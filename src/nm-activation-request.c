@@ -56,6 +56,16 @@ typedef struct {
 	GSList *share_rules;
 } NMActRequestPrivate;
 
+enum {
+	PROP_0,
+	PROP_IP4_CONFIG,
+	PROP_DHCP4_CONFIG,
+	PROP_IP6_CONFIG,
+	PROP_DHCP6_CONFIG,
+
+	LAST_PROP
+};
+
 /*******************************************************************/
 
 NMConnection *
@@ -282,6 +292,14 @@ nm_act_request_add_share_rule (NMActRequest *req,
 /********************************************************************/
 
 static void
+device_notify (GObject    *object,
+               GParamSpec *pspec,
+               gpointer    self)
+{
+	g_object_notify (self, pspec->name);
+}
+
+static void
 device_state_changed (NMActiveConnection *active,
                       NMDevice *device,
                       NMDeviceState new_state,
@@ -301,6 +319,15 @@ device_state_changed (NMActiveConnection *active,
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		ac_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
+
+		g_signal_connect (device, "notify::" NM_DEVICE_IP4_CONFIG,
+		                  G_CALLBACK (device_notify), active);
+		g_signal_connect (device, "notify::" NM_DEVICE_DHCP4_CONFIG,
+		                  G_CALLBACK (device_notify), active);
+		g_signal_connect (device, "notify::" NM_DEVICE_IP6_CONFIG,
+		                  G_CALLBACK (device_notify), active);
+		g_signal_connect (device, "notify::" NM_DEVICE_DHCP6_CONFIG,
+		                  G_CALLBACK (device_notify), active);
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
 		ac_state = NM_ACTIVE_CONNECTION_STATE_DEACTIVATING;
@@ -310,6 +337,8 @@ device_state_changed (NMActiveConnection *active,
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		ac_state = NM_ACTIVE_CONNECTION_STATE_DEACTIVATED;
+
+		g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_notify), active);
 		break;
 	default:
 		break;
@@ -414,6 +443,37 @@ dispose (GObject *object)
 }
 
 static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMDevice *device;
+
+	device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
+	if (!device) {
+		g_value_set_boxed (value, "/");
+		return;
+	}
+
+	switch (prop_id) {
+	case PROP_IP4_CONFIG:
+		g_object_get_property (G_OBJECT (device), NM_DEVICE_IP4_CONFIG, value);
+		break;
+	case PROP_DHCP4_CONFIG:
+		g_object_get_property (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG, value);
+		break;
+	case PROP_IP6_CONFIG:
+		g_object_get_property (G_OBJECT (device), NM_DEVICE_IP6_CONFIG, value);
+		break;
+	case PROP_DHCP6_CONFIG:
+		g_object_get_property (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG, value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
 nm_act_request_class_init (NMActRequestClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
@@ -423,7 +483,18 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 
 	/* virtual methods */
 	object_class->dispose = dispose;
+	object_class->get_property = get_property;
 	active_class->master_failed = master_failed;
 	active_class->device_state_changed = device_state_changed;
+
+	/* properties */
+	g_object_class_override_property (object_class, PROP_IP4_CONFIG,
+	                                  NM_ACTIVE_CONNECTION_IP4_CONFIG);
+	g_object_class_override_property (object_class, PROP_DHCP4_CONFIG,
+	                                  NM_ACTIVE_CONNECTION_DHCP4_CONFIG);
+	g_object_class_override_property (object_class, PROP_IP6_CONFIG,
+	                                  NM_ACTIVE_CONNECTION_IP6_CONFIG);
+	g_object_class_override_property (object_class, PROP_DHCP6_CONFIG,
+	                                  NM_ACTIVE_CONNECTION_DHCP6_CONFIG);
 }
 

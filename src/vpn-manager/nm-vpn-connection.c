@@ -105,6 +105,8 @@ enum {
 	PROP_0,
 	PROP_VPN_STATE,
 	PROP_BANNER,
+	PROP_IP4_CONFIG,
+	PROP_IP6_CONFIG,
 	PROP_MASTER = 2000,
 
 	LAST_PROP
@@ -1011,6 +1013,8 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	nm_ip4_config_merge_setting (config, nm_connection_get_setting_ip4_config (priv->connection));
 
 	priv->ip4_config = config;
+	nm_ip4_config_export (config);
+	g_object_notify (G_OBJECT (connection), NM_ACTIVE_CONNECTION_IP4_CONFIG);
 	nm_vpn_connection_config_maybe_complete (connection, TRUE);
 }
 
@@ -1152,6 +1156,8 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 	nm_ip6_config_merge_setting (config, nm_connection_get_setting_ip6_config (priv->connection));
 
 	priv->ip6_config = config;
+	nm_ip6_config_export (config);
+	g_object_notify (G_OBJECT (connection), NM_ACTIVE_CONNECTION_IP6_CONFIG);
 	nm_vpn_connection_config_maybe_complete (connection, TRUE);
 }
 
@@ -1787,6 +1793,18 @@ get_property (GObject *object, guint prop_id,
 	case PROP_BANNER:
 		g_value_set_string (value, priv->banner ? priv->banner : "");
 		break;
+	case PROP_IP4_CONFIG:
+		if (priv->vpn_state == NM_VPN_CONNECTION_STATE_ACTIVATED && priv->ip4_config)
+			g_value_set_boxed (value, nm_ip4_config_get_dbus_path (priv->ip4_config));
+		else
+			g_value_set_boxed (value, "/");
+		break;
+	case PROP_IP6_CONFIG:
+		if (priv->vpn_state == NM_VPN_CONNECTION_STATE_ACTIVATED && priv->ip6_config)
+			g_value_set_boxed (value, nm_ip6_config_get_dbus_path (priv->ip6_config));
+		else
+			g_value_set_boxed (value, "/");
+		break;
 	case PROP_MASTER:
 		parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (object));
 		g_value_set_boxed (value, parent_dev ? nm_device_get_path (parent_dev) : "/");
@@ -1831,6 +1849,11 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 		                     "Login Banner",
 		                     NULL,
 		                     G_PARAM_READABLE));
+
+	g_object_class_override_property (object_class, PROP_IP4_CONFIG,
+	                                  NM_ACTIVE_CONNECTION_IP4_CONFIG);
+	g_object_class_override_property (object_class, PROP_IP6_CONFIG,
+	                                  NM_ACTIVE_CONNECTION_IP6_CONFIG);
 
 	/* signals */
 	signals[VPN_STATE_CHANGED] =

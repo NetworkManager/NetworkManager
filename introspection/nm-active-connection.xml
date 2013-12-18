@@ -45,10 +45,40 @@
         whether it currently owns the default IPv4 route.
       </tp:docstring>
     </property>
+    <property name="Ip4Config" type="o" access="read">
+      <tp:docstring>
+        Object path of the Ip4Config object describing the configuration of the
+        connection. Only valid when the connection is in the
+        NM_ACTIVE_CONNECTION_STATE_ACTIVATED state.
+      </tp:docstring>
+    </property>
+    <property name="Dhcp4Config" type="o" access="read">
+      <tp:docstring>
+        Object path of the Dhcp4Config object describing the DHCP options
+        returned by the DHCP server (assuming the connection used DHCP). Only
+        valid when the connection is in the NM_ACTIVE_CONNECTION_STATE_ACTIVATED
+        state.
+      </tp:docstring>
+    </property>
     <property name="Default6" type="b" access="read">
       <tp:docstring>
         Whether this active connection is the default IPv6 connection, i.e.
         whether it currently owns the default IPv6 route.
+      </tp:docstring>
+    </property>
+    <property name="Ip6Config" type="o" access="read">
+      <tp:docstring>
+        Object path of the Ip6Config object describing the configuration of the
+        connection. Only valid when the connection is in the
+        NM_ACTIVE_CONNECTION_STATE_ACTIVATED state.
+      </tp:docstring>
+    </property>
+    <property name="Dhcp6Config" type="o" access="read">
+      <tp:docstring>
+        Object path of the Dhcp6Config object describing the DHCP options
+        returned by the DHCP server (assuming the connection used DHCP). Only
+        valid when the connection is in the NM_ACTIVE_CONNECTION_STATE_ACTIVATED
+        state.
       </tp:docstring>
     </property>
     <property name="Vpn" type="b" access="read">
