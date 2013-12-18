@@ -1696,15 +1696,15 @@ nm_system_bond_enslave (gint master_ifindex,
 	g_assert (!nm_system_iface_is_up (slave_ifindex));
 
 	if (nm_system_iface_get_flags (slave_ifindex) & IFF_SLAVE) {
-		struct rtnl_link *link;
+		struct rtnl_link *lk;
 		int existing_master = -1;
 
 		/* Get the ifindex of the existing master device */
-		link = nm_netlink_index_to_rtnl_link (slave_ifindex);
-		g_warn_if_fail (link != NULL);
-		if (link) {
-			existing_master = rtnl_link_get_master (link);
-			rtnl_link_put (link);
+		lk = nm_netlink_index_to_rtnl_link (slave_ifindex);
+		g_warn_if_fail (lk != NULL);
+		if (lk) {
+			existing_master = rtnl_link_get_master (lk);
+			rtnl_link_put (lk);
 		}
 
 		if (existing_master > 0) {
