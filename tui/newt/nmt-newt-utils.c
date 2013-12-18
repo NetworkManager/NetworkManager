@@ -32,10 +32,10 @@
 #include "nmt-newt-utils.h"
 
 static void
-nmt_newt_g_log_handler (const char     *log_domain,
-                        GLogLevelFlags  log_level,
-                        const char     *message,
-                        gpointer        user_data)
+nmt_newt_dialog_g_log_handler (const char     *log_domain,
+                               GLogLevelFlags  log_level,
+                               const char     *message,
+                               gpointer        user_data)
 {
 	const char *level_name;
 	char *full_message;
@@ -98,16 +98,22 @@ nmt_newt_g_log_handler (const char     *log_domain,
 	newtPopWindow ();
 }
 
+static void
+nmt_newt_basic_g_log_handler (const char     *log_domain,
+                              GLogLevelFlags  log_level,
+                              const char     *message,
+                              gpointer        user_data)
+{
+	newtSuspend ();
+	g_log_default_handler (log_domain, log_level, message, NULL);
+	newtResume ();
+}
+
 /**
  * nmt_newt_init:
  *
  * Wrapper for newtInit() that also does some nmt-newt-internal setup.
  * This should be called once, before any other nmt-newt functions.
- *
- * FIXME: Currently this also calls g_log_set_default_handler() to set
- * up a log handler that displays g_warning()s and the like as pop-up
- * windows, but in the long run that should only happen for
- * debug/developer builds.
  */
 void
 nmt_newt_init (void)
@@ -121,7 +127,10 @@ nmt_newt_init (void)
 	newtSetColor (NMT_NEWT_COLORSET_DISABLED_BUTTON, "blue", "lightgray");
 	newtSetColor (NMT_NEWT_COLORSET_TEXTBOX_WITH_BACKGROUND, "black", "white");
 
-	g_log_set_default_handler (nmt_newt_g_log_handler, NULL);
+	if (g_getenv ("NMTUI_DEBUG"))
+		g_log_set_default_handler (nmt_newt_dialog_g_log_handler, NULL);
+	else
+		g_log_set_default_handler (nmt_newt_basic_g_log_handler, NULL);
 }
 
 /**
@@ -133,7 +142,7 @@ void
 nmt_newt_finished (void)
 {
 	newtFinished ();
-	g_log_set_default_handler (nmt_newt_g_log_handler, g_log_default_handler);
+	g_log_set_default_handler (g_log_default_handler, NULL);
 }
 
 /**
