@@ -290,7 +290,7 @@ clean_servers (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *
 
 		if (now >= expiry) {
 			g_array_remove_index (rdisc->dns_servers, i--);
-			*changed |= NM_RDISC_CONFIG_ROUTES;
+			*changed |= NM_RDISC_CONFIG_DNS_SERVERS;
 		} else if (now >= refresh)
 			solicit (rdisc);
 		else if (*nextevent > refresh)
@@ -313,7 +313,7 @@ clean_domains (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *
 
 		if (now >= expiry) {
 			g_array_remove_index (rdisc->dns_domains, i--);
-			*changed |= NM_RDISC_CONFIG_ROUTES;
+			*changed |= NM_RDISC_CONFIG_DNS_DOMAINS;
 		} else if (now >= refresh)
 			solicit (rdisc);
 		else if (*nextevent >=refresh)
