@@ -900,13 +900,11 @@ static void
 update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	NMDnsManager *mgr;
 
-	mgr = nm_dns_manager_get ();
-	nm_dns_manager_begin_updates (mgr, __func__);
+	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
-	update_ip4_dns (policy, mgr);
-	update_ip6_dns (policy, mgr);
+	update_ip4_dns (policy, priv->dns_manager);
+	update_ip6_dns (policy, priv->dns_manager);
 
 	update_ip4_routing (policy, force_update);
 	update_ip6_routing (policy, force_update);
@@ -914,8 +912,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	/* Update the system hostname */
 	update_system_hostname (policy, priv->default_device4, priv->default_device6);
 
-	nm_dns_manager_end_updates (mgr, __func__);
-	g_object_unref (mgr);
+	nm_dns_manager_end_updates (priv->dns_manager, __func__);
 }
 
 static void
@@ -1713,13 +1710,12 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 static void
 vpn_connection_activated (NMPolicy *policy, NMVPNConnection *vpn)
 {
-	NMDnsManager *mgr;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
 	const char *ip_iface;
 
-	mgr = nm_dns_manager_get ();
-	nm_dns_manager_begin_updates (mgr, __func__);
+	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
 	ip_iface = nm_vpn_connection_get_ip_iface (vpn);
 
@@ -1727,42 +1723,41 @@ vpn_connection_activated (NMPolicy *policy, NMVPNConnection *vpn)
 
 	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
 	if (ip4_config)
-		nm_dns_manager_add_ip4_config (mgr, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_VPN);
+		nm_dns_manager_add_ip4_config (priv->dns_manager, ip_iface, ip4_config, NM_DNS_IP_CONFIG_TYPE_VPN);
 
 	ip6_config = nm_vpn_connection_get_ip6_config (vpn);
 	if (ip6_config)
-		nm_dns_manager_add_ip6_config (mgr, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_VPN);
+		nm_dns_manager_add_ip6_config (priv->dns_manager, ip_iface, ip6_config, NM_DNS_IP_CONFIG_TYPE_VPN);
 
 	update_routing_and_dns (policy, TRUE);
 
-	nm_dns_manager_end_updates (mgr, __func__);
+	nm_dns_manager_end_updates (priv->dns_manager, __func__);
 }
 
 static void
 vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 {
-	NMDnsManager *mgr;
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
 
-	mgr = nm_dns_manager_get ();
-	nm_dns_manager_begin_updates (mgr, __func__);
+	nm_dns_manager_begin_updates (priv->dns_manager, __func__);
 
 	ip4_config = nm_vpn_connection_get_ip4_config (vpn);
 	if (ip4_config) {
 		/* Remove the VPN connection's IP4 config from DNS */
-		nm_dns_manager_remove_ip4_config (mgr, ip4_config);
+		nm_dns_manager_remove_ip4_config (priv->dns_manager, ip4_config);
 	}
 
 	ip6_config = nm_vpn_connection_get_ip6_config (vpn);
 	if (ip6_config) {
 		/* Remove the VPN connection's IP6 config from DNS */
-		nm_dns_manager_remove_ip6_config (mgr, ip6_config);
+		nm_dns_manager_remove_ip6_config (priv->dns_manager, ip6_config);
 	}
 
 	update_routing_and_dns (policy, TRUE);
 
-	nm_dns_manager_end_updates (mgr, __func__);
+	nm_dns_manager_end_updates (priv->dns_manager, __func__);
 }
 
 static void
@@ -2098,7 +2093,7 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 
 	priv->dns_manager = nm_dns_manager_get ();
 	priv->config_changed_id = g_signal_connect (priv->dns_manager, "config-changed",
-	                                              G_CALLBACK (dns_config_changed), policy);
+	                                            G_CALLBACK (dns_config_changed), policy);
 
 	priv->resolver = g_resolver_get_default ();
 
@@ -2210,7 +2205,6 @@ dispose (GObject *object)
 
 	if (priv->dns_manager) {
 		g_signal_handler_disconnect (priv->dns_manager, priv->config_changed_id);
-		g_object_unref (priv->dns_manager);
 		priv->dns_manager = NULL;
 	}
 

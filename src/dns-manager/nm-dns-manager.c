@@ -1044,8 +1044,7 @@ nm_dns_manager_get (void)
 	if (!singleton) {
 		singleton = NM_DNS_MANAGER (g_object_new (NM_TYPE_DNS_MANAGER, NULL));
 		g_assert (singleton);
-	} else
-		g_object_ref (singleton);
+	}
 
 	return singleton;
 }
