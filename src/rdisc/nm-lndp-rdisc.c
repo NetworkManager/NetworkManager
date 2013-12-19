@@ -144,25 +144,31 @@ add_route (NMRDisc *rdisc, const NMRDiscRoute *new)
 }
 
 static gboolean
-add_server (NMRDisc *rdisc, const NMRDiscDNSServer *new)
+add_dns_server (NMRDisc *rdisc, const NMRDiscDNSServer *new)
 {
 	int i;
 
 	for (i = 0; i < rdisc->dns_servers->len; i++) {
 		NMRDiscDNSServer *item = &g_array_index (rdisc->dns_servers, NMRDiscDNSServer, i);
 
-		if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address))
-			return FALSE;
+		if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address)) {
+			gboolean changed = item->timestamp != new->timestamp ||
+			                   item->lifetime != new->lifetime;
+			if (changed) {
+				item->timestamp = new->timestamp;
+				item->lifetime = new->lifetime;
+			}
+			return changed;
+		}
 	}
 
 	g_array_insert_val (rdisc->dns_servers, i, *new);
-
 	return TRUE;
 }
 
 /* Copies new->domain if 'new' is added to the dns_domains list */
 static gboolean
-add_domain (NMRDisc *rdisc, const NMRDiscDNSDomain *new)
+add_dns_domain (NMRDisc *rdisc, const NMRDiscDNSDomain *new)
 {
 	NMRDiscDNSDomain *item;
 	int i;
@@ -170,8 +176,15 @@ add_domain (NMRDisc *rdisc, const NMRDiscDNSDomain *new)
 	for (i = 0; i < rdisc->dns_domains->len; i++) {
 		item = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
 
-		if (!g_strcmp0 (item->domain, new->domain))
-			return FALSE;
+		if (!g_strcmp0 (item->domain, new->domain)) {
+			gboolean changed = item->timestamp != new->timestamp ||
+			                   item->lifetime != new->lifetime;
+			if (changed) {
+				item->timestamp = new->timestamp;
+				item->lifetime = new->lifetime;
+			}
+			return changed;
+		}
 	}
 
 	g_array_insert_val (rdisc->dns_domains, i, *new);
@@ -279,7 +292,7 @@ clean_routes (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *n
 }
 
 static void
-clean_servers (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *nextevent)
+clean_dns_servers (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *nextevent)
 {
 	int i;
 
@@ -302,7 +315,7 @@ clean_servers (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *
 }
 
 static void
-clean_domains (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *nextevent)
+clean_dns_domains (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *nextevent)
 {
 	int i;
 
@@ -343,8 +356,8 @@ check_timestamps (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 	clean_gateways (rdisc, now, &changed, &nextevent);
 	clean_addresses (rdisc, now, &changed, &nextevent);
 	clean_routes (rdisc, now, &changed, &nextevent);
-	clean_servers (rdisc, now, &changed, &nextevent);
-	clean_domains (rdisc, now, &changed, &nextevent);
+	clean_dns_servers (rdisc, now, &changed, &nextevent);
+	clean_dns_domains (rdisc, now, &changed, &nextevent);
 
 	if (changed)
 		g_signal_emit_by_name (rdisc, NM_RDISC_CONFIG_CHANGED, changed);
@@ -567,7 +580,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 			 */
 			if (dns_server.lifetime && dns_server.lifetime < 7200)
 				dns_server.lifetime = 7200;
-			if (add_server (rdisc, &dns_server))
+			if (add_dns_server (rdisc, &dns_server))
 				changed |= NM_RDISC_CONFIG_DNS_SERVERS;
 		}
 	}
@@ -589,7 +602,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 			 */
 			if (dns_domain.lifetime && dns_domain.lifetime < 7200)
 				dns_domain.lifetime = 7200;
-			if (add_domain (rdisc, &dns_domain))
+			if (add_dns_domain (rdisc, &dns_domain))
 				changed |= NM_RDISC_CONFIG_DNS_DOMAINS;
 		}
 	}
