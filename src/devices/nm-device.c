@@ -6127,6 +6127,10 @@ reason_to_string (NMDeviceStateReason reason)
 		return "SSID not found";
 	case NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED:
 		return "secondary-connection-failed";
+	case NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED:
+		return "DCB-FCoE-failed";
+	case NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED:
+		return "teamd-control-failed";
 	default:
 		break;
 	}
