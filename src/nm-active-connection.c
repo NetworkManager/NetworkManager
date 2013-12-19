@@ -74,7 +74,11 @@ enum {
 	PROP_DEVICES,
 	PROP_STATE,
 	PROP_DEFAULT,
+	PROP_IP4_CONFIG,
+	PROP_DHCP4_CONFIG,
 	PROP_DEFAULT6,
+	PROP_IP6_CONFIG,
+	PROP_DHCP6_CONFIG,
 	PROP_VPN,
 	PROP_MASTER,
 
@@ -150,6 +154,14 @@ nm_active_connection_set_state (NMActiveConnection *self,
 			nm_device_remove_pending_action (priv->device, priv->pending_activation_id);
 			g_clear_pointer (&priv->pending_activation_id, g_free);
 		}
+	}
+
+	if (   new_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
+	    || old_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP4_CONFIG);
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DHCP4_CONFIG);
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_IP6_CONFIG);
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DHCP6_CONFIG);
 	}
 
 	if (priv->state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
@@ -712,8 +724,21 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DEFAULT:
 		g_value_set_boolean (value, priv->is_default);
 		break;
+	case PROP_IP4_CONFIG:
+		/* The IP and DHCP config properties may be overridden by a subclass */
+		g_value_set_boxed (value, "/");
+		break;
+	case PROP_DHCP4_CONFIG:
+		g_value_set_boxed (value, "/");
+		break;
 	case PROP_DEFAULT6:
 		g_value_set_boolean (value, priv->is_default6);
+		break;
+	case PROP_IP6_CONFIG:
+		g_value_set_boxed (value, "/");
+		break;
+	case PROP_DHCP6_CONFIG:
+		g_value_set_boxed (value, "/");
 		break;
 	case PROP_VPN:
 		g_value_set_boolean (value, priv->vpn);
@@ -838,12 +863,40 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		                      FALSE,
 		                      G_PARAM_READWRITE));
 
+	g_object_class_install_property (object_class, PROP_IP4_CONFIG,
+		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_IP4_CONFIG,
+		                     "IP4 Config",
+		                     "IP4 Config",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READABLE));
+
+	g_object_class_install_property (object_class, PROP_DHCP4_CONFIG,
+		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DHCP4_CONFIG,
+		                     "DHCP4 Config",
+		                     "DHCP4 Config",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READABLE));
+
 	g_object_class_install_property (object_class, PROP_DEFAULT6,
 		g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT6,
 		                      "Default6",
 		                      "Is the default IPv6 active connection",
 		                      FALSE,
 		                      G_PARAM_READWRITE));
+
+	g_object_class_install_property (object_class, PROP_IP6_CONFIG,
+		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_IP6_CONFIG,
+		                     "IP6 Config",
+		                     "IP6 Config",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READABLE));
+
+	g_object_class_install_property (object_class, PROP_DHCP6_CONFIG,
+		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DHCP6_CONFIG,
+		                     "DHCP6 Config",
+		                     "DHCP6 Config",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READABLE));
 
 	g_object_class_install_property (object_class, PROP_VPN,
 		g_param_spec_boolean (NM_ACTIVE_CONNECTION_VPN,

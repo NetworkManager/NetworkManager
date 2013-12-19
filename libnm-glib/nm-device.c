@@ -1253,6 +1253,10 @@ nm_device_get_firmware_missing (NMDevice *device)
  *
  * Gets the current #NMIP4Config associated with the #NMDevice.
  *
+ * Note that as of NetworkManager 0.9.10, you can alternatively use
+ * nm_active_connection_get_ip4_config(), which also works with VPN
+ * connections.
+ *
  * Returns: (transfer none): the #NMIP4Config or %NULL if the device is not activated.
  **/
 NMIP4Config *
@@ -1269,6 +1273,10 @@ nm_device_get_ip4_config (NMDevice *device)
  * @device: a #NMDevice
  *
  * Gets the current #NMDHCP4Config associated with the #NMDevice.
+ *
+ * Note that as of NetworkManager 0.9.10, you can alternatively use
+ * nm_active_connection_get_dhcp4_config(), which also works with VPN
+ * connections.
  *
  * Returns: (transfer none): the #NMDHCP4Config or %NULL if the device is not activated or not
  * using DHCP.
@@ -1288,6 +1296,10 @@ nm_device_get_dhcp4_config (NMDevice *device)
  *
  * Gets the current #NMIP6Config associated with the #NMDevice.
  *
+ * Note that as of NetworkManager 0.9.10, you can alternatively use
+ * nm_active_connection_get_ip6_config(), which also works with VPN
+ * connections.
+ *
  * Returns: (transfer none): the #NMIP6Config or %NULL if the device is not activated.
  **/
 NMIP6Config *
@@ -1304,6 +1316,10 @@ nm_device_get_ip6_config (NMDevice *device)
  * @device: a #NMDevice
  *
  * Gets the current #NMDHCP6Config associated with the #NMDevice.
+ *
+ * Note that as of NetworkManager 0.9.10, you can alternatively use
+ * nm_active_connection_get_dhcp6_config(), which also works with VPN
+ * connections.
  *
  * Returns: (transfer none): the #NMDHCP6Config or %NULL if the device is not activated or not
  * using DHCP.

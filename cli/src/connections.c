@@ -941,66 +941,38 @@ nmc_active_connection_detail (NMActiveConnection *acon, NmCli *nmc)
 
 		/* IP4 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[1].name) == 0) {
-			const GPtrArray *devices;
-			int j;
+			gboolean b1 = FALSE;
+			NMIP4Config *cfg4 = nm_active_connection_get_ip4_config (acon);
 
-			devices = nm_active_connection_get_devices (acon);
-			for (j = 0; devices && (j < devices->len); j++) {
-				gboolean b1 = FALSE;
-				NMDevice *device = g_ptr_array_index (devices, j);
-				NMIP4Config *cfg4 = nm_device_get_ip4_config (device);
-
-				b1 = print_ip4_config (cfg4, nmc, "IP4", group_fld);
-				was_output = was_output || b1;
-			}
+			b1 = print_ip4_config (cfg4, nmc, "IP4", group_fld);
+			was_output = was_output || b1;
 		}
 
 		/* DHCP4 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[2].name) == 0) {
-			const GPtrArray *devices;
-			int j;
+			gboolean b1 = FALSE;
+			NMDHCP4Config *dhcp4 = nm_active_connection_get_dhcp4_config (acon);
 
-			devices = nm_active_connection_get_devices (acon);
-			for (j = 0; devices && (j < devices->len); j++) {
-				gboolean b1 = FALSE;
-				NMDevice *device = g_ptr_array_index (devices, j);
-				NMDHCP4Config *dhcp4 = nm_device_get_dhcp4_config (device);
-
-				b1 = print_dhcp4_config (dhcp4, nmc, "DHCP4", group_fld);
-				was_output = was_output || b1;
-			}
+			b1 = print_dhcp4_config (dhcp4, nmc, "DHCP4", group_fld);
+			was_output = was_output || b1;
 		}
 
 		/* IP6 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[3].name) == 0) {
-			const GPtrArray *devices;
-			int j;
+			gboolean b1 = FALSE;
+			NMIP6Config *cfg6 = nm_active_connection_get_ip6_config (acon);
 
-			devices = nm_active_connection_get_devices (acon);
-			for (j = 0; devices && (j < devices->len); j++) {
-				gboolean b1 = FALSE;
-				NMDevice *device = g_ptr_array_index (devices, j);
-				NMIP6Config *cfg6 = nm_device_get_ip6_config (device);
-
-				b1 = print_ip6_config (cfg6, nmc, "IP6", group_fld);
-				was_output = was_output || b1;
-			}
+			b1 = print_ip6_config (cfg6, nmc, "IP6", group_fld);
+			was_output = was_output || b1;
 		}
 
 		/* DHCP6 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[4].name) == 0) {
-			const GPtrArray *devices;
-			int j;
+			gboolean b1 = FALSE;
+			NMDHCP6Config *dhcp6 = nm_active_connection_get_dhcp6_config (acon);
 
-			devices = nm_active_connection_get_devices (acon);
-			for (j = 0; devices && (j < devices->len); j++) {
-				gboolean b1 = FALSE;
-				NMDevice *device = g_ptr_array_index (devices, j);
-				NMDHCP6Config *dhcp6 = nm_device_get_dhcp6_config (device);
-
-				b1 = print_dhcp6_config (dhcp6, nmc, "DHCP6", group_fld);
-				was_output = was_output || b1;
-			}
+			b1 = print_dhcp6_config (dhcp6, nmc, "DHCP6", group_fld);
+			was_output = was_output || b1;
 		}
 
 		/* VPN */
