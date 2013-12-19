@@ -3364,6 +3364,7 @@ addrconf6_start (NMDevice *self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMActStageReturn ret;
+	const char *ip_iface = nm_device_get_ip_iface (self);
 
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
@@ -3374,15 +3375,14 @@ addrconf6_start (NMDevice *self)
 		priv->ac_ip6_config = NULL;
 	}
 
-	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self), nm_device_get_ip_iface (self));
+	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self), ip_iface);
 	if (!priv->rdisc) {
-		nm_log_err (LOGD_IP6, "Failed to start router discovery.");
+		nm_log_err (LOGD_IP6, "(%s): failed to start router discovery.", ip_iface);
 		return FALSE;
 	}
 
 	/* ensure link local is ready... */
 	ret = linklocal6_start (self);
-
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS)
 		addrconf6_start_with_link_ready (self);
 	else
