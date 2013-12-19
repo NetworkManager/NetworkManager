@@ -190,7 +190,7 @@ send_rs (NMRDisc *rdisc)
 	g_assert (!error);
 	ndp_msg_ifindex_set (msg, rdisc->ifindex);
 
-	debug ("(%s): sending router solicitation: %d", rdisc->ifname, rdisc->ifindex);
+	debug ("(%s): sending router solicitation", rdisc->ifname);
 
 	error = ndp_msg_send (priv->ndp, msg);
 	if (error)
@@ -346,7 +346,7 @@ check_timestamps (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 		g_signal_emit_by_name (rdisc, NM_RDISC_CONFIG_CHANGED, changed);
 
 	if (nextevent != never) {
-		debug ("Scheduling next now/lifetime check: %d seconds", (int) nextevent);
+		debug ("(%s): scheduling next now/lifetime check: %u seconds", rdisc->ifname, nextevent);
 		priv->timeout_id = g_timeout_add_seconds (nextevent, timeout_cb, rdisc);
 	}
 }
@@ -454,7 +454,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 * single time when the configuration is finished and updates can
 	 * come at any time.
 	 */
-	debug ("Received router advertisement: %d at %d", rdisc->ifindex, (int) now);
+	debug ("(%s): received router advertisement at %u", rdisc->ifname, now);
 
 	if (priv->send_rs_id) {
 		g_source_remove (priv->send_rs_id);
