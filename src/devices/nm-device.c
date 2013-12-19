@@ -3319,6 +3319,9 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 	}
 
 	if (changed & NM_RDISC_CONFIG_DNS_DOMAINS) {
+		/* Rebuild domain list from router discovery cache. */
+		nm_ip6_config_reset_domains (priv->ac_ip6_config);
+
 		for (i = 0; i < rdisc->dns_domains->len; i++) {
 			NMRDiscDNSDomain *discovered_domain = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
 
