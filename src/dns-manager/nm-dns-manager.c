@@ -24,8 +24,13 @@
 #include "config.h"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <resolv.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+
+#include <linux/fs.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -1056,13 +1061,24 @@ nm_dns_manager_error_quark (void)
 }
 
 static void
-nm_dns_manager_init (NMDnsManager *self)
+init_resolv_conf_mode (NMDnsManager *self)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 	const char *mode;
+	int fd, flags;
 
-	/* Set the initial hash */
-	compute_hash (self, NM_DNS_MANAGER_GET_PRIVATE (self)->hash);
+	fd = open (_PATH_RESCONF, O_RDONLY);
+	if (fd != -1) {
+		if (ioctl (fd, FS_IOC_GETFLAGS, &flags) == -1)
+			flags = 0;
+		close (fd);
+
+		if (flags & FS_IMMUTABLE_FL) {
+			nm_log_info (LOGD_DNS, "DNS: " _PATH_RESCONF " is immutable; not managing");
+			priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
+			return;
+		}
+	}
 
 	mode = nm_config_get_dns_mode (nm_config_get ());
 	if (!g_strcmp0 (mode, "none")) {
@@ -1076,6 +1092,17 @@ nm_dns_manager_init (NMDnsManager *self)
 		if (mode && g_strcmp0 (mode, "default") != 0)
 			nm_log_warn (LOGD_DNS, "Unknown DNS mode '%s'", mode);
 	}
+}
+
+static void
+nm_dns_manager_init (NMDnsManager *self)
+{
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+
+	/* Set the initial hash */
+	compute_hash (self, NM_DNS_MANAGER_GET_PRIVATE (self)->hash);
+
+	init_resolv_conf_mode (self);
 
 	if (priv->plugin) {
 		nm_log_info (LOGD_DNS, "DNS: loaded plugin %s", nm_dns_plugin_get_name (priv->plugin));
