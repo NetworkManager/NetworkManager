@@ -702,7 +702,7 @@ nmt_connect_connection_list_activated (NmtNewtWidget *widget)
 	activate_nmt_connection_async (NMT_CONNECT_CONNECTION_LIST (widget), nmtconn,
 	                               activate_complete, &op);
 	if (!nmt_sync_op_wait_boolean (&op, &error)) {
-		nmt_newt_error_dialog (_("Could not activate connection: %s"), error->message);
+		nmt_newt_message_dialog (_("Could not activate connection: %s"), error->message);
 		g_error_free (error);
 	}
 }

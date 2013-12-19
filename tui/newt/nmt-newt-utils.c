@@ -146,18 +146,16 @@ nmt_newt_finished (void)
 }
 
 /**
- * nmt_newt_error_dialog:
+ * nmt_newt_message_dialog:
  * @message: a printf()-style message format
  * @...: arguments
  *
  * Displays the given message in a dialog box with a single "OK"
  * button, and returns after the user clicks "OK".
- *
- * FIXME: it's not just for errors any more!
  */
 void
-nmt_newt_error_dialog  (const char *message,
-                        ...)
+nmt_newt_message_dialog  (const char *message,
+                          ...)
 {
 	va_list ap;
 	char *msg, *msg_lc, *ok_lc;
@@ -284,7 +282,7 @@ nmt_newt_edit_string (const char *data)
 
 	fd = g_file_open_tmp ("XXXXXX.json", &filename, &error);
 	if (fd == -1) {
-		nmt_newt_error_dialog (_("Could not create temporary file: %s"), error->message);
+		nmt_newt_message_dialog (_("Could not create temporary file: %s"), error->message);
 		g_error_free (error);
 		return NULL;
 	}
@@ -316,19 +314,19 @@ nmt_newt_edit_string (const char *data)
 	newtResume ();
 
 	if (error) {
-		nmt_newt_error_dialog (_("Could not create temporary file: %s"), error->message);
+		nmt_newt_message_dialog (_("Could not create temporary file: %s"), error->message);
 		g_error_free (error);
 		goto done;
 	}
 
 	if (!g_spawn_check_exit_status (status, &error)) {
-		nmt_newt_error_dialog (_("Editor failed: %s"), error->message);
+		nmt_newt_message_dialog (_("Editor failed: %s"), error->message);
 		g_error_free (error);
 		goto done;
 	}
 
 	if (!g_file_get_contents (filename, &new_data, NULL, &error)) {
-		nmt_newt_error_dialog (_("Could not re-read file: %s"), error->message);
+		nmt_newt_message_dialog (_("Could not re-read file: %s"), error->message);
 		g_error_free (error);
 		goto done;
 	}

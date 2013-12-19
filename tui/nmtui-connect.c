@@ -69,7 +69,7 @@ nmt_connect_connection (const char *identifier)
 	nmt_connect_connection_list_activate_async (NMT_CONNECT_CONNECTION_LIST (list), identifier,
 	                                            connect_complete, &op);
 	if (!nmt_sync_op_wait_boolean (&op, &error)) {
-		nmt_newt_error_dialog (_("Could not activate connection: %s"), error->message);
+		nmt_newt_message_dialog (_("Could not activate connection: %s"), error->message);
 		g_error_free (error);
 		nmtui_quit ();
 	}
