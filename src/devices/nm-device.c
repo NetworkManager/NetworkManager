@@ -7168,7 +7168,7 @@ nm_device_add_pending_action (NMDevice *device, const char *action)
 			             nm_device_get_iface (device),
 			             g_slist_length (priv->pending_actions),
 			             action);
-			g_return_val_if_reached (FALSE);
+			g_return_if_reached ();
 		}
 	}
 
