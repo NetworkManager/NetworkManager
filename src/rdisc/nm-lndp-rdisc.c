@@ -160,20 +160,23 @@ add_server (NMRDisc *rdisc, const NMRDiscDNSServer *new)
 	return TRUE;
 }
 
+/* Copies new->domain if 'new' is added to the dns_domains list */
 static gboolean
 add_domain (NMRDisc *rdisc, const NMRDiscDNSDomain *new)
 {
+	NMRDiscDNSDomain *item;
 	int i;
 
 	for (i = 0; i < rdisc->dns_domains->len; i++) {
-		NMRDiscDNSDomain *item = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
+		item = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
 
 		if (!g_strcmp0 (item->domain, new->domain))
 			return FALSE;
 	}
 
 	g_array_insert_val (rdisc->dns_domains, i, *new);
-
+	item = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
+	item->domain = g_strdup (new->domain);
 	return TRUE;
 }
 
@@ -312,6 +315,7 @@ clean_domains (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *
 			continue;
 
 		if (now >= expiry) {
+			g_free (item->domain);
 			g_array_remove_index (rdisc->dns_domains, i--);
 			*changed |= NM_RDISC_CONFIG_DNS_DOMAINS;
 		} else if (now >= refresh)
@@ -575,7 +579,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 			NMRDiscDNSDomain dns_domain;
 
 			memset (&dns_domain, 0, sizeof (dns_domain));
-			dns_domain.domain = g_strdup (domain);
+			dns_domain.domain = domain;
 			dns_domain.timestamp = now;
 			dns_domain.lifetime = ndp_msg_opt_rdnss_lifetime (msg, offset);
 			/* Pad the lifetime somewhat to give a bit of slack in cases
