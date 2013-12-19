@@ -438,14 +438,31 @@ nm_vpn_connection_get_service (NMVPNConnection *connection)
 	return nm_setting_vpn_get_service_type (s_vpn);
 }
 
+static const char *
+vpn_plugin_failure_to_string (NMVPNPluginFailure failure)
+{
+	switch (failure) {
+	case NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED:
+		return "login-failed";
+	case NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED:
+		return "connect-failed";
+	case NM_VPN_PLUGIN_FAILURE_BAD_IP_CONFIG:
+		return "bad-ip-config";
+	default:
+		break;
+	}
+	return "unknown";
+}
+
 static void
 plugin_failed (DBusGProxy *proxy,
-			   NMVPNPluginFailure plugin_failure,
-			   gpointer user_data)
+               NMVPNPluginFailure plugin_failure,
+               gpointer user_data)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (user_data);
 
-	nm_log_warn (LOGD_VPN, "VPN plugin failed: %d", plugin_failure);
+	nm_log_warn (LOGD_VPN, "VPN plugin failed: %s (%d)",
+	             vpn_plugin_failure_to_string (plugin_failure), plugin_failure);
 
 	switch (plugin_failure) {
 	case NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED:
@@ -481,6 +498,38 @@ vpn_state_to_string (NMVPNServiceState state)
 	return "unknown";
 }
 
+static const char *
+vpn_reason_to_string (NMVPNConnectionStateReason reason)
+{
+	switch (reason) {
+	case NM_VPN_CONNECTION_STATE_REASON_NONE:
+		return "none";
+	case NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED:
+		return "user-disconnected";
+	case NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED:
+		return "device-disconnected";
+	case NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED:
+		return "service-stopped";
+	case NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID:
+		return "ip-config-invalid";
+	case NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT:
+		return "connect-timeout";
+	case NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT:
+		return "service-start-timeout";
+	case NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED:
+		return "service-start-failed";
+	case NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS:
+		return "no-secrets";
+	case NM_VPN_CONNECTION_STATE_REASON_LOGIN_FAILED:
+		return "login-failed";
+	case NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED:
+		return "connection-removed";
+	default:
+		break;
+	}
+	return "unknown";
+}
+
 static void
 plugin_state_changed (DBusGProxy *proxy,
                       NMVPNServiceState state,
@@ -504,7 +553,8 @@ plugin_state_changed (DBusGProxy *proxy,
 		case NM_VPN_CONNECTION_STATE_CONNECT:
 		case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
 		case NM_VPN_CONNECTION_STATE_ACTIVATED:
-			nm_log_info (LOGD_VPN, "VPN plugin state change reason: %d", priv->failure_reason);
+			nm_log_info (LOGD_VPN, "VPN plugin state change reason: %s (%d)",
+			             vpn_reason_to_string (priv->failure_reason), priv->failure_reason);
 			nm_vpn_connection_set_vpn_state (connection,
 			                                 NM_VPN_CONNECTION_STATE_FAILED,
 			                                 priv->failure_reason);
