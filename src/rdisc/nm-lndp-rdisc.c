@@ -162,6 +162,10 @@ add_dns_server (NMRDisc *rdisc, const NMRDiscDNSServer *new)
 		}
 	}
 
+	/* DNS server should no longer be used */
+	if (new->lifetime == 0)
+		return FALSE;
+
 	g_array_insert_val (rdisc->dns_servers, i, *new);
 	return TRUE;
 }
@@ -186,6 +190,10 @@ add_dns_domain (NMRDisc *rdisc, const NMRDiscDNSDomain *new)
 			return changed;
 		}
 	}
+
+	/* Domain should no longer be used */
+	if (new->lifetime == 0)
+		return FALSE;
 
 	g_array_insert_val (rdisc->dns_domains, i, *new);
 	item = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
