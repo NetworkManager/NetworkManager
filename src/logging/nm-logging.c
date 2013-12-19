@@ -261,10 +261,10 @@ nm_logging_setup (const char  *level,
 	return TRUE;
 }
 
-const char *
+char *
 nm_logging_level_to_string (void)
 {
-	return level_names[log_level];
+	return g_strdup (level_names[log_level]);
 }
 
 const char *
