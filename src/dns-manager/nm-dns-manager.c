@@ -61,7 +61,7 @@ typedef struct {
 	guint8 hash[HASH_LEN];  /* SHA1 hash of current DNS config */
 	guint8 prev_hash[HASH_LEN];  /* Hash when begin_updates() was called */
 
-	gboolean manage_dns;
+	NMDnsManagerResolvConfMode resolv_conf_mode;
 	NMDnsPlugin *plugin;
 
 	gboolean dns_touched;
@@ -576,7 +576,7 @@ update_dns (NMDnsManager *self,
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
 
-	if (!priv->manage_dns)
+	if (priv->resolv_conf_mode == NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED)
 		return TRUE;
 
 	priv->dns_touched = TRUE;
@@ -971,6 +971,12 @@ nm_dns_manager_set_hostname (NMDnsManager *mgr,
 	}
 }
 
+NMDnsManagerResolvConfMode
+nm_dns_manager_get_resolv_conf_mode (NMDnsManager *mgr)
+{
+	return NM_DNS_MANAGER_GET_PRIVATE (mgr)->resolv_conf_mode;
+}
+
 void
 nm_dns_manager_begin_updates (NMDnsManager *mgr, const char *func)
 {
@@ -1060,13 +1066,14 @@ nm_dns_manager_init (NMDnsManager *self)
 
 	mode = nm_config_get_dns_mode (nm_config_get ());
 	if (!g_strcmp0 (mode, "none")) {
-		priv->manage_dns = FALSE;
+		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED;
 		nm_log_info (LOGD_DNS, "DNS: not managing " _PATH_RESCONF);
+	} else if (!g_strcmp0 (mode, "dnsmasq")) {
+		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_PROXY;
+		priv->plugin = nm_dns_dnsmasq_new ();
 	} else {
-		priv->manage_dns = TRUE;
-		if (!g_strcmp0 (mode, "dnsmasq"))
-			priv->plugin = nm_dns_dnsmasq_new ();
-		else if (mode && g_strcmp0 (mode, "default") != 0)
+		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT;
+		if (mode && g_strcmp0 (mode, "default") != 0)
 			nm_log_warn (LOGD_DNS, "Unknown DNS mode '%s'", mode);
 	}
 

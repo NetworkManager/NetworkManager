@@ -90,6 +90,26 @@ gboolean nm_dns_manager_remove_ip6_config (NMDnsManager *mgr, NMIP6Config *confi
 void nm_dns_manager_set_hostname (NMDnsManager *mgr,
                                   const char *hostname);
 
+/**
+ * NMDnsManagerResolvConfMode:
+ * @NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED: NM is not managing resolv.conf
+ * @NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT: NM is managing resolv.conf by
+ *   adding and removing "nameserver" lines corresponding to the currently
+ *   active connections
+ * @NM_DNS_MANAGER_RESOLV_CONF_PROXY: NM is managing resolv.conf by
+ *   pointing it to some other service (eg, dnsmasq) that knows the
+ *   nameservers corresponding to the currently active connections.
+ *
+ * NMDnsManager's behavior toward /etc/resolv.conf.
+ */
+typedef enum {
+	NM_DNS_MANAGER_RESOLV_CONF_UNMANAGED,
+	NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT,
+	NM_DNS_MANAGER_RESOLV_CONF_PROXY
+} NMDnsManagerResolvConfMode;
+
+NMDnsManagerResolvConfMode nm_dns_manager_get_resolv_conf_mode (NMDnsManager *mgr);
+
 G_END_DECLS
 
 #endif /* NM_DNS_MANAGER_H */
