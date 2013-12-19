@@ -222,9 +222,9 @@ clean_gateways (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 
 
 	for (i = 0; i < rdisc->gateways->len; i++) {
 		NMRDiscGateway *item = &g_array_index (rdisc->gateways, NMRDiscGateway, i);
-		guint32 expiry = item->timestamp + item->lifetime;
+		guint64 expiry = item->timestamp + item->lifetime;
 
-		if (item->lifetime == UINT_MAX)
+		if (item->lifetime == G_MAXUINT32)
 			continue;
 
 		if (now >= expiry) {
@@ -242,9 +242,9 @@ clean_addresses (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32
 
 	for (i = 0; i < rdisc->addresses->len; i++) {
 		NMRDiscAddress *item = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
-		guint32 expiry = item->timestamp + item->lifetime;
+		guint64 expiry = item->timestamp + item->lifetime;
 
-		if (item->lifetime == UINT_MAX)
+		if (item->lifetime == G_MAXUINT32)
 			continue;
 
 		if (now >= expiry) {
@@ -262,9 +262,9 @@ clean_routes (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *n
 
 	for (i = 0; i < rdisc->routes->len; i++) {
 		NMRDiscRoute *item = &g_array_index (rdisc->routes, NMRDiscRoute, i);
-		guint32 expiry = item->timestamp + item->lifetime;
+		guint64 expiry = item->timestamp + item->lifetime;
 
-		if (item->lifetime == UINT_MAX)
+		if (item->lifetime == G_MAXUINT32)
 			continue;
 
 		if (now >= expiry) {
@@ -282,10 +282,10 @@ clean_servers (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *
 
 	for (i = 0; i < rdisc->dns_servers->len; i++) {
 		NMRDiscDNSServer *item = &g_array_index (rdisc->dns_servers, NMRDiscDNSServer, i);
-		guint32 expiry = item->timestamp + item->lifetime;
-		guint32 refresh = item->timestamp + item->lifetime / 2;
+		guint64 expiry = item->timestamp + item->lifetime;
+		guint64 refresh = item->timestamp + item->lifetime / 2;
 
-		if (item->lifetime == UINT_MAX)
+		if (item->lifetime == G_MAXUINT32)
 			continue;
 
 		if (now >= expiry) {
@@ -305,10 +305,10 @@ clean_domains (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *
 
 	for (i = 0; i < rdisc->dns_domains->len; i++) {
 		NMRDiscDNSDomain *item = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
-		guint32 expiry = item->timestamp + item->lifetime;
-		guint32 refresh = item->timestamp + item->lifetime / 2;
+		guint64 expiry = item->timestamp + item->lifetime;
+		guint64 refresh = item->timestamp + item->lifetime / 2;
 
-		if (item->lifetime == UINT_MAX)
+		if (item->lifetime == G_MAXUINT32)
 			continue;
 
 		if (now >= expiry) {
@@ -327,7 +327,7 @@ static void
 check_timestamps (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 {
 	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
-	/* Use a magic date in distant enough future as there's no guint32 max macro. */
+	/* Use a magic date in the distant future (~68 years) */
 	guint32 never = G_MAXINT32;
 	guint32 nextevent = never;
 
