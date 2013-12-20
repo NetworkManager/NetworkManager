@@ -159,11 +159,19 @@ listbox_activated (NmtNewtListbox *listbox,
 	NMConnection *connection;
 	NMDevice *device;
 	NMObject *specific_object;
+	NMActiveConnection *ac;
 
-	if (!nmt_connect_connection_list_get_selection (list, &connection, &device, &specific_object))
+	if (!nmt_connect_connection_list_get_selection (list,
+	                                                &connection,
+	                                                &device,
+	                                                &specific_object,
+	                                                &ac))
 		return;
 
-	activate_connection (connection, device, specific_object);
+	if (ac)
+		nm_client_deactivate_connection (nm_client, ac);
+	else
+		activate_connection (connection, device, specific_object);
 }
 
 static void
@@ -171,6 +179,41 @@ activate_clicked (NmtNewtButton *button,
                   gpointer       listbox)
 {
 	listbox_activated (listbox, NULL);
+}
+
+static void
+listbox_active_changed (GObject    *object,
+                        GParamSpec *pspec,
+                        gpointer    button)
+{
+	NmtConnectConnectionList *list = NMT_CONNECT_CONNECTION_LIST (object);
+	static const char *activate, *deactivate;
+	static int deactivate_padding, activate_padding;
+	NMActiveConnection *ac;
+	gboolean has_selection;
+
+	if (G_UNLIKELY (activate == NULL)) {
+		int activate_len, deactivate_len;
+
+		activate = _("Activate");
+		activate_len = g_utf8_strlen (activate, -1);
+		deactivate = _("Deactivate");
+		deactivate_len = g_utf8_strlen (deactivate, -1);
+
+		activate_padding = MAX (0, deactivate_len - activate_len);
+		deactivate_padding = MAX (0, activate_len - deactivate_len);
+	}
+
+	has_selection = nmt_connect_connection_list_get_selection (list, NULL, NULL, NULL, &ac);
+
+	nmt_newt_component_set_sensitive (button, has_selection);
+	if (has_selection && ac) {
+		nmt_newt_button_set_label (button, deactivate);
+		nmt_newt_widget_set_padding (button, 0, 0, deactivate_padding, 0);
+	} else {
+		nmt_newt_button_set_label (button, activate);
+		nmt_newt_widget_set_padding (button, 0, 0, activate_padding, 0);
+	}
 }
 
 static void
@@ -209,6 +252,8 @@ nmt_connect_connection_list (void)
 	nmt_newt_widget_set_padding (bbox, 1, 1, 0, 1);
 
 	activate = nmt_newt_button_box_add_start (NMT_NEWT_BUTTON_BOX (bbox), _("Activate"));
+	g_signal_connect (list, "notify::active", G_CALLBACK (listbox_active_changed), activate);
+	listbox_active_changed (G_OBJECT (list), NULL, activate);
 	g_signal_connect (activate, "clicked", G_CALLBACK (activate_clicked), list);
 
 	quit = nmt_newt_button_box_add_end (NMT_NEWT_BUTTON_BOX (bbox), _("Quit"));
@@ -227,13 +272,20 @@ nmt_connect_connection (const char *identifier)
 	NMConnection *connection;
 	NMDevice *device;
 	NMObject *specific_object;
+	NMActiveConnection *ac;
 
 	list = nmt_connect_connection_list_new ();
-	if (nmt_connect_connection_list_get_connection (NMT_CONNECT_CONNECTION_LIST (list), identifier,
-	                                                &connection, &device, &specific_object))
-		activate_connection (connection, device, specific_object);
-	else
+	if (!nmt_connect_connection_list_get_connection (NMT_CONNECT_CONNECTION_LIST (list),
+	                                                 identifier,
+	                                                 &connection,
+	                                                 &device,
+	                                                 &specific_object,
+	                                                 &ac))
 		nmt_newt_message_dialog (_("No such connection '%s'"), identifier);
+	else if (ac)
+		nmt_newt_message_dialog (_("Connection is already active"));
+	else
+		activate_connection (connection, device, specific_object);
 	g_object_unref (list);
 
 	nmtui_quit ();

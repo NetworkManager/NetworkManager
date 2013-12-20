@@ -57,6 +57,7 @@ typedef struct {
 	NMConnection *conn;
 	NMAccessPoint *ap;
 	NMDevice *device;
+	NMActiveConnection *active;
 } NmtConnectConnection;
 
 typedef struct {
@@ -89,6 +90,7 @@ nmt_connect_connection_free (NmtConnectConnection *nmtconn)
 {
 	g_clear_object (&nmtconn->conn);
 	g_clear_object (&nmtconn->ap);
+	g_clear_object (&nmtconn->active);
 	g_free (nmtconn->ssid);
 }
 
@@ -374,9 +376,9 @@ sort_nmt_devices (gconstpointer  a,
 	return strcmp (nmta->name, nmtb->name);
 }
 
-static gboolean
-connection_is_active (NMConnection    *conn,
-                      const GPtrArray *acs)
+static NMActiveConnection *
+connection_find_ac (NMConnection    *conn,
+                    const GPtrArray *acs)
 {
 	NMActiveConnection *ac;
 	const char *path, *ac_path;
@@ -388,10 +390,10 @@ connection_is_active (NMConnection    *conn,
 		ac_path = nm_active_connection_get_connection (ac);
 
 		if (!strcmp (path, ac_path))
-			return TRUE;
+			return ac;
 	}
 
-	return FALSE;
+	return NULL;
 }
 
 static void
@@ -448,9 +450,12 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 		for (citer = nmtdev->conns; citer; citer = citer->next) {
 			nmtconn = citer->data;
 
-			if (nmtconn->conn && connection_is_active (nmtconn->conn, acs))
+			if (nmtconn->conn)
+				nmtconn->active = connection_find_ac (nmtconn->conn, acs);
+			if (nmtconn->active) {
+				g_object_ref (nmtconn->active);
 				active_col = '*';
-			else
+			} else
 				active_col = ' ';
 
 			if (nmtconn->ap) {
@@ -481,6 +486,9 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 	}
 
 	priv->nmt_devices = nmt_devices;
+
+	g_object_notify (G_OBJECT (listbox), "active");
+	g_object_notify (G_OBJECT (listbox), "active-key");
 }
 
 static void
@@ -548,6 +556,8 @@ nmt_connect_connection_list_class_init (NmtConnectConnectionListClass *list_clas
  * @connection: (out) (transfer none): the #NMConnection to be activated
  * @device: (out) (transfer none): the #NMDevice to activate @connection on
  * @specific_object: (out) (transfer none): the "specific object" to connect to
+ * @active: (out) (transfer none): the #NMActiveConnection corresponding
+ *   to the selection, if any.
  *
  * Gets information about the indicated connection.
  *
@@ -558,7 +568,8 @@ nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *list,
                                             const char                *identifier,
                                             NMConnection             **connection,
                                             NMDevice                 **device,
-                                            NMObject                 **specific_object)
+                                            NMObject                 **specific_object,
+                                            NMActiveConnection       **active)
 {
 	NmtConnectConnectionListPrivate *priv = NMT_CONNECT_CONNECTION_LIST_GET_PRIVATE (list);
 	GSList *diter, *citer;
@@ -612,6 +623,8 @@ nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *list,
 		*device = nmtconn->device;
 	if (specific_object)
 		*specific_object = NM_OBJECT (nmtconn->ap);
+	if (active)
+		*active = nmtconn->active;
 
 	return TRUE;
 }
@@ -622,6 +635,8 @@ nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *list,
  * @connection: (out) (transfer none): the #NMConnection to be activated
  * @device: (out) (transfer none): the #NMDevice to activate @connection on
  * @specific_object: (out) (transfer none): the "specific object" to connect to
+ * @active: (out) (transfer none): the #NMActiveConnection corresponding
+ *   to the selection, if any.
  *
  * Gets information about the selected row.
  *
@@ -631,7 +646,8 @@ gboolean
 nmt_connect_connection_list_get_selection (NmtConnectConnectionList  *list,
                                            NMConnection             **connection,
                                            NMDevice                 **device,
-                                           NMObject                 **specific_object)
+                                           NMObject                 **specific_object,
+                                           NMActiveConnection       **active)
 {
 	NmtConnectConnection *nmtconn;
 
@@ -645,6 +661,8 @@ nmt_connect_connection_list_get_selection (NmtConnectConnectionList  *list,
 		*device = nmtconn->device;
 	if (specific_object)
 		*specific_object = NM_OBJECT (nmtconn->ap);
+	if (active)
+		*active = nmtconn->active;
 
 	return TRUE;
 }

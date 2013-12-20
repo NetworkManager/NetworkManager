@@ -48,11 +48,13 @@ gboolean nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *
                                                      const char                *identifier,
                                                      NMConnection             **connection,
                                                      NMDevice                 **device,
-                                                     NMObject                 **specific_object);
+                                                     NMObject                 **specific_object,
+                                                     NMActiveConnection       **active);
 gboolean nmt_connect_connection_list_get_selection  (NmtConnectConnectionList  *list,
                                                      NMConnection             **connection,
                                                      NMDevice                 **device,
-                                                     NMObject                 **specific_object);
+                                                     NMObject                 **specific_object,
+                                                     NMActiveConnection       **active);
 
 G_END_DECLS
 
