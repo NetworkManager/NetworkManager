@@ -46,13 +46,17 @@
 #include "nm-dns-plugin.h"
 #include "nm-dns-dnsmasq.h"
 
-#ifdef HAVE_LIBSOUP
+#if HAVE_LIBSOUP
 #include <libsoup/soup.h>
+
+#ifdef SOUP_CHECK_VERSION
+#if SOUP_CHECK_VERSION (2, 40, 0)
+#define DOMAIN_IS_VALID(domain) (*(domain) && !soup_tld_domain_is_public_suffix (domain))
+#endif
+#endif
 #endif
 
-#if defined (SOUP_CHECK_VERSION) && SOUP_CHECK_VERSION (2, 40, 0)
-#define DOMAIN_IS_VALID(domain) (*(domain) && !soup_tld_domain_is_public_suffix (domain))
-#else
+#ifndef DOMAIN_IS_VALID
 #define DOMAIN_IS_VALID(domain) (*(domain))
 #endif
 
