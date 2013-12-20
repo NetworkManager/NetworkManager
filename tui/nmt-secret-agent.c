@@ -447,7 +447,8 @@ nmt_secret_agent_get_secrets (NMSecretAgent                 *agent,
 		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_INTERNAL_ERROR,
 		                     "Request for %s secrets already pending", request_id);
 	nope:
-		callback (agent, connection, NULL, NULL, callback_data);
+		callback (agent, connection, NULL, error, callback_data);
+		g_error_free (error);
 		g_free (request_id);
 		return;
 	}
