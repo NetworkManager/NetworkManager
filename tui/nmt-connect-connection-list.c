@@ -567,13 +567,6 @@ secrets_requested (NmtSecretAgent *agent,
 }
 
 
-static gboolean
-idle_unref_ac (gpointer ac)
-{
-	g_object_unref (ac);
-	return FALSE;
-}
-
 static void
 activation_complete (GSimpleAsyncResult *simple,
                      GError             *error)
@@ -614,9 +607,7 @@ activate_ac_state_changed (GObject    *object,
 	}
 
 	g_signal_handlers_disconnect_by_func (object, G_CALLBACK (activate_ac_state_changed), simple);
-
-	/* Work around NMObject bug for now: fix is 1981323b */
-	g_idle_add (idle_unref_ac, object);
+	g_object_unref (object);
 
 	activation_complete (simple, error);
 	g_clear_error (&error);
