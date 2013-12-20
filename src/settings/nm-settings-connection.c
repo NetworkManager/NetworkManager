@@ -911,7 +911,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	if (existing_secrets)
 		g_hash_table_unref (existing_secrets);
 
-	if (nm_logging_level_enabled (LOGL_DEBUG)) {
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_SETTINGS)) {
 		if (hints)
 			joined_hints = g_strjoinv (",", (char **) hints);
 		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) secrets requested flags 0x%X hints '%s'",

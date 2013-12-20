@@ -1633,7 +1633,7 @@ request_wireless_scan (gpointer user_data)
 
 		ssids = build_hidden_probe_list (self);
 
-		if (nm_logging_level_enabled (LOGL_DEBUG)) {
+		if (nm_logging_enabled (LOGL_DEBUG, LOGD_WIFI_SCAN)) {
 			if (ssids) {
 				guint i;
 				char *foo;

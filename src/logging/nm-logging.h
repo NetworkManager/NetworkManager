@@ -70,10 +70,12 @@ enum {
 
 /* Log levels */
 enum {
-	LOGL_ERR   = 1,
-	LOGL_WARN  = 2,
-	LOGL_INFO  = 3,
-	LOGL_DEBUG = 4
+	LOGL_DEBUG,
+	LOGL_INFO,
+	LOGL_WARN,
+	LOGL_ERR,
+
+	LOGL_MAX
 };
 
 typedef enum {
@@ -107,10 +109,9 @@ void _nm_log (const char *loc,
               const char *fmt,
               ...) __attribute__((__format__ (__printf__, 5, 6)));
 
-const char *nm_logging_level_to_string (void);
+char *nm_logging_level_to_string (void);
 char *nm_logging_domains_to_string (void);
-gboolean nm_logging_level_enabled (guint32 level);
-gboolean nm_logging_domain_enabled (guint64 domain);
+gboolean nm_logging_enabled (guint32 level, guint64 domain);
 
 const char *nm_logging_all_levels_to_string (void);
 const char *nm_logging_all_domains_to_string (void);
@@ -126,7 +127,10 @@ const char *nm_logging_all_domains_to_string (void);
 #undef nm_error
 #undef nm_error_str
 
-gboolean nm_logging_setup     (const char *level, const char *domains, GError **error);
+gboolean nm_logging_setup (const char  *level,
+                           const char  *domains,
+                           char       **bad_domains,
+                           GError     **error);
 void     nm_logging_syslog_openlog   (gboolean debug);
 void     nm_logging_syslog_closelog  (void);
 

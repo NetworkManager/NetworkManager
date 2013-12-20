@@ -323,6 +323,7 @@ main (int argc, char *argv[])
 	gs_unref_object NMSessionMonitor *session_monitor = NULL;
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
+	char *bad_domains = NULL;
 
 	GOptionEntry options[] = {
 		{ "version", 'V', 0, G_OPTION_ARG_NONE, &show_version, N_("Print NetworkManager version and exit"), NULL },
@@ -405,11 +406,17 @@ main (int argc, char *argv[])
 
 	if (!nm_logging_setup (opt_log_level,
 	                       opt_log_domains,
+	                       &bad_domains,
 	                       &error)) {
 		fprintf (stderr,
 		         _("%s.  Please use --help to see a list of valid options.\n"),
 		         error->message);
 		exit (1);
+	} else if (bad_domains) {
+		fprintf (stderr,
+		         _("Ignoring unrecognized log domain(s) '%s' passed on command line.\n"),
+		         bad_domains);
+		g_clear_pointer (&bad_domains, g_free);
 	}
 
 	/* When running from the build directory, determine our build directory
@@ -470,10 +477,16 @@ main (int argc, char *argv[])
 	if (opt_log_level == NULL && opt_log_domains == NULL) {
 		if (!nm_logging_setup (nm_config_get_log_level (config),
 		                       nm_config_get_log_domains (config),
+		                       &bad_domains,
 		                       &error)) {
-			fprintf (stderr, _("%s.  Please use --help to see a list of valid options.\n"),
+			fprintf (stderr, _("Error in configuration file: %s.\n"),
 			         error->message);
 			exit (1);
+		} else if (bad_domains) {
+			fprintf (stderr,
+			         _("Ignoring unrecognized log domain(s) '%s' from config files.\n"),
+			         bad_domains);
+			g_clear_pointer (&bad_domains, g_free);
 		}
 	}
 

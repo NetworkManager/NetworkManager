@@ -12,7 +12,7 @@ main (int argc, char **argv)
 
 	g_type_init ();
 	loop = g_main_loop_new (NULL, FALSE);
-	nm_logging_setup ("debug", NULL, NULL);
+	nm_logging_setup ("debug", NULL, NULL, NULL);
 	openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_DAEMON);
 
 	g_assert (argc <= 2);

@@ -120,7 +120,7 @@ main (int argc, char **argv)
 	/* Enable debug messages if called with --debug */
 	for (; *argv; argv++) {
 		if (!g_strcmp0 (*argv, "--debug")) {
-			nm_logging_setup ("debug", NULL, NULL);
+			nm_logging_setup ("debug", NULL, NULL, NULL);
 		}
 	}
 

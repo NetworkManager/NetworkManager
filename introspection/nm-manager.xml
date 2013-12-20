@@ -226,8 +226,11 @@
           VPN, SHARING, SUPPLICANT, AGENTS, SETTINGS, SUSPEND, CORE, DEVICE,
           OLPC, WIMAX, INFINIBAND, FIREWALL, ADSL, BOND, VLAN].  In addition to
           these domains, the following special domains can be used: [NONE, ALL,
-          DEFAULT, DHCP, IP].  If an empty string is given, the log level is
-          changed but the current set of log domains remains unchanged.
+          DEFAULT, DHCP, IP].  You can also specify that some domains should
+          log at a different level from the default by appending a colon (':')
+          and a log level (eg, 'WIFI:DEBUG').  If an empty string is given, the
+          log level is changed but the current set of log domains remains
+          unchanged.
         </tp:docstring>
       </arg>
     </method>

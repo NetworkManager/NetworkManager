@@ -431,7 +431,7 @@ get_duid (NMDHCPClient *self)
 		duid = generate_duid_from_machine_id ();
 		g_assert (duid);
 
-		if (nm_logging_level_enabled (LOGL_DEBUG)) {
+		if (nm_logging_enabled (LOGL_DEBUG, LOGD_DHCP6)) {
 			escaped = escape_duid (duid);
 			nm_log_dbg (LOGD_DHCP6, "Generated DUID %s", escaped);
 			g_free (escaped);
@@ -469,7 +469,7 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
 	if (!priv->duid)
 		priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self);
 
-	if (nm_logging_level_enabled (LOGL_DEBUG)) {
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_DHCP)) {
 		escaped = escape_duid (priv->duid);
 		nm_log_dbg (LOGD_DHCP, "(%s): DHCPv6 DUID is '%s'", priv->iface, escaped);
 		g_free (escaped);
