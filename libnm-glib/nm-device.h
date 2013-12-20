@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2012 Red Hat, Inc.
+ * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
 #ifndef NM_DEVICE_H
@@ -81,6 +81,7 @@ GQuark nm_device_error_quark (void);
 #define NM_DEVICE_VENDOR "vendor"
 #define NM_DEVICE_PRODUCT "product"
 #define NM_DEVICE_PHYSICAL_PORT_ID "physical-port-id"
+#define NM_DEVICE_MTU "mtu"
 
 typedef struct {
 	NMObject parent;
@@ -100,13 +101,13 @@ typedef struct {
 	                                   GError **error);
 
 	const char * (*get_type_description) (NMDevice *device);
+	const char * (*get_hw_address) (NMDevice *device);
 
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
 	void (*_reserved2) (void);
 	void (*_reserved3) (void);
 	void (*_reserved4) (void);
-	void (*_reserved5) (void);
 } NMDeviceClass;
 
 GType nm_device_get_type (void);
@@ -121,6 +122,7 @@ const char *         nm_device_get_driver           (NMDevice *device);
 const char *         nm_device_get_driver_version   (NMDevice *device);
 const char *         nm_device_get_firmware_version (NMDevice *device);
 const char *         nm_device_get_type_description (NMDevice *device);
+const char *         nm_device_get_hw_address       (NMDevice *device);
 NMDeviceCapabilities nm_device_get_capabilities     (NMDevice *device);
 gboolean             nm_device_get_managed          (NMDevice *device);
 gboolean             nm_device_get_autoconnect      (NMDevice *device);
@@ -137,6 +139,7 @@ const GPtrArray *    nm_device_get_available_connections(NMDevice *device);
 const char *         nm_device_get_product          (NMDevice *device);
 const char *         nm_device_get_vendor           (NMDevice *device);
 const char *         nm_device_get_physical_port_id (NMDevice *device);
+guint32              nm_device_get_mtu              (NMDevice *device);
 
 typedef void (*NMDeviceDeactivateFn) (NMDevice *device, GError *error, gpointer user_data);
 

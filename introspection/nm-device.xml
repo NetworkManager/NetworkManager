@@ -133,6 +133,11 @@
 	different virtual interfaces to the same physical port.
       </tp:docstring>
     </property>
+    <property name="Mtu" type="u" access="read">
+      <tp:docstring>
+        The device MTU (maximum transmission unit).
+      </tp:docstring>
+    </property>
 
     <method name="Disconnect">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_disconnect"/>

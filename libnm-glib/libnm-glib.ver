@@ -129,11 +129,13 @@ global:
 	nm_device_get_driver_version;
 	nm_device_get_firmware_missing;
 	nm_device_get_firmware_version;
+	nm_device_get_hw_address;
 	nm_device_get_iface;
 	nm_device_get_ip4_config;
 	nm_device_get_ip6_config;
 	nm_device_get_ip_iface;
 	nm_device_get_managed;
+	nm_device_get_mtu;
 	nm_device_get_physical_port_id;
 	nm_device_get_product;
 	nm_device_get_state;

@@ -427,6 +427,12 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	return NM_DEVICE_CLASS (nm_device_wimax_parent_class)->connection_compatible (device, connection, error);
 }
 
+static const char *
+get_hw_address (NMDevice *device)
+{
+	return nm_device_wimax_get_hw_address (NM_DEVICE_WIMAX (device));
+}
+
 /**************************************************************/
 
 static void
@@ -615,6 +621,7 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	device_class->connection_compatible = connection_compatible;
+	device_class->get_hw_address = get_hw_address;
 
 	/* properties */
 

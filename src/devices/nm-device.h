@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2012 Red Hat, Inc.
+ * Copyright (C) 2005 - 2013 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -61,6 +61,7 @@
 #define NM_DEVICE_FIRMWARE_MISSING "firmware-missing"
 #define NM_DEVICE_AVAILABLE_CONNECTIONS "available-connections"
 #define NM_DEVICE_PHYSICAL_PORT_ID "physical-port-id"
+#define NM_DEVICE_MTU              "mtu"
 #define NM_DEVICE_TYPE_DESC        "type-desc"    /* Internal only */
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"  /* Internal only */
 #define NM_DEVICE_IFINDEX          "ifindex"      /* Internal only */
@@ -323,6 +324,8 @@ GPtrArray *nm_device_get_available_connections (NMDevice *device,
                                                 const char *specific_object);
 
 const char *nm_device_get_physical_port_id (NMDevice *device);
+
+guint32 nm_device_get_mtu (NMDevice *device);
 
 gboolean   nm_device_connection_is_available (NMDevice *device, NMConnection *connection);
 

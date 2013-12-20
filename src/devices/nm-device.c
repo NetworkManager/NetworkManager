@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2012 Red Hat, Inc.
+ * Copyright (C) 2005 - 2013 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -117,6 +117,7 @@ enum {
 	PROP_FIRMWARE_VERSION,
 	PROP_CAPABILITIES,
 	PROP_CARRIER,
+	PROP_MTU,
 	PROP_IP4_ADDRESS,
 	PROP_IP4_CONFIG,
 	PROP_DHCP4_CONFIG,
@@ -230,6 +231,7 @@ typedef struct {
 	gboolean        carrier;
 	guint           carrier_wait_id;
 	gboolean        ignore_carrier;
+	guint32         mtu;
 
 	/* Generic DHCP stuff */
 	NMDHCPManager * dhcp_manager;
@@ -615,6 +617,9 @@ constructed (GObject *object)
 		priv->is_software = nm_platform_link_is_software (priv->ifindex);
 		priv->physical_port_id = nm_platform_link_get_physical_port_id (priv->ifindex);
 	}
+
+	if (priv->ifindex > 0)
+		priv->mtu = nm_platform_link_get_mtu (priv->ifindex);
 
 	if (G_OBJECT_CLASS (nm_device_parent_class)->constructed)
 		G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
@@ -1197,6 +1202,12 @@ link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlat
 		g_free (priv->udi);
 		priv->udi = g_strdup (info->udi);
 		g_object_notify (G_OBJECT (device), NM_DEVICE_UDI);
+	}
+
+	/* Update MTU if it has changed. */
+	if (priv->mtu != info->mtu) {
+		priv->mtu = info->mtu;
+		g_object_notify (G_OBJECT (device), NM_DEVICE_MTU);
 	}
 
 	if (klass->link_changed)
@@ -5393,7 +5404,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
 	NMPlatformLink *platform_device;
@@ -5448,6 +5459,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_FIRMWARE_VERSION:
 		g_free (priv->firmware_version);
 		priv->firmware_version = g_strdup (g_value_get_string (value));
+		break;
+	case PROP_MTU:
+		priv->mtu = g_value_get_uint (value);
 		break;
 	case PROP_IP4_ADDRESS:
 		priv->ip4_address = g_value_get_uint (value);
@@ -5546,6 +5560,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, priv->carrier);
+		break;
+	case PROP_MTU:
+		g_value_set_uint (value, priv->mtu);
 		break;
 	case PROP_IP4_CONFIG:
 		if (ip_config_valid (priv->state) && priv->ip4_config)
@@ -5740,6 +5757,14 @@ nm_device_class_init (NMDeviceClass *klass)
 		                       "Carrier",
 		                       FALSE,
 		                       G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_MTU,
+		 g_param_spec_uint (NM_DEVICE_MTU,
+		                    "MTU",
+		                    "MTU",
+		                    0, G_MAXUINT32, 1500,
+		                    G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_IP4_ADDRESS,
@@ -7244,3 +7269,16 @@ nm_device_get_physical_port_id (NMDevice *device)
 
 	return priv->physical_port_id;
 }
+
+/**
+ * nm_device_get_mtu:
+ * @device: the #NMDevice
+ *
+ * Returns: MTU of the #NMDevice
+ */
+guint32
+nm_device_get_mtu (NMDevice *device)
+{
+	return NM_DEVICE_GET_PRIVATE (device)->mtu;
+}
+

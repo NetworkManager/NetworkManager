@@ -98,6 +98,7 @@ typedef struct {
 	char *vendor;
 
 	char *physical_port_id;
+	guint32 mtu;
 } NMDevicePrivate;
 
 enum {
@@ -124,6 +125,7 @@ enum {
 	PROP_ACTIVE_CONNECTION,
 	PROP_AVAILABLE_CONNECTIONS,
 	PROP_PHYSICAL_PORT_ID,
+	PROP_MTU,
 
 	LAST_PROP
 };
@@ -203,6 +205,7 @@ register_properties (NMDevice *device)
 		{ NM_DEVICE_ACTIVE_CONNECTION, &priv->active_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_DEVICE_AVAILABLE_CONNECTIONS, &priv->available_connections, NULL, NM_TYPE_REMOTE_CONNECTION },
 		{ NM_DEVICE_PHYSICAL_PORT_ID,  &priv->physical_port_id },
+		{ NM_DEVICE_MTU,               &priv->mtu },
 
 		/* Properties that exist in D-Bus but that we don't track */
 		{ "ip4-address", NULL },
@@ -480,6 +483,9 @@ get_property (GObject *object,
 		break;
 	case PROP_PHYSICAL_PORT_ID:
 		g_value_set_string (value, nm_device_get_physical_port_id (device));
+		break;
+	case PROP_MTU:
+		g_value_set_uint (value, nm_device_get_mtu (device));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -828,6 +834,21 @@ nm_device_class_init (NMDeviceClass *device_class)
 		                      NULL,
 		                      G_PARAM_READABLE));
 
+	/**
+	 * NMDevice:mtu:
+	 *
+	 * The MTU of the device.
+	 *
+	 * Since: 0.9.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_MTU,
+		 g_param_spec_uint (NM_DEVICE_MTU,
+		                    "MTU",
+		                    "MTU",
+		                    0, G_MAXUINT32, 1500,
+		                    G_PARAM_READABLE));
+
 	/* signals */
 
 	/**
@@ -1149,6 +1170,28 @@ nm_device_get_type_description (NMDevice *device)
 	priv->type_description = g_ascii_strdown (typename, -1);
 
 	return priv->type_description;
+}
+
+/**
+ * nm_device_get_hw_address:
+ * @device: a #NMDevice
+ *
+ * Gets the current a hardware address (MAC) for the @device.
+ *
+ * Returns: the current MAC of the device, or %NULL.
+ * This is the internal string used by the device, and must not be modified.
+ *
+ * Since: 0.9.10
+ **/
+const char *
+nm_device_get_hw_address (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	if (NM_DEVICE_GET_CLASS (device)->get_hw_address)
+		return NM_DEVICE_GET_CLASS (device)->get_hw_address (device);
+
+	return NULL;
 }
 
 /**
@@ -1586,6 +1629,25 @@ nm_device_get_physical_port_id (NMDevice *device)
 		return priv->physical_port_id;
 	else
 		return NULL;
+}
+
+/**
+ * nm_device_get_mtu:
+ * @device: a #NMDevice
+ *
+ * Gets the  MTU of the #NMDevice.
+ *
+ * Returns: the MTU of the device.
+ *
+ * Since: 0.9.10
+ **/
+guint32
+nm_device_get_mtu (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
+
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return NM_DEVICE_GET_PRIVATE (device)->mtu;
 }
 
 typedef struct {

@@ -154,6 +154,12 @@ nm_device_olpc_mesh_get_active_channel (NMDeviceOlpcMesh *device)
 	return NM_DEVICE_OLPC_MESH_GET_PRIVATE (device)->active_channel;
 }
 
+static const char *
+get_hw_address (NMDevice *device)
+{
+	return nm_device_olpc_mesh_get_hw_address (NM_DEVICE_OLPC_MESH (device));
+}
+
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
@@ -277,6 +283,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *olpc_mesh_class)
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 	device_class->connection_compatible = connection_compatible;
+	device_class->get_hw_address = get_hw_address;
 
 	/* properties */
 
