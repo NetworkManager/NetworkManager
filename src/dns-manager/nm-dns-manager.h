@@ -87,8 +87,10 @@ gboolean nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
 
 gboolean nm_dns_manager_remove_ip6_config (NMDnsManager *mgr, NMIP6Config *config);
 
-void nm_dns_manager_set_hostname (NMDnsManager *mgr,
-                                  const char *hostname);
+void nm_dns_manager_set_initial_hostname (NMDnsManager *mgr,
+                                          const char *hostname);
+void nm_dns_manager_set_hostname         (NMDnsManager *mgr,
+                                          const char *hostname);
 
 /**
  * NMDnsManagerResolvConfMode:

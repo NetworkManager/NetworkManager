@@ -46,6 +46,16 @@
 #include "nm-dns-plugin.h"
 #include "nm-dns-dnsmasq.h"
 
+#ifdef HAVE_LIBSOUP
+#include <libsoup/soup.h>
+#endif
+
+#if defined (SOUP_CHECK_VERSION) && SOUP_CHECK_VERSION (2, 40, 0)
+#define DOMAIN_IS_VALID(domain) (*(domain) && !soup_tld_domain_is_public_suffix (domain))
+#else
+#define DOMAIN_IS_VALID(domain) (*(domain))
+#endif
+
 G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, G_TYPE_OBJECT)
 
 #define NM_DNS_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
@@ -129,14 +139,22 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 		const char *domain;
 
 		domain = nm_ip4_config_get_domain (src, i);
+		if (!DOMAIN_IS_VALID (domain))
+			continue;
 		if (!rc->domain)
 			rc->domain = domain;
 		add_string_item (rc->searches, domain);
 	}
 
 	num = nm_ip4_config_get_num_searches (src);
-	for (i = 0; i < num; i++)
-		add_string_item (rc->searches, nm_ip4_config_get_search (src, i));
+	for (i = 0; i < num; i++) {
+		const char *search;
+
+		search = nm_ip4_config_get_search (src, i);
+		if (!DOMAIN_IS_VALID (search))
+			continue;
+		add_string_item (rc->searches, search);
+	}
 
 	/* NIS stuff */
 	num = nm_ip4_config_get_num_nis_servers (src);
@@ -194,14 +212,22 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 		const char *domain;
 
 		domain = nm_ip6_config_get_domain (src, i);
+		if (!DOMAIN_IS_VALID (domain))
+			continue;
 		if (!rc->domain)
 			rc->domain = domain;
 		add_string_item (rc->searches, domain);
 	}
 
 	num = nm_ip6_config_get_num_searches (src);
-	for (i = 0; i < num; i++)
-		add_string_item (rc->searches, nm_ip6_config_get_search (src, i));
+	for (i = 0; i < num; i++) {
+		const char *search;
+
+		search = nm_ip6_config_get_search (src, i);
+		if (!DOMAIN_IS_VALID (search))
+			continue;
+		add_string_item (rc->searches, search);
+	}
 }
 
 
@@ -636,7 +662,7 @@ update_dns (NMDnsManager *self,
 		const char *hostsearch = strchr (priv->hostname, '.');
 
 		/* +1 to get rid of the dot */
-		if (hostsearch && strlen (hostsearch + 1))
+		if (hostsearch && DOMAIN_IS_VALID (hostsearch + 1))
 			add_string_item (rc.searches, hostsearch + 1);
 	}
 
@@ -945,8 +971,17 @@ nm_dns_manager_remove_ip6_config (NMDnsManager *mgr, NMIP6Config *config)
 }
 
 void
+nm_dns_manager_set_initial_hostname (NMDnsManager *mgr,
+                                     const char *hostname)
+{
+	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
+
+	priv->hostname = g_strdup (hostname);
+}
+
+void
 nm_dns_manager_set_hostname (NMDnsManager *mgr,
-                               const char *hostname)
+                             const char *hostname)
 {
 	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
 	GError *error = NULL;
@@ -1044,8 +1079,7 @@ nm_dns_manager_get (void)
 	if (!singleton) {
 		singleton = NM_DNS_MANAGER (g_object_new (NM_TYPE_DNS_MANAGER, NULL));
 		g_assert (singleton);
-	} else
-		g_object_ref (singleton);
+	}
 
 	return singleton;
 }
