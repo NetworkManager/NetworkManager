@@ -185,7 +185,6 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 	const char *iface;
 
 	iface = g_object_get_data (G_OBJECT (src), IP_CONFIG_IFACE_TAG);
-	g_assert (iface);
 
 	num = nm_ip6_config_get_num_nameservers (src);
 	for (i = 0; i < num; i++) {
@@ -201,7 +200,7 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 				add_string_item (rc->nameservers, buf);
 		} else {
 			if (inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN) > 0) {
-				if (IN6_IS_ADDR_LINKLOCAL (addr)) {
+				if (iface && IN6_IS_ADDR_LINKLOCAL (addr)) {
 					tmp = g_strdup_printf ("%s%%%s", buf, iface);
 					add_string_item (rc->nameservers, tmp);
 					g_free (tmp);
@@ -828,7 +827,6 @@ nm_dns_manager_add_ip4_config (NMDnsManager *mgr,
 	GError *error = NULL;
 
 	g_return_val_if_fail (mgr != NULL, FALSE);
-	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
@@ -906,7 +904,6 @@ nm_dns_manager_add_ip6_config (NMDnsManager *mgr,
 	GError *error = NULL;
 
 	g_return_val_if_fail (mgr != NULL, FALSE);
-	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	priv = NM_DNS_MANAGER_GET_PRIVATE (mgr);
