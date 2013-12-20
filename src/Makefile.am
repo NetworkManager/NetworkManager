@@ -351,7 +351,6 @@ BUILT_SOURCES += $(glue_sources)
 
 
 AM_CPPFLAGS += \
-	$(BLUEZ_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS) \
@@ -397,7 +396,6 @@ libNetworkManager_la_SOURCES = \
 libNetworkManager_la_LIBADD = \
 	$(top_builddir)/libgsystem.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(BLUEZ_LIBS) \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
