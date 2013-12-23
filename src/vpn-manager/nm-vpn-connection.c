@@ -301,13 +301,13 @@ device_state_changed (NMActiveConnection *active,
 }
 
 static void
-add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
+add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32 vpn_gw)
 {
 	NMIP4Config *parent_config;
 	guint32 parent_gw;
 	NMPlatformIP4Route route;
-	NMIP4Config *vpn4_config;
 
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 	g_return_if_fail (NM_IS_DEVICE (parent_device));
 	g_return_if_fail (vpn_gw != 0);
 
@@ -321,8 +321,6 @@ add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 	if (!parent_gw)
 		return;
 
-	vpn4_config = nm_ip4_config_new ();
-
 	memset (&route, 0, sizeof (route));
 	route.network = vpn_gw;
 	route.plen = 32;
@@ -335,7 +333,7 @@ add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 	if (nm_ip4_config_destination_is_direct (parent_config, vpn_gw, 32))
 		route.gateway = 0;
 
-	nm_ip4_config_add_route (vpn4_config, &route);
+	nm_ip4_config_add_route (config, &route);
 
 	/* Ensure there's a route to the parent device's gateway through the
 	 * parent device, since if the VPN claims the default route and the VPN
@@ -346,21 +344,19 @@ add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 	route.network = parent_gw;
 	route.plen = 32;
 
-	nm_ip4_config_add_route (vpn4_config, &route);
-
-	nm_device_set_vpn4_config (parent_device, vpn4_config);
-	g_object_unref (vpn4_config);
+	nm_ip4_config_add_route (config, &route);
 }
 
 static void
-add_ip6_vpn_gateway_route (NMDevice *parent_device,
+add_ip6_vpn_gateway_route (NMIP6Config *config,
+                           NMDevice *parent_device,
                            const struct in6_addr *vpn_gw)
 {
 	NMIP6Config *parent_config;
 	const struct in6_addr *parent_gw;
 	NMPlatformIP6Route route;
-	NMIP6Config *vpn6_config;
 
+	g_return_if_fail (NM_IS_IP6_CONFIG (config));
 	g_return_if_fail (NM_IS_DEVICE (parent_device));
 	g_return_if_fail (vpn_gw != NULL);
 
@@ -369,8 +365,6 @@ add_ip6_vpn_gateway_route (NMDevice *parent_device,
 	parent_gw = nm_ip6_config_get_gateway (parent_config);
 	if (!parent_gw)
 		return;
-
-	vpn6_config = nm_ip6_config_new ();
 
 	memset (&route, 0, sizeof (route));
 	route.network = *vpn_gw;
@@ -384,7 +378,7 @@ add_ip6_vpn_gateway_route (NMDevice *parent_device,
 	if (nm_ip6_config_destination_is_direct (parent_config, vpn_gw, 128))
 		route.gateway = in6addr_any;
 
-	nm_ip6_config_add_route (vpn6_config, &route);
+	nm_ip6_config_add_route (config, &route);
 
 	/* Ensure there's a route to the parent device's gateway through the
 	 * parent device, since if the VPN claims the default route and the VPN
@@ -395,10 +389,7 @@ add_ip6_vpn_gateway_route (NMDevice *parent_device,
 	route.network = *parent_gw;
 	route.plen = 128;
 
-	nm_ip6_config_add_route (vpn6_config, &route);
-
-	nm_device_set_vpn6_config (parent_device, vpn6_config);
-	g_object_unref (vpn6_config);
+	nm_ip6_config_add_route (config, &route);
 }
 
 NMVPNConnection *
@@ -601,7 +592,7 @@ print_vpn_config (NMVPNConnection *connection)
 		             nm_utils_inet6_ntop (priv->ip6_external_gw, NULL));
 	}
 
-	nm_log_info (LOGD_VPN, "Tunnel Device: %s", priv->ip_iface);
+	nm_log_info (LOGD_VPN, "Tunnel Device: %s", priv->ip_iface ? priv->ip_iface : "(none)");
 
 	if (priv->ip4_config) {
 		nm_log_info (LOGD_VPN, "IPv4 configuration:");
@@ -692,25 +683,54 @@ nm_vpn_connection_apply_config (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (connection));
+	NMIP4Config *vpn4_parent_config = NULL;
+	NMIP6Config *vpn6_parent_config = NULL;
 
-	nm_platform_link_set_up (priv->ip_ifindex);
+	if (priv->ip_ifindex > 0) {
+		nm_platform_link_set_up (priv->ip_ifindex);
 
-	if (priv->ip4_config) {
-		if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex, 0))
-			return FALSE;
+		if (priv->ip4_config) {
+			if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex, 0))
+				return FALSE;
+		}
+
+		if (priv->ip6_config) {
+			if (!nm_ip6_config_commit (priv->ip6_config, priv->ip_ifindex, 0))
+				return FALSE;
+		}
+
+		if (priv->ip4_config)
+			vpn4_parent_config = nm_ip4_config_new ();
+		if (priv->ip6_config)
+			vpn6_parent_config = nm_ip6_config_new ();
+	} else {
+		/* If the VPN didn't return a network interface, it is a route-based
+		 * VPN (like kernel IPSec) and all IP addressing and routing should
+		 * be done on the parent interface instead.
+		 */
+
+		if (priv->ip4_config)
+			vpn4_parent_config = g_object_ref (priv->ip4_config);
+		if (priv->ip6_config)
+			vpn6_parent_config = g_object_ref (priv->ip6_config);
 	}
 
-	if (priv->ip6_config) {
-		if (!nm_ip6_config_commit (priv->ip6_config, priv->ip_ifindex, 0))
-			/* FIXME: remove ip4 config */
-			return FALSE;
-	}
+	if (vpn4_parent_config) {
+		/* Add any explicit route to the VPN gateway through the parent device */
+		if (priv->ip4_external_gw)
+			add_ip4_vpn_gateway_route (vpn4_parent_config, parent_dev, priv->ip4_external_gw);
 
-	/* Add any explicit route to the VPN gateway through the parent device */
-	if (priv->ip4_external_gw)
-		add_ip4_vpn_gateway_route (parent_dev, priv->ip4_external_gw);
-	if (priv->ip6_external_gw)
-		add_ip6_vpn_gateway_route (parent_dev, priv->ip6_external_gw);
+		nm_device_set_vpn4_config (parent_dev, vpn4_parent_config);
+		g_object_unref (vpn4_parent_config);
+	}
+	if (vpn6_parent_config) {
+		/* Add any explicit route to the VPN gateway through the parent device */
+		if (priv->ip6_external_gw)
+			add_ip6_vpn_gateway_route (vpn6_parent_config, parent_dev, priv->ip6_external_gw);
+
+		nm_device_set_vpn6_config (parent_dev, vpn6_parent_config);
+		g_object_unref (vpn6_parent_config);
+	}
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) complete.",
 	             nm_connection_get_id (priv->connection));
@@ -768,21 +788,25 @@ process_generic_config (NMVPNConnection *connection,
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	GValue *val;
 
+	g_clear_pointer (&priv->ip_iface, g_free);
+
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_CONFIG_TUNDEV);
-	if (val)
-		priv->ip_iface = g_strdup (g_value_get_string (val));
-	else {
-		nm_log_err (LOGD_VPN, "invalid or missing tunnel device received!");
-		nm_vpn_connection_config_maybe_complete (connection, FALSE);
-		return FALSE;
+	if (val) {
+		const char *tmp = g_value_get_string (val);
+
+		/* Backwards compat with NM-openswan */
+		if (g_strcmp0 (tmp, "_none_") != 0)
+			priv->ip_iface = g_strdup (tmp);
 	}
 
-	/* Grab the interface index for address/routing operations */
-	priv->ip_ifindex = nm_platform_link_get_ifindex (priv->ip_iface);
-	if (!priv->ip_ifindex) {
-		nm_log_err (LOGD_VPN, "(%s): failed to look up VPN interface index", priv->ip_iface);
-		nm_vpn_connection_config_maybe_complete (connection, FALSE);
-		return FALSE;
+	if (priv->ip_iface) {
+		/* Grab the interface index for address/routing operations */
+		priv->ip_ifindex = nm_platform_link_get_ifindex (priv->ip_iface);
+		if (!priv->ip_ifindex) {
+			nm_log_err (LOGD_VPN, "(%s): failed to look up VPN interface index", priv->ip_iface);
+			nm_vpn_connection_config_maybe_complete (connection, FALSE);
+			return FALSE;
+		}
 	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_CONFIG_BANNER);

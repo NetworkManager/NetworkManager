@@ -655,17 +655,21 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 		in_addr_t int_gw = nm_vpn_connection_get_ip4_internal_gateway (vpn);
 		int mss = nm_ip4_config_get_mss (ip4_config);
 
+		/* If no VPN interface, use the parent interface */
+		if (ip_ifindex <= 0)
+			ip_ifindex = parent_ifindex;
+
 		if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, int_gw, 0, mss)) {
 			(void) nm_platform_ip4_route_add (parent_ifindex, gw_addr, 32, 0, 0, parent_mss);
-			if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, int_gw, 0, mss)) {
+			if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, int_gw, 0, mss))
 				nm_log_err (LOGD_IP4 | LOGD_VPN, "Failed to set default route.");
-			}
 		}
 
 		default_device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
 	} else {
 		int mss = nm_ip4_config_get_mss (ip4_config);
 
+		g_assert (ip_iface);
 		if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, gw_addr, 0, mss)) {
 			(void) nm_platform_ip4_route_add (ip_ifindex, gw_addr, 32, 0, 0, mss);
 			if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, gw_addr, 0, mss)) {
@@ -845,6 +849,10 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 		if (!int_gw)
 			int_gw = &in6addr_any;
 
+		/* If no VPN interface, use the parent interface */
+		if (ip_ifindex <= 0)
+			ip_ifindex = parent_ifindex;
+
 		if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *int_gw, 0, mss)) {
 			(void) nm_platform_ip6_route_add (parent_ifindex, *gw_addr, 128, in6addr_any, 0, parent_mss);
 			if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *int_gw, 0, mss)) {
@@ -858,9 +866,8 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 
 		if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *gw_addr, 0, mss)) {
 			(void) nm_platform_ip6_route_add (ip_ifindex, *gw_addr, 128, in6addr_any, 0, mss);
-			if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *gw_addr, 0, mss)) {
+			if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *gw_addr, 0, mss))
 				nm_log_err (LOGD_IP6, "Failed to set default route.");
-			}
 		}
 
 		default_device6 = best;
