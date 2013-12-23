@@ -51,7 +51,7 @@
         Flags describing the capabilities of the device.
       </tp:docstring>
     </property>
-    <property name="Ip4Address" type="i" access="read">
+    <property name="Ip4Address" type="u" access="read">
       <tp:docstring>
         DEPRECATED; use the 'Addresses' property of the 'Ip4Config' object instead.
       </tp:docstring>
