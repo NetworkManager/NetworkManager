@@ -81,20 +81,35 @@ Copyright (C) 2010 - 2013 Red Hat, Inc.
   </refsect1>
 
   <refsect1>
-    <title><literal>main</literal> section (mandatory)</title>
+    <title><literal>main</literal> section</title>
     <variablelist>
       <varlistentry>
 	<term><varname>plugins</varname></term>
-	<listitem><para>List system settings plugin names separated
-	by ','. These plugins are used to read/write system-wide
-	connection. When more plugins are specified, the connections
-	are read from all listed plugins. When writing connections,
-	the plugins will be asked to save the connection in the
-	order listed here. If the first plugin cannot write out that
-	connection type, or can't write out any connections, the
-	next plugin is tried. If none of the plugins can save the
-	connection, the error is returned to the user.  See below
-	for available plugins.</para></listitem>
+	<listitem>
+	  <para>
+	    Lists system settings plugin names separated by ','. These
+	    plugins are used to read and write system-wide
+	    connections. When multiple plugins are specified, the
+	    connections are read from all listed plugins. When writing
+	    connections, the plugins will be asked to save the
+	    connection in the order listed here; if the first plugin
+	    cannot write out that connection type (or can't write out
+	    any connections) the next plugin is tried, etc. If none of
+	    the plugins can save the connection, an error is returned
+	    to the user.
+	  </para>
+	  <para>
+	    If NetworkManager defines a distro-specific
+	    network-configuration plugin for your system, then that
+	    will normally be listed here. (See below for the available
+	    plugins.) Note that the <literal>keyfile</literal> plugin
+	    is always appended to the end of this list (if it doesn't
+	    already appear earlier in the list), so if there is no
+	    distro-specific plugin for your system then you can leave
+	    this key unset and NetworkManager will default to using
+	    <literal>keyfile</literal>.
+	  </para>
+	</listitem>
       </varlistentry>
       <varlistentry>
 	<term><varname>monitor-connection-files</varname></term>
@@ -197,7 +212,9 @@ Copyright (C) 2010 - 2013 Red Hat, Inc.
 
   <refsect1>
     <title><literal>keyfile</literal> section</title>
-    <para>This section contains keyfile-specific options and thus only has effect when using the <literal>keyfile</literal> plugin.</para>
+    <para>This section contains keyfile-plugin-specific options, and
+    is normally only used when you are not using any other
+    distro-specific plugin.</para>
 
     <para>
       <variablelist>
@@ -234,8 +251,8 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
 
   <refsect1>
     <title><literal>ifupdown</literal> section</title>
-    <para>This section contains keyfile-specific options and thus only
-    has effect when using the <literal>ifdown</literal> plugin.</para>
+    <para>This section contains ifupdown-specific options and thus only
+    has effect when using the <literal>ifupdown</literal> plugin.</para>
 
     <para>
       <variablelist>
@@ -390,49 +407,70 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
     <variablelist>
       <varlistentry>
 	<term><varname>keyfile</varname></term>
-	<listitem><para>plugin is the generic plugin that supports
-	all the connection types and capabilities that
-	NetworkManager has. It writes files out in an .ini-style
-	format in /etc/NetworkManager/system-connections. For
-	security, it will ignore files that are readable or
-	writeable by any user or group other than root since
-	private keys and passphrases may be stored in plaintext
-	inside the file.  </para></listitem>
+	<listitem>
+	  <para>
+	    The <literal>keyfile</literal> plugin is the generic
+	    plugin that supports all the connection types and
+	    capabilities that NetworkManager has. It writes files out
+	    in an .ini-style format in
+	    /etc/NetworkManager/system-connections.
+	  </para>
+	  <para>
+	    The stored connection file may contain passwords and
+	    private keys, so it will be made readable only to root,
+	    and the plugin will ignore files that are readable or
+	    writeable by any user or group other than root.
+	  </para>
+	  <para>
+	    This plugin is always active, and will automatically be
+	    used to store any connections that aren't supported by any
+	    other active plugin.
+	  </para>
+	</listitem>
       </varlistentry>
       <varlistentry>
 	<term><varname>ifcfg-rh</varname></term>
-	<listitem><para>This plugin is used on the Fedora and Red
-	Hat Enterprise Linux distributions to read and write
-	configuration from the standard
-	<filename>/etc/sysconfig/network-scripts/ifcfg-*</filename>
-	files.  It currently supports reading wired, WiFi, and
-	802.1x connections, but does not yet support reading or
-	writing mobile broadband, PPPoE, or VPN connections. To
-	allow reading and writing of these add <literal>keyfile</literal>
-	plugin to your configuration as well.</para></listitem>
-      </varlistentry>
-
-      <varlistentry>
-	<term><varname>ifupdown</varname></term>
-	<listitem><para>This plugin is used on the Debian and Ubuntu
-	distributions, and reads connections from
-	<filename>/etc/network/interfaces</filename>. Since it cannot
-	write connections out (that support isn't planned), it is
-	usually paired with the <literal>keyfile</literal> plugin to
-	enable saving and editing of new connections.  The
-	<literal>ifupdown</literal> plugin supports basic wired and
-	WiFi connections, including WPA-PSK.</para></listitem>
+	<listitem>
+	  <para>
+	    This plugin is used on the Fedora and Red Hat Enterprise
+	    Linux distributions to read and write configuration from
+	    the standard
+	    <filename>/etc/sysconfig/network-scripts/ifcfg-*</filename>
+	    files. It currently supports reading Ethernet, Wi-Fi,
+	    InfiniBand, VLAN, Bond, Bridge, and Team connections.
+	  </para>
+	</listitem>
       </varlistentry>
 
       <varlistentry>
 	<term><varname>ifcfg-suse</varname></term>
-	<listitem><para>This plugin is only provided for simple
-	backward compatibility with SUSE and OpenSUSE
-	configuration.  Most setups should be using the
-	<literal>keyfile</literal> plugin instead. The
-	<literal>ifcfg-suse</literal> plugin supports reading
-	wired and WiFi connections, but does not support saving
-	any connection types.</para></listitem>
+	<listitem>
+	  <para>
+	    This plugin is only provided for simple backward
+	    compatibility with SUSE and OpenSUSE configuration. Most
+	    setups should be using the <literal>keyfile</literal>
+	    plugin instead. The <literal>ifcfg-suse</literal> plugin
+	    supports reading Ethernet and Wi-Fi connections, but does
+	    not support saving any connection types.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><varname>ifupdown</varname></term>
+	<listitem>
+	  <para>
+	    This plugin is used on the Debian and Ubuntu
+	    distributions, and reads Ethernet and Wi-Fi connections
+	    from <filename>/etc/network/interfaces</filename>.
+	  </para>
+	  <para>
+	    This plugin is read-only; any connections (of any type)
+	    added from within NetworkManager when you are using this
+	    plugin will be saved using the <literal>keyfile</literal>
+	    plugin instead.
+	  </para>
+	</listitem>
       </varlistentry>
     </variablelist>
   </refsect1>
