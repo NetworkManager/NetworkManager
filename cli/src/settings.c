@@ -845,23 +845,29 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 	static char * \
 	func_name (NMSetting *setting) \
 	{ \
+		char *s; \
 		GValue val = G_VALUE_INIT; \
 		g_value_init (&val, G_TYPE_STRING); \
 		g_object_get_property (G_OBJECT (setting), property_name, &val); \
 		/* Getters return allocated values, and returning the string \
 		 * the GValue copied from the object without unsetting the \
 		 * GValue fulfills that requirement. */ \
-		return (char *) g_value_get_string (&val); \
+		s = g_value_dup_string (&val); \
+		g_value_unset (&val); \
+		return s; \
 	}
 
 #define DEFINE_SECRET_FLAGS_GETTER(func_name, property_name) \
 	static char * \
 	func_name (NMSetting *setting) \
 	{ \
+		guint v; \
 		GValue val = G_VALUE_INIT; \
 		g_value_init (&val, G_TYPE_UINT); \
 		g_object_get_property (G_OBJECT (setting), property_name, &val); \
-		return secret_flags_to_string (g_value_get_uint (&val)); \
+		v = g_value_get_uint (&val); \
+		g_value_unset (&val); \
+		return secret_flags_to_string (v); \
 	}
 
 #define DEFINE_HWADDR_GETTER(func_name, property_name) \
@@ -1141,10 +1147,13 @@ dcb_flags_to_string (NMSettingDcbFlags flags)
 	static char * \
 	func_name (NMSetting *setting) \
 	{ \
+		guint v; \
 		GValue val = G_VALUE_INIT; \
 		g_value_init (&val, G_TYPE_UINT); \
 		g_object_get_property (G_OBJECT (setting), property_name, &val); \
-		return dcb_flags_to_string (g_value_get_uint (&val)); \
+		v = g_value_get_uint (&val); \
+		g_value_unset (&val); \
+		return dcb_flags_to_string (v); \
 	}
 
 static char *
@@ -1157,10 +1166,13 @@ dcb_app_priority_to_string (gint priority)
 	static char * \
 	func_name (NMSetting *setting) \
 	{ \
+		int v; \
 		GValue val = G_VALUE_INIT; \
 		g_value_init (&val, G_TYPE_INT); \
 		g_object_get_property (G_OBJECT (setting), property_name, &val); \
-		return dcb_app_priority_to_string (g_value_get_int (&val)); \
+		v = g_value_get_int (&val); \
+		g_value_unset (&val); \
+		return dcb_app_priority_to_string (v); \
 	}
 
 #define DEFINE_DCB_BOOL_GETTER(func_name, getter_func_name) \
