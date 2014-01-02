@@ -89,7 +89,6 @@
    ...
    fun:g_type_register_fundamental
    ...
-   obj:/*/libgobject*
    fun:_dl_init
    obj:/*/ld-*.so
 }
@@ -99,11 +98,12 @@
    fun:calloc
    fun:g_malloc0
    ...
-   obj:/*/libgobject*
    fun:_dl_init
    obj:/*/ld-*.so
 }
 {
+    all_gobject_init_ctor
+    Memcheck:Leak
     ...
     fun:gobject_init_ctor
     ...
