@@ -66,6 +66,7 @@
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"  /* Internal only */
 #define NM_DEVICE_IFINDEX          "ifindex"      /* Internal only */
 #define NM_DEVICE_IS_MASTER        "is-master"    /* Internal only */
+#define NM_DEVICE_MASTER           "master"       /* Internal only */
 #define NM_DEVICE_HW_ADDRESS       "hw-address"   /* Internal only */
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
@@ -238,6 +239,9 @@ void            nm_device_capture_initial_config (NMDevice *dev);
 gboolean        nm_device_master_add_slave  (NMDevice *dev, NMDevice *slave, gboolean configure);
 GSList *        nm_device_master_get_slaves (NMDevice *dev);
 gboolean        nm_device_is_master         (NMDevice *dev);
+
+/* Slave */
+NMDevice *      nm_device_get_master        (NMDevice *dev);
 
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 NMConnection *  nm_device_get_connection	(NMDevice *dev);

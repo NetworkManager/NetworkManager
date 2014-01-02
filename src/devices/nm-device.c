@@ -137,6 +137,7 @@ enum {
 	PROP_AVAILABLE_CONNECTIONS,
 	PROP_PHYSICAL_PORT_ID,
 	PROP_IS_MASTER,
+	PROP_MASTER,
 	PROP_HW_ADDRESS,
 	PROP_HAS_PENDING_ACTION,
 	LAST_PROP
@@ -1415,6 +1416,27 @@ nm_device_master_release_slaves (NMDevice *self, gboolean failed)
 	}
 }
 
+/**
+ * nm_device_get_master:
+ * @dev: the device
+ *
+ * If @dev has been enslaved by another device, this returns that
+ * device. Otherwise it returns %NULL. (In particular, note that if
+ * @dev is in the process of activating as a slave, but has not yet
+ * been enslaved by its master, this will return %NULL.)
+ *
+ * Returns: (transfer none): @dev's master, or %NULL
+ */
+NMDevice *
+nm_device_get_master (NMDevice *dev)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
+
+	if (priv->enslaved)
+		return priv->master;
+	else
+		return NULL;
+}
 
 /**
  * nm_device_slave_notify_enslave:
@@ -1441,6 +1463,7 @@ nm_device_slave_notify_enslave (NMDevice *dev, gboolean success)
 				     nm_connection_get_id (connection));
 
 		priv->enslaved = TRUE;
+		g_object_notify (G_OBJECT (dev), NM_DEVICE_MASTER);
 	} else {
 		nm_log_warn (LOGD_DEVICE,
 		             "Activation (%s) connection '%s' could not be enslaved",
@@ -1493,6 +1516,11 @@ nm_device_slave_notify_release (NMDevice *dev, gboolean master_failed)
 		}
 
 		nm_device_queue_state (dev, new_state, reason);
+	}
+
+	if (priv->enslaved) {
+		priv->enslaved = FALSE;
+		g_object_notify (G_OBJECT (dev), NM_DEVICE_MASTER);
 	}
 }
 
@@ -4551,6 +4579,7 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	/* slave: mark no longer enslaved */
 	g_clear_object (&priv->master);
 	priv->enslaved = FALSE;
+	g_object_notify (G_OBJECT (self), NM_DEVICE_MASTER);
 
 	/* Tear down an existing activation request */
 	clear_act_request (self);
@@ -5629,6 +5658,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_IS_MASTER:
 		g_value_set_boolean (value, priv->is_master);
 		break;
+	case PROP_MASTER:
+		g_value_set_object (value, priv->master);
+		break;
 	case PROP_HW_ADDRESS:
 		if (priv->hw_addr_len)
 			g_value_take_string (value, nm_utils_hwaddr_ntoa_len (priv->hw_addr, priv->hw_addr_len));
@@ -5905,6 +5937,14 @@ nm_device_class_init (NMDeviceClass *klass)
 		                       "IsMaster",
 		                       FALSE,
 		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_MASTER,
+		 g_param_spec_object (NM_DEVICE_MASTER,
+		                      "Master",
+		                      "Master",
+		                      NM_TYPE_DEVICE,
+		                      G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
