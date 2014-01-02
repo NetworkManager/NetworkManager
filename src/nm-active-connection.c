@@ -44,7 +44,6 @@ typedef struct {
 	char *path;
 	char *specific_object;
 	NMDevice *device;
-	guint32 device_state_id;
 
 	char *pending_activation_id;
 
@@ -92,7 +91,7 @@ enum {
 };
 
 static void check_master_ready (NMActiveConnection *self);
-static void _device_cleanup (NMActiveConnectionPrivate *priv);
+static void _device_cleanup (NMActiveConnection *self);
 
 /****************************************************************/
 
@@ -169,7 +168,7 @@ nm_active_connection_set_state (NMActiveConnection *self,
 		 * emit property change notification so clients re-read the value,
 		 * which will be NULL due to conditions in get_property().
 		 */
-		_device_cleanup (priv);
+		_device_cleanup (self);
 		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DEVICES);
 	}
 }
@@ -344,15 +343,38 @@ device_state_changed (NMDevice *device,
 		/* If the device used to be active, but now is disconnected/failed, we
 		 * no longer care about its state.
 		 */
-		if (new_state <= NM_DEVICE_STATE_DISCONNECTED || new_state == NM_DEVICE_STATE_FAILED) {
-			g_signal_handler_disconnect (device, priv->device_state_id);
-			priv->device_state_id = 0;
-		}
+		if (new_state <= NM_DEVICE_STATE_DISCONNECTED || new_state == NM_DEVICE_STATE_FAILED)
+			g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_state_changed), self);
 	}
 
 	/* Let subclasses handle the state change */
 	if (NM_ACTIVE_CONNECTION_GET_CLASS (self)->device_state_changed)
 		NM_ACTIVE_CONNECTION_GET_CLASS (self)->device_state_changed (self, device, new_state, old_state);
+}
+
+static void
+device_master_changed (GObject *object,
+                       GParamSpec *pspec,
+                       gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (object);
+	NMActiveConnection *self = NM_ACTIVE_CONNECTION (user_data);
+	NMActiveConnection *master;
+	NMActiveConnectionState master_state;
+
+	if (!nm_device_get_master (device))
+		return;
+	g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_master_changed), self);
+
+	master = nm_active_connection_get_master (self);
+	g_assert (master);
+
+	master_state = nm_active_connection_get_state (master);
+	if (master_state >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+		/* Master failed before attaching the slave */
+		if (NM_ACTIVE_CONNECTION_GET_CLASS (self)->master_failed)
+			NM_ACTIVE_CONNECTION_GET_CLASS (self)->master_failed (self);
+	}
 }
 
 gboolean
@@ -374,10 +396,10 @@ nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 		priv->device = g_object_ref (device);
 		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_INT_DEVICE);
 
-		priv->device_state_id = g_signal_connect (device,
-		                                          "state-changed",
-		                                          G_CALLBACK (device_state_changed),
-		                                          self);
+		g_signal_connect (device, "state-changed",
+		                  G_CALLBACK (device_state_changed), self);
+		g_signal_connect (device, "notify::master",
+		                  G_CALLBACK (device_master_changed), self);
 
 		priv->pending_activation_id = g_strdup_printf ("activation::%p", (void *)self);
 		nm_device_add_pending_action (device, priv->pending_activation_id);
@@ -457,7 +479,6 @@ master_state_cb (NMActiveConnection *master,
                  gpointer user_data)
 {
 	NMActiveConnection *self = NM_ACTIVE_CONNECTION (user_data);
-	NMActiveConnectionState self_state = nm_active_connection_get_state (self);
 	NMActiveConnectionState master_state = nm_active_connection_get_state (master);
 
 	check_master_ready (self);
@@ -465,15 +486,9 @@ master_state_cb (NMActiveConnection *master,
 	nm_log_dbg (LOGD_DEVICE, "(%p): master ActiveConnection [%p] state now '%s' (%d)",
 	            self, master, state_to_string (master_state), master_state);
 
-	/* Master is deactivating, so this active connection must also deactivate */
-	if (self_state < NM_ACTIVE_CONNECTION_STATE_DEACTIVATING &&
-	    master_state >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
-		nm_log_dbg (LOGD_DEVICE, "(%p): master ActiveConnection [%p] '%s' failed",
-		            self, master, nm_active_connection_get_name (master));
-
-		g_signal_handlers_disconnect_by_func (master,
-		                                      (GCallback) master_state_cb,
-		                                      self);
+	if (master_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATING &&
+	    nm_active_connection_get_device (master) == NULL) {
+		/* Master failed without ever creating its device */
 		if (NM_ACTIVE_CONNECTION_GET_CLASS (self)->master_failed)
 			NM_ACTIVE_CONNECTION_GET_CLASS (self)->master_failed (self);
 	}
@@ -761,24 +776,28 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-_device_cleanup (NMActiveConnectionPrivate *priv)
+_device_cleanup (NMActiveConnection *self)
 {
-	if (priv->device_state_id) {
-		g_assert (priv->device);
-		g_signal_handler_disconnect (priv->device, priv->device_state_id);
-		priv->device_state_id = 0;
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->device) {
+		g_signal_handlers_disconnect_by_func (priv->device, G_CALLBACK (device_state_changed), self);
+		g_signal_handlers_disconnect_by_func (priv->device, G_CALLBACK (device_master_changed), self);
 	}
+
 	if (priv->pending_activation_id) {
 		nm_device_remove_pending_action (priv->device, priv->pending_activation_id);
 		g_clear_pointer (&priv->pending_activation_id, g_free);
 	}
+
 	g_clear_object (&priv->device);
 }
 
 static void
 dispose (GObject *object)
 {
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
+	NMActiveConnection *self = NM_ACTIVE_CONNECTION (object);
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
 	if (priv->chain) {
 		nm_auth_chain_unref (priv->chain);
@@ -792,12 +811,12 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->connection);
 
-	_device_cleanup (priv);
+	_device_cleanup (self);
 
 	if (priv->master) {
 		g_signal_handlers_disconnect_by_func (priv->master,
 		                                      (GCallback) master_state_cb,
-		                                      NM_ACTIVE_CONNECTION (object));
+		                                      self);
 	}
 	g_clear_object (&priv->master);
 	g_clear_object (&priv->subject);

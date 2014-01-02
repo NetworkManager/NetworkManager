@@ -301,17 +301,6 @@ device_state_changed (NMActiveConnection *active,
 }
 
 static void
-master_failed (NMActiveConnection *self)
-{
-	NMVPNConnection *connection = NM_VPN_CONNECTION (self);
-
-	/* Master failure fails the VPN */
-	nm_vpn_connection_set_vpn_state (connection,
-	                                 NM_VPN_CONNECTION_STATE_FAILED,
-	                                 NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
-}
-
-static void
 add_ip4_vpn_gateway_route (NMDevice *parent_device, guint32 vpn_gw)
 {
 	NMIP4Config *parent_config;
@@ -1828,7 +1817,6 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
-	active_class->master_failed = master_failed;
 	active_class->device_state_changed = device_state_changed;
 
 	g_object_class_override_property (object_class, PROP_MASTER, NM_ACTIVE_CONNECTION_MASTER);
