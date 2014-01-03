@@ -3489,9 +3489,8 @@ nm_manager_deactivate_connection (NMManager *manager,
 			                     "The VPN connection was not active.");
 	} else {
 		g_assert (NM_IS_ACT_REQUEST (active));
-		/* FIXME: use DEACTIVATING state */
 		nm_device_state_changed (nm_active_connection_get_device (active),
-		                         NM_DEVICE_STATE_DISCONNECTED,
+		                         NM_DEVICE_STATE_DEACTIVATING,
 		                         reason);
 		success = TRUE;
 	}

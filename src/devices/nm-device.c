@@ -4618,7 +4618,7 @@ disconnect_cb (NMDevice *device,
 		                                        TRUE);
 
 		nm_device_state_changed (device,
-		                         NM_DEVICE_STATE_DISCONNECTED,
+		                         NM_DEVICE_STATE_DEACTIVATING,
 		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 		dbus_g_method_return (context);
 	}
@@ -6303,6 +6303,9 @@ nm_device_state_changed (NMDevice *device,
 			} else if (old_state > NM_DEVICE_STATE_UNAVAILABLE && priv->default_unmanaged)
 				nm_device_queue_state (device, NM_DEVICE_STATE_UNMANAGED, NM_DEVICE_STATE_REASON_NONE);
 		}
+		break;
+	case NM_DEVICE_STATE_DEACTIVATING:
+		nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, reason);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (old_state > NM_DEVICE_STATE_DISCONNECTED && priv->default_unmanaged)
