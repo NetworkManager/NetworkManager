@@ -465,6 +465,8 @@ int nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatform
 int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b);
 int nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b);
 
+gboolean nm_platform_check_support_libnl_extended_ifa_flags (void);
+
 #define auto_g_free __attribute__((cleanup(put_g_free)))
 static void __attribute__((unused))
 put_g_free (void *ptr)

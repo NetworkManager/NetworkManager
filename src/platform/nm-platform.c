@@ -31,6 +31,14 @@
 #include "nm-logging.h"
 #include "nm-enum-types.h"
 
+/* workaround for older libnl version, that does not define these flags. */
+#ifndef IFA_F_MANAGETEMPADDR
+#define IFA_F_MANAGETEMPADDR 0x100
+#endif
+#ifndef IFA_F_NOPREFIXROUTE
+#define IFA_F_NOPREFIXROUTE 0x200
+#endif
+
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
 
 #define NM_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PLATFORM, NMPlatformPrivate))
@@ -194,6 +202,22 @@ reset_error (void)
 {
 	g_assert (platform);
 	platform->error = NM_PLATFORM_ERROR_NONE;
+}
+
+#define IFA_F_MANAGETEMPADDR_STR "mngtmpaddr"
+#define IFA_F_NOPREFIXROUTE_STR "noprefixroute"
+gboolean
+nm_platform_check_support_libnl_extended_ifa_flags ()
+{
+	static int supported = -1;
+
+	/* support for extended ifa-flags was added together
+	 * with the IFA_F_MANAGETEMPADDR flag. So, check if libnl
+	 * is able to parse this flag. */
+	if (supported == -1)
+		supported = rtnl_addr_str2flags (IFA_F_MANAGETEMPADDR_STR) == IFA_F_MANAGETEMPADDR;
+
+	return supported;
 }
 
 /******************************************************************/
@@ -1842,7 +1866,22 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	s_dev = address->ifindex > 0 ? nm_platform_link_get_name (address->ifindex) : NULL;
 	str_dev = s_dev ? g_strconcat (" dev ", s_dev, NULL) : NULL;
 
-	rtnl_addr_flags2str(address->flags, s_flags, sizeof(s_flags));
+	rtnl_addr_flags2str(address->flags, s_flags, sizeof (s_flags));
+
+	/* There are two recent flags IFA_F_MANAGETEMPADDR and IFA_F_NOPREFIXROUTE.
+	 * If libnl does not yet support them, add them by hand.
+	 * These two flags were introduced together with the extended ifa_flags,
+	 * so, check for that.
+	 **/
+	if ((address->flags && IFA_F_MANAGETEMPADDR) & !nm_platform_check_support_libnl_extended_ifa_flags ()) {
+		strncat (s_flags, s_flags[0] ? "," IFA_F_MANAGETEMPADDR_STR : IFA_F_MANAGETEMPADDR_STR,
+		         sizeof (s_flags) - strlen (s_flags) - 1);
+	}
+	if ((address->flags && IFA_F_NOPREFIXROUTE) & !nm_platform_check_support_libnl_extended_ifa_flags ()) {
+		strncat (s_flags, s_flags[0] ? "," IFA_F_NOPREFIXROUTE_STR : IFA_F_NOPREFIXROUTE_STR,
+		         sizeof (s_flags) - strlen (s_flags) - 1);
+	}
+
 	str_flags = s_flags[0] ? g_strconcat (" flags ", s_flags, NULL) : NULL;
 
 	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s%s%s src %s",
