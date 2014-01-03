@@ -255,6 +255,7 @@ global:
 	nm_remote_settings_add_connection_unsaved;
 	nm_remote_settings_error_get_type;
 	nm_remote_settings_error_quark;
+	nm_remote_settings_get_connection_by_id;
 	nm_remote_settings_get_connection_by_path;
 	nm_remote_settings_get_connection_by_uuid;
 	nm_remote_settings_get_type;
