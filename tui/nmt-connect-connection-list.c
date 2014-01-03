@@ -576,22 +576,12 @@ nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *list,
 	NmtConnectConnection *nmtconn = NULL;
 	NMConnection *conn = NULL;
 
+	g_return_val_if_fail (identifier, FALSE);
+
 	if (nm_utils_is_uuid (identifier))
 		conn = NM_CONNECTION (nm_remote_settings_get_connection_by_uuid (nm_settings, identifier));
-	else {
-		GSList *conns, *iter;
-
-		conns = nm_remote_settings_list_connections (nm_settings);
-		for (iter = conns; iter; iter = iter->next) {
-			NMConnection *candidate = iter->data;
-
-			if (!strcmp (identifier, nm_connection_get_id (candidate))) {
-				conn = candidate;
-				break;
-			}
-		}
-		g_slist_free (conns);
-	}
+	if (!conn)
+		conn = NM_CONNECTION (nm_remote_settings_get_connection_by_id (nm_settings, identifier));
 
 	for (diter = priv->nmt_devices; diter; diter = diter->next) {
 		nmtdev = diter->data;
