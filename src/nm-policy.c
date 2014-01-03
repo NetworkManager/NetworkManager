@@ -1431,6 +1431,10 @@ device_state_changed (NMDevice *device,
 		if (old_state > NM_DEVICE_STATE_DISCONNECTED)
 			update_routing_and_dns (policy, FALSE);
 		break;
+	case NM_DEVICE_STATE_DEACTIVATING:
+		if (reason == NM_DEVICE_STATE_REASON_USER_REQUESTED)
+			nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_USER_REQUESTED);
+		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		/* Reset retry counts for a device's connections when carrier on; if cable
 		 * was unplugged and plugged in again, we should try to reconnect.
