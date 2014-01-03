@@ -36,6 +36,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <linux/if.h>
+#include <netlink/route/addr.h>
 
 #include "libgsystem.h"
 #include "nm-glib-compat.h"
@@ -73,6 +74,11 @@
 #include "nm-device-bridge.h"
 #include "nm-device-bond.h"
 #include "nm-device-team.h"
+
+/* workaround for older libnl version, that does not define this flag. */
+#ifndef IFA_F_NOPREFIXROUTE
+#define IFA_F_NOPREFIXROUTE 0x200
+#endif
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
@@ -3313,6 +3319,25 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 	NMConnection *connection;
 	int i;
 	NMDeviceStateReason reason;
+	static int system_support = -1;
+	guint ifa_flags;
+
+	if (system_support == -1) {
+		/*
+		 * Check, if both libnl and the kernel are recent enough,
+		 * to help user space handling RA. If it's not supported,
+		 * we must add autoconf addresses as /128.
+		 * The reason for /128 is to prevent the kernel from adding
+		 * a prefix route for this address.
+		 **/
+		system_support = nm_platform_check_support_libnl_extended_ifa_flags () &&
+		                 nm_platform_check_support_kernel_extended_ifa_flags ();
+	}
+
+	/* without system_support, this flag will be ignored.
+	 * Still, we set it (why not?).
+	 **/
+	ifa_flags = IFA_F_NOPREFIXROUTE;
 
 	g_return_if_fail (priv->act_request);
 	connection = nm_device_get_connection (device);
@@ -3346,11 +3371,12 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 
 			memset (&address, 0, sizeof (address));
 			address.address = discovered_address->address;
-			address.plen = 128;
+			address.plen = system_support ? 64 : 128;
 			address.timestamp = discovered_address->timestamp;
 			address.lifetime = discovered_address->lifetime;
 			address.preferred = discovered_address->preferred;
 			address.source = NM_PLATFORM_SOURCE_RDISC;
+			address.flags = ifa_flags;
 
 			nm_ip6_config_add_address (priv->ac_ip6_config, &address);
 		}
