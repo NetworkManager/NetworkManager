@@ -1952,21 +1952,23 @@ dhcp4_state_changed (NMDHCPClient *client,
 	case DHC_REBOOT:     /* have valid lease, but now obtained a different one */
 	case DHC_REBIND4:    /* new, different lease */
 		config = nm_dhcp_client_get_ip4_config (priv->dhcp4_client, FALSE);
+
+		/* Update the DHCP4 config object with new DHCP options */
+		nm_dhcp4_config_reset (priv->dhcp4_config);
+		if (config) {
+			nm_dhcp_client_foreach_option (priv->dhcp4_client,
+			                               dhcp4_add_option_cb,
+			                               config);
+		}
+		g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG);
+
 		if (priv->ip4_state == IP_CONF)
 			nm_device_activate_schedule_ip4_config_result (device, config);
 		else if (priv->ip4_state == IP_DONE)
 			dhcp4_lease_change (device, config);
 
-		if (config) {
-			/* Update the DHCP4 config object with new DHCP options */
-			nm_dhcp4_config_reset (priv->dhcp4_config);
-			nm_dhcp_client_foreach_option (priv->dhcp4_client,
-			                               dhcp4_add_option_cb,
-			                               priv->dhcp4_config);
-			g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG);
-
+		if (config)
 			g_object_unref (config);
-		}
 		break;
 	case DHC_TIMEOUT: /* timed out contacting DHCP server */
 		dhcp4_fail (device, TRUE);
