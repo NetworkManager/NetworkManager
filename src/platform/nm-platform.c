@@ -1478,9 +1478,6 @@ nm_platform_ip4_route_add (int ifindex,
 	g_return_val_if_fail (mss >= 0, FALSE);
 	g_return_val_if_fail (klass->ip4_route_add, FALSE);
 
-	if (!metric)
-		metric = 1024;
-
 	return klass->ip4_route_add (platform, ifindex, network, plen, gateway, metric, mss);
 }
 
@@ -1493,9 +1490,6 @@ nm_platform_ip6_route_add (int ifindex,
 	g_return_val_if_fail (metric >= 0, FALSE);
 	g_return_val_if_fail (mss >= 0, FALSE);
 	g_return_val_if_fail (klass->ip6_route_add, FALSE);
-
-	if (!metric)
-		metric = 1024;
 
 	return klass->ip6_route_add (platform, ifindex, network, plen, gateway, metric, mss);
 }

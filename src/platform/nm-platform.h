@@ -156,6 +156,8 @@ typedef struct {
 	guint flags; /* ifa_flags from <linux/if_addr.h>, field type "unsigned int" is as used in rtnl_addr_get_flags. */
 } NMPlatformIP6Address;
 
+#define NM_PLATFORM_ROUTE_METRIC_DEFAULT 1024
+
 typedef struct {
 	int ifindex;
 	NMPlatformSource source;

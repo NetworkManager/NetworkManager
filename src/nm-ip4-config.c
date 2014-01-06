@@ -265,7 +265,6 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, int priority)
 
 		for (i = 0; i < count; i++) {
 			memcpy (&route, nm_ip4_config_get_route (config, i), sizeof (route));
-			route.metric = priority;
 
 			/* Don't add the route if it's more specific than one of the subnets
 			 * the device already has an IP address on.
@@ -279,6 +278,11 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, int priority)
 			if (nm_ip4_config_get_never_default (config) && route.network == 0)
 				continue;
 
+			/* Use the default metric only if the route was created by NM and
+			 * didn't already specify a metric.
+			 */
+			if (route.source != NM_PLATFORM_SOURCE_KERNEL && !route.metric)
+				route.metric = priority ? priority : NM_PLATFORM_ROUTE_METRIC_DEFAULT;
 			g_array_append_val (routes, route);
 		}
 
