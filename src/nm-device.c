@@ -2397,19 +2397,20 @@ dhcp6_state_changed (NMDHCPClient *client,
 		if (priv->dhcp6_ip6_config)
 			g_object_unref (priv->dhcp6_ip6_config);
 		priv->dhcp6_ip6_config = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, FALSE);
+
+		/* Update the DHCP6 config object with new DHCP options */
+		nm_dhcp6_config_reset (priv->dhcp6_config);
+		if (priv->dhcp6_ip6_config) {
+			nm_dhcp_client_foreach_option (priv->dhcp6_client,
+			                               dhcp6_add_option_cb,
+			                               priv->dhcp6_config);
+		}
+		g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG);
+
 		if (priv->ip6_state == IP_CONF)
 			nm_device_activate_schedule_ip6_config_result (device, priv->dhcp6_ip6_config);
 		else if (priv->ip6_state == IP_DONE)
 			dhcp6_lease_change (device);
-
-		if (priv->dhcp6_ip6_config) {
-			/* Update the DHCP6 config object with new DHCP options */
-			nm_dhcp6_config_reset (priv->dhcp6_config);
-			nm_dhcp_client_foreach_option (priv->dhcp6_client,
-			                               dhcp6_add_option_cb,
-			                               priv->dhcp6_config);
-			g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG);
-		}
 		break;
 	case DHC_TIMEOUT: /* timed out contacting DHCP server */
 		dhcp6_fail (device, TRUE);
