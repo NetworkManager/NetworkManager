@@ -2274,7 +2274,8 @@ build_rtnl_addr (int family,
 		auto_nl_addr struct nl_addr *nlpeer = nl_addr_build (family, peer_addr, addrlen);
 
 		nle = rtnl_addr_set_peer (rtnladdr, nlpeer);
-		g_assert (!nle);
+		/* IPv6 doesn't support peer addresses yet */
+		g_assert (!nle || (nle == -NLE_AF_NOSUPPORT));
 	}
 
 	rtnl_addr_set_prefixlen (rtnladdr, plen);
