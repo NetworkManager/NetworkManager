@@ -550,6 +550,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 		address.plen = g_value_get_uint (val);
 
 	if (address.address && address.plen) {
+		address.source = NM_PLATFORM_SOURCE_PPP;
 		nm_ip4_config_add_address (config, &address);
 	} else {
 		nm_log_err (LOGD_PPP, "invalid IPv4 address received!");

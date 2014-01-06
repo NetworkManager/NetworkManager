@@ -1563,9 +1563,15 @@ array_contains_ip4_route (const GArray *routes, const NMPlatformIP4Route *route)
 	guint len = routes ? routes->len : 0;
 	guint i;
 
-	for (i = 0; i < len; i++)
-		if (!memcmp (&g_array_index (routes, NMPlatformIP4Route, i), route, sizeof (*route)))
+	for (i = 0; i < len; i++) {
+		NMPlatformIP4Route *c = &g_array_index (routes, NMPlatformIP4Route, i);
+
+		if (route->network == c->network &&
+		    route->plen == c->plen &&
+		    route->gateway == c->gateway &&
+		    route->metric == c->metric)
 			return TRUE;
+	}
 
 	return FALSE;
 }
@@ -1576,9 +1582,15 @@ array_contains_ip6_route (const GArray *routes, const NMPlatformIP6Route *route)
 	guint len = routes ? routes->len : 0;
 	guint i;
 
-	for (i = 0; i < len; i++)
-		if (!memcmp (&g_array_index (routes, NMPlatformIP6Route, i), route, sizeof (*route)))
+	for (i = 0; i < len; i++) {
+		NMPlatformIP6Route *c = &g_array_index (routes, NMPlatformIP6Route, i);
+
+		if (IN6_ARE_ADDR_EQUAL (&route->network, &c->network) &&
+		    route->plen == c->plen &&
+		    IN6_ARE_ADDR_EQUAL (&route->gateway, &c->gateway) &&
+		    route->metric == c->metric)
 			return TRUE;
+	}
 
 	return FALSE;
 }
@@ -1606,7 +1618,6 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 	routes = nm_platform_ip4_route_get_all (ifindex, FALSE);
 	for (i = 0; i < routes->len; i++) {
 		route = &g_array_index (routes, NMPlatformIP4Route, i);
-		route->ifindex = 0;
 
 		if (!array_contains_ip4_route (known_routes, route))
 			nm_platform_ip4_route_delete (ifindex, route->network, route->plen, route->metric);
@@ -1684,6 +1695,34 @@ nm_platform_route_flush (int ifindex)
 
 /******************************************************************/
 
+static const char *
+source_to_string (NMPlatformSource source)
+{
+	switch (source) {
+	case NM_PLATFORM_SOURCE_KERNEL:
+		return "kernel";
+	case NM_PLATFORM_SOURCE_SHARED:
+		return "shared";
+	case NM_PLATFORM_SOURCE_IP4LL:
+		return "ipv4ll";
+	case NM_PLATFORM_SOURCE_PPP:
+		return "ppp";
+	case NM_PLATFORM_SOURCE_WWAN:
+		return "wwan";
+	case NM_PLATFORM_SOURCE_VPN:
+		return "vpn";
+	case NM_PLATFORM_SOURCE_DHCP:
+		return "dhcp";
+	case NM_PLATFORM_SOURCE_RDISC:
+		return "rdisc";
+	case NM_PLATFORM_SOURCE_USER:
+		return "user";
+	default:
+		break;
+	}
+	return "unknown";
+}
+
 /**
  * nm_platform_ip4_address_to_string:
  * @route: pointer to NMPlatformIP4Address address structure
@@ -1718,11 +1757,12 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 	s_dev = address->ifindex > 0 ? nm_platform_link_get_name (address->ifindex) : NULL;
 	str_dev = s_dev ? g_strconcat (" dev ", s_dev, NULL) : NULL;
 
-	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s%s",
+	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s%s src %s",
 	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
 	            (guint)address->timestamp,
 	            str_peer ? str_peer : "",
-	            str_dev ? str_dev : "");
+	            str_dev ? str_dev : "",
+	            source_to_string (address->source));
 	g_free (str_dev);
 	g_free (str_peer);
 	return buffer;
@@ -1767,12 +1807,13 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	rtnl_addr_flags2str(address->flags, s_flags, sizeof(s_flags));
 	str_flags = s_flags[0] ? g_strconcat (" flags ", s_flags, NULL) : NULL;
 
-	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s%s%s",
+	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s%s%s src %s",
 	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
 	            (guint)address->timestamp,
 	            str_peer ? str_peer : "",
 	            str_dev ? str_dev : "",
-	            str_flags ? str_flags : "");
+	            str_flags ? str_flags : "",
+	            source_to_string (address->source));
 	g_free (str_flags);
 	g_free (str_dev);
 	g_free (str_peer);
@@ -1807,10 +1848,11 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 	s_dev = route->ifindex > 0 ? nm_platform_link_get_name (route->ifindex) : NULL;
 	str_dev = s_dev ? g_strconcat (" dev ", s_dev, NULL) : NULL;
 
-	g_snprintf (buffer, sizeof (buffer), "%s/%d via %s%s metric %u mss %u",
+	g_snprintf (buffer, sizeof (buffer), "%s/%d via %s%s metric %u mss %u src %s",
 	            s_network, route->plen, s_gateway,
 	            str_dev ? str_dev : "",
-	            route->metric, route->mss);
+	            route->metric, route->mss,
+	            source_to_string (route->source));
 	g_free (str_dev);
 	return buffer;
 }
@@ -1843,10 +1885,11 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 	s_dev = route->ifindex > 0 ? nm_platform_link_get_name (route->ifindex) : NULL;
 	str_dev = s_dev ? g_strconcat (" dev ", s_dev, NULL) : NULL;
 
-	g_snprintf (buffer, sizeof (buffer), "%s/%d via %s%s metric %u mss %u",
+	g_snprintf (buffer, sizeof (buffer), "%s/%d via %s%s metric %u mss %u src %s",
 	            s_network, route->plen, s_gateway,
 	            str_dev ? str_dev : "",
-	            route->metric, route->mss);
+	            route->metric, route->mss,
+	            source_to_string (route->source));
 	g_free (str_dev);
 	return buffer;
 }
@@ -1879,9 +1922,10 @@ int
 nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
 {
 	_CMP_POINTER (a, b);
+	_CMP_FIELD (a, b, ifindex);
+	_CMP_FIELD (a, b, source);
 	_CMP_FIELD_MEMCMP (a, b, address);
 	_CMP_FIELD_MEMCMP (a, b, peer_address);
-	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD (a, b, timestamp);
 	_CMP_FIELD (a, b, lifetime);
@@ -1894,6 +1938,7 @@ nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6A
 {
 	_CMP_POINTER (a, b);
 	_CMP_FIELD (a, b, ifindex);
+	_CMP_FIELD (a, b, source);
 	_CMP_FIELD_MEMCMP (a, b, address);
 	_CMP_FIELD_MEMCMP (a, b, peer_address);
 	_CMP_FIELD (a, b, plen);
@@ -1909,6 +1954,7 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 {
 	_CMP_POINTER (a, b);
 	_CMP_FIELD (a, b, ifindex);
+	_CMP_FIELD (a, b, source);
 	_CMP_FIELD_MEMCMP (a, b, network);
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD_MEMCMP (a, b, gateway);
@@ -1922,6 +1968,7 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 {
 	_CMP_POINTER (a, b);
 	_CMP_FIELD (a, b, ifindex);
+	_CMP_FIELD (a, b, source);
 	_CMP_FIELD_MEMCMP (a, b, network);
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD_MEMCMP (a, b, gateway);

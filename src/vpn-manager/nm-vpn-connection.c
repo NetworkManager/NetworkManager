@@ -333,6 +333,7 @@ add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32
 	if (nm_ip4_config_destination_is_direct (parent_config, vpn_gw, 32))
 		route.gateway = 0;
 
+	route.source = NM_PLATFORM_SOURCE_VPN;
 	nm_ip4_config_add_route (config, &route);
 
 	/* Ensure there's a route to the parent device's gateway through the
@@ -343,6 +344,7 @@ add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32
 	memset (&route, 0, sizeof (route));
 	route.network = parent_gw;
 	route.plen = 32;
+	route.source = NM_PLATFORM_SOURCE_VPN;
 
 	nm_ip4_config_add_route (config, &route);
 }
@@ -378,6 +380,7 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 	if (nm_ip6_config_destination_is_direct (parent_config, vpn_gw, 128))
 		route.gateway = in6addr_any;
 
+	route.source = NM_PLATFORM_SOURCE_VPN;
 	nm_ip6_config_add_route (config, &route);
 
 	/* Ensure there's a route to the parent device's gateway through the
@@ -388,6 +391,7 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 	memset (&route, 0, sizeof (route));
 	route.network = *parent_gw;
 	route.plen = 128;
+	route.source = NM_PLATFORM_SOURCE_VPN;
 
 	nm_ip6_config_add_route (config, &route);
 }
@@ -944,6 +948,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		address.plen = g_value_get_uint (val);
 
 	if (address.address && address.plen) {
+		address.source = NM_PLATFORM_SOURCE_VPN;
 		nm_ip4_config_add_address (config, &address);
 	} else {
 		nm_log_err (LOGD_VPN, "invalid IP4 config received!");
@@ -1002,6 +1007,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 			route.network = nm_ip4_route_get_dest (item);
 			route.plen = nm_ip4_route_get_prefix (item);
 			route.gateway = nm_ip4_route_get_next_hop (item);
+			route.source = NM_PLATFORM_SOURCE_VPN;
 
 			/* Ignore host routes to the VPN gateway since NM adds one itself
 			 * below.  Since NM knows more about the routing situation than
@@ -1094,9 +1100,10 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 	if (val)
 		address.plen = g_value_get_uint (val);
 
-	if (!IN6_IS_ADDR_UNSPECIFIED (&address.address) && address.plen)
+	if (!IN6_IS_ADDR_UNSPECIFIED (&address.address) && address.plen) {
+		address.source = NM_PLATFORM_SOURCE_VPN;
 		nm_ip6_config_add_address (config, &address);
-	else {
+	} else {
 		nm_log_err (LOGD_VPN, "invalid IP6 config received!");
 		g_object_unref (config);
 		nm_vpn_connection_config_maybe_complete (connection, FALSE);
@@ -1145,6 +1152,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 			route.network = *nm_ip6_route_get_dest (item);
 			route.plen = nm_ip6_route_get_prefix (item);
 			route.gateway = *nm_ip6_route_get_next_hop (item);
+			route.source = NM_PLATFORM_SOURCE_VPN;
 
 			/* Ignore host routes to the VPN gateway since NM adds one itself
 			 * below.  Since NM knows more about the routing situation than

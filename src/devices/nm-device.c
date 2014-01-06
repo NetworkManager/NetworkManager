@@ -2310,12 +2310,14 @@ aipd_get_ip4_config (NMDevice *self, guint32 lla)
 	memset (&address, 0, sizeof (address));
 	address.address = lla;
 	address.plen = 16;
+	address.source = NM_PLATFORM_SOURCE_IP4LL;
 	nm_ip4_config_add_address (config, &address);
 
 	/* Add a multicast route for link-local connections: destination= 224.0.0.0, netmask=240.0.0.0 */
 	memset (&route, 0, sizeof (route));
 	route.network = htonl (0xE0000000L);
 	route.plen = 4;
+	route.source = NM_PLATFORM_SOURCE_IP4LL;
 	nm_ip4_config_add_route (config, &route);
 
 	return config;
@@ -2834,6 +2836,7 @@ shared4_new_config (NMDevice *self, NMConnection *connection, NMDeviceStateReaso
 	}
 
 	config = nm_ip4_config_new ();
+	address.source = NM_PLATFORM_SOURCE_SHARED;
 	nm_ip4_config_add_address (config, &address);
 
 	/* Remove the address lock when the object gets disposed */
@@ -3327,6 +3330,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 			address.timestamp = discovered_address->timestamp;
 			address.lifetime = discovered_address->lifetime;
 			address.preferred = discovered_address->preferred;
+			address.source = NM_PLATFORM_SOURCE_RDISC;
 
 			nm_ip6_config_add_address (priv->ac_ip6_config, &address);
 		}
@@ -3349,6 +3353,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 				route.network = discovered_route->network;
 				route.plen = discovered_route->plen;
 				route.gateway = discovered_route->gateway;
+				route.source = NM_PLATFORM_SOURCE_RDISC;
 
 				nm_ip6_config_add_route (priv->ac_ip6_config, &route);
 			}

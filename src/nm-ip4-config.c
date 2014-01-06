@@ -335,6 +335,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 		address.plen = nm_ip4_address_get_prefix (s_addr);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
+		address.source = NM_PLATFORM_SOURCE_USER;
 
 		nm_ip4_config_add_address (config, &address);
 	}
@@ -351,6 +352,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 		route.plen = nm_ip4_route_get_prefix (s_route);
 		route.gateway = nm_ip4_route_get_next_hop (s_route);
 		route.metric = nm_ip4_route_get_metric (s_route);
+		route.source = NM_PLATFORM_SOURCE_USER;
 
 		nm_ip4_config_add_route (config, &route);
 	}
@@ -981,10 +983,21 @@ nm_ip4_config_reset_addresses (NMIP4Config *config)
 	}
 }
 
+/**
+ * nm_ip4_config_add_address:
+ * @config: the #NMIP4Config
+ * @new: the new address to add to @config
+ *
+ * Adds the new address to @config.  If an address with the same basic properties
+ * (address, prefix) already exists in @config, it is overwritten with the
+ * lifetime and preferred of @new.  The source is also overwritten by the source
+ * from @new if that source is higher priority.
+ */
 void
 nm_ip4_config_add_address (NMIP4Config *config, const NMPlatformIP4Address *new)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	NMPlatformSource old_source;
 	int i;
 
 	g_return_if_fail (new != NULL);
@@ -995,7 +1008,10 @@ nm_ip4_config_add_address (NMIP4Config *config, const NMPlatformIP4Address *new)
 		if (addresses_are_duplicate (item, new, FALSE)) {
 			if (nm_platform_ip4_address_cmp (item, new) == 0)
 				return;
+			old_source = item->source;
 			memcpy (item, new, sizeof (*item));
+			/* Restore highest priority source */
+			item->source = MAX (old_source, new->source);
 			goto NOTIFY;
 		}
 	}
@@ -1061,10 +1077,21 @@ nm_ip4_config_reset_routes (NMIP4Config *config)
 	}
 }
 
+/**
+ * nm_ip4_config_add_route:
+ * @config: the #NMIP4Config
+ * @new: the new route to add to @config
+ *
+ * Adds the new route to @config.  If a route with the same basic properties
+ * (network, prefix) already exists in @config, it is overwritten including the
+ * gateway and metric of @new.  The source is also overwritten by the source
+ * from @new if that source is higher priority.
+ */
 void
 nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	NMPlatformSource old_source;
 	int i;
 
 	g_return_if_fail (new != NULL);
@@ -1075,7 +1102,10 @@ nm_ip4_config_add_route (NMIP4Config *config, const NMPlatformIP4Route *new)
 		if (routes_are_duplicate (item, new, FALSE)) {
 			if (nm_platform_ip4_route_cmp (item, new) == 0)
 				return;
+			old_source = item->source;
 			memcpy (item, new, sizeof (*item));
+			/* Restore highest priority source */
+			item->source = MAX (old_source, new->source);
 			goto NOTIFY;
 		}
 	}
@@ -1500,6 +1530,19 @@ nm_ip4_config_hash (const NMIP4Config *config, GChecksum *sum, gboolean dns_only
 	}
 }
 
+/**
+ * nm_ip4_config_equal:
+ * @a: first config to compare
+ * @b: second config to compare
+ *
+ * Compares two #NMIP4Configs for basic equality.  This means that all
+ * attributes must exist in the same order in both configs (addresses, routes,
+ * domains, DNS servers, etc) but some attributes (address lifetimes, and address
+ * and route sources) are ignored.
+ *
+ * Returns: %TRUE if the configurations are basically equal to each other,
+ * %FALSE if not
+ */
 gboolean
 nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b)
 {
