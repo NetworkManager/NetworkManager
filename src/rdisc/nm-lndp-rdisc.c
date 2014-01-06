@@ -48,7 +48,7 @@ G_DEFINE_TYPE (NMLNDPRDisc, nm_lndp_rdisc, NM_TYPE_RDISC)
 /******************************************************************/
 
 NMRDisc *
-nm_lndp_rdisc_new (int ifindex, const char *ifname)
+nm_lndp_rdisc_new (int ifindex, const char *ifname, gint32 max_addresses)
 {
 	NMRDisc *rdisc;
 	NMLNDPRDiscPrivate *priv;
@@ -59,6 +59,7 @@ nm_lndp_rdisc_new (int ifindex, const char *ifname)
 
 	rdisc->ifindex = ifindex;
 	rdisc->ifname = g_strdup (ifname);
+	rdisc->max_addresses = max_addresses;
 
 	priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 	error = ndp_open (&priv->ndp);
@@ -112,6 +113,13 @@ add_address (NMRDisc *rdisc, const NMRDiscAddress *new)
 			return changed;
 		}
 	}
+
+	/* we create at most max_addresses autoconf addresses. This is different from
+	 * what the kernel does, because it considers *all* addresses (including
+	 * static and other temporary addresses).
+	 **/
+	if (rdisc->max_addresses && rdisc->addresses->len >= rdisc->max_addresses)
+		return FALSE;
 
 	g_array_insert_val (rdisc->addresses, i, *new);
 	return TRUE;

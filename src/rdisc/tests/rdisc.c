@@ -12,7 +12,7 @@ main (int argc, char **argv)
 {
 	GMainLoop *loop;
 	NMRDisc *rdisc;
-	NMRDisc *(*new) (int ifindex, const char *ifname) = nm_lndp_rdisc_new;
+	NMRDisc *(*new) (int ifindex, const char *ifname, gint32 max_addresses) = nm_lndp_rdisc_new;
 	int ifindex = 1;
 	char ifname[IF_NAMESIZE];
 	char mac[6] = { 0x02, 0xaa, 0xbb, 0xcc, 0xdd, 0xee };
@@ -34,7 +34,7 @@ main (int argc, char **argv)
 		}
 	}
 
-	rdisc = new (ifindex, ifname);
+	rdisc = new (ifindex, ifname, 0);
 	if (!rdisc)
 		return EXIT_FAILURE;
 

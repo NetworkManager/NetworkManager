@@ -44,6 +44,6 @@ typedef struct {
 
 GType nm_lndp_rdisc_get_type (void);
 
-NMRDisc *nm_lndp_rdisc_new (int ifindex, const char *ifname);
+NMRDisc *nm_lndp_rdisc_new (int ifindex, const char *ifname, gint32 max_addresses);
 
 #endif /* NM_LNDP_RDISC_H */

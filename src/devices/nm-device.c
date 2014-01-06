@@ -477,6 +477,21 @@ restore_ip6_properties (NMDevice *self)
 	}
 }
 
+static gint32
+sysctl_get_ipv6_max_addresses (const char *dev)
+{
+	gint32 max_addresses = 16;
+	char *path;
+
+	g_return_val_if_fail (dev && *dev, max_addresses);
+
+	path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/max_addresses", dev);
+	max_addresses = nm_platform_sysctl_get_int32 (path, max_addresses);
+	g_free (path);
+
+	return max_addresses;
+}
+
 /*
  * Get driver info from SIOCETHTOOL ioctl() for 'iface'
  * Returns driver and firmware versions to 'driver_version and' 'firmware_version'
@@ -3320,6 +3335,11 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 		/* Rebuild address list from router discovery cache. */
 		nm_ip6_config_reset_addresses (priv->ac_ip6_config);
 
+		/* rdisc->addresses contains at most max_addresses entries.
+		 * This is different from what the kernel does, which
+		 * also counts static and temporary addresses when checking
+		 * max_addresses.
+		 **/
 		for (i = 0; i < rdisc->addresses->len; i++) {
 			NMRDiscAddress *discovered_address = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
 			NMPlatformIP6Address address;
@@ -3428,7 +3448,8 @@ addrconf6_start (NMDevice *self)
 		priv->ac_ip6_config = NULL;
 	}
 
-	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self), ip_iface);
+	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self), ip_iface,
+	                                 sysctl_get_ipv6_max_addresses (ip_iface));
 	if (!priv->rdisc) {
 		nm_log_err (LOGD_IP6, "(%s): failed to start router discovery.", ip_iface);
 		return FALSE;
