@@ -1365,12 +1365,13 @@ make_ip4_setting (shvarFile *ifcfg,
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		value = svGetValue (ifcfg, "DHCP_HOSTNAME", FALSE);
 		if (value && strlen (value))
-			g_object_set (s_ip4,
-			              NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, value,
-			              NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME,
-			                  svTrueValue (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
-			              NULL);
+			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, value, NULL);
 		g_free (value);
+
+		g_object_set (s_ip4,
+		              NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME,
+		              svTrueValue (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
+		              NULL);
 
 		value = svGetValue (ifcfg, "DHCP_CLIENT_ID", FALSE);
 		if (value && strlen (value))
