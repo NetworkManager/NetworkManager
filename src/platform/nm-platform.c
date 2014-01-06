@@ -27,6 +27,7 @@
 #include <netlink/route/addr.h>
 
 #include "nm-platform.h"
+#include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 #include "nm-enum-types.h"
 
@@ -244,27 +245,33 @@ nm_platform_sysctl_get (const char *path)
 }
 
 /**
- * nm_platform_sysctl_get_uint:
+ * nm_platform_sysctl_get_int32:
  * @path: Absolute path to sysctl
+ * @fallback: default value, if the content of path could not be read
+ * as decimal integer.
  *
- * Returns: (unsigned integer) contents of the sysctl file, or -1 on error
+ * Returns: contents of the sysctl file parsed as s32 integer, or
+ * @fallback on error. Also, on error, @errno will be set to a non-zero
+ * value.
  */
-int
-nm_platform_sysctl_get_uint (const char *path)
+gint32
+nm_platform_sysctl_get_int32 (const char *path, gint32 fallback)
 {
-	char *value, *end;
-	long tmp;
-	int ret = -1;
+	char *value = NULL;
+	gint32 ret;
 
-	value = nm_platform_sysctl_get (path);
-	if (!value)
-		return ret;
+	g_return_val_if_fail (path, fallback);
 
-	tmp = strtoul (value, &end, 10);
-	if (!*end)
-		ret = tmp;
+	if (path)
+		value = nm_platform_sysctl_get (path);
+
+	if (!value) {
+		errno = EINVAL;
+		return fallback;
+	}
+
+	ret = nm_utils_ascii_str_to_int64 (value, 10, G_MININT32, G_MAXINT32, fallback);
 	g_free (value);
-
 	return ret;
 }
 

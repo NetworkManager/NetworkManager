@@ -281,7 +281,7 @@ typedef struct {
 	guint          linklocal6_timeout_id;
 
 	char *         ip6_disable_ipv6_path;
-	gint           ip6_disable_ipv6_save;
+	gint32         ip6_disable_ipv6_save;
 
 	char *         ip6_accept_ra_path;
 	gint32         ip6_accept_ra_save;
@@ -441,16 +441,16 @@ save_ip6_properties (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	priv->ip6_accept_ra_save = nm_platform_sysctl_get_uint (priv->ip6_accept_ra_path);
-	if (priv->ip6_accept_ra_save > 2)
+	priv->ip6_accept_ra_save = nm_platform_sysctl_get_int32 (priv->ip6_accept_ra_path, -1);
+	if (priv->ip6_accept_ra_save > 2 || priv->ip6_accept_ra_save < -1)
 		priv->ip6_accept_ra_save = -1;
 
-	priv->ip6_use_tempaddr_save = nm_platform_sysctl_get_uint (priv->ip6_use_tempaddr_path);
-	if (priv->ip6_use_tempaddr_save > 2)
+	priv->ip6_use_tempaddr_save = nm_platform_sysctl_get_int32 (priv->ip6_use_tempaddr_path, -1);
+	if (priv->ip6_use_tempaddr_save > 2 || priv->ip6_use_tempaddr_save < -1)
 		priv->ip6_use_tempaddr_save = -1;
 
-	priv->ip6_disable_ipv6_save = nm_platform_sysctl_get_uint (priv->ip6_disable_ipv6_path);
-	if (priv->ip6_disable_ipv6_save > 1)
+	priv->ip6_disable_ipv6_save = nm_platform_sysctl_get_int32 (priv->ip6_disable_ipv6_path, -1);
+	if (priv->ip6_disable_ipv6_save > 1 || priv->ip6_disable_ipv6_save < -1)
 		priv->ip6_disable_ipv6_save = -1;
 }
 
