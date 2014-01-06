@@ -95,7 +95,7 @@ nmt_newt_textbox_set_text (NmtNewtTextbox *textbox,
 {
 	NmtNewtTextboxPrivate *priv = NMT_NEWT_TEXTBOX_GET_PRIVATE (textbox);
 	char **lines;
-	int i, len;
+	int i, width;
 
 	if (!text)
 		text = "";
@@ -108,9 +108,9 @@ nmt_newt_textbox_set_text (NmtNewtTextbox *textbox,
 	priv->width = priv->height = 0;
 	lines = g_strsplit (priv->text, "\n", -1);
 	for (i = 0; lines[i]; i++) {
-		len = g_utf8_strlen (lines[i], -1);
-		if (len > priv->width)
-			priv->width = len;
+		width = nmt_newt_text_width (lines[i]);
+		if (width > priv->width)
+			priv->width = width;
 	}
 	g_free (lines);
 	priv->height = MIN (i, 1);

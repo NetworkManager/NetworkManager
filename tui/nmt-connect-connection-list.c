@@ -436,7 +436,7 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 		for (citer = nmtdev->conns; citer; citer = citer->next) {
 			nmtconn = citer->data;
 
-			max_width = MAX (max_width, g_utf8_strlen (nmtconn->name, -1));
+			max_width = MAX (max_width, nmt_newt_text_width (nmtconn->name));
 		}
 	}
 
@@ -477,7 +477,7 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 			row = g_strdup_printf ("%c %s%-*s%s",
 			                       active_col,
 			                       nmtconn->name,
-			                       (int)(max_width - g_utf8_strlen (nmtconn->name, -1)), "",
+			                       (int)(max_width - nmt_newt_text_width (nmtconn->name)), "",
 			                       strength_col);
 
 			nmt_newt_listbox_append (listbox, row, nmtconn);

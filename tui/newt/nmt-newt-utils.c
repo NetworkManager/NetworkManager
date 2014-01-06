@@ -260,6 +260,37 @@ nmt_newt_locale_from_utf8 (const char *str_utf8)
 }
 
 /**
+ * nmt_newt_text_width
+ * @str: a UTF-8 string
+ *
+ * Computes the width (in terminal columns) of @str.
+ *
+ * Returns: the width of @str
+ */
+int
+nmt_newt_text_width (const char *str)
+{
+	int width;
+	gunichar ch;
+
+	for (width = 0; *str; str = g_utf8_next_char (str)) {
+		ch = g_utf8_get_char (str);
+
+		/* Based on _vte_iso2022_unichar_width */
+		if (G_LIKELY (ch < 0x80))
+			width += 1;
+		else if (G_UNLIKELY (g_unichar_iszerowidth (ch)))
+			width += 0;
+		else if (G_UNLIKELY (g_unichar_iswide (ch)))
+			width += 2;
+		else
+			width += 1;
+	}
+
+	return width;
+}
+
+/**
  * nmt_newt_edit_string:
  * @data: data to edit
  *

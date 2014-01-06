@@ -193,15 +193,15 @@ listbox_active_changed (GObject    *object,
 	gboolean has_selection;
 
 	if (G_UNLIKELY (activate == NULL)) {
-		int activate_len, deactivate_len;
+		int activate_width, deactivate_width;
 
 		activate = _("Activate");
-		activate_len = g_utf8_strlen (activate, -1);
+		activate_width = nmt_newt_text_width (activate);
 		deactivate = _("Deactivate");
-		deactivate_len = g_utf8_strlen (deactivate, -1);
+		deactivate_width = nmt_newt_text_width (deactivate);
 
-		activate_padding = MAX (0, deactivate_len - activate_len);
-		deactivate_padding = MAX (0, activate_len - deactivate_len);
+		activate_padding = MAX (0, deactivate_width - activate_width);
+		deactivate_padding = MAX (0, activate_width - deactivate_width);
 	}
 
 	has_selection = nmt_connect_connection_list_get_selection (list, NULL, NULL, NULL, &ac);

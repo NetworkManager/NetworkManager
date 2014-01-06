@@ -164,7 +164,7 @@ usage (void)
 	g_printerr ("%s: nmtui\n", usage);
 	for (i = 0; i < num_subprograms; i++) {
 		g_printerr ("%*s  nmtui %s [%s]\n",
-		            (int) g_utf8_strlen (usage, -1), " ",
+		            nmt_newt_text_width (usage), " ",
 		            subprograms[i].name,
 		            _(subprograms[i].arg));
 	}
