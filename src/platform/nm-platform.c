@@ -1606,6 +1606,7 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 	GArray *routes;
 	NMPlatformIP4Route *route;
 	const NMPlatformIP4Route *known_route;
+	gboolean success;
 	int i;
 
 	/* Delete unknown routes */
@@ -1616,22 +1617,29 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 		if (!array_contains_ip4_route (known_routes, route))
 			nm_platform_ip4_route_delete (ifindex, route->network, route->plen, route->metric);
 	}
-	g_array_free (routes, TRUE);
 
-	if (!known_routes)
+	if (!known_routes) {
+		g_array_free (routes, TRUE);
 		return TRUE;
-
-	/* Add missing routes */
-	for (i = 0; i < known_routes->len; i++) {
-		known_route = &g_array_index (known_routes, NMPlatformIP4Route, i);
-
-		if (!nm_platform_ip4_route_add (ifindex,
-				known_route->network, known_route->plen, known_route->gateway,
-				known_route->metric, known_route->mss))
-			return FALSE;
 	}
 
-	return TRUE;
+	/* Add missing routes */
+	for (i = 0, success = TRUE; i < known_routes->len && success; i++) {
+		known_route = &g_array_index (known_routes, NMPlatformIP4Route, i);
+
+		/* Ignore routes that already exist */
+		if (!array_contains_ip4_route (routes, known_route)) {
+			success = nm_platform_ip4_route_add (ifindex,
+			                                     known_route->network,
+			                                     known_route->plen,
+			                                     known_route->gateway,
+			                                     known_route->metric,
+			                                     known_route->mss);
+		}
+	}
+
+	g_array_free (routes, TRUE);
+	return success;
 }
 
 /**
@@ -1651,6 +1659,7 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 	GArray *routes;
 	NMPlatformIP6Route *route;
 	const NMPlatformIP6Route *known_route;
+	gboolean success;
 	int i;
 
 	/* Delete unknown routes */
@@ -1662,22 +1671,29 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 		if (!array_contains_ip6_route (known_routes, route))
 			nm_platform_ip6_route_delete (ifindex, route->network, route->plen, route->metric);
 	}
-	g_array_free (routes, TRUE);
 
-	if (!known_routes)
+	if (!known_routes) {
+		g_array_free (routes, TRUE);
 		return TRUE;
-
-	/* Add missing routes */
-	for (i = 0; i < known_routes->len; i++) {
-		known_route = &g_array_index (known_routes, NMPlatformIP6Route, i);
-
-		if (!nm_platform_ip6_route_add (ifindex,
-				known_route->network, known_route->plen, known_route->gateway,
-				known_route->metric, known_route->mss))
-			return FALSE;
 	}
 
-	return TRUE;
+	/* Add missing routes */
+	for (i = 0, success = TRUE; i < known_routes->len && success; i++) {
+		known_route = &g_array_index (known_routes, NMPlatformIP6Route, i);
+
+		/* Ignore routes that already exist */
+		if (!array_contains_ip6_route (routes, known_route)) {
+			success = nm_platform_ip6_route_add (ifindex,
+			                                     known_route->network,
+			                                     known_route->plen,
+			                                     known_route->gateway,
+			                                     known_route->metric,
+			                                     known_route->mss);
+		}
+	}
+
+	g_array_free (routes, TRUE);
+	return success;
 }
 
 gboolean
