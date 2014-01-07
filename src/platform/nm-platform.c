@@ -220,6 +220,17 @@ nm_platform_check_support_libnl_extended_ifa_flags ()
 	return supported;
 }
 
+gboolean
+nm_platform_check_support_kernel_extended_ifa_flags ()
+{
+	g_return_val_if_fail (NM_IS_PLATFORM (platform), FALSE);
+
+	if (!klass->check_support_kernel_extended_ifa_flags)
+		return FALSE;
+
+	return klass->check_support_kernel_extended_ifa_flags (platform);
+}
+
 /******************************************************************/
 
 /**
