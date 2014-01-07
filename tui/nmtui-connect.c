@@ -90,10 +90,10 @@ activate_ac_state_changed (GObject    *object,
 }
 
 static void
-activation_callback (NMClient           *client,
-                     NMActiveConnection *ac,
-                     GError             *error,
-                     gpointer            user_data)
+activate_callback (NMClient           *client,
+                   NMActiveConnection *ac,
+                   GError             *error,
+                   gpointer            user_data)
 {
 	NmtSyncOp *op = user_data;
 
@@ -108,6 +108,17 @@ activation_callback (NMClient           *client,
 }
 
 static void
+add_and_activate_callback (NMClient           *client,
+                           NMActiveConnection *ac,
+                           const char         *new_connection_path,
+                           GError             *error,
+                           gpointer            user_data)
+{
+	/* We don't care about @new_connection_path, so... */
+	activate_callback (client, ac, error, user_data);
+}
+
+static void
 activate_connection (NMConnection *connection,
                      NMDevice     *device,
                      NMObject     *specific_object)
@@ -116,6 +127,7 @@ activate_connection (NMConnection *connection,
 	NMSecretAgent *agent;
 	NmtNewtWidget *label;
 	NmtSyncOp op;
+	const char *specific_object_path;
 	GError *error = NULL;
 
 	form = g_object_new (NMT_TYPE_NEWT_FORM, NULL);
@@ -126,13 +138,21 @@ activate_connection (NMConnection *connection,
 	nm_secret_agent_register (agent);
 	g_signal_connect (agent, "request-secrets", G_CALLBACK (secrets_requested), NULL);
 
+	specific_object_path = specific_object ? nm_object_get_path (specific_object) : NULL;
+
 	/* FIXME: cancel button */
 
 	nmt_sync_op_init (&op);
-	nm_client_activate_connection (nm_client,
-	                               connection, device,
-	                               specific_object ? nm_object_get_path (specific_object) : NULL,
-	                               activation_callback, &op);
+	if (connection) {
+		nm_client_activate_connection (nm_client,
+		                               connection, device, specific_object_path,
+		                               activate_callback, &op);
+	} else {
+		nm_client_add_and_activate_connection (nm_client,
+		                                       NULL, device, specific_object_path,
+		                                       add_and_activate_callback, &op);
+	}
+
 	nmt_newt_form_show (form);
 
 	if (!nmt_sync_op_wait_boolean (&op, &error)) {
