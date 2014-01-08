@@ -65,6 +65,10 @@ static gboolean impl_device_get_access_points (NMDeviceWifi *device,
                                                GPtrArray **aps,
                                                GError **err);
 
+static gboolean impl_device_get_all_access_points (NMDeviceWifi *device,
+                                                   GPtrArray **aps,
+                                                   GError **err);
+
 static void impl_device_request_scan (NMDeviceWifi *device,
                                       GHashTable *options,
                                       DBusGMethodInvocation *context);
@@ -1376,13 +1380,26 @@ impl_device_get_access_points (NMDeviceWifi *self,
 	GSList *elt;
 
 	*aps = g_ptr_array_new ();
-
 	for (elt = priv->ap_list; elt; elt = g_slist_next (elt)) {
-		NMAccessPoint * ap = NM_AP (elt->data);
+		NMAccessPoint *ap = NM_AP (elt->data);
 
 		if (nm_ap_get_ssid (ap))
 			g_ptr_array_add (*aps, g_strdup (nm_ap_get_dbus_path (ap)));
 	}
+	return TRUE;
+}
+
+static gboolean
+impl_device_get_all_access_points (NMDeviceWifi *self,
+                                   GPtrArray **aps,
+                                   GError **err)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	GSList *elt;
+
+	*aps = g_ptr_array_new ();
+	for (elt = priv->ap_list; elt; elt = g_slist_next (elt))
+		g_ptr_array_add (*aps, g_strdup (nm_ap_get_dbus_path (NM_AP (elt->data))));
 	return TRUE;
 }
 

@@ -6,11 +6,27 @@
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_get_access_points"/>
       <arg name="access_points" type="ao" direction="out">
         <tp:docstring>
-          List of access point object paths
+          List of access point object paths.
         </tp:docstring>
       </arg>
       <tp:docstring>
-        Get the list of access points visible to this device.
+        DEPRECATED.  Get the list of access points visible to this device.  Note
+        that this list does not include access points which hide their SSID.  To
+        retrieve a list of all access points (including hidden ones) use the
+        GetAllAccessPoints() method.
+      </tp:docstring>
+    </method>
+
+    <method name="GetAllAccessPoints">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_get_all_access_points"/>
+      <arg name="access_points" type="ao" direction="out">
+        <tp:docstring>
+          List of access point object paths.
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        Get the list of all access points visible to this device, including
+        hidden ones for which the SSID is not yet known.
       </tp:docstring>
     </method>
 
