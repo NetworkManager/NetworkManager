@@ -60,17 +60,6 @@ typedef struct {
 static void reload_complete (NMObject *object);
 
 typedef struct {
-	PropertyInfo pi;
-
-	NMObject *self;
-	DBusGProxy *proxy;
-
-	char *get_method;
-	NMPseudoPropertyChangedFunc added_func;
-	NMPseudoPropertyChangedFunc removed_func;
-} PseudoPropertyInfo;
-
-typedef struct {
 	DBusGConnection *connection;
 	DBusGProxy *bus_proxy;
 	gboolean nm_running;
@@ -79,7 +68,6 @@ typedef struct {
 	DBusGProxy *properties_proxy;
 	GSList *property_interfaces;
 	GSList *property_tables;
-	GHashTable *pseudo_properties;
 	NMObject *parent;
 	gboolean suppress_property_updates;
 
@@ -342,9 +330,6 @@ finalize (GObject *object)
 
 	g_slist_free_full (priv->property_tables, (GDestroyNotify) g_hash_table_destroy);
 	g_free (priv->path);
-
-	if (priv->pseudo_properties)
-		g_hash_table_destroy (priv->pseudo_properties);
 
 	G_OBJECT_CLASS (nm_object_parent_class)->finalize (object);
 }
@@ -1237,8 +1222,6 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 	GHashTable *props = NULL;
 	GSList *p;
-	GHashTableIter pp;
-	gpointer name, info;
 
 	if (!priv->property_interfaces || !priv->nm_running)
 		return TRUE;
@@ -1253,12 +1236,6 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 
 		process_properties_changed (object, props, TRUE);
 		g_hash_table_destroy (props);
-	}
-
-	if (priv->pseudo_properties) {
-		g_hash_table_iter_init (&pp, priv->pseudo_properties);
-		while (g_hash_table_iter_next (&pp, &name, &info))
-			_nm_object_reload_pseudo_property (object, name);
 	}
 
 	return TRUE;
@@ -1361,166 +1338,6 @@ _nm_object_set_property (NMObject *object,
 }
 
 static void
-pseudo_property_object_created (GObject *obj, const char *path, gpointer user_data)
-{
-	PseudoPropertyInfo *ppi = user_data;
-
-	if (obj) {
-		GPtrArray **list_p = (GPtrArray **)ppi->pi.field;
-
-		if (!*list_p)
-			*list_p = g_ptr_array_new ();
-		add_to_object_array_unique (*list_p, obj);
-		ppi->added_func (ppi->self, NM_OBJECT (obj));
-	}
-}
-
-static void
-pseudo_property_added (DBusGProxy *proxy, const char *path, gpointer user_data)
-{
-	PseudoPropertyInfo *ppi = user_data;
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (ppi->self);
-	NMObject *obj;
-
-	if (priv->suppress_property_updates)
-		return;
-
-	obj = _nm_object_cache_get (path);
-	if (obj)
-		pseudo_property_object_created (G_OBJECT (obj), path, ppi);
-	else {
-		_nm_object_create_async (ppi->pi.object_type, priv->connection, path,
-		                         pseudo_property_object_created, ppi);
-	}
-}
-
-static void
-pseudo_property_removed (DBusGProxy *proxy, const char *path, gpointer user_data)
-{
-	PseudoPropertyInfo *ppi = user_data;
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (ppi->self);
-	GPtrArray *list = *(GPtrArray **)ppi->pi.field;
-	NMObject *obj = NULL;
-	int i;
-
-	if (!list || priv->suppress_property_updates)
-		return;
-
-	for (i = 0; i < list->len; i++) {
-		obj = list->pdata[i];
-		if (!strcmp (path, nm_object_get_path (obj))) {
-			g_ptr_array_remove_index (list, i);
-			ppi->removed_func (ppi->self, obj);
-			g_object_unref (obj);
-			return;
-		}
-	}
-}
-
-static void
-free_pseudo_property (PseudoPropertyInfo *ppi)
-{
-	g_object_unref (ppi->proxy);
-	g_free (ppi->get_method);
-	g_slice_free (PseudoPropertyInfo, ppi);
-}
-
-void
-_nm_object_register_pseudo_property (NMObject *object,
-                                     DBusGProxy *proxy,
-                                     const char *name,
-                                     gpointer field,
-                                     GType object_type,
-                                     NMPseudoPropertyChangedFunc added_func,
-                                     NMPseudoPropertyChangedFunc removed_func)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	PseudoPropertyInfo *ppi;
-	int basename_len;
-	char *added_signal, *removed_signal;
-
-	g_return_if_fail (NM_IS_OBJECT (object));
-	g_return_if_fail (proxy != NULL);
-
-	ppi = g_slice_new0 (PseudoPropertyInfo);
-	ppi->pi.field = field;
-	ppi->pi.object_type = object_type;
-	ppi->self = object;
-	ppi->proxy = g_object_ref (proxy);
-	ppi->added_func = added_func;
-	ppi->removed_func = removed_func;
-
-	basename_len = strlen (name);
-	if (basename_len > 4 && !strcmp (name + basename_len - 4, "List"))
-		basename_len -= 4;
-	else if (basename_len > 1 && name[basename_len - 1] == 's')
-		basename_len--;
-	else
-		g_assert_not_reached ();
-
-	ppi->get_method = g_strdup_printf ("Get%s", name);
-	added_signal = g_strdup_printf ("%.*sAdded", basename_len, name);
-	removed_signal = g_strdup_printf ("%.*sRemoved", basename_len, name);
-
-	if (!priv->pseudo_properties) {
-		priv->pseudo_properties = g_hash_table_new_full (g_str_hash, g_str_equal,
-		                                                 g_free, (GDestroyNotify) free_pseudo_property);
-	}
-	g_hash_table_insert (priv->pseudo_properties, g_strdup (name), ppi);
-
-	dbus_g_proxy_add_signal (proxy, added_signal,
-	                         DBUS_TYPE_G_OBJECT_PATH,
-	                         G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (proxy, added_signal,
-	                             G_CALLBACK (pseudo_property_added),
-	                             ppi, NULL);
-
-	dbus_g_proxy_add_signal (proxy, removed_signal,
-	                         DBUS_TYPE_G_OBJECT_PATH,
-	                         G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (proxy, removed_signal,
-	                             G_CALLBACK (pseudo_property_removed),
-	                             ppi, NULL);
-
-	g_free (added_signal);
-	g_free (removed_signal);
-}
-
-void
-_nm_object_reload_pseudo_property (NMObject *object,
-                                   const char *name)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	PseudoPropertyInfo *ppi;
-	GPtrArray *temp;
-	GError *error = NULL;
-	GValue value = G_VALUE_INIT;
-
-	g_return_if_fail (NM_IS_OBJECT (object));
-	g_return_if_fail (name != NULL);
-
-	if (!NM_OBJECT_GET_PRIVATE (object)->nm_running)
-		return;
-
-	ppi = g_hash_table_lookup (priv->pseudo_properties, name);
-	g_return_if_fail (ppi != NULL);
-
-	if (!dbus_g_proxy_call (ppi->proxy, ppi->get_method, &error,
-	                        G_TYPE_INVALID,
-	                        DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &temp,
-	                        G_TYPE_INVALID)) {
-		g_warning ("%s: error calling %s: %s", __func__, ppi->get_method, error->message);
-		g_error_free (error);
-		return;
-	}
-
-	g_value_init (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH);
-	g_value_take_boxed (&value, temp);
-	handle_object_array_property (object, NULL, &value, &ppi->pi, TRUE);
-	g_value_unset (&value);
-}
-
-static void
 reload_complete (NMObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
@@ -1573,36 +1390,6 @@ reload_got_properties (DBusGProxy *proxy, DBusGProxyCall *call,
 		reload_complete (object);
 }
 
-static void
-reload_got_pseudo_property (DBusGProxy *proxy, DBusGProxyCall *call,
-                            gpointer user_data)
-{
-	PseudoPropertyInfo *ppi = user_data;
-	NMObject *object = ppi->self;
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
-	GPtrArray *temp;
-	GValue value = G_VALUE_INIT;
-	GError *error = NULL;
-
-	if (dbus_g_proxy_end_call (proxy, call, &error,
-	                           DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &temp,
-	                           G_TYPE_INVALID)) {
-		g_value_init (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH);
-		g_value_take_boxed (&value, temp);
-		if (!priv->suppress_property_updates)
-			handle_object_array_property (object, NULL, &value, &ppi->pi, FALSE);
-		g_value_unset (&value);
-	} else {
-		if (priv->reload_error)
-			g_error_free (error);
-		else
-			priv->reload_error = error;
-	}
-
-	if (--priv->reload_remaining == 0)
-		reload_complete (object);
-}
-
 void
 _nm_object_reload_properties_async (NMObject *object, GAsyncReadyCallback callback, gpointer user_data)
 {
@@ -1613,7 +1400,7 @@ _nm_object_reload_properties_async (NMObject *object, GAsyncReadyCallback callba
 	simple = g_simple_async_result_new (G_OBJECT (object), callback,
 	                                    user_data, _nm_object_reload_properties_async);
 
-	if (!priv->property_interfaces && !priv->pseudo_properties) {
+	if (!priv->property_interfaces) {
 		g_simple_async_result_complete_in_idle (simple);
 		g_object_unref (simple);
 		return;
@@ -1634,21 +1421,6 @@ _nm_object_reload_properties_async (NMObject *object, GAsyncReadyCallback callba
 		                         reload_got_properties, object, NULL,
 		                         G_TYPE_STRING, p->data,
 		                         G_TYPE_INVALID);
-	}
-
-	if (priv->pseudo_properties) {
-		GHashTableIter iter;
-		gpointer key, value;
-		PseudoPropertyInfo *ppi;
-
-		g_hash_table_iter_init (&iter, priv->pseudo_properties);
-		while (g_hash_table_iter_next (&iter, &key, &value)) {
-			ppi = value;
-			priv->reload_remaining++;
-			dbus_g_proxy_begin_call (ppi->proxy, ppi->get_method,
-			                         reload_got_pseudo_property, ppi, NULL,
-			                         G_TYPE_INVALID);
-		}
 	}
 }
 

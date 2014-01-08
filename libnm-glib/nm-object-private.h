@@ -59,17 +59,6 @@ gboolean _nm_object_reload_properties_finish (NMObject *object,
                                               GAsyncResult *result,
                                               GError **error);
 
-typedef void (*NMPseudoPropertyChangedFunc) (NMObject *self, NMObject *changed);
-void _nm_object_register_pseudo_property (NMObject *object,
-                                          DBusGProxy *proxy,
-                                          const char *name,
-                                          gpointer field,
-                                          GType object_type,
-                                          NMPseudoPropertyChangedFunc added_func,
-                                          NMPseudoPropertyChangedFunc removed_func);
-void _nm_object_reload_pseudo_property   (NMObject *object,
-                                          const char *name);
-
 void _nm_object_queue_notify (NMObject *object, const char *property);
 
 void _nm_object_suppress_property_updates (NMObject *object, gboolean suppress);
