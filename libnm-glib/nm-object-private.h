@@ -37,6 +37,7 @@ typedef struct {
 	gpointer field;
 	PropertyMarshalFunc func;
 	GType object_type;
+	const char *signal_prefix;
 } NMPropertiesInfo;
 
 DBusGProxy *_nm_object_new_proxy (NMObject *self,

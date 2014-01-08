@@ -24,6 +24,7 @@
 #include <string.h>
 #include <gio/gio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <nm-utils.h>
 #include "NetworkManager.h"
 #include "nm-object.h"
@@ -52,8 +53,8 @@ static GHashTable *type_funcs, *type_async_funcs;
 typedef struct {
 	PropertyMarshalFunc func;
 	GType object_type;
-
 	gpointer field;
+	const char *signal_prefix;
 } PropertyInfo;
 
 static void reload_complete (NMObject *object);
@@ -761,31 +762,121 @@ typedef struct {
 	const char *property_name;
 } ObjectCreatedData;
 
+/* Places items from 'needles' that are not in 'haystack' into 'diff' */
+static void
+array_diff (GPtrArray *needles, GPtrArray *haystack, GPtrArray *diff)
+{
+	guint i, j;
+	GObject *obj;
+
+	g_assert (needles);
+	g_assert (haystack);
+	g_assert (diff);
+
+	for (i = 0; i < needles->len; i++) {
+		obj = g_ptr_array_index (needles, i);
+
+		for (j = 0; j < haystack->len; j++) {
+			if (g_ptr_array_index (haystack, j) == obj)
+				break;
+		}
+
+		if (j == haystack->len)
+			g_ptr_array_add (diff, obj);
+	}
+}
+
+static void
+emit_added_removed_signal (NMObject *self,
+                           const char *signal_prefix,
+                           NMObject *changed,
+                           gboolean added)
+{
+	char buf[50];
+	int ret;
+
+	ret = snprintf (buf, sizeof (buf), "%s-%s", signal_prefix, added ? "added" : "removed");
+	g_assert (ret > 0);
+	g_assert (ret < sizeof (buf));
+	g_signal_emit_by_name (self, buf, changed);
+}
+
 static void
 object_property_complete (ObjectCreatedData *odata)
 {
 	NMObject *self = odata->self;
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	PropertyInfo *pi = odata->pi;
+	gboolean different = TRUE;
 
 	if (odata->array) {
-		GPtrArray **array = pi->field;
+		GPtrArray *old = *((GPtrArray **) pi->field);
+		GPtrArray *new;
 		int i;
 
-		if (*array)
-			g_boxed_free (NM_TYPE_OBJECT_ARRAY, *array);
-		*array = g_ptr_array_sized_new (odata->length);
+		/* Build up new array */
+		new = g_ptr_array_sized_new (odata->length);
 		for (i = 0; i < odata->length; i++)
-			add_to_object_array_unique (*array, odata->objects[i]);
+			add_to_object_array_unique (new, odata->objects[i]);
+
+		if (pi->signal_prefix) {
+			GPtrArray *added = g_ptr_array_sized_new (3);
+			GPtrArray *removed = g_ptr_array_sized_new (3);
+
+			if (old) {
+				/* Find objects in 'old' that do not exist in 'new' */
+				array_diff (old, new, removed);
+
+				/* Find objects in 'new' that do not exist in old */
+				array_diff (new, old, added);
+			} else {
+				for (i = 0; i < new->len; i++)
+					g_ptr_array_add (added, g_ptr_array_index (new, i));
+			}
+
+			*((GPtrArray **) pi->field) = new;
+
+			/* Emit added & removed */
+			for (i = 0; i < removed->len; i++) {
+				emit_added_removed_signal (self,
+				                           pi->signal_prefix,
+				                           g_ptr_array_index (removed, i),
+				                           FALSE);
+			}
+
+			for (i = 0; i < added->len; i++) {
+				emit_added_removed_signal (self,
+				                           pi->signal_prefix,
+				                           g_ptr_array_index (added, i),
+				                           TRUE);
+			}
+
+			different = removed->len || added->len;
+			g_ptr_array_free (added, TRUE);
+			g_ptr_array_free (removed, TRUE);
+		} else {
+			/* No added/removed signals to send, just replace the property with
+			 * the new values.
+			 */
+			*((GPtrArray **) pi->field) = new;
+			different = TRUE;
+		}
+
+		/* Free old array last since it will release references, thus freeing
+		 * any objects in the 'removed' array.
+		 */
+		if (old)
+			g_boxed_free (NM_TYPE_OBJECT_ARRAY, old);
 	} else {
 		GObject **obj_p = pi->field;
 
+		different = (*obj_p != odata->objects[0]);
 		if (*obj_p)
 			g_object_unref (*obj_p);
 		*obj_p = odata->objects[0];
 	}
 
-	if (odata->property_name)
+	if (different && odata->property_name)
 		_nm_object_queue_notify (self, odata->property_name);
 
 	if (priv->reload_results && --priv->reload_remaining == 0)
@@ -1135,6 +1226,7 @@ _nm_object_register_properties (NMObject *object,
 		pi->func = tmp->func ? tmp->func : demarshal_generic;
 		pi->object_type = tmp->object_type;
 		pi->field = tmp->field;
+		pi->signal_prefix = tmp->signal_prefix;
 		g_hash_table_insert (instance, g_strdup (tmp->name), pi);
 	}
 }
