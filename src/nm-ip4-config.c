@@ -1688,5 +1688,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 
 	g_object_class_install_properties (object_class, LAST_PROP, obj_properties);
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (config_class), &dbus_glib_nm_ip4_config_object_info);
+	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
+	                                        G_TYPE_FROM_CLASS (config_class),
+	                                        &dbus_glib_nm_ip4_config_object_info);
 }
