@@ -62,6 +62,7 @@ GQuark nm_device_wimax_error_quark (void);
 #define NM_DEVICE_WIMAX_CINR             "cinr"
 #define NM_DEVICE_WIMAX_TX_POWER         "tx-power"
 #define NM_DEVICE_WIMAX_BSID             "bsid"
+#define NM_DEVICE_WIMAX_NSPS             "nsps"
 
 typedef struct {
 	NMDevice parent;
