@@ -67,6 +67,7 @@ GQuark nm_device_wifi_error_quark (void);
 #define NM_DEVICE_WIFI_BITRATE             "bitrate"
 #define NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT "active-access-point"
 #define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
+#define NM_DEVICE_WIFI_ACCESS_POINTS       "access-points"
 
 typedef struct {
 	NMDevice parent;
