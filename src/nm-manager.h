@@ -65,6 +65,7 @@ typedef enum {
 #define NM_MANAGER_CONNECTIVITY "connectivity"
 #define NM_MANAGER_PRIMARY_CONNECTION "primary-connection"
 #define NM_MANAGER_ACTIVATING_CONNECTION "activating-connection"
+#define NM_MANAGER_DEVICES "devices"
 
 /* Not exported */
 #define NM_MANAGER_HOSTNAME "hostname"
