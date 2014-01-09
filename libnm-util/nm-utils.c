@@ -1060,24 +1060,27 @@ nm_utils_ip4_routes_to_gvalue (GSList *list, GValue *value)
 guint32
 nm_utils_ip4_netmask_to_prefix (guint32 netmask)
 {
-	guchar *p, *end;
-	guint32 prefix = 0;
+	guint32 prefix;
+	guint8 v;
+	const guint8 *p = (guint8 *) &netmask;
 
-	p = (guchar *) &netmask;
-	end = p + sizeof (guint32);
-
-	while ((*p == 0xFF) && p < end) {
-		prefix += 8;
-		p++;
+	if (p[3]) {
+		prefix = 24;
+		v = p[3];
+	} else if (p[2]) {
+		prefix = 16;
+		v = p[2];
+	} else if (p[1]) {
+		prefix = 8;
+		v = p[1];
+	} else {
+		prefix = 0;
+		v = p[0];
 	}
 
-	if (p < end) {
-		guchar v = *p;
-
-		while (v) {
-			prefix++;
-			v <<= 1;
-		}
+	while (v) {
+		prefix++;
+		v <<= 1;
 	}
 
 	return prefix;
@@ -1092,16 +1095,7 @@ nm_utils_ip4_netmask_to_prefix (guint32 netmask)
 guint32
 nm_utils_ip4_prefix_to_netmask (guint32 prefix)
 {
-	guint32 msk = 0x80000000;
-	guint32 netmask = 0;
-
-	while (prefix > 0) {
-		netmask |= msk;
-		msk >>= 1;
-		prefix--;
-	}
-
-	return (guint32) htonl (netmask);
+	return prefix < 32 ? ~htonl(0xFFFFFFFF >> prefix) : 0xFFFFFFFF;
 }
 
 

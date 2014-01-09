@@ -1731,6 +1731,60 @@ test_connection_changed_cb (NMConnection *connection, gboolean *data)
 	*data = TRUE;
 }
 
+static void
+test_ip4_prefix_to_netmask (void)
+{
+	int i;
+
+	for (i = 0; i<=32; i++) {
+		guint32 netmask = nm_utils_ip4_prefix_to_netmask (i);
+		int plen = nm_utils_ip4_netmask_to_prefix (netmask);
+
+		g_assert_cmpint (i, ==, plen);
+		{
+			guint32 msk = 0x80000000;
+			guint32 netmask2 = 0;
+			guint32 prefix = i;
+			while (prefix > 0) {
+				netmask2 |= msk;
+				msk >>= 1;
+				prefix--;
+			}
+			g_assert_cmpint (netmask, ==, (guint32) htonl (netmask2));
+		}
+	}
+}
+
+static void
+test_ip4_netmask_to_prefix (void)
+{
+	int i, j;
+
+	GRand *rand = g_rand_new ();
+
+	g_rand_set_seed (rand, 1);
+
+	for (i = 2; i<=32; i++) {
+		guint32 netmask = nm_utils_ip4_prefix_to_netmask (i);
+		guint32 netmask_lowest_bit = netmask & ~nm_utils_ip4_prefix_to_netmask (i-1);
+
+		g_assert_cmpint (i, ==, nm_utils_ip4_netmask_to_prefix (netmask));
+
+		for (j = 0; j < 20; j++) {
+			guint32 r = g_rand_int (rand);
+			guint32 netmask_holey;
+
+			netmask_holey = (netmask & r) | netmask_lowest_bit;
+
+			/* create an invalid netmask with holes and check that
+			 * the function does something resonable. */
+			g_assert_cmpint (i, ==, nm_utils_ip4_netmask_to_prefix (netmask_holey));
+		}
+	}
+
+	g_rand_free (rand);
+}
+
 #define ASSERT_CHANGED(statement) \
 { \
 	changed = FALSE; \
@@ -2218,6 +2272,8 @@ int main (int argc, char **argv)
 	test_hwaddr_aton_ib_normal ();
 	test_hwaddr_aton_no_leading_zeros ();
 	test_hwaddr_aton_malformed ();
+	test_ip4_prefix_to_netmask ();
+	test_ip4_netmask_to_prefix ();
 
 	test_connection_changed_signal ();
 	test_setting_connection_changed_signal ();

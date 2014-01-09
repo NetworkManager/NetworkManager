@@ -100,60 +100,6 @@ nm_spawn_process (const char *args)
 	return status;
 }
 
-/*
- * nm_utils_ip4_netmask_to_prefix
- *
- * Figure out the network prefix from a netmask.  Netmask
- * MUST be in network byte order.
- *
- */
-guint32
-nm_utils_ip4_netmask_to_prefix (guint32 netmask)
-{
-	guchar *p, *end;
-	guint32 prefix = 0;
-
-	p = (guchar *) &netmask;
-	end = p + sizeof (guint32);
-
-	while ((*p == 0xFF) && p < end) {
-		prefix += 8;
-		p++;
-	}
-
-	if (p < end) {
-		guchar v = *p;
-
-		while (v) {
-			prefix++;
-			v <<= 1;
-		}
-	}
-
-	return prefix;
-}
-
-/*
- * nm_utils_ip4_prefix_to_netmask
- *
- * Figure out the netmask from a prefix.
- *
- */
-guint32
-nm_utils_ip4_prefix_to_netmask (guint32 prefix)
-{
-	guint32 msk = 0x80000000;
-	guint32 netmask = 0;
-
-	while (prefix > 0) {
-		netmask |= msk;
-		msk >>= 1;
-		prefix--;
-	}
-
-	return (guint32) htonl (netmask);
-}
-
 gboolean
 nm_match_spec_string (const GSList *specs, const char *match)
 {
