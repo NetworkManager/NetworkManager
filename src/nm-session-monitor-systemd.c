@@ -234,18 +234,19 @@ nm_session_monitor_uid_has_session (NMSessionMonitor *monitor,
                                     const char **out_user,
                                     GError **error)
 {
-	int ret;
+	int num_sessions;
 
 	if (!nm_session_uid_to_user (uid, out_user, error))
 		return FALSE;
 
-	ret = sd_uid_get_sessions (uid, FALSE, NULL) > 0;
-	if (ret < 0) {
+	/* Get all sessions (including inactive ones) for the user */
+	num_sessions = sd_uid_get_sessions (uid, 0, NULL);
+	if (num_sessions < 0) {
 		nm_log_warn (LOGD_CORE, "Failed to get systemd sessions for uid %d: %d",
-		             uid, ret);
+		             uid, num_sessions);
 		return FALSE;
 	}
-	return ret > 0 ? TRUE : FALSE;
+	return num_sessions > 0;
 }
 
 gboolean
@@ -253,13 +254,14 @@ nm_session_monitor_uid_active (NMSessionMonitor *monitor,
                                uid_t uid,
                                GError **error)
 {
-	int ret;
+	int num_sessions;
 
-	ret = sd_uid_get_sessions (uid, TRUE, NULL) > 0;
-	if (ret < 0) {
+	/* Get active sessions for the user */
+	num_sessions = sd_uid_get_sessions (uid, 1, NULL);
+	if (num_sessions < 0) {
 		nm_log_warn (LOGD_CORE, "Failed to get active systemd sessions for uid %d: %d",
-		             uid, ret);
+		             uid, num_sessions);
 		return FALSE;
 	}
-	return ret > 0 ? TRUE : FALSE;
+	return num_sessions > 0;
 }
