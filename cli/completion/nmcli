@@ -13,63 +13,19 @@ _nmcli_list_nl()
     COMPREPLY=( $( compgen -W '$1' -- $cur ) )
 }
 
-_nmcli_con_id()
+_nmcli_con_show()
 {
-    echo "$(nmcli -t -f NAME con show c 2>/dev/null)"
+    nmcli -t -f "$1" connection show "$2" 2>/dev/null
 }
 
-_nmcli_con_id_active()
+_nmcli_wifi_list()
 {
-    echo "$(nmcli -t -f NAME con show a 2>/dev/null)"
+    nmcli -t -f "$1" device wifi list 2>/dev/null
 }
 
-_nmcli_con_uuid()
+_nmcli_dev_status()
 {
-    echo "$(nmcli -t -f UUID con show c 2>/dev/null)"
-}
-
-_nmcli_con_path()
-{
-    echo "$(nmcli -t -f DBUS-PATH con show c 2>/dev/null)"
-}
-
-_nmcli_con_apath()
-{
-    echo "$(nmcli -t -f DBUS-PATH con show a 2>/dev/null)"
-}
-
-_nmcli_ap_ssid()
-{
-    echo "$(nmcli -t -f SSID dev wifi list 2>/dev/null)"
-
-    # without quotes
-    #ssids="$(nmcli -t -f SSID dev wifi list 2>/dev/null)"
-    #local IFS=$'\n'
-    #for ssid in $ssids; do
-    #   temp="${ssid%\'}"
-    #   temp="${temp#\'}"
-    #   echo "$temp"
-    #done
-}
-
-_nmcli_device_wifi_list_SSID()
-{
-    echo "$(nmcli -t -f SSID device wifi list 2>/dev/null | sort | uniq)"
-}
-
-_nmcli_ap_bssid()
-{
-    echo "$(nmcli -e no -t -f BSSID dev wifi list 2>/dev/null)"
-}
-
-_nmcli_NM_devices()
-{
-    echo "$(nmcli -t -f DEVICE dev status 2>/dev/null)"
-}
-
-_nmcli_NM_dev_MAC()
-{
-    echo "$(nmcli -t dev show | grep HWADDR | cut -d':' -f2- | sort | uniq)"
+    nmcli -t -f "$1" device status 2>/dev/null
 }
 
 _nmcli_array_has_value() {
@@ -313,9 +269,9 @@ _nmcli_complete_COMMAND_ARGS()
             master)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     if [[ "${words[1]}" = "" ]]; then
-                        _nmcli_list_nl "$(_nmcli_NM_devices)"
+                        _nmcli_list_nl "$(_nmcli_dev_status DEVICE)"
                     else
-                        _nmcli_list_nl "$(printf "%s\n%s\n%s" "$(_nmcli_NM_devices)" "$(_nmcli_con_uuid)")"
+                        _nmcli_list_nl "$(printf "%s\n%s\n%s" "$(_nmcli_dev_status DEVICE)" "$(_nmcli_con_show UUID configured)")"
                    fi
                    return 0
                 fi
@@ -323,9 +279,9 @@ _nmcli_complete_COMMAND_ARGS()
             dev)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     if [[ "${words[1]}" = "" ]]; then
-                        _nmcli_list_nl "$(_nmcli_NM_devices)"
+                        _nmcli_list_nl "$(_nmcli_dev_status DEVICE)"
                     else
-                        _nmcli_list_nl "$(printf "%s\n%s\n%s" "$(_nmcli_NM_devices)" "$(_nmcli_ap_bssid)" "$(_nmcli_con_uuid)")"
+                        _nmcli_list_nl "$(printf "%s\n%s\n%s" "$(_nmcli_dev_status DEVICE)" "$(_nmcli_wifi_list BSSID)" "$(_nmcli_con_show UUID configured)")"
                    fi
                    return 0
                 fi
@@ -333,7 +289,7 @@ _nmcli_complete_COMMAND_ARGS()
             primary| \
             ifname)
                 if [[ "${#words[@]}" -eq 2 ]]; then
-                    _nmcli_list_nl "$(_nmcli_NM_devices)"
+                    _nmcli_list_nl "$(_nmcli_dev_status DEVICE)"
                    return 0
                 fi
                 ;;
@@ -424,14 +380,14 @@ _nmcli_complete_COMMAND_ARGS()
                 ;;
             ssid)
                 if [[ "${#words[@]}" -eq 2 ]]; then
-                    _nmcli_list_nl "$(_nmcli_device_wifi_list_SSID)"
+                    _nmcli_list_nl "$(_nmcli_wifi_list SSID)"
                     return 0
                 fi
                 ;;
             ap| \
             bssid)
                 if [[ "${#words[@]}" -eq 2 ]]; then
-                    _nmcli_list_nl "$(_nmcli_ap_bssid)"
+                    _nmcli_list_nl "$(_nmcli_wifi_list BSSID)"
                     return 0
                 fi
                 ;;
@@ -484,35 +440,35 @@ _nmcli_complete_COMMAND_CONNECTION()
     case "${words[0]}" in
         id)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list_nl "$(_nmcli_con_id)"
+                _nmcli_list_nl "$(_nmcli_con_show NAME configured)"
                 return 0
             fi
             words=("${words[@]:2}")
             ;;
         uuid)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list_nl "$(_nmcli_con_uuid)"
+                _nmcli_list_nl "$(_nmcli_con_show UUID configured)"
                 return 0
             fi
             words=("${words[@]:2}")
             ;;
         path)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list_nl "$(_nmcli_con_path)"
+                _nmcli_list_nl "$(_nmcli_con_show DBUS-PATH configured)"
                 return 0
             fi
             words=("${words[@]:2}")
             ;;
         apath)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list_nl "$(_nmcli_con_apath)"
+                _nmcli_list_nl "$(_nmcli_con_show DBUS-PATH active)"
                 return 0
             fi
             words=("${words[@]:2}")
             ;;
         ifname)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_list_nl "$(_nmcli_NM_devices)"
+                _nmcli_list_nl "$(_nmcli_dev_status DEVICE)"
                 return 0
             fi
             words=("${words[@]:2}")
@@ -624,7 +580,7 @@ _nmcli()
                             case "${words[2]}" in
                                 c|co|con|conf|confi|config|configu|configur|configure|configured)
                                     if [[ ${#words[@]} -eq 4 ]]; then
-                                        _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
+                                        _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
                                     else
                                         words=("${words[@]:3}")
                                         OPTIONS=(id uuid path)
@@ -633,7 +589,7 @@ _nmcli()
                                     ;;
                                 a|ac|act|acti|activ|active)
                                     if [[ ${#words[@]} -eq 4 ]]; then
-                                        _nmcli_list_nl "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_id_active)")"
+                                        _nmcli_list_nl "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME active)")"
                                     else
                                         words=("${words[@]:3}")
                                         OPTIONS=(id uuid path apath)
@@ -645,7 +601,7 @@ _nmcli()
                         ;;
                     u|up)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(printf "ifname\nid\nuuid\npath\n%s" "$(_nmcli_con_id)")"
+                            _nmcli_list_nl "$(printf "ifname\nid\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             local COMMAND_CONNECTION_TYPE=''
                             words=("${words[@]:2}")
@@ -662,7 +618,7 @@ _nmcli()
                         ;;
                     d|do|dow|down)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_id_active)")"
+                            _nmcli_list_nl "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME active)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             OPTIONS=(id uuid path apath)
@@ -860,7 +816,7 @@ _nmcli()
                         ;;
                     e|ed|edi|edit)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(printf "id\nuuid\npath\ntype\ncon-name\n%s" "$(_nmcli_con_id)")"
+                            _nmcli_list_nl "$(printf "id\nuuid\npath\ntype\ncon-name\n%s" "$(_nmcli_con_show NAME configured)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             if [[ "${words[0]}" = 'type' || "${words[0]}" = 'con-name' ]]; then
@@ -874,7 +830,7 @@ _nmcli()
                         ;;
                     m|mo|mod|modi|modif|modify)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
+                            _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             OPTIONS=(id uuid path apath)
@@ -886,7 +842,7 @@ _nmcli()
                         ;;
                     de|del|dele|delet|delete)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_id)")"
+                            _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             OPTIONS=(id uuid path apath)
@@ -913,7 +869,7 @@ _nmcli()
                     c|co|con|conn|conne|connec|connect| \
                     d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(_nmcli_NM_devices)"
+                            _nmcli_list_nl "$(_nmcli_dev_status DEVICE)"
                         fi
                         ;;
                     w|wi|wif|wifi)
@@ -929,9 +885,9 @@ _nmcli()
                                 c|co|con|conn|conne|connec|connect)
                                     if [[ ${#words[@]} -eq 4 ]]; then
                                         if [[ "${words[3]}" = "" ]]; then
-                                            _nmcli_list_nl "$(_nmcli_ap_ssid)"
+                                            _nmcli_list_nl "$(_nmcli_wifi_list SSID)"
                                         else
-                                            _nmcli_list_nl "$(printf "%s\n%s" "$(_nmcli_ap_ssid)" "$(_nmcli_ap_bssid)")"
+                                            _nmcli_list_nl "$(printf "%s\n%s" "$(_nmcli_wifi_list SSID)" "$(_nmcli_wifi_list BSSID)")"
                                         fi
                                     else
                                         words=("${words[@]:4}")
