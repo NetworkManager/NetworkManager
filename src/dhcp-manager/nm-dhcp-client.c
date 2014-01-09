@@ -1200,8 +1200,8 @@ ip4_options_to_config (NMDHCPClient *self)
 
 			for (s = routers; *s; s++) {
 				/* FIXME: how to handle multiple routers? */
-				if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-					nm_ip4_config_set_gateway (ip4_config, tmp_addr);
+				if (inet_pton (AF_INET, *s, &gwaddr) > 0) {
+					nm_ip4_config_set_gateway (ip4_config, gwaddr);
 					nm_log_info (LOGD_DHCP4, "  gateway %s", *s);
 					break;
 				} else
@@ -1209,6 +1209,41 @@ ip4_options_to_config (NMDHCPClient *self)
 			}
 			g_strfreev (routers);
 		}
+	}
+
+	/*
+	 * RFC 2132, section 9.7
+	 *   DHCP clients use the contents of the 'server identifier' field
+	 *   as the destination address for any DHCP messages unicast to
+	 *   the DHCP server.
+	 *
+	 * Some ISP's provide leases from central servers that are on
+	 * different subnets that the address offered.  If the host
+	 * does not configure the interface as the default route, the
+	 * dhcp server may not be reachable via unicast, and a host
+	 * specific route is needed.
+	 **/
+	str = g_hash_table_lookup (priv->options, "new_dhcp_server_identifier");
+	if (str) {
+		if (inet_pton (AF_INET, str, &tmp_addr) > 0) {
+			NMPlatformIP4Route route;
+			guint32 mask = nm_utils_ip4_prefix_to_netmask (address.plen);
+
+			nm_log_info (LOGD_DHCP4, "  server identifier %s", str);
+			if ((tmp_addr & mask) != (address.address & mask)) {
+				/* DHCP server not on assigned subnet, route needed */
+				memset (&route, 0, sizeof (route));
+				route.network = tmp_addr;
+				route.plen = 32;
+				/* this will be a device route if gwaddr is 0 */
+				route.gateway = gwaddr;
+				nm_ip4_config_add_route (ip4_config, &route);
+				nm_log_dbg (LOGD_IP, "adding route for server identifier: %s",
+				                      nm_platform_ip4_route_to_string (&route));
+			}
+		}
+		else
+			nm_log_warn (LOGD_DHCP4, "ignoring invalid server identifier '%s'", str);
 	}
 
 	str = g_hash_table_lookup (priv->options, "new_dhcp_lease_time");
