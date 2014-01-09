@@ -85,8 +85,7 @@
     <_description>Modify personal network connections</_description>
     <_message>System policy prevents modification of personal network settings</_message>
     <defaults>
-      <allow_inactive>no</allow_inactive>
-      <allow_active>yes</allow_active>
+      <allow_any>yes</allow_any>
     </defaults>
   </action>
 
@@ -94,8 +93,7 @@
     <_description>Modify network connections for all users</_description>
     <_message>System policy prevents modification of network settings for all users</_message>
     <defaults>
-      <allow_inactive>no</allow_inactive>
-      <allow_active>@NM_MODIFY_SYSTEM_POLICY@</allow_active>
+      <allow_any>@NM_MODIFY_SYSTEM_POLICY@</allow_any>
     </defaults>
   </action>
 
@@ -103,8 +101,7 @@
     <_description>Modify persistent system hostname</_description>
     <_message>System policy prevents modification of the persistent system hostname</_message>
     <defaults>
-      <allow_inactive>no</allow_inactive>
-      <allow_active>auth_admin_keep</allow_active>
+      <allow_any>auth_admin_keep</allow_any>
     </defaults>
   </action>
 
