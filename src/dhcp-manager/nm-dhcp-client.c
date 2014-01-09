@@ -1073,15 +1073,24 @@ process_classful_routes (GHashTable *options, NMIP4Config *ip4_config)
 			continue;
 		}
 
-		// FIXME: ensure the IP addresse and route are sane
+		// FIXME: ensure the IP address and route are sane
 
 		memset (&route, 0, sizeof (route));
 		route.network = rt_addr;
-		route.plen = 32;
+		/* RFC 2132, updated by RFC 3442:
+		   The Static Routes option (option 33) does not provide a subnet mask
+		   for each route - it is assumed that the subnet mask is implicit in
+		   whatever network number is specified in each route entry */
+		route.plen = nm_utils_ip4_get_default_prefix (rt_addr);
+		if (rt_addr & ~nm_utils_ip4_prefix_to_netmask (route.plen)) {
+			/* RFC 943: target not "this network"; using host routing */
+			route.plen = 32;
+		}
 		route.gateway = rt_route;
 
 		nm_ip4_config_add_route (ip4_config, &route);
-		nm_log_info (LOGD_DHCP, "  static route %s gw %s", *s, *(s + 1));
+		nm_log_info (LOGD_DHCP, "  static route %s",
+		                        nm_platform_ip4_route_to_string (&route));
 	}
 
 out:
