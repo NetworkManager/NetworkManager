@@ -496,6 +496,16 @@ _nmcli_complete_commands() {
     fi
 }
 
+_nmcli_complete_commands_nl() {
+    local command="$1"
+    shift
+    if [[ "x${command:0:1}" == 'x-' ]]; then
+        _nmcli_list_nl "$(printf "%s-h\n--help\n%s" "" "$*")"
+    else
+        _nmcli_list_nl "$(printf "help\n%s" "$*")"
+    fi
+}
+
 _nmcli()
 {
     local cur prev words cword
@@ -535,7 +545,8 @@ _nmcli()
                 case "$command" in
                     ho|hos|host|hostn|hostna|hostnam|hostname)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(printf '%s\n%s\n%s\n' \
+                            _nmcli_complete_commands_nl "${words[2]}" \
+                                        "$(printf '%s\n%s\n%s\n' \
                                             "$(nmcli general hostname 2>/dev/null)" \
                                             "$(cat /etc/hostname 2>/dev/null)" \
                                             "$(hostnamectl status 2>/dev/null | sed -n '1s/^.\+hostname: \(.\+\)$/\1/p')" \
@@ -543,9 +554,13 @@ _nmcli()
                         fi
                         ;;
                     l|lo|log|logg|loggi|loggin|logging)
-                        words=("${words[@]:2}")
-                        OPTIONS=(level domains)
-                        _nmcli_complete_COMMAND_ARGS
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_complete_commands "${words[2]}" level domains
+                        else
+                            words=("${words[@]:2}")
+                            OPTIONS=(level domains)
+                            _nmcli_complete_COMMAND_ARGS
+                        fi
                         ;;
                 esac
             fi
@@ -556,7 +571,7 @@ _nmcli()
             elif [[ ${#words[@]} -eq 3 ]]; then
                 case "$command" in
                     c|co|con|conn|conne|connec|connect|connecti|connectiv|connectivi|connectivit|connectivity)
-                        _nmcli_list "check"
+                        _nmcli_complete_commands "${words[2]}" "check"
                         ;;
                 esac
             fi
@@ -567,7 +582,7 @@ _nmcli()
             elif [[ ${#words[@]} -eq 3 ]]; then
                 case "$command" in
                     a|al|all | w|wi|wif|wifi | ww|wwa|wwan | wim|wima|wimax)
-                        _nmcli_list "on off"
+                        _nmcli_complete_commands "${words[2]}" "on off"
                         ;;
                 esac
             fi
@@ -579,7 +594,7 @@ _nmcli()
                 case "$command" in
                     s|sh|sho|show)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list "configured active"
+                            _nmcli_complete_commands "${words[2]}" configured active
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             case "${words[2]}" in
                                 c|co|con|conf|confi|config|configu|configur|configure|configured)
@@ -605,7 +620,7 @@ _nmcli()
                         ;;
                     u|up)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(printf "ifname\nid\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
+                            _nmcli_complete_commands_nl "${words[2]}" "$(printf "ifname\nid\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             local COMMAND_CONNECTION_TYPE=''
                             words=("${words[@]:2}")
@@ -622,7 +637,7 @@ _nmcli()
                         ;;
                     d|do|dow|down)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME active)")"
+                            _nmcli_complete_commands_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME active)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             OPTIONS=(id uuid path apath)
@@ -821,7 +836,7 @@ _nmcli()
                         ;;
                     e|ed|edi|edit)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(printf "id\nuuid\npath\ntype\ncon-name\n%s" "$(_nmcli_con_show NAME configured)")"
+                            _nmcli_complete_commands_nl "${words[2]}" "$(printf "id\nuuid\npath\ntype\ncon-name\n%s" "$(_nmcli_con_show NAME configured)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             if [[ "${words[0]}" = 'type' || "${words[0]}" = 'con-name' ]]; then
@@ -835,7 +850,7 @@ _nmcli()
                         ;;
                     m|mo|mod|modi|modif|modify)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
+                            _nmcli_complete_commands_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             OPTIONS=(id uuid path apath)
@@ -847,7 +862,7 @@ _nmcli()
                         ;;
                     de|del|dele|delet|delete)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
+                            _nmcli_complete_commands_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             OPTIONS=(id uuid path apath)
@@ -856,6 +871,8 @@ _nmcli()
                         ;;
                     l|lo|loa|load)
                         if [[ ${#words[@]} -gt 2 ]]; then
+                            # we should also complete for help/--help, but who to mix that
+                            # with file name completion?
                             compopt -o default
                             COMPREPLY=()
                         fi
@@ -869,17 +886,20 @@ _nmcli()
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|st|sta|stat|statu|status)
+                        if [[ ${#words[@]} -eq 3 ]]; then
+                            _nmcli_complete_commands "${words[2]}"
+                        fi
                         ;;
                     sh|sho|show| \
                     c|co|con|conn|conne|connec|connect| \
                     d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list_nl "$(_nmcli_dev_status DEVICE)"
+                            _nmcli_complete_commands_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
                         fi
                         ;;
                     w|wi|wif|wifi)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list "list connect rescan"
+                            _nmcli_complete_commands "${words[2]}" list connect rescan
                         else
                             case "${words[2]}" in
                                 l|li|lis|list)
@@ -910,7 +930,7 @@ _nmcli()
                         ;;
                     wim|wima|wimax)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_list "list"
+                            _nmcli_complete_commands "${words[2]}" list
                         else
                             case "${words[2]}" in
                                 l|li|lis|list)
