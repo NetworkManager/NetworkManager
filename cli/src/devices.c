@@ -698,7 +698,7 @@ get_active_connection_id (NMDevice *device)
 	return NULL;
 }
 
-static void
+static gboolean
 show_device_info (NMDevice *device, NmCli *nmc)
 {
 	GError *error = NULL;
@@ -737,7 +737,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		g_string_printf (nmc->return_text, _("Error: 'device show': %s"), error->message);
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		return;
+		return FALSE;
 	}
 
 	/* Main header */
@@ -1130,6 +1130,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		g_array_free (sections_array, TRUE);
 	if (fields_in_section)
 		g_ptr_array_free (fields_in_section, TRUE);
+
+	return TRUE;
 }
 
 static void
@@ -1227,6 +1229,7 @@ do_devices_show (NmCli *nmc, int argc, char **argv)
 	NMDevice *device = NULL;
 	const char *ifname = NULL;
 	int i;
+	gboolean ret;
 
 	if (argc == 1)
 		ifname = *argv;
@@ -1268,7 +1271,9 @@ do_devices_show (NmCli *nmc, int argc, char **argv)
 		/* Show details for all devices */
 		for (i = 0; devices[i]; i++) {
 			nmc_empty_output_fields (nmc);
-			show_device_info (devices[i], nmc);
+			ret = show_device_info (devices[i], nmc);
+			if (!ret)
+				break;
 			if (devices[i + 1])
 				printf ("\n"); /* Empty line */
 		}
