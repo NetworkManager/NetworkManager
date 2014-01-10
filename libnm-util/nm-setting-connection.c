@@ -1138,6 +1138,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * set, then the connection can be attached to any interface of the
 	 * appropriate type (subject to restrictions imposed by other settings).
 	 *
+	 * For software devices this specifies the name of the created device.
+	 *
 	 * For connection types where interface names cannot easily be made
 	 * persistent (e.g. mobile broadband or USB Ethernet), this property should
 	 * not be used. Setting this property restricts the interfaces a connection
@@ -1171,7 +1173,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 
 	/**
 	 * NMSettingConnection:permissions:
-	 * 
+	 *
 	 * An array of strings defining what access a given user has to this
 	 * connection.  If this is %NULL or empty, all users are allowed to access
 	 * this connection.  Otherwise a user is allowed to access this connection

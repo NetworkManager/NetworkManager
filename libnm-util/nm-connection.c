@@ -1106,6 +1106,33 @@ nm_connection_get_path (NMConnection *connection)
 }
 
 /**
+ * nm_connection_get_interface_name:
+ * @connection: The #NMConnection
+ *
+ * Returns the interface name as stored in NMSettingConnection:interface_name.
+ * If the connection contains no NMSettingConnection, it will return %NULL.
+ *
+ * For hardware devices and software devices created outside of NetworkManager,
+ * this name is used to match the device. for software devices created by
+ * NetworkManager, this is the name of the created interface.
+ *
+ * Returns: Name of the kernel interface or %NULL
+ *
+ * Since: 1.0
+ */
+const char *
+nm_connection_get_interface_name (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	s_con = nm_connection_get_setting_connection (connection);
+
+	return s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
+}
+
+/**
  * nm_connection_get_virtual_iface_name:
  * @connection: The #NMConnection
  *

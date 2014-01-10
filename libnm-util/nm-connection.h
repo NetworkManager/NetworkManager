@@ -181,6 +181,9 @@ const char *  nm_connection_get_path      (NMConnection *connection);
 
 const char *  nm_connection_get_virtual_iface_name (NMConnection *connection);
 
+NM_AVAILABLE_IN_1_0
+const char *  nm_connection_get_interface_name (NMConnection *connection);
+
 gboolean      nm_connection_is_type (NMConnection *connection, const char *type);
 
 void          nm_connection_for_each_setting_value (NMConnection *connection,
