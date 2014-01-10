@@ -48,7 +48,7 @@ _nmcli_array_has_value() {
 # zero is returned and completion will be performed.
 # Otherwise it will remove all the option parameters from the ${words[@]}
 # array and return with zero (so that completion of OBJECT can continue).
-_nmcli_complete_OPTIONS()
+_nmcli_compl_OPTIONS()
 {
     local OPTIONS=( -t --terse -p --pretty -m --mode -f --fields -e --escape -n --nocheck -a --ask -w --wait -v --version -h --help )
     local i REMOVE_OPTIONS
@@ -138,7 +138,7 @@ _nmcli_complete_OPTIONS()
 
 # after the OPTIONS, the OBJECT, the COMMAND and possible the COMMAND_CONNECTION, the syntax for nmcli
 # expects several options with parameters. This function can parse them and remove them from the words array.
-_nmcli_complete_COMMAND_ARGS()
+_nmcli_compl_ARGS()
 {
     local OPTIONS_ALL N_REMOVE_WORDS REMOVE_OPTIONS OPTIONS_HAS_MANDATORY i
     OPTIONS_ALL=("${OPTIONS[@]}")
@@ -426,7 +426,7 @@ _nmcli_complete_COMMAND_ARGS()
 
 # some commands expect a connection as parameter. This connection can either be given
 # as id|uuid|path|apath. Parse that connection parameter.
-_nmcli_complete_COMMAND_CONNECTION()
+_nmcli_compl_ARGS_CONNECTION()
 {
     ARRAY=("${OPTIONS[@]}")
     if ! _nmcli_array_has_value "${words[0]}"; then
@@ -486,7 +486,7 @@ _nmcli_complete_COMMAND_CONNECTION()
     return 1
 }
 
-_nmcli_complete_commands() {
+_nmcli_compl_COMMAND() {
     local command="$1"
     shift
     if [[ "x${command:0:1}" == 'x-' ]]; then
@@ -496,7 +496,7 @@ _nmcli_complete_commands() {
     fi
 }
 
-_nmcli_complete_commands_nl() {
+_nmcli_compl_COMMAND_nl() {
     local command="$1"
     shift
     if [[ "x${command:0:1}" == 'x-' ]]; then
@@ -529,7 +529,7 @@ _nmcli()
         cur=''
     fi
 
-    _nmcli_complete_OPTIONS && return 0
+    _nmcli_compl_OPTIONS && return 0
 
     local command="${words[1]}"
     local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS ARRAY OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP
@@ -540,12 +540,12 @@ _nmcli()
             ;;
         g|ge|gen|gene|gener|genera|general)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_complete_commands "$command" status permissions logging hostname
+                _nmcli_compl_COMMAND "$command" status permissions logging hostname
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     ho|hos|host|hostn|hostna|hostnam|hostname)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands_nl "${words[2]}" \
+                            _nmcli_compl_COMMAND_nl "${words[2]}" \
                                         "$(printf '%s\n%s\n%s\n' \
                                             "$(nmcli general hostname 2>/dev/null)" \
                                             "$(cat /etc/hostname 2>/dev/null)" \
@@ -555,11 +555,11 @@ _nmcli()
                         ;;
                     l|lo|log|logg|loggi|loggin|logging)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands "${words[2]}" level domains
+                            _nmcli_compl_COMMAND "${words[2]}" level domains
                         else
                             words=("${words[@]:2}")
                             OPTIONS=(level domains)
-                            _nmcli_complete_COMMAND_ARGS
+                            _nmcli_compl_ARGS
                         fi
                         ;;
                 esac
@@ -567,34 +567,34 @@ _nmcli()
             ;;
         n|ne|net|netw|netwo|networ|network|networki|networkin|networking)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_complete_commands "$command" on off connectivity
+                _nmcli_compl_COMMAND "$command" on off connectivity
             elif [[ ${#words[@]} -eq 3 ]]; then
                 case "$command" in
                     c|co|con|conn|conne|connec|connect|connecti|connectiv|connectivi|connectivit|connectivity)
-                        _nmcli_complete_commands "${words[2]}" "check"
+                        _nmcli_compl_COMMAND "${words[2]}" "check"
                         ;;
                 esac
             fi
             ;;
         r|ra|rad|radi|radio)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_complete_commands "$command" all wifi wwan wimax
+                _nmcli_compl_COMMAND "$command" all wifi wwan wimax
             elif [[ ${#words[@]} -eq 3 ]]; then
                 case "$command" in
                     a|al|all | w|wi|wif|wifi | ww|wwa|wwan | wim|wima|wimax)
-                        _nmcli_complete_commands "${words[2]}" "on off"
+                        _nmcli_compl_COMMAND "${words[2]}" "on off"
                         ;;
                 esac
             fi
             ;;
         c|co|con|conn|conne|connec|connect|connecti|connectio|connection)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_complete_commands "$command" show up down add modify edit delete reload load
+                _nmcli_compl_COMMAND "$command" show up down add modify edit delete reload load
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|sh|sho|show)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands "${words[2]}" configured active
+                            _nmcli_compl_COMMAND "${words[2]}" configured active
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             case "${words[2]}" in
                                 c|co|con|conf|confi|config|configu|configur|configure|configured)
@@ -603,7 +603,7 @@ _nmcli()
                                     else
                                         words=("${words[@]:3}")
                                         OPTIONS=(id uuid path)
-                                        _nmcli_complete_COMMAND_CONNECTION
+                                        _nmcli_compl_ARGS_CONNECTION
                                     fi
                                     ;;
                                 a|ac|act|acti|activ|active)
@@ -612,7 +612,7 @@ _nmcli()
                                     else
                                         words=("${words[@]:3}")
                                         OPTIONS=(id uuid path apath)
-                                        _nmcli_complete_COMMAND_CONNECTION
+                                        _nmcli_compl_ARGS_CONNECTION
                                     fi
                                     ;;
                             esac
@@ -620,41 +620,41 @@ _nmcli()
                         ;;
                     u|up)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands_nl "${words[2]}" "$(printf "ifname\nid\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "ifname\nid\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             local COMMAND_CONNECTION_TYPE=''
                             words=("${words[@]:2}")
                             OPTIONS=(ifname id uuid path)
-                            _nmcli_complete_COMMAND_CONNECTION && return 0
+                            _nmcli_compl_ARGS_CONNECTION && return 0
 
                             if [[ "$COMMAND_CONNECTION_TYPE" = "ifname" ]]; then
                                 OPTIONS=(ap nsp)
                             else
                                 OPTIONS=(ifname ap nsp)
                             fi
-                            _nmcli_complete_COMMAND_ARGS
+                            _nmcli_compl_ARGS
                         fi
                         ;;
                     d|do|dow|down)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME active)")"
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME active)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             OPTIONS=(id uuid path apath)
                             local COMMAND_CONNECTION_ACTIVE=1
-                            _nmcli_complete_COMMAND_CONNECTION
+                            _nmcli_compl_ARGS_CONNECTION
                         fi
                         ;;
                     a|ad|add)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands "${words[2]}" type ifname con-name autoconnect
+                            _nmcli_compl_COMMAND "${words[2]}" type ifname con-name autoconnect
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             OPTIONS_TYPE=
                             OPTIONS=(type ifname con-name autoconnect)
                             OPTIONS_MANDATORY=(type)
                             COMMAND_ARGS_WAIT_OPTIONS=1
-                            _nmcli_complete_COMMAND_ARGS && return 0
+                            _nmcli_compl_ARGS && return 0
 
                             ARRAY=("${OPTIONS[@]}")
                             if _nmcli_array_has_value "${OPTIONS_MANDATORY[@]}"; then
@@ -760,7 +760,7 @@ _nmcli()
                                 # and continue parsing the options...
                                 OPTIONS=("${OPTIONS[@]}" "${OPTIONS_TYPED[@]}")
                                 OPTIONS_NEXT_GROUP=("${OPTIONS_TYPED[@]}")
-                                _nmcli_complete_COMMAND_ARGS && return 0
+                                _nmcli_compl_ARGS && return 0
 
                                 if [[ "$COMMAND_ARGS_WAIT_OPTIONS" -ne 1 ]]; then
                                     # means, we are at the end of options. Nothing more to parse, just show
@@ -793,7 +793,7 @@ _nmcli()
 
                             if [[ "${#OPTIONS_MANDATORY[@]}" -ge 1 ]]; then
                                 # we have some mandatory options... don't check for IP options yet...
-                                _nmcli_complete_COMMAND_ARGS && return 0
+                                _nmcli_compl_ARGS && return 0
 
                                 ARRAY=("${OPTIONS[@]}")
                                 if _nmcli_array_has_value "${OPTIONS_MANDATORY[@]}"; then
@@ -814,7 +814,7 @@ _nmcli()
                             # no mandatory options... do final completion including IP options
                             OPTIONS=("${OPTIONS[@]}" "${OPTIONS_IP[@]}")
                             OPTIONS_NEXT_GROUP=("${OPTIONS_IP[@]}")
-                            _nmcli_complete_COMMAND_ARGS && return 0
+                            _nmcli_compl_ARGS && return 0
 
                             if [[ "$OPTIONS_UNKNOWN_OPTION" != "" ]]; then
                                 return 0
@@ -831,30 +831,30 @@ _nmcli()
                             OPTIONS=("${OPTIONS_IP[@]}")
                             OPTIONS_NEXT_GROUP=()
                             COMMAND_ARGS_WAIT_OPTIONS=0
-                            _nmcli_complete_COMMAND_ARGS && return 0
+                            _nmcli_compl_ARGS && return 0
                         fi
                         ;;
                     e|ed|edi|edit)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands_nl "${words[2]}" "$(printf "id\nuuid\npath\ntype\ncon-name\n%s" "$(_nmcli_con_show NAME configured)")"
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\ntype\ncon-name\n%s" "$(_nmcli_con_show NAME configured)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             if [[ "${words[0]}" = 'type' || "${words[0]}" = 'con-name' ]]; then
                                 OPTIONS=(type con-name)
-                                _nmcli_complete_COMMAND_ARGS
+                                _nmcli_compl_ARGS
                             else
                                 OPTIONS=(id uuid path apath)
-                                _nmcli_complete_COMMAND_CONNECTION
+                                _nmcli_compl_ARGS_CONNECTION
                             fi
                         fi
                         ;;
                     m|mo|mod|modi|modif|modify)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             OPTIONS=(id uuid path apath)
-                            _nmcli_complete_COMMAND_CONNECTION && return 0
+                            _nmcli_compl_ARGS_CONNECTION && return 0
                             if [[ ${#words[@]} -le 1 ]]; then
                                 _nmcli_list_nl "$(nmcli connection show configured "${COMMAND_CONNECTION_TYPE:-id}" "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
                             fi
@@ -862,11 +862,11 @@ _nmcli()
                         ;;
                     de|del|dele|delet|delete)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME configured)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             OPTIONS=(id uuid path apath)
-                            _nmcli_complete_COMMAND_CONNECTION
+                            _nmcli_compl_ARGS_CONNECTION
                         fi
                         ;;
                     l|lo|loa|load)
@@ -882,30 +882,30 @@ _nmcli()
             ;;
         d|de|dev|devi|devic|device)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_complete_commands "$command" status show connect disconnect wifi wimax
+                _nmcli_compl_COMMAND "$command" status show connect disconnect wifi wimax
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|st|sta|stat|statu|status)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands "${words[2]}"
+                            _nmcli_compl_COMMAND "${words[2]}"
                         fi
                         ;;
                     sh|sho|show| \
                     c|co|con|conn|conne|connec|connect| \
                     d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
                         fi
                         ;;
                     w|wi|wif|wifi)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands "${words[2]}" list connect rescan
+                            _nmcli_compl_COMMAND "${words[2]}" list connect rescan
                         else
                             case "${words[2]}" in
                                 l|li|lis|list)
                                     words=("${words[@]:3}")
                                     OPTIONS=(ifname bssid)
-                                    _nmcli_complete_COMMAND_ARGS
+                                    _nmcli_compl_ARGS
                                     ;;
                                 c|co|con|conn|conne|connec|connect)
                                     if [[ ${#words[@]} -eq 4 ]]; then
@@ -917,26 +917,26 @@ _nmcli()
                                     else
                                         words=("${words[@]:4}")
                                         local OPTIONS=(password wep-key-type ifname bssid name private)
-                                        _nmcli_complete_COMMAND_ARGS
+                                        _nmcli_compl_ARGS
                                     fi
                                     ;;
                                 r|re|res|resc|resca|rescan)
                                     words=("${words[@]:3}")
                                     OPTIONS=(ifname)
-                                    _nmcli_complete_COMMAND_ARGS
+                                    _nmcli_compl_ARGS
                                     ;;
                             esac
                         fi
                         ;;
                     wim|wima|wimax)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_complete_commands "${words[2]}" list
+                            _nmcli_compl_COMMAND "${words[2]}" list
                         else
                             case "${words[2]}" in
                                 l|li|lis|list)
                                     words=("${words[@]:3}")
                                     OPTIONS=(ifname nsp)
-                                    _nmcli_complete_COMMAND_ARGS
+                                    _nmcli_compl_ARGS
                                     ;;
                             esac
                         fi
