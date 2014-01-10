@@ -957,24 +957,6 @@ _nmcli()
                                     OPTIONS=(ifname nsp)
                                     _nmcli_complete_COMMAND_ARGS
                                     ;;
-                                c|co|con|conn|conne|connec|connect)
-                                    if [[ ${#words[@]} -eq 4 ]]; then
-                                        if [[ "${words[3]}" = "" ]]; then
-                                            _nmcli_list_nl "$(_nmcli_ap_ssid)"
-                                        else
-                                            _nmcli_list_nl "$(_nmcli_ap_ssid) $(_nmcli_ap_bssid)"
-                                        fi
-                                    else
-                                        words=("${words[@]:4}")
-                                        OPTIONS=(password wep-key-type ifname bssid name private)
-                                        _nmcli_complete_COMMAND_ARGS
-                                    fi
-                                    ;;
-                                r|re|res|resc|resca|rescan)
-                                    words=("${words[@]:3}")
-                                    OPTIONS=(ifname)
-                                    _nmcli_complete_COMMAND_ARGS
-                                    ;;
                             esac
                         fi
                         ;;
