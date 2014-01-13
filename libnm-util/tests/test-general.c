@@ -1770,15 +1770,26 @@ test_ip4_netmask_to_prefix (void)
 
 		g_assert_cmpint (i, ==, nm_utils_ip4_netmask_to_prefix (netmask));
 
-		for (j = 0; j < 20; j++) {
+		for (j = 0; j < 2*i; j++) {
 			guint32 r = g_rand_int (rand);
 			guint32 netmask_holey;
+			guint32 prefix_holey;
 
 			netmask_holey = (netmask & r) | netmask_lowest_bit;
 
-			/* create an invalid netmask with holes and check that
-			 * the function does something resonable. */
-			g_assert_cmpint (i, ==, nm_utils_ip4_netmask_to_prefix (netmask_holey));
+			if (netmask_holey == netmask)
+				continue;
+
+			(void) prefix_holey;
+#if GLIB_CHECK_VERSION(2,34,0)
+			/* create an invalid netmask with holes and check that the function
+			 * returns the longest prefix and logs an assert. */
+			g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "nm_utils_ip4_netmask_to_prefix: assertion 'netmask == nm_utils_ip4_prefix_to_netmask (prefix)' failed");
+			prefix_holey = nm_utils_ip4_netmask_to_prefix (netmask_holey);
+			g_test_assert_expected_messages ();
+
+			g_assert_cmpint (i, ==, prefix_holey);
+#endif
 		}
 	}
 
