@@ -690,15 +690,19 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 }
 
 static NMConnection *
-find_connection (GSList *list, const char *filter_type, const char *filter_val)
+find_connection (GSList *list,
+                 const char *filter_type,
+                 const char *filter_val,
+                 GSList **start)
 {
 	NMConnection *connection;
+	NMConnection *found = NULL;
 	GSList *iterator;
 	const char *id;
 	const char *uuid;
 	const char *path, *path_num;
 
-	iterator = list;
+	iterator = (start && *start) ? *start : list;
 	while (iterator) {
 		connection = NM_CONNECTION (iterator->data);
 
@@ -717,26 +721,40 @@ find_connection (GSList *list, const char *filter_type, const char *filter_val)
 		    || (   (!filter_type || strcmp (filter_type, "uuid") == 0)
 		        && strcmp (filter_val, uuid) == 0)
 		    || (   (!filter_type || strcmp (filter_type, "path") == 0)
-		        && (g_strcmp0 (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0))))
-			return connection;
+		        && (g_strcmp0 (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0)))) {
+			if (!start)
+				return connection;
+			if (found) {
+				*start = iterator;
+				return found;
+			}
+			found = connection;
+		}
 
 		iterator = g_slist_next (iterator);
 	}
 
-	return NULL;
+	if (start)
+		*start = NULL;
+	return found;
 }
 
 static NMActiveConnection *
-find_active_connection (const GPtrArray *active_cons, const GSList *cons,
-                        const char *filter_type, const char *filter_val)
+find_active_connection (const GPtrArray *active_cons,
+                        const GSList *cons,
+                        const char *filter_type,
+                        const char *filter_val,
+                        int *idx)
 {
 	int i;
+	int start = (idx && *idx > 0) ? *idx : 0;
 	const char *path, *a_path, *path_num, *a_path_num;
 	const char *id;
 	const char *uuid;
 	NMConnection *con;
+	NMActiveConnection *found = NULL;
 
-	for (i = 0; active_cons && (i < active_cons->len); i++) {
+	for (i = start; active_cons && (i < active_cons->len); i++) {
 		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
 
 		path = nm_active_connection_get_connection (candidate);
@@ -760,10 +778,20 @@ find_active_connection (const GPtrArray *active_cons, const GSList *cons,
 		    || (   (!filter_type || strcmp (filter_type, "path") == 0)
 		        && (g_strcmp0 (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0)))
 		    || (   (!filter_type || strcmp (filter_type, "apath") == 0)
-		        && (g_strcmp0 (filter_val, a_path) == 0 || (filter_type && g_strcmp0 (filter_val, a_path_num) == 0))))
-			return candidate;
+		        && (g_strcmp0 (filter_val, a_path) == 0 || (filter_type && g_strcmp0 (filter_val, a_path_num) == 0)))) {
+			if (!idx)
+				return candidate;
+			if (found) {
+				*idx = i;
+				return found;
+			}
+			found = candidate;
+		}
 	}
-	return NULL;
+
+	if (idx)
+		*idx = 0;
+	return found;
 }
 
 static void
@@ -1334,6 +1362,7 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 		gboolean new_line = FALSE;
 		gboolean without_fields = (nmc->required_fields == NULL);
 		const GPtrArray *active_cons = nm_client_get_active_connections (nmc->client);
+		GSList *pos = NULL;
 
 		/* multiline mode is default for 'connection show <ID>' */
 		if (!nmc->mode_specified)
@@ -1363,9 +1392,9 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 			}
 
 			/* Find connection by id, uuid, path or apath */
-			con = find_connection (nmc->system_connections, selector, *argv);
+			con = find_connection (nmc->system_connections, selector, *argv, &pos);
 			if (!con) {
-				acon = find_active_connection (active_cons, nmc->system_connections, selector, *argv);
+				acon = find_active_connection (active_cons, nmc->system_connections, selector, *argv, NULL);
 				if (acon)
 					con = get_connection_for_active (nmc->system_connections, acon);
 			}
@@ -1411,8 +1440,13 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 				nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 				goto finish;
 			}
-
-			next_arg (&argc, &argv);
+			
+			/* Take next argument.
+			 * But for pos != NULL we have more connections of the same name,
+			 * so process the same argument again.
+			 */
+			if (!pos)
+				next_arg (&argc, &argv);
 		}
 	}
 
@@ -1965,7 +1999,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (name)
-		connection = find_connection (nmc->system_connections, selector, name);
+		connection = find_connection (nmc->system_connections, selector, name, NULL);
 
 	while (argc > 0) {
 		if (strcmp (*argv, "ifname") == 0) {
@@ -2050,6 +2084,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	char **arg_arr = NULL;
 	char **arg_ptr = argv;
 	int arg_num = argc;
+	int idx = 0;
 
 	if (argc == 0) {
 		if (nmc->ask) {
@@ -2091,7 +2126,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			}
 		}
 
-		active = find_active_connection (active_cons, nmc->system_connections, selector, *arg_ptr);
+		active = find_active_connection (active_cons, nmc->system_connections, selector, *arg_ptr, &idx);
 		if (active) {
 			nm_client_deactivate_connection (nmc->client, active);
 		} else {
@@ -2100,7 +2135,8 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			goto error;
 		}
 
-		next_arg (&arg_num, &arg_ptr);
+		if (idx == 0)
+			next_arg (&arg_num, &arg_ptr);
 	}
 
 	// FIXME: do something better then sleep()
@@ -7569,7 +7605,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		/* Existing connection */
 		NMConnection *found_con;
 
-		found_con = find_connection (nmc->system_connections, selector, con);
+		found_con = find_connection (nmc->system_connections, selector, con, NULL);
 		if (!found_con) {
 			g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), con);
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
@@ -7766,7 +7802,7 @@ do_connection_modify (NmCli *nmc, int argc, char **argv)
 		goto finish;
 	}
 
-	connection = find_connection (nmc->system_connections, selector, name);
+	connection = find_connection (nmc->system_connections, selector, name, NULL);
 	if (!connection) {
 		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
@@ -7868,6 +7904,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	int arg_num = argc;
 	GString *invalid_cons = NULL;
 	gboolean del_info_free = FALSE;
+	GSList *pos = NULL;
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 	nmc->should_wait = FALSE;
@@ -7913,7 +7950,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 			}
 		}
 
-		connection = find_connection (nmc->system_connections, selector, *arg_ptr);
+		connection = find_connection (nmc->system_connections, selector, *arg_ptr, &pos);
 		if (!connection) {
 			if (nmc->print_output != NMC_PRINT_TERSE)
 				printf (_("Error: unknown connection: %s\n"), *arg_ptr);
@@ -7940,7 +7977,9 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 		/* Delete the connection */
 		nm_remote_connection_delete (NM_REMOTE_CONNECTION (connection), delete_cb, del_info);
 
-		next_arg (&arg_num, &arg_ptr);
+		/* Take next argument (if there's no other connection of the same name) */
+		if (!pos)
+			next_arg (&arg_num, &arg_ptr);
 	}
 
 finish:
