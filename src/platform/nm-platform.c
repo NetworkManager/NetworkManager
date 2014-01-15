@@ -1934,8 +1934,8 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 	_CMP_POINTER (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, source);
-	_CMP_FIELD_MEMCMP (a, b, address);
-	_CMP_FIELD_MEMCMP (a, b, peer_address);
+	_CMP_FIELD (a, b, address);
+	_CMP_FIELD (a, b, peer_address);
 	_CMP_FIELD (a, b, plen);
 	_CMP_FIELD (a, b, timestamp);
 	_CMP_FIELD (a, b, lifetime);
@@ -1965,9 +1965,9 @@ nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route
 	_CMP_POINTER (a, b);
 	_CMP_FIELD (a, b, ifindex);
 	_CMP_FIELD (a, b, source);
-	_CMP_FIELD_MEMCMP (a, b, network);
+	_CMP_FIELD (a, b, network);
 	_CMP_FIELD (a, b, plen);
-	_CMP_FIELD_MEMCMP (a, b, gateway);
+	_CMP_FIELD (a, b, gateway);
 	_CMP_FIELD (a, b, metric);
 	_CMP_FIELD (a, b, mss);
 	return 0;
