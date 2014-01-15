@@ -1229,7 +1229,6 @@ reset_connections_retries (gpointer user_data)
 
 		if (con_stamp < now) {
 			nm_settings_connection_reset_autoconnect_retries (connection);
-			nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_NONE);
 			changed = TRUE;
 		} else if (min_stamp == 0 || min_stamp > con_stamp)
 			min_stamp = con_stamp;
@@ -1375,12 +1374,6 @@ device_state_changed (NMDevice *device,
 			guint32 tries = nm_settings_connection_get_autoconnect_retries (connection);
 
 			if (reason == NM_DEVICE_STATE_REASON_NO_SECRETS) {
-				/* If the connection couldn't get the secrets it needed (ex because
-				 * the user canceled, or no secrets exist), there's no point in
-				 * automatically retrying because it's just going to fail anyway.
-				 */
-				nm_settings_connection_set_autoconnect_retries (connection, 0);
-
 				/* Mark the connection as failed due to missing secrets so that we can
 				 * automatically re-try when an secret agent registers.
 				 */
