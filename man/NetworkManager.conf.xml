@@ -284,7 +284,7 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
 	<varlistentry>
 	  <term><varname>domains</varname></term>
 	  <listitem><para>The following log domains are available:
-	  HW, RFKILL, ETHER, WIFI, BT, MB, DHCP4, DHCP6, PPP,
+	  PLATFORM, RFKILL, ETHER, WIFI, BT, MB, DHCP4, DHCP6, PPP,
 	  WIFI_SCAN, IP4, IP6, AUTOIP4, DNS, VPN, SHARING, SUPPLICANT,
 	  AGENTS, SETTINGS, SUSPEND, CORE, DEVICE, OLPC, WIMAX,
 	  INFINIBAND, FIREWALL, ADSL, BOND, VLAN, BRIDGE, DBUS_PROPS,
@@ -292,9 +292,55 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
 	  <para>In addition, these special domains can be used: NONE,
 	  ALL, DEFAULT, DHCP, IP.</para>
 	  <para>You can specify per-domain log level overrides by
-	  adding a colon and a log level to any domain. Eg,
+	  adding a colon and a log level to any domain. E.g.,
 	  "<literal>WIFI:DEBUG</literal>".</para></listitem>
 	</varlistentry>
+	<varlistentry>
+          <para>Domain descriptions:
+          <simplelist type="horiz" columns="1">
+          <member>PLATFORM    : OS (platform) operations</member>
+          <member>RFKILL      : RFKill subsystem operations</member>
+          <member>ETHER       : Ethernet device operations</member>
+          <member>WIFI        : Wi-Fi device operations</member>
+          <member>BT          : Bluetooth operations</member>
+          <member>MB          : Mobile broadband operations</member>
+          <member>DHCP4       : DHCP for IPv4</member>
+          <member>DHCP6       : DHCP for IPv6</member>
+          <member>PPP         : Point-to-point protocol operations</member>
+          <member>WIFI_SCAN   : Wi-Fi scanning operations</member>
+          <member>IP4         : IPv4-related operations</member>
+          <member>IP6         : IPv6-related operations</member>
+          <member>AUTOIP4     : AutoIP (avahi) operations</member>
+          <member>DNS         : Domain Name System related operations</member>
+          <member>VPN         : Virtual Private Network connections and operaions</member>
+          <member>SHARING     : Connection sharing</member>
+          <member>SUPPLICANT  : WPA supplicant related operations</member>
+          <member>AGENTS      : Secret agents operations and communication</member>
+          <member>SETTINGS    : Settings/config service operations</member>
+          <member>SUSPEND     : Suspend/resume</member>
+          <member>CORE        : Core daemon and policy operations</member>
+          <member>DEVICE      : Activation and general interface operations</member>
+          <member>OLPC        : OLPC Mesh device operations</member>
+          <member>WIMAX       : WiMAX device operations</member>
+          <member>INFINIBAND  : InfiniBand device operations</member>
+          <member>FIREWALL    : FirewallD related operations</member>
+          <member>ADSL        : ADSL device operations</member>
+          <member>BOND        : Bonding operations</member>
+          <member>VLAN        : VLAN operations</member>
+          <member>BRIDGE      : Bridging operations</member>
+          <member>DBUS_PROPS  : D-Bus properties changes</member>
+          <member>TEAM        : Teaming operations</member>
+          <member>CONCHECK    : Connectivity check</member>
+          <member>DCB         : Data Center Bridging (DCB) operations</member>
+          <member> </member>
+          <member>NONE        : when given by itself logging is disabled</member>
+          <member>ALL         : all log domains</member>
+          <member>DEFAULT     : default log domains</member>
+          <member>DHCP        : shortcut for "DHCP4,DHCP6"</member>
+          <member>IP          : shortcut for "IP4,IP6"</member>
+          </simplelist>
+          </para>
+        </varlistentry>
       </variablelist>
     </para>
   </refsect1>
