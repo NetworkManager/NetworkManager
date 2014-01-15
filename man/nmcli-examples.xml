@@ -3,13 +3,13 @@
 "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
 
 <!--
-Copyright (C) 2013 Red Hat, Inc.
+Copyright (C) 2013 - 2014 Red Hat, Inc.
 -->
 
 <refentry id="nmcli-examples">
   <refentryinfo>
     <title>nmcli-examples</title>
-    <date>16 July 2013</date>
+    <date>15 January 2014</date>
     <author>NetworkManager developers</author>
   </refentryinfo>
 
@@ -35,7 +35,7 @@ Copyright (C) 2013 Red Hat, Inc.
   <refsect1>
     <title>Description</title>
     <para>
-      <emphasis>nmcli</emphasis> is a command line client for NetworkManager. It
+      <emphasis>nmcli</emphasis> is a command-line client for NetworkManager. It
       allows controlling NetworkManager and reporting its status. For more information
       please refer to <citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry>
       manual page.
@@ -70,7 +70,9 @@ $ nmcli device wifi list
       </screen>
     </example>
     <para>
-      This command shows how to list available Wi-Fi networks (APs).
+      This command shows how to list available Wi-Fi networks (APs). You can also use
+      <emphasis>--fields</emphasis> option for displaying different columns.
+      <emphasis role="bold">nmcli -f all dev wifi list</emphasis> will show all of them.
     </para>
 
     <example><title>Showing general information and properties for a Wi-Fi interface</title>
@@ -84,11 +86,12 @@ $ nmcli -p -f general,wifi-properties device show wlan0
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
 GENERAL.VENDOR:                         Intel Corporation
-GENERAL.PRODUCT:                        --
+GENERAL.PRODUCT:                        PRO/Wireless 5100 AGN [Shiloh] Network Connection
 GENERAL.DRIVER:                         iwlwifi
-GENERAL.DRIVER-VERSION:                 3.8.11-100.fc17.x86_64
+GENERAL.DRIVER-VERSION:                 3.8.13-100.fc17.x86_64
 GENERAL.FIRMWARE-VERSION:               8.83.5.1 build 33692
 GENERAL.HWADDR:                         00:1E:65:37:A1:D3
+GENERAL.MTU:                            1500
 GENERAL.STATE:                          100 (connected)
 GENERAL.REASON:                         0 (No reason given)
 GENERAL.UDI:                            /sys/devices/pci0000:00/0000:00:1c.1/0000:03:00.0/net/wlan0
@@ -96,7 +99,9 @@ GENERAL.IP-IFACE:                       wlan0
 GENERAL.NM-MANAGED:                     yes
 GENERAL.AUTOCONNECT:                    yes
 GENERAL.FIRMWARE-MISSING:               no
-GENERAL.CONNECTION:                     /org/freedesktop/NetworkManager/ActiveConnection/5
+GENERAL.CONNECTION:                     My Alfa WiFi
+GENERAL.CON-UUID:                       85194f4c-d496-4eec-bae0-d880b4cbcf26
+GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/10
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -143,7 +148,33 @@ org.freedesktop.NetworkManager.settings.modify.hostname   auth
       More information about polkit can be found at http://www.freedesktop.org/wiki/Software/polkit.
     </para>
 
-    <example><title>Adding a bonding master and two slave connections</title>
+    <example><title>Listing NetworkManager log level and domains</title>
+      <synopsis><emphasis role="bold">
+$ nmcli general logging
+      </emphasis></synopsis>
+      <screen>
+LEVEL  DOMAINS
+INFO   PLATFORM,RFKILL,ETHER,WIFI,BT,MB,DHCP4,DHCP6,PPP,IP4,IP6,AUTOIP4,DNS,VPN,SHARING,SUPPLICANT,AGENTS,SETTINGS,SUSPEND,CORE,DEVICE,OLPC,WIMAX,INFINIBAND,FIREWALL,ADSL,BOND,VLAN,BRIDGE,TEAM,CONCHECK,DCB 
+      </screen>
+    </example>
+    <para>
+      This command shows current NetworkManager logging status.
+    </para>
+
+    <example><title>Changing NetworkManager logging</title>
+      <synopsis><emphasis role="bold">
+$ nmcli g log level DEBUG domains CORE,ETHER,IP
+$ nmcli g log level INFO domains DEFAULT
+      </emphasis></synopsis>
+    </example>
+    <para>
+      The first command makes NetworkManager log in DEBUG level, and only for CORE, ETHER and
+      IP domains. The second command restores the default logging state. Please refer to the
+      <citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry> manual page
+      for available logging levels and domains.
+    </para>
+
+    <example><title>Adding a bonding master and two slave connection profiles</title>
       <programlisting><emphasis role="bold">
 $ nmcli con add type bond ifname mybond0 mode active-backup
 $ nmcli con add type bond-slave ifname eth1 master mybond0
@@ -159,7 +190,7 @@ $ nmcli con add type bond-slave ifname eth2 master mybond0
       <emphasis>eth2</emphasis>. 
     </para>
 
-    <example><title>Adding an ethernet connection with manual IP configuration</title>
+    <example><title>Adding an ethernet connection profile with manual IP configuration</title>
       <programlisting>
         <emphasis role="bold">
 $ nmcli con add con-name my-con-em1 ifname em1 type ethernet ip4 192.168.100.100/24 gw4 192.168.100.1 ip4 1.2.3.4 ip6 abbe::cafe
@@ -170,11 +201,11 @@ $ nmcli -p con show conf my-con-em1
       </programlisting>
     </example>
     <para>
-      The first command adds an Ethernet connection named <emphasis>my-con-em1</emphasis>
-      that is bound to interface name <emphasis>em1</emphasis>. The connection is configured
+      The first command adds an Ethernet connection profile named <emphasis>my-con-em1</emphasis>
+      that is bound to interface name <emphasis>em1</emphasis>. The profile is configured
       with static IP addresses. The second and third commands modify DNS parameters of the
       new connection profile. Using the last <emphasis>con show configured</emphasis> the
-      connection is displayed so that all parameters can be reviewed.
+      profile is displayed so that all parameters can be reviewed.
     </para>
 
     <example><title>Escaping colon characters in tabular mode</title>
@@ -184,7 +215,7 @@ $ nmcli -t -f general -e yes -m tab dev show eth0
         </emphasis>
       </programlisting>
       <screen>
-GENERAL:eth0:ethernet:Intel Corporation:--:e1000e:2.1.4-k:1.8-3:00\:22\:68\:11\:59\:01:100 (connected):0 (No reason given):/sys/devices/pci0000\:00/0000\:00\:19.0/net/eth0::yes:yes:no:connected
+GENERAL:eth0:ethernet:Intel Corporation:82567LM Gigabit Network Connection:e1000e:2.1.4-k:1.8-3:00\:22\:68\:15\:29\:21:1500:100 (connected):0 (No reason given):/sys/devices/pci0000\:00/0000\:00\:19.0/net/eth0:eth0:yes:yes:no:ethernet-13:89cbcbc6-dc85-456c-9c8b-bd828fee3917:/org/freedesktop/NetworkManager/ActiveConnection/9
       </screen>
     </example>
     <para>
@@ -192,22 +223,60 @@ GENERAL:eth0:ethernet:Intel Corporation:--:e1000e:2.1.4-k:1.8-3:00\:22\:68\:11\:
       useful for script processing, because ':' is used as a field separator.
     </para>
 
+    <example><title>nmcli usage in a NetworkManager dispatcher script to make Ethernet and Wi-Fi mutually exclusive</title>
+      <programlisting>
+#!/bin/bash
+export LC_ALL=C
+
+enable_disable_wifi ()
+{
+	result=$(nmcli dev | grep "ethernet" | grep -w "connected")
+	if [ -n "$result" ]; then
+		nmcli radio wifi off
+	else
+		nmcli radio wifi on
+	fi
+}
+
+if [ "$2" = "up" ]; then
+	enable_disable_wifi
+fi
+
+if [ "$2" = "down" ]; then
+	enable_disable_wifi
+fi
+      </programlisting>
+    </example>
+    <para>
+      This dispatcher script makes Wi-Fi mutually exclusive with wired
+      networking. When a wired interface is connected, Wi-Fi will be set
+      to airplane mode (rfkilled). When the wired interface is disconnected,
+      Wi-Fi will be turned back on.
+      Name this script e.g. 70-wifi-wired-exclusive.sh and put it into /etc/NetworkManager/dispatcher.d/
+      directory.
+      See <citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+      manual page for more information about NetworkManager dispatcher scripts.
+    </para>
+
+
     <para><emphasis role="bold">Example sessions of interactive connection editor</emphasis></para>
 
-    <example><title>Adding an ethernet connection in interactive editor (a)</title>
+    <example><title>Adding an ethernet connection profile in interactive editor (a)</title>
       <programlisting>
         <emphasis role="bold">
 $ nmcli connection edit type ethernet
         </emphasis>
       </programlisting>
       <screen>
+
 ===| nmcli interactive connection editor |===
 
 Adding a new '802-3-ethernet' connection
 
 Type 'help' or '?' for available commands.
+Type 'describe [&lt;setting&gt;.&lt;prop&gt;]' for detailed property description.
 
-You may edit the following settings: connection, 802-3-ethernet (ethernet), 802-1x, ipv4, ipv6
+You may edit the following settings: connection, 802-3-ethernet (ethernet), 802-1x, ipv4, ipv6, dcb
 nmcli> print
 ===============================================================================
                               Connection details
@@ -224,6 +293,7 @@ connection.zone:                        --
 connection.master:                      --
 connection.slave-type:                  --
 connection.secondaries:                 
+connection.gateway-ping-timeout:        0
 -------------------------------------------------------------------------------
 802-3-ethernet.port:                    --
 802-3-ethernet.speed:                   0
@@ -237,18 +307,43 @@ connection.secondaries:
 802-3-ethernet.s390-nettype:            --
 802-3-ethernet.s390-options:            
 -------------------------------------------------------------------------------
-nmcli> goto ethernet 
+ipv4.method:                            auto
+ipv4.dns:                               
+ipv4.dns-search:                        
+ipv4.addresses:                         
+ipv4.routes:                            
+ipv4.ignore-auto-routes:                no
+ipv4.ignore-auto-dns:                   no
+ipv4.dhcp-client-id:                    --
+ipv4.dhcp-send-hostname:                yes
+ipv4.dhcp-hostname:                     --
+ipv4.never-default:                     no
+ipv4.may-fail:                          yes
+-------------------------------------------------------------------------------
+ipv6.method:                            auto
+ipv6.dns:                               
+ipv6.dns-search:                        
+ipv6.addresses:                         
+ipv6.routes:                            
+ipv6.ignore-auto-routes:                no
+ipv6.ignore-auto-dns:                   no
+ipv6.never-default:                     no
+ipv6.may-fail:                          yes
+ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.dhcp-hostname:                     --
+-------------------------------------------------------------------------------
+nmcli> goto ethernet
 You may edit the following properties: port, speed, duplex, auto-negotiate, mac-address, cloned-mac-address, mac-address-blacklist, mtu, s390-subchannels, s390-nettype, s390-options
 nmcli 802-3-ethernet> set mtu 1492
 nmcli 802-3-ethernet> b
-nmcli> goto ipv4.addresses 
+nmcli> goto ipv4.addresses
 nmcli ipv4.addresses> desc
 
 === [addresses] ===
-[setting description]
-Array of IPv4 address structures.  Each IPv4 address structure is composed of three 32-bit values; the first being the IPv4 address (network byte order), the second the prefix (1 - 32), and last the IPv4 gateway (network byte order). The gateway may be left as 0 if no gateway exists for that subnet.  For the 'auto' method, given IP addresses are appended to those returned by automatic configuration.  Addresses cannot be used with the 'shared', 'link-local', or 'disabled' methods as addressing is either automatic or disabled with these methods.
+[NM property description]
+Array of IPv4 address structures.  Each IPv4 address structure is composed of 3 32-bit values; the first being the IPv4 address (network byte order), the second the prefix (1 - 32), and last the IPv4 gateway (network byte order). The gateway may be left as 0 if no gateway exists for that subnet.  For the 'auto' method, given IP addresses are appended to those returned by automatic configuration.  Addresses cannot be used with the 'shared', 'link-local', or 'disabled' methods as addressing is either automatic or disabled with these methods.
 
-[nmcli description]
+[nmcli specific description]
 Enter a list of IPv4 addresses formatted as:
   ip[/prefix] [gateway], ip[/prefix] [gateway],...
 Missing prefix is regarded as prefix of 32.
@@ -256,6 +351,8 @@ Missing prefix is regarded as prefix of 32.
 Example: 192.168.1.5/24 192.168.1.1, 10.0.0.11/24
 
 nmcli ipv4.addresses> set 192.168.1.100/24 192.168.1.1
+Do you also want to set 'ipv4.method' to 'manual'? [yes]: yes
+nmcli ipv4.addresses>
 nmcli ipv4.addresses> print
 addresses: { ip = 192.168.1.100/24, gw = 192.168.1.1 }
 nmcli ipv4.addresses> back
@@ -266,7 +363,7 @@ nmcli> print
 ===============================================================================
                               Connection details
 ===============================================================================
-connection.id:                          ethernet-18
+connection.id:                          ethernet-4
 connection.uuid:                        de89cdeb-a3e1-4d53-8fa0-c22546c775f4
 connection.interface-name:              --
 connection.type:                        802-3-ethernet
@@ -278,6 +375,7 @@ connection.zone:                        --
 connection.master:                      --
 connection.slave-type:                  --
 connection.secondaries:                 
+connection.gateway-ping-timeout:        0
 -------------------------------------------------------------------------------
 802-3-ethernet.port:                    --
 802-3-ethernet.speed:                   0
@@ -304,6 +402,18 @@ ipv4.dhcp-hostname:                     --
 ipv4.never-default:                     no
 ipv4.may-fail:                          yes
 -------------------------------------------------------------------------------
+ipv6.method:                            auto
+ipv6.dns:                               
+ipv6.dns-search:                        
+ipv6.addresses:                         
+ipv6.routes:                            
+ipv6.ignore-auto-routes:                no
+ipv6.ignore-auto-dns:                   no
+ipv6.never-default:                     no
+ipv6.may-fail:                          yes
+ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.dhcp-hostname:                     --
+-------------------------------------------------------------------------------
 nmcli> set ipv4.dns 8.8.8.8 8.8.4.4
 nmcli> print
 ===============================================================================
@@ -321,6 +431,7 @@ connection.zone:                        --
 connection.master:                      --
 connection.slave-type:                  --
 connection.secondaries:                 
+connection.gateway-ping-timeout:        0
 -------------------------------------------------------------------------------
 802-3-ethernet.port:                    --
 802-3-ethernet.speed:                   0
@@ -347,7 +458,19 @@ ipv4.dhcp-hostname:                     --
 ipv4.never-default:                     no
 ipv4.may-fail:                          yes
 -------------------------------------------------------------------------------
-nmcli> verify 
+ipv6.method:                            auto
+ipv6.dns:                               
+ipv6.dns-search:                        
+ipv6.addresses:                         
+ipv6.routes:                            
+ipv6.ignore-auto-routes:                no
+ipv6.ignore-auto-dns:                   no
+ipv6.never-default:                     no
+ipv6.may-fail:                          yes
+ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.dhcp-hostname:                     --
+-------------------------------------------------------------------------------
+nmcli> verify
 Verify connection: OK
 nmcli> save
 Connection 'ethernet-4' (de89cdeb-a3e1-4d53-8fa0-c22546c775f4) successfully saved.
@@ -359,39 +482,6 @@ nmcli> quit
       The scenario creates an Ethernet connection (configuration) with static addressing (IPs and DNS).
     </para>
 
-    <example><title>nmcli usage in a NetworkManager dispatcher script to make ethernet/Wi-Fi mutually exclusive</title>
-      <programlisting>
-#!/bin/bash
-export LC_ALL=C
-
-enable_disable_wifi ()
-{
-	result=$(nmcli dev | grep "802-3-ethernet" | grep -w "connected")
-	if [ -n "$result" ]; then
-		nmcli radio wifi off
-	else
-		nmcli radio wifi on
-	fi
-}
-
-if [ "$2" = "up" ]; then
-	enable_disable_wifi
-fi
-
-if [ "$2" = "down" ]; then
-	enable_disable_wifi
-fi
-      </programlisting>
-    </example>
-    <para>
-      This dispatcher script makes Wi-Fi mutually exclusive with wired
-      networking. When a wired interface is connected, Wi-Fi will be set
-      to airplane mode (rfkilled). When the wired interface is disconnected,
-      Wi-Fi will be turned back on.
-      Name this script e.g. 70-wifi-wired-exclusive.sh and put it into /etc/NetworkManager/dispatcher.d/.
-      See <citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry>
-      manual page for more information about NetworkManager dispatcher scripts.
-    </para>
   </refsect1>
 
   <refsect1>
