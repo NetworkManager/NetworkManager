@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2014 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -63,6 +63,7 @@ typedef struct {
 	gboolean is_default6;
 	NMIP6Config *ip6_config;
 	NMDHCP6Config *dhcp6_config;
+	gboolean is_vpn;
 	char *master;
 } NMActiveConnectionPrivate;
 
@@ -79,6 +80,7 @@ enum {
 	PROP_DEFAULT6,
 	PROP_IP6_CONFIG,
 	PROP_DHCP6_CONFIG,
+	PROP_VPN,
 	PROP_MASTER,
 
 	LAST_PROP
@@ -411,6 +413,25 @@ nm_active_connection_get_dhcp6_config (NMActiveConnection *connection)
 }
 
 /**
+ * nm_active_connection_get_vpn:
+ * @connection: a #NMActiveConnection
+ *
+ * Whether the active connection is a VPN connection.
+ *
+ * Returns: %TRUE if the active connection is a VPN connection
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_active_connection_get_vpn (NMActiveConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), FALSE);
+
+	_nm_object_ensure_inited (NM_OBJECT (connection));
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->is_vpn;
+}
+
+/**
  * nm_active_connection_get_master:
  * @connection: a #NMActiveConnection
  *
@@ -511,6 +532,9 @@ get_property (GObject *object,
 	case PROP_DHCP6_CONFIG:
 		g_value_set_object (value, nm_active_connection_get_dhcp6_config (self));
 		break;
+	case PROP_VPN:
+		g_value_set_boolean (value, nm_active_connection_get_vpn (self));
+		break;
 	case PROP_MASTER:
 		g_value_set_string (value, nm_active_connection_get_master (self));
 		break;
@@ -536,10 +560,8 @@ register_properties (NMActiveConnection *connection)
 		{ NM_ACTIVE_CONNECTION_DEFAULT6,            &priv->is_default6 },
 		{ NM_ACTIVE_CONNECTION_IP6_CONFIG,          &priv->ip6_config, NULL, NM_TYPE_IP6_CONFIG },
 		{ NM_ACTIVE_CONNECTION_DHCP6_CONFIG,        &priv->dhcp6_config, NULL, NM_TYPE_DHCP6_CONFIG },
+		{ NM_ACTIVE_CONNECTION_VPN,                 &priv->is_vpn },
 		{ NM_ACTIVE_CONNECTION_MASTER,              &priv->master },
-
-		/* not tracked after construction time */
-		{ "vpn", NULL },
 
 		{ NULL },
 	};
@@ -728,6 +750,21 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 		                      "DHCP6 Config",
 		                      NM_TYPE_DHCP6_CONFIG,
 		                      G_PARAM_READABLE));
+
+	/**
+	 * NMActiveConnection:vpn:
+	 *
+	 * Whether the active connection is a VPN connection.
+	 *
+	 * Since: 0.9.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_VPN,
+		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_VPN,
+		                       "VPN",
+		                       "Is a VPN connection",
+		                       FALSE,
+		                       G_PARAM_READABLE));
 
 	/**
 	 * NMActiveConnection:master:

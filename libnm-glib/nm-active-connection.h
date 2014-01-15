@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2014 Red Hat, Inc.
  * Copyright (C) 2008 Novell, Inc.
  */
 
@@ -54,6 +54,7 @@ G_BEGIN_DECLS
 #define NM_ACTIVE_CONNECTION_DEFAULT6            "default6"
 #define NM_ACTIVE_CONNECTION_IP6_CONFIG          "ip6-config"
 #define NM_ACTIVE_CONNECTION_DHCP6_CONFIG        "dhcp6-config"
+#define NM_ACTIVE_CONNECTION_VPN                 "vpn"
 #define NM_ACTIVE_CONNECTION_MASTER              "master"
 
 typedef struct {
@@ -88,6 +89,7 @@ NMDHCP4Config *nm_active_connection_get_dhcp4_config      (NMActiveConnection *c
 gboolean       nm_active_connection_get_default6          (NMActiveConnection *connection);
 NMIP6Config *  nm_active_connection_get_ip6_config        (NMActiveConnection *connection);
 NMDHCP6Config *nm_active_connection_get_dhcp6_config      (NMActiveConnection *connection);
+gboolean       nm_active_connection_get_vpn               (NMActiveConnection *connection);
 
 G_END_DECLS
 

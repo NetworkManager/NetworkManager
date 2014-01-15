@@ -32,6 +32,7 @@ global:
 	nm_active_connection_get_state;
 	nm_active_connection_get_type;
 	nm_active_connection_get_uuid;
+	nm_active_connection_get_vpn;
 	nm_active_connection_new;
 	nm_client_activate_connection;
 	nm_client_add_and_activate_connection;
