@@ -1635,6 +1635,11 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 			                                     known_route->gateway,
 			                                     known_route->metric,
 			                                     known_route->mss);
+			if (!success && known_route->source < NM_PLATFORM_SOURCE_USER) {
+				nm_log_dbg (LOGD_PLATFORM, "ignore error adding IPv4 route to kernel: %s",
+				                           nm_platform_ip4_route_to_string (known_route));
+				success = TRUE;
+			}
 		}
 	}
 
@@ -1689,6 +1694,11 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 			                                     known_route->gateway,
 			                                     known_route->metric,
 			                                     known_route->mss);
+			if (!success && known_route->source < NM_PLATFORM_SOURCE_USER) {
+				nm_log_dbg (LOGD_PLATFORM, "ignore error adding IPv6 route to kernel: %s",
+				                           nm_platform_ip6_route_to_string (known_route));
+				success = TRUE;
+			}
 		}
 	}
 
