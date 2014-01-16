@@ -55,6 +55,24 @@ _nm_utils_convert_strv_to_slist (const GValue *src_value, GValue *dest_value)
 }
 
 static void
+_nm_utils_convert_slist_to_strv (const GValue *src_value, GValue *dest_value)
+{
+	GSList *slist;
+	char **strv;
+	int len, i = 0;
+
+	slist = g_value_get_boxed (src_value);
+	len = g_slist_length (slist);
+
+	strv = g_new (char *, len + 1);
+	for (i = 0; slist; slist = slist->next, i++)
+		strv[i] = g_strdup (slist->data);
+	strv[i] = NULL;
+
+	g_value_take_boxed (dest_value, strv);
+}
+
+static void
 _nm_utils_convert_strv_to_ptrarray (const GValue *src_value, GValue *dest_value)
 {
 	char **str;
@@ -529,6 +547,9 @@ _nm_value_transforms_register (void)
 		g_value_register_transform_func (G_TYPE_STRV, 
 		                                 DBUS_TYPE_G_LIST_OF_STRING,
 		                                 _nm_utils_convert_strv_to_slist);
+		g_value_register_transform_func (DBUS_TYPE_G_LIST_OF_STRING,
+		                                 G_TYPE_STRV,
+		                                 _nm_utils_convert_slist_to_strv);
 		g_value_register_transform_func (G_TYPE_STRV,
 		                                 DBUS_TYPE_G_ARRAY_OF_STRING,
 		                                 _nm_utils_convert_strv_to_ptrarray);

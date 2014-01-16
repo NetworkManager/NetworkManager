@@ -440,9 +440,8 @@ connection_deleted_callback (NMRemoteConnection *connection,
 	ConnectionDeleteData *data = user_data;
 
 	if (error) {
-		nmt_newt_error_dialog (_("OK"),
-		                       _("Unable to delete connection: %s"),
-		                       error->message);
+		nmt_newt_message_dialog (_("Unable to delete connection: %s"),
+		                         error->message);
 	} else
 		data->got_callback = TRUE;
 
@@ -484,8 +483,8 @@ nmt_remove_connection (NMRemoteConnection *connection)
 	nm_remote_connection_delete (connection, connection_deleted_callback, &data);
 
 	if (!nmt_sync_op_wait_boolean (&data.op, &error)) {
-		nmt_newt_error_dialog (_("Could not delete connection: %s"),
-		                       error->message);
+		nmt_newt_message_dialog (_("Could not delete connection: %s"),
+		                         error->message);
 		g_error_free (error);
 	}
 
@@ -517,8 +516,9 @@ nmtui_edit (int argc, char **argv)
 		}
 
 		if (!conn) {
-			g_printerr ("%s: no such connection '%s'\n", argv[0], argv[1]);
-			exit (1);
+			nmt_newt_message_dialog ("%s: no such connection '%s'\n", argv[0], argv[1]);
+			nmtui_quit ();
+			return;
 		}
 
 		nmt_edit_connection (conn);

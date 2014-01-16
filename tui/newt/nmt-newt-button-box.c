@@ -291,14 +291,10 @@ nmt_newt_button_box_size_allocate (NmtNewtWidget *widget,
 		nmt_newt_widget_size_request (child, &child_width, &child_height);
 
 		if (priv->orientation == NMT_NEWT_BUTTON_BOX_HORIZONTAL) {
-			nmt_newt_widget_size_allocate (child,
-			                               child_x, child_y + (height - child_height) / 2,
-			                               child_width, child_height);
+			nmt_newt_widget_size_allocate (child, child_x, child_y, child_width, child_height);
 			child_x += child_width + 1;
 		} else {
-			nmt_newt_widget_size_allocate (child,
-			                               child_x + (width - child_width) / 2, child_y,
-			                               child_width, child_height);
+			nmt_newt_widget_size_allocate (child, child_x, child_y, child_width, child_height);
 			child_y += child_height + 1;
 		}
 	}
@@ -314,14 +310,12 @@ nmt_newt_button_box_size_allocate (NmtNewtWidget *widget,
 
 		if (priv->orientation == NMT_NEWT_BUTTON_BOX_HORIZONTAL) {
 			nmt_newt_widget_size_allocate (child,
-			                               child_x - child_width,
-			                               child_y + (height - child_height) / 2,
+			                               child_x - child_width, child_y,
 			                               child_width, child_height);
 			child_x -= child_width + 1;
 		} else {
 			nmt_newt_widget_size_allocate (child,
-			                               child_x + (width - child_width) / 2,
-			                               child_y - child_height,
+			                               child_x, child_y - child_height,
 			                               child_width, child_height);
 			child_y -= child_height + 1;
 		}

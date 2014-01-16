@@ -1634,33 +1634,3 @@ nm_editor_bind_vlan_name (NMSettingVlan *s_vlan)
 		binding->last_ifname_id = 0;
 	}
 }
-
-
-#define DBUS_TYPE_G_LIST_OF_STRING (dbus_g_type_get_collection ("GSList", G_TYPE_STRING))
-
-static void
-convert_slist_to_strv (const GValue *src_value, GValue *dest_value)
-{
-	GSList *slist;
-	char **strv;
-	int len, i = 0;
-
-	slist = g_value_get_boxed (src_value);
-	len = g_slist_length (slist);
-
-	strv = g_new (char *, len + 1);
-	for (i = 0; slist; slist = slist->next, i++)
-		strv[i] = g_strdup (slist->data);
-	strv[i] = NULL;
-
-	g_value_take_boxed (dest_value, strv);
-}
-
-void
-nm_editor_bindings_init (void)
-{
-	/* FIXME: libnm registers strv->list, but not list->strv */
-	g_value_register_transform_func (DBUS_TYPE_G_LIST_OF_STRING,
-	                                 G_TYPE_STRV,
-	                                 convert_slist_to_strv);
-}

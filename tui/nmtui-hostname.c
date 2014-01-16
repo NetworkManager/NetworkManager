@@ -111,9 +111,9 @@ nmtui_hostname (int argc, char **argv)
 		nm_remote_settings_save_hostname (nm_settings, hostname, hostname_set, &op);
 		if (nmt_sync_op_wait_boolean (&op, &error)) {
 			/* Translators: this indicates the result. ie, "I have set the hostname to ..." */
-			nmt_newt_error_dialog (_("Set hostname to '%s'"), hostname);
+			nmt_newt_message_dialog (_("Set hostname to '%s'"), hostname);
 		} else {
-			nmt_newt_error_dialog (_("Unable to set hostname: %s"), error->message);
+			nmt_newt_message_dialog (_("Unable to set hostname: %s"), error->message);
 			g_error_free (error);
 		}
 

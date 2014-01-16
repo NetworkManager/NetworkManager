@@ -32,10 +32,10 @@
 #include "nmt-newt-utils.h"
 
 static void
-nmt_newt_g_log_handler (const char     *log_domain,
-                        GLogLevelFlags  log_level,
-                        const char     *message,
-                        gpointer        user_data)
+nmt_newt_dialog_g_log_handler (const char     *log_domain,
+                               GLogLevelFlags  log_level,
+                               const char     *message,
+                               gpointer        user_data)
 {
 	const char *level_name;
 	char *full_message;
@@ -98,16 +98,22 @@ nmt_newt_g_log_handler (const char     *log_domain,
 	newtPopWindow ();
 }
 
+static void
+nmt_newt_basic_g_log_handler (const char     *log_domain,
+                              GLogLevelFlags  log_level,
+                              const char     *message,
+                              gpointer        user_data)
+{
+	newtSuspend ();
+	g_log_default_handler (log_domain, log_level, message, NULL);
+	newtResume ();
+}
+
 /**
  * nmt_newt_init:
  *
  * Wrapper for newtInit() that also does some nmt-newt-internal setup.
  * This should be called once, before any other nmt-newt functions.
- *
- * FIXME: Currently this also calls g_log_set_default_handler() to set
- * up a log handler that displays g_warning()s and the like as pop-up
- * windows, but in the long run that should only happen for
- * debug/developer builds.
  */
 void
 nmt_newt_init (void)
@@ -121,7 +127,10 @@ nmt_newt_init (void)
 	newtSetColor (NMT_NEWT_COLORSET_DISABLED_BUTTON, "blue", "lightgray");
 	newtSetColor (NMT_NEWT_COLORSET_TEXTBOX_WITH_BACKGROUND, "black", "white");
 
-	g_log_set_default_handler (nmt_newt_g_log_handler, NULL);
+	if (g_getenv ("NMTUI_DEBUG"))
+		g_log_set_default_handler (nmt_newt_dialog_g_log_handler, NULL);
+	else
+		g_log_set_default_handler (nmt_newt_basic_g_log_handler, NULL);
 }
 
 /**
@@ -133,22 +142,20 @@ void
 nmt_newt_finished (void)
 {
 	newtFinished ();
-	g_log_set_default_handler (nmt_newt_g_log_handler, g_log_default_handler);
+	g_log_set_default_handler (g_log_default_handler, NULL);
 }
 
 /**
- * nmt_newt_error_dialog:
+ * nmt_newt_message_dialog:
  * @message: a printf()-style message format
  * @...: arguments
  *
  * Displays the given message in a dialog box with a single "OK"
  * button, and returns after the user clicks "OK".
- *
- * FIXME: it's not just for errors any more!
  */
 void
-nmt_newt_error_dialog  (const char *message,
-                        ...)
+nmt_newt_message_dialog  (const char *message,
+                          ...)
 {
 	va_list ap;
 	char *msg, *msg_lc, *ok_lc;
@@ -253,6 +260,37 @@ nmt_newt_locale_from_utf8 (const char *str_utf8)
 }
 
 /**
+ * nmt_newt_text_width
+ * @str: a UTF-8 string
+ *
+ * Computes the width (in terminal columns) of @str.
+ *
+ * Returns: the width of @str
+ */
+int
+nmt_newt_text_width (const char *str)
+{
+	int width;
+	gunichar ch;
+
+	for (width = 0; *str; str = g_utf8_next_char (str)) {
+		ch = g_utf8_get_char (str);
+
+		/* Based on _vte_iso2022_unichar_width */
+		if (G_LIKELY (ch < 0x80))
+			width += 1;
+		else if (G_UNLIKELY (g_unichar_iszerowidth (ch)))
+			width += 0;
+		else if (G_UNLIKELY (g_unichar_iswide (ch)))
+			width += 2;
+		else
+			width += 1;
+	}
+
+	return width;
+}
+
+/**
  * nmt_newt_edit_string:
  * @data: data to edit
  *
@@ -275,7 +313,7 @@ nmt_newt_edit_string (const char *data)
 
 	fd = g_file_open_tmp ("XXXXXX.json", &filename, &error);
 	if (fd == -1) {
-		nmt_newt_error_dialog (_("Could not create temporary file: %s"), error->message);
+		nmt_newt_message_dialog (_("Could not create temporary file: %s"), error->message);
 		g_error_free (error);
 		return NULL;
 	}
@@ -307,19 +345,19 @@ nmt_newt_edit_string (const char *data)
 	newtResume ();
 
 	if (error) {
-		nmt_newt_error_dialog (_("Could not create temporary file: %s"), error->message);
+		nmt_newt_message_dialog (_("Could not create temporary file: %s"), error->message);
 		g_error_free (error);
 		goto done;
 	}
 
 	if (!g_spawn_check_exit_status (status, &error)) {
-		nmt_newt_error_dialog (_("Editor failed: %s"), error->message);
+		nmt_newt_message_dialog (_("Editor failed: %s"), error->message);
 		g_error_free (error);
 		goto done;
 	}
 
 	if (!g_file_get_contents (filename, &new_data, NULL, &error)) {
-		nmt_newt_error_dialog (_("Could not re-read file: %s"), error->message);
+		nmt_newt_message_dialog (_("Could not re-read file: %s"), error->message);
 		g_error_free (error);
 		goto done;
 	}

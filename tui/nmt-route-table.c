@@ -211,13 +211,13 @@ nmt_route_table_init (NmtRouteTable *table)
 	NmtRouteTablePrivate *priv = NMT_ROUTE_TABLE_GET_PRIVATE (table);
 	NmtNewtWidget *header, *empty;
 	NmtNewtWidget *dest_prefix_label, *next_hop_label, *metric_label;
-	int dest_prefix_len, next_hop_len, metric_len;
+	int dest_prefix_width, next_hop_width, metric_width;
 	char *text;
 
 	header = nmt_newt_grid_new ();
 
 	text = g_strdup_printf ("%s/%s", _("Destination"), _("Prefix"));
-	dest_prefix_len = g_utf8_strlen (text, -1);
+	dest_prefix_width = nmt_newt_text_width (text);
 	dest_prefix_label = g_object_new (NMT_TYPE_NEWT_LABEL,
 	                                  "text", text,
 	                                  "style", NMT_NEWT_LABEL_PLAIN,
@@ -230,7 +230,7 @@ nmt_route_table_init (NmtRouteTable *table)
 	                               "text", text,
 	                               "style", NMT_NEWT_LABEL_PLAIN,
 	                               NULL);
-	next_hop_len = g_utf8_strlen (text, -1);
+	next_hop_width = nmt_newt_text_width (text);
 	nmt_newt_grid_add (NMT_NEWT_GRID (header), next_hop_label, 1, 0);
 
 	text = _("Metric");
@@ -238,18 +238,18 @@ nmt_route_table_init (NmtRouteTable *table)
 	                             "text", text,
 	                             "style", NMT_NEWT_LABEL_PLAIN,
 	                             NULL);
-	metric_len = g_utf8_strlen (text, -1);
+	metric_width = nmt_newt_text_width (text);
 	nmt_newt_grid_add (NMT_NEWT_GRID (header), metric_label, 2, 0);
 
-	priv->ip_entry_width = MAX (20, MAX (dest_prefix_len, next_hop_len));
-	priv->metric_entry_width = MAX (7, metric_len);
+	priv->ip_entry_width = MAX (20, MAX (dest_prefix_width, next_hop_width));
+	priv->metric_entry_width = MAX (7, metric_width);
 
 	nmt_newt_widget_set_padding (dest_prefix_label,
-	                           0, 0, priv->ip_entry_width - dest_prefix_len, 0);
+	                           0, 0, priv->ip_entry_width - dest_prefix_width, 0);
 	nmt_newt_widget_set_padding (next_hop_label,
-	                           2, 0, priv->ip_entry_width - next_hop_len, 0);
+	                           2, 0, priv->ip_entry_width - next_hop_width, 0);
 	nmt_newt_widget_set_padding (metric_label,
-	                           2, 0, priv->metric_entry_width - metric_len, 0);
+	                           2, 0, priv->metric_entry_width - metric_width, 0);
 
 	nmt_newt_grid_add (NMT_NEWT_GRID (table), header, 0, 0);
 

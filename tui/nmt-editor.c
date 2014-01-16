@@ -78,12 +78,12 @@ nmt_editor_new (NMConnection *connection)
 
 		s_con = nm_connection_get_setting_connection (connection);
 		if (s_con) {
-			nmt_newt_error_dialog (_("Could not create editor for connection '%s' of type '%s'."),
-			                       nm_connection_get_id (connection),
-			                       nm_setting_connection_get_connection_type (s_con));
+			nmt_newt_message_dialog (_("Could not create editor for connection '%s' of type '%s'."),
+			                         nm_connection_get_id (connection),
+			                         nm_setting_connection_get_connection_type (s_con));
 		} else {
-			nmt_newt_error_dialog (_("Could not create editor for invalid connection '%s'."),
-			                       nm_connection_get_id (connection));
+			nmt_newt_message_dialog (_("Could not create editor for invalid connection '%s'."),
+			                         nm_connection_get_id (connection));
 		}
 
 		return NULL;
@@ -131,7 +131,7 @@ save_connection_and_exit (NmtNewtButton *button,
 	if (!nm_connection_replace_settings_from_connection (priv->orig_connection,
 	                                                     priv->edit_connection,
 	                                                     &error)) {
-		nmt_newt_error_dialog (_("Error saving connection: %s"), error->message);
+		nmt_newt_message_dialog (_("Error saving connection: %s"), error->message);
 		g_error_free (error);
 		return;
 	}
@@ -141,8 +141,8 @@ save_connection_and_exit (NmtNewtButton *button,
 		nm_remote_connection_commit_changes (NM_REMOTE_CONNECTION (priv->orig_connection),
 		                                     connection_updated, &op);
 		if (!nmt_sync_op_wait_boolean (&op, &error)) {
-			nmt_newt_error_dialog (_("Unable to save connection: %s"),
-			                       error->message);
+			nmt_newt_message_dialog (_("Unable to save connection: %s"),
+			                         error->message);
 			g_error_free (error);
 			return;
 		}
@@ -155,8 +155,8 @@ save_connection_and_exit (NmtNewtButton *button,
 		nm_remote_settings_add_connection (nm_settings, priv->orig_connection,
 		                                   connection_added, &op);
 		if (!nmt_sync_op_wait_boolean (&op, &error)) {
-			nmt_newt_error_dialog (_("Unable to add new connection: %s"),
-			                       error->message);
+			nmt_newt_message_dialog (_("Unable to add new connection: %s"),
+			                         error->message);
 			g_error_free (error);
 			return;
 		}

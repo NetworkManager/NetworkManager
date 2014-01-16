@@ -35,9 +35,6 @@
 
 #include "nmtui.h"
 #include "nmt-connect-connection-list.h"
-#include "nmt-utils.h"
-#include "nmt-password-dialog.h"
-#include "nmt-secret-agent.h"
 #include "nm-ui-utils.h"
 
 G_DEFINE_TYPE (NmtConnectConnectionList, nmt_connect_connection_list, NMT_TYPE_NEWT_LISTBOX)
@@ -60,6 +57,7 @@ typedef struct {
 	NMConnection *conn;
 	NMAccessPoint *ap;
 	NMDevice *device;
+	NMActiveConnection *active;
 } NmtConnectConnection;
 
 typedef struct {
@@ -92,6 +90,7 @@ nmt_connect_connection_free (NmtConnectConnection *nmtconn)
 {
 	g_clear_object (&nmtconn->conn);
 	g_clear_object (&nmtconn->ap);
+	g_clear_object (&nmtconn->active);
 	g_free (nmtconn->ssid);
 }
 
@@ -377,9 +376,9 @@ sort_nmt_devices (gconstpointer  a,
 	return strcmp (nmta->name, nmtb->name);
 }
 
-static gboolean
-connection_is_active (NMConnection    *conn,
-                      const GPtrArray *acs)
+static NMActiveConnection *
+connection_find_ac (NMConnection    *conn,
+                    const GPtrArray *acs)
 {
 	NMActiveConnection *ac;
 	const char *path, *ac_path;
@@ -391,10 +390,10 @@ connection_is_active (NMConnection    *conn,
 		ac_path = nm_active_connection_get_connection (ac);
 
 		if (!strcmp (path, ac_path))
-			return TRUE;
+			return ac;
 	}
 
-	return FALSE;
+	return NULL;
 }
 
 static void
@@ -437,7 +436,7 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 		for (citer = nmtdev->conns; citer; citer = citer->next) {
 			nmtconn = citer->data;
 
-			max_width = MAX (max_width, g_utf8_strlen (nmtconn->name, -1));
+			max_width = MAX (max_width, nmt_newt_text_width (nmtconn->name));
 		}
 	}
 
@@ -451,9 +450,12 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 		for (citer = nmtdev->conns; citer; citer = citer->next) {
 			nmtconn = citer->data;
 
-			if (nmtconn->conn && connection_is_active (nmtconn->conn, acs))
+			if (nmtconn->conn)
+				nmtconn->active = connection_find_ac (nmtconn->conn, acs);
+			if (nmtconn->active) {
+				g_object_ref (nmtconn->active);
 				active_col = '*';
-			else
+			} else
 				active_col = ' ';
 
 			if (nmtconn->ap) {
@@ -475,7 +477,7 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 			row = g_strdup_printf ("%c %s%-*s%s",
 			                       active_col,
 			                       nmtconn->name,
-			                       (int)(max_width - g_utf8_strlen (nmtconn->name, -1)), "",
+			                       (int)(max_width - nmt_newt_text_width (nmtconn->name)), "",
 			                       strength_col);
 
 			nmt_newt_listbox_append (listbox, row, nmtconn);
@@ -484,6 +486,9 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 	}
 
 	priv->nmt_devices = nmt_devices;
+
+	g_object_notify (G_OBJECT (listbox), "active");
+	g_object_notify (G_OBJECT (listbox), "active-key");
 }
 
 static void
@@ -532,211 +537,39 @@ nmt_connect_connection_list_finalize (GObject *object)
 	G_OBJECT_CLASS (nmt_connect_connection_list_parent_class)->finalize (object);
 }
 
-typedef struct {
-	NmtNewtForm *form;
-	NMSecretAgent *agent;
-} NmtActivationData;
-
-static void
-nmt_activation_data_free (NmtActivationData *data)
-{
-	g_object_unref (data->form);
-	g_object_unref (data->agent);
-	g_slice_free (NmtActivationData, data);
-}
-
-static void
-secrets_requested (NmtSecretAgent *agent,
-                   const char     *request_id,
-                   const char     *title,
-                   const char     *msg,
-                   GPtrArray      *secrets,
-                   gpointer        user_data)
-{
-	NmtNewtForm *form;
-
-	form = nmt_password_dialog_new (request_id, title, msg, secrets);
-	nmt_newt_form_run_sync (form);
-
-	if (nmt_password_dialog_succeeded (NMT_PASSWORD_DIALOG (form)))
-		nmt_secret_agent_response (agent, request_id, secrets);
-	else
-		nmt_secret_agent_response (agent, request_id, NULL);
-
-	g_object_unref (form);
-}
-
-
-static void
-activation_complete (GSimpleAsyncResult *simple,
-                     GError             *error)
-{
-	NmtActivationData *data = g_object_get_data (G_OBJECT (simple), "NmtActivationData");
-
-	if (error)
-		g_simple_async_result_set_from_error (simple, error);
-	else
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-
-	nmt_newt_form_quit (data->form);
-	/* If we bail out too soon, the agent won't have completed registering,
-	 * and nm_secret_agent_unregister() would complain.
-	 */
-	if (nm_secret_agent_get_registered (data->agent))
-		nm_secret_agent_unregister (data->agent);
-}
-
-static void
-activate_ac_state_changed (GObject    *object,
-                           GParamSpec *pspec,
-                           gpointer    user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	NMActiveConnectionState state;
-	GError *error = NULL;
-
-	state = nm_active_connection_get_state (NM_ACTIVE_CONNECTION (object));
-	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
-		return;
-
-	if (state != NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		error = g_error_new_literal (NM_CLIENT_ERROR, NM_CLIENT_ERROR_UNKNOWN,
-		                             _("Activation failed"));
-	}
-
-	g_signal_handlers_disconnect_by_func (object, G_CALLBACK (activate_ac_state_changed), simple);
-	g_object_unref (object);
-
-	activation_complete (simple, error);
-	g_clear_error (&error);
-}
-
-static void
-activation_callback (NMClient           *client,
-                     NMActiveConnection *ac,
-                     GError             *error,
-                     gpointer            user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-
-	if (error || nm_active_connection_get_state (ac) == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		activation_complete (simple, error);
-		return;
-	}
-
-	g_object_ref (ac);
-	g_signal_connect (ac, "notify::" NM_ACTIVE_CONNECTION_STATE,
-	                  G_CALLBACK (activate_ac_state_changed), simple);
-}
-
-static void
-activate_nmt_connection_async (NmtConnectConnectionList *list,
-                               NmtConnectConnection     *nmtconn,
-                               GAsyncReadyCallback       callback,
-                               gpointer                  user_data)
-{
-	NmtActivationData *data;
-	NmtNewtWidget *label;
-	GSimpleAsyncResult *simple;
-
-	data = g_slice_new (NmtActivationData);
-
-	data->form = g_object_new (NMT_TYPE_NEWT_FORM, NULL); 
-	label = nmt_newt_label_new (_("Connecting..."));
-	nmt_newt_form_set_content (data->form, label);
-
-	data->agent = nmt_secret_agent_new ();
-	nm_secret_agent_register (data->agent);
-	g_signal_connect (data->agent, "request-secrets",
-	                  G_CALLBACK (secrets_requested), NULL);
-
-	simple = g_simple_async_result_new (G_OBJECT (list), callback, user_data,
-	                                    activate_nmt_connection_async);
-	g_object_set_data_full (G_OBJECT (simple), "NmtActivationData", data,
-	                        (GDestroyNotify)nmt_activation_data_free);
-
-	/* FIXME: cancel button */
-	nm_client_activate_connection (nm_client,
-	                               nmtconn->conn, nmtconn->device,
-	                               nmtconn->ap ? nm_object_get_path (NM_OBJECT (nmtconn->ap)) : NULL,
-	                               activation_callback, simple);
-	nmt_newt_form_show (data->form);
-}
-
-static gboolean
-activate_nmt_connection_finish (NmtConnectConnectionList  *list,
-                                GAsyncResult              *result,
-                                GError                   **error)
-{
-	return g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error);
-}
-
-static void
-activate_complete (GObject      *object,
-                   GAsyncResult *result,
-                   gpointer      user_data)
-{
-	NmtSyncOp *op = user_data;
-	GError *error = NULL;
-
-	if (activate_nmt_connection_finish (NMT_CONNECT_CONNECTION_LIST (object), result, &error))
-		nmt_sync_op_complete_boolean (op, TRUE, NULL);
-	else
-		nmt_sync_op_complete_boolean (op, FALSE, error);
-	g_clear_error (&error);
-}
-
-static void
-nmt_connect_connection_list_activated (NmtNewtWidget *widget)
-{
-	NmtConnectConnection *nmtconn;
-	NmtSyncOp op;
-	GError *error = NULL;
-
-	nmtconn = nmt_newt_listbox_get_active_key (NMT_NEWT_LISTBOX (widget));
-	g_return_if_fail (nmtconn != NULL);
-
-	nmt_sync_op_init (&op);
-	activate_nmt_connection_async (NMT_CONNECT_CONNECTION_LIST (widget), nmtconn,
-	                               activate_complete, &op);
-	if (!nmt_sync_op_wait_boolean (&op, &error)) {
-		nmt_newt_error_dialog (_("Could not activate connection: %s"), error->message);
-		g_error_free (error);
-	}
-}
-
 static void
 nmt_connect_connection_list_class_init (NmtConnectConnectionListClass *list_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (list_class);
-	NmtNewtWidgetClass *widget_class = NMT_NEWT_WIDGET_CLASS (list_class);
 
 	g_type_class_add_private (list_class, sizeof (NmtConnectConnectionListPrivate));
 
 	/* virtual methods */
 	object_class->constructed  = nmt_connect_connection_list_constructed;
 	object_class->finalize     = nmt_connect_connection_list_finalize;
-
-	widget_class->activated = nmt_connect_connection_list_activated;
 }
 
 /**
- * nmt_connect_connection_list_activate_async:
+ * nmt_connect_connection_list_get_connection:
  * @list: an #NmtConnectConnectionList
- * @identifier: a connection ID or UUID
- * @callback: #GAsyncReadyCallback
- * @user_data: data for @callback
+ * @identifier: a connection ID or UUID, or device name
+ * @connection: (out) (transfer none): the #NMConnection to be activated
+ * @device: (out) (transfer none): the #NMDevice to activate @connection on
+ * @specific_object: (out) (transfer none): the "specific object" to connect to
+ * @active: (out) (transfer none): the #NMActiveConnection corresponding
+ *   to the selection, if any.
  *
- * Asynchronously begins to activate the connection identified by
- * @identifier, and invokes @callback when it completes.
+ * Gets information about the indicated connection.
+ *
+ * Returns: %TRUE if there was a match, %FALSE if not.
  */
-void
-nmt_connect_connection_list_activate_async (NmtConnectConnectionList *list,
-                                            const char               *identifier,
-                                            GAsyncReadyCallback       callback,
-                                            gpointer                  user_data)
+gboolean
+nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *list,
+                                            const char                *identifier,
+                                            NMConnection             **connection,
+                                            NMDevice                 **device,
+                                            NMObject                 **specific_object,
+                                            NMActiveConnection       **active)
 {
 	NmtConnectConnectionListPrivate *priv = NMT_CONNECT_CONNECTION_LIST_GET_PRIVATE (list);
 	GSList *diter, *citer;
@@ -770,42 +603,66 @@ nmt_connect_connection_list_activate_async (NmtConnectConnectionList *list,
 			nmtconn = citer->data;
 			if (conn) {
 				if (conn == nmtconn->conn)
-					goto activate;
-				else
-					continue;
-			}
-
-			if (nmtconn->ssid && !strcmp (identifier, nmtconn->ssid))
-				goto activate;
+					goto found;
+			} else if (nmtconn->ssid && !strcmp (identifier, nmtconn->ssid))
+				goto found;
 		}
 
-		if (!conn && !nmtdev->device && !strcmp (identifier, nm_device_get_ip_iface (nmtdev->device))) {
+		if (!conn && nmtdev->device && !strcmp (identifier, nm_device_get_ip_iface (nmtdev->device))) {
 			nmtconn = nmtdev->conns->data;
-			goto activate;
+			goto found;
 		}
 	}
 
-	g_printerr ("%s: no such connection '%s'\n", g_get_prgname (), identifier);
-	exit (1);
+	return FALSE;
 
- activate:
-	activate_nmt_connection_async (list, nmtconn, callback, user_data);
+ found:
+	if (connection)
+		*connection = nmtconn->conn;
+	if (device)
+		*device = nmtconn->device;
+	if (specific_object)
+		*specific_object = NM_OBJECT (nmtconn->ap);
+	if (active)
+		*active = nmtconn->active;
+
+	return TRUE;
 }
 
 /**
- * nmt_connect_connection_list_activate_finish:
+ * nmt_connect_connection_list_get_selection:
  * @list: an #NmtConnectConnectionList
- * @result: the #GAsyncResult passed to the callback
- * @error: return location for a #GError
+ * @connection: (out) (transfer none): the #NMConnection to be activated
+ * @device: (out) (transfer none): the #NMDevice to activate @connection on
+ * @specific_object: (out) (transfer none): the "specific object" to connect to
+ * @active: (out) (transfer none): the #NMActiveConnection corresponding
+ *   to the selection, if any.
  *
- * Gets the result of an nmt_connect_connection_list_activate_async() call.
+ * Gets information about the selected row.
  *
- * Returns: success or failure
+ * Returns: %TRUE if there is a selection, %FALSE if not.
  */
 gboolean
-nmt_connect_connection_list_activate_finish (NmtConnectConnectionList  *list,
-                                             GAsyncResult              *result,
-                                             GError                   **error)
+nmt_connect_connection_list_get_selection (NmtConnectConnectionList  *list,
+                                           NMConnection             **connection,
+                                           NMDevice                 **device,
+                                           NMObject                 **specific_object,
+                                           NMActiveConnection       **active)
 {
-	return g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (result), error);
+	NmtConnectConnection *nmtconn;
+
+	nmtconn = nmt_newt_listbox_get_active_key (NMT_NEWT_LISTBOX (list));
+	if (!nmtconn)
+		return FALSE;
+
+	if (connection)
+		*connection = nmtconn->conn;
+	if (device)
+		*device = nmtconn->device;
+	if (specific_object)
+		*specific_object = NM_OBJECT (nmtconn->ap);
+	if (active)
+		*active = nmtconn->active;
+
+	return TRUE;
 }

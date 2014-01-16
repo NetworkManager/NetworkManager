@@ -42,16 +42,19 @@ typedef struct {
 
 GType nmt_connect_connection_list_get_type (void);
 
-NmtNewtWidget *nmt_connect_connection_list_new      (void);
+NmtNewtWidget *nmt_connect_connection_list_new (void);
 
-void     nmt_connect_connection_list_activate_async  (NmtConnectConnectionList  *list,
-                                                      const char                *identifier,
-                                                      GAsyncReadyCallback        callback,
-                                                      gpointer                   user_data);
-gboolean nmt_connect_connection_list_activate_finish (NmtConnectConnectionList  *list,
-                                                      GAsyncResult              *result,
-                                                      GError                   **error);
-
+gboolean nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *list,
+                                                     const char                *identifier,
+                                                     NMConnection             **connection,
+                                                     NMDevice                 **device,
+                                                     NMObject                 **specific_object,
+                                                     NMActiveConnection       **active);
+gboolean nmt_connect_connection_list_get_selection  (NmtConnectConnectionList  *list,
+                                                     NMConnection             **connection,
+                                                     NMDevice                 **device,
+                                                     NMObject                 **specific_object,
+                                                     NMActiveConnection       **active);
 
 G_END_DECLS
 
