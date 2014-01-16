@@ -662,7 +662,7 @@ nm_remote_settings_load_connections (NMRemoteSettings *settings,
 {
 	NMRemoteSettingsPrivate *priv;
 	char **my_failures = NULL;
-	gboolean ret = FALSE;
+	gboolean ret;
 
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
 	g_return_val_if_fail (filenames != NULL, FALSE);
@@ -678,12 +678,13 @@ nm_remote_settings_load_connections (NMRemoteSettings *settings,
 		return FALSE;
 	}
 
-	dbus_g_proxy_call (priv->proxy, "LoadConnections", error,
-	                   G_TYPE_STRV, filenames,
-	                   G_TYPE_INVALID,
-	                   G_TYPE_BOOLEAN, &ret,
-	                   G_TYPE_STRV, &my_failures,
-	                   G_TYPE_INVALID);
+	if (!dbus_g_proxy_call (priv->proxy, "LoadConnections", error,
+	                        G_TYPE_STRV, filenames,
+	                        G_TYPE_INVALID,
+	                        G_TYPE_BOOLEAN, &ret,
+	                        G_TYPE_STRV, &my_failures,
+	                        G_TYPE_INVALID))
+		ret = FALSE;
 
 	if (failures) {
 		if (my_failures && !*my_failures)

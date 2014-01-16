@@ -920,7 +920,7 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 
 	/* 'config' can be either a file name or raw JSON config data */
 	if (g_file_test (config, G_FILE_TEST_EXISTS))
-		g_file_get_contents (config, &contents, NULL, NULL);
+		(void) g_file_get_contents (config, &contents, NULL, NULL);
 	else
 		contents = g_strdup (config);
 

@@ -435,14 +435,13 @@ nmt_secret_agent_get_secrets (NMSecretAgent                 *agent,
 {
 	NmtSecretAgent *self = NMT_SECRET_AGENT (agent);
 	NmtSecretAgentPrivate *priv = NMT_SECRET_AGENT_GET_PRIVATE (self);
-	NmtSecretAgentRequest *request;
 	NMSettingConnection *s_con;
 	const char *connection_type;
 	char *request_id;
 	GError *error;
 
 	request_id = g_strdup_printf ("%s/%s", connection_path, setting_name);
-	if ((request = g_hash_table_lookup (priv->requests, request_id)) != NULL) {
+	if (g_hash_table_lookup (priv->requests, request_id) != NULL) {
 		/* We already have a request pending for this (connection, setting) */
 		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_INTERNAL_ERROR,
 		                     "Request for %s secrets already pending", request_id);
