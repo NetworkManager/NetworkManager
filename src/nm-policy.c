@@ -464,32 +464,20 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 	ip4_config = best4 ? nm_device_get_ip4_config (best4) : NULL;
 	ip6_config = best6 ? nm_device_get_ip6_config (best6) : NULL;
 
-	if (   (!ip4_config || (nm_ip4_config_get_num_addresses (ip4_config) == 0))
-	    && (!ip6_config || (nm_ip6_config_get_num_addresses (ip6_config) == 0))) {
-		/* No valid IP config; fall back to localhost.localdomain */
-		_set_hostname (policy, NULL, "no IP config");
-		return;
-	}
-
-	if (ip4_config) {
+	if (ip4_config && nm_ip4_config_get_num_addresses (ip4_config) > 0) {
 		const NMPlatformIP4Address *addr4;
 
 		addr4 = nm_ip4_config_get_address (ip4_config, 0);
-		g_assert (addr4); /* checked for > 1 address above */
-
 		priv->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr4->address,
-		                                                     G_SOCKET_FAMILY_IPV4);
-	} else if (ip6_config) {
+		                                                   G_SOCKET_FAMILY_IPV4);
+	} else if (ip6_config && nm_ip6_config_get_num_addresses (ip6_config) > 0) {
 		const NMPlatformIP6Address *addr6;
 
 		addr6 = nm_ip6_config_get_address (ip6_config, 0);
-		g_assert (addr6); /* checked for > 1 address above */
-
 		priv->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr6->address,
-		                                                     G_SOCKET_FAMILY_IPV6);
+		                                                   G_SOCKET_FAMILY_IPV6);
 	} else {
-		/* Should never get here... */
-		g_warn_if_reached ();
+		/* No valid IP config; fall back to localhost.localdomain */
 		_set_hostname (policy, NULL, "no IP config");
 		return;
 	}
