@@ -1285,7 +1285,8 @@ nm_ip6_address_compare (NMIP6Address *address, NMIP6Address *other)
  *
  * Gets the IPv6 address property of this address object.
  *
- * Returns: (transfer none): the IPv6 address
+ * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
+ *          the IPv6 address
  **/
 const struct in6_addr *
 nm_ip6_address_get_address (NMIP6Address *address)
@@ -1354,7 +1355,9 @@ nm_ip6_address_set_prefix (NMIP6Address *address, guint32 prefix)
  *
  * Gets the IPv6 default gateway property of this address object.
  *
- * Returns: (transfer none): the IPv6 gateway address
+ * Returns: (transfer none): 
+ * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
+ *          the IPv6 gateway address
  **/
 const struct in6_addr *
 nm_ip6_address_get_gateway (NMIP6Address *address)
@@ -1502,7 +1505,8 @@ nm_ip6_route_compare (NMIP6Route *route, NMIP6Route *other)
  *
  * Gets the IPv6 destination address property of this route object.
  *
- * Returns: the IPv6 address
+ * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
+ *          the IPv6 address of destination
  **/
 const struct in6_addr *
 nm_ip6_route_get_dest (NMIP6Route *route)
@@ -1571,7 +1575,8 @@ nm_ip6_route_set_prefix (NMIP6Route *route, guint32 prefix)
  *
  * Gets the IPv6 address of the next hop of this route.
  *
- * Returns: the IPv6 address
+ * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
+ *          the IPv6 address of next hop
  **/
 const struct in6_addr *
 nm_ip6_route_get_next_hop (NMIP6Route *route)
