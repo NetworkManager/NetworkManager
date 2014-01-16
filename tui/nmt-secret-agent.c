@@ -435,6 +435,7 @@ nmt_secret_agent_get_secrets (NMSecretAgent                 *agent,
 {
 	NmtSecretAgent *self = NMT_SECRET_AGENT (agent);
 	NmtSecretAgentPrivate *priv = NMT_SECRET_AGENT_GET_PRIVATE (self);
+	NmtSecretAgentRequest *request;
 	NMSettingConnection *s_con;
 	const char *connection_type;
 	char *request_id;
