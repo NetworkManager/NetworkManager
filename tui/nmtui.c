@@ -151,20 +151,20 @@ static void
 usage (void)
 {
 	const char *argv0 = g_get_prgname ();
-	const char *usage = _("Usage");
+	const char *usage_str = _("Usage");
 	int i;
 
 	for (i = 0; i < num_subprograms; i++) {
 		if (!strcmp (argv0, subprograms[i].shortcut)) {
-			g_printerr ("%s: %s [%s]\n", usage, argv0, _(subprograms[i].arg));
+			g_printerr ("%s: %s [%s]\n", usage_str, argv0, _(subprograms[i].arg));
 			exit (1);
 		}
 	}
 
-	g_printerr ("%s: nmtui\n", usage);
+	g_printerr ("%s: nmtui\n", usage_str);
 	for (i = 0; i < num_subprograms; i++) {
 		g_printerr ("%*s  nmtui %s [%s]\n",
-		            nmt_newt_text_width (usage), " ",
+		            nmt_newt_text_width (usage_str), " ",
 		            subprograms[i].name,
 		            _(subprograms[i].arg));
 	}
