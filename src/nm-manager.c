@@ -2943,6 +2943,22 @@ _new_active_connection (NMManager *self,
 }
 
 static void
+_internal_activation_failed (NMManager *self,
+                             NMActiveConnection *active,
+                             const char *error_desc)
+{
+	nm_log_warn (LOGD_CORE, "Failed to activate '%s': %s",
+	             nm_connection_get_id (nm_active_connection_get_connection (active)),
+	             error_desc);
+
+	if (nm_active_connection_get_state (active) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATING);
+		nm_active_connection_set_state (active, NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
+	}
+	active_connection_remove (self, active);
+}
+
+static void
 _internal_activation_auth_done (NMActiveConnection *active,
                                 gboolean success,
                                 const char *error_desc,
@@ -2956,12 +2972,9 @@ _internal_activation_auth_done (NMActiveConnection *active,
 		if (_internal_activate_generic (self, active, &error))
 			return;
 	}
-	g_assert (error_desc || error);
 
-	active_connection_remove (self, active);
-	nm_log_warn (LOGD_CORE, "Failed to activate '%s': %s",
-	             nm_connection_get_id (nm_active_connection_get_connection (active)),
-	             error_desc ? error_desc : error->message);
+	g_assert (error_desc || error);
+	_internal_activation_failed (self, active, error_desc ? error_desc : error->message);
 	g_clear_error (&error);
 }
 
@@ -3130,8 +3143,8 @@ activation_auth_done (NMActiveConnection *active,
 			                         error_desc);
 	}
 
-	active_connection_remove (self, active);
 	dbus_g_method_return_error (context, error);
+	_internal_activation_failed (self, active, error->message);
 	g_error_free (error);
 }
 
@@ -3275,10 +3288,8 @@ activation_add_done (NMSettings *self,
 		error = local;
 	}
 
-	active_connection_remove (info->manager, info->active);
-
-	if (error)
-		dbus_g_method_return_error (context, error);
+	_internal_activation_failed (info->manager, info->active, error->message);
+	dbus_g_method_return_error (context, error);
 	g_clear_error (&local);
 
 done:
