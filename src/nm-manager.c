@@ -4387,7 +4387,7 @@ prop_filter (DBusConnection *connection,
 		goto out;
 	}
 
-	subject = nm_auth_subject_new_from_message (connection, message);\
+	subject = nm_auth_subject_new_from_message (connection, message);
 	if (!subject) {
 		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
 		                                "Could not determine request UID.");
