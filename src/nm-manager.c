@@ -1672,6 +1672,7 @@ device_auth_done_cb (NMAuthChain *chain,
 static void
 device_auth_request_cb (NMDevice *device,
                         DBusGMethodInvocation *context,
+                        NMConnection *connection,
                         const char *permission,
                         gboolean allow_interaction,
                         NMDeviceAuthRequestFunc callback,
@@ -1680,17 +1681,38 @@ device_auth_request_cb (NMDevice *device,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
+	NMAuthSubject *subject = NULL;
+	char *error_desc = NULL;
 	NMAuthChain *chain;
 
+	/* Validate the caller */
+	subject = nm_auth_subject_new_from_context (context);
+	if (!subject) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "Failed to get request UID.");
+		goto done;
+	}
+
+	/* Ensure the subject has permissions for this connection */
+	if (!nm_auth_uid_in_acl (connection,
+	                         nm_session_monitor_get (),
+	                         nm_auth_subject_get_uid (subject),
+	                         &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		g_free (error_desc);
+		goto done;
+	}
+
 	/* Validate the request */
-	chain = nm_auth_chain_new_context (context, device_auth_done_cb, self);
+	chain = nm_auth_chain_new_subject (subject, context, device_auth_done_cb, self);
 	if (!chain) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             "Unable to authenticate request.");
-		callback (device, context, error, user_data);
-		g_clear_error (&error);
-		return;
+		goto done;
 	}
 
 	priv->auth_chains = g_slist_append (priv->auth_chains, chain);
@@ -1699,6 +1721,12 @@ device_auth_request_cb (NMDevice *device,
 	nm_auth_chain_set_data (chain, "callback", callback, NULL);
 	nm_auth_chain_set_data (chain, "user-data", user_data, NULL);
 	nm_auth_chain_add_call (chain, permission, allow_interaction);
+
+done:
+	g_clear_object (&subject);
+	if (error)
+		callback (device, context, error, user_data);
+	g_clear_error (&error);
 }
 
 /* This should really be moved to gsystem. */
@@ -3013,6 +3041,7 @@ validate_activation_request (NMManager *self,
 	NMDevice *device = NULL;
 	gboolean vpn = FALSE;
 	NMAuthSubject *subject = NULL;
+	char *error_desc = NULL;
 
 	g_assert (connection);
 	g_assert (out_device);
@@ -3026,6 +3055,19 @@ validate_activation_request (NMManager *self,
 		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                     "Failed to get request UID.");
 		return NULL;
+	}
+
+	/* Ensure the subject has permissions for this connection */
+	if (!nm_auth_uid_in_acl (connection,
+	                         nm_session_monitor_get (),
+	                         nm_auth_subject_get_uid (subject),
+	                         &error_desc)) {
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     error_desc);
+		g_free (error_desc);
+		goto error;
 	}
 
 	/* Check whether it's a VPN or not */
@@ -3499,8 +3541,10 @@ impl_manager_deactivate_connection (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMConnection *connection = NULL;
 	GError *error = NULL;
+	NMAuthSubject *subject = NULL;
 	GSList *iter;
 	NMAuthChain *chain;
+	char *error_desc = NULL;
 
 	/* Find the connection by its object path */
 	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
@@ -3519,8 +3563,29 @@ impl_manager_deactivate_connection (NMManager *self,
 		goto done;
 	}
 
+	/* Validate the caller */
+	subject = nm_auth_subject_new_from_context (context);
+	if (!subject) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "Failed to get request UID.");
+		goto done;
+	}
+
+	/* Ensure the subject has permissions for this connection */
+	if (!nm_auth_uid_in_acl (connection,
+	                         nm_session_monitor_get (),
+	                         nm_auth_subject_get_uid (subject),
+	                         &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		g_free (error_desc);
+		goto done;
+	}
+
 	/* Validate the user request */
-	chain = nm_auth_chain_new_context (context, deactivate_net_auth_done_cb, self);
+	chain = nm_auth_chain_new_subject (subject, context, deactivate_net_auth_done_cb, self);
 	if (!chain) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -3533,6 +3598,7 @@ impl_manager_deactivate_connection (NMManager *self,
 	nm_auth_chain_add_call (chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
 
 done:
+	g_clear_object (&subject);
 	if (error)
 		dbus_g_method_return_error (context, error);
 	g_clear_error (&error);

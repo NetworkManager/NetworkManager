@@ -4601,37 +4601,39 @@ disconnect_cb (NMDevice *device,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	GError *local = NULL;
 
-	if (error)
+	if (error) {
 		dbus_g_method_return_error (context, error);
-	else {
-		/* Authorized */
-		if (priv->state <= NM_DEVICE_STATE_DISCONNECTED) {
-			local = g_error_new_literal (NM_DEVICE_ERROR,
-			                             NM_DEVICE_ERROR_NOT_ACTIVE,
-			                             "Device is not active");
-			dbus_g_method_return_error (context, local);
-			g_error_free (local);
-		} else {
-			priv->autoconnect = FALSE;
+		return;
+	}
 
-			/* Software devices are removed when manually disconnected and thus
-			 * we need to track the autoconnect flag outside the device.
-			 */
-			nm_manager_prevent_device_auto_connect (nm_manager_get (),
-			                                        nm_device_get_ip_iface (device),
-			                                        TRUE);
+	/* Authorized */
+	if (priv->state <= NM_DEVICE_STATE_DISCONNECTED) {
+		local = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_ACTIVE,
+		                             "Device is not active");
+		dbus_g_method_return_error (context, local);
+		g_error_free (local);
+	} else {
+		priv->autoconnect = FALSE;
 
-			nm_device_state_changed (device,
-			                         NM_DEVICE_STATE_DISCONNECTED,
-			                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
-			dbus_g_method_return (context);
-		}
+		/* Software devices are removed when manually disconnected and thus
+		 * we need to track the autoconnect flag outside the device.
+		 */
+		nm_manager_prevent_device_auto_connect (nm_manager_get (),
+		                                        nm_device_get_ip_iface (device),
+		                                        TRUE);
+
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_DISCONNECTED,
+		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+		dbus_g_method_return (context);
 	}
 }
 
 static void
 impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context)
 {
+	NMConnection *connection;
 	GError *error = NULL;
 
 	if (NM_DEVICE_GET_PRIVATE (device)->act_request == NULL) {
@@ -4643,9 +4645,13 @@ impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context)
 		return;
 	}
 
+	connection = nm_device_get_connection (device);
+	g_assert (connection);
+
 	/* Ask the manager to authenticate this request for us */
 	g_signal_emit (device, signals[AUTH_REQUEST], 0,
 	               context,
+	               connection,
 	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	               TRUE,
 	               disconnect_cb,
@@ -5952,8 +5958,8 @@ nm_device_class_init (NMDeviceClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,
-		              /* dbus-glib context, permission, allow_interaction, callback, user_data */
-		              G_TYPE_NONE, 5, G_TYPE_POINTER, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_POINTER, G_TYPE_POINTER);
+		              /* dbus-glib context, connection, permission, allow_interaction, callback, user_data */
+		              G_TYPE_NONE, 6, G_TYPE_POINTER, G_TYPE_POINTER, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_POINTER, G_TYPE_POINTER);
 
 	signals[IP4_CONFIG_CHANGED] =
 		g_signal_new (NM_DEVICE_IP4_CONFIG_CHANGED,
