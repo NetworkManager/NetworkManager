@@ -6112,6 +6112,21 @@ editor_show_status_line (NMConnection *connection, gboolean dirty)
 	        con_type, con_id, con_uuid, dirty ? _("yes") : _("no"));
 }
 
+static gboolean
+refresh_remote_connection (GWeakRef *weak, NMRemoteConnection **remote)
+{
+	gboolean previous;
+
+	g_return_val_if_fail (remote != NULL, FALSE);
+
+	previous = (*remote != NULL);
+	if (*remote)
+		g_object_unref (*remote);
+	*remote = g_weak_ref_get (weak);
+
+	return (previous && !*remote);
+}
+
 /*
  * Submenu for detailed property editing
  * Return: TRUE - continue;  FALSE - should quit
@@ -6119,7 +6134,8 @@ editor_show_status_line (NMConnection *connection, gboolean dirty)
 static gboolean
 property_edit_submenu (NmCli *nmc,
                        NMConnection *connection,
-                       NMRemoteConnection *rem_con,
+                       NMRemoteConnection **rem_con,
+                       GWeakRef *rem_con_weak,
                        NMSetting *curr_setting,
                        const char *prop_name)
 {
@@ -6132,6 +6148,7 @@ property_edit_submenu (NmCli *nmc,
 	char *prompt;
 	gboolean dirty;
 	GValue prop_g_value = G_VALUE_INIT;
+	gboolean removed;
 
 	prompt = nmc_colorize (nmc->editor_prompt_color, "nmcli %s.%s> ",
 	                       nm_setting_get_name (curr_setting), prop_name);
@@ -6140,9 +6157,15 @@ property_edit_submenu (NmCli *nmc,
 		char *cmd_property_user;
 		char *cmd_property_arg;
 
+		/* Get the remote connection again, it may have disapeared */
+		removed = refresh_remote_connection (rem_con_weak, rem_con);
+		if (removed)
+			printf (_("The connection profile has been removed from another client. "
+			          "You may type 'save' in the main menu to restore it.\n"));
+
 		/* Connection is dirty? (not saved or differs from the saved) */
 		dirty = !nm_connection_compare (connection,
-		                                rem_con ? NM_CONNECTION (rem_con) : NULL,
+		                                *rem_con ? NM_CONNECTION (*rem_con) : NULL,
 		                                NM_SETTING_COMPARE_FLAG_EXACT);
 
 		if (nmc->editor_status_line)
@@ -6507,7 +6530,10 @@ menu_switch_to_level1 (NmcEditorMenuContext *menu_ctx,
 static gboolean
 editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_type)
 {
-	NMRemoteConnection *rem_con = NULL;
+	NMRemoteConnection *rem_con;
+	NMRemoteConnection *con_tmp;
+	GWeakRef weak = { { NULL } };
+	gboolean removed;
 	NmcEditorMainCmd cmd;
 	char *cmd_user;
 	gboolean cmd_loop = TRUE;
@@ -6531,11 +6557,13 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	menu_ctx.valid_props = NULL;
 	menu_ctx.valid_props_str = NULL;
 
-	while (cmd_loop) {
-		if (!rem_con)
-			rem_con = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
-			                                                     nm_connection_get_uuid (connection));
+	/* Get remote connection */
+	con_tmp = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
+	                                                     nm_connection_get_uuid (connection));
+	g_weak_ref_init (&weak, con_tmp);
+	rem_con = g_weak_ref_get (&weak);
 
+	while (cmd_loop) {
 		/* Connection is dirty? (not saved or differs from the saved) */
 		dirty = !nm_connection_compare (connection,
 		                                rem_con ? NM_CONNECTION (rem_con) : NULL,
@@ -6543,7 +6571,15 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		if (nmc->editor_status_line)
 			editor_show_status_line (connection, dirty);
 
+		/* Read user input */
 		cmd_user = readline_x (menu_ctx.main_prompt);
+
+		/* Get the remote connection again, it may have disapeared */
+		removed = refresh_remote_connection (&weak, &rem_con);
+		if (removed)
+			printf (_("The connection profile has been removed from another client. "
+			          "You may type 'save' to restore it.\n"));
+
 		if (!cmd_user || *cmd_user == '\0')
 			continue;
 		cmd = parse_editor_main_cmd (g_strstrip (cmd_user), &cmd_arg);
@@ -6693,7 +6729,12 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					break;
 
 				/* submenu - level 2 - editing properties */
-				cmd_loop = property_edit_submenu (nmc, connection, rem_con, menu_ctx.curr_setting, prop_name);
+				cmd_loop = property_edit_submenu (nmc,
+				                                  connection,
+				                                  &rem_con,
+				                                  &weak,
+				                                  menu_ctx.curr_setting,
+				                                  prop_name);
 			}
 			break;
 
@@ -6933,18 +6974,19 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 					g_error_free (nmc_editor_error);
 				} else {
-					NMRemoteConnection *con_tmp;
-
 					printf (_("Connection '%s' (%s) successfully saved.\n"),
 					        nm_connection_get_id (connection),
 					        nm_connection_get_uuid (connection));
+
+					con_tmp = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
+					                                                     nm_connection_get_uuid (connection));
+					g_weak_ref_set (&weak, con_tmp);
+					refresh_remote_connection (&weak, &rem_con);
 
 					/* Replace local connection with the remote one to be sure they are equal.
 					 * This mitigates problems with plugins not preserving some properties or
 					 * adding ipv{4,6} settings when not present.
 					 */
-					con_tmp = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
-					                                                     nm_connection_get_uuid (connection));
 					if (con_tmp) {
 						char *s_name = NULL;
 						if (menu_ctx.curr_setting)
@@ -7128,6 +7170,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	g_free (menu_ctx.main_prompt);
 	g_strfreev (menu_ctx.valid_props);
 	g_free (menu_ctx.valid_props_str);
+	if (rem_con)
+		g_object_unref (rem_con);
+	g_weak_ref_clear (&weak);
 
 	/* Save history file */
 	save_history_cmds (nm_connection_get_uuid (connection));
