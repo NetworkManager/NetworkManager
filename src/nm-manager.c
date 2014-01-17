@@ -222,6 +222,7 @@ typedef struct {
 	guint          dbus_connection_changed_id;
 	NMUdevManager *udev_mgr;
 	NMBluezManager *bluez_mgr;
+	NMSessionMonitor *session_monitor;
 
 	/* List of NMDeviceFactoryFunc pointers sorted in priority order */
 	GSList *factories;
@@ -941,15 +942,17 @@ static void
 pending_activation_check_authorized (PendingActivation *pending,
                                      NMDBusManager *dbus_mgr)
 {
+	NMManagerPrivate *priv;
 	char *error_desc = NULL;
 	gulong sender_uid = G_MAXULONG;
 	GError *error;
 	const char *wifi_permission = NULL;
 	NMConnection *connection;
-	NMSettings *settings;
 
 	g_return_if_fail (pending != NULL);
 	g_return_if_fail (dbus_mgr != NULL);
+
+	priv = NM_MANAGER_GET_PRIVATE (pending->manager);
 
 	if (!nm_auth_get_caller_uid (pending->context, 
 	                             dbus_mgr,
@@ -974,10 +977,8 @@ pending_activation_check_authorized (PendingActivation *pending,
 	 * or an existing connection (for Activate).
 	 */
 	connection = pending->connection;
-	if (!connection) {
-		settings = NM_MANAGER_GET_PRIVATE (pending->manager)->settings;
-		connection = (NMConnection *) nm_settings_get_connection_by_path (settings, pending->connection_path);
-	}
+	if (!connection)
+		connection = (NMConnection *) nm_settings_get_connection_by_path (priv->settings, pending->connection_path);
 
 	if (!connection) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
@@ -985,6 +986,20 @@ pending_activation_check_authorized (PendingActivation *pending,
 		                             "Connection could not be found.");
 		pending->callback (pending, error);
 		g_error_free (error);
+		return;
+	}
+
+	/* Ensure the subject has permissions for this connection */
+	if (!nm_auth_uid_in_acl (connection,
+	                         priv->session_monitor,
+	                         sender_uid,
+	                         &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		pending->callback (pending, error);
+		g_error_free (error);
+		g_free (error_desc);
 		return;
 	}
 
@@ -1834,6 +1849,7 @@ device_auth_done_cb (NMAuthChain *chain,
 static void
 device_auth_request_cb (NMDevice *device,
                         DBusGMethodInvocation *context,
+                        NMConnection *connection,
                         const char *permission,
                         gboolean allow_interaction,
                         NMDeviceAuthRequestFunc callback,
@@ -1848,6 +1864,20 @@ device_auth_request_cb (NMDevice *device,
 
 	/* Get the caller's UID for the root check */
 	if (!nm_auth_get_caller_uid (context, priv->dbus_mgr, &sender_uid, &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		callback (device, context, error, user_data);
+		g_error_free (error);
+		g_free (error_desc);
+		return;
+	}
+
+	/* Ensure the subject has permissions for this connection */
+	if (!nm_auth_uid_in_acl (connection,
+	                         priv->session_monitor,
+	                         sender_uid,
+	                         &error_desc)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
@@ -3324,6 +3354,20 @@ impl_manager_deactivate_connection (NMManager *self,
 		return;
 	}
 
+	/* Ensure the subject has permissions for this connection */
+	if (!nm_auth_uid_in_acl (connection,
+	                         priv->session_monitor,
+	                         sender_uid,
+	                         &error_desc)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		g_free (error_desc);
+		return;
+	}
+
 	/* Yay for root */
 	if (0 == sender_uid) {
 		if (!nm_manager_deactivate_connection (self,
@@ -4392,6 +4436,8 @@ nm_manager_new (NMSettings *settings,
 	                  G_CALLBACK (bluez_manager_bdaddr_removed_cb),
 	                  singleton);
 
+	priv->session_monitor = nm_session_monitor_get ();
+
 	/* Force kernel WiFi rfkill state to follow NM saved wifi state in case
 	 * the BIOS doesn't save rfkill state, and to be consistent with user
 	 * changes to the WirelessEnabled property which toggles kernel rfkill.
@@ -4461,6 +4507,7 @@ dispose (GObject *object)
 
 	g_object_unref (priv->settings);
 	g_object_unref (priv->vpn_manager);
+	g_object_unref (priv->session_monitor);
 
 	if (priv->modem_added_id) {
 		g_source_remove (priv->modem_added_id);
