@@ -692,7 +692,7 @@ link_init (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	g_assert (rtnllink);
 
 	info->ifindex = rtnl_link_get_ifindex (rtnllink);
-	strcpy (info->name, rtnl_link_get_name (rtnllink));
+	g_strlcpy (info->name, rtnl_link_get_name (rtnllink), sizeof (info->name));
 	info->type = link_extract_type (platform, rtnllink, &info->type_name);
 	info->up = !!(rtnl_link_get_flags (rtnllink) & IFF_UP);
 	info->connected = !!(rtnl_link_get_flags (rtnllink) & IFF_LOWER_UP);
