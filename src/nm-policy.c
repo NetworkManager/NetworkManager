@@ -944,7 +944,7 @@ get_connection_auto_retries (NMConnection *connection)
 typedef struct {
 	NMPolicy *policy;
 	NMDevice *device;
-	guint id;
+	guint autoactivate_id;
 } ActivateData;
 
 static void
@@ -952,8 +952,8 @@ activate_data_free (ActivateData *data)
 {
 	nm_device_remove_pending_action (data->device, "autoactivate");
 
-	if (data->id)
-		g_source_remove (data->id);
+	if (data->autoactivate_id)
+		g_source_remove (data->autoactivate_id);
 	g_object_unref (data->device);
 	memset (data, 0, sizeof (*data));
 	g_free (data);
@@ -973,7 +973,7 @@ auto_activate_device (gpointer user_data)
 	policy = data->policy;
 	priv = NM_POLICY_GET_PRIVATE (policy);
 
-	data->id = 0;
+	data->autoactivate_id = 0;
 	priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, data);
 
 	// FIXME: if a device is already activating (or activated) with a connection
@@ -1052,9 +1052,9 @@ activate_data_new (NMPolicy *policy, NMDevice *device, guint delay_seconds)
 	data->policy = policy;
 	data->device = g_object_ref (device);
 	if (delay_seconds > 0)
-		data->id = g_timeout_add_seconds (delay_seconds, auto_activate_device, data);
+		data->autoactivate_id = g_timeout_add_seconds (delay_seconds, auto_activate_device, data);
 	else
-		data->id = g_idle_add (auto_activate_device, data);
+		data->autoactivate_id = g_idle_add (auto_activate_device, data);
 
 	nm_device_add_pending_action (device, "autoactivate");
 
