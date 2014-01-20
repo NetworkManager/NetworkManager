@@ -242,7 +242,7 @@ static guint progress_id = 0;  /* ID of event source for displaying progress */
 /* for readline TAB completion */
 typedef struct {
 	NmCli *nmc;
-	const char *con_type;
+	char *con_type;
 	NMConnection *connection;
 	NMSetting *setting;
 } TabCompletionInfo;
@@ -6945,10 +6945,21 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					 */
 					con_tmp = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
 					                                                     nm_connection_get_uuid (connection));
-					if (con_tmp)
+					if (con_tmp) {
+						char *s_name = NULL;
+						if (menu_ctx.curr_setting)
+							s_name = g_strdup (nm_setting_get_name (menu_ctx.curr_setting));
+
+						/* Update settings in the local connection */
 						nm_connection_replace_settings_from_connection (connection,
 						                                                NM_CONNECTION (con_tmp),
 						                                                NULL);
+
+						/* Also update setting for menu context and TAB-completion */
+						menu_ctx.curr_setting = s_name ? nm_connection_get_setting_by_name (connection, s_name) : NULL;
+						nmc_tab_completion.setting = menu_ctx.curr_setting;
+						g_free (s_name);
+					}
 				}
 
 				nmc_editor_cb_called = FALSE;
@@ -7424,7 +7435,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 	/* Set global variables for use in TAB completion */
 	nmc_tab_completion.nmc = nmc;
-	nmc_tab_completion.con_type = connection_type;
+	nmc_tab_completion.con_type = g_strdup (connection_type);
 	nmc_tab_completion.connection = connection;
 
 	/* Run menu loop */
@@ -7435,6 +7446,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 	if (connection)
 		g_object_unref (connection);
+	g_free (nmc_tab_completion.con_type);
 
 	nmc->should_wait = TRUE;
 	return nmc->return_value;
