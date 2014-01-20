@@ -950,10 +950,10 @@ typedef struct {
 static void
 activate_data_free (ActivateData *data)
 {
-	nm_device_remove_pending_action (data->device, "autoactivate");
-
-	if (data->autoactivate_id)
+	if (data->autoactivate_id) {
+		nm_device_remove_pending_action (data->device, "autoactivate");
 		g_source_remove (data->autoactivate_id);
+	}
 	g_object_unref (data->device);
 	memset (data, 0, sizeof (*data));
 	g_free (data);
@@ -973,8 +973,9 @@ auto_activate_device (gpointer user_data)
 	policy = data->policy;
 	priv = NM_POLICY_GET_PRIVATE (policy);
 
-	data->autoactivate_id = 0;
 	priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, data);
+	data->autoactivate_id = 0;
+	nm_device_remove_pending_action (data->device, "autoactivate");
 
 	// FIXME: if a device is already activating (or activated) with a connection
 	// but another connection now overrides the current one for that device,
@@ -1040,7 +1041,7 @@ auto_activate_device (gpointer user_data)
 
  out:
 	activate_data_free (data);
-	return FALSE;
+	return G_SOURCE_REMOVE;
 }
 
 static ActivateData *
