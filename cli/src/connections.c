@@ -6127,6 +6127,14 @@ refresh_remote_connection (GWeakRef *weak, NMRemoteConnection **remote)
 	return (previous && !*remote);
 }
 
+static gboolean
+is_connection_dirty (NMConnection *connection, NMRemoteConnection *remote)
+{
+	return !nm_connection_compare (connection,
+	                               remote ? NM_CONNECTION (remote) : NULL,
+	                               NM_SETTING_COMPARE_FLAG_EXACT);
+}
+
 /*
  * Submenu for detailed property editing
  * Return: TRUE - continue;  FALSE - should quit
@@ -6164,10 +6172,7 @@ property_edit_submenu (NmCli *nmc,
 			          "You may type 'save' in the main menu to restore it.\n"));
 
 		/* Connection is dirty? (not saved or differs from the saved) */
-		dirty = !nm_connection_compare (connection,
-		                                *rem_con ? NM_CONNECTION (*rem_con) : NULL,
-		                                NM_SETTING_COMPARE_FLAG_EXACT);
-
+		dirty = is_connection_dirty (connection, *rem_con);
 		if (nmc->editor_status_line)
 			editor_show_status_line (connection, dirty);
 
@@ -6286,7 +6291,7 @@ property_edit_submenu (NmCli *nmc,
 			break;
 
 		case NMC_EDITOR_SUB_CMD_QUIT:
-			if (dirty) {
+			if (is_connection_dirty (connection, *rem_con)) {
 				char *tmp_str;
 				do {
 					tmp_str = nmc_get_user_input (_("The connection is not saved. "
@@ -6565,9 +6570,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 	while (cmd_loop) {
 		/* Connection is dirty? (not saved or differs from the saved) */
-		dirty = !nm_connection_compare (connection,
-		                                rem_con ? NM_CONNECTION (rem_con) : NULL,
-		                                NM_SETTING_COMPARE_FLAG_EXACT);
+		dirty = is_connection_dirty (connection, rem_con);
 		if (nmc->editor_status_line)
 			editor_show_status_line (connection, dirty);
 
@@ -7029,7 +7032,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			} else
 				ap_nsp = ap_nsp && ap_nsp[0] == '/' ? ap_nsp + 1 : ap_nsp;
 
-			if (dirty) {
+			if (is_connection_dirty (connection, rem_con)) {
 				printf (_("Error: connection is not saved. Type 'save' first.\n"));
 				break;
 			}
@@ -7141,7 +7144,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			break;
 
 		case NMC_EDITOR_MAIN_CMD_QUIT:
-			if (dirty) {
+			if (is_connection_dirty (connection, rem_con)) {
 				char *tmp_str;
 				do {
 					tmp_str = nmc_get_user_input (_("The connection is not saved. "
