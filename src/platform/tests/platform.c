@@ -47,7 +47,7 @@ do_sysctl_set (char **argv)
 static gboolean
 do_sysctl_get (char **argv)
 {
-	auto_g_free char *value = nm_platform_sysctl_get (argv[0]);
+	auto_g_free char *value = nm_platform_sysctl_get (argv[0], FALSE);
 
 	printf ("%s\n", value);
 

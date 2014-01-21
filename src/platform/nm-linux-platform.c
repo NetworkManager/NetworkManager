@@ -1352,13 +1352,14 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 }
 
 static char *
-sysctl_get (NMPlatform *platform, const char *path)
+sysctl_get (NMPlatform *platform, const char *path, gboolean silent_on_error)
 {
 	GError *error = NULL;
 	char *contents;
 
 	if (!g_file_get_contents (path, &contents, NULL, &error)) {
-		error ("error reading %s: %s", path, error->message);
+		if (!silent_on_error)
+			error ("error reading %s: %s", path, error->message);
 		g_clear_error (&error);
 		return NULL;
 	}
@@ -1767,7 +1768,7 @@ link_get_physical_port_id (NMPlatform *platform, int ifindex)
 
 	path = g_strdup_printf ("/sys/class/net/%s/phys_port_id", ifname);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
-		id = sysctl_get (platform, path);
+		id = sysctl_get (platform, path, FALSE);
 	else
 		id = NULL;
 	g_free (path);
@@ -1888,7 +1889,7 @@ link_get_option (int master, const char *category, const char *option)
 {
 	auto_g_free char *path = link_option_path (master, category, option);
 
-	return path ? nm_platform_sysctl_get (path) : NULL;
+	return path ? nm_platform_sysctl_get (path, FALSE) : NULL;
 }
 
 static const char *
@@ -2012,7 +2013,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 		return FALSE;
 
 	path = g_strdup_printf ("/sys/class/net/%s/owner", ifname);
-	val = nm_platform_sysctl_get (path);
+	val = nm_platform_sysctl_get (path, FALSE);
 	g_free (path);
 	if (!val)
 		return FALSE;
@@ -2020,7 +2021,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	g_free (val);
 
 	path = g_strdup_printf ("/sys/class/net/%s/group", ifname);
-	val = nm_platform_sysctl_get (path);
+	val = nm_platform_sysctl_get (path, FALSE);
 	g_free (path);
 	if (!val)
 		return FALSE;
@@ -2028,7 +2029,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	g_free (val);
 
 	path = g_strdup_printf ("/sys/class/net/%s/tun_flags", ifname);
-	val = nm_platform_sysctl_get (path);
+	val = nm_platform_sysctl_get (path, FALSE);
 	g_free (path);
 	if (!val)
 		return FALSE;

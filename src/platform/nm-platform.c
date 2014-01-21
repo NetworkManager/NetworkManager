@@ -230,18 +230,20 @@ nm_platform_sysctl_set (const char *path, const char *value)
 /**
  * nm_platform_sysctl_get:
  * @path: Absolute path to sysctl
+ * @silent_on_error: don't log an error message when the value
+ * could not be read.
  *
  * Returns: (transfer full): Contents of the virtual sysctl file.
  */
 char *
-nm_platform_sysctl_get (const char *path)
+nm_platform_sysctl_get (const char *path, gboolean silent_on_error)
 {
 	reset_error ();
 
 	g_return_val_if_fail (path, NULL);
 	g_return_val_if_fail (klass->sysctl_get, NULL);
 
-	return klass->sysctl_get (platform, path);
+	return klass->sysctl_get (platform, path, silent_on_error);
 }
 
 /**
@@ -263,7 +265,7 @@ nm_platform_sysctl_get_int32 (const char *path, gint32 fallback)
 	g_return_val_if_fail (path, fallback);
 
 	if (path)
-		value = nm_platform_sysctl_get (path);
+		value = nm_platform_sysctl_get (path, FALSE);
 
 	if (!value) {
 		errno = EINVAL;
