@@ -44,6 +44,8 @@
 #include <gudev/gudev.h>
 
 #include "nm-linux-platform.h"
+#include "NetworkManagerUtils.h"
+#include "nm-utils.h"
 #include "nm-logging.h"
 #include "wifi/wifi-utils.h"
 
@@ -619,12 +621,23 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 		return_type (NM_LINK_TYPE_MACVTAP, "macvtap");
 	else if (!strcmp (type, "tun")) {
 		NMPlatformTunProperties props;
+		guint flags;
 
-		if (   nm_platform_tun_get_properties (rtnl_link_get_ifindex (rtnllink), &props)
-		       && !strcmp (props.mode, "tap"))
-			return_type (NM_LINK_TYPE_TAP, "tap");
-		else
+		if (nm_platform_tun_get_properties (rtnl_link_get_ifindex (rtnllink), &props)) {
+			if (!g_strcmp0 (props.mode, "tap"))
+				return_type (NM_LINK_TYPE_TAP, "tap");
+			if (!g_strcmp0 (props.mode, "tun"))
+				return_type (NM_LINK_TYPE_TUN, "tun");
+		}
+		flags = rtnl_link_get_flags (rtnllink);
+
+		nm_log_dbg (LOGD_PLATFORM, "Failed to read tun properties for interface %d (link flags: %X)",
+		                           rtnl_link_get_ifindex (rtnllink), flags);
+
+		/* try guessing the type using the link flags instead... */
+		if (flags & IFF_POINTOPOINT)
 			return_type (NM_LINK_TYPE_TUN, "tun");
+		return_type (NM_LINK_TYPE_TAP, "tap");
 	} else if (!strcmp (type, "veth"))
 		return_type (NM_LINK_TYPE_VETH, "veth");
 	else if (!strcmp (type, "vlan"))
@@ -2006,45 +2019,62 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 {
 	const char *ifname;
 	char *path, *val;
-	guint32 flags;
+	gboolean success = TRUE;
+
+	g_return_val_if_fail (props, FALSE);
+
+	memset (props, 0, sizeof (*props));
+	props->owner = -1;
+	props->group = -1;
 
 	ifname = nm_platform_link_get_name (ifindex);
-	if (!ifname)
+	if (!ifname || !nm_utils_iface_valid_name (ifname))
 		return FALSE;
 
 	path = g_strdup_printf ("/sys/class/net/%s/owner", ifname);
-	val = nm_platform_sysctl_get (path, FALSE);
+	val = nm_platform_sysctl_get (path, TRUE);
 	g_free (path);
-	if (!val)
-		return FALSE;
-	props->owner = strtoll (val, NULL, 10);
-	g_free (val);
+	if (val) {
+		props->owner = nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
+		if (errno)
+			success = FALSE;
+		g_free (val);
+	} else
+		success = FALSE;
 
 	path = g_strdup_printf ("/sys/class/net/%s/group", ifname);
-	val = nm_platform_sysctl_get (path, FALSE);
+	val = nm_platform_sysctl_get (path, TRUE);
 	g_free (path);
-	if (!val)
-		return FALSE;
-	props->group = strtoll (val, NULL, 10);
-	g_free (val);
+	if (val) {
+		props->group = nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
+		if (errno)
+			success = FALSE;
+		g_free (val);
+	} else
+		success = FALSE;
 
 	path = g_strdup_printf ("/sys/class/net/%s/tun_flags", ifname);
-	val = nm_platform_sysctl_get (path, FALSE);
+	val = nm_platform_sysctl_get (path, TRUE);
 	g_free (path);
-	if (!val)
-		return FALSE;
-	flags = strtoul (val, NULL, 16);
-	props->mode = ((flags & TUN_TYPE_MASK) == TUN_TUN_DEV) ? "tun" : "tap";
-	props->no_pi = !!(flags & IFF_NO_PI);
-	props->vnet_hdr = !!(flags & IFF_VNET_HDR);
-#ifdef IFF_MULTI_QUEUE
-	props->multi_queue = !!(flags & IFF_MULTI_QUEUE);
-#else
-	props->multi_queue = FALSE;
-#endif
-	g_free (val);
+	if (val) {
+		gint64 flags;
 
-	return TRUE;
+		flags = nm_utils_ascii_str_to_int64 (val, 16, 0, G_MAXINT64, 0);
+		if (!errno) {
+#ifndef IFF_MULTI_QUEUE
+			const int IFF_MULTI_QUEUE = 0x0100;
+#endif
+			props->mode = ((flags & TUN_TYPE_MASK) == TUN_TUN_DEV) ? "tun" : "tap";
+			props->no_pi = !!(flags & IFF_NO_PI);
+			props->vnet_hdr = !!(flags & IFF_VNET_HDR);
+			props->multi_queue = !!(flags & IFF_MULTI_QUEUE);
+		} else
+			success = FALSE;
+		g_free (val);
+	} else
+		success = FALSE;
+
+	return success;
 }
 
 static const struct nla_policy macvlan_info_policy[IFLA_MACVLAN_MAX + 1] = {

@@ -37,6 +37,7 @@ G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE_GENERIC)
 
 typedef struct {
 	NMPlatformTunProperties props;
+	guint delay_tun_get_properties_id;
 } NMDeviceTunPrivate;
 
 enum {
@@ -53,17 +54,15 @@ enum {
 };
 
 static void
-link_changed (NMDevice *device, NMPlatformLink *info)
+reload_tun_properties (NMDeviceTun *device)
 {
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (device);
 	GObject *object = G_OBJECT (device);
 	NMPlatformTunProperties props;
 
-	NM_DEVICE_CLASS (nm_device_tun_parent_class)->link_changed (device, info);
-
-	if (!nm_platform_tun_get_properties (nm_device_get_ifindex (device), &props)) {
+	if (!nm_platform_tun_get_properties (nm_device_get_ifindex (NM_DEVICE (device)), &props)) {
 		nm_log_warn (LOGD_HW, "(%s): could not read tun properties",
-		             nm_device_get_iface (device));
+		             nm_device_get_iface (NM_DEVICE (device)));
 		return;
 	}
 
@@ -85,6 +84,27 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 	memcpy (&priv->props, &props, sizeof (NMPlatformTunProperties));
 
 	g_object_thaw_notify (object);
+}
+
+static void
+link_changed (NMDevice *device, NMPlatformLink *info)
+{
+	NM_DEVICE_CLASS (nm_device_tun_parent_class)->link_changed (device, info);
+
+	reload_tun_properties (NM_DEVICE_TUN (device));
+}
+
+static gboolean
+delay_tun_get_properties_cb (gpointer user_data)
+{
+	NMDeviceTun *self = user_data;
+	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
+
+	priv->delay_tun_get_properties_id = 0;
+
+	reload_tun_properties (self);
+
+	return G_SOURCE_REMOVE;
 }
 
 /**************************************************************/
@@ -109,11 +129,32 @@ nm_device_tun_init (NMDeviceTun *self)
 static void
 constructed (GObject *object)
 {
+	gboolean properties_read;
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (object);
 
-	nm_platform_tun_get_properties (nm_device_get_ifindex (NM_DEVICE (object)), &priv->props);
+	properties_read = nm_platform_tun_get_properties (nm_device_get_ifindex (NM_DEVICE (object)), &priv->props);
 
 	G_OBJECT_CLASS (nm_device_tun_parent_class)->constructed (object);
+
+	if (!properties_read) {
+		/* Error reading the tun properties. Maybe this was due to a race. Try again a bit later. */
+		nm_log_dbg (LOGD_HW, "(%s): could not read tun properties (retry)",
+		                     nm_device_get_iface (NM_DEVICE (object)));
+		priv->delay_tun_get_properties_id = g_timeout_add_seconds (1, delay_tun_get_properties_cb, object);
+	}
+}
+
+static void
+dispose (GObject *object)
+{
+	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (object);
+
+	if (priv->delay_tun_get_properties_id) {
+		g_source_remove (priv->delay_tun_get_properties_id);
+		priv->delay_tun_get_properties_id = 0;
+	}
+
+	G_OBJECT_CLASS (nm_device_tun_parent_class)->dispose (object);
 }
 
 static void
@@ -158,6 +199,7 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
+	object_class->dispose = dispose;
 
 	device_class->link_changed = link_changed;
 
