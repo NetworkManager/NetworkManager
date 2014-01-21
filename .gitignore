@@ -180,6 +180,7 @@ valgrind-*.log
 /libnm-glib/tests/test-remote-settings-client
 /src/tests/test-dcb
 /src/tests/test-dhcp-options
+/src/tests/test-general
 /src/tests/test-ip4-config
 /src/tests/test-ip6-config
 /src/tests/test-policy-hosts

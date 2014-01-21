@@ -12,6 +12,7 @@ AM_CPPFLAGS = \
 
 noinst_PROGRAMS = \
 	test-dhcp-options \
+	test-general \
 	test-policy-hosts \
 	test-wifi-ap-utils \
 	test-ip4-config \
@@ -80,6 +81,14 @@ test_resolvconf_capture_SOURCES = \
 test_resolvconf_capture_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
+####### general test #######
+
+test_general_SOURCES = \
+	test-general.c
+
+test_general_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la
+
 ####### secret agent interface test #######
 
 EXTRA_DIST = test-secret-agent.py
@@ -94,4 +103,5 @@ check-local: test-dhcp-options test-policy-hosts test-wifi-ap-utils test-ip4-con
 	$(abs_builddir)/test-ip6-config
 	$(abs_builddir)/test-dcb
 	$(abs_builddir)/test-resolvconf-capture
+	$(abs_builddir)/test-general
 

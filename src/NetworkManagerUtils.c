@@ -695,3 +695,63 @@ nm_utils_match_connection (GSList *connections,
 	return best_match;
 }
 
+/* nm_utils_ascii_str_to_int64:
+ *
+ * A wrapper for g_ascii_strtoll, that checks whether the whole string
+ * can be successfully converted to a number and is within a given
+ * range. On any error, @fallback will be returned and @errno will be set
+ * to a non-zero value. Check @errno for errors. Any trailing or leading
+ * (ascii) white space is ignored and the functions is locale independent.
+ *
+ * The function is guaranteed to return a value between @min and @max
+ * (included) or @fallback. Also, the parsing is rather strict, it does
+ * not allow for any unrecognized characters, except leading and trailing
+ * white space.
+ **/
+gint64
+nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback)
+{
+	gint64 v;
+	char *end;
+	char *str_free = NULL;
+
+	if (str) {
+		while (str[0] && g_ascii_isspace (str[0]))
+			str++;
+	}
+	if (!str || !str[0]) {
+		errno = EINVAL;
+		return fallback;
+	}
+
+	if (g_ascii_isspace (str[strlen (str) - 1])) {
+		str_free = g_strdup (str);
+		g_strstrip (str_free);
+		str = str_free;
+	}
+
+	errno = 0;
+	v = g_ascii_strtoll (str, &end, base);
+
+	if (errno != 0) {
+		g_free (str_free);
+		return fallback;
+	}
+
+	if (end[0] != 0) {
+		g_free (str_free);
+		errno = EINVAL;
+		return fallback;
+	}
+
+	g_free (str_free);
+	if (v > max || v < min) {
+		errno = ERANGE;
+		return fallback;
+	}
+
+	return v;
+}
+
+
+
