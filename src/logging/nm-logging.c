@@ -159,101 +159,97 @@ nm_logging_setup (const char  *level,
 	GString *unrecognized = NULL;
 	guint64 new_logging[LOGL_MAX];
 	guint32 new_log_level = log_level;
+	char **tmp, **iter;
 	int i;
-
-	if (!domains)
-		domains = log_domains ? log_domains : "DEFAULT";
 
 	for (i = 0; i < LOGL_MAX; i++)
 		new_logging[i] = 0;
 
 	/* levels */
-	if (level && strlen (level)) {
+	if (level && *level) {
 		if (!match_log_level (level, &new_log_level, error))
 			return FALSE;
 	}
 
 	/* domains */
-	if (domains && strlen (domains)) {
-		char **tmp, **iter;
+	if (!domains || !*domains)
+		domains = log_domains ? log_domains : "DEFAULT";
 
-		tmp = g_strsplit_set (domains, ", ", 0);
-		for (iter = tmp; iter && *iter; iter++) {
-			const LogDesc *diter;
-			guint32 domain_log_level;
-			guint64 bits;
-			char *p;
+	tmp = g_strsplit_set (domains, ", ", 0);
+	for (iter = tmp; iter && *iter; iter++) {
+		const LogDesc *diter;
+		guint32 domain_log_level;
+		guint64 bits;
+		char *p;
 
-			if (!strlen (*iter))
-				continue;
+		if (!strlen (*iter))
+			continue;
 
-			p = strchr (*iter, ':');
-			if (p) {
-				*p = '\0';
-				if (!match_log_level (p + 1, &domain_log_level, error)) {
-					g_strfreev (tmp);
-					return FALSE;
-				}
-			} else
-				domain_log_level = new_log_level;
+		p = strchr (*iter, ':');
+		if (p) {
+			*p = '\0';
+			if (!match_log_level (p + 1, &domain_log_level, error)) {
+				g_strfreev (tmp);
+				return FALSE;
+			}
+		} else
+			domain_log_level = new_log_level;
 
-			bits = 0;
+		bits = 0;
 
-			/* Check for combined domains */
-			if (!g_ascii_strcasecmp (*iter, LOGD_ALL_STRING))
-				bits = LOGD_ALL;
-			else if (!g_ascii_strcasecmp (*iter, LOGD_DEFAULT_STRING))
-				bits = LOGD_DEFAULT;
-			else if (!g_ascii_strcasecmp (*iter, LOGD_DHCP_STRING))
-				bits = LOGD_DHCP;
-			else if (!g_ascii_strcasecmp (*iter, LOGD_IP_STRING))
-				bits = LOGD_IP;
+		/* Check for combined domains */
+		if (!g_ascii_strcasecmp (*iter, LOGD_ALL_STRING))
+			bits = LOGD_ALL;
+		else if (!g_ascii_strcasecmp (*iter, LOGD_DEFAULT_STRING))
+			bits = LOGD_DEFAULT;
+		else if (!g_ascii_strcasecmp (*iter, LOGD_DHCP_STRING))
+			bits = LOGD_DHCP;
+		else if (!g_ascii_strcasecmp (*iter, LOGD_IP_STRING))
+			bits = LOGD_IP;
 
-			/* Check for compatibility domains */
-			else if (!g_ascii_strcasecmp (*iter, "HW"))
-				bits = LOGD_PLATFORM;
+		/* Check for compatibility domains */
+		else if (!g_ascii_strcasecmp (*iter, "HW"))
+			bits = LOGD_PLATFORM;
 
-			else {
-				for (diter = &domain_descs[0]; diter->name; diter++) {
-					if (!g_ascii_strcasecmp (diter->name, *iter)) {
-						bits = diter->num;
-						break;
-					}
+		else {
+			for (diter = &domain_descs[0]; diter->name; diter++) {
+				if (!g_ascii_strcasecmp (diter->name, *iter)) {
+					bits = diter->num;
+					break;
 				}
 			}
+		}
 
-			if (!bits) {
-				if (!bad_domains) {
-					g_set_error (error, NM_LOGGING_ERROR, NM_LOGGING_ERROR_UNKNOWN_DOMAIN,
-					             _("Unknown log domain '%s'"), *iter);
-					return FALSE;
-				}
-
-				if (unrecognized)
-					g_string_append (unrecognized, ", ");
-				else
-					unrecognized = g_string_new (NULL);
-				g_string_append (unrecognized, *iter);
-				continue;
+		if (!bits) {
+			if (!bad_domains) {
+				g_set_error (error, NM_LOGGING_ERROR, NM_LOGGING_ERROR_UNKNOWN_DOMAIN,
+				             _("Unknown log domain '%s'"), *iter);
+				return FALSE;
 			}
 
-			for (i = 0; i < domain_log_level; i++)
-				new_logging[i] &= ~bits;
-			for (i = domain_log_level; i < LOGL_MAX; i++)
-				new_logging[i] |= bits;
-		}
-		g_strfreev (tmp);
-
-		if (log_domains != (char *)domains) {
-			g_free (log_domains);
-			log_domains = g_strdup (domains);
+			if (unrecognized)
+				g_string_append (unrecognized, ", ");
+			else
+				unrecognized = g_string_new (NULL);
+			g_string_append (unrecognized, *iter);
+			continue;
 		}
 
-		for (i = 0; i < LOGL_MAX; i++)
-			logging[i] = new_logging[i];
+		for (i = 0; i < domain_log_level; i++)
+			new_logging[i] &= ~bits;
+		for (i = domain_log_level; i < LOGL_MAX; i++)
+			new_logging[i] |= bits;
+	}
+	g_strfreev (tmp);
+
+	if (log_domains != (char *)domains) {
+		g_free (log_domains);
+		log_domains = g_strdup (domains);
 	}
 
 	log_level = new_log_level;
+	for (i = 0; i < LOGL_MAX; i++)
+		logging[i] = new_logging[i];
 
 	if (unrecognized)
 		*bad_domains = g_string_free (unrecognized, FALSE);
