@@ -3010,11 +3010,25 @@ nm_manager_activate_connection (NMManager *self,
                                 GError **error)
 {
 	NMActiveConnection *active;
+	char *error_desc = NULL;
 
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (error != NULL, NULL);
 	g_return_val_if_fail (*error == NULL, NULL);
+
+	/* Ensure the subject has permissions for this connection */
+	if (!nm_auth_uid_in_acl (connection,
+	                         nm_session_monitor_get (),
+	                         nm_auth_subject_get_uid (subject),
+	                         &error_desc)) {
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                     error_desc);
+		g_free (error_desc);
+		return NULL;
+	}
 
 	active = _new_active_connection (self,
 	                                 connection,
