@@ -1355,7 +1355,6 @@ nm_ip6_address_set_prefix (NMIP6Address *address, guint32 prefix)
  *
  * Gets the IPv6 default gateway property of this address object.
  *
- * Returns: (transfer none): 
  * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
  *          the IPv6 gateway address
  **/
