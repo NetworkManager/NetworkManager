@@ -2891,6 +2891,7 @@ nm_manager_activate_connection (NMManager *manager,
 	NMConnection *master_connection = NULL;
 	NMActiveConnection *master_ac = NULL;
 	gboolean matched;
+	char *error_desc = NULL;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -2910,6 +2911,19 @@ nm_manager_activate_connection (NMManager *manager,
 			                     NM_MANAGER_ERROR, NM_MANAGER_ERROR_PERMISSION_DENIED,
 			                     "Failed to get unix user for dbus sender");
 			dbus_error_free (&dbus_error);
+			return NULL;
+		}
+
+		/* Ensure the subject has permissions for this connection */
+		if (!nm_auth_uid_in_acl (connection,
+		                         priv->session_monitor,
+		                         sender_uid,
+		                         &error_desc)) {
+			g_set_error_literal (error,
+			                     NM_MANAGER_ERROR,
+			                     NM_MANAGER_ERROR_PERMISSION_DENIED,
+			                     error_desc);
+			g_free (error_desc);
 			return NULL;
 		}
 	}
