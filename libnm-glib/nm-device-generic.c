@@ -48,9 +48,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_HW_ADDRESS "HwAddress"
-#define DBUS_PROP_TYPE_DESCRIPTION "TypeDescription"
-
 /**
  * nm_device_generic_error_quark:
  *

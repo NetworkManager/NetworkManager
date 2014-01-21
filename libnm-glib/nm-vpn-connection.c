@@ -46,9 +46,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_VPN_STATE "VpnState"
-#define DBUS_PROP_BANNER "Banner"
-
 enum {
 	VPN_STATE_CHANGED,
 

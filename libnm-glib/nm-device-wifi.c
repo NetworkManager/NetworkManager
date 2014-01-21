@@ -78,13 +78,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_HW_ADDRESS "HwAddress"
-#define DBUS_PROP_PERM_HW_ADDRESS "PermHwAddress"
-#define DBUS_PROP_MODE "Mode"
-#define DBUS_PROP_BITRATE "Bitrate"
-#define DBUS_PROP_ACTIVE_ACCESS_POINT "ActiveAccessPoint"
-#define DBUS_PROP_WIRELESS_CAPABILITIES "WirelessCapabilities"
-
 enum {
 	ACCESS_POINT_ADDED,
 	ACCESS_POINT_REMOVED,

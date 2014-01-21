@@ -46,7 +46,6 @@ enum {
 	PROP_CARRIER,
 	LAST_PROP
 };
-#define DBUS_PROP_CARRIER "Carrier"
 
 /**
  * nm_device_adsl_error_quark:

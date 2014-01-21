@@ -55,10 +55,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_HW_ADDRESS "HwAddress"
-#define DBUS_PROP_CARRIER "Carrier"
-#define DBUS_PROP_VLAN_ID "VlanId"
-
 /**
  * nm_device_vlan_error_quark:
  *

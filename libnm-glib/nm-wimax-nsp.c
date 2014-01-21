@@ -55,10 +55,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_NAME "Name"
-#define DBUS_PROP_SIGNAL_QUALITY "SignalQuality"
-#define DBUS_PROP_NETWORK_TYPE "NetworkType"
-
 /**
  * nm_wimax_nsp_new:
  * @connection: the #DBusGConnection

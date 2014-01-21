@@ -71,14 +71,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_HW_ADDRESS       "HwAddress"
-#define DBUS_PROP_ACTIVE_NSP       "ActiveNsp"
-#define DBUS_PROP_CENTER_FREQUENCY "CenterFrequency"
-#define DBUS_PROP_RSSI             "Rssi"
-#define DBUS_PROP_CINR             "Cinr"
-#define DBUS_PROP_TX_POWER         "TxPower"
-#define DBUS_PROP_BSID             "Bsid"
-
 enum {
 	NSP_ADDED,
 	NSP_REMOVED,

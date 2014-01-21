@@ -55,10 +55,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_HW_ADDRESS      "HwAddress"
-#define DBUS_PROP_COMPANION       "Companion"
-#define DBUS_PROP_ACTIVE_CHANNEL  "ActiveChannel"
-
 /**
  * nm_device_olpc_mesh_error_quark:
  *

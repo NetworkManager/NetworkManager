@@ -58,11 +58,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_HW_ADDRESS "HwAddress"
-#define DBUS_PROP_PERM_HW_ADDRESS "PermHwAddress"
-#define DBUS_PROP_SPEED "Speed"
-#define DBUS_PROP_CARRIER "Carrier"
-
 /**
  * nm_device_ethernet_error_quark:
  *

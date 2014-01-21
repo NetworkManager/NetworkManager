@@ -55,10 +55,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_HW_ADDRESS      "HwAddress"
-#define DBUS_PROP_NAME            "Name"
-#define DBUS_PROP_BT_CAPABILITIES "BtCapabilities"
-
 /**
  * nm_device_bt_error_quark:
  *
