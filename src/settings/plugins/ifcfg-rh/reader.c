@@ -4189,6 +4189,31 @@ bond_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
+static char *
+read_team_config (shvarFile *ifcfg, const char *key, GError **error)
+{
+	char *value;
+	size_t l;
+
+	/* FIXME: validate the JSON at some point */
+	value = svGetValue (ifcfg, key, TRUE);
+	if (!value)
+		return NULL;
+
+	/* No reason Team config should be over 20k.  The config is read
+	 * verbatim, length-checked, then unescaped.  svUnescape() does not
+	 * deal well with extremely long strings.
+	 */
+	l = strlen (value);
+	if (l > 20000) {
+		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "%s too long (size %zd)", key, l);
+		g_free (value);
+		return NULL;
+	}
+	svUnescape (value);
+	return value;
+}
+
 static NMSetting *
 make_team_setting (shvarFile *ifcfg,
                    const char *file,
@@ -4199,7 +4224,7 @@ make_team_setting (shvarFile *ifcfg,
 
 	s_team = NM_SETTING_TEAM (nm_setting_team_new ());
 
-	value = svGetValue (ifcfg, "DEVICE", TRUE);
+	value = svGetValue (ifcfg, "DEVICE", FALSE);
 	if (!value || !strlen (value)) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "mandatory DEVICE keyword missing");
 		goto error;
@@ -4208,11 +4233,11 @@ make_team_setting (shvarFile *ifcfg,
 	g_object_set (s_team, NM_SETTING_TEAM_INTERFACE_NAME, value, NULL);
 	g_free (value);
 
-	value = svGetValue (ifcfg, "TEAM_CONFIG", TRUE);
-	if (value) {
-		g_object_set (s_team, NM_SETTING_TEAM_CONFIG, value, NULL);
-		g_free (value);
-	}
+	value = read_team_config (ifcfg, "TEAM_CONFIG", error);
+	if (!value)
+		goto error;
+	g_object_set (s_team, NM_SETTING_TEAM_CONFIG, value, NULL);
+	g_free (value);
 
 	return (NMSetting *) s_team;
 
@@ -4501,12 +4526,16 @@ make_team_port_setting (shvarFile *ifcfg)
 {
 	NMSetting *s_port = NULL;
 	char *value;
+	GError *error = NULL;
 
-	value = svGetValue (ifcfg, "TEAM_PORT_CONFIG", TRUE);
+	value = read_team_config (ifcfg, "TEAM_PORT_CONFIG", &error);
 	if (value) {
 		s_port = nm_setting_team_port_new ();
 		g_object_set (s_port, NM_SETTING_TEAM_PORT_CONFIG, value, NULL);
 		g_free (value);
+	} else if (error) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: %s", error->message);
+		g_error_free (error);
 	}
 
 	return s_port;
