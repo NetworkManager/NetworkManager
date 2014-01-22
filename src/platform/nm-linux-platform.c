@@ -1765,7 +1765,7 @@ link_get_physical_port_id (NMPlatform *platform, int ifindex)
 	if (!ifname)
 		return NULL;
 
-	path = g_strdup_printf ("/sys/class/net/%s/physical_port_id", ifname);
+	path = g_strdup_printf ("/sys/class/net/%s/phys_port_id", ifname);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		id = sysctl_get (platform, path);
 	else
