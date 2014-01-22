@@ -13236,6 +13236,245 @@ test_write_fcoe_mode (gconstpointer user_data)
 	g_free (testfile);
 }
 
+static void
+test_read_team_master (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingTeam *s_team;
+	gboolean success;
+	GError *error = NULL;
+	const char *expected_config = "{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }";
+
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-master",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_TEAM_SETTING_NAME);
+
+	s_team = nm_connection_get_setting_team (connection);
+	g_assert (s_team);
+	g_assert_cmpstr (nm_setting_team_get_interface_name (s_team), ==, "team0");
+	g_assert_cmpstr (nm_setting_team_get_config (s_team), ==, expected_config);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_team_master (void)
+{
+	NMConnection *connection, *reread;
+	NMSettingConnection *s_con;
+	NMSettingTeam *s_team;
+	NMSettingWired *s_wired;
+	char *uuid, *testfile = NULL, *val;
+	gboolean success;
+	GError *error = NULL;
+	const char *expected_config = "{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }";
+	const char *escaped_expected_config = "\"{ \\\"device\\\": \\\"team0\\\", \\\"link_watch\\\": { \\\"name\\\": \\\"ethtool\\\" } }\"";
+	shvarFile *f;
+
+	connection = nm_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Team Master",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_TEAM_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Team setting */
+	s_team = (NMSettingTeam *) nm_setting_team_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_team));
+
+	g_object_set (s_team,
+	              NM_SETTING_TEAM_INTERFACE_NAME, "team0",
+	              NM_SETTING_TEAM_CONFIG, expected_config,
+	              NULL);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	f = svNewFile (testfile);
+	g_assert (f);
+
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* re-read the file to check that what key was written. */
+	val = svGetValue (f, "DEVICETYPE", FALSE);
+	g_assert (val);
+	g_assert_cmpstr (val, ==, "Team");
+	g_free (val);
+	val = svGetValue (f, "TEAM_CONFIG", TRUE);
+	g_assert (val);
+	g_assert_cmpstr (val, ==, escaped_expected_config);
+	g_free (val);
+	svCloseFile (f);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL,
+	                               NULL, NULL, NULL, NULL, &error, NULL);
+	unlink (testfile);
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_read_team_port (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingTeamPort *s_team_port;
+	gboolean success;
+	GError *error = NULL;
+	const char *expected_config = "{ \"p4p1\": { \"prio\": -10, \"sticky\": true } }";
+
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, "team0");
+
+	s_team_port = nm_connection_get_setting_team_port (connection);
+	g_assert (s_team_port);
+	g_assert_cmpstr (nm_setting_team_port_get_config (s_team_port), ==, expected_config);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_team_port (void)
+{
+	NMConnection *connection, *reread;
+	NMSettingConnection *s_con;
+	NMSettingTeamPort *s_team_port;
+	NMSettingWired *s_wired;
+	char *uuid, *testfile = NULL, *val;
+	gboolean success;
+	GError *error = NULL;
+	const char *expected_config = "{ \"p4p1\": { \"prio\": -10, \"sticky\": true } }";
+	const char *escaped_expected_config = "\"{ \\\"p4p1\\\": { \\\"prio\\\": -10, \\\"sticky\\\": true } }\"";
+	shvarFile *f;
+
+	connection = nm_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Team Port",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NM_SETTING_CONNECTION_MASTER, "team0",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Team setting */
+	s_team_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_team_port));
+	g_object_set (s_team_port, NM_SETTING_TEAM_PORT_CONFIG, expected_config, NULL);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	f = svNewFile (testfile);
+	g_assert (f);
+
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* re-read the file to check that what key was written. */
+	val = svGetValue (f, "DEVICETYPE", FALSE);
+	g_assert (val);
+	g_assert_cmpstr (val, ==, "TeamPort");
+	g_free (val);
+	val = svGetValue (f, "TEAM_PORT_CONFIG", TRUE);
+	g_assert (val);
+	g_assert_cmpstr (val, ==, escaped_expected_config);
+	val = svGetValue (f, "TEAM_MASTER", TRUE);
+	g_assert (val);
+	g_assert_cmpstr (val, ==, "team0");
+	g_free (val);
+	svCloseFile (f);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile, NULL, TYPE_ETHERNET, NULL,
+	                               NULL, NULL, NULL, NULL, &error, NULL);
+	unlink (testfile);
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
 #define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
@@ -13453,6 +13692,12 @@ int main (int argc, char **argv)
 	test_read_bridge_component ();
 	test_write_bridge_component ();
 	test_read_bridge_missing_stp ();
+
+	/* Team */
+	g_test_add_func (TPATH "team/read-master", test_read_team_master);
+	g_test_add_func (TPATH "team/write-master", test_write_team_master);
+	g_test_add_func (TPATH "team/read-port", test_read_team_port);
+	g_test_add_func (TPATH "team/write-port", test_write_team_port);
 
 	/* Stuff we expect to fail for now */
 	test_write_wired_pppoe ();

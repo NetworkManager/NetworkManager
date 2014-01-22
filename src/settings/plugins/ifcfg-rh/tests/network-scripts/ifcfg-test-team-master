@@ -1,0 +1,6 @@
+DEVICE=team0
+ONBOOT=no
+DEVICETYPE=Team
+BOOTPROTO=dhcp
+TEAM_CONFIG="{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }"
+

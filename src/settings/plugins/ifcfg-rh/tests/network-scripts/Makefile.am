@@ -110,7 +110,9 @@ EXTRA_DIST = \
 	ifcfg-test-dcb-short-percent \
 	ifcfg-test-dcb-pgpct-not-100 \
 	ifcfg-test-fcoe-fabric \
-	ifcfg-test-fcoe-vn2vn
+	ifcfg-test-fcoe-vn2vn \
+	ifcfg-test-team-master \
+	ifcfg-test-team-port
 
 check-local:
 	@for f in $(EXTRA_DIST); do \
