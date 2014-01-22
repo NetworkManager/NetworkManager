@@ -24,8 +24,8 @@ import sys, socket, struct
 from gi.repository import GLib, NetworkManager, NMClient
 
 #
-#  This example shows how to get get addresses and routes from NMIP4Config and NMIP6Config
-#  (got out of NMDevice)
+#  This example shows how to get addresses, routes and DNS information
+#  from NMIP4Config and NMIP6Config (got out of NMDevice)
 #
 
 def show_addresses(self, family):
@@ -59,7 +59,6 @@ def show_addresses(self, family):
                               socket.inet_ntop(family, gateway_struct))
 
 
-
 def show_routes(self, family):
     if (family == socket.AF_INET):
        ip_cfg = self.get_ip4_config()
@@ -70,7 +69,7 @@ def show_routes(self, family):
         print("None")
         return
 
-    nm_routes = ip_cfg.get_routes() 
+    nm_routes = ip_cfg.get_routes()
     if len(nm_routes) == 0:
         print("None")
         return
@@ -91,6 +90,33 @@ def show_routes(self, family):
                                   prefix,
                                   socket.inet_ntop(family, next_hop_struct),
                                   metric)
+
+
+def show_dns(self, family):
+    if (family == socket.AF_INET):
+       ip_cfg = self.get_ip4_config()
+    else:
+       ip_cfg = self.get_ip6_config()
+
+    if ip_cfg is None:
+        print("None")
+        return
+
+    if (family == socket.AF_INET):
+        print ("Domains: %s") % (ip_cfg.get_domains())
+        print ("Searches: %s") % (ip_cfg.get_searches())
+        print("Nameservers:")
+        nameservers = ip_cfg.get_nameservers()
+        for dns in nameservers:
+            print socket.inet_ntop(family, struct.pack("=I", dns))
+    else:
+        print ("Domains: %s") % (ip_cfg.get_domains())
+        print ("Searches: %s") % (ip_cfg.get_searches())
+        print("Nameservers:")
+        num = ip_cfg.get_num_nameservers()
+        for i in range(0,num):
+           dns = ip_cfg.get_nameserver(i)
+           print socket.inet_ntop(family, dns)
 
 
 if __name__ == "__main__":
@@ -123,5 +149,15 @@ if __name__ == "__main__":
     print "IPv6 routes:"
     print("------------")
     show_routes(dev, socket.AF_INET6)
+    print
+
+    print "IPv4 DNS:"
+    print("------------")
+    show_dns(dev, socket.AF_INET)
+    print
+
+    print "IPv6 DNS:"
+    print("------------")
+    show_dns(dev, socket.AF_INET6)
     print
 
