@@ -123,10 +123,10 @@ static gboolean impl_manager_get_state (NMManager *manager,
                                         guint32 *state,
                                         GError **error);
 
-static gboolean impl_manager_set_logging (NMManager *manager,
-                                          const char *level,
-                                          const char *domains,
-                                          GError **error);
+static void impl_manager_set_logging (NMManager *manager,
+                                      const char *level,
+                                      const char *domains,
+                                      DBusGMethodInvocation *context);
 
 static void impl_manager_get_logging (NMManager *manager,
                                       char **level,
@@ -4002,13 +4002,31 @@ impl_manager_get_state (NMManager *manager, guint32 *state, GError **error)
 	return TRUE;
 }
 
-static gboolean
+static void
 impl_manager_set_logging (NMManager *manager,
                           const char *level,
                           const char *domains,
-                          GError **error)
+                          DBusGMethodInvocation *context)
 {
-	if (nm_logging_setup (level, domains, NULL, error)) {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GError *error = NULL;
+	gulong caller_uid = G_MAXULONG;
+
+	if (!nm_dbus_manager_get_caller_info (priv->dbus_mgr, context, NULL, &caller_uid, NULL)) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "Failed to get request UID.");
+		goto done;
+	}
+
+	if (0 != caller_uid) {
+		error = g_error_new_literal (NM_MANAGER_ERROR,
+		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		                             "Permission denied");
+		goto done;
+	}
+
+	if (nm_logging_setup (level, domains, NULL, &error)) {
 		char *new_level = nm_logging_level_to_string ();
 		char *new_domains = nm_logging_domains_to_string ();
 
@@ -4016,9 +4034,12 @@ impl_manager_set_logging (NMManager *manager,
 		             new_level, new_domains);
 		g_free (new_level);
 		g_free (new_domains);
-		return TRUE;
 	}
-	return FALSE;
+
+done:
+	if (error)
+		dbus_g_method_return_error (context, error);
+	g_clear_error (&error);
 }
 
 static void

@@ -209,6 +209,7 @@
 
     <method name="SetLogging">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_set_logging"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
         Set logging verbosity and which operations are logged.
       </tp:docstring>
