@@ -227,7 +227,9 @@ global:
 	nm_ip6_config_get_addresses;
 	nm_ip6_config_get_domains;
 	nm_ip6_config_get_gateway;
+	nm_ip6_config_get_nameserver;
 	nm_ip6_config_get_nameservers;
+	nm_ip6_config_get_num_nameservers;
 	nm_ip6_config_get_routes;
 	nm_ip6_config_get_searches;
 	nm_ip6_config_get_type;

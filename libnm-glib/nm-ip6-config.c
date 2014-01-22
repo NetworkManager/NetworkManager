@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2008 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 - 2014 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -190,6 +190,56 @@ nm_ip6_config_get_addresses (NMIP6Config *config)
 
 	_nm_object_ensure_inited (NM_OBJECT (config));
 	return NM_IP6_CONFIG_GET_PRIVATE (config)->addresses;
+}
+
+/**
+ * nm_ip6_config_get_num_nameservers:
+ * @config: a #NMIP6Config
+ *
+ * Gets the number of the domain name servers in the configuration.
+ *
+ * Returns: the number of domain name servers
+ *
+ * Since: 0.9.10
+ **/
+guint32
+nm_ip6_config_get_num_nameservers (NMIP6Config *config)
+{
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), 0);
+
+	_nm_object_ensure_inited (NM_OBJECT (config));
+	return g_slist_length (NM_IP6_CONFIG_GET_PRIVATE (config)->nameservers);
+}
+
+/**
+ * nm_ip6_config_get_nameserver:
+ * @config: a #NMIP6Config
+ * @idx: index of the nameserver to return
+ *
+ * Gets the domain name server at index @idx in the configuration.
+ *
+ * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
+ *          the IPv6 address of domain name server at index @iidx
+ *
+ * Since: 0.9.10
+ **/
+const struct in6_addr *
+nm_ip6_config_get_nameserver (NMIP6Config *config, guint32 idx)
+{
+	NMIP6ConfigPrivate *priv;
+	GSList *item;
+	guint32 i = 0;
+
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
+
+	_nm_object_ensure_inited (NM_OBJECT (config));
+	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	for (item = priv->nameservers; item && i < idx; i++)
+		item = item->next;
+
+	g_return_val_if_fail (item, NULL);
+	return item ? (const struct in6_addr *) item->data : NULL;
 }
 
 /* FIXME: like in libnm_util, in6_addr is not introspectable, so skipping here */

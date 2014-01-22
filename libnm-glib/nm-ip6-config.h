@@ -18,7 +18,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2014 Red Hat, Inc.
  */
 
 #ifndef NM_IP6_CONFIG_H
@@ -65,12 +65,14 @@ GType nm_ip6_config_get_type (void);
 
 GObject *nm_ip6_config_new (DBusGConnection *connection, const char *object_path);
 
-const char *     nm_ip6_config_get_gateway      (NMIP6Config *config);
-const GSList *   nm_ip6_config_get_addresses    (NMIP6Config *config);
-const GSList *   nm_ip6_config_get_routes       (NMIP6Config *config);
-const GSList *   nm_ip6_config_get_nameservers  (NMIP6Config *config);
-const GPtrArray *nm_ip6_config_get_domains      (NMIP6Config *config);
-const GPtrArray *nm_ip6_config_get_searches     (NMIP6Config *config);
+const char *           nm_ip6_config_get_gateway         (NMIP6Config *config);
+const GSList *         nm_ip6_config_get_addresses       (NMIP6Config *config);
+const GSList *         nm_ip6_config_get_routes          (NMIP6Config *config);
+guint32                nm_ip6_config_get_num_nameservers (NMIP6Config *config);
+const struct in6_addr *nm_ip6_config_get_nameserver      (NMIP6Config *config, guint32 idx);
+const GSList *         nm_ip6_config_get_nameservers     (NMIP6Config *config);
+const GPtrArray *      nm_ip6_config_get_domains         (NMIP6Config *config);
+const GPtrArray *      nm_ip6_config_get_searches        (NMIP6Config *config);
 
 G_END_DECLS
 
