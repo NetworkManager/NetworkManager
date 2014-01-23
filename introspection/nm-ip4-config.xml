@@ -30,6 +30,14 @@
     <property name="WinsServers" type="au" access="read">
       <tp:docstring>The Windows Internet Name Service servers associated with the connection.  Each address is in network byte order.</tp:docstring>
     </property>
+
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
+        <tp:docstring>
+          A dictionary mapping property names to variant boxed values
+        </tp:docstring>
+      </arg>
+    </signal>
   </interface>
 </node>
 

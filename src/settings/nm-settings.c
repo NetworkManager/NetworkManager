@@ -91,10 +91,10 @@ static gboolean impl_settings_list_connections (NMSettings *self,
                                                 GPtrArray **connections,
                                                 GError **error);
 
-static gboolean impl_settings_get_connection_by_uuid (NMSettings *self,
-                                                      const char *uuid,
-                                                      char **out_object_path,
-                                                      GError **error);
+static void impl_settings_get_connection_by_uuid (NMSettings *self,
+                                                  const char *uuid,
+                                                  char **out_object_path,
+                                                  DBusGMethodInvocation *context);
 
 static void impl_settings_add_connection (NMSettings *self,
                                           GHashTable *settings,
@@ -268,25 +268,53 @@ nm_settings_get_connection_by_uuid (NMSettings *self, const char *uuid)
 	return NULL;
 }
 
-static gboolean
+static void
 impl_settings_get_connection_by_uuid (NMSettings *self,
                                       const char *uuid,
                                       char **out_object_path,
-                                      GError **error)
+                                      DBusGMethodInvocation *context)
 {
 	NMSettingsConnection *connection = NULL;
+	NMAuthSubject *subject;
+	GError *error = NULL;
+	char *error_desc = NULL;
 
 	connection = nm_settings_get_connection_by_uuid (self, uuid);
-	if (connection)
-		*out_object_path = g_strdup (nm_connection_get_path (NM_CONNECTION (connection)));
-	else {
-		g_set_error_literal (error,
-		                     NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                     "No connection with the UUID was found.");
+	if (!connection) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                             "No connection with the UUID was found.");
+		goto error;
 	}
 
-	return !!connection;
+	subject = nm_auth_subject_new_from_context (context);
+	if (!subject) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             "Unable to determine UID of request.");
+		goto error;
+	}
+
+	if (!nm_auth_uid_in_acl (NM_CONNECTION (connection),
+	                         nm_session_monitor_get (),
+	                         nm_auth_subject_get_uid (subject),
+	                         &error_desc)) {
+		error = g_error_new_literal (NM_SETTINGS_ERROR,
+		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
+		                             error_desc);
+		g_free (error_desc);
+		goto error;
+	}
+
+	g_clear_object (&subject);
+	dbus_g_method_return (context, nm_connection_get_path (NM_CONNECTION (connection)));
+	return;
+
+error:
+	g_assert (error);
+	dbus_g_method_return_error (context, error);
+	g_error_free (error);
+	g_clear_object (&subject);
 }
 
 static int
