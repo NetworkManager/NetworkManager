@@ -335,8 +335,6 @@ static gboolean nm_device_set_ip6_config (NMDevice *dev,
                                           gboolean commit,
                                           NMDeviceStateReason *reason);
 
-static gboolean nm_device_activate_ip6_config_commit (gpointer user_data);
-
 static gboolean check_connection_available (NMDevice *device,
                                             NMConnection *connection,
                                             const char *specific_object);
@@ -4232,6 +4230,7 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	guint level = (priv->ip6_state == IP_DONE) ? LOGL_DEBUG : LOGL_INFO;
 	NMActRequest *req;
 	const char *iface;
 	NMConnection *connection;
@@ -4241,8 +4240,7 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	activation_source_clear (self, FALSE, AF_INET6);
 
 	iface = nm_device_get_iface (self);
-	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv6 Commit) started...",
-	             iface);
+	nm_log (LOGD_DEVICE, level, "Activation (%s) Stage 5 of 5 (IPv6 Commit) started...", iface);
 
 	req = nm_device_get_act_request (self);
 	g_assert (req);
@@ -4262,14 +4260,13 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 		if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
 			nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 	} else {
-		nm_log_info (LOGD_DEVICE | LOGD_IP6,
+		nm_log_warn (LOGD_DEVICE | LOGD_IP6,
 			         "Activation (%s) Stage 5 of 5 (IPv6 Commit) failed",
 					 iface);
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 	}
 
-	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 5 of 5 (IPv6 Commit) complete.",
-	             iface);
+	nm_log (LOGD_DEVICE, level, "Activation (%s) Stage 5 of 5 (IPv6 Commit) complete.", iface);
 
 	return FALSE;
 }
@@ -4277,13 +4274,16 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 void
 nm_device_activate_schedule_ip6_config_result (NMDevice *self)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	guint level = (priv->ip6_state == IP_DONE) ? LOGL_DEBUG : LOGL_INFO;
+
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
 
-	nm_log_info (LOGD_DEVICE | LOGD_IP6,
-		         "Activation (%s) Stage 5 of 5 (IPv6 Commit) scheduled...",
-		         nm_device_get_iface (self));
+	nm_log (LOGD_DEVICE | LOGD_IP6, level,
+		    "Activation (%s) Stage 5 of 5 (IPv6 Commit) scheduled...",
+		    nm_device_get_iface (self));
 }
 
 gboolean
