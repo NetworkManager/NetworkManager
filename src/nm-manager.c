@@ -1682,10 +1682,10 @@ device_auth_request_cb (NMDevice *device,
 	}
 
 	/* Ensure the subject has permissions for this connection */
-	if (!nm_auth_uid_in_acl (connection,
-	                         nm_session_monitor_get (),
-	                         nm_auth_subject_get_uid (subject),
-	                         &error_desc)) {
+	if (connection && !nm_auth_uid_in_acl (connection,
+	                                       nm_session_monitor_get (),
+	                                       nm_auth_subject_get_uid (subject),
+	                                       &error_desc)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
