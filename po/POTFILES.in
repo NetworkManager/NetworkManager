@@ -9,6 +9,7 @@ cli/src/nmcli.c
 cli/src/settings.c
 cli/src/utils.c
 libnm-glib/nm-device.c
+libnm-glib/nm-remote-connection.c
 libnm-util/crypto.c
 libnm-util/crypto_gnutls.c
 libnm-util/crypto_nss.c
