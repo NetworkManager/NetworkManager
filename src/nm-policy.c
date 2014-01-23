@@ -1364,9 +1364,6 @@ device_state_changed (NMDevice *device,
 	NMIP6Config *ip6_config;
 	NMSettingConnection *s_con;
 
-	if (connection)
-		nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_NONE);
-
 	switch (new_state) {
 	case NM_DEVICE_STATE_FAILED:
 		/* Mark the connection invalid if it failed during activation so that
@@ -1459,6 +1456,10 @@ device_state_changed (NMDevice *device,
 		/* Reset auto-connect retries of all slaves and schedule them for
 		 * activation. */
 		activate_slave_connections (policy, device);
+		break;
+	case NM_DEVICE_STATE_IP_CONFIG:
+		/* We must have secrets if we got here. */
+		nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	case NM_DEVICE_STATE_SECONDARIES:
 		s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
