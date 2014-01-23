@@ -275,6 +275,12 @@
       <arg name="state" type="u" direction="out" tp:type="NM_STATE"/>
     </method>
 
+    <property name="Devices" type="ao" access="read">
+      <tp:docstring>
+        The list of network devices/interfaces NetworkManager knows about.
+      </tp:docstring>
+    </property>
+
     <property name="NetworkingEnabled" type="b" access="read">
       <tp:docstring>
         Indicates if overall networking is currently enabled or not.  See the

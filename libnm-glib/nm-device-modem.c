@@ -54,9 +54,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_MODEM_CAPS "ModemCapabilities"
-#define DBUS_PROP_CURRENT_CAPS "CurrentCapabilities"
-
 /**
  * nm_device_modem_error_quark:
  *

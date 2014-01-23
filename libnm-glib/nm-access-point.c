@@ -72,16 +72,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_FLAGS "Flags"
-#define DBUS_PROP_WPA_FLAGS "WpaFlags"
-#define DBUS_PROP_RSN_FLAGS "RsnFlags"
-#define DBUS_PROP_SSID "Ssid"
-#define DBUS_PROP_FREQUENCY "Frequency"
-#define DBUS_PROP_HW_ADDRESS "HwAddress"
-#define DBUS_PROP_MODE "Mode"
-#define DBUS_PROP_MAX_BITRATE "MaxBitrate"
-#define DBUS_PROP_STRENGTH "Strength"
-
 /**
  * nm_access_point_new:
  * @connection: the #DBusGConnection

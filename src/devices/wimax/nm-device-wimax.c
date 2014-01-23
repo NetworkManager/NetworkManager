@@ -44,6 +44,7 @@
 #include "nm-rfkill-manager.h"
 #include "iwmxsdk.h"
 #include "nm-enum-types.h"
+#include "nm-dbus-glib-types.h"
 
 static gboolean impl_device_get_nsp_list (NMDeviceWimax *device, GPtrArray **list, GError **error);
 
@@ -53,6 +54,7 @@ G_DEFINE_TYPE (NMDeviceWimax, nm_device_wimax, NM_TYPE_DEVICE)
 
 enum {
 	PROP_0,
+	PROP_NSPS,
 	PROP_ACTIVE_NSP,
 	PROP_CENTER_FREQ,
 	PROP_RSSI,
@@ -231,6 +233,7 @@ remove_all_nsps (NMDeviceWimax *self)
 
 		priv->nsp_list = g_slist_remove (priv->nsp_list, nsp);
 		g_signal_emit (self, signals[NSP_REMOVED], 0, nsp);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_NSPS);
 		g_object_unref (nsp);
 	}
 
@@ -1023,6 +1026,7 @@ wmx_scan_result_cb (struct wmxsdk *wmxsdk,
 			priv->nsp_list = g_slist_append (priv->nsp_list, nsp);
 			nm_wimax_nsp_export_to_dbus (nsp);
 			g_signal_emit (self, signals[NSP_ADDED], 0, nsp);
+			g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_NSPS);
 			nm_device_recheck_available_connections (NM_DEVICE (self));
 		}
 	}
@@ -1313,8 +1317,16 @@ get_property (GObject *object, guint prop_id,
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (object);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
+	GPtrArray *array;
+	GSList *iter;
 
 	switch (prop_id) {
+	case PROP_NSPS:
+		array = g_ptr_array_sized_new (4);
+		for (iter = priv->nsp_list; iter; iter = g_slist_next (iter))
+			g_ptr_array_add (array, g_strdup (nm_wimax_nsp_get_dbus_path (NM_WIMAX_NSP (iter->data))));
+		g_value_take_boxed (value, array);
+		break;
 	case PROP_ACTIVE_NSP:
 		if (priv->current_nsp)
 			g_value_set_boxed (value, nm_wimax_nsp_get_dbus_path (priv->current_nsp));
@@ -1404,6 +1416,14 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *klass)
 	device_class->state_changed = device_state_changed;
 
 	/* Properties */
+	g_object_class_install_property
+		(object_class, PROP_NSPS,
+		 g_param_spec_boxed (NM_DEVICE_WIMAX_NSPS,
+		                     "Network access points",
+		                     "Network access points",
+		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_PARAM_READABLE));
+
 	g_object_class_install_property (object_class, PROP_ACTIVE_NSP,
 		g_param_spec_boxed (NM_DEVICE_WIMAX_ACTIVE_NSP,
 		                    "Active NSP",

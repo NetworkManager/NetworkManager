@@ -289,6 +289,7 @@ enum {
 	PROP_CONNECTIVITY,
 	PROP_PRIMARY_CONNECTION,
 	PROP_ACTIVATING_CONNECTION,
+	PROP_DEVICES,
 
 	/* Not exported */
 	PROP_HOSTNAME,
@@ -818,6 +819,7 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 
 	nm_settings_device_removed (priv->settings, device, quitting);
 	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
+	g_object_notify (G_OBJECT (manager), NM_MANAGER_DEVICES);
 	g_object_unref (device);
 
 	priv->devices = g_slist_remove (priv->devices, device);
@@ -1912,6 +1914,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 
 	nm_settings_device_added (priv->settings, device);
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
+	g_object_notify (G_OBJECT (self), NM_MANAGER_DEVICES);
 
 	/* New devices might be master interfaces for virtual interfaces; so we may
 	 * need to create new virtual interfaces now.
@@ -4840,7 +4843,7 @@ get_property (GObject *object, guint prop_id,
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GSList *iter;
-	GPtrArray *active;
+	GPtrArray *array;
 	const char *path;
 
 	switch (prop_id) {
@@ -4876,13 +4879,13 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WIMAX].hw_enabled);
 		break;
 	case PROP_ACTIVE_CONNECTIONS:
-		active = g_ptr_array_sized_new (3);
+		array = g_ptr_array_sized_new (3);
 		for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
 			path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (iter->data));
 			if (path)
-				g_ptr_array_add (active, g_strdup (path));
+				g_ptr_array_add (array, g_strdup (path));
 		}
-		g_value_take_boxed (value, active);
+		g_value_take_boxed (value, array);
 		break;
 	case PROP_CONNECTIVITY:
 		g_value_set_uint (value, nm_connectivity_get_state (priv->connectivity));
@@ -4900,6 +4903,15 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SLEEPING:
 		g_value_set_boolean (value, priv->sleeping);
+		break;
+	case PROP_DEVICES:
+		array = g_ptr_array_sized_new (5);
+		for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+			path = nm_device_get_path (NM_DEVICE (iter->data));
+			if (path)
+				g_ptr_array_add (array, g_strdup (path));
+		}
+		g_value_take_boxed (value, array);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -5200,6 +5212,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		                       "Sleeping",
 		                       FALSE,
 		                       G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_DEVICES,
+		 g_param_spec_boxed (NM_MANAGER_DEVICES,
+		                     "Devices",
+		                     "Devices",
+		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_PARAM_READABLE));
 
 	/* signals */
 	signals[DEVICE_ADDED] =

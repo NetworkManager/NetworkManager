@@ -164,6 +164,7 @@ enum {
 	PROP_UNMANAGED_SPECS,
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
+	PROP_CONNECTIONS,
 
 	LAST_PROP
 };
@@ -748,9 +749,12 @@ connection_removed (NMSettingsConnection *connection, gpointer user_data)
 	g_hash_table_remove (NM_SETTINGS_GET_PRIVATE (user_data)->connections,
 	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)));
 
-	/* Re-emit for listeners like NMPolicy */
+	/* Notify D-Bus */
 	g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connection);
+
+	/* Re-emit for listeners like NMPolicy */
 	g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_REMOVED, connection);
+	g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTIONS);
 
 	g_object_unref (connection);
 }
@@ -879,6 +883,7 @@ claim_connection (NMSettings *self,
 		/* Internal added signal */
 		g_signal_emit (self, signals[CONNECTION_ADDED], 0, connection);
 		g_signal_emit_by_name (self, NM_CP_SIGNAL_CONNECTION_ADDED, connection);
+		g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTIONS);
 
 		/* Exported D-Bus signal */
 		g_signal_emit (self, signals[NEW_CONNECTION], 0, connection);
@@ -1873,8 +1878,12 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMSettings *self = NM_SETTINGS (object);
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	const GSList *specs, *iter;
 	GSList *copy = NULL;
+	GHashTableIter citer;
+	GPtrArray *array;
+	const char *path;
 
 	switch (prop_id) {
 	case PROP_UNMANAGED_SPECS:
@@ -1892,6 +1901,13 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CAN_MODIFY:
 		g_value_set_boolean (value, !!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS));
+		break;
+	case PROP_CONNECTIONS:
+		array = g_ptr_array_sized_new (g_hash_table_size (priv->connections));
+		g_hash_table_iter_init (&citer, priv->connections);
+		while (g_hash_table_iter_next (&citer, (gpointer) &path, NULL))
+			g_ptr_array_add (array, g_strdup (path));
+		g_value_take_boxed (value, array);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1937,6 +1953,14 @@ nm_settings_class_init (NMSettingsClass *class)
 		                       "Can modify anything (hostname, connections, etc)",
 		                       FALSE,
 		                       G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_CONNECTIONS,
+		 g_param_spec_boxed (NM_SETTINGS_CONNECTIONS,
+		                     "Connections",
+		                     "Connections",
+		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_PARAM_READABLE));
 
 	/* signals */
 	signals[PROPERTIES_CHANGED] = 

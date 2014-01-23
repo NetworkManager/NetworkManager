@@ -56,10 +56,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_HW_ADDRESS "HwAddress"
-#define DBUS_PROP_CARRIER "Carrier"
-#define DBUS_PROP_SLAVES "Slaves"
-
 /**
  * nm_device_bridge_error_quark:
  *

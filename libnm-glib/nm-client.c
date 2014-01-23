@@ -100,6 +100,7 @@ enum {
 	PROP_CONNECTIVITY,
 	PROP_PRIMARY_CONNECTION,
 	PROP_ACTIVATING_CONNECTION,
+	PROP_DEVICES,
 
 	LAST_PROP
 };
@@ -119,9 +120,6 @@ static void proxy_name_owner_changed (DBusGProxy *proxy,
 									  const char *old_owner,
 									  const char *new_owner,
 									  gpointer user_data);
-
-static void client_device_added (NMObject *client, NMObject *device);
-static void client_device_removed (NMObject *client, NMObject *device);
 
 /**********************************************************************/
 
@@ -195,20 +193,13 @@ register_properties (NMClient *client)
 		{ NM_CLIENT_CONNECTIVITY,              &priv->connectivity },
 		{ NM_CLIENT_PRIMARY_CONNECTION,        &priv->primary_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_CLIENT_ACTIVATING_CONNECTION,     &priv->activating_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
+		{ NM_CLIENT_DEVICES,                   &priv->devices, NULL, NM_TYPE_DEVICE, "device" },
 		{ NULL },
 	};
 
 	_nm_object_register_properties (NM_OBJECT (client),
 	                                priv->client_proxy,
 	                                property_info);
-
-	_nm_object_register_pseudo_property (NM_OBJECT (client),
-	                                     priv->client_proxy,
-	                                     "Devices",
-	                                     &priv->devices,
-	                                     NM_TYPE_DEVICE,
-	                                     client_device_added,
-	                                     client_device_removed);
 }
 
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
@@ -1402,18 +1393,6 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 	}
 }
 
-static void
-client_device_added (NMObject *client, NMObject *device)
-{
-	g_signal_emit (client, signals[DEVICE_ADDED], 0, device);
-}
-
-static void
-client_device_removed (NMObject *client, NMObject *device)
-{
-	g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
-}
-
 /**
  * nm_client_get_connectivity:
  * @client: an #NMClient
@@ -2161,6 +2140,9 @@ get_property (GObject *object,
 	case PROP_ACTIVATING_CONNECTION:
 		g_value_set_object (value, priv->activating_connection);
 		break;
+	case PROP_DEVICES:
+		g_value_set_boxed (value, nm_client_get_devices (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -2388,6 +2370,21 @@ nm_client_class_init (NMClientClass *client_class)
 		                      "Activating connection",
 		                      NM_TYPE_ACTIVE_CONNECTION,
 		                      G_PARAM_READABLE));
+
+	/**
+	 * NMClient:devices:
+	 *
+	 * List of known network devices.
+	 *
+	 * Since: 0.9.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DEVICES,
+		 g_param_spec_boxed (NM_CLIENT_DEVICES,
+		                     "Devices",
+		                     "Devices",
+		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_PARAM_READABLE));
 
 	/* signals */
 

@@ -6,11 +6,27 @@
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_get_access_points"/>
       <arg name="access_points" type="ao" direction="out">
         <tp:docstring>
-          List of access point object paths
+          List of access point object paths.
         </tp:docstring>
       </arg>
       <tp:docstring>
-        Get the list of access points visible to this device.
+        DEPRECATED.  Get the list of access points visible to this device.  Note
+        that this list does not include access points which hide their SSID.  To
+        retrieve a list of all access points (including hidden ones) use the
+        GetAllAccessPoints() method.
+      </tp:docstring>
+    </method>
+
+    <method name="GetAllAccessPoints">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_get_all_access_points"/>
+      <arg name="access_points" type="ao" direction="out">
+        <tp:docstring>
+          List of access point object paths.
+        </tp:docstring>
+      </arg>
+      <tp:docstring>
+        Get the list of all access points visible to this device, including
+        hidden ones for which the SSID is not yet known.
       </tp:docstring>
     </method>
 
@@ -50,11 +66,19 @@
         The bit rate currently used by the wireless device, in kilobits/second (Kb/s).
       </tp:docstring>
     </property>
+
+    <property name="AccessPoints" type="ao" access="read">
+      <tp:docstring>
+        List of object paths of access point visible to this wireless device.
+      </tp:docstring>
+    </property>
+
     <property name="ActiveAccessPoint" type="o" access="read">
       <tp:docstring>
         Object path of the access point currently used by the wireless device.
       </tp:docstring>
     </property>
+
     <property name="WirelessCapabilities" type="u" access="read" tp:type="NM_802_11_DEVICE_CAP">
       <tp:docstring>
         The capabilities of the wireless device.

@@ -512,8 +512,8 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	const GByteArray *ssid;
 	const char *bssid;
 	NM80211Mode mode;
-	char *channel_str, *freq_str, *ssid_str, *ssid_hex_str, *bitrate_str,
-	     *strength_str, *wpa_flags_str, *rsn_flags_str;
+	char *channel_str, *freq_str, *ssid_str = NULL, *ssid_hex_str = NULL,
+	     *bitrate_str, *strength_str, *wpa_flags_str, *rsn_flags_str;
 	GString *security_str;
 	char *ap_name;
 	const char *sig_level_0 = "____";
@@ -541,8 +541,10 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	strength = MIN (nm_access_point_get_strength (ap), 100);
 
 	/* Convert to strings */
-	ssid_str = nm_utils_ssid_to_utf8 (ssid);
-	ssid_hex_str = ssid_to_hex ((const char *)ssid->data, ssid->len);
+	if (ssid) {
+		ssid_str = nm_utils_ssid_to_utf8 (ssid);
+		ssid_hex_str = ssid_to_hex ((const char *) ssid->data, ssid->len);
+	}
 	channel_str = g_strdup_printf ("%u", nm_utils_wifi_freq_to_channel (freq));
 	freq_str = g_strdup_printf (_("%u MHz"), freq);
 	bitrate_str = g_strdup_printf (_("%u MB/s"), bitrate/1000);
@@ -1942,16 +1944,20 @@ find_ap_on_device (NMDevice *device, GByteArray *bssid, const char *ssid)
 
 		if (ssid) {
 			/* Parameter is SSID */
-			const GByteArray *candidate_ssid = nm_access_point_get_ssid (candidate_ap);
-			char *ssid_tmp = nm_utils_ssid_to_utf8 (candidate_ssid);
+			const GByteArray *candidate_ssid;
 
-			/* Compare SSIDs */
-			if (strcmp (ssid, ssid_tmp) == 0) {
-				ap = candidate_ap;
+			candidate_ssid = nm_access_point_get_ssid (candidate_ap);
+			if (candidate_ssid) {
+				char *ssid_tmp = nm_utils_ssid_to_utf8 (candidate_ssid);
+
+				/* Compare SSIDs */
+				if (strcmp (ssid, ssid_tmp) == 0) {
+					ap = candidate_ap;
+					g_free (ssid_tmp);
+					break;
+				}
 				g_free (ssid_tmp);
-				break;
 			}
-			g_free (ssid_tmp);
 		} else if (bssid) {
 			/* Parameter is BSSID */
 			const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);

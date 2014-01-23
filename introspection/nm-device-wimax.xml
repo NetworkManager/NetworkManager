@@ -14,6 +14,13 @@
       </tp:docstring>
     </method>
 
+    <property name="Nsps" type="ao" access="read">
+      <tp:docstring>
+        List of object paths of Network Service Providers (NSPs) visible to this
+        WiMAX device.
+      </tp:docstring>
+    </property>
+
     <property name="HwAddress" type="s" access="read">
       <tp:docstring>
         Hardware address of the device.

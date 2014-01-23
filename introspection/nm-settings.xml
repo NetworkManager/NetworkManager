@@ -147,6 +147,12 @@
       </arg>
     </method>
 
+    <property name="Connections" type="ao" access="read">
+      <tp:docstring>
+        List of object paths of available network connection profiles.
+      </tp:docstring>
+    </property>
+
     <property name="Hostname" type="s" access="read">
       <tp:docstring>
         The machine hostname stored in persistent configuration.
@@ -181,6 +187,21 @@
       <arg name="connection" type="o">
         <tp:docstring>
           Object path of the new connection.
+        </tp:docstring>
+      </arg>
+    </signal>
+
+    <signal name="ConnectionRemoved">
+      <tp:docstring>
+        Emitted when a connection is no longer available.  This happens when
+        the connection is deleted or if it is no longer accessible by any of
+        the system's logged-in users.  After receipt of this signal, the
+        connection no longer exists and cannot be used.  Also see the
+        Settings.Connection.Removed signal.
+      </tp:docstring>
+      <arg name="connection" type="o">
+        <tp:docstring>
+          Object path of the removed connection.
         </tp:docstring>
       </arg>
     </signal>

@@ -73,16 +73,10 @@ enum {
 	PROP_BITRATE,
 	PROP_ACTIVE_ACCESS_POINT,
 	PROP_WIRELESS_CAPABILITIES,
+	PROP_ACCESS_POINTS,
 
 	LAST_PROP
 };
-
-#define DBUS_PROP_HW_ADDRESS "HwAddress"
-#define DBUS_PROP_PERM_HW_ADDRESS "PermHwAddress"
-#define DBUS_PROP_MODE "Mode"
-#define DBUS_PROP_BITRATE "Bitrate"
-#define DBUS_PROP_ACTIVE_ACCESS_POINT "ActiveAccessPoint"
-#define DBUS_PROP_WIRELESS_CAPABILITIES "WirelessCapabilities"
 
 enum {
 	ACCESS_POINT_ADDED,
@@ -90,7 +84,6 @@ enum {
 
 	LAST_SIGNAL
 };
-
 static guint signals[LAST_SIGNAL] = { 0 };
 
 /**
@@ -390,31 +383,6 @@ nm_device_wifi_request_scan_simple (NMDeviceWifi *device,
 }
 
 static void
-access_point_added (NMObject *self, NMObject *ap)
-{
-	g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);
-}
-
-static void
-access_point_removed (NMObject *self_obj, NMObject *ap_obj)
-{
-	NMDeviceWifi *self = NM_DEVICE_WIFI (self_obj);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMAccessPoint *ap = NM_ACCESS_POINT (ap_obj);
-
-	if (ap == priv->active_ap) {
-		g_object_unref (priv->active_ap);
-		priv->active_ap = NULL;
-		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
-
-		priv->rate = 0;
-		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_BITRATE);
-	}
-
-	g_signal_emit (self, signals[ACCESS_POINT_REMOVED], 0, ap);
-}
-
-static void
 clean_up_aps (NMDeviceWifi *self, gboolean notify)
 {
 	NMDeviceWifiPrivate *priv;
@@ -598,6 +566,9 @@ get_property (GObject *object,
 	case PROP_WIRELESS_CAPABILITIES:
 		g_value_set_uint (value, nm_device_wifi_get_capabilities (self));
 		break;
+	case PROP_ACCESS_POINTS:
+		g_value_set_boxed (value, nm_device_wifi_get_access_points (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -641,20 +612,28 @@ register_properties (NMDeviceWifi *device)
 		{ NM_DEVICE_WIFI_BITRATE,              &priv->rate },
 		{ NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT,  &priv->active_ap, NULL, NM_TYPE_ACCESS_POINT },
 		{ NM_DEVICE_WIFI_CAPABILITIES,         &priv->wireless_caps },
+		{ NM_DEVICE_WIFI_ACCESS_POINTS,        &priv->aps, NULL, NM_TYPE_ACCESS_POINT, "access-point" },
 		{ NULL },
 	};
 
 	_nm_object_register_properties (NM_OBJECT (device),
 	                                priv->proxy,
 	                                property_info);
+}
 
-	_nm_object_register_pseudo_property (NM_OBJECT (device),
-	                                     priv->proxy,
-	                                     "AccessPoints",
-	                                     &priv->aps,
-	                                     NM_TYPE_ACCESS_POINT,
-	                                     access_point_added,
-	                                     access_point_removed);
+static void
+access_point_removed (NMDeviceWifi *self, NMAccessPoint *ap)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	if (ap == priv->active_ap) {
+		g_object_unref (priv->active_ap);
+		priv->active_ap = NULL;
+		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
+
+		priv->rate = 0;
+		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_BITRATE);
+	}
 }
 
 static void
@@ -726,6 +705,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	object_class->finalize = finalize;
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_hw_address = get_hw_address;
+	wifi_class->access_point_removed = access_point_removed;
 
 	/* properties */
 
@@ -806,6 +786,21 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 		                    "Wireless Capabilities",
 		                    0, G_MAXUINT32, 0,
 		                    G_PARAM_READABLE));
+
+	/**
+	 * NMDeviceWifi:access-points:
+	 *
+	 * List of all Wi-Fi access points the device can see.
+	 *
+	 * Since: 0.9.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ACCESS_POINTS,
+		 g_param_spec_boxed (NM_DEVICE_WIFI_ACCESS_POINTS,
+		                     "AccessPoints",
+		                     "Access Points",
+		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_PARAM_READABLE));
 
 	/* signals */
 

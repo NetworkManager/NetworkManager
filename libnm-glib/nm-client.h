@@ -58,6 +58,7 @@ G_BEGIN_DECLS
 #define NM_CLIENT_CONNECTIVITY "connectivity"
 #define NM_CLIENT_PRIMARY_CONNECTION "primary-connection"
 #define NM_CLIENT_ACTIVATING_CONNECTION "activating-connection"
+#define NM_CLIENT_DEVICES "devices"
 
 /**
  * NMClientPermission:
