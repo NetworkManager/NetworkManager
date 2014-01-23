@@ -167,7 +167,6 @@ nm_remote_connection_commit_changes (NMRemoteConnection *self,
 	RemoteCall *call;
 
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (self));
-	g_return_if_fail (callback != NULL);
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
@@ -212,7 +211,6 @@ nm_remote_connection_commit_changes_unsaved (NMRemoteConnection *connection,
 	RemoteCall *call;
 
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
-	g_return_if_fail (callback != NULL);
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
 
@@ -254,7 +252,6 @@ nm_remote_connection_save (NMRemoteConnection *connection,
 	RemoteCall *call;
 
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
-	g_return_if_fail (callback != NULL);
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
 
