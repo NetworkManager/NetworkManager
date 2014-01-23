@@ -197,7 +197,7 @@ build_edit_connection (NMConnection *orig_connection)
 		/* FIXME: error handling */
 		secrets = nmt_sync_op_wait_pointer (&op, NULL);
 		if (secrets)
-			nm_connection_update_secrets (edit_connection, setting_name, secrets, NULL);
+			(void) nm_connection_update_secrets (edit_connection, setting_name, secrets, NULL);
 	}
 	g_hash_table_unref (settings);
 
