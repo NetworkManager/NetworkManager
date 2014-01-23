@@ -6283,7 +6283,8 @@ nm_device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		if (old_state == NM_DEVICE_STATE_UNMANAGED) {
 			save_ip6_properties (device);
-			nm_platform_sysctl_set (priv->ip6_disable_ipv6_path, "1");
+			if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
+				nm_platform_sysctl_set (priv->ip6_disable_ipv6_path, "1");
 			nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
 			nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, "0");
 		}
