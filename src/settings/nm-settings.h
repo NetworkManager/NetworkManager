@@ -49,7 +49,6 @@
 #define NM_SETTINGS_SIGNAL_CONNECTION_UPDATED_BY_USER    "connection-updated-by-user"
 #define NM_SETTINGS_SIGNAL_CONNECTION_REMOVED            "connection-removed"
 #define NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED "connection-visibility-changed"
-#define NM_SETTINGS_SIGNAL_CONNECTIONS_LOADED            "connections-loaded"
 #define NM_SETTINGS_SIGNAL_AGENT_REGISTERED              "agent-registered"
 
 typedef struct {
@@ -69,8 +68,6 @@ typedef struct {
 	void (*connection_removed) (NMSettings *self, NMSettingsConnection *connection);
 
 	void (*connection_visibility_changed) (NMSettings *self, NMSettingsConnection *connection);
-
-	void (*connections_loaded) (NMSettings *self);
 
 	void (*agent_registered) (NMSettings *self, NMSecretAgent *agent);
 } NMSettingsClass;

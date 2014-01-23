@@ -137,6 +137,7 @@ enum {
 	PROP_AVAILABLE_CONNECTIONS,
 	PROP_PHYSICAL_PORT_ID,
 	PROP_IS_MASTER,
+	PROP_MASTER,
 	PROP_HW_ADDRESS,
 	PROP_HAS_PENDING_ACTION,
 	LAST_PROP
@@ -351,7 +352,6 @@ static const char *reason_to_string (NMDeviceStateReason reason);
 static void ip_check_gw_ping_cleanup (NMDevice *self);
 
 static void cp_connection_added (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
-static void cp_connections_loaded (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
 static void cp_connection_removed (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
 static void cp_connection_updated (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data);
 
@@ -365,7 +365,7 @@ static void update_ip_config (NMDevice *self, gboolean initial);
 static void device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, NMPlatformReason reason, gpointer user_data);
 
 static void nm_device_slave_notify_enslave (NMDevice *dev, gboolean success);
-static void nm_device_slave_notify_release (NMDevice *dev, gboolean master_failed);
+static void nm_device_slave_notify_release (NMDevice *dev, NMDeviceStateReason reason);
 
 static void addrconf6_start_with_link_ready (NMDevice *self);
 
@@ -907,11 +907,6 @@ nm_device_set_connection_provider (NMDevice *device,
 	                                      G_CALLBACK (cp_connection_added),
 	                                      device);
 
-	priv->cp_loaded_id = g_signal_connect (priv->con_provider,
-	                                       NM_CP_SIGNAL_CONNECTIONS_LOADED,
-	                                       G_CALLBACK (cp_connections_loaded),
-	                                       device);
-
 	priv->cp_removed_id = g_signal_connect (priv->con_provider,
 	                                        NM_CP_SIGNAL_CONNECTION_REMOVED,
 	                                        G_CALLBACK (cp_connection_removed),
@@ -1012,7 +1007,6 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
  * nm_device_release_one_slave:
  * @dev: the master device
  * @slave: the slave device to release
- * @master_failed: %TRUE if the release was unexpected, ie the master failed
  *
  * If @dev is capable of enslaving other devices (ie it's a bridge, bond, team,
  * etc) then this function releases the previously enslaved @slave.
@@ -1021,11 +1015,12 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
  *  other devices, or if @slave was never enslaved.
  */
 static gboolean
-nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean master_failed)
+nm_device_release_one_slave (NMDevice *dev, NMDevice *slave)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
 	SlaveInfo *info;
 	gboolean success = FALSE;
+	NMDeviceStateReason reason;
 
 	g_return_val_if_fail (slave != NULL, FALSE);
 	g_return_val_if_fail (NM_DEVICE_GET_CLASS (dev)->release_slave != NULL, FALSE);
@@ -1038,7 +1033,12 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean master_fai
 		success = NM_DEVICE_GET_CLASS (dev)->release_slave (dev, slave);
 		g_warn_if_fail (success);
 	}
-	nm_device_slave_notify_release (info->slave, master_failed);
+
+	if (priv->state == NM_DEVICE_STATE_FAILED)
+		reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
+	else
+		reason = priv->state_reason;
+	nm_device_slave_notify_release (info->slave, reason);
 
 	priv->slaves = g_slist_remove (priv->slaves, info);
 	free_slave_info (info);
@@ -1268,7 +1268,7 @@ slave_state_changed (NMDevice *slave,
 	}
 
 	if (release) {
-		nm_device_release_one_slave (self, slave, FALSE);
+		nm_device_release_one_slave (self, slave);
 		/* Bridge/bond/team interfaces are left up until manually deactivated */
 		if (priv->slaves == NULL && priv->state == NM_DEVICE_STATE_ACTIVATED) {
 			nm_log_dbg (LOGD_DEVICE, "(%s): last slave removed; remaining activated",
@@ -1410,17 +1410,38 @@ nm_device_is_master (NMDevice *dev)
 
 /* release all slaves */
 static void
-nm_device_master_release_slaves (NMDevice *self, gboolean failed)
+nm_device_master_release_slaves (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	while (priv->slaves) {
 		SlaveInfo *info = priv->slaves->data;
 
-		nm_device_release_one_slave (self, info->slave, failed);
+		nm_device_release_one_slave (self, info->slave);
 	}
 }
 
+/**
+ * nm_device_get_master:
+ * @dev: the device
+ *
+ * If @dev has been enslaved by another device, this returns that
+ * device. Otherwise it returns %NULL. (In particular, note that if
+ * @dev is in the process of activating as a slave, but has not yet
+ * been enslaved by its master, this will return %NULL.)
+ *
+ * Returns: (transfer none): @dev's master, or %NULL
+ */
+NMDevice *
+nm_device_get_master (NMDevice *dev)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
+
+	if (priv->enslaved)
+		return priv->master;
+	else
+		return NULL;
+}
 
 /**
  * nm_device_slave_notify_enslave:
@@ -1447,6 +1468,7 @@ nm_device_slave_notify_enslave (NMDevice *dev, gboolean success)
 				     nm_connection_get_id (connection));
 
 		priv->enslaved = TRUE;
+		g_object_notify (G_OBJECT (dev), NM_DEVICE_MASTER);
 	} else {
 		nm_log_warn (LOGD_DEVICE,
 		             "Activation (%s) connection '%s' could not be enslaved",
@@ -1464,41 +1486,43 @@ nm_device_slave_notify_enslave (NMDevice *dev, gboolean success)
 /**
  * nm_device_slave_notify_release:
  * @dev: the slave device
- * @master_failed: indicates whether the release was unexpected,
- *   ie the master device failed.
+ * @reason: the reason associated with the state change
  *
- * Notifies a slave that it has been released, and whether this was expected
- * or not.
+ * Notifies a slave that it has been released, and why.
  */
 static void
-nm_device_slave_notify_release (NMDevice *dev, gboolean master_failed)
+nm_device_slave_notify_release (NMDevice *dev, NMDeviceStateReason reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
 	NMConnection *connection = nm_device_get_connection (dev);
 	NMDeviceState new_state;
-	NMDeviceStateReason reason;
+	const char *master_status;
 
 	if (   priv->state > NM_DEVICE_STATE_DISCONNECTED
 	    && priv->state <= NM_DEVICE_STATE_ACTIVATED) {
-		if (master_failed) {
+		if (reason == NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED) {
 			new_state = NM_DEVICE_STATE_FAILED;
-			reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
-
-			nm_log_warn (LOGD_DEVICE,
-			             "Activation (%s) connection '%s' master failed",
-			             nm_device_get_iface (dev),
-			             nm_connection_get_id (connection));
+			master_status = "failed";
+		} else if (reason == NM_DEVICE_STATE_REASON_USER_REQUESTED) {
+			new_state = NM_DEVICE_STATE_DEACTIVATING;
+			master_status = "deactivated by user request";
 		} else {
 			new_state = NM_DEVICE_STATE_DISCONNECTED;
-			reason = NM_DEVICE_STATE_REASON_NONE;
-
-			nm_log_dbg (LOGD_DEVICE,
-			            "Activation (%s) connection '%s' master deactivated",
-			            nm_device_get_iface (dev),
-			            nm_connection_get_id (connection));
+			master_status = "deactivated";
 		}
 
+		nm_log_dbg (LOGD_DEVICE,
+		            "Activation (%s) connection '%s' master %s",
+		            nm_device_get_iface (dev),
+		            nm_connection_get_id (connection),
+		            master_status);
+
 		nm_device_queue_state (dev, new_state, reason);
+	}
+
+	if (priv->enslaved) {
+		priv->enslaved = FALSE;
+		g_object_notify (G_OBJECT (dev), NM_DEVICE_MASTER);
 	}
 }
 
@@ -4552,11 +4576,12 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 		NM_DEVICE_GET_CLASS (self)->deactivate (self);
 
 	/* master: release slaves */
-	nm_device_master_release_slaves (self, FALSE);
+	nm_device_master_release_slaves (self);
 
 	/* slave: mark no longer enslaved */
 	g_clear_object (&priv->master);
 	priv->enslaved = FALSE;
+	g_object_notify (G_OBJECT (self), NM_DEVICE_MASTER);
 
 	/* Tear down an existing activation request */
 	clear_act_request (self);
@@ -4616,15 +4641,8 @@ disconnect_cb (NMDevice *device,
 	} else {
 		priv->autoconnect = FALSE;
 
-		/* Software devices are removed when manually disconnected and thus
-		 * we need to track the autoconnect flag outside the device.
-		 */
-		nm_manager_prevent_device_auto_connect (nm_manager_get (),
-		                                        nm_device_get_ip_iface (device),
-		                                        TRUE);
-
 		nm_device_state_changed (device,
-		                         NM_DEVICE_STATE_DISCONNECTED,
+		                         NM_DEVICE_STATE_DEACTIVATING,
 		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 		dbus_g_method_return (context);
 	}
@@ -5642,6 +5660,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_IS_MASTER:
 		g_value_set_boolean (value, priv->is_master);
 		break;
+	case PROP_MASTER:
+		g_value_set_object (value, priv->master);
+		break;
 	case PROP_HW_ADDRESS:
 		if (priv->hw_addr_len)
 			g_value_take_string (value, nm_utils_hwaddr_ntoa_len (priv->hw_addr, priv->hw_addr_len));
@@ -5918,6 +5939,14 @@ nm_device_class_init (NMDeviceClass *klass)
 		                       "IsMaster",
 		                       FALSE,
 		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_MASTER,
+		 g_param_spec_object (NM_DEVICE_MASTER,
+		                      "Master",
+		                      "Master",
+		                      NM_TYPE_DEVICE,
+		                      G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
@@ -6310,6 +6339,9 @@ nm_device_state_changed (NMDevice *device,
 				nm_device_queue_state (device, NM_DEVICE_STATE_UNMANAGED, NM_DEVICE_STATE_REASON_NONE);
 		}
 		break;
+	case NM_DEVICE_STATE_DEACTIVATING:
+		nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, reason);
+		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (old_state > NM_DEVICE_STATE_DISCONNECTED && priv->default_unmanaged)
 			nm_device_queue_state (device, NM_DEVICE_STATE_UNMANAGED, NM_DEVICE_STATE_REASON_NONE);
@@ -6327,7 +6359,7 @@ nm_device_state_changed (NMDevice *device,
 		             connection ? nm_connection_get_id (connection) : "<unknown>");
 
 		/* Notify any slaves of the unexpected failure */
-		nm_device_master_release_slaves (device, TRUE);
+		nm_device_master_release_slaves (device);
 
 		/* If the connection doesn't yet have a timestamp, set it to zero so that
 		 * we can distinguish between connections we've tried to activate and have
@@ -7039,20 +7071,6 @@ static void
 cp_connection_added (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
 {
 	if (_try_add_available_connection (NM_DEVICE (user_data), connection))
-		_signal_available_connections_changed (NM_DEVICE (user_data));
-}
-
-static void
-cp_connections_loaded (NMConnectionProvider *cp, NMConnection *connection, gpointer user_data)
-{
-	const GSList *connections, *iter;
-	gboolean added = FALSE;
-
-	connections = nm_connection_provider_get_connections (cp);
-	for (iter = connections; iter; iter = g_slist_next (iter))
-		added |= _try_add_available_connection (NM_DEVICE (user_data), NM_CONNECTION (iter->data));
-
-	if (added)
 		_signal_available_connections_changed (NM_DEVICE (user_data));
 }
 

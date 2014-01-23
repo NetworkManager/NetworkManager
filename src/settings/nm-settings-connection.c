@@ -124,6 +124,11 @@ typedef struct {
 	guint64 timestamp;   /* Up-to-date timestamp of connection use */
 	gboolean timestamp_set;
 	GHashTable *seen_bssids; /* Up-to-date BSSIDs that's been seen for the connection */
+
+	int autoconnect_retries;
+	time_t autoconnect_retry_time;
+	NMDeviceStateReason autoconnect_blocked_reason;
+
 } NMSettingsConnectionPrivate;
 
 /**************************************************************/
@@ -1899,6 +1904,78 @@ nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *connecti
 	}
 }
 
+#define AUTOCONNECT_RETRIES_DEFAULT 4
+#define AUTOCONNECT_RESET_RETRIES_TIMER 300
+
+int
+nm_settings_connection_get_autoconnect_retries (NMSettingsConnection *connection)
+{
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->autoconnect_retries;
+}
+
+void
+nm_settings_connection_set_autoconnect_retries (NMSettingsConnection *connection,
+                                                int retries)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+
+	priv->autoconnect_retries = retries;
+	if (retries)
+		priv->autoconnect_retry_time = 0;
+	else
+		priv->autoconnect_retry_time = time (NULL) + AUTOCONNECT_RESET_RETRIES_TIMER;
+}
+
+void
+nm_settings_connection_reset_autoconnect_retries (NMSettingsConnection *connection)
+{
+	nm_settings_connection_set_autoconnect_retries (connection, AUTOCONNECT_RETRIES_DEFAULT);
+}
+
+time_t
+nm_settings_connection_get_autoconnect_retry_time (NMSettingsConnection *connection)
+{
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->autoconnect_retry_time;
+}
+
+NMDeviceStateReason
+nm_settings_connection_get_autoconnect_blocked_reason (NMSettingsConnection *connection)
+{
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->autoconnect_blocked_reason;
+}
+
+void
+nm_settings_connection_set_autoconnect_blocked_reason (NMSettingsConnection *connection,
+                                                       NMDeviceStateReason reason)
+{
+	NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->autoconnect_blocked_reason = reason;
+}
+
+gboolean
+nm_settings_connection_can_autoconnect (NMSettingsConnection *connection)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	NMSettingConnection *s_con;
+	const char *permission;
+
+	if (   !priv->visible
+	    || priv->autoconnect_retries == 0
+	    || priv->autoconnect_blocked_reason != NM_DEVICE_STATE_REASON_NONE)
+		return FALSE;
+
+	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
+	if (!nm_setting_connection_get_autoconnect (s_con))
+		return FALSE;
+
+	permission = nm_utils_get_shared_wifi_permission (NM_CONNECTION (connection));
+	if (permission) {
+		if (nm_settings_connection_check_permission (connection, permission) == FALSE)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
 /**************************************************************/
 
 static void
@@ -1917,6 +1994,9 @@ nm_settings_connection_init (NMSettingsConnection *self)
 	priv->agent_mgr = nm_agent_manager_get ();
 
 	priv->seen_bssids = g_hash_table_new_full (mac_hash, mac_equal, g_free, g_free);
+
+	priv->autoconnect_retries = AUTOCONNECT_RETRIES_DEFAULT;
+	priv->autoconnect_blocked_reason = NM_DEVICE_STATE_REASON_NONE;
 
 	g_signal_connect (self, NM_CONNECTION_SECRETS_CLEARED, G_CALLBACK (secrets_cleared_cb), NULL);
 	g_signal_connect (self, NM_CONNECTION_CHANGED, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));

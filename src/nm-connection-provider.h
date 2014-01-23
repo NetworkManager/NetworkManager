@@ -29,7 +29,6 @@ typedef struct _NMConnectionProvider NMConnectionProvider;
 #define NM_CP_SIGNAL_CONNECTION_ADDED        "cp-connection-added"
 #define NM_CP_SIGNAL_CONNECTION_UPDATED      "cp-connection-updated"
 #define NM_CP_SIGNAL_CONNECTION_REMOVED      "cp-connection-removed"
-#define NM_CP_SIGNAL_CONNECTIONS_LOADED      "cp-connections-loaded"
 
 
 /**
@@ -58,8 +57,6 @@ struct _NMConnectionProvider {
 
 	const GSList * (*get_connections) (NMConnectionProvider *self);
 
-	gboolean (*has_connections_loaded) (NMConnectionProvider *self);
-
 	NMConnection * (*add_connection) (NMConnectionProvider *self,
 	                                  NMConnection *connection,
 	                                  gboolean save_to_disk,
@@ -75,7 +72,6 @@ struct _NMConnectionProvider {
 
 	void (*connection_removed) (NMConnectionProvider *self, NMConnection *connection);
 
-	void (*connections_loaded) (NMConnectionProvider *self);
 };
 
 GType nm_connection_provider_get_type (void);
@@ -112,19 +108,6 @@ GSList *nm_connection_provider_get_best_connections (NMConnectionProvider *self,
  *   not be freed.
  */
 const GSList *nm_connection_provider_get_connections (NMConnectionProvider *self);
-
-/**
- * nm_connection_provider_has_connections_loaded:
- * @self: the #NMConnectionProvider
- *
- * Returns: TRUE or FALSE indicating whether the connections of the provider are already
- *   loaded. If they are not yet loaded, the provider will not emit the signals
- *   NM_CP_SIGNAL_CONNECTION_ADDED, NM_CP_SIGNAL_CONNECTION_UPDATED and
- *   NM_CP_SIGNAL_CONNECTION_REMOVED until NM_CP_SIGNAL_CONNECTIONS_LOADED gets
- *   emited.
- */
-gboolean nm_connection_provider_has_connections_loaded (NMConnectionProvider *self);
-
 
 /**
  * nm_connection_provider_add_connection:
