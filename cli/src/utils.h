@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2013 Red Hat, Inc.
+ * (C) Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 #ifndef NMC_UTILS_H
@@ -38,6 +38,7 @@ typedef struct {
 int matches (const char *cmd, const char *pattern);
 int next_arg (int *argc, char ***argv);
 gboolean nmc_arg_is_help (const char *arg);
+gboolean nmc_arg_is_option (const char *arg, const char *opt_name);
 gboolean nmc_parse_args (nmc_arg_t *arg_arr, gboolean last, int *argc, char ***argv, GError **error);
 char *ssid_to_hex (const char *str, gsize len);
 gboolean nmc_string_to_int_base (const char *str,
@@ -85,6 +86,7 @@ GArray *parse_output_fields (const char *fields_str,
                              gboolean parse_groups,
                              GPtrArray **group_fields,
                              GError **error);
+char *nmc_get_allowed_fields (const NmcOutputField fields_array[], int group_idx);
 gboolean nmc_terse_option_check (NMCPrintOutput print_output, const char *fields, GError **error);
 NmcOutputField *nmc_dup_fields_array (NmcOutputField fields[], size_t size, guint32 flags);
 void nmc_empty_output_fields (NmCli *nmc);

@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2013 Red Hat, Inc.
+ * (C) Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 /* Generated configuration file */
@@ -71,6 +71,23 @@ nmc_arg_is_help (const char *arg)
 	}
 	return FALSE;
 }
+
+gboolean
+nmc_arg_is_option (const char *str, const char *opt_name)
+{
+	const char *p;
+
+	if (!str || !*str)
+		return FALSE;
+
+	if (str[0] != '-')
+		return FALSE;
+
+	p = (str[1] == '-') ? str + 2 : str + 1;
+
+	return (*p ? (matches (p, opt_name) == 0) : FALSE);
+}
+
 
 /*
  * Helper function to parse command-line arguments.
@@ -699,27 +716,15 @@ parse_output_fields (const char *fields_str,
 
 		/* Field was not found - error case */
 		if (fields_array[i].name == NULL) {
-			GString *allowed_fields = g_string_sized_new (256);
-			int k;
-
 			/* Set GError */
-			if (idx != -1 && fields_array[idx].group) {
-				NmcOutputField *second_level = fields_array[idx].group;
-				for (k = 0; second_level[k].name; k++)
-					g_string_append_printf (allowed_fields, "%s.%s,",
-					                        fields_array[idx].name, second_level[k].name);
-			} else {
-				for (k = 0; fields_array[k].name; k++)
-					g_string_append_printf (allowed_fields, "%s,", fields_array[k].name);
-			}
-			g_string_truncate (allowed_fields, allowed_fields->len - 1);
-
 			if (!strcasecmp (*iter, "all") || !strcasecmp (*iter, "common"))
 				g_set_error (error, NMCLI_ERROR, 0, _("field '%s' has to be alone"), *iter);
-			else
+			else {
+				char *allowed_fields = nmc_get_allowed_fields (fields_array, idx);
 				g_set_error (error, NMCLI_ERROR, 1, _("invalid field '%s'; allowed fields: %s"),
-				             *iter, allowed_fields->str);
-			g_string_free (allowed_fields, TRUE);
+				             *iter, allowed_fields);
+				g_free (allowed_fields);
+			}
 
 			/* Free arrays on error */
 			g_array_free (array, TRUE);
@@ -735,6 +740,35 @@ done:
 	if (fields)
 		g_strfreev (fields);
 	return array;
+}
+
+/**
+* nmc_get_allowed_fields:
+* @fields_array: array of fields
+* @group_idx: index to the array (for second-level array in 'group' member),
+*   or -1
+*
+* Returns: string of allowed fields names.
+*   Caller is responsible for freeing the array.
+*/
+char *
+nmc_get_allowed_fields (const NmcOutputField fields_array[], int group_idx)
+{
+	GString *allowed_fields = g_string_sized_new (256);
+	int i;
+
+	if (group_idx != -1 && fields_array[group_idx].group) {
+		NmcOutputField *second_level = fields_array[group_idx].group;
+		for (i = 0; second_level[i].name; i++)
+			g_string_append_printf (allowed_fields, "%s.%s,",
+			                        fields_array[group_idx].name, second_level[i].name);
+	} else {
+		for (i = 0; fields_array[i].name; i++)
+			g_string_append_printf (allowed_fields, "%s,", fields_array[i].name);
+	}
+	g_string_truncate (allowed_fields, allowed_fields->len - 1);
+
+	return g_string_free (allowed_fields, FALSE);
 }
 
 gboolean

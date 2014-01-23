@@ -224,7 +224,7 @@ $ nmcli con add up Team1-slave2
 $ nmcli con add con-name my-con-em1 ifname em1 type ethernet ip4 192.168.100.100/24 gw4 192.168.100.1 ip4 1.2.3.4 ip6 abbe::cafe
 $ nmcli con mod my-con-em1 ipv4.dns "8.8.8.8 8.8.4.4"
 $ nmcli con mod my-con-em1 ipv6.dns "2001:4860:4860::8888 2001:4860:4860::8844"
-$ nmcli -p con show conf my-con-em1
+$ nmcli -p con show my-con-em1
         </emphasis>
       </programlisting>
     </example>
@@ -232,8 +232,8 @@ $ nmcli -p con show conf my-con-em1
       The first command adds an Ethernet connection profile named <emphasis>my-con-em1</emphasis>
       that is bound to interface name <emphasis>em1</emphasis>. The profile is configured
       with static IP addresses. The second and third commands modify DNS parameters of the
-      new connection profile. Using the last <emphasis>con show configured</emphasis> the
-      profile is displayed so that all parameters can be reviewed.
+      new connection profile. The last <emphasis>con show</emphasis> command displays the
+      profile so that all parameters can be reviewed.
     </para>
 
     <example><title>Escaping colon characters in tabular mode</title>
