@@ -1404,6 +1404,12 @@ ip6_options_to_config (NMDHCPClient *self)
 
 	ip6_config = nm_ip6_config_new ();
 
+	str = g_hash_table_lookup (priv->options, "new_dhcp_lease_time");
+	if (str) {
+		address.lifetime = address.preferred = strtoul (str, NULL, 10);
+		nm_log_info (LOGD_DHCP6, "  lease time %d", address.lifetime);
+	}
+
 	str = g_hash_table_lookup (priv->options, "new_ip6_address");
 	if (str) {
 		if (!inet_pton (AF_INET6, str, &tmp_addr)) {
@@ -1413,20 +1419,12 @@ ip6_options_to_config (NMDHCPClient *self)
 		}
 
 		address.address = tmp_addr;
+		nm_ip6_config_add_address (ip6_config, &address);
 		nm_log_info (LOGD_DHCP6, "  address %s", str);
-
 	} else if (priv->info_only == FALSE) {
 		/* No address in Managed mode is a hard error */
 		goto error;
 	}
-
-	str = g_hash_table_lookup (priv->options, "new_dhcp_lease_time");
-	if (str) {
-		address.lifetime = address.preferred = strtoul (str, NULL, 10);
-		nm_log_info (LOGD_DHCP6, "  lease time %d", address.lifetime);
-	}
-
-	nm_ip6_config_add_address (ip6_config, &address);
 
 	str = g_hash_table_lookup (priv->options, "new_host_name");
 	if (str)
