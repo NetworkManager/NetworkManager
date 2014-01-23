@@ -1389,21 +1389,25 @@ request_scan_cb (NMDevice *device,
                  gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	GError *local = NULL;
 
 	if (error) {
 		dbus_g_method_return_error (context, error);
-		g_clear_error (&error);
-	} else if (!check_scanning_allowed (self)) {
-		error = g_error_new_literal (NM_WIFI_ERROR,
+		return;
+	}
+
+	if (!check_scanning_allowed (self)) {
+		local = g_error_new_literal (NM_WIFI_ERROR,
 		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
 		                             "Scanning not allowed at this time");
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-	} else {
-		cancel_pending_scan (self);
-		request_wireless_scan (self);
-		dbus_g_method_return (context);
+		dbus_g_method_return_error (context, local);
+		g_error_free (local);
+		return;
 	}
+
+	cancel_pending_scan (self);
+	request_wireless_scan (self);
+	dbus_g_method_return (context);
 }
 
 static void
