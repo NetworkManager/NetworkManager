@@ -1607,7 +1607,7 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 	NMPlatformIP4Route *route;
 	const NMPlatformIP4Route *known_route;
 	gboolean success;
-	int i;
+	int i, i_type;
 
 	/* Delete unknown routes */
 	routes = nm_platform_ip4_route_get_all (ifindex, FALSE);
@@ -1624,21 +1624,29 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 	}
 
 	/* Add missing routes */
-	for (i = 0, success = TRUE; i < known_routes->len && success; i++) {
-		known_route = &g_array_index (known_routes, NMPlatformIP4Route, i);
+	for (i_type = 0, success = TRUE; i_type < 2 && success; i_type++) {
+		for (i = 0; i < known_routes->len && success; i++) {
+			known_route = &g_array_index (known_routes, NMPlatformIP4Route, i);
 
-		/* Ignore routes that already exist */
-		if (!array_contains_ip4_route (routes, known_route)) {
-			success = nm_platform_ip4_route_add (ifindex,
-			                                     known_route->network,
-			                                     known_route->plen,
-			                                     known_route->gateway,
-			                                     known_route->metric,
-			                                     known_route->mss);
-			if (!success && known_route->source < NM_PLATFORM_SOURCE_USER) {
-				nm_log_dbg (LOGD_PLATFORM, "ignore error adding IPv4 route to kernel: %s",
-				                           nm_platform_ip4_route_to_string (known_route));
-				success = TRUE;
+			if ((known_route->gateway == 0) ^ (i_type != 0)) {
+				/* Make two runs over the list of routes. On the first, only add
+				 * device routes, on the second the others (gateway routes). */
+				continue;
+			}
+
+			/* Ignore routes that already exist */
+			if (!array_contains_ip4_route (routes, known_route)) {
+				success = nm_platform_ip4_route_add (ifindex,
+				                                     known_route->network,
+				                                     known_route->plen,
+				                                     known_route->gateway,
+				                                     known_route->metric,
+				                                     known_route->mss);
+				if (!success && known_route->source < NM_PLATFORM_SOURCE_USER) {
+					nm_log_dbg (LOGD_PLATFORM, "ignore error adding IPv4 route to kernel: %s",
+					                           nm_platform_ip4_route_to_string (known_route));
+					success = TRUE;
+				}
 			}
 		}
 	}
@@ -1665,7 +1673,7 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 	NMPlatformIP6Route *route;
 	const NMPlatformIP6Route *known_route;
 	gboolean success;
-	int i;
+	int i, i_type;
 
 	/* Delete unknown routes */
 	routes = nm_platform_ip6_route_get_all (ifindex, FALSE);
@@ -1683,21 +1691,29 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 	}
 
 	/* Add missing routes */
-	for (i = 0, success = TRUE; i < known_routes->len && success; i++) {
-		known_route = &g_array_index (known_routes, NMPlatformIP6Route, i);
+	for (i_type = 0, success = TRUE; i_type < 2 && success; i_type++) {
+		for (i = 0; i < known_routes->len && success; i++) {
+			known_route = &g_array_index (known_routes, NMPlatformIP6Route, i);
 
-		/* Ignore routes that already exist */
-		if (!array_contains_ip6_route (routes, known_route)) {
-			success = nm_platform_ip6_route_add (ifindex,
-			                                     known_route->network,
-			                                     known_route->plen,
-			                                     known_route->gateway,
-			                                     known_route->metric,
-			                                     known_route->mss);
-			if (!success && known_route->source < NM_PLATFORM_SOURCE_USER) {
-				nm_log_dbg (LOGD_PLATFORM, "ignore error adding IPv6 route to kernel: %s",
-				                           nm_platform_ip6_route_to_string (known_route));
-				success = TRUE;
+			if (IN6_IS_ADDR_UNSPECIFIED (&known_route->gateway) ^ (i_type != 0)) {
+				/* Make two runs over the list of routes. On the first, only add
+				 * device routes, on the second the others (gateway routes). */
+				continue;
+			}
+
+			/* Ignore routes that already exist */
+			if (!array_contains_ip6_route (routes, known_route)) {
+				success = nm_platform_ip6_route_add (ifindex,
+				                                     known_route->network,
+				                                     known_route->plen,
+				                                     known_route->gateway,
+				                                     known_route->metric,
+				                                     known_route->mss);
+				if (!success && known_route->source < NM_PLATFORM_SOURCE_USER) {
+					nm_log_dbg (LOGD_PLATFORM, "ignore error adding IPv6 route to kernel: %s",
+					                           nm_platform_ip6_route_to_string (known_route));
+					success = TRUE;
+				}
 			}
 		}
 	}
