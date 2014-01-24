@@ -184,10 +184,6 @@ static gboolean find_master (NMManager *self,
 
 static void nm_manager_update_state (NMManager *manager);
 
-static void dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
-                                        DBusConnection *dbus_connection,
-                                        gpointer user_data);
-
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
 
@@ -4474,6 +4470,156 @@ out:
 	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
+static void
+authority_changed_cb (gpointer user_data)
+{
+	/* Let clients know they should re-check their authorization */
+	g_signal_emit (NM_MANAGER (user_data), signals[CHECK_PERMISSIONS], 0);
+}
+
+#define KERN_RFKILL_OP_CHANGE_ALL 3
+#define KERN_RFKILL_TYPE_WLAN     1
+struct rfkill_event {
+	__u32 idx;
+	__u8  type;
+	__u8  op;
+	__u8  soft, hard;
+} __attribute__((packed));
+
+static void
+rfkill_change_wifi (const char *desc, gboolean enabled)
+{
+	int fd;
+	struct rfkill_event event;
+	ssize_t len;
+
+	errno = 0;
+	fd = open ("/dev/rfkill", O_RDWR);
+	if (fd < 0) {
+		if (errno == EACCES)
+			nm_log_warn (LOGD_RFKILL, "(%s): failed to open killswitch device "
+			             "for WiFi radio control", desc);
+		return;
+	}
+
+	if (fcntl (fd, F_SETFL, O_NONBLOCK) < 0) {
+		nm_log_warn (LOGD_RFKILL, "(%s): failed to set killswitch device for "
+		             "non-blocking operation", desc);
+		close (fd);
+		return;
+	}
+
+	memset (&event, 0, sizeof (event));
+	event.op = KERN_RFKILL_OP_CHANGE_ALL;
+	event.type = KERN_RFKILL_TYPE_WLAN;
+	event.soft = enabled ? 0 : 1;
+
+	len = write (fd, &event, sizeof (event));
+	if (len < 0) {
+		nm_log_warn (LOGD_RFKILL, "(%s): failed to change WiFi killswitch state: (%d) %s",
+		             desc, errno, g_strerror (errno));
+	} else if (len == sizeof (event)) {
+		nm_log_info (LOGD_RFKILL, "%s hardware radio set %s",
+		             desc, enabled ? "enabled" : "disabled");
+	} else {
+		/* Failed to write full structure */
+		nm_log_warn (LOGD_RFKILL, "(%s): failed to change WiFi killswitch state", desc);
+	}
+
+	close (fd);
+}
+
+static void
+manager_radio_user_toggled (NMManager *self,
+                            RadioState *rstate,
+                            gboolean enabled)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *error = NULL;
+	gboolean old_enabled, new_enabled;
+
+	if (rstate->desc) {
+		nm_log_dbg (LOGD_RFKILL, "(%s): setting radio %s by user",
+		            rstate->desc,
+		            enabled ? "enabled" : "disabled");
+	}
+
+	/* Update enabled key in state file */
+	if (priv->state_file) {
+		if (!write_value_to_state_file (priv->state_file,
+		                                "main", rstate->key,
+		                                G_TYPE_BOOLEAN, (gpointer) &enabled,
+		                                &error)) {
+			nm_log_warn (LOGD_CORE, "writing to state file %s failed: (%d) %s.",
+			             priv->state_file,
+			             error ? error->code : -1,
+			             (error && error->message) ? error->message : "unknown");
+			g_clear_error (&error);
+		}
+	}
+
+	/* When the user toggles the radio, their request should override any
+	 * daemon (like ModemManager) enabled state that can be changed.  For WWAN
+	 * for example, we want the WwanEnabled property to reflect the daemon state
+	 * too so that users can toggle the modem powered, but we don't want that
+	 * daemon state to affect whether or not the user *can* turn it on, which is
+	 * what the kernel rfkill state does.  So we ignore daemon enabled state
+	 * when determining what the new state should be since it shouldn't block
+	 * the user's request.
+	 */
+	old_enabled = radio_enabled_for_rstate (rstate, TRUE);
+	rstate->user_enabled = enabled;
+	new_enabled = radio_enabled_for_rstate (rstate, FALSE);
+	if (new_enabled != old_enabled) {
+		manager_update_radio_enabled (self, rstate, new_enabled);
+
+		/* For WiFi only (for now) set the actual kernel rfkill state */
+		if (rstate->rtype == RFKILL_TYPE_WLAN)
+			rfkill_change_wifi (rstate->desc, new_enabled);
+	}
+}
+
+static gboolean
+periodic_update_active_connection_timestamps (gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GSList *iter;
+
+	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
+		NMActiveConnection *ac = iter->data;
+		NMSettingsConnection *connection;
+
+		if (nm_active_connection_get_state (ac) == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+			connection = NM_SETTINGS_CONNECTION (nm_active_connection_get_connection (ac));
+			nm_settings_connection_update_timestamp (connection, (guint64) time (NULL), FALSE);
+		}
+	}
+
+	return TRUE;
+}
+
+static void
+dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
+                            DBusConnection *dbus_connection,
+                            gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	gboolean success = FALSE;
+
+	if (dbus_connection) {
+		/* Register property filter on new connection; there's no reason this
+		 * should fail except out-of-memory or program error; if it does fail
+		 * then there's no Manager property access control, which is bad.
+		 */
+		success = dbus_connection_add_filter (dbus_connection, prop_filter, self, NULL);
+		g_assert (success);
+	}
+	NM_MANAGER_GET_PRIVATE (self)->prop_filter_added = success;
+}
+
+/**********************************************************************/
+
 static NMManager *singleton = NULL;
 
 NMManager *
@@ -4610,361 +4756,6 @@ nm_manager_new (NMSettings *settings,
 }
 
 static void
-authority_changed_cb (gpointer user_data)
-{
-	/* Let clients know they should re-check their authorization */
-	g_signal_emit (NM_MANAGER (user_data), signals[CHECK_PERMISSIONS], 0);
-}
-
-static void
-dispose (GObject *object)
-{
-	NMManager *manager = NM_MANAGER (object);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	DBusGConnection *bus;
-	DBusConnection *dbus_connection;
-
-	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
-	priv->auth_chains = NULL;
-
-	nm_auth_changed_func_unregister (authority_changed_cb, manager);
-
-	/* Remove all devices */
-	while (priv->devices)
-		remove_device (manager, NM_DEVICE (priv->devices->data), TRUE);
-
-	if (priv->ac_cleanup_id) {
-		g_source_remove (priv->ac_cleanup_id);
-		priv->ac_cleanup_id = 0;
-	}
-
-	while (priv->active_connections)
-		active_connection_remove (manager, NM_ACTIVE_CONNECTION (priv->active_connections->data));
-	g_clear_pointer (&priv->active_connections, g_slist_free);
-	g_clear_object (&priv->primary_connection);
-	g_clear_object (&priv->activating_connection);
-
-	g_clear_object (&priv->connectivity);
-
-	g_free (priv->hostname);
-
-	if (priv->policy) {
-		g_signal_handlers_disconnect_by_func (priv->policy, policy_default_device_changed, manager);
-		g_signal_handlers_disconnect_by_func (priv->policy, policy_activating_device_changed, manager);
-		g_clear_object (&priv->policy);
-	}
-
-	g_clear_object (&priv->settings);
-	g_clear_object (&priv->vpn_manager);
-
-	if (priv->modem_added_id) {
-		g_source_remove (priv->modem_added_id);
-		priv->modem_added_id = 0;
-	}
-	if (priv->modem_removed_id) {
-		g_source_remove (priv->modem_removed_id);
-		priv->modem_removed_id = 0;
-	}
-	g_clear_object (&priv->modem_manager);
-
-	/* Unregister property filter */
-	if (priv->dbus_mgr) {
-		bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-		if (bus) {
-			dbus_connection = dbus_g_connection_get_connection (bus);
-			if (dbus_connection && priv->prop_filter_added) {
-				dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
-				priv->prop_filter_added = FALSE;
-			}
-		}
-		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, manager);
-		priv->dbus_mgr = NULL;
-	}
-
-	g_clear_object (&priv->bluez_mgr);
-	g_clear_object (&priv->aipd_proxy);
-	g_clear_object (&priv->sleep_monitor);
-
-	if (priv->fw_monitor) {
-		g_signal_handlers_disconnect_by_func (priv->fw_monitor, firmware_dir_changed, manager);
-
-		if (priv->fw_changed_id) {
-			g_source_remove (priv->fw_changed_id);
-			priv->fw_changed_id = 0;
-		}
-
-		g_file_monitor_cancel (priv->fw_monitor);
-		g_clear_object (&priv->fw_monitor);
-	}
-
-	g_clear_pointer (&priv->factories, g_slist_free);
-
-	if (priv->timestamp_update_id) {
-		g_source_remove (priv->timestamp_update_id);
-		priv->timestamp_update_id = 0;
-	}
-
-	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
-}
-
-#define KERN_RFKILL_OP_CHANGE_ALL 3
-#define KERN_RFKILL_TYPE_WLAN     1
-struct rfkill_event {
-	__u32 idx;
-	__u8  type;
-	__u8  op;
-	__u8  soft, hard;
-} __attribute__((packed));
-
-static void
-rfkill_change_wifi (const char *desc, gboolean enabled)
-{
-	int fd;
-	struct rfkill_event event;
-	ssize_t len;
-
-	errno = 0;
-	fd = open ("/dev/rfkill", O_RDWR);
-	if (fd < 0) {
-		if (errno == EACCES)
-			nm_log_warn (LOGD_RFKILL, "(%s): failed to open killswitch device "
-			             "for WiFi radio control", desc);
-		return;
-	}
-
-	if (fcntl (fd, F_SETFL, O_NONBLOCK) < 0) {
-		nm_log_warn (LOGD_RFKILL, "(%s): failed to set killswitch device for "
-		             "non-blocking operation", desc);
-		close (fd);
-		return;
-	}
-
-	memset (&event, 0, sizeof (event));
-	event.op = KERN_RFKILL_OP_CHANGE_ALL;
-	event.type = KERN_RFKILL_TYPE_WLAN;
-	event.soft = enabled ? 0 : 1;
-
-	len = write (fd, &event, sizeof (event));
-	if (len < 0) {
-		nm_log_warn (LOGD_RFKILL, "(%s): failed to change WiFi killswitch state: (%d) %s",
-		             desc, errno, g_strerror (errno));
-	} else if (len == sizeof (event)) {
-		nm_log_info (LOGD_RFKILL, "%s hardware radio set %s",
-		             desc, enabled ? "enabled" : "disabled");
-	} else {
-		/* Failed to write full structure */
-		nm_log_warn (LOGD_RFKILL, "(%s): failed to change WiFi killswitch state", desc);
-	}
-
-	close (fd);
-}
-
-static void
-manager_radio_user_toggled (NMManager *self,
-                            RadioState *rstate,
-                            gboolean enabled)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GError *error = NULL;
-	gboolean old_enabled, new_enabled;
-
-	if (rstate->desc) {
-		nm_log_dbg (LOGD_RFKILL, "(%s): setting radio %s by user",
-		            rstate->desc,
-		            enabled ? "enabled" : "disabled");
-	}
-
-	/* Update enabled key in state file */
-	if (priv->state_file) {
-		if (!write_value_to_state_file (priv->state_file,
-		                                "main", rstate->key,
-		                                G_TYPE_BOOLEAN, (gpointer) &enabled,
-		                                &error)) {
-			nm_log_warn (LOGD_CORE, "writing to state file %s failed: (%d) %s.",
-			             priv->state_file,
-			             error ? error->code : -1,
-			             (error && error->message) ? error->message : "unknown");
-			g_clear_error (&error);
-		}
-	}
-
-	/* When the user toggles the radio, their request should override any
-	 * daemon (like ModemManager) enabled state that can be changed.  For WWAN
-	 * for example, we want the WwanEnabled property to reflect the daemon state
-	 * too so that users can toggle the modem powered, but we don't want that
-	 * daemon state to affect whether or not the user *can* turn it on, which is
-	 * what the kernel rfkill state does.  So we ignore daemon enabled state
-	 * when determining what the new state should be since it shouldn't block
-	 * the user's request.
-	 */
-	old_enabled = radio_enabled_for_rstate (rstate, TRUE);
-	rstate->user_enabled = enabled;
-	new_enabled = radio_enabled_for_rstate (rstate, FALSE);
-	if (new_enabled != old_enabled) {
-		manager_update_radio_enabled (self, rstate, new_enabled);
-
-		/* For WiFi only (for now) set the actual kernel rfkill state */
-		if (rstate->rtype == RFKILL_TYPE_WLAN)
-			rfkill_change_wifi (rstate->desc, new_enabled);
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
-{
-	NMManager *self = NM_MANAGER (object);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-
-	switch (prop_id) {
-	case PROP_NETWORKING_ENABLED:
-		/* Construct only for now */
-		priv->net_enabled = g_value_get_boolean (value);
-		break;
-	case PROP_WIRELESS_ENABLED:
-		manager_radio_user_toggled (NM_MANAGER (object),
-		                            &priv->radio_states[RFKILL_TYPE_WLAN],
-		                            g_value_get_boolean (value));
-		break;
-	case PROP_WWAN_ENABLED:
-		manager_radio_user_toggled (NM_MANAGER (object),
-		                            &priv->radio_states[RFKILL_TYPE_WWAN],
-		                            g_value_get_boolean (value));
-		break;
-	case PROP_WIMAX_ENABLED:
-		manager_radio_user_toggled (NM_MANAGER (object),
-		                            &priv->radio_states[RFKILL_TYPE_WIMAX],
-		                            g_value_get_boolean (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
-{
-	NMManager *self = NM_MANAGER (object);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-	GPtrArray *array;
-	const char *path;
-
-	switch (prop_id) {
-	case PROP_VERSION:
-		g_value_set_string (value, VERSION);
-		break;
-	case PROP_STATE:
-		nm_manager_update_state (self);
-		g_value_set_uint (value, priv->state);
-		break;
-	case PROP_STARTUP:
-		g_value_set_boolean (value, priv->startup);
-		break;
-	case PROP_NETWORKING_ENABLED:
-		g_value_set_boolean (value, priv->net_enabled);
-		break;
-	case PROP_WIRELESS_ENABLED:
-		g_value_set_boolean (value, radio_enabled_for_type (self, RFKILL_TYPE_WLAN, TRUE));
-		break;
-	case PROP_WIRELESS_HARDWARE_ENABLED:
-		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WLAN].hw_enabled);
-		break;
-	case PROP_WWAN_ENABLED:
-		g_value_set_boolean (value, radio_enabled_for_type (self, RFKILL_TYPE_WWAN, TRUE));
-		break;
-	case PROP_WWAN_HARDWARE_ENABLED:
-		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WWAN].hw_enabled);
-		break;
-	case PROP_WIMAX_ENABLED:
-		g_value_set_boolean (value, radio_enabled_for_type (self, RFKILL_TYPE_WIMAX, TRUE));
-		break;
-	case PROP_WIMAX_HARDWARE_ENABLED:
-		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WIMAX].hw_enabled);
-		break;
-	case PROP_ACTIVE_CONNECTIONS:
-		array = g_ptr_array_sized_new (3);
-		for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
-			path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (iter->data));
-			if (path)
-				g_ptr_array_add (array, g_strdup (path));
-		}
-		g_value_take_boxed (value, array);
-		break;
-	case PROP_CONNECTIVITY:
-		g_value_set_uint (value, nm_connectivity_get_state (priv->connectivity));
-		break;
-	case PROP_PRIMARY_CONNECTION:
-		path = priv->primary_connection ? nm_active_connection_get_path (priv->primary_connection) : NULL;
-		g_value_set_boxed (value, path ? path : "/");
-		break;
-	case PROP_ACTIVATING_CONNECTION:
-		path = priv->activating_connection ? nm_active_connection_get_path (priv->activating_connection) : NULL;
-		g_value_set_boxed (value, path ? path : "/");
-		break;
-	case PROP_HOSTNAME:
-		g_value_set_string (value, priv->hostname);
-		break;
-	case PROP_SLEEPING:
-		g_value_set_boolean (value, priv->sleeping);
-		break;
-	case PROP_DEVICES:
-		array = g_ptr_array_sized_new (5);
-		for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-			path = nm_device_get_path (NM_DEVICE (iter->data));
-			if (path)
-				g_ptr_array_add (array, g_strdup (path));
-		}
-		g_value_take_boxed (value, array);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static gboolean
-periodic_update_active_connection_timestamps (gpointer user_data)
-{
-	NMManager *manager = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	GSList *iter;
-
-	for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
-		NMActiveConnection *ac = iter->data;
-		NMSettingsConnection *connection;
-
-		if (nm_active_connection_get_state (ac) == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-			connection = NM_SETTINGS_CONNECTION (nm_active_connection_get_connection (ac));
-			nm_settings_connection_update_timestamp (connection, (guint64) time (NULL), FALSE);
-		}
-	}
-
-	return TRUE;
-}
-
-static void
-dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
-                            DBusConnection *dbus_connection,
-                            gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	gboolean success = FALSE;
-
-	if (dbus_connection) {
-		/* Register property filter on new connection; there's no reason this
-		 * should fail except out-of-memory or program error; if it does fail
-		 * then there's no Manager property access control, which is bad.
-		 */
-		success = dbus_connection_add_filter (dbus_connection, prop_filter, self, NULL);
-		g_assert (success);
-	}
-	NM_MANAGER_GET_PRIVATE (self)->prop_filter_added = success;
-}
-
-static void
 nm_manager_init (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -5077,6 +4868,213 @@ nm_manager_init (NMManager *manager)
 
 	/* Update timestamps in active connections */
 	priv->timestamp_update_id = g_timeout_add_seconds (300, (GSourceFunc) periodic_update_active_connection_timestamps, manager);
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+			  GValue *value, GParamSpec *pspec)
+{
+	NMManager *self = NM_MANAGER (object);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+	GPtrArray *array;
+	const char *path;
+
+	switch (prop_id) {
+	case PROP_VERSION:
+		g_value_set_string (value, VERSION);
+		break;
+	case PROP_STATE:
+		nm_manager_update_state (self);
+		g_value_set_uint (value, priv->state);
+		break;
+	case PROP_STARTUP:
+		g_value_set_boolean (value, priv->startup);
+		break;
+	case PROP_NETWORKING_ENABLED:
+		g_value_set_boolean (value, priv->net_enabled);
+		break;
+	case PROP_WIRELESS_ENABLED:
+		g_value_set_boolean (value, radio_enabled_for_type (self, RFKILL_TYPE_WLAN, TRUE));
+		break;
+	case PROP_WIRELESS_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WLAN].hw_enabled);
+		break;
+	case PROP_WWAN_ENABLED:
+		g_value_set_boolean (value, radio_enabled_for_type (self, RFKILL_TYPE_WWAN, TRUE));
+		break;
+	case PROP_WWAN_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WWAN].hw_enabled);
+		break;
+	case PROP_WIMAX_ENABLED:
+		g_value_set_boolean (value, radio_enabled_for_type (self, RFKILL_TYPE_WIMAX, TRUE));
+		break;
+	case PROP_WIMAX_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->radio_states[RFKILL_TYPE_WIMAX].hw_enabled);
+		break;
+	case PROP_ACTIVE_CONNECTIONS:
+		array = g_ptr_array_sized_new (3);
+		for (iter = priv->active_connections; iter; iter = g_slist_next (iter)) {
+			path = nm_active_connection_get_path (NM_ACTIVE_CONNECTION (iter->data));
+			if (path)
+				g_ptr_array_add (array, g_strdup (path));
+		}
+		g_value_take_boxed (value, array);
+		break;
+	case PROP_CONNECTIVITY:
+		g_value_set_uint (value, nm_connectivity_get_state (priv->connectivity));
+		break;
+	case PROP_PRIMARY_CONNECTION:
+		path = priv->primary_connection ? nm_active_connection_get_path (priv->primary_connection) : NULL;
+		g_value_set_boxed (value, path ? path : "/");
+		break;
+	case PROP_ACTIVATING_CONNECTION:
+		path = priv->activating_connection ? nm_active_connection_get_path (priv->activating_connection) : NULL;
+		g_value_set_boxed (value, path ? path : "/");
+		break;
+	case PROP_HOSTNAME:
+		g_value_set_string (value, priv->hostname);
+		break;
+	case PROP_SLEEPING:
+		g_value_set_boolean (value, priv->sleeping);
+		break;
+	case PROP_DEVICES:
+		array = g_ptr_array_sized_new (5);
+		for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+			path = nm_device_get_path (NM_DEVICE (iter->data));
+			if (path)
+				g_ptr_array_add (array, g_strdup (path));
+		}
+		g_value_take_boxed (value, array);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+			  const GValue *value, GParamSpec *pspec)
+{
+	NMManager *self = NM_MANAGER (object);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	switch (prop_id) {
+	case PROP_NETWORKING_ENABLED:
+		/* Construct only for now */
+		priv->net_enabled = g_value_get_boolean (value);
+		break;
+	case PROP_WIRELESS_ENABLED:
+		manager_radio_user_toggled (NM_MANAGER (object),
+		                            &priv->radio_states[RFKILL_TYPE_WLAN],
+		                            g_value_get_boolean (value));
+		break;
+	case PROP_WWAN_ENABLED:
+		manager_radio_user_toggled (NM_MANAGER (object),
+		                            &priv->radio_states[RFKILL_TYPE_WWAN],
+		                            g_value_get_boolean (value));
+		break;
+	case PROP_WIMAX_ENABLED:
+		manager_radio_user_toggled (NM_MANAGER (object),
+		                            &priv->radio_states[RFKILL_TYPE_WIMAX],
+		                            g_value_get_boolean (value));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+dispose (GObject *object)
+{
+	NMManager *manager = NM_MANAGER (object);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	DBusGConnection *bus;
+	DBusConnection *dbus_connection;
+
+	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
+	priv->auth_chains = NULL;
+
+	nm_auth_changed_func_unregister (authority_changed_cb, manager);
+
+	/* Remove all devices */
+	while (priv->devices)
+		remove_device (manager, NM_DEVICE (priv->devices->data), TRUE);
+
+	if (priv->ac_cleanup_id) {
+		g_source_remove (priv->ac_cleanup_id);
+		priv->ac_cleanup_id = 0;
+	}
+
+	while (priv->active_connections)
+		active_connection_remove (manager, NM_ACTIVE_CONNECTION (priv->active_connections->data));
+	g_clear_pointer (&priv->active_connections, g_slist_free);
+	g_clear_object (&priv->primary_connection);
+	g_clear_object (&priv->activating_connection);
+
+	g_clear_object (&priv->connectivity);
+
+	g_free (priv->hostname);
+
+	if (priv->policy) {
+		g_signal_handlers_disconnect_by_func (priv->policy, policy_default_device_changed, manager);
+		g_signal_handlers_disconnect_by_func (priv->policy, policy_activating_device_changed, manager);
+		g_clear_object (&priv->policy);
+	}
+
+	g_clear_object (&priv->settings);
+	g_clear_object (&priv->vpn_manager);
+
+	if (priv->modem_added_id) {
+		g_source_remove (priv->modem_added_id);
+		priv->modem_added_id = 0;
+	}
+	if (priv->modem_removed_id) {
+		g_source_remove (priv->modem_removed_id);
+		priv->modem_removed_id = 0;
+	}
+	g_clear_object (&priv->modem_manager);
+
+	/* Unregister property filter */
+	if (priv->dbus_mgr) {
+		bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+		if (bus) {
+			dbus_connection = dbus_g_connection_get_connection (bus);
+			if (dbus_connection && priv->prop_filter_added) {
+				dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
+				priv->prop_filter_added = FALSE;
+			}
+		}
+		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, manager);
+		priv->dbus_mgr = NULL;
+	}
+
+	g_clear_object (&priv->bluez_mgr);
+	g_clear_object (&priv->aipd_proxy);
+	g_clear_object (&priv->sleep_monitor);
+
+	if (priv->fw_monitor) {
+		g_signal_handlers_disconnect_by_func (priv->fw_monitor, firmware_dir_changed, manager);
+
+		if (priv->fw_changed_id) {
+			g_source_remove (priv->fw_changed_id);
+			priv->fw_changed_id = 0;
+		}
+
+		g_file_monitor_cancel (priv->fw_monitor);
+		g_clear_object (&priv->fw_monitor);
+	}
+
+	g_clear_pointer (&priv->factories, g_slist_free);
+
+	if (priv->timestamp_update_id) {
+		g_source_remove (priv->timestamp_update_id);
+		priv->timestamp_update_id = 0;
+	}
+
+	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
 }
 
 static void
