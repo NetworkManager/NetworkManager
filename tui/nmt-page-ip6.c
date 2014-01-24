@@ -123,6 +123,9 @@ nmt_page_ip6_constructed (GObject *object)
 	s_ip6 = nm_connection_get_setting_ip6_config (conn);
 	if (!s_ip6) {
 		s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+		g_object_set (G_OBJECT (s_ip6),
+		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		              NULL);
 		nm_connection_add_setting (conn, (NMSetting *) s_ip6);
 	}
 

@@ -123,6 +123,9 @@ nmt_page_ip4_constructed (GObject *object)
 	s_ip4 = nm_connection_get_setting_ip4_config (conn);
 	if (!s_ip4) {
 		s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+		g_object_set (G_OBJECT (s_ip4),
+		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+		              NULL);
 		nm_connection_add_setting (conn, (NMSetting *) s_ip4);
 	}
 
