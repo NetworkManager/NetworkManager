@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import string
 import argparse
 import subprocess
 import os
@@ -22,6 +23,47 @@ def _call(args):
         print("Error invoking command: %s" % (' '.join(args)))
         sys.exit(1)
     return output
+
+str_examples = string.replace(
+"""Examples:
+  - show general usage
+    %cmd%
+
+  - show help for subcommand
+    %cmd% h p
+    %cmd% p -h
+
+parse:
+
+  - parse BZ from commit messages, --ref accepts git revisions and ranges, see man gitrevisions(7)
+    %cmd% p -c -e --ref origin/master~20.. --ref 4b39267
+
+  - only show BZ list
+    %cmd% p -c -e --ref origin/master~20..origin/master --list-by-bz
+
+  - select BZ via command line
+    %cmd% p -c -e --ref origin/master~20..origin/master --bz rh:100000,bg:670631 --bz 100001
+
+  - blacklist some BZ
+    %cmd% p -c -e --ref origin/master~20..origin/master --no-bz rh:100000,bg:670631
+
+  - search open rhbz for the last 10 days
+    %cmd% p -c -e --rh-search-since 10
+
+  - search open rhbz since date
+    %cmd% p -c -e --rh-search-since 20140110
+
+  - the same search providing the full search options
+    %cmd% p -c -e --rh-search "{'status': ['MODIFIED', 'POST', 'ON_QA'], 'component': ['NetworkManager'], 'last_change_time': '20140110'}"
+
+  - be more verbose (add -v more then once)
+    %cmd% p -c -e --ref origin/master~20..origin/master -v -v
+
+  - show only the list-by-bz output
+    %cmd% p -c -e --ref origin/master~20..origin/master --list-by-bz -v -v
+
+""", "%cmd%", sys.argv[0]);
+
 
 class ConfigStore:
     NAME_RHBZ_USER = 'rhbz_user'
@@ -72,9 +114,9 @@ class ConfigStore:
             if v is None:
                 if default is None:
                     if self.filename:
-                        raise Exception('config: Missing configuration value \'%s\': set it in the config file \'%s\' or set the environment variable \'%s\'' % (key, self.filename, ec))
+                        raise Exception('config: Missing configuration value \'%s\': set it in the config file \'%s\' or set the environment variable \'%s\'' % (key, self.filename, ekey))
                     else:
-                        raise Exception('config: Missing configuration value \'%s\': set it in the config file or set the environment variable \'%s\'' % (key, ec))
+                        raise Exception('config: Missing configuration value \'%s\': set it in the config file or set the environment variable \'%s\'' % (key, ekey))
         self.v[key] = v
         return v if v is not None else default
 config = ConfigStore()
@@ -609,23 +651,26 @@ class CmdParseCommitMessage(CmdBase):
                     print("        %s" % commit_data.commit_summary(self.options.color, shorten=True))
             printed_something = True
 
+commands = {}
+
 class CmdHelp(CmdBase):
 
     def __init__(self, name):
         CmdBase.__init__(self, name)
 
     def run(self, argv):
-        print_usage()
+        print("%s [%s] [OPTIONS]" % (sys.argv[0], '|'.join(commands.keys())))
         if len(argv) >= 1:
-            commands = find_cmds_by_name(argv[0])
-            if len(commands) == 1:
-                parser = commands[0].parser
+            command = find_cmds_by_name(argv[0])
+            if len(command) == 1:
+                parser = command[0].parser
                 if parser:
-                   print
-                   parser.print_help()
+                    print
+                    parser.print_help()
+        print
+        print str_examples;
 
 
-commands = {}
 def commands_add(name, t, realname=None):
     commands[name] = t(realname if realname else name)
 
@@ -633,6 +678,8 @@ def commands_add(name, t, realname=None):
 commands_add('parse',       CmdParseCommitMessage)
 commands_add('help',        CmdHelp)
 commands_add('?',           CmdHelp, realname='help')
+commands_add('-h',          CmdHelp, realname='help')
+commands_add('--help',      CmdHelp, realname='help')
 
 
 def find_cmds_by_name(command_name):
@@ -640,7 +687,7 @@ def find_cmds_by_name(command_name):
 
 
 def print_usage():
-    print("%s [%s] [OPTIONS]" % (sys.argv[0], '|'.join(commands.keys())))
+    CmdHelp("help").run([])
 
 
 
