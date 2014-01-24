@@ -184,6 +184,10 @@ static gboolean find_master (NMManager *self,
 
 static void nm_manager_update_state (NMManager *manager);
 
+static void dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
+                                        DBusConnection *dbus_connection,
+                                        gpointer user_data);
+
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
 
@@ -216,7 +220,6 @@ typedef struct {
 	NMPolicy *policy;
 
 	NMDBusManager *dbus_mgr;
-	guint          dbus_connection_changed_id;
 	gboolean       prop_filter_added;
 	NMAtmManager *atm_mgr;
 	NMRfkillManager *rfkill_mgr;
@@ -4646,8 +4649,8 @@ dispose (GObject *object)
 	g_free (priv->hostname);
 
 	if (priv->policy) {
-		g_signal_handlers_disconnect_by_func (priv->policy, G_CALLBACK (policy_default_device_changed), singleton);
-		g_signal_handlers_disconnect_by_func (priv->policy, G_CALLBACK (policy_activating_device_changed), singleton);
+		g_signal_handlers_disconnect_by_func (priv->policy, policy_default_device_changed, manager);
+		g_signal_handlers_disconnect_by_func (priv->policy, policy_activating_device_changed, manager);
 		g_clear_object (&priv->policy);
 	}
 
@@ -4674,7 +4677,7 @@ dispose (GObject *object)
 				priv->prop_filter_added = FALSE;
 			}
 		}
-		g_signal_handler_disconnect (priv->dbus_mgr, priv->dbus_connection_changed_id);
+		g_signal_handlers_disconnect_by_func (priv->dbus_mgr, dbus_connection_changed_cb, manager);
 		priv->dbus_mgr = NULL;
 	}
 
@@ -5004,10 +5007,10 @@ nm_manager_init (NMManager *manager)
 	priv->startup = TRUE;
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
-	priv->dbus_connection_changed_id = g_signal_connect (priv->dbus_mgr,
-	                                                     NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED,
-	                                                     G_CALLBACK (dbus_connection_changed_cb),
-	                                                     manager);
+	g_signal_connect (priv->dbus_mgr,
+	                  NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED,
+	                  G_CALLBACK (dbus_connection_changed_cb),
+	                  manager);
 
 	priv->modem_manager = nm_modem_manager_get ();
 	priv->modem_added_id = g_signal_connect (priv->modem_manager, "modem-added",
