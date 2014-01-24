@@ -26,41 +26,50 @@ def _call(args):
 
 str_examples = string.replace(
 """Examples:
-  - show general usage
-    %cmd%
+  * show general usage
 
-  - show help for subcommand
-    %cmd% h p
-    %cmd% p -h
+      %cmd%
 
-parse:
+  * show help for subcommand
 
-  - parse BZ from commit messages, --ref accepts git revisions and ranges, see man gitrevisions(7)
-    %cmd% p -c -e --ref origin/master~20.. --ref 4b39267
+      %cmd% h p
+      %cmd% p -h
 
-  - only show BZ list
-    %cmd% p -c -e --ref origin/master~20..origin/master --list-by-bz
+  * parse BZ from commit messages, --ref accepts git revisions and ranges, see man gitrevisions(7)
 
-  - select BZ via command line
-    %cmd% p -c -e --ref origin/master~20..origin/master --bz rh:100000,bg:670631 --bz 100001
+      %cmd% p -c -e --ref origin/master~20.. --ref 4b39267
 
-  - blacklist some BZ
-    %cmd% p -c -e --ref origin/master~20..origin/master --no-bz rh:100000,bg:670631
+  * only show BZ list
 
-  - search open rhbz for the last 10 days
-    %cmd% p -c -e --rh-search-since 10
+      %cmd% p -c -e --ref origin/master~20..origin/master --list-by-bz
 
-  - search open rhbz since date
-    %cmd% p -c -e --rh-search-since 20140110
+  * select BZ via command line
 
-  - the same search providing the full search options
-    %cmd% p -c -e --rh-search "{'status': ['MODIFIED', 'POST', 'ON_QA'], 'component': ['NetworkManager'], 'last_change_time': '20140110'}"
+      %cmd% p -c -e --ref origin/master~20..origin/master --bz rh:100000,bg:670631 --bz 100001
 
-  - be more verbose (add -v more then once)
-    %cmd% p -c -e --ref origin/master~20..origin/master -v -v
+  * blacklist some BZ
 
-  - show only the list-by-bz output
-    %cmd% p -c -e --ref origin/master~20..origin/master --list-by-bz -v -v
+      %cmd% p -c -e --ref origin/master~20..origin/master --no-bz rh:100000,bg:670631
+
+  * search open rhbz for the last 10 days
+
+      %cmd% p -c -e --rh-search-since 10
+
+  * search open rhbz since date
+
+      %cmd% p -c -e --rh-search-since 20140110
+
+  * the same search providing the full search options
+
+      %cmd% p -c -e --rh-search "{'status': ['MODIFIED', 'POST', 'ON_QA'], 'component': ['NetworkManager'], 'last_change_time': '20140110'}"
+
+  * be more verbose (add -v more then once)
+
+      %cmd% p -c -e --ref origin/master~20..origin/master -v -v
+
+  * show only the list-by-bz output
+
+      %cmd% p -c -e --ref origin/master~20..origin/master --list-by-bz -v -v
 
 """, "%cmd%", sys.argv[0]);
 
@@ -130,10 +139,13 @@ _colormap_status = {
         'MODIFIED': 'yellow',
         'CLOSED': 'green',
     }
-def _colored(colored, value, colormapping, prefix="", defaultcolor='red'):
+def _colored(colored, value, colormapping=None, prefix="", defaultcolor='red'):
     if not colored:
         return prefix + value
-    color = colormapping.get(value, defaultcolor)
+    if colormapping is not None:
+        color = colormapping.get(value, defaultcolor)
+    else:
+        color = defaultcolor
     return termcolor.colored(prefix+value, color)
 
 
@@ -183,7 +195,7 @@ class CmdBase:
 
 class BzClient:
     COMMON_FIELDS = ['id', 'depends_on', 'blocks', 'flags', 'keywords', 'status', 'component']
-    DEFAULT_FIELDS = ['summary', 'status', 'flags', 'cf_fixed_in', 'component']
+    DEFAULT_FIELDS = ['summary', 'status', 'product', 'version', 'component', 'flags', 'cf_fixed_in']
 
     def __init__(self, url):
         transport = None
@@ -314,11 +326,26 @@ class BzInfoRhbz(BzInfo):
             return BzInfo.to_string_tight(self, verbose, colored)
         bzdata = self.getBZData()
         s = ''
+        if 'product' in bzdata:
+            v = bzdata['product']
+            if v == 'Red Hat Enterprise Linux 7':
+                v = 'el7'
+            elif v == 'Red Hat Enterprise Linux 6':
+                v = 'el6'
+            elif v == 'Fedora':
+                v = 'fc'
+        else:
+            v = "??"
+        v = v + "-" + ",".join(bzdata.get('version',"??"))
+        s = s + _colored(colored, v, defaultcolor='yellow');
         v = bzdata.get('status', None)
         if v:
-            s = s +_colored(colored, v, _colormap_status)
+            s = s + ' ' + _colored(colored, v, _colormap_status)
         else:
-            s = s + '??'
+            s = s + ' ??'
+        v = bzdata.get('cf_fixed_in', None)
+        if v:
+            s = s + "+fix"
         v = bzdata.get('flags', None)
         if v is not None:
             d = dict([ (flag['name'], flag['status']) for flag in v ])
@@ -333,10 +360,11 @@ class BzInfoRhbz(BzInfo):
                 val = d.get(k[0], None)
                 if val is not None:
                     fl.append(k[1] + val)
-            s = s + ' ' + ' '.join(fl)
+            if fl:
+                s = s + ' ' + ' '.join(fl)
         v = bzdata.get('summary', None)
         if v is not None:
-            s = s + ' - ' + v
+            s = s + ' -- ' + v
         return s
     def to_string(self, prefix, verbose, colored):
         if verbose <= 1:
@@ -647,11 +675,11 @@ class CmdParseCommitMessage(CmdBase):
             for result in result_bz_keys:
                 print(result.to_string("    ", self.options.verbose, self.options.color))
                 for commit_data in sorted(result_bz[result], key=lambda commit_data: commit_data.get_commit_date(), reverse=True):
-                    print("        %s" % commit_data.commit_summary(self.options.color, shorten=True))
+                    print("         %s" % commit_data.commit_summary(self.options.color, shorten=True))
             if result_bz0:
                 print("    bug: --")
                 for commit_data in result_bz0:
-                    print("        %s" % commit_data.commit_summary(self.options.color, shorten=True))
+                    print("         %s" % commit_data.commit_summary(self.options.color, shorten=True))
             printed_something = True
 
 commands = {}
