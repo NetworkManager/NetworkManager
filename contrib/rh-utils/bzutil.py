@@ -71,6 +71,14 @@ str_examples = string.replace(
 
       %cmd% p -c -e --ref origin/master~20..origin/master --list-by-bz -v -v
 
+  * set properies of matching BZ. Will show only what to do, unless run with --no-test.
+    It will only change those properties, where it is possible and makes sense, e.g.
+    setting cf_fixed_in only works, if the value is unset.
+    Also, as always, you can combine --bz, --ref-, --rh-search, --rh-search-since,
+    --no-bz at will.
+
+      %cmd% p -c -e --ref origin/master~20..origin/master -v -v --set-status MODIFIED --set-cf-fixed-in 'NetworkManager-0.9.9.0-30.git20140108.el7'
+
 """, "%cmd%", sys.argv[0]);
 
 
@@ -192,6 +200,10 @@ class CmdBase:
     def run(self, argv):
         print_usage()
 
+def XMLRPCDateTime2datetime(dt):
+    if isinstance(dt, datetime.datetime):
+        return dt
+    return datetime.datetime.strptime(dt.value, "%Y%m%dT%H:%M:%S")
 
 class BzClient:
     COMMON_FIELDS = ['id', 'depends_on', 'blocks', 'flags', 'keywords', 'status', 'component']
@@ -225,14 +237,20 @@ class BzClient:
         if BzClient._getBZDataCache.has_key(key):
             return BzClient._getBZDataCache[key]
 
-        params = {'ids': bzid}
-        params['include_fields'] = BzClient.DEFAULT_FIELDS
+        params = {
+                'ids': bzid,
+                'include_fields': BzClient.DEFAULT_FIELDS,
+            }
 
         bugs_data = self._client.Bug.get(params)
         #print(bugs_data)
         bug_data = bugs_data['bugs'][0]
         BzClient._getBZDataCache[key] = bug_data
         return bug_data
+    def clearBZData(self, bzid):
+        key = ( bzid, self._key_part, self._user, self._password )
+        if BzClient._getBZDataCache.has_key(key):
+            del BzClient._getBZDataCache[key]
 
     def search(self, search_params):
         self._login()
@@ -241,6 +259,69 @@ class BzClient:
             key = ( bug_data['id'], self._key_part, self._user, self._password )
             BzClient._getBZDataCache[key] = bug_data
         return bugs_data
+
+    def update(self, bzInfos, options, colored, no_test):
+        bz = [(b, b.can_set(options)) for b in bzInfos if isinstance(b, BzInfoRhbz)]
+        bz = [(b,tuple([(k,can[k]) for k in sorted(can.keys())])) for (b,can) in bz if can]
+
+        if not bz:
+            return True
+
+        bz_grouped = {}
+        for (b,can) in bz:
+            key = tuple([(c[0],c[1][1]) for c in can])
+            ll = bz_grouped.get(key, None)
+            if ll is None:
+                ll = []
+                bz_grouped[key] = ll
+            ll.append((b,can))
+        for gr in bz_grouped:
+            bz_grouped[gr] = sorted(bz_grouped[gr], key=lambda b:b[0])
+
+        print("Set RHBZ options:")
+        for gr in bz_grouped:
+            for gri in gr:
+                print("  '%s' => '%s'" % (gri[0], gri[1]))
+            grv = bz_grouped[gr]
+            for b in grv:
+                print("      %-15s == %s" % (b[0], ", ".join([x[0]+":'" +x[1][0]+"'" for x in b[1]])))
+
+            params = {
+                'ids': [str(i[0].bzid) for i in grv],
+            }
+            for gri in gr:
+                if gri[0] == 'status':
+                    params[gri[0]] = gri[1]
+                elif gri[0] == 'cf_fixed_in':
+                    params[gri[0]] = gri[1]
+                else:
+                    raise Exception("Unexpected property")
+
+            if not no_test:
+                print("      %s" % _colored(colored, "nop: only show", defaultcolor='yellow'))
+                continue
+
+            #params = { 'ids':params['ids'] }
+            result = self._client.Bug.update(params)
+            result = result['bugs']
+            print("      %s: %s" % (_colored(colored, "Response", defaultcolor='green'), repr(result)))
+            print("      Results:")
+            for res in result:
+                bzid = res['id']
+                bzobjs = [b[0] for b in grv if b[0].bzid == bzid]
+                if not bzobjs:
+                    print(_colored(colored,"          >> Strange, receive unmatching response: %s" % (res)))
+                    continue
+                print("          %s (last-change=%s)" % (", ".join([str(b) for b in bzobjs]), XMLRPCDateTime2datetime(res['last_change_time'])))
+                c = res['changes']
+                if not c:
+                    print(_colored(colored,"              >> no change"))
+                else:
+                    for changed in c:
+                        r = c[changed]
+                        print("              %-15s == '%s' => '%s'" % (changed, r['removed'], r['added']))
+                for bzobj in bzobjs:
+                    bzobj.clearBZData()
 
 
 def is_sequence(arg):
@@ -295,6 +376,11 @@ class BzInfo:
             s = " " + s
         s = prefix + ("bug: %s%s" % (i, s))
         return s
+    def can_set(self, options):
+        return {}
+    def clearBZData(self):
+        if hasattr(self, '_bzdata'):
+            del self._bzdata
 
 
 class BzInfoBgo(BzInfo):
@@ -320,6 +406,9 @@ class BzInfoRhbz(BzInfo):
     BzClient = BzClient('https://bugzilla.redhat.com/xmlrpc.cgi')
     def _fetchBZData(self):
         return BzInfoRhbz.BzClient.getBZData(self.bzid)
+    def clearBZData(self):
+        BzInfo.clearBZData(self)
+        BzInfoRhbz.BzClient.clearBZData(self.bzid)
 
     def to_string_tight(self, verbose, colored):
         if verbose != 1:
@@ -392,6 +481,24 @@ class BzInfoRhbz(BzInfo):
                         v = ', '.join(v)
                     s = s + '\n' + prefix + ("     %-20s = %s" % (k, v))
         return s
+    def can_set(self, options):
+        bzdata = self.getBZData()
+
+        can = { }
+        for o in options:
+            if o in bzdata:
+                if o == 'status':
+                    allowed = {
+                                "MODIFIED": ['POST', 'ASSIGNED', 'NEW'],
+                                "ASSIGNED": ['NEW'],
+                            }
+                    if bzdata[o] in allowed.get(options[o], {}):
+                        can[o] = (bzdata[o], options[o])
+                elif o == 'cf_fixed_in':
+                    if not bzdata[o]:
+                        can[o] = (bzdata[o], options[o])
+        return can
+
 
 
 
@@ -507,6 +614,9 @@ class CmdParseCommitMessage(CmdBase):
         self.parser.add_argument('--no-list-by-ref', dest='list_by_refs', action='store_const', const=False, help='disable --list-by-ref')
         self.parser.add_argument('--no-list-by-bz', dest='list_by_bz', action='store_const', const=False, help='disable --list-by-bz')
         self.parser.add_argument('--show-empty-refs', '-e', action='store_true', help='Show refs without bugs')
+        self.parser.add_argument('--set-status', '-s', default=None, help='Set BZ status to the specified string (no action without --no-test)')
+        self.parser.add_argument('--set-cf-fixed-in', '-m', default=None, help='Set BZ cf_fixed_in to the specified string (no action without --no-test)')
+        self.parser.add_argument('--no-test', action='store_true', help='If specified any --set-* options, really change the bug')
 
     @staticmethod
     def _order_keys(keys, ordered):
@@ -575,6 +685,12 @@ class CmdParseCommitMessage(CmdBase):
         self.options = self.parser.parse_args(argv)
 
         config.setup(self.options.conf)
+
+        supported_set_status = ['MODIFIED', 'ASSIGNED']
+        if self.options.set_status and self.options.set_status not in supported_set_status:
+            print("Invalid argument --set-status \"%s\". Supported values are [ \"%s\" ]" % (self.options.set_status,
+                "\", \"".join(supported_set_status)))
+            raise Exception("Invalid argument --set-status \"%s\"" % self.options.set_status)
 
 
         if  self.options.list_refs is not None or \
@@ -681,6 +797,43 @@ class CmdParseCommitMessage(CmdBase):
                 for commit_data in result_bz0:
                     print("         %s" % commit_data.commit_summary(self.options.color, shorten=True))
             printed_something = True
+
+        if not self.options.set_status and \
+           not self.options.set_cf_fixed_in:
+            return
+
+        options = {
+                'status': self.options.set_status,
+                'cf_fixed_in': self.options.set_cf_fixed_in,
+                }
+        options = dict([(k,options[k]) for k in options if options[k] is not None])
+
+        print
+        print("Setting BZ options:")
+        for option in sorted(options.keys()):
+            print("  '%s' => '%s'" % (option, options[option]))
+
+        set_data = [ (result, result.can_set(options)) for result in result_bz_keys ]
+
+        print("Changes:")
+        has_changes = False
+        for result,can in sorted(set_data, key=lambda s: (sorted(s[1].keys()), s[0])):
+            print(result.to_string("  ", 1, self.options.color))
+            for c in sorted(can.keys()):
+                print("     %-16s : \"%s\" => \"%s\"" % ('"'+c+'"', can[c][0], can[c][1]))
+                has_changes = True
+
+        if not has_changes:
+            print(_colored(self.options.color, "No changes to set", defaultcolor='green'))
+            return
+
+        print
+        BzInfoRhbz.BzClient.update(result_bz_keys, options, self.options.color, self.options.no_test);
+
+        if not self.options.no_test:
+            print(_colored(self.options.color, "Changes not set, run with --no-test", defaultcolor='green'))
+            return
+
 
 commands = {}
 
