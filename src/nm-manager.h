@@ -49,6 +49,7 @@ typedef enum {
 	NM_MANAGER_ERROR_DEPENDENCY_FAILED,           /*< nick=DependencyFailed >*/
 	NM_MANAGER_ERROR_AUTOCONNECT_NOT_ALLOWED,     /*< nick=AutoconnectNotAllowed >*/
 	NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,   /*< nick=ConnectionAlreadyActive >*/
+	NM_MANAGER_ERROR_INTERNAL,                    /*< nick=Internal >*/
 } NMManagerError;
 
 #define NM_MANAGER_VERSION "version"

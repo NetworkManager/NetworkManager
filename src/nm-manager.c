@@ -4505,7 +4505,8 @@ nm_manager_new (NMSettings *settings,
 
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	if (!bus) {
-		nm_log_err (LOGD_CORE, "Failed to initialize D-Bus connection");
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INTERNAL,
+		                     "Failed to initialize D-Bus connection");
 		g_object_unref (singleton);
 		return NULL;
 	}
@@ -4528,7 +4529,8 @@ nm_manager_new (NMSettings *settings,
 	                  G_CALLBACK (connectivity_changed), singleton);
 
 	if (!dbus_connection_add_filter (dbus_connection, prop_filter, singleton, NULL)) {
-		nm_log_err (LOGD_CORE, "failed to register DBus connection filter");
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INTERNAL,
+		                     "Failed to register DBus connection filter");
 		g_object_unref (singleton);
 		return NULL;
 	}
