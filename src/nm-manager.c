@@ -245,7 +245,6 @@ typedef struct {
 
 	/* Firmware dir monitor */
 	GFileMonitor *fw_monitor;
-	guint fw_monitor_id;
 	guint fw_changed_id;
 
 	guint timestamp_update_id;
@@ -4684,10 +4683,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->sleep_monitor);
 
 	if (priv->fw_monitor) {
-		if (priv->fw_monitor_id) {
-			g_signal_handler_disconnect (priv->fw_monitor, priv->fw_monitor_id);
-			priv->fw_monitor_id = 0;
-		}
+		g_signal_handlers_disconnect_by_func (priv->fw_monitor, firmware_dir_changed, manager);
 
 		if (priv->fw_changed_id) {
 			g_source_remove (priv->fw_changed_id);
@@ -5064,9 +5060,9 @@ nm_manager_init (NMManager *manager)
 	}
 
 	if (priv->fw_monitor) {
-		priv->fw_monitor_id = g_signal_connect (priv->fw_monitor, "changed",
-		                                        G_CALLBACK (firmware_dir_changed),
-		                                        manager);
+		g_signal_connect (priv->fw_monitor, "changed",
+		                  G_CALLBACK (firmware_dir_changed),
+		                  manager);
 		nm_log_info (LOGD_CORE, "monitoring kernel firmware directory '%s'.",
 		             KERNEL_FIRMWARE_DIR);
 	} else {
