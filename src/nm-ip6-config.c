@@ -266,7 +266,6 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex, int priority)
 
 		for (i = 0; i < count; i++) {
 			memcpy (&route, nm_ip6_config_get_route (config, i), sizeof (route));
-			route.metric = priority;
 
 			/* Don't add the route if it's more specific than one of the subnets
 			 * the device already has an IP address on.
@@ -280,6 +279,11 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex, int priority)
 			if (nm_ip6_config_get_never_default (config) && IN6_IS_ADDR_UNSPECIFIED (&route.network))
 				continue;
 
+			/* Use the default metric only if the route was created by NM and
+			 * didn't already specify a metric.
+			 */
+			if (route.source != NM_PLATFORM_SOURCE_KERNEL && !route.metric)
+				route.metric = priority ? priority : NM_PLATFORM_ROUTE_METRIC_DEFAULT;
 			g_array_append_val (routes, route);
 		}
 
@@ -330,6 +334,7 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 		address.plen = nm_ip6_address_get_prefix (s_addr);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
+		address.source = NM_PLATFORM_SOURCE_USER;
 
 		nm_ip6_config_add_address (config, &address);
 	}
@@ -346,6 +351,7 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 		route.plen = nm_ip6_route_get_prefix (s_route);
 		route.gateway = *nm_ip6_route_get_next_hop (s_route);
 		route.metric = nm_ip6_route_get_metric (s_route);
+		route.source = NM_PLATFORM_SOURCE_USER;
 
 		nm_ip6_config_add_route (config, &route);
 	}
@@ -887,10 +893,21 @@ nm_ip6_config_reset_addresses (NMIP6Config *config)
 	}
 }
 
+/**
+ * nm_ip6_config_add_address:
+ * @config: the #NMIP6Config
+ * @new: the new address to add to @config
+ *
+ * Adds the new address to @config.  If an address with the same basic properties
+ * (address, prefix) already exists in @config, it is overwritten with the
+ * lifetime and preferred of @new.  The source is also overwritten by the source
+ * from @new if that source is higher priority.
+ */
 void
 nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *new)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	NMPlatformSource old_source;
 	int i;
 
 	g_return_if_fail (new != NULL);
@@ -901,8 +918,11 @@ nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *new)
 		if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address)) {
 			if (nm_platform_ip6_address_cmp (item, new) == 0)
 				return;
+			old_source = item->source;
 			/* Copy over old item to get new lifetime, timestamp, preferred */
 			*item = *new;
+			/* But restore highest priority source */
+			item->source = MAX (old_source, new->source);
 			goto NOTIFY;
 		}
 	}
@@ -969,10 +989,21 @@ nm_ip6_config_reset_routes (NMIP6Config *config)
 	}
 }
 
+/**
+ * nm_ip6_config_add_route:
+ * @config: the #NMIP6Config
+ * @new: the new route to add to @config
+ *
+ * Adds the new route to @config.  If a route with the same basic properties
+ * (network, prefix) already exists in @config, it is overwritten including the
+ * gateway and metric of @new.  The source is also overwritten by the source
+ * from @new if that source is higher priority.
+ */
 void
 nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	NMPlatformSource old_source;
 	int i;
 
 	g_return_if_fail (new != NULL);
@@ -983,7 +1014,10 @@ nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 		if (routes_are_duplicate (item, new, FALSE)) {
 			if (nm_platform_ip6_route_cmp (item, new) == 0)
 				return;
+			old_source = item->source;
 			*item = *new;
+			/* Restore highest priority source */
+			item->source = MAX (old_source, new->source);
 			goto NOTIFY;
 		}
 	}
@@ -1268,6 +1302,19 @@ nm_ip6_config_hash (const NMIP6Config *config, GChecksum *sum, gboolean dns_only
 	}
 }
 
+/**
+ * nm_ip6_config_equal:
+ * @a: first config to compare
+ * @b: second config to compare
+ *
+ * Compares two #NMIP6Configs for basic equality.  This means that all
+ * attributes must exist in the same order in both configs (addresses, routes,
+ * domains, DNS servers, etc) but some attributes (address lifetimes, and address
+ * and route sources) are ignored.
+ *
+ * Returns: %TRUE if the configurations are basically equal to each other,
+ * %FALSE if not
+ */
 gboolean
 nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b)
 {

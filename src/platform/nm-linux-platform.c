@@ -2196,6 +2196,7 @@ ip4_address_get_all (NMPlatform *platform, int ifindex)
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
 		if (nl_object_is_marked (object)) {
 			init_ip4_address (&address, (struct rtnl_addr *) object);
+			address.source = NM_PLATFORM_SOURCE_KERNEL;
 			g_array_append_val (addresses, address);
 			nl_object_unmark (object);
 		}
@@ -2219,6 +2220,7 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
 		if (nl_object_is_marked (object)) {
 			init_ip6_address (&address, (struct rtnl_addr *) object);
+			address.source = NM_PLATFORM_SOURCE_KERNEL;
 			g_array_append_val (addresses, address);
 			nl_object_unmark (object);
 		}
@@ -2410,6 +2412,7 @@ ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (nl_object_is_marked (object)) {
 			if (init_ip4_route (&route, (struct rtnl_route *) object)) {
+				route.source = NM_PLATFORM_SOURCE_KERNEL;
 				if (route.plen != 0 || include_default)
 					g_array_append_val (routes, route);
 			}
@@ -2435,6 +2438,7 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (nl_object_is_marked (object)) {
 			if (init_ip6_route (&route, (struct rtnl_route *) object)) {
+				route.source = NM_PLATFORM_SOURCE_KERNEL;
 				if (route.plen != 0 || include_default)
 					g_array_append_val (routes, route);
 			}

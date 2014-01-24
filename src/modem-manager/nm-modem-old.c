@@ -620,6 +620,7 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		/* IP address */
 		address.address = g_value_get_uint (g_value_array_get_nth (ret_array, 0));
 		address.plen = 32;
+		address.source = NM_PLATFORM_SOURCE_WWAN;
 		nm_ip4_config_add_address (config, &address);
 
 		nm_log_info (LOGD_MB, "  address %s/%d",

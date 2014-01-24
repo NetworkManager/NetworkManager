@@ -625,6 +625,7 @@ nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
 			address.plen = nm_utils_ip4_get_default_prefix (address.address);
 
 		address.lifetime = address.preferred = expiry;
+		address.source = NM_PLATFORM_SOURCE_DHCP;
 
 		ip4 = nm_ip4_config_new ();
 		nm_ip4_config_add_address (ip4, &address);

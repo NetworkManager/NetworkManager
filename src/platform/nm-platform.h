@@ -119,8 +119,23 @@ typedef struct {
 
 #define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
 
+typedef enum {
+	/* In priority order; higher number == higher priority */
+	NM_PLATFORM_SOURCE_UNKNOWN,
+	NM_PLATFORM_SOURCE_KERNEL,
+	NM_PLATFORM_SOURCE_SHARED,
+	NM_PLATFORM_SOURCE_IP4LL,
+	NM_PLATFORM_SOURCE_PPP,
+	NM_PLATFORM_SOURCE_WWAN,
+	NM_PLATFORM_SOURCE_VPN,
+	NM_PLATFORM_SOURCE_DHCP,
+	NM_PLATFORM_SOURCE_RDISC,
+	NM_PLATFORM_SOURCE_USER,
+} NMPlatformSource;
+
 typedef struct {
 	int ifindex;
+	NMPlatformSource source;
 	in_addr_t address;
 	in_addr_t peer_address;  /* PTP peer address */
 	int plen;
@@ -131,6 +146,7 @@ typedef struct {
 
 typedef struct {
 	int ifindex;
+	NMPlatformSource source;
 	struct in6_addr address;
 	struct in6_addr peer_address;
 	int plen;
@@ -140,8 +156,11 @@ typedef struct {
 	guint flags; /* ifa_flags from <linux/if_addr.h>, field type "unsigned int" is as used in rtnl_addr_get_flags. */
 } NMPlatformIP6Address;
 
+#define NM_PLATFORM_ROUTE_METRIC_DEFAULT 1024
+
 typedef struct {
 	int ifindex;
+	NMPlatformSource source;
 	in_addr_t network;
 	int plen;
 	in_addr_t gateway;
@@ -151,6 +170,7 @@ typedef struct {
 
 typedef struct {
 	int ifindex;
+	NMPlatformSource source;
 	struct in6_addr network;
 	int plen;
 	struct in6_addr gateway;
