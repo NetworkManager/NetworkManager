@@ -592,9 +592,10 @@ class CmdParseCommitMessage(CmdBase):
         result_search = self._rh_searchlist(rh_searches, no_bz)
 
         if self.options.list_refs or (self.options.list_refs is None and result_all):
-            print("=== List commit refs ===")
+            print("=== List commit refs (%s) ===" % (len(result_all)))
             for ref_data in result_all:
-                print("refs: %s" % ref_data[0])
+                count = len([commit_data for commit_data in ref_data[1] if commit_data.result])
+                print("refs: %s (%s%s)" % (ref_data[0], count, "+"+str(len(ref_data[1])-count)))
                 for commit_data in ref_data[1]:
                     if self.options.show_empty_refs or commit_data.result:
                         print("  %s" % commit_data.commit_summary(self.options.color))
@@ -603,20 +604,22 @@ class CmdParseCommitMessage(CmdBase):
             printed_something = True
 
 
-        result_reduced = [ commit_data for ref_data in result_all for commit_data in ref_data[1] if (commit_data.result or self.options.show_empty_refs) ]
+        result_reduced = [ commit_data for ref_data in result_all for commit_data in ref_data[1] ]
         result_reduced = result_reduced \
-                + [ commit_data for commit_data in result_man if (commit_data.result or self.options.show_empty_refs)] \
-                + [ commit_data for commit_data in result_search if (commit_data.result or self.options.show_empty_refs)]
+                + [ commit_data for commit_data in result_man ] \
+                + [ commit_data for commit_data in result_search ]
         result_reduced = sorted(set(result_reduced), key=lambda commit_data: commit_data.get_commit_date(), reverse=True)
 
         if self.options.list_by_refs or (self.options.list_by_refs is None and result_reduced):
             if printed_something:
                 print
-            print('=== List BZ by ref ===')
+            count = len([commit_data for commit_data in result_reduced if commit_data.result])
+            print('=== List BZ by ref (%s+%s) ===' % (count, len(result_reduced)-count))
             for commit_data in result_reduced:
-                print("  %s" % commit_data.commit_summary(self.options.color))
-                for result in commit_data.result:
-                    print(result.to_string("    ", self.options.verbose, self.options.color))
+                if self.options.show_empty_refs or commit_data.result:
+                    print("  %s" % commit_data.commit_summary(self.options.color))
+                    for result in commit_data.result:
+                        print(result.to_string("    ", self.options.verbose, self.options.color))
             printed_something = True
 
         result_bz0 = result_man \
@@ -640,7 +643,7 @@ class CmdParseCommitMessage(CmdBase):
         if self.options.list_by_bz or (self.options.list_by_bz is None and result_bz):
             if printed_something:
                 print
-            print('=== List by BZ ===')
+            print('=== List by BZ (%s) ===' % (len(result_bz_keys)))
             for result in result_bz_keys:
                 print(result.to_string("    ", self.options.verbose, self.options.color))
                 for commit_data in sorted(result_bz[result], key=lambda commit_data: commit_data.get_commit_date(), reverse=True):
