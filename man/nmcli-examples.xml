@@ -210,8 +210,8 @@ $ nmcli con add type team-slave con-name Team1-slave2 ifname em2 master Team1
       <emphasis>teamd</emphasis> will use its default configuration. You will activate the whole setup
       by activating both slaves:
       <programlisting><emphasis role="bold">
-$ nmcli con add up Team1-slave1
-$ nmcli con add up Team1-slave2
+$ nmcli con up Team1-slave1
+$ nmcli con up Team1-slave2
       </emphasis></programlisting>
       By default, the created profiles are marked for auto-activation. But if another
       connection has been activated on the device, the new profile won't activate
