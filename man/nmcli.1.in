@@ -388,7 +388,7 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .IP "\fI[con-name <connection name>]\fP" 42
 \(en connection name (when not provided a default name is generated: <type>[-<ifname>][-<num>])
 .IP "\fI[autoconnect yes|no]\fP" 42
-\(en whether the connection can auto-connect or not
+\(en whether the connection profile can be automatically activated (default: yes)
 .RE
 .RS
 .TP
