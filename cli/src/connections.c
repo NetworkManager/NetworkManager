@@ -4944,6 +4944,18 @@ add_new_connection (gboolean persistent,
 		return nm_remote_settings_add_connection_unsaved (settings, connection, callback, user_data);
 }
 
+static void
+update_connection (gboolean persistent,
+                   NMRemoteConnection *connection,
+                   NMRemoteConnectionResultFunc callback,
+                   gpointer user_data)
+{
+	if (persistent)
+		nm_remote_connection_commit_changes (connection, callback, user_data);
+	else
+		nm_remote_connection_commit_changes_unsaved (connection, callback, user_data);
+}
+
 static NMCResultCode
 do_connection_add (NmCli *nmc, int argc, char **argv)
 {
@@ -5242,6 +5254,13 @@ static char *
 gen_cmd_print2 (char *text, int state)
 {
 	const char *words[] = { "setting", "connection", "all", NULL };
+	return gen_func_basic (text, state, words);
+}
+
+static char *
+gen_cmd_save (char *text, int state)
+{
+	const char *words[] = { "persistent", "temporary", NULL };
 	return gen_func_basic (text, state, words);
 }
 
@@ -5619,6 +5638,8 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 						generator_func = gen_cmd_verify0;
 				} else if (should_complete_cmd (line, end, "activate", &num, NULL) && num <= 2) {
 					generator_func = gen_compat_devices;
+				} else if (should_complete_cmd (line, end, "save", &num, NULL) && num <= 2) {
+					generator_func = gen_cmd_save;
 				} else if (should_complete_cmd (line, end, "help", &num, NULL) && num <= 2)
 					generator_func = gen_nmcli_cmds_menu;
 			}
@@ -5948,7 +5969,7 @@ editor_main_usage (void)
 	          "describe [<setting>.<prop>]          :: describe property\n"
 	          "print    [all]                       :: print the connection\n"
 	          "verify   [all]                       :: verify the connection\n"
-	          "save                                 :: save the connection\n"
+	          "save     [persistent|temporary]      :: save the connection\n"
 	          "activate [<ifname>] [/<ap>|<nsp>]    :: activate the connection\n"
 	          "back                                 :: go one level up (back)\n"
 	          "help/?   [<command>]                 :: print this help\n"
@@ -6004,8 +6025,15 @@ editor_main_help (const char *command)
 			          "          nmcli bond> verify\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_SAVE:
-			printf (_("save  :: save the connection\n\n"
-			          "Sends the connection to NetworkManager that will save it.\n"));
+			printf (_("save [persistent|temporary]  :: save the connection\n\n"
+			          "Sends the connection profile to NetworkManager that either will save it\n"
+			          "pesistently, or will only keep it in memory. 'save' without an argument\n"
+			          "means 'save persistent'.\n"
+			          "Note that once you save the profile persistently those settings are saved\n"
+			          "across reboot or restart. Subsequent changes can also be temporary or\n"
+			          "persistent, but any temporary changes will not persist across reboot or\n"
+			          "restart. If you want to fully remove the persistent connection, the connection\n"
+			          "profile must be deleted.\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_ACTIVATE:
 			printf (_("activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n\n"
@@ -6332,7 +6360,7 @@ connection_remove_setting (NMConnection *connection, NMSetting *setting)
 }
 
 static void
-editor_show_status_line (NMConnection *connection, gboolean dirty)
+editor_show_status_line (NMConnection *connection, gboolean dirty, gboolean temp)
 {
 	NMSettingConnection *s_con;
 	const char *con_type, *con_id, *con_uuid;
@@ -6344,8 +6372,10 @@ editor_show_status_line (NMConnection *connection, gboolean dirty)
 	con_uuid = nm_connection_get_uuid (connection);
 
 	/* TRANSLATORS: status line in nmcli connection editor */
-	printf (_("[ Connection type: %s | name: %s | UUID: %s | dirty: %s ]\n"),
-	        con_type, con_id, con_uuid, dirty ? _("yes") : _("no"));
+	printf (_("[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"),
+	        con_type, con_id, con_uuid,
+	        dirty ? _("yes") : _("no"),
+	        temp ? _("yes") : _("no"));
 }
 
 static gboolean
@@ -6392,6 +6422,7 @@ property_edit_submenu (NmCli *nmc,
 	char *prompt;
 	gboolean dirty;
 	GValue prop_g_value = G_VALUE_INIT;
+	gboolean temp_changes;
 	gboolean removed;
 
 	prompt = nmc_colorize (nmc->editor_prompt_color, "nmcli %s.%s> ",
@@ -6409,8 +6440,9 @@ property_edit_submenu (NmCli *nmc,
 
 		/* Connection is dirty? (not saved or differs from the saved) */
 		dirty = is_connection_dirty (connection, *rem_con);
+		temp_changes = *rem_con ? nm_remote_connection_get_unsaved (*rem_con) : TRUE;
 		if (nmc->editor_status_line)
-			editor_show_status_line (connection, dirty);
+			editor_show_status_line (connection, dirty, temp_changes);
 
 		cmd_property_user = readline_x (prompt);
 		if (!cmd_property_user || *cmd_property_user == '\0')
@@ -6785,6 +6817,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	char *valid_settings_str = NULL;
 	AddConnectionInfo *info = NULL;
 	gboolean dirty;
+	gboolean temp_changes;
 	GError *err1 = NULL;
 	NmcEditorMenuContext menu_ctx;
 
@@ -6807,8 +6840,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	while (cmd_loop) {
 		/* Connection is dirty? (not saved or differs from the saved) */
 		dirty = is_connection_dirty (connection, rem_con);
+		temp_changes = rem_con ? nm_remote_connection_get_unsaved (rem_con) : TRUE;
 		if (nmc->editor_status_line)
-			editor_show_status_line (connection, dirty);
+			editor_show_status_line (connection, dirty, temp_changes);
 
 		/* Read user input */
 		cmd_user = readline_x (menu_ctx.main_prompt);
@@ -7176,6 +7210,20 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		case NMC_EDITOR_MAIN_CMD_SAVE:
 			/* Save the connection */
 			if (nm_connection_verify (connection, &err1)) {
+				gboolean persistent = TRUE;
+
+				/* parse argument */
+				if (cmd_arg) {
+					if (matches (cmd_arg, "temporary") == 0)
+						persistent = FALSE;
+					else if (matches (cmd_arg, "persistent") == 0)
+						persistent = TRUE;
+					else {
+						printf (_("Error: invalid argument '%s'\n"), cmd_arg);
+						break;
+					}
+				}
+
 				/* Ask for save confirmation if the connection changes to autoconnect=yes */
 				if (nmc->editor_save_confirmation)
 					if (!confirm_connection_saving (connection, NM_CONNECTION (rem_con)))
@@ -7186,18 +7234,17 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					info = g_malloc0 (sizeof (AddConnectionInfo));
 					info->nmc = nmc;
 					info->con_name = g_strdup (nm_connection_get_id (connection));
-					nm_remote_settings_add_connection (nmc->system_settings,
-					                                   connection,
-					                                   add_connection_editor_cb,
-					                                   info);
+					add_new_connection (persistent,
+					                    nmc->system_settings,
+					                    connection,
+					                    add_connection_editor_cb,
+					                    info);
 				} else {
 					/* Save/update already saved (existing) connection */
 					nm_connection_replace_settings_from_connection (NM_CONNECTION (rem_con),
 					                                                connection,
 					                                                NULL);
-					nm_remote_connection_commit_changes (rem_con,
-					                                     update_connection_editor_cb,
-					                                     NULL);
+					update_connection (persistent, rem_con, update_connection_editor_cb, NULL);
 				}
 
 				g_mutex_lock (&nmc_editor_mutex);
@@ -7213,7 +7260,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 					g_error_free (nmc_editor_error);
 				} else {
-					printf (_("Connection '%s' (%s) successfully saved.\n"),
+					printf (!rem_con ?
+					        _("Connection '%s' (%s) successfully saved.\n") :
+					        _("Connection '%s' (%s) successfully updated.\n"),
 					        nm_connection_get_id (connection),
 					        nm_connection_get_uuid (connection));
 
