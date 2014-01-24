@@ -344,6 +344,7 @@ usage_connection_add (void)
 	           "                  ifname <interface name> | \"*\"\n"
 	           "                  [con-name <connection name>]\n"
 	           "                  [autoconnect yes|no]\n\n"
+	           "                  [save yes|no]\n\n"
 	           "  TYPE_SPECIFIC_OPTIONS:\n"
 	           "    ethernet:     [mac <MAC address>]\n"
 	           "                  [cloned-mac <cloned MAC address>]\n"
@@ -4930,6 +4931,19 @@ add_connection_cb (NMRemoteSettings *settings,
 	quit ();
 }
 
+static gboolean
+add_new_connection (gboolean persistent,
+                    NMRemoteSettings *settings,
+                    NMConnection *connection,
+                    NMRemoteSettingsAddConnectionFunc callback,
+                    gpointer user_data)
+{
+	if (persistent)
+		return nm_remote_settings_add_connection (settings, connection, callback, user_data);
+	else
+		return nm_remote_settings_add_connection_unsaved (settings, connection, callback, user_data);
+}
+
 static NMCResultCode
 do_connection_add (NmCli *nmc, int argc, char **argv)
 {
@@ -4945,6 +4959,8 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	const char *ifname = NULL;
 	char *ifname_ask = NULL;
 	gboolean ifname_mandatory = TRUE;
+	const char *save = NULL;
+	gboolean save_bool = TRUE;
 	AddConnectionInfo *info = NULL;
 	const char *setting_name;
 	GError *error = NULL;
@@ -4952,6 +4968,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	                         {"con-name",    TRUE, &con_name,    FALSE},
 	                         {"autoconnect", TRUE, &autoconnect, FALSE},
 	                         {"ifname",      TRUE, &ifname,      FALSE},
+	                         {"save",        TRUE, &save,        FALSE},
 	                         {NULL} };
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
@@ -4986,6 +5003,16 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 		GError *tmp_err = NULL;
 		if (!nmc_string_to_bool (autoconnect, &auto_bool, &tmp_err)) {
 			g_string_printf (nmc->return_text, _("Error: 'autoconnect': %s."),
+			                 tmp_err->message);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			g_clear_error (&tmp_err);
+			goto error;
+		}
+	}
+	if (save) {
+		GError *tmp_err = NULL;
+		if (!nmc_string_to_bool (save, &save_bool, &tmp_err)) {
+			g_string_printf (nmc->return_text, _("Error: 'save': %s."),
 			                 tmp_err->message);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			g_clear_error (&tmp_err);
@@ -5069,10 +5096,11 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	info->con_name = g_strdup (nm_connection_get_id (connection));
 
 	/* Tell the settings service to add the new connection */
-	nm_remote_settings_add_connection (nmc->system_settings,
-	                                   connection,
-	                                   add_connection_cb,
-	                                   info);
+	add_new_connection (save_bool,
+	                    nmc->system_settings,
+	                    connection,
+	                    add_connection_cb,
+	                    info);
 
 	if (connection)
 		g_object_unref (connection);

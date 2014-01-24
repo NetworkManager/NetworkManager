@@ -389,6 +389,8 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 \(en connection name (when not provided a default name is generated: <type>[-<ifname>][-<num>])
 .IP "\fI[autoconnect yes|no]\fP" 42
 \(en whether the connection profile can be automatically activated (default: yes)
+.IP "\fI[save yes|no]\fP" 42
+\(en whether the connection should be persistent, i.e. NetworkManager should store it on disk (default: yes)
 .RE
 .RS
 .TP
