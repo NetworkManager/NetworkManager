@@ -580,7 +580,7 @@ nmt_newt_widget_class_init (NmtNewtWidgetClass *widget_class)
 	signals[NEEDS_REBUILD] =
 		g_signal_new ("needs-rebuild",
 		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
+		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NmtNewtWidgetClass, needs_rebuild),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
@@ -594,7 +594,7 @@ nmt_newt_widget_class_init (NmtNewtWidgetClass *widget_class)
 	signals[ACTIVATED] =
 		g_signal_new ("activated",
 		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
+		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NmtNewtWidgetClass, activated),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);

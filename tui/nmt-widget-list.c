@@ -412,7 +412,7 @@ nmt_widget_list_class_init (NmtWidgetListClass *list_class)
 	signals[ADD_CLICKED] =
 		g_signal_new ("add-clicked",
 		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
+		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NmtWidgetListClass, add_clicked),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
@@ -431,7 +431,7 @@ nmt_widget_list_class_init (NmtWidgetListClass *list_class)
 	signals[REMOVE_CLICKED] =
 		g_signal_new ("remove-clicked",
 		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
+		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NmtWidgetListClass, remove_clicked),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_INT);

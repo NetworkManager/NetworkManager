@@ -425,7 +425,7 @@ nmt_edit_connection_list_class_init (NmtEditConnectionListClass *list_class)
 	signals[ADD_CONNECTION] =
 		g_signal_new ("add-connection",
 		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
+		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NmtEditConnectionListClass, add_connection),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
@@ -441,7 +441,7 @@ nmt_edit_connection_list_class_init (NmtEditConnectionListClass *list_class)
 	signals[EDIT_CONNECTION] =
 		g_signal_new ("edit-connection",
 		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
+		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NmtEditConnectionListClass, edit_connection),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1,
@@ -457,7 +457,7 @@ nmt_edit_connection_list_class_init (NmtEditConnectionListClass *list_class)
 	signals[REMOVE_CONNECTION] =
 		g_signal_new ("remove-connection",
 		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
+		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NmtEditConnectionListClass, remove_connection),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1,

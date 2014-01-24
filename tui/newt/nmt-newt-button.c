@@ -241,7 +241,7 @@ nmt_newt_button_class_init (NmtNewtButtonClass *button_class)
 	signals[CLICKED] =
 		g_signal_new ("clicked",
 		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_LAST,
+		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
 
