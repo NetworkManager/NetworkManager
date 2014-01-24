@@ -205,6 +205,7 @@ def XMLRPCDateTime2datetime(dt):
         return dt
     return datetime.datetime.strptime(dt.value, "%Y%m%dT%H:%M:%S")
 
+# Webservice docs: http://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Bug.html
 class BzClient:
     COMMON_FIELDS = ['id', 'depends_on', 'blocks', 'flags', 'keywords', 'status', 'component']
     DEFAULT_FIELDS = ['summary', 'status', 'product', 'version', 'component', 'flags', 'cf_fixed_in']
