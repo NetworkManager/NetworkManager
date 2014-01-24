@@ -217,6 +217,7 @@ typedef struct {
 
 	NMDBusManager *dbus_mgr;
 	guint          dbus_connection_changed_id;
+	gboolean       prop_filter_added;
 	NMAtmManager *atm_mgr;
 	NMRfkillManager *rfkill_mgr;
 	NMBluezManager *bluez_mgr;
@@ -250,7 +251,6 @@ typedef struct {
 	guint timestamp_update_id;
 
 	gboolean startup;
-	gboolean disposed;
 } NMManagerPrivate;
 
 #define NM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MANAGER, NMManagerPrivate))
@@ -4503,6 +4503,16 @@ nm_manager_new (NMSettings *settings,
 
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
 
+	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	if (!bus) {
+		nm_log_err (LOGD_CORE, "Failed to initialize D-Bus connection");
+		g_object_unref (singleton);
+		return NULL;
+	}
+
+	dbus_connection = dbus_g_connection_get_connection (bus);
+	g_assert (dbus_connection);
+
 	priv->policy = nm_policy_new (singleton, settings);
 	g_signal_connect (priv->policy, "notify::" NM_POLICY_DEFAULT_IP4_DEVICE,
 	                  G_CALLBACK (policy_default_device_changed), singleton);
@@ -4517,16 +4527,12 @@ nm_manager_new (NMSettings *settings,
 	g_signal_connect (priv->connectivity, "notify::" NM_CONNECTIVITY_STATE,
 	                  G_CALLBACK (connectivity_changed), singleton);
 
-	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	g_assert (bus);
-	dbus_connection = dbus_g_connection_get_connection (bus);
-	g_assert (dbus_connection);
-
 	if (!dbus_connection_add_filter (dbus_connection, prop_filter, singleton, NULL)) {
 		nm_log_err (LOGD_CORE, "failed to register DBus connection filter");
 		g_object_unref (singleton);
 		return NULL;
-    }
+	}
+	priv->prop_filter_added = TRUE;
 
 	priv->settings = g_object_ref (settings);
 
@@ -4614,13 +4620,8 @@ dispose (GObject *object)
 	DBusGConnection *bus;
 	DBusConnection *dbus_connection;
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
-		return;
-	}
-	priv->disposed = TRUE;
-
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
+	priv->auth_chains = NULL;
 
 	nm_auth_changed_func_unregister (authority_changed_cb, manager);
 
@@ -4635,8 +4636,7 @@ dispose (GObject *object)
 
 	while (priv->active_connections)
 		active_connection_remove (manager, NM_ACTIVE_CONNECTION (priv->active_connections->data));
-	g_slist_free (priv->active_connections);
-	priv->active_connections = NULL;
+	g_clear_pointer (&priv->active_connections, g_slist_free);
 	g_clear_object (&priv->primary_connection);
 	g_clear_object (&priv->activating_connection);
 
@@ -4644,12 +4644,14 @@ dispose (GObject *object)
 
 	g_free (priv->hostname);
 
-	g_signal_handlers_disconnect_by_func (priv->policy, G_CALLBACK (policy_default_device_changed), singleton);
-	g_signal_handlers_disconnect_by_func (priv->policy, G_CALLBACK (policy_activating_device_changed), singleton);
-	g_object_unref (priv->policy);
+	if (priv->policy) {
+		g_signal_handlers_disconnect_by_func (priv->policy, G_CALLBACK (policy_default_device_changed), singleton);
+		g_signal_handlers_disconnect_by_func (priv->policy, G_CALLBACK (policy_activating_device_changed), singleton);
+		g_clear_object (&priv->policy);
+	}
 
-	g_object_unref (priv->settings);
-	g_object_unref (priv->vpn_manager);
+	g_clear_object (&priv->settings);
+	g_clear_object (&priv->vpn_manager);
 
 	if (priv->modem_added_id) {
 		g_source_remove (priv->modem_added_id);
@@ -4659,39 +4661,42 @@ dispose (GObject *object)
 		g_source_remove (priv->modem_removed_id);
 		priv->modem_removed_id = 0;
 	}
-	g_object_unref (priv->modem_manager);
+	g_clear_object (&priv->modem_manager);
 
 	/* Unregister property filter */
-	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	if (bus) {
-		dbus_connection = dbus_g_connection_get_connection (bus);
-		g_assert (dbus_connection);
-		dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
+	if (priv->dbus_mgr) {
+		bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
+		if (bus) {
+			dbus_connection = dbus_g_connection_get_connection (bus);
+			if (dbus_connection && priv->prop_filter_added) {
+				dbus_connection_remove_filter (dbus_connection, prop_filter, manager);
+				priv->prop_filter_added = FALSE;
+			}
+		}
+		g_signal_handler_disconnect (priv->dbus_mgr, priv->dbus_connection_changed_id);
+		priv->dbus_mgr = NULL;
 	}
-	g_signal_handler_disconnect (priv->dbus_mgr, priv->dbus_connection_changed_id);
-	priv->dbus_mgr = NULL;
 
-	if (priv->bluez_mgr)
-		g_object_unref (priv->bluez_mgr);
-
-	if (priv->aipd_proxy)
-		g_object_unref (priv->aipd_proxy);
-
-	if (priv->sleep_monitor)
-		g_object_unref (priv->sleep_monitor);
+	g_clear_object (&priv->bluez_mgr);
+	g_clear_object (&priv->aipd_proxy);
+	g_clear_object (&priv->sleep_monitor);
 
 	if (priv->fw_monitor) {
-		if (priv->fw_monitor_id)
+		if (priv->fw_monitor_id) {
 			g_signal_handler_disconnect (priv->fw_monitor, priv->fw_monitor_id);
+			priv->fw_monitor_id = 0;
+		}
 
-		if (priv->fw_changed_id)
+		if (priv->fw_changed_id) {
 			g_source_remove (priv->fw_changed_id);
+			priv->fw_changed_id = 0;
+		}
 
 		g_file_monitor_cancel (priv->fw_monitor);
-		g_object_unref (priv->fw_monitor);
+		g_clear_object (&priv->fw_monitor);
 	}
 
-	g_slist_free (priv->factories);
+	g_clear_pointer (&priv->factories, g_slist_free);
 
 	if (priv->timestamp_update_id) {
 		g_source_remove (priv->timestamp_update_id);
@@ -4945,14 +4950,17 @@ dbus_connection_changed_cb (NMDBusManager *dbus_mgr,
                             gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
+	gboolean success = FALSE;
 
 	if (dbus_connection) {
 		/* Register property filter on new connection; there's no reason this
 		 * should fail except out-of-memory or program error; if it does fail
 		 * then there's no Manager property access control, which is bad.
 		 */
-		g_assert (dbus_connection_add_filter (dbus_connection, prop_filter, self, NULL));
+		success = dbus_connection_add_filter (dbus_connection, prop_filter, self, NULL);
+		g_assert (success);
 	}
+	NM_MANAGER_GET_PRIVATE (self)->prop_filter_added = success;
 }
 
 static void
