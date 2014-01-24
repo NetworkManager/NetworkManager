@@ -13475,6 +13475,110 @@ test_write_team_port (void)
 	g_object_unref (reread);
 }
 
+
+/* Old algorithm for "remove escaped characters in place".
+ *
+ * This function is obsolete because it has O(n^2) runtime
+ * complexity and got replaced. Keep it here for testing,
+ * that both functions behave identical.
+ **/
+static void
+svUnescape_On2 (char *s)
+{
+	int len, i;
+
+	len = strlen(s);
+	if (len >= 2 && (s[0] == '"' || s[0] == '\'') && s[0] == s[len-1]) {
+		i = len - 2;
+		if (i == 0)
+			s[0] = '\0';
+		else {
+			memmove(s, s+1, i);
+			s[i+1] = '\0';
+			len = i;
+		}
+	}
+	for (i = 0; i < len; i++) {
+		if (s[i] == '\\') {
+			memmove(s+i, s+i+1, len-(i+1));
+			len--;
+		}
+		s[len] = '\0';
+	}
+}
+
+static void
+test_svUnescape_assert (const char *str)
+{
+	char *s1 = g_strdup (str);
+	char *s2 = g_strdup (str);
+
+	svUnescape (s1);
+	svUnescape_On2 (s2);
+
+	g_assert_cmpstr (s1, ==, s2);
+
+	g_free (s1);
+	g_free (s2);
+}
+
+static void
+test_svUnescape ()
+{
+	int len, repeat, i, k;
+	GRand *rand = g_rand_new ();
+	guint32 seed = g_random_int ();
+
+	g_rand_set_seed (rand, seed);
+
+	test_svUnescape_assert ("");
+	test_svUnescape_assert ("'");
+	test_svUnescape_assert ("\"");
+	test_svUnescape_assert ("\\");
+	test_svUnescape_assert ("x");
+	test_svUnescape_assert (" ");
+	test_svUnescape_assert ("'  '");
+	test_svUnescape_assert ("'x'");
+	test_svUnescape_assert ("\'some string\'");
+	test_svUnescape_assert ("Bob outside LAN");
+	test_svUnescape_assert ("{ \"device\": \"team0\", \"link_watch\": { \"name\": \"ethtool\" } }");
+
+	for (len = 1; len < 25; len++) {
+		char *s = g_new0 (char, len+1);
+
+		for (repeat = 0; repeat < MAX (4*len, 20); repeat++) {
+
+			/* fill the entire string with random. */
+			for (i = 0; i < len; i++)
+				s[i] = g_rand_int (rand);
+
+			/* randomly place escape characters into the string */
+			k = g_rand_int (rand) % (len);
+			while (k-- > 0)
+				s[g_rand_int (rand) % len] = '\\';
+
+			if (len > 1) {
+				/* quote the string. */
+				k = g_rand_int (rand) % (10);
+				if (k < 4) {
+					char quote = k < 2 ? '"' : '\'';
+
+					s[0] = quote;
+					s[len-1] = quote;
+				}
+			}
+
+			/*g_message (">>%s<<", s);*/
+			test_svUnescape_assert (s);
+		}
+
+		g_free (s);
+	}
+
+	g_rand_free (rand);
+}
+
+
 #define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
@@ -13505,6 +13609,8 @@ int main (int argc, char **argv)
 	g_assert (success);
 
 	g_log_set_always_fatal (G_LOG_LEVEL_CRITICAL);
+
+	g_test_add_func (TPATH "svUnescape", test_svUnescape);
 
 	g_test_add_func (TPATH "unmanaged", test_read_unmanaged);
 	g_test_add_func (TPATH "unmanaged-unrecognized", test_read_unmanaged_unrecognized);

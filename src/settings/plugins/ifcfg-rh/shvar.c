@@ -113,29 +113,62 @@ svCreateFile(const char *name)
 
 /* remove escaped characters in place */
 void
-svUnescape(char *s) {
-    int len, i;
+svUnescape (char *s)
+{
+	size_t len, idx_rd = 0, idx_wr = 0;
+	char c;
 
-    len = strlen(s);
-    if (len >= 2 && (s[0] == '"' || s[0] == '\'') && s[0] == s[len-1]) {
-	i = len - 2;
-	if (i == 0)
-	  s[0] = '\0';
-	else {
-	  memmove(s, s+1, i);
-	  s[i+1] = '\0';
-	  len = i;
+	len = strlen(s);
+	if (len < 2) {
+		if (s[0] == '\\')
+			s[0] = '\0';
+		return;
 	}
-    }
-    for (i = 0; i < len; i++) {
-	if (s[i] == '\\') {
-	    memmove(s+i, s+i+1, len-(i+1));
-	    len--;
+
+	if ((s[0] == '"' || s[0] == '\'') && s[0] == s[len-1]) {
+		if (len == 2) {
+			s[0] = '\0';
+			return;
+		}
+		if (len == 3) {
+			if (s[1] == '\\') {
+				s[0] = '\0';
+			} else {
+				s[0] = s[1];
+				s[1] = '\0';
+			}
+			return;
+		}
+		s[--len] = '\0';
+		idx_rd = 1;
+	} else {
+		/* seek for the first escape... */
+		char *p = strchr (s, '\\');
+
+		if (!p)
+			return;
+		if (p[1] == '\0') {
+			p[0] = '\0';
+			return;
+		}
+		idx_wr = idx_rd = (p - s);
 	}
-	s[len] = '\0';
-    }
+
+	/* idx_rd points to the first escape. Walk the string and shift the
+	 * characters from idx_rd to idx_wr. */
+	while ((c = s[idx_rd++])) {
+		if (c == '\\') {
+			if (s[idx_rd] == '\0') {
+				s[idx_wr] = '\0';
+				return;
+			}
+			s[idx_wr++] = s[idx_rd++];
+			continue;
+		}
+		s[idx_wr++] = c;
+	}
+	s[idx_wr] = '\0';
 }
-
 
 /* create a new string with all necessary characters escaped.
  * caller must free returned string
