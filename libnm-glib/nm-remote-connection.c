@@ -508,6 +508,8 @@ constructed (GObject *object)
 {
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
 
+	G_OBJECT_CLASS (nm_remote_connection_parent_class)->constructed (object);
+
 	g_assert (priv->bus);
 	g_assert (nm_connection_get_path (NM_CONNECTION (object)));
 
