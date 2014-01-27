@@ -23,6 +23,7 @@
 
 #include <string.h>
 
+#include <glib/gi18n.h>
 #include <gudev/gudev.h>
 
 #include "NetworkManager.h"
@@ -94,8 +95,9 @@ typedef struct {
 	GPtrArray *available_connections;
 
 	GUdevClient *client;
-	char *product;
-	char *vendor;
+	char *product, *short_product;
+	char *vendor, *short_vendor;
+	char *description, *bus_name;
 
 	char *physical_port_id;
 	guint32 mtu;
@@ -394,7 +396,11 @@ finalize (GObject *object)
 	g_free (priv->driver_version);
 	g_free (priv->firmware_version);
 	g_free (priv->product);
+	g_free (priv->short_product);
 	g_free (priv->vendor);
+	g_free (priv->short_vendor);
+	g_free (priv->description);
+	g_free (priv->bus_name);
 	g_free (priv->type_description);
 	g_free (priv->physical_port_id);
 
@@ -1481,23 +1487,31 @@ get_decoded_property (GUdevDevice *device, const char *property)
 	return unescaped;
 }
 
+static gboolean
+ensure_udev_client (NMDevice *device)
+{
+	static const char *const subsys[3] = { "net", "tty", NULL };
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (!priv->client)
+		priv->client = g_udev_client_new (subsys);
+
+	return priv->client != NULL;
+}
+
 static char *
 _get_udev_property (NMDevice *device,
                     const char *enc_prop,  /* ID_XXX_ENC */
                     const char *db_prop)   /* ID_XXX_FROM_DATABASE */
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	const char *subsys[3] = { "net", "tty", NULL };
 	GUdevDevice *udev_device = NULL, *tmpdev, *olddev;
 	const char *ifname;
 	guint32 count = 0;
 	char *enc_value = NULL, *db_value = NULL;
 
-	if (!priv->client) {
-		priv->client = g_udev_client_new (subsys);
-		if (!priv->client)
-			return NULL;
-	}
+	if (!ensure_udev_client (device))
+		return NULL;
 
 	ifname = nm_device_get_iface (device);
 	if (!ifname)
@@ -1598,6 +1612,429 @@ nm_device_get_vendor (NMDevice *device)
 		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_VENDOR);
 	}
 	return priv->vendor;
+}
+
+static const char * const ignored_words[] = {
+	"Semiconductor",
+	"Components",
+	"Corporation",
+	"Communications",
+	"Company",
+	"Corp.",
+	"Corp",
+	"Co.",
+	"Inc.",
+	"Inc",
+	"Incorporated",
+	"Ltd.",
+	"Limited.",
+	"Intel?",
+	"chipset",
+	"adapter",
+	"[hex]",
+	"NDIS",
+	"Module",
+	NULL
+};
+
+static const char * const ignored_phrases[] = {
+	"Multiprotocol MAC/baseband processor",
+	"Wireless LAN Controller",
+	"Wireless LAN Adapter",
+	"Wireless Adapter",
+	"Network Connection",
+	"Wireless Cardbus Adapter",
+	"Wireless CardBus Adapter",
+	"54 Mbps Wireless PC Card",
+	"Wireless PC Card",
+	"Wireless PC",
+	"PC Card with XJACK(r) Antenna",
+	"Wireless cardbus",
+	"Wireless LAN PC Card",
+	"Technology Group Ltd.",
+	"Communication S.p.A.",
+	"Business Mobile Networks BV",
+	"Mobile Broadband Minicard Composite Device",
+	"Mobile Communications AB",
+	"(PC-Suite Mode)",
+	NULL
+};
+
+static char *
+fixup_desc_string (const char *desc)
+{
+	char *p, *temp;
+	char **words, **item;
+	GString *str;
+	int i;
+
+	if (!desc)
+		return NULL;
+
+	p = temp = g_strdup (desc);
+	while (*p) {
+		if (*p == '_' || *p == ',')
+			*p = ' ';
+		p++;
+	}
+
+	/* Attempt to shorten ID by ignoring certain phrases */
+	for (i = 0; ignored_phrases[i]; i++) {
+		p = strstr (temp, ignored_phrases[i]);
+		if (p) {
+			guint32 ignored_len = strlen (ignored_phrases[i]);
+
+			memmove (p, p + ignored_len, strlen (p + ignored_len) + 1); /* +1 for the \0 */
+		}
+	}
+
+	/* Attempt to shorten ID by ignoring certain individual words */
+	words = g_strsplit (temp, " ", 0);
+	str = g_string_new_len (NULL, strlen (temp));
+	g_free (temp);
+
+	for (item = words; *item; item++) {
+		gboolean ignore = FALSE;
+
+		if (**item == '\0')
+			continue;
+
+		for (i = 0; ignored_words[i]; i++) {
+			if (!strcmp (*item, ignored_words[i])) {
+				ignore = TRUE;
+				break;
+			}
+		}
+
+		if (!ignore) {
+			if (str->len)
+				g_string_append_c (str, ' ');
+			g_string_append (str, *item);
+		}
+	}
+	g_strfreev (words);
+
+	temp = str->str;
+	g_string_free (str, FALSE);
+
+	return temp;
+}
+
+static void
+get_description (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	const char *dev_product;
+	const char *dev_vendor;
+	char *pdown;
+	char *vdown;
+	GString *str;
+
+	dev_product = nm_device_get_product (device);
+	priv->short_product = fixup_desc_string (dev_product);
+
+	dev_vendor = nm_device_get_vendor (device);
+	priv->short_vendor = fixup_desc_string (dev_vendor);
+
+	if (!dev_product || !dev_vendor) {
+		priv->description = g_strdup (nm_device_get_iface (device));
+		return;
+	}
+
+	str = g_string_new_len (NULL, strlen (priv->short_vendor) + strlen (priv->short_product) + 1);
+
+	/* Another quick hack; if all of the fixed up vendor string
+	 * is found in product, ignore the vendor.
+	 */
+	pdown = g_ascii_strdown (priv->short_product, -1);
+	vdown = g_ascii_strdown (priv->short_vendor, -1);
+	if (!strstr (pdown, vdown)) {
+		g_string_append (str, priv->short_vendor);
+		g_string_append_c (str, ' ');
+	}
+	g_free (pdown);
+	g_free (vdown);
+
+	g_string_append (str, priv->short_product);
+
+	priv->description = g_string_free (str, FALSE);
+}
+
+static const char *
+get_short_vendor (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (!priv->description)
+		get_description (device);
+
+	return priv->short_vendor;
+}
+
+/**
+ * nm_device_get_description:
+ * @device: an #NMDevice
+ *
+ * Gets a description of @device, incorporating the results of
+ * nm_device_get_short_vendor() and nm_device_get_short_product().
+ *
+ * Returns: a description of @device. If either the vendor or the
+ *   product name is unknown, this returns the interface name.
+ *
+ * Since: 0.9.10
+ */
+const char *
+nm_device_get_description (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (!priv->description)
+		get_description (device);
+
+	return priv->description;
+}
+
+static const char *
+get_type_name (NMDevice *device)
+{
+	switch (nm_device_get_device_type (device)) {
+	case NM_DEVICE_TYPE_ETHERNET:
+		return _("Ethernet");
+	case NM_DEVICE_TYPE_WIFI:
+		return _("Wi-Fi");
+	case NM_DEVICE_TYPE_BT:
+		return _("Bluetooth");
+	case NM_DEVICE_TYPE_OLPC_MESH:
+		return _("OLPC Mesh");
+	case NM_DEVICE_TYPE_WIMAX:
+		return _("WiMAX");
+	case NM_DEVICE_TYPE_MODEM:
+		return _("Mobile Broadband");
+	case NM_DEVICE_TYPE_INFINIBAND:
+		return _("InfiniBand");
+	case NM_DEVICE_TYPE_BOND:
+		return _("Bond");
+	case NM_DEVICE_TYPE_TEAM:
+		return _("Team");
+	case NM_DEVICE_TYPE_BRIDGE:
+		return _("Bridge");
+	case NM_DEVICE_TYPE_VLAN:
+		return _("VLAN");
+	case NM_DEVICE_TYPE_ADSL:
+		return _("ADSL");
+	default:
+		return _("Unknown");
+	}
+}
+
+static char *
+get_device_type_name_with_iface (NMDevice *device)
+{
+	const char *type_name = get_type_name (device);
+
+	switch (nm_device_get_device_type (device)) {
+	case NM_DEVICE_TYPE_BOND:
+	case NM_DEVICE_TYPE_TEAM:
+	case NM_DEVICE_TYPE_BRIDGE:
+	case NM_DEVICE_TYPE_VLAN:
+		return g_strdup_printf ("%s (%s)", type_name, nm_device_get_iface (device));
+	default:
+		return g_strdup (type_name);
+	}
+}
+
+static char *
+get_device_generic_type_name_with_iface (NMDevice *device)
+{
+	switch (nm_device_get_device_type (device)) {
+	case NM_DEVICE_TYPE_ETHERNET:
+	case NM_DEVICE_TYPE_INFINIBAND:
+		return g_strdup (_("Wired"));
+	default:
+		return get_device_type_name_with_iface (device);
+	}
+}
+
+static const char *
+get_bus_name (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	GUdevDevice *udevice;
+	const char *ifname, *bus;
+
+	if (priv->bus_name)
+		goto out;
+
+	if (!ensure_udev_client (device))
+		return NULL;
+
+	ifname = nm_device_get_iface (device);
+	if (!ifname)
+		return NULL;
+
+	udevice = g_udev_client_query_by_subsystem_and_name (priv->client, "net", ifname);
+	if (!udevice)
+		udevice = g_udev_client_query_by_subsystem_and_name (priv->client, "tty", ifname);
+	if (!udevice)
+		return NULL;
+
+	bus = g_udev_device_get_property (udevice, "ID_BUS");
+	if (!g_strcmp0 (bus, "pci"))
+		priv->bus_name = g_strdup (_("PCI"));
+	else if (!g_strcmp0 (bus, "usb"))
+		priv->bus_name = g_strdup (_("USB"));
+	else {
+		/* Use "" instead of NULL so we can tell later that we've
+		 * already tried.
+		 */
+		priv->bus_name = g_strdup ("");
+	}
+
+out:
+	if (*priv->bus_name)
+		return priv->bus_name;
+	else
+		return NULL;
+}
+
+static gboolean
+find_duplicates (char     **names,
+                 gboolean  *duplicates,
+                 int        num_devices)
+{
+	int i, j;
+	gboolean found_any = FALSE;
+
+	memset (duplicates, 0, num_devices * sizeof (gboolean));
+	for (i = 0; i < num_devices; i++) {
+		if (duplicates[i])
+			continue;
+		for (j = i + 1; j < num_devices; j++) {
+			if (duplicates[j])
+				continue;
+			if (!strcmp (names[i], names[j]))
+				duplicates[i] = duplicates[j] = found_any = TRUE;
+		}
+	}
+
+	return found_any;
+}
+
+/**
+ * nm_device_disambiguate_names:
+ * @devices: (array length=num_devices): an array of #NMDevice
+ * @num_devices: length of @devices
+ *
+ * Generates a list of short-ish unique presentation names for the
+ * devices in @devices.
+ *
+ * Returns: (transfer full) (array zero-terminated=1): the device names
+ *
+ * Since: 0.9.10
+ */
+char **
+nm_device_disambiguate_names (NMDevice **devices,
+                              int        num_devices)
+{
+	char **names;
+	gboolean *duplicates;
+	int i;
+
+	names = g_new (char *, num_devices + 1);
+	duplicates = g_new (gboolean, num_devices);
+
+	/* Generic device name */
+	for (i = 0; i < num_devices; i++)
+		names[i] = get_device_generic_type_name_with_iface (devices[i]);
+	if (!find_duplicates (names, duplicates, num_devices))
+		goto done;
+
+	/* Try specific names (eg, "Ethernet" and "InfiniBand" rather
+	 * than "Wired")
+	 */
+	for (i = 0; i < num_devices; i++) {
+		if (duplicates[i]) {
+			g_free (names[i]);
+			names[i] = get_device_type_name_with_iface (devices[i]);
+		}
+	}
+	if (!find_duplicates (names, duplicates, num_devices))
+		goto done;
+
+	/* Try prefixing bus name (eg, "PCI Ethernet" vs "USB Ethernet") */
+	for (i = 0; i < num_devices; i++) {
+		if (duplicates[i]) {
+			const char *bus = get_bus_name (devices[i]);
+			char *name;
+
+			if (!bus)
+				continue;
+
+			g_free (names[i]);
+			name = get_device_type_name_with_iface (devices[i]);
+			/* Translators: the first %s is a bus name (eg, "USB") or
+			 * product name, the second is a device type (eg,
+			 * "Ethernet"). You can change this to something like
+			 * "%2$s (%1$s)" if there's no grammatical way to combine
+			 * the strings otherwise.
+			 */
+			names[i] = g_strdup_printf (C_("long device name", "%s %s"),
+			                            bus, name);
+			g_free (name);
+		}
+	}
+	if (!find_duplicates (names, duplicates, num_devices))
+		goto done;
+
+	/* Try prefixing vendor name */
+	for (i = 0; i < num_devices; i++) {
+		if (duplicates[i]) {
+			const char *vendor = get_short_vendor (devices[i]);
+			char *name;
+
+			if (!vendor)
+				continue;
+
+			g_free (names[i]);
+			name = get_device_type_name_with_iface (devices[i]);
+			names[i] = g_strdup_printf (C_("long device name", "%s %s"),
+			                            vendor,
+			                            get_type_name (devices[i]));
+			g_free (name);
+		}
+	}
+	if (!find_duplicates (names, duplicates, num_devices))
+		goto done;
+
+	/* We have multiple identical network cards, so we have to differentiate
+	 * them by interface name.
+	 */
+	for (i = 0; i < num_devices; i++) {
+		if (duplicates[i]) {
+			const char *interface = nm_device_get_iface (devices[i]);
+
+			if (!interface)
+				continue;
+
+			g_free (names[i]);
+			names[i] = g_strdup_printf ("%s (%s)",
+			                            get_type_name (devices[i]),
+			                            interface);
+		}
+	}
+
+done:
+	g_free (duplicates);
+	names[num_devices] = NULL;
+	return names;
 }
 
 /**

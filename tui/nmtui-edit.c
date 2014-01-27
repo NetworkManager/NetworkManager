@@ -500,20 +500,8 @@ nmtui_edit (int argc, char **argv)
 	if (argc == 2) {
 		if (nm_utils_is_uuid (argv[1]))
 			conn = NM_CONNECTION (nm_remote_settings_get_connection_by_uuid (nm_settings, argv[1]));
-		else {
-			GSList *conns, *iter;
-
-			conns = nm_remote_settings_list_connections (nm_settings);
-			for (iter = conns; iter; iter = iter->next) {
-				NMConnection *candidate = iter->data;
-
-				if (!strcmp (argv[1], nm_connection_get_id (candidate))) {
-					conn = candidate;
-					break;
-				}
-			}
-			g_slist_free (conns);
-		}
+		if (!conn)
+			conn = NM_CONNECTION (nm_remote_settings_get_connection_by_id (nm_settings, argv[1]));
 
 		if (!conn) {
 			nmt_newt_message_dialog ("%s: no such connection '%s'\n", argv[0], argv[1]);

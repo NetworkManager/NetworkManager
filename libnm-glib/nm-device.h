@@ -136,10 +136,14 @@ NMDeviceState        nm_device_get_state            (NMDevice *device);
 NMDeviceState        nm_device_get_state_reason     (NMDevice *device, NMDeviceStateReason *reason);
 NMActiveConnection * nm_device_get_active_connection(NMDevice *device);
 const GPtrArray *    nm_device_get_available_connections(NMDevice *device);
-const char *         nm_device_get_product          (NMDevice *device);
-const char *         nm_device_get_vendor           (NMDevice *device);
 const char *         nm_device_get_physical_port_id (NMDevice *device);
 guint32              nm_device_get_mtu              (NMDevice *device);
+
+const char *         nm_device_get_product           (NMDevice  *device);
+const char *         nm_device_get_vendor            (NMDevice  *device);
+const char *         nm_device_get_description       (NMDevice  *device);
+char **              nm_device_disambiguate_names    (NMDevice **devices,
+                                                      int        num_devices);
 
 typedef void (*NMDeviceDeactivateFn) (NMDevice *device, GError *error, gpointer user_data);
 

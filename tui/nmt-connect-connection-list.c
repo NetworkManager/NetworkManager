@@ -35,7 +35,6 @@
 
 #include "nmtui.h"
 #include "nmt-connect-connection-list.h"
-#include "nm-ui-utils.h"
 
 G_DEFINE_TYPE (NmtConnectConnectionList, nmt_connect_connection_list, NMT_TYPE_NEWT_LISTBOX)
 
@@ -306,7 +305,7 @@ append_nmt_devices_for_virtual_devices (GSList *nmt_devices,
 		if (sort_order == -1)
 			continue;
 
-		name = nma_utils_get_connection_device_name (conn);
+		name = nm_connection_get_virtual_device_description (conn);
 		nmtdev = g_hash_table_lookup (devices_by_name, name);
 		if (nmtdev)
 			g_free (name);
@@ -420,7 +419,7 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 
 	nmt_devices = NULL;
 	if (devices) {
-		names = nma_utils_disambiguate_device_names ((NMDevice **) devices->pdata, devices->len);
+		names = nm_device_disambiguate_names ((NMDevice **) devices->pdata, devices->len);
 		nmt_devices = append_nmt_devices_for_devices (nmt_devices, devices, names, connections);
 		g_strfreev (names);
 	}
@@ -577,22 +576,12 @@ nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *list,
 	NmtConnectConnection *nmtconn = NULL;
 	NMConnection *conn = NULL;
 
+	g_return_val_if_fail (identifier, FALSE);
+
 	if (nm_utils_is_uuid (identifier))
 		conn = NM_CONNECTION (nm_remote_settings_get_connection_by_uuid (nm_settings, identifier));
-	else {
-		GSList *conns, *iter;
-
-		conns = nm_remote_settings_list_connections (nm_settings);
-		for (iter = conns; iter; iter = iter->next) {
-			NMConnection *candidate = iter->data;
-
-			if (!strcmp (identifier, nm_connection_get_id (candidate))) {
-				conn = candidate;
-				break;
-			}
-		}
-		g_slist_free (conns);
-	}
+	if (!conn)
+		conn = NM_CONNECTION (nm_remote_settings_get_connection_by_id (nm_settings, identifier));
 
 	for (diter = priv->nmt_devices; diter; diter = diter->next) {
 		nmtdev = diter->data;

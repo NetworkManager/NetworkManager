@@ -174,6 +174,45 @@ add_connection_info_complete (NMRemoteSettings *self,
 }
 
 /**
+ * nm_remote_settings_get_connection_by_id:
+ * @settings: the %NMRemoteSettings
+ * @id: the id of the remote connection
+ *
+ * Returns the first matching %NMRemoteConnection matching a given @id.
+ *
+ * Returns: (transfer none): the remote connection object on success, or %NULL if no
+ *  matching object was found.
+ *
+ * Since: 0.9.10
+ **/
+NMRemoteConnection *
+nm_remote_settings_get_connection_by_id (NMRemoteSettings *settings, const char *id)
+{
+	NMRemoteSettingsPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), NULL);
+	g_return_val_if_fail (id != NULL, NULL);
+
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
+
+	_nm_remote_settings_ensure_inited (settings);
+
+	if (priv->service_running) {
+		GHashTableIter iter;
+		NMConnection *candidate;
+
+		g_hash_table_iter_init (&iter, priv->connections);
+		while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &candidate)) {
+
+			if (!strcmp (id, nm_connection_get_id (candidate)))
+				return NM_REMOTE_CONNECTION (candidate);
+		}
+	}
+
+	return NULL;
+}
+
+/**
  * nm_remote_settings_get_connection_by_path:
  * @settings: the %NMRemoteSettings
  * @path: the D-Bus object path of the remote connection
