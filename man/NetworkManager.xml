@@ -4,7 +4,7 @@
         "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
 
 <!--
- Copyright (C) 2005 - 2013 Red Hat, Inc.
+ Copyright (C) 2005 - 2014 Red Hat, Inc.
  Copyright (C) 2005 - 2009 Novell, Inc.
  Copyright (C) 2005 Robert Love
 -->
@@ -47,6 +47,10 @@
       rich API with which to inspect and control network settings and
       operation.
     </para>
+  </refsect1>
+
+  <refsect1>
+    <title>Dispatcher scripts</title>
     <para>
       NetworkManager will execute scripts in the
       /etc/NetworkManager/dispatcher.d directory in alphabetical order
@@ -56,67 +60,140 @@
     </para>
     <para>
       Each script receives two arguments, the first being the interface name of the
-      device just activated, and second an action.
+      device an operation just happened on, and second the action.
     </para>
+    <para>The actions are:</para>
     <variablelist class="dispatcher-options">
       <varlistentry>
-	<term><varname>up</varname></term>
-	<listitem><para>The interface has been activated.  The
-	environment contains more information about the interface;
-	CONNECTION_UUID contains the UUID of the connection.  Other
-	variables are IP4_ADDRESS_N where N is a number from 0 to (#
-	IPv4 addresses \- 1), in the format "address/prefix gateway".
-	IP4_NUM_ADDRESSES contains the number addresses the script may
-	expect.  IP4_NAMESERVERS contains a space-separated list of
-	the DNS servers, and IP4_DOMAINS contains a space-separated
-	list of the search domains.  Routes use the format IP4_ROUTE_N
-	where N is a number from 0 to (# IPv4 routes \- 1), in the
-	format "address/prefix next-hop metric", and IP4_NUM_ROUTES
-	contains the number of routes to expect.  If the connection
-	used DHCP for address configuration, the received DHCP
-	configuration is passed in the environment using standard DHCP
-	option names, prefixed with "DHCP4_", like
-	"DHCP4_HOST_NAME=foobar".</para></listitem>
+        <term><varname>up</varname></term>
+        <listitem><para>The interface has been activated.</para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><varname>down</varname></term>
-	<listitem><para>
-	  The interface has been deactivated.
-	</para></listitem>
+        <term><varname>down</varname></term>
+        <listitem><para>
+          The interface has been deactivated.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><varname>vpn-up</varname></term>
-	<listitem><para>
-	  A VPN connection has been activated.  The environment contains the connection
-	  UUID in the variable CONNECTION_UUID.
-	</para></listitem>
+        <term><varname>vpn-up</varname></term>
+        <listitem><para>
+          A VPN connection has been activated.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><varname>vpn-down</varname></term>
-	<listitem><para>
-	  A VPN connection has been deactivated.
-	</para></listitem>
+        <term><varname>vpn-down</varname></term>
+        <listitem><para>
+          A VPN connection has been deactivated.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><varname>hostname</varname></term>
-	<listitem><para>
-	  The system hostname has been updated.  Use gethostname(2) to retrieve it.
-	</para></listitem>
+        <term><varname>hostname</varname></term>
+        <listitem><para>
+          The system hostname has been updated.  Use gethostname(2) to retrieve it.
+          The interface name (first argument) is empty and no environment variable is
+          set for this action.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><varname>dhcp4-change</varname></term>
-	<listitem><para>
-	  The DHCPv4 lease has changed (renewed, rebound, etc).
-	</para></listitem>
+        <term><varname>dhcp4-change</varname></term>
+        <listitem><para>
+          The DHCPv4 lease has changed (renewed, rebound, etc).
+        </para></listitem>
       </varlistentry>
       <varlistentry>
-	<term><varname>dhcp6-change</varname></term>
-	<listitem><para>
-	  The DHCPv6 lease has changed (renewed, rebound, etc).
-	</para></listitem>
+        <term><varname>dhcp6-change</varname></term>
+        <listitem><para>
+          The DHCPv6 lease has changed (renewed, rebound, etc).
+        </para></listitem>
       </varlistentry>
     </variablelist>
-
+    <para>
+      The environment contains more information about the interface and the connection.
+      The following variables are available for the use in the dispatcher scripts:
+      <variablelist class="dispatcher-environment">
+        <varlistentry>
+          <term><varname>CONNECTION_UUID</varname></term>
+          <listitem><para>
+            The UUID of the connection profile.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>CONNECTION_ID</varname></term>
+          <listitem><para>
+            The name (ID) of the connection profile.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>DEVICE_IFACE</varname></term>
+          <listitem><para>
+            The interface name of the device.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>DEVICE_IP_IFACE</varname></term>
+          <listitem><para>
+            The IP interface name of the device.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>IP4_ADDRESS_N</varname></term>
+          <listitem><para>
+            The IPv4 address in the format "address/prefix gateway", where N is a number
+            from 0 to (# IPv4 address \- 1).
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>IP4_NUM_ADDRESSES</varname></term>
+          <listitem><para>
+            The variable contains the number of IPv4 addresses the script may expect.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>IP4_ROUTE_N</varname></term>
+          <listitem><para>
+            The IPv4 route in the format "address/prefix next-hop metric", where N is a number
+            from 0 to (# IPv4 routes \- 1).
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>IP4_NUM_ROUTES</varname></term>
+          <listitem><para>
+            The variable contains the number of IPv4 routes the script may expect.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>IP4_NAMESERVERS</varname></term>
+          <listitem><para>
+            The variable contains a space-separated list of the DNS servers.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>IP4_DOMAINS</varname></term>
+          <listitem><para>
+            The variable contains a space-separated list of the search domains.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>DHCP4_&lt;dhcp-option-name&gt;</varname></term>
+          <listitem><para>
+            If the connection used DHCP for address configuration, the received DHCP
+            configuration is passed in the environment using standard DHCP
+            option names, prefixed with "DHCP4_", like "DHCP4_HOST_NAME=foobar".
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>IP6_&lt;name&gt; and DHCP6_&lt;name&gt;</varname></term>
+          <listitem><para>
+            The same variables as for IPv4 are available for IPv6, but the prefixes are IP6_
+            and DHCP6_ instead.
+          </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </para>
+    <para>
+      In case of VPN, VPN_IP_IFACE is set, and IP4_*, IP6_* variables with VPN prefix are
+      exported too, like VPN_IP4_ADDRESS_0, VPN_IP4_NUM_ADDRESSES.
+    </para>
   </refsect1>
 
   <refsect1>
