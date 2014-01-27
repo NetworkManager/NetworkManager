@@ -37,6 +37,7 @@ G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE_GENERIC)
 
 typedef struct {
 	NMPlatformTunProperties props;
+	const char *mode;
 	guint delay_tun_get_properties_id;
 } NMDeviceTunPrivate;
 
@@ -72,8 +73,6 @@ reload_tun_properties (NMDeviceTun *device)
 		g_object_notify (object, NM_DEVICE_TUN_OWNER);
 	if (priv->props.group != props.group)
 		g_object_notify (object, NM_DEVICE_TUN_GROUP);
-	if (g_strcmp0 (priv->props.mode, props.mode) != 0)
-		g_object_notify (object, NM_DEVICE_TUN_MODE);
 	if (priv->props.no_pi != props.no_pi)
 		g_object_notify (object, NM_DEVICE_TUN_NO_PI);
 	if (priv->props.vnet_hdr != props.vnet_hdr)
@@ -112,12 +111,21 @@ delay_tun_get_properties_cb (gpointer user_data)
 NMDevice *
 nm_device_tun_new (NMPlatformLink *platform_device)
 {
+	const char *mode = NULL;
+
 	g_return_val_if_fail (platform_device != NULL, NULL);
+
+	if (platform_device->type == NM_LINK_TYPE_TUN)
+		mode = "tun";
+	else if (platform_device->type == NM_LINK_TYPE_TAP)
+		mode = "tap";
+	g_return_val_if_fail (mode != NULL, NULL);
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_TUN,
 	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
 	                                  NM_DEVICE_TYPE_DESC, "Tun",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
+	                                  NM_DEVICE_TUN_MODE, mode,
 	                                  NULL);
 }
 
@@ -172,7 +180,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->props.group);
 		break;
 	case PROP_MODE:
-		g_value_set_string (value, priv->props.mode);
+		g_value_set_string (value, priv->mode);
 		break;
 	case PROP_NO_PI:
 		g_value_set_boolean (value, priv->props.no_pi);
@@ -190,6 +198,33 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMDeviceTun *self = NM_DEVICE_TUN (object);
+	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
+	const char *str;
+
+	switch (prop_id) {
+	case PROP_MODE:
+		/* construct-only */
+		str = g_value_get_string (value);
+
+		/* mode is G_PARAM_STATIC_STRINGS */
+		if (g_strcmp0 (str, "tun") == 0)
+			priv->mode = "tun";
+		else if (g_strcmp0 (str, "tap") == 0)
+			priv->mode = "tap";
+		else
+			g_return_if_fail (FALSE);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
 nm_device_tun_class_init (NMDeviceTunClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -199,6 +234,7 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
 	device_class->link_changed = link_changed;
@@ -226,7 +262,7 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 		                      "Mode",
 		                      "Mode",
 		                      "tun",
-		                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_NO_PI,
