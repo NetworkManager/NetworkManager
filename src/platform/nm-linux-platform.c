@@ -2763,10 +2763,10 @@ setup (NMPlatform *platform)
 	nle = nl_socket_set_buffer_size (priv->nlh_event, 131072, 0);
 	g_assert (!nle);
 	nle = nl_socket_add_memberships (priv->nlh_event,
-			RTNLGRP_LINK,
-			RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR,
-			RTNLGRP_IPV4_ROUTE,  RTNLGRP_IPV6_ROUTE,
-			NULL);
+	                                 RTNLGRP_LINK,
+	                                 RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR,
+	                                 RTNLGRP_IPV4_ROUTE,  RTNLGRP_IPV6_ROUTE,
+	                                 0);
 	g_assert (!nle);
 	debug ("Netlink socket for events established: %d", nl_socket_get_local_port (priv->nlh_event));
 
