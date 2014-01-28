@@ -330,6 +330,7 @@ _nmcli_compl_ARGS()
             autoconnect| \
             stp| \
             hairpin| \
+            save| \
             private)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "yes no"
@@ -652,7 +653,7 @@ _nmcli()
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
                             OPTIONS_TYPE=
-                            OPTIONS=(type ifname con-name autoconnect)
+                            OPTIONS=(type ifname con-name autoconnect save)
                             OPTIONS_MANDATORY=(type)
                             COMMAND_ARGS_WAIT_OPTIONS=1
                             _nmcli_compl_ARGS && return 0
