@@ -65,7 +65,6 @@ src/settings/nm-settings-utils.c
 test/nm-online.c
 tui/newt/nmt-newt-utils.c
 tui/nm-editor-utils.c
-tui/nm-ui-utils.c
 tui/nmt-connect-connection-list.c
 tui/nmt-device-entry.c
 tui/nmt-edit-connection-list.c
