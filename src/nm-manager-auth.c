@@ -535,9 +535,6 @@ nm_auth_uid_in_acl (NMConnection *connection,
 	if (0 == uid)
 		return TRUE;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
 	/* Reject the request if the request comes from no session at all */
 	if (!nm_session_monitor_uid_has_session (smon, uid, &user, &local)) {
 		if (out_error_desc) {
@@ -553,6 +550,14 @@ nm_auth_uid_in_acl (NMConnection *connection,
 		if (out_error_desc)
 			*out_error_desc = g_strdup_printf ("Could not determine username for uid %lu", uid);
 		return FALSE;
+	}
+
+	s_con = nm_connection_get_setting_connection (connection);
+	if (!s_con) {
+		/* This can only happen when called from AddAndActivate, so we know
+		 * the user will be authorized when the connection is completed.
+		 */
+		return TRUE;
 	}
 
 	/* Match the username returned by the session check to a user in the ACL */
