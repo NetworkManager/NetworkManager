@@ -1698,9 +1698,10 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 
 	master = nm_setting_connection_get_master (s_con);
 	if (master) {
-		if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME))
+		if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME)) {
 			svSetValue (ifcfg, "MASTER", master, FALSE);
-		else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME))
+			svSetValue (ifcfg, "SLAVE", "yes", FALSE);
+		} else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME))
 			svSetValue (ifcfg, "BRIDGE", master, FALSE);
 		else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME)) {
 			svSetValue (ifcfg, "TEAM_MASTER", master, FALSE);

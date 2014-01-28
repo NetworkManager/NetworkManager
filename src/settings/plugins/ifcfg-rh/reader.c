@@ -1755,6 +1755,10 @@ check_if_bond_slave (shvarFile *ifcfg,
 		              NULL);
 		g_free (value);
 	}
+
+	/* We should be checking for SLAVE=yes as well, but NM used to not set that,
+	 * so for backward-compatibility, we don't check.
+	 */
 }
 
 static void
