@@ -1565,16 +1565,26 @@ dispose (GObject *object)
 	 * the DHCP client.
 	 */
 
-	if (priv->remove_id)
+	if (priv->remove_id) {
 		g_source_remove (priv->remove_id);
+		priv->remove_id = 0;
+	}
 
-	g_hash_table_destroy (priv->options);
-	g_free (priv->iface);
-	if (priv->hwaddr)
+	if (priv->options) {
+		g_hash_table_destroy (priv->options);
+		priv->options = NULL;
+	}
+	g_clear_pointer (&priv->iface, g_free);
+
+	if (priv->hwaddr) {
 		g_byte_array_free (priv->hwaddr, TRUE);
+		priv->hwaddr = NULL;
+	}
 
-	if (priv->duid)
+	if (priv->duid) {
 		g_byte_array_free (priv->duid, TRUE);
+		priv->duid = NULL;
+	}
 
 	G_OBJECT_CLASS (nm_dhcp_client_parent_class)->dispose (object);
 }
