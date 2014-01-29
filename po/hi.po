@@ -1791,7 +1791,7 @@ msgstr "त्रुटि: 'mode': %s."
 #: ../cli/src/connections.c:4091
 #, c-format
 msgid "Error: 'primary': '%s' is not a valid interface name."
-msgstr "त्रुटि: 'primary': '%s' एक वैध अंतरफलक नाम नहीं है\n"
+msgstr "त्रुटि: 'primary': '%s' एक वैध अंतरफलक नाम नहीं है"
 
 #: ../cli/src/connections.c:4134
 msgid "Bond master: "

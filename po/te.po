@@ -4654,7 +4654,7 @@ msgid ""
 "Warning: changes will have no effect until '%s' includes 1 (enabled)\n"
 "\n"
 msgstr ""
-"హెచ్చరిక: '%s' అనునది 1 కలుపుకొనునంత వరకు మార్పులు ప్రభావితం కావు (చేతనమైను)"
+"హెచ్చరిక: '%s' అనునది 1 కలుపుకొనునంత వరకు మార్పులు ప్రభావితం కావు (చేతనమైను)\n\n"
 
 #: ../cli/src/settings.c:3916
 #, c-format
