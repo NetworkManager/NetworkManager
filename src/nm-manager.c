@@ -2426,13 +2426,26 @@ impl_manager_get_device_by_ip_iface (NMManager *self,
  * @out_master_device: on success, the master device of @connection if that
  *   master device was found
  *
- * Given an #NMConnection, attempts to find its master connection and/or its
- * master device.  This function may return a master connection, a master device,
- * or both.  If only a connection is returned, that master connection is not
- * currently active on any device.  If only a device is returned, that device
- * is not currently activated with any connection.  If both are returned, then
- * the device is currently activated or activating with the returned master
- * connection.
+ * Given an #NMConnection, attempts to find its master. If @connection has
+ * no master, this will return %TRUE and @out_master_connection and
+ * @out_master_device will be untouched.
+ *
+ * If @connection does have a master, then the outputs depend on what is in its
+ * #NMSettingConnection:master property:
+ *
+ * If "master" is the ifname of an existing #NMDevice, then that device will
+ * be returned in @out_master_device, and @out_master_connection will be %NULL.
+ * (Note that the returned device may already have an unrelated connection active
+ * or activating on it.)
+ *
+ * If "master" is the ifname of a non-existent device, then @out_master_device
+ * will be %NULL, and @out_master_connection will be a connection whose
+ * activation would cause the creation of that device.
+ *
+ * If "master" is a UUID, then @out_master_connection will be the identified
+ * connection (regardless of whether it actually is a valid master for
+ * @connection), and @out_master_device will be set if it exists and the master
+ * is already active or activating on it.
  *
  * Returns: %TRUE if the master device and/or connection could be found or if
  *  the connection did not require a master, %FALSE otherwise
@@ -2526,17 +2539,28 @@ is_compatible_with_slave (NMConnection *master, NMConnection *slave)
 
 /**
  * ensure_master_active_connection:
- *
  * @self: the #NMManager
  * @subject: the #NMAuthSubject representing the requestor of this activation
  * @connection: the connection that should depend on @master_connection
  * @device: the #NMDevice, if any, which will activate @connection
- * @master_connection: the master connection
- * @master_device: the master device
+ * @master_connection: the master connection, or %NULL
+ * @master_device: the master device, or %NULL
  * @error: the error, if an error occurred
  *
  * Determines whether a given #NMConnection depends on another connection to
  * be activated, and if so, finds that master connection or creates it.
+ *
+ * If @master_device and @master_connection are both set then @master_connection
+ * MUST already be activated or activating on @master_device, and the existing
+ * #NMActiveConnection will be returned.
+ *
+ * If only @master_device is set, then this will return its current #NMActiveConnection
+ * if it has one (even if that AC is not a valid master for @connection), or else it
+ * will create a new one if a compatible master connection exists, or else it will
+ * return an error.
+ *
+ * If only @master_connection is set, then this will try to find or create a compatible
+ * #NMDevice, and either activate @master_connection on that device or return an error.
  *
  * Returns: the master #NMActiveConnection that the caller should depend on, or
  * %NULL if an error occurred
@@ -2575,7 +2599,7 @@ ensure_master_active_connection (NMManager *self,
 			return NM_ACTIVE_CONNECTION (nm_device_get_act_request (master_device));
 		}
 
-		/* If the device is disconnected, find a compabile connection and
+		/* If the device is disconnected, find a compatible connection and
 		 * activate it on the device.
 		 */
 		if (master_state == NM_DEVICE_STATE_DISCONNECTED) {
