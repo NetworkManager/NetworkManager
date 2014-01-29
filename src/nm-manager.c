@@ -180,7 +180,8 @@ static gboolean find_master (NMManager *self,
                              NMConnection *connection,
                              NMDevice *device,
                              NMConnection **out_master_connection,
-                             NMDevice **out_master_device);
+                             NMDevice **out_master_device,
+                             GError **error);
 
 static void nm_manager_update_state (NMManager *manager);
 
@@ -1940,7 +1941,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 			NMActRequest *master_req;
 
 			/* If the device is a slave or VLAN, find the master ActiveConnection */
-			if (find_master (self, connection, device, NULL, &master) && master) {
+			if (find_master (self, connection, device, NULL, &master, NULL) && master) {
 				master_req = nm_device_get_act_request (master);
 				if (master_req)
 					nm_active_connection_set_master (active, NM_ACTIVE_CONNECTION (master_req));
@@ -2425,6 +2426,7 @@ impl_manager_get_device_by_ip_iface (NMManager *self,
  *   that master connection was found
  * @out_master_device: on success, the master device of @connection if that
  *   master device was found
+ * @error: the error, if an error occurred
  *
  * Given an #NMConnection, attempts to find its master. If @connection has
  * no master, this will return %TRUE and @out_master_connection and
@@ -2455,7 +2457,8 @@ find_master (NMManager *self,
              NMConnection *connection,
              NMDevice *device,
              NMConnection **out_master_connection,
-             NMDevice **out_master_device)
+             NMDevice **out_master_device,
+             GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
@@ -2474,9 +2477,11 @@ find_master (NMManager *self,
 	/* Try as an interface name first */
 	master_device = find_device_by_ip_iface (self, master);
 	if (master_device) {
-		/* A device obviously can't be its own master */
-		if (master_device == device)
+		if (master_device == device) {
+			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+			                     "Device cannot be its own master");
 			return FALSE;
+		}
 	} else {
 		/* Try master as a connection UUID */
 		master_connection = (NMConnection *) nm_settings_get_connection_by_uuid (priv->settings, master);
@@ -2520,7 +2525,13 @@ find_master (NMManager *self,
 	if (out_master_device)
 		*out_master_device = master_device;
 
-    return master_device || master_connection;
+	if (master_device || master_connection)
+		return TRUE;
+	else {
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+		                     "Master connection not found or invalid");
+		return FALSE;
+	}
 }
 
 static gboolean
@@ -2783,11 +2794,8 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	}
 
 	/* Try to find the master connection/device if the connection has a dependency */
-	if (!find_master (self, connection, device, &master_connection, &master_device)) {
-		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-		                     "Master connection not found or invalid");
+	if (!find_master (self, connection, device, &master_connection, &master_device, error))
 		return FALSE;
-	}
 
 	/* Ensure there's a master active connection the new connection we're
 	 * activating can depend on.
