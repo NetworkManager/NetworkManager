@@ -180,7 +180,9 @@ static gboolean find_master (NMManager *self,
                              NMConnection *connection,
                              NMDevice *device,
                              NMConnection **out_master_connection,
-                             NMDevice **out_master_device);
+                             NMDevice **out_master_device,
+                             NMActiveConnection **out_master_ac,
+                             GError **error);
 
 static void nm_manager_update_state (NMManager *manager);
 
@@ -1936,20 +1938,11 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 		subject = nm_auth_subject_new_internal ();
 		active = _new_active_connection (self, connection, NULL, device, subject, &error);
 		if (active) {
-			NMDevice *master = NULL;
-			NMActRequest *master_req;
+			NMActiveConnection *master_ac;
 
 			/* If the device is a slave or VLAN, find the master ActiveConnection */
-			if (find_master (self, connection, device, NULL, &master) && master) {
-				master_req = nm_device_get_act_request (master);
-				if (master_req)
-					nm_active_connection_set_master (active, NM_ACTIVE_CONNECTION (master_req));
-				else {
-					nm_log_warn (LOGD_DEVICE, "(%s): master device %s not activating!",
-					             nm_device_get_iface (device),
-					             nm_device_get_iface (master));
-				}
-			}
+			if (find_master (self, connection, device, NULL, NULL, &master_ac, NULL) && master_ac)
+				nm_active_connection_set_master (active, master_ac);
 
 			nm_active_connection_set_assumed (active, TRUE);
 			nm_active_connection_export (active);
@@ -2416,6 +2409,20 @@ impl_manager_get_device_by_ip_iface (NMManager *self,
 	return path ? TRUE : FALSE;
 }
 
+static gboolean
+is_compatible_with_slave (NMConnection *master, NMConnection *slave)
+{
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (master, FALSE);
+	g_return_val_if_fail (slave, FALSE);
+
+	s_con = nm_connection_get_setting_connection (slave);
+	g_assert (s_con);
+
+	return nm_connection_is_type (master, nm_setting_connection_get_slave_type (s_con));
+}
+
 /**
  * find_master:
  * @self: #NMManager object
@@ -2425,14 +2432,35 @@ impl_manager_get_device_by_ip_iface (NMManager *self,
  *   that master connection was found
  * @out_master_device: on success, the master device of @connection if that
  *   master device was found
+ * @out_master_ac: on success, the master ActiveConnection of @connection if
+ *   there already is one
+ * @error: the error, if an error occurred
  *
- * Given an #NMConnection, attempts to find its master connection and/or its
- * master device.  This function may return a master connection, a master device,
- * or both.  If only a connection is returned, that master connection is not
- * currently active on any device.  If only a device is returned, that device
- * is not currently activated with any connection.  If both are returned, then
- * the device is currently activated or activating with the returned master
- * connection.
+ * Given an #NMConnection, attempts to find its master. If @connection has
+ * no master, this will return %TRUE and @out_master_connection and
+ * @out_master_device will be untouched.
+ *
+ * If @connection does have a master, then the outputs depend on what is in its
+ * #NMSettingConnection:master property:
+ *
+ * If "master" is the ifname of an existing #NMDevice, and that device has a
+ * compatible master connection activated or activating on it, then
+ * @out_master_device, @out_master_connection, and @out_master_ac will all be
+ * set. If the device exists and is idle, only @out_master_device will be set.
+ * If the device exists and has an incompatible connection on it, an error
+ * will be returned.
+ *
+ * If "master" is the ifname of a non-existent device, then @out_master_device
+ * will be %NULL, and @out_master_connection will be a connection whose
+ * activation would cause the creation of that device. @out_master_ac MAY be
+ * set in this case as well (if the connection has started activating, but has
+ * not yet created its device).
+ *
+ * If "master" is the UUID of a compatible master connection, then
+ * @out_master_connection will be the identified connection, and @out_master_device
+ * and/or @out_master_ac will be set if the connection is currently activating.
+ * (@out_master_device will not be set if the device exists but does not have
+ * @out_master_connection active/activating on it.)
  *
  * Returns: %TRUE if the master device and/or connection could be found or if
  *  the connection did not require a master, %FALSE otherwise
@@ -2442,7 +2470,9 @@ find_master (NMManager *self,
              NMConnection *connection,
              NMDevice *device,
              NMConnection **out_master_connection,
-             NMDevice **out_master_device)
+             NMDevice **out_master_device,
+             NMActiveConnection **out_master_ac,
+             GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
@@ -2461,9 +2491,20 @@ find_master (NMManager *self,
 	/* Try as an interface name first */
 	master_device = find_device_by_ip_iface (self, master);
 	if (master_device) {
-		/* A device obviously can't be its own master */
-		if (master_device == device)
+		if (master_device == device) {
+			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+			                     "Device cannot be its own master");
 			return FALSE;
+		}
+
+		master_connection = nm_device_get_connection (master_device);
+		if (master_connection && !is_compatible_with_slave (master_connection, connection)) {
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+			             "The active connection on %s is not a valid master for '%s'",
+			             nm_device_get_iface (master_device),
+			             nm_connection_get_id (connection));
+			return FALSE;
+		}
 	} else {
 		/* Try master as a connection UUID */
 		master_connection = (NMConnection *) nm_settings_get_connection_by_uuid (priv->settings, master);
@@ -2493,7 +2534,8 @@ find_master (NMManager *self,
 
 				if (connection_needs_virtual_device (candidate)) {
 					vname = get_virtual_iface_name (self, candidate, NULL);
-					if (g_strcmp0 (master, vname) == 0)
+					if (   g_strcmp0 (master, vname) == 0
+					    && is_compatible_with_slave (candidate, connection))
 						master_connection = candidate;
 					g_free (vname);
 				}
@@ -2506,37 +2548,42 @@ find_master (NMManager *self,
 		*out_master_connection = master_connection;
 	if (out_master_device)
 		*out_master_device = master_device;
+	if (out_master_ac && master_connection)
+		*out_master_ac = find_ac_for_connection (self, master_connection);
 
-    return master_device || master_connection;
-}
-
-static gboolean
-is_compatible_with_slave (NMConnection *master, NMConnection *slave)
-{
-	NMSettingConnection *s_con;
-
-	g_return_val_if_fail (master, FALSE);
-	g_return_val_if_fail (slave, FALSE);
-
-	s_con = nm_connection_get_setting_connection (slave);
-	g_assert (s_con);
-
-	return nm_connection_is_type (master, nm_setting_connection_get_slave_type (s_con));
+	if (master_device || master_connection)
+		return TRUE;
+	else {
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+		                     "Master connection not found or invalid");
+		return FALSE;
+	}
 }
 
 /**
  * ensure_master_active_connection:
- *
  * @self: the #NMManager
  * @subject: the #NMAuthSubject representing the requestor of this activation
  * @connection: the connection that should depend on @master_connection
  * @device: the #NMDevice, if any, which will activate @connection
- * @master_connection: the master connection
- * @master_device: the master device
+ * @master_connection: the master connection, or %NULL
+ * @master_device: the master device, or %NULL
  * @error: the error, if an error occurred
  *
  * Determines whether a given #NMConnection depends on another connection to
  * be activated, and if so, finds that master connection or creates it.
+ *
+ * If @master_device and @master_connection are both set then @master_connection
+ * MUST already be activated or activating on @master_device, and the function will
+ * return the existing #NMActiveConnection.
+ *
+ * If only @master_device is set, and it has an #NMActiveConnection, then the
+ * function will return it if it is a compatible master, or an error if not. If it
+ * doesn't have an AC, then the function will create one if a compatible master
+ * connection exists, or return an error if not.
+ *
+ * If only @master_connection is set, then this will try to find or create a compatible
+ * #NMDevice, and either activate @master_connection on that device or return an error.
  *
  * Returns: the master #NMActiveConnection that the caller should depend on, or
  * %NULL if an error occurred
@@ -2562,11 +2609,20 @@ ensure_master_active_connection (NMManager *self,
 	 * compatible connection.  If it's already activating we can just proceed.
 	 */
 	if (master_device) {
+		NMConnection *device_connection = nm_device_get_connection (master_device);
+
 		/* If we're passed a connection and a device, we require that connection
 		 * be already activated on the device, eg returned from find_master().
 		 */
 		if (master_connection)
-			g_assert (nm_device_get_connection (master_device) == master_connection);
+			g_assert (device_connection == master_connection);
+		else if (!is_compatible_with_slave (device_connection, connection)) {
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+			             "The active connection on %s is not a valid master for '%s'",
+			             nm_device_get_iface (master_device),
+			             nm_connection_get_id (connection));
+			return NULL;
+		}
 
 		master_state = nm_device_get_state (master_device);
 		if (   (master_state == NM_DEVICE_STATE_ACTIVATED)
@@ -2575,7 +2631,7 @@ ensure_master_active_connection (NMManager *self,
 			return NM_ACTIVE_CONNECTION (nm_device_get_act_request (master_device));
 		}
 
-		/* If the device is disconnected, find a compabile connection and
+		/* If the device is disconnected, find a compatible connection and
 		 * activate it on the device.
 		 */
 		if (master_state == NM_DEVICE_STATE_DISCONNECTED) {
@@ -2696,6 +2752,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	NMDevice *device, *master_device = NULL;
 	NMConnection *connection;
 	NMConnection *master_connection = NULL;
+	NMActiveConnection *master_ac = NULL;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
@@ -2759,18 +2816,15 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	}
 
 	/* Try to find the master connection/device if the connection has a dependency */
-	if (!find_master (self, connection, device, &master_connection, &master_device)) {
-		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-		                     "Master connection not found or invalid");
+	if (!find_master (self, connection, device,
+	                  &master_connection, &master_device, &master_ac,
+	                  error))
 		return FALSE;
-	}
 
 	/* Ensure there's a master active connection the new connection we're
 	 * activating can depend on.
 	 */
 	if (master_connection || master_device) {
-		NMActiveConnection *master_ac = NULL;
-
 		if (master_connection) {
 			nm_log_dbg (LOGD_CORE, "Activation of '%s' requires master connection '%s'",
 			            nm_connection_get_id (connection),
@@ -2789,17 +2843,19 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 			return FALSE;
 		}
 
-		master_ac = ensure_master_active_connection (self,
-		                                             nm_active_connection_get_subject (active),
-		                                             connection,
-		                                             device,
-		                                             master_connection,
-		                                             master_device,
-		                                             error);
 		if (!master_ac) {
-			if (error)
-				g_assert (*error);
-			return FALSE;
+			master_ac = ensure_master_active_connection (self,
+			                                             nm_active_connection_get_subject (active),
+			                                             connection,
+			                                             device,
+			                                             master_connection,
+			                                             master_device,
+			                                             error);
+			if (!master_ac) {
+				if (error)
+					g_assert (*error);
+				return FALSE;
+			}
 		}
 
 		nm_active_connection_set_master (active, master_ac);
