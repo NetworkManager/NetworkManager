@@ -43,6 +43,7 @@
 #include <netlink/route/route.h>
 #include <gudev/gudev.h>
 
+#include "NetworkManagerUtils.h"
 #include "nm-linux-platform.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -814,16 +815,6 @@ hack_empty_master_iff_lower_up (NMPlatform *platform, struct nl_object *object)
 	rtnl_link_unset_flags (rtnllink, IFF_LOWER_UP);
 }
 
-static guint32
-get_time (void)
-{
-	struct timespec tp;
-
-	clock_gettime (CLOCK_MONOTONIC, &tp);
-
-	return tp.tv_sec;
-}
-
 static void
 init_ip4_address (NMPlatformIP4Address *address, struct rtnl_addr *rtnladdr)
 {
@@ -836,7 +827,7 @@ init_ip4_address (NMPlatformIP4Address *address, struct rtnl_addr *rtnladdr)
 
 	address->ifindex = rtnl_addr_get_ifindex (rtnladdr);
 	address->plen = rtnl_addr_get_prefixlen (rtnladdr);
-	address->timestamp = get_time ();
+	address->timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address->lifetime = rtnl_addr_get_valid_lifetime (rtnladdr);
 	address->preferred = rtnl_addr_get_preferred_lifetime (rtnladdr);
 	g_assert (nl_addr_get_len (nladdr) == sizeof (address->address));
@@ -857,7 +848,7 @@ init_ip6_address (NMPlatformIP6Address *address, struct rtnl_addr *rtnladdr)
 
 	address->ifindex = rtnl_addr_get_ifindex (rtnladdr);
 	address->plen = rtnl_addr_get_prefixlen (rtnladdr);
-	address->timestamp = get_time ();
+	address->timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address->lifetime = rtnl_addr_get_valid_lifetime (rtnladdr);
 	address->preferred = rtnl_addr_get_preferred_lifetime (rtnladdr);
 	address->flags = rtnl_addr_get_flags (rtnladdr);

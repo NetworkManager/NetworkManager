@@ -26,6 +26,7 @@
 #include <string.h>
 #include <netlink/route/addr.h>
 
+#include "NetworkManagerUtils.h"
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
@@ -1339,16 +1340,6 @@ array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address 
 	return FALSE;
 }
 
-static guint32
-get_time (void)
-{
-	struct timespec tp;
-
-	clock_gettime (CLOCK_MONOTONIC, &tp);
-
-	return tp.tv_sec;
-}
-
 /* Compute (a - b) in an overflow-safe manner. */
 static guint32
 subtract_guint32 (guint32 a, guint32 b)
@@ -1375,7 +1366,7 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 {
 	GArray *addresses;
 	NMPlatformIP4Address *address;
-	guint32 now = get_time ();
+	guint32 now = nm_utils_get_monotonic_timestamp_s ();
 	int i;
 
 	/* Delete unknown addresses */
@@ -1428,7 +1419,7 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 {
 	GArray *addresses;
 	NMPlatformIP6Address *address;
-	guint32 now = get_time ();
+	guint32 now = nm_utils_get_monotonic_timestamp_s ();
 	int i;
 
 	/* Delete unknown addresses */

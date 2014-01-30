@@ -59,7 +59,7 @@ typedef struct
 	gboolean			fake;	/* Whether or not the AP is from a scan */
 	gboolean            hotspot;    /* Whether the AP is a local device's hotspot network */
 	gboolean			broadcast;	/* Whether or not the AP is broadcasting (hidden) */
-	glong				last_seen;	/* Last time the AP was seen in a scan in seconds */
+	gint32              last_seen;  /* Timestamp when the AP was seen lastly (obtained via nm_utils_get_monotonic_timestamp_s()) */
 } NMAccessPointPrivate;
 
 #define NM_AP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP, NMAccessPointPrivate))
@@ -504,7 +504,7 @@ nm_ap_new_from_properties (const char *supplicant_path, GHashTable *properties)
 		return NULL;
 	}
 
-	nm_ap_set_last_seen (ap, (guint32) time (NULL));
+	nm_ap_set_last_seen (ap, nm_utils_get_monotonic_timestamp_s ());
 
 	if (!nm_ap_get_ssid (ap))
 		nm_ap_set_broadcast (ap, FALSE);
@@ -745,7 +745,7 @@ nm_ap_dump (NMAccessPoint *ap, const char *prefix)
 	nm_log_dbg (LOGD_WIFI_SCAN, "    quality   %d", priv->strength);
 	nm_log_dbg (LOGD_WIFI_SCAN, "    frequency %d", priv->freq);
 	nm_log_dbg (LOGD_WIFI_SCAN, "    max rate  %d", priv->max_bitrate);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    last-seen %ld", priv->last_seen);
+	nm_log_dbg (LOGD_WIFI_SCAN, "    last-seen %d", (int) priv->last_seen);
 }
 
 const char *
@@ -1095,14 +1095,16 @@ void nm_ap_set_broadcast (NMAccessPoint *ap, gboolean broadcast)
  * APs older than a certain date are dropped from the list.
  *
  */
-glong nm_ap_get_last_seen (const NMAccessPoint *ap)
+gint32
+nm_ap_get_last_seen (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
 
 	return NM_AP_GET_PRIVATE (ap)->last_seen;
 }
 
-void nm_ap_set_last_seen (NMAccessPoint *ap, const glong last_seen)
+void
+nm_ap_set_last_seen (NMAccessPoint *ap, gint32 last_seen)
 {
 	g_return_if_fail (NM_IS_AP (ap));
 

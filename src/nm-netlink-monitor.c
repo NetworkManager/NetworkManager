@@ -46,6 +46,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+#include "NetworkManagerUtils.h"
 #include "nm-netlink-monitor.h"
 #include "nm-logging.h"
 
@@ -107,18 +108,18 @@ detach_monitor (gpointer data)
 static void
 log_error_limited (NMNetlinkMonitor *monitor, guint32 code, const char *fmt, ...)
 {
-	static time_t rl_time = 0;
+	static gint64 rl_time = -10001;
 	static guint32 rl_code = 0;
 	static guint32 rl_count = 0;
 	va_list args;
 	char *msg;
-	time_t now;
+	gint64 now;
 
 	g_return_if_fail (monitor != NULL);
 
-	now = time (NULL);
+	now = nm_utils_get_monotonic_timestamp_ms ();
 
-	if ((code != rl_code) || (now > rl_time + 10)) {
+	if (code != rl_code || now > rl_time + 10000) {
 		va_start (args, fmt);
 		msg = g_strdup_vprintf (fmt, args);
 		va_end (args);

@@ -142,7 +142,7 @@ struct _NMDeviceWifiPrivate {
 	guint32           rate;
 	gboolean          enabled; /* rfkilled or not */
 
-	time_t            scheduled_scan_time;
+	gint32            scheduled_scan_time;
 	guint8            scan_interval; /* seconds */
 	guint             pending_scan_id;
 	guint             scanlist_cull_id;
@@ -1438,7 +1438,7 @@ impl_device_request_scan (NMDeviceWifi *self,
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
-	time_t last_scan;
+	gint32 last_scan;
 	GError *error;
 
 	if (   !priv->enabled
@@ -1459,7 +1459,7 @@ impl_device_request_scan (NMDeviceWifi *self,
 	}
 
 	last_scan = nm_supplicant_interface_get_last_scan_time (priv->supplicant.iface);
-	if ((time (NULL) - last_scan) < 10) {
+	if (last_scan && (nm_utils_get_monotonic_timestamp_s () - last_scan) < 10) {
 		error = g_error_new_literal (NM_WIFI_ERROR,
 		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
 		                             "Scanning not allowed immediately following previous scan");
@@ -1709,7 +1709,7 @@ static void
 schedule_scan (NMDeviceWifi *self, gboolean backoff)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	time_t now = time (NULL);
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 
 	/* Cancel the pending scan if it would happen later than (now + the scan_interval) */
 	if (priv->pending_scan_id) {
@@ -1897,7 +1897,7 @@ static gboolean
 cull_scan_list (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	time_t now = time (NULL);
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 	GSList *outdated_list = NULL;
 	GSList *elt;
 	guint32 removed = 0, total = 0;
@@ -1913,6 +1913,7 @@ cull_scan_list (NMDeviceWifi *self)
 	for (elt = priv->ap_list; elt; elt = g_slist_next (elt), total++) {
 		NMAccessPoint *ap = elt->data;
 		const guint prune_interval_s = SCAN_INTERVAL_MAX * 3;
+		gint32 last_seen;
 
 		/* Don't cull the associated AP or manually created APs */
 		if (ap == priv->current_ap)
@@ -1930,7 +1931,8 @@ cull_scan_list (NMDeviceWifi *self)
 		    && g_object_get_data (G_OBJECT (ap), WPAS_REMOVED_TAG) == NULL)
 			continue;
 
-		if (nm_ap_get_last_seen (ap) + prune_interval_s < now)
+		last_seen = nm_ap_get_last_seen (ap);
+		if (!last_seen || last_seen + prune_interval_s < now)
 			outdated_list = g_slist_prepend (outdated_list, ap);
 	}
 
@@ -2036,7 +2038,7 @@ supplicant_iface_bss_updated_cb (NMSupplicantInterface *iface,
 	/* Update the AP's last-seen property */
 	ap = get_ap_by_supplicant_path (self, object_path);
 	if (ap)
-		nm_ap_set_last_seen (ap, (guint32) time (NULL));
+		nm_ap_set_last_seen (ap, nm_utils_get_monotonic_timestamp_s ());
 
 	/* Remove outdated access points */
 	schedule_scanlist_cull (self);

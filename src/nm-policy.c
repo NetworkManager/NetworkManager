@@ -1252,13 +1252,13 @@ reset_connections_retries (gpointer user_data)
 	NMPolicy *policy = (NMPolicy *) user_data;
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	GSList *connections, *iter;
-	time_t con_stamp, min_stamp, now;
+	gint32 con_stamp, min_stamp, now;
 	gboolean changed = FALSE;
 
 	priv->reset_retries_id = 0;
 
 	min_stamp = 0;
-	now = time (NULL);
+	now = nm_utils_get_monotonic_timestamp_s ();
 	connections = nm_settings_get_connections (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMSettingsConnection *connection = NM_SETTINGS_CONNECTION (iter->data);
@@ -1429,10 +1429,10 @@ device_state_changed (NMDevice *device,
 				             nm_connection_get_id (NM_CONNECTION (connection)));
 				/* Schedule a handler to reset retries count */
 				if (!priv->reset_retries_id) {
-					time_t retry_time = nm_settings_connection_get_autoconnect_retry_time (connection);
+					gint32 retry_time = nm_settings_connection_get_autoconnect_retry_time (connection);
 
 					g_warn_if_fail (retry_time != 0);
-					priv->reset_retries_id = g_timeout_add_seconds (MAX (0, retry_time - time (NULL)), reset_connections_retries, policy);
+					priv->reset_retries_id = g_timeout_add_seconds (MAX (0, retry_time - nm_utils_get_monotonic_timestamp_s ()), reset_connections_retries, policy);
 				}
 			}
 			nm_connection_clear_secrets (NM_CONNECTION (connection));

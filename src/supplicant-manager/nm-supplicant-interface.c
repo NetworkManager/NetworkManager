@@ -24,6 +24,7 @@
 #include <string.h>
 #include <glib.h>
 
+#include "NetworkManagerUtils.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-manager.h"
 #include "nm-logging.h"
@@ -106,7 +107,7 @@ typedef struct {
 	guint32               blobs_left;
 	GHashTable *          bss_proxies;
 
-	time_t                last_scan;
+	gint32                last_scan; /* timestamp as returned by nm_utils_get_monotonic_timestamp_s() */
 
 	NMSupplicantConfig *  cfg;
 
@@ -167,7 +168,7 @@ bss_properties_changed (DBusGProxy *proxy,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	if (priv->scanning)
-		priv->last_scan = time (NULL);
+		priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 
 	if (g_strcmp0 (interface, WPAS_DBUS_IFACE_BSS) == 0)
 		g_signal_emit (self, signals[BSS_UPDATED], 0, dbus_g_proxy_get_path (proxy), props);
@@ -230,7 +231,7 @@ wpas_iface_bss_added (DBusGProxy *proxy,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	if (priv->scanning)
-		priv->last_scan = time (NULL);
+		priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 
 	handle_new_bss (self, object_path, props);
 }
@@ -334,7 +335,7 @@ set_state (NMSupplicantInterface *self, guint32 new_state)
 
 	if (   priv->state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING
 	    || old_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING)
-		priv->last_scan = time (NULL);
+		priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 
 	/* Disconnect reason is no longer relevant when not in the DISCONNECTED state */
 	if (priv->state != NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED)
@@ -367,7 +368,7 @@ set_scanning (NMSupplicantInterface *self, gboolean new_scanning)
 
 		/* Cache time of last scan completion */
 		if (priv->scanning == FALSE)
-			priv->last_scan = time (NULL);
+			priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 
 		g_object_notify (G_OBJECT (self), "scanning");
 	}
@@ -388,7 +389,7 @@ nm_supplicant_interface_get_scanning (NMSupplicantInterface *self)
 	return FALSE;
 }
 
-time_t
+gint32
 nm_supplicant_interface_get_last_scan_time (NMSupplicantInterface *self)
 {
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->last_scan;
@@ -403,7 +404,7 @@ wpas_iface_scan_done (DBusGProxy *proxy,
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	/* Cache last scan completed time */
-	priv->last_scan = time (NULL);
+	priv->last_scan = nm_utils_get_monotonic_timestamp_s ();
 	g_signal_emit (self, signals[SCAN_DONE], 0, success);
 }
 
