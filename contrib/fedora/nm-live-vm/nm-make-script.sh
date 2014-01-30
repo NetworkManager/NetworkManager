@@ -28,7 +28,13 @@ test -d /NetworkManager || (
 cd /NetworkManager/ || exit 1
 git fetch origin || die "Could not fetch $URL"
 git checkout -f "$COMMIT" || exit 1
-./autogen.sh --prefix=/usr --exec-prefix=/usr --libdir=/usr/lib --sysconfdir=/etc --localstatedir=/var --enable-gtk-doc || exit 1
+./autogen.sh --prefix=/usr \
+             --exec-prefix=/usr \
+             --libdir=/usr/lib \
+             --sysconfdir=/etc \
+             --localstatedir=/var \
+             --with-nmtui=yes \
+             --enable-gtk-doc || exit 1
 make || exit 1
 #make check || exit 1
 make install || exit 1
