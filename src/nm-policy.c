@@ -1267,7 +1267,7 @@ reset_connections_retries (gpointer user_data)
 		if (con_stamp == 0)
 			continue;
 
-		if (con_stamp < now) {
+		if (con_stamp <= now) {
 			nm_settings_connection_reset_autoconnect_retries (connection);
 			changed = TRUE;
 		} else if (min_stamp == 0 || min_stamp > con_stamp)
