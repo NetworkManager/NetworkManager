@@ -36,6 +36,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <linux/if.h>
+#include <netlink/route/addr.h>
 
 #include "libgsystem.h"
 #include "nm-glib-compat.h"
@@ -73,6 +74,14 @@
 #include "nm-device-bridge.h"
 #include "nm-device-bond.h"
 #include "nm-device-team.h"
+
+/* workaround for older libnl version, that does not define these flags. */
+#ifndef IFA_F_MANAGETEMPADDR
+#define IFA_F_MANAGETEMPADDR 0x100
+#endif
+#ifndef IFA_F_NOPREFIXROUTE
+#define IFA_F_NOPREFIXROUTE 0x200
+#endif
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
@@ -276,6 +285,7 @@ typedef struct {
 
 	NMRDisc *      rdisc;
 	gulong         rdisc_config_changed_sigid;
+	NMSettingIP6ConfigPrivacy rdisc_use_tempaddr;
 	/* IP6 config from autoconf */
 	NMIP6Config *  ac_ip6_config;
 
@@ -475,6 +485,21 @@ restore_ip6_properties (NMDevice *self)
 		nm_platform_sysctl_set (priv->ip6_disable_ipv6_path,
 		                        priv->ip6_disable_ipv6_save ? "1" : "0");
 	}
+}
+
+static gint32
+sysctl_get_ipv6_max_addresses (const char *dev)
+{
+	gint32 max_addresses = 16;
+	char *path;
+
+	g_return_val_if_fail (dev && *dev, max_addresses);
+
+	path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/max_addresses", dev);
+	max_addresses = nm_platform_sysctl_get_int32 (path, max_addresses);
+	g_free (path);
+
+	return max_addresses;
 }
 
 /*
@@ -3292,12 +3317,81 @@ linklocal6_start (NMDevice *self)
 static void dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release);
 
 static void
+print_support_extended_ifa_flags (NMSettingIP6ConfigPrivacy use_tempaddr)
+{
+	static gint8 warn = 0;
+	static gint8 s_libnl = -1, s_kernel;
+
+	if (warn >= 2)
+		return;
+
+	if (s_libnl == -1) {
+		s_libnl = !!nm_platform_check_support_libnl_extended_ifa_flags ();
+		s_kernel = !!nm_platform_check_support_kernel_extended_ifa_flags ();
+
+		if (s_libnl && s_kernel) {
+			nm_log_dbg (LOGD_IP6, "kernel and libnl support extended IFA_FLAGS (needed by NM for IPv6 private addresses)");
+			warn = 2;
+			return;
+		}
+	}
+
+	if (   use_tempaddr != NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR
+	    && use_tempaddr != NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR) {
+		if (warn == 0) {
+			nm_log_dbg (LOGD_IP6, "%s%s%s %s not support extended IFA_FLAGS (needed by NM for IPv6 private addresses)",
+			                      !s_kernel ? "kernel" : "",
+			                      !s_kernel && !s_libnl ? " and " : "",
+			                      !s_libnl ? "libnl" : "",
+			                      !s_kernel && !s_libnl ? "do" : "does");
+			warn = 1;
+		}
+		return;
+	}
+
+	if (!s_libnl && !s_kernel) {
+		nm_log_warn (LOGD_IP6, "libnl and the kernel do not support extended IFA_FLAGS needed by NM for "
+		                       "IPv6 private addresses. This feature is not available");
+	} else if (!s_libnl) {
+		nm_log_warn (LOGD_IP6, "libnl does not support extended IFA_FLAGS needed by NM for "
+		                       "IPv6 private addresses. This feature is not available");
+	} else if (!s_kernel) {
+		nm_log_warn (LOGD_IP6, "The kernel does not support extended IFA_FLAGS needed by NM for "
+		                       "IPv6 private addresses. This feature is not available");
+	}
+
+	warn = 2;
+}
+
+static void
 rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	NMConnection *connection;
 	int i;
 	NMDeviceStateReason reason;
+	static int system_support = -1;
+	guint ifa_flags;
+
+	if (system_support == -1) {
+		/*
+		 * Check, if both libnl and the kernel are recent enough,
+		 * to help user space handling RA. If it's not supported,
+		 * we have no ipv6-privacy and must add autoconf addresses
+		 * as /128. The reason for the /128 is to prevent the kernel
+		 * from adding a prefix route for this address.
+		 **/
+		system_support = nm_platform_check_support_libnl_extended_ifa_flags () &&
+		                 nm_platform_check_support_kernel_extended_ifa_flags ();
+	}
+
+	/* without system_support, these flags will be ignored.
+	 * Still, we set them (why not?).
+	 **/
+	ifa_flags = IFA_F_NOPREFIXROUTE;
+	if (priv->rdisc_use_tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR
+	    || priv->rdisc_use_tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR)
+		ifa_flags |= IFA_F_MANAGETEMPADDR;
 
 	g_return_if_fail (priv->act_request);
 	connection = nm_device_get_connection (device);
@@ -3320,17 +3414,23 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 		/* Rebuild address list from router discovery cache. */
 		nm_ip6_config_reset_addresses (priv->ac_ip6_config);
 
+		/* rdisc->addresses contains at most max_addresses entries.
+		 * This is different from what the kernel does, which
+		 * also counts static and temporary addresses when checking
+		 * max_addresses.
+		 **/
 		for (i = 0; i < rdisc->addresses->len; i++) {
 			NMRDiscAddress *discovered_address = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
 			NMPlatformIP6Address address;
 
 			memset (&address, 0, sizeof (address));
 			address.address = discovered_address->address;
-			address.plen = 128;
+			address.plen = system_support ? 64 : 128;
 			address.timestamp = discovered_address->timestamp;
 			address.lifetime = discovered_address->lifetime;
 			address.preferred = discovered_address->preferred;
 			address.source = NM_PLATFORM_SOURCE_RDISC;
+			address.flags = ifa_flags;
 
 			nm_ip6_config_add_address (priv->ac_ip6_config, &address);
 		}
@@ -3412,7 +3512,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 }
 
 static gboolean
-addrconf6_start (NMDevice *self)
+addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
@@ -3428,11 +3528,15 @@ addrconf6_start (NMDevice *self)
 		priv->ac_ip6_config = NULL;
 	}
 
-	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self), ip_iface);
+	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self), ip_iface,
+	                                 sysctl_get_ipv6_max_addresses (ip_iface));
 	if (!priv->rdisc) {
 		nm_log_err (LOGD_IP6, "(%s): failed to start router discovery.", ip_iface);
 		return FALSE;
 	}
+
+	priv->rdisc_use_tempaddr = use_tempaddr;
+	print_support_extended_ifa_flags (use_tempaddr);
 
 	/* ensure link local is ready... */
 	ret = linklocal6_start (self);
@@ -3480,10 +3584,23 @@ addrconf6_cleanup (NMDevice *self)
 
 /******************************************/
 
+static NMSettingIP6ConfigPrivacy
+use_tempaddr_clamp (NMSettingIP6ConfigPrivacy use_tempaddr)
+{
+	switch (use_tempaddr) {
+	case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
+	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR:
+	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR:
+		return use_tempaddr;
+	default:
+		return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
+	}
+}
+
 /* Get net.ipv6.conf.default.use_tempaddr value from /etc/sysctl.conf or
  * /lib/sysctl.d/sysctl.conf
  */
-static int
+static NMSettingIP6ConfigPrivacy
 ip6_use_tempaddr (void)
 {
 	char *contents = NULL;
@@ -3491,12 +3608,13 @@ ip6_use_tempaddr (void)
 	char *sysctl_data = NULL;
 	GKeyFile *keyfile;
 	GError *error = NULL;
-	int tmp, ret = -1;
+	gint tmp;
+	NMSettingIP6ConfigPrivacy ret = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 
 	/* Read file contents to a string. */
 	if (!g_file_get_contents ("/etc/sysctl.conf", &contents, NULL, NULL))
 		if (!g_file_get_contents ("/lib/sysctl.d/sysctl.conf", &contents, NULL, NULL))
-			return -1;
+			return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 
 	/* Prepend a group so that we can use GKeyFile parser. */
 	sysctl_data = g_strdup_printf ("%s%s", group_name, contents);
@@ -3507,7 +3625,7 @@ ip6_use_tempaddr (void)
 
 	tmp = g_key_file_get_integer (keyfile, "forged_group", "net.ipv6.conf.default.use_tempaddr", &error);
 	if (error == NULL)
-		ret = tmp;
+		ret = use_tempaddr_clamp (tmp);
 
 done:
 	g_free (contents);
@@ -3544,7 +3662,6 @@ act_stage3_ip6_config_start (NMDevice *self,
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMConnection *connection;
 	const char *method;
-	int conf_use_tempaddr;
 	NMSettingIP6ConfigPrivacy ip6_privacy = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 	const char *ip6_privacy_str = "0\n";
 	GSList *slaves;
@@ -3596,8 +3713,21 @@ act_stage3_ip6_config_start (NMDevice *self,
 	/* Re-enable IPv6 on the interface */
 	nm_platform_sysctl_set (priv->ip6_disable_ipv6_path, "0");
 
+	/* Enable/disable IPv6 Privacy Extensions.
+	 * If a global value is configured by sysadmin (e.g. /etc/sysctl.conf),
+	 * use that value instead of per-connection value.
+	 */
+	ip6_privacy = ip6_use_tempaddr ();
+	if (ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN) {
+		NMSettingIP6Config *s_ip6 = nm_connection_get_setting_ip6_config (connection);
+
+		if (s_ip6)
+			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (s_ip6);
+	}
+	ip6_privacy = use_tempaddr_clamp (ip6_privacy);
+
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
-		if (!addrconf6_start (self)) {
+		if (!addrconf6_start (self, ip6_privacy)) {
 			/* IPv6 might be disabled; allow IPv4 to proceed */
 			ret = NM_ACT_STAGE_RETURN_STOP;
 		} else
@@ -3624,21 +3754,6 @@ act_stage3_ip6_config_start (NMDevice *self,
 	}
 
 	/* Other methods (shared) aren't implemented yet */
-
-	/* Enable/disable IPv6 Privacy Extensions.
-	 * If a global value is configured by sysadmin (e.g. /etc/sysctl.conf),
-	 * use that value instead of per-connection value.
-	 */
-	conf_use_tempaddr = ip6_use_tempaddr ();
-	if (conf_use_tempaddr >= 0)
-		ip6_privacy = conf_use_tempaddr;
-	else {
-		NMSettingIP6Config *s_ip6 = nm_connection_get_setting_ip6_config (connection);
-
-		if (s_ip6)
-			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (s_ip6);
-	}
-	ip6_privacy = CLAMP (ip6_privacy, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
 
 	switch (ip6_privacy) {
 	case NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN:

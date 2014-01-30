@@ -67,6 +67,8 @@ typedef struct {
 
 	GUdevClient *udev_client;
 	GHashTable *udev_devices;
+
+	int support_kernel_extended_ifa_flags;
 } NMLinuxPlatformPrivate;
 
 #define NM_LINUX_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformPrivate))
@@ -428,6 +430,45 @@ ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *s
 }
 
 /******************************************************************/
+
+static void
+_check_support_kernel_extended_ifa_flags_init (NMLinuxPlatformPrivate *priv, struct nl_msg *msg)
+{
+	struct nlmsghdr *msg_hdr = nlmsg_hdr (msg);
+
+	g_return_if_fail (priv->support_kernel_extended_ifa_flags == 0);
+	g_return_if_fail (msg_hdr->nlmsg_type == RTM_NEWADDR);
+
+	/* the extended address flags are only set for AF_INET6 */
+	if (((struct ifaddrmsg *) nlmsg_data (msg_hdr))->ifa_family != AF_INET6)
+		return;
+
+	/* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
+	 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
+	 * and IFA_F_NOPREFIXROUTE (they were added together).
+	 **/
+	priv->support_kernel_extended_ifa_flags =
+	    nlmsg_find_attr (msg_hdr, sizeof (struct ifaddrmsg), 8 /* IFA_FLAGS */)
+	    ? 1 : -1;
+}
+
+static gboolean
+check_support_kernel_extended_ifa_flags (NMPlatform *platform)
+{
+	NMLinuxPlatformPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_LINUX_PLATFORM (platform), FALSE);
+
+	priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+
+	if (priv->support_kernel_extended_ifa_flags == 0) {
+		g_warn_if_reached ();
+		priv->support_kernel_extended_ifa_flags = -1;
+	}
+
+	return priv->support_kernel_extended_ifa_flags > 0;
+}
+
 
 /* Object type specific utilities */
 
@@ -1224,6 +1265,14 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	int nle;
 
 	event = nlmsg_hdr (msg)->nlmsg_type;
+
+	if (priv->support_kernel_extended_ifa_flags == 0 && event == RTM_NEWADDR) {
+		/* if kernel support for extended ifa flags is still undecided, use the opportunity
+		 * now and use @msg to decide it. This saves a blocking net link request.
+		 **/
+		_check_support_kernel_extended_ifa_flags_init (priv, msg);
+	}
+
 	nl_msg_parse (msg, ref_object, &object);
 	g_return_val_if_fail (object, NL_OK);
 
@@ -2806,6 +2855,12 @@ setup (NMPlatform *platform)
 	g_list_free (devices);
 	g_object_unref (enumerator);
 
+	/* request all IPv6 addresses (hopeing that there is at least one), to check for
+	 * the IFA_FLAGS attribute. */
+	nle = nl_rtgen_request (priv->nlh_event, RTM_GETADDR, AF_INET6, NLM_F_DUMP);
+	if (nle != 0)
+		nm_log_warn (LOGD_PLATFORM, "Netlink error: requesting RTM_GETADDR failed with %s", nl_geterror (nle));
+
 	return TRUE;
 }
 
@@ -2910,4 +2965,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->ip6_route_delete = ip6_route_delete;
 	platform_class->ip4_route_exists = ip4_route_exists;
 	platform_class->ip6_route_exists = ip6_route_exists;
+
+	platform_class->check_support_kernel_extended_ifa_flags = check_support_kernel_extended_ifa_flags;
 }

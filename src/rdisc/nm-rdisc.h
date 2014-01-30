@@ -106,6 +106,7 @@ typedef struct {
 	int ifindex;
 	char *ifname;
 	GBytes *lladdr;
+	gint32 max_addresses;
 
 	NMRDiscDHCPLevel dhcp_level;
 	GArray *gateways;

@@ -36,7 +36,7 @@ G_DEFINE_TYPE (NMFakeRDisc, nm_fake_rdisc, NM_TYPE_RDISC)
 /******************************************************************/
 
 NMRDisc *
-nm_fake_rdisc_new (int ifindex, const char *ifname)
+nm_fake_rdisc_new (int ifindex, const char *ifname, gint32 max_addresses)
 {
 	NMRDisc *rdisc = g_object_new (NM_TYPE_FAKE_RDISC, NULL);
 
@@ -44,6 +44,7 @@ nm_fake_rdisc_new (int ifindex, const char *ifname)
 
 	rdisc->ifindex = ifindex;
 	rdisc->ifname = g_strdup (ifname);
+	rdisc->max_addresses = max_addresses;
 
 	return rdisc;
 }

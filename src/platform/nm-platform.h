@@ -323,6 +323,8 @@ typedef struct {
 	gboolean (*ip6_route_delete) (NMPlatform *, int ifindex, struct in6_addr network, int plen, int metric);
 	gboolean (*ip4_route_exists) (NMPlatform *, int ifindex, in_addr_t network, int plen, int metric);
 	gboolean (*ip6_route_exists) (NMPlatform *, int ifindex, struct in6_addr network, int plen, int metric);
+
+	gboolean (*check_support_kernel_extended_ifa_flags) (NMPlatform *);
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -464,6 +466,9 @@ int nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatform
 int nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b);
 int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b);
 int nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b);
+
+gboolean nm_platform_check_support_libnl_extended_ifa_flags (void);
+gboolean nm_platform_check_support_kernel_extended_ifa_flags (void);
 
 #define auto_g_free __attribute__((cleanup(put_g_free)))
 static void __attribute__((unused))
