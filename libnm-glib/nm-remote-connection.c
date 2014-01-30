@@ -320,6 +320,8 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *proxy_call, gpointer user_dat
 	                       DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &secrets,
 	                       G_TYPE_INVALID);
 	(*func)(call->self, error ? NULL : secrets, error, call->user_data);
+	if (secrets)
+		g_hash_table_destroy (secrets);
 	g_clear_error (&error);
 	remote_call_complete (call->self, call);
 }
