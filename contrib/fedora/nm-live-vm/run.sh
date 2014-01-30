@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Three network interfaces
+NET_OPTIONS="-net nic -net user -net nic -net user -net nic -net user"
+
 OS="Linux"
 if [ -f /etc/redhat-release ]; then
     OS=`cat /etc/redhat-release | cut -d" " -f1,2,3,4`
@@ -13,7 +16,7 @@ if [ "$OS" == "Red Hat Enterprise Linux" ]; then
 
     PATH=$PATH:/usr/libexec
 
-    qemu-kvm -vnc :0 -m 2048 -net nic -net user -net nic -net user -net nic -net user -kernel vmlinuz -append video='1024x768' -initrd initramfs.img &
+    qemu-kvm -vnc :0 -m 2048 $NET_OPTIONS -kernel vmlinuz -append video='1024x768' -initrd initramfs.img &
 
     sleep 1
     vncviewer localhost
@@ -28,6 +31,6 @@ else
         QEMU="qemu-system-$ARCH -enable-kvm"
     }
 
-    $QEMU -m 2048 -net nic -net user -net nic -net user -net nic -net user -kernel vmlinuz -append video='1024x768' -initrd initramfs.img
+    $QEMU -m 2048 -net nic $NET_OPTIONS -kernel vmlinuz -append video='1024x768' -initrd initramfs.img
 
 fi
