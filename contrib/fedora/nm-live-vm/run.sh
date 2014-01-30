@@ -16,7 +16,7 @@ if [ "$OS" == "Red Hat Enterprise Linux" ]; then
 
     PATH=$PATH:/usr/libexec
 
-    qemu-kvm -vnc :0 -m 2048 $NET_OPTIONS -kernel vmlinuz -append video='1024x768' -initrd initramfs.img &
+    qemu-kvm -vnc :0 -m 2048 $NET_OPTIONS -kernel vmlinuz -append "video=1024x768 rootfstype=ramfs" -initrd initramfs.img &
 
     sleep 1
     vncviewer localhost
@@ -31,6 +31,5 @@ else
         QEMU="qemu-system-$ARCH -enable-kvm"
     }
 
-    $QEMU -m 2048 -net nic $NET_OPTIONS -kernel vmlinuz -append video='1024x768' -initrd initramfs.img
-
+    $QEMU -m 2048 -net nic $NET_OPTIONS -kernel vmlinuz -append "video=1024x768 rootfstype=ramfs" -initrd initramfs.img
 fi
