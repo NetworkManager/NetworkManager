@@ -266,9 +266,31 @@ _nmcli_compl_ARGS()
                     else
                         _nmcli_list "ethernet wifi wimax gsm cdma infiniband bluetooth vpn olpc-mesh vlan bond bond-slave bridge bridge-slave team team-slave pppoe"
                     fi
-                   return 0
+                    return 0
                 fi
                 OPTIONS_TYPE="${words[1]}"
+
+                if [[ "x$OPTIONS_MANDATORY_IFNAME" != x ]]; then
+                    # the ifname is not a mandatory option for a few connection types...
+                    # Check, if we have such a 'type' and remove the 'ifname' from the list
+                    # of mandatory options.
+                    case "$OPTIONS_TYPE" in
+                        vl|vla|vlan| \
+                        bond| \
+                        team| \
+                        bridge)
+                            for i in ${!OPTIONS_MANDATORY[*]}; do
+                                if [[ "${OPTIONS_MANDATORY[$i]}" = "ifname" ]]; then
+                                    unset OPTIONS_MANDATORY[$i]
+                                fi
+                            done
+                            ;;
+                        *)
+                            ;;
+
+                    esac
+                    OPTIONS_MANDATORY_IFNAME=
+                fi
                 ;;
             master)
                 if [[ "${#words[@]}" -eq 2 ]]; then
@@ -538,7 +560,7 @@ _nmcli()
 
     local command="${words[1]}"
     local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS ARRAY OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP
-    local COMMAND_CONNECTION_TYPE COMMAND_CONNECTION_ID
+    local COMMAND_CONNECTION_TYPE COMMAND_CONNECTION_ID OPTIONS_MANDATORY_IFNAME
     local COMMAND_CONNECTION_ACTIVE=""
 
     case "${words[0]}" in
@@ -654,10 +676,12 @@ _nmcli()
                             words=("${words[@]:2}")
                             OPTIONS_TYPE=
                             OPTIONS=(type ifname con-name autoconnect save)
-                            OPTIONS_MANDATORY=(type)
+                            OPTIONS_MANDATORY=(type ifname)
                             COMMAND_ARGS_WAIT_OPTIONS=1
+                            OPTIONS_MANDATORY_IFNAME=1
                             _nmcli_compl_ARGS && return 0
 
+                            OPTIONS_MANDATORY_IFNAME=
                             ARRAY=("${OPTIONS[@]}")
                             if _nmcli_array_has_value "${OPTIONS_MANDATORY[@]}"; then
                                 # we still have some missing mandatory options...
