@@ -30,7 +30,7 @@ fi
 
 BUILD_PACKAGES="qemu febootstrap mock rpmdevtools"
 ARCH=i386
-ROOT="${ROOT:-"fedora-18-$ARCH"}"
+ROOT="${ROOT:-"fedora-20-$ARCH"}"
 TREE="/var/lib/mock/$ROOT/root"
 PACKAGES="kernel passwd git autoconf automake libtool intltool gtk-doc libnl3-devel
     dbus-glib-devel libgudev1-devel libuuid-devel nss-devel ppp-devel dhclient
@@ -39,9 +39,9 @@ PACKAGES="kernel passwd git autoconf automake libtool intltool gtk-doc libnl3-de
     gdb valgrind lsof strace nmap-ncat tcpdump
     net-tools bridge-utils vconfig
     teamd libteam"
-KERNEL_URL=http://kojipkgs.fedoraproject.org/packages/kernel/3.8.5/201.fc18/i686/kernel-3.8.5-201.fc18.i686.rpm
+KERNEL_URL=http://kojipkgs.fedoraproject.org/packages/kernel/3.12.9/301.fc20/i686/kernel-3.12.9-301.fc20.i686.rpm
 KERNEL=`basename "${KERNEL_URL%.rpm}"`
-#RELEASE="http://kojipkgs.fedoraproject.org/packages/fedora-release/18/1/noarch/fedora-release-18-1.noarch.rpm"
+#RELEASE="http://kojipkgs.fedoraproject.org/packages/fedora-release/20/1/noarch/fedora-release-20-1.noarch.rpm"
 #PACKAGES="systemd bash"
 
 check_root() {
