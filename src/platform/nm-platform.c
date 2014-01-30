@@ -27,6 +27,7 @@
 #include <netlink/route/addr.h>
 
 #include "NetworkManagerUtils.h"
+#include "nm-utils.h"
 #include "nm-platform.h"
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
@@ -1224,7 +1225,18 @@ nm_platform_ip4_address_add (int ifindex,
 	g_return_val_if_fail (lifetime > 0, FALSE);
 	g_return_val_if_fail (klass->ip4_address_add, FALSE);
 
-	debug ("address: adding or updating IPv4 address");
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+		NMPlatformIP4Address addr = { 0 };
+
+		addr.ifindex = ifindex;
+		addr.address = address;
+		addr.peer_address = peer_address;
+		addr.plen = plen;
+		addr.lifetime = lifetime;
+		addr.preferred = preferred;
+
+		debug ("address: adding or updating IPv4 address: %s", nm_platform_ip4_address_to_string (&addr));
+	}
 	return klass->ip4_address_add (platform, ifindex, address, peer_address, plen, lifetime, preferred);
 }
 
@@ -1244,7 +1256,19 @@ nm_platform_ip6_address_add (int ifindex,
 	g_return_val_if_fail (lifetime > 0, FALSE);
 	g_return_val_if_fail (klass->ip6_address_add, FALSE);
 
-	debug ("address: adding or updating IPv6 address");
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+		NMPlatformIP6Address addr = { 0 };
+
+		addr.ifindex = ifindex;
+		addr.address = address;
+		addr.peer_address = peer_address;
+		addr.plen = plen;
+		addr.lifetime = lifetime;
+		addr.preferred = preferred;
+		addr.flags = flags;
+
+		debug ("address: adding or updating IPv6 address: %s", nm_platform_ip6_address_to_string (&addr));
+	}
 	return klass->ip6_address_add (platform, ifindex, address, peer_address, plen, lifetime, preferred, flags);
 }
 
@@ -1263,7 +1287,7 @@ nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen)
 		return FALSE;
 	}
 
-	debug ("address: deleting IPv4 address");
+	debug ("address: deleting IPv4 address %s/%d", nm_utils_inet4_ntop (address, NULL), plen);
 	return klass->ip4_address_delete (platform, ifindex, address, plen);
 }
 
@@ -1282,7 +1306,7 @@ nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen)
 		return FALSE;
 	}
 
-	debug ("address: deleting IPv6 address");
+	debug ("address: deleting IPv6 address %s/%d", nm_utils_inet6_ntop (&address, NULL), plen);
 	return klass->ip6_address_delete (platform, ifindex, address, plen);
 }
 
