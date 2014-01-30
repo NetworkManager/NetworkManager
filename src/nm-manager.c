@@ -1938,7 +1938,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 		subject = nm_auth_subject_new_internal ();
 		active = _new_active_connection (self, connection, NULL, device, subject, &error);
 		if (active) {
-			NMActiveConnection *master_ac;
+			NMActiveConnection *master_ac = NULL;
 
 			/* If the device is a slave or VLAN, find the master ActiveConnection */
 			if (find_master (self, connection, device, NULL, NULL, &master_ac, NULL) && master_ac)
