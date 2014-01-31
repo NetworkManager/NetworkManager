@@ -62,11 +62,11 @@ nm_dnsmasq_utils_get_range (const NMPlatformIP4Address *addr,
 	if (ntohl (host) - ntohl (first) > ntohl (last) - ntohl (host)) {
 		/* Range below the host's IP address */
 		reserved = (guint32) ((ntohl (host) - ntohl (first)) / 10);
-		last = host - htonl (CLAMP (reserved, 0, 8)) - htonl (1);
+		last = host - htonl (MIN (reserved, 8)) - htonl (1);
 	} else {
 		/* Range above host's IP address */
 		reserved = (guint32) ((ntohl (last) - ntohl (host)) / 10);
-		first = host + htonl (CLAMP (reserved, 0, 8)) + htonl (1);
+		first = host + htonl (MIN (reserved, 8)) + htonl (1);
 	}
 
 	nm_utils_inet4_ntop (first, out_first);
