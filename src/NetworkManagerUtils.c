@@ -792,9 +792,9 @@ monotonic_timestamp_get (struct timespec *tp)
 		char s[255];
 
 		strftime (s, sizeof (s), "%Y-%m-%d %H:%M:%S", localtime_r (&now, &tm));
-		nm_log_dbg (LOGD_CORE, "monotonic timestamp starts counting with 1.%09ld seconds at "
-		                       "CLOCK_BOOTTIME=%lld.%09ld (local time is %s)",
-		                       tp->tv_nsec, (long long)tp->tv_sec, tp->tv_nsec, s);
+		nm_log_dbg (LOGD_CORE, "monotonic timestamp started counting 1.%09ld seconds ago with "
+		                       "an offset of %lld.0 seconds to CLOCK_BOOTTIME (local time is %s)",
+		                       tp->tv_nsec, (long long) -monotonic_timestamp_offset_sec, s);
 	}
 }
 
