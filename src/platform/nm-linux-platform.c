@@ -2849,7 +2849,7 @@ setup (NMPlatform *platform)
 	/* request all IPv6 addresses (hopeing that there is at least one), to check for
 	 * the IFA_FLAGS attribute. */
 	nle = nl_rtgen_request (priv->nlh_event, RTM_GETADDR, AF_INET6, NLM_F_DUMP);
-	if (nle != 0)
+	if (nle < 0)
 		nm_log_warn (LOGD_PLATFORM, "Netlink error: requesting RTM_GETADDR failed with %s", nl_geterror (nle));
 
 	return TRUE;
