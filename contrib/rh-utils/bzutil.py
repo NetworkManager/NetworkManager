@@ -745,11 +745,12 @@ class FilterMatch(FilterBase):
         if not bzdata or self._name not in bzdata:
             return False
         v = bzdata[self._name]
-        if isinstance(v, basestring):
-            return v == self._value
-        if len(v) == 1:
-            return self._value == v[0]
-        return False
+        if not isinstance(v, basestring):
+            if len(v) == 1:
+                v = str(v[0])
+            else:
+                v = str(v)
+        return re.search(self._value, v) is not None
 FilterBase._mapping = {
         'true':                 FilterTrue,
         'false':                FilterFalse,
