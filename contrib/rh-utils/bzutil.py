@@ -24,7 +24,7 @@ def _call(args):
         sys.exit(1)
     return output
 
-str_examples = string.replace(
+str_examples = \
 """Examples:
   * show general usage
 
@@ -79,8 +79,16 @@ str_examples = string.replace(
 
       %cmd% p -c -e --ref origin/master~20..origin/master -v -v --set-status MODIFIED --set-cf-fixed-in 'NetworkManager-0.9.9.0-30.git20140108.el7'
 
-""", "%cmd%", sys.argv[0]);
+  * The parameters --ref, --bz, --rh-search and --rh-search-since allow you to add bug
+    numbers to the output list. --no-bz on the other hand blacklists  specific bz numbers.
+    In addition you can specify one or more --filter arguments. Filters must be parsable
+    python expressions (strings, tuples or lists).
 
+    Supported filter names are: %FILTERS%
+
+       %cmd% p -c --list-by-bz --ref origin/master~50..origin/master --filter "('or', 'bgo', ('and', ('match', 'product', 'Fedora'), ('match', 'version', '20')))" -v -v
+
+"""
 
 class ConfigStore:
     NAME_RHBZ_USER = 'rhbz_user'
@@ -525,7 +533,7 @@ class UtilParseCommitMessage:
 
     @property
     def result(self):
-        if not self._result and self._git_backend:
+        if self._result is None and self._git_backend:
             message = git_commit_message(self.commit)
             data = []
 
@@ -558,6 +566,17 @@ class UtilParseCommitMessage:
             self._result = list(set(data))
         return self._result
 
+    def filter_out(self, filter):
+        res = []
+        exc = []
+        for r in self.result:
+            if filter.eval(r):
+                res.append(r)
+            else:
+                exc.append(r)
+        self._result = res
+        return exc
+
     def __cmp__(self, other):
         if self._git_backend != other._git_backend:
             return cmp(self._git_backend, other._git_backend)
@@ -589,6 +608,159 @@ class UtilParseCommitMessage:
         return self._commit_date
 
 
+class FilterBase():
+    def __init__(self, args):
+        if args:
+            raise Exception("No arguments expected (instead got \"%r\")" % (args))
+    def eval(self, bz):
+        return True
+    @staticmethod
+    def escape(s):
+        s = s.replace("'", "\'")
+        s = s.replace("\n", "\\n")
+        s = s.replace("\\", "\\\\")
+        return "'" + s + "'"
+    @staticmethod
+    def create_filter(args):
+        if isinstance(args, basestring):
+            args = [args]
+        if not args:
+            raise Exception("Cannot parse empty filter")
+        name = args[0]
+
+        if name.lower() not in FilterBase._mapping:
+            raise Exception("Invalid filter name \"%s\"" % name)
+
+        filter_type = FilterBase._mapping[name.lower()]
+
+        try:
+            f = filter_type(args[1:])
+        except Exception as e:
+            raise Exception("Cannot create filter of type %s with arguments \"%r\": (%s)" % (filter_type.__name__, args[1:], str(e)))
+        return f
+    @staticmethod
+    def parse(s):
+        try:
+            expr = ast.literal_eval(s)
+        except Exception as e:
+            raise Exception("Error parsing filter expression \"%s\": invalid python syntax: %s" % (s, str(e)))
+        try:
+            return FilterBase.create_filter(expr);
+        except Exception as e:
+            raise Exception("Error parsing filter expression \"%s\", \"%s\": expression not parseable as filter: %s" % (s, repr(expr), str(e)))
+
+class FilterTrue(FilterBase):
+    def __init__(self, args):
+        FilterBase.__init__(self, args)
+    def __str__(self):
+        return 'True'
+    def __repr__(self):
+        return "'True'"
+class FilterFalse(FilterBase):
+    def __init__(self, args):
+        FilterBase.__init__(self, args)
+    def __str__(self):
+        return 'False'
+    def __repr__(self):
+        return "'False'"
+    def eval(self, bz):
+        return False
+class FilterNot(FilterBase):
+    def __init__(self, args):
+        if len(args) != 1:
+            raise Exception("Filter of type FilterNot expects exactly one arguement (instead got \"%r\")" % (args))
+        self._filter = FilterBase.create_filter(args[0])
+    def __str__(self):
+        return '(not %s)' % self._filter
+    def __repr__(self):
+        return "('not', %s)" % (repr(self._filter))
+    def eval(self, bz):
+        return not self._filter.eval(bz)
+class FilterAnd(FilterBase):
+    def __init__(self, args):
+        if not args:
+            raise Exception("Filter of type FilterAnd expects one or more filters (instead got \"%r\")" % (args))
+        self._filters = [FilterBase.create_filter(f) for f in args]
+    def __str__(self):
+        return '(and %s)' % (" ".join([str(f) for f in self._filters]))
+    def __repr__(self):
+        return "('and', %s)" % (", ".join([repr(f) for f in self._filters]))
+    def eval(self, bz):
+        for f in self._filters:
+            if not f.eval(bz):
+                return False
+        return True
+class FilterOr(FilterBase):
+    @staticmethod
+    def join(filters):
+        if len(filters) >= 2:
+            return FilterOr(None, ready=filters)
+        return filters[0]
+    def __init__(self, args, ready=None):
+        if ready is not None:
+            self._filters = ready
+            return
+        if not args:
+            raise Exception("Filter of type FilterOr expects one or more filters (instead got \"%r\")" % (args))
+        self._filters = [FilterBase.create_filter(f) for f in args]
+    def __str__(self):
+        return '(or %s)' % (" ".join([str(f) for f in self._filters]))
+    def __repr__(self):
+        return "('or', %s)" % (", ".join([repr(f) for f in self._filters]))
+    def eval(self, bz):
+        for f in self._filters:
+            if f.eval(bz):
+                return True
+        return False
+class FilterRhbz(FilterBase):
+    def __init__(self, args):
+        FilterBase.__init__(self, args)
+    def __str__(self):
+        return 'rhbz'
+    def __repr__(self):
+        return "'rhbz'"
+    def eval(self, bz):
+        return isinstance(bz, BzInfoRhbz)
+class FilterBgo(FilterBase):
+    def __init__(self, args):
+        FilterBase.__init__(self, args)
+    def __str__(self):
+        return 'bgo'
+    def __repr__(self):
+        return "'bgo'"
+    def eval(self, bz):
+        return isinstance(bz, BzInfoBgo)
+class FilterMatch(FilterBase):
+    def __init__(self, args):
+        if len(args) != 2 or not isinstance(args[0], basestring) or not isinstance(args[1], basestring):
+            raise Exception("Filter of type FilterMatch expects two strings as argument (instead got \"%r\")" % (args))
+        self._name = args[0]
+        self._value = args[1]
+    def __str__(self):
+        return '(match %s %s)' % (FilterBase.escape(self._name), FilterBase.escape(self._value))
+    def __repr__(self):
+        return "('match' %s %s)" % (FilterBase.escape(self._name), FilterBase.escape(self._value))
+    def eval(self, bz):
+        bzdata = bz.getBZData()
+        if not bzdata or self._name not in bzdata:
+            return False
+        v = bzdata[self._name]
+        if isinstance(v, basestring):
+            return v == self._value
+        if len(v) == 1:
+            return self._value == v[0]
+        return False
+FilterBase._mapping = {
+        'true':                 FilterTrue,
+        'false':                FilterFalse,
+        'not':                  FilterNot,
+        'and':                  FilterAnd,
+        'or':                   FilterOr,
+        'rhbz':                 FilterRhbz,
+        'bgo':                  FilterBgo,
+        'match':                FilterMatch,
+    }
+
 
 
 
@@ -618,6 +790,7 @@ class CmdParseCommitMessage(CmdBase):
         self.parser.add_argument('--set-status', '-s', default=None, help='Set BZ status to the specified string (no action without --no-test)')
         self.parser.add_argument('--set-cf-fixed-in', '-m', default=None, help='Set BZ cf_fixed_in to the specified string (no action without --no-test)')
         self.parser.add_argument('--no-test', action='store_true', help='If specified any --set-* options, really change the bug')
+        self.parser.add_argument('--filter', '-f', action='append', help='Filter expressions to include/exclude bugs (specifying more then one filter, means OR)')
 
     @staticmethod
     def _order_keys(keys, ordered):
@@ -680,12 +853,22 @@ class CmdParseCommitMessage(CmdBase):
             i = i + 1
         return result
 
+    def filter_out(self, result, filter):
+        exc = []
+        for r in result:
+            exc = exc + r.filter_out(filter)
+        return exc
+
     def run(self, argv):
         printed_something = False
 
         self.options = self.parser.parse_args(argv)
 
         config.setup(self.options.conf)
+
+        filter = None
+        if self.options.filter:
+            filter = FilterOr.join([FilterBase.parse(f) for f in self.options.filter])
 
         supported_set_status = ['MODIFIED', 'ASSIGNED']
         if self.options.set_status and self.options.set_status not in supported_set_status:
@@ -735,6 +918,23 @@ class CmdParseCommitMessage(CmdBase):
         result_man = self._parse_bzlist(self.options.bz, no_bz)
         result_all = [ (ref, [UtilParseCommitMessage(commit, no_bz=no_bz) for commit in git_ref_list(ref)]) for ref in (self.options.ref if self.options.ref else [])]
         result_search = self._rh_searchlist(rh_searches, no_bz)
+
+        if filter is not None:
+            print("=== Excluded by filter: %s" % (repr(filter)))
+            excluded = []
+
+            excluded = excluded + self.filter_out(result_man, filter)
+            excluded = excluded + self.filter_out(result_search, filter)
+
+            for ref_data in result_all:
+                for commit_data in ref_data[1]:
+                    excluded = excluded + commit_data.filter_out(filter)
+
+            excluded =sorted(list(set(excluded)))
+            for result in excluded:
+                print(result.to_string("    ", 0, self.options.color))
+
+
 
         if self.options.list_refs or (self.options.list_refs is None and result_all):
             print("=== List commit refs (%s) ===" % (len(result_all)))
@@ -835,6 +1035,9 @@ class CmdParseCommitMessage(CmdBase):
             print(_colored(self.options.color, "Changes not set, run with --no-test", defaultcolor='green'))
             return
 
+
+str_examples = string.replace(str_examples, "%cmd%", sys.argv[0]);
+str_examples = string.replace(str_examples, "%FILTERS%", ', '.join(["'"+n+"'" for n in FilterBase._mapping]));
 
 commands = {}
 
