@@ -313,7 +313,7 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *proxy_call, gpointer user_dat
 {
 	RemoteCall *call = user_data;
 	NMRemoteConnectionGetSecretsFunc func = (NMRemoteConnectionGetSecretsFunc) call->callback;
-	GHashTable *secrets;
+	GHashTable *secrets = NULL;
 	GError *error = NULL;
 
 	dbus_g_proxy_end_call (proxy, proxy_call, &error,
