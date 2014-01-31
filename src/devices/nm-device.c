@@ -4700,9 +4700,12 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	aipd_cleanup (self);
 
 	/* Turn off kernel IPv6 */
-	nm_platform_sysctl_set (priv->ip6_disable_ipv6_path, "1");
-	nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
-	nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, "0");
+	if (priv->ip6_disable_ipv6_path)
+		nm_platform_sysctl_set (priv->ip6_disable_ipv6_path, "1");
+	if (priv->ip6_accept_ra_path)
+		nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
+	if (priv->ip6_use_tempaddr_path)
+		nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, "0");
 
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
@@ -5480,9 +5483,9 @@ dispose (GObject *object)
 	g_clear_object (&priv->vpn6_config);
 	g_clear_object (&priv->ext_ip6_config);
 
-	g_free (priv->ip6_disable_ipv6_path);
-	g_free (priv->ip6_accept_ra_path);
-	g_free (priv->ip6_use_tempaddr_path);
+	g_clear_pointer (&priv->ip6_disable_ipv6_path, g_free);
+	g_clear_pointer (&priv->ip6_accept_ra_path, g_free);
+	g_clear_pointer (&priv->ip6_use_tempaddr_path, g_free);
 
 	if (priv->carrier_defer_id) {
 		g_source_remove (priv->carrier_defer_id);
