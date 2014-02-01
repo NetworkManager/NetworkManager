@@ -86,7 +86,7 @@ str_examples = \
 
     Supported filter names are: %FILTERS%
 
-       %cmd% p -c --list-by-bz --ref origin/master~50..origin/master --filter "('or', 'bgo', ('and', ('match', 'product', 'Fedora'), ('match', 'version', '20')))" -v -v
+       %cmd% p -c --list-by-bz --ref origin/master~50..origin/master --filter "('or', 'bgo', ('and', ('product', 'Fedora'), ('version', '20'), ('not', ('status', '^CLOS.*$'))))" -v -v
 
 """
 
@@ -628,10 +628,13 @@ class FilterBase():
             raise Exception("Cannot parse empty filter")
         name = args[0]
 
-        if name.lower() not in FilterBase._mapping:
+        if name.lower() in FilterBase._mapping:
+            filter_type = FilterBase._mapping[name.lower()]
+        elif name.lower() in BzClient.DEFAULT_FIELDS:
+            args = tuple(['match'] + list(args))
+            filter_type = FilterBase._mapping['match']
+        else:
             raise Exception("Invalid filter name \"%s\"" % name)
-
-        filter_type = FilterBase._mapping[name.lower()]
 
         try:
             f = filter_type(args[1:])
