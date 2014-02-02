@@ -7,6 +7,7 @@ m4_define([nm_micro_version], [9])
 m4_define([nm_nano_version],  [0])
 m4_define([nm_version],
           [nm_major_version.nm_minor_version.nm_micro_version.nm_nano_version])
+m4_define([nm_git_sha], [m4_esyscmd([ ( [[ -d ./.git/ && "$(realpath ./.git/)" = "$(realpath "$(git rev-parse --git-dir 2>/dev/null)" 2>/dev/null)" ]] && git rev-parse --verify -q HEAD 2>/dev/null ) || true ])])
 
 AC_INIT([NetworkManager], [nm_version],
         [http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager],
@@ -54,6 +55,7 @@ NM_MAJOR_VERSION=nm_major_version
 NM_MINOR_VERSION=nm_minor_version
 NM_MICRO_VERSION=nm_micro_version
 NM_VERSION=nm_version
+NM_GIT_SHA=nm_git_sha
 AC_SUBST(NM_MAJOR_VERSION)
 AC_SUBST(NM_MINOR_VERSION)
 AC_SUBST(NM_MICRO_VERSION)
