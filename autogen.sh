@@ -35,5 +35,5 @@ AUTOPOINT='intltoolize --automake --copy' autoreconf --force --install --verbose
 
 cd $olddir
 if test -z "$NOCONFIGURE"; then
-	exec $srcdir/configure --enable-maintainer-mode "$@" --enable-static=libndp
+	exec $srcdir/configure --enable-maintainer-mode "$@"
 fi

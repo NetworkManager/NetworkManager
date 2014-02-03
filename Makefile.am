@@ -20,8 +20,6 @@ SUBDIRS = \
 	examples \
 	vapi
 
-DIST_SUBDIRS = $(SUBDIRS) libndp
-
 @GNOME_CODE_COVERAGE_RULES@
 
 EXTRA_DIST = \
@@ -64,13 +62,4 @@ libgsystem_libs = $(GLIB_LIBS)
 include libgsystem/Makefile-libgsystem.am
 noinst_LTLIBRARIES = libgsystem.la
 
-if BUILD_LIBNDP
-noinst_DATA = libndp
-libndp:
-	(cd libndp && $(MAKE))
-
-clean-local:
-	(cd libndp && $(MAKE) clean)
-endif
-
-.PHONY: cscope libndp
+.PHONY: cscope
