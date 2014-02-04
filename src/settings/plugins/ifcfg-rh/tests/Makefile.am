@@ -16,7 +16,6 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/ \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/settings \
-	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/posix-signals \
 	-I$(srcdir)/../ \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \

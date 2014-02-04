@@ -130,6 +130,11 @@ nm_sources = \
 	platform/nm-linux-platform.h \
 	platform/nm-platform.c \
 	platform/nm-platform.h \
+	platform/wifi/wifi-utils-nl80211.c \
+	platform/wifi/wifi-utils-nl80211.h \
+	platform/wifi/wifi-utils-private.h \
+	platform/wifi/wifi-utils.c \
+	platform/wifi/wifi-utils.h \
 	\
 	rdisc/nm-fake-rdisc.c \
 	rdisc/nm-fake-rdisc.h \
@@ -193,12 +198,6 @@ nm_sources = \
 	vpn-manager/nm-vpn-manager.h \
 	vpn-manager/nm-vpn-service.c \
 	vpn-manager/nm-vpn-service.h \
-	\
-	wifi/wifi-utils-nl80211.c \
-	wifi/wifi-utils-nl80211.h \
-	wifi/wifi-utils-private.h \
-	wifi/wifi-utils.c \
-	wifi/wifi-utils.h \
 	\
 	nm-activation-request.c \
 	nm-activation-request.h \
@@ -270,7 +269,9 @@ nm_sources += nm-sleep-monitor-upower.c
 endif
 
 if WITH_WEXT
-nm_sources += wifi/wifi-utils-wext.c wifi/wifi-utils-wext.h
+nm_sources += \
+	platform/wifi/wifi-utils-wext.c \
+	platform/wifi/wifi-utils-wext.h
 endif
 
 

@@ -678,6 +678,101 @@ gre_get_properties (NMPlatform *platform, int ifindex, NMPlatformGreProperties *
 	return FALSE;
 }
 
+static gboolean
+wifi_get_capabilities (NMPlatform *platform, int ifindex, NMDeviceWifiCapabilities *caps)
+{
+	NMFakePlatformLink *device = link_get (platform, ifindex);
+
+	g_return_val_if_fail (device, FALSE);
+
+	if (device->link.type != NM_LINK_TYPE_WIFI)
+		return FALSE;
+
+	if (caps) {
+		*caps = (  NM_WIFI_DEVICE_CAP_CIPHER_WEP40
+		         | NM_WIFI_DEVICE_CAP_CIPHER_WEP104
+		         | NM_WIFI_DEVICE_CAP_CIPHER_TKIP
+		         | NM_WIFI_DEVICE_CAP_CIPHER_CCMP
+		         | NM_WIFI_DEVICE_CAP_WPA
+		         | NM_WIFI_DEVICE_CAP_RSN
+		         | NM_WIFI_DEVICE_CAP_AP
+		         | NM_WIFI_DEVICE_CAP_ADHOC);
+	}
+	return TRUE;
+}
+
+static gboolean
+wifi_get_bssid (NMPlatform *platform, int ifindex, struct ether_addr *bssid)
+{
+	return FALSE;
+}
+
+static GByteArray *
+wifi_get_ssid (NMPlatform *platform, int ifindex)
+{
+	return NULL;
+}
+
+static guint32
+wifi_get_frequency (NMPlatform *platform, int ifindex)
+{
+	return 0;
+}
+
+static int
+wifi_get_quality (NMPlatform *platform, int ifindex)
+{
+	return 0;
+}
+
+static guint32
+wifi_get_rate (NMPlatform *platform, int ifindex)
+{
+	return 0;
+}
+
+static NM80211Mode
+wifi_get_mode (NMPlatform *platform, int ifindex)
+{
+	return NM_802_11_MODE_UNKNOWN;
+}
+
+static void
+wifi_set_mode (NMPlatform *platform, int ifindex, NM80211Mode mode)
+{
+	;
+}
+
+static guint32
+wifi_find_frequency (NMPlatform *platform, int ifindex, const guint32 *freqs)
+{
+	return freqs[0];
+}
+
+static void
+wifi_indicate_addressing_running (NMPlatform *platform, int ifindex, gboolean running)
+{
+	;
+}
+
+static guint32
+mesh_get_channel (NMPlatform *platform, int ifindex)
+{
+	return 0;
+}
+
+static gboolean
+mesh_set_channel (NMPlatform *platform, int ifindex, guint32 channel)
+{
+	return FALSE;
+}
+
+static gboolean
+mesh_set_ssid (NMPlatform *platform, int ifindex, const GByteArray *ssid)
+{
+	return FALSE;
+}
+
 /******************************************************************/
 
 static GArray *
@@ -1230,6 +1325,21 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->macvlan_get_properties = macvlan_get_properties;
 	platform_class->vxlan_get_properties = vxlan_get_properties;
 	platform_class->gre_get_properties = gre_get_properties;
+
+	platform_class->wifi_get_capabilities = wifi_get_capabilities;
+	platform_class->wifi_get_bssid = wifi_get_bssid;
+	platform_class->wifi_get_ssid = wifi_get_ssid;
+	platform_class->wifi_get_frequency = wifi_get_frequency;
+	platform_class->wifi_get_quality = wifi_get_quality;
+	platform_class->wifi_get_rate = wifi_get_rate;
+	platform_class->wifi_get_mode = wifi_get_mode;
+	platform_class->wifi_set_mode = wifi_set_mode;
+	platform_class->wifi_find_frequency = wifi_find_frequency;
+	platform_class->wifi_indicate_addressing_running = wifi_indicate_addressing_running;
+
+	platform_class->mesh_get_channel = mesh_get_channel;
+	platform_class->mesh_set_channel = mesh_set_channel;
+	platform_class->mesh_set_ssid = mesh_set_ssid;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;
