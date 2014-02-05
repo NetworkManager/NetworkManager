@@ -2873,6 +2873,31 @@ mesh_set_ssid (NMPlatform *platform, int ifindex, const GByteArray *ssid)
 	return wifi_utils_set_mesh_ssid (wifi_data, ssid);
 }
 
+static gboolean
+link_get_wake_on_lan (NMPlatform *platform, int ifindex)
+{
+	NMLinkType type = link_get_type (platform, ifindex);
+
+	if (type == NM_LINK_TYPE_ETHERNET) {
+		struct ethtool_wolinfo wol;
+
+		memset (&wol, 0, sizeof (wol));
+		wol.cmd = ETHTOOL_GWOL;
+		if (!ethtool_get (link_get_name (platform, ifindex), &wol))
+			return FALSE;
+
+		return wol.wolopts != 0;
+	} else if (type == NM_LINK_TYPE_WIFI) {
+		WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+		if (!wifi_data)
+			return FALSE;
+
+		return wifi_utils_get_wowlan (wifi_data);
+	} else
+		return FALSE;
+}
+
 /******************************************************************/
 
 static int
@@ -3644,6 +3669,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_set_mtu = link_set_mtu;
 
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
+	platform_class->link_get_wake_on_lan = link_get_wake_on_lan;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;

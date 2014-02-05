@@ -321,6 +321,7 @@ typedef struct {
 	gboolean (*link_set_mtu) (NMPlatform *, int ifindex, guint32 mtu);
 
 	char * (*link_get_physical_port_id) (NMPlatform *, int ifindex);
+	gboolean (*link_get_wake_on_lan) (NMPlatform *, int ifindex);
 
 	gboolean (*link_supports_carrier_detect) (NMPlatform *, int ifindex);
 	gboolean (*link_supports_vlans) (NMPlatform *, int ifindex);
@@ -466,7 +467,8 @@ gboolean nm_platform_link_set_address (int ifindex, const void *address, size_t 
 guint32 nm_platform_link_get_mtu (int ifindex);
 gboolean nm_platform_link_set_mtu (int ifindex, guint32 mtu);
 
-char *nm_platform_link_get_physical_port_id (int ifindex);
+char    *nm_platform_link_get_physical_port_id (int ifindex);
+gboolean nm_platform_link_get_wake_on_lan (int ifindex);
 
 gboolean nm_platform_link_supports_carrier_detect (int ifindex);
 gboolean nm_platform_link_supports_vlans (int ifindex);
