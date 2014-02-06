@@ -72,6 +72,14 @@ enum {
 	LAST_PROP
 };
 
+enum {
+	QUIT,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
 static void nmt_newt_form_redraw (NmtNewtForm *form);
 
 /**
@@ -400,7 +408,6 @@ nmt_newt_form_quit (NmtNewtForm *form)
 	nmt_newt_form_destroy (form);
 
 	form_stack = g_slist_remove (form_stack, form);
-	g_object_unref (form);
 
 	if (form_stack)
 		nmt_newt_form_iterate (form_stack->data);
@@ -408,6 +415,9 @@ nmt_newt_form_quit (NmtNewtForm *form)
 		g_source_destroy (keypress_source);
 		g_clear_pointer (&keypress_source, g_source_unref);
 	}
+
+	g_signal_emit (form, signals[QUIT], 0);
+	g_object_unref (form);
 }
 
 /**
@@ -555,6 +565,22 @@ nmt_newt_form_class_init (NmtNewtFormClass *form_class)
 	container_class->remove = nmt_newt_form_remove;
 
 	form_class->show = nmt_newt_form_real_show;
+
+	/* signals */
+
+	/**
+	 * NmtNewtForm::quit:
+	 * @form: the #NmtNewtForm
+	 *
+	 * Emitted when the form quits.
+	 */
+	signals[QUIT] =
+		g_signal_new ("quit",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NmtNewtFormClass, quit),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 0);
 
 	/**
 	 * NmtNewtForm:title:

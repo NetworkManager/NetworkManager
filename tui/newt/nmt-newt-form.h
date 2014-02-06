@@ -38,6 +38,10 @@ struct _NmtNewtForm {
 typedef struct {
 	NmtNewtContainerClass parent;
 
+	/* signals */
+	void (*quit) (NmtNewtForm *form);
+
+	/* methods */
 	void (*show) (NmtNewtForm *form);
 
 } NmtNewtFormClass;

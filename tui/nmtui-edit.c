@@ -78,8 +78,8 @@ edit_connection_list_filter (NmtEditConnectionList *list,
 }
 
 static void
-quit_clicked (NmtNewtButton *button,
-              gpointer       user_data)
+form_quit (NmtNewtForm *form,
+           gpointer     user_data)
 {
 	nmtui_quit ();
 }
@@ -98,10 +98,10 @@ nmt_edit_main_connection_list (void)
 	                     "height", screen_height - 4,
 	                     "escape-exits", TRUE,
 	                     NULL);
+	g_signal_connect (form, "quit", G_CALLBACK (form_quit), NULL);
 
 	quit = nmt_newt_button_new (_("Quit"));
 	nmt_newt_widget_set_exit_on_activate (quit, TRUE);
-	g_signal_connect (quit, "clicked", G_CALLBACK (quit_clicked), NULL);
 
 	list = g_object_new (NMT_TYPE_EDIT_CONNECTION_LIST,
 	                     "extra-widget", quit,

@@ -237,8 +237,8 @@ listbox_active_changed (GObject    *object,
 }
 
 static void
-quit_clicked (NmtNewtButton *button,
-              gpointer       user_data)
+form_quit (NmtNewtForm *form,
+           gpointer     user_data)
 {
 	nmtui_quit ();
 }
@@ -257,6 +257,7 @@ nmt_connect_connection_list (void)
 	                     "height", screen_height - 4,
 	                     "escape-exits", TRUE,
 	                     NULL);
+	g_signal_connect (form, "quit", G_CALLBACK (form_quit), NULL);
 
 	grid = nmt_newt_grid_new ();
 
@@ -278,7 +279,6 @@ nmt_connect_connection_list (void)
 
 	quit = nmt_newt_button_box_add_end (NMT_NEWT_BUTTON_BOX (bbox), _("Quit"));
 	nmt_newt_widget_set_exit_on_activate (quit, TRUE);
-	g_signal_connect (quit, "clicked", G_CALLBACK (quit_clicked), NULL);
 
 	nmt_newt_form_set_content (form, grid);
 	nmt_newt_form_show (form);
