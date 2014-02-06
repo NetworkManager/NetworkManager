@@ -268,7 +268,7 @@ usage (void)
 #endif
 	           "  down [id | uuid | path | apath] <ID>\n\n"
 	           "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
-	           "  modify [id | uuid | path] <ID> <setting>.<property> <value>\n\n"
+	           "  modify [--temporary] [id | uuid | path] <ID> <setting>.<property> <value>\n\n"
 	           "  edit [id | uuid | path] <ID>\n"
 	           "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
 	           "  delete [id | uuid | path] <ID>\n\n"
@@ -7825,7 +7825,7 @@ modify_connection_cb (NMRemoteConnection *connection,
 }
 
 static NMCResultCode
-do_connection_modify (NmCli *nmc, int argc, char **argv)
+do_connection_modify (NmCli *nmc, gboolean temporary, int argc, char **argv)
 {
 	NMConnection *connection = NULL;
 	NMRemoteConnection *rc = NULL;
@@ -7944,9 +7944,7 @@ do_connection_modify (NmCli *nmc, int argc, char **argv)
 		goto finish;
 	}
 
-	nm_remote_connection_commit_changes (rc,
-	                                     modify_connection_cb,
-	                                     nmc);
+	update_connection (!temporary, rc, modify_connection_cb, nmc);
 finish:
 	nmc->should_wait = (nmc->return_value == NMC_RESULT_SUCCESS);
 	g_free (value);
@@ -8265,11 +8263,18 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = do_connection_load (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "modify") == 0) {
+			gboolean temporary = FALSE;
+
 			if (nmc_arg_is_help (*(argv+1))) {
 				usage_connection_modify ();
 				goto usage_exit;
 			}
-			nmc->return_value = do_connection_modify (nmc, argc-1, argv+1);
+			next_arg (&argc, &argv);
+			if (nmc_arg_is_option (*argv, "temporary")) {
+				temporary = TRUE;
+				next_arg (&argc, &argv);
+			}
+			nmc->return_value = do_connection_modify (nmc, temporary, argc, argv);
 		}
 		else {
 			usage ();
