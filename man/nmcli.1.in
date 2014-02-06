@@ -21,7 +21,7 @@
 .\"
 .\" Copyright (C) 2010 - 2014 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "14 January 2014"
+.TH NMCLI "1" "17 February 2014"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -619,16 +619,25 @@ See also \fInm-settings\fP(5) for all NetworkManager settings and property names
 descriptions; and \fInmcli-examples\fP(5) for sample editor sessions.
 .RE
 .TP
-.B modify [ id | uuid | path ] <ID> <setting name>.<property name> [<value>]
+.B modify [--temporary] [ id | uuid | path ] <ID> [+]<setting>.<property> <value>
+.B [+]<setting>.<property> <value> ...
 .br
-Modify a single property in the connection.
+Modify one or more properties in the connection profile.
 .br
 The connection is identified by its name, UUID or D-Bus path. If <ID> is
 ambiguous, a keyword \fIid\fP, \fIuuid\fP or \fIpath\fP can be used.
 See \fInm-settings\fP(5) for setting and property names, their descriptions
 and default values. This command supports abbreviations for \fIsetting name\fP
-and \fIproperty name\fP provided they are unique. When \fIvalue\fP is not
-specified, the property will be set to the default value (deleted).
+and \fIproperty name\fP provided they are unique. Empty \fIvalue\fP ("")
+removes the property value (sets the property to the default value).
+The provided value overwrite the existing property value. If you want to
+append to the existing value instead, use \fI+\fP prefix for the property name.
+But it only has a real effect for multi-value (container) properties like ipv4.dns,
+ipv4.addresses, etc.
+.br
+The changed values will be saved persistently by NetworkManager, unless
+\fI--temporary\fP option is provided, in which case the changes won't persist
+over NetworkManager restart.
 .TP
 .B delete [ id | uuid | path ] <ID>
 .br
@@ -896,6 +905,14 @@ modifies 'autoconnect' property in the 'connection' setting of 'ethernet\(hy2' c
 .IP "\fB\f(CWnmcli con mod \(dq\&Home Wi\-Fi\(dq\& wifi.mtu 1350\fP\fP"
 .IP
 modifies 'mtu' property in the 'wifi' setting of 'Home Wi\(hyFi' connection.
+
+.IP "\fB\f(CWnmcli con mod em1-1 ipv4.method manual ipv4.addr \(dq\&192.168.1.23/24 192.168.1.1, 10.10.1.5/8, 10.0.0.11\(dq\&\fP\fP"
+.IP
+sets manual addressing and the addresses in em1-1 profile.
+
+.IP "\fB\f(CWnmcli con modify ABC +ipv4.dns 8.8.8.8\fP\fP"
+.IP
+appends a Google public DNS server to DNS servers in ABC profile.
 
 .SH NOTES
 \fInmcli\fP accepts abbreviations, as long as they are a unique prefix in the set
