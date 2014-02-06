@@ -62,6 +62,8 @@ enum {
 	PROP_0,
 	PROP_TITLE,
 	PROP_FULLSCREEN,
+	PROP_FULLSCREEN_VERTICAL,
+	PROP_FULLSCREEN_HORIZONTAL,
 	PROP_X,
 	PROP_Y,
 	PROP_WIDTH,
@@ -471,6 +473,24 @@ nmt_newt_form_set_property (GObject      *object,
 			priv->fixed_width = priv->fixed_height = TRUE;
 		}
 		break;
+	case PROP_FULLSCREEN_VERTICAL:
+		if (g_value_get_boolean (value)) {
+			newtGetScreenSize (&screen_width, &screen_height);
+			priv->y = 2;
+			priv->fixed_y = TRUE;
+			priv->height = screen_height - 4;
+			priv->fixed_height = TRUE;
+		}
+		break;
+	case PROP_FULLSCREEN_HORIZONTAL:
+		if (g_value_get_boolean (value)) {
+			newtGetScreenSize (&screen_width, &screen_height);
+			priv->x = 2;
+			priv->fixed_x = TRUE;
+			priv->width = screen_width - 4;
+			priv->fixed_width = TRUE;
+		}
+		break;
 	case PROP_X:
 		if (g_value_get_uint (value)) {
 			priv->x = g_value_get_uint (value);
@@ -602,6 +622,30 @@ nmt_newt_form_class_init (NmtNewtFormClass *form_class)
 	 */
 	g_object_class_install_property (object_class, PROP_FULLSCREEN,
 	                                 g_param_spec_boolean ("fullscreen", "", "",
+	                                                       FALSE,
+	                                                       G_PARAM_WRITABLE |
+	                                                       G_PARAM_STATIC_STRINGS |
+	                                                       G_PARAM_CONSTRUCT_ONLY));
+	/**
+	 * NmtNewtForm:fullscreen-vertical:
+	 *
+	 * If %TRUE, the form will fill the entire "screen" (ie, terminal
+	 * window) vertically, but not necessarily horizontally.
+	 */
+	g_object_class_install_property (object_class, PROP_FULLSCREEN_VERTICAL,
+	                                 g_param_spec_boolean ("fullscreen-vertical", "", "",
+	                                                       FALSE,
+	                                                       G_PARAM_WRITABLE |
+	                                                       G_PARAM_STATIC_STRINGS |
+	                                                       G_PARAM_CONSTRUCT_ONLY));
+	/**
+	 * NmtNewtForm:fullscreen-horizontal:
+	 *
+	 * If %TRUE, the form will fill the entire "screen" (ie, terminal
+	 * window) horizontally, but not necessarily vertically.
+	 */
+	g_object_class_install_property (object_class, PROP_FULLSCREEN_HORIZONTAL,
+	                                 g_param_spec_boolean ("fullscreen-horizontal", "", "",
 	                                                       FALSE,
 	                                                       G_PARAM_WRITABLE |
 	                                                       G_PARAM_STATIC_STRINGS |
