@@ -262,7 +262,7 @@ nmt_newt_form_destroy (NmtNewtForm *form)
 
 	newtFormDestroy (priv->form);
 	priv->form = NULL;
-	newtPopWindow ();
+	newtPopWindowNoRefresh ();
 
 	nmt_newt_widget_unrealize (priv->content);
 }
