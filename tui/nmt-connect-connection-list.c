@@ -208,6 +208,55 @@ add_connections_for_device (NmtConnectDevice *nmtdev,
 	}
 }
 
+/* stolen from nm-applet */
+static char *
+hash_ap (NMAccessPoint *ap)
+{
+	unsigned char input[66];
+	const GByteArray *ssid;
+	NM80211Mode mode;
+	guint32 flags;
+	guint32 wpa_flags;
+	guint32 rsn_flags;
+
+	memset (&input[0], 0, sizeof (input));
+
+	ssid = nm_access_point_get_ssid (ap);
+	if (ssid)
+		memcpy (input, ssid->data, ssid->len);
+
+	mode = nm_access_point_get_mode (ap);
+	if (mode == NM_802_11_MODE_INFRA)
+		input[32] |= (1 << 0);
+	else if (mode == NM_802_11_MODE_ADHOC)
+		input[32] |= (1 << 1);
+	else
+		input[32] |= (1 << 2);
+
+	/* Separate out no encryption, WEP-only, and WPA-capable */
+	flags = nm_access_point_get_flags (ap);
+	wpa_flags = nm_access_point_get_wpa_flags (ap);
+	rsn_flags = nm_access_point_get_rsn_flags (ap);
+	if (  !(flags & NM_802_11_AP_FLAGS_PRIVACY)
+	      && (wpa_flags == NM_802_11_AP_SEC_NONE)
+	      && (rsn_flags == NM_802_11_AP_SEC_NONE))
+		input[32] |= (1 << 3);
+	else if (   (flags & NM_802_11_AP_FLAGS_PRIVACY)
+	            && (wpa_flags == NM_802_11_AP_SEC_NONE)
+	            && (rsn_flags == NM_802_11_AP_SEC_NONE))
+		input[32] |= (1 << 4);
+	else if (   !(flags & NM_802_11_AP_FLAGS_PRIVACY)
+	            &&  (wpa_flags != NM_802_11_AP_SEC_NONE)
+	            &&  (rsn_flags != NM_802_11_AP_SEC_NONE))
+		input[32] |= (1 << 5);
+	else
+		input[32] |= (1 << 6);
+
+	/* duplicate it */
+	memcpy (&input[33], &input[0], 32);
+	return g_compute_checksum_for_data (G_CHECKSUM_MD5, input, sizeof (input));
+}
+
 static void
 add_connections_for_aps (NmtConnectDevice *nmtdev,
                          GSList           *connections)
@@ -216,6 +265,8 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 	NMConnection *conn;
 	NMAccessPoint *ap;
 	const GPtrArray *aps;
+	GHashTable *seen_ssids;
+	char *ap_hash;
 	GSList *iter;
 	int i;
 
@@ -223,11 +274,20 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 	if (!aps)
 		return;
 
+	seen_ssids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+
 	for (i = 0; i < aps->len; i++) {
 		ap = aps->pdata[i];
 
 		if (!nm_access_point_get_ssid (ap))
 			continue;
+
+		ap_hash = hash_ap (ap);
+		if (g_hash_table_contains (seen_ssids, ap_hash)) {
+			g_free (ap_hash);
+			continue;
+		}
+		g_hash_table_add (seen_ssids, ap_hash);
 
 		nmtconn = g_slice_new0 (NmtConnectConnection);
 		nmtconn->device = nmtdev->device;
@@ -249,6 +309,8 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 
 		nmtdev->conns = g_slist_prepend (nmtdev->conns, nmtconn);
 	}
+
+	g_hash_table_unref (seen_ssids);
 }
 
 static GSList *
