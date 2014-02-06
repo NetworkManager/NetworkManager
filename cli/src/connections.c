@@ -268,7 +268,7 @@ usage (void)
 #endif
 	           "  down [id | uuid | path | apath] <ID>\n\n"
 	           "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
-	           "  modify [--temporary] [id | uuid | path] <ID> <setting>.<property> <value>\n\n"
+	           "  modify [--temporary] [id | uuid | path] <ID> [+]<setting>.<property> <value>\n\n"
 	           "  edit [id | uuid | path] <ID>\n"
 	           "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
 	           "  delete [id | uuid | path] <ID>\n\n"
@@ -416,10 +416,13 @@ usage_connection_modify (void)
 	fprintf (stderr,
 	         _("Usage: nmcli connection modify { ARGUMENTS | help }\n"
 	           "\n"
-	           "ARGUMENTS := [id | uuid | path] <ID> <setting name>.<property name> [<value>]\n"
+	           "ARGUMENTS := [id | uuid | path] <ID> [+]<setting>.<property> <value>\n"
 	           "\n"
 	           "Modify a single property in the connection profile.\n"
-	           "The profile is identified by its name, UUID or D-Bus path.\n\n"));
+	           "The profile is identified by its name, UUID or D-Bus path.\n\n"
+	           "\n"
+	           "Examples:\n"
+	           "nmcli con mod em1-1 +ipv4.dns 8.8.4.4\n\n"));
 }
 
 static void
@@ -7825,7 +7828,10 @@ modify_connection_cb (NMRemoteConnection *connection,
 }
 
 static NMCResultCode
-do_connection_modify (NmCli *nmc, gboolean temporary, int argc, char **argv)
+do_connection_modify (NmCli *nmc,
+                      gboolean temporary,
+                      int argc,
+                      char **argv)
 {
 	NMConnection *connection = NULL;
 	NMRemoteConnection *rc = NULL;
@@ -7839,6 +7845,7 @@ do_connection_modify (NmCli *nmc, gboolean temporary, int argc, char **argv)
 	char **strv = NULL;
 	const char *setting_name;
 	char *property_name = NULL;
+	gboolean append = FALSE;
 	GError *error = NULL;
 
 	nmc->should_wait = FALSE;
@@ -7894,6 +7901,12 @@ do_connection_modify (NmCli *nmc, gboolean temporary, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto finish;
 	}
+
+	if (set_prop[0] == '+') {
+		set_prop++;
+		append = TRUE;
+	}
+
 	strv = g_strsplit (set_prop, ".", 2);
 	if (g_strv_length (strv) != 2) {
 		g_string_printf (nmc->return_text, _("Error: invalid <setting>.<property> '%s'."),
@@ -7937,6 +7950,8 @@ do_connection_modify (NmCli *nmc, gboolean temporary, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
 	}
+	if (!append)
+		nmc_setting_reset_property (setting, property_name, NULL);
 	if (!nmc_setting_set_property (setting, property_name, value, &error)) {
 		g_string_printf (nmc->return_text, _("Error: failed to modify %s.%s: %s."),
 		                 strv[0], strv[1], error->message);
