@@ -1,4 +1,5 @@
 AM_CPPFLAGS= \
+	-I$(top_srcdir)/include \
 	$(GLIB_CFLAGS) \
 	$(NEWT_CFLAGS) \
 	$(NULL)

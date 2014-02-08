@@ -254,12 +254,10 @@ AM_CONDITIONAL(HAVE_DBUS_GLIB_100, test "${have_dbus_glib_100}" = "yes")
 PKG_CHECK_MODULES(GLIB, gio-unix-2.0 >= 2.32 gmodule-2.0)
 
 dnl GLIB_VERSION_MIN_REQUIRED should match the version above.
-dnl GLIB_VERSION_MAX_ALLOWED should be the largest version for which there
-dnl is a GLIB_CHECK_VERSION check. We currently have to use
-dnl G_ENCODE_VERSION(2,34) here rather than GLIB_VERSION_2_34, because
-dnl GLib 2.32 did not handle future version defines correctly.
-
-GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_32 '-DGLIB_VERSION_MAX_ALLOWED=G_ENCODE_VERSION(2,34)'"
+dnl GLIB_VERSION_MAX_ALLOWED should be set to the same version;
+dnl nm-glib-compat.h will cause it to be overridden for the functions
+dnl we have compat versions of.
+GLIB_CFLAGS="$GLIB_CFLAGS -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_32 -DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_32"
 
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)

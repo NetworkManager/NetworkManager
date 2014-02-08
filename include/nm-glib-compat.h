@@ -55,6 +55,40 @@ g_type_ensure (GType type)
 			_destroy (_p); \
 	} G_STMT_END
 
+/* These are used to clean up the output of test programs; we can just let
+ * them no-op in older glib.
+ */
+#define g_test_expect_message(log_domain, log_level, pattern)
+#define g_test_assert_expected_messages()
+
+#else
+
+/* We build with -DGLIB_MAX_ALLOWED_VERSION set to 2.32 to make sure we don't
+ * accidentally use new API that we shouldn't. But we don't want warnings for
+ * the APIs that we emulate above.
+ */
+
+#define g_type_ensure(t) \
+	G_STMT_START { \
+		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
+		g_type_ensure (t); \
+		G_GNUC_END_IGNORE_DEPRECATIONS \
+	} G_STMT_END
+
+#define g_test_expect_message(domain, level, format...) \
+	G_STMT_START { \
+		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
+		g_test_expect_message (domain, level, format); \
+		G_GNUC_END_IGNORE_DEPRECATIONS \
+	} G_STMT_END
+
+#define g_test_assert_expected_messages_internal(domain, file, line, func) \
+	G_STMT_START { \
+		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
+		g_test_assert_expected_messages_internal (domain, file, line, func); \
+		G_GNUC_END_IGNORE_DEPRECATIONS \
+	} G_STMT_END
+
 #endif
 
 #endif  /* NM_GLIB_COMPAT_H */

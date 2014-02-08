@@ -57,7 +57,7 @@ cscope:
 	cscope -b -q -R -Iinclude -ssrc -slibnm-glib -slibnm-util -scli/src;
 
 libgsystem_srcpath := libgsystem
-libgsystem_cflags := $(GLIB_CFLAGS) -I$(srcdir)/libgsystem
+libgsystem_cflags := $(filter-out -DGLIB_VERSION%,$(GLIB_CFLAGS)) -I$(srcdir)/libgsystem
 libgsystem_libs = $(GLIB_LIBS)
 include libgsystem/Makefile-libgsystem.am
 noinst_LTLIBRARIES = libgsystem.la

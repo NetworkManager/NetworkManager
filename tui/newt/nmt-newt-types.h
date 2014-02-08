@@ -21,6 +21,7 @@
 
 #include <glib-object.h>
 #include <newt.h>
+#include "nm-glib-compat.h"
 
 G_BEGIN_DECLS
 
