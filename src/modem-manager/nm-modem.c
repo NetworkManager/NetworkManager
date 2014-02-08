@@ -581,27 +581,21 @@ nm_modem_device_state_changed (NMModem *self,
 
 	g_return_if_fail (NM_IS_MODEM (self));
 
-	if (old_state >= NM_DEVICE_STATE_PREPARE && old_state <= NM_DEVICE_STATE_ACTIVATED)
+	if (old_state >= NM_DEVICE_STATE_PREPARE && old_state <= NM_DEVICE_STATE_DEACTIVATING)
 		was_connected = TRUE;
 
 	priv = NM_MODEM_GET_PRIVATE (self);
 
 	/* Make sure we don't leave the serial device open */
 	switch (new_state) {
-	case NM_DEVICE_STATE_NEED_AUTH:
-		if (priv->ppp_manager)
-			break;
-		/* else fall through */
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
-	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_DISCONNECTED:
-		if (new_state != NM_DEVICE_STATE_NEED_AUTH) {
-			if (priv->act_request) {
-				cancel_get_secrets (self);
-				g_object_unref (priv->act_request);
-				priv->act_request = NULL;
-			}
+	case NM_DEVICE_STATE_FAILED:
+		if (priv->act_request) {
+			cancel_get_secrets (self);
+			g_object_unref (priv->act_request);
+			priv->act_request = NULL;
 		}
 
 		if (was_connected) {
