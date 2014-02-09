@@ -95,9 +95,7 @@ typedef struct {
 	                                            GError **error);
 
 	NMActStageReturn (*act_stage1_prepare)     (NMModem *modem,
-	                                            NMActRequest *req,
-	                                            GPtrArray **out_hints,
-	                                            const char **out_setting_name,
+	                                            NMConnection *connection,
 	                                            NMDeviceStateReason *reason);
 
 	NMActStageReturn (*static_stage3_ip4_config_start) (NMModem *self,
