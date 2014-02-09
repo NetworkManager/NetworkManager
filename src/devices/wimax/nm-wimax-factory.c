@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2011 Red Hat, Inc.
+ * Copyright (C) 2011 - 2014 Red Hat, Inc.
  */
 
 #include <gmodule.h>
@@ -23,28 +23,92 @@
 #include "nm-device-factory.h"
 #include "nm-device-wimax.h"
 
-G_MODULE_EXPORT GObject *
-nm_device_factory_create_device (NMPlatformLink *platform_device,
-                                 GError **error)
+#define NM_TYPE_WIMAX_FACTORY            (nm_wimax_factory_get_type ())
+#define NM_WIMAX_FACTORY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_WIMAX_FACTORY, NMWimaxFactory))
+
+typedef struct {
+	GObject parent;
+} NMWimaxFactory;
+
+typedef struct {
+	GObjectClass parent;
+} NMWimaxFactoryClass;
+
+static GType nm_wimax_factory_get_type (void);
+
+static void device_factory_interface_init (NMDeviceFactory *factory_iface);
+
+G_DEFINE_TYPE_EXTENDED (NMWimaxFactory, nm_wimax_factory, G_TYPE_OBJECT, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
+
+/**************************************************************************/
+
+#define PLUGIN_TYPE NM_DEVICE_TYPE_WIMAX
+
+G_MODULE_EXPORT NMDeviceFactory *
+nm_device_factory_create (GError **error)
+{
+	return (NMDeviceFactory *) g_object_new (NM_TYPE_WIMAX_FACTORY, NULL);
+}
+
+G_MODULE_EXPORT NMDeviceType
+nm_device_factory_get_device_type (void)
+{
+	return PLUGIN_TYPE;
+}
+
+/**************************************************************************/
+
+static NMDevice *
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 {
 	/* FIXME: check udev 'DEVTYPE' instead; but since we only support Intel
 	 * WiMAX devices for now this is appropriate.
 	 */
-	if (g_strcmp0 (platform_device->driver, "i2400m_usb") != 0)
+	if (g_strcmp0 (plink->driver, "i2400m_usb") != 0)
 		return NULL;  /* unsupported */
 
-	return (GObject *) nm_device_wimax_new (platform_device);
+	return (NMDevice *) nm_device_wimax_new (plink);
 }
 
-G_MODULE_EXPORT guint32
-nm_device_factory_get_priority (void)
+enum {
+	PROP_0 = 0x1000,
+	PROP_DEVICE_TYPE,
+};
+
+static void
+get_property (GObject *object, guint prop, GValue *value, GParamSpec *pspec)
 {
-	return 0;
+	switch (prop) {
+	case PROP_DEVICE_TYPE:
+		g_value_set_uint (value, PLUGIN_TYPE);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop, pspec);
+		break;
+	}
 }
 
-G_MODULE_EXPORT NMDeviceType
-nm_device_factory_get_type (void)
+static void
+device_factory_interface_init (NMDeviceFactory *factory_iface)
 {
-	return NM_DEVICE_TYPE_WIMAX;
+	factory_iface->new_link = new_link;
+}
+
+static void
+nm_wimax_factory_init (NMWimaxFactory *factory)
+{
+}
+
+static void
+nm_wimax_factory_class_init (NMWimaxFactoryClass *wf_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (wf_class);
+
+	object_class->get_property = get_property;
+
+	g_object_class_override_property (object_class,
+	                                  PROP_DEVICE_TYPE,
+	                                  NM_DEVICE_FACTORY_DEVICE_TYPE);
 }
 

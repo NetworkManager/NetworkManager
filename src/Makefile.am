@@ -80,6 +80,7 @@ nm_sources = \
 	devices/nm-device-bt.h \
 	devices/nm-device-ethernet.c \
 	devices/nm-device-ethernet.h \
+	devices/nm-device-factory.c \
 	devices/nm-device-factory.h \
 	devices/nm-device-generic.c \
 	devices/nm-device-generic.h \

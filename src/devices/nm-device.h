@@ -196,6 +196,10 @@ typedef struct {
 
 	gboolean        (* have_any_ready_slaves) (NMDevice *self,
 	                                           const GSList *slaves);
+
+	gboolean        (* component_added) (NMDevice *self, GObject *component);
+
+	gboolean        (* owns_iface) (NMDevice *self, const char *iface);
 } NMDeviceClass;
 
 
@@ -331,6 +335,10 @@ const char *nm_device_get_physical_port_id (NMDevice *device);
 guint32 nm_device_get_mtu (NMDevice *device);
 
 gboolean   nm_device_connection_is_available (NMDevice *device, NMConnection *connection);
+
+gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
+
+gboolean nm_device_owns_iface (NMDevice *device, const char *iface);
 
 G_END_DECLS
 

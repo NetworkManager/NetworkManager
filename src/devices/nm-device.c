@@ -1193,6 +1193,48 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 		nm_device_set_carrier (device, info->connected);
 }
 
+/**
+ * nm_device_notify_component_added():
+ * @device: the #NMDevice
+ * @component: the component being added by a plugin
+ *
+ * Called by the manager to notify the device that a new component has
+ * been found.  The device implementation should return %TRUE if it
+ * wishes to claim the component, or %FALSE if it cannot.
+ *
+ * Returns: %TRUE to claim the component, %FALSE if the component cannot be
+ * claimed.
+ */
+gboolean
+nm_device_notify_component_added (NMDevice *device, GObject *component)
+{
+	if (NM_DEVICE_GET_CLASS (device)->component_added)
+		return NM_DEVICE_GET_CLASS (device)->component_added (device, component);
+	return FALSE;
+}
+
+/**
+ * nm_device_owns_iface():
+ * @device: the #NMDevice
+ * @iface: an interface name
+ *
+ * Called by the manager to ask if the device or any of its components owns
+ * @iface.  For example, a WWAN implementation would return %TRUE for an
+ * ethernet interface name that was owned by the WWAN device's modem component,
+ * because that ethernet interface is controlled by the WWAN device and cannot
+ * be used independently of the WWAN device.
+ *
+ * Returns: %TRUE if @device or it's components owns the interface name,
+ * %FALSE if not
+ */
+gboolean
+nm_device_owns_iface (NMDevice *device, const char *iface)
+{
+	if (NM_DEVICE_GET_CLASS (device)->owns_iface)
+		return NM_DEVICE_GET_CLASS (device)->owns_iface (device, iface);
+	return FALSE;
+}
+
 static void
 check_carrier (NMDevice *device)
 {

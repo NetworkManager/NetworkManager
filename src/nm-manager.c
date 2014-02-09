@@ -551,27 +551,12 @@ modem_added (NMModemManager *modem_manager,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device = NULL;
 	const char *modem_iface;
-	GSList *iter, *remove = NULL;
-
-	/* Remove ethernet devices that are actually owned by the modem, since
-	 * they cannot be used as normal ethernet.
-	 */
-	for (iter = priv->devices; iter; iter = iter->next) {
-		if (nm_device_get_device_type (iter->data) == NM_DEVICE_TYPE_ETHERNET) {
-			if (nm_modem_owns_port (modem, nm_device_get_ip_iface (iter->data)))
-				remove = g_slist_prepend (remove, iter->data);
-		}
-	}
-	for (iter = remove; iter; iter = iter->next)
-		remove_device (self, NM_DEVICE (iter->data), FALSE);
-	g_slist_free (remove);
+	GSList *iter;
 
 	/* Give Bluetooth DUN devices first chance to claim the modem */
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		if (nm_device_get_device_type (iter->data) == NM_DEVICE_TYPE_BT) {
-			if (nm_device_bt_modem_added (NM_DEVICE_BT (iter->data), modem, driver))
-				return;
-		}
+	for (iter = priv->devices; iter; iter = iter->next) {
+		if (nm_device_notify_component_added (device, G_OBJECT (modem)))
+			return;
 	}
 
 	/* If it was a Bluetooth modem and no bluetooth device claimed it, ignore
@@ -589,8 +574,10 @@ modem_added (NMModemManager *modem_manager,
 
 	/* Make the new modem device */
 	device = nm_device_modem_new (modem, driver);
-	if (device)
+	if (device) {
 		add_device (self, device, FALSE);
+		g_object_unref (device);
+	}
 }
 
 static void
@@ -1182,6 +1169,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	if (device) {
 		nm_device_set_is_nm_owned (device, TRUE);
 		add_device (self, device, FALSE);
+		g_object_unref (device);
 	}
 
 	g_signal_handlers_unblock_by_func (nm_platform_get (), G_CALLBACK (platform_link_added_cb), self);
@@ -1792,6 +1780,15 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	return added ? NM_CONNECTION (added) : NULL;
 }
 
+/**
+ * add_device:
+ * @self: the #NMManager
+ * @device: the #NMDevice to add
+ * @generate_con: %TRUE if existing connection (if any) should be assumed
+ *
+ * If successful, this function will increase the references count of @device.
+ * Callers should decrease the reference count.
+ */
 static void
 add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 {
@@ -1804,26 +1801,31 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	gboolean enabled = FALSE;
 	RfKillType rtype;
 	NMDeviceType devtype;
-
-	iface = nm_device_get_ip_iface (device);
-	g_assert (iface);
+	GSList *iter, *remove = NULL;
 
 	devtype = nm_device_get_device_type (device);
 
-	/* Ignore the device if we already know about it.  But some modems will
-	 * provide pseudo-ethernet devices that NM has already claimed while
-	 * ModemManager is still detecting the modem's serial ports, so when the
-	 * MM modem object finally shows up it may have the same IP interface as the
-	 * ethernet interface we've already detected.  In this case we skip the
-	 * check for an existing device with the same IP interface name and kill
-	 * the ethernet device later in favor of the modem device.
-	 */
-	if ((devtype != NM_DEVICE_TYPE_MODEM) && find_device_by_ip_iface (self, iface)) {
-		g_object_unref (device);
+	/* No duplicates */
+	if (nm_manager_get_device_by_udi (self, nm_device_get_udi (device)))
 		return;
-	}
 
-	priv->devices = g_slist_append (priv->devices, device);
+	/* Remove existing devices owned by the new device; eg remove ethernet
+	 * ports that are owned by a WWAN modem, since udev may announce them
+	 * before the modem is fully discovered.
+	 *
+	 * FIXME: use parent/child device relationships instead of removing
+	 * the child NMDevice entirely
+	 */
+	for (iter = priv->devices; iter; iter = iter->next) {
+		iface = nm_device_get_ip_iface (iter->data);
+		if (nm_device_owns_iface (device, iface))
+			remove = g_slist_prepend (remove, iter->data);
+	}
+	for (iter = remove; iter; iter = iter->next)
+		remove_device (self, NM_DEVICE (iter->data), FALSE);
+	g_slist_free (remove);
+
+	priv->devices = g_slist_append (priv->devices, g_object_ref (device));
 
 	g_signal_connect (device, "state-changed",
 	                  G_CALLBACK (manager_device_state_changed),
@@ -1873,6 +1875,9 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 		enabled = radio_enabled_for_type (self, rtype, TRUE);
 		nm_device_set_enabled (device, enabled);
 	}
+
+	iface = nm_device_get_iface (device);
+	g_assert (iface);
 
 	type_desc = nm_device_get_type_desc (device);
 	g_assert (type_desc);
@@ -1983,6 +1988,7 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 		             has_nap ? "NAP" : "");
 
 		add_device (manager, device, FALSE);
+		g_object_unref (device);
 	}
 }
 
@@ -2050,24 +2056,30 @@ find_device_by_ifindex (NMManager *self, guint32 ifindex)
 	return NULL;
 }
 
-#define PLUGIN_PREFIX "libnm-device-plugin-"
-
-typedef struct {
-	NMDeviceType t;
-	guint priority;
-	NMDeviceFactoryCreateFunc create_func;
-} PluginInfo;
-
-static gint
-plugin_sort (PluginInfo *a, PluginInfo *b)
+static void
+factory_device_added_cb (NMDeviceFactory *factory,
+                         NMDevice *device,
+                         gpointer user_data)
 {
-	/* Higher priority means sort earlier in the list (ie, return -1) */
-	if (a->priority > b->priority)
-		return -1;
-	else if (a->priority < b->priority)
-		return 1;
-	return 0;
+	add_device (NM_MANAGER (user_data), device, FALSE);
 }
+
+static gboolean
+factory_component_added_cb (NMDeviceFactory *factory,
+                            GObject *component,
+                            gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	GSList *iter;
+
+	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
+		if (nm_device_notify_component_added (NM_DEVICE (iter->data), component))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+#define PLUGIN_PREFIX "libnm-device-plugin-"
 
 static void
 load_device_factories (NMManager *self)
@@ -2077,7 +2089,7 @@ load_device_factories (NMManager *self)
 	GError *error = NULL;
 	const char *item;
 	char *path;
-	GSList *list = NULL, *iter;
+	GSList *iter;
 
 	dir = g_dir_open (NMPLUGINDIR, 0, &error);
 	if (!dir) {
@@ -2090,11 +2102,11 @@ load_device_factories (NMManager *self)
 
 	while ((item = g_dir_read_name (dir))) {
 		GModule *plugin;
+		NMDeviceFactory *factory;
 		NMDeviceFactoryCreateFunc create_func;
-		NMDeviceFactoryPriorityFunc priority_func;
-		NMDeviceFactoryTypeFunc type_func;
-		PluginInfo *info = NULL;
-		NMDeviceType plugin_type;
+		NMDeviceFactoryDeviceTypeFunc type_func;
+		NMDeviceType dev_type;
+		gboolean found = FALSE;
 
 		if (!g_str_has_prefix (item, PLUGIN_PREFIX))
 			continue;
@@ -2109,60 +2121,63 @@ load_device_factories (NMManager *self)
 			continue;
 		}
 
-		if (!g_module_symbol (plugin, "nm_device_factory_get_type", (gpointer) (&type_func))) {
-			nm_log_warn (LOGD_HW, "(%s): failed to find device factory: %s", item, g_module_error ());
+		if (!g_module_symbol (plugin, "nm_device_factory_get_device_type", (gpointer) &type_func)) {
+			nm_log_warn (LOGD_HW, "(%s): failed to find device factory type: %s", item, g_module_error ());
 			g_module_close (plugin);
 			continue;
 		}
 
 		/* Make sure we don't double-load plugins */
-		plugin_type = type_func ();
-		for (iter = list; iter; iter = g_slist_next (iter)) {
-			PluginInfo *candidate = iter->data;
+		dev_type = type_func ();
+		for (iter = priv->factories; iter; iter = iter->next) {
+			NMDeviceType t = NM_DEVICE_TYPE_UNKNOWN;
 
-			if (plugin_type == candidate->t) {
-				info = candidate;
+			g_object_get (G_OBJECT (iter->data),
+			              NM_DEVICE_FACTORY_DEVICE_TYPE, &t,
+			              NULL);
+			if (dev_type == t) {
+				found = TRUE;
 				break;
 			}
 		}
-		if (info) {
+		if (found) {
 			g_module_close (plugin);
 			continue;
 		}
 
-		if (!g_module_symbol (plugin, "nm_device_factory_create_device", (gpointer) (&create_func))) {
-			nm_log_warn (LOGD_HW, "(%s): failed to find device creator: %s", item, g_module_error ());
+		if (!g_module_symbol (plugin, "nm_device_factory_create", (gpointer) &create_func)) {
+			nm_log_warn (LOGD_HW, "(%s): failed to find device factory creator: %s", item, g_module_error ());
 			g_module_close (plugin);
 			continue;
 		}
 
-		info = g_malloc0 (sizeof (*info));
-		info->create_func = create_func;
-		info->t = plugin_type;
-
-		/* Grab priority; higher number equals higher priority */
-		if (g_module_symbol (plugin, "nm_device_factory_get_priority", (gpointer) (&priority_func)))
-			info->priority = priority_func ();
-		else {
-			nm_log_dbg (LOGD_HW, "(%s): failed to find device factory priority func: %s",
-			            item, g_module_error ());
+		factory = create_func (&error);
+		if (!factory) {
+			nm_log_warn (LOGD_HW, "(%s): failed to initialize device factory: %s",
+			             item, error ? error->message : "unknown");
+			g_clear_error (&error);
+			g_module_close (plugin);
+			continue;
 		}
+		g_clear_error (&error);
 
 		g_module_make_resident (plugin);
-		list = g_slist_insert_sorted (list, info, (GCompareFunc) plugin_sort);
+		priv->factories = g_slist_prepend (priv->factories, factory);
 
-		nm_log_info (LOGD_HW, "Loaded device factory: %s", g_module_name (plugin));
+		g_signal_connect (factory,
+		                  NM_DEVICE_FACTORY_DEVICE_ADDED,
+		                  G_CALLBACK (factory_device_added_cb),
+		                  self);
+		g_signal_connect (factory,
+		                  NM_DEVICE_FACTORY_COMPONENT_ADDED,
+		                  G_CALLBACK (factory_component_added_cb),
+		                  self);
+
+		nm_log_info (LOGD_HW, "Loaded device plugin: %s", g_module_name (plugin));
 	};
 	g_dir_close (dir);
 
-	/* Ditch the priority info and copy the factory functions to our private data */
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		PluginInfo *info = iter->data;
-
-		priv->factories = g_slist_append (priv->factories, info->create_func);
-		g_free (info);
-	}
-	g_slist_free (list);
+	priv->factories = g_slist_reverse (priv->factories);
 }
 
 static void
@@ -2184,11 +2199,10 @@ platform_link_added_cb (NMPlatform *platform,
 		return;
 
 	/* Try registered device factories */
-	for (iter = priv->factories; iter; iter = g_slist_next (iter)) {
-		NMDeviceFactoryCreateFunc create_func = iter->data;
+	for (iter = priv->factories; iter; iter = iter->next) {
+		NMDeviceFactory *factory = NM_DEVICE_FACTORY (iter->data);
 
-		g_clear_error (&error);
-		device = (NMDevice *) create_func (plink, &error);
+		device = nm_device_factory_new_link (factory, plink, &error);
 		if (device && NM_IS_DEVICE (device)) {
 			g_assert_no_error (error);
 			break;  /* success! */
@@ -2281,8 +2295,10 @@ platform_link_added_cb (NMPlatform *platform,
 		}
 	}
 
-	if (device)
+	if (device) {
 		add_device (self, device, plink->type != NM_LINK_TYPE_LOOPBACK);
+		g_object_unref (device);
+	}
 }
 
 static void
@@ -4807,6 +4823,8 @@ nm_manager_new (NMSettings *settings,
 	 */
 	rfkill_change_wifi (priv->radio_states[RFKILL_TYPE_WLAN].desc, initial_wifi_enabled);
 
+	load_device_factories (singleton);
+
 	return singleton;
 }
 
@@ -4916,8 +4934,6 @@ nm_manager_init (NMManager *manager)
 		nm_log_warn (LOGD_CORE, "failed to monitor kernel firmware directory '%s'.",
 		             KERNEL_FIRMWARE_DIR);
 	}
-
-	load_device_factories (manager);
 
 	/* Update timestamps in active connections */
 	priv->timestamp_update_id = g_timeout_add_seconds (300, (GSourceFunc) periodic_update_active_connection_timestamps, manager);
@@ -5046,6 +5062,7 @@ dispose (GObject *object)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	DBusGConnection *bus;
 	DBusConnection *dbus_connection;
+	GSList *iter;
 
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
@@ -5116,6 +5133,12 @@ dispose (GObject *object)
 		g_clear_object (&priv->fw_monitor);
 	}
 
+	for (iter = priv->factories; iter; iter = iter->next) {
+		NMDeviceFactory *factory = iter->data;
+
+		g_signal_handlers_disconnect_matched (factory, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, manager);
+		g_object_unref (factory);
+	}
 	g_clear_pointer (&priv->factories, g_slist_free);
 
 	if (priv->timestamp_update_id) {

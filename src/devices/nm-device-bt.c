@@ -588,22 +588,22 @@ modem_removed_cb (NMModem *modem, gpointer user_data)
 		modem_cleanup (self);
 }
 
-gboolean
-nm_device_bt_modem_added (NMDeviceBt *self,
-                          NMModem *modem,
-                          const char *driver)
+static gboolean
+component_added (NMDevice *device, GObject *component)
 {
-	NMDeviceBtPrivate *priv;
+	NMDeviceBt *self = NM_DEVICE_BT (device);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
+	NMModem *modem;
 	const gchar *modem_data_port;
 	const gchar *modem_control_port;
 	char *base;
 	NMDeviceState state;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
-	g_return_val_if_fail (NM_IS_DEVICE_BT (self), FALSE);
-	g_return_val_if_fail (NM_IS_MODEM (modem), FALSE);
+	if (!NM_IS_MODEM (component))
+		return FALSE;
+	modem = NM_MODEM (component);
 
-	priv = NM_DEVICE_BT_GET_PRIVATE (self);
 	modem_data_port = nm_modem_get_data_port (modem);
 	modem_control_port = nm_modem_get_control_port (modem);
 	g_return_val_if_fail (modem_data_port != NULL || modem_control_port != NULL, FALSE);
@@ -1207,6 +1207,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
 	device_class->is_available = is_available;
+	device_class->component_added = component_added;
 
 	device_class->state_changed = device_state_changed;
 

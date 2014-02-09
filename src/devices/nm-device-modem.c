@@ -212,6 +212,15 @@ nm_device_modem_get_modem (NMDeviceModem *self)
 	return NM_DEVICE_MODEM_GET_PRIVATE (self)->modem;
 }
 
+static gboolean
+owns_iface (NMDevice *device, const char *iface)
+{
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+
+	g_assert (priv->modem);
+	return nm_modem_owns_port (priv->modem, iface);
+}
+
 /*****************************************************************************/
 
 static void
@@ -492,6 +501,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	device_class->get_enabled = get_enabled;
 	device_class->set_enabled = set_enabled;
+	device_class->owns_iface = owns_iface;
 
 	device_class->state_changed = device_state_changed;
 
