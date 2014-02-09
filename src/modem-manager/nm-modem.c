@@ -661,6 +661,27 @@ nm_modem_get_data_port (NMModem *self)
 		NM_MODEM_GET_PRIVATE (self)->ppp_iface : NM_MODEM_GET_PRIVATE (self)->data_port;
 }
 
+gboolean
+nm_modem_owns_port (NMModem *self, const char *iface)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+
+	g_return_val_if_fail (iface != NULL, FALSE);
+
+	if (NM_MODEM_GET_CLASS (self)->owns_port)
+		return NM_MODEM_GET_CLASS (self)->owns_port (self, iface);
+
+	/* Fall back to data/control ports */
+	if (priv->ppp_iface && (strcmp (priv->ppp_iface, iface) == 0))
+		return TRUE;
+	if (priv->data_port && (strcmp (priv->data_port, iface) == 0))
+		return TRUE;
+	if (priv->control_port && (strcmp (priv->control_port, iface) == 0))
+		return TRUE;
+
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 void

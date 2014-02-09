@@ -108,6 +108,8 @@ typedef struct {
 
 	void (*deactivate)                         (NMModem *self, NMDevice *device);
 
+	gboolean (*owns_port)                      (NMModem *self, const char *iface);
+
 	/* Signals */
 	void (*ppp_stats)  (NMModem *self, guint32 in_bytes, guint32 out_bytes);
 	void (*ppp_failed) (NMModem *self, NMDeviceStateReason reason);
@@ -126,6 +128,8 @@ const char *nm_modem_get_uid          (NMModem *modem);
 const char *nm_modem_get_control_port (NMModem *modem);
 const char *nm_modem_get_data_port    (NMModem *modem);
 const char *nm_modem_get_driver       (NMModem *modem);
+
+gboolean    nm_modem_owns_port        (NMModem *modem, const char *iface);
 
 void        nm_modem_get_capabilities (NMModem *self,
                                        NMDeviceModemCapabilities *modem_caps,

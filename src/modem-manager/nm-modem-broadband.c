@@ -124,6 +124,20 @@ get_capabilities (NMModem *_self,
 	*current_caps = (NMDeviceModemCapabilities) mm_modem_get_current_capabilities (self->priv->modem_iface);
 }
 
+static gboolean
+owns_port (NMModem *_self, const char *iface)
+{
+	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
+	const MMModemPortInfo *ports = NULL;
+	guint n_ports = 0, i;
+	gboolean owns = FALSE;
+
+	mm_modem_peek_ports (self->priv->modem_iface, &ports, &n_ports);
+	for (i = 0; i < n_ports && !owns; i++)
+		owns = (g_strcmp0 (iface, ports[i].name) == 0);
+	return owns;
+}
+
 /*****************************************************************************/
 
 static void
@@ -916,6 +930,7 @@ nm_modem_broadband_class_init (NMModemBroadbandClass *klass)
 	modem_class->check_connection_compatible = check_connection_compatible;
 	modem_class->complete_connection = complete_connection;
 	modem_class->act_stage1_prepare = act_stage1_prepare;
+	modem_class->owns_port = owns_port;
 
 	/* Properties */
 	g_object_class_install_property
