@@ -113,7 +113,15 @@ modem_prepare_result (NMModem *modem,
 static void
 modem_auth_requested (NMModem *modem, gpointer user_data)
 {
-	nm_device_state_changed (NM_DEVICE (user_data),
+	NMDevice *device = NM_DEVICE (user_data);
+
+	/* Auth requests (PIN, PAP/CHAP passwords, etc) only get handled
+	 * during activation.
+	 */
+	if (!nm_device_is_activating (device))
+		return;
+
+	nm_device_state_changed (device,
 	                         NM_DEVICE_STATE_NEED_AUTH,
 	                         NM_DEVICE_STATE_REASON_NONE);
 }
