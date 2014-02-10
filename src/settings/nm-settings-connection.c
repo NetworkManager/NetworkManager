@@ -96,7 +96,7 @@ typedef struct {
 	guint session_changed_id;
 
 	/* TRUE if the connection has not yet been saved to disk,
-	 * or it it contains changes that have not been saved to disk.
+	 * or if it contains changes that have not been saved to disk.
 	 */
 	gboolean unsaved;
 
