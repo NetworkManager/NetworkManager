@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2012 Red Hat, Inc.
+ * Copyright (C) 2009 - 2014 Red Hat, Inc.
  */
 
 #ifndef NM_BLUEZ_DEVICE_H
@@ -36,12 +36,16 @@
 #define NM_IS_BLUEZ_DEVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_BLUEZ_DEVICE))
 #define NM_BLUEZ_DEVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_BLUEZ_DEVICE, NMBluezDeviceClass))
 
+/* Properties */
 #define NM_BLUEZ_DEVICE_PATH         "path"
 #define NM_BLUEZ_DEVICE_ADDRESS      "address"
 #define NM_BLUEZ_DEVICE_NAME         "name"
 #define NM_BLUEZ_DEVICE_CAPABILITIES "capabilities"
 #define NM_BLUEZ_DEVICE_USABLE       "usable"
 #define NM_BLUEZ_DEVICE_CONNECTED    "connected"
+
+/* Signals */
+#define NM_BLUEZ_DEVICE_REMOVED      "removed"
 
 typedef struct {
 	GObject parent;
@@ -53,7 +57,7 @@ typedef struct {
 	/* virtual functions */
 	void (*initialized) (NMBluezDevice *self, gboolean success);
 
-	void (*invalid)     (NMBluezDevice *self);
+	void (*removed)     (NMBluezDevice *self);
 } NMBluezDeviceClass;
 
 GType nm_bluez_device_get_type (void);

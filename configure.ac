@@ -764,6 +764,7 @@ src/rdisc/Makefile
 src/rdisc/tests/Makefile
 src/devices/atm/Makefile
 src/devices/wimax/Makefile
+src/devices/bluetooth/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile
 libnm-util/tests/Makefile

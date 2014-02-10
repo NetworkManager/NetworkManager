@@ -5,6 +5,7 @@ include $(GLIB_MAKEFILE)
 SUBDIRS =				\
 	.				\
 	devices/atm			\
+	devices/bluetooth		\
 	dhcp-manager			\
 	ppp-manager			\
 	settings/plugins
@@ -52,18 +53,6 @@ NetworkManager_LDADD = libNetworkManager.la $(top_builddir)/libgsystem.la $(LIBN
 noinst_LTLIBRARIES = libNetworkManager.la
 
 nm_sources = \
-	bluez-manager/nm-bluez-common.h \
-	bluez-manager/nm-bluez-device.c \
-	bluez-manager/nm-bluez-device.h \
-	bluez-manager/nm-bluez-manager.c \
-	bluez-manager/nm-bluez-manager.h \
-	bluez-manager/nm-bluez4-adapter.c \
-	bluez-manager/nm-bluez4-adapter.h \
-	bluez-manager/nm-bluez4-manager.c \
-	bluez-manager/nm-bluez4-manager.h \
-	bluez-manager/nm-bluez5-manager.c \
-	bluez-manager/nm-bluez5-manager.h \
-	\
 	config/nm-config.c \
 	config/nm-config.h \
 	config/nm-config-device.c \
@@ -75,8 +64,6 @@ nm_sources = \
 	devices/nm-device-bond.h \
 	devices/nm-device-bridge.c \
 	devices/nm-device-bridge.h \
-	devices/nm-device-bt.c \
-	devices/nm-device-bt.h \
 	devices/nm-device-ethernet.c \
 	devices/nm-device-ethernet.h \
 	devices/nm-device-factory.c \
@@ -303,8 +290,8 @@ endif
 GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
-
 nm_enum_types_sources = $(nm_sources)
+
 if WITH_WIMAX
 nm_enum_types_sources += devices/wimax/nm-device-wimax.h
 AM_CPPFLAGS += -I$(top_srcdir)/src/devices/wimax
@@ -319,7 +306,6 @@ glue_sources = \
 	nm-agent-manager-glue.h \
 	nm-device-bond-glue.h \
 	nm-device-bridge-glue.h \
-	nm-device-bt-glue.h \
 	nm-device-ethernet-glue.h \
 	nm-device-generic-glue.h \
 	nm-device-glue.h \

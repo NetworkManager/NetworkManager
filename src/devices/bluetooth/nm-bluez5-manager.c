@@ -50,8 +50,6 @@ G_DEFINE_TYPE (NMBluez5Manager, nm_bluez5_manager, G_TYPE_OBJECT)
 
 enum {
 	BDADDR_ADDED,
-	BDADDR_REMOVED,
-
 	LAST_SIGNAL
 };
 
@@ -88,13 +86,10 @@ nm_bluez5_manager_query_devices (NMBluez5Manager *self)
 static void
 remove_device (NMBluez5Manager *self, NMBluezDevice *device)
 {
-	if (nm_bluez_device_get_usable (device)) {
-		g_signal_emit (self, signals[BDADDR_REMOVED], 0,
-		               nm_bluez_device_get_address (device),
-		               nm_bluez_device_get_path (device));
-	}
 	g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_initialized), self);
 	g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_usable), self);
+	if (nm_bluez_device_get_usable (device))
+		g_signal_emit_by_name (device, NM_BLUEZ_DEVICE_REMOVED);
 }
 
 static void
@@ -127,9 +122,7 @@ device_usable (NMBluezDevice *device, GParamSpec *pspec, NMBluez5Manager *self)
 				    nm_bluez_device_get_address (device));
 		emit_bdaddr_added (self, device);
 	} else
-		g_signal_emit (self, signals[BDADDR_REMOVED], 0,
-		               nm_bluez_device_get_address (device),
-		               nm_bluez_device_get_path (device));
+		g_signal_emit_by_name (device, NM_BLUEZ_DEVICE_REMOVED);
 }
 
 static void
@@ -425,12 +418,4 @@ nm_bluez5_manager_class_init (NMBluez5ManagerClass *klass)
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 5, G_TYPE_OBJECT, G_TYPE_STRING,
 		              G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
-
-	signals[BDADDR_REMOVED] =
-		g_signal_new (NM_BLUEZ_MANAGER_BDADDR_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMBluez5ManagerClass, bdaddr_removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 }

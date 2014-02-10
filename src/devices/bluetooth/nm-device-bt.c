@@ -44,7 +44,7 @@
 #include "nm-setting-ppp.h"
 #include "nm-device-bt-glue.h"
 #include "NetworkManagerUtils.h"
-#include "nm-enum-types.h"
+#include "nm-bt-enum-types.h"
 #include "nm-utils.h"
 
 #define MM_OLD_DBUS_SERVICE  "org.freedesktop.ModemManager"
@@ -926,6 +926,12 @@ deactivate (NMDevice *device)
 		NM_DEVICE_CLASS (nm_device_bt_parent_class)->deactivate (device);
 }
 
+static void
+bluez_device_removed (NMBluezDevice *bdev, gpointer user_data)
+{
+	g_signal_emit_by_name (NM_DEVICE_BT (user_data), NM_DEVICE_REMOVED);
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -1116,6 +1122,7 @@ set_property (GObject *object, guint prop_id,
 	case PROP_BT_DEVICE:
 		/* Construct only */
 		priv->bt_device = g_value_dup_object (value);
+		g_signal_connect (priv->bt_device, "removed", G_CALLBACK (bluez_device_removed), object);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1155,9 +1162,7 @@ dispose (GObject *object)
 		priv->timeout_id = 0;
 	}
 
-	g_signal_handlers_disconnect_by_func (priv->bt_device,
-	                                      G_CALLBACK (bluez_connected_changed),
-	                                      object);
+	g_signal_handlers_disconnect_matched (priv->bt_device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, object);
 
 	if (priv->dbus_mgr && priv->mm_watch_id) {
 		g_signal_handler_disconnect (priv->dbus_mgr, priv->mm_watch_id);

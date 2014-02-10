@@ -40,7 +40,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-modem-manager.h"
-#include "nm-device-bt.h"
 #include "nm-device.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
@@ -56,7 +55,6 @@
 #include "nm-device-tun.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-gre.h"
-#include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-vpn.h"
@@ -64,8 +62,6 @@
 #include "nm-platform.h"
 #include "nm-rfkill-manager.h"
 #include "nm-hostname-provider.h"
-#include "nm-bluez-manager.h"
-#include "nm-bluez-common.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
 #include "nm-manager-auth.h"
@@ -134,19 +130,6 @@ static void impl_manager_check_connectivity (NMManager *manager,
                                              DBusGMethodInvocation *context);
 
 #include "nm-manager-glue.h"
-
-static void bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
-                                           NMBluezDevice *bt_device,
-                                           const char *bdaddr,
-                                           const char *name,
-                                           const char *object_path,
-                                           guint32 uuids,
-                                           NMManager *manager);
-
-static void bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
-                                             const char *bdaddr,
-                                             const char *object_path,
-                                             gpointer user_data);
 
 static void add_device (NMManager *self, NMDevice *device, gboolean generate_con);
 static void remove_device (NMManager *self, NMDevice *device, gboolean quitting);
@@ -217,7 +200,6 @@ typedef struct {
 	NMDBusManager *dbus_mgr;
 	gboolean       prop_filter_added;
 	NMRfkillManager *rfkill_mgr;
-	NMBluezManager *bluez_mgr;
 
 	/* List of NMDeviceFactoryFunc pointers sorted in priority order */
 	GSList *factories;
@@ -1948,62 +1930,6 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 			g_error_free (error);
 		}
 		g_object_unref (subject);
-	}
-}
-
-static void
-bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
-                               NMBluezDevice *bt_device,
-                               const char *bdaddr,
-                               const char *name,
-                               const char *object_path,
-                               guint32 capabilities,
-                               NMManager *manager)
-{
-	NMDevice *device;
-	gboolean has_dun = (capabilities & NM_BT_CAPABILITY_DUN);
-	gboolean has_nap = (capabilities & NM_BT_CAPABILITY_NAP);
-
-	g_return_if_fail (bdaddr != NULL);
-	g_return_if_fail (name != NULL);
-	g_return_if_fail (object_path != NULL);
-	g_return_if_fail (capabilities != NM_BT_CAPABILITY_NONE);
-	g_return_if_fail (NM_IS_BLUEZ_DEVICE (bt_device));
-
-	/* Make sure the device is not already in the device list */
-	if (nm_manager_get_device_by_udi (manager, object_path))
-		return;
-
-	device = nm_device_bt_new (bt_device, object_path, bdaddr, name, capabilities);
-	if (device) {
-		nm_log_info (LOGD_HW, "BT device %s (%s) added (%s%s%s)",
-		             name,
-		             bdaddr,
-		             has_dun ? "DUN" : "",
-		             has_dun && has_nap ? " " : "",
-		             has_nap ? "NAP" : "");
-
-		add_device (manager, device, FALSE);
-		g_object_unref (device);
-	}
-}
-
-static void
-bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
-                                 const char *bdaddr,
-                                 const char *object_path,
-                                 gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMDevice *device;
-
-	g_return_if_fail (bdaddr != NULL);
-	g_return_if_fail (object_path != NULL);
-
-	device = nm_manager_get_device_by_udi (self, object_path);
-	if (device) {
-		nm_log_info (LOGD_HW, "BT device %s removed", bdaddr);
-		remove_device (self, device, FALSE);
 	}
 }
 
@@ -4168,7 +4094,6 @@ nm_manager_start (NMManager *self)
 	system_hostname_changed_cb (priv->settings, NULL, self);
 
 	nm_platform_query_devices ();
-	nm_bluez_manager_query_devices (priv->bluez_mgr);
 
 	/*
 	 * Connections added before the manager is started do not emit
@@ -4732,18 +4657,6 @@ nm_manager_new (NMSettings *settings,
 	                  G_CALLBACK (rfkill_manager_rfkill_changed_cb),
 	                  singleton);
 
-	priv->bluez_mgr = nm_bluez_manager_new (NM_CONNECTION_PROVIDER (priv->settings));
-
-	g_signal_connect (priv->bluez_mgr,
-	                  NM_BLUEZ_MANAGER_BDADDR_ADDED,
-	                  G_CALLBACK (bluez_manager_bdaddr_added_cb),
-	                  singleton);
-
-	g_signal_connect (priv->bluez_mgr,
-	                  NM_BLUEZ_MANAGER_BDADDR_REMOVED,
-	                  G_CALLBACK (bluez_manager_bdaddr_removed_cb),
-	                  singleton);
-
 	/* Force kernel WiFi rfkill state to follow NM saved wifi state in case
 	 * the BIOS doesn't save rfkill state, and to be consistent with user
 	 * changes to the WirelessEnabled property which toggles kernel rfkill.
@@ -5044,7 +4957,6 @@ dispose (GObject *object)
 		priv->dbus_mgr = NULL;
 	}
 
-	g_clear_object (&priv->bluez_mgr);
 	g_clear_object (&priv->aipd_proxy);
 	g_clear_object (&priv->sleep_monitor);
 

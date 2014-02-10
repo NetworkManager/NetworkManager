@@ -87,6 +87,7 @@ enum {
 /* Signals */
 enum {
 	INITIALIZED,
+	REMOVED,
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -1169,5 +1170,12 @@ nm_bluez_device_class_init (NMBluezDeviceClass *config_class)
 	                                     G_STRUCT_OFFSET (NMBluezDeviceClass, initialized),
 	                                     NULL, NULL, NULL,
 	                                     G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+
+	signals[REMOVED] =     g_signal_new (NM_BLUEZ_DEVICE_REMOVED,
+	                                     G_OBJECT_CLASS_TYPE (object_class),
+	                                     G_SIGNAL_RUN_LAST,
+	                                     G_STRUCT_OFFSET (NMBluezDeviceClass, removed),
+	                                     NULL, NULL, NULL,
+	                                     G_TYPE_NONE, 0);
 }
 
