@@ -66,7 +66,6 @@
 /*
  * Globals
  */
-static NMManager *manager = NULL;
 static GMainLoop *main_loop = NULL;
 static gboolean quit_early = FALSE;
 static sigset_t signal_set;
@@ -312,6 +311,7 @@ main (int argc, char *argv[])
 	gboolean wifi_enabled = TRUE, net_enabled = TRUE, wwan_enabled = TRUE, wimax_enabled = TRUE;
 	gboolean success, show_version = FALSE;
 	int i;
+	NMManager *manager = NULL;
 	gs_unref_object NMVPNManager *vpn_manager = NULL;
 	gs_unref_object NMDnsManager *dns_mgr = NULL;
 	gs_unref_object NMDBusManager *dbus_mgr = NULL;

@@ -362,7 +362,6 @@ dispose (GObject *object)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (object);
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	NMManager *manager;
 
 	if (priv->dispose_has_run) {
 		G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->dispose (object);
@@ -375,12 +374,10 @@ dispose (GObject *object)
 
 	companion_cleanup (self);
 
-	manager = nm_manager_get ();
 	if (priv->device_added_id)
-		g_signal_handler_disconnect (manager, priv->device_added_id);
+		g_signal_handler_disconnect (nm_manager_get (), priv->device_added_id);
 	if (priv->device_removed_id)
-		g_signal_handler_disconnect (manager, priv->device_removed_id);
-	g_object_unref (manager);
+		g_signal_handler_disconnect (nm_manager_get (), priv->device_removed_id);
 
 	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->dispose (object);
 }
@@ -536,7 +533,6 @@ is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 	const guint8 *my_addr, *their_addr;
 	guint their_addr_len;
-	NMManager *manager;
 
 	if (!NM_IS_DEVICE_WIFI (other))
 		return FALSE;
@@ -550,12 +546,10 @@ is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	priv->companion = other;
 
 	/* When we've found the companion, stop listening for other devices */
-	manager = nm_manager_get ();
 	if (priv->device_added_id) {
-		g_signal_handler_disconnect (manager, priv->device_added_id);
+		g_signal_handler_disconnect (nm_manager_get (), priv->device_added_id);
 		priv->device_added_id = 0;
 	}
-	g_object_unref (manager);
 
 	nm_device_state_changed (NM_DEVICE (self),
 	                         NM_DEVICE_STATE_DISCONNECTED,
@@ -631,8 +625,6 @@ check_companion_cb (gpointer user_data)
 		if (is_companion (self, NM_DEVICE (list->data)))
 			break;
 	}
-
-	g_object_unref (manager);
 
  done:
 	nm_device_remove_pending_action (NM_DEVICE (self), "waiting for companion");

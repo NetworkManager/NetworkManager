@@ -4690,7 +4690,7 @@ NMManager *
 nm_manager_get (void)
 {
 	g_assert (singleton);
-	return g_object_ref (singleton);
+	return singleton;
 }
 
 NMManager *
