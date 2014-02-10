@@ -98,7 +98,7 @@ nl80211_alloc_msg (WifiDataNl80211 *nl80211, guint32 cmd, guint32 flags)
 
 /* NOTE: this function consumes 'msg' */
 static int
-_nl80211_send_and_recv (struct nl_sock *nl_sock, 
+_nl80211_send_and_recv (struct nl_sock *nl_sock,
                         struct nl_cb *nl_cb,
                         struct nl_msg *msg,
                         int (*valid_handler)(struct nl_msg *, void *),

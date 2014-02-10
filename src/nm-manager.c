@@ -1839,8 +1839,8 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	priv->devices = g_slist_append (priv->devices, device);
 
 	g_signal_connect (device, "state-changed",
-					  G_CALLBACK (manager_device_state_changed),
-					  self);
+	                  G_CALLBACK (manager_device_state_changed),
+	                  self);
 
 	g_signal_connect (device, NM_DEVICE_AUTH_REQUEST,
 	                  G_CALLBACK (device_auth_request_cb),
@@ -2918,7 +2918,7 @@ _new_vpn_active_connection (NMManager *self,
 	NMDevice *device = NULL;
 
 	if (specific_object) {
-		/* Find the specifc connection the client requested we use */
+		/* Find the specific connection the client requested we use */
 		parent = active_connection_get_by_path (self, specific_object);
 		if (!parent) {
 			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
@@ -3415,7 +3415,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 
 	/* Try to create a new connection with the given settings.
 	 * We allow empty settings for AddAndActivateConnection(). In that case,
-	 * the connection will be completed in nm_utils_complete_generic() or 
+	 * the connection will be completed in nm_utils_complete_generic() or
 	 * nm_device_complete_connection() below. Just make sure we don't expect
 	 * specific data being in the connection till then (especially in
 	 * validate_activation_request()).
