@@ -132,6 +132,15 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 	while (!done) {
 		err = nl_recvmsgs (nl_sock, cb);
 		if (err && err != -NLE_AGAIN) {
+			/* Kernel scan list can change while we are dumping it, as new scan
+			 * results from H/W can arrive. BSS info is assured to be consistent
+			 * and we don't need consistent view of whole scan list. Hence do
+			 * not warn on DUMP_INTR error for get scan command.
+			 */
+			if (err == -NLE_DUMP_INTR &&
+			    genlmsg_hdr(nlmsg_hdr(msg))->cmd == NL80211_CMD_GET_SCAN)
+				break;
+
 			nm_log_warn (LOGD_WIFI, "nl_recvmsgs() error: (%d) %s",
 			             err, nl_geterror (err));
 			break;
