@@ -52,6 +52,7 @@ G_BEGIN_DECLS
 #define NM_MODEM_IP4_CONFIG_RESULT "ip4-config-result"
 #define NM_MODEM_AUTH_REQUESTED    "auth-requested"
 #define NM_MODEM_AUTH_RESULT       "auth-result"
+#define NM_MODEM_REMOVED           "removed"
 
 #define MM_MODEM_IP_METHOD_PPP    0
 #define MM_MODEM_IP_METHOD_STATIC 1
@@ -119,6 +120,8 @@ typedef struct {
 
 	void (*auth_requested)    (NMModem *self);
 	void (*auth_result)       (NMModem *self, GError *error);
+
+	void (*removed)           (NMModem *self);
 } NMModemClass;
 
 GType nm_modem_get_type (void);
@@ -181,6 +184,9 @@ gboolean      nm_modem_get_mm_enabled (NMModem *self);
 void          nm_modem_set_mm_enabled (NMModem *self, gboolean enabled);
 
 gboolean      nm_modem_get_mm_connected (NMModem *self);
+
+/* For the modem-manager only */
+void          nm_modem_emit_removed (NMModem *self);
 
 G_END_DECLS
 

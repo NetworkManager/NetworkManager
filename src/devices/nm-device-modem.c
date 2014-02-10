@@ -196,6 +196,12 @@ modem_connected_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 	}
 }
 
+static void
+modem_removed_cb (NMModem *modem, gpointer user_data)
+{
+	g_signal_emit_by_name (NM_DEVICE (user_data), NM_DEVICE_REMOVED);
+}
+
 /*****************************************************************************/
 
 NMModem *
@@ -398,6 +404,7 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_ENABLED, G_CALLBACK (modem_enabled_cb), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_CONNECTED, G_CALLBACK (modem_connected_cb), self);
+	g_signal_connect (modem, NM_MODEM_REMOVED, G_CALLBACK (modem_removed_cb), self);
 
 	/* In the old ModemManager the data port is known from the very beginning;
 	 * while in the new ModemManager the data port is set afterwards when the bearer gets

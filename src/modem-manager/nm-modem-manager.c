@@ -63,8 +63,6 @@ struct _NMModemManagerPrivate {
 
 enum {
 	MODEM_ADDED,
-	MODEM_REMOVED,
-
 	LAST_SIGNAL
 };
 
@@ -159,7 +157,7 @@ modem_removed (DBusGProxy *proxy, const char *path, gpointer user_data)
 
 	modem = (NMModem *) g_hash_table_lookup (self->priv->modems, path);
 	if (modem) {
-		g_signal_emit (self, signals[MODEM_REMOVED], 0, modem);
+		nm_modem_emit_removed (modem);
 		g_hash_table_remove (self->priv->modems, path);
 	}
 }
@@ -274,8 +272,7 @@ modem_manager_appeared (NMModemManager *self, gboolean enumerate_devices)
 static gboolean
 remove_one_modem (gpointer key, gpointer value, gpointer user_data)
 {
-	g_signal_emit (user_data, signals[MODEM_REMOVED], 0, value);
-
+	nm_modem_emit_removed (NM_MODEM (value));
 	return TRUE;
 }
 
@@ -426,7 +423,7 @@ modem_object_removed (MMManager *manager,
 	if (!modem)
 		return;
 
-	g_signal_emit (self, signals[MODEM_REMOVED], 0, modem);
+	nm_modem_emit_removed (modem);
 	g_hash_table_remove (self->priv->modems, path);
 }
 
@@ -760,12 +757,4 @@ nm_modem_manager_class_init (NMModemManagerClass *klass)
 					  G_STRUCT_OFFSET (NMModemManagerClass, modem_added),
 					  NULL, NULL, NULL,
 					  G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_STRING);
-
-	signals[MODEM_REMOVED] =
-		g_signal_new ("modem-removed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemManagerClass, modem_removed),
-					  NULL, NULL, NULL,
-					  G_TYPE_NONE, 1, G_TYPE_OBJECT);
 }

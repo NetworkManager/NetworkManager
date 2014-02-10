@@ -81,6 +81,7 @@ enum {
 	IP4_CONFIG_RESULT,
 	AUTH_REQUESTED,
 	AUTH_RESULT,
+	REMOVED,
 
 	LAST_SIGNAL
 };
@@ -124,6 +125,12 @@ gboolean
 nm_modem_get_mm_connected (NMModem *self)
 {
 	return NM_MODEM_GET_PRIVATE (self)->mm_connected;
+}
+
+void
+nm_modem_emit_removed (NMModem *self)
+{
+	g_signal_emit (self, signals[REMOVED], 0);
 }
 
 /*****************************************************************************/
@@ -987,6 +994,14 @@ nm_modem_class_init (NMModemClass *klass)
 		              G_STRUCT_OFFSET (NMModemClass, auth_result),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1, G_TYPE_POINTER);
+
+	signals[REMOVED] =
+		g_signal_new (NM_MODEM_REMOVED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMModemClass, removed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 0);
 
 	dbus_g_error_domain_register (NM_MODEM_ERROR,
 	                              NM_DBUS_INTERFACE_DEVICE_MODEM,

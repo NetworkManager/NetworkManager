@@ -237,7 +237,6 @@ typedef struct {
 
 	NMModemManager *modem_manager;
 	guint modem_added_id;
-	guint modem_removed_id;
 
 	DBusGProxy *aipd_proxy;
 	NMSleepMonitor *sleep_monitor;
@@ -840,30 +839,6 @@ static void
 device_removed_cb (NMDevice *device, gpointer user_data)
 {
 	remove_device (NM_MANAGER (user_data), device, FALSE);
-}
-
-static void
-modem_removed (NMModemManager *modem_manager,
-			   NMModem *modem,
-			   gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMDevice *found;
-	GSList *iter;
-
-	/* Give Bluetooth DUN devices first chance to handle the modem removal */
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		if (nm_device_get_device_type (iter->data) == NM_DEVICE_TYPE_BT) {
-			if (nm_device_bt_modem_removed (NM_DEVICE_BT (iter->data), modem))
-				return;
-		}
-	}
-
-	/* Otherwise remove the standalone modem */
-	found = nm_manager_get_device_by_udi (self, nm_modem_get_path (modem));
-	if (found)
-		remove_device (self, found, FALSE);
 }
 
 static void
@@ -4886,8 +4861,6 @@ nm_manager_init (NMManager *manager)
 	priv->modem_manager = nm_modem_manager_get ();
 	priv->modem_added_id = g_signal_connect (priv->modem_manager, "modem-added",
 	                                         G_CALLBACK (modem_added), manager);
-	priv->modem_removed_id = g_signal_connect (priv->modem_manager, "modem-removed",
-	                                           G_CALLBACK (modem_removed), manager);
 
 	priv->vpn_manager = nm_vpn_manager_get ();
 
@@ -5110,10 +5083,6 @@ dispose (GObject *object)
 	if (priv->modem_added_id) {
 		g_source_remove (priv->modem_added_id);
 		priv->modem_added_id = 0;
-	}
-	if (priv->modem_removed_id) {
-		g_source_remove (priv->modem_removed_id);
-		priv->modem_removed_id = 0;
 	}
 	g_clear_object (&priv->modem_manager);
 

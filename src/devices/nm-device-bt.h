@@ -69,8 +69,6 @@ gboolean nm_device_bt_modem_added (NMDeviceBt *device,
                                    NMModem *modem,
                                    const char *driver);
 
-gboolean nm_device_bt_modem_removed (NMDeviceBt *device, NMModem *modem);
-
 G_END_DECLS
 
 #endif /* NM_DEVICE_BT_H */
