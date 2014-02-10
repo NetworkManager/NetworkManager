@@ -837,6 +837,12 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 }
 
 static void
+device_removed_cb (NMDevice *device, gpointer user_data)
+{
+	remove_device (NM_MANAGER (user_data), device, FALSE);
+}
+
+static void
 modem_removed (NMModemManager *modem_manager,
 			   NMModem *modem,
 			   gpointer user_data)
@@ -1850,6 +1856,10 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 
 	g_signal_connect (device, NM_DEVICE_AUTH_REQUEST,
 	                  G_CALLBACK (device_auth_request_cb),
+	                  self);
+
+	g_signal_connect (device, NM_DEVICE_REMOVED,
+	                  G_CALLBACK (device_removed_cb),
 	                  self);
 
 	if (priv->startup) {

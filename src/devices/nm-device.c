@@ -112,6 +112,7 @@ enum {
 	AUTH_REQUEST,
 	IP4_CONFIG_CHANGED,
 	IP6_CONFIG_CHANGED,
+	REMOVED,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -6116,6 +6117,13 @@ nm_device_class_init (NMDeviceClass *klass)
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
+
+	signals[REMOVED] =
+		g_signal_new (NM_DEVICE_REMOVED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL, NULL,
+		              G_TYPE_NONE, 0);
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
