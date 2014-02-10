@@ -34,7 +34,7 @@ ROOT="${ROOT:-"fedora-20-$ARCH"}"
 TREE="/var/lib/mock/$ROOT/root"
 PACKAGES="kernel passwd git autoconf automake libtool intltool gtk-doc libnl3-devel
     dbus-glib-devel libgudev1-devel libuuid-devel nss-devel ppp-devel newt-devel libndp-devel
-    dhclient
+    dhclient dnsmasq
     bash-completion man-db man-pages vim-minimal
     firewald
     gdb valgrind lsof strace nmap-ncat tcpdump
