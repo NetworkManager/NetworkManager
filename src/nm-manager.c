@@ -3407,6 +3407,12 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	NMDevice *device = NULL;
 	gboolean vpn = FALSE;
 
+	/* Normalize object paths */
+	if (g_strcmp0 (specific_object_path, "/") == 0)
+		specific_object_path = NULL;
+	if (g_strcmp0 (device_path, "/") == 0)
+		device_path = NULL;
+
 	/* Try to create a new connection with the given settings.
 	 * We allow empty settings for AddAndActivateConnection(). In that case,
 	 * the connection will be completed in nm_utils_complete_generic() or 
