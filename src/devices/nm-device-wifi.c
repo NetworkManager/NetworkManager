@@ -1603,7 +1603,6 @@ build_hidden_probe_list (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	guint max_scan_ssids = nm_supplicant_interface_get_max_scan_ssids (priv->supplicant.iface);
-	NMConnectionProvider *provider = nm_device_get_connection_provider (NM_DEVICE (self));
 	GSList *connections, *iter;
 	GPtrArray *ssids = NULL;
 	static GByteArray *nullssid = NULL;
@@ -1616,7 +1615,7 @@ build_hidden_probe_list (NMDeviceWifi *self)
 	if (G_UNLIKELY (nullssid == NULL))
 		nullssid = g_byte_array_new ();
 
-	connections = nm_connection_provider_get_best_connections (provider,
+	connections = nm_connection_provider_get_best_connections (nm_connection_provider_get (),
 	                                                           max_scan_ssids - 1,
 	                                                           NM_SETTING_WIRELESS_SETTING_NAME,
 	                                                           NULL,

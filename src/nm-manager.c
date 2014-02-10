@@ -1842,8 +1842,6 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 		return;
 	}
 
-	nm_device_set_connection_provider (device, NM_CONNECTION_PROVIDER (priv->settings));
-
 	priv->devices = g_slist_append (priv->devices, device);
 
 	g_signal_connect (device, "state-changed",
@@ -4691,6 +4689,14 @@ nm_manager_get (void)
 {
 	g_assert (singleton);
 	return singleton;
+}
+
+NMConnectionProvider *
+nm_connection_provider_get (void)
+{
+	g_assert (singleton);
+	g_assert (NM_MANAGER_GET_PRIVATE (singleton)->settings);
+	return NM_CONNECTION_PROVIDER (NM_MANAGER_GET_PRIVATE (singleton)->settings);
 }
 
 NMManager *

@@ -80,8 +80,6 @@ void nm_device_set_dhcp_anycast_address (NMDevice *device, guint8 *addr);
 
 gboolean nm_device_dhcp4_renew (NMDevice *device, gboolean release);
 
-NMConnectionProvider *nm_device_get_connection_provider (NMDevice *device);
-
 void nm_device_recheck_available_connections (NMDevice *device);
 
 void nm_device_queued_state_clear (NMDevice *device);

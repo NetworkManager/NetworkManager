@@ -341,11 +341,10 @@ update_connection (NMDevice *device, NMConnection *connection)
 	new_parent = nm_device_get_iface (parent);
 	setting_parent = nm_setting_vlan_get_parent (s_vlan);
 	if (setting_parent && nm_utils_is_uuid (setting_parent)) {
-		NMConnectionProvider *cp = nm_device_get_connection_provider (device);
 		NMConnection *parent_connection;
 
 		/* Don't change a parent specified by UUID if it's still valid */
-		parent_connection = nm_connection_provider_get_connection_by_uuid (cp, setting_parent);
+		parent_connection = nm_connection_provider_get_connection_by_uuid (nm_connection_provider_get (), setting_parent);
 		if (parent_connection && nm_device_check_connection_compatible (parent, parent_connection, NULL))
 			new_parent = NULL;
 	}
