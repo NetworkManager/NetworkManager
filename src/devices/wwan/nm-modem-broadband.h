@@ -51,7 +51,7 @@ struct _NMModemBroadbandClass {
 
 GType nm_modem_broadband_get_type (void);
 
-NMModem *nm_modem_broadband_new (GObject *object);
+NMModem *nm_modem_broadband_new (GObject *object, GError **error);
 
 G_END_DECLS
 

@@ -9,7 +9,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/src/devices \
 	-I${top_srcdir}/src/settings \
 	-I${top_srcdir}/src/platform \
-	-I${top_srcdir}/src/modem-manager \
+	-I${top_srcdir}/src/devices/wwan \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/libnm-util \
@@ -50,7 +50,10 @@ libnm_device_plugin_bt_la_SOURCES = \
 	$(BUILT_SOURCES)
 
 libnm_device_plugin_bt_la_LDFLAGS = -module -avoid-version
-libnm_device_plugin_bt_la_LIBADD = $(DBUS_LIBS) $(GUDEV_LIBS)
+libnm_device_plugin_bt_la_LIBADD = \
+	$(top_builddir)/src/devices/wwan/libnm-wwan.la \
+	$(DBUS_LIBS) \
+	$(GUDEV_LIBS)
 
 CLEANFILES = $(BUILT_SOURCES)
 

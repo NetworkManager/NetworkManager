@@ -360,14 +360,14 @@ set_enabled (NMDevice *device, gboolean enabled)
 /*****************************************************************************/
 
 NMDevice *
-nm_device_modem_new (NMModem *modem, const char *driver)
+nm_device_modem_new (NMModem *modem)
 {
 	NMDeviceModemCapabilities caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
 	NMDeviceModemCapabilities current_caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
 	NMDevice *device;
+	const char *data_port;
 
 	g_return_val_if_fail (NM_IS_MODEM (modem), NULL);
-	g_return_val_if_fail (driver != NULL, NULL);
 
 	/* Load capabilities */
 	nm_modem_get_capabilities (modem, &caps, &current_caps);
@@ -375,7 +375,7 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_MODEM,
 	                                    NM_DEVICE_UDI, nm_modem_get_path (modem),
 	                                    NM_DEVICE_IFACE, nm_modem_get_uid (modem),
-	                                    NM_DEVICE_DRIVER, driver,
+	                                    NM_DEVICE_DRIVER, nm_modem_get_driver (modem),
 	                                    NM_DEVICE_TYPE_DESC, "Broadband",
 	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_MODEM,
 	                                    NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WWAN,
@@ -384,10 +384,10 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 	                                    NM_DEVICE_MODEM_CURRENT_CAPABILITIES, current_caps,
 	                                    NULL);
 
-	/* In old MM modems, data port is known right away (may be changed
-	 * afterwards during a PPP session setup) */
-	if (NM_IS_MODEM_OLD (modem))
-		nm_device_set_ip_iface (device, nm_modem_get_data_port (modem));
+	/* If the data port is known, set it as the IP interface immediately */
+	data_port = nm_modem_get_data_port (modem);
+	if (data_port)
+		nm_device_set_ip_iface (device, data_port);
 
 	return device;
 }

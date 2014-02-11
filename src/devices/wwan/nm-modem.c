@@ -29,7 +29,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-enum-types.h"
+#include "nm-modem-enum-types.h"
 
 G_DEFINE_TYPE (NMModem, nm_modem, G_TYPE_OBJECT)
 

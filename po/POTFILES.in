@@ -47,8 +47,6 @@ src/dns-manager/nm-dns-manager.c
 src/logging/nm-logging.c
 src/config/nm-config.c
 src/devices/atm/nm-device-adsl.c
-src/modem-manager/nm-modem-broadband.c
-src/modem-manager/nm-modem-old.c
 src/devices/bluetooth/nm-bluez-device.c
 src/devices/bluetooth/nm-device-bt.c
 src/devices/nm-device-bond.c
@@ -58,6 +56,8 @@ src/devices/nm-device-infiniband.c
 src/devices/nm-device-olpc-mesh.c
 src/devices/nm-device-team.c
 src/devices/nm-device-vlan.c
+src/devices/wwan/nm-modem-broadband.c
+src/devices/wwan/nm-modem-old.c
 src/nm-manager.c
 src/nm-sleep-monitor-systemd.c
 src/settings/plugins/ifcfg-rh/reader.c

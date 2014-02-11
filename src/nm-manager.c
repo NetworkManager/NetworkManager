@@ -39,12 +39,10 @@
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
-#include "nm-modem-manager.h"
 #include "nm-device.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
-#include "nm-device-modem.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
 #include "nm-device-team.h"
@@ -212,9 +210,6 @@ typedef struct {
 	gboolean net_enabled;
 
 	NMVPNManager *vpn_manager;
-
-	NMModemManager *modem_manager;
-	guint modem_added_id;
 
 	DBusGProxy *aipd_proxy;
 	NMSleepMonitor *sleep_monitor;
@@ -517,45 +512,6 @@ manager_sleeping (NMManager *self)
 	if (priv->sleeping || !priv->net_enabled)
 		return TRUE;
 	return FALSE;
-}
-
-static void
-modem_added (NMModemManager *modem_manager,
-			 NMModem *modem,
-			 const char *driver,
-			 gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMDevice *device = NULL;
-	const char *modem_iface;
-	GSList *iter;
-
-	/* Give Bluetooth DUN devices first chance to claim the modem */
-	for (iter = priv->devices; iter; iter = iter->next) {
-		if (nm_device_notify_component_added (device, G_OBJECT (modem)))
-			return;
-	}
-
-	/* If it was a Bluetooth modem and no bluetooth device claimed it, ignore
-	 * it.  The rfcomm port (and thus the modem) gets created automatically
-	 * by the Bluetooth code during the connection process.
-	 */
-	if (driver && !strcmp (driver, "bluetooth")) {
-		modem_iface = nm_modem_get_data_port (modem);
-		if (!modem_iface)
-			modem_iface = nm_modem_get_control_port (modem);
-
-		nm_log_info (LOGD_MB, "ignoring modem '%s' (no associated Bluetooth device)", modem_iface);
-		return;
-	}
-
-	/* Make the new modem device */
-	device = nm_device_modem_new (modem, driver);
-	if (device) {
-		add_device (self, device, FALSE);
-		g_object_unref (device);
-	}
 }
 
 static void
@@ -1838,7 +1794,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 		                  G_CALLBACK (manager_ipw_rfkill_state_changed),
 		                  self);
 	} else if (devtype == NM_DEVICE_TYPE_MODEM) {
-		g_signal_connect (device, NM_DEVICE_MODEM_ENABLE_CHANGED,
+		g_signal_connect (device, "enable-changed",
 		                  G_CALLBACK (manager_modem_enabled_changed),
 		                  self);
 	}
@@ -4716,10 +4672,6 @@ nm_manager_init (NMManager *manager)
 	                  G_CALLBACK (dbus_connection_changed_cb),
 	                  manager);
 
-	priv->modem_manager = nm_modem_manager_get ();
-	priv->modem_added_id = g_signal_connect (priv->modem_manager, "modem-added",
-	                                         G_CALLBACK (modem_added), manager);
-
 	priv->vpn_manager = nm_vpn_manager_get ();
 
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
@@ -4936,12 +4888,6 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->settings);
 	g_clear_object (&priv->vpn_manager);
-
-	if (priv->modem_added_id) {
-		g_source_remove (priv->modem_added_id);
-		priv->modem_added_id = 0;
-	}
-	g_clear_object (&priv->modem_manager);
 
 	/* Unregister property filter */
 	if (priv->dbus_mgr) {

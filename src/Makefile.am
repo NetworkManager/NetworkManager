@@ -5,6 +5,7 @@ include $(GLIB_MAKEFILE)
 SUBDIRS =				\
 	.				\
 	devices/atm			\
+	devices/wwan			\
 	devices/bluetooth		\
 	dhcp-manager			\
 	ppp-manager			\
@@ -76,8 +77,6 @@ nm_sources = \
 	devices/nm-device-infiniband.h \
 	devices/nm-device-macvlan.c \
 	devices/nm-device-macvlan.h \
-	devices/nm-device-modem.c \
-	devices/nm-device-modem.h \
 	devices/nm-device-olpc-mesh.c \
 	devices/nm-device-olpc-mesh.h \
 	devices/nm-device-private.h \
@@ -122,14 +121,6 @@ nm_sources = \
 	\
 	logging/nm-logging.c \
 	logging/nm-logging.h \
-	\
-	modem-manager/nm-modem-old.c \
-	modem-manager/nm-modem-old.h \
-	modem-manager/nm-modem-old-types.h \
-	modem-manager/nm-modem-manager.c \
-	modem-manager/nm-modem-manager.h \
-	modem-manager/nm-modem.c \
-	modem-manager/nm-modem.h \
 	\
 	platform/nm-fake-platform.c \
 	platform/nm-fake-platform.h \
@@ -259,12 +250,6 @@ nm_sources = \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
 
-if WITH_MODEM_MANAGER_1
-nm_sources += \
-	modem-manager/nm-modem-broadband.c \
-	modem-manager/nm-modem-broadband.h
-endif
-
 if SESSION_TRACKING_SYSTEMD
 nm_sources += nm-session-monitor-systemd.c
 else
@@ -312,7 +297,6 @@ glue_sources = \
 	nm-device-gre-glue.h \
 	nm-device-infiniband-glue.h \
 	nm-device-macvlan-glue.h \
-	nm-device-modem-glue.h \
 	nm-device-olpc-mesh-glue.h \
 	nm-device-team-glue.h \
 	nm-device-tun-glue.h \
@@ -342,7 +326,6 @@ AM_CPPFLAGS += \
 	$(LIBNL_CFLAGS) \
 	$(LIBNDP_CFLAGS) \
 	$(LIBSOUP_CFLAGS) \
-	$(MM_GLIB_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	\
@@ -385,7 +368,6 @@ libNetworkManager_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
-	$(MM_GLIB_LIBS) \
 	$(POLKIT_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
 	$(LIBDL) \
