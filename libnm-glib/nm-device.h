@@ -104,11 +104,12 @@ typedef struct {
 	const char * (*get_type_description) (NMDevice *device);
 	const char * (*get_hw_address) (NMDevice *device);
 
+	GType (*get_setting_type) (NMDevice *device);
+
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
 	void (*_reserved2) (void);
 	void (*_reserved3) (void);
-	void (*_reserved4) (void);
 } NMDeviceClass;
 
 GType nm_device_get_type (void);
@@ -167,6 +168,9 @@ gboolean             nm_device_connection_valid     (NMDevice *device,
 gboolean             nm_device_connection_compatible (NMDevice *device,
                                                       NMConnection *connection,
                                                       GError **error);
+
+NM_AVAILABLE_IN_0_9_10
+GType                nm_device_get_setting_type     (NMDevice *device);
 
 G_END_DECLS
 

@@ -143,6 +143,7 @@ global:
 	nm_device_get_mtu;
 	nm_device_get_physical_port_id;
 	nm_device_get_product;
+	nm_device_get_setting_type;
 	nm_device_get_state;
 	nm_device_get_state_reason;
 	nm_device_get_type;

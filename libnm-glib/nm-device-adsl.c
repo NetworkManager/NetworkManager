@@ -133,6 +133,12 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	return NM_DEVICE_CLASS (nm_device_adsl_parent_class)->connection_compatible (device, connection, error);
 }
 
+static GType
+get_setting_type (NMDevice *device)
+{
+	return NM_TYPE_SETTING_ADSL;
+}
+
 /******************************************************************/
 
 static void
@@ -221,6 +227,7 @@ nm_device_adsl_class_init (NMDeviceAdslClass *adsl_class)
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 	device_class->connection_compatible = connection_compatible;
+	device_class->get_setting_type = get_setting_type;
 
 	/* properties */
 	/**

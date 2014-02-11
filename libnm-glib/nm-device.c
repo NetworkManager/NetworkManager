@@ -2260,3 +2260,22 @@ nm_device_filter_connections (NMDevice *device, const GSList *connections)
 	return g_slist_reverse (filtered);
 }
 
+/**
+ * nm_device_get_setting_type:
+ * @device: an #NMDevice
+ *
+ * Gets the (primary) #NMSetting subtype associated with connections
+ * that can be used on @device.
+ *
+ * Returns: @device's associated #NMSetting type
+ *
+ * Since: 0.9.10
+ */
+GType
+nm_device_get_setting_type (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), G_TYPE_INVALID);
+	g_return_val_if_fail (NM_DEVICE_GET_CLASS (device)->get_setting_type != NULL, G_TYPE_INVALID);
+
+	return NM_DEVICE_GET_CLASS (device)->get_setting_type (device);
+}

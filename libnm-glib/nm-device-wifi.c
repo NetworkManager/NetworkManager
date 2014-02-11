@@ -523,6 +523,12 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	return NM_DEVICE_CLASS (nm_device_wifi_parent_class)->connection_compatible (device, connection, error);
 }
 
+static GType
+get_setting_type (NMDevice *device)
+{
+	return NM_TYPE_SETTING_WIRELESS;
+}
+
 static const char *
 get_hw_address (NMDevice *device)
 {
@@ -704,6 +710,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	device_class->connection_compatible = connection_compatible;
+	device_class->get_setting_type = get_setting_type;
 	device_class->get_hw_address = get_hw_address;
 	wifi_class->access_point_removed = access_point_removed;
 

@@ -205,6 +205,12 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	return NM_DEVICE_CLASS (nm_device_vlan_parent_class)->connection_compatible (device, connection, error);
 }
 
+static GType
+get_setting_type (NMDevice *device)
+{
+	return NM_TYPE_SETTING_VLAN;
+}
+
 static const char *
 get_hw_address (NMDevice *device)
 {
@@ -306,6 +312,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *eth_class)
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 	device_class->connection_compatible = connection_compatible;
+	device_class->get_setting_type = get_setting_type;
 	device_class->get_hw_address = get_hw_address;
 
 	/* properties */
