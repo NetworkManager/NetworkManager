@@ -141,12 +141,13 @@ nm_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
 #define rtnl_addr_set_prefixlen nm_rtnl_addr_set_prefixlen
 
 typedef enum {
+	UNKNOWN_OBJECT_TYPE,
 	LINK,
 	IP4_ADDRESS,
 	IP6_ADDRESS,
 	IP4_ROUTE,
 	IP6_ROUTE,
-	N_TYPES
+	N_TYPES,
 } ObjectType;
 
 typedef enum {
@@ -159,9 +160,10 @@ typedef enum {
 static ObjectType
 object_type_from_nl_object (const struct nl_object *object)
 {
-	const char *type_str = nl_object_get_type (object);
+	const char *type_str;
 
-	g_assert (object);
+	if (!object || !(type_str = nl_object_get_type (object)))
+		return UNKNOWN_OBJECT_TYPE;
 
 	if (!strcmp (type_str, "route/link"))
 		return LINK;
@@ -172,7 +174,7 @@ object_type_from_nl_object (const struct nl_object *object)
 		case AF_INET6:
 			return IP6_ADDRESS;
 		default:
-			g_assert_not_reached ();
+			return UNKNOWN_OBJECT_TYPE;
 		}
 	} else if (!strcmp (type_str, "route/route")) {
 		switch (rtnl_route_get_family ((struct rtnl_route *) object)) {
@@ -181,10 +183,10 @@ object_type_from_nl_object (const struct nl_object *object)
 		case AF_INET6:
 			return IP6_ROUTE;
 		default:
-			g_assert_not_reached ();
+			return UNKNOWN_OBJECT_TYPE;
 		}
 	} else
-		g_assert_not_reached ();
+		return UNKNOWN_OBJECT_TYPE;
 }
 
 /* libnl inclues LINK_ATTR_FAMILY in oo_id_attrs of link_obj_ops and thus
@@ -231,7 +233,10 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 				return NULL;
 			}
 		}
-	default:
+	case IP4_ADDRESS:
+	case IP6_ADDRESS:
+	case IP4_ROUTE:
+	case IP6_ROUTE:
 		/* Fallback to a one-time cache allocation. */
 		{
 			struct nl_cache *cache;
@@ -247,6 +252,9 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 			nl_cache_free (cache);
 			return object;
 		}
+	default:
+		g_return_val_if_reached (NULL);
+		return NULL;
 	}
 }
 
@@ -264,7 +272,8 @@ add_kernel_object (struct nl_sock *sock, struct nl_object *object)
 	case IP6_ROUTE:
 		return rtnl_route_add (sock, (struct rtnl_route *) object, NLM_F_CREATE | NLM_F_REPLACE);
 	default:
-		g_assert_not_reached ();
+		g_return_val_if_reached (-NLE_INVAL);
+		return -NLE_INVAL;
 	}
 }
 
@@ -282,7 +291,8 @@ delete_kernel_object (struct nl_sock *sock, struct nl_object *object)
 	case IP6_ROUTE:
 		return rtnl_route_delete (sock, (struct rtnl_route *) object, 0);
 	default:
-		g_assert_not_reached ();
+		g_return_val_if_reached (-NLE_INVAL);
+		return -NLE_INVAL;
 	}
 }
 
@@ -931,11 +941,11 @@ init_ip6_route (NMPlatformIP6Route *route, struct rtnl_route *rtnlroute)
 /* Object and cache manipulation */
 
 static const char *signal_by_type_and_status[N_TYPES][N_STATUSES] = {
-	{ NM_PLATFORM_LINK_ADDED, NM_PLATFORM_LINK_CHANGED, NM_PLATFORM_LINK_REMOVED },
-	{ NM_PLATFORM_IP4_ADDRESS_ADDED, NM_PLATFORM_IP4_ADDRESS_CHANGED, NM_PLATFORM_IP4_ADDRESS_REMOVED },
-	{ NM_PLATFORM_IP6_ADDRESS_ADDED, NM_PLATFORM_IP6_ADDRESS_CHANGED, NM_PLATFORM_IP6_ADDRESS_REMOVED },
-	{ NM_PLATFORM_IP4_ROUTE_ADDED, NM_PLATFORM_IP4_ROUTE_CHANGED, NM_PLATFORM_IP4_ROUTE_REMOVED },
-	{ NM_PLATFORM_IP6_ROUTE_ADDED, NM_PLATFORM_IP6_ROUTE_CHANGED, NM_PLATFORM_IP6_ROUTE_REMOVED }
+	[LINK]        = { NM_PLATFORM_LINK_ADDED,        NM_PLATFORM_LINK_CHANGED,        NM_PLATFORM_LINK_REMOVED },
+	[IP4_ADDRESS] = { NM_PLATFORM_IP4_ADDRESS_ADDED, NM_PLATFORM_IP4_ADDRESS_CHANGED, NM_PLATFORM_IP4_ADDRESS_REMOVED },
+	[IP6_ADDRESS] = { NM_PLATFORM_IP6_ADDRESS_ADDED, NM_PLATFORM_IP6_ADDRESS_CHANGED, NM_PLATFORM_IP6_ADDRESS_REMOVED },
+	[IP4_ROUTE]   = { NM_PLATFORM_IP4_ROUTE_ADDED,   NM_PLATFORM_IP4_ROUTE_CHANGED,   NM_PLATFORM_IP4_ROUTE_REMOVED },
+	[IP6_ROUTE]   = { NM_PLATFORM_IP6_ROUTE_ADDED,   NM_PLATFORM_IP6_ROUTE_CHANGED,   NM_PLATFORM_IP6_ROUTE_REMOVED }
 };
 
 static struct nl_cache *
@@ -953,7 +963,8 @@ choose_cache (NMPlatform *platform, struct nl_object *object)
 	case IP6_ROUTE:
 		return priv->route_cache;
 	default:
-		g_assert_not_reached ();
+		g_return_val_if_reached (NULL);
+		return NULL;
 	}
 }
 
@@ -1095,7 +1106,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 		}
 		return;
 	default:
-		error ("Announcing object: object type unknown: %d", object_type);
+		g_return_if_reached ();
 	}
 }
 
@@ -1951,7 +1962,8 @@ master_category (NMPlatform *platform, int master)
 	case NM_LINK_TYPE_BOND:
 		return "bonding";
 	default:
-		g_assert_not_reached ();
+		g_return_val_if_reached (NULL);
+		return NULL;
 	}
 }
 
@@ -1969,7 +1981,8 @@ slave_category (NMPlatform *platform, int slave)
 	case NM_LINK_TYPE_BRIDGE:
 		return "brport";
 	default:
-		g_assert_not_reached ();
+		g_return_val_if_reached (NULL);
+		return NULL;
 	}
 }
 
