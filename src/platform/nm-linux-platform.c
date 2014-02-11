@@ -189,26 +189,47 @@ object_type_from_nl_object (const struct nl_object *object)
 		return UNKNOWN_OBJECT_TYPE;
 }
 
-/* libnl inclues LINK_ATTR_FAMILY in oo_id_attrs of link_obj_ops and thus
- * refuses to search for items that lack this attribute. I believe this is a
- * bug or a bad design at the least. Address family is not an identifying
- * attribute of a network interface and IMO is not an attribute of a network
- * interface at all.
- */
+static void
+_nl_link_family_unset (struct nl_object *obj, int *family)
+{
+	if (!obj || object_type_from_nl_object (obj) != LINK)
+		*family = AF_UNSPEC;
+	else {
+		*family = rtnl_link_get_family ((struct rtnl_link *) obj);
+
+		/* Always explicitly set the family to AF_UNSPEC, even if rtnl_link_get_family() might
+		 * already return %AF_UNSPEC. The reason is, that %AF_UNSPEC is the default family
+		 * and libnl nl_object_identical() function will only succeed, if the family is
+		 * explicitly set (which we cannot be sure, unless setting it). */
+		rtnl_link_set_family ((struct rtnl_link *) obj, AF_UNSPEC);
+	}
+}
+
+/* In our link cache, we coerce the family of all link objects to AF_UNSPEC.
+ * Thus, before searching for an object, we fixup @needle to have the right
+ * id (by resetting the family). */
 static struct nl_object *
 nm_nl_cache_search (struct nl_cache *cache, struct nl_object *needle)
 {
-	if (object_type_from_nl_object (needle) == LINK)
-		rtnl_link_set_family ((struct rtnl_link *) needle, AF_UNSPEC);
+	int family;
+	struct nl_object *obj;
 
-	return nl_cache_search (cache, needle);
+	_nl_link_family_unset (needle, &family);
+	obj = nl_cache_search (cache, needle);
+	if (family != AF_UNSPEC) {
+		/* restore the family of the @needle instance. If the family was
+		 * unset before, we cannot make it unset again. Thus, in that case
+		 * we cannot undo _nl_link_family_unset() entirely. */
+		rtnl_link_set_family ((struct rtnl_link *) needle, family);
+	}
+
+	return obj;
 }
-#define nl_cache_search nm_nl_cache_search
 
 /* Ask the kernel for an object identical (as in nl_cache_identical) to the
  * needle argument. This is a kernel counterpart for nl_cache_search.
  *
- * libnl 3.2 doesn't seem to provide such functionality.
+ * The returned object must be freed by the caller with nl_object_put().
  */
 static struct nl_object *
 get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
@@ -225,6 +246,7 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 			nle = rtnl_link_get_kernel (sock, ifindex, name, (struct rtnl_link **) &kernel_object);
 			switch (nle) {
 			case -NLE_SUCCESS:
+				_nl_link_family_unset (kernel_object, &nle);
 				return kernel_object;
 			case -NLE_NODEV:
 				return NULL;
@@ -1128,7 +1150,7 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 	int nle;
 
 	cache = choose_cache (platform, object);
-	cached_object = nl_cache_search (choose_cache (platform, object), object);
+	cached_object = nm_nl_cache_search (cache, object);
 	kernel_object = get_kernel_object (priv->nlh, object);
 
 	if (removed) {
@@ -1223,7 +1245,7 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 	 * for delete_kernel_object() and we need to search the cache first. If
 	 * that problem is fixed, we can use 'object' directly.
 	 */
-	cached_object = nl_cache_search (choose_cache (platform, object), object);
+	cached_object = nm_nl_cache_search (choose_cache (platform, object), object);
 	g_return_val_if_fail (cached_object, FALSE);
 
 	nle = delete_kernel_object (priv->nlh, cached_object);
@@ -1285,7 +1307,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	g_return_val_if_fail (object, NL_OK);
 
 	cache = choose_cache (platform, object);
-	cached_object = nl_cache_search (cache, object);
+	cached_object = nm_nl_cache_search (cache, object);
 	kernel_object = get_kernel_object (priv->nlh, object);
 
 	/* Just for debugging */
@@ -1321,7 +1343,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		 * already removed and announced.
 		 */
 		if (event == RTM_DELLINK) {
-			if (!link_is_announceable (platform, (struct rtnl_link *) object))
+			if (!link_is_announceable (platform, (struct rtnl_link *) cached_object))
 				return NL_OK;
 		}
 		announce_object (platform, cached_object, REMOVED, NM_PLATFORM_REASON_EXTERNAL);
