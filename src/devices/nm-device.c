@@ -5310,28 +5310,35 @@ gboolean
 nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean success;
-	guint32 tries = 0;
+	gboolean device_is_up = FALSE;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	if (nm_device_is_up (self))
-		goto out;
-
-	nm_log_info (LOGD_HW, "(%s): bringing up device.", nm_device_get_iface (self));
+	nm_log_dbg (LOGD_HW, "(%s): bringing up device.", nm_device_get_iface (self));
 
 	if (NM_DEVICE_GET_CLASS (self)->bring_up) {
-		success = NM_DEVICE_GET_CLASS (self)->bring_up (self, no_firmware);
-		if (!success)
+		if (!NM_DEVICE_GET_CLASS (self)->bring_up (self, no_firmware))
 			return FALSE;
 	}
 
-	/* Wait for the device to come up if requested */
-	while (block && !nm_device_is_up (self) && (tries++ < 50))
-		g_usleep (200);
+	device_is_up = nm_device_is_up (self);
+	if (block && !device_is_up) {
+		int ifindex = nm_device_get_ip_ifindex (self);
+		gint64 wait_until = nm_utils_get_monotonic_timestamp_us () + 10000 /* microseconds */;
 
-	if (!nm_device_is_up (self)) {
-		nm_log_warn (LOGD_HW, "(%s): device not up after timeout!", nm_device_get_iface (self));
+		do {
+			g_usleep (200);
+			if (!nm_platform_link_refresh (ifindex))
+				return FALSE;
+			device_is_up = nm_device_is_up (self);
+		} while (!device_is_up && nm_utils_get_monotonic_timestamp_us () < wait_until);
+	}
+
+	if (!device_is_up) {
+		if (block)
+			nm_log_warn (LOGD_HW, "(%s): device not up after timeout!", nm_device_get_iface (self));
+		else
+			nm_log_dbg (LOGD_HW, "(%s): device not up immediately", nm_device_get_iface (self));
 		return FALSE;
 	}
 
@@ -5349,7 +5356,6 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 		nm_device_add_pending_action (self, "carrier wait");
 	}
 
-out:
 	/* Can only get HW address of some devices when they are up */
 	nm_device_update_hw_address (self);
 
@@ -5363,8 +5369,11 @@ bring_up (NMDevice *device, gboolean *no_firmware)
 	int ifindex = nm_device_get_ip_ifindex (device);
 	gboolean result;
 
-	if (!ifindex)
+	if (ifindex <= 0) {
+		if (no_firmware)
+			*no_firmware = FALSE;
 		return TRUE;
+	}
 
 	result = nm_platform_link_set_up (ifindex);
 	if (no_firmware)
@@ -5380,30 +5389,49 @@ bring_up (NMDevice *device, gboolean *no_firmware)
 void
 nm_device_take_down (NMDevice *self, gboolean block)
 {
-	guint32 tries = 0;
+	gboolean device_is_up;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	if (!nm_device_is_up (self))
-		return;
+	nm_log_dbg (LOGD_HW, "(%s): taking down device.", nm_device_get_iface (self));
 
-	nm_log_info (LOGD_HW, "(%s): taking down device.", nm_device_get_iface (self));
+	if (NM_DEVICE_GET_CLASS (self)->take_down) {
+		if (!NM_DEVICE_GET_CLASS (self)->take_down (self))
+			return;
+	}
 
-	if (NM_DEVICE_GET_CLASS (self)->take_down)
-		NM_DEVICE_GET_CLASS (self)->take_down (self);
+	device_is_up = nm_device_is_up (self);
+	if (block && device_is_up) {
+		int ifindex = nm_device_get_ip_ifindex (self);
+		gint64 wait_until = nm_utils_get_monotonic_timestamp_us () + 10000 /* microseconds */;
 
-	/* Wait for the device to go down if requested */
-	while (block && nm_device_is_up (self) && (tries++ < 50))
-		g_usleep (200);
+		do {
+			g_usleep (200);
+			if (!nm_platform_link_refresh (ifindex))
+				return;
+			device_is_up = nm_device_is_up (self);
+		} while (device_is_up && nm_utils_get_monotonic_timestamp_us () < wait_until);
+	}
+
+	if (device_is_up) {
+		if (block)
+			nm_log_warn (LOGD_HW, "(%s): device not down after timeout!", nm_device_get_iface (self));
+		else
+			nm_log_dbg (LOGD_HW, "(%s): device not down immediately", nm_device_get_iface (self));
+	}
 }
 
-static void
+static gboolean
 take_down (NMDevice *device)
 {
 	int ifindex = nm_device_get_ip_ifindex (device);
 
 	if (ifindex)
-		nm_platform_link_set_down (ifindex);
+		return nm_platform_link_set_down (ifindex);
+
+	/* devices without ifindex are always up. */
+	nm_log_dbg (LOGD_HW, "(%s): cannot take down device without ifindex", nm_device_get_iface (device));
+	return FALSE;
 }
 
 static void
