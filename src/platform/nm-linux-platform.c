@@ -234,24 +234,36 @@ nm_nl_cache_search (struct nl_cache *cache, struct nl_object *needle)
 static struct nl_object *
 get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 {
+	struct nl_object *object = NULL;
+	ObjectType type = object_type_from_nl_object (needle);
 
-	switch (object_type_from_nl_object (needle)) {
+	switch (type) {
 	case LINK:
 		{
-			struct nl_object *kernel_object;
 			int ifindex = rtnl_link_get_ifindex ((struct rtnl_link *) needle);
 			const char *name = rtnl_link_get_name ((struct rtnl_link *) needle);
 			int nle;
 
-			nle = rtnl_link_get_kernel (sock, ifindex, name, (struct rtnl_link **) &kernel_object);
+			nle = rtnl_link_get_kernel (sock, ifindex, name, (struct rtnl_link **) &object);
 			switch (nle) {
 			case -NLE_SUCCESS:
-				_nl_link_family_unset (kernel_object, &nle);
-				return kernel_object;
+				if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+					name = rtnl_link_get_name ((struct rtnl_link *) object);
+					debug ("get_kernel_object for link: %s (%d, family %d)",
+					       name ? name : "(unknown)",
+					       rtnl_link_get_ifindex ((struct rtnl_link *) object),
+					       rtnl_link_get_family ((struct rtnl_link *) object));
+				}
+
+				_nl_link_family_unset (object, &nle);
+				return object;
 			case -NLE_NODEV:
+				debug ("get_kernel_object for link %s (%d) had no result",
+				       name ? name : "(unknown)", ifindex);
 				return NULL;
 			default:
-				error ("Netlink error: %s", nl_geterror (nle));
+				error ("get_kernel_object for link %s (%d) failed: %s (%d)",
+				       name ? name : "(unknown)", ifindex, nl_geterror (nle), nle);
 				return NULL;
 			}
 		}
@@ -262,16 +274,25 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 		/* Fallback to a one-time cache allocation. */
 		{
 			struct nl_cache *cache;
-			struct nl_object *object;
 			int nle;
 
 			nle = nl_cache_alloc_and_fill (
 					nl_cache_ops_lookup (nl_object_get_type (needle)),
 					sock, &cache);
-			g_return_val_if_fail (!nle, NULL);
+			if (nle) {
+				error ("get_kernel_object for type %d failed: %s (%d)",
+				       type, nl_geterror (nle), nle);
+				return NULL;
+			}
+
 			object = nl_cache_search (cache, needle);
 
 			nl_cache_free (cache);
+
+			if (object)
+				debug ("get_kernel_object for type %d returned %p", type, object);
+			else
+				debug ("get_kernel_object for type %d had no result", type);
 			return object;
 		}
 	default:
@@ -1306,18 +1327,21 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	nl_msg_parse (msg, ref_object, &object);
 	g_return_val_if_fail (object, NL_OK);
 
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+		if (object_type_from_nl_object (object) == LINK) {
+			const char *name = rtnl_link_get_name ((struct rtnl_link *) object);
+
+			debug ("netlink event (type %d) for link: %s (%d, family %d)",
+			       event, name ? name : "(unknown)",
+			       rtnl_link_get_ifindex ((struct rtnl_link *) object),
+			       rtnl_link_get_family ((struct rtnl_link *) object));
+		} else
+			debug ("netlink event (type %d)", event);
+	}
+
 	cache = choose_cache (platform, object);
 	cached_object = nm_nl_cache_search (cache, object);
 	kernel_object = get_kernel_object (priv->nlh, object);
-
-	/* Just for debugging */
-	if (object_type_from_nl_object (object) == LINK) {
-		int ifindex = rtnl_link_get_ifindex ((struct rtnl_link *) object);
-		const char *name = rtnl_link_get_name ((struct rtnl_link *) object);
-		debug ("netlink event (type %d) for link: %s (%d)",
-		       event, name ? name : "(unknown)", ifindex);
-	} else
-		debug ("netlink event (type %d)", event);
 
 	hack_empty_master_iff_lower_up (platform, kernel_object);
 
