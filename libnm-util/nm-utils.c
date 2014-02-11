@@ -36,6 +36,7 @@
 #include "nm-utils-private.h"
 #include "nm-glib-compat.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-setting-private.h"
 #include "crypto.h"
 
 /**
@@ -2327,3 +2328,64 @@ nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst)
 	                  INET6_ADDRSTRLEN);
 }
 
+/**
+ * nm_utils_check_virtual_device_compatibility:
+ * @virtual_type: a virtual connection type
+ * @other_type: a connection type to test against @virtual_type
+ *
+ * Determines if a connection of type @virtual_type can (in the
+ * general case) work with connections of type @other_type.
+ *
+ * If @virtual_type is %NM_TYPE_SETTING_VLAN, then this checks if
+ * @other_type is a valid type for the parent of a VLAN.
+ *
+ * If @virtual_type is a "master" type (eg, %NM_TYPE_SETTING_BRIDGE),
+ * then this checks if @other_type is a valid type for a slave of that
+ * master.
+ *
+ * Note that even if this returns %TRUE it is not guaranteed that
+ * <emphasis>every</emphasis> connection of type @other_type is
+ * compatible with @virtual_type; it may depend on the exact
+ * configuration of the two connections, or on the capabilities of an
+ * underlying device driver.
+ *
+ * Returns: %TRUE or %FALSE
+ *
+ * Since: 0.9.10
+ */
+gboolean
+nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_type)
+{
+	g_return_val_if_fail (_nm_setting_type_is_base_type (virtual_type), FALSE);
+	g_return_val_if_fail (_nm_setting_type_is_base_type (other_type), FALSE);
+
+	if (virtual_type == NM_TYPE_SETTING_BOND) {
+		return (   other_type == NM_TYPE_SETTING_INFINIBAND
+		        || other_type == NM_TYPE_SETTING_WIRED
+		        || other_type == NM_TYPE_SETTING_BRIDGE
+		        || other_type == NM_TYPE_SETTING_BOND
+		        || other_type == NM_TYPE_SETTING_TEAM
+		        || other_type == NM_TYPE_SETTING_VLAN);
+	} else if (virtual_type == NM_TYPE_SETTING_BRIDGE) {
+		return (   other_type == NM_TYPE_SETTING_WIRED
+		        || other_type == NM_TYPE_SETTING_BOND
+		        || other_type == NM_TYPE_SETTING_TEAM
+		        || other_type == NM_TYPE_SETTING_VLAN);
+	} else if (virtual_type == NM_TYPE_SETTING_TEAM) {
+		return (   other_type == NM_TYPE_SETTING_WIRED
+		        || other_type == NM_TYPE_SETTING_BRIDGE
+		        || other_type == NM_TYPE_SETTING_BOND
+		        || other_type == NM_TYPE_SETTING_TEAM
+		        || other_type == NM_TYPE_SETTING_VLAN);
+	} else if (virtual_type == NM_TYPE_SETTING_VLAN) {
+		return (   other_type == NM_TYPE_SETTING_WIRED
+		        || other_type == NM_TYPE_SETTING_WIRELESS
+		        || other_type == NM_TYPE_SETTING_BRIDGE
+		        || other_type == NM_TYPE_SETTING_BOND
+		        || other_type == NM_TYPE_SETTING_TEAM
+		        || other_type == NM_TYPE_SETTING_VLAN);
+	} else {
+		g_warn_if_reached ();
+		return FALSE;
+	}
+}

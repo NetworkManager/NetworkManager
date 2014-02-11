@@ -174,6 +174,9 @@ const char *nm_utils_inet4_ntop (in_addr_t inaddr, char *dst);
 NM_AVAILABLE_IN_0_9_10
 const char *nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst);
 
+NM_AVAILABLE_IN_0_9_10
+gboolean nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_type);
+
 G_END_DECLS
 
 #endif /* NM_UTILS_H */

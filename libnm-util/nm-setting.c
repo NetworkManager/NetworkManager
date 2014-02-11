@@ -199,25 +199,31 @@ _nm_setting_lookup_setting_by_type (GType type)
 }
 
 static guint32
-_get_setting_priority (NMSetting *setting)
+_get_setting_type_priority (GType type)
 {
-	NMSettingPrivate *priv;
+	const SettingInfo *info;
 
-	g_return_val_if_fail (NM_IS_SETTING (setting), G_MAXUINT32);
-	priv = NM_SETTING_GET_PRIVATE (setting);
-	_ensure_setting_info (setting, priv);
-	return priv->info->priority;
+	g_return_val_if_fail (g_type_is_a (type, NM_TYPE_SETTING), G_MAXUINT32);
+
+	info = _nm_setting_lookup_setting_by_type (type);
+	return info->priority;
 }
 
 gboolean
-_nm_setting_is_base_type (NMSetting *setting)
+_nm_setting_type_is_base_type (GType type)
 {
 	/* Historical oddity: PPPoE is a base-type even though it's not
 	 * priority 1.  It needs to be sorted *after* lower-level stuff like
 	 * WiFi security or 802.1x for secrets, but it's still allowed as a
 	 * base type.
 	 */
-	return _get_setting_priority (setting) == 1 || NM_IS_SETTING_PPPOE (setting);
+	return _get_setting_type_priority (type) == 1 || (type == NM_TYPE_SETTING_PPPOE);
+}
+
+gboolean
+_nm_setting_is_base_type (NMSetting *setting)
+{
+	return _nm_setting_type_is_base_type (G_OBJECT_TYPE (setting));
 }
 
 GType
@@ -254,8 +260,8 @@ _nm_setting_compare_priority (gconstpointer a, gconstpointer b)
 {
 	guint32 prio_a, prio_b;
 
-	prio_a = _get_setting_priority (NM_SETTING (a));
-	prio_b = _get_setting_priority (NM_SETTING (b));
+	prio_a = _get_setting_type_priority (G_OBJECT_TYPE (a));
+	prio_b = _get_setting_type_priority (G_OBJECT_TYPE (b));
 
 	if (prio_a < prio_b)
 		return -1;
