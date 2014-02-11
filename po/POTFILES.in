@@ -58,7 +58,6 @@ src/devices/nm-device-olpc-mesh.c
 src/devices/nm-device-team.c
 src/devices/nm-device-vlan.c
 src/nm-manager.c
-src/nm-netlink-monitor.c
 src/nm-sleep-monitor-systemd.c
 src/settings/plugins/ifcfg-rh/reader.c
 src/settings/nm-settings-utils.c

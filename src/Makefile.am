@@ -253,8 +253,6 @@ nm_sources = \
 	nm-auth-subject.h \
 	nm-manager.c \
 	nm-manager.h \
-	nm-netlink-monitor.c \
-	nm-netlink-monitor.h \
 	nm-policy-hosts.c \
 	nm-policy-hosts.h \
 	nm-policy.c \
