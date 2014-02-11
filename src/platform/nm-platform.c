@@ -640,6 +640,25 @@ nm_platform_link_supports_slaves (int ifindex)
 }
 
 /**
+ * nm_platform_link_refresh:
+ * @ifindex: Interface index
+ *
+ * Reload the cache for ifindex synchronously.
+ */
+gboolean
+nm_platform_link_refresh (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	if (klass->link_refresh)
+		return klass->link_refresh (platform, ifindex);
+
+	return TRUE;
+}
+
+/**
  * nm_platform_link_is_up:
  * @ifindex: Interface index
  *

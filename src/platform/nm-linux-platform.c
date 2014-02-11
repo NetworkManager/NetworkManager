@@ -1669,6 +1669,20 @@ link_get_flags (NMPlatform *platform, int ifindex)
 }
 
 static gboolean
+link_refresh (NMPlatform *platform, int ifindex)
+{
+	auto_nl_object struct rtnl_link *rtnllink = rtnl_link_alloc ();
+
+	if (rtnllink) {
+		rtnl_link_set_ifindex (rtnllink, ifindex);
+		return refresh_object (platform, (struct nl_object *) rtnllink, FALSE, NM_PLATFORM_REASON_EXTERNAL);
+	} else
+		error ("link_refresh failed with out of memory");
+
+	return FALSE;
+}
+
+static gboolean
 link_is_up (NMPlatform *platform, int ifindex)
 {
 	return !!(link_get_flags (platform, ifindex) & IFF_UP);
@@ -3025,6 +3039,8 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_get_name = link_get_name;
 	platform_class->link_get_type = link_get_type;
 	platform_class->link_get_type_name = link_get_type_name;
+
+	platform_class->link_refresh = link_refresh;
 
 	platform_class->link_set_up = link_set_up;
 	platform_class->link_set_down = link_set_down;

@@ -271,6 +271,8 @@ typedef struct {
 	NMLinkType (*link_get_type) (NMPlatform *, int ifindex);
 	const char *(*link_get_type_name) (NMPlatform *, int ifindex);
 
+	gboolean (*link_refresh) (NMPlatform *, int ifindex);
+
 	gboolean (*link_set_up) (NMPlatform *, int ifindex);
 	gboolean (*link_set_down) (NMPlatform *, int ifindex);
 	gboolean (*link_set_arp) (NMPlatform *, int ifindex);
@@ -396,6 +398,8 @@ NMLinkType nm_platform_link_get_type (int ifindex);
 const char *nm_platform_link_get_type_name (int ifindex);
 gboolean nm_platform_link_is_software (int ifindex);
 gboolean nm_platform_link_supports_slaves (int ifindex);
+
+gboolean nm_platform_link_refresh (int ifindex);
 
 gboolean nm_platform_link_set_up (int ifindex);
 gboolean nm_platform_link_set_down (int ifindex);
