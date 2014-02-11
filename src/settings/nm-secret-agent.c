@@ -514,22 +514,25 @@ dispose (GObject *object)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (object);
 
-	g_clear_pointer (&priv->description, g_free);
-	g_clear_pointer (&priv->identifier, g_free);
-	g_clear_pointer (&priv->owner_username, g_free);
-
-	g_slist_free_full (priv->permissions, g_free);
-	priv->permissions = NULL;
-
-	if (priv->requests) {
-		g_hash_table_destroy (priv->requests);
-		priv->requests = NULL;
-	}
-
 	proxy_cleanup (NM_SECRET_AGENT (object));
 	g_clear_object (&priv->subject);
 
 	G_OBJECT_CLASS (nm_secret_agent_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (object);
+
+	g_free (priv->description);
+	g_free (priv->identifier);
+	g_free (priv->owner_username);
+
+	g_slist_free_full (priv->permissions, g_free);
+	g_hash_table_destroy (priv->requests);
+
+	G_OBJECT_CLASS (nm_secret_agent_parent_class)->finalize (object);
 }
 
 static void
@@ -541,5 +544,6 @@ nm_secret_agent_class_init (NMSecretAgentClass *config_class)
 
 	/* virtual methods */
 	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 }
 
