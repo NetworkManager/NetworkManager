@@ -799,6 +799,30 @@ monotonic_timestamp_get (struct timespec *tp)
 }
 
 /**
+ * nm_utils_get_monotonic_timestamp_us:
+ *
+ * Returns: a monotonically increasing time stamp in microseconds,
+ * starting at an unspecified offset. See clock_gettime(), %CLOCK_BOOTTIME.
+ *
+ * The returned value will start counting at an undefined point
+ * in the past and will always be positive.
+ **/
+gint64
+nm_utils_get_monotonic_timestamp_us (void)
+{
+	struct timespec tp;
+
+	monotonic_timestamp_get (&tp);
+
+	/* Although the result will always be positive, we return a signed
+	 * integer, which makes it easier to calculate time differences (when
+	 * you want to subtract signed values).
+	 **/
+	return (((gint64) tp.tv_sec) + monotonic_timestamp_offset_sec) * ((gint64) G_USEC_PER_SEC) +
+	       (tp.tv_nsec / (NM_UTILS_NS_PER_SECOND/G_USEC_PER_SEC));
+}
+
+/**
  * nm_utils_get_monotonic_timestamp_ms:
  *
  * Returns: a monotonically increasing time stamp in milliseconds,
