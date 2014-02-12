@@ -1312,13 +1312,16 @@ progress_cb (gpointer user_data)
 static void
 connected_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 {
-	NmCli *nmc = (NmCli *) user_data;
+	NMActiveConnection *active = (NMActiveConnection *) user_data;
 	NMDeviceState state;
 
 	state = nm_device_get_state (device);
 
 	if (state == NM_DEVICE_STATE_ACTIVATED) {
-		g_string_printf (nmc->return_text, _("Success: Device '%s' successfully activated."), nm_device_get_iface (device));
+		nmc_terminal_erase_line ();
+		printf (_("Device '%s' successfully activated with '%s'.\n"),
+		        nm_device_get_iface (device),
+		        nm_active_connection_get_uuid (active));
 		quit ();
 	}
 }
@@ -1339,10 +1342,14 @@ connect_device_cb (NMClient *client, NMActiveConnection *active, GError *error, 
 	} else {
 		g_assert (active);
 		devices = nm_active_connection_get_devices (active);
-		g_assert (devices && devices->len);
-		device = g_ptr_array_index (devices, 0);
-		g_assert (device);
+		if (!devices || devices->len == 0) {
+			g_string_printf (nmc->return_text, _("Error: Device activation failed: device was disconnected"));
+			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+			quit ();
+			return;
+		}
 
+		device = g_ptr_array_index (devices, 0);
 		state = nm_device_get_state (device);
 
 		if (nmc->nowait_flag || state == NM_DEVICE_STATE_ACTIVATED) {
@@ -1353,11 +1360,10 @@ connect_device_cb (NMClient *client, NMActiveConnection *active, GError *error, 
 			}
 			quit ();
 		} else {
-			g_signal_connect (device, "notify::state", G_CALLBACK (connected_state_cb), nmc);
+			g_signal_connect (device, "notify::state", G_CALLBACK (connected_state_cb), active);
 			/* Start timer not to loop forever if "notify::state" signal is not issued */
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 		}
-
 	}
 }
 
