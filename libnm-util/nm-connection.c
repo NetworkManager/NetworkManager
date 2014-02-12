@@ -1253,6 +1253,8 @@ nm_connection_get_id (NMConnection *connection)
  *
  * Returns: (transfer full): the name of @connection's device,
  *   or %NULL if @connection is not a virtual connection type
+ *
+ * Since: 0.9.10
  */
 char *
 nm_connection_get_virtual_device_description (NMConnection *connection)
@@ -1341,6 +1343,8 @@ nm_connection_get_setting_bond (NMConnection *connection)
  * A shortcut to return any #NMSettingTeam the connection might contain.
  *
  * Returns: (transfer none): an #NMSettingTeam if the connection contains one, otherwise %NULL
+ *
+ * Since: 0.9.10
  **/
 NMSettingTeam *
 nm_connection_get_setting_team (NMConnection *connection)
@@ -1357,6 +1361,8 @@ nm_connection_get_setting_team (NMConnection *connection)
  * A shortcut to return any #NMSettingTeamPort the connection might contain.
  *
  * Returns: (transfer none): an #NMSettingTeamPort if the connection contains one, otherwise %NULL
+ *
+ * Since: 0.9.10
  **/
 NMSettingTeamPort *
 nm_connection_get_setting_team_port (NMConnection *connection)
@@ -1421,6 +1427,8 @@ nm_connection_get_setting_connection (NMConnection *connection)
  * A shortcut to return any #NMSettingDcb the connection might contain.
  *
  * Returns: (transfer none): an #NMSettingDcb if the connection contains one, otherwise NULL
+ *
+ * Since: 0.9.10
  **/
 NMSettingDcb *
 nm_connection_get_setting_dcb (NMConnection *connection)
@@ -1437,6 +1445,8 @@ nm_connection_get_setting_dcb (NMConnection *connection)
  * A shortcut to return any #NMSettingGeneric the connection might contain.
  *
  * Returns: (transfer none): an #NMSettingGeneric if the connection contains one, otherwise NULL
+ *
+ * Since: 0.9.10
  **/
 NMSettingGeneric *
 nm_connection_get_setting_generic (NMConnection *connection)

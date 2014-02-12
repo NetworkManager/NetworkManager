@@ -60,6 +60,8 @@ enum {
  * Registers an error quark for #NMDeviceTeam if necessary.
  *
  * Returns: the error quark used for #NMDeviceTeam errors.
+ *
+ * Since: 0.9.10
  **/
 GQuark
 nm_device_team_error_quark (void)
@@ -79,6 +81,8 @@ nm_device_team_error_quark (void)
  * Creates a new #NMDeviceTeam.
  *
  * Returns: (transfer full): a new device
+ *
+ * Since: 0.9.10
  **/
 GObject *
 nm_device_team_new (DBusGConnection *connection, const char *path)
@@ -104,6 +108,8 @@ nm_device_team_new (DBusGConnection *connection, const char *path)
  *
  * Returns: the hardware address. This is the internal string used by the
  * device, and must not be modified.
+ *
+ * Since: 0.9.10
  **/
 const char *
 nm_device_team_get_hw_address (NMDeviceTeam *device)
@@ -121,6 +127,8 @@ nm_device_team_get_hw_address (NMDeviceTeam *device)
  * Whether the device has carrier.
  *
  * Returns: %TRUE if the device has carrier
+ *
+ * Since: 0.9.10
  **/
 gboolean
 nm_device_team_get_carrier (NMDeviceTeam *device)
@@ -140,6 +148,8 @@ nm_device_team_get_carrier (NMDeviceTeam *device)
  * Returns: (element-type NMClient.Device): the #GPtrArray containing
  * #NMDevices that are slaves of @device. This is the internal
  * copy used by the device, and must not be modified.
+ *
+ * Since: 0.9.10
  **/
 const GPtrArray *
 nm_device_team_get_slaves (NMDeviceTeam *device)

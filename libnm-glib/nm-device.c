@@ -146,6 +146,8 @@ static guint signals[LAST_SIGNAL] = { 0 };
  * Registers an error quark for #NMDevice if necessary.
  *
  * Returns: the error quark used for #NMDevice errors.
+ *
+ * Since: 0.9.10
  **/
 GQuark
 nm_device_error_quark (void)

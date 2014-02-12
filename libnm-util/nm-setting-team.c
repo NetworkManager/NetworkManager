@@ -37,6 +37,8 @@
  *
  * The #NMSettingTeam object is a #NMSetting subclass that describes properties
  * necessary for team connections.
+ *
+ * Since: 0.9.10
  **/
 
 /**
@@ -45,6 +47,8 @@
  * Registers an error quark for #NMSettingTeam if necessary.
  *
  * Returns: the error quark used for #NMSettingTeam errors.
+ *
+ * Since: 0.9.10
  **/
 GQuark
 nm_setting_team_error_quark (void)
@@ -84,6 +88,8 @@ enum {
  * Creates a new #NMSettingTeam object with default values.
  *
  * Returns: (transfer full): the new empty #NMSettingTeam object
+ *
+ * Since: 0.9.10
  **/
 NMSetting *
 nm_setting_team_new (void)
@@ -96,6 +102,8 @@ nm_setting_team_new (void)
  * @setting: the #NMSettingTeam
  *
  * Returns: the #NMSettingTeam:interface-name property of the setting
+ *
+ * Since: 0.9.10
  **/
 const char *
 nm_setting_team_get_interface_name (NMSettingTeam *setting)
@@ -110,6 +118,8 @@ nm_setting_team_get_interface_name (NMSettingTeam *setting)
  * @setting: the #NMSettingTeam
  *
  * Returns: the #NMSettingTeam:config property of the setting
+ *
+ * Since: 0.9.10
  **/
 const char *
 nm_setting_team_get_config (NMSettingTeam *setting)
