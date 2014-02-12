@@ -19,6 +19,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/posix-signals \
 	-I$(srcdir)/../ \
+	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DTEST_IFCFG_DIR=\"$(abs_srcdir)\" \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/\" \
 	-DSYSCONFDIR=\"nonexistent\" \

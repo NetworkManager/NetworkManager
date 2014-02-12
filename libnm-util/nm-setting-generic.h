@@ -67,8 +67,10 @@ typedef struct {
 	void (*_reserved4) (void);
 } NMSettingGenericClass;
 
+NM_AVAILABLE_IN_0_9_10
 GType nm_setting_generic_get_type (void);
 
+NM_AVAILABLE_IN_0_9_10
 NMSetting * nm_setting_generic_new              (void);
 
 G_END_DECLS

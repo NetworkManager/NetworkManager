@@ -30,7 +30,8 @@ AM_CPPFLAGS =				\
 	-I${top_srcdir}/libgsystem	\
 	-I$(top_srcdir)/libnm-util	\
 	-I$(top_builddir)/libnm-util	\
-	-I$(top_srcdir)/callouts
+	-I$(top_srcdir)/callouts	\
+	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE
 
 # add each subdirectory that contains a libNM source file. $(sort) is being used
 # primarily for its side effect of removing duplicates.

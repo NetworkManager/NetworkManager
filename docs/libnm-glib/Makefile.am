@@ -76,6 +76,7 @@ GTKDOC_CFLAGS =				\
 	-I$(top_builddir)/libnm-util	\
 	-I$(top_srcdir)/libnm-glib	\
 	-I$(top_builddir)/libnm-glib	\
+	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS)			\
 	$(DBUS_CFLAGS)
 

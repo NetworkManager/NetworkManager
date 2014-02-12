@@ -64,6 +64,8 @@ typedef enum {
  * @NM_SECRET_AGENT_CAPABILITY_LAST: bounds checking value; should not be used.
  *
  * #NMSecretAgentCapabilities indicate various capabilities of the agent.
+ *
+ * Since: 0.9.10
  */
 typedef enum /*< flags >*/ {
 	NM_SECRET_AGENT_CAPABILITY_NONE = 0x0,

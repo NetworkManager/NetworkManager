@@ -110,10 +110,12 @@ void nm_remote_connection_commit_changes (NMRemoteConnection *connection,
                                           NMRemoteConnectionResultFunc callback,
                                           gpointer user_data);
 
+NM_AVAILABLE_IN_0_9_10
 void nm_remote_connection_commit_changes_unsaved (NMRemoteConnection *connection,
                                                   NMRemoteConnectionResultFunc callback,
                                                   gpointer user_data);
 
+NM_AVAILABLE_IN_0_9_10
 void nm_remote_connection_save (NMRemoteConnection *connection,
                                 NMRemoteConnectionResultFunc callback,
                                 gpointer user_data);
@@ -127,6 +129,7 @@ void nm_remote_connection_get_secrets (NMRemoteConnection *connection,
                                        NMRemoteConnectionGetSecretsFunc callback,
                                        gpointer user_data);
 
+NM_AVAILABLE_IN_0_9_10
 gboolean nm_remote_connection_get_unsaved (NMRemoteConnection *connection);
 
 G_END_DECLS

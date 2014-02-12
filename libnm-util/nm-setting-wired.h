@@ -92,11 +92,15 @@ const GByteArray *nm_setting_wired_get_mac_address      (NMSettingWired *setting
 const GByteArray *nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting);
 
 const GSList     *nm_setting_wired_get_mac_address_blacklist   (NMSettingWired *setting);
+NM_AVAILABLE_IN_0_9_10
 guint32           nm_setting_wired_get_num_mac_blacklist_items (NMSettingWired *setting);
+NM_AVAILABLE_IN_0_9_10
 const char *      nm_setting_wired_get_mac_blacklist_item      (NMSettingWired *setting,
                                                                 guint32 idx);
+NM_AVAILABLE_IN_0_9_10
 gboolean          nm_setting_wired_add_mac_blacklist_item      (NMSettingWired *setting,
                                                                 const char *mac);
+NM_AVAILABLE_IN_0_9_10
 void              nm_setting_wired_remove_mac_blacklist_item   (NMSettingWired *setting,
                                                                 guint32 idx);
 
@@ -117,6 +121,7 @@ gboolean          nm_setting_wired_add_s390_option      (NMSettingWired *setting
                                                          const char *value);
 gboolean          nm_setting_wired_remove_s390_option   (NMSettingWired *setting,
                                                          const char *key);
+NM_AVAILABLE_IN_0_9_10
 const char **     nm_setting_wired_get_valid_s390_options (NMSettingWired *setting);
 
 G_END_DECLS

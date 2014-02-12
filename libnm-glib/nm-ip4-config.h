@@ -66,11 +66,13 @@ GType nm_ip4_config_get_type (void);
 
 GObject *nm_ip4_config_new (DBusGConnection *connection, const char *object_path);
 
+NM_AVAILABLE_IN_0_9_10
 const char *     nm_ip4_config_get_gateway      (NMIP4Config *config);
 const GSList *   nm_ip4_config_get_addresses    (NMIP4Config *config);
 const GSList *   nm_ip4_config_get_routes       (NMIP4Config *config);
 const GArray *   nm_ip4_config_get_nameservers  (NMIP4Config *config);
 const GPtrArray *nm_ip4_config_get_domains      (NMIP4Config *config);
+NM_AVAILABLE_IN_0_9_10
 const GPtrArray *nm_ip4_config_get_searches     (NMIP4Config *config);
 const GArray *   nm_ip4_config_get_wins_servers (NMIP4Config *config);
 

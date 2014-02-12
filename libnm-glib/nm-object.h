@@ -28,6 +28,8 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 
+#include <nm-version.h>
+
 G_BEGIN_DECLS
 
 #define NM_TYPE_OBJECT            (nm_object_get_type ())

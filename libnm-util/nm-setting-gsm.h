@@ -197,8 +197,10 @@ NMSettingSecretFlags nm_setting_gsm_get_pin_flags      (NMSettingGsm *setting);
 NMSettingSecretFlags nm_setting_gsm_get_password_flags (NMSettingGsm *setting);
 
 /* Deprecated */
-G_DEPRECATED int     nm_setting_gsm_get_network_type  (NMSettingGsm *setting);
-G_DEPRECATED guint32 nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting);
+NM_DEPRECATED_IN_0_9_10
+int     nm_setting_gsm_get_network_type  (NMSettingGsm *setting);
+NM_DEPRECATED_IN_0_9_10
+guint32 nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting);
 
 G_END_DECLS
 

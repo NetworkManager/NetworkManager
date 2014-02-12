@@ -29,6 +29,8 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include <nm-version.h>
+
 G_BEGIN_DECLS
 
 #define NM_TYPE_SETTING            (nm_setting_get_type ())

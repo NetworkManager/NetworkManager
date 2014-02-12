@@ -50,6 +50,7 @@ extra_files =
 GTKDOC_CFLAGS =				\
 	-I$(top_srcdir)/include		\
 	-I$(top_srcdir)/libnm-util	\
+	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS)			\
 	$(DBUS_CFLAGS)
 

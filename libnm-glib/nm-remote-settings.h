@@ -138,16 +138,19 @@ gboolean nm_remote_settings_add_connection (NMRemoteSettings *settings,
                                             NMRemoteSettingsAddConnectionFunc callback,
                                             gpointer user_data);
 
+NM_AVAILABLE_IN_0_9_10
 gboolean nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
                                                     NMConnection *connection,
                                                     NMRemoteSettingsAddConnectionFunc callback,
                                                     gpointer user_data);
 
+NM_AVAILABLE_IN_0_9_10
 gboolean nm_remote_settings_load_connections (NMRemoteSettings *settings,
                                               char **filenames,
                                               char ***failures,
                                               GError **error);
 
+NM_AVAILABLE_IN_0_9_10
 gboolean nm_remote_settings_reload_connections (NMRemoteSettings *settings,
                                                 GError **error);
 

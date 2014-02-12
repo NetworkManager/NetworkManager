@@ -90,6 +90,7 @@ gboolean               nm_access_point_connection_valid   (NMAccessPoint *ap,
                                                            NMConnection *connection);
 
 /* DEPRECATED */
+NM_DEPRECATED_IN_0_9_10
 const char *           nm_access_point_get_hw_address   (NMAccessPoint *ap);
 
 G_END_DECLS

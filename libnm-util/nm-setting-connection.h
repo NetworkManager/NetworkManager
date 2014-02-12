@@ -107,6 +107,7 @@ GType nm_setting_connection_get_type (void);
 NMSetting * nm_setting_connection_new                  (void);
 const char *nm_setting_connection_get_id               (NMSettingConnection *setting);
 const char *nm_setting_connection_get_uuid             (NMSettingConnection *setting);
+NM_AVAILABLE_IN_0_9_10
 const char *nm_setting_connection_get_interface_name   (NMSettingConnection *setting);
 const char *nm_setting_connection_get_connection_type  (NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_autoconnect      (NMSettingConnection *setting);
@@ -136,6 +137,7 @@ const char *nm_setting_connection_get_secondary        (NMSettingConnection *set
 gboolean    nm_setting_connection_add_secondary        (NMSettingConnection *setting, const char *sec_uuid);
 void        nm_setting_connection_remove_secondary     (NMSettingConnection *setting, guint32 idx);
 
+NM_AVAILABLE_IN_0_9_10
 guint32     nm_setting_connection_get_gateway_ping_timeout (NMSettingConnection *setting);
 
 G_END_DECLS

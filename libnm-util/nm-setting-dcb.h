@@ -127,8 +127,10 @@ typedef struct {
 	void (*_reserved4) (void);
 } NMSettingDcbClass;
 
+NM_AVAILABLE_IN_0_9_10
 GType nm_setting_dcb_get_type (void);
 
+NM_AVAILABLE_IN_0_9_10
 NMSetting *       nm_setting_dcb_new                      (void);
 
 NMSettingDcbFlags nm_setting_dcb_get_app_fcoe_flags     (NMSettingDcb *setting);

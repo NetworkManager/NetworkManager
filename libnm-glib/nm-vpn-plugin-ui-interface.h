@@ -170,6 +170,7 @@ char *nm_vpn_plugin_ui_interface_get_suggested_name (NMVpnPluginUiInterface *ifa
                                                      NMConnection *connection);
 
 /* Deprecated and no longer used */
+NM_DEPRECATED_IN_0_9_10
 gboolean nm_vpn_plugin_ui_interface_delete_connection (NMVpnPluginUiInterface *iface,
                                                        NMConnection *connection,
                                                        GError **error);
@@ -220,6 +221,7 @@ gboolean nm_vpn_plugin_ui_widget_interface_update_connection (NMVpnPluginUiWidge
                                                               GError **error);
 
 /* Deprecated and no longer used */
+NM_DEPRECATED_IN_0_9_10
 gboolean nm_vpn_plugin_ui_widget_interface_save_secrets (NMVpnPluginUiWidgetInterface *iface,
                                                          NMConnection *connection,
                                                          GError **error);

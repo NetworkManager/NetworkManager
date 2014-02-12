@@ -7,6 +7,7 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/libnm-util \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
+	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DNMCONFDIR=\"$(nmconfdir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\"

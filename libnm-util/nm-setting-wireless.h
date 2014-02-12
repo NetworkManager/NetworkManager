@@ -134,11 +134,15 @@ const GByteArray *nm_setting_wireless_get_mac_address        (NMSettingWireless 
 const GByteArray *nm_setting_wireless_get_cloned_mac_address (NMSettingWireless *setting);
 
 const GSList     *nm_setting_wireless_get_mac_address_blacklist   (NMSettingWireless *setting);
+NM_AVAILABLE_IN_0_9_10
 guint32           nm_setting_wireless_get_num_mac_blacklist_items (NMSettingWireless *setting);
+NM_AVAILABLE_IN_0_9_10
 const char *      nm_setting_wireless_get_mac_blacklist_item      (NMSettingWireless *setting,
                                                                    guint32 idx);
+NM_AVAILABLE_IN_0_9_10
 gboolean          nm_setting_wireless_add_mac_blacklist_item      (NMSettingWireless *setting,
                                                                    const char *mac);
+NM_AVAILABLE_IN_0_9_10
 void              nm_setting_wireless_remove_mac_blacklist_item   (NMSettingWireless *setting,
                                                                    guint32 idx);
 
@@ -160,7 +164,8 @@ gboolean          nm_setting_wireless_ap_security_compatible (NMSettingWireless 
                                                               NM80211Mode ap_mode);
 
 /* Deprecated */
-G_DEPRECATED const char *nm_setting_wireless_get_security (NMSettingWireless *setting);
+NM_DEPRECATED_IN_0_9_10
+const char *nm_setting_wireless_get_security (NMSettingWireless *setting);
 
 G_END_DECLS
 

@@ -144,6 +144,7 @@ gboolean      nm_connection_replace_settings (NMConnection *connection,
                                               GHashTable *new_settings,
                                               GError **error);
 
+NM_AVAILABLE_IN_0_9_10
 gboolean      nm_connection_replace_settings_from_connection (NMConnection *connection,
                                                               NMConnection *new_connection,
                                                               GError **error);
@@ -200,18 +201,23 @@ const char *  nm_connection_get_uuid        (NMConnection *connection);
 
 const char *  nm_connection_get_id          (NMConnection *connection);
 
+NM_AVAILABLE_IN_0_9_10
 char *        nm_connection_get_virtual_device_description (NMConnection *connection);
 
 NMSetting8021x *           nm_connection_get_setting_802_1x            (NMConnection *connection);
 NMSettingBluetooth *       nm_connection_get_setting_bluetooth         (NMConnection *connection);
 NMSettingBond *            nm_connection_get_setting_bond              (NMConnection *connection);
+NM_AVAILABLE_IN_0_9_10
 NMSettingTeam *            nm_connection_get_setting_team              (NMConnection *connection);
+NM_AVAILABLE_IN_0_9_10
 NMSettingTeamPort *        nm_connection_get_setting_team_port         (NMConnection *connection);
 NMSettingBridge *          nm_connection_get_setting_bridge            (NMConnection *connection);
 NMSettingBridgePort *      nm_connection_get_setting_bridge_port       (NMConnection *connection);
 NMSettingCdma *            nm_connection_get_setting_cdma              (NMConnection *connection);
 NMSettingConnection *      nm_connection_get_setting_connection        (NMConnection *connection);
+NM_AVAILABLE_IN_0_9_10
 NMSettingDcb *             nm_connection_get_setting_dcb               (NMConnection *connection);
+NM_AVAILABLE_IN_0_9_10
 NMSettingGeneric *         nm_connection_get_setting_generic           (NMConnection *connection);
 NMSettingGsm *             nm_connection_get_setting_gsm               (NMConnection *connection);
 NMSettingInfiniband *      nm_connection_get_setting_infiniband        (NMConnection *connection);

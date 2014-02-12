@@ -7,6 +7,7 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/include \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DBINDIR=\"$(bindir)\" \
 	-DDATADIR=\"$(datadir)\" \
 	-DNMLOCALEDIR=\"$(datadir)/locale\"
