@@ -51,7 +51,6 @@
 #include "nm-device-team.h"
 #include "nm-device-bridge.h"
 #include "nm-device-vlan.h"
-#include "nm-device-adsl.h"
 #include "nm-device-generic.h"
 #include "nm-device-veth.h"
 #include "nm-device-tun.h"
@@ -63,7 +62,6 @@
 #include "nm-setting-vpn.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-platform.h"
-#include "nm-atm-manager.h"
 #include "nm-rfkill-manager.h"
 #include "nm-hostname-provider.h"
 #include "nm-bluez-manager.h"
@@ -165,7 +163,6 @@ static NMActiveConnection *_new_active_connection (NMManager *self,
 static void policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
 
 static NMDevice *find_device_by_ip_iface (NMManager *self, const gchar *iface);
-static NMDevice *find_device_by_iface (NMManager *self, const gchar *iface);
 
 static void rfkill_change_wifi (const char *desc, gboolean enabled);
 
@@ -219,7 +216,6 @@ typedef struct {
 
 	NMDBusManager *dbus_mgr;
 	gboolean       prop_filter_added;
-	NMAtmManager *atm_mgr;
 	NMRfkillManager *rfkill_mgr;
 	NMBluezManager *bluez_mgr;
 
@@ -2027,21 +2023,6 @@ find_device_by_ip_iface (NMManager *self, const gchar *iface)
 }
 
 static NMDevice *
-find_device_by_iface (NMManager *self, const gchar *iface)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = iter->data;
-
-		if (g_strcmp0 (nm_device_get_iface (candidate), iface) == 0)
-			return candidate;
-	}
-	return NULL;
-}
-
-static NMDevice *
 find_device_by_ifindex (NMManager *self, guint32 ifindex)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -2312,49 +2293,6 @@ platform_link_removed_cb (NMPlatform *platform,
 	NMDevice *device;
 
 	device = find_device_by_ifindex (self, ifindex);
-	if (device)
-		remove_device (self, device, FALSE);
-}
-
-static void
-atm_device_added_cb (NMAtmManager *atm_mgr,
-                     const char *iface,
-                     const char *sysfs_path,
-                     const char *driver,
-                     gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMDevice *device;
-
-	g_return_if_fail (iface != NULL);
-	g_return_if_fail (sysfs_path != NULL);
-
-	device = find_device_by_iface (self, iface);
-	if (device)
-		return;
-
-	device = nm_device_adsl_new (sysfs_path, iface, driver);
-	if (device)
-		add_device (self, device, TRUE);
-}
-
-static void
-atm_device_removed_cb (NMAtmManager *manager,
-                       const char *iface,
-                       gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMDevice *device = NULL;
-	GSList *iter;
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		if (g_strcmp0 (nm_device_get_iface (NM_DEVICE (iter->data)), iface) == 0) {
-			device = iter->data;
-			break;
-		}
-	}
-
 	if (device)
 		remove_device (self, device, FALSE);
 }
@@ -4230,7 +4168,6 @@ nm_manager_start (NMManager *self)
 	system_hostname_changed_cb (priv->settings, NULL, self);
 
 	nm_platform_query_devices ();
-	nm_atm_manager_query_devices (priv->atm_mgr);
 	nm_bluez_manager_query_devices (priv->bluez_mgr);
 
 	/*
@@ -4787,16 +4724,6 @@ nm_manager_new (NMSettings *settings,
 	g_signal_connect (nm_platform_get (),
 	                  NM_PLATFORM_LINK_REMOVED,
 	                  G_CALLBACK (platform_link_removed_cb),
-	                  singleton);
-
-	priv->atm_mgr = nm_atm_manager_new ();
-	g_signal_connect (priv->atm_mgr,
-	                  "device-added",
-	                  G_CALLBACK (atm_device_added_cb),
-	                  singleton);
-	g_signal_connect (priv->atm_mgr,
-	                  "device-removed",
-	                  G_CALLBACK (atm_device_removed_cb),
 	                  singleton);
 
 	priv->rfkill_mgr = nm_rfkill_manager_new ();

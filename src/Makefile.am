@@ -4,6 +4,7 @@ include $(GLIB_MAKEFILE)
 
 SUBDIRS =				\
 	.				\
+	devices/atm			\
 	dhcp-manager			\
 	ppp-manager			\
 	settings/plugins
@@ -70,8 +71,6 @@ nm_sources = \
 	\
 	devices/nm-device.c \
 	devices/nm-device.h \
-	devices/nm-device-adsl.c \
-	devices/nm-device-adsl.h \
 	devices/nm-device-bond.c \
 	devices/nm-device-bond.h \
 	devices/nm-device-bridge.c \
@@ -225,8 +224,6 @@ nm_sources = \
 	nm-activation-request.h \
 	nm-active-connection.c \
 	nm-active-connection.h \
-	nm-atm-manager.c \
-	nm-atm-manager.h \
 	nm-connection-provider.c \
 	nm-connection-provider.h \
 	nm-connectivity.c \
@@ -320,7 +317,6 @@ glue_sources = \
 	nm-access-point-glue.h \
 	nm-active-connection-glue.h \
 	nm-agent-manager-glue.h \
-	nm-device-adsl-glue.h \
 	nm-device-bond-glue.h \
 	nm-device-bridge-glue.h \
 	nm-device-bt-glue.h \

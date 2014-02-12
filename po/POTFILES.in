@@ -47,10 +47,10 @@ src/dhcp-manager/nm-dhcp-manager.c
 src/dns-manager/nm-dns-manager.c
 src/logging/nm-logging.c
 src/config/nm-config.c
+src/devices/atm/nm-device-adsl.c
 src/modem-manager/nm-modem-broadband.c
 src/modem-manager/nm-modem-old.c
 src/devices/nm-device-bond.c
-src/devices/nm-device-adsl.c
 src/devices/nm-device-bridge.c
 src/devices/nm-device-bt.c
 src/devices/nm-device-ethernet.c
