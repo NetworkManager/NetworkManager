@@ -29,6 +29,8 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include "nm-utils-internal.h"
+
 /* Log domains */
 enum {
 	LOGD_NONE       = 0LL,
@@ -105,6 +107,31 @@ GQuark nm_logging_error_quark    (void);
             _nm_log (G_STRLOC, G_STRFUNC, (level), (domain), __VA_ARGS__); \
         } \
     } G_STMT_END
+
+
+#define _nm_log_ptr(level, domain, self, ...) \
+   nm_log ((level), (domain), "[%p] " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), self _NM_UTILS_MACRO_REST(__VA_ARGS__))
+
+/* log a message for an object (with providing a generic @self pointer) */
+#define nm_log_ptr(level, domain, self, ...) \
+    G_STMT_START { \
+        if ((level) <= LOGL_DEBUG) { \
+            _nm_log_ptr ((level), (domain), (self), __VA_ARGS__); \
+        } else { \
+            nm_log ((level), (domain), __VA_ARGS__); \
+        } \
+    } G_STMT_END
+
+
+#define _nm_log_obj(level, domain, self, ...) \
+    _nm_log_ptr ((level), (domain), (self), __VA_ARGS__)
+
+/* log a message for an object (with providing a @self pointer to a GObject).
+ * Contrary to nm_log_ptr(), @self must be a GObject type (or %NULL).
+ * As of now, nm_log_obj() is identical to nm_log_ptr(), but we might change that */
+#define nm_log_obj(level, domain, self, ...) \
+    nm_log_ptr ((level), (domain), (self), __VA_ARGS__)
+
 
 void _nm_log (const char *loc,
               const char *func,
