@@ -34,6 +34,7 @@
 
 #include <glib/gi18n.h>
 
+#include "nm-glib-compat.h"
 #include "nm-logging.h"
 
 static void
@@ -59,6 +60,7 @@ static char *log_domains;
 static guint64 logging[LOGL_MAX];
 static gboolean logging_set_up;
 static gboolean syslog_opened;
+static char *logging_domains_to_string;
 
 typedef struct {
 	guint64 num;
@@ -253,6 +255,8 @@ nm_logging_setup (const char  *level,
 		log_domains = g_strdup (domains);
 	}
 
+	g_clear_pointer (&logging_domains_to_string, g_free);
+
 	log_level = new_log_level;
 	for (i = 0; i < LOGL_MAX; i++)
 		logging[i] = new_logging[i];
@@ -288,45 +292,48 @@ nm_logging_all_levels_to_string (void)
 	return str->str;
 }
 
-char *
+const char *
 nm_logging_domains_to_string (void)
 {
-	const LogDesc *diter;
-	GString *str;
-	int i;
+	if (G_UNLIKELY (!logging_domains_to_string)) {
+		const LogDesc *diter;
+		GString *str;
+		int i;
 
-	/* We don't just return g_strdup (log_domains) because we want to expand
-	 * "DEFAULT" and "ALL".
-	 */
+		/* We don't just return g_strdup (log_domains) because we want to expand
+		 * "DEFAULT" and "ALL".
+		 */
 
-	str = g_string_sized_new (75);
-	for (diter = &domain_descs[0]; diter->name; diter++) {
-		/* If it's set for any lower level, it will also be set for LOGL_ERR */
-		if (!(diter->num & logging[LOGL_ERR]))
-			continue;
+		str = g_string_sized_new (75);
+		for (diter = &domain_descs[0]; diter->name; diter++) {
+			/* If it's set for any lower level, it will also be set for LOGL_ERR */
+			if (!(diter->num & logging[LOGL_ERR]))
+				continue;
 
-		if (str->len)
-			g_string_append_c (str, ',');
-		g_string_append (str, diter->name);
+			if (str->len)
+				g_string_append_c (str, ',');
+			g_string_append (str, diter->name);
 
-		/* Check if it's logging at a lower level than the default. */
-		for (i = 0; i < log_level; i++) {
-			if (diter->num & logging[i]) {
-				g_string_append_printf (str, ":%s", level_names[i]);
-				break;
-			}
-		}
-		/* Check if it's logging at a higher level than the default. */
-		if (!(diter->num & logging[log_level])) {
-			for (i = log_level + 1; i < LOGL_MAX; i++) {
+			/* Check if it's logging at a lower level than the default. */
+			for (i = 0; i < log_level; i++) {
 				if (diter->num & logging[i]) {
 					g_string_append_printf (str, ":%s", level_names[i]);
 					break;
 				}
 			}
+			/* Check if it's logging at a higher level than the default. */
+			if (!(diter->num & logging[log_level])) {
+				for (i = log_level + 1; i < LOGL_MAX; i++) {
+					if (diter->num & logging[i]) {
+						g_string_append_printf (str, ":%s", level_names[i]);
+						break;
+					}
+				}
+			}
 		}
+		logging_domains_to_string = g_string_free (str, FALSE);
 	}
-	return g_string_free (str, FALSE);
+	return logging_domains_to_string;
 }
 
 const char *

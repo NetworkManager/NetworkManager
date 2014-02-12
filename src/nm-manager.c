@@ -4089,11 +4089,8 @@ impl_manager_set_logging (NMManager *manager,
 	}
 
 	if (nm_logging_setup (level, domains, NULL, &error)) {
-		char *new_domains = nm_logging_domains_to_string ();
-
 		nm_log_info (LOGD_CORE, "logging: level '%s' domains '%s'",
-		             nm_logging_level_to_string (), new_domains);
-		g_free (new_domains);
+		             nm_logging_level_to_string (), nm_logging_domains_to_string ());
 	}
 
 done:
@@ -4110,7 +4107,7 @@ impl_manager_get_logging (NMManager *manager,
                           char **domains)
 {
 	*level = g_strdup (nm_logging_level_to_string ());
-	*domains = nm_logging_domains_to_string ();
+	*domains = g_strdup (nm_logging_domains_to_string ());
 }
 
 static void
