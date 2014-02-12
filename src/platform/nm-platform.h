@@ -22,6 +22,7 @@
 #define NM_PLATFORM_H
 
 #include <glib-object.h>
+#include "nm-glib-compat.h"
 #include <netinet/in.h>
 #include <linux/if.h>
 #include <linux/if_addr.h>
@@ -482,12 +483,7 @@ gboolean nm_platform_check_support_kernel_extended_ifa_flags (void);
 static void __attribute__((unused))
 put_g_free (void *ptr)
 {
-	gpointer *object = ptr;
-
-	if (object && *object) {
-		g_free (*object);
-		*object = NULL;
-	}
+	g_clear_pointer ((gpointer *) ptr, g_free);
 }
 
 #endif /* NM_PLATFORM_H */
