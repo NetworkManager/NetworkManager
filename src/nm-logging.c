@@ -163,6 +163,9 @@ nm_logging_setup (const char  *level,
 	char **tmp, **iter;
 	int i;
 
+	g_return_val_if_fail (!bad_domains || !*bad_domains, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+
 	logging_set_up = TRUE;
 
 	for (i = 0; i < LOGL_MAX; i++)
