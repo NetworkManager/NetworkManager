@@ -4100,9 +4100,11 @@ impl_manager_set_logging (NMManager *manager,
 	}
 
 done:
-	if (error)
+	if (error) {
 		dbus_g_method_return_error (context, error);
-	g_clear_error (&error);
+		g_error_free (error);
+	} else
+		dbus_g_method_return (context);
 }
 
 static void
