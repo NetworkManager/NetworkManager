@@ -97,8 +97,14 @@ GQuark nm_logging_error_quark    (void);
 #define nm_log_info(domain, ...)    nm_log (LOGL_INFO,  (domain), __VA_ARGS__)
 #define nm_log_dbg(domain, ...)     nm_log (LOGL_DEBUG, (domain), __VA_ARGS__)
 
+/* nm_log() only evaluates it's argument list after checking
+ * whether logging for the given level/domain is enabled.  */
 #define nm_log(level, domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, (level), (domain), __VA_ARGS__)
+    G_STMT_START { \
+        if (nm_logging_enabled ((level), (domain))) { \
+            _nm_log (G_STRLOC, G_STRFUNC, (level), (domain), __VA_ARGS__); \
+        } \
+    } G_STMT_END
 
 void _nm_log (const char *loc,
               const char *func,
