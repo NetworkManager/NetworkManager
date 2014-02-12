@@ -82,6 +82,19 @@ G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
+
+#define _LOG(level, domain, ...) \
+    nm_log_obj ((level), (domain), (self), \
+                "(%s): " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                (self) ? str_if_set (nm_device_get_iface (self), "(null)") : "(none)" \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__))
+
+#define _LOGD(domain, ...)      _LOG (LOGL_DEBUG, domain, __VA_ARGS__)
+#define _LOGI(domain, ...)      _LOG (LOGL_INFO,  domain, __VA_ARGS__)
+#define _LOGW(domain, ...)      _LOG (LOGL_WARN,  domain, __VA_ARGS__)
+#define _LOGE(domain, ...)      _LOG (LOGL_ERR,   domain, __VA_ARGS__)
+
+
 enum {
 	STATE_CHANGED,
 	AUTOCONNECT_ALLOWED,
