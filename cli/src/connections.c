@@ -268,7 +268,7 @@ usage (void)
 #endif
 	           "  down [id | uuid | path | apath] <ID>\n\n"
 	           "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
-	           "  modify [--temporary] [id | uuid | path] <ID> [+]<setting>.<property> <value>\n\n"
+	           "  modify [--temporary] [id | uuid | path] <ID> ([+]<setting>.<property> <value>)+\n\n"
 	           "  edit [id | uuid | path] <ID>\n"
 	           "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
 	           "  delete [id | uuid | path] <ID>\n\n"
@@ -416,12 +416,16 @@ usage_connection_modify (void)
 	fprintf (stderr,
 	         _("Usage: nmcli connection modify { ARGUMENTS | help }\n"
 	           "\n"
-	           "ARGUMENTS := [id | uuid | path] <ID> [+]<setting>.<property> <value>\n"
+	           "ARGUMENTS := [id | uuid | path] <ID> ([+]<setting>.<property> <value>)+\n"
 	           "\n"
-	           "Modify a single property in the connection profile.\n"
-	           "The profile is identified by its name, UUID or D-Bus path.\n\n"
+	           "Modify one or more properties of the connection profile.\n"
+	           "The profile is identified by its name, UUID or D-Bus path. The optional '+'\n"
+	           "sign before the property instruct nmcli to append the value instead of \n"
+	           "overwriting it.\n"
 	           "\n"
 	           "Examples:\n"
+	           "nmcli con mod home-wifi wifi.ssid rakosnicek\n"
+	           "nmcli con mod em1-1 ipv4.method manual ipv4.addr \"192.168.1.2/24, 10.10.1.5/8\"\n"
 	           "nmcli con mod em1-1 +ipv4.dns 8.8.4.4\n\n"));
 }
 
@@ -7840,8 +7844,8 @@ do_connection_modify (NmCli *nmc,
 	const char *con_type;
 	const char *name;
 	const char *selector = NULL;
-	const char *set_prop;
-	char *value = NULL;
+	const char *s_dot_p;
+	const char *value;
 	char **strv = NULL;
 	const char *setting_name;
 	char *property_name = NULL;
@@ -7849,6 +7853,15 @@ do_connection_modify (NmCli *nmc,
 	GError *error = NULL;
 
 	nmc->should_wait = FALSE;
+
+	/* create NMClient */
+	nmc->get_client (nmc);
+
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		goto finish;
+	}
 
 	if (argc == 0) {
 		g_string_printf (nmc->return_text, _("Error: No arguments provided."));
@@ -7869,102 +7882,117 @@ do_connection_modify (NmCli *nmc,
 		name = *argv;
 	}
 	name = *argv;
-	next_arg (&argc, &argv);
-	set_prop = *argv;
-	next_arg (&argc, &argv);
-	value = g_strjoinv (" ", argv);
-
 	if (!name) {
 		g_string_printf (nmc->return_text, _("Error: connection ID is missing."));
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
 	}
-	if (!set_prop) {
-		g_string_printf (nmc->return_text, _("Error: <setting>.<property> argument is missing."));
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto finish;
-	}
-	/* NULL value means deleting/setting default property value */
-
-	/* create NMClient */
-	nmc->get_client (nmc);
-
-	if (!nm_client_get_manager_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto finish;
-	}
-
 	connection = find_connection (nmc->system_connections, selector, name, NULL);
 	if (!connection) {
 		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto finish;
 	}
-
-	if (set_prop[0] == '+') {
-		set_prop++;
-		append = TRUE;
-	}
-
-	strv = g_strsplit (set_prop, ".", 2);
-	if (g_strv_length (strv) != 2) {
-		g_string_printf (nmc->return_text, _("Error: invalid <setting>.<property> '%s'."),
-		                 set_prop);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto finish;
-	}
-
 	rc = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
 	                                                nm_connection_get_uuid (connection));
-
+	if (!rc) {
+		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		goto finish;
+	}
 	s_con = nm_connection_get_setting_connection (NM_CONNECTION (rc));
 	g_assert (s_con);
 	con_type = nm_setting_connection_get_connection_type (s_con);
 
-	setting_name = check_valid_name (strv[0], get_valid_settings_array (con_type), &error);
-	if (!setting_name) {
-		g_string_printf (nmc->return_text, _("Error: invalid or not allowed setting '%s': %s."),
-		                 strv[0], error->message);
+	if (next_arg (&argc, &argv) != 0) {
+		g_string_printf (nmc->return_text, _("Error: <setting>.<property> argument is missing."));
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
-	}
-	setting = nm_connection_get_setting_by_name (NM_CONNECTION (rc), setting_name);
-	if (!setting) {
-		setting = nmc_setting_new_for_name (setting_name);
-		if (!setting) {
-			/* This should really not happen */
-			g_string_printf (nmc->return_text,
-			                 "Error: don't know how to create '%s' setting.",
-			                 setting_name);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			goto finish;
-		}
-		nm_connection_add_setting (NM_CONNECTION (rc), setting);
 	}
 
-	property_name = is_property_valid (setting, strv[1], &error);
-	if (!property_name) {
-		g_string_printf (nmc->return_text, _("Error: invalid property '%s': %s."),
-		                 strv[1], error->message);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto finish;
-	}
-	if (!append)
-		nmc_setting_reset_property (setting, property_name, NULL);
-	if (!nmc_setting_set_property (setting, property_name, value, &error)) {
-		g_string_printf (nmc->return_text, _("Error: failed to modify %s.%s: %s."),
-		                 strv[0], strv[1], error->message);
-		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-		goto finish;
+	/* Go through arguments and set properties */
+	while (argc) {
+		s_dot_p = *argv;
+		next_arg (&argc, &argv);
+		value = *argv;
+		next_arg (&argc, &argv);
+
+		if (!s_dot_p) {
+			g_string_printf (nmc->return_text, _("Error: <setting>.<property> argument is missing."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+		if (!value) {
+			g_string_printf (nmc->return_text, _("Error: value for '%s' is missing."), s_dot_p);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+		/* Empty string will reset the value to default */
+		if (value[0] == '\0')
+			value = NULL;
+
+		if (s_dot_p[0] == '+') {
+			s_dot_p++;
+			append = TRUE;
+		}
+
+		strv = g_strsplit (s_dot_p, ".", 2);
+		if (g_strv_length (strv) != 2) {
+			g_string_printf (nmc->return_text, _("Error: invalid <setting>.<property> '%s'."),
+			                 s_dot_p);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+
+		setting_name = check_valid_name (strv[0], get_valid_settings_array (con_type), &error);
+		if (!setting_name) {
+			g_string_printf (nmc->return_text, _("Error: invalid or not allowed setting '%s': %s."),
+			                 strv[0], error->message);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+		setting = nm_connection_get_setting_by_name (NM_CONNECTION (rc), setting_name);
+		if (!setting) {
+			setting = nmc_setting_new_for_name (setting_name);
+			if (!setting) {
+				/* This should really not happen */
+				g_string_printf (nmc->return_text,
+				                 "Error: don't know how to create '%s' setting.",
+				                  setting_name);
+				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+				goto finish;
+			}
+			nm_connection_add_setting (NM_CONNECTION (rc), setting);
+		}
+
+		property_name = is_property_valid (setting, strv[1], &error);
+		if (!property_name) {
+			g_string_printf (nmc->return_text, _("Error: invalid property '%s': %s."),
+			                 strv[1], error->message);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+
+		if (!append)
+			nmc_setting_reset_property (setting, property_name, NULL);
+		if (!nmc_setting_set_property (setting, property_name, value, &error)) {
+			g_string_printf (nmc->return_text, _("Error: failed to modify %s.%s: %s."),
+			                 strv[0], strv[1], error->message);
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto finish;
+		}
+
+		g_strfreev (strv);
+		strv = NULL;
 	}
 
 	update_connection (!temporary, rc, modify_connection_cb, nmc);
+
 finish:
 	nmc->should_wait = (nmc->return_value == NMC_RESULT_SUCCESS);
-	g_free (value);
 	g_free (property_name);
-	g_strfreev (strv);
+	if (strv)
+		g_strfreev (strv);
 	g_clear_error (&error);
 	return nmc->return_value;
 }
