@@ -401,8 +401,10 @@ nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 		g_signal_connect (device, "notify::master",
 		                  G_CALLBACK (device_master_changed), self);
 
-		priv->pending_activation_id = g_strdup_printf ("activation::%p", (void *)self);
-		nm_device_add_pending_action (device, priv->pending_activation_id);
+		if (!priv->assumed) {
+			priv->pending_activation_id = g_strdup_printf ("activation::%p", (void *)self);
+			nm_device_add_pending_action (device, priv->pending_activation_id);
+		}
 	}
 	return TRUE;
 }
@@ -540,6 +542,11 @@ nm_active_connection_set_assumed (NMActiveConnection *self, gboolean assumed)
 
 	g_return_if_fail (priv->assumed == FALSE);
 	priv->assumed = assumed;
+
+	if (priv->pending_activation_id) {
+		nm_device_remove_pending_action (priv->device, priv->pending_activation_id);
+		g_clear_pointer (&priv->pending_activation_id, g_free);
+	}
 }
 
 gboolean
