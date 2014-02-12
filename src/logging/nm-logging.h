@@ -115,7 +115,7 @@ void _nm_log (const char *loc,
               ...) __attribute__((__format__ (__printf__, 5, 6)));
 
 const char *nm_logging_level_to_string (void);
-char *nm_logging_domains_to_string (void);
+const char *nm_logging_domains_to_string (void);
 gboolean nm_logging_enabled (guint32 level, guint64 domain);
 
 const char *nm_logging_all_levels_to_string (void);
