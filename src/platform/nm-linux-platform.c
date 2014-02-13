@@ -2582,15 +2582,41 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	return routes;
 }
 
+static void
+clear_host_address (int family, const void *network, int plen, void *dst)
+{
+	g_return_if_fail (plen == (guint8)plen);
+	g_return_if_fail (network);
+
+	switch (family) {
+	case AF_INET:
+		*((in_addr_t *) dst) = nm_utils_ip4_address_clear_host_address (*((in_addr_t *) network), plen);
+		break;
+	case AF_INET6:
+		nm_utils_ip6_address_clear_host_address ((struct in6_addr *) dst, (const struct in6_addr *) network, plen);
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+}
+
 static struct nl_object *
 build_rtnl_route (int family, int ifindex, gconstpointer network, int plen, gconstpointer gateway, int metric, int mss)
 {
+	guint32 network_clean[4];
 	struct rtnl_route *rtnlroute = rtnl_route_alloc ();
 	struct rtnl_nexthop *nexthop = rtnl_route_nh_alloc ();
 	int addrlen = (family == AF_INET) ? sizeof (in_addr_t) : sizeof (struct in6_addr);
 	/* Workaround a libnl bug by using zero destination address length for default routes */
-	auto_nl_addr struct nl_addr *dst = nl_addr_build (family, network, plen ? addrlen : 0);
+	auto_nl_addr struct nl_addr *dst = NULL;
 	auto_nl_addr struct nl_addr *gw = gateway ? nl_addr_build (family, gateway, addrlen) : NULL;
+
+	/* There seem to be problems adding a route with non-zero host identifier.
+	 * Adding IPv6 routes is simply ignored, without error message.
+	 * In the IPv4 case, we got an error. Thus, we have to make sure, that
+	 * the address is sane. */
+	clear_host_address (family, network, plen, network_clean);
+	dst = nl_addr_build (family, network_clean, plen ? addrlen : 0);
 
 	g_assert (rtnlroute && dst && nexthop);
 
@@ -2635,7 +2661,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 static gboolean
 ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, int metric)
 {
-	struct in6_addr gateway = in6addr_any;
+	struct in6_addr gateway = IN6ADDR_ANY_INIT;
 
 	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, &network, plen, &gateway, metric, 0));
 }
