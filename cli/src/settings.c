@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2013 Red Hat, Inc.
+ * (C) Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -663,9 +663,9 @@ wep_key_type_to_string (NMWepKeyType type)
 {
 	switch (type) {
 	case NM_WEP_KEY_TYPE_KEY:
-		return g_strdup_printf (_("%d (hex-ascii-key)"), type);
+		return g_strdup_printf (_("%d (key)"), type);
 	case NM_WEP_KEY_TYPE_PASSPHRASE:
-		return g_strdup_printf (_("%d (104/128-bit passphrase)"), type);
+		return g_strdup_printf (_("%d (passphrase)"), type);
 	case NM_WEP_KEY_TYPE_UNKNOWN:
 	default:
 		return g_strdup_printf (_("%d (unknown)"), type);
@@ -3705,23 +3705,47 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_group, wifi_sec_valid_gro
 static gboolean
 nmc_property_wifi_set_wep_key (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
+	NMWepKeyType guessed_type = NM_WEP_KEY_TYPE_UNKNOWN;
 	NMWepKeyType type;
+	guint32 prev_idx, idx;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (nm_utils_wep_key_valid (val, NM_WEP_KEY_TYPE_KEY)) {
-		type = NM_WEP_KEY_TYPE_KEY;
-		fprintf (stdout, _("WEP key is guessed to be of '%s'\n"), wep_key_type_to_string (type));
-	} else if (nm_utils_wep_key_valid (val, NM_WEP_KEY_TYPE_PASSPHRASE)) {
-		type = NM_WEP_KEY_TYPE_PASSPHRASE;
-		fprintf (stdout, _("WEP key is guessed to be of '%s'\n"), wep_key_type_to_string (type));
-	} else {
+	/* Get currently set type */
+	type = nm_setting_wireless_security_get_wep_key_type (NM_SETTING_WIRELESS_SECURITY (setting));
+
+	/* Guess key type */
+	if (nm_utils_wep_key_valid (val, NM_WEP_KEY_TYPE_KEY))
+		guessed_type = NM_WEP_KEY_TYPE_KEY;
+	else if (nm_utils_wep_key_valid (val, NM_WEP_KEY_TYPE_PASSPHRASE))
+		guessed_type = NM_WEP_KEY_TYPE_PASSPHRASE;
+
+	if (guessed_type == NM_WEP_KEY_TYPE_UNKNOWN) {
 		g_set_error (error, 1, 0, _("'%s' is not valid"), val);
 		return FALSE;
 	}
 
+	if (type != NM_WEP_KEY_TYPE_UNKNOWN && type != guessed_type) {
+		if (nm_utils_wep_key_valid (val, type))
+			guessed_type = type;
+		else {
+			g_set_error (error, 1, 0,
+			             _("'%s' not compatible with %s '%s', please change the key or set the right %s first."),
+			             val, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, wep_key_type_to_string (type),
+			             NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE);
+			return FALSE;
+		}
+	}
+	prev_idx = nm_setting_wireless_security_get_wep_tx_keyidx (NM_SETTING_WIRELESS_SECURITY (setting));
+	idx = prop[strlen (prop) - 1] - '0';
+	printf (_("WEP key is guessed to be of '%s'\n"), wep_key_type_to_string (guessed_type));
+	if (idx != prev_idx)
+		printf (_("WEP key index set to '%d'\n"), idx);
+
 	g_object_set (setting, prop, val, NULL);
-	g_object_set (setting, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, type, NULL);
+	g_object_set (setting, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, guessed_type, NULL);
+	if (idx != prev_idx)
+		g_object_set (setting, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, idx, NULL);
 	return TRUE;
 }
 
@@ -3732,6 +3756,7 @@ nmc_property_wifi_set_wep_key_type (NMSetting *setting, const char *prop, const 
 	unsigned long  type_int;
 	const char *valid_wep_types[] = { "unknown", "key", "passphrase", NULL };
 	const char *type_str = NULL;
+	const char *key0, *key1,* key2, *key3;
 	NMWepKeyType type = NM_WEP_KEY_TYPE_UNKNOWN;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -3747,6 +3772,24 @@ nmc_property_wifi_set_wep_key_type (NMSetting *setting, const char *prop, const 
 			type = NM_WEP_KEY_TYPE_PASSPHRASE;
 	} else
 		type = (NMWepKeyType) type_int;
+
+	/* Check type compatibility with set keys */
+	key0 = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), 0);
+	key1 = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), 1);
+	key2 = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), 2);
+	key3 = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), 3);
+	if (key0 && !nm_utils_wep_key_valid (key0, type))
+		printf (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
+			NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, wep_key_type_to_string (type));
+	if (key1 && !nm_utils_wep_key_valid (key1, type))
+		printf (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
+			NM_SETTING_WIRELESS_SECURITY_WEP_KEY1, wep_key_type_to_string (type));
+	if (key2 && !nm_utils_wep_key_valid (key2, type))
+		printf (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
+			NM_SETTING_WIRELESS_SECURITY_WEP_KEY2, wep_key_type_to_string (type));
+	if (key3 && !nm_utils_wep_key_valid (key3, type))
+		printf (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
+			NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, wep_key_type_to_string (type));
 
 	g_object_set (setting, prop, type, NULL);
 	return TRUE;
