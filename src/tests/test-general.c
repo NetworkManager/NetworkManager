@@ -60,6 +60,76 @@ test_nm_utils_ascii_str_to_int64 (void)
 	test_nm_utils_ascii_str_to_int64_do ("\r\n\t10000\t\n\t\n", 10, 0, 10000, -1, 0, 10000);
 }
 
+/* Reference implementation for nm_utils_ip6_address_clear_host_address.
+ * Taken originally from set_address_masked(), src/rdisc/nm-lndp-rdisc.c
+ **/
+static void
+ip6_address_clear_host_address_reference (struct in6_addr *dst, struct in6_addr *src, guint8 plen)
+{
+	guint nbytes = plen / 8;
+	guint nbits = plen % 8;
+
+	g_return_if_fail (plen <= 128);
+	g_assert (src);
+	g_assert (dst);
+
+	if (plen >= 128)
+		*dst = *src;
+	else {
+		memset (dst, 0, sizeof (*dst));
+		memcpy (dst, src, nbytes);
+		dst->s6_addr[nbytes] = (src->s6_addr[nbytes] & (0xFF << (8 - nbits)));
+	}
+}
+
+static void
+_randomize_in6_addr (struct in6_addr *addr, GRand *rand)
+{
+	int i;
+
+	for (i=0; i < 4; i++)
+		((guint32 *)addr)[i] = g_rand_int (rand);
+}
+
+static void
+test_nm_utils_ip6_address_clear_host_address (void)
+{
+	GRand *rand = g_rand_new ();
+	int plen, i;
+
+	g_rand_set_seed (rand, 0);
+
+	for (plen = 0; plen <= 128; plen++) {
+		for (i =0; i<50; i++) {
+			struct in6_addr addr_src, addr_ref;
+			struct in6_addr addr1, addr2;
+
+			_randomize_in6_addr (&addr_src, rand);
+			_randomize_in6_addr (&addr_ref, rand);
+			_randomize_in6_addr (&addr1, rand);
+			_randomize_in6_addr (&addr2, rand);
+
+			addr1 = addr_src;
+			ip6_address_clear_host_address_reference (&addr_ref, &addr1, plen);
+
+			_randomize_in6_addr (&addr1, rand);
+			_randomize_in6_addr (&addr2, rand);
+			addr1 = addr_src;
+			nm_utils_ip6_address_clear_host_address (&addr2, &addr1, plen);
+			g_assert_cmpint (memcmp (&addr1, &addr_src, sizeof (struct in6_addr)), ==, 0);
+			g_assert_cmpint (memcmp (&addr2, &addr_ref, sizeof (struct in6_addr)), ==, 0);
+
+			/* test for self assignment/inplace update. */
+			_randomize_in6_addr (&addr1, rand);
+			addr1 = addr_src;
+			nm_utils_ip6_address_clear_host_address (&addr1, &addr1, plen);
+			g_assert_cmpint (memcmp (&addr1, &addr_ref, sizeof (struct in6_addr)), ==, 0);
+		}
+	}
+
+	g_rand_free (rand);
+}
+
 /*******************************************/
 
 int
@@ -70,6 +140,7 @@ main (int argc, char **argv)
 	g_type_init ();
 
 	g_test_add_func ("/general/nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
+	g_test_add_func ("/general/nm_utils_ip6_address_clear_host_address", test_nm_utils_ip6_address_clear_host_address);
 
 	return g_test_run ();
 }
