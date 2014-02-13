@@ -1015,17 +1015,14 @@ auto_activate_device (gpointer user_data)
 }
 
 static ActivateData *
-activate_data_new (NMPolicy *policy, NMDevice *device, guint delay_seconds)
+activate_data_new (NMPolicy *policy, NMDevice *device)
 {
 	ActivateData *data;
 
 	data = g_malloc0 (sizeof (ActivateData));
 	data->policy = policy;
 	data->device = g_object_ref (device);
-	if (delay_seconds > 0)
-		data->autoactivate_id = g_timeout_add_seconds (delay_seconds, auto_activate_device, data);
-	else
-		data->autoactivate_id = g_idle_add (auto_activate_device, data);
+	data->autoactivate_id = g_idle_add (auto_activate_device, data);
 
 	nm_device_add_pending_action (device, "autoactivate");
 
@@ -1215,7 +1212,7 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds)
+schedule_activate_check (NMPolicy *policy, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	ActivateData *data;
@@ -1241,7 +1238,7 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 
 	/* Schedule an auto-activation if there isn't one already for this device */
 	if (find_pending_activation (priv->pending_activation_checks, device) == NULL) {
-		data = activate_data_new (policy, device, delay_seconds);
+		data = activate_data_new (policy, device);
 		priv->pending_activation_checks = g_slist_append (priv->pending_activation_checks, data);
 	}
 }
@@ -1493,7 +1490,7 @@ device_state_changed (NMDevice *device,
 			update_routing_and_dns (policy, FALSE);
 
 		/* Device is now available for auto-activation */
-		schedule_activate_check (policy, device, 0);
+		schedule_activate_check (policy, device);
 		break;
 
 	case NM_DEVICE_STATE_PREPARE:
@@ -1601,25 +1598,25 @@ device_autoconnect_changed (NMDevice *device,
                             gpointer user_data)
 {
 	if (nm_device_get_autoconnect (device))
-		schedule_activate_check ((NMPolicy *) user_data, device, 0);
+		schedule_activate_check ((NMPolicy *) user_data, device);
 }
 
 static void
 wireless_networks_changed (NMDevice *device, GObject *ap, gpointer user_data)
 {
-	schedule_activate_check ((NMPolicy *) user_data, device, 0);
+	schedule_activate_check ((NMPolicy *) user_data, device);
 }
 
 static void
 nsps_changed (NMDevice *device, GObject *nsp, gpointer user_data)
 {
-	schedule_activate_check ((NMPolicy *) user_data, device, 0);
+	schedule_activate_check ((NMPolicy *) user_data, device);
 }
 
 static void
 modem_enabled_changed (NMDevice *device, gpointer user_data)
 {
-	schedule_activate_check ((NMPolicy *) (user_data), device, 0);
+	schedule_activate_check ((NMPolicy *) (user_data), device);
 }
 
 typedef struct {
@@ -1837,7 +1834,7 @@ schedule_activate_all (NMPolicy *policy)
 
 	devices = nm_manager_get_devices (priv->manager);
 	for (iter = devices; iter; iter = g_slist_next (iter))
-		schedule_activate_check (policy, NM_DEVICE (iter->data), 0);
+		schedule_activate_check (policy, NM_DEVICE (iter->data));
 }
 
 static void
