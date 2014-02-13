@@ -937,12 +937,14 @@ typedef struct {
 static void
 activate_data_free (ActivateData *data)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (data->policy);
+
 	nm_device_remove_pending_action (data->device, "autoactivate");
+	priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, data);
 
 	if (data->autoactivate_id)
 		g_source_remove (data->autoactivate_id);
 	g_object_unref (data->device);
-	memset (data, 0, sizeof (*data));
 	g_free (data);
 }
 
@@ -961,7 +963,6 @@ auto_activate_device (gpointer user_data)
 	priv = NM_POLICY_GET_PRIVATE (policy);
 
 	data->autoactivate_id = 0;
-	priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, data);
 
 	// FIXME: if a device is already activating (or activated) with a connection
 	// but another connection now overrides the current one for that device,
@@ -1011,21 +1012,6 @@ auto_activate_device (gpointer user_data)
  out:
 	activate_data_free (data);
 	return G_SOURCE_REMOVE;
-}
-
-static ActivateData *
-activate_data_new (NMPolicy *policy, NMDevice *device)
-{
-	ActivateData *data;
-
-	data = g_malloc0 (sizeof (ActivateData));
-	data->policy = policy;
-	data->device = g_object_ref (device);
-	data->autoactivate_id = g_idle_add (auto_activate_device, data);
-
-	nm_device_add_pending_action (device, "autoactivate");
-
-	return data;
 }
 
 static ActivateData *
@@ -1226,20 +1212,33 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device)
 	if (!nm_device_autoconnect_allowed (device))
 		return;
 
-	/* If the device already has an activation in-progress or waiting for
-	 * authentication, don't start an auto-activation for it.
-	 */
+	if (find_pending_activation (priv->pending_activation_checks, device))
+		return;
+
 	active_connections = nm_manager_get_active_connections (priv->manager);
 	for (iter = active_connections; iter; iter = iter->next) {
 		if (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (iter->data)) == device)
 			return;
 	}
 
-	/* Schedule an auto-activation if there isn't one already for this device */
-	if (find_pending_activation (priv->pending_activation_checks, device) == NULL) {
-		data = activate_data_new (policy, device);
-		priv->pending_activation_checks = g_slist_append (priv->pending_activation_checks, data);
-	}
+	nm_device_add_pending_action (device, "autoactivate");
+
+	data = g_malloc0 (sizeof (ActivateData));
+	data->policy = policy;
+	data->device = g_object_ref (device);
+	data->autoactivate_id = g_idle_add (auto_activate_device, data);
+	priv->pending_activation_checks = g_slist_append (priv->pending_activation_checks, data);
+}
+
+static void
+clear_pending_activate_check (NMPolicy *policy, NMDevice *device)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
+	ActivateData *data;
+
+	data = find_pending_activation (priv->pending_activation_checks, device);
+	if (data && data->autoactivate_id)
+		activate_data_free (data);
 }
 
 static gboolean
@@ -1676,15 +1675,10 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	ActivateData *tmp;
 	GSList *iter;
 
 	/* Clear any idle callbacks for this device */
-	tmp = find_pending_activation (priv->pending_activation_checks, device);
-	if (tmp) {
-		priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, tmp);
-		activate_data_free (tmp);
-	}
+	clear_pending_activate_check (policy, device);
 
 	/* Clear any signal handlers for this device */
 	iter = priv->dev_ids;
