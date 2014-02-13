@@ -82,8 +82,13 @@ add_or_change_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data
 	                            G_TYPE_STRING, &zone,
 	                            G_TYPE_INVALID)) {
 		g_assert (error);
-		nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone add/change failed: (%d) %s",
-		             info->iface, error->code, error->message);
+		if (g_strcmp0 (error->message, "ZONE_ALREADY_SET") != 0) {
+			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone add/change failed: (%d) %s",
+			             info->iface, error->code, error->message);
+		} else {
+			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change failed: (%d) %s",
+			            info->iface, error->code, error->message);
+		}
 	}
 
 	info->callback (error, info->user_data);
@@ -114,7 +119,8 @@ nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
 	info->callback = callback;
 	info->user_data = user_data;
 
-	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s -> %s", iface, add ? "add" : "change", zone);
+	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s -> %s%s%s", iface, add ? "add" : "change",
+	                           zone?"\"":"", zone ? zone : "default", zone?"\"":"");
 	return dbus_g_proxy_begin_call_with_timeout (priv->proxy,
 	                                             add ? "addInterface" : "changeZone",
 	                                             add_or_change_cb,
