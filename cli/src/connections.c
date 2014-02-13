@@ -7570,13 +7570,18 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 			              NM_SETTING_GSM_NUMBER, "*99#",
 			              NULL);
 
-		/* For Wi-Fi set mode to "infrastructure". Even though mode == NULL
-		 * is regarded as "infrastructure", explicit value makes no doubts.
-		 */
-		if (g_strcmp0 (con_type, NM_SETTING_WIRELESS_SETTING_NAME) == 0)
+		/* Wi-Fi */
+		if (g_strcmp0 (con_type, NM_SETTING_WIRELESS_SETTING_NAME) == 0) {
+			/* For Wi-Fi set mode to "infrastructure". Even though mode == NULL
+			 * is regarded as "infrastructure", explicit value makes no doubts.
+			 */
 			g_object_set (NM_SETTING_WIRELESS (base_setting),
 			              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
 			              NULL);
+
+			/* Do custom initialization for wifi setting */
+			nmc_setting_custom_init (base_setting);
+		}
 
 		/* Always add IPv4 and IPv6 settings for non-slave connections */
 		setting = nm_setting_ip4_config_new ();
@@ -7594,14 +7599,18 @@ editor_init_existing_connection (NMConnection *connection)
 {
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
+	NMSettingWireless *s_wireless;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	s_wireless = nm_connection_get_setting_wireless (connection);
 
 	if (s_ip4)
 		nmc_setting_ip4_connect_handlers (s_ip4);
 	if (s_ip6)
 		nmc_setting_ip6_connect_handlers (s_ip6);
+	if (s_wireless)
+		nmc_setting_wireless_connect_handlers (s_wireless);
 }
 
 static NMCResultCode

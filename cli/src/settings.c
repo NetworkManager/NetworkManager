@@ -1751,6 +1751,36 @@ ipv6_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 	g_signal_handlers_unblock_by_func (object, G_CALLBACK (ipv6_addresses_changed_cb), NULL);
 }
 
+static void
+wireless_band_channel_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	const char *value = NULL, *mode;
+	char str[16];
+	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (object);
+
+	if (strcmp (g_param_spec_get_name (pspec), NM_SETTING_WIRELESS_BAND) == 0) {
+		value = nm_setting_wireless_get_band (s_wireless);
+		if (!value)
+			return;
+	} else {
+		guint32 channel = nm_setting_wireless_get_channel (s_wireless);
+
+		if (channel == 0)
+			return;
+
+		snprintf (str, sizeof (str), "%d", nm_setting_wireless_get_channel (s_wireless));
+		str[sizeof (str)-1] = 0;
+		value = str;
+	}
+
+	mode = nm_setting_wireless_get_mode (NM_SETTING_WIRELESS (object));
+	if (!mode || !*mode || strcmp (mode, NM_SETTING_WIRELESS_MODE_INFRA) == 0) {
+		printf (_("Warning: %s.%s set to '%s', but it might be ignored in infrastructure mode\n"),
+		        nm_setting_get_name (NM_SETTING (s_wireless)), g_param_spec_get_name (pspec),
+		        value);
+	}
+}
+
 void
 nmc_setting_ip4_connect_handlers (NMSettingIP4Config *setting)
 {
@@ -1773,6 +1803,17 @@ nmc_setting_ip6_connect_handlers (NMSettingIP6Config *setting)
 	                  G_CALLBACK (ipv6_method_changed_cb), NULL);
 }
 
+void
+nmc_setting_wireless_connect_handlers (NMSettingWireless *setting)
+{
+	g_return_if_fail (NM_IS_SETTING_WIRELESS (setting));
+
+	g_signal_connect (setting, "notify::" NM_SETTING_WIRELESS_BAND,
+	                  G_CALLBACK (wireless_band_channel_changed_cb), NULL);
+	g_signal_connect (setting, "notify::" NM_SETTING_WIRELESS_CHANNEL,
+	                  G_CALLBACK (wireless_band_channel_changed_cb), NULL);
+}
+
 /*
  * Customize some properties of the setting so that the setting has sensible
  * values.
@@ -1792,6 +1833,11 @@ nmc_setting_custom_init (NMSetting *setting)
 		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 		              NULL);
 		nmc_setting_ip6_connect_handlers (NM_SETTING_IP6_CONFIG (setting));
+	} else if (NM_IS_SETTING_WIRELESS (setting)) {
+		g_object_set (NM_SETTING_WIRELESS (setting),
+		              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
+		              NULL);
+		nmc_setting_wireless_connect_handlers (NM_SETTING_WIRELESS (setting));
 	}
 }
 

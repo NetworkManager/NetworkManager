@@ -56,6 +56,7 @@ NMSetting *nmc_setting_new_for_name (const char *name);
 void nmc_setting_custom_init (NMSetting *setting);
 void nmc_setting_ip4_connect_handlers (NMSettingIP4Config *setting);
 void nmc_setting_ip6_connect_handlers (NMSettingIP6Config *setting);
+void nmc_setting_wireless_connect_handlers (NMSettingWireless *setting);
 
 char      **nmc_setting_get_valid_properties (NMSetting *setting);
 char       *nmc_setting_get_property_desc (NMSetting *setting, const char *prop);
