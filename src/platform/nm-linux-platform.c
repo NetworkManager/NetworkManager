@@ -320,25 +320,6 @@ add_kernel_object (struct nl_sock *sock, struct nl_object *object)
 	}
 }
 
-/* libnl 3.2 doesn't seem to provide such a generic way to delete libnl-route objects. */
-static int
-delete_kernel_object (struct nl_sock *sock, struct nl_object *object)
-{
-	switch (object_type_from_nl_object (object)) {
-	case LINK:
-		return rtnl_link_delete (sock, (struct rtnl_link *) object);
-	case IP4_ADDRESS:
-	case IP6_ADDRESS:
-		return rtnl_addr_delete (sock, (struct rtnl_addr *) object, 0);
-	case IP4_ROUTE:
-	case IP6_ROUTE:
-		return rtnl_route_delete (sock, (struct rtnl_route *) object, 0);
-	default:
-		g_return_val_if_reached (-NLE_INVAL);
-		return -NLE_INVAL;
-	}
-}
-
 /* nm_rtnl_link_parse_info_data(): Re-fetches a link from the kernel
  * and parses its IFLA_INFO_DATA using a caller-provided parser.
  *
@@ -1234,6 +1215,8 @@ add_object (NMPlatform *platform, struct nl_object *obj)
 		.dp_fd = stderr,
 	};
 
+	g_return_val_if_fail (object, FALSE);
+
 	nle = add_kernel_object (priv->nlh, object);
 
 	/* NLE_EXIST is considered equivalent to success to avoid race conditions. You
@@ -1258,26 +1241,48 @@ static gboolean
 delete_object (NMPlatform *platform, struct nl_object *obj)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nl_object struct nl_object *object = obj;
+	auto_nl_object struct nl_object *obj_cleanup = obj;
 	auto_nl_object struct nl_object *cached_object = NULL;
+	struct nl_object *object;
+	int object_type;
 	int nle;
 
-	/* FIXME: For some reason the result of build_rtnl_route() is not suitable
-	 * for delete_kernel_object() and we need to search the cache first. If
-	 * that problem is fixed, we can use 'object' directly.
-	 */
-	cached_object = nm_nl_cache_search (choose_cache (platform, object), object);
-	g_return_val_if_fail (cached_object, FALSE);
+	object_type = object_type_from_nl_object (obj);
+	g_return_val_if_fail (object_type != UNKNOWN_OBJECT_TYPE, FALSE);
 
-	nle = delete_kernel_object (priv->nlh, cached_object);
+	cached_object = nm_nl_cache_search (choose_cache_by_type (platform, object_type), obj);
+	object = cached_object ? cached_object : obj;
 
-	/* NLE_OBJ_NOTFOUND is considered equivalent to success to avoid race conditions. You
-	 * never know when something deletes the same object just before NetworkManager.
-	 */
+	switch (object_type) {
+	case LINK:
+		nle = rtnl_link_delete (priv->nlh, (struct rtnl_link *) object);
+		break;
+	case IP4_ADDRESS:
+	case IP6_ADDRESS:
+		nle = rtnl_addr_delete (priv->nlh, (struct rtnl_addr *) object, 0);
+		break;
+	case IP4_ROUTE:
+	case IP6_ROUTE:
+		nle = rtnl_route_delete (priv->nlh, (struct rtnl_route *) object, 0);
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+
 	switch (nle) {
 	case -NLE_SUCCESS:
-	case -NLE_OBJ_NOTFOUND:
 		break;
+	case -NLE_OBJ_NOTFOUND:
+		debug("delete_object failed with \"%s\" (%d), meaning the object was already removed",
+		      nl_geterror (nle), nle);
+		break;
+	case -NLE_NOADDR:
+		if (object_type == IP4_ADDRESS || object_type == IP6_ADDRESS) {
+			debug("delete_object for address failed with \"%s\" (%d), meaning the address was already removed",
+			      nl_geterror (nle), nle);
+			break;
+		}
+		/* fall-through to error, because we only expect this for addresses. */
 	default:
 		error ("Netlink error: %s", nl_geterror (nle));
 		return FALSE;
@@ -2626,6 +2631,7 @@ build_rtnl_route (int family, int ifindex, gconstpointer network, int plen, gcon
 	rtnl_route_set_tos (rtnlroute, 0);
 	rtnl_route_set_dst (rtnlroute, dst);
 	rtnl_route_set_priority (rtnlroute, metric);
+	rtnl_route_set_family (rtnlroute, family);
 
 	rtnl_route_nh_set_ifindex (nexthop, ifindex);
 	if (gw && !nl_addr_iszero (gw))
@@ -2654,8 +2660,28 @@ static gboolean
 ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, int metric)
 {
 	in_addr_t gateway = 0;
+	struct nl_object *route = build_rtnl_route (AF_INET, ifindex, &network, plen, &gateway, metric, 0);
 
-	return delete_object (platform, build_rtnl_route (AF_INET, ifindex, &network, plen, &gateway, metric, 0));
+	g_return_val_if_fail (route, FALSE);
+
+	/* When searching for a matching IPv4 route to delete, the kernel
+	 * searches for a matching scope, unless the RTM_DELROUTE message
+	 * specifies RT_SCOPE_NOWHERE (see fib_table_delete()).
+	 *
+	 * However, if we set the scope of @rtnlroute to RT_SCOPE_NOWHERE (or
+	 * leave it unset), rtnl_route_build_msg() will reset the scope to
+	 * rtnl_route_guess_scope() -- which might be the wrong scope.
+	 *
+	 * As a workaround, we set the scope to RT_SCOPE_UNIVERSE, so libnl
+	 * will not overwrite it. But this only works if we guess correctly.
+	 *
+	 * As a better workaround, we don't use @rtnlroute as argument for
+	 * rtnl_route_delete(), but we look into our cache, if we already have
+	 * this route ready.
+	 **/
+	rtnl_route_set_scope ((struct rtnl_route *) route, RT_SCOPE_UNIVERSE);
+
+	return delete_object (platform, route);
 }
 
 static gboolean
