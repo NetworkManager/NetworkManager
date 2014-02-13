@@ -827,7 +827,7 @@ ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
 		}
 	}
 
-	g_assert_not_reached ();
+	return TRUE;
 }
 
 static gboolean
@@ -850,7 +850,7 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 		}
 	}
 
-	g_assert_not_reached ();
+	return TRUE;
 }
 
 static gboolean
@@ -1064,11 +1064,11 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 	NMPlatformIP4Route *route = ip4_route_get (platform, ifindex, network, plen, metric);
 	NMPlatformIP4Route deleted_route;
 
-	g_assert (route);
-
-	memcpy (&deleted_route, route, sizeof (deleted_route));
-	memset (route, 0, sizeof (*route));
-	g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ROUTE_REMOVED, ifindex, &deleted_route, NM_PLATFORM_REASON_INTERNAL);
+	if (route) {
+		memcpy (&deleted_route, route, sizeof (deleted_route));
+		memset (route, 0, sizeof (*route));
+		g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ROUTE_REMOVED, ifindex, &deleted_route, NM_PLATFORM_REASON_INTERNAL);
+	}
 
 	return TRUE;
 }
@@ -1079,11 +1079,11 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 	NMPlatformIP6Route *route = ip6_route_get (platform, ifindex, network, plen, metric);
 	NMPlatformIP6Route deleted_route;
 
-	g_assert (route);
-
-	memcpy (&deleted_route, route, sizeof (deleted_route));
-	memset (route, 0, sizeof (*route));
-	g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ROUTE_REMOVED, ifindex, &deleted_route, NM_PLATFORM_REASON_INTERNAL);
+	if (route) {
+		memcpy (&deleted_route, route, sizeof (deleted_route));
+		memset (route, 0, sizeof (*route));
+		g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ROUTE_REMOVED, ifindex, &deleted_route, NM_PLATFORM_REASON_INTERNAL);
+	}
 
 	return TRUE;
 }

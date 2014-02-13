@@ -1282,13 +1282,6 @@ nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen)
 	g_return_val_if_fail (klass->ip4_address_delete, FALSE);
 
 	debug ("address: deleting IPv4 address %s/%d", nm_utils_inet4_ntop (address, NULL), plen);
-
-	if (!nm_platform_ip4_address_exists (ifindex, address, plen)) {
-		debug ("address doesn't exists");
-		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
-		return FALSE;
-	}
-
 	return klass->ip4_address_delete (platform, ifindex, address, plen);
 }
 
@@ -1302,13 +1295,6 @@ nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen)
 	g_return_val_if_fail (klass->ip6_address_delete, FALSE);
 
 	debug ("address: deleting IPv6 address %s/%d", nm_utils_inet6_ntop (&address, NULL), plen);
-
-	if (!nm_platform_ip6_address_exists (ifindex, address, plen)) {
-		debug ("address doesn't exists");
-		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
-		return FALSE;
-	}
-
 	return klass->ip6_address_delete (platform, ifindex, address, plen);
 }
 
@@ -1581,13 +1567,6 @@ nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metr
 	g_return_val_if_fail (klass->ip4_route_delete, FALSE);
 
 	debug ("route: deleting IPv4 route %s/%d, metric=%d", nm_utils_inet4_ntop (network, NULL), plen, metric);
-
-	if (!nm_platform_ip4_route_exists (ifindex, network, plen, metric)) {
-		debug ("route not found");
-		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
-		return FALSE;
-	}
-
 	return klass->ip4_route_delete (platform, ifindex, network, plen, metric);
 }
 
@@ -1601,13 +1580,6 @@ nm_platform_ip6_route_delete (int ifindex,
 	g_return_val_if_fail (klass->ip6_route_delete, FALSE);
 
 	debug ("route: deleting IPv6 route %s/%d, metric=%d", nm_utils_inet6_ntop (&network, NULL), plen, metric);
-
-	if (!nm_platform_ip6_route_exists (ifindex, network, plen, metric)) {
-		debug ("route not found");
-		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
-		return FALSE;
-	}
-
 	return klass->ip6_route_delete (platform, ifindex, network, plen, metric);
 }
 

@@ -89,8 +89,8 @@ test_ip4_address (void)
 	accept_signal (address_removed);
 
 	/* Remove address again */
-	g_assert (!nm_platform_ip4_address_delete (ifindex, addr, IP4_PLEN));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (nm_platform_ip4_address_delete (ifindex, addr, IP4_PLEN));
+	no_error ();
 
 	free_signal (address_added);
 	free_signal (address_changed);
@@ -145,8 +145,8 @@ test_ip6_address (void)
 	accept_signal (address_removed);
 
 	/* Remove address again */
-	g_assert (!nm_platform_ip6_address_delete (ifindex, addr, IP6_PLEN));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (nm_platform_ip6_address_delete (ifindex, addr, IP6_PLEN));
+	no_error ();
 
 	free_signal (address_added);
 	free_signal (address_changed);
