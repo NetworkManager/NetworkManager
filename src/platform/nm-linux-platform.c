@@ -949,11 +949,11 @@ static const char *signal_by_type_and_status[N_TYPES][N_STATUSES] = {
 };
 
 static struct nl_cache *
-choose_cache (NMPlatform *platform, struct nl_object *object)
+choose_cache_by_type (NMPlatform *platform, ObjectType object_type)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
-	switch (object_type_from_nl_object (object)) {
+	switch (object_type) {
 	case LINK:
 		return priv->link_cache;
 	case IP4_ADDRESS:
@@ -966,6 +966,12 @@ choose_cache (NMPlatform *platform, struct nl_object *object)
 		g_return_val_if_reached (NULL);
 		return NULL;
 	}
+}
+
+static struct nl_cache *
+choose_cache (NMPlatform *platform, struct nl_object *object)
+{
+	return choose_cache_by_type (platform, object_type_from_nl_object (object));
 }
 
 static gboolean
