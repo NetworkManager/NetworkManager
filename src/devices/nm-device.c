@@ -2323,13 +2323,7 @@ aipd_cleanup (NMDevice *self)
 	}
 
 	if (priv->aipd_pid > 0) {
-		kill (priv->aipd_pid, SIGKILL);
-
-		/* ensure the child is reaped */
-		nm_log_dbg (LOGD_AUTOIP4, "waiting for avahi-autoipd pid %d to exit", priv->aipd_pid);
-		waitpid (priv->aipd_pid, NULL, 0);
-		nm_log_dbg (LOGD_AUTOIP4, "avahi-autoip pid %d cleaned up", priv->aipd_pid);
-
+		nm_utils_kill_child_sync (priv->aipd_pid, SIGKILL, LOGD_AUTOIP4, "avahi-autoipd", NULL, 0, 0);
 		priv->aipd_pid = -1;
 	}
 
@@ -5349,16 +5343,7 @@ ip_check_gw_ping_cleanup (NMDevice *self)
 	}
 
 	if (priv->gw_ping.pid) {
-		guint count = 20;
-		int status;
-
-		kill (priv->gw_ping.pid, SIGKILL);
-		do {
-			if (waitpid (priv->gw_ping.pid, &status, WNOHANG) != 0)
-				break;
-			g_usleep (G_USEC_PER_SEC / 20);
-		} while (count--);
-
+		nm_utils_kill_child_async (priv->gw_ping.pid, SIGTERM, priv->gw_ping.log_domain, "ping", 1000, NULL, NULL);
 		priv->gw_ping.pid = 0;
 	}
 }

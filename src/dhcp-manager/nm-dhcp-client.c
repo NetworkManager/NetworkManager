@@ -139,47 +139,11 @@ watch_cleanup (NMDHCPClient *self)
 void
 nm_dhcp_client_stop_pid (GPid pid, const char *iface)
 {
-	int i = 5;  /* roughly 0.5 seconds */
+	char *name = iface ? g_strdup_printf ("dhcp-client-%s", iface) : NULL;
 
-	g_return_if_fail (pid > 0);
-
-	/* Tell it to quit; maybe it wants to send out a RELEASE message */
-	kill (pid, SIGTERM);
-
-	while (i-- > 0) {
-		gint child_status;
-		int ret;
-
-		ret = waitpid (pid, &child_status, WNOHANG);
-		if (ret > 0)
-			break;
-
-		if (ret == -1) {
-			/* Child already exited */
-			if (errno == ECHILD) {
-				/* Was it really our child and it exited? */
-				if (kill (pid, 0) < 0 && errno == ESRCH)
-					break;
-			} else {
-				/* Took too long; shoot it in the head */
-				i = 0;
-				break;
-			}
-		}
-		g_usleep (G_USEC_PER_SEC / 10);
-	}
-
-	if (i <= 0) {
-		if (iface) {
-			nm_log_warn (LOGD_DHCP, "(%s): DHCP client pid %d didn't exit, will kill it.",
-			             iface, pid);
-		}
-		kill (pid, SIGKILL);
-
-		nm_log_dbg (LOGD_DHCP, "waiting for DHCP client pid %d to exit", pid);
-		waitpid (pid, NULL, 0);
-		nm_log_dbg (LOGD_DHCP, "DHCP client pid %d cleaned up", pid);
-	}
+	nm_utils_kill_child_sync (pid, SIGTERM, LOGD_DHCP, name ? name : "dhcp-client", NULL,
+	                          1000 / 2, 1000 / 20);
+	g_free (name);
 }
 
 static void

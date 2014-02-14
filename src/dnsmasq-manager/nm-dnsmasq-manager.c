@@ -33,6 +33,7 @@
 #include "nm-glib-compat.h"
 #include "nm-posix-signals.h"
 #include "nm-utils.h"
+#include "NetworkManagerUtils.h"
 
 typedef struct {
 	char *iface;
@@ -432,22 +433,6 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 	return priv->pid > 0;
 }
 
-static gboolean
-ensure_killed (gpointer data)
-{
-	int pid = GPOINTER_TO_INT (data);
-
-	if (kill (pid, 0) == 0)
-		kill (pid, SIGKILL);
-
-	/* ensure the child is reaped */
-	nm_log_dbg (LOGD_SHARING, "waiting for dnsmasq pid %d to exit", pid);
-	waitpid (pid, NULL, 0);
-	nm_log_dbg (LOGD_SHARING, "dnsmasq pid %d cleaned up", pid);
-
-	return FALSE;
-}
-
 void
 nm_dnsmasq_manager_stop (NMDnsMasqManager *manager)
 {
@@ -463,17 +448,7 @@ nm_dnsmasq_manager_stop (NMDnsMasqManager *manager)
 	}
 
 	if (priv->pid) {
-		if (kill (priv->pid, SIGTERM) == 0)
-			g_timeout_add_seconds (2, ensure_killed, GINT_TO_POINTER (priv->pid));
-		else {
-			kill (priv->pid, SIGKILL);
-
-			/* ensure the child is reaped */
-			nm_log_dbg (LOGD_SHARING, "waiting for dnsmasq pid %d to exit", priv->pid);
-			waitpid (priv->pid, NULL, 0);
-			nm_log_dbg (LOGD_SHARING, "dnsmasq pid %d cleaned up", priv->pid);
-		}
-
+		nm_utils_kill_child_async (priv->pid, SIGTERM, LOGD_SHARING, "dnsmasq", 2000, NULL, NULL);
 		priv->pid = 0;
 	}
 
