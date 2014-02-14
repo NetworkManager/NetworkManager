@@ -1958,7 +1958,7 @@ dhcp4_state_changed (NMDHCPClient *client,
 		if (config) {
 			nm_dhcp_client_foreach_option (priv->dhcp4_client,
 			                               dhcp4_add_option_cb,
-			                               config);
+			                               priv->dhcp4_config);
 		}
 		g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG);
 
