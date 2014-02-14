@@ -17,6 +17,7 @@ AM_CPPFLAGS = \
 noinst_PROGRAMS = \
 	test-dhcp-options \
 	test-general \
+	test-general-with-expect \
 	test-ip4-config \
 	test-ip6-config \
 	test-dcb \
@@ -75,11 +76,19 @@ test_general_SOURCES = \
 test_general_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
+####### general-with-expect test #######
+
+test_general_with_expect_SOURCES = \
+	test-general-with-expect.c
+
+test_general_with_expect_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la
+
 ####### secret agent interface test #######
 
 EXTRA_DIST = test-secret-agent.py
 
 ###########################################
 
-TESTS = test-dhcp-options test-ip4-config test-ip6-config test-dcb test-resolvconf-capture test-general
+TESTS = test-dhcp-options test-ip4-config test-ip6-config test-dcb test-resolvconf-capture test-general test-general-with-expect
 

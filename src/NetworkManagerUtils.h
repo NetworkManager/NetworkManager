@@ -59,6 +59,14 @@ str_if_set (const char *str, const char *fallback)
 	return str ? str : fallback;
 }
 
+typedef void (*NMUtilsKillChildAsyncCb) (pid_t pid, gboolean success, int child_status, void *user_data);
+void nm_utils_kill_child_async (pid_t pid, int sig, guint64 log_domain, const char *log_name,
+                                guint32 wait_before_kill_msec,
+                                NMUtilsKillChildAsyncCb callback, void *user_data);
+gboolean nm_utils_kill_child_sync (pid_t pid, int sig, guint64 log_domain, const char *log_name,
+                                   int *child_status, guint32 wait_before_kill_msec,
+                                   guint32 sleep_duration_msec);
+
 gboolean nm_match_spec_string (const GSList *specs, const char *string);
 gboolean nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
 gboolean nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
