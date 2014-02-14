@@ -75,6 +75,50 @@ nm_ethernet_address_is_valid (const struct ether_addr *test_addr)
 }
 
 
+/* nm_utils_ip4_address_clear_host_address:
+ * @addr: source ip6 address
+ * @plen: prefix length of network
+ *
+ * returns: the input address, with the host address set to 0.
+ */
+in_addr_t
+nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen)
+{
+	return addr & nm_utils_ip4_prefix_to_netmask (plen);
+}
+
+	/* nm_utils_ip6_address_clear_host_address:
+ * @dst: destination output buffer, will contain the network part of the @src address
+ * @src: source ip6 address
+ * @plen: prefix length of network
+ *
+ * Note: this function is self assignment save, to update @src inplace, set both
+ * @dst and @src to the same destination.
+ */
+void
+nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct in6_addr *src, guint8 plen)
+{
+	g_return_if_fail (plen <= 128);
+	g_return_if_fail (src);
+	g_return_if_fail (dst);
+
+	if (plen < 128) {
+		guint nbytes = plen / 8;
+		guint nbits = plen % 8;
+
+		if (nbytes && dst != src)
+			memcpy (dst, src, nbytes);
+		if (nbits) {
+			dst->s6_addr[nbytes] = (src->s6_addr[nbytes] & (0xFF << (8 - nbits)));
+			nbytes++;
+		}
+		if (nbytes <= 15)
+			memset (&dst->s6_addr[nbytes], 0, 16 - nbytes);
+	} else if (src != dst)
+		*dst = *src;
+}
+
+
 int
 nm_spawn_process (const char *args)
 {

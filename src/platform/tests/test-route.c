@@ -113,8 +113,8 @@ test_ip4_route ()
 	accept_signal (route_removed);
 
 	/* Remove route again */
-	g_assert (!nm_platform_ip4_route_delete (ifindex, network, plen, metric));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (nm_platform_ip4_route_delete (ifindex, network, plen, metric));
+	no_error ();
 
 	free_signal (route_added);
 	free_signal (route_changed);
@@ -196,8 +196,8 @@ test_ip6_route ()
 	accept_signal (route_removed);
 
 	/* Remove route again */
-	g_assert (!nm_platform_ip6_route_delete (ifindex, network, plen, metric));
-	error (NM_PLATFORM_ERROR_NOT_FOUND);
+	g_assert (nm_platform_ip6_route_delete (ifindex, network, plen, metric));
+	no_error ();
 
 	free_signal (route_added);
 	free_signal (route_changed);

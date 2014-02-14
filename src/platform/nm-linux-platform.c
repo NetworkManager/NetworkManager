@@ -141,12 +141,13 @@ nm_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
 #define rtnl_addr_set_prefixlen nm_rtnl_addr_set_prefixlen
 
 typedef enum {
+	UNKNOWN_OBJECT_TYPE,
 	LINK,
 	IP4_ADDRESS,
 	IP6_ADDRESS,
 	IP4_ROUTE,
 	IP6_ROUTE,
-	N_TYPES
+	N_TYPES,
 } ObjectType;
 
 typedef enum {
@@ -159,9 +160,10 @@ typedef enum {
 static ObjectType
 object_type_from_nl_object (const struct nl_object *object)
 {
-	const char *type_str = nl_object_get_type (object);
+	const char *type_str;
 
-	g_assert (object);
+	if (!object || !(type_str = nl_object_get_type (object)))
+		return UNKNOWN_OBJECT_TYPE;
 
 	if (!strcmp (type_str, "route/link"))
 		return LINK;
@@ -172,7 +174,7 @@ object_type_from_nl_object (const struct nl_object *object)
 		case AF_INET6:
 			return IP6_ADDRESS;
 		default:
-			g_assert_not_reached ();
+			return UNKNOWN_OBJECT_TYPE;
 		}
 	} else if (!strcmp (type_str, "route/route")) {
 		switch (rtnl_route_get_family ((struct rtnl_route *) object)) {
@@ -181,72 +183,121 @@ object_type_from_nl_object (const struct nl_object *object)
 		case AF_INET6:
 			return IP6_ROUTE;
 		default:
-			g_assert_not_reached ();
+			return UNKNOWN_OBJECT_TYPE;
 		}
 	} else
-		g_assert_not_reached ();
+		return UNKNOWN_OBJECT_TYPE;
 }
 
-/* libnl inclues LINK_ATTR_FAMILY in oo_id_attrs of link_obj_ops and thus
- * refuses to search for items that lack this attribute. I believe this is a
- * bug or a bad design at the least. Address family is not an identifying
- * attribute of a network interface and IMO is not an attribute of a network
- * interface at all.
- */
+static void
+_nl_link_family_unset (struct nl_object *obj, int *family)
+{
+	if (!obj || object_type_from_nl_object (obj) != LINK)
+		*family = AF_UNSPEC;
+	else {
+		*family = rtnl_link_get_family ((struct rtnl_link *) obj);
+
+		/* Always explicitly set the family to AF_UNSPEC, even if rtnl_link_get_family() might
+		 * already return %AF_UNSPEC. The reason is, that %AF_UNSPEC is the default family
+		 * and libnl nl_object_identical() function will only succeed, if the family is
+		 * explicitly set (which we cannot be sure, unless setting it). */
+		rtnl_link_set_family ((struct rtnl_link *) obj, AF_UNSPEC);
+	}
+}
+
+/* In our link cache, we coerce the family of all link objects to AF_UNSPEC.
+ * Thus, before searching for an object, we fixup @needle to have the right
+ * id (by resetting the family). */
 static struct nl_object *
 nm_nl_cache_search (struct nl_cache *cache, struct nl_object *needle)
 {
-	if (object_type_from_nl_object (needle) == LINK)
-		rtnl_link_set_family ((struct rtnl_link *) needle, AF_UNSPEC);
+	int family;
+	struct nl_object *obj;
 
-	return nl_cache_search (cache, needle);
+	_nl_link_family_unset (needle, &family);
+	obj = nl_cache_search (cache, needle);
+	if (family != AF_UNSPEC) {
+		/* restore the family of the @needle instance. If the family was
+		 * unset before, we cannot make it unset again. Thus, in that case
+		 * we cannot undo _nl_link_family_unset() entirely. */
+		rtnl_link_set_family ((struct rtnl_link *) needle, family);
+	}
+
+	return obj;
 }
-#define nl_cache_search nm_nl_cache_search
 
 /* Ask the kernel for an object identical (as in nl_cache_identical) to the
  * needle argument. This is a kernel counterpart for nl_cache_search.
  *
- * libnl 3.2 doesn't seem to provide such functionality.
+ * The returned object must be freed by the caller with nl_object_put().
  */
 static struct nl_object *
 get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 {
+	struct nl_object *object = NULL;
+	ObjectType type = object_type_from_nl_object (needle);
 
-	switch (object_type_from_nl_object (needle)) {
+	switch (type) {
 	case LINK:
 		{
-			struct nl_object *kernel_object;
 			int ifindex = rtnl_link_get_ifindex ((struct rtnl_link *) needle);
 			const char *name = rtnl_link_get_name ((struct rtnl_link *) needle);
 			int nle;
 
-			nle = rtnl_link_get_kernel (sock, ifindex, name, (struct rtnl_link **) &kernel_object);
+			nle = rtnl_link_get_kernel (sock, ifindex, name, (struct rtnl_link **) &object);
 			switch (nle) {
 			case -NLE_SUCCESS:
-				return kernel_object;
+				if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+					name = rtnl_link_get_name ((struct rtnl_link *) object);
+					debug ("get_kernel_object for link: %s (%d, family %d)",
+					       name ? name : "(unknown)",
+					       rtnl_link_get_ifindex ((struct rtnl_link *) object),
+					       rtnl_link_get_family ((struct rtnl_link *) object));
+				}
+
+				_nl_link_family_unset (object, &nle);
+				return object;
 			case -NLE_NODEV:
+				debug ("get_kernel_object for link %s (%d) had no result",
+				       name ? name : "(unknown)", ifindex);
 				return NULL;
 			default:
-				error ("Netlink error: %s", nl_geterror (nle));
+				error ("get_kernel_object for link %s (%d) failed: %s (%d)",
+				       name ? name : "(unknown)", ifindex, nl_geterror (nle), nle);
 				return NULL;
 			}
 		}
-	default:
+	case IP4_ADDRESS:
+	case IP6_ADDRESS:
+	case IP4_ROUTE:
+	case IP6_ROUTE:
 		/* Fallback to a one-time cache allocation. */
 		{
 			struct nl_cache *cache;
-			struct nl_object *object;
 			int nle;
 
 			nle = nl_cache_alloc_and_fill (
 					nl_cache_ops_lookup (nl_object_get_type (needle)),
 					sock, &cache);
-			g_return_val_if_fail (!nle, NULL);
+			if (nle) {
+				error ("get_kernel_object for type %d failed: %s (%d)",
+				       type, nl_geterror (nle), nle);
+				return NULL;
+			}
+
 			object = nl_cache_search (cache, needle);
 
 			nl_cache_free (cache);
+
+			if (object)
+				debug ("get_kernel_object for type %d returned %p", type, object);
+			else
+				debug ("get_kernel_object for type %d had no result", type);
 			return object;
 		}
+	default:
+		g_return_val_if_reached (NULL);
+		return NULL;
 	}
 }
 
@@ -264,25 +315,8 @@ add_kernel_object (struct nl_sock *sock, struct nl_object *object)
 	case IP6_ROUTE:
 		return rtnl_route_add (sock, (struct rtnl_route *) object, NLM_F_CREATE | NLM_F_REPLACE);
 	default:
-		g_assert_not_reached ();
-	}
-}
-
-/* libnl 3.2 doesn't seem to provide such a generic way to delete libnl-route objects. */
-static int
-delete_kernel_object (struct nl_sock *sock, struct nl_object *object)
-{
-	switch (object_type_from_nl_object (object)) {
-	case LINK:
-		return rtnl_link_delete (sock, (struct rtnl_link *) object);
-	case IP4_ADDRESS:
-	case IP6_ADDRESS:
-		return rtnl_addr_delete (sock, (struct rtnl_addr *) object, 0);
-	case IP4_ROUTE:
-	case IP6_ROUTE:
-		return rtnl_route_delete (sock, (struct rtnl_route *) object, 0);
-	default:
-		g_assert_not_reached ();
+		g_return_val_if_reached (-NLE_INVAL);
+		return -NLE_INVAL;
 	}
 }
 
@@ -931,19 +965,19 @@ init_ip6_route (NMPlatformIP6Route *route, struct rtnl_route *rtnlroute)
 /* Object and cache manipulation */
 
 static const char *signal_by_type_and_status[N_TYPES][N_STATUSES] = {
-	{ NM_PLATFORM_LINK_ADDED, NM_PLATFORM_LINK_CHANGED, NM_PLATFORM_LINK_REMOVED },
-	{ NM_PLATFORM_IP4_ADDRESS_ADDED, NM_PLATFORM_IP4_ADDRESS_CHANGED, NM_PLATFORM_IP4_ADDRESS_REMOVED },
-	{ NM_PLATFORM_IP6_ADDRESS_ADDED, NM_PLATFORM_IP6_ADDRESS_CHANGED, NM_PLATFORM_IP6_ADDRESS_REMOVED },
-	{ NM_PLATFORM_IP4_ROUTE_ADDED, NM_PLATFORM_IP4_ROUTE_CHANGED, NM_PLATFORM_IP4_ROUTE_REMOVED },
-	{ NM_PLATFORM_IP6_ROUTE_ADDED, NM_PLATFORM_IP6_ROUTE_CHANGED, NM_PLATFORM_IP6_ROUTE_REMOVED }
+	[LINK]        = { NM_PLATFORM_LINK_ADDED,        NM_PLATFORM_LINK_CHANGED,        NM_PLATFORM_LINK_REMOVED },
+	[IP4_ADDRESS] = { NM_PLATFORM_IP4_ADDRESS_ADDED, NM_PLATFORM_IP4_ADDRESS_CHANGED, NM_PLATFORM_IP4_ADDRESS_REMOVED },
+	[IP6_ADDRESS] = { NM_PLATFORM_IP6_ADDRESS_ADDED, NM_PLATFORM_IP6_ADDRESS_CHANGED, NM_PLATFORM_IP6_ADDRESS_REMOVED },
+	[IP4_ROUTE]   = { NM_PLATFORM_IP4_ROUTE_ADDED,   NM_PLATFORM_IP4_ROUTE_CHANGED,   NM_PLATFORM_IP4_ROUTE_REMOVED },
+	[IP6_ROUTE]   = { NM_PLATFORM_IP6_ROUTE_ADDED,   NM_PLATFORM_IP6_ROUTE_CHANGED,   NM_PLATFORM_IP6_ROUTE_REMOVED }
 };
 
 static struct nl_cache *
-choose_cache (NMPlatform *platform, struct nl_object *object)
+choose_cache_by_type (NMPlatform *platform, ObjectType object_type)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
-	switch (object_type_from_nl_object (object)) {
+	switch (object_type) {
 	case LINK:
 		return priv->link_cache;
 	case IP4_ADDRESS:
@@ -953,8 +987,15 @@ choose_cache (NMPlatform *platform, struct nl_object *object)
 	case IP6_ROUTE:
 		return priv->route_cache;
 	default:
-		g_assert_not_reached ();
+		g_return_val_if_reached (NULL);
+		return NULL;
 	}
+}
+
+static struct nl_cache *
+choose_cache (NMPlatform *platform, struct nl_object *object)
+{
+	return choose_cache_by_type (platform, object_type_from_nl_object (object));
 }
 
 static gboolean
@@ -1095,7 +1136,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 		}
 		return;
 	default:
-		error ("Announcing object: object type unknown: %d", object_type);
+		g_return_if_reached ();
 	}
 }
 
@@ -1111,7 +1152,7 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 	int nle;
 
 	cache = choose_cache (platform, object);
-	cached_object = nl_cache_search (choose_cache (platform, object), object);
+	cached_object = nm_nl_cache_search (cache, object);
 	kernel_object = get_kernel_object (priv->nlh, object);
 
 	if (removed) {
@@ -1174,6 +1215,8 @@ add_object (NMPlatform *platform, struct nl_object *obj)
 		.dp_fd = stderr,
 	};
 
+	g_return_val_if_fail (object, FALSE);
+
 	nle = add_kernel_object (priv->nlh, object);
 
 	/* NLE_EXIST is considered equivalent to success to avoid race conditions. You
@@ -1198,26 +1241,48 @@ static gboolean
 delete_object (NMPlatform *platform, struct nl_object *obj)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nl_object struct nl_object *object = obj;
+	auto_nl_object struct nl_object *obj_cleanup = obj;
 	auto_nl_object struct nl_object *cached_object = NULL;
+	struct nl_object *object;
+	int object_type;
 	int nle;
 
-	/* FIXME: For some reason the result of build_rtnl_route() is not suitable
-	 * for delete_kernel_object() and we need to search the cache first. If
-	 * that problem is fixed, we can use 'object' directly.
-	 */
-	cached_object = nl_cache_search (choose_cache (platform, object), object);
-	g_return_val_if_fail (cached_object, FALSE);
+	object_type = object_type_from_nl_object (obj);
+	g_return_val_if_fail (object_type != UNKNOWN_OBJECT_TYPE, FALSE);
 
-	nle = delete_kernel_object (priv->nlh, cached_object);
+	cached_object = nm_nl_cache_search (choose_cache_by_type (platform, object_type), obj);
+	object = cached_object ? cached_object : obj;
 
-	/* NLE_OBJ_NOTFOUND is considered equivalent to success to avoid race conditions. You
-	 * never know when something deletes the same object just before NetworkManager.
-	 */
+	switch (object_type) {
+	case LINK:
+		nle = rtnl_link_delete (priv->nlh, (struct rtnl_link *) object);
+		break;
+	case IP4_ADDRESS:
+	case IP6_ADDRESS:
+		nle = rtnl_addr_delete (priv->nlh, (struct rtnl_addr *) object, 0);
+		break;
+	case IP4_ROUTE:
+	case IP6_ROUTE:
+		nle = rtnl_route_delete (priv->nlh, (struct rtnl_route *) object, 0);
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+
 	switch (nle) {
 	case -NLE_SUCCESS:
-	case -NLE_OBJ_NOTFOUND:
 		break;
+	case -NLE_OBJ_NOTFOUND:
+		debug("delete_object failed with \"%s\" (%d), meaning the object was already removed",
+		      nl_geterror (nle), nle);
+		break;
+	case -NLE_NOADDR:
+		if (object_type == IP4_ADDRESS || object_type == IP6_ADDRESS) {
+			debug("delete_object for address failed with \"%s\" (%d), meaning the address was already removed",
+			      nl_geterror (nle), nle);
+			break;
+		}
+		/* fall-through to error, because we only expect this for addresses. */
 	default:
 		error ("Netlink error: %s", nl_geterror (nle));
 		return FALSE;
@@ -1267,18 +1332,21 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	nl_msg_parse (msg, ref_object, &object);
 	g_return_val_if_fail (object, NL_OK);
 
-	cache = choose_cache (platform, object);
-	cached_object = nl_cache_search (cache, object);
-	kernel_object = get_kernel_object (priv->nlh, object);
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+		if (object_type_from_nl_object (object) == LINK) {
+			const char *name = rtnl_link_get_name ((struct rtnl_link *) object);
 
-	/* Just for debugging */
-	if (object_type_from_nl_object (object) == LINK) {
-		int ifindex = rtnl_link_get_ifindex ((struct rtnl_link *) object);
-		const char *name = rtnl_link_get_name ((struct rtnl_link *) object);
-		debug ("netlink event (type %d) for link: %s (%d)",
-		       event, name ? name : "(unknown)", ifindex);
-	} else
-		debug ("netlink event (type %d)", event);
+			debug ("netlink event (type %d) for link: %s (%d, family %d)",
+			       event, name ? name : "(unknown)",
+			       rtnl_link_get_ifindex ((struct rtnl_link *) object),
+			       rtnl_link_get_family ((struct rtnl_link *) object));
+		} else
+			debug ("netlink event (type %d)", event);
+	}
+
+	cache = choose_cache (platform, object);
+	cached_object = nm_nl_cache_search (cache, object);
+	kernel_object = get_kernel_object (priv->nlh, object);
 
 	hack_empty_master_iff_lower_up (platform, kernel_object);
 
@@ -1304,7 +1372,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		 * already removed and announced.
 		 */
 		if (event == RTM_DELLINK) {
-			if (!link_is_announceable (platform, (struct rtnl_link *) object))
+			if (!link_is_announceable (platform, (struct rtnl_link *) cached_object))
 				return NL_OK;
 		}
 		announce_object (platform, cached_object, REMOVED, NM_PLATFORM_REASON_EXTERNAL);
@@ -1487,7 +1555,7 @@ static struct rtnl_link *
 link_get (NMPlatform *platform, int ifindex)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nl_object struct rtnl_link *rtnllink = rtnl_link_get (priv->link_cache, ifindex);
+	struct rtnl_link *rtnllink = rtnl_link_get (priv->link_cache, ifindex);
 
 	if (!rtnllink) {
 		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
@@ -1497,10 +1565,10 @@ link_get (NMPlatform *platform, int ifindex)
 	/* physical interfaces must be found by udev before they can be used */
 	if (!link_is_announceable (platform, rtnllink)) {
 		platform->error = NM_PLATFORM_ERROR_NOT_FOUND;
+		rtnl_link_put (rtnllink);
 		return NULL;
 	}
 
-	nl_object_get ((struct nl_object *) rtnllink);
 	return rtnllink;
 }
 
@@ -1951,7 +2019,8 @@ master_category (NMPlatform *platform, int master)
 	case NM_LINK_TYPE_BOND:
 		return "bonding";
 	default:
-		g_assert_not_reached ();
+		g_return_val_if_reached (NULL);
+		return NULL;
 	}
 }
 
@@ -1969,7 +2038,8 @@ slave_category (NMPlatform *platform, int slave)
 	case NM_LINK_TYPE_BRIDGE:
 		return "brport";
 	default:
-		g_assert_not_reached ();
+		g_return_val_if_reached (NULL);
+		return NULL;
 	}
 }
 
@@ -2517,15 +2587,41 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	return routes;
 }
 
+static void
+clear_host_address (int family, const void *network, int plen, void *dst)
+{
+	g_return_if_fail (plen == (guint8)plen);
+	g_return_if_fail (network);
+
+	switch (family) {
+	case AF_INET:
+		*((in_addr_t *) dst) = nm_utils_ip4_address_clear_host_address (*((in_addr_t *) network), plen);
+		break;
+	case AF_INET6:
+		nm_utils_ip6_address_clear_host_address ((struct in6_addr *) dst, (const struct in6_addr *) network, plen);
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+}
+
 static struct nl_object *
 build_rtnl_route (int family, int ifindex, gconstpointer network, int plen, gconstpointer gateway, int metric, int mss)
 {
+	guint32 network_clean[4];
 	struct rtnl_route *rtnlroute = rtnl_route_alloc ();
 	struct rtnl_nexthop *nexthop = rtnl_route_nh_alloc ();
 	int addrlen = (family == AF_INET) ? sizeof (in_addr_t) : sizeof (struct in6_addr);
 	/* Workaround a libnl bug by using zero destination address length for default routes */
-	auto_nl_addr struct nl_addr *dst = nl_addr_build (family, network, plen ? addrlen : 0);
+	auto_nl_addr struct nl_addr *dst = NULL;
 	auto_nl_addr struct nl_addr *gw = gateway ? nl_addr_build (family, gateway, addrlen) : NULL;
+
+	/* There seem to be problems adding a route with non-zero host identifier.
+	 * Adding IPv6 routes is simply ignored, without error message.
+	 * In the IPv4 case, we got an error. Thus, we have to make sure, that
+	 * the address is sane. */
+	clear_host_address (family, network, plen, network_clean);
+	dst = nl_addr_build (family, network_clean, plen ? addrlen : 0);
 
 	g_assert (rtnlroute && dst && nexthop);
 
@@ -2535,6 +2631,7 @@ build_rtnl_route (int family, int ifindex, gconstpointer network, int plen, gcon
 	rtnl_route_set_tos (rtnlroute, 0);
 	rtnl_route_set_dst (rtnlroute, dst);
 	rtnl_route_set_priority (rtnlroute, metric);
+	rtnl_route_set_family (rtnlroute, family);
 
 	rtnl_route_nh_set_ifindex (nexthop, ifindex);
 	if (gw && !nl_addr_iszero (gw))
@@ -2563,14 +2660,34 @@ static gboolean
 ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, int metric)
 {
 	in_addr_t gateway = 0;
+	struct nl_object *route = build_rtnl_route (AF_INET, ifindex, &network, plen, &gateway, metric, 0);
 
-	return delete_object (platform, build_rtnl_route (AF_INET, ifindex, &network, plen, &gateway, metric, 0));
+	g_return_val_if_fail (route, FALSE);
+
+	/* When searching for a matching IPv4 route to delete, the kernel
+	 * searches for a matching scope, unless the RTM_DELROUTE message
+	 * specifies RT_SCOPE_NOWHERE (see fib_table_delete()).
+	 *
+	 * However, if we set the scope of @rtnlroute to RT_SCOPE_NOWHERE (or
+	 * leave it unset), rtnl_route_build_msg() will reset the scope to
+	 * rtnl_route_guess_scope() -- which might be the wrong scope.
+	 *
+	 * As a workaround, we set the scope to RT_SCOPE_UNIVERSE, so libnl
+	 * will not overwrite it. But this only works if we guess correctly.
+	 *
+	 * As a better workaround, we don't use @rtnlroute as argument for
+	 * rtnl_route_delete(), but we look into our cache, if we already have
+	 * this route ready.
+	 **/
+	rtnl_route_set_scope ((struct rtnl_route *) route, RT_SCOPE_UNIVERSE);
+
+	return delete_object (platform, route);
 }
 
 static gboolean
 ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, int metric)
 {
-	struct in6_addr gateway = in6addr_any;
+	struct in6_addr gateway = IN6ADDR_ANY_INIT;
 
 	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, &network, plen, &gateway, metric, 0));
 }
