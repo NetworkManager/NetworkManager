@@ -13475,6 +13475,33 @@ test_write_team_port (void)
 	g_object_unref (reread);
 }
 
+static void
+test_read_team_port_empty_config (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	gboolean success;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-team-port-empty-config",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, "team0");
+
+	/* Empty TEAM_PORT_CONFIG means no team-port setting */
+	g_assert (nm_connection_get_setting_team_port (connection) == NULL);
+
+	g_object_unref (connection);
+}
 
 /* Old algorithm for "remove escaped characters in place".
  *
@@ -13804,6 +13831,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "team/write-master", test_write_team_master);
 	g_test_add_func (TPATH "team/read-port", test_read_team_port);
 	g_test_add_func (TPATH "team/write-port", test_write_team_port);
+	g_test_add_func (TPATH "team/read-port-empty-config", test_read_team_port_empty_config);
 
 	/* Stuff we expect to fail for now */
 	test_write_wired_pppoe ();

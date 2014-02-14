@@ -1,0 +1,4 @@
+TYPE=Ethernet
+DEVICE=p4p1
+TEAM_MASTER=team0
+DEVICETYPE=TeamPort

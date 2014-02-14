@@ -112,7 +112,8 @@ EXTRA_DIST = \
 	ifcfg-test-fcoe-fabric \
 	ifcfg-test-fcoe-vn2vn \
 	ifcfg-test-team-master \
-	ifcfg-test-team-port
+	ifcfg-test-team-port \
+	ifcfg-test-team-port-empty-config
 
 check-local:
 	@for f in $(EXTRA_DIST); do \
