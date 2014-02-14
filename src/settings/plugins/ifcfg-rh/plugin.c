@@ -136,7 +136,10 @@ _internal_new_connection (SCPluginIfcfg *self,
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    error: %s",
 			              (local && local->message) ? local->message : "(unknown)");
 		}
-		g_propagate_error (error, local);
+		if (local)
+			g_propagate_error (error, local);
+		else
+			g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "(unknown)");
 		return NULL;
 	}
 

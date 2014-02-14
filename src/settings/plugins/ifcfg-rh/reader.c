@@ -4193,6 +4193,7 @@ bond_connection_from_ifcfg (const char *file,
 	return connection;
 }
 
+/* Check 'error' for errors. Missing config (NULL return value) is a valid case. */
 static char *
 read_team_config (shvarFile *ifcfg, const char *key, GError **error)
 {
@@ -4225,6 +4226,7 @@ make_team_setting (shvarFile *ifcfg,
 {
 	NMSettingTeam *s_team;
 	char *value;
+	GError *local_err = NULL;
 
 	s_team = NM_SETTING_TEAM (nm_setting_team_new ());
 
@@ -4237,9 +4239,11 @@ make_team_setting (shvarFile *ifcfg,
 	g_object_set (s_team, NM_SETTING_TEAM_INTERFACE_NAME, value, NULL);
 	g_free (value);
 
-	value = read_team_config (ifcfg, "TEAM_CONFIG", error);
-	if (!value)
+	value = read_team_config (ifcfg, "TEAM_CONFIG", &local_err);
+	if (local_err) {
+		g_propagate_error (error, local_err);
 		goto error;
+	}
 	g_object_set (s_team, NM_SETTING_TEAM_CONFIG, value, NULL);
 	g_free (value);
 
