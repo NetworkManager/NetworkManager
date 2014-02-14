@@ -391,11 +391,13 @@ main (int argc, char *argv[])
 	g_option_context_set_summary (opt_ctx,
 		_("NetworkManager monitors all network connections and automatically\nchooses the best connection to use.  It also allows the user to\nspecify wireless access points which wireless cards in the computer\nshould associate with."));
 
-	success = g_option_context_parse (opt_ctx, &argc, &argv, NULL);
+	success = g_option_context_parse (opt_ctx, &argc, &argv, &error);
 	g_option_context_free (opt_ctx);
 
 	if (!success) {
-		fprintf (stderr, _("Invalid option.  Please use --help to see a list of valid options.\n"));
+		fprintf (stderr, _("%s.  Please use --help to see a list of valid options.\n"),
+		         error->message);
+		g_clear_error (&error);
 		exit (1);
 	}
 
