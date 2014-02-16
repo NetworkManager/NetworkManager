@@ -87,7 +87,7 @@ nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen)
 	return addr & nm_utils_ip4_prefix_to_netmask (plen);
 }
 
-	/* nm_utils_ip6_address_clear_host_address:
+/* nm_utils_ip6_address_clear_host_address:
  * @dst: destination output buffer, will contain the network part of the @src address
  * @src: source ip6 address
  * @plen: prefix length of network
