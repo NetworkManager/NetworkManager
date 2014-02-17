@@ -937,12 +937,14 @@ typedef struct {
 static void
 activate_data_free (ActivateData *data)
 {
-	if (data->autoactivate_id) {
-		nm_device_remove_pending_action (data->device, "autoactivate");
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (data->policy);
+
+	nm_device_remove_pending_action (data->device, "autoactivate");
+	priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, data);
+
+	if (data->autoactivate_id)
 		g_source_remove (data->autoactivate_id);
-	}
 	g_object_unref (data->device);
-	memset (data, 0, sizeof (*data));
 	g_free (data);
 }
 
@@ -960,9 +962,7 @@ auto_activate_device (gpointer user_data)
 	policy = data->policy;
 	priv = NM_POLICY_GET_PRIVATE (policy);
 
-	priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, data);
 	data->autoactivate_id = 0;
-	nm_device_remove_pending_action (data->device, "autoactivate");
 
 	// FIXME: if a device is already activating (or activated) with a connection
 	// but another connection now overrides the current one for that device,
@@ -1012,24 +1012,6 @@ auto_activate_device (gpointer user_data)
  out:
 	activate_data_free (data);
 	return G_SOURCE_REMOVE;
-}
-
-static ActivateData *
-activate_data_new (NMPolicy *policy, NMDevice *device, guint delay_seconds)
-{
-	ActivateData *data;
-
-	data = g_malloc0 (sizeof (ActivateData));
-	data->policy = policy;
-	data->device = g_object_ref (device);
-	if (delay_seconds > 0)
-		data->autoactivate_id = g_timeout_add_seconds (delay_seconds, auto_activate_device, data);
-	else
-		data->autoactivate_id = g_idle_add (auto_activate_device, data);
-
-	nm_device_add_pending_action (device, "autoactivate");
-
-	return data;
 }
 
 static ActivateData *
@@ -1215,7 +1197,7 @@ sleeping_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds)
+schedule_activate_check (NMPolicy *policy, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	ActivateData *data;
@@ -1230,20 +1212,33 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds
 	if (!nm_device_autoconnect_allowed (device))
 		return;
 
-	/* If the device already has an activation in-progress or waiting for
-	 * authentication, don't start an auto-activation for it.
-	 */
+	if (find_pending_activation (priv->pending_activation_checks, device))
+		return;
+
 	active_connections = nm_manager_get_active_connections (priv->manager);
 	for (iter = active_connections; iter; iter = iter->next) {
 		if (nm_active_connection_get_device (NM_ACTIVE_CONNECTION (iter->data)) == device)
 			return;
 	}
 
-	/* Schedule an auto-activation if there isn't one already for this device */
-	if (find_pending_activation (priv->pending_activation_checks, device) == NULL) {
-		data = activate_data_new (policy, device, delay_seconds);
-		priv->pending_activation_checks = g_slist_append (priv->pending_activation_checks, data);
-	}
+	nm_device_add_pending_action (device, "autoactivate");
+
+	data = g_malloc0 (sizeof (ActivateData));
+	data->policy = policy;
+	data->device = g_object_ref (device);
+	data->autoactivate_id = g_idle_add (auto_activate_device, data);
+	priv->pending_activation_checks = g_slist_append (priv->pending_activation_checks, data);
+}
+
+static void
+clear_pending_activate_check (NMPolicy *policy, NMDevice *device)
+{
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
+	ActivateData *data;
+
+	data = find_pending_activation (priv->pending_activation_checks, device);
+	if (data && data->autoactivate_id)
+		activate_data_free (data);
 }
 
 static gboolean
@@ -1493,7 +1488,7 @@ device_state_changed (NMDevice *device,
 			update_routing_and_dns (policy, FALSE);
 
 		/* Device is now available for auto-activation */
-		schedule_activate_check (policy, device, 0);
+		schedule_activate_check (policy, device);
 		break;
 
 	case NM_DEVICE_STATE_PREPARE:
@@ -1601,25 +1596,25 @@ device_autoconnect_changed (NMDevice *device,
                             gpointer user_data)
 {
 	if (nm_device_get_autoconnect (device))
-		schedule_activate_check ((NMPolicy *) user_data, device, 0);
+		schedule_activate_check ((NMPolicy *) user_data, device);
 }
 
 static void
 wireless_networks_changed (NMDevice *device, GObject *ap, gpointer user_data)
 {
-	schedule_activate_check ((NMPolicy *) user_data, device, 0);
+	schedule_activate_check ((NMPolicy *) user_data, device);
 }
 
 static void
 nsps_changed (NMDevice *device, GObject *nsp, gpointer user_data)
 {
-	schedule_activate_check ((NMPolicy *) user_data, device, 0);
+	schedule_activate_check ((NMPolicy *) user_data, device);
 }
 
 static void
 modem_enabled_changed (NMDevice *device, gpointer user_data)
 {
-	schedule_activate_check ((NMPolicy *) (user_data), device, 0);
+	schedule_activate_check ((NMPolicy *) (user_data), device);
 }
 
 typedef struct {
@@ -1680,15 +1675,10 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	ActivateData *tmp;
 	GSList *iter;
 
 	/* Clear any idle callbacks for this device */
-	tmp = find_pending_activation (priv->pending_activation_checks, device);
-	if (tmp) {
-		priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, tmp);
-		activate_data_free (tmp);
-	}
+	clear_pending_activate_check (policy, device);
 
 	/* Clear any signal handlers for this device */
 	iter = priv->dev_ids;
@@ -1837,7 +1827,7 @@ schedule_activate_all (NMPolicy *policy)
 
 	devices = nm_manager_get_devices (priv->manager);
 	for (iter = devices; iter; iter = g_slist_next (iter))
-		schedule_activate_check (policy, NM_DEVICE (iter->data), 0);
+		schedule_activate_check (policy, NM_DEVICE (iter->data));
 }
 
 static void
