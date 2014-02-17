@@ -502,6 +502,7 @@ gboolean nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes);
 gboolean nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes);
 gboolean nm_platform_route_flush (int ifindex);
 
+const char *nm_platform_link_to_string (const NMPlatformLink *link);
 const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address);
 const char *nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address);
 const char *nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route);

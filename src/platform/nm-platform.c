@@ -1850,6 +1850,52 @@ _to_string_dev (int ifindex, char *buf, size_t size)
 
 static char to_string_buffer[256];
 
+const char *
+nm_platform_link_to_string (const NMPlatformLink *link)
+{
+	char master[20];
+	char parent[20];
+	char *driver, *udi, *type;
+	GString *str;
+
+	if (!link)
+		return "(unknown link)";
+
+	str = g_string_new (NULL);
+	if (!link->arp)
+		g_string_append (str, "NOARP,");
+	if (link->up)
+		g_string_append (str, "UP");
+	else
+		g_string_append (str, "DOWN");
+	if (link->connected)
+		g_string_append (str, ",LOWER_UP");
+
+	if (link->master)
+		g_snprintf (master, sizeof (master), " master %d", link->master);
+	else
+		master[0] = 0;
+
+	if (link->parent)
+		g_snprintf (parent, sizeof (master), "@%d", link->parent);
+	else
+		parent[0] = 0;
+
+	driver = link->driver ? g_strdup_printf (" driver '%s'", link->driver) : NULL;
+	udi = link->udi ? g_strdup_printf (" udi '%s'", link->udi) : NULL;
+	type = link->type_name ? NULL : g_strdup_printf ("(%d)", link->type);
+
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%d: %s%s <%s> mtu %d%s %s%s%s",
+	            link->ifindex, link->name, parent, str->str,
+	            link->mtu, master, link->type_name ? link->type_name : type,
+	            driver ? driver : "", udi ? udi : "");
+	g_string_free (str, TRUE);
+	g_free (driver);
+	g_free (udi);
+	g_free (type);
+	return to_string_buffer;
+}
+
 /**
  * nm_platform_ip4_address_to_string:
  * @route: pointer to NMPlatformIP4Address address structure
