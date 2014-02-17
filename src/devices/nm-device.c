@@ -470,13 +470,13 @@ restore_ip6_properties (NMDevice *self)
 
 	if (   priv->ip6_accept_ra_save != -1
 	    && g_file_test (priv->ip6_accept_ra_path, G_FILE_TEST_EXISTS)) {
-		snprintf (tmp, sizeof (tmp), "%d", priv->ip6_accept_ra_save);
+		g_snprintf (tmp, sizeof (tmp), "%d", priv->ip6_accept_ra_save);
 		nm_platform_sysctl_set (priv->ip6_accept_ra_path, tmp);
 	}
 
 	if (   priv->ip6_use_tempaddr_save != -1
 	    && g_file_test (priv->ip6_use_tempaddr_path, G_FILE_TEST_EXISTS)) {
-		snprintf (tmp, sizeof (tmp), "%d", priv->ip6_use_tempaddr_save);
+		g_snprintf (tmp, sizeof (tmp), "%d", priv->ip6_use_tempaddr_save);
 		nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, tmp);
 	}
 

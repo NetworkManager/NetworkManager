@@ -777,8 +777,7 @@ emit_added_removed_signal (NMObject *self,
 	char buf[50];
 	int ret;
 
-	ret = snprintf (buf, sizeof (buf), "%s-%s", signal_prefix, added ? "added" : "removed");
-	g_assert (ret > 0);
+	ret = g_snprintf (buf, sizeof (buf), "%s-%s", signal_prefix, added ? "added" : "removed");
 	g_assert (ret < sizeof (buf));
 	g_signal_emit_by_name (self, buf, changed);
 }

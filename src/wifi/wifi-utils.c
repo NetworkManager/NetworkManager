@@ -161,7 +161,7 @@ wifi_utils_is_wifi (const char *iface, const char *sysfs_path)
 
 	if (sysfs_path) {
 		/* Check for nl80211 sysfs paths */
-		snprintf (phy80211_path, sizeof (phy80211_path), "%s/phy80211", sysfs_path);
+		g_snprintf (phy80211_path, sizeof (phy80211_path), "%s/phy80211", sysfs_path);
 		if ((stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
 			return TRUE;
 	}

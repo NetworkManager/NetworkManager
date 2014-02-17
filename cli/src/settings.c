@@ -1768,8 +1768,7 @@ wireless_band_channel_changed_cb (GObject *object, GParamSpec *pspec, gpointer u
 		if (channel == 0)
 			return;
 
-		snprintf (str, sizeof (str), "%d", nm_setting_wireless_get_channel (s_wireless));
-		str[sizeof (str)-1] = 0;
+		g_snprintf (str, sizeof (str), "%d", nm_setting_wireless_get_channel (s_wireless));
 		value = str;
 	}
 

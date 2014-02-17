@@ -206,7 +206,7 @@ br2684_create_iface (NMDeviceAdsl *self, NMSettingAdsl *s_adsl)
 	 */
 	while (num < 10000) {
 		memset (&ni.ifname, 0, sizeof (ni.ifname));
-		snprintf (ni.ifname, sizeof (ni.ifname), "nas%d", num);
+		g_snprintf (ni.ifname, sizeof (ni.ifname), "nas%d", num);
 
 		err = ioctl (fd, ATM_NEWBACKENDIF, &ni);
 		if (err == 0) {

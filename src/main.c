@@ -155,7 +155,7 @@ write_pidfile (const char *pidfile)
 		return FALSE;
 	}
 
- 	snprintf (pid, sizeof (pid), "%d", getpid ());
+	g_snprintf (pid, sizeof (pid), "%d", getpid ());
 	if (write (fd, pid, strlen (pid)) < 0)
 		fprintf (stderr, _("Writing to %s failed: %s\n"), pidfile, strerror (errno));
 	else

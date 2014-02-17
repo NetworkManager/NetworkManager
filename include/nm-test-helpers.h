@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <glib.h>
 
 static void
 FAIL(const char *test_name, const char *fmt, ...)
@@ -31,7 +32,7 @@ FAIL(const char *test_name, const char *fmt, ...)
 	va_list args;
 	char buf[500];
 
-	snprintf (buf, 500, "FAIL: (%s) %s\n", test_name, fmt);
+	g_snprintf (buf, 500, "FAIL: (%s) %s\n", test_name, fmt);
 
 	va_start (args, fmt);
 	vfprintf (stderr, buf, args);
