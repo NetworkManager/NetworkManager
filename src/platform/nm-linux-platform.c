@@ -771,7 +771,7 @@ udev_get_driver (NMPlatform *platform, GUdevDevice *device, int ifindex)
 }
 
 static void
-link_init (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllink)
+init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllink)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GUdevDevice *udev_device;
@@ -1051,7 +1051,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			NMPlatformLink device;
 			struct rtnl_link *rtnl_link = (struct rtnl_link *) object;
 
-			link_init (platform, &device, rtnl_link);
+			init_link (platform, &device, rtnl_link);
 
 			/* Skip hardware devices not yet discovered by udev. They will be
 			 * announced by udev_device_added(). This doesn't apply to removed
@@ -1502,7 +1502,7 @@ link_get_all (NMPlatform *platform)
 		struct rtnl_link *rtnl_link = (struct rtnl_link *) object;
 
 		if (link_is_announceable (platform, rtnl_link)) {
-			link_init (platform, &device, rtnl_link);
+			init_link (platform, &device, rtnl_link);
 			g_array_append_val (links, device);
 		}
 	}
