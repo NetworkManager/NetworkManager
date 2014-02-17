@@ -2157,7 +2157,7 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 static void
 log_link (NMPlatformLink *device, const char *change_type)
 {
-	debug ("signal: link %s: %s (%d)", change_type, device->name, device->ifindex);
+	debug ("signal: link %s: %s", change_type, nm_platform_link_to_string (device));
 }
 
 static void
