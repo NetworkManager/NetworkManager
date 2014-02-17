@@ -619,8 +619,8 @@ See also \fInm-settings\fP(5) for all NetworkManager settings and property names
 descriptions; and \fInmcli-examples\fP(5) for sample editor sessions.
 .RE
 .TP
-.B modify [--temporary] [ id | uuid | path ] <ID> [+]<setting>.<property> <value>
-.B [+]<setting>.<property> <value> ...
+.B modify [--temporary] [ id | uuid | path ] <ID> [+|-]<setting>.<property> <value>
+.B [+|-]<setting>.<property> <value> ...
 .br
 Modify one or more properties in the connection profile.
 .br
@@ -632,10 +632,12 @@ and \fIproperty name\fP provided they are unique. Empty \fIvalue\fP ("")
 removes the property value (sets the property to the default value).
 The provided value overwrite the existing property value. If you want to
 append to the existing value instead, use \fI+\fP prefix for the property name.
-But it only has a real effect for multi-value (container) properties like ipv4.dns,
-ipv4.addresses, etc.
+If you want to remove just one item from container-type property, use \fI-\fP
+prefix for the property name and specify its index (or option name) as
+\fIvalue\fP. Of course, it only has a real effect for multi-value (container)
+properties like ipv4.dns, ipv4.addresses, bond.options, etc.
 .br
-The changed values will be saved persistently by NetworkManager, unless
+The changes will be saved persistently by NetworkManager, unless
 \fI--temporary\fP option is provided, in which case the changes won't persist
 over NetworkManager restart.
 .TP

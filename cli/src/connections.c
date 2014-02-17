@@ -268,7 +268,7 @@ usage (void)
 #endif
 	           "  down [id | uuid | path | apath] <ID>\n\n"
 	           "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
-	           "  modify [--temporary] [id | uuid | path] <ID> ([+]<setting>.<property> <value>)+\n\n"
+	           "  modify [--temporary] [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n\n"
 	           "  edit [id | uuid | path] <ID>\n"
 	           "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
 	           "  delete [id | uuid | path] <ID>\n\n"
@@ -416,17 +416,21 @@ usage_connection_modify (void)
 	fprintf (stderr,
 	         _("Usage: nmcli connection modify { ARGUMENTS | help }\n"
 	           "\n"
-	           "ARGUMENTS := [id | uuid | path] <ID> ([+]<setting>.<property> <value>)+\n"
+	           "ARGUMENTS := [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n"
 	           "\n"
 	           "Modify one or more properties of the connection profile.\n"
-	           "The profile is identified by its name, UUID or D-Bus path. The optional '+'\n"
-	           "sign before the property instruct nmcli to append the value instead of \n"
-	           "overwriting it.\n"
+	           "The profile is identified by its name, UUID or D-Bus path. For multi-value\n"
+	           "properties you can use optional '+' or '-' prefix to the property name.\n"
+	           "The '+' sign instructs nmcli to append the value instead of overwriting it.\n"
+	           "The '-' sign allows removing selected items instead of the whole value.\n"
 	           "\n"
 	           "Examples:\n"
 	           "nmcli con mod home-wifi wifi.ssid rakosnicek\n"
 	           "nmcli con mod em1-1 ipv4.method manual ipv4.addr \"192.168.1.2/24, 10.10.1.5/8\"\n"
-	           "nmcli con mod em1-1 +ipv4.dns 8.8.4.4\n\n"));
+	           "nmcli con mod em1-1 +ipv4.dns 8.8.4.4\n"
+	           "nmcli con mod em1-1 -ipv4.dns 1\n"
+	           "nmcli con mod bond0 +bond.options mii=500\n"
+	           "nmcli con mod bond0 -bond.options downdelay\n\n"));
 }
 
 static void
@@ -7850,6 +7854,7 @@ do_connection_modify (NmCli *nmc,
 	const char *setting_name;
 	char *property_name = NULL;
 	gboolean append = FALSE;
+	gboolean remove = FALSE;
 	GError *error = NULL;
 
 	nmc->should_wait = FALSE;
@@ -7934,6 +7939,9 @@ do_connection_modify (NmCli *nmc,
 		if (s_dot_p[0] == '+') {
 			s_dot_p++;
 			append = TRUE;
+		} else if (s_dot_p[0] == '-') {
+			s_dot_p++;
+			remove = TRUE;
 		}
 
 		strv = g_strsplit (s_dot_p, ".", 2);
@@ -7973,13 +7981,36 @@ do_connection_modify (NmCli *nmc,
 			goto finish;
 		}
 
-		if (!append)
-			nmc_setting_reset_property (setting, property_name, NULL);
-		if (!nmc_setting_set_property (setting, property_name, value, &error)) {
-			g_string_printf (nmc->return_text, _("Error: failed to modify %s.%s: %s."),
-			                 strv[0], strv[1], error->message);
-			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			goto finish;
+		if (!remove) {
+			/* Set/add value */
+			if (!append)
+				nmc_setting_reset_property (setting, property_name, NULL);
+			if (!nmc_setting_set_property (setting, property_name, value, &error)) {
+				g_string_printf (nmc->return_text, _("Error: failed to modify %s.%s: %s."),
+				                 strv[0], strv[1], error->message);
+				nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+				goto finish;
+			}
+		} else {
+			/* Remove value
+			 * - either empty: remove whole value
+			 * - or specified by index <0-n>: remove item at the index
+			 * - or option name: remove item with the option name
+			 */
+			if (value) {
+				unsigned long idx;
+				if (nmc_string_to_uint (value, TRUE, 0, G_MAXUINT32, &idx))
+					nmc_setting_remove_property_option (setting, property_name, NULL, idx, &error);
+				else
+					nmc_setting_remove_property_option (setting, property_name, value, 0, &error);
+				if (error) {
+					g_string_printf (nmc->return_text, _("Error: failed to remove a value from %s.%s: %s."),
+					                 strv[0], strv[1], error->message);
+					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					goto finish;
+				}
+			} else
+				nmc_setting_reset_property (setting, property_name, NULL);
 		}
 
 		g_strfreev (strv);
