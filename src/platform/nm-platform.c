@@ -1853,6 +1853,8 @@ _to_string_dev (int ifindex, char *buf, size_t size)
 		buf[0] = 0;
 }
 
+static char to_string_buffer[256];
+
 /**
  * nm_platform_ip4_address_to_string:
  * @route: pointer to NMPlatformIP4Address address structure
@@ -1868,7 +1870,6 @@ _to_string_dev (int ifindex, char *buf, size_t size)
 const char *
 nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 {
-	static char buffer[256];
 	char s_address[INET_ADDRSTRLEN];
 	char s_peer[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
@@ -1885,14 +1886,14 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 
 	_to_string_dev (address->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s%s src %s",
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d lft %u pref %u time %u%s%s src %s",
 	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
 	            (guint)address->timestamp,
 	            str_peer ? str_peer : "",
 	            str_dev,
 	            source_to_string (address->source));
 	g_free (str_peer);
-	return buffer;
+	return to_string_buffer;
 }
 
 /**
@@ -1910,7 +1911,6 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 const char *
 nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 {
-	static char buffer[256];
 	char s_flags[256];
 	char s_address[INET6_ADDRSTRLEN];
 	char s_peer[INET6_ADDRSTRLEN];
@@ -1947,7 +1947,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 
 	str_flags = s_flags[0] ? g_strconcat (" flags ", s_flags, NULL) : NULL;
 
-	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s%s%s src %s",
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d lft %u pref %u time %u%s%s%s src %s",
 	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
 	            (guint)address->timestamp,
 	            str_peer ? str_peer : "",
@@ -1956,7 +1956,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	            source_to_string (address->source));
 	g_free (str_flags);
 	g_free (str_peer);
-	return buffer;
+	return to_string_buffer;
 }
 
 /**
@@ -1974,7 +1974,6 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 const char *
 nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 {
-	static char buffer[256];
 	char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
@@ -1985,12 +1984,12 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 
 	_to_string_dev (route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (buffer, sizeof (buffer), "%s/%d via %s%s metric %u mss %u src %s",
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %u mss %u src %s",
 	            s_network, route->plen, s_gateway,
 	            str_dev,
 	            route->metric, route->mss,
 	            source_to_string (route->source));
-	return buffer;
+	return to_string_buffer;
 }
 
 /**
@@ -2008,7 +2007,6 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 const char *
 nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 {
-	static char buffer[256];
 	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
@@ -2019,12 +2017,12 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 
 	_to_string_dev (route->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (buffer, sizeof (buffer), "%s/%d via %s%s metric %u mss %u src %s",
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d via %s%s metric %u mss %u src %s",
 	            s_network, route->plen, s_gateway,
 	            str_dev,
 	            route->metric, route->mss,
 	            source_to_string (route->source));
-	return buffer;
+	return to_string_buffer;
 }
 
 #define _CMP_POINTER(a, b)                                  \
