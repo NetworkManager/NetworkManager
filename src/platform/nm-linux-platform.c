@@ -76,6 +76,8 @@ typedef struct {
 
 G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
 
+static const char *to_string_object (NMPlatform *platform, struct nl_object *obj);
+
 void
 nm_linux_platform_setup (void)
 {
@@ -999,6 +1001,92 @@ init_ip6_route (NMPlatformIP6Route *route, struct rtnl_route *rtnlroute)
 	return TRUE;
 }
 
+static char to_string_buffer[255];
+
+#define SET_AND_RETURN_STRING_BUFFER(...) \
+	G_STMT_START { \
+		g_snprintf (to_string_buffer, sizeof (to_string_buffer), ## __VA_ARGS__); \
+		g_return_val_if_reached (to_string_buffer); \
+		return to_string_buffer; \
+	} G_STMT_END
+
+static const char *
+to_string_link (NMPlatform *platform, struct rtnl_link *obj)
+{
+	NMPlatformLink pl_obj;
+
+	if (init_link (platform, &pl_obj, obj))
+		return nm_platform_link_to_string (&pl_obj);
+	SET_AND_RETURN_STRING_BUFFER ("(invalid link %p)", obj);
+}
+
+static const char *
+to_string_ip4_address (struct rtnl_addr *obj)
+{
+	NMPlatformIP4Address pl_obj;
+
+	if (init_ip4_address (&pl_obj, obj))
+		return nm_platform_ip4_address_to_string (&pl_obj);
+	SET_AND_RETURN_STRING_BUFFER ("(invalid ip4 address %p)", obj);
+}
+
+static const char *
+to_string_ip6_address (struct rtnl_addr *obj)
+{
+	NMPlatformIP6Address pl_obj;
+
+	if (init_ip6_address (&pl_obj, obj))
+		return nm_platform_ip6_address_to_string (&pl_obj);
+	SET_AND_RETURN_STRING_BUFFER ("(invalid ip6 address %p)", obj);
+}
+
+static const char *
+to_string_ip4_route (struct rtnl_route *obj)
+{
+	NMPlatformIP4Route pl_obj;
+
+	if (init_ip4_route (&pl_obj, obj))
+		return nm_platform_ip4_route_to_string (&pl_obj);
+	SET_AND_RETURN_STRING_BUFFER ("(invalid ip4 route %p)", obj);
+}
+
+static const char *
+to_string_ip6_route (struct rtnl_route *obj)
+{
+	NMPlatformIP6Route pl_obj;
+
+	if (init_ip6_route (&pl_obj, obj))
+		return nm_platform_ip6_route_to_string (&pl_obj);
+	SET_AND_RETURN_STRING_BUFFER ("(invalid ip6 route %p)", obj);
+}
+
+static const char *
+to_string_object_with_type (NMPlatform *platform, struct nl_object *obj, ObjectType type)
+{
+	switch (type) {
+	case LINK:
+		return to_string_link (platform, (struct rtnl_link *) obj);
+	case IP4_ADDRESS:
+		return to_string_ip4_address ((struct rtnl_addr *) obj);
+	case IP6_ADDRESS:
+		return to_string_ip6_address ((struct rtnl_addr *) obj);
+	case IP4_ROUTE:
+		return to_string_ip4_route ((struct rtnl_route *) obj);
+	case IP6_ROUTE:
+		return to_string_ip6_route ((struct rtnl_route *) obj);
+	default:
+		SET_AND_RETURN_STRING_BUFFER ("(unknown netlink object %p)", obj);
+	}
+}
+
+static const char *
+to_string_object (NMPlatform *platform, struct nl_object *obj)
+{
+	return to_string_object_with_type (platform, obj, object_type_from_nl_object (obj));
+}
+
+#undef SET_AND_RETURN_STRING_BUFFER
+
 /******************************************************************/
 
 /* Object and cache manipulation */
@@ -1269,7 +1357,7 @@ add_object (NMPlatform *platform, struct nl_object *obj)
 	case -NLE_EXIST:
 		break;
 	default:
-		error ("Netlink error: %s", nl_geterror (nle));
+		error ("Netlink error adding %s: %s", to_string_object (platform, object),  nl_geterror (nle));
 		nl_object_dump (object, &dp);
 		return FALSE;
 	}
@@ -1325,7 +1413,7 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 		}
 		/* fall-through to error, because we only expect this for addresses. */
 	default:
-		error ("Netlink error: %s", nl_geterror (nle));
+		error ("Netlink error deleting %s: %s", to_string_object (platform, obj), nl_geterror (nle));
 		return FALSE;
 	}
 
@@ -1737,11 +1825,11 @@ link_change (NMPlatform *platform, int ifindex, struct rtnl_link *change)
 	case -NLE_EXIST:
 		break;
 	case -NLE_OBJ_NOTFOUND:
-		error ("Firmware not found; Netlink error: %s)", nl_geterror (nle));
+		error ("Firmware not found for changing link %s; Netlink error: %s)", to_string_link (platform, change), nl_geterror (nle));
 		platform->error = NM_PLATFORM_ERROR_NO_FIRMWARE;
 		return FALSE;
 	default:
-		error ("Netlink error: %s", nl_geterror (nle));
+		error ("Netlink error changing link %s: %s", to_string_link (platform, change), nl_geterror (nle));
 		return FALSE;
 	}
 
