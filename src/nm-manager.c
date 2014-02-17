@@ -1955,7 +1955,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 			nm_active_connection_set_assumed (active, TRUE);
 			nm_active_connection_export (active);
 			active_connection_add (self, active);
-			nm_device_activate (device, NM_ACT_REQUEST (active));
+			nm_device_queue_activation (device, NM_ACT_REQUEST (active));
 		} else {
 			nm_log_warn (LOGD_DEVICE, "assumed connection %s failed to activate: (%d) %s",
 			             nm_connection_get_path (connection),
@@ -2872,17 +2872,8 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		            nm_active_connection_get_path (master_ac));
 	}
 
-	/* Tear down any existing connection */
-	if (nm_device_get_act_request (device)) {
-		nm_log_info (LOGD_DEVICE, "(%s): disconnecting for new activation request.",
-		             nm_device_get_iface (device));
-		nm_device_state_changed (device,
-		                         NM_DEVICE_STATE_DISCONNECTED,
-		                         NM_DEVICE_STATE_REASON_NONE);
-	}
-
 	/* Start the new activation */
-	nm_device_activate (device, NM_ACT_REQUEST (active));
+	nm_device_queue_activation (device, NM_ACT_REQUEST (active));
 	return TRUE;
 }
 

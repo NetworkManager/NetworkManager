@@ -229,6 +229,7 @@ typedef struct {
 
 	guint32         ip4_address;
 
+	NMActRequest *  queued_act_request;
 	NMActRequest *  act_request;
 	guint           act_source_id;
 	gpointer        act_source_func;
@@ -4436,11 +4437,7 @@ nm_device_activate_ip6_state_in_wait (NMDevice *self)
 static void
 clear_act_request (NMDevice *self)
 {
-	NMDevicePrivate * priv;
-
-	g_return_if_fail (self != NULL);
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (!priv->act_request)
 		return;
@@ -4452,8 +4449,7 @@ clear_act_request (NMDevice *self)
 		priv->master_ready_id = 0;
 	}
 
-	g_object_unref (priv->act_request);
-	priv->act_request = NULL;
+	g_clear_object (&priv->act_request);
 }
 
 static void
@@ -4812,8 +4808,8 @@ impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context)
 	               NULL);
 }
 
-void
-nm_device_activate (NMDevice *self, NMActRequest *req)
+static void
+_device_activate (NMDevice *self, NMActRequest *req)
 {
 	NMDevicePrivate *priv;
 	NMConnection *connection;
@@ -4840,14 +4836,30 @@ nm_device_activate (NMDevice *self, NMActRequest *req)
 	priv->act_request = g_object_ref (req);
 	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
 
-	/* HACK: update the state a bit early to avoid a race between the 
-	 * scheduled stage1 handler and nm_policy_device_change_check() thinking
-	 * that the activation request isn't deferred because the deferred bit
-	 * gets cleared a bit too early, when the connection becomes valid.
-	 */
-	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
-
 	nm_device_activate_schedule_stage1_device_prepare (self);
+}
+
+void
+nm_device_queue_activation (NMDevice *self, NMActRequest *req)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!priv->act_request) {
+		/* Just activate immediately */
+		_device_activate (self, req);
+		return;
+	}
+
+	/* supercede any already-queued request */
+	g_clear_object (&priv->queued_act_request);
+	priv->queued_act_request = g_object_ref (req);
+
+	/* Deactivate existing activation request first */
+	nm_log_info (LOGD_DEVICE, "(%s): disconnecting for new activation request.",
+	             nm_device_get_iface (self));
+	nm_device_state_changed (self,
+	                         NM_DEVICE_STATE_DEACTIVATING,
+	                         NM_DEVICE_STATE_REASON_NONE);
 }
 
 /*
@@ -5554,6 +5566,7 @@ dispose (GObject *object)
 	activation_source_clear (self, TRUE, AF_INET6);
 
 	clear_act_request (self);
+	g_clear_object (&priv->queued_act_request);
 
 	platform = nm_platform_get ();
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip_changed), self);
@@ -6422,8 +6435,10 @@ nm_device_state_changed (NMDevice *device,
 	/* Cache the activation request for the dispatcher */
 	req = priv->act_request ? g_object_ref (priv->act_request) : NULL;
 
-	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
+	if (state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		_clear_available_connections (device, TRUE);
+		g_clear_object (&priv->queued_act_request);
+	}
 
 	/* Update the available connections list when a device first becomes available */
 	if (   state >= NM_DEVICE_STATE_DISCONNECTED
@@ -6508,7 +6523,14 @@ nm_device_state_changed (NMDevice *device,
 		nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, reason);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
-		if (old_state > NM_DEVICE_STATE_DISCONNECTED && priv->default_unmanaged)
+		if (priv->queued_act_request) {
+			NMActRequest *queued_req;
+
+			queued_req = priv->queued_act_request;
+			priv->queued_act_request = NULL;
+			_device_activate (device, queued_req);
+			g_object_unref (queued_req);
+		} else if (old_state > NM_DEVICE_STATE_DISCONNECTED && priv->default_unmanaged)
 			nm_device_queue_state (device, NM_DEVICE_STATE_UNMANAGED, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
