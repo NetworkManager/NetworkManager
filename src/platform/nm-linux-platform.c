@@ -781,15 +781,15 @@ udev_get_driver (NMPlatform *platform, GUdevDevice *device, int ifindex)
 	return driver;
 }
 
-static void
+static gboolean
 init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllink)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GUdevDevice *udev_device;
 
-	memset (info, 0, sizeof (*info));
+	g_return_val_if_fail (rtnllink, FALSE);
 
-	g_assert (rtnllink);
+	memset (info, 0, sizeof (*info));
 
 	info->ifindex = rtnl_link_get_ifindex (rtnllink);
 	g_strlcpy (info->name, rtnl_link_get_name (rtnllink), sizeof (info->name));
@@ -812,6 +812,8 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 			info->driver = "unknown";
 		info->udi = g_udev_device_get_sysfs_path (udev_device);
 	}
+
+	return TRUE;
 }
 
 /* Hack: Empty bridges and bonds have IFF_LOWER_UP flag and therefore they break
@@ -858,13 +860,13 @@ hack_empty_master_iff_lower_up (NMPlatform *platform, struct nl_object *object)
 	rtnl_link_unset_flags (rtnllink, IFF_LOWER_UP);
 }
 
-static void
+static gboolean
 init_ip4_address (NMPlatformIP4Address *address, struct rtnl_addr *rtnladdr)
 {
 	struct nl_addr *nladdr = rtnl_addr_get_local (rtnladdr);
 	struct nl_addr *nlpeer = rtnl_addr_get_peer (rtnladdr);
 
-	g_assert (nladdr);
+	g_return_val_if_fail (nladdr, FALSE);
 
 	memset (address, 0, sizeof (*address));
 
@@ -873,15 +875,23 @@ init_ip4_address (NMPlatformIP4Address *address, struct rtnl_addr *rtnladdr)
 	address->timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address->lifetime = rtnl_addr_get_valid_lifetime (rtnladdr);
 	address->preferred = rtnl_addr_get_preferred_lifetime (rtnladdr);
-	g_assert (nl_addr_get_len (nladdr) == sizeof (address->address));
+	if (!nladdr || nl_addr_get_len (nladdr) != sizeof (address->address)) {
+		g_return_val_if_reached (FALSE);
+		return FALSE;
+	}
 	memcpy (&address->address, nl_addr_get_binary_addr (nladdr), sizeof (address->address));
 	if (nlpeer) {
-		g_assert (nl_addr_get_len (nlpeer) == sizeof (address->peer_address));
+		if (nl_addr_get_len (nlpeer) != sizeof (address->peer_address)) {
+			g_return_val_if_reached (FALSE);
+			return FALSE;
+		}
 		memcpy (&address->peer_address, nl_addr_get_binary_addr (nlpeer), sizeof (address->peer_address));
 	}
+
+	return TRUE;
 }
 
-static void
+static gboolean
 init_ip6_address (NMPlatformIP6Address *address, struct rtnl_addr *rtnladdr)
 {
 	struct nl_addr *nladdr = rtnl_addr_get_local (rtnladdr);
@@ -895,12 +905,20 @@ init_ip6_address (NMPlatformIP6Address *address, struct rtnl_addr *rtnladdr)
 	address->lifetime = rtnl_addr_get_valid_lifetime (rtnladdr);
 	address->preferred = rtnl_addr_get_preferred_lifetime (rtnladdr);
 	address->flags = rtnl_addr_get_flags (rtnladdr);
-	g_assert (nl_addr_get_len (nladdr) == sizeof (address->address));
+	if (!nladdr || nl_addr_get_len (nladdr) != sizeof (address->address)) {
+		g_return_val_if_reached (FALSE);
+		return FALSE;
+	}
 	memcpy (&address->address, nl_addr_get_binary_addr (nladdr), sizeof (address->address));
 	if (nlpeer) {
-		g_assert (nl_addr_get_len (nlpeer) == sizeof (address->peer_address));
+		if (nl_addr_get_len (nlpeer) != sizeof (address->peer_address)) {
+			g_return_val_if_reached (FALSE);
+			return FALSE;
+		}
 		memcpy (&address->peer_address, nl_addr_get_binary_addr (nlpeer), sizeof (address->peer_address));
 	}
+
+	return TRUE;
 }
 
 static gboolean
@@ -923,11 +941,17 @@ init_ip4_route (NMPlatformIP4Route *route, struct rtnl_route *rtnlroute)
 	route->plen = nl_addr_get_prefixlen (dst);
 	/* Workaround on previous workaround for libnl default route prefixlen bug. */
 	if (nl_addr_get_len (dst)) {
-		g_assert (nl_addr_get_len (dst) == sizeof (route->network));
+		if (nl_addr_get_len (dst) != sizeof (route->network)) {
+			g_return_val_if_reached (FALSE);
+			return FALSE;
+		}
 		memcpy (&route->network, nl_addr_get_binary_addr (dst), sizeof (route->network));
 	}
 	if (gw) {
-		g_assert (nl_addr_get_len (gw) == sizeof (route->network));
+		if (nl_addr_get_len (gw) != sizeof (route->network)) {
+			g_return_val_if_reached (FALSE);
+			return FALSE;
+		}
 		memcpy (&route->gateway, nl_addr_get_binary_addr (gw), sizeof (route->gateway));
 	}
 	route->metric = rtnl_route_get_priority (rtnlroute);
@@ -956,11 +980,17 @@ init_ip6_route (NMPlatformIP6Route *route, struct rtnl_route *rtnlroute)
 	route->plen = nl_addr_get_prefixlen (dst);
 	/* Workaround on previous workaround for libnl default route prefixlen bug. */
 	if (nl_addr_get_len (dst)) {
-		g_assert (nl_addr_get_len (dst) == sizeof (route->network));
+		if (nl_addr_get_len (dst) != sizeof (route->network)) {
+			g_return_val_if_reached (FALSE);
+			return FALSE;
+		}
 		memcpy (&route->network, nl_addr_get_binary_addr (dst), sizeof (route->network));
 	}
 	if (gw) {
-		g_assert (nl_addr_get_len (gw) == sizeof (route->network));
+		if (nl_addr_get_len (gw) != sizeof (route->network)) {
+			g_return_val_if_reached (FALSE);
+			return FALSE;
+		}
 		memcpy (&route->gateway, nl_addr_get_binary_addr (gw), sizeof (route->gateway));
 	}
 	route->metric = rtnl_route_get_priority (rtnlroute);
@@ -1059,7 +1089,8 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			NMPlatformLink device;
 			struct rtnl_link *rtnl_link = (struct rtnl_link *) object;
 
-			init_link (platform, &device, rtnl_link);
+			if (!init_link (platform, &device, rtnl_link))
+				return;
 
 			/* Skip hardware devices not yet discovered by udev. They will be
 			 * announced by udev_device_added(). This doesn't apply to removed
@@ -1103,7 +1134,8 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 		{
 			NMPlatformIP4Address address;
 
-			init_ip4_address (&address, (struct rtnl_addr *) object);
+			if (!init_ip4_address (&address, (struct rtnl_addr *) object))
+				return;
 
 			/* Address deletion is sometimes accompanied by route deletion. We need to
 			 * check all routes belonging to the same interface.
@@ -1123,7 +1155,8 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 		{
 			NMPlatformIP6Address address;
 
-			init_ip6_address (&address, (struct rtnl_addr *) object);
+			if (!init_ip6_address (&address, (struct rtnl_addr *) object))
+				return;
 			g_signal_emit_by_name (platform, sig, address.ifindex, &address, reason);
 		}
 		return;
@@ -1608,8 +1641,8 @@ link_get_all (NMPlatform *platform)
 		struct rtnl_link *rtnl_link = (struct rtnl_link *) object;
 
 		if (link_is_announceable (platform, rtnl_link)) {
-			init_link (platform, &device, rtnl_link);
-			g_array_append_val (links, device);
+			if (init_link (platform, &device, rtnl_link))
+				g_array_append_val (links, device);
 		}
 	}
 
@@ -2570,9 +2603,10 @@ ip4_address_get_all (NMPlatform *platform, int ifindex)
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
 		if (nl_object_is_marked (object)) {
-			init_ip4_address (&address, (struct rtnl_addr *) object);
-			address.source = NM_PLATFORM_SOURCE_KERNEL;
-			g_array_append_val (addresses, address);
+			if (init_ip4_address (&address, (struct rtnl_addr *) object)) {
+				address.source = NM_PLATFORM_SOURCE_KERNEL;
+				g_array_append_val (addresses, address);
+			}
 			nl_object_unmark (object);
 		}
 	}
@@ -2594,9 +2628,10 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
 		if (nl_object_is_marked (object)) {
-			init_ip6_address (&address, (struct rtnl_addr *) object);
-			address.source = NM_PLATFORM_SOURCE_KERNEL;
-			g_array_append_val (addresses, address);
+			if (init_ip6_address (&address, (struct rtnl_addr *) object)) {
+				address.source = NM_PLATFORM_SOURCE_KERNEL;
+				g_array_append_val (addresses, address);
+			}
 			nl_object_unmark (object);
 		}
 	}
