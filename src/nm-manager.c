@@ -583,6 +583,7 @@ checked_connectivity (GObject *object, GAsyncResult *result, gpointer user_data)
 		else if (   connectivity == NM_CONNECTIVITY_PORTAL
 		         || connectivity == NM_CONNECTIVITY_LIMITED)
 			set_state (manager, NM_STATE_CONNECTED_SITE);
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_CONNECTIVITY);
 	}
 
 	g_object_unref (manager);
@@ -3997,6 +3998,7 @@ connectivity_changed (NMConnectivity *connectivity,
 	            connectivity_states[state]);
 
 	nm_manager_update_state (self);
+	g_object_notify (G_OBJECT (self), NM_MANAGER_CONNECTIVITY);
 }
 
 static void
