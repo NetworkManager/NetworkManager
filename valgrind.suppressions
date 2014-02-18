@@ -109,3 +109,23 @@
     ...
 }
 
+
+# The following suppressions were needed on fc20.armv7hl
+{
+   _fun_malloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+}
+{
+   _fun_realloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:realloc
+}
+{
+   _fun_calloc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+}
