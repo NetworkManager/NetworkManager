@@ -1813,6 +1813,27 @@ source_to_string (NMPlatformSource source)
 	return "unknown";
 }
 
+#define TO_STRING_DEV_BUF_SIZE (5+15+1)
+static void
+_to_string_dev (int ifindex, char *buf, size_t size)
+{
+	g_assert (buf && size >= TO_STRING_DEV_BUF_SIZE);
+
+	if (ifindex){
+		const char *name = ifindex > 0 ? nm_platform_link_get_name (ifindex) : NULL;
+
+		strcpy (buf, " dev ");
+		buf += 5;
+		size -= 5;
+
+		if (name)
+			g_strlcpy (buf, name, size);
+		else
+			g_snprintf (buf, size, "%d", ifindex);
+	} else
+		buf[0] = 0;
+}
+
 /**
  * nm_platform_ip4_address_to_string:
  * @route: pointer to NMPlatformIP4Address address structure
@@ -1831,8 +1852,7 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 	static char buffer[256];
 	char s_address[INET_ADDRSTRLEN];
 	char s_peer[INET_ADDRSTRLEN];
-	const char *s_dev;
-	char *str_dev;
+	char str_dev[TO_STRING_DEV_BUF_SIZE];
 	char *str_peer = NULL;
 
 	g_return_val_if_fail (address, "(unknown)");
@@ -1844,16 +1864,14 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 		str_peer = g_strconcat (" ptp ", s_peer, NULL);
 	}
 
-	s_dev = address->ifindex > 0 ? nm_platform_link_get_name (address->ifindex) : NULL;
-	str_dev = s_dev ? g_strconcat (" dev ", s_dev, NULL) : NULL;
+	_to_string_dev (address->ifindex, str_dev, sizeof (str_dev));
 
 	g_snprintf (buffer, sizeof (buffer), "%s/%d lft %u pref %u time %u%s%s src %s",
 	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
 	            (guint)address->timestamp,
 	            str_peer ? str_peer : "",
-	            str_dev ? str_dev : "",
+	            str_dev,
 	            source_to_string (address->source));
-	g_free (str_dev);
 	g_free (str_peer);
 	return buffer;
 }
@@ -1877,9 +1895,8 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	char s_flags[256];
 	char s_address[INET6_ADDRSTRLEN];
 	char s_peer[INET6_ADDRSTRLEN];
-	const char *s_dev;
 	char *str_flags;
-	char *str_dev;
+	char str_dev[TO_STRING_DEV_BUF_SIZE];
 	char *str_peer = NULL;
 
 	g_return_val_if_fail (address, "(unknown)");
@@ -1891,8 +1908,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 		str_peer = g_strconcat (" ptp ", s_peer, NULL);
 	}
 
-	s_dev = address->ifindex > 0 ? nm_platform_link_get_name (address->ifindex) : NULL;
-	str_dev = s_dev ? g_strconcat (" dev ", s_dev, NULL) : NULL;
+	_to_string_dev (address->ifindex, str_dev, sizeof (str_dev));
 
 	rtnl_addr_flags2str(address->flags, s_flags, sizeof (s_flags));
 
@@ -1916,11 +1932,10 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
 	            (guint)address->timestamp,
 	            str_peer ? str_peer : "",
-	            str_dev ? str_dev : "",
+	            str_dev,
 	            str_flags ? str_flags : "",
 	            source_to_string (address->source));
 	g_free (str_flags);
-	g_free (str_dev);
 	g_free (str_peer);
 	return buffer;
 }
@@ -1942,23 +1957,20 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route)
 {
 	static char buffer[256];
 	char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN];
-	const char *s_dev;
-	char *str_dev;
+	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
 	g_return_val_if_fail (route, "(unknown)");
 
 	inet_ntop (AF_INET, &route->network, s_network, sizeof(s_network));
 	inet_ntop (AF_INET, &route->gateway, s_gateway, sizeof(s_gateway));
 
-	s_dev = route->ifindex > 0 ? nm_platform_link_get_name (route->ifindex) : NULL;
-	str_dev = s_dev ? g_strconcat (" dev ", s_dev, NULL) : NULL;
+	_to_string_dev (route->ifindex, str_dev, sizeof (str_dev));
 
 	g_snprintf (buffer, sizeof (buffer), "%s/%d via %s%s metric %u mss %u src %s",
 	            s_network, route->plen, s_gateway,
-	            str_dev ? str_dev : "",
+	            str_dev,
 	            route->metric, route->mss,
 	            source_to_string (route->source));
-	g_free (str_dev);
 	return buffer;
 }
 
@@ -1979,23 +1991,20 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
 {
 	static char buffer[256];
 	char s_network[INET6_ADDRSTRLEN], s_gateway[INET6_ADDRSTRLEN];
-	const char *s_dev;
-	char *str_dev;
+	char str_dev[TO_STRING_DEV_BUF_SIZE];
 
 	g_return_val_if_fail (route, "(unknown)");
 
 	inet_ntop (AF_INET6, &route->network, s_network, sizeof(s_network));
 	inet_ntop (AF_INET6, &route->gateway, s_gateway, sizeof(s_gateway));
 
-	s_dev = route->ifindex > 0 ? nm_platform_link_get_name (route->ifindex) : NULL;
-	str_dev = s_dev ? g_strconcat (" dev ", s_dev, NULL) : NULL;
+	_to_string_dev (route->ifindex, str_dev, sizeof (str_dev));
 
 	g_snprintf (buffer, sizeof (buffer), "%s/%d via %s%s metric %u mss %u src %s",
 	            s_network, route->plen, s_gateway,
-	            str_dev ? str_dev : "",
+	            str_dev,
 	            route->metric, route->mss,
 	            source_to_string (route->source));
-	g_free (str_dev);
 	return buffer;
 }
 
