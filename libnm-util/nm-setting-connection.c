@@ -867,15 +867,34 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	is_slave = (   !g_strcmp0 (priv->slave_type, NM_SETTING_BOND_SETTING_NAME)
-	            || !g_strcmp0 (priv->slave_type, NM_SETTING_BRIDGE_SETTING_NAME)
-	            || !g_strcmp0 (priv->slave_type, NM_SETTING_TEAM_SETTING_NAME));
+	is_slave = (   priv->slave_type
+	            && (   !strcmp (priv->slave_type, NM_SETTING_BOND_SETTING_NAME)
+	                || !strcmp (priv->slave_type, NM_SETTING_BRIDGE_SETTING_NAME)
+	                || !strcmp (priv->slave_type, NM_SETTING_TEAM_SETTING_NAME)));
 
-	/* Bond/bridge/team slaves are not allowed to have any IP configuration. */
+	if (priv->slave_type && !is_slave) {
+		g_set_error (error,
+		             NM_SETTING_CONNECTION_ERROR,
+		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("Unknown slave type '%s'"), priv->slave_type);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
+		return NM_SETTING_VERIFY_ERROR;
+	}
+
 	if (is_slave) {
 		NMSettingIP4Config *s_ip4;
 		NMSettingIP6Config *s_ip6;
 
+		if (!priv->master) {
+			g_set_error_literal (error,
+			                     NM_SETTING_CONNECTION_ERROR,
+			                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+			                     _("Slave connections need a valid '" NM_SETTING_CONNECTION_MASTER "' property"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER);
+			return NM_SETTING_VERIFY_ERROR;
+		}
+
+		/* Bond/bridge/team slaves are not allowed to have any IP configuration. */
 		s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_find_in_list (all_settings, NM_SETTING_IP4_CONFIG_SETTING_NAME));
 		if (s_ip4) {
 			if (strcmp (nm_setting_ip4_config_get_method (s_ip4),
@@ -900,6 +919,15 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
 				return FALSE;
 			}
+		}
+	} else {
+		if (priv->master) {
+			g_set_error_literal (error,
+			                     NM_SETTING_CONNECTION_ERROR,
+			                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+			                     _("Cannot set '" NM_SETTING_CONNECTION_MASTER "' without '" NM_SETTING_CONNECTION_SLAVE_TYPE "'"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
+			return NM_SETTING_VERIFY_ERROR;
 		}
 	}
 
