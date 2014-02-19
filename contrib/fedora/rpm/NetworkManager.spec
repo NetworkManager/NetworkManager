@@ -11,11 +11,12 @@
 %define wireless_tools_version 1:28-0pre9
 %define libnl3_version 3.2.7
 %define ppp_version 2.4.5
-%define nmtui_version __NMTUI_VERSION__
 
 %define snapshot %{nil}
 %define git_sha __COMMIT__
 %define realversion __VERSION__
+
+%global with_nmtui 1
 
 %if 0%{?fedora}
 %global regen_docs 1
@@ -23,8 +24,6 @@
 #%global regen_docs 0
 %global regen_docs 1
 %endif
-
-%global with_nmtui __WITH_NMTUI__
 
 %define systemd_dir %{_prefix}/lib/systemd/system
 %define udev_dir %{_prefix}/lib/udev
@@ -50,8 +49,6 @@ URL: http://www.gnome.org/projects/NetworkManager/
 Source: __SOURCE1__
 Source1: NetworkManager.conf
 Source2: 00-server.conf
-#Source3: nmtui-%{nmtui_version}.tar.xz
-__SOURCE_NMTUI__3
 
 #Patch1: some.patch
 
@@ -219,11 +216,6 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %prep
 %setup -q -n NetworkManager-%{realversion}
 
-# nmtui
-%if 0%{with_nmtui}
-tar -xf %{SOURCE3}
-%endif
-
 #%patch1 -p1 -b .some
 
 %build
@@ -279,18 +271,6 @@ tar -xf %{SOURCE3}
 
 make %{?_smp_mflags}
 
-# nmtui
-%if 0%{with_nmtui}
-pushd nmtui-%{nmtui_version}
-	NETWORKMANAGER_CFLAGS='-I$(top_builddir)/../include -I$(top_builddir)/../libnm-util -I$(top_builddir)/../libnm-glib `pkg-config --cflags gio-2.0 dbus-glib-1`'
-	export NETWORKMANAGER_CFLAGS
-	NETWORKMANAGER_LIBS='-L$(top_builddir)/../libnm-util/.libs -L$(top_builddir)/../libnm-glib/.libs -lnm-util -lnm-glib `pkg-config --libs gio-2.0 dbus-glib-1`'
-	export NETWORKMANAGER_LIBS
-	%configure
-	make %{?_smp_mflags}
-popd
-%endif
-
 %install
 %{__rm} -rf $RPM_BUILD_ROOT
 
@@ -331,13 +311,6 @@ install -m 0755 test/.libs/nm-online %{buildroot}/%{_bindir}
 
 mkdir -p $RPM_BUILD_ROOT%{systemd_dir}/network-online.target.wants
 ln -s ../NetworkManager-wait-online.service $RPM_BUILD_ROOT%{systemd_dir}/network-online.target.wants
-
-# install nmtui
-%if 0%{with_nmtui}
-pushd nmtui-%{nmtui_version}
-	make install DESTDIR=$RPM_BUILD_ROOT
-popd
-%endif
 
 %clean
 %{__rm} -rf $RPM_BUILD_ROOT
@@ -453,10 +426,11 @@ fi
 %defattr(-,root,root,0755)
 %config %{_sysconfdir}/%{name}/conf.d/00-server.conf
 
-%if 0%{with_nmtui}
 %files tui
+%{_bindir}/nmtui
 %{_bindir}/nmtui-edit
-%endif
+%{_bindir}/nmtui-connect
+%{_bindir}/nmtui-hostname
 
 %changelog
 __CHANGELOG__
