@@ -377,7 +377,7 @@ ifcfg_dir_changed (GFileMonitor *monitor,
                    gpointer user_data)
 {
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
-	char *path, *ifcfg_path;
+	char *path, *base, *ifcfg_path;
 	NMIfcfgConnection *connection;
 
 	path = g_file_get_path (file);
@@ -386,8 +386,14 @@ ifcfg_dir_changed (GFileMonitor *monitor,
 		return;
 	}
 
-	/* Given any ifcfg, keys, or routes file, get the ifcfg file path */
-	ifcfg_path = utils_get_ifcfg_path (path);
+	base = g_file_get_basename (file);
+	if (utils_is_ifcfg_alias_file (base, NULL)) {
+		/* Alias file changed. Get the base ifcfg file from it */
+		ifcfg_path = utils_get_ifcfg_from_alias (path);
+	} else {
+		/* Given any ifcfg, keys, or routes file, get the ifcfg file path */
+		ifcfg_path = utils_get_ifcfg_path (path);
+	}
 	if (ifcfg_path) {
 		connection = find_by_path (plugin, ifcfg_path);
 		switch (event_type) {
@@ -407,6 +413,7 @@ ifcfg_dir_changed (GFileMonitor *monitor,
 		g_free (ifcfg_path);
 	}
 	g_free (path);
+	g_free (base);
 }
 
 static void
@@ -458,6 +465,8 @@ read_connections (SCPluginIfcfg *plugin)
 		char *full_path, *old_path;
 
 		if (utils_should_ignore_file (item, TRUE))
+			continue;
+		if (utils_is_ifcfg_alias_file (item, NULL))
 			continue;
 
 		full_path = g_build_filename (IFCFG_DIR, item, NULL);

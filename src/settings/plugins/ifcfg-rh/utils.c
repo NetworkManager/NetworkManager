@@ -367,3 +367,49 @@ utils_ignore_ip_config (NMConnection *connection)
 
 	return FALSE;
 }
+
+/* Find out if the 'alias' file name might be an alias file for 'ifcfg' file name,
+ * or any alias when 'ifcfg' is NULL. Does not check that it's actually a valid
+ * alias name; that happens in reader.c
+ */
+gboolean
+utils_is_ifcfg_alias_file (const char *alias, const char *ifcfg)
+{
+	g_return_val_if_fail (alias != NULL, FALSE);
+
+	if (strncmp (alias, IFCFG_TAG, strlen (IFCFG_TAG)))
+		return FALSE;
+
+	if (ifcfg) {
+		size_t len = strlen (ifcfg);
+
+		return (strncmp (alias, ifcfg, len) == 0 && alias[len] == ':');
+	} else {
+		return (strchr (alias, ':') != NULL);
+	}
+}
+
+char *
+utils_get_ifcfg_from_alias (const char *alias)
+{
+	char *base, *ptr, *ifcfg = NULL;
+
+	g_return_val_if_fail (alias != NULL, NULL);
+
+	base = g_path_get_basename (alias);
+	g_return_val_if_fail (base != NULL, NULL);
+
+	if (utils_is_ifcfg_alias_file (base, NULL)) {
+		ifcfg = g_strdup (alias);
+		ptr = strrchr (ifcfg, ':');
+		if (ptr)
+			*ptr = '\0';
+		else {
+			g_free (ifcfg);
+			ifcfg = NULL;
+		}
+	}
+
+	g_free (base);
+	return ifcfg;
+}

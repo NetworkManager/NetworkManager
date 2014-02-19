@@ -39,6 +39,7 @@
 #include <nm-setting-vlan.h>
 #include <nm-setting-team.h>
 #include <nm-setting-team-port.h>
+#include <nm-util-private.h>
 #include <nm-utils.h>
 
 #include "common.h"
@@ -1845,7 +1846,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	char *addr_key, *prefix_key, *netmask_key, *gw_key, *metric_key, *tmp;
 	char *route_path = NULL;
 	gint32 j;
-	guint32 i, num;
+	guint32 i, n, num;
 	GString *searches;
 	gboolean success = FALSE;
 	gboolean fake_ip4 = FALSE;
@@ -1909,48 +1910,68 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
 		svSetValue (ifcfg, "BOOTPROTO", "shared", FALSE);
 
-	/* Write out IPADDR0 .. IPADDR255, PREFIX0 .. PREFIX255, GATEWAY0 .. GATEWAY255
-	 * Possible NETMASK<n> is removed only (it's obsolete) */
-	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
+	/* Clear out un-numbered IP address fields */
 	svSetValue (ifcfg, "IPADDR", NULL, FALSE);
 	svSetValue (ifcfg, "PREFIX", NULL, FALSE);
 	svSetValue (ifcfg, "NETMASK", NULL, FALSE);
 	svSetValue (ifcfg, "GATEWAY", NULL, FALSE);
-	for (i = 0; i < 256; i++) {
+
+	/* Write out IPADDR<n>, PREFIX<n>, GATEWAY<n> for current IP addresses
+	 * without labels. Unset obsolete NETMASK<n>.
+	 */
+	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
+	for (i = n = 0; i < num; i++) {
 		char buf[INET_ADDRSTRLEN];
 		NMIP4Address *addr;
 		guint32 ip;
 
-		addr_key = g_strdup_printf ("IPADDR%d", i);
-		prefix_key = g_strdup_printf ("PREFIX%d", i);
-		netmask_key = g_strdup_printf ("NETMASK%d", i);
-		gw_key = g_strdup_printf ("GATEWAY%d", i);
+		if (i > 0 && NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i)))
+			continue;
 
-		if (i >= num) {
-			svSetValue (ifcfg, addr_key, NULL, FALSE);
-			svSetValue (ifcfg, prefix_key, NULL, FALSE);
-			svSetValue (ifcfg, netmask_key, NULL, FALSE);
-			svSetValue (ifcfg, gw_key, NULL, FALSE);
-		} else {
-			addr = nm_setting_ip4_config_get_address (s_ip4, i);
+		addr_key = g_strdup_printf ("IPADDR%d", n);
+		prefix_key = g_strdup_printf ("PREFIX%d", n);
+		netmask_key = g_strdup_printf ("NETMASK%d", n);
+		gw_key = g_strdup_printf ("GATEWAY%d", n);
 
+		addr = nm_setting_ip4_config_get_address (s_ip4, i);
+
+		memset (buf, 0, sizeof (buf));
+		ip = nm_ip4_address_get_address (addr);
+		inet_ntop (AF_INET, (const void *) &ip, &buf[0], sizeof (buf));
+		svSetValue (ifcfg, addr_key, &buf[0], FALSE);
+
+		tmp = g_strdup_printf ("%u", nm_ip4_address_get_prefix (addr));
+		svSetValue (ifcfg, prefix_key, tmp, FALSE);
+		g_free (tmp);
+
+		svSetValue (ifcfg, netmask_key, NULL, FALSE);
+
+		if (nm_ip4_address_get_gateway (addr)) {
 			memset (buf, 0, sizeof (buf));
-			ip = nm_ip4_address_get_address (addr);
+			ip = nm_ip4_address_get_gateway (addr);
 			inet_ntop (AF_INET, (const void *) &ip, &buf[0], sizeof (buf));
-			svSetValue (ifcfg, addr_key, &buf[0], FALSE);
+			svSetValue (ifcfg, gw_key, &buf[0], FALSE);
+		} else
+			svSetValue (ifcfg, gw_key, NULL, FALSE);
 
-			tmp = g_strdup_printf ("%u", nm_ip4_address_get_prefix (addr));
-			svSetValue (ifcfg, prefix_key, tmp, FALSE);
-			g_free (tmp);
+		g_free (addr_key);
+		g_free (prefix_key);
+		g_free (netmask_key);
+		g_free (gw_key);
+		n++;
+	}
 
-			if (nm_ip4_address_get_gateway (addr)) {
-				memset (buf, 0, sizeof (buf));
-				ip = nm_ip4_address_get_gateway (addr);
-				inet_ntop (AF_INET, (const void *) &ip, &buf[0], sizeof (buf));
-				svSetValue (ifcfg, gw_key, &buf[0], FALSE);
-			} else
-				svSetValue (ifcfg, gw_key, NULL, FALSE);
-		}
+	/* Clear remaining IPADDR<n..255>, etc */
+	for (; n < 256; n++) {
+		addr_key = g_strdup_printf ("IPADDR%d", n);
+		prefix_key = g_strdup_printf ("PREFIX%d", n);
+		netmask_key = g_strdup_printf ("NETMASK%d", n);
+		gw_key = g_strdup_printf ("GATEWAY%d", n);
+
+		svSetValue (ifcfg, addr_key, NULL, FALSE);
+		svSetValue (ifcfg, prefix_key, NULL, FALSE);
+		svSetValue (ifcfg, netmask_key, NULL, FALSE);
+		svSetValue (ifcfg, gw_key, NULL, FALSE);
 
 		g_free (addr_key);
 		g_free (prefix_key);
@@ -2118,6 +2139,102 @@ out:
 		g_object_unref (s_ip4);
 
 	return success;
+}
+
+static void
+write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
+{
+	NMSettingIP4Config *s_ip4;
+	char *base_ifcfg_dir, *base_ifcfg_name, *base_name;
+	int i, num, base_ifcfg_path_len, base_ifcfg_name_len, base_name_len;
+	GDir *dir;
+
+	base_ifcfg_path_len = strlen (base_ifcfg_path);
+	base_ifcfg_dir = g_path_get_dirname (base_ifcfg_path);
+	base_ifcfg_name = g_path_get_basename (base_ifcfg_path);
+	base_ifcfg_name_len = strlen (base_ifcfg_name);
+	base_name = base_ifcfg_name + strlen (IFCFG_TAG);
+	base_name_len = strlen (base_name);
+
+	/* Remove all existing aliases for this file first */
+	dir = g_dir_open (base_ifcfg_dir, 0, NULL);
+	if (dir) {
+		const char *item;
+
+		while ((item = g_dir_read_name (dir))) {
+			char *full_path;
+
+			if (   strncmp (item, base_ifcfg_name, base_ifcfg_name_len) != 0
+			    || item[base_ifcfg_name_len] != ':')
+				continue;
+
+			full_path = g_build_filename (base_ifcfg_dir, item, NULL);
+			unlink (full_path);
+			g_free (full_path);
+		}
+
+		g_dir_close (dir);
+	}
+
+	if (utils_ignore_ip_config (connection))
+		return;
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (!s_ip4)
+		return;
+
+	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
+	for (i = 0; i < num; i++) {
+		const char *label, *p;
+		char buf[INET_ADDRSTRLEN], *path, *tmp;
+		NMIP4Address *addr;
+		guint32 ip;
+		shvarFile *ifcfg;
+
+		label = NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i));
+		if (!label)
+			continue;
+		if (   strncmp (label, base_name, base_name_len) != 0
+		    || label[base_name_len] != ':')
+			continue;
+
+		for (p = label; *p; p++) {
+			if (!g_ascii_isalnum (*p) && *p != '_' && *p != ':')
+				break;
+		}
+		if (*p)
+			continue;
+
+		path = g_strdup_printf ("%s%s", base_ifcfg_path, label + base_name_len);
+		ifcfg = svCreateFile (path);
+		g_free (path);
+
+		svSetValue (ifcfg, "DEVICE", label, FALSE);
+
+		addr = nm_setting_ip4_config_get_address (s_ip4, i);
+
+		memset (buf, 0, sizeof (buf));
+		ip = nm_ip4_address_get_address (addr);
+		inet_ntop (AF_INET, (const void *) &ip, &buf[0], sizeof (buf));
+		svSetValue (ifcfg, "IPADDR", &buf[0], FALSE);
+
+		tmp = g_strdup_printf ("%u", nm_ip4_address_get_prefix (addr));
+		svSetValue (ifcfg, "PREFIX", tmp, FALSE);
+		g_free (tmp);
+
+		if (nm_ip4_address_get_gateway (addr)) {
+			memset (buf, 0, sizeof (buf));
+			ip = nm_ip4_address_get_gateway (addr);
+			inet_ntop (AF_INET, (const void *) &ip, &buf[0], sizeof (buf));
+			svSetValue (ifcfg, "GATEWAY", &buf[0], FALSE);
+		}
+
+		svWriteFile (ifcfg, 0644);
+		svCloseFile (ifcfg);
+	}
+
+	g_free (base_ifcfg_name);
+	g_free (base_ifcfg_dir);
 }
 
 static gboolean
@@ -2517,6 +2634,7 @@ write_connection (NMConnection *connection,
 
 		if (!write_ip4_setting (connection, ifcfg, error))
 			goto out;
+		write_ip4_aliases (connection, ifcfg_name);
 
 		if (!write_ip6_setting (connection, ifcfg, error))
 			goto out;

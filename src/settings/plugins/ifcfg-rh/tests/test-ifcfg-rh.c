@@ -46,6 +46,7 @@
 #include <nm-setting-serial.h>
 #include <nm-setting-vlan.h>
 #include <nm-setting-dcb.h>
+#include <nm-util-private.h>
 
 #include "nm-test-helpers.h"
 #include "NetworkManagerUtils.h"
@@ -2827,6 +2828,271 @@ test_read_write_802_1X_subj_matches (void)
 
 	g_object_unref (connection);
 	g_object_unref (reread);
+}
+
+#define TEST_IFCFG_ALIASES_GOOD TEST_IFCFG_DIR"/network-scripts/ifcfg-aliasem0"
+
+static void
+test_read_wired_aliases_good (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System aliasem0";
+	int expected_num_addresses = 4, expected_prefix = 24;
+	const char *expected_address[4] = { "192.168.1.5", "192.168.1.6", "192.168.1.9", "192.168.1.99" };
+	const char *expected_label[4] = { NULL, "aliasem0:1", "aliasem0:2", "aliasem0:99" };
+	const char *expected_gateway[4] = { "192.168.1.1", "192.168.1.1", "192.168.1.1", "192.168.1.1" };
+	int i, j;
+
+	connection = connection_from_file (TEST_IFCFG_ALIASES_GOOD,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "aliases-good-read", "failed to read %s: %s", TEST_IFCFG_ALIASES_GOOD, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "aliases-good-verify", "failed to verify %s: %s", TEST_IFCFG_ALIASES_GOOD, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = nm_connection_get_setting_connection (connection);
+	ASSERT (s_con != NULL,
+	        "aliases-good-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_ALIASES_GOOD,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "aliases-good-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_ALIASES_GOOD,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "aliases-good-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_ALIASES_GOOD,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	ASSERT (s_ip4 != NULL,
+	        "aliases-good-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_ALIASES_GOOD,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
+	        "aliases-good-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_ALIASES_GOOD,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == expected_num_addresses,
+	        "aliases-good-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_ALIASES_GOOD,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+
+	/* Addresses */
+	for (i = 0; i < expected_num_addresses; i++) {
+		NMIP4Address *ip4_addr;
+		char buf[INET_ADDRSTRLEN];
+		struct in_addr addr;
+
+		ip4_addr = nm_setting_ip4_config_get_address (s_ip4, i);
+		ASSERT (ip4_addr,
+		        "aliases-good-verify-ip4", "failed to verify %s: missing IP4 address #%d",
+		        TEST_IFCFG_ALIASES_GOOD,
+		        i);
+
+		addr.s_addr = nm_ip4_address_get_address (ip4_addr);
+		ASSERT (inet_ntop (AF_INET, &addr, buf, sizeof (buf)) > 0,
+		        "aliases-good-verify-ip4", "failed to verify %s: couldn't convert IP address #%d",
+		        TEST_IFCFG_ALIASES_GOOD,
+		        i);
+
+		for (j = 0; j < expected_num_addresses; j++) {
+			if (!g_strcmp0 (buf, expected_address[j]))
+				break;
+		}
+
+		ASSERT (j < expected_num_addresses,
+		        "aliases-good-verify-ip4", "failed to verify %s: unexpected IP4 address #%d",
+		        TEST_IFCFG_ALIASES_GOOD,
+		        i);
+
+		ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix,
+		        "aliases-good-verify-ip4", "failed to verify %s: unexpected IP4 address prefix #%d",
+		        TEST_IFCFG_ALIASES_GOOD,
+		        i);
+
+		if (expected_gateway[j]) {
+			ASSERT (inet_pton (AF_INET, expected_gateway[j], &addr) > 0,
+			        "aliases-good-verify-ip4", "failed to verify %s: couldn't convert IP address gateway #%d",
+			        TEST_IFCFG_ALIASES_GOOD,
+			        i);
+		} else
+			addr.s_addr = 0;
+		ASSERT (nm_ip4_address_get_gateway (ip4_addr) == addr.s_addr,
+		        "aliases-good-verify-ip4", "failed to verify %s: unexpected IP4 address gateway #%d",
+		        TEST_IFCFG_ALIASES_GOOD,
+		        i);
+
+		ASSERT (g_strcmp0 (NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i)), expected_label[j]) == 0,
+		        "aliases-good-verify-ip4", "failed to verify %s: unexpected IP4 address label #%d",
+		        TEST_IFCFG_ALIASES_GOOD,
+		        i);
+
+		expected_address[j] = NULL;
+		expected_gateway[j] = NULL;
+		expected_label[j] = NULL;
+	}
+
+	for (i = 0; i < expected_num_addresses; i++) {
+		ASSERT (expected_address[i] == NULL,
+		        "aliases-good-verify-ip4", "failed to verify %s: did not find IP4 address %s",
+		        TEST_IFCFG_ALIASES_GOOD,
+		        expected_address[i]);
+	}
+
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_ALIASES_BAD  TEST_IFCFG_DIR"/network-scripts/ifcfg-aliasem1"
+
+static void
+test_read_wired_aliases_bad (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System aliasem1";
+	int expected_num_addresses = 1, expected_prefix = 24;
+	const char *expected_address = "192.168.1.5";
+	const char *expected_label = NULL;
+	const char *expected_gateway = "192.168.1.1";
+	NMIP4Address *ip4_addr;
+	struct in_addr addr;
+
+	connection = connection_from_file (TEST_IFCFG_ALIASES_BAD,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &routefile,
+	                                   &route6file,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "aliases-bad-read", "failed to read %s: %s", TEST_IFCFG_ALIASES_BAD, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "aliases-bad-verify", "failed to verify %s: %s", TEST_IFCFG_ALIASES_BAD, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = nm_connection_get_setting_connection (connection);
+	ASSERT (s_con != NULL,
+	        "aliases-bad-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_ALIASES_BAD,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "aliases-bad-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_ALIASES_BAD,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "aliases-bad-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_ALIASES_BAD,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	ASSERT (s_ip4 != NULL,
+	        "aliases-bad-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_ALIASES_BAD,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
+	        "aliases-bad-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_ALIASES_BAD,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == expected_num_addresses,
+	        "aliases-bad-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_ALIASES_BAD,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+
+	/* Addresses */
+	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	ASSERT (ip4_addr,
+			"aliases-bad-verify-ip4", "failed to verify %s: missing IP4 address",
+			TEST_IFCFG_ALIASES_BAD);
+
+	ASSERT (inet_pton (AF_INET, expected_address, &addr) > 0,
+			"aliases-bad-verify-ip4", "failed to verify %s: couldn't convert IP address",
+			TEST_IFCFG_ALIASES_BAD);
+	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr.s_addr,
+			"aliases-bad-verify-ip4", "failed to verify %s: unexpected IP4 address",
+			TEST_IFCFG_ALIASES_BAD);
+
+	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == expected_prefix,
+			"aliases-bad-verify-ip4", "failed to verify %s: unexpected IP4 address prefix",
+			TEST_IFCFG_ALIASES_BAD);
+
+	ASSERT (inet_pton (AF_INET, expected_gateway, &addr) > 0,
+			"aliases-bad-verify-ip4", "failed to verify %s: couldn't convert IP address gateway",
+			TEST_IFCFG_ALIASES_BAD);
+	ASSERT (nm_ip4_address_get_gateway (ip4_addr) == addr.s_addr,
+			"aliases-bad-verify-ip4", "failed to verify %s: unexpected IP4 address gateway",
+			TEST_IFCFG_ALIASES_BAD);
+
+	ASSERT (g_strcmp0 (NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0)), expected_label) == 0,
+			"aliases-bad-verify-ip4", "failed to verify %s: unexpected IP4 address label",
+			TEST_IFCFG_ALIASES_BAD);
+
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
 }
 
 #define TEST_IFCFG_WIFI_OPEN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open"
@@ -7792,6 +8058,208 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 
 	g_free (testfile);
 	g_free (unmanaged);
+	g_free (keyfile);
+	g_free (routefile);
+	g_free (route6file);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+#define TEST_SCRATCH_ALIAS_BASE TEST_SCRATCH_DIR "/network-scripts/ifcfg-alias0"
+
+static void
+test_write_wired_aliases (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	int num_addresses = 4;
+	guint32 ip[] = { 0x01010101, 0x01010102, 0x01010103, 0x01010104 };
+	const char *label[] = { NULL, "alias0:2", NULL, "alias0:3" };
+	const guint32 gw = htonl (0x01010101);
+	const guint32 prefix = 24;
+	NMIP4Address *addr;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	char *routefile = NULL;
+	char *route6file = NULL;
+	gboolean ignore_error = FALSE;
+	shvarFile *ifcfg;
+	int i, j;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wired-aliases-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wired-aliases-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "alias0",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	ASSERT (s_wired != NULL,
+	        "wired-aliases-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRED_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+	        "wired-aliases-write", "failed to allocate new %s setting",
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+
+	for (i = 0; i < num_addresses; i++) {
+		addr = nm_ip4_address_new ();
+		nm_ip4_address_set_address (addr, ip[i]);
+		nm_ip4_address_set_prefix (addr, prefix);
+		nm_ip4_address_set_gateway (addr, gw);
+		NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, label[i]));
+		nm_ip4_address_unref (addr);
+	}
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wired-aliases-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Create some pre-existing alias files, to make sure they get overwritten / deleted. */
+	ifcfg = svCreateFile (TEST_SCRATCH_ALIAS_BASE ":2");
+	svSetValue (ifcfg, "DEVICE", "alias0:2", FALSE);
+	svSetValue (ifcfg, "IPADDR", "192.168.1.2", FALSE);
+	svWriteFile (ifcfg, 0644);
+	svCloseFile (ifcfg);
+	ASSERT (g_file_test (TEST_SCRATCH_ALIAS_BASE ":2", G_FILE_TEST_EXISTS),
+	        "wired-aliases-write", "failed to write extra alias file");
+
+	ifcfg = svCreateFile (TEST_SCRATCH_ALIAS_BASE ":5");
+	svSetValue (ifcfg, "DEVICE", "alias0:5", FALSE);
+	svSetValue (ifcfg, "IPADDR", "192.168.1.5", FALSE);
+	svWriteFile (ifcfg, 0644);
+	svCloseFile (ifcfg);
+	ASSERT (g_file_test (TEST_SCRATCH_ALIAS_BASE ":5", G_FILE_TEST_EXISTS),
+	        "wired-aliases-write", "failed to write extra alias file");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wired-aliases-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wired-aliases-write", "didn't get ifcfg file path back after writing connection");
+
+	/* Re-check the alias files */
+	ASSERT (g_file_test (TEST_SCRATCH_ALIAS_BASE ":2", G_FILE_TEST_EXISTS),
+	        "wired-aliases-write", "saving failed to write ifcfg-alias0:2");
+	ASSERT (g_file_test (TEST_SCRATCH_ALIAS_BASE ":3", G_FILE_TEST_EXISTS),
+	        "wired-aliases-write", "saving failed to write ifcfg-alias0:3");
+	ASSERT (!g_file_test (TEST_SCRATCH_ALIAS_BASE ":5", G_FILE_TEST_EXISTS),
+	        "wired-aliases-write", "saving failed to delete unused ifcfg-alias0:5");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               NULL,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &routefile,
+	                               &route6file,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+	unlink (TEST_SCRATCH_ALIAS_BASE ":2");
+	unlink (TEST_SCRATCH_ALIAS_BASE ":3");
+
+	ASSERT (reread != NULL,
+	        "wired-aliases-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wired-aliases-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	/* nm_connection_compare() is not guaranteed to succeed, because the
+	 * aliases get read back in essentially random order. So just
+	 * verify the aliases manually.
+	 */
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == num_addresses,
+	        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        testfile,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+
+	/* Addresses */
+	for (i = 0; i < num_addresses; i++) {
+		guint32 addrbytes;
+
+		addr = nm_setting_ip4_config_get_address (s_ip4, i);
+		ASSERT (addr,
+		        "wired-aliases-write-verify-ip4", "failed to verify %s: missing IP4 address #%d",
+		        testfile,
+		        i);
+
+		addrbytes = nm_ip4_address_get_address (addr);
+		for (j = 0; j < num_addresses; j++) {
+			if (addrbytes == ip[j])
+				break;
+		}
+
+		ASSERT (j < num_addresses,
+		        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected IP4 address #%d",
+		        testfile,
+		        i);
+
+		ASSERT (nm_ip4_address_get_prefix (addr) == prefix,
+		        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected IP4 address prefix #%d",
+		        testfile,
+		        i);
+
+		ASSERT (nm_ip4_address_get_gateway (addr) == gw,
+		        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected IP4 address gateway #%d",
+		        testfile,
+		        i);
+
+		ASSERT (g_strcmp0 (NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i)), label[j]) == 0,
+		        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected IP4 address label #%d",
+		        testfile,
+		        i);
+
+		ip[j] = 0;
+	}
+
+	for (i = 0; i < num_addresses; i++) {
+		ASSERT (ip[i] == 0,
+		        "wired-aliases-write-verify-ip4", "failed to verify %s: did not find IP4 address 0x%08x",
+		        testfile,
+		        ip[i]);
+	}
+
+	g_free (testfile);
 	g_free (keyfile);
 	g_free (routefile);
 	g_free (route6file);
@@ -13869,6 +14337,8 @@ int main (int argc, char **argv)
 	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_WIRED_8021X_TLS_ALWAYS,
 	                                        NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
 	g_test_add_func (TPATH "802-1x/subj-mathes", test_read_write_802_1X_subj_matches);
+	test_read_wired_aliases_good ();
+	test_read_wired_aliases_bad ();
 	test_read_wifi_open ();
 	test_read_wifi_open_auto ();
 	test_read_wifi_open_ssid_hex ();
@@ -13918,6 +14388,7 @@ int main (int argc, char **argv)
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_NOT_SAVED);
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_BLOB, NM_SETTING_SECRET_FLAG_NONE);
+	test_write_wired_aliases ();
 	test_write_wifi_open ();
 	test_write_wifi_open_hex_ssid ();
 	test_write_wifi_wep ();
