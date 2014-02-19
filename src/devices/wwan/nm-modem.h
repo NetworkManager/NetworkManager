@@ -42,7 +42,8 @@ G_BEGIN_DECLS
 #define NM_MODEM_DRIVER       "driver"
 #define NM_MODEM_CONTROL_PORT "control-port"
 #define NM_MODEM_DATA_PORT    "data-port"
-#define NM_MODEM_IP_METHOD    "ip-method"
+#define NM_MODEM_IP4_METHOD   "ip4-method"
+#define NM_MODEM_IP6_METHOD   "ip6-method"
 #define NM_MODEM_IP_TIMEOUT   "ip-timeout"
 #define NM_MODEM_STATE        "state"
 #define NM_MODEM_DEVICE_ID    "device-id"
@@ -59,9 +60,12 @@ G_BEGIN_DECLS
 #define NM_MODEM_REMOVED           "removed"
 #define NM_MODEM_STATE_CHANGED     "state-changed"
 
-#define MM_MODEM_IP_METHOD_PPP    0
-#define MM_MODEM_IP_METHOD_STATIC 1
-#define MM_MODEM_IP_METHOD_DHCP   2
+typedef enum {
+	NM_MODEM_IP_METHOD_UNKNOWN = 0,
+	NM_MODEM_IP_METHOD_PPP,
+	NM_MODEM_IP_METHOD_STATIC,
+	NM_MODEM_IP_METHOD_AUTO,  /* DHCP and/or SLAAC */
+} NMModemIPMethod;
 
 /**
  * NMModemIPType:

@@ -163,7 +163,7 @@ connect_ready (MMModemSimple *simple_iface,
                NMModemBroadband *self)
 {
 	GError *error = NULL;
-	guint ip_method;
+	NMModemIPMethod ip_method;
 
 	g_clear_object (&self->priv->connect_properties);
 
@@ -200,13 +200,13 @@ connect_ready (MMModemSimple *simple_iface,
 
 	switch (mm_bearer_ip_config_get_method (self->priv->ipv4_config)) {
 	case MM_BEARER_IP_METHOD_PPP:
-		ip_method = MM_MODEM_IP_METHOD_PPP;
+		ip_method = NM_MODEM_IP_METHOD_PPP;
 		break;
 	case MM_BEARER_IP_METHOD_STATIC:
-		ip_method = MM_MODEM_IP_METHOD_STATIC;
+		ip_method = NM_MODEM_IP_METHOD_STATIC;
 		break;
 	case MM_BEARER_IP_METHOD_DHCP:
-		ip_method = MM_MODEM_IP_METHOD_DHCP;
+		ip_method = NM_MODEM_IP_METHOD_AUTO;
 		break;
 	default:
 		error = g_error_new (NM_MODEM_ERROR,
@@ -224,7 +224,7 @@ connect_ready (MMModemSimple *simple_iface,
 	/* IPv4 for now only */
 	g_object_set (self,
 	              NM_MODEM_DATA_PORT,  mm_bearer_get_interface (self->priv->bearer),
-	              NM_MODEM_IP_METHOD,  ip_method,
+	              NM_MODEM_IP4_METHOD, ip_method,
 	              NM_MODEM_IP_TIMEOUT, mm_bearer_get_ip_timeout (self->priv->bearer),
 	              NULL);
 

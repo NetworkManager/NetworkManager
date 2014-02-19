@@ -42,7 +42,8 @@ enum {
 	PROP_PATH,
 	PROP_UID,
 	PROP_DRIVER,
-	PROP_IP_METHOD,
+	PROP_IP4_METHOD,
+	PROP_IP6_METHOD,
 	PROP_IP_TIMEOUT,
 	PROP_STATE,
 	PROP_DEVICE_ID,
@@ -59,7 +60,8 @@ typedef struct {
 	char *control_port;
 	char *data_port;
 	char *ppp_iface;
-	guint32 ip_method;
+	NMModemIPMethod ip4_method;
+	NMModemIPMethod ip6_method;
 	NMModemState state;
 	NMModemState prev_state;  /* revert to this state if enable/disable fails */
 	char *device_id;
@@ -401,18 +403,18 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 	g_assert (req);
 
 	priv = NM_MODEM_GET_PRIVATE (self);
-	switch (priv->ip_method) {
-	case MM_MODEM_IP_METHOD_PPP:
+	switch (priv->ip4_method) {
+	case NM_MODEM_IP_METHOD_PPP:
 		ret = ppp_stage3_ip4_config_start (self, req, reason);
 		break;
-	case MM_MODEM_IP_METHOD_STATIC:
+	case NM_MODEM_IP_METHOD_STATIC:
 		ret = NM_MODEM_GET_CLASS (self)->static_stage3_ip4_config_start (self, req, reason);
 		break;
-	case MM_MODEM_IP_METHOD_DHCP:
+	case NM_MODEM_IP_METHOD_AUTO:
 		ret = device_class->act_stage3_ip4_config_start (device, NULL, reason);
 		break;
 	default:
-		nm_log_err (LOGD_MB, "unknown IP method %d", priv->ip_method);
+		nm_log_err (LOGD_MB, "unknown IP method %d", priv->ip4_method);
 		ret = NM_ACT_STAGE_RETURN_FAILURE;
 		break;
 	}
@@ -431,8 +433,8 @@ nm_modem_ip4_pre_commit (NMModem *modem,
 	 * not point-to-point) and IP config has a /32 prefix, then we assume that
 	 * ARP will be pointless and we turn it off.
 	 */
-	if (   priv->ip_method == MM_MODEM_IP_METHOD_STATIC
-	    || priv->ip_method == MM_MODEM_IP_METHOD_DHCP) {
+	if (   priv->ip4_method == NM_MODEM_IP_METHOD_STATIC
+	    || priv->ip4_method == NM_MODEM_IP_METHOD_AUTO) {
 		const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, 0);
 
 		g_assert (address);
@@ -641,22 +643,19 @@ deactivate (NMModem *self, NMDevice *device)
 		priv->ppp_manager = NULL;
 	}
 
-	switch (priv->ip_method) {
-	case MM_MODEM_IP_METHOD_PPP:
-		break;
-	case MM_MODEM_IP_METHOD_STATIC:
-	case MM_MODEM_IP_METHOD_DHCP:
+	if (priv->ip4_method == NM_MODEM_IP_METHOD_STATIC ||
+	    priv->ip4_method == NM_MODEM_IP_METHOD_AUTO ||
+	    priv->ip6_method == NM_MODEM_IP_METHOD_STATIC ||
+	    priv->ip6_method == NM_MODEM_IP_METHOD_AUTO) {
 		ifindex = nm_device_get_ip_ifindex (device);
 		if (ifindex > 0) {
 			nm_platform_route_flush (ifindex);
 			nm_platform_address_flush (ifindex);
 			nm_platform_link_set_down (ifindex);
 		}
-		break;
-	default:
-		nm_log_err (LOGD_MB, "unknown IP method %d", priv->ip_method);
-		break;
 	}
+	priv->ip4_method = NM_MODEM_IP_METHOD_UNKNOWN;
+	priv->ip6_method = NM_MODEM_IP_METHOD_UNKNOWN;
 
 	g_free (priv->ppp_iface);
 	priv->ppp_iface = NULL;
@@ -854,8 +853,11 @@ get_property (GObject *object, guint prop_id,
 	case PROP_UID:
 		g_value_set_string (value, priv->uid);
 		break;
-	case PROP_IP_METHOD:
-		g_value_set_uint (value, priv->ip_method);
+	case PROP_IP4_METHOD:
+		g_value_set_uint (value, priv->ip4_method);
+		break;
+	case PROP_IP6_METHOD:
+		g_value_set_uint (value, priv->ip6_method);
 		break;
 	case PROP_IP_TIMEOUT:
 		g_value_set_uint (value, priv->mm_ip_timeout);
@@ -903,8 +905,11 @@ set_property (GObject *object, guint prop_id,
 		/* Construct only */
 		priv->uid = g_value_dup_string (value);
 		break;
-	case PROP_IP_METHOD:
-		priv->ip_method = g_value_get_uint (value);
+	case PROP_IP4_METHOD:
+		priv->ip4_method = g_value_get_uint (value);
+		break;
+	case PROP_IP6_METHOD:
+		priv->ip6_method = g_value_get_uint (value);
 		break;
 	case PROP_IP_TIMEOUT:
 		priv->mm_ip_timeout = g_value_get_uint (value);
@@ -1013,12 +1018,21 @@ nm_modem_class_init (NMModemClass *klass)
 		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
-		(object_class, PROP_IP_METHOD,
-		 g_param_spec_uint (NM_MODEM_IP_METHOD, "", "",
-		                    MM_MODEM_IP_METHOD_PPP,
-		                    MM_MODEM_IP_METHOD_DHCP,
-		                    MM_MODEM_IP_METHOD_PPP,
-		                    G_PARAM_READWRITE |
+		(object_class, PROP_IP4_METHOD,
+		 g_param_spec_uint (NM_MODEM_IP4_METHOD, "", "",
+		                    NM_MODEM_IP_METHOD_UNKNOWN,
+		                    NM_MODEM_IP_METHOD_AUTO,
+		                    NM_MODEM_IP_METHOD_UNKNOWN,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_IP6_METHOD,
+		 g_param_spec_uint (NM_MODEM_IP6_METHOD, "", "",
+		                    NM_MODEM_IP_METHOD_UNKNOWN,
+		                    NM_MODEM_IP_METHOD_AUTO,
+		                    NM_MODEM_IP_METHOD_UNKNOWN,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
