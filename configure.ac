@@ -198,7 +198,7 @@ else
 fi
 
 dnl
-dnl Default to using WEXT but allow it to be disabled
+dnl Check for newer VLAN flags
 dnl
 AC_MSG_CHECKING([Linux kernel VLAN_FLAG_LOOSE_BINDING enum value])
 AC_COMPILE_IFELSE(
