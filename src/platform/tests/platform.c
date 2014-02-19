@@ -570,7 +570,7 @@ do_ip4_address_add (char **argv)
 		guint32 lifetime = strtol (*argv++, NULL, 10);
 		guint32 preferred = strtol (*argv++, NULL, 10);
 
-		gboolean value = nm_platform_ip4_address_add (ifindex, address, 0, plen, lifetime, preferred);
+		gboolean value = nm_platform_ip4_address_add (ifindex, address, 0, plen, lifetime, preferred, NULL);
 		return value;
 	} else
 		return FALSE;
