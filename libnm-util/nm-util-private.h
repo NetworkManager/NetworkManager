@@ -24,9 +24,16 @@
 
 #include <glib.h>
 
+#include "nm-setting-private.h"
+
 G_BEGIN_DECLS
 
 typedef struct NMUtilPrivateData {
+	const char * (*nm_setting_ip4_config_get_address_label)      (NMSettingIP4Config *setting,
+	                                                              guint32             i);
+	gboolean     (*nm_setting_ip4_config_add_address_with_label) (NMSettingIP4Config *setting,
+	                                                              NMIP4Address       *address,
+	                                                              const char         *label);
 } NMUtilPrivateData;
 
 const NMUtilPrivateData *nm_util_get_private (void);

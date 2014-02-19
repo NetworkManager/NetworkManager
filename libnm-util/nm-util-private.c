@@ -22,6 +22,8 @@
 #include "nm-util-private.h"
 
 static const NMUtilPrivateData data = {
+	.nm_setting_ip4_config_get_address_label = nm_setting_ip4_config_get_address_label,
+	.nm_setting_ip4_config_add_address_with_label = nm_setting_ip4_config_add_address_with_label,
 };
 
 /**
