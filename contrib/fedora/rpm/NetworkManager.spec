@@ -28,12 +28,17 @@
 %define systemd_dir %{_prefix}/lib/systemd/system
 %define udev_dir %{_prefix}/lib/udev
 
-%if ! 0%{?rhel}
+%if ! 0%{?rhel} && (! 0%{?fedora} || 0%{?fedora} < 20)
 %ifnarch s390 s390x
 # No wimax or bluetooth on s390
 %global with_wimax 1
 %endif
 %endif
+
+%if 0%{?rhel} || (0%{?fedora} > 19)
+%global with_teamctl 1
+%endif
+
 
 %global _hardened_build 1
 
@@ -54,7 +59,7 @@ Source2: 00-server.conf
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-%if 0%{?fedora}
+%if 0%{?fedora} && 0%{?fedora} < 20
 Requires(post): chkconfig
 Requires(preun): chkconfig
 %endif
@@ -123,7 +128,7 @@ BuildRequires: ModemManager-glib-devel >= 1.0
 %if 0%{?with_nmtui}
 BuildRequires: newt-devel
 %endif
-%if 0%{?rhel}
+%if 0%{?with_teamctl}
 BuildRequires: teamd-devel
 %endif
 
@@ -235,7 +240,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	--with-crypto=nss \
 	--enable-more-warnings=error \
 	--enable-ppp=yes \
-%if 0%{?rhel}
+%if 0%{?rhel} || (0%{?fedora} > 19)
 	--with-modem-manager-1=yes \
 %else
 	--with-modem-manager-1=no \
@@ -253,6 +258,11 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	--with-wext=yes \
 %else
 	--with-wext=no \
+%endif
+%if 0%{?with_teamctl}
+	--enable-teamctl=yes \
+%else
+	--enable-teamctl=no \
 %endif
 	--enable-polkit=yes \
 	--enable-modify-system=yes \
@@ -331,6 +341,7 @@ fi
 
 %postun
 %systemd_postun
+
 
 %post	glib -p /sbin/ldconfig
 %postun	glib -p /sbin/ldconfig
