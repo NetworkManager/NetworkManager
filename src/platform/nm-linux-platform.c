@@ -2244,6 +2244,10 @@ macvlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformMacvlanProp
 
 	err = nm_rtnl_link_parse_info_data (priv->nlh, ifindex,
 	                                    macvlan_info_data_parser, props);
+	if (err != 0) {
+		warning ("(%s) could not read properties: %s",
+		         rtnl_link_get_name (rtnllink), nl_geterror (err));
+	}
 	return (err == 0);
 }
 
@@ -2294,6 +2298,10 @@ gre_get_properties (NMPlatform *platform, int ifindex, NMPlatformGreProperties *
 
 	err = nm_rtnl_link_parse_info_data (priv->nlh, ifindex,
 	                                    gre_info_data_parser, props);
+	if (err != 0) {
+		warning ("(%s) could not read properties: %s",
+		         link_get_name (platform, ifindex), nl_geterror (err));
+	}
 	return (err == 0);
 }
 
