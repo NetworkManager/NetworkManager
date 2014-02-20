@@ -2281,7 +2281,7 @@ gre_info_data_parser (struct nlattr *info_data, gpointer parser_data)
 	props->remote = nla_get_u32 (tb[IFLA_GRE_REMOTE]);
 	props->tos = nla_get_u8 (tb[IFLA_GRE_TOS]);
 	props->ttl = nla_get_u8 (tb[IFLA_GRE_TTL]);
-	props->path_mtu_discovery = nla_get_u8 (tb[IFLA_GRE_PMTUDISC]);
+	props->path_mtu_discovery = !!nla_get_u8 (tb[IFLA_GRE_PMTUDISC]);
 
 	return 0;
 }
