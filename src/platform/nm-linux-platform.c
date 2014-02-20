@@ -2186,7 +2186,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 
 static const struct nla_policy macvlan_info_policy[IFLA_MACVLAN_MAX + 1] = {
 	[IFLA_MACVLAN_MODE]  = { .type = NLA_U32 },
-#ifdef IFLA_MACVLAN_FLAGS
+#ifdef MACVLAN_FLAG_NOPROMISC
 	[IFLA_MACVLAN_FLAGS] = { .type = NLA_U16 },
 #endif
 };
