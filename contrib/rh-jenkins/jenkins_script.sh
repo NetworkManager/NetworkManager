@@ -5,12 +5,18 @@ get_timestamp() {
     date --utc '+%Y%m%d-%H%M%S'
 }
 log_timestamp() {
-    echo "STARTING_NEXT_PHASE: `get_timestamp`"
+    printf "%s%s %s -- %s\n" ">>" ">>" "$(get_timestamp)" "$*"
 }
 DATE="`get_timestamp`"
 REPO=ssh://Jenkins-nm-user/var/lib/git/NetworkManager.git
 
+MAKE_JOBS="-j $((3 * $(grep -c ^processor /proc/cpuinfo || echo 1)))"
+
 git_notes() {
+    if [[ "$GIT_NOTES_DISABLED" == true ]]; then
+        return 0
+    fi
+
     git fetch "$REPO" +refs/notes/test:refs/notes/test || git update-ref -d refs/notes/test
 
     # git-notes append adds a newline so merge them by hand...
@@ -47,43 +53,58 @@ temporary_workaround_01() {
     fi
 }
 
-log_timestamp
-git reset --hard HEAD
-git clean -fdx
-git submodule foreach git clean -fdx
-git submodule update
+clean_all() {
+    git reset --hard HEAD
+    git clean -fdx
+    git submodule foreach git reset --hard HEAD
+    git submodule foreach git clean -fdx
+    git submodule update
 
-temporary_workaround_01
+    temporary_workaround_01
+}
 
 
-#export CFLAGS="-Wall -g -O0 -fstack-protector-strong -Wno-deprecated-declarations"
-# yum install ppp-devel polkit-devel vala-compat-tools gcc-c++
+if [[ "$OUT_OF_TREE_BUILD" == true ]]; then
+    log_timestamp "Starting out of tree build"
+    clean_all
 
+    ./autogen.sh
+    make distclean
+
+    mkdir _build
+    pushd _build
+        ../configure --enable-maintainer-mode --prefix=$PWD/.INSTALL/ --with-dhclient=yes --with-dhcpcd=yes --with-crypto=nss --enable-more-warnings=error --enable-ppp=yes --enable-polkit=yes --with-session-tracking=systemd --with-suspend-resume=systemd --with-tests=yes --enable-tests=yes --with-valgrind=yes --enable-ifcfg-rh=yes --enable-ifupdown=yes --enable-ifnet=yes --enable-gtk-doc --enable-qt=yes --with-system-libndp=no --enable-static=libndp --enable-bluez4=no --enable-wimax=no --enable-vala=no --enable-modify-system=no
+        make $MAKE_JOBS
+    popd
+
+    log_timestamp "Finished out of tree build"
+fi
+
+log_timestamp "start build"
+clean_all
 
 log_timestamp
 ./autogen.sh --enable-maintainer-mode --prefix=$PWD/.INSTALL/ --with-dhclient=yes --with-dhcpcd=yes --with-crypto=nss --enable-more-warnings=error --enable-ppp=yes --enable-polkit=yes --with-session-tracking=systemd --with-suspend-resume=systemd --with-tests=yes --enable-tests=yes --with-valgrind=yes --enable-ifcfg-rh=yes --enable-ifupdown=yes --enable-ifnet=yes --enable-gtk-doc --enable-qt=yes --with-system-libndp=no --enable-static=libndp --enable-bluez4=no --enable-wimax=no --enable-vala=no --enable-modify-system=no
 
-
 log_timestamp
-make
-
+make $MAKE_JOBS
 
 log_timestamp
 make check
-
 
 log_timestamp
 make distcheck
 
 
-log_timestamp
 if [[ "$RPM" == true ]]; then
+    log_timestamp "start making RPM"
     wget http://file.brq.redhat.com/~thaller/nmtui-0.0.1.tar.xz
     git checkout origin/automation -- :/contrib/
     ./contrib/rpm/build.sh
+    log_timestamp "finished making RPM"
 fi
 
 
-log_timestamp
+log_timestamp "finished with success"
 git_notes_ok
 

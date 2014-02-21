@@ -62,8 +62,14 @@ for i in ${!ARGV[@]}; do
             -C|--no-check-upstream)
                 NO_CHECK_UPSTREAM=yes
                 ;;
+            -o|--out-of-tree)
+                OUT_OF_TREE_BUILD=yes
+                ;;
+            -O|--no-out-of-tree)
+                OUT_OF_TREE_BUILD=no
+                ;;
             -h|--help|'-?')
-                echo "$0 [ -h | -r|--rpm|-R|--no-rpm | -n|--dry-run|--test|-N|-f|--no-test|--force | -c|--check-upstream|-C|--no-check-upstream ] [--] REFS"
+                echo "$0 [ -h | -r|--rpm|-R|--no-rpm | -n|--dry-run|--test|-N|-f|--no-test|--force | -c|--check-upstream|-C|--no-check-upstream | -o|--out-of-tree|-O|--no-out-of-tree ] [--] REFS"
                 exit 1
                 ;;
             --)
@@ -80,6 +86,14 @@ if eval_bool "$NO_CHECK_UPSTREAM" 0; then
     NO_CHECK_UPSTREAM=yes
 else
     NO_CHECK_UPSTREAM=no
+fi
+
+if eval_bool "$OUT_OF_TREE_BUILD" 0; then
+    OUT_OF_TREE_BUILD=yes
+    _OUT_OF_TREE_BUILD=true
+else
+    OUT_OF_TREE_BUILD=no
+    _OUT_OF_TREE_BUILD=false
 fi
 
 if eval_bool "$DRY_RUN" 1; then
@@ -105,6 +119,7 @@ echo "TOKEN                 : \"$_TOKEN\""
 echo "DRY_RUN               : $DRY_RUN"
 echo "RPM                   : $RPM"
 echo "NO_CHECK_UPSTREAM     : $NO_CHECK_UPSTREAM"
+echo "OUT_OF_TREE_BUILD     : $OUT_OF_TREE_BUILD"
 
 
 for _BRANCH in "${REFS[@]}"; do
@@ -134,7 +149,7 @@ for _BRANCH in "${REFS[@]}"; do
     if [[ -n "$CAUSE" ]]; then
         URL_CAUSE="&cause=`url_encode "$CAUSE"`"
     fi
-    _URL="http://10.34.131.51:8080/job/NetworkManager/buildWithParameters?token=`url_encode "$_TOKEN"`$URL_CAUSE&BRANCH=`url_encode "$_B"`&RPM=$_RPM"
+    _URL="http://10.34.131.51:8080/job/NetworkManager/buildWithParameters?token=`url_encode "$_TOKEN"`$URL_CAUSE&BRANCH=`url_encode "$_B"`&RPM=$_RPM&OUT_OF_TREE_BUILD=$_OUT_OF_TREE_BUILD"
     echo
     echo "BRANCH[$i0]  : \"$_BRANCH\" ($_B)"
     echo "CAUSE[$i0]   : \"$CAUSE\""
