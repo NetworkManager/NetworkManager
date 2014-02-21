@@ -440,6 +440,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	NMRDiscGateway gateway;
 	guint32 now = nm_utils_get_monotonic_timestamp_s ();
 	int offset;
+	int hop_limit;
 
 	if (rdisc->lladdr)
 		lladdr = g_bytes_get_data (rdisc->lladdr, &lladdrlen);
@@ -589,6 +590,12 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 			if (add_dns_domain (rdisc, &dns_domain))
 				changed |= NM_RDISC_CONFIG_DNS_DOMAINS;
 		}
+	}
+
+	hop_limit = ndp_msgra_curhoplimit (msgra);
+	if (rdisc->hop_limit != hop_limit) {
+		rdisc->hop_limit = hop_limit;
+		changed |= NM_RDISC_CONFIG_HOP_LIMIT;
 	}
 
 	check_timestamps (rdisc, now, changed);

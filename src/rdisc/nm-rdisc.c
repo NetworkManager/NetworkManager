@@ -153,6 +153,7 @@ nm_rdisc_init (NMRDisc *rdisc)
 	rdisc->dns_servers = g_array_new (FALSE, FALSE, sizeof (NMRDiscDNSServer));
 	rdisc->dns_domains = g_array_new (FALSE, FALSE, sizeof (NMRDiscDNSDomain));
 	rdisc->lladdr = NULL;
+	rdisc->hop_limit = 64;
 }
 
 static void

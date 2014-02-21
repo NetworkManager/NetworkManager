@@ -90,7 +90,8 @@ typedef enum {
 	NM_RDISC_CONFIG_ADDRESSES                           = 1 << 2,
 	NM_RDISC_CONFIG_ROUTES                              = 1 << 3,
 	NM_RDISC_CONFIG_DNS_SERVERS                         = 1 << 4,
-	NM_RDISC_CONFIG_DNS_DOMAINS                         = 1 << 5
+	NM_RDISC_CONFIG_DNS_DOMAINS                         = 1 << 5,
+	NM_RDISC_CONFIG_HOP_LIMIT                           = 1 << 6,
 } NMRDiscConfigMap;
 
 /**
@@ -114,6 +115,7 @@ typedef struct {
 	GArray *routes;
 	GArray *dns_servers;
 	GArray *dns_domains;
+	int hop_limit;
 } NMRDisc;
 
 typedef struct {
