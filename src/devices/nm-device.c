@@ -292,15 +292,7 @@ typedef struct {
 
 	guint          linklocal6_timeout_id;
 
-	char *         ip6_disable_ipv6_path;
-	gint32         ip6_disable_ipv6_save;
-
-	char *         ip6_accept_ra_path;
-	gint32         ip6_accept_ra_save;
-
-	/* IPv6 privacy extensions (RFC4941) */
-	char *         ip6_use_tempaddr_path;
-	gint32         ip6_use_tempaddr_save;
+	GHashTable *   ip6_saved_properties;
 
 	NMDHCPClient *  dhcp6_client;
 	NMRDiscDHCPLevel dhcp6_mode;
@@ -407,101 +399,74 @@ nm_device_init (NMDevice *self)
 	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
 	priv->autoconnect = DEFAULT_AUTOCONNECT;
 	priv->available_connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
+	priv->ip6_saved_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 }
 
-static void
-update_ip6_property_paths (NMDevice *self)
+/* Returns a static buffer */
+static const char *
+ip6_property_path (NMDevice *self, const char *property)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *ip_iface;
-	char *new_path;
+#define IPV6_PROPERTY_DIR "/proc/sys/net/ipv6/conf/"
+	static char path[sizeof (IPV6_PROPERTY_DIR) + IFNAMSIZ + 32];
+	int len;
 
-	ip_iface = nm_device_get_ip_iface (self);
+	len = g_snprintf (path, sizeof (path), IPV6_PROPERTY_DIR "%s/%s",
+	                  nm_device_get_ip_iface (self),
+	                  property);
+	g_assert (len < sizeof (path) - 1);
 
-	new_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/accept_ra", ip_iface);
-	if (priv->ip6_accept_ra_path) {
-		/* If ip_iface hasn't changed, then there's nothing to do */
-		if (!strcmp (new_path, priv->ip6_accept_ra_path)) {
-			g_free (new_path);
-			return;
-		}
-
-		/* If ip_iface did change, then any values we saved before are irrelevant. */
-		priv->ip6_accept_ra_save = -1;
-		priv->ip6_use_tempaddr_save = -1;
-		priv->ip6_disable_ipv6_save = -1;
-
-		g_free (priv->ip6_accept_ra_path);
-		g_free (priv->ip6_use_tempaddr_path);
-		g_free (priv->ip6_disable_ipv6_path);
-	}
-
-	priv->ip6_accept_ra_path = new_path;
-
-	new_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/use_tempaddr", ip_iface);
-	priv->ip6_use_tempaddr_path = new_path;
-
-	new_path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/disable_ipv6", ip_iface);
-	priv->ip6_disable_ipv6_path = new_path;
+	return path;
 }
+
+static inline gboolean
+nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *value)
+{
+	return nm_platform_sysctl_set (ip6_property_path (self, property), value);
+}
+
+static const char *ip6_properties_to_save[] = {
+	"accept_ra",
+	"disable_ipv6",
+	"use_tempaddr",
+};
 
 static void
 save_ip6_properties (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	char *value;
+	int i;
 
-	priv->ip6_accept_ra_save = nm_platform_sysctl_get_int32 (priv->ip6_accept_ra_path, -1);
-	if (priv->ip6_accept_ra_save > 2 || priv->ip6_accept_ra_save < -1)
-		priv->ip6_accept_ra_save = -1;
+	g_hash_table_remove_all (priv->ip6_saved_properties);
 
-	priv->ip6_use_tempaddr_save = nm_platform_sysctl_get_int32 (priv->ip6_use_tempaddr_path, -1);
-	if (priv->ip6_use_tempaddr_save > 2 || priv->ip6_use_tempaddr_save < -1)
-		priv->ip6_use_tempaddr_save = -1;
-
-	priv->ip6_disable_ipv6_save = nm_platform_sysctl_get_int32 (priv->ip6_disable_ipv6_path, -1);
-	if (priv->ip6_disable_ipv6_save > 1 || priv->ip6_disable_ipv6_save < -1)
-		priv->ip6_disable_ipv6_save = -1;
+	for (i = 0; i < G_N_ELEMENTS (ip6_properties_to_save); i++) {
+		value = nm_platform_sysctl_get (ip6_property_path (self, ip6_properties_to_save[i]));
+		if (value) {
+			g_hash_table_insert (priv->ip6_saved_properties,
+			                     (char *) ip6_properties_to_save[i],
+			                     value);
+		}
+	}
 }
 
 static void
 restore_ip6_properties (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	char tmp[16];
+	GHashTableIter iter;
+	gpointer key, value;
 
-	if (   priv->ip6_accept_ra_save != -1
-	    && g_file_test (priv->ip6_accept_ra_path, G_FILE_TEST_EXISTS)) {
-		g_snprintf (tmp, sizeof (tmp), "%d", priv->ip6_accept_ra_save);
-		nm_platform_sysctl_set (priv->ip6_accept_ra_path, tmp);
-	}
-
-	if (   priv->ip6_use_tempaddr_save != -1
-	    && g_file_test (priv->ip6_use_tempaddr_path, G_FILE_TEST_EXISTS)) {
-		g_snprintf (tmp, sizeof (tmp), "%d", priv->ip6_use_tempaddr_save);
-		nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, tmp);
-	}
-
-	if (   priv->ip6_disable_ipv6_save != -1
-	    && g_file_test (priv->ip6_disable_ipv6_path, G_FILE_TEST_EXISTS)) {
-		nm_platform_sysctl_set (priv->ip6_disable_ipv6_path,
-		                        priv->ip6_disable_ipv6_save ? "1" : "0");
-	}
+	g_hash_table_iter_init (&iter, priv->ip6_saved_properties);
+	while (g_hash_table_iter_next (&iter, &key, &value))
+		nm_device_ipv6_sysctl_set (self, key, value);
 }
 
 static gint32
-sysctl_get_ipv6_max_addresses (const char *dev)
+sysctl_get_ipv6_max_addresses (NMDevice *self)
 {
-	gint32 max_addresses = 16;
-	char *path;
-
-	g_return_val_if_fail (dev && *dev, max_addresses);
-
-	path = g_strdup_printf ("/proc/sys/net/ipv6/conf/%s/max_addresses", dev);
-	max_addresses = nm_platform_sysctl_get_int32 (path, max_addresses);
-	g_free (path);
-
-	return max_addresses;
+	return nm_platform_sysctl_get_int32 (ip6_property_path (self, "max_addresses"), 16);
 }
+
 
 /*
  * Get driver info from SIOCETHTOOL ioctl() for 'iface'
@@ -588,8 +553,6 @@ constructor (GType type,
 	priv->fw_manager = nm_firewall_manager_get ();
 
 	device_get_driver_info (priv->iface, &priv->driver_version, &priv->firmware_version);
-
-	update_ip6_property_paths (dev);
 
 	/* Watch for external IP config changes */
 	platform = nm_platform_get ();
@@ -758,6 +721,9 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (!g_strcmp0 (iface, priv->ip_iface))
+		return;
+
 	old_ip_iface = priv->ip_iface;
 	priv->ip_ifindex = 0;
 
@@ -773,7 +739,8 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 		}
 	}
 
-	update_ip6_property_paths (self);
+	/* We don't care about any saved values from the old iface */
+	g_hash_table_remove_all (priv->ip6_saved_properties);
 
 	/* Emit change notification */
 	if (g_strcmp0 (old_ip_iface, priv->ip_iface))
@@ -3530,7 +3497,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	}
 
 	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self), ip_iface,
-	                                 sysctl_get_ipv6_max_addresses (ip_iface));
+	                                 sysctl_get_ipv6_max_addresses (self));
 	if (!priv->rdisc) {
 		nm_log_err (LOGD_IP6, "(%s): failed to start router discovery.", ip_iface);
 		return FALSE;
@@ -3560,7 +3527,7 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	if (priv->hw_addr_len)
 		nm_rdisc_set_lladdr (priv->rdisc, (const char *) priv->hw_addr, priv->hw_addr_len);
 
-	nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
+	nm_device_ipv6_sysctl_set (self, "accept_ra", "0");
 
 	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
 	                                                     G_CALLBACK (rdisc_config_changed), self);
@@ -3712,7 +3679,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	}
 
 	/* Re-enable IPv6 on the interface */
-	nm_platform_sysctl_set (priv->ip6_disable_ipv6_path, "0");
+	nm_device_ipv6_sysctl_set (self, "disable_ipv6", "0");
 
 	/* Enable/disable IPv6 Privacy Extensions.
 	 * If a global value is configured by sysadmin (e.g. /etc/sysctl.conf),
@@ -3768,7 +3735,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 		ip6_privacy_str = "2";
 	break;
 	}
-	nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, ip6_privacy_str);
+	nm_device_ipv6_sysctl_set (self, "use_tempaddr", ip6_privacy_str);
 
 	return ret;
 }
@@ -4696,12 +4663,9 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 	aipd_cleanup (self);
 
 	/* Turn off kernel IPv6 */
-	if (priv->ip6_disable_ipv6_path)
-		nm_platform_sysctl_set (priv->ip6_disable_ipv6_path, "1");
-	if (priv->ip6_accept_ra_path)
-		nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
-	if (priv->ip6_use_tempaddr_path)
-		nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, "0");
+	nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
+	nm_device_ipv6_sysctl_set (self, "accept_ra", "0");
+	nm_device_ipv6_sysctl_set (self, "use_tempaddr", "0");
 
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
@@ -5523,9 +5487,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->vpn6_config);
 	g_clear_object (&priv->ext_ip6_config);
 
-	g_clear_pointer (&priv->ip6_disable_ipv6_path, g_free);
-	g_clear_pointer (&priv->ip6_accept_ra_path, g_free);
-	g_clear_pointer (&priv->ip6_use_tempaddr_path, g_free);
+	g_clear_pointer (&priv->ip6_saved_properties, g_hash_table_unref);
 
 	if (priv->carrier_defer_id) {
 		g_source_remove (priv->carrier_defer_id);
@@ -6463,9 +6425,9 @@ nm_device_state_changed (NMDevice *device,
 		if (old_state == NM_DEVICE_STATE_UNMANAGED) {
 			save_ip6_properties (device);
 			if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
-				nm_platform_sysctl_set (priv->ip6_disable_ipv6_path, "1");
-			nm_platform_sysctl_set (priv->ip6_accept_ra_path, "0");
-			nm_platform_sysctl_set (priv->ip6_use_tempaddr_path, "0");
+				nm_device_ipv6_sysctl_set (device, "disable_ipv6", "1");
+			nm_device_ipv6_sysctl_set (device, "accept_ra", "0");
+			nm_device_ipv6_sysctl_set (device, "use_tempaddr", "0");
 		}
 
 		if (old_state == NM_DEVICE_STATE_UNMANAGED || priv->firmware_missing) {
