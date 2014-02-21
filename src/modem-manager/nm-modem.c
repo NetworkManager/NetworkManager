@@ -416,9 +416,7 @@ nm_modem_get_secrets (NMModem *self,
 
 static NMActStageReturn
 act_stage1_prepare (NMModem *modem,
-                    NMActRequest *req,
-                    GPtrArray **out_hints,
-                    const char **out_setting_name,
+                    NMConnection *connection,
                     NMDeviceStateReason *reason)
 {
 	*reason = NM_DEVICE_STATE_REASON_UNKNOWN;
@@ -435,36 +433,42 @@ nm_modem_act_stage1_prepare (NMModem *self,
 	GPtrArray *hints = NULL;
 	const char *setting_name = NULL;
 	NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+	NMConnection *connection;
 
 	if (priv->act_request)
 		g_object_unref (priv->act_request);
 	priv->act_request = g_object_ref (req);
 
-	ret = NM_MODEM_GET_CLASS (self)->act_stage1_prepare (self,
-	                                                     req,
-	                                                     &hints,
-	                                                     &setting_name,
-	                                                     reason);
-	if ((ret == NM_ACT_STAGE_RETURN_POSTPONE) && setting_name) {
-		if (priv->secrets_tries++)
-			flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
 
-		priv->secrets_id = nm_act_request_get_secrets (req,
-		                                               setting_name,
-		                                               flags,
-		                                               hints ? g_ptr_array_index (hints, 0) : NULL,
-		                                               modem_secrets_cb,
-		                                               self);
-		if (priv->secrets_id)
-			g_signal_emit (self, signals[AUTH_REQUESTED], 0);
-		else {
-			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
-			ret = NM_ACT_STAGE_RETURN_FAILURE;
-		}
-
-		if (hints)
-			g_ptr_array_free (hints, TRUE);
+	setting_name = nm_connection_need_secrets (connection, &hints);
+	if (!setting_name) {
+		/* Ready to connect */
+		g_assert (!hints);
+		return NM_MODEM_GET_CLASS (self)->act_stage1_prepare (self, connection, reason);
 	}
+
+	/* Secrets required... */
+	if (priv->secrets_tries++)
+		flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
+
+	priv->secrets_id = nm_act_request_get_secrets (req,
+	                                               setting_name,
+	                                               flags,
+	                                               hints ? g_ptr_array_index (hints, 0) : NULL,
+	                                               modem_secrets_cb,
+	                                               self);
+	if (priv->secrets_id) {
+		g_signal_emit (self, signals[AUTH_REQUESTED], 0);
+		ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	} else {
+		*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
+		ret = NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	if (hints)
+		g_ptr_array_free (hints, TRUE);
 
 	return ret;
 }
@@ -581,27 +585,21 @@ nm_modem_device_state_changed (NMModem *self,
 
 	g_return_if_fail (NM_IS_MODEM (self));
 
-	if (old_state >= NM_DEVICE_STATE_PREPARE && old_state <= NM_DEVICE_STATE_ACTIVATED)
+	if (old_state >= NM_DEVICE_STATE_PREPARE && old_state <= NM_DEVICE_STATE_DEACTIVATING)
 		was_connected = TRUE;
 
 	priv = NM_MODEM_GET_PRIVATE (self);
 
 	/* Make sure we don't leave the serial device open */
 	switch (new_state) {
-	case NM_DEVICE_STATE_NEED_AUTH:
-		if (priv->ppp_manager)
-			break;
-		/* else fall through */
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
-	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_DISCONNECTED:
-		if (new_state != NM_DEVICE_STATE_NEED_AUTH) {
-			if (priv->act_request) {
-				cancel_get_secrets (self);
-				g_object_unref (priv->act_request);
-				priv->act_request = NULL;
-			}
+	case NM_DEVICE_STATE_FAILED:
+		if (priv->act_request) {
+			cancel_get_secrets (self);
+			g_object_unref (priv->act_request);
+			priv->act_request = NULL;
 		}
 
 		if (was_connected) {
@@ -661,6 +659,27 @@ nm_modem_get_data_port (NMModem *self)
 	 */
 	return NM_MODEM_GET_PRIVATE (self)->ppp_iface ?
 		NM_MODEM_GET_PRIVATE (self)->ppp_iface : NM_MODEM_GET_PRIVATE (self)->data_port;
+}
+
+gboolean
+nm_modem_owns_port (NMModem *self, const char *iface)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+
+	g_return_val_if_fail (iface != NULL, FALSE);
+
+	if (NM_MODEM_GET_CLASS (self)->owns_port)
+		return NM_MODEM_GET_CLASS (self)->owns_port (self, iface);
+
+	/* Fall back to data/control ports */
+	if (priv->ppp_iface && (strcmp (priv->ppp_iface, iface) == 0))
+		return TRUE;
+	if (priv->data_port && (strcmp (priv->data_port, iface) == 0))
+		return TRUE;
+	if (priv->control_port && (strcmp (priv->control_port, iface) == 0))
+		return TRUE;
+
+	return FALSE;
 }
 
 /*****************************************************************************/

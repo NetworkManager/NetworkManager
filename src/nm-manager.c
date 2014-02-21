@@ -550,19 +550,22 @@ modem_added (NMModemManager *modem_manager,
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMDevice *replace_device, *device = NULL;
+	NMDevice *device = NULL;
 	const char *modem_iface;
-	GSList *iter;
+	GSList *iter, *remove = NULL;
 
-	/* Don't rely only on the data port; use the control port if available */
-	modem_iface = nm_modem_get_data_port (modem);
-	if (!modem_iface)
-		modem_iface = nm_modem_get_control_port (modem);
-	g_return_if_fail (modem_iface);
-
-	replace_device = find_device_by_ip_iface (NM_MANAGER (user_data), modem_iface);
-	if (replace_device)
-		remove_device (NM_MANAGER (user_data), replace_device, FALSE);
+	/* Remove ethernet devices that are actually owned by the modem, since
+	 * they cannot be used as normal ethernet.
+	 */
+	for (iter = priv->devices; iter; iter = iter->next) {
+		if (nm_device_get_device_type (iter->data) == NM_DEVICE_TYPE_ETHERNET) {
+			if (nm_modem_owns_port (modem, nm_device_get_ip_iface (iter->data)))
+				remove = g_slist_prepend (remove, iter->data);
+		}
+	}
+	for (iter = remove; iter; iter = iter->next)
+		remove_device (self, NM_DEVICE (iter->data), FALSE);
+	g_slist_free (remove);
 
 	/* Give Bluetooth DUN devices first chance to claim the modem */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
@@ -577,6 +580,10 @@ modem_added (NMModemManager *modem_manager,
 	 * by the Bluetooth code during the connection process.
 	 */
 	if (driver && !strcmp (driver, "bluetooth")) {
+		modem_iface = nm_modem_get_data_port (modem);
+		if (!modem_iface)
+			modem_iface = nm_modem_get_control_port (modem);
+
 		nm_log_info (LOGD_MB, "ignoring modem '%s' (no associated Bluetooth device)", modem_iface);
 		return;
 	}

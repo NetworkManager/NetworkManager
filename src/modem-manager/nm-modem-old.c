@@ -538,33 +538,21 @@ G_GNUC_END_IGNORE_DEPRECATIONS
 
 static NMActStageReturn
 act_stage1_prepare (NMModem *modem,
-                    NMActRequest *req,
-                    GPtrArray **out_hints,
-                    const char **out_setting_name,
+                    NMConnection *connection,
                     NMDeviceStateReason *reason)
 {
 	NMModemOld *self = NM_MODEM_OLD (modem);
 	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (self);
-	NMConnection *connection;
+	gboolean enabled = nm_modem_get_mm_enabled (modem);
 
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
+	if (priv->connect_properties)
+		g_hash_table_destroy (priv->connect_properties);
+	priv->connect_properties = create_connect_properties (connection);
 
-	*out_setting_name = nm_connection_need_secrets (connection, out_hints);
-	if (!*out_setting_name) {
-		gboolean enabled = nm_modem_get_mm_enabled (modem);
-
-		if (priv->connect_properties)
-			g_hash_table_destroy (priv->connect_properties);
-		priv->connect_properties = create_connect_properties (connection);
-
-		if (enabled)
-			do_connect (self);
-		else
-			do_enable (self);
-	} else {
-		/* NMModem will handle requesting secrets... */
-	}
+	if (enabled)
+		do_connect (self);
+	else
+		do_enable (self);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }

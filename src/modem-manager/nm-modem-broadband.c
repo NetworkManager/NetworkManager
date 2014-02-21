@@ -124,6 +124,20 @@ get_capabilities (NMModem *_self,
 	*current_caps = (NMDeviceModemCapabilities) mm_modem_get_current_capabilities (self->priv->modem_iface);
 }
 
+static gboolean
+owns_port (NMModem *_self, const char *iface)
+{
+	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
+	const MMModemPortInfo *ports = NULL;
+	guint n_ports = 0, i;
+	gboolean owns = FALSE;
+
+	mm_modem_peek_ports (self->priv->modem_iface, &ports, &n_ports);
+	for (i = 0; i < n_ports && !owns; i++)
+		owns = (g_strcmp0 (iface, ports[i].name) == 0);
+	return owns;
+}
+
 /*****************************************************************************/
 
 static void
@@ -296,47 +310,34 @@ create_gsm_connect_properties (NMConnection *connection)
 
 static NMActStageReturn
 act_stage1_prepare (NMModem *_self,
-                    NMActRequest *req,
-                    GPtrArray **out_hints,
-                    const char **out_setting_name,
+                    NMConnection *connection,
                     NMDeviceStateReason *reason)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
-	NMConnection *connection;
+	MMModemCapability caps;
 
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
+	g_clear_object (&self->priv->connect_properties);
 
-	*out_setting_name = nm_connection_need_secrets (connection, out_hints);
-	if (!*out_setting_name) {
-		MMModemCapability caps;
-
-		caps = mm_modem_get_current_capabilities (self->priv->modem_iface);
-
-		g_clear_object (&self->priv->connect_properties);
-
-		if (MODEM_CAPS_3GPP (caps))
-			self->priv->connect_properties = create_gsm_connect_properties (connection);
-		else if (MODEM_CAPS_3GPP2 (caps))
-			self->priv->connect_properties = create_cdma_connect_properties (connection);
-		else {
-			nm_log_warn (LOGD_MB, "(%s) not a mobile broadband modem",
-						 nm_modem_get_uid (NM_MODEM (self)));
-			return NM_ACT_STAGE_RETURN_FAILURE;
-		}
-
-		if (!self->priv->simple_iface)
-			self->priv->simple_iface = mm_object_get_modem_simple (self->priv->modem_object);
-
-		g_dbus_proxy_set_default_timeout (G_DBUS_PROXY (self->priv->simple_iface), MODEM_CONNECT_TIMEOUT_SECS * 1000);
-		mm_modem_simple_connect (self->priv->simple_iface,
-		                         self->priv->connect_properties,
-		                         NULL,
-		                         (GAsyncReadyCallback)connect_ready,
-		                         g_object_ref (self));
-	} else {
-		/* NMModem will handle requesting secrets... */
+	caps = mm_modem_get_current_capabilities (self->priv->modem_iface);
+	if (MODEM_CAPS_3GPP (caps))
+		self->priv->connect_properties = create_gsm_connect_properties (connection);
+	else if (MODEM_CAPS_3GPP2 (caps))
+		self->priv->connect_properties = create_cdma_connect_properties (connection);
+	else {
+		nm_log_warn (LOGD_MB, "(%s) not a mobile broadband modem",
+					 nm_modem_get_uid (NM_MODEM (self)));
+		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
+
+	if (!self->priv->simple_iface)
+		self->priv->simple_iface = mm_object_get_modem_simple (self->priv->modem_object);
+
+	g_dbus_proxy_set_default_timeout (G_DBUS_PROXY (self->priv->simple_iface), MODEM_CONNECT_TIMEOUT_SECS * 1000);
+	mm_modem_simple_connect (self->priv->simple_iface,
+	                         self->priv->connect_properties,
+	                         NULL,
+	                         (GAsyncReadyCallback)connect_ready,
+	                         g_object_ref (self));
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
@@ -614,14 +615,16 @@ static gboolean
 ip_string_to_network_address (const gchar *str,
                               guint32 *out)
 {
-	guint32 addr;
+	guint32 addr = 0;
+	gboolean success = FALSE;
 
-	/* IP address */
-	if (inet_pton (AF_INET, str, &addr) <= 0)
-		return FALSE;
+	if (!str || inet_pton (AF_INET, str, &addr) != 1)
+		addr = 0;
+	else
+		success = TRUE;
 
 	*out = (guint32)addr;
-	return TRUE;
+	return success;
 }
 
 static gboolean
@@ -630,7 +633,9 @@ static_stage3_done (NMModemBroadband *self)
 	GError *error = NULL;
 	NMIP4Config *config = NULL;
 	const gchar *address_string;
+	const gchar *gw_string;
 	guint32 address_network;
+	guint32 gw;
 	NMPlatformIP4Address address;
 	const gchar **dns;
 	guint i;
@@ -651,6 +656,10 @@ static_stage3_done (NMModemBroadband *self)
 		goto out;
 	}
 
+	/* Missing gateway not a hard failure */
+	gw_string = mm_bearer_ip_config_get_gateway (self->priv->ipv4_config);
+	ip_string_to_network_address (gw_string, &gw);
+
 	config = nm_ip4_config_new ();
 
 	memset (&address, 0, sizeof (address));
@@ -659,9 +668,12 @@ static_stage3_done (NMModemBroadband *self)
 	address.source = NM_PLATFORM_SOURCE_WWAN;
 	nm_ip4_config_add_address (config, &address);
 
-	nm_log_info (LOGD_MB, "  address %s/%d",
-	             mm_bearer_ip_config_get_address (self->priv->ipv4_config),
-	             mm_bearer_ip_config_get_prefix (self->priv->ipv4_config));
+	nm_log_info (LOGD_MB, "  address %s/%d", address_string, address.plen);
+
+	if (gw) {
+		nm_ip4_config_set_gateway (config, gw);
+		nm_log_info (LOGD_MB, "  gateway %s", gw_string);
+	}
 
 	/* DNS servers */
 	dns = mm_bearer_ip_config_get_dns (self->priv->ipv4_config);
@@ -929,6 +941,7 @@ nm_modem_broadband_class_init (NMModemBroadbandClass *klass)
 	modem_class->check_connection_compatible = check_connection_compatible;
 	modem_class->complete_connection = complete_connection;
 	modem_class->act_stage1_prepare = act_stage1_prepare;
+	modem_class->owns_port = owns_port;
 
 	/* Properties */
 	g_object_class_install_property
