@@ -430,6 +430,7 @@ static const char *ip6_properties_to_save[] = {
 	"accept_ra_pinfo",
 	"accept_ra_rtr_pref",
 	"disable_ipv6",
+	"hop_limit",
 	"use_tempaddr",
 };
 
@@ -3477,6 +3478,13 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 				return;
 			}
 		}
+	}
+
+	if (changed & NM_RDISC_CONFIG_HOP_LIMIT) {
+		char val[16];
+
+		g_snprintf (val, sizeof (val), "%d", rdisc->hop_limit);
+		nm_device_ipv6_sysctl_set (device, "hop_limit", val);
 	}
 
 	nm_device_activate_schedule_ip6_config_result (device);
