@@ -426,6 +426,9 @@ nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *val
 
 static const char *ip6_properties_to_save[] = {
 	"accept_ra",
+	"accept_ra_defrtr",
+	"accept_ra_pinfo",
+	"accept_ra_rtr_pref",
 	"disable_ipv6",
 	"use_tempaddr",
 };
@@ -3527,7 +3530,10 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	if (priv->hw_addr_len)
 		nm_rdisc_set_lladdr (priv->rdisc, (const char *) priv->hw_addr, priv->hw_addr_len);
 
-	nm_device_ipv6_sysctl_set (self, "accept_ra", "0");
+	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
+	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
+	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
+	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
 
 	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
 	                                                     G_CALLBACK (rdisc_config_changed), self);
@@ -6424,10 +6430,13 @@ nm_device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		if (old_state == NM_DEVICE_STATE_UNMANAGED) {
 			save_ip6_properties (device);
-			if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
+			if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED) {
 				nm_device_ipv6_sysctl_set (device, "disable_ipv6", "1");
-			nm_device_ipv6_sysctl_set (device, "accept_ra", "0");
-			nm_device_ipv6_sysctl_set (device, "use_tempaddr", "0");
+				nm_device_ipv6_sysctl_set (device, "accept_ra_defrtr", "0");
+				nm_device_ipv6_sysctl_set (device, "accept_ra_pinfo", "0");
+				nm_device_ipv6_sysctl_set (device, "accept_ra_rtr_pref", "0");
+				nm_device_ipv6_sysctl_set (device, "use_tempaddr", "0");
+			}
 		}
 
 		if (old_state == NM_DEVICE_STATE_UNMANAGED || priv->firmware_missing) {
