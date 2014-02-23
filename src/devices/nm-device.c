@@ -665,7 +665,7 @@ is_up (NMDevice *device)
 {
 	int ifindex = nm_device_get_ip_ifindex (device);
 
-	return ifindex ? nm_platform_link_is_up (ifindex) : TRUE;
+	return ifindex > 0 ? nm_platform_link_is_up (ifindex) : TRUE;
 }
 
 void
@@ -5426,7 +5426,7 @@ take_down (NMDevice *device)
 {
 	int ifindex = nm_device_get_ip_ifindex (device);
 
-	if (ifindex)
+	if (ifindex > 0)
 		return nm_platform_link_set_down (ifindex);
 
 	/* devices without ifindex are always up. */
