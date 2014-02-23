@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+#include <dlfcn.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 #include <linux/ip.h>
@@ -58,6 +59,15 @@
 #define warning(...) nm_log_warn (LOGD_PLATFORM, __VA_ARGS__)
 #define error(...) nm_log_err (LOGD_PLATFORM, __VA_ARGS__)
 
+
+struct libnl_vtable
+{
+	void *handle;
+
+	int (*f_nl_has_capability) (int capability);
+};
+
+
 typedef struct {
 	struct nl_sock *nlh;
 	struct nl_sock *nlh_event;
@@ -85,6 +95,43 @@ void
 nm_linux_platform_setup (void)
 {
 	nm_platform_setup (NM_TYPE_LINUX_PLATFORM);
+}
+
+/******************************************************************/
+
+static int
+_nl_f_nl_has_capability (int capability)
+{
+	return FALSE;
+}
+
+static struct libnl_vtable *
+_nl_get_vtable ()
+{
+	static struct libnl_vtable vtable;
+
+	if (G_UNLIKELY (!vtable.f_nl_has_capability)) {
+		void *handle;
+
+		handle = dlopen ("libnl-3.so", RTLD_LAZY | RTLD_NOLOAD);
+		if (handle) {
+			vtable.handle = handle;
+			vtable.f_nl_has_capability = dlsym (handle, "nl_has_capability");
+		}
+
+		if (!vtable.f_nl_has_capability)
+			vtable.f_nl_has_capability = &_nl_f_nl_has_capability;
+
+		g_return_val_if_fail (vtable.handle, &vtable);
+	}
+
+	return &vtable;
+}
+
+static gboolean
+_nl_has_capability (int capability)
+{
+	return (_nl_get_vtable ()->f_nl_has_capability) (capability);
 }
 
 /******************************************************************/
