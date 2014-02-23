@@ -1010,7 +1010,8 @@ check_system_secrets_cb (NMSetting *setting,
 				*has_system = TRUE;
 		}
 	} else {
-		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
+		if (!nm_setting_get_secret_flags (setting, key, &secret_flags, NULL))
+			g_return_if_reached ();
 		if (secret_flags == NM_SETTING_SECRET_FLAG_NONE)
 			*has_system = TRUE;
 	}

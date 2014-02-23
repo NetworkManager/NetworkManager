@@ -2053,10 +2053,11 @@ need_new_8021x_secrets (NMDeviceWifi *self,
 
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 	if (s_8021x) {
-		nm_setting_get_secret_flags (NM_SETTING (s_8021x),
-		                             NM_SETTING_802_1X_PASSWORD,
-		                             &secret_flags,
-		                             NULL);
+		if (!nm_setting_get_secret_flags (NM_SETTING (s_8021x),
+		                                  NM_SETTING_802_1X_PASSWORD,
+		                                  &secret_flags,
+		                                  NULL))
+			g_assert_not_reached ();
 		if (secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)
 			*setting_name = NM_SETTING_802_1X_SETTING_NAME;
 		return *setting_name ? TRUE : FALSE;
@@ -2064,10 +2065,11 @@ need_new_8021x_secrets (NMDeviceWifi *self,
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	if (s_wsec) {
-		nm_setting_get_secret_flags (NM_SETTING (s_wsec),
-		                             NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD,
-		                             &secret_flags,
-		                             NULL);
+		if (!nm_setting_get_secret_flags (NM_SETTING (s_wsec),
+		                                  NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD,
+		                                  &secret_flags,
+		                                  NULL))
+			g_assert_not_reached ();
 		if (secret_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)
 			*setting_name = NM_SETTING_WIRELESS_SECURITY_SETTING_NAME;
 		return *setting_name ? TRUE : FALSE;

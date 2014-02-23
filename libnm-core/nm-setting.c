@@ -1002,8 +1002,12 @@ compare_property (NMSetting *setting,
 		NMSettingSecretFlags a_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 		NMSettingSecretFlags b_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
-		nm_setting_get_secret_flags (setting, prop_spec->name, &a_secret_flags, NULL);
-		nm_setting_get_secret_flags (other, prop_spec->name, &b_secret_flags, NULL);
+		g_return_val_if_fail (!NM_IS_SETTING_VPN (setting), FALSE);
+
+		if (!nm_setting_get_secret_flags (setting, prop_spec->name, &a_secret_flags, NULL))
+			g_return_val_if_reached (FALSE);
+		if (!nm_setting_get_secret_flags (other, prop_spec->name, &b_secret_flags, NULL))
+			g_return_val_if_reached (FALSE);
 
 		/* If the secret flags aren't the same the settings aren't the same */
 		if (a_secret_flags != b_secret_flags)
@@ -1108,7 +1112,16 @@ should_compare_prop (NMSetting *setting,
 		if (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
 			return FALSE;
 
-		nm_setting_get_secret_flags (setting, prop_name, &secret_flags, NULL);
+		if (   NM_IS_SETTING_VPN (setting)
+		    && g_strcmp0 (prop_name, NM_SETTING_VPN_SECRETS) == 0) {
+			/* FIXME: NMSettingVPN:NM_SETTING_VPN_SECRETS has NM_SETTING_PARAM_SECRET.
+			 * nm_setting_get_secret_flags() quite possibly fails, but it might succeed if the
+			 * setting accidently uses a key "secrets". */
+			return TRUE;
+		}
+
+		if (!nm_setting_get_secret_flags (setting, prop_name, &secret_flags, NULL))
+			g_return_val_if_reached (FALSE);
 
 		if (   (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
 		    && (secret_flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED))
@@ -1330,8 +1343,12 @@ clear_secrets_with_flags (NMSetting *setting,
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 	gboolean changed = FALSE;
 
+	g_return_val_if_fail (!NM_IS_SETTING_VPN (setting), FALSE);
+
 	/* Clear the secret if the user function says to do so */
-	nm_setting_get_secret_flags (setting, pspec->name, &flags, NULL);
+	if (!nm_setting_get_secret_flags (setting, pspec->name, &flags, NULL))
+		g_return_val_if_reached (FALSE);
+
 	if (func (setting, pspec->name, flags, user_data) == TRUE) {
 		GValue value = G_VALUE_INIT;
 
@@ -1549,8 +1566,11 @@ get_secret_flags (NMSetting *setting,
 	char *flags_prop;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
-	if (verify_secret)
-		g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
+	if (verify_secret && !is_secret_prop (setting, secret_name, error)) {
+		if (out_flags)
+			*out_flags = NM_SETTING_SECRET_FLAG_NONE;
+		return FALSE;
+	}
 
 	flags_prop = g_strdup_printf ("%s-flags", secret_name);
 	g_object_get (G_OBJECT (setting), flags_prop, &flags, NULL);

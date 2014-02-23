@@ -144,6 +144,7 @@ typedef gboolean (*ForEachSecretFunc) (GHashTableIter *iter,
 static void
 for_each_secret (NMConnection *connection,
                  GHashTable *secrets,
+                 gboolean remove_non_secrets,
                  ForEachSecretFunc callback,
                  gpointer callback_data)
 {
@@ -167,6 +168,8 @@ for_each_secret (NMConnection *connection,
 	 * each time.
 	 */
 
+	g_return_if_fail (callback);
+
 	/* Walk through the list of setting hashes */
 	g_hash_table_iter_init (&iter, secrets);
 	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
@@ -174,6 +177,9 @@ for_each_secret (NMConnection *connection,
 		GHashTableIter secret_iter;
 		const char *secret_name;
 		GValue *val;
+
+		if (g_hash_table_size (setting_hash) == 0)
+			continue;
 
 		/* Get the actual NMSetting from the connection so we can get secret flags
 		 * from the connection data, since flags aren't secrets.  What we're
@@ -203,7 +209,11 @@ for_each_secret (NMConnection *connection,
 						return;
 				}
 			} else {
-				nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL);
+				if (!nm_setting_get_secret_flags (setting, secret_name, &secret_flags, NULL)) {
+					if (remove_non_secrets)
+						g_hash_table_iter_remove (&secret_iter);
+					continue;
+				}
 				if (callback (&secret_iter, secret_flags, callback_data) == FALSE)
 					return;
 			}
@@ -764,7 +774,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 		 * save those system-owned secrets.  If not, discard them and use the
 		 * existing secrets, or fail the connection.
 		 */
-		for_each_secret (NM_CONNECTION (self), secrets, has_system_owned_secrets, &agent_had_system);
+		for_each_secret (NM_CONNECTION (self), secrets, TRUE, has_system_owned_secrets, &agent_had_system);
 		if (agent_had_system) {
 			if (flags == NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE) {
 				/* No user interaction was allowed when requesting secrets; the
@@ -776,7 +786,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 				            call_id,
 				            agent_dbus_owner);
 
-				for_each_secret (NM_CONNECTION (self), secrets, clear_nonagent_secrets, NULL);
+				for_each_secret (NM_CONNECTION (self), secrets, FALSE, clear_nonagent_secrets, NULL);
 			} else if (agent_has_modify == FALSE) {
 				/* Agent didn't successfully authenticate; clear system-owned secrets
 				 * from the secrets the agent returned.
@@ -786,7 +796,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 				            setting_name,
 				            call_id);
 
-				for_each_secret (NM_CONNECTION (self), secrets, clear_nonagent_secrets, NULL);
+				for_each_secret (NM_CONNECTION (self), secrets, FALSE, clear_nonagent_secrets, NULL);
 			}
 		}
 	} else {
@@ -805,7 +815,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	 * came back.  Unsaved secrets by definition require user interaction.
 	 */
 	if (flags == NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE)
-		for_each_secret (NM_CONNECTION (self), secrets, clear_unsaved_secrets, NULL);
+		for_each_secret (NM_CONNECTION (self), secrets, TRUE, clear_unsaved_secrets, NULL);
 
 	/* Update the connection with our existing secrets from backing storage */
 	nm_connection_clear_secrets (NM_CONNECTION (self));
