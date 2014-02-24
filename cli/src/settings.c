@@ -2017,6 +2017,31 @@ check_and_set_string (NMSetting *setting,
 		return TRUE; \
 	}
 
+#define DEFINE_REMOVER_INDEX_OR_VALUE(def_func, s_macro, num_func, rem_func_idx, rem_func_val) \
+	static gboolean \
+	def_func (NMSetting *setting, const char *prop, const char *value, guint32 idx, GError **error) \
+	{ \
+		guint32 num; \
+		if (value) { \
+			gboolean ret; \
+			char *value_stripped = g_strstrip (g_strdup (value)); \
+			ret = rem_func_val (s_macro (setting), value_stripped, error); \
+			g_free (value_stripped); \
+			return ret; \
+		} \
+		num = num_func (s_macro (setting)); \
+		if (num == 0) { \
+			g_set_error_literal (error, 1, 0, _("no item to remove")); \
+			return FALSE; \
+		} \
+		if (idx >= num) { \
+			g_set_error (error, 1, 0, _("index '%d' is not in range <0-%d>"), idx, num - 1); \
+			return FALSE; \
+		} \
+		rem_func_idx (s_macro (setting), idx); \
+		return TRUE; \
+	}
+
 #define DEFINE_REMOVER_OPTION(def_func, s_macro, rem_func) \
 	static gboolean \
 	def_func (NMSetting *setting, const char *prop, const char *option, guint32 idx, GError **error) \
@@ -2351,10 +2376,24 @@ nmc_property_connection_set_permissions (NMSetting *setting, const char *prop, c
 
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX (nmc_property_connection_remove_idx_permissions,
-                      NM_SETTING_CONNECTION,
-                      nm_setting_connection_get_num_permissions,
-                      nm_setting_connection_remove_permission)
+
+static gboolean
+_validate_and_remove_connection_permission (NMSettingConnection *setting,
+                                            const char *perm,
+                                            GError **error)
+{
+	gboolean ret;
+
+	ret = nm_setting_connection_remove_permission_by_value (setting, "user", perm, NULL);
+	if (!ret)
+		g_set_error (error, 1, 0, _("the property doesn't contain permission '%s'"), perm);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_connection_remove_permissions,
+                               NM_SETTING_CONNECTION,
+                               nm_setting_connection_get_num_permissions,
+                               nm_setting_connection_remove_permission,
+                               _validate_and_remove_connection_permission)
 
 static const char *
 nmc_property_connection_describe_permissions (NMSetting *setting, const char *prop)
@@ -2424,11 +2463,31 @@ nmc_property_connection_set_secondaries (NMSetting *setting, const char *prop, c
 
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX (nmc_property_connection_remove_idx_secondaries,
-                      NM_SETTING_CONNECTION,
-                      nm_setting_connection_get_num_secondaries,
-                      nm_setting_connection_remove_secondary)
 
+static gboolean
+_validate_and_remove_connection_secondary (NMSettingConnection *setting,
+                                           const char *secondary_uuid,
+                                           GError **error)
+{
+	gboolean ret;
+
+	if (!nm_utils_is_uuid (secondary_uuid)) {
+		g_set_error (error, 1, 0,
+		             _("the value '%s' is not a valid UUID"), secondary_uuid);
+		return FALSE;
+	}
+
+	ret = nm_setting_connection_remove_secondary_by_value (setting, secondary_uuid);
+	if (!ret)
+		g_set_error (error, 1, 0,
+		             _("the property doesn't contain UUID '%s'"), secondary_uuid);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_connection_remove_secondaries,
+                               NM_SETTING_CONNECTION,
+                               nm_setting_connection_get_num_secondaries,
+                               nm_setting_connection_remove_secondary,
+                               _validate_and_remove_connection_secondary)
 
 /* --- NM_SETTING_802_1X_SETTING_NAME property setter functions --- */
 #define DEFINE_SETTER_STR_LIST(def_func, set_func) \
@@ -2516,19 +2575,50 @@ nmc_property_802_1X_set_eap (NMSetting *setting, const char *prop, const char *v
 	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd", NULL };
 	return check_and_add_802_1X_eap (setting, prop, val, valid_eap, error);
 }
-DEFINE_REMOVER_INDEX (nmc_property_802_1X_remove_idx_eap,
-                      NM_SETTING_802_1X,
-                      nm_setting_802_1x_get_num_eap_methods,
-                      nm_setting_802_1x_remove_eap_method)
+
+static gboolean
+_validate_and_remove_eap_method (NMSetting8021x *setting,
+                                 const char *eap,
+                                 GError **error)
+{
+	gboolean ret;
+
+	ret = nm_setting_802_1x_remove_eap_method_by_value(setting, eap);
+	if (!ret)
+		g_set_error (error, 1, 0, _("the property doesn't contain EAP method '%s'"), eap);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_802_1X_remove_eap,
+                               NM_SETTING_802_1X,
+                               nm_setting_802_1x_get_num_eap_methods,
+                               nm_setting_802_1x_remove_eap_method,
+                               _validate_and_remove_eap_method)
+
 /* 'ca-cert' */
 DEFINE_SETTER_CERT (nmc_property_802_1X_set_ca_cert, nm_setting_802_1x_set_ca_cert)
 
 /* 'altsubject-matches' */
 DEFINE_SETTER_STR_LIST (nmc_property_802_1X_set_altsubject_matches, nm_setting_802_1x_add_altsubject_match)
-DEFINE_REMOVER_INDEX (nmc_property_802_1X_remove_idx_altsubject_matches,
-                      NM_SETTING_802_1X,
-                      nm_setting_802_1x_get_num_altsubject_matches,
-                      nm_setting_802_1x_remove_altsubject_match)
+
+static gboolean
+_validate_and_remove_altsubject_match (NMSetting8021x *setting,
+                                       const char *altsubject_match,
+                                       GError **error)
+{
+	gboolean ret;
+
+	ret = nm_setting_802_1x_remove_altsubject_match_by_value (setting, altsubject_match);
+	if (!ret)
+		g_set_error (error, 1, 0,
+		             _("the property doesn't contain alternative subject match '%s'"),
+		             altsubject_match);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_802_1X_remove_altsubject_matches,
+                               NM_SETTING_802_1X,
+                               nm_setting_802_1x_get_num_altsubject_matches,
+                               nm_setting_802_1x_remove_altsubject_match,
+                               _validate_and_remove_altsubject_match)
 
 /* 'client-cert' */
 DEFINE_SETTER_CERT (nmc_property_802_1X_set_client_cert, nm_setting_802_1x_set_client_cert)
@@ -2538,10 +2628,26 @@ DEFINE_SETTER_CERT (nmc_property_802_1X_set_phase2_ca_cert, nm_setting_802_1x_se
 
 /* 'phase2-altsubject-matches' */
 DEFINE_SETTER_STR_LIST (nmc_property_802_1X_set_phase2_altsubject_matches, nm_setting_802_1x_add_phase2_altsubject_match)
-DEFINE_REMOVER_INDEX (nmc_property_802_1X_remove_idx_phase2_altsubject_matches,
-                      NM_SETTING_802_1X,
-                      nm_setting_802_1x_get_num_phase2_altsubject_matches,
-                      nm_setting_802_1x_remove_phase2_altsubject_match)
+
+static gboolean
+_validate_and_remove_phase2_altsubject_match (NMSetting8021x *setting,
+                                              const char *phase2_altsubject_match,
+                                              GError **error)
+{
+	gboolean ret;
+
+	ret = nm_setting_802_1x_remove_phase2_altsubject_match_by_value (setting, phase2_altsubject_match);
+	if (!ret)
+		g_set_error (error, 1, 0,
+		             _("the property doesn't contain \"phase2\" alternative subject match '%s'"),
+		             phase2_altsubject_match);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_802_1X_remove_phase2_altsubject_matches,
+                               NM_SETTING_802_1X,
+                               nm_setting_802_1x_get_num_phase2_altsubject_matches,
+                               nm_setting_802_1x_remove_phase2_altsubject_match,
+                               _validate_and_remove_phase2_altsubject_match)
 
 /* 'phase2-client-cert' */
 DEFINE_SETTER_CERT (nmc_property_802_1X_set_phase2_client_cert, nm_setting_802_1x_set_phase2_client_cert)
@@ -2863,10 +2969,30 @@ nmc_property_ipv4_set_dns (NMSetting *setting, const char *prop, const char *val
 	g_strfreev (strv);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX (nmc_property_ipv4_remove_idx_dns,
-                      NM_SETTING_IP4_CONFIG,
-                      nm_setting_ip4_config_get_num_dns,
-                      nm_setting_ip4_config_remove_dns)
+
+static gboolean
+_validate_and_remove_ipv4_dns (NMSettingIP4Config *setting,
+                               const char *dns,
+                               GError **error)
+{
+	guint32 ip4_addr;
+	gboolean ret;
+
+	if (inet_pton (AF_INET, dns, &ip4_addr) < 1) {
+		g_set_error (error, 1, 0, _("invalid IPv4 address '%s'"), dns);
+		return FALSE;
+	}
+
+	ret = nm_setting_ip4_config_remove_dns_by_value (setting, ip4_addr);
+	if (!ret)
+		g_set_error (error, 1, 0, _("the property doesn't contain DNS server '%s'"), dns);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_dns,
+                               NM_SETTING_IP4_CONFIG,
+                               nm_setting_ip4_config_get_num_dns,
+                               nm_setting_ip4_config_remove_dns,
+                               _validate_and_remove_ipv4_dns)
 
 static const char *
 nmc_property_ipv4_describe_dns (NMSetting *setting, const char *prop)
@@ -2896,49 +3022,94 @@ nmc_property_ipv4_set_dns_search (NMSetting *setting, const char *prop, const ch
 
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX (nmc_property_ipv4_remove_idx_dns_search,
-                      NM_SETTING_IP4_CONFIG,
-                      nm_setting_ip4_config_get_num_dns_searches,
-                      nm_setting_ip4_config_remove_dns_search)
+
+static gboolean
+_validate_and_remove_ipv4_dns_search (NMSettingIP4Config *setting,
+                                      const char *dns_search,
+                                      GError **error)
+{
+	gboolean ret;
+
+	ret = nm_setting_ip4_config_remove_dns_search_by_value (setting, dns_search);
+	if (!ret)
+		g_set_error (error, 1, 0,
+		             _("the property doesn't contain DNS search domain '%s'"),
+		             dns_search);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_dns_search,
+                               NM_SETTING_IP4_CONFIG,
+                               nm_setting_ip4_config_get_num_dns_searches,
+                               nm_setting_ip4_config_remove_dns_search,
+                               _validate_and_remove_ipv4_dns_search)
 
 /* 'addresses' */
+static NMIP4Address *
+_parse_ipv4_address (const char *address, GError **error)
+{
+	char **addrv;
+	NMIP4Address *ip4addr;
+
+	addrv = nmc_strsplit_set (address, " \t", 0);
+	if (g_strv_length (addrv) > 2) {
+		g_set_error (error, 1, 0, _("'%s' is not valid (use ip[/prefix] [gateway])"),
+		             address);
+		g_strfreev (addrv);
+		return NULL;
+	}
+	ip4addr = nmc_parse_and_build_ip4_address (addrv[0], addrv[1], error);
+	g_strfreev (addrv);
+	return ip4addr;
+}
+
 static gboolean
 nmc_property_ipv4_set_addresses (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	char **strv = NULL, **iter;
-	char **addrv;
-	NMIP4Address *ip4addr = NULL;
+	NMIP4Address *ip4addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	strv = nmc_strsplit_set (val, ",", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		char *address = g_strstrip (*iter);
-		addrv = nmc_strsplit_set (address, " \t", 0);
 
-		if (g_strv_length (addrv) > 2) {
-			g_set_error (error, 1, 0, _("'%s' is not valid (use ip[/prefix] [gateway])"),
-			             address);
-			g_strfreev (addrv);
-			g_strfreev (strv);
-			return FALSE;
-		}
-		ip4addr = nmc_parse_and_build_ip4_address (addrv[0], addrv[1], error);
+		ip4addr = _parse_ipv4_address (address, error);
 		if (!ip4addr) {
-			g_strfreev (addrv);
 			g_strfreev (strv);
 			return FALSE;
 		}
 		nm_setting_ip4_config_add_address (NM_SETTING_IP4_CONFIG (setting), ip4addr);
-		g_strfreev (addrv);
+		nm_ip4_address_unref (ip4addr);
 	}
 	g_strfreev (strv);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX (nmc_property_ipv4_remove_idx_addresses,
-                      NM_SETTING_IP4_CONFIG,
-                      nm_setting_ip4_config_get_num_addresses,
-                      nm_setting_ip4_config_remove_address)
+
+static gboolean
+_validate_and_remove_ipv4_address (NMSettingIP4Config *setting,
+                                   const char *address,
+                                   GError **error)
+{
+	NMIP4Address *ip4addr;
+	gboolean ret;
+
+	ip4addr = _parse_ipv4_address (address, error);
+	if (!ip4addr)
+		return FALSE;
+
+	ret = nm_setting_ip4_config_remove_address_by_value (setting, ip4addr);
+	if (!ret)
+		g_set_error (error, 1, 0,
+		             _("the property doesn't contain IP address '%s'"), address);
+	nm_ip4_address_unref (ip4addr);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_addresses,
+                               NM_SETTING_IP4_CONFIG,
+                               nm_setting_ip4_config_get_num_addresses,
+                               nm_setting_ip4_config_remove_address,
+                               _validate_and_remove_ipv4_address)
 
 static const char *
 nmc_property_ipv4_describe_addresses (NMSetting *setting, const char *prop)
@@ -2985,43 +3156,71 @@ nmc_property_out2in_addresses (const char *out_format)
 }
 
 /* 'routes' */
+static NMIP4Route *
+_parse_ipv4_route (const char *route, GError **error)
+{
+	char **routev;
+	NMIP4Route *ip4route;
+
+	routev = nmc_strsplit_set (route, " \t", 0);
+	if (g_strv_length (routev) < 2 || g_strv_length (routev) > 3) {
+		g_set_error (error, 1, 0, _("'%s' is not valid (use ip/[prefix] next-hop [metric])"),
+		             route);
+		g_strfreev (routev);
+		return NULL;
+	}
+	ip4route = nmc_parse_and_build_ip4_route (routev[0], routev[1], routev[2], error);
+	g_strfreev (routev);
+	return ip4route;
+}
+
 static gboolean
 nmc_property_ipv4_set_routes (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	char **strv = NULL, **iter;
-	char **routev;
-	NMIP4Route *ip4route = NULL;
+	NMIP4Route *ip4route;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	strv = nmc_strsplit_set (val, ",", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		char *route = g_strstrip (*iter);
-		routev = nmc_strsplit_set (route, " \t", 0);
 
-		if (g_strv_length (routev) < 2 || g_strv_length (routev) > 3) {
-			g_set_error (error, 1, 0, _("'%s' is not valid (use ip/[prefix] next-hop [metric])"),
-			             route);
-			g_strfreev (routev);
-			g_strfreev (strv);
-			return FALSE;
-		}
-		ip4route = nmc_parse_and_build_ip4_route (routev[0], routev[1], routev[2], error);
+		ip4route = _parse_ipv4_route (route, error);
 		if (!ip4route) {
-			g_strfreev (routev);
 			g_strfreev (strv);
 			return FALSE;
 		}
 		nm_setting_ip4_config_add_route (NM_SETTING_IP4_CONFIG (setting), ip4route);
-		g_strfreev (routev);
+		nm_ip4_route_unref (ip4route);
 	}
 	g_strfreev (strv);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX (nmc_property_ipv4_remove_idx_routes,
-                      NM_SETTING_IP4_CONFIG,
-                      nm_setting_ip4_config_get_num_routes,
-                      nm_setting_ip4_config_remove_route)
+
+static gboolean
+_validate_and_remove_ipv4_route (NMSettingIP4Config *setting,
+                                 const char *route,
+                                 GError **error)
+{
+	NMIP4Route *ip4route;
+	gboolean ret;
+
+	ip4route = _parse_ipv4_route (route, error);
+	if (!ip4route)
+		return FALSE;
+
+	ret = nm_setting_ip4_config_remove_route_by_value (setting, ip4route);
+	if (!ret)
+		g_set_error (error, 1, 0, _("the property doesn't contain route '%s'"), route);
+	nm_ip4_route_unref (ip4route);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_routes,
+                               NM_SETTING_IP4_CONFIG,
+                               nm_setting_ip4_config_get_num_routes,
+                               nm_setting_ip4_config_remove_route,
+                               _validate_and_remove_ipv4_route)
 
 static const char *
 nmc_property_ipv4_describe_routes (NMSetting *setting, const char *prop)
@@ -3109,10 +3308,30 @@ nmc_property_ipv6_set_dns (NMSetting *setting, const char *prop, const char *val
 	g_strfreev (strv);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX (nmc_property_ipv6_remove_idx_dns,
-                      NM_SETTING_IP6_CONFIG,
-                      nm_setting_ip6_config_get_num_dns,
-                      nm_setting_ip6_config_remove_dns)
+
+static gboolean
+_validate_and_remove_ipv6_dns (NMSettingIP6Config *setting,
+                               const char *dns,
+                               GError **error)
+{
+	struct in6_addr ip6_addr;
+	gboolean ret;
+
+	if (inet_pton (AF_INET6, dns, &ip6_addr) < 1) {
+		g_set_error (error, 1, 0, _("invalid IPv6 address '%s'"), dns);
+		return FALSE;
+	}
+
+	ret = nm_setting_ip6_config_remove_dns_by_value (setting, &ip6_addr);
+	if (!ret)
+		g_set_error (error, 1, 0, _("the property doesn't contain DNS server '%s'"), dns);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_dns,
+                               NM_SETTING_IP6_CONFIG,
+                               nm_setting_ip6_config_get_num_dns,
+                               nm_setting_ip6_config_remove_dns,
+                               _validate_and_remove_ipv6_dns)
 
 static const char *
 nmc_property_ipv6_describe_dns (NMSetting *setting, const char *prop)
@@ -3148,49 +3367,93 @@ nmc_property_ipv6_set_dns_search (NMSetting *setting, const char *prop, const ch
 
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX (nmc_property_ipv6_remove_idx_dns_search,
-                      NM_SETTING_IP6_CONFIG,
-                      nm_setting_ip6_config_get_num_dns_searches,
-                      nm_setting_ip6_config_remove_dns_search)
+
+static gboolean
+_validate_and_remove_ipv6_dns_search (NMSettingIP6Config *setting,
+                                      const char *dns_search,
+                                      GError **error)
+{
+	gboolean ret;
+
+	ret = nm_setting_ip6_config_remove_dns_search_by_value (setting, dns_search);
+	if (!ret)
+		g_set_error (error, 1, 0,
+		             _("the property doesn't contain DNS search domain '%s'"),
+		             dns_search);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_dns_search,
+                               NM_SETTING_IP6_CONFIG,
+                               nm_setting_ip6_config_get_num_dns_searches,
+                               nm_setting_ip6_config_remove_dns_search,
+                               _validate_and_remove_ipv6_dns_search)
 
 /* 'addresses' */
+static NMIP6Address *
+_parse_ipv6_address (const char *address, GError **error)
+{
+	char **addrv;
+	NMIP6Address *ip6addr;
+
+	addrv = nmc_strsplit_set (address, " \t", 0);
+	if (g_strv_length (addrv) > 2) {
+		g_set_error (error, 1, 0, _("'%s' is not valid (use ip[/prefix] [gateway])"),
+		             address);
+		g_strfreev (addrv);
+		return NULL;
+	}
+	ip6addr = nmc_parse_and_build_ip6_address (addrv[0], addrv[1], error);
+	g_strfreev (addrv);
+	return ip6addr;
+}
+
 static gboolean
 nmc_property_ipv6_set_addresses (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	char **strv = NULL, **iter;
-	char **addrv;
-	NMIP6Address *ip6addr = NULL;
+	NMIP6Address *ip6addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	strv = nmc_strsplit_set (val, ",", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		char *address = g_strstrip (*iter);
-		addrv = nmc_strsplit_set (address, " \t", 0);
 
-		if (g_strv_length (addrv) > 2) {
-			g_set_error (error, 1, 0, _("'%s' is not valid (use ip[/prefix] [gateway])"),
-			             address);
-			g_strfreev (addrv);
-			g_strfreev (strv);
-			return FALSE;
-		}
-		ip6addr = nmc_parse_and_build_ip6_address (addrv[0], addrv[1], error);
+		ip6addr = _parse_ipv6_address (address, error);
 		if (!ip6addr) {
-			g_strfreev (addrv);
 			g_strfreev (strv);
 			return FALSE;
 		}
 		nm_setting_ip6_config_add_address (NM_SETTING_IP6_CONFIG (setting), ip6addr);
-		g_strfreev (addrv);
+		nm_ip6_address_unref (ip6addr);
 	}
 	g_strfreev (strv);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX (nmc_property_ipv6_remove_idx_addresses,
-                      NM_SETTING_IP6_CONFIG,
-                      nm_setting_ip6_config_get_num_addresses,
-                      nm_setting_ip6_config_remove_address)
+
+static gboolean
+_validate_and_remove_ipv6_address (NMSettingIP6Config *setting,
+                                   const char *address,
+                                   GError **error)
+{
+	NMIP6Address *ip6addr;
+	gboolean ret;
+
+	ip6addr = _parse_ipv6_address (address, error);
+	if (!ip6addr)
+		return FALSE;
+
+	ret = nm_setting_ip6_config_remove_address_by_value (setting, ip6addr);
+	if (!ret)
+		g_set_error (error, 1, 0, _("the property doesn't contain IP address '%s'"), address);
+	nm_ip6_address_unref (ip6addr);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_addresses,
+                               NM_SETTING_IP6_CONFIG,
+                               nm_setting_ip6_config_get_num_addresses,
+                               nm_setting_ip6_config_remove_address,
+                               _validate_and_remove_ipv6_address)
 
 static const char *
 nmc_property_ipv6_describe_addresses (NMSetting *setting, const char *prop)
@@ -3202,43 +3465,71 @@ nmc_property_ipv6_describe_addresses (NMSetting *setting, const char *prop)
 }
 
 /* 'routes' */
+static NMIP6Route *
+_parse_ipv6_route (const char *route, GError **error)
+{
+	char **routev;
+	NMIP6Route *ip6route;
+
+	routev = nmc_strsplit_set (route, " \t", 0);
+	if (g_strv_length (routev) < 2 || g_strv_length (routev) > 3) {
+		g_set_error (error, 1, 0, _("'%s' is not valid (use <dest IP>/prefix <next-hop IP> [metric])"),
+		             route);
+		g_strfreev (routev);
+		return NULL;
+	}
+	ip6route = nmc_parse_and_build_ip6_route (routev[0], routev[1], routev[2], error);
+	g_strfreev (routev);
+	return ip6route;
+}
+
 static gboolean
 nmc_property_ipv6_set_routes (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	char **strv = NULL, **iter;
-	char **routev;
-	NMIP6Route *ip6route = NULL;
+	NMIP6Route *ip6route;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	strv = nmc_strsplit_set (val, ",", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		char *route = g_strstrip (*iter);
-		routev = nmc_strsplit_set (route, " \t", 0);
 
-		if (g_strv_length (routev) < 2 || g_strv_length (routev) > 3) {
-			g_set_error (error, 1, 0, _("'%s' is not valid (use <dest IP>/prefix <next-hop IP> [metric])"),
-			             route);
-			g_strfreev (routev);
-			g_strfreev (strv);
-			return FALSE;
-		}
-		ip6route = nmc_parse_and_build_ip6_route (routev[0], routev[1], routev[2], error);
+		ip6route = _parse_ipv6_route (route, error);
 		if (!ip6route) {
-			g_strfreev (routev);
 			g_strfreev (strv);
 			return FALSE;
 		}
 		nm_setting_ip6_config_add_route (NM_SETTING_IP6_CONFIG (setting), ip6route);
-		g_strfreev (routev);
+		nm_ip6_route_unref (ip6route);
 	}
 	g_strfreev (strv);
 	return TRUE;
 }
-DEFINE_REMOVER_INDEX (nmc_property_ipv6_remove_idx_routes,
-                      NM_SETTING_IP6_CONFIG,
-                      nm_setting_ip6_config_get_num_routes,
-                      nm_setting_ip6_config_remove_route)
+
+static gboolean
+_validate_and_remove_ipv6_route (NMSettingIP6Config *setting,
+                                 const char *route,
+                                 GError **error)
+{
+	NMIP6Route *ip6route;
+	gboolean ret;
+
+	ip6route = _parse_ipv6_route (route, error);
+	if (!ip6route)
+		return FALSE;
+
+	ret = nm_setting_ip6_config_remove_route_by_value (setting, ip6route);
+	if (!ret)
+		g_set_error (error, 1, 0, _("the property doesn't contain route '%s'"), route);
+	nm_ip6_route_unref (ip6route);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_routes,
+                               NM_SETTING_IP6_CONFIG,
+                               nm_setting_ip6_config_get_num_routes,
+                               nm_setting_ip6_config_remove_route,
+                               _validate_and_remove_ipv6_route)
 
 static const char *
 nmc_property_ipv6_describe_routes (NMSetting *setting, const char *prop)
@@ -3397,23 +3688,68 @@ nmc_property_vlan_set_egress_priority_map (NMSetting *setting, const char *prop,
 }
 
 static gboolean
-nmc_property_vlan_remove_idx_ingress_priority_map (NMSetting *setting,
-                                                   const char *prop,
-                                                   const char *option,
-                                                   guint32 idx,
-                                                   GError **error)
+nmc_property_vlan_remove_priority_map (NMSetting *setting,
+                                       const char *prop,
+                                       const char *value,
+                                       guint32 idx,
+                                       NMVlanPriorityMap map,
+                                       GError **error)
 {
-	return nmc_property_vlan_remove_prio_map (setting, prop, idx, NM_VLAN_INGRESS_MAP, error);
+	/* If value != NULL, remove by value */
+	if (value) {
+		gboolean ret;
+		char **prio_map;
+		char *val = g_strdup (value);
+
+		prio_map = nmc_vlan_parse_priority_maps (val, map, error);
+		if (!prio_map)
+			return FALSE;
+		if (prio_map[1])
+			printf (_("Warning: only one mapping at a time is supported; taking the first one (%s)\n"),
+			        prio_map[0]);
+		ret = nm_setting_vlan_remove_priority_str_by_value (NM_SETTING_VLAN (setting),
+		                                                    map,
+		                                                    prio_map[0]);
+
+		if (!ret)
+			g_set_error (error, 1, 0, _("the property doesn't contain mapping '%s'"), prio_map[0]);
+		g_free (val);
+		g_strfreev (prio_map);
+		return ret;
+	}
+
+	/* Else remove by index */
+	return nmc_property_vlan_remove_prio_map (setting, prop, idx, map, error);
 }
 
 static gboolean
-nmc_property_vlan_remove_idx_egress_priority_map (NMSetting *setting,
-                                                  const char *prop,
-                                                  const char *option,
-                                                  guint32 idx,
-                                                  GError **error)
+nmc_property_vlan_remove_ingress_priority_map (NMSetting *setting,
+                                               const char *prop,
+                                               const char *value,
+                                               guint32 idx,
+                                               GError **error)
 {
-	return nmc_property_vlan_remove_prio_map (setting, prop, idx, NM_VLAN_EGRESS_MAP, error);
+	return nmc_property_vlan_remove_priority_map (setting,
+                                                      prop,
+                                                      value,
+                                                      idx,
+                                                      NM_VLAN_INGRESS_MAP,
+                                                      error);
+}
+
+static gboolean
+nmc_property_vlan_remove_egress_priority_map (NMSetting *setting,
+                                              const char *prop,
+                                              const char *value,
+                                              guint32 idx,
+                                              GError **error)
+{
+	return nmc_property_vlan_remove_priority_map (setting,
+                                                      prop,
+                                                      value,
+                                                      idx,
+                                                      NM_VLAN_EGRESS_MAP,
+                                                      error);
 }
 
 /* --- NM_SETTING_VPN_SETTING_NAME property setter functions --- */
@@ -3475,10 +3811,30 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_wired_allowed_duplex, wired_valid_duplexes
 DEFINE_SETTER_MAC_BLACKLIST (nmc_property_wired_set_mac_address_blacklist,
                              NM_SETTING_WIRED,
                              nm_setting_wired_add_mac_blacklist_item)
-DEFINE_REMOVER_INDEX (nmc_property_wired_remove_idx_mac_address_blacklist,
-                      NM_SETTING_WIRED,
-                      nm_setting_wired_get_num_mac_blacklist_items,
-                      nm_setting_wired_remove_mac_blacklist_item)
+
+static gboolean
+_validate_and_remove_wired_mac_blacklist_item (NMSettingWired *setting,
+                                              const char *mac,
+                                              GError **error)
+{
+	gboolean ret;
+	guint8 buf[32];
+
+	if (!nm_utils_hwaddr_aton (mac, ARPHRD_ETHER, buf)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid MAC address"), mac);
+                return FALSE;
+	}
+
+	ret = nm_setting_wired_remove_mac_blacklist_item_by_value (setting, mac);
+	if (!ret)
+		g_set_error (error, 1, 0, _("the property doesn't contain MAC address '%s'"), mac);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_wired_remove_mac_address_blacklist,
+                               NM_SETTING_WIRED,
+                               nm_setting_wired_get_num_mac_blacklist_items,
+                               nm_setting_wired_remove_mac_blacklist_item,
+                               _validate_and_remove_wired_mac_blacklist_item)
 
 /* 's390-subchannels' */
 static gboolean
@@ -3623,10 +3979,30 @@ nmc_property_wifi_set_channel (NMSetting *setting, const char *prop, const char 
 DEFINE_SETTER_MAC_BLACKLIST (nmc_property_wireless_set_mac_address_blacklist,
                              NM_SETTING_WIRELESS,
                              nm_setting_wireless_add_mac_blacklist_item)
-DEFINE_REMOVER_INDEX (nmc_property_wireless_remove_idx_mac_address_blacklist,
-                      NM_SETTING_WIRELESS,
-                      nm_setting_wireless_get_num_mac_blacklist_items,
-                      nm_setting_wireless_remove_mac_blacklist_item)
+
+static gboolean
+_validate_and_remove_wifi_mac_blacklist_item (NMSettingWireless *setting,
+                                              const char *mac,
+                                              GError **error)
+{
+	gboolean ret;
+	guint8 buf[32];
+
+	if (!nm_utils_hwaddr_aton (mac, ARPHRD_ETHER, buf)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid MAC address"), mac);
+                return FALSE;
+	}
+
+	ret = nm_setting_wireless_remove_mac_blacklist_item_by_value (setting, mac);
+	if (!ret)
+		g_set_error (error, 1, 0, _("the property doesn't contain MAC address '%s'"), mac);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_wireless_remove_mac_address_blacklist,
+                               NM_SETTING_WIRELESS,
+                               nm_setting_wireless_get_num_mac_blacklist_items,
+                               nm_setting_wireless_remove_mac_blacklist_item,
+                               _validate_and_remove_wifi_mac_blacklist_item)
 
 /* --- NM_SETTING_WIRELESS_SECURITY_SETTING_NAME property setter functions --- */
 /* 'key-mgmt' */
@@ -3662,10 +4038,30 @@ nmc_property_wifi_sec_set_proto (NMSetting *setting, const char *prop, const cha
 {
 	return check_and_add_wifi_sec_proto (setting, prop, val, wifi_sec_valid_protos, error);
 }
-DEFINE_REMOVER_INDEX (nmc_property_wifi_sec_remove_idx_proto,
-                      NM_SETTING_WIRELESS_SECURITY,
-                      nm_setting_wireless_security_get_num_protos,
-                      nm_setting_wireless_security_remove_proto)
+
+static gboolean
+_validate_and_remove_wifi_sec_proto (NMSettingWirelessSecurity *setting,
+                                     const char *proto,
+                                     GError **error)
+{
+	gboolean ret;
+	const char *valid;
+
+	valid = nmc_string_is_valid (proto, wifi_sec_valid_protos, error);
+	if (!valid)
+		return FALSE;
+
+	ret = nm_setting_wireless_security_remove_proto_by_value (setting, proto);
+	if (!ret)
+		g_set_error (error, 1, 0,
+		             _("the property doesn't contain protocol '%s'"), proto);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_wifi_sec_remove_proto,
+                               NM_SETTING_WIRELESS_SECURITY,
+                               nm_setting_wireless_security_get_num_protos,
+                               nm_setting_wireless_security_remove_proto,
+                               _validate_and_remove_wifi_sec_proto)
 
 DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_pairwise,
                               NM_SETTING_WIRELESS_SECURITY,
@@ -3680,10 +4076,30 @@ nmc_property_wifi_sec_set_pairwise (NMSetting *setting, const char *prop, const 
 {
 	return check_and_add_wifi_sec_pairwise (setting, prop, val, wifi_sec_valid_pairwises, error);
 }
-DEFINE_REMOVER_INDEX (nmc_property_wifi_sec_remove_idx_pairwise,
-                      NM_SETTING_WIRELESS_SECURITY,
-                      nm_setting_wireless_security_get_num_pairwise,
-                      nm_setting_wireless_security_remove_pairwise)
+
+static gboolean
+_validate_and_remove_wifi_sec_pairwise (NMSettingWirelessSecurity *setting,
+                                        const char *pairwise,
+                                        GError **error)
+{
+	gboolean ret;
+	const char *valid;
+
+	valid = nmc_string_is_valid (pairwise, wifi_sec_valid_pairwises, error);
+	if (!valid)
+		return FALSE;
+
+	ret = nm_setting_wireless_security_remove_pairwise_by_value (setting, pairwise);
+	if (!ret)
+		g_set_error (error, 1, 0,
+		             _("the property doesn't contain protocol '%s'"), pairwise);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_wifi_sec_remove_pairwise,
+                               NM_SETTING_WIRELESS_SECURITY,
+                               nm_setting_wireless_security_get_num_pairwise,
+                               nm_setting_wireless_security_remove_pairwise,
+                               _validate_and_remove_wifi_sec_pairwise)
 
 DEFINE_SETTER_STR_LIST_MULTI (check_and_add_wifi_sec_group,
                               NM_SETTING_WIRELESS_SECURITY,
@@ -3698,10 +4114,30 @@ nmc_property_wifi_sec_set_group (NMSetting *setting, const char *prop, const cha
 {
 	return check_and_add_wifi_sec_group (setting, prop, val, wifi_sec_valid_groups, error);
 }
-DEFINE_REMOVER_INDEX (nmc_property_wifi_sec_remove_idx_group,
-                      NM_SETTING_WIRELESS_SECURITY,
-                      nm_setting_wireless_security_get_num_groups,
-                      nm_setting_wireless_security_remove_group)
+
+static gboolean
+_validate_and_remove_wifi_sec_group (NMSettingWirelessSecurity *setting,
+                                     const char *group,
+                                     GError **error)
+{
+	gboolean ret;
+	const char *valid;
+
+	valid = nmc_string_is_valid (group, wifi_sec_valid_groups, error);
+	if (!valid)
+		return FALSE;
+
+	ret = nm_setting_wireless_security_remove_group_by_value (setting, group);
+	if (!ret)
+		g_set_error (error, 1, 0,
+		             _("the property doesn't contain protocol '%s'"), group);
+	return ret;
+}
+DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_wifi_sec_remove_group,
+                               NM_SETTING_WIRELESS_SECURITY,
+                               nm_setting_wireless_security_get_num_groups,
+                               nm_setting_wireless_security_remove_group,
+                               _validate_and_remove_wifi_sec_group)
 DEFINE_ALLOWED_VAL_FUNC (nmc_property_wifi_sec_allowed_group, wifi_sec_valid_groups)
 
 /* 'wep-key' */
@@ -4120,7 +4556,7 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (802_1X, EAP),
 	                    nmc_property_802_1X_get_eap,
 	                    nmc_property_802_1X_set_eap,
-	                    nmc_property_802_1X_remove_idx_eap,
+	                    nmc_property_802_1X_remove_eap,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4169,7 +4605,7 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (802_1X, ALTSUBJECT_MATCHES),
 	                    nmc_property_802_1X_get_altsubject_matches,
 	                    nmc_property_802_1X_set_altsubject_matches,
-	                    nmc_property_802_1X_remove_idx_altsubject_matches,
+	                    nmc_property_802_1X_remove_altsubject_matches,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4239,7 +4675,7 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_ALTSUBJECT_MATCHES),
 	                    nmc_property_802_1X_get_phase2_altsubject_matches,
 	                    nmc_property_802_1X_set_phase2_altsubject_matches,
-	                    nmc_property_802_1X_remove_idx_phase2_altsubject_matches,
+	                    nmc_property_802_1X_remove_phase2_altsubject_matches,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4582,7 +5018,7 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (CONNECTION, PERMISSIONS),
 	                    nmc_property_connection_get_permissions,
 	                    nmc_property_connection_set_permissions,
-	                    nmc_property_connection_remove_idx_permissions,
+	                    nmc_property_connection_remove_permissions,
 	                    nmc_property_connection_describe_permissions,
 	                    NULL,
 	                    NULL);
@@ -4610,7 +5046,7 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (CONNECTION, SECONDARIES),
 	                    nmc_property_connection_get_secondaries,
 	                    nmc_property_connection_set_secondaries,
-	                    nmc_property_connection_remove_idx_secondaries,
+	                    nmc_property_connection_remove_secondaries,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -4856,28 +5292,28 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DNS),
 	                    nmc_property_ipv4_get_dns,
 	                    nmc_property_ipv4_set_dns,
-	                    nmc_property_ipv4_remove_idx_dns,
+	                    nmc_property_ipv4_remove_dns,
 	                    nmc_property_ipv4_describe_dns,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DNS_SEARCH),
 	                    nmc_property_ipv4_get_dns_search,
 	                    nmc_property_ipv4_set_dns_search,
-	                    nmc_property_ipv4_remove_idx_dns_search,
+	                    nmc_property_ipv4_remove_dns_search,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, ADDRESSES),
 	                    nmc_property_ipv4_get_addresses,
 	                    nmc_property_ipv4_set_addresses,
-	                    nmc_property_ipv4_remove_idx_addresses,
+	                    nmc_property_ipv4_remove_addresses,
 	                    nmc_property_ipv4_describe_addresses,
 	                    NULL,
 	                    nmc_property_out2in_addresses);
 	nmc_add_prop_funcs (GLUE (IP4_CONFIG, ROUTES),
 	                    nmc_property_ipv4_get_routes,
 	                    nmc_property_ipv4_set_routes,
-	                    nmc_property_ipv4_remove_idx_routes,
+	                    nmc_property_ipv4_remove_routes,
 	                    nmc_property_ipv4_describe_routes,
 	                    NULL,
 	                    nmc_property_out2in_routes);
@@ -4942,28 +5378,28 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (IP6_CONFIG, DNS),
 	                    nmc_property_ipv6_get_dns,
 	                    nmc_property_ipv6_set_dns,
-	                    nmc_property_ipv6_remove_idx_dns,
+	                    nmc_property_ipv6_remove_dns,
 	                    nmc_property_ipv6_describe_dns,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP6_CONFIG, DNS_SEARCH),
 	                    nmc_property_ipv6_get_dns_search,
 	                    nmc_property_ipv6_set_dns_search,
-	                    nmc_property_ipv6_remove_idx_dns_search,
+	                    nmc_property_ipv6_remove_dns_search,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (IP6_CONFIG, ADDRESSES),
 	                    nmc_property_ipv6_get_addresses,
 	                    nmc_property_ipv6_set_addresses,
-	                    nmc_property_ipv6_remove_idx_addresses,
+	                    nmc_property_ipv6_remove_addresses,
 	                    nmc_property_ipv6_describe_addresses,
 	                    NULL,
 	                    nmc_property_out2in_addresses);
 	nmc_add_prop_funcs (GLUE (IP6_CONFIG, ROUTES),
 	                    nmc_property_ipv6_get_routes,
 	                    nmc_property_ipv6_set_routes,
-	                    nmc_property_ipv6_remove_idx_routes,
+	                    nmc_property_ipv6_remove_routes,
 	                    nmc_property_ipv6_describe_routes,
 	                    NULL,
 	                    nmc_property_out2in_routes);
@@ -5285,14 +5721,14 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (VLAN, INGRESS_PRIORITY_MAP),
 	                    nmc_property_vlan_get_ingress_priority_map,
 	                    nmc_property_vlan_set_ingress_priority_map,
-	                    nmc_property_vlan_remove_idx_ingress_priority_map,
+	                    nmc_property_vlan_remove_ingress_priority_map,
 	                    NULL,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (VLAN, EGRESS_PRIORITY_MAP),
 	                    nmc_property_vlan_get_egress_priority_map,
 	                    nmc_property_vlan_set_egress_priority_map,
-	                    nmc_property_vlan_remove_idx_egress_priority_map,
+	                    nmc_property_vlan_remove_egress_priority_map,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -5389,7 +5825,7 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (WIRED, MAC_ADDRESS_BLACKLIST),
 	                    nmc_property_wired_get_mac_address_blacklist,
 	                    nmc_property_wired_set_mac_address_blacklist,
-	                    nmc_property_wired_remove_idx_mac_address_blacklist,
+	                    nmc_property_wired_remove_mac_address_blacklist,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -5493,7 +5929,7 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (WIRELESS, MAC_ADDRESS_BLACKLIST),
 	                    nmc_property_wireless_get_mac_address_blacklist,
 	                    nmc_property_wireless_set_mac_address_blacklist,
-	                    nmc_property_wireless_remove_idx_mac_address_blacklist,
+	                    nmc_property_wireless_remove_mac_address_blacklist,
 	                    NULL,
 	                    NULL,
 	                    NULL);
@@ -5544,21 +5980,21 @@ nmc_properties_init (void)
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, PROTO),
 	                    nmc_property_wifi_sec_get_proto,
 	                    nmc_property_wifi_sec_set_proto,
-	                    nmc_property_wifi_sec_remove_idx_proto,
+	                    nmc_property_wifi_sec_remove_proto,
 	                    NULL,
 	                    nmc_property_wifi_sec_allowed_proto,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, PAIRWISE),
 	                    nmc_property_wifi_sec_get_pairwise,
 	                    nmc_property_wifi_sec_set_pairwise,
-	                    nmc_property_wifi_sec_remove_idx_pairwise,
+	                    nmc_property_wifi_sec_remove_pairwise,
 	                    NULL,
 	                    nmc_property_wifi_sec_allowed_pairwise,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, GROUP),
 	                    nmc_property_wifi_sec_get_group,
 	                    nmc_property_wifi_sec_set_group,
-	                    nmc_property_wifi_sec_remove_idx_group,
+	                    nmc_property_wifi_sec_remove_group,
 	                    NULL,
 	                    nmc_property_wifi_sec_allowed_group,
 	                    NULL);
