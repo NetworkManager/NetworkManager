@@ -3,7 +3,7 @@
 		$WHITEBOARD $UUID
 	</whiteboard>
 	<recipeSet priority="Normal">
-		<recipe kernel_options="" kernel_options_post="selinux=0" ks_meta="method=nfs" role="None" whiteboard="">
+		<recipe kernel_options="" kernel_options_post="selinux=0" ks_meta="beah_rpm=beah-0.6.48" role="None" whiteboard="">
 			<autopick random="true"/>
 			<watchdog panic="None"/>
 			<packages/>
@@ -11,9 +11,9 @@
 			<repos/>
 			<distroRequires>
 				<and>
-					<distro_family op="=" value="$DISTRO_FAMILY"/>
-					<distro_variant op="=" value="$DISTRO_VARIANT"/>
+					<!--<distro_family op="=" value="$DISTRO_FAMILY"/>-->
 					<distro_name op="=" value="$DISTRO_NAME"/>
+					<distro_variant op="=" value="$DISTRO_VARIANT"/>
 					<distro_method op="=" value="$DISTRO_METHOD"/>
 					<distro_arch op="=" value="$DISTRO_ARCH"/>
 				</and>
@@ -31,15 +31,20 @@
 			</task>
 			<task name="/distribution/command" role="STANDALONE">
 				<params>
-					<param name="CMDS_TO_RUN" value="rpm -Uvh $RPM_LIST"/>
+					<param name="CMDS_TO_RUN" value="yum install -y pexpect wireshark http://kojipkgs.fedoraproject.org//packages/python-parse/1.6.2/4.fc19/noarch/python-parse-1.6.2-4.fc19.noarch.rpm http://kojipkgs.fedoraproject.org//packages/python-behave/1.2.3/8.fc19/noarch/python-behave-1.2.3-8.fc19.noarch.rpm"/>
+				</params>
+			</task>
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="yum install -y $RPM_LIST"/>
 				</params>
 			</task>
 			<task name="/qe/desktop/simpletestharness" role="STANDALONE">
 				<params>
 					<param name="COMPONENT" value="NetworkManager"/>
-					<param name="TESTS" value="testcase_281207,testcase_281210,testcase_280562,testcase_280563,testcase_280565,testcase_280567,testcase_281356,testcase_281361,testcase_281170,testcase_281388,testcase_281392,testcase_281393,testcase_281249,testcase_281558,testcase_281241,testcase_281243,testcase_281155,testcase_280740,testcase_280613,testcase_281146,testcase_281149,bond_start_by_hand_with_one_auto_only,bond_start_on_boot_with_nothing_auto,bond_start_on_boot_with_one_auto_only,bond_start_on_boot_with_bond_and_one_slave_auto,testcase_281150,testcase_281151,testcase_281153,testcase_281154,nmcli_novice_mode_create_bond_with_mii_monitor_values,nmcli_novice_mode_create_bond_with_default_options,nmcli_novice_mode_create_bond_with_arp_monitor_values,nmcli_novice_mode_create_bond-slave_with_default_options,add_default_team,nmcli_novice_mode_create_team,nmcli_novice_mode_create_team-slave_with_default_options,add_two_slaves_to_team,remove_all_slaves,remove_one_slave,change_slave_type_and_master,remove_active_team_profile,disconnect_active_team,start_team_by_hand_all_auto,start_team_by_hand_one_auto,start_team_on_boot,team_start_on_boot_with_nothing_auto,team_start_on_boot_with_one_auto_only,team_start_on_boot_with_team_and_one_slave_auto,config_loadbalance,config_broadcast,config_invalid,remove_config,describe"/>
-					<param name="GIT_URL" value="git://git.engineering.redhat.com/users/vhumpa/NetworkManager"/>
+					<param name="TESTS" value="$TESTS"/>
 					<param name="GIT_TARGETBRANCH" value="rhel-7"/>
+					<param name="GIT_URL" value="https://gerrit.dqe.lab.eng.bos.redhat.com/cgit/NetworkManager.git"/>
 					<param name="TYPE" value="TEST"/>
 					<param name="TEST_MAPPER" value="True"/>
 				</params>
