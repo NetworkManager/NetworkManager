@@ -16,6 +16,8 @@ import string
 import urllib
 import glob
 import uuid
+import nitrate
+import sets
 
 
 devnull = open(os.devnull, 'w')
@@ -28,6 +30,20 @@ def is_sequence(arg):
     return (not hasattr(arg, "strip") and
             hasattr(arg, "__getitem__") or
             hasattr(arg, "__iter__"))
+
+def seq_unique(seq):
+    s = sets.Set()
+    for i in seq:
+        if i not in s:
+            s.add(i)
+            yield i
+
+_nitrate_tag = {}
+def nitrate_tag(tag):
+    if tag not in _nitrate_tag:
+        testcases = nitrate.Nitrate()._server.TestCase.filter({'plan__component__name': 'NetworkManager', 'tag__name' : tag})
+        _nitrate_tag[tag] = [ case['script'].split('=')[-1] for case in testcases if case['script'] ]
+    return _nitrate_tag[tag]
 
 def _call(args, stderr=devnull, reason=None, dry_run=False, verbose=False):
     if verbose:
@@ -155,6 +171,7 @@ class CmdSubmit(CmdBase):
         self.parser = argparse.ArgumentParser(prog=sys.argv[0] + " " + name, description='Submit job to beaker.')
         self.parser.add_argument('--no-test', action='store_true', help='do submit the job to beaker')
         self.parser.add_argument('--rpm', '-r', action='append')
+        self.parser.add_argument('--nitrate-tag', '-t', action='append')
         self.parser.add_argument('--job', '-j', help='beaker xml job file')
 
     def _prepare_rpms(self):
@@ -180,6 +197,11 @@ class CmdSubmit(CmdBase):
     def _prepare_substitutions(self):
         self.subs = {}
         self.subs['RPM_LIST'] = [ u for x in self.rpm for u in x[1].url() ]
+
+        tests = []
+        if self.options.nitrate_tag:
+            tests = [ tag for n_tag in self.options.nitrate_tag for tag in nitrate_tag(n_tag) ]
+        self.subs['TESTS'] = ','.join(seq_unique(tests))
 
         for (k,v) in self.subs.iteritems():
             self._print_substitution(k, v)
