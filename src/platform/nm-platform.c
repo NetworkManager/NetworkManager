@@ -2124,7 +2124,7 @@ log_link (NMPlatformLink *device, const char *change_type)
 static void
 log_link_added (NMPlatform *p, int ifindex, NMPlatformLink *device, gpointer user_data)
 {
-	log_link (device, "added");
+	log_link (device, "added  ");
 }
 
 static void
@@ -2144,13 +2144,13 @@ log_ip4_address (NMPlatformIP4Address *address, const char *change_type)
 {
 	const char *name = nm_platform_link_get_name (address->ifindex);
 
-	debug ("(%s) signal: address %s: %s", name, change_type, nm_platform_ip4_address_to_string (address));
+	debug ("(%s) signal: address 4 %s: %s", name, change_type, nm_platform_ip4_address_to_string (address));
 }
 
 static void
 log_ip4_address_added (NMPlatform *p, int ifindex, NMPlatformIP4Address *address, gpointer user_data)
 {
-	log_ip4_address (address, "added");
+	log_ip4_address (address, "added  ");
 }
 
 static void
@@ -2170,13 +2170,13 @@ log_ip6_address (NMPlatformIP6Address *address, const char *change_type)
 {
 	const char *name = nm_platform_link_get_name (address->ifindex);
 
-	debug ("(%s) signal: address %s: %s", name, change_type, nm_platform_ip6_address_to_string (address));
+	debug ("(%s) signal: address 6 %s: %s", name, change_type, nm_platform_ip6_address_to_string (address));
 }
 
 static void
 log_ip6_address_added (NMPlatform *p, int ifindex, NMPlatformIP6Address *address, gpointer user_data)
 {
-	log_ip6_address (address, "added");
+	log_ip6_address (address, "added  ");
 }
 
 static void
@@ -2194,13 +2194,13 @@ log_ip6_address_removed (NMPlatform *p, int ifindex, NMPlatformIP6Address *addre
 static void
 log_ip4_route (NMPlatformIP4Route *route, const char *change_type)
 {
-	debug ("signal: route %s: %s", change_type, nm_platform_ip4_route_to_string (route));
+	debug ("signal: route   4 %s: %s", change_type, nm_platform_ip4_route_to_string (route));
 }
 
 static void
 log_ip4_route_added (NMPlatform *p, int ifindex, NMPlatformIP4Route *route, gpointer user_data)
 {
-	log_ip4_route (route, "added");
+	log_ip4_route (route, "added  ");
 }
 
 static void
@@ -2218,13 +2218,13 @@ log_ip4_route_removed (NMPlatform *p, int ifindex, NMPlatformIP4Route *route, gp
 static void
 log_ip6_route (NMPlatformIP6Route *route, const char *change_type)
 {
-	debug ("signal: route %s: %s", change_type, nm_platform_ip6_route_to_string (route));
+	debug ("signal: route   6 %s: %s", change_type, nm_platform_ip6_route_to_string (route));
 }
 
 static void
 log_ip6_route_added (NMPlatform *p, int ifindex, NMPlatformIP6Route *route, gpointer user_data)
 {
-	log_ip6_route (route, "added");
+	log_ip6_route (route, "added  ");
 }
 
 static void
