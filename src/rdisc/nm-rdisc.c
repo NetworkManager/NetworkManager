@@ -24,6 +24,7 @@
 #include "nm-rdisc.h"
 
 #include "nm-logging.h"
+#include "nm-utils.h"
 
 #define debug(...) nm_log_dbg (LOGD_IP6, __VA_ARGS__)
 
@@ -103,37 +104,41 @@ config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed)
 	char changedstr[CONFIG_MAP_MAX_STR];
 	char addrstr[INET6_ADDRSTRLEN];
 
-	config_map_to_string (changed, changedstr);
-	debug ("(%s): router discovery configuration changed [%s]:", rdisc->ifname, changedstr);
-	debug ("  dhcp-level %s", dhcp_level_to_string (rdisc->dhcp_level));
-	for (i = 0; i < rdisc->gateways->len; i++) {
-		NMRDiscGateway *gateway = &g_array_index (rdisc->gateways, NMRDiscGateway, i);
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_IP6)) {
+		config_map_to_string (changed, changedstr);
+		debug ("(%s): router discovery configuration changed [%s]:", rdisc->ifname, changedstr);
+		debug ("  dhcp-level %s", dhcp_level_to_string (rdisc->dhcp_level));
+		for (i = 0; i < rdisc->gateways->len; i++) {
+			NMRDiscGateway *gateway = &g_array_index (rdisc->gateways, NMRDiscGateway, i);
 
-		inet_ntop (AF_INET6, &gateway->address, addrstr, sizeof (addrstr));
-		debug ("  gateway %s pref %d exp %u", addrstr, gateway->preference, expiry (gateway));
-	}
-	for (i = 0; i < rdisc->addresses->len; i++) {
-		NMRDiscAddress *address = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
+			inet_ntop (AF_INET6, &gateway->address, addrstr, sizeof (addrstr));
+			debug ("  gateway %s pref %d exp %u", addrstr, gateway->preference, expiry (gateway));
+		}
+		for (i = 0; i < rdisc->addresses->len; i++) {
+			NMRDiscAddress *address = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
 
-		inet_ntop (AF_INET6, &address->address, addrstr, sizeof (addrstr));
-		debug ("  address %s exp %u", addrstr, expiry (address));
-	}
-	for (i = 0; i < rdisc->routes->len; i++) {
-		NMRDiscRoute *route = &g_array_index (rdisc->routes, NMRDiscRoute, i);
+			inet_ntop (AF_INET6, &address->address, addrstr, sizeof (addrstr));
+			debug ("  address %s exp %u", addrstr, expiry (address));
+		}
+		for (i = 0; i < rdisc->routes->len; i++) {
+			NMRDiscRoute *route = &g_array_index (rdisc->routes, NMRDiscRoute, i);
 
-		inet_ntop (AF_INET6, &route->network, addrstr, sizeof (addrstr));
-		debug ("  route %s/%d pref %d exp %u", addrstr, route->plen, route->preference, expiry (route));
-	}
-	for (i = 0; i < rdisc->dns_servers->len; i++) {
-		NMRDiscDNSServer *dns_server = &g_array_index (rdisc->dns_servers, NMRDiscDNSServer, i);
+			inet_ntop (AF_INET6, &route->network, addrstr, sizeof (addrstr));
+			debug ("  route %s/%d via %s pref %d exp %u", addrstr, route->plen,
+				   nm_utils_inet6_ntop (&route->gateway, NULL), route->preference,
+				   expiry (route));
+		}
+		for (i = 0; i < rdisc->dns_servers->len; i++) {
+			NMRDiscDNSServer *dns_server = &g_array_index (rdisc->dns_servers, NMRDiscDNSServer, i);
 
-		inet_ntop (AF_INET6, &dns_server->address, addrstr, sizeof (addrstr));
-		debug ("  dns_server %s exp %u", addrstr, expiry (dns_server));
-	}
-	for (i = 0; i < rdisc->dns_domains->len; i++) {
-		NMRDiscDNSDomain *dns_domain = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
+			inet_ntop (AF_INET6, &dns_server->address, addrstr, sizeof (addrstr));
+			debug ("  dns_server %s exp %u", addrstr, expiry (dns_server));
+		}
+		for (i = 0; i < rdisc->dns_domains->len; i++) {
+			NMRDiscDNSDomain *dns_domain = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
 
-		debug ("  dns_domain %s exp %u", dns_domain->domain, expiry (dns_domain));
+			debug ("  dns_domain %s exp %u", dns_domain->domain, expiry (dns_domain));
+		}
 	}
 }
 
