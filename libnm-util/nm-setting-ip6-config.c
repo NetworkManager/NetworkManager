@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2013 Red Hat, Inc.
+ * (C) Copyright 2007 - 2014 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -242,6 +242,37 @@ nm_setting_ip6_config_remove_dns (NMSettingIP6Config *setting, guint32 i)
 }
 
 /**
+ * nm_setting_ip6_config_remove_dns_by_value:
+ * @setting: the #NMSettingIP6Config
+ * @dns: the IPv6 address of the DNS server to remove
+ *
+ * Removes the DNS server at index @i.
+ *
+ * Returns: %TRUE if the DNS server was found and removed; %FALSE if it was not.
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_setting_ip6_config_remove_dns_by_value (NMSettingIP6Config *setting,
+                                           const struct in6_addr *addr)
+{
+	NMSettingIP6ConfigPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
+
+	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
+	for (iter = priv->dns; iter; iter = g_slist_next (iter)) {
+		if (!memcmp (addr, (struct in6_addr *) iter->data, sizeof (struct in6_addr))) {
+			priv->dns = g_slist_delete_link (priv->dns, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
  * nm_setting_ip6_config_clear_dns:
  * @setting: the #NMSettingIP6Config
  *
@@ -345,6 +376,39 @@ nm_setting_ip6_config_remove_dns_search (NMSettingIP6Config *setting, guint32 i)
 	g_free (elt->data);
 	priv->dns_search = g_slist_delete_link (priv->dns_search, elt);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+}
+
+/**
+ * nm_setting_ip6_config_remove_dns_search_by_value:
+ * @setting: the #NMSettingIP6Config
+ * @dns_search: the search domain to remove
+ *
+ * Removes the DNS search domain @dns_search.
+ *
+ * Returns: %TRUE if the DNS search domain was found and removed; %FALSE if it was not.
+ *
+ * Since 0.9.10
+ **/
+gboolean
+nm_setting_ip6_config_remove_dns_search_by_value (NMSettingIP6Config *setting,
+                                                  const char *dns_search)
+{
+	NMSettingIP6ConfigPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
+	g_return_val_if_fail (dns_search != NULL, FALSE);
+	g_return_val_if_fail (dns_search[0] != '\0', FALSE);
+
+	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
+	for (iter = priv->dns_search; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (dns_search, (char *) iter->data)) {
+			priv->dns_search = g_slist_delete_link (priv->dns_search, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS_SEARCH);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 /**
@@ -458,6 +522,38 @@ nm_setting_ip6_config_remove_address (NMSettingIP6Config *setting, guint32 i)
 }
 
 /**
+ * nm_setting_ip6_config_remove_address_by_value:
+ * @setting: the #NMSettingIP6Config
+ * @address: the address to remove
+ *
+ * Removes the address @address.
+ *
+ * Returns: %TRUE if the address was found and removed; %FALSE if it was not.
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_setting_ip6_config_remove_address_by_value (NMSettingIP6Config *setting,
+                                               NMIP6Address *address)
+{
+	NMSettingIP6ConfigPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
+	g_return_val_if_fail (address != NULL, FALSE);
+
+	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
+	for (iter = priv->addresses; iter; iter = g_slist_next (iter)) {
+		if (nm_ip6_address_compare ((NMIP6Address *) iter->data, address)) {
+			priv->addresses = g_slist_delete_link (priv->addresses, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
  * nm_setting_ip6_config_clear_addresses:
  * @setting: the #NMSettingIP6Config
  *
@@ -566,6 +662,39 @@ nm_setting_ip6_config_remove_route (NMSettingIP6Config *setting, guint32 i)
 	nm_ip6_route_unref ((NMIP6Route *) elt->data);
 	priv->routes = g_slist_delete_link (priv->routes, elt);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
+}
+
+/**
+ * nm_setting_ip6_config_remove_route_by_value:
+ * @setting: the #NMSettingIP6Config
+ * @route: the route to remove
+ *
+ * Removes the route @route.
+ *
+ * Returns: %TRUE if the route was found and removed; %FALSE if it was not.
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_setting_ip6_config_remove_route_by_value (NMSettingIP6Config *setting,
+                                             NMIP6Route *route)
+{
+	NMSettingIP6ConfigPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
+	g_return_val_if_fail (route != NULL, FALSE);
+
+	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
+	for (iter = priv->routes; iter; iter = g_slist_next (iter)) {
+		if (nm_ip6_route_compare ((NMIP6Route *) iter->data, route)) {
+			nm_ip6_route_unref ((NMIP6Route *) iter->data);
+			priv->routes = g_slist_delete_link (priv->routes, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 /**

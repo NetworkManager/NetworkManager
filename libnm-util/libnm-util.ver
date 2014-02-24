@@ -361,9 +361,13 @@ global:
 	nm_setting_ip4_config_get_type;
 	nm_setting_ip4_config_new;
 	nm_setting_ip4_config_remove_address;
+	nm_setting_ip4_config_remove_address_by_value;
 	nm_setting_ip4_config_remove_dns;
+	nm_setting_ip4_config_remove_dns_by_value;
 	nm_setting_ip4_config_remove_dns_search;
+	nm_setting_ip4_config_remove_dns_search_by_value;
 	nm_setting_ip4_config_remove_route;
+	nm_setting_ip4_config_remove_route_by_value;
 	nm_setting_ip6_config_add_address;
 	nm_setting_ip6_config_add_dns;
 	nm_setting_ip6_config_add_dns_search;
@@ -393,9 +397,13 @@ global:
 	nm_setting_ip6_config_new;
 	nm_setting_ip6_config_privacy_get_type;
 	nm_setting_ip6_config_remove_address;
+	nm_setting_ip6_config_remove_address_by_value;
 	nm_setting_ip6_config_remove_dns;
+	nm_setting_ip6_config_remove_dns_by_value;
 	nm_setting_ip6_config_remove_dns_search;
+	nm_setting_ip6_config_remove_dns_search_by_value;
 	nm_setting_ip6_config_remove_route;
+	nm_setting_ip6_config_remove_route_by_value;
 	nm_setting_need_secrets;
 	nm_setting_new_from_hash;
 	nm_setting_olpc_mesh_error_get_type;
