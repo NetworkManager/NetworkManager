@@ -267,7 +267,9 @@ global:
 	nm_setting_connection_new;
 	nm_setting_connection_permissions_user_allowed;
 	nm_setting_connection_remove_permission;
+	nm_setting_connection_remove_permission_by_value;
 	nm_setting_connection_remove_secondary;
+	nm_setting_connection_remove_secondary_by_value;
 	nm_setting_dcb_error_get_type;
 	nm_setting_dcb_error_quark;
 	nm_setting_dcb_flags_get_type;
