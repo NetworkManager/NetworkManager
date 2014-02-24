@@ -437,11 +437,13 @@ fi
 %defattr(-,root,root,0755)
 %config %{_sysconfdir}/%{name}/conf.d/00-server.conf
 
+%if 0%{?with_nmtui}
 %files tui
 %{_bindir}/nmtui
 %{_bindir}/nmtui-edit
 %{_bindir}/nmtui-connect
 %{_bindir}/nmtui-hostname
+%endif
 
 %changelog
 __CHANGELOG__
