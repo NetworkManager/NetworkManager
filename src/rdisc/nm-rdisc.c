@@ -113,7 +113,7 @@ config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed)
 		debug ("  gateway %s pref %d exp %u", addrstr, gateway->preference, expiry (gateway));
 	}
 	for (i = 0; i < rdisc->addresses->len; i++) {
-		NMRDiscGateway *address = &g_array_index (rdisc->addresses, NMRDiscGateway, i);
+		NMRDiscAddress *address = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
 
 		inet_ntop (AF_INET6, &address->address, addrstr, sizeof (addrstr));
 		debug ("  address %s exp %u", addrstr, expiry (address));
