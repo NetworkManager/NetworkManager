@@ -172,8 +172,11 @@ global:
 	nm_setting_802_1x_get_type;
 	nm_setting_802_1x_new;
 	nm_setting_802_1x_remove_altsubject_match;
+	nm_setting_802_1x_remove_altsubject_match_by_value;
 	nm_setting_802_1x_remove_eap_method;
+	nm_setting_802_1x_remove_eap_method_by_value;
 	nm_setting_802_1x_remove_phase2_altsubject_match;
+	nm_setting_802_1x_remove_phase2_altsubject_match_by_value;
 	nm_setting_802_1x_set_ca_cert;
 	nm_setting_802_1x_set_client_cert;
 	nm_setting_802_1x_set_phase2_ca_cert;
