@@ -2,9 +2,9 @@
 	<whiteboard>
 		$WHITEBOARD $UUID
 	</whiteboard>
-	<recipeSet priority="Normal">
-		<recipe kernel_options="" kernel_options_post="selinux=0" ks_meta="beah_rpm=beah-0.6.48" role="None" whiteboard="">
-			<autopick random="true"/>
+	<recipeSet priority="High">
+		<recipe kernel_options="" kernel_options_post="" ks_meta="method=nfs" role="None" whiteboard="">
+			<autopick random="false"/>
 			<watchdog panic="None"/>
 			<packages/>
 			<ks_appends/>
@@ -22,16 +22,19 @@
 				<and>
 					<group op="=" value="desktopqe-net"/>
 					<arch op="=" value="x86_64"/>
+					<!--<hostname op="=" value="qe-dell-ovs5-vm-2.dqe.lab.eng.bos.redhat.com"/>-->
 				</and>
 				<system_type value="Machine"/>
 			</hostRequires>
 			<partitions/>
-			<task name="/distribution/install" role="STANDALONE">
-				<params/>
+			<task name="/distribution/pkginstall" role="STANDALONE">
+				<params>
+					<param name="PKGARGNAME" value="python-setuptools pexpect bash-completion iw net-tools teamd NetworkManager wireshark"/>
+				</params>
 			</task>
 			<task name="/distribution/command" role="STANDALONE">
 				<params>
-					<param name="CMDS_TO_RUN" value="yum install -y pexpect wireshark http://kojipkgs.fedoraproject.org//packages/python-parse/1.6.2/4.fc19/noarch/python-parse-1.6.2-4.fc19.noarch.rpm http://kojipkgs.fedoraproject.org//packages/python-behave/1.2.3/8.fc19/noarch/python-behave-1.2.3-8.fc19.noarch.rpm"/>
+					<param name="CMDS_TO_RUN" value="sed -i '$$s/$$/\n[logging]\n    level=DEBUG\n    domains=ALL\n/' /etc/NetworkManager/NetworkManager.conf"/>
 				</params>
 			</task>
 			<task name="/distribution/command" role="STANDALONE">
@@ -39,7 +42,12 @@
 					<param name="CMDS_TO_RUN" value="yum install -y $RPM_LIST"/>
 				</params>
 			</task>
-			<task name="/qe/desktop/simpletestharness" role="STANDALONE">
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="systemctl restart NetworkManager.service"/>
+				</params>
+			</task>
+			<task name="/qe/desktop/simpletestharness_dev" role="STANDALONE">
 				<params>
 					<param name="COMPONENT" value="NetworkManager"/>
 					<param name="TESTS" value="$TESTS"/>
