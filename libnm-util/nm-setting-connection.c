@@ -383,8 +383,8 @@ nm_setting_connection_permissions_user_allowed (NMSettingConnection *setting,
  * the "user" permission type is supported, and @pitem must be a username. See
  * #NMSettingConnection:permissions: for more details.
  *
- * Returns: TRUE if the permission was unique and was successfully added to the
- * list, FALSE if @ptype or @pitem was invalid or it the permission was already
+ * Returns: %TRUE if the permission was unique and was successfully added to the
+ * list, %FALSE if @ptype or @pitem was invalid or it the permission was already
  * present in the list
  */
 gboolean
@@ -551,7 +551,7 @@ nm_setting_connection_get_slave_type (NMSettingConnection *setting)
  * @type: the setting name (ie #NM_SETTING_BOND_SETTING_NAME) to be matched
  * against @setting's slave type
  *
- * Returns: TRUE if connection is of the given slave @type
+ * Returns: %TRUE if connection is of the given slave @type
  */
 gboolean
 nm_setting_connection_is_slave_type (NMSettingConnection *setting,

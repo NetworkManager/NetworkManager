@@ -287,10 +287,10 @@ validate_ifname (const char *name, const char *value)
  * @value: the value of the option to validate
  *
  * Checks whether @name is a valid bond option and @value is a valid value for
- * the @name. If @value is NULL, the function only validates the option name.
+ * the @name. If @value is %NULL, the function only validates the option name.
  *
- * Returns: TRUE, if the @value is valid for the given name.
- * If the @name is not a valid option, FALSE will be returned.
+ * Returns: %TRUE, if the @value is valid for the given name.
+ * If the @name is not a valid option, %FALSE will be returned.
  *
  * Since: 0.9.10
  **/

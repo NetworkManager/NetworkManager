@@ -569,7 +569,7 @@ add_connection_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data
  * Requests that the remote settings service add the given settings to a new
  * connection.  The connection is immediately written to disk.
  *
- * Returns: TRUE if the request was successful, FALSE if it failed
+ * Returns: %TRUE if the request was successful, %FALSE if it failed
  **/
 gboolean
 nm_remote_settings_add_connection (NMRemoteSettings *settings,
@@ -831,7 +831,7 @@ save_hostname_cb (DBusGProxy *proxy,
  * Requests that the machine's persistent hostname be set to the specified value
  * or cleared.
  *
- * Returns: TRUE if the request was successful, FALSE if it failed
+ * Returns: %TRUE if the request was successful, %FALSE if it failed
  **/
 gboolean
 nm_remote_settings_save_hostname (NMRemoteSettings *settings,

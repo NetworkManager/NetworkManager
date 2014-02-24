@@ -1764,7 +1764,7 @@ nm_settings_connection_get_seen_bssids (NMSettingsConnection *connection)
  * @connection: the #NMSettingsConnection
  * @bssid: the BSSID to check the seen BSSID list for
  *
- * Returns: TRUE if the given @bssid is in the seen BSSIDs list
+ * Returns: %TRUE if the given @bssid is in the seen BSSIDs list
  **/
 gboolean
 nm_settings_connection_has_seen_bssid (NMSettingsConnection *connection,

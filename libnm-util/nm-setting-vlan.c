@@ -242,8 +242,8 @@ set_map (NMSettingVlan *self, NMVlanPriorityMap map, GSList *list)
  * or the #NMSettingVlan:egress_priority_map properties.  The priority map maps
  * the Linux SKB priorities to 802.1p priorities.
  *
- * Returns: TRUE if the entry was successfully added to the list, or it
- * overwrote the old value, FALSE if error
+ * Returns: %TRUE if the entry was successfully added to the list, or it
+ * overwrote the old value, %FALSE if error
  */
 gboolean
 nm_setting_vlan_add_priority_str (NMSettingVlan *setting,
@@ -357,8 +357,8 @@ nm_setting_vlan_get_priority (NMSettingVlan *setting,
  * If @map is #NM_VLAN_EGRESS_MAP then @from is the Linux SKB priority value and
  * @to is the outgoing 802.1q VLAN Priority Code Point (PCP) value.
  *
- * Returns: TRUE if the new priority mapping was successfully added to the
- * list, FALSE if error
+ * Returns: %TRUE if the new priority mapping was successfully added to the
+ * list, %FALSE if error
  */
 gboolean
 nm_setting_vlan_add_priority (NMSettingVlan *setting,

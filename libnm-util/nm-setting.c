@@ -1109,8 +1109,8 @@ get_secret_flags (NMSetting *setting,
  * For a given secret, retrieves the #NMSettingSecretFlags describing how to
  * handle that secret.
  *
- * Returns: TRUE on success (if the given secret name was a valid property of
- * this setting, and if that property is secret), FALSE if not
+ * Returns: %TRUE on success (if the given secret name was a valid property of
+ * this setting, and if that property is secret), %FALSE if not
  **/
 gboolean
 nm_setting_get_secret_flags (NMSetting *setting,
@@ -1152,8 +1152,8 @@ set_secret_flags (NMSetting *setting,
  * For a given secret, stores the #NMSettingSecretFlags describing how to
  * handle that secret.
  *
- * Returns: TRUE on success (if the given secret name was a valid property of
- * this setting, and if that property is secret), FALSE if not
+ * Returns: %TRUE on success (if the given secret name was a valid property of
+ * this setting, and if that property is secret), %FALSE if not
  **/
 gboolean
 nm_setting_set_secret_flags (NMSetting *setting,

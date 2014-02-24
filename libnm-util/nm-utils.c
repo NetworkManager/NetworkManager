@@ -219,7 +219,7 @@ static gboolean initialized = FALSE;
  * is performed, but calling nm_utils_deinit() to explicitly deinitialize
  * libnm-util can also be done.  This function can be called more than once.
  * 
- * Returns: TRUE if the initialization was successful, FALSE on failure.
+ * Returns: %TRUE if the initialization was successful, %FALSE on failure.
  **/
 gboolean
 nm_utils_init (GError **error)
@@ -334,7 +334,7 @@ nm_utils_ssid_to_utf8 (const GByteArray *ssid)
  * AP's SSID.  This function attempts to detect blank/empty SSIDs using a
  * number of known SSID-cloaking methods.
  *
- * Returns: TRUE if the SSID is "empty", FALSE if it is not
+ * Returns: %TRUE if the SSID is "empty", %FALSE if it is not
  **/
 gboolean
 nm_utils_is_empty_ssid (const guint8 * ssid, int len)
@@ -396,7 +396,7 @@ nm_utils_escape_ssid (const guint8 * ssid, guint32 len)
  * nm_utils_same_ssid:
  * @ssid1: first SSID data to compare
  * @ssid2: second SSID data to compare
- * @ignore_trailing_null: TRUE to ignore one trailing NULL byte
+ * @ignore_trailing_null: %TRUE to ignore one trailing NULL byte
  *
  * Earlier versions of the Linux kernel added a NULL byte to the end of the
  * SSID to enable easy printing of the SSID on the console or in a terminal,
@@ -405,7 +405,7 @@ nm_utils_escape_ssid (const guint8 * ssid, guint32 len)
  * cost of some compatibility with odd SSIDs that may legitimately have trailing
  * NULLs, even though that is functionally pointless.
  *
- * Returns: TRUE if the SSIDs are the same, FALSE if they are not
+ * Returns: %TRUE if the SSIDs are the same, %FALSE if they are not
  **/
 gboolean
 nm_utils_same_ssid (const GByteArray * ssid1,
@@ -604,8 +604,8 @@ device_supports_ap_ciphers (guint32 dev_caps,
  * against, determines whether the combination of device capabilities and
  * desired security type are valid for AP/Hotspot connections.
  *
- * Returns: TRUE if the device capabilities are compatible with the desired
- * @type, FALSE if they are not.
+ * Returns: %TRUE if the device capabilities are compatible with the desired
+ * @type, %FALSE if they are not.
  *
  * Since: 0.9.8
  **/
@@ -652,8 +652,8 @@ nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
  * NOTE: this function cannot handle checking security for AP/Hotspot mode;
  * use nm_utils_ap_mode_security_valid() instead.
  *
- * Returns: TRUE if the device capabilities and AP capabilties intersect and are
- * compatible with the desired @type, FALSE if they are not
+ * Returns: %TRUE if the device capabilities and AP capabilties intersect and are
+ * compatible with the desired @type, %FALSE if they are not
  **/
 gboolean
 nm_utils_security_valid (NMUtilsSecurityType type,
@@ -1653,7 +1653,7 @@ out:
  *
  * Utility function to find out if the @filename is in PKCS#12 format.
  *
- * Returns: TRUE if the file is PKCS#12, FALSE if it is not
+ * Returns: %TRUE if the file is PKCS#12, %FALSE if it is not
  **/
 gboolean
 nm_utils_file_is_pkcs12 (const char *filename)
@@ -1846,7 +1846,7 @@ nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band)
  *
  * Utility function to verify WiFi channel validity.
  *
- * Returns: TRUE or FALSE
+ * Returns: %TRUE or %FALSE
  **/
 gboolean
 nm_utils_wifi_is_channel_valid (guint32 channel, const char *band)
