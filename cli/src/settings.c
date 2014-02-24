@@ -2372,8 +2372,12 @@ nmc_property_con_set_master (NMSetting *setting, const char *prop, const char *v
 {
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (   !nm_utils_iface_valid_name (val)
-	    && !nm_utils_is_uuid (val)) {
+	if (!val)
+		;
+	else if (!*val)
+		val = NULL;
+	else if (   !nm_utils_iface_valid_name (val)
+	         && !nm_utils_is_uuid (val)) {
 		g_set_error (error, 1, 0,
 		             _("'%s' is not valid master; use ifname or connection UUID"),
 		             val);
