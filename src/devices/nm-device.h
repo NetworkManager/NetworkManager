@@ -71,10 +71,11 @@
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
 /* Internal signals */
-#define NM_DEVICE_AUTH_REQUEST       "auth-request"
-#define NM_DEVICE_IP4_CONFIG_CHANGED "ip4-config-changed"
-#define NM_DEVICE_IP6_CONFIG_CHANGED "ip6-config-changed"
-#define NM_DEVICE_REMOVED            "removed"
+#define NM_DEVICE_AUTH_REQUEST          "auth-request"
+#define NM_DEVICE_IP4_CONFIG_CHANGED    "ip4-config-changed"
+#define NM_DEVICE_IP6_CONFIG_CHANGED    "ip6-config-changed"
+#define NM_DEVICE_REMOVED               "removed"
+#define NM_DEVICE_RECHECK_AUTO_ACTIVATE "recheck-auto-activate"
 
 
 G_BEGIN_DECLS

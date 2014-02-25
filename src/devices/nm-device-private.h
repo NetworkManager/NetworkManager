@@ -95,4 +95,6 @@ void nm_device_master_check_slave_physical_port (NMDevice *dev, NMDevice *slave,
 
 void nm_device_set_carrier (NMDevice *device, gboolean carrier);
 
+void nm_device_emit_recheck_auto_activate (NMDevice *device);
+
 #endif	/* NM_DEVICE_PRIVATE_H */

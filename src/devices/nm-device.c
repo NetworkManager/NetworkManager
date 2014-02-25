@@ -113,6 +113,7 @@ enum {
 	IP4_CONFIG_CHANGED,
 	IP6_CONFIG_CHANGED,
 	REMOVED,
+	RECHECK_AUTO_ACTIVATE,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -1962,6 +1963,12 @@ gboolean
 nm_device_can_assume_connections (NMDevice *device)
 {
 	return !!NM_DEVICE_GET_CLASS (device)->update_connection;
+}
+
+void
+nm_device_emit_recheck_auto_activate (NMDevice *self)
+{
+	g_signal_emit (self, signals[RECHECK_AUTO_ACTIVATE], 0);
 }
 
 static void
@@ -6162,6 +6169,13 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	signals[REMOVED] =
 		g_signal_new (NM_DEVICE_REMOVED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL, NULL,
+		              G_TYPE_NONE, 0);
+
+	signals[RECHECK_AUTO_ACTIVATE] =
+		g_signal_new (NM_DEVICE_RECHECK_AUTO_ACTIVATE,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,

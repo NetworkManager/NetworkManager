@@ -222,6 +222,19 @@ activation_timed_out (gpointer data)
 }
 
 static void
+emit_nsp_added_removed (NMDeviceWimax *self,
+                        guint signum,
+                        NMWimaxNsp *nsp,
+                        gboolean recheck_available_connections)
+{
+	g_signal_emit (self, signals[signum], 0, nsp);
+	g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_NSPS);
+	nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
+	if (recheck_available_connections)
+		nm_device_recheck_available_connections (NM_DEVICE (self));
+}
+
+static void
 remove_all_nsps (NMDeviceWimax *self)
 {
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
@@ -232,8 +245,7 @@ remove_all_nsps (NMDeviceWimax *self)
 		NMWimaxNsp *nsp = NM_WIMAX_NSP (priv->nsp_list->data);
 
 		priv->nsp_list = g_slist_remove (priv->nsp_list, nsp);
-		g_signal_emit (self, signals[NSP_REMOVED], 0, nsp);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_NSPS);
+		emit_nsp_added_removed (self, NSP_REMOVED, nsp, FALSE);
 		g_object_unref (nsp);
 	}
 
@@ -971,7 +983,7 @@ remove_outdated_nsps (NMDeviceWimax *self,
 	for (iter = to_remove; iter; iter = iter->next) {
 		NMWimaxNsp *nsp = NM_WIMAX_NSP (iter->data);
 
-		g_signal_emit (self, signals[NSP_REMOVED], 0, nsp);
+		emit_nsp_added_removed (self, NSP_REMOVED, nsp, FALSE);
 		priv->nsp_list = g_slist_remove (priv->nsp_list, nsp);
 		g_object_unref (nsp);
 	}
@@ -1025,9 +1037,7 @@ wmx_scan_result_cb (struct wmxsdk *wmxsdk,
 		if (new_nsp) {
 			priv->nsp_list = g_slist_append (priv->nsp_list, nsp);
 			nm_wimax_nsp_export_to_dbus (nsp);
-			g_signal_emit (self, signals[NSP_ADDED], 0, nsp);
-			g_object_notify (G_OBJECT (self), NM_DEVICE_WIMAX_NSPS);
-			nm_device_recheck_available_connections (NM_DEVICE (self));
+			emit_nsp_added_removed (self, NSP_ADDED, nsp, TRUE);
 		}
 	}
 }

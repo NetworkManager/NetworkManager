@@ -181,6 +181,7 @@ modem_enabled_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 	set_enabled (NM_DEVICE (self), nm_modem_get_mm_enabled (priv->modem));
 
 	g_signal_emit (G_OBJECT (self), signals[ENABLE_CHANGED], 0);
+	nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
 }
 
 static void
