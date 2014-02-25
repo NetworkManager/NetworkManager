@@ -488,6 +488,8 @@ global:
 	nm_setting_vlan_get_type;
 	nm_setting_vlan_new;
 	nm_setting_vlan_remove_priority;
+	nm_setting_vlan_remove_priority_by_value;
+	nm_setting_vlan_remove_priority_str_by_value;
 	nm_setting_vpn_add_data_item;
 	nm_setting_vpn_add_secret;
 	nm_setting_vpn_error_get_type;
