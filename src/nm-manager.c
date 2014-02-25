@@ -1705,6 +1705,7 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	connections = g_slist_sort (connections, nm_settings_sort_connections);
 	matched = nm_utils_match_connection (connections,
 	                                     connection,
+	                                     nm_device_has_carrier (device),
 	                                     match_connection_filter,
 	                                     device);
 	if (matched) {

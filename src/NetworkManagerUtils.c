@@ -685,14 +685,55 @@ check_ip6_method_link_local_auto (NMConnection *orig,
 	return FALSE;
 }
 
+static gboolean
+check_ip4_method_disabled_auto (NMConnection *orig,
+                                NMConnection *candidate,
+                                GHashTable *settings,
+                                gboolean device_has_carrier)
+{
+	GHashTable *props;
+	const char *orig_ip4_method, *candidate_ip4_method;
+	NMSettingIP4Config *candidate_ip4;
+
+	props = g_hash_table_lookup (settings, NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	if (   !props
+	    || (g_hash_table_size (props) != 1)
+	    || !g_hash_table_lookup (props, NM_SETTING_IP4_CONFIG_METHOD)) {
+		/* For now 'method' is the only difference we handle here */
+		return FALSE;
+	}
+
+	/* If the original connection is 'disabled' (device had no IP addresses)
+	 * but it has no carrier, that most likely means that IP addressing could
+	 * not complete and thus no IP addresses were assigned.  In that case, allow
+	 * matching to the "auto" method.
+	 */
+	orig_ip4_method = nm_utils_get_ip_config_method (orig, NM_TYPE_SETTING_IP4_CONFIG);
+	candidate_ip4_method = nm_utils_get_ip_config_method (candidate, NM_TYPE_SETTING_IP4_CONFIG);
+	candidate_ip4 = nm_connection_get_setting_ip4_config (candidate);
+
+	if (   strcmp (orig_ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
+	    && strcmp (candidate_ip4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0
+	    && (!candidate_ip4 || nm_setting_ip4_config_get_may_fail (candidate_ip4))
+	    && (device_has_carrier == FALSE)) {
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 static NMConnection *
 check_possible_match (NMConnection *orig,
                       NMConnection *candidate,
-                      GHashTable *settings)
+                      GHashTable *settings,
+                      gboolean device_has_carrier)
 {
 	g_return_val_if_fail (settings != NULL, NULL);
 
 	if (check_ip6_method_link_local_auto (orig, candidate, settings))
+		return candidate;
+
+	if (check_ip4_method_disabled_auto (orig, candidate, settings, device_has_carrier))
 		return candidate;
 
 	return NULL;
@@ -703,6 +744,8 @@ check_possible_match (NMConnection *orig,
  * @connections: a (optionally pre-sorted) list of connections from which to
  * find a matching connection to @original based on "inferrable" properties
  * @original: the #NMConnection to find a match for from @connections
+ * @device_has_carrier: pass %TRUE if the device that generated @original has
+ * a carrier, %FALSE if not
  * @match_filter_func: a function to check whether each connection from @connections
  * should be considered for matching.  This function should return %TRUE if the
  * connection should be considered, %FALSE if the connection should be ignored
@@ -720,6 +763,7 @@ check_possible_match (NMConnection *orig,
 NMConnection *
 nm_utils_match_connection (GSList *connections,
                            NMConnection *original,
+                           gboolean device_has_carrier,
                            NMUtilsMatchFilterFunc match_filter_func,
                            gpointer match_filter_data)
 {
@@ -737,7 +781,7 @@ nm_utils_match_connection (GSList *connections,
 
 		if (!nm_connection_diff (original, candidate, NM_SETTING_COMPARE_FLAG_INFERRABLE, &diffs)) {
 			if (!best_match)
-				best_match = check_possible_match (original, candidate, diffs);
+				best_match = check_possible_match (original, candidate, diffs, device_has_carrier);
 			g_hash_table_unref (diffs);
 			continue;
 		}

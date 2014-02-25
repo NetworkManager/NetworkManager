@@ -185,7 +185,7 @@ test_connection_match_basic (void)
 	copy = nm_connection_duplicate (orig);
 	connections = g_slist_append (connections, copy);
 
-	matched = nm_utils_match_connection (connections, orig, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
 	g_assert (matched == copy);
 
 	/* Now change a material property like IPv4 method and ensure matching fails */
@@ -194,7 +194,7 @@ test_connection_match_basic (void)
 	g_object_set (G_OBJECT (s_ip4),
 	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
 	              NULL);
-	matched = nm_utils_match_connection (connections, orig, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
 	g_assert (matched == NULL);
 
 	g_slist_free (connections);
@@ -230,8 +230,48 @@ test_connection_match_ip6_method (void)
 	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 
-	matched = nm_utils_match_connection (connections, orig, NULL, NULL);
+	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
 	g_assert (matched == copy);
+
+	g_slist_free (connections);
+	g_object_unref (orig);
+	g_object_unref (copy);
+}
+
+static void
+test_connection_match_ip4_method (void)
+{
+	NMConnection *orig, *copy, *matched;
+	GSList *connections = NULL;
+	NMSettingIP4Config *s_ip4;
+
+	orig = _match_connection_new ();
+	copy = nm_connection_duplicate (orig);
+	connections = g_slist_append (connections, copy);
+
+	/* Check that if the original connection is IPv4 method=disabled, and the
+	 * candidate is both method=auto and may-faily=true, and the device has no
+	 * carrier that the candidate is matched.
+	 */
+	s_ip4 = nm_connection_get_setting_ip4_config (orig);
+	g_assert (s_ip4);
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+	              NULL);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (copy);
+	g_assert (s_ip4);
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+
+	matched = nm_utils_match_connection (connections, orig, FALSE, NULL, NULL);
+	g_assert (matched == copy);
+
+	/* Ensure when carrier=true matching fails */
+	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	g_assert (matched == NULL);
 
 	g_slist_free (connections);
 	g_object_unref (orig);
@@ -252,6 +292,7 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/general/connection-match/basic", test_connection_match_basic);
 	g_test_add_func ("/general/connection-match/ip6-method", test_connection_match_ip6_method);
+	g_test_add_func ("/general/connection-match/ip4-method", test_connection_match_ip4_method);
 
 	return g_test_run ();
 }
