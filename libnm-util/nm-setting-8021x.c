@@ -638,7 +638,7 @@ nm_setting_802_1x_get_altsubject_match (NMSetting8021x *setting, guint32 i)
  **/
 gboolean
 nm_setting_802_1x_add_altsubject_match (NMSetting8021x *setting,
-										const char *altsubject_match)
+                                        const char *altsubject_match)
 {
 	NMSetting8021xPrivate *priv;
 	GSList *iter;
@@ -652,7 +652,8 @@ nm_setting_802_1x_add_altsubject_match (NMSetting8021x *setting,
 			return FALSE;
 	}
 
-	priv->altsubject_matches = g_slist_append (priv->altsubject_matches, g_strdup (altsubject_match));
+	priv->altsubject_matches = g_slist_append (priv->altsubject_matches,
+	                                           g_strdup (altsubject_match));
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_ALTSUBJECT_MATCHES);
 	return TRUE;
 }
@@ -1184,7 +1185,7 @@ nm_setting_802_1x_get_phase2_altsubject_match (NMSetting8021x *setting, guint32 
  **/
 gboolean
 nm_setting_802_1x_add_phase2_altsubject_match (NMSetting8021x *setting,
-											   const char *phase2_altsubject_match)
+                                               const char *phase2_altsubject_match)
 {
 	NMSetting8021xPrivate *priv;
 	GSList *iter;
@@ -1198,8 +1199,8 @@ nm_setting_802_1x_add_phase2_altsubject_match (NMSetting8021x *setting,
 			return FALSE;
 	}
 
-	priv->phase2_altsubject_matches = g_slist_append (priv->altsubject_matches,
-													  g_strdup (phase2_altsubject_match));
+	priv->phase2_altsubject_matches = g_slist_append (priv->phase2_altsubject_matches,
+	                                                  g_strdup (phase2_altsubject_match));
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES);
 	return TRUE;
 }
