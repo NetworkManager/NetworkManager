@@ -497,7 +497,7 @@ check_support_kernel_extended_ifa_flags (NMPlatform *platform)
 	priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
 	if (priv->support_kernel_extended_ifa_flags == 0) {
-		g_warn_if_reached ();
+		nm_log_warn (LOGD_PLATFORM, "Unable to detect kernel support for extended IFA_FLAGS. Assume no kernel support.");
 		priv->support_kernel_extended_ifa_flags = -1;
 	}
 
@@ -2769,8 +2769,18 @@ event_handler (GIOChannel *channel,
 	int nle;
 
 	nle = nl_recvmsgs_default (priv->nlh_event);
-	if (nle)
-		error ("Failed to retrieve incoming events: %s", nl_geterror (nle));
+	if (nle < 0)
+		switch (nle) {
+		case NLE_DUMP_INTR:
+			/* this most likely happens due to our request (RTM_GETADDR, AF_INET6, NLM_F_DUMP)
+			 * to detect support for support_kernel_extended_ifa_flags. This is not critical
+			 * and can happen easily. */
+			debug ("Uncritical failure to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+			break;
+		default:
+			error ("Failed to retrieve incoming events: %s (%d)", nl_geterror (nle), nle);
+			break;
+	}
 	return TRUE;
 }
 
