@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2013 Red Hat, Inc.
+ * (C) Copyright 2007 - 2014 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -297,6 +297,7 @@ nm_setting_wired_add_mac_blacklist_item (NMSettingWired *setting, const char *ma
 
 	priv->mac_address_blacklist = g_slist_append (priv->mac_address_blacklist,
 	                                              g_ascii_strup (mac, -1));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
 	return TRUE;
 }
 
@@ -323,6 +324,61 @@ nm_setting_wired_remove_mac_blacklist_item (NMSettingWired *setting, guint32 idx
 
 	g_free (elt->data);
 	priv->mac_address_blacklist = g_slist_delete_link (priv->mac_address_blacklist, elt);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
+}
+
+/**
+ * nm_setting_wired_remove_mac_blacklist_item_by_value:
+ * @setting: the #NMSettingWired
+ * @mac: the MAC address string (hex-digits-and-colons notation) to remove from
+ * the blacklist
+ *
+ * Removes the MAC address @mac from the blacklist.
+ *
+ * Returns: %TRUE if the MAC address was found and removed; %FALSE if it was not.
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_setting_wired_remove_mac_blacklist_item_by_value (NMSettingWired *setting, const char *mac)
+{
+	NMSettingWiredPrivate *priv;
+	GSList *iter;
+	guint8 buf[32];
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
+	g_return_val_if_fail (mac != NULL, FALSE);
+
+	if (!nm_utils_hwaddr_aton (mac, ARPHRD_ETHER, buf))
+		return FALSE;
+
+	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
+	for (iter = priv->mac_address_blacklist; iter; iter = g_slist_next (iter)) {
+		if (!strcasecmp (mac, (char *) iter->data)) {
+			priv->mac_address_blacklist = g_slist_delete_link (priv->mac_address_blacklist, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
+ * nm_setting_wired_clear_mac_blacklist_items:
+ * @setting: the #NMSettingWired
+ *
+ * Removes all blacklisted MAC addresses.
+ *
+ * Since: 0.9.10
+ **/
+void
+nm_setting_wired_clear_mac_blacklist_items (NMSettingWired *setting)
+{
+	g_return_if_fail (NM_IS_SETTING_WIRED (setting));
+
+	g_slist_free_full (NM_SETTING_WIRED_GET_PRIVATE (setting)->mac_address_blacklist, g_free);
+	NM_SETTING_WIRED_GET_PRIVATE (setting)->mac_address_blacklist = NULL;
+	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
 }
 
 /**

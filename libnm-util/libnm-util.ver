@@ -512,6 +512,7 @@ global:
 	nm_setting_wimax_new;
 	nm_setting_wired_add_mac_blacklist_item;
 	nm_setting_wired_add_s390_option;
+	nm_setting_wired_clear_mac_blacklist_items;
 	nm_setting_wired_error_get_type;
 	nm_setting_wired_error_quark;
 	nm_setting_wired_get_auto_negotiate;
@@ -533,6 +534,7 @@ global:
 	nm_setting_wired_get_valid_s390_options;
 	nm_setting_wired_new;
 	nm_setting_wired_remove_mac_blacklist_item;
+	nm_setting_wired_remove_mac_blacklist_item_by_value;
 	nm_setting_wired_remove_s390_option;
 	nm_setting_wireless_add_mac_blacklist_item;
 	nm_setting_wireless_add_seen_bssid;
