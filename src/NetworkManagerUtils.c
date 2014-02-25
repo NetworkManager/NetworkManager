@@ -649,23 +649,21 @@ nm_utils_read_resolv_conf_nameservers (const char *rc_contents)
 	return nameservers;
 }
 
-static NMConnection *
-check_possible_match (NMConnection *orig,
-                      NMConnection *candidate,
-                      GHashTable *settings)
+static gboolean
+check_ip6_method_link_local_auto (NMConnection *orig,
+                                  NMConnection *candidate,
+                                  GHashTable *settings)
 {
 	GHashTable *props;
 	const char *orig_ip6_method, *candidate_ip6_method;
 	NMSettingIP6Config *candidate_ip6;
-
-	g_return_val_if_fail (settings != NULL, NULL);
 
 	props = g_hash_table_lookup (settings, NM_SETTING_IP6_CONFIG_SETTING_NAME);
 	if (   !props
 	    || (g_hash_table_size (props) != 1)
 	    || !g_hash_table_lookup (props, NM_SETTING_IP6_CONFIG_METHOD)) {
 		/* For now 'method' is the only difference we handle here */
-		return NULL;
+		return FALSE;
 	}
 
 	/* If the original connection is 'link-local' and the candidate is both 'auto'
@@ -681,8 +679,21 @@ check_possible_match (NMConnection *orig,
 	if (   strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
 	    && strcmp (candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
 	    && (!candidate_ip6 || nm_setting_ip6_config_get_may_fail (candidate_ip6))) {
-		return candidate;
+		return TRUE;
 	}
+
+	return FALSE;
+}
+
+static NMConnection *
+check_possible_match (NMConnection *orig,
+                      NMConnection *candidate,
+                      GHashTable *settings)
+{
+	g_return_val_if_fail (settings != NULL, NULL);
+
+	if (check_ip6_method_link_local_auto (orig, candidate, settings))
+		return candidate;
 
 	return NULL;
 }

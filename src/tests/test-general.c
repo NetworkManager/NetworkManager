@@ -23,6 +23,7 @@
 #include <errno.h>
 
 #include "NetworkManagerUtils.h"
+#include "nm-utils.h"
 
 
 static void
@@ -132,6 +133,113 @@ test_nm_utils_ip6_address_clear_host_address (void)
 
 /*******************************************/
 
+static NMConnection *
+_match_connection_new (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	char *uuid;
+
+	connection = nm_connection_new ();
+
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, (NMSetting *) s_con);
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (G_OBJECT (s_con),
+	              NM_SETTING_CONNECTION_ID, "blahblah",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NULL);
+	g_free (uuid);
+
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, (NMSetting *) s_wired);
+
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, (NMSetting *) s_ip4);
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	nm_connection_add_setting (connection, (NMSetting *) s_ip6);
+	g_object_set (G_OBJECT (s_ip6),
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	return connection;
+}
+
+static void
+test_connection_match_basic (void)
+{
+	NMConnection *orig, *copy, *matched;
+	GSList *connections = NULL;
+	NMSettingIP4Config *s_ip4;
+
+	orig = _match_connection_new ();
+	copy = nm_connection_duplicate (orig);
+	connections = g_slist_append (connections, copy);
+
+	matched = nm_utils_match_connection (connections, orig, NULL, NULL);
+	g_assert (matched == copy);
+
+	/* Now change a material property like IPv4 method and ensure matching fails */
+	s_ip4 = nm_connection_get_setting_ip4_config (orig);
+	g_assert (s_ip4);
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+	              NULL);
+	matched = nm_utils_match_connection (connections, orig, NULL, NULL);
+	g_assert (matched == NULL);
+
+	g_slist_free (connections);
+	g_object_unref (orig);
+	g_object_unref (copy);
+}
+
+static void
+test_connection_match_ip6_method (void)
+{
+	NMConnection *orig, *copy, *matched;
+	GSList *connections = NULL;
+	NMSettingIP6Config *s_ip6;
+
+	orig = _match_connection_new ();
+	copy = nm_connection_duplicate (orig);
+	connections = g_slist_append (connections, copy);
+
+	/* Check that if the original connection is IPv6 method=link-local, and the
+	 * candidate is both method=auto and may-faily=true, that the candidate is
+	 * matched.
+	 */
+	s_ip6 = nm_connection_get_setting_ip6_config (orig);
+	g_assert (s_ip6);
+	g_object_set (G_OBJECT (s_ip6),
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	              NULL);
+
+	s_ip6 = nm_connection_get_setting_ip6_config (copy);
+	g_assert (s_ip6);
+	g_object_set (G_OBJECT (s_ip6),
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+
+	matched = nm_utils_match_connection (connections, orig, NULL, NULL);
+	g_assert (matched == copy);
+
+	g_slist_free (connections);
+	g_object_unref (orig);
+	g_object_unref (copy);
+}
+
+/*******************************************/
+
 int
 main (int argc, char **argv)
 {
@@ -141,6 +249,9 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/general/nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
 	g_test_add_func ("/general/nm_utils_ip6_address_clear_host_address", test_nm_utils_ip6_address_clear_host_address);
+
+	g_test_add_func ("/general/connection-match/basic", test_connection_match_basic);
+	g_test_add_func ("/general/connection-match/ip6-method", test_connection_match_ip6_method);
 
 	return g_test_run ();
 }
