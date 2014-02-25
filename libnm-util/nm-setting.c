@@ -209,6 +209,17 @@ _get_setting_type_priority (GType type)
 	return info->priority;
 }
 
+guint32
+_nm_setting_get_setting_priority (NMSetting *setting)
+{
+	NMSettingPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), G_MAXUINT32);
+	priv = NM_SETTING_GET_PRIVATE (setting);
+	_ensure_setting_info (setting, priv);
+	return priv->info->priority;
+}
+
 gboolean
 _nm_setting_type_is_base_type (GType type)
 {
@@ -260,8 +271,8 @@ _nm_setting_compare_priority (gconstpointer a, gconstpointer b)
 {
 	guint32 prio_a, prio_b;
 
-	prio_a = _get_setting_type_priority (G_OBJECT_TYPE (a));
-	prio_b = _get_setting_type_priority (G_OBJECT_TYPE (b));
+	prio_a = _nm_setting_get_setting_priority ((NMSetting *) a);
+	prio_b = _nm_setting_get_setting_priority ((NMSetting *) b);
 
 	if (prio_a < prio_b)
 		return -1;

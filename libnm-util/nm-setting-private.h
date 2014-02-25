@@ -55,6 +55,7 @@ void _nm_register_setting (const char *name,
 
 gboolean _nm_setting_is_base_type (NMSetting *setting);
 gboolean _nm_setting_type_is_base_type (GType type);
+guint32 _nm_setting_get_setting_priority (NMSetting *setting);
 GType _nm_setting_lookup_setting_type (const char *name);
 GType _nm_setting_lookup_setting_type_by_quark (GQuark error_quark);
 gint _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
