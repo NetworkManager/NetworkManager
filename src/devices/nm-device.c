@@ -956,6 +956,7 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave)
 	info = find_slave_info (dev, slave);
 	if (!info)
 		return FALSE;
+	priv->slaves = g_slist_remove (priv->slaves, info);
 
 	if (info->enslaved) {
 		success = NM_DEVICE_GET_CLASS (dev)->release_slave (dev, slave);
@@ -968,7 +969,6 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave)
 		reason = priv->state_reason;
 	nm_device_slave_notify_release (info->slave, reason);
 
-	priv->slaves = g_slist_remove (priv->slaves, info);
 	free_slave_info (info);
 
 	/* Ensure the device's hardware address is up-to-date; it often changes
