@@ -2362,12 +2362,14 @@ verify_identity (NMSetting8021x *self, gboolean phase2, GError **error)
 		                     NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_IDENTITY);
+		return FALSE;
 	} else if (!strlen (priv->identity)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_802_1X_ERROR,
 		                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
 		                     _("property is empty"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_IDENTITY);
+		return FALSE;
 	}
 
 	return TRUE;
