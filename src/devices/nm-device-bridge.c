@@ -391,30 +391,43 @@ enslave_slave (NMDevice *device,
 			return FALSE;
 
 		commit_slave_options (slave, nm_connection_get_setting_bridge_port (connection));
+
+		nm_log_info (LOGD_BRIDGE, "(%s): attached bridge port %s",
+		             nm_device_get_ip_iface (device),
+		             nm_device_get_ip_iface (slave));
+	} else {
+		nm_log_info (LOGD_BRIDGE, "(%s): bridge port %s was attached",
+		             nm_device_get_ip_iface (device),
+		             nm_device_get_ip_iface (slave));
 	}
 
-	nm_log_info (LOGD_BRIDGE, "(%s): attached bridge port %s",
-	             nm_device_get_ip_iface (device),
-	             nm_device_get_ip_iface (slave));
 	g_object_notify (G_OBJECT (device), NM_DEVICE_BRIDGE_SLAVES);
 
 	return TRUE;
 }
 
 static gboolean
-release_slave (NMDevice *device, NMDevice *slave)
+release_slave (NMDevice *device,
+               NMDevice *slave,
+               gboolean configure)
 {
-	gboolean success;
+	gboolean success = TRUE;
 
-	success = nm_platform_link_release (nm_device_get_ip_ifindex (device),
-	                                    nm_device_get_ip_ifindex (slave));
+	if (configure) {
+		success = nm_platform_link_release (nm_device_get_ip_ifindex (device),
+		                                    nm_device_get_ip_ifindex (slave));
 
-	if (success) {
-		nm_log_info (LOGD_BRIDGE, "(%s): detached bridge port %s",
-		             nm_device_get_ip_iface (device),
-		             nm_device_get_ip_iface (slave));
+		if (success) {
+			nm_log_info (LOGD_BRIDGE, "(%s): detached bridge port %s",
+			             nm_device_get_ip_iface (device),
+			             nm_device_get_ip_iface (slave));
+		} else {
+			nm_log_warn (LOGD_BRIDGE, "(%s): failed to detach bridge port %s",
+			             nm_device_get_ip_iface (device),
+			             nm_device_get_ip_iface (slave));
+		}
 	} else {
-		nm_log_warn (LOGD_BRIDGE, "(%s): failed to detach bridge port %s",
+		nm_log_info (LOGD_BRIDGE, "(%s): bridge port %s was detached",
 		             nm_device_get_ip_iface (device),
 		             nm_device_get_ip_iface (slave));
 	}

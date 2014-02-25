@@ -198,7 +198,8 @@ typedef struct {
 	                                   gboolean configure);
 
 	gboolean        (* release_slave) (NMDevice *self,
-	                                   NMDevice *slave);
+	                                   NMDevice *slave,
+	                                   gboolean configure);
 
 	gboolean        (* have_any_ready_slaves) (NMDevice *self,
 	                                           const GSList *slaves);
