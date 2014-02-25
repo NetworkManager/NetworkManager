@@ -447,10 +447,15 @@ release_slave (NMDevice *device, NMDevice *slave)
 	success = nm_platform_link_release (nm_device_get_ip_ifindex (device),
 	                                    nm_device_get_ip_ifindex (slave));
 
-	nm_log_info (LOGD_BOND, "(%s): released bond slave %s (success %d)",
-	             nm_device_get_ip_iface (device),
-	             nm_device_get_ip_iface (slave),
-	             success);
+	if (success) {
+		nm_log_info (LOGD_BOND, "(%s): released bond slave %s",
+		             nm_device_get_ip_iface (device),
+		             nm_device_get_ip_iface (slave));
+	} else {
+		nm_log_warn (LOGD_BOND, "(%s): failed to release bond slave %s",
+		             nm_device_get_ip_iface (device),
+		             nm_device_get_ip_iface (slave));
+	}
 	g_object_notify (G_OBJECT (device), "slaves");
 
 	/* Kernel bonding code "closes" the slave when releasing it, (which clears

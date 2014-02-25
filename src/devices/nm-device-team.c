@@ -717,10 +717,15 @@ release_slave (NMDevice *device, NMDevice *slave)
 	success = nm_platform_link_release (nm_device_get_ip_ifindex (device),
 	                                    nm_device_get_ip_ifindex (slave));
 
-	nm_log_info (LOGD_TEAM, "(%s): released team port %s (success %d)",
-	             nm_device_get_ip_iface (device),
-	             nm_device_get_ip_iface (slave),
-	             success);
+	if (success) {
+		nm_log_info (LOGD_TEAM, "(%s): released team port %s",
+		             nm_device_get_ip_iface (device),
+		             nm_device_get_ip_iface (slave));
+	} else {
+		nm_log_warn (LOGD_TEAM, "(%s): failed to release team port %s",
+		             nm_device_get_ip_iface (device),
+		             nm_device_get_ip_iface (slave));
+	}
 	g_object_notify (G_OBJECT (device), "slaves");
 
 	/* Kernel team code "closes" the port when releasing it, (which clears

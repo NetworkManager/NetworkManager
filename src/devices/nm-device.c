@@ -960,7 +960,9 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave)
 
 	if (info->enslaved) {
 		success = NM_DEVICE_GET_CLASS (dev)->release_slave (dev, slave);
-		g_warn_if_fail (success);
+		/* The release_slave() implementation logs success/failure (in the
+		 * correct device-specific log domain), so we don't have to do anything.
+		 */
 	}
 
 	if (priv->state == NM_DEVICE_STATE_FAILED)
