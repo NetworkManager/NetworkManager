@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
+ * (C) Copyright 2007 - 2014 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -137,23 +137,29 @@ NMSetting * nm_setting_wireless_security_new               (void);
 
 const char *nm_setting_wireless_security_get_key_mgmt      (NMSettingWirelessSecurity *setting);
 
-guint32     nm_setting_wireless_security_get_num_protos    (NMSettingWirelessSecurity *setting);
-const char *nm_setting_wireless_security_get_proto         (NMSettingWirelessSecurity *setting, guint32 i);
-gboolean    nm_setting_wireless_security_add_proto         (NMSettingWirelessSecurity *setting, const char *proto);
-void        nm_setting_wireless_security_remove_proto      (NMSettingWirelessSecurity *setting, guint32 i);
-void        nm_setting_wireless_security_clear_protos      (NMSettingWirelessSecurity *setting);
+guint32     nm_setting_wireless_security_get_num_protos        (NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_proto             (NMSettingWirelessSecurity *setting, guint32 i);
+gboolean    nm_setting_wireless_security_add_proto             (NMSettingWirelessSecurity *setting, const char *proto);
+void        nm_setting_wireless_security_remove_proto          (NMSettingWirelessSecurity *setting, guint32 i);
+NM_AVAILABLE_IN_0_9_10
+gboolean    nm_setting_wireless_security_remove_proto_by_value (NMSettingWirelessSecurity *setting, const char *proto);
+void        nm_setting_wireless_security_clear_protos          (NMSettingWirelessSecurity *setting);
 
-guint32     nm_setting_wireless_security_get_num_pairwise  (NMSettingWirelessSecurity *setting);
-const char *nm_setting_wireless_security_get_pairwise      (NMSettingWirelessSecurity *setting, guint32 i);
-gboolean    nm_setting_wireless_security_add_pairwise      (NMSettingWirelessSecurity *setting, const char *pairwise);
-void        nm_setting_wireless_security_remove_pairwise   (NMSettingWirelessSecurity *setting, guint32 i);
-void        nm_setting_wireless_security_clear_pairwise    (NMSettingWirelessSecurity *setting);
+guint32     nm_setting_wireless_security_get_num_pairwise         (NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_pairwise             (NMSettingWirelessSecurity *setting, guint32 i);
+gboolean    nm_setting_wireless_security_add_pairwise             (NMSettingWirelessSecurity *setting, const char *pairwise);
+void        nm_setting_wireless_security_remove_pairwise          (NMSettingWirelessSecurity *setting, guint32 i);
+NM_AVAILABLE_IN_0_9_10
+gboolean    nm_setting_wireless_security_remove_pairwise_by_value (NMSettingWirelessSecurity *setting, const char *proto);
+void        nm_setting_wireless_security_clear_pairwise           (NMSettingWirelessSecurity *setting);
 
-guint32     nm_setting_wireless_security_get_num_groups    (NMSettingWirelessSecurity *setting);
-const char *nm_setting_wireless_security_get_group         (NMSettingWirelessSecurity *setting, guint32 i);
-gboolean    nm_setting_wireless_security_add_group         (NMSettingWirelessSecurity *setting, const char *group);
-void        nm_setting_wireless_security_remove_group      (NMSettingWirelessSecurity *setting, guint32 i);
-void        nm_setting_wireless_security_clear_groups      (NMSettingWirelessSecurity *setting);
+guint32     nm_setting_wireless_security_get_num_groups        (NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_group             (NMSettingWirelessSecurity *setting, guint32 i);
+gboolean    nm_setting_wireless_security_add_group             (NMSettingWirelessSecurity *setting, const char *group);
+void        nm_setting_wireless_security_remove_group          (NMSettingWirelessSecurity *setting, guint32 i);
+NM_AVAILABLE_IN_0_9_10
+gboolean    nm_setting_wireless_security_remove_group_by_value (NMSettingWirelessSecurity *setting, const char *proto);
+void        nm_setting_wireless_security_clear_groups          (NMSettingWirelessSecurity *setting);
 
 const char *nm_setting_wireless_security_get_psk           (NMSettingWirelessSecurity *setting);
 NMSettingSecretFlags nm_setting_wireless_security_get_psk_flags (NMSettingWirelessSecurity *setting);

@@ -591,8 +591,11 @@ global:
 	nm_setting_wireless_security_get_wep_tx_keyidx;
 	nm_setting_wireless_security_new;
 	nm_setting_wireless_security_remove_group;
+	nm_setting_wireless_security_remove_group_by_value;
 	nm_setting_wireless_security_remove_pairwise;
+	nm_setting_wireless_security_remove_pairwise_by_value;
 	nm_setting_wireless_security_remove_proto;
+	nm_setting_wireless_security_remove_proto_by_value;
 	nm_setting_wireless_security_set_wep_key;
 	nm_utils_ap_mode_security_valid;
 	nm_utils_bin2hexstr;
