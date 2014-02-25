@@ -73,7 +73,7 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 }
 
 static char *
-sysctl_get (NMPlatform *platform, const char *path, gboolean silent_on_error)
+sysctl_get (NMPlatform *platform, const char *path)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 
@@ -567,7 +567,7 @@ master_get_option (NMPlatform *platform, int master, const char *option)
 {
 	auto_g_free char *path = g_strdup_printf ("master:%d:%s", master, option);
 
-	return sysctl_get (platform, path, FALSE);
+	return sysctl_get (platform, path);
 }
 
 static gboolean
@@ -583,7 +583,7 @@ slave_get_option (NMPlatform *platform, int slave, const char *option)
 {
 	auto_g_free char *path = g_strdup_printf ("slave:%d:%s", slave, option);
 
-	return sysctl_get (platform, path, FALSE);
+	return sysctl_get (platform, path);
 }
 
 static gboolean

@@ -1435,8 +1435,13 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 
 	fd = open (path, O_WRONLY | O_TRUNC);
 	if (fd == -1) {
-		error ("sysctl: failed to open '%s': (%d) %s",
-				path, errno, strerror (errno));
+		if (errno == ENOENT) {
+			debug ("sysctl: failed to open '%s': (%d) %s",
+			       path, errno, strerror (errno));
+		} else {
+			error ("sysctl: failed to open '%s': (%d) %s",
+			       path, errno, strerror (errno));
+		}
 		return FALSE;
 	}
 
@@ -1452,19 +1457,21 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	/* Try to write the entire value three times if a partial write occurs */
 	len = strlen (actual);
 	for (tries = 0, nwrote = 0; tries < 3 && nwrote != len; tries++) {
-		errno = 0;
 		nwrote = write (fd, actual, len);
 		if (nwrote == -1) {
 			if (errno == EINTR) {
-				error ("sysctl: interrupted, will try again");
+				debug ("sysctl: interrupted, will try again");
 				continue;
 			}
 			break;
 		}
 	}
-	if (nwrote != len && errno != EEXIST) {
+	if (nwrote == -1 && errno != EEXIST) {
 		error ("sysctl: failed to set '%s' to '%s': (%d) %s",
-		             path, value, errno, strerror (errno));
+		       path, value, errno, strerror (errno));
+	} else if (nwrote < len) {
+		error ("sysctl: failed to set '%s' to '%s' after three attempts",
+		       path, value);
 	}
 
 	g_free (actual);
@@ -1473,13 +1480,17 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 }
 
 static char *
-sysctl_get (NMPlatform *platform, const char *path, gboolean silent_on_error)
+sysctl_get (NMPlatform *platform, const char *path)
 {
 	GError *error = NULL;
 	char *contents;
 
 	if (!g_file_get_contents (path, &contents, NULL, &error)) {
-		if (!silent_on_error)
+		/* We assume FAILED means EOPNOTSUP */
+		if (   g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)
+		    || g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_FAILED))
+			debug ("error reading %s: %s", path, error->message);
+		else
 			error ("error reading %s: %s", path, error->message);
 		g_clear_error (&error);
 		return NULL;
@@ -1902,7 +1913,7 @@ link_get_physical_port_id (NMPlatform *platform, int ifindex)
 		return NULL;
 
 	path = g_strdup_printf ("/sys/class/net/%s/phys_port_id", ifname);
-	id = sysctl_get (platform, path, TRUE);
+	id = sysctl_get (platform, path);
 	g_free (path);
 
 	return id;
@@ -2021,7 +2032,7 @@ link_get_option (int master, const char *category, const char *option)
 {
 	auto_g_free char *path = link_option_path (master, category, option);
 
-	return path ? nm_platform_sysctl_get (path, FALSE) : NULL;
+	return path ? nm_platform_sysctl_get (path) : NULL;
 }
 
 static const char *
@@ -2153,7 +2164,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 		return FALSE;
 
 	path = g_strdup_printf ("/sys/class/net/%s/owner", ifname);
-	val = nm_platform_sysctl_get (path, TRUE);
+	val = nm_platform_sysctl_get (path);
 	g_free (path);
 	if (val) {
 		props->owner = nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
@@ -2164,7 +2175,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 		success = FALSE;
 
 	path = g_strdup_printf ("/sys/class/net/%s/group", ifname);
-	val = nm_platform_sysctl_get (path, TRUE);
+	val = nm_platform_sysctl_get (path);
 	g_free (path);
 	if (val) {
 		props->group = nm_utils_ascii_str_to_int64 (val, 10, -1, G_MAXINT64, -1);
@@ -2175,7 +2186,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 		success = FALSE;
 
 	path = g_strdup_printf ("/sys/class/net/%s/tun_flags", ifname);
-	val = nm_platform_sysctl_get (path, TRUE);
+	val = nm_platform_sysctl_get (path);
 	g_free (path);
 	if (val) {
 		gint64 flags;
