@@ -447,10 +447,12 @@ write_8021x_setting (NMConnection *connection,
                      GError **error)
 {
 	NMSetting8021x *s_8021x;
-	const char *value;
+	const char *value, *match;
 	char *tmp = NULL;
 	gboolean success = FALSE;
 	GString *phase2_auth;
+	GString *str;
+	guint32 i, num;
 
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 	if (!s_8021x) {
@@ -544,6 +546,40 @@ write_8021x_setting (NMConnection *connection,
 	            FALSE);
 
 	g_string_free (phase2_auth, TRUE);
+
+	svSetValue (ifcfg, "IEEE_8021X_SUBJECT_MATCH",
+	            nm_setting_802_1x_get_subject_match (s_8021x),
+	            FALSE);
+
+	svSetValue (ifcfg, "IEEE_8021X_PHASE2_SUBJECT_MATCH",
+	            nm_setting_802_1x_get_phase2_subject_match (s_8021x),
+	            FALSE);
+
+	svSetValue (ifcfg, "IEEE_8021X_ALTSUBJECT_MATCHES", NULL, FALSE);
+	str = g_string_new (NULL);
+	num = nm_setting_802_1x_get_num_altsubject_matches (s_8021x);
+	for (i = 0; i < num; i++) {
+		if (i > 0)
+			g_string_append_c (str, ' ');
+		match = nm_setting_802_1x_get_altsubject_match (s_8021x, i);
+		g_string_append (str, match);
+	}
+	if (str->len > 0)
+		svSetValue (ifcfg, "IEEE_8021X_ALTSUBJECT_MATCHES", str->str, FALSE);
+	g_string_free (str, TRUE);
+
+	svSetValue (ifcfg, "IEEE_8021X_PHASE2_ALTSUBJECT_MATCHES", NULL, FALSE);
+	str = g_string_new (NULL);
+	num = nm_setting_802_1x_get_num_phase2_altsubject_matches (s_8021x);
+	for (i = 0; i < num; i++) {
+		if (i > 0)
+			g_string_append_c (str, ' ');
+		match = nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, i);
+		g_string_append (str, match);
+	}
+	if (str->len > 0)
+		svSetValue (ifcfg, "IEEE_8021X_PHASE2_ALTSUBJECT_MATCHES", str->str, FALSE);
+	g_string_free (str, TRUE);
 
 	success = write_8021x_certs (s_8021x, FALSE, ifcfg, error);
 	if (success) {

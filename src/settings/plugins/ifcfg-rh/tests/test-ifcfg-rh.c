@@ -2753,6 +2753,82 @@ test_read_wired_8021x_tls_secret_flags (const char *ifcfg, NMSettingSecretFlags 
 	g_object_unref (connection);
 }
 
+static void
+test_read_write_802_1X_subj_matches (void)
+{
+	NMConnection *connection, *reread;
+	NMSetting8021x *s_8021x;
+	char *written = NULL;
+	GError *error = NULL;
+	gboolean success = FALSE;
+
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1X-subj-matches",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL,
+	                                   NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection != NULL);
+
+	/* ===== 802.1x SETTING ===== */
+	s_8021x = nm_connection_get_setting_802_1x (connection);
+	g_assert (s_8021x);
+	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
+	g_assert_cmpstr (nm_setting_802_1x_get_eap_method (s_8021x, 0), ==, "peap");
+	g_assert_cmpstr (nm_setting_802_1x_get_identity (s_8021x), ==, "Jara Cimrman");
+	g_assert_cmpstr (nm_setting_802_1x_get_subject_match (s_8021x), ==, "server1.yourdomain.tld");
+	g_assert_cmpstr (nm_setting_802_1x_get_phase2_subject_match (s_8021x), ==, "server2.yourdomain.tld");
+	g_assert_cmpint (nm_setting_802_1x_get_num_altsubject_matches (s_8021x), ==, 3);
+	g_assert_cmpstr (nm_setting_802_1x_get_altsubject_match (s_8021x, 0), ==, "a.yourdomain.tld");
+	g_assert_cmpstr (nm_setting_802_1x_get_altsubject_match (s_8021x, 1), ==, "b.yourdomain.tld");
+	g_assert_cmpstr (nm_setting_802_1x_get_altsubject_match (s_8021x, 2), ==, "c.yourdomain.tld");
+	g_assert_cmpint (nm_setting_802_1x_get_num_phase2_altsubject_matches (s_8021x), ==, 2);
+	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 0), ==, "x.yourdomain.tld");
+	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 1), ==, "y.yourdomain.tld");
+
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &written,
+	                                 &error);
+	g_assert (success);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (written, NULL, TYPE_ETHERNET, NULL, NULL,
+	                               NULL, NULL, NULL, &error, NULL);
+	unlink (written);
+	g_free (written);
+
+	g_assert_no_error (error);
+	g_assert (reread != NULL);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
+	g_assert (success);
+
+	/* Check 802.1X stuff of the re-read connection. */
+	s_8021x = nm_connection_get_setting_802_1x (reread);
+	g_assert (s_8021x);
+	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
+	g_assert_cmpstr (nm_setting_802_1x_get_eap_method (s_8021x, 0), ==, "peap");
+	g_assert_cmpstr (nm_setting_802_1x_get_identity (s_8021x), ==, "Jara Cimrman");
+	g_assert_cmpstr (nm_setting_802_1x_get_subject_match (s_8021x), ==, "server1.yourdomain.tld");
+	g_assert_cmpstr (nm_setting_802_1x_get_phase2_subject_match (s_8021x), ==, "server2.yourdomain.tld");
+	g_assert_cmpint (nm_setting_802_1x_get_num_altsubject_matches (s_8021x), ==, 3);
+	g_assert_cmpstr (nm_setting_802_1x_get_altsubject_match (s_8021x, 0), ==, "a.yourdomain.tld");
+	g_assert_cmpstr (nm_setting_802_1x_get_altsubject_match (s_8021x, 1), ==, "b.yourdomain.tld");
+	g_assert_cmpstr (nm_setting_802_1x_get_altsubject_match (s_8021x, 2), ==, "c.yourdomain.tld");
+	g_assert_cmpint (nm_setting_802_1x_get_num_phase2_altsubject_matches (s_8021x), ==, 2);
+	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 0), ==, "x.yourdomain.tld");
+	g_assert_cmpstr (nm_setting_802_1x_get_phase2_altsubject_match (s_8021x, 1), ==, "y.yourdomain.tld");
+
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
 #define TEST_IFCFG_WIFI_OPEN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open"
 
 static void
@@ -13676,6 +13752,7 @@ int main (int argc, char **argv)
 	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_WIRED_8021X_TLS_AGENT, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_WIRED_8021X_TLS_ALWAYS,
 	                                        NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
+	g_test_add_func (TPATH "802-1x/subj-mathes", test_read_write_802_1X_subj_matches);
 	test_read_wifi_open ();
 	test_read_wifi_open_auto ();
 	test_read_wifi_open_ssid_hex ();

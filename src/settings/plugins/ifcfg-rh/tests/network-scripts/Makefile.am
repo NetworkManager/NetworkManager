@@ -21,6 +21,7 @@ EXTRA_DIST = \
 	keys-test-wired-8021x-peap-mschapv2 \
 	ifcfg-test-wired-8021x-tls-agent \
 	ifcfg-test-wired-8021x-tls-always \
+	ifcfg-test-wired-802-1X-subj-matches \
 	ifcfg-test-onboot-no \
 	ifcfg-test-noip \
 	ifcfg-test-wifi-open \

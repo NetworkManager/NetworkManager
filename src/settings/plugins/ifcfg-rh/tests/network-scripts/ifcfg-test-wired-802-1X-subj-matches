@@ -1,0 +1,17 @@
+# Intel Corporation 82540EP Gigabit Ethernet Controller (Mobile)
+TYPE=Ethernet
+DEVICE=eth0
+HWADDR=00:11:22:33:44:ee
+BOOTPROTO=dhcp
+ONBOOT=yes
+NM_CONTROLLED=yes
+KEY_MGMT=IEEE8021X
+IEEE_8021X_EAP_METHODS=PEAP
+IEEE_8021X_IDENTITY="Jara Cimrman"
+IEEE_8021X_PEAP_VERSION=1
+IEEE_8021X_INNER_AUTH_METHODS=GTC
+IEEE_8021X_PASSWORD_FLAGS="user ask"
+IEEE_8021X_SUBJECT_MATCH=server1.yourdomain.tld
+IEEE_8021X_ALTSUBJECT_MATCHES="a.yourdomain.tld b.yourdomain.tld c.yourdomain.tld"
+IEEE_8021X_PHASE2_SUBJECT_MATCH=server2.yourdomain.tld
+IEEE_8021X_PHASE2_ALTSUBJECT_MATCHES="x.yourdomain.tld y.yourdomain.tld"

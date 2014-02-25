@@ -3118,6 +3118,39 @@ static EAPReader eap_readers[] = {
 	{ NULL, NULL }
 };
 
+static void
+read_8021x_list_value (shvarFile *ifcfg,
+                       const char *ifcfg_var_name,
+                       NMSetting8021x *setting,
+                       const char *prop_name)
+{
+	char *value;
+	char **strv, **iter;
+	GSList *gslist = NULL;
+
+	g_return_if_fail (ifcfg != NULL);
+	g_return_if_fail (ifcfg_var_name != NULL);
+	g_return_if_fail (prop_name != NULL);
+
+	value = svGetValue (ifcfg, ifcfg_var_name, FALSE);
+	if (!value)
+		return;
+
+	strv = g_strsplit_set (value, " \t", 0);
+	for (iter = strv; iter && *iter; iter++) {
+		if (*iter[0] == '\0')
+			continue;
+		gslist = g_slist_prepend (gslist, *iter);
+	}
+	if (gslist) {
+		gslist = g_slist_reverse (gslist);
+		g_object_set (setting, prop_name, gslist, NULL);
+		g_slist_free (gslist);
+	}
+	g_strfreev (strv);
+	g_free (value);
+}
+
 static NMSetting8021x *
 fill_8021x (shvarFile *ifcfg,
             const char *file,
@@ -3193,6 +3226,19 @@ fill_8021x (shvarFile *ifcfg,
 		             "No valid EAP methods found in IEEE_8021X_EAP_METHODS.");
 		goto error;
 	}
+
+	value = svGetValue (ifcfg, "IEEE_8021X_SUBJECT_MATCH", FALSE);
+	g_object_set (s_8021x, NM_SETTING_802_1X_SUBJECT_MATCH, value, NULL);
+	g_free (value);
+
+	value = svGetValue (ifcfg, "IEEE_8021X_PHASE2_SUBJECT_MATCH", FALSE);
+	g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH, value, NULL);
+	g_free (value);
+
+	read_8021x_list_value (ifcfg, "IEEE_8021X_ALTSUBJECT_MATCHES",
+	                       s_8021x, NM_SETTING_802_1X_ALTSUBJECT_MATCHES);
+	read_8021x_list_value (ifcfg, "IEEE_8021X_PHASE2_ALTSUBJECT_MATCHES",
+	                       s_8021x, NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES);
 
 	if (list)
 		g_strfreev (list);
