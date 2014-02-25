@@ -2287,11 +2287,13 @@ verify_identity (NMSetting8021x *self, gboolean phase2, GError **error)
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
 		             NM_SETTING_802_1X_IDENTITY);
+		return FALSE;
 	} else if (!strlen (priv->identity)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_802_1X_IDENTITY);
+		return FALSE;
 	}
 
 	return TRUE;
