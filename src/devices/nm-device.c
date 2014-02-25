@@ -1352,7 +1352,7 @@ nm_device_master_add_slave (NMDevice *dev, NMDevice *slave, gboolean configure)
 		info->configure = configure;
 		info->watch_id = g_signal_connect (slave, "state-changed",
 		                                   G_CALLBACK (slave_state_changed), dev);
-		priv->slaves = g_slist_prepend (priv->slaves, info);
+		priv->slaves = g_slist_append (priv->slaves, info);
 	}
 
 	return TRUE;
