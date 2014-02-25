@@ -143,8 +143,11 @@ remove_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	                            G_TYPE_STRING, &zone,
 	                            G_TYPE_INVALID)) {
 		g_assert (error);
-		nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone remove failed: (%d) %s",
-		             info->iface, error->code, error->message);
+		/* ignore UNKNOWN_INTERFACE errors */
+		if (error->message && !strstr (error->message, "UNKNOWN_INTERFACE")) {
+			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone remove failed: (%d) %s",
+			             info->iface, error->code, error->message);
+		}
 	}
 
 	g_free (zone);
