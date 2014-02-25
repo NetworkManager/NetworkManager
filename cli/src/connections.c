@@ -6180,18 +6180,25 @@ editor_sub_usage (const char *command)
 			          "This command sets provided <value> to this property\n"));
 			break;
 		case NMC_EDITOR_SUB_CMD_ADD:
-			printf (_("add [<value>]  :: add new option to the property\n\n"
-			          "This command add provided <value> to this property, if "
+			printf (_("add [<value>]  :: append new value to the property\n\n"
+			          "This command adds provided <value> to this property, if "
 			          "the property is of a container type. For single-valued "
-			          "properties it replaces the value (same as 'set').\n"));
+			          "properties the property value is replaced (same as 'set').\n"));
 			break;
 		case NMC_EDITOR_SUB_CMD_CHANGE:
 			printf (_("change  :: change current value\n\n"
 			          "Displays current value and allows editing it.\n"));
 			break;
 		case NMC_EDITOR_SUB_CMD_REMOVE:
-			printf (_("remove [<index>|<option>]  :: delete the value\n\n"
-			          "Removes the property value (sets it to default).\n"));
+			printf (_("remove [<value>|<index>|<option name>]  :: delete the value\n\n"
+			          "Removes the property value. For single-valued properties, this sets the\n"
+			          "property back to its default value. For container-type properties, this removes\n"
+			          "all the values of that property, or you can specify an argument to remove just\n"
+			          "a single item or option. The argument is either a value or index of the item to\n"
+			          "remove, or an option name (for properties with named options).\n\n"
+			          "Examples: nmcli ipv4.dns> remove 8.8.8.8\n"
+			          "          nmcli ipv4.dns> remove 2\n"
+			          "          nmcli bond.options> remove downdelay\n\n"));
 			break;
 		case NMC_EDITOR_SUB_CMD_DESCRIBE:
 			printf (_("describe  :: describe property\n\n"
