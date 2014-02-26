@@ -87,6 +87,7 @@ str_examples = \
     Supported filter names are: %FILTERS%
 
        %cmd% p -c --list-by-bz --ref origin/master~50..origin/master --filter "('or', 'bgo', ('and', ('product', 'Fedora'), ('version', '20'), ('not', ('status', '^CLOS.*$'))))" -v -v
+       %cmd% p -c --list-by-bz --ref origin/master~50..origin/master --filter "'and','rhel7','open'"
 
 """
 
@@ -651,6 +652,8 @@ class FilterBase():
             return FilterBase.create_filter(expr);
         except Exception as e:
             raise Exception("Error parsing filter expression \"%s\", \"%s\": expression not parseable as filter: %s" % (s, repr(expr), str(e)))
+    def __eq__(self, other):
+        return False
 
 class FilterTrue(FilterBase):
     def __init__(self, args):
@@ -659,6 +662,8 @@ class FilterTrue(FilterBase):
         return 'True'
     def __repr__(self):
         return "'True'"
+    def __eq__(self, other):
+        return isinstance(other, FilterTrue)
 class FilterFalse(FilterBase):
     def __init__(self, args):
         FilterBase.__init__(self, args)
@@ -668,8 +673,18 @@ class FilterFalse(FilterBase):
         return "'False'"
     def eval(self, bz):
         return False
+    def __eq__(self, other):
+        return isinstance(other, FilterFalse)
 class FilterNot(FilterBase):
-    def __init__(self, args):
+    @staticmethod
+    def create(filter):
+        if isinstance(filter, FilterNot):
+            return filter._filter
+        return FilterNot(filter=filter)
+    def __init__(self, args=None, filter=None):
+        if filter is not None:
+            self._filter = filter
+            return
         if len(args) != 1:
             raise Exception("Filter of type FilterNot expects exactly one arguement (instead got \"%r\")" % (args))
         self._filter = FilterBase.create_filter(args[0])
@@ -679,11 +694,33 @@ class FilterNot(FilterBase):
         return "('not', %s)" % (repr(self._filter))
     def eval(self, bz):
         return not self._filter.eval(bz)
+    def __eq__(self, other):
+        return isinstance(other, FilterNot) and other._filter == self._filter
 class FilterAnd(FilterBase):
-    def __init__(self, args):
-        if not args:
-            raise Exception("Filter of type FilterAnd expects one or more filters (instead got \"%r\")" % (args))
-        self._filters = [FilterBase.create_filter(f) for f in args]
+    @staticmethod
+    def join(*args):
+        if len(args) >= 2:
+            return FilterAnd(None, filters=args)
+        return args[0]
+    def __init__(self, args, filters=None):
+        if filters is None:
+            if not args:
+                raise Exception("Filter of type FilterAnd expects one or more filters (instead got \"%r\")" % (args))
+            filters = [FilterBase.create_filter(f) for f in args]
+        if len(filters) == 0:
+            return FilterTrue()
+        if len(filters) == 1:
+            return filters[0]
+        f = []
+        for filter in filters:
+            if isinstance(filter, FilterAnd):
+                filters2 = filter._filters
+            else:
+                filters2 = [filter]
+            for filter2 in filters2:
+                if filter2 not in f:
+                    f.append(filter2)
+        self._filters = f
     def __str__(self):
         return '(and %s)' % (" ".join([str(f) for f in self._filters]))
     def __repr__(self):
@@ -695,17 +732,29 @@ class FilterAnd(FilterBase):
         return True
 class FilterOr(FilterBase):
     @staticmethod
-    def join(filters):
-        if len(filters) >= 2:
-            return FilterOr(None, ready=filters)
-        return filters[0]
-    def __init__(self, args, ready=None):
-        if ready is not None:
-            self._filters = ready
-            return
-        if not args:
-            raise Exception("Filter of type FilterOr expects one or more filters (instead got \"%r\")" % (args))
-        self._filters = [FilterBase.create_filter(f) for f in args]
+    def join(*args):
+        if len(args) >= 2:
+            return FilterOr(None, filters=args)
+        return args[0]
+    def __init__(self, args, filters=None):
+        if filters is None:
+            if not args:
+                raise Exception("Filter of type FilterOr expects one or more filters (instead got \"%r\")" % (args))
+            filters = [FilterBase.create_filter(f) for f in args]
+        if len(filters) == 0:
+            return FilterFalse()
+        if len(filters) == 1:
+            return filters[0]
+        f = []
+        for filter in filters:
+            if isinstance(filter, FilterOr):
+                filters2 = filter._filters
+            else:
+                filters2 = [filter]
+            for filter2 in filters2:
+                if filter2 not in f:
+                    f.append(filter2)
+        self._filters = f
     def __str__(self):
         return '(or %s)' % (" ".join([str(f) for f in self._filters]))
     def __repr__(self):
@@ -716,23 +765,29 @@ class FilterOr(FilterBase):
                 return True
         return False
 class FilterRhbz(FilterBase):
-    def __init__(self, args):
-        FilterBase.__init__(self, args)
+    def __init__(self, args=None):
+        if args is not None:
+            FilterBase.__init__(self, args)
     def __str__(self):
         return 'rhbz'
     def __repr__(self):
         return "'rhbz'"
     def eval(self, bz):
         return isinstance(bz, BzInfoRhbz)
+    def __eq__(self, other):
+        return isinstance(other, FilterRhbz)
 class FilterBgo(FilterBase):
-    def __init__(self, args):
-        FilterBase.__init__(self, args)
+    def __init__(self, args=None):
+        if args is not None:
+            FilterBase.__init__(self, args)
     def __str__(self):
         return 'bgo'
     def __repr__(self):
         return "'bgo'"
     def eval(self, bz):
         return isinstance(bz, BzInfoBgo)
+    def __eq__(self, other):
+        return isinstance(other, FilterBgo)
 class FilterMatch(FilterBase):
     def __init__(self, args):
         if len(args) != 2 or not isinstance(args[0], basestring) or not isinstance(args[1], basestring):
@@ -754,6 +809,33 @@ class FilterMatch(FilterBase):
             else:
                 v = str(v)
         return re.search(self._value, v) is not None
+    def __eq__(self, other):
+        if not isinstance(other, FilterMatch):
+            return False
+        return self._name == other._name and self._value == other._value
+def CreateFilterRhel(version):
+    def _CreateFilterRhel(args):
+        if args:
+            raise Exception("No arguments expected (instead got \"%r\")" % (args))
+        return FilterAnd.join(
+                FilterRhbz(),
+                FilterMatch(['product', '^Red Hat Enterprise Linux ' + str(version) + "$"]),
+            )
+    return _CreateFilterRhel
+def CreateFilterOpen(args):
+    if args:
+        raise Exception("No arguments expected (instead got \"%r\")" % (args))
+    return FilterAnd.join(
+            FilterRhbz(),
+            FilterNot.create(
+                FilterOr.join(
+                    FilterMatch(['status', '^CLOSED$']),
+                    FilterMatch(['status', '^ON_QA$']),
+                    FilterMatch(['status', '^VERIFIED$']),
+                )
+            )
+        )
+
 FilterBase._mapping = {
         'true':                 FilterTrue,
         'false':                FilterFalse,
@@ -763,6 +845,9 @@ FilterBase._mapping = {
         'rhbz':                 FilterRhbz,
         'bgo':                  FilterBgo,
         'match':                FilterMatch,
+        'rhel6':                CreateFilterRhel(6),
+        'rhel7':                CreateFilterRhel(7),
+        'open':                 CreateFilterOpen,
     }
 
 
@@ -872,7 +957,8 @@ class CmdParseCommitMessage(CmdBase):
 
         filter = None
         if self.options.filter:
-            filter = FilterOr.join([FilterBase.parse(f) for f in self.options.filter])
+            filters = [FilterBase.parse(f) for f in self.options.filter]
+            filter = FilterOr.join(*filters)
 
         supported_set_status = ['MODIFIED', 'ASSIGNED']
         if self.options.set_status and self.options.set_status not in supported_set_status:
