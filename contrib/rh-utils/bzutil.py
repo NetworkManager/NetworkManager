@@ -89,6 +89,14 @@ str_examples = \
        %cmd% p -c --list-by-bz --ref origin/master~50..origin/master --filter "('or', 'bgo', ('and', ('product', 'Fedora'), ('version', '20'), ('not', ('status', '^CLOS.*$'))))" -v -v
        %cmd% p -c --list-by-bz --ref origin/master~50..origin/master --filter "'and','rhel7','open'"
 
+  * Specifying more then one --filter option, means combining them with 'and'
+    The full filter expression is cumbersome to write, thus, for simple filters without
+    arguments, you can write just the filter name itself. Thus, the following expressions
+    are equal:
+
+       %cmd% p -c --list-by-bz --ref origin/master~50..origin/master -v -v --filter "'and','rhel6','open'"
+       %cmd% p -c --list-by-bz --ref origin/master~50..origin/master -v -v --filter rhel7 --filter open
+
 """
 
 class ConfigStore:
@@ -645,6 +653,13 @@ class FilterBase():
         return f
     @staticmethod
     def parse(s):
+        if s.lower() in FilterBase._mapping:
+            filter_type = FilterBase._mapping[s.lower()]
+            try:
+                f = filter_type([])
+            except Exception as e:
+                raise Exception("Cannot create filter of type %s with arguments \"%r\": (%s)" % (filter_type.__name__, args[1:], str(e)))
+            return f
         try:
             expr = ast.literal_eval(s)
         except Exception as e:
@@ -880,7 +895,7 @@ class CmdParseCommitMessage(CmdBase):
         self.parser.add_argument('--set-status', '-s', default=None, help='Set BZ status to the specified string (no action without --no-test)')
         self.parser.add_argument('--set-cf-fixed-in', '-m', default=None, help='Set BZ cf_fixed_in to the specified string (no action without --no-test)')
         self.parser.add_argument('--no-test', action='store_true', help='If specified any --set-* options, really change the bug')
-        self.parser.add_argument('--filter', '-f', action='append', help='Filter expressions to include/exclude bugs (specifying more then one filter, means OR)')
+        self.parser.add_argument('--filter', '-f', action='append', help='Filter expressions to exclude bugs that don\'t match (specifying more then one filter, means \'and\')')
 
     @staticmethod
     def _order_keys(keys, ordered):
@@ -959,7 +974,7 @@ class CmdParseCommitMessage(CmdBase):
         filter = None
         if self.options.filter:
             filters = [FilterBase.parse(f) for f in self.options.filter]
-            filter = FilterOr.join(*filters)
+            filter = FilterAnd.join(*filters)
 
         supported_set_status = ['MODIFIED', 'ASSIGNED']
         if self.options.set_status and self.options.set_status not in supported_set_status:
