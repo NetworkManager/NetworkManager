@@ -455,6 +455,7 @@ class BzInfoRhbz(BzInfo):
                         ('pm_ack', 'p'),
                         ('devel_ack', 'd'),
                         ('qa_ack', 'q'),
+                        ('blocker', 'b'),
                     ]:
                 val = d.get(k[0], None)
                 if val is not None:
