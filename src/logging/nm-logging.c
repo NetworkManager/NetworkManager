@@ -381,7 +381,7 @@ _nm_log (const char *loc,
 	case LOGL_DEBUG:
 		g_get_current_time (&tv);
 		syslog_level = LOG_INFO;
-		fullmsg = g_strdup_printf ("<debug> [%ld.%ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		fullmsg = g_strdup_printf ("<debug> [%ld.%06ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
 		break;
 	case LOGL_INFO:
 		syslog_level = LOG_INFO;
@@ -394,7 +394,7 @@ _nm_log (const char *loc,
 	case LOGL_ERR:
 		syslog_level = LOG_ERR;
 		g_get_current_time (&tv);
-		fullmsg = g_strdup_printf ("<error> [%ld.%ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		fullmsg = g_strdup_printf ("<error> [%ld.%06ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
 		break;
 	default:
 		g_assert_not_reached ();
