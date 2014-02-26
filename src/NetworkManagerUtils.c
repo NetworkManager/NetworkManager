@@ -1881,6 +1881,254 @@ nm_utils_get_monotonic_timestamp_s (void)
 	return (((gint64) tp.tv_sec) + monotonic_timestamp_offset_sec);
 }
 
+typedef struct
+{
+	const char *name;
+	NMSetting *setting;
+	NMSetting *diff_base_setting;
+	GHashTable *setting_diff;
+} LogConnectionSettingData;
+
+typedef struct
+{
+	const char *item_name;
+	NMSettingDiffResult diff_result;
+} LogConnectionSettingItem;
+
+static gint
+_log_connection_sort_hashes_fcn (gconstpointer a, gconstpointer b)
+{
+	const LogConnectionSettingData *v1 = a;
+	const LogConnectionSettingData *v2 = b;
+	guint32 p1, p2;
+	NMSetting *s1, *s2;
+
+	s1 = v1->setting ? v1->setting : v1->diff_base_setting;
+	s2 = v2->setting ? v2->setting : v2->diff_base_setting;
+
+	g_assert (s1 && s2);
+
+	p1 = _nm_setting_get_setting_priority (s1);
+	p2 = _nm_setting_get_setting_priority (s2);
+
+	if (p1 != p2)
+		return p1 > p2 ? 1 : -1;
+
+	return strcmp (v1->name, v2->name);
+}
+
+static GArray *
+_log_connection_sort_hashes (NMConnection *connection, NMConnection *diff_base, GHashTable *connection_diff)
+{
+	GHashTableIter iter;
+	GArray *sorted_hashes;
+	LogConnectionSettingData setting_data;
+
+	sorted_hashes = g_array_sized_new (TRUE, FALSE, sizeof (LogConnectionSettingData), g_hash_table_size (connection_diff));
+
+	g_hash_table_iter_init (&iter, connection_diff);
+	while (g_hash_table_iter_next (&iter, (gpointer) &setting_data.name, (gpointer) &setting_data.setting_diff)) {
+		setting_data.setting = nm_connection_get_setting_by_name (connection, setting_data.name);
+		setting_data.diff_base_setting = diff_base ? nm_connection_get_setting_by_name (diff_base, setting_data.name) : NULL;
+		g_assert (setting_data.setting || setting_data.diff_base_setting);
+		g_array_append_val (sorted_hashes, setting_data);
+	}
+
+	g_array_sort (sorted_hashes, _log_connection_sort_hashes_fcn);
+	return sorted_hashes;
+}
+
+static gint
+_log_connection_sort_names_fcn (gconstpointer a, gconstpointer b)
+{
+	const LogConnectionSettingItem *v1 = a;
+	const LogConnectionSettingItem *v2 = b;
+
+	/* we want to first show the items, that disappeared, then the one that changed and
+	 * then the ones that were added. */
+
+	if ((v1->diff_result & NM_SETTING_DIFF_RESULT_IN_A) != (v1->diff_result & NM_SETTING_DIFF_RESULT_IN_A))
+		return (v1->diff_result & NM_SETTING_DIFF_RESULT_IN_A) ? -1 : 1;
+	if ((v1->diff_result & NM_SETTING_DIFF_RESULT_IN_B) != (v1->diff_result & NM_SETTING_DIFF_RESULT_IN_B))
+		return (v1->diff_result & NM_SETTING_DIFF_RESULT_IN_B) ? 1 : -1;
+	return strcmp (v1->item_name, v2->item_name);
+}
+
+static char *
+_log_connection_get_property (NMSetting *setting, const char *name)
+{
+	GValue val = G_VALUE_INIT;
+	char *s;
+
+	g_return_val_if_fail (setting, NULL);
+
+	if (   !NM_IS_SETTING_VPN (setting)
+	    && nm_setting_get_secret_flags (setting, name, NULL, NULL))
+		return g_strdup ("****");
+
+	if (!_nm_setting_get_property (setting, name, &val))
+		g_return_val_if_reached (FALSE);
+
+	if (G_VALUE_HOLDS_STRING (&val)) {
+		const char *val_s;
+
+		val_s = g_value_get_string (&val);
+		if (!val_s) {
+			/* for NULL, we want to return the unquoted string "NULL". */
+			s = g_strdup ("NULL");
+		} else {
+			char *escaped = g_strescape (val_s, "'");
+
+			s = g_strdup_printf ("'%s'", escaped);
+			g_free (escaped);
+		}
+	} else {
+		s = g_strdup_value_contents (&val);
+		if (s == NULL)
+			s = g_strdup ("NULL");
+		else {
+			char *escaped = g_strescape (s, "'");
+
+			g_free (s);
+			s = escaped;
+		}
+	}
+	g_value_unset(&val);
+	return s;
+}
+
+static void
+_log_connection_sort_names (LogConnectionSettingData *setting_data, GArray *sorted_names)
+{
+	GHashTableIter iter;
+	LogConnectionSettingItem item;
+	gpointer p;
+
+	g_array_set_size (sorted_names, 0);
+
+	g_hash_table_iter_init (&iter, setting_data->setting_diff);
+	while (g_hash_table_iter_next (&iter, (gpointer) &item.item_name, &p)) {
+		item.diff_result = GPOINTER_TO_UINT (p);
+		g_array_append_val (sorted_names, item);
+	}
+
+	g_array_sort (sorted_names, _log_connection_sort_names_fcn);
+}
+
+void
+nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base, guint32 level, guint64 domain, const char *name, const char *prefix)
+{
+	GHashTable *connection_diff = NULL;
+	GArray *sorted_hashes;
+	GArray *sorted_names = NULL;
+	int i, j;
+	gboolean connection_diff_are_same;
+	gboolean print_header = TRUE;
+	gboolean print_setting_header;
+	GString *str1;
+
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (!diff_base || (NM_IS_CONNECTION (diff_base) && diff_base != connection));
+
+	/* For VPN setting types, this is broken, because we cannot (generically) print the content of data/secrets. Bummer... */
+
+	if (!nm_logging_enabled (level, domain))
+		return;
+
+	if (!prefix)
+		prefix = "";
+	if (!name)
+		name = "";
+
+	connection_diff_are_same = nm_connection_diff (connection, diff_base, NM_SETTING_COMPARE_FLAG_EXACT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT, &connection_diff);
+	if (connection_diff_are_same) {
+		if (diff_base)
+			nm_log (level, domain, "%sconnection '%s' (%p and %p): no difference", prefix, name, connection, diff_base);
+		else
+			nm_log (level, domain, "%sconnection '%s' (%p): no properties set", prefix, name, connection);
+		g_assert (!connection_diff);
+		return;
+	}
+
+	/* FIXME: it doesn't nicely show the content of NMSettingVpn, becuase nm_connection_diff() does not
+	 * expand the hash values. */
+
+	sorted_hashes = _log_connection_sort_hashes (connection, diff_base, connection_diff);
+	if (sorted_hashes->len <= 0)
+		goto out;
+
+	sorted_names = g_array_new (FALSE, FALSE, sizeof (LogConnectionSettingItem));
+	str1 = g_string_new (NULL);
+
+	for (i = 0; i < sorted_hashes->len; i++) {
+		LogConnectionSettingData *setting_data = &g_array_index (sorted_hashes, LogConnectionSettingData, i);
+
+		_log_connection_sort_names (setting_data, sorted_names);
+		print_setting_header = TRUE;
+		for (j = 0; j < sorted_names->len; j++) {
+			char *str_conn, *str_diff;
+			LogConnectionSettingItem *item = &g_array_index (sorted_names, LogConnectionSettingItem, j);
+
+			str_conn = (item->diff_result & NM_SETTING_DIFF_RESULT_IN_A)
+			           ? _log_connection_get_property (setting_data->setting, item->item_name)
+			           : NULL;
+			str_diff = (item->diff_result & NM_SETTING_DIFF_RESULT_IN_B)
+			           ? _log_connection_get_property (setting_data->diff_base_setting, item->item_name)
+			           : NULL;
+
+			if (print_header) {
+				GError *err_verify = NULL;
+
+				if (diff_base)
+					nm_log (level, domain, "%sconnection '%s' (%p < %p):", prefix, name, connection, diff_base);
+				else
+					nm_log (level, domain, "%sconnection '%s' (%p):", prefix, name, connection);
+				print_header = FALSE;
+
+				if (!nm_connection_verify (connection, &err_verify)) {
+					nm_log (level, domain, "%sconnection %p does not verify: %s", prefix, connection, err_verify->message);
+					g_clear_error (&err_verify);
+				}
+			}
+#define _NM_LOG_ALIGN "-25"
+			if (print_setting_header) {
+				if (diff_base) {
+					if (setting_data->setting && setting_data->diff_base_setting)
+						g_string_printf (str1, "%p < %p", setting_data->setting, setting_data->diff_base_setting);
+					else if (setting_data->diff_base_setting)
+						g_string_printf (str1, "*missing* < %p", setting_data->diff_base_setting);
+					else
+						g_string_printf (str1, "%p < *missing*", setting_data->setting);
+					nm_log (level, domain, "%s%"_NM_LOG_ALIGN"s [ %s ]", prefix, setting_data->name, str1->str);
+				} else
+					nm_log (level, domain, "%s%"_NM_LOG_ALIGN"s [ %p ]", prefix, setting_data->name, setting_data->setting);
+				print_setting_header = FALSE;
+			}
+			g_string_printf (str1, "%s.%s", setting_data->name, item->item_name);
+			switch (item->diff_result & (NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B)) {
+				case NM_SETTING_DIFF_RESULT_IN_B:
+					nm_log (level, domain, "%s%"_NM_LOG_ALIGN"s < %s", prefix, str1->str, str_diff ? str_diff : "NULL");
+					break;
+				case NM_SETTING_DIFF_RESULT_IN_A:
+					nm_log (level, domain, "%s%"_NM_LOG_ALIGN"s = %s", prefix, str1->str, str_conn ? str_conn : "NULL");
+					break;
+				default:
+					nm_log (level, domain, "%s%"_NM_LOG_ALIGN"s = %s < %s", prefix, str1->str, str_conn ? str_conn : "NULL", str_diff ? str_diff : "NULL");
+					break;
+#undef _NM_LOG_ALIGN
+			}
+			g_free (str_conn);
+			g_free (str_diff);
+		}
+	}
+
+	g_array_free (sorted_names, TRUE);
+	g_string_free (str1, TRUE);
+out:
+	g_hash_table_destroy (connection_diff);
+	g_array_free (sorted_hashes, TRUE);
+}
+
 
 /**
  * nm_utils_ip6_property_path:
