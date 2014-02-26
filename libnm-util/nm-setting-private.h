@@ -60,6 +60,8 @@ GType _nm_setting_lookup_setting_type (const char *name);
 GType _nm_setting_lookup_setting_type_by_quark (GQuark error_quark);
 gint _nm_setting_compare_priority (gconstpointer a, gconstpointer b);
 
+gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue *value);
+
 typedef enum NMSettingUpdateSecretResult {
 	NM_SETTING_UPDATE_SECRET_ERROR              = FALSE,
 	NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED   = TRUE,
