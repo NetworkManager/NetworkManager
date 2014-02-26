@@ -1,4 +1,6 @@
-INCLUDES = \
+noinst_LTLIBRARIES = libbluez-manager.la
+
+libbluez_manager_la_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/include \
@@ -7,9 +9,15 @@ INCLUDES = \
 	-I${top_srcdir}/src \
 	-I${top_builddir}/src/generated \
 	-I${top_srcdir}/src/generated \
-	-I${top_srcdir}/src/logging
-
-noinst_LTLIBRARIES = libbluez-manager.la
+	-I${top_srcdir}/src/logging \
+	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(BLUEZ_CFLAGS) \
+	-DBINDIR=\"$(bindir)\" \
+	-DDATADIR=\"$(datadir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
+	-DLOCALSTATEDIR=\"$(localstatedir)\"
 
 libbluez_manager_la_SOURCES = \
 	nm-bluez-common.h \
@@ -26,16 +34,6 @@ else
 libbluez_manager_la_SOURCES += \
 	nm-bluez-manager.c
 endif
-
-libbluez_manager_la_CPPFLAGS = \
-	$(DBUS_CFLAGS) \
-	$(GLIB_CFLAGS) \
-	$(BLUEZ_CFLAGS) \
-	-DBINDIR=\"$(bindir)\" \
-	-DDATADIR=\"$(datadir)\" \
-	-DSYSCONFDIR=\"$(sysconfdir)\" \
-	-DLIBEXECDIR=\"$(libexecdir)\" \
-	-DLOCALSTATEDIR=\"$(localstatedir)\"
 
 libbluez_manager_la_LIBADD = \
 	$(top_builddir)/src/generated/libnm-generated.la \

@@ -2,13 +2,14 @@ if ENABLE_TESTS
 
 SUBDIRS=network-scripts
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
-	-I$(srcdir)/../
+	-I$(srcdir)/../ \
+	$(GLIB_CFLAGS)
 
 noinst_PROGRAMS = test-ifcfg-rh test-ifcfg-rh-utils
 
@@ -16,7 +17,7 @@ test_ifcfg_rh_SOURCES = \
 	test-ifcfg-rh.c
 
 test_ifcfg_rh_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
+	$(AM_CPPFLAGS) \
 	$(DBUS_CFLAGS) \
 	-DTEST_IFCFG_DIR=\"$(abs_srcdir)\" \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/\"
@@ -31,9 +32,6 @@ test_ifcfg_rh_LDADD = \
 
 test_ifcfg_rh_utils_SOURCES = \
 	test-ifcfg-rh-utils.c
-
-test_ifcfg_rh_utils_CPPFLAGS = \
-	$(GLIB_CFLAGS)
 
 test_ifcfg_rh_utils_LDADD = \
 	$(builddir)/../libifcfg-rh-io.la

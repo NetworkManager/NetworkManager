@@ -1,4 +1,4 @@
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/include \
@@ -8,7 +8,9 @@ INCLUDES = \
 	-I${top_builddir}/src/generated \
 	-I${top_srcdir}/src/generated \
 	-I${top_srcdir}/src/logging \
-	-I${top_srcdir}/src/posix-signals
+	-I${top_srcdir}/src/posix-signals \
+	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS)
 
 noinst_LTLIBRARIES = libppp-manager.la
 
@@ -25,7 +27,7 @@ built_sources = nm-ppp-manager-glue.h
 $(libppp_manager_la_OBJECTS): $(built_sources)
 
 libppp_manager_la_CPPFLAGS = \
-	$(DBUS_CFLAGS) \
+	$(AM_CPPFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBDIR=\"$(libdir)\" \
 	-DPLUGINDIR=\"$(PPPD_PLUGIN_DIR)\"
@@ -46,10 +48,6 @@ nm_pppd_plugin_la_SOURCES = \
 	nm-pppd-plugin.c \
 	nm-pppd-plugin.h \
 	nm-ppp-status.h
-
-nm_pppd_plugin_la_CPPFLAGS = \
-	$(DBUS_CFLAGS) \
-	$(GLIB_CFLAGS)
 
 nm_pppd_plugin_la_LDFLAGS = -module -avoid-version
 

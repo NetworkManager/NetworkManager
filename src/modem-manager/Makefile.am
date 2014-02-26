@@ -1,6 +1,8 @@
 include $(GLIB_MAKEFILE)
 
-INCLUDES = \
+noinst_LTLIBRARIES = libmodem-manager.la
+
+libmodem_manager_la_CPPFLAGS = \
 	-I${top_srcdir}/src \
 	-I${top_builddir}/src/generated \
 	-I${top_srcdir}/src/generated \
@@ -8,9 +10,9 @@ INCLUDES = \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/libnm-util \
-	-I${top_srcdir}/libnm-util
-
-noinst_LTLIBRARIES = libmodem-manager.la
+	-I${top_srcdir}/libnm-util \
+	$(LIBNL_CFLAGS) \
+	$(DBUS_CFLAGS)
 
 libmodem_manager_la_SOURCES = \
 	nm-modem.c \
@@ -24,10 +26,6 @@ libmodem_manager_la_SOURCES = \
 	nm-modem-manager.h \
 	nm-modem-manager.c \
 	nm-modem-types.h
-
-libmodem_manager_la_CPPFLAGS = \
-	$(LIBNL_CFLAGS) \
-	$(DBUS_CFLAGS)
 
 libmodem_manager_la_LIBADD = \
 	$(top_builddir)/src/generated/libnm-generated.la \

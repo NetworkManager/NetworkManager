@@ -1,4 +1,14 @@
-INCLUDES = \
+noinst_LTLIBRARIES = libvpn-manager.la
+
+libvpn_manager_la_SOURCES = \
+	nm-vpn-manager.c \
+	nm-vpn-manager.h \
+	nm-vpn-service.c \
+	nm-vpn-service.h \
+	nm-vpn-connection.c \
+	nm-vpn-connection.h
+
+libvpn_manager_la_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/include \
@@ -10,23 +20,10 @@ INCLUDES = \
 	-I${top_srcdir}/src/posix-signals \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/src/dns-manager \
+	$(LIBNL_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS) \
 	-DVPN_NAME_FILES_DIR=\""$(sysconfdir)/NetworkManager/VPN"\"
-
-
-noinst_LTLIBRARIES = libvpn-manager.la
-
-libvpn_manager_la_SOURCES = \
-	nm-vpn-manager.c \
-	nm-vpn-manager.h \
-	nm-vpn-service.c \
-	nm-vpn-service.h \
-	nm-vpn-connection.c \
-	nm-vpn-connection.h
-
-libvpn_manager_la_CPPFLAGS =	\
-	$(LIBNL_CFLAGS)		\
-	$(DBUS_CFLAGS)		\
-	$(GLIB_CFLAGS)
 
 libvpn_manager_la_LIBADD = \
 	$(top_builddir)/src/generated/libnm-generated.la \

@@ -1,17 +1,21 @@
 SUBDIRS = . tests
 
-INCLUDES = \
+pkglib_LTLIBRARIES = libnm-settings-plugin-ifnet.la
+
+noinst_LTLIBRARIES = lib-ifnet-io.la
+
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/wifi \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util
-
-pkglib_LTLIBRARIES = libnm-settings-plugin-ifnet.la
-
-noinst_LTLIBRARIES = lib-ifnet-io.la
+	-I$(top_builddir)/libnm-util \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DSBINDIR=\"$(sbindir)\"
 
 libnm_settings_plugin_ifnet_la_SOURCES = \
 	nm-ifnet-connection.c \
@@ -20,10 +24,8 @@ libnm_settings_plugin_ifnet_la_SOURCES = \
 	plugin.h 
 
 libnm_settings_plugin_ifnet_la_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
 	$(GUDEV_CFLAGS) \
-	-DSYSCONFDIR=\"$(sysconfdir)\"
+	$(AM_CPPFLAGS)
 
 libnm_settings_plugin_ifnet_la_LDFLAGS = -module -avoid-version
 
@@ -43,12 +45,6 @@ lib_ifnet_io_la_SOURCES = \
 	net_utils.c\
 	wpa_parser.h\
 	wpa_parser.c
-
-lib_ifnet_io_la_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	-DSYSCONFDIR=\"$(sysconfdir)\" \
-	-DSBINDIR=\"$(sbindir)\"
 
 lib_ifnet_io_la_LIBADD = \
 	 $(top_builddir)/src/wifi/libwifi-utils.la \

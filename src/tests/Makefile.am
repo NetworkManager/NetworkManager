@@ -1,13 +1,15 @@
 if ENABLE_TESTS
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/src/dhcp-manager \
 	-I$(top_srcdir)/src \
-	-I$(top_builddir)/src
+	-I$(top_builddir)/src \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS)
 
 noinst_PROGRAMS = \
 	test-dhcp-options \
@@ -20,8 +22,7 @@ test_dhcp_options_SOURCES = \
 	test-dhcp-options.c
 
 test_dhcp_options_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
+	$(AM_CPPFLAGS) \
 	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
 	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\"
 
@@ -37,9 +38,6 @@ test_dhcp_options_LDADD = \
 test_policy_hosts_SOURCES = \
 	test-policy-hosts.c
 
-test_policy_hosts_CPPFLAGS = \
-	$(GLIB_CFLAGS)
-
 test_policy_hosts_LDADD = \
 	-ldl \
 	$(top_builddir)/src/libtest-policy-hosts.la \
@@ -49,10 +47,6 @@ test_policy_hosts_LDADD = \
 
 test_wifi_ap_utils_SOURCES = \
 	test-wifi-ap-utils.c
-
-test_wifi_ap_utils_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
 
 test_wifi_ap_utils_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

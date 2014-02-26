@@ -1,6 +1,6 @@
 SUBDIRS = . tests
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/include \
@@ -25,6 +25,7 @@ libdhcp_dhclient_la_SOURCES = \
 libdhcp_dhclient_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	$(AM_CPPFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \
@@ -52,6 +53,7 @@ libdhcp_manager_la_SOURCES = \
 libdhcp_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	$(AM_CPPFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\" \

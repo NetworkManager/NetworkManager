@@ -50,7 +50,7 @@ GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 GLIB_GENERATED += nm-marshal.h nm-marshal.c
 nm_marshal_sources = $(nm_daemon_sources)
 
-INCLUDES = \
+libnm_generated_la_CPPFLAGS = \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/src \
@@ -67,13 +67,7 @@ INCLUDES = \
 	-I$(top_srcdir)/src/firewall-manager \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/wifi \
-	-I$(top_srcdir)/libnm-util
-
-if WITH_WIMAX
-INCLUDES += -I$(top_srcdir)/src/wimax
-endif
-
-libnm_generated_la_CPPFLAGS = \
+	-I$(top_srcdir)/libnm-util \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GUDEV_CFLAGS) \
@@ -82,8 +76,12 @@ libnm_generated_la_CPPFLAGS = \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	$(IWMX_SDK_CFLAGS)
 
+if WITH_WIMAX
+libnm_generated_la_CPPFLAGS += -I$(top_srcdir)/src/wimax
+endif
+
 if WITH_MODEM_MANAGER_1
-	libnm_generated_la_CPPFLAGS += $(MM_GLIB_CFLAGS)
+libnm_generated_la_CPPFLAGS += $(MM_GLIB_CFLAGS)
 endif
 
 libnm_generated_la_LIBADD = \

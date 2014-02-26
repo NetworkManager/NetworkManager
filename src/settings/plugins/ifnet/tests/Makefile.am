@@ -1,20 +1,19 @@
 if ENABLE_TESTS
 
-INCLUDES=-I$(srcdir)/../ \
-	 -I$(top_srcdir)/libnm-glib \
-	 -I$(top_srcdir)/libnm-util \
-	 -I$(top_builddir)/libnm-util \
-	 -I$(top_srcdir)/include \
-	 -I$(top_builddir)/include \
-	 -I$(top_srcdir)/src/settings
-
-noinst_PROGRAMS = check_ifnet
-check_ifnet_SOURCES = test_all.c
-
-check_ifnet_CPPFLAGS = \
+AM_CPPFLAGS= \
+	-I$(srcdir)/../ \
+	-I$(top_srcdir)/libnm-glib \
+	-I$(top_srcdir)/libnm-util \
+	-I$(top_builddir)/libnm-util \
+	-I$(top_srcdir)/include \
+	-I$(top_builddir)/include \
+	-I$(top_srcdir)/src/settings \
 	$(CHECK_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DTEST_WPA_SUPPLICANT_CONF='"$(srcdir)/wpa_supplicant.conf"'
+
+noinst_PROGRAMS = check_ifnet
+check_ifnet_SOURCES = test_all.c
 
 check_ifnet_LDADD = $(top_builddir)/libnm-util/libnm-util.la \
 		    $(builddir)/../lib-ifnet-io.la \

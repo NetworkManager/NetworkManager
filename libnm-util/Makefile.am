@@ -2,14 +2,18 @@ include $(GLIB_MAKEFILE)
 
 SUBDIRS = . tests
 
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/include -I${top_builddir}/include
+AM_CPPFLAGS = \
+	-I${top_srcdir} \
+	-I${top_srcdir}/include \
+	-I${top_builddir}/include
 
 lib_LTLIBRARIES=libnm-util.la
 
 libnm_util_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	$(UUID_CFLAGS)
+	$(UUID_CFLAGS) \
+	$(AM_CPPFLAGS)
 
 libnm_util_include_HEADERS = 		\
 	nm-connection.h			\
@@ -116,7 +120,8 @@ noinst_LTLIBRARIES = libtest-crypto.la
 libtest_crypto_la_SOURCES = crypto.c
 
 libtest_crypto_la_CPPFLAGS = \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(AM_CPPFLAGS)
 
 libtest_crypto_la_LIBADD = \
 	$(GLIB_LIBS)
@@ -153,7 +158,7 @@ NetworkManager-1.0.gir: libnm-util.la
 NetworkManager_1_0_gir_INCLUDES = GObject-2.0 DBusGLib-1.0
 NetworkManager_1_0_gir_PACKAGES = gobject-2.0 dbus-glib-1
 NetworkManager_1_0_gir_EXPORT_PACKAGES = libnm-util
-NetworkManager_1_0_gir_CFLAGS = $(INCLUDES) -I$(top_srcdir)/libnm-util
+NetworkManager_1_0_gir_CFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/libnm-util
 NetworkManager_1_0_gir_LIBS = libnm-util.la
 NetworkManager_1_0_gir_FILES = $(introspection_sources)
 NetworkManager_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm

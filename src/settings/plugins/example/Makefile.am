@@ -1,12 +1,15 @@
-INCLUDES = \
+# 'noinst' here because this is an example plugin we don't want to install
+noinst_LTLIBRARIES = libnm-settings-plugin-example.la
+
+libnm_settings_plugin_example_la_CPPFLAGS = \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util
-
-# 'noinst' here because this is an example plugin we don't want to install
-noinst_LTLIBRARIES = libnm-settings-plugin-example.la
+	-I$(top_builddir)/libnm-util \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	-DNMCONFDIR=\"$(nmconfdir)\"
 
 # The actual plugins typically pull reader.c and writer.c out into
 # their own static library so that unit tests can use them without
@@ -22,11 +25,6 @@ libnm_settings_plugin_example_la_SOURCES = \
 	common.h \
 	reader.c \
 	writer.c
-
-libnm_settings_plugin_example_la_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	-DNMCONFDIR=\"$(nmconfdir)\"
 
 libnm_settings_plugin_example_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

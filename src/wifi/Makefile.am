@@ -1,11 +1,3 @@
-INCLUDES = \
-	-I${top_srcdir}/include \
-	-I${top_builddir}/include \
-	-I${top_srcdir}/src/logging \
-	-I${top_srcdir}/libnm-util \
-	-I${top_builddir}/libnm-util \
-	-I${top_srcdir}/src
-
 noinst_LTLIBRARIES = libwifi-utils.la
 
 libwifi_utils_la_SOURCES = \
@@ -20,6 +12,12 @@ libwifi_utils_la_SOURCES += wifi-utils-wext.c wifi-utils-wext.h
 endif
 
 libwifi_utils_la_CPPFLAGS = \
+	-I${top_srcdir}/include \
+	-I${top_builddir}/include \
+	-I${top_srcdir}/src/logging \
+	-I${top_srcdir}/libnm-util \
+	-I${top_builddir}/libnm-util \
+	-I${top_srcdir}/src \
 	$(GLIB_CFLAGS) \
 	$(LIBNL_CFLAGS)
 

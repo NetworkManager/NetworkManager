@@ -1,13 +1,20 @@
-INCLUDES = \
+noinst_LTLIBRARIES = libdns-manager.la
+
+libdns_manager_la_CPPFLAGS = \
 	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/src/posix-signals \
 	-I${top_srcdir}/libnm-util \
 	-I${top_builddir}/libnm-util \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/include \
-	-I${top_builddir}/include
-
-noinst_LTLIBRARIES = libdns-manager.la
+	-I${top_builddir}/include \
+	$(LIBNL_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	-DLOCALSTATEDIR=\"$(localstatedir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DNMCONFDIR=\"$(nmconfdir)\" \
+	-DNMRUNDIR=\"$(nmrundir)\"
 
 libdns_manager_la_SOURCES = \
 	nm-dns-manager.h \
@@ -18,15 +25,6 @@ libdns_manager_la_SOURCES = \
 	nm-dns-dnsmasq.c \
 	nm-dns-utils.h \
 	nm-dns-utils.c
-
-libdns_manager_la_CPPFLAGS = \
-	$(LIBNL_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	$(GLIB_CFLAGS) \
-	-DLOCALSTATEDIR=\"$(localstatedir)\" \
-	-DSYSCONFDIR=\"$(sysconfdir)\" \
-	-DNMCONFDIR=\"$(nmconfdir)\" \
-	-DNMRUNDIR=\"$(nmrundir)\"
 
 libdns_manager_la_LIBADD = \
 	$(top_builddir)/src/logging/libnm-logging.la \

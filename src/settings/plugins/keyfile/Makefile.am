@@ -1,11 +1,14 @@
 SUBDIRS = . tests
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util
+	-I$(top_builddir)/libnm-util \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	-DNMCONFDIR=\"$(nmconfdir)\"
 
 noinst_LTLIBRARIES = \
 	libkeyfile-io.la \
@@ -23,11 +26,6 @@ libkeyfile_io_la_SOURCES = \
 	utils.h \
 	common.h
 
-libkeyfile_io_la_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	-DNMCONFDIR=\"$(nmconfdir)\"
-
 libkeyfile_io_la_LIBADD = $(GLIB_LIBS)
 
 #####################################
@@ -37,11 +35,6 @@ libnm_settings_plugin_keyfile_la_SOURCES = \
 	nm-keyfile-connection.h \
 	plugin.c \
 	plugin.h
-
-libnm_settings_plugin_keyfile_la_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	-DNMCONFDIR=\"$(nmconfdir)\"
 
 libnm_settings_plugin_keyfile_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

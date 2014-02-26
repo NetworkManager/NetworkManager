@@ -21,7 +21,8 @@ endif
 
 SUBDIRS += . tests
 
-INCLUDES = -I${top_srcdir} \
+AM_CPPFLAGS = \
+           -I${top_srcdir} \
            -I${top_builddir}/include \
            -I${top_srcdir}/include \
            -I${top_builddir}/src/generated \
@@ -65,7 +66,8 @@ libtest_dhcp_la_SOURCES = \
 libtest_dhcp_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	$(LIBNL_CFLAGS)
+	$(LIBNL_CFLAGS) \
+	$(AM_CPPFLAGS)
 
 libtest_dhcp_la_LIBADD = \
 	$(top_builddir)/src/generated/libnm-generated.la \
@@ -84,7 +86,8 @@ libtest_policy_hosts_la_SOURCES = \
 
 libtest_policy_hosts_la_CPPFLAGS = \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(AM_CPPFLAGS)
 
 libtest_policy_hosts_la_LIBADD = \
 	${top_builddir}/src/logging/libnm-logging.la \
@@ -100,7 +103,8 @@ libtest_wifi_ap_utils_la_SOURCES = \
 	nm-wifi-ap-utils.h
 
 libtest_wifi_ap_utils_la_CPPFLAGS = \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(AM_CPPFLAGS)
 
 libtest_wifi_ap_utils_la_LIBADD = \
 	${top_builddir}/libnm-util/libnm-util.la \
@@ -301,6 +305,7 @@ NetworkManager_CPPFLAGS = \
 	$(POLKIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	$(LIBSOUP_CFLAGS) \
+	$(AM_CPPFLAGS) \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
