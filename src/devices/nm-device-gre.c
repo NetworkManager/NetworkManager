@@ -36,7 +36,6 @@ G_DEFINE_TYPE (NMDeviceGre, nm_device_gre, NM_TYPE_DEVICE_GENERIC)
 #define NM_DEVICE_GRE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_GRE, NMDeviceGrePrivate))
 
 typedef struct {
-	NMDevice *parent;
 	NMPlatformGreProperties props;
 } NMDeviceGrePrivate;
 
@@ -73,15 +72,8 @@ update_properties (NMDevice *device)
 
 	g_object_freeze_notify (object);
 
-	if (priv->props.parent_ifindex != props.parent_ifindex) {
+	if (priv->props.parent_ifindex != props.parent_ifindex)
 		g_object_notify (object, NM_DEVICE_GRE_PARENT);
-		if (priv->parent)
-			g_object_remove_weak_pointer (G_OBJECT (priv->parent), (gpointer *) &priv->parent);
-		priv->parent = nm_manager_get_device_by_ifindex (nm_manager_get (), props.parent_ifindex);
-		if (priv->parent)
-			g_object_add_weak_pointer (G_OBJECT (priv->parent), (gpointer *) &priv->parent);
-	}
-
 	if (priv->props.input_flags != props.input_flags)
 		g_object_notify (object, NM_DEVICE_GRE_INPUT_FLAGS);
 	if (priv->props.output_flags != props.output_flags)
@@ -146,10 +138,12 @@ get_property (GObject *object, guint prop_id,
 {
 	NMDeviceGrePrivate *priv = NM_DEVICE_GRE_GET_PRIVATE (object);
 	char buf[INET_ADDRSTRLEN];
+	NMDevice *parent;
 
 	switch (prop_id) {
 	case PROP_PARENT:
-		g_value_set_boxed (value, priv->parent ? nm_device_get_path (priv->parent) : "/");
+		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), priv->props.parent_ifindex);
+		g_value_set_boxed (value, parent ? nm_device_get_path (parent) : "/");
 		break;
 	case PROP_INPUT_FLAGS:
 		g_value_set_uint (value, priv->props.input_flags);

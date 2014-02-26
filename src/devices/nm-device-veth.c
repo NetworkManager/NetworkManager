@@ -114,6 +114,20 @@ nm_device_veth_init (NMDeviceVeth *self)
 }
 
 static void
+dispose (GObject *object)
+{
+	NMDeviceVeth *self = NM_DEVICE_VETH (object);
+	NMDeviceVethPrivate *priv = NM_DEVICE_VETH_GET_PRIVATE (self);
+
+	if (priv->peer) {
+		g_object_remove_weak_pointer (G_OBJECT (priv->peer), (gpointer *) &priv->peer);
+		priv->peer = NULL;
+	}
+
+	G_OBJECT_CLASS (nm_device_veth_parent_class)->dispose (object);
+}
+
+static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
@@ -139,6 +153,7 @@ nm_device_veth_class_init (NMDeviceVethClass *klass)
 	g_type_class_add_private (klass, sizeof (NMDeviceVethPrivate));
 
 	object_class->get_property = get_property;
+	object_class->dispose = dispose;
 
 	/* properties */
 	g_object_class_install_property
