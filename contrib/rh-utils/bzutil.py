@@ -658,7 +658,7 @@ class FilterBase():
             raise Exception("Invalid filter name \"%s\"" % name)
 
         try:
-            f = filter_type(args[1:])
+            f = filter_type.factory(args[1:])
         except Exception as e:
             raise Exception("Cannot create filter of type %s with arguments \"%r\": (%s)" % (filter_type.__name__, args[1:], str(e)))
         return f
@@ -666,10 +666,12 @@ class FilterBase():
     def parse(s):
         if s.lower() in FilterBase._mapping:
             filter_type = FilterBase._mapping[s.lower()]
+            if not filter_type.allow_simple:
+                raise Exception("Cannot create filter '%s' because it needs some arguments. Use full python syntax" % (s))
             try:
-                f = filter_type([])
+                f = filter_type.factory([])
             except Exception as e:
-                raise Exception("Cannot create filter of type %s with arguments \"%r\": (%s)" % (filter_type.__name__, args[1:], str(e)))
+                raise Exception("Cannot create filter of type %s with arguments \"%r\": (%s)" % (filter_type.factory.__name__, args[1:], str(e)))
             return f
         try:
             expr = ast.literal_eval(s)
@@ -840,15 +842,30 @@ class FilterMatch(FilterBase):
         if not isinstance(other, FilterMatch):
             return False
         return self._name == other._name and self._value == other._value
-def CreateFilterRhel(version):
+def CreateFilterRhel(version=None, minor=None):
     def _CreateFilterRhel(args):
         if args:
             raise Exception("No arguments expected (instead got \"%r\")" % (args))
-        return FilterAnd.join(
-                FilterRhbz(),
-                FilterMatch(['product', '^Red Hat Enterprise Linux ' + str(version) + "$"]),
-            )
+        f = [
+            FilterRhbz(),
+            FilterMatch(['product', '^Red Hat Enterprise Linux ' + ('.*' if version is None else str(version)) + "$"]),
+        ]
+        if minor is not None:
+            f.append(FilterMatch(['version', '^' + str(minor) + '$']))
+        return FilterAnd.join(*f)
     return _CreateFilterRhel
+def CreateFilterFc(version=None):
+    def _CreateFilterFc(args):
+        if args:
+            raise Exception("No arguments expected (instead got \"%r\")" % (args))
+        f = [
+            FilterRhbz(),
+            FilterMatch(['product', '^Fedora$'])
+        ]
+        if version is not None:
+            f.append(FilterMatch(['version', '^' + str(version) + '$']))
+        return FilterAnd.join(*f)
+    return _CreateFilterFc
 def CreateFilterOpen(args):
     if args:
         raise Exception("No arguments expected (instead got \"%r\")" % (args))
@@ -863,18 +880,32 @@ def CreateFilterOpen(args):
             )
         )
 
+class FilterMapping:
+    def __init__(self, factory, allow_simple=True):
+        self.factory = factory
+        self.allow_simple = allow_simple
+
 FilterBase._mapping = {
-        'true':                 FilterTrue,
-        'false':                FilterFalse,
-        'not':                  FilterNot,
-        'and':                  FilterAnd,
-        'or':                   FilterOr,
-        'rhbz':                 FilterRhbz,
-        'bgo':                  FilterBgo,
-        'match':                FilterMatch,
-        'rhel6':                CreateFilterRhel(6),
-        'rhel7':                CreateFilterRhel(7),
-        'open':                 CreateFilterOpen,
+        'true':                 FilterMapping(FilterTrue),
+        'false':                FilterMapping(FilterFalse),
+        'not':                  FilterMapping(FilterNot, False),
+        'and':                  FilterMapping(FilterAnd, False),
+        'or':                   FilterMapping(FilterOr, False),
+        'rhbz':                 FilterMapping(FilterRhbz),
+        'bgo':                  FilterMapping(FilterBgo),
+        'match':                FilterMapping(FilterMatch, False),
+        'rhel':                 FilterMapping(CreateFilterRhel()),
+        'rhel6':                FilterMapping(CreateFilterRhel(6)),
+        'rhel6':                FilterMapping(CreateFilterRhel(6)),
+        'rhel6.5':              FilterMapping(CreateFilterRhel(6, '6\\.5')),
+        'rhel6.6':              FilterMapping(CreateFilterRhel(6, '6\\.6')),
+        'rhel7':                FilterMapping(CreateFilterRhel(7)),
+        'rhel7.0':              FilterMapping(CreateFilterRhel(7, '7\\.0')),
+        'rhel7.1':              FilterMapping(CreateFilterRhel(7, '7\\.1')),
+        'fc':                   FilterMapping(CreateFilterFc()),
+        'fc20':                 FilterMapping(CreateFilterFc(20)),
+        'fc21':                 FilterMapping(CreateFilterFc(21)),
+        'open':                 FilterMapping(CreateFilterOpen),
     }
 
 
