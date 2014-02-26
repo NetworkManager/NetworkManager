@@ -432,5 +432,9 @@ install-data-hook:
 	$(mkinstalldirs) -m 0700 $(DESTDIR)$(statedir)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(pkglibdir)
 
-CLEANFILES = $(BUILT_SOURCES)
+CLEANFILES = \
+	$(BUILT_SOURCES) \
+	settings/*-glue.h \
+	devices/*-glue.h \
+	devices/*/*-glue.h
 
