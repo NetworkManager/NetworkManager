@@ -874,6 +874,8 @@ claim_connection (NMSettings *self,
 	                     (gpointer) nm_connection_get_path (NM_CONNECTION (connection)),
 	                     g_object_ref (connection));
 
+	nm_utils_log_connection_diff (NM_CONNECTION (connection), NULL, LOGL_DEBUG, LOGD_CORE, "new connection", "++ ");
+
 	/* Only emit the individual connection-added signal after connections
 	 * have been initially loaded.
 	 */

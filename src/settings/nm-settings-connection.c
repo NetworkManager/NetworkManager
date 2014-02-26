@@ -470,6 +470,8 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	 */
 	g_signal_handlers_block_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
 
+	nm_utils_log_connection_diff (new_connection, NM_CONNECTION (self), LOGL_DEBUG, LOGD_CORE, "update connection", "++ ");
+
 	nm_connection_replace_settings_from_connection (NM_CONNECTION (self), new_connection);
 	nm_settings_connection_set_flags (self,
 	                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED | NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED,
