@@ -1173,6 +1173,8 @@ nm_setting_diff (NMSetting *a,
 	guint i;
 	NMSettingDiffResult a_result = NM_SETTING_DIFF_RESULT_IN_A;
 	NMSettingDiffResult b_result = NM_SETTING_DIFF_RESULT_IN_B;
+	NMSettingDiffResult a_result_default = NM_SETTING_DIFF_RESULT_IN_A_DEFAULT;
+	NMSettingDiffResult b_result_default = NM_SETTING_DIFF_RESULT_IN_B_DEFAULT;
 	gboolean results_created = FALSE;
 
 	g_return_val_if_fail (results != NULL, FALSE);
@@ -1180,6 +1182,12 @@ nm_setting_diff (NMSetting *a,
 	if (b) {
 		g_return_val_if_fail (NM_IS_SETTING (b), FALSE);
 		g_return_val_if_fail (G_OBJECT_TYPE (a) == G_OBJECT_TYPE (b), FALSE);
+	}
+
+	if ((flags & (NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT)) ==
+	             (NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT)) {
+		/* conflicting flags: default to WITH_DEFAULT (clearing NO_DEFAULT). */
+		flags &= ~NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT;
 	}
 
 	/* If the caller is calling this function in a pattern like this to get
@@ -1194,6 +1202,8 @@ nm_setting_diff (NMSetting *a,
 	if (invert_results) {
 		a_result = NM_SETTING_DIFF_RESULT_IN_B;
 		b_result = NM_SETTING_DIFF_RESULT_IN_A;
+		a_result_default = NM_SETTING_DIFF_RESULT_IN_B_DEFAULT;
+		b_result_default = NM_SETTING_DIFF_RESULT_IN_A_DEFAULT;
 	}
 
 	if (*results == NULL) {
@@ -1206,8 +1216,7 @@ nm_setting_diff (NMSetting *a,
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
-		NMSettingDiffResult r = NM_SETTING_DIFF_RESULT_UNKNOWN, tmp;
-		gboolean different = TRUE;
+		NMSettingDiffResult r = NM_SETTING_DIFF_RESULT_UNKNOWN;
 
 		/* Handle compare flags */
 		if (!should_compare_prop (a, prop_spec->name, flags, prop_spec->flags))
@@ -1216,28 +1225,58 @@ nm_setting_diff (NMSetting *a,
 			continue;
 
 		if (b) {
+			gboolean different;
+
 			different = !NM_SETTING_GET_CLASS (a)->compare_property (a, b, prop_spec, flags);
 			if (different) {
+				gboolean a_is_default, b_is_default;
 				GValue value = G_VALUE_INIT;
 
 				g_value_init (&value, prop_spec->value_type);
 				g_object_get_property (G_OBJECT (a), prop_spec->name, &value);
-				if (!g_param_value_defaults (prop_spec, &value))
-					r |= a_result;
+				a_is_default = g_param_value_defaults (prop_spec, &value);
 
 				g_value_reset (&value);
 				g_object_get_property (G_OBJECT (b), prop_spec->name, &value);
-				if (!g_param_value_defaults (prop_spec, &value))
-					r |= b_result;
+				b_is_default = g_param_value_defaults (prop_spec, &value);
 
 				g_value_unset (&value);
+				if ((flags & NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT) == 0) {
+					if (!a_is_default)
+						r |= a_result;
+					if (!b_is_default)
+						r |= b_result;
+				} else {
+					r |= a_result | b_result;
+					if (a_is_default)
+						r |= a_result_default;
+					if (b_is_default)
+						r |= b_result_default;
+				}
 			}
-		} else
+		} else if ((flags & (NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT)) == 0)
 			r = a_result;  /* only in A */
+		else {
+			GValue value = G_VALUE_INIT;
 
-		if (different) {
-			tmp = GPOINTER_TO_UINT (g_hash_table_lookup (*results, prop_spec->name));
-			g_hash_table_insert (*results, g_strdup (prop_spec->name), GUINT_TO_POINTER (tmp | r));
+			g_value_init (&value, prop_spec->value_type);
+			g_object_get_property (G_OBJECT (a), prop_spec->name, &value);
+			if (!g_param_value_defaults (prop_spec, &value))
+				r |= a_result;
+			else if (flags & NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT)
+				r |= a_result | a_result_default;
+
+			g_value_unset (&value);
+		}
+
+		if (r != NM_SETTING_DIFF_RESULT_UNKNOWN) {
+			void *p;
+
+			if (g_hash_table_lookup_extended (*results, prop_spec->name, NULL, &p)) {
+				if ((r & GPOINTER_TO_UINT (p)) != r)
+					g_hash_table_insert (*results, g_strdup (prop_spec->name), GUINT_TO_POINTER (r | GPOINTER_TO_UINT (p)));
+			} else
+				g_hash_table_insert (*results, g_strdup (prop_spec->name), GUINT_TO_POINTER (r));
 		}
 	}
 	g_free (property_specs);
