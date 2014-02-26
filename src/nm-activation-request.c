@@ -308,18 +308,27 @@ device_state_changed (NMActiveConnection *active,
 	NMActiveConnectionState cur_ac_state = nm_active_connection_get_state (active);
 	NMActiveConnectionState ac_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 
-	/* Ignore state changes when this activation request is not yet active, but
-	 * handle the DISCONNECTED state correctly.  The device clears the
-	 * activation request before sending the state change signal so this
-	 * must be special-cased to ensure the activation request is deactivated.
+	/* Decide which device state changes to handle when this active connection
+	 * is not the device's current request.  Two cases here: (a) the AC is
+	 * pending and not yet active, and (b) the AC was active but the device is
+	 * entering DISCONNECTED state (which clears the device's current AC before
+	 * emitting the state change signal).
 	 */
 	if (NM_ACTIVE_CONNECTION (nm_device_get_act_request (device)) != active) {
-		if (new_state != NM_DEVICE_STATE_DISCONNECTED)
+		/* Some other request is activating; this one must be pending */
+		if (new_state >= NM_DEVICE_STATE_PREPARE)
 			return;
-		if (cur_ac_state < NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
-			return;
+		else if (new_state == NM_DEVICE_STATE_DISCONNECTED) {
+			/* This request hasn't started activating yet; the device is
+			 * disconnecting and cleaning up a previous activation request.
+			 */
+			if (cur_ac_state < NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
+				return;
 
-		/* Catch device disconnections after this request has been active */
+			/* Catch device disconnections after this request has been active */
+		}
+
+		/* All states < DISCONNECTED are fatal and handled */
 	}
 
 	/* Set NMActiveConnection state based on the device's state */

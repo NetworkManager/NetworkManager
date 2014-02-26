@@ -2611,7 +2611,17 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 
 	device = nm_active_connection_get_device (active);
 	if (!device) {
-		g_assert (connection_needs_virtual_device (connection));
+		if (!connection_needs_virtual_device (connection)) {
+			NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
+
+			g_assert (s_con);
+			g_set_error (error,
+			             NM_MANAGER_ERROR,
+			             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+			             "Unsupported virtual interface type '%s'",
+			             nm_setting_connection_get_connection_type (s_con));
+			return FALSE;
+		}
 
 		device = system_create_virtual_device (self, connection);
 		if (!device) {
@@ -2720,6 +2730,17 @@ _internal_activate_generic (NMManager *self, NMActiveConnection *active, GError 
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	gboolean success = FALSE;
+
+	/* Ensure activation request is still valid, eg that its device hasn't gone
+	 * away or that some other dependency has not failed.
+	 */
+	if (nm_active_connection_get_state (active) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+		                     "Activation failed because dependencies failed.");
+		return FALSE;
+	}
 
 	if (NM_IS_VPN_CONNECTION (active))
 		success = _internal_activate_vpn (self, active, error);
