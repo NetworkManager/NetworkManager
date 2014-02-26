@@ -361,5 +361,8 @@ install-data-hook:
 	$(mkinstalldirs) -m 0700 $(DESTDIR)$(statedir)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(pkglibdir)
 
-CLEANFILES = $(BUILT_SOURCES)
+CLEANFILES = \
+	$(BUILT_SOURCES) \
+	nm-enum-types.c \
+	nm-enum-types.h
 
