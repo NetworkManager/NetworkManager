@@ -296,13 +296,18 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	gboolean notify = !!nm_active_connection_get_path (active);
+	GSList *found;
 
-	priv->active_connections = g_slist_remove (priv->active_connections, active);
-	g_signal_emit (self, signals[ACTIVE_CONNECTION_REMOVED], 0, active);
-	g_signal_handlers_disconnect_by_func (active, active_connection_state_changed, self);
-	g_object_unref (active);
+	/* FIXME: switch to a GList for faster removal */
+	found = g_slist_find (priv->active_connections, active);
+	if (found) {
+		priv->active_connections = g_slist_remove (priv->active_connections, active);
+		g_signal_emit (self, signals[ACTIVE_CONNECTION_REMOVED], 0, active);
+		g_signal_handlers_disconnect_by_func (active, active_connection_state_changed, self);
+		g_object_unref (active);
+	}
 
-	return notify;
+	return found && notify;
 }
 
 static gboolean
@@ -352,6 +357,13 @@ active_connection_state_changed (NMActiveConnection *active,
 	nm_manager_update_state (self);
 }
 
+/**
+ * active_connection_add():
+ * @self: the #NMManager
+ * @active: the #NMActiveConnection to manage
+ *
+ * Begins to track and manage @active.  Increases the refcount of @active.
+ */
 static void
 active_connection_add (NMManager *self, NMActiveConnection *active)
 {
@@ -359,8 +371,11 @@ active_connection_add (NMManager *self, NMActiveConnection *active)
 
 	g_return_if_fail (g_slist_find (priv->active_connections, active) == FALSE);
 
-	priv->active_connections = g_slist_prepend (priv->active_connections, active);
-	g_signal_connect (active, "notify::" NM_ACTIVE_CONNECTION_STATE,
+	priv->active_connections = g_slist_prepend (priv->active_connections,
+	                                            g_object_ref (active));
+
+	g_signal_connect (active,
+	                  "notify::" NM_ACTIVE_CONNECTION_STATE,
 	                  G_CALLBACK (active_connection_state_changed),
 	                  self);
 
@@ -384,14 +399,17 @@ find_ac_for_connection (NMManager *manager, NMConnection *connection)
 	GSList *iter;
 	NMActiveConnection *ac;
 	NMConnection *ac_connection;
+	NMActiveConnectionState ac_state;
 	const char *uuid;
 
 	uuid = nm_connection_get_uuid (connection);
 	for (iter = priv->active_connections; iter; iter = iter->next) {
 		ac = iter->data;
 		ac_connection = nm_active_connection_get_connection (ac);
+		ac_state = nm_active_connection_get_state (ac);
 
-		if (!strcmp (nm_connection_get_uuid (ac_connection), uuid))
+		if (   !strcmp (nm_connection_get_uuid (ac_connection), uuid)
+		    && (ac_state < NM_ACTIVE_CONNECTION_STATE_DEACTIVATED))
 			return ac;
 	}
 
@@ -1878,6 +1896,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 			nm_active_connection_export (active);
 			active_connection_add (self, active);
 			nm_device_queue_activation (device, NM_ACT_REQUEST (active));
+			g_object_unref (active);
 		} else {
 			nm_log_warn (LOGD_DEVICE, "assumed connection %s failed to activate: (%d) %s",
 			             nm_connection_get_path (connection),
@@ -2844,15 +2863,36 @@ _internal_activation_auth_done (NMActiveConnection *active,
 	GError *error = NULL;
 
 	if (success) {
-		if (_internal_activate_generic (self, active, &error))
+		if (_internal_activate_generic (self, active, &error)) {
+			g_object_unref (active);
 			return;
+		}
 	}
 
 	g_assert (error_desc || error);
 	_internal_activation_failed (self, active, error_desc ? error_desc : error->message);
+	g_object_unref (active);
 	g_clear_error (&error);
 }
 
+/**
+ * nm_manager_activate_connection():
+ * @self: the #NMManager
+ * @connection: the #NMConnection to activate on @device
+ * @specific_object: the specific object path, if any, for the activation
+ * @device: the #NMDevice to activate @connection on
+ * @subject: the subject which requested activation
+ * @error: return location for an error
+ *
+ * Begins a new internally-initiated activation of @connection on @device.
+ * @subject should be the subject of the activation that triggered this
+ * one, or if this is an autoconnect request, a new internal subject.
+ * The returned #NMActiveConnection is owned by the Manager and should be
+ * referenced by the caller if the caller continues to use it.
+ *
+ * Returns: (transfer none): the new #NMActiveConnection that tracks
+ * activation of @connection on @device
+ */
 NMActiveConnection *
 nm_manager_activate_connection (NMManager *self,
                                 NMConnection *connection,
@@ -2997,11 +3037,11 @@ error:
 /***********************************************************************/
 
 static void
-activation_auth_done (NMActiveConnection *active,
-                      gboolean success,
-                      const char *error_desc,
-                      gpointer user_data1,
-                      gpointer user_data2)
+_activation_auth_done (NMActiveConnection *active,
+                       gboolean success,
+                       const char *error_desc,
+                       gpointer user_data1,
+                       gpointer user_data2)
 {
 	NMManager *self = user_data1;
 	DBusGMethodInvocation *context = user_data2;
@@ -3010,6 +3050,7 @@ activation_auth_done (NMActiveConnection *active,
 	if (success) {
 		if (_internal_activate_generic (self, active, &error)) {
 			dbus_g_method_return (context, nm_active_connection_get_path (active));
+			g_object_unref (active);
 			return;
 		}
 	} else {
@@ -3020,6 +3061,7 @@ activation_auth_done (NMActiveConnection *active,
 
 	dbus_g_method_return_error (context, error);
 	_internal_activation_failed (self, active, error->message);
+	g_object_unref (active);
 	g_error_free (error);
 }
 
@@ -3120,7 +3162,7 @@ impl_manager_activate_connection (NMManager *self,
 	if (!active)
 		goto error;
 
-	nm_active_connection_authorize (active, activation_auth_done, self, context);
+	nm_active_connection_authorize (active, _activation_auth_done, self, context);
 	active_connection_add (self, active);
 	g_clear_object (&subject);
 	return;
@@ -3173,11 +3215,11 @@ done:
 }
 
 static void
-add_and_activate_auth_done (NMActiveConnection *active,
-                            gboolean success,
-                            const char *error_desc,
-                            gpointer user_data1,
-                            gpointer user_data2)
+_add_and_activate_auth_done (NMActiveConnection *active,
+                             gboolean success,
+                             const char *error_desc,
+                             gpointer user_data1,
+                             gpointer user_data2)
 {
 	NMManager *self = user_data1;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -3207,6 +3249,8 @@ add_and_activate_auth_done (NMActiveConnection *active,
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 	}
+
+	g_object_unref (active);
 }
 
 static void
@@ -3297,7 +3341,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	if (!active)
 		goto error;
 
-	nm_active_connection_authorize (active, add_and_activate_auth_done, self, context);
+	nm_active_connection_authorize (active, _add_and_activate_auth_done, self, context);
 	active_connection_add (self, active);
 	g_object_unref (connection);
 	g_object_unref (subject);
