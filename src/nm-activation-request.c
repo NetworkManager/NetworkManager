@@ -307,6 +307,10 @@ device_state_changed (NMActiveConnection *active,
 {
 	NMActiveConnectionState ac_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 
+	/* Ignore state changes when this activation request is not yet active */
+	if (NM_ACTIVE_CONNECTION (nm_device_get_act_request (device)) != active)
+		return;
+
 	/* Set NMActiveConnection state based on the device's state */
 	switch (new_state) {
 	case NM_DEVICE_STATE_PREPARE:

@@ -314,7 +314,7 @@ void nm_device_queue_ip_config_change (NMDevice *self);
 
 gboolean nm_device_get_firmware_missing (NMDevice *self);
 
-void nm_device_activate (NMDevice *device, NMActRequest *req);
+void nm_device_queue_activation (NMDevice *device, NMActRequest *req);
 
 void nm_device_set_connection_provider (NMDevice *device, NMConnectionProvider *provider);
 

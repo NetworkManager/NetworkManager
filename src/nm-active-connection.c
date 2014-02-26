@@ -325,27 +325,11 @@ device_state_changed (NMDevice *device,
 	NMActiveConnection *self = NM_ACTIVE_CONNECTION (user_data);
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 
+	/* When already deactivated or before activation, device state changes are useless */
+	if (priv->state >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATED)
+		return;
 	if (old_state < NM_DEVICE_STATE_DISCONNECTED)
 		return;
-
-	if (old_state > NM_DEVICE_STATE_DISCONNECTED) {
-		/* Ignore disconnects if this ActiveConnection has not yet started
-		 * activating.  This is caused by activating a device when it's
-		 * already activated, which causes a deactivating of the device before
-		 * activating the new connection.
-		 */
-		if (new_state == NM_DEVICE_STATE_DISCONNECTED &&
-		    old_state > NM_DEVICE_STATE_DISCONNECTED &&
-		    priv->state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
-			return;
-		}
-
-		/* If the device used to be active, but now is disconnected/failed, we
-		 * no longer care about its state.
-		 */
-		if (new_state <= NM_DEVICE_STATE_DISCONNECTED || new_state == NM_DEVICE_STATE_FAILED)
-			g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_state_changed), self);
-	}
 
 	/* Let subclasses handle the state change */
 	if (NM_ACTIVE_CONNECTION_GET_CLASS (self)->device_state_changed)
@@ -362,6 +346,8 @@ device_master_changed (GObject *object,
 	NMActiveConnection *master;
 	NMActiveConnectionState master_state;
 
+	if (NM_ACTIVE_CONNECTION (nm_device_get_act_request (device)) != self)
+		return;
 	if (!nm_device_get_master (device))
 		return;
 	g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_master_changed), self);
