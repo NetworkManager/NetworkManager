@@ -12,6 +12,7 @@ import termcolor
 from sets import Set
 import ast
 import datetime
+import itertools
 
 
 devnull = open(os.devnull, 'w')
@@ -365,7 +366,7 @@ class BzInfo:
     def __hash__(self):
         return hash( (self.bztype, self.bzid) )
     def __str__(self):
-        return "%s #%s" % (self.bztype, self.bzid)
+        return "%s#%s" % (self.bztype, self.bzid)
     def __repr__(self):
         return "(\"%s\", \"%s\")" % (self.bztype, self.bzid)
 
@@ -546,6 +547,7 @@ class UtilParseCommitMessage:
         if self._result is None and self._git_backend:
             message = git_commit_message(self.commit)
             data = []
+            no_bz_skipped = []
 
             while message:
                 match = None;
@@ -567,6 +569,8 @@ class UtilParseCommitMessage:
                 if m:
                     if self._no_bz is None or m not in self._no_bz:
                         data.append(m)
+                    else:
+                        no_bz_skipped.append(m)
 
                 # remove everything before the end of the match 'replace' group.
                 group = match.group('replace')
@@ -574,7 +578,14 @@ class UtilParseCommitMessage:
                 message = message[match.end('replace'):];
 
             self._result = list(set(data))
+            self._no_bz_skipped = list(set(no_bz_skipped))
         return self._result
+    @property
+    def no_bz_skipped(self):
+        r = self.result
+        if not hasattr(self, "_no_bz_skipped"):
+            self._no_bz_skipped = []
+        return self._no_bz_skipped
 
     def filter_out(self, filter):
         res = []
@@ -904,6 +915,7 @@ class CmdParseCommitMessage(CmdBase):
     def _parse_bz(self, obz, no_bz):
         bz_tuples = [bz for bz in re.split('[,; ]', obz) if bz]
         result_man2 = []
+        no_bz_skipped = []
         has_any = False
         for bzii in bz_tuples:
             bzi = bzii.partition(':')
@@ -924,39 +936,48 @@ class CmdParseCommitMessage(CmdBase):
                 raise Exception('invalid bug specifier \"%s\"' % obz)
             if no_bz is None or bz not in no_bz:
                 result_man2.append(bz)
+            else:
+                no_bz_skipped.append(bz)
             has_any = True
         if not has_any:
             raise Exception('invalid bug specifier \"%s\": contains no bugs' % obz)
-        return result_man2
+        return result_man2, no_bz_skipped
     def _parse_bzlist(self, bzlist, no_bz=None):
         i = 0
         result_man = []
+        no_bz_skipped = []
         for obz in (bzlist if bzlist else []):
-            result_man2 = self._parse_bz(obz, no_bz)
+            result_man2, no_bz_skipped2 = self._parse_bz(obz, no_bz)
             result_man.append(UtilParseCommitMessage('bz:\"%s\"' % obz, result_man2, git_backend=False, commit_date=-1000+i))
+            no_bz_skipped.extend(no_bz_skipped2)
             i = i + 1
-        return result_man
+        return result_man, list(set(no_bz_skipped))
 
     def _rh_search(self, params, no_bz=None):
         searches = BzInfoRhbz.BzClient.search(params)
         result = []
+        no_bz_skipped = []
         for s in searches:
             bz = BzInfoRhbz(s['id'], bzdata=s)
             if no_bz is None or bz not in no_bz:
                 result.append(bz)
-        return result
+            else:
+                no_bz_skipped.append(bz)
+        return result, no_bz_skipped
     def _rh_searchlist(self, rh_searches, no_bz=None):
         i = 0
         result = []
+        no_bz_skipped = []
         for (name,params) in rh_searches:
-            result2 = self._rh_search(params, no_bz)
+            result2, no_bz_skipped2 = self._rh_search(params, no_bz)
             if not name:
                 name = ' ' + repr(params)
             else:
                 name = name + ': ' + repr(params)
             result.append(UtilParseCommitMessage('srch:' + name, result2, git_backend=False, commit_date=-2000+i))
+            no_bz_skipped.extend(no_bz_skipped2)
             i = i + 1
-        return result
+        return result, list(set(no_bz_skipped))
 
     def filter_out(self, result, filter):
         exc = []
@@ -993,7 +1014,7 @@ class CmdParseCommitMessage(CmdBase):
             if self.options.list_by_bz is None:
                 self.options.list_by_bz = False
 
-        no_bz = self._parse_bzlist(self.options.no_bz)
+        no_bz, dummy = self._parse_bzlist(self.options.no_bz)
         no_bz = set([bz for commit_data in no_bz for bz in commit_data.result])
 
         rh_searches = []
@@ -1021,9 +1042,17 @@ class CmdParseCommitMessage(CmdBase):
                     'last_change_time': d.strftime('%Y%m%d'),
                 }))
 
-        result_man = self._parse_bzlist(self.options.bz, no_bz)
+        result_man, no_bz_skipped_man = self._parse_bzlist(self.options.bz, no_bz)
         result_all = [ (ref, [UtilParseCommitMessage(commit, no_bz=no_bz) for commit in git_ref_list(ref)]) for ref in (self.options.ref if self.options.ref else [])]
-        result_search = self._rh_searchlist(rh_searches, no_bz)
+        result_search, no_bz_skipped_search = self._rh_searchlist(rh_searches, no_bz)
+
+        no_bz_skipped = [no_bz_skipped for ref_data in result_all for commit_data in ref_data[1] for no_bz_skipped in commit_data.no_bz_skipped]
+        no_bz_skipped = sorted(list(set(itertools.chain(no_bz_skipped, no_bz_skipped_man, no_bz_skipped_search))))
+
+        if no_bz_skipped:
+            print("=== Excluded by --no-bz option: %s" % (" ".join(self.options.no_bz)))
+            for bz in no_bz_skipped:
+                print(bz.to_string("    ", 0, self.options.color))
 
         if filter is not None:
             print("=== Excluded by filter: %s" % (repr(filter)))
@@ -1036,11 +1065,12 @@ class CmdParseCommitMessage(CmdBase):
                 for commit_data in ref_data[1]:
                     excluded = excluded + commit_data.filter_out(filter)
 
-            excluded =sorted(list(set(excluded)))
-            for result in excluded:
-                print(result.to_string("    ", 0, self.options.color))
+            if excluded:
+                excluded =sorted(list(set(excluded)))
+                for result in excluded:
+                    print(result.to_string("    ", 0, self.options.color))
 
-
+                print("    --no-bz '%s'" % ",".join([str(result) for result in excluded]))
 
         if self.options.list_refs or (self.options.list_refs is None and result_all):
             print("=== List commit refs (%s) ===" % (len(result_all)))
