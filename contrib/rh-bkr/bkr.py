@@ -171,13 +171,15 @@ class CmdSubmit(CmdBase):
         self.parser = argparse.ArgumentParser(prog=sys.argv[0] + " " + name, description='Submit job to beaker.')
         self.parser.add_argument('--no-test', action='store_true', help='do submit the job to beaker')
         self.parser.add_argument('--rpm', '-r', action='append')
-        self.parser.add_argument('--nitrate-tag', '-t', action='append')
+        self.parser.add_argument('--nitrate-tag', '-t', action='append', help='Querry nitrate for tests having this tag. Output is appended to $TESTS')
+        self.parser.add_argument('--tests', '-T', action='append', help='Append argument to $TESTS')
         self.parser.add_argument('--job', '-j', help='beaker xml job file')
 
     def _prepare_rpms(self):
-        self.rpm = []
         if self.options.rpm is None:
+            self.rpm = None
             return
+        self.rpm = []
         for r in self.options.rpm:
             if r.startswith('http://') or r.startswith('https://'):
                 self.rpm.append((r, UploadFileUrl(r)));
@@ -196,12 +198,17 @@ class CmdSubmit(CmdBase):
             print("$%s = %r" % (k, v))
     def _prepare_substitutions(self):
         self.subs = {}
-        self.subs['RPM_LIST'] = [ u for x in self.rpm for u in x[1].url() ]
+        if self.rpm is not None:
+            self.subs['RPM_LIST'] = [ u for x in self.rpm for u in x[1].url() ]
 
-        tests = []
-        if self.options.nitrate_tag:
-            tests = [ tag for n_tag in self.options.nitrate_tag for tag in nitrate_tag(n_tag) ]
-        self.subs['TESTS'] = ','.join(seq_unique(tests))
+        if self.options.nitrate_tag or self.options.tests:
+            tests = ''
+            if self.options.nitrate_tag:
+                n_tests = [ tag for n_tag in self.options.nitrate_tag for tag in nitrate_tag(n_tag) ]
+                tests = ','.join(seq_unique(n_tests))
+            if self.options.tests:
+                tests = (tests+',' if tests else "") + ','.join(self.options.tests)
+            self.subs['TESTS'] = tests
 
         for (k,v) in self.subs.iteritems():
             self._print_substitution(k, v)
@@ -288,8 +295,9 @@ class CmdSubmit(CmdBase):
 
             print("Write job '%s' to file '%s'" % (self.options.job, temp.name));
 
-        for r in self.rpm:
-            r[1].prepare(dry_run=not self.options.no_test)
+        if self.rpm:
+            for r in self.rpm:
+                r[1].prepare(dry_run=not self.options.no_test)
 
         if self.options.job:
             args = ['bkr', 'job-submit', temp.name]
