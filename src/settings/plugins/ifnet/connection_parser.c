@@ -571,7 +571,7 @@ make_ip4_setting (NMConnection *connection,
 
 	NMSettingIP4Config *ip4_setting =
 	    NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
-	const char *value, *method;
+	const char *value, *method = NULL;
 	gboolean is_static_block = is_static_ip4 (conn_name);
 	ip_block *iblock = NULL;
 

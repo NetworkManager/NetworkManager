@@ -5672,7 +5672,7 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 static GModule *
 load_cmd_line_edit_lib (void)
 {
-	GModule *module;
+	GModule *module = NULL;
 	char *lib_path;
 	int i;
 	static const char * const edit_lib_table[] = {
