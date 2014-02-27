@@ -3913,7 +3913,7 @@ parse_infiniband_p_key (shvarFile *ifcfg,
 {
 	char *device = NULL, *physdev = NULL, *pkey_id = NULL, *end;
 	char *ifname = NULL;
-	guint32 id;
+	guint32 id = G_MAXUINT32;
 	gboolean ret = FALSE;
 
 	device = svGetValue (ifcfg, "DEVICE", FALSE);
