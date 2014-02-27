@@ -323,7 +323,7 @@ class BzClient:
         for gr in bz_grouped:
             bz_grouped[gr] = sorted(bz_grouped[gr], key=lambda b:b[0])
 
-        print("Set RHBZ options:")
+        print("=== Set RHBZ options ===")
         for gr in bz_grouped:
             for gri in gr:
                 print("  '%s' => '%s'" % (gri[0], gri[1]))
@@ -377,10 +377,11 @@ def is_sequence(arg):
 
 # class to hold information about a bugzilla entry
 class BzInfo:
-    def __init__(self, bzid, bzdata=None):
+    def __init__(self, bzid, bzdata=None, related=None):
         self.bzid = bzid
         if bzdata is not None:
             self._bzdata = bzdata
+        self.related = True if related else False
     @property
     def bztype(self):
         return None
@@ -432,8 +433,8 @@ class BzInfo:
 
 
 class BzInfoBgo(BzInfo):
-    def __init__(self, bzid):
-        BzInfo.__init__(self, int(bzid))
+    def __init__(self, bzid, related=None):
+        BzInfo.__init__(self, int(bzid), related=related)
     @BzInfo.bztype.getter
     def bztype(self):
         return "bgo"
@@ -442,8 +443,8 @@ class BzInfoBgo(BzInfo):
         return "https://bugzilla.gnome.org/show_bug.cgi?id=%s" % self.bzid
 
 class BzInfoRhbz(BzInfo):
-    def __init__(self, bzid, bzdata=None):
-        BzInfo.__init__(self, int(bzid), bzdata)
+    def __init__(self, bzid, bzdata=None, related=None):
+        BzInfo.__init__(self, int(bzid), bzdata, related=related)
     @BzInfo.bztype.getter
     def bztype(self):
         return "rhbz"
@@ -557,17 +558,18 @@ class BzInfoRhbz(BzInfo):
 
 class UtilParseCommitMessage:
 
+    _p_related = '(?P<related>([rR]elated(:[ \t]*|[ \t]+))?)'
     _patterns = [
-            ('(^|\W)(?P<replace>(?P<type>bgo)[ ]?[#]?(?P<id>[0-9]{4,7}))($|\W)',                            lambda m: BzInfoBgo(m.group('id'))),
-            ('(^|\W)(?P<replace>https://bugzilla\.gnome\.org/show_bug\.cgi\?id=(?P<id>[0-9]{4,7}))($|\W)',  lambda m: BzInfoBgo(m.group('id'))),
-            ('(^|\W)(?P<replace>(?P<type>rh(bz)?)[ ]?[#]?(?P<id>[0-9]{4,7}))($|\W)',                        lambda m: BzInfoRhbz(m.group('id'))),
-            ('(^|\W)(?P<replace>https://bugzilla\.redhat\.com/show_bug.cgi\?id=(?P<id>[0-9]{4,7}))($|\W)',  lambda m: BzInfoRhbz(m.group('id'))),
-            ('(^|\W)(?P<replace>(bz|bug)[ ]?[#]?(?P<id>[0-9]{4,7}))($|\W)',                                 lambda m: BzInfoRhbz(m.group('id'))),
-            ('(^|\W)(?P<replace>#(?P<id>[0-9]{4,7}))($|\W)',                                                lambda m: BzInfoRhbz(m.group('id'))),
+            ('(^|\W)(?P<replace>'+_p_related+'(?P<type>bgo)[ ]?[#]?(?P<id>[0-9]{4,7}))($|\W)',                            lambda m: BzInfoBgo(m.group('id'),related=m.group('related'))),
+            ('(^|\W)(?P<replace>'+_p_related+'https://bugzilla\.gnome\.org/show_bug\.cgi\?id=(?P<id>[0-9]{4,7}))($|\W)',  lambda m: BzInfoBgo(m.group('id'),related=m.group('related'))),
+            ('(^|\W)(?P<replace>'+_p_related+'(?P<type>rh(bz)?)[ ]?[#]?(?P<id>[0-9]{4,7}))($|\W)',                        lambda m: BzInfoRhbz(m.group('id'),related=m.group('related'))),
+            ('(^|\W)(?P<replace>'+_p_related+'https://bugzilla\.redhat\.com/show_bug.cgi\?id=(?P<id>[0-9]{4,7}))($|\W)',  lambda m: BzInfoRhbz(m.group('id'),related=m.group('related'))),
+            ('(^|\W)(?P<replace>'+_p_related+'(bz|bug)[ ]?[#]?(?P<id>[0-9]{4,7}))($|\W)',                                 lambda m: BzInfoRhbz(m.group('id'),related=m.group('related'))),
+            ('(^|\W)(?P<replace>'+_p_related+'#(?P<id>[0-9]{4,7}))($|\W)',                                                lambda m: BzInfoRhbz(m.group('id'),related=m.group('related'))),
         ]
     _patterns = [(re.compile(p[0]), p[1]) for p in _patterns]
 
-    def __init__(self, commit, result=None, git_backend=True, commit_date=0, no_bz=None, git_notes=None):
+    def __init__(self, commit, result=None, git_backend=True, commit_date=0, no_bz=None, git_notes=None, no_related=False):
         self.commit = commit
         self._result = result
         self._git_backend = git_backend
@@ -579,6 +581,7 @@ class UtilParseCommitMessage:
             else:
                 git_notes = list(set([ n for n in git_notes if n ]))
             self._git_notes = git_notes
+            self._no_related = no_related
 
     @property
     def result(self):
@@ -586,6 +589,7 @@ class UtilParseCommitMessage:
             message = git_commit_message(self.commit, self._git_notes)
             data = []
             no_bz_skipped = []
+            related = []
 
             while message:
                 match = None;
@@ -606,7 +610,10 @@ class UtilParseCommitMessage:
                 m = match_ctor(match)
                 if m:
                     if self._no_bz is None or m not in self._no_bz:
-                        data.append(m)
+                        if self._no_related and m.related:
+                            related.append(m)
+                        else:
+                            data.append(m)
                     else:
                         no_bz_skipped.append(m)
 
@@ -617,7 +624,17 @@ class UtilParseCommitMessage:
 
             self._result = list(set(data))
             self._no_bz_skipped = list(set(no_bz_skipped))
+
+            related = set(related)
+            related.difference_update(self._result)
+            self._related = list(set(related))
         return self._result
+    @property
+    def related(self):
+        r = self.result
+        if not hasattr(self, "_related"):
+            self._related = []
+        return self._related
     @property
     def no_bz_skipped(self):
         r = self.result
@@ -978,6 +995,7 @@ class CmdParseCommitMessage(CmdBase):
         self.parser.add_argument('--filter', '-f', action='append', help='Filter expressions to exclude bugs that don\'t match (specifying more then one filter, means \'and\')')
         self.parser.add_argument('--resolves', '-R', action='store_true', help='Print "Resolves: <BZ>" entries')
         self.parser.add_argument('--git-notes', '-N', action='append', help='Additional git-notes to parse. Defaults to "bugs". To use no notes call --git-notes ""')
+        self.parser.add_argument('--no-related', '-r', action='store_true', help='Skip "Related:" bugs when parsing commit message')
 
     @staticmethod
     def _order_keys(keys, ordered):
@@ -1114,19 +1132,24 @@ class CmdParseCommitMessage(CmdBase):
                 }))
 
         result_man, no_bz_skipped_man = self._parse_bzlist(self.options.bz, no_bz)
-        result_all = [ (ref, [UtilParseCommitMessage(commit, no_bz=no_bz, git_notes=self.options.git_notes) for commit in git_ref_list(ref)]) for ref in (self.options.ref if self.options.ref else [])]
+        result_all = [ (ref, [UtilParseCommitMessage(commit, no_bz=no_bz, git_notes=self.options.git_notes, no_related=self.options.no_related) for commit in git_ref_list(ref)]) for ref in (self.options.ref if self.options.ref else [])]
         result_search, no_bz_skipped_search = self._rh_searchlist(rh_searches, no_bz)
 
         no_bz_skipped = [no_bz_skipped for ref_data in result_all for commit_data in ref_data[1] for no_bz_skipped in commit_data.no_bz_skipped]
         no_bz_skipped = sorted(list(set(itertools.chain(no_bz_skipped, no_bz_skipped_man, no_bz_skipped_search))))
 
         if no_bz_skipped:
+            if printed_something:
+                print
+            printed_something = True
             print("=== Excluded by --no-bz option: %s" % (" ".join(self.options.no_bz)))
             for bz in no_bz_skipped:
                 print(bz.to_string("    ", 0, self.options.color))
-            printed_something = True
 
         if filter is not None:
+            if printed_something:
+                print
+            printed_something = True
             print("=== Excluded by filter: %s" % (repr(filter)))
             excluded = []
 
@@ -1142,39 +1165,12 @@ class CmdParseCommitMessage(CmdBase):
                 excluded =sorted(list(set(excluded)))
                 for result in excluded:
                     print(result.to_string("    ", 0, self.options.color))
-            printed_something = True
-
-
-        if self.options.list_refs or (self.options.list_refs is None and result_all):
-            print("=== List commit refs (%s) ===" % (len(result_all)))
-            for ref_data in result_all:
-                count = len([commit_data for commit_data in ref_data[1] if commit_data.result])
-                print("refs: %s (%s%s)" % (ref_data[0], count, "+"+str(len(ref_data[1])-count)))
-                for commit_data in ref_data[1]:
-                    if self.options.show_empty_refs or commit_data.result:
-                        print("  %s" % commit_data.commit_summary(self.options.color))
-                        for result in commit_data.result:
-                            print(result.to_string("    ", self.options.verbose, self.options.color))
-            printed_something = True
-
 
         result_reduced = [ commit_data for ref_data in result_all for commit_data in ref_data[1] ]
         result_reduced = result_reduced \
                 + [ commit_data for commit_data in result_man ] \
                 + [ commit_data for commit_data in result_search ]
         result_reduced = sorted(set(result_reduced), key=lambda commit_data: commit_data.get_commit_date(), reverse=True)
-
-        if self.options.list_by_refs or (self.options.list_by_refs is None and result_reduced):
-            if printed_something:
-                print
-            count = len([commit_data for commit_data in result_reduced if commit_data.result])
-            print('=== List BZ by ref (%s+%s) ===' % (count, len(result_reduced)-count))
-            for commit_data in result_reduced:
-                if self.options.show_empty_refs or commit_data.result:
-                    print("  %s" % commit_data.commit_summary(self.options.color))
-                    for result in commit_data.result:
-                        print(result.to_string("    ", self.options.verbose, self.options.color))
-            printed_something = True
 
         result_bz0 = result_man \
                 + [ commit_data for ref_data in result_all for commit_data in ref_data[1] if commit_data.result] \
@@ -1194,9 +1190,59 @@ class CmdParseCommitMessage(CmdBase):
                     + [ commit_data for commit_data in result_search if not commit_data.result]
         else:
             result_bz0 = []
+        if self.options.no_related:
+            related_bz = [bz for ref_data in result_all for commit_data in ref_data[1] for bz in commit_data.related]
+            related_bz = set(related_bz)
+            related_bz_excluded = related_bz.difference(result_bz_keys)
+            related_bz_included = related_bz.difference(related_bz_excluded)
+            if related_bz_excluded:
+                related_bz_excluded = list(sorted(related_bz_excluded, key=lambda result: (result.bztype, result.bzid), reverse=True))
+                if printed_something:
+                    print
+                printed_something = True
+                print("=== Ignored by --no-related option ===")
+                for result in related_bz_excluded:
+                    print(result.to_string("    ", 0, self.options.color))
+            if related_bz_included:
+                related_bz_included = list(sorted(related_bz_included, key=lambda result: (result.bztype, result.bzid), reverse=True))
+                if printed_something:
+                    print
+                printed_something = True
+                print("=== Mentioned as related, but included in result ===")
+                for result in related_bz_included:
+                    print(result.to_string("    ", 0, self.options.color))
+
+        if self.options.list_refs or (self.options.list_refs is None and result_all):
+            if printed_something:
+                print
+            printed_something = True
+            print("=== List commit refs (%s) ===" % (len(result_all)))
+            for ref_data in result_all:
+                count = len([commit_data for commit_data in ref_data[1] if commit_data.result])
+                print("refs: %s (%s%s)" % (ref_data[0], count, "+"+str(len(ref_data[1])-count)))
+                for commit_data in ref_data[1]:
+                    if self.options.show_empty_refs or commit_data.result:
+                        print("  %s" % commit_data.commit_summary(self.options.color))
+                        for result in commit_data.result:
+                            print(result.to_string("    ", self.options.verbose, self.options.color))
+
+
+        if self.options.list_by_refs or (self.options.list_by_refs is None and result_reduced):
+            if printed_something:
+                print
+            printed_something = True
+            count = len([commit_data for commit_data in result_reduced if commit_data.result])
+            print('=== List BZ by ref (%s+%s) ===' % (count, len(result_reduced)-count))
+            for commit_data in result_reduced:
+                if self.options.show_empty_refs or commit_data.result:
+                    print("  %s" % commit_data.commit_summary(self.options.color))
+                    for result in commit_data.result:
+                        print(result.to_string("    ", self.options.verbose, self.options.color))
+
         if self.options.list_by_bz or (self.options.list_by_bz is None and result_bz):
             if printed_something:
                 print
+            printed_something = True
             print('=== List by BZ (%s) ===' % (len(result_bz_keys)))
             if result_bz_keys:
                 print("    --bz '%s'" % ",".join([str(result) for result in result_bz_keys]))
@@ -1208,15 +1254,14 @@ class CmdParseCommitMessage(CmdBase):
                 print("    bug: --")
                 for commit_data in result_bz0:
                     print("         %s" % commit_data.commit_summary(self.options.color, shorten=True))
-            printed_something = True
 
         if (self.options.resolves) and result_bz_keys:
             if printed_something:
                 print
             printed_something = True
+            print("=== Resolves ===")
             keys = list(result_bz_keys)
             keys.reverse()
-            print("=== Resolves ===")
             for result in keys:
                 print("Resolves: %s" % (result.resolves_str()))
 
@@ -1232,13 +1277,13 @@ class CmdParseCommitMessage(CmdBase):
         options = dict([(k,options[k]) for k in options if options[k] is not None])
 
         print
-        print("Setting BZ options:")
+        print("=== Setting BZ options (overview) ===")
         for option in sorted(options.keys()):
             print("  '%s' => '%s'" % (option, options[option]))
 
         set_data = [ (result, result.can_set(options)) for result in result_bz_keys ]
 
-        print("Changes:")
+        print("Changes...")
         has_changes = False
         for result,can in sorted(set_data, key=lambda s: (sorted(s[1].keys()), s[0])):
             print(result.to_string("  ", 1, self.options.color))
