@@ -255,12 +255,13 @@ nm_team_update_slave_connection (NMDevice *slave, NMConnection *connection)
 	NMSettingTeamPort *s_port;
 	const char *iface = nm_device_get_iface (slave);
 	char *port_config = NULL;
-	gboolean success = FALSE;
+	gboolean with_teamdctl = FALSE;
+	int err = 0;
 #if WITH_TEAMDCTL
 	const char *master_iface;
 	int master_ifindex;
 	struct teamdctl *tdc;
-	int err;
+	const char *team_port_config = NULL;
 #endif
 
 	g_return_val_if_fail (NM_IS_DEVICE (slave), FALSE);
@@ -276,14 +277,15 @@ nm_team_update_slave_connection (NMDevice *slave, NMConnection *connection)
 	g_assert (tdc);
 	err = teamdctl_connect (tdc, master_iface, NULL, NULL);
 	if (err) {
-		nm_log_err (LOGD_TEAM, "(%s): failed to connect to teamd for master %s",
-		            iface, master_iface);
+		nm_log_err (LOGD_TEAM, "(%s): failed to connect to teamd for master %s (err=%d)",
+		            iface, master_iface, err);
 		teamdctl_free (tdc);
 		return FALSE;
 	}
-	/* FIXME: wait for libteamd to implement getting port config */
-/*	port_config = teamdctl_port_config_get_raw (tdc, iface); */
+	err = teamdctl_port_config_get_raw_direct (tdc, iface, (char **)&team_port_config);
+	port_config = g_strdup (team_port_config);
 	teamdctl_free (tdc);
+	with_teamdctl = TRUE;
 #endif
 
 	s_port = nm_connection_get_setting_team_port (connection);
@@ -292,14 +294,20 @@ nm_team_update_slave_connection (NMDevice *slave, NMConnection *connection)
 		nm_connection_add_setting (connection, NM_SETTING (s_port));
 	}
 
-	if (port_config) {
-		g_object_set (G_OBJECT (s_port), NM_SETTING_TEAM_PORT_CONFIG, port_config, NULL);
-		free (port_config);
-		success = TRUE;
-	} else
-		nm_log_err (LOGD_TEAM, "(%s): failed to read teamd port configuration", iface);
+	g_object_set (G_OBJECT (s_port), NM_SETTING_TEAM_PORT_CONFIG, port_config, NULL);
+	g_free (port_config);
 
-	return success;
+	if (!with_teamdctl || err != 0) {
+		if (!with_teamdctl)
+			nm_log_err (LOGD_TEAM, "(%s): failed to read teamd port configuration "
+			                       " (compiled without libteamdctl support)", iface);
+		else
+			nm_log_err (LOGD_TEAM, "(%s): failed to read teamd port configuration (err=%d)",
+			            iface, err);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 /******************************************************************/
