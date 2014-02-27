@@ -28,6 +28,9 @@ test -d /NetworkManager || (
 cd /NetworkManager/ || exit 1
 git fetch origin || die "Could not fetch $URL"
 git checkout -f "$COMMIT" || exit 1
+git clean -fdx
+export CFLAGS='-g -Og'
+export CXXFLAGS='-g -Og'
 ./autogen.sh --prefix=/usr \
              --exec-prefix=/usr \
              --libdir=/usr/lib \
