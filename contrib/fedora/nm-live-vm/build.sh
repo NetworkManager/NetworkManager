@@ -37,6 +37,7 @@ PACKAGES="kernel passwd git autoconf automake libtool intltool gtk-doc libnl3-de
     dhclient dnsmasq
     bash-completion man-db man-pages vim-minimal
     firewald
+    vim
     gdb valgrind lsof strace nmap-ncat tcpdump
     net-tools bridge-utils vconfig
     teamd libteam"
@@ -90,7 +91,7 @@ do_live_vm() {
     echo "Preparing kernel and initrd..." || exit 1
     mkdir -p $NAME || exit 1
     cp $TREE/boot/vmlinuz* $NAME/vmlinuz || exit 1
-    mock -r "$ROOT" --chroot "{ ( cd / ; find -not \( -path ./tmp/initramfs.img -o -path './var/cache/yum/*' -o -path './boot' -o -path './NetworkManager' \) -xdev -print0 | cpio -o0c ) || exit 1; } | gzip > /tmp/initramfs.img || exit 1" || die "error creating initramfs"
+    mock -r "$ROOT" --chroot "{ ( cd / ; find -not \( -path ./tmp/initramfs.img -o -path './var/cache/yum/*' -o -path './boot' \) -xdev -print0 | cpio -o0c ) || exit 1; } | gzip > /tmp/initramfs.img || exit 1" || die "error creating initramfs"
     cp "$TREE/tmp/initramfs.img" "$NAME/" || exit 1
     cp run.sh $NAME/run.sh
 }

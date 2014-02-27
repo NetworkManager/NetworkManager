@@ -49,3 +49,5 @@ level=DEBUG
 domains=ALL
 EOF
 /bin/systemctl enable NetworkManager.service || exit 1
+
+git gc
