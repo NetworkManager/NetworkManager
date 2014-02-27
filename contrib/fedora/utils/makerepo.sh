@@ -7,9 +7,6 @@ die() {
 	exit 1
 }
 
-DIRNAME=NetworkManager-0.9.9.0
-
-
 if grep -q '^NAME="Red Hat Enterprise Linux' /etc/os-release ; then
     FEDPKG=rhpkg
 else
@@ -95,6 +92,8 @@ srcdir="$(dirname "$(readlink -f "$0")")"
 
 # generate the clean dir
 $FEDPKG prep || die "error while \`$FEDPKG prep\`"
+
+DIRNAME="$(basename "$(ls -1d NetworkManager-[0-9].*/ || die "could not find directory")")"
 
 pushd "$DIRNAME"
     git init .
