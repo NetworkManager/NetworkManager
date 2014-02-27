@@ -370,6 +370,9 @@ class BzInfo:
     def __repr__(self):
         return "(\"%s\", \"%s\")" % (self.bztype, self.bzid)
 
+    def resolves_str(self):
+        return "%s #%s" % (self.bztype, self.bzid)
+
     def getBZData(self, field=None):
         if not hasattr(self, '_bzdata'):
             self._bzdata = self._fetchBZData()
@@ -421,6 +424,9 @@ class BzInfoRhbz(BzInfo):
     @BzInfo.url.getter
     def url(self):
         return "https://bugzilla.redhat.com/show_bug.cgi?id=%s" % self.bzid
+
+    def resolves_str(self):
+        return "#%s" % (self.bzid)
 
     BzClient = BzClient('https://bugzilla.redhat.com/xmlrpc.cgi')
     def _fetchBZData(self):
@@ -938,6 +944,7 @@ class CmdParseCommitMessage(CmdBase):
         self.parser.add_argument('--set-cf-fixed-in', '-m', default=None, help='Set BZ cf_fixed_in to the specified string (no action without --no-test)')
         self.parser.add_argument('--no-test', action='store_true', help='If specified any --set-* options, really change the bug')
         self.parser.add_argument('--filter', '-f', action='append', help='Filter expressions to exclude bugs that don\'t match (specifying more then one filter, means \'and\')')
+        self.parser.add_argument('--resolves', '-R', action='store_true', help='Print "Resolves: <BZ>" entries')
 
     @staticmethod
     def _order_keys(keys, ordered):
@@ -1084,6 +1091,7 @@ class CmdParseCommitMessage(CmdBase):
             print("=== Excluded by --no-bz option: %s" % (" ".join(self.options.no_bz)))
             for bz in no_bz_skipped:
                 print(bz.to_string("    ", 0, self.options.color))
+            printed_something = True
 
         if filter is not None:
             print("=== Excluded by filter: %s" % (repr(filter)))
@@ -1097,11 +1105,12 @@ class CmdParseCommitMessage(CmdBase):
                     excluded = excluded + commit_data.filter_out(filter)
 
             if excluded:
+                print("    --no-bz '%s'" % ",".join([str(result) for result in excluded]))
                 excluded =sorted(list(set(excluded)))
                 for result in excluded:
                     print(result.to_string("    ", 0, self.options.color))
+            printed_something = True
 
-                print("    --no-bz '%s'" % ",".join([str(result) for result in excluded]))
 
         if self.options.list_refs or (self.options.list_refs is None and result_all):
             print("=== List commit refs (%s) ===" % (len(result_all)))
@@ -1156,6 +1165,8 @@ class CmdParseCommitMessage(CmdBase):
             if printed_something:
                 print
             print('=== List by BZ (%s) ===' % (len(result_bz_keys)))
+            if result_bz_keys:
+                print("    --bz '%s'" % ",".join([str(result) for result in result_bz_keys]))
             for result in result_bz_keys:
                 print(result.to_string("    ", self.options.verbose, self.options.color))
                 for commit_data in sorted(result_bz[result], key=lambda commit_data: commit_data.get_commit_date(), reverse=True):
@@ -1165,6 +1176,17 @@ class CmdParseCommitMessage(CmdBase):
                 for commit_data in result_bz0:
                     print("         %s" % commit_data.commit_summary(self.options.color, shorten=True))
             printed_something = True
+
+        if (self.options.resolves) and result_bz_keys:
+            if printed_something:
+                print
+            printed_something = True
+            keys = list(result_bz_keys)
+            keys.reverse()
+            print("=== Resolves ===")
+            for result in keys:
+                print("Resolves: %s" % (result.resolves_str()))
+
 
         if not self.options.set_status and \
            not self.options.set_cf_fixed_in:
