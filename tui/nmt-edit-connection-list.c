@@ -181,12 +181,14 @@ static void
 nmt_edit_connection_list_rebuild (NmtEditConnectionList *list)
 {
 	NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE (list);
-	NmtNewtListbox *listbox;
 	GSList *iter, *next;
 	gboolean did_header = FALSE, did_vpn = FALSE;
 	NMEditorConnectionTypeData **types;
-	NMConnection *conn;
-	int i;
+	NMConnection *conn, *selected_conn;
+	int i, row, selected_row;
+
+	selected_row = nmt_newt_listbox_get_active (priv->listbox);
+	selected_conn = nmt_newt_listbox_get_active_key (priv->listbox);
 
 	free_connections (list);
 	priv->connections = nm_remote_settings_list_connections (nm_settings);
@@ -215,20 +217,25 @@ nmt_edit_connection_list_rebuild (NmtEditConnectionList *list)
 	nmt_newt_component_set_sensitive (NMT_NEWT_COMPONENT (priv->delete),
 	                                  priv->connections != NULL);
 
-	listbox = NMT_NEWT_LISTBOX (priv->listbox);
-	nmt_newt_listbox_clear (listbox);
+	nmt_newt_listbox_clear (priv->listbox);
 
 	if (!priv->grouped) {
 		/* Just add the connections in order */
-		for (iter = priv->connections; iter; iter = iter->next) {
+		for (iter = priv->connections, row = 0; iter; iter = iter->next, row++) {
 			conn = iter->data;
-			nmt_newt_listbox_append (listbox, nm_connection_get_id (conn), conn);
+			nmt_newt_listbox_append (priv->listbox, nm_connection_get_id (conn), conn);
+			if (conn == selected_conn)
+				selected_row = row;
 		}
+		if (selected_row >= row)
+			selected_row = row - 1;
+		nmt_newt_listbox_set_active (priv->listbox, selected_row);
+
 		return;
 	}
 
 	types = nm_editor_utils_get_connection_type_list ();
-	for (i = 0; types[i]; i++) {
+	for (i = row = 0; types[i]; i++) {
 		if (types[i]->setting_type == NM_TYPE_SETTING_VPN) {
 			if (did_vpn)
 				continue;
@@ -249,15 +256,26 @@ nmt_edit_connection_list_rebuild (NmtEditConnectionList *list)
 				continue;
 
 			if (!did_header) {
-				nmt_newt_listbox_append (listbox, types[i]->name, NULL);
+				nmt_newt_listbox_append (priv->listbox, types[i]->name, NULL);
+				if (row == selected_row)
+					selected_row++;
+				row++;
 				did_header = TRUE;
 			}
 
 			indented = g_strdup_printf ("  %s", nm_connection_get_id (conn));
-			nmt_newt_listbox_append (listbox, indented, conn);
+			nmt_newt_listbox_append (priv->listbox, indented, conn);
 			g_free (indented);
+
+			if (conn == selected_conn)
+				selected_row = row;
+			row++;
 		}
 	}
+
+	if (selected_row >= row)
+		selected_row = row - 1;
+	nmt_newt_listbox_set_active (priv->listbox, selected_row);
 }
 
 static void

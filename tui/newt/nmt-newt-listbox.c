@@ -126,6 +126,10 @@ nmt_newt_listbox_clear (NmtNewtListbox *listbox)
 
 	g_ptr_array_set_size (priv->entries, 0);
 	g_ptr_array_set_size (priv->keys, 0);
+
+	priv->active = -1;
+	priv->active_key = NULL;
+
 	nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (listbox));
 }
 
