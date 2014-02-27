@@ -100,6 +100,28 @@ str_examples = \
 
 """
 
+
+# Comment about git-notes:
+#
+# The script parses the commit messages for referenced bugzilla entries. You can also
+# associate additional entries with commits using git-notes. By default the script will
+# also consider the note 'bugs', you can disable this with --git-notes "" argument.
+# You can also specify (several) other notes to consider, e.g. '-N bugs -N bugs2' will
+# consider the nodes 'bugs' and 'bugs2'
+#
+# To setup notes in git, add the following lines in your git config file:
+#
+#   [remote "origin"]
+#     ...
+#     fetch = refs/notes/bugs:refs/notes/bugs
+#
+# Optionally, you might want to see the notes in git-log by default. Try
+#
+#   [notes]
+#     displayRef = refs/notes/test
+#     displayRef = refs/notes/bugs
+#
+
 class ConfigStore:
     NAME_RHBZ_USER = 'rhbz_user'
     NAME_RHBZ_PASSWD = 'rhbz_passwd'
@@ -179,9 +201,13 @@ def git_ref_list(commit):
     return _call(['git', 'rev-list', '--no-walk', commit]).splitlines()
 
 _git_commit_message = {}
-def git_commit_message(shaid):
+def git_commit_message(shaid, git_notes=None):
     if not _git_commit_message.has_key(shaid):
-        _git_commit_message[shaid] = _call(['git', 'log', '--format=%B', '-n', '1', shaid])
+        if git_notes:
+            git_notes = ['--notes=' + n for n in git_notes if n]
+        else:
+            git_notes = []
+        _git_commit_message[shaid] = _call(['git', 'log', '--format=%B' + ('%n%N' if git_notes else "")] + git_notes + ['-n', '1', shaid])
     return _git_commit_message[shaid]
 
 _git_summary = {}
@@ -541,17 +567,23 @@ class UtilParseCommitMessage:
         ]
     _patterns = [(re.compile(p[0]), p[1]) for p in _patterns]
 
-    def __init__(self, commit, result=None, git_backend=True, commit_date=0, no_bz=None):
+    def __init__(self, commit, result=None, git_backend=True, commit_date=0, no_bz=None, git_notes=None):
         self.commit = commit
         self._result = result
         self._git_backend = git_backend
         self._commit_date = commit_date
         self._no_bz = no_bz
+        if git_backend:
+            if git_notes is None:
+                git_notes = ['bugs']
+            else:
+                git_notes = list(set([ n for n in git_notes if n ]))
+            self._git_notes = git_notes
 
     @property
     def result(self):
         if self._result is None and self._git_backend:
-            message = git_commit_message(self.commit)
+            message = git_commit_message(self.commit, self._git_notes)
             data = []
             no_bz_skipped = []
 
@@ -945,6 +977,7 @@ class CmdParseCommitMessage(CmdBase):
         self.parser.add_argument('--no-test', action='store_true', help='If specified any --set-* options, really change the bug')
         self.parser.add_argument('--filter', '-f', action='append', help='Filter expressions to exclude bugs that don\'t match (specifying more then one filter, means \'and\')')
         self.parser.add_argument('--resolves', '-R', action='store_true', help='Print "Resolves: <BZ>" entries')
+        self.parser.add_argument('--git-notes', '-N', action='append', help='Additional git-notes to parse. Defaults to "bugs". To use no notes call --git-notes ""')
 
     @staticmethod
     def _order_keys(keys, ordered):
@@ -1081,7 +1114,7 @@ class CmdParseCommitMessage(CmdBase):
                 }))
 
         result_man, no_bz_skipped_man = self._parse_bzlist(self.options.bz, no_bz)
-        result_all = [ (ref, [UtilParseCommitMessage(commit, no_bz=no_bz) for commit in git_ref_list(ref)]) for ref in (self.options.ref if self.options.ref else [])]
+        result_all = [ (ref, [UtilParseCommitMessage(commit, no_bz=no_bz, git_notes=self.options.git_notes) for commit in git_ref_list(ref)]) for ref in (self.options.ref if self.options.ref else [])]
         result_search, no_bz_skipped_search = self._rh_searchlist(rh_searches, no_bz)
 
         no_bz_skipped = [no_bz_skipped for ref_data in result_all for commit_data in ref_data[1] for no_bz_skipped in commit_data.no_bz_skipped]
