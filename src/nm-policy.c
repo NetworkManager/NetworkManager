@@ -97,16 +97,14 @@ static void schedule_activate_all (NMPolicy *policy);
 
 
 static NMDevice *
-get_best_ip4_device (NMManager *manager, gboolean fully_activated)
+get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	GSList *devices, *iter;
 	NMDevice *best = NULL;
 	int best_prio = G_MAXINT;
 
-	g_return_val_if_fail (manager != NULL, NULL);
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-
-	devices = nm_manager_get_devices (manager);
+	devices = nm_manager_get_devices (priv->manager);
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 		NMDeviceType devtype = nm_device_get_device_type (dev);
@@ -167,7 +165,9 @@ get_best_ip4_device (NMManager *manager, gboolean fully_activated)
 		}
 
 		prio = nm_device_get_priority (dev);
-		if (prio > 0 && prio < best_prio) {
+		if (   prio < best_prio
+		    || (priv->default_device4 == dev && prio == best_prio)
+		    || !best) {
 			best = dev;
 			best_prio = prio;
 		}
@@ -191,16 +191,14 @@ get_best_ip4_device (NMManager *manager, gboolean fully_activated)
 }
 
 static NMDevice *
-get_best_ip6_device (NMManager *manager, gboolean fully_activated)
+get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 {
+	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	GSList *devices, *iter;
 	NMDevice *best = NULL;
 	int best_prio = G_MAXINT;
 
-	g_return_val_if_fail (manager != NULL, NULL);
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-
-	devices = nm_manager_get_devices (manager);
+	devices = nm_manager_get_devices (priv->manager);
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 		NMDeviceType devtype = nm_device_get_device_type (dev);
@@ -257,7 +255,9 @@ get_best_ip6_device (NMManager *manager, gboolean fully_activated)
 		}
 
 		prio = nm_device_get_priority (dev);
-		if (prio > 0 && prio < best_prio) {
+		if (   prio < best_prio
+		    || (priv->default_device6 == dev && prio == best_prio)
+		    || !best) {
 			best = dev;
 			best_prio = prio;
 		}
@@ -383,9 +383,9 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 
 	/* Try automatically determined hostname from the best device's IP config */
 	if (!best4)
-		best4 = get_best_ip4_device (priv->manager, TRUE);
+		best4 = get_best_ip4_device (policy, TRUE);
 	if (!best6)
-		best6 = get_best_ip6_device (priv->manager, TRUE);
+		best6 = get_best_ip6_device (policy, TRUE);
 
 	if (!best4 && !best6) {
 		/* No best device; fall back to original hostname or if there wasn't
@@ -582,7 +582,7 @@ get_best_ip4_config (NMPolicy *policy,
 
 	/* If no VPN connections, we use the best device instead */
 	if (!ip4_config) {
-		device = get_best_ip4_device (priv->manager, TRUE);
+		device = get_best_ip4_device (policy, TRUE);
 		if (device) {
 			ip4_config = nm_device_get_ip4_config (device);
 			g_assert (ip4_config);
@@ -766,7 +766,7 @@ get_best_ip6_config (NMPolicy *policy,
 
 	/* If no VPN connections, we use the best device instead */
 	if (!ip6_config) {
-		device = get_best_ip6_device (priv->manager, TRUE);
+		device = get_best_ip6_device (policy, TRUE);
 		if (device) {
 			req = nm_device_get_act_request (device);
 			g_assert (req);
@@ -923,8 +923,8 @@ check_activating_devices (NMPolicy *policy)
 	GObject *object = G_OBJECT (policy);
 	NMDevice *best4, *best6 = NULL;
 
-	best4 = get_best_ip4_device (priv->manager, FALSE);
-	best6 = get_best_ip6_device (priv->manager, FALSE);
+	best4 = get_best_ip4_device (policy, FALSE);
+	best6 = get_best_ip6_device (policy, FALSE);
 
 	g_object_freeze_notify (object);
 
