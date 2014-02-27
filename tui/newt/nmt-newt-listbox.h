@@ -51,7 +51,7 @@ NmtNewtWidget *nmt_newt_listbox_new            (int                  height,
                                                 NmtNewtListboxFlags  flags);
 
 void           nmt_newt_listbox_set_height     (NmtNewtListbox      *listbox,
-                                                int                  active);
+                                                int                  height);
 
 void           nmt_newt_listbox_append         (NmtNewtListbox      *listbox,
                                                 const char          *entry,
