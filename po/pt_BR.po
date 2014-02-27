@@ -18,7 +18,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2014-02-19 05:55-0500\n"
+"PO-Revision-Date: 2014-02-27 06:23-0500\n"
 "Last-Translator: gcintra <gcintra@redhat.com>\n"
 "Language-Team: Brazilian Portuguese <gnome-pt_br-list@gnome.org>\n"
 "Language: pt-BR\n"
@@ -980,6 +980,10 @@ msgid ""
 "Reload all connection files from disk.\n"
 "\n"
 msgstr ""
+"Usage: recarga de conexão de nmcli { help }\n"
+"\n"
+"Recarrega todos os arquivos de conexão do disco.\n"
+"\n"
 
 #: ../cli/src/connections.c:457
 #, c-format
@@ -994,6 +998,16 @@ msgid ""
 "state.\n"
 "\n"
 msgstr ""
+"Uso: carga de conexão do nmcli { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := <filename> [<filename>...]\n"
+"\n"
+"Carga/recarga de um ou mais arquivos de conexão do disco. Use este após "
+"editar\n"
+"manualmente um arquivo de conexão para garantir que o NetworkManager sabe de "
+"seu último\n"
+"estado.\n"
+"\n"
 
 #: ../cli/src/connections.c:515
 #, c-format
@@ -1421,7 +1435,7 @@ msgstr "Você deseja fornecer isto? (sim/não) [sim]"
 #: ../cli/src/connections.c:2734
 #, c-format
 msgid "There are 4 optional arguments for 'PPPoE' connection type.\n"
-msgstr ""
+msgstr "Há 4 argumentos opcionais para o tipo de conexão \"PPPoE\".\n"
 
 #: ../cli/src/connections.c:2742 ../cli/src/connections.c:2790
 msgid "Password [none]: "
@@ -1429,7 +1443,7 @@ msgstr "Senha [nenhuma]: "
 
 #: ../cli/src/connections.c:2744
 msgid "Service [none]: "
-msgstr ""
+msgstr "Serviço [Nenhum]: "
 
 #: ../cli/src/connections.c:2780
 #, c-format
@@ -1543,19 +1557,19 @@ msgstr "Vinculação arp-ip-destino [nenhum]: "
 #: ../cli/src/connections.c:3023
 #, c-format
 msgid "There is 1 optional argument for '%s' connection type.\n"
-msgstr ""
+msgstr "Há 1 argumento opcional para o tipo de conexão \"%s\".\n"
 
 #: ../cli/src/connections.c:3032
 msgid "Team JSON configuration [none]: "
-msgstr ""
+msgstr "Configuration da Equipe JSON [nenhum]:"
 
 #: ../cli/src/connections.c:3051
 msgid "team"
-msgstr ""
+msgstr "equipe"
 
 #: ../cli/src/connections.c:3057
 msgid "team-slave"
-msgstr ""
+msgstr "equipe-escrava"
 
 #: ../cli/src/connections.c:3071
 #, c-format
@@ -1722,11 +1736,11 @@ msgstr "Erro: é necessário o \"nsp\"."
 
 #: ../cli/src/connections.c:3694
 msgid "PPPoE username: "
-msgstr ""
+msgstr "Nome de usuário do PPPoE: "
 
 #: ../cli/src/connections.c:3697
 msgid "Error: 'username' is required."
-msgstr ""
+msgstr "Erro: 'nome de usuário' é necessário"
 
 #: ../cli/src/connections.c:3768
 msgid "APN: "
@@ -1886,7 +1900,7 @@ msgstr "Nome da interface [*]: "
 #: ../cli/src/connections.c:4801
 #, c-format
 msgid "Error: 'ifname' argument is required."
-msgstr ""
+msgstr "Erro: é necessário o argumento \"ifname\"."
 
 #: ../cli/src/connections.c:4808
 #, c-format
@@ -1917,19 +1931,19 @@ msgid ""
 "quit                                 :: exit nmcli\n"
 msgstr ""
 "---[ Menu principal ]---\n"
-"goto     [<configuração> | <prop>]        :: vai a uma configuração ou "
+"goto     [<setting> | <prop>]        :: vai a uma configuração ou "
 "propriedade\n"
-"remove   <configuração>[.<prop>] | <prop> :: remove configuração ou reinicia "
+"remove   <setting>[.<prop>] | <prop> :: remove configuração ou reinicia "
 "valor de propriedade\n"
-"set      [<configuração>.<prop> <valor>]  :: define valor propriedade\n"
-"describe [<configuração>.<prop>]          :: descreve propriedade\n"
+"set      [<setting>.<prop> <value>]  :: define valor propriedade\n"
+"describe [<setting>.<prop>]           :: descreve propriedade\n"
 "print    [all]                       :: exibe a conexão\n"
 "verify   [all]                       :: verifica a conexão\n"
 "save                                 :: salva a conexão\n"
-"activate [<nome da interface>] [/<ap>|<nsp>]    :: ativa a conexão\n"
+"activate [<ifname>] [/<ap>|<nsp>]    :: ativa a conexão\n"
 "back                                 :: vai um nível acima (retorna)\n"
-"help/?   [<comando>]                 :: exibe esta ajuda\n"
-"nmcli    <opção-conf> <valor>       :: configuração do nmcli\n"
+"help/?   [<command>]                 :: exibe esta ajuda\n"
+"nmcli    <conf-option> <value>       :: configuração do nmcli\n"
 "quit                                 :: sai do nmcli\n"
 
 #: ../cli/src/connections.c:5735
@@ -1943,8 +1957,8 @@ msgid ""
 "          nmcli connection> goto secondaries\n"
 "          nmcli> goto ipv4.addresses\n"
 msgstr ""
-"goto <configuração>[.<prop>] | <prop>  :: digite configuração/propriedade "
-"para edição\n"
+"goto <setting>[.<prop>] | <prop>  :: digite configuração/propriedade para "
+"edição\n"
 "\n"
 "Este comando entra em uma configuração ou propriedade para editá-lo.\n"
 "\n"
@@ -1963,8 +1977,8 @@ msgid ""
 "Examples: nmcli> remove wifi-sec\n"
 "          nmcli> remove eth.mtu\n"
 msgstr ""
-"remove <configuração>[.<prop>]  :: remove configuração ou reinicia o valor "
-"da propriedade\n"
+"remove <setting>[.<prop>]  :: remove configuração ou reinicia o valor da "
+"propriedade\n"
 "\n"
 "Este comando remove uma configuração inteira da conexão, ou se uma "
 "propriedade é\n"
@@ -1982,7 +1996,7 @@ msgid ""
 "\n"
 "Example: nmcli> set con.id My connection\n"
 msgstr ""
-"set [<configuração>.<prop> <valor>]  :: define valor da propriedade\n"
+"set [<setting>.<prop> <value>]  :: define valor da propriedade\n"
 "\n"
 "Este comando configura o valor da propriedade.\n"
 "\n"
@@ -1996,7 +2010,7 @@ msgid ""
 "Shows property description. You can consult nm-settings(5) manual page to "
 "see all NM settings and properties.\n"
 msgstr ""
-"describe [<configuração>.<prop>]  :: descreve a propriedade\n"
+"describe [<setting>.<prop>]  :: descreve a propriedade\n"
 "\n"
 "Mostra a descrição da propriedade. Você pode consultar a página do manual nm-"
 "settings(5) para ver todas as configurações e propriedades do NM.\n"
@@ -2058,14 +2072,14 @@ msgid ""
 "/<ap>|<nsp> - AP (Wi-Fi) or NSP (WiMAX) (prepend with / when <ifname> is not "
 "specified)\n"
 msgstr ""
-"activate [<nome da interface>] [/<ap>|<nsp>]  :: ativa a conexão\n"
+"activate [<ifname>] [/<ap>|<nsp>]  :: ativa a conexão\n"
 "\n"
 "Ativa a conexão.\n"
 "\n"
 "Opções disponíveis:\n"
-"<nome da interface>    - dispositivo que ativará a conexão\n"
+"<ifname>    - dispositivo que ativará a conexão\n"
 "/<ap>|<nsp> - Ponto de acesso (Wi-Fi) ou provedor de serviço de rede (WiMAX) "
-"(preceda com / quando o <nome da interface> não for especificado)\n"
+"(preceda com / quando o <ifname> não for especificado)\n"
 
 #: ../cli/src/connections.c:5782 ../cli/src/connections.c:5932
 #, c-format
@@ -2078,7 +2092,7 @@ msgstr "back  :: vai ao nível de menu superior\n"
 #, c-format
 msgid "help/? [<command>]  :: help for the nmcli commands\n"
 "\n"
-msgstr "help/? [<comando>]  :: ajuda para os comandos do nmcli \n"
+msgstr "help/? [<command>]  :: ajuda para os comandos do nmcli \n"
 "\n"
 
 #: ../cli/src/connections.c:5788
@@ -2104,7 +2118,7 @@ msgid ""
 "          nmcli> nmcli save-confirmation no\n"
 "          nmcli> nmcli prompt-color 3\n"
 msgstr ""
-"nmcli [<opção-conf> <valor>]  :: configuração do nmcli\n"
+"nmcli [<conf-option> <value>]  :: configuração do nmcli\n"
 "\n"
 "Configura o nmcli. Estão disponíveis as seguintes opções:\n"
 "status-line yes | no        [default: no]\n"
@@ -2159,15 +2173,15 @@ msgid ""
 "quit                             :: exit nmcli\n"
 msgstr ""
 "---[ Menu de propriedades ]---\n"
-"set      [<valor>]               :: define novo valor\n"
-"add      [<valor>]               :: adiciona nova opção à propriedade\n"
+"set      [<value>]               :: define novo valor\n"
+"add      [<value>]               :: adiciona nova opção à propriedade\n"
 "change                           :: modifica o valor atual\n"
-"remove   [<índice> | <opção>]    :: exclui o valor\n"
+"remove   [<index> | <option>]    :: exclui o valor\n"
 "describe                         :: descreve propriedade\n"
 "print    [setting | connection]  :: exibe valor(es) da propriedade "
 "(configuração/conexão)\n"
 "back                             :: vai ao nível superior\n"
-"help/?   [<comando>]             :: exibe esta ajuda ou descrição de comando\n"
+"help/?   [<command>]             :: exibe esta ajuda ou descrição de comando\n"
 "quit                             :: sai do nmcli\n"
 
 #: ../cli/src/connections.c:5904
@@ -2177,9 +2191,9 @@ msgid ""
 "\n"
 "This command sets provided <value> to this property\n"
 msgstr ""
-"set [<valor>]  :: define novo valor\n"
+"set [<value>]  :: define novo valor\n"
 "\n"
-"Este comando configura o <valor> fornecido à propriedade\n"
+"Este comando configura o <value> fornecido à propriedade\n"
 
 #: ../cli/src/connections.c:5908
 #, c-format
@@ -2190,9 +2204,9 @@ msgid ""
 "container type. For single-valued properties it replaces the value (same as "
 "'set').\n"
 msgstr ""
-"add [<valor>]  :: adiciona nova opção à propriedade\n"
+"add [<value>]  :: adiciona nova opção à propriedade\n"
 "\n"
-"Este comando adiciona o <valor> fornecido à propriedade, caso propriedade "
+"Este comando adiciona o <value> fornecido à propriedade, caso propriedade "
 "seja um tipo de contêiner. Para propriedades com valores únicos, isto "
 "substitui o valor (semelhante ao 'set').\n"
 
@@ -2214,7 +2228,7 @@ msgid ""
 "\n"
 "Removes the property value (sets it to default).\n"
 msgstr ""
-"remove [<índice>|<opção>]  :: exclui o valor\n"
+"remove [<index>|<option>]  :: exclui o valor\n"
 "\n"
 "Remove o valor da propriedade (define-o como padrão).\n"
 
@@ -2250,7 +2264,7 @@ msgstr ""
 #, c-format
 msgid "help/? [<command>]  :: help for nmcli commands\n"
 "\n"
-msgstr "help/? [<comando>]  :: ajuda para os comandos do nmcli\n"
+msgstr "help/? [<command>]  :: ajuda para os comandos do nmcli\n"
 "\n"
 
 #: ../cli/src/connections.c:6022
@@ -2274,6 +2288,8 @@ msgid ""
 "The connection profile has been removed from another client. You may type "
 "'save' in the main menu to restore it.\n"
 msgstr ""
+"O perfil de conexão foi removido do outro cliente. Você pode digitar 'save' "
+"no menu principal para recuperá-lo.\n"
 
 #: ../cli/src/connections.c:6192 ../cli/src/connections.c:6615
 #: ../cli/src/connections.c:6673
@@ -2353,6 +2369,8 @@ msgid ""
 "The connection profile has been removed from another client. You may type "
 "'save' to restore it.\n"
 msgstr ""
+"O perfil de conexão foi removido de outro cliente. Você pode digitar 'save' "
+"para recuperá-lo.\n"
 
 #: ../cli/src/connections.c:6613 ../cli/src/connections.c:6671
 #, c-format
@@ -2367,8 +2385,7 @@ msgstr "Erro: nenhuma configuração selecionada; as válidas são [%s]\n"
 #: ../cli/src/connections.c:6626
 #, c-format
 msgid "use 'goto <setting>' first, or 'set <setting>.<property>'\n"
-msgstr ""
-"primeiro use 'goto <configuração>' ou 'set <configuração>.<propriedade>'\n"
+msgstr "primeiro use 'goto <setting>' ou 'set <setting>.<property>'\n"
 
 #: ../cli/src/connections.c:6641 ../cli/src/connections.c:6779
 #: ../cli/src/connections.c:6859
@@ -2414,9 +2431,7 @@ msgstr "Erro: propriedades %s, tampouco é um nome de configuração válido.\n"
 #: ../cli/src/connections.c:6843
 #, c-format
 msgid "use 'goto <setting>' first, or 'describe <setting>.<property>'\n"
-msgstr ""
-"primeiro use 'goto <configuração>' ou 'describe <configuração>."
-"<propriedade>'\n"
+msgstr "primeiro use 'goto <setting>' ou 'describe <setting>.<property>'\n"
 
 #: ../cli/src/connections.c:6884
 #, c-format
@@ -2591,7 +2606,7 @@ msgstr "Digite 'help' ou '?' para comandos disponíveis."
 #, c-format
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr ""
-"Digite 'describe [<configuração>.<prop>]' para exibir descrição detalhada da "
+"Digite 'describe [<setting>.<prop>]' para exibir descrição detalhada da "
 "propriedade."
 
 #: ../cli/src/connections.c:7520
@@ -2617,12 +2632,12 @@ msgstr "Erro: está faltando o ID da conexão."
 #: ../cli/src/connections.c:7582
 #, c-format
 msgid "Error: <setting>.<property> argument is missing."
-msgstr "Erro: está faltando argumento <configuração>.<propriedade>."
+msgstr "Erro: está faltando argumento <setting>.<property>."
 
 #: ../cli/src/connections.c:7605
 #, c-format
 msgid "Error: invalid <setting>.<property> '%s'."
-msgstr "Erro: inválida <configuração>.<propriedade> '%s'."
+msgstr "Erro: inválida <setting>.<property> '%s'."
 
 #: ../cli/src/connections.c:7620
 #, c-format
@@ -2657,7 +2672,7 @@ msgstr "Erro: não é possível excluir conexão(ões) desconhecida(s): %s."
 #: ../cli/src/connections.c:7852
 #, c-format
 msgid "Could not load file '%s'\n"
-msgstr ""
+msgstr "Não foi possível carregar arquivo '%s'\n"
 
 #: ../cli/src/connections.c:7917
 #, c-format
@@ -2695,7 +2710,7 @@ msgstr "CONEXÃO"
 
 #: ../cli/src/devices.c:76 ../cli/src/devices.c:104
 msgid "CON-UUID"
-msgstr ""
+msgstr "CON-UUID"
 
 #: ../cli/src/devices.c:89
 msgid "VENDOR"
@@ -2725,7 +2740,7 @@ msgstr "ENDEREÇO-HW"
 #: ../tui/nmt-page-infiniband.c:90 ../tui/nmt-page-vlan.c:138
 #: ../tui/nmt-page-wifi.c:364
 msgid "MTU"
-msgstr ""
+msgstr "MTU"
 
 #: ../cli/src/devices.c:97
 msgid "REASON"
@@ -2940,6 +2955,30 @@ msgid ""
 "  wimax [list [ifname <ifname>] [nsp <name>]]\n"
 "\n"
 msgstr ""
+"Uso: dispositivo do nmcli { COMMAND | help }\n"
+"\n"
+"COMMAND := { status | show | connect | disconnect | wifi | wimax }\n"
+"\n"
+"COMMAND := { status | show | connect | disconnect | wifi }\n"
+"\n"
+"  status\n"
+"\n"
+"  exibir [<ifname>]\n"
+"\n"
+"  conectar <ifname>\n"
+"\n"
+"  desconectar <ifname>\n"
+"\n"
+"  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n"
+"\n"
+"  conectar wifi <(B)SSID> [password <password>] [wep-key-type key|phrase] "
+"[ifname <ifname>]\n"
+"                         [bssid <BSSID>] [name <name>] [private yes|no]\n"
+"\n"
+"  wifi rescan [[ifname] <ifname>]\n"
+"\n"
+"  wimax [list [ifname <ifname>] [nsp <name>]]\n"
+"\n"
 
 #: ../cli/src/devices.c:298
 #, c-format
@@ -2956,6 +2995,19 @@ msgid ""
 "the default command, which means 'nmcli device' calls 'nmcli device status'.\n"
 "\n"
 msgstr ""
+"Uso: estado do dispositivo do nmcli { help }\n"
+"\n"
+"exibir estado para todos os dispositivos.\n"
+"Por padrão, são exibidas as seguintes colunas:\n"
+" DEVICE     - nome da interface\n"
+" TYPE       - tipo de dispositivo\n"
+" STATE      - estado do dispositivo\n"
+" CONNECTION - conexão ativada no dispositivo (caso haja algum)\n"
+"Colunas exibidas podem ser modificadas utilizando a opção mundial '--fields'."
+" 'status' é\n"
+"o comando padrão, o que significa que 'nmcli device' chama 'nmcli device "
+"status'.\n"
+"\n"
 
 #: ../cli/src/devices.c:314
 #, c-format
@@ -2968,6 +3020,14 @@ msgid ""
 "The command lists details for all devices, or for a given device.\n"
 "\n"
 msgstr ""
+"Uso: exibe o dispositivo nmcli { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := [<ifname>]\n"
+"\n"
+"Exibe detalhes de dispositivo(s).\n"
+"Os detalhes da lista do comando para todos os dispositivos, ou para "
+"dispositivos dados.\n"
+"\n"
 
 #: ../cli/src/devices.c:326
 #, c-format
@@ -2982,6 +3042,14 @@ msgid ""
 "It will also consider connections that are not set to auto-connect.\n"
 "\n"
 msgstr ""
+"Uso: conectar dispositivo de nmcli { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := <ifname>\n"
+"\n"
+"Conecta o dispositivo.\n"
+"NetworkManager tentará encontrar uma conexão adequada que será ativada.\n"
+"Também irá considerar conexões que não sejam configuradas para auto-connect.\n"
+"\n"
 
 #: ../cli/src/devices.c:339
 #, c-format
@@ -2995,6 +3063,14 @@ msgid ""
 "further connections without user/manual intervention.\n"
 "\n"
 msgstr ""
+"Uso: desconectar o dispositivo nmcli { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := <ifname>\n"
+"\n"
+"Desconecta o dispositivo.\n"
+"O comando desconecta o dispositivo e previne-o de auto-ativar\n"
+"conexões futuras sem a intervenção do usuário/manual.\n"
+"\n"
 
 #: ../cli/src/devices.c:352
 #, c-format
@@ -3029,6 +3105,42 @@ msgid ""
 "the APs, use 'nmcli device wifi list' for that.\n"
 "\n"
 msgstr ""
+"Uso: wifi do dispositivo nmcli { ARGUMENTS | help }\n"
+"\n"
+"Realizar operação em dispositivo Wi-Fi.\n"
+"\n"
+"ARGUMENTS := [list [ifname <ifname>] [bssid <BSSID>]]\n"
+"\n"
+"Lista pontos de acesso de Wi-Fi disponíveis. As opções 'ifname' e 'bssid' "
+"podem ser\n"
+"usadas para listar APs para uma interface específica, ou com um BSSID "
+"específico.\n"
+"\n"
+"ARGUMENTS := connect <(B)SSID> [password <password>] [wep-key-type "
+"key|phrase] [ifname <ifname>]\n"
+"                    [bssid <BSSID>] [name <name>] [private yes|no]\n"
+"\n"
+"Conecta à uma rede Wi-Fi especificada por SSID ou BSSID. O comando cria\n"
+"uma nova conexão e então ativa-a em um dispositivo. Isto é um parceiro de "
+"linha de comando\n"
+"para clicar um SSID em um cliente GUI. O comando sempre cria\n"
+"uma nova conexão e então é utilizada principalmente para conectar à novas "
+"rede Wi-Fi\n"
+"Se uma conexão para a rede já existe, é melhor\n"
+"traga o perfil existente como se segue: nmcli con up id <name>. Note que\n"
+"somente as redes abertas WEP e WPA-PSK são suportadas no momento. Presume-se "
+"também que\n"
+"a configuração IP seja obtida via DHCP\n"
+"\n"
+"ARGUMENTS := rescan [[ifname] <ifname>]\n"
+"\n"
+"Requer que o NetworkManager copie novamente imediatamente para pontos de "
+"acesso disponíveis.\n"
+"NetworkManager scaneia as redes Wi-Fi periodicamente, mas em alguns casos "
+"pode ser\n"
+"útil iniciar o scan manualmente. Note que este comando não exibe o\n"
+"APs, use 'nmcli device wifi list' para isto.\n"
+"\n"
 
 #: ../cli/src/devices.c:386
 #, c-format
@@ -3043,6 +3155,16 @@ msgid ""
 "list networks for a particular interface, or with a specific NSP.\n"
 "\n"
 msgstr ""
+"Uso: nmcli device wimax { ARGUMENTS | help }\n"
+"\n"
+"Realizar operações nos dispositivos WiMAX.\n"
+"\n"
+"ARGUMENTS := [list [ifname <ifname>] [nsp <name>]]\n"
+"\n"
+"Lista WiMAX NSPs disponíveis. As opções 'ifname' e 'nsp' podem ser "
+"utilizadas para\n"
+"listar redes para uma interface específica, ou com um NSP específico.\n"
+"\n"
 
 #: ../cli/src/devices.c:480
 msgid "(none)"
@@ -3391,6 +3513,18 @@ msgid ""
 "  logging [level <log level>] [domains <log domains>]\n"
 "\n"
 msgstr ""
+"Uso: nmcli general { COMMAND | help }\n"
+"\n"
+"COMMAND := { status | hostname | permissions | logging }\n"
+"\n"
+"  status\n"
+"\n"
+"  hostname [<hostname>]\n"
+"\n"
+"  permissões\n"
+"\n"
+"  logging [level <log level>] [domains <log domains>]\n"
+"\n"
 
 #: ../cli/src/network-manager.c:107
 #, c-format
@@ -3402,6 +3536,12 @@ msgid ""
 "status'\n"
 "\n"
 msgstr ""
+"Uso: status geral do nmcli { help }\n"
+"\n"
+"Exibe status geral de NetworkManager.\n"
+"'status' é a ação padrão, o que significa que 'nmcli gen' chama 'nmcli gen "
+"status'\n"
+"\n"
 
 #: ../cli/src/network-manager.c:117
 #, c-format
@@ -3416,6 +3556,16 @@ msgid ""
 "\n"
 "\n"
 msgstr ""
+"Uso: nmcli general hostname { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := [<hostname>]\n"
+"\n"
+"Obtém ou muda hostname de sistema persistente.\n"
+"Sem um argumento, ele imprime o hostname configurado atualmente. Quando você "
+"passa\n"
+"um hostname,o NetworkManager o definirá como o novo hostname de sistema "
+"persistente.\n"
+"\n"
 
 #: ../cli/src/network-manager.c:130
 #, c-format
@@ -3425,6 +3575,10 @@ msgid ""
 "Show caller permissions for authenticated operations.\n"
 "\n"
 msgstr ""
+"Uso: permissões gerais do nmcli { help }\n"
+"\n"
+"Exibir permissões de quem chama para operações autenticadas.\n"
+"\n"
 
 #: ../cli/src/network-manager.c:139
 #, c-format
@@ -3441,6 +3595,17 @@ msgid ""
 "for the list of possible logging domains.\n"
 "\n"
 msgstr ""
+"Uso: nmcli general logging { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := [level <log level>] [domains <log domains>]\n"
+"\n"
+"Get or change NetworkManager logging level and domains.\n"
+"Without any argument current logging level and domains are shown. In order "
+"to\n"
+"change logging state, provide level and/or domain. Please refer to the man "
+"page\n"
+"for the list of possible logging domains.\n"
+"\n"
 
 #: ../cli/src/network-manager.c:153
 #, c-format
@@ -3456,6 +3621,16 @@ msgid ""
 "  connectivity [check]\n"
 "\n"
 msgstr ""
+"Uso: nmcli networking { COMMAND | help }\n"
+"\n"
+"COMMAND := { [ on | off | connectivity ] }\n"
+"\n"
+"  on\n"
+"\n"
+"  off\n"
+"\n"
+"  connectivity [check]\n"
+"\n"
 
 #: ../cli/src/network-manager.c:164
 #, c-format
@@ -3463,7 +3638,10 @@ msgid "Usage: nmcli networking on { help }\n"
 "\n"
 "Switch networking on.\n"
 "\n"
-msgstr ""
+msgstr "Uso: nmcli networking on { help }\n"
+"\n"
+"Ativa a rede.\n"
+"\n"
 
 #: ../cli/src/network-manager.c:173
 #, c-format
@@ -3471,7 +3649,10 @@ msgid "Usage: nmcli networking off { help }\n"
 "\n"
 "Switch networking off.\n"
 "\n"
-msgstr ""
+msgstr "Uso: rede desativada do nmcli { help }\n"
+"\n"
+"Desativa rede.\n"
+"\n"
 
 #: ../cli/src/network-manager.c:182
 #, c-format
@@ -3485,6 +3666,14 @@ msgid ""
 "\n"
 "\n"
 msgstr ""
+"Uso: conexão de rede nmcli { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := [check]\n"
+"\n"
+"Obtém estado de conexão de rede.\n"
+"O argumento de 'verificação' opcional, faz com que o NetworkManager verifica "
+"novamente a conexão.\n"
+"\n"
 
 #: ../cli/src/network-manager.c:195
 #, c-format
@@ -3500,6 +3689,16 @@ msgid ""
 "  all | wifi | wwan [ on | off ]\n"
 "\n"
 msgstr ""
+"Uso: nmcli radio { COMMAND | help }\n"
+"\n"
+"COMMAND := { all | wifi | wwan | wimax }\n"
+"\n"
+"  all | wifi | wwan | wimax [ on | off ]\n"
+"\n"
+"COMMAND := { all | wifi | wwan }\n"
+"\n"
+"  all | wifi | wwan [ on | off ]\n"
+"\n"
 
 #: ../cli/src/network-manager.c:210
 #, c-format
@@ -3511,6 +3710,12 @@ msgid ""
 "Get status of all radio switches, or turn them on/off.\n"
 "\n"
 msgstr ""
+"Uso: nmcli radio all { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := [on | off]\n"
+"\n"
+"Obtém status de todos os interruptores de radio, ou os ativa ou desativa.\n"
+"\n"
 
 #: ../cli/src/network-manager.c:221
 #, c-format
@@ -3522,6 +3727,12 @@ msgid ""
 "Get status of Wi-Fi radio switch, or turn it on/off.\n"
 "\n"
 msgstr ""
+"Uso: nmcli radio wifi { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := [on | off]\n"
+"\n"
+"Obtém status do interruptor de radio Wi-Fi, ou os ativa ou desativa.\n"
+"\n"
 
 #: ../cli/src/network-manager.c:232
 #, c-format
@@ -3533,6 +3744,13 @@ msgid ""
 "Get status of mobile broadband radio switch, or turn it on/off.\n"
 "\n"
 msgstr ""
+"Uso: nmcli radio wwan { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := [on | off]\n"
+"\n"
+"Obtém status de um radio switch de banda larga móvel, ou o ativa ou desativa."
+"\n"
+"\n"
 
 #: ../cli/src/network-manager.c:244
 #, c-format
@@ -3544,6 +3762,12 @@ msgid ""
 "Get status of WiMAX radio switch, or turn it on/off.\n"
 "\n"
 msgstr ""
+"Uso: nmcli radio wimax { ARGUMENTS | help }\n"
+"\n"
+"ARGUMENTS := [on | off]\n"
+"\n"
+"Obtém status do WiMAX radio switch, ou o ativa ou desativa.\n"
+"\n"
 
 #: ../cli/src/network-manager.c:264
 msgid "asleep"
@@ -3580,7 +3804,7 @@ msgstr "completa"
 #: ../cli/src/network-manager.c:332
 #, c-format
 msgid "Error: only these fields are allowed: %s"
-msgstr ""
+msgstr "Erro: somente estes campos são permitidos: %s"
 
 #: ../cli/src/network-manager.c:348 ../cli/src/network-manager.c:349
 #: ../cli/src/network-manager.c:350 ../cli/src/network-manager.c:351
@@ -3641,7 +3865,7 @@ msgstr "Gravação de registros do NetworkManager"
 #: ../cli/src/network-manager.c:565
 #, c-format
 msgid "Error: failed to set hostname: (%d) %s"
-msgstr ""
+msgstr "Erro: falha ao definir hostname: (%d) %s"
 
 #: ../cli/src/network-manager.c:682
 #, c-format
@@ -3968,23 +4192,23 @@ msgstr "não requisitado, "
 
 #: ../cli/src/settings.c:1124
 msgid "0 (disabled)"
-msgstr ""
+msgstr "0 (desativado)"
 
 #: ../cli/src/settings.c:1130
 msgid "enabled, "
-msgstr ""
+msgstr "habilitado,"
 
 #: ../cli/src/settings.c:1132
 msgid "advertise, "
-msgstr ""
+msgstr "publicar,"
 
 #: ../cli/src/settings.c:1134
 msgid "willing, "
-msgstr ""
+msgstr "desejando,"
 
 #: ../cli/src/settings.c:1162
 msgid "-1 (unset)"
-msgstr ""
+msgstr "-1 (indefinido)"
 
 #: ../cli/src/settings.c:1270 ../cli/src/settings.c:1453
 #: ../cli/src/settings.c:1493
@@ -4095,6 +4319,12 @@ msgid ""
 "\n"
 "Example: alice bob charlie\n"
 msgstr ""
+"Inserir uma lista de permissões de usuário. Esta é uma lista de nomes de "
+"usuários formatados como:\n"
+" [user:]<user name 1>, [user:]<user name 2>,...\n"
+"Os ítens pode ser separado por commas ou espaços.\n"
+"\n"
+"Exemplo: alice bob charlie\n"
 
 #: ../cli/src/settings.c:2332
 #, c-format
@@ -4221,6 +4451,12 @@ msgid ""
 "\n"
 "Example: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 msgstr ""
+"Digite uma lista de rotas IPv4 formatados como:\n"
+"  ip/[prefixo] next-hop [métrica],... \n"
+"O prefixo que falta é considerado como um prefixo de 32.\n"
+"A métrica que falta é considerada como uma métrica de 0.\n"
+"\n"
+"Exemplo: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 
 #: ../cli/src/settings.c:3071
 msgid ""
@@ -4262,7 +4498,7 @@ msgstr ""
 #: ../cli/src/settings.c:3171
 #, c-format
 msgid "'%s' is not valid (use <dest IP>/prefix <next-hop IP> [metric])"
-msgstr "\"%s\" não é válido (use <IP de dest>/prefix <IP próx-salto> [métrica])"
+msgstr "'%s' não é válido (use <dest IP>/prefix <next-hop IP> [metric])"
 
 #: ../cli/src/settings.c:3197
 msgid ""
@@ -4274,6 +4510,13 @@ msgid ""
 "Example: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:"
 "db8:beef::3 2\n"
 msgstr ""
+"Digite uma lista de rotas IPv6, formatadas como:\n"
+"  ip/[prefixo] next-hop [métrica],... \n"
+"O prefixo que falta é considerado como prefixo de 128.\n"
+"A métrica que falta é considerada como uma métrica de 0.\n"
+"\n"
+"Exemplo: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:"
+"db8:beef::3 2\n"
 
 #: ../cli/src/settings.c:3219
 #, c-format
@@ -4300,6 +4543,13 @@ msgid ""
 "\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
 "          set team.config /etc/my-team.conf\n"
 msgstr ""
+"nmcli pode aceitar ambos dados de configuração diretos do JSON e um nome de "
+"arquivo contendo a configuração. Neste caso, o arquivo é lido e o conteúdo é "
+"colocado nesta propriedade.\n"
+"\n"
+"Exemplos: set team.config { \"device\": \"team0\", \"runner\": {\"name\": "
+"\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
+"          set team.config /etc/my-team.conf\n"
 
 #: ../cli/src/settings.c:3325
 msgid "no priority to remove"
@@ -4332,6 +4582,9 @@ msgid ""
 "  option = <value>, option = <value>,...\n"
 "Valid options are: %s\n"
 msgstr ""
+"Digite uma lista de opções S/390, formatadas como:\n"
+"  option = <value>, option = <value>,... \n"
+"Opções válidas são: %s\n"
 
 #: ../cli/src/settings.c:3559
 #, c-format
@@ -4372,37 +4625,39 @@ msgstr "\"%s\" não é um PSK válido"
 #: ../cli/src/settings.c:3772
 #, c-format
 msgid "'%s' is not a valid DCB flag"
-msgstr ""
+msgstr "'%s' não é uma sinalização DCB válida"
 
 #: ../cli/src/settings.c:3795
 #, c-format
 msgid "'%s' is not a DCB app priority"
-msgstr ""
+msgstr "'%s' não é uma prioridade de app de DCB"
 
 #: ../cli/src/settings.c:3821
 msgid "must contain 8 comma-separated numbers"
-msgstr ""
+msgstr "deve conter 8 números separados por vírgulas"
 
 #: ../cli/src/settings.c:3838
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive) or %u"
-msgstr ""
+msgstr "'%s' não é um número entre 0 e %u (inclusive) ou %u"
 
 #: ../cli/src/settings.c:3841
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive)"
-msgstr ""
+msgstr "'%s' não um número entre 0 e %u (inclusive)"
 
 #: ../cli/src/settings.c:3863
 #, c-format
 msgid "Warning: changes will have no effect until '%s' includes 1 (enabled)\n"
 "\n"
 msgstr ""
+"Aviso: mudanças não tomarão efeito até '%s' incluindo 1 (habilitado)\n"
+"\n"
 
 #: ../cli/src/settings.c:3916
 #, c-format
 msgid "bandwidth percentages must total 100%%"
-msgstr ""
+msgstr "porcentagem da largura de banda deve totalizar 100%%"
 
 #: ../cli/src/settings.c:5594
 msgid "don't know how to get the property value"
@@ -4468,7 +4723,7 @@ msgstr "campo \"%s\" tem que ser um só"
 #: ../cli/src/utils.c:720
 #, c-format
 msgid "invalid field '%s'; allowed fields: %s"
-msgstr ""
+msgstr "campo inválido '%s'; campos permitidos: %s"
 
 #: ../cli/src/utils.c:747
 msgid "Option '--terse' requires specifying '--fields'"
@@ -5398,6 +5653,8 @@ msgstr "%s. Por favor, use --help para ver uma lista de opções válidas.\n"
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' passed on command line.\n"
 msgstr ""
+"Ignorando domínio(s) de log irreconhecíveis '%s' passaram na linha de "
+"comando.\n"
 
 #: ../src/main.c:468
 #, c-format
@@ -5407,12 +5664,13 @@ msgstr "Falha ao ler configuração: (%d) %s\n"
 #: ../src/main.c:482
 #, c-format
 msgid "Error in configuration file: %s.\n"
-msgstr ""
+msgstr "Erro no arquivo de configuração: %s.\n"
 
 #: ../src/main.c:487
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' from config files.\n"
 msgstr ""
+"Ignorando domínio(s) de log irreconhecíveis '%s' dos arquivos de config.\n"
 
 #: ../src/main.c:495
 #, c-format
@@ -5685,508 +5943,508 @@ msgstr ""
 #: ../tui/nmt-password-dialog.c:175 ../tui/nmt-route-editor.c:135
 #: ../tui/nmtui-hostname.c:71 ../tui/nmtui.c:120
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
 #: ../tui/newt/nmt-newt-utils.c:316 ../tui/newt/nmt-newt-utils.c:348
 #, c-format
 msgid "Could not create temporary file: %s"
-msgstr ""
+msgstr "Não foi possível criar um arquivo temporário: %s"
 
 #: ../tui/newt/nmt-newt-utils.c:354
 #, c-format
 msgid "Editor failed: %s"
-msgstr ""
+msgstr "Editor falhou: %s"
 
 #: ../tui/newt/nmt-newt-utils.c:360
 #, c-format
 msgid "Could not re-read file: %s"
-msgstr ""
+msgstr "Não foi possível re-ler arquivo: %s"
 
 #: ../tui/nm-editor-utils.c:160
 #, c-format
 msgid "Ethernet connection %d"
-msgstr ""
+msgstr "Conexão de ethernet %d"
 
 #: ../tui/nm-editor-utils.c:168
 #, c-format
 msgid "Wi-Fi connection %d"
-msgstr ""
+msgstr "Conexão de Wi-Fi %d"
 
 #: ../tui/nm-editor-utils.c:182 ../tui/nm-ui-utils.c:345
 msgid "Mobile Broadband"
-msgstr ""
+msgstr "Banda Larga Móvel"
 
 #: ../tui/nm-editor-utils.c:185
 #, c-format
 msgid "Mobile broadband connection %d"
-msgstr ""
+msgstr "Conexão de Banda larga móvel %d"
 
 #: ../tui/nm-editor-utils.c:190
 msgid "DSL"
-msgstr ""
+msgstr "DSL"
 
 #: ../tui/nm-editor-utils.c:194
 #, c-format
 msgid "DSL connection %d"
-msgstr ""
+msgstr "Conexão DSL %d"
 
 #: ../tui/nm-ui-utils.c:316 ../tui/nm-ui-utils.c:385
 msgid "Wired"
-msgstr ""
+msgstr "Cabeada"
 
 #: ../tui/nm-ui-utils.c:339
 msgid "Bluetooth"
-msgstr ""
+msgstr "Bluetooth"
 
 #: ../tui/nm-ui-utils.c:341
 msgid "OLPC Mesh"
-msgstr ""
+msgstr "OLPC Mesh"
 
 #: ../tui/nm-ui-utils.c:343
 msgid "WiMAX"
-msgstr ""
+msgstr "WiMAX"
 
 #: ../tui/nm-ui-utils.c:357
 msgid "ADSL"
-msgstr ""
+msgstr "ADSL"
 
 #: ../tui/nm-ui-utils.c:420
 msgid "PCI"
-msgstr ""
+msgstr "PCI"
 
 #: ../tui/nm-ui-utils.c:422
 msgid "USB"
-msgstr ""
+msgstr "USB"
 
 #: ../tui/nm-ui-utils.c:498 ../tui/nm-ui-utils.c:518
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
-msgstr ""
+msgstr "%s %s"
 
 #: ../tui/nmt-device-entry.c:391
 msgid "Select..."
-msgstr ""
+msgstr "Selecionar..."
 
 #: ../tui/nmt-edit-connection-list.c:129
 msgid "Add"
-msgstr ""
+msgstr "Adicionar"
 
 #: ../tui/nmt-edit-connection-list.c:132 ../tui/nmt-page-ip4.c:172
 #: ../tui/nmt-page-ip6.c:170 ../tui/nmt-page-team-port.c:110
 #: ../tui/nmt-page-team.c:180
 msgid "Edit..."
-msgstr ""
+msgstr "Editar..."
 
 #: ../tui/nmt-edit-connection-list.c:135 ../tui/nmtui-edit.c:471
 msgid "Delete"
-msgstr ""
+msgstr "Remover"
 
 #: ../tui/nmt-editor.c:81
 #, c-format
 msgid "Could not create editor for connection '%s' of type '%s'."
-msgstr ""
+msgstr "Não foi possível criar editor para a conexão '%s' do tipo '%s'."
 
 #: ../tui/nmt-editor.c:85
 #, c-format
 msgid "Could not create editor for invalid connection '%s'."
-msgstr ""
+msgstr "Não foi possível criar editor para a conexão inválida '%s'"
 
 #: ../tui/nmt-editor.c:95
 msgid "Edit connection"
-msgstr ""
+msgstr "Editar conexão"
 
 #: ../tui/nmt-editor.c:134
 #, c-format
 msgid "Error saving connection: %s"
-msgstr ""
+msgstr "Erro ao salvar conexão: %s"
 
 #: ../tui/nmt-editor.c:144
 #, c-format
 msgid "Unable to save connection: %s"
-msgstr ""
+msgstr "Incapaz de salvar conexão: %s"
 
 #: ../tui/nmt-editor.c:158
 #, c-format
 msgid "Unable to add new connection: %s"
-msgstr ""
+msgstr "Incapaz de adicionar nova conexão: %s"
 
 #: ../tui/nmt-editor.c:228 ../tui/nmt-password-dialog.c:172
 #: ../tui/nmt-route-editor.c:128 ../tui/nmtui-edit.c:201
 #: ../tui/nmtui-edit.c:470 ../tui/nmtui-hostname.c:69
 msgid "Cancel"
-msgstr ""
+msgstr "Cancelar"
 
 #: ../tui/nmt-mtu-entry.c:86
 msgid "(default)"
-msgstr ""
+msgstr "(default)"
 
 #: ../tui/nmt-mtu-entry.c:88 ../tui/nmt-mtu-entry.c:119
 msgid "bytes"
-msgstr ""
+msgstr "bytes"
 
 #: ../tui/nmt-page-bond.c:88
 msgid "Round-robin"
-msgstr ""
+msgstr "Round-robin"
 
 #: ../tui/nmt-page-bond.c:89
 msgid "Active Backup"
-msgstr ""
+msgstr "Backup Ativo"
 
 #: ../tui/nmt-page-bond.c:90
 msgid "XOR"
-msgstr ""
+msgstr "XOR"
 
 #: ../tui/nmt-page-bond.c:91
 msgid "Broadcast"
-msgstr ""
+msgstr "Broadcast"
 
 #: ../tui/nmt-page-bond.c:92
 msgid "802.3ad"
-msgstr ""
+msgstr "802.3ad"
 
 #: ../tui/nmt-page-bond.c:93
 msgid "Adaptive Transmit Load Balancing (tlb)"
-msgstr ""
+msgstr "Balanceamento de Carga de Trasmissão Adaptativo (tlb)"
 
 #: ../tui/nmt-page-bond.c:94
 msgid "Adaptive Load Balancing (alb)"
-msgstr ""
+msgstr "Balanceamento de Carga Adaptativa (alb)"
 
 #: ../tui/nmt-page-bond.c:100
 msgid "MII (recommended)"
-msgstr ""
+msgstr "MII (recomendado)"
 
 #: ../tui/nmt-page-bond.c:101
 msgid "ARP"
-msgstr ""
+msgstr "ARP"
 
 #: ../tui/nmt-page-bond.c:359 ../tui/nmt-page-bridge.c:86
 #: ../tui/nmt-page-team.c:159
 msgid "Slaves"
-msgstr ""
+msgstr "Escravos"
 
 #: ../tui/nmt-page-bond.c:371 ../tui/nmt-page-wifi.c:227
 msgid "Mode"
-msgstr ""
+msgstr "Mode"
 
 #: ../tui/nmt-page-bond.c:377
 msgid "Primary"
-msgstr ""
+msgstr "Primário"
 
 #: ../tui/nmt-page-bond.c:383
 msgid "Link monitoring"
-msgstr ""
+msgstr "Monitoramento de Link"
 
 #: ../tui/nmt-page-bond.c:389 ../tui/nmt-page-bond.c:396
 #: ../tui/nmt-page-bond.c:403 ../tui/nmt-page-bond.c:410
 msgctxt "milliseconds"
 msgid "ms"
-msgstr ""
+msgstr "ms"
 
 #: ../tui/nmt-page-bond.c:390 ../tui/nmt-page-bond.c:411
 msgid "Monitoring frequency"
-msgstr ""
+msgstr "Frequência de Monitoramento"
 
 #: ../tui/nmt-page-bond.c:397
 msgid "Link up delay"
-msgstr ""
+msgstr "Atraso de Link up"
 
 #: ../tui/nmt-page-bond.c:404
 msgid "Link down delay"
-msgstr ""
+msgstr "Atraso de Link down"
 
 #: ../tui/nmt-page-bond.c:417
 msgid "ARP targets"
-msgstr ""
+msgstr "Alvos ARP"
 
 #: ../tui/nmt-page-bridge-port.c:38
 msgid "BRIDGE PORT"
-msgstr ""
+msgstr "PORTA DE PONTE"
 
 #: ../tui/nmt-page-bridge-port.c:69 ../tui/nmt-page-bridge.c:112
 msgid "Priority"
-msgstr ""
+msgstr "Prioridade"
 
 #: ../tui/nmt-page-bridge-port.c:75
 msgid "Path cost"
-msgstr ""
+msgstr "Custo do Caminho"
 
 #: ../tui/nmt-page-bridge-port.c:77
 msgid "Hairpin mode"
-msgstr ""
+msgstr "Modo do Hairpin"
 
 #: ../tui/nmt-page-bridge.c:42
 msgid "BRIDGE"
-msgstr ""
+msgstr "PONTE"
 
 #: ../tui/nmt-page-bridge.c:96 ../tui/nmt-page-bridge.c:121
 #: ../tui/nmt-page-bridge.c:131 ../tui/nmt-page-bridge.c:141
 msgid "seconds"
-msgstr ""
+msgstr "segundos"
 
 #: ../tui/nmt-page-bridge.c:97
 msgid "Aging time"
-msgstr ""
+msgstr "Tempo de Expiração"
 
 #: ../tui/nmt-page-bridge.c:99
 msgid "Enable STP (Spanning Tree Protocol)"
-msgstr ""
+msgstr "Habilitar STP (Spanning Tree Protocol)"
 
 #: ../tui/nmt-page-bridge.c:122
 msgid "Forward delay"
-msgstr ""
+msgstr "Avançar atraso"
 
 #: ../tui/nmt-page-bridge.c:132
 msgid "Hello time"
-msgstr ""
+msgstr "Tempo de Saudação"
 
 #: ../tui/nmt-page-bridge.c:142
 msgid "Max age"
-msgstr ""
+msgstr "Tempo de expiração máximo"
 
 #: ../tui/nmt-page-ethernet.c:41
 msgid "ETHERNET"
-msgstr ""
+msgstr "ETHERNET"
 
 #: ../tui/nmt-page-ethernet.c:80 ../tui/nmt-page-vlan.c:132
 #: ../tui/nmt-page-wifi.c:358
 msgid "Cloned MAC address"
-msgstr ""
+msgstr "Endereço MAC clonado"
 
 #: ../tui/nmt-page-infiniband.c:40
 msgid "INFINIBAND"
-msgstr ""
+msgstr "INFINIBAND"
 
 #: ../tui/nmt-page-infiniband.c:51
 msgid "Datagram"
-msgstr ""
+msgstr "Datagram"
 
 #: ../tui/nmt-page-infiniband.c:52
 msgid "Connected"
-msgstr ""
+msgstr "Conectado"
 
 #: ../tui/nmt-page-infiniband.c:84
 msgid "Transport mode"
-msgstr ""
+msgstr "Modo de Transporte"
 
 #: ../tui/nmt-page-ip4.c:41
 msgid "Disabled"
-msgstr ""
+msgstr "Desabilitado"
 
 #: ../tui/nmt-page-ip4.c:42 ../tui/nmt-page-ip6.c:42
 msgid "Automatic"
-msgstr ""
+msgstr "Automático"
 
 #: ../tui/nmt-page-ip4.c:43 ../tui/nmt-page-ip6.c:44
 msgid "Link-Local"
-msgstr ""
+msgstr "Link-local"
 
 #: ../tui/nmt-page-ip4.c:44 ../tui/nmt-page-ip6.c:45
 msgid "Manual"
-msgstr ""
+msgstr "Manual"
 
 #: ../tui/nmt-page-ip4.c:45
 msgid "Shared"
-msgstr ""
+msgstr "Compartilhado"
 
 #: ../tui/nmt-page-ip4.c:54
 msgid "IPv4 CONFIGURATION"
-msgstr ""
+msgstr "CONFIGURAÇÃO DO IPv4"
 
 #: ../tui/nmt-page-ip4.c:100 ../tui/nmt-page-ip6.c:100
 msgid "(No custom routes)"
-msgstr ""
+msgstr "(Nenhuma rota de cliente)"
 
 #: ../tui/nmt-page-ip4.c:103 ../tui/nmt-page-ip6.c:103
 #, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Uma rota de cliente"
+msgstr[1] "%d rotas de clientes"
 
 #: ../tui/nmt-page-ip4.c:141 ../tui/nmt-page-ip6.c:141
 msgid "Addresses"
-msgstr ""
+msgstr "Endereços"
 
 #: ../tui/nmt-page-ip4.c:147 ../tui/nmt-page-ip6.c:147
 msgid "Gateway"
-msgstr ""
+msgstr "Gateway"
 
 #: ../tui/nmt-page-ip4.c:153 ../tui/nmt-page-ip6.c:153
 msgid "DNS servers"
-msgstr ""
+msgstr "Servidores de DNS"
 
 #: ../tui/nmt-page-ip4.c:159 ../tui/nmt-page-ip6.c:159
 msgid "Search domains"
-msgstr ""
+msgstr "Procurar domínios"
 
 #: ../tui/nmt-page-ip4.c:174 ../tui/nmt-page-ip6.c:172
 msgid "Routing"
-msgstr ""
+msgstr "Roteamento"
 
 #: ../tui/nmt-page-ip4.c:176 ../tui/nmt-page-ip6.c:174
 msgid "Never use this network for default route"
-msgstr ""
+msgstr "Nunca usar esta rede para rota padrão"
 
 #: ../tui/nmt-page-ip4.c:184
 msgid "Require IPv4 addressing for this connection"
-msgstr ""
+msgstr "Requer endereço IPv4 para esta conexão"
 
 #: ../tui/nmt-page-ip6.c:41
 msgid "Ignore"
-msgstr ""
+msgstr "Ignorar"
 
 #: ../tui/nmt-page-ip6.c:43
 msgid "Automatic (DHCP-only)"
-msgstr ""
+msgstr "Automático (somente DHCP)"
 
 #: ../tui/nmt-page-ip6.c:54
 msgid "IPv6 CONFIGURATION"
-msgstr ""
+msgstr "CONFIGURAÇÃO DO IPv6"
 
 #: ../tui/nmt-page-ip6.c:182
 msgid "Require IPv6 addressing for this connection"
-msgstr ""
+msgstr "Requer endereço de IPv6 para esta conexão"
 
 #: ../tui/nmt-page-main.c:134
 msgid "Hide"
-msgstr ""
+msgstr "Esconder"
 
 #: ../tui/nmt-page-main.c:134
 msgid "Show"
-msgstr ""
+msgstr "Exibir"
 
 #: ../tui/nmt-page-main.c:181
 msgid "Profile name"
-msgstr ""
+msgstr "Nome do perfil"
 
 #: ../tui/nmt-page-main.c:188
 msgid "Device"
-msgstr ""
+msgstr "Dispositivo"
 
 #: ../tui/nmt-page-main.c:252
 msgid "Automatically connect"
-msgstr ""
+msgstr "Conectar automaticamente"
 
 #: ../tui/nmt-page-main.c:258
 msgid "Available to all users"
-msgstr ""
+msgstr "Disponibilizar à todos os usuários"
 
 #: ../tui/nmt-page-team-port.c:45
 msgid "TEAM PORT"
-msgstr ""
+msgstr "PORTA DA EQUIPE"
 
 #: ../tui/nmt-page-team-port.c:100 ../tui/nmt-page-team.c:170
 msgid "JSON configuration"
-msgstr ""
+msgstr "Configuração do JSON"
 
 #: ../tui/nmt-page-team.c:51
 msgid "TEAM"
-msgstr ""
+msgstr "EQUIPE"
 
 #: ../tui/nmt-page-vlan.c:109
 msgid "Parent"
-msgstr ""
+msgstr "Pai"
 
 #: ../tui/nmt-page-vlan.c:124
 msgid "VLAN id"
-msgstr ""
+msgstr "VLAN id"
 
 #: ../tui/nmt-page-wifi.c:58
 msgid "WI-FI"
-msgstr ""
+msgstr "WI-FI"
 
 #: ../tui/nmt-page-wifi.c:69
 msgctxt "Wi-Fi"
 msgid "Client"
-msgstr ""
+msgstr "Cliente"
 
 #: ../tui/nmt-page-wifi.c:70
 msgid "Access Point"
-msgstr ""
+msgstr "Ponto de Acesso"
 
 #: ../tui/nmt-page-wifi.c:71
 msgid "Ad-Hoc Network"
-msgstr ""
+msgstr "Rede Ad-Hoc"
 
 #: ../tui/nmt-page-wifi.c:76
 msgctxt "Wi-Fi"
 msgid "Automatic"
-msgstr ""
+msgstr "Automático"
 
 #: ../tui/nmt-page-wifi.c:78
 msgid "A (5 GHz)"
-msgstr ""
+msgstr "A (5 GHz)"
 
 #: ../tui/nmt-page-wifi.c:80
 msgid "B/G (2.4 GHz)"
-msgstr ""
+msgstr "B/G (2.4 GHz)"
 
 #: ../tui/nmt-page-wifi.c:85
 msgctxt "Wi-Fi security"
 msgid "None"
-msgstr ""
+msgstr "Nenhum"
 
 #: ../tui/nmt-page-wifi.c:86
 msgid "WPA & WPA2 Personal"
-msgstr ""
+msgstr "WPA & WPA2 Pessoal"
 
 #: ../tui/nmt-page-wifi.c:87
 msgid "WPA & WPA2 Enterprise"
-msgstr ""
+msgstr "WPA & WPA2 Empresa"
 
 #: ../tui/nmt-page-wifi.c:88
 msgid "WEP 40/128-bit Key (Hex or ASCII)"
-msgstr ""
+msgstr "WEP 40/128-bit Key (Hex or ASCII)"
 
 #: ../tui/nmt-page-wifi.c:89
 msgid "WEP 128-bit Passphrase"
-msgstr ""
+msgstr "WEP 128-bit Frase senha"
 
 #: ../tui/nmt-page-wifi.c:90
 msgid "Dynamic WEP (802.1x)"
-msgstr ""
+msgstr "WEP Dinâmico (802.1x)"
 
 #: ../tui/nmt-page-wifi.c:91
 msgid "LEAP"
-msgstr ""
+msgstr "LEAP"
 
 #: ../tui/nmt-page-wifi.c:96
 msgctxt "WEP key index"
 msgid "1 (Default)"
-msgstr ""
+msgstr "1 (Default)"
 
 #: ../tui/nmt-page-wifi.c:97
 msgctxt "WEP key index"
 msgid "2"
-msgstr ""
+msgstr "2"
 
 #: ../tui/nmt-page-wifi.c:98
 msgctxt "WEP key index"
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: ../tui/nmt-page-wifi.c:99
 msgctxt "WEP key index"
 msgid "4"
-msgstr ""
+msgstr "4"
 
 #: ../tui/nmt-page-wifi.c:104
 msgid "Open System"
-msgstr ""
+msgstr "Abrir Sistema"
 
 #: ../tui/nmt-page-wifi.c:105
 msgid "Shared Key"
-msgstr ""
+msgstr "Chave compartilhada"
 
 #: ../tui/nmt-page-wifi.c:253
 msgid "Channel"
-msgstr ""
+msgstr "Canal"
 
 #: ../tui/nmt-page-wifi.c:258
 msgid "Security"
-msgstr ""
+msgstr "Segurança"
 
 #: ../tui/nmt-page-wifi.c:274 ../tui/nmt-page-wifi.c:305
 #: ../tui/nmt-page-wifi.c:335 ../tui/nmt-secret-agent.c:214
@@ -6194,76 +6452,76 @@ msgstr ""
 #: ../tui/nmt-secret-agent.c:314 ../tui/nmt-secret-agent.c:380
 #: ../tui/nmt-secret-agent.c:393 ../tui/nmt-secret-agent.c:409
 msgid "Password"
-msgstr ""
+msgstr "Senha"
 
 #: ../tui/nmt-page-wifi.c:279
 msgid "(No support for wpa-enterprise yet...)"
-msgstr ""
+msgstr "(Nenhum suporte para wpa-empresa ainda...)"
 
 #: ../tui/nmt-page-wifi.c:286 ../tui/nmt-secret-agent.c:265
 msgid "Key"
-msgstr ""
+msgstr "Chave"
 
 #: ../tui/nmt-page-wifi.c:289 ../tui/nmt-page-wifi.c:308
 msgid "WEP index"
-msgstr ""
+msgstr "Índice WEP"
 
 #: ../tui/nmt-page-wifi.c:297 ../tui/nmt-page-wifi.c:316
 msgid "Authentication"
-msgstr ""
+msgstr "Autenticação"
 
 #: ../tui/nmt-page-wifi.c:322
 msgid "(No support for dynamic-wep yet...)"
-msgstr ""
+msgstr "(Nenhum suporte para o dynamic-wep ainda...)"
 
 #: ../tui/nmt-page-wifi.c:329 ../tui/nmt-secret-agent.c:209
 #: ../tui/nmt-secret-agent.c:304
 msgid "Username"
-msgstr ""
+msgstr "Nome de usuário"
 
 #: ../tui/nmt-password-fields.c:130
 msgid "Ask for this password every time"
-msgstr ""
+msgstr "Perguntar a senha todas as vezes"
 
 #: ../tui/nmt-password-fields.c:131
 msgid "Show password"
-msgstr ""
+msgstr "Exibir senha"
 
 #: ../tui/nmt-route-table.c:219
 msgid "Destination"
-msgstr ""
+msgstr "Destino"
 
 #: ../tui/nmt-route-table.c:219
 msgid "Prefix"
-msgstr ""
+msgstr "Prefixo"
 
 #: ../tui/nmt-route-table.c:228
 msgid "Next Hop"
-msgstr ""
+msgstr "Próxima parada"
 
 #: ../tui/nmt-route-table.c:236
 msgid "Metric"
-msgstr ""
+msgstr "Métrico"
 
 #: ../tui/nmt-route-table.c:256
 msgid "No custom routes are defined."
-msgstr ""
+msgstr "Nenhuma rota de cliente foi definida."
 
 #: ../tui/nmt-secret-agent.c:223
 msgid "Identity"
-msgstr ""
+msgstr "Identidade"
 
 #: ../tui/nmt-secret-agent.c:228
 msgid "Private key password"
-msgstr ""
+msgstr "Senha de chave privada"
 
 #: ../tui/nmt-secret-agent.c:309
 msgid "Service"
-msgstr ""
+msgstr "Serviço"
 
 #: ../tui/nmt-secret-agent.c:340
 msgid "Authentication required by wireless network"
-msgstr ""
+msgstr "Autenticação requerida pela rede wireless"
 
 #: ../tui/nmt-secret-agent.c:341
 #, c-format
@@ -6271,175 +6529,179 @@ msgid ""
 "Passwords or encryption keys are required to access the wireless network "
 "'%s'."
 msgstr ""
+"Senhas ou chaves de criptografia são necessárias para acessar a rede "
+"wireless '%s'."
 
 #: ../tui/nmt-secret-agent.c:349
 msgid "Wired 802.1X authentication"
-msgstr ""
+msgstr "Autenticação Wired 802.1X "
 
 #: ../tui/nmt-secret-agent.c:352
 msgid "Network name"
-msgstr ""
+msgstr "Nome de rede"
 
 #: ../tui/nmt-secret-agent.c:359
 msgid "DSL authentication"
-msgstr ""
+msgstr "Autenticação do DSL"
 
 #: ../tui/nmt-secret-agent.c:367
 msgid "PIN code required"
-msgstr ""
+msgstr "Código PIN necessário"
 
 #: ../tui/nmt-secret-agent.c:368
 msgid "PIN code is needed for the mobile broadband device"
-msgstr ""
+msgstr "Código PIN é necessário para o dispositivo de banda larga móvel"
 
 #: ../tui/nmt-secret-agent.c:370
 msgid "PIN"
-msgstr ""
+msgstr "PIN"
 
 #: ../tui/nmt-secret-agent.c:376 ../tui/nmt-secret-agent.c:389
 #: ../tui/nmt-secret-agent.c:405
 msgid "Mobile broadband network password"
-msgstr ""
+msgstr "Senha de rede de banda larga móvel"
 
 #: ../tui/nmt-secret-agent.c:377 ../tui/nmt-secret-agent.c:390
 #: ../tui/nmt-secret-agent.c:406
 #, c-format
 msgid "A password is required to connect to '%s'."
-msgstr ""
+msgstr "Requer uma senha para conectar ao '%s'."
 
 #: ../tui/nmt-slave-list.c:138
 msgid "Select the type of slave connection you wish to add."
-msgstr ""
+msgstr "Selecionar o tipo de conexão escrava que você deseja adicionar."
 
 #: ../tui/nmt-widget-list.c:142
 msgid "Add..."
-msgstr ""
+msgstr "Adicionar..."
 
 #: ../tui/nmt-widget-list.c:205
 msgid "Remove"
-msgstr ""
+msgstr "Remover"
 
 #: ../tui/nmtui-connect.c:82
 msgid "Activation failed"
-msgstr ""
+msgstr "Ativação falhou"
 
 #: ../tui/nmtui-connect.c:134
 msgid "Connecting..."
-msgstr ""
+msgstr "Conectar..."
 
 #: ../tui/nmtui-connect.c:159
 #, c-format
 msgid "Could not activate connection: %s"
-msgstr ""
+msgstr "Não foi possível ativar a conexão: %s"
 
 #: ../tui/nmtui-connect.c:218 ../tui/nmtui-connect.c:274
 msgid "Activate"
-msgstr ""
+msgstr "Ativar"
 
 #: ../tui/nmtui-connect.c:220
 msgid "Deactivate"
-msgstr ""
+msgstr "Desativar"
 
 #: ../tui/nmtui-connect.c:279 ../tui/nmtui-edit.c:102 ../tui/nmtui.c:114
 msgid "Quit"
-msgstr ""
+msgstr "Cancelar"
 
 #: ../tui/nmtui-connect.c:304
 #, c-format
 msgid "No such connection '%s'"
-msgstr ""
+msgstr "Nenhuma conexão '%s'"
 
 #: ../tui/nmtui-connect.c:306
 msgid "Connection is already active"
-msgstr ""
+msgstr "A conexão já está ativada"
 
 #: ../tui/nmtui-edit.c:209
 msgid "Create"
-msgstr ""
+msgstr "Criar"
 
 #: ../tui/nmtui-edit.c:350
 msgid "Select the type of connection you wish to create."
-msgstr ""
+msgstr "Selecionar o tipo de conexão que você deseja criar"
 
 #: ../tui/nmtui-edit.c:357
 msgid ""
 "If you are creating a VPN, and the VPN connection you wish to create does "
 "not appear in the list, you may not have the correct VPN plugin installed."
 msgstr ""
+"Se você estiver criando uma conexão VPN e esta conexão que você deseja criar "
+"não aparece na lista, você pode não ter o plugin VPN correto instalado."
 
 #: ../tui/nmtui-edit.c:390 ../tui/nmtui-edit.c:406
 msgid "New Connection"
-msgstr ""
+msgstr "Nova Conexão"
 
 #: ../tui/nmtui-edit.c:443
 #, c-format
 msgid "Unable to delete connection: %s"
-msgstr ""
+msgstr "Incapaz de remover conexão: %s"
 
 #: ../tui/nmtui-edit.c:472
 #, c-format
 msgid "Are you sure you want to delete the connection '%s'?"
-msgstr ""
+msgstr "Você tem certeza de que você quer remover a conexão '%s'?"
 
 #: ../tui/nmtui-edit.c:486
 #, c-format
 msgid "Could not delete connection: %s"
-msgstr ""
+msgstr "Nâo foi possível remover a conexão: %s"
 
 #: ../tui/nmtui-hostname.c:47
 msgid "Set Hostname"
-msgstr ""
+msgstr "Definir Hostname"
 
 #: ../tui/nmtui-hostname.c:55
 msgid "Hostname"
-msgstr ""
+msgstr "Hostname"
 
 #: ../tui/nmtui-hostname.c:114
 #, c-format
 msgid "Set hostname to '%s'"
-msgstr ""
+msgstr "Definir hostname para '%s'"
 
 #: ../tui/nmtui-hostname.c:116
 #, c-format
 msgid "Unable to set hostname: %s"
-msgstr ""
+msgstr "Incapaz de definir hostname: %s"
 
 #: ../tui/nmtui.c:59 ../tui/nmtui.c:62
 msgid "connection"
-msgstr ""
+msgstr "conexão"
 
 #: ../tui/nmtui.c:60
 msgid "Edit a connection"
-msgstr ""
+msgstr "Editar a conexão"
 
 #: ../tui/nmtui.c:63
 msgid "Activate a connection"
-msgstr ""
+msgstr "Ativar a conexão"
 
 #: ../tui/nmtui.c:65
 msgid "new hostname"
-msgstr ""
+msgstr "novo hostname"
 
 #: ../tui/nmtui.c:66
 msgid "Set system hostname"
-msgstr ""
+msgstr "Definir hostname do sistema"
 
 #: ../tui/nmtui.c:89
 msgid "NetworkManager TUI"
-msgstr ""
+msgstr "NetworkManager TUI"
 
 #: ../tui/nmtui.c:97
 msgid "Please select an option"
-msgstr ""
+msgstr "Por favor selecione uma opção"
 
 #: ../tui/nmtui.c:154
 msgid "Usage"
-msgstr ""
+msgstr "Uso"
 
 #: ../tui/nmtui.c:221
 msgid "Could not parse arguments"
-msgstr ""
+msgstr "Não foi possível analisar argumentos"
 
 #: ../tui/nmtui.c:229
 msgid "NetworkManager is not running."
-msgstr ""
+msgstr "NetworkManager não está em execução."
