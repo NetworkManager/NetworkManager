@@ -956,8 +956,26 @@ _nmcli()
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
+
+                            LONG_OPTIONS=(help)
+                            _nmcli_compl_OPTIONS
+                            case $? in
+                                0)
+                                    return 0
+                                    ;;
+                                1)
+                                    ARRAY="${LONG_OPTIONS[@]}"
+                                    if ! _nmcli_array_has_value "help"; then
+                                        return 0
+                                    fi
+                                    ;;
+                            esac
+
                             OPTIONS=(id uuid path apath)
-                            _nmcli_compl_ARGS_CONNECTION
+                            while [[ ${#words[@]} -gt 0 ]]; do
+                                _nmcli_compl_ARGS_CONNECTION && return 0
+                            done
+                            _nmcli_list_nl "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")"
                         fi
                         ;;
                     l|lo|loa|load)
