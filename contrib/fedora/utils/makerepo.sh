@@ -7,10 +7,24 @@ die() {
 	exit 1
 }
 
-if grep -q '^NAME="Red Hat Enterprise Linux' /etc/os-release ; then
-    FEDPKG=rhpkg
-else
-    FEDPKG=fedpkg
+srcdir="$(readlink -f "$(git rev-parse --show-toplevel 2>/dev/null)")"
+[[ "x$srcdir" != x ]] || die "Could not detect dist-git directory (are you inside the git working directory?)"
+cd "$srcdir" || die "Could not switch to dist-git directory"
+
+
+(test -f $srcdir/NetworkManager.spec \
+  && test -f $srcdir/sources) || {
+    die "**Error**: Directory "\`$srcdir\'" does not look like the NM pkg dir." \
+        "Copy the file \"$(readlink -f "$0")\" to the dist-git base directory"
+}
+
+if [[ "$FEDPKG" == "" ]]; then
+    REMOTES="$(git remote -v 2>/dev/null)" || die "not inside dist-git repository? >>$PWD<<"
+    if echo "$REMOTES" | grep -q -F 'pkgs.devel.redhat.com' ; then
+        FEDPKG=rhpkg
+    else
+        FEDPKG=fedpkg
+    fi
 fi
 
 split_patch() {
@@ -80,15 +94,6 @@ for ARG; do
             ;;
     esac
 done
-
-srcdir="$(dirname "$(readlink -f "$0")")"
-
-(test -f $srcdir/NetworkManager.spec \
-  && test -f $srcdir/sources) || {
-    echo "**Error**: Directory "\`$srcdir\'" does not look like the NM pkg dir."
-    echo "Copy the file \"$(readlink -f "$0")\" to the dist-git base directory"
-    exit 1
-}
 
 # generate the clean dir
 $FEDPKG prep || die "error while \`$FEDPKG prep\`"
