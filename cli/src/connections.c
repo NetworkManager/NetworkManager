@@ -419,9 +419,9 @@ usage_connection_modify (void)
 	           "ARGUMENTS := [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n"
 	           "\n"
 	           "Modify one or more properties of the connection profile.\n"
-	           "The profile is identified by its name, UUID or D-Bus path. For multi-value\n"
+	           "The profile is identified by its name, UUID or D-Bus path. For multi-valued\n"
 	           "properties you can use optional '+' or '-' prefix to the property name.\n"
-	           "The '+' sign instructs nmcli to append the value instead of overwriting it.\n"
+	           "The '+' sign allows appending items instead of overwriting the whole value.\n"
 	           "The '-' sign allows removing selected items instead of the whole value.\n"
 	           "\n"
 	           "Examples:\n"
@@ -429,6 +429,7 @@ usage_connection_modify (void)
 	           "nmcli con mod em1-1 ipv4.method manual ipv4.addr \"192.168.1.2/24, 10.10.1.5/8\"\n"
 	           "nmcli con mod em1-1 +ipv4.dns 8.8.4.4\n"
 	           "nmcli con mod em1-1 -ipv4.dns 1\n"
+	           "nmcli con mod em1-1 -ipv6.addr \"abbe::cafe/56\"\n"
 	           "nmcli con mod bond0 +bond.options mii=500\n"
 	           "nmcli con mod bond0 -bond.options downdelay\n\n"));
 }
