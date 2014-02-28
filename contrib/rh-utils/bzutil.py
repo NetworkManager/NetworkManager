@@ -430,6 +430,37 @@ class BzInfo:
     def clearBZData(self):
         if hasattr(self, '_bzdata'):
             del self._bzdata
+    @staticmethod
+    def parse_bz(obz, no_bz=None):
+        bz_tuples = [bz for bz in re.split('[,; ]', obz) if bz]
+        result_man2 = []
+        no_bz_skipped = []
+        has_any = False
+        for bzii in bz_tuples:
+            bzi = bzii.partition(':')
+            if not bzi[1] and not bzi[2]:
+                bzi = bzii.partition('#')
+            if not bzi[1] and not bzi[2]:
+                bzi = ['rh',bzi[0]]
+            else:
+                bzi = bzi[::2]
+            if not bzi[0] or not bzi[1] or not re.match('^[0-9]{4,7}$', bzi[1]):
+                raise Exception('invalid bug specifier \"%s\" (%s)' % (obz, bzii))
+            bz = None
+            if bzi[0] == 'rhbz' or bzi[0] == 'rh':
+                bz = BzInfoRhbz(bzi[1])
+            elif bzi[0] == 'bgo' or bzi[0] == 'bg':
+                bz = BzInfoBgo(bzi[1])
+            else:
+                raise Exception('invalid bug specifier \"%s\"' % obz)
+            if no_bz is None or bz not in no_bz:
+                result_man2.append(bz)
+            else:
+                no_bz_skipped.append(bz)
+            has_any = True
+        if not has_any:
+            raise Exception('invalid bug specifier \"%s\": contains no bugs' % obz)
+        return result_man2, no_bz_skipped
 
 
 class BzInfoBgo(BzInfo):
@@ -696,6 +727,8 @@ class FilterBase():
         s = s.replace("\n", "\\n")
         s = s.replace("\\", "\\\\")
         return "'" + s + "'"
+    _regex_neg = '^([!~]*)'
+    _regex_neg = re.compile(_regex_neg)
     @staticmethod
     def create_filter(args):
         if isinstance(args, basestring):
@@ -704,10 +737,16 @@ class FilterBase():
             raise Exception("Cannot parse empty filter")
         name = args[0]
 
+        neg = FilterBase._regex_neg.match(name)
+        neg = neg.group(0)
+        if neg:
+            name = name[len(neg):]
+            neg = len(neg) % 2 == 1
+
         if name.lower() in FilterBase._mapping:
             filter_type = FilterBase._mapping[name.lower()]
         elif name.lower() in BzClient.DEFAULT_FIELDS:
-            args = tuple(['match'] + list(args))
+            args = tuple(['match', name] + list(args[1:]))
             filter_type = FilterBase._mapping['match']
         else:
             raise Exception("Invalid filter name \"%s\"" % name)
@@ -716,18 +755,30 @@ class FilterBase():
             f = filter_type.factory(args[1:])
         except Exception as e:
             raise Exception("Cannot create filter of type %s with arguments \"%r\": (%s)" % (filter_type.__name__, args[1:], str(e)))
+        if neg:
+            f = FilterNot.create(f)
         return f
     @staticmethod
     def parse(s):
-        if s.lower() in FilterBase._mapping:
-            filter_type = FilterBase._mapping[s.lower()]
-            if not filter_type.allow_simple:
-                raise Exception("Cannot create filter '%s' because it needs some arguments. Use full python syntax" % (s))
-            try:
-                f = filter_type.factory([])
-            except Exception as e:
-                raise Exception("Cannot create filter of type %s with arguments \"%r\": (%s)" % (filter_type.factory.__name__, args[1:], str(e)))
-            return f
+        if not isinstance(s, basestring):
+            return FilterBase.create_filter(s)
+        sl = s.lower()
+        if sl in FilterBase._mapping:
+            filter_type = FilterBase._mapping[sl]
+            if filter_type.allow_simple:
+                try:
+                    f = filter_type.factory([])
+                except Exception as e:
+                    raise Exception("Cannot create filter of type %s with arguments \"%r\": (%s)" % (filter_type.factory.__name__, args[1:], str(e)))
+                return f
+        if sl.startswith("bz "):
+            return FilterBz(s[3:].split())
+        if sl.startswith("nobz "):
+            return FilterBz.exclude(s[5:].split())
+        if sl.startswith("not "):
+            return FilterNot.create(filter=FilterBase.parse(s[4:]))
+        if sl.startswith("!") or sl.startswith("~"):
+            return FilterNot.create(filter=FilterBase.parse(s[1:]))
         try:
             expr = ast.literal_eval(s)
         except Exception as e:
@@ -771,7 +822,7 @@ class FilterNot(FilterBase):
             return
         if len(args) != 1:
             raise Exception("Filter of type FilterNot expects exactly one arguement (instead got \"%r\")" % (args))
-        self._filter = FilterBase.create_filter(args[0])
+        self._filter = FilterBase.parse(args[0])
     def __str__(self):
         return '(not %s)' % self._filter
     def __repr__(self):
@@ -784,17 +835,21 @@ class FilterAnd(FilterBase):
     @staticmethod
     def join(*args):
         if len(args) >= 2:
-            return FilterAnd(None, filters=args)
+            return FilterAnd(filters=args)
         return args[0]
-    def __init__(self, args, filters=None):
+    @staticmethod
+    def create(args=None,filters=None):
+        filter = FilterAnd(args=args, filters=filters)
+        if len(filter._filters) == 0:
+            return FilterTrue()
+        if len(filter._filters) == 1:
+            return filters[0]
+        return filter
+    def __init__(self, args=None, filters=None):
         if filters is None:
             if not args:
                 raise Exception("Filter of type FilterAnd expects one or more filters (instead got \"%r\")" % (args))
-            filters = [FilterBase.create_filter(f) for f in args]
-        if len(filters) == 0:
-            return FilterTrue()
-        if len(filters) == 1:
-            return filters[0]
+            filters = [FilterBase.parse(f) for f in args]
         f = []
         for filter in filters:
             if isinstance(filter, FilterAnd):
@@ -818,17 +873,21 @@ class FilterOr(FilterBase):
     @staticmethod
     def join(*args):
         if len(args) >= 2:
-            return FilterOr(None, filters=args)
+            return FilterOr(filters=args)
         return args[0]
-    def __init__(self, args, filters=None):
+    @staticmethod
+    def create(args=None,filters=None):
+        filter = FilterOr(args=args, filters=filters)
+        if len(filter._filters) == 0:
+            return FilterTrue()
+        if len(filter._filters) == 1:
+            return filters[0]
+        return filter
+    def __init__(self, args=None, filters=None):
         if filters is None:
             if not args:
                 raise Exception("Filter of type FilterOr expects one or more filters (instead got \"%r\")" % (args))
-            filters = [FilterBase.create_filter(f) for f in args]
-        if len(filters) == 0:
-            return FilterFalse()
-        if len(filters) == 1:
-            return filters[0]
+            filters = [FilterBase.parse(f) for f in args]
         f = []
         for filter in filters:
             if isinstance(filter, FilterOr):
@@ -872,6 +931,27 @@ class FilterBgo(FilterBase):
         return isinstance(bz, BzInfoBgo)
     def __eq__(self, other):
         return isinstance(other, FilterBgo)
+class FilterBz(FilterBase):
+    def __init__(self, args=None, bz=None):
+        if bz is not None:
+            self._bz = set(bz)
+        else:
+            self._bz = set([bz for arg in args for bz in BzInfo.parse_bz(arg)[0]])
+        if not self._bz:
+            raise Exception("Missing bz arguments for FilterBz")
+    def __str__(self):
+        return "(bz %s)" % (" ".join([FilterBase.escape(str(bz)) for bz in self._bz]))
+    def __repr__(self):
+        return "('bz' %s)" % (",".join([FilterBase.escape(str(bz)) for bz in self._bz]))
+    def eval(self, bz):
+        for bz2 in self._bz:
+            if bz == bz2:
+                return True
+        return False
+    def __eq__(self, other):
+        if isinstance(other, FilterBz):
+            return other._bz == self._bz
+        return False
 class FilterMatch(FilterBase):
     def __init__(self, args):
         if len(args) != 2 or not isinstance(args[0], basestring) or not isinstance(args[1], basestring):
@@ -881,7 +961,7 @@ class FilterMatch(FilterBase):
     def __str__(self):
         return '(match %s %s)' % (FilterBase.escape(self._name), FilterBase.escape(self._value))
     def __repr__(self):
-        return "('match' %s %s)" % (FilterBase.escape(self._name), FilterBase.escape(self._value))
+        return "('match', %s, %s)" % (FilterBase.escape(self._name), FilterBase.escape(self._value))
     def eval(self, bz):
         bzdata = bz.getBZData()
         if not bzdata or self._name not in bzdata:
@@ -946,6 +1026,7 @@ FilterBase._mapping = {
         'not':                  FilterMapping(FilterNot, False),
         'and':                  FilterMapping(FilterAnd, False),
         'or':                   FilterMapping(FilterOr, False),
+        'bz':                   FilterMapping(FilterBz, False),
         'rhbz':                 FilterMapping(FilterRhbz),
         'bgo':                  FilterMapping(FilterBgo),
         'match':                FilterMapping(FilterMatch, False),
@@ -1001,42 +1082,12 @@ class CmdParseCommitMessage(CmdBase):
     def _order_keys(keys, ordered):
         return [o for o in ordered if o in keys]
 
-    def _parse_bz(self, obz, no_bz):
-        bz_tuples = [bz for bz in re.split('[,; ]', obz) if bz]
-        result_man2 = []
-        no_bz_skipped = []
-        has_any = False
-        for bzii in bz_tuples:
-            bzi = bzii.partition(':')
-            if not bzi[1] and not bzi[2]:
-                bzi = bzii.partition('#')
-            if not bzi[1] and not bzi[2]:
-                bzi = ['rh',bzi[0]]
-            else:
-                bzi = bzi[::2]
-            if not bzi[0] or not bzi[1] or not re.match('^[0-9]{4,7}$', bzi[1]):
-                raise Exception('invalid bug specifier \"%s\" (%s)' % (obz, bzii))
-            bz = None
-            if bzi[0] == 'rhbz' or bzi[0] == 'rh':
-                bz = BzInfoRhbz(bzi[1])
-            elif bzi[0] == 'bgo' or bzi[0] == 'bg':
-                bz = BzInfoBgo(bzi[1])
-            else:
-                raise Exception('invalid bug specifier \"%s\"' % obz)
-            if no_bz is None or bz not in no_bz:
-                result_man2.append(bz)
-            else:
-                no_bz_skipped.append(bz)
-            has_any = True
-        if not has_any:
-            raise Exception('invalid bug specifier \"%s\": contains no bugs' % obz)
-        return result_man2, no_bz_skipped
     def _parse_bzlist(self, bzlist, no_bz=None):
         i = 0
         result_man = []
         no_bz_skipped = []
         for obz in (bzlist if bzlist else []):
-            result_man2, no_bz_skipped2 = self._parse_bz(obz, no_bz)
+            result_man2, no_bz_skipped2 = BzInfo.parse_bz(obz, no_bz)
             result_man.append(UtilParseCommitMessage('bz:\"%s\"' % obz, result_man2, git_backend=False, commit_date=-1000+i))
             no_bz_skipped.extend(no_bz_skipped2)
             i = i + 1
@@ -1161,7 +1212,7 @@ class CmdParseCommitMessage(CmdBase):
                     excluded = excluded + commit_data.filter_out(filter)
 
             if excluded:
-                print("    --no-bz '%s'" % ",".join([str(result) for result in excluded]))
+                print("    ~bz %s" % ",".join([str(result) for result in excluded]))
                 excluded =sorted(list(set(excluded)))
                 for result in excluded:
                     print(result.to_string("    ", 0, self.options.color))
@@ -1245,7 +1296,7 @@ class CmdParseCommitMessage(CmdBase):
             printed_something = True
             print('=== List by BZ (%s) ===' % (len(result_bz_keys)))
             if result_bz_keys:
-                print("    --bz '%s'" % ",".join([str(result) for result in result_bz_keys]))
+                print("    bz %s" % ",".join([str(result) for result in result_bz_keys]))
             for result in result_bz_keys:
                 print(result.to_string("    ", self.options.verbose, self.options.color))
                 for commit_data in sorted(result_bz[result], key=lambda commit_data: commit_data.get_commit_date(), reverse=True):
