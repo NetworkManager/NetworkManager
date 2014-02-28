@@ -150,7 +150,7 @@ const char *nm_setting_wireless_security_get_pairwise             (NMSettingWire
 gboolean    nm_setting_wireless_security_add_pairwise             (NMSettingWirelessSecurity *setting, const char *pairwise);
 void        nm_setting_wireless_security_remove_pairwise          (NMSettingWirelessSecurity *setting, guint32 i);
 NM_AVAILABLE_IN_0_9_10
-gboolean    nm_setting_wireless_security_remove_pairwise_by_value (NMSettingWirelessSecurity *setting, const char *proto);
+gboolean    nm_setting_wireless_security_remove_pairwise_by_value (NMSettingWirelessSecurity *setting, const char *pairwise);
 void        nm_setting_wireless_security_clear_pairwise           (NMSettingWirelessSecurity *setting);
 
 guint32     nm_setting_wireless_security_get_num_groups        (NMSettingWirelessSecurity *setting);
@@ -158,7 +158,7 @@ const char *nm_setting_wireless_security_get_group             (NMSettingWireles
 gboolean    nm_setting_wireless_security_add_group             (NMSettingWirelessSecurity *setting, const char *group);
 void        nm_setting_wireless_security_remove_group          (NMSettingWirelessSecurity *setting, guint32 i);
 NM_AVAILABLE_IN_0_9_10
-gboolean    nm_setting_wireless_security_remove_group_by_value (NMSettingWirelessSecurity *setting, const char *proto);
+gboolean    nm_setting_wireless_security_remove_group_by_value (NMSettingWirelessSecurity *setting, const char *group);
 void        nm_setting_wireless_security_clear_groups          (NMSettingWirelessSecurity *setting);
 
 const char *nm_setting_wireless_security_get_psk           (NMSettingWirelessSecurity *setting);
