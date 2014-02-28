@@ -5760,6 +5760,120 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	g_object_unref (connection);
 }
 
+static void
+test_read_wifi_hidden (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	gboolean success;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-hidden",
+	                                   NULL, TYPE_WIRELESS, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRELESS_SETTING_NAME);
+
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	g_assert (s_wifi);
+	g_assert (nm_setting_wireless_get_hidden (s_wifi) == TRUE);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_wifi_hidden (void)
+{
+	NMConnection *connection, *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	char *uuid, *testfile = NULL, *val;
+	gboolean success;
+	GError *error = NULL;
+	shvarFile *f;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
+
+	connection = nm_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write WiFi Hidden",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_HIDDEN, TRUE,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	f = svNewFile (testfile);
+	g_assert (f);
+
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* re-read the file to check that what key was written. */
+	val = svGetValue (f, "SSID_HIDDEN", FALSE);
+	g_assert (val);
+	g_assert_cmpstr (val, ==, "yes");
+	g_free (val);
+	svCloseFile (f);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL,
+	                               NULL, NULL, NULL, NULL, &error, NULL);
+	unlink (testfile);
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
 #define TEST_IFCFG_WIRED_QETH_STATIC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-qeth-static"
 
 static void
@@ -13781,6 +13895,7 @@ int main (int argc, char **argv)
 	test_read_wifi_wpa_eap_tls ();
 	test_read_wifi_wpa_eap_ttls_tls ();
 	test_read_wifi_wep_eap_ttls_chap ();
+	g_test_add_func (TPATH "wifi/read-hidden", test_read_wifi_hidden);
 	test_read_wired_qeth_static ();
 	test_read_wired_ctc_static ();
 	test_read_wifi_wep_no_keys ();
@@ -13857,6 +13972,7 @@ int main (int argc, char **argv)
 	test_write_wifi_dynamic_wep_leap ();
 	test_write_wifi_wpa_then_open ();
 	test_write_wifi_wpa_then_wep_with_perms ();
+	g_test_add_func (TPATH "wifi/write-hidden", test_write_wifi_hidden);
 	test_write_wired_qeth_dhcp ();
 	test_write_wired_ctc_dhcp ();
 	test_write_permissions ();

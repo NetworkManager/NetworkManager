@@ -1,0 +1,10 @@
+# Intel Corporation 82540EP Gigabit Ethernet Controller (Mobile)
+TYPE=Wireless
+DEVICE=eth2
+HWADDR=00:16:41:11:22:33
+BOOTPROTO=dhcp
+ONBOOT=yes
+ESSID=blahblah
+MODE=Managed
+SSID_HIDDEN=yes
+
