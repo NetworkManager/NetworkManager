@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2013 Red Hat, Inc.
+ * (C) Copyright 2007 - 2014 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -257,6 +257,38 @@ nm_setting_wireless_security_remove_proto (NMSettingWirelessSecurity *setting, g
 }
 
 /**
+ * nm_setting_wireless_security_remove_proto_by_value:
+ * @setting: the #NMSettingWirelessSecurity
+ * @proto: the protocol to remove, one of "wpa" or "rsn"
+ *
+ * Removes a protocol from the allowed protocol list.
+ *
+ * Returns: %TRUE if the protocol was found and removed; %FALSE it it was not.
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_setting_wireless_security_remove_proto_by_value (NMSettingWirelessSecurity *setting,
+                                                    const char *proto)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), FALSE);
+	g_return_val_if_fail (proto != NULL, FALSE);
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	for (iter = priv->proto; iter; iter = g_slist_next (iter)) {
+		if (strcasecmp (proto, (char *) iter->data) == 0) {
+			priv->proto = g_slist_delete_link (priv->proto, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PROTO);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
  * nm_setting_wireless_security_clear_protos:
  * @setting: the #NMSettingWirelessSecurity
  *
@@ -369,6 +401,39 @@ nm_setting_wireless_security_remove_pairwise (NMSettingWirelessSecurity *setting
 	g_free (elt->data);
 	priv->pairwise = g_slist_delete_link (priv->pairwise, elt);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
+}
+
+/**
+ * nm_setting_wireless_security_remove_pairwise_by_value:
+ * @setting: the #NMSettingWirelessSecurity
+ * @pairwise: the encryption algorithm to remove, one of "tkip" or "ccmp"
+ *
+ * Removes an encryption algorithm from the allowed pairwise encryption
+ * algorithm list.
+ *
+ * Returns: %TRUE if the encryption algorith was found and removed; %FALSE it it was not.
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_setting_wireless_security_remove_pairwise_by_value (NMSettingWirelessSecurity *setting,
+                                                       const char *pairwise)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), FALSE);
+	g_return_val_if_fail (pairwise != NULL, FALSE);
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	for (iter = priv->pairwise; iter; iter = g_slist_next (iter)) {
+		if (strcasecmp (pairwise, (char *) iter->data) == 0) {
+			priv->pairwise = g_slist_delete_link (priv->pairwise, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 /**
@@ -485,6 +550,40 @@ nm_setting_wireless_security_remove_group (NMSettingWirelessSecurity *setting, g
 	g_free (elt->data);
 	priv->group = g_slist_delete_link (priv->group, elt);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_GROUP);
+}
+
+/**
+ * nm_setting_wireless_security_remove_group_by_value:
+ * @setting: the #NMSettingWirelessSecurity
+ * @group: the encryption algorithm to remove, one of "wep40", "wep104",
+ * "tkip", or "ccmp"
+ *
+ * Removes an encryption algorithm from the allowed groupwise encryption
+ * algorithm list.
+ *
+ * Returns: %TRUE if the algorithm was found and removed; %FALSE it it was not.
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_setting_wireless_security_remove_group_by_value (NMSettingWirelessSecurity *setting,
+                                                    const char *group)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), FALSE);
+	g_return_val_if_fail (group != NULL, FALSE);
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	for (iter = priv->group; iter; iter = g_slist_next (iter)) {
+		if (strcasecmp (group, (char *) iter->data) == 0) {
+			priv->group = g_slist_delete_link (priv->group, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_WIRELESS_SECURITY_GROUP);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 /**

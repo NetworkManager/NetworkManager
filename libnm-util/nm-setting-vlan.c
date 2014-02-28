@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 - 2013 Red Hat, Inc.
+ * (C) Copyright 2011 - 2014 Red Hat, Inc.
  */
 
 #include <stdlib.h>
@@ -419,6 +419,78 @@ nm_setting_vlan_remove_priority (NMSettingVlan *setting,
 	item = g_slist_nth (list, idx);
 	priority_map_free ((PriorityMap *) (item->data));
 	set_map (setting, map, g_slist_delete_link (list, item));
+}
+
+/**
+ * nm_setting_vlan_remove_priority_by_value:
+ * @setting: the #NMSettingVlan
+ * @map: the type of priority map
+ * @from: the priority to map to @to
+ * @to: the priority to map @from to
+ *
+ * Removes the priority map @form:@to from the #NMSettingVlan:ingress_priority_map
+ * or #NMSettingVlan:egress_priority_map (according to @map argument)
+ * properties.
+ *
+ * Returns: %TRUE if the priority mapping was found and removed; %FALSE if it was not.
+ *
+ * Since: 0.9.10
+ */
+gboolean
+nm_setting_vlan_remove_priority_by_value (NMSettingVlan *setting,
+                                          NMVlanPriorityMap map,
+                                          guint32 from,
+                                          guint32 to)
+{
+	GSList *list = NULL, *iter = NULL;
+	PriorityMap *item;
+
+	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
+	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
+
+	list = get_map (setting, map);
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		item = iter->data;
+		if (item->from == from && item->to == to) {
+			priority_map_free ((PriorityMap *) (iter->data));
+			set_map (setting, map, g_slist_delete_link (list, iter));
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
+ * nm_setting_vlan_remove_priority_str_by_value:
+ * @setting: the #NMSettingVlan
+ * @map: the type of priority map
+ * @str: the string which contains a priority map, like "3:7"
+ *
+ * Removes the priority map @str from the #NMSettingVlan:ingress_priority_map
+ * or #NMSettingVlan:egress_priority_map (according to @map argument)
+ * properties.
+ *
+ * Returns: %TRUE if the priority mapping was found and removed; %FALSE if it was not.
+ *
+ * Since: 0.9.10
+ */
+gboolean
+nm_setting_vlan_remove_priority_str_by_value (NMSettingVlan *setting,
+                                              NMVlanPriorityMap map,
+                                              const char *str)
+{
+	GSList *list;
+	PriorityMap *item;
+
+	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
+	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
+
+	list = get_map (setting, map);
+	item = priority_map_new_from_str (map, str);
+	if (!item)
+		return FALSE;
+
+	return nm_setting_vlan_remove_priority_by_value (setting, map, item->from, item->to);
 }
 
 /**

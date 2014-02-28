@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2010 Red Hat, Inc.
+ * (C) Copyright 2007 - 2014 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -189,24 +189,32 @@ guint32       nm_setting_ip4_config_get_num_dns            (NMSettingIP4Config *
 guint32       nm_setting_ip4_config_get_dns                (NMSettingIP4Config *setting, guint32 i);
 gboolean      nm_setting_ip4_config_add_dns                (NMSettingIP4Config *setting, guint32 dns);
 void          nm_setting_ip4_config_remove_dns             (NMSettingIP4Config *setting, guint32 i);
+NM_AVAILABLE_IN_0_9_10
+gboolean      nm_setting_ip4_config_remove_dns_by_value    (NMSettingIP4Config *setting, guint32 dns);
 void          nm_setting_ip4_config_clear_dns              (NMSettingIP4Config *setting);
 
-guint32       nm_setting_ip4_config_get_num_dns_searches   (NMSettingIP4Config *setting);
-const char *  nm_setting_ip4_config_get_dns_search         (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_add_dns_search         (NMSettingIP4Config *setting, const char *dns_search);
-void          nm_setting_ip4_config_remove_dns_search      (NMSettingIP4Config *setting, guint32 i);
-void          nm_setting_ip4_config_clear_dns_searches     (NMSettingIP4Config *setting);
+guint32       nm_setting_ip4_config_get_num_dns_searches       (NMSettingIP4Config *setting);
+const char *  nm_setting_ip4_config_get_dns_search             (NMSettingIP4Config *setting, guint32 i);
+gboolean      nm_setting_ip4_config_add_dns_search             (NMSettingIP4Config *setting, const char *dns_search);
+void          nm_setting_ip4_config_remove_dns_search          (NMSettingIP4Config *setting, guint32 i);
+NM_AVAILABLE_IN_0_9_10
+gboolean      nm_setting_ip4_config_remove_dns_search_by_value (NMSettingIP4Config *setting, const char *dns_search);
+void          nm_setting_ip4_config_clear_dns_searches         (NMSettingIP4Config *setting);
 
-guint32       nm_setting_ip4_config_get_num_addresses      (NMSettingIP4Config *setting);
-NMIP4Address *nm_setting_ip4_config_get_address            (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_add_address            (NMSettingIP4Config *setting, NMIP4Address *address);
-void          nm_setting_ip4_config_remove_address         (NMSettingIP4Config *setting, guint32 i);
-void          nm_setting_ip4_config_clear_addresses        (NMSettingIP4Config *setting);
+guint32       nm_setting_ip4_config_get_num_addresses       (NMSettingIP4Config *setting);
+NMIP4Address *nm_setting_ip4_config_get_address             (NMSettingIP4Config *setting, guint32 i);
+gboolean      nm_setting_ip4_config_add_address             (NMSettingIP4Config *setting, NMIP4Address *address);
+void          nm_setting_ip4_config_remove_address          (NMSettingIP4Config *setting, guint32 i);
+NM_AVAILABLE_IN_0_9_10
+gboolean      nm_setting_ip4_config_remove_address_by_value (NMSettingIP4Config *setting, NMIP4Address *address);
+void          nm_setting_ip4_config_clear_addresses         (NMSettingIP4Config *setting);
 
 guint32       nm_setting_ip4_config_get_num_routes         (NMSettingIP4Config *setting);
 NMIP4Route *  nm_setting_ip4_config_get_route              (NMSettingIP4Config *setting, guint32 i);
 gboolean      nm_setting_ip4_config_add_route              (NMSettingIP4Config *setting, NMIP4Route *route);
 void          nm_setting_ip4_config_remove_route           (NMSettingIP4Config *setting, guint32 i);
+NM_AVAILABLE_IN_0_9_10
+gboolean      nm_setting_ip4_config_remove_route_by_value  (NMSettingIP4Config *setting, NMIP4Route *route);
 void          nm_setting_ip4_config_clear_routes           (NMSettingIP4Config *setting);
 
 gboolean      nm_setting_ip4_config_get_ignore_auto_routes (NMSettingIP4Config *setting);

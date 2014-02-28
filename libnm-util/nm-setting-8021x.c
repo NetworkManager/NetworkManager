@@ -277,6 +277,38 @@ nm_setting_802_1x_remove_eap_method (NMSetting8021x *setting, guint32 i)
 }
 
 /**
+ * nm_setting_802_1x_remove_eap_method_by_value:
+ * @setting: the #NMSetting8021x
+ * @eap: the name of the EAP method to remove
+ *
+ * Removes the allowed EAP method @method.
+ *
+ * Returns: %TRUE if the EAP method was founs and removed, %FALSE if it was not.
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_setting_802_1x_remove_eap_method_by_value (NMSetting8021x *setting,
+                                              const char *eap)
+{
+	NMSetting8021xPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
+	g_return_val_if_fail (eap != NULL, FALSE);
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	for (iter = priv->eap; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (eap, (char *) iter->data)) {
+			priv->eap = g_slist_delete_link (priv->eap, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_EAP);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
  * nm_setting_802_1x_clear_eap_methods:
  * @setting: the #NMSetting8021x
  *
@@ -680,6 +712,39 @@ nm_setting_802_1x_remove_altsubject_match (NMSetting8021x *setting, guint32 i)
 	g_free (elt->data);
 	priv->altsubject_matches = g_slist_delete_link (priv->altsubject_matches, elt);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_ALTSUBJECT_MATCHES);
+}
+
+/**
+ * nm_setting_802_1x_remove_altsubject_match_by_value:
+ * @setting: the #NMSetting8021x
+ * @altsubject_match: the altSubjectName to remove
+ *
+ * Removes the allowed altSubjectName @altsubject_match.
+ *
+ * Returns: %TRUE if the alternative subject name match was found and removed,
+ *          %FALSE if it was not.
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_setting_802_1x_remove_altsubject_match_by_value (NMSetting8021x *setting,
+                                                    const char *altsubject_match)
+{
+	NMSetting8021xPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
+	g_return_val_if_fail (altsubject_match != NULL, FALSE);
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	for (iter = priv->altsubject_matches; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (altsubject_match, (char *) iter->data)) {
+			priv->altsubject_matches = g_slist_delete_link (priv->altsubject_matches, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_ALTSUBJECT_MATCHES);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 /**
@@ -1227,6 +1292,40 @@ nm_setting_802_1x_remove_phase2_altsubject_match (NMSetting8021x *setting, guint
 	g_free (elt->data);
 	priv->phase2_altsubject_matches = g_slist_delete_link (priv->phase2_altsubject_matches, elt);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES);
+}
+
+
+/**
+ * nm_setting_802_1x_remove_phase2_altsubject_match_by_value:
+ * @setting: the #NMSetting8021x
+ * @phase2_altsubject_match: the "phase 2" altSubjectName to remove
+ *
+ * Removes the allowed "phase 2" altSubjectName @phase2_altsubject_match.
+ *
+ * Returns: %TRUE if the alternative subject name match for "phase 2" was found and removed,
+ *          %FALSE if it was not.
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_setting_802_1x_remove_phase2_altsubject_match_by_value (NMSetting8021x *setting,
+                                                           const char *phase2_altsubject_match)
+{
+	NMSetting8021xPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
+	g_return_val_if_fail (phase2_altsubject_match != NULL, FALSE);
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	for (iter = priv->phase2_altsubject_matches; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (phase2_altsubject_match, (char *) iter->data)) {
+			priv->phase2_altsubject_matches = g_slist_delete_link (priv->phase2_altsubject_matches, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 /**

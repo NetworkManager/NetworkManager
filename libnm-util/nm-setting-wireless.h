@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
+ * (C) Copyright 2007 - 2014 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -145,6 +145,11 @@ gboolean          nm_setting_wireless_add_mac_blacklist_item      (NMSettingWire
 NM_AVAILABLE_IN_0_9_10
 void              nm_setting_wireless_remove_mac_blacklist_item   (NMSettingWireless *setting,
                                                                    guint32 idx);
+NM_AVAILABLE_IN_0_9_10
+gboolean          nm_setting_wireless_remove_mac_blacklist_item_by_value (NMSettingWireless *setting,
+                                                                          const char *mac);
+NM_AVAILABLE_IN_0_9_10
+void              nm_setting_wireless_clear_mac_blacklist_items   (NMSettingWireless *setting);
 
 guint32           nm_setting_wireless_get_mtu                (NMSettingWireless *setting);
 gboolean          nm_setting_wireless_get_hidden             (NMSettingWireless *setting);

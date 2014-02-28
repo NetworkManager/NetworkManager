@@ -447,6 +447,51 @@ nm_setting_connection_remove_permission (NMSettingConnection *setting,
 	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_PERMISSIONS);
 }
 
+/**
+ * nm_setting_connection_remove_permission_by_value:
+ * @setting: the #NMSettingConnection
+ * @ptype: the permission type; at this time only "user" is supported
+ * @pitem: the permission item formatted as required for @ptype
+ * @detail: (allow-none): unused at this time; must be %NULL
+ *
+ * Removes the permission from the connection.
+ * At this time, only the "user" permission type is supported, and @pitem must
+ * be a username. See #NMSettingConnection:permissions: for more details.
+ *
+ * Returns: %TRUE if the permission was found and removed; %FALSE if it was not.
+ * 
+ * Since: 0.9.10
+ */
+gboolean
+nm_setting_connection_remove_permission_by_value (NMSettingConnection *setting,
+                                                  const char *ptype,
+                                                  const char *pitem,
+                                                  const char *detail)
+{
+	NMSettingConnectionPrivate *priv;
+	Permission *p;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
+	g_return_val_if_fail (ptype, FALSE);
+	g_return_val_if_fail (strlen (ptype) > 0, FALSE);
+	g_return_val_if_fail (detail == NULL, FALSE);
+
+	/* Only "user" for now... */
+	g_return_val_if_fail (strcmp (ptype, "user") == 0, FALSE);
+
+	priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+	for (iter = priv->permissions; iter; iter = g_slist_next (iter)) {
+		p = iter->data;
+		if (strcmp (pitem, p->item) == 0) {
+			permission_free ((Permission *) iter->data);
+			priv->permissions = g_slist_delete_link (priv->permissions, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_PERMISSIONS);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
 
 /**
  * nm_setting_connection_get_autoconnect:
@@ -658,6 +703,39 @@ nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 id
 	g_free (elt->data);
 	priv->secondaries = g_slist_delete_link (priv->secondaries, elt);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_SECONDARIES);
+}
+
+/**
+ * nm_setting_connection_remove_secondary_by_value:
+ * @setting: the #NMSettingConnection
+ * @sec_uuid: the secondary connection UUID to remove
+ *
+ * Removes the secondary coonnection UUID @sec_uuid.
+ *
+ * Returns: %TRUE if the secondary connection UUID was found and removed; %FALSE if it was not.
+ *
+ * Since: 0.9.10
+ **/
+gboolean
+nm_setting_connection_remove_secondary_by_value (NMSettingConnection *setting,
+                                                 const char *sec_uuid)
+{
+	NMSettingConnectionPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
+	g_return_val_if_fail (sec_uuid != NULL, FALSE);
+	g_return_val_if_fail (sec_uuid[0] != '\0', FALSE);
+
+	priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
+	for (iter = priv->secondaries; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (sec_uuid, (char *) iter->data)) {
+			priv->secondaries = g_slist_delete_link (priv->secondaries, iter);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_CONNECTION_SECONDARIES);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 /**

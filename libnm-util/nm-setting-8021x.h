@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2012 Red Hat, Inc.
+ * (C) Copyright 2007 - 2014 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -170,6 +170,8 @@ guint32           nm_setting_802_1x_get_num_eap_methods              (NMSetting8
 const char *      nm_setting_802_1x_get_eap_method                   (NMSetting8021x *setting, guint32 i);
 gboolean          nm_setting_802_1x_add_eap_method                   (NMSetting8021x *setting, const char *eap);
 void              nm_setting_802_1x_remove_eap_method                (NMSetting8021x *setting, guint32 i);
+NM_AVAILABLE_IN_0_9_10
+gboolean          nm_setting_802_1x_remove_eap_method_by_value       (NMSetting8021x *setting, const char *eap);
 void              nm_setting_802_1x_clear_eap_methods                (NMSetting8021x *setting);
 
 const char *      nm_setting_802_1x_get_identity                     (NMSetting8021x *setting);
@@ -195,11 +197,14 @@ const char *      nm_setting_802_1x_get_subject_match                (NMSetting8
 
 guint32           nm_setting_802_1x_get_num_altsubject_matches       (NMSetting8021x *setting);
 const char *      nm_setting_802_1x_get_altsubject_match             (NMSetting8021x *setting,
-																	  guint32 i);
+                                                                      guint32 i);
 gboolean          nm_setting_802_1x_add_altsubject_match             (NMSetting8021x *setting,
-																	  const char *altsubject_match);
+                                                                      const char *altsubject_match);
 void              nm_setting_802_1x_remove_altsubject_match          (NMSetting8021x *setting,
-																	  guint32 i);
+                                                                      guint32 i);
+NM_AVAILABLE_IN_0_9_10
+gboolean          nm_setting_802_1x_remove_altsubject_match_by_value (NMSetting8021x *setting,
+                                                                      const char *altsubject_match);
 void              nm_setting_802_1x_clear_altsubject_matches         (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_client_cert_scheme      (NMSetting8021x *setting);
@@ -232,14 +237,17 @@ gboolean               nm_setting_802_1x_set_phase2_ca_cert          (NMSetting8
 
 const char *      nm_setting_802_1x_get_phase2_subject_match         (NMSetting8021x *setting);
 
-guint32           nm_setting_802_1x_get_num_phase2_altsubject_matches   (NMSetting8021x *setting);
-const char *      nm_setting_802_1x_get_phase2_altsubject_match         (NMSetting8021x *setting,
-																		 guint32 i);
-gboolean          nm_setting_802_1x_add_phase2_altsubject_match         (NMSetting8021x *setting,
-																		 const char *phase2_altsubject_match);
-void              nm_setting_802_1x_remove_phase2_altsubject_match      (NMSetting8021x *setting,
-																		 guint32 i);
-void              nm_setting_802_1x_clear_phase2_altsubject_matches     (NMSetting8021x *setting);
+guint32           nm_setting_802_1x_get_num_phase2_altsubject_matches       (NMSetting8021x *setting);
+const char *      nm_setting_802_1x_get_phase2_altsubject_match             (NMSetting8021x *setting,
+                                                                             guint32 i);
+gboolean          nm_setting_802_1x_add_phase2_altsubject_match             (NMSetting8021x *setting,
+                                                                             const char *phase2_altsubject_match);
+void              nm_setting_802_1x_remove_phase2_altsubject_match          (NMSetting8021x *setting,
+                                                                             guint32 i);
+NM_AVAILABLE_IN_0_9_10
+gboolean          nm_setting_802_1x_remove_phase2_altsubject_match_by_value (NMSetting8021x *setting,
+                                                                             const char *phase2_altsubject_match);
+void              nm_setting_802_1x_clear_phase2_altsubject_matches         (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_phase2_client_cert_scheme   (NMSetting8021x *setting);
 const GByteArray *     nm_setting_802_1x_get_phase2_client_cert_blob     (NMSetting8021x *setting);
