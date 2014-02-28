@@ -29,9 +29,12 @@ _nmcli_dev_status()
 }
 
 _nmcli_array_has_value() {
-    # expects an array variable ARRAY defined and returns true
-    # if one of the arguments $@ is contained in ${ARRAY[@]}
+    # expects the name of an array as first parameter and
+    # returns true if if one of the remaining arguments is
+    # contained in the array ${$1[@]}
+    eval "local ARRAY=(\"\${$1[@]}\")"
     local arg a
+    shift
     for arg; do
         for a in "${ARRAY[@]}"; do
             if [[ "$a" = "$arg" ]]; then
@@ -40,6 +43,31 @@ _nmcli_array_has_value() {
         done
     done
     return 1
+}
+
+_nmcli_array_delete_at()
+{
+    eval "local ARRAY=(\"\${$1[@]}\")"
+    local i
+    local tmp=()
+    local lower=$2
+    local upper=${3:-$lower}
+
+    # for some reason the following fails. So this clumsy workaround...
+    #   A=(a "")
+    #   echo " >> ${#A[@]}"
+    #    >> 2
+    #   A=("${A[@]:1}")
+    #   echo " >> ${#A[@]}"
+    #    >> 0
+    # ... seriously???
+
+    for i in "${!ARRAY[@]}"; do
+        if [[ "$i" -lt "$2" || "$i" -gt "${3-$2}" ]]; then
+            tmp=("${tmp[@]}" "${ARRAY[$i]}")
+        fi
+    done
+    eval "$1=(\"\${tmp[@]}\")"
 }
 
 _nmcli_compl_match_option()
@@ -84,32 +112,32 @@ _nmcli_compl_OPTIONS()
         REMOVE_LONG_OPTION="$W"
         case "$W" in
             terse)
-                words=("${words[@]:1}")
+                _nmcli_array_delete_at words 0
                 ;;
             pretty)
-                words=("${words[@]:1}")
+                _nmcli_array_delete_at words 0
                 ;;
             nocheck)
-                words=("${words[@]:1}")
+                _nmcli_array_delete_at words 0
                 ;;
             ask)
-                words=("${words[@]:1}")
+                _nmcli_array_delete_at words 0
                 ;;
             version)
-                words=("${words[@]:1}")
+                _nmcli_array_delete_at words 0
                 ;;
             help)
-                words=("${words[@]:1}")
+                _nmcli_array_delete_at words 0
                 ;;
             temporary)
-                words=("${words[@]:1}")
+                _nmcli_array_delete_at words 0
                 ;;
             mode)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "tabular multiline"
                    return 0
                 fi
-                words=("${words[@]:2}")
+                _nmcli_array_delete_at words 0 1
                 ;;
             fields)
                 if [[ "${#words[@]}" -eq 2 ]]; then
@@ -120,21 +148,21 @@ _nmcli_compl_OPTIONS()
                         profile active"
                    return 0
                 fi
-                words=("${words[@]:2}")
+                _nmcli_array_delete_at words 0 1
                 ;;
             escape)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "no yes"
                    return 0
                 fi
-                words=("${words[@]:2}")
+                _nmcli_array_delete_at words 0 1
                 ;;
             wait)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list ""
                    return 0
                 fi
-                words=("${words[@]:2}")
+                _nmcli_array_delete_at words 0 1
                 ;;
             *)
                 # something unexpected. We are finished with parsing the OPTIONS.
@@ -179,8 +207,7 @@ _nmcli_compl_ARGS()
             COMMAND_ARGS_WAIT_OPTIONS=0
             return 1
         fi
-        ARRAY=("${OPTIONS_ALL[@]}")
-        if ! _nmcli_array_has_value "${words[0]}"; then
+        if ! _nmcli_array_has_value OPTIONS_ALL "${words[0]}"; then
             # This is an entirely unknown option.
             OPTIONS_UNKNOWN_OPTION="?${words[0]}"
             return 1
@@ -441,15 +468,14 @@ _nmcli_compl_ARGS()
 
 
         if [[ "${#OPTIONS_NEXT_GROUP[@]}" -gt 0 ]]; then
-            ARRAY=("${OPTIONS_NEXT_GROUP[@]}")
-            if _nmcli_array_has_value "${words[0]}"; then
+            if _nmcli_array_has_value OPTIONS_NEXT_GROUP "${words[0]}"; then
                 # the current value is from the next group...
                 # We back off, because the current group is complete.
                 return 1
             fi
         fi
 
-        words=("${words[@]:$N_REMOVE_WORDS}")
+        _nmcli_array_delete_at words 0 $((N_REMOVE_WORDS-1))
         # remove the options already seen.
         for i in ${!OPTIONS[*]}; do
             if [[ "${OPTIONS[$i]}" = "${REMOVE_OPTIONS[0]}" || "${OPTIONS[$i]}" = "${REMOVE_OPTIONS[1]}" ]]; then
@@ -468,11 +494,10 @@ _nmcli_compl_ARGS()
 # as id|uuid|path|apath. Parse that connection parameter.
 _nmcli_compl_ARGS_CONNECTION()
 {
-    ARRAY=("${OPTIONS[@]}")
-    if ! _nmcli_array_has_value "${words[0]}"; then
+    if ! _nmcli_array_has_value OPTIONS "${words[0]}"; then
         COMMAND_CONNECTION_TYPE=
         COMMAND_CONNECTION_ID="${words[0]}"
-        words=("${words[@]:1}")
+        _nmcli_array_delete_at words 0
         return 1
     fi
     COMMAND_CONNECTION_TYPE="${words[0]}"
@@ -487,40 +512,40 @@ _nmcli_compl_ARGS_CONNECTION()
                 _nmcli_list_nl "$(_nmcli_con_show NAME $CON_TYPE)"
                 return 0
             fi
-            words=("${words[@]:2}")
+            _nmcli_array_delete_at words 0 1
             ;;
         uuid)
             if [[ ${#words[@]} -le 2 ]]; then
                 _nmcli_list_nl "$(_nmcli_con_show UUID $CON_TYPE)"
                 return 0
             fi
-            words=("${words[@]:2}")
+            _nmcli_array_delete_at words 0 1
             ;;
         path)
             if [[ ${#words[@]} -le 2 ]]; then
                 _nmcli_list_nl "$(_nmcli_con_show DBUS-PATH $CON_TYPE)"
                 return 0
             fi
-            words=("${words[@]:2}")
+            _nmcli_array_delete_at words 0 1
             ;;
         apath)
             if [[ ${#words[@]} -le 2 ]]; then
                 _nmcli_list_nl "$(_nmcli_con_show ACTIVE-PATH --active)"
                 return 0
             fi
-            words=("${words[@]:2}")
+            _nmcli_array_delete_at words 0 1
             ;;
         ifname)
             if [[ ${#words[@]} -le 2 ]]; then
                 _nmcli_list_nl "$(_nmcli_dev_status DEVICE)"
                 return 0
             fi
-            words=("${words[@]:2}")
+            _nmcli_array_delete_at words 0 1
             ;;
         *)
             COMMAND_CONNECTION_TYPE=
             COMMAND_CONNECTION_ID="${words[0]}"
-            words=("${words[@]:1}")
+            _nmcli_array_delete_at words 0
             ;;
     esac
     return 1
@@ -562,7 +587,8 @@ _nmcli()
     # we don't care about any arguments after the current cursor position
     # because we only parse from left to right. So, if there are some arguments
     # right of the cursor, just ignore them. Also don't care about ${words[0]}.
-    words=("${words[@]:1:$cword}")
+    _nmcli_array_delete_at words $((cword+1)) ${#words[@]}
+    _nmcli_array_delete_at words 0
 
     # _init_completion returns the words with all the quotes and escaping
     # characters. We don't care about them, drop them at first.
@@ -577,7 +603,7 @@ _nmcli()
         cur=''
     fi
 
-    local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS ARRAY OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP
+    local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP
     local COMMAND_CONNECTION_TYPE COMMAND_CONNECTION_ID OPTIONS_MANDATORY_IFNAME
     local COMMAND_CONNECTION_ACTIVE=""
 
@@ -626,7 +652,7 @@ _nmcli()
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND "${words[2]}" level domains
                         else
-                            words=("${words[@]:2}")
+                            _nmcli_array_delete_at words 0 1
                             OPTIONS=(level domains)
                             _nmcli_compl_ARGS
                         fi
@@ -666,11 +692,11 @@ _nmcli()
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME)")" active
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             OPTIONS=(id uuid path apath)
-                            words=("${words[@]:2}")
+                            _nmcli_array_delete_at words 0 1
                             case "${words[0]}" in
                                 --a|--ac|--act|--acti|--activ|--active)
                                     COMMAND_CONNECTION_ACTIVE=1
-                                    words=("${words[@]:1}")
+                                    _nmcli_array_delete_at words 0
                                     ;;
                             esac
                             while [[ ${#words[@]} -gt 0 ]]; do
@@ -688,7 +714,7 @@ _nmcli()
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "ifname\nid\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             local COMMAND_CONNECTION_TYPE=''
-                            words=("${words[@]:2}")
+                            _nmcli_array_delete_at words 0 1
                             OPTIONS=(ifname id uuid path)
                             _nmcli_compl_ARGS_CONNECTION && return 0
 
@@ -704,7 +730,7 @@ _nmcli()
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME --active)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
-                            words=("${words[@]:2}")
+                            _nmcli_array_delete_at words 0 1
                             OPTIONS=(id uuid path apath)
                             COMMAND_CONNECTION_ACTIVE=1
                             _nmcli_compl_ARGS_CONNECTION
@@ -714,7 +740,7 @@ _nmcli()
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND "${words[2]}" type ifname con-name autoconnect
                         elif [[ ${#words[@]} -gt 3 ]]; then
-                            words=("${words[@]:2}")
+                            _nmcli_array_delete_at words 0 1
                             OPTIONS_TYPE=
                             OPTIONS=(type ifname con-name autoconnect save)
                             OPTIONS_MANDATORY=(type ifname)
@@ -723,12 +749,10 @@ _nmcli()
                             _nmcli_compl_ARGS && return 0
 
                             OPTIONS_MANDATORY_IFNAME=
-                            ARRAY=("${OPTIONS[@]}")
-                            if _nmcli_array_has_value "${OPTIONS_MANDATORY[@]}"; then
+                            if _nmcli_array_has_value OPTIONS "${OPTIONS_MANDATORY[@]}"; then
                                 # we still have some missing mandatory options...
                                 if [[ "$OPTIONS_UNKNOWN_OPTION" != '' ]]; then
-                                    ARRAY="${OPTIONS[@]}"
-                                    if ! _nmcli_array_has_value "${OPTIONS_UNKNOWN_OPTION:1}"; then
+                                    if ! _nmcli_array_has_value OPTIONS "${OPTIONS_UNKNOWN_OPTION:1}"; then
                                         # if we encountered an unknown option while having mandatory
                                         # options, just return.
                                         return 0
@@ -846,8 +870,7 @@ _nmcli()
                                         # we have an unknown option, but still mandatory ones that must be fullfiled first.
                                         return 0
                                     fi
-                                    ARRAY=("${OPTIONS_IP[@]}")
-                                    if ! _nmcli_array_has_value "${OPTIONS_UNKNOWN_OPTION:1}"; then
+                                    if ! _nmcli_array_has_value OPTIONS_IP "${OPTIONS_UNKNOWN_OPTION:1}"; then
                                         # the unknown option is NOT an IP option.
                                         return 0
                                     fi
@@ -862,15 +885,13 @@ _nmcli()
                                 # we have some mandatory options... don't check for IP options yet...
                                 _nmcli_compl_ARGS && return 0
 
-                                ARRAY=("${OPTIONS[@]}")
-                                if _nmcli_array_has_value "${OPTIONS_MANDATORY[@]}"; then
+                                if _nmcli_array_has_value OPTIONS "${OPTIONS_MANDATORY[@]}"; then
                                     _nmcli_list "$(echo "${OPTIONS[@]}")"
                                     return 0
                                 fi
 
                                 if [[ "$OPTIONS_UNKNOWN_OPTION" != "" ]]; then
-                                    ARRAY=("${OPTIONS_IP[@]}")
-                                    if ! _nmcli_array_has_value "${OPTIONS_UNKNOWN_OPTION:1}"; then
+                                    if ! _nmcli_array_has_value OPTIONS_IP "${OPTIONS_UNKNOWN_OPTION:1}"; then
                                         # the unknown option is NOT an IP option.
                                         return 0
                                     fi
@@ -905,7 +926,7 @@ _nmcli()
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\ntype\ncon-name\n%s" "$(_nmcli_con_show NAME)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
-                            words=("${words[@]:2}")
+                            _nmcli_array_delete_at words 0 1
                             if [[ "${words[0]}" = 'type' || "${words[0]}" = 'con-name' ]]; then
                                 OPTIONS=(type con-name)
                                 _nmcli_compl_ARGS
@@ -919,7 +940,7 @@ _nmcli()
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")" temporary
                         elif [[ ${#words[@]} -gt 3 ]]; then
-                            words=("${words[@]:2}")
+                            _nmcli_array_delete_at words 0 1
 
                             LONG_OPTIONS=(help temporary)
                             _nmcli_compl_OPTIONS
@@ -928,8 +949,7 @@ _nmcli()
                                     return 0
                                     ;;
                                 1)
-                                    ARRAY="${LONG_OPTIONS[@]}"
-                                    if _nmcli_array_has_value "help"; then
+                                    if _nmcli_array_has_value LONG_OPTIONS "help"; then
                                         _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")" "${LONG_OPTIONS[@]}"
                                     fi
                                     return 0
@@ -945,7 +965,7 @@ _nmcli()
                                 elif [[ ${#words[@]} -le 2 ]]; then
                                     return 0
                                 fi
-                                words=("${words[@]:2}")
+                                _nmcli_array_delete_at words 0 1
                             done
                             _nmcli_list_nl "$(nmcli --fields profile connection show "${COMMAND_CONNECTION_TYPE:-id}" "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
                             return 0
@@ -955,7 +975,7 @@ _nmcli()
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
-                            words=("${words[@]:2}")
+                            _nmcli_array_delete_at words 0 1
 
                             LONG_OPTIONS=(help)
                             _nmcli_compl_OPTIONS
@@ -964,8 +984,7 @@ _nmcli()
                                     return 0
                                     ;;
                                 1)
-                                    ARRAY="${LONG_OPTIONS[@]}"
-                                    if ! _nmcli_array_has_value "help"; then
+                                    if ! _nmcli_array_has_value LONG_OPTIONS "help"; then
                                         return 0
                                     fi
                                     ;;
@@ -1012,7 +1031,7 @@ _nmcli()
                         else
                             case "${words[2]}" in
                                 l|li|lis|list)
-                                    words=("${words[@]:3}")
+                                    _nmcli_array_delete_at words 0 2
                                     OPTIONS=(ifname bssid)
                                     _nmcli_compl_ARGS
                                     ;;
@@ -1024,13 +1043,13 @@ _nmcli()
                                             _nmcli_list_nl "$(printf "%s\n%s" "$(_nmcli_wifi_list SSID)" "$(_nmcli_wifi_list BSSID)")"
                                         fi
                                     else
-                                        words=("${words[@]:4}")
+                                        _nmcli_array_delete_at words 0 3
                                         local OPTIONS=(password wep-key-type ifname bssid name private)
                                         _nmcli_compl_ARGS
                                     fi
                                     ;;
                                 r|re|res|resc|resca|rescan)
-                                    words=("${words[@]:3}")
+                                    _nmcli_array_delete_at words 0 2
                                     OPTIONS=(ifname)
                                     _nmcli_compl_ARGS
                                     ;;
@@ -1043,7 +1062,7 @@ _nmcli()
                         else
                             case "${words[2]}" in
                                 l|li|lis|list)
-                                    words=("${words[@]:3}")
+                                    _nmcli_array_delete_at words 0 2
                                     OPTIONS=(ifname nsp)
                                     _nmcli_compl_ARGS
                                     ;;
