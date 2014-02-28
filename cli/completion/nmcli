@@ -938,9 +938,17 @@ _nmcli()
 
                             OPTIONS=(id uuid path apath)
                             _nmcli_compl_ARGS_CONNECTION && return 0
-                            if [[ ${#words[@]} -le 1 ]]; then
-                                _nmcli_list_nl "$(nmcli connection show "${COMMAND_CONNECTION_TYPE:-id}" "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
-                            fi
+                            while [[ "${#words[@]}" -gt 0 ]]; do
+                                if [[ ${#words[@]} -le 1 ]]; then
+                                    _nmcli_list_nl "$(nmcli --fields profile connection show "${COMMAND_CONNECTION_TYPE:-id}" "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
+                                    return 0
+                                elif [[ ${#words[@]} -le 2 ]]; then
+                                    return 0
+                                fi
+                                words=("${words[@]:2}")
+                            done
+                            _nmcli_list_nl "$(nmcli --fields profile connection show "${COMMAND_CONNECTION_TYPE:-id}" "$COMMAND_CONNECTION_ID" 2>/dev/null | sed -n 's/^\([^:]\+\):.*/\1/p')"
+                            return 0
                         fi
                         ;;
                     de|del|dele|delet|delete)
