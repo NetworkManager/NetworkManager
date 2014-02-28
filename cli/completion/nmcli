@@ -101,6 +101,9 @@ _nmcli_compl_OPTIONS()
             help)
                 words=("${words[@]:1}")
                 ;;
+            temporary)
+                words=("${words[@]:1}")
+                ;;
             mode)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "tabular multiline"
@@ -914,9 +917,25 @@ _nmcli()
                         ;;
                     m|mo|mod|modi|modif|modify)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")"
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")" temporary
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             words=("${words[@]:2}")
+
+                            LONG_OPTIONS=(help temporary)
+                            _nmcli_compl_OPTIONS
+                            case $? in
+                                0)
+                                    return 0
+                                    ;;
+                                1)
+                                    ARRAY="${LONG_OPTIONS[@]}"
+                                    if _nmcli_array_has_value "help"; then
+                                        _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")" "${LONG_OPTIONS[@]}"
+                                    fi
+                                    return 0
+                                    ;;
+                            esac
+
                             OPTIONS=(id uuid path apath)
                             _nmcli_compl_ARGS_CONNECTION && return 0
                             if [[ ${#words[@]} -le 1 ]]; then
