@@ -42,6 +42,27 @@ _nmcli_array_has_value() {
     return 1
 }
 
+_nmcli_compl_match_option()
+{
+    local S="$1"
+    local V
+    shift
+    if [[ "${S:0:2}" == "--" ]]; then
+        S="${S:2}"
+    elif [[ "${S:0:1}" == "-" ]]; then
+        S="${S:1}"
+    fi
+    for V; do
+        case "$V" in
+            "$S"*)
+                echo "$V"
+                return 0
+                ;;
+        esac
+    done
+    return 1
+}
+
 # OPTIONS appear first at the command line (before the OBJECT).
 # This iterates over the argument list and tries to complete
 # the options. If there are options that are to be completed,
@@ -50,54 +71,44 @@ _nmcli_array_has_value() {
 # array and return with zero (so that completion of OBJECT can continue).
 _nmcli_compl_OPTIONS()
 {
-    local OPTIONS=( -t --terse -p --pretty -m --mode -f --fields -e --escape -n --nocheck -a --ask -w --wait -v --version -h --help )
-    local i REMOVE_OPTIONS
+    local i REMOVE_LONG_OPTION W
 
     for (( ; ; )); do
         if [[ "${#words[@]}" -le 1 ]]; then
-            # we show for completion either the (remaining) OPTIONS
-            # (if the current word starts with a dash) or the OBJECT list
-            # otherwise.
-            if [[ "${words[0]:0:1}" != '-' ]]; then
-                OPTIONS=(help general networking radio connection device)
-            fi
-            _nmcli_list "$(echo "${OPTIONS[@]}")"
-            return 0
+            return 1
         fi
-        case "${words[0]}" in
-            -t|--terse)
-                REMOVE_OPTIONS=(-t --terse)
+        W="$(_nmcli_compl_match_option "${words[0]}" "${LONG_OPTIONS[@]}")"
+        if [[ $? != 0 ]]; then
+            return 2
+        fi
+        REMOVE_LONG_OPTION="$W"
+        case "$W" in
+            terse)
                 words=("${words[@]:1}")
                 ;;
-            -p|--pretty)
-                REMOVE_OPTIONS=(-p --pretty)
+            pretty)
                 words=("${words[@]:1}")
                 ;;
-            -n|--nocheck)
-                REMOVE_OPTIONS=(-n --nocheck)
+            nocheck)
                 words=("${words[@]:1}")
                 ;;
-            -a|--ask)
-                REMOVE_OPTIONS=(-a --ask)
+            ask)
                 words=("${words[@]:1}")
                 ;;
-            -v|--version)
-                REMOVE_OPTIONS=(-v --version)
+            version)
                 words=("${words[@]:1}")
                 ;;
-            -h|--help)
-                REMOVE_OPTIONS=(-h --help)
+            help)
                 words=("${words[@]:1}")
                 ;;
-            -m|--mode)
+            mode)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "tabular multiline"
                    return 0
                 fi
-                REMOVE_OPTIONS=(-m --mode)
                 words=("${words[@]:2}")
                 ;;
-            -f|--fields)
+            fields)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "all common
                         NAME UUID TYPE TIMESTAMP TIMESTAMP-REAL AUTOCONNECT READONLY DBUS-PATH ACTIVE DEVICE STATE ACTIVE-PATH
@@ -106,37 +117,36 @@ _nmcli_compl_OPTIONS()
                         profile active"
                    return 0
                 fi
-                REMOVE_OPTIONS=(-f --fields)
                 words=("${words[@]:2}")
                 ;;
-            -e|--escape)
+            escape)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "no yes"
                    return 0
                 fi
-                REMOVE_OPTIONS=(-e --escape)
                 words=("${words[@]:2}")
                 ;;
-            -w|--wait)
+            wait)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list ""
                    return 0
                 fi
-                REMOVE_OPTIONS=(-w --wait)
                 words=("${words[@]:2}")
                 ;;
             *)
                 # something unexpected. We are finished with parsing the OPTIONS.
-                return 1
+                return 2
                 ;;
         esac
 
         # remove the options already seen.
-        for i in ${!OPTIONS[*]}; do
-            if [[ "${OPTIONS[$i]}" = "${REMOVE_OPTIONS[0]}" || "${OPTIONS[$i]}" = "${REMOVE_OPTIONS[1]}" ]]; then
-                unset OPTIONS[$i]
-            fi
-        done
+        if [[ "$REMOVE_LONG_OPTION" != "" ]]; then
+            for i in ${!LONG_OPTIONS[@]}; do
+                if [[ "${LONG_OPTIONS[$i]}" == "$REMOVE_LONG_OPTION" ]]; then
+                    unset LONG_OPTIONS[$i]
+                fi
+            done
+        fi
     done
 }
 
@@ -556,13 +566,33 @@ _nmcli()
         cur=''
     fi
 
-    _nmcli_compl_OPTIONS && return 0
-
-    local command="${words[1]}"
     local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS ARRAY OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP
     local COMMAND_CONNECTION_TYPE COMMAND_CONNECTION_ID OPTIONS_MANDATORY_IFNAME
     local COMMAND_CONNECTION_ACTIVE=""
 
+    local LONG_OPTIONS=(terse pretty mode fields escape nocheck ask wait version help)
+    _nmcli_compl_OPTIONS
+    case $? in
+        0)
+            return 0
+            ;;
+        1)
+            # we show for completion either the (remaining) OPTIONS
+            # (if the current word starts with a dash) or the OBJECT list
+            # otherwise.
+            if [[ "${words[0]:0:1}" != '-' ]]; then
+                OPTIONS=(help general networking radio connection device)
+            elif [[ "${words[0]:1:1}" == '-' ||  "${words[0]}" == "-" ]]; then
+                OPTIONS=("${LONG_OPTIONS[@]/#/--}")
+            else
+                OPTIONS=("${LONG_OPTIONS[@]/#/-}")
+            fi
+            _nmcli_list "${OPTIONS[*]}"
+            return 0
+            ;;
+    esac
+
+    local command="${words[1]}"
     case "${words[0]}" in
         h|he|hel|help)
             ;;
