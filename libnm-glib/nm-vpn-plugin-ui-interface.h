@@ -86,10 +86,10 @@ typedef enum /*< flags >*/ {
  * information to UI programs.
  **/
 typedef enum {
-	/*< private >*/
+	/* private */
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_FIRST = 0x1000,
 
-	/*< public >*/
+	/* public */
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_NAME = NM_VPN_PLUGIN_UI_INTERFACE_PROP_FIRST,
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_DESC,
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_SERVICE
