@@ -535,12 +535,20 @@ _nmcli_compl_COMMAND() {
 
 _nmcli_compl_COMMAND_nl() {
     local command="$1"
+    local a="$2"
     shift
-    if [[ "x${command:0:1}" == 'x-' ]]; then
-        _nmcli_list_nl "$(printf "%s-h\n--help\n%s" "" "$*")"
+    shift
+    local V=("$@")
+    if [[ "${command[0]:0:1}" != '-' ]]; then
+        V=("${V[@]/#/--}" help)
+    elif [[ "${command[0]:1:1}" == '-' ||  "${command[0]}" == "-" ]]; then
+        V=("${V[@]/#/--}" --help)
     else
-        _nmcli_list_nl "$(printf "help\n%s" "$*")"
+        V=("${V[@]/#/-}" -help)
     fi
+    local IFS=$'\n'
+    V="${V[*]}"
+    _nmcli_list_nl "$(printf "%s%s\n%s" "" "$V" "$a")"
 }
 
 _nmcli()
@@ -652,7 +660,7 @@ _nmcli()
                 case "$command" in
                     s|sh|sho|show)
                         if [[ ${#words[@]} -eq 3 ]]; then
-                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n--active\n%s" "$(_nmcli_con_show NAME)")"
+                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME)")" active
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             OPTIONS=(id uuid path apath)
                             words=("${words[@]:2}")
