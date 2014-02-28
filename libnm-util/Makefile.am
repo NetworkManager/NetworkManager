@@ -56,6 +56,7 @@ libnm_util_include_HEADERS = 		\
 libnm_util_la_private_headers = \
 	crypto.h			\
 	nm-param-spec-specialized.h	\
+	nm-util-private.h		\
 	nm-utils-private.h		\
 	nm-setting-private.h
 
@@ -90,6 +91,7 @@ libnm_util_la_csources = \
 	nm-setting-wireless.c		\
 	nm-setting-wireless-security.c	\
 	nm-setting-vpn.c		\
+	nm-util-private.c		\
 	nm-utils-enum-types.c		\
 	nm-utils.c			\
 	nm-value-transforms.c
