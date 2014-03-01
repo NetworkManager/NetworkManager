@@ -400,6 +400,9 @@ class BzInfo:
     def resolves_str(self):
         return "%s #%s" % (self.bztype, self.bzid)
 
+    @property
+    def bzDataIsCached(self):
+        return hasattr(self, '_bzdata')
     def getBZData(self, field=None):
         if not hasattr(self, '_bzdata'):
             self._bzdata = self._fetchBZData()
@@ -677,7 +680,7 @@ class UtilParseCommitMessage:
         res = []
         exc = []
         for r in self.result:
-            if filter.eval(r):
+            if filter.eval_filter(r):
                 res.append(r)
             else:
                 exc.append(r)
@@ -719,7 +722,12 @@ class FilterBase():
     def __init__(self, args):
         if args:
             raise Exception("No arguments expected (instead got \"%r\")" % (args))
-    def eval(self, bz):
+    def eval_filter(self, bz):
+        res = self._eval_filter(bz, decide_fast=True)
+        if res is not None:
+            return res
+        return self._eval_filter(bz, decide_fast=False)
+    def _eval_filter(self, bz, decide_fast=False):
         return True
     @staticmethod
     def escape(s):
@@ -806,7 +814,7 @@ class FilterFalse(FilterBase):
         return 'False'
     def __repr__(self):
         return "'False'"
-    def eval(self, bz):
+    def _eval_filter(self, bz, decide_fast=False):
         return False
     def __eq__(self, other):
         return isinstance(other, FilterFalse)
@@ -827,8 +835,11 @@ class FilterNot(FilterBase):
         return '(not %s)' % self._filter
     def __repr__(self):
         return "('not', %s)" % (repr(self._filter))
-    def eval(self, bz):
-        return not self._filter.eval(bz)
+    def _eval_filter(self, bz, decide_fast=False):
+        res = self._filter._eval_filter(bz, decide_fast=decide_fast)
+        if decide_fast and res is None:
+            return None
+        return not res
     def __eq__(self, other):
         return isinstance(other, FilterNot) and other._filter == self._filter
 class FilterAnd(FilterBase):
@@ -864,10 +875,16 @@ class FilterAnd(FilterBase):
         return '(and %s)' % (" ".join([str(f) for f in self._filters]))
     def __repr__(self):
         return "('and', %s)" % (", ".join([repr(f) for f in self._filters]))
-    def eval(self, bz):
+    def _eval_filter(self, bz, decide_fast=False):
+        has_undecided = False
         for f in self._filters:
-            if not f.eval(bz):
+            res = f._eval_filter(bz, decide_fast)
+            if decide_fast and res is None:
+                has_undecided = True
+            elif not res:
                 return False
+        if has_undecided:
+            return None
         return True
 class FilterOr(FilterBase):
     @staticmethod
@@ -902,10 +919,16 @@ class FilterOr(FilterBase):
         return '(or %s)' % (" ".join([str(f) for f in self._filters]))
     def __repr__(self):
         return "('or', %s)" % (", ".join([repr(f) for f in self._filters]))
-    def eval(self, bz):
+    def _eval_filter(self, bz, decide_fast=False):
+        has_undecided = False
         for f in self._filters:
-            if f.eval(bz):
+            res = f._eval_filter(bz, decide_fast)
+            if decide_fast and res is None:
+                has_undecided = True
+            elif res:
                 return True
+        if has_undecided:
+            return None
         return False
 class FilterRhbz(FilterBase):
     def __init__(self, args=None):
@@ -915,7 +938,7 @@ class FilterRhbz(FilterBase):
         return 'rhbz'
     def __repr__(self):
         return "'rhbz'"
-    def eval(self, bz):
+    def _eval_filter(self, bz, decide_fast=False):
         return isinstance(bz, BzInfoRhbz)
     def __eq__(self, other):
         return isinstance(other, FilterRhbz)
@@ -927,7 +950,7 @@ class FilterBgo(FilterBase):
         return 'bgo'
     def __repr__(self):
         return "'bgo'"
-    def eval(self, bz):
+    def _eval_filter(self, bz, decide_fast=False):
         return isinstance(bz, BzInfoBgo)
     def __eq__(self, other):
         return isinstance(other, FilterBgo)
@@ -943,11 +966,8 @@ class FilterBz(FilterBase):
         return "(bz %s)" % (" ".join([FilterBase.escape(str(bz)) for bz in self._bz]))
     def __repr__(self):
         return "('bz' %s)" % (",".join([FilterBase.escape(str(bz)) for bz in self._bz]))
-    def eval(self, bz):
-        for bz2 in self._bz:
-            if bz == bz2:
-                return True
-        return False
+    def _eval_filter(self, bz, decide_fast=False):
+        return bz in self._bz
     def __eq__(self, other):
         if isinstance(other, FilterBz):
             return other._bz == self._bz
@@ -962,7 +982,9 @@ class FilterMatch(FilterBase):
         return '(match %s %s)' % (FilterBase.escape(self._name), FilterBase.escape(self._value))
     def __repr__(self):
         return "('match', %s, %s)" % (FilterBase.escape(self._name), FilterBase.escape(self._value))
-    def eval(self, bz):
+    def _eval_filter(self, bz, decide_fast=False):
+        if decide_fast and not bz.bzDataIsCached:
+            return None
         bzdata = bz.getBZData()
         if not bzdata or self._name not in bzdata:
             return False
