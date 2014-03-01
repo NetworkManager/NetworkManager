@@ -83,7 +83,7 @@ _nmcli_compl_match_option()
     for V; do
         case "$V" in
             "$S"*)
-                echo "$V"
+                printf "%s" "$V"
                 return 0
                 ;;
         esac
@@ -235,7 +235,7 @@ _nmcli_compl_ARGS()
                         # split the comma separaeted domain string into its parts LOGD
                         local oIFS="$IFS"
                         IFS=","
-                        local LOGD=($(echo "${words[1]}" | sed 's/\(^\|,\)/,#/g'))
+                        local LOGD=($(printf '%s' "${words[1]}" | sed 's/\(^\|,\)/,#/g'))
                         IFS="$oIFS"
                         unset oIFS
 
@@ -459,9 +459,6 @@ _nmcli_compl_ARGS()
                 fi
                 ;;
             *)
-                echo
-                echo "unexpected option. This is a bug in the completion. Check for \"${words[0]}\""
-                echo
                 return 1
                 ;;
         esac
@@ -592,8 +589,8 @@ _nmcli()
 
     # _init_completion returns the words with all the quotes and escaping
     # characters. We don't care about them, drop them at first.
-    for i in ${!words[*]}; do
-        words[i]="$(echo "${words[i]}" | xargs 2>/dev/null || true)"
+    for i in ${!words[@]}; do
+        words[i]="$(printf '%s' "${words[i]}" | xargs printf '%s\n' 2>/dev/null || true)"
     done
 
     # In case the cursor is not at the end of the line,
