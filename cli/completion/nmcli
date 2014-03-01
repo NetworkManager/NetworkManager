@@ -99,7 +99,7 @@ _nmcli_compl_match_option()
 # array and return with zero (so that completion of OBJECT can continue).
 _nmcli_compl_OPTIONS()
 {
-    local i REMOVE_LONG_OPTION W
+    local i W
 
     for (( ; ; )); do
         if [[ "${#words[@]}" -le 1 ]]; then
@@ -109,7 +109,24 @@ _nmcli_compl_OPTIONS()
         if [[ $? != 0 ]]; then
             return 2
         fi
-        REMOVE_LONG_OPTION="$W"
+
+        # remove the options already seen.
+        for i in ${!LONG_OPTIONS[@]}; do
+            if [[ "${LONG_OPTIONS[$i]}" == "$W" ]]; then
+                _nmcli_array_delete_at LONG_OPTIONS $i
+                break
+            fi
+        done
+
+        if [[ "$HELP_ONLY_AS_FIRST" == '1' ]]; then
+            for i in ${!LONG_OPTIONS[@]}; do
+                if [[ "${LONG_OPTIONS[$i]}" == "help" ]]; then
+                    _nmcli_array_delete_at LONG_OPTIONS $i
+                    break
+                fi
+            done
+        fi
+
         case "$W" in
             terse)
                 _nmcli_array_delete_at words 0
@@ -128,6 +145,11 @@ _nmcli_compl_OPTIONS()
                 ;;
             help)
                 _nmcli_array_delete_at words 0
+                if [[ "$HELP_ONLY_AS_FIRST" == 1 ]]; then
+                    HELP_ONLY_AS_FIRST=0
+                    return 0
+                fi
+                HELP_ONLY_AS_FIRST=0
                 ;;
             temporary)
                 _nmcli_array_delete_at words 0
@@ -169,15 +191,6 @@ _nmcli_compl_OPTIONS()
                 return 2
                 ;;
         esac
-
-        # remove the options already seen.
-        if [[ "$REMOVE_LONG_OPTION" != "" ]]; then
-            for i in ${!LONG_OPTIONS[@]}; do
-                if [[ "${LONG_OPTIONS[$i]}" == "$REMOVE_LONG_OPTION" ]]; then
-                    unset LONG_OPTIONS[$i]
-                fi
-            done
-        fi
     done
 }
 
@@ -564,12 +577,19 @@ _nmcli_compl_COMMAND_nl() {
     shift
     shift
     local V=("$@")
+    local H=
     if [[ "${command[0]:0:1}" != '-' ]]; then
-        V=("${V[@]/#/--}" help)
+        V=("${V[@]/#/--}")
+        H=help
     elif [[ "${command[0]:1:1}" == '-' ||  "${command[0]}" == "-" ]]; then
-        V=("${V[@]/#/--}" --help)
+        V=("${V[@]/#/--}")
+        H=--help
     else
-        V=("${V[@]/#/-}" -help)
+        V=("${V[@]/#/-}")
+        H=-help
+    fi
+    if [[ "x$COMPL_COMMAND_NO_HELP" == x ]]; then
+        V=("${V[@]}" "$H")
     fi
     local IFS=$'\n'
     V="${V[*]}"
@@ -578,7 +598,7 @@ _nmcli_compl_COMMAND_nl() {
 
 _nmcli()
 {
-    local cur prev words cword
+    local cur prev words cword i
     _init_completion || return
 
     # we don't care about any arguments after the current cursor position
@@ -601,12 +621,20 @@ _nmcli()
     fi
 
     local OPTIONS_UNKNOWN_OPTION OPTIONS_TYPE OPTIONS_TYPED OPTIONS OPTIONS_MANDATORY COMMAND_ARGS_WAIT_OPTIONS OPTIONS_IP OPTIONS_MANDATORY OPTIONS_NEXT_GROUP
-    local COMMAND_CONNECTION_TYPE COMMAND_CONNECTION_ID OPTIONS_MANDATORY_IFNAME
+    local COMMAND_CONNECTION_TYPE COMMAND_CONNECTION_ID OPTIONS_MANDATORY_IFNAME HELP_ONLY_AS_FIRST
     local COMMAND_CONNECTION_ACTIVE=""
 
+    HELP_ONLY_AS_FIRST=
     local LONG_OPTIONS=(terse pretty mode fields escape nocheck ask wait version help)
     _nmcli_compl_OPTIONS
-    case $? in
+    i=$?
+
+    if [[ "$HELP_ONLY_AS_FIRST" == '0' ]]; then
+        # got a --help. No more completion.
+        return 0
+    fi
+
+    case $i in
         0)
             return 0
             ;;
@@ -940,13 +968,14 @@ _nmcli()
                             _nmcli_array_delete_at words 0 1
 
                             LONG_OPTIONS=(help temporary)
+                            HELP_ONLY_AS_FIRST=1
                             _nmcli_compl_OPTIONS
                             case $? in
                                 0)
                                     return 0
                                     ;;
                                 1)
-                                    if _nmcli_array_has_value LONG_OPTIONS "help"; then
+                                    if [[ "$HELP_ONLY_AS_FIRST" == 1 ]]; then
                                         _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")" "${LONG_OPTIONS[@]}"
                                     fi
                                     return 0
