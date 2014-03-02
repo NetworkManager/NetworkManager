@@ -15,6 +15,7 @@
 %define snapshot %{nil}
 %define git_sha __COMMIT__
 %define realversion __VERSION__
+%define release_version __RELEASE_VERSION__
 
 %global with_nmtui 1
 
@@ -46,7 +47,7 @@ Name: NetworkManager
 Summary: Network connection manager and user applications
 Epoch: 1
 Version: %{realversion}
-Release: __RELEASE_VERSION__%{snapshot}.%{git_sha}%{?dist}
+Release: %{release_version}%{snapshot}.%{git_sha}%{?dist}
 Group: System Environment/Base
 License: GPLv2+
 URL: http://www.gnome.org/projects/NetworkManager/
