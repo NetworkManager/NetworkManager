@@ -140,6 +140,9 @@ _nmcli_compl_OPTIONS()
             ask)
                 _nmcli_array_delete_at words 0
                 ;;
+            active)
+                _nmcli_array_delete_at words 0
+                ;;
             version)
                 _nmcli_array_delete_at words 0
                 ;;
@@ -564,11 +567,19 @@ _nmcli_compl_ARGS_CONNECTION()
 _nmcli_compl_COMMAND() {
     local command="$1"
     shift
-    if [[ "x${command:0:1}" == 'x-' ]]; then
-        _nmcli_list "-h --help"
+    local V=("$@")
+    local H=
+    if [[ "${command[0]:0:1}" != '-' ]]; then
+        H=help
+    elif [[ "${command[0]:1:1}" == '-' ||  "${command[0]}" == "-" ]]; then
+        H=--help
     else
-        _nmcli_list "help $*"
+        H=-help
     fi
+    if [[ "x$COMPL_COMMAND_NO_HELP" == x ]]; then
+        V=("${V[@]}" "$H")
+    fi
+    _nmcli_list "${V[*]}"
 }
 
 _nmcli_compl_COMMAND_nl() {
@@ -716,14 +727,35 @@ _nmcli()
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME)")" active
                         elif [[ ${#words[@]} -gt 3 ]]; then
-                            OPTIONS=(id uuid path apath)
                             _nmcli_array_delete_at words 0 1
-                            case "${words[0]}" in
-                                --a|--ac|--act|--acti|--activ|--active)
-                                    COMMAND_CONNECTION_ACTIVE=1
-                                    _nmcli_array_delete_at words 0
+
+                            LONG_OPTIONS=(help active)
+                            HELP_ONLY_AS_FIRST=1
+                            _nmcli_compl_OPTIONS
+                            i=$?
+
+                            if ! _nmcli_array_has_value LONG_OPTIONS active; then
+                                COMMAND_CONNECTION_ACTIVE=1
+                            fi
+
+                            case $i in
+                                0)
+                                    return 0
+                                    ;;
+                                1)
+                                    if [[ "$HELP_ONLY_AS_FIRST" == 1 ]]; then
+                                        if [[ "x$COMMAND_CONNECTION_ACTIVE" = x ]]; then
+                                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME)")" "${LONG_OPTIONS[@]}"
+
+                                        else
+                                            _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME --active)")" "${LONG_OPTIONS[@]}"
+                                        fi
+                                    fi
+                                    return 0
                                     ;;
                             esac
+
+                            OPTIONS=(id uuid path apath)
                             while [[ ${#words[@]} -gt 0 ]]; do
                                 _nmcli_compl_ARGS_CONNECTION && return 0
                             done
@@ -738,8 +770,25 @@ _nmcli()
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "ifname\nid\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
-                            local COMMAND_CONNECTION_TYPE=''
                             _nmcli_array_delete_at words 0 1
+
+                            LONG_OPTIONS=(help)
+                            HELP_ONLY_AS_FIRST=1
+                            _nmcli_compl_OPTIONS
+
+                           case $? in
+                                0)
+                                    return 0
+                                    ;;
+                                1)
+                                    if [[ "$HELP_ONLY_AS_FIRST" == 1 ]]; then
+                                        _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "ifname\nid\nuuid\npath\n%s" "$(_nmcli_con_show NAME)")" "${LONG_OPTIONS[@]}"
+                                    fi
+                                    return 0
+                                    ;;
+                            esac
+
+                            local COMMAND_CONNECTION_TYPE=''
                             OPTIONS=(ifname id uuid path)
                             _nmcli_compl_ARGS_CONNECTION && return 0
 
@@ -756,9 +805,25 @@ _nmcli()
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME --active)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             _nmcli_array_delete_at words 0 1
+
+                            LONG_OPTIONS=(help)
+                            HELP_ONLY_AS_FIRST=1
+                            _nmcli_compl_OPTIONS
+                           case $? in
+                                0)
+                                    return 0
+                                    ;;
+                                1)
+                                    if [[ "$HELP_ONLY_AS_FIRST" == 1 ]]; then
+                                        _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\napath\n%s" "$(_nmcli_con_show NAME --active)")" "${LONG_OPTIONS[@]}"
+                                    fi
+                                    return 0
+                                    ;;
+                            esac
+
                             OPTIONS=(id uuid path apath)
                             COMMAND_CONNECTION_ACTIVE=1
-                            _nmcli_compl_ARGS_CONNECTION
+                            _nmcli_compl_ARGS_CONNECTION && return 0
                         fi
                         ;;
                     a|ad|add)
@@ -766,6 +831,22 @@ _nmcli()
                             _nmcli_compl_COMMAND "${words[2]}" type ifname con-name autoconnect
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             _nmcli_array_delete_at words 0 1
+
+                            LONG_OPTIONS=(help)
+                            HELP_ONLY_AS_FIRST=1
+                            _nmcli_compl_OPTIONS
+                           case $? in
+                                0)
+                                    return 0
+                                    ;;
+                                1)
+                                    if [[ "$HELP_ONLY_AS_FIRST" == 1 ]]; then
+                                        _nmcli_compl_COMMAND "${words[2]}" type ifname con-name autoconnect
+                                    fi
+                                    return 0
+                                    ;;
+                            esac
+
                             OPTIONS_TYPE=
                             OPTIONS=(type ifname con-name autoconnect save)
                             OPTIONS_MANDATORY=(type ifname)
@@ -952,6 +1033,23 @@ _nmcli()
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\ntype\ncon-name\n%s" "$(_nmcli_con_show NAME)")"
                         elif [[ ${#words[@]} -gt 3 ]]; then
                             _nmcli_array_delete_at words 0 1
+
+                            LONG_OPTIONS=(help)
+                            HELP_ONLY_AS_FIRST=1
+                            _nmcli_compl_OPTIONS
+
+                           case $? in
+                                0)
+                                    return 0
+                                    ;;
+                                1)
+                                    if [[ "$HELP_ONLY_AS_FIRST" == 1 ]]; then
+                                        _nmcli_compl_COMMAND_nl "${words[2]}" "$(printf "id\nuuid\npath\ntype\ncon-name\n%s" "$(_nmcli_con_show NAME)")" "${LONG_OPTIONS[@]}"
+                                    fi
+                                    return 0
+                                    ;;
+                            esac
+
                             if [[ "${words[0]}" = 'type' || "${words[0]}" = 'con-name' ]]; then
                                 OPTIONS=(type con-name)
                                 _nmcli_compl_ARGS
