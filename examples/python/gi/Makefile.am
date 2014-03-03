@@ -4,4 +4,5 @@ EXTRA_DIST = \
 	firewall-zone.py \
 	show-wifi-networks.py \
 	get_ips.py \
-	add_connection.py
+	add_connection.py \
+	get-active-connections.py
