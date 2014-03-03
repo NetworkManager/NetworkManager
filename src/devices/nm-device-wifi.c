@@ -1142,6 +1142,7 @@ complete_connection (NMDevice *device,
 	NMAccessPoint *ap = NULL;
 	const GByteArray *ssid = NULL;
 	GSList *iter;
+	gboolean hidden = FALSE;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -1191,6 +1192,8 @@ complete_connection (NMDevice *device,
 			g_slist_free (settings);
 			if (!valid)
 				return FALSE;
+
+			hidden = TRUE;
 		}
 	} else {
 		ap = get_ap_by_path (self, specific_object);
@@ -1267,6 +1270,9 @@ complete_connection (NMDevice *device,
 	                           TRUE);
 	g_free (str_ssid);
 	g_free (format);
+
+	if (hidden)
+		g_object_set (s_wifi, NM_SETTING_WIRELESS_HIDDEN, TRUE, NULL);
 
 	setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
 	if (setting_mac) {
