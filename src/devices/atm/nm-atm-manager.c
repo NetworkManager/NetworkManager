@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <gudev/gudev.h>
+#include <gmodule.h>
 
 #include "nm-atm-manager.h"
 #include "nm-device-adsl.h"

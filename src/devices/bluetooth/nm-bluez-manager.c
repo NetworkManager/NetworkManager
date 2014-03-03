@@ -21,6 +21,7 @@
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
+#include <gmodule.h>
 #include <gio/gio.h>
 
 #include "nm-logging.h"

@@ -19,6 +19,8 @@
  */
 
 #include <string.h>
+#include <gmodule.h>
+
 #include "config.h"
 #include "nm-device-factory.h"
 #include "nm-wwan-factory.h"
