@@ -20,11 +20,13 @@ global:
 	nm_access_point_get_wpa_flags;
 	nm_access_point_new;
 	nm_active_connection_get_connection;
+	nm_active_connection_get_connection_type;
 	nm_active_connection_get_default6;
 	nm_active_connection_get_default;
 	nm_active_connection_get_devices;
 	nm_active_connection_get_dhcp4_config;
 	nm_active_connection_get_dhcp6_config;
+	nm_active_connection_get_id;
 	nm_active_connection_get_ip4_config;
 	nm_active_connection_get_ip6_config;
 	nm_active_connection_get_master;
