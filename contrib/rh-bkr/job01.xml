@@ -57,6 +57,11 @@
 					<param name="TEST_MAPPER" value="True"/>
 				</params>
 			</task>
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="journalctl -b &gt; /tmp/journal_all.log; rhts-submit-log -l '/tmp/journal_all.log'"/>
+				</params>
+			</task>
 		</recipe>
 	</recipeSet>
 </job>
