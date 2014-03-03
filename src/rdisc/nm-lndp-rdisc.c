@@ -40,6 +40,8 @@ typedef struct {
 	GIOChannel *event_channel;
 	guint event_id;
 	guint timeout_id;
+
+	int solicitations_left;
 } NMLNDPRDiscPrivate;
 
 #define NM_LNDP_RDISC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_LNDP_RDISC, NMLNDPRDiscPrivate))
@@ -48,19 +50,30 @@ G_DEFINE_TYPE (NMLNDPRDisc, nm_lndp_rdisc, NM_TYPE_RDISC)
 
 /******************************************************************/
 
+static inline gint32
+ipv6_sysctl_get (const char *ifname, const char *property, gint32 defval)
+{
+	return nm_platform_sysctl_get_int32 (nm_utils_ip6_property_path (ifname, property), defval);
+}
+
 NMRDisc *
-nm_lndp_rdisc_new (int ifindex, const char *ifname, gint32 max_addresses)
+nm_lndp_rdisc_new (int ifindex, const char *ifname)
 {
 	NMRDisc *rdisc;
 	NMLNDPRDiscPrivate *priv;
 	int error;
 
 	rdisc = g_object_new (NM_TYPE_LNDP_RDISC, NULL);
-	g_assert (rdisc);
 
 	rdisc->ifindex = ifindex;
 	rdisc->ifname = g_strdup (ifname);
-	rdisc->max_addresses = max_addresses;
+
+	rdisc->max_addresses = ipv6_sysctl_get (ifname, "max_addresses",
+	                                        NM_RDISC_MAX_ADDRESSES_DEFAULT);
+	rdisc->rtr_solicitations = ipv6_sysctl_get (ifname, "router_solicitations",
+	                                            NM_RDISC_RTR_SOLICITATIONS_DEFAULT);
+	rdisc->rtr_solicitation_interval = ipv6_sysctl_get (ifname, "router_solicitation_interval",
+	                                                    NM_RDISC_RTR_SOLICITATION_INTERVAL_DEFAULT);
 
 	priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 	error = ndp_open (&priv->ndp);
@@ -210,8 +223,6 @@ add_dns_domain (NMRDisc *rdisc, const NMRDiscDNSDomain *new)
 	return TRUE;
 }
 
-#define RETRY 10
-
 static gboolean
 send_rs (NMRDisc *rdisc)
 {
@@ -228,13 +239,23 @@ send_rs (NMRDisc *rdisc)
 	error = ndp_msg_send (priv->ndp, msg);
 	if (error)
 		error ("(%s): cannot send router solicitation: %d.", rdisc->ifname, error);
+	else
+		priv->solicitations_left--;
 
 	ndp_msg_destroy (msg);
 
-	debug ("(%s): scheduling router solicitation retry in %d seconds.", rdisc->ifname, RETRY);
-	priv->send_rs_id = g_timeout_add_seconds (RETRY, (GSourceFunc) send_rs, rdisc);
+	if (priv->solicitations_left > 0) {
+		debug ("(%s): scheduling router solicitation retry in %d seconds.",
+		       rdisc->ifname, rdisc->rtr_solicitation_interval);
+		priv->send_rs_id = g_timeout_add_seconds (rdisc->rtr_solicitation_interval,
+		                                          (GSourceFunc) send_rs, rdisc);
+	} else {
+		debug ("(%s): did not receive a router advertisement after %d solicitations.",
+		       rdisc->ifname, rdisc->rtr_solicitations);
+		priv->send_rs_id = 0;
+	}
 
-	return FALSE;
+	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -245,6 +266,7 @@ solicit (NMRDisc *rdisc)
 	if (!priv->send_rs_id) {
 		debug ("(%s): scheduling router solicitation.", rdisc->ifname);
 		priv->send_rs_id = g_idle_add ((GSourceFunc) send_rs, rdisc);
+		priv->solicitations_left = rdisc->rtr_solicitations;
 	}
 }
 

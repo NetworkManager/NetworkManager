@@ -445,13 +445,6 @@ restore_ip6_properties (NMDevice *self)
 		nm_device_ipv6_sysctl_set (self, key, value);
 }
 
-static gint32
-sysctl_get_ipv6_max_addresses (NMDevice *self)
-{
-	return nm_platform_sysctl_get_int32 (ip6_property_path (self, "max_addresses"), 16);
-}
-
-
 /*
  * Get driver info from SIOCETHTOOL ioctl() for 'iface'
  * Returns driver and firmware versions to 'driver_version and' 'firmware_version'
@@ -3498,8 +3491,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 		priv->ac_ip6_config = NULL;
 	}
 
-	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self), ip_iface,
-	                                 sysctl_get_ipv6_max_addresses (self));
+	priv->rdisc = nm_lndp_rdisc_new (nm_device_get_ip_ifindex (self), ip_iface);
 	if (!priv->rdisc) {
 		nm_log_err (LOGD_IP6, "(%s): failed to start router discovery.", ip_iface);
 		return FALSE;

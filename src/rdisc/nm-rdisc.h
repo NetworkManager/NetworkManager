@@ -94,6 +94,10 @@ typedef enum {
 	NM_RDISC_CONFIG_HOP_LIMIT                           = 1 << 6,
 } NMRDiscConfigMap;
 
+#define NM_RDISC_MAX_ADDRESSES_DEFAULT 16
+#define NM_RDISC_RTR_SOLICITATIONS_DEFAULT 3
+#define NM_RDISC_RTR_SOLICITATION_INTERVAL_DEFAULT 4
+
 /**
  * NMRDisc:
  * @ifindex: Interface index
@@ -108,6 +112,8 @@ typedef struct {
 	char *ifname;
 	GBytes *lladdr;
 	gint32 max_addresses;
+	gint32 rtr_solicitations;
+	gint32 rtr_solicitation_interval;
 
 	NMRDiscDHCPLevel dhcp_level;
 	GArray *gateways;

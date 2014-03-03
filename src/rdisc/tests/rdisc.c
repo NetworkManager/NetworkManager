@@ -1,40 +1,68 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+/* rdisc.c - test program
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Copyright (C) 2013 Red Hat, Inc.
+ */
+
 #include <string.h>
 #include <syslog.h>
-#include <net/if.h>
 
 #include "nm-rdisc.h"
 #include "nm-fake-rdisc.h"
 #include "nm-lndp-rdisc.h"
 #include "nm-logging.h"
 
+#include "nm-fake-platform.h"
+#include "nm-linux-platform.h"
+
 int
 main (int argc, char **argv)
 {
 	GMainLoop *loop;
 	NMRDisc *rdisc;
-	NMRDisc *(*new) (int ifindex, const char *ifname, gint32 max_addresses) = nm_lndp_rdisc_new;
+	NMRDisc *(*new) (int ifindex, const char *ifname);
 	int ifindex = 1;
-	char ifname[IF_NAMESIZE];
+	const char *ifname;
 	char mac[6] = { 0x02, 0xaa, 0xbb, 0xcc, 0xdd, 0xee };
-
-	if_indextoname (ifindex, ifname);
 
 	g_type_init ();
 	loop = g_main_loop_new (NULL, FALSE);
-	nm_logging_setup ("debug", NULL, NULL, NULL);
+	nm_logging_setup ("debug", "ip6", NULL, NULL);
 	openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_DAEMON);
 
 	argv++;
-	for (; *argv; argv++) {
-		if (!g_strcmp0 (*argv, "--fake"))
-			new = nm_fake_rdisc_new;
-		else {
-			strncpy (ifname, *argv, IF_NAMESIZE);
-			ifindex = if_nametoindex (ifname);
-		}
+	if (!g_strcmp0 (argv[0], "--fake")) {
+		new = nm_fake_rdisc_new;
+		nm_fake_platform_setup ();
+		argv++;
+	} else {
+		new = nm_lndp_rdisc_new;
+		nm_linux_platform_setup ();
 	}
 
-	rdisc = new (ifindex, ifname, 0);
+	if (argv[0]) {
+		ifname = argv[0];
+		ifindex = nm_platform_link_get_ifindex (ifname);
+	} else {
+		ifindex = 1;
+		ifname = nm_platform_link_get_name (ifindex);
+	}
+
+	rdisc = new (ifindex, ifname);
 	if (!rdisc)
 		return EXIT_FAILURE;
 
