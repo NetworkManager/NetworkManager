@@ -3047,17 +3047,20 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_dns_search,
 static NMIP4Address *
 _parse_ipv4_address (const char *address, GError **error)
 {
+	char *value = g_strdup (address);
 	char **addrv;
 	NMIP4Address *ip4addr;
 
-	addrv = nmc_strsplit_set (address, " \t", 0);
-	if (g_strv_length (addrv) > 2) {
+	addrv = nmc_strsplit_set (g_strstrip (value), " \t", 0);
+	if (addrv[0] == NULL || g_strv_length (addrv) > 2) {
 		g_set_error (error, 1, 0, _("'%s' is not valid (use ip[/prefix] [gateway])"),
 		             address);
+		g_free (value);
 		g_strfreev (addrv);
 		return NULL;
 	}
 	ip4addr = nmc_parse_and_build_ip4_address (addrv[0], addrv[1], error);
+	g_free (value);
 	g_strfreev (addrv);
 	return ip4addr;
 }
@@ -3072,9 +3075,7 @@ nmc_property_ipv4_set_addresses (NMSetting *setting, const char *prop, const cha
 
 	strv = nmc_strsplit_set (val, ",", 0);
 	for (iter = strv; iter && *iter; iter++) {
-		char *address = g_strstrip (*iter);
-
-		ip4addr = _parse_ipv4_address (address, error);
+		ip4addr = _parse_ipv4_address (*iter, error);
 		if (!ip4addr) {
 			g_strfreev (strv);
 			return FALSE;
@@ -3159,17 +3160,20 @@ nmc_property_out2in_addresses (const char *out_format)
 static NMIP4Route *
 _parse_ipv4_route (const char *route, GError **error)
 {
+	char *value = g_strdup (route);
 	char **routev;
 	NMIP4Route *ip4route;
 
-	routev = nmc_strsplit_set (route, " \t", 0);
+	routev = nmc_strsplit_set (g_strstrip (value), " \t", 0);
 	if (g_strv_length (routev) < 2 || g_strv_length (routev) > 3) {
 		g_set_error (error, 1, 0, _("'%s' is not valid (use ip/[prefix] next-hop [metric])"),
 		             route);
+		g_free (value);
 		g_strfreev (routev);
 		return NULL;
 	}
 	ip4route = nmc_parse_and_build_ip4_route (routev[0], routev[1], routev[2], error);
+	g_free (value);
 	g_strfreev (routev);
 	return ip4route;
 }
@@ -3184,9 +3188,7 @@ nmc_property_ipv4_set_routes (NMSetting *setting, const char *prop, const char *
 
 	strv = nmc_strsplit_set (val, ",", 0);
 	for (iter = strv; iter && *iter; iter++) {
-		char *route = g_strstrip (*iter);
-
-		ip4route = _parse_ipv4_route (route, error);
+		ip4route = _parse_ipv4_route (*iter, error);
 		if (!ip4route) {
 			g_strfreev (strv);
 			return FALSE;
@@ -3392,17 +3394,20 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_dns_search,
 static NMIP6Address *
 _parse_ipv6_address (const char *address, GError **error)
 {
+	char *value = g_strstrip (g_strdup (address));
 	char **addrv;
 	NMIP6Address *ip6addr;
 
-	addrv = nmc_strsplit_set (address, " \t", 0);
-	if (g_strv_length (addrv) > 2) {
+	addrv = nmc_strsplit_set (g_strstrip (value), " \t", 0);
+	if (addrv[0] == NULL || g_strv_length (addrv) > 2) {
 		g_set_error (error, 1, 0, _("'%s' is not valid (use ip[/prefix] [gateway])"),
 		             address);
+		g_free (value);
 		g_strfreev (addrv);
 		return NULL;
 	}
 	ip6addr = nmc_parse_and_build_ip6_address (addrv[0], addrv[1], error);
+	g_free (value);
 	g_strfreev (addrv);
 	return ip6addr;
 }
@@ -3417,9 +3422,7 @@ nmc_property_ipv6_set_addresses (NMSetting *setting, const char *prop, const cha
 
 	strv = nmc_strsplit_set (val, ",", 0);
 	for (iter = strv; iter && *iter; iter++) {
-		char *address = g_strstrip (*iter);
-
-		ip6addr = _parse_ipv6_address (address, error);
+		ip6addr = _parse_ipv6_address (*iter, error);
 		if (!ip6addr) {
 			g_strfreev (strv);
 			return FALSE;
@@ -3468,17 +3471,20 @@ nmc_property_ipv6_describe_addresses (NMSetting *setting, const char *prop)
 static NMIP6Route *
 _parse_ipv6_route (const char *route, GError **error)
 {
+	char *value = g_strdup (route);
 	char **routev;
 	NMIP6Route *ip6route;
 
-	routev = nmc_strsplit_set (route, " \t", 0);
+	routev = nmc_strsplit_set (g_strstrip (value), " \t", 0);
 	if (g_strv_length (routev) < 2 || g_strv_length (routev) > 3) {
 		g_set_error (error, 1, 0, _("'%s' is not valid (use <dest IP>/prefix <next-hop IP> [metric])"),
 		             route);
+		g_free (value);
 		g_strfreev (routev);
 		return NULL;
 	}
 	ip6route = nmc_parse_and_build_ip6_route (routev[0], routev[1], routev[2], error);
+	g_free (value);
 	g_strfreev (routev);
 	return ip6route;
 }
@@ -3493,9 +3499,7 @@ nmc_property_ipv6_set_routes (NMSetting *setting, const char *prop, const char *
 
 	strv = nmc_strsplit_set (val, ",", 0);
 	for (iter = strv; iter && *iter; iter++) {
-		char *route = g_strstrip (*iter);
-
-		ip6route = _parse_ipv6_route (route, error);
+		ip6route = _parse_ipv6_route (*iter, error);
 		if (!ip6route) {
 			g_strfreev (strv);
 			return FALSE;
