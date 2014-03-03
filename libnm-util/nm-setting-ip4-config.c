@@ -839,10 +839,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!strcmp (priv->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 		if (!priv->addresses) {
-			g_set_error_literal (error,
-			                     NM_SETTING_IP4_CONFIG_ERROR,
-			                     NM_SETTING_IP4_CONFIG_ERROR_MISSING_PROPERTY,
-			                     _("property is missing"));
+			g_set_error (error,
+			             NM_SETTING_IP4_CONFIG_ERROR,
+			             NM_SETTING_IP4_CONFIG_ERROR_MISSING_PROPERTY,
+			             _("this property cannot be empty for '%s=%s'"),
+			             NM_SETTING_IP4_CONFIG_METHOD, priv->method);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_ADDRESSES);
 			return FALSE;
 		}
