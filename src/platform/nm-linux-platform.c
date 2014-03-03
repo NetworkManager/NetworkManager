@@ -334,11 +334,11 @@ typedef struct {
 } NMNLInfoDataClosure;
 
 static struct nla_policy info_data_link_policy[IFLA_MAX + 1] = {
-	[IFLA_LINKINFO]	= { .type = NLA_NESTED },
+	[IFLA_LINKINFO] = { .type = NLA_NESTED },
 };
 
 static struct nla_policy info_data_link_info_policy[IFLA_INFO_MAX + 1] = {
-	[IFLA_INFO_DATA]	= { .type = NLA_NESTED },
+	[IFLA_INFO_DATA] = { .type = NLA_NESTED },
 };
 
 static int
@@ -2363,16 +2363,16 @@ macvlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformMacvlanProp
 }
 
 static const struct nla_policy gre_info_policy[IFLA_GRE_MAX + 1] = {
-	[IFLA_GRE_LINK]		= { .type = NLA_U32 },
-	[IFLA_GRE_IFLAGS]	= { .type = NLA_U16 },
-	[IFLA_GRE_OFLAGS]	= { .type = NLA_U16 },
-	[IFLA_GRE_IKEY]		= { .type = NLA_U32 },
-	[IFLA_GRE_OKEY]		= { .type = NLA_U32 },
-	[IFLA_GRE_LOCAL]	= { .type = NLA_U32 },
-	[IFLA_GRE_REMOTE]	= { .type = NLA_U32 },
-	[IFLA_GRE_TTL]		= { .type = NLA_U8 },
-	[IFLA_GRE_TOS]		= { .type = NLA_U8 },
-	[IFLA_GRE_PMTUDISC]	= { .type = NLA_U8 },
+	[IFLA_GRE_LINK]     = { .type = NLA_U32 },
+	[IFLA_GRE_IFLAGS]   = { .type = NLA_U16 },
+	[IFLA_GRE_OFLAGS]   = { .type = NLA_U16 },
+	[IFLA_GRE_IKEY]     = { .type = NLA_U32 },
+	[IFLA_GRE_OKEY]     = { .type = NLA_U32 },
+	[IFLA_GRE_LOCAL]    = { .type = NLA_U32 },
+	[IFLA_GRE_REMOTE]   = { .type = NLA_U32 },
+	[IFLA_GRE_TTL]      = { .type = NLA_U8 },
+	[IFLA_GRE_TOS]      = { .type = NLA_U8 },
+	[IFLA_GRE_PMTUDISC] = { .type = NLA_U8 },
 };
 
 static int
