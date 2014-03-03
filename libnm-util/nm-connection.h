@@ -197,9 +197,10 @@ GType         nm_connection_lookup_setting_type (const char *name);
 GType         nm_connection_lookup_setting_type_by_quark (GQuark error_quark);
 
 /* Helpers */
-const char *  nm_connection_get_uuid        (NMConnection *connection);
-
-const char *  nm_connection_get_id          (NMConnection *connection);
+const char *  nm_connection_get_uuid            (NMConnection *connection);
+const char *  nm_connection_get_id              (NMConnection *connection);
+NM_AVAILABLE_IN_0_9_10
+const char *  nm_connection_get_connection_type (NMConnection *connection);
 
 NM_AVAILABLE_IN_0_9_10
 char *        nm_connection_get_virtual_device_description (NMConnection *connection);

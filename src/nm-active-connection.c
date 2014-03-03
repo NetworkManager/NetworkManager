@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2012 Red Hat, Inc.
+ * Copyright (C) 2008 - 2014 Red Hat, Inc.
  */
 
 #include <glib.h>
@@ -68,7 +68,9 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_CONNECTION,
+	PROP_ID,
 	PROP_UUID,
+	PROP_TYPE,
 	PROP_SPECIFIC_OBJECT,
 	PROP_DEVICES,
 	PROP_STATE,
@@ -714,8 +716,14 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CONNECTION:
 		g_value_set_boxed (value, nm_connection_get_path (priv->connection));
 		break;
+	case PROP_ID:
+		g_value_set_string (value, nm_connection_get_id (priv->connection));
+		break;
 	case PROP_UUID:
 		g_value_set_string (value, nm_connection_get_uuid (priv->connection));
+		break;
+	case PROP_TYPE:
+		g_value_set_string (value, nm_connection_get_connection_type (priv->connection));
 		break;
 	case PROP_SPECIFIC_OBJECT:
 		g_value_set_boxed (value, priv->specific_object ? priv->specific_object : "/");
@@ -838,10 +846,24 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		                    DBUS_TYPE_G_OBJECT_PATH,
 		                    G_PARAM_READABLE));
 
+	g_object_class_install_property (object_class, PROP_ID,
+		g_param_spec_string (NM_ACTIVE_CONNECTION_ID,
+		                     "Connection ID",
+		                     "Connection ID",
+		                     NULL,
+		                     G_PARAM_READABLE));
+
 	g_object_class_install_property (object_class, PROP_UUID,
 		g_param_spec_string (NM_ACTIVE_CONNECTION_UUID,
 		                     "Connection UUID",
 		                     "Connection UUID",
+		                     NULL,
+		                     G_PARAM_READABLE));
+
+	g_object_class_install_property (object_class, PROP_TYPE,
+		g_param_spec_string (NM_ACTIVE_CONNECTION_TYPE,
+		                     "Connection Type",
+		                     "Connection Type",
 		                     NULL,
 		                     G_PARAM_READABLE));
 

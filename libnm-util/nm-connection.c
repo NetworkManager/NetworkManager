@@ -1244,6 +1244,29 @@ nm_connection_get_id (NMConnection *connection)
 }
 
 /**
+ * nm_connection_get_connection_type:
+ * @connection: the #NMConnection
+ *
+ * A shortcut to return the type from the connection's #NMSettingConnection.
+ *
+ * Returns: the type from the connection's 'connection' setting
+ *
+ * Since: 0.9.10
+ **/
+const char *
+nm_connection_get_connection_type (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_return_val_if_fail (s_con != NULL, NULL);
+
+	return nm_setting_connection_get_connection_type (s_con);
+}
+
+/**
  * nm_connection_get_virtual_device_description:
  * @connection: an #NMConnection for a virtual device type
  *

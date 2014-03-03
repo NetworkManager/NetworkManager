@@ -22,9 +22,21 @@
         not change over the lifetime of the ActiveConnection once set.
       </tp:docstring>
     </property>
+    <property name="Id" type="s" access="read">
+      <tp:docstring>
+        The ID of the connection, provided as a convenience so that clients
+        do not have to retrieve all connection details.
+      </tp:docstring>
+    </property>
     <property name="Uuid" type="s" access="read">
       <tp:docstring>
         The UUID of the connection, provided as a convenience so that clients
+        do not have to retrieve all connection details.
+      </tp:docstring>
+    </property>
+    <property name="Type" type="s" access="read">
+      <tp:docstring>
+        The type of the connection, provided as a convenience so that clients
         do not have to retrieve all connection details.
       </tp:docstring>
     </property>
