@@ -21,27 +21,14 @@
 
 # This example lists currently active connections
 
-main_loop = None
+from gi.repository import GLib, NMClient
 
-from gi.repository import GLib, NetworkManager, NMClient
-
-def connections_read(settings):
+if __name__ == "__main__":
     client = NMClient.Client.new()
     acons = client.get_active_connections()
     for ac in acons:
-        rem_con = settings.get_connection_by_path(ac.get_connection())
-        c_type = rem_con.get_setting_connection().get_connection_type()
-        print "%s (%s) - %s" % (rem_con.get_id(), ac.get_uuid(), c_type)
+        print "%s (%s) - %s" % (ac.get_id(), ac.get_uuid(), ac.get_connection_type())
     if len(acons) == 0:
        print "No active connections"
-    main_loop.quit()
 
-if __name__ == "__main__":
-    main_loop = GLib.MainLoop()
-    settings = NMClient.RemoteSettings.new(None);
-
-    # connections are read asynchronously, so we need to wait for the
-    # settings object to tell us that it's read all connections
-    settings.connect("connections-read", connections_read)
-    main_loop.run()
 
