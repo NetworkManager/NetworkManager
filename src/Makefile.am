@@ -4,6 +4,9 @@ include $(GLIB_MAKEFILE)
 
 SUBDIRS =				\
 	.				\
+	devices/atm			\
+	devices/wwan			\
+	devices/bluetooth		\
 	dhcp-manager			\
 	ppp-manager			\
 	settings/plugins
@@ -51,18 +54,6 @@ NetworkManager_LDADD = libNetworkManager.la $(top_builddir)/libgsystem.la $(LIBN
 noinst_LTLIBRARIES = libNetworkManager.la
 
 nm_sources = \
-	bluez-manager/nm-bluez-common.h \
-	bluez-manager/nm-bluez-device.c \
-	bluez-manager/nm-bluez-device.h \
-	bluez-manager/nm-bluez-manager.c \
-	bluez-manager/nm-bluez-manager.h \
-	bluez-manager/nm-bluez4-adapter.c \
-	bluez-manager/nm-bluez4-adapter.h \
-	bluez-manager/nm-bluez4-manager.c \
-	bluez-manager/nm-bluez4-manager.h \
-	bluez-manager/nm-bluez5-manager.c \
-	bluez-manager/nm-bluez5-manager.h \
-	\
 	config/nm-config.c \
 	config/nm-config.h \
 	config/nm-config-device.c \
@@ -70,16 +61,13 @@ nm_sources = \
 	\
 	devices/nm-device.c \
 	devices/nm-device.h \
-	devices/nm-device-adsl.c \
-	devices/nm-device-adsl.h \
 	devices/nm-device-bond.c \
 	devices/nm-device-bond.h \
 	devices/nm-device-bridge.c \
 	devices/nm-device-bridge.h \
-	devices/nm-device-bt.c \
-	devices/nm-device-bt.h \
 	devices/nm-device-ethernet.c \
 	devices/nm-device-ethernet.h \
+	devices/nm-device-factory.c \
 	devices/nm-device-factory.h \
 	devices/nm-device-generic.c \
 	devices/nm-device-generic.h \
@@ -89,8 +77,6 @@ nm_sources = \
 	devices/nm-device-infiniband.h \
 	devices/nm-device-macvlan.c \
 	devices/nm-device-macvlan.h \
-	devices/nm-device-modem.c \
-	devices/nm-device-modem.h \
 	devices/nm-device-olpc-mesh.c \
 	devices/nm-device-olpc-mesh.h \
 	devices/nm-device-private.h \
@@ -135,14 +121,6 @@ nm_sources = \
 	\
 	logging/nm-logging.c \
 	logging/nm-logging.h \
-	\
-	modem-manager/nm-modem-old.c \
-	modem-manager/nm-modem-old.h \
-	modem-manager/nm-modem-old-types.h \
-	modem-manager/nm-modem-manager.c \
-	modem-manager/nm-modem-manager.h \
-	modem-manager/nm-modem.c \
-	modem-manager/nm-modem.h \
 	\
 	platform/nm-fake-platform.c \
 	platform/nm-fake-platform.h \
@@ -224,8 +202,6 @@ nm_sources = \
 	nm-activation-request.h \
 	nm-active-connection.c \
 	nm-active-connection.h \
-	nm-atm-manager.c \
-	nm-atm-manager.h \
 	nm-connection-provider.c \
 	nm-connection-provider.h \
 	nm-connectivity.c \
@@ -274,12 +250,6 @@ nm_sources = \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
 
-if WITH_MODEM_MANAGER_1
-nm_sources += \
-	modem-manager/nm-modem-broadband.c \
-	modem-manager/nm-modem-broadband.h
-endif
-
 if SESSION_TRACKING_SYSTEMD
 nm_sources += nm-session-monitor-systemd.c
 else
@@ -305,8 +275,8 @@ endif
 GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
-
 nm_enum_types_sources = $(nm_sources)
+
 if WITH_WIMAX
 nm_enum_types_sources += devices/wimax/nm-device-wimax.h
 AM_CPPFLAGS += -I$(top_srcdir)/src/devices/wimax
@@ -319,17 +289,14 @@ glue_sources = \
 	nm-access-point-glue.h \
 	nm-active-connection-glue.h \
 	nm-agent-manager-glue.h \
-	nm-device-adsl-glue.h \
 	nm-device-bond-glue.h \
 	nm-device-bridge-glue.h \
-	nm-device-bt-glue.h \
 	nm-device-ethernet-glue.h \
 	nm-device-generic-glue.h \
 	nm-device-glue.h \
 	nm-device-gre-glue.h \
 	nm-device-infiniband-glue.h \
 	nm-device-macvlan-glue.h \
-	nm-device-modem-glue.h \
 	nm-device-olpc-mesh-glue.h \
 	nm-device-team-glue.h \
 	nm-device-tun-glue.h \
@@ -359,7 +326,6 @@ AM_CPPFLAGS += \
 	$(LIBNL_CFLAGS) \
 	$(LIBNDP_CFLAGS) \
 	$(LIBSOUP_CFLAGS) \
-	$(MM_GLIB_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	\
@@ -402,7 +368,6 @@ libNetworkManager_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
-	$(MM_GLIB_LIBS) \
 	$(POLKIT_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
 	$(LIBDL) \

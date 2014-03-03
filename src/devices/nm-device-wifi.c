@@ -804,18 +804,31 @@ bring_up (NMDevice *device, gboolean *no_firmware)
 }
 
 static void
+emit_ap_added_removed (NMDeviceWifi *self,
+                       guint signum,
+                       NMAccessPoint *ap,
+                       gboolean recheck_available_connections)
+{
+	g_signal_emit (self, signals[signum], 0, ap);
+	g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_ACCESS_POINTS);
+	nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
+	if (recheck_available_connections)
+		nm_device_recheck_available_connections (NM_DEVICE (self));
+}
+
+static void
 remove_access_point (NMDeviceWifi *device,
                      NMAccessPoint *ap)
 {
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	g_return_if_fail (ap);
 	g_return_if_fail (ap != priv->current_ap);
 	g_return_if_fail (g_slist_find (priv->ap_list, ap));
 
 	priv->ap_list = g_slist_remove (priv->ap_list, ap);
-	g_signal_emit (device, signals[ACCESS_POINT_REMOVED], 0, ap);
-	g_object_notify (G_OBJECT (device), NM_DEVICE_WIFI_ACCESS_POINTS);
+	emit_ap_added_removed (self, ACCESS_POINT_REMOVED, ap, FALSE);
 	g_object_unref (ap);
 }
 
@@ -1603,7 +1616,6 @@ build_hidden_probe_list (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	guint max_scan_ssids = nm_supplicant_interface_get_max_scan_ssids (priv->supplicant.iface);
-	NMConnectionProvider *provider = nm_device_get_connection_provider (NM_DEVICE (self));
 	GSList *connections, *iter;
 	GPtrArray *ssids = NULL;
 	static GByteArray *nullssid = NULL;
@@ -1616,7 +1628,7 @@ build_hidden_probe_list (NMDeviceWifi *self)
 	if (G_UNLIKELY (nullssid == NULL))
 		nullssid = g_byte_array_new ();
 
-	connections = nm_connection_provider_get_best_connections (provider,
+	connections = nm_connection_provider_get_best_connections (nm_connection_provider_get (),
 	                                                           max_scan_ssids - 1,
 	                                                           NM_SETTING_WIRELESS_SETTING_NAME,
 	                                                           NULL,
@@ -1789,7 +1801,6 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 	}
 }
 
-
 /****************************************************************************
  * WPA Supplicant control stuff
  *
@@ -1888,9 +1899,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 		g_object_ref (merge_ap);
 		priv->ap_list = g_slist_prepend (priv->ap_list, merge_ap);
 		nm_ap_export_to_dbus (merge_ap);
-		g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, merge_ap);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_ACCESS_POINTS);
-		nm_device_recheck_available_connections (NM_DEVICE (self));
+		emit_ap_added_removed (self, ACCESS_POINT_ADDED, merge_ap, TRUE);
 	}
 }
 
@@ -2901,10 +2910,8 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	nm_ap_export_to_dbus (ap);
 	g_object_freeze_notify (G_OBJECT (self));
 	set_current_ap (self, ap, FALSE, FALSE);
-	g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);
-	g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_ACCESS_POINTS);
+	emit_ap_added_removed (self, ACCESS_POINT_ADDED, ap, TRUE);
 	g_object_thaw_notify (G_OBJECT (self));
-	nm_device_recheck_available_connections (NM_DEVICE (self));
 	nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req), nm_ap_get_dbus_path (ap));
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 

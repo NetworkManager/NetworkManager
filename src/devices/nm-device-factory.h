@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright (C) 2007 - 2014 Red Hat, Inc.
  */
 
 #ifndef NM_DEVICE_FACTORY_H
@@ -26,6 +26,7 @@
 
 #include "NetworkManager.h"
 #include "nm-platform.h"
+#include "nm-device.h"
 
 /* WARNING: this file is private API between NetworkManager and its internal
  * device plugins.  Its API can change at any time and is not guaranteed to be
@@ -33,52 +34,106 @@
  * not meant to enable third-party plugins.
  */
 
+typedef struct _NMDeviceFactory NMDeviceFactory;
+
 /**
- * nm_device_factory_create_device:
- * @devpath: sysfs path of the device
- * @ifname: interface name of the device
- * @driver: driver of the device
- * @error: error for failure information
+ * nm_device_factory_create:
+ * @error: an error if creation of the factory failed, or %NULL
  *
- * Creates a #NMDevice subclass if the given information represents a device
- * the factory is capable of creating.  If the information does represent a
- * device the factory is capable of creating, but the device could not be
- * created, %NULL should be returned and @error should be set.  If the
- * factory is not capable of creating a device with the given information
- * (ie, the factory creates Ethernet devices but the information represents
- * a WiFi device) it should return %NULL and leave @error untouched.
+ * Creates a #GObject that implements the #NMDeviceFactory interface. This
+ * function must not emit any signals or perform any actions that would cause
+ * devices or components to be created immediately.  Instead these should be
+ * deferred to an idle handler.
  *
- * Returns: the device object (a subclass of #NMDevice) or %NULL
+ * Returns: the #GObject implementing #NMDeviceFactory or %NULL
  */
-GObject *nm_device_factory_create_device (NMPlatformLink *platform_device,
+NMDeviceFactory *nm_device_factory_create (GError **error);
+
+/* Should match nm_device_factory_create() */
+typedef NMDeviceFactory * (*NMDeviceFactoryCreateFunc) (GError **error);
+
+/**
+ * nm_device_factory_get_device_type:
+ *
+ * Returns: the #NMDeviceType that this plugin creates
+ */
+NMDeviceType nm_device_factory_get_device_type (void);
+
+/* Should match nm_device_factory_get_device_type() */
+typedef NMDeviceType (*NMDeviceFactoryDeviceTypeFunc) (void);
+
+/********************************************************************/
+
+#define NM_TYPE_DEVICE_FACTORY               (nm_device_factory_get_type ())
+#define NM_DEVICE_FACTORY(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactory))
+#define NM_IS_DEVICE_FACTORY(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_FACTORY))
+#define NM_DEVICE_FACTORY_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactory))
+
+/* properties */
+#define NM_DEVICE_FACTORY_DEVICE_TYPE     "device-type"
+
+/* signals */
+#define NM_DEVICE_FACTORY_COMPONENT_ADDED "component-added"
+#define NM_DEVICE_FACTORY_DEVICE_ADDED    "device-added"
+
+struct _NMDeviceFactory {
+	GTypeInterface g_iface;
+
+	/**
+	 * new_link:
+	 * @factory: the #NMDeviceFactory
+	 * @link: the new link
+	 * @error: error if the link could be claimed but an error occurred
+	 *
+	 * The NetworkManager core was notified of a new link which the plugin
+	 * may want to claim and create a #NMDevice subclass for.  If the link
+	 * represents a device the factory is capable of claiming, but the device
+	 * could not be created, %NULL should be returned and @error should be set.
+	 * %NULL should always be returned and @error should never be set if the
+	 * factory cannot create devices for the type which @link represents.
+	 *
+	 * Returns: the #NMDevice if the link was claimed and created, %NULL if not
+	 */
+	NMDevice * (*new_link)        (NMDeviceFactory *factory,
+	                               NMPlatformLink *plink,
+	                               GError **error);
+
+	/* Signals */
+
+	/**
+	 * device_added:
+	 * @factory: the #NMDeviceFactory
+	 * @device: the new #NMDevice subclass
+	 *
+	 * The factory emits this signal if it finds a new device by itself.
+	 */
+	void       (*device_added)    (NMDeviceFactory *factory, NMDevice *device);
+
+	/**
+	 * component_added:
+	 * @factory: the #NMDeviceFactory
+	 * @component: a new component which existing devices may wish to claim
+	 *
+	 * The factory emits this signal when it finds a new component.  For example,
+	 * the WWAN factory may indicate that a new modem is available, which an
+	 * existing Bluetooth device may wish to claim.  If no device claims the
+	 * component, the plugin is allowed to create a new #NMDevice instance for
+	 * that component and emit the "device-added" signal.
+	 *
+	 * Returns: %TRUE if the component was claimed by a device, %FALSE if not
+	 */
+	gboolean   (*component_added) (NMDeviceFactory *factory, GObject *component);
+};
+
+GType      nm_device_factory_get_type    (void);
+
+NMDevice * nm_device_factory_new_link    (NMDeviceFactory *factory,
+                                          NMPlatformLink *plink,
                                           GError **error);
 
-/* Should match nm_device_factory() */
-typedef GObject * (*NMDeviceFactoryCreateFunc) (NMPlatformLink *platform_device,
-                                                GError **error);
-
-/**
- * nm_device_factory_get_priority:
- *
- * Returns the priority of this plugin.  Higher numbers mean a higher priority.
- *
- * Returns: plugin priority
- */
-guint32 nm_device_factory_get_priority (void);
-
-typedef guint32 (*NMDeviceFactoryPriorityFunc) (void);
-
-/**
- * nm_device_factory_get_type:
- *
- * Returns the type of device this factory can create.  Only one factory for
- * each type of device is allowed.
- *
- * Returns: the %NMDeviceType
- */
-NMDeviceType nm_device_factory_get_type (void);
-
-typedef NMDeviceType (*NMDeviceFactoryTypeFunc) (void);
+/* For use by implementations */
+gboolean   nm_device_factory_emit_component_added (NMDeviceFactory *factory,
+                                                   GObject *component);
 
 #endif /* NM_DEVICE_FACTORY_H */
 

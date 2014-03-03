@@ -762,7 +762,10 @@ src/platform/Makefile
 src/platform/tests/Makefile
 src/rdisc/Makefile
 src/rdisc/tests/Makefile
+src/devices/atm/Makefile
 src/devices/wimax/Makefile
+src/devices/bluetooth/Makefile
+src/devices/wwan/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile
 libnm-util/tests/Makefile

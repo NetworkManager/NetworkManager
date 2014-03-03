@@ -50,8 +50,6 @@ G_DEFINE_TYPE (NMBluez4Manager, nm_bluez4_manager, G_TYPE_OBJECT)
 
 enum {
 	BDADDR_ADDED,
-	BDADDR_REMOVED,
-
 	LAST_SIGNAL
 };
 
@@ -93,11 +91,8 @@ device_added (NMBluez4Adapter *adapter, NMBluezDevice *device, gpointer user_dat
 static void
 device_removed (NMBluez4Adapter *adapter, NMBluezDevice *device, gpointer user_data)
 {
-	NMBluez4Manager *self = NM_BLUEZ4_MANAGER (user_data);
-
-	g_signal_emit (self, signals[BDADDR_REMOVED], 0,
-	               nm_bluez_device_get_address (device),
-	               nm_bluez_device_get_path (device));
+	/* Re-emit the signal on the device for now; flatten this later */
+	g_signal_emit_by_name (device, NM_BLUEZ_DEVICE_REMOVED);
 }
 
 static void
@@ -132,13 +127,8 @@ adapter_removed (DBusGProxy *proxy, const char *path, NMBluez4Manager *self)
 			GSList *devices, *iter;
 
 			devices = nm_bluez4_adapter_get_devices (priv->adapter);
-			for (iter = devices; iter; iter = g_slist_next (iter)) {
-				NMBluezDevice *device = NM_BLUEZ_DEVICE (iter->data);
-
-				g_signal_emit (self, signals[BDADDR_REMOVED], 0,
-				               nm_bluez_device_get_address (device),
-				               nm_bluez_device_get_path (device));
-			}
+			for (iter = devices; iter; iter = g_slist_next (iter))
+				g_signal_emit_by_name (NM_BLUEZ_DEVICE (iter->data), NM_BLUEZ_DEVICE_REMOVED);
 			g_slist_free (devices);
 		}
 
@@ -367,13 +357,5 @@ nm_bluez4_manager_class_init (NMBluez4ManagerClass *klass)
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 5, G_TYPE_OBJECT, G_TYPE_STRING,
 		              G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
-
-	signals[BDADDR_REMOVED] =
-		g_signal_new (NM_BLUEZ_MANAGER_BDADDR_REMOVED,
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMBluez4ManagerClass, bdaddr_removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 }
 

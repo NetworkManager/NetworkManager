@@ -77,6 +77,13 @@ struct _NMConnectionProvider {
 GType nm_connection_provider_get_type (void);
 
 /**
+ * nm_connection_provider_get:
+ *
+ * Returns: the global #NMConnectionProvider
+ */
+NMConnectionProvider *nm_connection_provider_get (void);
+
+/**
  * nm_connection_provider_get_best_connections:
  * @self: the #NMConnectionProvider
  * @max_requested: if non-zero, the maximum number of connections to return

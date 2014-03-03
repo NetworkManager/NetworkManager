@@ -39,35 +39,27 @@
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
-#include "nm-modem-manager.h"
-#include "nm-device-bt.h"
 #include "nm-device.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
-#include "nm-device-modem.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
 #include "nm-device-team.h"
 #include "nm-device-bridge.h"
 #include "nm-device-vlan.h"
-#include "nm-device-adsl.h"
 #include "nm-device-generic.h"
 #include "nm-device-veth.h"
 #include "nm-device-tun.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-gre.h"
-#include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-vpn.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-platform.h"
-#include "nm-atm-manager.h"
 #include "nm-rfkill-manager.h"
 #include "nm-hostname-provider.h"
-#include "nm-bluez-manager.h"
-#include "nm-bluez-common.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
 #include "nm-manager-auth.h"
@@ -137,19 +129,6 @@ static void impl_manager_check_connectivity (NMManager *manager,
 
 #include "nm-manager-glue.h"
 
-static void bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
-                                           NMBluezDevice *bt_device,
-                                           const char *bdaddr,
-                                           const char *name,
-                                           const char *object_path,
-                                           guint32 uuids,
-                                           NMManager *manager);
-
-static void bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
-                                             const char *bdaddr,
-                                             const char *object_path,
-                                             gpointer user_data);
-
 static void add_device (NMManager *self, NMDevice *device, gboolean generate_con);
 static void remove_device (NMManager *self, NMDevice *device, gboolean quitting);
 
@@ -165,7 +144,6 @@ static NMActiveConnection *_new_active_connection (NMManager *self,
 static void policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer user_data);
 
 static NMDevice *find_device_by_ip_iface (NMManager *self, const gchar *iface);
-static NMDevice *find_device_by_iface (NMManager *self, const gchar *iface);
 
 static void rfkill_change_wifi (const char *desc, gboolean enabled);
 
@@ -219,9 +197,7 @@ typedef struct {
 
 	NMDBusManager *dbus_mgr;
 	gboolean       prop_filter_added;
-	NMAtmManager *atm_mgr;
 	NMRfkillManager *rfkill_mgr;
-	NMBluezManager *bluez_mgr;
 
 	/* List of NMDeviceFactoryFunc pointers sorted in priority order */
 	GSList *factories;
@@ -234,10 +210,6 @@ typedef struct {
 	gboolean net_enabled;
 
 	NMVPNManager *vpn_manager;
-
-	NMModemManager *modem_manager;
-	guint modem_added_id;
-	guint modem_removed_id;
 
 	DBusGProxy *aipd_proxy;
 	NMSleepMonitor *sleep_monitor;
@@ -543,58 +515,6 @@ manager_sleeping (NMManager *self)
 }
 
 static void
-modem_added (NMModemManager *modem_manager,
-			 NMModem *modem,
-			 const char *driver,
-			 gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMDevice *device = NULL;
-	const char *modem_iface;
-	GSList *iter, *remove = NULL;
-
-	/* Remove ethernet devices that are actually owned by the modem, since
-	 * they cannot be used as normal ethernet.
-	 */
-	for (iter = priv->devices; iter; iter = iter->next) {
-		if (nm_device_get_device_type (iter->data) == NM_DEVICE_TYPE_ETHERNET) {
-			if (nm_modem_owns_port (modem, nm_device_get_ip_iface (iter->data)))
-				remove = g_slist_prepend (remove, iter->data);
-		}
-	}
-	for (iter = remove; iter; iter = iter->next)
-		remove_device (self, NM_DEVICE (iter->data), FALSE);
-	g_slist_free (remove);
-
-	/* Give Bluetooth DUN devices first chance to claim the modem */
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		if (nm_device_get_device_type (iter->data) == NM_DEVICE_TYPE_BT) {
-			if (nm_device_bt_modem_added (NM_DEVICE_BT (iter->data), modem, driver))
-				return;
-		}
-	}
-
-	/* If it was a Bluetooth modem and no bluetooth device claimed it, ignore
-	 * it.  The rfcomm port (and thus the modem) gets created automatically
-	 * by the Bluetooth code during the connection process.
-	 */
-	if (driver && !strcmp (driver, "bluetooth")) {
-		modem_iface = nm_modem_get_data_port (modem);
-		if (!modem_iface)
-			modem_iface = nm_modem_get_control_port (modem);
-
-		nm_log_info (LOGD_MB, "ignoring modem '%s' (no associated Bluetooth device)", modem_iface);
-		return;
-	}
-
-	/* Make the new modem device */
-	device = nm_device_modem_new (modem, driver);
-	if (device)
-		add_device (self, device, FALSE);
-}
-
-static void
 set_state (NMManager *manager, NMState state)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -837,27 +757,9 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 }
 
 static void
-modem_removed (NMModemManager *modem_manager,
-			   NMModem *modem,
-			   gpointer user_data)
+device_removed_cb (NMDevice *device, gpointer user_data)
 {
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMDevice *found;
-	GSList *iter;
-
-	/* Give Bluetooth DUN devices first chance to handle the modem removal */
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		if (nm_device_get_device_type (iter->data) == NM_DEVICE_TYPE_BT) {
-			if (nm_device_bt_modem_removed (NM_DEVICE_BT (iter->data), modem))
-				return;
-		}
-	}
-
-	/* Otherwise remove the standalone modem */
-	found = nm_manager_get_device_by_udi (self, nm_modem_get_path (modem));
-	if (found)
-		remove_device (self, found, FALSE);
+	remove_device (NM_MANAGER (user_data), device, FALSE);
 }
 
 static void
@@ -1201,6 +1103,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	if (device) {
 		nm_device_set_is_nm_owned (device, TRUE);
 		add_device (self, device, FALSE);
+		g_object_unref (device);
 	}
 
 	g_signal_handlers_unblock_by_func (nm_platform_get (), G_CALLBACK (platform_link_added_cb), self);
@@ -1811,6 +1714,15 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	return added ? NM_CONNECTION (added) : NULL;
 }
 
+/**
+ * add_device:
+ * @self: the #NMManager
+ * @device: the #NMDevice to add
+ * @generate_con: %TRUE if existing connection (if any) should be assumed
+ *
+ * If successful, this function will increase the references count of @device.
+ * Callers should decrease the reference count.
+ */
 static void
 add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 {
@@ -1823,28 +1735,31 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	gboolean enabled = FALSE;
 	RfKillType rtype;
 	NMDeviceType devtype;
-
-	iface = nm_device_get_ip_iface (device);
-	g_assert (iface);
+	GSList *iter, *remove = NULL;
 
 	devtype = nm_device_get_device_type (device);
 
-	/* Ignore the device if we already know about it.  But some modems will
-	 * provide pseudo-ethernet devices that NM has already claimed while
-	 * ModemManager is still detecting the modem's serial ports, so when the
-	 * MM modem object finally shows up it may have the same IP interface as the
-	 * ethernet interface we've already detected.  In this case we skip the
-	 * check for an existing device with the same IP interface name and kill
-	 * the ethernet device later in favor of the modem device.
-	 */
-	if ((devtype != NM_DEVICE_TYPE_MODEM) && find_device_by_ip_iface (self, iface)) {
-		g_object_unref (device);
+	/* No duplicates */
+	if (nm_manager_get_device_by_udi (self, nm_device_get_udi (device)))
 		return;
+
+	/* Remove existing devices owned by the new device; eg remove ethernet
+	 * ports that are owned by a WWAN modem, since udev may announce them
+	 * before the modem is fully discovered.
+	 *
+	 * FIXME: use parent/child device relationships instead of removing
+	 * the child NMDevice entirely
+	 */
+	for (iter = priv->devices; iter; iter = iter->next) {
+		iface = nm_device_get_ip_iface (iter->data);
+		if (nm_device_owns_iface (device, iface))
+			remove = g_slist_prepend (remove, iter->data);
 	}
+	for (iter = remove; iter; iter = iter->next)
+		remove_device (self, NM_DEVICE (iter->data), FALSE);
+	g_slist_free (remove);
 
-	nm_device_set_connection_provider (device, NM_CONNECTION_PROVIDER (priv->settings));
-
-	priv->devices = g_slist_append (priv->devices, device);
+	priv->devices = g_slist_append (priv->devices, g_object_ref (device));
 
 	g_signal_connect (device, "state-changed",
 	                  G_CALLBACK (manager_device_state_changed),
@@ -1852,6 +1767,10 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 
 	g_signal_connect (device, NM_DEVICE_AUTH_REQUEST,
 	                  G_CALLBACK (device_auth_request_cb),
+	                  self);
+
+	g_signal_connect (device, NM_DEVICE_REMOVED,
+	                  G_CALLBACK (device_removed_cb),
 	                  self);
 
 	if (priv->startup) {
@@ -1875,7 +1794,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 		                  G_CALLBACK (manager_ipw_rfkill_state_changed),
 		                  self);
 	} else if (devtype == NM_DEVICE_TYPE_MODEM) {
-		g_signal_connect (device, NM_DEVICE_MODEM_ENABLE_CHANGED,
+		g_signal_connect (device, "enable-changed",
 		                  G_CALLBACK (manager_modem_enabled_changed),
 		                  self);
 	}
@@ -1890,6 +1809,9 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 		enabled = radio_enabled_for_type (self, rtype, TRUE);
 		nm_device_set_enabled (device, enabled);
 	}
+
+	iface = nm_device_get_iface (device);
+	g_assert (iface);
 
 	type_desc = nm_device_get_type_desc (device);
 	g_assert (type_desc);
@@ -1967,61 +1889,6 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	}
 }
 
-static void
-bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
-                               NMBluezDevice *bt_device,
-                               const char *bdaddr,
-                               const char *name,
-                               const char *object_path,
-                               guint32 capabilities,
-                               NMManager *manager)
-{
-	NMDevice *device;
-	gboolean has_dun = (capabilities & NM_BT_CAPABILITY_DUN);
-	gboolean has_nap = (capabilities & NM_BT_CAPABILITY_NAP);
-
-	g_return_if_fail (bdaddr != NULL);
-	g_return_if_fail (name != NULL);
-	g_return_if_fail (object_path != NULL);
-	g_return_if_fail (capabilities != NM_BT_CAPABILITY_NONE);
-	g_return_if_fail (NM_IS_BLUEZ_DEVICE (bt_device));
-
-	/* Make sure the device is not already in the device list */
-	if (nm_manager_get_device_by_udi (manager, object_path))
-		return;
-
-	device = nm_device_bt_new (bt_device, object_path, bdaddr, name, capabilities);
-	if (device) {
-		nm_log_info (LOGD_HW, "BT device %s (%s) added (%s%s%s)",
-		             name,
-		             bdaddr,
-		             has_dun ? "DUN" : "",
-		             has_dun && has_nap ? " " : "",
-		             has_nap ? "NAP" : "");
-
-		add_device (manager, device, FALSE);
-	}
-}
-
-static void
-bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
-                                 const char *bdaddr,
-                                 const char *object_path,
-                                 gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMDevice *device;
-
-	g_return_if_fail (bdaddr != NULL);
-	g_return_if_fail (object_path != NULL);
-
-	device = nm_manager_get_device_by_udi (self, object_path);
-	if (device) {
-		nm_log_info (LOGD_HW, "BT device %s removed", bdaddr);
-		remove_device (self, device, FALSE);
-	}
-}
-
 static NMDevice *
 find_device_by_ip_iface (NMManager *self, const gchar *iface)
 {
@@ -2032,21 +1899,6 @@ find_device_by_ip_iface (NMManager *self, const gchar *iface)
 		NMDevice *candidate = iter->data;
 
 		if (g_strcmp0 (nm_device_get_ip_iface (candidate), iface) == 0)
-			return candidate;
-	}
-	return NULL;
-}
-
-static NMDevice *
-find_device_by_iface (NMManager *self, const gchar *iface)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = iter->data;
-
-		if (g_strcmp0 (nm_device_get_iface (candidate), iface) == 0)
 			return candidate;
 	}
 	return NULL;
@@ -2067,24 +1919,30 @@ find_device_by_ifindex (NMManager *self, guint32 ifindex)
 	return NULL;
 }
 
-#define PLUGIN_PREFIX "libnm-device-plugin-"
-
-typedef struct {
-	NMDeviceType t;
-	guint priority;
-	NMDeviceFactoryCreateFunc create_func;
-} PluginInfo;
-
-static gint
-plugin_sort (PluginInfo *a, PluginInfo *b)
+static void
+factory_device_added_cb (NMDeviceFactory *factory,
+                         NMDevice *device,
+                         gpointer user_data)
 {
-	/* Higher priority means sort earlier in the list (ie, return -1) */
-	if (a->priority > b->priority)
-		return -1;
-	else if (a->priority < b->priority)
-		return 1;
-	return 0;
+	add_device (NM_MANAGER (user_data), device, FALSE);
 }
+
+static gboolean
+factory_component_added_cb (NMDeviceFactory *factory,
+                            GObject *component,
+                            gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	GSList *iter;
+
+	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
+		if (nm_device_notify_component_added (NM_DEVICE (iter->data), component))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+#define PLUGIN_PREFIX "libnm-device-plugin-"
 
 static void
 load_device_factories (NMManager *self)
@@ -2094,7 +1952,7 @@ load_device_factories (NMManager *self)
 	GError *error = NULL;
 	const char *item;
 	char *path;
-	GSList *list = NULL, *iter;
+	GSList *iter;
 
 	dir = g_dir_open (NMPLUGINDIR, 0, &error);
 	if (!dir) {
@@ -2107,11 +1965,11 @@ load_device_factories (NMManager *self)
 
 	while ((item = g_dir_read_name (dir))) {
 		GModule *plugin;
+		NMDeviceFactory *factory;
 		NMDeviceFactoryCreateFunc create_func;
-		NMDeviceFactoryPriorityFunc priority_func;
-		NMDeviceFactoryTypeFunc type_func;
-		PluginInfo *info = NULL;
-		NMDeviceType plugin_type;
+		NMDeviceFactoryDeviceTypeFunc type_func;
+		NMDeviceType dev_type;
+		gboolean found = FALSE;
 
 		if (!g_str_has_prefix (item, PLUGIN_PREFIX))
 			continue;
@@ -2126,60 +1984,63 @@ load_device_factories (NMManager *self)
 			continue;
 		}
 
-		if (!g_module_symbol (plugin, "nm_device_factory_get_type", (gpointer) (&type_func))) {
-			nm_log_warn (LOGD_HW, "(%s): failed to find device factory: %s", item, g_module_error ());
+		if (!g_module_symbol (plugin, "nm_device_factory_get_device_type", (gpointer) &type_func)) {
+			nm_log_warn (LOGD_HW, "(%s): failed to find device factory type: %s", item, g_module_error ());
 			g_module_close (plugin);
 			continue;
 		}
 
 		/* Make sure we don't double-load plugins */
-		plugin_type = type_func ();
-		for (iter = list; iter; iter = g_slist_next (iter)) {
-			PluginInfo *candidate = iter->data;
+		dev_type = type_func ();
+		for (iter = priv->factories; iter; iter = iter->next) {
+			NMDeviceType t = NM_DEVICE_TYPE_UNKNOWN;
 
-			if (plugin_type == candidate->t) {
-				info = candidate;
+			g_object_get (G_OBJECT (iter->data),
+			              NM_DEVICE_FACTORY_DEVICE_TYPE, &t,
+			              NULL);
+			if (dev_type == t) {
+				found = TRUE;
 				break;
 			}
 		}
-		if (info) {
+		if (found) {
 			g_module_close (plugin);
 			continue;
 		}
 
-		if (!g_module_symbol (plugin, "nm_device_factory_create_device", (gpointer) (&create_func))) {
-			nm_log_warn (LOGD_HW, "(%s): failed to find device creator: %s", item, g_module_error ());
+		if (!g_module_symbol (plugin, "nm_device_factory_create", (gpointer) &create_func)) {
+			nm_log_warn (LOGD_HW, "(%s): failed to find device factory creator: %s", item, g_module_error ());
 			g_module_close (plugin);
 			continue;
 		}
 
-		info = g_malloc0 (sizeof (*info));
-		info->create_func = create_func;
-		info->t = plugin_type;
-
-		/* Grab priority; higher number equals higher priority */
-		if (g_module_symbol (plugin, "nm_device_factory_get_priority", (gpointer) (&priority_func)))
-			info->priority = priority_func ();
-		else {
-			nm_log_dbg (LOGD_HW, "(%s): failed to find device factory priority func: %s",
-			            item, g_module_error ());
+		factory = create_func (&error);
+		if (!factory) {
+			nm_log_warn (LOGD_HW, "(%s): failed to initialize device factory: %s",
+			             item, error ? error->message : "unknown");
+			g_clear_error (&error);
+			g_module_close (plugin);
+			continue;
 		}
+		g_clear_error (&error);
 
 		g_module_make_resident (plugin);
-		list = g_slist_insert_sorted (list, info, (GCompareFunc) plugin_sort);
+		priv->factories = g_slist_prepend (priv->factories, factory);
 
-		nm_log_info (LOGD_HW, "Loaded device factory: %s", g_module_name (plugin));
+		g_signal_connect (factory,
+		                  NM_DEVICE_FACTORY_DEVICE_ADDED,
+		                  G_CALLBACK (factory_device_added_cb),
+		                  self);
+		g_signal_connect (factory,
+		                  NM_DEVICE_FACTORY_COMPONENT_ADDED,
+		                  G_CALLBACK (factory_component_added_cb),
+		                  self);
+
+		nm_log_info (LOGD_HW, "Loaded device plugin: %s", g_module_name (plugin));
 	};
 	g_dir_close (dir);
 
-	/* Ditch the priority info and copy the factory functions to our private data */
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		PluginInfo *info = iter->data;
-
-		priv->factories = g_slist_append (priv->factories, info->create_func);
-		g_free (info);
-	}
-	g_slist_free (list);
+	priv->factories = g_slist_reverse (priv->factories);
 }
 
 static void
@@ -2201,11 +2062,10 @@ platform_link_added_cb (NMPlatform *platform,
 		return;
 
 	/* Try registered device factories */
-	for (iter = priv->factories; iter; iter = g_slist_next (iter)) {
-		NMDeviceFactoryCreateFunc create_func = iter->data;
+	for (iter = priv->factories; iter; iter = iter->next) {
+		NMDeviceFactory *factory = NM_DEVICE_FACTORY (iter->data);
 
-		g_clear_error (&error);
-		device = (NMDevice *) create_func (plink, &error);
+		device = nm_device_factory_new_link (factory, plink, &error);
 		if (device && NM_IS_DEVICE (device)) {
 			g_assert_no_error (error);
 			break;  /* success! */
@@ -2298,8 +2158,10 @@ platform_link_added_cb (NMPlatform *platform,
 		}
 	}
 
-	if (device)
+	if (device) {
 		add_device (self, device, plink->type != NM_LINK_TYPE_LOOPBACK);
+		g_object_unref (device);
+	}
 }
 
 static void
@@ -2313,49 +2175,6 @@ platform_link_removed_cb (NMPlatform *platform,
 	NMDevice *device;
 
 	device = find_device_by_ifindex (self, ifindex);
-	if (device)
-		remove_device (self, device, FALSE);
-}
-
-static void
-atm_device_added_cb (NMAtmManager *atm_mgr,
-                     const char *iface,
-                     const char *sysfs_path,
-                     const char *driver,
-                     gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMDevice *device;
-
-	g_return_if_fail (iface != NULL);
-	g_return_if_fail (sysfs_path != NULL);
-
-	device = find_device_by_iface (self, iface);
-	if (device)
-		return;
-
-	device = nm_device_adsl_new (sysfs_path, iface, driver);
-	if (device)
-		add_device (self, device, TRUE);
-}
-
-static void
-atm_device_removed_cb (NMAtmManager *manager,
-                       const char *iface,
-                       gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMDevice *device = NULL;
-	GSList *iter;
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		if (g_strcmp0 (nm_device_get_iface (NM_DEVICE (iter->data)), iface) == 0) {
-			device = iter->data;
-			break;
-		}
-	}
-
 	if (device)
 		remove_device (self, device, FALSE);
 }
@@ -4231,8 +4050,6 @@ nm_manager_start (NMManager *self)
 	system_hostname_changed_cb (priv->settings, NULL, self);
 
 	nm_platform_query_devices ();
-	nm_atm_manager_query_devices (priv->atm_mgr);
-	nm_bluez_manager_query_devices (priv->bluez_mgr);
 
 	/*
 	 * Connections added before the manager is started do not emit
@@ -4690,7 +4507,15 @@ NMManager *
 nm_manager_get (void)
 {
 	g_assert (singleton);
-	return g_object_ref (singleton);
+	return singleton;
+}
+
+NMConnectionProvider *
+nm_connection_provider_get (void)
+{
+	g_assert (singleton);
+	g_assert (NM_MANAGER_GET_PRIVATE (singleton)->settings);
+	return NM_CONNECTION_PROVIDER (NM_MANAGER_GET_PRIVATE (singleton)->settings);
 }
 
 NMManager *
@@ -4782,32 +4607,10 @@ nm_manager_new (NMSettings *settings,
 	                  G_CALLBACK (platform_link_removed_cb),
 	                  singleton);
 
-	priv->atm_mgr = nm_atm_manager_new ();
-	g_signal_connect (priv->atm_mgr,
-	                  "device-added",
-	                  G_CALLBACK (atm_device_added_cb),
-	                  singleton);
-	g_signal_connect (priv->atm_mgr,
-	                  "device-removed",
-	                  G_CALLBACK (atm_device_removed_cb),
-	                  singleton);
-
 	priv->rfkill_mgr = nm_rfkill_manager_new ();
 	g_signal_connect (priv->rfkill_mgr,
 	                  "rfkill-changed",
 	                  G_CALLBACK (rfkill_manager_rfkill_changed_cb),
-	                  singleton);
-
-	priv->bluez_mgr = nm_bluez_manager_new (NM_CONNECTION_PROVIDER (priv->settings));
-
-	g_signal_connect (priv->bluez_mgr,
-	                  NM_BLUEZ_MANAGER_BDADDR_ADDED,
-	                  G_CALLBACK (bluez_manager_bdaddr_added_cb),
-	                  singleton);
-
-	g_signal_connect (priv->bluez_mgr,
-	                  NM_BLUEZ_MANAGER_BDADDR_REMOVED,
-	                  G_CALLBACK (bluez_manager_bdaddr_removed_cb),
 	                  singleton);
 
 	/* Force kernel WiFi rfkill state to follow NM saved wifi state in case
@@ -4815,6 +4618,8 @@ nm_manager_new (NMSettings *settings,
 	 * changes to the WirelessEnabled property which toggles kernel rfkill.
 	 */
 	rfkill_change_wifi (priv->radio_states[RFKILL_TYPE_WLAN].desc, initial_wifi_enabled);
+
+	load_device_factories (singleton);
 
 	return singleton;
 }
@@ -4866,12 +4671,6 @@ nm_manager_init (NMManager *manager)
 	                  NM_DBUS_MANAGER_DBUS_CONNECTION_CHANGED,
 	                  G_CALLBACK (dbus_connection_changed_cb),
 	                  manager);
-
-	priv->modem_manager = nm_modem_manager_get ();
-	priv->modem_added_id = g_signal_connect (priv->modem_manager, "modem-added",
-	                                         G_CALLBACK (modem_added), manager);
-	priv->modem_removed_id = g_signal_connect (priv->modem_manager, "modem-removed",
-	                                           G_CALLBACK (modem_removed), manager);
 
 	priv->vpn_manager = nm_vpn_manager_get ();
 
@@ -4927,8 +4726,6 @@ nm_manager_init (NMManager *manager)
 		nm_log_warn (LOGD_CORE, "failed to monitor kernel firmware directory '%s'.",
 		             KERNEL_FIRMWARE_DIR);
 	}
-
-	load_device_factories (manager);
 
 	/* Update timestamps in active connections */
 	priv->timestamp_update_id = g_timeout_add_seconds (300, (GSourceFunc) periodic_update_active_connection_timestamps, manager);
@@ -5057,6 +4854,7 @@ dispose (GObject *object)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	DBusGConnection *bus;
 	DBusConnection *dbus_connection;
+	GSList *iter;
 
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
@@ -5091,16 +4889,6 @@ dispose (GObject *object)
 	g_clear_object (&priv->settings);
 	g_clear_object (&priv->vpn_manager);
 
-	if (priv->modem_added_id) {
-		g_source_remove (priv->modem_added_id);
-		priv->modem_added_id = 0;
-	}
-	if (priv->modem_removed_id) {
-		g_source_remove (priv->modem_removed_id);
-		priv->modem_removed_id = 0;
-	}
-	g_clear_object (&priv->modem_manager);
-
 	/* Unregister property filter */
 	if (priv->dbus_mgr) {
 		bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
@@ -5115,7 +4903,6 @@ dispose (GObject *object)
 		priv->dbus_mgr = NULL;
 	}
 
-	g_clear_object (&priv->bluez_mgr);
 	g_clear_object (&priv->aipd_proxy);
 	g_clear_object (&priv->sleep_monitor);
 
@@ -5131,6 +4918,12 @@ dispose (GObject *object)
 		g_clear_object (&priv->fw_monitor);
 	}
 
+	for (iter = priv->factories; iter; iter = iter->next) {
+		NMDeviceFactory *factory = iter->data;
+
+		g_signal_handlers_disconnect_matched (factory, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, manager);
+		g_object_unref (factory);
+	}
 	g_clear_pointer (&priv->factories, g_slist_free);
 
 	if (priv->timestamp_update_id) {

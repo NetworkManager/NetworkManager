@@ -112,6 +112,8 @@ enum {
 	AUTH_REQUEST,
 	IP4_CONFIG_CHANGED,
 	IP6_CONFIG_CHANGED,
+	REMOVED,
+	RECHECK_AUTO_ACTIVATE,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -315,13 +317,6 @@ typedef struct {
 	GSList *        slaves;    /* list of SlaveInfo */
 
 	NMConnectionProvider *con_provider;
-
-	/* connection provider signals for available connections property */
-	guint cp_added_id;
-	guint cp_loaded_id;
-	guint cp_removed_id;
-	guint cp_updated_id;
-
 } NMDevicePrivate;
 
 static gboolean nm_device_set_ip4_config (NMDevice *dev,
@@ -613,6 +608,23 @@ constructed (GObject *object)
 	if (priv->ifindex > 0)
 		priv->mtu = nm_platform_link_get_mtu (priv->ifindex);
 
+	priv->con_provider = nm_connection_provider_get ();
+	g_assert (priv->con_provider);
+	g_signal_connect (priv->con_provider,
+	                  NM_CP_SIGNAL_CONNECTION_ADDED,
+	                  G_CALLBACK (cp_connection_added),
+	                  dev);
+
+	g_signal_connect (priv->con_provider,
+	                  NM_CP_SIGNAL_CONNECTION_REMOVED,
+	                  G_CALLBACK (cp_connection_removed),
+	                  dev);
+
+	g_signal_connect (priv->con_provider,
+	                  NM_CP_SIGNAL_CONNECTION_UPDATED,
+	                  G_CALLBACK (cp_connection_updated),
+	                  dev);
+
 	if (G_OBJECT_CLASS (nm_device_parent_class)->constructed)
 		G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
 }
@@ -882,43 +894,6 @@ nm_device_get_type_desc (NMDevice *self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return NM_DEVICE_GET_PRIVATE (self)->type_desc;
-}
-
-void
-nm_device_set_connection_provider (NMDevice *device,
-                                   NMConnectionProvider *provider)
-{
-	NMDevicePrivate *priv;
-
-	g_return_if_fail (device != NULL);
-	g_return_if_fail (NM_IS_CONNECTION_PROVIDER (provider));
-
-	priv = NM_DEVICE_GET_PRIVATE (device);
-	g_return_if_fail (priv->con_provider == NULL);
-
-	priv->con_provider = provider;
-	priv->cp_added_id = g_signal_connect (priv->con_provider,
-	                                      NM_CP_SIGNAL_CONNECTION_ADDED,
-	                                      G_CALLBACK (cp_connection_added),
-	                                      device);
-
-	priv->cp_removed_id = g_signal_connect (priv->con_provider,
-	                                        NM_CP_SIGNAL_CONNECTION_REMOVED,
-	                                        G_CALLBACK (cp_connection_removed),
-	                                        device);
-
-	priv->cp_updated_id = g_signal_connect (priv->con_provider,
-	                                        NM_CP_SIGNAL_CONNECTION_UPDATED,
-	                                        G_CALLBACK (cp_connection_updated),
-	                                        device);
-}
-
-NMConnectionProvider *
-nm_device_get_connection_provider (NMDevice *device)
-{
-	g_return_val_if_fail (device != NULL, NULL);
-
-	return NM_DEVICE_GET_PRIVATE (device)->con_provider;
 }
 
 static SlaveInfo *
@@ -1217,6 +1192,48 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 	if (   device_has_capability (device, NM_DEVICE_CAP_CARRIER_DETECT)
 	    && !device_has_capability (device, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
 		nm_device_set_carrier (device, info->connected);
+}
+
+/**
+ * nm_device_notify_component_added():
+ * @device: the #NMDevice
+ * @component: the component being added by a plugin
+ *
+ * Called by the manager to notify the device that a new component has
+ * been found.  The device implementation should return %TRUE if it
+ * wishes to claim the component, or %FALSE if it cannot.
+ *
+ * Returns: %TRUE to claim the component, %FALSE if the component cannot be
+ * claimed.
+ */
+gboolean
+nm_device_notify_component_added (NMDevice *device, GObject *component)
+{
+	if (NM_DEVICE_GET_CLASS (device)->component_added)
+		return NM_DEVICE_GET_CLASS (device)->component_added (device, component);
+	return FALSE;
+}
+
+/**
+ * nm_device_owns_iface():
+ * @device: the #NMDevice
+ * @iface: an interface name
+ *
+ * Called by the manager to ask if the device or any of its components owns
+ * @iface.  For example, a WWAN implementation would return %TRUE for an
+ * ethernet interface name that was owned by the WWAN device's modem component,
+ * because that ethernet interface is controlled by the WWAN device and cannot
+ * be used independently of the WWAN device.
+ *
+ * Returns: %TRUE if @device or it's components owns the interface name,
+ * %FALSE if not
+ */
+gboolean
+nm_device_owns_iface (NMDevice *device, const char *iface)
+{
+	if (NM_DEVICE_GET_CLASS (device)->owns_iface)
+		return NM_DEVICE_GET_CLASS (device)->owns_iface (device, iface);
+	return FALSE;
 }
 
 static void
@@ -1946,6 +1963,12 @@ gboolean
 nm_device_can_assume_connections (NMDevice *device)
 {
 	return !!NM_DEVICE_GET_CLASS (device)->update_connection;
+}
+
+void
+nm_device_emit_recheck_auto_activate (NMDevice *self)
+{
+	g_signal_emit (self, signals[RECHECK_AUTO_ACTIVATE], 0);
 }
 
 static void
@@ -5508,33 +5531,20 @@ dispose (GObject *object)
 		priv->carrier_defer_id = 0;
 	}
 
-	if (priv->cp_added_id) {
-	    g_signal_handler_disconnect (priv->con_provider, priv->cp_added_id);
-	    priv->cp_added_id = 0;
+	if (priv->con_provider) {
+		g_signal_handlers_disconnect_by_func (priv->con_provider, cp_connection_added, self);
+		g_signal_handlers_disconnect_by_func (priv->con_provider, cp_connection_removed, self);
+		g_signal_handlers_disconnect_by_func (priv->con_provider, cp_connection_updated, self);
+		priv->con_provider = NULL;
 	}
 
-	if (priv->cp_loaded_id) {
-	    g_signal_handler_disconnect (priv->con_provider, priv->cp_loaded_id);
-	    priv->cp_loaded_id = 0;
-	}
-
-	if (priv->cp_removed_id) {
-	    g_signal_handler_disconnect (priv->con_provider, priv->cp_removed_id);
-	    priv->cp_removed_id = 0;
-	}
-
-	if (priv->cp_updated_id) {
-	    g_signal_handler_disconnect (priv->con_provider, priv->cp_updated_id);
-	    priv->cp_updated_id = 0;
-	}
+	g_hash_table_unref (priv->available_connections);
+	priv->available_connections = NULL;
 
 	if (priv->carrier_wait_id) {
 		g_source_remove (priv->carrier_wait_id);
 		priv->carrier_wait_id = 0;
 	}
-
-	g_hash_table_unref (priv->available_connections);
-	priv->available_connections = NULL;
 
 	g_clear_pointer (&priv->physical_port_id, g_free);
 
@@ -6156,6 +6166,20 @@ nm_device_class_init (NMDeviceClass *klass)
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_OBJECT);
+
+	signals[REMOVED] =
+		g_signal_new (NM_DEVICE_REMOVED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL, NULL,
+		              G_TYPE_NONE, 0);
+
+	signals[RECHECK_AUTO_ACTIVATE] =
+		g_signal_new (NM_DEVICE_RECHECK_AUTO_ACTIVATE,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL, NULL,
+		              G_TYPE_NONE, 0);
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

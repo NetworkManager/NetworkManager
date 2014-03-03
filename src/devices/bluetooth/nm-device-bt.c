@@ -44,7 +44,7 @@
 #include "nm-setting-ppp.h"
 #include "nm-device-bt-glue.h"
 #include "NetworkManagerUtils.h"
-#include "nm-enum-types.h"
+#include "nm-bt-enum-types.h"
 #include "nm-utils.h"
 
 #define MM_OLD_DBUS_SERVICE  "org.freedesktop.ModemManager"
@@ -560,22 +560,50 @@ modem_stage1 (NMDeviceBt *self, NMModem *modem, NMDeviceStateReason *reason)
 
 /*****************************************************************************/
 
-gboolean
-nm_device_bt_modem_added (NMDeviceBt *self,
-                          NMModem *modem,
-                          const char *driver)
+static void
+modem_cleanup (NMDeviceBt *self)
 {
-	NMDeviceBtPrivate *priv;
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
+
+	if (priv->modem) {
+		g_signal_handlers_disconnect_matched (priv->modem, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, self);
+		g_clear_object (&priv->modem);
+	}
+}
+
+static void
+modem_removed_cb (NMModem *modem, gpointer user_data)
+{
+	NMDeviceBt *self = NM_DEVICE_BT (user_data);
+	NMDeviceState state;
+
+	/* Fail the device if the modem was removed while active */
+	state = nm_device_get_state (NM_DEVICE (self));
+	if (   state == NM_DEVICE_STATE_ACTIVATED
+	    || nm_device_is_activating (NM_DEVICE (self))) {
+		nm_device_state_changed (NM_DEVICE (self),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_BT_FAILED);
+	} else
+		modem_cleanup (self);
+}
+
+static gboolean
+component_added (NMDevice *device, GObject *component)
+{
+	NMDeviceBt *self = NM_DEVICE_BT (device);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
+	NMModem *modem;
 	const gchar *modem_data_port;
 	const gchar *modem_control_port;
 	char *base;
 	NMDeviceState state;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
-	g_return_val_if_fail (NM_IS_DEVICE_BT (self), FALSE);
-	g_return_val_if_fail (NM_IS_MODEM (modem), FALSE);
+	if (!NM_IS_MODEM (component))
+		return FALSE;
+	modem = NM_MODEM (component);
 
-	priv = NM_DEVICE_BT_GET_PRIVATE (self);
 	modem_data_port = nm_modem_get_data_port (modem);
 	modem_control_port = nm_modem_get_control_port (modem);
 	g_return_val_if_fail (modem_data_port != NULL || modem_control_port != NULL, FALSE);
@@ -614,7 +642,7 @@ nm_device_bt_modem_added (NMDeviceBt *self,
 
 	if (priv->modem) {
 		g_warn_if_reached ();
-		g_object_unref (priv->modem);
+		modem_cleanup (self);
 	}
 
 	priv->modem = g_object_ref (modem);
@@ -624,6 +652,7 @@ nm_device_bt_modem_added (NMDeviceBt *self,
 	g_signal_connect (modem, NM_MODEM_IP4_CONFIG_RESULT, G_CALLBACK (modem_ip4_config_result), self);
 	g_signal_connect (modem, NM_MODEM_AUTH_REQUESTED, G_CALLBACK (modem_auth_requested), self);
 	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
+	g_signal_connect (modem, NM_MODEM_REMOVED, G_CALLBACK (modem_removed_cb), self);
 
 	/* In the old ModemManager the data port is known from the very beginning;
 	 * while in the new ModemManager the data port is set afterwards when the bearer gets
@@ -635,35 +664,6 @@ nm_device_bt_modem_added (NMDeviceBt *self,
 	/* Kick off the modem connection */
 	if (!modem_stage1 (self, modem, &reason))
 		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, reason);
-
-	return TRUE;
-}
-
-gboolean
-nm_device_bt_modem_removed (NMDeviceBt *self, NMModem *modem)
-{
-	NMDeviceBtPrivate *priv;
-	NMDeviceState state;
-
-	g_return_val_if_fail (NM_IS_DEVICE_BT (self), FALSE);
-	g_return_val_if_fail (NM_IS_MODEM (modem), FALSE);
-
-	priv = NM_DEVICE_BT_GET_PRIVATE (self);
-
-	if (modem != priv->modem)
-		return FALSE;
-
-	/* Fail the device if the modem was removed while active */
-	state = nm_device_get_state (NM_DEVICE (self));
-	if (   state == NM_DEVICE_STATE_ACTIVATED
-	    || nm_device_is_activating (NM_DEVICE (self))) {
-		nm_device_state_changed (NM_DEVICE (self),
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_BT_FAILED);
-	} else {
-		g_object_unref (priv->modem);
-		priv->modem = NULL;
-	}
 
 	return TRUE;
 }
@@ -905,8 +905,7 @@ deactivate (NMDevice *device)
 			                               NM_DEVICE_STATE_DISCONNECTED,
 			                               NM_DEVICE_STATE_ACTIVATED,
 			                               NM_DEVICE_STATE_REASON_USER_REQUESTED);
-			g_object_unref (priv->modem);
-			priv->modem = NULL;
+			modem_cleanup (NM_DEVICE_BT (device));
 		}
 	}
 
@@ -925,6 +924,12 @@ deactivate (NMDevice *device)
 
 	if (NM_DEVICE_CLASS (nm_device_bt_parent_class)->deactivate)
 		NM_DEVICE_CLASS (nm_device_bt_parent_class)->deactivate (device);
+}
+
+static void
+bluez_device_removed (NMBluezDevice *bdev, gpointer user_data)
+{
+	g_signal_emit_by_name (NM_DEVICE_BT (user_data), NM_DEVICE_REMOVED);
 }
 
 /*****************************************************************************/
@@ -1117,6 +1122,7 @@ set_property (GObject *object, guint prop_id,
 	case PROP_BT_DEVICE:
 		/* Construct only */
 		priv->bt_device = g_value_dup_object (value);
+		g_signal_connect (priv->bt_device, "removed", G_CALLBACK (bluez_device_removed), object);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1156,9 +1162,7 @@ dispose (GObject *object)
 		priv->timeout_id = 0;
 	}
 
-	g_signal_handlers_disconnect_by_func (priv->bt_device,
-	                                      G_CALLBACK (bluez_connected_changed),
-	                                      object);
+	g_signal_handlers_disconnect_matched (priv->bt_device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, object);
 
 	if (priv->dbus_mgr && priv->mm_watch_id) {
 		g_signal_handler_disconnect (priv->dbus_mgr, priv->mm_watch_id);
@@ -1166,7 +1170,7 @@ dispose (GObject *object)
 	}
 	priv->dbus_mgr = NULL;
 
-	g_clear_object (&priv->modem);
+	modem_cleanup (NM_DEVICE_BT (object));
 	g_clear_object (&priv->bt_device);
 
 	G_OBJECT_CLASS (nm_device_bt_parent_class)->dispose (object);
@@ -1208,6 +1212,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
 	device_class->is_available = is_available;
+	device_class->component_added = component_added;
 
 	device_class->state_changed = device_state_changed;
 

@@ -1602,21 +1602,9 @@ device_autoconnect_changed (NMDevice *device,
 }
 
 static void
-wireless_networks_changed (NMDevice *device, GObject *ap, gpointer user_data)
+device_recheck_auto_activate (NMDevice *device, gpointer user_data)
 {
-	schedule_activate_check ((NMPolicy *) user_data, device);
-}
-
-static void
-nsps_changed (NMDevice *device, GObject *nsp, gpointer user_data)
-{
-	schedule_activate_check ((NMPolicy *) user_data, device);
-}
-
-static void
-modem_enabled_changed (NMDevice *device, gpointer user_data)
-{
-	schedule_activate_check ((NMPolicy *) (user_data), device);
+	schedule_activate_check (NM_POLICY (user_data), device);
 }
 
 typedef struct {
@@ -1654,22 +1642,7 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	_connect_device_signal (policy, device, NM_DEVICE_IP4_CONFIG_CHANGED, device_ip4_config_changed, FALSE);
 	_connect_device_signal (policy, device, NM_DEVICE_IP6_CONFIG_CHANGED, device_ip6_config_changed, FALSE);
 	_connect_device_signal (policy, device, "notify::" NM_DEVICE_AUTOCONNECT, device_autoconnect_changed, FALSE);
-
-	switch (nm_device_get_device_type (device)) {
-	case NM_DEVICE_TYPE_WIFI:
-		_connect_device_signal (policy, device, "access-point-added", wireless_networks_changed, FALSE);
-		_connect_device_signal (policy, device, "access-point-removed", wireless_networks_changed, FALSE);
-		break;
-	case NM_DEVICE_TYPE_WIMAX:
-		_connect_device_signal (policy, device, "nsp-added", nsps_changed, FALSE);
-		_connect_device_signal (policy, device, "nsp-removed", nsps_changed, FALSE);
-		break;
-	case NM_DEVICE_TYPE_MODEM:
-		_connect_device_signal (policy, device, "enable-changed", modem_enabled_changed, FALSE);
-		break;
-	default:
-		break;
-	}
+	_connect_device_signal (policy, device, NM_DEVICE_RECHECK_AUTO_ACTIVATE, device_recheck_auto_activate, FALSE);
 }
 
 static void

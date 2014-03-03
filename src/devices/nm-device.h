@@ -71,9 +71,11 @@
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
 /* Internal signals */
-#define NM_DEVICE_AUTH_REQUEST "auth-request"
-#define NM_DEVICE_IP4_CONFIG_CHANGED "ip4-config-changed"
-#define NM_DEVICE_IP6_CONFIG_CHANGED "ip6-config-changed"
+#define NM_DEVICE_AUTH_REQUEST          "auth-request"
+#define NM_DEVICE_IP4_CONFIG_CHANGED    "ip4-config-changed"
+#define NM_DEVICE_IP6_CONFIG_CHANGED    "ip6-config-changed"
+#define NM_DEVICE_REMOVED               "removed"
+#define NM_DEVICE_RECHECK_AUTO_ACTIVATE "recheck-auto-activate"
 
 
 G_BEGIN_DECLS
@@ -195,6 +197,10 @@ typedef struct {
 
 	gboolean        (* have_any_ready_slaves) (NMDevice *self,
 	                                           const GSList *slaves);
+
+	gboolean        (* component_added) (NMDevice *self, GObject *component);
+
+	gboolean        (* owns_iface) (NMDevice *self, const char *iface);
 } NMDeviceClass;
 
 
@@ -316,8 +322,6 @@ gboolean nm_device_get_firmware_missing (NMDevice *self);
 
 void nm_device_queue_activation (NMDevice *device, NMActRequest *req);
 
-void nm_device_set_connection_provider (NMDevice *device, NMConnectionProvider *provider);
-
 gboolean nm_device_supports_vlans (NMDevice *device);
 
 void     nm_device_add_pending_action    (NMDevice *device, const char *action);
@@ -332,6 +336,10 @@ const char *nm_device_get_physical_port_id (NMDevice *device);
 guint32 nm_device_get_mtu (NMDevice *device);
 
 gboolean   nm_device_connection_is_available (NMDevice *device, NMConnection *connection);
+
+gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
+
+gboolean nm_device_owns_iface (NMDevice *device, const char *iface);
 
 G_END_DECLS
 

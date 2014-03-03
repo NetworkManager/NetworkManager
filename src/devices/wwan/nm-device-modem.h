@@ -51,7 +51,7 @@ typedef struct {
 
 GType nm_device_modem_get_type (void);
 
-NMDevice *nm_device_modem_new (NMModem *modem, const char *driver);
+NMDevice *nm_device_modem_new (NMModem *modem);
 
 /* Private for subclases */
 NMModem *nm_device_modem_get_modem (NMDeviceModem *self);

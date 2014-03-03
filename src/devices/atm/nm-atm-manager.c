@@ -24,51 +24,60 @@
 #include <gudev/gudev.h>
 
 #include "nm-atm-manager.h"
+#include "nm-device-adsl.h"
+#include "nm-device-factory.h"
 #include "nm-logging.h"
 
 typedef struct {
 	GUdevClient *client;
-
+	GSList *devices;
+	guint start_id;
 } NMAtmManagerPrivate;
 
 #define NM_ATM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ATM_MANAGER, NMAtmManagerPrivate))
 
-G_DEFINE_TYPE (NMAtmManager, nm_atm_manager, G_TYPE_OBJECT)
+static GType nm_atm_manager_get_type (void);
+
+static void device_factory_interface_init (NMDeviceFactory *factory_iface);
+
+G_DEFINE_TYPE_EXTENDED (NMAtmManager, nm_atm_manager, G_TYPE_OBJECT, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
 
 enum {
-	DEVICE_ADDED,
-	DEVICE_REMOVED,
-
-	LAST_SIGNAL
+	PROP_0,
+	PROP_DEVICE_TYPE,
+	LAST_PROP
 };
 
-static guint signals[LAST_SIGNAL] = { 0 };
+/**************************************************************************/
 
-NMAtmManager *
-nm_atm_manager_new (void)
+#define PLUGIN_TYPE NM_DEVICE_TYPE_ADSL
+
+G_MODULE_EXPORT NMDeviceFactory *
+nm_device_factory_create (GError **error)
 {
-	return NM_ATM_MANAGER (g_object_new (NM_TYPE_ATM_MANAGER, NULL));
+	return (NMDeviceFactory *) g_object_new (NM_TYPE_ATM_MANAGER, NULL);
 }
+
+G_MODULE_EXPORT NMDeviceType
+nm_device_factory_get_device_type (void)
+{
+	return PLUGIN_TYPE;
+}
+
+/************************************************************************/
 
 static gboolean
 dev_get_attrs (GUdevDevice *udev_device,
-               const char **out_ifname,
                const char **out_path,
                char **out_driver)
 {
 	GUdevDevice *parent = NULL;
-	const char *ifname, *driver, *path;
+	const char *driver, *path;
 
 	g_return_val_if_fail (udev_device != NULL, FALSE);
-	g_return_val_if_fail (out_ifname != NULL, FALSE);
 	g_return_val_if_fail (out_path != NULL, FALSE);
 	g_return_val_if_fail (out_driver != NULL, FALSE);
-
-	ifname = g_udev_device_get_name (udev_device);
-	if (!ifname) {
-		nm_log_dbg (LOGD_HW, "failed to get device's interface");
-		return FALSE;
-	}
 
 	path = g_udev_device_get_sysfs_path (udev_device);
 	if (!path) {
@@ -80,50 +89,91 @@ dev_get_attrs (GUdevDevice *udev_device,
 	if (!driver) {
 		/* Try the parent */
 		parent = g_udev_device_get_parent (udev_device);
-		if (parent) {
+		if (parent)
 			driver = g_udev_device_get_driver (parent);
-			g_object_unref (parent);
-		}
 	}
 
-	*out_ifname = ifname;
 	*out_path = path;
 	*out_driver = g_strdup (driver);
 
+	g_clear_object (&parent);
 	return TRUE;
+}
+
+static void
+device_destroyed (gpointer user_data, GObject *dead)
+{
+	NMAtmManager *self = NM_ATM_MANAGER (user_data);
+	NMAtmManagerPrivate *priv = NM_ATM_MANAGER_GET_PRIVATE (self);
+
+	priv->devices = g_slist_remove (priv->devices, dead);
 }
 
 static void
 adsl_add (NMAtmManager *self, GUdevDevice *udev_device)
 {
-	const char *ifname = NULL, *path = NULL;
+	NMAtmManagerPrivate *priv = NM_ATM_MANAGER_GET_PRIVATE (self);
+	const char *ifname, *sysfs_path = NULL;
 	char *driver = NULL;
+	NMDevice *device;
 
 	g_return_if_fail (udev_device != NULL);
 
-	nm_log_dbg (LOGD_HW, "adsl_add: ATM Device detected from udev. Adding ..");
+	ifname = g_udev_device_get_name (udev_device);
+	if (!ifname) {
+		nm_log_warn (LOGD_HW, "failed to get device's interface name");
+		return;
+	}
 
-	if (dev_get_attrs (udev_device, &ifname, &path, &driver))
-		g_signal_emit (self, signals[DEVICE_ADDED], 0, ifname, path, driver);
-	g_free (driver);
+	nm_log_dbg (LOGD_HW, "(%s): found ATM device", ifname);
+
+	if (dev_get_attrs (udev_device, &sysfs_path, &driver)) {
+		g_assert (sysfs_path);
+
+		device = nm_device_adsl_new (sysfs_path, ifname, driver);
+		g_assert (device);
+
+		priv->devices = g_slist_prepend (priv->devices, device);
+		g_object_weak_ref (G_OBJECT (device), device_destroyed, self);
+
+		g_signal_emit_by_name (self, NM_DEVICE_FACTORY_DEVICE_ADDED, device);
+		g_object_unref (device);
+
+		g_free (driver);
+	}
 }
 
 static void
-adsl_remove (NMAtmManager *self, GUdevDevice *device)
+adsl_remove (NMAtmManager *self, GUdevDevice *udev_device)
 {
-	nm_log_dbg (LOGD_HW, "adsl_remove: Removing ATM Device");
+	NMAtmManagerPrivate *priv = NM_ATM_MANAGER_GET_PRIVATE (self);
+	const char *iface = g_udev_device_get_name (udev_device);
+	GSList *iter;
 
-	g_signal_emit (self, signals[DEVICE_REMOVED], 0, g_udev_device_get_name (device));
+	nm_log_dbg (LOGD_HW, "(%s): removing ATM device", iface);
+
+	for (iter = priv->devices; iter; iter = iter->next) {
+		NMDevice *device = iter->data;
+
+		/* Match 'iface' not 'ip_iface' to the ATM device instead of the
+		 * NAS bridge interface or PPPoE interface.
+		 */
+		if (g_strcmp0 (nm_device_get_iface (device), iface) != 0)
+			continue;
+
+		g_object_weak_unref (G_OBJECT (iter->data), device_destroyed, self);
+		priv->devices = g_slist_remove (priv->devices, device);
+		g_signal_emit_by_name (device, NM_DEVICE_REMOVED);
+		break;
+	}
 }
 
-void
-nm_atm_manager_query_devices (NMAtmManager *self)
+static gboolean
+query_devices (NMAtmManager *self)
 {
 	NMAtmManagerPrivate *priv = NM_ATM_MANAGER_GET_PRIVATE (self);
 	GUdevEnumerator *enumerator;
 	GList *devices, *iter;
-
-	g_return_if_fail (NM_IS_ATM_MANAGER (self));
 
 	enumerator = g_udev_enumerator_new (priv->client);
 	g_udev_enumerator_add_match_subsystem (enumerator, "atm");
@@ -135,6 +185,8 @@ nm_atm_manager_query_devices (NMAtmManager *self)
 	}
 	g_list_free (devices);
 	g_object_unref (enumerator);
+
+	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -165,6 +217,8 @@ handle_uevent (GUdevClient *client,
 		adsl_remove (self, device);
 }
 
+/*********************************************************************/
+
 static void
 nm_atm_manager_init (NMAtmManager *self)
 {
@@ -173,6 +227,27 @@ nm_atm_manager_init (NMAtmManager *self)
 
 	priv->client = g_udev_client_new (subsys);
 	g_signal_connect (priv->client, "uevent", G_CALLBACK (handle_uevent), self);
+
+	priv->start_id = g_idle_add ((GSourceFunc) query_devices, self);
+}
+
+static void
+device_factory_interface_init (NMDeviceFactory *factory_iface)
+{
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	case PROP_DEVICE_TYPE:
+		g_value_set_uint (value, PLUGIN_TYPE);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -180,8 +255,20 @@ dispose (GObject *object)
 {
 	NMAtmManager *self = NM_ATM_MANAGER (object);
 	NMAtmManagerPrivate *priv = NM_ATM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
 
+	if (priv->client)
+		g_signal_handlers_disconnect_by_func (priv->client, handle_uevent, self);
 	g_clear_object (&priv->client);
+
+	if (priv->start_id) {
+		g_source_remove (priv->start_id);
+		priv->start_id = 0;
+	}
+
+	for (iter = priv->devices; iter; iter = iter->next)
+		g_object_weak_unref (G_OBJECT (iter->data), device_destroyed, self);
+	g_clear_pointer (&priv->devices, g_slist_free);
 
 	G_OBJECT_CLASS (nm_atm_manager_parent_class)->dispose (object);
 }
@@ -195,21 +282,9 @@ nm_atm_manager_class_init (NMAtmManagerClass *klass)
 
 	/* virtual methods */
 	object_class->dispose = dispose;
+	object_class->get_property = get_property;
 
-	/* Signals */
-	signals[DEVICE_ADDED] =
-		g_signal_new ("device-added",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMAtmManagerClass, device_added),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
-
-	signals[DEVICE_REMOVED] =
-		g_signal_new ("device-removed",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMAtmManagerClass, device_removed),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1, G_TYPE_STRING);
+	g_object_class_override_property (object_class,
+	                                  PROP_DEVICE_TYPE,
+	                                  NM_DEVICE_FACTORY_DEVICE_TYPE);
 }

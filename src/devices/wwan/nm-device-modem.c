@@ -181,6 +181,7 @@ modem_enabled_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 	set_enabled (NM_DEVICE (self), nm_modem_get_mm_enabled (priv->modem));
 
 	g_signal_emit (G_OBJECT (self), signals[ENABLE_CHANGED], 0);
+	nm_device_emit_recheck_auto_activate (NM_DEVICE (self));
 }
 
 static void
@@ -196,6 +197,12 @@ modem_connected_cb (NMModem *modem, GParamSpec *pspec, gpointer user_data)
 	}
 }
 
+static void
+modem_removed_cb (NMModem *modem, gpointer user_data)
+{
+	g_signal_emit_by_name (NM_DEVICE (user_data), NM_DEVICE_REMOVED);
+}
+
 /*****************************************************************************/
 
 NMModem *
@@ -204,6 +211,15 @@ nm_device_modem_get_modem (NMDeviceModem *self)
 	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NULL);
 
 	return NM_DEVICE_MODEM_GET_PRIVATE (self)->modem;
+}
+
+static gboolean
+owns_iface (NMDevice *device, const char *iface)
+{
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+
+	g_assert (priv->modem);
+	return nm_modem_owns_port (priv->modem, iface);
 }
 
 /*****************************************************************************/
@@ -345,14 +361,14 @@ set_enabled (NMDevice *device, gboolean enabled)
 /*****************************************************************************/
 
 NMDevice *
-nm_device_modem_new (NMModem *modem, const char *driver)
+nm_device_modem_new (NMModem *modem)
 {
 	NMDeviceModemCapabilities caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
 	NMDeviceModemCapabilities current_caps = NM_DEVICE_MODEM_CAPABILITY_NONE;
 	NMDevice *device;
+	const char *data_port;
 
 	g_return_val_if_fail (NM_IS_MODEM (modem), NULL);
-	g_return_val_if_fail (driver != NULL, NULL);
 
 	/* Load capabilities */
 	nm_modem_get_capabilities (modem, &caps, &current_caps);
@@ -360,7 +376,7 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_MODEM,
 	                                    NM_DEVICE_UDI, nm_modem_get_path (modem),
 	                                    NM_DEVICE_IFACE, nm_modem_get_uid (modem),
-	                                    NM_DEVICE_DRIVER, driver,
+	                                    NM_DEVICE_DRIVER, nm_modem_get_driver (modem),
 	                                    NM_DEVICE_TYPE_DESC, "Broadband",
 	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_MODEM,
 	                                    NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WWAN,
@@ -369,10 +385,10 @@ nm_device_modem_new (NMModem *modem, const char *driver)
 	                                    NM_DEVICE_MODEM_CURRENT_CAPABILITIES, current_caps,
 	                                    NULL);
 
-	/* In old MM modems, data port is known right away (may be changed
-	 * afterwards during a PPP session setup) */
-	if (NM_IS_MODEM_OLD (modem))
-		nm_device_set_ip_iface (device, nm_modem_get_data_port (modem));
+	/* If the data port is known, set it as the IP interface immediately */
+	data_port = nm_modem_get_data_port (modem);
+	if (data_port)
+		nm_device_set_ip_iface (device, data_port);
 
 	return device;
 }
@@ -398,6 +414,7 @@ set_modem (NMDeviceModem *self, NMModem *modem)
 	g_signal_connect (modem, NM_MODEM_AUTH_RESULT, G_CALLBACK (modem_auth_result), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_ENABLED, G_CALLBACK (modem_enabled_cb), self);
 	g_signal_connect (modem, "notify::" NM_MODEM_CONNECTED, G_CALLBACK (modem_connected_cb), self);
+	g_signal_connect (modem, NM_MODEM_REMOVED, G_CALLBACK (modem_removed_cb), self);
 
 	/* In the old ModemManager the data port is known from the very beginning;
 	 * while in the new ModemManager the data port is set afterwards when the bearer gets
@@ -485,6 +502,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->ip4_config_pre_commit = ip4_config_pre_commit;
 	device_class->get_enabled = get_enabled;
 	device_class->set_enabled = set_enabled;
+	device_class->owns_iface = owns_iface;
 
 	device_class->state_changed = device_state_changed;
 

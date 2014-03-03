@@ -44,16 +44,12 @@ typedef struct {
 typedef struct {
 	GObjectClass parent;
 
-	/* Virtual functions */
+	/* Signals */
 	void (*bdaddr_added) (NMBluez5Manager *manager,
 	                      const char *bdaddr,
 	                      const char *name,
 	                      const char *object_path,
 	                      guint uuids);
-
-	void (*bdaddr_removed) (NMBluez5Manager *manager,
-	                        const char *bdaddr,
-	                        const char *object_path);
 } NMBluez5ManagerClass;
 
 GType nm_bluez5_manager_get_type (void);

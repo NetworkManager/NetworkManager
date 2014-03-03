@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2010 Red Hat, Inc.
+ * Copyright (C) 2009 - 2014 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  * Copyright (C) 2009 Canonical Ltd.
  */
@@ -63,26 +63,26 @@ struct _NMModemManagerPrivate {
 
 enum {
 	MODEM_ADDED,
-	MODEM_REMOVED,
-
-	LAST_SIGNAL
+	LAST_SIGNAL,
 };
-
 static guint signals[LAST_SIGNAL] = { 0 };
 
+/************************************************************************/
 
-NMModemManager *
-nm_modem_manager_get (void)
+static void
+handle_new_modem (NMModemManager *self, NMModem *modem)
 {
-	static NMModemManager *singleton = NULL;
+	const char *path;
 
-	if (!singleton)
-		singleton = NM_MODEM_MANAGER (g_object_new (NM_TYPE_MODEM_MANAGER, NULL));
-	else
-		g_object_ref (singleton);
+	path = nm_modem_get_path (modem);
+	if (g_hash_table_lookup (self->priv->modems, path)) {
+		g_warn_if_reached ();
+		return;
+	}
 
-	g_assert (singleton);
-	return singleton;
+	/* Track the new modem */
+	g_hash_table_insert (self->priv->modems, g_strdup (path), modem);
+	g_signal_emit (self, signals[MODEM_ADDED], 0, modem);
 }
 
 /************************************************************************/
@@ -127,10 +127,9 @@ create_modem (NMModemManager *self, const char *path)
 	                                    G_TYPE_INVALID)) {
 		/* Success, create the modem */
 		modem = nm_modem_old_new (path, properties, &error);
-		if (modem) {
-			g_hash_table_insert (self->priv->modems, g_strdup (path), modem);
-			g_signal_emit (self, signals[MODEM_ADDED], 0, modem, nm_modem_get_driver (modem));
-		} else {
+		if (modem)
+			handle_new_modem (self, modem);
+		else {
 			nm_log_warn (LOGD_MB, "failed to create modem: %s",
 				         error ? error->message : "(unknown)");
 		}
@@ -159,7 +158,7 @@ modem_removed (DBusGProxy *proxy, const char *path, gpointer user_data)
 
 	modem = (NMModem *) g_hash_table_lookup (self->priv->modems, path);
 	if (modem) {
-		g_signal_emit (self, signals[MODEM_REMOVED], 0, modem);
+		nm_modem_emit_removed (modem);
 		g_hash_table_remove (self->priv->modems, path);
 	}
 }
@@ -274,8 +273,7 @@ modem_manager_appeared (NMModemManager *self, gboolean enumerate_devices)
 static gboolean
 remove_one_modem (gpointer key, gpointer value, gpointer user_data)
 {
-	g_signal_emit (user_data, signals[MODEM_REMOVED], 0, value);
-
+	nm_modem_emit_removed (NM_MODEM (value));
 	return TRUE;
 }
 
@@ -375,9 +373,9 @@ modem_object_added (MMManager *modem_manager,
                     NMModemManager *self)
 {
 	const gchar *path;
-	gchar *drivers;
 	MMModem *modem_iface;
 	NMModem *modem;
+	GError *error = NULL;
 
 	/* Ensure we don't have the same modem already */
 	path = mm_object_get_path (modem_object);
@@ -400,17 +398,14 @@ modem_object_added (MMManager *modem_manager,
 	}
 
 	/* Create a new modem object */
-	modem = nm_modem_broadband_new (G_OBJECT (modem_object));
-	if (!modem)
-		return;
-
-	/* Build a single string with all drivers listed */
-	drivers = g_strjoinv (", ", (gchar **)mm_modem_get_drivers (modem_iface));
-
-	/* Keep track of the new modem and notify about it */
-	g_hash_table_insert (self->priv->modems, g_strdup (path), modem);
-	g_signal_emit (self, signals[MODEM_ADDED], 0, modem, drivers);
-	g_free (drivers);
+	modem = nm_modem_broadband_new (G_OBJECT (modem_object), &error);
+	if (modem)
+		handle_new_modem (self, modem);
+	else {
+		nm_log_warn (LOGD_MB, "failed to create modem: %s",
+		             error ? error->message : "(unknown)");
+	}
+	g_clear_error (&error);
 }
 
 static void
@@ -426,7 +421,7 @@ modem_object_removed (MMManager *manager,
 	if (!modem)
 		return;
 
-	g_signal_emit (self, signals[MODEM_REMOVED], 0, modem);
+	nm_modem_emit_removed (modem);
 	g_hash_table_remove (self->priv->modems, path);
 }
 
@@ -752,20 +747,11 @@ nm_modem_manager_class_init (NMModemManagerClass *klass)
 
 	object_class->dispose = dispose;
 
-	/* signals */
 	signals[MODEM_ADDED] =
-		g_signal_new ("modem-added",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemManagerClass, modem_added),
-					  NULL, NULL, NULL,
-					  G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_STRING);
-
-	signals[MODEM_REMOVED] =
-		g_signal_new ("modem-removed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemManagerClass, modem_removed),
-					  NULL, NULL, NULL,
-					  G_TYPE_NONE, 1, G_TYPE_OBJECT);
+		g_signal_new (NM_MODEM_MANAGER_MODEM_ADDED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMModemManagerClass, modem_added),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1, NM_TYPE_MODEM);
 }

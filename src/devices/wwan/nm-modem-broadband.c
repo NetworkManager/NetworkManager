@@ -814,10 +814,12 @@ modem_state_changed (MMModem *modem,
 /*****************************************************************************/
 
 NMModem *
-nm_modem_broadband_new (GObject *object)
+nm_modem_broadband_new (GObject *object, GError **error)
 {
+	NMModem *modem;
 	MMObject *modem_object;
 	MMModem *modem_iface;
+	gchar *drivers;
 
 	g_return_val_if_fail (MM_IS_OBJECT (object), NULL);
 	modem_object = MM_OBJECT (object);
@@ -831,18 +833,25 @@ nm_modem_broadband_new (GObject *object)
 	 * This happens when a severe error happened when trying to initialize it,
 	 * like missing SIM. */
 	if (mm_modem_get_state (modem_iface) == MM_MODEM_STATE_FAILED) {
-		nm_log_warn (LOGD_MB, "(%s): unusable modem detected",
-					 mm_modem_get_primary_port (modem_iface));
+		g_set_error (error, NM_MODEM_ERROR, NM_MODEM_ERROR_INITIALIZATION_FAILED,
+		             "(%s): unusable modem detected",
+		             mm_modem_get_primary_port (modem_iface));
 		return NULL;
 	}
 
-	return (NMModem *) g_object_new (NM_TYPE_MODEM_BROADBAND,
-	                                 NM_MODEM_PATH, mm_object_get_path (modem_object),
-	                                 NM_MODEM_UID, mm_modem_get_primary_port (modem_iface),
-	                                 NM_MODEM_CONTROL_PORT, mm_modem_get_primary_port (modem_iface),
-	                                 NM_MODEM_DATA_PORT, NULL, /* We don't know it until bearer created */
-	                                 NM_MODEM_BROADBAND_MODEM, modem_object,
-	                                 NULL);
+	/* Build a single string with all drivers listed */
+	drivers = g_strjoinv (", ", (gchar **)mm_modem_get_drivers (modem_iface));
+
+	modem = g_object_new (NM_TYPE_MODEM_BROADBAND,
+	                      NM_MODEM_PATH, mm_object_get_path (modem_object),
+	                      NM_MODEM_UID, mm_modem_get_primary_port (modem_iface),
+	                      NM_MODEM_CONTROL_PORT, mm_modem_get_primary_port (modem_iface),
+	                      NM_MODEM_DATA_PORT, NULL, /* We don't know it until bearer created */
+	                      NM_MODEM_BROADBAND_MODEM, modem_object,
+	                      NM_MODEM_DRIVER, drivers,
+	                      NULL);
+	g_free (drivers);
+	return modem;
 }
 
 static void
