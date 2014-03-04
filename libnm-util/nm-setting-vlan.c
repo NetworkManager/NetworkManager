@@ -479,18 +479,19 @@ nm_setting_vlan_remove_priority_str_by_value (NMSettingVlan *setting,
                                               NMVlanPriorityMap map,
                                               const char *str)
 {
-	GSList *list;
 	PriorityMap *item;
+	gboolean found;
 
 	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), FALSE);
 	g_return_val_if_fail (map == NM_VLAN_INGRESS_MAP || map == NM_VLAN_EGRESS_MAP, FALSE);
 
-	list = get_map (setting, map);
 	item = priority_map_new_from_str (map, str);
 	if (!item)
 		return FALSE;
 
-	return nm_setting_vlan_remove_priority_by_value (setting, map, item->from, item->to);
+	found = nm_setting_vlan_remove_priority_by_value (setting, map, item->from, item->to);
+	g_free (item);
+	return found;
 }
 
 /**
