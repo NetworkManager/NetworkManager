@@ -1920,11 +1920,11 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	 * These two flags were introduced together with the extended ifa_flags,
 	 * so, check for that.
 	 **/
-	if ((address->flags && IFA_F_MANAGETEMPADDR) & !nm_platform_check_support_libnl_extended_ifa_flags ()) {
+	if ((address->flags & IFA_F_MANAGETEMPADDR) && !nm_platform_check_support_libnl_extended_ifa_flags ()) {
 		strncat (s_flags, s_flags[0] ? "," IFA_F_MANAGETEMPADDR_STR : IFA_F_MANAGETEMPADDR_STR,
 		         sizeof (s_flags) - strlen (s_flags) - 1);
 	}
-	if ((address->flags && IFA_F_NOPREFIXROUTE) & !nm_platform_check_support_libnl_extended_ifa_flags ()) {
+	if ((address->flags & IFA_F_NOPREFIXROUTE) && !nm_platform_check_support_libnl_extended_ifa_flags ()) {
 		strncat (s_flags, s_flags[0] ? "," IFA_F_NOPREFIXROUTE_STR : IFA_F_NOPREFIXROUTE_STR,
 		         sizeof (s_flags) - strlen (s_flags) - 1);
 	}
