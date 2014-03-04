@@ -1643,12 +1643,9 @@ get_secrets (NMVPNConnection *self,
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_NONE;
 	GError *error = NULL;
-	gboolean filter_by_uid;
 
 	g_return_if_fail (secrets_idx < SECRETS_REQ_LAST);
 	priv->secrets_idx = secrets_idx;
-
-	filter_by_uid = nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (self));
 
 	nm_log_dbg (LOGD_VPN, "(%s/%s) requesting VPN secrets pass #%d",
 	            nm_connection_get_uuid (priv->connection),
@@ -1658,7 +1655,6 @@ get_secrets (NMVPNConnection *self,
 	switch (priv->secrets_idx) {
 	case SECRETS_REQ_SYSTEM:
 		flags = NM_SETTINGS_GET_SECRETS_FLAG_ONLY_SYSTEM;
-		filter_by_uid = FALSE;
 		break;
 	case SECRETS_REQ_EXISTING:
 		flags = NM_SETTINGS_GET_SECRETS_FLAG_NONE;
