@@ -255,12 +255,6 @@ nm_platform_sysctl_set (const char *path, const char *value)
 	g_return_val_if_fail (value, FALSE);
 	g_return_val_if_fail (klass->sysctl_set, FALSE);
 
-	/* Don't write outside known locations */
-	g_assert (g_str_has_prefix (path, "/proc/sys")
-			|| g_str_has_prefix (path, "/sys"));
-	/* Don't write to suspicious locations */
-	g_assert (!strstr (path, ".."));
-
 	return klass->sysctl_set (platform, path, value);
 }
 
