@@ -397,26 +397,10 @@ nm_device_init (NMDevice *self)
 	priv->ip6_saved_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 }
 
-/* Returns a static buffer */
-static const char *
-ip6_property_path (NMDevice *self, const char *property)
-{
-#define IPV6_PROPERTY_DIR "/proc/sys/net/ipv6/conf/"
-	static char path[sizeof (IPV6_PROPERTY_DIR) + IFNAMSIZ + 32];
-	int len;
-
-	len = g_snprintf (path, sizeof (path), IPV6_PROPERTY_DIR "%s/%s",
-	                  nm_device_get_ip_iface (self),
-	                  property);
-	g_assert (len < sizeof (path) - 1);
-
-	return path;
-}
-
 static inline gboolean
 nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *value)
 {
-	return nm_platform_sysctl_set (ip6_property_path (self, property), value);
+	return nm_platform_sysctl_set (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property), value);
 }
 
 static const char *ip6_properties_to_save[] = {
@@ -433,13 +417,14 @@ static void
 save_ip6_properties (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const char *ifname = nm_device_get_ip_iface (self);
 	char *value;
 	int i;
 
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
 	for (i = 0; i < G_N_ELEMENTS (ip6_properties_to_save); i++) {
-		value = nm_platform_sysctl_get (ip6_property_path (self, ip6_properties_to_save[i]));
+		value = nm_platform_sysctl_get (nm_utils_ip6_property_path (ifname, ip6_properties_to_save[i]));
 		if (value) {
 			g_hash_table_insert (priv->ip6_saved_properties,
 			                     (char *) ip6_properties_to_save[i],

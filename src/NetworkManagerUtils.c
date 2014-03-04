@@ -964,3 +964,24 @@ nm_utils_get_monotonic_timestamp_s (void)
 }
 
 
+/**
+ * nm_utils_ip6_property_path:
+ * @ifname: an interface name
+ * @property: a property name
+ *
+ * Returns the path to IPv6 property @property on @ifname. Note that
+ * this uses a static buffer.
+ */
+const char *
+nm_utils_ip6_property_path (const char *ifname, const char *property)
+{
+#define IPV6_PROPERTY_DIR "/proc/sys/net/ipv6/conf/"
+	static char path[sizeof (IPV6_PROPERTY_DIR) + IFNAMSIZ + 32];
+	int len;
+
+	len = g_snprintf (path, sizeof (path), IPV6_PROPERTY_DIR "%s/%s",
+	                  ifname, property);
+	g_assert (len < sizeof (path) - 1);
+
+	return path;
+}
