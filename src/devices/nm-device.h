@@ -254,7 +254,6 @@ NMConnection *  nm_device_get_connection	(NMDevice *dev);
 
 gboolean        nm_device_is_available   (NMDevice *dev);
 gboolean        nm_device_has_carrier    (NMDevice *dev);
-gboolean        nm_device_ignore_carrier (NMDevice *dev);
 
 NMConnection * nm_device_generate_connection (NMDevice *device);
 

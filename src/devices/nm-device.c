@@ -1599,12 +1599,6 @@ nm_device_is_available (NMDevice *self)
 }
 
 gboolean
-nm_device_ignore_carrier (NMDevice *dev)
-{
-	return NM_DEVICE_GET_PRIVATE (dev)->ignore_carrier;
-}
-
-gboolean
 nm_device_get_enabled (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
