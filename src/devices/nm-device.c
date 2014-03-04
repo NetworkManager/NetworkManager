@@ -68,7 +68,6 @@
 #include "nm-dispatcher.h"
 #include "nm-config-device.h"
 #include "nm-config.h"
-#include "nm-platform.h"
 #include "nm-dns-manager.h"
 
 #include "nm-device-bridge.h"
