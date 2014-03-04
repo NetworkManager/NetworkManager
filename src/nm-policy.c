@@ -1398,7 +1398,7 @@ device_state_changed (NMDevice *device,
 	const char *ip_iface = nm_device_get_ip_iface (device);
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
-	NMSettingConnection *s_con;
+	NMSettingConnection *s_con = NULL;
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_FAILED:
@@ -1472,10 +1472,13 @@ device_state_changed (NMDevice *device,
 				/* The device was disconnected; block all connections on it */
 				block_autoconnect_for_device (policy, device);
 			} else {
-				/* The connection was deactivated, so block just this connection */
-				nm_log_dbg (LOGD_DEVICE, "Blocking autoconnect of connection '%s' by user request",
-				            nm_connection_get_id (NM_CONNECTION (connection)));
-				nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_USER_REQUESTED);
+				if (connection) {
+					/* The connection was deactivated, so block just this connection */
+					nm_log_dbg (LOGD_DEVICE, "Blocking autoconnect of connection '%s' by user request",
+					            nm_connection_get_id (NM_CONNECTION (connection)));
+					nm_settings_connection_set_autoconnect_blocked_reason (connection,
+					                                                       NM_DEVICE_STATE_REASON_USER_REQUESTED);
+				}
 			}
 		}
 		break;
@@ -1500,10 +1503,12 @@ device_state_changed (NMDevice *device,
 		break;
 	case NM_DEVICE_STATE_IP_CONFIG:
 		/* We must have secrets if we got here. */
-		nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_NONE);
+		if (connection)
+			nm_settings_connection_set_autoconnect_blocked_reason (connection, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	case NM_DEVICE_STATE_SECONDARIES:
-		s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
+		if (connection)
+			s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
 		if (s_con && nm_setting_connection_get_num_secondaries (s_con) > 0) {
 			/* Make routes and DNS up-to-date before activating dependent connections */
 			update_routing_and_dns (policy, FALSE);
