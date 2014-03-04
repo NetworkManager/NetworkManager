@@ -1423,6 +1423,36 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 
 /******************************************************************/
 
+static void
+_log_dbg_sysctl_set_impl (const char *path, const char *value)
+{
+	GError *error = NULL;
+	char *contents, *contents_escaped;
+	char *value_escaped = g_strescape (value, NULL);
+
+	if (!g_file_get_contents (path, &contents, NULL, &error)) {
+		debug ("sysctl: setting '%s' to '%s' (current value cannot be read: %s)", path, value_escaped, error->message);
+		g_clear_error (&error);
+	} else {
+		g_strstrip (contents);
+		contents_escaped = g_strescape (contents, NULL);
+		if (strcmp (contents, value) == 0)
+			debug ("sysctl: setting '%s' to '%s' (current value is identical)", path, value_escaped);
+		else
+			debug ("sysctl: setting '%s' to '%s' (current value is '%s')", path, value_escaped, contents_escaped);
+		g_free (contents);
+		g_free (contents_escaped);
+	}
+	g_free (value_escaped);
+}
+
+#define _log_dbg_sysctl_set(path, value) \
+	G_STMT_START { \
+		if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) { \
+			_log_dbg_sysctl_set_impl (path, value); \
+		} \
+	} G_STMT_END
+
 static gboolean
 sysctl_set (NMPlatform *platform, const char *path, const char *value)
 {
@@ -1444,7 +1474,7 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 		return FALSE;
 	}
 
-	debug ("sysctl: setting '%s' to '%s'", path, value);
+	_log_dbg_sysctl_set (path, value);
 
 	/* Most sysfs and sysctl options don't care about a trailing LF, while some
 	 * (like infiniband) do.  So always add the LF.  Also, neither sysfs nor
@@ -1478,6 +1508,47 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	return (nwrote == len);
 }
 
+static GHashTable *sysctl_get_prev_values;
+
+static void
+_log_dbg_sysctl_get_impl (const char *path, const char *contents)
+{
+	const char *prev_value = NULL;
+
+	if (!sysctl_get_prev_values)
+		sysctl_get_prev_values = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	else
+		prev_value = g_hash_table_lookup (sysctl_get_prev_values, path);
+
+	if (prev_value) {
+		if (strcmp (prev_value, contents) != 0) {
+			char *contents_escaped = g_strescape (contents, NULL);
+			char *prev_value_escaped = g_strescape (prev_value, NULL);
+
+			debug ("sysctl: reading '%s': '%s' (changed from '%s' on last read)", path, contents_escaped, prev_value_escaped);
+			g_free (contents_escaped);
+			g_free (prev_value_escaped);
+			g_hash_table_insert (sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
+		}
+	} else {
+		char *contents_escaped = g_strescape (contents, NULL);
+
+		debug ("sysctl: reading '%s': '%s'", path, contents_escaped);
+		g_free (contents_escaped);
+		g_hash_table_insert (sysctl_get_prev_values, g_strdup (path), g_strdup (contents));
+	}
+}
+
+#define _log_dbg_sysctl_get(path, contents) \
+	G_STMT_START { \
+		if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) { \
+			_log_dbg_sysctl_get_impl (path, contents); \
+		} else if (sysctl_get_prev_values) { \
+			g_hash_table_destroy (sysctl_get_prev_values); \
+			sysctl_get_prev_values = NULL; \
+		} \
+	} G_STMT_END
+
 static char *
 sysctl_get (NMPlatform *platform, const char *path)
 {
@@ -1495,7 +1566,11 @@ sysctl_get (NMPlatform *platform, const char *path)
 		return NULL;
 	}
 
-	return g_strstrip (contents);
+	g_strstrip (contents);
+
+	_log_dbg_sysctl_get (path, contents);
+
+	return contents;
 }
 
 /******************************************************************/
