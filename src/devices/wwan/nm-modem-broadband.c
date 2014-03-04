@@ -66,6 +66,8 @@ translate_mm_error (GError *error)
 {
 	NMDeviceStateReason reason;
 
+	g_return_val_if_fail (error != NULL, NM_DEVICE_STATE_REASON_UNKNOWN);
+
 	if (g_error_matches (error, MM_CONNECTION_ERROR, MM_CONNECTION_ERROR_NO_CARRIER))
 		reason = NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER;
 	else if (g_error_matches (error, MM_CONNECTION_ERROR, MM_CONNECTION_ERROR_NO_DIALTONE))

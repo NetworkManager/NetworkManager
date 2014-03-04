@@ -3081,6 +3081,7 @@ _activation_auth_done (NMActiveConnection *active,
 			                         error_desc);
 	}
 
+	g_assert (error);
 	dbus_g_method_return_error (context, error);
 	_internal_activation_failed (self, active, error->message);
 	g_object_unref (active);
@@ -3227,6 +3228,7 @@ activation_add_done (NMSettings *self,
 		error = local;
 	}
 
+	g_assert (error);
 	_internal_activation_failed (info->manager, info->active, error->message);
 	dbus_g_method_return_error (context, error);
 	g_clear_error (&local);
