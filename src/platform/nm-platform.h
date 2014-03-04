@@ -36,6 +36,14 @@
 
 /******************************************************************/
 
+/* workaround for older libnl version, that does not define these flags. */
+#ifndef IFA_F_MANAGETEMPADDR
+#define IFA_F_MANAGETEMPADDR 0x100
+#endif
+#ifndef IFA_F_NOPREFIXROUTE
+#define IFA_F_NOPREFIXROUTE 0x200
+#endif
+
 typedef enum {
 	/* no error specified, sometimes this means the arguments were wrong */
 	NM_PLATFORM_ERROR_NONE,

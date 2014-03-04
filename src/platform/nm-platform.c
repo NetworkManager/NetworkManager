@@ -33,14 +33,6 @@
 #include "nm-logging.h"
 #include "nm-enum-types.h"
 
-/* workaround for older libnl version, that does not define these flags. */
-#ifndef IFA_F_MANAGETEMPADDR
-#define IFA_F_MANAGETEMPADDR 0x100
-#endif
-#ifndef IFA_F_NOPREFIXROUTE
-#define IFA_F_NOPREFIXROUTE 0x200
-#endif
-
 #define debug(...) nm_log_dbg (LOGD_PLATFORM, __VA_ARGS__)
 
 #define NM_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PLATFORM, NMPlatformPrivate))
