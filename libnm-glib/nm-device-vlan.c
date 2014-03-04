@@ -198,7 +198,6 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 		if (!g_strcmp0 (mac_address_str, NM_DEVICE_VLAN_GET_PRIVATE (device)->hw_address)) {
 			g_set_error (error, NM_DEVICE_VLAN_ERROR, NM_DEVICE_VLAN_ERROR_MAC_MISMATCH,
 			             "The hardware address of the device and the connection didn't match.");
-			g_free (mac_address_str);
 		}
 		g_free (mac_address_str);
 	}
