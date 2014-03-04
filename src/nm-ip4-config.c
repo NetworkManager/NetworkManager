@@ -269,7 +269,8 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex, int priority)
 			/* Don't add the route if it's more specific than one of the subnets
 			 * the device already has an IP address on.
 			 */
-			if (nm_ip4_config_destination_is_direct (config, route.network, route.plen))
+			if (   route.gateway == 0
+			    && nm_ip4_config_destination_is_direct (config, route.network, route.plen))
 				continue;
 
 			/* Don't add the default route when and the connection

@@ -270,7 +270,8 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex, int priority)
 			/* Don't add the route if it's more specific than one of the subnets
 			 * the device already has an IP address on.
 			 */
-			if (nm_ip6_config_destination_is_direct (config, &route.network, route.plen))
+			if (   IN6_IS_ADDR_UNSPECIFIED (&route.gateway)
+			    && nm_ip6_config_destination_is_direct (config, &route.network, route.plen))
 				continue;
 
 			/* Don't add the default route when and the connection
