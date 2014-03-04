@@ -1938,6 +1938,30 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 }
 
 /**
+ * nm_platform_addr_flags2str: wrapper for rtnl_addr_flags2str(),
+ * which might not yet support some recent address flags.
+ **/
+void
+nm_platform_addr_flags2str (int flags, char *buf, size_t size)
+{
+	rtnl_addr_flags2str(flags, buf, size);
+
+	/* There are two recent flags IFA_F_MANAGETEMPADDR and IFA_F_NOPREFIXROUTE.
+	 * If libnl does not yet support them, add them by hand.
+	 * These two flags were introduced together with the extended ifa_flags,
+	 * so, check for that.
+	 */
+	if ((flags & IFA_F_MANAGETEMPADDR) && !nm_platform_check_support_libnl_extended_ifa_flags ()) {
+		strncat (buf, buf[0] ? "," IFA_F_MANAGETEMPADDR_STR : IFA_F_MANAGETEMPADDR_STR,
+		         size - strlen (buf) - 1);
+	}
+	if ((flags & IFA_F_NOPREFIXROUTE) && !nm_platform_check_support_libnl_extended_ifa_flags ()) {
+		strncat (buf, buf[0] ? "," IFA_F_NOPREFIXROUTE_STR : IFA_F_NOPREFIXROUTE_STR,
+		         size - strlen (buf) - 1);
+	}
+}
+
+/**
  * nm_platform_ip6_address_to_string:
  * @route: pointer to NMPlatformIP6Address address structure
  *
@@ -1970,21 +1994,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 
 	_to_string_dev (address->ifindex, str_dev, sizeof (str_dev));
 
-	rtnl_addr_flags2str(address->flags, s_flags, sizeof (s_flags));
-
-	/* There are two recent flags IFA_F_MANAGETEMPADDR and IFA_F_NOPREFIXROUTE.
-	 * If libnl does not yet support them, add them by hand.
-	 * These two flags were introduced together with the extended ifa_flags,
-	 * so, check for that.
-	 **/
-	if ((address->flags & IFA_F_MANAGETEMPADDR) && !nm_platform_check_support_libnl_extended_ifa_flags ()) {
-		strncat (s_flags, s_flags[0] ? "," IFA_F_MANAGETEMPADDR_STR : IFA_F_MANAGETEMPADDR_STR,
-		         sizeof (s_flags) - strlen (s_flags) - 1);
-	}
-	if ((address->flags & IFA_F_NOPREFIXROUTE) && !nm_platform_check_support_libnl_extended_ifa_flags ()) {
-		strncat (s_flags, s_flags[0] ? "," IFA_F_NOPREFIXROUTE_STR : IFA_F_NOPREFIXROUTE_STR,
-		         sizeof (s_flags) - strlen (s_flags) - 1);
-	}
+	nm_platform_addr_flags2str (address->flags, s_flags, sizeof (s_flags));
 
 	str_flags = s_flags[0] ? g_strconcat (" flags ", s_flags, NULL) : NULL;
 
