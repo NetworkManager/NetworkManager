@@ -104,8 +104,8 @@ nm_device_factory_new_link (NMDeviceFactory *factory,
                             NMPlatformLink *plink,
                             GError **error)
 {
-	g_return_if_fail (factory != NULL);
-	g_return_if_fail (plink != NULL);
+	g_return_val_if_fail (factory != NULL, NULL);
+	g_return_val_if_fail (plink != NULL, NULL);
 
 	if (NM_DEVICE_FACTORY_GET_INTERFACE (factory)->new_link)
 		return NM_DEVICE_FACTORY_GET_INTERFACE (factory)->new_link (factory, plink, error);
