@@ -2859,8 +2859,8 @@ verify_source (struct nl_msg *msg, gpointer user_data)
 
 static gboolean
 event_handler (GIOChannel *channel,
-		GIOCondition io_condition,
-		gpointer user_data)
+               GIOCondition io_condition,
+               gpointer user_data)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (user_data);
 	int nle;
@@ -2868,7 +2868,7 @@ event_handler (GIOChannel *channel,
 	nle = nl_recvmsgs_default (priv->nlh_event);
 	if (nle < 0)
 		switch (nle) {
-		case NLE_DUMP_INTR:
+		case -NLE_DUMP_INTR:
 			/* this most likely happens due to our request (RTM_GETADDR, AF_INET6, NLM_F_DUMP)
 			 * to detect support for support_kernel_extended_ifa_flags. This is not critical
 			 * and can happen easily. */
