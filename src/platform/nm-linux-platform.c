@@ -1031,7 +1031,6 @@ check_cache_items (NMPlatform *platform, struct nl_cache *cache, int ifindex)
 	struct nl_object *object;
 
 	for (object = nl_cache_get_first (cloned_cache); object; object = nl_cache_get_next (object)) {
-		debug ("cache %p object %p", cloned_cache, object);
 		g_assert (nl_object_get_cache (object) == cloned_cache);
 		if (object_has_ifindex (object, ifindex))
 			refresh_object (platform, object, TRUE, NM_PLATFORM_REASON_CACHE_CHECK);
