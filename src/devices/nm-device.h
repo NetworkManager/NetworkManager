@@ -180,8 +180,6 @@ typedef struct {
 
 	void			(* deactivate)			(NMDevice *self);
 
-	gboolean		(* can_interrupt_activation)		(NMDevice *self);
-
 	gboolean        (* spec_match_list)     (NMDevice *self, const GSList *specs);
 
 	/* Update the connection with currently configured L2 settings */
@@ -279,7 +277,6 @@ NMConnection * nm_device_find_assumable_connection (NMDevice *device,
 gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);
 
 gboolean		nm_device_is_activating		(NMDevice *dev);
-gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
 gboolean		nm_device_autoconnect_allowed	(NMDevice *self);
 
 NMDeviceState nm_device_get_state (NMDevice *device);

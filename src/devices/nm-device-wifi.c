@@ -3338,15 +3338,6 @@ activation_failure_handler (NMDevice *dev)
 	wifi_utils_indicate_addressing_running (NM_DEVICE_WIFI_GET_PRIVATE (dev)->wifi_data, FALSE);
 }
 
-static gboolean
-can_interrupt_activation (NMDevice *dev)
-{
-	if (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH)
-		return TRUE;
-
-	return FALSE;
-}
-
 static void
 device_state_changed (NMDevice *device,
                       NMDeviceState new_state,
@@ -3643,7 +3634,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->act_stage4_ip4_config_timeout = act_stage4_ip4_config_timeout;
 	parent_class->act_stage4_ip6_config_timeout = act_stage4_ip6_config_timeout;
 	parent_class->deactivate = deactivate;
-	parent_class->can_interrupt_activation = can_interrupt_activation;
 
 	parent_class->state_changed = device_state_changed;
 

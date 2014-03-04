@@ -4872,31 +4872,6 @@ nm_device_is_activating (NMDevice *device)
 	return priv->act_source_id ? TRUE : FALSE;
 }
 
-
-static gboolean
-can_interrupt_activation (NMDevice *device)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-
-	/* Devices that support carrier detect can interrupt activation
-	 * if the link becomes inactive and carrier is honored.
-	 */
-	return !priv->carrier && !priv->ignore_carrier;
-
-}
-
-gboolean
-nm_device_can_interrupt_activation (NMDevice *self)
-{
-	gboolean	interrupt = FALSE;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	if (NM_DEVICE_GET_CLASS (self)->can_interrupt_activation)
-		interrupt = NM_DEVICE_GET_CLASS (self)->can_interrupt_activation (self);
-	return interrupt;
-}
-
 /* IP Configuration stuff */
 
 NMDHCP4Config *
@@ -5861,7 +5836,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->bring_up = bring_up;
 	klass->take_down = take_down;
 	klass->carrier_changed = carrier_changed;
-	klass->can_interrupt_activation = can_interrupt_activation;
 	klass->get_hw_address_length = get_hw_address_length;
 
 	/* Properties */
