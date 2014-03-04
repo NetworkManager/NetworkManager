@@ -3332,13 +3332,14 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 		                 nm_platform_check_support_kernel_extended_ifa_flags ();
 	}
 
-	/* without system_support, these flags will be ignored.
-	 * Still, we set them (why not?).
-	 **/
-	ifa_flags = IFA_F_NOPREFIXROUTE;
+	if (system_support)
+		ifa_flags = IFA_F_NOPREFIXROUTE;
 	if (priv->rdisc_use_tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR
 	    || priv->rdisc_use_tempaddr == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR)
+	{
+		/* without system_support, this flag will be ignored. Still set it, doesn't seem to do any harm. */
 		ifa_flags |= IFA_F_MANAGETEMPADDR;
+	}
 
 	g_return_if_fail (priv->act_request);
 	connection = nm_device_get_connection (device);

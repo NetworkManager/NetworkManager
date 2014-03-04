@@ -513,7 +513,8 @@ nm_ip6_config_destination_is_direct (const NMIP6Config *config, const struct in6
 	for (i = 0; i < num; i++) {
 		const NMPlatformIP6Address *item = nm_ip6_config_get_address (config, i);
 
-		if (item->plen <= plen && same_prefix (&item->address, network, item->plen))
+		if (item->plen <= plen && same_prefix (&item->address, network, item->plen) &&
+		    !(item->flags & IFA_F_NOPREFIXROUTE))
 			return TRUE;
 	}
 
