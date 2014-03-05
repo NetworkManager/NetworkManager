@@ -8,6 +8,11 @@ if [ -f /etc/redhat-release ]; then
     OS=`cat /etc/redhat-release | cut -d" " -f1,2,3,4`
 fi
 
+DIR="$(dirname "$(readlink -f "$0")")"
+SDIR="$DIR/share"
+
+mkdir "$SDIR"
+
 if [ "$OS" == "Red Hat Enterprise Linux" ]; then
     # qemu-kvm is installed in /usr/libexec on RHEL6
     # and redirects its output to VNC server
@@ -31,5 +36,5 @@ else
         QEMU="qemu-system-$ARCH -enable-kvm"
     }
 
-    $QEMU -m 2048 -net nic $NET_OPTIONS -kernel vmlinuz -append "video=1024x768 rootfstype=ramfs" -initrd initramfs.img
+    $QEMU -m 2048 -net nic $NET_OPTIONS -drive "file=fat:rw:$SDIR,cache=none" -kernel vmlinuz -append "video=1024x768 rootfstype=ramfs" -initrd initramfs.img
 fi

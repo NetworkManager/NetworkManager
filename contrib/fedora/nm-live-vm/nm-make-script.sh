@@ -50,4 +50,7 @@ domains=ALL
 EOF
 /bin/systemctl enable NetworkManager.service || exit 1
 
+mkdir /mnt/sda1
+echo "/dev/sda1 /mnt/sda1 vfat defaults 1 2" >> /etc/fstab
+
 git gc
