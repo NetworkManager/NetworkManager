@@ -12,6 +12,6 @@ cd $NAME || exit 1
 
 ./run.sh || exit 1
 
-rm -rf "$TEMP"
+#rm -rf "$TEMP"
 exit 0
 __MARK__
