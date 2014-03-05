@@ -907,6 +907,17 @@ nmc_bond_validate_mode (const char *mode, GError **error)
 		return nmc_string_is_valid (mode, valid_modes, error);
 }
 
+/*
+ * nmc_team_check_config:
+ * @config: file name with team config, or raw team JSON config data
+ * @out_config: raw team JSON config data (with removed new-line characters)
+ * @error: location to store error, or %NUL
+ *
+ * Check team config from @config parameter and return the checked/sanitized
+ * config in @out_config.
+ *
+ * Returns: %TRUE if the config is valid, %FALSE if it is invalid
+ */
 gboolean
 nmc_team_check_config (const char *config, char **out_config, GError **error)
 {
@@ -936,7 +947,7 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 		g_free (contents);
 		return FALSE;
 	}
-	*out_config = contents;
+	*out_config = g_strdelimit (contents, "\r\n", ' ');
 	return TRUE;
 }
 
