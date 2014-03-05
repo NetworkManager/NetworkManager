@@ -11,6 +11,7 @@ global:
 	nm_connection_error_get_type;
 	nm_connection_error_quark;
 	nm_connection_for_each_setting_value;
+	nm_connection_get_connection_type;
 	nm_connection_get_id;
 	nm_connection_get_path;
 	nm_connection_get_setting;

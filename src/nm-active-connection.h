@@ -35,7 +35,9 @@
 
 /* D-Bus Exported Properties */
 #define NM_ACTIVE_CONNECTION_CONNECTION      "connection"
+#define NM_ACTIVE_CONNECTION_ID              "id"
 #define NM_ACTIVE_CONNECTION_UUID            "uuid"
+#define NM_ACTIVE_CONNECTION_TYPE            "type"
 #define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT "specific-object"
 #define NM_ACTIVE_CONNECTION_DEVICES         "devices"
 #define NM_ACTIVE_CONNECTION_STATE           "state"
@@ -93,6 +95,10 @@ void          nm_active_connection_set_connection (NMActiveConnection *self,
                                                    NMConnection *connection);
 
 const char *  nm_active_connection_get_name       (NMActiveConnection *self);
+
+const char *  nm_active_connection_get_uuid       (NMActiveConnection *self);
+
+const char *  nm_active_connection_get_connection_type (NMActiveConnection *self);
 
 const char *  nm_active_connection_get_path (NMActiveConnection *self);
 

@@ -53,7 +53,9 @@ typedef struct {
 	DBusGProxy *proxy;
 
 	char *connection;
+	char *id;
 	char *uuid;
+	char *type;
 	char *specific_object;
 	GPtrArray *devices;
 	NMActiveConnectionState state;
@@ -70,7 +72,9 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_CONNECTION,
+	PROP_ID,
 	PROP_UUID,
+	PROP_TYPE,
 	PROP_SPECIFIC_OBJECT,
 	PROP_DEVICES,
 	PROP_STATE,
@@ -220,6 +224,26 @@ nm_active_connection_get_connection (NMActiveConnection *connection)
 }
 
 /**
+ * nm_active_connection_get_id:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the #NMConnection's ID.
+ *
+ * Returns: the ID of the #NMConnection that backs the #NMActiveConnection.
+ * This is the internal string used by the connection, and must not be modified.
+ *
+ * Since: 0.9.10
+ **/
+const char *
+nm_active_connection_get_id (NMActiveConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
+
+	_nm_object_ensure_inited (NM_OBJECT (connection));
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->id;
+}
+
+/**
  * nm_active_connection_get_uuid:
  * @connection: a #NMActiveConnection
  *
@@ -235,6 +259,26 @@ nm_active_connection_get_uuid (NMActiveConnection *connection)
 
 	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->uuid;
+}
+
+/**
+ * nm_active_connection_get_connection_type:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the #NMConnection's type.
+ *
+ * Returns: the type of the #NMConnection that backs the #NMActiveConnection.
+ * This is the internal string used by the connection, and must not be modified.
+ *
+ * Since: 0.9.10
+ **/
+const char *
+nm_active_connection_get_connection_type (NMActiveConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
+
+	_nm_object_ensure_inited (NM_OBJECT (connection));
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->type;
 }
 
 /**
@@ -481,7 +525,9 @@ finalize (GObject *object)
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
 
 	g_free (priv->connection);
+	g_free (priv->id);
 	g_free (priv->uuid);
+	g_free (priv->type);
 	g_free (priv->specific_object);
 	g_free (priv->master);
 
@@ -502,8 +548,14 @@ get_property (GObject *object,
 	case PROP_CONNECTION:
 		g_value_set_string (value, nm_active_connection_get_connection (self));
 		break;
+	case PROP_ID:
+		g_value_set_string (value, nm_active_connection_get_id (self));
+		break;
 	case PROP_UUID:
 		g_value_set_string (value, nm_active_connection_get_uuid (self));
+		break;
+	case PROP_TYPE:
+		g_value_set_string (value, nm_active_connection_get_connection_type (self));
 		break;
 	case PROP_SPECIFIC_OBJECT:
 		g_value_set_boxed (value, nm_active_connection_get_specific_object (self));
@@ -550,7 +602,9 @@ register_properties (NMActiveConnection *connection)
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_ACTIVE_CONNECTION_CONNECTION,          &priv->connection },
+		{ NM_ACTIVE_CONNECTION_ID,                  &priv->id },
 		{ NM_ACTIVE_CONNECTION_UUID,                &priv->uuid },
+		{ NM_ACTIVE_CONNECTION_TYPE,                &priv->type },
 		{ NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,     &priv->specific_object },
 		{ NM_ACTIVE_CONNECTION_DEVICES,             &priv->devices, NULL, NM_TYPE_DEVICE },
 		{ NM_ACTIVE_CONNECTION_STATE,               &priv->state },
@@ -612,6 +666,21 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 						      G_PARAM_READABLE));
 
 	/**
+	 * NMActiveConnection:id:
+	 *
+	 * The active connection's ID
+	 *
+	 * Since: 0.9.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ID,
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_ID,
+						      "ID",
+						      "ID",
+						      NULL,
+						      G_PARAM_READABLE));
+
+	/**
 	 * NMActiveConnection:uuid:
 	 *
 	 * The active connection's UUID
@@ -621,6 +690,21 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 		 g_param_spec_string (NM_ACTIVE_CONNECTION_UUID,
 						      "UUID",
 						      "UUID",
+						      NULL,
+						      G_PARAM_READABLE));
+
+	/**
+	 * NMActiveConnection:type:
+	 *
+	 * The active connection's type
+	 *
+	 * Since: 0.9.10
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_TYPE,
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_TYPE,
+						      "Type",
+						      "Type",
 						      NULL,
 						      G_PARAM_READABLE));
 
