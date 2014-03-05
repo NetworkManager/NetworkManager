@@ -49,7 +49,7 @@ NMClient *nm_client;
 NMRemoteSettings *nm_settings;
 static GMainLoop *loop;
 
-typedef void (*NmtuiSubprogram) (int argc, char **argv);
+typedef NmtNewtForm * (*NmtuiSubprogram) (int argc, char **argv);
 
 static const struct {
 	const char *name, *shortcut, *arg;
@@ -74,7 +74,7 @@ quit_func (int argc, char **argv)
 	nmtui_quit ();
 }
 
-static void
+static NmtNewtForm *
 nmtui_main (int argc, char **argv)
 {
 	NmtNewtForm *form;
@@ -124,7 +124,10 @@ nmtui_main (int argc, char **argv)
 	subprogram = nmt_newt_listbox_get_active_key (listbox);
 	g_object_unref (form);
 
-	subprogram (argc, argv);
+	if (subprogram)
+		return subprogram (argc, argv);
+	else
+		return NULL;
 }
 
 /**
@@ -177,12 +180,27 @@ typedef struct {
 	char **argv;
 } NmtuiStartupData;
 
+static void
+toplevel_form_quit (NmtNewtForm *form,
+                    gpointer     user_data)
+{
+       nmtui_quit ();
+}
+
 static gboolean
 idle_run_subprogram (gpointer user_data)
 {
 	NmtuiStartupData *data = user_data;
+	NmtNewtForm *form;
 
-	data->subprogram (data->argc, data->argv);
+	form = data->subprogram (data->argc, data->argv);
+	if (form) {
+		g_signal_connect (form, "quit", G_CALLBACK (toplevel_form_quit), NULL);
+		nmt_newt_form_show (form);
+		g_object_unref (form);
+	} else
+		nmtui_quit ();
+
 	return FALSE;
 }
 

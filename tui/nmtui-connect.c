@@ -236,14 +236,7 @@ listbox_active_changed (GObject    *object,
 	}
 }
 
-static void
-form_quit (NmtNewtForm *form,
-           gpointer     user_data)
-{
-	nmtui_quit ();
-}
-
-static void
+static NmtNewtForm *
 nmt_connect_connection_list (void)
 {
 	int screen_width, screen_height;
@@ -257,7 +250,6 @@ nmt_connect_connection_list (void)
 	                     "height", screen_height - 4,
 	                     "escape-exits", TRUE,
 	                     NULL);
-	g_signal_connect (form, "quit", G_CALLBACK (form_quit), NULL);
 
 	grid = nmt_newt_grid_new ();
 
@@ -281,11 +273,10 @@ nmt_connect_connection_list (void)
 	nmt_newt_widget_set_exit_on_activate (quit, TRUE);
 
 	nmt_newt_form_set_content (form, grid);
-	nmt_newt_form_show (form);
-	g_object_unref (form);
+	return form;
 }
 
-static void
+static NmtNewtForm *
 nmt_connect_connection (const char *identifier)
 {
 	NmtNewtWidget *list;
@@ -308,14 +299,14 @@ nmt_connect_connection (const char *identifier)
 		activate_connection (connection, device, specific_object);
 	g_object_unref (list);
 
-	nmtui_quit ();
+	return NULL;
 }
 
-void
+NmtNewtForm *
 nmtui_connect (int argc, char **argv)
 {
 	if (argc == 2)
-		nmt_connect_connection (argv[1]);
+		return nmt_connect_connection (argv[1]);
 	else
-		nmt_connect_connection_list ();
+		return nmt_connect_connection_list ();
 }

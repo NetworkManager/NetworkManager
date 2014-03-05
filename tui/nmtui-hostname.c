@@ -93,7 +93,7 @@ hostname_set (NMRemoteSettings *settings,
 	nmt_sync_op_complete_boolean (op, error == NULL, error);
 }
 
-void
+NmtNewtForm *
 nmtui_hostname (int argc, char **argv)
 {
 	const char *hostname;
@@ -120,5 +120,5 @@ nmtui_hostname (int argc, char **argv)
 		g_free (tmp);
 	}
 
-	nmtui_quit ();
+	return NULL;
 }

@@ -77,14 +77,7 @@ edit_connection_list_filter (NmtEditConnectionList *list,
 	return (nm_setting_connection_get_slave_type (s_con) == NULL);
 }
 
-static void
-form_quit (NmtNewtForm *form,
-           gpointer     user_data)
-{
-	nmtui_quit ();
-}
-
-static void
+static NmtNewtForm *
 nmt_edit_main_connection_list (void)
 {
 	int screen_width, screen_height;
@@ -98,7 +91,6 @@ nmt_edit_main_connection_list (void)
 	                     "height", screen_height - 4,
 	                     "escape-exits", TRUE,
 	                     NULL);
-	g_signal_connect (form, "quit", G_CALLBACK (form_quit), NULL);
 
 	quit = nmt_newt_button_new (_("Quit"));
 	nmt_newt_widget_set_exit_on_activate (quit, TRUE);
@@ -116,8 +108,7 @@ nmt_edit_main_connection_list (void)
 	                  G_CALLBACK (list_remove_connection), form);
 
 	nmt_newt_form_set_content (form, list);
-	nmt_newt_form_show (form);
-	g_object_unref (form);
+	return form;
 }
 
 #define NMT_TYPE_ADD_CONNECTION    (nmt_add_connection_get_type ())
@@ -492,7 +483,7 @@ nmt_remove_connection (NMRemoteConnection *connection)
 	g_object_unref (connection);
 }
 
-void
+NmtNewtForm *
 nmtui_edit (int argc, char **argv)
 {
 	NMConnection *conn = NULL;
@@ -505,11 +496,10 @@ nmtui_edit (int argc, char **argv)
 
 		if (!conn) {
 			nmt_newt_message_dialog ("%s: no such connection '%s'\n", argv[0], argv[1]);
-			nmtui_quit ();
-			return;
+			return NULL;
 		}
 
-		nmt_edit_connection (conn);
+		return nmt_editor_new (conn);
 	} else
-		nmt_edit_main_connection_list ();
+		return nmt_edit_main_connection_list ();
 }

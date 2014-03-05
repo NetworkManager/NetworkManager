@@ -21,7 +21,7 @@
 
 G_BEGIN_DECLS
 
-void nmtui_hostname (int argc, char **argv);
+NmtNewtForm *nmtui_hostname (int argc, char **argv);
 
 G_END_DECLS
 
