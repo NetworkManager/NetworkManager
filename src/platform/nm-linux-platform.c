@@ -1775,6 +1775,9 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type)
 			r = system ("modprobe bonding max_bonds=0");
 	}
 
+	debug ("link: add link '%s' of type '%s' (%d)",
+	       name, type_to_string (type), (int) type);
+
 	return add_object (platform, build_rtnl_link (0, name, type));
 }
 
@@ -1939,6 +1942,13 @@ link_change_flags (NMPlatform *platform, int ifindex, unsigned int flags, gboole
 	else
 		rtnl_link_unset_flags (change, flags);
 
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+		char buf[512];
+
+		rtnl_link_flags2str (flags, buf, sizeof (buf));
+		debug ("link: change %d: flags %s '%s' (%d)", ifindex, value ? "set" : "unset", buf, flags);
+	}
+
 	return link_change (platform, ifindex, change);
 }
 
@@ -2082,6 +2092,13 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 
 	rtnl_link_set_addr (change, nladdr);
 
+	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
+		char *mac = nm_utils_hwaddr_ntoa_len (address, length);
+
+		debug ("link: change %d: address %s (%lu bytes)", ifindex, mac, (unsigned long) length);
+		g_free (mac);
+	}
+
 	return link_change (platform, ifindex, change);
 }
 
@@ -2106,6 +2123,8 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 
 	g_return_val_if_fail (change != NULL, FALSE);
 	rtnl_link_set_mtu (change, mtu);
+
+	debug ("link: change %d: mtu %lu", ifindex, (unsigned long)mtu);
 
 	return link_change (platform, ifindex, change);
 }
@@ -2154,6 +2173,9 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 	rtnl_link_vlan_set_id (rtnllink, vlan_id);
 	rtnl_link_vlan_set_flags (rtnllink, kernel_flags);
 
+	debug ("link: add vlan '%s', parent %d, vlan id %d, flags %X (native: %X)",
+	       name, parent, vlan_id, (unsigned int) vlan_flags, kernel_flags);
+
 	return add_object (platform, object);
 }
 
@@ -2183,6 +2205,8 @@ vlan_set_ingress_map (NMPlatform *platform, int ifindex, int from, int to)
 		return FALSE;
 	rtnl_link_vlan_set_ingress_map (change, from, to);
 
+	debug ("link: change %d: vlan ingress map %d -> %d", ifindex, from, to);
+
 	return link_change (platform, ifindex, change);
 }
 
@@ -2195,6 +2219,8 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 		return FALSE;
 	rtnl_link_vlan_set_egress_map (change, from, to);
 
+	debug ("link: change %d: vlan egress map %d -> %d", ifindex, from, to);
+
 	return link_change (platform, ifindex, change);
 }
 
@@ -2206,6 +2232,8 @@ link_enslave (NMPlatform *platform, int master, int slave)
 	g_return_val_if_fail (change != NULL, FALSE);
 
 	rtnl_link_set_master (change, master);
+
+	debug ("link: change %d: enslave to master %d", slave, master);
 
 	return link_change (platform, slave, change);
 }
