@@ -209,8 +209,9 @@ ensure_teamd_connection (NMDevice *self)
 	priv->tdc = teamdctl_alloc ();
 	g_assert (priv->tdc);
 	err = teamdctl_connect (priv->tdc, nm_device_get_iface (self), NULL, NULL);
-	if (err) {
-		nm_log_err (LOGD_TEAM, "(%s): failed to connect to teamd", nm_device_get_iface (self));
+	if (err != 0) {
+		nm_log_err (LOGD_TEAM, "(%s): failed to connect to teamd (err=%d)",
+		            nm_device_get_iface (self), err);
 		teamdctl_free (priv->tdc);
 		priv->tdc = NULL;
 	}
@@ -680,8 +681,9 @@ enslave_slave (NMDevice *device,
 					int err;
 
 					err = teamdctl_port_config_update_raw (priv->tdc, slave_iface, config);
-					if (err) {
-						nm_log_err (LOGD_TEAM, "(%s): failed to update config for port %s", iface, slave_iface);
+					if (err != 0) {
+						nm_log_err (LOGD_TEAM, "(%s): failed to update config for port %s (err=%d)",
+						            iface, slave_iface, err);
 						return FALSE;
 					}
 				}
