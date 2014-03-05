@@ -1289,24 +1289,33 @@ static void
 activate_slave_connections (NMPolicy *policy, NMDevice *device)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	const char *master_device;
+	const char *master_device, *master_uuid = NULL;
 	GSList *connections, *iter;
+	NMActRequest *req;
 
 	master_device = nm_device_get_iface (device);
 	g_assert (master_device);
+
+	req = nm_device_get_act_request (device);
+	if (req)
+		master_uuid = nm_active_connection_get_uuid (NM_ACTIVE_CONNECTION (req));
 
 	connections = nm_settings_get_connections (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *slave;
 		NMSettingConnection *s_slave_con;
+		const char *slave_master;
 
 		slave = NM_CONNECTION (iter->data);
 		g_assert (slave);
 
 		s_slave_con = nm_connection_get_setting_connection (slave);
 		g_assert (s_slave_con);
+		slave_master = nm_setting_connection_get_master (s_slave_con);
+		if (!slave_master)
+			continue;
 
-		if (!g_strcmp0 (nm_setting_connection_get_master (s_slave_con), master_device))
+		if (!g_strcmp0 (slave_master, master_device) || !g_strcmp0 (slave_master, master_uuid))
 			nm_settings_connection_reset_autoconnect_retries (NM_SETTINGS_CONNECTION (slave));
 	}
 
