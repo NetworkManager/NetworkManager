@@ -1077,7 +1077,7 @@ process_secondaries (NMPolicy *policy,
 
 			if (connected) {
 				nm_log_dbg (LOGD_DEVICE, "Secondary connection '%s' SUCCEEDED; active path '%s'",
-				            nm_active_connection_get_name (active),
+				            nm_active_connection_get_id (active),
 				            nm_active_connection_get_path (active));
 
 				/* Secondary connection activated */
@@ -1092,7 +1092,7 @@ process_secondaries (NMPolicy *policy,
 				}
 			} else {
 				nm_log_dbg (LOGD_DEVICE, "Secondary connection '%s' FAILED; active path '%s'",
-				            nm_active_connection_get_name (active),
+				            nm_active_connection_get_id (active),
 				            nm_active_connection_get_path (active));
 
 				/* Secondary connection failed -> do not watch other connections */

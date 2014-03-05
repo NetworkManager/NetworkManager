@@ -176,7 +176,7 @@ nm_active_connection_set_state (NMActiveConnection *self,
 }
 
 const char *
-nm_active_connection_get_name (NMActiveConnection *self)
+nm_active_connection_get_id (NMActiveConnection *self)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (self), NULL);
 
@@ -512,7 +512,7 @@ nm_active_connection_set_master (NMActiveConnection *self, NMActiveConnection *m
 	}
 
 	nm_log_dbg (LOGD_DEVICE, "(%p): master ActiveConnection is [%p] %s",
-	            self, master, nm_active_connection_get_name (master));
+	            self, master, nm_active_connection_get_id (master));
 
 	priv->master = g_object_ref (master);
 	g_signal_connect (priv->master,

@@ -4228,7 +4228,7 @@ policy_default_device_changed (GObject *object, GParamSpec *pspec, gpointer user
 	if (ac != priv->primary_connection) {
 		g_clear_object (&priv->primary_connection);
 		priv->primary_connection = ac ? g_object_ref (ac) : NULL;
-		nm_log_dbg (LOGD_CORE, "PrimaryConnection now %s", ac ? nm_active_connection_get_name (ac) : "(none)");
+		nm_log_dbg (LOGD_CORE, "PrimaryConnection now %s", ac ? nm_active_connection_get_id (ac) : "(none)");
 		g_object_notify (G_OBJECT (self), NM_MANAGER_PRIMARY_CONNECTION);
 	}
 }
@@ -4261,7 +4261,7 @@ policy_activating_device_changed (GObject *object, GParamSpec *pspec, gpointer u
 	if (ac != priv->activating_connection) {
 		g_clear_object (&priv->activating_connection);
 		priv->activating_connection = ac ? g_object_ref (ac) : NULL;
-		nm_log_dbg (LOGD_CORE, "ActivatingConnection now %s", ac ? nm_active_connection_get_name (ac) : "(none)");
+		nm_log_dbg (LOGD_CORE, "ActivatingConnection now %s", ac ? nm_active_connection_get_id (ac) : "(none)");
 		g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVATING_CONNECTION);
 	}
 }
