@@ -153,6 +153,14 @@ typedef struct {
 	                                            NMConnection *connection,
 	                                            const char *specific_object);
 
+	/* Same as check_connection_available() but called if the connection
+	 * is not present in the activating-connections array during activation,
+	 * to give the device a chance to allow/deny the activation.  This is a
+	 * hack only meant for hidden WiFi networks.
+	 */
+	gboolean    (* check_connection_available_wifi_hidden) (NMDevice *self,
+	                                                        NMConnection *connection);
+
 	gboolean    (* complete_connection)         (NMDevice *self,
 	                                             NMConnection *connection,
 	                                             const char *specific_object,
@@ -331,7 +339,9 @@ const char *nm_device_get_physical_port_id (NMDevice *device);
 
 guint32 nm_device_get_mtu (NMDevice *device);
 
-gboolean   nm_device_connection_is_available (NMDevice *device, NMConnection *connection);
+gboolean   nm_device_connection_is_available (NMDevice *device,
+                                              NMConnection *connection,
+                                              gboolean allow_device_override);
 
 gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
 

@@ -2501,7 +2501,7 @@ ensure_master_active_connection (NMManager *self,
 				if (!is_compatible_with_slave (candidate, connection))
 					continue;
 
-				if (nm_device_connection_is_available (master_device, candidate)) {
+				if (nm_device_connection_is_available (master_device, candidate, TRUE)) {
 					master_ac = nm_manager_activate_connection (self,
 					                                            candidate,
 					                                            NULL,
@@ -2542,7 +2542,7 @@ ensure_master_active_connection (NMManager *self,
 				continue;
 			}
 
-			if (!nm_device_connection_is_available (candidate, master_connection))
+			if (!nm_device_connection_is_available (candidate, master_connection, TRUE))
 				continue;
 
 			found_device = TRUE;
@@ -2658,7 +2658,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	}
 
 	/* Final connection must be available on device */
-	if (!nm_device_connection_is_available (device, connection)) {
+	if (!nm_device_connection_is_available (device, connection, TRUE)) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
 		             "Connection '%s' is not available on the device %s at this time.",
 		             nm_connection_get_id (connection), nm_device_get_iface (device));

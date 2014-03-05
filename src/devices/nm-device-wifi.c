@@ -1050,9 +1050,10 @@ check_connection_compatible (NMDevice *device,
 
 
 static gboolean
-check_connection_available (NMDevice *device,
-                            NMConnection *connection,
-                            const char *specific_object)
+_internal_check_connection_available (NMDevice *device,
+                                      NMConnection *connection,
+                                      const char *specific_object,
+                                      gboolean ignore_ap_list)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	NMSettingWireless *s_wifi;
@@ -1077,7 +1078,7 @@ check_connection_available (NMDevice *device,
 		return TRUE;
 
 	/* Hidden SSIDs obviously don't always appear in the scan list either */
-	if (nm_setting_wireless_get_hidden (s_wifi))
+	if (nm_setting_wireless_get_hidden (s_wifi) || ignore_ap_list)
 		return TRUE;
 
 	/* check if its visible */
@@ -1087,6 +1088,24 @@ check_connection_available (NMDevice *device,
 	}
 
 	return FALSE;
+}
+
+static gboolean
+check_connection_available (NMDevice *device,
+                            NMConnection *connection,
+                            const char *specific_object)
+{
+	return _internal_check_connection_available (device, connection, specific_object, FALSE);
+}
+
+/* FIXME: remove this function when we require the 'hidden' property to be
+ * set before a hidden connection can be activated.
+ */
+static gboolean
+check_connection_available_wifi_hidden (NMDevice *device,
+                                        NMConnection *connection)
+{
+	return _internal_check_connection_available (device, connection, NULL, TRUE);
 }
 
 /*
@@ -3629,6 +3648,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;
+	parent_class->check_connection_available_wifi_hidden = check_connection_available_wifi_hidden;
 	parent_class->complete_connection = complete_connection;
 	parent_class->set_enabled = set_enabled;
 
