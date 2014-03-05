@@ -49,6 +49,11 @@ level=DEBUG
 domains=ALL
 EOF
 /bin/systemctl enable NetworkManager.service || exit 1
+/bin/systemctl enable sshd.service || exit 1
+
+sed -e 's/^#\?\(PermitRootLogin *\).*/\1yes/' \
+    -e 's/^#\?\(PermitEmptyPasswords *\).*/\1yes/' \
+    -i /etc/ssh/sshd_config
 
 mkdir /mnt/sda1
 echo "/dev/sda1 /mnt/sda1 vfat defaults 1 2" >> /etc/fstab

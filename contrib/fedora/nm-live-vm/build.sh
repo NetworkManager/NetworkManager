@@ -40,6 +40,7 @@ PACKAGES="kernel passwd git autoconf automake libtool intltool gtk-doc libnl3-de
     vim
     gdb valgrind lsof strace nmap-ncat tcpdump
     net-tools bridge-utils vconfig
+    openssh-server
     teamd libteam"
 KERNEL_URL=http://kojipkgs.fedoraproject.org/packages/kernel/3.12.9/301.fc20/i686/kernel-3.12.9-301.fc20.i686.rpm
 KERNEL=`basename "${KERNEL_URL%.rpm}"`

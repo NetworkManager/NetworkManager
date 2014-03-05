@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Three network interfaces
-NET_OPTIONS="-net nic -net user -net nic -net user -net nic -net user"
+NET_OPTIONS="-net nic -net user,hostfwd=tcp:127.0.0.1:10022-:22 -net nic -net user -net nic -net user"
 
 OS="Linux"
 if [ -f /etc/redhat-release ]; then
