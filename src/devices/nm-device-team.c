@@ -230,17 +230,19 @@ update_connection (NMDevice *device, NMConnection *connection)
 		nm_connection_add_setting (connection, (NMSetting *) s_team);
 		g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_INTERFACE_NAME, iface, NULL);
 	}
+	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, NULL, NULL);
 
 #if WITH_TEAMDCTL
 	if (ensure_teamd_connection (device)) {
-		char *config;
+		const char *config = NULL;
+		int err;
 
-		config = teamdctl_config_get_raw (NM_DEVICE_TEAM_GET_PRIVATE (device)->tdc);
-		if (config)
+		err = teamdctl_config_get_raw_direct (NM_DEVICE_TEAM_GET_PRIVATE (device)->tdc,
+		                                      (char **)&config);
+		if (err == 0)
 			g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, config, NULL);
 		else
-			nm_log_err (LOGD_TEAM, "(%s): failed to read teamd config", iface);
-		g_free (config);
+			nm_log_err (LOGD_TEAM, "(%s): failed to read teamd config (err=%d)", iface, err);
 	}
 #endif
 }
