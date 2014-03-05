@@ -4779,6 +4779,8 @@ _device_activate (NMDevice *self, NMActRequest *req)
 	             nm_device_get_iface (self),
 	             nm_connection_get_id (connection));
 
+	delete_on_deactivate_unschedule (priv);
+
 	/* Move default unmanaged devices to DISCONNECTED state here */
 	if (priv->default_unmanaged && priv->state == NM_DEVICE_STATE_UNMANAGED) {
 		nm_device_state_changed (self,
