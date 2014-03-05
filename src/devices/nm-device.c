@@ -185,6 +185,12 @@ typedef struct {
 } PingInfo;
 
 typedef struct {
+	NMDevice *device;
+	guint idle_add_id;
+	int ifindex;
+} DeleteOnDeactivateData;
+
+typedef struct {
 	gboolean disposed;
 	gboolean initialized;
 	gboolean in_state_changed;
@@ -218,7 +224,7 @@ typedef struct {
 	gboolean      manager_managed; /* whether managed by NMManager or not */
 	gboolean      default_unmanaged; /* whether unmanaged by default */
 	gboolean      is_nm_owned; /* whether the device is a device owned and created by NM */
-	guint         delete_on_deactivate_id; /* event id for scheduled link_delete action (g_idle_add) */
+	DeleteOnDeactivateData *delete_on_deactivate_data; /* data for scheduled cleanup when deleting link (g_idle_add) */
 
 	guint32         ip4_address;
 
@@ -4520,7 +4526,6 @@ _update_ip4_address (NMDevice *self)
 	close (fd);
 }
 
-
 /*
  * delete_on_deactivate_link_delete
  *
@@ -4531,19 +4536,37 @@ _update_ip4_address (NMDevice *self)
 static gboolean
 delete_on_deactivate_link_delete (gpointer user_data)
 {
-	int ifindex = GPOINTER_TO_INT (user_data);
+	DeleteOnDeactivateData *data = user_data;
 
-	nm_log_dbg (LOGD_DEVICE, "device deactivated: cleanup and delete virtual link #%d", ifindex);
-	nm_platform_link_delete (ifindex);
+	if (data->device) {
+		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (data->device);
+
+		g_object_remove_weak_pointer (G_OBJECT (data->device), (void **) &data->device);
+		priv->delete_on_deactivate_data = NULL;
+	}
+
+	nm_log_dbg (LOGD_DEVICE, "delete_on_deactivate: cleanup and delete virtual link #%d (id=%u)",
+	                         data->ifindex, data->idle_add_id);
+	nm_platform_link_delete (data->ifindex);
+	g_free (data);
 	return FALSE;
 }
 
 static void
-delete_on_deactivate_unschedule (NMDevicePrivate *priv)
+delete_on_deactivate_unschedule (NMDevice *self)
 {
-	if (priv->delete_on_deactivate_id) {
-		g_source_remove (priv->delete_on_deactivate_id);
-		priv->delete_on_deactivate_id = 0;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->delete_on_deactivate_data) {
+		DeleteOnDeactivateData *data = priv->delete_on_deactivate_data;
+
+		priv->delete_on_deactivate_data = NULL;
+
+		g_source_remove (data->idle_add_id);
+		g_object_remove_weak_pointer (G_OBJECT (self), (void **) &data->device);
+		nm_log_dbg (LOGD_DEVICE, "delete_on_deactivate: cancel cleanup and delete virtual link #%d (id=%u)",
+		                         data->ifindex, data->idle_add_id);
+		g_free (data);
 	}
 }
 
@@ -4551,6 +4574,7 @@ static void
 delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 {
 	NMDevicePrivate *priv;
+	DeleteOnDeactivateData *data;
 
 	if (ifindex <= 0)
 		return;
@@ -4562,11 +4586,19 @@ delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 		return;
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_UNAVAILABLE)
 		return;
-	nm_log_dbg (LOGD_DEVICE, "Schedule cleanup and delete virtual link #%d for [%s]",
-	                         ifindex, nm_device_get_iface (self));
+	delete_on_deactivate_unschedule (self); /* always cancel and reschedule */
+
 	priv = NM_DEVICE_GET_PRIVATE (self);
-	delete_on_deactivate_unschedule (priv); /* always cancel and reschedule */
-	priv->delete_on_deactivate_id = g_idle_add (delete_on_deactivate_link_delete, GINT_TO_POINTER (ifindex));
+
+	data = g_new (DeleteOnDeactivateData, 1);
+	g_object_add_weak_pointer (G_OBJECT (self), (void **) &data->device);
+	data->device = self;
+	data->ifindex = ifindex;
+	data->idle_add_id = g_idle_add (delete_on_deactivate_link_delete, data);
+	priv->delete_on_deactivate_data = data;
+
+	nm_log_dbg (LOGD_DEVICE, "delete_on_deactivate: schedule cleanup and delete virtual link #%d for [%s] (id=%u)",
+	                         ifindex, nm_device_get_iface (self), data->idle_add_id);
 }
 
 gboolean
@@ -4779,7 +4811,7 @@ _device_activate (NMDevice *self, NMActRequest *req)
 	             nm_device_get_iface (self),
 	             nm_connection_get_id (connection));
 
-	delete_on_deactivate_unschedule (priv);
+	delete_on_deactivate_unschedule (self);
 
 	/* Move default unmanaged devices to DISCONNECTED state here */
 	if (priv->default_unmanaged && priv->state == NM_DEVICE_STATE_UNMANAGED) {
@@ -6517,7 +6549,7 @@ nm_device_state_changed (NMDevice *device,
 	}
 
 	if (state > NM_DEVICE_STATE_DISCONNECTED)
-		delete_on_deactivate_unschedule (priv);
+		delete_on_deactivate_unschedule (device);
 
 	if (old_state == NM_DEVICE_STATE_ACTIVATED)
 		nm_dispatcher_call (DISPATCHER_ACTION_DOWN, nm_act_request_get_connection (req), device, NULL, NULL);
