@@ -277,7 +277,7 @@ clean_gateways (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 
 
 	for (i = 0; i < rdisc->gateways->len; i++) {
 		NMRDiscGateway *item = &g_array_index (rdisc->gateways, NMRDiscGateway, i);
-		guint64 expiry = item->timestamp + item->lifetime;
+		guint64 expiry = (guint64) item->timestamp + item->lifetime;
 
 		if (item->lifetime == G_MAXUINT32)
 			continue;
@@ -297,7 +297,7 @@ clean_addresses (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32
 
 	for (i = 0; i < rdisc->addresses->len; i++) {
 		NMRDiscAddress *item = &g_array_index (rdisc->addresses, NMRDiscAddress, i);
-		guint64 expiry = item->timestamp + item->lifetime;
+		guint64 expiry = (guint64) item->timestamp + item->lifetime;
 
 		if (item->lifetime == G_MAXUINT32)
 			continue;
@@ -317,7 +317,7 @@ clean_routes (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint32 *n
 
 	for (i = 0; i < rdisc->routes->len; i++) {
 		NMRDiscRoute *item = &g_array_index (rdisc->routes, NMRDiscRoute, i);
-		guint64 expiry = item->timestamp + item->lifetime;
+		guint64 expiry = (guint64) item->timestamp + item->lifetime;
 
 		if (item->lifetime == G_MAXUINT32)
 			continue;
@@ -337,8 +337,8 @@ clean_dns_servers (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint
 
 	for (i = 0; i < rdisc->dns_servers->len; i++) {
 		NMRDiscDNSServer *item = &g_array_index (rdisc->dns_servers, NMRDiscDNSServer, i);
-		guint64 expiry = item->timestamp + item->lifetime;
-		guint64 refresh = item->timestamp + item->lifetime / 2;
+		guint64 expiry = (guint64) item->timestamp + item->lifetime;
+		guint64 refresh = (guint64) item->timestamp + item->lifetime / 2;
 
 		if (item->lifetime == G_MAXUINT32)
 			continue;
@@ -360,8 +360,8 @@ clean_dns_domains (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint
 
 	for (i = 0; i < rdisc->dns_domains->len; i++) {
 		NMRDiscDNSDomain *item = &g_array_index (rdisc->dns_domains, NMRDiscDNSDomain, i);
-		guint64 expiry = item->timestamp + item->lifetime;
-		guint64 refresh = item->timestamp + item->lifetime / 2;
+		guint64 expiry = (guint64) item->timestamp + item->lifetime;
+		guint64 refresh = (guint64) item->timestamp + item->lifetime / 2;
 
 		if (item->lifetime == G_MAXUINT32)
 			continue;
@@ -372,7 +372,7 @@ clean_dns_domains (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap *changed, guint
 			*changed |= NM_RDISC_CONFIG_DNS_DOMAINS;
 		} else if (now >= refresh)
 			solicit (rdisc);
-		else if (*nextevent >=refresh)
+		else if (*nextevent > refresh)
 			*nextevent = refresh;
 	}
 }
