@@ -51,11 +51,17 @@ EOF
 /bin/systemctl enable NetworkManager.service || exit 1
 /bin/systemctl enable sshd.service || exit 1
 
+# allow login for root via SSH, without password!!
 sed -e 's/^#\?\(PermitRootLogin *\).*/\1yes/' \
     -e 's/^#\?\(PermitEmptyPasswords *\).*/\1yes/' \
     -i /etc/ssh/sshd_config
 
+# disable rate limiting of the journal
+sed -e 's/^#\?\(RateLimitInterval *= *\).*/\10/' \
+    -e 's/^#\?\(RateLimitBurst *= *\).*/\10/' \
+    -i /etc/systemd/journald.conf
+
 mkdir /mnt/sda1
-echo "/dev/sda1 /mnt/sda1 vfat defaults 1 2" >> /etc/fstab
+echo "/dev/sda1 /mnt/sda1 vfat defaults 0 0" >> /etc/fstab
 
 git gc
