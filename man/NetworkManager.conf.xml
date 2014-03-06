@@ -207,6 +207,20 @@ Copyright (C) 2010 - 2013 Red Hat, Inc.
 	modify resolv.conf.</para>
 	</listitem>
       </varlistentry>
+
+      <varlistentry>
+        <term><varname>debug</varname></term>
+        <listitem><para>Comma separated list of options to aid
+        debugging. This value will be combined with the environment
+        variable <literal>NM_DEBUG</literal>. Currently the following
+        values are supported:</para>
+        <para>
+          <literal>RLIMIT_CORE</literal>: set ulimit -c unlimited
+          to write out core dumps.
+        </para>
+        </listitem>
+      </varlistentry>
+
     </variablelist>
   </refsect1>
 

@@ -37,6 +37,7 @@
 #include <glib/gi18n.h>
 #include <gmodule.h>
 #include <string.h>
+#include <sys/resource.h>
 
 #include "libgsystem.h"
 #include "NetworkManager.h"
@@ -293,6 +294,37 @@ parse_state_file (const char *filename,
 	return TRUE;
 }
 
+static void
+_init_nm_debug (const char *debug)
+{
+	const guint D_RLIMIT_CORE = 1;
+	GDebugKey keys[] = {
+		{ "RLIMIT_CORE", D_RLIMIT_CORE },
+	};
+	guint flags = 0;
+	const char *env = getenv ("NM_DEBUG");
+
+	if (env && strcasecmp (env, "help") != 0) {
+		/* g_parse_debug_string() prints options to stderr if the variable
+		 * is set to "help". Don't allow that. */
+		flags = g_parse_debug_string (env,  keys, G_N_ELEMENTS (keys));
+	}
+
+	if (debug && strcasecmp (debug, "help") != 0)
+		flags |= g_parse_debug_string (debug,  keys, G_N_ELEMENTS (keys));
+
+	if (flags & D_RLIMIT_CORE) {
+		/* only enable this, if explicitly requested, because it might
+		 * expose sensitive data. */
+
+		struct rlimit limit = {
+			.rlim_cur = RLIM_INFINITY,
+			.rlim_max = RLIM_INFINITY,
+		};
+		setrlimit (RLIMIT_CORE, &limit);
+	}
+}
+
 /*
  * main
  *
@@ -515,6 +547,8 @@ main (int argc, char *argv[])
 		if (write_pidfile (pidfile))
 			wrote_pidfile = TRUE;
 	}
+
+	_init_nm_debug (nm_config_get_debug (config));
 
 	/* Set up unix signal handling - before creating threads, but after daemonizing! */
 	if (!setup_signals ())

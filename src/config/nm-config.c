@@ -51,6 +51,8 @@ typedef struct {
 	char *log_level;
 	char *log_domains;
 
+	char *debug;
+
 	char *connectivity_uri;
 	gint connectivity_interval;
 	char *connectivity_response;
@@ -129,6 +131,14 @@ nm_config_get_log_domains (NMConfig *config)
 	g_return_val_if_fail (config != NULL, NULL);
 
 	return NM_CONFIG_GET_PRIVATE (config)->log_domains;
+}
+
+const char *
+nm_config_get_debug (NMConfig *config)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+
+	return NM_CONFIG_GET_PRIVATE (config)->debug;
 }
 
 const char *
@@ -519,6 +529,8 @@ nm_config_new (GError **error)
 	priv->log_level = g_key_file_get_value (priv->keyfile, "logging", "level", NULL);
 	priv->log_domains = g_key_file_get_value (priv->keyfile, "logging", "domains", NULL);
 
+	priv->debug = g_key_file_get_value (priv->keyfile, "main", "debug", NULL);
+
 	if (cli_connectivity_uri && cli_connectivity_uri[0])
 		g_key_file_set_value (priv->keyfile, "connectivity", "uri", cli_connectivity_uri);
 	priv->connectivity_uri = g_key_file_get_value (priv->keyfile, "connectivity", "uri", NULL);
@@ -562,6 +574,7 @@ finalize (GObject *gobject)
 	g_free (priv->dns_mode);
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
+	g_free (priv->debug);
 	g_free (priv->connectivity_uri);
 	g_free (priv->connectivity_response);
 	g_strfreev (priv->no_auto_default);
