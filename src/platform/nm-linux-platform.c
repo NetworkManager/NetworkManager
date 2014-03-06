@@ -554,11 +554,13 @@ type_to_string (NMLinkType type)
 	} G_STMT_END
 
 static NMLinkType
-link_type_from_udev (NMPlatform *platform, int ifindex, int arptype, const char **out_name)
+link_type_from_udev (NMPlatform *platform, int ifindex, const char *ifname, int arptype, const char **out_name)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GUdevDevice *udev_device;
-	const char *prop, *name, *sysfs_path;
+	const char *prop, *sysfs_path;
+
+	g_assert (ifname);
 
 	udev_device = g_hash_table_lookup (priv->udev_devices, GINT_TO_POINTER (ifindex));
 	if (!udev_device)
@@ -569,9 +571,8 @@ link_type_from_udev (NMPlatform *platform, int ifindex, int arptype, const char 
 		return_type (NM_LINK_TYPE_OLPC_MESH, "olpc-mesh");
 
 	prop = g_udev_device_get_property (udev_device, "DEVTYPE");
-	name = g_udev_device_get_name (udev_device);
 	sysfs_path = g_udev_device_get_sysfs_path (udev_device);
-	if (g_strcmp0 (prop, "wlan") == 0 || wifi_utils_is_wifi (name, sysfs_path))
+	if (g_strcmp0 (prop, "wlan") == 0 || wifi_utils_is_wifi (ifname, sysfs_path))
 		return_type (NM_LINK_TYPE_WIFI, "wifi");
 	else if (g_strcmp0 (prop, "wwan") == 0)
 		return_type (NM_LINK_TYPE_WWAN_ETHERNET, "wwan");
@@ -664,26 +665,31 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 	if (!type) {
 		int arptype = rtnl_link_get_arptype (rtnllink);
 		const char *driver;
+		const char *ifname;
+
 
 		if (arptype == ARPHRD_LOOPBACK)
 			return_type (NM_LINK_TYPE_LOOPBACK, "loopback");
 		else if (arptype == ARPHRD_INFINIBAND)
 			return_type (NM_LINK_TYPE_INFINIBAND, "infiniband");
-		else if (arptype == 256) {
+
+		ifname = rtnl_link_get_name (rtnllink);
+		if (arptype == 256) {
 			/* Some s390 CTC-type devices report 256 for the encapsulation type
 			 * for some reason, but we need to call them Ethernet. FIXME: use
 			 * something other than interface name to detect CTC here.
 			 */
-			if (g_str_has_prefix (rtnl_link_get_name (rtnllink), "ctc"))
+			if (g_str_has_prefix (ifname, "ctc"))
 				return_type (NM_LINK_TYPE_ETHERNET, "ethernet");
 		}
 
-		driver = ethtool_get_driver (rtnl_link_get_name (rtnllink));
+		driver = ethtool_get_driver (ifname);
 		if (!g_strcmp0 (driver, "openvswitch"))
 			return_type (NM_LINK_TYPE_OPENVSWITCH, "openvswitch");
 
 		return link_type_from_udev (platform,
 		                            rtnl_link_get_ifindex (rtnllink),
+		                            ifname,
 		                            arptype,
 		                            out_name);
 	} else if (!strcmp (type, "dummy"))
@@ -827,6 +833,7 @@ hack_empty_master_iff_lower_up (NMPlatform *platform, struct nl_object *object)
 	struct rtnl_link *rtnllink;
 	int ifindex;
 	struct nl_object *slave;
+	const char *type;
 
 	if (!object)
 		return;
@@ -837,18 +844,15 @@ hack_empty_master_iff_lower_up (NMPlatform *platform, struct nl_object *object)
 
 	ifindex = rtnl_link_get_ifindex (rtnllink);
 
-	switch (link_extract_type (platform, rtnllink, NULL)) {
-	case NM_LINK_TYPE_BRIDGE:
-	case NM_LINK_TYPE_BOND:
-		for (slave = nl_cache_get_first (priv->link_cache); slave; slave = nl_cache_get_next (slave)) {
-			struct rtnl_link *rtnlslave = (struct rtnl_link *) slave;
-			if (rtnl_link_get_master (rtnlslave) == ifindex
-					&& rtnl_link_get_flags (rtnlslave) & IFF_LOWER_UP)
-				return;
-		}
-		break;
-	default:
+	type = rtnl_link_get_type (rtnllink);
+	if (!type || (strcmp (type, "bridge") != 0 && strcmp (type, "bond") != 0))
 		return;
+
+	for (slave = nl_cache_get_first (priv->link_cache); slave; slave = nl_cache_get_next (slave)) {
+		struct rtnl_link *rtnlslave = (struct rtnl_link *) slave;
+		if (rtnl_link_get_master (rtnlslave) == ifindex
+				&& rtnl_link_get_flags (rtnlslave) & IFF_LOWER_UP)
+			return;
 	}
 
 	rtnl_link_unset_flags (rtnllink, IFF_LOWER_UP);
