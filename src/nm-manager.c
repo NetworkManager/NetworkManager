@@ -52,6 +52,7 @@
 #include "nm-device-veth.h"
 #include "nm-device-tun.h"
 #include "nm-device-macvlan.h"
+#include "nm-device-vxlan.h"
 #include "nm-device-gre.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
@@ -2154,6 +2155,9 @@ platform_link_added_cb (NMPlatform *platform,
 		case NM_LINK_TYPE_MACVLAN:
 		case NM_LINK_TYPE_MACVTAP:
 			device = nm_device_macvlan_new (plink);
+			break;
+		case NM_LINK_TYPE_VXLAN:
+			device = nm_device_vxlan_new (plink);
 			break;
 		case NM_LINK_TYPE_GRE:
 		case NM_LINK_TYPE_GRETAP:

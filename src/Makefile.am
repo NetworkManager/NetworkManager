@@ -88,6 +88,8 @@ nm_sources = \
 	devices/nm-device-veth.h \
 	devices/nm-device-vlan.c \
 	devices/nm-device-vlan.h \
+	devices/nm-device-vxlan.c \
+	devices/nm-device-vxlan.h \
 	devices/nm-device-wifi.c \
 	devices/nm-device-wifi.h \
 	\
@@ -302,6 +304,7 @@ glue_sources = \
 	nm-device-tun-glue.h \
 	nm-device-veth-glue.h \
 	nm-device-vlan-glue.h \
+	nm-device-vxlan-glue.h \
 	nm-device-wifi-glue.h \
 	nm-dhcp4-config-glue.h \
 	nm-dhcp6-config-glue.h \

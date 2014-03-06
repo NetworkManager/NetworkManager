@@ -36,7 +36,6 @@ G_DEFINE_TYPE (NMDeviceMacvlan, nm_device_macvlan, NM_TYPE_DEVICE_GENERIC)
 #define NM_DEVICE_MACVLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MACVLAN, NMDeviceMacvlanPrivate))
 
 typedef struct {
-	NMDevice *parent;
 	NMPlatformMacvlanProperties props;
 } NMDeviceMacvlanPrivate;
 
@@ -68,14 +67,8 @@ update_properties (NMDevice *device)
 
 	g_object_freeze_notify (object);
 
-	if (priv->props.parent_ifindex != props.parent_ifindex) {
+	if (priv->props.parent_ifindex != props.parent_ifindex)
 		g_object_notify (object, NM_DEVICE_MACVLAN_PARENT);
-		if (priv->parent)
-			g_object_remove_weak_pointer (G_OBJECT (priv->parent), (gpointer *) &priv->parent);
-		priv->parent = nm_manager_get_device_by_ifindex (nm_manager_get (), props.parent_ifindex);
-		if (priv->parent)
-			g_object_add_weak_pointer (G_OBJECT (priv->parent), (gpointer *) &priv->parent);
-	}
 	if (g_strcmp0 (priv->props.mode, props.mode) != 0)
 		g_object_notify (object, NM_DEVICE_MACVLAN_MODE);
 	if (priv->props.no_promisc != props.no_promisc)
@@ -125,10 +118,12 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (object);
+	NMDevice *parent;
 
 	switch (prop_id) {
 	case PROP_PARENT:
-		g_value_set_boxed (value, priv->parent ? nm_device_get_path (priv->parent) : "/");
+		parent = nm_manager_get_device_by_ifindex (nm_manager_get (), priv->props.parent_ifindex);
+		g_value_set_boxed (value, parent ? nm_device_get_path (parent) : "/");
 		break;
 	case PROP_MODE:
 		g_value_set_string (value, priv->props.mode);

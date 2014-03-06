@@ -104,6 +104,7 @@ typedef enum {
 	NM_LINK_TYPE_TUN,
 	NM_LINK_TYPE_VETH,
 	NM_LINK_TYPE_VLAN,
+	NM_LINK_TYPE_VXLAN,
 
 	/* Software types with slaves */
 	NM_LINK_TYPE_BRIDGE = 0x10000 | 0x20000,
@@ -216,6 +217,27 @@ typedef struct {
 
 typedef struct {
 	int parent_ifindex;
+	guint32 id;
+	in_addr_t group;
+	in_addr_t local;
+	struct in6_addr group6;
+	struct in6_addr local6;
+	guint8 tos;
+	guint8 ttl;
+	gboolean learning;
+	guint32 ageing;
+	guint32 limit;
+	guint16 dst_port;
+	guint16 src_port_min;
+	guint16 src_port_max;
+	gboolean proxy;
+	gboolean rsc;
+	gboolean l2miss;
+	gboolean l3miss;
+} NMPlatformVxlanProperties;
+
+typedef struct {
+	int parent_ifindex;
 	guint16 input_flags;
 	guint16 output_flags;
 	guint32 input_key;
@@ -317,6 +339,7 @@ typedef struct {
 	gboolean (*veth_get_properties) (NMPlatform *, int ifindex, NMPlatformVethProperties *properties);
 	gboolean (*tun_get_properties) (NMPlatform *, int ifindex, NMPlatformTunProperties *properties);
 	gboolean (*macvlan_get_properties) (NMPlatform *, int ifindex, NMPlatformMacvlanProperties *props);
+	gboolean (*vxlan_get_properties) (NMPlatform *, int ifindex, NMPlatformVxlanProperties *props);
 	gboolean (*gre_get_properties) (NMPlatform *, int ifindex, NMPlatformGreProperties *props);
 
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
@@ -445,6 +468,7 @@ gboolean nm_platform_infiniband_partition_add (int parent, int p_key);
 gboolean nm_platform_veth_get_properties (int ifindex, NMPlatformVethProperties *properties);
 gboolean nm_platform_tun_get_properties (int ifindex, NMPlatformTunProperties *properties);
 gboolean nm_platform_macvlan_get_properties (int ifindex, NMPlatformMacvlanProperties *props);
+gboolean nm_platform_vxlan_get_properties (int ifindex, NMPlatformVxlanProperties *props);
 gboolean nm_platform_gre_get_properties (int ifindex, NMPlatformGreProperties *props);
 
 GArray *nm_platform_ip4_address_get_all (int ifindex);

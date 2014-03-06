@@ -1179,6 +1179,17 @@ nm_platform_macvlan_get_properties (int ifindex, NMPlatformMacvlanProperties *pr
 }
 
 gboolean
+nm_platform_vxlan_get_properties (int ifindex, NMPlatformVxlanProperties *props)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (props != NULL, FALSE);
+
+	return klass->vxlan_get_properties (platform, ifindex, props);
+}
+
+gboolean
 nm_platform_gre_get_properties (int ifindex, NMPlatformGreProperties *props)
 {
 	reset_error ();
