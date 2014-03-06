@@ -402,8 +402,10 @@ check_timestamps (NMRDisc *rdisc, guint32 now, NMRDiscConfigMap changed)
 		g_signal_emit_by_name (rdisc, NM_RDISC_CONFIG_CHANGED, changed);
 
 	if (nextevent != never) {
-		debug ("(%s): scheduling next now/lifetime check: %u seconds", rdisc->ifname, nextevent);
-		priv->timeout_id = g_timeout_add_seconds (nextevent, timeout_cb, rdisc);
+		g_return_if_fail (nextevent > now);
+		debug ("(%s): scheduling next now/lifetime check: %u seconds",
+		       rdisc->ifname, nextevent - now);
+		priv->timeout_id = g_timeout_add_seconds (nextevent - now, timeout_cb, rdisc);
 	}
 }
 
