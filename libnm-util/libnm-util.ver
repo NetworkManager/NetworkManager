@@ -602,8 +602,8 @@ global:
 	nm_setting_wireless_security_set_wep_key;
 	nm_utils_ap_mode_security_valid;
 	nm_utils_bin2hexstr;
-	nm_utils_deinit;
 	nm_utils_check_virtual_device_compatibility;
+	nm_utils_deinit;
 	nm_utils_escape_ssid;
 	nm_utils_file_is_pkcs12;
 	nm_utils_gvalue_hash_dup;
