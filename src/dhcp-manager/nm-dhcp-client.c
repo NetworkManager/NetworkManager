@@ -135,9 +135,9 @@ watch_cleanup (NMDHCPClient *self)
 }
 
 void
-nm_dhcp_client_stop_pid (GPid pid, const char *iface, guint timeout_secs)
+nm_dhcp_client_stop_pid (GPid pid, const char *iface)
 {
-	int i = (timeout_secs ? timeout_secs : 3) * 5;  /* default 3 seconds */
+	int i = 5;  /* roughly 0.5 seconds */
 
 	g_return_if_fail (pid > 0);
 
@@ -164,7 +164,7 @@ nm_dhcp_client_stop_pid (GPid pid, const char *iface, guint timeout_secs)
 				break;
 			}
 		}
-		g_usleep (G_USEC_PER_SEC / 5);
+		g_usleep (G_USEC_PER_SEC / 10);
 	}
 
 	if (i <= 0) {
@@ -193,7 +193,7 @@ stop (NMDHCPClient *self, gboolean release, const GByteArray *duid)
 	/* Clean up the watch handler since we're explicitly killing the daemon */
 	watch_cleanup (self);
 
-	nm_dhcp_client_stop_pid (priv->pid, priv->iface, 0);
+	nm_dhcp_client_stop_pid (priv->pid, priv->iface);
 
 	priv->info_only = FALSE;
 }
@@ -518,7 +518,7 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 				exe = proc_contents;
 
 			if (!strcmp (exe, binary_name))
-				nm_dhcp_client_stop_pid ((GPid) tmp, NULL, 0);
+				nm_dhcp_client_stop_pid ((GPid) tmp, NULL);
 		}
 	}
 

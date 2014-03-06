@@ -541,7 +541,7 @@ stop (NMDHCPClient *client, gboolean release, const GByteArray *duid)
 		rpid = dhclient_start (client, NULL, duid, TRUE);
 		if (rpid > 0) {
 			/* Wait a few seconds for the release to happen */
-			nm_dhcp_client_stop_pid (rpid, nm_dhcp_client_get_iface (client), 5);
+			nm_dhcp_client_stop_pid (rpid, nm_dhcp_client_get_iface (client));
 		}
 	}
 }

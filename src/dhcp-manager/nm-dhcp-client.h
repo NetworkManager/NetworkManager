@@ -148,7 +148,7 @@ NMIP6Config *nm_dhcp_client_get_ip6_config   (NMDHCPClient *self, gboolean test)
 /* Backend helpers */
 void nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name);
 
-void nm_dhcp_client_stop_pid (GPid pid, const char *iface, guint timeout_secs);
+void nm_dhcp_client_stop_pid (GPid pid, const char *iface);
 
 #endif /* NM_DHCP_CLIENT_H */
 
