@@ -62,6 +62,5 @@ sed -e 's/^#\?\(RateLimitInterval *= *\).*/\10/' \
     -i /etc/systemd/journald.conf
 
 mkdir /mnt/sda1
-echo "/dev/sda1 /mnt/sda1 vfat defaults 0 0" >> /etc/fstab
 
 git gc

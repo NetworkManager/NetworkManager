@@ -92,7 +92,14 @@ do_live_vm() {
     echo "Preparing kernel and initrd..." || exit 1
     mkdir -p $NAME || exit 1
     cp $TREE/boot/vmlinuz* $NAME/vmlinuz || exit 1
-    mock -r "$ROOT" --chroot "{ ( cd / ; find -not \( -path ./tmp/initramfs.img -o -path './var/cache/yum/*' -o -path './boot' \) -xdev -print0 | cpio -o0c ) || exit 1; } | gzip > /tmp/initramfs.img || exit 1" || die "error creating initramfs"
+    mock -r "$ROOT" --chroot "{ (   cd / ; \
+                                    echo '/dev/sda1 /mnt/sda1 vfat defaults 0 0' >> /etc/fstab ; \
+                                    find -not \( \
+                                        -path ./tmp/initramfs.img -o \
+                                        -path './var/cache/yum/*' -o \
+                                        -path './boot' \
+                                    \) -xdev -print0 | \
+                                    cpio -o0c ) || exit 1; } | gzip > /tmp/initramfs.img || exit 1" || die "error creating initramfs"
     cp "$TREE/tmp/initramfs.img" "$NAME/" || exit 1
     cp run.sh $NAME/run.sh
 }
