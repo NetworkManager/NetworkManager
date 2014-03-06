@@ -167,6 +167,20 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	return NM_DEVICE_CLASS (nm_device_modem_parent_class)->connection_compatible (device, connection, error);
 }
 
+static GType
+get_setting_type (NMDevice *device)
+{
+	NMDeviceModemCapabilities caps;
+
+	caps = nm_device_modem_get_current_capabilities (NM_DEVICE_MODEM (device));
+	if (caps & (NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS | NM_DEVICE_MODEM_CAPABILITY_LTE))
+		return NM_TYPE_SETTING_GSM;
+	else if (caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO)
+		return NM_TYPE_SETTING_CDMA;
+	else
+		return G_TYPE_INVALID;
+}
+
 /*******************************************************************/
 
 static void
@@ -249,6 +263,7 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 
 	device_class->get_type_description = get_type_description;
 	device_class->connection_compatible = connection_compatible;
+	device_class->get_setting_type = get_setting_type;
 
 	/**
 	 * NMDeviceModem:modem-capabilities:
