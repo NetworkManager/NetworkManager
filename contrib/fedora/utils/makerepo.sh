@@ -108,10 +108,13 @@ pushd "$DIRNAME"
     if [[ -d "$LOCAL_GIT/" ]]; then
         git remote add local "$LOCAL_GIT/"
         git fetch local
-        git fetch local 'refs/remotes/origin/*:refs/remotes/origin/*'
     fi
     git remote add origin git://anongit.freedesktop.org/NetworkManager/NetworkManager
     git remote 'set-url' --push origin "ssh://$USER@git.freedesktop.org/git/NetworkManager/NetworkManager"
+    git config --local notes.displayRef refs/notes/bugs
+    git config --local --add remote.origin.fetch refs/tags/*:refs/tags/*
+    git config --local --add remote.origin.fetch refs/notes/bugs:refs/notes/bugs
+    git fetch origin
     git commit --allow-empty -m '*** empty initial commit'  # useful, to rebase the following commit
     git add -f -A .
     git commit -m '*** add all'
