@@ -3036,6 +3036,7 @@ udev_device_added (NMPlatform *platform,
 	auto_nl_object struct rtnl_link *rtnllink = NULL;
 	const char *ifname;
 	int ifindex;
+	gboolean is_changed;
 
 	ifname = g_udev_device_get_name (udev_device);
 	if (!ifname) {
@@ -3055,6 +3056,7 @@ udev_device_added (NMPlatform *platform,
 		return;
 	}
 
+	is_changed = g_hash_table_lookup_extended (priv->udev_devices, GINT_TO_POINTER (ifindex), NULL, NULL);
 	g_hash_table_insert (priv->udev_devices, GINT_TO_POINTER (ifindex),
 	                     g_object_ref (udev_device));
 
@@ -3065,7 +3067,7 @@ udev_device_added (NMPlatform *platform,
 		return;
 	}
 
-	announce_object (platform, (struct nl_object *) rtnllink, ADDED, NM_PLATFORM_REASON_EXTERNAL);
+	announce_object (platform, (struct nl_object *) rtnllink, is_changed ? CHANGED : ADDED, NM_PLATFORM_REASON_EXTERNAL);
 }
 
 static void
@@ -3128,7 +3130,7 @@ handle_udev_event (GUdevClient *client,
 	       action, subsys, g_udev_device_get_name (udev_device),
 	       ifindex ? ifindex : "unknown", seqnum);
 
-	if (!strcmp (action, "add"))
+	if (!strcmp (action, "add") || !strcmp (action, "move"))
 		udev_device_added (platform, udev_device);
 	if (!strcmp (action, "remove"))
 		udev_device_removed (platform, udev_device);
