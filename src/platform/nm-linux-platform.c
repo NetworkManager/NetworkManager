@@ -2953,25 +2953,6 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 	return addresses;
 }
 
-static void
-addr4_to_broadcast (struct in_addr *dst, const struct in_addr *src, guint8 plen)
-{
-	guint nbytes = plen / 8;
-	guint nbits = plen % 8;
-
-	g_return_if_fail (plen <= 32);
-	g_assert (src);
-	g_assert (dst);
-
-	if (plen >= 32)
-		*dst = *src;
-	else {
-		dst->s_addr = 0xFFFFFFFF;
-		memcpy (dst, src, nbytes);
-		((guint8 *) dst)[nbytes] = (((const guint8 *) src)[nbytes] | (0xFF >> nbits));
-	}
-}
-
 #define IPV4LL_NETWORK (htonl (0xA9FE0000L))
 #define IPV4LL_NETMASK (htonl (0xFFFF0000L))
 
@@ -3010,10 +2991,10 @@ build_rtnl_addr (int family,
 
 	/* IPv4 Broadcast address */
 	if (family == AF_INET) {
-		struct in_addr bcast;
+		in_addr_t bcast;
 		auto_nl_addr struct nl_addr *bcaddr = NULL;
 
-		addr4_to_broadcast (&bcast, addr, plen);
+		bcast = *((in_addr_t *) addr) | ~nm_utils_ip4_prefix_to_netmask (plen);
 		bcaddr = nl_addr_build (family, &bcast, addrlen);
 		g_assert (bcaddr);
 		rtnl_addr_set_broadcast (rtnladdr, bcaddr);
