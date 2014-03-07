@@ -2900,24 +2900,13 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 
 /******************************************************************/
 
-static int
-ip_address_mark_all (NMPlatform *platform, int family, int ifindex)
+static gboolean
+_address_match (struct rtnl_addr *addr, int family, int ifindex)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	struct nl_object *object;
-	int count = 0;
+	g_return_val_if_fail (addr, FALSE);
 
-	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
-		nl_object_unmark (object);
-		if (rtnl_addr_get_family ((struct rtnl_addr *) object) != family)
-			continue;
-		if (rtnl_addr_get_ifindex ((struct rtnl_addr *) object) != ifindex)
-			continue;
-		nl_object_mark (object);
-		count++;
-	}
-
-	return count;
+	return rtnl_addr_get_family (addr) == family &&
+	       rtnl_addr_get_ifindex (addr) == ifindex;
 }
 
 static GArray *
@@ -2927,18 +2916,15 @@ ip4_address_get_all (NMPlatform *platform, int ifindex)
 	GArray *addresses;
 	NMPlatformIP4Address address;
 	struct nl_object *object;
-	int count;
 
-	count = ip_address_mark_all (platform, AF_INET, ifindex);
-	addresses = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP4Address), count);
+	addresses = g_array_new (TRUE, FALSE, sizeof (NMPlatformIP4Address));
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
-		if (nl_object_is_marked (object)) {
+		if (_address_match ((struct rtnl_addr *) object, AF_INET, ifindex)) {
 			if (init_ip4_address (&address, (struct rtnl_addr *) object)) {
 				address.source = NM_PLATFORM_SOURCE_KERNEL;
 				g_array_append_val (addresses, address);
 			}
-			nl_object_unmark (object);
 		}
 	}
 
@@ -2952,18 +2938,15 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 	GArray *addresses;
 	NMPlatformIP6Address address;
 	struct nl_object *object;
-	int count;
 
-	count = ip_address_mark_all (platform, AF_INET6, ifindex);
-	addresses = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP6Address), count);
+	addresses = g_array_new (TRUE, FALSE, sizeof (NMPlatformIP6Address));
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
-		if (nl_object_is_marked (object)) {
+		if (_address_match ((struct rtnl_addr *) object, AF_INET6, ifindex)) {
 			if (init_ip6_address (&address, (struct rtnl_addr *) object)) {
 				address.source = NM_PLATFORM_SOURCE_KERNEL;
 				g_array_append_val (addresses, address);
 			}
-			nl_object_unmark (object);
 		}
 	}
 
