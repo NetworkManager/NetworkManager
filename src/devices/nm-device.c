@@ -3318,7 +3318,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 	int i;
 	NMDeviceStateReason reason;
 	static int system_support = -1;
-	guint ifa_flags;
+	guint ifa_flags = 0x00;
 
 	if (system_support == -1) {
 		/*
