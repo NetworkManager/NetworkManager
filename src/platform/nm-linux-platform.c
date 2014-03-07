@@ -3119,36 +3119,22 @@ ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 
 /******************************************************************/
 
-static int
-ip_route_mark_all (NMPlatform *platform, int family, int ifindex)
+static gboolean
+_route_match (struct rtnl_route *rtnlroute, int family, int ifindex)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	struct nl_object *object;
-	int count = 0;
+	struct rtnl_nexthop *nexthop;
 
-	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
-		struct rtnl_route *rtnlroute = (struct rtnl_route *) object;
-		struct rtnl_nexthop *nexthop;
+	g_return_val_if_fail (rtnlroute, FALSE);
 
-		nl_object_unmark (object);
-		if (rtnl_route_get_type (rtnlroute) != RTN_UNICAST)
-			continue;
-		if (rtnl_route_get_table (rtnlroute) != RT_TABLE_MAIN)
-			continue;
-		if (rtnl_route_get_protocol (rtnlroute) == RTPROT_KERNEL)
-			continue;
-		if (rtnl_route_get_family (rtnlroute) != family)
-			continue;
-		if (rtnl_route_get_nnexthops (rtnlroute) != 1)
-			continue;
-		nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
-		if (rtnl_route_nh_get_ifindex (nexthop) != ifindex)
-			continue;
-		nl_object_mark (object);
-		count++;
-	}
+	if (rtnl_route_get_type (rtnlroute) != RTN_UNICAST ||
+	    rtnl_route_get_table (rtnlroute) != RT_TABLE_MAIN ||
+	    rtnl_route_get_protocol (rtnlroute) == RTPROT_KERNEL ||
+	    rtnl_route_get_family (rtnlroute) != family ||
+	    rtnl_route_get_nnexthops (rtnlroute) != 1)
+		return FALSE;
 
-	return count;
+	nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
+	return rtnl_route_nh_get_ifindex (nexthop) == ifindex;
 }
 
 static GArray *
@@ -3158,19 +3144,16 @@ ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	GArray *routes;
 	NMPlatformIP4Route route;
 	struct nl_object *object;
-	int count = 0;
 
-	count = ip_route_mark_all (platform, AF_INET, ifindex);
-	routes = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP4Route), count);
+	routes = g_array_new (TRUE, FALSE, sizeof (NMPlatformIP4Route));
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
-		if (nl_object_is_marked (object)) {
+		if (_route_match ((struct rtnl_route *) object, AF_INET, ifindex)) {
 			if (init_ip4_route (&route, (struct rtnl_route *) object)) {
 				route.source = NM_PLATFORM_SOURCE_KERNEL;
 				if (route.plen != 0 || include_default)
 					g_array_append_val (routes, route);
 			}
-			nl_object_unmark (object);
 		}
 	}
 
@@ -3184,19 +3167,16 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	GArray *routes;
 	NMPlatformIP6Route route;
 	struct nl_object *object;
-	int count;
 
-	count = ip_route_mark_all (platform, AF_INET6, ifindex);
-	routes = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP6Route), count);
+	routes = g_array_new (TRUE, FALSE, sizeof (NMPlatformIP6Route));
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
-		if (nl_object_is_marked (object)) {
+		if (_route_match ((struct rtnl_route *) object, AF_INET6, ifindex)) {
 			if (init_ip6_route (&route, (struct rtnl_route *) object)) {
 				route.source = NM_PLATFORM_SOURCE_KERNEL;
 				if (route.plen != 0 || include_default)
 					g_array_append_val (routes, route);
 			}
-			nl_object_unmark (object);
 		}
 	}
 
