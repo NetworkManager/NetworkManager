@@ -52,6 +52,18 @@ EOF
 /bin/systemctl enable NetworkManager.service || exit 1
 /bin/systemctl enable sshd.service || exit 1
 
+git config --global user.name "NetworkManager Test VM"
+git config --global user.email "networkmanager-maint@gnome.bugs"
+
+cat <<EOF > /root/.vimrc
+EOF
+
+cat <<EOF > /root/.bashrc
+LS_OPTIONS='--color=auto -Q'
+alias l='ls \$LS_OPTIONS -la'
+alias ll='ls \$LS_OPTIONS -l'
+EOF
+
 # allow login for root via SSH, without password!!
 sed -e 's/^#\?\(PermitRootLogin *\).*/\1yes/' \
     -e 's/^#\?\(PermitEmptyPasswords *\).*/\1yes/' \
