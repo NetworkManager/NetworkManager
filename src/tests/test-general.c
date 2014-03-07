@@ -239,6 +239,40 @@ test_connection_match_ip6_method (void)
 }
 
 static void
+test_connection_match_ip6_method_ignore (void)
+{
+	NMConnection *orig, *copy, *matched;
+	GSList *connections = NULL;
+	NMSettingIP6Config *s_ip6;
+
+	orig = _match_connection_new ();
+	copy = nm_connection_duplicate (orig);
+	connections = g_slist_append (connections, copy);
+
+	/* Check that if the original connection is IPv6 method=link-local, and the
+	 * candidate is method=ignore, that the candidate is matched.
+	 */
+	s_ip6 = nm_connection_get_setting_ip6_config (orig);
+	g_assert (s_ip6);
+	g_object_set (G_OBJECT (s_ip6),
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	              NULL);
+
+	s_ip6 = nm_connection_get_setting_ip6_config (copy);
+	g_assert (s_ip6);
+	g_object_set (G_OBJECT (s_ip6),
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NULL);
+
+	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	g_assert (matched == copy);
+
+	g_slist_free (connections);
+	g_object_unref (orig);
+	g_object_unref (copy);
+}
+
+static void
 test_connection_match_ip4_method (void)
 {
 	NMConnection *orig, *copy, *matched;
@@ -292,6 +326,7 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/general/connection-match/basic", test_connection_match_basic);
 	g_test_add_func ("/general/connection-match/ip6-method", test_connection_match_ip6_method);
+	g_test_add_func ("/general/connection-match/ip6-method-ignore", test_connection_match_ip6_method_ignore);
 	g_test_add_func ("/general/connection-match/ip4-method", test_connection_match_ip4_method);
 
 	return g_test_run ();

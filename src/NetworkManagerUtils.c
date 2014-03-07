@@ -686,6 +686,37 @@ check_ip6_method_link_local_auto (NMConnection *orig,
 }
 
 static gboolean
+check_ip6_method_link_local_ignore (NMConnection *orig,
+                                    NMConnection *candidate,
+                                    GHashTable *settings)
+{
+	GHashTable *props;
+	const char *orig_ip6_method, *candidate_ip6_method;
+
+	props = g_hash_table_lookup (settings, NM_SETTING_IP6_CONFIG_SETTING_NAME);
+	if (   !props
+	    || (g_hash_table_size (props) != 1)
+	    || !g_hash_table_lookup (props, NM_SETTING_IP6_CONFIG_METHOD)) {
+		/* We only handle ipv6 'method' here */
+		return FALSE;
+	}
+
+	/* If the original connection method is 'link-local' and the candidate method
+	 * is 'ignore' we can take the connection, because NM didn't simply take care
+	 * of IPv6.
+	 */
+	orig_ip6_method = nm_utils_get_ip_config_method (orig, NM_TYPE_SETTING_IP6_CONFIG);
+	candidate_ip6_method = nm_utils_get_ip_config_method (candidate, NM_TYPE_SETTING_IP6_CONFIG);
+
+	if (   strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
+	    && strcmp (candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+static gboolean
 check_ip4_method_disabled_auto (NMConnection *orig,
                                 NMConnection *candidate,
                                 GHashTable *settings,
@@ -731,6 +762,9 @@ check_possible_match (NMConnection *orig,
 	g_return_val_if_fail (settings != NULL, NULL);
 
 	if (check_ip6_method_link_local_auto (orig, candidate, settings))
+		return candidate;
+
+	if (check_ip6_method_link_local_ignore (orig, candidate, settings))
 		return candidate;
 
 	if (check_ip4_method_disabled_auto (orig, candidate, settings, device_has_carrier))
