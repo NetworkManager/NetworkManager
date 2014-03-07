@@ -44,6 +44,7 @@ make install || exit 1
 cat <<EOF > /etc/NetworkManager/NetworkManager.conf
 [main]
 plugins=ifcfg-rh
+debug=RLIMIT_CORE
 [logging]
 level=DEBUG
 domains=ALL
