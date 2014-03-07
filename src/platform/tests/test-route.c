@@ -3,12 +3,16 @@
 #define DEVICE_NAME "nm-test-device"
 
 static void
-ip4_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Route *received, NMPlatformReason reason, SignalData *data)
+ip4_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Route *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
 {
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);
+	g_assert (data && data->name);
+	g_assert_cmpstr (data->name, ==, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED);
 
 	if (data->ifindex && data->ifindex != received->ifindex)
+		return;
+	if (data->change_type != change_type)
 		return;
 
 	if (data->loop)
@@ -21,12 +25,16 @@ ip4_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Route *recei
 }
 
 static void
-ip6_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Route *received, NMPlatformReason reason, SignalData *data)
+ip6_route_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Route *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
 {
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);
+	g_assert (data && data->name);
+	g_assert_cmpstr (data->name, ==, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED);
 
 	if (data->ifindex && data->ifindex != received->ifindex)
+		return;
+	if (data->change_type != change_type)
 		return;
 
 	if (data->loop)
@@ -42,9 +50,9 @@ static void
 test_ip4_route ()
 {
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
-	SignalData *route_added = add_signal (NM_PLATFORM_IP4_ROUTE_ADDED, ip4_route_callback);
-	SignalData *route_changed = add_signal (NM_PLATFORM_IP4_ROUTE_CHANGED, ip4_route_callback);
-	SignalData *route_removed = add_signal (NM_PLATFORM_IP4_ROUTE_REMOVED, ip4_route_callback);
+	SignalData *route_added = add_signal (NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, NM_PLATFORM_SIGNAL_ADDED, ip4_route_callback);
+	SignalData *route_changed = add_signal (NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, ip4_route_callback);
+	SignalData *route_removed = add_signal (NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, ip4_route_callback);
 	GArray *routes;
 	NMPlatformIP4Route rts[3];
 	in_addr_t network;
@@ -125,9 +133,9 @@ static void
 test_ip6_route ()
 {
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
-	SignalData *route_added = add_signal (NM_PLATFORM_IP6_ROUTE_ADDED, ip6_route_callback);
-	SignalData *route_changed = add_signal (NM_PLATFORM_IP6_ROUTE_CHANGED, ip6_route_callback);
-	SignalData *route_removed = add_signal (NM_PLATFORM_IP6_ROUTE_REMOVED, ip6_route_callback);
+	SignalData *route_added = add_signal (NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, NM_PLATFORM_SIGNAL_ADDED, ip6_route_callback);
+	SignalData *route_changed = add_signal (NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, ip6_route_callback);
+	SignalData *route_removed = add_signal (NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, ip6_route_callback);
 	GArray *routes;
 	NMPlatformIP6Route rts[3];
 	struct in6_addr network;
@@ -207,7 +215,7 @@ test_ip6_route ()
 void
 setup_tests (void)
 {
-	SignalData *link_added = add_signal_ifname (NM_PLATFORM_LINK_ADDED, link_callback, DEVICE_NAME);
+	SignalData *link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 
 	nm_platform_link_delete (nm_platform_link_get_ifindex (DEVICE_NAME));
 	g_assert (!nm_platform_link_exists (DEVICE_NAME));

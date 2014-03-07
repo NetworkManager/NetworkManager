@@ -5,7 +5,7 @@
 static void
 test_cleanup_internal ()
 {
-	SignalData *link_added = add_signal_ifname (NM_PLATFORM_LINK_ADDED, link_callback, DEVICE_NAME);
+	SignalData *link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 	int ifindex;
 	GArray *addresses4;
 	GArray *addresses6;

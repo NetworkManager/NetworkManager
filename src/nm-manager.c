@@ -148,13 +148,6 @@ static NMDevice *find_device_by_ip_iface (NMManager *self, const gchar *iface);
 
 static void rfkill_change_wifi (const char *desc, gboolean enabled);
 
-static void
-platform_link_added_cb (NMPlatform *platform,
-                        int ifindex,
-                        NMPlatformLink *plink,
-                        NMPlatformReason reason,
-                        gpointer user_data);
-
 static gboolean find_master (NMManager *self,
                              NMConnection *connection,
                              NMDevice *device,
@@ -193,6 +186,8 @@ typedef struct {
 	GSList *devices;
 	NMState state;
 	NMConnectivity *connectivity;
+
+	int ignore_link_added_cb;
 
 	NMPolicy *policy;
 
@@ -1102,7 +1097,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	 * explicitly here, otherwise adding the platform/kernel device would
 	 * create it before this function can do the rest of the setup.
 	 */
-	g_signal_handlers_block_by_func (nm_platform_get (), G_CALLBACK (platform_link_added_cb), self);
+	priv->ignore_link_added_cb++;
 
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
 		device = nm_device_bond_new_for_connection (connection);
@@ -1122,7 +1117,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		g_object_unref (device);
 	}
 
-	g_signal_handlers_unblock_by_func (nm_platform_get (), G_CALLBACK (platform_link_added_cb), self);
+	priv->ignore_link_added_cb--;
 
 out:
 	g_free (iface);
@@ -2078,19 +2073,20 @@ load_device_factories (NMManager *self)
 }
 
 static void
-platform_link_added_cb (NMPlatform *platform,
-                        int ifindex,
-                        NMPlatformLink *plink,
-                        NMPlatformReason reason,
-                        gpointer user_data)
+platform_link_added (NMManager *self,
+                     int ifindex,
+                     NMPlatformLink *plink,
+                     NMPlatformReason reason)
 {
-	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device = NULL;
 	GSList *iter;
 	GError *error = NULL;
 
 	g_return_if_fail (ifindex > 0);
+
+	if (priv->ignore_link_added_cb > 0)
+		return;
 
 	if (find_device_by_ifindex (self, ifindex))
 		return;
@@ -2202,18 +2198,29 @@ platform_link_added_cb (NMPlatform *platform,
 }
 
 static void
-platform_link_removed_cb (NMPlatform *platform,
-                          int ifindex,
-                          NMPlatformLink *plink,
-                          NMPlatformReason reason,
-                          gpointer user_data)
+platform_link_cb (NMPlatform *platform,
+                  int ifindex,
+                  NMPlatformLink *plink,
+                  NMPlatformSignalChangeType change_type,
+                  NMPlatformReason reason,
+                  gpointer user_data)
 {
-	NMManager *self = NM_MANAGER (user_data);
-	NMDevice *device;
+	switch (change_type) {
+	case NM_PLATFORM_SIGNAL_ADDED:
+		platform_link_added (NM_MANAGER (user_data), ifindex, plink, reason);
+		break;
+	case NM_PLATFORM_SIGNAL_REMOVED: {
+		NMManager *self = NM_MANAGER (user_data);
+		NMDevice *device;
 
-	device = find_device_by_ifindex (self, ifindex);
-	if (device)
-		remove_device (self, device, FALSE);
+		device = find_device_by_ifindex (self, ifindex);
+		if (device)
+			remove_device (self, device, FALSE);
+		break;
+	 }
+	 default:
+		break;
+	 }
 }
 
 static void
@@ -4738,12 +4745,8 @@ nm_manager_new (NMSettings *settings,
 	nm_dbus_manager_register_object (priv->dbus_mgr, NM_DBUS_PATH, singleton);
 
 	g_signal_connect (nm_platform_get (),
-	                  NM_PLATFORM_LINK_ADDED,
-	                  G_CALLBACK (platform_link_added_cb),
-	                  singleton);
-	g_signal_connect (nm_platform_get (),
-	                  NM_PLATFORM_LINK_REMOVED,
-	                  G_CALLBACK (platform_link_removed_cb),
+	                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
+	                  G_CALLBACK (platform_link_cb),
 	                  singleton);
 
 	priv->rfkill_mgr = nm_rfkill_manager_new ();

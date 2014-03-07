@@ -19,21 +19,22 @@
 typedef struct {
 	int handler_id;
 	const char *name;
+	NMPlatformSignalChangeType change_type;
 	gboolean received;
 	GMainLoop *loop;
 	int ifindex;
 	const char *ifname;
 } SignalData;
 
-SignalData *add_signal_full (const char *name, GCallback callback, int ifindex, const char *ifname);
-#define add_signal(name, callback) add_signal_full (name, (GCallback) callback, 0, NULL)
-#define add_signal_ifindex(name, callback, ifindex) add_signal_full (name, (GCallback) callback, ifindex, NULL)
-#define add_signal_ifname(name, callback, ifname) add_signal_full (name, (GCallback) callback, 0, ifname)
+SignalData *add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCallback callback, int ifindex, const char *ifname);
+#define add_signal(name, change_type, callback) add_signal_full (name, change_type, (GCallback) callback, 0, NULL)
+#define add_signal_ifindex(name, change_type, callback, ifindex) add_signal_full (name, change_type, (GCallback) callback, ifindex, NULL)
+#define add_signal_ifname(name, change_type, callback, ifname) add_signal_full (name, change_type, (GCallback) callback, 0, ifname)
 void accept_signal (SignalData *data);
 void wait_signal (SignalData *data);
 void free_signal (SignalData *data);
 
-void link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPlatformReason reason, SignalData *data);
+void link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data);
 
 void run_command (const char *format, ...);
 

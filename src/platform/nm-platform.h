@@ -130,6 +130,12 @@ typedef struct {
 	guint mtu;
 } NMPlatformLink;
 
+typedef enum {
+	NM_PLATFORM_SIGNAL_ADDED,
+	NM_PLATFORM_SIGNAL_CHANGED,
+	NM_PLATFORM_SIGNAL_REMOVED,
+} NMPlatformSignalChangeType;
+
 #define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
 
 typedef enum {
@@ -401,21 +407,11 @@ typedef struct {
  * but you are free to copy the provided information and use it for later
  * reference.
  */
-#define NM_PLATFORM_LINK_ADDED "link-added"
-#define NM_PLATFORM_LINK_CHANGED "link-changed"
-#define NM_PLATFORM_LINK_REMOVED "link-removed"
-#define NM_PLATFORM_IP4_ADDRESS_ADDED "ip4-address-added"
-#define NM_PLATFORM_IP4_ADDRESS_CHANGED "ip4-address-changed"
-#define NM_PLATFORM_IP4_ADDRESS_REMOVED "ip4-address-removed"
-#define NM_PLATFORM_IP6_ADDRESS_ADDED "ip6-address-added"
-#define NM_PLATFORM_IP6_ADDRESS_CHANGED "ip6-address-changed"
-#define NM_PLATFORM_IP6_ADDRESS_REMOVED "ip6-address-removed"
-#define NM_PLATFORM_IP4_ROUTE_ADDED "ip4-route-added"
-#define NM_PLATFORM_IP4_ROUTE_CHANGED "ip4-route-changed"
-#define NM_PLATFORM_IP4_ROUTE_REMOVED "ip4-route-removed"
-#define NM_PLATFORM_IP6_ROUTE_ADDED "ip6-route-added"
-#define NM_PLATFORM_IP6_ROUTE_CHANGED "ip6-route-changed"
-#define NM_PLATFORM_IP6_ROUTE_REMOVED "ip6-route-removed"
+#define NM_PLATFORM_SIGNAL_LINK_CHANGED "link-changed"
+#define NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED "ip4-address-changed"
+#define NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED "ip6-address-changed"
+#define NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED "ip4-route-changed"
+#define NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED "ip6-route-changed"
 
 /******************************************************************/
 
