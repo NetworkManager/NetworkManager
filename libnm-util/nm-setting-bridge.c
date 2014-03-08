@@ -468,7 +468,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                     "for this bridge.  Lower values are 'better'; the "
 		                     "lowest priority bridge will be elected the root "
 		                     "bridge.",
-		                     0, G_MAXUINT16, 0x80,
+		                     0, G_MAXUINT16, 0x8000,
 		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
