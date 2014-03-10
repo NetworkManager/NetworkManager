@@ -4999,6 +4999,8 @@ connection_from_file (const char *filename,
 	if (devtype) {
 		if (!strcasecmp (devtype, TYPE_TEAM))
 			type = g_strdup (TYPE_TEAM);
+		else if (!strcasecmp (devtype, TYPE_TEAM_PORT))
+			type = g_strdup (TYPE_ETHERNET);
 		g_free (devtype);
 	}
 

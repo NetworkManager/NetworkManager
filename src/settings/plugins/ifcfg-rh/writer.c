@@ -1742,6 +1742,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 		else if (nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME)) {
 			svSetValue (ifcfg, "TEAM_MASTER", master, FALSE);
 			svSetValue (ifcfg, "DEVICETYPE", TYPE_TEAM_PORT, FALSE);
+			svSetValue (ifcfg, "TYPE", NULL, FALSE);
 		}
 	}
 

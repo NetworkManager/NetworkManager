@@ -13517,6 +13517,8 @@ test_write_team_port (void)
 	g_assert (success);
 
 	/* re-read the file to check that what key was written. */
+	val = svGetValue (f, "TYPE", FALSE);
+	g_assert (!val);
 	val = svGetValue (f, "DEVICETYPE", FALSE);
 	g_assert (val);
 	g_assert_cmpstr (val, ==, "TeamPort");
