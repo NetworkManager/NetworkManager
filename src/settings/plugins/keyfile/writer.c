@@ -1015,6 +1015,11 @@ _internal_write_connection (NMConnection *connection,
 	if (out_path)
 		g_return_val_if_fail (*out_path == NULL, FALSE);
 
+	if (!nm_connection_verify (connection, error)) {
+		g_return_val_if_reached (FALSE);
+		return FALSE;
+	}
+
 	id = nm_connection_get_id (connection);
 	if (!id) {
 		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
