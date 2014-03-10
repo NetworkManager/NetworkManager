@@ -70,21 +70,18 @@ add_hostname (GString *str, const char *format, const char *hostname)
 }
 
 static void
-add_ip4_config (GString *str, NMSettingIP4Config *s_ip4, const char *hostname)
+add_ip4_config (GString *str, const char *dhcp_client_id, const char *hostname)
 {
-	const char *tmp;
-
-	tmp = nm_setting_ip4_config_get_dhcp_client_id (s_ip4);
-	if (tmp) {
+	if (dhcp_client_id) {
 		gboolean is_octets = TRUE;
 		int i = 0;
 
-		while (tmp[i]) {
-			if ((i % 3) != 2 && !g_ascii_isxdigit (tmp[i])) {
+		while (dhcp_client_id[i]) {
+			if ((i % 3) != 2 && !g_ascii_isxdigit (dhcp_client_id[i])) {
 				is_octets = FALSE;
 				break;
 			}
-			if ((i % 3) == 2 && tmp[i] != ':') {
+			if ((i % 3) == 2 && dhcp_client_id[i] != ':') {
 				is_octets = FALSE;
 				break;
 			}
@@ -96,9 +93,9 @@ add_ip4_config (GString *str, NMSettingIP4Config *s_ip4, const char *hostname)
 		 * array formated as hex octets separated by :
 		 */
 		if (is_octets)
-			g_string_append_printf (str, CLIENTID_FORMAT_OCTETS "\n", tmp);
+			g_string_append_printf (str, CLIENTID_FORMAT_OCTETS "\n", dhcp_client_id);
 		else
-			g_string_append_printf (str, CLIENTID_FORMAT "\n", tmp);
+			g_string_append_printf (str, CLIENTID_FORMAT "\n", dhcp_client_id);
 	}
 
 	add_hostname (str, HOSTNAME4_FORMAT "\n", hostname);
@@ -117,7 +114,7 @@ add_ip4_config (GString *str, NMSettingIP4Config *s_ip4, const char *hostname)
 }
 
 static void
-add_ip6_config (GString *str, NMSettingIP6Config *s_ip6, const char *hostname)
+add_ip6_config (GString *str, const char *hostname)
 {
 	add_hostname (str, HOSTNAME6_FORMAT "\n", hostname);
 	g_string_append (str,
@@ -129,8 +126,7 @@ add_ip6_config (GString *str, NMSettingIP6Config *s_ip6, const char *hostname)
 char *
 nm_dhcp_dhclient_create_config (const char *interface,
                                 gboolean is_ip6,
-                                NMSettingIP4Config *s_ip4,
-                                NMSettingIP6Config *s_ip6,
+                                const char *dhcp_client_id,
                                 GByteArray *anycast_addr,
                                 const char *hostname,
                                 const char *orig_path,
@@ -159,8 +155,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 			/* Override config file "dhcp-client-id" and use one from the
 			 * connection.
 			 */
-			if (   nm_setting_ip4_config_get_dhcp_client_id (s_ip4)
-			    && !strncmp (p, CLIENTID_TAG, strlen (CLIENTID_TAG)))
+			if (dhcp_client_id && !strncmp (p, CLIENTID_TAG, strlen (CLIENTID_TAG)))
 				continue;
 
 			/* Override config file hostname and use one from the connection */
@@ -225,13 +220,13 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		g_string_append_c (new_contents, '\n');
 
 	if (is_ip6) {
-		add_ip6_config (new_contents, s_ip6, hostname);
+		add_ip6_config (new_contents, hostname);
 		add_also_request (alsoreq, "dhcp6.name-servers");
 		add_also_request (alsoreq, "dhcp6.domain-search");
 		add_also_request (alsoreq, "dhcp6.client-id");
 		add_also_request (alsoreq, "dhcp6.server-id");
 	} else {
-		add_ip4_config (new_contents, s_ip4, hostname);
+		add_ip4_config (new_contents, dhcp_client_id, hostname);
 		add_also_request (alsoreq, "rfc3442-classless-static-routes");
 		add_also_request (alsoreq, "ms-classless-static-routes");
 		add_also_request (alsoreq, "static-routes");

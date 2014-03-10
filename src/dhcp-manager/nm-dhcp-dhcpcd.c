@@ -88,7 +88,7 @@ dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
 
 static GPid
 ip4_start (NMDHCPClient *client,
-           NMSettingIP4Config *s_ip4,
+           const char *dhcp_client_id,
            GByteArray *dhcp_anycast_addr,
            const char *hostname)
 {
@@ -167,7 +167,6 @@ ip4_start (NMDHCPClient *client,
 
 static GPid
 ip6_start (NMDHCPClient *client,
-           NMSettingIP6Config *s_ip6,
            GByteArray *dhcp_anycast_addr,
            const char *hostname,
            gboolean info_only,

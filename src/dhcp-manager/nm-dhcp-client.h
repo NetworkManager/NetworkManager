@@ -78,12 +78,11 @@ typedef struct {
 	/* Methods */
 
 	GPid (*ip4_start)     (NMDHCPClient *self,
-	                       NMSettingIP4Config *s_ip4,
+	                       const char *dhcp_client_id,
 	                       GByteArray *anycast_addr,
 	                       const char *hostname);
 
 	GPid (*ip6_start)     (NMDHCPClient *self,
-	                       NMSettingIP6Config *s_ip6,
 	                       GByteArray *anycast_addr,
 	                       const char *hostname,
 	                       gboolean info_only,
@@ -121,12 +120,11 @@ gboolean nm_dhcp_client_get_ipv6 (NMDHCPClient *self);
 const char *nm_dhcp_client_get_uuid (NMDHCPClient *self);
 
 gboolean nm_dhcp_client_start_ip4 (NMDHCPClient *self,
-                                   NMSettingIP4Config *s_ip4,
+                                   const char *dhcp_client_id,
                                    GByteArray *dhcp_anycast_addr,
                                    const char *hostname);
 
 gboolean nm_dhcp_client_start_ip6 (NMDHCPClient *self,
-                                   NMSettingIP6Config *s_ip6,
                                    GByteArray *dhcp_anycast_addr,
                                    const char *hostname,
                                    gboolean info_only);

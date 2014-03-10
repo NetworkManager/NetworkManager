@@ -36,16 +36,11 @@ test_config (const char *orig,
              const char *iface,
              GByteArray *anycast_addr)
 {
-	NMSettingIP4Config *s_ip4;
 	char *new;
-
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, dhcp_client_id, NULL);
 
 	new = nm_dhcp_dhclient_create_config (iface,
 	                                      FALSE,
-	                                      s_ip4,
-	                                      NULL,
+	                                      dhcp_client_id,
 	                                      anycast_addr,
 	                                      hostname,
 	                                      "/path/to/dhclient.conf",

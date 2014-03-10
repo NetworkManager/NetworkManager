@@ -295,7 +295,7 @@ start_monitor (NMDHCPClient *self)
 
 gboolean
 nm_dhcp_client_start_ip4 (NMDHCPClient *self,
-                          NMSettingIP4Config *s_ip4,
+                          const char *dhcp_client_id,
                           GByteArray *dhcp_anycast_addr,
                           const char *hostname)
 {
@@ -311,7 +311,7 @@ nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv4 transaction (timeout in %d seconds)",
 	             priv->iface, priv->timeout);
 
-	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, s_ip4, dhcp_anycast_addr, hostname);
+	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_client_id, dhcp_anycast_addr, hostname);
 	if (priv->pid)
 		start_monitor (self);
 
@@ -449,7 +449,6 @@ get_duid (NMDHCPClient *self)
 
 gboolean
 nm_dhcp_client_start_ip6 (NMDHCPClient *self,
-                          NMSettingIP6Config *s_ip6,
                           GByteArray *dhcp_anycast_addr,
                           const char *hostname,
                           gboolean info_only)
@@ -482,7 +481,6 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
 	             priv->iface, priv->timeout);
 
 	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self,
-	                                                        s_ip6,
 	                                                        dhcp_anycast_addr,
 	                                                        hostname,
 	                                                        info_only,
