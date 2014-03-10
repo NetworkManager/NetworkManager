@@ -296,7 +296,7 @@ start_monitor (NMDHCPClient *self)
 gboolean
 nm_dhcp_client_start_ip4 (NMDHCPClient *self,
                           NMSettingIP4Config *s_ip4,
-                          guint8 *dhcp_anycast_addr,
+                          GByteArray *dhcp_anycast_addr,
                           const char *hostname)
 {
 	NMDHCPClientPrivate *priv;
@@ -450,7 +450,7 @@ get_duid (NMDHCPClient *self)
 gboolean
 nm_dhcp_client_start_ip6 (NMDHCPClient *self,
                           NMSettingIP6Config *s_ip6,
-                          guint8 *dhcp_anycast_addr,
+                          GByteArray *dhcp_anycast_addr,
                           const char *hostname,
                           gboolean info_only)
 {

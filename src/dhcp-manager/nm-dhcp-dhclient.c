@@ -167,7 +167,7 @@ merge_dhclient_config (const char *iface,
                        gboolean is_ip6,
                        NMSettingIP4Config *s_ip4,
                        NMSettingIP6Config *s_ip6,
-                       guint8 *anycast_addr,
+                       GByteArray *anycast_addr,
                        const char *hostname,
                        const char *orig_path,
                        GError **error)
@@ -274,7 +274,7 @@ create_dhclient_config (const char *iface,
                         const char *uuid,
                         NMSettingIP4Config *s_ip4,
                         NMSettingIP6Config *s_ip6,
-                        guint8 *dhcp_anycast_addr,
+                        GByteArray *dhcp_anycast_addr,
                         const char *hostname)
 {
 	char *orig = NULL, *new = NULL;
@@ -476,7 +476,7 @@ dhclient_start (NMDHCPClient *client,
 static GPid
 ip4_start (NMDHCPClient *client,
            NMSettingIP4Config *s_ip4,
-           guint8 *dhcp_anycast_addr,
+           GByteArray *dhcp_anycast_addr,
            const char *hostname)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
@@ -497,7 +497,7 @@ ip4_start (NMDHCPClient *client,
 static GPid
 ip6_start (NMDHCPClient *client,
            NMSettingIP6Config *s_ip6,
-           guint8 *dhcp_anycast_addr,
+           GByteArray *dhcp_anycast_addr,
            const char *hostname,
            gboolean info_only,
            const GByteArray *duid)

@@ -34,7 +34,7 @@ test_config (const char *orig,
              const char *hostname,
              const char *dhcp_client_id,
              const char *iface,
-             guint8 *anycast_addr)
+             GByteArray *anycast_addr)
 {
 	NMSettingIP4Config *s_ip4;
 	char *new;

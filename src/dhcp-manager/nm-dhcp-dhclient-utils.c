@@ -131,7 +131,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
                                 gboolean is_ip6,
                                 NMSettingIP4Config *s_ip4,
                                 NMSettingIP6Config *s_ip6,
-                                guint8 *anycast_addr,
+                                GByteArray *anycast_addr,
                                 const char *hostname,
                                 const char *orig_path,
                                 const char *orig_contents)
@@ -250,16 +250,21 @@ nm_dhcp_dhclient_create_config (const char *interface,
 
 	g_string_append_c (new_contents, '\n');
 
-	if (anycast_addr) {
+	if (anycast_addr && anycast_addr->len == 6) {
+		const guint8 *p_anycast_addr = anycast_addr->data;
+
 		g_string_append_printf (new_contents, "interface \"%s\" {\n"
 		                        " initial-interval 1; \n"
 		                        " anycast-mac ethernet %02x:%02x:%02x:%02x:%02x:%02x;\n"
 		                        "}\n",
 		                        interface,
-		                        anycast_addr[0], anycast_addr[1],
-		                        anycast_addr[2], anycast_addr[3],
-		                        anycast_addr[4], anycast_addr[5]);
+		                        p_anycast_addr[0], p_anycast_addr[1],
+		                        p_anycast_addr[2], p_anycast_addr[3],
+		                        p_anycast_addr[4], p_anycast_addr[5]);
 	}
+
+	/* Finally, assert that anycast_addr was unset or a 48 bit mac address. */
+	g_return_val_if_fail (!anycast_addr || anycast_addr->len == 6, g_string_free (new_contents, FALSE));
 
 	return g_string_free (new_contents, FALSE);
 }
