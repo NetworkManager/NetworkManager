@@ -331,6 +331,13 @@ nm_supplicant_config_get_blobs (NMSupplicantConfig * self)
 #define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
 #define MAC_ARG(x) ((guint8*)(x))[0],((guint8*)(x))[1],((guint8*)(x))[2],((guint8*)(x))[3],((guint8*)(x))[4],((guint8*)(x))[5]
 
+#define TWO_GHZ_FREQS  "2412,2417,2422,2427,2432,2437,2442,2447,2452,2457,2462,2467,2472,2484"
+#define FIVE_GHZ_FREQS "4915,4920,4925,4935,4940,4945,4960,4980,5035,5040,5045,5055,5060,5080," \
+                         "5170,5180,5190,5200,5210,5220,5230,5240,5260,5280,5300,5320,5500," \
+                         "5520,5540,5560,5580,5600,5620,5640,5660,5680,5700,5745,5765,5785," \
+                         "5805,5825"
+
+
 gboolean
 nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
                                            NMSettingWireless * setting,
@@ -338,7 +345,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 {
 	NMSupplicantConfigPrivate *priv;
 	gboolean is_adhoc, is_ap;
-	const char *mode;
+	const char *mode, *band;
 	const GByteArray *id;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
@@ -409,7 +416,22 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		g_free (str_bssid);
 	}
 
-	// FIXME: band & channel config items
+	band = nm_setting_wireless_get_band (setting);
+	if (band) {
+		const char *freqs = NULL;
+
+		if (!strcmp (band, "a"))
+			freqs = FIVE_GHZ_FREQS;
+		else if (!strcmp (band, "bg"))
+			freqs = TWO_GHZ_FREQS;
+
+		if (freqs && !nm_supplicant_config_add_option (self, "freq_list", freqs, strlen (freqs), FALSE)) {
+			nm_log_warn (LOGD_SUPPLICANT, "Error adding frequency list/band to supplicant config.");
+			return FALSE;
+		}
+	}
+
+	// FIXME: channel config item
 	
 	return TRUE;
 }
