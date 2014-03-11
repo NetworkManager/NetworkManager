@@ -397,12 +397,12 @@ _nm_log (const char *loc,
 	case LOGL_INFO:
 		syslog_level = LOG_INFO;
 		g_log_level = G_LOG_LEVEL_MESSAGE;
-		fullmsg = g_strconcat ("<info> ", msg, NULL);
+		fullmsg = g_strconcat ("<info>  ", msg, NULL);
 		break;
 	case LOGL_WARN:
 		syslog_level = LOG_WARNING;
 		g_log_level = G_LOG_LEVEL_WARNING;
-		fullmsg = g_strconcat ("<warn> ", msg, NULL);
+		fullmsg = g_strconcat ("<warn>  ", msg, NULL);
 		break;
 	case LOGL_ERR:
 		syslog_level = LOG_ERR;
