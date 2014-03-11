@@ -575,63 +575,54 @@ state_is_bound (guint32 state)
 	return FALSE;
 }
 
-typedef struct {
-	NMDHCPState state;
-	const char *name;
-} DhcState;
-
-#define STATE_TABLE_SIZE (sizeof (state_table) / sizeof (state_table[0]))
-
-static DhcState state_table[] = {
-	{ DHC_NBI,     "nbi" },
-	{ DHC_PREINIT, "preinit" },
-	{ DHC_PREINIT6,"preinit6" },
-	{ DHC_BOUND4,  "bound" },
-	{ DHC_BOUND6,  "bound6" },
-	{ DHC_IPV4LL,  "ipv4ll" },
-	{ DHC_RENEW4,  "renew" },
-	{ DHC_RENEW6,  "renew6" },
-	{ DHC_REBOOT,  "reboot" },
-	{ DHC_REBIND4, "rebind" },
-	{ DHC_REBIND6, "rebind6" },
-	{ DHC_STOP,    "stop" },
-	{ DHC_STOP6,   "stop6" },
-	{ DHC_MEDIUM,  "medium" },
-	{ DHC_TIMEOUT, "timeout" },
-	{ DHC_FAIL,    "fail" },
-	{ DHC_EXPIRE,  "expire" },
-	{ DHC_EXPIRE6, "expire6" },
-	{ DHC_RELEASE, "release" },
-	{ DHC_RELEASE6,"release6" },
-	{ DHC_START,   "start" },
-	{ DHC_ABEND,   "abend" },
-	{ DHC_END,     "end" },
-	{ DHC_DEPREF6, "depref6" },
+static const char *state_table[] = {
+	[DHC_NBI]             = "nbi",
+	[DHC_PREINIT]         = "preinit",
+	[DHC_PREINIT6]        = "preinit6",
+	[DHC_BOUND4]          = "bound",
+	[DHC_BOUND6]          = "bound6",
+	[DHC_IPV4LL]          = "ipv4ll",
+	[DHC_RENEW4]          = "renew",
+	[DHC_RENEW6]          = "renew6",
+	[DHC_REBOOT]          = "reboot",
+	[DHC_REBIND4]         = "rebind",
+	[DHC_REBIND6]         = "rebind6",
+	[DHC_DEPREF6]         = "depref6",
+	[DHC_STOP]            = "stop",
+	[DHC_STOP6]           = "stop6",
+	[DHC_MEDIUM]          = "medium",
+	[DHC_TIMEOUT]         = "timeout",
+	[DHC_FAIL]            = "fail",
+	[DHC_EXPIRE]          = "expire",
+	[DHC_EXPIRE6]         = "expire6",
+	[DHC_RELEASE]         = "release",
+	[DHC_RELEASE6]        = "release6",
+	[DHC_START]           = "start",
+	[DHC_ABEND]           = "abend",
+	[DHC_END]             = "end",
 };
 
-static inline const char *
-state_to_string (guint32 state)
+static const char *
+state_to_string (NMDHCPState state)
 {
-	int i;
-
-	for (i = 0; i < STATE_TABLE_SIZE; i++) {
-		if (state == state_table[i].state)
-			return state_table[i].name;
-	}
-
+	if (state >= 0 && state < G_N_ELEMENTS (state_table))
+		return state_table[state];
 	return NULL;
 }
 
-static inline NMDHCPState
+static NMDHCPState
 string_to_state (const char *name)
 {
 	int i;
 
-	for (i = 0; i < STATE_TABLE_SIZE; i++) {
-		if (!strcasecmp (name, state_table[i].name))
-			return state_table[i].state;
-	}
+	if (name) {
+		for (i = 0; i < G_N_ELEMENTS (state_table); i++) {
+			const char *n = state_table[i];
 
+			if (n && !strcasecmp (name, n))
+				return i;
+		}
+	}
 	return 255;
 }
 
