@@ -522,7 +522,8 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .TP
 .B bond-slave:
 .IP "\fImaster <master (ifname, or connection UUID or name)>\fP" 42
-\(en name of bond master interface
+\(en master bond interface name, or connection UUID or ID of bond master connection profile.
+The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disambiguate it.
 .RE
 .RS
 .TP
@@ -534,7 +535,8 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .TP
 .B team-slave:
 .IP "\fImaster <master (ifname, or connection UUID or name)>\fP" 42
-\(en name of team master interface
+\(en master team interface name, or connection UUID or ID of team master connection profile.
+The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disambiguate it.
 .IP "\fI[config <file>|<raw JSON data>]\fP" 42
 \(en JSON configuration for team
 .RE
@@ -558,7 +560,8 @@ Note: use quotes around \fB*\fP to suppress shell expansion.
 .TP
 .B bridge-slave:
 .IP "\fImaster <master (ifname, or connection UUID or name)>\fP" 42
-\(en name of bridge master interface
+\(en master bridge interface name, or connection UUID or ID of bridge master connection profile.
+The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disambiguate it.
 .IP "\fI[priority <0-63>]\fP" 42
 \(en STP priority of this slave (default: 32)
 .IP "\fI[path-cost <1-65535>]\fP" 42

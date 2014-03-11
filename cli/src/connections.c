@@ -2743,6 +2743,28 @@ unique_master_iface_ifname (GSList *list,
 	return new_name;
 }
 
+static const char *
+_strip_master_prefix (const char *master, const char *(**func)(NMConnection *))
+{
+	if (!master)
+		return NULL;
+
+	if (g_str_has_prefix (master, "ifname/")) {
+		master = master + strlen ("ifname/");
+		if (func)
+			*func = nm_connection_get_virtual_iface_name;
+	} else if (g_str_has_prefix (master, "uuid/")) {
+		master = master + strlen ("uuid/");
+		if (func)
+			*func = nm_connection_get_uuid;
+	} else if (g_str_has_prefix (master, "id/")) {
+		master = master + strlen ("id/");
+		if (func)
+			 *func = nm_connection_get_id;
+	}
+	return master;
+}
+
 /* verify_master_for_slave:
  * @connections: list af all connections
  * @master: UUID, ifname or ID of the master connection
@@ -2765,7 +2787,12 @@ verify_master_for_slave (GSList *connections,
 	GSList *iterator = connections;
 	const char *found_by_id = NULL;
 	const char *out_master = NULL;
+	const char *(*func) (NMConnection *) = NULL;
 
+	if (!master)
+		return NULL;
+
+	master = _strip_master_prefix (master, &func);
 	while (iterator) {
 		connection = NM_CONNECTION (iterator->data);
 		s_con = nm_connection_get_setting_connection (connection);
@@ -2775,16 +2802,27 @@ verify_master_for_slave (GSList *connections,
 			iterator = g_slist_next (iterator);
 			continue;
 		}
-		id = nm_connection_get_id (connection);
-		uuid = nm_connection_get_uuid (connection);
-		ifname = nm_connection_get_virtual_iface_name (connection);
-		if (   g_strcmp0 (master, uuid) == 0
-		    || g_strcmp0 (master, ifname) == 0) {
-			out_master = master;
-			break;
+		if (func) {
+			/* There was a prefix; only compare to that type. */
+			if (g_strcmp0 (master, func (connection)) == 0) {
+				if (func == nm_connection_get_id)
+					out_master = nm_connection_get_uuid (connection);
+				else
+					out_master = master;
+				break;
+			}
+		} else {
+			id = nm_connection_get_id (connection);
+			uuid = nm_connection_get_uuid (connection);
+			ifname = nm_connection_get_virtual_iface_name (connection);
+			if (   g_strcmp0 (master, uuid) == 0
+			    || g_strcmp0 (master, ifname) == 0) {
+				out_master = master;
+				break;
+			}
+			if (!found_by_id && g_strcmp0 (master, id) == 0)
+				found_by_id = uuid;
 		}
-		if (!found_by_id && g_strcmp0 (master, id) == 0)
-			found_by_id = uuid;
 
 		iterator = g_slist_next (iterator);
 	}
@@ -4419,7 +4457,7 @@ cleanup_bond:
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : master,
+		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : _strip_master_prefix (master, NULL),
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
 		              NULL);
 
@@ -4533,7 +4571,7 @@ cleanup_team:
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : master,
+		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : _strip_master_prefix (master, NULL),
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
 		              NULL);
 
@@ -4738,7 +4776,7 @@ cleanup_bridge:
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : master,
+		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : _strip_master_prefix (master, NULL),
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
 		              NULL);
 
