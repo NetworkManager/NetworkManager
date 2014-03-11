@@ -386,9 +386,9 @@ usage_connection_add (void)
 	           "                  [updelay <num>]\n"
 	           "                  [arp-interval <num>]\n"
 	           "                  [arp-ip-target <num>]\n\n"
-	           "    bond-slave:   master <master (ifname or connection UUID)>\n\n"
+	           "    bond-slave:   master <master (ifname, or connection UUID or name)>\n\n"
 	           "    team:         [config <file>|<raw JSON data>]\n\n"
-	           "    team-slave:   master <master (ifname or connection UUID)>\n"
+	           "    team-slave:   master <master (ifname, or connection UUID or name)>\n"
 	           "                  [config <file>|<raw JSON data>]\n\n"
 	           "    bridge:       [stp yes|no]\n"
 	           "                  [priority <num>]\n"
@@ -396,7 +396,7 @@ usage_connection_add (void)
 	           "                  [hello-time <1-10>]\n"
 	           "                  [max-age <6-40>]\n"
 	           "                  [ageing-time <0-1000000>]\n\n"
-	           "    bridge-slave: master <master (ifname or connection UUID)>\n"
+	           "    bridge-slave: master <master (ifname, or connection UUID or name)>\n"
 	           "                  [priority <0-63>]\n"
 	           "                  [path-cost <1-65535>]\n"
 	           "                  [hairpin yes|no]\n\n"
@@ -2743,6 +2743,54 @@ unique_master_iface_ifname (GSList *list,
 	return new_name;
 }
 
+/* verify_master_for_slave:
+ * @connections: list af all connections
+ * @master: UUID, ifname or ID of the master connection
+ * @type: virtual connection type (bond, team, bridge, ...)
+ *
+ * Check whether master is a valid interface name, UUID or ID of some @type connection.
+ * First UUID and ifname are checked. If they don't match, ID is checked
+ * and replaced by UUID on a match.
+ *
+ * Returns: identifier of master connection if found, %NULL otherwise
+ */
+static const char *
+verify_master_for_slave (GSList *connections,
+                         const char *master,
+                         const char *type)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	const char *con_type, *id, *uuid, *ifname;
+	GSList *iterator = connections;
+	const char *found_by_id = NULL;
+	const char *out_master = NULL;
+
+	while (iterator) {
+		connection = NM_CONNECTION (iterator->data);
+		s_con = nm_connection_get_setting_connection (connection);
+		g_assert (s_con);
+		con_type = nm_setting_connection_get_connection_type (s_con);
+		if (g_strcmp0 (con_type, type) != 0) {
+			iterator = g_slist_next (iterator);
+			continue;
+		}
+		id = nm_connection_get_id (connection);
+		uuid = nm_connection_get_uuid (connection);
+		ifname = nm_connection_get_virtual_iface_name (connection);
+		if (   g_strcmp0 (master, uuid) == 0
+		    || g_strcmp0 (master, ifname) == 0) {
+			out_master = master;
+			break;
+		}
+		if (!found_by_id && g_strcmp0 (master, id) == 0)
+			found_by_id = uuid;
+
+		iterator = g_slist_next (iterator);
+	}
+	return out_master ? out_master : found_by_id;
+}
+
 static gboolean
 bridge_prop_string_to_uint (const char *str,
                             const char *nmc_arg,
@@ -4343,6 +4391,7 @@ cleanup_bond:
 		/* Build up the settings required for 'bond-slave' */
 		const char *master = NULL;
 		char *master_ask = NULL;
+		const char *checked_master = NULL;
 		const char *type = NULL;
 		nmc_arg_t exp_args[] = { {"master", TRUE, &master, !ask},
 		                         {"type",   TRUE, &type,   FALSE},
@@ -4358,6 +4407,10 @@ cleanup_bond:
 			                     _("Error: 'master' is required."));
 			return FALSE;
 		}
+		/* Verify master argument */
+		checked_master = verify_master_for_slave (all_connections, master, NM_SETTING_BOND_SETTING_NAME);
+		if (!checked_master)
+			printf (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
 
 		if (type)
 			printf (_("Warning: 'type' is currently ignored. "
@@ -4366,7 +4419,7 @@ cleanup_bond:
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_MASTER, master,
+		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : master,
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
 		              NULL);
 
@@ -4431,6 +4484,7 @@ cleanup_team:
 		gboolean success = FALSE;
 		const char *master = NULL;
 		char *master_ask = NULL;
+		const char *checked_master = NULL;
 		const char *type = NULL;
 		const char *config_c = NULL;
 		char *config = NULL;
@@ -4450,6 +4504,10 @@ cleanup_team:
 			                     _("Error: 'master' is required."));
 			return FALSE;
 		}
+		/* Verify master argument */
+		checked_master = verify_master_for_slave (all_connections, master, NM_SETTING_TEAM_SETTING_NAME);
+		if (!checked_master)
+			printf (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		config = g_strdup (config_c);
@@ -4475,7 +4533,7 @@ cleanup_team:
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_MASTER, master,
+		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : master,
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
 		              NULL);
 
@@ -4611,6 +4669,7 @@ cleanup_bridge:
 		gboolean success = FALSE;
 		const char *master = NULL;
 		char *master_ask = NULL;
+		const char *checked_master = NULL;
 		const char *type = NULL;
 		const char *priority_c = NULL;
 		char *priority = NULL;
@@ -4637,12 +4696,10 @@ cleanup_bridge:
 			                     _("Error: 'master' is required."));
 			return FALSE;
 		}
-		if (!nm_utils_is_uuid (master) && !nm_utils_iface_valid_name (master)) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("Error: 'master': '%s' is not valid UUID nor interface."),
-			             master);
-			goto cleanup_bridge_slave;
-		}
+		/* Verify master argument */
+		checked_master = verify_master_for_slave (all_connections, master, NM_SETTING_BRIDGE_SETTING_NAME);
+		if (!checked_master)
+			printf (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
 
 		if (type)
 			printf (_("Warning: 'type' is currently ignored. "
@@ -4681,7 +4738,7 @@ cleanup_bridge:
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
 		              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		              NM_SETTING_CONNECTION_MASTER, master,
+		              NM_SETTING_CONNECTION_MASTER, checked_master ? checked_master : master,
 		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
 		              NULL);
 
