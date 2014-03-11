@@ -121,17 +121,6 @@ gboolean nm_logging_enabled (guint32 level, guint64 domain);
 const char *nm_logging_all_levels_to_string (void);
 const char *nm_logging_all_domains_to_string (void);
 
-/* Undefine the nm-utils.h logging stuff to ensure errors */
-#undef nm_get_timestamp
-#undef nm_info
-#undef nm_info_str
-#undef nm_debug
-#undef nm_debug_str
-#undef nm_warning
-#undef nm_warning_str
-#undef nm_error
-#undef nm_error_str
-
 gboolean nm_logging_setup (const char  *level,
                            const char  *domains,
                            char       **bad_domains,
