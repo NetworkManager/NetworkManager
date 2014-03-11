@@ -58,9 +58,9 @@ typedef struct {
 G_DEFINE_TYPE_EXTENDED (NMDHCPClient, nm_dhcp_client, G_TYPE_OBJECT, G_TYPE_FLAG_ABSTRACT, {})
 
 enum {
-	STATE_CHANGED,
-	TIMEOUT,
-	REMOVE,
+	SIGNAL_STATE_CHANGED,
+	SIGNAL_TIMEOUT,
+	SIGNAL_REMOVE,
 	LAST_SIGNAL
 };
 
@@ -209,7 +209,7 @@ daemon_timeout (gpointer user_data)
 	} else {
 		nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 request timed out.", priv->iface);
 	}
-	g_signal_emit (G_OBJECT (self), signals[TIMEOUT], 0);
+	g_signal_emit (G_OBJECT (self), signals[SIGNAL_TIMEOUT], 0);
 	return FALSE;
 }
 
@@ -219,7 +219,7 @@ signal_remove (gpointer user_data)
 	NMDHCPClient *self = NM_DHCP_CLIENT (user_data);
 
 	NM_DHCP_CLIENT_GET_PRIVATE (self)->remove_id = 0;
-	g_signal_emit (G_OBJECT (self), signals[REMOVE], 0);
+	g_signal_emit (G_OBJECT (self), signals[SIGNAL_REMOVE], 0);
 	return FALSE;
 }
 
@@ -234,12 +234,12 @@ dhcp_client_set_state (NMDHCPClient *self,
 	priv->state = state;
 
 	if (emit_state)
-		g_signal_emit (G_OBJECT (self), signals[STATE_CHANGED], 0, priv->state);
+		g_signal_emit (G_OBJECT (self), signals[SIGNAL_STATE_CHANGED], 0, priv->state);
 
 	if (state == DHC_END || state == DHC_ABEND) {
 		/* Start the remove signal timer */
 		if (remove_now) {
-			g_signal_emit (G_OBJECT (self), signals[REMOVE], 0);
+			g_signal_emit (G_OBJECT (self), signals[SIGNAL_REMOVE], 0);
 		} else {
 			if (!priv->remove_id)
 				priv->remove_id = g_timeout_add_seconds (5, signal_remove, self);
@@ -1634,8 +1634,8 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* signals */
-	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
+	signals[SIGNAL_STATE_CHANGED] =
+		g_signal_new (NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDHCPClientClass, state_changed),
@@ -1643,8 +1643,8 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 					  g_cclosure_marshal_VOID__UINT,
 					  G_TYPE_NONE, 1, G_TYPE_UINT);
 
-	signals[TIMEOUT] =
-		g_signal_new ("timeout",
+	signals[SIGNAL_TIMEOUT] =
+		g_signal_new (NM_DHCP_CLIENT_SIGNAL_TIMEOUT,
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDHCPClientClass, timeout),
@@ -1652,8 +1652,8 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 					  g_cclosure_marshal_VOID__VOID,
 					  G_TYPE_NONE, 0);
 
-	signals[REMOVE] =
-		g_signal_new ("remove",
+	signals[SIGNAL_REMOVE] =
+		g_signal_new (NM_DHCP_CLIENT_SIGNAL_REMOVE,
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDHCPClientClass, remove),

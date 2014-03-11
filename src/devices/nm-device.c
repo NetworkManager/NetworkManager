@@ -2807,11 +2807,11 @@ dhcp4_start (NMDevice *self,
 	}
 
 	priv->dhcp4_state_sigid = g_signal_connect (priv->dhcp4_client,
-	                                            "state-changed",
+	                                            NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
 	                                            G_CALLBACK (dhcp4_state_changed),
 	                                            self);
 	priv->dhcp4_timeout_sigid = g_signal_connect (priv->dhcp4_client,
-	                                              "timeout",
+	                                              NM_DHCP_CLIENT_SIGNAL_TIMEOUT,
 	                                              G_CALLBACK (dhcp4_timeout),
 	                                              self);
 
@@ -3240,11 +3240,11 @@ dhcp6_start (NMDevice *self,
 
 	if (priv->dhcp6_client) {
 		priv->dhcp6_state_sigid = g_signal_connect (priv->dhcp6_client,
-		                                            "state-changed",
+		                                            NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
 		                                            G_CALLBACK (dhcp6_state_changed),
 		                                            self);
 		priv->dhcp6_timeout_sigid = g_signal_connect (priv->dhcp6_client,
-		                                              "timeout",
+		                                              NM_DHCP_CLIENT_SIGNAL_TIMEOUT,
 		                                              G_CALLBACK (dhcp6_timeout),
 		                                              self);
 

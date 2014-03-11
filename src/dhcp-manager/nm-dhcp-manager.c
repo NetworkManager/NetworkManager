@@ -438,10 +438,10 @@ add_client (NMDHCPManager *self, NMDHCPClient *client)
 	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 	guint id;
 
-	id = g_signal_connect_swapped (client, "remove", G_CALLBACK (remove_client), self);
+	id = g_signal_connect_swapped (client, NM_DHCP_CLIENT_SIGNAL_REMOVE, G_CALLBACK (remove_client), self);
 	g_object_set_data (G_OBJECT (client), REMOVE_ID_TAG, GUINT_TO_POINTER (id));
 
-	id = g_signal_connect_swapped (client, "timeout", G_CALLBACK (remove_client), self);
+	id = g_signal_connect_swapped (client, NM_DHCP_CLIENT_SIGNAL_TIMEOUT, G_CALLBACK (remove_client), self);
 	g_object_set_data (G_OBJECT (client), TIMEOUT_ID_TAG, GUINT_TO_POINTER (id));
 
 	g_hash_table_insert (priv->clients, client, g_object_ref (client));
