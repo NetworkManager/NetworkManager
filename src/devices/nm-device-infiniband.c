@@ -168,7 +168,8 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 
 	transport_mode = nm_setting_infiniband_get_transport_mode (s_infiniband);
 
-	mode_path = g_strdup_printf ("/sys/class/net/%s/mode", nm_device_get_iface (dev));
+	mode_path = g_strdup_printf ("/sys/class/net/%s/mode",
+	                             ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (dev)));
 	if (!g_file_test (mode_path, G_FILE_TEST_EXISTS)) {
 		g_free (mode_path);
 
@@ -327,7 +328,8 @@ update_connection (NMDevice *device, NMConnection *connection)
 		g_byte_array_unref (array);
 	}
 
-	mode_path = g_strdup_printf ("/sys/class/net/%s/mode", nm_device_get_iface (device));
+	mode_path = g_strdup_printf ("/sys/class/net/%s/mode",
+	                             ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (device)));
 	if (g_file_get_contents (mode_path, &contents, NULL, NULL)) {
 		if (strstr (contents, "datagram"))
 			transport_mode = "datagram";

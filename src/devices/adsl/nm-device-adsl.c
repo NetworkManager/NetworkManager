@@ -538,7 +538,8 @@ carrier_update_cb (gpointer user_data)
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
 
-	path  = g_strdup_printf ("/sys/class/atm/%s/carrier", iface);
+	path  = g_strdup_printf ("/sys/class/atm/%s/carrier",
+	                         ASSERT_VALID_PATH_COMPONENT (iface));
 	success = g_file_get_contents (path, &contents, NULL, &error);
 	g_free (path);
 
@@ -581,7 +582,8 @@ get_atm_index (const char *iface, GError **error)
 	char *path, *contents;
 	int idx = -1;
 
-	path = g_strdup_printf ("/sys/class/atm/%s/atmindex", iface);
+	path = g_strdup_printf ("/sys/class/atm/%s/atmindex",
+	                        ASSERT_VALID_PATH_COMPONENT (iface));
 	if (g_file_get_contents (path, &contents, NULL, error))
 		idx = atoi (contents);
 	g_free (path);

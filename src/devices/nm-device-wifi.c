@@ -331,7 +331,7 @@ constructor (GType type,
 	 * don't have to poll.
 	 */
 	priv->ipw_rfkill_path = g_strdup_printf ("/sys/class/net/%s/device/rf_kill",
-	                                         nm_device_get_iface (NM_DEVICE (self)));
+	                                         ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (NM_DEVICE (self))));
 	if (!g_file_test (priv->ipw_rfkill_path, G_FILE_TEST_IS_REGULAR)) {
 		g_free (priv->ipw_rfkill_path);
 		priv->ipw_rfkill_path = NULL;

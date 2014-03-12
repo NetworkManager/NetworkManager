@@ -1046,6 +1046,9 @@ nm_utils_ip6_property_path (const char *ifname, const char *property)
 	static char path[sizeof (IPV6_PROPERTY_DIR) + IFNAMSIZ + 32];
 	int len;
 
+	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
+	property = ASSERT_VALID_PATH_COMPONENT (property);
+
 	len = g_snprintf (path, sizeof (path), IPV6_PROPERTY_DIR "%s/%s",
 	                  ifname, property);
 	g_assert (len < sizeof (path) - 1);
