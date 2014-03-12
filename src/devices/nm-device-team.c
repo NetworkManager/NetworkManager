@@ -679,8 +679,11 @@ enslave_slave (NMDevice *device,
 					             iface, slave_iface);
 				} else {
 					int err;
+					char *sanitized_config;
 
-					err = teamdctl_port_config_update_raw (priv->tdc, slave_iface, config);
+					sanitized_config = g_strdelimit (g_strdup (config), "\r\n", ' ');
+					err = teamdctl_port_config_update_raw (priv->tdc, slave_iface, sanitized_config);
+					g_free (sanitized_config);
 					if (err != 0) {
 						nm_log_err (LOGD_TEAM, "(%s): failed to update config for port %s (err=%d)",
 						            iface, slave_iface, err);
