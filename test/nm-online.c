@@ -15,6 +15,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2006 - 2008 Novell, Inc.
+ * Copyright (C) 2008 - 2014 Red Hat, Inc.
  *
  */
 
@@ -42,6 +43,7 @@
 #include "nm-client.h"
 
 #define PROGRESS_STEPS 15
+#define WAIT_STARTUP_TAG "wait-startup"
 
 typedef struct
 {
@@ -56,11 +58,22 @@ client_properties_changed (GObject *object,
                            gpointer loop)
 {
 	NMClient *client = NM_CLIENT (object);
+	NMState state;
+	gboolean wait_startup = GPOINTER_TO_UINT (g_object_get_data (object, WAIT_STARTUP_TAG));
 
 	if (!nm_client_get_manager_running (client))
 		return;
-	if (!nm_client_get_startup (client))
-		g_main_loop_quit (loop);
+
+	if (wait_startup) {
+		if (!nm_client_get_startup (client))
+			g_main_loop_quit (loop);
+	} else {
+		state = nm_client_get_state (client);
+		if (   state == NM_STATE_CONNECTED_LOCAL
+		    || state == NM_STATE_CONNECTED_SITE
+		    || state == NM_STATE_CONNECTED_GLOBAL)
+			g_main_loop_quit (loop);
+	}
 }
 
 static gboolean
@@ -94,16 +107,19 @@ main (int argc, char *argv[])
 	gint t_secs = -1;
 	gboolean exit_no_nm = FALSE;
 	gboolean quiet = FALSE;
+	gboolean wait_startup = FALSE;
 	Timeout timeout;
 	GOptionContext *opt_ctx = NULL;
 	gboolean success;
 	NMClient *client;
+	NMState state = NM_STATE_UNKNOWN;
 	GMainLoop *loop;
 
 	GOptionEntry options[] = {
 		{"timeout", 't', 0, G_OPTION_ARG_INT, &t_secs, N_("Time to wait for a connection, in seconds (without the option, default value is 30)"), "<timeout>"},
 		{"exit", 'x', 0, G_OPTION_ARG_NONE, &exit_no_nm, N_("Exit immediately if NetworkManager is not running"), NULL},
 		{"quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet, N_("Don't print anything"), NULL},
+		{"wait-for-startup", 's', 0, G_OPTION_ARG_NONE, &wait_startup, N_("Wait for NetworkManager startup instead of a connection"), NULL},
 		{NULL}
 	};
 
@@ -152,13 +168,35 @@ main (int argc, char *argv[])
 
 	loop = g_main_loop_new (NULL, FALSE);
 
+	g_object_set_data (G_OBJECT (client), WAIT_STARTUP_TAG, GUINT_TO_POINTER (wait_startup));
+	state = nm_client_get_state (client);
 	if (!nm_client_get_manager_running (client)) {
-		if (exit_no_nm)
+		if (exit_no_nm) {
+			g_object_unref (client);
 			return 1;
-	} else if (!nm_client_get_startup (client))
-		return 0;
-	if (!timeout.value)
+		}
+	} else if (wait_startup) {
+		if (!nm_client_get_startup (client)) {
+			g_object_unref (client);
+			return 0;
+		}
+	} else {
+		if (   state == NM_STATE_CONNECTED_LOCAL
+		    || state == NM_STATE_CONNECTED_SITE
+		    || state == NM_STATE_CONNECTED_GLOBAL) {
+			g_object_unref (client);
+			return 0;
+		}
+	}
+	if (exit_no_nm && (state != NM_STATE_CONNECTING)) {
+		g_object_unref (client);
 		return 1;
+	}
+
+	if (!timeout.value) {
+		g_object_unref (client);
+		return 1;
+	}
 
 	timeout.norm = (double) timeout.value / (double) PROGRESS_STEPS;
 	g_timeout_add_seconds (1, handle_timeout, &timeout);
