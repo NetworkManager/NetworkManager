@@ -47,8 +47,9 @@
 
 typedef struct
 {
-	int value;
-	double norm;
+	gint64 start_timestamp_ms;
+	gint64 end_timestamp_ms;
+	gint64 progress_step_duration;
 	gboolean quiet;
 } Timeout;
 
@@ -79,32 +80,60 @@ client_properties_changed (GObject *object,
 static gboolean
 handle_timeout (gpointer data)
 {
-	int i = PROGRESS_STEPS;
-	Timeout *timeout = data;
+	const Timeout *timeout = data;
+	const gint64 now = g_get_monotonic_time () / (G_USEC_PER_SEC / 1000);
+	gint64 remaining_ms = timeout->end_timestamp_ms - now;
+	const gint64 elapsed_ms = now - timeout->start_timestamp_ms;
+	int progress_next_step_i = 0;
 
 	if (!timeout->quiet) {
+		int i;
+
+		/* calculate the next step (not the current): floor()+1 */
+		progress_next_step_i = (elapsed_ms / timeout->progress_step_duration) + 1;
+		progress_next_step_i = MIN (progress_next_step_i, PROGRESS_STEPS);
+
 		g_print (_("\rConnecting"));
-		for (; i > 0; i--)
-			putchar ((timeout->value >= (i * timeout->norm)) ? ' ' : '.');
-		if (timeout->value)
-			g_print (" %4is", timeout->value);
+		for (i = 0; i < PROGRESS_STEPS; i++)
+			putchar (i < progress_next_step_i ? '.' : ' ');
+		g_print (" %4lds", (long) (MAX (0, remaining_ms) / 1000));
 		fflush (stdout);
 	}
 
-	timeout->value--;
-	if (timeout->value < 0) {
+	if (remaining_ms <= 3) {
 		if (!timeout->quiet)
 			g_print ("\n");
 		exit (1);
 	}
 
-	return TRUE;
+	if (!timeout->quiet) {
+		gint64 rem;
+
+		/* synchronize the timeout with the ticking of the seconds. */
+		rem = remaining_ms % 1000;
+		if (rem <= 3)
+			rem = rem + G_USEC_PER_SEC;
+		rem = rem + 10; /* add small offset to awake a bit after the second ticks */
+		if (remaining_ms > rem)
+			remaining_ms = rem;
+
+		/* synchronize the timeout with the steps of the progress bar. */
+		rem = (progress_next_step_i * timeout->progress_step_duration) - elapsed_ms;
+		if (rem <= 3)
+			rem = rem + timeout->progress_step_duration;
+		rem = rem + 10; /* add small offset to awake a bit after the time out */
+		if (remaining_ms > rem)
+			remaining_ms = rem;
+	}
+
+	g_timeout_add (remaining_ms, handle_timeout, (void *) timeout);
+	return G_SOURCE_REMOVE;
 }
 
 int
 main (int argc, char *argv[])
 {
-	gint t_secs = -1;
+	int t_secs = 30;
 	gboolean exit_no_nm = FALSE;
 	gboolean wait_startup = FALSE;
 	Timeout timeout;
@@ -113,6 +142,7 @@ main (int argc, char *argv[])
 	NMClient *client;
 	NMState state = NM_STATE_UNKNOWN;
 	GMainLoop *loop;
+	gint64 remaining_ms;
 
 	GOptionEntry options[] = {
 		{"timeout", 't', 0, G_OPTION_ARG_INT, &t_secs, N_("Time to wait for a connection, in seconds (without the option, default value is 30)"), "<timeout>"},
@@ -122,6 +152,7 @@ main (int argc, char *argv[])
 		{NULL}
 	};
 
+	timeout.start_timestamp_ms = g_get_monotonic_time () / (G_USEC_PER_SEC / 1000);
 	timeout.quiet = FALSE;
 
 	/* Set locale to be able to use environment variables */
@@ -148,16 +179,13 @@ main (int argc, char *argv[])
 		            _("Invalid option.  Please use --help to see a list of valid options."));
 		return 2;
 	}
-	
-	if (t_secs > -1)
-		timeout.value = t_secs;
-	else
-		timeout.value = 30;
-	if (timeout.value < 0 || timeout.value > 3600)  {
+
+	if (t_secs < 0 || t_secs > 3600)  {
 		g_printerr ("%s: %s\n", argv[0],
 		            _("Invalid option.  Please use --help to see a list of valid options."));
 		return 2;
 	}
+	remaining_ms = t_secs * 1000;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
@@ -196,16 +224,19 @@ main (int argc, char *argv[])
 		return 1;
 	}
 
-	if (!timeout.value) {
+	if (remaining_ms == 0) {
 		g_object_unref (client);
 		return 1;
 	}
 
-	timeout.norm = (double) timeout.value / (double) PROGRESS_STEPS;
-	g_timeout_add_seconds (1, handle_timeout, &timeout);
-
 	g_signal_connect (client, "notify",
 	                  G_CALLBACK (client_properties_changed), loop);
+
+	timeout.end_timestamp_ms = timeout.start_timestamp_ms + remaining_ms;
+	timeout.progress_step_duration = (timeout.end_timestamp_ms - timeout.start_timestamp_ms + PROGRESS_STEPS/2) / PROGRESS_STEPS;
+
+	g_timeout_add (timeout.quiet ? remaining_ms : 0,
+	               handle_timeout, &timeout);
 
 	g_main_loop_run (loop);
 	g_main_loop_unref (loop);
