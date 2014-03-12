@@ -984,6 +984,8 @@ write_wireless_setting (NMConnection *connection,
 		g_free (keys_path);
 	}
 
+	svSetValue (ifcfg, "SSID_HIDDEN", nm_setting_wireless_get_hidden (s_wireless) ? "yes" : NULL, TRUE);
+
 	svSetValue (ifcfg, "TYPE", TYPE_WIRELESS, FALSE);
 
 	return TRUE;

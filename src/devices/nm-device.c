@@ -1643,7 +1643,7 @@ can_auto_connect (NMDevice *device,
 	if (!nm_setting_connection_get_autoconnect (s_con))
 		return FALSE;
 
-	return nm_device_connection_is_available (device, connection);
+	return nm_device_connection_is_available (device, connection, FALSE);
 }
 
 static gboolean
@@ -7046,10 +7046,26 @@ nm_device_get_autoconnect (NMDevice *device)
 	return NM_DEVICE_GET_PRIVATE (device)->autoconnect;
 }
 
+/**
+ * nm_device_connection_is_available():
+ * @device: the #NMDevice
+ * @connection: the #NMConnection to check for availability
+ * @allow_device_override: set to %TRUE to let the device do specific checks
+ *
+ * Check if @connection is available to be activated on @device.  Normally this
+ * only checks if the connection is in @device's AvailableConnections property.
+ * If @allow_device_override is %TRUE then the device is asked to do specific
+ * checks that may bypass the AvailableConnections property.
+ *
+ * Returns: %TRUE if @connection can be activated on @device
+ */
 gboolean
-nm_device_connection_is_available (NMDevice *device, NMConnection *connection)
+nm_device_connection_is_available (NMDevice *device,
+                                   NMConnection *connection,
+                                   gboolean allow_device_override)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	gboolean available = FALSE;
 
 	if (priv->default_unmanaged && (priv->state == NM_DEVICE_STATE_UNMANAGED)) {
 		/* default-unmanaged  devices in UNMANAGED state have no available connections
@@ -7060,7 +7076,18 @@ nm_device_connection_is_available (NMDevice *device, NMConnection *connection)
 			return TRUE;
 	}
 
-	return !!g_hash_table_lookup (priv->available_connections, connection);
+	available = !!g_hash_table_lookup (priv->available_connections, connection);
+	if (!available && allow_device_override) {
+		/* FIXME: hack for hidden WiFi becuase clients didn't consistently
+		 * set the 'hidden' property to indicate hidden SSID networks.  If
+		 * activating but the network isn't available let the device recheck
+		 * availability.
+		 */
+		if (NM_DEVICE_GET_CLASS (device)->check_connection_available_wifi_hidden)
+			available = NM_DEVICE_GET_CLASS (device)->check_connection_available_wifi_hidden (device, connection);
+	}
+
+	return available;
 }
 
 static void

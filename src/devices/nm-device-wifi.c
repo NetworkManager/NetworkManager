@@ -1050,9 +1050,10 @@ check_connection_compatible (NMDevice *device,
 
 
 static gboolean
-check_connection_available (NMDevice *device,
-                            NMConnection *connection,
-                            const char *specific_object)
+_internal_check_connection_available (NMDevice *device,
+                                      NMConnection *connection,
+                                      const char *specific_object,
+                                      gboolean ignore_ap_list)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	NMSettingWireless *s_wifi;
@@ -1077,7 +1078,7 @@ check_connection_available (NMDevice *device,
 		return TRUE;
 
 	/* Hidden SSIDs obviously don't always appear in the scan list either */
-	if (nm_setting_wireless_get_hidden (s_wifi))
+	if (nm_setting_wireless_get_hidden (s_wifi) || ignore_ap_list)
 		return TRUE;
 
 	/* check if its visible */
@@ -1087,6 +1088,24 @@ check_connection_available (NMDevice *device,
 	}
 
 	return FALSE;
+}
+
+static gboolean
+check_connection_available (NMDevice *device,
+                            NMConnection *connection,
+                            const char *specific_object)
+{
+	return _internal_check_connection_available (device, connection, specific_object, FALSE);
+}
+
+/* FIXME: remove this function when we require the 'hidden' property to be
+ * set before a hidden connection can be activated.
+ */
+static gboolean
+check_connection_available_wifi_hidden (NMDevice *device,
+                                        NMConnection *connection)
+{
+	return _internal_check_connection_available (device, connection, NULL, TRUE);
 }
 
 /*
@@ -1142,6 +1161,7 @@ complete_connection (NMDevice *device,
 	NMAccessPoint *ap = NULL;
 	const GByteArray *ssid = NULL;
 	GSList *iter;
+	gboolean hidden = FALSE;
 
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -1191,6 +1211,8 @@ complete_connection (NMDevice *device,
 			g_slist_free (settings);
 			if (!valid)
 				return FALSE;
+
+			hidden = TRUE;
 		}
 	} else {
 		ap = get_ap_by_path (self, specific_object);
@@ -1267,6 +1289,9 @@ complete_connection (NMDevice *device,
 	                           TRUE);
 	g_free (str_ssid);
 	g_free (format);
+
+	if (hidden)
+		g_object_set (s_wifi, NM_SETTING_WIRELESS_HIDDEN, TRUE, NULL);
 
 	setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
 	if (setting_mac) {
@@ -3623,6 +3648,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->check_connection_available = check_connection_available;
+	parent_class->check_connection_available_wifi_hidden = check_connection_available_wifi_hidden;
 	parent_class->complete_connection = complete_connection;
 	parent_class->set_enabled = set_enabled;
 
