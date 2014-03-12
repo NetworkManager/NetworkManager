@@ -1052,3 +1052,35 @@ nm_utils_ip6_property_path (const char *ifname, const char *property)
 
 	return path;
 }
+
+const char *
+ASSERT_VALID_PATH_COMPONENT (const char *name)
+{
+	const char *n;
+
+	if (name == NULL || name[0] == '\0')
+		goto fail;
+
+	if (name[0] == '.') {
+		if (name[1] == '\0')
+			goto fail;
+		if (name[1] == '.' && name[2] == '\0')
+			goto fail;
+	}
+	n = name;
+	do {
+		if (*n == '/')
+			goto fail;
+	} while (*(++n) != '\0');
+
+	return name;
+fail:
+	if (name)
+		nm_log_err (LOGD_CORE, "Failed asserting path component: NULL");
+	else
+		nm_log_err (LOGD_CORE, "Failed asserting path component: \"%s\"", name);
+	g_assert_not_reached ();
+	g_return_val_if_reached ("XXXXX");
+	return "XXXXX";
+}
+
