@@ -530,31 +530,19 @@ static gboolean
 carrier_update_cb (gpointer user_data)
 {
 	NMDeviceAdsl *self = NM_DEVICE_ADSL (user_data);
-	GError *error = NULL;
-	gboolean carrier = FALSE;
-	char *path, *contents;
+	int carrier;
+	char *path;
 	const char *iface;
-	gboolean success;
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
 
 	path  = g_strdup_printf ("/sys/class/atm/%s/carrier",
 	                         ASSERT_VALID_PATH_COMPONENT (iface));
-	success = g_file_get_contents (path, &contents, NULL, &error);
+	carrier = (int) nm_platform_sysctl_get_int_checked (path, 10, 0, 1, -1);
 	g_free (path);
 
-	if (!success) {
-		nm_log_dbg (LOGD_ADSL, "error reading %s: (%d) %s",
-		            path,
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
-		return TRUE;
-	}
-
-	carrier = (gboolean) atoi (contents);
-	g_free (contents);
-	nm_device_set_carrier (NM_DEVICE (self), carrier);
+	if (carrier != -1)
+		nm_device_set_carrier (NM_DEVICE (self), carrier);
 	return TRUE;
 }
 
@@ -577,17 +565,16 @@ nm_device_adsl_new (const char *udi,
 }
 
 static int
-get_atm_index (const char *iface, GError **error)
+get_atm_index (const char *iface)
 {
-	char *path, *contents;
-	int idx = -1;
+	char *path;
+	int idx;
 
 	path = g_strdup_printf ("/sys/class/atm/%s/atmindex",
 	                        ASSERT_VALID_PATH_COMPONENT (iface));
-	if (g_file_get_contents (path, &contents, NULL, error))
-		idx = atoi (contents);
+	idx = (int) nm_platform_sysctl_get_int_checked (path, 10, 0, G_MAXINT, -1);
 	g_free (path);
-	g_free (contents);
+
 	return idx;
 }
 
@@ -598,7 +585,6 @@ constructor (GType type,
 {
 	GObject *object;
 	NMDeviceAdslPrivate *priv;
-	GError *error = NULL;
 
 	object = G_OBJECT_CLASS (nm_device_adsl_parent_class)->constructor (type,
 	                                                                    n_construct_params,
@@ -608,12 +594,10 @@ constructor (GType type,
 
 	priv = NM_DEVICE_ADSL_GET_PRIVATE (object);
 
-	priv->atm_index = get_atm_index (nm_device_get_iface (NM_DEVICE (object)), &error);
+	priv->atm_index = get_atm_index (nm_device_get_iface (NM_DEVICE (object)));
 	if (priv->atm_index < 0) {
-		nm_log_dbg (LOGD_ADSL, "error reading ATM device index: (%d) %s",
-		            error ? error->code : -1,
-		            error && error->message ? error->message : "(unknown)");
-		g_clear_error (&error);
+		nm_log_err (LOGD_ADSL, "(%s): error reading ATM device index",
+		                       nm_device_get_iface (NM_DEVICE (object)));
 		g_object_unref (object);
 		return NULL;
 	} else {
