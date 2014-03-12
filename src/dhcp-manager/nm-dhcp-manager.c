@@ -43,6 +43,7 @@
 #include "nm-config.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
+#include "NetworkManagerUtils.h"
 
 GQuark
 nm_dhcp_manager_error_quark (void)
@@ -198,41 +199,41 @@ nm_dhcp_manager_handle_event (DBusGProxy *proxy,
 	char *iface = NULL;
 	char *pid_str = NULL;
 	char *reason = NULL;
-	unsigned long temp;
+	long pid;
 
 	iface = get_option (options, "interface");
 	if (iface == NULL) {
-		nm_log_warn (LOGD_DHCP, "DHCP event didn't have associated interface.");
+		nm_log_warn (LOGD_DHCP, "DHCP event: didn't have associated interface.");
 		goto out;
 	}
 
 	pid_str = get_option (options, "pid");
-	if (pid_str == NULL) {
-		nm_log_warn (LOGD_DHCP, "DHCP event didn't have associated PID.");
+	pid = nm_utils_ascii_str_to_int64 (pid_str, 10, 0, LONG_MAX, -1);
+	if (pid == -1 || pid != (GPid)pid) {
+		nm_log_warn (LOGD_DHCP, "DHCP event: couldn't convert PID '%s' to an integer", pid_str ? pid_str : "(null)");
 		goto out;
 	}
 
-	temp = strtoul (pid_str, NULL, 10);
-	if ((temp == ULONG_MAX) && (errno == ERANGE)) {
-		nm_log_warn (LOGD_DHCP, "couldn't convert PID");
-		goto out;
-	}
-
-	client = get_client_for_pid (manager, (GPid) temp);
+	reason = get_option (options, "reason");
+	client = get_client_for_pid (manager, (GPid) pid);
 	if (client == NULL) {
-		nm_log_warn (LOGD_DHCP, "(pid %ld) unhandled DHCP event for interface %s", temp, iface);
+		if (reason && g_ascii_strcasecmp (reason, "RELEASE") == 0) {
+			/* This happens regularly, when the dhcp client gets killed and we receive its last message.
+			 * Don't log a warning in this case. */
+			nm_log_dbg (LOGD_DHCP, "(pid %ld) unhandled RELEASE DHCP event for interface %s", pid, iface);
+		} else
+			nm_log_warn (LOGD_DHCP, "(pid %ld) unhandled DHCP event for interface %s", pid, iface);
 		goto out;
 	}
 
 	if (strcmp (iface, nm_dhcp_client_get_iface (client))) {
 		nm_log_warn (LOGD_DHCP, "(pid %ld) received DHCP event from unexpected interface '%s' (expected '%s')",
-		             temp, iface, nm_dhcp_client_get_iface (client));
+		             pid, iface, nm_dhcp_client_get_iface (client));
 		goto out;
 	}
 
-	reason = get_option (options, "reason");
 	if (reason == NULL) {
-		nm_log_warn (LOGD_DHCP, "(pid %ld) DHCP event didn't have a reason", temp);
+		nm_log_warn (LOGD_DHCP, "(pid %ld) DHCP event didn't have a reason", pid);
 		goto out;
 	}
 
