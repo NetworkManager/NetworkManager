@@ -230,8 +230,10 @@ nm_device_wifi_get_ipw_rfkill_state (NMDeviceWifi *self)
 	const char *str_state = NULL;
 
 	if (   priv->ipw_rfkill_path
-	    && g_file_get_contents (priv->ipw_rfkill_path, &contents, NULL, NULL)) {
-		contents = g_strstrip (contents);
+	    && (contents = nm_platform_sysctl_get (priv->ipw_rfkill_path))) {
+
+		if (strlen (contents) != 1)
+			contents[0] = 0;
 
 		/* 0 - RF kill not enabled
 		 * 1 - SW based RF kill active (sysfs)
