@@ -417,6 +417,7 @@ void nm_platform_query_devices (void);
 gboolean nm_platform_sysctl_set (const char *path, const char *value);
 char *nm_platform_sysctl_get (const char *path);
 gint32 nm_platform_sysctl_get_int32 (const char *path, gint32 fallback);
+gint64 nm_platform_sysctl_get_int_checked (const char *path, guint base, gint64 min, gint64 max, gint64 fallback);
 
 GArray *nm_platform_link_get_all (void);
 gboolean nm_platform_dummy_add (const char *name);

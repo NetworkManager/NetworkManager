@@ -280,6 +280,27 @@ nm_platform_sysctl_get (const char *path)
 gint32
 nm_platform_sysctl_get_int32 (const char *path, gint32 fallback)
 {
+	return nm_platform_sysctl_get_int_checked (path, 10, G_MININT32, G_MAXINT32, fallback);
+}
+
+/**
+ * nm_platform_sysctl_get_int_checked:
+ * @path: Absolute path to sysctl
+ * @base: base of numeric conversion
+ * @min: minimal value that is still valid
+ * @max: maximal value that is still valid
+ * @fallback: default value, if the content of path could not be read
+ * as valid integer.
+ *
+ * Returns: contents of the sysctl file parsed as s64 integer, or
+ * @fallback on error. On error, %errno will be set to a non-zero
+ * value. On success, %errno will be set to zero. The returned value
+ * will always be in the range between @min and @max
+ * (inclusive) or @fallback.
+ */
+gint64
+nm_platform_sysctl_get_int_checked (const char *path, guint base, gint64 min, gint64 max, gint64 fallback)
+{
 	char *value = NULL;
 	gint32 ret;
 
@@ -293,7 +314,7 @@ nm_platform_sysctl_get_int32 (const char *path, gint32 fallback)
 		return fallback;
 	}
 
-	ret = nm_utils_ascii_str_to_int64 (value, 10, G_MININT32, G_MAXINT32, fallback);
+	ret = nm_utils_ascii_str_to_int64 (value, base, min, max, fallback);
 	g_free (value);
 	return ret;
 }
