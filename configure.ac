@@ -396,7 +396,7 @@ fi
 AM_CONDITIONAL(WITH_WIMAX, test "${enable_wimax}" = "yes")
 
 # Teamd control checks
-PKG_CHECK_MODULES(LIBTEAMDCTL, [libteamdctl], [have_teamdctl=yes],[have_teamdctl=no])
+PKG_CHECK_MODULES(LIBTEAMDCTL, [libteamdctl >= 1.9], [have_teamdctl=yes],[have_teamdctl=no])
 AC_ARG_ENABLE(teamdctl, AS_HELP_STRING([--enable-teamdctl], [enable Teamd control support]),
                      [enable_teamdctl=${enableval}], [enable_teamdctl=${have_teamdctl}])
 if (test "${enable_teamdctl}" = "yes"); then
