@@ -46,7 +46,7 @@ test_ip4_route ()
 	SignalData *route_changed = add_signal (NM_PLATFORM_IP4_ROUTE_CHANGED, ip4_route_callback);
 	SignalData *route_removed = add_signal (NM_PLATFORM_IP4_ROUTE_REMOVED, ip4_route_callback);
 	GArray *routes;
-	NMPlatformIP4Route rts[4];
+	NMPlatformIP4Route rts[3];
 	in_addr_t network;
 	int plen = 24;
 	in_addr_t gateway;
@@ -129,7 +129,7 @@ test_ip6_route ()
 	SignalData *route_changed = add_signal (NM_PLATFORM_IP6_ROUTE_CHANGED, ip6_route_callback);
 	SignalData *route_removed = add_signal (NM_PLATFORM_IP6_ROUTE_REMOVED, ip6_route_callback);
 	GArray *routes;
-	NMPlatformIP6Route rts[4];
+	NMPlatformIP6Route rts[3];
 	struct in6_addr network;
 	int plen = 64;
 	struct in6_addr gateway;

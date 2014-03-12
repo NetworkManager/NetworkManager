@@ -1735,7 +1735,7 @@ static GArray *
 link_get_all (NMPlatform *platform)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	GArray *links = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformLink), nl_cache_nitems (priv->link_cache));
+	GArray *links = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformLink), nl_cache_nitems (priv->link_cache));
 	NMPlatformLink device;
 	struct nl_object *object;
 
@@ -2917,7 +2917,7 @@ ip4_address_get_all (NMPlatform *platform, int ifindex)
 	NMPlatformIP4Address address;
 	struct nl_object *object;
 
-	addresses = g_array_new (TRUE, FALSE, sizeof (NMPlatformIP4Address));
+	addresses = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Address));
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
 		if (_address_match ((struct rtnl_addr *) object, AF_INET, ifindex)) {
@@ -2939,7 +2939,7 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 	NMPlatformIP6Address address;
 	struct nl_object *object;
 
-	addresses = g_array_new (TRUE, FALSE, sizeof (NMPlatformIP6Address));
+	addresses = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP6Address));
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
 		if (_address_match ((struct rtnl_addr *) object, AF_INET6, ifindex)) {
@@ -3145,7 +3145,7 @@ ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	NMPlatformIP4Route route;
 	struct nl_object *object;
 
-	routes = g_array_new (TRUE, FALSE, sizeof (NMPlatformIP4Route));
+	routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (_route_match ((struct rtnl_route *) object, AF_INET, ifindex)) {
@@ -3168,7 +3168,7 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	NMPlatformIP6Route route;
 	struct nl_object *object;
 
-	routes = g_array_new (TRUE, FALSE, sizeof (NMPlatformIP6Route));
+	routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP6Route));
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (_route_match ((struct rtnl_route *) object, AF_INET6, ifindex)) {
