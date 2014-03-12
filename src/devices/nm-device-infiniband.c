@@ -313,7 +313,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	gconstpointer mac = nm_device_get_hw_address (device, &maclen);
 	static const guint8 null_mac[INFINIBAND_ALEN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	GByteArray *array;
-	char *mode_path, *contents;
+	char *mode_path, *contents = NULL;
 	const char *transport_mode = "datagram";
 
 	if (!s_infiniband) {
@@ -330,15 +330,16 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 	mode_path = g_strdup_printf ("/sys/class/net/%s/mode",
 	                             ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (device)));
-	if (g_file_get_contents (mode_path, &contents, NULL, NULL)) {
+	contents = nm_platform_sysctl_get (mode_path);
+	g_free (mode_path);
+	if (contents) {
 		if (strstr (contents, "datagram"))
 			transport_mode = "datagram";
 		else if (strstr (contents, "connected"))
 			transport_mode = "connected";
+		g_free (contents);
 	}
 	g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_TRANSPORT_MODE, transport_mode, NULL);
-	g_free (mode_path);
-	g_free (contents);
 }
 
 static gboolean
