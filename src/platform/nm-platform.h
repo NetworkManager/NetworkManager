@@ -502,6 +502,7 @@ gboolean nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes);
 gboolean nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes);
 gboolean nm_platform_route_flush (int ifindex);
 
+const char *nm_platform_link_to_string (const NMPlatformLink *link);
 const char *nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address);
 const char *nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address);
 const char *nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route);
@@ -514,6 +515,8 @@ int nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6R
 
 gboolean nm_platform_check_support_libnl_extended_ifa_flags (void);
 gboolean nm_platform_check_support_kernel_extended_ifa_flags (void);
+
+void nm_platform_addr_flags2str (int flags, char *buf, size_t size);
 
 #define auto_g_free __attribute__((cleanup(put_g_free)))
 static void __attribute__((unused))

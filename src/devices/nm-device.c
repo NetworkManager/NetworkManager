@@ -1069,6 +1069,9 @@ link_disconnect_action_cb (gpointer user_data)
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
+	nm_log_dbg (LOGD_DEVICE, "(%s): link disconnected (calling deferred action) (id=%u)",
+	             nm_device_get_iface (device), priv->carrier_defer_id);
+
 	priv->carrier_defer_id = 0;
 
 	nm_log_info (LOGD_DEVICE, "(%s): link disconnected (calling deferred action)",
@@ -1077,6 +1080,19 @@ link_disconnect_action_cb (gpointer user_data)
 	NM_DEVICE_GET_CLASS (device)->carrier_changed (device, FALSE);
 
 	return FALSE;
+}
+
+static void
+link_disconnect_action_cancel (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->carrier_defer_id) {
+		g_source_remove (priv->carrier_defer_id);
+		nm_log_dbg (LOGD_DEVICE, "(%s): link disconnected (canceling deferred action) (id=%u)",
+		            nm_device_get_iface (self), priv->carrier_defer_id);
+		priv->carrier_defer_id = 0;
+	}
 }
 
 void
@@ -1095,10 +1111,7 @@ nm_device_set_carrier (NMDevice *device, gboolean carrier)
 
 	if (priv->carrier) {
 		nm_log_info (LOGD_DEVICE, "(%s): link connected", iface);
-		if (priv->carrier_defer_id) {
-			g_source_remove (priv->carrier_defer_id);
-			priv->carrier_defer_id = 0;
-		}
+		link_disconnect_action_cancel (device);
 		klass->carrier_changed (device, TRUE);
 
 		if (priv->carrier_wait_id) {
@@ -1114,6 +1127,8 @@ nm_device_set_carrier (NMDevice *device, gboolean carrier)
 		             iface, LINK_DISCONNECT_DELAY);
 		priv->carrier_defer_id = g_timeout_add_seconds (LINK_DISCONNECT_DELAY,
 		                                                link_disconnect_action_cb, device);
+		nm_log_dbg (LOGD_DEVICE, "(%s): link disconnected (deferring action for %d seconds) (id=%u)",
+		             iface, LINK_DISCONNECT_DELAY, priv->carrier_defer_id);
 	}
 }
 
@@ -5580,10 +5595,7 @@ dispose (GObject *object)
 
 	g_clear_pointer (&priv->ip6_saved_properties, g_hash_table_unref);
 
-	if (priv->carrier_defer_id) {
-		g_source_remove (priv->carrier_defer_id);
-		priv->carrier_defer_id = 0;
-	}
+	link_disconnect_action_cancel (self);
 
 	if (priv->con_provider) {
 		g_signal_handlers_disconnect_by_func (priv->con_provider, cp_connection_added, self);

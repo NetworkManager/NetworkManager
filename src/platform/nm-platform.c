@@ -1850,6 +1850,52 @@ _to_string_dev (int ifindex, char *buf, size_t size)
 
 static char to_string_buffer[256];
 
+const char *
+nm_platform_link_to_string (const NMPlatformLink *link)
+{
+	char master[20];
+	char parent[20];
+	char *driver, *udi, *type;
+	GString *str;
+
+	if (!link)
+		return "(unknown link)";
+
+	str = g_string_new (NULL);
+	if (!link->arp)
+		g_string_append (str, "NOARP,");
+	if (link->up)
+		g_string_append (str, "UP");
+	else
+		g_string_append (str, "DOWN");
+	if (link->connected)
+		g_string_append (str, ",LOWER_UP");
+
+	if (link->master)
+		g_snprintf (master, sizeof (master), " master %d", link->master);
+	else
+		master[0] = 0;
+
+	if (link->parent)
+		g_snprintf (parent, sizeof (master), "@%d", link->parent);
+	else
+		parent[0] = 0;
+
+	driver = link->driver ? g_strdup_printf (" driver '%s'", link->driver) : NULL;
+	udi = link->udi ? g_strdup_printf (" udi '%s'", link->udi) : NULL;
+	type = link->type_name ? NULL : g_strdup_printf ("(%d)", link->type);
+
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%d: %s%s <%s> mtu %d%s %s%s%s",
+	            link->ifindex, link->name, parent, str->str,
+	            link->mtu, master, link->type_name ? link->type_name : type,
+	            driver ? driver : "", udi ? udi : "");
+	g_string_free (str, TRUE);
+	g_free (driver);
+	g_free (udi);
+	g_free (type);
+	return to_string_buffer;
+}
+
 /**
  * nm_platform_ip4_address_to_string:
  * @route: pointer to NMPlatformIP4Address address structure
@@ -1892,6 +1938,30 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 }
 
 /**
+ * nm_platform_addr_flags2str: wrapper for rtnl_addr_flags2str(),
+ * which might not yet support some recent address flags.
+ **/
+void
+nm_platform_addr_flags2str (int flags, char *buf, size_t size)
+{
+	rtnl_addr_flags2str(flags, buf, size);
+
+	/* There are two recent flags IFA_F_MANAGETEMPADDR and IFA_F_NOPREFIXROUTE.
+	 * If libnl does not yet support them, add them by hand.
+	 * These two flags were introduced together with the extended ifa_flags,
+	 * so, check for that.
+	 */
+	if ((flags & IFA_F_MANAGETEMPADDR) && !nm_platform_check_support_libnl_extended_ifa_flags ()) {
+		strncat (buf, buf[0] ? "," IFA_F_MANAGETEMPADDR_STR : IFA_F_MANAGETEMPADDR_STR,
+		         size - strlen (buf) - 1);
+	}
+	if ((flags & IFA_F_NOPREFIXROUTE) && !nm_platform_check_support_libnl_extended_ifa_flags ()) {
+		strncat (buf, buf[0] ? "," IFA_F_NOPREFIXROUTE_STR : IFA_F_NOPREFIXROUTE_STR,
+		         size - strlen (buf) - 1);
+	}
+}
+
+/**
  * nm_platform_ip6_address_to_string:
  * @route: pointer to NMPlatformIP6Address address structure
  *
@@ -1924,21 +1994,7 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 
 	_to_string_dev (address->ifindex, str_dev, sizeof (str_dev));
 
-	rtnl_addr_flags2str(address->flags, s_flags, sizeof (s_flags));
-
-	/* There are two recent flags IFA_F_MANAGETEMPADDR and IFA_F_NOPREFIXROUTE.
-	 * If libnl does not yet support them, add them by hand.
-	 * These two flags were introduced together with the extended ifa_flags,
-	 * so, check for that.
-	 **/
-	if ((address->flags & IFA_F_MANAGETEMPADDR) && !nm_platform_check_support_libnl_extended_ifa_flags ()) {
-		strncat (s_flags, s_flags[0] ? "," IFA_F_MANAGETEMPADDR_STR : IFA_F_MANAGETEMPADDR_STR,
-		         sizeof (s_flags) - strlen (s_flags) - 1);
-	}
-	if ((address->flags & IFA_F_NOPREFIXROUTE) && !nm_platform_check_support_libnl_extended_ifa_flags ()) {
-		strncat (s_flags, s_flags[0] ? "," IFA_F_NOPREFIXROUTE_STR : IFA_F_NOPREFIXROUTE_STR,
-		         sizeof (s_flags) - strlen (s_flags) - 1);
-	}
+	nm_platform_addr_flags2str (address->flags, s_flags, sizeof (s_flags));
 
 	str_flags = s_flags[0] ? g_strconcat (" flags ", s_flags, NULL) : NULL;
 
@@ -2111,7 +2167,7 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 static void
 log_link (NMPlatformLink *device, const char *change_type)
 {
-	debug ("signal: link %s: %s (%d)", change_type, device->name, device->ifindex);
+	debug ("signal: link %s: %s", change_type, nm_platform_link_to_string (device));
 }
 
 static void
