@@ -6545,9 +6545,13 @@ nm_device_state_changed (NMDevice *device,
 			nm_device_deactivate (device, reason);
 		break;
 	default:
-		priv->autoconnect = TRUE;
 		break;
 	}
+
+	/* Reset autoconnect flag when the device is activating or connected. */
+	if (   state >= NM_DEVICE_STATE_PREPARE
+	    && state <= NM_DEVICE_STATE_ACTIVATED)
+		priv->autoconnect = TRUE;
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_STATE);
 	g_object_notify (G_OBJECT (device), NM_DEVICE_STATE_REASON);
