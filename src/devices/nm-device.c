@@ -7177,7 +7177,8 @@ nm_device_connection_is_available (NMDevice *device,
 		 * activating but the network isn't available let the device recheck
 		 * availability.
 		 */
-		if (NM_DEVICE_GET_CLASS (device)->check_connection_available_wifi_hidden)
+		if (   nm_device_check_connection_compatible (device, connection, NULL)
+		    && NM_DEVICE_GET_CLASS (device)->check_connection_available_wifi_hidden)
 			available = NM_DEVICE_GET_CLASS (device)->check_connection_available_wifi_hidden (device, connection);
 	}
 

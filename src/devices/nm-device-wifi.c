@@ -1060,14 +1060,15 @@ _internal_check_connection_available (NMDevice *device,
 	const char *mode;
 	GSList *ap_iter = NULL;
 
+	s_wifi = nm_connection_get_setting_wireless (connection);
+	g_return_val_if_fail (s_wifi, FALSE);
+
 	if (specific_object) {
 		NMAccessPoint *ap;
 
 		ap = get_ap_by_path (NM_DEVICE_WIFI (device), specific_object);
 		return ap ? nm_ap_check_compatible (ap, connection) : FALSE;
 	}
-
-	s_wifi = nm_connection_get_setting_wireless (connection);
 
 	/* Ad-Hoc and AP connections are always available because they may be
 	 * started at any time.
