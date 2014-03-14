@@ -1780,16 +1780,11 @@ test_ip4_netmask_to_prefix (void)
 			if (netmask_holey == netmask)
 				continue;
 
-			(void) prefix_holey;
-#if GLIB_CHECK_VERSION(2,34,0)
 			/* create an invalid netmask with holes and check that the function
 			 * returns the longest prefix and logs an assert. */
-			g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "nm_utils_ip4_netmask_to_prefix: assertion 'netmask == nm_utils_ip4_prefix_to_netmask (prefix)' failed");
 			prefix_holey = nm_utils_ip4_netmask_to_prefix (netmask_holey);
-			g_test_assert_expected_messages ();
 
 			g_assert_cmpint (i, ==, prefix_holey);
-#endif
 		}
 	}
 

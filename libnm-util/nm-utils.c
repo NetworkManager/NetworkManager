@@ -1084,11 +1084,6 @@ nm_utils_ip4_netmask_to_prefix (guint32 netmask)
 		v <<= 1;
 	}
 
-	/* Assert that caller provided a valid netmask, without "holes" and all the
-	 * first @prefix bits set.
-	 **/
-	g_return_val_if_fail (netmask == nm_utils_ip4_prefix_to_netmask (prefix), prefix);
-
 	return prefix;
 }
 
