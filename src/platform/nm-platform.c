@@ -2521,20 +2521,39 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 void
 nm_platform_addr_flags2str (int flags, char *buf, size_t size)
 {
-	rtnl_addr_flags2str(flags, buf, size);
+	if (   !NM_FLAGS_ANY (flags, IFA_F_MANAGETEMPADDR | IFA_F_NOPREFIXROUTE)
+	    || nm_platform_check_support_libnl_extended_ifa_flags ())
+		rtnl_addr_flags2str (flags, buf, size);
+	else {
+		/* There are two recent flags IFA_F_MANAGETEMPADDR and IFA_F_NOPREFIXROUTE.
+		 * If libnl does not yet support them, add them by hand.
+		 * These two flags were introduced together with the extended ifa_flags
+		 * so check for nm_platform_check_support_libnl_extended_ifa_flags (). */
+		gboolean has_other_unknown_flags = FALSE;
+		size_t len;
 
-	/* There are two recent flags IFA_F_MANAGETEMPADDR and IFA_F_NOPREFIXROUTE.
-	 * If libnl does not yet support them, add them by hand.
-	 * These two flags were introduced together with the extended ifa_flags,
-	 * so, check for that.
-	 */
-	if ((flags & IFA_F_MANAGETEMPADDR) && !nm_platform_check_support_libnl_extended_ifa_flags ()) {
-		strncat (buf, buf[0] ? "," IFA_F_MANAGETEMPADDR_STR : IFA_F_MANAGETEMPADDR_STR,
-		         size - strlen (buf) - 1);
-	}
-	if ((flags & IFA_F_NOPREFIXROUTE) && !nm_platform_check_support_libnl_extended_ifa_flags ()) {
-		strncat (buf, buf[0] ? "," IFA_F_NOPREFIXROUTE_STR : IFA_F_NOPREFIXROUTE_STR,
-		         size - strlen (buf) - 1);
+		/* if there are unknown flags to rtnl_addr_flags2str(), libnl appends ','
+		 * to indicate them. We want to keep this behavior, if there are other
+		 * unknown flags present. */
+
+		rtnl_addr_flags2str (flags & ~(IFA_F_MANAGETEMPADDR | IFA_F_NOPREFIXROUTE), buf, size);
+
+		len = strlen (buf);
+		if (len > 0) {
+			has_other_unknown_flags = (buf[len - 1] == ',');
+			if (!has_other_unknown_flags)
+				g_strlcat (buf, ",", size);
+		}
+
+		if (NM_FLAGS_ALL (flags, IFA_F_MANAGETEMPADDR | IFA_F_NOPREFIXROUTE))
+			g_strlcat (buf, IFA_F_MANAGETEMPADDR_STR","IFA_F_NOPREFIXROUTE_STR, size);
+		else if (NM_FLAGS_HAS (flags, IFA_F_MANAGETEMPADDR))
+			g_strlcat (buf, IFA_F_MANAGETEMPADDR_STR, size);
+		else
+			g_strlcat (buf, IFA_F_NOPREFIXROUTE_STR, size);
+
+		if (has_other_unknown_flags)
+			g_strlcat (buf, ",", size);
 	}
 }
 
