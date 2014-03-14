@@ -24,61 +24,24 @@
 
 #include "nm-ip6-config.h"
 
-static void
-addr_init (NMPlatformIP6Address *a, const char *addr, const char *peer, guint plen)
-{
-	memset (a, 0, sizeof (*a));
-	g_assert (inet_pton (AF_INET6, addr, (void *) &a->address) == 1);
-	if (peer)
-		g_assert (inet_pton (AF_INET6, peer, (void *) &a->peer_address) == 1);
-	a->plen = plen;
-}
-
-static void
-route_new (NMPlatformIP6Route *route, const char *network, guint plen, const char *gw)
-{
-	g_assert (route);
-	memset (route, 0, sizeof (*route));
-	g_assert (inet_pton (AF_INET6, network, (void *) &route->network) == 1);
-	route->plen = plen;
-	if (gw)
-		g_assert (inet_pton (AF_INET6, gw, (void *) &route->gateway) == 1);
-}
-
-static void
-addr_to_num (const char *addr, struct in6_addr *out_addr)
-{
-	memset (out_addr, 0, sizeof (*out_addr));
-	g_assert (inet_pton (AF_INET6, addr, (void *) out_addr) == 1);
-}
+#include "nm-test-utils.h"
 
 static NMIP6Config *
 build_test_config (void)
 {
 	NMIP6Config *config;
-	NMPlatformIP6Address addr;
-	NMPlatformIP6Route route;
-	struct in6_addr tmp;
 
 	/* Build up the config to subtract */
 	config = nm_ip6_config_new ();
 
-	addr_init (&addr, "abcd:1234:4321::cdde", "1:2:3:4::5", 64);
-	nm_ip6_config_add_address (config, &addr);
+	nm_ip6_config_add_address (config, nmtst_platform_ip6_address ("abcd:1234:4321::cdde", "1:2:3:4::5", 64));
+	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("abcd:1234:4321::", 24, "abcd:1234:4321:cdde::2"));
+	nm_ip6_config_add_route (config, nmtst_platform_ip6_route ("2001:abba::", 16, "2001:abba::2234"));
 
-	route_new (&route, "abcd:1234:4321::", 24, "abcd:1234:4321:cdde::2");
-	nm_ip6_config_add_route (config, &route);
+	nm_ip6_config_set_gateway (config, nmtst_inet6_from_string ("3001:abba::3234"));
 
-	route_new (&route, "2001:abba::", 16, "2001:abba::2234");
-	nm_ip6_config_add_route (config, &route);
-
-	addr_to_num ("3001:abba::3234", &tmp);
-	nm_ip6_config_set_gateway (config, &tmp);
-
-	addr_to_num ("1:2:3:4::1", &tmp);
-	nm_ip6_config_add_nameserver (config, &tmp);
-	addr_to_num ("1:2:3:4::2", &tmp);
-	nm_ip6_config_add_nameserver (config, &tmp);
+	nm_ip6_config_add_nameserver (config, nmtst_inet6_from_string ("1:2:3:4::1"));
+	nm_ip6_config_add_nameserver (config, nmtst_inet6_from_string ("1:2:3:4::2"));
 	nm_ip6_config_add_domain (config, "foobar.com");
 	nm_ip6_config_add_domain (config, "baz.com");
 	nm_ip6_config_add_search (config, "blahblah.com");
@@ -91,8 +54,6 @@ static void
 test_subtract (void)
 {
 	NMIP6Config *src, *dst;
-	NMPlatformIP6Address addr;
-	NMPlatformIP6Route route;
 	const NMPlatformIP6Address *test_addr;
 	const NMPlatformIP6Route *test_route;
 	const char *expected_addr = "1122:3344:5566::7788";
@@ -110,15 +71,12 @@ test_subtract (void)
 
 	/* add a couple more things to the test config */
 	dst = build_test_config ();
-	addr_init (&addr, expected_addr, NULL, expected_addr_plen);
-	nm_ip6_config_add_address (dst, &addr);
+	nm_ip6_config_add_address (dst, nmtst_platform_ip6_address (expected_addr, NULL, expected_addr_plen));
+	nm_ip6_config_add_route (dst, nmtst_platform_ip6_route (expected_route_dest, expected_route_plen, expected_route_next_hop));
 
-	route_new (&route, expected_route_dest, expected_route_plen, expected_route_next_hop);
-	nm_ip6_config_add_route (dst, &route);
-
-	addr_to_num ("2222:3333:4444::5555", &expected_ns1);
+	expected_ns1 = *nmtst_inet6_from_string ("2222:3333:4444::5555");
 	nm_ip6_config_add_nameserver (dst, &expected_ns1);
-	addr_to_num ("2222:3333:4444::5556", &expected_ns2);
+	expected_ns2 = *nmtst_inet6_from_string ("2222:3333:4444::5556");
 	nm_ip6_config_add_nameserver (dst, &expected_ns2);
 
 	nm_ip6_config_add_domain (dst, expected_domain);
@@ -130,7 +88,7 @@ test_subtract (void)
 	g_assert_cmpuint (nm_ip6_config_get_num_addresses (dst), ==, 1);
 	test_addr = nm_ip6_config_get_address (dst, 0);
 	g_assert (test_addr != NULL);
-	addr_to_num (expected_addr, &tmp);
+	tmp = *nmtst_inet6_from_string (expected_addr);
 	g_assert (memcmp (&test_addr->address, &tmp, sizeof (tmp)) == 0);
 	g_assert (memcmp (&test_addr->peer_address, &in6addr_any, sizeof (tmp)) == 0);
 	g_assert_cmpuint (test_addr->plen, ==, expected_addr_plen);
@@ -141,10 +99,10 @@ test_subtract (void)
 	test_route = nm_ip6_config_get_route (dst, 0);
 	g_assert (test_route != NULL);
 
-	addr_to_num (expected_route_dest, &tmp);
+	tmp = *nmtst_inet6_from_string (expected_route_dest);
 	g_assert (memcmp (&test_route->network, &tmp, sizeof (tmp)) == 0);
 	g_assert_cmpuint (test_route->plen, ==, expected_route_plen);
-	addr_to_num (expected_route_next_hop, &tmp);
+	tmp = *nmtst_inet6_from_string  (expected_route_next_hop);
 	g_assert (memcmp (&test_route->gateway, &tmp, sizeof (tmp)) == 0);
 
 	g_assert_cmpuint (nm_ip6_config_get_num_nameservers (dst), ==, 2);
@@ -171,7 +129,7 @@ test_compare_with_source (void)
 	b = nm_ip6_config_new ();
 
 	/* Address */
-	addr_init (&addr, "1122:3344:5566::7788", NULL, 64);
+	addr = *nmtst_platform_ip6_address ("1122:3344:5566::7788", NULL, 64);
 	addr.source = NM_PLATFORM_SOURCE_USER;
 	nm_ip6_config_add_address (a, &addr);
 
@@ -179,7 +137,7 @@ test_compare_with_source (void)
 	nm_ip6_config_add_address (b, &addr);
 
 	/* Route */
-	route_new (&route, "abcd:1234:4321::", 24, "abcd:1234:4321:cdde::2");
+	route = *nmtst_platform_ip6_route ("abcd:1234:4321::", 24, "abcd:1234:4321:cdde::2");
 	route.source = NM_PLATFORM_SOURCE_USER;
 	nm_ip6_config_add_route (a, &route);
 
@@ -203,7 +161,7 @@ test_add_address_with_source (void)
 	a = nm_ip6_config_new ();
 
 	/* Test that a higher priority source is not overwritten */
-	addr_init (&addr, "1122:3344:5566::7788", NULL, 64);
+	addr = *nmtst_platform_ip6_address ("1122:3344:5566::7788", NULL, 64);
 	addr.source = NM_PLATFORM_SOURCE_USER;
 	nm_ip6_config_add_address (a, &addr);
 
@@ -243,7 +201,7 @@ test_add_route_with_source (void)
 	a = nm_ip6_config_new ();
 
 	/* Test that a higher priority source is not overwritten */
-	route_new (&route, "abcd:1234:4321::", 24, "abcd:1234:4321:cdde::2");
+	route = *nmtst_platform_ip6_route ("abcd:1234:4321::", 24, "abcd:1234:4321:cdde::2");
 	route.source = NM_PLATFORM_SOURCE_USER;
 	nm_ip6_config_add_route (a, &route);
 
@@ -275,12 +233,12 @@ test_add_route_with_source (void)
 
 /*******************************************/
 
+NMTST_DEFINE();
+
 int
 main (int argc, char **argv)
 {
-	g_test_init (&argc, &argv, NULL);
-
-	g_type_init ();
+	nmtst_init (&argc, &argv);
 
 	g_test_add_func ("/ip6-config/subtract", test_subtract);
 	g_test_add_func ("/ip6-config/compare-with-source", test_compare_with_source);
