@@ -1781,7 +1781,7 @@ test_ip4_netmask_to_prefix (void)
 				continue;
 
 			/* create an invalid netmask with holes and check that the function
-			 * returns the longest prefix and logs an assert. */
+			 * returns the longest prefix. */
 			prefix_holey = nm_utils_ip4_netmask_to_prefix (netmask_holey);
 
 			g_assert_cmpint (i, ==, prefix_holey);
