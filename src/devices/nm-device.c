@@ -3062,6 +3062,9 @@ ip6_config_merge_and_apply (NMDevice *self,
 	if (connection)
 		nm_ip6_config_merge_setting (composite, nm_connection_get_setting_ip6_config (connection));
 
+	nm_ip6_config_addresses_sort (composite,
+	    priv->rdisc ? priv->rdisc_use_tempaddr : NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+
 	success = nm_device_set_ip6_config (self, composite, commit, out_reason);
 	g_object_unref (composite);
 	return success;
@@ -7037,7 +7040,7 @@ update_ip_config (NMDevice *self, gboolean initial)
 
 	/* IPv6 */
 	g_clear_object (&priv->ext_ip6_config);
-	priv->ext_ip6_config = nm_ip6_config_capture (ifindex, capture_resolv_conf);
+	priv->ext_ip6_config = nm_ip6_config_capture (ifindex, capture_resolv_conf, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 	if (priv->ext_ip6_config) {
 
 		/* Check this before modifying ext_ip6_config */

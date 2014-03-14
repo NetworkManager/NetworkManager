@@ -231,6 +231,92 @@ test_add_route_with_source (void)
 	g_object_unref (a);
 }
 
+static void
+test_nm_ip6_config_addresses_sort_check (NMIP6Config *config, NMSettingIP6ConfigPrivacy use_tempaddr, int repeat)
+{
+	int addr_count = nm_ip6_config_get_num_addresses (config);
+	int i, irepeat;
+	NMIP6Config *copy = nmtst_ip6_config_clone (config);
+	NMIP6Config *copy2 = nmtst_ip6_config_clone (config);
+	int *idx = g_new (int, addr_count);
+
+	/* initialize the array of indeces, and keep shuffling them for every @repeat iteration. */
+	for (i = 0; i < addr_count; i++)
+		idx[i] = i;
+
+	for (irepeat = 0; irepeat < repeat; irepeat++) {
+		/* randomly shuffle the addresses. */
+		nm_ip6_config_reset_addresses (copy);
+		for (i = 0; i < addr_count; i++) {
+			int j = g_rand_int_range (nmtst_get_rand (), i, addr_count);
+
+			NMTST_SWAP (idx[i], idx[j]);
+			nm_ip6_config_add_address (copy, nm_ip6_config_get_address (config, idx[i]));
+		}
+
+		/* reorder them again */
+		nm_ip6_config_addresses_sort (copy, use_tempaddr);
+
+		/* check equality using nm_ip6_config_equal() */
+		if (!nm_ip6_config_equal (copy, config)) {
+			g_message ("%s", "SORTING yields unexpected output:");
+			for (i = 0; i < addr_count; i++) {
+				g_message ("   >> [%d] = %s", i, nm_platform_ip6_address_to_string (nm_ip6_config_get_address (config, i)));
+				g_message ("   << [%d] = %s", i, nm_platform_ip6_address_to_string (nm_ip6_config_get_address (copy, i)));
+			}
+			g_assert_not_reached ();
+		}
+
+		/* also check equality using nm_ip6_config_replace() */
+		g_assert (nm_ip6_config_replace (copy2, copy, NULL) == FALSE);
+	}
+
+	g_free (idx);
+	g_object_unref (copy);
+	g_object_unref (copy2);
+}
+
+static void
+test_nm_ip6_config_addresses_sort (void)
+{
+	NMIP6Config *config = build_test_config ();
+
+#define ADDR_ADD(...) nm_ip6_config_add_address (config, nmtst_platform_ip6_address_full (__VA_ARGS__))
+
+	nm_ip6_config_reset_addresses (config);
+	ADDR_ADD("2607:f0d0:1002:51::4",     NULL,  64, 0, NM_PLATFORM_SOURCE_USER,   0, 0, 0, 0);
+	ADDR_ADD("2607:f0d0:1002:51::5",     NULL,  64, 0, NM_PLATFORM_SOURCE_USER,   0, 0, 0, 0);
+	ADDR_ADD("2607:f0d0:1002:51::6",     NULL,  64, 0, NM_PLATFORM_SOURCE_RDISC,  0, 0, 0, IFA_F_MANAGETEMPADDR);
+	ADDR_ADD("2607:f0d0:1002:51::3",     NULL,  64, 0, NM_PLATFORM_SOURCE_USER,   0, 0, 0, IFA_F_SECONDARY);
+	ADDR_ADD("2607:f0d0:1002:51::8",     NULL,  64, 0, NM_PLATFORM_SOURCE_USER,   0, 0, 0, IFA_F_SECONDARY);
+	ADDR_ADD("2607:f0d0:1002:51::0",     NULL,  64, 0, NM_PLATFORM_SOURCE_KERNEL, 0, 0, 0, IFA_F_SECONDARY);
+	ADDR_ADD("fec0::1",                  NULL, 128, 0, NM_PLATFORM_SOURCE_KERNEL, 0, 0, 0, 0);
+	ADDR_ADD("fe80::208:74ff:feda:625c", NULL, 128, 0, NM_PLATFORM_SOURCE_KERNEL, 0, 0, 0, 0);
+	ADDR_ADD("fe80::208:74ff:feda:625d", NULL, 128, 0, NM_PLATFORM_SOURCE_KERNEL, 0, 0, 0, 0);
+	ADDR_ADD("::1",                      NULL, 128, 0, NM_PLATFORM_SOURCE_USER, 0, 0, 0, 0);
+	ADDR_ADD("2607:f0d0:1002:51::2",     NULL,  64, 0, NM_PLATFORM_SOURCE_USER,   0, 0, 0, IFA_F_TENTATIVE);
+	test_nm_ip6_config_addresses_sort_check (config, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN, 8);
+	test_nm_ip6_config_addresses_sort_check (config, NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED, 8);
+	test_nm_ip6_config_addresses_sort_check (config, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR, 8);
+
+	nm_ip6_config_reset_addresses (config);
+	ADDR_ADD("2607:f0d0:1002:51::3",     NULL,  64, 0, NM_PLATFORM_SOURCE_USER,   0, 0, 0, IFA_F_SECONDARY);
+	ADDR_ADD("2607:f0d0:1002:51::4",     NULL,  64, 0, NM_PLATFORM_SOURCE_USER,   0, 0, 0, 0);
+	ADDR_ADD("2607:f0d0:1002:51::5",     NULL,  64, 0, NM_PLATFORM_SOURCE_USER,   0, 0, 0, 0);
+	ADDR_ADD("2607:f0d0:1002:51::8",     NULL,  64, 0, NM_PLATFORM_SOURCE_USER,   0, 0, 0, IFA_F_SECONDARY);
+	ADDR_ADD("2607:f0d0:1002:51::0",     NULL,  64, 0, NM_PLATFORM_SOURCE_KERNEL, 0, 0, 0, IFA_F_SECONDARY);
+	ADDR_ADD("2607:f0d0:1002:51::6",     NULL,  64, 0, NM_PLATFORM_SOURCE_RDISC,  0, 0, 0, IFA_F_MANAGETEMPADDR);
+	ADDR_ADD("fec0::1",                  NULL, 128, 0, NM_PLATFORM_SOURCE_KERNEL, 0, 0, 0, 0);
+	ADDR_ADD("fe80::208:74ff:feda:625c", NULL, 128, 0, NM_PLATFORM_SOURCE_KERNEL, 0, 0, 0, 0);
+	ADDR_ADD("fe80::208:74ff:feda:625d", NULL, 128, 0, NM_PLATFORM_SOURCE_KERNEL, 0, 0, 0, 0);
+	ADDR_ADD("::1",                      NULL, 128, 0, NM_PLATFORM_SOURCE_USER, 0, 0, 0, 0);
+	ADDR_ADD("2607:f0d0:1002:51::2",     NULL,  64, 0, NM_PLATFORM_SOURCE_USER,   0, 0, 0, IFA_F_TENTATIVE);
+	test_nm_ip6_config_addresses_sort_check (config, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR, 8);
+
+#undef ADDR_ADD
+	g_object_unref (config);
+}
+
 /*******************************************/
 
 NMTST_DEFINE();
@@ -244,6 +330,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/ip6-config/compare-with-source", test_compare_with_source);
 	g_test_add_func ("/ip6-config/add-address-with-source", test_add_address_with_source);
 	g_test_add_func ("/ip6-config/add-route-with-source", test_add_route_with_source);
+	g_test_add_func ("/ip6-config/test_nm_ip6_config_addresses_sort", test_nm_ip6_config_addresses_sort);
 
 	return g_test_run ();
 }

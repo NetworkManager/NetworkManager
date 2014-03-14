@@ -172,8 +172,115 @@ routes_are_duplicate (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, 
 	       (!consider_gateway_and_metric || (IN6_ARE_ADDR_EQUAL (&a->gateway, &b->gateway) && a->metric == b->metric));
 }
 
+static gint
+_addresses_sort_cmp_get_prio (const struct in6_addr *addr)
+{
+	if (IN6_IS_ADDR_V4MAPPED (addr))
+		return 0;
+	if (IN6_IS_ADDR_V4COMPAT (addr))
+		return 1;
+	if (IN6_IS_ADDR_UNSPECIFIED (addr))
+		return 2;
+	if (IN6_IS_ADDR_LOOPBACK (addr))
+		return 3;
+	if (IN6_IS_ADDR_LINKLOCAL (addr))
+		return 4;
+	if (IN6_IS_ADDR_SITELOCAL (addr))
+		return 5;
+	return 6;
+}
+
+static gint
+_addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	gint p1, p2, c;
+	gboolean perm1, perm2, tent1, tent2;
+	gboolean ipv6_privacy1, ipv6_privacy2;
+	const NMPlatformIP6Address *a1 = a, *a2 = b;
+
+	/* tentative addresses are always sorted back... */
+	/* sort tentative addresses after non-tentative. */
+	tent1 = (a1->flags & IFA_F_TENTATIVE);
+	tent2 = (a2->flags & IFA_F_TENTATIVE);
+	if (tent1 != tent2)
+		return tent1 ? 1 : -1;
+
+	/* Sort by address type. For example link local will
+	 * be sorted *after* site local or global. */
+	p1 = _addresses_sort_cmp_get_prio (&a1->address);
+	p2 = _addresses_sort_cmp_get_prio (&a2->address);
+	if (p1 != p2)
+		return p1 > p2 ? -1 : 1;
+
+	ipv6_privacy1 = !!(a1->flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
+	ipv6_privacy2 = !!(a2->flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
+	if (ipv6_privacy1 || ipv6_privacy2) {
+		gboolean prefer_temp = ((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR;
+		gboolean public1 = TRUE, public2 = TRUE;
+
+		if (ipv6_privacy1) {
+			if (a1->flags & IFA_F_TEMPORARY)
+				public1 = prefer_temp;
+			else
+				public1 = !prefer_temp;
+		}
+		if (ipv6_privacy2) {
+			if (a2->flags & IFA_F_TEMPORARY)
+				public2 = prefer_temp;
+			else
+				public2 = !prefer_temp;
+		}
+
+		if (public1 != public2)
+			return public1 ? -1 : 1;
+	}
+
+	/* Sort the addresses based on their source. */
+	if (a1->source != a2->source)
+		return a1->source > a2->source ? -1 : 1;
+
+	/* sort permanent addresses before non-permanent. */
+	perm1 = (a1->flags & IFA_F_PERMANENT);
+	perm2 = (a2->flags & IFA_F_PERMANENT);
+	if (perm1 != perm2)
+		return perm1 ? -1 : 1;
+
+	/* finally sort addresses lexically */
+	c = memcmp (&a1->address, &a2->address, sizeof (a2->address));
+	return c != 0 ? c : memcmp (a1, a2, sizeof (*a1));
+}
+
+gboolean
+nm_ip6_config_addresses_sort (NMIP6Config *self, NMSettingIP6ConfigPrivacy use_temporary)
+{
+	NMIP6ConfigPrivate *priv;
+	size_t data_len = 0;
+	char *data_pre = NULL;
+	gboolean changed;
+
+	g_return_val_if_fail (NM_IS_IP6_CONFIG (self), FALSE);
+
+	priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+	if (priv->addresses->len > 1) {
+		data_len = priv->addresses->len * g_array_get_element_size (priv->addresses);
+		data_pre = g_new (char, data_len);
+		memcpy (data_pre, priv->addresses->data, data_len);
+
+		g_array_sort_with_data (priv->addresses, _addresses_sort_cmp, GINT_TO_POINTER (use_temporary));
+
+		changed = memcmp (data_pre, priv->addresses->data, data_len) != 0;
+		g_free (data_pre);
+
+		if (changed) {
+			_NOTIFY (self, PROP_ADDRESSES);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 NMIP6Config *
-nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf)
+nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary)
 {
 	NMIP6Config *config;
 	NMIP6ConfigPrivate *priv;
@@ -181,6 +288,7 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf)
 	guint lowest_metric = G_MAXUINT;
 	struct in6_addr old_gateway = IN6ADDR_ANY_INIT;
 	gboolean has_gateway = FALSE;
+	gboolean notify_nameservers = FALSE;
 
 	/* Slaves have no IP configuration */
 	if (nm_platform_link_get_master (ifindex) > 0)
@@ -231,12 +339,14 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf)
 	/* If the interface has the default route, and has IPv6 addresses, capture
 	 * nameservers from /etc/resolv.conf.
 	 */
-	if (priv->addresses->len && has_gateway && capture_resolv_conf) {
-		if (nm_ip6_config_capture_resolv_conf (priv->nameservers, NULL))
-			_NOTIFY (config, PROP_NAMESERVERS);
-	}
+	if (priv->addresses->len && has_gateway && capture_resolv_conf)
+		notify_nameservers = nm_ip6_config_capture_resolv_conf (priv->nameservers, NULL);
+
+	g_array_sort_with_data (priv->addresses, _addresses_sort_cmp, GINT_TO_POINTER (use_temporary));
 
 	/* actually, nobody should be connected to the signal, just to be sure, notify */
+	if (notify_nameservers)
+		_NOTIFY (config, PROP_NAMESERVERS);
 	_NOTIFY (config, PROP_ADDRESSES);
 	_NOTIFY (config, PROP_ROUTES);
 	if (!IN6_ARE_ADDR_EQUAL (&priv->gateway, &old_gateway))
