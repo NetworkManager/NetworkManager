@@ -40,6 +40,9 @@ void nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct
 
 int nm_spawn_process (const char *args);
 
+/* macro to return strlen() of a compile time string. */
+#define STRLEN(str)     ( sizeof ("" str) - 1 )
+
 gboolean nm_match_spec_string (const GSList *specs, const char *string);
 gboolean nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
 gboolean nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
