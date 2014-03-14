@@ -1041,6 +1041,13 @@ carrier_changed (NMDevice *device, gboolean carrier)
 		if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
 			nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED,
 			                       NM_DEVICE_STATE_REASON_CARRIER);
+		} else if (priv->state == NM_DEVICE_STATE_DISCONNECTED) {
+			/* If the device is already in DISCONNECTED state without a carrier
+			 * (probably because it is tagged for carrier ignore) ensure that
+			 * when the carrier appears, auto connections are rechecked for
+			 * the device.
+			 */
+			nm_device_emit_recheck_auto_activate (device);
 		}
 	} else {
 		g_return_if_fail (priv->state >= NM_DEVICE_STATE_UNAVAILABLE);
