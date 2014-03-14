@@ -790,6 +790,7 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	GUdevDevice *udev_device;
 
 	g_return_val_if_fail (rtnllink, FALSE);
+	g_return_val_if_fail (rtnl_link_get_name (rtnllink), FALSE);
 
 	memset (info, 0, sizeof (*info));
 
