@@ -269,20 +269,17 @@ construct_ip6_items (GSList *items, GHashTable *ip6_config, const char *prefix)
 
 	for (iter = addresses, num = 0; iter; iter = g_slist_next (iter)) {
 		NMIP6Address *addr = (NMIP6Address *) iter->data;
-		char str_addr[INET6_ADDRSTRLEN + 1];
-		char str_gw[INET6_ADDRSTRLEN + 1];
+		char str_addr[INET6_ADDRSTRLEN];
+		char str_gw[INET6_ADDRSTRLEN];
 		const struct in6_addr *tmp_addr;
 		guint32 ip_prefix = nm_ip6_address_get_prefix (addr);
 		char *addrtmp;
 
-		memset (str_addr, 0, sizeof (str_addr));
 		tmp_addr = nm_ip6_address_get_address (addr);
-		if (!inet_ntop (AF_INET6, &tmp_addr, str_addr, sizeof (str_addr)))
-			continue;
+		inet_ntop (AF_INET6, tmp_addr, str_addr, sizeof (str_addr));
 
-		memset (str_gw, 0, sizeof (str_gw));
 		tmp_addr = nm_ip6_address_get_gateway (addr);
-		inet_ntop (AF_INET6, &tmp_addr, str_gw, sizeof (str_gw));
+		inet_ntop (AF_INET6, tmp_addr, str_gw, sizeof (str_gw));
 
 		addrtmp = g_strdup_printf ("%sIP6_ADDRESS_%d=%s/%d %s", prefix, num++, str_addr, ip_prefix, str_gw);
 		items = g_slist_prepend (items, addrtmp);
