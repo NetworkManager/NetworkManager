@@ -70,7 +70,7 @@ exec 2>&1
 setup_nmtui
 
 UUID=`uuidgen`
-RELEASE_VERSION="${RELEASE_VERSION:-999}"
+RELEASE_VERSION="${RELEASE_VERSION:-$(git rev-list --first-parent HEAD | wc -l)}"
 VERSION="${VERSION:-$(get_version || die "Could not read $VERSION")}"
 COMMIT="${COMMIT:-$(git rev-parse --verify HEAD | sed 's/^\(.\{10\}\).*/\1/' || die "Error reading HEAD revision")}"
 USERNAME="${USERNAME:-"$(git config user.name) <$(git config user.email)>"}"
