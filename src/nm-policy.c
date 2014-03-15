@@ -105,7 +105,6 @@ get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
 		NMDeviceState state = nm_device_get_state (dev);
 		NMActRequest *req;
 		NMConnection *connection;
-		NMIP4Config *ip4_config;
 		NMSettingIP4Config *s_ip4;
 		int prio;
 		const char *method = NULL;
@@ -117,8 +116,13 @@ get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
 		if (fully_activated && state < NM_DEVICE_STATE_SECONDARIES)
 			continue;
 
-		ip4_config = nm_device_get_ip4_config (dev);
-		if (ip4_config) {
+		if (fully_activated) {
+			NMIP4Config *ip4_config;
+
+			ip4_config = nm_device_get_ip4_config (dev);
+			if (!ip4_config)
+				continue;
+
 			/* Make sure the device has a gateway */
 			if (!nm_ip4_config_get_gateway (ip4_config) && (devtype != NM_DEVICE_TYPE_MODEM))
 				continue;
@@ -126,8 +130,7 @@ get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
 			/* 'never-default' devices can't ever be the default */
 			if (nm_ip4_config_get_never_default (ip4_config))
 				continue;
-		} else if (fully_activated)
-			continue;
+		}
 
 		req = nm_device_get_act_request (dev);
 		g_assert (req);
@@ -186,7 +189,6 @@ get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 		NMDeviceState state = nm_device_get_state (dev);
 		NMActRequest *req;
 		NMConnection *connection;
-		NMIP6Config *ip6_config;
 		NMSettingIP6Config *s_ip6;
 		int prio;
 		const char *method = NULL;
@@ -198,15 +200,19 @@ get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 		if (fully_activated && state < NM_DEVICE_STATE_SECONDARIES)
 			continue;
 
-		ip6_config = nm_device_get_ip6_config (dev);
-		if (ip6_config) {
+		if (fully_activated) {
+			NMIP6Config *ip6_config;
+
+			ip6_config = nm_device_get_ip6_config (dev);
+			if (!ip6_config)
+				continue;
+
 			if (!nm_ip6_config_get_gateway (ip6_config) && (devtype != NM_DEVICE_TYPE_MODEM))
 				continue;
 
 			if (nm_ip6_config_get_never_default (ip6_config))
 				continue;
-		} else if (fully_activated)
-			continue;
+		}
 
 		req = nm_device_get_act_request (dev);
 		g_assert (req);
