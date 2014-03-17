@@ -40,7 +40,6 @@ typedef struct _shvarFile shvarFile;
 struct _shvarFile {
 	char		*fileName;	/* read-only */
 	int		fd;		/* read-only */
-	char		*arena;		/* ignore */
 	GList		*lineList;	/* read-only */
 	GList		*current;	/* set implicitly or explicitly,
 					   points to element of lineList */

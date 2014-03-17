@@ -22,6 +22,7 @@
  *
  */
 
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,17 +57,27 @@ svOpenFile(const char *name, gboolean create)
 
     if (s->fd != -1) {
 	struct stat buf;
-	char *p, *q;
+	char *arena, *p, *q;
+	ssize_t nread, total = 0;
 
 	if (fstat(s->fd, &buf) < 0) goto bail;
-	s->arena = g_malloc0(buf.st_size + 1);
+	arena = g_malloc(buf.st_size + 1);
+	arena[buf.st_size] = '\0';
 
-	if (read(s->fd, s->arena, buf.st_size) < 0) goto bail;
+	while (total < buf.st_size) {
+		nread = read(s->fd, arena + total, buf.st_size - total);
+		if (nread == -1 && errno == EINTR)
+			continue;
+		if (nread <= 0)
+			goto bail;
+		total += nread;
+	}
 
 	/* we'd use g_strsplit() here, but we want a list, not an array */
-	for(p = s->arena; (q = strchr(p, '\n')) != NULL; p = q + 1) {
+	for(p = arena; (q = strchr(p, '\n')) != NULL; p = q + 1) {
 		s->lineList = g_list_append(s->lineList, g_strndup(p, q - p));
 	}
+	g_free (arena);
 
 	/* closefd is set if we opened the file read-only, so go ahead and
 	   close it, because we can't write to it anyway */
@@ -84,7 +95,6 @@ svOpenFile(const char *name, gboolean create)
 
 bail:
     if (s->fd != -1) close(s->fd);
-    g_free (s->arena);
     g_free (s->fileName);
     g_free (s);
     return NULL;
@@ -374,7 +384,6 @@ svCloseFile(shvarFile *s)
 
     if (s->fd != -1) close(s->fd);
 
-    g_free(s->arena);
     g_free(s->fileName);
     g_list_free_full (s->lineList, g_free); /* implicitly frees s->current */
     g_free(s);
