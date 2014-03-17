@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
  * shvar.h
  *
@@ -32,50 +33,42 @@
 
 #include <glib.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+G_BEGIN_DECLS
 
 typedef struct _shvarFile shvarFile;
 struct _shvarFile {
-	char		*fileName;	/* read-only */
-	int		fd;		/* read-only */
-	GList		*lineList;	/* read-only */
-	GList		*current;	/* set implicitly or explicitly,
-					   points to element of lineList */
-	int		modified;	/* ignore */
+	char      *fileName;    /* read-only */
+	int        fd;          /* read-only */
+	GList     *lineList;    /* read-only */
+	GList     *current;     /* set implicitly or explicitly, points to element of lineList */
+	int        modified;    /* ignore */
 };
 
 
 /* Create the file <name>, return shvarFile on success, NULL on failure */
-shvarFile *
-svCreateFile(const char *name);
+shvarFile *svCreateFile (const char *name);
 
 /* Open the file <name>, return shvarFile on success, NULL on failure */
-shvarFile *
-svNewFile(const char *name);
+shvarFile *svNewFile (const char *name);
 
 /* Get the value associated with the key, and leave the current pointer
  * pointing at the line containing the value.  The char* returned MUST
  * be freed by the caller.
  */
-char *
-svGetValue(shvarFile *s, const char *key, gboolean verbatim);
+char *svGetValue (shvarFile *s, const char *key, gboolean verbatim);
 
 /* return 1 if <key> resolves to any truth value (e.g. "yes", "y", "true")
  * return 0 if <key> resolves to any non-truth value (e.g. "no", "n", "false")
  * return <def> otherwise
  */
-int
-svTrueValue(shvarFile *s, const char *key, int def);
+int svTrueValue (shvarFile *s, const char *key, int def);
 
 /* Set the variable <key> equal to the value <value>.
  * If <key> does not exist, and the <current> pointer is set, append
  * the key=value pair after that line.  Otherwise, prepend the pair
  * to the top of the file.
  */
-void
-svSetValue(shvarFile *s, const char *key, const char *value, gboolean verbatim);
+void svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim);
 
 
 /* Write the current contents iff modified.  Returns -1 on error
@@ -84,25 +77,19 @@ svSetValue(shvarFile *s, const char *key, const char *value, gboolean verbatim);
  * re-writing an existing file, and is passed unchanged to the
  * open() syscall.
  */
-int
-svWriteFile(shvarFile *s, int mode);
+int svWriteFile (shvarFile *s, int mode);
 
 /* Close the file descriptor (if open) and delete the shvarFile.
  * Returns -1 on error and 0 on success.
  */
-int
-svCloseFile(shvarFile *s);
+int svCloseFile (shvarFile *s);
 
 /* Return a new escaped string */
-char *
-svEscape(const char *s);
+char *svEscape (const char *s);
 
 /* Unescape a string in-place */
-void
-svUnescape(char *s);
+void svUnescape (char *s);
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+G_END_DECLS
 
 #endif /* ! _SHVAR_H */
