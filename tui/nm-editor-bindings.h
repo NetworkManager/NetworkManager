@@ -26,6 +26,8 @@
 
 G_BEGIN_DECLS
 
+void nm_editor_bindings_init (void);
+
 void nm_editor_bind_ip4_addresses_with_prefix_to_strv (gpointer       source,
                                                        const gchar   *source_property,
                                                        gpointer       target,

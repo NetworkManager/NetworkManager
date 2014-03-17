@@ -37,6 +37,42 @@
 #include "nm-editor-bindings.h"
 #include "nm-gvaluearray-compat.h"
 
+static void
+value_transform_string_int (const GValue *src_value,
+                            GValue       *dest_value)
+{
+	long val;
+	char *end;
+
+	val = strtol (g_value_get_string (src_value), &end, 10);
+	if (val < G_MININT || val > G_MAXINT || *end)
+		return;
+
+	g_value_set_int (dest_value, (int) val);
+}
+
+static void
+value_transform_string_uint (const GValue *src_value,
+                             GValue       *dest_value)
+{
+	long val;
+	char *end;
+
+	val = strtol (g_value_get_string (src_value), &end, 10);
+	if (val < 0 || val > G_MAXUINT || *end)
+		return;
+
+	g_value_set_uint (dest_value, (gint) val);
+}
+
+void
+nm_editor_bindings_init (void)
+{
+	/* glib registers number -> string, but not string -> number */
+	g_value_register_transform_func (G_TYPE_STRING, G_TYPE_INT, value_transform_string_int);
+	g_value_register_transform_func (G_TYPE_STRING, G_TYPE_UINT, value_transform_string_uint);
+}
+
 static gboolean
 ip_string_parse (const char *text,
                  int         family,

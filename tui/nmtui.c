@@ -39,6 +39,7 @@
 #include <nm-utils.h>
 
 #include "nmt-newt.h"
+#include "nm-editor-bindings.h"
 
 #include "nmtui.h"
 #include "nmtui-edit.h"
@@ -241,6 +242,8 @@ main (int argc, char **argv)
 		exit (1);
 	}
 	g_option_context_free (opts);
+
+	nm_editor_bindings_init ();
 
 	nm_client = nm_client_new ();
 	if (!nm_client_get_manager_running (nm_client)) {
