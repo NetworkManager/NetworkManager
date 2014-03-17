@@ -1356,7 +1356,7 @@ msgstr "त्रुटि: '%s': '%s' वैध नहीं है; %s "
 #: ../cli/src/connections.c:2541
 #, c-format
 msgid "Error: '%s': '%s' is not valid; use <%u-%u>."
-msgstr "त्रुटि: '%s': 's' वैध नहीं है; <%-%> का उपयोग करें."
+msgstr "त्रुटि: '%s': '%s' वैध नहीं है; <%u-%u> का उपयोग करें."
 
 #: ../cli/src/connections.c:2555
 msgid "ethernet"
@@ -1524,7 +1524,7 @@ msgstr "बांडिंग downdelay [0]: "
 #: ../cli/src/connections.c:2973
 #, c-format
 msgid "Error: 'downdelay': '%s' is not a valid number <0-%u>.\n"
-msgstr "त्रुटि:  'downdelay': 's' एक वैध संख्या नहीं है <0-%u>.\n"
+msgstr "त्रुटि:  'downdelay': '%s' एक वैध संख्या नहीं है <0-%u>.\n"
 
 #: ../cli/src/connections.c:2981
 msgid "Bonding updelay [0]: "
@@ -1533,7 +1533,7 @@ msgstr "बांडिंग updelay [0]: "
 #: ../cli/src/connections.c:2984
 #, c-format
 msgid "Error: 'updelay': '%s' is not a valid number <0-%u>.\n"
-msgstr "त्रुटि:'updelay': 's' एक वैध संख्या नहीं है <0-%u>.\n"
+msgstr "त्रुटि:'updelay': '%s' एक वैध संख्या नहीं है <0-%u>.\n"
 
 #: ../cli/src/connections.c:2993
 msgid "Bonding arp-interval [0]: "
