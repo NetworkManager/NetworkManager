@@ -41,7 +41,7 @@ struct _shvarFile {
 	int        fd;          /* read-only */
 	GList     *lineList;    /* read-only */
 	GList     *current;     /* set implicitly or explicitly, points to element of lineList */
-	int        modified;    /* ignore */
+	gboolean   modified;    /* ignore */
 };
 
 
@@ -57,11 +57,11 @@ shvarFile *svNewFile (const char *name);
  */
 char *svGetValue (shvarFile *s, const char *key, gboolean verbatim);
 
-/* return 1 if <key> resolves to any truth value (e.g. "yes", "y", "true")
- * return 0 if <key> resolves to any non-truth value (e.g. "no", "n", "false")
+/* return TRUE if <key> resolves to any truth value (e.g. "yes", "y", "true")
+ * return FALSE if <key> resolves to any non-truth value (e.g. "no", "n", "false")
  * return <def> otherwise
  */
-int svTrueValue (shvarFile *s, const char *key, int def);
+gboolean svTrueValue (shvarFile *s, const char *key, gboolean def);
 
 /* Set the variable <key> equal to the value <value>.
  * If <key> does not exist, and the <current> pointer is set, append
@@ -71,18 +71,18 @@ int svTrueValue (shvarFile *s, const char *key, int def);
 void svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim);
 
 
-/* Write the current contents iff modified.  Returns -1 on error
- * and 0 on success.  Do not write if no values have been modified.
+/* Write the current contents iff modified.  Returns FALSE on error
+ * and TRUE on success.  Do not write if no values have been modified.
  * The mode argument is only used if creating the file, not if
  * re-writing an existing file, and is passed unchanged to the
  * open() syscall.
  */
-int svWriteFile (shvarFile *s, int mode);
+gboolean svWriteFile (shvarFile *s, int mode);
 
-/* Close the file descriptor (if open) and delete the shvarFile.
- * Returns -1 on error and 0 on success.
+/* Close the file descriptor (if open) and free the shvarFile.
+ * Returns FALSE on error and TRUE on success.
  */
-int svCloseFile (shvarFile *s);
+gboolean svCloseFile (shvarFile *s);
 
 /* Return a new escaped string */
 char *svEscape (const char *s);

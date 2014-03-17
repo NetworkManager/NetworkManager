@@ -118,7 +118,7 @@ set_secret (shvarFile *ifcfg,
 	if (flags == NM_SETTING_SECRET_FLAG_NONE)
 		svSetValue (keyfile, key, value, verbatim);
 
-	if (svWriteFile (keyfile, 0600)) {
+	if (!svWriteFile (keyfile, 0600)) {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: could not update key file '%s'",
 		             keyfile->fileName);
 		svCloseFile (keyfile);
@@ -2118,7 +2118,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			g_free (gw_key);
 			g_free (metric_key);
 		}
-		if (svWriteFile (routefile, 0644)) {
+		if (!svWriteFile (routefile, 0644)) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Could not update route file '%s'", routefile->fileName);
 			svCloseFile (routefile);
@@ -2641,7 +2641,7 @@ write_connection (NMConnection *connection,
 
 	write_connection_setting (s_con, ifcfg);
 
-	if (svWriteFile (ifcfg, 0644)) {
+	if (!svWriteFile (ifcfg, 0644)) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Can't write connection '%s'", ifcfg->fileName);
 		goto out;

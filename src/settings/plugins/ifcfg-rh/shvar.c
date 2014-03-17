@@ -42,9 +42,9 @@ static shvarFile *
 svOpenFile (const char *name, gboolean create)
 {
 	shvarFile *s = NULL;
-	int closefd = 0;
+	gboolean closefd = FALSE;
 
-	s = g_malloc0 (sizeof (shvarFile));
+	s = g_slice_new0 (shvarFile);
 
 	s->fd = -1;
 	if (create)
@@ -54,7 +54,7 @@ svOpenFile (const char *name, gboolean create)
 		/* try read-only */
 		s->fd = open (name, O_RDONLY); /* NOT O_CREAT */
 		if (s->fd != -1)
-			closefd = 1;
+			closefd = TRUE;
 	}
 	s->fileName = g_strdup (name);
 
@@ -100,7 +100,7 @@ svOpenFile (const char *name, gboolean create)
 	if (s->fd != -1)
 		close (s->fd);
 	g_free (s->fileName);
-	g_free (s);
+	g_slice_free (shvarFile, s);
 	return NULL;
 }
 
@@ -208,7 +208,7 @@ svEscape (const char *s)
 		return strdup (s);
 
 	newlen = slen + mangle - newline + 3;	/* 3 is extra ""\0 */
-	new = g_malloc0 (newlen);
+	new = g_malloc (newlen);
 
 	j = 0;
 	new[j++] = '"';
@@ -221,7 +221,9 @@ svEscape (const char *s)
 		new[j++] = s[i];
 	}
 	new[j++] = '"';
-	g_assert (j == slen + mangle - newline + 2); /* j is the index of the '\0' */
+	new[j++] = '\0'
+;
+	g_assert (j == slen + mangle - newline + 3);
 
 	return new;
 }
@@ -238,12 +240,10 @@ svGetValue (shvarFile *s, const char *key, gboolean verbatim)
 	char *keyString;
 	int len;
 
-	g_assert (s);
-	g_assert (key);
+	g_return_val_if_fail (s != NULL, NULL);
+	g_return_val_if_fail (key != NULL, NULL);
 
-	keyString = g_malloc0 (strlen (key) + 2);
-	strcpy (keyString, key);
-	keyString[strlen (key)] = '=';
+	keyString = g_strdup_printf ("%s=", key);
 	len = strlen (keyString);
 
 	for (s->current = s->lineList; s->current; s->current = s->current->next) {
@@ -265,15 +265,15 @@ svGetValue (shvarFile *s, const char *key, gboolean verbatim)
 	}
 }
 
-/* return 1 if <key> resolves to any truth value (e.g. "yes", "y", "true")
- * return 0 if <key> resolves to any non-truth value (e.g. "no", "n", "false")
+/* return TRUE if <key> resolves to any truth value (e.g. "yes", "y", "true")
+ * return FALSE if <key> resolves to any non-truth value (e.g. "no", "n", "false")
  * return <default> otherwise
  */
-int
-svTrueValue (shvarFile *s, const char *key, int def)
+gboolean
+svTrueValue (shvarFile *s, const char *key, gboolean def)
 {
 	char *tmp;
-	int returnValue = def;
+	gboolean returnValue = def;
 
 	tmp = svGetValue (s, key, FALSE);
 	if (!tmp)
@@ -283,12 +283,12 @@ svTrueValue (shvarFile *s, const char *key, int def)
 	    || !g_ascii_strcasecmp ("true", tmp)
 	    || !g_ascii_strcasecmp ("t", tmp)
 	    || !g_ascii_strcasecmp ("y", tmp))
-		returnValue = 1;
+		returnValue = TRUE;
 	else if (   !g_ascii_strcasecmp ("no", tmp)
 	         || !g_ascii_strcasecmp ("false", tmp)
 	         || !g_ascii_strcasecmp ("f", tmp)
 	         || !g_ascii_strcasecmp ("n", tmp))
-		returnValue = 0;
+		returnValue = FALSE;
 
 	g_free (tmp);
 	return returnValue;
@@ -306,8 +306,8 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 	char *newval = NULL, *oldval = NULL;
 	char *keyValue;
 
-	g_assert(s);
-	g_assert(key);
+	g_return_if_fail (s != NULL);
+	g_return_if_fail (key != NULL);
 	/* value may be NULL */
 
 	if (value)
@@ -322,7 +322,7 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 			/* delete line */
 			s->lineList = g_list_remove_link (s->lineList, s->current);
 			g_list_free_1 (s->current);
-			s->modified = 1;
+			s->modified = TRUE;
 		}
 		goto bail; /* do not need keyValue */
 	}
@@ -330,7 +330,7 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 	if (!oldval) {
 		/* append line */
 		s->lineList = g_list_append (s->lineList, keyValue);
-		s->modified = 1;
+		s->modified = TRUE;
 		goto end;
 	}
 
@@ -340,7 +340,7 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 			s->current->data = keyValue;
 		else
 			s->lineList = g_list_append (s->lineList, keyValue);
-		s->modified = 1;
+		s->modified = TRUE;
 	}
 
  end:
@@ -353,13 +353,13 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
 	goto end;
 }
 
-/* Write the current contents iff modified.  Returns -1 on error
- * and 0 on success.  Do not write if no values have been modified.
+/* Write the current contents iff modified.  Returns FALSE on error
+ * and TRUE on success.  Do not write if no values have been modified.
  * The mode argument is only used if creating the file, not if
  * re-writing an existing file, and is passed unchanged to the
  * open() syscall.
  */
-int
+gboolean
 svWriteFile (shvarFile *s, int mode)
 {
 	FILE *f;
@@ -369,13 +369,13 @@ svWriteFile (shvarFile *s, int mode)
 		if (s->fd == -1)
 			s->fd = open (s->fileName, O_WRONLY | O_CREAT, mode);
 		if (s->fd == -1)
-			return -1;
+			return FALSE;
 		if (ftruncate (s->fd, 0) < 0)
-			return -1;
+			return FALSE;
 
 		tmpfd = dup (s->fd);
 		if (tmpfd == -1)
-			return -1;
+			return FALSE;
 		f = fdopen (tmpfd, "w");
 		fseek (f, 0, SEEK_SET);
 		for (s->current = s->lineList; s->current; s->current = s->current->next) {
@@ -385,23 +385,22 @@ svWriteFile (shvarFile *s, int mode)
 		fclose (f);
 	}
 
-	return 0;
+	return TRUE;
 }
 
 
-/* Close the file descriptor (if open) and delete the shvarFile.
- * Returns -1 on error and 0 on success.
- */
-int
+/* Close the file descriptor (if open) and free the shvarFile. */
+gboolean
 svCloseFile (shvarFile *s)
 {
-	g_assert (s);
+	g_return_val_if_fail (s != NULL, FALSE);
 
 	if (s->fd != -1)
 		close (s->fd);
 
-    g_free(s->fileName);
-    g_list_free_full (s->lineList, g_free); /* implicitly frees s->current */
-    g_free(s);
-    return 0;
+	g_free (s->fileName);
+	g_list_free_full (s->lineList, g_free); /* implicitly frees s->current */
+	g_slice_free (shvarFile, s);
+
+	return TRUE;
 }
