@@ -3397,8 +3397,8 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay,
 	}
 	if (!*priority) {
 		do {
-			*priority = nmc_get_user_input (_("STP priority [128]: "));
-			*priority = *priority ? *priority : g_strdup ("128");
+			*priority = nmc_get_user_input (_("STP priority [32768]: "));
+			*priority = *priority ? *priority : g_strdup ("32768");
 			once_more = !nmc_string_to_uint (*priority, TRUE, 0, G_MAXUINT16, &tmp);
 			if (once_more) {
 				printf (_("Error: 'priority': '%s' is not a valid number <0-%d>.\n"),
