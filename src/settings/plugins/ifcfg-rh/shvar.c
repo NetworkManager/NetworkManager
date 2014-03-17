@@ -4,12 +4,6 @@
  * Implementation of non-destructively reading/writing files containing
  * only shell variable declarations and full-line comments.
  *
- * Includes explicit inheritance mechanism intended for use with
- * Red Hat Linux ifcfg-* files.  There is no protection against
- * inheritance loops; they will generally cause stack overflows.
- * Furthermore, they are only intended for one level of inheritance;
- * the value setting algorithm assumes this.
- *
  * Copyright 1999,2000 Red Hat, Inc.
  *
  * This is free software; you can redistribute it and/or modify it
@@ -241,16 +235,12 @@ svGetValue(shvarFile *s, const char *key, gboolean verbatim)
     }
     g_free(keyString);
 
-    if (value) {
-	if (value[0]) {
-	    return value;
-	} else {
-	    g_free(value);
-	    return NULL;
-	}
+    if (value && value[0]) {
+	return value;
+    } else {
+	g_free(value);
+	return NULL;
     }
-    if (s->parent) value = svGetValue(s->parent, key, verbatim);
-    return value;
 }
 
 /* return 1 if <key> resolves to any truth value (e.g. "yes", "y", "true")
@@ -283,31 +273,13 @@ svTrueValue(shvarFile *s, const char *key, int def)
 
 /* Set the variable <key> equal to the value <value>.
  * If <key> does not exist, and the <current> pointer is set, append
- * the key=value pair after that line.  Otherwise, prepend the pair
- * to the top of the file.  Here's the algorithm, as the C code
- * seems to be rather dense:
- *
- * if (value == NULL), then:
- *     if val2 (parent): change line to key= or append line key=
- *     if val1 (this)  : delete line
- *     else noop
- * else use this table:
- *                                val2
- *             NULL              value               other
- * v   NULL    append line       noop                append line
- * a
- * l   value   noop              noop                noop
- * 1
- *     other   change line       delete line         change line
- *
- * No changes are ever made to the parent config file, only to the
- * specific file passed on the command line.
- *
+ * the key=value pair after that line.  Otherwise, append the pair
+ * to the bottom of the file.
  */
 void
 svSetValue(shvarFile *s, const char *key, const char *value, gboolean verbatim)
 {
-    char *newval = NULL, *val1 = NULL, *val2 = NULL;
+    char *newval = NULL, *oldval = NULL;
     char *keyValue;
 
     g_assert(s);
@@ -318,19 +290,11 @@ svSetValue(shvarFile *s, const char *key, const char *value, gboolean verbatim)
         newval = verbatim ? g_strdup(value) : svEscape(value);
     keyValue = g_strdup_printf("%s=%s", key, newval ? newval : "");
 
-    val1 = svGetValue(s, key, FALSE);
-    if (val1 && newval && !strcmp(val1, newval)) goto bail;
-    if (s->parent) val2 = svGetValue(s->parent, key, FALSE);
+    oldval = svGetValue(s, key, FALSE);
 
     if (!newval || !newval[0]) {
-	/* delete value somehow */
-	if (val2) {
-	    /* change/append line to get key= */
-	    if (s->current) s->current->data = keyValue;
-	    else s->lineList = g_list_append(s->lineList, keyValue);
-	    s->modified = 1;
-	    goto end;
-	} else if (val1) {
+	/* delete value */
+	if (oldval) {
 	    /* delete line */
 	    s->lineList = g_list_remove_link(s->lineList, s->current);
 	    g_list_free_1(s->current);
@@ -339,25 +303,14 @@ svSetValue(shvarFile *s, const char *key, const char *value, gboolean verbatim)
 	goto bail; /* do not need keyValue */
     }
 
-    if (!val1) {
-	if (val2 && !strcmp(val2, newval)) goto end;
+    if (!oldval) {
 	/* append line */
 	s->lineList = g_list_append(s->lineList, keyValue);
 	s->modified = 1;
 	goto end;
     }
 
-    /* deal with a whole line of noops */
-    if (val1 && !strcmp(val1, newval)) goto end;
-
-    /* At this point, val1 && val1 != value */
-    if (val2 && !strcmp(val2, newval)) {
-	/* delete line */
-	s->lineList = g_list_remove_link(s->lineList, s->current);
-	g_list_free_1(s->current);
-	s->modified = 1;
-	goto bail; /* do not need keyValue */
-    } else {
+    if (strcmp(oldval, newval) != 0) {
 	/* change line */
 	if (s->current) s->current->data = keyValue;
 	else s->lineList = g_list_append(s->lineList, keyValue);
@@ -366,8 +319,7 @@ svSetValue(shvarFile *s, const char *key, const char *value, gboolean verbatim)
 
 end:
     g_free(newval);
-    g_free(val1);
-    g_free(val2);
+    g_free(oldval);
     return;
 
 bail:

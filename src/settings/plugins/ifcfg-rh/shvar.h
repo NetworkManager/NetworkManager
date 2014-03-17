@@ -44,7 +44,6 @@ struct _shvarFile {
 	GList		*lineList;	/* read-only */
 	GList		*current;	/* set implicitly or explicitly,
 					   points to element of lineList */
-	shvarFile	*parent;	/* set explicitly */
 	int		modified;	/* ignore */
 };
 
