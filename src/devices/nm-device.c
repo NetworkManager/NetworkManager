@@ -5052,6 +5052,9 @@ nm_device_set_ip4_config (NMDevice *self,
 				/* Export over D-Bus */
 				nm_ip4_config_export (new_config);
 			}
+
+			nm_log_dbg (LOGD_IP4, "(%s): set IP4Config instance (%s)",
+			            ip_iface, nm_ip4_config_get_dbus_path (new_config));
 		}
 	} else if (old_config) {
 		has_changes = TRUE;
@@ -5144,6 +5147,9 @@ nm_device_set_ip6_config (NMDevice *self,
 				/* Export over D-Bus */
 				nm_ip6_config_export (new_config);
 			}
+
+			nm_log_dbg (LOGD_IP4, "(%s): set IP6Config instance (%s)",
+			            ip_iface, nm_ip6_config_get_dbus_path (new_config));
 		}
 	} else if (old_config) {
 		has_changes = TRUE;
