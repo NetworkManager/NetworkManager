@@ -54,7 +54,7 @@ enum {
  * @min: the minimum valid value
  * @max: the maximum valid value
  *
- * Creates a new #NmtNewtEntryNumeric, accepting values in pthe
+ * Creates a new #NmtNewtEntryNumeric, accepting values in the
  * indicated range.
  *
  * Returns: a new #NmtNewtEntryNumeric
