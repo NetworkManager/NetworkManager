@@ -2008,9 +2008,7 @@ add_device (NMManager *self, NMDevice *device)
 		            nm_device_get_iface (device));
 
 		ac = internal_activate_device (self, device, existing, NULL, FALSE, 0, NULL, TRUE, NULL, &error);
-		if (ac)
-			active_connection_add (self, ac);
-		else {
+		if (!ac) {
 			nm_log_warn (LOGD_DEVICE, "assumed connection %s failed to activate: (%d) %s",
 			             nm_connection_get_path (existing),
 			             error ? error->code : -1,
@@ -2519,6 +2517,7 @@ internal_activate_device (NMManager *manager,
 	                          device,
 	                          master_device);
 	g_assert (req);
+	active_connection_add (manager, NM_ACTIVE_CONNECTION (req));
 	nm_device_activate (device, req);
 
 	return NM_ACTIVE_CONNECTION (req);
@@ -2796,7 +2795,7 @@ activate_vpn_connection (NMManager *self,
                          GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	NMActiveConnection *parent = NULL;
+	NMActiveConnection *parent = NULL, *ac;
 	NMDevice *device = NULL;
 	GSList *iter;
 
@@ -2832,13 +2831,16 @@ activate_vpn_connection (NMManager *self,
 		return NULL;
 	}
 
-	return nm_vpn_manager_activate_connection (priv->vpn_manager,
-	                                           connection,
-	                                           device,
-	                                           nm_active_connection_get_path (parent),
-	                                           TRUE,
-	                                           sender_uid,
-	                                           error);
+	ac = nm_vpn_manager_activate_connection (priv->vpn_manager,
+	                                         connection,
+	                                         device,
+	                                         nm_active_connection_get_path (parent),
+	                                         TRUE,
+	                                         sender_uid,
+	                                         error);
+	if (ac)
+		active_connection_add (self, ac);
+	return ac;
 }
 
 NMActiveConnection *
@@ -2857,7 +2859,7 @@ nm_manager_activate_connection (NMManager *manager,
 	char *iface;
 	NMDevice *master_device = NULL;
 	NMConnection *master_connection = NULL;
-	NMActiveConnection *master_ac = NULL, *ac = NULL;
+	NMActiveConnection *master_ac = NULL;
 	gboolean matched;
 
 	g_return_val_if_fail (manager != NULL, NULL);
@@ -2883,10 +2885,8 @@ nm_manager_activate_connection (NMManager *manager,
 	}
 
 	/* VPN ? */
-	if (nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME)) {
-		ac = activate_vpn_connection (manager, connection, specific_object, sender_uid, error);
-		goto activated;
-	}
+	if (nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME))
+		return activate_vpn_connection (manager, connection, specific_object, sender_uid, error);
 
 	/* Device-based connection */
 	if (device_path) {
@@ -3023,22 +3023,16 @@ nm_manager_activate_connection (NMManager *manager,
 		            nm_active_connection_get_path (master_ac));
 	}
 
-	ac = internal_activate_device (manager,
-	                               device,
-	                               connection,
-	                               specific_object,
-	                               dbus_sender ? TRUE : FALSE,
-	                               dbus_sender ? sender_uid : 0,
-	                               dbus_sender,
-	                               FALSE,
-	                               master_ac,
-	                               error);
-
-activated:
-	if (ac)
-		active_connection_add (manager, ac);
-
-	return ac;
+	return internal_activate_device (manager,
+	                                 device,
+	                                 connection,
+	                                 specific_object,
+	                                 dbus_sender ? TRUE : FALSE,
+	                                 dbus_sender ? sender_uid : 0,
+	                                 dbus_sender,
+	                                 FALSE,
+	                                 master_ac,
+	                                 error);
 }
 
 /* 
