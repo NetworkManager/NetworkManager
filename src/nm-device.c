@@ -3611,8 +3611,8 @@ clear_act_request (NMDevice *self)
 
 	nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request), FALSE);
 
-	g_object_unref (priv->act_request);
-	priv->act_request = NULL;
+	g_clear_object (&priv->act_request);
+	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
 }
 
 static void
