@@ -753,6 +753,35 @@ check_ip4_method_disabled_auto (NMConnection *orig,
 	return FALSE;
 }
 
+static gboolean
+check_connection_interface_name (NMConnection *orig,
+                                 NMConnection *candidate,
+                                 GHashTable *settings)
+{
+	GHashTable *props;
+	const char *orig_ifname, *cand_ifname;
+	NMSettingConnection *s_con_orig, *s_con_cand;
+
+	props = g_hash_table_lookup (settings, NM_SETTING_CONNECTION_SETTING_NAME);
+	if (   !props
+	    || (g_hash_table_size (props) != 1)
+	    || !g_hash_table_lookup (props, NM_SETTING_CONNECTION_INTERFACE_NAME)) {
+		/* We only handle 'interface-name' here. */
+		return FALSE;
+	}
+
+	/* If one of the interface name is NULL, we accept that connection */
+	s_con_orig = nm_connection_get_setting_connection (orig);
+	s_con_cand = nm_connection_get_setting_connection (candidate);
+	orig_ifname = nm_setting_connection_get_interface_name (s_con_orig);
+	cand_ifname = nm_setting_connection_get_interface_name (s_con_cand);
+
+	if (!orig_ifname || !cand_ifname)
+		return TRUE;
+
+	return FALSE;
+}
+
 static NMConnection *
 check_possible_match (NMConnection *orig,
                       NMConnection *candidate,
@@ -768,6 +797,9 @@ check_possible_match (NMConnection *orig,
 		return candidate;
 
 	if (check_ip4_method_disabled_auto (orig, candidate, settings, device_has_carrier))
+		return candidate;
+
+	if (check_connection_interface_name (orig, candidate, settings))
 		return candidate;
 
 	return NULL;

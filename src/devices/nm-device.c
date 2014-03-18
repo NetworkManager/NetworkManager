@@ -1790,6 +1790,7 @@ nm_device_generate_connection (NMDevice *device)
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_ID, name,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
 	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL),
 	              NULL);
 	if (klass->connection_type)
