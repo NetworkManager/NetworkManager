@@ -2529,7 +2529,7 @@ write_connection (NMConnection *connection,
 
 	if (filename) {
 		/* For existing connections, 'filename' should be full path to ifcfg file */
-		ifcfg = svNewFile (filename);
+		ifcfg = svOpenFile (filename);
 		ifcfg_name = g_strdup (filename);
 	} else {
 		char *escaped;

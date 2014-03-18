@@ -45,11 +45,11 @@ struct _shvarFile {
 };
 
 
-/* Create the file <name>, return shvarFile on success, NULL on failure */
+/* Create the file <name>, return a shvarFile (never fails) */
 shvarFile *svCreateFile (const char *name);
 
 /* Open the file <name>, return shvarFile on success, NULL on failure */
-shvarFile *svNewFile (const char *name);
+shvarFile *svOpenFile (const char *name);
 
 /* Get the value associated with the key, and leave the current pointer
  * pointing at the line containing the value.  The char* returned MUST

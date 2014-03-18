@@ -646,7 +646,7 @@ plugin_get_hostname (SCPluginIfcfg *plugin)
 		return hostname;
 	}
 
-	network = svNewFile (SC_NETWORK_FILE);
+	network = svOpenFile (SC_NETWORK_FILE);
 	if (!network) {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "Could not get hostname: failed to read " SC_NETWORK_FILE);
 		return NULL;
@@ -708,7 +708,7 @@ plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
 	g_free (hostname_eol);
 
 	/* Remove "HOSTNAME" from SC_NETWORK_FILE, if present */
-	network = svNewFile (SC_NETWORK_FILE);
+	network = svOpenFile (SC_NETWORK_FILE);
 	if (network) {
 		svSetValue (network, "HOSTNAME", NULL, FALSE);
 		svWriteFile (network, 0644);

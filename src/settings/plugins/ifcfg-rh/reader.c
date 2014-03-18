@@ -682,7 +682,7 @@ read_full_ip4_address (shvarFile *ifcfg,
 		gboolean read_success;
 
 		/* If no gateway in the ifcfg, try /etc/sysconfig/network instead */
-		network_ifcfg = svNewFile (network_file);
+		network_ifcfg = svOpenFile (network_file);
 		if (network_ifcfg) {
 			read_success = read_ip4_address (network_ifcfg, "GATEWAY", &tmp, error);
 			svCloseFile (network_ifcfg);
@@ -1066,7 +1066,7 @@ parse_full_ip6_address (shvarFile *ifcfg,
 	}
 	if (!value) {
 		/* If no gateway in the ifcfg, try global /etc/sysconfig/network instead */
-		network_ifcfg = svNewFile (network_file);
+		network_ifcfg = svOpenFile (network_file);
 		if (network_ifcfg) {
 			value = svGetValue (network_ifcfg, "IPV6_DEFAULTGW", FALSE);
 			svCloseFile (network_ifcfg);
@@ -1281,7 +1281,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	never_default = !svTrueValue (ifcfg, "DEFROUTE", TRUE);
 
 	/* Then check if GATEWAYDEV; it's global and overrides DEFROUTE */
-	network_ifcfg = svNewFile (network_file);
+	network_ifcfg = svOpenFile (network_file);
 	if (network_ifcfg) {
 		char *gatewaydev;
 
@@ -1645,7 +1645,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	 * they are global and override IPV6_DEFROUTE
 	 * When both are set, the device specified in IPV6_DEFAULTGW takes preference.
 	 */
-	network_ifcfg = svNewFile (network_file);
+	network_ifcfg = svOpenFile (network_file);
 	if (network_ifcfg) {
 		char *ipv6_defaultgw, *ipv6_defaultdev;
 		char *default_dev = NULL;
@@ -1680,7 +1680,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	str_value = svGetValue (ifcfg, "IPV6INIT", FALSE);
 	ipv6init = svTrueValue (ifcfg, "IPV6INIT", FALSE);
 	if (!str_value) {
-		network_ifcfg = svNewFile (network_file);
+		network_ifcfg = svOpenFile (network_file);
 		if (network_ifcfg) {
 			ipv6init = svTrueValue (network_ifcfg, "IPV6INIT", FALSE);
 			svCloseFile (network_ifcfg);
@@ -4991,7 +4991,7 @@ uuid_from_file (const char *filename)
 	if (!ifcfg_name)
 		return NULL;
 
-	ifcfg = svNewFile (filename);
+	ifcfg = svOpenFile (filename);
 	if (!ifcfg)
 		return NULL;
 
@@ -5077,7 +5077,7 @@ connection_from_file (const char *filename,
 		return NULL;
 	}
 
-	parsed = svNewFile (filename);
+	parsed = svOpenFile (filename);
 	if (!parsed) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Couldn't parse file '%s'", filename);

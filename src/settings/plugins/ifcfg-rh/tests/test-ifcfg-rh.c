@@ -6106,7 +6106,7 @@ test_write_wifi_hidden (void)
 	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
-	f = svNewFile (testfile);
+	f = svOpenFile (testfile);
 	g_assert (f);
 
 	g_assert_no_error (error);
@@ -7340,7 +7340,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 
 	{
 		/* re-read the file to check that what key was written. */
-		shvarFile *ifcfg = svNewFile (testfile);
+		shvarFile *ifcfg = svOpenFile (testfile);
 
 		g_assert (ifcfg);
 		written_ifcfg_gateway = svGetValue (ifcfg, "IPV6_DEFAULTGW", FALSE);
@@ -8382,7 +8382,7 @@ test_write_wifi_open (void)
 	                               &ignore_error);
 
 	/* Now make sure that the ESSID item isn't double-quoted (rh #606518) */
-	ifcfg = svNewFile (testfile);
+	ifcfg = svOpenFile (testfile);
 	ASSERT (ifcfg != NULL,
 	        "wifi-open-write-reread", "failed to load %s as shvarfile", testfile);
 
@@ -10869,7 +10869,7 @@ test_write_wifi_dynamic_wep_leap (void)
 	 * did not get written.  Check first that the auth alg is not set to "LEAP"
 	 * and next that the only IEEE 802.1x EAP method is "LEAP".
 	 */
-	ifcfg = svNewFile (testfile);
+	ifcfg = svOpenFile (testfile);
 	g_assert (ifcfg);
 	tmp = svGetValue (ifcfg, "SECURITYMODE", FALSE);
 	g_assert_cmpstr (tmp, ==, NULL);
@@ -11487,7 +11487,7 @@ test_write_wired_ctc_dhcp (void)
 	g_assert (testfile != NULL);
 
 	/* Ensure the CTCPROT item gets written out as it's own option */
-	ifcfg = svNewFile (testfile);
+	ifcfg = svOpenFile (testfile);
 	g_assert (ifcfg);
 
 	tmp = svGetValue (ifcfg, "CTCPROT", TRUE);
@@ -13864,7 +13864,7 @@ test_write_fcoe_mode (gconstpointer user_data)
 	g_assert (testfile);
 
 	{
-		shvarFile *ifcfg = svNewFile (testfile);
+		shvarFile *ifcfg = svOpenFile (testfile);
 		char *written_mode;
 
 		g_assert (ifcfg);
@@ -13975,7 +13975,7 @@ test_write_team_master (void)
 	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
-	f = svNewFile (testfile);
+	f = svOpenFile (testfile);
 	g_assert (f);
 
 	g_assert_no_error (error);
@@ -14092,7 +14092,7 @@ test_write_team_port (void)
 	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
-	f = svNewFile (testfile);
+	f = svOpenFile (testfile);
 	g_assert (f);
 
 	g_assert_no_error (error);

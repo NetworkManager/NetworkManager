@@ -39,7 +39,7 @@
  * (actually, return a structure anyway) if it doesn't exist.
  */
 static shvarFile *
-svOpenFile (const char *name, gboolean create)
+svOpenFileInternal (const char *name, gboolean create)
 {
 	shvarFile *s = NULL;
 	gboolean closefd = FALSE;
@@ -106,9 +106,9 @@ svOpenFile (const char *name, gboolean create)
 
 /* Open the file <name>, return shvarFile on success, NULL on failure */
 shvarFile *
-svNewFile (const char *name)
+svOpenFile (const char *name)
 {
-	return svOpenFile (name, FALSE);
+	return svOpenFileInternal (name, FALSE);
 }
 
 /* Create a new file structure, returning actual data if the file exists,
@@ -117,7 +117,7 @@ svNewFile (const char *name)
 shvarFile *
 svCreateFile (const char *name)
 {
-	return svOpenFile (name, TRUE);
+	return svOpenFileInternal (name, TRUE);
 }
 
 /* remove escaped characters in place */

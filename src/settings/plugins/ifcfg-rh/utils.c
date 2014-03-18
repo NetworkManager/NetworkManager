@@ -296,7 +296,7 @@ utils_get_extra_ifcfg (const char *parent, const char *tag, gboolean should_crea
 		ifcfg = svCreateFile (path);
 
 	if (!ifcfg)
-		ifcfg = svNewFile (path);
+		ifcfg = svOpenFile (path);
 
 	g_free (path);
 	return ifcfg;
