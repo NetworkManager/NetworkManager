@@ -878,11 +878,11 @@ gint64
 nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback)
 {
 	gint64 v;
-	char *end;
-	char *str_free = NULL;
+	size_t len;
+	char buf[64], *s, *str_free = NULL;
 
 	if (str) {
-		while (str[0] && g_ascii_isspace (str[0]))
+		while (g_ascii_isspace (str[0]))
 			str++;
 	}
 	if (!str || !str[0]) {
@@ -890,32 +890,48 @@ nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max
 		return fallback;
 	}
 
-	if (g_ascii_isspace (str[strlen (str) - 1])) {
-		str_free = g_strdup (str);
-		g_strstrip (str_free);
-		str = str_free;
+	len = strlen (str);
+	if (g_ascii_isspace (str[--len])) {
+		/* backward search the first non-ws character.
+		 * We already know that str[0] is non-ws. */
+		while (g_ascii_isspace (str[--len]))
+			;
+
+		/* str[len] is now the last non-ws character... */
+		len++;
+
+		if (len >= sizeof (buf))
+			s = str_free = g_malloc (len + 1);
+		else
+			s = buf;
+
+		memcpy (s, str, len);
+		s[len] = 0;
+
+		/*
+		g_assert (len > 0 && len < strlen (str) && len == strlen (s));
+		g_assert (!g_ascii_isspace (str[len-1]) && g_ascii_isspace (str[len]));
+		g_assert (strncmp (str, s, len) == 0);
+		*/
+
+		str = s;
 	}
 
 	errno = 0;
-	v = g_ascii_strtoll (str, &end, base);
+	v = g_ascii_strtoll (str, &s, base);
 
-	if (errno != 0) {
-		g_free (str_free);
-		return fallback;
-	}
-
-	if (end[0] != 0) {
-		g_free (str_free);
+	if (errno != 0)
+		v = fallback;
+	else if (s[0] != 0) {
 		errno = EINVAL;
-		return fallback;
-	}
-
-	g_free (str_free);
-	if (v > max || v < min) {
+		v = fallback;
+	} else if (v > max || v < min) {
 		errno = ERANGE;
-		return fallback;
+		v = fallback;
 	}
 
+	if (G_UNLIKELY (str_free))
+		g_free (str_free);
 	return v;
 }
 
