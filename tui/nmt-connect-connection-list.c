@@ -351,7 +351,7 @@ static GSList *
 append_nmt_devices_for_virtual_devices (GSList *nmt_devices,
                                         GSList *connections)
 {
-	NmtConnectDevice *nmtdev;
+	NmtConnectDevice *nmtdev = NULL;
 	GSList *iter;
 	GHashTable *devices_by_name;
 	char *name;
@@ -368,12 +368,13 @@ append_nmt_devices_for_virtual_devices (GSList *nmt_devices,
 			continue;
 
 		name = nm_connection_get_virtual_device_description (conn);
-		nmtdev = g_hash_table_lookup (devices_by_name, name);
+		if (name)
+			nmtdev = g_hash_table_lookup (devices_by_name, name);
 		if (nmtdev)
 			g_free (name);
 		else {
 			nmtdev = g_slice_new0 (NmtConnectDevice);
-			nmtdev->name = name;
+			nmtdev->name = name ? name : g_strdup ("Unknown");
 			nmtdev->sort_order = sort_order;
 
 			g_hash_table_insert (devices_by_name, nmtdev->name, nmtdev);
@@ -450,7 +451,7 @@ connection_find_ac (NMConnection    *conn,
 		ac = acs->pdata[i];
 		ac_path = nm_active_connection_get_connection (ac);
 
-		if (!strcmp (path, ac_path))
+		if (!g_strcmp0 (path, ac_path))
 			return ac;
 	}
 
