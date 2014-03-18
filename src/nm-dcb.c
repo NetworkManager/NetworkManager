@@ -154,61 +154,69 @@ _dcb_setup (const char *iface,
 
 	/* Priority Groups */
 	flags = nm_setting_dcb_get_priority_group_flags (s_dcb);
-	SET_FLAGS (flags, "pg");
 	if (flags & NM_SETTING_DCB_FLAG_ENABLE) {
-		char buf[10];
+		GString *s;
+		gboolean success;
 		guint id;
 
+		s = g_string_sized_new (150);
+
+		g_string_append_printf (s, "pg e:1 a:%c w:%c",
+		                        flags & NM_SETTING_DCB_FLAG_ADVERTISE ? '1' : '0',
+		                        flags & NM_SETTING_DCB_FLAG_WILLING ? '1' : '0');
+
 		/* Priority Groups */
+		g_string_append (s, " pgid:");
 		for (i = 0; i < 8; i++) {
 			id = nm_setting_dcb_get_priority_group_id (s_dcb, i);
 			g_assert (id < 8 || id == 15);
-			buf[i] = (id < 8) ? ('0' + id) : 'f';
+			g_string_append_c (s, (id < 8) ? ('0' + id) : 'f');
 		}
-		buf[i] = 0;
-		if (!do_helper (iface, DCBTOOL, run_func, user_data, error, "pg pgid:%s", buf))
-			return FALSE;
 
 		/* Priority Group Bandwidth */
-		if (!do_helper (iface, DCBTOOL, run_func, user_data, error, "pg pgpct:%u,%u,%u,%u,%u,%u,%u,%u",
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 0),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 1),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 2),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 3),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 4),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 5),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 6),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 7)))
-			return FALSE;
+		g_string_append_printf (s, " pgpct:%u,%u,%u,%u,%u,%u,%u,%u",
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 0),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 1),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 2),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 3),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 4),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 5),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 6),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 7));
 
 		/* Priority Bandwidth */
-		if (!do_helper (iface, DCBTOOL, run_func, user_data, error, "pg uppct:%u,%u,%u,%u,%u,%u,%u,%u",
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 0),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 1),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 2),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 3),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 4),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 5),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 6),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 7)))
-			return FALSE;
+		g_string_append_printf (s, " uppct:%u,%u,%u,%u,%u,%u,%u,%u",
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 0),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 1),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 2),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 3),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 4),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 5),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 6),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 7));
 
 		/* Strict Bandwidth */
+		g_string_append (s, " strict:");
 		for (i = 0; i < 8; i++)
-			buf[i] = nm_setting_dcb_get_priority_strict_bandwidth (s_dcb, i) ? '1' : '0';
-		buf[i] = 0;
-		if (!do_helper (iface, DCBTOOL, run_func, user_data, error, "pg strict:%s", buf))
-			return FALSE;
+			g_string_append_c (s, nm_setting_dcb_get_priority_strict_bandwidth (s_dcb, i) ? '1' : '0');
 
 		/* Priority Traffic Class */
+		g_string_append (s, " up2tc:");
 		for (i = 0; i < 8; i++) {
 			id = nm_setting_dcb_get_priority_traffic_class (s_dcb, i);
 			g_assert (id < 8);
-			buf[i] = '0' + id;
+			g_string_append_c (s, '0' + id);
 		}
-		buf[i] = 0;
-		if (!do_helper (iface, DCBTOOL, run_func, user_data, error, "pg up2tc:%s", buf))
+
+		success = do_helper (iface, DCBTOOL, run_func, user_data, error, s->str);
+		g_string_free (s, TRUE);
+		if (!success)
 			return FALSE;
+	} else {
+		/* Ignore disable failure since lldpad <= 0.9.46 does not support disabling
+		 * priority groups without specifying an entire PG config.
+		 */
+		do_helper (iface, DCBTOOL, run_func, user_data, error, "pg e:0");
 	}
 
 	return TRUE;
