@@ -203,3 +203,9 @@ data/org.freedesktop.NetworkManager.service
 cli/src/nmcli
 
 vapi/*.vapi
+
+/data/NetworkManager-dispatcher.service
+/examples/C/qt/monitor-nm-running
+/examples/C/qt/monitor-nm-running.moc
+/man/nm-settings.xml
+/tools/generate-settings-spec
