@@ -1122,103 +1122,119 @@ nm_device_set_carrier (NMDevice *device, gboolean carrier)
 }
 
 static void
-link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlatformSignalChangeType change_type, NMPlatformReason reason, NMDevice *device)
+update_for_ip_ifname_change (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	g_hash_table_remove_all (priv->ip6_saved_properties);
+
+	if (priv->dhcp4_client) {
+		if (!nm_device_dhcp4_renew (device, FALSE)) {
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_DHCP_FAILED);
+			return;
+		}
+	}
+	if (priv->dhcp6_client) {
+		if (!nm_device_dhcp6_renew (device, FALSE)) {
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_DHCP_FAILED);
+			return;
+		}
+	}
+	if (priv->rdisc) {
+		/* FIXME: todo */
+	}
+	if (priv->dnsmasq_manager) {
+		/* FIXME: todo */
+	}
+}
+
+static void
+device_link_changed (NMDevice *device, NMPlatformLink *info)
 {
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	int my_ifindex = nm_device_get_ifindex (device);
-	gboolean change_ip_ifname = FALSE;
+	gboolean ip_ifname_changed = FALSE;
 
+	if (info->udi && g_strcmp0 (info->udi, priv->udi)) {
+		/* Update UDI to what udev gives us */
+		g_free (priv->udi);
+		priv->udi = g_strdup (info->udi);
+		g_object_notify (G_OBJECT (device), NM_DEVICE_UDI);
+	}
+
+	/* Update MTU if it has changed. */
+	if (priv->mtu != info->mtu) {
+		priv->mtu = info->mtu;
+		g_object_notify (G_OBJECT (device), NM_DEVICE_MTU);
+	}
+
+	if (info->name[0] && strcmp (priv->iface, info->name) != 0) {
+		nm_log_info (LOGD_DEVICE, "(%s): interface index %d renamed iface from '%s' to '%s'",
+		             priv->iface, priv->ifindex, priv->iface, info->name);
+		g_free (priv->iface);
+		priv->iface = g_strdup (info->name);
+
+		/* If the device has no explicit ip_iface, then changing iface changes ip_iface too. */
+		ip_ifname_changed = !priv->ip_iface;
+
+		g_object_notify (G_OBJECT (device), NM_DEVICE_IFACE);
+		if (ip_ifname_changed)
+			g_object_notify (G_OBJECT (device), NM_DEVICE_IP_IFACE);
+
+		/* Re-match available connections against the new interface name */
+		nm_device_recheck_available_connections (device);
+
+		/* Let any connections that use the new interface name have a chance
+		 * to auto-activate on the device.
+		 */
+		nm_device_emit_recheck_auto_activate (device);
+
+		/* Update DHCP, etc, if needed */
+		if (ip_ifname_changed)
+			update_for_ip_ifname_change (device);
+	}
+
+	if (klass->link_changed)
+		klass->link_changed (device, info);
+}
+
+static void
+device_ip_link_changed (NMDevice *device, NMPlatformLink *info)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (info->name[0] && g_strcmp0 (priv->ip_iface, info->name)) {
+		nm_log_info (LOGD_DEVICE, "(%s): interface index %d renamed ip_iface (%d) from '%s' to '%s'",
+		             priv->iface, priv->ifindex, nm_device_get_ip_ifindex (device),
+		             priv->ip_iface, info->name);
+		g_free (priv->ip_iface);
+		priv->ip_iface = g_strdup (info->name);
+
+		g_object_notify (G_OBJECT (device), NM_DEVICE_IP_IFACE);
+		update_for_ip_ifname_change (device);
+	}
+}
+
+static void
+link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlatformSignalChangeType change_type, NMPlatformReason reason, NMDevice *device)
+{
 	if (change_type != NM_PLATFORM_SIGNAL_CHANGED)
 		return;
 
-	/* Ignore other devices. */
-	if (ifindex == my_ifindex) {
+	/* We don't filter by 'reason' because we are interested in *all* link
+	 * changes. For example a call to nm_platform_link_set_up() may result
+	 * in an internal carrier change (i.e. we ask the kernel to set IFF_UP
+	 * and it results in also setting IFF_LOWER_UP.
+	 */
 
-		/* We don't filter by 'reason' because we are interested in *all* link
-		 * changes. For example a call to nm_platform_link_set_up() may result
-		 * in an internal carrier change (i.e. we ask the kernel to set IFF_UP
-		 * and it results in also setting IFF_LOWER_UP.
-		 */
-
-		if (info->udi && g_strcmp0 (info->udi, priv->udi)) {
-			/* Update UDI to what udev gives us */
-			g_free (priv->udi);
-			priv->udi = g_strdup (info->udi);
-			g_object_notify (G_OBJECT (device), NM_DEVICE_UDI);
-		}
-
-		/* Update MTU if it has changed. */
-		if (priv->mtu != info->mtu) {
-			priv->mtu = info->mtu;
-			g_object_notify (G_OBJECT (device), NM_DEVICE_MTU);
-		}
-
-		if (info->name[0] && strcmp (priv->iface, info->name) != 0) {
-			nm_log_info (LOGD_DEVICE, "(%s): interface index %d renamed iface from '%s' to '%s'",
-			                          priv->iface, my_ifindex, priv->iface, info->name);
-			g_free (priv->iface);
-			priv->iface = g_strdup (info->name);
-
-			change_ip_ifname = !priv->ip_iface;
-			if (change_ip_ifname)
-				g_hash_table_remove_all (priv->ip6_saved_properties);
-
-			g_object_notify (G_OBJECT (device), NM_DEVICE_IFACE);
-			if (change_ip_ifname)
-				g_object_notify (G_OBJECT (device), NM_DEVICE_IP_IFACE);
-
-			/* Re-match available connections against the new interface name */
-			nm_device_recheck_available_connections (device);
-
-			/* Let any connections that use the new interface name have a chance
-			 * to auto-activate on the device.
-			 */
-			nm_device_emit_recheck_auto_activate (device);
-		}
-
-		if (klass->link_changed)
-			klass->link_changed (device, info);
-
-	} else if (priv->ip_iface && ifindex == nm_device_get_ip_ifindex (device)) {
-		if (info->name[0] && strcmp (priv->ip_iface, info->name)) {
-			nm_log_info (LOGD_DEVICE, "(%s): interface index %d renamed ip_iface (%d) from '%s' to '%s'",
-			                          priv->iface, my_ifindex, nm_device_get_ip_ifindex (device),
-			                          priv->ip_iface, info->name);
-			g_free (priv->ip_iface);
-			priv->ip_iface = g_strdup (info->name);
-
-			g_hash_table_remove_all (priv->ip6_saved_properties);
-
-			g_object_notify (G_OBJECT (device), NM_DEVICE_IP_IFACE);
-			change_ip_ifname = TRUE;
-		}
-	}
-
-	if (change_ip_ifname) {
-		if (priv->dhcp4_client) {
-			if (!nm_device_dhcp4_renew (device, FALSE)) {
-				nm_device_state_changed (device,
-				                         NM_DEVICE_STATE_FAILED,
-				                         NM_DEVICE_STATE_REASON_DHCP_FAILED);
-				return;
-			}
-		}
-		if (priv->dhcp6_client) {
-			if (!nm_device_dhcp6_renew (device, FALSE)) {
-				nm_device_state_changed (device,
-				                         NM_DEVICE_STATE_FAILED,
-				                         NM_DEVICE_STATE_REASON_DHCP_FAILED);
-				return;
-			}
-		}
-		if (priv->rdisc) {
-			/* FIXME: todo */
-		}
-		if (priv->dnsmasq_manager) {
-			/* FIXME: todo */
-		}
-	}
+	if (ifindex == nm_device_get_ifindex (device))
+		device_link_changed (device, info);
+	else if (ifindex == nm_device_get_ip_ifindex (device))
+		device_ip_link_changed (device, info);
 }
 
 static void
