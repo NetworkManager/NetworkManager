@@ -4524,6 +4524,7 @@ clear_act_request (NMDevice *self)
 	}
 
 	g_clear_object (&priv->act_request);
+	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
 }
 
 static void
