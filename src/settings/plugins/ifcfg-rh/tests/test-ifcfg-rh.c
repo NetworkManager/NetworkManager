@@ -6106,11 +6106,12 @@ test_write_wifi_hidden (void)
 	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
-	f = svOpenFile (testfile);
-	g_assert (f);
-
 	g_assert_no_error (error);
 	g_assert (success);
+
+	f = svOpenFile (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (f);
 
 	/* re-read the file to check that what key was written. */
 	val = svGetValue (f, "SSID_HIDDEN", FALSE);
@@ -7337,22 +7338,22 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	                               NULL, NULL,
 	                               &error,
 	                               &ignore_error);
+	g_assert_no_error (error);
+	g_assert (reread);
+	g_assert (nm_connection_verify (reread, &error));
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
 
 	{
 		/* re-read the file to check that what key was written. */
-		shvarFile *ifcfg = svOpenFile (testfile);
+		shvarFile *ifcfg = svOpenFile (testfile, &error);
 
+		g_assert_no_error (error);
 		g_assert (ifcfg);
 		written_ifcfg_gateway = svGetValue (ifcfg, "IPV6_DEFAULTGW", FALSE);
 		svCloseFile (ifcfg);
 	}
 
 	unlink (testfile);
-
-	g_assert_no_error (error);
-	g_assert (reread);
-	g_assert (nm_connection_verify (reread, &error));
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
 
 	/* access the gateway from the loaded connection. */
 	s_ip6 = nm_connection_get_setting_ip6_config (reread);
@@ -8380,11 +8381,12 @@ test_write_wifi_open (void)
 	                               &route6file,
 	                               &error,
 	                               &ignore_error);
+	g_assert_no_error (error);
 
 	/* Now make sure that the ESSID item isn't double-quoted (rh #606518) */
-	ifcfg = svOpenFile (testfile);
-	ASSERT (ifcfg != NULL,
-	        "wifi-open-write-reread", "failed to load %s as shvarfile", testfile);
+	ifcfg = svOpenFile (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (ifcfg != NULL);
 
 	tmp = svGetValue (ifcfg, "ESSID", TRUE);
 	ASSERT (tmp != NULL,
@@ -10869,7 +10871,8 @@ test_write_wifi_dynamic_wep_leap (void)
 	 * did not get written.  Check first that the auth alg is not set to "LEAP"
 	 * and next that the only IEEE 802.1x EAP method is "LEAP".
 	 */
-	ifcfg = svOpenFile (testfile);
+	ifcfg = svOpenFile (testfile, &error);
+	g_assert_no_error (error);
 	g_assert (ifcfg);
 	tmp = svGetValue (ifcfg, "SECURITYMODE", FALSE);
 	g_assert_cmpstr (tmp, ==, NULL);
@@ -11487,7 +11490,8 @@ test_write_wired_ctc_dhcp (void)
 	g_assert (testfile != NULL);
 
 	/* Ensure the CTCPROT item gets written out as it's own option */
-	ifcfg = svOpenFile (testfile);
+	ifcfg = svOpenFile (testfile, &error);
+	g_assert_no_error (error);
 	g_assert (ifcfg);
 
 	tmp = svGetValue (ifcfg, "CTCPROT", TRUE);
@@ -13864,9 +13868,10 @@ test_write_fcoe_mode (gconstpointer user_data)
 	g_assert (testfile);
 
 	{
-		shvarFile *ifcfg = svOpenFile (testfile);
+		shvarFile *ifcfg = svOpenFile (testfile, &error);
 		char *written_mode;
 
+		g_assert_no_error (error);
 		g_assert (ifcfg);
 		written_mode = svGetValue (ifcfg, "DCB_APP_FCOE_MODE", FALSE);
 		svCloseFile (ifcfg);
@@ -13975,11 +13980,12 @@ test_write_team_master (void)
 	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
-	f = svOpenFile (testfile);
-	g_assert (f);
-
 	g_assert_no_error (error);
 	g_assert (success);
+
+	f = svOpenFile (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (f);
 
 	/* re-read the file to check that what key was written. */
 	val = svGetValue (f, "DEVICETYPE", FALSE);
@@ -14092,11 +14098,12 @@ test_write_team_port (void)
 	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
-	f = svOpenFile (testfile);
-	g_assert (f);
-
 	g_assert_no_error (error);
 	g_assert (success);
+
+	f = svOpenFile (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (f);
 
 	/* re-read the file to check that what key was written. */
 	val = svGetValue (f, "TYPE", FALSE);

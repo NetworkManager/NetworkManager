@@ -97,6 +97,7 @@ set_secret (shvarFile *ifcfg,
             gboolean verbatim)
 {
 	shvarFile *keyfile;
+	GError *error = NULL;
 	
 	/* Clear the secret from the ifcfg and the associated "keys" file */
 	svSetValue (ifcfg, key, NULL, FALSE);
@@ -118,9 +119,9 @@ set_secret (shvarFile *ifcfg,
 	if (flags == NM_SETTING_SECRET_FLAG_NONE)
 		svSetValue (keyfile, key, value, verbatim);
 
-	if (!svWriteFile (keyfile, 0600)) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: could not update key file '%s'",
-		             keyfile->fileName);
+	if (!svWriteFile (keyfile, 0600, &error)) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: %s", error->message);
+		g_clear_error (&error);
 		svCloseFile (keyfile);
 		goto error;
 	}
@@ -2118,9 +2119,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			g_free (gw_key);
 			g_free (metric_key);
 		}
-		if (!svWriteFile (routefile, 0644)) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-			             "Could not update route file '%s'", routefile->fileName);
+		if (!svWriteFile (routefile, 0644, error)) {
 			svCloseFile (routefile);
 			goto out;
 		}
@@ -2529,7 +2528,10 @@ write_connection (NMConnection *connection,
 
 	if (filename) {
 		/* For existing connections, 'filename' should be full path to ifcfg file */
-		ifcfg = svOpenFile (filename);
+		ifcfg = svOpenFile (filename, error);
+		if (!ifcfg)
+			return FALSE;
+
 		ifcfg_name = g_strdup (filename);
 	} else {
 		char *escaped;
@@ -2563,12 +2565,6 @@ write_connection (NMConnection *connection,
 		}
 
 		ifcfg = svCreateFile (ifcfg_name);
-	}
-
-	if (!ifcfg) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Failed to open/create ifcfg file '%s'", ifcfg_name);
-		goto out;
 	}
 
 	type = nm_setting_connection_get_connection_type (s_con);
@@ -2641,11 +2637,8 @@ write_connection (NMConnection *connection,
 
 	write_connection_setting (s_con, ifcfg);
 
-	if (!svWriteFile (ifcfg, 0644)) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "Can't write connection '%s'", ifcfg->fileName);
+	if (!svWriteFile (ifcfg, 0644, error))
 		goto out;
-	}
 
 	/* Only return the filename if this was a newly written ifcfg */
 	if (out_filename && !filename)

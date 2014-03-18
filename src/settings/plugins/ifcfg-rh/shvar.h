@@ -49,7 +49,7 @@ struct _shvarFile {
 shvarFile *svCreateFile (const char *name);
 
 /* Open the file <name>, return shvarFile on success, NULL on failure */
-shvarFile *svOpenFile (const char *name);
+shvarFile *svOpenFile (const char *name, GError **error);
 
 /* Get the value associated with the key, and leave the current pointer
  * pointing at the line containing the value.  The char* returned MUST
@@ -77,12 +77,10 @@ void svSetValue (shvarFile *s, const char *key, const char *value, gboolean verb
  * re-writing an existing file, and is passed unchanged to the
  * open() syscall.
  */
-gboolean svWriteFile (shvarFile *s, int mode);
+gboolean svWriteFile (shvarFile *s, int mode, GError **error);
 
-/* Close the file descriptor (if open) and free the shvarFile.
- * Returns FALSE on error and TRUE on success.
- */
-gboolean svCloseFile (shvarFile *s);
+/* Close the file descriptor (if open) and free the shvarFile. */
+void svCloseFile (shvarFile *s);
 
 /* Return a new escaped string */
 char *svEscape (const char *s);

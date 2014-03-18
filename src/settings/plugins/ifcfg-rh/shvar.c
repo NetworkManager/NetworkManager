@@ -39,10 +39,11 @@
  * (actually, return a structure anyway) if it doesn't exist.
  */
 static shvarFile *
-svOpenFileInternal (const char *name, gboolean create)
+svOpenFileInternal (const char *name, gboolean create, GError **error)
 {
 	shvarFile *s = NULL;
 	gboolean closefd = FALSE;
+	int errsv;
 
 	s = g_slice_new0 (shvarFile);
 
@@ -53,7 +54,9 @@ svOpenFileInternal (const char *name, gboolean create)
 	if (!create || s->fd == -1) {
 		/* try read-only */
 		s->fd = open (name, O_RDONLY); /* NOT O_CREAT */
-		if (s->fd != -1)
+		if (s->fd == -1)
+			errsv = errno;
+		else
 			closefd = TRUE;
 	}
 	s->fileName = g_strdup (name);
@@ -63,8 +66,10 @@ svOpenFileInternal (const char *name, gboolean create)
 		char *arena, *p, *q;
 		ssize_t nread, total = 0;
 
-		if (fstat (s->fd, &buf) < 0)
+		if (fstat (s->fd, &buf) < 0) {
+			errsv = errno;
 			goto bail;
+		}
 		arena = g_malloc (buf.st_size + 1);
 		arena[buf.st_size] = '\0';
 
@@ -72,8 +77,10 @@ svOpenFileInternal (const char *name, gboolean create)
 			nread = read (s->fd, arena + total, buf.st_size - total);
 			if (nread == -1 && errno == EINTR)
 				continue;
-			if (nread <= 0)
+			if (nread <= 0) {
+				errsv = errno;
 				goto bail;
+			}
 			total += nread;
 		}
 
@@ -101,14 +108,18 @@ svOpenFileInternal (const char *name, gboolean create)
 		close (s->fd);
 	g_free (s->fileName);
 	g_slice_free (shvarFile, s);
+
+	g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
+	             "Could not read file '%s': %s",
+	             name, errsv ? strerror (errsv) : "Unknown error");
 	return NULL;
 }
 
 /* Open the file <name>, return shvarFile on success, NULL on failure */
 shvarFile *
-svOpenFile (const char *name)
+svOpenFile (const char *name, GError **error)
 {
-	return svOpenFileInternal (name, FALSE);
+	return svOpenFileInternal (name, FALSE, error);
 }
 
 /* Create a new file structure, returning actual data if the file exists,
@@ -117,7 +128,7 @@ svOpenFile (const char *name)
 shvarFile *
 svCreateFile (const char *name)
 {
-	return svOpenFileInternal (name, TRUE);
+	return svOpenFileInternal (name, TRUE, NULL);
 }
 
 /* remove escaped characters in place */
@@ -360,7 +371,7 @@ svSetValue (shvarFile *s, const char *key, const char *value, gboolean verbatim)
  * open() syscall.
  */
 gboolean
-svWriteFile (shvarFile *s, int mode)
+svWriteFile (shvarFile *s, int mode, GError **error)
 {
 	FILE *f;
 	int tmpfd;
@@ -368,14 +379,32 @@ svWriteFile (shvarFile *s, int mode)
 	if (s->modified) {
 		if (s->fd == -1)
 			s->fd = open (s->fileName, O_WRONLY | O_CREAT, mode);
-		if (s->fd == -1)
+		if (s->fd == -1) {
+			int errsv = errno;
+
+			g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
+			             "Could not open file '%s' for writing: %s",
+			             s->fileName, strerror (errsv));
 			return FALSE;
-		if (ftruncate (s->fd, 0) < 0)
+		}
+		if (ftruncate (s->fd, 0) < 0) {
+			int errsv = errno;
+
+			g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
+			             "Could not overwrite file '%s': %s",
+			             s->fileName, strerror (errsv));
 			return FALSE;
+		}
 
 		tmpfd = dup (s->fd);
-		if (tmpfd == -1)
+		if (tmpfd == -1) {
+			int errsv = errno;
+
+			g_set_error (error, G_FILE_ERROR, g_file_error_from_errno (errsv),
+			             "Internal error writing file '%s': %s",
+			             s->fileName, strerror (errsv));
 			return FALSE;
+		}
 		f = fdopen (tmpfd, "w");
 		fseek (f, 0, SEEK_SET);
 		for (s->current = s->lineList; s->current; s->current = s->current->next) {
@@ -390,10 +419,10 @@ svWriteFile (shvarFile *s, int mode)
 
 
 /* Close the file descriptor (if open) and free the shvarFile. */
-gboolean
+void
 svCloseFile (shvarFile *s)
 {
-	g_return_val_if_fail (s != NULL, FALSE);
+	g_return_if_fail (s != NULL);
 
 	if (s->fd != -1)
 		close (s->fd);
@@ -401,6 +430,4 @@ svCloseFile (shvarFile *s)
 	g_free (s->fileName);
 	g_list_free_full (s->lineList, g_free); /* implicitly frees s->current */
 	g_slice_free (shvarFile, s);
-
-	return TRUE;
 }
