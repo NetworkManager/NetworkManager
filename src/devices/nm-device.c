@@ -4739,13 +4739,13 @@ nm_device_set_is_nm_owned (NMDevice *device,
 }
 
 /*
- * nm_device_deactivate
+ * nm_device_cleanup
  *
- * Remove a device's routing table entries and IP address.
+ * Remove a device's routing table entries and IP addresses.
  *
  */
 static void
-nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
+nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 {
 	NMDevicePrivate *priv;
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
@@ -4755,8 +4755,13 @@ nm_device_deactivate (NMDevice *self, NMDeviceStateReason reason)
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	nm_log_info (LOGD_DEVICE, "(%s): deactivating device (reason '%s') [%d]",
-	             nm_device_get_iface (self), reason_to_string (reason), reason);
+	if (reason == NM_DEVICE_STATE_REASON_NOW_MANAGED) {
+		nm_log_info (LOGD_DEVICE, "(%s): preparing device",
+		             nm_device_get_iface (self));
+	} else {
+		nm_log_info (LOGD_DEVICE, "(%s): deactivating device (reason '%s') [%d]",
+		             nm_device_get_iface (self), reason_to_string (reason), reason);
+	}
 
 	/* Save whether or not we tried IPv6 for later */
 	priv = NM_DEVICE_GET_PRIVATE (self);
@@ -5584,7 +5589,7 @@ dispose (GObject *object)
 		NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
 		if (nm_device_get_act_request (self))
-			nm_device_deactivate (self, NM_DEVICE_STATE_REASON_REMOVED);
+			nm_device_cleanup (self, NM_DEVICE_STATE_REASON_REMOVED);
 		nm_device_set_ip4_config (self, NULL, TRUE, &ignored);
 		nm_device_set_ip6_config (self, NULL, TRUE, &ignored);
 
@@ -6532,7 +6537,7 @@ nm_device_state_changed (NMDevice *device,
 		if (old_state > NM_DEVICE_STATE_UNMANAGED) {
 			/* Clean up if the device is now unmanaged but was activated */
 			if (nm_device_get_act_request (device))
-				nm_device_deactivate (device, reason);
+				nm_device_cleanup (device, reason);
 			nm_device_take_down (device, TRUE);
 			restore_ip6_properties (device);
 		}
@@ -6563,11 +6568,11 @@ nm_device_state_changed (NMDevice *device,
 		 * UNMANAGED, to ensure that it's in a clean state.
 		 */
 		if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
-			nm_device_deactivate (device, reason);
+			nm_device_cleanup (device, reason);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (old_state > NM_DEVICE_STATE_UNAVAILABLE)
-			nm_device_deactivate (device, reason);
+			nm_device_cleanup (device, reason);
 		break;
 	default:
 		break;
