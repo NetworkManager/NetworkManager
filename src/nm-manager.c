@@ -1964,6 +1964,7 @@ factory_component_added_cb (NMDeviceFactory *factory,
 }
 
 #define PLUGIN_PREFIX "libnm-device-plugin-"
+#define PLUGIN_PATH_TAG "NMManager-plugin-path"
 
 static void
 load_device_factories (NMManager *self)
@@ -1990,9 +1991,11 @@ load_device_factories (NMManager *self)
 		NMDeviceFactoryCreateFunc create_func;
 		NMDeviceFactoryDeviceTypeFunc type_func;
 		NMDeviceType dev_type;
-		gboolean found = FALSE;
+		const char *found = NULL;
 
 		if (!g_str_has_prefix (item, PLUGIN_PREFIX))
+			continue;
+		if (g_str_has_suffix (item, ".la"))
 			continue;
 
 		path = g_module_build_path (NMPLUGINDIR, item);
@@ -2020,11 +2023,13 @@ load_device_factories (NMManager *self)
 			              NM_DEVICE_FACTORY_DEVICE_TYPE, &t,
 			              NULL);
 			if (dev_type == t) {
-				found = TRUE;
+				found = g_object_get_data (G_OBJECT (iter->data), PLUGIN_PATH_TAG);
 				break;
 			}
 		}
 		if (found) {
+			nm_log_warn (LOGD_HW, "Found multiple device plugins for same type: %s vs %s",
+			             found, g_module_name (plugin));
 			g_module_close (plugin);
 			continue;
 		}
@@ -2056,6 +2061,8 @@ load_device_factories (NMManager *self)
 		                  NM_DEVICE_FACTORY_COMPONENT_ADDED,
 		                  G_CALLBACK (factory_component_added_cb),
 		                  self);
+		g_object_set_data_full (G_OBJECT (factory), PLUGIN_PATH_TAG,
+		                        g_strdup (g_module_name (plugin)), g_free);
 
 		nm_log_info (LOGD_HW, "Loaded device plugin: %s", g_module_name (plugin));
 	};
