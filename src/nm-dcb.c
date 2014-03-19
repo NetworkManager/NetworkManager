@@ -343,6 +343,14 @@ nm_dcb_setup (const char *iface, NMSettingDcb *s_dcb, GError **error)
 gboolean
 nm_dcb_cleanup (const char *iface, GError **error)
 {
-	return _dcb_cleanup (iface, run_helper, GUINT_TO_POINTER (DCBTOOL), error);
+	gboolean success;
+
+	success = _dcb_cleanup (iface, run_helper, GUINT_TO_POINTER (DCBTOOL), error);
+	if (success) {
+		/* Only report FCoE errors if DCB cleanup was successful */
+		success = _fcoe_cleanup (iface, run_helper, GUINT_TO_POINTER (FCOEADM), success ? error : NULL);
+	}
+
+	return success;
 }
 
