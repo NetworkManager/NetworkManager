@@ -46,7 +46,7 @@ src/dhcp-manager/nm-dhcp-manager.c
 src/dns-manager/nm-dns-manager.c
 src/logging/nm-logging.c
 src/config/nm-config.c
-src/devices/atm/nm-device-adsl.c
+src/devices/adsl/nm-device-adsl.c
 src/devices/bluetooth/nm-bluez-device.c
 src/devices/bluetooth/nm-device-bt.c
 src/devices/nm-device-bond.c

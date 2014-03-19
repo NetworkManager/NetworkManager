@@ -29,9 +29,9 @@ nm-device-bt-glue.h: $(top_srcdir)/introspection/nm-device-bt.xml
 
 BUILT_SOURCES = $(GLIB_GENERATED) nm-device-bt-glue.h
 
-pkglib_LTLIBRARIES = libnm-device-plugin-bt.la
+pkglib_LTLIBRARIES = libnm-device-plugin-bluetooth.la
 
-libnm_device_plugin_bt_la_SOURCES = \
+libnm_device_plugin_bluetooth_la_SOURCES = \
 	nm-bluez-manager.c \
 	nm-bluez-manager.h \
 	nm-bluez-common.h \
@@ -49,8 +49,8 @@ libnm_device_plugin_bt_la_SOURCES = \
 	\
 	$(BUILT_SOURCES)
 
-libnm_device_plugin_bt_la_LDFLAGS = -module -avoid-version
-libnm_device_plugin_bt_la_LIBADD = \
+libnm_device_plugin_bluetooth_la_LDFLAGS = -module -avoid-version
+libnm_device_plugin_bluetooth_la_LIBADD = \
 	$(top_builddir)/src/devices/wwan/libnm-wwan.la \
 	$(DBUS_LIBS) \
 	$(GUDEV_LIBS)

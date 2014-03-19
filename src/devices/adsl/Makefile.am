@@ -29,9 +29,9 @@ nm-device-adsl-glue.h: $(top_srcdir)/introspection/nm-device-adsl.xml
 
 BUILT_SOURCES = $(GLIB_GENERATED) nm-device-adsl-glue.h
 
-pkglib_LTLIBRARIES = libnm-device-plugin-atm.la
+pkglib_LTLIBRARIES = libnm-device-plugin-adsl.la
 
-libnm_device_plugin_atm_la_SOURCES = \
+libnm_device_plugin_adsl_la_SOURCES = \
 	nm-atm-manager.c \
 	nm-atm-manager.h \
 	nm-device-adsl.c \
@@ -39,8 +39,8 @@ libnm_device_plugin_atm_la_SOURCES = \
 	\
 	$(BUILT_SOURCES)
 
-libnm_device_plugin_atm_la_LDFLAGS = -module -avoid-version
-libnm_device_plugin_atm_la_LIBADD = \
+libnm_device_plugin_adsl_la_LDFLAGS = -module -avoid-version
+libnm_device_plugin_adsl_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GUDEV_LIBS)
 

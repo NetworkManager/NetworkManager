@@ -4,7 +4,7 @@ include $(GLIB_MAKEFILE)
 
 SUBDIRS =				\
 	.				\
-	devices/atm			\
+	devices/adsl			\
 	devices/wwan			\
 	devices/bluetooth		\
 	dhcp-manager			\
