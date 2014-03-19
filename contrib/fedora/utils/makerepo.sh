@@ -12,11 +12,9 @@ srcdir="$(readlink -f "$(git rev-parse --show-toplevel 2>/dev/null)")"
 cd "$srcdir" || die "Could not switch to dist-git directory"
 
 
-(test -f $srcdir/NetworkManager.spec \
-  && test -f $srcdir/sources) || {
-    die "**Error**: Directory "\`$srcdir\'" does not look like the NM pkg dir." \
-        "Copy the file \"$(readlink -f "$0")\" to the dist-git base directory"
-}
+if [[ "x$(ls -1d ./*.spec 2>/dev/null)" == x || ! -f "./sources" ]]; then
+    die "**Error**: Directory "\`$srcdir\'" does not look like the dist-git pkg dir."
+fi
 
 if [[ "$FEDPKG" == "" ]]; then
     REMOTES="$(git remote -v 2>/dev/null)" || die "not inside dist-git repository? >>$PWD<<"
@@ -77,7 +75,7 @@ for ARG; do
             echo "    otherwise only the last NUM patches."
             echo "  - When specifying 'local', it will also call \`$FEDPKG local\` to configure"
             echo "    and build the output directory."
-            echo "  TIP: symlink your local git clone of NetworkManager to './.git/local'."
+            echo "  TIP: symlink your local git clone of upstream to './.git/local'."
             exit 0
             ;;
         local|-l)
@@ -98,22 +96,38 @@ done
 # generate the clean dir
 $FEDPKG prep || die "error while \`$FEDPKG prep\`"
 
-DIRNAME="$(basename "$(ls -1d NetworkManager-[0-9].*/ || die "could not find directory")")"
+if [[ "x$(ls -1d ./NetworkManager-[0-9].*/ 2>/dev/null)" != x && -f NetworkManager.spec ]]; then
+    DIRNAME="$(basename "$(ls -1d ./NetworkManager-[0-9].*/ || die "could not find directory")")"
+    BUILD_NETWORMANAGER=x
+    SPEC=NetworkManager.spec
+elif [[ "x$(ls -1d ./libnl-[0-9].*/ 2>/dev/null)" != x && -f libnl3.spec ]]; then
+    DIRNAME="$(basename "$(ls -1d ./libnl-[0-9].*/ || die "could not find directory")")"
+    BUILD_LIBNL3=x
+    SPEC=libnl3.spec
+else
+    die "Could not detect dist-git type"
+fi
 
 pushd "$DIRNAME"
     git init .
-    # if you have a local clone of NetworkManager, symlink
-    # it as ../.git/local.
+    # if you have a local clone of upstream, symlink it as ../.git/local.
     LOCAL_GIT="$(realpath ../.git/local/)"
     if [[ -d "$LOCAL_GIT/" ]]; then
         git remote add local "$LOCAL_GIT/"
         git fetch local
     fi
-    git remote add origin git://anongit.freedesktop.org/NetworkManager/NetworkManager
-    git remote 'set-url' --push origin "ssh://$USER@git.freedesktop.org/git/NetworkManager/NetworkManager"
-    git config --local notes.displayRef refs/notes/bugs
-    git config --local --add remote.origin.fetch refs/tags/*:refs/tags/*
-    git config --local --add remote.origin.fetch refs/notes/bugs:refs/notes/bugs
+    if [[ "$BUILD_NETWORMANAGER" != "" ]]; then
+        git remote add origin "git://anongit.freedesktop.org/NetworkManager/NetworkManager"
+        git remote 'set-url' --push origin "ssh://$USER@git.freedesktop.org/git/NetworkManager/NetworkManager"
+        git config --local notes.displayRef refs/notes/bugs
+        git config --local --add remote.origin.fetch refs/tags/*:refs/tags/*
+        git config --local --add remote.origin.fetch refs/notes/bugs:refs/notes/bugs
+    elif [[ "$BUILD_LIBNL3" != "" ]]; then
+        git remote add origin "git://github.com/thom311/libnl.git"
+        git remote 'set-url' --push origin "git@github.com:thom311/libnl.git"
+    else
+        die "UNEXPECTED"
+    fi
     git fetch origin
     git commit --allow-empty -m '*** empty initial commit'  # useful, to rebase the following commit
     git add -f -A .
@@ -126,7 +140,7 @@ pushd "$DIRNAME"
     if [[ "$REVERT_COUNT" == "" || $REVERT_COUNT -gt 0 ]]; then
 
         # parse the list of patches
-        IFS=$'\n' read -rd '' -a PATCH_LIST <<<"$(sed -n 's/^Patch\([0-9]\+\): \+\(.*\)$/\1 \2/p' ../NetworkManager.spec | sort -n)"
+        IFS=$'\n' read -rd '' -a PATCH_LIST <<<"$(sed -n 's/^Patch\([0-9]\+\): \+\(.*\)$/\1 \2/p' ../"$SPEC" | sort -n)"
 
         # truncate the list of patches to revert/reapply
         if [[ "$REVERT_COUNT" == "" || "$REVERT_COUNT" -gt ${#PATCH_LIST[@]} ]]; then
