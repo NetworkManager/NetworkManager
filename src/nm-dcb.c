@@ -315,11 +315,19 @@ run_helper (char **argv, guint which, gpointer user_data, GError **error)
 	                        &outmsg, &errmsg, &exit_status, error);
 	/* Log any stderr output */
 	if (success && WIFEXITED (exit_status) && WEXITSTATUS (exit_status) && (errmsg || outmsg)) {
-		nm_log_dbg (LOGD_DCB, "'%s' failed: '%s'",
-		            cmdline, (errmsg && strlen (errmsg)) ? errmsg : outmsg);
-		g_set_error (error, NM_DCB_ERROR, NM_DCB_ERROR_HELPER_FAILED,
-		             "Failed to run '%s'", cmdline);
-		success = FALSE;
+		gboolean ignore_error = FALSE;
+
+		/* Ignore fcoeadm "success" errors like when FCoE is already set up */
+		if (errmsg && strstr (errmsg, "Connection already created"))
+			ignore_error = TRUE;
+
+		if (ignore_error == FALSE) {
+			nm_log_warn (LOGD_DCB, "'%s' failed: '%s'",
+			             cmdline, (errmsg && strlen (errmsg)) ? errmsg : outmsg);
+			g_set_error (error, NM_DCB_ERROR, NM_DCB_ERROR_HELPER_FAILED,
+			             "Failed to run '%s'", cmdline);
+			success = FALSE;
+		}
 	}
 	g_free (outmsg);
 	g_free (errmsg);
