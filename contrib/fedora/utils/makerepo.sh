@@ -108,6 +108,10 @@ else
     die "Could not detect dist-git type"
 fi
 
+if [[ -f ./.git/makerepo.gitignore ]]; then
+    /bin/cp ./.git/makerepo.gitignore ./
+fi
+
 pushd "$DIRNAME"
     git init .
     # if you have a local clone of upstream, symlink it as ../.git/local.
