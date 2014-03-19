@@ -262,6 +262,7 @@ typedef struct {
 	NMDHCP4Config * dhcp4_config;
 	NMIP4Config *   vpn4_config;  /* routes added by a VPN which uses this device */
 
+	guint           arp_round2_id;
 	PingInfo        gw_ping;
 
 	/* dnsmasq stuff for shared connections */
@@ -4344,6 +4345,99 @@ start_sharing (NMDevice *self, NMIP4Config *config)
 	return TRUE;
 }
 
+static void
+send_arps (NMDevice *self, const char *mode_arg)
+{
+	const char *argv[] = { "/sbin/arping", mode_arg, "-q", "-I", nm_device_get_ip_iface (self), "-c", "1", NULL, NULL };
+	int ip_arg = G_N_ELEMENTS (argv) - 2;
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
+	int i, num;
+	NMIP4Address *addr;
+	guint32 ipaddr;
+	GError *error = NULL;
+
+	connection = nm_device_get_connection (self);
+	if (!connection)
+		return;
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (!s_ip4)
+		return;
+	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
+
+	for (i = 0; i < num; i++) {
+		addr = nm_setting_ip4_config_get_address (s_ip4, i);
+		ipaddr = nm_ip4_address_get_address (addr);
+		argv[ip_arg] = (char *) nm_utils_inet4_ntop (ipaddr, NULL);
+
+		nm_log_dbg (LOGD_DEVICE | LOGD_IP4,
+		            "Running arping %s -I %s %s",
+		            mode_arg, nm_device_get_iface (self), argv[ip_arg]);
+		g_spawn_async (NULL, (char **) argv, NULL,
+		               G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
+		               nm_unblock_posix_signals,
+		               NULL, NULL, &error);
+		if (error) {
+			nm_log_warn (LOGD_DEVICE | LOGD_IP4,
+			             "Could not send ARP for local address %s: %s",
+			             argv[ip_arg], error->message);
+			g_clear_error (&error);
+		}
+	}
+}
+
+static gboolean
+arp_announce_round2 (gpointer self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->arp_round2_id = 0;
+
+	if (   priv->state >= NM_DEVICE_STATE_IP_CONFIG
+	    && priv->state <= NM_DEVICE_STATE_ACTIVATED)
+		send_arps (self, "-U");
+
+	return G_SOURCE_REMOVE;
+}
+
+static void
+arp_cleanup (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->arp_round2_id) {
+		g_source_remove (priv->arp_round2_id);
+		priv->arp_round2_id = 0;
+	}
+}
+
+static void
+arp_announce (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
+	int num;
+
+	arp_cleanup (self);
+
+	/* We only care about manually-configured addresses; DHCP- and autoip-configured
+	 * ones should already have been seen on the network at this point.
+	 */
+	connection = nm_device_get_connection (self);
+	if (!connection)
+		return;
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (!s_ip4)
+		return;
+	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
+	if (num == 0)
+		return;
+
+	send_arps (self, "-A");
+	priv->arp_round2_id = g_timeout_add_seconds (2, arp_announce_round2, self);
+}
+
 static gboolean
 nm_device_activate_ip4_config_commit (gpointer user_data)
 {
@@ -4391,6 +4485,8 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 			goto out;
 		}
 	}
+
+	arp_announce (self);
 
 	/* Enter the IP_CHECK state if this is the first method to complete */
 	priv->ip4_state = IP_DONE;
@@ -4799,6 +4895,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 	priv->ip4_state = priv->ip6_state = IP_NONE;
 
 	dhcp4_cleanup (self, TRUE, FALSE);
+	arp_cleanup (self);
 	dhcp6_cleanup (self, TRUE, FALSE);
 	linklocal6_cleanup (self);
 	addrconf6_cleanup (self);
@@ -5581,8 +5678,9 @@ dispose (GObject *object)
 	nm_device_queued_state_clear (self);
 	nm_device_queued_ip_config_change_clear (self);
 
-	/* Clean up and stop DHCP */
+	/* Clean up and stop address configuration */
 	dhcp4_cleanup (self, deconfigure, FALSE);
+	arp_cleanup (self);
 	dhcp6_cleanup (self, deconfigure, FALSE);
 	linklocal6_cleanup (self);
 	addrconf6_cleanup (self);
