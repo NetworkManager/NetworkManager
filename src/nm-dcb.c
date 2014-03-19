@@ -321,6 +321,7 @@ run_helper (char **argv, guint which, gpointer user_data, GError **error)
 		             "Failed to run '%s'", cmdline);
 		success = FALSE;
 	}
+	g_free (outmsg);
 	g_free (errmsg);
 
 	g_free (cmdline);
