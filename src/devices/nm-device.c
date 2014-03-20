@@ -2168,6 +2168,9 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 
 	priv->ip4_state = priv->ip6_state = IP_NONE;
 
+	/* Notify the new ActiveConnection along with the state change */
+	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
+
 	iface = nm_device_get_iface (self);
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 1 of 5 (Device Prepare) started...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
@@ -4938,8 +4941,10 @@ _device_activate (NMDevice *self, NMActRequest *req)
 		                         NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	}
 
+	/* note: don't notify D-Bus of the new AC here, but do it later when
+	 * changing state to PREPARE so that the two properties change together.
+	 */
 	priv->act_request = g_object_ref (req);
-	g_object_notify (G_OBJECT (self), NM_DEVICE_ACTIVE_CONNECTION);
 
 	nm_device_activate_schedule_stage1_device_prepare (self);
 }

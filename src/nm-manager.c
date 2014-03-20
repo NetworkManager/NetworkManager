@@ -2597,11 +2597,18 @@ ensure_master_active_connection (NMManager *self,
 static gboolean
 _internal_activate_vpn (NMManager *self, NMActiveConnection *active, GError **error)
 {
+	gboolean success;
+
 	g_assert (NM_IS_VPN_CONNECTION (active));
 
-	return nm_vpn_manager_activate_connection (NM_MANAGER_GET_PRIVATE (self)->vpn_manager,
-	                                           NM_VPN_CONNECTION (active),
-	                                           error);
+	success = nm_vpn_manager_activate_connection (NM_MANAGER_GET_PRIVATE (self)->vpn_manager,
+	                                              NM_VPN_CONNECTION (active),
+	                                              error);
+	if (success) {
+		nm_active_connection_export (active);
+		g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
+	}
+	return success;
 }
 
 static gboolean
@@ -2732,7 +2739,9 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		            nm_active_connection_get_path (master_ac));
 	}
 
-	/* Start the new activation */
+	/* Export the new ActiveConnection to clients and start it on the device */
+	nm_active_connection_export (active);
+	g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
 	nm_device_queue_activation (device, NM_ACT_REQUEST (active));
 	return TRUE;
 }
@@ -2760,9 +2769,6 @@ _internal_activate_generic (NMManager *self, NMActiveConnection *active, GError 
 		success = _internal_activate_device (self, active, error);
 
 	if (success) {
-		nm_active_connection_export (active);
-		g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
-
 		/* Force an update of the Manager's activating-connection property.
 		 * The device changes state before the AC gets exported, which causes
 		 * the manager's 'activating-connection' property to be NULL since the
