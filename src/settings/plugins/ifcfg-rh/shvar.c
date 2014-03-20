@@ -256,15 +256,15 @@ svTrueValue(shvarFile *s, const char *key, int def)
     tmp = svGetValue(s, key, FALSE);
     if (!tmp) return returnValue;
 
-    if ( (!strcasecmp("yes", tmp)) ||
-	 (!strcasecmp("true", tmp)) ||
-	 (!strcasecmp("t", tmp)) ||
-	 (!strcasecmp("y", tmp)) ) returnValue = 1;
+    if ( (!g_ascii_strcasecmp("yes", tmp)) ||
+	 (!g_ascii_strcasecmp("true", tmp)) ||
+	 (!g_ascii_strcasecmp("t", tmp)) ||
+	 (!g_ascii_strcasecmp("y", tmp)) ) returnValue = 1;
     else
-    if ( (!strcasecmp("no", tmp)) ||
-	 (!strcasecmp("false", tmp)) ||
-	 (!strcasecmp("f", tmp)) ||
-	 (!strcasecmp("n", tmp)) ) returnValue = 0;
+    if ( (!g_ascii_strcasecmp("no", tmp)) ||
+	 (!g_ascii_strcasecmp("false", tmp)) ||
+	 (!g_ascii_strcasecmp("f", tmp)) ||
+	 (!g_ascii_strcasecmp("n", tmp)) ) returnValue = 0;
 
     g_free (tmp);
     return returnValue;
