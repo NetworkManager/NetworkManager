@@ -228,8 +228,26 @@ _dcb_cleanup (const char *iface,
               gpointer user_data,
               GError **error)
 {
-	/* FIXME: do we need to turn off features individually here? */
-	return do_helper (iface, DCBTOOL, run_func, user_data, error, "dcb off");
+	const char *cmds[] = {
+		"dcb off",
+		"app:fcoe e:0",
+		"app:iscsi e:0",
+		"app:fip e:0",
+		"pfc e:0",
+		"pg e:0",
+		NULL
+	};
+	const char **iter = cmds;
+	gboolean success = TRUE;
+
+	/* Turn everything off and return first error we get (if any) */
+	while (iter && *iter) {
+		if (!do_helper (iface, DCBTOOL, run_func, user_data, success ? error : NULL, *iter))
+			success = FALSE;
+		iter++;
+	}
+
+	return success;
 }
 
 gboolean

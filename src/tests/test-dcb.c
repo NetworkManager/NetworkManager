@@ -268,7 +268,13 @@ static void
 test_dcb_cleanup (void)
 {
 	static DcbExpected expected = { 0,
-		{ "dcbtool sc eth0 dcb off", NULL },
+		{ "dcbtool sc eth0 dcb off",
+		  "dcbtool sc eth0 app:fcoe e:0",
+		  "dcbtool sc eth0 app:iscsi e:0",
+		  "dcbtool sc eth0 app:fip e:0",
+		  "dcbtool sc eth0 pfc e:0",
+		  "dcbtool sc eth0 pg e:0",
+		  NULL },
 	};
 	GError *error = NULL;
 	gboolean success;
