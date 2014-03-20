@@ -29,8 +29,8 @@
 %define systemd_dir %{_prefix}/lib/systemd/system
 %define udev_dir %{_prefix}/lib/udev
 
-%global with_atm 1
-%global with_bt 1
+%global with_adsl 1
+%global with_bluetooth 1
 %global with_wwan 1
 
 %if ! 0%{?rhel} && (! 0%{?fedora} || 0%{?fedora} < 20)
@@ -146,27 +146,29 @@ It manages ethernet, WiFi, mobile broadband (WWAN), and PPPoE devices, and
 provides VPN integration with a variety of different VPN services.
 
 
-%if 0%{?with_atm}
-%package atm
+%if 0%{?with_adsl}
+%package adsl
 Summary: ADSL device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Obsoletes: NetworkManager < 1:0.9.9.1-2
+Obsoletes: NetworkManager-atm
 
-%description atm
+%description adsl
 This package contains NetworkManager support for ADSL devices.
 %endif
 
 
-%if 0%{?with_bt}
-%package bt
+%if 0%{?with_bluetooth}
+%package bluetooth
 Summary: Bluetooth device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: NetworkManager-wwan
 Obsoletes: NetworkManager < 1:0.9.9.1-2
+Obsoletes: NetworkManager-bt
 
-%description bt
+%description bluetooth
 This package contains NetworkManager support for Bluetooth devices.
 %endif
 
@@ -428,16 +430,16 @@ fi
 %{systemd_dir}/network-online.target.wants/NetworkManager-wait-online.service
 %{_datadir}/doc/NetworkManager/examples/server.conf
 
-%if 0%{?with_atm}
-%files atm
+%if 0%{?with_adsl}
+%files adsl
 %defattr(-,root,root,0755)
-%{_libdir}/%{name}/libnm-device-plugin-atm.so
+%{_libdir}/%{name}/libnm-device-plugin-adsl.so
 %endif
 
-%if 0%{?with_bt}
-%files bt
+%if 0%{?with_bluetooth}
+%files bluetooth
 %defattr(-,root,root,0755)
-%{_libdir}/%{name}/libnm-device-plugin-bt.so
+%{_libdir}/%{name}/libnm-device-plugin-bluetooth.so
 %endif
 
 %if 0%{?with_wwan}
