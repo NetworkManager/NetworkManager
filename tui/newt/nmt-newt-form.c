@@ -91,7 +91,9 @@ static void nmt_newt_form_redraw (NmtNewtForm *form);
  * Creates a new form, which will be shown centered on the screen.
  * Compare nmt_newt_form_new_fullscreen(). You can also position a
  * form manually by setting its #NmtNewtForm:x and #NmtNewtForm:y
- * properties, either at construct time or later.
+ * properties at construct time, and/or by setting
+ * #NmtNewtForm:fullscreen, #NmtNewtform:fullscreen-horizontal, or
+ * #NmtNewtForm:fullscreen-vertical.
  *
  * If @title is NULL, the form will have no title.
  *
@@ -269,6 +271,13 @@ nmt_newt_form_destroy (NmtNewtForm *form)
 	nmt_newt_widget_unrealize (priv->content);
 }
 
+/* A "normal" newt program would call newtFormRun() to run newt's main loop
+ * and process events. But we want to let GLib's main loop control the program
+ * (eg, so libnm-glib can process D-Bus notifications). So we call this function
+ * to run a single iteration of newt's main loop (or rather, to run newt's
+ * main loop for 1ms) whenever there are events for newt to process (redrawing
+ * or keypresses).
+ */
 static void
 nmt_newt_form_iterate (NmtNewtForm *form)
 {
@@ -286,18 +295,23 @@ nmt_newt_form_iterate (NmtNewtForm *form)
 
 	if (   es.reason == NEWT_EXIT_HOTKEY
 	    || es.reason == NEWT_EXIT_ERROR) {
+		/* The user hit Esc or there was an error. */
 		g_clear_object (&priv->focus);
 		nmt_newt_form_quit (form);
 		return;
 	}
 
 	if (es.reason == NEWT_EXIT_COMPONENT) {
+		/* The user hit Return/Space on a component; update the form focus
+		 * to point that that component, and activate it.
+		 */
 		focus = nmt_newt_widget_find_component (priv->content, es.u.co);
 		if (focus) {
 			nmt_newt_form_set_focus (form, focus);
 			nmt_newt_widget_activated (focus);
 		}
 	} else {
+		/* The 1ms timer ran out. Update focus but don't do anything else. */
 		focus = nmt_newt_widget_find_component (priv->content,
 		                                        newtFormGetCurrent (priv->form));
 		if (focus)
@@ -305,6 +319,11 @@ nmt_newt_form_iterate (NmtNewtForm *form)
 	}
 }
 
+/* @form_stack keeps track of all currently-displayed forms, from top to bottom.
+ * @keypress_source is the global stdin-monitoring GSource. When it triggers,
+ * nmt_newt_form_keypress_callback() iterates the top-most form, so it can
+ * process the keypress.
+ */
 static GSList *form_stack;
 static GSource *keypress_source;
 
