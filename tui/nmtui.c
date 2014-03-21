@@ -83,7 +83,7 @@ nmtui_main (int argc, char **argv)
 	NmtNewtGrid *grid;
 	NmtNewtListbox *listbox;
 	NmtNewtButtonBox *bbox;
-	NmtuiSubprogram subprogram;
+	NmtuiSubprogram subprogram = NULL;
 	int i;
 
 	form = g_object_new (NMT_TYPE_NEWT_FORM,
@@ -121,8 +121,9 @@ nmtui_main (int argc, char **argv)
 	ok = nmt_newt_button_box_add_end (bbox, _("OK"));
 	nmt_newt_widget_set_exit_on_activate (ok, TRUE);
 
-	nmt_newt_form_run_sync (form);
-	subprogram = nmt_newt_listbox_get_active_key (listbox);
+	widget = nmt_newt_form_run_sync (form);
+	if (widget)
+		subprogram = nmt_newt_listbox_get_active_key (listbox);
 	g_object_unref (form);
 
 	if (subprogram)
