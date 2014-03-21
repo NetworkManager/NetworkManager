@@ -468,14 +468,15 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-finalize (GObject *object)
+dispose (GObject *object)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
 
-	g_object_unref (priv->modem);
-	priv->modem = NULL;
+	if (priv->modem)
+		g_signal_handlers_disconnect_by_data (priv->modem, NM_DEVICE_MODEM (object));
+	g_clear_object (&priv->modem);
 
-	G_OBJECT_CLASS (nm_device_modem_parent_class)->finalize (object);
+	G_OBJECT_CLASS (nm_device_modem_parent_class)->dispose (object);
 }
 
 static void
@@ -487,7 +488,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	g_type_class_add_private (object_class, sizeof (NMDeviceModemPrivate));
 
 	/* Virtual methods */
-	object_class->finalize = finalize;
+	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
