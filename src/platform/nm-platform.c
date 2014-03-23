@@ -274,8 +274,8 @@ nm_platform_sysctl_get (const char *path)
  * as decimal integer.
  *
  * Returns: contents of the sysctl file parsed as s32 integer, or
- * @fallback on error. Also, on error, @errno will be set to a non-zero
- * value.
+ * @fallback on error. On error, %errno will be set to a non-zero
+ * value, on success %errno will be set to zero.
  */
 gint32
 nm_platform_sysctl_get_int32 (const char *path, gint32 fallback)

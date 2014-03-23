@@ -864,12 +864,13 @@ nm_utils_match_connection (GSList *connections,
  *
  * A wrapper for g_ascii_strtoll, that checks whether the whole string
  * can be successfully converted to a number and is within a given
- * range. On any error, @fallback will be returned and @errno will be set
- * to a non-zero value. Check @errno for errors. Any trailing or leading
- * (ascii) white space is ignored and the functions is locale independent.
+ * range. On any error, @fallback will be returned and %errno will be set
+ * to a non-zero value. On success, %errno will be set to zero, check %errno
+ * for errors. Any trailing or leading (ascii) white space is ignored and the
+ * functions is locale independent.
  *
  * The function is guaranteed to return a value between @min and @max
- * (included) or @fallback. Also, the parsing is rather strict, it does
+ * (inclusive) or @fallback. Also, the parsing is rather strict, it does
  * not allow for any unrecognized characters, except leading and trailing
  * white space.
  **/
