@@ -65,6 +65,18 @@ secrets_requested (NmtSecretAgent *agent,
 }
 
 static void
+connect_cancelled (NmtNewtForm *form,
+                   gpointer     user_data)
+{
+	NmtSyncOp *op = user_data;
+	GError *error = NULL;
+
+	error = g_error_new_literal (G_IO_ERROR, G_IO_ERROR_CANCELLED, "Cancelled");
+	nmt_sync_op_complete_boolean (op, FALSE, error);
+	g_clear_error (&error);
+}
+
+static void
 activate_ac_state_changed (GObject    *object,
                            GParamSpec *pspec,
                            gpointer    user_data)
@@ -82,9 +94,6 @@ activate_ac_state_changed (GObject    *object,
 		                             _("Activation failed"));
 	}
 
-	g_signal_handlers_disconnect_by_func (object, G_CALLBACK (activate_ac_state_changed), op);
-	g_object_unref (object);
-
 	nmt_sync_op_complete_boolean (op, error == NULL, error);
 	g_clear_error (&error);
 }
@@ -97,14 +106,10 @@ activate_callback (NMClient           *client,
 {
 	NmtSyncOp *op = user_data;
 
-	if (error || nm_active_connection_get_state (ac) == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		nmt_sync_op_complete_boolean (op, error == NULL, error);
-		return;
-	}
-
-	g_object_ref (ac);
-	g_signal_connect (ac, "notify::" NM_ACTIVE_CONNECTION_STATE,
-	                  G_CALLBACK (activate_ac_state_changed), op);
+	if (error)
+		nmt_sync_op_complete_pointer (op, NULL, error);
+	else
+		nmt_sync_op_complete_pointer (op, g_object_ref (ac), NULL);
 }
 
 static void
@@ -128,9 +133,12 @@ activate_connection (NMConnection *connection,
 	NmtNewtWidget *label;
 	NmtSyncOp op;
 	const char *specific_object_path;
+	NMActiveConnection *ac;
 	GError *error = NULL;
 
-	form = g_object_new (NMT_TYPE_NEWT_FORM, NULL);
+	form = g_object_new (NMT_TYPE_NEWT_FORM,
+	                     "escape-exits", TRUE,
+	                     NULL);
 	label = nmt_newt_label_new (_("Connecting..."));
 	nmt_newt_form_set_content (form, label);
 
@@ -140,7 +148,11 @@ activate_connection (NMConnection *connection,
 
 	specific_object_path = specific_object ? nm_object_get_path (specific_object) : NULL;
 
-	/* FIXME: cancel button */
+	/* There's no way to cancel an nm_client_activate_connection() /
+	 * nm_client_add_and_activate_connection() call, so we always let them
+	 * complete, even if the user hits Esc; they shouldn't normally take long
+	 * to complete anyway.
+	 */
 
 	nmt_sync_op_init (&op);
 	if (connection) {
@@ -155,12 +167,41 @@ activate_connection (NMConnection *connection,
 
 	nmt_newt_form_show (form);
 
-	if (!nmt_sync_op_wait_boolean (&op, &error)) {
+	ac = nmt_sync_op_wait_pointer (&op, &error);
+	if (!ac) {
 		nmt_newt_message_dialog (_("Could not activate connection: %s"), error->message);
-		g_error_free (error);
+		g_clear_error (&error);
+		goto done;
+	} else if (nm_active_connection_get_state (ac) == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		/* Already active */
+		goto done;
+	} else if (!nmt_newt_widget_get_realized (NMT_NEWT_WIDGET (form))) {
+		/* User already hit Esc */
+		goto done;
 	}
 
-	nmt_newt_form_quit (form);
+	/* Now wait for the connection to actually reach the ACTIVATED state,
+	 * allowing the user to cancel if it takes too long.
+	 */
+
+	nmt_sync_op_init (&op);
+
+	g_signal_connect (form, "quit", G_CALLBACK (connect_cancelled), &op);
+	g_signal_connect (ac, "notify::" NM_ACTIVE_CONNECTION_STATE,
+	                  G_CALLBACK (activate_ac_state_changed), &op);
+
+	if (!nmt_sync_op_wait_boolean (&op, &error)) {
+		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+			nmt_newt_message_dialog (_("Could not activate connection: %s"), error->message);
+		g_clear_error (&error);
+	}
+
+	g_signal_handlers_disconnect_by_func (form, G_CALLBACK (connect_cancelled), &op);
+	g_signal_handlers_disconnect_by_func (ac, G_CALLBACK (activate_ac_state_changed), &op);
+
+ done:
+	if (nmt_newt_widget_get_realized (NMT_NEWT_WIDGET (form)))
+		nmt_newt_form_quit (form);
 	g_object_unref (form);
 
 	/* If the activation failed very quickly, then agent won't be registered yet,
