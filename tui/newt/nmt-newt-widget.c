@@ -133,6 +133,22 @@ nmt_newt_widget_unrealize (NmtNewtWidget *widget)
 }
 
 /**
+ * nmt_newt_widget_get_realized:
+ * @widget: an #NmtNewtWidget
+ *
+ * Checks if @widget is realized or not.
+ *
+ * Returns: whether @widget is realized.
+ */
+gboolean
+nmt_newt_widget_get_realized (NmtNewtWidget *widget)
+{
+	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+
+	return priv->realized;
+}
+
+/**
  * nmt_newt_widget_get_components:
  * @widget: an #NmtNewtWidget
  *

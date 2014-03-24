@@ -199,7 +199,7 @@ nmt_newt_form_build (NmtNewtForm *form)
 	int i;
 
 	priv->dirty = FALSE;
-	nmt_newt_widget_realize (priv->content);
+	nmt_newt_widget_realize (NMT_NEWT_WIDGET (form));
 
 	nmt_newt_widget_size_request (priv->content, &form_width, &form_height);
 	newtGetScreenSize (&screen_width, &screen_height);
@@ -268,7 +268,7 @@ nmt_newt_form_destroy (NmtNewtForm *form)
 	priv->form = NULL;
 	newtPopWindowNoRefresh ();
 
-	nmt_newt_widget_unrealize (priv->content);
+	nmt_newt_widget_unrealize (NMT_NEWT_WIDGET (form));
 }
 
 /* A "normal" newt program would call newtFormRun() to run newt's main loop
