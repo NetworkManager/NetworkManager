@@ -110,6 +110,14 @@ nmt_newt_basic_g_log_handler (const char     *log_domain,
 	newtResume ();
 }
 
+static void
+nmt_newt_suspend_callback (gpointer user_data)
+{
+	newtSuspend ();
+	kill (getpid (), SIGTSTP);
+	newtResume ();
+}
+
 /**
  * nmt_newt_init:
  *
@@ -132,6 +140,8 @@ nmt_newt_init (void)
 		g_log_set_default_handler (nmt_newt_dialog_g_log_handler, NULL);
 	else
 		g_log_set_default_handler (nmt_newt_basic_g_log_handler, NULL);
+
+	newtSetSuspendCallback (nmt_newt_suspend_callback, NULL);
 }
 
 /**
