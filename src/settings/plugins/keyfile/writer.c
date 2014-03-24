@@ -195,6 +195,17 @@ ip4_addr_writer (GKeyFile *file,
 }
 
 static void
+ip4_addr_label_writer (GKeyFile *file,
+                       const char *keyfile_dir,
+                       const char *uuid,
+                       NMSetting *setting,
+                       const char *key,
+                       const GValue *value)
+{
+	/* skip */
+}
+
+static void
 ip4_route_writer (GKeyFile *file,
                   const char *keyfile_dir,
                   const char *uuid,
@@ -773,6 +784,9 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_ADDRESSES,
 	  ip4_addr_writer },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	  "address-labels",
+	  ip4_addr_label_writer },
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP6_CONFIG_ADDRESSES,
 	  ip6_addr_writer },
