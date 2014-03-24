@@ -6577,6 +6577,8 @@ reason_to_string (NMDeviceStateReason reason)
 		return "modem-failed";
 	case NM_DEVICE_STATE_REASON_MODEM_AVAILABLE:
 		return "modem-available";
+	case NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT:
+		return "sim-pin-incorrect";
 	default:
 		break;
 	}

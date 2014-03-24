@@ -90,6 +90,8 @@ translate_mm_error (GError *error)
 		reason = NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED;
 	else if (g_error_matches (error, MM_MOBILE_EQUIPMENT_ERROR, MM_MOBILE_EQUIPMENT_ERROR_SIM_WRONG))
 		reason = NM_DEVICE_STATE_REASON_GSM_SIM_WRONG;
+	else if (g_error_matches (error, MM_MOBILE_EQUIPMENT_ERROR, MM_MOBILE_EQUIPMENT_ERROR_INCORRECT_PASSWORD))
+		reason = NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT;
 	else {
 		/* unable to map the ModemManager error to a NM_DEVICE_STATE_REASON */
 		nm_log_dbg (LOGD_MB, "unmapped error detected: '%s'", error->message);

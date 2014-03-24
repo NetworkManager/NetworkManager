@@ -50,6 +50,7 @@
 #define MM_OLD_MODEM_ERROR_SIM_PIN             MM_OLD_MODEM_ERROR ".SimPinRequired"
 #define MM_OLD_MODEM_ERROR_SIM_PUK             MM_OLD_MODEM_ERROR ".SimPukRequired"
 #define MM_OLD_MODEM_ERROR_SIM_WRONG           MM_OLD_MODEM_ERROR ".SimWrong"
+#define MM_OLD_MODEM_ERROR_WRONG_PASSWORD      MM_OLD_MODEM_ERROR ".IncorrectPassword"
 
 typedef enum {
     MM_OLD_MODEM_STATE_UNKNOWN = 0,

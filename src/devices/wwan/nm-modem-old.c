@@ -124,6 +124,8 @@ translate_mm_error (GError *error)
 		reason = NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED;
 	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_SIM_WRONG))
 		reason = NM_DEVICE_STATE_REASON_GSM_SIM_WRONG;
+	else if (dbus_g_error_has_name (error, MM_OLD_MODEM_ERROR_WRONG_PASSWORD))
+		reason = NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT;
 	else {
 		/* unable to map the ModemManager error to a NM_DEVICE_STATE_REASON */
 		nm_log_dbg (LOGD_MB, "unmapped dbus error detected: '%s'", dbus_g_error_get_name (error));

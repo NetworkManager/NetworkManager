@@ -622,6 +622,11 @@
           Modem now ready and available.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="SIM_PIN_INCORRECT" value="59">
+        <tp:docstring>
+          The SIM PIN was incorrect.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">

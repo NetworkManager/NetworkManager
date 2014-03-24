@@ -29,6 +29,7 @@
 #include "nm-rfkill-manager.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
+#include "nm-settings-connection.h"
 
 #if WITH_MODEM_MANAGER_1
 #include "nm-modem-broadband.h"
@@ -98,8 +99,19 @@ modem_prepare_result (NMModem *modem,
 
 	if (success)
 		nm_device_activate_schedule_stage2_device_config (device);
-	else
+	else {
+		if (reason == NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT) {
+			/* If the connect failed because the SIM PIN was wrong don't allow
+			 * the device to be auto-activated anymore, which would risk locking
+			 * the SIM if the incorrect PIN continues to be used.
+			 */
+			g_object_set (G_OBJECT (device), NM_DEVICE_AUTOCONNECT, FALSE, NULL);
+			nm_log_info (LOGD_MB, "(%s): disabling autoconnect due to failed SIM PIN",
+			             nm_device_get_iface (device));
+		}
+
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
+	}
 }
 
 static void
@@ -255,6 +267,7 @@ device_state_changed (NMDevice *device,
                       NMDeviceStateReason reason)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMConnection *connection = nm_device_get_connection (device);
 
 	g_assert (priv->modem);
 
@@ -267,6 +280,26 @@ device_state_changed (NMDevice *device,
 	}
 
 	nm_modem_device_state_changed (priv->modem, new_state, old_state, reason);
+
+	switch (reason) {
+	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED:
+	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING:
+	case NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED:
+	case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
+	case NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED:
+	case NM_DEVICE_STATE_REASON_GSM_SIM_WRONG:
+	case NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT:
+	case NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED:
+	case NM_DEVICE_STATE_REASON_GSM_APN_FAILED:
+		/* Block autoconnect of the just-failed connection for situations
+		 * where a retry attempt would just fail again.
+		 */
+		if (connection)
+			nm_settings_connection_set_autoconnect_blocked_reason (NM_SETTINGS_CONNECTION (connection), reason);
+		break;
+	default:
+		break;
+	}
 }
 
 static guint

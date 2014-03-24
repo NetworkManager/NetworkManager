@@ -487,8 +487,19 @@ modem_prepare_result (NMModem *modem,
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, stage2_reason);
 			break;
 		}
-	} else
+	} else {
+		if (reason == NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT) {
+			/* If the connect failed because the SIM PIN was wrong don't allow
+			 * the device to be auto-activated anymore, which would risk locking
+			 * the SIM if the incorrect PIN continues to be used.
+			 */
+			g_object_set (G_OBJECT (device), NM_DEVICE_AUTOCONNECT, FALSE, NULL);
+			nm_log_info (LOGD_MB, "(%s): disabling autoconnect due to failed SIM PIN",
+			             nm_device_get_iface (device));
+		}
+
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
+	}
 }
 
 static void
