@@ -45,6 +45,8 @@ G_BEGIN_DECLS
 #define NM_MODEM_IP_METHOD    "ip-method"
 #define NM_MODEM_IP_TIMEOUT   "ip-timeout"
 #define NM_MODEM_STATE        "state"
+#define NM_MODEM_DEVICE_ID    "device-id"
+#define NM_MODEM_SIM_ID       "sim-id"
 
 /* Signals */
 #define NM_MODEM_PPP_STATS         "ppp-stats"

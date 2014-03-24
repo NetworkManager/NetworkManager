@@ -45,6 +45,8 @@ enum {
 	PROP_IP_METHOD,
 	PROP_IP_TIMEOUT,
 	PROP_STATE,
+	PROP_DEVICE_ID,
+	PROP_SIM_ID,
 
 	LAST_PROP
 };
@@ -59,6 +61,8 @@ typedef struct {
 	guint32 ip_method;
 	NMModemState state;
 	NMModemState prev_state;  /* revert to this state if enable/disable fails */
+	char *device_id;
+	char *sim_id;
 
 	NMPPPManager *ppp_manager;
 
@@ -853,6 +857,12 @@ get_property (GObject *object, guint prop_id,
 	case PROP_STATE:
 		g_value_set_enum (value, priv->state);
 		break;
+	case PROP_DEVICE_ID:
+		g_value_set_string (value, priv->device_id);
+		break;
+	case PROP_SIM_ID:
+		g_value_set_string (value, priv->sim_id);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -893,6 +903,14 @@ set_property (GObject *object, guint prop_id,
 	case PROP_STATE:
 		priv->state = g_value_get_enum (value);
 		break;
+	case PROP_DEVICE_ID:
+		/* construct only */
+		priv->device_id = g_value_dup_string (value);
+		break;
+	case PROP_SIM_ID:
+		g_free (priv->sim_id);
+		priv->sim_id = g_value_dup_string (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -922,6 +940,8 @@ finalize (GObject *object)
 	g_free (priv->driver);
 	g_free (priv->control_port);
 	g_free (priv->data_port);
+	g_free (priv->device_id);
+	g_free (priv->sim_id);
 
 	G_OBJECT_CLASS (nm_modem_parent_class)->finalize (object);
 }
@@ -1011,6 +1031,22 @@ nm_modem_class_init (NMModemClass *klass)
 		                   NM_TYPE_MODEM_STATE,
 		                   NM_MODEM_STATE_UNKNOWN,
 		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_DEVICE_ID,
+		 g_param_spec_string (NM_MODEM_DEVICE_ID,
+		                      "DeviceId",
+		                      "Device ID",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_SIM_ID,
+		 g_param_spec_string (NM_MODEM_SIM_ID,
+		                      "SimId",
+		                      "Sim ID",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/* Signals */
 

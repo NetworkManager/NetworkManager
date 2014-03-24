@@ -690,13 +690,23 @@ modem_properties_changed (DBusGProxy *proxy,
 	GValue *value;
 	gboolean update_state = FALSE;
 
-	if (strcmp (interface, MM_OLD_DBUS_INTERFACE_MODEM))
+	if (strcmp (interface, MM_OLD_DBUS_INTERFACE_MODEM) &&
+	    strcmp (interface, MM_OLD_DBUS_INTERFACE_MODEM_GSM_CARD))
 		return;
 
 	value = g_hash_table_lookup (props, "IpMethod");
 	if (value && G_VALUE_HOLDS_UINT (value)) {
 		g_object_set (self,
 		              NM_MODEM_IP_METHOD, g_value_get_uint (value),
+		              NULL);
+	}
+
+	value = g_hash_table_lookup (props, "SimIdentifier");
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		const char *sim_id = g_value_get_string (value);
+
+		g_object_set (self,
+		              NM_MODEM_SIM_ID, (sim_id && *sim_id) ? sim_id : NULL,
 		              NULL);
 	}
 
@@ -937,6 +947,7 @@ nm_modem_old_new (const char *path, GHashTable *properties, GError **error)
 	const char *driver = NULL;
 	const char *master_device = NULL;
 	const char *unlock_required = NULL;
+	const char *device_id = NULL;
 	guint32 modem_type = MM_OLD_MODEM_TYPE_UNKNOWN;
 	guint32 ip_method = MM_MODEM_IP_METHOD_PPP;
 	guint32 ip_timeout = 0;
@@ -963,6 +974,8 @@ nm_modem_old_new (const char *path, GHashTable *properties, GError **error)
 			state = g_value_get_uint (value);
 		else if (g_strcmp0 (prop, "UnlockRequired") == 0)
 			unlock_required = g_value_get_string (value);
+		else if (g_strcmp0 (prop, "DeviceIdentifier") == 0)
+			device_id = g_value_get_string (value);
 	}
 
 	if (modem_type == MM_OLD_MODEM_TYPE_UNKNOWN) {
@@ -997,6 +1010,7 @@ nm_modem_old_new (const char *path, GHashTable *properties, GError **error)
 	                                    NM_MODEM_DATA_PORT, data_device,
 	                                    NM_MODEM_IP_METHOD, ip_method,
 	                                    NM_MODEM_IP_TIMEOUT, ip_timeout,
+	                                    NM_MODEM_DEVICE_ID, device_id,
 	                                    NM_MODEM_STATE, mm_state_to_nm (state, unlock_required),
 	                                    NULL);
 	if (self) {
@@ -1016,6 +1030,23 @@ nm_modem_old_new (const char *path, GHashTable *properties, GError **error)
 static void
 nm_modem_old_init (NMModemOld *self)
 {
+}
+
+static void
+get_sim_id_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMModemOld *self = NM_MODEM_OLD (user_data);
+	GValue value = G_VALUE_INIT;
+
+	if (dbus_g_proxy_end_call (proxy, call_id, NULL, G_TYPE_VALUE, &value, G_TYPE_INVALID)) {
+		if (G_VALUE_HOLDS_STRING (&value)) {
+			const char *sim_id = g_value_get_string (&value);
+
+			if (sim_id && *sim_id)
+				g_object_set (G_OBJECT (self), NM_MODEM_SIM_ID, sim_id, NULL);
+		}
+		g_value_unset (&value);
+	}
 }
 
 static GObject*
@@ -1054,6 +1085,15 @@ constructor (GType type,
 	                             G_CALLBACK (modem_properties_changed),
 	                             object,
 	                             NULL);
+
+	/* Request the SIM ID */
+	dbus_g_proxy_begin_call (priv->props_proxy,
+	                         "Get",
+	                         get_sim_id_done,
+	                         g_object_ref (object), g_object_unref,
+	                         G_TYPE_STRING, MM_OLD_DBUS_INTERFACE_MODEM_GSM_CARD,
+	                         G_TYPE_STRING, "SimIdentifier",
+	                         G_TYPE_INVALID);
 
 	return object;
 }

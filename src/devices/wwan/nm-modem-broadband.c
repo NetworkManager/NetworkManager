@@ -831,11 +831,51 @@ nm_modem_broadband_new (GObject *object, GError **error)
 	                      NM_MODEM_CONTROL_PORT, mm_modem_get_primary_port (modem_iface),
 	                      NM_MODEM_DATA_PORT, NULL, /* We don't know it until bearer created */
 	                      NM_MODEM_STATE, mm_state_to_nm (mm_modem_get_state (modem_iface)),
+	                      NM_MODEM_DEVICE_ID, mm_modem_get_device_identifier (modem_iface),
 	                      NM_MODEM_BROADBAND_MODEM, modem_object,
 	                      NM_MODEM_DRIVER, drivers,
 	                      NULL);
 	g_free (drivers);
 	return modem;
+}
+
+static void
+get_sim_ready (MMModem *modem,
+               GAsyncResult *res,
+               NMModemBroadband *self)
+{
+	GError *error = NULL;
+	MMSim *new_sim;
+
+	new_sim = mm_modem_get_sim_finish (modem, res, &error);
+	if (new_sim) {
+		g_object_set (G_OBJECT (self),
+		              NM_MODEM_SIM_ID, mm_sim_get_identifier (new_sim),
+		              NULL);
+		g_object_unref (new_sim);
+	} else {
+		nm_log_warn (LOGD_MB, "(%s) failed to retrieve SIM object: %s",
+		             nm_modem_get_uid (NM_MODEM (self)),
+		             error && error->message ? error->message : "(unknown)");
+	}
+	g_clear_error (&error);
+	g_object_unref (self);
+}
+
+static void
+sim_changed (MMModem *modem, GParamSpec *pspec, gpointer user_data)
+{
+	NMModemBroadband *self = NM_MODEM_BROADBAND (user_data);
+
+	g_return_if_fail (modem == self->priv->modem_iface);
+
+	if (mm_modem_get_sim_path (self->priv->modem_iface)) {
+		mm_modem_get_sim (self->priv->modem_iface,
+		                  NULL,  /* cancellable */
+		                  (GAsyncReadyCallback) get_sim_ready,
+		                  g_object_ref (self));
+	} else
+		g_object_set (G_OBJECT (self), NM_MODEM_SIM_ID, NULL, NULL);
 }
 
 static void
@@ -861,9 +901,14 @@ set_property (GObject *object,
 		self->priv->modem_iface = mm_object_get_modem (self->priv->modem_object);
 		g_assert (self->priv->modem_iface != NULL);
 		g_signal_connect (self->priv->modem_iface,
-                          "state-changed",
-                          G_CALLBACK (modem_state_changed),
-                          self);
+		                  "state-changed",
+		                  G_CALLBACK (modem_state_changed),
+		                  self);
+		g_signal_connect (self->priv->modem_iface,
+		                  "notify::sim",
+		                  G_CALLBACK (sim_changed),
+		                  self);
+		sim_changed (self->priv->modem_iface, NULL, self);
 
 		/* Note: don't grab the Simple iface here; the Modem interface is the
 		 * only one assumed to be always valid and available */
