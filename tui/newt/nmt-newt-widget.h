@@ -67,6 +67,7 @@ GType nmt_newt_widget_get_type (void);
 
 void           nmt_newt_widget_realize        (NmtNewtWidget *widget);
 void           nmt_newt_widget_unrealize      (NmtNewtWidget *widget);
+gboolean       nmt_newt_widget_get_realized   (NmtNewtWidget *widget);
 
 newtComponent *nmt_newt_widget_get_components (NmtNewtWidget *widget);
 
