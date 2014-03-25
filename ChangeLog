@@ -10246,7 +10246,7 @@
 			for NM service; only emit when state really changes
 		- Use hash tables correctly so that the key (which was previously owned
 			by the D-Bus message) now has the same lifetime as the value, since
-			the key is now taken from the the NMVPNConnection itself.  This
+			the key is now taken from the NMVPNConnection itself.  This
 			really fixes the double-VPN names in the applet
 
 2007-08-13  Dan Williams  <dcbw@redhat.com>

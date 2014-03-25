@@ -1291,7 +1291,7 @@ split_required_fields_for_con_show (const char *input,
 	/* Handle pseudo groups: profile, active */
 	if (success && group_profile) {
 		if (str1->len > 0) {
-			g_set_error (error, NMCLI_ERROR, 0, _("'%s' has to be alone'"),
+			g_set_error (error, NMCLI_ERROR, 0, _("'%s' has to be alone"),
 			             CON_SHOW_DETAIL_GROUP_PROFILE);
 			success = FALSE;
 		} else
@@ -1299,7 +1299,7 @@ split_required_fields_for_con_show (const char *input,
 	}
 	if (success && group_active) {
 		if (str2->len > 0) {
-			g_set_error (error, NMCLI_ERROR, 0, _("'%s' has to be alone'"),
+			g_set_error (error, NMCLI_ERROR, 0, _("'%s' has to be alone"),
 			             CON_SHOW_DETAIL_GROUP_ACTIVE);
 			success = FALSE;
 		} else
@@ -6134,7 +6134,7 @@ editor_main_help (const char *command)
 		case NMC_EDITOR_MAIN_CMD_SAVE:
 			printf (_("save [persistent|temporary]  :: save the connection\n\n"
 			          "Sends the connection profile to NetworkManager that either will save it\n"
-			          "pesistently, or will only keep it in memory. 'save' without an argument\n"
+			          "persistently, or will only keep it in memory. 'save' without an argument\n"
 			          "means 'save persistent'.\n"
 			          "Note that once you save the profile persistently those settings are saved\n"
 			          "across reboot or restart. Subsequent changes can also be temporary or\n"
