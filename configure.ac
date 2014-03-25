@@ -360,6 +360,23 @@ esac
 AM_CONDITIONAL(SUSPEND_RESUME_UPOWER, test "x$with_suspend_resume" = "xupower")
 AM_CONDITIONAL(SUSPEND_RESUME_SYSTEMD, test "x$with_suspend_resume" = "xsystemd")
 
+# SELinux support
+AC_ARG_WITH(selinux, AS_HELP_STRING([--with-selinux=yes|no|auto], [Build with SELinux (default: auto)]),,[with_selinux=auto])
+if test "$with_selinux" = "yes" -o "$with_selinux" = "auto"; then
+    PKG_CHECK_MODULES(SELINUX, libselinux, [have_selinux=yes], [have_selinux=no])
+else
+    have_selinux=no
+fi
+if test "$with_selinux" = "yes" -a "$have_selinux" = "no"; then
+    AC_MSG_ERROR([You must have libselinux installed to build --with-selinux=yes.])
+fi
+if test "$have_selinux" = "yes"; then
+    AC_DEFINE(HAVE_SELINUX, 1, [Define if you have SELinux support])
+else
+    AC_DEFINE(HAVE_SELINUX, 0, [Define if you have SELinux support])
+fi
+AM_CONDITIONAL(HAVE_SELINUX, test "${have_selinux}" = "yes")
+
 # libnl support for the linux platform
 PKG_CHECK_MODULES(LIBNL, libnl-3.0 >= 3.2.8 libnl-route-3.0 libnl-genl-3.0)
 AC_SUBST(LIBNL_CFLAGS)
@@ -848,6 +865,7 @@ if test "${enable_polkit}" = "yes"; then
 else
 	echo  "  policykit: no"
 fi
+echo "  selinux: $have_selinux"
 echo
 
 echo "Features:"
