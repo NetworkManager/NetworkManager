@@ -156,6 +156,7 @@ typedef struct {
 	guint32 timestamp;
 	guint32 lifetime;   /* seconds */
 	guint32 preferred;  /* seconds */
+	char label[IFNAMSIZ];
 } NMPlatformIP4Address;
 
 /**
@@ -346,7 +347,8 @@ typedef struct {
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
 	gboolean (*ip4_address_add) (NMPlatform *, int ifindex,
 	                             in_addr_t address, in_addr_t peer_address, int plen,
-	                             guint32 lifetime, guint32 preferred_lft);
+	                             guint32 lifetime, guint32 preferred_lft,
+	                             const char *label);
 	gboolean (*ip6_address_add) (NMPlatform *, int ifindex,
 	                             struct in6_addr address, struct in6_addr peer_address, int plen,
 	                             guint32 lifetime, guint32 preferred_lft, guint flags);
@@ -475,7 +477,8 @@ GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);
 gboolean nm_platform_ip4_address_add (int ifindex,
                                       in_addr_t address, in_addr_t peer_address, int plen,
-                                      guint32 lifetime, guint32 preferred_lft);
+                                      guint32 lifetime, guint32 preferred_lft,
+                                      const char *label);
 gboolean nm_platform_ip6_address_add (int ifindex,
                                       struct in6_addr address, struct in6_addr peer_address, int plen,
                                       guint32 lifetime, guint32 preferred_lft, guint flags);

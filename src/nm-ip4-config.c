@@ -30,7 +30,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-ip4-config-glue.h"
 #include "NetworkManagerUtils.h"
-
+#include "nm-util-private.h"
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, G_TYPE_OBJECT)
 
@@ -333,6 +333,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
 		NMIP4Address *s_addr = nm_setting_ip4_config_get_address (setting, i);
+		const char *label = NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (setting, i));
 		NMPlatformIP4Address address;
 
 		memset (&address, 0, sizeof (address));
@@ -341,6 +342,8 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.source = NM_PLATFORM_SOURCE_USER;
+		if (label)
+			g_strlcpy (address.label, label, sizeof (address.label));
 
 		nm_ip4_config_add_address (config, &address);
 	}
@@ -418,7 +421,10 @@ nm_ip4_config_update_setting (const NMIP4Config *config, NMSettingIP4Config *set
 		if (same_prefix (address->address, gateway, address->plen))
 			nm_ip4_address_set_gateway (s_addr, gateway);
 
-		nm_setting_ip4_config_add_address (setting, s_addr);
+		if (*address->label)
+			NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (setting, s_addr, address->label));
+		else
+			nm_setting_ip4_config_add_address (setting, s_addr);
 		nm_ip4_address_unref (s_addr);
 	}
 

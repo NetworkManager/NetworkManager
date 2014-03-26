@@ -1230,7 +1230,8 @@ nm_platform_ip4_address_add (int ifindex,
                              in_addr_t peer_address,
                              int plen,
                              guint32 lifetime,
-                             guint32 preferred)
+                             guint32 preferred,
+                             const char *label)
 {
 	reset_error ();
 
@@ -1238,6 +1239,7 @@ nm_platform_ip4_address_add (int ifindex,
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (lifetime > 0, FALSE);
 	g_return_val_if_fail (klass->ip4_address_add, FALSE);
+	g_return_val_if_fail (!label || strlen (label) < sizeof (((NMPlatformIP4Address *) NULL)->label), FALSE);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
 		NMPlatformIP4Address addr = { 0 };
@@ -1248,10 +1250,12 @@ nm_platform_ip4_address_add (int ifindex,
 		addr.plen = plen;
 		addr.lifetime = lifetime;
 		addr.preferred = preferred;
+		if (label)
+			g_strlcpy (addr.label, label, sizeof (addr.label));
 
 		debug ("address: adding or updating IPv4 address: %s", nm_platform_ip4_address_to_string (&addr));
 	}
-	return klass->ip4_address_add (platform, ifindex, address, peer_address, plen, lifetime, preferred);
+	return klass->ip4_address_add (platform, ifindex, address, peer_address, plen, lifetime, preferred, label);
 }
 
 gboolean
@@ -1422,7 +1426,7 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 		} else
 			lifetime = preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 
-		if (!nm_platform_ip4_address_add (ifindex, known_address->address, known_address->peer_address, known_address->plen, lifetime, preferred))
+		if (!nm_platform_ip4_address_add (ifindex, known_address->address, known_address->peer_address, known_address->plen, lifetime, preferred, known_address->label))
 			return FALSE;
 	}
 
@@ -1914,6 +1918,7 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 	char s_address[INET_ADDRSTRLEN];
 	char s_peer[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
+	char str_label[32];
 	char *str_peer = NULL;
 
 	g_return_val_if_fail (address, "(unknown)");
@@ -1927,11 +1932,17 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 
 	_to_string_dev (address->ifindex, str_dev, sizeof (str_dev));
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d lft %u pref %u time %u%s%s src %s",
+	if (*address->label)
+		g_snprintf (str_label, sizeof (str_label), " label %s", address->label);
+	else
+		str_label[0] = 0;
+
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d lft %u pref %u time %u%s%s%s src %s",
 	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
 	            (guint)address->timestamp,
 	            str_peer ? str_peer : "",
 	            str_dev,
+	            str_label,
 	            source_to_string (address->source));
 	g_free (str_peer);
 	return to_string_buffer;
@@ -2092,6 +2103,13 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
             return (((a)->field) < ((b)->field)) ? -1 : 1;  \
     } G_STMT_END
 
+#define _CMP_FIELD_STR(a, b, field)                         \
+    G_STMT_START {                                          \
+        int c = strcmp ((a)->field, (b)->field);            \
+        if (c != 0)                                         \
+            return c < 0 ? -1 : 1;                          \
+    } G_STMT_END
+
 #define _CMP_FIELD_MEMCMP(a, b, field)                      \
     G_STMT_START {                                          \
         int c = memcmp (&((a)->field), &((b)->field),       \
@@ -2112,6 +2130,7 @@ nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4A
 	_CMP_FIELD (a, b, timestamp);
 	_CMP_FIELD (a, b, lifetime);
 	_CMP_FIELD (a, b, preferred);
+	_CMP_FIELD_STR (a, b, label);
 	return 0;
 }
 

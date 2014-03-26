@@ -41,7 +41,7 @@ test_cleanup_internal ()
 	g_assert (ifindex > 0);
 
 	/* Add routes and addresses */
-	g_assert (nm_platform_ip4_address_add (ifindex, addr4, 0, plen4, lifetime, preferred));
+	g_assert (nm_platform_ip4_address_add (ifindex, addr4, 0, plen4, lifetime, preferred, NULL));
 	g_assert (nm_platform_ip6_address_add (ifindex, addr6, in6addr_any, plen6, lifetime, preferred, flags));
 	g_assert (nm_platform_ip4_route_add (ifindex, gateway4, 32, INADDR_ANY, metric, mss));
 	g_assert (nm_platform_ip4_route_add (ifindex, network4, plen4, gateway4, metric, mss));

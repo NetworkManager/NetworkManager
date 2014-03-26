@@ -50,6 +50,7 @@
 #include <nm-setting-bridge-port.h>
 #include <nm-setting-dcb.h>
 #include <nm-setting-generic.h>
+#include <nm-util-private.h>
 #include <nm-utils.h>
 
 #include "wifi-utils.h"
@@ -641,10 +642,9 @@ static gboolean
 read_full_ip4_address (shvarFile *ifcfg,
                        const char *network_file,
                        gint32 which,
-                       NMIP4Address **out_address,
+                       NMIP4Address *addr,
                        GError **error)
 {
-	NMIP4Address *addr;
 	char *ip_tag, *prefix_tag, *netmask_tag, *gw_tag;
 	guint32 tmp;
 	gboolean success = FALSE;
@@ -654,12 +654,10 @@ read_full_ip4_address (shvarFile *ifcfg,
 	g_return_val_if_fail (which >= -1, FALSE);
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (network_file != NULL, FALSE);
-	g_return_val_if_fail (out_address != NULL, FALSE);
-	g_return_val_if_fail (*out_address == NULL, FALSE);
+	g_return_val_if_fail (addr != NULL, FALSE);
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
-	addr = nm_ip4_address_new ();
 	ip_tag = get_numbered_tag ("IPADDR", which);
 	prefix_tag = get_numbered_tag ("PREFIX", which);
 	netmask_tag = get_numbered_tag ("NETMASK", which);
@@ -668,13 +666,12 @@ read_full_ip4_address (shvarFile *ifcfg,
 	/* IP address */
 	if (!read_ip4_address (ifcfg, ip_tag, &tmp, error))
 		goto done;
-	if (!tmp) {
-		nm_ip4_address_unref (addr);
-		addr = NULL;
-		success = TRUE;  /* done */
+	if (tmp)
+		nm_ip4_address_set_address (addr, tmp);
+	else if (!nm_ip4_address_get_address (addr)) {
+		success = TRUE;
 		goto done;
 	}
-	nm_ip4_address_set_address (addr, tmp);
 
 	/* Gateway */
 	if (!read_ip4_address (ifcfg, gw_tag, &tmp, error))
@@ -741,13 +738,9 @@ read_full_ip4_address (shvarFile *ifcfg,
 		goto done;
 	}
 
-	*out_address = addr;
 	success = TRUE;
 
 done:
-	if (!success && addr)
-		nm_ip4_address_unref (addr);
-
 	g_free (ip_tag);
 	g_free (prefix_tag);
 	g_free (netmask_tag);
@@ -1387,9 +1380,12 @@ make_ip4_setting (shvarFile *ifcfg,
 	for (i = -1; i < 256; i++) {
 		NMIP4Address *addr = NULL;
 
-		if (!read_full_ip4_address (ifcfg, network_file, i, &addr, error))
+		addr = nm_ip4_address_new ();
+		if (!read_full_ip4_address (ifcfg, network_file, i, addr, error))
 			goto done;
-		if (!addr) {
+		if (!nm_ip4_address_get_address (addr)) {
+			nm_ip4_address_unref (addr);
+
 			/* The first mandatory variable is 2-indexed (IPADDR2)
 			 * Variables IPADDR, IPADDR0 and IPADDR1 are optional */
 			if (i > 1)
@@ -1514,6 +1510,101 @@ done:
 	g_free (route_path);
 	g_object_unref (s_ip4);
 	return NULL;
+}
+
+static void
+read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *network_file)
+{
+	GDir *dir;
+	char *dirname, *base;
+	shvarFile *parsed;
+	NMIP4Address *base_addr;
+	GError *err = NULL;
+
+	g_return_if_fail (s_ip4 != NULL);
+	g_return_if_fail (filename != NULL);
+
+	base_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	if (!base_addr)
+		return;
+
+	dirname = g_path_get_dirname (filename);
+	g_return_if_fail (dirname != NULL);
+	base = g_path_get_basename (filename);
+	g_return_if_fail (base != NULL);
+
+	dir = g_dir_open (dirname, 0, &err);
+	if (dir) {
+		const char *item;
+		NMIP4Address *addr;
+		gboolean ok;
+
+		while ((item = g_dir_read_name (dir))) {
+			char *full_path, *device;
+			const char *p;
+
+			if (!utils_is_ifcfg_alias_file (item, base))
+				continue;
+
+			full_path = g_build_filename (dirname, item, NULL);
+
+			p = strchr (item, ':');
+			g_assert (p != NULL); /* we know this is true from utils_is_ifcfg_alias_file() */
+			for (p++; *p; p++) {
+				if (!g_ascii_isalnum (*p) && *p != '_') {
+					PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: ignoring alias file '%s' with invalid name", full_path);
+					g_free (full_path);
+					continue;
+				}
+			}
+
+			parsed = svNewFile (full_path);
+			if (!parsed) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: couldn't parse file '%s'", full_path);
+				g_free (full_path);
+				continue;
+			}
+
+			device = svGetValue (parsed, "DEVICE", FALSE);
+			if (!device) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: file '%s' has no DEVICE", full_path);
+				svCloseFile (parsed);
+				g_free (full_path);
+				continue;
+			}
+			/* We know that item starts with IFCFG_TAG from utils_is_ifcfg_alias_file() */
+			if (strcmp (device, item + strlen (IFCFG_TAG)) != 0) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: file '%s' has invalid DEVICE (%s) for filename", full_path, device);
+				g_free (device);
+				svCloseFile (parsed);
+				g_free (full_path);
+				continue;
+			}
+
+			addr = nm_ip4_address_dup (base_addr);
+			ok = read_full_ip4_address (parsed, network_file, -1, addr, &err);
+			svCloseFile (parsed);
+			if (ok) {
+				if (!NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, device)))
+					PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: duplicate IP4 address in alias file %s", item);
+			} else {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: error reading IP4 address from '%s': %s", full_path, err ? err->message : "no address")
+					g_clear_error (&err);
+			}
+			nm_ip4_address_unref (addr);
+
+			g_free (device);
+			g_free (full_path);
+		}
+
+		g_dir_close (dir);
+	} else {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: can not read directory '%s': %s", dirname, err->message);
+		g_error_free (err);
+	}
+
+	g_free (base);
+	g_free (dirname);
 }
 
 static NMSetting *
@@ -5106,8 +5197,10 @@ connection_from_file (const char *filename,
 		g_object_unref (connection);
 		connection = NULL;
 		goto done;
-	} else
+	} else {
+		read_aliases (NM_SETTING_IP4_CONFIG (s_ip4), filename, network_file);
 		nm_connection_add_setting (connection, s_ip4);
+	}
 
 	/* There is only one DOMAIN variable and it is read and put to IPv4 config
 	 * But if IPv4 is disabled or the config fails for some reason, we read

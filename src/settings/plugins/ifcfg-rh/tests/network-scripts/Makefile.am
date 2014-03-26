@@ -117,8 +117,24 @@ EXTRA_DIST = \
 	ifcfg-test-team-port \
 	ifcfg-test-team-port-empty-config
 
+# make target dependencies can't have colons in their names, which ends up
+# meaning that we can't add the alias files to EXTRA_DIST
+ALIAS_FILES = \
+	ifcfg-aliasem0 \
+	ifcfg-aliasem0:1 \
+	ifcfg-aliasem0:2 \
+	ifcfg-aliasem0:99 \
+	ifcfg-aliasem1 \
+	ifcfg-aliasem1:1 \
+	ifcfg-aliasem1:2
+
+dist-hook:
+	@for f in $(ALIAS_FILES); do \
+		cp $(abs_srcdir)/$$f $(distdir)/; \
+	done
+
 check-local:
-	@for f in $(EXTRA_DIST); do \
+	@for f in $(EXTRA_DIST) $(ALIAS_FILES); do \
 		chmod 0600 $(abs_srcdir)/$$f; \
 	done
 

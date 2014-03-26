@@ -738,7 +738,8 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 static gboolean
 ip4_address_add (NMPlatform *platform, int ifindex,
                  in_addr_t addr, in_addr_t peer_addr,
-                 int plen, guint32 lifetime, guint32 preferred)
+                 int plen, guint32 lifetime, guint32 preferred,
+                 const char *label)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMPlatformIP4Address address;
@@ -752,6 +753,8 @@ ip4_address_add (NMPlatform *platform, int ifindex,
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 	address.lifetime = lifetime;
 	address.preferred = preferred;
+	if (label)
+		g_strlcpy (address.label, label, sizeof (address.label));
 
 	for (i = 0; i < priv->ip4_addresses->len; i++) {
 		NMPlatformIP4Address *item = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);

@@ -868,6 +868,7 @@ init_ip4_address (NMPlatformIP4Address *address, struct rtnl_addr *rtnladdr)
 {
 	struct nl_addr *nladdr = rtnl_addr_get_local (rtnladdr);
 	struct nl_addr *nlpeer = rtnl_addr_get_peer (rtnladdr);
+	const char *label;
 
 	g_return_val_if_fail (nladdr, FALSE);
 
@@ -890,6 +891,9 @@ init_ip4_address (NMPlatformIP4Address *address, struct rtnl_addr *rtnladdr)
 		}
 		memcpy (&address->peer_address, nl_addr_get_binary_addr (nlpeer), sizeof (address->peer_address));
 	}
+	label = rtnl_addr_get_label (rtnladdr);
+	if (label && *label)
+		g_strlcpy (address->label, label, sizeof (address->label));
 
 	return TRUE;
 }
@@ -2783,7 +2787,8 @@ build_rtnl_addr (int family,
                  int plen,
                  guint32 lifetime,
                  guint32 preferred,
-                 guint flags)
+                 guint flags,
+                 const char *label)
 {
 	struct rtnl_addr *rtnladdr = rtnl_addr_alloc ();
 	int addrlen = family == AF_INET ? sizeof (in_addr_t) : sizeof (struct in6_addr);
@@ -2824,6 +2829,8 @@ build_rtnl_addr (int family,
 	}
 	if (flags)
 		rtnl_addr_set_flags (rtnladdr, flags);
+	if (label && *label)
+		rtnl_addr_set_label (rtnladdr, label);
 
 	return (struct nl_object *) rtnladdr;
 }
@@ -2835,11 +2842,13 @@ ip4_address_add (NMPlatform *platform,
                  in_addr_t peer_addr,
                  int plen,
                  guint32 lifetime,
-                 guint32 preferred)
+                 guint32 preferred,
+                 const char *label)
 {
 	return add_object (platform, build_rtnl_addr (AF_INET, ifindex, &addr,
 	                                              peer_addr ? &peer_addr : NULL,
-	                                              plen, lifetime, preferred, 0));
+	                                              plen, lifetime, preferred, 0,
+	                                              label));
 }
 
 static gboolean
@@ -2854,25 +2863,26 @@ ip6_address_add (NMPlatform *platform,
 {
 	return add_object (platform, build_rtnl_addr (AF_INET6, ifindex, &addr,
 	                                              IN6_IS_ADDR_UNSPECIFIED (&peer_addr) ? NULL : &peer_addr,
-	                                              plen, lifetime, preferred, flags));
+	                                              plen, lifetime, preferred, flags,
+	                                              NULL));
 }
 
 static gboolean
 ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
 {
-	return delete_object (platform, build_rtnl_addr (AF_INET, ifindex, &addr, NULL, plen, 0, 0, 0));
+	return delete_object (platform, build_rtnl_addr (AF_INET, ifindex, &addr, NULL, plen, 0, 0, 0, NULL));
 }
 
 static gboolean
 ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
 {
-	return delete_object (platform, build_rtnl_addr (AF_INET6, ifindex, &addr, NULL, plen, 0, 0, 0));
+	return delete_object (platform, build_rtnl_addr (AF_INET6, ifindex, &addr, NULL, plen, 0, 0, 0, NULL));
 }
 
 static gboolean
 ip_address_exists (NMPlatform *platform, int family, int ifindex, gconstpointer addr, int plen)
 {
-	auto_nl_object struct nl_object *object = build_rtnl_addr (family, ifindex, addr, NULL, plen, 0, 0, 0);
+	auto_nl_object struct nl_object *object = build_rtnl_addr (family, ifindex, addr, NULL, plen, 0, 0, 0, NULL);
 	auto_nl_object struct nl_object *cached_object = nl_cache_search (choose_cache (platform, object), object);
 
 	return !!cached_object;

@@ -42,6 +42,7 @@
 #include "nm-setting-vlan.h"
 #include "nm-setting-bond.h"
 #include "nm-utils.h"
+#include "nm-util-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
@@ -270,6 +271,153 @@ test_setting_vpn_modify_during_foreach (void)
 	g_assert_cmpint (info.called, ==, TO_DEL_NUM * 2);
 
 	g_object_unref (s_vpn);
+}
+
+static void
+test_setting_ip4_config_labels (void)
+{
+	NMSettingIP4Config *s_ip4;
+	NMIP4Address *addr;
+	const char *label;
+	GPtrArray *addrs;
+	GSList *labels;
+	GError *error = NULL;
+
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NULL);
+
+	/* addr 1 */
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, 0x01010101);
+	nm_ip4_address_set_prefix (addr, 24);
+
+	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	g_assert_no_error (error);
+
+	label = NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0));
+	g_assert_cmpstr (label, ==, NULL);
+
+	/* addr 2 */
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, 0x02020202);
+	nm_ip4_address_set_prefix (addr, 24);
+
+	NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "eth0:1"));
+	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	g_assert_no_error (error);
+
+	label = NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 1));
+	g_assert_cmpstr (label, ==, "eth0:1");
+
+	/* addr 3 */
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, 0x03030303);
+	nm_ip4_address_set_prefix (addr, 24);
+
+	NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, NULL));
+	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	g_assert_no_error (error);
+
+	label = NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 2));
+	g_assert_cmpstr (label, ==, NULL);
+
+	/* Remove addr 1 and re-verify remaining addresses */
+	nm_setting_ip4_config_remove_address (s_ip4, 0);
+	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	g_assert_no_error (error);
+
+	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
+	label = NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0));
+	g_assert_cmpstr (label, ==, "eth0:1");
+
+	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
+	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
+	label = NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 1));
+	g_assert_cmpstr (label, ==, NULL);
+
+
+	/* Test explicit property assignment */
+	g_object_get (G_OBJECT (s_ip4),
+	              NM_SETTING_IP4_CONFIG_ADDRESSES, &addrs,
+	              "address-labels", &labels,
+	              NULL);
+
+	nm_setting_ip4_config_clear_addresses (s_ip4);
+	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 0);
+
+	/* Setting addrs but not labels will result in empty labels */
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP4_CONFIG_ADDRESSES, addrs,
+	              NULL);
+	g_boxed_free (DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT, addrs);
+	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	g_assert_no_error (error);
+	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
+
+	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
+	label = NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0));
+	g_assert_cmpstr (label, ==, NULL);
+
+	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
+	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
+	label = NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 1));
+	g_assert_cmpstr (label, ==, NULL);
+
+	/* Setting labels now will leave addresses untouched */
+	g_object_set (G_OBJECT (s_ip4),
+	              "address-labels", labels,
+	              NULL);
+	g_boxed_free (DBUS_TYPE_G_LIST_OF_STRING, labels);
+	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	g_assert_no_error (error);
+	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
+
+	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
+	label = NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0));
+	g_assert_cmpstr (label, ==, "eth0:1");
+
+	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
+	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
+	label = NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 1));
+	g_assert_cmpstr (label, ==, NULL);
+
+	/* Setting labels to a value that's too short or too long will result in
+	 * the setting not verifying.
+	 */
+	labels = g_slist_append (NULL, "eth0:2");
+	g_object_set (G_OBJECT (s_ip4),
+	              "address-labels", labels,
+	              NULL);
+
+	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	g_assert_error (error, NM_SETTING_IP4_CONFIG_ERROR, NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "ipv4.address-labels:"));
+	g_clear_error (&error);
+
+	labels = g_slist_append (labels, "eth0:3");
+	g_object_set (G_OBJECT (s_ip4),
+	              "address-labels", labels,
+	              NULL);
+	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	g_assert_no_error (error);
+
+	labels = g_slist_append (labels, "eth0:4");
+	g_object_set (G_OBJECT (s_ip4),
+	              "address-labels", labels,
+	              NULL);
+	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
+	g_assert_error (error, NM_SETTING_IP4_CONFIG_ERROR, NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "ipv4.address-labels:"));
+	g_clear_error (&error);
+
+
+	g_object_unref (s_ip4);
 }
 
 #define OLD_DBUS_TYPE_G_IP6_ADDRESS (dbus_g_type_get_struct ("GValueArray", DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, G_TYPE_INVALID))
@@ -1197,6 +1345,7 @@ test_connection_diff_a_only (void)
 			{ NM_SETTING_IP4_CONFIG_DNS,                NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_DNS_SEARCH,         NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_ADDRESSES,          NM_SETTING_DIFF_RESULT_IN_A },
+			{ "address-labels",                         NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_ROUTES,             NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS,    NM_SETTING_DIFF_RESULT_IN_A },
@@ -2232,6 +2381,7 @@ int main (int argc, char **argv)
 	test_setting_vpn_items ();
 	test_setting_vpn_update_secrets ();
 	test_setting_vpn_modify_during_foreach ();
+	test_setting_ip4_config_labels ();
 	test_setting_ip6_config_old_address_array ();
 	test_setting_gsm_apn_spaces ();
 	test_setting_gsm_apn_bad_chars ();
