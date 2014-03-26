@@ -137,6 +137,7 @@ static const struct Opt opt_table[] = {
 	{ "proactive_key_caching", TYPE_INT,  0, 1, FALSE,  NULL },
 	{ "bgscan",             TYPE_BYTES,   0, 0, FALSE,  NULL },
 	{ "pac_file",           TYPE_BYTES,   0, 1024, FALSE,  NULL },
+	{ "freq_list",          TYPE_BYTES,   0, 0, FALSE,  NULL },
 };
 
 
