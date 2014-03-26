@@ -60,7 +60,7 @@ test_dcb_fcoe (void)
 		  "dcbtool sc eth0 app:iscsi e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:fip e:0 a:0 w:0",
 		  "dcbtool sc eth0 pfc e:0 a:0 w:0",
-		  "dcbtool sc eth0 pg e:0 a:0 w:0",
+		  "dcbtool sc eth0 pg e:0",
 		  NULL },
 	};
 	NMSettingDcb *s_dcb;
@@ -91,7 +91,7 @@ test_dcb_iscsi (void)
 		  "dcbtool sc eth0 app:iscsi appcfg:08",
 		  "dcbtool sc eth0 app:fip e:0 a:0 w:0",
 		  "dcbtool sc eth0 pfc e:0 a:0 w:0",
-		  "dcbtool sc eth0 pg e:0 a:0 w:0",
+		  "dcbtool sc eth0 pg e:0",
 		  NULL },
 	};
 	NMSettingDcb *s_dcb;
@@ -122,7 +122,7 @@ test_dcb_fip (void)
 		  "dcbtool sc eth0 app:fip e:1 a:1 w:0",
 		  "dcbtool sc eth0 app:fip appcfg:01",
 		  "dcbtool sc eth0 pfc e:0 a:0 w:0",
-		  "dcbtool sc eth0 pg e:0 a:0 w:0",
+		  "dcbtool sc eth0 pg e:0",
 		  NULL },
 	};
 	NMSettingDcb *s_dcb;
@@ -152,7 +152,7 @@ test_dcb_fip_default_prio (void)
 		  "dcbtool sc eth0 app:iscsi e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:fip e:1 a:1 w:0",
 		  "dcbtool sc eth0 pfc e:0 a:0 w:0",
-		  "dcbtool sc eth0 pg e:0 a:0 w:0",
+		  "dcbtool sc eth0 pg e:0",
 		  NULL },
 	};
 	NMSettingDcb *s_dcb;
@@ -183,7 +183,7 @@ test_dcb_pfc (void)
 		  "dcbtool sc eth0 app:fip e:0 a:0 w:0",
 		  "dcbtool sc eth0 pfc e:1 a:1 w:1",
 		  "dcbtool sc eth0 pfc pfcup:01101100",
-		  "dcbtool sc eth0 pg e:0 a:0 w:0",
+		  "dcbtool sc eth0 pg e:0",
 		  NULL },
 	};
 	NMSettingDcb *s_dcb;
