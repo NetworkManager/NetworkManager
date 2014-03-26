@@ -154,61 +154,69 @@ _dcb_setup (const char *iface,
 
 	/* Priority Groups */
 	flags = nm_setting_dcb_get_priority_group_flags (s_dcb);
-	SET_FLAGS (flags, "pg");
 	if (flags & NM_SETTING_DCB_FLAG_ENABLE) {
-		char buf[10];
+		GString *s;
+		gboolean success;
 		guint id;
 
+		s = g_string_sized_new (150);
+
+		g_string_append_printf (s, "pg e:1 a:%c w:%c",
+		                        flags & NM_SETTING_DCB_FLAG_ADVERTISE ? '1' : '0',
+		                        flags & NM_SETTING_DCB_FLAG_WILLING ? '1' : '0');
+
 		/* Priority Groups */
+		g_string_append (s, " pgid:");
 		for (i = 0; i < 8; i++) {
 			id = nm_setting_dcb_get_priority_group_id (s_dcb, i);
 			g_assert (id < 8 || id == 15);
-			buf[i] = (id < 8) ? ('0' + id) : 'f';
+			g_string_append_c (s, (id < 8) ? ('0' + id) : 'f');
 		}
-		buf[i] = 0;
-		if (!do_helper (iface, DCBTOOL, run_func, user_data, error, "pg pgid:%s", buf))
-			return FALSE;
 
 		/* Priority Group Bandwidth */
-		if (!do_helper (iface, DCBTOOL, run_func, user_data, error, "pg pgpct:%u,%u,%u,%u,%u,%u,%u,%u",
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 0),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 1),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 2),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 3),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 4),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 5),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 6),
-		                nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 7)))
-			return FALSE;
+		g_string_append_printf (s, " pgpct:%u,%u,%u,%u,%u,%u,%u,%u",
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 0),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 1),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 2),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 3),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 4),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 5),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 6),
+		                        nm_setting_dcb_get_priority_group_bandwidth (s_dcb, 7));
 
 		/* Priority Bandwidth */
-		if (!do_helper (iface, DCBTOOL, run_func, user_data, error, "pg uppct:%u,%u,%u,%u,%u,%u,%u,%u",
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 0),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 1),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 2),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 3),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 4),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 5),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 6),
-		                nm_setting_dcb_get_priority_bandwidth (s_dcb, 7)))
-			return FALSE;
+		g_string_append_printf (s, " uppct:%u,%u,%u,%u,%u,%u,%u,%u",
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 0),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 1),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 2),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 3),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 4),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 5),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 6),
+		                        nm_setting_dcb_get_priority_bandwidth (s_dcb, 7));
 
 		/* Strict Bandwidth */
+		g_string_append (s, " strict:");
 		for (i = 0; i < 8; i++)
-			buf[i] = nm_setting_dcb_get_priority_strict_bandwidth (s_dcb, i) ? '1' : '0';
-		buf[i] = 0;
-		if (!do_helper (iface, DCBTOOL, run_func, user_data, error, "pg strict:%s", buf))
-			return FALSE;
+			g_string_append_c (s, nm_setting_dcb_get_priority_strict_bandwidth (s_dcb, i) ? '1' : '0');
 
 		/* Priority Traffic Class */
+		g_string_append (s, " up2tc:");
 		for (i = 0; i < 8; i++) {
 			id = nm_setting_dcb_get_priority_traffic_class (s_dcb, i);
 			g_assert (id < 8);
-			buf[i] = '0' + id;
+			g_string_append_c (s, '0' + id);
 		}
-		buf[i] = 0;
-		if (!do_helper (iface, DCBTOOL, run_func, user_data, error, "pg up2tc:%s", buf))
+
+		success = do_helper (iface, DCBTOOL, run_func, user_data, error, s->str);
+		g_string_free (s, TRUE);
+		if (!success)
 			return FALSE;
+	} else {
+		/* Ignore disable failure since lldpad <= 0.9.46 does not support disabling
+		 * priority groups without specifying an entire PG config.
+		 */
+		do_helper (iface, DCBTOOL, run_func, user_data, error, "pg e:0");
 	}
 
 	return TRUE;
@@ -220,8 +228,26 @@ _dcb_cleanup (const char *iface,
               gpointer user_data,
               GError **error)
 {
-	/* FIXME: do we need to turn off features individually here? */
-	return do_helper (iface, DCBTOOL, run_func, user_data, error, "dcb off");
+	const char *cmds[] = {
+		"dcb off",
+		"app:fcoe e:0",
+		"app:iscsi e:0",
+		"app:fip e:0",
+		"pfc e:0",
+		"pg e:0",
+		NULL
+	};
+	const char **iter = cmds;
+	gboolean success = TRUE;
+
+	/* Turn everything off and return first error we get (if any) */
+	while (iter && *iter) {
+		if (!do_helper (iface, DCBTOOL, run_func, user_data, success ? error : NULL, *iter))
+			success = FALSE;
+		iter++;
+	}
+
+	return success;
 }
 
 gboolean
@@ -307,12 +333,21 @@ run_helper (char **argv, guint which, gpointer user_data, GError **error)
 	                        &outmsg, &errmsg, &exit_status, error);
 	/* Log any stderr output */
 	if (success && WIFEXITED (exit_status) && WEXITSTATUS (exit_status) && (errmsg || outmsg)) {
-		nm_log_dbg (LOGD_DCB, "'%s' failed: '%s'",
-		            cmdline, (errmsg && strlen (errmsg)) ? errmsg : outmsg);
-		g_set_error (error, NM_DCB_ERROR, NM_DCB_ERROR_HELPER_FAILED,
-		             "Failed to run '%s'", cmdline);
-		success = FALSE;
+		gboolean ignore_error = FALSE;
+
+		/* Ignore fcoeadm "success" errors like when FCoE is already set up */
+		if (errmsg && strstr (errmsg, "Connection already created"))
+			ignore_error = TRUE;
+
+		if (ignore_error == FALSE) {
+			nm_log_warn (LOGD_DCB, "'%s' failed: '%s'",
+			             cmdline, (errmsg && strlen (errmsg)) ? errmsg : outmsg);
+			g_set_error (error, NM_DCB_ERROR, NM_DCB_ERROR_HELPER_FAILED,
+			             "Failed to run '%s'", cmdline);
+			success = FALSE;
+		}
 	}
+	g_free (outmsg);
 	g_free (errmsg);
 
 	g_free (cmdline);
@@ -334,6 +369,14 @@ nm_dcb_setup (const char *iface, NMSettingDcb *s_dcb, GError **error)
 gboolean
 nm_dcb_cleanup (const char *iface, GError **error)
 {
-	return _dcb_cleanup (iface, run_helper, GUINT_TO_POINTER (DCBTOOL), error);
+	gboolean success;
+
+	success = _dcb_cleanup (iface, run_helper, GUINT_TO_POINTER (DCBTOOL), error);
+	if (success) {
+		/* Only report FCoE errors if DCB cleanup was successful */
+		success = _fcoe_cleanup (iface, run_helper, GUINT_TO_POINTER (FCOEADM), success ? error : NULL);
+	}
+
+	return success;
 }
 

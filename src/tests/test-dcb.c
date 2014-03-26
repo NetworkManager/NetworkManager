@@ -221,12 +221,12 @@ test_dcb_priority_groups (void)
 		  "dcbtool sc eth0 app:iscsi e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:fip e:0 a:0 w:0",
 		  "dcbtool sc eth0 pfc e:0 a:0 w:0",
-		  "dcbtool sc eth0 pg e:1 a:1 w:1",
-		  "dcbtool sc eth0 pg pgid:765f3210",
-		  "dcbtool sc eth0 pg pgpct:10,40,5,10,5,20,7,3",
-		  "dcbtool sc eth0 pg uppct:100,50,33,25,20,16,14,12",
-		  "dcbtool sc eth0 pg strict:01010101",
-		  "dcbtool sc eth0 pg up2tc:01201201",
+		  "dcbtool sc eth0 pg e:1 a:1 w:1" \
+		      " pgid:765f3210" \
+		      " pgpct:10,40,5,10,5,20,7,3" \
+		      " uppct:100,50,33,25,20,16,14,12" \
+		      " strict:01010101" \
+		      " up2tc:01201201",
 		  NULL },
 	};
 	NMSettingDcb *s_dcb;
@@ -268,7 +268,13 @@ static void
 test_dcb_cleanup (void)
 {
 	static DcbExpected expected = { 0,
-		{ "dcbtool sc eth0 dcb off", NULL },
+		{ "dcbtool sc eth0 dcb off",
+		  "dcbtool sc eth0 app:fcoe e:0",
+		  "dcbtool sc eth0 app:iscsi e:0",
+		  "dcbtool sc eth0 app:fip e:0",
+		  "dcbtool sc eth0 pfc e:0",
+		  "dcbtool sc eth0 pg e:0",
+		  NULL },
 	};
 	GError *error = NULL;
 	gboolean success;
