@@ -892,7 +892,8 @@ init_ip4_address (NMPlatformIP4Address *address, struct rtnl_addr *rtnladdr)
 		memcpy (&address->peer_address, nl_addr_get_binary_addr (nlpeer), sizeof (address->peer_address));
 	}
 	label = rtnl_addr_get_label (rtnladdr);
-	if (label && *label)
+	/* Check for ':'; we're only interested in labels used as interface aliases */
+	if (label && strchr (label, ':'))
 		g_strlcpy (address->label, label, sizeof (address->label));
 
 	return TRUE;
