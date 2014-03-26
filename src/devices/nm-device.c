@@ -1771,6 +1771,7 @@ nm_device_generate_connection (NMDevice *device)
 	gs_free char *name = NULL;
 	int master_ifindex = 0;
 	const char *ip4_method, *ip6_method;
+	GError *error = NULL;
 
 	/* If update_connection() is not implemented, just fail. */
 	if (!klass->update_connection)
@@ -1851,7 +1852,13 @@ nm_device_generate_connection (NMDevice *device)
 	klass->update_connection (device, connection);
 
 	/* Check the connection in case of update_connection() bug. */
-	g_return_val_if_fail (nm_connection_verify (connection, NULL), NULL);
+	if (!nm_connection_verify (connection, &error)) {
+		nm_log_err (LOGD_DEVICE, "(%s): Generated connection does not verify: %s",
+		            nm_device_get_iface (device), error->message);
+		g_clear_error (&error);
+		g_object_unref (connection);
+		return NULL;
+	}
 
 	/* Ignore the connection if it has no IP configuration,
 	 * no slave configuration, and is not a master interface.
