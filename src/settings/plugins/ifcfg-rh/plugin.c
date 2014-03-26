@@ -673,6 +673,7 @@ plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	shvarFile *network;
+	char *hostname_eol;
 	gboolean ret;
 #if HAVE_SELINUX
 	security_context_t se_ctx_prev, se_ctx = NULL;
@@ -686,7 +687,8 @@ plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
 	setfscreatecon (se_ctx);
 #endif
 
-	ret = g_file_set_contents (HOSTNAME_FILE, hostname, -1, NULL);
+	hostname_eol = g_strdup_printf ("%s\n", hostname);
+	ret = g_file_set_contents (HOSTNAME_FILE, hostname_eol, -1, NULL);
 
 #if HAVE_SELINUX
 	/* Restore previous context and cleanup */
@@ -697,11 +699,13 @@ plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
 
 	if (!ret) {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "Could not save hostname: failed to create/open " HOSTNAME_FILE);
+		g_free (hostname_eol);
 		return FALSE;
 	}
 
 	g_free (priv->hostname);
 	priv->hostname = g_strdup (hostname);
+	g_free (hostname_eol);
 
 	/* Remove "HOSTNAME" from SC_NETWORK_FILE, if present */
 	network = svNewFile (SC_NETWORK_FILE);
