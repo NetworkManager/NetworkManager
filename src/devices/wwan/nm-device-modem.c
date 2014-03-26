@@ -472,24 +472,6 @@ act_stage3_ip6_config_start (NMDevice *device,
                              NMIP6Config **out_config,
                              NMDeviceStateReason *reason)
 {
-	NMConnection *connection;
-	const char *method;
-
-	connection = nm_device_get_connection (device);
-	g_assert (connection);
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-
-	/* Only Ignore and Auto methods make sense for WWAN */
-	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
-		return NM_ACT_STAGE_RETURN_STOP;
-
-	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) != 0) {
-		nm_log_warn (LOGD_IP6, "(%s): unhandled WWAN IPv6 method '%s'; will fail",
-		             nm_device_get_iface (device), method);
-		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
-		return NM_ACT_STAGE_RETURN_FAILURE;
-	}
-
 	return nm_modem_stage3_ip6_config_start (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem,
 	                                         nm_device_get_act_request (device),
 	                                         reason);

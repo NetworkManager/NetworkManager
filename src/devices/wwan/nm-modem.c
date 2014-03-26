@@ -521,6 +521,8 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 {
 	NMModemPrivate *priv;
 	NMActRequest *req;
+	NMConnection *connection;
+	const char *method;
 	NMActStageReturn ret;
 
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
@@ -530,6 +532,21 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+
+	/* Only Disabled and Auto methods make sense for WWAN */
+	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
+		return NM_ACT_STAGE_RETURN_STOP;
+
+	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) != 0) {
+		nm_log_warn (LOGD_MB | LOGD_IP4,
+		             "(%s): unhandled WWAN IPv4 method '%s'; will fail",
+		             nm_modem_get_uid (self), method);
+		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
 	priv = NM_MODEM_GET_PRIVATE (self);
 	switch (priv->ip4_method) {
@@ -543,8 +560,8 @@ nm_modem_stage3_ip4_config_start (NMModem *self,
 		ret = device_class->act_stage3_ip4_config_start (device, NULL, reason);
 		break;
 	default:
-		nm_log_err (LOGD_MB, "unknown IP method %d", priv->ip4_method);
-		ret = NM_ACT_STAGE_RETURN_FAILURE;
+		nm_log_info (LOGD_MB, "(%s): IPv4 configuration disabled", nm_modem_get_uid (self));
+		ret = NM_ACT_STAGE_RETURN_STOP;
 		break;
 	}
 
@@ -623,12 +640,30 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 {
 	NMModemPrivate *priv;
 	NMActStageReturn ret;
+	NMConnection *connection;
+	const char *method;
 
 	g_return_val_if_fail (self != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_MODEM (self), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+
+	/* Only Ignore and Auto methods make sense for WWAN */
+	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0)
+		return NM_ACT_STAGE_RETURN_STOP;
+
+	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) != 0) {
+		nm_log_warn (LOGD_MB | LOGD_IP6,
+		             "(%s): unhandled WWAN IPv6 method '%s'; will fail",
+		             nm_modem_get_uid (self), method);
+		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
 	priv = NM_MODEM_GET_PRIVATE (self);
 	switch (priv->ip6_method) {
@@ -644,8 +679,8 @@ nm_modem_stage3_ip6_config_start (NMModem *self,
 		ret = NM_MODEM_GET_CLASS (self)->stage3_ip6_config_request (self, reason);
 		break;
 	default:
-		nm_log_err (LOGD_MB, "unknown IP method %d", priv->ip6_method);
-		ret = NM_ACT_STAGE_RETURN_FAILURE;
+		nm_log_info (LOGD_MB, "(%s): IPv6 configuration disabled", nm_modem_get_uid (self));
+		ret = NM_ACT_STAGE_RETURN_STOP;
 		break;
 	}
 
