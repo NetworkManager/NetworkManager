@@ -4319,20 +4319,20 @@ nmc_property_dcb_set_flags (NMSetting *setting, const char *prop, const char *va
 static gboolean
 nmc_property_dcb_set_priority (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	unsigned long priority = 0;
+	long int priority = 0;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (!nmc_string_to_uint (val, FALSE, 0, 7, &priority)) {
+	if (!nmc_string_to_int (val, FALSE, -1, 7, &priority)) {
 		g_set_error (error, 1, 0, _("'%s' is not a DCB app priority"), val);
 		return FALSE;
 	}
 
 	/* Validate the number according to the property spec */
-	if (!validate_uint (setting, prop, (guint) priority, error))
+	if (!validate_int (setting, prop, (gint) priority, error))
 		return FALSE;
 
-	g_object_set (setting, prop, (guint) priority, NULL);
+	g_object_set (setting, prop, (gint) priority, NULL);
 	return TRUE;
 }
 
