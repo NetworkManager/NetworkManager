@@ -86,6 +86,20 @@ typedef struct Supplicant {
 	guint con_timeout_id;
 } Supplicant;
 
+typedef enum {
+	DCB_WAIT_UNKNOWN = 0,
+	/* Ensure carrier is up before enabling DCB */
+	DCB_WAIT_CARRIER_PREENABLE_UP,
+	/* Wait for carrier down when device starts enabling */
+	DCB_WAIT_CARRIER_PRECONFIG_DOWN,
+	/* Wait for carrier up when device has finished enabling */
+	DCB_WAIT_CARRIER_PRECONFIG_UP,
+	/* Wait carrier down when device starts configuring */
+	DCB_WAIT_CARRIER_POSTCONFIG_DOWN,
+	/* Wait carrier up when device has finished configuring */
+	DCB_WAIT_CARRIER_POSTCONFIG_UP,
+} DcbWait;
+
 typedef struct {
 	guint8              perm_hw_addr[ETH_ALEN];    /* Permanent MAC address */
 	guint8              initial_hw_addr[ETH_ALEN]; /* Initial MAC address (as seen when NM starts) */
@@ -106,6 +120,11 @@ typedef struct {
 	NMIP4Config  *pending_ip4_config;
 	gint32        last_pppoe_time;
 	guint         pppoe_wait_id;
+
+	/* DCB */
+	DcbWait       dcb_wait;
+	guint         dcb_timeout_id;
+	guint         dcb_carrier_id;
 } NMDeviceEthernetPrivate;
 
 enum {
@@ -1094,32 +1113,216 @@ pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reas
 	return ret;
 }
 
+/****************************************************************/
+
+static void
+dcb_timeout_cleanup (NMDevice *device)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+
+	if (priv->dcb_timeout_id) {
+		g_source_remove (priv->dcb_timeout_id);
+		priv->dcb_timeout_id = 0;
+	}
+}
+
+static void
+dcb_carrier_cleanup (NMDevice *device)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+
+	if (priv->dcb_carrier_id) {
+		g_signal_handler_disconnect (device, priv->dcb_carrier_id);
+		priv->dcb_carrier_id = 0;
+	}
+}
+
+static void dcb_state (NMDevice *device, gboolean timeout);
+
+static gboolean
+dcb_carrier_timeout (gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+
+	g_return_val_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_CONFIG, G_SOURCE_REMOVE);
+
+	priv->dcb_timeout_id = 0;
+	if (priv->dcb_wait != DCB_WAIT_CARRIER_POSTCONFIG_DOWN) {
+		nm_log_warn (LOGD_DCB,
+		             "(%s): DCB: timed out waiting for carrier (step %d)",
+		             nm_device_get_iface (device),
+		             priv->dcb_wait);
+	}
+	dcb_state (device, TRUE);
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+dcb_configure (NMDevice *device)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+	NMSettingDcb *s_dcb;
+	const char *iface = nm_device_get_iface (device);
+	GError *error = NULL;
+
+	dcb_timeout_cleanup (device);
+
+	s_dcb = (NMSettingDcb *) device_get_setting (device, NM_TYPE_SETTING_DCB);
+	g_assert (s_dcb);
+	if (!nm_dcb_setup (iface, s_dcb, &error)) {
+		nm_log_warn (LOGD_DCB,
+		             "Activation (%s/wired) failed to enable DCB/FCoE: %s",
+		             iface, error->message);
+		g_clear_error (&error);
+		return FALSE;
+	}
+
+	/* Pause again just in case the device takes the carrier down when
+	 * setting specific DCB attributes.
+	 */
+	nm_log_dbg (LOGD_DCB, "(%s): waiting for carrier (postconfig down)", iface);
+	priv->dcb_wait = DCB_WAIT_CARRIER_POSTCONFIG_DOWN;
+	priv->dcb_timeout_id = g_timeout_add_seconds (3, dcb_carrier_timeout, device);
+	return TRUE;
+}
+
+static gboolean
+dcb_enable (NMDevice *device)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+	const char *iface = nm_device_get_iface (device);
+	GError *error = NULL;
+
+	dcb_timeout_cleanup (device);
+	if (!nm_dcb_enable (iface, TRUE, &error)) {
+		nm_log_warn (LOGD_DCB,
+		             "Activation (%s/wired) failed to enable DCB/FCoE: %s",
+		             iface, error->message);
+		g_clear_error (&error);
+		return FALSE;
+	}
+
+	/* Pause for 3 seconds after enabling DCB to let the card reconfigure
+	 * itself.  Drivers will often re-initialize internal settings which
+	 * takes the carrier down for 2 or more seconds.  During this time,
+	 * lldpad will refuse to do anything else with the card since the carrier
+	 * is down.  But NM might get the carrier-down signal long after calling
+	 * "dcbtool dcb on", so we have to first wait for the carrier to go down.
+	 */
+	nm_log_dbg (LOGD_DCB, "(%s): waiting for carrier (preconfig down)", iface);
+	priv->dcb_wait = DCB_WAIT_CARRIER_PRECONFIG_DOWN;
+	priv->dcb_timeout_id = g_timeout_add_seconds (3, dcb_carrier_timeout, device);
+	return TRUE;
+}
+
+static void
+dcb_state (NMDevice *device, gboolean timeout)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+	const char *iface = nm_device_get_iface (device);
+	gboolean carrier;
+
+	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_CONFIG);
+
+
+	carrier = nm_platform_link_is_connected (nm_device_get_ifindex (device));
+	nm_log_dbg (LOGD_DCB, "(%s): dcb_state() wait %d carrier %d timeout %d", iface, priv->dcb_wait, carrier, timeout);
+
+	switch (priv->dcb_wait) {
+	case DCB_WAIT_CARRIER_PREENABLE_UP:
+		if (timeout || carrier) {
+			nm_log_dbg (LOGD_DCB, "(%s): dcb_state() enabling DCB", iface);
+			dcb_timeout_cleanup (device);
+			if (!dcb_enable (device)) {
+				dcb_carrier_cleanup (device);
+				nm_device_state_changed (device,
+				                         NM_ACT_STAGE_RETURN_FAILURE,
+				                         NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED);
+			}
+		}
+		break;
+	case DCB_WAIT_CARRIER_PRECONFIG_DOWN:
+		dcb_timeout_cleanup (device);
+		priv->dcb_wait = DCB_WAIT_CARRIER_PRECONFIG_UP;
+
+		if (!carrier) {
+			/* Wait for the carrier to come back up */
+			nm_log_dbg (LOGD_DCB, "(%s): waiting for carrier (preconfig up)", iface);
+			priv->dcb_timeout_id = g_timeout_add_seconds (5, dcb_carrier_timeout, device);
+			break;
+		}
+		nm_log_dbg (LOGD_DCB, "(%s): dcb_state() preconfig down falling through", iface);
+		/* carrier never went down? fall through */
+	case DCB_WAIT_CARRIER_PRECONFIG_UP:
+		if (timeout || carrier) {
+			nm_log_dbg (LOGD_DCB, "(%s): dcb_state() preconfig up configuring DCB", iface);
+			dcb_timeout_cleanup (device);
+			if (!dcb_configure (device)) {
+				dcb_carrier_cleanup (device);
+				nm_device_state_changed (device,
+				                         NM_ACT_STAGE_RETURN_FAILURE,
+				                         NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED);
+			}
+		}
+		break;
+	case DCB_WAIT_CARRIER_POSTCONFIG_DOWN:
+		dcb_timeout_cleanup (device);
+		priv->dcb_wait = DCB_WAIT_CARRIER_POSTCONFIG_UP;
+
+		if (!carrier) {
+			/* Wait for the carrier to come back up */
+			nm_log_dbg (LOGD_DCB, "(%s): waiting for carrier (postconfig up)", iface);
+			priv->dcb_timeout_id = g_timeout_add_seconds (5, dcb_carrier_timeout, device);
+			break;
+		}
+		nm_log_dbg (LOGD_DCB, "(%s): dcb_state() postconfig down falling through", iface);
+		/* carrier never went down? fall through */
+	case DCB_WAIT_CARRIER_POSTCONFIG_UP:
+		if (timeout || carrier) {
+			nm_log_dbg (LOGD_DCB, "(%s): dcb_state() postconfig up starting IP", iface);
+			dcb_timeout_cleanup (device);
+			dcb_carrier_cleanup (device);
+			priv->dcb_wait = DCB_WAIT_UNKNOWN;
+			nm_device_activate_schedule_stage3_ip_config_start (device);
+		}
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+}
+
+static void
+dcb_carrier_changed (NMDevice *device, GParamSpec *pspec, gpointer unused)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+
+	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_CONFIG);
+
+	if (priv->dcb_timeout_id) {
+		nm_log_dbg (LOGD_DCB, "(%s): carrier_changed() calling dcb_state()", nm_device_get_iface (device));
+		dcb_state (device, FALSE);
+	}
+}
+
+/****************************************************************/
+
 static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	NMSettingConnection *s_con;
 	const char *connection_type;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	NMSettingDcb *s_dcb;
-	GError *error = NULL;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	/* DCB and FCoE setup */
-	s_dcb = (NMSettingDcb *) device_get_setting (device, NM_TYPE_SETTING_DCB);
-	if (s_dcb) {
-		if (!nm_dcb_setup (nm_device_get_iface (device), s_dcb, &error)) {
-			nm_log_warn (LOGD_DEVICE | LOGD_HW,
-			             "Activation (%s/wired) failed to enable DCB/FCoE: %s",
-			             nm_device_get_iface (device), error->message);
-			g_clear_error (&error);
-			*reason = NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED;
-			return NM_ACT_STAGE_RETURN_FAILURE;
-		}
-	}
-
 	s_con = NM_SETTING_CONNECTION (device_get_setting (device, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
+
+	dcb_timeout_cleanup (device);
+	dcb_carrier_cleanup (device);
 
 	/* 802.1x has to run before any IP configuration since the 802.1x auth
 	 * process opens the port up for normal traffic.
@@ -1129,8 +1332,36 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		NMSetting8021x *security;
 
 		security = (NMSetting8021x *) device_get_setting (device, NM_TYPE_SETTING_802_1X);
-		if (security)
-			ret = nm_8021x_stage2_config (NM_DEVICE_ETHERNET (device), reason);
+		if (security) {
+			/* FIXME: for now 802.1x is mutually exclusive with DCB */
+			return nm_8021x_stage2_config (NM_DEVICE_ETHERNET (device), reason);
+		}
+	}
+
+	/* DCB and FCoE setup */
+	s_dcb = (NMSettingDcb *) device_get_setting (device, NM_TYPE_SETTING_DCB);
+	if (s_dcb) {
+		/* lldpad really really wants the carrier to be up */
+		if (nm_platform_link_is_connected (nm_device_get_ifindex (device))) {
+			if (!dcb_enable (device)) {
+				*reason = NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED;
+				return NM_ACT_STAGE_RETURN_FAILURE;
+			}
+		} else {
+			nm_log_dbg (LOGD_DCB, "(%s): waiting for carrier (preenable up)",
+			            nm_device_get_iface (device));
+			priv->dcb_wait = DCB_WAIT_CARRIER_PREENABLE_UP;
+			priv->dcb_timeout_id = g_timeout_add_seconds (4, dcb_carrier_timeout, device);
+		}
+
+		/* Watch carrier independently of NMDeviceClass::carrier_changed so
+		 * we get instant notifications of disconnection that aren't deferred.
+		 */
+		priv->dcb_carrier_id = g_signal_connect (device,
+		                                         "notify::" NM_DEVICE_CARRIER,
+		                                         G_CALLBACK (dcb_carrier_changed),
+		                                         NULL);
+		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
 	return ret;
@@ -1205,6 +1436,10 @@ deactivate (NMDevice *device)
 	}
 
 	supplicant_interface_release (self);
+
+	priv->dcb_wait = DCB_WAIT_UNKNOWN;
+	dcb_timeout_cleanup (device);
+	dcb_carrier_cleanup (device);
 
 	/* Tear down DCB/FCoE if it was enabled */
 	s_dcb = (NMSettingDcb *) device_get_setting (device, NM_TYPE_SETTING_DCB);
@@ -1408,6 +1643,9 @@ dispose (GObject *object)
 		g_source_remove (priv->pppoe_wait_id);
 		priv->pppoe_wait_id = 0;
 	}
+
+	dcb_timeout_cleanup (NM_DEVICE (self));
+	dcb_carrier_cleanup (NM_DEVICE (self));
 
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
 }

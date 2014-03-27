@@ -92,6 +92,19 @@ out:
 	return success;
 }
 
+gboolean
+_dcb_enable (const char *iface,
+             gboolean enable,
+             DcbFunc run_func,
+             gpointer user_data,
+             GError **error)
+{
+	if (enable)
+		return do_helper (iface, DCBTOOL, run_func, user_data, error, "dcb on");
+	else
+		return do_helper (iface, DCBTOOL, run_func, user_data, error, "dcb off");
+}
+
 #define SET_FLAGS(f, tag) \
 G_STMT_START { \
 	if (!do_helper (iface, DCBTOOL, run_func, user_data, error, tag " e:%c a:%c w:%c", \
@@ -123,9 +136,6 @@ _dcb_setup (const char *iface,
 	guint i;
 
 	g_assert (s_dcb);
-
-	if (!do_helper (iface, DCBTOOL, run_func, user_data, error, "dcb on"))
-		return FALSE;
 
 	/* FCoE */
 	flags = nm_setting_dcb_get_app_fcoe_flags (s_dcb);
@@ -229,7 +239,6 @@ _dcb_cleanup (const char *iface,
               GError **error)
 {
 	const char *cmds[] = {
-		"dcb off",
 		"app:fcoe e:0",
 		"app:iscsi e:0",
 		"app:fip e:0",
@@ -246,6 +255,9 @@ _dcb_cleanup (const char *iface,
 			success = FALSE;
 		iter++;
 	}
+
+	if (!_dcb_enable (iface, FALSE, run_func, user_data, success ? error : NULL))
+		success = FALSE;
 
 	return success;
 }
@@ -355,6 +367,12 @@ run_helper (char **argv, guint which, gpointer user_data, GError **error)
 }
 
 gboolean
+nm_dcb_enable (const char *iface, gboolean enable, GError **error)
+{
+	return _dcb_enable (iface, enable, run_helper, GUINT_TO_POINTER (DCBTOOL), error);
+}
+
+gboolean
 nm_dcb_setup (const char *iface, NMSettingDcb *s_dcb, GError **error)
 {
 	gboolean success;
@@ -369,14 +387,8 @@ nm_dcb_setup (const char *iface, NMSettingDcb *s_dcb, GError **error)
 gboolean
 nm_dcb_cleanup (const char *iface, GError **error)
 {
-	gboolean success;
-
-	success = _dcb_cleanup (iface, run_helper, GUINT_TO_POINTER (DCBTOOL), error);
-	if (success) {
-		/* Only report FCoE errors if DCB cleanup was successful */
-		success = _fcoe_cleanup (iface, run_helper, GUINT_TO_POINTER (FCOEADM), success ? error : NULL);
-	}
-
-	return success;
+	/* Ignore FCoE cleanup errors */
+	_fcoe_cleanup (iface, run_helper, GUINT_TO_POINTER (FCOEADM), NULL);
+	return _dcb_cleanup (iface, run_helper, GUINT_TO_POINTER (DCBTOOL), error);
 }
 
