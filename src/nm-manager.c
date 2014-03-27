@@ -765,11 +765,11 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 	g_signal_handlers_disconnect_matched (device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, manager);
 
 	nm_settings_device_removed (priv->settings, device, quitting);
+	priv->devices = g_slist_remove (priv->devices, device);
+
 	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
 	g_object_notify (G_OBJECT (manager), NM_MANAGER_DEVICES);
 	g_object_unref (device);
-
-	priv->devices = g_slist_remove (priv->devices, device);
 
 	if (priv->startup)
 		check_if_startup_complete (manager);
