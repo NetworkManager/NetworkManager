@@ -6,6 +6,10 @@ Type=dbus
 BusName=org.freedesktop.nm_dispatcher
 ExecStart=@libexecdir@/nm-dispatcher.action
 
+# We want to allow scripts to spawn long-running daemons, so tell
+# systemd to not clean up when nm-dispatcher exits
+KillMode=process
+
 [Install]
 Alias=dbus-org.freedesktop.nm-dispatcher.service
 
