@@ -50,7 +50,7 @@ nm_log_handler (const gchar *log_domain,
 	 LOGD_CORE | LOGD_DEVICE | LOGD_OLPC_MESH | LOGD_WIMAX | \
 	 LOGD_INFINIBAND | LOGD_FIREWALL | LOGD_ADSL | LOGD_BOND | \
 	 LOGD_VLAN | LOGD_BRIDGE | LOGD_DBUS_PROPS | LOGD_TEAM | LOGD_CONCHECK | \
-	 LOGD_DCB)
+	 LOGD_DCB | LOGD_DISPATCH)
 
 #define LOGD_DEFAULT (LOGD_ALL & ~(LOGD_WIFI_SCAN | LOGD_DBUS_PROPS))
 
@@ -108,6 +108,7 @@ static const LogDesc domain_descs[] = {
 	{ LOGD_TEAM,      "TEAM" },
 	{ LOGD_CONCHECK,  "CONCHECK" },
 	{ LOGD_DCB,       "DCB" },
+	{ LOGD_DISPATCH,  "DISPATCH" },
 	{ 0, NULL }
 };
 

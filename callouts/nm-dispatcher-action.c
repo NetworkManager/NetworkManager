@@ -83,6 +83,7 @@ impl_dispatch (Handler *h,
                const char *vpn_ip_iface,
                GHashTable *vpn_ip4_props,
                GHashTable *vpn_ip6_props,
+               gboolean request_debug,
                DBusGMethodInvocation *context);
 
 #include "nm-dispatcher-glue.h"
@@ -116,6 +117,8 @@ struct Request {
 	char *action;
 	char *iface;
 	char **envp;
+	gboolean debug;
+
 	GPtrArray *scripts;  /* list of ScriptInfo */
 	guint idx;
 
@@ -170,6 +173,11 @@ quit_timeout_reschedule (Handler *h)
 static void
 start_request (Request *request)
 {
+	if (request->iface)
+		g_message ("Dispatching action '%s' for %s", request->action, request->iface);
+	else
+		g_message ("Dispatching action '%s'", request->action);
+
 	request->handler->current_request = request;
 	dispatch_one_script (request);
 }
@@ -234,6 +242,13 @@ next_script (gpointer user_data)
 
 	dbus_g_method_return (request->context, results);
 	g_ptr_array_unref (results);
+
+	if (request->debug) {
+		if (request->iface)
+			g_message ("Dispatch '%s' on %s complete", request->action, request->iface);
+		else
+			g_message ("Dispatch '%s' complete", request->action);
+	}
 	request_free (request);
 
 	next_request (h);
@@ -271,7 +286,10 @@ script_watch_cb (GPid pid, gint status, gpointer user_data)
 		                                 script->script);
 	}
 
-	if (script->result != DISPATCH_RESULT_SUCCESS) {
+	if (script->result == DISPATCH_RESULT_SUCCESS) {
+		if (script->request->debug)
+			g_message ("Script '%s' complete", script->script);
+	} else {
 		script->result = DISPATCH_RESULT_FAILED;
 		g_warning ("%s", script->error);
 	}
@@ -379,8 +397,8 @@ dispatch_one_script (Request *request)
 	argv[2] = request->action;
 	argv[3] = NULL;
 
-	if (debug)
-		g_message ("Script: %s %s %s", script->script, request->iface ? request->iface : "(none)", request->action);
+	if (request->debug)
+		g_message ("Running script '%s'", script->script);
 
 	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, child_setup, request, &script->pid, &error)) {
 		request->script_watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
@@ -451,6 +469,7 @@ impl_dispatch (Handler *h,
                const char *vpn_ip_iface,
                GHashTable *vpn_ip4_props,
                GHashTable *vpn_ip6_props,
+               gboolean request_debug,
                DBusGMethodInvocation *context)
 {
 	GSList *sorted_scripts = NULL;
@@ -470,6 +489,7 @@ impl_dispatch (Handler *h,
 
 	request = g_malloc0 (sizeof (*request));
 	request->handler = h;
+	request->debug = request_debug || debug;
 	request->context = context;
 	request->action = g_strdup (str_action);
 
@@ -486,7 +506,7 @@ impl_dispatch (Handler *h,
 	                                                    vpn_ip6_props,
 	                                                    &iface);
 
-	if (debug) {
+	if (request->debug) {
 		g_message ("------------ Action ID %p '%s' Interface %s Environment ------------",
 		           context, str_action, iface ? iface : "(none)");
 		for (p = request->envp; *p; p++)
