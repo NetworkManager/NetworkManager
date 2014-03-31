@@ -194,6 +194,15 @@
       In case of VPN, VPN_IP_IFACE is set, and IP4_*, IP6_* variables with VPN prefix are
       exported too, like VPN_IP4_ADDRESS_0, VPN_IP4_NUM_ADDRESSES.
     </para>
+    <para>
+      Dispatcher scripts are run one at a time, but asynchronously from the main
+      NetworkManager process, and will be killed if they run for too long. If your script
+      might take arbitrarily long to complete, you should spawn a child process and have the
+      parent return immediately. Also beware that once a script is queued, it will always be
+      run, even if a later event renders it obsolete. (Eg, if an interface goes up, and then
+      back down again quickly, it is possible that one or more "up" scripts will be run
+      after the interface has gone down.)
+    </para>
   </refsect1>
 
   <refsect1>
