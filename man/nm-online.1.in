@@ -19,9 +19,9 @@
 .\" with this manual; if not, write to the Free Software Foundation, Inc.,
 .\" 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 .\"
-.\" Copyright (C) 2010 Red Hat, Inc.
+.\" Copyright (C) 2010 - 2014 Red Hat, Inc.
 .\"
-.TH NM-ONLINE "1" "11 July 2013"
+.TH NM-ONLINE "1" "25 March 2014"
 
 .SH NAME
 nm-online \- ask NetworkManager whether the network is connected
@@ -47,6 +47,9 @@ Exit immediately if NetworkManager is not running or connecting.
 .TP
 .B \-q, \-\-quiet
 Don't print anything.
+.TP
+.B \-s, \-\-wait-for-startup
+Wait for NetworkManager finishing its startup instead of establishing a connection.
 
 .SH EXIT STATUS
 
