@@ -149,10 +149,18 @@ quit_timeout_cb (gpointer user_data)
 }
 
 static void
+quit_timeout_cancel (Handler *h)
+{
+	if (h->quit_id) {
+		g_source_remove (h->quit_id);
+		h->quit_id = 0;
+	}
+}
+
+static void
 quit_timeout_reschedule (Handler *h)
 {
-	if (h->quit_id)
-		g_source_remove (h->quit_id);
+	quit_timeout_cancel (h);
 	if (!h->persist)
 		h->quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
 }
@@ -164,8 +172,6 @@ next_script (gpointer user_data)
 	GPtrArray *results;
 	GValueArray *item;
 	guint i;
-
-	quit_timeout_reschedule (request->handler);
 
 	request->idx++;
 	if (request->idx < request->scripts->len) {
@@ -203,9 +209,11 @@ next_script (gpointer user_data)
 	}
 
 	dbus_g_method_return (request->context, results);
-
-	request_free (request);
 	g_ptr_array_unref (results);
+
+	quit_timeout_reschedule (request->handler);
+	request_free (request);
+
 	return FALSE;
 }
 
@@ -353,7 +361,7 @@ dispatch_one_script (Request *request)
 
 	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, child_setup, request, &script->pid, &error)) {
 		request->script_watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
-		request->script_timeout_id = g_timeout_add_seconds (3, script_timeout_cb, script);
+		request->script_timeout_id = g_timeout_add_seconds (20, script_timeout_cb, script);
 	} else {
 		g_warning ("Failed to execute script '%s': (%d) %s",
 		           script->script, error->code, error->message);
@@ -435,7 +443,7 @@ impl_dispatch (Handler *h,
 		return;
 	}
 
-	quit_timeout_reschedule (h);
+	quit_timeout_cancel (h);
 
 	request = g_malloc0 (sizeof (*request));
 	request->handler = h;
