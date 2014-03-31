@@ -2669,6 +2669,31 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 			                         NM_DEVICE_STATE_DISCONNECTED,
 			                         NM_DEVICE_STATE_REASON_NONE);
 		}
+	} else {
+		NMConnection *existing_connection = NULL;
+		NMAuthSubject *subject;
+		char *error_desc = NULL;
+
+		/* If the device is active and its connection is not visible to the
+		 * user that's requesting this new activation, fail, since other users
+		 * should not be allowed to implicitly deactivate private connections
+		 * by activating a connection of their own.
+		 */
+		existing_connection = nm_device_get_connection (device);
+		subject = nm_active_connection_get_subject (active);
+		if (existing_connection &&
+		    !nm_auth_uid_in_acl (existing_connection,
+			                     nm_session_monitor_get (),
+			                     nm_auth_subject_get_uid (subject),
+			                     &error_desc)) {
+			g_set_error (error,
+					     NM_MANAGER_ERROR,
+					     NM_MANAGER_ERROR_PERMISSION_DENIED,
+					     "Private connection already active on the device: %s",
+					     error_desc);
+			g_free (error_desc);
+			return FALSE;
+		}
 	}
 
 	/* Final connection must be available on device */
