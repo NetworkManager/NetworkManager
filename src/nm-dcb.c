@@ -384,11 +384,43 @@ nm_dcb_setup (const char *iface, NMSettingDcb *s_dcb, GError **error)
 	return success;
 }
 
+static void
+carrier_wait (const char *iface, guint secs, gboolean up)
+{
+	int ifindex, count = secs * 10;
+
+	g_return_if_fail (iface != NULL);
+
+	ifindex = nm_platform_link_get_ifindex (iface);
+	if (ifindex > 0) {
+		/* To work around driver quirks and lldpad handling of carrier status,
+		 * we must wait a short period of time to see if the carrier goes
+		 * down, and then wait for the carrier to come back up again.  Otherwise
+		 * subsequent lldpad calls may fail with "Device not found, link down
+		 * or DCB not enabled" errors.
+		 */
+		nm_log_dbg (LOGD_DCB, "(%s): cleanup waiting for carrier %s",
+		            iface, up ? "up" : "down");
+		g_usleep (G_USEC_PER_SEC / 4);
+		while (nm_platform_link_is_connected (ifindex) != up && count-- > 0) {
+			g_usleep (G_USEC_PER_SEC / 10);
+			nm_platform_link_refresh (ifindex);
+		}
+	}
+}
+
 gboolean
 nm_dcb_cleanup (const char *iface, GError **error)
 {
 	/* Ignore FCoE cleanup errors */
 	_fcoe_cleanup (iface, run_helper, GUINT_TO_POINTER (FCOEADM), NULL);
+
+	/* Must pause a bit to wait for carrier-up since disabling FCoE may
+	 * cause the device to take the link down, making lldpad return errors.
+	 */
+	carrier_wait (iface, 2, FALSE);
+	carrier_wait (iface, 4, TRUE);
+
 	return _dcb_cleanup (iface, run_helper, GUINT_TO_POINTER (DCBTOOL), error);
 }
 
