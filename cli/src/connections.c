@@ -6381,7 +6381,7 @@ progress_activation_editor_cb (gpointer user_data)
 	NMDeviceState dev_state;
 
 	if (!device || !ac)
-		return FALSE;
+		goto finish;
 
 	ac_state = nm_active_connection_get_state (ac);
 	dev_state = nm_device_get_state (device);
@@ -6393,15 +6393,22 @@ progress_activation_editor_cb (gpointer user_data)
 		nmc_terminal_erase_line ();
 		printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
 		        nm_object_get_path (NM_OBJECT (ac)));
-		return FALSE; /* we are done */
+		goto finish; /* we are done */
 	} else if (   ac_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
-	           || ac_state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
+	           || dev_state == NM_DEVICE_STATE_FAILED) {
 		nmc_terminal_erase_line ();
 		printf (_("Error: Connection activation failed.\n"));
-		return FALSE; /* we are done */
+		goto finish; /* we are done */
 	}
 
 	return TRUE;
+
+finish:
+	if (device)
+		g_object_unref (device);
+	if (ac)
+		g_object_unref (ac);
+	return FALSE;
 }
 
 static void
@@ -6422,8 +6429,8 @@ activate_connection_editor_cb (NMClient *client,
 		}
 		if (device) {
 			monitor_ac_info = g_malloc0 (sizeof (AddConnectionInfo));
-			monitor_ac_info->device = device;
-			monitor_ac_info->ac = active;
+			monitor_ac_info->device = g_object_ref (device);
+			monitor_ac_info->ac = active ? g_object_ref (active) : NULL;
 			monitor_ac_info->monitor_id = g_timeout_add (120, progress_activation_editor_cb, monitor_ac_info);
 		}
 	}
