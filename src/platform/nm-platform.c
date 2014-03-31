@@ -1611,7 +1611,7 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 			guint32 shift = subtract_guint32 (now, known_address->timestamp + 5);
 
 			lifetime = subtract_guint32 (known_address->lifetime, shift);
-			preferred = subtract_guint32 (known_address->lifetime, shift);
+			preferred = subtract_guint32 (known_address->preferred, shift);
 
 			g_warn_if_fail (known_address->preferred <= known_address->lifetime);
 		} else
@@ -1670,7 +1670,7 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 			guint32 shift = subtract_guint32 (now, known_address->timestamp + 5);
 
 			lifetime = subtract_guint32 (known_address->lifetime, shift);
-			preferred = subtract_guint32 (known_address->lifetime, shift);
+			preferred = subtract_guint32 (known_address->preferred, shift);
 
 			g_warn_if_fail (known_address->preferred <= known_address->lifetime);
 		} else
