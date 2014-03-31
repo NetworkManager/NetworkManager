@@ -1751,6 +1751,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	char *path;
 	static guint32 devcount = 0;
 	const GSList *unmanaged_specs;
+	gboolean unmanaged = FALSE;
 	NMConnection *connection = NULL;
 	gboolean enabled = FALSE;
 	RfKillType rtype;
@@ -1847,15 +1848,17 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	nm_log_info (LOGD_CORE, "(%s): exported as %s", iface, path);
 	g_free (path);
 
+	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
+	unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
+
 	/* Don't generate a connection e.g. for devices NM just created, or
 	 * for the loopback */
-	if (generate_con)
+	if (generate_con && !unmanaged)
 		connection = get_existing_connection (self, device);
 
 	/* Start the device if it's supposed to be managed */
-	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	if (   !manager_sleeping (self)
-	    && !nm_device_spec_match_list (device, unmanaged_specs)) {
+	    && !unmanaged) {
 		nm_device_set_manager_managed (device,
 		                               TRUE,
 		                               connection ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED :
