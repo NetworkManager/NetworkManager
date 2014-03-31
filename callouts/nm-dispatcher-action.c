@@ -46,10 +46,14 @@
 static GMainLoop *loop = NULL;
 static gboolean debug = FALSE;
 
+typedef struct Request Request;
+
 typedef struct {
 	GObject parent;
 
 	/* Private data */
+	Request *current_request;
+	GQueue *pending_requests;
 	guint quit_id;
 	gboolean persist;
 } Handler;
@@ -93,8 +97,6 @@ static void
 handler_class_init (HandlerClass *h_class)
 {
 }
-
-typedef struct Request Request;
 
 static void dispatch_one_script (Request *request);
 
@@ -165,10 +167,32 @@ quit_timeout_reschedule (Handler *h)
 		h->quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
 }
 
+static void
+start_request (Request *request)
+{
+	request->handler->current_request = request;
+	dispatch_one_script (request);
+}
+
+static void
+next_request (Handler *h)
+{
+	Request *request = g_queue_pop_head (h->pending_requests);
+
+	if (request) {
+		start_request (request);
+		return;
+	}
+
+	h->current_request = NULL;
+	quit_timeout_reschedule (h);
+}
+
 static gboolean
 next_script (gpointer user_data)
 {
 	Request *request = user_data;
+	Handler *h = request->handler;
 	GPtrArray *results;
 	GValueArray *item;
 	guint i;
@@ -210,10 +234,9 @@ next_script (gpointer user_data)
 
 	dbus_g_method_return (request->context, results);
 	g_ptr_array_unref (results);
-
-	quit_timeout_reschedule (request->handler);
 	request_free (request);
 
+	next_request (h);
 	return FALSE;
 }
 
@@ -482,8 +505,10 @@ impl_dispatch (Handler *h,
 	}
 	g_slist_free (sorted_scripts);
 
-	/* start dispatching scripts */
-	dispatch_one_script (request);
+	if (h->current_request)
+		g_queue_push_tail (h->pending_requests, request);
+	else
+		start_request (request);
 }
 
 static void
@@ -661,6 +686,7 @@ main (int argc, char **argv)
 	if (!handler)
 		return 1;
 	handler->persist = persist;
+	handler->pending_requests = g_queue_new ();
 
 	dbus_g_object_type_install_info (HANDLER_TYPE, &dbus_glib_nm_dispatcher_object_info);
 	dbus_g_connection_register_g_object (bus,
@@ -672,7 +698,9 @@ main (int argc, char **argv)
 
 	g_main_loop_run (loop);
 
+	g_queue_free (handler->pending_requests);
 	g_object_unref (handler);
+
 	dbus_g_connection_unref (bus);
 
 	if (!debug)
