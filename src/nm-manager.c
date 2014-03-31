@@ -2889,6 +2889,7 @@ nm_manager_activate_connection (NMManager *manager,
 	char *iface;
 	NMDevice *master_device = NULL;
 	NMConnection *master_connection = NULL;
+	NMConnection *existing_connection = NULL;
 	NMActiveConnection *master_ac = NULL;
 	gboolean matched;
 	char *error_desc = NULL;
@@ -3018,6 +3019,28 @@ nm_manager_activate_connection (NMManager *manager,
 		             "%s does not allow automatic connections at this time",
 		             nm_device_get_iface (device));
 		return NULL;
+	}
+
+	if (dbus_sender) {
+		/* If the device is active and its connection is not visible to the
+		 * user that's requesting this new activation, fail, since other users
+		 * should not be allowed to implicitly deactivate private connections
+		 * by activating a connection of their own.
+		 */
+		existing_connection = nm_device_get_connection (device);
+		if (existing_connection &&
+		    !nm_auth_uid_in_acl (existing_connection,
+		                         priv->session_monitor,
+		                         sender_uid,
+		                         &error_desc)) {
+			g_set_error (error,
+			             NM_MANAGER_ERROR,
+			             NM_MANAGER_ERROR_PERMISSION_DENIED,
+			             "Private connection already active on the device: %s",
+			             error_desc);
+			g_free (error_desc);
+			return FALSE;
+		}
 	}
 
 	/* Try to find the master connection/device if the connection has a dependency */
