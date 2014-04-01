@@ -547,7 +547,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	}
 	channel_str = g_strdup_printf ("%u", nm_utils_wifi_freq_to_channel (freq));
 	freq_str = g_strdup_printf (_("%u MHz"), freq);
-	bitrate_str = g_strdup_printf (_("%u MB/s"), bitrate/1000);
+	bitrate_str = g_strdup_printf (_("%u Mbit/s"), bitrate/1000);
 	strength_str = g_strdup_printf ("%u", strength);
 	wpa_flags_str = ap_wpa_rsn_flags_to_string (wpa_flags);
 	rsn_flags_str = ap_wpa_rsn_flags_to_string (rsn_flags);
