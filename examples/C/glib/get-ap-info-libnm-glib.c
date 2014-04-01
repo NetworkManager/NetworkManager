@@ -105,7 +105,7 @@ show_access_point_info (NMAccessPoint *ap)
 	/* Convert to strings */
 	ssid_str = nm_utils_ssid_to_utf8 (ssid);
 	freq_str = g_strdup_printf ("%u MHz", freq);
-	bitrate_str = g_strdup_printf ("%u MB/s", bitrate/1000);
+	bitrate_str = g_strdup_printf ("%u Mbit/s", bitrate/1000);
 	strength_str = g_strdup_printf ("%u", strength);
 	wpa_flags_str = ap_wpa_rsn_flags_to_string (wpa_flags);
 	rsn_flags_str = ap_wpa_rsn_flags_to_string (rsn_flags);
@@ -178,7 +178,7 @@ show_wifi_device_info (NMDevice *device)
 	speed = nm_device_wifi_get_bitrate (NM_DEVICE_WIFI (device));
 	speed /= 1000;
 
-	printf ("Device: %s  ----  Driver: %s  ----  Speed: %d MB/s  ----  Active AP: %s\n",
+	printf ("Device: %s  ----  Driver: %s  ----  Speed: %d Mbit/s  ----  Active AP: %s\n",
 	         iface, driver, speed, active_ssid_str ? active_ssid_str : "none");
 	printf ("=================================================================================\n");
 	g_free (active_ssid_str);
