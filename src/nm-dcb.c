@@ -216,7 +216,7 @@ _dcb_setup (const char *iface,
 		/* Ignore disable failure since lldpad <= 0.9.46 does not support disabling
 		 * priority groups without specifying an entire PG config.
 		 */
-		do_helper (iface, DCBTOOL, run_func, user_data, error, "pg e:0");
+		(void) do_helper (iface, DCBTOOL, run_func, user_data, error, "pg e:0");
 	}
 
 	return TRUE;
