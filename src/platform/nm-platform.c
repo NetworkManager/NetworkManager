@@ -1425,6 +1425,7 @@ nm_platform_ip4_address_add (int ifindex,
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (lifetime > 0, FALSE);
+	g_return_val_if_fail (preferred <= lifetime, FALSE);
 	g_return_val_if_fail (klass->ip4_address_add, FALSE);
 	g_return_val_if_fail (!label || strlen (label) < sizeof (((NMPlatformIP4Address *) NULL)->label), FALSE);
 
@@ -1459,6 +1460,7 @@ nm_platform_ip6_address_add (int ifindex,
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (lifetime > 0, FALSE);
+	g_return_val_if_fail (preferred <= lifetime, FALSE);
 	g_return_val_if_fail (klass->ip6_address_add, FALSE);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
@@ -1610,6 +1612,8 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 
 			lifetime = subtract_guint32 (known_address->lifetime, shift);
 			preferred = subtract_guint32 (known_address->lifetime, shift);
+
+			g_warn_if_fail (known_address->preferred <= known_address->lifetime);
 		} else
 			lifetime = preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 
@@ -1667,6 +1671,8 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 
 			lifetime = subtract_guint32 (known_address->lifetime, shift);
 			preferred = subtract_guint32 (known_address->lifetime, shift);
+
+			g_warn_if_fail (known_address->preferred <= known_address->lifetime);
 		} else
 			lifetime = preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 

@@ -547,6 +547,8 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 				address.timestamp = now;
 				address.lifetime = ndp_msg_opt_prefix_valid_time (msg, offset);
 				address.preferred = ndp_msg_opt_prefix_preferred_time (msg, offset);
+				if (address.preferred > address.lifetime)
+					address.preferred = address.lifetime;
 
 				fill_address_from_mac (&address.address, lladdr);
 
