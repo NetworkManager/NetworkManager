@@ -185,9 +185,9 @@ nm_device_wifi_get_mode (NMDeviceWifi *device)
  * nm_device_wifi_get_bitrate:
  * @device: a #NMDeviceWifi
  *
- * Gets the bit rate of the #NMDeviceWifi.
+ * Gets the bit rate of the #NMDeviceWifi in kbit/s.
  *
- * Returns: the bit rate
+ * Returns: the bit rate (kbit/s)
  **/
 guint32
 nm_device_wifi_get_bitrate (NMDeviceWifi *device)
@@ -758,7 +758,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	/**
 	 * NMDeviceWifi:bitrate:
 	 *
-	 * The bit rate of the device.
+	 * The bit rate of the device in kbit/s.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_BITRATE,

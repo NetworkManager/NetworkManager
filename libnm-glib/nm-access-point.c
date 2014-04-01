@@ -236,9 +236,9 @@ nm_access_point_get_mode (NMAccessPoint *ap)
  * nm_access_point_get_max_bitrate:
  * @ap: a #NMAccessPoint
  *
- * Gets the maximum bit rate of the access point.
+ * Gets the maximum bit rate of the access point in kbit/s.
  *
- * Returns: the maximum bit rate
+ * Returns: the maximum bit rate (kbit/s)
  **/
 guint32
 nm_access_point_get_max_bitrate (NMAccessPoint *ap)
@@ -660,7 +660,7 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	/**
 	 * NMAccessPoint:max-bitrate:
 	 *
-	 * The maximum bit rate of the access point.
+	 * The maximum bit rate of the access point in kbit/s.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAX_BITRATE,

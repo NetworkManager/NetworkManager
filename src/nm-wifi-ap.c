@@ -1023,7 +1023,7 @@ nm_ap_set_freq (NMAccessPoint *ap,
 
 
 /*
- * Get/set functions for max bitrate
+ * Get/set functions for max bitrate (in kbit/s)
  *
  */
 guint32 nm_ap_get_max_bitrate (NMAccessPoint *ap)
