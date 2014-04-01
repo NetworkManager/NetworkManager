@@ -758,7 +758,7 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 				NMActRequest *req = nm_device_get_act_request (device);
 
 				if (!req || !nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (req)))
-					nm_device_set_manager_managed (device, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
+					nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
 			}
 	}
 
@@ -1199,13 +1199,14 @@ system_unmanaged_devices_changed_cb (NMSettings *settings,
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *device = NM_DEVICE (iter->data);
-		gboolean managed;
+		gboolean unmanaged;
 
-		managed = !nm_device_spec_match_list (device, unmanaged_specs);
-		nm_device_set_manager_managed (device,
-		                               managed,
-		                               managed ? NM_DEVICE_STATE_REASON_NOW_MANAGED :
-		                                         NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+		unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
+		nm_device_set_unmanaged (device,
+		                         NM_UNMANAGED_INTERNAL,
+		                         unmanaged,
+		                         unmanaged ? NM_DEVICE_STATE_REASON_NOW_UNMANAGED :
+		                                     NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	}
 }
 
@@ -1751,7 +1752,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	char *path;
 	static guint32 devcount = 0;
 	const GSList *unmanaged_specs;
-	gboolean unmanaged = FALSE;
+	gboolean user_unmanaged, sleeping;
 	NMConnection *connection = NULL;
 	gboolean enabled = FALSE;
 	RfKillType rtype;
@@ -1842,27 +1843,30 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	nm_log_info (LOGD_HW, "(%s): new %s device (driver: '%s' ifindex: %d)",
 	             iface, type_desc, driver, nm_device_get_ifindex (device));
 
+	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
+	user_unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
+	sleeping = manager_sleeping (self);
+	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_INTERNAL, sleeping || user_unmanaged);
+
 	path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
 	nm_device_set_path (device, path);
 	nm_dbus_manager_register_object (priv->dbus_mgr, path, device);
 	nm_log_info (LOGD_CORE, "(%s): exported as %s", iface, path);
 	g_free (path);
 
-	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
-	unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
-
 	/* Don't generate a connection e.g. for devices NM just created, or
-	 * for the loopback */
-	if (generate_con && !unmanaged)
+	 * for the loopback, or when we're sleeping. */
+	if (generate_con && !user_unmanaged && !sleeping)
 		connection = get_existing_connection (self, device);
 
-	/* Start the device if it's supposed to be managed */
-	if (   !manager_sleeping (self)
-	    && !unmanaged) {
-		nm_device_set_manager_managed (device,
-		                               TRUE,
-		                               connection ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED :
-		                                          NM_DEVICE_STATE_REASON_NOW_MANAGED);
+	/* Start the device if it's supposed to be managed. Note that this will
+	 * manage default-unmanaged devices if they have a generated connection.
+	 */
+	if (nm_device_get_managed (device) || connection) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_UNAVAILABLE,
+		                         connection ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED :
+		                                      NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	}
 
 	nm_settings_device_added (priv->settings, device);
@@ -3604,7 +3608,7 @@ do_sleep_wake (NMManager *self)
 			NMDevice *device = iter->data;
 
 			if (!nm_device_is_software (device))
-				nm_device_set_manager_managed (device, FALSE, NM_DEVICE_STATE_REASON_SLEEPING);
+				nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
 		}
 	} else {
 		nm_log_info (LOGD_SUSPEND, "waking up and re-enabling...");
@@ -3644,9 +3648,9 @@ do_sleep_wake (NMManager *self)
 			g_object_set (G_OBJECT (device), NM_DEVICE_AUTOCONNECT, TRUE, NULL);
 
 			if (nm_device_spec_match_list (device, unmanaged_specs))
-				nm_device_set_manager_managed (device, FALSE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+				nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
 			else
-				nm_device_set_manager_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
+				nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, FALSE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 		}
 	}
 
