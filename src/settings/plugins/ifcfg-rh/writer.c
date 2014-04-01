@@ -2146,10 +2146,9 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 {
 	NMSettingIP4Config *s_ip4;
 	char *base_ifcfg_dir, *base_ifcfg_name, *base_name;
-	int i, num, base_ifcfg_path_len, base_ifcfg_name_len, base_name_len;
+	int i, num, base_ifcfg_name_len, base_name_len;
 	GDir *dir;
 
-	base_ifcfg_path_len = strlen (base_ifcfg_path);
 	base_ifcfg_dir = g_path_get_dirname (base_ifcfg_path);
 	base_ifcfg_name = g_path_get_basename (base_ifcfg_path);
 	base_ifcfg_name_len = strlen (base_ifcfg_name);

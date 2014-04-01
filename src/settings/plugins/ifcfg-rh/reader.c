@@ -1381,8 +1381,10 @@ make_ip4_setting (shvarFile *ifcfg,
 		NMIP4Address *addr = NULL;
 
 		addr = nm_ip4_address_new ();
-		if (!read_full_ip4_address (ifcfg, network_file, i, addr, error))
+		if (!read_full_ip4_address (ifcfg, network_file, i, addr, error)) {
+			nm_ip4_address_unref (addr);
 			goto done;
+		}
 		if (!nm_ip4_address_get_address (addr)) {
 			nm_ip4_address_unref (addr);
 
@@ -1551,11 +1553,13 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 			p = strchr (item, ':');
 			g_assert (p != NULL); /* we know this is true from utils_is_ifcfg_alias_file() */
 			for (p++; *p; p++) {
-				if (!g_ascii_isalnum (*p) && *p != '_') {
-					PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: ignoring alias file '%s' with invalid name", full_path);
-					g_free (full_path);
-					continue;
-				}
+				if (!g_ascii_isalnum (*p) && *p != '_')
+					break;
+			}
+			if (*p) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: ignoring alias file '%s' with invalid name", full_path);
+				g_free (full_path);
+				continue;
 			}
 
 			parsed = svNewFile (full_path);
