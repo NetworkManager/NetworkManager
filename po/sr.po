@@ -711,8 +711,8 @@ msgstr "%u MHz"
 
 #: ../cli/src/devices.c:394
 #, c-format
-msgid "%u MB/s"
-msgstr "%u MB/s"
+msgid "%u Mbit/s"
+msgstr "%u Mbit/s"
 
 #: ../cli/src/devices.c:403
 msgid "Encrypted: "

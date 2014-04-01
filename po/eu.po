@@ -638,8 +638,8 @@ msgstr "%u MHz"
 
 #: ../cli/src/devices.c:863
 #, c-format
-msgid "%u MB/s"
-msgstr "%u MB/s"
+msgid "%u Mbit/s"
+msgstr "%u Mbit/s"
 
 #: ../cli/src/devices.c:869 ../cli/src/devices.c:871
 msgid "AP parameters"

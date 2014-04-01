@@ -1170,7 +1170,7 @@ msgstr "%u MHz"
 
 #: ../cli/src/devices.c:401
 #, c-format
-msgid "%u MB/s"
+msgid "%u Mbit/s"
 msgstr "%u মেগাবাইট/সেকেন্ড"
 
 #: ../cli/src/devices.c:410

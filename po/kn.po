@@ -3194,8 +3194,8 @@ msgstr "%u MHz"
 
 #: ../cli/src/devices.c:548
 #, c-format
-msgid "%u MB/s"
-msgstr "%u MB/s"
+msgid "%u Mbit/s"
+msgstr "%u Mbit/s"
 
 #: ../cli/src/devices.c:567
 msgid "WPA1"

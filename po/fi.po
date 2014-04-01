@@ -761,7 +761,7 @@ msgstr "%u MHz"
 
 #: ../cli/src/devices.c:461
 #, c-format
-msgid "%u MB/s"
+msgid "%u Mbit/s"
 msgstr ""
 
 #: ../cli/src/devices.c:470

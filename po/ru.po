@@ -1165,7 +1165,7 @@ msgstr "%u МГц"
 
 #: ../cli/src/devices.c:400
 #, c-format
-msgid "%u MB/s"
+msgid "%u Mbit/s"
 msgstr "%u МБ/с"
 
 #: ../cli/src/devices.c:409
