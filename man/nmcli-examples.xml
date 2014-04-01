@@ -55,18 +55,18 @@ Copyright (C) 2013 - 2014 Red Hat, Inc.
 $ nmcli device wifi list
       </emphasis></synopsis>
       <screen>
-*  SSID               MODE    CHAN  RATE     SIGNAL  BARS  SECURITY
-   netdatacomm_local  Infra   6     54 MB/s  37      ▂▄__  WEP
-*  F1                 Infra   11    54 MB/s  98      ▂▄▆█  WPA1
-   LoremCorp          Infra   1     54 MB/s  62      ▂▄▆_  WPA2 802.1X
-   Internet           Infra   6     54 MB/s  29      ▂___  WPA1
-   HPB110a.F2672A     Ad-Hoc  6     54 MB/s  22      ▂___  --
-   Jozinet            Infra   1     54 MB/s  19      ▂___  WEP
-   VOIP               Infra   1     54 MB/s  20      ▂___  WEP
-   MARTINA            Infra   4     54 MB/s  32      ▂▄__  WPA2
-   N24PU1             Infra   7     11 MB/s  22      ▂___  --
-   alfa               Infra   1     54 MB/s  67      ▂▄▆_  WPA2
-   bertnet            Infra   5     54 MB/s  20      ▂___  WPA1 WPA2
+*  SSID               MODE    CHAN  RATE       SIGNAL  BARS  SECURITY
+   netdatacomm_local  Infra   6     54 Mbit/s  37      ▂▄__  WEP
+*  F1                 Infra   11    54 Mbit/s  98      ▂▄▆█  WPA1
+   LoremCorp          Infra   1     54 Mbit/s  62      ▂▄▆_  WPA2 802.1X
+   Internet           Infra   6     54 Mbit/s  29      ▂___  WPA1
+   HPB110a.F2672A     Ad-Hoc  6     54 Mbit/s  22      ▂___  --
+   Jozinet            Infra   1     54 Mbit/s  19      ▂___  WEP
+   VOIP               Infra   1     54 Mbit/s  20      ▂___  WEP
+   MARTINA            Infra   4     54 Mbit/s  32      ▂▄__  WPA2
+   N24PU1             Infra   7     11 Mbit/s  22      ▂___  --
+   alfa               Infra   1     54 Mbit/s  67      ▂▄▆_  WPA2
+   bertnet            Infra   5     54 Mbit/s  20      ▂___  WPA1 WPA2
       </screen>
     </example>
     <para>
