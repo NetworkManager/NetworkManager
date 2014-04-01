@@ -294,6 +294,7 @@ test_setting_ip4_config_labels (void)
 	nm_ip4_address_set_prefix (addr, 24);
 
 	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_ip4_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
@@ -306,6 +307,7 @@ test_setting_ip4_config_labels (void)
 	nm_ip4_address_set_prefix (addr, 24);
 
 	NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "eth0:1"));
+	nm_ip4_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
@@ -318,6 +320,7 @@ test_setting_ip4_config_labels (void)
 	nm_ip4_address_set_prefix (addr, 24);
 
 	NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, NULL));
+	nm_ip4_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
