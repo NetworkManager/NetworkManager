@@ -1203,7 +1203,7 @@ system_unmanaged_devices_changed_cb (NMSettings *settings,
 
 		unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
 		nm_device_set_unmanaged (device,
-		                         NM_UNMANAGED_INTERNAL,
+		                         NM_UNMANAGED_USER,
 		                         unmanaged,
 		                         unmanaged ? NM_DEVICE_STATE_REASON_NOW_UNMANAGED :
 		                                     NM_DEVICE_STATE_REASON_NOW_MANAGED);
@@ -1845,8 +1845,10 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 
 	unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 	user_unmanaged = nm_device_spec_match_list (device, unmanaged_specs);
+	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_USER, user_unmanaged);
+
 	sleeping = manager_sleeping (self);
-	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_INTERNAL, sleeping || user_unmanaged);
+	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_INTERNAL, sleeping);
 
 	path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
 	nm_device_set_path (device, path);
@@ -3594,7 +3596,6 @@ static void
 do_sleep_wake (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	const GSList *unmanaged_specs;
 	GSList *iter;
 
 	if (manager_sleeping (self)) {
@@ -3612,8 +3613,6 @@ do_sleep_wake (NMManager *self)
 		}
 	} else {
 		nm_log_info (LOGD_SUSPEND, "waking up and re-enabling...");
-
-		unmanaged_specs = nm_settings_get_unmanaged_specs (priv->settings);
 
 		/* Ensure rfkill state is up-to-date since we don't respond to state
 		 * changes during sleep.
@@ -3647,10 +3646,7 @@ do_sleep_wake (NMManager *self)
 
 			g_object_set (G_OBJECT (device), NM_DEVICE_AUTOCONNECT, TRUE, NULL);
 
-			if (nm_device_spec_match_list (device, unmanaged_specs))
-				nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
-			else
-				nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, FALSE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
+			nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, FALSE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 		}
 	}
 
