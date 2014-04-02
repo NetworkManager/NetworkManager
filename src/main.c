@@ -49,7 +49,6 @@
 #include "nm-supplicant-manager.h"
 #include "nm-dhcp-manager.h"
 #include "nm-firewall-manager.h"
-#include "nm-hostname-provider.h"
 #include "nm-vpn-manager.h"
 #include "nm-logging.h"
 #include "nm-config.h"
@@ -601,7 +600,6 @@ main (int argc, char *argv[])
 	/* Initialize DHCP manager */
 	dhcp_mgr = nm_dhcp_manager_get ();
 	g_assert (dhcp_mgr != NULL);
-	nm_dhcp_manager_set_hostname_provider (dhcp_mgr, NM_HOSTNAME_PROVIDER (manager));
 
 	settings = nm_settings_new (&error);
 	if (!settings) {

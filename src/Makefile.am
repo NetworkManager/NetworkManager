@@ -220,8 +220,6 @@ nm_sources = \
 	nm-dispatcher.h \
 	nm-enum-types.c \
 	nm-enum-types.h \
-	nm-hostname-provider.c \
-	nm-hostname-provider.h \
 	nm-ip4-config.c \
 	nm-ip4-config.h \
 	nm-ip6-config.c \
