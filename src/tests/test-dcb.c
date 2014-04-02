@@ -54,8 +54,7 @@ static void
 test_dcb_fcoe (void)
 {
 	static DcbExpected expected = { 0,
-		{ "dcbtool sc eth0 dcb on",
-		  "dcbtool sc eth0 app:fcoe e:1 a:1 w:1",
+		{ "dcbtool sc eth0 app:fcoe e:1 a:1 w:1",
 		  "dcbtool sc eth0 app:fcoe appcfg:40",
 		  "dcbtool sc eth0 app:iscsi e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:fip e:0 a:0 w:0",
@@ -85,8 +84,7 @@ static void
 test_dcb_iscsi (void)
 {
 	static DcbExpected expected = { 0,
-		{ "dcbtool sc eth0 dcb on",
-		  "dcbtool sc eth0 app:fcoe e:0 a:0 w:0",
+		{ "dcbtool sc eth0 app:fcoe e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:iscsi e:1 a:0 w:1",
 		  "dcbtool sc eth0 app:iscsi appcfg:08",
 		  "dcbtool sc eth0 app:fip e:0 a:0 w:0",
@@ -116,8 +114,7 @@ static void
 test_dcb_fip (void)
 {
 	static DcbExpected expected = { 0,
-		{ "dcbtool sc eth0 dcb on",
-		  "dcbtool sc eth0 app:fcoe e:0 a:0 w:0",
+		{ "dcbtool sc eth0 app:fcoe e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:iscsi e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:fip e:1 a:1 w:0",
 		  "dcbtool sc eth0 app:fip appcfg:01",
@@ -147,8 +144,7 @@ static void
 test_dcb_fip_default_prio (void)
 {
 	static DcbExpected expected = { 0,
-		{ "dcbtool sc eth0 dcb on",
-		  "dcbtool sc eth0 app:fcoe e:0 a:0 w:0",
+		{ "dcbtool sc eth0 app:fcoe e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:iscsi e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:fip e:1 a:1 w:0",
 		  "dcbtool sc eth0 pfc e:0 a:0 w:0",
@@ -177,8 +173,7 @@ static void
 test_dcb_pfc (void)
 {
 	static DcbExpected expected = { 0,
-		{ "dcbtool sc eth0 dcb on",
-		  "dcbtool sc eth0 app:fcoe e:0 a:0 w:0",
+		{ "dcbtool sc eth0 app:fcoe e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:iscsi e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:fip e:0 a:0 w:0",
 		  "dcbtool sc eth0 pfc e:1 a:1 w:1",
@@ -216,8 +211,7 @@ static void
 test_dcb_priority_groups (void)
 {
 	static DcbExpected expected = { 0,
-		{ "dcbtool sc eth0 dcb on",
-		  "dcbtool sc eth0 app:fcoe e:0 a:0 w:0",
+		{ "dcbtool sc eth0 app:fcoe e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:iscsi e:0 a:0 w:0",
 		  "dcbtool sc eth0 app:fip e:0 a:0 w:0",
 		  "dcbtool sc eth0 pfc e:0 a:0 w:0",
@@ -268,20 +262,27 @@ static void
 test_dcb_cleanup (void)
 {
 	static DcbExpected expected = { 0,
-		{ "dcbtool sc eth0 dcb off",
+		{ "fcoeadm -d eth0",
 		  "dcbtool sc eth0 app:fcoe e:0",
 		  "dcbtool sc eth0 app:iscsi e:0",
 		  "dcbtool sc eth0 app:fip e:0",
 		  "dcbtool sc eth0 pfc e:0",
 		  "dcbtool sc eth0 pg e:0",
+		  "dcbtool sc eth0 dcb off",
 		  NULL },
 	};
 	GError *error = NULL;
 	gboolean success;
 
+	success = _fcoe_cleanup ("eth0", test_dcb_func, &expected, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
 	success = _dcb_cleanup ("eth0", test_dcb_func, &expected, &error);
 	g_assert_no_error (error);
 	g_assert (success);
+
+	g_assert_cmpstr (expected.cmds[expected.num], ==, NULL);
 }
 
 static void

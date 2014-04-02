@@ -48,6 +48,7 @@ GQuark nm_dcb_error_quark (void);
 GType  nm_dcb_error_get_type (void);
 
 
+gboolean nm_dcb_enable (const char *iface, gboolean enable, GError **error);
 gboolean nm_dcb_setup (const char *iface, NMSettingDcb *s_dcb, GError **error);
 gboolean nm_dcb_cleanup (const char *iface, GError **error);
 
@@ -67,6 +68,12 @@ gboolean do_helper (const char *iface,
                     GError **error,
                     const char *fmt,
                     ...) G_GNUC_PRINTF(6, 7);
+
+gboolean _dcb_enable (const char *iface,
+                      gboolean enable,
+                      DcbFunc run_func,
+                      gpointer user_data,
+                      GError **error);
 
 gboolean _dcb_setup (const char *iface,
                      NMSettingDcb *s_dcb,
