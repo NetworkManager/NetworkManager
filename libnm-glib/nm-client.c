@@ -1404,9 +1404,11 @@ check_connectivity_cb (DBusGProxy *proxy,
 	CheckConnectivityData *ccd = g_simple_async_result_get_op_res_gpointer (simple);
 	GError *error = NULL;
 
-	if (!dbus_g_proxy_end_call (proxy, call, &error,
-	                            G_TYPE_UINT, &ccd->connectivity,
-	                            G_TYPE_INVALID))
+	if (g_cancellable_set_error_if_cancelled (ccd->cancellable, &error))
+		g_simple_async_result_take_error (simple, error);
+	else if (!dbus_g_proxy_end_call (proxy, call, &error,
+	                                 G_TYPE_UINT, &ccd->connectivity,
+	                                 G_TYPE_INVALID))
 		g_simple_async_result_take_error (simple, error);
 
 	g_simple_async_result_complete (simple);
@@ -1466,7 +1468,6 @@ nm_client_check_connectivity_async (NMClient *client,
 		ccd->cancelled_id = g_signal_connect (cancellable, "cancelled",
 		                                      G_CALLBACK (check_connectivity_cancelled_cb),
 		                                      simple);
-		g_simple_async_result_set_check_cancellable (simple, cancellable);
 	}
 
 	ccd->call = dbus_g_proxy_begin_call (priv->client_proxy, "CheckConnectivity",
