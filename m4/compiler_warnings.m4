@@ -8,7 +8,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	CFLAGS="-Wall -std=gnu89 $CFLAGS"
 
 	for option in -Wshadow -Wmissing-declarations -Wmissing-prototypes \
-		      -Wdeclaration-after-statement \
+		      -Wdeclaration-after-statement -Wformat-security \
 		      -Wfloat-equal -Wno-unused-parameter -Wno-sign-compare \
 		      -fno-strict-aliasing -Wno-unused-but-set-variable \
 		      -Wundef -Wimplicit-function-declaration \
