@@ -31,7 +31,6 @@
 #include <arpa/inet.h>
 
 #include <glib.h>
-#include <glib-unix.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
@@ -597,15 +596,27 @@ logging_shutdown (void)
 	closelog ();
 }
 
-static gboolean
-signal_handler (gpointer user_data)
+static void
+signal_handler (int signo)
 {
-	int signo = GPOINTER_TO_INT (user_data);
+	if (signo == SIGINT || signo == SIGTERM) {
+		g_message ("Caught signal %d, shutting down...", signo);
+		g_main_loop_quit (loop);
+	}
+}
 
-	g_message ("Caught signal %d, shutting down...", signo);
-	g_main_loop_quit (loop);
+static void
+setup_signals (void)
+{
+	struct sigaction action;
+	sigset_t mask;
 
-	return G_SOURCE_REMOVE;
+	sigemptyset (&mask);
+	action.sa_handler = signal_handler;
+	action.sa_mask = mask;
+	action.sa_flags = 0;
+	sigaction (SIGTERM,  &action, NULL);
+	sigaction (SIGINT,  &action, NULL);
 }
 
 int
@@ -636,8 +647,7 @@ main (int argc, char **argv)
 	g_option_context_free (opt_ctx);
 
 	g_type_init ();
-	g_unix_signal_add (SIGTERM, signal_handler, GINT_TO_POINTER (SIGTERM));
-	g_unix_signal_add (SIGINT, signal_handler, GINT_TO_POINTER (SIGINT));
+	setup_signals ();
 
 	if (!debug)
 		logging_setup ();
