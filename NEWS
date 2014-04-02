@@ -1,14 +1,15 @@
 ================================================
-NetworkManager-0.9.8.9
+NetworkManager-0.9.8.10
 Overview of changes since NetworkManager-0.9.8.8
 ================================================
 
-This is a prerelease of an upcoming stable release of NetworkManager.
-Notable changes include:
+This is a new stable release of NetworkManager.  Notable changes include:
 
 * Fixed two problems that could result in gnome-shell showing
   incorrect icons. (In particular, fixed the problem where the network
   icon would disappear when certain VPNs were activated.)
+* Fixed a bug that allowed a user to disconnect a connection that
+  they didn't have permissions on.
 * Dispatcher scripts now receive correct IPv6 addresses, and also
   correct DHCP information on lease-change events.
 * NetworkManager no longer tries to start ModemManager itself on
