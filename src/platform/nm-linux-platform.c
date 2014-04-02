@@ -1705,6 +1705,22 @@ ref_object (struct nl_object *obj, void *data)
 	*out = obj;
 }
 
+static gboolean
+_rtnl_addr_timestamps_equal_fuzzy (guint32 ts1, guint32 ts2)
+{
+	guint32 diff;
+
+	if (ts1 == ts2)
+		return TRUE;
+	if (ts1 == NM_PLATFORM_LIFETIME_PERMANENT ||
+	    ts2 == NM_PLATFORM_LIFETIME_PERMANENT)
+		return FALSE;
+
+	/** accept the timestamps as equal if they are within two seconds. */
+	diff = ts1 > ts2 ? ts1 - ts2 : ts2 - ts1;
+	return diff <= 2;
+}
+
 /* This function does all the magic to avoid race conditions caused
  * by concurrent usage of synchronous commands and an asynchronous cache. This
  * might be a nice future addition to libnl but it requires to do all operations
@@ -1722,6 +1738,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	auto_nl_object struct nl_object *kernel_object = NULL;
 	int event;
 	int nle;
+	ObjectType type;
 
 	event = nlmsg_hdr (msg)->nlmsg_type;
 
@@ -1735,8 +1752,10 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	nl_msg_parse (msg, ref_object, &object);
 	g_return_val_if_fail (object, NL_OK);
 
+	type = object_type_from_nl_object (object);
+
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
-		if (object_type_from_nl_object (object) == OBJECT_TYPE_LINK) {
+		if (type == OBJECT_TYPE_LINK) {
 			const char *name = rtnl_link_get_name ((struct rtnl_link *) object);
 
 			debug ("netlink event (type %d) for link: %s (%d, family %d)",
@@ -1747,7 +1766,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			debug ("netlink event (type %d)", event);
 	}
 
-	cache = choose_cache (platform, object);
+	cache = choose_cache_by_type (platform, type);
 	cached_object = nm_nl_cache_search (cache, object);
 	kernel_object = get_kernel_object (priv->nlh, object);
 
@@ -1807,8 +1826,24 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		 * This also catches notifications for internal addition or change, unless
 		 * another action occured very soon after it.
 		 */
-		if (!nl_object_diff (kernel_object, cached_object))
-			return NL_OK;
+		if (!nl_object_diff (kernel_object, cached_object)) {
+			if (type == OBJECT_TYPE_IP4_ADDRESS || type == OBJECT_TYPE_IP6_ADDRESS) {
+				struct rtnl_addr *c = (struct rtnl_addr *) cached_object;
+				struct rtnl_addr *k = (struct rtnl_addr *) kernel_object;
+
+				/* libnl nl_object_diff() ignores differences in timestamp. Let's care about
+				 * them (if they are large enough).
+				 *
+				 * Note that these valid and preferred timestamps are absolute, after
+				 * _rtnl_addr_hack_lifetimes_rel_to_abs(). */
+				if (   _rtnl_addr_timestamps_equal_fuzzy (rtnl_addr_get_preferred_lifetime (c),
+				                                          rtnl_addr_get_preferred_lifetime (k))
+				    && _rtnl_addr_timestamps_equal_fuzzy (rtnl_addr_get_valid_lifetime (c),
+				                                          rtnl_addr_get_valid_lifetime (k)))
+					return NL_OK;
+			} else
+				return NL_OK;
+		}
 		/* Handle external change */
 		nl_cache_remove (cached_object);
 		nle = nl_cache_add (cache, kernel_object);
