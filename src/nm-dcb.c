@@ -208,7 +208,7 @@ _dcb_setup (const char *iface,
 			g_string_append_c (s, '0' + id);
 		}
 
-		success = do_helper (iface, DCBTOOL, run_func, user_data, error, s->str);
+		success = do_helper (iface, DCBTOOL, run_func, user_data, error, "%s", s->str);
 		g_string_free (s, TRUE);
 		if (!success)
 			return FALSE;
@@ -242,7 +242,7 @@ _dcb_cleanup (const char *iface,
 
 	/* Turn everything off and return first error we get (if any) */
 	while (iter && *iter) {
-		if (!do_helper (iface, DCBTOOL, run_func, user_data, success ? error : NULL, *iter))
+		if (!do_helper (iface, DCBTOOL, run_func, user_data, success ? error : NULL, "%s", *iter))
 			success = FALSE;
 		iter++;
 	}
