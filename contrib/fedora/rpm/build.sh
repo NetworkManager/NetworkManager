@@ -54,7 +54,7 @@ setup_nmtui() {
 }
 
 ORIGDIR="$(readlink -f "$PWD")"
-SCRIPTDIR="$(readlink -f "$(dirname "$0")")"
+SCRIPTDIR="$(dirname "$(readlink -f "$0")")"
 LOG "Change to directory \"$SCRIPTDIR\""
 cd "$SCRIPTDIR" || die "could not change into $SCRIPTDIR"
 GITDIR="$(cd "$SCRIPTDIR" && git rev-parse --show-toplevel || die "Could not get GITDIR")"
