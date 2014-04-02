@@ -598,6 +598,11 @@ main (int argc, char *argv[])
 	dns_mgr = nm_dns_manager_get ();
 	g_assert (dns_mgr != NULL);
 
+	/* Initialize DHCP manager */
+	dhcp_mgr = nm_dhcp_manager_get ();
+	g_assert (dhcp_mgr != NULL);
+	nm_dhcp_manager_set_hostname_provider (dhcp_mgr, NM_HOSTNAME_PROVIDER (manager));
+
 	settings = nm_settings_new (&error);
 	if (!settings) {
 		nm_log_err (LOGD_CORE, "failed to initialize settings storage: %s",
@@ -621,11 +626,6 @@ main (int argc, char *argv[])
 	/* Initialize the supplicant manager */
 	sup_mgr = nm_supplicant_manager_get ();
 	g_assert (sup_mgr != NULL);
-
-	/* Initialize DHCP manager */
-	dhcp_mgr = nm_dhcp_manager_get ();
-	g_assert (dhcp_mgr != NULL);
-	nm_dhcp_manager_set_hostname_provider (dhcp_mgr, NM_HOSTNAME_PROVIDER (manager));
 
 	/* Initialize Firewall manager */
 	fw_mgr = nm_firewall_manager_get ();

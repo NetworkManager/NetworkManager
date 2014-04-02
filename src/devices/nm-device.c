@@ -248,7 +248,6 @@ typedef struct {
 	guint32         mtu;
 
 	/* Generic DHCP stuff */
-	NMDHCPManager * dhcp_manager;
 	guint32         dhcp_timeout;
 	GByteArray *    dhcp_anycast_address;
 
@@ -509,8 +508,6 @@ constructor (GType type,
 
 	if (NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities (dev);
-
-	priv->dhcp_manager = nm_dhcp_manager_get ();
 
 	priv->fw_manager = nm_firewall_manager_get ();
 
@@ -2779,7 +2776,7 @@ dhcp4_start (NMDevice *self,
 
 	/* Begin DHCP on the interface */
 	g_warn_if_fail (priv->dhcp4_client == NULL);
-	priv->dhcp4_client = nm_dhcp_manager_start_ip4 (priv->dhcp_manager,
+	priv->dhcp4_client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
 	                                                nm_device_get_ip_iface (self),
 	                                                tmp,
 	                                                nm_connection_get_uuid (connection),
@@ -3219,7 +3216,7 @@ dhcp6_start (NMDevice *self,
 		g_byte_array_append (tmp, priv->hw_addr, priv->hw_addr_len);
 	}
 
-	priv->dhcp6_client = nm_dhcp_manager_start_ip6 (priv->dhcp_manager,
+	priv->dhcp6_client = nm_dhcp_manager_start_ip6 (nm_dhcp_manager_get (),
 	                                                nm_device_get_ip_iface (self),
 	                                                tmp,
 	                                                nm_connection_get_uuid (connection),
@@ -5797,9 +5794,6 @@ finalize (GObject *object)
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->dhcp_manager)
-		g_object_unref (priv->dhcp_manager);
-
 	if (priv->fw_manager)
 		g_object_unref (priv->fw_manager);
 
@@ -6950,7 +6944,6 @@ find_ip4_lease_config (NMDevice *device,
                        NMConnection *connection,
                        NMIP4Config *ext_ip4_config)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	const char *ip_iface = nm_device_get_ip_iface (device);
 	GSList *leases, *liter;
 	NMIP4Config *found = NULL;
@@ -6958,7 +6951,7 @@ find_ip4_lease_config (NMDevice *device,
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (ext_ip4_config), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	leases = nm_dhcp_manager_get_lease_ip_configs (priv->dhcp_manager,
+	leases = nm_dhcp_manager_get_lease_ip_configs (nm_dhcp_manager_get (),
 	                                               ip_iface,
 	                                               nm_connection_get_uuid (connection),
 	                                               FALSE);

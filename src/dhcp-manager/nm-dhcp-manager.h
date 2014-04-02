@@ -60,7 +60,7 @@ typedef struct {
 
 GType nm_dhcp_manager_get_type (void);
 
-NMDHCPManager *nm_dhcp_manager_get                  (void);
+NMDHCPManager *nm_dhcp_manager_get (void);
 
 void           nm_dhcp_manager_set_hostname_provider(NMDHCPManager *manager,
 													 NMHostnameProvider *provider);

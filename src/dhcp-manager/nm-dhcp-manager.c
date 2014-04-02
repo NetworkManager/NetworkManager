@@ -63,8 +63,6 @@ nm_dhcp_manager_error_quark (void)
 #define PRIV_SOCK_PATH NMRUNDIR "/private-dhcp"
 #define PRIV_SOCK_TAG  "dhcp"
 
-static NMDHCPManager *singleton = NULL;
-
 /* default to installed helper, but can be modified for testing */
 const char *nm_dhcp_helper_path = LIBEXECDIR "/nm-dhcp-helper";
 
@@ -342,71 +340,6 @@ get_client_type (const char *client, GError **error)
 	return G_TYPE_INVALID;
 }
 
-NMDHCPManager *
-nm_dhcp_manager_get (void)
-{
-	NMDHCPManagerPrivate *priv;
-	const char *client;
-	GError *error = NULL;
-#if !HAVE_DBUS_GLIB_100
-	DBusGConnection *g_connection;
-#endif
-
-	if (singleton)
-		return g_object_ref (singleton);
-
-	singleton = g_object_new (NM_TYPE_DHCP_MANAGER, NULL);
-	priv = NM_DHCP_MANAGER_GET_PRIVATE (singleton);
-
-	/* Client-specific setup */
-	client = nm_config_get_dhcp_client (nm_config_get ());
-	priv->client_type = get_client_type (client, &error);
-
-	if (priv->client_type == NM_TYPE_DHCP_DHCLIENT)
-		priv->get_lease_ip_configs_func = nm_dhcp_dhclient_get_lease_ip_configs;
-	else if (priv->client_type == G_TYPE_INVALID) {
-		nm_log_warn (LOGD_DHCP, "No usable DHCP client found (%s)! DHCP configurations will fail.",
-		             error->message);
-	}
-	g_clear_error (&error);
-
-	priv->clients = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-	                                       NULL,
-	                                       (GDestroyNotify) g_object_unref);
-	g_assert (priv->clients);
-
-	priv->dbus_mgr = nm_dbus_manager_get ();
-
-#if HAVE_DBUS_GLIB_100
-	/* Register the socket our DHCP clients will return lease info on */
-	nm_dbus_manager_private_server_register (priv->dbus_mgr, PRIV_SOCK_PATH, PRIV_SOCK_TAG);
-	priv->new_conn_id = g_signal_connect (priv->dbus_mgr,
-	                                      NM_DBUS_MANAGER_PRIVATE_CONNECTION_NEW "::" PRIV_SOCK_TAG,
-	                                      (GCallback) new_connection_cb,
-	                                      singleton);
-	priv->dis_conn_id = g_signal_connect (priv->dbus_mgr,
-	                                      NM_DBUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED "::" PRIV_SOCK_TAG,
-	                                      (GCallback) dis_connection_cb,
-	                                      singleton);
-#else
-	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	priv->proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                         "org.freedesktop.nm_dhcp_client",
-	                                         "/",
-	                                         NM_DHCP_CLIENT_DBUS_IFACE);
-	g_assert (priv->proxy);
-	dbus_g_proxy_add_signal (priv->proxy,
-	                         "Event",
-	                         DBUS_TYPE_G_MAP_OF_VARIANT,
-	                         G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "Event",
-	                             G_CALLBACK (nm_dhcp_manager_handle_event),
-	                             singleton,
-	                             NULL);
-#endif
-	return singleton;
-}
-
 #define REMOVE_ID_TAG "remove-id"
 #define TIMEOUT_ID_TAG "timeout-id"
 
@@ -656,13 +589,73 @@ nm_dhcp_manager_test_ip4_options_to_config (const char *dhcp_client,
 
 /***************************************************/
 
-static void
-nm_dhcp_manager_init (NMDHCPManager *manager)
+NMDHCPManager *
+nm_dhcp_manager_get (void)
 {
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
+	static NMDHCPManager *singleton = NULL;
+
+	if (G_UNLIKELY (singleton == NULL))
+		singleton = g_object_new (NM_TYPE_DHCP_MANAGER, NULL);
+	g_assert (singleton);
+	return singleton;
+}
+
+static void
+nm_dhcp_manager_init (NMDHCPManager *self)
+{
+	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+	const char *client;
+	GError *error = NULL;
+#if !HAVE_DBUS_GLIB_100
+	DBusGConnection *g_connection;
+#endif
 
 	/* Maps DBusGConnection :: DBusGProxy */
 	priv->proxies = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_object_unref);
+
+	/* Client-specific setup */
+	client = nm_config_get_dhcp_client (nm_config_get ());
+	priv->client_type = get_client_type (client, &error);
+
+	if (priv->client_type == NM_TYPE_DHCP_DHCLIENT)
+		priv->get_lease_ip_configs_func = nm_dhcp_dhclient_get_lease_ip_configs;
+	else if (priv->client_type == G_TYPE_INVALID) {
+		nm_log_warn (LOGD_DHCP, "No usable DHCP client found (%s)! DHCP configurations will fail.",
+		             error->message);
+	}
+	g_clear_error (&error);
+
+	priv->clients = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+	                                       NULL,
+	                                       (GDestroyNotify) g_object_unref);
+	g_assert (priv->clients);
+
+	priv->dbus_mgr = nm_dbus_manager_get ();
+
+#if HAVE_DBUS_GLIB_100
+	/* Register the socket our DHCP clients will return lease info on */
+	nm_dbus_manager_private_server_register (priv->dbus_mgr, PRIV_SOCK_PATH, PRIV_SOCK_TAG);
+	priv->new_conn_id = g_signal_connect (priv->dbus_mgr,
+	                                      NM_DBUS_MANAGER_PRIVATE_CONNECTION_NEW "::" PRIV_SOCK_TAG,
+	                                      (GCallback) new_connection_cb,
+	                                      self);
+	priv->dis_conn_id = g_signal_connect (priv->dbus_mgr,
+	                                      NM_DBUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED "::" PRIV_SOCK_TAG,
+	                                      (GCallback) dis_connection_cb,
+	                                      self);
+#else
+	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	priv->proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                         "org.freedesktop.nm_dhcp_client",
+	                                         "/",
+	                                         NM_DHCP_CLIENT_DBUS_IFACE);
+	g_assert (priv->proxy);
+	dbus_g_proxy_add_signal (priv->proxy, "Event", DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->proxy, "Event",
+	                             G_CALLBACK (nm_dhcp_manager_handle_event),
+	                             self,
+	                             NULL);
+#endif
 }
 
 static void
