@@ -1008,11 +1008,9 @@ carrier_changed (NMDevice *device, gboolean carrier)
 
 	nm_device_recheck_available_connections (device);
 
-	if (priv->ignore_carrier) {
-		/* Ignore all carrier-off, and ignore carrier-on on connected devices */
-		if (!carrier || priv->state > NM_DEVICE_STATE_DISCONNECTED)
-			return;
-	}
+	/* ignore-carrier devices ignore all carrier-down events */
+	if (priv->ignore_carrier && !carrier)
+		return;
 
 	if (nm_device_is_master (device)) {
 		/* Bridge/bond/team carrier does not affect its own activation,
