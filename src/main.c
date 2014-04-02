@@ -177,6 +177,20 @@ _init_nm_debug (const char *debug)
 	}
 }
 
+static void
+manager_startup_complete (NMManager *manager, GParamSpec *pspec, gpointer user_data)
+{
+	NMConfig *config = NM_CONFIG (user_data);
+	gboolean startup = FALSE;
+
+	g_object_get (G_OBJECT (manager), NM_MANAGER_STARTUP, &startup, NULL);
+
+	if (!startup && nm_config_get_configure_and_quit (config)) {
+		nm_log_info (LOGD_CORE, "quitting now that startup is complete");
+		g_main_loop_quit (main_loop);
+	}
+}
+
 /*
  * main
  *
@@ -447,6 +461,11 @@ main (int argc, char *argv[])
 			goto done;
 		}
 	}
+
+	g_signal_connect (manager,
+	                  "notify::" NM_MANAGER_STARTUP,
+	                  G_CALLBACK (manager_startup_complete),
+	                  config);
 
 	nm_manager_start (manager);
 
