@@ -1,4 +1,38 @@
 ================================================
+NetworkManager-0.9.8.9
+Overview of changes since NetworkManager-0.9.8.8
+================================================
+
+This is a prerelease of an upcoming stable release of NetworkManager.
+Notable changes include:
+
+* Fixed two problems that could result in gnome-shell showing
+  incorrect icons. (In particular, fixed the problem where the network
+  icon would disappear when certain VPNs were activated.)
+* Dispatcher scripts now receive correct IPv6 addresses, and also
+  correct DHCP information on lease-change events.
+* NetworkManager no longer tries to start ModemManager itself on
+  systemd-using systems
+* Activating a second ethernet connection while another is already
+  active will now not move the default route.
+* Fixed some edge cases where one user could deactivate a connection
+  owned by another.
+* Fix handling of dhcp-send-hostname property with ifcfg-rh
+* DHCP now works even if you have a global dhclient.conf that
+  specifies a (non-NetworkManager) script to run
+* The dhcpcd backend now requests that dhcpcd only do DHCPv4, fixing
+  some WWAN devices that don't react well to seeing IPv6 packets.
+* Fixed the default value of bridge priority
+* The D-Bus policy file has been updated to include the
+  NetworkManager-iodine VPN plugin
+* It is possible to specify the path to dnsmasq at build time
+* Removed a GLib 2.32 dependency that accidentally snuck into 0.9.8.8
+* Fixed a bunch of memory leaks
+* Fixed a bunch of miscellaneous crashes
+* Removed some less-useful bits of logging output
+
+
+================================================
 NetworkManager-0.9.8.8
 Overview of changes since NetworkManager-0.9.8.6
 ================================================
