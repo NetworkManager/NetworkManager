@@ -2072,6 +2072,32 @@ _to_string_dev (int ifindex, char *buf, size_t size)
 		buf[0] = 0;
 }
 
+static const char *
+_lifetime_to_string (guint32 timestamp, guint32 lifetime, gint32 now, char *buf, size_t buf_size)
+{
+	if (lifetime == NM_PLATFORM_LIFETIME_PERMANENT)
+		return "forever";
+
+	g_snprintf (buf, buf_size, "%dsec",
+	            _rebase_relative_time_on_now (timestamp, lifetime, now));
+	return buf;
+}
+
+
+static const char *
+_lifetime_summary_to_string (gint32 now, guint32 timestamp, guint32 preferred, guint32 lifetime, char *buf, size_t buf_size)
+{
+	if (timestamp == 0) {
+		if (preferred == NM_PLATFORM_LIFETIME_PERMANENT && lifetime == NM_PLATFORM_LIFETIME_PERMANENT)
+			return "";
+		if (preferred == 0 && lifetime == 0)
+			return " lifetime unset";
+	}
+	g_snprintf (buf, buf_size, " lifetime %d-%u[%u,%u]",
+	            (signed) now, (unsigned) timestamp, (unsigned) preferred, (unsigned) lifetime);
+	return buf;
+}
+
 static char to_string_buffer[256];
 
 const char *
@@ -2139,7 +2165,10 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 	char s_peer[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
 	char str_label[32];
+	char str_lft[30], str_pref[30], str_time[50];
 	char *str_peer = NULL;
+	const char *str_lft_p, *str_pref_p, *str_time_p;
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 
 	g_return_val_if_fail (address, "(unknown)");
 
@@ -2157,9 +2186,18 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address)
 	else
 		str_label[0] = 0;
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d lft %u pref %u time %u%s%s%s src %s",
-	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
-	            (guint)address->timestamp,
+	str_lft_p = _lifetime_to_string (address->timestamp,
+	                                 address->lifetime ? address->lifetime : NM_PLATFORM_LIFETIME_PERMANENT,
+	                                 now, str_lft, sizeof (str_lft)),
+	str_pref_p = (address->lifetime == address->preferred)
+	             ? str_lft_p
+	             : ( _lifetime_to_string (address->timestamp,
+	                                      address->lifetime ? MIN (address->preferred, address->lifetime) : NM_PLATFORM_LIFETIME_PERMANENT,
+	                                      now, str_pref, sizeof (str_pref)) );
+	str_time_p = _lifetime_summary_to_string (now, address->timestamp, address->preferred, address->lifetime, str_time, sizeof (str_time));
+
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d lft %s pref %s%s%s%s%s src %s",
+	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
 	            str_peer ? str_peer : "",
 	            str_dev,
 	            str_label,
@@ -2210,9 +2248,12 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 	char s_flags[256];
 	char s_address[INET6_ADDRSTRLEN];
 	char s_peer[INET6_ADDRSTRLEN];
-	char *str_flags;
+	char str_lft[30], str_pref[30], str_time[50];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
+	char *str_flags;
 	char *str_peer = NULL;
+	const char *str_lft_p, *str_pref_p, *str_time_p;
+	gint32 now = nm_utils_get_monotonic_timestamp_s ();
 
 	g_return_val_if_fail (address, "(unknown)");
 
@@ -2229,9 +2270,18 @@ nm_platform_ip6_address_to_string (const NMPlatformIP6Address *address)
 
 	str_flags = s_flags[0] ? g_strconcat (" flags ", s_flags, NULL) : NULL;
 
-	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d lft %u pref %u time %u%s%s%s src %s",
-	            s_address, address->plen, (guint)address->lifetime, (guint)address->preferred,
-	            (guint)address->timestamp,
+	str_lft_p = _lifetime_to_string (address->timestamp,
+	                                 address->lifetime ? address->lifetime : NM_PLATFORM_LIFETIME_PERMANENT,
+	                                 now, str_lft, sizeof (str_lft)),
+	str_pref_p = (address->lifetime == address->preferred)
+	             ? str_lft_p
+	             : ( _lifetime_to_string (address->timestamp,
+	                                      address->lifetime ? MIN (address->preferred, address->lifetime) : NM_PLATFORM_LIFETIME_PERMANENT,
+	                                      now, str_pref, sizeof (str_pref)) );
+	str_time_p = _lifetime_summary_to_string (now, address->timestamp, address->preferred, address->lifetime, str_time, sizeof (str_time));
+
+	g_snprintf (to_string_buffer, sizeof (to_string_buffer), "%s/%d lft %s pref %s%s%s%s%s src %s",
+	            s_address, address->plen, str_lft_p, str_pref_p, str_time_p,
 	            str_peer ? str_peer : "",
 	            str_dev,
 	            str_flags ? str_flags : "",
