@@ -83,20 +83,20 @@ typedef struct {
 
 	/* Methods */
 
-	GPid (*ip4_start)     (NMDHCPClient *self,
-	                       const char *dhcp_client_id,
-	                       GByteArray *anycast_addr,
-	                       const char *hostname);
+	gboolean (*ip4_start)     (NMDHCPClient *self,
+	                           const char *dhcp_client_id,
+	                           GByteArray *anycast_addr,
+	                           const char *hostname);
 
-	GPid (*ip6_start)     (NMDHCPClient *self,
-	                       GByteArray *anycast_addr,
-	                       const char *hostname,
-	                       gboolean info_only,
-	                       const GByteArray *duid);
+	gboolean (*ip6_start)     (NMDHCPClient *self,
+	                           GByteArray *anycast_addr,
+	                           const char *hostname,
+	                           gboolean info_only,
+	                           const GByteArray *duid);
 
-	void (*stop)          (NMDHCPClient *self,
-	                       gboolean release,
-	                       const GByteArray *duid);
+	void (*stop)              (NMDHCPClient *self,
+	                           gboolean release,
+	                           const GByteArray *duid);
 
 	/**
 	 * get_duid:
@@ -117,7 +117,7 @@ typedef struct {
 
 GType nm_dhcp_client_get_type (void);
 
-GPid nm_dhcp_client_get_pid (NMDHCPClient *self);
+pid_t nm_dhcp_client_get_pid (NMDHCPClient *self);
 
 const char *nm_dhcp_client_get_iface (NMDHCPClient *self);
 
@@ -154,7 +154,9 @@ NMIP6Config *nm_dhcp_client_get_ip6_config   (NMDHCPClient *self, gboolean test)
 /* Backend helpers */
 void nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name);
 
-void nm_dhcp_client_stop_pid (GPid pid, const char *iface);
+void nm_dhcp_client_stop_pid (pid_t pid, const char *iface);
+
+void nm_dhcp_client_watch_child (NMDHCPClient *self, pid_t pid);
 
 #endif /* NM_DHCP_CLIENT_H */
 

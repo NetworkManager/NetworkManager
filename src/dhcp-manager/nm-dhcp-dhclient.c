@@ -324,7 +324,7 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 	nm_unblock_posix_signals (NULL);
 }
 
-static GPid
+static gboolean
 dhclient_start (NMDHCPClient *client,
                 const char *mode_opt,
                 const GByteArray *duid,
@@ -332,7 +332,7 @@ dhclient_start (NMDHCPClient *client,
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
-	GPid pid = -1;
+	pid_t pid;
 	GError *error = NULL;
 	const char *iface, *uuid, *system_bus_address;
 	char *binary_name, *cmd_str, *pid_file = NULL, *system_bus_address_env = NULL;
@@ -340,7 +340,7 @@ dhclient_start (NMDHCPClient *client,
 	guint log_domain;
 	char *escaped, *preferred_leasefile_path = NULL;
 
-	g_return_val_if_fail (priv->pid_file == NULL, -1);
+	g_return_val_if_fail (priv->pid_file == NULL, FALSE);
 
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
@@ -350,7 +350,7 @@ dhclient_start (NMDHCPClient *client,
 
 	if (!g_file_test (priv->path, G_FILE_TEST_EXISTS)) {
 		nm_log_warn (log_domain, "%s does not exist.", priv->path);
-		return -1;
+		return FALSE;
 	}
 
 	pid_file = g_strdup_printf (LOCALSTATEDIR "/run/dhclient%s-%s.pid",
@@ -404,7 +404,8 @@ dhclient_start (NMDHCPClient *client,
 			             iface, priv->lease_file,
 			             error ? error->code : -1,
 			             error && error->message ? error->message : "(unknown)");
-			return -1;
+			g_free (pid_file);
+			return FALSE;
 		}
 	}
 
@@ -456,22 +457,24 @@ dhclient_start (NMDHCPClient *client,
 	nm_log_dbg (log_domain, "running: %s", cmd_str);
 	g_free (cmd_str);
 
-	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
+	if (g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    &dhclient_child_setup, NULL, &pid, &error)) {
+		g_assert (pid > 0);
+		nm_log_info (log_domain, "dhclient started with pid %d", pid);
+		nm_dhcp_client_watch_child (client, pid);
+		priv->pid_file = pid_file;
+	} else {
 		nm_log_warn (log_domain, "dhclient failed to start: '%s'", error->message);
 		g_error_free (error);
-		pid = -1;
-	} else {
-		nm_log_info (log_domain, "dhclient started with pid %d", pid);
-		priv->pid_file = pid_file;
+		g_free (pid_file);
 	}
 
 	g_ptr_array_free (argv, TRUE);
 	g_free (system_bus_address_env);
-	return pid;
+	return pid > 0 ? TRUE : FALSE;
 }
 
-static GPid
+static gboolean
 ip4_start (NMDHCPClient *client,
            const char *dhcp_client_id,
            GByteArray *dhcp_anycast_addr,
@@ -486,13 +489,13 @@ ip4_start (NMDHCPClient *client,
 	priv->conf_file = create_dhclient_config (iface, FALSE, uuid, dhcp_client_id, dhcp_anycast_addr, hostname);
 	if (!priv->conf_file) {
 		nm_log_warn (LOGD_DHCP4, "(%s): error creating dhclient configuration file.", iface);
-		return -1;
+		return FALSE;
 	}
 
 	return dhclient_start (client, NULL, NULL, FALSE);
 }
 
-static GPid
+static gboolean
 ip6_start (NMDHCPClient *client,
            GByteArray *dhcp_anycast_addr,
            const char *hostname,
@@ -508,7 +511,7 @@ ip6_start (NMDHCPClient *client,
 	priv->conf_file = create_dhclient_config (iface, TRUE, uuid, NULL, dhcp_anycast_addr, hostname);
 	if (!priv->conf_file) {
 		nm_log_warn (LOGD_DHCP6, "(%s): error creating dhclient6 configuration file.", iface);
-		return -1;
+		return FALSE;
 	}
 
 	return dhclient_start (client, info_only ? "-S" : "-N", duid, FALSE);
@@ -533,7 +536,7 @@ stop (NMDHCPClient *client, gboolean release, const GByteArray *duid)
 	}
 
 	if (release) {
-		GPid rpid;
+		pid_t rpid;
 
 		rpid = dhclient_start (client, NULL, duid, TRUE);
 		if (rpid > 0) {
