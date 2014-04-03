@@ -596,6 +596,8 @@ gboolean nm_platform_check_support_kernel_extended_ifa_flags (void);
 
 void nm_platform_addr_flags2str (int flags, char *buf, size_t size);
 
+int nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatformIPAddress *b);
+
 #define auto_g_free __attribute__((cleanup(put_g_free)))
 static void __attribute__((unused))
 put_g_free (void *ptr)

@@ -2339,10 +2339,60 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 	return 0;
 }
 
-#undef _CMP_POINTER
 #undef _CMP_FIELD
 #undef _CMP_FIELD_MEMCMP
 
+/**
+ * nm_platform_ip_address_cmp_expiry:
+ * @a: a NMPlatformIPAddress to compare
+ * @b: the other NMPlatformIPAddress to compare
+ *
+ * Compares two addresses and returns which one has a longer remaining lifetime.
+ * If both addresses have the same lifetime, look at the remaining preferred time.
+ *
+ * For comparison, only the timestamp, lifetime and preferred fields are considered.
+ * If they compare equal (== 0), their other fields were not considered.
+ *
+ * Returns: -1, 0, or 1 according to the comparison
+ **/
+int
+nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatformIPAddress *b)
+{
+	gint64 ta, tb;
+
+	_CMP_POINTER (a, b);
+
+	if (a->lifetime == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0)
+		ta = G_MAXINT64;
+	else
+		ta = ((gint64) a->timestamp) + a->lifetime;
+
+	if (b->lifetime == NM_PLATFORM_LIFETIME_PERMANENT || b->lifetime == 0)
+		tb = G_MAXINT64;
+	else
+		tb = ((gint64) b->timestamp) + b->lifetime;
+
+	if (ta == tb) {
+		/* if the lifetime is equal, compare the preferred time. */
+
+		if (a->preferred == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0 /* liftime==0 means permanent! */)
+			ta = G_MAXINT64;
+		else
+			ta = ((gint64) a->timestamp) + a->preferred;
+
+		if (b->preferred == NM_PLATFORM_LIFETIME_PERMANENT|| b->lifetime == 0)
+			tb = G_MAXINT64;
+		else
+			tb = ((gint64) b->timestamp) + b->preferred;
+
+		if (ta == tb)
+			return 0;
+	}
+
+	return ta < tb ? -1 : 1;
+}
+
+#undef _CMP_POINTER
 
 static const char *
 _change_type_to_string (NMPlatformSignalChangeType change_type)
