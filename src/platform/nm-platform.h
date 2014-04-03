@@ -115,8 +115,12 @@ typedef enum {
 	NM_LINK_TYPE_TEAM,
 } NMLinkType;
 
+#define __NMPlatformObject_COMMON \
+	int ifindex; \
+	;
+
 typedef struct {
-	int ifindex;
+	__NMPlatformObject_COMMON;
 	char name[IFNAMSIZ];
 	NMLinkType type;
 	const char *type_name;
@@ -152,59 +156,98 @@ typedef enum {
 	NM_PLATFORM_SOURCE_USER,
 } NMPlatformSource;
 
+
+typedef struct {
+	__NMPlatformObject_COMMON;
+} NMPlatformObject;
+
+
+#define __NMPlatformIPAddress_COMMON \
+	__NMPlatformObject_COMMON; \
+	NMPlatformSource source; \
+	guint32 timestamp;  /* nm_utils_get_monotonic_timestamp_s() */ \
+	guint32 lifetime;   /* seconds */ \
+	guint32 preferred;  /* seconds */ \
+	int plen; \
+	;
+
+/**
+ * NMPlatformIPAddress:
+ *
+ * Common parts of NMPlatformIP4Address and NMPlatformIP6Address.
+ **/
+typedef struct {
+	__NMPlatformIPAddress_COMMON;
+	union {
+		guint8 address_ptr[1];
+		guint32 __dummy_for_32bit_alignment;
+	};
+} NMPlatformIPAddress;
+
 /**
  * NMPlatformIP4Address:
  * @timestamp: timestamp as returned by nm_utils_get_monotonic_timestamp_s()
  **/
 typedef struct {
-	int ifindex;
-	NMPlatformSource source;
+	__NMPlatformIPAddress_COMMON;
 	in_addr_t address;
 	in_addr_t peer_address;  /* PTP peer address */
-	int plen;
-	guint32 timestamp;
-	guint32 lifetime;   /* seconds */
-	guint32 preferred;  /* seconds */
 	char label[IFNAMSIZ];
 } NMPlatformIP4Address;
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Address, address));
 
 /**
  * NMPlatformIP6Address:
  * @timestamp: timestamp as returned by nm_utils_get_monotonic_timestamp_s()
  **/
 typedef struct {
-	int ifindex;
-	NMPlatformSource source;
+	__NMPlatformIPAddress_COMMON;
 	struct in6_addr address;
 	struct in6_addr peer_address;
-	int plen;
-	guint32 timestamp;  /* seconds */
-	guint32 lifetime;   /* seconds */
-	guint32 preferred;
 	guint flags; /* ifa_flags from <linux/if_addr.h>, field type "unsigned int" is as used in rtnl_addr_get_flags. */
 } NMPlatformIP6Address;
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Address, address));
+
+#undef __NMPlatformIPAddress_COMMON
+
 
 #define NM_PLATFORM_ROUTE_METRIC_DEFAULT 1024
 
-typedef struct {
-	int ifindex;
-	NMPlatformSource source;
-	in_addr_t network;
-	int plen;
-	in_addr_t gateway;
-	guint metric;
-	guint mss;
-} NMPlatformIP4Route;
+#define __NMPlatformIPRoute_COMMON \
+	__NMPlatformObject_COMMON; \
+	NMPlatformSource source; \
+	int plen; \
+	guint metric; \
+	guint mss; \
+	;
 
 typedef struct {
-	int ifindex;
-	NMPlatformSource source;
+	__NMPlatformIPRoute_COMMON;
+	union {
+		guint8 network_ptr[1];
+		guint32 __dummy_for_32bit_alignment;
+	};
+} NMPlatformIPRoute;
+
+typedef struct {
+	__NMPlatformIPRoute_COMMON;
+	in_addr_t network;
+	in_addr_t gateway;
+} NMPlatformIP4Route;
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Route, network));
+
+typedef struct {
+	__NMPlatformIPRoute_COMMON;
 	struct in6_addr network;
-	int plen;
 	struct in6_addr gateway;
-	guint metric;
-	guint mss;
 } NMPlatformIP6Route;
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Route, network));
+
+#undef __NMPlatformIPRoute_COMMON
+
+
+#undef __NMPlatformObject_COMMON
+
 
 typedef struct {
 	int peer;
