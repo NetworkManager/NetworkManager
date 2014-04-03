@@ -36,6 +36,7 @@
 
 typedef struct {
 	char *       iface;
+	int          ifindex;
 	GByteArray * hwaddr;
 	gboolean     ipv6;
 	char *       uuid;
@@ -70,6 +71,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 enum {
 	PROP_0,
 	PROP_IFACE,
+	PROP_IFINDEX,
 	PROP_HWADDR,
 	PROP_IPV6,
 	PROP_UUID,
@@ -94,6 +96,14 @@ nm_dhcp_client_get_iface (NMDHCPClient *self)
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->iface;
+}
+
+int
+nm_dhcp_client_get_ifindex (NMDHCPClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), -1);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->ifindex;
 }
 
 gboolean
@@ -1467,6 +1477,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_IFACE:
 		g_value_set_string (value, priv->iface);
 		break;
+	case PROP_IFINDEX:
+		g_value_set_int (value, priv->ifindex);
+		break;
 	case PROP_HWADDR:
 		g_value_set_boxed (value, priv->hwaddr);
 		break;
@@ -1498,6 +1511,11 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IFACE:
 		/* construct-only */
 		priv->iface = g_strdup (g_value_get_string (value));
+		break;
+	case PROP_IFINDEX:
+		/* construct-only */
+		priv->ifindex = g_value_get_int (value);
+		g_warn_if_fail (priv->ifindex > 0);
 		break;
 	case PROP_HWADDR:
 		/* construct only */
@@ -1580,6 +1598,12 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 		                      G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+		(object_class, PROP_IFINDEX,
+		 g_param_spec_int (NM_DHCP_CLIENT_IFINDEX, "", "",
+		                   -1, G_MAXINT, -1,
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_HWADDR,

@@ -35,6 +35,7 @@
 #define NM_DHCP_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_CLIENT, NMDHCPClientClass))
 
 #define NM_DHCP_CLIENT_INTERFACE "iface"
+#define NM_DHCP_CLIENT_IFINDEX   "ifindex"
 #define NM_DHCP_CLIENT_HWADDR    "hwaddr"
 #define NM_DHCP_CLIENT_IPV6      "ipv6"
 #define NM_DHCP_CLIENT_UUID      "uuid"
@@ -119,6 +120,8 @@ GType nm_dhcp_client_get_type (void);
 GPid nm_dhcp_client_get_pid (NMDHCPClient *self);
 
 const char *nm_dhcp_client_get_iface (NMDHCPClient *self);
+
+int         nm_dhcp_client_get_ifindex (NMDHCPClient *self);
 
 gboolean nm_dhcp_client_get_ipv6 (NMDHCPClient *self);
 

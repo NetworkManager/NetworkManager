@@ -382,6 +382,7 @@ add_client (NMDHCPManager *self, NMDHCPClient *client)
 static NMDHCPClient *
 client_start (NMDHCPManager *self,
               const char *iface,
+              int ifindex,
               const GByteArray *hwaddr,
               const char *uuid,
               guint priority,
@@ -416,6 +417,7 @@ client_start (NMDHCPManager *self,
 	/* And make a new one */
 	client = g_object_new (priv->client_type,
 	                       NM_DHCP_CLIENT_INTERFACE, iface,
+	                       NM_DHCP_CLIENT_IFINDEX, ifindex,
 	                       NM_DHCP_CLIENT_HWADDR, hwaddr,
 	                       NM_DHCP_CLIENT_IPV6, ipv6,
 	                       NM_DHCP_CLIENT_UUID, uuid,
@@ -452,6 +454,7 @@ get_send_hostname (NMDHCPManager *self, const char *setting_hostname)
 NMDHCPClient *
 nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
                            const char *iface,
+                           int ifindex,
                            const GByteArray *hwaddr,
                            const char *uuid,
                            guint priority,
@@ -472,7 +475,7 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 	if (send_hostname)
 		hostname = get_send_hostname (self, nm_setting_ip4_config_get_dhcp_hostname (s_ip4));
 
-	return client_start (self, iface, hwaddr, uuid, priority, FALSE,
+	return client_start (self, iface, ifindex, hwaddr, uuid, priority, FALSE,
 	                     nm_setting_ip4_config_get_dhcp_client_id (s_ip4),
 	                     timeout, dhcp_anycast_addr, hostname, FALSE);
 }
@@ -481,6 +484,7 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 NMDHCPClient *
 nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
                            const char *iface,
+                           int ifindex,
                            const GByteArray *hwaddr,
                            const char *uuid,
                            guint priority,
@@ -495,7 +499,7 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
 
 	hostname = get_send_hostname (self, nm_setting_ip6_config_get_dhcp_hostname (s_ip6));
 
-	return client_start (self, iface, hwaddr, uuid, priority, TRUE,
+	return client_start (self, iface, ifindex, hwaddr, uuid, priority, TRUE,
 	                     NULL, timeout, dhcp_anycast_addr, hostname, info_only);
 }
 
