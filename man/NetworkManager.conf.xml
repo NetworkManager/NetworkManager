@@ -203,6 +203,10 @@ Copyright (C) 2010 - 2013 Red Hat, Inc.
 	configuration if you are connected to a VPN, and then update
 	<filename>resolv.conf</filename> to point to the local
 	nameserver.</para>
+	<para><literal>unbound</literal>: NetworkManager will talk
+	to unbound and dnssec-triggerd, providing a "split DNS"
+	configuration with DNSSEC support. The /etc/resolv.conf
+	will be managed by dnssec-trigger daemon.</para>
 	<para><literal>none</literal>: NetworkManager will not
 	modify resolv.conf.</para>
 	</listitem>

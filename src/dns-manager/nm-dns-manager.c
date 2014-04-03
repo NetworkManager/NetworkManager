@@ -45,6 +45,7 @@
 
 #include "nm-dns-plugin.h"
 #include "nm-dns-dnsmasq.h"
+#include "nm-dns-unbound.h"
 
 #if HAVE_LIBSOUP
 #include <libsoup/soup.h>
@@ -1103,6 +1104,9 @@ init_resolv_conf_mode (NMDnsManager *self)
 	} else if (!g_strcmp0 (mode, "dnsmasq")) {
 		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_PROXY;
 		priv->plugin = nm_dns_dnsmasq_new ();
+	} else if (!g_strcmp0 (mode, "unbound")) {
+		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_PROXY;
+		priv->plugin = nm_dns_unbound_new ();
 	} else {
 		priv->resolv_conf_mode = NM_DNS_MANAGER_RESOLV_CONF_EXPLICIT;
 		if (mode && g_strcmp0 (mode, "default") != 0)

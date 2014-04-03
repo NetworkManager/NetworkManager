@@ -104,6 +104,8 @@ nm_sources = \
 	\
 	dns-manager/nm-dns-dnsmasq.c \
 	dns-manager/nm-dns-dnsmasq.h \
+	dns-manager/nm-dns-unbound.c \
+	dns-manager/nm-dns-unbound.h \
 	dns-manager/nm-dns-manager.c \
 	dns-manager/nm-dns-manager.h \
 	dns-manager/nm-dns-plugin.c \
