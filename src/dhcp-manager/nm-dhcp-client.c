@@ -45,8 +45,7 @@ typedef struct {
 	GByteArray * duid;
 
 	guchar       state;
-	GPid         pid;
-	gboolean     dead;
+	pid_t        pid;
 	guint        timeout_id;
 	guint        watch_id;
 	guint32      remove_id;
@@ -82,7 +81,7 @@ enum {
 
 /********************************************/
 
-GPid
+pid_t
 nm_dhcp_client_get_pid (NMDHCPClient *self)
 {
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), -1);
@@ -147,7 +146,7 @@ watch_cleanup (NMDHCPClient *self)
 }
 
 void
-nm_dhcp_client_stop_pid (GPid pid, const char *iface)
+nm_dhcp_client_stop_pid (pid_t pid, const char *iface)
 {
 	char *name = iface ? g_strdup_printf ("dhcp-client-%s", iface) : NULL;
 
@@ -164,12 +163,13 @@ stop (NMDHCPClient *self, gboolean release, const GByteArray *duid)
 	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
-	g_return_if_fail (priv->pid > 0);
 
-	/* Clean up the watch handler since we're explicitly killing the daemon */
-	watch_cleanup (self);
-
-	nm_dhcp_client_stop_pid (priv->pid, priv->iface);
+	if (priv->pid > 0) {
+		/* Clean up the watch handler since we're explicitly killing the daemon */
+		watch_cleanup (self);
+		nm_dhcp_client_stop_pid (priv->pid, priv->iface);
+		priv->pid = -1;
+	}
 
 	priv->info_only = FALSE;
 }
@@ -248,25 +248,26 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 
 	watch_cleanup (self);
 	timeout_cleanup (self);
-	priv->dead = TRUE;
+	priv->pid = -1;
 
 	dhcp_client_set_state (self, new_state, TRUE, FALSE);
 }
 
-static void
-start_monitor (NMDHCPClient *self)
+void
+nm_dhcp_client_watch_child (NMDHCPClient *self, pid_t pid)
 {
 	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
-	g_return_if_fail (priv->pid > 0);
+	g_return_if_fail (priv->pid == -1);
+	priv->pid = pid;
 
 	/* Set up a timeout on the transaction to kill it after the timeout */
+	g_assert (priv->timeout_id == 0);
 	priv->timeout_id = g_timeout_add_seconds (priv->timeout,
 	                                          daemon_timeout,
 	                                          self);
-	priv->watch_id = g_child_watch_add (priv->pid,
-	                                    (GChildWatchFunc) daemon_watch_cb,
-	                                    self);
+	g_assert (priv->watch_id == 0);
+	priv->watch_id = g_child_watch_add (pid, daemon_watch_cb, self);
 }
 
 gboolean
@@ -287,11 +288,7 @@ nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv4 transaction (timeout in %d seconds)",
 	             priv->iface, priv->timeout);
 
-	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_client_id, dhcp_anycast_addr, hostname);
-	if (priv->pid)
-		start_monitor (self);
-
-	return priv->pid ? TRUE : FALSE;
+	return NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_client_id, dhcp_anycast_addr, hostname);
 }
 
 /* uuid_parse does not work for machine-id, so we use our own converter */
@@ -456,15 +453,11 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
 	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv6 transaction (timeout in %d seconds)",
 	             priv->iface, priv->timeout);
 
-	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self,
-	                                                        dhcp_anycast_addr,
-	                                                        hostname,
-	                                                        info_only,
-	                                                        priv->duid);
-	if (priv->pid > 0)
-		start_monitor (self);
-
-	return priv->pid ? TRUE : FALSE;
+	return NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self,
+	                                                   dhcp_anycast_addr,
+	                                                   hostname,
+	                                                   info_only,
+	                                                   priv->duid);
 }
 
 void
@@ -492,7 +485,7 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 				exe = proc_contents;
 
 			if (!strcmp (exe, binary_name))
-				nm_dhcp_client_stop_pid ((GPid) tmp, NULL);
+				nm_dhcp_client_stop_pid ((pid_t) tmp, NULL);
 		}
 	}
 
@@ -508,23 +501,24 @@ void
 nm_dhcp_client_stop (NMDHCPClient *self, gboolean release)
 {
 	NMDHCPClientPrivate *priv;
+	pid_t old_pid = 0;
 
 	g_return_if_fail (NM_IS_DHCP_CLIENT (self));
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
 	/* Kill the DHCP client */
-	if (!priv->dead) {
-		NM_DHCP_CLIENT_GET_CLASS (self)->stop (self, release, priv->duid);
-		priv->dead = TRUE;
-
+	old_pid = priv->pid;
+	NM_DHCP_CLIENT_GET_CLASS (self)->stop (self, release, priv->duid);
+	if (old_pid > 0) {
 		nm_log_info (LOGD_DHCP, "(%s): canceled DHCP transaction, DHCP client pid %d",
-		             priv->iface, priv->pid);
-	}
+		             priv->iface, old_pid);
+	} else
+		nm_log_info (LOGD_DHCP, "(%s): canceled DHCP transaction", priv->iface);
+	g_assert (priv->pid == -1);
 
 	/* And clean stuff up */
 
-	priv->pid = -1;
 	dhcp_client_set_state (self, DHC_END, FALSE, TRUE);
 
 	g_hash_table_remove_all (priv->options);

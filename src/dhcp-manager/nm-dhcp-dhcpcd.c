@@ -86,7 +86,7 @@ dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
 	nm_unblock_posix_signals (NULL);
 }
 
-static GPid
+static gboolean
 ip4_start (NMDHCPClient *client,
            const char *dhcp_client_id,
            GByteArray *dhcp_anycast_addr,
@@ -94,12 +94,12 @@ ip4_start (NMDHCPClient *client,
 {
 	NMDHCPDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
-	GPid pid = -1;
+	pid_t pid = -1;
 	GError *error = NULL;
 	char *pid_contents = NULL, *binary_name, *cmd_str;
 	const char *iface;
 
-	g_return_val_if_fail (priv->pid_file == NULL, -1);
+	g_return_val_if_fail (priv->pid_file == NULL, FALSE);
 
 	iface = nm_dhcp_client_get_iface (client);
 
@@ -110,7 +110,7 @@ ip4_start (NMDHCPClient *client,
 
 	if (!g_file_test (priv->path, G_FILE_TEST_EXISTS)) {
 		nm_log_warn (LOGD_DHCP4, "%s does not exist.", priv->path);
-		return -1;
+		return FALSE;
 	}
 
 	/* Kill any existing dhcpcd from the pidfile */
@@ -152,20 +152,22 @@ ip4_start (NMDHCPClient *client,
 	nm_log_dbg (LOGD_DHCP4, "running: %s", cmd_str);
 	g_free (cmd_str);
 
-	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
-	                    &dhcpcd_child_setup, NULL, &pid, &error)) {
+	if (g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
+	                   &dhcpcd_child_setup, NULL, &pid, &error)) {
+		g_assert (pid > 0);
+		nm_log_info (LOGD_DHCP4, "dhcpcd started with pid %d", pid);
+		nm_dhcp_client_watch_child (client, pid);
+	} else {
 		nm_log_warn (LOGD_DHCP4, "dhcpcd failed to start.  error: '%s'", error->message);
 		g_error_free (error);
-		pid = -1;
-	} else
-		nm_log_info (LOGD_DHCP4, "dhcpcd started with pid %d", pid);
+	}
 
 	g_free (pid_contents);
 	g_ptr_array_free (argv, TRUE);
-	return pid;
+	return pid > 0 ? TRUE : FALSE;
 }
 
-static GPid
+static gboolean
 ip6_start (NMDHCPClient *client,
            GByteArray *dhcp_anycast_addr,
            const char *hostname,
@@ -173,7 +175,7 @@ ip6_start (NMDHCPClient *client,
            const GByteArray *duid)
 {
 	nm_log_warn (LOGD_DHCP6, "the dhcpcd backend does not support IPv6.");
-	return -1;
+	return FALSE;
 }
 
 static void
