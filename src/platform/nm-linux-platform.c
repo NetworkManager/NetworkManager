@@ -1090,6 +1090,7 @@ init_ip4_address (NMPlatformIP4Address *address, struct rtnl_addr *rtnladdr)
 
 	memset (address, 0, sizeof (*address));
 
+	address->source = NM_PLATFORM_SOURCE_KERNEL;
 	address->ifindex = rtnl_addr_get_ifindex (rtnladdr);
 	address->plen = rtnl_addr_get_prefixlen (rtnladdr);
 	_init_ip_address_lifetime ((NMPlatformIPAddress *) address, rtnladdr);
@@ -1121,6 +1122,7 @@ init_ip6_address (NMPlatformIP6Address *address, struct rtnl_addr *rtnladdr)
 
 	memset (address, 0, sizeof (*address));
 
+	address->source = NM_PLATFORM_SOURCE_KERNEL;
 	address->ifindex = rtnl_addr_get_ifindex (rtnladdr);
 	address->plen = rtnl_addr_get_prefixlen (rtnladdr);
 	_init_ip_address_lifetime ((NMPlatformIPAddress *) address, rtnladdr);
@@ -3179,10 +3181,8 @@ ip4_address_get_all (NMPlatform *platform, int ifindex)
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
 		if (_address_match ((struct rtnl_addr *) object, AF_INET, ifindex)) {
-			if (init_ip4_address (&address, (struct rtnl_addr *) object)) {
-				address.source = NM_PLATFORM_SOURCE_KERNEL;
+			if (init_ip4_address (&address, (struct rtnl_addr *) object))
 				g_array_append_val (addresses, address);
-			}
 		}
 	}
 
@@ -3201,10 +3201,8 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
 		if (_address_match ((struct rtnl_addr *) object, AF_INET6, ifindex)) {
-			if (init_ip6_address (&address, (struct rtnl_addr *) object)) {
-				address.source = NM_PLATFORM_SOURCE_KERNEL;
+			if (init_ip6_address (&address, (struct rtnl_addr *) object))
 				g_array_append_val (addresses, address);
-			}
 		}
 	}
 
