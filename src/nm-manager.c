@@ -3589,27 +3589,56 @@ done:
 	g_clear_error (&error);
 }
 
+static gboolean
+device_is_wake_on_lan (NMDevice *device)
+{
+	return nm_platform_link_get_wake_on_lan (nm_device_get_ip_ifindex (device));
+}
+
 static void
-do_sleep_wake (NMManager *self)
+do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gboolean suspending, waking_from_suspend;
 	GSList *iter;
 
-	if (manager_sleeping (self)) {
-		nm_log_info (LOGD_SUSPEND, "sleeping or disabling...");
+	suspending = sleeping_changed && priv->sleeping;
+	waking_from_suspend = sleeping_changed && !priv->sleeping;
 
-		/* Just deactivate and down all physical devices from the device list,
-		 * to keep things fast the device list will get resynced when
-		 * the manager wakes up.
+	if (manager_sleeping (self)) {
+		nm_log_info (LOGD_SUSPEND, suspending ? "sleeping..." : "disabling...");
+
+		/* FIXME: are there still hardware devices that need to be disabled around
+		 * suspend/resume?
 		 */
 		for (iter = priv->devices; iter; iter = iter->next) {
 			NMDevice *device = iter->data;
 
-			if (!nm_device_is_software (device))
-				nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
+			/* FIXME: shouldn't we be unmanaging software devices if !suspending? */
+			if (nm_device_is_software (device))
+				continue;
+			/* Wake-on-LAN devices will be taken down post-suspend rather than pre- */
+			if (suspending && device_is_wake_on_lan (device))
+				continue;
+
+			nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
 		}
 	} else {
-		nm_log_info (LOGD_SUSPEND, "waking up and re-enabling...");
+		nm_log_info (LOGD_SUSPEND, waking_from_suspend ? "waking up..." : "re-enabling...");
+
+		if (waking_from_suspend) {
+			/* Belatedly take down Wake-on-LAN devices; ideally we wouldn't have to do this
+			 * but for now it's the only way to make sure we re-check their connectivity.
+			 */
+			for (iter = priv->devices; iter; iter = iter->next) {
+				NMDevice *device = iter->data;
+
+				if (nm_device_is_software (device))
+					continue;
+				if (device_is_wake_on_lan (device))
+					nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_SLEEPING);
+			}
+		}
 
 		/* Ensure rfkill state is up-to-date since we don't respond to state
 		 * changes during sleep.
@@ -3665,7 +3694,7 @@ _internal_sleep (NMManager *self, gboolean do_sleep)
 
 	priv->sleeping = do_sleep;
 
-	do_sleep_wake (self);
+	do_sleep_wake (self, TRUE);
 
 	g_object_notify (G_OBJECT (self), NM_MANAGER_SLEEPING);
 }
@@ -3805,7 +3834,7 @@ _internal_enable (NMManager *self, gboolean enable)
 
 	priv->net_enabled = enable;
 
-	do_sleep_wake (self);
+	do_sleep_wake (self, FALSE);
 
 	g_object_notify (G_OBJECT (self), NM_MANAGER_NETWORKING_ENABLED);
 }
