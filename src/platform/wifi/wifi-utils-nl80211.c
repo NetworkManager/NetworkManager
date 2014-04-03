@@ -604,6 +604,43 @@ nla_put_failure:
 }
 #endif
 
+struct nl80211_wowlan_info {
+	gboolean enabled;
+};
+
+static int
+nl80211_wowlan_handler (struct nl_msg *msg, void *arg)
+{
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
+	struct nl80211_wowlan_info *info = arg;
+
+	info->enabled = FALSE;
+
+	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+		       genlmsg_attrlen (gnlh, 0), NULL) < 0)
+		return NL_SKIP;
+
+	if (tb[NL80211_ATTR_WOWLAN_TRIGGERS])
+		info->enabled = TRUE;
+
+	return NL_SKIP;
+}
+
+static gboolean
+wifi_nl80211_get_wowlan (WifiData *data)
+{
+	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
+	struct nl_msg *msg;
+	struct nl80211_wowlan_info info;
+
+	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WOWLAN, 0);
+
+	nl80211_send_and_recv (nl80211, msg, nl80211_wowlan_handler, &info);
+
+	return info.enabled;
+}
+
 struct nl80211_device_info {
 	guint32 *freqs;
 	int num_freqs;
@@ -612,6 +649,7 @@ struct nl80211_device_info {
 	gboolean can_scan_ssid;
 	gboolean supported;
 	gboolean success;
+	gboolean can_wowlan;
 };
 
 #define WLAN_CIPHER_SUITE_USE_GROUP 0x000FAC00
@@ -770,6 +808,9 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 		}
 	}
 
+	if (tb[NL80211_ATTR_WOWLAN_TRIGGERS_SUPPORTED])
+		info->can_wowlan = TRUE;
+
 	info->success = TRUE;
 
 	return NL_SKIP;
@@ -859,6 +900,9 @@ wifi_nl80211_init (const char *iface, int ifindex)
 	nl80211->freqs = device_info.freqs;
 	nl80211->num_freqs = device_info.num_freqs;
 	nl80211->parent.caps = device_info.caps;
+
+	if (device_info.can_wowlan)
+		nl80211->parent.get_wowlan = wifi_nl80211_get_wowlan;
 
 	nm_log_info (LOGD_HW | LOGD_WIFI,
 	             "(%s): using nl80211 for WiFi device control",
