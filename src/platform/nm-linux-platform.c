@@ -2828,8 +2828,19 @@ build_rtnl_addr (int family,
 		rtnl_addr_set_valid_lifetime (rtnladdr, lifetime);
 		rtnl_addr_set_preferred_lifetime (rtnladdr, preferred);
 	}
-	if (flags)
+	if (flags) {
+		if ((flags & ~0xFF) && !check_support_kernel_extended_ifa_flags (nm_platform_get ())) {
+			/* Older kernels don't accept unknown netlink attributes.
+			 *
+			 * With commit libnl commit 5206c050504f8676a24854519b9c351470fb7cc6, libnl will only set
+			 * the extended address flags attribute IFA_FLAGS when necessary (> 8 bit). But it's up to
+			 * us not to shove those extended flags on to older kernels.
+			 *
+			 * Just silently clear them. The kernel should ignore those unknown flags anyway. */
+			flags &= 0xFF;
+		}
 		rtnl_addr_set_flags (rtnladdr, flags);
+	}
 	if (label && *label)
 		rtnl_addr_set_label (rtnladdr, label);
 
