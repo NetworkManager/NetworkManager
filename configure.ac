@@ -537,6 +537,15 @@ else
 fi
 AC_SUBST(PPPD_PLUGIN_DIR)
 
+AC_ARG_WITH(pppd, AS_HELP_STRING([--with-pppd=/path/to/pppd], [path to pppd binary]))
+if test "x${with_pppd}" = x; then
+  AC_PATH_PROG(PPPD_PATH, pppd, [], $PATH:/sbin:/usr/sbin)
+else
+  PPPD_PATH="$with_pppd"
+fi
+AC_DEFINE_UNQUOTED(PPPD_PATH, "$PPPD_PATH", [Define to path of pppd binary])
+AC_SUBST(PPPD_PATH)
+
 # ModemManager1 with libmm-glib
 AC_ARG_WITH(modem-manager-1, AS_HELP_STRING([--with-modem-manager-1], [Enable new ModemManager1 interface support]),,[with_modem_manager_1=auto])
 if (test "${with_modem_manager_1}" != "no"); then

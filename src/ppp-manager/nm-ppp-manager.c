@@ -651,16 +651,17 @@ static inline const char *
 nm_find_pppd (void)
 {
 	static const char *pppd_binary_paths[] = {
+		PPPD_PATH,
 		"/usr/local/sbin/pppd",
 		"/usr/sbin/pppd",
 		"/sbin/pppd",
 		NULL
 	};
 
-	const char  **pppd_binary = pppd_binary_paths;
+	const char **pppd_binary = pppd_binary_paths;
 
 	while (*pppd_binary != NULL) {
-		if (g_file_test (*pppd_binary, G_FILE_TEST_EXISTS))
+		if (**pppd_binary && g_file_test (*pppd_binary, G_FILE_TEST_EXISTS))
 			break;
 		pppd_binary++;
 	}
@@ -787,22 +788,22 @@ create_pppd_cmd_line (NMPPPManager *self,
                       GError **err)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
-	const char *ppp_binary;
+	const char *pppd_binary;
 	NMCmdLine *cmd;
 	gboolean ppp_debug;
 
 	g_return_val_if_fail (setting != NULL, NULL);
 
-	ppp_binary = nm_find_pppd ();
-	if (!ppp_binary) {
+	pppd_binary = nm_find_pppd ();
+	if (!pppd_binary) {
 		g_set_error (err, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR,
-		             "Could not find ppp binary.");
+		             "Could not find pppd binary.");
 		return NULL;
 	}
 
 	/* Create pppd command line */
 	cmd = nm_cmd_line_new ();
-	nm_cmd_line_add_string (cmd, ppp_binary);
+	nm_cmd_line_add_string (cmd, pppd_binary);
 
 	nm_cmd_line_add_string (cmd, "nodetach");
 	nm_cmd_line_add_string (cmd, "lock");
