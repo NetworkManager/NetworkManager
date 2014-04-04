@@ -73,8 +73,6 @@ static void _ppp_cleanup  (NMPPPManager *manager);
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
 
 typedef struct {
-	gboolean disposed;
-
 	GPid pid;
 	char *dbus_path;
 
@@ -134,26 +132,18 @@ nm_ppp_manager_init (NMPPPManager *manager)
 {
 }
 
-static GObject *
-constructor (GType type,
-		   guint n_construct_params,
-		   GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
-	NMPPPManagerPrivate *priv;
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
 	DBusGConnection *connection;
 	static guint32 counter = 0;
 
-	object = G_OBJECT_CLASS (nm_ppp_manager_parent_class)->constructor (type,
-	                                                                    n_construct_params,
-	                                                                    construct_params);
-	if (object) {
-		priv = NM_PPP_MANAGER_GET_PRIVATE (object);
-		priv->dbus_path = g_strdup_printf (NM_DBUS_PATH "/PPP/%d", counter++);
-		connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
-		dbus_g_connection_register_g_object (connection, priv->dbus_path, object);
-	}
-	return object;
+	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH "/PPP/%d", counter++);
+	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
+	dbus_g_connection_register_g_object (connection, priv->dbus_path, object);
+
+	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->constructed (object);
 }
 
 static void
@@ -161,16 +151,9 @@ dispose (GObject *object)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
 
-	if (priv->disposed == FALSE) {
-		priv->disposed = TRUE;
+	_ppp_cleanup (NM_PPP_MANAGER (object));
 
-		_ppp_cleanup (NM_PPP_MANAGER (object));
-
-		if (priv->act_req) {
-			g_object_unref (priv->act_req);
-			priv->act_req = NULL;
-		}
-	}
+	g_clear_object (&priv->act_req);
 
 	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->dispose (object);
 }
@@ -226,7 +209,7 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 
 	g_type_class_add_private (manager_class, sizeof (NMPPPManagerPrivate));
 
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
