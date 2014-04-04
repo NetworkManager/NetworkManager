@@ -647,26 +647,34 @@ nm_cmd_line_add_int (NMCmdLine *cmd, int i)
 
 /*******************************************/
 
+static const char *pppd_binary_paths[] = {
+	PPPD_PATH,
+	"/usr/local/sbin/pppd",
+	"/usr/sbin/pppd",
+	"/sbin/pppd",
+	NULL
+};
+
+static const char *pppoe_binary_paths[] = {
+	PPPOE_PATH,
+	"/usr/local/sbin/pppoe",
+	"/usr/sbin/pppoe",
+	"/sbin/pppoe",
+	NULL
+};
+
 static inline const char *
-nm_find_pppd (void)
+nm_find_binary (const char *paths[])
 {
-	static const char *pppd_binary_paths[] = {
-		PPPD_PATH,
-		"/usr/local/sbin/pppd",
-		"/usr/sbin/pppd",
-		"/sbin/pppd",
-		NULL
-	};
+	const char **binary = paths;
 
-	const char **pppd_binary = pppd_binary_paths;
-
-	while (*pppd_binary != NULL) {
-		if (**pppd_binary && g_file_test (*pppd_binary, G_FILE_TEST_EXISTS))
+	while (*binary != NULL) {
+		if (**binary && g_file_test (*binary, G_FILE_TEST_EXISTS))
 			break;
-		pppd_binary++;
+		binary++;
 	}
 
-	return *pppd_binary;
+	return *binary;
 }
 
 static void
@@ -788,17 +796,27 @@ create_pppd_cmd_line (NMPPPManager *self,
                       GError **err)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
-	const char *pppd_binary;
+	const char *pppd_binary, *pppoe_binary = NULL;
 	NMCmdLine *cmd;
 	gboolean ppp_debug;
 
 	g_return_val_if_fail (setting != NULL, NULL);
 
-	pppd_binary = nm_find_pppd ();
+	pppd_binary = nm_find_binary (pppd_binary_paths);
 	if (!pppd_binary) {
 		g_set_error (err, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR,
 		             "Could not find pppd binary.");
 		return NULL;
+	}
+
+	if (   pppoe
+	    || (adsl && strcmp (nm_setting_adsl_get_protocol (adsl), NM_SETTING_ADSL_PROTOCOL_PPPOE))) {
+		pppoe_binary = nm_find_binary (pppoe_binary_paths);
+		if (!pppoe_binary) {
+			g_set_error (err, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR,
+			             "Could not find pppoe binary.");
+			return NULL;
+		}
 	}
 
 	/* Create pppd command line */
@@ -828,21 +846,30 @@ create_pppd_cmd_line (NMPPPManager *self,
 	}
 
 	if (pppoe) {
-		char *dev_str;
+		GString *pppoe_arg;
 		const char *pppoe_service;
+		char *quoted;
 
-		nm_cmd_line_add_string (cmd, "plugin");
-		nm_cmd_line_add_string (cmd, "rp-pppoe.so");
+		g_assert (pppoe_binary != NULL);
+		pppoe_arg = g_string_new (pppoe_binary);
 
-		dev_str = g_strdup_printf ("nic-%s", priv->parent_iface);
-		nm_cmd_line_add_string (cmd, dev_str);
-		g_free (dev_str);
+		g_string_append (pppoe_arg, " -I ");
+		quoted = g_shell_quote (priv->parent_iface);
+		g_string_append (pppoe_arg, quoted);
+		g_free (quoted);
 
 		pppoe_service = nm_setting_pppoe_get_service (pppoe);
 		if (pppoe_service) {
-			nm_cmd_line_add_string (cmd, "rp_pppoe_service");
-			nm_cmd_line_add_string (cmd, pppoe_service);
+			g_string_append (pppoe_arg, " -S ");
+			quoted = g_shell_quote (pppoe_service);
+			g_string_append (pppoe_arg, quoted);
+			g_free (quoted);
 		}
+
+		nm_cmd_line_add_string (cmd, "pty");
+		nm_cmd_line_add_string (cmd, pppoe_arg->str);
+
+		g_string_free (pppoe_arg, TRUE);
 	} else if (adsl) {
 		const gchar *protocol = nm_setting_adsl_get_protocol (adsl);
 
@@ -865,9 +892,14 @@ create_pppd_cmd_line (NMPPPManager *self,
 				nm_cmd_line_add_string (cmd, "vc-encaps");
 
 		} else if (!strcmp (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE)) {
-			nm_cmd_line_add_string (cmd, "plugin");
-			nm_cmd_line_add_string (cmd, "rp-pppoe.so");
-			nm_cmd_line_add_string (cmd, priv->parent_iface);
+			char *pppoe_arg;
+
+			g_assert (pppoe_binary != NULL);
+
+			pppoe_arg = g_strdup_printf ("%s -I %s", pppoe_binary, priv->parent_iface);
+			nm_cmd_line_add_string (cmd, "pty");
+			nm_cmd_line_add_string (cmd, pppoe_arg);
+			g_free (pppoe_arg);
 		}
 
 		nm_cmd_line_add_string (cmd, "noipdefault");
