@@ -51,13 +51,13 @@ class NMWatcher: public QObject {
 
 void NMWatcher::serviceRegistered(const QString& name)
 {
-    std::cout << "Name '" << name.constData() << "' registered"
+    std::cout << "Name '" << name.toUtf8().constData() << "' registered"
               << " => NM is running" << std::endl;
 }
 
 void NMWatcher::serviceUnregistered(const QString& name)
 {
-    std::cout << "Name '" << name.constData() << "' unregistered"
+    std::cout << "Name '" << name.toUtf8().constData() << "' unregistered"
               << " => NM is not running" << std::endl;
 }
 
