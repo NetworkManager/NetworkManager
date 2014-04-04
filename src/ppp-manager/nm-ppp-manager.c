@@ -58,12 +58,12 @@ static void impl_ppp_manager_need_secrets (NMPPPManager *manager,
                                            DBusGMethodInvocation *context);
 
 static gboolean impl_ppp_manager_set_state (NMPPPManager *manager,
-								    guint32 state,
-								    GError **err);
+                                            guint32 state,
+                                            GError **err);
 
 static gboolean impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
-									    GHashTable *config,
-									    GError **err);
+                                                 GHashTable *config,
+                                                 GError **err);
 
 #include "nm-ppp-manager-glue.h"
 
@@ -171,7 +171,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
 
@@ -188,7 +188,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
 
@@ -219,10 +219,10 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	g_object_class_install_property
 		(object_class, PROP_PARENT_IFACE,
 		 g_param_spec_string (NM_PPP_MANAGER_PARENT_IFACE,
-							"ParentIface",
-							"Parent interface",
-							NULL,
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      "ParentIface",
+		                      "Parent interface",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* signals */
 	signals[STATE_CHANGED] =
@@ -254,7 +254,7 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 		              G_TYPE_UINT, G_TYPE_UINT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
-							   &dbus_glib_nm_ppp_manager_object_info);
+	                                 &dbus_glib_nm_ppp_manager_object_info);
 }
 
 NMPPPManager *
@@ -430,7 +430,7 @@ ppp_secrets_cb (NMActRequest *req,
 	 */
 	dbus_g_method_return (priv->pending_secrets_context, username, password);
 
-out:
+ out:
 	priv->pending_secrets_context = NULL;
 	priv->secrets_id = 0;
 	priv->secrets_setting_name = NULL;
@@ -489,8 +489,8 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 }
 
 static gboolean impl_ppp_manager_set_state (NMPPPManager *manager,
-								    guint32 state,
-								    GError **err)
+                                            guint32 state,
+                                            GError **err)
 {
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, state);
 
@@ -499,8 +499,8 @@ static gboolean impl_ppp_manager_set_state (NMPPPManager *manager,
 
 static gboolean
 impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
-						   GHashTable *config_hash,
-						   GError **err)
+                                 GHashTable *config_hash,
+                                 GError **err)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	NMConnection *connection;
@@ -796,7 +796,7 @@ create_pppd_cmd_line (NMPPPManager *self,
 	ppp_binary = nm_find_pppd ();
 	if (!ppp_binary) {
 		g_set_error (err, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR,
-				   "Could not find ppp binary.");
+		             "Could not find ppp binary.");
 		return NULL;
 	}
 
@@ -964,9 +964,9 @@ pppoe_fill_defaults (NMSettingPPP *setting)
 		g_object_set (setting, NM_SETTING_PPP_MRU, (guint32) 1492, NULL);
 
 	g_object_set (setting,
-			    NM_SETTING_PPP_NOAUTH, TRUE,
-			    NM_SETTING_PPP_NODEFLATE, TRUE,
-			    NULL);
+	              NM_SETTING_PPP_NOAUTH, TRUE,
+	              NM_SETTING_PPP_NODEFLATE, TRUE,
+	              NULL);
 
 	/* FIXME: These commented settings should be set as well, update NMSettingPPP first. */
 #if 0
@@ -1051,9 +1051,9 @@ nm_ppp_manager_start (NMPPPManager *manager,
 
 	priv->pid = 0;
 	if (!g_spawn_async (NULL, (char **) ppp_cmd->array->pdata, NULL,
-					G_SPAWN_DO_NOT_REAP_CHILD,
-					pppd_child_setup,
-					NULL, &priv->pid, err)) {
+	                    G_SPAWN_DO_NOT_REAP_CHILD,
+	                    pppd_child_setup,
+	                    NULL, &priv->pid, err)) {
 		goto out;
 	}
 
@@ -1063,7 +1063,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	priv->ppp_timeout_handler = g_timeout_add_seconds (timeout_secs, pppd_timed_out, manager);
 	priv->act_req = g_object_ref (req);
 
- out:
+out:
 	if (s_ppp_created)
 		g_object_unref (s_ppp);
 

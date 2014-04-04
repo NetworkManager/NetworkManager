@@ -174,13 +174,13 @@ nm_ip_up (void *data, int arg)
 	}
 
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal,
-							NULL, value_destroy);
+	                              NULL, value_destroy);
 
 	g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_INTERFACE, 
-					 str_to_gvalue (ifname));
+	                     str_to_gvalue (ifname));
 
 	g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_ADDRESS, 
-					 uint_to_gvalue (opts.ouraddr));
+	                     uint_to_gvalue (opts.ouraddr));
 
 	/* Prefer the peer options remote address first, _unless_ pppd made the
 	 * address up, at which point prefer the local options remote address,
