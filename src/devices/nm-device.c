@@ -6844,29 +6844,25 @@ nm_device_queue_state (NMDevice *self,
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	/* "lock" the pending actions so that if there was a previously
-	 * queued action that's about to be cleared, that doesn't drop
-	 * the pending actions to 0 before we add the new pending action.
-	 */
-	nm_device_add_pending_action (self, "queued state lock");
+	if (priv->queued_state.id && priv->queued_state.state == state)
+		return;
+
+	/* Add pending action for the new state before clearing the queued states, so
+	 * that we don't accidently pop all pending states and reach 'startup complete'  */
+	nm_device_add_pending_action (self, queued_state_to_string (state));
 
 	/* We should only ever have one delayed state transition at a time */
 	if (priv->queued_state.id) {
-		if (priv->queued_state.state == state)
-			return;
 		nm_log_warn (LOGD_DEVICE, "(%s): overwriting previously queued state change to %s (%s)",
-					 nm_device_get_iface (self),
-					 state_to_string (priv->queued_state.state),
-					 reason_to_string (priv->queued_state.reason));
+		             nm_device_get_iface (self),
+		             state_to_string (priv->queued_state.state),
+		             reason_to_string (priv->queued_state.reason));
 		nm_device_queued_state_clear (self);
 	}
 
 	priv->queued_state.state = state;
 	priv->queued_state.reason = reason;
 	priv->queued_state.id = g_idle_add (queued_set_state, self);
-	nm_device_add_pending_action (self, queued_state_to_string (state));
-
-	nm_device_remove_pending_action (self, "queued state lock");
 
 	nm_log_dbg (LOGD_DEVICE, "(%s): queued state change to %s due to %s (id %d)",
 	            nm_device_get_iface (self), state_to_string (state), reason_to_string (reason),
