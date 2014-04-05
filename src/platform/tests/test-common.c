@@ -101,6 +101,7 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 	for (i = 0; i < links->len; i++) {
 		cached = &g_array_index (links, NMPlatformLink, i);
 		if (cached->ifindex == received->ifindex) {
+			g_assert_cmpint (nm_platform_link_cmp (cached, received), ==, 0);
 			g_assert (!memcmp (cached, received, sizeof (*cached)));
 			if (data->change_type == NM_PLATFORM_SIGNAL_REMOVED)
 				g_error ("Deleted link still found in the local cache.");

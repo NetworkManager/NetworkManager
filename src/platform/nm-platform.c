@@ -2271,6 +2271,13 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
             return c < 0 ? -1 : 1;                          \
     } G_STMT_END
 
+#define _CMP_FIELD_STR0(a, b, field)                        \
+    G_STMT_START {                                          \
+        int c = g_strcmp0 ((a)->field, (b)->field);         \
+        if (c != 0)                                         \
+            return c < 0 ? -1 : 1;                          \
+    } G_STMT_END
+
 #define _CMP_FIELD_MEMCMP(a, b, field)                      \
     G_STMT_START {                                          \
         int c = memcmp (&((a)->field), &((b)->field),       \
@@ -2278,6 +2285,24 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
         if (c != 0)                                         \
             return c < 0 ? -1 : 1;                          \
     } G_STMT_END
+
+int
+nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
+{
+	_CMP_POINTER (a, b);
+	_CMP_FIELD (a, b, type);
+	_CMP_FIELD_STR (a, b, name);
+	_CMP_FIELD (a, b, master);
+	_CMP_FIELD (a, b, parent);
+	_CMP_FIELD (a, b, up);
+	_CMP_FIELD (a, b, connected);
+	_CMP_FIELD (a, b, arp);
+	_CMP_FIELD (a, b, mtu);
+	_CMP_FIELD_STR0 (a, b, type_name);
+	_CMP_FIELD_STR0 (a, b, udi);
+	_CMP_FIELD_STR0 (a, b, driver);
+	return 0;
+}
 
 int
 nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)

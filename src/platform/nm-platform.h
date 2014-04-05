@@ -586,6 +586,7 @@ const char *nm_platform_ip6_address_to_string (const NMPlatformIP6Address *addre
 const char *nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route);
 const char *nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route);
 
+int nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b);
 int nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b);
 int nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b);
 int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b);
