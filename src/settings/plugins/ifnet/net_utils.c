@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <nm-utils.h>
 #include <nm-system-config-interface.h>
+#include <nm-logging.h>
 #include <nm-config.h>
 #include <gio/gio.h>
 #include "net_utils.h"
@@ -392,17 +393,14 @@ create_ip4_block (gchar * ip)
 	} else {
 		g_slice_free (ip_block, iblock);
 		if (!is_ip6_address (ip) && !strstr (ip, "dhcp"))
-			PLUGIN_WARN (IFNET_PLUGIN_NAME,
-				     "Can't handle ipv4 address: %s, missing netmask or prefix",
-				     ip);
+			nm_log_warn (LOGD_SETTINGS, "Can't handle ipv4 address: %s, missing netmask or prefix", ip);
 		return NULL;
 	}
 	g_strfreev (ip_mask);
 	return iblock;
 error:
 	if (!is_ip6_address (ip))
-		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Can't handle IPv4 address: %s",
-			     ip);
+		nm_log_warn (LOGD_SETTINGS, "Can't handle IPv4 address: %s", ip);
 	g_strfreev (ip_mask);
 	g_slice_free (ip_block, iblock);
 	return NULL;
@@ -436,8 +434,7 @@ create_ip6_block (gchar * ip)
 	return iblock;
 error:
 	if (!is_ip4_address (ip))
-		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Can't handle IPv6 address: %s",
-			     ip);
+		nm_log_warn (LOGD_SETTINGS, "Can't handle IPv6 address: %s", ip);
 	g_slice_free (ip6_block, iblock);
 	g_slice_free (struct in6_addr, tmp_ip6_addr);
 
@@ -455,8 +452,7 @@ get_ip4_gateway (gchar * gateway)
 		return 0;
 	tmp = find_gateway_str (gateway);
 	if (!tmp) {
-		PLUGIN_WARN (IFNET_PLUGIN_NAME,
-			     "Couldn't obtain gateway in \"%s\"", gateway);
+		nm_log_warn (LOGD_SETTINGS, "Couldn't obtain gateway in \"%s\"", gateway);
 		return 0;
 	}
 	tmp = g_strdup (tmp);
@@ -473,8 +469,7 @@ get_ip4_gateway (gchar * gateway)
 	return tmp_ip4_addr;
 error:
 	if (!is_ip6_address (tmp))
-		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Can't handle IPv4 gateway: %s",
-			     tmp);
+		nm_log_warn (LOGD_SETTINGS, "Can't handle IPv4 gateway: %s", tmp);
 	g_free (tmp);
 	return 0;
 }
@@ -489,8 +484,7 @@ get_ip6_next_hop (gchar * next_hop)
 		return 0;
 	tmp = find_gateway_str (next_hop);
 	if (!tmp) {
-		PLUGIN_WARN (IFNET_PLUGIN_NAME,
-			     "Couldn't obtain next_hop in \"%s\"", next_hop);
+		nm_log_warn (LOGD_SETTINGS, "Couldn't obtain next_hop in \"%s\"", next_hop);
 		return 0;
 	}
 	tmp = g_strdup (tmp);
@@ -503,8 +497,7 @@ get_ip6_next_hop (gchar * next_hop)
 	return tmp_ip6_addr;
 error:
 	if (!is_ip4_address (tmp))
-		PLUGIN_WARN (IFNET_PLUGIN_NAME,
-			     "Can't handle IPv6 next_hop: %s", tmp);
+		nm_log_warn (LOGD_SETTINGS, "Can't handle IPv6 next_hop: %s", tmp);
 	g_free (tmp);
 	g_slice_free (struct in6_addr, tmp_ip6_addr);
 
@@ -709,16 +702,12 @@ set_ip4_dns_servers (NMSettingIP4Config *s_ip4, const char *conn_name)
 			continue;
 		if (!inet_pton (AF_INET, server_list[i], &tmp_ip4_addr)) {
 			if (!is_ip6_address (server_list[i]))
-				PLUGIN_WARN (IFNET_PLUGIN_NAME,
-					     "ignored dns: %s\n",
-					     server_list[i]);
+				nm_log_warn (LOGD_SETTINGS, "ignored dns: %s\n", server_list[i]);
 			continue;
 		}
 		new_dns = tmp_ip4_addr;
 		if (new_dns && !nm_setting_ip4_config_add_dns (s_ip4, new_dns))
-			PLUGIN_WARN (IFNET_PLUGIN_NAME,
-				     "warning: duplicate DNS server %s",
-				     server_list[i]);
+			nm_log_warn (LOGD_SETTINGS, "warning: duplicate DNS server %s", server_list[i]);
 	}
 	g_strfreev (server_list);
 }
@@ -750,16 +739,12 @@ set_ip6_dns_servers (NMSettingIP6Config *s_ip6, const char *conn_name)
 			continue;
 		if (!inet_pton (AF_INET6, server_list[i], &tmp_ip6_addr)) {
 			if (is_ip6_address (server_list[i]))
-				PLUGIN_WARN (IFNET_PLUGIN_NAME,
-					     "ignored dns: %s\n",
-					     server_list[i]);
+				nm_log_warn (LOGD_SETTINGS, "ignored dns: %s\n", server_list[i]);
 			continue;
 		}
 		if (!IN6_IS_ADDR_UNSPECIFIED (&tmp_ip6_addr)
 		    && !nm_setting_ip6_config_add_dns (s_ip6, &tmp_ip6_addr))
-			PLUGIN_WARN (IFNET_PLUGIN_NAME,
-				     "warning: duplicate DNS server %s",
-				     server_list[i]);
+			nm_log_warn (LOGD_SETTINGS, "warning: duplicate DNS server %s", server_list[i]);
 	}
 	g_strfreev (server_list);
 }
@@ -820,16 +805,14 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 			if (tmp[0] != '\0')
 				*hostname = g_strdup (tmp);
 			else
-				PLUGIN_PRINT (IFNET_PLUGIN_NAME,
-					      "dhcpcd hostname not defined, ignoring");
+				nm_log_info (LOGD_SETTINGS, "dhcpcd hostname not defined, ignoring");
 		} else if (g_str_has_prefix (line, "clientid")) {
 			tmp = line + strlen ("clientid");
 			g_strstrip (tmp);
 			if (tmp[0] != '\0')
 				*client_id = g_strdup (tmp);
 			else
-				PLUGIN_PRINT (IFNET_PLUGIN_NAME,
-					      "dhcpcd clientid not defined, ignoring");
+				nm_log_info (LOGD_SETTINGS, "dhcpcd clientid not defined, ignoring");
 		}
 		// dhclient.conf
 		else if ((tmp = strstr (line, "send host-name")) != NULL) {
@@ -840,8 +823,7 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 			if (tmp[0] != '\0')
 				*hostname = g_strdup (tmp);
 			else
-				PLUGIN_PRINT (IFNET_PLUGIN_NAME,
-					      "dhclient hostname not defined, ignoring");
+				nm_log_info (LOGD_SETTINGS, "dhclient hostname not defined, ignoring");
 		} else if ((tmp = strstr (line, "send dhcp-client-identifier"))
 			   != NULL) {
 			tmp += strlen ("send dhcp-client-identifier");
@@ -850,8 +832,7 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 			if (tmp[0] != '\0')
 				*client_id = g_strdup (tmp);
 			else
-				PLUGIN_PRINT (IFNET_PLUGIN_NAME,
-					      "dhclient clientid not defined, ignoring");
+				nm_log_info (LOGD_SETTINGS, "dhclient clientid not defined, ignoring");
 		}
 	}
 	g_strfreev (all_lines);
@@ -870,7 +851,7 @@ gchar *backup_file (const gchar* target)
 
 	g_file_copy (source, backup, G_FILE_COPY_OVERWRITE, NULL, NULL, NULL, error);
 	if (error && *error) {
-		PLUGIN_WARN (IFNET_PLUGIN_NAME, "Backup failed: %s", (*error)->message);
+		nm_log_warn (LOGD_SETTINGS, "Backup failed: %s", (*error)->message);
 		g_free (backup_path);
 		backup_path = NULL;
 	}

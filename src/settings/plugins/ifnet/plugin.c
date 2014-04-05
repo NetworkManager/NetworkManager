@@ -31,6 +31,7 @@
 
 #include "NetworkManager.h"
 #include "nm-system-config-interface.h"
+#include "nm-logging.h"
 #include "nm-ifnet-connection.h"
 #include "nm-config.h"
 
@@ -95,8 +96,7 @@ update_system_hostname (gpointer config)
 
 	g_object_notify (G_OBJECT (config),
 			 NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Hostname updated to: %s",
-		      priv->hostname);
+	nm_log_info (LOGD_SETTINGS, "Hostname updated to: %s", priv->hostname);
 }
 
 static void
@@ -106,16 +106,14 @@ write_system_hostname (NMSystemConfigInterface * config,
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (config);
 
 	g_return_if_fail (newhostname);
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Write system hostname: %s",
-		      newhostname);
+	nm_log_info (LOGD_SETTINGS, "Write system hostname: %s", newhostname);
 	if (write_hostname (IFNET_SYSTEM_HOSTNAME_FILE, newhostname)) {
 		g_free (priv->hostname);
 		priv->hostname = g_strdup (newhostname);
 		g_object_notify (G_OBJECT (config),
 				 NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 	} else
-		PLUGIN_WARN (IFNET_PLUGIN_NAME,
-			     "Write system hostname: %s failed", newhostname);
+		nm_log_warn (LOGD_SETTINGS, "Write system hostname: %s failed", newhostname);
 }
 
 static gboolean
@@ -175,10 +173,10 @@ monitor_file_changes (const char *filename,
 				   info);
 		g_signal_connect (monitor, "changed", G_CALLBACK (file_changed),
 				  info);
-	} else
-		PLUGIN_WARN (IFNET_PLUGIN_NAME,
-			     "Monitoring %s failed, error: %s", filename,
-			     error == NULL ? "nothing" : (*error)->message);
+	} else {
+		nm_log_warn (LOGD_SETTINGS, "Monitoring %s failed, error: %s", filename,
+		             error == NULL ? "nothing" : (*error)->message);
+	}
 
 	return monitor;
 }
@@ -262,7 +260,7 @@ reload_connections (NMSystemConfigInterface *config)
 	if (!reload_parsers ())
 		return;
 
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Loading connections");
+	nm_log_info (LOGD_SETTINGS, "Loading connections");
 
 	str_auto_refresh = nm_config_get_value (nm_config_get (),
 	                                        IFNET_KEY_FILE_GROUP, "auto_refresh",
@@ -301,7 +299,7 @@ reload_connections (NMSystemConfigInterface *config)
 				                            NM_CONNECTION (new),
 				                            NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
 				                              NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
-					PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Auto refreshing %s", conn_name);
+					nm_log_info (LOGD_SETTINGS, "Auto refreshing %s", conn_name);
 
 					nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (old));
 					track_new_connection (self, new);
@@ -317,8 +315,8 @@ reload_connections (NMSystemConfigInterface *config)
 					/* Shouldn't ever get here as 'new' was verified by the reader already */
 					g_assert_no_error (error);
 				}
-				PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Connection %s updated",
-				              nm_connection_get_id (NM_CONNECTION (new)));
+				nm_log_info (LOGD_SETTINGS, "Connection %s updated",
+				             nm_connection_get_id (NM_CONNECTION (new)));
 			}
 			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 		} else if (new) {
@@ -396,7 +394,7 @@ check_unmanaged (gpointer key, gpointer data, gpointer user_data)
 	if (is_managed (conn_name))
 		return;
 
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Checking unmanaged: %s", conn_name);
+	nm_log_info (LOGD_SETTINGS, "Checking unmanaged: %s", conn_name);
 	mac = ifnet_get_data (conn_name, "mac");
 	if (mac)
 		unmanaged_spec = g_strdup_printf ("mac:%s", mac);
@@ -411,7 +409,7 @@ check_unmanaged (gpointer key, gpointer data, gpointer user_data)
 		}
 	}
 
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Add unmanaged: %s", unmanaged_spec);
+	nm_log_info (LOGD_SETTINGS, "Add unmanaged: %s", unmanaged_spec);
 	*list = g_slist_prepend (*list, unmanaged_spec);
 }
 
@@ -421,7 +419,7 @@ get_unmanaged_specs (NMSystemConfigInterface * config)
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (config);
 	GSList *list = NULL;
 
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "getting unmanaged specs...");
+	nm_log_info (LOGD_SETTINGS, "getting unmanaged specs...");
 	g_hash_table_foreach (priv->connections, check_unmanaged, &list);
 	return list;
 }
@@ -432,18 +430,18 @@ init (NMSystemConfigInterface *config)
 	SCPluginIfnet *self = SC_PLUGIN_IFNET (config);
 	SCPluginIfnetPrivate *priv = SC_PLUGIN_IFNET_GET_PRIVATE (self);
 
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Initializing!");
+	nm_log_info (LOGD_SETTINGS, "Initializing!");
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 	priv->unmanaged_well_known = !is_managed_plugin ();
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "management mode: %s",
-		      priv->unmanaged_well_known ? "unmanaged" : "managed");
+	nm_log_info (LOGD_SETTINGS, "management mode: %s",
+	             priv->unmanaged_well_known ? "unmanaged" : "managed");
 
 	setup_monitors (NULL, config);
 	reload_connections (config);
 	update_system_hostname (self);
 
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Initialzation complete!");
+	nm_log_info (LOGD_SETTINGS, "Initialzation complete!");
 }
 
 static GSList *
@@ -454,7 +452,7 @@ get_connections (NMSystemConfigInterface *config)
 	GHashTableIter iter;
 	NMIfnetConnection *connection;
 
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "(%p) ... get_connections.", config);
+	nm_log_info (LOGD_SETTINGS, "(%p) ... get_connections.", config);
 
 	g_hash_table_iter_init (&iter, priv->connections);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
@@ -463,8 +461,8 @@ get_connections (NMSystemConfigInterface *config)
 		if (!conn_name || (!priv->unmanaged_well_known && is_managed (conn_name)))
 			connections = g_slist_prepend (connections, connection);
 	}
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "(%p) connections count: %d",
-	              config, g_slist_length (connections));
+	nm_log_info (LOGD_SETTINGS, "(%p) connections count: %d",
+	             config, g_slist_length (connections));
 	return connections;
 }
 

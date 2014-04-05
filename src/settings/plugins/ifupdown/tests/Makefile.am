@@ -7,6 +7,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/logging \
 	-I$(top_srcdir)/src/settings \
 	-I$(srcdir)/../ \
 	-DG_LOG_DOMAIN=\""NetworkManager-ifupdown"\" \
@@ -24,6 +25,7 @@ test_ifupdown_SOURCES = \
 	../parser.c
 
 test_ifupdown_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS)

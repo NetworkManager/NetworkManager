@@ -42,15 +42,13 @@
 #include <nm-util-private.h>
 #include <nm-utils.h>
 
+#include "nm-logging.h"
 #include "common.h"
 #include "shvar.h"
 #include "reader.h"
 #include "writer.h"
 #include "utils.h"
 #include "crypto.h"
-
-#define PLUGIN_WARN(pname, fmt, args...) \
-	{ g_warning ("   " pname ": " fmt, ##args); }
 
 static void
 save_secret_flags (shvarFile *ifcfg,
@@ -107,8 +105,7 @@ set_secret (shvarFile *ifcfg,
 
 	keyfile = utils_get_keys_ifcfg (ifcfg->fileName, TRUE);
 	if (!keyfile) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: could not create key file for '%s'",
-		             ifcfg->fileName);
+		nm_log_warn (LOGD_SETTINGS, "    could not create ifcfg file for '%s'", ifcfg->fileName);
 		goto error;
 	}
 
@@ -120,7 +117,8 @@ set_secret (shvarFile *ifcfg,
 		svSetValue (keyfile, key, value, verbatim);
 
 	if (!svWriteFile (keyfile, 0600, &error)) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: %s", error->message);
+		nm_log_warn (LOGD_SETTINGS, "    could not update ifcfg file '%s': %s",
+		             keyfile->fileName, error->message);
 		g_clear_error (&error);
 		svCloseFile (keyfile);
 		goto error;

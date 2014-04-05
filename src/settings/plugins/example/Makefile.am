@@ -1,6 +1,7 @@
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/config \
+	-I$(top_srcdir)/src/logging \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
@@ -32,6 +33,7 @@ libnm_settings_plugin_example_la_SOURCES = \
 	writer.c
 
 libnm_settings_plugin_example_la_LIBADD = \
+	$(top_builddir)/src/libNetworkManager.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS)
 

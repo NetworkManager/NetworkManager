@@ -56,6 +56,7 @@
 #include "nm-platform.h"
 #include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
+#include "nm-logging.h"
 
 #include "common.h"
 #include "shvar.h"
@@ -63,11 +64,7 @@
 
 #include "reader.h"
 
-#define PLUGIN_PRINT(pname, fmt, args...) \
-	{ g_message ("   " pname ": " fmt, ##args); }
-
-#define PLUGIN_WARN(pname, fmt, args...) \
-	{ g_warning ("   " pname ": " fmt, ##args); }
+#define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)
 
 static gboolean
 get_int (const char *str, int *value)
@@ -168,7 +165,7 @@ make_connection_setting (const char *file,
 			              NM_SETTING_CONNECTION_INTERFACE_NAME, value,
 			              NULL);
 		} else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid DEVICE name '%s'", value);
+			PARSE_WARNING ("invalid DEVICE name '%s'", value);
 		g_free (value);
 	}
 
@@ -185,7 +182,7 @@ make_connection_setting (const char *file,
 		for (iter = items; iter && *iter; iter++) {
 			if (strlen (*iter)) {
 				if (!nm_setting_connection_add_permission (s_con, "user", *iter, NULL))
-					PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid USERS item '%s'", *iter);
+					PARSE_WARNING ("invalid USERS item '%s'", *iter);
 			}
 		}
 		g_free (value);
@@ -209,8 +206,7 @@ make_connection_setting (const char *file,
 		for (iter = items; iter && *iter; iter++) {
 			if (strlen (*iter)) {
 				if (!nm_setting_connection_add_secondary (s_con, *iter))
-					PLUGIN_WARN (IFCFG_PLUGIN_NAME,
-					             "    warning: secondary connection UUID '%s' already added", *iter);
+					PARSE_WARNING ("secondary connection UUID '%s' already added", *iter);
 			}
 		}
 		g_free (value);
@@ -222,9 +218,8 @@ make_connection_setting (const char *file,
 		const char *bridge;
 
 		if ((bridge = nm_setting_connection_get_master (s_con))) {
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME,
-			             "     warning: Already configured as slave of %s. "
-			             "Ignoring BRIDGE=\"%s\"", bridge, value);
+			PARSE_WARNING ("Already configured as slave of %s. Ignoring BRIDGE=\"%s\"",
+			               bridge, value);
 			g_free (value);
 		}
 
@@ -245,7 +240,7 @@ make_connection_setting (const char *file,
 			timeout = (guint32) tmp;
 			g_object_set (s_con, NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, timeout, NULL);
 		} else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid GATEWAY_PING_TIMEOUT time");
+			PARSE_WARNING ("invalid GATEWAY_PING_TIMEOUT time");
 		g_free (value);
 	}
 
@@ -308,8 +303,7 @@ match_iscsiadm_tag (const char *line, const char *tag, gboolean *skip)
 
 	p = strchr (line, '=');
 	if (!p) {
-		g_warning ("%s: malformed iscsiadm record: no = in '%s'.",
-		           __func__, line);
+		PARSE_WARNING ("malformed iscsiadm record: no = in '%s'.", line);
 		*skip = TRUE;
 		return NULL;
 	}
@@ -387,14 +381,14 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 
 		if (!g_ascii_strcasecmp (*iter, "# BEGIN RECORD")) {
 			if (in_record) {
-				g_warning ("%s: malformed iscsiadm record: already parsing record.", __func__);
+				PARSE_WARNING ("malformed iscsiadm record: already parsing record.");
 				skip = TRUE;
 			}
 		} else if (!g_ascii_strcasecmp (*iter, "# END RECORD")) {
 			if (!skip && hwaddr_matched) {
 				/* Record is good; fill IP4 config with its info */
 				if (!method) {
-					g_warning ("%s: malformed iscsiadm record: missing BOOTPROTO.", __func__);
+					PARSE_WARNING ("malformed iscsiadm record: missing BOOTPROTO.");
 					goto done;
 				}
 
@@ -404,8 +398,8 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 					NMIP4Address *addr;
 
 				    if (!ipaddr || !prefix) {
-						g_warning ("%s: malformed iscsiadm record: BOOTPROTO=static "
-						           "but missing IP address or prefix.", __func__);
+						PARSE_WARNING ("malformed iscsiadm record: BOOTPROTO=static "
+						               "but missing IP address or prefix.");
 						goto done;
 					}
 
@@ -445,7 +439,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 
 			ibft_mac = ether_aton (p);
 			if (!ibft_mac) {
-				g_warning ("%s: malformed iscsiadm record: invalid hwaddress.", __func__);
+				PARSE_WARNING ("malformed iscsiadm record: invalid hwaddress.");
 				skip = TRUE;
 				continue;
 			}
@@ -467,8 +461,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 			else if (!g_ascii_strcasecmp (p, "static"))
 				method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 			else {
-				g_warning ("%s: malformed iscsiadm record: unknown BOOTPROTO '%s'.",
-				           __func__, p);
+				PARSE_WARNING ("malformed iscsiadm record: unknown BOOTPROTO '%s'.", p);
 				skip = TRUE;
 				continue;
 			}
@@ -476,8 +469,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 
 		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_IPADDR_TAG, &skip))) {
 			if (inet_pton (AF_INET, p, &ipaddr) < 1) {
-				g_warning ("%s: malformed iscsiadm record: invalid IP address '%s'.",
-				           __func__, p);
+				PARSE_WARNING ("malformed iscsiadm record: invalid IP address '%s'.", p);
 				skip = TRUE;
 				continue;
 			}
@@ -487,8 +479,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 			guint32 mask;
 
 			if (inet_pton (AF_INET, p, &mask) < 1) {
-				g_warning ("%s: malformed iscsiadm record: invalid subnet mask '%s'.",
-				           __func__, p);
+				PARSE_WARNING ("malformed iscsiadm record: invalid subnet mask '%s'.", p);
 				skip = TRUE;
 				continue;
 			}
@@ -498,8 +489,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 
 		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_GATEWAY_TAG, &skip))) {
 			if (inet_pton (AF_INET, p, &gateway) < 1) {
-				g_warning ("%s: malformed iscsiadm record: invalid IP gateway '%s'.",
-				           __func__, p);
+				PARSE_WARNING ("malformed iscsiadm record: invalid IP gateway '%s'.", p);
 				skip = TRUE;
 				continue;
 			}
@@ -507,8 +497,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 
 		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_DNS1_TAG, &skip))) {
 			if (inet_pton (AF_INET, p, &dns1) < 1) {
-				g_warning ("%s: malformed iscsiadm record: invalid DNS1 address '%s'.",
-				           __func__, p);
+				PARSE_WARNING ("malformed iscsiadm record: invalid DNS1 address '%s'.", p);
 				skip = TRUE;
 				continue;
 			}
@@ -516,8 +505,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 
 		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_DNS2_TAG, &skip))) {
 			if (inet_pton (AF_INET, p, &dns2) < 1) {
-				g_warning ("%s: malformed iscsiadm record: invalid DNS2 address '%s'.",
-				           __func__, p);
+				PARSE_WARNING ("malformed iscsiadm record: invalid DNS2 address '%s'.", p);
 				skip = TRUE;
 				continue;
 			}
@@ -725,8 +713,7 @@ read_full_ip4_address (shvarFile *ifcfg,
 		nm_ip4_address_set_prefix (addr, prefix);
 
 		value = svGetValue (ifcfg, ip_tag, FALSE);
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing %s, assuming %s/%u",
-		             prefix_tag, value, prefix);
+		PARSE_WARNING ("missing %s, assuming %s/%u", prefix_tag, value, prefix);
 		g_free (value);
 	}
 
@@ -977,7 +964,7 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 		g_match_info_free (match_info);
 
 		if (!nm_setting_ip4_config_add_route (s_ip4, route))
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 route");
+			PARSE_WARNING ("duplicate IP4 route");
 
 	}
 
@@ -1168,8 +1155,7 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 			/* Ignore default route - NM handles it internally */
 			g_free (dest);
 			g_match_info_free (match_info);
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring manual default route: '%s' (%s)",
-			             *iter, filename);
+			PARSE_WARNING ("ignoring manual default route: '%s' (%s)", *iter, filename);
 			continue;
 		}
 		if (inet_pton (AF_INET6, dest, &ip6_addr) != 1) {
@@ -1238,7 +1224,7 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 		g_match_info_free (match_info);
 
 		if (!nm_setting_ip6_config_add_route (s_ip6, route))
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP6 route");
+			PARSE_WARNING ("duplicate IP6 route");
 	}
 
 	success = TRUE;
@@ -1396,7 +1382,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		}
 
 		if (!nm_setting_ip4_config_add_address (s_ip4, addr))
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 address");
+			PARSE_WARNING ("duplicate IP4 address");
 		nm_ip4_address_unref (addr);
 	}
 
@@ -1427,7 +1413,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		}
 
 		if (dns && !nm_setting_ip4_config_add_dns (s_ip4, dns))
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS server %s", tag);
+			PARSE_WARNING ("duplicate DNS server %s", tag);
 		g_free (tag);
 	}
 
@@ -1442,7 +1428,7 @@ make_ip4_setting (shvarFile *ifcfg,
 			for (item = searches; *item; item++) {
 				if (strlen (*item)) {
 					if (!nm_setting_ip4_config_add_dns_search (s_ip4, *item))
-						PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS domain '%s'", *item);
+						PARSE_WARNING ("duplicate DNS domain '%s'", *item);
 				}
 			}
 			g_strfreev (searches);
@@ -1475,7 +1461,7 @@ make_ip4_setting (shvarFile *ifcfg,
 					break;
 
 				if (!nm_setting_ip4_config_add_route (s_ip4, route))
-					PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 route");
+					PARSE_WARNING ("duplicate IP4 route");
 				nm_ip4_route_unref (route);
 			}
 			svCloseFile (route_ifcfg);
@@ -1497,7 +1483,7 @@ make_ip4_setting (shvarFile *ifcfg,
 				for (item = searches; *item; item++) {
 					if (strlen (*item)) {
 						if (!nm_setting_ip4_config_add_dns_search (s_ip4, *item))
-							PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS search '%s'", *item);
+							PARSE_WARNING ("duplicate DNS search '%s'", *item);
 					}
 				}
 				g_strfreev (searches);
@@ -1557,15 +1543,14 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 					break;
 			}
 			if (*p) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: ignoring alias file '%s' with invalid name", full_path);
+				PARSE_WARNING ("ignoring alias file '%s' with invalid name", full_path);
 				g_free (full_path);
 				continue;
 			}
 
 			parsed = svOpenFile (full_path, &err);
 			if (!parsed) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: couldn't parse file '%s': %s",
-				             full_path, err->message);
+				PARSE_WARNING ("couldn't parse alias file '%s': %s", full_path, err->message);
 				g_free (full_path);
 				g_clear_error (&err);
 				continue;
@@ -1573,14 +1558,15 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 
 			device = svGetValue (parsed, "DEVICE", FALSE);
 			if (!device) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: file '%s' has no DEVICE", full_path);
+				PARSE_WARNING ("alias file '%s' has no DEVICE", full_path);
 				svCloseFile (parsed);
 				g_free (full_path);
 				continue;
 			}
 			/* We know that item starts with IFCFG_TAG from utils_is_ifcfg_alias_file() */
 			if (strcmp (device, item + strlen (IFCFG_TAG)) != 0) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: file '%s' has invalid DEVICE (%s) for filename", full_path, device);
+				PARSE_WARNING ("alias file '%s' has invalid DEVICE (%s) for filename",
+				               full_path, device);
 				g_free (device);
 				svCloseFile (parsed);
 				g_free (full_path);
@@ -1592,10 +1578,11 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 			svCloseFile (parsed);
 			if (ok) {
 				if (!NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, device)))
-					PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: duplicate IP4 address in alias file %s", item);
+					PARSE_WARNING ("duplicate IP4 address in alias file %s", item);
 			} else {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: error reading IP4 address from '%s': %s", full_path, err ? err->message : "no address")
-					g_clear_error (&err);
+				PARSE_WARNING ("error reading IP4 address from alias file '%s': %s",
+				               full_path, err ? err->message : "no address");
+				g_clear_error (&err);
 			}
 			nm_ip4_address_unref (addr);
 
@@ -1605,7 +1592,7 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 
 		g_dir_close (dir);
 	} else {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: can not read directory '%s': %s", dirname, err->message);
+		PARSE_WARNING ("can not read directory '%s': %s", dirname, err->message);
 		g_error_free (err);
 	}
 
@@ -1778,7 +1765,7 @@ make_ip6_setting (shvarFile *ifcfg,
 		}
 
 		if (!nm_setting_ip6_config_add_address (s_ip6, addr))
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP6 address");
+			PARSE_WARNING ("duplicate IP6 address");
 		nm_ip6_address_unref (addr);
 	}
 	g_strfreev (list);
@@ -1801,13 +1788,13 @@ make_ip6_setting (shvarFile *ifcfg,
 		ip6_dns = in6addr_any;
 		if (parse_ip6_address (value, &ip6_dns, NULL)) {
 			if (!IN6_IS_ADDR_UNSPECIFIED (&ip6_dns) && !nm_setting_ip6_config_add_dns (s_ip6, &ip6_dns))
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS server %s", tag);
+				PARSE_WARNING ("duplicate DNS server %s", tag);
 		} else {
 			/* Maybe an IPv4 address? If so ignore it */
 			if (inet_pton (AF_INET, value, &ip4_addr) != 1) {
 				g_free (tag);
 				g_free (value);
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP6 address");
+				PARSE_WARNING ("duplicate IP6 address");
 				goto error;
 			}
 		}
@@ -1949,7 +1936,7 @@ read_dcb_app (shvarFile *ifcfg,
 		g_free (val);
 
 		if (!(flags & NM_SETTING_DCB_FLAG_ENABLE))
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring DCB %s priority; app not enabled", app);
+			PARSE_WARNING ("ignoring DCB %s priority; app not enabled", app);
 	}
 	g_free (tmp);
 
@@ -1983,14 +1970,14 @@ read_dcb_bool_array (shvarFile *ifcfg,
 		return TRUE;
 
 	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE)) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring %s; %s is not enabled", prop, desc);
+		PARSE_WARNING ("ignoring %s; %s is not enabled", prop, desc);
 		success = TRUE;
 		goto out;
 	}
 
 	val = g_strstrip (val);
 	if (strlen (val) != 8) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: %s value '%s' must be 8 characters long", prop, val);
+		PARSE_WARNING ("%s value '%s' must be 8 characters long", prop, val);
 		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "boolean array must be 8 characters");
 		goto out;
 	}
@@ -1998,7 +1985,7 @@ read_dcb_bool_array (shvarFile *ifcfg,
 	/* All characters must be either 0 or 1 */
 	for (i = 0; i < 8; i++) {
 		if (val[i] != '0' && val[i] != '1') {
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: invalid %s value '%s': not all 0s and 1s", prop, val);
+			PARSE_WARNING ("invalid %s value '%s': not all 0s and 1s", prop, val);
 			g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid boolean digit");
 			goto out;
 		}
@@ -2032,14 +2019,14 @@ read_dcb_uint_array (shvarFile *ifcfg,
 		return TRUE;
 
 	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE)) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring %s; %s is not enabled", prop, desc);
+		PARSE_WARNING ("ignoring %s; %s is not enabled", prop, desc);
 		success = TRUE;
 		goto out;
 	}
 
 	val = g_strstrip (val);
 	if (strlen (val) != 8) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: %s value '%s' must be 8 characters long", prop, val);
+		PARSE_WARNING ("%s value '%s' must be 8 characters long", prop, val);
 		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "uint array must be 8 characters");
 		goto out;
 	}
@@ -2051,8 +2038,8 @@ read_dcb_uint_array (shvarFile *ifcfg,
 		else if (f_allowed && (val[i] == 'f' || val[i] == 'F'))
 			set_func (s_dcb, i, 15);
 		else {
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: invalid %s value '%s': not 0 - 7%s",
-			             prop, val, f_allowed ? " or 'f'" : "");
+			PARSE_WARNING ("invalid %s value '%s': not 0 - 7%s",
+			               prop, val, f_allowed ? " or 'f'" : "");
 			g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid uint digit");
 			goto out;
 		}
@@ -2085,7 +2072,7 @@ read_dcb_percent_array (shvarFile *ifcfg,
 		return TRUE;
 
 	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE)) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring %s; %s is not enabled", prop, desc);
+		PARSE_WARNING ("ignoring %s; %s is not enabled", prop, desc);
 		success = TRUE;
 		goto out;
 	}
@@ -2093,14 +2080,14 @@ read_dcb_percent_array (shvarFile *ifcfg,
 	val = g_strstrip (val);
 	split = g_strsplit_set (val, ",", 0);
 	if (!split || (g_strv_length (split) != 8)) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: invalid %s percentage list value '%s'", prop, val);
+		PARSE_WARNING ("invalid %s percentage list value '%s'", prop, val);
 		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "percent array must be 8 elements");
 		goto out;
 	}
 
 	for (iter = split, i = 0; iter && *iter; iter++, i++) {
 		if (!get_int (*iter, &tmp) || tmp < 0 || tmp > 100) {
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: invalid %s percentage value '%s'", prop, *iter);
+			PARSE_WARNING ("invalid %s percentage value '%s'", prop, *iter);
 			g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid percent element");
 			goto out;
 		}
@@ -2109,7 +2096,7 @@ read_dcb_percent_array (shvarFile *ifcfg,
 	}
 
 	if (sum_pct && (sum != 100)) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: %s percentages do not equal 100%%", prop);
+		PARSE_WARNING ("%s percentages do not equal 100%%", prop);
 		g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid percentage sum");
 		goto out;
 	}
@@ -2158,7 +2145,7 @@ make_dcb_setting (shvarFile *ifcfg,
 			    strcmp (val, NM_SETTING_DCB_FCOE_MODE_VN2VN) == 0)
 				g_object_set (G_OBJECT (s_dcb), NM_SETTING_DCB_APP_FCOE_MODE, val, NULL);
 			else {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: invalid FCoE mode '%s'", val);
+				PARSE_WARNING ("invalid FCoE mode '%s'", val);
 				g_set_error_literal (error, IFCFG_PLUGIN_ERROR, 0, "invalid FCoE mode");
 				g_free (val);
 				g_object_unref (s_dcb);
@@ -2541,12 +2528,12 @@ fill_wpa_ciphers (shvarFile *ifcfg,
 		 */
 		if (adhoc) {
 			if (group && (i > 0)) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring group cipher '%s' (only one group cipher allowed in Ad-Hoc mode)",
-				             *iter);
+				PARSE_WARNING ("ignoring group cipher '%s' (only one group cipher allowed "
+				               "in Ad-Hoc mode)", *iter);
 				continue;
 			} else if (!group) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring pairwise cipher '%s' (pairwise not used in Ad-Hoc mode)",
-				             *iter);
+				PARSE_WARNING ("ignoring pairwise cipher '%s' (pairwise not used "
+				               "in Ad-Hoc mode)", *iter);
 				continue;
 			}
 		}
@@ -2566,9 +2553,9 @@ fill_wpa_ciphers (shvarFile *ifcfg,
 		else if (group && !strcmp (*iter, "WEP40"))
 			nm_setting_wireless_security_add_group (wsec, "wep40");
 		else {
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring invalid %s cipher '%s'",
-			             group ? "CIPHER_GROUP" : "CIPHER_PAIRWISE",
-			             *iter);
+			PARSE_WARNING ("ignoring invalid %s cipher '%s'",
+			               group ? "CIPHER_GROUP" : "CIPHER_PAIRWISE",
+			               *iter);
 		}
 	}
 
@@ -2783,10 +2770,8 @@ eap_tls_reader (const char *eap_method,
 		g_free (real_path);
 		real_path = NULL;
 	} else {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing %s for EAP"
-		             " method '%s'; this is insecure!",
-		             ca_cert_key,
-		             eap_method);
+		PARSE_WARNING ("missing %s for EAP method '%s'; this is insecure!",
+		               ca_cert_key, eap_method);
 	}
 
 	/* Read and set private key password flags */
@@ -2916,10 +2901,8 @@ eap_peap_reader (const char *eap_method,
 		                                    error))
 			goto done;
 	} else {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing "
-		             "IEEE_8021X_CA_CERT for EAP method '%s'; this is"
-		             " insecure!",
-		             eap_method);
+		PARSE_WARNING ("missing IEEE_8021X_CA_CERT for EAP method '%s'; this is insecure!",
+		               eap_method);
 	}
 
 	peapver = svGetValue (ifcfg, "IEEE_8021X_PEAP_VERSION", FALSE);
@@ -3022,10 +3005,8 @@ eap_ttls_reader (const char *eap_method,
 		                                    error))
 			goto done;
 	} else {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing "
-		             "IEEE_8021X_CA_CERT for EAP method '%s'; this is"
-		             " insecure!",
-		             eap_method);
+		PARSE_WARNING ("missing IEEE_8021X_CA_CERT for EAP method '%s'; this is insecure!",
+		               eap_method);
 	}
 
 	anon_ident = svGetValue (ifcfg, "IEEE_8021X_ANON_IDENTITY", FALSE);
@@ -3120,9 +3101,9 @@ eap_fast_reader (const char *eap_method,
 			else if (strcmp (*iter, "allow-auth") == 0)
 				allow_auth = TRUE;
 			else {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid IEEE_8021X_FAST_PROVISIONING '%s' "
-				             "(space-separated list of these values [allow-auth, allow-unauth] expected)",
-				             *iter);
+				PARSE_WARNING ("invalid IEEE_8021X_FAST_PROVISIONING '%s' "
+				               "(space-separated list of these values [allow-auth, allow-unauth] expected)",
+				               *iter);
 			}
 		}
 		g_strfreev (list);
@@ -3292,9 +3273,8 @@ fill_8021x (shvarFile *ifcfg,
 			 * used with TTLS or PEAP or whatever.
 			 */
 			if (wifi && eap->wifi_phase2_only) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignored invalid "
-				             "IEEE_8021X_EAP_METHOD '%s'; not allowed for wifi.",
-				             lower);
+				PARSE_WARNING ("ignored invalid IEEE_8021X_EAP_METHOD '%s'; not allowed for wifi.",
+				               lower);
 				goto next;
 			}
 
@@ -3310,11 +3290,8 @@ fill_8021x (shvarFile *ifcfg,
 			eap++;
 		}
 
-		if (!found) {
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignored unknown"
-			             "IEEE_8021X_EAP_METHOD '%s'.",
-			             lower);
-		}
+		if (!found)
+			PARSE_WARNING ("ignored unknown IEEE_8021X_EAP_METHOD '%s'.", lower);
 		g_free (lower);
 	}
 
@@ -3583,7 +3560,7 @@ make_wireless_setting (shvarFile *ifcfg,
 			g_byte_array_free (array, TRUE);
 		}
 	} else {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: %s", (*error)->message);
+		PARSE_WARNING ("%s", (*error)->message);
 		g_clear_error (error);
 	}
 
@@ -3597,7 +3574,7 @@ make_wireless_setting (shvarFile *ifcfg,
 			if (**iter == '\0')
 				continue;
 			if (!ether_aton_r (*iter, &addr)) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid MAC in HWADDR_BLACKLIST '%s'", *iter);
+				PARSE_WARNING ("invalid MAC in HWADDR_BLACKLIST '%s'", *iter);
 				continue;
 			}
 			macaddr_blacklist = g_slist_prepend (macaddr_blacklist, *iter);
@@ -3856,7 +3833,7 @@ make_wired_setting (shvarFile *ifcfg,
 				g_object_set (s_wired, NM_SETTING_WIRED_MTU, mtu, NULL);
 		} else {
 			/* Shouldn't be fatal... */
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid MTU '%s'", value);
+			PARSE_WARNING ("invalid MTU '%s'", value);
 		}
 		g_free (value);
 	}
@@ -3880,7 +3857,7 @@ make_wired_setting (shvarFile *ifcfg,
 		/* basic sanity checks */
 		while (*p) {
 			if (!g_ascii_isxdigit (*p) && (*p != ',') && (*p != '.')) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid SUBCHANNELS '%s'", value);
+				PARSE_WARNING ("invalid SUBCHANNELS '%s'", value);
 				success = FALSE;
 				break;
 			}
@@ -3893,8 +3870,8 @@ make_wired_setting (shvarFile *ifcfg,
 			chans = g_strsplit_set (value, ",", 0);
 			num_chans = g_strv_length (chans);
 			if (num_chans < 2 || num_chans > 3) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid SUBCHANNELS '%s' (%d channels, 2 or 3 expected)",
-				             value, g_strv_length (chans));
+				PARSE_WARNING ("invalid SUBCHANNELS '%s' (%d channels, 2 or 3 expected)",
+				               value, g_strv_length (chans));
 			} else {
 				GPtrArray *array = g_ptr_array_sized_new (num_chans);
 
@@ -3927,7 +3904,7 @@ make_wired_setting (shvarFile *ifcfg,
 		if (!strcmp (nettype, "qeth") || !strcmp (nettype, "lcs") || !strcmp (nettype, "ctc"))
 			g_object_set (s_wired, NM_SETTING_WIRED_S390_NETTYPE, nettype, NULL);
 		else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: unknown s390 NETTYPE '%s'", nettype);
+			PARSE_WARNING ("unknown s390 NETTYPE '%s'", nettype);
 	}
 	g_free (nettype);
 
@@ -3945,7 +3922,7 @@ make_wired_setting (shvarFile *ifcfg,
 				valid = nm_setting_wired_add_s390_option (s_wired, *iter, equals + 1);
 			}
 			if (!valid)
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid s390 OPTION '%s'", *iter);
+				PARSE_WARNING ("invalid s390 OPTION '%s'", *iter);
 			iter++;
 		}
 		g_strfreev (options);
@@ -3959,7 +3936,7 @@ make_wired_setting (shvarFile *ifcfg,
 			g_byte_array_free (mac, TRUE);
 		}
 	} else {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: %s", (*error)->message);
+		PARSE_WARNING ("%s", (*error)->message);
 		g_clear_error (error);
 	}
 
@@ -3973,7 +3950,7 @@ make_wired_setting (shvarFile *ifcfg,
 			if (**iter == '\0')
 				continue;
 			if (!ether_aton_r (*iter, &addr)) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid MAC in HWADDR_BLACKLIST '%s'", *iter);
+				PARSE_WARNING ("invalid MAC in HWADDR_BLACKLIST '%s'", *iter);
 				continue;
 			}
 			macaddr_blacklist = g_slist_prepend (macaddr_blacklist, *iter);
@@ -4066,19 +4043,19 @@ parse_infiniband_p_key (shvarFile *ifcfg,
 
 	device = svGetValue (ifcfg, "DEVICE", FALSE);
 	if (!device) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    InfiniBand connection specified PKEY but not DEVICE");
+		PARSE_WARNING ("InfiniBand connection specified PKEY but not DEVICE");
 		goto done;
 	}
 
 	physdev = svGetValue (ifcfg, "PHYSDEV", FALSE);
 	if (!physdev) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    InfiniBand connection specified PKEY but not PHYSDEV");
+		PARSE_WARNING ("InfiniBand connection specified PKEY but not PHYSDEV");
 		goto done;
 	}
 
 	pkey_id = svGetValue (ifcfg, "PKEY_ID", FALSE);
 	if (!pkey_id) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    InfiniBand connection specified PKEY but not PKEY_ID");
+		PARSE_WARNING ("InfiniBand connection specified PKEY but not PKEY_ID");
 		goto done;
 	}
 
@@ -4089,15 +4066,15 @@ parse_infiniband_p_key (shvarFile *ifcfg,
 	else
 		end = pkey_id;
 	if (end == pkey_id || *end || id > 0xFFFF) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    invalid InfiniBand PKEY_ID '%s'", pkey_id);
+		PARSE_WARNING ("invalid InfiniBand PKEY_ID '%s'", pkey_id);
 		goto done;
 	}
 	id = (id | 0x8000);
 
 	ifname = g_strdup_printf ("%s.%04x", physdev, id);
 	if (strcmp (device, ifname) != 0) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    InfiniBand DEVICE (%s) does not match PHYSDEV+PKEY_ID (%s)",
-		             device, ifname);
+		PARSE_WARNING ("InfiniBand DEVICE (%s) does not match PHYSDEV+PKEY_ID (%s)",
+		               device, ifname);
 		goto done;
 	}
 
@@ -4138,7 +4115,7 @@ make_infiniband_setting (shvarFile *ifcfg,
 				g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MTU, mtu, NULL);
 		} else {
 			/* Shouldn't be fatal... */
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid MTU '%s'", value);
+			PARSE_WARNING ("invalid MTU '%s'", value);
 		}
 		g_free (value);
 	}
@@ -4237,7 +4214,7 @@ handle_bond_option (NMSettingBond *s_bond,
 	}
 
 	if (!nm_setting_bond_add_option (s_bond, key, sanitized ? sanitized : value))
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid bonding option '%s'", key);
+		PARSE_WARNING ("invalid bonding option '%s'", key);
 	g_free (sanitized);
 }
 
@@ -4467,32 +4444,32 @@ handle_bridge_option (NMSetting *setting,
 
 	if (!strcmp (key, "priority")) {
 		if (stp == FALSE) {
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: 'priority' invalid when STP is disabled");
+			PARSE_WARNING ("'priority' invalid when STP is disabled");
 		} else if (get_uint (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_PRIORITY, u, NULL);
 		else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid priority value '%s'", value);
+			PARSE_WARNING ("invalid priority value '%s'", value);
 	} else if (!strcmp (key, "hello_time")) {
 		if (stp == FALSE) {
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: 'hello_time' invalid when STP is disabled");
+			PARSE_WARNING ("'hello_time' invalid when STP is disabled");
 		} else if (get_uint (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_HELLO_TIME, u, NULL);
 		else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid hello_time value '%s'", value);
+			PARSE_WARNING ("invalid hello_time value '%s'", value);
 	} else if (!strcmp (key, "max_age")) {
 		if (stp == FALSE) {
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: 'max_age' invalid when STP is disabled");
+			PARSE_WARNING ("'max_age' invalid when STP is disabled");
 		} else if (get_uint (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_MAX_AGE, u, NULL);
 		else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid max_age value '%s'", value);
+			PARSE_WARNING ("invalid max_age value '%s'", value);
 	} else if (!strcmp (key, "ageing_time")) {
 		if (get_uint (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_AGEING_TIME, u, NULL);
 		else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid ageing_time value '%s'", value);
+			PARSE_WARNING ("invalid ageing_time value '%s'", value);
 	} else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: unhandled bridge option '%s'", key);
+			PARSE_WARNING ("unhandled bridge option '%s'", key);
 }
 
 static void
@@ -4554,7 +4531,7 @@ make_bridge_setting (shvarFile *ifcfg,
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, FALSE, NULL);
 			stp_set = TRUE;
 		} else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid STP value '%s'", value);
+			PARSE_WARNING ("invalid STP value '%s'", value);
 		g_free (value);
 	}
 
@@ -4569,9 +4546,9 @@ make_bridge_setting (shvarFile *ifcfg,
 			if (get_uint (value, &u))
 				g_object_set (s_bridge, NM_SETTING_BRIDGE_FORWARD_DELAY, u, NULL);
 			else
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid forward delay value '%s'", value);
+				PARSE_WARNING ("invalid forward delay value '%s'", value);
 		} else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: DELAY invalid when STP is disabled");
+			PARSE_WARNING ("DELAY invalid when STP is disabled");
 		g_free (value);
 	}
 
@@ -4638,21 +4615,21 @@ handle_bridge_port_option (NMSetting *setting,
 		if (get_uint (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_PORT_PRIORITY, u, NULL);
 		else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid priority value '%s'", value);
+			PARSE_WARNING ("invalid priority value '%s'", value);
 	} else if (!strcmp (key, "path_cost")) {
 		if (get_uint (value, &u))
 			g_object_set (setting, NM_SETTING_BRIDGE_PORT_PATH_COST, u, NULL);
 		else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid path_cost value '%s'", value);
+			PARSE_WARNING ("invalid path_cost value '%s'", value);
 	} else if (!strcmp (key, "hairpin_mode")) {
 		if (!strcasecmp (value, "on") || !strcasecmp (value, "yes") || !strcmp (value, "1"))
 			g_object_set (setting, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, TRUE, NULL);
 		else if (!strcasecmp (value, "off") || !strcasecmp (value, "no"))
 			g_object_set (setting, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, FALSE, NULL);
 		else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid hairpin_mode value '%s'", value);
+			PARSE_WARNING ("invalid hairpin_mode value '%s'", value);
 	} else
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: unhandled bridge port option '%s'", key);
+			PARSE_WARNING ("unhandled bridge port option '%s'", key);
 }
 
 static NMSetting *
@@ -4690,7 +4667,7 @@ make_team_port_setting (shvarFile *ifcfg)
 		g_object_set (s_port, NM_SETTING_TEAM_PORT_CONFIG, value, NULL);
 		g_free (value);
 	} else if (error) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: %s", error->message);
+		PARSE_WARNING ("%s", error->message);
 		g_error_free (error);
 	}
 
@@ -4758,10 +4735,8 @@ parse_prio_map_list (NMSettingVlan *s_vlan,
 		if (!*iter || !strchr (*iter, ':'))
 			continue;
 
-		if (!nm_setting_vlan_add_priority_str (s_vlan, map, *iter)) {
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid %s priority map item '%s'",
-			             key, *iter);
-		}
+		if (!nm_setting_vlan_add_priority_str (s_vlan, map, *iter))
+			PARSE_WARNING ("invalid %s priority map item '%s'", key, *iter);
 	}
 	g_strfreev (list);
 }
@@ -5042,7 +5017,7 @@ check_dns_search_domains (shvarFile *ifcfg, NMSetting *s_ip4, NMSetting *s_ip6)
 				for (item = searches; *item; item++) {
 					if (strlen (*item)) {
 						if (!nm_setting_ip6_config_add_dns_search (NM_SETTING_IP6_CONFIG (s_ip6), *item))
-							PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS domain '%s'", *item);
+							PARSE_WARNING ("duplicate DNS domain '%s'", *item);
 					}
 				}
 				g_strfreev (searches);
@@ -5103,7 +5078,7 @@ connection_from_file (const char *filename,
 
 		connection = create_unhandled_connection (filename, parsed, "unmanaged", out_unhandled);
 		if (!connection)
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: NM_CONTROLLED was false but device was not uniquely identified; device will be managed");
+			PARSE_WARNING ("NM_CONTROLLED was false but device was not uniquely identified; device will be managed");
 		goto done;
 	}
 
@@ -5193,7 +5168,7 @@ connection_from_file (const char *filename,
 
 		connection = create_unhandled_connection (filename, parsed, "unrecognized", out_unhandled);
 		if (!connection)
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: connection type was unrecognized but device was not uniquely identified; device may be managed");
+			PARSE_WARNING ("connection type was unrecognized but device was not uniquely identified; device may be managed");
 		goto done;
 	}
 	g_free (type);

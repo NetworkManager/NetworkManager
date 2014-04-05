@@ -28,6 +28,7 @@
 #include <wordexp.h>
 #include <libgen.h>
 #include "nm-utils.h"
+#include "nm-logging.h"
 
 if_block* first;
 if_block* last;
@@ -112,17 +113,17 @@ _recursive_ifparser (const char *eni_file, int quiet)
 	// Check if interfaces file exists and open it
 	if (!g_file_test (eni_file, G_FILE_TEST_EXISTS)) {
 		if (!quiet)
-			g_warning ("Warning: interfaces file %s doesn't exist\n", eni_file);
+			nm_log_warn (LOGD_SETTINGS, "interfaces file %s doesn't exist\n", eni_file);
 		return;
 	}
 	inp = fopen (eni_file, "r");
 	if (inp == NULL) {
 		if (!quiet)
-			g_warning ("Error: Can't open %s\n", eni_file);
+			nm_log_warn (LOGD_SETTINGS, "Can't open %s\n", eni_file);
 		return;
 	}
 	if (!quiet)
-		g_message ("      interface-parser: parsing file %s\n", eni_file);
+		nm_log_info (LOGD_SETTINGS, "      interface-parser: parsing file %s\n", eni_file);
 
 
 	while (!feof(inp))
@@ -142,7 +143,7 @@ _recursive_ifparser (const char *eni_file, int quiet)
 		if (!feof(inp) && len > 0 &&  line[len-1] != '\n') {
 			if (!skip_long_line) {
 				if (!quiet)
-					g_message ("Error: Skipping over-long-line '%s...'\n", line);
+					nm_log_warn (LOGD_SETTINGS, "Skipping over-long-line '%s...'\n", line);
 			}
 			skip_long_line = 1;
 			continue;
@@ -182,8 +183,8 @@ _recursive_ifparser (const char *eni_file, int quiet)
 
 		if (toknum < 2) {
 			if (!quiet) {
-				g_message ("Error: Can't parse interface line '%s'\n",
-						join_values_with_spaces(value, token));
+				nm_log_warn (LOGD_SETTINGS, "Can't parse interface line '%s'\n",
+				             join_values_with_spaces(value, token));
 			}
 			skip_to_block = 1;
 			continue;
@@ -197,8 +198,8 @@ _recursive_ifparser (const char *eni_file, int quiet)
 		if (strcmp(token[0], "iface") == 0) {
 			if (toknum < 4) {
 				if (!quiet) {
-					g_message ("Error: Can't parse iface line '%s'\n",
-							join_values_with_spaces(value, token));
+					nm_log_warn (LOGD_SETTINGS, "Can't parse iface line '%s'\n",
+					             join_values_with_spaces(value, token));
 				}
 				continue;
 			}
@@ -235,7 +236,7 @@ _recursive_ifparser (const char *eni_file, int quiet)
 
 			if (toknum == 1) {
 				if (!quiet)
-					g_warning ("Error: Invalid source line without parameters\n");
+					nm_log_warn (LOGD_SETTINGS, "Invalid source line without parameters\n");
 				continue;
 			}
 
@@ -247,8 +248,8 @@ _recursive_ifparser (const char *eni_file, int quiet)
 		else {
 			if (skip_to_block) {
 				if (!quiet) {
-					g_message ("Error: ignoring out-of-block data '%s'\n",
-					           join_values_with_spaces(value, token));
+					nm_log_warn (LOGD_SETTINGS, "ignoring out-of-block data '%s'\n",
+					             join_values_with_spaces(value, token));
 				}
 			} else
 				add_data(token[0], join_values_with_spaces(value, token + 1));
@@ -257,7 +258,7 @@ _recursive_ifparser (const char *eni_file, int quiet)
 	fclose(inp);
 
 	if (!quiet)
-		g_message ("      interface-parser: finished parsing file %s\n", eni_file);
+		nm_log_info (LOGD_SETTINGS, "      interface-parser: finished parsing file %s\n", eni_file);
 }
 
 static void
@@ -273,12 +274,12 @@ _ifparser_source (const char *path, const char *en_dir, int quiet)
 		abs_path = g_build_filename (en_dir, path, NULL);
 
 	if (!quiet)
-		g_message ("      interface-parser: source line includes interfaces file(s) %s\n", abs_path);
+		nm_log_info (LOGD_SETTINGS, "      interface-parser: source line includes interfaces file(s) %s\n", abs_path);
 
 	/* ifupdown uses WRDE_NOCMD for wordexp. */
 	if (wordexp (abs_path, &we, WRDE_NOCMD)) {
 		if (!quiet)
-			g_warning ("Error: word expansion for %s failed\n", abs_path);
+			nm_log_warn (LOGD_SETTINGS, "word expansion for %s failed\n", abs_path);
 	} else {
 		for (i = 0; i < we.we_wordc; i++)
 			_recursive_ifparser (we.we_wordv[i], quiet);

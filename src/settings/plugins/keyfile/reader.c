@@ -43,6 +43,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-system-config-interface.h"
+#include "nm-logging.h"
 #include "reader.h"
 #include "common.h"
 #include "utils.h"
@@ -101,7 +102,7 @@ get_one_int (const char *str, guint32 max_val, const char *key_name, guint32 *ou
 
 	if (!str || !str[0]) {
 		if (key_name)
-			g_warning ("%s: ignoring missing number %s", __func__, key_name);
+			nm_log_warn (LOGD_SETTINGS, "%s: ignoring missing number %s", __func__, key_name);
 		return FALSE;
 	}
 
@@ -109,7 +110,7 @@ get_one_int (const char *str, guint32 max_val, const char *key_name, guint32 *ou
 	tmp = strtol (str, &endptr, 10);
 	if (errno || (tmp < 0) || (tmp > max_val) || *endptr != 0) {
 		if (key_name)
-			g_warning ("%s: ignoring invalid number %s '%s'", __func__, key_name, str);
+			nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid number %s '%s'", __func__, key_name, str);
 		return FALSE;
 	}
 
@@ -132,7 +133,7 @@ build_ip4_address_or_route (const char *key_name, const char *address_str, guint
 	/* Address */
 	err = inet_pton (AF_INET, address_str, &addr);
 	if (err <= 0) {
-		g_warning ("%s: ignoring invalid IPv4 address '%s'", __func__, address_str);
+		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid IPv4 address '%s'", __func__, address_str);
 		return NULL;
 	}
 	address = addr;
@@ -141,7 +142,7 @@ build_ip4_address_or_route (const char *key_name, const char *address_str, guint
 	if (gateway_str && gateway_str[0]) {
 		err = inet_pton (AF_INET, gateway_str, &addr);
 		if (err <= 0) {
-			g_warning ("%s: ignoring invalid IPv4 gateway '%s'", __func__, gateway_str);
+			nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid IPv4 gateway '%s'", __func__, gateway_str);
 			return NULL;
 		}
 		gateway = addr;
@@ -183,7 +184,7 @@ build_ip6_address_or_route (const char *key_name, const char *address_str, guint
 	/* add address */
 	err = inet_pton (AF_INET6, address_str, &addr);
 	if (err <= 0) {
-		g_warning ("%s: ignoring invalid IPv6 address '%s'", __func__, address_str);
+		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid IPv6 address '%s'", __func__, address_str);
 		goto error_out;
 	}
 	address = g_byte_array_new ();
@@ -214,7 +215,7 @@ build_ip6_address_or_route (const char *key_name, const char *address_str, guint
 			if (route && !metric_str && get_one_int (gateway_str, G_MAXUINT32, NULL, &metric))
 				addr = in6addr_any;
 			else {
-				g_warning ("%s: ignoring invalid IPv6 gateway '%s'", __func__, gateway_str);
+				nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid IPv6 gateway '%s'", __func__, gateway_str);
 				goto error_out;
 			}
 		}
@@ -354,8 +355,8 @@ read_one_ip_address_or_route (GKeyFile *file,
 	/* get address field */
 	address_str = read_field (&current, &error, IP_ADDRESS_CHARS, DELIMITERS);
 	if (error) {
-		g_warning ("keyfile: Unexpected character '%c' in '%s.%s' address (position %td of '%s').",
-			*error, setting_name, key_name, error - current, current);
+		nm_log_warn (LOGD_SETTINGS, "keyfile: Unexpected character '%c' in '%s.%s' address (position %td of '%s').",
+		             *error, setting_name, key_name, error - current, current);
 		goto error;
 	}
 	/* get prefix length field (skippable) */
@@ -363,18 +364,18 @@ read_one_ip_address_or_route (GKeyFile *file,
 	/* get gateway field */
 	gateway_str = read_field (&current, &error, IP_ADDRESS_CHARS, DELIMITERS);
 	if (error) {
-		g_warning ("keyfile: Unexpected character '%c' in '%s.%s' %s (position %td of '%s').",
-			*error, setting_name, key_name,
-			plen_str ? "gateway" : "gateway or prefix length",
-			error - current, current);
+		nm_log_warn (LOGD_SETTINGS, "keyfile: Unexpected character '%c' in '%s.%s' %s (position %td of '%s').",
+		             *error, setting_name, key_name,
+		             plen_str ? "gateway" : "gateway or prefix length",
+		             error - current, current);
 		goto error;
 	}
 	/* for routes, get metric */
 	if (route) {
 		metric_str = read_field (&current, &error, DIGITS, DELIMITERS);
 		if (error) {
-			g_warning ("keyfile: Unexpected character '%c' in '%s.%s' prefix length (position %td of '%s').",
-				*error, setting_name, key_name, error - current, current);
+			nm_log_warn (LOGD_SETTINGS, "keyfile: Unexpected character '%c' in '%s.%s' prefix length (position %td of '%s').",
+			             *error, setting_name, key_name, error - current, current);
 			goto error;
 		}
 	} else
@@ -383,13 +384,13 @@ read_one_ip_address_or_route (GKeyFile *file,
 		/* there is still some data */
 		if (*current) {
 			/* another field follows */
-			g_warning ("keyfile: %s.%s: Garbage at the and of the line: %s",
-				setting_name, key_name, current);
+			nm_log_warn (LOGD_SETTINGS, "keyfile: %s.%s: Garbage at the and of the line: %s",
+			             setting_name, key_name, current);
 			goto error;
 		} else {
 			/* semicolon at the end of input */
-			g_message ("keyfile: %s.%s: Deprecated semicolon at the end of value.",
-				setting_name, key_name);
+			nm_log_info (LOGD_SETTINGS, "keyfile: %s.%s: Deprecated semicolon at the end of value.",
+			             setting_name, key_name);
 		}
 	}
 
@@ -402,8 +403,8 @@ read_one_ip_address_or_route (GKeyFile *file,
 			plen = ipv6 ? 128 : 24;
 		else
 			plen = ipv6 ? 64 : 24;
-		g_warning ("keyfile: Missing prefix length in '%s.%s', defaulting to %d",
-			setting_name, key_name, plen);
+		nm_log_warn (LOGD_SETTINGS, "keyfile: Missing prefix length in '%s.%s', defaulting to %d",
+		             setting_name, key_name, plen);
 	}
 
 	/* build the appropriate data structure for NetworkManager settings */
@@ -481,7 +482,7 @@ ip4_dns_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const ch
 
 		ret = inet_pton (AF_INET, *iter, &addr);
 		if (ret <= 0) {
-			g_warning ("%s: ignoring invalid DNS server address '%s'", __func__, *iter);
+			nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid DNS server address '%s'", __func__, *iter);
 			continue;
 		}
 
@@ -516,7 +517,7 @@ ip6_dns_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const ch
 
 		ret = inet_pton (AF_INET6, *iter, &addr);
 		if (ret <= 0) {
-			g_warning ("%s: ignoring invalid DNS server IPv6 address '%s'", __func__, *iter);
+			nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid DNS server IPv6 address '%s'", __func__, *iter);
 			continue;
 		}
 		byte_array = g_byte_array_new ();
@@ -570,9 +571,9 @@ mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, cons
 				const guint8 v = (guint8) (val & 0xFF);
 
 				if (val < 0 || val > 255) {
-					g_warning ("%s: %s / %s ignoring invalid byte element '%d' (not "
-							   " between 0 and 255 inclusive)", __func__, setting_name,
-							   key, val);
+					nm_log_warn (LOGD_SETTINGS, "%s: %s / %s ignoring invalid byte element '%d' (not "
+					             " between 0 and 255 inclusive)", __func__, setting_name,
+					             key, val);
 					g_byte_array_free (array, TRUE);
 					array = NULL;
 					break;
@@ -587,8 +588,8 @@ mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, cons
 		g_object_set (setting, key, array, NULL);
 		g_byte_array_free (array, TRUE);
 	} else {
-		g_warning ("%s: ignoring invalid MAC address for %s / %s",
-		           __func__, setting_name, key);
+		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid MAC address for %s / %s",
+		             __func__, setting_name, key);
 	}
 }
 
@@ -684,9 +685,9 @@ get_uchar_array (GKeyFile *keyfile,
 			unsigned char v = (unsigned char) (val & 0xFF);
 
 			if (val < 0 || val > 255) {
-				g_warning ("%s: %s / %s ignoring invalid byte element '%d' (not "
-					       " between 0 and 255 inclusive)", __func__, setting_name,
-					       key, val);
+				nm_log_warn (LOGD_SETTINGS, "%s: %s / %s ignoring invalid byte element '%d' (not "
+				             " between 0 and 255 inclusive)", __func__, setting_name,
+				             key, val);
 			} else
 				g_byte_array_append (array, (const unsigned char *) &v, sizeof (v));
 		}
@@ -711,8 +712,8 @@ ssid_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 		g_object_set (setting, key, array, NULL);
 		g_byte_array_free (array, TRUE);
 	} else {
-		g_warning ("%s: ignoring invalid SSID for %s / %s",
-		           __func__, setting_name, key);
+		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid SSID for %s / %s",
+		             __func__, setting_name, key);
 	}
 }
 
@@ -727,8 +728,8 @@ password_raw_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, con
 		g_object_set (setting, key, array, NULL);
 		g_byte_array_free (array, TRUE);
 	} else {
-		g_warning ("%s: ignoring invalid raw password for %s / %s",
-		           __func__, setting_name, key);
+		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid raw password for %s / %s",
+		             __func__, setting_name, key);
 	}
 }
 
@@ -829,7 +830,7 @@ handle_as_path (GByteArray *array,
 
 		/* Warn if the certificate didn't exist */
 		if (exists == FALSE)
-			PLUGIN_WARN (KEYFILE_PLUGIN_NAME, "   certificate or key %s does not exist", path);
+			nm_log_warn (LOGD_SETTINGS, "certificate or key %s does not exist", path);
 	}
 	g_free (path);
 
@@ -856,8 +857,8 @@ cert_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 		if (success == FALSE)
 			g_object_set (setting, key, array, NULL);
 	} else {
-		g_warning ("%s: ignoring invalid key/cert value for %s / %s",
-		           __func__, setting_name, key);
+		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid key/cert value for %s / %s",
+		             __func__, setting_name, key);
 	}
 
 	if (array)
@@ -1032,7 +1033,7 @@ read_one_setting_value (NMSetting *setting,
 	if (check_for_key && !nm_keyfile_plugin_kf_has_key (info->keyfile, setting_name, key, &err)) {
 		/* Key doesn't exist or an error ocurred, thus nothing to do. */
 		if (err) {
-			g_warning ("Error loading setting '%s' value: %s", setting_name, err->message);
+			nm_log_warn (LOGD_SETTINGS, "Error loading setting '%s' value: %s", setting_name, err->message);
 			g_error_free (err);
 		}
 		return;
@@ -1059,7 +1060,7 @@ read_one_setting_value (NMSetting *setting,
 
 		int_val = nm_keyfile_plugin_kf_get_integer (info->keyfile, setting_name, key, NULL);
 		if (int_val < 0)
-			g_warning ("Casting negative value (%i) to uint", int_val);
+			nm_log_warn (LOGD_SETTINGS, "Casting negative value (%i) to uint", int_val);
 		g_object_set (setting, key, int_val, NULL);
 	} else if (type == G_TYPE_INT) {
 		int int_val;
@@ -1076,7 +1077,7 @@ read_one_setting_value (NMSetting *setting,
 
 		int_val = nm_keyfile_plugin_kf_get_integer (info->keyfile, setting_name, key, NULL);
 		if (int_val < G_MININT8 || int_val > G_MAXINT8)
-			g_warning ("Casting value (%i) to char", int_val);
+			nm_log_warn (LOGD_SETTINGS, "Casting value (%i) to char", int_val);
 
 		g_object_set (setting, key, int_val, NULL);
 	} else if (type == G_TYPE_UINT64) {
@@ -1101,9 +1102,9 @@ read_one_setting_value (NMSetting *setting,
 			unsigned char v = (unsigned char) (val & 0xFF);
 
 			if (val < 0 || val > 255) {
-				g_warning ("%s: %s / %s ignoring invalid byte element '%d' (not "
-				           " between 0 and 255 inclusive)", __func__, setting_name,
-				           key, val);
+				nm_log_warn (LOGD_SETTINGS, "%s: %s / %s ignoring invalid byte element '%d' (not "
+				             " between 0 and 255 inclusive)", __func__, setting_name,
+				             key, val);
 			} else
 				g_byte_array_append (array, (const unsigned char *) &v, sizeof (v));
 		}
@@ -1130,12 +1131,12 @@ read_one_setting_value (NMSetting *setting,
 		read_hash_of_string (info->keyfile, setting, key);
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
 		if (!read_array_of_uint (info->keyfile, setting, key)) {
-			g_warning ("Unhandled setting property type (read): '%s/%s' : '%s'",
-					 setting_name, key, G_VALUE_TYPE_NAME (value));
+			nm_log_warn (LOGD_SETTINGS, "Unhandled setting property type (read): '%s/%s' : '%s'",
+			             setting_name, key, G_VALUE_TYPE_NAME (value));
 		}
 	} else {
-		g_warning ("Unhandled setting property type (read): '%s/%s' : '%s'",
-				 setting_name, key, G_VALUE_TYPE_NAME (value));
+		nm_log_warn (LOGD_SETTINGS, "Unhandled setting property type (read): '%s/%s' : '%s'",
+		             setting_name, key, G_VALUE_TYPE_NAME (value));
 	}
 }
 
@@ -1151,7 +1152,7 @@ read_setting (GKeyFile *file, const char *keyfile_path, const char *group)
 	if (setting)
 		nm_setting_enumerate_values (setting, read_one_setting_value, &info);
 	else
-		g_warning ("Invalid setting name '%s'", group);
+		nm_log_warn (LOGD_SETTINGS, "Invalid setting name '%s'", group);
 
 	return setting;
 }
@@ -1293,8 +1294,8 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 		g_clear_error (&verify_error);
 		g_object_unref (connection);
 		connection = NULL;
-		g_warning ("Connection failed to verify: %s",
-			verify_error ? g_type_name (nm_connection_lookup_setting_type_by_quark (verify_error->domain)) : "(unknown)");
+		nm_log_warn (LOGD_SETTINGS, "Connection failed to verify: %s",
+		             verify_error ? g_type_name (nm_connection_lookup_setting_type_by_quark (verify_error->domain)) : "(unknown)");
 	}
 
 out:

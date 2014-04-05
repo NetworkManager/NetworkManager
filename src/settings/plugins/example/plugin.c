@@ -35,6 +35,7 @@
 #include <nm-setting-connection.h>
 #include <nm-utils.h>
 #include <nm-config.h>
+#include <nm-logging.h>
 
 #include "plugin.h"
 #include "nm-system-config-interface.h"
@@ -156,7 +157,7 @@ read_connections (NMSystemConfigInterface *config)
 
 	dir = g_dir_open (EXAMPLE_DIR, 0, &error);
 	if (!dir) {
-		PLUGIN_WARN (EXAMPLE_PLUGIN_NAME, "Cannot read directory '%s': (%d) %s",
+		nm_log_warn (LOGD_SETTINGS, "Cannot read directory '%s': (%d) %s",
 		             EXAMPLE_DIR,
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
@@ -171,15 +172,15 @@ read_connections (NMSystemConfigInterface *config)
 		/* XXX: Check file extension and ignore "~", ".tmp", ".bak", etc */
 
 		full_path = g_build_filename (EXAMPLE_DIR, item, NULL);
-		PLUGIN_PRINT (EXAMPLE_PLUGIN_NAME, "parsing %s ... ", item);
+		nm_log_info (LOGD_SETTINGS, "parsing %s ... ", item);
 
 		connection = _internal_new_connection (self, full_path, NULL, &error);
 		if (connection) {
-			PLUGIN_PRINT (EXAMPLE_PLUGIN_NAME, "    read connection '%s'",
-			              nm_connection_get_id (NM_CONNECTION (connection)));
+			nm_log_info (LOGD_SETTINGS, "    read connection '%s'",
+			             nm_connection_get_id (NM_CONNECTION (connection)));
 		} else {
-			PLUGIN_PRINT (EXAMPLE_PLUGIN_NAME, "    error: %s",
-				          (error && error->message) ? error->message : "(unknown)");
+			nm_log_info (LOGD_SETTINGS, "    error: %s",
+			             (error && error->message) ? error->message : "(unknown)");
 		}
 		g_clear_error (&error);
 		g_free (full_path);
@@ -197,11 +198,11 @@ update_connection_settings_commit_cb (NMSettingsConnection *orig, GError *error,
 	 * an error here.
 	 */
 	if (error) {
-		g_warning ("%s: '%s' / '%s' invalid: %d",
-		       	   __func__,
-		       	   error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
-		       	   (error && error->message) ? error->message : "(none)",
-		       	   error ? error->code : -1);
+		nm_log_warn (LOGD_SETTINGS, "%s: '%s' / '%s' invalid: %d",
+		             __func__,
+		             error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
+		             (error && error->message) ? error->message : "(none)",
+		             error ? error->code : -1);
 		g_clear_error (&error);
 
 		nm_settings_connection_signal_remove (orig);
@@ -288,7 +289,7 @@ dir_changed (GFileMonitor *monitor,
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_DELETED:
 		if (connection) {
-			PLUGIN_PRINT (EXAMPLE_PLUGIN_NAME, "removed %s.", full_path);
+			nm_log_info (LOGD_SETTINGS, "removed %s.", full_path);
 			remove_connection (SC_PLUGIN_EXAMPLE (config), connection, full_path);
 		}
 		break;
@@ -308,7 +309,7 @@ dir_changed (GFileMonitor *monitor,
 				                            NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
 				                              NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
 					/* Connection changed; update our internal connection object */
-					PLUGIN_PRINT (EXAMPLE_PLUGIN_NAME, "updating %s", full_path);
+					nm_log_info (LOGD_SETTINGS, "updating %s", full_path);
 					update_connection_settings (connection, tmp);
 				}
 				g_object_unref (tmp);
@@ -318,13 +319,13 @@ dir_changed (GFileMonitor *monitor,
 				 * becomes valid again later we'll get another change
 				 * notification, we'll re-read it, and we'll treat it as new.
 				 */
-				PLUGIN_PRINT (EXAMPLE_PLUGIN_NAME, "    error: %s",
-						      (error && error->message) ? error->message : "(unknown)");
+				nm_log_info (LOGD_SETTINGS, "    error: %s",
+				             (error && error->message) ? error->message : "(unknown)");
 				remove_connection (SC_PLUGIN_EXAMPLE (config), connection, full_path);
 			}
 			g_clear_error (&error);
 		} else {
-			PLUGIN_PRINT (EXAMPLE_PLUGIN_NAME, "updating %s", full_path);
+			nm_log_info (LOGD_SETTINGS, "updating %s", full_path);
 
 			/* We don't know about the connection yet, so the change represents
 			 * a completely new connection.
@@ -369,8 +370,7 @@ dir_changed (GFileMonitor *monitor,
 					g_signal_emit_by_name (config, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
 				}
 			} else {
-				PLUGIN_PRINT (EXAMPLE_PLUGIN_NAME, "    error: %s",
-						      (error && error->message) ? error->message : "(unknown)");
+				nm_log_info (LOGD_SETTINGS, "    error: %s", (error && error->message) ? error->message : "(unknown)");
 				g_clear_error (&error);
 			}
 		}
@@ -547,7 +547,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 
 	key_file = g_key_file_new ();
 	if (!g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
-		g_warning ("Error parsing file '%s': %s", priv->conf_file, error->message);
+		nm_log_warn (LOGD_SETTINGS, "Error parsing file '%s': %s", priv->conf_file, error->message);
 		g_error_free (error);
 		goto out;
 	}
@@ -565,7 +565,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 		} else if (!strncmp (ids[i], "interface-name:", 15) && nm_utils_iface_valid_name (ids[i] + 15)) {
 			specs = g_slist_append (specs, ids[i]);
 		} else {
-			g_warning ("Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, ids[i]);
+			nm_log_warn (LOGD_SETTINGS, "Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, ids[i]);
 			g_free (ids[i]);
 		}
 	}
@@ -598,7 +598,7 @@ plugin_get_hostname (SCPluginExample *plugin)
 	if (g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error))
 		hostname = g_key_file_get_value (key_file, "keyfile", "hostname", NULL);
 	else {
-		g_warning ("Error parsing file '%s': %s", priv->conf_file, error->message);
+		nm_log_warn (LOGD_SETTINGS, "Error parsing file '%s': %s", priv->conf_file, error->message);
 		g_error_free (error);
 	}
 
@@ -617,7 +617,7 @@ plugin_set_hostname (SCPluginExample *plugin, const char *hostname)
 	gsize len;
 
 	if (!priv->conf_file) {
-		g_warning ("Error saving hostname: no config file");
+		nm_log_warn (LOGD_SETTINGS, "Error saving hostname: no config file");
 		return FALSE;
 	}
 
@@ -626,7 +626,7 @@ plugin_set_hostname (SCPluginExample *plugin, const char *hostname)
 	 */
 	key_file = g_key_file_new ();
 	if (!g_key_file_load_from_file (key_file, priv->conf_file, G_KEY_FILE_NONE, &error)) {
-		g_warning ("Error parsing file '%s': %s", priv->conf_file, error->message);
+		nm_log_warn (LOGD_SETTINGS, "Error parsing file '%s': %s", priv->conf_file, error->message);
 		g_error_free (error);
 		goto out;
 	}
@@ -646,7 +646,7 @@ plugin_set_hostname (SCPluginExample *plugin, const char *hostname)
 	}
 
 	if (error) {
-		g_warning ("Error saving hostname: %s", error->message);
+		nm_log_warn (LOGD_SETTINGS, "Error saving hostname: %s", error->message);
 		g_error_free (error);
 	}
 

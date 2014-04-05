@@ -11,6 +11,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/logging \
 	-I$(top_srcdir)/src/settings \
 	-I$(srcdir)/../ \
 	$(GLIB_CFLAGS) \
@@ -33,6 +34,7 @@ test_keyfile_SOURCES = \
 	../utils.c
 
 test_keyfile_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
