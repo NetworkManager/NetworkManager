@@ -277,7 +277,8 @@ read_field (char **current, char **error, const char *characters, const char *de
 	}
 
 	/* fail on empty input */
-	g_return_val_if_fail (**current, NULL);
+	if (!**current)
+		return NULL;
 
 	/* remember beginning of input */
 	start = *current;
