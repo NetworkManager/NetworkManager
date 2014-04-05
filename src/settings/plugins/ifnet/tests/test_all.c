@@ -28,8 +28,11 @@
 #include <unistd.h>
 #include <nm-utils.h>
 
-#include "net_parser.h"
 #include "nm-test-helpers.h"
+#include "nm-linux-platform.h"
+#include "nm-logging.h"
+
+#include "net_parser.h"
 #include "net_utils.h"
 #include "wpa_parser.h"
 #include "connection_parser.h"
@@ -195,12 +198,19 @@ test_convert_ipv4_config_block ()
 	check_ip_block (iblock, "192.168.4.121", "255.255.255.0",
 			"202.117.16.1");
 	destroy_ip_block (iblock);
+
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*Can't handle IPv4 address*202.117.16.1211*");
 	iblock = convert_ip4_config_block ("eth2");
+	g_test_assert_expected_messages ();
 	ASSERT (iblock != NULL
 		&& iblock->next == NULL,
 		"convert error IPv4 address", "should only get one address");
 	check_ip_block (iblock, "192.168.4.121", "255.255.255.0", "0.0.0.0");
 	destroy_ip_block (iblock);
+
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*missing netmask or prefix*");
 	iblock = convert_ip4_config_block ("eth3");
 	ASSERT (iblock == NULL, "convert config_block",
 		"convert error configuration");
@@ -281,7 +291,12 @@ test_new_connection ()
 	GError *error = NULL;
 	NMConnection *connection;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*Can't handle IPv4 address*202.117.16.1211*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*Can't handle IPv6 address*202.117.16.1211*");
 	connection = ifnet_update_connection_from_config_block ("eth2", NULL, &error);
+	g_test_assert_expected_messages ();
 	ASSERT (connection != NULL, "new connection",
 		"new connection failed: %s",
 		error ? error->message : "None");
@@ -378,7 +393,12 @@ test_add_connection (const char *basepath)
 	kill_backup (&backup);
 	g_object_unref (connection);
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*Can't handle ipv4 address: brd, missing netmask or prefix*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*Can't handle ipv4 address: 202.117.16.255, missing netmask or prefix*");
 	connection = ifnet_update_connection_from_config_block ("myxjtu2", basepath, NULL);
+	g_test_assert_expected_messages ();
 	ASSERT (ifnet_add_new_connection (connection, NET_GEN_NAME, SUP_GEN_NAME, NULL, &backup, NULL),
 	        "add connection", "add connection failed: %s", "myxjtu2");
 	kill_backup (&backup);
@@ -423,7 +443,10 @@ test_missing_config ()
 	GError *error = NULL;
 	NMConnection *connection;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*Unknown config for eth8*");
 	connection = ifnet_update_connection_from_config_block ("eth8", NULL, &error);
+	g_test_assert_expected_messages ();
 	ASSERT (connection == NULL && error != NULL, "get connection",
 	        "get connection should fail with 'Unknown config for eth8'");
 }
@@ -434,6 +457,8 @@ main (int argc, char **argv)
 	char *f;
 
 	g_type_init ();
+	nm_linux_platform_setup ();
+	nm_logging_setup ("WARN", "DEFAULT", NULL, NULL);
 
 	nm_fake_platform_setup ();
 

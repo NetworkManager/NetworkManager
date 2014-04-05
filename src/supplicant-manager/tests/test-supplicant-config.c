@@ -40,6 +40,7 @@
 #include <nm-setting-8021x.h>
 
 #include "nm-test-helpers.h"
+#include "nm-glib-compat.h"
 
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
@@ -173,13 +174,25 @@ test_wifi_open (void)
 
 	config = nm_supplicant_config_new ();
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'ssid' value 'Test SSID'*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'scan_ssid' value '1'*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'bssid' value '11:22:33:44:55:66'*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'freq_list' value *");
 	success = nm_supplicant_config_add_setting_wireless (config, s_wifi, 0);
 	ASSERT (success == TRUE,
 	        "wifi-open", "failed to add wireless setting to supplicant config.");
+	g_test_assert_expected_messages ();
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'key_mgmt' value 'NONE'");
 	success = nm_supplicant_config_add_no_security (config);
 	ASSERT (success == TRUE,
 	        "wifi-open", "failed to add wireless security to supplicant config.");
+	g_test_assert_expected_messages ();
 
 	hash = nm_supplicant_config_get_hash (config);
 	ASSERT (hash != NULL,
@@ -272,16 +285,32 @@ test_wifi_wep_key (const char *detail,
 
 	config = nm_supplicant_config_new ();
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'ssid' value 'Test SSID'*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'scan_ssid' value '1'*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'bssid' value '11:22:33:44:55:66'*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'freq_list' value *");
 	success = nm_supplicant_config_add_setting_wireless (config, s_wifi, 0);
 	ASSERT (success == TRUE,
 	        detail, "failed to add wireless setting to supplicant config.");
+	g_test_assert_expected_messages ();
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'key_mgmt' value 'NONE'");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'wep_key0' value *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'wep_tx_keyidx' value '0'");
 	success = nm_supplicant_config_add_setting_wireless_security (config,
 	                                                              s_wsec,
 	                                                              NULL,
 	                                                              "376aced7-b28c-46be-9a62-fcdf072571da");
 	ASSERT (success == TRUE,
 	        detail, "failed to add wireless security to supplicant config.");
+	g_test_assert_expected_messages ();
 
 	hash = nm_supplicant_config_get_hash (config);
 	ASSERT (hash != NULL,
@@ -405,16 +434,36 @@ test_wifi_wpa_psk (const char *detail,
 
 	config = nm_supplicant_config_new ();
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'ssid' value 'Test SSID'*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'scan_ssid' value '1'*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'bssid' value '11:22:33:44:55:66'*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'freq_list' value *");
 	success = nm_supplicant_config_add_setting_wireless (config, s_wifi, 0);
 	ASSERT (success == TRUE,
 	        detail, "failed to add wireless setting to supplicant config.");
+	g_test_assert_expected_messages ();
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'key_mgmt' value 'WPA-PSK'");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'psk' value *");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'proto' value 'WPA RSN'");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'pairwise' value 'TKIP CCMP'");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*added 'group' value 'TKIP CCMP'");
 	success = nm_supplicant_config_add_setting_wireless_security (config,
 	                                                              s_wsec,
 	                                                              NULL,
 	                                                              "376aced7-b28c-46be-9a62-fcdf072571da");
 	ASSERT (success == TRUE,
 	        detail, "failed to add wireless security to supplicant config.");
+	g_test_assert_expected_messages ();
 
 	hash = nm_supplicant_config_get_hash (config);
 	ASSERT (hash != NULL,

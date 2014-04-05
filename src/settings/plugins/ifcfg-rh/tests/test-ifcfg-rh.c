@@ -50,6 +50,7 @@
 
 #include "nm-test-helpers.h"
 #include "NetworkManagerUtils.h"
+#include "nm-glib-compat.h"
 
 #include "common.h"
 #include "reader.h"
@@ -512,8 +513,11 @@ test_read_wired_static_no_prefix (gconstpointer user_data)
 	file = g_strdup_printf (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-wired-static-no-prefix-%u", expected_prefix);
 	expected_id = g_strdup_printf ("System test-wired-static-no-prefix-%u", expected_prefix);
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*missing PREFIX, assuming*");
 	connection = connection_from_file (file, NULL, TYPE_ETHERNET, NULL, NULL,
 	                                   NULL, NULL, NULL, &error, NULL);
+	g_test_assert_expected_messages ();
 	g_assert_no_error (error);
 	g_assert (connection);
 	g_assert (nm_connection_verify (connection, &error));
@@ -1857,6 +1861,8 @@ test_read_wired_ipv6_manual (void)
 	NMIP6Route *ip6_route;
 	struct in6_addr addr;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*ignoring manual default route*");
 	connection = connection_from_file (TEST_IFCFG_WIRED_IPV6_MANUAL,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
@@ -1867,6 +1873,8 @@ test_read_wired_ipv6_manual (void)
 	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
+	g_test_assert_expected_messages ();
+
 	ASSERT (connection != NULL,
 	        "wired-ipv6-manual-read", "failed to read %s: %s", TEST_IFCFG_WIRED_IPV6_MANUAL, error->message);
 
@@ -2763,9 +2771,12 @@ test_read_write_802_1X_subj_matches (void)
 	GError *error = NULL;
 	gboolean success = FALSE;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*missing IEEE_8021X_CA_CERT*peap*");
 	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1X-subj-matches",
 	                                   NULL, TYPE_ETHERNET, NULL, NULL,
 	                                   NULL, NULL, NULL, &error, NULL);
+	g_test_assert_expected_messages ();
 	g_assert_no_error (error);
 	g_assert (connection != NULL);
 
@@ -2795,8 +2806,11 @@ test_read_write_802_1X_subj_matches (void)
 	nm_utils_normalize_connection (connection, TRUE);
 
 	/* re-read the connection for comparison */
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*missing IEEE_8021X_CA_CERT*peap*");
 	reread = connection_from_file (written, NULL, TYPE_ETHERNET, NULL, NULL,
 	                               NULL, NULL, NULL, &error, NULL);
+	g_test_assert_expected_messages ();
 	unlink (written);
 	g_free (written);
 
@@ -3002,6 +3016,10 @@ test_read_wired_aliases_bad (void)
 	NMIP4Address *ip4_addr;
 	struct in_addr addr;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*aliasem1:1*has no DEVICE*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*aliasem1:2*has invalid DEVICE*");
 	connection = connection_from_file (TEST_IFCFG_ALIASES_BAD,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
@@ -3012,6 +3030,7 @@ test_read_wired_aliases_bad (void)
 	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
+	g_test_assert_expected_messages ();
 	ASSERT (connection != NULL,
 	        "aliases-bad-read", "failed to read %s: %s", TEST_IFCFG_ALIASES_BAD, error->message);
 
@@ -11250,7 +11269,7 @@ test_read_ibft_static (void)
 }
 
 static void
-test_read_ibft_malformed (const char *name, const char *iscsiadm_path)
+test_read_ibft_malformed (const char *name, const char *iscsiadm_path, gboolean expect_warning)
 {
 	NMConnection *connection;
 	char *unmanaged = NULL;
@@ -11262,6 +11281,10 @@ test_read_ibft_malformed (const char *name, const char *iscsiadm_path)
 
 	g_assert (g_file_test (iscsiadm_path, G_FILE_TEST_EXISTS));
 
+	if (expect_warning) {
+		g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+		                       "*malformed iscsiadm record*");
+	}
 	connection = connection_from_file (TEST_IFCFG_IBFT_STATIC,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
@@ -11272,6 +11295,8 @@ test_read_ibft_malformed (const char *name, const char *iscsiadm_path)
 	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
+	if (expect_warning)
+		g_test_assert_expected_messages ();
 	ASSERT (connection == NULL,
 	        name, "unexpectedly able to read %s", TEST_IFCFG_IBFT_STATIC);
 
@@ -12982,6 +13007,8 @@ test_read_bond_slave (void)
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*ignoring IP4 config on slave*");
 	connection = connection_from_file (TEST_IFCFG_BOND_SLAVE,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
@@ -12992,6 +13019,8 @@ test_read_bond_slave (void)
 	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
+	g_test_assert_expected_messages ();
+
 	ASSERT (connection != NULL,
 	        "bond-slave-read", "unexpected failure reading %s", TEST_IFCFG_BOND_SLAVE);
 
@@ -13346,6 +13375,8 @@ test_read_bond_slave_ib (void)
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*ignoring IP4 config on slave*");
 	connection = connection_from_file (TEST_IFCFG_BOND_SLAVE_IB,
 	                                   NULL,
 	                                   NULL,
@@ -13356,6 +13387,8 @@ test_read_bond_slave_ib (void)
 	                                   &route6file,
 	                                   &error,
 	                                   &ignore_error);
+	g_test_assert_expected_messages();
+
 	ASSERT (connection != NULL,
 	        "bond-slave-read-ib", "unexpected failure reading %s", TEST_IFCFG_BOND_SLAVE_IB);
 
@@ -13694,8 +13727,12 @@ test_read_dcb_bad_booleans (void)
 	NMConnection *connection;
 	GError *error = NULL;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*invalid DCB_PG_STRICT value*not all 0s and 1s*");
 	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-booleans",
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_test_assert_expected_messages ();
+
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "invalid boolean digit"));
 	g_assert (connection == NULL);
@@ -13707,8 +13744,12 @@ test_read_dcb_short_booleans (void)
 	NMConnection *connection;
 	GError *error = NULL;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*DCB_PG_STRICT value*8 characters*");
 	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-booleans",
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_test_assert_expected_messages ();
+
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "boolean array must be 8 characters"));
 	g_assert (connection == NULL);
@@ -13720,8 +13761,12 @@ test_read_dcb_bad_uints (void)
 	NMConnection *connection;
 	GError *error = NULL;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*invalid DCB_PG_UP2TC value*not 0 - 7*");
 	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-uints",
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_test_assert_expected_messages ();
+
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "invalid uint digit"));
 	g_assert (connection == NULL);
@@ -13733,8 +13778,12 @@ test_read_dcb_short_uints (void)
 	NMConnection *connection;
 	GError *error = NULL;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*DCB_PG_UP2TC value*8 characters*");
 	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-uints",
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_test_assert_expected_messages ();
+
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "uint array must be 8 characters"));
 	g_assert (connection == NULL);
@@ -13746,8 +13795,12 @@ test_read_dcb_bad_percent (void)
 	NMConnection *connection;
 	GError *error = NULL;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*invalid DCB_PG_PCT percentage value*");
 	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-bad-percent",
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_test_assert_expected_messages ();
+
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "invalid percent element"));
 	g_assert (connection == NULL);
@@ -13759,8 +13812,12 @@ test_read_dcb_short_percent (void)
 	NMConnection *connection;
 	GError *error = NULL;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*invalid DCB_PG_PCT percentage list value*");
 	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-short-percent",
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_test_assert_expected_messages ();
+
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "percent array must be 8 elements"));
 	g_assert (connection == NULL);
@@ -13772,8 +13829,12 @@ test_read_dcb_pgpct_not_100 (void)
 	NMConnection *connection;
 	GError *error = NULL;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*DCB_PG_PCT percentages do not equal 100*");
 	connection = connection_from_file (TEST_IFCFG_DIR "/network-scripts/ifcfg-test-dcb-pgpct-not-100",
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_test_assert_expected_messages ();
+
 	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (strstr (error->message, "invalid percentage sum"));
 	g_assert (connection == NULL);
@@ -14296,13 +14357,19 @@ int main (int argc, char **argv)
 	gboolean success;
 
 	g_test_init (&argc, &argv, NULL);
+#if GLIB_CHECK_VERSION(2,34,0)
+	/* consider even unexpected g_message()s to be fatal */
+	g_log_set_always_fatal (G_LOG_LEVEL_MASK);
+#else
+	/* g_test_expect_message() is dummied out, so allow warnings */
+	g_log_set_always_fatal (G_LOG_LEVEL_CRITICAL);
+#endif
+
 	g_type_init ();
 
 	success = nm_utils_init (&error);
 	g_assert_no_error (error);
 	g_assert (success);
-
-	g_log_set_always_fatal (G_LOG_LEVEL_CRITICAL);
 
 	g_test_add_func (TPATH "svUnescape", test_svUnescape);
 
@@ -14343,7 +14410,7 @@ int main (int argc, char **argv)
 	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_WIRED_8021X_TLS_AGENT, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
 	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_WIRED_8021X_TLS_ALWAYS,
 	                                        NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
-	g_test_add_func (TPATH "802-1x/subj-mathes", test_read_write_802_1X_subj_matches);
+	g_test_add_func (TPATH "802-1x/subj-matches", test_read_write_802_1X_subj_matches);
 	test_read_wired_aliases_good ();
 	test_read_wired_aliases_bad ();
 	test_read_wifi_open ();
@@ -14463,12 +14530,12 @@ int main (int argc, char **argv)
 	/* iSCSI / ibft */
 	test_read_ibft_dhcp ();
 	test_read_ibft_static ();
-	test_read_ibft_malformed ("ibft-bad-record-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-record");
-	test_read_ibft_malformed ("ibft-bad-entry-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-entry");
-	test_read_ibft_malformed ("ibft-bad-ipaddr-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-ipaddr");
-	test_read_ibft_malformed ("ibft-bad-gateway-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-gateway");
-	test_read_ibft_malformed ("ibft-bad-dns1-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-dns1");
-	test_read_ibft_malformed ("ibft-bad-dns2-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-dns2");
+	test_read_ibft_malformed ("ibft-bad-record-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-record", FALSE);
+	test_read_ibft_malformed ("ibft-bad-entry-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-entry", TRUE);
+	test_read_ibft_malformed ("ibft-bad-ipaddr-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-ipaddr", TRUE);
+	test_read_ibft_malformed ("ibft-bad-gateway-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-gateway", TRUE);
+	test_read_ibft_malformed ("ibft-bad-dns1-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-dns1", TRUE);
+	test_read_ibft_malformed ("ibft-bad-dns2-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-dns2", TRUE);
 	g_test_add_func (TPATH "dcb/read-basic", test_read_dcb_basic);
 	g_test_add_func (TPATH "dcb/write-basic", test_write_dcb_basic);
 	g_test_add_func (TPATH "dcb/default-app-priorities", test_read_dcb_default_app_priorities);
