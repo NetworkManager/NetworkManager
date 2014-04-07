@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2013 Red Hat, Inc.
+ * Copyright (C) 2005 - 2014 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -114,6 +114,8 @@ typedef struct {
 	char *              subchan2;
 	char *              subchan3;
 	char *              subchannels; /* Composite used for checking unmanaged specs */
+	char *              s390_nettype;
+	GHashTable *        s390_options;
 
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
@@ -143,6 +145,25 @@ nm_ethernet_error_quark (void)
 	if (!quark)
 		quark = g_quark_from_static_string ("nm-ethernet-error");
 	return quark;
+}
+
+static char *
+get_link_basename (const char *parent_path, const char *name, GError **error)
+{
+	char buf[128];
+	char *path;
+	char *result = NULL;
+
+	path = g_strdup_printf ("%s/%s", parent_path, name);
+
+	memset (buf, 0, sizeof (buf));
+	errno = 0;
+	if (readlink (path, &buf[0], sizeof (buf) - 1) >= 0)
+		result = g_path_get_basename (buf);
+	else
+		g_set_error (error, 0, 1, "failed to read link '%s': %d", path, errno);
+	g_free (path);
+	return result;
 }
 
 static void
@@ -192,34 +213,33 @@ _update_s390_subchannels (NMDeviceEthernet *self)
 		goto out;
 	}
 
-	/* FIXME: we probably care about ordering here to ensure that we map
-	 * cdev0 -> subchan1, cdev1 -> subchan2, etc.
-	 */
 	while ((item = g_dir_read_name (dir))) {
-		char buf[50];
-		char *cdev_path;
-
-		if (strncmp (item, "cdev", 4))
-			continue;  /* Not a subchannel link */
-
-		cdev_path = g_strdup_printf ("%s/%s", parent_path, item);
-
-		memset (buf, 0, sizeof (buf));
-		errno = 0;
-		if (readlink (cdev_path, &buf[0], sizeof (buf) - 1) >= 0) {
-			if (!priv->subchan1)
-				priv->subchan1 = g_path_get_basename (buf);
-			else if (!priv->subchan2)
-				priv->subchan2 = g_path_get_basename (buf);
-			else if (!priv->subchan3)
-				priv->subchan3 = g_path_get_basename (buf);
-		} else {
-			nm_log_warn (LOGD_DEVICE | LOGD_HW,
-			             "(%s): failed to read cdev link '%s': %d",
-			             iface, cdev_path, errno);
+		if (!strcmp (item, "cdev0")) {
+			priv->subchan1 = get_link_basename (parent_path, "cdev0", &error);
+		} else if (!strcmp (item, "cdev1")) {
+			priv->subchan2 = get_link_basename (parent_path, "cdev1", &error);
+		} else if (!strcmp (item, "cdev2")) {
+			priv->subchan3 = get_link_basename (parent_path, "cdev2", &error);
+		} else if (!strcmp (item, "driver")) {
+			priv->s390_nettype = get_link_basename (parent_path, "driver", &error);
+		} else if (   !strcmp (item, "layer2")
+		           || !strcmp (item, "portname")
+		           || !strcmp (item, "portno")) {
+			char *path, *value;
+			path = g_strdup_printf ("%s/%s", parent_path, item);
+			value = nm_platform_sysctl_get (path);
+			if (value && *value)
+				g_hash_table_insert (priv->s390_options, g_strdup (item), g_strdup (value));
+			else
+				nm_log_warn (LOGD_DEVICE | LOGD_HW, "(%s): error reading %s", iface, path);
+			g_free (path);
+			g_free (value);
 		}
-		g_free (cdev_path);
-	};
+		if (error) {
+			nm_log_warn (LOGD_DEVICE | LOGD_HW, "(%s): %s", iface, error->message);
+			g_clear_error (&error);
+		}
+	}
 
 	g_dir_close (dir);
 
@@ -250,8 +270,8 @@ out:
 
 static GObject*
 constructor (GType type,
-			 guint n_construct_params,
-			 GObjectConstructParam *construct_params)
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
 {
 	GObject *object;
 	NMDevice *self;
@@ -268,8 +288,8 @@ constructor (GType type,
 		          || nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_VETH);
 
 		nm_log_dbg (LOGD_HW | LOGD_ETHER, "(%s): kernel ifindex %d",
-			        nm_device_get_iface (NM_DEVICE (self)),
-			        nm_device_get_ifindex (NM_DEVICE (self)));
+		            nm_device_get_iface (NM_DEVICE (self)),
+		            nm_device_get_ifindex (NM_DEVICE (self)));
 
 		/* s390 stuff */
 		_update_s390_subchannels (NM_DEVICE_ETHERNET (self));
@@ -305,8 +325,10 @@ device_state_changed (NMDevice *device,
 }
 
 static void
-nm_device_ethernet_init (NMDeviceEthernet * self)
+nm_device_ethernet_init (NMDeviceEthernet *self)
 {
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	priv->s390_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 }
 
 NMDevice *
@@ -1543,6 +1565,8 @@ update_connection (NMDevice *device, NMConnection *connection)
 	static const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
 	const char *mac_prop = NM_SETTING_WIRED_MAC_ADDRESS;
 	GByteArray *array;
+	GHashTableIter iter;
+	gpointer key, value;
 
 	if (!s_wired) {
 		s_wired = (NMSettingWired *) nm_setting_wired_new ();
@@ -1571,6 +1595,26 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 
 	/* We don't set the MTU as we don't know whether it was set explicitly */
+
+	/* s390 */
+	if (priv->subchannels) {
+		GPtrArray *subchan_arr = g_ptr_array_sized_new (3);
+		if (priv->subchan1)
+			 g_ptr_array_add (subchan_arr, priv->subchan1);
+		if (priv->subchan2)
+			 g_ptr_array_add (subchan_arr, priv->subchan2);
+		if (priv->subchan3)
+			 g_ptr_array_add (subchan_arr, priv->subchan3);
+		g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, subchan_arr, NULL);
+		g_ptr_array_free (subchan_arr, TRUE);
+	}
+	if (priv->s390_nettype)
+		g_object_set (s_wired, NM_SETTING_WIRED_S390_NETTYPE, priv->s390_nettype, NULL);
+	g_hash_table_iter_init (&iter, priv->s390_options);
+	while (g_hash_table_iter_next (&iter, &key, &value)) {
+		nm_setting_wired_add_s390_option (s_wired, (const char *) key, (const char *) value);
+	}
+
 }
 
 static void
@@ -1638,6 +1682,8 @@ dispose (GObject *object)
 	g_free (priv->subchan2);
 	g_free (priv->subchan3);
 	g_free (priv->subchannels);
+	g_free (priv->s390_nettype);
+	g_hash_table_destroy (priv->s390_options);
 
 	if (priv->pppoe_wait_id) {
 		g_source_remove (priv->pppoe_wait_id);
