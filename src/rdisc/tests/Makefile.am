@@ -8,6 +8,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/src/posix-signals \
 	-I${top_srcdir}/libnm-util \
 	-I${srcdir}/.. \
+	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(POLKIT_CFLAGS) \

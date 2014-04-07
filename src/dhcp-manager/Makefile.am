@@ -2,7 +2,10 @@ libexec_PROGRAMS = nm-dhcp-helper
 
 nm_dhcp_helper_SOURCES = nm-dhcp-helper.c
 
-nm_dhcp_helper_CPPFLAGS = $(DBUS_CFLAGS) -DNMRUNDIR=\"$(nmrundir)\"
+nm_dhcp_helper_CPPFLAGS = \
+	$(DBUS_CFLAGS) \
+	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
+	-DNMRUNDIR=\"$(nmrundir)\"
 
 nm_dhcp_helper_LDADD = $(DBUS_LIBS)
 

@@ -6,6 +6,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/dnsmasq-manager \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/platform \
+	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	-DTESTDIR="\"$(abs_srcdir)\""
 

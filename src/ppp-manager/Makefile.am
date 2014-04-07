@@ -3,6 +3,7 @@ if WITH_PPP
 AM_CPPFLAGS = \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/include \
+	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS)
 
