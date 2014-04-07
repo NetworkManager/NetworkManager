@@ -17,6 +17,10 @@ bin_PROGRAMS = nm-online
 noinst_PROGRAMS = libnm-glib-test
 
 nm_online_SOURCES = nm-online.c
+nm_online_CPPFLAGS = \
+	-DG_LOG_DOMAIN=\""nm-online"\" \
+	$(AM_CPPFLAGS)
+
 nm_online_LDADD = \
 	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \

@@ -12,6 +12,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
+	-DG_LOG_DOMAIN=\""NetworkManager-ifnet"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \

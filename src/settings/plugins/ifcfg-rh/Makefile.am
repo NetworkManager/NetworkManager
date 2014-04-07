@@ -40,6 +40,7 @@ AM_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	$(NSS_CFLAGS) \
+	-DG_LOG_DOMAIN=\""NetworkManager-ifcfg-rh"\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"
 

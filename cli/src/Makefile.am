@@ -10,6 +10,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/libnm-glib \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	-DG_LOG_DOMAIN=\""nmcli"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DNMCLI_LOCALEDIR=\"$(datadir)/locale\"
 

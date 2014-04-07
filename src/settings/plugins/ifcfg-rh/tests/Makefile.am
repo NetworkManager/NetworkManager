@@ -18,6 +18,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/posix-signals \
 	-I$(srcdir)/../ \
+	-DG_LOG_DOMAIN=\""NetworkManager-ifcfg-rh"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DTEST_IFCFG_DIR=\"$(abs_srcdir)\" \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/\" \

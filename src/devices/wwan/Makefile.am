@@ -13,6 +13,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/libnm-util \
 	-I${top_srcdir}/libnm-util \
+	-DG_LOG_DOMAIN=\""NetworkManager-wwan"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(DBUS_CFLAGS) \
 	$(POLKIT_CFLAGS) \

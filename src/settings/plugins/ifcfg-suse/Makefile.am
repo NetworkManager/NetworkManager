@@ -8,6 +8,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
+	-DG_LOG_DOMAIN=\""NetworkManager-ifcfg-suse"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 

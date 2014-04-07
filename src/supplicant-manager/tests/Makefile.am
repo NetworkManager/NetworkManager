@@ -5,6 +5,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/supplicant-manager \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
