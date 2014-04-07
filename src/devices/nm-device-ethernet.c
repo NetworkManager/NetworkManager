@@ -1677,14 +1677,6 @@ dispose (GObject *object)
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	g_clear_object (&priv->supplicant.mgr);
-	g_free (priv->subchan1);
-	g_free (priv->subchan2);
-	g_free (priv->subchan3);
-	g_free (priv->subchannels);
-	g_free (priv->s390_nettype);
-	g_hash_table_destroy (priv->s390_options);
-
 	if (priv->pppoe_wait_id) {
 		g_source_remove (priv->pppoe_wait_id);
 		priv->pppoe_wait_id = 0;
@@ -1694,6 +1686,23 @@ dispose (GObject *object)
 	dcb_carrier_cleanup (NM_DEVICE (self));
 
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+
+	g_clear_object (&priv->supplicant.mgr);
+	g_free (priv->subchan1);
+	g_free (priv->subchan2);
+	g_free (priv->subchan3);
+	g_free (priv->subchannels);
+	g_free (priv->s390_nettype);
+	g_hash_table_destroy (priv->s390_options);
+
+	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->finalize (object);
 }
 
 static void
@@ -1740,6 +1749,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	/* virtual methods */
 	object_class->constructor = constructor;
 	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
