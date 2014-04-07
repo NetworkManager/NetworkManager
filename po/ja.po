@@ -2128,7 +2128,7 @@ msgstr "エラー: '%s' (%s) 接続の保存に失敗しました: (%d) %s\n"
 
 #: ../cli/src/connections.c:6055
 #, c-format
-msgid "Connection '%s' (%s) sucessfully saved.\n"
+msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "接続 '%s' (%s) が正常に保存されました。\n"
 
 #: ../cli/src/connections.c:6063

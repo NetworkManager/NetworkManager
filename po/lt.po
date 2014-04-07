@@ -2284,7 +2284,7 @@ msgstr "Klaida: nepavyiko įrašyti „%s“ (%s) ryšio: (%d) %s\n"
 
 #: ../cli/src/connections.c:6014
 #, c-format
-msgid "Connection '%s' (%s) sucessfully saved.\n"
+msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "Ryšys „%s“ (%s) sėkmingai įrašytas.\n"
 
 #: ../cli/src/connections.c:6022

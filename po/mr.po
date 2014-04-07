@@ -2754,7 +2754,6 @@ msgstr "त्रुटी: '%s' (%s) जोडणी: (%d) %s साठवण�
 
 #: ../cli/src/connections.c:7188
 #, c-format
-#| msgid "Connection '%s' (%s) sucessfully saved.\n"
 msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "जोडणी '%s' (%s) यशस्वीरित्या साठवली.\n"
 
