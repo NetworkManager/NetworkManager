@@ -138,7 +138,7 @@ pushd "$DIRNAME"
     git commit -m '*** add all'
     cat ../makerepo.gitignore > .gitignore
     git rm --cached -r .
-    git add .
+    git add --all .
     git commit -m "*** clean state (ignored files removed)"
 
     if [[ "$REVERT_COUNT" == "" || $REVERT_COUNT -gt 0 ]]; then
@@ -178,7 +178,7 @@ pushd "$DIRNAME"
                     patch --no-backup-if-mismatch -R -p1 < "$p" || die "error reverting Patch${LAST_PATCH_N[$i]} ${LAST_PATCH[$i]}"
                 done
             )
-            git add .
+            git add --all .
             git commit --allow-empty -a -m "<< revert Patch${LAST_PATCH_N[$i]} \"${LAST_PATCH[$i]}\""
             BASECOMMIT=("`git rev-parse HEAD`" "${BASECOMMIT[@]}")
         done
