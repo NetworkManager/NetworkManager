@@ -1036,6 +1036,13 @@ def CreateFilterOpen(args):
                 )
             )
         )
+def CreateFilterFixed(args):
+    if args:
+        raise Exception("No arguments expected (instead got \"%r\")" % (args))
+    return FilterAnd.join(
+            FilterRhbz(),
+            FilterMatch(['cf_fixed_in', '.'])
+        )
 
 class FilterMapping:
     def __init__(self, factory, allow_simple=True):
@@ -1064,6 +1071,7 @@ FilterBase._mapping = {
         'fc20':                 FilterMapping(CreateFilterFc(20)),
         'fc21':                 FilterMapping(CreateFilterFc(21)),
         'open':                 FilterMapping(CreateFilterOpen),
+        'fixed':                FilterMapping(CreateFilterFixed, True),
     }
 
 
