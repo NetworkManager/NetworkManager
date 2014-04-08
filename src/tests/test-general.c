@@ -21,6 +21,7 @@
 #include <glib.h>
 #include <string.h>
 #include <errno.h>
+#include <netinet/ether.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -440,6 +441,116 @@ test_connection_match_interface_name (void)
 	g_object_unref (copy);
 }
 
+static void
+test_connection_match_wired (void)
+{
+	NMConnection *orig, *copy, *matched;
+	GSList *connections = NULL;
+	NMSettingWired *s_wired;
+	GPtrArray *subchan_arr = g_ptr_array_sized_new (3);
+	GByteArray *mac;
+
+	g_ptr_array_add (subchan_arr, "0.0.8000");
+	g_ptr_array_add (subchan_arr, "0.0.8001");
+	g_ptr_array_add (subchan_arr, "0.0.8002");
+
+	orig = _match_connection_new ();
+	copy = nm_connection_duplicate (orig);
+	connections = g_slist_append (connections, copy);
+
+	mac = nm_utils_hwaddr_atoba ("52:54:00:ab:db:23", ARPHRD_ETHER);
+	s_wired = nm_connection_get_setting_wired (orig);
+	g_assert (s_wired);
+	g_object_set (G_OBJECT (s_wired),
+	              NM_SETTING_WIRED_PORT, "tp",           /* port is not compared */
+	              NM_SETTING_WIRED_MAC_ADDRESS, mac,     /* we allow MAC address just in one connection */
+	              NM_SETTING_WIRED_S390_SUBCHANNELS, subchan_arr,
+	              NM_SETTING_WIRED_S390_NETTYPE, "qeth",
+	              NULL);
+	g_byte_array_free (mac, TRUE);
+
+	s_wired = nm_connection_get_setting_wired (copy);
+	g_assert (s_wired);
+	g_object_set (G_OBJECT (s_wired),
+	              NM_SETTING_WIRED_S390_SUBCHANNELS, subchan_arr,
+	              NM_SETTING_WIRED_S390_NETTYPE, "qeth",
+	              NULL);
+
+	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	g_assert (matched == copy);
+
+	g_slist_free (connections);
+	g_ptr_array_free (subchan_arr, TRUE);
+	g_object_unref (orig);
+	g_object_unref (copy);
+}
+
+static void
+test_connection_no_match_ip4_addr (void)
+{
+	NMConnection *orig, *copy, *matched;
+	GSList *connections = NULL;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
+	NMIP4Address *nm_addr;
+	guint32 addr, gw;
+
+	orig = _match_connection_new ();
+	copy = nm_connection_duplicate (orig);
+	connections = g_slist_append (connections, copy);
+
+	/* Check that if we have two differences, ipv6.method (exception we allow) and
+	 * ipv4.addresses (which is fatal), we don't match the connections.
+	 */
+	s_ip6 = nm_connection_get_setting_ip6_config (orig);
+	g_assert (s_ip6);
+	g_object_set (G_OBJECT (s_ip6),
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+	              NULL);
+
+	s_ip6 = nm_connection_get_setting_ip6_config (copy);
+	g_assert (s_ip6);
+	g_object_set (G_OBJECT (s_ip6),
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+	              NULL);
+
+
+	s_ip4 = nm_connection_get_setting_ip4_config (orig);
+	g_assert (s_ip4);
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NULL);
+	nm_addr = nm_ip4_address_new ();
+	inet_pton (AF_INET, "1.1.1.4", &addr);
+	inet_pton (AF_INET, "1.1.1.254", &gw);
+	nm_ip4_address_set_address (nm_addr, addr);
+	nm_ip4_address_set_prefix (nm_addr, 24);
+	nm_ip4_address_set_gateway (nm_addr, gw);
+	nm_setting_ip4_config_add_address (s_ip4, nm_addr);
+	nm_ip4_address_unref (nm_addr);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (copy);
+	g_assert (s_ip4);
+	g_object_set (G_OBJECT (s_ip4),
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NULL);
+	nm_addr = nm_ip4_address_new ();
+	inet_pton (AF_INET, "2.2.2.4", &addr);
+	inet_pton (AF_INET, "2.2.2.254", &gw);
+	nm_ip4_address_set_address (nm_addr, addr);
+	nm_ip4_address_set_prefix (nm_addr, 24);
+	nm_ip4_address_set_gateway (nm_addr, gw);
+	nm_setting_ip4_config_add_address (s_ip4, nm_addr);
+	nm_ip4_address_unref (nm_addr);
+
+	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
+	g_assert (matched != copy);
+
+	g_slist_free (connections);
+	g_object_unref (orig);
+	g_object_unref (copy);
+}
+
 /*******************************************/
 
 int
@@ -457,6 +568,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/connection-match/ip6-method-ignore", test_connection_match_ip6_method_ignore);
 	g_test_add_func ("/general/connection-match/ip4-method", test_connection_match_ip4_method);
 	g_test_add_func ("/general/connection-match/con-interface-name", test_connection_match_interface_name);
+	g_test_add_func ("/general/connection-match/wired", test_connection_match_wired);
+	g_test_add_func ("/general/connection-match/no-match-ip4-addr", test_connection_no_match_ip4_addr);
 
 	return g_test_run ();
 }
