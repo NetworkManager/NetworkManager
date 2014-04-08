@@ -7898,7 +7898,7 @@ load_history_cmds (const char *uuid)
 	filename = g_build_filename (g_get_home_dir (), NMCLI_EDITOR_HISTORY, NULL);
 	kf = g_key_file_new ();
 	if (!g_key_file_load_from_file (kf, filename, G_KEY_FILE_KEEP_COMMENTS, &err)) {
-		if (err->code == G_KEY_FILE_ERROR_PARSE)
+		if (g_error_matches (err, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_PARSE))
 			g_print ("Warning: %s parse error: %s\n", filename, err->message);
 		g_key_file_free (kf);
 		g_free (filename);
@@ -7933,8 +7933,8 @@ save_history_cmds (const char *uuid)
 		filename = g_build_filename (g_get_home_dir (), NMCLI_EDITOR_HISTORY, NULL);
 		kf = g_key_file_new ();
 		if (!g_key_file_load_from_file (kf, filename, G_KEY_FILE_KEEP_COMMENTS, &err)) {
-			if (   err->code != G_FILE_ERROR_NOENT
-			    && err->code != G_KEY_FILE_ERROR_NOT_FOUND) {
+			if (   !g_error_matches (err, G_FILE_ERROR, G_FILE_ERROR_NOENT)
+			    && !g_error_matches (err, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
 				g_print ("Warning: %s parse error: %s\n", filename, err->message);
 				g_key_file_free (kf);
 				g_free (filename);

@@ -2163,7 +2163,7 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *self,
 	/* Save timestamp to timestamps database file */
 	timestamps_file = g_key_file_new ();
 	if (!g_key_file_load_from_file (timestamps_file, SETTINGS_TIMESTAMPS_FILE, G_KEY_FILE_KEEP_COMMENTS, &error)) {
-		if (!(error->domain == G_FILE_ERROR && error->code == G_FILE_ERROR_NOENT))
+		if (!g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
 			_LOGW ("error parsing timestamps file '%s': %s", SETTINGS_TIMESTAMPS_FILE, error->message);
 		g_clear_error (&error);
 	}
@@ -2172,7 +2172,7 @@ nm_settings_connection_update_timestamp (NMSettingsConnection *self,
 	tmp = g_strdup_printf ("%" G_GUINT64_FORMAT, timestamp);
 	g_key_file_set_value (timestamps_file, "timestamps", connection_uuid, tmp);
 	g_free (tmp);
- 
+
 	data = g_key_file_to_data (timestamps_file, &len, &error);
 	if (data) {
 		g_file_set_contents (SETTINGS_TIMESTAMPS_FILE, data, len, &error);
