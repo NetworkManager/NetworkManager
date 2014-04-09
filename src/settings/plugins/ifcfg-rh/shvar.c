@@ -43,7 +43,7 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 {
 	shvarFile *s = NULL;
 	gboolean closefd = FALSE;
-	int errsv;
+	int errsv = 0;
 
 	s = g_slice_new0 (shvarFile);
 
