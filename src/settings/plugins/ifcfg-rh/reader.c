@@ -1562,10 +1562,12 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 				continue;
 			}
 
-			parsed = svNewFile (full_path);
+			parsed = svOpenFile (full_path, &err);
 			if (!parsed) {
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: couldn't parse file '%s'", full_path);
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    alias: couldn't parse file '%s': %s",
+				             full_path, err->message);
 				g_free (full_path);
+				g_clear_error (&err);
 				continue;
 			}
 

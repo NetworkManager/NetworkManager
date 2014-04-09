@@ -2227,7 +2227,7 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 			svSetValue (ifcfg, "GATEWAY", &buf[0], FALSE);
 		}
 
-		svWriteFile (ifcfg, 0644);
+		svWriteFile (ifcfg, 0644, NULL);
 		svCloseFile (ifcfg);
 	}
 

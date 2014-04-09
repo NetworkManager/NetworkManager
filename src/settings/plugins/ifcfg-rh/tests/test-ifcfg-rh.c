@@ -8149,7 +8149,7 @@ test_write_wired_aliases (void)
 	ifcfg = svCreateFile (TEST_SCRATCH_ALIAS_BASE ":2");
 	svSetValue (ifcfg, "DEVICE", "alias0:2", FALSE);
 	svSetValue (ifcfg, "IPADDR", "192.168.1.2", FALSE);
-	svWriteFile (ifcfg, 0644);
+	svWriteFile (ifcfg, 0644, NULL);
 	svCloseFile (ifcfg);
 	ASSERT (g_file_test (TEST_SCRATCH_ALIAS_BASE ":2", G_FILE_TEST_EXISTS),
 	        "wired-aliases-write", "failed to write extra alias file");
@@ -8157,7 +8157,7 @@ test_write_wired_aliases (void)
 	ifcfg = svCreateFile (TEST_SCRATCH_ALIAS_BASE ":5");
 	svSetValue (ifcfg, "DEVICE", "alias0:5", FALSE);
 	svSetValue (ifcfg, "IPADDR", "192.168.1.5", FALSE);
-	svWriteFile (ifcfg, 0644);
+	svWriteFile (ifcfg, 0644, NULL);
 	svCloseFile (ifcfg);
 	ASSERT (g_file_test (TEST_SCRATCH_ALIAS_BASE ":5", G_FILE_TEST_EXISTS),
 	        "wired-aliases-write", "failed to write extra alias file");
