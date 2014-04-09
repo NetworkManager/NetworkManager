@@ -2165,8 +2165,8 @@ dispose (GObject *object)
 	g_clear_object (&priv->lookup_addr);
 	g_clear_object (&priv->resolver);
 
-	g_slist_free_full (priv->pending_activation_checks, (GDestroyNotify) activate_data_free);
-	priv->pending_activation_checks = NULL;
+	while (priv->pending_activation_checks)
+		activate_data_free (priv->pending_activation_checks->data);
 
 	g_slist_free_full (priv->pending_secondaries, (GDestroyNotify) pending_secondary_data_free);
 	priv->pending_secondaries = NULL;
