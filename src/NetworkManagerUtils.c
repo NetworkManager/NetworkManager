@@ -649,22 +649,47 @@ nm_utils_read_resolv_conf_nameservers (const char *rc_contents)
 	return nameservers;
 }
 
+static GHashTable *
+check_property_in_hash (GHashTable *hash,
+                        const char *s_name,
+                        const char *p_name)
+{
+	GHashTable *props;
+
+	props = g_hash_table_lookup (hash, s_name);
+	if (   !props
+	    || !g_hash_table_lookup (props, p_name)) {
+		return NULL;
+	}
+	return props;
+}
+
+static void
+remove_from_hash (GHashTable *s_hash,
+                  GHashTable *p_hash,
+                  const char *s_name,
+                  const char *p_name)
+{
+	g_hash_table_remove (p_hash, p_name);
+	if (g_hash_table_size (p_hash) == 0)
+		g_hash_table_remove (s_hash, s_name);
+}
+
 static gboolean
-check_ip6_method_link_local_auto (NMConnection *orig,
-                                  NMConnection *candidate,
-                                  GHashTable *settings)
+check_ip6_method (NMConnection *orig,
+                  NMConnection *candidate,
+                  GHashTable *settings)
 {
 	GHashTable *props;
 	const char *orig_ip6_method, *candidate_ip6_method;
 	NMSettingIP6Config *candidate_ip6;
+	gboolean allow = FALSE;
 
-	props = g_hash_table_lookup (settings, NM_SETTING_IP6_CONFIG_SETTING_NAME);
-	if (   !props
-	    || (g_hash_table_size (props) != 1)
-	    || !g_hash_table_lookup (props, NM_SETTING_IP6_CONFIG_METHOD)) {
-		/* For now 'method' is the only difference we handle here */
-		return FALSE;
-	}
+	props = check_property_in_hash (settings,
+	                                NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                                NM_SETTING_IP6_CONFIG_METHOD);
+	if (!props)
+		return TRUE;
 
 	/* If the original connection is 'link-local' and the candidate is both 'auto'
 	 * and may-fail=TRUE, then the candidate is OK to use.  may-fail is included
@@ -679,60 +704,41 @@ check_ip6_method_link_local_auto (NMConnection *orig,
 	if (   strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
 	    && strcmp (candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0
 	    && (!candidate_ip6 || nm_setting_ip6_config_get_may_fail (candidate_ip6))) {
-		return TRUE;
-	}
-
-	return FALSE;
-}
-
-static gboolean
-check_ip6_method_link_local_ignore (NMConnection *orig,
-                                    NMConnection *candidate,
-                                    GHashTable *settings)
-{
-	GHashTable *props;
-	const char *orig_ip6_method, *candidate_ip6_method;
-
-	props = g_hash_table_lookup (settings, NM_SETTING_IP6_CONFIG_SETTING_NAME);
-	if (   !props
-	    || (g_hash_table_size (props) != 1)
-	    || !g_hash_table_lookup (props, NM_SETTING_IP6_CONFIG_METHOD)) {
-		/* We only handle ipv6 'method' here */
-		return FALSE;
+		allow = TRUE;
 	}
 
 	/* If the original connection method is 'link-local' and the candidate method
 	 * is 'ignore' we can take the connection, because NM didn't simply take care
 	 * of IPv6.
 	 */
-	orig_ip6_method = nm_utils_get_ip_config_method (orig, NM_TYPE_SETTING_IP6_CONFIG);
-	candidate_ip6_method = nm_utils_get_ip_config_method (candidate, NM_TYPE_SETTING_IP6_CONFIG);
-
 	if (   strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
 	    && strcmp (candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
-		return TRUE;
+		allow = TRUE;
 	}
 
-	return FALSE;
+	if (allow) {
+		remove_from_hash (settings, props,
+		                  NM_SETTING_IP6_CONFIG_SETTING_NAME,
+		                  NM_SETTING_IP6_CONFIG_METHOD);
+	}
+	return allow;
 }
 
 static gboolean
-check_ip4_method_disabled_auto (NMConnection *orig,
-                                NMConnection *candidate,
-                                GHashTable *settings,
-                                gboolean device_has_carrier)
+check_ip4_method (NMConnection *orig,
+                  NMConnection *candidate,
+                  GHashTable *settings,
+                  gboolean device_has_carrier)
 {
 	GHashTable *props;
 	const char *orig_ip4_method, *candidate_ip4_method;
 	NMSettingIP4Config *candidate_ip4;
 
-	props = g_hash_table_lookup (settings, NM_SETTING_IP4_CONFIG_SETTING_NAME);
-	if (   !props
-	    || (g_hash_table_size (props) != 1)
-	    || !g_hash_table_lookup (props, NM_SETTING_IP4_CONFIG_METHOD)) {
-		/* For now 'method' is the only difference we handle here */
-		return FALSE;
-	}
+	props = check_property_in_hash (settings,
+	                                NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                                NM_SETTING_IP4_CONFIG_METHOD);
+	if (!props)
+		return TRUE;
 
 	/* If the original connection is 'disabled' (device had no IP addresses)
 	 * but it has no carrier, that most likely means that IP addressing could
@@ -747,9 +753,11 @@ check_ip4_method_disabled_auto (NMConnection *orig,
 	    && strcmp (candidate_ip4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0
 	    && (!candidate_ip4 || nm_setting_ip4_config_get_may_fail (candidate_ip4))
 	    && (device_has_carrier == FALSE)) {
+		remove_from_hash (settings, props,
+		                  NM_SETTING_IP4_CONFIG_SETTING_NAME,
+		                  NM_SETTING_IP4_CONFIG_METHOD);
 		return TRUE;
 	}
-
 	return FALSE;
 }
 
@@ -762,13 +770,11 @@ check_connection_interface_name (NMConnection *orig,
 	const char *orig_ifname, *cand_ifname;
 	NMSettingConnection *s_con_orig, *s_con_cand;
 
-	props = g_hash_table_lookup (settings, NM_SETTING_CONNECTION_SETTING_NAME);
-	if (   !props
-	    || (g_hash_table_size (props) != 1)
-	    || !g_hash_table_lookup (props, NM_SETTING_CONNECTION_INTERFACE_NAME)) {
-		/* We only handle 'interface-name' here. */
-		return FALSE;
-	}
+	props = check_property_in_hash (settings,
+	                                NM_SETTING_CONNECTION_SETTING_NAME,
+	                                NM_SETTING_CONNECTION_INTERFACE_NAME);
+	if (!props)
+		return TRUE;
 
 	/* If one of the interface name is NULL, we accept that connection */
 	s_con_orig = nm_connection_get_setting_connection (orig);
@@ -776,9 +782,12 @@ check_connection_interface_name (NMConnection *orig,
 	orig_ifname = nm_setting_connection_get_interface_name (s_con_orig);
 	cand_ifname = nm_setting_connection_get_interface_name (s_con_cand);
 
-	if (!orig_ifname || !cand_ifname)
+	if (!orig_ifname || !cand_ifname) {
+		remove_from_hash (settings, props,
+		                  NM_SETTING_CONNECTION_SETTING_NAME,
+		                  NM_SETTING_CONNECTION_INTERFACE_NAME);
 		return TRUE;
-
+	}
 	return FALSE;
 }
 
@@ -790,19 +799,19 @@ check_possible_match (NMConnection *orig,
 {
 	g_return_val_if_fail (settings != NULL, NULL);
 
-	if (check_ip6_method_link_local_auto (orig, candidate, settings))
-		return candidate;
+	if (!check_ip6_method (orig, candidate, settings))
+		return NULL;
 
-	if (check_ip6_method_link_local_ignore (orig, candidate, settings))
-		return candidate;
+	if (!check_ip4_method (orig, candidate, settings, device_has_carrier))
+		return NULL;
 
-	if (check_ip4_method_disabled_auto (orig, candidate, settings, device_has_carrier))
-		return candidate;
+	if (!check_connection_interface_name (orig, candidate, settings))
+		return NULL;
 
-	if (check_connection_interface_name (orig, candidate, settings))
+	if (g_hash_table_size (settings) == 0)
 		return candidate;
-
-	return NULL;
+	else
+		return NULL;
 }
 
 /**
