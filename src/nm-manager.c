@@ -1706,7 +1706,7 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	 * When no configured connection matches the generated connection, we keep
 	 * the generated connection instead.
 	 */
-	connections = g_slist_sort (connections, nm_settings_sort_connections);
+	connections = g_slist_reverse (g_slist_sort (connections, nm_settings_sort_connections));
 	matched = nm_utils_match_connection (connections,
 	                                     connection,
 	                                     nm_device_has_carrier (device),
