@@ -575,6 +575,38 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 	g_free (old_ip_iface);
 }
 
+static gboolean
+get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
+{
+	NMLinkType link_type;
+	const guint8 *hwaddr = NULL;
+	size_t hwaddr_len = 0;
+	int ifindex;
+	gboolean success;
+
+	/* If we get here, we *must* have a kernel netdev, which implies an ifindex */
+	ifindex = nm_device_get_ip_ifindex (self);
+	g_assert (ifindex);
+
+	link_type = nm_platform_link_get_type (ifindex);
+	g_return_val_if_fail (link_type > NM_LINK_TYPE_UNKNOWN, 0);
+
+	hwaddr = nm_platform_link_get_address (ifindex, &hwaddr_len);
+	if (!hwaddr_len)
+		return FALSE;
+
+	success = nm_utils_get_ipv6_interface_identifier (link_type,
+	                                                  hwaddr,
+	                                                  hwaddr_len,
+	                                                  out_iid);
+	if (!success) {
+		nm_log_warn (LOGD_HW, "(%s): failed to generate interface identifier "
+		             "for link type %u hwaddr_len %zu",
+		             nm_device_get_ip_iface (self), link_type, hwaddr_len);
+	}
+	return success;
+}
+
 const char *
 nm_device_get_driver (NMDevice *self)
 {
@@ -3647,15 +3679,14 @@ static void
 addrconf6_start_with_link_ready (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const guint8 *hw_addr;
-	size_t hw_addr_len = 0;
+	NMUtilsIPv6IfaceId iid;
 
 	g_assert (priv->rdisc);
 
-	/* FIXME: what if interface has no lladdr, like PPP? */
-	hw_addr = nm_platform_link_get_address (nm_device_get_ip_ifindex (self), &hw_addr_len);
-	if (hw_addr_len)
-		nm_rdisc_set_lladdr (priv->rdisc, (const char *) hw_addr, hw_addr_len);
+	if (NM_DEVICE_GET_CLASS (self)->get_ip_iface_identifier (self, &iid))
+		nm_rdisc_set_iid (priv->rdisc, iid);
+	else
+		nm_log_warn (LOGD_IP6, "(%s): failed to get interface identifier", nm_device_get_ip_iface (self));
 
 	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
@@ -3664,7 +3695,6 @@ addrconf6_start_with_link_ready (NMDevice *self)
 
 	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
 	                                                     G_CALLBACK (rdisc_config_changed), self);
-
 	nm_rdisc_start (priv->rdisc);
 }
 
@@ -7611,6 +7641,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->bring_up = bring_up;
 	klass->take_down = take_down;
 	klass->carrier_changed = carrier_changed;
+	klass->get_ip_iface_identifier = get_ip_iface_identifier;
 
 	/* Properties */
 	g_object_class_install_property

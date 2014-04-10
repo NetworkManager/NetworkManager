@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <linux/if.h>
+#include <linux/if_infiniband.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -1594,5 +1595,121 @@ nm_utils_is_specific_hostname (const char *name)
 	    && strcmp (name, "localhost6.localdomain6"))
 		return TRUE;
 	return FALSE;
+}
+
+/******************************************************************/
+
+/* Returns the "u" (universal/local) bit value for a Modified EUI-64 */
+static gboolean
+get_gre_eui64_u_bit (guint32 addr)
+{
+	static const struct {
+		guint32 mask;
+		guint32 result;
+	} items[] = {
+		{ 0xff000000 }, { 0x7f000000 },  /* IPv4 loopback */
+		{ 0xf0000000 }, { 0xe0000000 },  /* IPv4 multicast */
+		{ 0xffffff00 }, { 0xe0000000 },  /* IPv4 local multicast */
+		{ 0xffffffff }, { INADDR_BROADCAST },  /* limited broadcast */
+		{ 0xff000000 }, { 0x00000000 },  /* zero net */
+		{ 0xff000000 }, { 0x0a000000 },  /* private 10 (RFC3330) */
+		{ 0xfff00000 }, { 0xac100000 },  /* private 172 */
+		{ 0xffff0000 }, { 0xc0a80000 },  /* private 192 */
+		{ 0xffff0000 }, { 0xa9fe0000 },  /* IPv4 link-local */
+		{ 0xffffff00 }, { 0xc0586300 },  /* anycast 6-to-4 */
+		{ 0xffffff00 }, { 0xc0000200 },  /* test 192 */
+		{ 0xfffe0000 }, { 0xc6120000 },  /* test 198 */
+	};
+	guint i;
+
+	for (i = 0; i < G_N_ELEMENTS (items); i++) {
+		if ((addr & htonl (items[i].mask)) == htonl (items[i].result))
+			return 0x00; /* "local" scope */
+	}
+	return 0x02; /* "universal" scope */
+}
+
+/**
+ * nm_utils_get_ipv6_interface_identifier:
+ * @link_type: the hardware link type
+ * @hwaddr: the hardware address of the interface
+ * @hwaddr_len: the length (in bytes) of @hwaddr
+ * @out_iid: on success, filled with the interface identifier; on failure
+ * zeroed out
+ *
+ * Constructs an interface identifier in "Modified EUI-64" format which is
+ * suitable for constructing IPv6 addresses.  Note that the identifier is
+ * not obscured in any way (eg, RFC3041).
+ *
+ * Returns: %TRUE if the interface identifier could be constructed, %FALSE if
+ * if could not be constructed.
+ */
+gboolean
+nm_utils_get_ipv6_interface_identifier (NMLinkType link_type,
+                                        const guint8 *hwaddr,
+                                        guint hwaddr_len,
+                                        NMUtilsIPv6IfaceId *out_iid)
+{
+	guint32 addr;
+
+	g_return_val_if_fail (hwaddr != NULL, FALSE);
+	g_return_val_if_fail (hwaddr_len > 0, FALSE);
+	g_return_val_if_fail (out_iid != NULL, FALSE);
+
+	out_iid->id = 0;
+
+	switch (link_type) {
+	case NM_LINK_TYPE_INFINIBAND:
+		/* Use the port GUID per http://tools.ietf.org/html/rfc4391#section-8,
+		 * making sure to set the 'u' bit to 1.  The GUID is the lower 64 bits
+		 * of the IPoIB interface's hardware address.
+		 */
+		g_return_val_if_fail (hwaddr_len == INFINIBAND_ALEN, FALSE);
+		memcpy (out_iid->id_u8, hwaddr + INFINIBAND_ALEN - 8, 8);
+		out_iid->id_u8[0] |= 0x02;
+		return TRUE;
+	case NM_LINK_TYPE_GRE:
+	case NM_LINK_TYPE_GRETAP:
+		/* Hardware address is the network-endian IPv4 address */
+		g_return_val_if_fail (hwaddr_len == 4, FALSE);
+		addr = * (guint32 *) hwaddr;
+		out_iid->id_u8[0] = get_gre_eui64_u_bit (addr);
+		out_iid->id_u8[1] = 0x00;
+		out_iid->id_u8[2] = 0x5E;
+		out_iid->id_u8[3] = 0xFE;
+		memcpy (out_iid->id_u8 + 4, &addr, 4);
+		return TRUE;
+	default:
+		if (hwaddr_len == ETH_ALEN) {
+			/* Translate 48-bit MAC address to a 64-bit Modified EUI-64.  See
+			 * http://tools.ietf.org/html/rfc4291#appendix-A
+			 */
+			out_iid->id_u8[0] = hwaddr[0] ^ 0x02;
+			out_iid->id_u8[1] = hwaddr[1];
+			out_iid->id_u8[2] = hwaddr[2];
+			out_iid->id_u8[3] = 0xff;
+			out_iid->id_u8[4] = 0xfe;
+			out_iid->id_u8[5] = hwaddr[3];
+			out_iid->id_u8[6] = hwaddr[4];
+			out_iid->id_u8[7] = hwaddr[5];
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+
+void
+nm_utils_ipv6_addr_set_interface_identfier (struct in6_addr *addr,
+                                            const NMUtilsIPv6IfaceId iid)
+{
+	memcpy (addr->s6_addr + 8, &iid.id_u8, 8);
+}
+
+void
+nm_utils_ipv6_interface_identfier_get_from_addr (NMUtilsIPv6IfaceId *iid,
+                                                 const struct in6_addr *addr)
+{
+	memcpy (iid, addr->s6_addr + 8, 8);
 }
 

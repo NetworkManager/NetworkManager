@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 
+#include "NetworkManagerUtils.h"
+
 #define NM_TYPE_RDISC            (nm_rdisc_get_type ())
 #define NM_RDISC(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_RDISC, NMRDisc))
 #define NM_RDISC_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_RDISC, NMRDiscClass))
@@ -110,7 +112,7 @@ typedef struct {
 
 	int ifindex;
 	char *ifname;
-	GBytes *lladdr;
+	NMUtilsIPv6IfaceId iid;
 	gint32 max_addresses;
 	gint32 rtr_solicitations;
 	gint32 rtr_solicitation_interval;
@@ -133,7 +135,7 @@ typedef struct {
 
 GType nm_rdisc_get_type (void);
 
-void nm_rdisc_set_lladdr (NMRDisc *rdisc, const char *addr, size_t addrlen);
+void nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid);
 void nm_rdisc_start (NMRDisc *rdisc);
 
 #endif /* NM_RDISC_H */

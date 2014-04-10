@@ -30,6 +30,7 @@
 #include "nm-types.h"
 #include "nm-connection.h"
 #include "nm-rfkill-manager.h"
+#include "NetworkManagerUtils.h"
 
 /* Properties */
 #define NM_DEVICE_UDI              "udi"
@@ -118,6 +119,8 @@ typedef struct {
 
 	void        (* update_permanent_hw_address) (NMDevice *self);
 	void        (* update_initial_hw_address) (NMDevice *self);
+
+	gboolean    (* get_ip_iface_identifier) (NMDevice *self, NMUtilsIPv6IfaceId *out_iid);
 
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
