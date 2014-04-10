@@ -33,6 +33,93 @@
 #include "nm-glib-compat.h"
 #include "nm-object-private.h"
 
+/**
+ * SECTION:nm-remote-settings
+ * @Short_description: A helper for NetworkManager's settings API
+ * @Title: NMRemoteSettings
+ * @See_also:#NMRemoteConnection, #NMClient
+ *
+ * The #NMRemoteSettings object represents NetworkManager's "settings" service,
+ * which stores network configuration and allows authenticated clients to
+ * add, delete, and modify that configuration.  The data required to connect
+ * to a specific network is called a "connection" and encapsulated by the
+ * #NMConnection object.  Once a connection is known to NetworkManager, having
+ * either been added by a user or read from on-disk storage, the
+ * #NMRemoteSettings object creates a #NMRemoteConnection object which
+ * represents this stored connection.  Use the #NMRemoteConnection object to
+ * perform any operations like modification or deletion.
+ *
+ * To add a new network connection to the NetworkManager settings service, first
+ * build up a template #NMConnection object.  Since this connection is not yet
+ * added to NetworkManager, it is known only to your program and is not yet
+ * an #NMRemoteConnection.  Then ask #NMRemoteSettings to add your connection.
+ * When the connection is added successfully, the supplied callback is called
+ * and returns to your program the new #NMRemoteConnection which represents
+ * the stored object known to NetworkManager.
+ *
+ * |[<!-- language="C" -->
+ * static void
+ * added_cb (NMRemoteSettings *settings,
+ *           NMRemoteConnection *remote,
+ *           GError *error,
+ *           gpointer user_data)
+ * {
+ *    if (error)
+ *        g_print ("Error adding connection: %s", error->message);
+ *    else {
+ *        g_print ("Added: %s\n", nm_connection_get_path (NM_CONNECTION (remote)));
+ *        /&ast; Use 'remote' with nm_remote_connection_commit_changes() to save
+ *         * changes and nm_remote_connection_delete() to delete the connection &ast;/
+ *    }
+ * }
+ *
+ * static gboolean
+ * add_wired_connection (const char *human_name)
+ * {
+ *    NMConnection *connection;
+ *    NMSettingConnection *s_con;
+ *    NMSettingWired *s_wired;
+ *    char *uuid;
+ *    gboolean success;
+ *
+ *    connection = nm_connection_new ();
+ *
+ *    /&ast; Build up the 'connection' setting &ast;/
+ *    s_con = (NMSettingConnection *) nm_setting_connection_new ();
+ *    uuid = nm_utils_uuid_generate ();
+ *    g_object_set (G_OBJECT (s_con),
+ *                  NM_SETTING_CONNECTION_UUID, uuid,
+ *                  NM_SETTING_CONNECTION_ID, human_name,
+ *                  NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+ *                  NULL);
+ *    g_free (uuid);
+ *    nm_connection_add_setting (connection, NM_SETTING (s_con));
+ *
+ *    /&ast; Add the required 'wired' setting as this is a wired connection &ast;/
+ *    nm_connection_add_setting (connection, nm_setting_wired_new ());
+ *
+ *    /&ast; Add an 'ipv4' setting using AUTO configuration (eg DHCP) &ast;/
+ *    s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+ *    g_object_set (G_OBJECT (s_ip4),
+ *                  NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+ *                  NULL);
+ *    nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+ *
+ *    /&ast; Ask NetworkManager to store the connection &ast;/
+ *    success = nm_remote_settings_add_connection (settings, connection, added_cb, loop);
+ *
+ *    /&ast; Release the template connection; the actual stored connection will
+ *     * be returned in added_cb() &ast;/
+ *    g_object_unref (connection);
+ *
+ *    /&ast; Let glib event loop run and added_cb() will be called when NetworkManager
+ *     * is done adding the new connection. &ast;/
+ *
+ *    return success;
+ * }
+ * ]|
+ */
+
 static void nm_remote_settings_initable_iface_init (GInitableIface *iface);
 static void nm_remote_settings_async_initable_iface_init (GAsyncInitableIface *iface);
 
@@ -567,7 +654,14 @@ add_connection_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data
  * @user_data: (closure): caller-specific data passed to @callback
  *
  * Requests that the remote settings service add the given settings to a new
- * connection.  The connection is immediately written to disk.
+ * connection.  The connection is immediately written to disk.  @connection is
+ * untouched by this function and only serves as a template of the settings to
+ * add.  The #NMRemoteConnection object that represents what NetworkManager
+ * actually added is returned to @callback when the addition operation is complete.
+ *
+ * Note that the #NMRemoteConnection returned in @callback may not contain
+ * identical settings to @connection as NetworkManager may perform automatic
+ * completion and/or normalization of connection properties.
  *
  * Returns: %TRUE if the request was successful, %FALSE if it failed
  **/
