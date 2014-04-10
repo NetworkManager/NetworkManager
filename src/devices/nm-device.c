@@ -324,6 +324,8 @@ static void _set_state_full (NMDevice *device,
                              NMDeviceStateReason reason,
                              gboolean quitting);
 
+static gboolean nm_device_update_hw_address (NMDevice *dev);
+
 /***********************************************************/
 
 static GQuark
@@ -2751,6 +2753,8 @@ dhcp4_start (NMDevice *self,
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingIP4Config *s_ip4;
+	const guint8 *hw_addr;
+	size_t hw_addr_len = 0;
 	GByteArray *tmp = NULL;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -2760,9 +2764,10 @@ dhcp4_start (NMDevice *self,
 		g_object_unref (priv->dhcp4_config);
 	priv->dhcp4_config = nm_dhcp4_config_new ();
 
-	if (priv->hw_addr_len) {
-		tmp = g_byte_array_sized_new (priv->hw_addr_len);
-		g_byte_array_append (tmp, priv->hw_addr, priv->hw_addr_len);
+	hw_addr = nm_platform_link_get_address (nm_device_get_ip_ifindex (self), &hw_addr_len);
+	if (hw_addr_len) {
+		tmp = g_byte_array_sized_new (hw_addr_len);
+		g_byte_array_append (tmp, hw_addr, hw_addr_len);
 	}
 
 	/* Begin DHCP on the interface */
@@ -3205,6 +3210,8 @@ dhcp6_start (NMDevice *self,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	GByteArray *tmp = NULL;
+	const guint8 *hw_addr;
+	size_t hw_addr_len = 0;
 
 	if (!connection) {
 		connection = nm_device_get_connection (self);
@@ -3225,9 +3232,10 @@ dhcp6_start (NMDevice *self,
 		priv->dhcp6_ip6_config = NULL;
 	}
 
-	if (priv->hw_addr_len) {
-		tmp = g_byte_array_sized_new (priv->hw_addr_len);
-		g_byte_array_append (tmp, priv->hw_addr, priv->hw_addr_len);
+	hw_addr = nm_platform_link_get_address (nm_device_get_ip_ifindex (self), &hw_addr_len);
+	if (hw_addr_len) {
+		tmp = g_byte_array_sized_new (hw_addr_len);
+		g_byte_array_append (tmp, hw_addr, hw_addr_len);
 	}
 
 	priv->dhcp6_client = nm_dhcp_manager_start_ip6 (nm_dhcp_manager_get (),
@@ -3639,12 +3647,15 @@ static void
 addrconf6_start_with_link_ready (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const guint8 *hw_addr;
+	size_t hw_addr_len = 0;
 
 	g_assert (priv->rdisc);
 
 	/* FIXME: what if interface has no lladdr, like PPP? */
-	if (priv->hw_addr_len)
-		nm_rdisc_set_lladdr (priv->rdisc, (const char *) priv->hw_addr, priv->hw_addr_len);
+	hw_addr = nm_platform_link_get_address (nm_device_get_ip_ifindex (self), &hw_addr_len);
+	if (hw_addr_len)
+		nm_rdisc_set_lladdr (priv->rdisc, (const char *) hw_addr, hw_addr_len);
 
 	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
@@ -6946,7 +6957,7 @@ nm_device_get_hw_address (NMDevice *dev, guint *out_len)
 		return priv->hw_addr;
 }
 
-gboolean
+static gboolean
 nm_device_update_hw_address (NMDevice *dev)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
@@ -6959,7 +6970,7 @@ nm_device_update_hw_address (NMDevice *dev)
 		return FALSE;
 
 	if (priv->hw_addr_len) {
-		int ifindex = nm_device_get_ip_ifindex (dev);
+		int ifindex = nm_device_get_ifindex (dev);
 		gsize addrlen;
 		const guint8 *binaddr;
 
@@ -7112,7 +7123,7 @@ get_hw_address_length (NMDevice *dev, gboolean *out_permanent)
 {
 	size_t len;
 
-	if (nm_platform_link_get_address (nm_device_get_ip_ifindex (dev), &len))
+	if (nm_platform_link_get_address (nm_device_get_ifindex (dev), &len))
 		return len;
 	else
 		return 0;
