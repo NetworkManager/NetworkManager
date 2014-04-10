@@ -230,8 +230,10 @@ nm_device_wifi_get_ipw_rfkill_state (NMDeviceWifi *self)
 	const char *str_state = NULL;
 
 	if (   priv->ipw_rfkill_path
-	    && g_file_get_contents (priv->ipw_rfkill_path, &contents, NULL, NULL)) {
-		contents = g_strstrip (contents);
+	    && (contents = nm_platform_sysctl_get (priv->ipw_rfkill_path))) {
+
+		if (strlen (contents) != 1)
+			contents[0] = 0;
 
 		/* 0 - RF kill not enabled
 		 * 1 - SW based RF kill active (sysfs)
@@ -331,7 +333,7 @@ constructor (GType type,
 	 * don't have to poll.
 	 */
 	priv->ipw_rfkill_path = g_strdup_printf ("/sys/class/net/%s/device/rf_kill",
-	                                         nm_device_get_iface (NM_DEVICE (self)));
+	                                         ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (NM_DEVICE (self))));
 	if (!g_file_test (priv->ipw_rfkill_path, G_FILE_TEST_IS_REGULAR)) {
 		g_free (priv->ipw_rfkill_path);
 		priv->ipw_rfkill_path = NULL;

@@ -864,12 +864,13 @@ nm_utils_match_connection (GSList *connections,
  *
  * A wrapper for g_ascii_strtoll, that checks whether the whole string
  * can be successfully converted to a number and is within a given
- * range. On any error, @fallback will be returned and @errno will be set
- * to a non-zero value. Check @errno for errors. Any trailing or leading
- * (ascii) white space is ignored and the functions is locale independent.
+ * range. On any error, @fallback will be returned and %errno will be set
+ * to a non-zero value. On success, %errno will be set to zero, check %errno
+ * for errors. Any trailing or leading (ascii) white space is ignored and the
+ * functions is locale independent.
  *
  * The function is guaranteed to return a value between @min and @max
- * (included) or @fallback. Also, the parsing is rather strict, it does
+ * (inclusive) or @fallback. Also, the parsing is rather strict, it does
  * not allow for any unrecognized characters, except leading and trailing
  * white space.
  **/
@@ -877,11 +878,11 @@ gint64
 nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback)
 {
 	gint64 v;
-	char *end;
-	char *str_free = NULL;
+	size_t len;
+	char buf[64], *s, *str_free = NULL;
 
 	if (str) {
-		while (str[0] && g_ascii_isspace (str[0]))
+		while (g_ascii_isspace (str[0]))
 			str++;
 	}
 	if (!str || !str[0]) {
@@ -889,32 +890,48 @@ nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max
 		return fallback;
 	}
 
-	if (g_ascii_isspace (str[strlen (str) - 1])) {
-		str_free = g_strdup (str);
-		g_strstrip (str_free);
-		str = str_free;
+	len = strlen (str);
+	if (g_ascii_isspace (str[--len])) {
+		/* backward search the first non-ws character.
+		 * We already know that str[0] is non-ws. */
+		while (g_ascii_isspace (str[--len]))
+			;
+
+		/* str[len] is now the last non-ws character... */
+		len++;
+
+		if (len >= sizeof (buf))
+			s = str_free = g_malloc (len + 1);
+		else
+			s = buf;
+
+		memcpy (s, str, len);
+		s[len] = 0;
+
+		/*
+		g_assert (len > 0 && len < strlen (str) && len == strlen (s));
+		g_assert (!g_ascii_isspace (str[len-1]) && g_ascii_isspace (str[len]));
+		g_assert (strncmp (str, s, len) == 0);
+		*/
+
+		str = s;
 	}
 
 	errno = 0;
-	v = g_ascii_strtoll (str, &end, base);
+	v = g_ascii_strtoll (str, &s, base);
 
-	if (errno != 0) {
-		g_free (str_free);
-		return fallback;
-	}
-
-	if (end[0] != 0) {
-		g_free (str_free);
+	if (errno != 0)
+		v = fallback;
+	else if (s[0] != 0) {
 		errno = EINVAL;
-		return fallback;
-	}
-
-	g_free (str_free);
-	if (v > max || v < min) {
+		v = fallback;
+	} else if (v > max || v < min) {
 		errno = ERANGE;
-		return fallback;
+		v = fallback;
 	}
 
+	if (G_UNLIKELY (str_free))
+		g_free (str_free);
 	return v;
 }
 
@@ -1045,9 +1062,44 @@ nm_utils_ip6_property_path (const char *ifname, const char *property)
 	static char path[sizeof (IPV6_PROPERTY_DIR) + IFNAMSIZ + 32];
 	int len;
 
+	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
+	property = ASSERT_VALID_PATH_COMPONENT (property);
+
 	len = g_snprintf (path, sizeof (path), IPV6_PROPERTY_DIR "%s/%s",
 	                  ifname, property);
 	g_assert (len < sizeof (path) - 1);
 
 	return path;
 }
+
+const char *
+ASSERT_VALID_PATH_COMPONENT (const char *name)
+{
+	const char *n;
+
+	if (name == NULL || name[0] == '\0')
+		goto fail;
+
+	if (name[0] == '.') {
+		if (name[1] == '\0')
+			goto fail;
+		if (name[1] == '.' && name[2] == '\0')
+			goto fail;
+	}
+	n = name;
+	do {
+		if (*n == '/')
+			goto fail;
+	} while (*(++n) != '\0');
+
+	return name;
+fail:
+	if (name)
+		nm_log_err (LOGD_CORE, "Failed asserting path component: NULL");
+	else
+		nm_log_err (LOGD_CORE, "Failed asserting path component: \"%s\"", name);
+	g_assert_not_reached ();
+	g_return_val_if_reached ("XXXXX");
+	return "XXXXX";
+}
+

@@ -1602,7 +1602,7 @@ sysctl_set (NMPlatform *platform, const char *path, const char *value)
 	g_assert (g_str_has_prefix (path, "/proc/sys/")
 	          || g_str_has_prefix (path, "/sys/"));
 	/* Don't write to suspicious locations */
-	g_assert (!strstr (path, "/.."));
+	g_assert (!strstr (path, "/../"));
 
 	fd = open (path, O_WRONLY | O_TRUNC);
 	if (fd == -1) {
@@ -1701,7 +1701,7 @@ sysctl_get (NMPlatform *platform, const char *path)
 	g_assert (g_str_has_prefix (path, "/proc/sys/")
 	          || g_str_has_prefix (path, "/sys/"));
 	/* Don't write to suspicious locations */
-	g_assert (!strstr (path, "/.."));
+	g_assert (!strstr (path, "/../"));
 
 	if (!g_file_get_contents (path, &contents, NULL, &error)) {
 		/* We assume FAILED means EOPNOTSUP */
@@ -2153,6 +2153,8 @@ link_get_physical_port_id (NMPlatform *platform, int ifindex)
 	if (!ifname)
 		return NULL;
 
+	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
+
 	path = g_strdup_printf ("/sys/class/net/%s/phys_port_id", ifname);
 	id = sysctl_get (platform, path);
 	g_free (path);
@@ -2266,7 +2268,10 @@ link_option_path (int master, const char *category, const char *option)
 	if (!name || !category || !option)
 		return NULL;
 
-	return g_strdup_printf ("/sys/class/net/%s/%s/%s", name, category, option);
+	return g_strdup_printf ("/sys/class/net/%s/%s/%s",
+	                        ASSERT_VALID_PATH_COMPONENT (name),
+	                        ASSERT_VALID_PATH_COMPONENT (category),
+	                        ASSERT_VALID_PATH_COMPONENT (option));
 }
 
 static gboolean
@@ -2352,7 +2357,7 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
 	parent_name = nm_platform_link_get_name (parent);
 	g_return_val_if_fail (parent_name != NULL, FALSE);
 
-	path = g_strdup_printf ("/sys/class/net/%s/create_child", parent_name);
+	path = g_strdup_printf ("/sys/class/net/%s/create_child", ASSERT_VALID_PATH_COMPONENT (parent_name));
 	id = g_strdup_printf ("0x%04x", p_key);
 	success = nm_platform_sysctl_set (path, id);
 	g_free (id);
@@ -2412,6 +2417,7 @@ tun_get_properties (NMPlatform *platform, int ifindex, NMPlatformTunProperties *
 	ifname = nm_platform_link_get_name (ifindex);
 	if (!ifname || !nm_utils_iface_valid_name (ifname))
 		return FALSE;
+	ifname = ASSERT_VALID_PATH_COMPONENT (ifname);
 
 	path = g_strdup_printf ("/sys/class/net/%s/owner", ifname);
 	val = nm_platform_sysctl_get (path);
