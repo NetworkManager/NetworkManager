@@ -362,7 +362,8 @@ utils_ignore_ip_config (NMConnection *connection)
 	 * scripts just ignore it if it's there.
 	 */
 	if (   nm_setting_connection_is_slave_type (s_con, NM_SETTING_BOND_SETTING_NAME)
-	    || nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME))
+	    || nm_setting_connection_is_slave_type (s_con, NM_SETTING_BRIDGE_SETTING_NAME)
+	    || nm_setting_connection_is_slave_type (s_con, NM_SETTING_TEAM_SETTING_NAME))
 		return TRUE;
 
 	return FALSE;
