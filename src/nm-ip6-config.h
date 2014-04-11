@@ -58,7 +58,7 @@ void nm_ip6_config_export (NMIP6Config *config);
 const char * nm_ip6_config_get_dbus_path (const NMIP6Config *config);
 
 /* Integration with nm-platform and nm-setting */
-NMIP6Config *nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf);
+NMIP6Config *nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
 gboolean nm_ip6_config_commit (const NMIP6Config *config, int ifindex, int priority);
 void nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting);
 void nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *setting);
@@ -83,6 +83,8 @@ void nm_ip6_config_del_address (NMIP6Config *config, guint i);
 guint nm_ip6_config_get_num_addresses (const NMIP6Config *config);
 const NMPlatformIP6Address *nm_ip6_config_get_address (const NMIP6Config *config, guint i);
 gboolean nm_ip6_config_address_exists (const NMIP6Config *config, const NMPlatformIP6Address *address);
+gboolean nm_ip6_config_addresses_sort (NMIP6Config *config, NMSettingIP6ConfigPrivacy use_temporary);
+
 
 /* Routes */
 void nm_ip6_config_reset_routes (NMIP6Config *config);
