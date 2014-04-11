@@ -58,9 +58,9 @@ typedef struct {
 G_DEFINE_TYPE_EXTENDED (NMDHCPClient, nm_dhcp_client, G_TYPE_OBJECT, G_TYPE_FLAG_ABSTRACT, {})
 
 enum {
-	STATE_CHANGED,
-	TIMEOUT,
-	REMOVE,
+	SIGNAL_STATE_CHANGED,
+	SIGNAL_TIMEOUT,
+	SIGNAL_REMOVE,
 	LAST_SIGNAL
 };
 
@@ -209,7 +209,7 @@ daemon_timeout (gpointer user_data)
 	} else {
 		nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 request timed out.", priv->iface);
 	}
-	g_signal_emit (G_OBJECT (self), signals[TIMEOUT], 0);
+	g_signal_emit (G_OBJECT (self), signals[SIGNAL_TIMEOUT], 0);
 	return FALSE;
 }
 
@@ -219,7 +219,7 @@ signal_remove (gpointer user_data)
 	NMDHCPClient *self = NM_DHCP_CLIENT (user_data);
 
 	NM_DHCP_CLIENT_GET_PRIVATE (self)->remove_id = 0;
-	g_signal_emit (G_OBJECT (self), signals[REMOVE], 0);
+	g_signal_emit (G_OBJECT (self), signals[SIGNAL_REMOVE], 0);
 	return FALSE;
 }
 
@@ -234,12 +234,12 @@ dhcp_client_set_state (NMDHCPClient *self,
 	priv->state = state;
 
 	if (emit_state)
-		g_signal_emit (G_OBJECT (self), signals[STATE_CHANGED], 0, priv->state);
+		g_signal_emit (G_OBJECT (self), signals[SIGNAL_STATE_CHANGED], 0, priv->state);
 
 	if (state == DHC_END || state == DHC_ABEND) {
 		/* Start the remove signal timer */
 		if (remove_now) {
-			g_signal_emit (G_OBJECT (self), signals[REMOVE], 0);
+			g_signal_emit (G_OBJECT (self), signals[SIGNAL_REMOVE], 0);
 		} else {
 			if (!priv->remove_id)
 				priv->remove_id = g_timeout_add_seconds (5, signal_remove, self);
@@ -295,8 +295,8 @@ start_monitor (NMDHCPClient *self)
 
 gboolean
 nm_dhcp_client_start_ip4 (NMDHCPClient *self,
-                          NMSettingIP4Config *s_ip4,
-                          guint8 *dhcp_anycast_addr,
+                          const char *dhcp_client_id,
+                          GByteArray *dhcp_anycast_addr,
                           const char *hostname)
 {
 	NMDHCPClientPrivate *priv;
@@ -311,7 +311,7 @@ nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 	nm_log_info (LOGD_DHCP, "Activation (%s) Beginning DHCPv4 transaction (timeout in %d seconds)",
 	             priv->iface, priv->timeout);
 
-	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, s_ip4, dhcp_anycast_addr, hostname);
+	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip4_start (self, dhcp_client_id, dhcp_anycast_addr, hostname);
 	if (priv->pid)
 		start_monitor (self);
 
@@ -449,8 +449,7 @@ get_duid (NMDHCPClient *self)
 
 gboolean
 nm_dhcp_client_start_ip6 (NMDHCPClient *self,
-                          NMSettingIP6Config *s_ip6,
-                          guint8 *dhcp_anycast_addr,
+                          GByteArray *dhcp_anycast_addr,
                           const char *hostname,
                           gboolean info_only)
 {
@@ -482,7 +481,6 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
 	             priv->iface, priv->timeout);
 
 	priv->pid = NM_DHCP_CLIENT_GET_CLASS (self)->ip6_start (self,
-	                                                        s_ip6,
 	                                                        dhcp_anycast_addr,
 	                                                        hostname,
 	                                                        info_only,
@@ -577,63 +575,54 @@ state_is_bound (guint32 state)
 	return FALSE;
 }
 
-typedef struct {
-	NMDHCPState state;
-	const char *name;
-} DhcState;
-
-#define STATE_TABLE_SIZE (sizeof (state_table) / sizeof (state_table[0]))
-
-static DhcState state_table[] = {
-	{ DHC_NBI,     "nbi" },
-	{ DHC_PREINIT, "preinit" },
-	{ DHC_PREINIT6,"preinit6" },
-	{ DHC_BOUND4,  "bound" },
-	{ DHC_BOUND6,  "bound6" },
-	{ DHC_IPV4LL,  "ipv4ll" },
-	{ DHC_RENEW4,  "renew" },
-	{ DHC_RENEW6,  "renew6" },
-	{ DHC_REBOOT,  "reboot" },
-	{ DHC_REBIND4, "rebind" },
-	{ DHC_REBIND6, "rebind6" },
-	{ DHC_STOP,    "stop" },
-	{ DHC_STOP6,   "stop6" },
-	{ DHC_MEDIUM,  "medium" },
-	{ DHC_TIMEOUT, "timeout" },
-	{ DHC_FAIL,    "fail" },
-	{ DHC_EXPIRE,  "expire" },
-	{ DHC_EXPIRE6, "expire6" },
-	{ DHC_RELEASE, "release" },
-	{ DHC_RELEASE6,"release6" },
-	{ DHC_START,   "start" },
-	{ DHC_ABEND,   "abend" },
-	{ DHC_END,     "end" },
-	{ DHC_DEPREF6, "depref6" },
+static const char *state_table[] = {
+	[DHC_NBI]             = "nbi",
+	[DHC_PREINIT]         = "preinit",
+	[DHC_PREINIT6]        = "preinit6",
+	[DHC_BOUND4]          = "bound",
+	[DHC_BOUND6]          = "bound6",
+	[DHC_IPV4LL]          = "ipv4ll",
+	[DHC_RENEW4]          = "renew",
+	[DHC_RENEW6]          = "renew6",
+	[DHC_REBOOT]          = "reboot",
+	[DHC_REBIND4]         = "rebind",
+	[DHC_REBIND6]         = "rebind6",
+	[DHC_DEPREF6]         = "depref6",
+	[DHC_STOP]            = "stop",
+	[DHC_STOP6]           = "stop6",
+	[DHC_MEDIUM]          = "medium",
+	[DHC_TIMEOUT]         = "timeout",
+	[DHC_FAIL]            = "fail",
+	[DHC_EXPIRE]          = "expire",
+	[DHC_EXPIRE6]         = "expire6",
+	[DHC_RELEASE]         = "release",
+	[DHC_RELEASE6]        = "release6",
+	[DHC_START]           = "start",
+	[DHC_ABEND]           = "abend",
+	[DHC_END]             = "end",
 };
 
-static inline const char *
-state_to_string (guint32 state)
+static const char *
+state_to_string (NMDHCPState state)
 {
-	int i;
-
-	for (i = 0; i < STATE_TABLE_SIZE; i++) {
-		if (state == state_table[i].state)
-			return state_table[i].name;
-	}
-
+	if (state >= 0 && state < G_N_ELEMENTS (state_table))
+		return state_table[state];
 	return NULL;
 }
 
-static inline NMDHCPState
+static NMDHCPState
 string_to_state (const char *name)
 {
 	int i;
 
-	for (i = 0; i < STATE_TABLE_SIZE; i++) {
-		if (!strcasecmp (name, state_table[i].name))
-			return state_table[i].state;
-	}
+	if (name) {
+		for (i = 0; i < G_N_ELEMENTS (state_table); i++) {
+			const char *n = state_table[i];
 
+			if (n && !strcasecmp (name, n))
+				return i;
+		}
+	}
 	return 255;
 }
 
@@ -1636,8 +1625,8 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* signals */
-	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
+	signals[SIGNAL_STATE_CHANGED] =
+		g_signal_new (NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDHCPClientClass, state_changed),
@@ -1645,8 +1634,8 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 					  g_cclosure_marshal_VOID__UINT,
 					  G_TYPE_NONE, 1, G_TYPE_UINT);
 
-	signals[TIMEOUT] =
-		g_signal_new ("timeout",
+	signals[SIGNAL_TIMEOUT] =
+		g_signal_new (NM_DHCP_CLIENT_SIGNAL_TIMEOUT,
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDHCPClientClass, timeout),
@@ -1654,8 +1643,8 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 					  g_cclosure_marshal_VOID__VOID,
 					  G_TYPE_NONE, 0);
 
-	signals[REMOVE] =
-		g_signal_new ("remove",
+	signals[SIGNAL_REMOVE] =
+		g_signal_new (NM_DHCP_CLIENT_SIGNAL_REMOVE,
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDHCPClientClass, remove),

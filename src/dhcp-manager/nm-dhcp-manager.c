@@ -438,10 +438,10 @@ add_client (NMDHCPManager *self, NMDHCPClient *client)
 	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 	guint id;
 
-	id = g_signal_connect_swapped (client, "remove", G_CALLBACK (remove_client), self);
+	id = g_signal_connect_swapped (client, NM_DHCP_CLIENT_SIGNAL_REMOVE, G_CALLBACK (remove_client), self);
 	g_object_set_data (G_OBJECT (client), REMOVE_ID_TAG, GUINT_TO_POINTER (id));
 
-	id = g_signal_connect_swapped (client, "timeout", G_CALLBACK (remove_client), self);
+	id = g_signal_connect_swapped (client, NM_DHCP_CLIENT_SIGNAL_TIMEOUT, G_CALLBACK (remove_client), self);
 	g_object_set_data (G_OBJECT (client), TIMEOUT_ID_TAG, GUINT_TO_POINTER (id));
 
 	g_hash_table_insert (priv->clients, client, g_object_ref (client));
@@ -453,10 +453,9 @@ client_start (NMDHCPManager *self,
               const GByteArray *hwaddr,
               const char *uuid,
               gboolean ipv6,
-              NMSettingIP4Config *s_ip4,
-              NMSettingIP6Config *s_ip6,
+              const char *dhcp_client_id,
               guint32 timeout,
-              guint8 *dhcp_anycast_addr,
+              GByteArray *dhcp_anycast_addr,
               const char *hostname,
               gboolean info_only)
 {
@@ -493,9 +492,9 @@ client_start (NMDHCPManager *self,
 	add_client (self, client);
 
 	if (ipv6)
-		success = nm_dhcp_client_start_ip6 (client, s_ip6, dhcp_anycast_addr, hostname, info_only);
+		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, hostname, info_only);
 	else
-		success = nm_dhcp_client_start_ip4 (client, s_ip4, dhcp_anycast_addr, hostname);
+		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname);
 
 	if (!success) {
 		remove_client (self, client);
@@ -514,7 +513,7 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
                            const char *uuid,
                            NMSettingIP4Config *s_ip4,
                            guint32 timeout,
-                           guint8 *dhcp_anycast_addr)
+                           GByteArray *dhcp_anycast_addr)
 {
 	NMDHCPManagerPrivate *priv;
 	const char *hostname, *method;
@@ -547,7 +546,7 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 	} else
 		hostname = NULL;
 
-	return client_start (self, iface, hwaddr, uuid, FALSE, s_ip4, NULL, timeout, dhcp_anycast_addr, hostname, FALSE);
+	return client_start (self, iface, hwaddr, uuid, FALSE, nm_setting_ip4_config_get_dhcp_client_id (s_ip4), timeout, dhcp_anycast_addr, hostname, FALSE);
 }
 
 /* Caller owns a reference to the NMDHCPClient on return */
@@ -558,7 +557,7 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
                            const char *uuid,
                            NMSettingIP6Config *s_ip6,
                            guint32 timeout,
-                           guint8 *dhcp_anycast_addr,
+                           GByteArray *dhcp_anycast_addr,
                            gboolean info_only)
 {
 	NMDHCPManagerPrivate *priv;
@@ -577,7 +576,7 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
 			hostname = NULL;
 	}
 
-	return client_start (self, iface, hwaddr, uuid, TRUE, NULL, s_ip6, timeout, dhcp_anycast_addr, hostname, info_only);
+	return client_start (self, iface, hwaddr, uuid, TRUE, NULL, timeout, dhcp_anycast_addr, hostname, info_only);
 }
 
 static void

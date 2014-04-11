@@ -27,9 +27,8 @@
 
 char *nm_dhcp_dhclient_create_config (const char *interface,
                                       gboolean is_ip6,
-                                      NMSettingIP4Config *s_ip4,
-                                      NMSettingIP6Config *s_ip6,
-                                      guint8 *anycast_addr,
+                                      const char *dhcp_client_id,
+                                      GByteArray *anycast_addr,
                                       const char *hostname,
                                       const char *orig_path,
                                       const char *orig_contents);

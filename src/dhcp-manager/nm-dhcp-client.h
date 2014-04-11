@@ -40,6 +40,10 @@
 #define NM_DHCP_CLIENT_UUID      "uuid"
 #define NM_DHCP_CLIENT_TIMEOUT   "timeout"
 
+#define NM_DHCP_CLIENT_SIGNAL_TIMEOUT       "timeout"
+#define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
+#define NM_DHCP_CLIENT_SIGNAL_REMOVE        "remove"
+
 typedef enum {
 	DHC_NBI = 0,     /* no broadcast interfaces found */
 	DHC_PREINIT,     /* configuration started */
@@ -78,13 +82,12 @@ typedef struct {
 	/* Methods */
 
 	GPid (*ip4_start)     (NMDHCPClient *self,
-	                       NMSettingIP4Config *s_ip4,
-	                       guint8 *anycast_addr,
+	                       const char *dhcp_client_id,
+	                       GByteArray *anycast_addr,
 	                       const char *hostname);
 
 	GPid (*ip6_start)     (NMDHCPClient *self,
-	                       NMSettingIP6Config *s_ip6,
-	                       guint8 *anycast_addr,
+	                       GByteArray *anycast_addr,
 	                       const char *hostname,
 	                       gboolean info_only,
 	                       const GByteArray *duid);
@@ -121,13 +124,12 @@ gboolean nm_dhcp_client_get_ipv6 (NMDHCPClient *self);
 const char *nm_dhcp_client_get_uuid (NMDHCPClient *self);
 
 gboolean nm_dhcp_client_start_ip4 (NMDHCPClient *self,
-                                   NMSettingIP4Config *s_ip4,
-                                   guint8 *dhcp_anycast_addr,
+                                   const char *dhcp_client_id,
+                                   GByteArray *dhcp_anycast_addr,
                                    const char *hostname);
 
 gboolean nm_dhcp_client_start_ip6 (NMDHCPClient *self,
-                                   NMSettingIP6Config *s_ip6,
-                                   guint8 *dhcp_anycast_addr,
+                                   GByteArray *dhcp_anycast_addr,
                                    const char *hostname,
                                    gboolean info_only);
 

@@ -165,9 +165,8 @@ static gboolean
 merge_dhclient_config (const char *iface,
                        const char *conf_file,
                        gboolean is_ip6,
-                       NMSettingIP4Config *s_ip4,
-                       NMSettingIP6Config *s_ip6,
-                       guint8 *anycast_addr,
+                       const char *dhcp_client_id,
+                       GByteArray *anycast_addr,
                        const char *hostname,
                        const char *orig_path,
                        GError **error)
@@ -188,7 +187,7 @@ merge_dhclient_config (const char *iface,
 		}
 	}
 
-	new = nm_dhcp_dhclient_create_config (iface, is_ip6, s_ip4, s_ip6, anycast_addr, hostname, orig_path, orig);
+	new = nm_dhcp_dhclient_create_config (iface, is_ip6, dhcp_client_id, anycast_addr, hostname, orig_path, orig);
 	g_assert (new);
 	success = g_file_set_contents (conf_file, new, -1, error);
 	g_free (new);
@@ -272,9 +271,8 @@ static char *
 create_dhclient_config (const char *iface,
                         gboolean is_ip6,
                         const char *uuid,
-                        NMSettingIP4Config *s_ip4,
-                        NMSettingIP6Config *s_ip6,
-                        guint8 *dhcp_anycast_addr,
+                        const char *dhcp_client_id,
+                        GByteArray *dhcp_anycast_addr,
                         const char *hostname)
 {
 	char *orig = NULL, *new = NULL;
@@ -300,7 +298,7 @@ create_dhclient_config (const char *iface,
 	}
 
 	error = NULL;
-	success = merge_dhclient_config (iface, new, is_ip6, s_ip4, s_ip6, dhcp_anycast_addr, hostname, orig, &error);
+	success = merge_dhclient_config (iface, new, is_ip6, dhcp_client_id, dhcp_anycast_addr, hostname, orig, &error);
 	if (!success) {
 		nm_log_warn (LOGD_DHCP, "(%s): error creating dhclient%s configuration: %s",
 		             iface, is_ip6 ? "6" : "", error->message);
@@ -475,8 +473,8 @@ dhclient_start (NMDHCPClient *client,
 
 static GPid
 ip4_start (NMDHCPClient *client,
-           NMSettingIP4Config *s_ip4,
-           guint8 *dhcp_anycast_addr,
+           const char *dhcp_client_id,
+           GByteArray *dhcp_anycast_addr,
            const char *hostname)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
@@ -485,7 +483,7 @@ ip4_start (NMDHCPClient *client,
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
 
-	priv->conf_file = create_dhclient_config (iface, FALSE, uuid, s_ip4, NULL, dhcp_anycast_addr, hostname);
+	priv->conf_file = create_dhclient_config (iface, FALSE, uuid, dhcp_client_id, dhcp_anycast_addr, hostname);
 	if (!priv->conf_file) {
 		nm_log_warn (LOGD_DHCP4, "(%s): error creating dhclient configuration file.", iface);
 		return -1;
@@ -496,8 +494,7 @@ ip4_start (NMDHCPClient *client,
 
 static GPid
 ip6_start (NMDHCPClient *client,
-           NMSettingIP6Config *s_ip6,
-           guint8 *dhcp_anycast_addr,
+           GByteArray *dhcp_anycast_addr,
            const char *hostname,
            gboolean info_only,
            const GByteArray *duid)
@@ -508,7 +505,7 @@ ip6_start (NMDHCPClient *client,
 	iface = nm_dhcp_client_get_iface (client);
 	uuid = nm_dhcp_client_get_uuid (client);
 
-	priv->conf_file = create_dhclient_config (iface, TRUE, uuid, NULL, s_ip6, dhcp_anycast_addr, hostname);
+	priv->conf_file = create_dhclient_config (iface, TRUE, uuid, NULL, dhcp_anycast_addr, hostname);
 	if (!priv->conf_file) {
 		nm_log_warn (LOGD_DHCP6, "(%s): error creating dhclient6 configuration file.", iface);
 		return -1;
