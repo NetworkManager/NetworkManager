@@ -115,17 +115,17 @@ fi
 pushd "$DIRNAME"
     git init .
     # if you have a local clone of upstream, symlink it as ../.git/local.
-    LOCAL_GIT="$(realpath ../.git/local/)"
-    if [[ -d "$LOCAL_GIT/" ]]; then
+    LOCAL_GIT="$(readlink -f ../.git/local/)"
+    if [[ -d "$LOCAL_GIT" ]]; then
         git remote add local "$LOCAL_GIT/"
         git fetch local
     fi
     if [[ "$BUILD_NETWORMANAGER" != "" ]]; then
         git remote add origin "git://anongit.freedesktop.org/NetworkManager/NetworkManager"
         git remote 'set-url' --push origin "ssh://$USER@git.freedesktop.org/git/NetworkManager/NetworkManager"
-        git config --local notes.displayRef refs/notes/bugs
-        git config --local --add remote.origin.fetch refs/tags/*:refs/tags/*
-        git config --local --add remote.origin.fetch refs/notes/bugs:refs/notes/bugs
+        git config notes.displayRef refs/notes/bugs
+        git config --add remote.origin.fetch refs/tags/*:refs/tags/*
+        git config --add remote.origin.fetch refs/notes/bugs:refs/notes/bugs
     elif [[ "$BUILD_LIBNL3" != "" ]]; then
         git remote add origin "git://github.com/thom311/libnl.git"
         git remote 'set-url' --push origin "git@github.com:thom311/libnl.git"
