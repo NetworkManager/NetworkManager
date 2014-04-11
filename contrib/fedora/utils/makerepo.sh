@@ -136,6 +136,7 @@ pushd "$DIRNAME"
     git commit --allow-empty -m '*** empty initial commit'  # useful, to rebase the following commit
     git add -f -A .
     git commit -m '*** add all'
+    ORIG_HEAD="`git rev-parse HEAD`"
     cat ../makerepo.gitignore > .gitignore
     git rm --cached -r .
     git add --all .
@@ -206,8 +207,13 @@ pushd "$DIRNAME"
                 git commit --allow-empty -m "$COMMIT_MSG"
             fi
             git reset --hard HEAD
+            git clean -fdx
+            [[ x = "x$(git diff "${BASECOMMIT[$((i+1))]}" HEAD)" ]] || die "error reverting patch"
         done
     fi
+    git checkout "$ORIG_HEAD" -- .
+    git checkout HEAD~ -- .gitignore
+    git reset
 popd
 
 if [[ $LOCAL != 0 ]]; then
@@ -220,3 +226,4 @@ if [[ $LOCAL != 0 ]]; then
     popd
 fi
 
+echo SUCCESS;
