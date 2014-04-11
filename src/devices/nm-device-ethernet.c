@@ -150,18 +150,15 @@ nm_ethernet_error_quark (void)
 static char *
 get_link_basename (const char *parent_path, const char *name, GError **error)
 {
-	char buf[128];
-	char *path;
+	char *link_dest, *path;
 	char *result = NULL;
 
 	path = g_strdup_printf ("%s/%s", parent_path, name);
-
-	memset (buf, 0, sizeof (buf));
-	errno = 0;
-	if (readlink (path, &buf[0], sizeof (buf) - 1) >= 0)
-		result = g_path_get_basename (buf);
-	else
-		g_set_error (error, 0, 1, "failed to read link '%s': %d", path, errno);
+	link_dest = g_file_read_link (path, error);
+	if (link_dest) {
+		result = g_path_get_basename (link_dest);
+		g_free (link_dest);
+	}
 	g_free (path);
 	return result;
 }
