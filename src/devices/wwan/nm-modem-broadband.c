@@ -533,13 +533,39 @@ get_user_pass (NMModem *modem,
 /* Query/Update enabled state */
 
 static void
+set_power_state_low_ready (MMModem *modem,
+                           GAsyncResult *result,
+                           NMModemBroadband *self)
+{
+	GError *error = NULL;
+
+	if (!mm_modem_set_power_state_finish (modem, result, &error)) {
+		/* Log but ignore errors; not all modems support low power state */
+		nm_log_dbg (LOGD_MB, "(%s) failed to set modem low power state: %s",
+		             nm_modem_get_uid (NM_MODEM (self)),
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+	}
+
+	/* Balance refcount */
+	g_object_unref (self);
+}
+
+static void
 modem_disable_ready (MMModem *modem_iface,
                      GAsyncResult *res,
                      NMModemBroadband *self)
 {
 	GError *error = NULL;
 
-	if (!mm_modem_disable_finish (modem_iface, res, &error)) {
+	if (mm_modem_disable_finish (modem_iface, res, &error)) {
+		/* Once disabled, move to low-power mode */
+		mm_modem_set_power_state (modem_iface,
+		                          MM_MODEM_POWER_STATE_LOW,
+		                          NULL,
+		                          (GAsyncReadyCallback) set_power_state_low_ready,
+		                          g_object_ref (self));
+	} else {
 		nm_log_warn (LOGD_MB, "(%s) failed to disable modem: %s",
 		             nm_modem_get_uid (NM_MODEM (self)),
 		             error && error->message ? error->message : "(unknown)");
