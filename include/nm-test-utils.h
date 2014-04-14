@@ -634,6 +634,17 @@ __define_nmtst_static(03, 1024)
 		memcpy(&x, __nmtst_swap_temp, sizeof(x)); \
 	} G_STMT_END
 
+#define nmtst_assert_str_has_substr(str, substr) \
+	G_STMT_START { \
+		const char *__str = (str); \
+		const char *__substr = (substr); \
+		\
+		g_assert (__str); \
+		g_assert (__substr); \
+		if (strstr (__str, __substr) == NULL) \
+			g_error ("%s:%d: Expects \"%s\" but got \"%s\"", __FILE__, __LINE__, __substr, __str); \
+	} G_STMT_END
+
 inline static guint32
 nmtst_inet4_from_string (const char *str)
 {
