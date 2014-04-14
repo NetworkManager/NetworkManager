@@ -137,6 +137,22 @@ pushd "$DIRNAME"
     git add -f -A .
     git commit -m '*** add all'
     ORIG_HEAD="`git rev-parse HEAD`"
+    if [[ "$BUILD_NETWORMANAGER" != "" ]]; then
+        # try to find the commit from which the original tarball originates
+        # and base the new branch on to of it.
+        RELEASE_BASE_COMMIT="$(sed -n 's/^NM_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
+        if [[ x != "x$RELEASE_BASE_COMMIT" ]]; then
+            RELEASE_BASE_COMMIT="$(git rev-list -n1 "$RELEASE_BASE_COMMIT" 2>/dev/null)"
+        fi
+        if [[ x != "x$RELEASE_BASE_COMMIT" ]]; then
+            git checkout -B master "$RELEASE_BASE_COMMIT" || die "could not checkout master"
+            git rm --cached -r :/
+            git checkout "$ORIG_HEAD" -- :/
+            git clean -fdx :/
+            git commit -m '*** add all'
+            [[ x == "x$(git diff HEAD "$ORIG_HEAD")" ]] || die "error recreating initial tarball"
+        fi
+    fi
     cat ../makerepo.gitignore > .gitignore
     git rm --cached -r .
     git add --all .
@@ -214,6 +230,8 @@ pushd "$DIRNAME"
     git checkout "$ORIG_HEAD" -- .
     git checkout HEAD~ -- .gitignore
     git reset
+
+    git gc
 popd
 
 if [[ $LOCAL != 0 ]]; then
