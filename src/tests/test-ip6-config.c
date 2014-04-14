@@ -324,7 +324,7 @@ NMTST_DEFINE();
 int
 main (int argc, char **argv)
 {
-	nmtst_init (&argc, &argv);
+	nmtst_init (&argc, &argv, NULL, NULL);
 
 	g_test_add_func ("/ip6-config/subtract", test_subtract);
 	g_test_add_func ("/ip6-config/compare-with-source", test_compare_with_source);

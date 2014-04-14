@@ -41,7 +41,7 @@ extern struct __nmtst_internal __nmtst_internal;
 	struct __nmtst_internal __nmtst_internal = { 0 };
 
 inline static void
-nmtst_init (int *argc, char ***argv)
+nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_domains)
 {
 	g_assert (!__nmtst_internal.rand0);
 
@@ -58,6 +58,14 @@ nmtst_init (int *argc, char ***argv)
 #endif
 
 	__nmtst_internal.rand0 = g_rand_new_with_seed (0);
+
+	if (log_level || log_domains) {
+		gboolean success = FALSE;
+#ifdef NM_LOGGING_H
+		success = nm_logging_setup (log_level, log_domains, NULL, NULL);
+#endif
+		g_assert (success);
+	}
 }
 
 inline static GRand *
