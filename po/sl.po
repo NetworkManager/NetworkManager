@@ -2593,8 +2593,8 @@ msgstr "vstavek1,vstavek2"
 
 #. Translators: Do not translate the values in the square brackets
 #: ../src/main.c:383
-msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
-msgstr "Raven beleženja: ena izmed [ERR, WARN, INFO, DEBUG]"
+msgid "Log level: one of [ERR, WARN, INFO, DEBUG, TRACE]"
+msgstr "Raven beleženja: ena izmed [ERR, WARN, INFO, DEBUG, TRACE]"
 
 #. Translators: Do not translate the values in the square brackets
 #: ../src/main.c:386

@@ -68,6 +68,7 @@ typedef struct {
 } LogDesc;
 
 static const char *level_names[LOGL_MAX] = {
+	[LOGL_TRACE] = "TRACE",
 	[LOGL_DEBUG] = "DEBUG",
 	[LOGL_INFO] = "INFO",
 	[LOGL_WARN] = "WARN",
@@ -405,6 +406,12 @@ _nm_log (const char *loc,
 	va_end (args);
 
 	switch (level) {
+	case LOGL_TRACE:
+		g_get_current_time (&tv);
+		syslog_level = LOG_DEBUG;
+		g_log_level = G_LOG_LEVEL_DEBUG;
+		fullmsg = g_strdup_printf ("<trace> [%ld.%06ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
+		break;
 	case LOGL_DEBUG:
 		g_get_current_time (&tv);
 		syslog_level = LOG_INFO;
