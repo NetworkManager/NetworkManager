@@ -11,6 +11,36 @@ _nmcli_list_nl()
 {
     local IFS=$'\n'
     COMPREPLY=( $( compgen -W '$1' -- $cur ) )
+
+    # Now escape special characters (spaces, single and double quotes),
+    # so that the argument is really regarded a single argument by bash.
+    # See http://stackoverflow.com/questions/1146098/properly-handling-spaces-and-quotes-in-bash-completion
+    local escaped_single_quote="'\''"
+    local i=0
+    local entry
+    for entry in ${COMPREPLY[*]}
+    do
+        if [[ "${cur:0:1}" == "'" ]]; then
+            # started with single quote, escaping only other single quotes
+            # [']bla'bla"bla\bla bla --> [']bla'\''bla"bla\bla bla
+            COMPREPLY[$i]="${entry//\'/${escaped_single_quote}}"
+        elif [[ "${cur:0:1}" == '"' ]]; then
+            # started with double quote, escaping all double quotes and all backslashes
+            # ["]bla'bla"bla\bla bla --> ["]bla'bla\"bla\\bla bla
+            entry="${entry//\\/\\\\}"
+            entry="${entry//\"/\\\"}"
+            COMPREPLY[$i]="$entry"
+        else
+            # no quotes in front, escaping _everything_
+            # [ ]bla'bla"bla\bla bla --> [ ]bla\'bla\"bla\\bla\ bla
+            entry="${entry//\\/\\\\}"
+            entry="${entry//\'/\'}"
+            entry="${entry//\"/\\\"}"
+            entry="${entry// /\\ }"
+            COMPREPLY[$i]="$entry"
+        fi
+        (( i++ ))
+    done
 }
 
 _nmcli_con_show()
