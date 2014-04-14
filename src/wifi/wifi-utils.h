@@ -59,6 +59,9 @@ guint32 wifi_utils_get_rate (WifiData *data);
 /* Returns quality 0 - 100% on succes, or -1 on error */
 int wifi_utils_get_qual (WifiData *data);
 
+/* Tells the driver DHCP or SLAAC is running */
+gboolean wifi_utils_indicate_addressing_running (WifiData *data, gboolean running);
+
 
 /* OLPC Mesh-only functions */
 guint32 wifi_utils_get_mesh_channel (WifiData *data);
@@ -66,7 +69,5 @@ guint32 wifi_utils_get_mesh_channel (WifiData *data);
 gboolean wifi_utils_set_mesh_channel (WifiData *data, guint32 channel);
 
 gboolean wifi_utils_set_mesh_ssid (WifiData *data, const GByteArray *ssid);
-
-gboolean wifi_utils_indicate_addressing_running (WifiData *data, gboolean running);
 
 #endif  /* WIFI_UTILS_H */

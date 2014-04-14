@@ -69,7 +69,7 @@ struct iw_range_with_scan_capa
 	guint8  old_num_frequency;
 
 	guint8  scan_capa;
-/* don't need the rest... */
+	/* don't need the rest... */
 };
 
 static guint32
@@ -284,7 +284,7 @@ wext_qual_to_percent (const struct iw_quality *qual,
 	            max_qual->updated);
 
 	/* Try using the card's idea of the signal quality first as long as it tells us what the max quality is.
-	 * Drivers that fill in quality values MUST treat them as percentages, ie the "Link Quality" MUST be 
+	 * Drivers that fill in quality values MUST treat them as percentages, ie the "Link Quality" MUST be
 	 * bounded by 0 and max_qual->qual, and MUST change in a linear fashion.  Within those bounds, drivers
 	 * are free to use whatever they want to calculate "Link Quality".
 	 */
@@ -302,10 +302,10 @@ wext_qual_to_percent (const struct iw_quality *qual,
 	 * If drivers don't conform to it, they are wrong and need to be fixed.
 	 */
 
-	if (    (max_qual->level == 0) && !(max_qual->updated & IW_QUAL_LEVEL_INVALID)          /* Valid max_qual->level == 0 */
-		&& !(qual->updated & IW_QUAL_LEVEL_INVALID)                                     /* Must have valid qual->level */
-		&& (    ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID)) /* Must have valid max_qual->noise */
-			|| ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID)))     /*    OR valid qual->noise */
+	if (    (max_qual->level == 0) && !(max_qual->updated & IW_QUAL_LEVEL_INVALID)      /* Valid max_qual->level == 0 */
+	    && !(qual->updated & IW_QUAL_LEVEL_INVALID)                                     /* Must have valid qual->level */
+	    && (    ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID)) /* Must have valid max_qual->noise */
+	        || ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID)))         /*    OR valid qual->noise */
 	   ) {
 		/* Absolute power values (dBm) */
 
@@ -325,9 +325,8 @@ wext_qual_to_percent (const struct iw_quality *qual,
 		noise = CLAMP (noise, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
 
 		/* A sort of signal-to-noise ratio calculation */
-		level_percent = (int)(100 - 70 *(
-		                                ((double)max_level - (double)level) /
-		                                ((double)max_level - (double)noise)));
+		level_percent = (int) (100 - 70 * (((double)max_level - (double)level) /
+		                                   ((double)max_level - (double)noise)));
 		nm_log_dbg (LOGD_WIFI, "QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.",
 		            level_percent, max_level, level, noise);
 	} else if (   (max_qual->level != 0)
@@ -670,4 +669,3 @@ wifi_wext_is_wifi (const char *iface)
 	}
 	return is_wifi;
 }
-
