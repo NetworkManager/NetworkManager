@@ -77,6 +77,7 @@ enum {
 
 /* Log levels */
 enum {
+	LOGL_TRACE,
 	LOGL_DEBUG,
 	LOGL_INFO,
 	LOGL_WARN,
@@ -98,6 +99,7 @@ GQuark nm_logging_error_quark    (void);
 #define nm_log_warn(domain, ...)    nm_log (LOGL_WARN,  (domain), __VA_ARGS__)
 #define nm_log_info(domain, ...)    nm_log (LOGL_INFO,  (domain), __VA_ARGS__)
 #define nm_log_dbg(domain, ...)     nm_log (LOGL_DEBUG, (domain), __VA_ARGS__)
+#define nm_log_trace(domain, ...)   nm_log (LOGL_TRACE, (domain), __VA_ARGS__)
 
 /* nm_log() only evaluates it's argument list after checking
  * whether logging for the given level/domain is enabled.  */

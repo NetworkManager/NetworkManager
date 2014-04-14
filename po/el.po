@@ -2532,8 +2532,8 @@ msgstr "plugin1,plugin2"
 
 #. Translators: Do not translate the values in the square brackets
 #: ../src/main.c:384
-msgid "Log level: one of [ERR, WARN, INFO, DEBUG]"
-msgstr "Επίπεδο καταγραφής: ένα από τα [ERR, WARN, INFO, DEBUG]"
+msgid "Log level: one of [ERR, WARN, INFO, DEBUG, TRACE]"
+msgstr "Επίπεδο καταγραφής: ένα από τα [ERR, WARN, INFO, DEBUG, TRACE]"
 
 #. Translators: Do not translate the values in the square brackets
 #: ../src/main.c:387
