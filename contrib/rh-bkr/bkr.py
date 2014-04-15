@@ -129,7 +129,7 @@ class UploadFileJenkins(UploadFile):
         self.jid = int(m.group(1))
         self.pattern = m.group(3)
         if not self.pattern:
-            self.pattern = '/NetworkManager(-glib)?-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-.*\.x86_64\.rpm'
+            self.pattern = '/NetworkManager(-glib|-tui)?-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-.*\.x86_64\.rpm'
         try:
             re.match(self.pattern, '')
         except:
