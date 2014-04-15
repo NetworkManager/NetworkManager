@@ -533,46 +533,41 @@ manager_sleeping (NMManager *self)
 	return FALSE;
 }
 
+static const char *
+_nm_state_to_string (NMState state)
+{
+	switch (state) {
+	case NM_STATE_ASLEEP:
+		return "ASLEEP";
+	case NM_STATE_DISCONNECTED:
+		return "DISCONNECTED";
+	case NM_STATE_DISCONNECTING:
+		return "DISCONNECTING";
+	case NM_STATE_CONNECTING:
+		return "CONNECTING";
+	case NM_STATE_CONNECTED_LOCAL:
+		return "CONNECTED_LOCAL";
+	case NM_STATE_CONNECTED_SITE:
+		return "CONNECTED_SITE";
+	case NM_STATE_CONNECTED_GLOBAL:
+		return "CONNECTED_GLOBAL";
+	case NM_STATE_UNKNOWN:
+	default:
+		return "UNKNOWN";
+	}
+}
+
 static void
 set_state (NMManager *manager, NMState state)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	const char *state_str;
 
 	if (priv->state == state)
 		return;
 
 	priv->state = state;
 
-	switch (state) {
-	case NM_STATE_ASLEEP:
-		state_str = "ASLEEP";
-		break;
-	case NM_STATE_DISCONNECTED:
-		state_str = "DISCONNECTED";
-		break;
-	case NM_STATE_DISCONNECTING:
-		state_str = "DISCONNECTING";
-		break;
-	case NM_STATE_CONNECTING:
-		state_str = "CONNECTING";
-		break;
-	case NM_STATE_CONNECTED_LOCAL:
-		state_str = "CONNECTED_LOCAL";
-		break;
-	case NM_STATE_CONNECTED_SITE:
-		state_str = "CONNECTED_SITE";
-		break;
-	case NM_STATE_CONNECTED_GLOBAL:
-		state_str = "CONNECTED_GLOBAL";
-		break;
-	case NM_STATE_UNKNOWN:
-	default:
-		state_str = "UNKNOWN";
-		break;
-	}
-
-	nm_log_info (LOGD_CORE, "NetworkManager state is now %s", state_str);
+	nm_log_info (LOGD_CORE, "NetworkManager state is now %s", _nm_state_to_string (state));
 
 	g_object_notify (G_OBJECT (manager), NM_MANAGER_STATE);
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, priv->state);
