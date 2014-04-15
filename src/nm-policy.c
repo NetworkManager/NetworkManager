@@ -1087,7 +1087,8 @@ process_secondaries (NMPolicy *policy,
 					/* No secondary UUID remained -> remove the secondary data item */
 					priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
 					pending_secondary_data_free (secondary_data);
-					nm_device_state_changed (item_device, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
+					if (nm_device_get_state (item_device) == NM_DEVICE_STATE_SECONDARIES)
+						nm_device_state_changed (item_device, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
 					break;
 				}
 			} else {
@@ -1098,8 +1099,10 @@ process_secondaries (NMPolicy *policy,
 				/* Secondary connection failed -> do not watch other connections */
 				priv->pending_secondaries = g_slist_remove (priv->pending_secondaries, secondary_data);
 				pending_secondary_data_free (secondary_data);
-				nm_device_state_changed (item_device, NM_DEVICE_STATE_FAILED,
-				                                      NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED);
+				if (   nm_device_get_state (item_device) == NM_DEVICE_STATE_SECONDARIES
+				    || nm_device_get_state (item_device) == NM_DEVICE_STATE_ACTIVATED)
+					nm_device_state_changed (item_device, NM_DEVICE_STATE_FAILED,
+					                                      NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED);
 				break;
 			}
 		}
