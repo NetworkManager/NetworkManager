@@ -41,8 +41,6 @@
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
 #include "nm-device-ethernet.h"
-#include "nm-device-wifi.h"
-#include "nm-device-olpc-mesh.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
 #include "nm-device-team.h"
@@ -1310,39 +1308,6 @@ manager_update_radio_enabled (NMManager *self,
 }
 
 static void
-manager_hidden_ap_found (NMDevice *device,
-                         NMAccessPoint *ap,
-                         gpointer user_data)
-{
-	NMManager *manager = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	const struct ether_addr *bssid;
-	GSList *iter;
-	GSList *connections;
-	gboolean done = FALSE;
-
-	g_return_if_fail (nm_ap_get_ssid (ap) == NULL);
-
-	bssid = nm_ap_get_address (ap);
-	g_assert (bssid);
-
-	/* Look for this AP's BSSID in the seen-bssids list of a connection,
-	 * and if a match is found, copy over the SSID */
-	connections = nm_settings_get_connections (priv->settings);
-	for (iter = connections; iter && !done; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingWireless *s_wifi;
-
-		s_wifi = nm_connection_get_setting_wireless (connection);
-		if (s_wifi) {
-			if (nm_settings_connection_has_seen_bssid (NM_SETTINGS_CONNECTION (connection), bssid))
-				nm_ap_set_ssid (ap, nm_setting_wireless_get_ssid (s_wifi));
-		}
-	}
-	g_slist_free (connections);
-}
-
-static void
 update_rstate_from_rfkill (NMRfkillManager *rfkill_mgr, RadioState *rstate)
 {
 	switch (nm_rfkill_manager_get_rfkill_state (rfkill_mgr, rstate->rtype)) {
@@ -1644,10 +1609,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	NMConnection *connection = NULL;
 	gboolean enabled = FALSE;
 	RfKillType rtype;
-	NMDeviceType devtype;
 	GSList *iter, *remove = NULL;
-
-	devtype = nm_device_get_device_type (device);
 
 	/* No duplicates */
 	if (nm_manager_get_device_by_udi (self, nm_device_get_udi (device)))
@@ -1687,15 +1649,6 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 		g_signal_connect (device, "notify::" NM_DEVICE_HAS_PENDING_ACTION,
 		                  G_CALLBACK (device_has_pending_action_changed),
 		                  self);
-	}
-
-	if (devtype == NM_DEVICE_TYPE_WIFI) {
-		/* Attach to the access-point-added signal so that the manager can fill
-		 * non-SSID-broadcasting APs with an SSID.
-		 */
-		g_signal_connect (device, "hidden-ap-found",
-						  G_CALLBACK (manager_hidden_ap_found),
-						  self);
 	}
 
 	/* Update global rfkill state for this device type with the device's
@@ -2006,12 +1959,6 @@ platform_link_added (NMManager *self,
 			break;
 		case NM_LINK_TYPE_INFINIBAND:
 			device = nm_device_infiniband_new (plink);
-			break;
-		case NM_LINK_TYPE_OLPC_MESH:
-			device = nm_device_olpc_mesh_new (plink);
-			break;
-		case NM_LINK_TYPE_WIFI:
-			device = nm_device_wifi_new (plink);
 			break;
 		case NM_LINK_TYPE_BOND:
 			device = nm_device_bond_new (plink);

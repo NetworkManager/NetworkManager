@@ -186,6 +186,7 @@ valgrind-*.log
 /src/tests/test-ip6-config
 /src/tests/test-wifi-ap-utils
 /src/tests/test-resolvconf-capture
+/src/devices/wifi/tests/test-wifi-ap-utils
 /src/dnsmasq-manager/tests/test-dnsmasq-utils
 /src/dhcp-manager/tests/test-dhcp-dhclient
 /src/dhcp-manager/tests/test-dnsmasq-utils

@@ -81,7 +81,6 @@ struct _NMDeviceWifiClass
 	/* Signals */
 	void (*access_point_added)   (NMDeviceWifi *device, NMAccessPoint *ap);
 	void (*access_point_removed) (NMDeviceWifi *device, NMAccessPoint *ap);
-	void (*hidden_ap_found)      (NMDeviceWifi *device, NMAccessPoint *ap);
 	gboolean (*scanning_allowed) (NMDeviceWifi *device);
 };
 

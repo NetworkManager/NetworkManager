@@ -58,6 +58,8 @@
 #include "nm-settings-connection.h"
 #include "nm-enum-types.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-wifi-enum-types.h"
+#include "nm-connection-provider.h"
 
 
 static gboolean impl_device_get_access_points (NMDeviceWifi *device,
@@ -103,7 +105,6 @@ enum {
 enum {
 	ACCESS_POINT_ADDED,
 	ACCESS_POINT_REMOVED,
-	HIDDEN_AP_FOUND,
 	SCANNING_ALLOWED,
 
 	LAST_SIGNAL
@@ -1748,6 +1749,34 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
  *
  */
 
+static void
+try_fill_ssid_for_hidden_ap (NMAccessPoint *ap)
+{
+	const struct ether_addr *bssid;
+	const GSList *connections, *iter;
+
+	g_return_if_fail (nm_ap_get_ssid (ap) == NULL);
+
+	bssid = nm_ap_get_address (ap);
+	g_assert (bssid);
+
+	/* Look for this AP's BSSID in the seen-bssids list of a connection,
+	 * and if a match is found, copy over the SSID */
+	connections = nm_connection_provider_get_connections (nm_connection_provider_get ());
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *connection = NM_CONNECTION (iter->data);
+		NMSettingWireless *s_wifi;
+
+		s_wifi = nm_connection_get_setting_wireless (connection);
+		if (s_wifi) {
+			if (nm_settings_connection_has_seen_bssid (NM_SETTINGS_CONNECTION (connection), bssid)) {
+				nm_ap_set_ssid (ap, nm_setting_wireless_get_ssid (s_wifi));
+				break;
+			}
+		}
+	}
+}
+
 #define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
 #define MAC_ARG(x) ((guint8*)(x))[0],((guint8*)(x))[1],((guint8*)(x))[2],((guint8*)(x))[3],((guint8*)(x))[4],((guint8*)(x))[5]
 
@@ -1777,8 +1806,8 @@ merge_scanned_ap (NMDeviceWifi *self,
 	bssid = nm_ap_get_address (merge_ap);
 	ssid = nm_ap_get_ssid (merge_ap);
 	if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len)) {
-		/* Let the manager try to fill the AP's SSID from the database */
-		g_signal_emit (self, signals[HIDDEN_AP_FOUND], 0, merge_ap);
+		/* Try to fill the SSID from the AP database */
+		try_fill_ssid_for_hidden_ap (merge_ap);
 
 		ssid = nm_ap_get_ssid (merge_ap);
 		if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {
@@ -3617,15 +3646,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0,
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 1,
-		              G_TYPE_OBJECT);
-
-	signals[HIDDEN_AP_FOUND] =
-		g_signal_new ("hidden-ap-found",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMDeviceWifiClass, hidden_ap_found),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1,
 		              G_TYPE_OBJECT);

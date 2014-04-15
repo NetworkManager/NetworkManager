@@ -16,7 +16,6 @@ AM_CPPFLAGS = \
 noinst_PROGRAMS = \
 	test-dhcp-options \
 	test-general \
-	test-wifi-ap-utils \
 	test-ip4-config \
 	test-ip6-config \
 	test-dcb \
@@ -33,14 +32,6 @@ test_dhcp_options_CPPFLAGS = \
 	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\"
 
 test_dhcp_options_LDADD = \
-	$(top_builddir)/src/libNetworkManager.la
-
-####### wifi ap utils test #######
-
-test_wifi_ap_utils_SOURCES = \
-	test-wifi-ap-utils.c
-
-test_wifi_ap_utils_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
 ####### ip4 config test #######
@@ -89,5 +80,5 @@ EXTRA_DIST = test-secret-agent.py
 
 ###########################################
 
-TESTS = test-dhcp-options test-wifi-ap-utils test-ip4-config test-ip6-config test-dcb test-resolvconf-capture test-general
+TESTS = test-dhcp-options test-ip4-config test-ip6-config test-dcb test-resolvconf-capture test-general
 

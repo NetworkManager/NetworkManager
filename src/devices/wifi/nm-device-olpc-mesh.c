@@ -53,6 +53,7 @@
 #include "nm-manager.h"
 #include "nm-enum-types.h"
 #include "nm-dbus-manager.h"
+#include "nm-wifi-enum-types.h"
 
 /* This is a bug; but we can't really change API now... */
 #include "NetworkManagerVPN.h"
