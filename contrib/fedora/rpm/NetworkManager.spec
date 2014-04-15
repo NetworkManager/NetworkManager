@@ -22,7 +22,6 @@
 %if 0%{?fedora}
 %global regen_docs 1
 %else
-#%global regen_docs 0
 %global regen_docs 1
 %endif
 
@@ -298,6 +297,8 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	--enable-vala=yes \
 %if 0%{?regen_docs}
 	--enable-gtk-doc \
+%else
+	--disable-gtk-doc \
 %endif
 %if 0%{?fedora}
 	--with-wext=yes \
