@@ -536,7 +536,6 @@ done:
 static void
 update_seen_bssids_cache (NMDeviceWifi *self, NMAccessPoint *ap)
 {
-	NMActRequest *req;
 	NMConnection *connection;
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
@@ -549,9 +548,8 @@ update_seen_bssids_cache (NMDeviceWifi *self, NMAccessPoint *ap)
 		return;
 
 	if (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED) {
-		req = nm_device_get_act_request (NM_DEVICE (self));
-		if (req) {
-			connection = nm_act_request_get_connection (req);
+		connection = nm_device_get_connection (NM_DEVICE (self));
+		if (connection) {
 			nm_settings_connection_add_seen_bssid (NM_SETTINGS_CONNECTION (connection),
 			                                       nm_ap_get_address (ap));
 		}
@@ -769,13 +767,11 @@ deactivate (NMDevice *dev)
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	int ifindex = nm_device_get_ifindex (dev);
-	NMActRequest *req;
 	NMConnection *connection;
 	NM80211Mode old_mode = priv->mode;
 
-	req = nm_device_get_act_request (dev);
-	if (req) {
-		connection = nm_act_request_get_connection (req);
+	connection = nm_device_get_connection (dev);
+	if (connection) {
 		/* Clear wireless secrets tries when deactivating */
 		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
 	}
@@ -1446,7 +1442,7 @@ scanning_allowed (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	guint32 sup_state;
-	NMActRequest *req;
+	NMConnection *connection;
 
 	g_return_val_if_fail (priv->supplicant.iface != NULL, FALSE);
 
@@ -1485,15 +1481,13 @@ scanning_allowed (NMDeviceWifi *self)
 	    || nm_supplicant_interface_get_scanning (priv->supplicant.iface))
 		return FALSE;
 
-	req = nm_device_get_act_request (NM_DEVICE (self));
-	if (req) {
-		NMConnection *connection;
+	connection = nm_device_get_connection (NM_DEVICE (self));
+	if (connection) {
 		NMSettingWireless *s_wifi;
 		const char *ip4_method = NULL;
 		const GByteArray *bssid;
 
 		/* Don't scan when a shared connection is active; it makes drivers mad */
-		connection = nm_act_request_get_connection (req);
 		ip4_method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
 		if (!strcmp (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
