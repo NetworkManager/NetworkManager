@@ -788,14 +788,18 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GUdevDevice *udev_device;
+	const char *name;
 
 	g_return_val_if_fail (rtnllink, FALSE);
-	g_return_val_if_fail (rtnl_link_get_name (rtnllink), FALSE);
 
+	name = rtnl_link_get_name (rtnllink);
 	memset (info, 0, sizeof (*info));
 
 	info->ifindex = rtnl_link_get_ifindex (rtnllink);
-	g_strlcpy (info->name, rtnl_link_get_name (rtnllink), sizeof (info->name));
+	if (name)
+		g_strlcpy (info->name, name, sizeof (info->name));
+	else
+		info->name[0] = '\0';
 	info->type = link_extract_type (platform, rtnllink, &info->type_name);
 	info->up = !!(rtnl_link_get_flags (rtnllink) & IFF_UP);
 	info->connected = !!(rtnl_link_get_flags (rtnllink) & IFF_LOWER_UP);
