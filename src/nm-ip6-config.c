@@ -540,7 +540,7 @@ nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *set
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
 		const NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
-		NMIP6Route *s_route = nm_ip6_route_new ();
+		NMIP6Route *s_route;
 
 		/* Ignore link-local route. */
 		if (IN6_IS_ADDR_LINKLOCAL (&route->network))
@@ -550,6 +550,7 @@ nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *set
 		if (!route->plen)
 			continue;
 
+		s_route = nm_ip6_route_new ();
 		nm_ip6_route_set_dest (s_route, &route->network);
 		nm_ip6_route_set_prefix (s_route, route->plen);
 		if (!IN6_IS_ADDR_UNSPECIFIED (&route->network))
@@ -557,6 +558,7 @@ nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *set
 		nm_ip6_route_set_metric (s_route, route->metric);
 
 		nm_setting_ip6_config_add_route (setting, s_route);
+		nm_ip6_route_unref (s_route);
 	}
 
 	/* DNS */

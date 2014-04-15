@@ -527,6 +527,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		} else {
 			nm_log_info (LOGD_SETTINGS, "ignoring duplicate IP4 address");
 		}
+		nm_ip4_address_unref (addr);
 
 		nameserver_v = ifparser_getkey (block, "dns-nameserver");
 		ifupdown_ip4_add_dns (s_ip4, nameserver_v);
@@ -647,6 +648,7 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 		} else {
 			nm_log_info (LOGD_SETTINGS, "ignoring duplicate IP6 address");
 		}
+		nm_ip6_address_unref (addr);
 
 		nameserver_v = ifparser_getkey(block, "dns-nameserver");
 		ifupdown_ip6_add_dns (s_ip6, nameserver_v);
