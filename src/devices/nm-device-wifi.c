@@ -96,7 +96,6 @@ enum {
 	PROP_ACTIVE_ACCESS_POINT,
 	PROP_CAPABILITIES,
 	PROP_SCANNING,
-	PROP_IPW_RFKILL_STATE,
 
 	LAST_PROP
 };
@@ -128,11 +127,6 @@ struct _NMDeviceWifiPrivate {
 
 	guint8            perm_hw_addr[ETH_ALEN];    /* Permanent MAC address */
 	guint8            initial_hw_addr[ETH_ALEN]; /* Initial MAC address (as seen when NM starts) */
-
-	/* Legacy rfkill for ipw2x00; will be fixed with 2.6.33 kernel */
-	char *            ipw_rfkill_path;
-	guint             ipw_rfkill_id;
-	RfKillState       ipw_rfkill_state;
 
 	gint8             invalid_strength_counter;
 
@@ -218,68 +212,6 @@ nm_wifi_error_quark (void)
 
 /*****************************************************************/
 
-/* IPW rfkill handling (until 2.6.33) */
-RfKillState
-nm_device_wifi_get_ipw_rfkill_state (NMDeviceWifi *self)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	char *contents = NULL;
-	RfKillState state = RFKILL_UNBLOCKED;
-	const char *str_state = NULL;
-
-	if (   priv->ipw_rfkill_path
-	    && (contents = nm_platform_sysctl_get (priv->ipw_rfkill_path))) {
-
-		if (strlen (contents) != 1)
-			contents[0] = 0;
-
-		/* 0 - RF kill not enabled
-		 * 1 - SW based RF kill active (sysfs)
-		 * 2 - HW based RF kill active
-		 * 3 - Both HW and SW baed RF kill active
-		 */
-		switch (contents[0]) {
-		case '1':
-			state = RFKILL_SOFT_BLOCKED;
-			str_state = "soft-blocked";
-			break;
-		case '2':
-		case '3':
-			state = RFKILL_HARD_BLOCKED;
-			str_state = "hard-blocked";
-			break;
-		case '0':
-			str_state = "unblocked";
-		default:
-			break;
-		}
-		g_free (contents);
-
-		nm_log_dbg (LOGD_RFKILL, "(%s): ipw rfkill state '%s'",
-		            nm_device_get_iface (NM_DEVICE (self)),
-		            str_state ? str_state : "(unknown)");
-	}
-
-	return state;
-}
-
-static gboolean
-ipw_rfkill_state_work (gpointer user_data)
-{
-	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	RfKillState old_state;
-
-	old_state = priv->ipw_rfkill_state;
-	priv->ipw_rfkill_state = nm_device_wifi_get_ipw_rfkill_state (self);
-	if (priv->ipw_rfkill_state != old_state)
-		g_object_notify (G_OBJECT (self), NM_DEVICE_WIFI_IPW_RFKILL_STATE);
-
-	return TRUE;
-}
-
-/*****************************************************************/
-
 static GObject*
 constructor (GType type,
              guint n_construct_params,
@@ -318,22 +250,6 @@ constructor (GType type,
 	/* Connect to the supplicant manager */
 	priv->supplicant.mgr = nm_supplicant_manager_get ();
 	g_assert (priv->supplicant.mgr);
-
-	/* The ipw2x00 drivers don't integrate with the kernel rfkill subsystem until
-	 * 2.6.33.  Thus all our nice libgudev magic is useless.  So we get to poll.
-	 *
-	 * FIXME: when 2.6.33 comes lands, we can do some sysfs parkour to figure out
-	 * if we need to poll or not by matching /sys/class/net/ethX/device to one
-	 * of the /sys/class/rfkill/rfkillX/device links.  If there's a match, we
-	 * don't have to poll.
-	 */
-	priv->ipw_rfkill_path = g_strdup_printf ("/sys/class/net/%s/device/rf_kill",
-	                                         ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (NM_DEVICE (self))));
-	if (!g_file_test (priv->ipw_rfkill_path, G_FILE_TEST_IS_REGULAR)) {
-		g_free (priv->ipw_rfkill_path);
-		priv->ipw_rfkill_path = NULL;
-	}
-	priv->ipw_rfkill_state = nm_device_wifi_get_ipw_rfkill_state (self);
 
 	return object;
 }
@@ -3388,19 +3304,6 @@ device_state_changed (NMDevice *device,
 		remove_all_aps (self);
 	}
 
-	/* Start or stop the rfkill poll worker for ipw cards */
-	if (priv->ipw_rfkill_path) {
-		if (new_state > NM_DEVICE_STATE_UNMANAGED) {
-			if (!priv->ipw_rfkill_id)
-				priv->ipw_rfkill_id = g_timeout_add_seconds (3, ipw_rfkill_state_work, self);
-		} else if (new_state <= NM_DEVICE_STATE_UNMANAGED) {
-			if (priv->ipw_rfkill_id) {
-				g_source_remove (priv->ipw_rfkill_id);
-				priv->ipw_rfkill_id = 0;
-			}
-		}
-	}
-
 	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
 		clear_aps = TRUE;
@@ -3551,12 +3454,6 @@ dispose (GObject *object)
 
 	remove_all_aps (self);
 
-	g_free (priv->ipw_rfkill_path);
-	if (priv->ipw_rfkill_id) {
-		g_source_remove (priv->ipw_rfkill_id);
-		priv->ipw_rfkill_id = 0;
-	}
-
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
 }
 
@@ -3597,9 +3494,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_SCANNING:
 		g_value_set_boolean (value, nm_supplicant_interface_get_scanning (priv->supplicant.iface));
 		break;
-	case PROP_IPW_RFKILL_STATE:
-		g_value_set_uint (value, nm_device_wifi_get_ipw_rfkill_state (device));
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3610,13 +3504,7 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
-
 	switch (prop_id) {
-	case PROP_IPW_RFKILL_STATE:
-		/* construct only */
-		priv->ipw_rfkill_state = g_value_get_uint (value);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3713,13 +3601,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		                   "Scanning",
 		                   FALSE,
 		                   G_PARAM_READABLE));
-
-	g_object_class_install_property (object_class, PROP_IPW_RFKILL_STATE,
-		g_param_spec_uint (NM_DEVICE_WIFI_IPW_RFKILL_STATE,
-		                   "IpwRfkillState",
-		                   "ipw rf-kill state",
-		                   RFKILL_UNBLOCKED, RFKILL_HARD_BLOCKED, RFKILL_UNBLOCKED,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
 	signals[ACCESS_POINT_ADDED] =

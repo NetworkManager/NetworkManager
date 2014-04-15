@@ -26,7 +26,6 @@
 #include <dbus/dbus.h>
 #include <net/ethernet.h>
 
-#include "nm-rfkill-manager.h"
 #include "nm-device.h"
 #include "nm-wifi-ap.h"
 
@@ -58,7 +57,6 @@ typedef enum {
 #define NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT "active-access-point"
 #define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
 #define NM_DEVICE_WIFI_SCANNING            "scanning"
-#define NM_DEVICE_WIFI_IPW_RFKILL_STATE    "ipw-rfkill-state"
 
 #ifndef NM_DEVICE_WIFI_DEFINED
 #define NM_DEVICE_WIFI_DEFINED
@@ -91,8 +89,6 @@ struct _NMDeviceWifiClass
 GType nm_device_wifi_get_type (void);
 
 NMDevice *nm_device_wifi_new (NMPlatformLink *platform_device);
-
-RfKillState nm_device_wifi_get_ipw_rfkill_state (NMDeviceWifi *self);
 
 G_END_DECLS
 

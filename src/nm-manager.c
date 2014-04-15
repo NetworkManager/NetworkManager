@@ -168,7 +168,6 @@ typedef struct {
 	const char *key;
 	const char *prop;
 	const char *hw_prop;
-	RfKillState (*other_enabled_func) (NMManager *);
 } RadioState;
 
 typedef struct {
@@ -1343,40 +1342,25 @@ manager_hidden_ap_found (NMDevice *device,
 	g_slist_free (connections);
 }
 
-static RfKillState
-nm_manager_get_ipw_rfkill_state (NMManager *self)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-	RfKillState ipw_state = RFKILL_UNBLOCKED;
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = NM_DEVICE (iter->data);
-		RfKillState candidate_state;
-
-		if (nm_device_get_device_type (candidate) == NM_DEVICE_TYPE_WIFI) {
-			candidate_state = nm_device_wifi_get_ipw_rfkill_state (NM_DEVICE_WIFI (candidate));
-
-			if (candidate_state > ipw_state)
-				ipw_state = candidate_state;
-		}
-	}
-
-	return ipw_state;
-}
-
 static void
-update_rstate_from_rfkill (RadioState *rstate, RfKillState rfkill)
+update_rstate_from_rfkill (NMRfkillManager *rfkill_mgr, RadioState *rstate)
 {
-	if (rfkill == RFKILL_UNBLOCKED) {
+	switch (nm_rfkill_manager_get_rfkill_state (rfkill_mgr, rstate->rtype)) {
+	case RFKILL_UNBLOCKED:
 		rstate->sw_enabled = TRUE;
 		rstate->hw_enabled = TRUE;
-	} else if (rfkill == RFKILL_SOFT_BLOCKED) {
+		break;
+	case RFKILL_SOFT_BLOCKED:
 		rstate->sw_enabled = FALSE;
 		rstate->hw_enabled = TRUE;
-	} else if (rfkill == RFKILL_HARD_BLOCKED) {
+		break;
+	case RFKILL_HARD_BLOCKED:
 		rstate->sw_enabled = FALSE;
 		rstate->hw_enabled = FALSE;
+		break;
+	default:
+		g_warn_if_reached ();
+		break;
 	}
 }
 
@@ -1386,29 +1370,14 @@ manager_rfkill_update_one_type (NMManager *self,
                                 RfKillType rtype)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	RfKillState udev_state = RFKILL_UNBLOCKED;
-	RfKillState other_state = RFKILL_UNBLOCKED;
-	RfKillState composite;
 	gboolean old_enabled, new_enabled, old_rfkilled, new_rfkilled, old_hwe;
 
 	old_enabled = radio_enabled_for_rstate (rstate, TRUE);
 	old_rfkilled = rstate->hw_enabled && rstate->sw_enabled;
 	old_hwe = rstate->hw_enabled;
 
-	udev_state = nm_rfkill_manager_get_rfkill_state (priv->rfkill_mgr, rtype);
-
-	if (rstate->other_enabled_func)
-		other_state = rstate->other_enabled_func (self);
-
-	/* The composite state is the "worst" of either udev or other states */
-	if (udev_state == RFKILL_HARD_BLOCKED || other_state == RFKILL_HARD_BLOCKED)
-		composite = RFKILL_HARD_BLOCKED;
-	else if (udev_state == RFKILL_SOFT_BLOCKED || other_state == RFKILL_SOFT_BLOCKED)
-		composite = RFKILL_SOFT_BLOCKED;
-	else
-		composite = RFKILL_UNBLOCKED;
-
-	update_rstate_from_rfkill (rstate, composite);
+	/* recheck kernel rfkill state */
+	update_rstate_from_rfkill (priv->rfkill_mgr, rstate);
 
 	/* Print out all states affecting device enablement */
 	if (rstate->desc) {
@@ -1453,14 +1422,6 @@ nm_manager_rfkill_update (NMManager *self, RfKillType rtype)
 		for (i = 0; i < RFKILL_TYPE_MAX; i++)
 			manager_rfkill_update_one_type (self, &priv->radio_states[i], i);
 	}
-}
-
-static void
-manager_ipw_rfkill_state_changed (NMDeviceWifi *device,
-                                  GParamSpec *pspec,
-                                  gpointer user_data)
-{
-	nm_manager_rfkill_update (NM_MANAGER (user_data), RFKILL_TYPE_WLAN);
 }
 
 static void
@@ -1735,13 +1696,6 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 		g_signal_connect (device, "hidden-ap-found",
 						  G_CALLBACK (manager_hidden_ap_found),
 						  self);
-
-		/* Hook up rfkill handling for ipw-based cards until they get converted
-		 * to use the kernel's rfkill subsystem in 2.6.33.
-		 */
-		g_signal_connect (device, "notify::" NM_DEVICE_WIFI_IPW_RFKILL_STATE,
-		                  G_CALLBACK (manager_ipw_rfkill_state_changed),
-		                  self);
 	}
 
 	/* Update global rfkill state for this device type with the device's
@@ -4100,14 +4054,13 @@ nm_manager_start (NMManager *self)
 	/* Set initial radio enabled/disabled state */
 	for (i = 0; i < RFKILL_TYPE_MAX; i++) {
 		RadioState *rstate = &priv->radio_states[i];
-		RfKillState udev_state;
 		gboolean enabled;
 
 		if (!rstate->desc)
 			continue;
 
-		udev_state = nm_rfkill_manager_get_rfkill_state (priv->rfkill_mgr, i);
-		update_rstate_from_rfkill (rstate, udev_state);
+		/* recheck kernel rfkill state */
+		update_rstate_from_rfkill (priv->rfkill_mgr, rstate);
 
 		if (rstate->desc) {
 			nm_log_info (LOGD_RFKILL, "%s %s by radio killswitch; %s by state file",
@@ -4730,7 +4683,6 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WLAN].prop = NM_MANAGER_WIRELESS_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WLAN].hw_prop = NM_MANAGER_WIRELESS_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WLAN].desc = "WiFi";
-	priv->radio_states[RFKILL_TYPE_WLAN].other_enabled_func = nm_manager_get_ipw_rfkill_state;
 	priv->radio_states[RFKILL_TYPE_WLAN].rtype = RFKILL_TYPE_WLAN;
 
 	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = TRUE;
@@ -4745,7 +4697,6 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WIMAX].prop = NM_MANAGER_WIMAX_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WIMAX].hw_prop = NM_MANAGER_WIMAX_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WIMAX].desc = "WiMAX";
-	priv->radio_states[RFKILL_TYPE_WIMAX].other_enabled_func = NULL;
 	priv->radio_states[RFKILL_TYPE_WIMAX].rtype = RFKILL_TYPE_WIMAX;
 
 	for (i = 0; i < RFKILL_TYPE_MAX; i++)
