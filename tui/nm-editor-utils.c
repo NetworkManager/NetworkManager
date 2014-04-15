@@ -349,7 +349,10 @@ nm_editor_utils_create_connection (GType             type,
 			slave_setting_type = types[i]->slave_setting_type;
 
 	}
-	g_return_val_if_fail (type_data != NULL, NULL);
+	if (!type_data) {
+		g_return_val_if_reached (NULL);
+		return NULL;
+	}
 
 	connection = nm_connection_new ();
 

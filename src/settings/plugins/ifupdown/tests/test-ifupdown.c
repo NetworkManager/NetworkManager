@@ -50,11 +50,8 @@ expected_key_new (const char *key, const char *data)
 	ExpectedKey *k;
 
 	k = g_malloc0 (sizeof (ExpectedKey));
-	g_assert (k);
 	k->key = g_strdup (key);
-	g_assert (k->key);
 	k->data = g_strdup (data);
-	g_assert (k->data);
 	return k;
 }
 
@@ -108,11 +105,7 @@ expected_block_add_key (ExpectedBlock *b, ExpectedKey *k)
 static Expected *
 expected_new (void)
 {
-	Expected *e;
-
-	e = g_malloc0 (sizeof (Expected));
-	g_assert (e);
-	return e;
+	return g_malloc0 (sizeof (Expected));
 }
 
 static void

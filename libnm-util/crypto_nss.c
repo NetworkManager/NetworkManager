@@ -402,11 +402,8 @@ out:
 	if (slot)
 		PK11_FreeSlot (slot);
 
-	if (padded_buf) {
-		memset (padded_buf, 0, padded_buf_len);
-		g_free (padded_buf);
-		padded_buf = NULL;
-	}
+	memset (padded_buf, 0, padded_buf_len);
+	g_free (padded_buf);
 
 	if (!success) {
 		memset (output, 0, output_len);

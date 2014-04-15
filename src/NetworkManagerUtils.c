@@ -1140,8 +1140,6 @@ fail:
 		nm_log_err (LOGD_CORE, "Failed asserting path component: NULL");
 	else
 		nm_log_err (LOGD_CORE, "Failed asserting path component: \"%s\"", name);
-	g_assert_not_reached ();
-	g_return_val_if_reached ("XXXXX");
-	return "XXXXX";
+	g_error ("FATAL: Failed asserting path component: %s", name ? name : "(null)");
 }
 

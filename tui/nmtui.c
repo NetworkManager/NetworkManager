@@ -255,6 +255,7 @@ main (int argc, char **argv)
 	nm_settings = nm_remote_settings_new (NULL);
 	g_signal_connect (nm_settings, NM_REMOTE_SETTINGS_CONNECTIONS_READ,
 	                  G_CALLBACK (connections_read), &got_connections);
+	/* coverity[loop_condition] */
 	while (!got_connections)
 		g_main_context_iteration (NULL, TRUE);
 

@@ -492,8 +492,6 @@ nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting,
 	}
 
 	copy = nm_ip4_address_dup (address);
-	g_return_val_if_fail (copy != NULL, FALSE);
-
 	priv->addresses = g_slist_append (priv->addresses, copy);
 	priv->address_labels = g_slist_append (priv->address_labels, g_strdup (label));
 
@@ -645,8 +643,6 @@ nm_setting_ip4_config_add_route (NMSettingIP4Config *setting,
 	}
 
 	copy = nm_ip4_route_dup (route);
-	g_return_val_if_fail (copy != NULL, FALSE);
-
 	priv->routes = g_slist_append (priv->routes, copy);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ROUTES);
 	return TRUE;

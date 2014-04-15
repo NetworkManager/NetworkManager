@@ -699,7 +699,7 @@ parse_output_fields (const char *fields_str,
 			if (found) {
 				/* Add index to array, and field name (or NULL) to group_fields array */
 				g_array_append_val (array, idx);
-				if (*group_fields)
+				if (group_fields && *group_fields)
 					g_ptr_array_add (*group_fields, g_strdup (right));
 			}
 			if (right)

@@ -490,8 +490,6 @@ nm_setting_ip6_config_add_address (NMSettingIP6Config *setting,
 	}
 
 	copy = nm_ip6_address_dup (address);
-	g_return_val_if_fail (copy != NULL, FALSE);
-
 	priv->addresses = g_slist_append (priv->addresses, copy);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
 	return TRUE;
@@ -633,8 +631,6 @@ nm_setting_ip6_config_add_route (NMSettingIP6Config *setting,
 	}
 
 	copy = nm_ip6_route_dup (route);
-	g_return_val_if_fail (copy != NULL, FALSE);
-
 	priv->routes = g_slist_append (priv->routes, copy);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
 	return TRUE;

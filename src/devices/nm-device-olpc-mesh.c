@@ -119,7 +119,6 @@ constructor (GType type,
 	GObject *object;
 	GObjectClass *klass;
 	NMDeviceOlpcMesh *self;
-	NMDeviceOlpcMeshPrivate *priv;
 	NMDeviceWifiCapabilities caps;
 
 	klass = G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class);
@@ -128,7 +127,6 @@ constructor (GType type,
 		return NULL;
 
 	self = NM_DEVICE_OLPC_MESH (object);
-	priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 
 	nm_log_dbg (LOGD_HW | LOGD_OLPC_MESH, "(%s): kernel ifindex %d",
 	            nm_device_get_iface (NM_DEVICE (self)),

@@ -259,12 +259,13 @@ get_credentials (char *username, char *password)
 	size_t len;
 	GError *err = NULL;
 
-	if (username && !password) {
+	if (!password) {
 		/* pppd is checking pap support; return 1 for supported */
+		g_return_val_if_fail (username, -1);
 		return 1;
 	}
 
-	g_return_val_if_fail (username && password, -1);
+	g_return_val_if_fail (username, -1);
 	g_return_val_if_fail (DBUS_IS_G_PROXY (proxy), -1);
 
 	g_message ("nm-ppp-plugin: (%s): passwd-hook, requesting credentials...", __func__);
