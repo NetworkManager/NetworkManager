@@ -2,9 +2,9 @@
 	<whiteboard>
 		$WHITEBOARD $UUID
 	</whiteboard>
-	<recipeSet priority="High">
-		<recipe kernel_options="" kernel_options_post="" ks_meta="method=nfs" role="None" whiteboard="">
-			<autopick random="false"/>
+	<recipeSet priority="Normal">
+		<recipe kernel_options="" kernel_options_post="" ks_meta="method=nfs" role="None" whiteboard="$WHITEBOARD $UUID">
+			<autopick random="true"/>
 			<watchdog panic="None"/>
 			<packages/>
 			<ks_appends/>
@@ -20,8 +20,8 @@
 			</distroRequires>
 			<hostRequires>
 				<and>
-					<group op="=" value="desktopqe-net"/>
 					<arch op="=" value="x86_64"/>
+					<group op="=" value="desktopqe-net"/>
 					<!--<hostname op="=" value="qe-dell-ovs5-vm-2.dqe.lab.eng.bos.redhat.com"/>-->
 				</and>
 				<system_type value="Machine"/>
@@ -29,7 +29,7 @@
 			<partitions/>
 			<task name="/distribution/pkginstall" role="STANDALONE">
 				<params>
-					<param name="PKGARGNAME" value="python-setuptools pexpect bash-completion iw net-tools teamd NetworkManager wireshark"/>
+					<param name="PKGARGNAME" value="python-setuptools pexpect bash-completion iw net-tools teamd NetworkManager radvd wireshark"/>
 				</params>
 			</task>
 			<task name="/distribution/command" role="STANDALONE">
@@ -49,12 +49,12 @@
 			</task>
 			<task name="/qe/desktop/simpletestharness_dev" role="STANDALONE">
 				<params>
-					<param name="COMPONENT" value="NetworkManager"/>
-					<param name="TESTS" value="$TESTS"/>
 					<param name="GIT_TARGETBRANCH" value="rhel-7"/>
+					<param name="TESTS" value="$TESTS"/>
+					<param name="TEST_MAPPER" value="True"/>
+					<param name="COMPONENT" value="NetworkManager"/>
 					<param name="GIT_URL" value="https://gerrit.dqe.lab.eng.bos.redhat.com/cgit/NetworkManager.git"/>
 					<param name="TYPE" value="TEST"/>
-					<param name="TEST_MAPPER" value="True"/>
 				</params>
 			</task>
 			<task name="/distribution/command" role="STANDALONE">

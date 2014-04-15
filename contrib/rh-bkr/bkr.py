@@ -217,7 +217,7 @@ class CmdSubmit(CmdBase):
             'WHITEBOARD'        : 'Test NetworkManager',
             'DISTRO_FAMILY'     : 'RedHatEnterpriseLinux7',
             'DISTRO_VARIANT'    : 'Workstation',
-            'DISTRO_NAME'       : 'RHEL-7.0-20140224.n.0',
+            'DISTRO_NAME'       : 'RHEL-7.0-20140408.n.0',
             'DISTRO_METHOD'     : 'nfs',
             'DISTRO_ARCH'       : 'x86_64',
             'TEST_URL'          : 'http://download.eng.brq.redhat.com/scratch/vbenes/NetworkManager-rhel-7.tar.gz',
