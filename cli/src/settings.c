@@ -1587,6 +1587,13 @@ typedef struct {
 	NmcPropertyOut2InFunc out2in_func;     /* func converting property values from output to input format */
 } NmcPropertyFuncs;
 
+/*
+ * We need NmCli in some _set_property functions, and they aren't passed NmCli.
+ * So use the global variable.
+ */
+/* Global variable defined in nmcli.c */
+extern NmCli nm_cli;
+
 NMSetting *
 nmc_setting_new_for_name (const char *name)
 {
@@ -2446,15 +2453,34 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_con_allowed_slave_type, con_valid_slave_ty
 static gboolean
 nmc_property_connection_set_secondaries (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	char **strv = NULL;
+	NMConnection *con;
+	char **strv = NULL, **iter;
 	guint i = 0;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	strv = nmc_strsplit_set (val, " \t,", 0);
-	if (!verify_string_list (strv, prop, nm_utils_is_uuid, error)) {
-		g_strfreev (strv);
-		return FALSE;
+	for (iter = strv; iter && *iter; iter++) {
+		if (**iter == '\0')
+			continue;
+
+		if (nm_utils_is_uuid (*iter)) {
+			con = nmc_find_connection (nm_cli.system_connections,
+			                           "uuid", *iter, NULL);
+			if (!con)
+				printf (_("Warning: %s is not an UUID of any existing connection profile\n"), *iter);
+		} else {
+			con = nmc_find_connection (nm_cli.system_connections,
+			                           "id", *iter, NULL);
+			if (!con) {
+				g_set_error (error, 1, 0, _("'%s' is not a name of any exiting profile"), *iter);
+				g_strfreev (strv);
+				return FALSE;
+			}
+			/* translate id to uuid */
+			g_free (*iter);
+			*iter = g_strdup (nm_connection_get_uuid (con));
+		}
 	}
 
 	while (strv && strv[i])
@@ -2488,6 +2514,17 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_connection_remove_secondaries,
                                nm_setting_connection_get_num_secondaries,
                                nm_setting_connection_remove_secondary,
                                _validate_and_remove_connection_secondary)
+
+static const char *
+nmc_property_connection_describe_secondaries (NMSetting *setting, const char *prop)
+{
+	return _("Enter secondary connections that should be activated when this connection is\n"
+	         "activated. Connections can be specified either by UUID or ID (name). nmcli\n"
+	         "transparently translates names to UUIDs. Note that NetworkManager only supports\n"
+	         "VPNs as secondary connections at the moment.\n"
+	         "The items can be separated by commas or spaces.\n\n"
+	         "Example: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n");
+}
 
 /* --- NM_SETTING_802_1X_SETTING_NAME property setter functions --- */
 #define DEFINE_SETTER_STR_LIST(def_func, set_func) \
@@ -5051,7 +5088,7 @@ nmc_properties_init (void)
 	                    nmc_property_connection_get_secondaries,
 	                    nmc_property_connection_set_secondaries,
 	                    nmc_property_connection_remove_secondaries,
-	                    NULL,
+	                    nmc_property_connection_describe_secondaries,
 	                    NULL,
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, GATEWAY_PING_TIMEOUT),

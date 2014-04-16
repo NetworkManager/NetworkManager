@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2012 Red Hat, Inc.
+ * (C) Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 /* Generated configuration file */
@@ -47,6 +47,10 @@
 # define NMCLI_VERSION VERSION
 #endif
 
+/* Global NmCli object */
+// FIXME: Currently, we pass NmCli over in most APIs, but we might refactor
+// that and use the global variable directly instead.
+NmCli nm_cli;
 
 typedef struct {
 	NmCli *nmc;
@@ -406,8 +410,7 @@ start (gpointer data)
 int
 main (int argc, char *argv[])
 {
-	NmCli nmc;
-	ArgsInfo args_info = { &nmc, argc, argv };
+	ArgsInfo args_info = { &nm_cli, argc, argv };
 
 	/* Set up unix signal handling */
 	if (!setup_signals ())
@@ -425,19 +428,19 @@ main (int argc, char *argv[])
 
 	g_type_init ();
 
-	nmc_init (&nmc);
+	nmc_init (&nm_cli);
 	g_idle_add (start, &args_info);
 
 	loop = g_main_loop_new (NULL, FALSE);  /* create main loop */
 	g_main_loop_run (loop);                /* run main loop */
 
 	/* Print result descripting text */
-	if (nmc.return_value != NMC_RESULT_SUCCESS) {
-		fprintf (stderr, "%s\n", nmc.return_text->str);
+	if (nm_cli.return_value != NMC_RESULT_SUCCESS) {
+		fprintf (stderr, "%s\n", nm_cli.return_text->str);
 	}
 
 	g_main_loop_unref (loop);
-	nmc_cleanup (&nmc);
+	nmc_cleanup (&nm_cli);
 
-	return nmc.return_value;
+	return nm_cli.return_value;
 }

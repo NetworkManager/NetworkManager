@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2012 - 2013 Red Hat, Inc.
+ * (C) Copyright 2012 - 2014 Red Hat, Inc.
  */
 
 #ifndef NMC_COMMON_H
@@ -53,5 +53,10 @@ nmc_vlan_parse_priority_maps (const char *priority_map,
 
 const char *nmc_bond_validate_mode (const char *mode, GError **error);
 gboolean nmc_team_check_config (const char *config, char **out_config, GError **error);
+
+NMConnection *nmc_find_connection (GSList *list,
+                                   const char *filter_type,
+                                   const char *filter_val,
+                                   GSList **start);
 
 #endif /* NMC_COMMON_H */

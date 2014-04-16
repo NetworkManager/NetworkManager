@@ -951,3 +951,69 @@ nmc_team_check_config (const char *config, char **out_config, GError **error)
 	return TRUE;
 }
 
+/*
+ * nmc_find_connection:
+ * @list: list of NMConnections to search in
+ * @filter_type: "id", "uuid", "path" or %NULL
+ * @filter_val: connection to find (connection name, UUID or path)
+ * @start: where to start in @list. The location is updated so that the function
+ *   can be called multiple times (for connections with the same name).
+ *
+ * Find a connection in @list according to @filter_val. @filter_type determines
+ * what property is used for comparison. When @filter_type is NULL, compare
+ * @filter_val against all types. Otherwise, only compare against the specified
+ * type. If 'path' filter type is specified, comparison against numeric index
+ * (in addition to the whole path) is allowed.
+ *
+ * Returns: found connection, or %NULL
+ */
+NMConnection *
+nmc_find_connection (GSList *list,
+                     const char *filter_type,
+                     const char *filter_val,
+                     GSList **start)
+{
+	NMConnection *connection;
+	NMConnection *found = NULL;
+	GSList *iterator;
+	const char *id;
+	const char *uuid;
+	const char *path, *path_num;
+
+	iterator = (start && *start) ? *start : list;
+	while (iterator) {
+		connection = NM_CONNECTION (iterator->data);
+
+		id = nm_connection_get_id (connection);
+		uuid = nm_connection_get_uuid (connection);
+		path = nm_connection_get_path (connection);
+		path_num = path ? strrchr (path, '/') + 1 : NULL;
+
+		/* When filter_type is NULL, compare connection ID (filter_val)
+		 * against all types. Otherwise, only compare against the specific
+		 * type. If 'path' filter type is specified, comparison against
+		 * numeric index (in addition to the whole path) is allowed.
+		 */
+		if (   (   (!filter_type || strcmp (filter_type, "id")  == 0)
+		        && strcmp (filter_val, id) == 0)
+		    || (   (!filter_type || strcmp (filter_type, "uuid") == 0)
+		        && strcmp (filter_val, uuid) == 0)
+		    || (   (!filter_type || strcmp (filter_type, "path") == 0)
+		        && (g_strcmp0 (filter_val, path) == 0 || (filter_type && g_strcmp0 (filter_val, path_num) == 0)))) {
+			if (!start)
+				return connection;
+			if (found) {
+				*start = iterator;
+				return found;
+			}
+			found = connection;
+		}
+
+		iterator = g_slist_next (iterator);
+	}
+
+	if (start)
+		*start = NULL;
+	return found;
+}
+
