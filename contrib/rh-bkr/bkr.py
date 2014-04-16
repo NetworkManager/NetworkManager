@@ -38,12 +38,208 @@ def seq_unique(seq):
             s.add(i)
             yield i
 
-_nitrate_tag = {}
-def nitrate_tag(tag):
-    if tag not in _nitrate_tag:
-        testcases = nitrate.Nitrate()._server.TestCase.filter({'plan__component__name': 'NetworkManager', 'tag__name' : tag})
-        _nitrate_tag[tag] = [ case['script'].split('=')[-1] for case in testcases if case['script'] ]
-    return _nitrate_tag[tag]
+def sub_dict(diction, keys, default=None):
+    r = dict(diction)
+    return dict([ (k, r.pop(k, default)) for k in keys ]), r
+
+def nitrate_get_script_name_for_case(case):
+    name = case.get('script_name', None)
+    if name is None:
+        name = case['script'].split('=')[-1]
+        case['script_name'] = name
+    return name
+
+_nitrate_tags = {}
+def nitrate_get_tag_by_id(tag_id):
+    if tag_id not in _nitrate_tags:
+        tags = nitrate.Nitrate()._server.Tag.get_tags({'ids': [tag_id]})
+        if not tags:
+            _nitrate_tags[tag_id] = None
+        elif len(tags) > 1:
+            raise Error("tag with id %d appears more then once: %s" % (tag_id, repr(tags)))
+        else:
+            _nitrate_tags[tag_id] = tags[0]
+    return _nitrate_tags.get(tag_id, None)
+
+_nitrate_tags_searched_name = {}
+def nitrate_get_tag_by_name(tag_name):
+    if tag_name not in _nitrate_tags_searched_name:
+        tags = nitrate.Nitrate()._server.Tag.get_tags({'names': [tag_name]})
+        for t in tags:
+            _nitrate_tags[t['id']] = t
+        _nitrate_tags_searched_name[tag_name] = 1
+    tags = [ tag for tag_id, tag in _nitrate_tags.iteritems()  if tag['name'] == tag_name ]
+    if not tags:
+        return None
+    if len(tags) > 1:
+        raise Error("tag with name %d appears more then once: %s" % (tag_name, repr(tags)))
+    return tags[0]
+
+_nitrate_cases = {}
+def _nitrate_add_case(case):
+    case_id = case['case_id']
+    if case_id in _nitrate_cases:
+        case2 = _nitrate_cases[case_id]
+        tags = list(sorted(set(case['tag'] + case2['tag'])))
+        case2['tag'] = tags
+    else:
+        _nitrate_cases[case_id] = case
+
+def _nitrate_base_filter(additional=None, default=None):
+    if default is None:
+        # f = {'plan__component__name': 'NetworkManager'}
+        f = {'plan__parent_id': '6726'}
+    else:
+        f = dict(default);
+
+    if additional:
+        for key,value in additional.iteritems():
+            f[key] = value
+    return f
+
+_nitrate_cases_searched_by_tag = {}
+def nitrate_get_cases_by_tag(tag=None, tag_name=None, tag_id=None):
+    if (0 if tag is None else 1) + \
+       (0 if tag_name is None else 1) + \
+       (0 if tag_id is None else 1) != 1:
+        raise Error("Need one filter argument")
+    if tag is None:
+        if tag_name is not None:
+            tag = nitrate_get_tag_by_name(tag_name)
+        if tag_id is not None:
+            tag = nitrate_get_tag_by_id(tag_id)
+    tag_id = tag['id']
+    if not _nitrate_get_cases_all and tag_id not in _nitrate_cases_searched_by_tag:
+        cases = nitrate.Nitrate()._server.TestCase.filter(_nitrate_base_filter({'tag' : tag_id}))
+        for case in cases:
+            _nitrate_add_case(case)
+        _nitrate_cases_searched_by_tag[tag_id] = 1
+    return [ case for case_id, case in _nitrate_cases.iteritems() if tag_id in case['tag'] ]
+
+_nitrate_get_cases_all = False
+def nitrate_get_cases_all():
+    global _nitrate_get_cases_all
+    if not _nitrate_get_cases_all:
+        cases = nitrate.Nitrate()._server.TestCase.filter(_nitrate_base_filter())
+        for case in cases:
+            _nitrate_add_case(case)
+        _nitrate_get_cases_all = True
+    return [ case for case_id, case in _nitrate_cases.iteritems() ]
+
+
+def nitrate_merge_cases(cases, new):
+    for case in new:
+        cases[case['case_id']] = case
+
+def nitrate_subtract_cases(cases, remove, no_cases=None):
+    for case in remove:
+        case_id = case['case_id']
+        case = cases.get(case_id, None)
+        if case is not None:
+            del cases[case_id]
+            if no_cases is not None:
+                no_cases[case_id] = case
+
+def nitrate_cases_get(tags=None, no_tags=None, include_all=False):
+    cases = {}
+    no_cases = {}
+
+    if isinstance(tags, basestring):
+        tags = [tags]
+    if isinstance(no_tags, basestring):
+        no_tags = [no_tags]
+
+    cases_tag = []
+    cases_no_tag = []
+
+    # we have to fetch all the cases by tags esplicitly to merge them properly
+    # in our cache.
+    if not tags or include_all:
+        # only blacklist of ~all~. Fetch first all.
+        cases_tag = [ nitrate_get_cases_all() ]
+    else:
+        cases_tag = [ nitrate_get_cases_by_tag(tag_name=tag) for tag in tags ]
+    if no_tags:
+        cases_no_tag = [ nitrate_get_cases_by_tag(tag_name=tag) for tag in no_tags ]
+
+    for c in cases_tag:
+        nitrate_merge_cases(cases, c)
+    for c in cases_no_tag:
+        nitrate_subtract_cases(cases, c, no_cases)
+
+    return cases, no_cases
+
+def nitrate_filter_by_status(cases, whitelist=None, blacklist=None):
+    cases = _nitrate_index_cases_by_case_id(cases)
+
+    inc = set(cases.keys())
+    exc = set()
+    if whitelist:
+        l = []
+        for wl in whitelist:
+            l.extend([case_id for case_id, case in cases.iteritems() if case['case_status'] == wl])
+        new_inc = inc.intersection(l)
+        exc.update(inc.difference(new_inc))
+        inc = new_inc
+    if blacklist:
+        l = []
+        for wl in blacklist:
+            l.extend([case_id for case_id, case in cases.iteritems() if case['case_status'] == wl])
+        new_exc = inc.intersection(l)
+        inc.difference_update(new_exc)
+        exc.update(new_exc)
+    no_cases, cases = sub_dict(cases, exc)
+    return cases, no_cases
+
+def _nitrate_index_cases_by_case_id(cases):
+    if not isinstance(cases, dict):
+        cases = dict([(case['case_id'], case) for case in cases])
+    return cases
+
+def _nitrate_index_cases_by_tag_id(cases):
+    cases = _nitrate_index_cases_by_case_id(cases)
+    by_tag = {}
+    for case_id, case in cases.iteritems():
+        for tag_id in case['tag']:
+            t = by_tag.get(tag_id, None)
+            if t is None:
+                t = {}
+                by_tag[tag_id] = t
+            t[case_id] = case
+    t2 = {}
+    for tag_id, t in by_tag.iteritems():
+        l = list(t.values())
+        by_tag[tag_id] = l
+        t2[nitrate_get_tag_by_id(tag_id)['name']] = l
+    return t2, by_tag
+
+
+def nitrate_print_cases(cases, prefix=""):
+    cases = _nitrate_index_cases_by_case_id(cases)
+    tags = {}
+    for case_id in sorted(cases.keys(), key=lambda i: (tuple(sorted(cases[i]["plan"])), i)):
+        case = cases[case_id]
+        t = case.get('tag_names', None)
+        if t is None:
+            tag_ids = tuple(case['tag'])
+            t = tags.get(tag_ids, None)
+            if t is None:
+                t = ','.join(sorted(set([nitrate_get_tag_by_id(tag_id)['name']  for tag_id in tag_ids])))
+                tags[tag_ids] = t
+            case['tag_names'] = t
+        print("%s[%10s/%7d] = %-60s - %-20s - [ %s %s]" % (prefix, \
+            ",".join([str(i) for i in sorted(case["plan"])]),
+            case_id,
+            nitrate_get_script_name_for_case(case), case['case_status'], \
+            t, "(?) " if not _nitrate_get_cases_all else ""))
+
+def nitrate_get_cases_by_one_tag(tag_name):
+    tag = nitrate_get_tag_by_name(tag_name)
+    cases = nitrate_get_cases_all()
+    cases_with_tag = nitrate_get_cases_by_tag(tag)
+    cases = _nitrate_index_cases_by_case_id(cases)
+    cases_with_tag = _nitrate_index_cases_by_case_id(cases_with_tag)
+    return sub_dict(cases, cases_with_tag.keys())
 
 def _call(args, stderr=devnull, reason=None, dry_run=False, verbose=False):
     if verbose:
@@ -171,9 +367,14 @@ class CmdSubmit(CmdBase):
         self.parser = argparse.ArgumentParser(prog=sys.argv[0] + " " + name, description='Submit job to beaker.')
         self.parser.add_argument('--no-test', action='store_true', help='do submit the job to beaker')
         self.parser.add_argument('--rpm', '-r', action='append')
-        self.parser.add_argument('--nitrate-tag', '-t', action='append', help='Querry nitrate for tests having this tag. Output is appended to $TESTS')
-        self.parser.add_argument('--tests', '-T', action='append', help='Append argument to $TESTS')
+        self.parser.add_argument('--nitrate-tag', '-t', action='append', help='Query nitrate for tests having this tag. Output is appended to $TESTS. Specifying more then once combines them as AND')
+        self.parser.add_argument('--nitrate-all', '-a', action='store_true', help='Query all nitrate tests')
+        self.parser.add_argument('--nitrate-exclude-tag', '-T', action='append', help='Query nitrate for tests not having this tag. Output is appended to $TESTS. In combination with --nitrate-tag this blacklists cases (after selecting then)')
+        self.parser.add_argument('--nitrate-status', '-s', action='append', help='After selecting the tests by via --nitrate-tag, --nitrate-all, or --nitrate-exclude-tag, further whitelist by status')
+        self.parser.add_argument('--nitrate-exclude-status', '-S', action='append', help='After selecting the tests by via --nitrate-tag, --nitrate-all, --nitrate-exclude-tag, further blacklist by status')
+        self.parser.add_argument('--tests', '-c', action='append', help='Append argument to $TESTS')
         self.parser.add_argument('--job', '-j', help='beaker xml job file')
+        self.parser.add_argument('--verbose', '-v', action='count', help='print more information')
 
     def _prepare_rpms(self):
         if self.options.rpm is None:
@@ -201,14 +402,34 @@ class CmdSubmit(CmdBase):
         if self.rpm is not None:
             self.subs['RPM_LIST'] = [ u for x in self.rpm for u in x[1].url() ]
 
-        if self.options.nitrate_tag or self.options.tests:
-            tests = ''
-            if self.options.nitrate_tag:
-                n_tests = [ tag for n_tag in self.options.nitrate_tag for tag in nitrate_tag(n_tag) ]
-                tests = ','.join(seq_unique(n_tests))
-            if self.options.tests:
-                tests = (tests+',' if tests else "") + ','.join(self.options.tests)
-            self.subs['TESTS'] = tests
+        tests = []
+        if self.options.tests:
+            tests.extend(self.options.tests)
+        if self.options.nitrate_all or self.options.nitrate_tag or self.options.nitrate_exclude_tag:
+
+            cases, no_cases = nitrate_cases_get(self.options.nitrate_tag, self.options.nitrate_exclude_tag, self.options.nitrate_all)
+            cases, no_case_by_status = nitrate_filter_by_status(cases, self.options.nitrate_status, self.options.nitrate_exclude_status)
+
+            if self.options.verbose >= 1:
+                if self.options.nitrate_exclude_tag:
+                    print("Blacklisted %d cases for tags %s..." % (len(no_cases), sorted(set(self.options.nitrate_exclude_tag))))
+                nitrate_print_cases(no_cases, prefix="  - ")
+                if self.options.nitrate_status or self.options.nitrate_exclude_status:
+                    print("Excluded %d cases after %s%s%s" % (len(no_case_by_status), \
+                            (("--nitrate-status=" + ",".join(self.options.nitrate_status)) if self.options.nitrate_status else ""), \
+                            (" and " if (self.options.nitrate_status and self.options.nitrate_exclude_status) else ""), \
+                            (("--nitrate-exclude-status=" + ",".join(self.options.nitrate_exclude_status)) if self.options.nitrate_exclude_status else "")))
+                nitrate_print_cases(no_case_by_status, prefix="  - ")
+                if self.options.nitrate_tag:
+                    print("Selected %d cases for tags %s..." % (len(cases), sorted(set(self.options.nitrate_tag))))
+                else:
+                    print("Selected %d cases..." % (len(cases)))
+                nitrate_print_cases(cases, prefix="  + ")
+            tests.extend([nitrate_get_script_name_for_case(case) for case_id, case in cases.iteritems()])
+        elif self.options.nitrate_status or self.options.nitrate_exclude_status:
+            raise Exception("--nitrate-status or --nitrate-exclude-status makes only sense with selecting nitrate tags")
+
+        self.subs['TESTS'] = ','.join(sorted(set(tests)))
 
         for (k,v) in self.subs.iteritems():
             self._print_substitution(k, v)
