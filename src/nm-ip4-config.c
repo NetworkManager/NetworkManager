@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2013 Red Hat, Inc.
+ * Copyright (C) 2005 - 2014 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -502,8 +502,13 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 	for (i = 0; i < nm_ip4_config_get_num_searches (src); i++)
 		nm_ip4_config_add_search (dst, nm_ip4_config_get_search (src, i));
 
+	/* MSS */
 	if (!nm_ip4_config_get_mss (dst))
 		nm_ip4_config_set_mss (dst, nm_ip4_config_get_mss (src));
+
+	/* MTU */
+	if (!nm_ip4_config_get_mtu (dst))
+		nm_ip4_config_set_mtu (dst, nm_ip4_config_get_mtu (src));
 
 	/* NIS */
 	for (i = 0; i < nm_ip4_config_get_num_nis_servers (src); i++)
@@ -611,8 +616,13 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 		}
 	}
 
+	/* MSS */
 	if (nm_ip4_config_get_mss (src) == nm_ip4_config_get_mss (dst))
 		nm_ip4_config_set_mss (dst, 0);
+
+	/* MTU */
+	if (nm_ip4_config_get_mtu (src) == nm_ip4_config_get_mtu (dst))
+		nm_ip4_config_set_mtu (dst, 0);
 
 	/* NIS */
 	for (i = 0; i < nm_ip4_config_get_num_nis_servers (src); i++) {
