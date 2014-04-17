@@ -1636,7 +1636,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			return NL_OK;
 
 		nl_cache_remove (cached_object);
-		/* Don't announced removed interfaces that are not recognized by
+		/* Don't announce removed interfaces that are not recognized by
 		 * udev. They were either not yet discovered or they have been
 		 * already removed and announced.
 		 */

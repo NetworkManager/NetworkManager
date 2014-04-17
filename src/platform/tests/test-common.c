@@ -48,6 +48,9 @@ accept_signal (SignalData *data)
 void
 wait_signal (SignalData *data)
 {
+	if (data->received)
+		g_error ("Signal '%s' received before waiting for it.", data->name);
+
 	data->loop = g_main_loop_new (NULL, FALSE);
 	g_main_loop_run (data->loop);
 	g_clear_pointer (&data->loop, g_main_loop_unref);
@@ -95,6 +98,11 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 
 	debug ("Received signal '%s-%s' ifindex %d ifname '%s'.", data->name, _change_type_to_string (data->change_type), ifindex, received->name);
 	data->received = TRUE;
+
+	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
+		g_assert (!nm_platform_link_get_name (ifindex));
+	else
+		g_assert (nm_platform_link_get_name (ifindex));
 
 	/* Check the data */
 	g_assert (received->ifindex > 0);

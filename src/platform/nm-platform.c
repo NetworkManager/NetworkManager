@@ -314,7 +314,7 @@ nm_platform_sysctl_get_int_checked (const char *path, guint base, gint64 min, gi
 /**
  * nm_platform_query_devices:
  *
- * Emit #NMPlatform:link-added signals for all currently-known links.
+ * Emit #NMPlatform:link-changed ADDED signals for all currently-known links.
  * Should only be called at startup.
  */
 void
@@ -468,8 +468,8 @@ nm_platform_link_get (int ifindex, NMPlatformLink *link)
  * @address_len: the length of the @address
  *
  * Add a software interface. Sets platform->error to NM_PLATFORM_ERROR_EXISTS
- * if interface is already already exists.  Any link-added signal will be
- * emitted from an idle handler and not within this function.
+ * if interface is already already exists.  Any link-changed ADDED signal will be
+ * emitted directly, before this function finishes.
  */
 static gboolean
 nm_platform_link_add (const char *name, NMLinkType type, const void *address, size_t address_len)
