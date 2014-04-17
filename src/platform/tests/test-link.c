@@ -1,4 +1,5 @@
 #include "test-common.h"
+#include "nm-test-utils.h"
 
 #define LO_INDEX 1
 #define LO_NAME "lo"
@@ -348,6 +349,13 @@ test_bridge (void)
 static void
 test_bond (void)
 {
+	if (SETUP == nm_linux_platform_setup &&
+	    !g_file_test ("/proc/1/net/bonding", G_FILE_TEST_IS_DIR) &&
+	    system("modprobe --show bonding") != 0) {
+		g_test_skip ("Skipping test for bonding: bonding module not available");
+		return;
+	}
+
 	test_software (NM_LINK_TYPE_BOND, "bond");
 }
 
