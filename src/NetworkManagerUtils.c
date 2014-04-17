@@ -1058,6 +1058,9 @@ monotonic_timestamp_get (struct timespec *tp)
  *
  * The returned value will start counting at an undefined point
  * in the past and will always be positive.
+ *
+ * All the nm_utils_get_monotonic_timestamp_*s functions return the same
+ * timestamp but in different scales (nsec, usec, msec, sec).
  **/
 gint64
 nm_utils_get_monotonic_timestamp_us (void)
@@ -1082,6 +1085,9 @@ nm_utils_get_monotonic_timestamp_us (void)
  *
  * The returned value will start counting at an undefined point
  * in the past and will always be positive.
+ *
+ * All the nm_utils_get_monotonic_timestamp_*s functions return the same
+ * timestamp but in different scales (nsec, usec, msec, sec).
  **/
 gint64
 nm_utils_get_monotonic_timestamp_ms (void)
@@ -1106,6 +1112,9 @@ nm_utils_get_monotonic_timestamp_ms (void)
  *
  * This value wraps after roughly 68 years which should be fine for any
  * practical purpose.
+ *
+ * All the nm_utils_get_monotonic_timestamp_*s functions return the same
+ * timestamp but in different scales (nsec, usec, msec, sec).
  **/
 gint32
 nm_utils_get_monotonic_timestamp_s (void)
