@@ -362,6 +362,48 @@ nmtst_platform_ip6_route_full (const char *network, guint plen, const char *gate
 	return route;
 }
 
+inline static void
+nmtst_platform_ip4_routes_equal (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, gsize len)
+{
+	gsize i;
+
+	g_assert (a);
+	g_assert (b);
+
+	for (i = 0; i < len; i++) {
+		if (nm_platform_ip4_route_cmp (&a[i], &b[i]) != 0) {
+			g_error ("Error comparing IPv4 route[%lu]: %s vs %s", (long unsigned) i,
+			         nmtst_static_1024_01 (nm_platform_ip4_route_to_string (&a[i])),
+			         nmtst_static_1024_02 (nm_platform_ip4_route_to_string (&b[i])));
+			g_assert_not_reached ();
+		}
+
+		/* also check with memcmp, though this might fail for valid programs (due to field alignment) */
+		g_assert_cmpint (memcmp (&a[i], &b[i], sizeof (a[i])), ==, 0);
+	}
+}
+
+inline static void
+nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gsize len)
+{
+	gsize i;
+
+	g_assert (a);
+	g_assert (b);
+
+	for (i = 0; i < len; i++) {
+		if (nm_platform_ip6_route_cmp (&a[i], &b[i]) != 0) {
+			g_error ("Error comparing IPv6 route[%lu]: %s vs %s", (long unsigned) i,
+			         nmtst_static_1024_01 (nm_platform_ip6_route_to_string (&a[i])),
+			         nmtst_static_1024_02 (nm_platform_ip6_route_to_string (&b[i])));
+			g_assert_not_reached ();
+		}
+
+		/* also check with memcmp, though this might fail for valid programs (due to field alignment) */
+		g_assert_cmpint (memcmp (&a[i], &b[i], sizeof (a[i])), ==, 0);
+	}
+}
+
 #endif
 
 
