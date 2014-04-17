@@ -827,6 +827,7 @@ ip4_address_add (NMPlatform *platform, int ifindex,
 	int i;
 
 	memset (&address, 0, sizeof (address));
+	address.source = NM_PLATFORM_SOURCE_KERNEL;
 	address.ifindex = ifindex;
 	address.address = addr;
 	address.peer_address = peer_addr;
@@ -868,6 +869,7 @@ ip6_address_add (NMPlatform *platform, int ifindex,
 	int i;
 
 	memset (&address, 0, sizeof (address));
+	address.source = NM_PLATFORM_SOURCE_KERNEL;
 	address.ifindex = ifindex;
 	address.address = addr;
 	address.peer_address = peer_addr;
@@ -1045,6 +1047,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
 	guint i;
 
 	memset (&route, 0, sizeof (route));
+	route.source = NM_PLATFORM_SOURCE_KERNEL;
 	route.ifindex = ifindex;
 	route.network = network;
 	route.plen = plen;
@@ -1082,6 +1085,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 	guint i;
 
 	memset (&route, 0, sizeof (route));
+	route.source = NM_PLATFORM_SOURCE_KERNEL;
 	route.ifindex = ifindex;
 	route.network = network;
 	route.plen = plen;
