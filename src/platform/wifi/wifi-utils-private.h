@@ -56,6 +56,8 @@ struct WifiData {
 
 	void (*deinit) (WifiData *data);
 
+	gboolean (*get_wowlan) (WifiData *data);
+
 	/* OLPC Mesh-only functions */
 
 	guint32 (*get_mesh_channel) (WifiData *data);

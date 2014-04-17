@@ -902,6 +902,23 @@ nm_platform_link_get_physical_port_id (int ifindex)
 }
 
 /**
+ * nm_platform_link_get_wake_onlan:
+ * @ifindex: Interface index
+ *
+ * Returns: the "Wake-on-LAN" status for @ifindex.
+ */
+gboolean
+nm_platform_link_get_wake_on_lan (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (klass->link_get_wake_on_lan, FALSE);
+
+	return klass->link_get_wake_on_lan (platform, ifindex);
+}
+
+/**
  * nm_platform_link_enslave:
  * @master: Interface index of the master
  * @slave: Interface index of the slave
