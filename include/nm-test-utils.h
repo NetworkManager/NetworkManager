@@ -40,10 +40,18 @@ extern struct __nmtst_internal __nmtst_internal;
 #define NMTST_DEFINE() \
 	struct __nmtst_internal __nmtst_internal = { 0 };
 
+
+inline static gboolean
+nmtst_initialized (void)
+{
+	return !!__nmtst_internal.rand0;
+}
+
+
 inline static void
 nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_domains)
 {
-	g_assert (!__nmtst_internal.rand0);
+	g_assert (!nmtst_initialized ());
 
 	g_assert (!((!!argc) ^ (!!argv)));
 	if (argc) {
@@ -71,13 +79,15 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 inline static GRand *
 nmtst_get_rand0 ()
 {
-	g_assert (__nmtst_internal.rand0);
+	g_assert (nmtst_initialized ());
 	return __nmtst_internal.rand0;
 }
 
 inline static GRand *
 nmtst_get_rand ()
 {
+	g_assert (nmtst_initialized ());
+
 	if (G_UNLIKELY (!__nmtst_internal.rand)) {
 		guint32 seed;
 		const char *str;
