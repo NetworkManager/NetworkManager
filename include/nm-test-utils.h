@@ -242,6 +242,26 @@ nmtst_get_rand ()
 	return __nmtst_internal.rand;
 }
 
+
+#define __define_nmtst_static(NUM,SIZE) \
+inline static const char * \
+nmtst_static_##SIZE##_##NUM (const char *str) \
+{ \
+	gsize l; \
+	static char buf[SIZE]; \
+\
+	if (!str) \
+		return NULL; \
+	l = g_strlcpy (buf, str, sizeof (buf)); \
+	g_assert (l < sizeof (buf)); \
+	return buf; \
+}
+__define_nmtst_static(01, 1024)
+__define_nmtst_static(02, 1024)
+__define_nmtst_static(03, 1024)
+#undef __define_nmtst_static
+
+
 #define NMTST_SWAP(x,y) \
 	G_STMT_START { \
 		char __nmtst_swap_temp[sizeof(x) == sizeof(y) ? (signed) sizeof(x) : -1]; \
