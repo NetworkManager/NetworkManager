@@ -39,9 +39,7 @@ extern struct __nmtst_internal __nmtst_internal;
 #define NMTST_DEFINE() \
 	struct __nmtst_internal __nmtst_internal = { 0 };
 
-inline void nmtst_init (int *argc, char ***argv);
-
-inline void
+inline static void
 nmtst_init (int *argc, char ***argv)
 {
 	g_assert (!__nmtst_internal.rand0);
@@ -61,18 +59,14 @@ nmtst_init (int *argc, char ***argv)
 	__nmtst_internal.rand0 = g_rand_new_with_seed (0);
 }
 
-inline GRand *nmtst_get_rand0 (void);
-
-inline GRand *
+inline static GRand *
 nmtst_get_rand0 ()
 {
 	g_assert (__nmtst_internal.rand0);
 	return __nmtst_internal.rand0;
 }
 
-inline GRand *nmtst_get_rand (void);
-
-inline GRand *
+inline static GRand *
 nmtst_get_rand ()
 {
 	if (G_UNLIKELY (!__nmtst_internal.rand)) {
@@ -109,8 +103,7 @@ nmtst_get_rand ()
 		memcpy(&x, __nmtst_swap_temp, sizeof(x)); \
 	} G_STMT_END
 
-inline guint32 nmtst_inet4_from_string (const char *str);
-inline guint32
+inline static guint32
 nmtst_inet4_from_string (const char *str)
 {
 	guint32 addr;
@@ -126,8 +119,7 @@ nmtst_inet4_from_string (const char *str)
 	return addr;
 }
 
-inline struct in6_addr *nmtst_inet6_from_string (const char *str);
-inline struct in6_addr *
+inline static struct in6_addr *
 nmtst_inet6_from_string (const char *str)
 {
 	static struct in6_addr addr;
@@ -145,9 +137,7 @@ nmtst_inet6_from_string (const char *str)
 
 #ifdef NM_PLATFORM_H
 
-inline NMPlatformIP6Address *nmtst_platform_ip6_address (const char *address, const char *peer_address, guint plen);
-
-inline NMPlatformIP6Address *
+inline static NMPlatformIP6Address *
 nmtst_platform_ip6_address (const char *address, const char *peer_address, guint plen)
 {
 	static NMPlatformIP6Address addr;
@@ -160,13 +150,7 @@ nmtst_platform_ip6_address (const char *address, const char *peer_address, guint
 	return &addr;
 }
 
-
-inline NMPlatformIP6Address *
-nmtst_platform_ip6_address_full (const char *address, const char *peer_address, guint plen,
-                                 int ifindex, NMPlatformSource source, guint32 timestamp,
-                                 guint32 lifetime, guint32 preferred, guint flags);
-
-inline NMPlatformIP6Address *
+inline static NMPlatformIP6Address *
 nmtst_platform_ip6_address_full (const char *address, const char *peer_address, guint plen,
                                  int ifindex, NMPlatformSource source, guint32 timestamp,
                                  guint32 lifetime, guint32 preferred, guint flags)
@@ -183,10 +167,7 @@ nmtst_platform_ip6_address_full (const char *address, const char *peer_address, 
 	return addr;
 }
 
-
-inline NMPlatformIP6Route * nmtst_platform_ip6_route (const char *network, guint plen, const char *gateway);
-
-inline NMPlatformIP6Route *
+inline static NMPlatformIP6Route *
 nmtst_platform_ip6_route (const char *network, guint plen, const char *gateway)
 {
 	static NMPlatformIP6Route route;
@@ -199,13 +180,7 @@ nmtst_platform_ip6_route (const char *network, guint plen, const char *gateway)
 	return &route;
 }
 
-
-inline NMPlatformIP6Route *
-nmtst_platform_ip6_route_full (const char *network, guint plen, const char *gateway,
-                               int ifindex, NMPlatformSource source,
-                               guint metric, guint mss);
-
-inline NMPlatformIP6Route *
+inline static NMPlatformIP6Route *
 nmtst_platform_ip6_route_full (const char *network, guint plen, const char *gateway,
                                int ifindex, NMPlatformSource source,
                                guint metric, guint mss)
@@ -225,9 +200,7 @@ nmtst_platform_ip6_route_full (const char *network, guint plen, const char *gate
 
 #ifdef NM_IP4_CONFIG_H
 
-inline NMIP4Config *nmtst_ip4_config_clone (NMIP4Config *config);
-
-inline NMIP4Config *
+inline static NMIP4Config *
 nmtst_ip4_config_clone (NMIP4Config *config)
 {
 	NMIP4Config *copy = nm_ip4_config_new ();
@@ -243,9 +216,7 @@ nmtst_ip4_config_clone (NMIP4Config *config)
 
 #ifdef NM_IP6_CONFIG_H
 
-inline NMIP6Config *nmtst_ip6_config_clone (NMIP6Config *config);
-
-inline NMIP6Config *
+inline static NMIP6Config *
 nmtst_ip6_config_clone (NMIP6Config *config)
 {
 	NMIP6Config *copy = nm_ip6_config_new ();
