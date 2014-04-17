@@ -24,11 +24,10 @@
 #include <stdio.h>
 
 #include <sys/ioctl.h>
-#include <net/if.h>
 #include <unistd.h>
 
 #include "plugin.h"
-#include "wifi-utils.h"
+#include "nm-platform.h"
 
 #include "net_parser.h"
 #include "net_utils.h"
@@ -172,13 +171,16 @@ init_block_by_line (gchar * buf)
 		else if (ignore_connection_name (pos)) {
 			/* ignored connection */
 			conn = add_new_connection_config ("ignore", pos);
-		} else
-			if (if_nametoindex (pos) && !wifi_utils_is_wifi (pos, NULL))
+		} else {
+			int ifindex = nm_platform_link_get_ifindex (pos);
+
+			if (ifindex && nm_platform_link_get_type (ifindex) != NM_LINK_TYPE_WIFI)
 				/* wired connection */
 				conn = add_new_connection_config ("wired", pos);
 			else
 				/* wireless connection */
 				conn = add_new_connection_config ("wireless", pos);
+		}
 	}
 	data = g_strdup (key_value[1]);
 	tmp = strip_string (data, '"');

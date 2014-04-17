@@ -53,10 +53,6 @@
 #include "nm-manager.h"
 #include "nm-enum-types.h"
 #include "nm-dbus-manager.h"
-#include "wifi-utils.h"
-#if HAVE_WEXT
-#include "wifi-utils-wext.h"
-#endif
 
 /* This is a bug; but we can't really change API now... */
 #include "NetworkManagerVPN.h"
@@ -82,8 +78,6 @@ enum {
 
 struct _NMDeviceOlpcMeshPrivate {
 	gboolean          dispose_has_run;
-
-	WifiData *        wifi_data;
 
 	NMDevice *        companion;
 	gboolean          stage1_waiting;
@@ -126,6 +120,7 @@ constructor (GType type,
 	GObjectClass *klass;
 	NMDeviceOlpcMesh *self;
 	NMDeviceOlpcMeshPrivate *priv;
+	NMDeviceWifiCapabilities caps;
 
 	klass = G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class);
 	object = klass->constructor (type, n_construct_params, construct_params);
@@ -139,17 +134,7 @@ constructor (GType type,
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            nm_device_get_ifindex (NM_DEVICE (self)));
 
-	/*
-	 * The kernel driver now uses nl80211, but we force use of WEXT because
-	 * the cfg80211 interactions are not quite ready to support access to
-	 * mesh control through nl80211 just yet.
-	 */
-#if HAVE_WEXT
-	priv->wifi_data = wifi_wext_init (nm_device_get_iface (NM_DEVICE (self)),
-	                                  nm_device_get_ifindex (NM_DEVICE (self)),
-	                                  FALSE);
-#endif
-	if (priv->wifi_data == NULL) {
+	if (!nm_platform_wifi_get_capabilities (nm_device_get_ifindex (NM_DEVICE (self)), &caps)) {
 		nm_log_warn (LOGD_HW | LOGD_OLPC_MESH, "(%s): failed to initialize WiFi driver",
 		             nm_device_get_iface (NM_DEVICE (self)));
 		g_object_unref (object);
@@ -287,10 +272,10 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 static void
 _mesh_set_channel (NMDeviceOlpcMesh *self, guint32 channel)
 {
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
+	int ifindex = nm_device_get_ifindex (NM_DEVICE (self));
 
-	if (wifi_utils_get_mesh_channel (priv->wifi_data) != channel) {
-		if (wifi_utils_set_mesh_channel (priv->wifi_data, channel))
+	if (nm_platform_mesh_get_channel (ifindex) != channel) {
+		if (nm_platform_mesh_set_channel (ifindex, channel))
 			g_object_notify (G_OBJECT (self), NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL);
 	}
 }
@@ -299,7 +284,6 @@ static NMActStageReturn
 act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (dev);
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMSettingOlpcMesh *s_mesh;
 	guint32 channel;
@@ -315,7 +299,8 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	channel = nm_setting_olpc_mesh_get_channel (s_mesh);
 	if (channel != 0)
 		_mesh_set_channel (self, channel);
-	wifi_utils_set_mesh_ssid (priv->wifi_data, nm_setting_olpc_mesh_get_ssid (s_mesh));
+	nm_platform_mesh_set_ssid (nm_device_get_ifindex (dev),
+	                           nm_setting_olpc_mesh_get_ssid (s_mesh));
 
 	anycast_addr_array = nm_setting_olpc_mesh_get_dhcp_anycast_address (s_mesh);
 	if (anycast_addr_array)
@@ -369,9 +354,6 @@ dispose (GObject *object)
 	}
 	priv->dispose_has_run = TRUE;
 
-	if (priv->wifi_data)
-		wifi_utils_deinit (priv->wifi_data);
-
 	companion_cleanup (self);
 
 	if (priv->device_added_id)
@@ -397,7 +379,7 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_ACTIVE_CHANNEL:
-		g_value_set_uint (value, wifi_utils_get_mesh_channel (priv->wifi_data));
+		g_value_set_uint (value, nm_platform_mesh_get_channel (nm_device_get_ifindex (NM_DEVICE (device))));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

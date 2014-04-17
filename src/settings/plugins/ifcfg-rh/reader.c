@@ -53,7 +53,7 @@
 #include <nm-util-private.h>
 #include <nm-utils.h>
 
-#include "wifi-utils.h"
+#include "nm-platform.h"
 #include "nm-posix-signals.h"
 #include "NetworkManagerUtils.h"
 
@@ -4723,6 +4723,21 @@ is_vlan_device (const char *name, shvarFile *parsed)
 	return FALSE;
 }
 
+static gboolean
+is_wifi_device (const char *name, shvarFile *parsed)
+{
+	int ifindex;
+
+	g_return_val_if_fail (name != NULL, FALSE);
+	g_return_val_if_fail (parsed != NULL, FALSE);
+
+	ifindex = nm_platform_link_get_ifindex (name);
+	if (ifindex == 0)
+		return FALSE;
+
+	return nm_platform_link_get_type (ifindex) == NM_LINK_TYPE_WIFI;
+}
+
 static void
 parse_prio_map_list (NMSettingVlan *s_vlan,
                      shvarFile *ifcfg,
@@ -5130,8 +5145,7 @@ connection_from_file (const char *filename,
 				type = g_strdup (TYPE_BOND);
 			else if (is_vlan_device (device, parsed))
 				type = g_strdup (TYPE_VLAN);
-			/* Test wireless extensions */
-			else if (wifi_utils_is_wifi (device, NULL))
+			else if (is_wifi_device (device, parsed))
 				type = g_strdup (TYPE_WIRELESS);
 			else
 				type = g_strdup (TYPE_ETHERNET);

@@ -1221,6 +1221,138 @@ nm_platform_gre_get_properties (int ifindex, NMPlatformGreProperties *props)
 	return klass->gre_get_properties (platform, ifindex, props);
 }
 
+gboolean
+nm_platform_wifi_get_capabilities (int ifindex, NMDeviceWifiCapabilities *caps)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return klass->wifi_get_capabilities (platform, ifindex, caps);
+}
+
+gboolean
+nm_platform_wifi_get_bssid (int ifindex, struct ether_addr *bssid)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return klass->wifi_get_bssid (platform, ifindex, bssid);
+}
+
+GByteArray *
+nm_platform_wifi_get_ssid (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, NULL);
+
+	return klass->wifi_get_ssid (platform, ifindex);
+}
+
+guint32
+nm_platform_wifi_get_frequency (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, 0);
+
+	return klass->wifi_get_frequency (platform, ifindex);
+}
+
+int
+nm_platform_wifi_get_quality (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, 0);
+
+	return klass->wifi_get_quality (platform, ifindex);
+}
+
+guint32
+nm_platform_wifi_get_rate (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, 0);
+
+	return klass->wifi_get_rate (platform, ifindex);
+}
+
+NM80211Mode
+nm_platform_wifi_get_mode (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, NM_802_11_MODE_UNKNOWN);
+
+	return klass->wifi_get_mode (platform, ifindex);
+}
+
+void
+nm_platform_wifi_set_mode (int ifindex, NM80211Mode mode)
+{
+	reset_error ();
+
+	g_return_if_fail (ifindex > 0);
+
+	klass->wifi_set_mode (platform, ifindex, mode);
+}
+
+guint32
+nm_platform_wifi_find_frequency (int ifindex, const guint32 *freqs)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, 0);
+	g_return_val_if_fail (freqs != NULL, 0);
+
+	return klass->wifi_find_frequency (platform, ifindex, freqs);
+}
+
+void
+nm_platform_wifi_indicate_addressing_running (int ifindex, gboolean running)
+{
+	reset_error ();
+
+	g_return_if_fail (ifindex > 0);
+
+	klass->wifi_indicate_addressing_running (platform, ifindex, running);
+}
+
+guint32
+nm_platform_mesh_get_channel (int ifindex)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, 0);
+
+	return klass->mesh_get_channel (platform, ifindex);
+}
+
+gboolean
+nm_platform_mesh_set_channel (int ifindex, guint32 channel)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+
+	return klass->mesh_set_channel (platform, ifindex, channel);
+}
+
+gboolean
+nm_platform_mesh_set_ssid (int ifindex, const GByteArray *ssid)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (ssid != NULL, FALSE);
+
+	return klass->mesh_set_ssid (platform, ifindex, ssid);
+}
+
 /******************************************************************/
 
 GArray *

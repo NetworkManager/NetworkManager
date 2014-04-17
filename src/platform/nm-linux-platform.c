@@ -49,6 +49,7 @@
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "wifi/wifi-utils.h"
+#include "wifi/wifi-utils-wext.h"
 
 /* This is only included for the translation of VLAN flags */
 #include "nm-setting-vlan.h"
@@ -68,6 +69,8 @@ typedef struct {
 
 	GUdevClient *udev_client;
 	GHashTable *udev_devices;
+
+	GHashTable *wifi_data;
 
 	int support_kernel_extended_ifa_flags;
 } NMLinuxPlatformPrivate;
@@ -1220,6 +1223,7 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			case REMOVED:
 				check_cache_items (platform, priv->address_cache, device.ifindex);
 				check_cache_items (platform, priv->route_cache, device.ifindex);
+				g_hash_table_remove (priv->wifi_data, GINT_TO_POINTER (device.ifindex));
 				break;
 			default:
 				break;
@@ -2699,6 +2703,176 @@ gre_get_properties (NMPlatform *platform, int ifindex, NMPlatformGreProperties *
 	return (err == 0);
 }
 
+static WifiData *
+wifi_get_wifi_data (NMPlatform *platform, int ifindex)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	WifiData *wifi_data;
+
+	wifi_data = g_hash_table_lookup (priv->wifi_data, GINT_TO_POINTER (ifindex));
+	if (!wifi_data) {
+		NMLinkType type;
+		const char *ifname;
+
+		type = link_get_type (platform, ifindex);
+		ifname = link_get_name (platform, ifindex);
+
+		if (type == NM_LINK_TYPE_WIFI)
+			wifi_data = wifi_utils_init (ifname, ifindex, TRUE);
+		else if (type == NM_LINK_TYPE_OLPC_MESH) {
+			/* The kernel driver now uses nl80211, but we force use of WEXT because
+			 * the cfg80211 interactions are not quite ready to support access to
+			 * mesh control through nl80211 just yet.
+			 */
+#if HAVE_WEXT
+			wifi_data = wifi_wext_init (ifname, ifindex, FALSE);
+#endif
+		}
+
+		if (wifi_data)
+			g_hash_table_insert (priv->wifi_data, GINT_TO_POINTER (ifindex), wifi_data);
+	}
+
+	return wifi_data;
+}
+
+static gboolean
+wifi_get_capabilities (NMPlatform *platform, int ifindex, NMDeviceWifiCapabilities *caps)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (!wifi_data)
+		return FALSE;
+
+	if (caps)
+		*caps = wifi_utils_get_caps (wifi_data);
+	return TRUE;
+}
+
+static gboolean
+wifi_get_bssid (NMPlatform *platform, int ifindex, struct ether_addr *bssid)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (!wifi_data)
+		return FALSE;
+	return wifi_utils_get_bssid (wifi_data, bssid);
+}
+
+static GByteArray *
+wifi_get_ssid (NMPlatform *platform, int ifindex)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (!wifi_data)
+		return NULL;
+	return wifi_utils_get_ssid (wifi_data);
+}
+
+static guint32
+wifi_get_frequency (NMPlatform *platform, int ifindex)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (!wifi_data)
+		return 0;
+	return wifi_utils_get_freq (wifi_data);
+}
+
+static gboolean
+wifi_get_quality (NMPlatform *platform, int ifindex)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (!wifi_data)
+		return FALSE;
+	return wifi_utils_get_qual (wifi_data);
+}
+
+static guint32
+wifi_get_rate (NMPlatform *platform, int ifindex)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (!wifi_data)
+		return FALSE;
+	return wifi_utils_get_rate (wifi_data);
+}
+
+static NM80211Mode
+wifi_get_mode (NMPlatform *platform, int ifindex)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (!wifi_data)
+		return NM_802_11_MODE_UNKNOWN;
+
+	return wifi_utils_get_mode (wifi_data);
+}
+
+static void
+wifi_set_mode (NMPlatform *platform, int ifindex, NM80211Mode mode)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (wifi_data)
+		wifi_utils_set_mode (wifi_data, mode);
+}
+
+static guint32
+wifi_find_frequency (NMPlatform *platform, int ifindex, const guint32 *freqs)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (!wifi_data)
+		return 0;
+
+	return wifi_utils_find_freq (wifi_data, freqs);
+}
+
+static void
+wifi_indicate_addressing_running (NMPlatform *platform, int ifindex, gboolean running)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (wifi_data)
+		wifi_utils_indicate_addressing_running (wifi_data, running);
+}
+
+
+static guint32
+mesh_get_channel (NMPlatform *platform, int ifindex)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (!wifi_data)
+		return 0;
+
+	return wifi_utils_get_mesh_channel (wifi_data);
+}
+
+static gboolean
+mesh_set_channel (NMPlatform *platform, int ifindex, guint32 channel)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (!wifi_data)
+		return FALSE;
+
+	return wifi_utils_set_mesh_channel (wifi_data, channel);
+}
+
+static gboolean
+mesh_set_ssid (NMPlatform *platform, int ifindex, const GByteArray *ssid)
+{
+	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
+
+	if (!wifi_data)
+		return FALSE;
+
+	return wifi_utils_set_mesh_ssid (wifi_data, ssid);
+}
+
 /******************************************************************/
 
 static int
@@ -3402,6 +3576,8 @@ setup (NMPlatform *platform)
 	if (nle < 0)
 		nm_log_warn (LOGD_PLATFORM, "Netlink error: requesting RTM_GETADDR failed with %s", nl_geterror (nle));
 
+	priv->wifi_data = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) wifi_utils_deinit);
+
 	return TRUE;
 }
 
@@ -3421,6 +3597,7 @@ nm_linux_platform_finalize (GObject *object)
 
 	g_object_unref (priv->udev_client);
 	g_hash_table_unref (priv->udev_devices);
+	g_hash_table_unref (priv->wifi_data);
 
 	G_OBJECT_CLASS (nm_linux_platform_parent_class)->finalize (object);
 }
@@ -3491,6 +3668,21 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->macvlan_get_properties = macvlan_get_properties;
 	platform_class->vxlan_get_properties = vxlan_get_properties;
 	platform_class->gre_get_properties = gre_get_properties;
+
+	platform_class->wifi_get_capabilities = wifi_get_capabilities;
+	platform_class->wifi_get_bssid = wifi_get_bssid;
+	platform_class->wifi_get_ssid = wifi_get_ssid;
+	platform_class->wifi_get_frequency = wifi_get_frequency;
+	platform_class->wifi_get_quality = wifi_get_quality;
+	platform_class->wifi_get_rate = wifi_get_rate;
+	platform_class->wifi_get_mode = wifi_get_mode;
+	platform_class->wifi_set_mode = wifi_set_mode;
+	platform_class->wifi_find_frequency = wifi_find_frequency;
+	platform_class->wifi_indicate_addressing_running = wifi_indicate_addressing_running;
+
+	platform_class->mesh_get_channel = mesh_get_channel;
+	platform_class->mesh_set_channel = mesh_set_channel;
+	platform_class->mesh_set_ssid = mesh_set_ssid;
 
 	platform_class->ip4_address_get_all = ip4_address_get_all;
 	platform_class->ip6_address_get_all = ip6_address_get_all;

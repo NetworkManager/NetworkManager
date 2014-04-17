@@ -51,22 +51,24 @@ typedef struct {
 	int num_freqs;
 } WifiDataNl80211;
 
-static int ack_handler (struct nl_msg *msg, void *arg)
+static int
+ack_handler (struct nl_msg *msg, void *arg)
 {
 	int *done = arg;
 	*done = 1;
 	return NL_STOP;
 }
 
-static int finish_handler (struct nl_msg *msg, void *arg)
+static int
+finish_handler (struct nl_msg *msg, void *arg)
 {
 	int *done = arg;
 	*done = 1;
 	return NL_SKIP;
 }
 
-static int error_handler (struct sockaddr_nl *nla, struct nlmsgerr *err,
-			  void *arg)
+static int
+error_handler (struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
 {
 	int *done = arg;
 	*done = err->error;
@@ -101,7 +103,7 @@ static int
 _nl80211_send_and_recv (struct nl_sock *nl_sock,
                         struct nl_cb *nl_cb,
                         struct nl_msg *msg,
-                        int (*valid_handler)(struct nl_msg *, void *),
+                        int (*valid_handler) (struct nl_msg *, void *),
                         void *valid_data)
 {
 	struct nl_cb *cb;
@@ -158,10 +160,11 @@ _nl80211_send_and_recv (struct nl_sock *nl_sock,
 static int
 nl80211_send_and_recv (WifiDataNl80211 *nl80211,
                        struct nl_msg *msg,
-                       int (*valid_handler)(struct nl_msg *, void *),
+                       int (*valid_handler) (struct nl_msg *, void *),
                        void *valid_data)
 {
-	return _nl80211_send_and_recv (nl80211->nl_sock, nl80211->nl_cb, msg, valid_handler, valid_data);
+	return _nl80211_send_and_recv (nl80211->nl_sock, nl80211->nl_cb, msg,
+	                               valid_handler, valid_data);
 }
 
 static void
@@ -180,12 +183,13 @@ struct nl80211_iface_info {
 	NM80211Mode mode;
 };
 
-static int nl80211_iface_info_handler (struct nl_msg *msg, void *arg)
+static int
+nl80211_iface_info_handler (struct nl_msg *msg, void *arg)
 {
 	struct nl80211_iface_info *info = arg;
 	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
-                
+
 	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata (gnlh, 0),
 		       genlmsg_attrlen (gnlh, 0), NULL) < 0)
 		return NL_SKIP;
@@ -204,7 +208,7 @@ static int nl80211_iface_info_handler (struct nl_msg *msg, void *arg)
 		info->mode = NM_802_11_MODE_INFRA;
 		break;
 	}
-                          
+
 	return NL_SKIP;
 }
 
@@ -258,7 +262,8 @@ wifi_nl80211_set_mode (WifiData *data, const NM80211Mode mode)
 }
 
 /* @divisor: pass what value @xbm should be divided by to get dBm */
-static guint32 nl80211_xbm_to_percent (gint32 xbm, guint32 divisor)
+static guint32
+nl80211_xbm_to_percent (gint32 xbm, guint32 divisor)
 {
 #define NOISE_FLOOR_DBM  -90
 #define SIGNAL_MAX_DBM   -20
@@ -281,8 +286,9 @@ struct nl80211_bss_info {
 
 #define WLAN_EID_SSID	0
 
-static void find_ssid (guint8 *ies, guint32 ies_len,
-		       guint8 **ssid, guint32 *ssid_len)
+static void
+find_ssid (guint8 *ies, guint32 ies_len,
+           guint8 **ssid, guint32 *ssid_len)
 {
 	*ssid = NULL;
 	*ssid_len = 0;
@@ -300,7 +306,8 @@ static void find_ssid (guint8 *ies, guint32 ies_len,
 	*ssid = ies + 2;
 }
 
-static int nl80211_bss_dump_handler (struct nl_msg *msg, void *arg)
+static int
+nl80211_bss_dump_handler (struct nl_msg *msg, void *arg)
 {
 	struct nl80211_bss_info *info = arg;
 	struct genlmsghdr *gnlh = nlmsg_data (nlmsg_hdr (msg));
@@ -318,7 +325,7 @@ static int nl80211_bss_dump_handler (struct nl_msg *msg, void *arg)
 		[NL80211_BSS_STATUS] = { .type = NLA_U32 },
 	};
 	guint32 status;
-                
+
 	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata (gnlh, 0),
 		       genlmsg_attrlen (gnlh, 0), NULL) < 0)
 		return NL_SKIP;
@@ -362,7 +369,7 @@ static int nl80211_bss_dump_handler (struct nl_msg *msg, void *arg)
 		find_ssid(nla_data (bss[NL80211_BSS_INFORMATION_ELEMENTS]),
 			  nla_len (bss[NL80211_BSS_INFORMATION_ELEMENTS]),
 			  &ssid, &ssid_len);
-		if (ssid && ssid_len && ssid_len <= sizeof(info->ssid)) {
+		if (ssid && ssid_len && ssid_len <= sizeof (info->ssid)) {
 			memcpy (info->ssid, ssid, ssid_len);
 			info->ssid_len = ssid_len;
 		}
@@ -373,12 +380,13 @@ static int nl80211_bss_dump_handler (struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-static void nl80211_get_bss_info (WifiDataNl80211 *nl80211,
-				  struct nl80211_bss_info *bss_info)
+static void
+nl80211_get_bss_info (WifiDataNl80211 *nl80211,
+                      struct nl80211_bss_info *bss_info)
 {
 	struct nl_msg *msg;
 
-	memset(bss_info, 0, sizeof(*bss_info));
+	memset(bss_info, 0, sizeof (*bss_info));
 
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_SCAN, NLM_F_DUMP);
 
@@ -451,7 +459,8 @@ struct nl80211_station_info {
 	gboolean signal_valid;
 };
 
-static int nl80211_station_handler (struct nl_msg *msg, void *arg)
+static int
+nl80211_station_handler (struct nl_msg *msg, void *arg)
 {
 	struct nl80211_station_info *info = arg;
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
@@ -479,23 +488,23 @@ static int nl80211_station_handler (struct nl_msg *msg, void *arg)
 	};
 
 	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata (gnlh, 0),
-		       genlmsg_attrlen (gnlh, 0), NULL) < 0)
+	               genlmsg_attrlen (gnlh, 0), NULL) < 0)
 		return NL_SKIP;
 
 	if (tb[NL80211_ATTR_STA_INFO] == NULL)
 		return NL_SKIP;
 
 	if (nla_parse_nested (sinfo, NL80211_STA_INFO_MAX,
-			      tb[NL80211_ATTR_STA_INFO],
-			      stats_policy))
+	                      tb[NL80211_ATTR_STA_INFO],
+	                      stats_policy))
 		return NL_SKIP;
 
 	if (sinfo[NL80211_STA_INFO_TX_BITRATE] == NULL)
 		return NL_SKIP;
 
 	if (nla_parse_nested (rinfo, NL80211_RATE_INFO_MAX,
-			      sinfo[NL80211_STA_INFO_TX_BITRATE],
-			      rate_policy))
+	                      sinfo[NL80211_STA_INFO_TX_BITRATE],
+	                      rate_policy))
 		return NL_SKIP;
 
 	if (rinfo[NL80211_RATE_INFO_BITRATE] == NULL)
@@ -513,13 +522,14 @@ static int nl80211_station_handler (struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-static void nl80211_get_ap_info (WifiDataNl80211 *nl80211,
-				 struct nl80211_station_info *sta_info)
+static void
+nl80211_get_ap_info (WifiDataNl80211 *nl80211,
+                     struct nl80211_station_info *sta_info)
 {
 	struct nl_msg *msg;
 	struct nl80211_bss_info bss_info;
 
-	memset(sta_info, 0, sizeof(*sta_info));
+	memset(sta_info, 0, sizeof (*sta_info));
 
 	nl80211_get_bss_info (nl80211, &bss_info);
 	if (!bss_info.valid)
@@ -635,7 +645,7 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 	};
 
 	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		       genlmsg_attrlen (gnlh, 0), NULL) < 0)
+	               genlmsg_attrlen (gnlh, 0), NULL) < 0)
 		return NL_SKIP;
 
 	if (tb[NL80211_ATTR_WIPHY_BANDS] == NULL)
@@ -693,18 +703,18 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 		}
 	}
 
-	info->freqs = g_malloc0 (sizeof(guint32) * info->num_freqs);
+	info->freqs = g_malloc0 (sizeof (guint32) * info->num_freqs);
 
 	freq_idx = 0;
 	nla_for_each_nested (nl_band, tb[NL80211_ATTR_WIPHY_BANDS], rem_band) {
 		if (nla_parse_nested (tb_band, NL80211_BAND_ATTR_MAX, nl_band,
-				      NULL) < 0)
+		                      NULL) < 0)
 			return NL_SKIP;
 
 		nla_for_each_nested(nl_freq, tb_band[NL80211_BAND_ATTR_FREQS],
-				    rem_freq) {
+		                    rem_freq) {
 			nla_parse_nested (tb_freq, NL80211_FREQUENCY_ATTR_MAX,
-					  nl_freq, freq_policy);
+			                  nl_freq, freq_policy);
 
 			if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
 				continue;
@@ -720,7 +730,7 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 		int i;
 		__u32 *ciphers = nla_data (tb[NL80211_ATTR_CIPHER_SUITES]);
 
-		num = nla_len (tb[NL80211_ATTR_CIPHER_SUITES]) / sizeof(__u32);
+		num = nla_len (tb[NL80211_ATTR_CIPHER_SUITES]) / sizeof (__u32);
 		for (i = 0; i < num; i++) {
 			switch (ciphers[i]) {
 			case WLAN_CIPHER_SUITE_WEP40:
@@ -730,12 +740,12 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 				info->caps |= NM_WIFI_DEVICE_CAP_CIPHER_WEP104;
 				break;
 			case WLAN_CIPHER_SUITE_TKIP:
-				info->caps |= NM_WIFI_DEVICE_CAP_CIPHER_TKIP |
-					      NM_WIFI_DEVICE_CAP_WPA;
+				info->caps |= (NM_WIFI_DEVICE_CAP_CIPHER_TKIP |
+				               NM_WIFI_DEVICE_CAP_WPA);
 				break;
 			case WLAN_CIPHER_SUITE_CCMP:
-				info->caps |= NM_WIFI_DEVICE_CAP_CIPHER_CCMP |
-					      NM_WIFI_DEVICE_CAP_RSN;
+				info->caps |= (NM_WIFI_DEVICE_CAP_CIPHER_CCMP |
+				               NM_WIFI_DEVICE_CAP_RSN);
 				break;
 			case WLAN_CIPHER_SUITE_AES_CMAC:
 			case WLAN_CIPHER_SUITE_GCMP:
@@ -804,7 +814,7 @@ wifi_nl80211_init (const char *iface, int ifindex)
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WIPHY, 0);
 
 	if (nl80211_send_and_recv (nl80211, msg, nl80211_wiphy_info_handler,
-				   &device_info) < 0) {
+	                           &device_info) < 0) {
 		nm_log_dbg (LOGD_HW | LOGD_WIFI,
 				    "(%s): NL80211_CMD_GET_WIPHY request failed",
 				    nl80211->parent.iface);

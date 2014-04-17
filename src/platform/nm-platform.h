@@ -24,8 +24,11 @@
 #include <glib-object.h>
 #include "nm-glib-compat.h"
 #include <netinet/in.h>
+#include <net/ethernet.h>
 #include <linux/if.h>
 #include <linux/if_addr.h>
+
+#include <NetworkManager.h>
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
 #define NM_PLATFORM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PLATFORM, NMPlatform))
@@ -343,6 +346,21 @@ typedef struct {
 	gboolean (*vxlan_get_properties) (NMPlatform *, int ifindex, NMPlatformVxlanProperties *props);
 	gboolean (*gre_get_properties) (NMPlatform *, int ifindex, NMPlatformGreProperties *props);
 
+	gboolean    (*wifi_get_capabilities) (NMPlatform *, int ifindex, NMDeviceWifiCapabilities *caps);
+	gboolean    (*wifi_get_bssid)        (NMPlatform *, int ifindex, struct ether_addr *bssid);
+	GByteArray *(*wifi_get_ssid)         (NMPlatform *, int ifindex);
+	guint32     (*wifi_get_frequency)    (NMPlatform *, int ifindex);
+	int         (*wifi_get_quality)      (NMPlatform *, int ifindex);
+	guint32     (*wifi_get_rate)         (NMPlatform *, int ifindex);
+	NM80211Mode (*wifi_get_mode)         (NMPlatform *, int ifindex);
+	void        (*wifi_set_mode)         (NMPlatform *, int ifindex, NM80211Mode mode);
+	guint32     (*wifi_find_frequency)   (NMPlatform *, int ifindex, const guint32 *freqs);
+	void        (*wifi_indicate_addressing_running) (NMPlatform *, int ifindex, gboolean running);
+
+	guint32     (*mesh_get_channel)      (NMPlatform *, int ifindex);
+	gboolean    (*mesh_set_channel)      (NMPlatform *, int ifindex, guint32 channel);
+	gboolean    (*mesh_set_ssid)         (NMPlatform *, int ifindex, const GByteArray *ssid);
+
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
 	gboolean (*ip4_address_add) (NMPlatform *, int ifindex,
@@ -473,6 +491,21 @@ gboolean nm_platform_tun_get_properties (int ifindex, NMPlatformTunProperties *p
 gboolean nm_platform_macvlan_get_properties (int ifindex, NMPlatformMacvlanProperties *props);
 gboolean nm_platform_vxlan_get_properties (int ifindex, NMPlatformVxlanProperties *props);
 gboolean nm_platform_gre_get_properties (int ifindex, NMPlatformGreProperties *props);
+
+gboolean    nm_platform_wifi_get_capabilities (int ifindex, NMDeviceWifiCapabilities *caps);
+gboolean    nm_platform_wifi_get_bssid        (int ifindex, struct ether_addr *bssid);
+GByteArray *nm_platform_wifi_get_ssid         (int ifindex);
+guint32     nm_platform_wifi_get_frequency    (int ifindex);
+int         nm_platform_wifi_get_quality      (int ifindex);
+guint32     nm_platform_wifi_get_rate         (int ifindex);
+NM80211Mode nm_platform_wifi_get_mode         (int ifindex);
+void        nm_platform_wifi_set_mode         (int ifindex, NM80211Mode mode);
+guint32     nm_platform_wifi_find_frequency   (int ifindex, const guint32 *freqs);
+void        nm_platform_wifi_indicate_addressing_running (int ifindex, gboolean running);
+
+guint32     nm_platform_mesh_get_channel      (int ifindex);
+gboolean    nm_platform_mesh_set_channel      (int ifindex, guint32 channel);
+gboolean    nm_platform_mesh_set_ssid         (int ifindex, const GByteArray *ssid);
 
 GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);
