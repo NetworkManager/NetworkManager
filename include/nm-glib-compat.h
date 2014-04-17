@@ -91,4 +91,9 @@ g_type_ensure (GType type)
 
 #endif
 
+/* g_test_initialized() is only available since glib 2.36. */
+#if !GLIB_CHECK_VERSION (2, 36, 0)
+#define g_test_initialized() (g_test_config_vars->test_initialized)
+#endif
+
 #endif  /* NM_GLIB_COMPAT_H */

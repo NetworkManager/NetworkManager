@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <glib.h>
 #include <glib-object.h>
+#include <string.h>
 
 
 struct __nmtst_internal
@@ -33,6 +34,7 @@ struct __nmtst_internal
 	GRand *rand0;
 	guint32 rand_seed;
 	GRand *rand;
+	gboolean is_debug;
 };
 
 extern struct __nmtst_internal __nmtst_internal;
@@ -47,14 +49,68 @@ nmtst_initialized (void)
 	return !!__nmtst_internal.rand0;
 }
 
+/* split the string inplace at specific delimiters, allowing escaping with '\\'.
+ * Returns a zero terminated array of pointers into @str.
+ *
+ * The caller must g_free() the returned argv array.
+ **/
+inline static char **
+nmtst_str_split (char *str, const char *delimiters)
+{
+	const char *d;
+	GArray *result = g_array_sized_new (TRUE, FALSE, sizeof (char *), 3);
+
+	g_assert (str);
+	g_assert (delimiters && !strchr (delimiters, '\\'));
+
+	while (*str) {
+		gsize i = 0, j = 0;
+
+		while (TRUE) {
+			char c = str[i];
+
+			if (c == '\0') {
+				str[j++] = 0;
+				break;
+			} else if (c == '\\') {
+				str[j++] = str[++i];
+				if (!str[i])
+					break;
+			} else {
+				for (d = delimiters; *d; d++) {
+					if (c == *d) {
+						str[j++] = 0;
+						i++;
+						goto BREAK_INNER_LOOPS;
+					}
+				}
+				str[j++] = c;
+			}
+			i++;
+		}
+
+BREAK_INNER_LOOPS:
+		g_array_append_val (result, str);
+		str = &str[i];
+	}
+
+	return (char **) g_array_free (result, FALSE);
+}
+
 
 inline static void
 nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_domains)
 {
+	const char *nmtst_debug;
+	gboolean is_debug = FALSE;
+	char *c_log_level = NULL, *c_log_domains = NULL;
+	GArray *debug_messages = g_array_new (TRUE, FALSE, sizeof (char *));
+	int i;
+
 	g_assert (!nmtst_initialized ());
 
 	g_assert (!((!!argc) ^ (!!argv)));
-	if (argc) {
+	if (argc && !g_test_initialized ()) {
 		/* g_test_init() is a variadic function, so we cannot pass it
 		 * (variadic) arguments. If you need to pass additional parameters,
 		 * call nmtst_init() with argc==NULL and call g_test_init() yourself. */
@@ -65,7 +121,64 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 	g_type_init ();
 #endif
 
+	is_debug = g_test_verbose ();
+
+	nmtst_debug = g_getenv ("NMTST_DEBUG");
+	if (nmtst_debug) {
+		char **d_argv, **i_argv, *nmtst_debug_copy;
+
+		/* By setting then NMTST_DEBUG variable, @is_debug is set automatically.
+		 * This can be reverted with no-debug (on command line or environment variable). */
+		is_debug = TRUE;
+
+		nmtst_debug_copy = g_strdup (nmtst_debug);
+		d_argv = nmtst_str_split (nmtst_debug_copy, ",; \t\r\n");
+
+		for (i_argv = d_argv; *i_argv; i_argv++) {
+			const char *debug = *i_argv;
+
+			if (!g_ascii_strcasecmp (debug, "debug"))
+				is_debug = TRUE;
+			else if (!g_ascii_strcasecmp (debug, "no-debug")) {
+				/* when specifying the NMTST_DEBUG variable, we set is_debug to true. Use this flag to disable this
+				 * (e.g. for only setting the log-level, but not is_debug). */
+				is_debug = FALSE;
+			} else if (!g_ascii_strncasecmp (debug, "log-level=", strlen ("log-level="))) {
+				g_free (c_log_level);
+				log_level = c_log_level = g_strdup (&debug[strlen ("log-level=")]);
+			} else if (!g_ascii_strncasecmp (debug, "log-domains=", strlen ("log-domains="))) {
+				g_free (c_log_domains);
+				log_domains = c_log_domains = g_strdup (&debug[strlen ("log-domains=")]);
+			} else {
+				char *msg = g_strdup_printf (">>> nmtst: ignore unrecognized NMTST_DEBUG option \"%s\"", debug);
+
+				g_array_append_val (debug_messages, msg);
+			}
+		}
+
+		g_free (d_argv);
+		g_free (nmtst_debug_copy);
+	}
+
+	if (argv && *argv) {
+		 char **a = *argv;
+
+		 for (; *a; a++) {
+			if (!g_ascii_strcasecmp (*a, "--debug"))
+				is_debug = TRUE;
+			else if (!g_ascii_strcasecmp (*a, "--no-debug"))
+				is_debug = FALSE;
+		 }
+	}
+
+	__nmtst_internal.is_debug = is_debug;
 	__nmtst_internal.rand0 = g_rand_new_with_seed (0);
+
+	if (!log_level && log_domains) {
+		/* if the log level is not specified (but the domain is), we assume
+		 * the caller wants to set it depending on is_debug */
+		log_level = is_debug ? "DEBUG" : "WARN";
+	}
 
 	if (log_level || log_domains) {
 		gboolean success = FALSE;
@@ -74,6 +187,21 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 #endif
 		g_assert (success);
 	}
+
+	/* Delay messages until we setup logging. */
+	for (i = 0; i < debug_messages->len; i++)
+		g_message ("%s", g_array_index (debug_messages, const char *, i));
+
+	g_strfreev ((char **) g_array_free (debug_messages, FALSE));
+	g_free (c_log_level);
+	g_free (c_log_domains);
+}
+
+inline static gboolean
+nmtst_is_debug (void)
+{
+	g_assert (nmtst_initialized ());
+	return __nmtst_internal.is_debug;
 }
 
 inline static GRand *
