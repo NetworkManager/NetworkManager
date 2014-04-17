@@ -3594,38 +3594,40 @@ udev_device_added (NMPlatform *platform,
 	auto_nl_object struct rtnl_link *rtnllink = NULL;
 	const char *ifname;
 	int ifindex;
-	gboolean is_changed;
+	gboolean was_announceable = FALSE;
 
 	ifname = g_udev_device_get_name (udev_device);
 	if (!ifname) {
-		debug ("failed to get device's interface");
+		debug ("udev-add: failed to get device's interface");
 		return;
 	}
 
 	if (g_udev_device_get_property (udev_device, "IFINDEX"))
 		ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	else {
-		warning ("(%s): failed to get device's ifindex", ifname);
+		warning ("(%s): udev-add: failed to get device's ifindex", ifname);
+		return;
+	}
+	if (ifindex <= 0) {
+		warning ("(%s): udev-add: retrieved invalid IFINDEX=%d", ifname, ifindex);
 		return;
 	}
 
 	if (!g_udev_device_get_sysfs_path (udev_device)) {
-		debug ("(%s): couldn't determine device path; ignoring...", ifname);
+		debug ("(%s): udev-add: couldn't determine device path; ignoring...", ifname);
 		return;
 	}
 
-	is_changed = g_hash_table_lookup_extended (priv->udev_devices, GINT_TO_POINTER (ifindex), NULL, NULL);
+	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
+	if (rtnllink)
+		was_announceable = link_is_announceable (platform, rtnllink);
+
 	g_hash_table_insert (priv->udev_devices, GINT_TO_POINTER (ifindex),
 	                     g_object_ref (udev_device));
 
-	/* Don't announce devices that have not yet been discovered via Netlink. */
-	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-	if (!rtnllink) {
-		debug ("%s: not found in link cache, ignoring...", ifname);
-		return;
-	}
-
-	announce_object (platform, (struct nl_object *) rtnllink, is_changed ? NM_PLATFORM_SIGNAL_CHANGED : NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_EXTERNAL);
+	/* Announce devices only if they also have been discovered via Netlink. */
+	if (rtnllink && link_is_announceable (platform, rtnllink))
+		announce_object (platform, (struct nl_object *) rtnllink, was_announceable ? NM_PLATFORM_SIGNAL_CHANGED : NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_EXTERNAL);
 }
 
 static void
@@ -3633,12 +3635,13 @@ udev_device_removed (NMPlatform *platform,
                      GUdevDevice *udev_device)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	auto_nl_object struct rtnl_link *rtnllink = NULL;
 	int ifindex = 0;
+	gboolean was_announceable = FALSE;
 
-	if (g_udev_device_get_property (udev_device, "IFINDEX")) {
+	if (g_udev_device_get_property (udev_device, "IFINDEX"))
 		ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
-		g_hash_table_remove (priv->udev_devices, GINT_TO_POINTER (ifindex));
-	} else {
+	else {
 		GHashTableIter iter;
 		gpointer key, value;
 
@@ -3650,19 +3653,24 @@ udev_device_removed (NMPlatform *platform,
 		while (g_hash_table_iter_next (&iter, &key, &value)) {
 			if ((GUdevDevice *)value == udev_device) {
 				ifindex = GPOINTER_TO_INT (key);
-				g_hash_table_iter_remove (&iter);
 				break;
 			}
 		}
 	}
 
-	/* Announce device removal if it's still in the Netlink cache. */
-	if (ifindex) {
-		auto_nl_object struct rtnl_link *device = rtnl_link_get (priv->link_cache, ifindex);
+	debug ("udev-remove: IFINDEX=%d", ifindex);
+	if (ifindex <= 0)
+		return;
 
-		if (device)
-			announce_object (platform, (struct nl_object *) device, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_EXTERNAL);
-	}
+	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
+	if (rtnllink)
+		was_announceable = link_is_announceable (platform, rtnllink);
+
+	g_hash_table_remove (priv->udev_devices, GINT_TO_POINTER (ifindex));
+
+	/* Announce device removal if it is no longer announceable. */
+	if (was_announceable && !link_is_announceable (platform, rtnllink))
+		announce_object (platform, (struct nl_object *) rtnllink, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_EXTERNAL);
 }
 
 static void

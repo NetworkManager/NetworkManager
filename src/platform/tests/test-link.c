@@ -461,9 +461,11 @@ test_internal (void)
 static void
 test_external (void)
 {
+	NMPlatformLink link;
 	SignalData *link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 	SignalData *link_changed, *link_removed;
 	int ifindex;
+	gboolean success;
 
 	run_command ("ip link add %s type %s", DEVICE_NAME, "dummy");
 	wait_signal (link_added);
@@ -475,6 +477,13 @@ test_external (void)
 	g_assert_cmpstr (nm_platform_link_get_type_name (ifindex), ==, DUMMY_TYPEDESC);
 	link_changed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, link_callback, ifindex);
 	link_removed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, link_callback, ifindex);
+
+	success = nm_platform_link_get (ifindex, &link);
+	g_assert (success);
+	if (!link.driver) {
+		/* we still lack the notification via UDEV. Expect another link changed signal. */
+		wait_signal (link_changed);
+	}
 
 	/* Up/connected/arp */
 	g_assert (!nm_platform_link_is_up (ifindex));
