@@ -1,5 +1,6 @@
 #include "test-common.h"
-#include "nm-glib-compat.h"
+
+#include "nm-test-utils.h"
 
 SignalData *
 add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCallback callback, int ifindex, const char *ifname)
@@ -130,24 +131,14 @@ run_command (const char *format, ...)
 	g_free (command);
 }
 
+NMTST_DEFINE();
+
 int
 main (int argc, char **argv)
 {
 	int result;
 
-	openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_DAEMON);
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	g_test_init (&argc, &argv, NULL);
-	/* Enable debug messages if called with --debug */
-	for (; *argv; argv++) {
-		if (!g_strcmp0 (*argv, "--debug")) {
-			nm_logging_setup ("debug", NULL, NULL, NULL);
-		}
-	}
+	nmtst_init (&argc, &argv, NULL, "ALL");
 
 	SETUP ();
 
