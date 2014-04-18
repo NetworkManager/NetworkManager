@@ -86,6 +86,7 @@ def _nitrate_add_case(case):
         _nitrate_cases[case_id] = case
 
 def _nitrate_base_filter(additional=None, default=None):
+    # see https://tcms.engineering.redhat.com/plan/6726/networkmanager#treeview
     if default is None:
         # f = {'plan__component__name': 'NetworkManager'}
         f = {'plan__parent_id': '6726'}
