@@ -75,6 +75,12 @@
         </tp:docstring>
       </arg>
 
+      <arg name="debug" type="b" direction="in">
+        <tp:docstring>
+          Whether to log debug output.
+        </tp:docstring>
+      </arg>
+
       <arg name="results" type="a(sus)" direction="out">
         <tp:docstring>
           Results of dispatching operations.  Each element of the returned

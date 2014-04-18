@@ -62,6 +62,7 @@ enum {
 	LOGD_TEAM       = (1LL << 32),
 	LOGD_CONCHECK   = (1LL << 33),
 	LOGD_DCB        = (1LL << 34), /* Data Center Bridging */
+	LOGD_DISPATCH   = (1LL << 35),
 };
 
 #define LOGD_DHCP (LOGD_DHCP4 | LOGD_DHCP6)

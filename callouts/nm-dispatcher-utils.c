@@ -345,10 +345,10 @@ nm_dispatcher_utils_construct_envp (const char *action,
                                     char **out_iface)
 {
 	const char *iface = NULL, *ip_iface = NULL;
-	const char *uuid = NULL, *id = NULL;
+	const char *uuid = NULL, *id = NULL, *path;
 	NMDeviceState dev_state = NM_DEVICE_STATE_UNKNOWN;
 	GValue *value;
-	char **envp = NULL;
+	char **envp = NULL, *path_item;
 	GSList *items = NULL, *iter;
 	guint i;
 	GHashTable *con_setting_hash;
@@ -359,7 +359,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 
 	/* Hostname changes don't require a device nor contain a connection */
 	if (!strcmp (action, "hostname"))
-		return g_new0 (char *, 1);
+		goto done;
 
 	/* Canonicalize the VPN interface name; "" is used when passing it through
 	 * D-Bus so make sure that's fixed up here.
@@ -445,12 +445,6 @@ nm_dispatcher_utils_construct_envp (const char *action,
 		items = construct_ip6_items (items, vpn_ip6_props, "VPN_");
 	}
 
-	/* Convert the list to an environment pointer */
-	envp = g_new0 (char *, g_slist_length (items) + 1);
-	for (iter = items, i = 0; iter; iter = g_slist_next (iter), i++)
-		envp[i] = (char *) iter->data;
-	g_slist_free (items);
-
 	/* Backwards compat: 'iface' is set in this order:
 	 * 1) VPN interface name
 	 * 2) Device IP interface name
@@ -462,6 +456,19 @@ nm_dispatcher_utils_construct_envp (const char *action,
 		*out_iface = g_strdup (ip_iface);
 	else
 		*out_iface = g_strdup (iface);
+
+ done:
+	path = g_getenv ("PATH");
+	if (path) {
+		path_item = g_strdup_printf ("PATH=%s", path);
+		items = g_slist_prepend (items, path_item);
+	}
+
+	/* Convert the list to an environment pointer */
+	envp = g_new0 (char *, g_slist_length (items) + 1);
+	for (iter = items, i = 0; iter; iter = g_slist_next (iter), i++)
+		envp[i] = (char *) iter->data;
+	g_slist_free (items);
 
 	return envp;
 }

@@ -179,16 +179,16 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 			DispatchResult result;
 
 			if (item->n_values != 3) {
-				nm_log_dbg (LOGD_CORE, "Unexpected number of items in "
-				                       "dispatcher result (got %d, expectd 3)",
-				                       item->n_values);
+				nm_log_dbg (LOGD_DISPATCH, "Unexpected number of items in "
+				            "dispatcher result (got %d, expectd 3)",
+				            item->n_values);
 				goto next;
 			}
 
 			/* Script */
 			tmp = g_value_array_get_nth (item, 0);
 			if (G_VALUE_TYPE (tmp) != G_TYPE_STRING) {
-				nm_log_dbg (LOGD_CORE, "Dispatcher result %d element 0 invalid type %s",
+				nm_log_dbg (LOGD_DISPATCH, "Dispatcher result %d element 0 invalid type %s",
 				            i, G_VALUE_TYPE_NAME (tmp));
 				goto next;
 			}
@@ -197,7 +197,7 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 			/* Result */
 			tmp = g_value_array_get_nth (item, 1);
 			if (G_VALUE_TYPE (tmp) != G_TYPE_UINT) {
-				nm_log_dbg (LOGD_CORE, "Dispatcher result %d element 1 invalid type %s",
+				nm_log_dbg (LOGD_DISPATCH, "Dispatcher result %d element 1 invalid type %s",
 				            i, G_VALUE_TYPE_NAME (tmp));
 				goto next;
 			}
@@ -206,14 +206,14 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 			/* Error */
 			tmp = g_value_array_get_nth (item, 2);
 			if (G_VALUE_TYPE (tmp) != G_TYPE_STRING) {
-				nm_log_dbg (LOGD_CORE, "Dispatcher result %d element 2 invalid type %s",
+				nm_log_dbg (LOGD_DISPATCH, "Dispatcher result %d element 2 invalid type %s",
 				            i, G_VALUE_TYPE_NAME (tmp));
 				goto next;
 			}
 			err = g_value_get_string (tmp);
 
 			if (result != DISPATCH_RESULT_SUCCESS) {
-				nm_log_warn (LOGD_CORE, "Dispatcher script \"%s\" failed with %s: %s",
+				nm_log_warn (LOGD_DISPATCH, "Dispatcher script \"%s\" failed with %s: %s",
 				             script, dispatch_result_to_string (result), err);
 			}
 
@@ -223,7 +223,7 @@ next:
 		g_ptr_array_free (results, TRUE);
 	} else {
 		g_assert (error);
-		nm_log_warn (LOGD_CORE, "Dispatcher failed: (%d) %s", error->code, error->message);
+		nm_log_warn (LOGD_DISPATCH, "Dispatcher failed: (%d) %s", error->code, error->message);
 	}
 
 	if (info->callback)
@@ -285,8 +285,16 @@ _dispatcher_call (DispatcherAction action,
 	DispatchInfo *info;
 
 	/* All actions except 'hostname' require a device */
-	if (action != DISPATCHER_ACTION_HOSTNAME)
+	if (action == DISPATCHER_ACTION_HOSTNAME) {
+		nm_log_dbg (LOGD_DISPATCH, "dispatching action '%s'",
+		            action_to_string (action));
+	} else {
 		g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+		nm_log_dbg (LOGD_DISPATCH, "(%s) dispatching action '%s'",
+		            nm_device_get_iface (device), action_to_string (action));
+	}
+
 	/* VPN actions require at least an IPv4 config (for now) */
 	if (action == DISPATCHER_ACTION_VPN_UP)
 		g_return_val_if_fail (vpn_ip4_config != NULL, NULL);
@@ -297,7 +305,7 @@ _dispatcher_call (DispatcherAction action,
 	                                   NM_DISPATCHER_DBUS_PATH,
 	                                   NM_DISPATCHER_DBUS_IFACE);
 	if (!proxy) {
-		nm_log_err (LOGD_CORE, "could not get dispatcher proxy!");
+		nm_log_err (LOGD_DISPATCH, "could not get dispatcher proxy!");
 		return NULL;
 	}
 
@@ -342,7 +350,7 @@ _dispatcher_call (DispatcherAction action,
 	                                      dispatcher_done_cb,
 	                                      info,
 	                                      (GDestroyNotify) dispatcher_info_free,
-	                                      15000,
+	                                      30000,
 	                                      G_TYPE_STRING, action_to_string (action),
 	                                      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
 	                                      DBUS_TYPE_G_MAP_OF_VARIANT, connection_props,
@@ -354,6 +362,7 @@ _dispatcher_call (DispatcherAction action,
 	                                      G_TYPE_STRING, vpn_iface ? vpn_iface : "",
 	                                      DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip4_props,
 	                                      DBUS_TYPE_G_MAP_OF_VARIANT, vpn_ip6_props,
+	                                      G_TYPE_BOOLEAN, nm_logging_enabled (LOGL_DEBUG, LOGD_DISPATCH),
 	                                      G_TYPE_INVALID);
 	g_hash_table_destroy (connection_hash);
 	g_hash_table_destroy (connection_props);

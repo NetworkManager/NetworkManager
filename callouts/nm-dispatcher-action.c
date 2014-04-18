@@ -46,10 +46,14 @@
 static GMainLoop *loop = NULL;
 static gboolean debug = FALSE;
 
+typedef struct Request Request;
+
 typedef struct {
 	GObject parent;
 
 	/* Private data */
+	Request *current_request;
+	GQueue *pending_requests;
 	guint quit_id;
 	gboolean persist;
 } Handler;
@@ -79,6 +83,7 @@ impl_dispatch (Handler *h,
                const char *vpn_ip_iface,
                GHashTable *vpn_ip4_props,
                GHashTable *vpn_ip6_props,
+               gboolean request_debug,
                DBusGMethodInvocation *context);
 
 #include "nm-dispatcher-glue.h"
@@ -93,8 +98,6 @@ static void
 handler_class_init (HandlerClass *h_class)
 {
 }
-
-typedef struct Request Request;
 
 static void dispatch_one_script (Request *request);
 
@@ -114,6 +117,8 @@ struct Request {
 	char *action;
 	char *iface;
 	char **envp;
+	gboolean debug;
+
 	GPtrArray *scripts;  /* list of ScriptInfo */
 	guint idx;
 
@@ -149,23 +154,56 @@ quit_timeout_cb (gpointer user_data)
 }
 
 static void
+quit_timeout_cancel (Handler *h)
+{
+	if (h->quit_id) {
+		g_source_remove (h->quit_id);
+		h->quit_id = 0;
+	}
+}
+
+static void
 quit_timeout_reschedule (Handler *h)
 {
-	if (h->quit_id)
-		g_source_remove (h->quit_id);
+	quit_timeout_cancel (h);
 	if (!h->persist)
 		h->quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
+}
+
+static void
+start_request (Request *request)
+{
+	if (request->iface)
+		g_message ("Dispatching action '%s' for %s", request->action, request->iface);
+	else
+		g_message ("Dispatching action '%s'", request->action);
+
+	request->handler->current_request = request;
+	dispatch_one_script (request);
+}
+
+static void
+next_request (Handler *h)
+{
+	Request *request = g_queue_pop_head (h->pending_requests);
+
+	if (request) {
+		start_request (request);
+		return;
+	}
+
+	h->current_request = NULL;
+	quit_timeout_reschedule (h);
 }
 
 static gboolean
 next_script (gpointer user_data)
 {
 	Request *request = user_data;
+	Handler *h = request->handler;
 	GPtrArray *results;
 	GValueArray *item;
 	guint i;
-
-	quit_timeout_reschedule (request->handler);
 
 	request->idx++;
 	if (request->idx < request->scripts->len) {
@@ -203,9 +241,17 @@ next_script (gpointer user_data)
 	}
 
 	dbus_g_method_return (request->context, results);
-
-	request_free (request);
 	g_ptr_array_unref (results);
+
+	if (request->debug) {
+		if (request->iface)
+			g_message ("Dispatch '%s' on %s complete", request->action, request->iface);
+		else
+			g_message ("Dispatch '%s' complete", request->action);
+	}
+	request_free (request);
+
+	next_request (h);
 	return FALSE;
 }
 
@@ -240,7 +286,10 @@ script_watch_cb (GPid pid, gint status, gpointer user_data)
 		                                 script->script);
 	}
 
-	if (script->result != DISPATCH_RESULT_SUCCESS) {
+	if (script->result == DISPATCH_RESULT_SUCCESS) {
+		if (script->request->debug)
+			g_message ("Script '%s' complete", script->script);
+	} else {
 		script->result = DISPATCH_RESULT_FAILED;
 		g_warning ("%s", script->error);
 	}
@@ -348,12 +397,12 @@ dispatch_one_script (Request *request)
 	argv[2] = request->action;
 	argv[3] = NULL;
 
-	if (debug)
-		g_message ("Script: %s %s %s", script->script, request->iface ? request->iface : "(none)", request->action);
+	if (request->debug)
+		g_message ("Running script '%s'", script->script);
 
 	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, child_setup, request, &script->pid, &error)) {
 		request->script_watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
-		request->script_timeout_id = g_timeout_add_seconds (3, script_timeout_cb, script);
+		request->script_timeout_id = g_timeout_add_seconds (20, script_timeout_cb, script);
 	} else {
 		g_warning ("Failed to execute script '%s': (%d) %s",
 		           script->script, error->code, error->message);
@@ -420,6 +469,7 @@ impl_dispatch (Handler *h,
                const char *vpn_ip_iface,
                GHashTable *vpn_ip4_props,
                GHashTable *vpn_ip6_props,
+               gboolean request_debug,
                DBusGMethodInvocation *context)
 {
 	GSList *sorted_scripts = NULL;
@@ -435,10 +485,11 @@ impl_dispatch (Handler *h,
 		return;
 	}
 
-	quit_timeout_reschedule (h);
+	quit_timeout_cancel (h);
 
 	request = g_malloc0 (sizeof (*request));
 	request->handler = h;
+	request->debug = request_debug || debug;
 	request->context = context;
 	request->action = g_strdup (str_action);
 
@@ -455,7 +506,7 @@ impl_dispatch (Handler *h,
 	                                                    vpn_ip6_props,
 	                                                    &iface);
 
-	if (debug) {
+	if (request->debug) {
 		g_message ("------------ Action ID %p '%s' Interface %s Environment ------------",
 		           context, str_action, iface ? iface : "(none)");
 		for (p = request->envp; *p; p++)
@@ -474,8 +525,10 @@ impl_dispatch (Handler *h,
 	}
 	g_slist_free (sorted_scripts);
 
-	/* start dispatching scripts */
-	dispatch_one_script (request);
+	if (h->current_request)
+		g_queue_push_tail (h->pending_requests, request);
+	else
+		start_request (request);
 }
 
 static void
@@ -653,6 +706,7 @@ main (int argc, char **argv)
 	if (!handler)
 		return 1;
 	handler->persist = persist;
+	handler->pending_requests = g_queue_new ();
 
 	dbus_g_object_type_install_info (HANDLER_TYPE, &dbus_glib_nm_dispatcher_object_info);
 	dbus_g_connection_register_g_object (bus,
@@ -664,7 +718,9 @@ main (int argc, char **argv)
 
 	g_main_loop_run (loop);
 
+	g_queue_free (handler->pending_requests);
 	g_object_unref (handler);
+
 	dbus_g_connection_unref (bus);
 
 	if (!debug)
