@@ -2989,6 +2989,15 @@ addr4_to_broadcast (struct in_addr *dst, const struct in_addr *src, guint8 plen)
 	}
 }
 
+#define IPV4LL_NETWORK (htonl (0xA9FE0000L))
+#define IPV4LL_NETMASK (htonl (0xFFFF0000L))
+
+static gboolean
+ip4_is_link_local (const struct in_addr *src)
+{
+	return (src->s_addr & IPV4LL_NETMASK) == IPV4LL_NETWORK;
+}
+
 static struct nl_object *
 build_rtnl_addr (int family,
                  int ifindex,
@@ -3011,6 +3020,10 @@ build_rtnl_addr (int family,
 	rtnl_addr_set_ifindex (rtnladdr, ifindex);
 	nle = rtnl_addr_set_local (rtnladdr, nladdr);
 	g_assert (!nle);
+
+	/* Tighten scope (IPv4 only) */
+	if (family == AF_INET && ip4_is_link_local (addr))
+		rtnl_addr_set_scope (rtnladdr, rtnl_str2scope ("link"));
 
 	/* IPv4 Broadcast address */
 	if (family == AF_INET) {
