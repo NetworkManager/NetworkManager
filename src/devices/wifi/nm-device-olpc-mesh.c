@@ -84,10 +84,6 @@ struct _NMDeviceOlpcMeshPrivate {
 	gboolean          stage1_waiting;
 	guint             device_added_id;
 	guint             device_removed_id;
-	guint             cmp_state_changed_id;
-	guint             cmp_scanning_id;
-	guint             cmp_scanning_allowed_id;
-	guint             cmp_autoconnect_allowed_id;
 };
 
 static void state_changed (NMDevice *device, NMDeviceState new_state,
@@ -314,30 +310,10 @@ companion_cleanup (NMDeviceOlpcMesh *self)
 {
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 
-	if (priv->companion == NULL)
-		return;
-
-	if (priv->cmp_state_changed_id) {
-		g_signal_handler_disconnect (priv->companion, priv->cmp_state_changed_id);
-		priv->cmp_state_changed_id = 0;
+	if (priv->companion) {
+		g_signal_handlers_disconnect_by_data (priv->companion, self);
+		priv->companion = NULL;
 	}
-
-	if (priv->cmp_scanning_id) {
-		g_signal_handler_disconnect (priv->companion, priv->cmp_scanning_id);
-		priv->cmp_scanning_id = 0;
-	}
-
-	if (priv->cmp_scanning_allowed_id) {
-		g_signal_handler_disconnect (priv->companion, priv->cmp_scanning_allowed_id);
-		priv->cmp_scanning_allowed_id = 0;
-	}
-
-	if (priv->cmp_autoconnect_allowed_id) {
-		g_signal_handler_disconnect (priv->companion, priv->cmp_autoconnect_allowed_id);
-		priv->cmp_autoconnect_allowed_id = 0;
-	}
-
-	priv->companion = NULL;
 	g_object_notify (G_OBJECT (self), NM_DEVICE_OLPC_MESH_COMPANION);
 }
 
@@ -540,17 +516,17 @@ is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	             nm_device_get_iface (NM_DEVICE (self)),
 	             nm_device_get_iface (other));
 
-	priv->cmp_state_changed_id = g_signal_connect (G_OBJECT (other), "state-changed",
-	                                               G_CALLBACK (companion_state_changed_cb), self);
+	g_signal_connect (G_OBJECT (other), "state-changed",
+	                  G_CALLBACK (companion_state_changed_cb), self);
 
-	priv->cmp_scanning_id = g_signal_connect (G_OBJECT (other), "notify::scanning",
-	                                          G_CALLBACK (companion_notify_cb), self);
+	g_signal_connect (G_OBJECT (other), "notify::scanning",
+	                  G_CALLBACK (companion_notify_cb), self);
 
-	priv->cmp_scanning_allowed_id = g_signal_connect (G_OBJECT (other), "scanning-allowed",
-	                                                  G_CALLBACK (companion_scan_allowed_cb), self);
+	g_signal_connect (G_OBJECT (other), "scanning-allowed",
+	                  G_CALLBACK (companion_scan_allowed_cb), self);
 
-	priv->cmp_autoconnect_allowed_id = g_signal_connect (G_OBJECT (other), "autoconnect-allowed",
-	                                                     G_CALLBACK (companion_autoconnect_allowed_cb), self);
+	g_signal_connect (G_OBJECT (other), "autoconnect-allowed",
+	                  G_CALLBACK (companion_autoconnect_allowed_cb), self);
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_OLPC_MESH_COMPANION);
 
