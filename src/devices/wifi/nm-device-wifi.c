@@ -2336,6 +2336,9 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
 		cleanup_association_attempt (self, FALSE);
 
+		if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY)
+			nm_device_remove_pending_action (device, "waiting for supplicant", TRUE);
+
 		/* If the device is already in UNAVAILABLE state then the state change
 		 * is a NOP and the interface won't be re-acquired in the device state
 		 * change handler.  So ensure we have a new one here so that we're
