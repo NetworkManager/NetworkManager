@@ -78,8 +78,6 @@ enum {
 
 
 struct _NMDeviceOlpcMeshPrivate {
-	gboolean          dispose_has_run;
-
 	NMDevice *        companion;
 	gboolean          stage1_waiting;
 	guint             device_added_id;
@@ -101,11 +99,6 @@ nm_olpc_mesh_error_quark (void)
 static void
 nm_device_olpc_mesh_init (NMDeviceOlpcMesh * self)
 {
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-
-	priv->dispose_has_run = FALSE;
-	priv->companion = NULL;
-	priv->stage1_waiting = FALSE;
 }
 
 static GObject*
@@ -323,18 +316,16 @@ dispose (GObject *object)
 	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (object);
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
 
-	if (priv->dispose_has_run) {
-		G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->dispose (object);
-		return;
-	}
-	priv->dispose_has_run = TRUE;
-
 	companion_cleanup (self);
 
-	if (priv->device_added_id)
+	if (priv->device_added_id) {
 		g_signal_handler_disconnect (nm_manager_get (), priv->device_added_id);
-	if (priv->device_removed_id)
+		priv->device_added_id = 0;
+	}
+	if (priv->device_removed_id) {
 		g_signal_handler_disconnect (nm_manager_get (), priv->device_removed_id);
+		priv->device_removed_id = 0;
+	}
 
 	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->dispose (object);
 }
