@@ -257,6 +257,20 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
+static gboolean
+is_available (NMDevice *dev)
+{
+	NMDeviceOlpcMesh *self = NM_DEVICE_OLPC_MESH (dev);
+
+	if (!NM_DEVICE_OLPC_MESH_GET_PRIVATE (self)->companion) {
+		nm_log_dbg (LOGD_WIFI, "(%s): not available because companion not found",
+		            nm_device_get_iface (dev));
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 /*******************************************************************/
 
 static void
@@ -549,6 +563,7 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->complete_connection = complete_connection;
 
+	parent_class->is_available = is_available;
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->act_stage2_config = act_stage2_config;
 
