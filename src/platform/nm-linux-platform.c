@@ -623,6 +623,8 @@ ethtool_get_driver (const char *ifname)
 {
 	struct ethtool_drvinfo drvinfo = { 0 };
 
+	g_return_val_if_fail (ifname != NULL, NULL);
+
 	drvinfo.cmd = ETHTOOL_GDRVINFO;
 	if (!ethtool_get (ifname, &drvinfo))
 		return NULL;
@@ -665,13 +667,15 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink, const char 
 		const char *driver;
 		const char *ifname;
 
-
 		if (arptype == ARPHRD_LOOPBACK)
 			return_type (NM_LINK_TYPE_LOOPBACK, "loopback");
 		else if (arptype == ARPHRD_INFINIBAND)
 			return_type (NM_LINK_TYPE_INFINIBAND, "infiniband");
 
 		ifname = rtnl_link_get_name (rtnllink);
+		if (!ifname)
+			return_type (NM_LINK_TYPE_UNKNOWN, type);
+
 		if (arptype == 256) {
 			/* Some s390 CTC-type devices report 256 for the encapsulation type
 			 * for some reason, but we need to call them Ethernet. FIXME: use
@@ -1818,6 +1822,7 @@ link_change (NMPlatform *platform, int ifindex, struct rtnl_link *change)
 
 	if (!rtnllink)
 		return FALSE;
+	g_return_val_if_fail (rtnl_link_get_ifindex (change) > 0, FALSE);
 
 	nle = rtnl_link_change (priv->nlh, rtnllink, change, 0);
 
@@ -1943,6 +1948,7 @@ link_change_flags (NMPlatform *platform, int ifindex, unsigned int flags, gboole
 	auto_nl_object struct rtnl_link *change = rtnl_link_alloc ();
 
 	g_return_val_if_fail (change != NULL, FALSE);
+	rtnl_link_set_ifindex (change, ifindex);
 
 	if (value)
 		rtnl_link_set_flags (change, flags);
@@ -2093,6 +2099,7 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 
 	change = rtnl_link_alloc ();
 	g_return_val_if_fail (change, FALSE);
+	rtnl_link_set_ifindex (change, ifindex);
 
 	nladdr = nl_addr_build (AF_LLC, address, length);
 	g_return_val_if_fail (nladdr, FALSE);
@@ -2129,6 +2136,7 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	auto_nl_object struct rtnl_link *change = rtnl_link_alloc ();
 
 	g_return_val_if_fail (change != NULL, FALSE);
+	rtnl_link_set_ifindex (change, ifindex);
 	rtnl_link_set_mtu (change, mtu);
 
 	debug ("link: change %d: mtu %lu", ifindex, (unsigned long)mtu);
@@ -2240,6 +2248,7 @@ link_enslave (NMPlatform *platform, int master, int slave)
 
 	g_return_val_if_fail (change != NULL, FALSE);
 
+	rtnl_link_set_ifindex (change, slave);
 	rtnl_link_set_master (change, master);
 
 	debug ("link: change %d: enslave to master %d", slave, master);
