@@ -112,14 +112,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-typedef struct Supplicant {
-	NMSupplicantManager *mgr;
-	NMSupplicantInterface *iface;
-
-	/* Timeouts and idles */
-	guint con_timeout_id;
-} Supplicant;
-
 struct _NMDeviceWifiPrivate {
 	gboolean          disposed;
 
@@ -139,7 +131,10 @@ struct _NMDeviceWifiPrivate {
 	guint             scanlist_cull_id;
 	gboolean          requested_scan;
 
-	Supplicant        supplicant;
+	NMSupplicantManager   *sup_mgr;
+	NMSupplicantInterface *sup_iface;
+	guint                  sup_timeout_id; /* supplicant association timeout */
+
 	gboolean          ssid_found;
 	NM80211Mode       mode;
 
@@ -158,8 +153,6 @@ static void cancel_pending_scan (NMDeviceWifi *self);
 
 static void cleanup_association_attempt (NMDeviceWifi * self,
                                          gboolean disconnect);
-
-static void remove_supplicant_timeouts (NMDeviceWifi *self);
 
 static void supplicant_iface_state_cb (NMSupplicantInterface *iface,
                                        guint32 new_state,
@@ -248,8 +241,8 @@ constructor (GType type,
 	}
 
 	/* Connect to the supplicant manager */
-	priv->supplicant.mgr = nm_supplicant_manager_get ();
-	g_assert (priv->supplicant.mgr);
+	priv->sup_mgr = nm_supplicant_manager_get ();
+	g_assert (priv->sup_mgr);
 
 	return object;
 }
@@ -261,41 +254,41 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	/* interface already acquired? */
-	g_return_val_if_fail (priv->supplicant.iface == NULL, TRUE);
+	g_return_val_if_fail (priv->sup_iface == NULL, TRUE);
 
-	priv->supplicant.iface = nm_supplicant_manager_iface_get (priv->supplicant.mgr,
-	                                                          nm_device_get_iface (NM_DEVICE (self)),
-	                                                          TRUE);
-	if (priv->supplicant.iface == NULL) {
+	priv->sup_iface = nm_supplicant_manager_iface_get (priv->sup_mgr,
+	                                                   nm_device_get_iface (NM_DEVICE (self)),
+	                                                   TRUE);
+	if (priv->sup_iface == NULL) {
 		nm_log_err (LOGD_WIFI, "Couldn't initialize supplicant interface for %s.",
 		            nm_device_get_iface (NM_DEVICE (self)));
 		return FALSE;
 	}
 
-	if (nm_supplicant_interface_get_state (priv->supplicant.iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
+	if (nm_supplicant_interface_get_state (priv->sup_iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
 		nm_device_add_pending_action (NM_DEVICE (self), "waiting for supplicant", TRUE);
 
-	g_signal_connect (priv->supplicant.iface,
+	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_STATE,
 	                  G_CALLBACK (supplicant_iface_state_cb),
 	                  self);
-	g_signal_connect (priv->supplicant.iface,
+	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_NEW_BSS,
 	                  G_CALLBACK (supplicant_iface_new_bss_cb),
 	                  self);
-	g_signal_connect (priv->supplicant.iface,
+	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_BSS_UPDATED,
 	                  G_CALLBACK (supplicant_iface_bss_updated_cb),
 	                  self);
-	g_signal_connect (priv->supplicant.iface,
+	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_BSS_REMOVED,
 	                  G_CALLBACK (supplicant_iface_bss_removed_cb),
 	                  self);
-	g_signal_connect (priv->supplicant.iface,
+	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_SCAN_DONE,
 	                  G_CALLBACK (supplicant_iface_scan_done_cb),
 	                  self);
-	g_signal_connect (priv->supplicant.iface,
+	g_signal_connect (priv->sup_iface,
 	                  "notify::scanning",
 	                  G_CALLBACK (supplicant_iface_notify_scanning_cb),
 	                  self);
@@ -325,17 +318,17 @@ supplicant_interface_release (NMDeviceWifi *self)
 		priv->scanlist_cull_id = 0;
 	}
 
-	if (priv->supplicant.iface) {
+	if (priv->sup_iface) {
 		remove_supplicant_interface_error_handler (self);
 
 		/* Clear supplicant interface signal handlers */
-		g_signal_handlers_disconnect_by_data (priv->supplicant.iface, self);
+		g_signal_handlers_disconnect_by_data (priv->sup_iface, self);
 
 		/* Tell the supplicant to disconnect from the current AP */
-		nm_supplicant_interface_disconnect (priv->supplicant.iface);
+		nm_supplicant_interface_disconnect (priv->sup_iface);
 
-		nm_supplicant_manager_iface_release (priv->supplicant.mgr, priv->supplicant.iface);
-		priv->supplicant.iface = NULL;
+		nm_supplicant_manager_iface_release (priv->sup_mgr, priv->sup_iface);
+		priv->sup_iface = NULL;
 	}
 }
 
@@ -600,10 +593,10 @@ periodic_update (NMDeviceWifi *self, NMAccessPoint *ignore_ap)
 	 * assume the old one (if any) is still valid until we're told otherwise or
 	 * the connection fails.
 	 */
-	supplicant_state = nm_supplicant_interface_get_state (priv->supplicant.iface);
+	supplicant_state = nm_supplicant_interface_get_state (priv->sup_iface);
 	if (   supplicant_state < NM_SUPPLICANT_INTERFACE_STATE_AUTHENTICATING
 	    || supplicant_state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED
-	    || nm_supplicant_interface_get_scanning (priv->supplicant.iface))
+	    || nm_supplicant_interface_get_scanning (priv->sup_iface))
 		return;
 
 	/* In AP mode we currently have nothing to do. */
@@ -917,8 +910,8 @@ check_connection_compatible (NMDevice *device,
 			return FALSE;
 		}
 
-		if (priv->supplicant.iface) {
-			switch (nm_supplicant_interface_get_ap_support (priv->supplicant.iface)) {
+		if (priv->sup_iface) {
+			switch (nm_supplicant_interface_get_ap_support (priv->sup_iface)) {
 			case AP_SUPPORT_NO:
 				g_set_error_literal (error,
 				                     NM_WIFI_ERROR,
@@ -1229,7 +1222,7 @@ is_available (NMDevice *dev)
 		return FALSE;
 	}
 
-	sup_iface = priv->supplicant.iface;
+	sup_iface = priv->sup_iface;
 	if (!sup_iface) {
 		nm_log_dbg (LOGD_WIFI, "(%s): not available because supplicant not running",
 		            nm_device_get_iface (dev));
@@ -1376,7 +1369,7 @@ impl_device_request_scan (NMDeviceWifi *self,
 	GError *error;
 
 	if (   !priv->enabled
-	    || !priv->supplicant.iface
+	    || !priv->sup_iface
 	    || nm_device_get_state (device) < NM_DEVICE_STATE_DISCONNECTED
 	    || nm_device_is_activating (device)) {
 		error = g_error_new_literal (NM_WIFI_ERROR,
@@ -1385,14 +1378,14 @@ impl_device_request_scan (NMDeviceWifi *self,
 		goto error;
 	}
 
-	if (nm_supplicant_interface_get_scanning (priv->supplicant.iface)) {
+	if (nm_supplicant_interface_get_scanning (priv->sup_iface)) {
 		error = g_error_new_literal (NM_WIFI_ERROR,
 		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
 		                             "Scanning not allowed while already scanning");
 		goto error;
 	}
 
-	last_scan = nm_supplicant_interface_get_last_scan_time (priv->supplicant.iface);
+	last_scan = nm_supplicant_interface_get_last_scan_time (priv->sup_iface);
 	if (last_scan && (nm_utils_get_monotonic_timestamp_s () - last_scan) < 10) {
 		error = g_error_new_literal (NM_WIFI_ERROR,
 		                             NM_WIFI_ERROR_SCAN_NOT_ALLOWED,
@@ -1423,7 +1416,7 @@ scanning_allowed (NMDeviceWifi *self)
 	guint32 sup_state;
 	NMConnection *connection;
 
-	g_return_val_if_fail (priv->supplicant.iface != NULL, FALSE);
+	g_return_val_if_fail (priv->sup_iface != NULL, FALSE);
 
 	/* Scanning not done in AP mode */
 	if (priv->mode == NM_802_11_MODE_AP)
@@ -1452,12 +1445,12 @@ scanning_allowed (NMDeviceWifi *self)
 	}
 
 	/* Don't scan if the supplicant is busy */
-	sup_state = nm_supplicant_interface_get_state (priv->supplicant.iface);
+	sup_state = nm_supplicant_interface_get_state (priv->sup_iface);
 	if (   sup_state == NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING
 	    || sup_state == NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED
 	    || sup_state == NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE
 	    || sup_state == NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE
-	    || nm_supplicant_interface_get_scanning (priv->supplicant.iface))
+	    || nm_supplicant_interface_get_scanning (priv->sup_iface))
 		return FALSE;
 
 	connection = nm_device_get_connection (NM_DEVICE (self));
@@ -1531,7 +1524,7 @@ static GPtrArray *
 build_hidden_probe_list (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	guint max_scan_ssids = nm_supplicant_interface_get_max_scan_ssids (priv->supplicant.iface);
+	guint max_scan_ssids = nm_supplicant_interface_get_max_scan_ssids (priv->sup_iface);
 	GSList *connections, *iter;
 	GPtrArray *ssids = NULL;
 	static GByteArray *nullssid = NULL;
@@ -1608,7 +1601,7 @@ request_wireless_scan (gpointer user_data)
 			}
 		}
 
-		if (nm_supplicant_interface_request_scan (priv->supplicant.iface, ssids)) {
+		if (nm_supplicant_interface_request_scan (priv->sup_iface, ssids)) {
 			/* success */
 			backoff = TRUE;
 			priv->requested_scan = TRUE;
@@ -2015,6 +2008,21 @@ supplicant_iface_bss_removed_cb (NMSupplicantInterface *iface,
 		g_object_set_data (G_OBJECT (ap), WPAS_REMOVED_TAG, GUINT_TO_POINTER (TRUE));
 }
 
+static void
+remove_supplicant_timeouts (NMDeviceWifi *self)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	if (priv->sup_timeout_id) {
+		g_source_remove (priv->sup_timeout_id);
+		priv->sup_timeout_id = 0;
+	}
+
+	if (priv->link_timeout_id) {
+		g_source_remove (priv->link_timeout_id);
+		priv->link_timeout_id = 0;
+	}
+}
 
 static void
 cleanup_association_attempt (NMDeviceWifi *self, gboolean disconnect)
@@ -2023,8 +2031,8 @@ cleanup_association_attempt (NMDeviceWifi *self, gboolean disconnect)
 
 	remove_supplicant_interface_error_handler (self);
 	remove_supplicant_timeouts (self);
-	if (disconnect && priv->supplicant.iface)
-		nm_supplicant_interface_disconnect (priv->supplicant.iface);
+	if (disconnect && priv->sup_iface)
+		nm_supplicant_interface_disconnect (priv->sup_iface);
 }
 
 static void
@@ -2048,21 +2056,6 @@ wifi_secrets_cb (NMActRequest *req,
 	} else
 		nm_device_activate_schedule_stage1_device_prepare (dev);
 }
-
-static void
-remove_link_timeout (NMDeviceWifi *self)
-{
-	NMDeviceWifiPrivate *priv;
-
-	g_return_if_fail (self != NULL);
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	if (priv->link_timeout_id) {
-		g_source_remove (priv->link_timeout_id);
-		priv->link_timeout_id = 0;
-	}
-}
-
 
 /*
  * link_timeout_cb
@@ -2388,8 +2381,8 @@ remove_supplicant_interface_error_handler (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	if (priv->supplicant.iface) {
-		g_signal_handlers_disconnect_by_func (priv->supplicant.iface,
+	if (priv->sup_iface) {
+		g_signal_handlers_disconnect_by_func (priv->sup_iface,
 		                                      supplicant_iface_connection_error_cb,
 		                                      self);
 	}
@@ -2414,21 +2407,6 @@ supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
 	state = nm_device_get_state (NM_DEVICE (self));
 	if (!scanning && state == NM_DEVICE_STATE_ACTIVATED)
 		periodic_update (self, NULL);
-}
-
-static void
-remove_supplicant_connection_timeout (NMDeviceWifi *self)
-{
-	NMDeviceWifiPrivate *priv;
-
-	g_return_if_fail (self != NULL);
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	/* Remove any pending timeouts on the request */
-	if (priv->supplicant.con_timeout_id) {
-		g_source_remove (priv->supplicant.con_timeout_id);
-		priv->supplicant.con_timeout_id = 0;
-	}
 }
 
 static NMActStageReturn
@@ -2564,40 +2542,6 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	return FALSE;
 }
 
-
-static gboolean
-start_supplicant_connection_timeout (NMDeviceWifi *self)
-{
-	NMDeviceWifiPrivate *priv;
-	guint id;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	/* Set up a timeout on the connection attempt to fail it after 25 seconds */
-	id = g_timeout_add_seconds (25, supplicant_connection_timeout_cb, self);
-	if (id == 0) {
-		nm_log_err (LOGD_DEVICE | LOGD_WIFI,
-		            "Activation (%s/wireless): couldn't start supplicant "
-		            "timeout timer.",
-		            nm_device_get_iface (NM_DEVICE (self)));
-		return FALSE;
-	}
-	priv->supplicant.con_timeout_id = id;
-	return TRUE;
-}
-
-
-static void
-remove_supplicant_timeouts (NMDeviceWifi *self)
-{
-	g_return_if_fail (self != NULL);
-
-	remove_supplicant_connection_timeout (self);
-	remove_link_timeout (self);
-}
-
 static NMSupplicantConfig *
 build_supplicant_config (NMDeviceWifi *self,
                          NMConnection *connection,
@@ -2619,7 +2563,7 @@ build_supplicant_config (NMDeviceWifi *self,
 
 	/* Warn if AP mode may not be supported */
 	if (   g_strcmp0 (nm_setting_wireless_get_mode (s_wireless), NM_SETTING_WIRELESS_MODE_AP) == 0
-	    && nm_supplicant_interface_get_ap_support (priv->supplicant.iface) == AP_SUPPORT_UNKNOWN) {
+	    && nm_supplicant_interface_get_ap_support (priv->sup_iface) == AP_SUPPORT_UNKNOWN) {
 		nm_log_warn (LOGD_WIFI, "Supplicant may not support AP mode; connection may time out.");
 	}
 
@@ -2935,12 +2879,12 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	}
 
 	/* Hook up error signal handler to capture association errors */
-	g_signal_connect (priv->supplicant.iface,
+	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR,
 	                  G_CALLBACK (supplicant_iface_connection_error_cb),
 	                  self);
 
-	if (!nm_supplicant_interface_set_config (priv->supplicant.iface, config)) {
+	if (!nm_supplicant_interface_set_config (priv->sup_iface, config)) {
 		nm_log_err (LOGD_DEVICE | LOGD_WIFI,
 		            "Activation (%s/wireless): couldn't send wireless "
 		            "configuration to the supplicant.", iface);
@@ -2948,10 +2892,8 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 		goto out;
 	}
 
-	if (!start_supplicant_connection_timeout (self)) {
-		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
-		goto out;
-	}
+	/* Set up a timeout on the association attempt to fail after 25 seconds */
+	priv->sup_timeout_id = g_timeout_add_seconds (25, supplicant_connection_timeout_cb, self);
 
 	if (!priv->periodic_source_id)
 		priv->periodic_source_id = g_timeout_add_seconds (6, periodic_update_cb, self);
@@ -3257,7 +3199,7 @@ device_state_changed (NMDevice *device,
 		/* Clean up the supplicant interface because in these states the
 		 * device cannot be used.
 		 */
-		if (priv->supplicant.iface)
+		if (priv->sup_iface)
 			supplicant_interface_release (self);
 
 		if (priv->periodic_source_id) {
@@ -3279,14 +3221,14 @@ device_state_changed (NMDevice *device,
 		 * the device is now ready to use.
 		 */
 		if (priv->enabled && (nm_device_get_firmware_missing (device) == FALSE)) {
-			if (!priv->supplicant.iface)
+			if (!priv->sup_iface)
 				supplicant_interface_acquire (self);
 		}
 		clear_aps = TRUE;
 		break;
 	case NM_DEVICE_STATE_NEED_AUTH:
-		if (priv->supplicant.iface)
-			nm_supplicant_interface_disconnect (priv->supplicant.iface);
+		if (priv->sup_iface)
+			nm_supplicant_interface_disconnect (priv->sup_iface);
 		break;
 	case NM_DEVICE_STATE_IP_CHECK:
 		/* Clear any critical protocol notification in the wifi stack */
@@ -3356,7 +3298,7 @@ set_enabled (NMDevice *device, gboolean enabled)
 		}
 
 		/* Re-initialize the supplicant interface and wait for it to be ready */
-		if (priv->supplicant.iface)
+		if (priv->sup_iface)
 			supplicant_interface_release (self);
 		supplicant_interface_acquire (self);
 
@@ -3412,10 +3354,7 @@ dispose (GObject *object)
 	cleanup_association_attempt (self, TRUE);
 	supplicant_interface_release (self);
 
-	if (priv->supplicant.mgr) {
-		g_object_unref (priv->supplicant.mgr);
-		priv->supplicant.mgr = NULL;
-	}
+	g_clear_object (&priv->sup_mgr);
 
 	remove_all_aps (self);
 
@@ -3457,7 +3396,7 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_SCANNING:
-		g_value_set_boolean (value, nm_supplicant_interface_get_scanning (priv->supplicant.iface));
+		g_value_set_boolean (value, nm_supplicant_interface_get_scanning (priv->sup_iface));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
