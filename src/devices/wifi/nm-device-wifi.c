@@ -119,7 +119,6 @@ typedef struct Supplicant {
 	guint iface_error_id;
 
 	/* Timeouts and idles */
-	guint iface_con_error_cb_id;
 	guint con_timeout_id;
 } Supplicant;
 
@@ -315,11 +314,6 @@ remove_supplicant_interface_error_handler (NMDeviceWifi *self)
 	if (priv->supplicant.iface_error_id > 0) {
 		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_error_id);
 		priv->supplicant.iface_error_id = 0;
-	}
-
-	if (priv->supplicant.iface_con_error_cb_id > 0) {
-		g_source_remove (priv->supplicant.iface_con_error_cb_id);
-		priv->supplicant.iface_con_error_cb_id = 0;
 	}
 }
 
@@ -2386,69 +2380,22 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		g_object_notify (G_OBJECT (self), "scanning");
 }
 
-struct iface_con_error_cb_data {
-	NMDeviceWifi *self;
-	char *name;
-	char *message;
-};
-
-static gboolean
-supplicant_iface_connection_error_cb_handler (gpointer user_data)
-{
-	NMDeviceWifi *self;
-	NMDeviceWifiPrivate *priv;
-	struct iface_con_error_cb_data * cb_data = (struct iface_con_error_cb_data *) user_data;
-
-	g_return_val_if_fail (cb_data != NULL, FALSE);
-
-	self = cb_data->self;
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	if (!nm_device_is_activating (NM_DEVICE (self)))
-		goto out;
-
-	nm_log_info (LOGD_DEVICE | LOGD_WIFI,
-	             "Activation (%s/wireless): association request to the supplicant "
-	             "failed: %s - %s",
-	             nm_device_get_iface (NM_DEVICE (self)),
-	             cb_data->name,
-	             cb_data->message);
-
-	cleanup_association_attempt (self, TRUE);
-	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-
-out:
-	priv->supplicant.iface_con_error_cb_id = 0;
-	g_free (cb_data->name);
-	g_free (cb_data->message);
-	g_slice_free (struct iface_con_error_cb_data, cb_data);
-	return FALSE;
-}
-
-
 static void
-supplicant_iface_connection_error_cb (NMSupplicantInterface * iface,
-                                      const char * name,
-                                      const char * message,
-                                      NMDeviceWifi * self)
+supplicant_iface_connection_error_cb (NMSupplicantInterface *iface,
+                                      const char *name,
+                                      const char *message,
+                                      NMDeviceWifi *self)
 {
-	NMDeviceWifiPrivate *priv;
-	struct iface_con_error_cb_data *cb_data;
-	guint id;
+	NMDevice *device = NM_DEVICE (self);
 
-	g_return_if_fail (self != NULL);
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	if (nm_device_is_activating (device)) {
+		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
+		             "Activation (%s/wireless): supplicant association failed: %s - %s",
+		             nm_device_get_iface (device), name, message);
 
-	cb_data = g_slice_new0 (struct iface_con_error_cb_data);
-	cb_data->self = self;
-	cb_data->name = g_strdup (name);
-	cb_data->message = g_strdup (message);
-
-	if (priv->supplicant.iface_con_error_cb_id)
-		g_source_remove (priv->supplicant.iface_con_error_cb_id);
-
-	id = g_idle_add (supplicant_iface_connection_error_cb_handler, cb_data);
-	priv->supplicant.iface_con_error_cb_id = id;
+		cleanup_association_attempt (self, TRUE);
+		nm_device_queue_state (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+	}
 }
 
 static void
