@@ -116,8 +116,6 @@ typedef struct Supplicant {
 	NMSupplicantManager *mgr;
 	NMSupplicantInterface *iface;
 
-	guint iface_error_id;
-
 	/* Timeouts and idles */
 	guint con_timeout_id;
 } Supplicant;
@@ -196,6 +194,8 @@ static void schedule_scanlist_cull (NMDeviceWifi *self);
 static gboolean request_wireless_scan (gpointer user_data);
 
 static void remove_access_point (NMDeviceWifi *device, NMAccessPoint *ap);
+
+static void remove_supplicant_interface_error_handler (NMDeviceWifi *self);
 
 /*****************************************************************/
 
@@ -304,20 +304,6 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 }
 
 static void
-remove_supplicant_interface_error_handler (NMDeviceWifi *self)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	if (!priv->supplicant.iface)
-		return;
-
-	if (priv->supplicant.iface_error_id > 0) {
-		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_error_id);
-		priv->supplicant.iface_error_id = 0;
-	}
-}
-
-static void
 supplicant_interface_release (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv;
@@ -334,17 +320,16 @@ supplicant_interface_release (NMDeviceWifi *self)
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            priv->scan_interval);
 
-	remove_supplicant_interface_error_handler (self);
-
 	if (priv->scanlist_cull_id) {
 		g_source_remove (priv->scanlist_cull_id);
 		priv->scanlist_cull_id = 0;
 	}
 
 	if (priv->supplicant.iface) {
+		remove_supplicant_interface_error_handler (self);
+
 		/* Clear supplicant interface signal handlers */
-		g_signal_handlers_disconnect_matched (priv->supplicant.iface, G_SIGNAL_MATCH_DATA,
-		                                      0, 0, NULL, NULL, self);
+		g_signal_handlers_disconnect_by_data (priv->supplicant.iface, self);
 
 		/* Tell the supplicant to disconnect from the current AP */
 		nm_supplicant_interface_disconnect (priv->supplicant.iface);
@@ -2399,6 +2384,18 @@ supplicant_iface_connection_error_cb (NMSupplicantInterface *iface,
 }
 
 static void
+remove_supplicant_interface_error_handler (NMDeviceWifi *self)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+
+	if (priv->supplicant.iface) {
+		g_signal_handlers_disconnect_by_func (priv->supplicant.iface,
+		                                      supplicant_iface_connection_error_cb,
+		                                      self);
+	}
+}
+
+static void
 supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
                                      GParamSpec *pspec,
                                      NMDeviceWifi *self)
@@ -2866,7 +2863,6 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	const char *iface = nm_device_get_iface (dev);
 	NMSupplicantConfig *config = NULL;
-	gulong id = 0;
 	NMActRequest *req;
 	NMAccessPoint *ap;
 	NMConnection *connection;
@@ -2939,11 +2935,10 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	}
 
 	/* Hook up error signal handler to capture association errors */
-	id = g_signal_connect (priv->supplicant.iface,
-	                       NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR,
-	                       G_CALLBACK (supplicant_iface_connection_error_cb),
-	                       self);
-	priv->supplicant.iface_error_id = id;
+	g_signal_connect (priv->supplicant.iface,
+	                  NM_SUPPLICANT_INTERFACE_CONNECTION_ERROR,
+	                  G_CALLBACK (supplicant_iface_connection_error_cb),
+	                  self);
 
 	if (!nm_supplicant_interface_set_config (priv->supplicant.iface, config)) {
 		nm_log_err (LOGD_DEVICE | LOGD_WIFI,
