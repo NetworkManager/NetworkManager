@@ -564,8 +564,8 @@ link_type_from_udev (NMPlatform *platform, int ifindex, const char *ifname, int 
 	if (!udev_device)
 		return_type (NM_LINK_TYPE_UNKNOWN, "unknown");
 
-	prop = g_udev_device_get_property (udev_device, "ID_NM_OLPC_MESH");
-	if (prop)
+	if (   g_udev_device_get_property (udev_device, "ID_NM_OLPC_MESH")
+	    || g_udev_device_get_sysfs_attr (udev_device, "anycast_mask"))
 		return_type (NM_LINK_TYPE_OLPC_MESH, "olpc-mesh");
 
 	prop = g_udev_device_get_property (udev_device, "DEVTYPE");
