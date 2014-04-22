@@ -5221,10 +5221,36 @@ typedef struct {
 	const char **rl_completer_word_break_characters_x;
 	void (*rl_free_line_state_func) (void);
 	void (*rl_cleanup_after_signal_func) (void);
+	void **rl_completion_display_matches_hook_x;
+	void (*rl_display_match_list_func) (char **, int, int);
+	void (*rl_forced_update_display_func) (void);
 } EditLibSymbols;
 
 static EditLibSymbols edit_lib_symbols;
 static char *pre_input_deftext;
+
+static void
+uuid_display_hook (char **array, int len, int max_len)
+{
+	NMConnection *con;
+	int i, max = 0;
+	char *tmp;
+	const char *id;
+
+	for (i = 1; i <= len; i++) {
+		con = nmc_find_connection (nmc_tab_completion.nmc->system_connections, "uuid", array[i], NULL);
+		id = con ? nm_connection_get_id (con) : NULL;
+		if (id) {
+			tmp = g_strdup_printf ("%s (%s)", array[i], id);
+			g_free (array[i]);
+			array[i] = tmp;
+			if (max < strlen (id))
+				max = strlen (id);
+		}
+	}
+	edit_lib_symbols.rl_display_match_list_func (array, len, max_len + max + 3);
+	edit_lib_symbols.rl_forced_update_display_func ();
+}
 
 static int
 set_deftext (void)
@@ -5447,6 +5473,34 @@ gen_compat_devices (char *text, int state)
 	return ret;
 }
 
+static char *
+gen_vpn_uuids (char *text, int state)
+{
+	GSList *iter;
+	guint len;
+	int i = 0;
+	const char **uuids;
+	char *ret;
+
+	len = g_slist_length (nmc_tab_completion.nmc->system_connections);
+	if (len < 1)
+		return NULL;
+
+	uuids = g_new (const char *, len + 1);
+	for (iter = nmc_tab_completion.nmc->system_connections; iter; iter = g_slist_next (iter)) {
+		const char *type = nm_connection_get_connection_type (NM_CONNECTION (iter->data));
+
+		if (g_strcmp0 (type, NM_SETTING_VPN_SETTING_NAME) == 0)
+			uuids[i++] = nm_connection_get_uuid (NM_CONNECTION (iter->data));
+	}
+	uuids[i] = NULL;
+
+	ret = gen_func_basic (text, state, uuids);
+
+	g_free (uuids);
+	return ret;
+}
+
 typedef char * (*my_gen_func_ptr) (char *, int);
 static my_gen_func_ptr
 get_gen_func_cmd_nmcli (char *str)
@@ -5541,26 +5595,10 @@ should_complete_cmd (const char *line, int end, const char *cmd,
 	return ret;
 }
 
-static gboolean
-should_complete_files (const char *prompt, const char *line)
+static char *
+extract_property_name (const char *prompt, const char *line)
 {
 	char *prop = NULL;
-	gboolean found = FALSE;
-	const char *file_properties[] = {
-		/* '802-1x' properties */
-		"ca-cert",
-		"ca-path",
-		"client-cert",
-		"pac-file",
-		"phase2-ca-cert",
-		"phase2-ca-path",
-		"phase2-client-cert",
-		"private-key",
-		"phase2-private-key",
-		/* 'team' and 'team-port' properties */
-		"config",
-		NULL
-	};
 
 	/* If prompt is set take the property name from it, else extract it from line */
 	if (!prompt) {
@@ -5591,8 +5629,52 @@ should_complete_files (const char *prompt, const char *line)
 		}
 	}
 
+	return prop;
+}
+
+static gboolean
+should_complete_files (const char *prompt, const char *line)
+{
+	char *prop;
+	gboolean found = FALSE;
+	const char *file_properties[] = {
+		/* '802-1x' properties */
+		"ca-cert",
+		"ca-path",
+		"client-cert",
+		"pac-file",
+		"phase2-ca-cert",
+		"phase2-ca-path",
+		"phase2-client-cert",
+		"private-key",
+		"phase2-private-key",
+		/* 'team' and 'team-port' properties */
+		"config",
+		NULL
+	};
+
+	prop = extract_property_name (prompt, line);
 	if (prop) {
 		found = !!nmc_string_is_valid (prop, file_properties, NULL);
+		g_free (prop);
+	}
+	return found;
+}
+
+static gboolean
+should_complete_vpn_uuids (const char *prompt, const char *line)
+{
+	char *prop;
+	gboolean found = FALSE;
+	const char *uuid_properties[] = {
+		/* 'connection' properties */
+		"secondaries",
+		NULL
+	};
+
+	prop = extract_property_name (prompt, line);
+	if (prop) {
+		found = !!nmc_string_is_valid (prop, uuid_properties, NULL);
 		g_free (prop);
 	}
 	return found;
@@ -5620,6 +5702,9 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 
 	/* Restore standard append character to space */
 	*edit_lib_symbols.rl_completion_append_character_x = ' ';
+
+	/* Restore standard function for displaying matches */
+	*edit_lib_symbols.rl_completion_display_matches_hook_x = NULL;
 
 	/* Disable default filename completion */
 	*edit_lib_symbols.rl_attempted_completion_over_x = 1;
@@ -5673,8 +5758,13 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 							*edit_lib_symbols.rl_completion_append_character_x = '.';
 						} else
 							generator_func = gen_property_names;
-					} else if (num == 3 && should_complete_files (NULL, line)) {
-						*edit_lib_symbols.rl_attempted_completion_over_x = 0;
+					} else if (num >= 3) {
+						if (num == 3 && should_complete_files (NULL, line))
+							*edit_lib_symbols.rl_attempted_completion_over_x = 0;
+						if (should_complete_vpn_uuids (NULL, line)) {
+							*edit_lib_symbols.rl_completion_display_matches_hook_x = uuid_display_hook;
+							generator_func = gen_vpn_uuids;
+						}
 					}
 				} else if (  (   should_complete_cmd (line, end, "remove", &num, NULL)
 				              || should_complete_cmd (line, end, "describe", &num, NULL))
@@ -5709,6 +5799,10 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 				    || should_complete_cmd (line, end, "set", &num, NULL)) {
 					if (num <= 2 && should_complete_files (prompt_tmp, line))
 						*edit_lib_symbols.rl_attempted_completion_over_x = 0;
+					else if (should_complete_vpn_uuids (prompt_tmp, line)) {
+						*edit_lib_symbols.rl_completion_display_matches_hook_x = uuid_display_hook;
+						generator_func = gen_vpn_uuids;
+					}
 				}
 				if (should_complete_cmd (line, end, "print", &num, NULL) && num <= 2)
 					generator_func = gen_cmd_print2;
@@ -5788,6 +5882,15 @@ load_cmd_line_edit_lib (void)
 		goto error;
 	if (!g_module_symbol (module, "rl_cleanup_after_signal",
 	                      (gpointer) (&edit_lib_symbols.rl_cleanup_after_signal_func)))
+		goto error;
+	if (!g_module_symbol (module, "rl_completion_display_matches_hook",
+	                      (gpointer) (&edit_lib_symbols.rl_completion_display_matches_hook_x)))
+		goto error;
+	if (!g_module_symbol (module, "rl_display_match_list",
+	                      (gpointer) (&edit_lib_symbols.rl_display_match_list_func)))
+		goto error;
+	if (!g_module_symbol (module, "rl_forced_update_display",
+	                      (gpointer) (&edit_lib_symbols.rl_forced_update_display_func)))
 		goto error;
 
 	/* Set a pointer to an alternative function to create matches */
