@@ -12,6 +12,7 @@ interface=wlan0
 path=/org/freedesktop/NetworkManager/Devices/0
 
 [env]
+PATH=
 CONNECTION_UUID=3fd2a33a-d81b-423f-ae99-e6baba742311
 CONNECTION_ID=Random Connection
 DEVICE_IFACE=wlan0

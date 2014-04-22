@@ -31,6 +31,7 @@ nameservers=68.87.77.134 68.87.72.134 192.168.1.1
 domains=hsd1.mn.comcast.net.
 
 [env]
+PATH=
 CONNECTION_UUID=3fd2a33a-d81b-423f-ae99-e6baba742311
 CONNECTION_ID=Random Connection
 DEVICE_IFACE=wlan0

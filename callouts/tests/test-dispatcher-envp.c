@@ -560,10 +560,18 @@ test_generic (const char *path, const char *file, const char *override_vpn_ip_if
 	/* Compare dispatcher generated env and expected env */
 	for (iter = denv; iter && *iter; iter++) {
 		gpointer foo;
+		const char *i_value = *iter;
 
-		foo = g_hash_table_lookup (expected_env, *iter);
+		if (strstr (i_value, "PATH=") == i_value) {
+			g_assert_cmpstr (&i_value[strlen("PATH=")], ==, g_getenv ("PATH"));
+
+			/* The path is constructed dynamically. Ignore the actual value. */
+			i_value = "PATH=";
+		}
+
+		foo = g_hash_table_lookup (expected_env, i_value);
 		if (!foo)
-			g_warning ("Failed to find %s in environment", *iter);
+			g_warning ("Failed to find %s in environment", i_value);
 		g_assert (foo);
 	}
 
