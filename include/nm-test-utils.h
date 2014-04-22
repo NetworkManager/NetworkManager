@@ -24,6 +24,8 @@
 
 
 #include <arpa/inet.h>
+#include <stdio.h>
+#include <unistd.h>
 #include <glib.h>
 #include <glib-object.h>
 #include <string.h>
@@ -301,6 +303,27 @@ nmtst_inet6_from_string (const char *str)
 
 	return &addr;
 }
+
+inline static void
+FAIL(const char *test_name, const char *fmt, ...)
+{
+	va_list args;
+	char buf[500];
+
+	g_snprintf (buf, 500, "FAIL: (%s) %s\n", test_name, fmt);
+
+	va_start (args, fmt);
+	vfprintf (stderr, buf, args);
+	va_end (args);
+	_exit (1);
+}
+
+#define ASSERT(x, test_name, fmt, ...) \
+	if (!(x)) { \
+		FAIL (test_name, fmt, ## __VA_ARGS__); \
+	}
+
+/*******************************************************************************/
 
 #ifdef NM_PLATFORM_H
 

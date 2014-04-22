@@ -25,7 +25,6 @@
 #include <netinet/ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-test-helpers.h"
 #include <nm-utils.h>
 
 #include "nm-setting-private.h"
@@ -45,6 +44,8 @@
 #include "nm-util-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
+
+#include "nm-test-utils.h"
 
 static void
 vpn_check_func (const char *key, const char *value, gpointer user_data)

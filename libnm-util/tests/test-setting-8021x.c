@@ -22,11 +22,12 @@
 #include <glib.h>
 #include <string.h>
 
-#include "nm-test-helpers.h"
 #include <nm-utils.h>
 
 #include "nm-setting-connection.h"
 #include "nm-setting-8021x.h"
+
+#include "nm-test-utils.h"
 
 static void
 compare_blob_data (const char *test,

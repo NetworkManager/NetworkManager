@@ -22,7 +22,6 @@
 #include <glib.h>
 #include <string.h>
 
-#include "nm-test-helpers.h"
 #include <nm-utils.h>
 
 #include "nm-setting-connection.h"
@@ -37,6 +36,7 @@
 #include "nm-setting-pppoe.h"
 #include "nm-setting-vpn.h"
 
+#include "nm-test-utils.h"
 
 #define TEST_NEED_SECRETS_EAP_TLS_CA_CERT TEST_CERT_DIR "/test_ca_cert.pem"
 #define TEST_NEED_SECRETS_EAP_TLS_CLIENT_CERT TEST_CERT_DIR "/test_key_and_cert.pem"

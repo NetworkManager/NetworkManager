@@ -41,11 +41,12 @@
 #include <nm-setting-8021x.h>
 #include <nm-setting-infiniband.h>
 
-#include "nm-test-helpers.h"
 #include "nm-glib-compat.h"
 
 #include "reader.h"
 #include "writer.h"
+
+#include "nm-test-utils.h"
 
 #define TEST_WIRED_FILE    TEST_KEYFILES_DIR"/Test_Wired_Connection"
 #define TEST_WIRELESS_FILE TEST_KEYFILES_DIR"/Test_Wireless_Connection"

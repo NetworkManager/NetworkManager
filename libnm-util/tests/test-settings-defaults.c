@@ -22,7 +22,6 @@
 #include <glib.h>
 #include <string.h>
 
-#include "nm-test-helpers.h"
 #include <nm-utils.h>
 
 #include "nm-setting-8021x.h"
@@ -39,6 +38,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 
+#include "nm-test-utils.h"
 
 static void
 test_defaults (GType type, const char *name)

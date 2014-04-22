@@ -39,11 +39,12 @@
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-8021x.h>
 
-#include "nm-test-helpers.h"
 #include "nm-glib-compat.h"
 
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
+
+#include "nm-test-utils.h"
 
 static gboolean
 validate_opt (const char *detail,

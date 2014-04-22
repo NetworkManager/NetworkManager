@@ -28,9 +28,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "nm-test-helpers.h"
 #include "crypto.h"
 #include "nm-utils.h"
+
+#include "nm-test-utils.h"
 
 #if 0
 static const char *pem_rsa_key_begin = "-----BEGIN RSA PRIVATE KEY-----";

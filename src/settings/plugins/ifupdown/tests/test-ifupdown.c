@@ -23,11 +23,11 @@
 
 #include <nm-utils.h>
 
-#include "nm-test-helpers.h"
 #include "nm-logging.h"
-
 #include "interface_parser.h"
 #include "parser.h"
+
+#include "nm-test-utils.h"
 
 typedef struct {
 	char *key;

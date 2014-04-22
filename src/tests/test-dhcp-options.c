@@ -25,11 +25,12 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-#include "nm-test-helpers.h"
 #include <nm-utils.h>
 
 #include "nm-dhcp-manager.h"
 #include "nm-logging.h"
+
+#include "nm-test-utils.h"
 
 typedef struct {
 	const char *name;

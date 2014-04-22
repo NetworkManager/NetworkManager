@@ -23,11 +23,10 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "nm-test-helpers.h"
-
 #include "common.h"
 #include "utils.h"
 
+#include "nm-test-utils.h"
 
 static void
 test_get_ifcfg_name (const char *desc,

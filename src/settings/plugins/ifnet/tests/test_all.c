@@ -28,7 +28,6 @@
 #include <unistd.h>
 #include <nm-utils.h>
 
-#include "nm-test-helpers.h"
 #include "nm-linux-platform.h"
 #include "nm-logging.h"
 
@@ -37,6 +36,8 @@
 #include "wpa_parser.h"
 #include "connection_parser.h"
 #include "nm-config.h"
+
+#include "nm-test-utils.h"
 
 /* Fake NMConfig handling; the values it returns don't matter, so this
  * is easier than forcing it to read our own config file, etc.

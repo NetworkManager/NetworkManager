@@ -48,7 +48,6 @@
 #include <nm-setting-dcb.h>
 #include <nm-util-private.h>
 
-#include "nm-test-helpers.h"
 #include "NetworkManagerUtils.h"
 #include "nm-glib-compat.h"
 
@@ -56,6 +55,8 @@
 #include "reader.h"
 #include "writer.h"
 #include "utils.h"
+
+#include "nm-test-utils.h"
 
 #if 0
 static void
