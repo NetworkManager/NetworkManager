@@ -37,7 +37,6 @@
 #include "wpa_parser.h"
 #include "connection_parser.h"
 #include "nm-config.h"
-#include "nm-fake-platform.h"
 
 /* Fake NMConfig handling; the values it returns don't matter, so this
  * is easier than forcing it to read our own config file, etc.
@@ -459,8 +458,6 @@ main (int argc, char **argv)
 	g_type_init ();
 	nm_linux_platform_setup ();
 	nm_logging_setup ("WARN", "DEFAULT", NULL, NULL);
-
-	nm_fake_platform_setup ();
 
 	f = g_build_filename (argv[1], "net", NULL);
 	ifnet_init (f);
