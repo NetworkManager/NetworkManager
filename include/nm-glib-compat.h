@@ -96,4 +96,18 @@ g_type_ensure (GType type)
 #define g_test_initialized() (g_test_config_vars->test_initialized)
 #endif
 
+/* g_test_skip() is only available since glib 2.38. Add a compatibility wrapper. */
+inline static void
+__nmtst_g_test_skip (const gchar *msg)
+{
+#if GLIB_CHECK_VERSION (2, 38, 0)
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+	g_test_skip (msg);
+	G_GNUC_END_IGNORE_DEPRECATIONS
+#else
+	g_debug ("%s", msg);
+#endif
+}
+#define g_test_skip __nmtst_g_test_skip
+
 #endif  /* NM_GLIB_COMPAT_H */

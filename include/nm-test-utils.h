@@ -33,6 +33,7 @@
 #include <errno.h>
 
 #include "nm-utils.h"
+#include "nm-glib-compat.h"
 
 
 struct __nmtst_internal

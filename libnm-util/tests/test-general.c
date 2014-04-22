@@ -43,7 +43,6 @@
 #include "nm-utils.h"
 #include "nm-util-private.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
 
 #include "nm-test-utils.h"
 

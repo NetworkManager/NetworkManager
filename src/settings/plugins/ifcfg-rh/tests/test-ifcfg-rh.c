@@ -49,7 +49,6 @@
 #include <nm-util-private.h>
 
 #include "NetworkManagerUtils.h"
-#include "nm-glib-compat.h"
 
 #include "common.h"
 #include "reader.h"

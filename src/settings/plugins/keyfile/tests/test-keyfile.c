@@ -41,8 +41,6 @@
 #include <nm-setting-8021x.h>
 #include <nm-setting-infiniband.h>
 
-#include "nm-glib-compat.h"
-
 #include "reader.h"
 #include "writer.h"
 
