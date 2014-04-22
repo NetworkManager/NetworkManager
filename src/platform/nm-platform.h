@@ -346,6 +346,7 @@ typedef struct {
 	gboolean (*sysctl_set) (NMPlatform *, const char *path, const char *value);
 	char * (*sysctl_get) (NMPlatform *, const char *path);
 
+	gboolean (*link_get) (NMPlatform *platform, int ifindex, NMPlatformLink *link);
 	GArray *(*link_get_all) (NMPlatform *);
 	gboolean (*link_add) (NMPlatform *, const char *name, NMLinkType type, const void *address, size_t address_len);
 	gboolean (*link_delete) (NMPlatform *, int ifindex);
@@ -477,6 +478,7 @@ char *nm_platform_sysctl_get (const char *path);
 gint32 nm_platform_sysctl_get_int32 (const char *path, gint32 fallback);
 gint64 nm_platform_sysctl_get_int_checked (const char *path, guint base, gint64 min, gint64 max, gint64 fallback);
 
+gboolean nm_platform_link_get (int ifindex, NMPlatformLink *link);
 GArray *nm_platform_link_get_all (void);
 gboolean nm_platform_dummy_add (const char *name);
 gboolean nm_platform_bridge_add (const char *name, const void *address, size_t address_len);

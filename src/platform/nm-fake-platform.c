@@ -185,6 +185,16 @@ link_added_emit (gpointer user_data)
 }
 
 static gboolean
+_nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *link)
+{
+	NMFakePlatformLink *device = link_get (platform, ifindex);
+
+	if (device)
+		*link = device->link;
+	return !!device;
+}
+
+static gboolean
 link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *address, size_t address_len)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
@@ -1288,6 +1298,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;
 
+	platform_class->link_get = _nm_platform_link_get;
 	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;

@@ -1877,6 +1877,22 @@ link_get_all (NMPlatform *platform)
 	return links;
 }
 
+static gboolean
+_nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *link)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	auto_nl_object struct rtnl_link *rtnllink;
+
+	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
+	if (rtnllink) {
+		if (link_is_announceable (platform, rtnllink)) {
+			if (init_link (platform, link, rtnllink))
+				return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 static struct nl_object *
 build_rtnl_link (int ifindex, const char *name, NMLinkType type)
 {
@@ -3804,6 +3820,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;
 
+	platform_class->link_get = _nm_platform_link_get;
 	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;
