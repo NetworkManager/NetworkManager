@@ -145,8 +145,19 @@ int
 main (int argc, char **argv)
 {
 	int result;
+	const char *program = *argv;
 
 	nmtst_init (&argc, &argv, NULL, "ALL");
+
+	if (SETUP == nm_linux_platform_setup && getuid() != 0) {
+#ifdef REQUIRE_ROOT_TESTS
+		g_message ("Fail test: requires root privileges (%s)", program);
+		return EXIT_FAILURE;
+#else
+		g_message ("Skipping test: requires root privileges (%s)", program);
+		return 77;
+#endif
+	}
 
 	SETUP ();
 

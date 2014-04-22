@@ -14,6 +14,10 @@ AM_CPPFLAGS = \
 	$(GUDEV_CFLAGS) \
 	$(LIBNL_CFLAGS)
 
+if REQUIRE_ROOT_TESTS
+AM_CPPFLAGS += -DREQUIRE_ROOT_TESTS=1
+endif
+
 PLATFORM_SOURCES = \
 	../nm-platform.c \
 	../nm-fake-platform.c \
@@ -106,20 +110,7 @@ test_cleanup_linux_CPPFLAGS = \
 	-DKERNEL_HACKS=1
 test_cleanup_linux_LDADD = $(PLATFORM_LDADD)
 
-# Unfortunately, we cannot run nm-linux-platform-test as an automatic test
-# program by default, as it requires root access and modifies kernel
-# configuration.
-#
-# However, we can check whether the fake platform fakes platform behavior
-# correctly.
+#@VALGRIND_RULES@
+TESTS = test-link-fake test-address-fake test-route-fake test-cleanup-fake test-link-linux test-address-linux test-route-linux test-cleanup-linux
 
-@VALGRIND_RULES@
-USERTESTS = test-link-fake test-address-fake test-route-fake test-cleanup-fake
-ROOTTESTS = test-link-linux test-address-linux test-route-linux test-cleanup-linux
 
-# If explicitly enabled, we can run the root tests
-if RUN_ROOT_TESTS
-TESTS = $(USERTESTS) $(ROOTTESTS)
-else
-TESTS = $(USERTESTS)
-endif
