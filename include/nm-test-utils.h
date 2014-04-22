@@ -25,6 +25,7 @@
 
 #include <arpa/inet.h>
 #include <glib.h>
+#include <glib-object.h>
 
 
 struct __nmtst_internal
