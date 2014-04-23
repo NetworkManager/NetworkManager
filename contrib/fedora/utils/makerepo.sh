@@ -104,6 +104,10 @@ elif [[ "x$(ls -1d ./libnl-[0-9].*/ 2>/dev/null)" != x && -f libnl3.spec ]]; the
     DIRNAME="$(basename "$(ls -1d ./libnl-[0-9].*/ || die "could not find directory")")"
     BUILD_LIBNL3=x
     SPEC=libnl3.spec
+elif [[ "x$(ls -1d ./NetworkManager-openvpn-[0-9].*/ 2>/dev/null)" != x && -f NetworkManager-openvpn.spec ]]; then
+    DIRNAME="$(basename "$(ls -1d ./NetworkManager-openvpn-[0-9].*/ || die "could not find directory")")"
+    BUILD_NETWORMANAGER_OPENVPN=x
+    SPEC=NetworkManager-openvpn.spec
 else
     die "Could not detect dist-git type"
 fi
@@ -129,6 +133,9 @@ pushd "$DIRNAME"
     elif [[ "$BUILD_LIBNL3" != "" ]]; then
         git remote add origin "git://github.com/thom311/libnl.git"
         git remote 'set-url' --push origin "git@github.com:thom311/libnl.git"
+    elif [[ "$BUILD_NETWORMANAGER_OPENVPN" != "" ]]; then
+        git remote add origin "git://git.gnome.org/network-manager-openvpn";
+        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openvpn"
     else
         die "UNEXPECTED"
     fi
