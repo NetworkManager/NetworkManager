@@ -144,21 +144,31 @@ pushd "$DIRNAME"
     git add -f -A .
     git commit -m '*** add all'
     ORIG_HEAD="`git rev-parse HEAD`"
-    if [[ "$BUILD_NETWORMANAGER" != "" ]]; then
-        # try to find the commit from which the original tarball originates
-        # and base the new branch on to of it.
-        RELEASE_BASE_COMMIT="$(sed -n 's/^NM_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
-        if [[ x != "x$RELEASE_BASE_COMMIT" ]]; then
-            RELEASE_BASE_COMMIT="$(git rev-list -n1 "$RELEASE_BASE_COMMIT" 2>/dev/null)"
+    if [[ "x$RELEASE_BASE_COMMIT" == x ]]; then
+        # if RELEASE_BASE_COMMIT is not set, try detecting the BASE_COMMIT...
+
+        if [[ "$BUILD_NETWORMANAGER" != "" ]]; then
+            # try to find the commit from which the original tarball originates
+            # and base the new branch on to of it.
+            RELEASE_BASE_COMMIT="$(sed -n 's/^NM_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
         fi
-        if [[ x != "x$RELEASE_BASE_COMMIT" ]]; then
-            git checkout -B master "$RELEASE_BASE_COMMIT" || die "could not checkout master"
-            git rm --cached -r :/
-            git checkout "$ORIG_HEAD" -- :/
-            git clean -fdx :/
-            git commit -m '*** add all'
-            [[ x == "x$(git diff HEAD "$ORIG_HEAD")" ]] || die "error recreating initial tarball"
+    fi
+    if [[ x != "x$RELEASE_BASE_COMMIT" ]]; then
+        if [[ "$RELEASE_BASE_COMMIT" == "-" ]]; then
+            # you can disable detection of the RELEASE_BASE_COMMIT by setting it to '-'
+            RELEASE_BASE_COMMIT=
+        else
+            # verify the base commit...
+            RELEASE_BASE_COMMIT="$(git rev-parse --verify -q "$RELEASE_BASE_COMMIT" 2>/dev/null)" || die "error detecting RELEASE_BASE_COMMIT=$RELEASE_BASE_COMMIT"
         fi
+    fi
+    if [[ x != "x$RELEASE_BASE_COMMIT" ]]; then
+        git checkout -B master "$RELEASE_BASE_COMMIT" || die "could not checkout master"
+        git rm --cached -r :/
+        git checkout "$ORIG_HEAD" -- :/
+        git clean -fdx :/
+        git commit -m '*** add all'
+        [[ x == "x$(git diff HEAD "$ORIG_HEAD")" ]] || die "error recreating initial tarball"
     fi
     cat ../makerepo.gitignore > .gitignore
     git rm --cached -r .
