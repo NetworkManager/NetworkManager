@@ -151,6 +151,11 @@ pushd "$DIRNAME"
             # try to find the commit from which the original tarball originates
             # and base the new branch on to of it.
             RELEASE_BASE_COMMIT="$(sed -n 's/^NM_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
+        elif [[ "$BUILD_NETWORMANAGER_OPENVPN" != "" ]]; then
+            DATE="$(sed -n 's/%global snapshot .git\(20[0-3][0-9]\)\([0-1][0-9]\)\([0-3][0-9]\)/\1-\2-\3/p' "../$SPEC")"
+            if [[ "x$DATE" != x ]]; then
+                RELEASE_BASE_COMMIT="$(git rev-list -n1 --date-order --before="$DATE" origin/master 2>/dev/null)"
+            fi
         fi
     fi
     if [[ x != "x$RELEASE_BASE_COMMIT" ]]; then
