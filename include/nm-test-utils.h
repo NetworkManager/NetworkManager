@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <glib.h>
 #include <glib-object.h>
 #include <string.h>
@@ -100,9 +101,25 @@ BREAK_INNER_LOOPS:
 }
 
 
+/* free instances allocated by nmtst (especially nmtst_init()) on shutdown
+ * to release memory. After nmtst_free(), the test is uninitialized again. */
+inline static void
+nmtst_free (void)
+{
+	if (!nmtst_initialized ())
+		return;
+
+	g_rand_free (__nmtst_internal.rand0);
+	if (__nmtst_internal.rand)
+		g_rand_free (__nmtst_internal.rand);
+
+	memset (&__nmtst_internal, 0, sizeof (__nmtst_internal));
+}
+
 inline static void
 nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_domains)
 {
+	static gsize atexit_registered = 0;
 	const char *nmtst_debug;
 	gboolean is_debug = FALSE;
 	char *c_log_level = NULL, *c_log_domains = NULL;
@@ -197,6 +214,11 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 	g_strfreev ((char **) g_array_free (debug_messages, FALSE));
 	g_free (c_log_level);
 	g_free (c_log_domains);
+
+	if (g_once_init_enter (&atexit_registered)) {
+		atexit (nmtst_free);
+		g_once_init_leave (&atexit_registered, 1);
+	}
 }
 
 inline static gboolean
