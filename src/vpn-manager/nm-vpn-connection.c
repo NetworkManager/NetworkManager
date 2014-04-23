@@ -785,6 +785,10 @@ nm_vpn_connection_config_maybe_complete (NMVPNConnection *connection,
 	                                 NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID);
 }
 
+#define LOG_INVALID_ARG(property) \
+    nm_log_dbg (LOGD_VPN, "VPN connection '%s' has invalid argument %s", \
+                          nm_connection_get_id (priv->connection), property)
+
 static gboolean
 process_generic_config (NMVPNConnection *connection,
                         GHashTable *config_hash)
@@ -793,14 +797,16 @@ process_generic_config (NMVPNConnection *connection,
 	GValue *val;
 
 	g_clear_pointer (&priv->ip_iface, g_free);
-
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_CONFIG_TUNDEV);
 	if (val) {
-		const char *tmp = g_value_get_string (val);
+		if (G_VALUE_HOLDS (val, G_TYPE_STRING)) {
+			const char *tmp = g_value_get_string (val);
 
-		/* Backwards compat with NM-openswan */
-		if (g_strcmp0 (tmp, "_none_") != 0)
-			priv->ip_iface = g_strdup (tmp);
+			/* Backwards compat with NM-openswan */
+			if (g_strcmp0 (tmp, "_none_") != 0)
+				priv->ip_iface = g_strdup (tmp);
+		} else
+			LOG_INVALID_ARG (NM_VPN_PLUGIN_CONFIG_TUNDEV);
 	}
 
 	if (priv->ip_iface) {
@@ -813,24 +819,28 @@ process_generic_config (NMVPNConnection *connection,
 		}
 	}
 
+	g_clear_pointer (&priv->banner, g_free);
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_CONFIG_BANNER);
 	if (val) {
-		g_free (priv->banner);
-		priv->banner = g_strdup (g_value_get_string (val));
+		if (G_VALUE_HOLDS (val, G_TYPE_STRING))
+			priv->banner = g_strdup (g_value_get_string (val));
+		else
+			LOG_INVALID_ARG (NM_VPN_PLUGIN_CONFIG_BANNER);
 	}
 
 	/* External world-visible address of the VPN server */
 	priv->ip4_external_gw = 0;
-	priv->ip6_external_gw = NULL;
+	g_clear_pointer (&priv->ip6_external_gw, g_free);
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY);
 	if (val) {
+		GByteArray *ba;
+
 		if (G_VALUE_HOLDS (val, G_TYPE_UINT)) {
 			priv->ip4_external_gw = g_value_get_uint (val);
-		} else if (G_VALUE_HOLDS (val, DBUS_TYPE_G_UCHAR_ARRAY)) {
-			GByteArray *ba = g_value_get_boxed (val);
-
-			if (ba->len == sizeof (struct in6_addr))
-				priv->ip6_external_gw = g_memdup (ba->data, ba->len);
+		} else if (G_VALUE_HOLDS (val, DBUS_TYPE_G_UCHAR_ARRAY) &&
+		           (ba = g_value_get_boxed (val)) &&
+		           ba->len == sizeof (struct in6_addr)) {
+			priv->ip6_external_gw = g_memdup (ba->data, ba->len);
 		} else {
 			nm_log_err (LOGD_VPN, "(%s): VPN gateway is neither IPv4 nor IPv6", priv->ip_iface);
 			nm_vpn_connection_config_maybe_complete (connection, FALSE);
@@ -842,11 +852,14 @@ process_generic_config (NMVPNConnection *connection,
 	 * like it's IP4-specific. So we store it for now and retrieve it
 	 * later in ip4_config_get.
 	 */
+	priv->mtu = 0;
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_CONFIG_MTU);
-	if (val)
-		priv->mtu = g_value_get_uint (val);
-	else
-		priv->mtu = 0;
+	if (val) {
+		if (G_VALUE_HOLDS (val, G_TYPE_UINT)) {
+			priv->mtu = g_value_get_uint (val);
+		} else
+			LOG_INVALID_ARG (NM_VPN_PLUGIN_CONFIG_MTU);
+	}
 
 	return TRUE;
 }
@@ -874,11 +887,23 @@ nm_vpn_connection_config_get (DBusGProxy *proxy,
 
 	/* Note whether to expect IPv4 and IPv6 configs */
 	val = g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_CONFIG_HAS_IP4);
-	priv->has_ip4 = val ? g_value_get_boolean (val) : FALSE;
+	priv->has_ip4 = FALSE;
+	if (val) {
+		if (G_VALUE_HOLDS (val, G_TYPE_BOOLEAN))
+			priv->has_ip4 = g_value_get_boolean (val);
+		else
+			LOG_INVALID_ARG (NM_VPN_PLUGIN_CONFIG_HAS_IP4);
+	}
 	g_clear_object (&priv->ip4_config);
 
 	val = g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_CONFIG_HAS_IP6);
-	priv->has_ip6 = val ? g_value_get_boolean (val) : FALSE;
+	priv->has_ip6 = FALSE;
+	if (val) {
+		if (G_VALUE_HOLDS (val, G_TYPE_BOOLEAN))
+			priv->has_ip6 = g_value_get_boolean (val);
+		else
+			LOG_INVALID_ARG (NM_VPN_PLUGIN_CONFIG_HAS_IP6);
+	}
 	g_clear_object (&priv->ip6_config);
 }
 
@@ -1072,6 +1097,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 		nm_ip6_config_set_gateway (config, priv->ip6_external_gw);
 
 	/* Internal address of the VPN subnet's gateway */
+	g_clear_pointer (&priv->ip6_internal_gw, g_free);
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP6_CONFIG_INT_GATEWAY);
 	if (val) {
 		GByteArray *ba = g_value_get_boxed (val);
