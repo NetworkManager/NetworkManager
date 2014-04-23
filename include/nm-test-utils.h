@@ -30,6 +30,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <string.h>
+#include <errno.h>
 
 
 struct __nmtst_internal
@@ -38,6 +39,8 @@ struct __nmtst_internal
 	guint32 rand_seed;
 	GRand *rand;
 	gboolean is_debug;
+	char *sudo_cmd;
+	char **orig_argv;
 };
 
 extern struct __nmtst_internal __nmtst_internal;
@@ -112,6 +115,8 @@ nmtst_free (void)
 	g_rand_free (__nmtst_internal.rand0);
 	if (__nmtst_internal.rand)
 		g_rand_free (__nmtst_internal.rand);
+	g_free (__nmtst_internal.sudo_cmd);
+	g_strfreev (__nmtst_internal.orig_argv);
 
 	memset (&__nmtst_internal, 0, sizeof (__nmtst_internal));
 }
@@ -123,12 +128,18 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 	const char *nmtst_debug;
 	gboolean is_debug = FALSE;
 	char *c_log_level = NULL, *c_log_domains = NULL;
+	char *sudo_cmd = NULL;
 	GArray *debug_messages = g_array_new (TRUE, FALSE, sizeof (char *));
 	int i;
 
 	g_assert (!nmtst_initialized ());
 
 	g_assert (!((!!argc) ^ (!!argv)));
+	g_assert (!argc || (g_strv_length (*argv) == *argc));
+
+	if (argc)
+		__nmtst_internal.orig_argv = g_strdupv (*argv);
+
 	if (argc && !g_test_initialized ()) {
 		/* g_test_init() is a variadic function, so we cannot pass it
 		 * (variadic) arguments. If you need to pass additional parameters,
@@ -168,6 +179,9 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 			} else if (!g_ascii_strncasecmp (debug, "log-domains=", strlen ("log-domains="))) {
 				g_free (c_log_domains);
 				log_domains = c_log_domains = g_strdup (&debug[strlen ("log-domains=")]);
+			} else if (!g_ascii_strncasecmp (debug, "sudo-cmd=", strlen ("sudo-cmd="))) {
+				g_free (sudo_cmd);
+				sudo_cmd = g_strdup (&debug[strlen ("sudo-cmd=")]);
 			} else {
 				char *msg = g_strdup_printf (">>> nmtst: ignore unrecognized NMTST_DEBUG option \"%s\"", debug);
 
@@ -192,6 +206,7 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 
 	__nmtst_internal.is_debug = is_debug;
 	__nmtst_internal.rand0 = g_rand_new_with_seed (0);
+	__nmtst_internal.sudo_cmd = sudo_cmd;
 
 	if (!log_level && log_domains) {
 		/* if the log level is not specified (but the domain is), we assume
@@ -266,6 +281,40 @@ nmtst_get_rand ()
 	return __nmtst_internal.rand;
 }
 
+inline static const char *
+nmtst_get_sudo_cmd (void)
+{
+	g_assert (nmtst_initialized ());
+	return __nmtst_internal.sudo_cmd;
+}
+
+inline static void
+nmtst_reexec_sudo (void)
+{
+	char *str;
+	char **argv;
+	int i;
+	int errsv;
+
+	g_assert (nmtst_initialized ());
+	g_assert (__nmtst_internal.orig_argv);
+
+	if (!__nmtst_internal.sudo_cmd)
+		return;
+
+	str = g_strjoinv (" ", __nmtst_internal.orig_argv);
+	g_message (">> exec %s %s", __nmtst_internal.sudo_cmd, str);
+
+	argv = g_new0 (char *, 1 + g_strv_length (__nmtst_internal.orig_argv) + 1);
+	argv[0] = __nmtst_internal.sudo_cmd;
+	for (i = 0; __nmtst_internal.orig_argv[i]; i++)
+		argv[i+1] = __nmtst_internal.orig_argv[i];
+
+	execvp (__nmtst_internal.sudo_cmd, argv);
+
+	errsv = errno;
+	g_error (">> exec %s failed: %d - %s", __nmtst_internal.sudo_cmd, errsv, strerror (errsv));
+}
 
 #define __define_nmtst_static(NUM,SIZE) \
 inline static const char * \
