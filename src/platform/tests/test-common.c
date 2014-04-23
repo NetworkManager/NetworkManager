@@ -150,6 +150,9 @@ main (int argc, char **argv)
 	nmtst_init (&argc, &argv, NULL, "ALL");
 
 	if (SETUP == nm_linux_platform_setup && getuid() != 0) {
+		/* Try to exec as sudo, this function does not return, if a sudo-cmd is set. */
+		nmtst_reexec_sudo ();
+
 #ifdef REQUIRE_ROOT_TESTS
 		g_message ("Fail test: requires root privileges (%s)", program);
 		return EXIT_FAILURE;
