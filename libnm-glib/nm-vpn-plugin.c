@@ -296,6 +296,20 @@ schedule_fail_stop (NMVPNPlugin *plugin)
 	priv->fail_stop_id = g_idle_add (fail_stop, plugin);
 }
 
+static void
+_g_value_set (GValue *dst, GValue *src)
+{
+	if (src) {
+		GType type = G_VALUE_TYPE (src);
+
+		if (G_IS_VALUE (dst))
+			g_value_unset (dst);
+		g_value_init (dst, type);
+		g_value_copy (src, dst);
+	} else if (G_IS_VALUE (dst))
+		g_value_unset (dst);
+}
+
 void
 nm_vpn_plugin_set_config (NMVPNPlugin *plugin,
                           GHashTable *config)
@@ -320,26 +334,10 @@ nm_vpn_plugin_set_config (NMVPNPlugin *plugin,
 	/* Record the items that need to also be inserted into the
 	 * ip4config, for compatibility with older daemons.
 	 */
-	val = g_hash_table_lookup (config, NM_VPN_PLUGIN_CONFIG_BANNER);
-	if (val) {
-		g_value_init (&priv->banner, G_VALUE_TYPE (val));
-		g_value_copy (val, &priv->banner);
-	}
-	val = g_hash_table_lookup (config, NM_VPN_PLUGIN_CONFIG_TUNDEV);
-	if (val) {
-		g_value_init (&priv->tundev, G_VALUE_TYPE (val));
-		g_value_copy (val, &priv->tundev);
-	}
-	val = g_hash_table_lookup (config, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY);
-	if (val) {
-		g_value_init (&priv->gateway, G_VALUE_TYPE (val));
-		g_value_copy (val, &priv->gateway);
-	}
-	val = g_hash_table_lookup (config, NM_VPN_PLUGIN_CONFIG_MTU);
-	if (val) {
-		g_value_init (&priv->mtu, G_VALUE_TYPE (val));
-		g_value_copy (val, &priv->mtu);
-	}
+	_g_value_set (&priv->banner, g_hash_table_lookup (config, NM_VPN_PLUGIN_CONFIG_BANNER));
+	_g_value_set (&priv->tundev, g_hash_table_lookup (config, NM_VPN_PLUGIN_CONFIG_TUNDEV));
+	_g_value_set (&priv->gateway, g_hash_table_lookup (config, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY));
+	_g_value_set (&priv->mtu, g_hash_table_lookup (config, NM_VPN_PLUGIN_CONFIG_MTU));
 
 	g_signal_emit (plugin, signals[CONFIG], 0, config);
 }
