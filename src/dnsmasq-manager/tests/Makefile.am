@@ -19,6 +19,5 @@ test_dnsmasq_utils_SOURCES = \
 test_dnsmasq_utils_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
-check-local: test-dnsmasq-utils
-	$(abs_builddir)/test-dnsmasq-utils
+TESTS = test-dnsmasq-utils
 

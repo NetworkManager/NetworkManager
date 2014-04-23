@@ -18,5 +18,4 @@ test_supplicant_config_SOURCES = \
 test_supplicant_config_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
-check-local: test-supplicant-config
-	$(abs_builddir)/test-supplicant-config
+TESTS = test-supplicant-config

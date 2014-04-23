@@ -30,8 +30,7 @@ test_ifupdown_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS)
 
-check-local: test-ifupdown
-	$(abs_builddir)/test-ifupdown
+TESTS = test-ifupdown
 
 EXTRA_DIST = \
 	test1 test2 test3 test4 test5 test6 test7 test8 test9 test11 test12 \

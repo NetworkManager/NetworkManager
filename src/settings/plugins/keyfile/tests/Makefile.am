@@ -40,7 +40,6 @@ test_keyfile_LDADD = \
 	$(DBUS_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS)
 
-check-local: test-keyfile
-	$(abs_builddir)/test-keyfile
+TESTS = test-keyfile
 
 endif

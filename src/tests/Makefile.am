@@ -98,13 +98,5 @@ EXTRA_DIST = test-secret-agent.py
 
 ###########################################
 
-check-local: test-dhcp-options test-policy-hosts test-wifi-ap-utils test-ip4-config test-ip6-config
-	$(abs_builddir)/test-dhcp-options
-	$(abs_builddir)/test-policy-hosts
-	$(abs_builddir)/test-wifi-ap-utils
-	$(abs_builddir)/test-ip4-config
-	$(abs_builddir)/test-ip6-config
-	$(abs_builddir)/test-dcb
-	$(abs_builddir)/test-resolvconf-capture
-	$(abs_builddir)/test-general
+TESTS = test-dhcp-options test-policy-hosts test-wifi-ap-utils test-ip4-config test-ip6-config test-dcb test-resolvconf-capture test-general
 

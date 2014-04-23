@@ -56,9 +56,7 @@ test_ifcfg_rh_utils_SOURCES = \
 test_ifcfg_rh_utils_LDADD = \
 	$(AM_LDADD)
 
-check-local: test-ifcfg-rh
-	$(abs_builddir)/test-ifcfg-rh-utils
-	$(abs_builddir)/test-ifcfg-rh
+TESTS = test-ifcfg-rh-utils test-ifcfg-rh
 
 EXTRA_DIST = \
 	iscsiadm-test-dhcp \

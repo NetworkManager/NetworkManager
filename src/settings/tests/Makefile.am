@@ -20,5 +20,4 @@ test_wired_defname_LDADD = \
 
 ###########################################
 
-check-local: test-wired-defname
-	$(abs_builddir)/test-wired-defname
+TESTS = test-wired-defname

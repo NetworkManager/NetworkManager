@@ -68,12 +68,7 @@ test_setting_dcb_LDADD = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
 
-check-local: test-settings-defaults test-crypto test-secrets test-setting-8021x test-setting-dcb
-	$(abs_builddir)/test-settings-defaults
-	$(abs_builddir)/test-secrets
-	$(abs_builddir)/test-general
-	$(abs_builddir)/test-setting-dcb
-
+check-local: test-crypto test-setting-8021x
 # Private key and CA certificate in the same file (PEM)
 	$(abs_builddir)/test-setting-8021x $(srcdir)/certs/test_key_and_cert.pem "test"
 
@@ -129,5 +124,7 @@ check-local: test-settings-defaults test-crypto test-secrets test-setting-8021x 
 	$(abs_builddir)/test-crypto --pkcs8 \
 		$(srcdir)/certs/pkcs8-enc-key.pem \
 		"1234567890"
+
+TESTS = test-settings-defaults test-secrets test-general test-setting-dcb
 
 endif

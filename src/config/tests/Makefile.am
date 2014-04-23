@@ -20,8 +20,7 @@ test_config_SOURCES = \
 test_config_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
-check-local: test-config
-	$(abs_builddir)/test-config
+TESTS = test-config
 
 EXTRA_DIST = \
 	NetworkManager.conf \

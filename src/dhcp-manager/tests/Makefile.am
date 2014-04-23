@@ -21,8 +21,7 @@ test_dhcp_dhclient_SOURCES = \
 test_dhcp_dhclient_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
-check-local: test-dhcp-dhclient
-	$(abs_builddir)/test-dhcp-dhclient
+TESTS = test-dhcp-dhclient
 
 EXTRA_DIST = \
 	test-dhclient-duid.leases \
