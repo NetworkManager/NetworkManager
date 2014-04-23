@@ -26,6 +26,7 @@
 #include <nm-setting-wireless-security.h>
 #include <nm-settings-connection.h>
 #include <nm-system-config-interface.h>
+#include <nm-logging.h>
 #include <nm-settings-error.h>
 #include "nm-ifnet-connection.h"
 #include "connection_parser.h"
@@ -137,11 +138,11 @@ commit_changes (NMSettingsConnection *connection,
 		priv->conn_name = new_name;
 
 		NM_SETTINGS_CONNECTION_CLASS (nm_ifnet_connection_parent_class)->commit_changes (connection, callback, user_data);
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully updated %s", priv->conn_name);
+		nm_log_info (LOGD_SETTINGS, "Successfully updated %s", priv->conn_name);
 	} else {
-		PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Failed to update %s",
-		              priv->conn_name ? priv->conn_name :
-		                  nm_connection_get_id (NM_CONNECTION (connection)));
+		nm_log_warn (LOGD_SETTINGS, "Failed to update %s",
+		             priv->conn_name ? priv->conn_name :
+		             nm_connection_get_id (NM_CONNECTION (connection)));
 		reload_parsers ();
 		callback (connection, error, user_data);
 		g_error_free (error);
@@ -163,7 +164,7 @@ do_delete (NMSettingsConnection *connection,
 	/* Only connections which exist in /etc/conf.d/net will have a conn_name */
 	if (priv->conn_name) {
 		if (!ifnet_delete_connection_in_parsers (priv->conn_name, CONF_NET_FILE, WPA_SUPPLICANT_CONF, NULL)) {
-			PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Failed to delete %s", priv->conn_name);
+			nm_log_warn (LOGD_SETTINGS, "Failed to delete %s", priv->conn_name);
 			reload_parsers ();
 			callback (connection, error, user_data);
 			g_error_free (error);
@@ -176,9 +177,9 @@ do_delete (NMSettingsConnection *connection,
 
 	g_signal_emit (connection, signals[IFNET_SETUP_MONITORS], 0);
 
-	PLUGIN_PRINT (IFNET_PLUGIN_NAME, "Successfully deleted %s",
-	              priv->conn_name ? priv->conn_name :
-	                  nm_connection_get_id (NM_CONNECTION (connection)));
+	nm_log_info (LOGD_SETTINGS, "Successfully deleted %s",
+	             priv->conn_name ? priv->conn_name :
+	             nm_connection_get_id (NM_CONNECTION (connection)));
 }
 
 static void

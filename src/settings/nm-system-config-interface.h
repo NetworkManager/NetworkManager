@@ -29,13 +29,6 @@
 
 G_BEGIN_DECLS
 
-#define PLUGIN_PRINT(pname, fmt, args...) \
-	{ g_message ("   " pname ": " fmt, ##args); }
-
-#define PLUGIN_WARN(pname, fmt, args...) \
-	{ g_warning ("   " pname ": " fmt, ##args); }
-
-
 /* Plugin's factory function that returns a GObject that implements
  * NMSystemConfigInterface.
  */

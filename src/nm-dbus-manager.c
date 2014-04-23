@@ -466,16 +466,16 @@ private_connection_disconnected (NMDBusManager *self, DBusGConnection *connectio
 	g_signal_emit (G_OBJECT (self), signals[NAME_OWNER_CHANGED],
 	               0, owner, owner, NULL);
 }
-#endif  /* HAVE_DBUS_GLIB_100 */
 
 static void
-nm_dbus_manager_init (NMDBusManager *self)
+private_server_setup (NMDBusManager *self)
 {
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
-	priv->exported = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
+	/* Skip this step if this is just a test program */
+	if (g_test_initialized ())
+		return;
 
-#if HAVE_DBUS_GLIB_100
 	/* Set up our main private DBus socket */
 	if (mkdir (NMRUNDIR, 0700) == -1) {
 		if (errno != EEXIST)
@@ -494,6 +494,18 @@ nm_dbus_manager_init (NMDBusManager *self)
 		                  (GCallback) private_connection_disconnected,
 		                  NULL);
 	}
+}
+#endif  /* HAVE_DBUS_GLIB_100 */
+
+static void
+nm_dbus_manager_init (NMDBusManager *self)
+{
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+
+	priv->exported = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
+
+#if HAVE_DBUS_GLIB_100
+	private_server_setup (self);
 #endif
 }
 

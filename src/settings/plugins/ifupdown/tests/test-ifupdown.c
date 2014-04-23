@@ -24,6 +24,8 @@
 #include <nm-utils.h>
 
 #include "nm-test-helpers.h"
+#include "nm-logging.h"
+
 #include "interface_parser.h"
 #include "parser.h"
 
@@ -941,6 +943,7 @@ main (int argc, char **argv)
 
 	if (!nm_utils_init (&error))
 		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
+	nm_logging_setup ("WARN", "DEFAULT", NULL, NULL);
 
 	g_test_init (&argc, &argv, NULL);
 

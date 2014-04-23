@@ -29,6 +29,7 @@
 #include <nm-settings-connection.h>
 #include <nm-system-config-interface.h>
 #include <nm-settings-error.h>
+#include <nm-logging.h>
 #include "nm-ifupdown-connection.h"
 #include "parser.h"
 
@@ -60,7 +61,7 @@ nm_ifupdown_connection_new (if_block *block)
 static gboolean
 supports_secrets (NMSettingsConnection *connection, const char *setting_name)
 {
-	PLUGIN_PRINT ("SCPlugin-Ifupdown", "supports_secrets() for setting_name: '%s'", setting_name);
+	nm_log_info (LOGD_SETTINGS, "supports_secrets() for setting_name: '%s'", setting_name);
 
 	return (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0);
 }
@@ -84,20 +85,20 @@ constructor (GType type,
 
 	priv = NM_IFUPDOWN_CONNECTION_GET_PRIVATE (object);
 	if (!priv) {
-		g_warning ("%s.%d - no private instance.", __FILE__, __LINE__);
+		nm_log_warn (LOGD_SETTINGS, "%s.%d - no private instance.", __FILE__, __LINE__);
 		goto err;
 	}
 	if (!priv->ifblock) {
-		g_warning ("(ifupdown) ifblock not provided to constructor.");
+		nm_log_warn (LOGD_SETTINGS, "(ifupdown) ifblock not provided to constructor.");
 		goto err;
 	}
 
 	if (!ifupdown_update_connection_from_if_block (NM_CONNECTION (object), priv->ifblock, &error)) {
-		g_warning ("%s.%d - invalid connection read from /etc/network/interfaces: (%d) %s",
-		           __FILE__,
-		           __LINE__,
-		           error ? error->code : -1,
-		           error && error->message ? error->message : "(unknown)");
+		nm_log_warn (LOGD_SETTINGS, "%s.%d - invalid connection read from /etc/network/interfaces: (%d) %s",
+		             __FILE__,
+		             __LINE__,
+		             error ? error->code : -1,
+		             error && error->message ? error->message : "(unknown)");
 		goto err;
 	}
 

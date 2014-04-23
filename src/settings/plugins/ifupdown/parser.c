@@ -36,6 +36,7 @@
 #include <nm-setting-8021x.h>
 #include <nm-system-config-interface.h>
 #include <nm-utils.h>
+#include <nm-logging.h>
 #include <ctype.h>
 
 #include "parser.h"
@@ -67,9 +68,7 @@ _ifupdownplugin_guess_connection_type (if_block *block)
 	if(!ret_type)
 		ret_type = NM_SETTING_WIRED_SETTING_NAME;
 
-	PLUGIN_PRINT("SCPluginIfupdown",
-			   "guessed connection type (%s) = %s",
-			   block->name, ret_type);
+	nm_log_info (LOGD_SETTINGS, "guessed connection type (%s) = %s", block->name, ret_type);
 	return ret_type;
 }
 
@@ -111,15 +110,14 @@ update_wireless_setting_from_if_block(NMConnection *connection,
 		return;
 	}
 
-	PLUGIN_PRINT ("SCPlugin-Ifupdown", "update wireless settings (%s).", block->name);
+	nm_log_info (LOGD_SETTINGS, "update wireless settings (%s).", block->name);
 	wireless_setting = NM_SETTING_WIRELESS(nm_setting_wireless_new());
 
 	while(curr) {
 		if(strlen(curr->key) > wireless_l &&
 		   !strncmp("wireless-", curr->key, wireless_l)) {
 			const gchar* newkey = map_by_mapping(mapping, curr->key+wireless_l);
-			PLUGIN_PRINT ("SCPlugin-Ifupdown", "wireless setting key: %s='%s'",
-					    newkey, curr->data);
+			nm_log_info (LOGD_SETTINGS, "wireless setting key: %s='%s'", newkey, curr->data);
 			if(newkey && !strcmp("ssid", newkey)) {
 				GByteArray *ssid;
 				gint len = strlen(curr->data);
@@ -128,7 +126,7 @@ update_wireless_setting_from_if_block(NMConnection *connection,
 				g_byte_array_append (ssid, (const guint8 *) curr->data, len);
 				g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, ssid, NULL);
 				g_byte_array_free (ssid, TRUE);
-				PLUGIN_PRINT("SCPlugin-Ifupdown", "setting wireless ssid = %d", len);
+				nm_log_info (LOGD_SETTINGS, "setting wireless ssid = %d", len);
 			} else {
 				g_object_set(wireless_setting,
 					   newkey, curr->data,
@@ -146,13 +144,13 @@ update_wireless_setting_from_if_block(NMConnection *connection,
 				g_byte_array_append (ssid, (const guint8 *) curr->data, len);
 				g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, ssid, NULL);
 				g_byte_array_free (ssid, TRUE);
-				PLUGIN_PRINT("SCPlugin-Ifupdown", "setting wpa ssid = %d", len);
+				nm_log_info (LOGD_SETTINGS, "setting wpa ssid = %d", len);
 			} else if(newkey) {
 
 				g_object_set(wireless_setting,
 						   newkey, curr->data,
 						   NULL);
-				PLUGIN_PRINT ("SCPlugin-Ifupdown", "setting wpa newkey(%s)=data(%s)", newkey, curr->data);
+				nm_log_info (LOGD_SETTINGS, "setting wpa newkey(%s)=data(%s)", newkey, curr->data);
 			}
 		}
 		curr = curr->next;
@@ -313,7 +311,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 	s_wireless = nm_connection_get_setting_wireless(connection);
 	g_return_if_fail(s_wireless);
 
-	PLUGIN_PRINT ("SCPlugin-Ifupdown","update wireless security settings (%s).", block->name);
+	nm_log_info (LOGD_SETTINGS, "update wireless security settings (%s).", block->name);
 	wireless_security_setting =
 		NM_SETTING_WIRELESS_SECURITY(nm_setting_wireless_security_new());
 
@@ -328,12 +326,13 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 			IfupdownStrToTypeFunc type_map_func = map_by_mapping (type_mapping, curr->key+wireless_l);
 			GFreeFunc free_func = map_by_mapping (free_type_mapping, curr->key+wireless_l);
 			if(!newkey || !dupe_func) {
-				g_warning("no (wireless) mapping found for key: %s", curr->key);
+				nm_log_warn (LOGD_SETTINGS, "no (wireless) mapping found for key: %s",
+				             curr->key);
 				goto next;
 			}
 			property_value = (*dupe_func) (curr->data, connection);
-			PLUGIN_PRINT ("SCPlugin-Ifupdown", "setting wireless security key: %s=%s",
-					    newkey, property_value);
+			nm_log_info (LOGD_SETTINGS, "setting wireless security key: %s=%s",
+			             newkey, property_value);
 
 			if (type_map_func) {
 				errno = 0;
@@ -365,23 +364,23 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 				goto next;
 			}
 			property_value = (*dupe_func) (curr->data, connection);
-			PLUGIN_PRINT ("SCPlugin-Ifupdown", "setting wpa security key: %s=%s",
-					    newkey,
+			nm_log_info (LOGD_SETTINGS, "setting wpa security key: %s=%s",
+			             newkey,
 #ifdef DEBUG_SECRETS
-					    property_value
+			             property_value
 #else // DEBUG_SECRETS
-					    !strcmp("key", newkey) ||
-					    !strcmp("leap-password", newkey) ||
-					    !strcmp("pin", newkey) ||
-					    !strcmp("psk", newkey) ||
-					    !strcmp("wep-key0", newkey) ||
-					    !strcmp("wep-key1", newkey) ||
-					    !strcmp("wep-key2", newkey) ||
-					    !strcmp("wep-key3", newkey) ||
-					    NULL ?
-					    "<omitted>" : property_value
+			             !strcmp("key", newkey) ||
+			             !strcmp("leap-password", newkey) ||
+			             !strcmp("pin", newkey) ||
+			             !strcmp("psk", newkey) ||
+			             !strcmp("wep-key0", newkey) ||
+			             !strcmp("wep-key1", newkey) ||
+			             !strcmp("wep-key2", newkey) ||
+			             !strcmp("wep-key3", newkey) ||
+			             NULL ?
+			             "<omitted>" : property_value
 #endif // DEBUG_SECRETS
-					    );
+			             );
 
 			if (type_map_func) {
 				errno = 0;
@@ -444,15 +443,12 @@ ifupdown_ip4_add_dns (NMSettingIP4Config *s_ip4, const char *dns)
 		if (g_ascii_isspace (*iter[0]))
 			continue;
 		if (!inet_pton (AF_INET, *iter, &addr)) {
-			PLUGIN_WARN ("SCPlugin-Ifupdown",
-					   "    warning: ignoring invalid nameserver '%s'", *iter);
+			nm_log_warn (LOGD_SETTINGS, "    ignoring invalid nameserver '%s'", *iter);
 			continue;
 		}
 
-		if (!nm_setting_ip4_config_add_dns (s_ip4, addr)) {
-			PLUGIN_WARN ("SCPlugin-Ifupdown",
-					   "    warning: duplicate DNS domain '%s'", *iter);
-		}
+		if (!nm_setting_ip4_config_add_dns (s_ip4, addr))
+			nm_log_warn (LOGD_SETTINGS, "    duplicate DNS domain '%s'", *iter);
 	}
 	g_strfreev (list);
 }
@@ -526,10 +522,10 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		nm_ip4_address_set_gateway (addr, tmp_gw);
 
 		if (nm_setting_ip4_config_add_address (s_ip4, addr)) {
-			PLUGIN_PRINT("SCPlugin-Ifupdown", "addresses count: %d",
+			nm_log_info (LOGD_SETTINGS, "addresses count: %d",
 			             nm_setting_ip4_config_get_num_addresses (s_ip4));
 		} else {
-			PLUGIN_PRINT("SCPlugin-Ifupdown", "ignoring duplicate IP4 address");
+			nm_log_info (LOGD_SETTINGS, "ignoring duplicate IP4 address");
 		}
 
 		nameserver_v = ifparser_getkey (block, "dns-nameserver");
@@ -539,7 +535,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		ifupdown_ip4_add_dns (s_ip4, nameservers_v);
 
 		if (!nm_setting_ip4_config_get_num_dns (s_ip4))
-			PLUGIN_PRINT("SCPlugin-Ifupdown", "No dns-nameserver configured in /etc/network/interfaces");
+			nm_log_info (LOGD_SETTINGS, "No dns-nameserver configured in /etc/network/interfaces");
 
 		/* DNS searches */
 		search_v = ifparser_getkey (block, "dns-search");
@@ -549,10 +545,8 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 				g_strstrip (*iter);
 				if (g_ascii_isspace (*iter[0]))
 					continue;
-				if (!nm_setting_ip4_config_add_dns_search (s_ip4, *iter)) {
-					PLUGIN_WARN ("SCPlugin-Ifupdown",
-							   "    warning: duplicate DNS domain '%s'", *iter);
-				}
+				if (!nm_setting_ip4_config_add_dns_search (s_ip4, *iter))
+					nm_log_warn (LOGD_SETTINGS, "    duplicate DNS domain '%s'", *iter);
 			}
 			g_strfreev (list);
 		}
@@ -583,15 +577,12 @@ ifupdown_ip6_add_dns (NMSettingIP6Config *s_ip6, const char *dns)
 		if (g_ascii_isspace (*iter[0]))
 			continue;
 		if (!inet_pton (AF_INET6, *iter, &addr)) {
-			PLUGIN_WARN ("SCPlugin-Ifupdown",
-					   "    warning: ignoring invalid nameserver '%s'", *iter);
+			nm_log_warn (LOGD_SETTINGS, "    ignoring invalid nameserver '%s'", *iter);
 			continue;
 		}
 
-		if (!nm_setting_ip6_config_add_dns (s_ip6, &addr)) {
-			PLUGIN_WARN ("SCPlugin-Ifupdown",
-					   "    warning: duplicate DNS domain '%s'", *iter);
-		}
+		if (!nm_setting_ip6_config_add_dns (s_ip6, &addr))
+			nm_log_warn (LOGD_SETTINGS, "    duplicate DNS domain '%s'", *iter);
 	}
 	g_strfreev (list);
 }
@@ -651,10 +642,10 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 		nm_ip6_address_set_gateway (addr, &tmp_gw);
 
 		if (nm_setting_ip6_config_add_address (s_ip6, addr)) {
-			PLUGIN_PRINT("SCPlugin-Ifupdown", "addresses count: %d",
-					   nm_setting_ip6_config_get_num_addresses (s_ip6));
+			nm_log_info (LOGD_SETTINGS, "addresses count: %d",
+			             nm_setting_ip6_config_get_num_addresses (s_ip6));
 		} else {
-			PLUGIN_PRINT("SCPlugin-Ifupdown", "ignoring duplicate IP6 address");
+			nm_log_info (LOGD_SETTINGS, "ignoring duplicate IP6 address");
 		}
 
 		nameserver_v = ifparser_getkey(block, "dns-nameserver");
@@ -664,7 +655,7 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 		ifupdown_ip6_add_dns (s_ip6, nameservers_v);
 
 		if (!nm_setting_ip6_config_get_num_dns (s_ip6))
-			PLUGIN_PRINT("SCPlugin-Ifupdown", "No dns-nameserver configured in /etc/network/interfaces");
+			nm_log_info (LOGD_SETTINGS, "No dns-nameserver configured in /etc/network/interfaces");
 
 		/* DNS searches */
 		search_v = ifparser_getkey (block, "dns-search");
@@ -674,10 +665,8 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 				g_strstrip (*iter);
 				if (isblank (*iter[0]))
 					continue;
-				if (!nm_setting_ip6_config_add_dns_search (s_ip6, *iter)) {
-					PLUGIN_WARN ("SCPlugin-Ifupdown",
-							   "    warning: duplicate DNS domain '%s'", *iter);
-				}
+				if (!nm_setting_ip6_config_add_dns_search (s_ip6, *iter))
+					nm_log_warn (LOGD_SETTINGS, "    duplicate DNS domain '%s'", *iter);
 			}
 			g_strfreev (list);
 		}
@@ -729,8 +718,8 @@ ifupdown_update_connection_from_if_block (NMConnection *connection,
 	              NULL);
 	g_free (uuid);
 
-	PLUGIN_PRINT("SCPlugin-Ifupdown", "update_connection_setting_from_if_block: name:%s, type:%s, id:%s, uuid: %s",
-			   block->name, type, idstr, nm_setting_connection_get_uuid (s_con));
+	nm_log_info (LOGD_SETTINGS, "update_connection_setting_from_if_block: name:%s, type:%s, id:%s, uuid: %s",
+	             block->name, type, idstr, nm_setting_connection_get_uuid (s_con));
 
 	if (!strcmp (NM_SETTING_WIRED_SETTING_NAME, type))
 		update_wired_setting_from_if_block (connection, block);

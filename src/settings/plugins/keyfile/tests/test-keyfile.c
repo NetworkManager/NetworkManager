@@ -42,6 +42,7 @@
 #include <nm-setting-infiniband.h>
 
 #include "nm-test-helpers.h"
+#include "nm-glib-compat.h"
 
 #include "reader.h"
 #include "writer.h"
@@ -141,7 +142,36 @@ test_read_valid_wired_connection (void)
 	const char *expected6_dnssearch2 = "redhat.com";
 	const char *expected6_dnssearch3 = "gnu.org";
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv4.addresses1*semicolon at the end*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv4.addresses2*semicolon at the end*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*Missing prefix length*ipv4.address4*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*Missing prefix length*ipv4.address5*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv4.routes2*semicolon at the end*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv4.routes3*semicolon at the end*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv4.routes5*semicolon at the end*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv4.routes8*semicolon at the end*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*Missing prefix length*ipv6.address4*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv6.address5*semicolon at the end*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*Missing prefix length*ipv6.address5*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv6.address7*semicolon at the end*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv6.routes1*semicolon at the end*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv6.route6*semicolon at the end*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_FILE, NULL);
+	g_test_assert_expected_messages ();
 	ASSERT (connection != NULL,
 			"connection-read", "failed to read %s", TEST_WIRED_FILE);
 
@@ -861,7 +891,14 @@ test_read_wired_mac_case (void)
 	const char *expected_id = "Test Wired Connection MAC Case";
 	const char *expected_uuid = "4e80a56d-c99f-4aad-a6dd-b449bc398c57";
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv4.addresses1*semicolon at the end*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv4.addresses2*semicolon at the end*");
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_MESSAGE,
+	                       "*ipv6.routes1*semicolon at the end*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_MAC_CASE_FILE, NULL);
+	g_test_assert_expected_messages ();
 	ASSERT (connection != NULL,
 			"connection-read", "failed to read %s", TEST_WIRED_MAC_CASE_FILE);
 
@@ -2182,7 +2219,10 @@ test_read_wired_8021x_tls_blob_connection (void)
 	g_assert_cmpint (nm_setting_802_1x_get_ca_cert_scheme (s_8021x), ==, NM_SETTING_802_1X_CK_SCHEME_BLOB);
 
 	/* Make sure it's not a path, since it's a blob */
+	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL,
+	                       "*assertion*scheme == NM_SETTING_802_1X_CK_SCHEME_PATH*");
 	tmp = nm_setting_802_1x_get_ca_cert_path (s_8021x);
+	g_test_assert_expected_messages ();
 	g_assert (tmp == NULL);
 
 	/* Validate the path */
@@ -2212,7 +2252,10 @@ test_read_wired_8021x_tls_bad_path_connection (void)
 	char *tmp2;
 	gboolean success;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*does not exist*");
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_TLS_PATH_MISSING_FILE, &error);
+	g_test_assert_expected_messages ();
 	if (connection == NULL) {
 		g_assert (error);
 		g_warning ("Failed to read %s: %s", TEST_WIRED_TLS_PATH_MISSING_FILE, error->message);
@@ -3300,6 +3343,7 @@ int main (int argc, char **argv)
 	char *base;
 
 	g_type_init ();
+	g_log_set_always_fatal (G_LOG_LEVEL_MASK);
 
 	if (!nm_utils_init (&error))
 		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);

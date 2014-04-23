@@ -44,6 +44,7 @@
 
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
+#include "nm-logging.h"
 #include "writer.h"
 #include "common.h"
 #include "utils.h"
@@ -329,9 +330,8 @@ ip6_addr_writer (GKeyFile *file,
 		char *key_name, *ip6_addr;
 
 		if (values->n_values != 3) {
-			g_warning ("%s: error writing IP6 address %d (address array length "
-			           "%d is not 3)",
-			           __func__, i, values->n_values);
+			nm_log_warn (LOGD_SETTINGS, "%s: error writing IP6 address %d (address array "
+			             "length %d is not 3)", __func__, i, values->n_values);
 			continue;
 		}
 
@@ -424,8 +424,8 @@ mac_address_writer (GKeyFile *file,
 
 	type = nm_utils_hwaddr_type (array->len);
 	if (type < 0) {
-		g_warning ("%s: invalid %s / %s MAC address length %d",
-		           __func__, setting_name, key, array->len);
+		nm_log_warn (LOGD_SETTINGS, "%s: invalid %s / %s MAC address length %d",
+		             __func__, setting_name, key, array->len);
 		return;
 	}
 
@@ -752,7 +752,8 @@ cert_writer (GKeyFile *file,
 			/* Write the path value to the keyfile */
 			nm_keyfile_plugin_kf_set_string (file, setting_name, key, new_path);
 		} else {
-			g_warning ("Failed to write certificate/key %s: %s", new_path, error->message);
+			nm_log_warn (LOGD_SETTINGS, "Failed to write certificate/key %s: %s",
+			             new_path, error->message);
 			g_error_free (error);
 		}
 		g_free (new_path);
@@ -969,12 +970,12 @@ write_setting_value (NMSetting *setting,
 		write_hash_of_string (info->keyfile, setting, key, value);
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
 		if (!write_array_of_uint (info->keyfile, setting, key, value)) {
-			g_warning ("Unhandled setting property type (write) '%s/%s' : '%s'", 
-					 setting_name, key, g_type_name (type));
+			nm_log_warn (LOGD_SETTINGS, "Unhandled setting property type (write) '%s/%s' : '%s'", 
+			             setting_name, key, g_type_name (type));
 		}
 	} else {
-		g_warning ("Unhandled setting property type (write) '%s/%s' : '%s'", 
-				 setting_name, key, g_type_name (type));
+		nm_log_warn (LOGD_SETTINGS, "Unhandled setting property type (write) '%s/%s' : '%s'", 
+		             setting_name, key, g_type_name (type));
 	}
 }
 

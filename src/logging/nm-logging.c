@@ -57,6 +57,7 @@ nm_log_handler (const gchar *log_domain,
 static guint32 log_level = LOGL_INFO;
 static char *log_domains;
 static guint64 logging[LOGL_MAX];
+static gboolean logging_set_up;
 static gboolean syslog_opened;
 
 typedef struct {
@@ -162,6 +163,8 @@ nm_logging_setup (const char  *level,
 	guint32 new_log_level = log_level;
 	char **tmp, **iter;
 	int i;
+
+	logging_set_up = TRUE;
 
 	for (i = 0; i < LOGL_MAX; i++)
 		new_logging[i] = 0;
@@ -368,8 +371,12 @@ _nm_log (const char *loc,
 	char *fullmsg = NULL;
 	GTimeVal tv;
 	int syslog_level = LOG_INFO;
+	int g_log_level = G_LOG_LEVEL_INFO;
 
 	g_return_if_fail (level < LOGL_MAX);
+
+	if (G_UNLIKELY (!logging_set_up))
+		nm_logging_setup ("INFO", "DEFAULT", NULL, NULL);
 
 	if (!(logging[level] & domain))
 		return;
@@ -382,18 +389,23 @@ _nm_log (const char *loc,
 	case LOGL_DEBUG:
 		g_get_current_time (&tv);
 		syslog_level = LOG_INFO;
+		g_log_level = G_LOG_LEVEL_DEBUG;
 		fullmsg = g_strdup_printf ("<debug> [%ld.%06ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
 		break;
 	case LOGL_INFO:
 		syslog_level = LOG_INFO;
+		g_log_level = G_LOG_LEVEL_MESSAGE;
 		fullmsg = g_strconcat ("<info> ", msg, NULL);
 		break;
 	case LOGL_WARN:
 		syslog_level = LOG_WARNING;
+		g_log_level = G_LOG_LEVEL_WARNING;
 		fullmsg = g_strconcat ("<warn> ", msg, NULL);
 		break;
 	case LOGL_ERR:
 		syslog_level = LOG_ERR;
+		/* g_log_level is still WARNING, because ERROR is fatal */
+		g_log_level = G_LOG_LEVEL_WARNING;
 		g_get_current_time (&tv);
 		fullmsg = g_strdup_printf ("<error> [%ld.%06ld] [%s] %s(): %s", tv.tv_sec, tv.tv_usec, loc, func, msg);
 		break;
@@ -403,14 +415,8 @@ _nm_log (const char *loc,
 
 	if (syslog_opened)
 		syslog (syslog_level, "%s", fullmsg);
-	else {
-		FILE *log_target;
-		if (level == LOGL_WARN || level == LOGL_ERR)
-			log_target = stderr;
-		else
-			log_target = stdout;
-		fprintf (log_target, "%s\n", fullmsg);
-	}
+	else
+		g_log (G_LOG_DOMAIN, g_log_level, "%s", fullmsg);
 
 	g_free (msg);
 	g_free (fullmsg);

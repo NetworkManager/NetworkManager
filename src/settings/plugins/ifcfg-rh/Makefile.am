@@ -26,6 +26,7 @@ libifcfg_rh_io_la_SOURCES = \
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/ \
+	-I$(top_srcdir)/src/logging \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/posix-signals \
@@ -40,6 +41,7 @@ AM_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	$(NSS_CFLAGS) \
+	-DG_LOG_DOMAIN=\""NetworkManager-ifcfg-rh"\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DSBINDIR=\"$(sbindir)\"
 

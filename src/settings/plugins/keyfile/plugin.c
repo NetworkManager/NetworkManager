@@ -36,6 +36,7 @@
 #include <nm-setting-connection.h>
 #include <nm-utils.h>
 #include <nm-config.h>
+#include <nm-logging.h>
 
 #include "plugin.h"
 #include "nm-system-config-interface.h"
@@ -105,7 +106,7 @@ remove_connection (SCPluginKeyfile *self, NMKeyfileConnection *connection)
 {
 	g_return_if_fail (connection != NULL);
 
-	PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "removed %s.", nm_keyfile_connection_get_path (connection));
+	nm_log_info (LOGD_SETTINGS, "removed %s.", nm_keyfile_connection_get_path (connection));
 
 	/* Removing from the hash table should drop the last reference */
 	g_object_ref (connection);
@@ -126,8 +127,7 @@ update_connection (SCPluginKeyfile *self,
 	tmp = nm_keyfile_connection_new (NULL, name, &error);
 	if (!tmp) {
 		/* Error; remove the connection */
-		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "    error: %s",
-		              (error && error->message) ? error->message : "(unknown)");
+		nm_log_warn (LOGD_SETTINGS, "    %s", (error && error->message) ? error->message : "(unknown)");
 		g_clear_error (&error);
 		remove_connection (self, connection);
 		return;
@@ -137,7 +137,7 @@ update_connection (SCPluginKeyfile *self,
 	                            NM_CONNECTION (tmp),
 	                            NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS |
 		                          NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)) {
-		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "updating %s", name);
+		nm_log_info (LOGD_SETTINGS, "updating %s", name);
 		if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection),
 		                                              NM_CONNECTION (tmp),
 		                                              FALSE,  /* don't set Unsaved */
@@ -180,8 +180,8 @@ new_connection (SCPluginKeyfile *self,
 
 	tmp = nm_keyfile_connection_new (NULL, name, &error);
 	if (!tmp) {
-		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "    error in connection %s: %s", name,
-		              (error && error->message) ? error->message : "(unknown)");
+		nm_log_warn (LOGD_SETTINGS, "    error in connection %s: %s", name,
+		             (error && error->message) ? error->message : "(unknown)");
 		g_clear_error (&error);
 		return;
 	}
@@ -189,8 +189,7 @@ new_connection (SCPluginKeyfile *self,
 	/* Connection renames will show as different paths but same UUID */
 	connection = g_hash_table_lookup (priv->connections, nm_connection_get_uuid (NM_CONNECTION (tmp)));
 	if (connection) {
-		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "rename %s -> %s",
-		              nm_keyfile_connection_get_path (connection), name);
+		nm_log_info (LOGD_SETTINGS, "rename %s -> %s", nm_keyfile_connection_get_path (connection), name);
 		if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection),
 		                                              NM_CONNECTION (tmp),
 		                                              FALSE,  /* don't set Unsaved */
@@ -203,7 +202,7 @@ new_connection (SCPluginKeyfile *self,
 			*out_old_path = g_strdup (nm_keyfile_connection_get_path (connection));
 		nm_keyfile_connection_set_path (connection, name);
 	} else {
-		PLUGIN_PRINT (KEYFILE_PLUGIN_NAME, "new connection %s", name);
+		nm_log_info (LOGD_SETTINGS, "new connection %s", name);
 		g_hash_table_insert (priv->connections,
 		                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (tmp)),
 		                     tmp);
@@ -335,7 +334,7 @@ read_connections (NMSystemConfigInterface *config)
 
 	dir = g_dir_open (KEYFILE_DIR, 0, &error);
 	if (!dir) {
-		PLUGIN_WARN (KEYFILE_PLUGIN_NAME, "Cannot read directory '%s': (%d) %s",
+		nm_log_warn (LOGD_SETTINGS, "Cannot read directory '%s': (%d) %s",
 		             KEYFILE_DIR,
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
@@ -514,7 +513,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 			} else if (!strncmp (udis[i], "interface-name:", 15) && nm_utils_iface_valid_name (udis[i] + 15)) {
 				specs = g_slist_append (specs, udis[i]);
 			} else {
-				g_warning ("Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, udis[i]);
+				nm_log_warn (LOGD_SETTINGS, "Error in file '%s': invalid unmanaged-devices entry: '%s'", priv->conf_file, udis[i]);
 				g_free (udis[i]);
 			}
 		}
@@ -524,7 +523,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 
  out:
 	if (error) {
-		g_warning ("%s", error->message);
+		nm_log_warn (LOGD_SETTINGS, "%s", error->message);
 		g_error_free (error);
 	}
 	if (key_file)
@@ -552,7 +551,7 @@ plugin_get_hostname (SCPluginKeyfile *plugin)
 
  out:
 	if (error) {
-		g_warning ("%s", error->message);
+		nm_log_warn (LOGD_SETTINGS, "%s", error->message);
 		g_error_free (error);
 	}
 	if (key_file)
@@ -599,7 +598,7 @@ plugin_set_hostname (SCPluginKeyfile *plugin, const char *hostname)
 
  out:
 	if (error) {
-		g_warning ("%s", error->message);
+		nm_log_warn (LOGD_SETTINGS, "%s", error->message);
 		g_error_free (error);
 	}
 	g_free (data);
