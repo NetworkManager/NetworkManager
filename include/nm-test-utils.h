@@ -32,6 +32,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include "nm-utils.h"
+
 
 struct __nmtst_internal
 {
@@ -125,6 +127,7 @@ inline static void
 nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_domains)
 {
 	static gsize atexit_registered = 0;
+	GError *error = NULL;
 	const char *nmtst_debug;
 	gboolean is_debug = FALSE;
 	char *c_log_level = NULL, *c_log_domains = NULL;
@@ -221,6 +224,10 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 #endif
 		g_assert (success);
 	}
+
+	if (!nm_utils_init (&error))
+		g_error ("failed to initialize libnm-util: %s", error->message);
+	g_assert (!error);
 
 	/* Delay messages until we setup logging. */
 	for (i = 0; i < debug_messages->len; i++)
