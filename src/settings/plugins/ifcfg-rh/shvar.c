@@ -79,6 +79,7 @@ svOpenFileInternal (const char *name, gboolean create, GError **error)
 				continue;
 			if (nread <= 0) {
 				errsv = errno;
+				g_free (arena);
 				goto bail;
 			}
 			total += nread;

@@ -559,13 +559,13 @@ get_duid (NMDHCPClient *client)
 	if (leasefile) {
 		nm_log_dbg (LOGD_DHCP, "Looking for DHCPv6 DUID in '%s'.", leasefile);
 		duid = nm_dhcp_dhclient_read_duid (leasefile, &error);
-		g_free (leasefile);
 
 		if (error) {
 			nm_log_warn (LOGD_DHCP, "Failed to read leasefile '%s': (%d) %s",
 			             leasefile, error->code, error->message);
 			g_clear_error (&error);
 		}
+		g_free (leasefile);
 	}
 
 	if (!duid && priv->def_leasefile) {
