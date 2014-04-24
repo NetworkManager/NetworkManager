@@ -610,7 +610,7 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 			continue;
 
 		if (NM_IS_SETTING_VPN (setting)) {
-			if (strcmp (*iter, NM_SETTING_VPN_SERVICE_TYPE))
+			if (strcmp (*iter, NM_SETTING_VPN_SERVICE_TYPE) && strcmp (*iter, NM_SETTING_VPN_USER_NAME))
 				nm_setting_vpn_add_data_item (NM_SETTING_VPN (setting), *iter, value);
 		}
 		if (NM_IS_SETTING_BOND (setting)) {
