@@ -42,6 +42,7 @@ struct __nmtst_internal
 	guint32 rand_seed;
 	GRand *rand;
 	gboolean is_debug;
+	gboolean assert_logging;
 	char *sudo_cmd;
 	char **orig_argv;
 };
@@ -57,6 +58,16 @@ nmtst_initialized (void)
 {
 	return !!__nmtst_internal.rand0;
 }
+
+#define __NMTST_LOG(cmd, fmt, ...) \
+	G_STMT_START { \
+		g_assert (nmtst_initialized ()); \
+		if (!__nmtst_internal.assert_logging) { \
+			cmd (fmt, __VA_ARGS__); \
+		} else { \
+			printf (fmt "\n", __VA_ARGS__); \
+		} \
+	} G_STMT_END
 
 /* split the string inplace at specific delimiters, allowing escaping with '\\'.
  * Returns a zero terminated array of pointers into @str.
@@ -125,7 +136,7 @@ nmtst_free (void)
 }
 
 inline static void
-nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_domains)
+__nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_level, const char *log_domains)
 {
 	static gsize atexit_registered = 0;
 	GError *error = NULL;
@@ -140,6 +151,7 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 
 	g_assert (!((!!argc) ^ (!!argv)));
 	g_assert (!argc || (g_strv_length (*argv) == *argc));
+	g_assert (!assert_logging || (!log_level && !log_domains));
 
 	if (argc)
 		__nmtst_internal.orig_argv = g_strdupv (*argv);
@@ -150,6 +162,8 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 		 * call nmtst_init() with argc==NULL and call g_test_init() yourself. */
 		g_test_init (argc, argv, NULL);
 	}
+
+	__nmtst_internal.assert_logging = !!assert_logging;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
@@ -218,12 +232,21 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 		log_level = is_debug ? "DEBUG" : "WARN";
 	}
 
-	if (log_level || log_domains) {
-		gboolean success = FALSE;
+	if (!__nmtst_internal.assert_logging) {
+		gboolean success = TRUE;
 #ifdef NM_LOGGING_H
 		success = nm_logging_setup (log_level, log_domains, NULL, NULL);
 #endif
 		g_assert (success);
+	} else {
+#if GLIB_CHECK_VERSION(2,34,0)
+		/* We were called not to set logging levels. This means, that the user
+		 * expects to assert against (all) messages. Any uncought message is fatal. */
+		g_log_set_always_fatal (G_LOG_LEVEL_MASK);
+#else
+		/* g_test_expect_message() is a NOP, so allow any messages */
+		g_log_set_always_fatal (G_LOG_FATAL_MASK);
+#endif
 	}
 
 	if (!nm_utils_init (&error))
@@ -232,7 +255,7 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 
 	/* Delay messages until we setup logging. */
 	for (i = 0; i < debug_messages->len; i++)
-		g_message ("%s", g_array_index (debug_messages, const char *, i));
+		__NMTST_LOG (g_message, "%s", g_array_index (debug_messages, const char *, i));
 
 	g_strfreev ((char **) g_array_free (debug_messages, FALSE));
 	g_free (c_log_level);
@@ -243,6 +266,25 @@ nmtst_init (int *argc, char ***argv, const char *log_level, const char *log_doma
 		g_once_init_leave (&atexit_registered, 1);
 	}
 }
+
+#ifdef NM_LOGGING_H
+inline static void
+nmtst_init_with_logging (int *argc, char ***argv, const char *log_level, const char *log_domains)
+{
+	__nmtst_init (argc, argv, FALSE, log_level, log_domains);
+}
+inline static void
+nmtst_init_assert_logging (int *argc, char ***argv)
+{
+	__nmtst_init (argc, argv, TRUE, NULL, NULL);
+}
+#else
+inline static void
+nmtst_init (int *argc, char ***argv, gboolean assert_logging)
+{
+	__nmtst_init (argc, argv, assert_logging, NULL, NULL);
+}
+#endif
 
 inline static gboolean
 nmtst_is_debug (void)
@@ -284,7 +326,7 @@ nmtst_get_rand ()
 		}
 		__nmtst_internal.rand_seed = seed;
 
-		g_message (">> initialize nmtst_get_rand() with seed=%u", seed);
+		__NMTST_LOG (g_message, ">> initialize nmtst_get_rand() with seed=%u", seed);
 	}
 	return __nmtst_internal.rand;
 }
@@ -311,7 +353,7 @@ nmtst_reexec_sudo (void)
 		return;
 
 	str = g_strjoinv (" ", __nmtst_internal.orig_argv);
-	g_message (">> exec %s %s", __nmtst_internal.sudo_cmd, str);
+	__NMTST_LOG (g_message, ">> exec %s %s", __nmtst_internal.sudo_cmd, str);
 
 	argv = g_new0 (char *, 1 + g_strv_length (__nmtst_internal.orig_argv) + 1);
 	argv[0] = __nmtst_internal.sudo_cmd;

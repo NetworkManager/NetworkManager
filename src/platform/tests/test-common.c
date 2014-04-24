@@ -147,7 +147,7 @@ main (int argc, char **argv)
 	int result;
 	const char *program = *argv;
 
-	nmtst_init (&argc, &argv, NULL, "ALL");
+	nmtst_init_with_logging (&argc, &argv, NULL, "ALL");
 
 	if (SETUP == nm_linux_platform_setup && getuid() != 0) {
 		/* Try to exec as sudo, this function does not return, if a sudo-cmd is set. */
