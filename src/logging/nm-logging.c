@@ -432,7 +432,7 @@ nm_log_handler (const gchar *log_domain,
 {
 	int syslog_priority;	
 
-	switch (level) {
+	switch (level & G_LOG_LEVEL_MASK) {
 	case G_LOG_LEVEL_ERROR:
 		syslog_priority = LOG_CRIT;
 		break;
