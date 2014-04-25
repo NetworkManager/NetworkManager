@@ -1,3 +1,3 @@
 # bad: wrong DEVICE
-DEVICE=aliasem0:2
+DEVICE=aliasem0:1
 IPADDR=192.168.1.20

@@ -126,7 +126,8 @@ ALIAS_FILES = \
 	ifcfg-aliasem0:99 \
 	ifcfg-aliasem1 \
 	ifcfg-aliasem1:1 \
-	ifcfg-aliasem1:2
+	ifcfg-aliasem2 \
+	ifcfg-aliasem2:1
 
 dist-hook:
 	@for f in $(ALIAS_FILES); do \
