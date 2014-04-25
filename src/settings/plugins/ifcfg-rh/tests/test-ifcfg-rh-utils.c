@@ -113,9 +113,13 @@ test_ignored (const char *desc, const char *path, gboolean expected_ignored)
 	ASSERT (result == expected_ignored, desc, "unexpected ignore result for path '%s'", path);
 }
 
+NMTST_DEFINE ();
+
 int main (int argc, char **argv)
 {
 	char *base;
+
+	nmtst_init (&argc, &argv, TRUE);
 
 	/* The tests */
 	test_get_ifcfg_name ("get-ifcfg-name-bad", "/foo/bar/adfasdfadf", FALSE, NULL);

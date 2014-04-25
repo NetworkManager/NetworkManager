@@ -43,6 +43,7 @@ struct __nmtst_internal
 	GRand *rand;
 	gboolean is_debug;
 	gboolean assert_logging;
+	gboolean no_expect_message;
 	char *sudo_cmd;
 	char **orig_argv;
 };
@@ -62,7 +63,7 @@ nmtst_initialized (void)
 #define __NMTST_LOG(cmd, fmt, ...) \
 	G_STMT_START { \
 		g_assert (nmtst_initialized ()); \
-		if (!__nmtst_internal.assert_logging) { \
+		if (!__nmtst_internal.assert_logging || __nmtst_internal.no_expect_message) { \
 			cmd (fmt, __VA_ARGS__); \
 		} else { \
 			printf (fmt "\n", __VA_ARGS__); \
@@ -146,6 +147,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 	char *sudo_cmd = NULL;
 	GArray *debug_messages = g_array_new (TRUE, FALSE, sizeof (char *));
 	int i;
+	gboolean no_expect_message = FALSE;
 
 	g_assert (!nmtst_initialized ());
 
@@ -160,6 +162,10 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		/* g_test_init() is a variadic function, so we cannot pass it
 		 * (variadic) arguments. If you need to pass additional parameters,
 		 * call nmtst_init() with argc==NULL and call g_test_init() yourself. */
+
+		/* g_test_init() sets g_log_set_always_fatal() for G_LOG_LEVEL_WARNING
+		 * and G_LOG_LEVEL_CRITICAL. So, beware that the test will fail if you
+		 * have any WARN or ERR log messages -- unless you g_test_expect_message(). */
 		g_test_init (argc, argv, NULL);
 	}
 
@@ -200,6 +206,8 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 			} else if (!g_ascii_strncasecmp (debug, "sudo-cmd=", strlen ("sudo-cmd="))) {
 				g_free (sudo_cmd);
 				sudo_cmd = g_strdup (&debug[strlen ("sudo-cmd=")]);
+			} else if (!g_ascii_strcasecmp (debug, "no-expect-message")) {
+				no_expect_message = TRUE;
 			} else {
 				char *msg = g_strdup_printf (">>> nmtst: ignore unrecognized NMTST_DEBUG option \"%s\"", debug);
 
@@ -225,6 +233,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 	__nmtst_internal.is_debug = is_debug;
 	__nmtst_internal.rand0 = g_rand_new_with_seed (0);
 	__nmtst_internal.sudo_cmd = sudo_cmd;
+	__nmtst_internal.no_expect_message = no_expect_message;
 
 	if (!log_level && log_domains) {
 		/* if the log level is not specified (but the domain is), we assume
@@ -238,6 +247,11 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		success = nm_logging_setup (log_level, log_domains, NULL, NULL);
 #endif
 		g_assert (success);
+	} else if (__nmtst_internal.no_expect_message) {
+		/* We have a test that would be assert_logging, but the user specified no_expect_message.
+		 * This transforms g_test_expect_message() into a NOP, but we also have to relax
+		 * g_log_set_always_fatal(), which was set by g_test_init(). */
+		g_log_set_always_fatal (G_LOG_FATAL_MASK);
 	} else {
 #if GLIB_CHECK_VERSION(2,34,0)
 		/* We were called not to set logging levels. This means, that the user
@@ -249,7 +263,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 #endif
 	}
 
-	if (!__nmtst_internal.assert_logging &&
+	if ((!__nmtst_internal.assert_logging || (__nmtst_internal.assert_logging && __nmtst_internal.no_expect_message)) &&
 	    (is_debug || (log_level && !g_ascii_strcasecmp (log_level, "DEBUG"))) &&
 	    !g_getenv ("G_MESSAGES_DEBUG"))
 	{
@@ -305,6 +319,21 @@ nmtst_is_debug (void)
 	g_assert (nmtst_initialized ());
 	return __nmtst_internal.is_debug;
 }
+
+#if GLIB_CHECK_VERSION(2,34,0)
+#undef g_test_expect_message
+#define g_test_expect_message(...) \
+	G_STMT_START { \
+		g_assert (nmtst_initialized ()); \
+		if (__nmtst_internal.assert_logging && __nmtst_internal.no_expect_message) { \
+			g_debug ("nmtst: swallow g_test_expect_message %s", G_STRINGIFY ((__VA_ARGS__))); \
+		} else { \
+			G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
+			g_test_expect_message (__VA_ARGS__); \
+			G_GNUC_END_IGNORE_DEPRECATIONS \
+		} \
+	} G_STMT_END
+#endif
 
 inline static GRand *
 nmtst_get_rand0 ()

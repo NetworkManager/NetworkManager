@@ -2484,17 +2484,13 @@ test_setting_old_uuid (void)
 	g_assert (success == TRUE);
 }
 
+NMTST_DEFINE ();
+
 int main (int argc, char **argv)
 {
-	GError *error = NULL;
 	char *base;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
+	nmtst_init (&argc, &argv, TRUE);
 
 	/* The tests */
 	test_setting_vpn_items ();

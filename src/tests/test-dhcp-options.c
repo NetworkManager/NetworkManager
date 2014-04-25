@@ -837,24 +837,15 @@ test_ip4_prefix_classless (gconstpointer test_data)
 	g_hash_table_destroy (options);
 }
 
+NMTST_DEFINE ();
+
 int main (int argc, char **argv)
 {
-	GError *error = NULL;
 	char *path;
 	const char *clients[2][2] = { {DHCLIENT_PATH, "dhclient"}, {DHCPCD_PATH, "dhcpcd"} };
 	guint32 i;
 
-	g_test_init (&argc, &argv, NULL);
-#if !GLIB_CHECK_VERSION(2,34,0)
-	g_log_set_always_fatal (G_LOG_LEVEL_CRITICAL);
-#endif
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
+	nmtst_init_assert_logging (&argc, &argv);
 	nm_logging_setup ("WARN", "DEFAULT", NULL, NULL);
 
 	for (i = 0; i < 2; i++) {
