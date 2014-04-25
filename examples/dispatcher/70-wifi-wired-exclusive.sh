@@ -1,28 +1,17 @@
 #!/bin/bash
-export LC_ALL=C
-
 # This dispatcher script makes WiFi mutually exclusive with
 # wired networking.  When a wired interface is connected,
 # WiFi will be set to airplane mode (rfkilled).  When the wired
 # interface is disconnected, WiFi will be turned back on.
+#
+# Copyright 2012 Johannes Buchner <buchner.johannes@gmx.at>
+# Copyright 2012 - 2014 Red Hat, Inc.
+#
 
-enable_disable_wifi ()
-{
-	result=$(nmcli dev | grep "802-3-ethernet" | grep -w "connected")
-	if [ -n "$result" ]; then
-		nmcli radio wifi off
-		#with older nmcli, use nmcli nm wifi off
-	else
-		nmcli radio wifi on
-		#with older nmcli, use nmcli nm wifi on
-	fi
-}
-
-if [ "$2" = "up" ]; then
-	enable_disable_wifi
-fi
-
-if [ "$2" = "down" ]; then
-	enable_disable_wifi
+export LC_ALL=C
+if nmcli -t --fields type,state dev | grep -E "ethernet:connected" -q; then
+	nmcli radio wifi off
+else
+	nmcli radio wifi on
 fi
 
