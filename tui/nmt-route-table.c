@@ -119,7 +119,14 @@ route_list_transform_from_route (GBinding     *binding,
 			nm_ip6_route_unref (nth->data);
 	}
 	nth->data = g_value_dup_boxed (source_value);
-	g_value_take_boxed (target_value, routes);
+
+	if (priv->family == AF_INET) {
+		nm_utils_ip4_routes_to_gvalue (routes, target_value);
+		g_slist_free_full (routes, (GDestroyNotify) nm_ip4_route_unref);
+	} else if (priv->family == AF_INET6) {
+		nm_utils_ip6_routes_to_gvalue (routes, target_value);
+		g_slist_free_full (routes, (GDestroyNotify) nm_ip6_route_unref);
+	}
 
 	return TRUE;
 }
