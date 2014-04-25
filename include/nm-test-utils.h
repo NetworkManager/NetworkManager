@@ -249,6 +249,19 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 #endif
 	}
 
+	if (!__nmtst_internal.assert_logging &&
+	    (is_debug || (log_level && !g_ascii_strcasecmp (log_level, "DEBUG"))) &&
+	    !g_getenv ("G_MESSAGES_DEBUG"))
+	{
+		/* if we are @is_debug or @log_level=="DEBUG" and
+		 * G_MESSAGES_DEBUG is unset, we set G_MESSAGES_DEBUG=all.
+		 * To disable this default behaviour, set G_MESSAGES_DEBUG='' */
+
+		/* Note that g_setenv is not thread safe, but you should anyway call
+		 * nmtst_init() at the very start. */
+		g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
+	}
+
 	if (!nm_utils_init (&error))
 		g_error ("failed to initialize libnm-util: %s", error->message);
 	g_assert (!error);
