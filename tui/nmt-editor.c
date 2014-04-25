@@ -92,7 +92,7 @@ nmt_editor_new (NMConnection *connection)
 	return g_object_new (NMT_TYPE_EDITOR,
 	                     "connection", connection,
 	                     "type-data", type_data,
-	                     "title", _("Edit connection"),
+	                     "title", _("Edit Connection"),
 	                     "fullscreen-vertical", TRUE,
 	                     NULL);
 }
