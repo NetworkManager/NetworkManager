@@ -97,7 +97,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
 	GPtrArray *nameservers;
-	const char *domain;
 	GPtrArray *searches;
 	const char *nis_domain;
 	GPtrArray *nis_servers;
@@ -145,8 +144,6 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 		domain = nm_ip4_config_get_domain (src, i);
 		if (!DOMAIN_IS_VALID (domain))
 			continue;
-		if (!rc->domain)
-			rc->domain = domain;
 		add_string_item (rc->searches, domain);
 	}
 
@@ -217,8 +214,6 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 		domain = nm_ip6_config_get_domain (src, i);
 		if (!DOMAIN_IS_VALID (domain))
 			continue;
-		if (!rc->domain)
-			rc->domain = domain;
 		add_string_item (rc->searches, domain);
 	}
 
@@ -288,8 +283,7 @@ write_to_netconfig (gint fd, const char *key, const char *value)
 }
 
 static gboolean
-dispatch_netconfig (const char *domain,
-                    char **searches,
+dispatch_netconfig (char **searches,
                     char **nameservers,
                     const char *nis_domain,
                     char **nis_servers,
@@ -311,12 +305,6 @@ dispatch_netconfig (const char *domain,
 
 	if (searches) {
 		str = g_strjoinv (" ", searches);
-
-		if (domain) {
-			tmp = g_strconcat (domain, " ", str, NULL);
-			g_free (str);
-			str = tmp;
-		}
 
 		write_to_netconfig (fd, "DNSSEARCH", str);
 		g_free (str);
@@ -357,12 +345,11 @@ dispatch_netconfig (const char *domain,
 
 
 static gboolean
-write_resolv_conf (FILE *f, const char *domain,
+write_resolv_conf (FILE *f,
                    char **searches,
                    char **nameservers,
                    GError **error)
 {
-	char *domain_str = NULL;
 	char *searches_str = NULL;
 	char *nameservers_str = NULL;
 	int i;
@@ -377,9 +364,6 @@ write_resolv_conf (FILE *f, const char *domain,
 		             g_strerror (errno));
 		return FALSE;
 	}
-
-	if (domain)
-		domain_str = g_strconcat ("domain ", domain, "\n", NULL);
 
 	if (searches) {
 		char *tmp_str;
@@ -411,13 +395,11 @@ write_resolv_conf (FILE *f, const char *domain,
 
 	nameservers_str = g_string_free (str, FALSE);
 
-	if (fprintf (f, "%s%s%s",
-	             domain_str ? domain_str : "",
+	if (fprintf (f, "%s%s",
 	             searches_str ? searches_str : "",
 	             strlen (nameservers_str) ? nameservers_str : "") != -1)
 		retval = TRUE;
 
-	g_free (domain_str);
 	g_free (searches_str);
 	g_free (nameservers_str);
 
@@ -426,8 +408,7 @@ write_resolv_conf (FILE *f, const char *domain,
 
 #ifdef RESOLVCONF_PATH
 static gboolean
-dispatch_resolvconf (const char *domain,
-                     char **searches,
+dispatch_resolvconf (char **searches,
                      char **nameservers,
                      GError **error)
 {
@@ -438,7 +419,7 @@ dispatch_resolvconf (const char *domain,
 	if (! g_file_test (RESOLVCONF_PATH, G_FILE_TEST_IS_EXECUTABLE))
 		return FALSE;
 
-	if (domain || searches || nameservers) {
+	if (searches || nameservers) {
 		cmd = g_strconcat (RESOLVCONF_PATH, " -a ", "NetworkManager", NULL);
 		nm_log_info (LOGD_DNS, "Writing DNS information to %s", RESOLVCONF_PATH);
 		if ((f = popen (cmd, "w")) == NULL)
@@ -449,7 +430,7 @@ dispatch_resolvconf (const char *domain,
 			             RESOLVCONF_PATH,
 			             g_strerror (errno));
 		else {
-			retval = write_resolv_conf (f, domain, searches, nameservers, error);
+			retval = write_resolv_conf (f, searches, nameservers, error);
 			retval &= (pclose (f) == 0);
 		}
 	} else {
@@ -466,8 +447,7 @@ dispatch_resolvconf (const char *domain,
 #endif
 
 static gboolean
-update_resolv_conf (const char *domain,
-                    char **searches,
+update_resolv_conf (char **searches,
                     char **nameservers,
                     GError **error)
 {
@@ -515,7 +495,7 @@ update_resolv_conf (const char *domain,
 		strcpy (tmp_resolv_conf_realpath, _PATH_RESCONF);
 	}
 
-	write_resolv_conf (f, domain, searches, nameservers, error);
+	write_resolv_conf (f, searches, nameservers, error);
 
 	if (fclose (f) < 0) {
 		if (*error == NULL) {
@@ -597,7 +577,6 @@ update_dns (NMDnsManager *self,
 	NMDnsManagerPrivate *priv;
 	NMResolvConfData rc;
 	GSList *iter, *vpn_configs = NULL, *dev_configs = NULL, *other_configs = NULL;
-	const char *domain = NULL;
 	const char *nis_domain = NULL;
 	char **searches = NULL;
 	char **nameservers = NULL;
@@ -621,7 +600,6 @@ update_dns (NMDnsManager *self,
 	compute_hash (self, priv->hash);
 
 	rc.nameservers = g_ptr_array_new ();
-	rc.domain = NULL;
 	rc.searches = g_ptr_array_new ();
 	rc.nis_domain = NULL;
 	rc.nis_servers = g_ptr_array_new ();
@@ -668,8 +646,6 @@ update_dns (NMDnsManager *self,
 		if (hostsearch && DOMAIN_IS_VALID (hostsearch + 1))
 			add_string_item (rc.searches, hostsearch + 1);
 	}
-
-	domain = rc.domain;
 
 	/* Per 'man resolv.conf', the search list is limited to 6 domains
 	 * totalling 256 characters.
@@ -771,18 +747,18 @@ update_dns (NMDnsManager *self,
 	}
 
 #ifdef RESOLVCONF_PATH
-	success = dispatch_resolvconf (domain, searches, nameservers, error);
+	success = dispatch_resolvconf (searches, nameservers, error);
 #endif
 
 #ifdef NETCONFIG_PATH
 	if (success == FALSE) {
-		success = dispatch_netconfig (domain, searches, nameservers,
+		success = dispatch_netconfig (searches, nameservers,
 		                              nis_domain, nis_servers, error);
 	}
 #endif
 
 	if (success == FALSE)
-		success = update_resolv_conf (domain, searches, nameservers, error);
+		success = update_resolv_conf (searches, nameservers, error);
 
 	/* signal that resolv.conf was changed */
 	if (success)
