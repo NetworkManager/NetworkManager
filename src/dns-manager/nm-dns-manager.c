@@ -633,18 +633,23 @@ update_dns (NMDnsManager *self,
 			g_assert_not_reached ();
 	}
 
-	/* Add the current domain name (from the hostname) to the searches list;
-	 * see rh #600407.  The bug report is that when the hostname is set to
-	 * something like 'dcbw.foobar.com' (ie an FQDN) that pinging 'dcbw' doesn't
-	 * work because the resolver doesn't have anything to append to 'dcbw' when
-	 * looking it up.
+	/* If the hostname is a FQDN ("dcbw.example.com"), then add the domain part of it
+	 * ("example.com") to the searches list, to ensure that we can still resolve its
+	 * non-FQ form ("dcbw") too. (Also, if there are no other search domains specified,
+	 * this makes a good default.) However, if the hostname is the top level of a domain
+	 * (eg, "example.com"), then use the hostname itself as the search (since the user is
+	 * unlikely to want "com" as a search domain).
 	 */
 	if (priv->hostname) {
-		const char *hostsearch = strchr (priv->hostname, '.');
+		const char *hostdomain = strchr (priv->hostname, '.');
 
-		/* +1 to get rid of the dot */
-		if (hostsearch && DOMAIN_IS_VALID (hostsearch + 1))
-			add_string_item (rc.searches, hostsearch + 1);
+		if (hostdomain) {
+			hostdomain++;
+			if (DOMAIN_IS_VALID (hostdomain))
+				add_string_item (rc.searches, hostdomain);
+			else if (DOMAIN_IS_VALID (priv->hostname))
+				add_string_item (rc.searches, priv->hostname);
+		}
 	}
 
 	/* Per 'man resolv.conf', the search list is limited to 6 domains
