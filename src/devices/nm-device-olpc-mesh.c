@@ -609,7 +609,7 @@ check_companion_cb (gpointer user_data)
 	}
 
  done:
-	nm_device_remove_pending_action (NM_DEVICE (self), "waiting for companion");
+	nm_device_remove_pending_action (NM_DEVICE (self), "waiting for companion", TRUE);
 	return FALSE;
 }
 
@@ -627,7 +627,7 @@ state_changed (NMDevice *device, NMDeviceState new_state,
 		 * transition to DISCONNECTED otherwise wait for our companion.
 		 */
 		g_idle_add (check_companion_cb, self);
-		nm_device_add_pending_action (device, "waiting for companion");
+		nm_device_add_pending_action (device, "waiting for companion", TRUE);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		break;

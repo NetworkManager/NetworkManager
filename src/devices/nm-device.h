@@ -351,8 +351,8 @@ void nm_device_queue_activation (NMDevice *device, NMActRequest *req);
 
 gboolean nm_device_supports_vlans (NMDevice *device);
 
-void     nm_device_add_pending_action    (NMDevice *device, const char *action);
-void     nm_device_remove_pending_action (NMDevice *device, const char *action);
+gboolean nm_device_add_pending_action    (NMDevice *device, const char *action, gboolean assert_not_yet_pending);
+gboolean nm_device_remove_pending_action (NMDevice *device, const char *action, gboolean assert_is_pending);
 gboolean nm_device_has_pending_action    (NMDevice *device);
 
 GPtrArray *nm_device_get_available_connections (NMDevice *device,
