@@ -4487,6 +4487,20 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 		}
 	}
 
+	/* If IPv4 wasn't the first to complete, and DHCP was used, then ensure
+	 * dispatcher scripts get the DHCP lease information.
+	 */
+	if (   priv->dhcp4_client
+	    && nm_device_activate_ip4_state_in_conf (self)
+	    && (nm_device_get_state (self) > NM_DEVICE_STATE_IP_CONFIG)) {
+		/* Notify dispatcher scripts of new DHCP4 config */
+		nm_dispatcher_call (DISPATCHER_ACTION_DHCP4_CHANGE,
+		                    nm_device_get_connection (self),
+		                    self,
+		                    NULL,
+		                    NULL);
+	}
+
 	arp_announce (self);
 
 	/* Enter the IP_CHECK state if this is the first method to complete */
@@ -4567,6 +4581,20 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 		NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self);
 
 	if (ip6_config_merge_and_apply (self, TRUE, &reason)) {
+		/* If IPv6 wasn't the first IP to complete, and DHCP was used,
+		 * then ensure dispatcher scripts get the DHCP lease information.
+		 */
+		if (   priv->dhcp6_client
+		    && nm_device_activate_ip6_state_in_conf (self)
+		    && (nm_device_get_state (self) > NM_DEVICE_STATE_IP_CONFIG)) {
+			/* Notify dispatcher scripts of new DHCP6 config */
+			nm_dispatcher_call (DISPATCHER_ACTION_DHCP6_CHANGE,
+			                    nm_device_get_connection (self),
+			                    self,
+			                    NULL,
+			                    NULL);
+		}
+
 		/* Enter the IP_CHECK state if this is the first method to complete */
 		priv->ip6_state = IP_DONE;
 
