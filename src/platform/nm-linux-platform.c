@@ -128,8 +128,73 @@ put_nl_addr (void *ptr)
 	}
 }
 
-/* libnl doesn't use const where due */
-#define nl_addr_build(family, addr, addrlen) nl_addr_build (family, (gpointer) addr, addrlen)
+/*******************************************************************/
+
+/* wrap the libnl alloc functions and abort on out-of-memory*/
+
+static struct nl_addr *
+_nm_nl_addr_build (int family, const void *buf, size_t size)
+{
+	struct nl_addr *addr;
+
+	addr = nl_addr_build (family, (void *) buf, size);
+	if (!addr)
+		g_error ("nl_addr_build() failed with out of memory");
+
+	return addr;
+}
+
+static struct rtnl_link *
+_nm_rtnl_link_alloc (int ifindex, const char*name)
+{
+	struct rtnl_link *rtnllink;
+
+	rtnllink = rtnl_link_alloc ();
+	if (!rtnllink)
+		g_error ("rtnl_link_alloc() failed with out of memory");
+
+	if (ifindex > 0)
+		rtnl_link_set_ifindex (rtnllink, ifindex);
+	if (name)
+		rtnl_link_set_name (rtnllink, name);
+	return rtnllink;
+}
+
+static struct rtnl_addr *
+_nm_rtnl_addr_alloc (int ifindex)
+{
+	struct rtnl_addr *rtnladdr;
+
+	rtnladdr = rtnl_addr_alloc ();
+	if (!rtnladdr)
+		g_error ("rtnl_addr_alloc() failed with out of memory");
+	if (ifindex > 0)
+		rtnl_addr_set_ifindex (rtnladdr, ifindex);
+	return rtnladdr;
+}
+
+static struct rtnl_route *
+_nm_rtnl_route_alloc ()
+{
+	struct rtnl_route *rtnlroute = rtnl_route_alloc ();
+
+	if (!rtnlroute)
+		g_error ("rtnl_route_alloc() failed with out of memory");
+	return rtnlroute;
+}
+
+static struct rtnl_nexthop *
+_nm_rtnl_route_nh_alloc ()
+{
+	struct rtnl_nexthop *nexthop;
+
+	nexthop = rtnl_route_nh_alloc ();
+	if (!nexthop)
+		g_error ("rtnl_route_nh_alloc () failed with out of memory");
+	return nexthop;
+}
+
+/*******************************************************************/
 
 /* rtnl_addr_set_prefixlen fails to update the nl_addr prefixlen */
 static void
@@ -1754,17 +1819,11 @@ build_rtnl_link (int ifindex, const char *name, NMLinkType type)
 	struct rtnl_link *rtnllink;
 	int nle;
 
-	rtnllink = rtnl_link_alloc ();
-	g_assert (rtnllink);
-	if (ifindex)
-		rtnl_link_set_ifindex (rtnllink, ifindex);
-	if (name)
-		rtnl_link_set_name (rtnllink, name);
+	rtnllink = _nm_rtnl_link_alloc (ifindex, name);
 	if (type) {
 		nle = rtnl_link_set_type (rtnllink, type_to_string (type));
 		g_assert (!nle);
 	}
-
 	return (struct nl_object *) rtnllink;
 }
 
@@ -1913,15 +1972,9 @@ link_get_flags (NMPlatform *platform, int ifindex)
 static gboolean
 link_refresh (NMPlatform *platform, int ifindex)
 {
-	auto_nl_object struct rtnl_link *rtnllink = rtnl_link_alloc ();
+	auto_nl_object struct rtnl_link *rtnllink = _nm_rtnl_link_alloc (ifindex, NULL);
 
-	if (rtnllink) {
-		rtnl_link_set_ifindex (rtnllink, ifindex);
-		return refresh_object (platform, (struct nl_object *) rtnllink, FALSE, NM_PLATFORM_REASON_EXTERNAL);
-	} else
-		error ("link_refresh failed with out of memory");
-
-	return FALSE;
+	return refresh_object (platform, (struct nl_object *) rtnllink, FALSE, NM_PLATFORM_REASON_EXTERNAL);
 }
 
 static gboolean
@@ -1945,10 +1998,7 @@ link_uses_arp (NMPlatform *platform, int ifindex)
 static gboolean
 link_change_flags (NMPlatform *platform, int ifindex, unsigned int flags, gboolean value)
 {
-	auto_nl_object struct rtnl_link *change = rtnl_link_alloc ();
-
-	g_return_val_if_fail (change != NULL, FALSE);
-	rtnl_link_set_ifindex (change, ifindex);
+	auto_nl_object struct rtnl_link *change = _nm_rtnl_link_alloc (ifindex, NULL);
 
 	if (value)
 		rtnl_link_set_flags (change, flags);
@@ -2094,15 +2144,8 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 static gboolean
 link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size_t length)
 {
-	auto_nl_object struct rtnl_link *change = NULL;
-	auto_nl_addr struct nl_addr *nladdr = NULL;
-
-	change = rtnl_link_alloc ();
-	g_return_val_if_fail (change, FALSE);
-	rtnl_link_set_ifindex (change, ifindex);
-
-	nladdr = nl_addr_build (AF_LLC, address, length);
-	g_return_val_if_fail (nladdr, FALSE);
+	auto_nl_object struct rtnl_link *change = _nm_rtnl_link_alloc (ifindex, NULL);
+	auto_nl_addr struct nl_addr *nladdr = _nm_nl_addr_build (AF_LLC, address, length);
 
 	rtnl_link_set_addr (change, nladdr);
 
@@ -2133,12 +2176,9 @@ link_get_address (NMPlatform *platform, int ifindex, size_t *length)
 static gboolean
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
-	auto_nl_object struct rtnl_link *change = rtnl_link_alloc ();
+	auto_nl_object struct rtnl_link *change = _nm_rtnl_link_alloc (ifindex, NULL);
 
-	g_return_val_if_fail (change != NULL, FALSE);
-	rtnl_link_set_ifindex (change, ifindex);
 	rtnl_link_set_mtu (change, mtu);
-
 	debug ("link: change %d: mtu %lu", ifindex, (unsigned long)mtu);
 
 	return link_change (platform, ifindex, change);
@@ -2244,13 +2284,9 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 static gboolean
 link_enslave (NMPlatform *platform, int master, int slave)
 {
-	auto_nl_object struct rtnl_link *change = rtnl_link_alloc ();
+	auto_nl_object struct rtnl_link *change = _nm_rtnl_link_alloc (slave, NULL);
 
-	g_return_val_if_fail (change != NULL, FALSE);
-
-	rtnl_link_set_ifindex (change, slave);
 	rtnl_link_set_master (change, master);
-
 	debug ("link: change %d: enslave to master %d", slave, master);
 
 	return link_change (platform, slave, change);
@@ -2374,10 +2410,9 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
 	g_free (path);
 
 	if (success) {
-		auto_nl_object struct rtnl_link *rtnllink = rtnl_link_alloc ();
 		auto_g_free char *ifname = g_strdup_printf ("%s.%04x", parent_name, p_key);
+		auto_nl_object struct rtnl_link *rtnllink = _nm_rtnl_link_alloc (0, ifname);
 
-		rtnl_link_set_name (rtnllink, ifname);
 		success = refresh_object (platform, (struct nl_object *) rtnllink, FALSE, NM_PLATFORM_REASON_INTERNAL);
 	}
 
@@ -2975,17 +3010,18 @@ build_rtnl_addr (int family,
                  guint flags,
                  const char *label)
 {
-	struct rtnl_addr *rtnladdr = rtnl_addr_alloc ();
+	auto_nl_addr struct rtnl_addr *rtnladdr = _nm_rtnl_addr_alloc (ifindex);
+	struct rtnl_addr *rtnladdr_copy;
 	int addrlen = family == AF_INET ? sizeof (in_addr_t) : sizeof (struct in6_addr);
-	auto_nl_addr struct nl_addr *nladdr = nl_addr_build (family, addr, addrlen);
+	auto_nl_addr struct nl_addr *nladdr = _nm_nl_addr_build (family, addr, addrlen);
 	int nle;
 
-	g_assert (rtnladdr && nladdr);
-
 	/* IP address */
-	rtnl_addr_set_ifindex (rtnladdr, ifindex);
 	nle = rtnl_addr_set_local (rtnladdr, nladdr);
-	g_assert (!nle);
+	if (nle) {
+		error ("build_rtnl_addr(): rtnl_addr_set_local failed with %s (%d)", nl_geterror (nle), nle);
+		return NULL;
+	}
 
 	/* Tighten scope (IPv4 only) */
 	if (family == AF_INET && ip4_is_link_local (addr))
@@ -2997,18 +3033,21 @@ build_rtnl_addr (int family,
 		auto_nl_addr struct nl_addr *bcaddr = NULL;
 
 		bcast = *((in_addr_t *) addr) | ~nm_utils_ip4_prefix_to_netmask (plen);
-		bcaddr = nl_addr_build (family, &bcast, addrlen);
+		bcaddr = _nm_nl_addr_build (family, &bcast, addrlen);
 		g_assert (bcaddr);
 		rtnl_addr_set_broadcast (rtnladdr, bcaddr);
 	}
 
 	/* Peer/point-to-point address */
 	if (peer_addr) {
-		auto_nl_addr struct nl_addr *nlpeer = nl_addr_build (family, peer_addr, addrlen);
+		auto_nl_addr struct nl_addr *nlpeer = _nm_nl_addr_build (family, peer_addr, addrlen);
 
 		nle = rtnl_addr_set_peer (rtnladdr, nlpeer);
-		/* IPv6 doesn't support peer addresses yet */
-		g_assert (!nle || (nle == -NLE_AF_NOSUPPORT));
+		if (nle && nle != -NLE_AF_NOSUPPORT) {
+			/* IPv6 doesn't support peer addresses yet */
+			error ("build_rtnl_addr(): rtnl_addr_set_peer failed with %s (%d)", nl_geterror (nle), nle);
+			return NULL;
+		}
 	}
 
 	rtnl_addr_set_prefixlen (rtnladdr, plen);
@@ -3032,7 +3071,9 @@ build_rtnl_addr (int family,
 	if (label && *label)
 		rtnl_addr_set_label (rtnladdr, label);
 
-	return (struct nl_object *) rtnladdr;
+	rtnladdr_copy = rtnladdr;
+	rtnladdr = NULL;
+	return (struct nl_object *) rtnladdr_copy;
 }
 
 static gboolean
@@ -3188,30 +3229,29 @@ static struct nl_object *
 build_rtnl_route (int family, int ifindex, gconstpointer network, int plen, gconstpointer gateway, int metric, int mss)
 {
 	guint32 network_clean[4];
-	struct rtnl_route *rtnlroute = rtnl_route_alloc ();
-	struct rtnl_nexthop *nexthop = rtnl_route_nh_alloc ();
+	struct rtnl_route *rtnlroute;
+	struct rtnl_nexthop *nexthop;
 	int addrlen = (family == AF_INET) ? sizeof (in_addr_t) : sizeof (struct in6_addr);
 	/* Workaround a libnl bug by using zero destination address length for default routes */
 	auto_nl_addr struct nl_addr *dst = NULL;
-	auto_nl_addr struct nl_addr *gw = gateway ? nl_addr_build (family, gateway, addrlen) : NULL;
+	auto_nl_addr struct nl_addr *gw = gateway ? _nm_nl_addr_build (family, gateway, addrlen) : NULL;
 
 	/* There seem to be problems adding a route with non-zero host identifier.
 	 * Adding IPv6 routes is simply ignored, without error message.
 	 * In the IPv4 case, we got an error. Thus, we have to make sure, that
 	 * the address is sane. */
 	clear_host_address (family, network, plen, network_clean);
-	dst = nl_addr_build (family, network_clean, plen ? addrlen : 0);
-
-	g_assert (rtnlroute && dst && nexthop);
-
+	dst = _nm_nl_addr_build (family, network_clean, plen ? addrlen : 0);
 	nl_addr_set_prefixlen (dst, plen);
 
+	rtnlroute = _nm_rtnl_route_alloc ();
 	rtnl_route_set_table (rtnlroute, RT_TABLE_MAIN);
 	rtnl_route_set_tos (rtnlroute, 0);
 	rtnl_route_set_dst (rtnlroute, dst);
 	rtnl_route_set_priority (rtnlroute, metric);
 	rtnl_route_set_family (rtnlroute, family);
 
+	nexthop = _nm_rtnl_route_nh_alloc ();
 	rtnl_route_nh_set_ifindex (nexthop, ifindex);
 	if (gw && !nl_addr_iszero (gw))
 		rtnl_route_nh_set_gateway (nexthop, gw);
