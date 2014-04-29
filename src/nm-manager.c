@@ -2011,12 +2011,6 @@ platform_link_added (NMManager *self,
 			 */
 			break;
 
-		case NM_LINK_TYPE_WIMAX:
-			/* If the WiMAX plugin is not installed, we can't control the
-			 * interface, so ignore it.
-			 */
-			break;
-
 		default:
 			device = nm_device_generic_new (plink);
 			break;
