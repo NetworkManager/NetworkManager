@@ -2064,7 +2064,7 @@ rfkill_manager_rfkill_changed_cb (NMRfkillManager *rfkill_mgr,
 	nm_manager_rfkill_update (NM_MANAGER (user_data), rtype);
 }
 
-GSList *
+const GSList *
 nm_manager_get_devices (NMManager *manager)
 {
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);

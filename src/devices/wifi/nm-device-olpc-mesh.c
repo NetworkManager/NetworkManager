@@ -416,7 +416,7 @@ static void
 find_companion (NMDeviceOlpcMesh *self)
 {
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	GSList *list;
+	const GSList *list;
 
 	if (priv->companion)
 		return;

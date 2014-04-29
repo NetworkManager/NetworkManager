@@ -110,7 +110,7 @@ GSList *nm_manager_get_activatable_connections (NMManager *manager);
 
 /* Device handling */
 
-GSList *nm_manager_get_devices (NMManager *manager);
+const GSList *nm_manager_get_devices (NMManager *manager);
 
 NMDevice *nm_manager_get_device_by_master (NMManager *manager,
                                            const char *master,

@@ -95,12 +95,11 @@ static NMDevice *
 get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	GSList *devices, *iter;
+	const GSList *iter;
 	NMDevice *best = NULL;
 	int best_prio = G_MAXINT;
 
-	devices = nm_manager_get_devices (priv->manager);
-	for (iter = devices; iter; iter = g_slist_next (iter)) {
+	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 		NMDeviceType devtype = nm_device_get_device_type (dev);
 		NMDeviceState state = nm_device_get_state (dev);
@@ -177,12 +176,11 @@ static NMDevice *
 get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
-	GSList *devices, *iter;
+	const GSList *iter;
 	NMDevice *best = NULL;
 	int best_prio = G_MAXINT;
 
-	devices = nm_manager_get_devices (priv->manager);
-	for (iter = devices; iter; iter = g_slist_next (iter)) {
+	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 		NMDeviceType devtype = nm_device_get_device_type (dev);
 		NMDeviceState state = nm_device_get_state (dev);
@@ -1814,10 +1812,9 @@ static void
 schedule_activate_all (NMPolicy *policy)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
-	GSList *iter, *devices;
+	const GSList *iter;
 
-	devices = nm_manager_get_devices (priv->manager);
-	for (iter = devices; iter; iter = g_slist_next (iter))
+	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter))
 		schedule_activate_check (policy, NM_DEVICE (iter->data));
 }
 
@@ -1848,11 +1845,10 @@ firewall_update_zone (NMPolicy *policy, NMConnection *connection)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
-	GSList *iter, *devices;
+	const GSList *iter;
 
-	devices = nm_manager_get_devices (priv->manager);
 	/* find dev with passed connection and change zone its interface belongs to */
-	for (iter = devices; iter; iter = g_slist_next (iter)) {
+	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 
 		if (   (nm_device_get_connection (dev) == connection)
@@ -1875,11 +1871,10 @@ firewall_started (NMFirewallManager *manager,
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	GSList *iter, *devices;
+	const GSList *iter;
 
-	devices = nm_manager_get_devices (priv->manager);
 	/* add interface of each device to correct zone */
-	for (iter = devices; iter; iter = g_slist_next (iter)) {
+	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 
 		connection = nm_device_get_connection (dev);
