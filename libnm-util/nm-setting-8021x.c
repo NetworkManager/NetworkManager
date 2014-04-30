@@ -588,10 +588,11 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *setting,
 			else
 				g_assert_not_reached ();
 		} else {
-			g_set_error (error,
+			g_set_error_literal (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_CA_CERT);
+			             _("CA certificate must be in X.509 format"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_CA_CERT);
 		}
 		g_byte_array_unref (data);
 	}
@@ -905,10 +906,11 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *setting,
 			valid = TRUE;
 			break;
 		default:
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_CLIENT_CERT);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     _("invalid certificate format"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_CLIENT_CERT);
 			break;
 		}
 
@@ -1167,10 +1169,11 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
 			else
 				g_assert_not_reached ();
 		} else {
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_PHASE2_CA_CERT);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     _("invalid certificate format"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_CA_CERT);
 		}
 		g_byte_array_unref (data);
 	}
@@ -1489,10 +1492,11 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *setting,
 			valid = TRUE;
 			break;
 		default:
-			g_set_error (error,
-			             NM_SETTING_802_1X_ERROR,
-			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-			             NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     _("invalid certificate format"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 			break;
 		}
 
@@ -1737,6 +1741,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	gboolean key_cleared = FALSE, password_cleared = FALSE;
+	GError *local_err = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
@@ -1754,12 +1759,14 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 	 * given, that it decrypts the private key.
 	 */
 	if (key_path) {
-		format = crypto_verify_private_key (key_path, password, NULL);
+		format = crypto_verify_private_key (key_path, password, &local_err);
 		if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
-			g_set_error (error,
-				         NM_SETTING_802_1X_ERROR,
-				         NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-				         NM_SETTING_802_1X_PRIVATE_KEY);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     local_err ? local_err->message : _("invalid private key"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PRIVATE_KEY);
+			g_clear_error (&local_err);
 			return FALSE;
 		}
 	}
@@ -2045,6 +2052,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 	NMSetting8021xPrivate *priv;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	gboolean key_cleared = FALSE, password_cleared = FALSE;
+	GError *local_err = NULL;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
 
@@ -2062,12 +2070,14 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 	 * given, that it decrypts the private key.
 	 */
 	if (key_path) {
-		format = crypto_verify_private_key (key_path, password, NULL);
+		format = crypto_verify_private_key (key_path, password, &local_err);
 		if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
-			g_set_error (error,
-				         NM_SETTING_802_1X_ERROR,
-				         NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-				         NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+			g_set_error_literal (error,
+			                     NM_SETTING_802_1X_ERROR,
+			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			                     local_err ? local_err->message : _("invalid phase2 private key"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+			g_clear_error (&local_err);
 			return FALSE;
 		}
 	}
