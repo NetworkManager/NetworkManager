@@ -941,7 +941,7 @@ activate_data_free (ActivateData *data)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (data->policy);
 
-	nm_device_remove_pending_action (data->device, "autoactivate");
+	nm_device_remove_pending_action (data->device, "autoactivate", TRUE);
 	priv->pending_activation_checks = g_slist_remove (priv->pending_activation_checks, data);
 
 	if (data->autoactivate_id)
@@ -1226,7 +1226,7 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device)
 			return;
 	}
 
-	nm_device_add_pending_action (device, "autoactivate");
+	nm_device_add_pending_action (device, "autoactivate", TRUE);
 
 	data = g_malloc0 (sizeof (ActivateData));
 	data->policy = policy;

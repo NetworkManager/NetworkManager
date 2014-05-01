@@ -357,7 +357,7 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	}
 
 	if (nm_supplicant_interface_get_state (priv->supplicant.iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
-		nm_device_add_pending_action (NM_DEVICE (self), "waiting for supplicant");
+		nm_device_add_pending_action (NM_DEVICE (self), "waiting for supplicant", TRUE);
 
 	g_signal_connect (priv->supplicant.iface,
 	                  NM_SUPPLICANT_INTERFACE_STATE,
@@ -1722,7 +1722,7 @@ request_wireless_scan (gpointer user_data)
 			/* success */
 			backoff = TRUE;
 			priv->requested_scan = TRUE;
-			nm_device_add_pending_action (NM_DEVICE (self), "scan");
+			nm_device_add_pending_action (NM_DEVICE (self), "scan", TRUE);
 		}
 
 		if (ssids) {
@@ -1823,7 +1823,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 
 	if (priv->requested_scan) {
 		priv->requested_scan = FALSE;
-		nm_device_remove_pending_action (NM_DEVICE (self), "scan");
+		nm_device_remove_pending_action (NM_DEVICE (self), "scan", TRUE);
 	}
 }
 
@@ -2364,7 +2364,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		request_wireless_scan (self);
 
 		if (old_state < NM_SUPPLICANT_INTERFACE_STATE_READY)
-			nm_device_remove_pending_action (device, "waiting for supplicant");
+			nm_device_remove_pending_action (device, "waiting for supplicant", TRUE);
 		break;
 	case NM_SUPPLICANT_INTERFACE_STATE_COMPLETED:
 		remove_supplicant_interface_error_handler (self);

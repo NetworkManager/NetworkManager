@@ -156,6 +156,10 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMDevice, nm_device, G_TYPE_OBJECT,
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
+#define PENDING_ACTION_DHCP4 "dhcp4"
+#define PENDING_ACTION_DHCP6 "dhcp6"
+#define PENDING_ACTION_AUTOCONF6 "autoconf6"
+
 typedef enum {
 	IP_NONE = 0,
 	IP_WAIT,
@@ -1122,7 +1126,7 @@ nm_device_set_carrier (NMDevice *device, gboolean carrier)
 		if (priv->carrier_wait_id) {
 			g_source_remove (priv->carrier_wait_id);
 			priv->carrier_wait_id = 0;
-			nm_device_remove_pending_action (device, "carrier wait");
+			nm_device_remove_pending_action (device, "carrier wait", TRUE);
 		}
 	} else if (state <= NM_DEVICE_STATE_DISCONNECTED) {
 		nm_log_info (LOGD_DEVICE, "(%s): link disconnected", iface);
@@ -2815,6 +2819,8 @@ dhcp4_start (NMDevice *self,
 	                                              G_CALLBACK (dhcp4_timeout),
 	                                              self);
 
+	nm_device_add_pending_action (self, PENDING_ACTION_DHCP4, TRUE);
+
 	/* DHCP devices will be notified by the DHCP manager when stuff happens */
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
@@ -3200,6 +3206,7 @@ dhcp6_start (NMDevice *self,
              guint32 dhcp_opt,
              NMDeviceStateReason *reason)
 {
+	NMSettingIP6Config *s_ip6;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	GByteArray *tmp = NULL;
@@ -3247,6 +3254,11 @@ dhcp6_start (NMDevice *self,
 		                                              NM_DHCP_CLIENT_SIGNAL_TIMEOUT,
 		                                              G_CALLBACK (dhcp6_timeout),
 		                                              self);
+
+		s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		if (!nm_setting_ip6_config_get_may_fail (s_ip6) ||
+		    !strcmp (nm_setting_ip6_config_get_method (s_ip6), NM_SETTING_IP6_CONFIG_METHOD_DHCP))
+			nm_device_add_pending_action (self, PENDING_ACTION_DHCP6, TRUE);
 
 		/* DHCP devices will be notified by the DHCP manager when stuff happens */
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
@@ -3614,6 +3626,9 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	priv->rdisc_use_tempaddr = use_tempaddr;
 	print_support_extended_ifa_flags (use_tempaddr);
 
+	if (!nm_setting_ip6_config_get_may_fail (nm_connection_get_setting_ip6_config (connection)))
+		nm_device_add_pending_action (self, PENDING_ACTION_AUTOCONF6, TRUE);
+
 	/* ensure link local is ready... */
 	ret = linklocal6_start (self);
 	if (ret == NM_ACT_STAGE_RETURN_SUCCESS)
@@ -3656,6 +3671,8 @@ addrconf6_cleanup (NMDevice *self)
 		                             priv->rdisc_config_changed_sigid);
 		priv->rdisc_config_changed_sigid = 0;
 	}
+
+	nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
 
 	g_clear_object (&priv->ac_ip6_config);
 	g_clear_object (&priv->rdisc);
@@ -4489,6 +4506,9 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 
 	/* Enter the IP_CHECK state if this is the first method to complete */
 	priv->ip4_state = IP_DONE;
+
+	nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
+
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
 		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 
@@ -4564,6 +4584,10 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	if (ip6_config_merge_and_apply (self, TRUE, &reason)) {
 		/* Enter the IP_CHECK state if this is the first method to complete */
 		priv->ip6_state = IP_DONE;
+
+		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
+		nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
+
 		if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
 			nm_device_state_changed (self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
 	} else {
@@ -4649,6 +4673,8 @@ dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 			priv->dhcp4_timeout_sigid = 0;
 		}
 
+		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
+
 		if (stop)
 			nm_dhcp_client_stop (priv->dhcp4_client, release);
 
@@ -4685,6 +4711,8 @@ dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
 			g_signal_handler_disconnect (priv->dhcp6_client, priv->dhcp6_timeout_sigid);
 			priv->dhcp6_timeout_sigid = 0;
 		}
+
+		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
 
 		if (stop)
 			nm_dhcp_client_stop (priv->dhcp6_client, release);
@@ -5505,7 +5533,7 @@ carrier_wait_timeout (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 
 	NM_DEVICE_GET_PRIVATE (self)->carrier_wait_id = 0;
-	nm_device_remove_pending_action (self, "carrier wait");
+	nm_device_remove_pending_action (self, "carrier wait", TRUE);
 	return G_SOURCE_REMOVE;
 }
 
@@ -5553,10 +5581,10 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	if (device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
 		if (priv->carrier_wait_id) {
 			g_source_remove (priv->carrier_wait_id);
-			nm_device_remove_pending_action (self, "carrier wait");
+			nm_device_remove_pending_action (self, "carrier wait", TRUE);
 		}
 		priv->carrier_wait_id = g_timeout_add_seconds (5, carrier_wait_timeout, self);
-		nm_device_add_pending_action (self, "carrier wait");
+		nm_device_add_pending_action (self, "carrier wait", TRUE);
 	}
 
 	/* Can only get HW address of some devices when they are up */
@@ -6820,7 +6848,7 @@ queued_set_state (gpointer user_data)
 		nm_device_queued_state_clear (self);
 
 		nm_device_state_changed (self, new_state, new_reason);
-		nm_device_remove_pending_action (self, queued_state_to_string (new_state));
+		nm_device_remove_pending_action (self, queued_state_to_string (new_state), TRUE);
 	} else {
 		g_warn_if_fail (priv->queued_state.state == NM_DEVICE_STATE_UNKNOWN);
 		g_warn_if_fail (priv->queued_state.reason == NM_DEVICE_STATE_REASON_NONE);
@@ -6844,7 +6872,7 @@ nm_device_queue_state (NMDevice *self,
 
 	/* Add pending action for the new state before clearing the queued states, so
 	 * that we don't accidently pop all pending states and reach 'startup complete'  */
-	nm_device_add_pending_action (self, queued_state_to_string (state));
+	nm_device_add_pending_action (self, queued_state_to_string (state), TRUE);
 
 	/* We should only ever have one delayed state transition at a time */
 	if (priv->queued_state.id) {
@@ -6885,7 +6913,7 @@ nm_device_queued_state_clear (NMDevice *self)
 		nm_log_dbg (LOGD_DEVICE, "(%s): clearing queued state transition (id %d)",
 		            nm_device_get_iface (self), priv->queued_state.id);
 		g_source_remove (priv->queued_state.id);
-		nm_device_remove_pending_action (self, queued_state_to_string (priv->queued_state.state));
+		nm_device_remove_pending_action (self, queued_state_to_string (priv->queued_state.state), TRUE);
 	}
 	memset (&priv->queued_state, 0, sizeof (priv->queued_state));
 }
@@ -7660,31 +7688,46 @@ nm_device_set_hw_addr (NMDevice *device, const guint8 *addr,
  * nm_device_add_pending_action():
  * @device: the #NMDevice to add the pending action to
  * @action: a static string that identifies the action
+ * @assert_not_yet_pending: if %TRUE, assert that the @action is currently not yet pending.
+ * Otherwise, ignore duplicate scheduling of the same action silently.
  *
  * Adds a pending action to the device.
+ *
+ * Returns: %TRUE if the action was added (and not already added before). %FALSE
+ * if the same action is already scheduled. In the latter case, the action was not scheduled
+ * a second time.
  */
-void
-nm_device_add_pending_action (NMDevice *device, const char *action)
+gboolean
+nm_device_add_pending_action (NMDevice *device, const char *action, gboolean assert_not_yet_pending)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	GSList *iter;
-	guint count;
+	guint count = 0;
 
-	g_return_if_fail (action);
+	g_return_val_if_fail (action, FALSE);
 
-	/* Shouldn't ever add the same pending action twice */
+	/* Check if the action is already pending. Cannot add duplicate actions */
 	for (iter = priv->pending_actions; iter; iter = iter->next) {
 		if (!strcmp (action, iter->data)) {
-			nm_log_warn (LOGD_DEVICE, "(%s): add_pending_action (%d): '%s' already added",
-			             nm_device_get_iface (device),
-			             g_slist_length (priv->pending_actions),
-			             action);
-			g_return_if_reached ();
+			if (assert_not_yet_pending) {
+				nm_log_warn (LOGD_DEVICE, "(%s): add_pending_action (%d): '%s' already pending",
+				             nm_device_get_iface (device),
+				             count + g_slist_length (iter),
+				             action);
+				g_return_val_if_reached (FALSE);
+			} else {
+				nm_log_dbg (LOGD_DEVICE, "(%s): add_pending_action (%d): '%s' already pending (expected)",
+				            nm_device_get_iface (device),
+				            count + g_slist_length (iter),
+				            action);
+			}
+			return FALSE;
 		}
+		count++;
 	}
 
 	priv->pending_actions = g_slist_append (priv->pending_actions, g_strdup (action));
-	count = g_slist_length (priv->pending_actions);
+	count++;
 
 	nm_log_dbg (LOGD_DEVICE, "(%s): add_pending_action (%d): '%s'",
 	            nm_device_get_iface (device),
@@ -7693,44 +7736,60 @@ nm_device_add_pending_action (NMDevice *device, const char *action)
 
 	if (count == 1)
 		g_object_notify (G_OBJECT (device), NM_DEVICE_HAS_PENDING_ACTION);
+
+	return TRUE;
 }
 
 /**
  * nm_device_remove_pending_action():
  * @device: the #NMDevice to remove the pending action from
  * @action: a static string that identifies the action
+ * @assert_is_pending: if %TRUE, assert that the @action is pending.
+ * If %FALSE, don't do anything if the current action is not pending and
+ * return %FALSE.
  *
  * Removes a pending action previously added by nm_device_add_pending_action().
+ *
+ * Returns: whether the @action was pending and is now removed.
  */
-void
-nm_device_remove_pending_action (NMDevice *device, const char *action)
+gboolean
+nm_device_remove_pending_action (NMDevice *device, const char *action, gboolean assert_is_pending)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	GSList *iter;
+	guint count = 0;
 
-	g_return_if_fail (action);
+	g_return_val_if_fail (action, FALSE);
 
-	/* Shouldn't ever add the same pending action twice */
 	for (iter = priv->pending_actions; iter; iter = iter->next) {
 		if (!strcmp (action, iter->data)) {
 			g_free (iter->data);
 			priv->pending_actions = g_slist_delete_link (priv->pending_actions, iter);
 			nm_log_dbg (LOGD_DEVICE, "(%s): remove_pending_action (%d): '%s'",
 			            nm_device_get_iface (device),
-			            g_slist_length (priv->pending_actions),
+			            count + g_slist_length (iter),
 			            action);
 
 			if (priv->pending_actions == NULL)
 				g_object_notify (G_OBJECT (device), NM_DEVICE_HAS_PENDING_ACTION);
-			return;
+			return TRUE;
 		}
+		count++;
 	}
 
-	nm_log_warn (LOGD_DEVICE, "(%s): remove_pending_action (%d): '%s' never added",
-	             nm_device_get_iface (device),
-	             g_slist_length (priv->pending_actions),
-	             action);
-	g_return_if_reached ();
+	if (assert_is_pending) {
+		nm_log_warn (LOGD_DEVICE, "(%s): remove_pending_action (%d): '%s' not pending",
+		             nm_device_get_iface (device),
+		             count,
+		             action);
+		g_return_val_if_reached (FALSE);
+	} else {
+		nm_log_dbg (LOGD_DEVICE, "(%s): remove_pending_action (%d): '%s' not pending (expected)",
+		             nm_device_get_iface (device),
+		             count,
+		             action);
+	}
+	return FALSE;
 }
 
 gboolean
