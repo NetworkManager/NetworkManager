@@ -406,6 +406,9 @@ make_des_key (const char *cipher,
 		return NULL;
 	}
 
+	if (password[0] == '\0')
+		return NULL;
+
 	key = g_malloc0 (digest_len + 1);
 
 	if (!crypto_md5_hash (salt,
