@@ -206,6 +206,8 @@ parse_old_openssl_key_file (const GByteArray *contents,
 				cipher = g_strdup (p);
 			} else if (!strcasecmp (p, "DES-CBC")) {
 				cipher = g_strdup (p);
+			} else if (!strcasecmp (p, "AES-128-CBC")) {
+				cipher = g_strdup (p);
 			} else {
 				g_set_error (error, NM_CRYPTO_ERROR,
 				             NM_CRYPTO_ERR_UNKNOWN_KEY_TYPE,
@@ -378,12 +380,12 @@ error:
 }
 
 static char *
-make_des_key (const char *cipher,
-              const char *salt,
-              const gsize salt_len,
-              const char *password,
-              gsize *out_len,
-              GError **error)
+make_des_aes_key (const char *cipher,
+                  const char *salt,
+                  const gsize salt_len,
+                  const char *password,
+                  gsize *out_len,
+                  GError **error)
 {
 	char *key;
 	guint32 digest_len;
@@ -398,6 +400,8 @@ make_des_key (const char *cipher,
 		digest_len = 24;
 	else if (!strcmp (cipher, "DES-CBC"))
 		digest_len = 8;
+	else if (!strcmp (cipher, "AES-128-CBC"))
+		digest_len = 16;
 	else {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_UNKNOWN_CIPHER,
@@ -454,8 +458,8 @@ decrypt_key (const char *cipher,
 	if (!bin_iv)
 		return NULL;
 
-	/* Convert the PIN and IV into a DES key */
-	key = make_des_key (cipher, bin_iv, bin_iv_len, password, &key_len, error);
+	/* Convert the password and IV into a DES or AES key */
+	key = make_des_aes_key (cipher, bin_iv, bin_iv_len, password, &key_len, error);
 	if (!key || !key_len)
 		goto out;
 

@@ -20,5 +20,6 @@ EXTRA_DIST = \
 	test-key-only-decrypted.der \
 	pkcs8-enc-key.pem \
 	pkcs8-noenc-key.pem \
-	pkcs8-decrypted.der
+	pkcs8-decrypted.der \
+	test-aes-key.pem
 

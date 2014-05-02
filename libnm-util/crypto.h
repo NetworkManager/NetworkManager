@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2011 Red Hat, Inc.
+ * (C) Copyright 2007 - 2014 Red Hat, Inc.
  */
 
 #ifndef __CRYPTO_H__
@@ -29,6 +29,7 @@
 #define MD5_HASH_LEN 20
 #define CIPHER_DES_EDE3_CBC "DES-EDE3-CBC"
 #define CIPHER_DES_CBC "DES-CBC"
+#define CIPHER_AES_CBC "AES-128-CBC"
 
 enum {
 	NM_CRYPTO_ERR_NONE = 0,

@@ -141,6 +141,9 @@ crypto_decrypt (const char *cipher,
 	} else if (!strcmp (cipher, CIPHER_DES_CBC)) {
 		cipher_mech = GCRY_CIPHER_DES;
 		real_iv_len = SALT_LEN;
+	} else if (!strcmp (cipher, CIPHER_AES_CBC)) {
+		cipher_mech = GCRY_CIPHER_AES;
+		real_iv_len = 16;
 	} else {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_UNKNOWN_CIPHER,

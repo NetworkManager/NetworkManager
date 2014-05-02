@@ -125,6 +125,9 @@ check-local: test-crypto test-setting-8021x
 		$(srcdir)/certs/pkcs8-enc-key.pem \
 		"1234567890"
 
+# Private key with AES cipher
+	$(abs_builddir)/test-crypto --key $(srcdir)/certs/test-aes-key.pem "test-aes-password"
+
 TESTS = test-settings-defaults test-secrets test-general test-setting-dcb
 
 endif
