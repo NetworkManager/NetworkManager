@@ -169,7 +169,7 @@ mm_state_to_nm (MMOldModemState mm_state, const char *unlock_required)
 
 /*****************************************************************************/
 
-DBusGProxy *
+static DBusGProxy *
 nm_modem_old_get_proxy (NMModemOld *self, const char *interface)
 {
 

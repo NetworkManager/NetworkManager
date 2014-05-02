@@ -51,7 +51,4 @@ GType nm_device_modem_get_type (void);
 
 NMDevice *nm_device_modem_new (NMModem *modem);
 
-/* Private for subclases */
-NMModem *nm_device_modem_get_modem (NMDeviceModem *self);
-
 #endif /* NM_DEVICE_MODEM_H */

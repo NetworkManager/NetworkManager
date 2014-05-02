@@ -49,7 +49,11 @@ libnm_wwan_la_SOURCES += \
 	nm-modem-broadband.h
 endif
 
-libnm_wwan_la_LDFLAGS = -avoid-version
+WWAN_SYMBOL_VIS_FILE=$(srcdir)/wwan-exports.ver
+
+libnm_wwan_la_LDFLAGS = \
+	-avoid-version \
+	-Wl,--version-script=$(WWAN_SYMBOL_VIS_FILE)
 libnm_wwan_la_LIBADD = $(DBUS_LIBS) $(MM_GLIB_LIBS)
 
 ###########################################################
@@ -59,6 +63,8 @@ nm-device-modem-glue.h: $(top_srcdir)/introspection/nm-device-modem.xml
 
 BUILT_SOURCES += nm-device-modem-glue.h
 
+SYMBOL_VIS_FILE=$(srcdir)/exports.ver
+
 libnm_device_plugin_wwan_la_SOURCES = \
 	nm-wwan-factory.c \
 	nm-wwan-factory.h \
@@ -66,7 +72,10 @@ libnm_device_plugin_wwan_la_SOURCES = \
 	nm-device-modem.h \
 	nm-device-modem-glue.h
 
-libnm_device_plugin_wwan_la_LDFLAGS = -module -avoid-version
+libnm_device_plugin_wwan_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script=$(SYMBOL_VIS_FILE)
+
 libnm_device_plugin_wwan_la_LIBADD = \
 	libnm-wwan.la \
 	$(DBUS_LIBS)
@@ -74,4 +83,13 @@ libnm_device_plugin_wwan_la_LIBADD = \
 ###########################################################
 
 CLEANFILES = $(BUILT_SOURCES)
+EXTRA_DIST = $(SYMBOL_VIS_FILE) $(WWAN_SYMBOL_VIS_FILE)
+
+if ENABLE_TESTS
+
+check-local:
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-wwan.so $(SYMBOL_VIS_FILE)
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-wwan.so $(WWAN_SYMBOL_VIS_FILE)
+
+endif
 

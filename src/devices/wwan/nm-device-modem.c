@@ -241,14 +241,6 @@ modem_removed_cb (NMModem *modem, gpointer user_data)
 
 /*****************************************************************************/
 
-NMModem *
-nm_device_modem_get_modem (NMDeviceModem *self)
-{
-	g_return_val_if_fail (NM_IS_DEVICE_MODEM (self), NULL);
-
-	return NM_DEVICE_MODEM_GET_PRIVATE (self)->modem;
-}
-
 static gboolean
 owns_iface (NMDevice *device, const char *iface)
 {
