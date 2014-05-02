@@ -123,46 +123,6 @@ nm_wimax_error_quark (void)
 
 /***********************************************************/
 
-guint32
-nm_device_wimax_get_center_frequency (NMDeviceWimax *self)
-{
-	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
-
-	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->center_freq;
-}
-
-gint
-nm_device_wimax_get_rssi (NMDeviceWimax *self)
-{
-	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
-
-	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->rssi;
-}
-
-gint
-nm_device_wimax_get_cinr (NMDeviceWimax *self)
-{
-	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
-
-	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->cinr;
-}
-
-gint
-nm_device_wimax_get_tx_power (NMDeviceWimax *self)
-{
-	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
-
-	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->tx_power;
-}
-
-const char *
-nm_device_wimax_get_bsid (NMDeviceWimax *self)
-{
-	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), NULL);
-
-	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->bsid;
-}
-
 static gboolean
 impl_device_get_nsp_list (NMDeviceWimax *self, GPtrArray **nsps, GError **error)
 {
@@ -200,14 +160,6 @@ set_current_nsp (NMDeviceWimax *self, NMWimaxNsp *new_nsp)
 
 	if (old_nsp)
 		g_object_unref (old_nsp);
-}
-
-NMWimaxNsp *
-nm_device_wimax_get_active_nsp (NMDeviceWimax *self)
-{
-	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), NULL);
-
-	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->current_nsp;
 }
 
 static gboolean
