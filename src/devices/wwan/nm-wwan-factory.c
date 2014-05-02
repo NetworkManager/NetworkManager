@@ -41,13 +41,6 @@ typedef struct {
 	NMModemManager *mm;
 } NMWwanFactoryPrivate;
 
-enum {
-	PROP_0,
-	PROP_DEVICE_TYPE,
-
-	LAST_PROP
-};
-
 /************************************************************************/
 
 #define PLUGIN_TYPE NM_DEVICE_TYPE_MODEM
@@ -119,20 +112,6 @@ device_factory_interface_init (NMDeviceFactory *factory_iface)
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case PROP_DEVICE_TYPE:
-		g_value_set_uint (value, PLUGIN_TYPE);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 dispose (GObject *object)
 {
 	NMWwanFactory *self = NM_WWAN_FACTORY (object);
@@ -154,9 +133,4 @@ nm_wwan_factory_class_init (NMWwanFactoryClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMWwanFactoryPrivate));
 
 	object_class->dispose = dispose;
-	object_class->get_property = get_property;
-
-	g_object_class_override_property (object_class,
-	                                  PROP_DEVICE_TYPE,
-	                                  NM_DEVICE_FACTORY_DEVICE_TYPE);
 }
