@@ -180,7 +180,7 @@ link_added_emit (gpointer user_data)
 
 	device = link_get (info->platform, info->ifindex);
 	g_assert (device);
-	g_signal_emit_by_name (info->platform, NM_PLATFORM_LINK_ADDED, info->ifindex, &device->link, NM_PLATFORM_REASON_INTERNAL);
+	g_signal_emit_by_name (info->platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, info->ifindex, &device->link, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_INTERNAL);
 	return FALSE;
 }
 
@@ -250,7 +250,7 @@ link_delete (NMPlatform *platform, int ifindex)
 			memset (route, 0, sizeof (*route));
 	}
 
-	g_signal_emit_by_name (platform, NM_PLATFORM_LINK_REMOVED, ifindex, &deleted_device, NM_PLATFORM_REASON_INTERNAL);
+	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, ifindex, &deleted_device, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_INTERNAL);
 
 	return TRUE;
 }
@@ -299,7 +299,7 @@ link_changed (NMPlatform *platform, NMFakePlatformLink *device)
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
 
-	g_signal_emit_by_name (platform, NM_PLATFORM_LINK_CHANGED, device->link.ifindex, &device->link, NM_PLATFORM_REASON_INTERNAL);
+	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, device->link.ifindex, &device->link, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
 
 	if (device->link.master) {
 		NMFakePlatformLink *master = link_get (platform, device->link.master);
@@ -871,12 +871,12 @@ ip4_address_add (NMPlatform *platform, int ifindex,
 			continue;
 
 		memcpy (item, &address, sizeof (address));
-		g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ADDRESS_CHANGED, ifindex, &address, NM_PLATFORM_REASON_INTERNAL);
+		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, ifindex, &address, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
 		return TRUE;
 	}
 
 	g_array_append_val (priv->ip4_addresses, address);
-	g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ADDRESS_ADDED, ifindex, &address, NM_PLATFORM_REASON_INTERNAL);
+	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, ifindex, &address, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_INTERNAL);
 
 	return TRUE;
 }
@@ -911,12 +911,12 @@ ip6_address_add (NMPlatform *platform, int ifindex,
 			continue;
 
 		memcpy (item, &address, sizeof (address));
-		g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ADDRESS_CHANGED, ifindex, &address, NM_PLATFORM_REASON_INTERNAL);
+		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, ifindex, &address, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
 		return TRUE;
 	}
 
 	g_array_append_val (priv->ip6_addresses, address);
-	g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ADDRESS_ADDED, ifindex, &address, NM_PLATFORM_REASON_INTERNAL);
+	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, ifindex, &address, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_INTERNAL);
 
 	return TRUE;
 }
@@ -935,7 +935,7 @@ ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
 
 			memcpy (&deleted_address, address, sizeof (deleted_address));
 			memset (address, 0, sizeof (*address));
-			g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ADDRESS_REMOVED, ifindex, &deleted_address, NM_PLATFORM_REASON_INTERNAL);
+			g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, ifindex, &deleted_address, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_INTERNAL);
 			return TRUE;
 		}
 	}
@@ -958,7 +958,7 @@ ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 
 			memcpy (&deleted_address, address, sizeof (deleted_address));
 			memset (address, 0, sizeof (*address));
-			g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ADDRESS_REMOVED, ifindex, &deleted_address, NM_PLATFORM_REASON_INTERNAL);
+			g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, ifindex, &deleted_address, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_INTERNAL);
 			return TRUE;
 		}
 	}
@@ -1086,12 +1086,12 @@ ip4_route_add (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
 			continue;
 
 		memcpy (item, &route, sizeof (route));
-		g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ROUTE_CHANGED, ifindex, &route, NM_PLATFORM_REASON_INTERNAL);
+		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, ifindex, &route, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
 		return TRUE;
 	}
 
 	g_array_append_val (priv->ip4_routes, route);
-	g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ROUTE_ADDED, ifindex, &route, NM_PLATFORM_REASON_INTERNAL);
+	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, ifindex, &route, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_INTERNAL);
 
 	return TRUE;
 }
@@ -1123,12 +1123,12 @@ ip6_route_add (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 			continue;
 
 		memcpy (item, &route, sizeof (route));
-		g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ROUTE_CHANGED, ifindex, &route, NM_PLATFORM_REASON_INTERNAL);
+		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, ifindex, &route, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_INTERNAL);
 		return TRUE;
 	}
 
 	g_array_append_val (priv->ip6_routes, route);
-	g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ROUTE_ADDED, ifindex, &route, NM_PLATFORM_REASON_INTERNAL);
+	g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, ifindex, &route, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_INTERNAL);
 
 	return TRUE;
 }
@@ -1180,7 +1180,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 	if (route) {
 		memcpy (&deleted_route, route, sizeof (deleted_route));
 		memset (route, 0, sizeof (*route));
-		g_signal_emit_by_name (platform, NM_PLATFORM_IP4_ROUTE_REMOVED, ifindex, &deleted_route, NM_PLATFORM_REASON_INTERNAL);
+		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, ifindex, &deleted_route, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_INTERNAL);
 	}
 
 	return TRUE;
@@ -1195,7 +1195,7 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 	if (route) {
 		memcpy (&deleted_route, route, sizeof (deleted_route));
 		memset (route, 0, sizeof (*route));
-		g_signal_emit_by_name (platform, NM_PLATFORM_IP6_ROUTE_REMOVED, ifindex, &deleted_route, NM_PLATFORM_REASON_INTERNAL);
+		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, ifindex, &deleted_route, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_INTERNAL);
 	}
 
 	return TRUE;

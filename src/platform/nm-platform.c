@@ -41,21 +41,11 @@ G_DEFINE_TYPE (NMPlatform, nm_platform, G_TYPE_OBJECT)
 
 /* NMPlatform signals */
 enum {
-	LINK_ADDED,
-	LINK_CHANGED,
-	LINK_REMOVED,
-	IP4_ADDRESS_ADDED,
-	IP4_ADDRESS_CHANGED,
-	IP4_ADDRESS_REMOVED,
-	IP6_ADDRESS_ADDED,
-	IP6_ADDRESS_CHANGED,
-	IP6_ADDRESS_REMOVED,
-	IP4_ROUTE_ADDED,
-	IP4_ROUTE_CHANGED,
-	IP4_ROUTE_REMOVED,
-	IP6_ROUTE_ADDED,
-	IP6_ROUTE_CHANGED,
-	IP6_ROUTE_REMOVED,
+	SIGNAL_LINK_CHANGED,
+	SIGNAL_IP4_ADDRESS_CHANGED,
+	SIGNAL_IP6_ADDRESS_CHANGED,
+	SIGNAL_IP4_ROUTE_CHANGED,
+	SIGNAL_IP6_ROUTE_CHANGED,
 	LAST_SIGNAL
 };
 
@@ -337,8 +327,9 @@ nm_platform_query_devices (void)
 	links_array = nm_platform_link_get_all ();
 	links = (NMPlatformLink *) links_array->data;
 	for (i = 0; i < links_array->len; i++) {
-		g_signal_emit (platform, signals[LINK_ADDED], 0,
-		               links[i].ifindex, &links[i], NM_PLATFORM_REASON_INTERNAL);
+		g_signal_emit (platform, signals[SIGNAL_LINK_CHANGED], 0,
+		               links[i].ifindex, &links[i], NM_PLATFORM_SIGNAL_ADDED,
+		               NM_PLATFORM_REASON_INTERNAL);
 	}
 	g_array_unref (links_array);
 }
@@ -2280,6 +2271,13 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
             return c < 0 ? -1 : 1;                          \
     } G_STMT_END
 
+#define _CMP_FIELD_STR0(a, b, field)                        \
+    G_STMT_START {                                          \
+        int c = g_strcmp0 ((a)->field, (b)->field);         \
+        if (c != 0)                                         \
+            return c < 0 ? -1 : 1;                          \
+    } G_STMT_END
+
 #define _CMP_FIELD_MEMCMP(a, b, field)                      \
     G_STMT_START {                                          \
         int c = memcmp (&((a)->field), &((b)->field),       \
@@ -2287,6 +2285,24 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route)
         if (c != 0)                                         \
             return c < 0 ? -1 : 1;                          \
     } G_STMT_END
+
+int
+nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
+{
+	_CMP_POINTER (a, b);
+	_CMP_FIELD (a, b, type);
+	_CMP_FIELD_STR (a, b, name);
+	_CMP_FIELD (a, b, master);
+	_CMP_FIELD (a, b, parent);
+	_CMP_FIELD (a, b, up);
+	_CMP_FIELD (a, b, connected);
+	_CMP_FIELD (a, b, arp);
+	_CMP_FIELD (a, b, mtu);
+	_CMP_FIELD_STR0 (a, b, type_name);
+	_CMP_FIELD_STR0 (a, b, udi);
+	_CMP_FIELD_STR0 (a, b, driver);
+	return 0;
+}
 
 int
 nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
@@ -2348,133 +2364,106 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 	return 0;
 }
 
-#undef _CMP_POINTER
 #undef _CMP_FIELD
 #undef _CMP_FIELD_MEMCMP
 
-
-static void
-log_link (NMPlatformLink *device, const char *change_type)
+/**
+ * nm_platform_ip_address_cmp_expiry:
+ * @a: a NMPlatformIPAddress to compare
+ * @b: the other NMPlatformIPAddress to compare
+ *
+ * Compares two addresses and returns which one has a longer remaining lifetime.
+ * If both addresses have the same lifetime, look at the remaining preferred time.
+ *
+ * For comparison, only the timestamp, lifetime and preferred fields are considered.
+ * If they compare equal (== 0), their other fields were not considered.
+ *
+ * Returns: -1, 0, or 1 according to the comparison
+ **/
+int
+nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatformIPAddress *b)
 {
-	debug ("signal: link %s: %s", change_type, nm_platform_link_to_string (device));
+	gint64 ta, tb;
+
+	_CMP_POINTER (a, b);
+
+	if (a->lifetime == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0)
+		ta = G_MAXINT64;
+	else
+		ta = ((gint64) a->timestamp) + a->lifetime;
+
+	if (b->lifetime == NM_PLATFORM_LIFETIME_PERMANENT || b->lifetime == 0)
+		tb = G_MAXINT64;
+	else
+		tb = ((gint64) b->timestamp) + b->lifetime;
+
+	if (ta == tb) {
+		/* if the lifetime is equal, compare the preferred time. */
+
+		if (a->preferred == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0 /* liftime==0 means permanent! */)
+			ta = G_MAXINT64;
+		else
+			ta = ((gint64) a->timestamp) + a->preferred;
+
+		if (b->preferred == NM_PLATFORM_LIFETIME_PERMANENT|| b->lifetime == 0)
+			tb = G_MAXINT64;
+		else
+			tb = ((gint64) b->timestamp) + b->preferred;
+
+		if (ta == tb)
+			return 0;
+	}
+
+	return ta < tb ? -1 : 1;
+}
+
+#undef _CMP_POINTER
+
+static const char *
+_change_type_to_string (NMPlatformSignalChangeType change_type)
+{
+	switch (change_type) {
+	case NM_PLATFORM_SIGNAL_ADDED:
+		return "added";
+	case NM_PLATFORM_SIGNAL_CHANGED:
+		return "changed";
+	case NM_PLATFORM_SIGNAL_REMOVED:
+		return "removed";
+	default:
+		g_return_val_if_reached ("UNKNOWN");
+		return "UNKNOWN";
+	}
 }
 
 static void
-log_link_added (NMPlatform *p, int ifindex, NMPlatformLink *device, gpointer user_data)
+log_link (NMPlatform *p, int ifindex, NMPlatformLink *device, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	log_link (device, "added  ");
+
+	debug ("signal: link %7s: %s", _change_type_to_string (change_type), nm_platform_link_to_string (device));
 }
 
 static void
-log_link_changed (NMPlatform *p, int ifindex, NMPlatformLink *device, gpointer user_data)
+log_ip4_address (NMPlatform *p, int ifindex, NMPlatformIP4Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	log_link (device, "changed");
+	debug ("signal: address 4 %7s: %s", _change_type_to_string (change_type), nm_platform_ip4_address_to_string (address));
 }
 
 static void
-log_link_removed (NMPlatform *p, int ifindex, NMPlatformLink *device, gpointer user_data)
+log_ip6_address (NMPlatform *p, int ifindex, NMPlatformIP6Address *address, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	log_link (device, "removed");
+	debug ("signal: address 6 %7s: %s", _change_type_to_string (change_type), nm_platform_ip6_address_to_string (address));
 }
 
 static void
-log_ip4_address (NMPlatformIP4Address *address, const char *change_type)
+log_ip4_route (NMPlatform *p, int ifindex, NMPlatformIP4Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	const char *name = nm_platform_link_get_name (address->ifindex);
-
-	debug ("(%s) signal: address 4 %s: %s", name, change_type, nm_platform_ip4_address_to_string (address));
+	debug ("signal: route   4 %7s: %s", _change_type_to_string (change_type), nm_platform_ip4_route_to_string (route));
 }
 
 static void
-log_ip4_address_added (NMPlatform *p, int ifindex, NMPlatformIP4Address *address, gpointer user_data)
+log_ip6_route (NMPlatform *p, int ifindex, NMPlatformIP6Route *route, NMPlatformSignalChangeType change_type, gpointer user_data)
 {
-	log_ip4_address (address, "added  ");
-}
-
-static void
-log_ip4_address_changed (NMPlatform *p, int ifindex, NMPlatformIP4Address *address, gpointer user_data)
-{
-	log_ip4_address (address, "changed");
-}
-
-static void
-log_ip4_address_removed (NMPlatform *p, int ifindex, NMPlatformIP4Address *address, gpointer user_data)
-{
-	log_ip4_address (address, "removed");
-}
-
-static void
-log_ip6_address (NMPlatformIP6Address *address, const char *change_type)
-{
-	const char *name = nm_platform_link_get_name (address->ifindex);
-
-	debug ("(%s) signal: address 6 %s: %s", name, change_type, nm_platform_ip6_address_to_string (address));
-}
-
-static void
-log_ip6_address_added (NMPlatform *p, int ifindex, NMPlatformIP6Address *address, gpointer user_data)
-{
-	log_ip6_address (address, "added  ");
-}
-
-static void
-log_ip6_address_changed (NMPlatform *p, int ifindex, NMPlatformIP6Address *address, gpointer user_data)
-{
-	log_ip6_address (address, "changed");
-}
-
-static void
-log_ip6_address_removed (NMPlatform *p, int ifindex, NMPlatformIP6Address *address, gpointer user_data)
-{
-	log_ip6_address (address, "removed");
-}
-
-static void
-log_ip4_route (NMPlatformIP4Route *route, const char *change_type)
-{
-	debug ("signal: route   4 %s: %s", change_type, nm_platform_ip4_route_to_string (route));
-}
-
-static void
-log_ip4_route_added (NMPlatform *p, int ifindex, NMPlatformIP4Route *route, gpointer user_data)
-{
-	log_ip4_route (route, "added  ");
-}
-
-static void
-log_ip4_route_changed (NMPlatform *p, int ifindex, NMPlatformIP4Route *route, gpointer user_data)
-{
-	log_ip4_route (route, "changed");
-}
-
-static void
-log_ip4_route_removed (NMPlatform *p, int ifindex, NMPlatformIP4Route *route, gpointer user_data)
-{
-	log_ip4_route (route, "removed");
-}
-
-static void
-log_ip6_route (NMPlatformIP6Route *route, const char *change_type)
-{
-	debug ("signal: route   6 %s: %s", change_type, nm_platform_ip6_route_to_string (route));
-}
-
-static void
-log_ip6_route_added (NMPlatform *p, int ifindex, NMPlatformIP6Route *route, gpointer user_data)
-{
-	log_ip6_route (route, "added  ");
-}
-
-static void
-log_ip6_route_changed (NMPlatform *p, int ifindex, NMPlatformIP6Route *route, gpointer user_data)
-{
-	log_ip6_route (route, "changed");
-}
-
-static void
-log_ip6_route_removed (NMPlatform *p, int ifindex, NMPlatformIP6Route *route, gpointer user_data)
-{
-	log_ip6_route (route, "removed");
+	debug ("signal: route   6 %7s: %s", _change_type_to_string (change_type), nm_platform_ip6_route_to_string (route));
 }
 
 /******************************************************************/
@@ -2490,7 +2479,7 @@ nm_platform_init (NMPlatform *object)
 		G_SIGNAL_RUN_FIRST, \
 		G_CALLBACK (method), \
 		NULL, NULL, NULL, \
-		G_TYPE_NONE, 3, G_TYPE_INT, G_TYPE_POINTER, NM_TYPE_PLATFORM_REASON);
+		G_TYPE_NONE, 4, G_TYPE_INT, G_TYPE_POINTER, NM_TYPE_PLATFORM_SIGNAL_CHANGE_TYPE, NM_TYPE_PLATFORM_REASON);
 
 static void
 nm_platform_class_init (NMPlatformClass *platform_class)
@@ -2498,19 +2487,9 @@ nm_platform_class_init (NMPlatformClass *platform_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (platform_class);
 
 	/* Signals */
-	SIGNAL (LINK_ADDED, log_link_added)
-	SIGNAL (LINK_CHANGED, log_link_changed)
-	SIGNAL (LINK_REMOVED, log_link_removed)
-	SIGNAL (IP4_ADDRESS_ADDED, log_ip4_address_added)
-	SIGNAL (IP4_ADDRESS_CHANGED, log_ip4_address_changed)
-	SIGNAL (IP4_ADDRESS_REMOVED, log_ip4_address_removed)
-	SIGNAL (IP6_ADDRESS_ADDED, log_ip6_address_added)
-	SIGNAL (IP6_ADDRESS_CHANGED, log_ip6_address_changed)
-	SIGNAL (IP6_ADDRESS_REMOVED, log_ip6_address_removed)
-	SIGNAL (IP4_ROUTE_ADDED, log_ip4_route_added)
-	SIGNAL (IP4_ROUTE_CHANGED, log_ip4_route_changed)
-	SIGNAL (IP4_ROUTE_REMOVED, log_ip4_route_removed)
-	SIGNAL (IP6_ROUTE_ADDED, log_ip6_route_added)
-	SIGNAL (IP6_ROUTE_CHANGED, log_ip6_route_changed)
-	SIGNAL (IP6_ROUTE_REMOVED, log_ip6_route_removed)
+	SIGNAL (SIGNAL_LINK_CHANGED, log_link)
+	SIGNAL (SIGNAL_IP4_ADDRESS_CHANGED, log_ip4_address)
+	SIGNAL (SIGNAL_IP6_ADDRESS_CHANGED, log_ip6_address)
+	SIGNAL (SIGNAL_IP4_ROUTE_CHANGED, log_ip4_route)
+	SIGNAL (SIGNAL_IP6_ROUTE_CHANGED, log_ip6_route)
 }

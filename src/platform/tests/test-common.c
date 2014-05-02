@@ -2,11 +2,12 @@
 #include "nm-glib-compat.h"
 
 SignalData *
-add_signal_full (const char *name, GCallback callback, int ifindex, const char *ifname)
+add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCallback callback, int ifindex, const char *ifname)
 {
 	SignalData *data = g_new0 (SignalData, 1);
 
 	data->name = name;
+	data->change_type = change_type;
 	data->received = FALSE;
 	data->handler_id = g_signal_connect (nm_platform_get (), name, callback, data);
 	data->ifindex = ifindex;
@@ -17,12 +18,28 @@ add_signal_full (const char *name, GCallback callback, int ifindex, const char *
 	return data;
 }
 
+static const char *
+_change_type_to_string (NMPlatformSignalChangeType change_type)
+{
+    switch (change_type) {
+    case NM_PLATFORM_SIGNAL_ADDED:
+        return "added";
+    case NM_PLATFORM_SIGNAL_CHANGED:
+        return "changed";
+    case NM_PLATFORM_SIGNAL_REMOVED:
+        return "removed";
+    default:
+        g_return_val_if_reached ("UNKNOWN");
+        return "UNKNOWN";
+    }
+}
+
 void
 accept_signal (SignalData *data)
 {
-	debug ("Accepting signal '%s' ifindex %d ifname %s.", data->name, data->ifindex, data->ifname);
+	debug ("Accepting signal '%s-%s' ifindex %d ifname %s.", data->name, _change_type_to_string (data->change_type), data->ifindex, data->ifname);
 	if (!data->received)
-		g_error ("Attemted to accept a non-received signal '%s'.", data->name);
+		g_error ("Attemted to accept a non-received signal '%s-%s'.", data->name, _change_type_to_string (data->change_type));
 
 	data->received = FALSE;
 }
@@ -41,14 +58,14 @@ void
 free_signal (SignalData *data)
 {
 	if (data->received)
-		g_error ("Attempted to free received but not accepted signal '%s'.", data->name);
+		g_error ("Attempted to free received but not accepted signal '%s-%s'.", data->name, _change_type_to_string (data->change_type));
 
 	g_signal_handler_disconnect (nm_platform_get (), data->handler_id);
 	g_free (data);
 }
 
 void
-link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPlatformReason reason, SignalData *data)
+link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
 {
 	
 	GArray *links;
@@ -57,10 +74,14 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);
+	g_assert (data && data->name);
+	g_assert_cmpstr (data->name, ==, NM_PLATFORM_SIGNAL_LINK_CHANGED);
 
 	if (data->ifindex && data->ifindex != received->ifindex)
 		return;
 	if (data->ifname && g_strcmp0 (data->ifname, nm_platform_link_get_name (ifindex)) != 0)
+		return;
+	if (change_type != data->change_type)
 		return;
 
 	if (data->loop) {
@@ -69,9 +90,9 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 	}
 
 	if (data->received)
-		g_error ("Received signal '%s' a second time.", data->name);
+		g_error ("Received signal '%s-%s' a second time.", data->name, _change_type_to_string (data->change_type));
 
-	debug ("Received signal '%s' ifindex %d ifname '%s'.", data->name, ifindex, received->name);
+	debug ("Received signal '%s-%s' ifindex %d ifname '%s'.", data->name, _change_type_to_string (data->change_type), ifindex, received->name);
 	data->received = TRUE;
 
 	/* Check the data */
@@ -80,17 +101,17 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 	for (i = 0; i < links->len; i++) {
 		cached = &g_array_index (links, NMPlatformLink, i);
 		if (cached->ifindex == received->ifindex) {
+			g_assert_cmpint (nm_platform_link_cmp (cached, received), ==, 0);
 			g_assert (!memcmp (cached, received, sizeof (*cached)));
-			if (!g_strcmp0 (data->name, NM_PLATFORM_LINK_REMOVED)) {
+			if (data->change_type == NM_PLATFORM_SIGNAL_REMOVED)
 				g_error ("Deleted link still found in the local cache.");
-			}
 			g_array_unref (links);
 			return;
 		}
 	}
 	g_array_unref (links);
 
-	if (g_strcmp0 (data->name, NM_PLATFORM_LINK_REMOVED))
+	if (data->change_type != NM_PLATFORM_SIGNAL_REMOVED)
 		g_error ("Added/changed link not found in the local cache.");
 }
 

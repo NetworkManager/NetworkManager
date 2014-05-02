@@ -146,21 +146,14 @@ nm_rtnl_addr_set_prefixlen (struct rtnl_addr *rtnladdr, int plen)
 #define rtnl_addr_set_prefixlen nm_rtnl_addr_set_prefixlen
 
 typedef enum {
-	UNKNOWN_OBJECT_TYPE,
-	LINK,
-	IP4_ADDRESS,
-	IP6_ADDRESS,
-	IP4_ROUTE,
-	IP6_ROUTE,
-	N_TYPES,
+	OBJECT_TYPE_UNKNOWN,
+	OBJECT_TYPE_LINK,
+	OBJECT_TYPE_IP4_ADDRESS,
+	OBJECT_TYPE_IP6_ADDRESS,
+	OBJECT_TYPE_IP4_ROUTE,
+	OBJECT_TYPE_IP6_ROUTE,
+	__OBJECT_TYPE_LAST,
 } ObjectType;
-
-typedef enum {
-	ADDED,
-	CHANGED,
-	REMOVED,
-	N_STATUSES
-} ObjectStatus;
 
 static ObjectType
 object_type_from_nl_object (const struct nl_object *object)
@@ -168,36 +161,36 @@ object_type_from_nl_object (const struct nl_object *object)
 	const char *type_str;
 
 	if (!object || !(type_str = nl_object_get_type (object)))
-		return UNKNOWN_OBJECT_TYPE;
+		return OBJECT_TYPE_UNKNOWN;
 
 	if (!strcmp (type_str, "route/link"))
-		return LINK;
+		return OBJECT_TYPE_LINK;
 	else if (!strcmp (type_str, "route/addr")) {
 		switch (rtnl_addr_get_family ((struct rtnl_addr *) object)) {
 		case AF_INET:
-			return IP4_ADDRESS;
+			return OBJECT_TYPE_IP4_ADDRESS;
 		case AF_INET6:
-			return IP6_ADDRESS;
+			return OBJECT_TYPE_IP6_ADDRESS;
 		default:
-			return UNKNOWN_OBJECT_TYPE;
+			return OBJECT_TYPE_UNKNOWN;
 		}
 	} else if (!strcmp (type_str, "route/route")) {
 		switch (rtnl_route_get_family ((struct rtnl_route *) object)) {
 		case AF_INET:
-			return IP4_ROUTE;
+			return OBJECT_TYPE_IP4_ROUTE;
 		case AF_INET6:
-			return IP6_ROUTE;
+			return OBJECT_TYPE_IP6_ROUTE;
 		default:
-			return UNKNOWN_OBJECT_TYPE;
+			return OBJECT_TYPE_UNKNOWN;
 		}
 	} else
-		return UNKNOWN_OBJECT_TYPE;
+		return OBJECT_TYPE_UNKNOWN;
 }
 
 static void
 _nl_link_family_unset (struct nl_object *obj, int *family)
 {
-	if (!obj || object_type_from_nl_object (obj) != LINK)
+	if (!obj || object_type_from_nl_object (obj) != OBJECT_TYPE_LINK)
 		*family = AF_UNSPEC;
 	else {
 		*family = rtnl_link_get_family ((struct rtnl_link *) obj);
@@ -243,7 +236,7 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 	ObjectType type = object_type_from_nl_object (needle);
 
 	switch (type) {
-	case LINK:
+	case OBJECT_TYPE_LINK:
 		{
 			int ifindex = rtnl_link_get_ifindex ((struct rtnl_link *) needle);
 			const char *name = rtnl_link_get_name ((struct rtnl_link *) needle);
@@ -272,10 +265,10 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 				return NULL;
 			}
 		}
-	case IP4_ADDRESS:
-	case IP6_ADDRESS:
-	case IP4_ROUTE:
-	case IP6_ROUTE:
+	case OBJECT_TYPE_IP4_ADDRESS:
+	case OBJECT_TYPE_IP6_ADDRESS:
+	case OBJECT_TYPE_IP4_ROUTE:
+	case OBJECT_TYPE_IP6_ROUTE:
 		/* Fallback to a one-time cache allocation. */
 		{
 			struct nl_cache *cache;
@@ -311,13 +304,13 @@ static int
 add_kernel_object (struct nl_sock *sock, struct nl_object *object)
 {
 	switch (object_type_from_nl_object (object)) {
-	case LINK:
+	case OBJECT_TYPE_LINK:
 		return rtnl_link_add (sock, (struct rtnl_link *) object, NLM_F_CREATE);
-	case IP4_ADDRESS:
-	case IP6_ADDRESS:
+	case OBJECT_TYPE_IP4_ADDRESS:
+	case OBJECT_TYPE_IP6_ADDRESS:
 		return rtnl_addr_add (sock, (struct rtnl_addr *) object, NLM_F_CREATE | NLM_F_REPLACE);
-	case IP4_ROUTE:
-	case IP6_ROUTE:
+	case OBJECT_TYPE_IP4_ROUTE:
+	case OBJECT_TYPE_IP6_ROUTE:
 		return rtnl_route_add (sock, (struct rtnl_route *) object, NLM_F_CREATE | NLM_F_REPLACE);
 	default:
 		g_return_val_if_reached (-NLE_INVAL);
@@ -1077,15 +1070,15 @@ static const char *
 to_string_object_with_type (NMPlatform *platform, struct nl_object *obj, ObjectType type)
 {
 	switch (type) {
-	case LINK:
+	case OBJECT_TYPE_LINK:
 		return to_string_link (platform, (struct rtnl_link *) obj);
-	case IP4_ADDRESS:
+	case OBJECT_TYPE_IP4_ADDRESS:
 		return to_string_ip4_address ((struct rtnl_addr *) obj);
-	case IP6_ADDRESS:
+	case OBJECT_TYPE_IP6_ADDRESS:
 		return to_string_ip6_address ((struct rtnl_addr *) obj);
-	case IP4_ROUTE:
+	case OBJECT_TYPE_IP4_ROUTE:
 		return to_string_ip4_route ((struct rtnl_route *) obj);
-	case IP6_ROUTE:
+	case OBJECT_TYPE_IP6_ROUTE:
 		return to_string_ip6_route ((struct rtnl_route *) obj);
 	default:
 		SET_AND_RETURN_STRING_BUFFER ("(unknown netlink object %p)", obj);
@@ -1104,12 +1097,12 @@ to_string_object (NMPlatform *platform, struct nl_object *obj)
 
 /* Object and cache manipulation */
 
-static const char *signal_by_type_and_status[N_TYPES][N_STATUSES] = {
-	[LINK]        = { NM_PLATFORM_LINK_ADDED,        NM_PLATFORM_LINK_CHANGED,        NM_PLATFORM_LINK_REMOVED },
-	[IP4_ADDRESS] = { NM_PLATFORM_IP4_ADDRESS_ADDED, NM_PLATFORM_IP4_ADDRESS_CHANGED, NM_PLATFORM_IP4_ADDRESS_REMOVED },
-	[IP6_ADDRESS] = { NM_PLATFORM_IP6_ADDRESS_ADDED, NM_PLATFORM_IP6_ADDRESS_CHANGED, NM_PLATFORM_IP6_ADDRESS_REMOVED },
-	[IP4_ROUTE]   = { NM_PLATFORM_IP4_ROUTE_ADDED,   NM_PLATFORM_IP4_ROUTE_CHANGED,   NM_PLATFORM_IP4_ROUTE_REMOVED },
-	[IP6_ROUTE]   = { NM_PLATFORM_IP6_ROUTE_ADDED,   NM_PLATFORM_IP6_ROUTE_CHANGED,   NM_PLATFORM_IP6_ROUTE_REMOVED }
+static const char *signal_by_type_and_status[__OBJECT_TYPE_LAST] = {
+	[OBJECT_TYPE_LINK]        = NM_PLATFORM_SIGNAL_LINK_CHANGED,
+	[OBJECT_TYPE_IP4_ADDRESS] = NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED,
+	[OBJECT_TYPE_IP6_ADDRESS] = NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
+	[OBJECT_TYPE_IP4_ROUTE]   = NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
+	[OBJECT_TYPE_IP6_ROUTE]   = NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
 };
 
 static struct nl_cache *
@@ -1118,13 +1111,13 @@ choose_cache_by_type (NMPlatform *platform, ObjectType object_type)
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 
 	switch (object_type) {
-	case LINK:
+	case OBJECT_TYPE_LINK:
 		return priv->link_cache;
-	case IP4_ADDRESS:
-	case IP6_ADDRESS:
+	case OBJECT_TYPE_IP4_ADDRESS:
+	case OBJECT_TYPE_IP6_ADDRESS:
 		return priv->address_cache;
-	case IP4_ROUTE:
-	case IP6_ROUTE:
+	case OBJECT_TYPE_IP4_ROUTE:
+	case OBJECT_TYPE_IP6_ROUTE:
 		return priv->route_cache;
 	default:
 		g_return_val_if_reached (NULL);
@@ -1142,11 +1135,11 @@ static gboolean
 object_has_ifindex (struct nl_object *object, int ifindex)
 {
 	switch (object_type_from_nl_object (object)) {
-	case IP4_ADDRESS:
-	case IP6_ADDRESS:
+	case OBJECT_TYPE_IP4_ADDRESS:
+	case OBJECT_TYPE_IP6_ADDRESS:
 		return ifindex == rtnl_addr_get_ifindex ((struct rtnl_addr *) object);
-	case IP4_ROUTE:
-	case IP6_ROUTE:
+	case OBJECT_TYPE_IP4_ROUTE:
+	case OBJECT_TYPE_IP6_ROUTE:
 		{
 			struct rtnl_route *rtnlroute = (struct rtnl_route *) object;
 			struct rtnl_nexthop *nexthop;
@@ -1178,14 +1171,14 @@ check_cache_items (NMPlatform *platform, struct nl_cache *cache, int ifindex)
 }
 
 static void
-announce_object (NMPlatform *platform, const struct nl_object *object, ObjectStatus status, NMPlatformReason reason)
+announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatformSignalChangeType change_type, NMPlatformReason reason)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	ObjectType object_type = object_type_from_nl_object (object);
-	const char *sig = signal_by_type_and_status[object_type][status];
+	const char *sig = signal_by_type_and_status[object_type];
 
 	switch (object_type) {
-	case LINK:
+	case OBJECT_TYPE_LINK:
 		{
 			NMPlatformLink device;
 			struct rtnl_link *rtnl_link = (struct rtnl_link *) object;
@@ -1199,9 +1192,9 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			 * event_notification() or link_delete() which block the announcment
 			 * themselves when appropriate.
 			 */
-			switch (status) {
-			case ADDED:
-			case CHANGED:
+			switch (change_type) {
+			case NM_PLATFORM_SIGNAL_ADDED:
+			case NM_PLATFORM_SIGNAL_CHANGED:
 				if (!link_is_software (rtnl_link) && !device.driver)
 					return;
 				break;
@@ -1215,12 +1208,12 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			 * More precisely, kernel removes routes when interface goes !IFF_UP and
 			 * removes both addresses and routes when interface is removed.
 			 */
-			switch (status) {
-			case CHANGED:
+			switch (change_type) {
+			case NM_PLATFORM_SIGNAL_CHANGED:
 				if (!device.connected)
 					check_cache_items (platform, priv->route_cache, device.ifindex);
 				break;
-			case REMOVED:
+			case NM_PLATFORM_SIGNAL_REMOVED:
 				check_cache_items (platform, priv->address_cache, device.ifindex);
 				check_cache_items (platform, priv->route_cache, device.ifindex);
 				g_hash_table_remove (priv->wifi_data, GINT_TO_POINTER (device.ifindex));
@@ -1229,10 +1222,10 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 				break;
 			}
 
-			g_signal_emit_by_name (platform, sig, device.ifindex, &device, reason);
+			g_signal_emit_by_name (platform, sig, device.ifindex, &device, change_type, reason);
 		}
 		return;
-	case IP4_ADDRESS:
+	case OBJECT_TYPE_IP4_ADDRESS:
 		{
 			NMPlatformIP4Address address;
 
@@ -1242,40 +1235,40 @@ announce_object (NMPlatform *platform, const struct nl_object *object, ObjectSta
 			/* Address deletion is sometimes accompanied by route deletion. We need to
 			 * check all routes belonging to the same interface.
 			 */
-			switch (status) {
-			case REMOVED:
+			switch (change_type) {
+			case NM_PLATFORM_SIGNAL_REMOVED:
 				check_cache_items (platform, priv->route_cache, address.ifindex);
 				break;
 			default:
 				break;
 			}
 
-			g_signal_emit_by_name (platform, sig, address.ifindex, &address, reason);
+			g_signal_emit_by_name (platform, sig, address.ifindex, &address, change_type, reason);
 		}
 		return;
-	case IP6_ADDRESS:
+	case OBJECT_TYPE_IP6_ADDRESS:
 		{
 			NMPlatformIP6Address address;
 
 			if (!init_ip6_address (&address, (struct rtnl_addr *) object))
 				return;
-			g_signal_emit_by_name (platform, sig, address.ifindex, &address, reason);
+			g_signal_emit_by_name (platform, sig, address.ifindex, &address, change_type, reason);
 		}
 		return;
-	case IP4_ROUTE:
+	case OBJECT_TYPE_IP4_ROUTE:
 		{
 			NMPlatformIP4Route route;
 
 			if (init_ip4_route (&route, (struct rtnl_route *) object))
-				g_signal_emit_by_name (platform, sig, route.ifindex, &route, reason);
+				g_signal_emit_by_name (platform, sig, route.ifindex, &route, change_type, reason);
 		}
 		return;
-	case IP6_ROUTE:
+	case OBJECT_TYPE_IP6_ROUTE:
 		{
 			NMPlatformIP6Route route;
 
 			if (init_ip6_route (&route, (struct rtnl_route *) object))
-				g_signal_emit_by_name (platform, sig, route.ifindex, &route, reason);
+				g_signal_emit_by_name (platform, sig, route.ifindex, &route, change_type, reason);
 		}
 		return;
 	default:
@@ -1306,7 +1299,7 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 		if (cached_object) {
 			nl_cache_remove (cached_object);
 
-			announce_object (platform, cached_object, REMOVED, reason);
+			announce_object (platform, cached_object, NM_PLATFORM_SIGNAL_REMOVED, reason);
 		}
 	} else {
 		if (!kernel_object)
@@ -1322,10 +1315,10 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 			return FALSE;
 		}
 
-		announce_object (platform, kernel_object, cached_object ? CHANGED : ADDED, reason);
+		announce_object (platform, kernel_object, cached_object ? NM_PLATFORM_SIGNAL_CHANGED : NM_PLATFORM_SIGNAL_ADDED, reason);
 
 		/* Refresh the master device (even on enslave/release) */
-		if (object_type_from_nl_object (kernel_object) == LINK) {
+		if (object_type_from_nl_object (kernel_object) == OBJECT_TYPE_LINK) {
 			int kernel_master = rtnl_link_get_master ((struct rtnl_link *) kernel_object);
 			int cached_master = cached_object ? rtnl_link_get_master ((struct rtnl_link *) cached_object) : 0;
 			struct nl_object *master_object;
@@ -1391,21 +1384,21 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 	int nle;
 
 	object_type = object_type_from_nl_object (obj);
-	g_return_val_if_fail (object_type != UNKNOWN_OBJECT_TYPE, FALSE);
+	g_return_val_if_fail (object_type != OBJECT_TYPE_UNKNOWN, FALSE);
 
 	cached_object = nm_nl_cache_search (choose_cache_by_type (platform, object_type), obj);
 	object = cached_object ? cached_object : obj;
 
 	switch (object_type) {
-	case LINK:
+	case OBJECT_TYPE_LINK:
 		nle = rtnl_link_delete (priv->nlh, (struct rtnl_link *) object);
 		break;
-	case IP4_ADDRESS:
-	case IP6_ADDRESS:
+	case OBJECT_TYPE_IP4_ADDRESS:
+	case OBJECT_TYPE_IP6_ADDRESS:
 		nle = rtnl_addr_delete (priv->nlh, (struct rtnl_addr *) object, 0);
 		break;
-	case IP4_ROUTE:
-	case IP6_ROUTE:
+	case OBJECT_TYPE_IP4_ROUTE:
+	case OBJECT_TYPE_IP6_ROUTE:
 		nle = rtnl_route_delete (priv->nlh, (struct rtnl_route *) object, 0);
 		break;
 	default:
@@ -1420,7 +1413,7 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 		      nl_geterror (nle), nle);
 		break;
 	case -NLE_NOADDR:
-		if (object_type == IP4_ADDRESS || object_type == IP6_ADDRESS) {
+		if (object_type == OBJECT_TYPE_IP4_ADDRESS || object_type == OBJECT_TYPE_IP6_ADDRESS) {
 			debug("delete_object for address failed with \"%s\" (%d), meaning the address was already removed",
 			      nl_geterror (nle), nle);
 			break;
@@ -1476,7 +1469,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	g_return_val_if_fail (object, NL_OK);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
-		if (object_type_from_nl_object (object) == LINK) {
+		if (object_type_from_nl_object (object) == OBJECT_TYPE_LINK) {
 			const char *name = rtnl_link_get_name ((struct rtnl_link *) object);
 
 			debug ("netlink event (type %d) for link: %s (%d, family %d)",
@@ -1518,7 +1511,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			if (!link_is_announceable (platform, (struct rtnl_link *) cached_object))
 				return NL_OK;
 		}
-		announce_object (platform, cached_object, REMOVED, NM_PLATFORM_REASON_EXTERNAL);
+		announce_object (platform, cached_object, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_EXTERNAL);
 
 		return NL_OK;
 	case RTM_NEWLINK:
@@ -1539,7 +1532,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 				error ("netlink cache error: %s", nl_geterror (nle));
 				return NL_OK;
 			}
-			announce_object (platform, kernel_object, ADDED, NM_PLATFORM_REASON_EXTERNAL);
+			announce_object (platform, kernel_object, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_EXTERNAL);
 			return NL_OK;
 		}
 		/* Ignore non-change
@@ -1556,7 +1549,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			error ("netlink cache error: %s", nl_geterror (nle));
 			return NL_OK;
 		}
-		announce_object (platform, kernel_object, CHANGED, NM_PLATFORM_REASON_EXTERNAL);
+		announce_object (platform, kernel_object, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_REASON_EXTERNAL);
 
 		return NL_OK;
 	default:
@@ -1735,7 +1728,7 @@ static GArray *
 link_get_all (NMPlatform *platform)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	GArray *links = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformLink), nl_cache_nitems (priv->link_cache));
+	GArray *links = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformLink), nl_cache_nitems (priv->link_cache));
 	NMPlatformLink device;
 	struct nl_object *object;
 
@@ -2900,24 +2893,13 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 
 /******************************************************************/
 
-static int
-ip_address_mark_all (NMPlatform *platform, int family, int ifindex)
+static gboolean
+_address_match (struct rtnl_addr *addr, int family, int ifindex)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	struct nl_object *object;
-	int count = 0;
+	g_return_val_if_fail (addr, FALSE);
 
-	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
-		nl_object_unmark (object);
-		if (rtnl_addr_get_family ((struct rtnl_addr *) object) != family)
-			continue;
-		if (rtnl_addr_get_ifindex ((struct rtnl_addr *) object) != ifindex)
-			continue;
-		nl_object_mark (object);
-		count++;
-	}
-
-	return count;
+	return rtnl_addr_get_family (addr) == family &&
+	       rtnl_addr_get_ifindex (addr) == ifindex;
 }
 
 static GArray *
@@ -2927,18 +2909,15 @@ ip4_address_get_all (NMPlatform *platform, int ifindex)
 	GArray *addresses;
 	NMPlatformIP4Address address;
 	struct nl_object *object;
-	int count;
 
-	count = ip_address_mark_all (platform, AF_INET, ifindex);
-	addresses = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP4Address), count);
+	addresses = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Address));
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
-		if (nl_object_is_marked (object)) {
+		if (_address_match ((struct rtnl_addr *) object, AF_INET, ifindex)) {
 			if (init_ip4_address (&address, (struct rtnl_addr *) object)) {
 				address.source = NM_PLATFORM_SOURCE_KERNEL;
 				g_array_append_val (addresses, address);
 			}
-			nl_object_unmark (object);
 		}
 	}
 
@@ -2952,41 +2931,19 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 	GArray *addresses;
 	NMPlatformIP6Address address;
 	struct nl_object *object;
-	int count;
 
-	count = ip_address_mark_all (platform, AF_INET6, ifindex);
-	addresses = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP6Address), count);
+	addresses = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP6Address));
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
-		if (nl_object_is_marked (object)) {
+		if (_address_match ((struct rtnl_addr *) object, AF_INET6, ifindex)) {
 			if (init_ip6_address (&address, (struct rtnl_addr *) object)) {
 				address.source = NM_PLATFORM_SOURCE_KERNEL;
 				g_array_append_val (addresses, address);
 			}
-			nl_object_unmark (object);
 		}
 	}
 
 	return addresses;
-}
-
-static void
-addr4_to_broadcast (struct in_addr *dst, const struct in_addr *src, guint8 plen)
-{
-	guint nbytes = plen / 8;
-	guint nbits = plen % 8;
-
-	g_return_if_fail (plen <= 32);
-	g_assert (src);
-	g_assert (dst);
-
-	if (plen >= 32)
-		*dst = *src;
-	else {
-		dst->s_addr = 0xFFFFFFFF;
-		memcpy (dst, src, nbytes);
-		((guint8 *) dst)[nbytes] = (((const guint8 *) src)[nbytes] | (0xFF >> nbits));
-	}
 }
 
 #define IPV4LL_NETWORK (htonl (0xA9FE0000L))
@@ -3027,10 +2984,10 @@ build_rtnl_addr (int family,
 
 	/* IPv4 Broadcast address */
 	if (family == AF_INET) {
-		struct in_addr bcast;
+		in_addr_t bcast;
 		auto_nl_addr struct nl_addr *bcaddr = NULL;
 
-		addr4_to_broadcast (&bcast, addr, plen);
+		bcast = *((in_addr_t *) addr) | ~nm_utils_ip4_prefix_to_netmask (plen);
 		bcaddr = nl_addr_build (family, &bcast, addrlen);
 		g_assert (bcaddr);
 		rtnl_addr_set_broadcast (rtnladdr, bcaddr);
@@ -3136,36 +3093,22 @@ ip6_address_exists (NMPlatform *platform, int ifindex, struct in6_addr addr, int
 
 /******************************************************************/
 
-static int
-ip_route_mark_all (NMPlatform *platform, int family, int ifindex)
+static gboolean
+_route_match (struct rtnl_route *rtnlroute, int family, int ifindex)
 {
-	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	struct nl_object *object;
-	int count = 0;
+	struct rtnl_nexthop *nexthop;
 
-	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
-		struct rtnl_route *rtnlroute = (struct rtnl_route *) object;
-		struct rtnl_nexthop *nexthop;
+	g_return_val_if_fail (rtnlroute, FALSE);
 
-		nl_object_unmark (object);
-		if (rtnl_route_get_type (rtnlroute) != RTN_UNICAST)
-			continue;
-		if (rtnl_route_get_table (rtnlroute) != RT_TABLE_MAIN)
-			continue;
-		if (rtnl_route_get_protocol (rtnlroute) == RTPROT_KERNEL)
-			continue;
-		if (rtnl_route_get_family (rtnlroute) != family)
-			continue;
-		if (rtnl_route_get_nnexthops (rtnlroute) != 1)
-			continue;
-		nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
-		if (rtnl_route_nh_get_ifindex (nexthop) != ifindex)
-			continue;
-		nl_object_mark (object);
-		count++;
-	}
+	if (rtnl_route_get_type (rtnlroute) != RTN_UNICAST ||
+	    rtnl_route_get_table (rtnlroute) != RT_TABLE_MAIN ||
+	    rtnl_route_get_protocol (rtnlroute) == RTPROT_KERNEL ||
+	    rtnl_route_get_family (rtnlroute) != family ||
+	    rtnl_route_get_nnexthops (rtnlroute) != 1)
+		return FALSE;
 
-	return count;
+	nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
+	return rtnl_route_nh_get_ifindex (nexthop) == ifindex;
 }
 
 static GArray *
@@ -3175,19 +3118,16 @@ ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	GArray *routes;
 	NMPlatformIP4Route route;
 	struct nl_object *object;
-	int count = 0;
 
-	count = ip_route_mark_all (platform, AF_INET, ifindex);
-	routes = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP4Route), count);
+	routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
-		if (nl_object_is_marked (object)) {
+		if (_route_match ((struct rtnl_route *) object, AF_INET, ifindex)) {
 			if (init_ip4_route (&route, (struct rtnl_route *) object)) {
 				route.source = NM_PLATFORM_SOURCE_KERNEL;
 				if (route.plen != 0 || include_default)
 					g_array_append_val (routes, route);
 			}
-			nl_object_unmark (object);
 		}
 	}
 
@@ -3201,19 +3141,16 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	GArray *routes;
 	NMPlatformIP6Route route;
 	struct nl_object *object;
-	int count;
 
-	count = ip_route_mark_all (platform, AF_INET6, ifindex);
-	routes = g_array_sized_new (TRUE, TRUE, sizeof (NMPlatformIP6Route), count);
+	routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP6Route));
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
-		if (nl_object_is_marked (object)) {
+		if (_route_match ((struct rtnl_route *) object, AF_INET6, ifindex)) {
 			if (init_ip6_route (&route, (struct rtnl_route *) object)) {
 				route.source = NM_PLATFORM_SOURCE_KERNEL;
 				if (route.plen != 0 || include_default)
 					g_array_append_val (routes, route);
 			}
-			nl_object_unmark (object);
 		}
 	}
 
@@ -3463,7 +3400,7 @@ udev_device_added (NMPlatform *platform,
 		return;
 	}
 
-	announce_object (platform, (struct nl_object *) rtnllink, is_changed ? CHANGED : ADDED, NM_PLATFORM_REASON_EXTERNAL);
+	announce_object (platform, (struct nl_object *) rtnllink, is_changed ? NM_PLATFORM_SIGNAL_CHANGED : NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_EXTERNAL);
 }
 
 static void
@@ -3499,7 +3436,7 @@ udev_device_removed (NMPlatform *platform,
 		auto_nl_object struct rtnl_link *device = rtnl_link_get (priv->link_cache, ifindex);
 
 		if (device)
-			announce_object (platform, (struct nl_object *) device, REMOVED, NM_PLATFORM_REASON_EXTERNAL);
+			announce_object (platform, (struct nl_object *) device, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_EXTERNAL);
 	}
 }
 

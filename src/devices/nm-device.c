@@ -355,33 +355,17 @@ static void cp_connection_updated (NMConnectionProvider *cp, NMConnection *conne
 
 static const char *state_to_string (NMDeviceState state);
 
-static void link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlatformReason reason, NMDevice *device);
+static void link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlatformSignalChangeType change_type, NMPlatformReason reason, NMDevice *device);
 static void check_carrier (NMDevice *device);
 
 static void nm_device_queued_ip_config_change_clear (NMDevice *self);
 static void update_ip_config (NMDevice *self, gboolean initial);
-static void device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, NMPlatformReason reason, gpointer user_data);
+static void device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, NMPlatformSignalChangeType change_type, NMPlatformReason reason, gpointer user_data);
 
 static void nm_device_slave_notify_enslave (NMDevice *dev, gboolean success);
 static void nm_device_slave_notify_release (NMDevice *dev, NMDeviceStateReason reason);
 
 static void addrconf6_start_with_link_ready (NMDevice *self);
-
-static const char const *platform_ip_signals[] = {
-	NM_PLATFORM_IP4_ADDRESS_ADDED,
-	NM_PLATFORM_IP4_ADDRESS_CHANGED,
-	NM_PLATFORM_IP4_ADDRESS_REMOVED,
-	NM_PLATFORM_IP4_ROUTE_ADDED,
-	NM_PLATFORM_IP4_ROUTE_CHANGED,
-	NM_PLATFORM_IP4_ROUTE_REMOVED,
-	NM_PLATFORM_IP6_ADDRESS_ADDED,
-	NM_PLATFORM_IP6_ADDRESS_CHANGED,
-	NM_PLATFORM_IP6_ADDRESS_REMOVED,
-	NM_PLATFORM_IP6_ROUTE_ADDED,
-	NM_PLATFORM_IP6_ROUTE_CHANGED,
-	NM_PLATFORM_IP6_ROUTE_REMOVED,
-};
-static const int n_platform_ip_signals = G_N_ELEMENTS (platform_ip_signals);
 
 static void
 nm_device_init (NMDevice *self)
@@ -502,7 +486,6 @@ constructor (GType type,
 	NMDevice *dev;
 	NMDevicePrivate *priv;
 	NMPlatform *platform;
-	int i;
 	static guint32 id = 0;
 
 	object = G_OBJECT_CLASS (nm_device_parent_class)->constructor (type,
@@ -535,13 +518,11 @@ constructor (GType type,
 
 	/* Watch for external IP config changes */
 	platform = nm_platform_get ();
-	for (i = 0; i < n_platform_ip_signals; i++) {
-		g_signal_connect (platform, platform_ip_signals[i],
-		                  G_CALLBACK (device_ip_changed), dev);
-	}
-
-	g_signal_connect (platform, NM_PLATFORM_LINK_CHANGED,
-	                  G_CALLBACK (link_changed_cb), dev);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (device_ip_changed), dev);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (device_ip_changed), dev);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (device_ip_changed), dev);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (device_ip_changed), dev);
+	g_signal_connect (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (link_changed_cb), dev);
 
 	priv->initialized = TRUE;
 	return object;
@@ -1142,12 +1123,15 @@ nm_device_set_carrier (NMDevice *device, gboolean carrier)
 }
 
 static void
-link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlatformReason reason, NMDevice *device)
+link_changed_cb (NMPlatform *platform, int ifindex, NMPlatformLink *info, NMPlatformSignalChangeType change_type, NMPlatformReason reason, NMDevice *device)
 {
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	int my_ifindex = nm_device_get_ifindex (device);
 	gboolean change_ip_ifname = FALSE;
+
+	if (change_type != NM_PLATFORM_SIGNAL_CHANGED)
+		return;
 
 	/* Ignore other devices. */
 	if (ifindex == my_ifindex) {
@@ -7107,7 +7091,7 @@ queued_ip_config_change (gpointer user_data)
 }
 
 static void
-device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, NMPlatformReason reason, gpointer user_data)
+device_ip_changed (NMPlatform *platform, int ifindex, gpointer platform_object, NMPlatformSignalChangeType change_type, NMPlatformReason reason, gpointer user_data)
 {
 	NMDevice *self = user_data;
 

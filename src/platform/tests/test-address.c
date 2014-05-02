@@ -7,12 +7,16 @@
 #define IP6_PLEN 64
 
 static void
-ip4_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Address *received, NMPlatformReason reason, SignalData *data)
+ip4_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Address *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
 {
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);
+	g_assert (data && data->name);
+	g_assert_cmpstr (data->name, ==, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED);
 
 	if (data->ifindex && data->ifindex != received->ifindex)
+		return;
+	if (data->change_type != change_type)
 		return;
 
 	if (data->loop)
@@ -25,12 +29,16 @@ ip4_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP4Address *r
 }
 
 static void
-ip6_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Address *received, NMPlatformReason reason, SignalData *data)
+ip6_address_callback (NMPlatform *platform, int ifindex, NMPlatformIP6Address *received, NMPlatformSignalChangeType change_type, NMPlatformReason reason, SignalData *data)
 {
 	g_assert (received);
 	g_assert_cmpint (received->ifindex, ==, ifindex);
+	g_assert (data && data->name);
+	g_assert_cmpstr (data->name, ==, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED);
 
 	if (data->ifindex && data->ifindex != received->ifindex)
+		return;
+	if (data->change_type != change_type)
 		return;
 
 	if (data->loop)
@@ -46,9 +54,9 @@ static void
 test_ip4_address (void)
 {
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
-	SignalData *address_added = add_signal_ifindex (NM_PLATFORM_IP4_ADDRESS_ADDED, ip4_address_callback, ifindex);
-	SignalData *address_changed = add_signal_ifindex (NM_PLATFORM_IP4_ADDRESS_CHANGED, ip4_address_callback, ifindex);
-	SignalData *address_removed = add_signal_ifindex (NM_PLATFORM_IP4_ADDRESS_REMOVED, ip4_address_callback, ifindex);
+	SignalData *address_added = add_signal_ifindex (NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, NM_PLATFORM_SIGNAL_ADDED, ip4_address_callback, ifindex);
+	SignalData *address_changed = add_signal_ifindex (NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, ip4_address_callback, ifindex);
+	SignalData *address_removed = add_signal_ifindex (NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, ip4_address_callback, ifindex);
 	GArray *addresses;
 	NMPlatformIP4Address *address;
 	in_addr_t addr;
@@ -101,9 +109,9 @@ static void
 test_ip6_address (void)
 {
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
-	SignalData *address_added = add_signal_ifindex (NM_PLATFORM_IP6_ADDRESS_ADDED, ip6_address_callback, ifindex);
-	SignalData *address_changed = add_signal_ifindex (NM_PLATFORM_IP6_ADDRESS_CHANGED, ip6_address_callback, ifindex);
-	SignalData *address_removed = add_signal_ifindex (NM_PLATFORM_IP6_ADDRESS_REMOVED, ip6_address_callback, ifindex);
+	SignalData *address_added = add_signal_ifindex (NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, NM_PLATFORM_SIGNAL_ADDED, ip6_address_callback, ifindex);
+	SignalData *address_changed = add_signal_ifindex (NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, ip6_address_callback, ifindex);
+	SignalData *address_removed = add_signal_ifindex (NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, ip6_address_callback, ifindex);
 	GArray *addresses;
 	NMPlatformIP6Address *address;
 	struct in6_addr addr;
@@ -156,8 +164,8 @@ test_ip6_address (void)
 static void
 test_ip4_address_external (void)
 {
-	SignalData *address_added = add_signal (NM_PLATFORM_IP4_ADDRESS_ADDED, ip4_address_callback);
-	SignalData *address_removed = add_signal (NM_PLATFORM_IP4_ADDRESS_REMOVED, ip4_address_callback);
+	SignalData *address_added = add_signal (NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, NM_PLATFORM_SIGNAL_ADDED, ip4_address_callback);
+	SignalData *address_removed = add_signal (NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, ip4_address_callback);
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	in_addr_t addr;
 	guint32 lifetime = 2000;
@@ -200,8 +208,8 @@ test_ip4_address_external (void)
 static void
 test_ip6_address_external (void)
 {
-	SignalData *address_added = add_signal (NM_PLATFORM_IP6_ADDRESS_ADDED, ip6_address_callback);
-	SignalData *address_removed = add_signal (NM_PLATFORM_IP6_ADDRESS_REMOVED, ip6_address_callback);
+	SignalData *address_added = add_signal (NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, NM_PLATFORM_SIGNAL_ADDED, ip6_address_callback);
+	SignalData *address_removed = add_signal (NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, ip6_address_callback);
 	int ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	struct in6_addr addr;
 	guint32 lifetime = 2000;
@@ -239,7 +247,7 @@ test_ip6_address_external (void)
 void
 setup_tests (void)
 {
-	SignalData *link_added = add_signal_ifname (NM_PLATFORM_LINK_ADDED, link_callback, DEVICE_NAME);
+	SignalData *link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 
 	nm_platform_link_delete (nm_platform_link_get_ifindex (DEVICE_NAME));
 	g_assert (!nm_platform_link_exists (DEVICE_NAME));

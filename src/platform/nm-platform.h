@@ -115,8 +115,12 @@ typedef enum {
 	NM_LINK_TYPE_TEAM,
 } NMLinkType;
 
+#define __NMPlatformObject_COMMON \
+	int ifindex; \
+	;
+
 typedef struct {
-	int ifindex;
+	__NMPlatformObject_COMMON;
 	char name[IFNAMSIZ];
 	NMLinkType type;
 	const char *type_name;
@@ -129,6 +133,12 @@ typedef struct {
 	gboolean arp;
 	guint mtu;
 } NMPlatformLink;
+
+typedef enum {
+	NM_PLATFORM_SIGNAL_ADDED,
+	NM_PLATFORM_SIGNAL_CHANGED,
+	NM_PLATFORM_SIGNAL_REMOVED,
+} NMPlatformSignalChangeType;
 
 #define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
 
@@ -146,59 +156,98 @@ typedef enum {
 	NM_PLATFORM_SOURCE_USER,
 } NMPlatformSource;
 
+
+typedef struct {
+	__NMPlatformObject_COMMON;
+} NMPlatformObject;
+
+
+#define __NMPlatformIPAddress_COMMON \
+	__NMPlatformObject_COMMON; \
+	NMPlatformSource source; \
+	guint32 timestamp;  /* nm_utils_get_monotonic_timestamp_s() */ \
+	guint32 lifetime;   /* seconds */ \
+	guint32 preferred;  /* seconds */ \
+	int plen; \
+	;
+
+/**
+ * NMPlatformIPAddress:
+ *
+ * Common parts of NMPlatformIP4Address and NMPlatformIP6Address.
+ **/
+typedef struct {
+	__NMPlatformIPAddress_COMMON;
+	union {
+		guint8 address_ptr[1];
+		guint32 __dummy_for_32bit_alignment;
+	};
+} NMPlatformIPAddress;
+
 /**
  * NMPlatformIP4Address:
  * @timestamp: timestamp as returned by nm_utils_get_monotonic_timestamp_s()
  **/
 typedef struct {
-	int ifindex;
-	NMPlatformSource source;
+	__NMPlatformIPAddress_COMMON;
 	in_addr_t address;
 	in_addr_t peer_address;  /* PTP peer address */
-	int plen;
-	guint32 timestamp;
-	guint32 lifetime;   /* seconds */
-	guint32 preferred;  /* seconds */
 	char label[IFNAMSIZ];
 } NMPlatformIP4Address;
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Address, address));
 
 /**
  * NMPlatformIP6Address:
  * @timestamp: timestamp as returned by nm_utils_get_monotonic_timestamp_s()
  **/
 typedef struct {
-	int ifindex;
-	NMPlatformSource source;
+	__NMPlatformIPAddress_COMMON;
 	struct in6_addr address;
 	struct in6_addr peer_address;
-	int plen;
-	guint32 timestamp;  /* seconds */
-	guint32 lifetime;   /* seconds */
-	guint32 preferred;
 	guint flags; /* ifa_flags from <linux/if_addr.h>, field type "unsigned int" is as used in rtnl_addr_get_flags. */
 } NMPlatformIP6Address;
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Address, address));
+
+#undef __NMPlatformIPAddress_COMMON
+
 
 #define NM_PLATFORM_ROUTE_METRIC_DEFAULT 1024
 
-typedef struct {
-	int ifindex;
-	NMPlatformSource source;
-	in_addr_t network;
-	int plen;
-	in_addr_t gateway;
-	guint metric;
-	guint mss;
-} NMPlatformIP4Route;
+#define __NMPlatformIPRoute_COMMON \
+	__NMPlatformObject_COMMON; \
+	NMPlatformSource source; \
+	int plen; \
+	guint metric; \
+	guint mss; \
+	;
 
 typedef struct {
-	int ifindex;
-	NMPlatformSource source;
+	__NMPlatformIPRoute_COMMON;
+	union {
+		guint8 network_ptr[1];
+		guint32 __dummy_for_32bit_alignment;
+	};
+} NMPlatformIPRoute;
+
+typedef struct {
+	__NMPlatformIPRoute_COMMON;
+	in_addr_t network;
+	in_addr_t gateway;
+} NMPlatformIP4Route;
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Route, network));
+
+typedef struct {
+	__NMPlatformIPRoute_COMMON;
 	struct in6_addr network;
-	int plen;
 	struct in6_addr gateway;
-	guint metric;
-	guint mss;
 } NMPlatformIP6Route;
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Route, network));
+
+#undef __NMPlatformIPRoute_COMMON
+
+
+#undef __NMPlatformObject_COMMON
+
 
 typedef struct {
 	int peer;
@@ -401,21 +450,11 @@ typedef struct {
  * but you are free to copy the provided information and use it for later
  * reference.
  */
-#define NM_PLATFORM_LINK_ADDED "link-added"
-#define NM_PLATFORM_LINK_CHANGED "link-changed"
-#define NM_PLATFORM_LINK_REMOVED "link-removed"
-#define NM_PLATFORM_IP4_ADDRESS_ADDED "ip4-address-added"
-#define NM_PLATFORM_IP4_ADDRESS_CHANGED "ip4-address-changed"
-#define NM_PLATFORM_IP4_ADDRESS_REMOVED "ip4-address-removed"
-#define NM_PLATFORM_IP6_ADDRESS_ADDED "ip6-address-added"
-#define NM_PLATFORM_IP6_ADDRESS_CHANGED "ip6-address-changed"
-#define NM_PLATFORM_IP6_ADDRESS_REMOVED "ip6-address-removed"
-#define NM_PLATFORM_IP4_ROUTE_ADDED "ip4-route-added"
-#define NM_PLATFORM_IP4_ROUTE_CHANGED "ip4-route-changed"
-#define NM_PLATFORM_IP4_ROUTE_REMOVED "ip4-route-removed"
-#define NM_PLATFORM_IP6_ROUTE_ADDED "ip6-route-added"
-#define NM_PLATFORM_IP6_ROUTE_CHANGED "ip6-route-changed"
-#define NM_PLATFORM_IP6_ROUTE_REMOVED "ip6-route-removed"
+#define NM_PLATFORM_SIGNAL_LINK_CHANGED "link-changed"
+#define NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED "ip4-address-changed"
+#define NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED "ip6-address-changed"
+#define NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED "ip4-route-changed"
+#define NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED "ip6-route-changed"
 
 /******************************************************************/
 
@@ -547,6 +586,7 @@ const char *nm_platform_ip6_address_to_string (const NMPlatformIP6Address *addre
 const char *nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route);
 const char *nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route);
 
+int nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b);
 int nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b);
 int nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b);
 int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b);
@@ -556,6 +596,8 @@ gboolean nm_platform_check_support_libnl_extended_ifa_flags (void);
 gboolean nm_platform_check_support_kernel_extended_ifa_flags (void);
 
 void nm_platform_addr_flags2str (int flags, char *buf, size_t size);
+
+int nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatformIPAddress *b);
 
 #define auto_g_free __attribute__((cleanup(put_g_free)))
 static void __attribute__((unused))

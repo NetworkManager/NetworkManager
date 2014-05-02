@@ -1021,7 +1021,7 @@ void
 nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *new)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	NMPlatformSource old_source;
+	NMPlatformIP6Address item_old;
 	int i;
 
 	g_return_if_fail (new != NULL);
@@ -1032,11 +1032,28 @@ nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *new)
 		if (IN6_ARE_ADDR_EQUAL (&item->address, &new->address)) {
 			if (nm_platform_ip6_address_cmp (item, new) == 0)
 				return;
-			old_source = item->source;
+
+			/* remember the old values. */
+			item_old = *item;
 			/* Copy over old item to get new lifetime, timestamp, preferred */
 			*item = *new;
+
 			/* But restore highest priority source */
-			item->source = MAX (old_source, new->source);
+			item->source = MAX (item_old.source, new->source);
+
+			/* for addresses that we read from the kernel, we keep the timestamps as defined
+			 * by the previous source (item_old). The reason is, that the other source configured the lifetimes
+			 * with "what should be" and the kernel values are "what turned out after configuring it".
+			 *
+			 * For other sources, the longer lifetime wins. */
+			if (   (new->source == NM_PLATFORM_SOURCE_KERNEL && new->source != item_old.source)
+			    || nm_platform_ip_address_cmp_expiry ((const NMPlatformIPAddress *) &item_old, (const NMPlatformIPAddress *) new) > 0) {
+				item->timestamp = item_old.timestamp;
+				item->lifetime = item_old.lifetime;
+				item->preferred = item_old.preferred;
+			}
+			if (nm_platform_ip6_address_cmp (&item_old, item) == 0)
+				return;
 			goto NOTIFY;
 		}
 	}
