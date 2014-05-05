@@ -116,6 +116,11 @@ if [[ -f ./.git/makerepo.gitignore ]]; then
     /bin/cp ./.git/makerepo.gitignore ./
 fi
 
+DEFAULT_BACKUP_PATTERN='*.[0-9][0-9][0-9][0-9][-.]*.orig'
+if ! grep -q -e "$DEFAULT_BACKUP_PATTERN" "./makerepo.gitignore" ; then
+    echo "$DEFAULT_BACKUP_PATTERN" >> ./makerepo.gitignore
+fi
+
 pushd "$DIRNAME"
     git init .
     # if you have a local clone of upstream, symlink it as ../.git/local.
