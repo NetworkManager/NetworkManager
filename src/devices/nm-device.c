@@ -1691,7 +1691,7 @@ nm_device_autoconnect_allowed (NMDevice *self)
 	GValue retval = G_VALUE_INIT;
 
 	g_value_init (&instance, G_TYPE_OBJECT);
-	g_value_take_object (&instance, self);
+	g_value_set_object (&instance, self);
 
 	g_value_init (&retval, G_TYPE_BOOLEAN);
 	if (priv->autoconnect)
@@ -1702,6 +1702,7 @@ nm_device_autoconnect_allowed (NMDevice *self)
 	/* Use g_signal_emitv() rather than g_signal_emit() to avoid the return
 	 * value being changed if no handlers are connected */
 	g_signal_emitv (&instance, signals[AUTOCONNECT_ALLOWED], 0, &retval);
+	g_value_unset (&instance);
 	return g_value_get_boolean (&retval);
 }
 
