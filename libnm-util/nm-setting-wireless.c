@@ -1221,7 +1221,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * A list of BSSIDs (each BSSID formatted as a MAC address like
 	 * '00:11:22:33:44:55') that have been detected as part of the Wi-FI network.
 	 * NetworkManager internally tracks previously seen BSSIDs. The property is only
-	 * meant for reading and reflects the BBSID list of NetworkManager. The changes you
+	 * meant for reading and reflects the BSSID list of NetworkManager. The changes you
 	 * make to this property will not be preserved.
 	 **/
 	g_object_class_install_property
@@ -1233,7 +1233,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                             "detected as part of the WiFI network. "
 		                             "NetworkManager internally tracks previously seen "
 		                             "BSSIDs. The property is only meant for reading "
-		                             "and reflects the BBSID list of NetworkManager. "
+		                             "and reflects the BSSID list of NetworkManager. "
 		                             "The changes you make to this property will not be "
 		                             "preserved.",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
