@@ -90,6 +90,8 @@ translate_mm_error (GError *error)
 		reason = NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED;
 	else if (g_error_matches (error, MM_MOBILE_EQUIPMENT_ERROR, MM_MOBILE_EQUIPMENT_ERROR_SIM_WRONG))
 		reason = NM_DEVICE_STATE_REASON_GSM_SIM_WRONG;
+	else if (g_error_matches (error, MM_MOBILE_EQUIPMENT_ERROR, MM_MOBILE_EQUIPMENT_ERROR_INCORRECT_PASSWORD))
+		reason = NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT;
 	else {
 		/* unable to map the ModemManager error to a NM_DEVICE_STATE_REASON */
 		nm_log_dbg (LOGD_MB, "unmapped error detected: '%s'", error->message);
@@ -531,14 +533,22 @@ get_user_pass (NMModem *modem,
 /* Query/Update enabled state */
 
 static void
-update_mm_enabled (NMModem *self,
-                   gboolean new_enabled)
+set_power_state_low_ready (MMModem *modem,
+                           GAsyncResult *result,
+                           NMModemBroadband *self)
 {
-	if (nm_modem_get_mm_enabled (self) != new_enabled) {
-		g_object_set (self,
-		              NM_MODEM_ENABLED, new_enabled,
-		              NULL);
+	GError *error = NULL;
+
+	if (!mm_modem_set_power_state_finish (modem, result, &error)) {
+		/* Log but ignore errors; not all modems support low power state */
+		nm_log_dbg (LOGD_MB, "(%s) failed to set modem low power state: %s",
+		             nm_modem_get_uid (NM_MODEM (self)),
+		             error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
 	}
+
+	/* Balance refcount */
+	g_object_unref (self);
 }
 
 static void
@@ -548,14 +558,20 @@ modem_disable_ready (MMModem *modem_iface,
 {
 	GError *error = NULL;
 
-	if (!mm_modem_disable_finish (modem_iface, res, &error)) {
+	if (mm_modem_disable_finish (modem_iface, res, &error)) {
+		/* Once disabled, move to low-power mode */
+		mm_modem_set_power_state (modem_iface,
+		                          MM_MODEM_POWER_STATE_LOW,
+		                          NULL,
+		                          (GAsyncReadyCallback) set_power_state_low_ready,
+		                          g_object_ref (self));
+	} else {
 		nm_log_warn (LOGD_MB, "(%s) failed to disable modem: %s",
 		             nm_modem_get_uid (NM_MODEM (self)),
 		             error && error->message ? error->message : "(unknown)");
+		nm_modem_set_prev_state (NM_MODEM (self), "disable failed");
 		g_clear_error (&error);
-	} else
-		/* Update enabled/disabled state again */
-		update_mm_enabled (NM_MODEM (self), FALSE);
+	}
 
 	/* Balance refcount */
 	g_object_unref (self);
@@ -572,9 +588,9 @@ modem_enable_ready (MMModem *modem_iface,
 		nm_log_warn (LOGD_MB, "(%s) failed to enable modem: %s",
 		             nm_modem_get_uid (NM_MODEM (self)),
 		             error && error->message ? error->message : "(unknown)");
+		nm_modem_set_prev_state (NM_MODEM (self), "enable failed");
 		g_clear_error (&error);
-	} else
-		update_mm_enabled (NM_MODEM (self), TRUE);
+	}
 
 	/* Balance refcount */
 	g_object_unref (self);
@@ -587,14 +603,6 @@ set_mm_enabled (NMModem *_self,
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 
 	if (enabled) {
-		/* Don't even try to enable if we're known to be already locked */
-		if (mm_modem_get_state (self->priv->modem_iface) == MM_MODEM_STATE_LOCKED) {
-			nm_log_warn (LOGD_MB, "(%s) cannot enable modem: locked",
-			             nm_modem_get_uid (NM_MODEM (self)));
-			g_signal_emit_by_name (self, NM_MODEM_AUTH_REQUESTED, 0);
-			return;
-		}
-
 		mm_modem_enable (self->priv->modem_iface,
 		                 NULL, /* cancellable */
 		                 (GAsyncReadyCallback)modem_enable_ready,
@@ -604,9 +612,6 @@ set_mm_enabled (NMModem *_self,
 		                  NULL, /* cancellable */
 		                  (GAsyncReadyCallback)modem_disable_ready,
 		                  g_object_ref (self));
-
-		/* When disabling don't say we're enabled */
-		update_mm_enabled (NM_MODEM (self), enabled);
 	}
 }
 
@@ -782,6 +787,29 @@ deactivate (NMModem *_self, NMDevice *device)
 
 /*****************************************************************************/
 
+#define MAP_STATE(name) case MM_MODEM_STATE_##name: return NM_MODEM_STATE_##name;
+
+static NMModemState
+mm_state_to_nm (MMModemState mm_state)
+{
+	switch (mm_state) {
+	MAP_STATE(UNKNOWN)
+	MAP_STATE(FAILED)
+	MAP_STATE(INITIALIZING)
+	MAP_STATE(LOCKED)
+	MAP_STATE(DISABLED)
+	MAP_STATE(DISABLING)
+	MAP_STATE(ENABLING)
+	MAP_STATE(ENABLED)
+	MAP_STATE(SEARCHING)
+	MAP_STATE(REGISTERED)
+	MAP_STATE(DISCONNECTING)
+	MAP_STATE(CONNECTING)
+	MAP_STATE(CONNECTED)
+	}
+	return NM_MODEM_STATE_UNKNOWN;
+}
+
 static void
 modem_state_changed (MMModem *modem,
                      MMModemState old_state,
@@ -789,28 +817,17 @@ modem_state_changed (MMModem *modem,
                      MMModemStateChangeReason reason,
                      NMModemBroadband *self)
 {
-	gboolean old;
-	gboolean new;
 
-	nm_log_info (LOGD_MB, "(%s) modem state changed, '%s' --> '%s' (reason: %s)\n",
-	             nm_modem_get_uid (NM_MODEM (self)),
-	             mm_modem_state_get_string (old_state),
-	             mm_modem_state_get_string (new_state),
-	             mm_modem_state_change_reason_get_string (reason));
+	/* After the SIM is unlocked MM1 will move the device to INITIALIZING which
+	 * is an unavailable state.  That makes state handling confusing here, so
+	 * suppress this state change and let the modem move from LOCKED to DISABLED.
+	 */
+	if (new_state == MM_MODEM_STATE_INITIALIZING && old_state == MM_MODEM_STATE_LOCKED)
+		return;
 
-	old = nm_modem_get_mm_enabled (NM_MODEM (self));
-	new = (mm_modem_get_state (self->priv->modem_iface) >= MM_MODEM_STATE_ENABLED);
-	if (old != new)
-		g_object_set (self,
-		              NM_MODEM_ENABLED, new,
-		              NULL);
-
-	old = nm_modem_get_mm_connected (NM_MODEM (self));
-	new = (mm_modem_get_state (self->priv->modem_iface) >= MM_MODEM_STATE_CONNECTED);
-	if (old != new)
-		g_object_set (self,
-		              NM_MODEM_CONNECTED, new,
-		              NULL);
+	nm_modem_set_state (NM_MODEM (self),
+	                    mm_state_to_nm (new_state),
+	                    mm_modem_state_change_reason_get_string (reason));
 }
 
 /*****************************************************************************/
@@ -831,16 +848,6 @@ nm_modem_broadband_new (GObject *object, GError **error)
 	g_return_val_if_fail (!!modem_iface, NULL);
 	g_return_val_if_fail (!!mm_modem_get_primary_port (modem_iface), NULL);
 
-	/* If the modem is in 'FAILED' state we cannot do anything with it.
-	 * This happens when a severe error happened when trying to initialize it,
-	 * like missing SIM. */
-	if (mm_modem_get_state (modem_iface) == MM_MODEM_STATE_FAILED) {
-		g_set_error (error, NM_MODEM_ERROR, NM_MODEM_ERROR_INITIALIZATION_FAILED,
-		             "(%s): unusable modem detected",
-		             mm_modem_get_primary_port (modem_iface));
-		return NULL;
-	}
-
 	/* Build a single string with all drivers listed */
 	drivers = g_strjoinv (", ", (gchar **)mm_modem_get_drivers (modem_iface));
 
@@ -849,11 +856,52 @@ nm_modem_broadband_new (GObject *object, GError **error)
 	                      NM_MODEM_UID, mm_modem_get_primary_port (modem_iface),
 	                      NM_MODEM_CONTROL_PORT, mm_modem_get_primary_port (modem_iface),
 	                      NM_MODEM_DATA_PORT, NULL, /* We don't know it until bearer created */
+	                      NM_MODEM_STATE, mm_state_to_nm (mm_modem_get_state (modem_iface)),
+	                      NM_MODEM_DEVICE_ID, mm_modem_get_device_identifier (modem_iface),
 	                      NM_MODEM_BROADBAND_MODEM, modem_object,
 	                      NM_MODEM_DRIVER, drivers,
 	                      NULL);
 	g_free (drivers);
 	return modem;
+}
+
+static void
+get_sim_ready (MMModem *modem,
+               GAsyncResult *res,
+               NMModemBroadband *self)
+{
+	GError *error = NULL;
+	MMSim *new_sim;
+
+	new_sim = mm_modem_get_sim_finish (modem, res, &error);
+	if (new_sim) {
+		g_object_set (G_OBJECT (self),
+		              NM_MODEM_SIM_ID, mm_sim_get_identifier (new_sim),
+		              NULL);
+		g_object_unref (new_sim);
+	} else {
+		nm_log_warn (LOGD_MB, "(%s) failed to retrieve SIM object: %s",
+		             nm_modem_get_uid (NM_MODEM (self)),
+		             error && error->message ? error->message : "(unknown)");
+	}
+	g_clear_error (&error);
+	g_object_unref (self);
+}
+
+static void
+sim_changed (MMModem *modem, GParamSpec *pspec, gpointer user_data)
+{
+	NMModemBroadband *self = NM_MODEM_BROADBAND (user_data);
+
+	g_return_if_fail (modem == self->priv->modem_iface);
+
+	if (mm_modem_get_sim_path (self->priv->modem_iface)) {
+		mm_modem_get_sim (self->priv->modem_iface,
+		                  NULL,  /* cancellable */
+		                  (GAsyncReadyCallback) get_sim_ready,
+		                  g_object_ref (self));
+	} else
+		g_object_set (G_OBJECT (self), NM_MODEM_SIM_ID, NULL, NULL);
 }
 
 static void
@@ -879,14 +927,14 @@ set_property (GObject *object,
 		self->priv->modem_iface = mm_object_get_modem (self->priv->modem_object);
 		g_assert (self->priv->modem_iface != NULL);
 		g_signal_connect (self->priv->modem_iface,
-                          "state-changed",
-                          G_CALLBACK (modem_state_changed),
-                          self);
-
-		g_object_set (object,
-		              NM_MODEM_ENABLED, (mm_modem_get_state (self->priv->modem_iface) >= MM_MODEM_STATE_ENABLED),
-		              NM_MODEM_CONNECTED, (mm_modem_get_state (self->priv->modem_iface) >= MM_MODEM_STATE_CONNECTED),
-		              NULL);
+		                  "state-changed",
+		                  G_CALLBACK (modem_state_changed),
+		                  self);
+		g_signal_connect (self->priv->modem_iface,
+		                  "notify::sim",
+		                  G_CALLBACK (sim_changed),
+		                  self);
+		sim_changed (self->priv->modem_iface, NULL, self);
 
 		/* Note: don't grab the Simple iface here; the Modem interface is the
 		 * only one assumed to be always valid and available */

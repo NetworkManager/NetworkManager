@@ -612,6 +612,21 @@
           teamd control failed.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="MODEM_FAILED" value="57">
+        <tp:docstring>
+          Modem failed or no longer available.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="MODEM_AVAILABLE" value="58">
+        <tp:docstring>
+          Modem now ready and available.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="SIM_PIN_INCORRECT" value="59">
+        <tp:docstring>
+          The SIM PIN was incorrect.
+        </tp:docstring>
+      </tp:enumvalue>
     </tp:enum>
 
     <tp:struct name="NM_DEVICE_STATE_REASON_STRUCT">

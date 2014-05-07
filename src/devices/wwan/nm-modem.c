@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2011 Red Hat, Inc.
+ * Copyright (C) 2009 - 2014 Red Hat, Inc.
  * Copyright (C) 2009 Novell, Inc.
  */
 
@@ -44,8 +44,9 @@ enum {
 	PROP_DRIVER,
 	PROP_IP_METHOD,
 	PROP_IP_TIMEOUT,
-	PROP_ENABLED,
-	PROP_CONNECTED,
+	PROP_STATE,
+	PROP_DEVICE_ID,
+	PROP_SIM_ID,
 
 	LAST_PROP
 };
@@ -58,6 +59,10 @@ typedef struct {
 	char *data_port;
 	char *ppp_iface;
 	guint32 ip_method;
+	NMModemState state;
+	NMModemState prev_state;  /* revert to this state if enable/disable fails */
+	char *device_id;
+	char *sim_id;
 
 	NMPPPManager *ppp_manager;
 
@@ -65,9 +70,7 @@ typedef struct {
 	guint32 secrets_tries;
 	guint32 secrets_id;
 
-	gboolean mm_enabled;
 	guint32 mm_ip_timeout;
-	gboolean mm_connected;
 
 	/* PPP stats */
 	guint32 in_bytes;
@@ -82,6 +85,7 @@ enum {
 	AUTH_REQUESTED,
 	AUTH_RESULT,
 	REMOVED,
+	STATE_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -101,30 +105,111 @@ nm_modem_error_quark (void)
 }
 
 /*****************************************************************************/
-/* Get/Set enabled/connected */
+/* State/enabled/connected */
 
-gboolean
-nm_modem_get_mm_enabled (NMModem *self)
+static const char *state_table[] = {
+	[NM_MODEM_STATE_UNKNOWN]       = "unknown",
+	[NM_MODEM_STATE_FAILED]        = "failed",
+	[NM_MODEM_STATE_INITIALIZING]  = "initializing",
+	[NM_MODEM_STATE_LOCKED]        = "locked",
+	[NM_MODEM_STATE_DISABLED]      = "disabled",
+	[NM_MODEM_STATE_DISABLING]     = "disabling",
+	[NM_MODEM_STATE_ENABLING]      = "enabling",
+	[NM_MODEM_STATE_ENABLED]       = "enabled",
+	[NM_MODEM_STATE_SEARCHING]     = "searching",
+	[NM_MODEM_STATE_REGISTERED]    = "registered",
+	[NM_MODEM_STATE_DISCONNECTING] = "disconnecting",
+	[NM_MODEM_STATE_CONNECTING]    = "connecting",
+	[NM_MODEM_STATE_CONNECTED]     = "connected",
+};
+
+const char *
+nm_modem_state_to_string (NMModemState state)
 {
-	return NM_MODEM_GET_PRIVATE (self)->mm_enabled;
+	if (state >= 0 && state < G_N_ELEMENTS (state_table))
+		return state_table[state];
+	return NULL;
+}
+
+NMModemState
+nm_modem_get_state (NMModem *self)
+{
+	return NM_MODEM_GET_PRIVATE (self)->state;
+}
+
+void
+nm_modem_set_state (NMModem *self,
+                    NMModemState new_state,
+                    const char *reason)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+	NMModemState old_state = priv->state;
+
+	priv->prev_state = NM_MODEM_STATE_UNKNOWN;
+
+	if (new_state != old_state) {
+		nm_log_info (LOGD_MB, "(%s): modem state changed, '%s' --> '%s' (reason: %s)\n",
+		             nm_modem_get_uid (self),
+		             nm_modem_state_to_string (old_state),
+		             nm_modem_state_to_string (new_state),
+		             reason ? reason : "none");
+
+		priv->state = new_state;
+		g_object_notify (G_OBJECT (self), NM_MODEM_STATE);
+		g_signal_emit (self, signals[STATE_CHANGED], 0, new_state, old_state, reason);
+	}
+}
+
+void
+nm_modem_set_prev_state (NMModem *self, const char *reason)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+
+	/* Reset modem to previous state if the state hasn't already changed */
+	if (priv->prev_state != NM_MODEM_STATE_UNKNOWN)
+		nm_modem_set_state (self, priv->prev_state, reason);
 }
 
 void
 nm_modem_set_mm_enabled (NMModem *self,
                          gboolean enabled)
 {
-	NMModemPrivate *priv;
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
+	NMModemState prev_state = priv->state;
 
-	priv = NM_MODEM_GET_PRIVATE (self);
+	if (enabled && priv->state >= NM_MODEM_STATE_ENABLING) {
+		nm_log_dbg (LOGD_MB, "(%s) cannot enable modem: already enabled",
+		            nm_modem_get_uid (self));
+		return;
+	}
+	if (!enabled && priv->state <= NM_MODEM_STATE_DISABLING) {
+		nm_log_dbg (LOGD_MB, "(%s) cannot disable modem: already disabled",
+		            nm_modem_get_uid (self));
+		return;
+	}
 
-	if (priv->mm_enabled != enabled)
-		NM_MODEM_GET_CLASS (self)->set_mm_enabled (self, enabled);
-}
+	if (priv->state <= NM_MODEM_STATE_INITIALIZING) {
+		nm_log_dbg (LOGD_MB, "(%s) cannot enable/disable modem: initializing or failed",
+		            nm_modem_get_uid (self));
+		return;
+	} else if (priv->state == NM_MODEM_STATE_LOCKED) {
+		/* Don't try to enable if the modem is locked since that will fail */
+		nm_log_warn (LOGD_MB, "(%s) cannot enable/disable modem: locked",
+		             nm_modem_get_uid (self));
 
-gboolean
-nm_modem_get_mm_connected (NMModem *self)
-{
-	return NM_MODEM_GET_PRIVATE (self)->mm_connected;
+		/* Try to unlock the modem if it's being enabled */
+		if (enabled)
+			g_signal_emit_by_name (self, NM_MODEM_AUTH_REQUESTED, 0);
+		return;
+	}
+
+	NM_MODEM_GET_CLASS (self)->set_mm_enabled (self, enabled);
+
+	/* Pre-empt the state change signal */
+	nm_modem_set_state (self,
+	                    enabled ? NM_MODEM_STATE_ENABLING : NM_MODEM_STATE_DISABLING,
+	                    "user preference");
+	priv->prev_state = prev_state;
 }
 
 void
@@ -769,11 +854,14 @@ get_property (GObject *object, guint prop_id,
 	case PROP_IP_TIMEOUT:
 		g_value_set_uint (value, priv->mm_ip_timeout);
 		break;
-	case PROP_ENABLED:
-		g_value_set_boolean (value, priv->mm_enabled);
+	case PROP_STATE:
+		g_value_set_enum (value, priv->state);
 		break;
-	case PROP_CONNECTED:
-		g_value_set_boolean (value, priv->mm_connected);
+	case PROP_DEVICE_ID:
+		g_value_set_string (value, priv->device_id);
+		break;
+	case PROP_SIM_ID:
+		g_value_set_string (value, priv->sim_id);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -812,11 +900,16 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IP_TIMEOUT:
 		priv->mm_ip_timeout = g_value_get_uint (value);
 		break;
-	case PROP_ENABLED:
-		priv->mm_enabled = g_value_get_boolean (value);
+	case PROP_STATE:
+		priv->state = g_value_get_enum (value);
 		break;
-	case PROP_CONNECTED:
-		priv->mm_connected = g_value_get_boolean (value);
+	case PROP_DEVICE_ID:
+		/* construct only */
+		priv->device_id = g_value_dup_string (value);
+		break;
+	case PROP_SIM_ID:
+		g_free (priv->sim_id);
+		priv->sim_id = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -847,6 +940,8 @@ finalize (GObject *object)
 	g_free (priv->driver);
 	g_free (priv->control_port);
 	g_free (priv->data_port);
+	g_free (priv->device_id);
+	g_free (priv->sim_id);
 
 	G_OBJECT_CLASS (nm_modem_parent_class)->finalize (object);
 }
@@ -929,20 +1024,29 @@ nm_modem_class_init (NMModemClass *klass)
 		                    G_PARAM_READWRITE));
 
 	g_object_class_install_property
-		(object_class, PROP_ENABLED,
-		 g_param_spec_boolean (NM_MODEM_ENABLED,
-		                       "Enabled",
-		                       "Enabled",
-		                       TRUE,
-		                       G_PARAM_READWRITE));
+		(object_class, PROP_STATE,
+		 g_param_spec_enum (NM_MODEM_STATE,
+		                   "State",
+		                   "State",
+		                   NM_TYPE_MODEM_STATE,
+		                   NM_MODEM_STATE_UNKNOWN,
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
-		(object_class, PROP_CONNECTED,
-		 g_param_spec_boolean (NM_MODEM_CONNECTED,
-		                       "Connected",
-		                       "Connected",
-		                       TRUE,
-		                       G_PARAM_READWRITE));
+		(object_class, PROP_DEVICE_ID,
+		 g_param_spec_string (NM_MODEM_DEVICE_ID,
+		                      "DeviceId",
+		                      "Device ID",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_SIM_ID,
+		 g_param_spec_string (NM_MODEM_SIM_ID,
+		                      "SimId",
+		                      "Sim ID",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/* Signals */
 
@@ -1002,6 +1106,14 @@ nm_modem_class_init (NMModemClass *klass)
 		              G_STRUCT_OFFSET (NMModemClass, removed),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 0);
+
+	signals[STATE_CHANGED] =
+		g_signal_new (NM_MODEM_STATE_CHANGED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMModemClass, state_changed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 2, NM_TYPE_MODEM_STATE, NM_TYPE_MODEM_STATE);
 
 	dbus_g_error_domain_register (NM_MODEM_ERROR,
 	                              NM_DBUS_INTERFACE_DEVICE_MODEM,

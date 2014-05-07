@@ -36,6 +36,7 @@ G_BEGIN_DECLS
 #define NM_IS_MODEM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_MODEM))
 #define NM_MODEM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_MODEM, NMModemClass))
 
+/* Properties */
 #define NM_MODEM_UID          "uid"
 #define NM_MODEM_PATH         "path"
 #define NM_MODEM_DRIVER       "driver"
@@ -43,9 +44,11 @@ G_BEGIN_DECLS
 #define NM_MODEM_DATA_PORT    "data-port"
 #define NM_MODEM_IP_METHOD    "ip-method"
 #define NM_MODEM_IP_TIMEOUT   "ip-timeout"
-#define NM_MODEM_ENABLED      "enabled"
-#define NM_MODEM_CONNECTED    "connected"
+#define NM_MODEM_STATE        "state"
+#define NM_MODEM_DEVICE_ID    "device-id"
+#define NM_MODEM_SIM_ID       "sim-id"
 
+/* Signals */
 #define NM_MODEM_PPP_STATS         "ppp-stats"
 #define NM_MODEM_PPP_FAILED        "ppp-failed"
 #define NM_MODEM_PREPARE_RESULT    "prepare-result"
@@ -53,6 +56,7 @@ G_BEGIN_DECLS
 #define NM_MODEM_AUTH_REQUESTED    "auth-requested"
 #define NM_MODEM_AUTH_RESULT       "auth-result"
 #define NM_MODEM_REMOVED           "removed"
+#define NM_MODEM_STATE_CHANGED     "state-changed"
 
 #define MM_MODEM_IP_METHOD_PPP    0
 #define MM_MODEM_IP_METHOD_STATIC 1
@@ -65,6 +69,22 @@ typedef enum {
 	NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 	NM_MODEM_ERROR_INITIALIZATION_FAILED,   /*< nick=InitializationFailed >*/
 } NMModemError;
+
+typedef enum {  /*< underscore_name=nm_modem_state >*/
+	NM_MODEM_STATE_UNKNOWN       = 0,
+	NM_MODEM_STATE_FAILED        = 1,
+	NM_MODEM_STATE_INITIALIZING  = 2,
+	NM_MODEM_STATE_LOCKED        = 3,
+	NM_MODEM_STATE_DISABLED      = 4,
+	NM_MODEM_STATE_DISABLING     = 5,
+	NM_MODEM_STATE_ENABLING      = 6,
+	NM_MODEM_STATE_ENABLED       = 7,
+	NM_MODEM_STATE_SEARCHING     = 8,
+	NM_MODEM_STATE_REGISTERED    = 9,
+	NM_MODEM_STATE_DISCONNECTING = 10,
+	NM_MODEM_STATE_CONNECTING    = 11,
+	NM_MODEM_STATE_CONNECTED     = 12,
+} NMModemState;
 
 #define NM_MODEM_ERROR (nm_modem_error_quark ())
 GQuark nm_modem_error_quark (void);
@@ -120,6 +140,10 @@ typedef struct {
 
 	void (*auth_requested)    (NMModem *self);
 	void (*auth_result)       (NMModem *self, GError *error);
+
+	void (*state_changed)     (NMModem *self,
+	                           NMModemState new_state,
+	                           NMModemState old_state);
 
 	void (*removed)           (NMModem *self);
 } NMModemClass;
@@ -179,11 +203,14 @@ void nm_modem_device_state_changed (NMModem *modem,
                                     NMDeviceState old_state,
                                     NMDeviceStateReason reason);
 
-gboolean      nm_modem_get_mm_enabled (NMModem *self);
-
 void          nm_modem_set_mm_enabled (NMModem *self, gboolean enabled);
 
-gboolean      nm_modem_get_mm_connected (NMModem *self);
+NMModemState  nm_modem_get_state (NMModem *self);
+void          nm_modem_set_state (NMModem *self,
+                                  NMModemState new_state,
+                                  const char *reason);
+void          nm_modem_set_prev_state (NMModem *self, const char *reason);
+const char *  nm_modem_state_to_string (NMModemState state);
 
 /* For the modem-manager only */
 void          nm_modem_emit_removed (NMModem *self);

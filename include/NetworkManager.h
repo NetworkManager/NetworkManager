@@ -552,6 +552,15 @@ typedef enum {
 	/* teamd control failed */
 	NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED = 56,
 
+	/* Modem failed or no longer available */
+	NM_DEVICE_STATE_REASON_MODEM_FAILED = 57,
+
+	/* Modem now ready and available */
+	NM_DEVICE_STATE_REASON_MODEM_AVAILABLE = 58,
+
+	/* SIM PIN was incorrect */
+	NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT = 59,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

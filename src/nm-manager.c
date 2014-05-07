@@ -146,7 +146,7 @@ static void policy_activating_device_changed (GObject *object, GParamSpec *pspec
 
 static NMDevice *find_device_by_ip_iface (NMManager *self, const gchar *iface);
 
-static void rfkill_change_wifi (const char *desc, gboolean enabled);
+static void rfkill_change (const char *desc, RfKillType rtype, gboolean enabled);
 
 static gboolean find_master (NMManager *self,
                              NMConnection *connection,
@@ -163,7 +163,6 @@ static void nm_manager_update_state (NMManager *manager);
 
 typedef struct {
 	gboolean user_enabled;
-	gboolean daemon_enabled;
 	gboolean sw_enabled;
 	gboolean hw_enabled;
 	RfKillType rtype;
@@ -172,7 +171,6 @@ typedef struct {
 	const char *prop;
 	const char *hw_prop;
 	RfKillState (*other_enabled_func) (NMManager *);
-	RfKillState (*daemon_enabled_func) (NMManager *);
 } RadioState;
 
 typedef struct {
@@ -1282,11 +1280,8 @@ radio_enabled_for_rstate (RadioState *rstate, gboolean check_changeable)
 	gboolean enabled;
 
 	enabled = rstate->user_enabled && rstate->hw_enabled;
-	if (check_changeable) {
+	if (check_changeable)
 		enabled &= rstate->sw_enabled;
-		if (rstate->daemon_enabled_func)
-			enabled &= rstate->daemon_enabled;
-	}
 	return enabled;
 }
 
@@ -1384,29 +1379,6 @@ nm_manager_get_ipw_rfkill_state (NMManager *self)
 	return ipw_state;
 }
 
-static RfKillState
-nm_manager_get_modem_enabled_state (NMManager *self)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-	RfKillState wwan_state = RFKILL_UNBLOCKED;
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = NM_DEVICE (iter->data);
-		RfKillState candidate_state = RFKILL_UNBLOCKED;
-
-		if (nm_device_get_rfkill_type (candidate) == RFKILL_TYPE_WWAN) {
-			if (!nm_device_get_enabled (candidate))
-				candidate_state = RFKILL_SOFT_BLOCKED;
-
-			if (candidate_state > wwan_state)
-				wwan_state = candidate_state;
-		}
-	}
-
-	return wwan_state;
-}
-
 static void
 update_rstate_from_rfkill (RadioState *rstate, RfKillState rfkill)
 {
@@ -1431,8 +1403,7 @@ manager_rfkill_update_one_type (NMManager *self,
 	RfKillState udev_state = RFKILL_UNBLOCKED;
 	RfKillState other_state = RFKILL_UNBLOCKED;
 	RfKillState composite;
-	gboolean old_enabled, new_enabled, old_rfkilled, new_rfkilled;
-	gboolean old_hwe, old_daemon_enabled = FALSE;
+	gboolean old_enabled, new_enabled, old_rfkilled, new_rfkilled, old_hwe;
 
 	old_enabled = radio_enabled_for_rstate (rstate, TRUE);
 	old_rfkilled = rstate->hw_enabled && rstate->sw_enabled;
@@ -1453,26 +1424,10 @@ manager_rfkill_update_one_type (NMManager *self,
 
 	update_rstate_from_rfkill (rstate, composite);
 
-	/* If the device has a management daemon that can affect enabled state, check that now */
-	if (rstate->daemon_enabled_func) {
-		old_daemon_enabled = rstate->daemon_enabled;
-		rstate->daemon_enabled = (rstate->daemon_enabled_func (self) == RFKILL_UNBLOCKED);
-		if (old_daemon_enabled != rstate->daemon_enabled) {
-			nm_log_info (LOGD_RFKILL, "%s now %s by management service",
-				         rstate->desc,
-				         rstate->daemon_enabled ? "enabled" : "disabled");
-		}
-	}
-
 	/* Print out all states affecting device enablement */
 	if (rstate->desc) {
-		if (rstate->daemon_enabled_func) {
-			nm_log_dbg (LOGD_RFKILL, "%s hw-enabled %d sw-enabled %d daemon-enabled %d",
-			            rstate->desc, rstate->hw_enabled, rstate->sw_enabled, rstate->daemon_enabled);
-		} else {
-			nm_log_dbg (LOGD_RFKILL, "%s hw-enabled %d sw-enabled %d",
-			            rstate->desc, rstate->hw_enabled, rstate->sw_enabled);
-		}
+		nm_log_dbg (LOGD_RFKILL, "%s hw-enabled %d sw-enabled %d",
+		            rstate->desc, rstate->hw_enabled, rstate->sw_enabled);
 	}
 
 	/* Log new killswitch state */
@@ -1520,12 +1475,6 @@ manager_ipw_rfkill_state_changed (NMDeviceWifi *device,
                                   gpointer user_data)
 {
 	nm_manager_rfkill_update (NM_MANAGER (user_data), RFKILL_TYPE_WLAN);
-}
-
-static void
-manager_modem_enabled_changed (NMDevice *device, gpointer user_data)
-{
-	nm_manager_rfkill_update (NM_MANAGER (user_data), RFKILL_TYPE_WWAN);
 }
 
 static void
@@ -1806,10 +1755,6 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 		 */
 		g_signal_connect (device, "notify::" NM_DEVICE_WIFI_IPW_RFKILL_STATE,
 		                  G_CALLBACK (manager_ipw_rfkill_state_changed),
-		                  self);
-	} else if (devtype == NM_DEVICE_TYPE_MODEM) {
-		g_signal_connect (device, "enable-changed",
-		                  G_CALLBACK (manager_modem_enabled_changed),
 		                  self);
 	}
 
@@ -4506,6 +4451,7 @@ authority_changed_cb (gpointer user_data)
 
 #define KERN_RFKILL_OP_CHANGE_ALL 3
 #define KERN_RFKILL_TYPE_WLAN     1
+#define KERN_RFKILL_TYPE_WWAN     5
 struct rfkill_event {
 	__u32 idx;
 	__u8  type;
@@ -4514,18 +4460,19 @@ struct rfkill_event {
 } __attribute__((packed));
 
 static void
-rfkill_change_wifi (const char *desc, gboolean enabled)
+rfkill_change (const char *desc, RfKillType rtype, gboolean enabled)
 {
 	int fd;
 	struct rfkill_event event;
 	ssize_t len;
 
+	g_return_if_fail (rtype == RFKILL_TYPE_WLAN || rtype == RFKILL_TYPE_WWAN);
+
 	errno = 0;
 	fd = open ("/dev/rfkill", O_RDWR);
 	if (fd < 0) {
 		if (errno == EACCES)
-			nm_log_warn (LOGD_RFKILL, "(%s): failed to open killswitch device "
-			             "for WiFi radio control", desc);
+			nm_log_warn (LOGD_RFKILL, "(%s): failed to open killswitch device", desc);
 		return;
 	}
 
@@ -4538,7 +4485,16 @@ rfkill_change_wifi (const char *desc, gboolean enabled)
 
 	memset (&event, 0, sizeof (event));
 	event.op = KERN_RFKILL_OP_CHANGE_ALL;
-	event.type = KERN_RFKILL_TYPE_WLAN;
+	switch (rtype) {
+	case RFKILL_TYPE_WLAN:
+		event.type = KERN_RFKILL_TYPE_WLAN;
+		break;
+	case RFKILL_TYPE_WWAN:
+		event.type = KERN_RFKILL_TYPE_WWAN;
+		break;
+	default:
+		g_assert_not_reached ();
+	}
 	event.soft = enabled ? 0 : 1;
 
 	len = write (fd, &event, sizeof (event));
@@ -4564,6 +4520,10 @@ manager_radio_user_toggled (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GError *error = NULL;
 	gboolean old_enabled, new_enabled;
+
+	/* Don't touch devices if asleep/networking disabled */
+	if (manager_sleeping (self))
+		return;
 
 	if (rstate->desc) {
 		nm_log_dbg (LOGD_RFKILL, "(%s): setting radio %s by user",
@@ -4598,11 +4558,11 @@ manager_radio_user_toggled (NMManager *self,
 	rstate->user_enabled = enabled;
 	new_enabled = radio_enabled_for_rstate (rstate, FALSE);
 	if (new_enabled != old_enabled) {
-		manager_update_radio_enabled (self, rstate, new_enabled);
+		/* Try to change the kernel rfkill state */
+		if (rstate->rtype == RFKILL_TYPE_WLAN || rstate->rtype == RFKILL_TYPE_WWAN)
+			rfkill_change (rstate->desc, rstate->rtype, new_enabled);
 
-		/* For WiFi only (for now) set the actual kernel rfkill state */
-		if (rstate->rtype == RFKILL_TYPE_WLAN)
-			rfkill_change_wifi (rstate->desc, new_enabled);
+		manager_update_radio_enabled (self, rstate, new_enabled);
 	}
 }
 
@@ -4755,11 +4715,13 @@ nm_manager_new (NMSettings *settings,
 	                  G_CALLBACK (rfkill_manager_rfkill_changed_cb),
 	                  singleton);
 
-	/* Force kernel WiFi rfkill state to follow NM saved wifi state in case
-	 * the BIOS doesn't save rfkill state, and to be consistent with user
-	 * changes to the WirelessEnabled property which toggles kernel rfkill.
+	/* Force kernel WiFi/WWAN rfkill state to follow NM saved WiFi/WWAN state
+	 * in case the BIOS doesn't save rfkill state, and to be consistent with user
+	 * changes to the WirelessEnabled/WWANEnabled properties which toggle kernel
+	 * rfkill.
 	 */
-	rfkill_change_wifi (priv->radio_states[RFKILL_TYPE_WLAN].desc, initial_wifi_enabled);
+	rfkill_change (priv->radio_states[RFKILL_TYPE_WLAN].desc, RFKILL_TYPE_WLAN, initial_wifi_enabled);
+	rfkill_change (priv->radio_states[RFKILL_TYPE_WWAN].desc, RFKILL_TYPE_WWAN, initial_wwan_enabled);
 
 	load_device_factories (singleton);
 
@@ -4790,7 +4752,6 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WWAN].prop = NM_MANAGER_WWAN_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WWAN].hw_prop = NM_MANAGER_WWAN_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WWAN].desc = "WWAN";
-	priv->radio_states[RFKILL_TYPE_WWAN].daemon_enabled_func = nm_manager_get_modem_enabled_state;
 	priv->radio_states[RFKILL_TYPE_WWAN].rtype = RFKILL_TYPE_WWAN;
 
 	priv->radio_states[RFKILL_TYPE_WIMAX].user_enabled = TRUE;
