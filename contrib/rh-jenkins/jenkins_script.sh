@@ -109,8 +109,11 @@ fi
 if [[ "$RPM" == true ]]; then
     log_timestamp "rpm: start"
     wget http://file.brq.redhat.com/~thaller/nmtui-0.0.1.tar.xz
-    git checkout origin/automation -- :/contrib/
-    ./contrib/rpm/build.sh
+    if [[ "$(git merge-base dd3d5b22207e63ecbfd7f2222435fdc691f66f2e HEAD 2>/dev/null || true)" != "dd3d5b22207e63ecbfd7f2222435fdc691f66f2e" ]]; then
+        # in the meantime, the rpm build script merged to master.
+        git checkout origin/automation -- :/contrib/
+    fi
+    ./contrib/fedora/rpm/build.sh
     log_timestamp "rpm: finished"
 fi
 
