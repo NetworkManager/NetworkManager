@@ -50,6 +50,18 @@ for i in ${!ARGV[@]}; do
             -R|--no-rpm)
                 RPM=false
                 ;;
+            -d|--distcheck)
+                DISTCHECK=true
+                ;;
+            -D|--no-distcheck)
+                DISTCHECK=false
+                ;;
+            --dist)
+                DIST=true
+                ;;
+            --no-dist)
+                DIST=false
+                ;;
             -n|--dry-run|--test)
                 DRY_RUN=yes
                 ;;
@@ -69,7 +81,7 @@ for i in ${!ARGV[@]}; do
                 OUT_OF_TREE_BUILD=no
                 ;;
             -h|--help|'-?')
-                echo "$0 [ -h | -r|--rpm|-R|--no-rpm | -n|--dry-run|--test|-N|-f|--no-test|--force | -c|--check-upstream|-C|--no-check-upstream | -o|--out-of-tree|-O|--no-out-of-tree ] [--] REFS"
+                echo "$0 [ -h | -r|--rpm|-R|--no-rpm | -n|--dry-run|--test|-N|-f|--no-test|--force | -c|--check-upstream|-C|--no-check-upstream | -o|--out-of-tree|-O|--no-out-of-tree | -d|--distcheck|-D|--no-distcheck | --dist|--no-dist ] [--] REFS"
                 exit 1
                 ;;
             --)
@@ -110,6 +122,28 @@ else
     _RPM=false
 fi
 
+if eval_bool "$DISTCHECK" 0; then
+    DISTCHECK=yes
+    _DISTCHECK=true
+else
+    DISTCHECK=no
+    _DISTCHECK=false
+fi
+
+if eval_bool "$DIST" 0; then
+    DIST=yes
+    _DIST=true
+else
+    DIST=no
+    _DIST=false
+fi
+
+if [[ "$DIST" == yes && "$DISTCHECK" == yes ]]; then
+    echo "WARNING: DIST and DISTCHECK cannot be both true. DIST will be ignored."
+    DIST=no
+    _DIST=false
+fi
+
 if [[ "${#REFS[@]}" -eq 0 ]]; then
     REFS=("$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse HEAD)")
 fi
@@ -120,7 +154,8 @@ echo "DRY_RUN               : $DRY_RUN"
 echo "RPM                   : $RPM"
 echo "NO_CHECK_UPSTREAM     : $NO_CHECK_UPSTREAM"
 echo "OUT_OF_TREE_BUILD     : $OUT_OF_TREE_BUILD"
-
+echo "DIST                  : $DIST"
+echo "DISTCHECK             : $DISTCHECK"
 
 for _BRANCH in "${REFS[@]}"; do
     _B="$(git rev-parse -q --verify "$_BRANCH")" || die "Error parsing revision \"$_BRANCH\""
@@ -149,7 +184,7 @@ for _BRANCH in "${REFS[@]}"; do
     if [[ -n "$CAUSE" ]]; then
         URL_CAUSE="&cause=`url_encode "$CAUSE"`"
     fi
-    _URL="http://10.34.131.51:8080/job/NetworkManager/buildWithParameters?token=`url_encode "$_TOKEN"`$URL_CAUSE&BRANCH=`url_encode "$_B"`&RPM=$_RPM&OUT_OF_TREE_BUILD=$_OUT_OF_TREE_BUILD"
+    _URL="http://10.34.131.51:8080/job/NetworkManager/buildWithParameters?token=`url_encode "$_TOKEN"`$URL_CAUSE&BRANCH=`url_encode "$_B"`&RPM=$_RPM&OUT_OF_TREE_BUILD=$_OUT_OF_TREE_BUILD&DIST=$_DIST&DISTCHECK=$_DISTCHECK"
     echo
     echo "BRANCH[$i0]  : \"$_BRANCH\" ($_B)"
     echo "CAUSE[$i0]   : \"$CAUSE\""

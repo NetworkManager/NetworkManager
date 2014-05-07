@@ -65,46 +65,56 @@ clean_all() {
 
 
 if [[ "$OUT_OF_TREE_BUILD" == true ]]; then
-    log_timestamp "Starting out of tree build"
+    log_timestamp "out-of-tree: start"
     clean_all
 
+    log_timestamp "out-of-tree: autogen"
     ./autogen.sh
     make distclean
 
     mkdir _build
     pushd _build
+        log_timestamp "out-of-tree: configure"
         ../configure --enable-maintainer-mode --prefix=$PWD/.INSTALL/ --with-dhclient=yes --with-dhcpcd=yes --with-crypto=nss --enable-more-warnings=error --enable-ppp=yes --enable-polkit=yes --with-session-tracking=systemd --with-suspend-resume=systemd --with-tests=yes --enable-tests=yes --with-valgrind=yes --enable-ifcfg-rh=yes --enable-ifupdown=yes --enable-ifnet=yes --enable-gtk-doc --enable-qt=yes --with-system-libndp=no --enable-static=libndp --enable-bluez4=no --enable-wimax=no --enable-vala=no --enable-modify-system=no
+        log_timestamp "out-of-tree: make"
         make $MAKE_JOBS
     popd
 
-    log_timestamp "Finished out of tree build"
+    log_timestamp "out-of-tree: end"
 fi
 
-log_timestamp "start build"
+log_timestamp "build: start"
 clean_all
 
-log_timestamp
+log_timestamp "build: autogen.sh"
 ./autogen.sh --enable-maintainer-mode --prefix=$PWD/.INSTALL/ --with-dhclient=yes --with-dhcpcd=yes --with-crypto=nss --enable-more-warnings=error --enable-ppp=yes --enable-polkit=yes --with-session-tracking=systemd --with-suspend-resume=systemd --with-tests=yes --enable-tests=yes --with-valgrind=yes --enable-ifcfg-rh=yes --enable-ifupdown=yes --enable-ifnet=yes --enable-gtk-doc --enable-qt=yes --with-system-libndp=no --enable-static=libndp --enable-bluez4=no --enable-wimax=no --enable-vala=no --enable-modify-system=no
 
-log_timestamp
+log_timestamp "build: make"
 make $MAKE_JOBS
 
-log_timestamp
+log_timestamp "build: make check"
 make check
 
-log_timestamp
-make distcheck
+if [[ "$DISTCHECK" == true ]]; then
+    log_timestamp "distcheck: start"
+    make distcheck
+    log_timestamp "distcheck: end"
+elif [[ "$DIST" == true || "$RPM" == true ]]; then
+    log_timestamp "dist: start"
+    make dist
+    log_timestamp "dist: end"
+fi
 
 
 if [[ "$RPM" == true ]]; then
-    log_timestamp "start making RPM"
+    log_timestamp "rpm: start"
     wget http://file.brq.redhat.com/~thaller/nmtui-0.0.1.tar.xz
     git checkout origin/automation -- :/contrib/
     ./contrib/rpm/build.sh
-    log_timestamp "finished making RPM"
+    log_timestamp "rpm: finished"
 fi
 
 
-log_timestamp "finished with success"
+log_timestamp "all finished with success"
 git_notes_ok
 
