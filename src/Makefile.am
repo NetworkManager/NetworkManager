@@ -232,8 +232,6 @@ nm_sources = \
 	nm-auth-subject.h \
 	nm-manager.c \
 	nm-manager.h \
-	nm-policy-hosts.c \
-	nm-policy-hosts.h \
 	nm-policy.c \
 	nm-policy.h \
 	nm-properties-changed-signal.c \

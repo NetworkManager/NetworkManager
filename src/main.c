@@ -52,7 +52,6 @@
 #include "nm-hostname-provider.h"
 #include "nm-vpn-manager.h"
 #include "nm-logging.h"
-#include "nm-policy-hosts.h"
 #include "nm-config.h"
 #include "nm-posix-signals.h"
 #include "nm-session-monitor.h"
@@ -650,9 +649,6 @@ main (int argc, char *argv[])
 			goto done;
 		}
 	}
-
-	/* Clean leftover "# Added by NetworkManager" entries from /etc/hosts */
-	nm_policy_hosts_clean_etc_hosts ();
 
 	nm_manager_start (manager);
 

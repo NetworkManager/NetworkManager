@@ -184,7 +184,6 @@ valgrind-*.log
 /src/tests/test-general
 /src/tests/test-ip4-config
 /src/tests/test-ip6-config
-/src/tests/test-policy-hosts
 /src/tests/test-wifi-ap-utils
 /src/tests/test-resolvconf-capture
 /src/dnsmasq-manager/tests/test-dnsmasq-utils
