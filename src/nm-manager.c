@@ -727,20 +727,23 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	if (nm_device_get_managed (device)) {
-		/* Leave configured interfaces up when quitting so they can be
-		 * taken over again if NM starts up, and to ensure connectivity while
-		 * NM is gone.  Assumed connections don't get taken down even if they
-		 * haven't been fully activated.
+		NMActRequest *req = nm_device_get_act_request (device);
+		gboolean unmanage = FALSE;
+
+		/* Leave activated interfaces up when quitting so their configuration
+		 * can be taken over when NM restarts.  This ensures connectivity while
+		 * NM is stopped. Devices which do not support connection assumption
+		 * cannot be left up.
 		 */
+		if (!quitting)  /* Forced removal; device already gone */
+			unmanage = TRUE;
+		else if (!nm_device_can_assume_connections (device))
+			unmanage = TRUE;
+		else if (!req)
+			unmanage = TRUE;
 
-		if (   !nm_device_can_assume_connections (device)
-		    || (nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED)
-		    || !quitting) {
-				NMActRequest *req = nm_device_get_act_request (device);
-
-				if (!req || !nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (req)))
-					nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
-			}
+		if (unmanage)
+			nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
 	}
 
 	g_signal_handlers_disconnect_matched (device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, manager);
