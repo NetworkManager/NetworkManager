@@ -1711,7 +1711,7 @@ nm_platform_ip6_route_get_all (int ifindex, gboolean include_default)
 }
 
 gboolean
-nm_platform_ip4_route_add (int ifindex,
+nm_platform_ip4_route_add (int ifindex, NMPlatformSource source,
                            in_addr_t network, int plen,
                            in_addr_t gateway, int metric, int mss)
 {
@@ -1727,6 +1727,7 @@ nm_platform_ip4_route_add (int ifindex,
 		NMPlatformIP4Route route = { 0 };
 
 		route.ifindex = ifindex;
+		route.source = source;
 		route.network = network;
 		route.plen = plen;
 		route.gateway = gateway;
@@ -1735,11 +1736,11 @@ nm_platform_ip4_route_add (int ifindex,
 
 		debug ("route: adding or updating IPv4 route: %s", nm_platform_ip4_route_to_string (&route));
 	}
-	return klass->ip4_route_add (platform, ifindex, network, plen, gateway, metric, mss);
+	return klass->ip4_route_add (platform, ifindex, source, network, plen, gateway, metric, mss);
 }
 
 gboolean
-nm_platform_ip6_route_add (int ifindex,
+nm_platform_ip6_route_add (int ifindex, NMPlatformSource source,
                            struct in6_addr network, int plen, struct in6_addr gateway,
                            int metric, int mss)
 {
@@ -1753,6 +1754,7 @@ nm_platform_ip6_route_add (int ifindex,
 		NMPlatformIP6Route route = { 0 };
 
 		route.ifindex = ifindex;
+		route.source = source;
 		route.network = network;
 		route.plen = plen;
 		route.gateway = gateway;
@@ -1761,7 +1763,7 @@ nm_platform_ip6_route_add (int ifindex,
 
 		debug ("route: adding or updating IPv6 route: %s", nm_platform_ip6_route_to_string (&route));
 	}
-	return klass->ip6_route_add (platform, ifindex, network, plen, gateway, metric, mss);
+	return klass->ip6_route_add (platform, ifindex, source, network, plen, gateway, metric, mss);
 }
 
 gboolean
@@ -1896,6 +1898,7 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 			/* Ignore routes that already exist */
 			if (!array_contains_ip4_route (routes, known_route)) {
 				success = nm_platform_ip4_route_add (ifindex,
+				                                     known_route->source,
 				                                     known_route->network,
 				                                     known_route->plen,
 				                                     known_route->gateway,
@@ -1963,6 +1966,7 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 			/* Ignore routes that already exist */
 			if (!array_contains_ip6_route (routes, known_route)) {
 				success = nm_platform_ip6_route_add (ifindex,
+				                                     known_route->source,
 				                                     known_route->network,
 				                                     known_route->plen,
 				                                     known_route->gateway,
