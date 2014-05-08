@@ -444,6 +444,10 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 		if (!route->plen)
 			continue;
 
+		/* Ignore routes provided by external sources */
+		if (route->source != NM_PLATFORM_SOURCE_USER)
+			continue;
+
 		s_route = nm_ip4_route_new ();
 		nm_ip4_route_set_dest (s_route, route->network);
 		nm_ip4_route_set_prefix (s_route, route->plen);
