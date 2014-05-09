@@ -177,10 +177,6 @@ gboolean             nm_device_connection_compatible (NMDevice *device,
 NM_AVAILABLE_IN_0_9_10
 GType                nm_device_get_setting_type     (NMDevice *device);
 
-/* Deprecated */
-NM_DEPRECATED_IN_1_0
-typedef void (*NMDeviceDeactivateFn) (NMDevice *device, GError *error, gpointer user_data);
-
 G_END_DECLS
 
 #endif /* NM_DEVICE_H */

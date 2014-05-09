@@ -156,15 +156,6 @@ nm_vpn_plugin_ui_interface_get_suggested_name (NMVpnPluginUiInterface *iface,
 	return NULL;
 }
 
-gboolean
-nm_vpn_plugin_ui_interface_delete_connection (NMVpnPluginUiInterface *iface,
-                                              NMConnection *connection,
-                                              GError **error)
-{
-	/* Deprecated and no longer used */
-	return TRUE;
-}
-
 
 static void
 widget_interface_init (gpointer g_iface)
@@ -235,13 +226,4 @@ nm_vpn_plugin_ui_widget_interface_update_connection (NMVpnPluginUiWidgetInterfac
 		g_return_val_if_fail (*error == NULL, FALSE);
 
 	return NM_VPN_PLUGIN_UI_WIDGET_INTERFACE_GET_INTERFACE (iface)->update_connection (iface, connection, error);
-}
-
-gboolean
-nm_vpn_plugin_ui_widget_interface_save_secrets (NMVpnPluginUiWidgetInterface *iface,
-                                                NMConnection *connection,
-                                                GError **error)
-{
-	/* Deprecated and no longer used */
-	return TRUE;
 }

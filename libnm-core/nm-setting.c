@@ -399,6 +399,10 @@ nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
 			continue;
 		}
 
+		/* 'name' doesn't get deserialized */
+		if (strcmp (g_param_spec_get_name (param_spec), NM_SETTING_NAME) == 0)
+			continue;
+
 		g_value_init (dst_value, G_VALUE_TYPE (src_value));
 		if (g_value_transform (src_value, dst_value))
 			params[n_params++].name = prop_name;
@@ -1372,28 +1376,6 @@ constructor (GType type,
 }
 
 static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMSettingPrivate *priv = NM_SETTING_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_NAME:
-		/* The setter for NAME is deprecated and should not be used anymore.
-		 * Keep the setter for NAME to remain backward compatible.
-		 * Only assert that the caller does not try to set the name to a different value
-		 * then the registered name, which would be extra wrong.
-		 **/
-		_ensure_setting_info (object, priv);
-		g_return_if_fail (!g_strcmp0 (priv->info->name, g_value_get_string (value)));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
@@ -1418,7 +1400,6 @@ nm_setting_class_init (NMSettingClass *setting_class)
 
 	/* virtual methods */
 	object_class->constructor  = constructor;
-	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 
 	setting_class->update_one_secret = update_one_secret;
@@ -1440,6 +1421,6 @@ nm_setting_class_init (NMSettingClass *setting_class)
 		(object_class, PROP_NAME,
 		 g_param_spec_string (NM_SETTING_NAME, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE |
+		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 }

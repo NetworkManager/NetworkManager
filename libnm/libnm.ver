@@ -5,7 +5,6 @@ global:
 	nm_access_point_get_bssid;
 	nm_access_point_get_flags;
 	nm_access_point_get_frequency;
-	nm_access_point_get_hw_address;
 	nm_access_point_get_max_bitrate;
 	nm_access_point_get_mode;
 	nm_access_point_get_rsn_flags;
@@ -61,7 +60,6 @@ global:
 	nm_client_permission_get_type;
 	nm_client_permission_result_get_type;
 	nm_client_set_logging;
-	nm_client_sleep;
 	nm_client_wimax_get_enabled;
 	nm_client_wimax_hardware_get_enabled;
 	nm_client_wimax_set_enabled;
@@ -595,11 +593,9 @@ global:
 	nm_setting_get_virtual_iface_name;
 	nm_setting_gsm_error_get_type;
 	nm_setting_gsm_error_quark;
-	nm_setting_gsm_get_allowed_bands;
 	nm_setting_gsm_get_apn;
 	nm_setting_gsm_get_home_only;
 	nm_setting_gsm_get_network_id;
-	nm_setting_gsm_get_network_type;
 	nm_setting_gsm_get_number;
 	nm_setting_gsm_get_password;
 	nm_setting_gsm_get_password_flags;
@@ -607,8 +603,6 @@ global:
 	nm_setting_gsm_get_pin_flags;
 	nm_setting_gsm_get_type;
 	nm_setting_gsm_get_username;
-	nm_setting_gsm_network_band_get_type;
-	nm_setting_gsm_network_type_get_type;
 	nm_setting_gsm_new;
 	nm_setting_hash_flags_get_type;
 	nm_setting_infiniband_error_get_type;
@@ -840,7 +834,6 @@ global:
 	nm_setting_wireless_get_num_mac_blacklist_items;
 	nm_setting_wireless_get_num_seen_bssids;
 	nm_setting_wireless_get_rate;
-	nm_setting_wireless_get_security;
 	nm_setting_wireless_get_seen_bssid;
 	nm_setting_wireless_get_ssid;
 	nm_setting_wireless_get_tx_power;
@@ -885,7 +878,6 @@ global:
 	nm_ssid_get_type;
 	nm_string_array_get_type;
 	nm_uint_array_get_type;
-	nm_util_get_private;
 	nm_utils_ap_mode_security_valid;
 	nm_utils_bin2hexstr;
 	nm_utils_check_virtual_device_compatibility;
@@ -902,7 +894,6 @@ global:
 	nm_utils_hwaddr_len;
 	nm_utils_hwaddr_ntoa;
 	nm_utils_hwaddr_ntoa_len;
-	nm_utils_hwaddr_type;
 	nm_utils_hwaddr_valid;
 	nm_utils_iface_valid_name;
 	nm_utils_inet4_ntop;
@@ -928,7 +919,6 @@ global:
 	nm_utils_same_ssid;
 	nm_utils_security_type_get_type;
 	nm_utils_security_valid;
-	nm_utils_slist_free;
 	nm_utils_ssid_to_utf8;
 	nm_utils_uuid_generate;
 	nm_utils_uuid_generate_from_string;

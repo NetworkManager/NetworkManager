@@ -226,7 +226,6 @@ NM_AVAILABLE_IN_0_9_10
 gboolean  nm_client_get_startup          (NMClient *client);
 gboolean  nm_client_get_manager_running  (NMClient *client);
 const GPtrArray *nm_client_get_active_connections (NMClient *client);
-void      nm_client_sleep                (NMClient *client, gboolean sleep_);
 
 NMClientPermissionResult nm_client_get_permission_result (NMClient *client,
                                                           NMClientPermission permission);

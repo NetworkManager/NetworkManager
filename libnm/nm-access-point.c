@@ -197,23 +197,6 @@ nm_access_point_get_bssid (NMAccessPoint *ap)
 }
 
 /**
- * nm_access_point_get_hw_address:
- * @ap: a #NMAccessPoint
- *
- * Gets the hardware (MAC) address of the access point.
- *
- * Returns: the hardware address of the access point. This is the internal string used by the
- * access point and must not be modified.
- *
- * Deprecated: 0.9: Use nm_access_point_get_bssid() instead.
- **/
-const char *
-nm_access_point_get_hw_address (NMAccessPoint *ap)
-{
-	return nm_access_point_get_bssid (ap);
-}
-
-/**
  * nm_access_point_get_mode:
  * @ap: a #NMAccessPoint
  *
@@ -507,6 +490,7 @@ register_properties (NMAccessPoint *ap)
 		{ NM_ACCESS_POINT_RSN_FLAGS,   &priv->rsn_flags },
 		{ NM_ACCESS_POINT_SSID,        &priv->ssid, demarshal_ssid },
 		{ NM_ACCESS_POINT_FREQUENCY,   &priv->frequency },
+		/* The D-Bus property is HwAddress, but the GObject property is "bssid" */
 		{ NM_ACCESS_POINT_HW_ADDRESS,  &priv->bssid },
 		{ NM_ACCESS_POINT_MODE,        &priv->mode },
 		{ NM_ACCESS_POINT_MAX_BITRATE, &priv->max_bitrate },
@@ -624,7 +608,9 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	/**
 	 * NMAccessPoint:hw-address:
 	 *
-	 * The hardware address of the access point.
+	 * Alias for #NMAccessPoint:bssid.
+	 *
+	 * Deprecated: 1.0: use #NMAccessPoint:bssid.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,

@@ -165,10 +165,6 @@ gboolean          nm_setting_wireless_ap_security_compatible (NMSettingWireless 
                                                               NM80211ApSecurityFlags ap_rsn,
                                                               NM80211Mode ap_mode);
 
-/* Deprecated */
-NM_DEPRECATED_IN_0_9_10
-const char *nm_setting_wireless_get_security (NMSettingWireless *setting);
-
 G_END_DECLS
 
 #endif /* NM_SETTING_WIRELESS_H */

@@ -135,9 +135,6 @@ struct _NMVpnPluginUiInterface {
 	 */
 	char * (*get_suggested_name) (NMVpnPluginUiInterface *iface, NMConnection *connection);
 
-	/* Deprecated and no longer used */
-	gboolean (*delete_connection) (NMVpnPluginUiInterface *iface, NMConnection *connection, GError **error);
-
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
 	void (*_reserved2) (void);
@@ -167,13 +164,6 @@ gboolean nm_vpn_plugin_ui_interface_export (NMVpnPluginUiInterface *iface,
 char *nm_vpn_plugin_ui_interface_get_suggested_name (NMVpnPluginUiInterface *iface,
                                                      NMConnection *connection);
 
-/* Deprecated and no longer used */
-NM_DEPRECATED_IN_0_9_10
-gboolean nm_vpn_plugin_ui_interface_delete_connection (NMVpnPluginUiInterface *iface,
-                                                       NMConnection *connection,
-                                                       GError **error);
-
-
 /**************************************************/
 /* UI widget interface                            */
 /**************************************************/
@@ -200,11 +190,6 @@ struct _NMVpnPluginUiWidgetInterface {
 	                               NMConnection *connection,
 	                               GError **error);
 
-	/* Deprecated and no longer used */
-	gboolean (*save_secrets) (NMVpnPluginUiWidgetInterface *iface,
-	                          NMConnection *connection,
-	                          GError **error);
-
 	/* Emitted when the value of a UI widget changes.  May trigger a validity
 	 * check via update_connection() to write values to the connection */
 	void (*changed) (NMVpnPluginUiWidgetInterface *iface);
@@ -217,12 +202,6 @@ GObject * nm_vpn_plugin_ui_widget_interface_get_widget (NMVpnPluginUiWidgetInter
 gboolean nm_vpn_plugin_ui_widget_interface_update_connection (NMVpnPluginUiWidgetInterface *iface,
                                                               NMConnection *connection,
                                                               GError **error);
-
-/* Deprecated and no longer used */
-NM_DEPRECATED_IN_0_9_10
-gboolean nm_vpn_plugin_ui_widget_interface_save_secrets (NMVpnPluginUiWidgetInterface *iface,
-                                                         NMConnection *connection,
-                                                         GError **error);
 
 G_END_DECLS
 

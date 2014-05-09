@@ -196,38 +196,6 @@ nm_setting_gsm_get_network_id (NMSettingGsm *setting)
 }
 
 /**
- * nm_setting_gsm_get_network_type:
- * @setting: the #NMSettingGsm
- *
- * Returns: the #NMSettingGsm:network-type property of the setting
- *
- * Deprecated: 0.9.10: No longer used. Network type setting should be done talking to ModemManager directly.
- **/
-int
-nm_setting_gsm_get_network_type (NMSettingGsm *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), -1);
-
-	return NM_SETTING_GSM_GET_PRIVATE (setting)->network_type;
-}
-
-/**
- * nm_setting_gsm_get_allowed_bands:
- * @setting: the #NMSettingGsm
- *
- * Returns: the #NMSettingGsm:allowed-bands property of the setting
- *
- * Deprecated: 0.9.10: No longer used. Bands setting should be done talking to ModemManager directly.
- **/
-guint32
-nm_setting_gsm_get_allowed_bands (NMSettingGsm *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_GSM (setting), NM_SETTING_GSM_BAND_UNKNOWN);
-
-	return NM_SETTING_GSM_GET_PRIVATE (setting)->allowed_bands;
-}
-
-/**
  * nm_setting_gsm_get_pin:
  * @setting: the #NMSettingGsm
  *
@@ -636,15 +604,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	/**
 	 * NMSettingGsm:network-type:
 	 *
-	 * Network preference to force the device to only use specific network
-	 * technologies. The permitted values are %NM_SETTING_GSM_NETWORK_TYPE_ANY,
-	 * %NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA,
-	 * %NM_SETTING_GSM_NETWORK_TYPE_GPRS_EDGE,
-	 * %NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA,
-	 * %NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE,
-	 * %NM_SETTING_GSM_NETWORK_TYPE_PREFER_4G, and
-	 * %NM_SETTING_GSM_NETWORK_TYPE_4G.  Note that not all devices allow network
-	 * preference control.
+	 * (Unused)
 	 *
 	 * Deprecated: 0.9.10: No longer used. Network type setting should be done
 	 * by talking to ModemManager directly.
@@ -652,9 +612,9 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_TYPE,
 		 g_param_spec_int (NM_SETTING_GSM_NETWORK_TYPE, "", "",
-		                   NM_SETTING_GSM_NETWORK_TYPE_ANY,
-		                   NM_SETTING_GSM_NETWORK_TYPE_4G,
-		                   NM_SETTING_GSM_NETWORK_TYPE_ANY,
+		                   -1 /* NM_SETTING_GSM_NETWORK_TYPE_ANY */,
+		                   5  /* NM_SETTING_GSM_NETWORK_TYPE_4G */,
+		                   -1 /* NM_SETTING_GSM_NETWORK_TYPE_ANY */,
 		                   G_PARAM_READWRITE |
 		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));
@@ -662,9 +622,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	/**
 	 * NMSettingGsm:allowed-bands:
 	 *
-	 * Bitfield of allowed frequency bands.  Note that not all devices allow
-	 * frequency band control.  Permitted values are those specified by
-	 * #NMSettingGsmNetworkBand.
+	 * (Unused)
 	 *
 	 * Deprecated: 0.9.10: No longer used. Band setting should be done by
 	 * talking to ModemManager directly.
@@ -672,9 +630,9 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_ALLOWED_BANDS,
 		 g_param_spec_uint (NM_SETTING_GSM_ALLOWED_BANDS, "", "",
-		                    NM_SETTING_GSM_BAND_UNKNOWN,
-		                    NM_SETTING_GSM_BANDS_MAX,
-		                    NM_SETTING_GSM_BAND_ANY,
+		                    0      /* NM_SETTING_GSM_BAND_UNKNOWN */,
+		                    0x3fff /* NM_SETTING_GSM_BANDS_MAX */,
+		                    1      /* NM_SETTING_GSM_BAND_ANY */,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));

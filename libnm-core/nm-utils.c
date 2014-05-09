@@ -476,21 +476,6 @@ nm_utils_gvalue_hash_dup (GHashTable *hash)
 	return table;
 }
 
-/**
- * nm_utils_slist_free: (skip)
- * @list: a #GSList
- * @elem_destroy_fn: user function called for each element in @list
- *
- * Utility function to free a #GSList.
- *
- * Deprecated: use g_slist_free_full().
- **/
-void
-nm_utils_slist_free (GSList *list, GDestroyNotify elem_destroy_fn)
-{
-	g_slist_free_full (list, elem_destroy_fn);
-}
-
 gboolean
 _nm_utils_string_in_list (const char *str, const char **valid_strings)
 {
@@ -1952,34 +1937,6 @@ nm_utils_hwaddr_len (int type)
 		return -1;
 }
 
-/**
- * nm_utils_hwaddr_type:
- * @len: the length of hardware address in bytes
- *
- * Returns the type (either %ARPHRD_ETHER or %ARPHRD_INFINIBAND) of
- * the raw address given its length.
- *
- * Return value: the type, either %ARPHRD_ETHER or %ARPHRD_INFINIBAND.
- * If the length is unexpected, return -1 (unsupported type/length).
- *
- * Deprecated: This could not be extended to cover other types, since
- * there is not a one-to-one mapping between types and lengths. This
- * was mostly only used to get a type to pass to
- * nm_utils_hwaddr_ntoa() or nm_utils_hwaddr_aton() when you only had
- * a length; but you can just use nm_utils_hwaddr_ntoa_len() or
- * nm_utils_hwaddr_aton_len() now instead.
- */
-int
-nm_utils_hwaddr_type (int len)
-{
-	if (len == ETH_ALEN)
-		return ARPHRD_ETHER;
-	else if (len == INFINIBAND_ALEN)
-		return ARPHRD_INFINIBAND;
-	else
-		return -1;
-}
-
 #define HEXVAL(c) ((c) <= '9' ? (c) - '0' : ((c) & 0x4F) - 'A' + 10)
 
 /**
@@ -2490,9 +2447,6 @@ nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_typ
 
 /***********************************************************/
 
-/* Unused prototype to make the compiler happy */
-const NMUtilsPrivateData *nm_util_get_private (void);
-
 static const NMUtilsPrivateData data = {
 	.nm_setting_ip4_config_get_address_label = nm_setting_ip4_config_get_address_label,
 	.nm_setting_ip4_config_add_address_with_label = nm_setting_ip4_config_add_address_with_label,
@@ -2512,20 +2466,4 @@ const NMUtilsPrivateData *
 nm_utils_get_private (void)
 {
 	return &data;
-}
-
-/**
- * nm_util_get_private:
- *
- * You should not use this function for any reason.
- *
- * Returns: Who knows? It's a mystery.
- *
- * Since: 0.9.10
- */
-const NMUtilsPrivateData *
-nm_util_get_private (void)
-{
-	/* Compat function to preserve ABI */
-	return nm_utils_get_private ();
 }

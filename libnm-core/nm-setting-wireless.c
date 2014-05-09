@@ -629,23 +629,6 @@ nm_setting_wireless_get_mtu (NMSettingWireless *setting)
 }
 
 /**
- * nm_setting_wireless_get_security:
- * @setting: the #NMSettingWireless
- *
- * Returns: the #NMSettingWireless:security property of the setting
- *
- * Deprecated: 0.9.10: No longer used. Security rescrictions are recognized by
- * the presence of NM_SETTING_WIRELESS_SECURITY_SETTING_NAME in the connection.
- **/
-const char *
-nm_setting_wireless_get_security (NMSettingWireless *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
-
-	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->security;
-}
-
-/**
  * nm_setting_wireless_get_hidden:
  * @setting: the #NMSettingWireless
  *
@@ -1211,10 +1194,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:security:
 	 *
-	 * If the wireless connection has any security restrictions, like 802.1x,
-	 * WEP, or WPA, set this property to
-	 * %NM_SETTING_WIRELESS_SECURITY_SETTING_NAME and ensure the connection
-	 * contains a valid #NMSettingWirelessSecurity setting.
+	 * (Unused)
 	 *
 	 * Deprecated: 0.9.10: No longer used. Security restrictions are recognized
 	 * by the presence of a #NMSettingWirelessSecurity setting in the

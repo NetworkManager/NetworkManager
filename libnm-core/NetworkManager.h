@@ -104,9 +104,6 @@ typedef enum {
 	NM_STATE_CONNECTED_GLOBAL = 70
 } NMState;
 
-/* For backwards compat */
-#define NM_STATE_CONNECTED NM_STATE_CONNECTED_GLOBAL
-
 /**
  * NMConnectivityState:
  * @NM_CONNECTIVITY_UNKNOWN: Network connectivity is unknown.

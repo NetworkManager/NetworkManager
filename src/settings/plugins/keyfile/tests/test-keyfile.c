@@ -2215,7 +2215,6 @@ test_write_gsm_connection (void)
 	              NM_SETTING_GSM_PIN, "123456",
 	              NM_SETTING_GSM_NETWORK_ID, "254098",
 	              NM_SETTING_GSM_HOME_ONLY, TRUE,
-	              NM_SETTING_GSM_NETWORK_TYPE, NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA,
 	              NULL);
 
 	/* Write out the connection */
