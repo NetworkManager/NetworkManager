@@ -253,10 +253,15 @@ crypto_encrypt (const char *cipher,
 	gsize padded_buf_len, pad_len, output_len;
 	char *padded_buf = NULL;
 	guint32 i;
+	gsize salt_len;
 
-	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
+	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC)) {
 		cipher_mech = GCRY_CIPHER_3DES;
-	else {
+		salt_len = SALT_LEN;
+	} else if (!strcmp (cipher, CIPHER_AES_CBC)) {
+		cipher_mech = GCRY_CIPHER_AES;
+		salt_len = iv_len;
+	} else {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_UNKNOWN_CIPHER,
 		             _("Private key cipher '%s' was unknown."),
@@ -296,7 +301,7 @@ crypto_encrypt (const char *cipher,
 	}
 
 	/* gcrypt only wants 8 bytes of the IV (same as the DES block length) */
-	err = gcry_cipher_setiv (ctx, iv, SALT_LEN);
+	err = gcry_cipher_setiv (ctx, iv, salt_len);
 	if (err) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_CIPHER_SET_IV_FAILED,

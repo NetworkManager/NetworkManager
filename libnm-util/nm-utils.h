@@ -120,6 +120,10 @@ GByteArray *nm_utils_rsa_key_encrypt (const GByteArray *data,
                                       const char *in_password,
                                       char **out_password,
                                       GError **error);
+GByteArray *nm_utils_rsa_key_encrypt_aes (const GByteArray *data,
+                                          const char *in_password,
+                                          char **out_password,
+                                          GError **error);
 gboolean nm_utils_file_is_pkcs12 (const char *filename);
 
 guint32 nm_utils_wifi_freq_to_channel (guint32 freq);

@@ -638,6 +638,7 @@ global:
 	nm_utils_is_empty_ssid;
 	nm_utils_is_uuid;
 	nm_utils_rsa_key_encrypt;
+	nm_utils_rsa_key_encrypt_aes;
 	nm_utils_same_ssid;
 	nm_utils_security_type_get_type;
 	nm_utils_security_valid;

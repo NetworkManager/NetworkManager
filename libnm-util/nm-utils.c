@@ -1516,7 +1516,8 @@ out:
 }
 
 static char *
-make_key (const char *salt,
+make_key (const char *cipher,
+          const char *salt,
           const gsize salt_len,
           const char *password,
           gsize *out_len,
@@ -1529,6 +1530,11 @@ make_key (const char *salt,
 	g_return_val_if_fail (salt_len >= 8, NULL);
 	g_return_val_if_fail (password != NULL, NULL);
 	g_return_val_if_fail (out_len != NULL, NULL);
+
+	if (!strcmp (cipher, "DES-EDE3-CBC"))
+		digest_len = 24;
+	else if (!strcmp (cipher, "AES-128-CBC"))
+		digest_len = 16;
 
 	key = g_malloc0 (digest_len + 1);
 
@@ -1544,7 +1550,8 @@ make_key (const char *salt,
 }
 
 /**
- * nm_utils_rsa_key_encrypt:
+ * nm_utils_rsa_key_encrypt_helper:
+ * @cipher: cipher to use for encryption ("DES-EDE3-CBC" or "AES-128-CBC")
  * @data: RSA private key data to be encrypted
  * @in_password: (allow-none): existing password to use, if any
  * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
@@ -1558,13 +1565,15 @@ make_key (const char *salt,
  * Returns: (transfer full): on success, PEM-formatted data suitable for writing to a PEM-formatted
  * certificate/private key file.
  **/
-GByteArray *
-nm_utils_rsa_key_encrypt (const GByteArray *data,
-                          const char *in_password,
-                          char **out_password,
-                          GError **error)
+static GByteArray *
+nm_utils_rsa_key_encrypt_helper (const char *cipher,
+                                 const GByteArray *data,
+                                 const char *in_password,
+                                 char **out_password,
+                                 GError **error)
 {
-	char salt[8];
+	char salt[16];
+	int salt_len;
 	char *key = NULL, *enc = NULL, *pw_buf[32];
 	gsize key_len = 0, enc_len = 0;
 	GString *pem = NULL;
@@ -1573,6 +1582,7 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
 	const char *p;
 	GByteArray *ret = NULL;
 
+	g_return_val_if_fail (!g_strcmp0 (cipher, CIPHER_DES_EDE3_CBC) || !g_strcmp0 (cipher, CIPHER_AES_CBC), NULL);
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (data->len > 0, NULL);
 	if (out_password)
@@ -1585,14 +1595,19 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
 		in_password = tmp_password = nm_utils_bin2hexstr ((const char *) pw_buf, sizeof (pw_buf), -1);
 	}
 
-	if (!crypto_randomize (salt, sizeof (salt), error))
+	if (g_strcmp0 (cipher, CIPHER_AES_CBC) == 0)
+		salt_len = 16;
+	else
+		salt_len = 8;
+
+	if (!crypto_randomize (salt, salt_len, error))
 		goto out;
 
-	key = make_key (&salt[0], sizeof (salt), in_password, &key_len, error);
+	key = make_key (cipher, &salt[0], salt_len, in_password, &key_len, error);
 	if (!key)
 		goto out;
 
-	enc = crypto_encrypt (CIPHER_DES_EDE3_CBC, data, salt, sizeof (salt), key, key_len, &enc_len, error);
+	enc = crypto_encrypt (cipher, data, salt, salt_len, key, key_len, &enc_len, error);
 	if (!enc)
 		goto out;
 
@@ -1601,8 +1616,8 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
 	g_string_append (pem, "Proc-Type: 4,ENCRYPTED\n");
 
 	/* Convert the salt to a hex string */
-	tmp = nm_utils_bin2hexstr ((const char *) salt, sizeof (salt), 16);
-	g_string_append_printf (pem, "DEK-Info: DES-EDE3-CBC,%s\n\n", tmp);
+	tmp = nm_utils_bin2hexstr ((const char *) salt, salt_len, salt_len * 2);
+	g_string_append_printf (pem, "DEK-Info: %s,%s\n\n", cipher, tmp);
 	g_free (tmp);
 
 	/* Convert the encrypted key to a base64 string */
@@ -1641,6 +1656,65 @@ out:
 	}
 
 	return ret;
+}
+
+/**
+ * nm_utils_rsa_key_encrypt:
+ * @data: RSA private key data to be encrypted
+ * @in_password: (allow-none): existing password to use, if any
+ * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
+ *  and returned in this argument
+ * @error: detailed error information on return, if an error occurred
+ *
+ * Encrypts the given RSA private key data with the given password (or generates
+ * a password if no password was given) and converts the data to PEM format
+ * suitable for writing to a file. It uses Triple DES cipher for the encryption.
+ *
+ * Returns: (transfer full): on success, PEM-formatted data suitable for writing to a PEM-formatted
+ * certificate/private key file.
+ **/
+GByteArray *
+nm_utils_rsa_key_encrypt (const GByteArray *data,
+                          const char *in_password,
+                          char **out_password,
+                          GError **error)
+{
+
+
+	return nm_utils_rsa_key_encrypt_helper (CIPHER_DES_EDE3_CBC,
+	                                        data,
+	                                        in_password,
+	                                        out_password,
+	                                        error);
+}
+
+/**
+ * nm_utils_rsa_key_encrypt_aes:
+ * @data: RSA private key data to be encrypted
+ * @in_password: (allow-none): existing password to use, if any
+ * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
+ *  and returned in this argument
+ * @error: detailed error information on return, if an error occurred
+ *
+ * Encrypts the given RSA private key data with the given password (or generates
+ * a password if no password was given) and converts the data to PEM format
+ * suitable for writing to a file.  It uses AES cipher for the encryption.
+ *
+ * Returns: (transfer full): on success, PEM-formatted data suitable for writing to a PEM-formatted
+ * certificate/private key file.
+ **/
+GByteArray *
+nm_utils_rsa_key_encrypt_aes (const GByteArray *data,
+                              const char *in_password,
+                              char **out_password,
+                              GError **error)
+{
+
+	return nm_utils_rsa_key_encrypt_helper (CIPHER_AES_CBC,
+	                                        data,
+	                                        in_password,
+	                                        out_password,
+	                                        error);
 }
 
 /**

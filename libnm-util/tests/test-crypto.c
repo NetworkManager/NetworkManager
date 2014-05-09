@@ -255,6 +255,28 @@ test_load_pkcs8 (const char *path,
 	}
 }
 
+static gboolean
+is_cipher_aes (const char *path)
+{
+	char *contents;
+	gsize length = 0;
+	const char *cipher;
+	gboolean is_aes = FALSE;
+
+	if (!g_file_get_contents (path, &contents, &length, NULL))
+		return FALSE;
+
+	cipher = strstr (contents, "DEK-Info: ");
+	if (cipher) {
+		cipher += strlen ("DEK-Info: ");
+		if (g_str_has_prefix (cipher, "AES-128-CBC"))
+			is_aes = TRUE;
+	}
+
+	g_free (contents);
+        return is_aes;
+}
+
 static void
 test_encrypt_private_key (const char *path,
                           const char *password,
@@ -274,7 +296,10 @@ test_encrypt_private_key (const char *path,
 	        path, NM_CRYPTO_KEY_TYPE_RSA, key_type);
 
 	/* Now re-encrypt the private key */
-	encrypted = nm_utils_rsa_key_encrypt (array, password, NULL, &error);
+	if (is_cipher_aes (path))
+		encrypted = nm_utils_rsa_key_encrypt_aes (array, password, NULL, &error);
+	else
+		encrypted = nm_utils_rsa_key_encrypt (array, password, NULL, &error);
 	ASSERT (encrypted != NULL, desc,
 	        "couldn't re-encrypt private key file '%s': %d %s",
 	        path, error->code, error->message);
