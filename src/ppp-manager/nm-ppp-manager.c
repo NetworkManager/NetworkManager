@@ -964,6 +964,10 @@ create_pppd_cmd_line (NMPPPManager *self,
 	nm_cmd_line_add_string (cmd, "lcp-echo-interval");
 	nm_cmd_line_add_int (cmd, nm_setting_ppp_get_lcp_echo_interval (setting));
 
+	/* Avoid pppd to exit if no traffic going through */
+	nm_cmd_line_add_string (cmd, "idle");
+	nm_cmd_line_add_int (cmd, 0);
+
 	nm_cmd_line_add_string (cmd, "ipparam");
 	nm_cmd_line_add_string (cmd, priv->dbus_path);
 
