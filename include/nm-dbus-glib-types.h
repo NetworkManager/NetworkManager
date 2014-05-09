@@ -38,4 +38,3 @@
 #define DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE      (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_IP6_ROUTE))
 
 #endif /* DBUS_GLIB_TYPES_H */
-

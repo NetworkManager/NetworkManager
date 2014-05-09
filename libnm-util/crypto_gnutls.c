@@ -105,7 +105,7 @@ crypto_md5_hash (const char *salt,
 		gcry_md_final (ctx);
 		memcpy (digest, gcry_md_read (ctx, 0), digest_len);
 		gcry_md_reset (ctx);
-		
+
 		while (nkey && (i < digest_len)) {
 			*(p++) = digest[i++];
 			nkey--;
@@ -475,9 +475,9 @@ crypto_verify_pkcs8 (const GByteArray *data,
 			 */
 		} else {
 			g_set_error (error, NM_CRYPTO_ERROR,
-				         NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
-				         _("Couldn't decode PKCS#8 file: %s"),
-				         gnutls_strerror (err));
+			             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
+			             _("Couldn't decode PKCS#8 file: %s"),
+			             gnutls_strerror (err));
 			return FALSE;
 		}
 	}
@@ -491,4 +491,3 @@ crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 	gcry_randomize (buffer, buffer_len, GCRY_STRONG_RANDOM);
 	return TRUE;
 }
-

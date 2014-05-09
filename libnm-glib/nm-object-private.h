@@ -45,8 +45,8 @@ DBusGProxy *_nm_object_new_proxy (NMObject *self,
 gboolean _nm_object_is_connection_private (NMObject *self);
 
 void _nm_object_register_properties (NMObject *object,
-									 DBusGProxy *proxy,
-									 const NMPropertiesInfo *info);
+                                     DBusGProxy *proxy,
+                                     const NMPropertiesInfo *info);
 
 gboolean _nm_object_reload_properties (NMObject *object, GError **error);
 

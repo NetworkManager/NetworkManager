@@ -35,4 +35,3 @@ typedef enum {
 } NMSettingsGetSecretsFlags;
 
 #endif  /* NM_SETTINGS_FLAGS_H */
-

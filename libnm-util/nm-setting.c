@@ -289,7 +289,7 @@ destroy_gvalue (gpointer data)
  * Converts the #NMSetting into a #GHashTable mapping each setting property
  * name to a GValue describing that property, suitable for marshalling over
  * D-Bus or serializing.  The mapping is string to GValue.
- * 
+ *
  * Returns: (transfer full) (element-type utf8 GObject.Value): a new #GHashTable
  * describing the setting's properties
  **/
@@ -362,7 +362,7 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
  * are strongly typed, thus the GValue type of the hash value must be correct.
  * See the documentation on each #NMSetting object subclass for the correct
  * property names and value types.
- * 
+ *
  * Returns: a new #NMSetting object populated with the properties from the
  * hash table, or %NULL on failure
  **/
@@ -404,7 +404,7 @@ nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
 			params[n_params++].name = prop_name;
 		else {
 			g_warning ("Ignoring property '%s' with invalid type (%s)",
-				       prop_name, G_VALUE_TYPE_NAME (src_value));
+			           prop_name, G_VALUE_TYPE_NAME (src_value));
 			g_value_unset (dst_value);
 		}
 	}
@@ -537,9 +537,9 @@ _nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 static gboolean
 compare_property (NMSetting *setting,
-	              NMSetting *other,
-	              const GParamSpec *prop_spec,
-	              NMSettingCompareFlags flags)
+                  NMSetting *other,
+                  const GParamSpec *prop_spec,
+                  NMSettingCompareFlags flags)
 {
 	GValue value1 = G_VALUE_INIT;
 	GValue value2 = G_VALUE_INIT;
@@ -619,7 +619,7 @@ nm_setting_compare (NMSetting *a,
 
 		/* Fuzzy compare ignores secrets and properties defined with the FUZZY_IGNORE flag */
 		if (   (flags & NM_SETTING_COMPARE_FLAG_FUZZY)
-			&& (prop_spec->flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
+		    && (prop_spec->flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
 			continue;
 
 		if ((flags & NM_SETTING_COMPARE_FLAG_INFERRABLE) && !(prop_spec->flags & NM_SETTING_PARAM_INFERRABLE))
@@ -797,8 +797,8 @@ nm_setting_diff (NMSetting *a,
  **/
 void
 nm_setting_enumerate_values (NMSetting *setting,
-					    NMSettingValueIterFn func,
-					    gpointer user_data)
+                             NMSettingValueIterFn func,
+                             gpointer user_data)
 {
 	GParamSpec **property_specs;
 	guint n_property_specs;
@@ -871,9 +871,9 @@ _nm_setting_clear_secrets (NMSetting *setting)
 
 static gboolean
 clear_secrets_with_flags (NMSetting *setting,
-	                      GParamSpec *pspec,
-	                      NMSettingClearSecretsWithFlagsFn func,
-	                      gpointer user_data)
+                          GParamSpec *pspec,
+                          NMSettingClearSecretsWithFlagsFn func,
+                          gpointer user_data)
 {
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 	gboolean changed = FALSE;
@@ -1025,7 +1025,7 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
  *
  * Update the setting's secrets, given a hash table of secrets intended for that
  * setting (deserialized from D-Bus for example).
- * 
+ *
  * Returns: %TRUE if the secrets were successfully updated, %FALSE on failure to
  * update one or more of the secrets.
  **/
@@ -1443,4 +1443,3 @@ nm_setting_class_init (NMSettingClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
 }
-

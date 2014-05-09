@@ -405,7 +405,7 @@ nm_setting_802_1x_get_ca_path (NMSetting8021x *setting)
  * properties are ignored if the #NMSetting8021x:system-ca-certs property is
  * %TRUE, in which case a system-wide CA certificate directory specified at
  * compile time (using the --system-ca-path configure option) is used in place
- * of these properties. 
+ * of these properties.
  *
  * Returns: %TRUE if a system CA certificate path should be used, %FALSE if not
  **/
@@ -2816,7 +2816,7 @@ set_cert_prop_helper (const GValue *value, const char *prop_name, GError **error
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSetting8021x *setting = NM_SETTING_802_1X (object);
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
@@ -3002,7 +3002,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSetting8021x *setting = NM_SETTING_802_1X (object);
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
@@ -3464,7 +3464,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		(object_class, PROP_PASSWORD,
 		 g_param_spec_string (NM_SETTING_802_1X_PASSWORD, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -3493,7 +3494,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		(object_class, PROP_PASSWORD_RAW,
 		 _nm_param_spec_specialized (NM_SETTING_802_1X_PASSWORD_RAW, "", "",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_SECRET |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -3561,7 +3563,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		(object_class, PROP_PRIVATE_KEY_PASSWORD,
 		 g_param_spec_string (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -3625,7 +3628,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		(object_class, PROP_PHASE2_PRIVATE_KEY_PASSWORD,
 		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -3652,7 +3656,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		(object_class, PROP_PIN,
 		 g_param_spec_string (NM_SETTING_802_1X_PIN, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -3683,7 +3688,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		(object_class, PROP_SYSTEM_CA_CERTS,
 		 g_param_spec_boolean (NM_SETTING_802_1X_SYSTEM_CA_CERTS, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/* Initialize crypto lbrary. */

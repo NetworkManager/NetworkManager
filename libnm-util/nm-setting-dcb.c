@@ -985,7 +985,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		(object_class, PROP_APP_FCOE_PRIORITY,
 		 g_param_spec_int (NM_SETTING_DCB_APP_FCOE_PRIORITY, "", "",
 		                   -1, 7, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1000,7 +1001,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		(object_class, PROP_APP_FCOE_MODE,
 		 g_param_spec_string (NM_SETTING_DCB_APP_FCOE_MODE, "", "",
 		                      NM_SETTING_DCB_FCOE_MODE_FABRIC,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1032,7 +1034,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		(object_class, PROP_APP_ISCSI_PRIORITY,
 		 g_param_spec_int (NM_SETTING_DCB_APP_ISCSI_PRIORITY, "", "",
 		                   -1, 7, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1064,7 +1067,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		(object_class, PROP_APP_FIP_PRIORITY,
 		 g_param_spec_int (NM_SETTING_DCB_APP_FIP_PRIORITY, "", "",
 		                   -1, 7, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1201,4 +1205,3 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                             G_PARAM_READWRITE |
 		                             G_PARAM_STATIC_STRINGS));
 }
-

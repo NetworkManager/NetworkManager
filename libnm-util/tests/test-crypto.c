@@ -275,7 +275,7 @@ is_cipher_aes (const char *path)
 	}
 
 	g_free (contents);
-        return is_aes;
+	return is_aes;
 }
 
 static void

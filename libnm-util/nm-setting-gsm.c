@@ -421,7 +421,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE (object);
 	char *tmp;
@@ -480,7 +480,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingGsm *setting = NM_SETTING_GSM (object);
 
@@ -581,7 +581,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		(object_class, PROP_PASSWORD,
 		 g_param_spec_string (NM_SETTING_GSM_PASSWORD, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -654,7 +655,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                   NM_SETTING_GSM_NETWORK_TYPE_ANY,
 		                   NM_SETTING_GSM_NETWORK_TYPE_4G,
 		                   NM_SETTING_GSM_NETWORK_TYPE_ANY,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -673,7 +675,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                    NM_SETTING_GSM_BAND_UNKNOWN,
 		                    NM_SETTING_GSM_BANDS_MAX,
 		                    NM_SETTING_GSM_BAND_ANY,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -687,7 +690,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		(object_class, PROP_PIN,
 		 g_param_spec_string (NM_SETTING_GSM_PIN, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**

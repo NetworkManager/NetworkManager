@@ -133,7 +133,7 @@ gboolean    nm_setting_connection_remove_permission_by_value (NMSettingConnectio
 
 const char *nm_setting_connection_get_master           (NMSettingConnection *setting);
 gboolean    nm_setting_connection_is_slave_type        (NMSettingConnection *setting,
-							const char *type);
+                                                        const char *type);
 const char *nm_setting_connection_get_slave_type       (NMSettingConnection *setting);
 
 guint32     nm_setting_connection_get_num_secondaries  (NMSettingConnection *setting);

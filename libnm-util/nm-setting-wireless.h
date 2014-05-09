@@ -152,11 +152,11 @@ guint32           nm_setting_wireless_get_mtu                (NMSettingWireless 
 gboolean          nm_setting_wireless_get_hidden             (NMSettingWireless *setting);
 
 gboolean          nm_setting_wireless_add_seen_bssid         (NMSettingWireless *setting,
-															  const char *bssid);
+                                                              const char *bssid);
 
 guint32           nm_setting_wireless_get_num_seen_bssids    (NMSettingWireless *setting);
 const char       *nm_setting_wireless_get_seen_bssid         (NMSettingWireless *setting,
-															  guint32 i);
+                                                              guint32 i);
 
 gboolean          nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
                                                               NMSettingWirelessSecurity *s_wireless_sec,

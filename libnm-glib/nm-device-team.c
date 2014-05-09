@@ -93,9 +93,9 @@ nm_device_team_new (DBusGConnection *connection, const char *path)
 	g_return_val_if_fail (path != NULL, NULL);
 
 	device = g_object_new (NM_TYPE_DEVICE_TEAM,
-			       NM_OBJECT_DBUS_CONNECTION, connection,
-			       NM_OBJECT_DBUS_PATH, path,
-			       NULL);
+	                       NM_OBJECT_DBUS_CONNECTION, connection,
+	                       NM_OBJECT_DBUS_PATH, path,
+	                       NULL);
 	_nm_object_ensure_inited (NM_OBJECT (device));
 	return device;
 }

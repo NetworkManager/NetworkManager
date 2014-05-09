@@ -1065,7 +1065,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_set_error_literal (error,
 			                     NM_SETTING_WIRELESS_SECURITY_ERROR,
 			                     NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-			                    _("property is invalid"));
+			                     _("property is invalid"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
 			return FALSE;
 		}
@@ -1180,7 +1180,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingWirelessSecurity *setting = NM_SETTING_WIRELESS_SECURITY (object);
 	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
@@ -1260,7 +1260,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingWirelessSecurity *setting = NM_SETTING_WIRELESS_SECURITY (object);
 	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
@@ -1354,7 +1354,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		(object_class, PROP_KEY_MGMT,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_REQUIRED |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_REQUIRED |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1369,7 +1370,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		(object_class, PROP_WEP_TX_KEYIDX,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, "", "",
 		                    0, 3, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1455,7 +1457,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		(object_class, PROP_WEP_KEY0,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1468,7 +1471,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		(object_class, PROP_WEP_KEY1,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY1, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1481,7 +1485,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		(object_class, PROP_WEP_KEY2,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY2, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1494,7 +1499,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		(object_class, PROP_WEP_KEY3,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1527,7 +1533,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		(object_class, PROP_PSK,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_PSK, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1555,7 +1562,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		(object_class, PROP_LEAP_PASSWORD,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1589,6 +1597,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		                    NM_WEP_KEY_TYPE_UNKNOWN,
 		                    NM_WEP_KEY_TYPE_LAST,
 		                    NM_WEP_KEY_TYPE_UNKNOWN,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
 }

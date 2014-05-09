@@ -183,7 +183,7 @@ void                   nm_ip6_route_set_dest     (NMIP6Route *route,
 
 guint32                nm_ip6_route_get_prefix   (NMIP6Route *route);
 void                   nm_ip6_route_set_prefix   (NMIP6Route *route,
-                                        guint32 prefix);
+                                                  guint32 prefix);
 
 const struct in6_addr *nm_ip6_route_get_next_hop (NMIP6Route *route);
 void                   nm_ip6_route_set_next_hop (NMIP6Route *route,

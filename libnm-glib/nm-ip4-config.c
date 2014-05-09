@@ -396,7 +396,7 @@ nm_ip4_config_get_nameservers (NMIP4Config *config)
  *
  * Gets the domain names.
  *
- * Returns: (element-type utf8): the #GPtrArray containing domains as strings. This is the 
+ * Returns: (element-type utf8): the #GPtrArray containing domains as strings. This is the
  * internal copy used by the configuration, and must not be modified.
  **/
 const GPtrArray *
@@ -465,4 +465,3 @@ nm_ip4_config_get_routes (NMIP4Config *config)
 	_nm_object_ensure_inited (NM_OBJECT (config));
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->routes;
 }
-

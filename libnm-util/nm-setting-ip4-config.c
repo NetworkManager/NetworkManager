@@ -1071,7 +1071,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingIP4Config *setting = NM_SETTING_IP4_CONFIG (object);
 	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
@@ -1149,7 +1149,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingIP4Config *setting = NM_SETTING_IP4_CONFIG (object);
 	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
@@ -1235,7 +1235,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_METHOD,
 		 g_param_spec_string (NM_SETTING_IP4_CONFIG_METHOD, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1287,7 +1288,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_ADDRESSES,
 		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ADDRESSES, "", "",
 		                             DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1299,7 +1301,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_ADDRESS_LABELS,
 		 _nm_param_spec_specialized ("address-labels", "", "",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1318,7 +1321,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_ROUTES,
 		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ROUTES, "", "",
 		                             DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1332,7 +1336,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_IGNORE_AUTO_ROUTES,
 		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1348,7 +1353,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_IGNORE_AUTO_DNS,
 		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1377,7 +1383,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_DHCP_SEND_HOSTNAME,
 		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME, "", "",
 		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1390,7 +1397,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_DHCP_HOSTNAME,
 		 g_param_spec_string (NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1403,7 +1411,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_NEVER_DEFAULT,
 		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1420,7 +1429,8 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_MAY_FAIL,
 		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_MAY_FAIL, "", "",
 		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 }
 
@@ -1883,4 +1893,3 @@ nm_ip4_route_set_metric (NMIP4Route *route, guint32 metric)
 
 	route->metric = metric;
 }
-

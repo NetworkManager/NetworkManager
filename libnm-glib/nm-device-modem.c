@@ -34,9 +34,7 @@
 
 G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                        NM_TYPE_DEVICE_MODEM, \
-                                        NMDeviceModemPrivate))
+#define NM_DEVICE_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MODEM, NMDeviceModemPrivate))
 
 typedef struct {
 	DBusGProxy *proxy;
@@ -291,4 +289,3 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 }
-

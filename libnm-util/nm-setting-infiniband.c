@@ -401,7 +401,8 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 		(object_class, PROP_MAC_ADDRESS,
 		 _nm_param_spec_specialized (NM_SETTING_INFINIBAND_MAC_ADDRESS, "", "",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -414,7 +415,9 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 		(object_class, PROP_MTU,
 		 g_param_spec_uint (NM_SETTING_INFINIBAND_MTU, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -427,7 +430,9 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 		(object_class, PROP_TRANSPORT_MODE,
 		 g_param_spec_string (NM_SETTING_INFINIBAND_TRANSPORT_MODE, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -442,7 +447,9 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 		(object_class, PROP_P_KEY,
 		 g_param_spec_int (NM_SETTING_INFINIBAND_P_KEY, "", "",
 		                   -1, 0xFFFF, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
+		                   NM_SETTING_PARAM_INFERRABLE |
 		                   G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -457,7 +464,9 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 		(object_class, PROP_PARENT,
 		 g_param_spec_string (NM_SETTING_INFINIBAND_PARENT, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 }

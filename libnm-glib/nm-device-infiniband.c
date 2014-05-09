@@ -87,9 +87,9 @@ nm_device_infiniband_new (DBusGConnection *connection, const char *path)
 	g_return_val_if_fail (path != NULL, NULL);
 
 	device = g_object_new (NM_TYPE_DEVICE_INFINIBAND,
-						   NM_OBJECT_DBUS_CONNECTION, connection,
-						   NM_OBJECT_DBUS_PATH, path,
-						   NULL);
+	                       NM_OBJECT_DBUS_CONNECTION, connection,
+	                       NM_OBJECT_DBUS_PATH, path,
+	                       NULL);
 	_nm_object_ensure_inited (NM_OBJECT (device));
 	return device;
 }
@@ -309,4 +309,3 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *eth_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 }
-

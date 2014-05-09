@@ -417,7 +417,7 @@ clean_up_aps (NMDeviceWifi *self, gboolean notify)
  **/
 void
 _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device,
-                                                gboolean enabled)
+                                      gboolean enabled)
 {
 	g_return_if_fail (NM_IS_DEVICE_WIFI (device));
 
@@ -811,13 +811,13 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	signals[ACCESS_POINT_ADDED] =
 		g_signal_new ("access-point-added",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_added),
-				    NULL, NULL,
-				    g_cclosure_marshal_VOID__OBJECT,
-				    G_TYPE_NONE, 1,
-				    G_TYPE_OBJECT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_added),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
 
 	/**
 	 * NMDeviceWifi::access-point-removed:
@@ -828,11 +828,11 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	signals[ACCESS_POINT_REMOVED] =
 		g_signal_new ("access-point-removed",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_removed),
-				    NULL, NULL,
-				    g_cclosure_marshal_VOID__OBJECT,
-				    G_TYPE_NONE, 1,
-				    G_TYPE_OBJECT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_removed),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
 }

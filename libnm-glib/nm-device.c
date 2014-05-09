@@ -344,9 +344,9 @@ constructed (GObject *object)
 	register_properties (NM_DEVICE (object));
 
 	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
-									   G_TYPE_NONE,
-									   G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
-									   G_TYPE_INVALID);
+	                                   G_TYPE_NONE,
+	                                   G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
+	                                   G_TYPE_INVALID);
 
 	dbus_g_proxy_add_signal (priv->proxy,
 	                         "StateChanged",
@@ -354,9 +354,9 @@ constructed (GObject *object)
 	                         G_TYPE_INVALID);
 
 	dbus_g_proxy_connect_signal (priv->proxy, "StateChanged",
-								 G_CALLBACK (device_state_changed),
-								 NM_DEVICE (object),
-								 NULL);
+	                             G_CALLBACK (device_state_changed),
+	                             NM_DEVICE (object),
+	                             NULL);
 }
 
 static void
@@ -845,12 +845,12 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	signals[STATE_CHANGED] =
 		g_signal_new ("state-changed",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMDeviceClass, state_changed),
-				    NULL, NULL, NULL,
-				    G_TYPE_NONE, 3,
-				    G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMDeviceClass, state_changed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 3,
+		              G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
 
 /**
@@ -2161,7 +2161,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	device_iface = nm_device_get_iface (device);
 	if (config_iface && g_strcmp0 (config_iface, device_iface) != 0) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INTERFACE_MISMATCH,
-					 "The interface names of the device and the connection didn't match.");
+		             "The interface names of the device and the connection didn't match.");
 		return FALSE;
 	}
 

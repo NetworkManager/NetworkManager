@@ -476,7 +476,7 @@ update_secret_hash (NMSetting *setting,
 		if (!value || !strlen (value)) {
 			g_set_error (error, NM_SETTING_ERROR,
 			             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
-				         "Secret %s value was empty", name);
+			             "Secret %s value was empty", name);
 			return NM_SETTING_UPDATE_SECRET_ERROR;
 		}
 	}
@@ -656,9 +656,9 @@ compare_property (NMSetting *setting,
 
 static gboolean
 clear_secrets_with_flags (NMSetting *setting,
-	                      GParamSpec *pspec,
-	                      NMSettingClearSecretsWithFlagsFn func,
-	                      gpointer user_data)
+                          GParamSpec *pspec,
+                          NMSettingClearSecretsWithFlagsFn func,
+                          gpointer user_data)
 {
 	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 	GHashTableIter iter;
@@ -728,7 +728,7 @@ copy_hash (gpointer key, gpointer value, gpointer user_data)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (object);
 	GHashTable *new_hash;
@@ -764,7 +764,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingVPN *setting = NM_SETTING_VPN (object);
 	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
@@ -864,7 +864,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 		(object_class, PROP_SECRETS,
 		 _nm_param_spec_specialized (NM_SETTING_VPN_SECRETS, "", "",
 		                             DBUS_TYPE_G_MAP_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_SECRET |
 		                             G_PARAM_STATIC_STRINGS));
 }
-

@@ -102,4 +102,3 @@ _nm_dbus_new_proxy_for_connection (DBusGConnection *connection,
 
 	return dbus_g_proxy_new_for_name (connection, NM_DBUS_SERVICE, path, interface);
 }
-

@@ -31,4 +31,3 @@ typedef enum {
 } NMRemoteConnectionInitResult;
 
 #endif  /* __NM_REMOTE_CONNECTION_PRIVATE__ */
-

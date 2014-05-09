@@ -264,7 +264,9 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 		(object_class, PROP_PRIORITY,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PRIORITY, "", "",
 		                    0, BR_MAX_PORT_PRIORITY, BR_DEF_PRIORITY,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_INFERRABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -279,7 +281,9 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 		(object_class, PROP_PATH_COST,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PATH_COST, "", "",
 		                    0, BR_MAX_PATH_COST, 100,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_INFERRABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -294,6 +298,7 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 		(object_class, PROP_HAIRPIN_MODE,
 		 g_param_spec_boolean (NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                       G_PARAM_READWRITE |
+		                       NM_SETTING_PARAM_INFERRABLE |
 		                       G_PARAM_STATIC_STRINGS));
 }

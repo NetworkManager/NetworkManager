@@ -86,4 +86,3 @@ _nm_object_cache_clear (NMObject *except)
 		}
 	}
 }
-

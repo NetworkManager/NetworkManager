@@ -230,9 +230,9 @@ nm_object_array_get_type (void)
 
 gboolean
 _nm_object_array_demarshal (GValue *value,
-                           GPtrArray **dest,
-                           DBusGConnection *connection,
-                           NMObjectCreatorFunc func)
+                            GPtrArray **dest,
+                            DBusGConnection *connection,
+                            NMObjectCreatorFunc func)
 {
 	GPtrArray *temp = NULL;
 	GPtrArray *array;
@@ -417,4 +417,3 @@ nm_ip6_route_object_array_get_type (void)
 		                                         (GBoxedFreeFunc) _nm_ip6_route_object_array_free);
 	return our_type;
 }
-

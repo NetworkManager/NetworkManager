@@ -171,7 +171,7 @@ const struct in6_addr *
 nm_setting_ip6_config_get_dns (NMSettingIP6Config *setting, guint32 i)
 {
 	NMSettingIP6ConfigPrivate *priv;
-	
+
 
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
@@ -902,7 +902,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (object);
 
@@ -954,7 +954,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (object);
 
@@ -1031,7 +1031,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		(object_class, PROP_METHOD,
 		 g_param_spec_string (NM_SETTING_IP6_CONFIG_METHOD, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1101,7 +1102,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		(object_class, PROP_ADDRESSES,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ADDRESSES, "", "",
 		                             DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1120,7 +1122,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		(object_class, PROP_ROUTES,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ROUTES, "", "",
 		                             DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1134,7 +1137,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		(object_class, PROP_IGNORE_AUTO_ROUTES,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1150,7 +1154,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		(object_class, PROP_IGNORE_AUTO_DNS,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1164,7 +1169,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		(object_class, PROP_NEVER_DEFAULT,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1181,7 +1187,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		(object_class, PROP_MAY_FAIL,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_MAY_FAIL, "", "",
 		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1201,7 +1208,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		                   NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
 		                   NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
 		                   NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));
 }
 

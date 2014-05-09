@@ -282,4 +282,3 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 }
-

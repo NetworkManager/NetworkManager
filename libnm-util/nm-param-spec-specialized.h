@@ -35,9 +35,9 @@ typedef struct _NMParamSpecSpecialized NMParamSpecSpecialized;
 GType _nm_param_spec_specialized_get_type (void);
 
 GParamSpec *_nm_param_spec_specialized (const char *name,
-							    const char *nick,
-							    const char *blurb,
-							    GType specialized_type,
-							    GParamFlags flags);
+                                        const char *nick,
+                                        const char *blurb,
+                                        GType specialized_type,
+                                        GParamFlags flags);
 
 #endif /* NM_PARAM_SPEC_SPECIALIZED_H */

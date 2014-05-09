@@ -179,7 +179,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingWimaxPrivate *priv = NM_SETTING_WIMAX_GET_PRIVATE (object);
 
@@ -201,7 +201,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingWimax *setting = NM_SETTING_WIMAX (object);
 

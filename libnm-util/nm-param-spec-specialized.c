@@ -243,7 +243,7 @@ static void
 iterate_collection (const GValue *value, gpointer user_data)
 {
 	GSList **list = (GSList **) user_data;
-	
+
 	*list = g_slist_prepend (*list, _gvalue_dup (value));
 }
 
@@ -283,8 +283,8 @@ _gvalues_compare_collection (const GValue *value1, const GValue *value2)
 			GSList *iter2;
 
 			for (iter1 = list1, iter2 = list2, ret = 0;
-				ret == 0 && iter1 && iter2; 
-				iter1 = iter1->next, iter2 = iter2->next)
+			     ret == 0 && iter1 && iter2;
+			     iter1 = iter1->next, iter2 = iter2->next)
 				ret = _gvalues_compare ((GValue *) iter1->data, (GValue *) iter2->data);
 		}
 
@@ -297,8 +297,8 @@ _gvalues_compare_collection (const GValue *value1, const GValue *value2)
 
 static void
 iterate_map (const GValue *key_val,
-		   const GValue *value_val,
-		   gpointer user_data)
+             const GValue *value_val,
+             gpointer user_data)
 {
 	GHashTable **hash = (GHashTable **) user_data;
 
@@ -337,7 +337,7 @@ _gvalues_compare_map (const GValue *value1, const GValue *value2)
 
 	if (dbus_g_type_get_map_key_specialization (G_VALUE_TYPE (value1)) != G_TYPE_STRING) {
 		g_warning ("Can not compare maps with '%s' for keys",
-				 g_type_name (dbus_g_type_get_map_key_specialization (G_VALUE_TYPE (value1))));
+		           g_type_name (dbus_g_type_get_map_key_specialization (G_VALUE_TYPE (value1))));
 		return 0;
 	}
 
@@ -525,7 +525,7 @@ _gvalues_compare (const GValue *value1, const GValue *value2)
 
 	if (type_is_fixed_size (type1, NULL))
 		ret = _gvalues_compare_fixed (value1, value2);
-	else if (type1 == G_TYPE_STRING) 
+	else if (type1 == G_TYPE_STRING)
 		ret = _gvalues_compare_string (value1, value2);
 	else if (G_VALUE_HOLDS_BOXED (value1)) {
 		gpointer p1 = g_value_get_boxed (value1);
@@ -589,8 +589,8 @@ param_specialized_validate (GParamSpec *pspec, GValue *value)
 
 static gint
 param_specialized_values_cmp (GParamSpec *pspec,
-						const GValue *value1,
-						const GValue *value2)
+                              const GValue *value1,
+                              const GValue *value2)
 {
 	return _gvalues_compare (value1, value2);
 }
@@ -619,17 +619,17 @@ _nm_param_spec_specialized_get_type (void)
 
 GParamSpec *
 _nm_param_spec_specialized (const char *name,
-					  const char *nick,
-					  const char *blurb,
-					  GType specialized_type,
-					  GParamFlags flags)
+                            const char *nick,
+                            const char *blurb,
+                            GType specialized_type,
+                            GParamFlags flags)
 {
 	NMParamSpecSpecialized *pspec;
 
 	g_return_val_if_fail (g_type_is_a (specialized_type, G_TYPE_BOXED), NULL);
 
 	pspec = g_param_spec_internal (NM_TYPE_PARAM_SPEC_SPECIALIZED,
-							 name, nick, blurb, flags);
+	                               name, nick, blurb, flags);
 
 	G_PARAM_SPEC (pspec)->value_type = specialized_type;
 

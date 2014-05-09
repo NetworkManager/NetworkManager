@@ -86,9 +86,9 @@ nm_access_point_new (DBusGConnection *connection, const char *path)
 	g_return_val_if_fail (path != NULL, NULL);
 
 	return (GObject *) g_object_new (NM_TYPE_ACCESS_POINT,
-								    NM_OBJECT_DBUS_CONNECTION, connection,
-								    NM_OBJECT_DBUS_PATH, path,
-								    NULL);
+	                                 NM_OBJECT_DBUS_CONNECTION, connection,
+	                                 NM_OBJECT_DBUS_PATH, path,
+	                                 NULL);
 }
 
 /**

@@ -31,11 +31,11 @@
 /*
  * dbus services details
  */
-#define	NM_DBUS_SERVICE                     "org.freedesktop.NetworkManager"
+#define NM_DBUS_SERVICE                     "org.freedesktop.NetworkManager"
 
-#define	NM_DBUS_PATH                        "/org/freedesktop/NetworkManager"
-#define	NM_DBUS_INTERFACE                   "org.freedesktop.NetworkManager"
-#define	NM_DBUS_INTERFACE_DEVICE            NM_DBUS_INTERFACE ".Device"
+#define NM_DBUS_PATH                        "/org/freedesktop/NetworkManager"
+#define NM_DBUS_INTERFACE                   "org.freedesktop.NetworkManager"
+#define NM_DBUS_INTERFACE_DEVICE            NM_DBUS_INTERFACE ".Device"
 #define NM_DBUS_INTERFACE_DEVICE_WIRED      NM_DBUS_INTERFACE_DEVICE ".Wired"
 #define NM_DBUS_INTERFACE_DEVICE_ADSL       NM_DBUS_INTERFACE_DEVICE ".Adsl"
 #define NM_DBUS_INTERFACE_DEVICE_WIRELESS   NM_DBUS_INTERFACE_DEVICE ".Wireless"
@@ -216,7 +216,7 @@ typedef enum {
  * @NM_802_11_AP_FLAGS_PRIVACY: access point requires authentication and
  * encryption (usually means WEP)
  *
- * 802.11 access point flags. 
+ * 802.11 access point flags.
  **/
 typedef enum {
 	NM_802_11_AP_FLAGS_NONE    = 0x00000000,
@@ -239,7 +239,7 @@ typedef enum {
  * @NM_802_11_AP_SEC_GROUP_TKIP: TKIP is supported for group/broadcast encryption
  * @NM_802_11_AP_SEC_GROUP_CCMP: AES/CCMP is supported for group/broadcast
  * encryption
- * @NM_802_11_AP_SEC_KEY_MGMT_PSK: WPA/RSN Pre-Shared Key encryption is 
+ * @NM_802_11_AP_SEC_KEY_MGMT_PSK: WPA/RSN Pre-Shared Key encryption is
  * supported
  * @NM_802_11_AP_SEC_KEY_MGMT_802_1X: 802.1x authentication and key management
  * is supported
@@ -592,4 +592,3 @@ typedef enum {
 } NMActiveConnectionState;
 
 #endif /* NETWORK_MANAGER_H */
-

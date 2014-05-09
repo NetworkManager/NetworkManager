@@ -68,9 +68,9 @@ GObject *
 nm_ip6_config_new (DBusGConnection *connection, const char *object_path)
 {
 	return (GObject *) g_object_new (NM_TYPE_IP6_CONFIG,
-									 NM_OBJECT_DBUS_CONNECTION, connection,
-									 NM_OBJECT_DBUS_PATH, object_path,
-									 NULL);
+	                                 NM_OBJECT_DBUS_CONNECTION, connection,
+	                                 NM_OBJECT_DBUS_PATH, object_path,
+	                                 NULL);
 }
 
 static gboolean
@@ -491,4 +491,3 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	                         G_PARAM_STATIC_STRINGS));
 
 }
-

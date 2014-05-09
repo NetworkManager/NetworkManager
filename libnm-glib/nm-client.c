@@ -114,10 +114,10 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 static void proxy_name_owner_changed (DBusGProxy *proxy,
-									  const char *name,
-									  const char *old_owner,
-									  const char *new_owner,
-									  gpointer user_data);
+                                      const char *name,
+                                      const char *old_owner,
+                                      const char *new_owner,
+                                      gpointer user_data);
 
 /**********************************************************************/
 
@@ -785,7 +785,7 @@ nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
  *  containing all the active #NMActiveConnections.
  * The returned array is owned by the client and should not be modified.
  **/
-const GPtrArray * 
+const GPtrArray *
 nm_client_get_active_connections (NMClient *client)
 {
 	NMClientPrivate *priv;
@@ -1339,10 +1339,10 @@ updated_properties (GObject *object, GAsyncResult *result, gpointer user_data)
 
 static void
 proxy_name_owner_changed (DBusGProxy *proxy,
-						  const char *name,
-						  const char *old_owner,
-						  const char *new_owner,
-						  gpointer user_data)
+                          const char *name,
+                          const char *old_owner,
+                          const char *new_owner,
+                          gpointer user_data)
 {
 	NMClient *client = NM_CLIENT (user_data);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
@@ -1782,7 +1782,7 @@ constructor (GType type,
 			} else {
 				if (!_nm_client_is_object_path (dbus_path)) {
 					g_warning ("Passsed D-Bus object path '%s' is invalid; using default '%s' instead",
-					            dbus_path, NM_DBUS_PATH);
+					           dbus_path, NM_DBUS_PATH);
 					g_value_set_static_string (construct_params[i].value, NM_DBUS_PATH);
 				}
 			}
@@ -1966,8 +1966,8 @@ init_async_got_manager_running (DBusGProxy *proxy, DBusGProxyCall *call,
 
 static void
 init_async (GAsyncInitable *initable, int io_priority,
-			GCancellable *cancellable, GAsyncReadyCallback callback,
-			gpointer user_data)
+            GCancellable *cancellable, GAsyncReadyCallback callback,
+            gpointer user_data)
 {
 	NMClientInitData *init_data;
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (initable);
@@ -1983,10 +1983,10 @@ init_async (GAsyncInitable *initable, int io_priority,
 	else {
 		/* Check if NM is running */
 		dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
-			                     init_async_got_manager_running,
-			                     init_data, NULL,
-			                     G_TYPE_STRING, NM_DBUS_SERVICE,
-			                     G_TYPE_INVALID);
+		                         init_async_got_manager_running,
+		                         init_data, NULL,
+		                         G_TYPE_STRING, NM_DBUS_SERVICE,
+		                         G_TYPE_INVALID);
 	}
 }
 
@@ -2041,7 +2041,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 	gboolean b;
@@ -2380,12 +2380,12 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	signals[DEVICE_ADDED] =
 		g_signal_new ("device-added",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMClientClass, device_added),
-					  NULL, NULL, NULL,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_OBJECT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMClientClass, device_added),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
 
 	/**
 	 * NMClient::device-removed:

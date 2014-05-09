@@ -123,4 +123,3 @@ NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
                                           GError    **error);
 
 #endif  /* NM_SETTING_PRIVATE_H */
-

@@ -112,9 +112,9 @@ nm_device_wimax_new (DBusGConnection *connection, const char *path)
 	g_return_val_if_fail (path != NULL, NULL);
 
 	device = g_object_new (NM_TYPE_DEVICE_WIMAX,
-						   NM_OBJECT_DBUS_CONNECTION, connection,
-						   NM_OBJECT_DBUS_PATH, path,
-						   NULL);
+	                       NM_OBJECT_DBUS_CONNECTION, connection,
+	                       NM_OBJECT_DBUS_PATH, path,
+	                       NULL);
 	_nm_object_ensure_inited (NM_OBJECT (device));
 	return device;
 }
@@ -202,7 +202,7 @@ nm_device_wimax_get_nsps (NMDeviceWimax *wimax)
  **/
 NMWimaxNsp *
 nm_device_wimax_get_nsp_by_path (NMDeviceWimax *wimax,
-								 const char *path)
+                                 const char *path)
 {
 	const GPtrArray *nsps;
 	int i;
@@ -728,13 +728,13 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 **/
 	signals[NSP_ADDED] =
 		g_signal_new ("nsp-added",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMDeviceWimaxClass, nsp_added),
-				    NULL, NULL,
-				    g_cclosure_marshal_VOID__OBJECT,
-				    G_TYPE_NONE, 1,
-				    G_TYPE_OBJECT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMDeviceWimaxClass, nsp_added),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
 
 	/**
 	 * NMDeviceWimax::nsp-removed:
@@ -745,11 +745,11 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 **/
 	signals[NSP_REMOVED] =
 		g_signal_new ("nsp-removed",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMDeviceWimaxClass, nsp_removed),
-				    NULL, NULL,
-				    g_cclosure_marshal_VOID__OBJECT,
-				    G_TYPE_NONE, 1,
-				    G_TYPE_OBJECT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMDeviceWimaxClass, nsp_removed),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
 }

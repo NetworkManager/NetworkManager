@@ -728,7 +728,7 @@ nm_setting_wireless_get_num_seen_bssids (NMSettingWireless *setting)
  **/
 const char *
 nm_setting_wireless_get_seen_bssid (NMSettingWireless *setting,
-									guint32 i)
+                                    guint32 i)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
 
@@ -891,7 +891,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (object);
 
@@ -959,7 +959,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingWireless *setting = NM_SETTING_WIRELESS (object);
 
@@ -1081,7 +1081,8 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		(object_class, PROP_CHANNEL,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_CHANNEL, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1111,7 +1112,9 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		(object_class, PROP_RATE,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_RATE, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1125,7 +1128,9 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		(object_class, PROP_TX_POWER,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_TX_POWER, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1166,7 +1171,8 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		(object_class, PROP_MAC_ADDRESS_BLACKLIST,
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, "", "",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_FUZZY_IGNORE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1183,7 +1189,8 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		(object_class, PROP_SEEN_BSSIDS,
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SEEN_BSSIDS, "", "",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_FUZZY_IGNORE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1196,7 +1203,9 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		(object_class, PROP_MTU,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_MTU, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**

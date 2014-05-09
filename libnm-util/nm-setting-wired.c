@@ -889,7 +889,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		(object_class, PROP_SPEED,
 		 g_param_spec_uint (NM_SETTING_WIRED_SPEED, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -916,7 +917,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		(object_class, PROP_AUTO_NEGOTIATE,
 		 g_param_spec_boolean (NM_SETTING_WIRED_AUTO_NEGOTIATE, "", "",
 		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -930,7 +932,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		(object_class, PROP_MAC_ADDRESS,
 		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS, "", "",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -943,7 +946,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		(object_class, PROP_CLONED_MAC_ADDRESS,
 		 _nm_param_spec_specialized (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "", "",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
     
 	/**
@@ -958,7 +962,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		(object_class, PROP_MAC_ADDRESS_BLACKLIST,
 		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, "", "",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_FUZZY_IGNORE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -971,7 +976,9 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		(object_class, PROP_MTU,
 		 g_param_spec_uint (NM_SETTING_WIRED_MTU, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_FUZZY_IGNORE |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -989,7 +996,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		(object_class, PROP_S390_SUBCHANNELS,
 		 _nm_param_spec_specialized (NM_SETTING_WIRED_S390_SUBCHANNELS, "", "",
 		                             DBUS_TYPE_G_ARRAY_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1002,7 +1010,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		(object_class, PROP_S390_NETTYPE,
 		 g_param_spec_string (NM_SETTING_WIRED_S390_NETTYPE, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1017,7 +1026,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		(object_class, PROP_S390_OPTIONS,
 		 _nm_param_spec_specialized (NM_SETTING_WIRED_S390_OPTIONS, "", "",
 		                             DBUS_TYPE_G_MAP_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 }
-

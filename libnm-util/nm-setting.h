@@ -315,4 +315,3 @@ const char *nm_setting_get_virtual_iface_name (NMSetting *setting);
 G_END_DECLS
 
 #endif /* NM_SETTING_H */
-

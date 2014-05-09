@@ -560,4 +560,3 @@ crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 	}
 	return TRUE;
 }
-

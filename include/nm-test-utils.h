@@ -681,4 +681,3 @@ nmtst_ip6_config_clone (NMIP6Config *config)
 
 
 #endif /* __NM_TEST_UTILS_H__ */
-

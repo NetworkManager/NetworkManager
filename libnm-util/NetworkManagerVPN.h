@@ -29,11 +29,11 @@
 /*
  * dbus services details
  */
-#define	NM_DBUS_PATH_VPN                  "/org/freedesktop/NetworkManager/VPN/Manager"
-#define	NM_DBUS_INTERFACE_VPN             "org.freedesktop.NetworkManager.VPN.Manager"
+#define NM_DBUS_PATH_VPN                  "/org/freedesktop/NetworkManager/VPN/Manager"
+#define NM_DBUS_INTERFACE_VPN             "org.freedesktop.NetworkManager.VPN.Manager"
 
-#define	NM_DBUS_PATH_VPN_CONNECTION       "/org/freedesktop/NetworkManager/VPN/Connection"
-#define	NM_DBUS_INTERFACE_VPN_CONNECTION  "org.freedesktop.NetworkManager.VPN.Connection"
+#define NM_DBUS_PATH_VPN_CONNECTION       "/org/freedesktop/NetworkManager/VPN/Connection"
+#define NM_DBUS_INTERFACE_VPN_CONNECTION  "org.freedesktop.NetworkManager.VPN.Connection"
 
 #define NM_VPN_DBUS_PLUGIN_PATH           "/org/freedesktop/NetworkManager/VPN/Plugin"
 #define NM_VPN_DBUS_PLUGIN_INTERFACE      "org.freedesktop.NetworkManager.VPN.Plugin"
@@ -41,37 +41,36 @@
 /*
  * VPN Errors
  */
-#define NM_DBUS_NO_ACTIVE_VPN_CONNECTION	"org.freedesktop.NetworkManager.VPNConnections.NoActiveVPNConnection"
-#define NM_DBUS_NO_VPN_CONNECTIONS			"org.freedesktop.NetworkManager.VPNConnections.NoVPNConnections"
-#define NM_DBUS_INVALID_VPN_CONNECTION		"org.freedesktop.NetworkManager.VPNConnections.InvalidVPNConnection"
+#define NM_DBUS_NO_ACTIVE_VPN_CONNECTION "org.freedesktop.NetworkManager.VPNConnections.NoActiveVPNConnection"
+#define NM_DBUS_NO_VPN_CONNECTIONS       "org.freedesktop.NetworkManager.VPNConnections.NoVPNConnections"
+#define NM_DBUS_INVALID_VPN_CONNECTION   "org.freedesktop.NetworkManager.VPNConnections.InvalidVPNConnection"
 
-#define NM_DBUS_VPN_ERROR_PREFIX		"org.freedesktop.NetworkManager.VPN.Error"
-#define NM_DBUS_VPN_STARTING_IN_PROGRESS	"StartingInProgress"
-#define NM_DBUS_VPN_ALREADY_STARTED		"AlreadyStarted"
-#define NM_DBUS_VPN_STOPPING_IN_PROGRESS	"StoppingInProgress"
-#define NM_DBUS_VPN_ALREADY_STOPPED		"AlreadyStopped"
-#define NM_DBUS_VPN_WRONG_STATE			"WrongState"
-#define NM_DBUS_VPN_BAD_ARGUMENTS			"BadArguments"
-#define NM_DBUS_VPN_INTERACTIVE_NOT_SUPPORTED	"InteractiveNotSupported"
+#define NM_DBUS_VPN_ERROR_PREFIX              "org.freedesktop.NetworkManager.VPN.Error"
+#define NM_DBUS_VPN_STARTING_IN_PROGRESS      "StartingInProgress"
+#define NM_DBUS_VPN_ALREADY_STARTED           "AlreadyStarted"
+#define NM_DBUS_VPN_STOPPING_IN_PROGRESS      "StoppingInProgress"
+#define NM_DBUS_VPN_ALREADY_STOPPED           "AlreadyStopped"
+#define NM_DBUS_VPN_WRONG_STATE               "WrongState"
+#define NM_DBUS_VPN_BAD_ARGUMENTS             "BadArguments"
+#define NM_DBUS_VPN_INTERACTIVE_NOT_SUPPORTED "InteractiveNotSupported"
 
 
 /*
  * VPN daemon signals
  */
-#define NM_DBUS_VPN_SIGNAL_LOGIN_BANNER		"LoginBanner"
-#define NM_DBUS_VPN_SIGNAL_LOGIN_FAILED		"LoginFailed"
-#define NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED	"LaunchFailed"
-#define NM_DBUS_VPN_SIGNAL_CONNECT_FAILED	"ConnectFailed"
-#define NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD	"VPNConfigBad"
-#define NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD	"IPConfigBad"
-#define NM_DBUS_VPN_SIGNAL_STATE_CHANGE		"StateChange"
-#define NM_DBUS_VPN_SIGNAL_IP4_CONFIG		"IP4Config"
+#define NM_DBUS_VPN_SIGNAL_LOGIN_BANNER   "LoginBanner"
+#define NM_DBUS_VPN_SIGNAL_LOGIN_FAILED   "LoginFailed"
+#define NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED  "LaunchFailed"
+#define NM_DBUS_VPN_SIGNAL_CONNECT_FAILED "ConnectFailed"
+#define NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD "VPNConfigBad"
+#define NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD  "IPConfigBad"
+#define NM_DBUS_VPN_SIGNAL_STATE_CHANGE   "StateChange"
+#define NM_DBUS_VPN_SIGNAL_IP4_CONFIG     "IP4Config"
 
 /*
  * VPN daemon states
  */
-typedef enum NMVPNServiceState
-{
+typedef enum NMVPNServiceState {
 	NM_VPN_SERVICE_STATE_UNKNOWN = 0,
 	NM_VPN_SERVICE_STATE_INIT,
 	NM_VPN_SERVICE_STATE_SHUTDOWN,
@@ -85,8 +84,7 @@ typedef enum NMVPNServiceState
 /*
  * VPN connection states
  */
-typedef enum NMVPNConnectionState
-{
+typedef enum NMVPNConnectionState {
 	NM_VPN_CONNECTION_STATE_UNKNOWN = 0,
 	NM_VPN_CONNECTION_STATE_PREPARE,
 	NM_VPN_CONNECTION_STATE_NEED_AUTH,
@@ -97,8 +95,7 @@ typedef enum NMVPNConnectionState
 	NM_VPN_CONNECTION_STATE_DISCONNECTED
 } NMVPNConnectionState;
 
-typedef enum NMVPNConnectionStateReason
-{
+typedef enum NMVPNConnectionStateReason {
 	NM_VPN_CONNECTION_STATE_REASON_UNKNOWN = 0,
 	NM_VPN_CONNECTION_STATE_REASON_NONE,
 	NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED,

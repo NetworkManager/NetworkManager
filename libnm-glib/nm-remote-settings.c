@@ -141,7 +141,7 @@ typedef struct {
 
 	/* AddConnectionInfo objects that are waiting for the connection to become initialized */
 	GSList *add_list;
-	
+
 	DBusGProxy *props_proxy;
 	char *hostname;
 	gboolean can_modify;
@@ -204,7 +204,7 @@ _nm_remote_settings_ensure_inited (NMRemoteSettings *self)
 			 */
 			if (!g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NO_REPLY)) {
 				g_warning ("%s: (NMRemoteSettings) error initializing: %s\n",
-					       __func__, error->message);
+				           __func__, error->message);
 			}
 			g_error_free (error);
 		}
@@ -557,7 +557,7 @@ fetch_connections_done (DBusGProxy *proxy,
 	g_warn_if_fail (priv->listcon_call == call);
 	priv->listcon_call = NULL;
 
-	if (!dbus_g_proxy_end_call (proxy, call, &error, 
+	if (!dbus_g_proxy_end_call (proxy, call, &error,
 	                            DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &connections,
 	                            G_TYPE_INVALID)) {
 		if (   !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN)
@@ -565,8 +565,8 @@ fetch_connections_done (DBusGProxy *proxy,
 		    && priv->service_running) {
 			g_warning ("%s: error fetching connections: (%d) %s.",
 			           __func__,
-				       error->code,
-				       error->message ? error->message : "(unknown)");
+			           error->code,
+			           error->message ? error->message : "(unknown)");
 		}
 		g_clear_error (&error);
 
@@ -937,7 +937,7 @@ nm_remote_settings_save_hostname (NMRemoteSettings *settings,
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
 	g_return_val_if_fail (hostname != NULL, FALSE);
 	g_return_val_if_fail (callback != NULL, FALSE);
-	
+
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
 	_nm_remote_settings_ensure_inited (settings);
@@ -1352,8 +1352,8 @@ init_async_got_manager_running (DBusGProxy *proxy, DBusGProxyCall *call,
 
 static void
 init_async (GAsyncInitable *initable, int io_priority,
-			GCancellable *cancellable, GAsyncReadyCallback callback,
-			gpointer user_data)
+            GCancellable *cancellable, GAsyncReadyCallback callback,
+            gpointer user_data)
 {
 	NMRemoteSettingsInitData *init_data;
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (initable);
@@ -1486,7 +1486,8 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		(object_class, PROP_BUS,
 		 g_param_spec_boxed (NM_REMOTE_SETTINGS_BUS, "", "",
 		                     DBUS_TYPE_G_CONNECTION,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_CONSTRUCT_ONLY |
 		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
@@ -1511,21 +1512,21 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
-	signals[NEW_CONNECTION] = 
-	                g_signal_new (NM_REMOTE_SETTINGS_NEW_CONNECTION,
-	                              G_OBJECT_CLASS_TYPE (object_class),
-	                              G_SIGNAL_RUN_FIRST,
-	                              G_STRUCT_OFFSET (NMRemoteSettingsClass, new_connection),
-	                              NULL, NULL, NULL,
-	                              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+	signals[NEW_CONNECTION] =
+		g_signal_new (NM_REMOTE_SETTINGS_NEW_CONNECTION,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMRemoteSettingsClass, new_connection),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
-	signals[CONNECTIONS_READ] = 
-	                g_signal_new (NM_REMOTE_SETTINGS_CONNECTIONS_READ,
-	                              G_OBJECT_CLASS_TYPE (object_class),
-	                              G_SIGNAL_RUN_FIRST,
-	                              G_STRUCT_OFFSET (NMRemoteSettingsClass, connections_read),
-	                              NULL, NULL, NULL,
-	                              G_TYPE_NONE, 0);
+	signals[CONNECTIONS_READ] =
+		g_signal_new (NM_REMOTE_SETTINGS_CONNECTIONS_READ,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMRemoteSettingsClass, connections_read),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 0);
 }
 
 static void

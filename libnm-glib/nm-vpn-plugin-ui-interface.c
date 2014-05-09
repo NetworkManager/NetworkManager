@@ -71,9 +71,9 @@ nm_vpn_plugin_ui_interface_get_type (void)
 		};
 
 		vpn_plugin_ui_interface_type = g_type_register_static (G_TYPE_INTERFACE,
-														       "NMVpnPluginUiInterface",
-														       &vpn_plugin_ui_interface_info,
-														       0);
+		                                                       "NMVpnPluginUiInterface",
+		                                                       &vpn_plugin_ui_interface_info,
+		                                                       0);
 
 		g_type_interface_add_prerequisite (vpn_plugin_ui_interface_type, G_TYPE_OBJECT);
 	}
@@ -161,12 +161,12 @@ widget_interface_init (gpointer g_iface)
 
 	/* Signals */
 	g_signal_new ("changed",
-				  iface_type,
-				  G_SIGNAL_RUN_FIRST,
-				  G_STRUCT_OFFSET (NMVpnPluginUiWidgetInterface, changed),
-				  NULL, NULL,
-				  g_cclosure_marshal_VOID__VOID,
-				  G_TYPE_NONE, 0);
+	              iface_type,
+	              G_SIGNAL_RUN_FIRST,
+	              G_STRUCT_OFFSET (NMVpnPluginUiWidgetInterface, changed),
+	              NULL, NULL,
+	              g_cclosure_marshal_VOID__VOID,
+	              G_TYPE_NONE, 0);
 
 	initialized = TRUE;
 }
@@ -229,4 +229,3 @@ nm_vpn_plugin_ui_widget_interface_save_secrets (NMVpnPluginUiWidgetInterface *if
 	/* Deprecated and no longer used */
 	return TRUE;
 }
-

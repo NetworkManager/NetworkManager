@@ -77,12 +77,12 @@ typedef struct {
 GType nm_device_wimax_get_type (void);
 
 GObject         *nm_device_wimax_new             (DBusGConnection *connection,
-												  const char *path);
+                                                  const char *path);
 
 const char      *nm_device_wimax_get_hw_address  (NMDeviceWimax *wimax);
 NMWimaxNsp      *nm_device_wimax_get_active_nsp  (NMDeviceWimax *wimax);
 NMWimaxNsp      *nm_device_wimax_get_nsp_by_path (NMDeviceWimax *wimax,
-												  const char *path);
+                                                  const char *path);
 
 const GPtrArray *nm_device_wimax_get_nsps        (NMDeviceWimax *wimax);
 

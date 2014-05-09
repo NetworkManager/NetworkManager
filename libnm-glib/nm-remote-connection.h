@@ -147,4 +147,3 @@ gboolean nm_remote_connection_get_unsaved (NMRemoteConnection *connection);
 G_END_DECLS
 
 #endif  /* __NM_REMOTE_CONNECTION__ */
-

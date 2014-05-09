@@ -477,7 +477,7 @@ nm_connection_compare (NMConnection *a,
 
 	/* B / A: ensure settings in B that are not in A make the comparison fail */
 	if (g_hash_table_size (NM_CONNECTION_GET_PRIVATE (a)->settings) !=
-		g_hash_table_size (NM_CONNECTION_GET_PRIVATE (b)->settings))
+	    g_hash_table_size (NM_CONNECTION_GET_PRIVATE (b)->settings))
 		return FALSE;
 
 	/* A / B: ensure all settings in A match corresponding ones in B */
@@ -829,11 +829,11 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 
 	if (!_nm_setting_is_base_type (base)) {
 		g_set_error (error,
-			         NM_CONNECTION_ERROR,
-			         NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
-			         "connection type '%s' is not a base type",
-			         ctype);
-		goto EXIT;
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
+		             "connection type '%s' is not a base type",
+		             ctype);
+		return FALSE;
 	}
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -1022,8 +1022,8 @@ nm_connection_update_secrets (NMConnection *connection,
 
 		g_signal_handlers_block_by_func (setting, (GCallback) setting_changed_cb, connection);
 		success_detail = _nm_setting_update_secrets (setting,
-		                                      setting_hash ? setting_hash : secrets,
-		                                      error);
+		                                             setting_hash ? setting_hash : secrets,
+		                                             error);
 		g_signal_handlers_unblock_by_func (setting, (GCallback) setting_changed_cb, connection);
 
 		if (success_detail == NM_SETTING_UPDATE_SECRET_ERROR)
@@ -1254,7 +1254,7 @@ nm_connection_to_hash (NMConnection *connection, NMSettingHashFlags flags)
 /**
  * nm_connection_is_type:
  * @connection: the #NMConnection
- * @type: a setting name to check the connection's type against (like 
+ * @type: a setting name to check the connection's type against (like
  * %NM_SETTING_WIRELESS_SETTING_NAME or %NM_SETTING_WIRED_SETTING_NAME)
  *
  * A convenience function to check if the given @connection is a particular
@@ -2074,7 +2074,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMConnection *connection = NM_CONNECTION (object);
 
@@ -2090,7 +2090,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMConnection *connection = NM_CONNECTION (object);
 
@@ -2129,37 +2129,38 @@ nm_connection_class_init (NMConnectionClass *klass)
 		(object_class, PROP_PATH,
 		 g_param_spec_string (NM_CONNECTION_PATH, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 
 	/**
-	* NMConnection::secrets-updated:
-	* @connection: the object on which the signal is emitted
-	* @setting_name: the setting name of the #NMSetting for which secrets were
-	* updated
-	*
-	* The ::secrets-updated signal is emitted when the secrets of a setting
-	* have been changed.
-	*/
+	 * NMConnection::secrets-updated:
+	 * @connection: the object on which the signal is emitted
+	 * @setting_name: the setting name of the #NMSetting for which secrets were
+	 * updated
+	 *
+	 * The ::secrets-updated signal is emitted when the secrets of a setting
+	 * have been changed.
+	 */
 	signals[SECRETS_UPDATED] =
 		g_signal_new (NM_CONNECTION_SECRETS_UPDATED,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMConnectionClass, secrets_updated),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__STRING,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_STRING);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMConnectionClass, secrets_updated),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__STRING,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_STRING);
 
 	/**
-	* NMConnection::secrets-cleared:
-	* @connection: the object on which the signal is emitted
-	*
-	* The ::secrets-cleared signal is emitted when the secrets of a connection
-	* are cleared.
-	*/
+	 * NMConnection::secrets-cleared:
+	 * @connection: the object on which the signal is emitted
+	 *
+	 * The ::secrets-cleared signal is emitted when the secrets of a connection
+	 * are cleared.
+	 */
 	signals[SECRETS_CLEARED] =
 		g_signal_new (NM_CONNECTION_SECRETS_CLEARED,
 		              G_OBJECT_CLASS_TYPE (object_class),
@@ -2169,15 +2170,15 @@ nm_connection_class_init (NMConnectionClass *klass)
 		              G_TYPE_NONE, 0);
 
 	/**
-	* NMConnection::changed:
-	* @connection: the object on which the signal is emitted
-	*
-	* The ::changed signal is emitted when any property of any property
-	* (including secrets) of any setting of the connection is modified,
-	* or when settings are added or removed.
-	*
-	* Since: 0.9.10
-	*/
+	 * NMConnection::changed:
+	 * @connection: the object on which the signal is emitted
+	 *
+	 * The ::changed signal is emitted when any property of any property
+	 * (including secrets) of any setting of the connection is modified,
+	 * or when settings are added or removed.
+	 *
+	 * Since: 0.9.10
+	 */
 	signals[CHANGED] =
 		g_signal_new (NM_CONNECTION_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
@@ -2186,4 +2187,3 @@ nm_connection_class_init (NMConnectionClass *klass)
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
 }
-

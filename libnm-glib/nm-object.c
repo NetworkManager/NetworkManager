@@ -336,7 +336,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
@@ -359,7 +359,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
@@ -402,7 +402,8 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 		(object_class, PROP_DBUS_CONNECTION,
 		 g_param_spec_boxed (NM_OBJECT_DBUS_CONNECTION, "", "",
 		                     DBUS_TYPE_G_CONNECTION,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_CONSTRUCT_ONLY |
 		                     G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -414,7 +415,8 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 		(object_class, PROP_DBUS_PATH,
 		 g_param_spec_string (NM_OBJECT_DBUS_PATH, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/* signals */
@@ -1182,10 +1184,10 @@ _nm_object_register_properties (NMObject *object,
 
 	dbus_g_proxy_add_signal (proxy, "PropertiesChanged", DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (proxy,
-						    "PropertiesChanged",
-						    G_CALLBACK (properties_changed_proxy),
-						    object,
-						    NULL);
+	                             "PropertiesChanged",
+	                             G_CALLBACK (properties_changed_proxy),
+	                             object,
+	                             NULL);
 
 	instance = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	priv->property_tables = g_slist_prepend (priv->property_tables, instance);
@@ -1439,4 +1441,3 @@ _nm_object_is_connection_private (NMObject *self)
 {
 	return _nm_dbus_is_connection_private (NM_OBJECT_GET_PRIVATE (self)->connection);
 }
-

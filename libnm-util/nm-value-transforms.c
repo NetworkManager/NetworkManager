@@ -543,7 +543,7 @@ _nm_value_transforms_register (void)
 		g_value_register_transform_func (DBUS_TYPE_G_OBJECT_PATH,
 		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_op_to_string);
-		g_value_register_transform_func (G_TYPE_STRV, 
+		g_value_register_transform_func (G_TYPE_STRV,
 		                                 DBUS_TYPE_G_LIST_OF_STRING,
 		                                 _nm_utils_convert_strv_to_slist);
 		g_value_register_transform_func (DBUS_TYPE_G_LIST_OF_STRING,
@@ -553,7 +553,7 @@ _nm_value_transforms_register (void)
 		                                 DBUS_TYPE_G_ARRAY_OF_STRING,
 		                                 _nm_utils_convert_strv_to_ptrarray);
 		g_value_register_transform_func (DBUS_TYPE_G_LIST_OF_STRING,
-		                                 G_TYPE_STRING, 
+		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_string_list_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_STRING,
 		                                 G_TYPE_STRING,
@@ -562,28 +562,28 @@ _nm_value_transforms_register (void)
 		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_op_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_UINT_ARRAY,
-		                                 G_TYPE_STRING, 
+		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_uint_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-		                                 G_TYPE_STRING, 
+		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_ip4_addr_route_struct_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_MAP_OF_VARIANT,
-		                                 G_TYPE_STRING, 
+		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_gvalue_hash_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_MAP_OF_STRING,
-		                                 G_TYPE_STRING, 
+		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_string_hash_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_UCHAR_ARRAY,
 		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_byte_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
-		                                 G_TYPE_STRING, 
+		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_ip6_dns_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
-		                                 G_TYPE_STRING, 
+		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_ip6_addr_struct_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
-		                                 G_TYPE_STRING, 
+		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_ip6_route_struct_array_to_string);
 		g_value_register_transform_func (OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
 		                                 DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,

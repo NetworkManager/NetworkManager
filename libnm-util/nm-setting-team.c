@@ -232,7 +232,8 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 		(object_class, PROP_INTERFACE_NAME,
 		 g_param_spec_string (NM_SETTING_TEAM_INTERFACE_NAME, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -247,6 +248,7 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 		(object_class, PROP_CONFIG,
 		 g_param_spec_string (NM_SETTING_TEAM_CONFIG, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 }

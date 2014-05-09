@@ -180,7 +180,7 @@ nm_setting_serial_init (NMSettingSerial *setting)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingSerialPrivate *priv = NM_SETTING_SERIAL_GET_PRIVATE (object);
 
@@ -208,7 +208,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingSerial *setting = NM_SETTING_SERIAL (object);
 
@@ -260,7 +260,8 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 		(object_class, PROP_BAUD,
 		 g_param_spec_uint (NM_SETTING_SERIAL_BAUD, "", "",
 		                    0, G_MAXUINT, 57600,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -272,7 +273,8 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 		(object_class, PROP_BITS,
 		 g_param_spec_uint (NM_SETTING_SERIAL_BITS, "", "",
 		                    5, 8, 8,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -285,7 +287,8 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 		(object_class, PROP_PARITY,
 		 g_param_spec_char (NM_SETTING_SERIAL_PARITY, "", "",
 		                    'E', 'o', 'n',
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -298,7 +301,8 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 		(object_class, PROP_STOPBITS,
 		 g_param_spec_uint (NM_SETTING_SERIAL_STOPBITS, "", "",
 		                    1, 2, 1,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -310,6 +314,7 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 		(object_class, PROP_SEND_DELAY,
 		 g_param_spec_uint64 (NM_SETTING_SERIAL_SEND_DELAY, "", "",
 		                      0, G_MAXUINT64, 0,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT |
 		                      G_PARAM_STATIC_STRINGS));
 }

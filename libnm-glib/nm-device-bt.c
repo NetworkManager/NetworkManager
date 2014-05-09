@@ -371,4 +371,3 @@ nm_device_bt_class_init (NMDeviceBtClass *bt_class)
 		                    G_PARAM_STATIC_STRINGS));
 
 }
-

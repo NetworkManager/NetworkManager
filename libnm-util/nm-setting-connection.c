@@ -456,7 +456,7 @@ nm_setting_connection_remove_permission (NMSettingConnection *setting,
  * be a username. See #NMSettingConnection:permissions: for more details.
  *
  * Returns: %TRUE if the permission was found and removed; %FALSE if it was not.
- * 
+ *
  * Since: 0.9.10
  */
 gboolean
@@ -1106,7 +1106,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_ID,
 		 g_param_spec_string (NM_SETTING_CONNECTION_ID, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_FUZZY_IGNORE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1129,7 +1130,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_UUID,
 		 g_param_spec_string (NM_SETTING_CONNECTION_UUID, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_FUZZY_IGNORE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1153,7 +1155,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_INTERFACE_NAME,
 		 g_param_spec_string (NM_SETTING_CONNECTION_INTERFACE_NAME, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1169,7 +1172,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_TYPE,
 		 g_param_spec_string (NM_SETTING_CONNECTION_TYPE, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1206,7 +1210,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_AUTOCONNECT,
 		 g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT, "", "",
 		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
+		                       NM_SETTING_PARAM_FUZZY_IGNORE |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1224,7 +1230,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_TIMESTAMP,
 		 g_param_spec_uint64 (NM_SETTING_CONNECTION_TIMESTAMP, "", "",
 		                      0, G_MAXUINT64, 0,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT |
+		                      NM_SETTING_PARAM_FUZZY_IGNORE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1238,7 +1246,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_READ_ONLY,
 		 g_param_spec_boolean (NM_SETTING_CONNECTION_READ_ONLY, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
+		                       NM_SETTING_PARAM_FUZZY_IGNORE |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1253,7 +1263,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_ZONE,
 		 g_param_spec_string (NM_SETTING_CONNECTION_ZONE, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT |
+		                      NM_SETTING_PARAM_FUZZY_IGNORE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1265,7 +1277,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_MASTER,
 		 g_param_spec_string (NM_SETTING_CONNECTION_MASTER, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_FUZZY_IGNORE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1279,7 +1293,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_SLAVE_TYPE,
 		 g_param_spec_string (NM_SETTING_CONNECTION_SLAVE_TYPE, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_FUZZY_IGNORE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1295,7 +1311,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_SECONDARIES,
 		 _nm_param_spec_specialized (NM_SETTING_CONNECTION_SECONDARIES, "", "",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_FUZZY_IGNORE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1310,6 +1327,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		(object_class, PROP_GATEWAY_PING_TIMEOUT,
 		 g_param_spec_uint (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, "", "",
 		                    0, 30, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
 }

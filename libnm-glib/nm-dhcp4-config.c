@@ -173,9 +173,9 @@ GObject *
 nm_dhcp4_config_new (DBusGConnection *connection, const char *object_path)
 {
 	return (GObject *) g_object_new (NM_TYPE_DHCP4_CONFIG,
-									 NM_OBJECT_DBUS_CONNECTION, connection,
-									 NM_OBJECT_DBUS_PATH, object_path,
-									 NULL);
+	                                 NM_OBJECT_DBUS_CONNECTION, connection,
+	                                 NM_OBJECT_DBUS_PATH, object_path,
+	                                 NULL);
 }
 
 /**
@@ -213,4 +213,3 @@ nm_dhcp4_config_get_one_option (NMDHCP4Config *config, const char *option)
 
 	return g_hash_table_lookup (nm_dhcp4_config_get_options (config), option);
 }
-

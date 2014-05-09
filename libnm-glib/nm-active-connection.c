@@ -104,9 +104,9 @@ nm_active_connection_new (DBusGConnection *connection, const char *path)
 	g_return_val_if_fail (path != NULL, NULL);
 
 	return g_object_new (NM_TYPE_ACTIVE_CONNECTION,
-						 NM_OBJECT_DBUS_CONNECTION, connection,
-						 NM_OBJECT_DBUS_PATH, path,
-						 NULL);
+	                     NM_OBJECT_DBUS_CONNECTION, connection,
+	                     NM_OBJECT_DBUS_PATH, path,
+	                     NULL);
 }
 
 static GType
