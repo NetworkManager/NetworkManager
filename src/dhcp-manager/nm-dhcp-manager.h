@@ -31,7 +31,6 @@
 #include "nm-dhcp-client.h"
 #include "nm-ip4-config.h"
 #include "nm-dhcp4-config.h"
-#include "nm-hostname-provider.h"
 
 typedef enum {
 	NM_DHCP_MANAGER_ERROR_BAD_CLIENT = 0, /*< nick=BadClient >*/
@@ -60,10 +59,10 @@ typedef struct {
 
 GType nm_dhcp_manager_get_type (void);
 
-NMDHCPManager *nm_dhcp_manager_get                  (void);
+NMDHCPManager *nm_dhcp_manager_get (void);
 
-void           nm_dhcp_manager_set_hostname_provider(NMDHCPManager *manager,
-													 NMHostnameProvider *provider);
+void           nm_dhcp_manager_set_default_hostname (NMDHCPManager *manager,
+                                                     const char *hostname);
 
 NMDHCPClient * nm_dhcp_manager_start_ip4     (NMDHCPManager *manager,
                                               const char *iface,

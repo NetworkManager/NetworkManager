@@ -60,7 +60,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-platform.h"
 #include "nm-rfkill-manager.h"
-#include "nm-hostname-provider.h"
+#include "nm-dhcp-manager.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
 #include "nm-manager-auth.h"
@@ -132,8 +132,6 @@ static void impl_manager_check_connectivity (NMManager *manager,
 
 static void add_device (NMManager *self, NMDevice *device, gboolean generate_con);
 static void remove_device (NMManager *self, NMDevice *device, gboolean quitting);
-
-static void hostname_provider_init (NMHostnameProvider *provider_class);
 
 static NMActiveConnection *_new_active_connection (NMManager *self,
                                                    NMConnection *connection,
@@ -221,9 +219,7 @@ typedef struct {
 
 #define NM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MANAGER, NMManagerPrivate))
 
-G_DEFINE_TYPE_EXTENDED (NMManager, nm_manager, G_TYPE_OBJECT, 0,
-						G_IMPLEMENT_INTERFACE (NM_TYPE_HOSTNAME_PROVIDER,
-											   hostname_provider_init))
+G_DEFINE_TYPE (NMManager, nm_manager, G_TYPE_OBJECT)
 
 enum {
 	DEVICE_ADDED,
@@ -810,18 +806,6 @@ aipd_handle_event (DBusGProxy *proxy,
 		nm_log_warn (LOGD_AUTOIP4, "(%s): unhandled avahi-autoipd event", iface);
 }
 
-static const char *
-hostname_provider_get_hostname (NMHostnameProvider *provider)
-{
-	return NM_MANAGER_GET_PRIVATE (provider)->hostname;
-}
-
-static void
-hostname_provider_init (NMHostnameProvider *provider_class)
-{
-	provider_class->get_hostname = hostname_provider_get_hostname;
-}
-
 NMState
 nm_manager_get_state (NMManager *manager)
 {
@@ -1218,6 +1202,8 @@ system_hostname_changed_cb (NMSettings *settings,
 	g_free (priv->hostname);
 	priv->hostname = (hostname && strlen (hostname)) ? g_strdup (hostname) : NULL;
 	g_object_notify (G_OBJECT (self), NM_MANAGER_HOSTNAME);
+
+	nm_dhcp_manager_set_default_hostname (nm_dhcp_manager_get (), priv->hostname);
 
 	g_free (hostname);
 }
