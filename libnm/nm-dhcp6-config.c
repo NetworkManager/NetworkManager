@@ -161,24 +161,6 @@ nm_dhcp6_config_class_init (NMDhcp6ConfigClass *config_class)
 }
 
 /**
- * nm_dhcp6_config_new:
- * @connection: the #DBusGConnection
- * @object_path: the DBus object path of the device
- *
- * Creates a new #NMDhcp6Config.
- *
- * Returns: (transfer full): a new configuration
- **/
-GObject *
-nm_dhcp6_config_new (DBusGConnection *connection, const char *object_path)
-{
-	return (GObject *) g_object_new (NM_TYPE_DHCP6_CONFIG,
-	                                 NM_OBJECT_DBUS_CONNECTION, connection,
-	                                 NM_OBJECT_DBUS_PATH, object_path,
-	                                 NULL);
-}
-
-/**
  * nm_dhcp6_config_get_options:
  * @config: a #NMDhcp6Config
  *

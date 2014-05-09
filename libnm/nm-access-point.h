@@ -64,8 +64,6 @@ typedef struct {
 
 GType nm_access_point_get_type (void);
 
-GObject *nm_access_point_new (DBusGConnection *connection, const char *path);
-
 NM80211ApFlags         nm_access_point_get_flags        (NMAccessPoint *ap);
 NM80211ApSecurityFlags nm_access_point_get_wpa_flags    (NMAccessPoint *ap);
 NM80211ApSecurityFlags nm_access_point_get_rsn_flags    (NMAccessPoint *ap);

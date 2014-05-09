@@ -63,31 +63,6 @@ nm_device_adsl_error_quark (void)
 }
 
 /**
- * nm_device_adsl_new:
- * @connection: the #DBusGConnection
- * @path: the DBus object path of the device
- *
- * Creates a new #NMDeviceAdsl.
- *
- * Returns: (transfer full): a new device
- **/
-GObject *
-nm_device_adsl_new (DBusGConnection *connection, const char *path)
-{
-	GObject *device;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	device = g_object_new (NM_TYPE_DEVICE_ADSL,
-	                       NM_OBJECT_DBUS_CONNECTION, connection,
-	                       NM_OBJECT_DBUS_PATH, path,
-	                       NULL);
-	_nm_object_ensure_inited (NM_OBJECT (device));
-	return device;
-}
-
-/**
  * nm_device_adsl_get_carrier:
  * @device: a #NMDeviceAdsl
  *

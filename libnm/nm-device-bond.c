@@ -72,31 +72,6 @@ nm_device_bond_error_quark (void)
 }
 
 /**
- * nm_device_bond_new:
- * @connection: the #DBusGConnection
- * @path: the DBus object path of the device
- *
- * Creates a new #NMDeviceBond.
- *
- * Returns: (transfer full): a new device
- **/
-GObject *
-nm_device_bond_new (DBusGConnection *connection, const char *path)
-{
-	GObject *device;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	device = g_object_new (NM_TYPE_DEVICE_BOND,
-	                       NM_OBJECT_DBUS_CONNECTION, connection,
-	                       NM_OBJECT_DBUS_PATH, path,
-	                       NULL);
-	_nm_object_ensure_inited (NM_OBJECT (device));
-	return device;
-}
-
-/**
  * nm_device_bond_get_hw_address:
  * @device: a #NMDeviceBond
  *

@@ -50,8 +50,6 @@ typedef struct {
 
 GType nm_dhcp6_config_get_type (void);
 
-GObject *nm_dhcp6_config_new (DBusGConnection *connection, const char *object_path);
-
 GHashTable * nm_dhcp6_config_get_options (NMDhcp6Config *config);
 
 const char * nm_dhcp6_config_get_one_option (NMDhcp6Config *config, const char *option);

@@ -56,8 +56,6 @@ typedef struct {
 
 GType nm_ip6_config_get_type (void);
 
-GObject *nm_ip6_config_new (DBusGConnection *connection, const char *object_path);
-
 const char *           nm_ip6_config_get_gateway         (NMIP6Config *config);
 const GSList *         nm_ip6_config_get_addresses       (NMIP6Config *config);
 const GSList *         nm_ip6_config_get_routes          (NMIP6Config *config);

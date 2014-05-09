@@ -313,24 +313,6 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 }
 
 /**
- * nm_ip4_config_new:
- * @connection: the #DBusGConnection
- * @object_path: the DBus object path of the device
- *
- * Creates a new #NMIP4Config.
- *
- * Returns: (transfer full): a new IP4 configuration
- **/
-GObject *
-nm_ip4_config_new (DBusGConnection *connection, const char *object_path)
-{
-	return (GObject *) g_object_new (NM_TYPE_IP4_CONFIG,
-	                                 NM_OBJECT_DBUS_CONNECTION, connection,
-	                                 NM_OBJECT_DBUS_PATH, object_path,
-	                                 NULL);
-}
-
-/**
  * nm_ip4_config_get_gateway:
  * @config: a #NMIP4Config
  *

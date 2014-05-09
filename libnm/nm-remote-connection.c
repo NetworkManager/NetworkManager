@@ -33,7 +33,6 @@
 #include "nm-glib-compat.h"
 #include "nm-dbus-helpers-private.h"
 
-#define NM_REMOTE_CONNECTION_BUS "bus"
 #define NM_REMOTE_CONNECTION_DBUS_CONNECTION "dbus-connection"
 #define NM_REMOTE_CONNECTION_DBUS_PATH "dbus-path"
 
@@ -541,28 +540,6 @@ properties_changed_cb (DBusGProxy *proxy,
 }
 
 /****************************************************************/
-
-/**
- * nm_remote_connection_new:
- * @bus: a valid and connected D-Bus connection
- * @path: the D-Bus path of the connection as exported by the settings service
- *
- * Creates a new object representing the remote connection.
- *
- * Returns: the new remote connection object on success, or %NULL on failure
- **/
-NMRemoteConnection *
-nm_remote_connection_new (DBusGConnection *bus,
-                          const char *path)
-{
-	g_return_val_if_fail (bus != NULL, NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	return (NMRemoteConnection *) g_object_new (NM_TYPE_REMOTE_CONNECTION,
-	                                            NM_REMOTE_CONNECTION_BUS, bus,
-	                                            NM_CONNECTION_PATH, path,
-	                                            NULL);
-}
 
 static void
 constructed (GObject *object)

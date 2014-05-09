@@ -900,36 +900,6 @@ _nm_device_type_for_path (DBusGConnection *connection,
 	return _nm_device_gtype_from_dtype (nm_dtype);
 }
 
-/**
- * nm_device_new:
- * @connection: the #DBusGConnection
- * @path: the DBus object path of the device
- *
- * Creates a new #NMDevice.
- *
- * Returns: (transfer full): a new device
- **/
-GObject *
-nm_device_new (DBusGConnection *connection, const char *path)
-{
-	GType dtype;
-	NMDevice *device = NULL;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	dtype = _nm_device_type_for_path (connection, path);
-	if (dtype == G_TYPE_INVALID)
-		return NULL;
-
-	device = (NMDevice *) g_object_new (dtype,
-	                                    NM_OBJECT_DBUS_CONNECTION, connection,
-	                                    NM_OBJECT_DBUS_PATH, path,
-	                                    NULL);
-	_nm_object_ensure_inited (NM_OBJECT (device));
-	return G_OBJECT (device);
-}
-
 typedef struct {
 	DBusGConnection *connection;
 	NMObjectTypeCallbackFunc callback;

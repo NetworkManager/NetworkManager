@@ -70,8 +70,6 @@ typedef struct {
 
 GType nm_active_connection_get_type (void);
 
-GObject *nm_active_connection_new (DBusGConnection *connection, const char *path);
-
 const char * nm_active_connection_get_connection          (NMActiveConnection *connection);
 const char * nm_active_connection_get_id                  (NMActiveConnection *connection);
 const char * nm_active_connection_get_uuid                (NMActiveConnection *connection);

@@ -55,24 +55,6 @@ enum {
 	LAST_PROP
 };
 
-/**
- * nm_ip6_config_new:
- * @connection: the #DBusGConnection
- * @object_path: the DBus object path of the device
- *
- * Creates a new #NMIP6Config.
- *
- * Returns: (transfer full): a new IP6 configuration
- **/
-GObject *
-nm_ip6_config_new (DBusGConnection *connection, const char *object_path)
-{
-	return (GObject *) g_object_new (NM_TYPE_IP6_CONFIG,
-	                                 NM_OBJECT_DBUS_CONNECTION, connection,
-	                                 NM_OBJECT_DBUS_PATH, object_path,
-	                                 NULL);
-}
-
 static gboolean
 demarshal_ip6_address_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
 {

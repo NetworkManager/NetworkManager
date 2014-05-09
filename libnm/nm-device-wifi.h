@@ -84,8 +84,6 @@ typedef struct {
 
 GType nm_device_wifi_get_type (void);
 
-GObject *nm_device_wifi_new (DBusGConnection *connection, const char *path);
-
 const char *             nm_device_wifi_get_hw_address           (NMDeviceWifi *device);
 const char *             nm_device_wifi_get_permanent_hw_address (NMDeviceWifi *device);
 NM80211Mode              nm_device_wifi_get_mode                 (NMDeviceWifi *device);

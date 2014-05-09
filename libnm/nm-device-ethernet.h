@@ -70,8 +70,6 @@ typedef struct {
 
 GType nm_device_ethernet_get_type (void);
 
-GObject *nm_device_ethernet_new (DBusGConnection *connection, const char *path);
-
 const char * nm_device_ethernet_get_hw_address (NMDeviceEthernet *device);
 const char * nm_device_ethernet_get_permanent_hw_address (NMDeviceEthernet *device);
 guint32      nm_device_ethernet_get_speed   (NMDeviceEthernet *device);

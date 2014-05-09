@@ -54,27 +54,6 @@ enum {
 };
 
 /**
- * nm_wimax_nsp_new:
- * @connection: the #DBusGConnection
- * @path: the D-Bus object path of the WiMAX NSP
- *
- * Creates a new #NMWimaxNsp.
- *
- * Returns: (transfer full): a new WiMAX NSP
- **/
-GObject *
-nm_wimax_nsp_new (DBusGConnection *connection, const char *path)
-{
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	return (GObject *) g_object_new (NM_TYPE_WIMAX_NSP,
-	                                 NM_OBJECT_DBUS_CONNECTION, connection,
-	                                 NM_OBJECT_DBUS_PATH, path,
-	                                 NULL);
-}
-
-/**
  * nm_wimax_nsp_get_name:
  * @nsp: a #NMWimaxNsp
  *

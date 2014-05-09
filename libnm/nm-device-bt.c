@@ -71,27 +71,6 @@ nm_device_bt_error_quark (void)
 }
 
 /**
- * nm_device_bt_new:
- * @connection: the #DBusGConnection
- * @path: the DBus object path of the device
- *
- * Creates a new #NMDeviceBt.
- *
- * Returns: (transfer full): a new device
- **/
-GObject *
-nm_device_bt_new (DBusGConnection *connection, const char *path)
-{
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	return g_object_new (NM_TYPE_DEVICE_BT,
-	                     NM_OBJECT_DBUS_CONNECTION, connection,
-	                     NM_OBJECT_DBUS_PATH, path,
-	                     NULL);
-}
-
-/**
  * nm_device_bt_get_hw_address:
  * @device: a #NMDeviceBt
  *

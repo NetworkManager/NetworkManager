@@ -71,27 +71,6 @@ enum {
 };
 
 /**
- * nm_access_point_new:
- * @connection: the #DBusGConnection
- * @path: the DBusobject path of the access point
- *
- * Creates a new #NMAccessPoint.
- *
- * Returns: (transfer full): a new access point
- **/
-GObject *
-nm_access_point_new (DBusGConnection *connection, const char *path)
-{
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	return (GObject *) g_object_new (NM_TYPE_ACCESS_POINT,
-	                                 NM_OBJECT_DBUS_CONNECTION, connection,
-	                                 NM_OBJECT_DBUS_PATH, path,
-	                                 NULL);
-}
-
-/**
  * nm_access_point_get_flags:
  * @ap: a #NMAccessPoint
  *

@@ -15,7 +15,6 @@ global:
 	nm_access_point_get_strength;
 	nm_access_point_get_type;
 	nm_access_point_get_wpa_flags;
-	nm_access_point_new;
 	nm_active_connection_get_connection;
 	nm_active_connection_get_connection_type;
 	nm_active_connection_get_default6;
@@ -32,7 +31,6 @@ global:
 	nm_active_connection_get_type;
 	nm_active_connection_get_uuid;
 	nm_active_connection_get_vpn;
-	nm_active_connection_new;
 	nm_active_connection_state_get_type;
 	nm_bluetooth_capabilities_get_type;
 	nm_client_activate_connection;
@@ -140,28 +138,24 @@ global:
 	nm_device_adsl_error_quark;
 	nm_device_adsl_get_carrier;
 	nm_device_adsl_get_type;
-	nm_device_adsl_new;
 	nm_device_bond_error_get_type;
 	nm_device_bond_error_quark;
 	nm_device_bond_get_carrier;
 	nm_device_bond_get_hw_address;
 	nm_device_bond_get_slaves;
 	nm_device_bond_get_type;
-	nm_device_bond_new;
 	nm_device_bridge_error_get_type;
 	nm_device_bridge_error_quark;
 	nm_device_bridge_get_carrier;
 	nm_device_bridge_get_hw_address;
 	nm_device_bridge_get_slaves;
 	nm_device_bridge_get_type;
-	nm_device_bridge_new;
 	nm_device_bt_error_get_type;
 	nm_device_bt_error_quark;
 	nm_device_bt_get_capabilities;
 	nm_device_bt_get_hw_address;
 	nm_device_bt_get_name;
 	nm_device_bt_get_type;
-	nm_device_bt_new;
 	nm_device_capabilities_get_type;
 	nm_device_connection_compatible;
 	nm_device_connection_valid;
@@ -177,13 +171,11 @@ global:
 	nm_device_ethernet_get_permanent_hw_address;
 	nm_device_ethernet_get_speed;
 	nm_device_ethernet_get_type;
-	nm_device_ethernet_new;
 	nm_device_filter_connections;
 	nm_device_generic_error_get_type;
 	nm_device_generic_error_quark;
 	nm_device_generic_get_hw_address;
 	nm_device_generic_get_type;
-	nm_device_generic_new;
 	nm_device_get_active_connection;
 	nm_device_get_autoconnect;
 	nm_device_get_available_connections;
@@ -217,7 +209,6 @@ global:
 	nm_device_infiniband_get_carrier;
 	nm_device_infiniband_get_hw_address;
 	nm_device_infiniband_get_type;
-	nm_device_infiniband_new;
 	nm_device_is_software;
 	nm_device_modem_capabilities_get_type;
 	nm_device_modem_error_get_type;
@@ -225,14 +216,12 @@ global:
 	nm_device_modem_get_current_capabilities;
 	nm_device_modem_get_modem_capabilities;
 	nm_device_modem_get_type;
-	nm_device_new;
 	nm_device_olpc_mesh_error_get_type;
 	nm_device_olpc_mesh_error_quark;
 	nm_device_olpc_mesh_get_active_channel;
 	nm_device_olpc_mesh_get_companion;
 	nm_device_olpc_mesh_get_hw_address;
 	nm_device_olpc_mesh_get_type;
-	nm_device_olpc_mesh_new;
 	nm_device_set_autoconnect;
 	nm_device_state_get_type;
 	nm_device_state_reason_get_type;
@@ -242,7 +231,6 @@ global:
 	nm_device_team_get_hw_address;
 	nm_device_team_get_slaves;
 	nm_device_team_get_type;
-	nm_device_team_new;
 	nm_device_type_get_type;
 	nm_device_vlan_error_get_type;
 	nm_device_vlan_error_quark;
@@ -250,7 +238,6 @@ global:
 	nm_device_vlan_get_hw_address;
 	nm_device_vlan_get_type;
 	nm_device_vlan_get_vlan_id;
-	nm_device_vlan_new;
 	nm_device_wifi_capabilities_get_type;
 	nm_device_wifi_error_get_type;
 	nm_device_wifi_error_quark;
@@ -263,7 +250,6 @@ global:
 	nm_device_wifi_get_mode;
 	nm_device_wifi_get_permanent_hw_address;
 	nm_device_wifi_get_type;
-	nm_device_wifi_new;
 	nm_device_wifi_request_scan_simple;
 	nm_device_wimax_error_get_type;
 	nm_device_wimax_error_quark;
@@ -277,15 +263,12 @@ global:
 	nm_device_wimax_get_rssi;
 	nm_device_wimax_get_tx_power;
 	nm_device_wimax_get_type;
-	nm_device_wimax_new;
 	nm_dhcp4_config_get_one_option;
 	nm_dhcp4_config_get_options;
 	nm_dhcp4_config_get_type;
-	nm_dhcp4_config_new;
 	nm_dhcp6_config_get_one_option;
 	nm_dhcp6_config_get_options;
 	nm_dhcp6_config_get_type;
-	nm_dhcp6_config_new;
 	nm_ip4_address_compare;
 	nm_ip4_address_dup;
 	nm_ip4_address_get_address;
@@ -306,7 +289,6 @@ global:
 	nm_ip4_config_get_searches;
 	nm_ip4_config_get_type;
 	nm_ip4_config_get_wins_servers;
-	nm_ip4_config_new;
 	nm_ip4_route_compare;
 	nm_ip4_route_dup;
 	nm_ip4_route_get_dest;
@@ -344,7 +326,6 @@ global:
 	nm_ip6_config_get_routes;
 	nm_ip6_config_get_searches;
 	nm_ip6_config_get_type;
-	nm_ip6_config_new;
 	nm_ip6_route_compare;
 	nm_ip6_route_dup;
 	nm_ip6_route_get_dest;
@@ -374,7 +355,6 @@ global:
 	nm_remote_connection_get_secrets;
 	nm_remote_connection_get_type;
 	nm_remote_connection_get_unsaved;
-	nm_remote_connection_new;
 	nm_remote_connection_save;
 	nm_remote_settings_add_connection;
 	nm_remote_settings_add_connection_unsaved;
@@ -946,7 +926,6 @@ global:
 	nm_vpn_connection_get_banner;
 	nm_vpn_connection_get_type;
 	nm_vpn_connection_get_vpn_state;
-	nm_vpn_connection_new;
 	nm_vpn_connection_state_get_type;
 	nm_vpn_connection_state_reason_get_type;
 	nm_vpn_plugin_failure_get_type;
@@ -959,7 +938,6 @@ global:
 	nm_wimax_nsp_get_signal_quality;
 	nm_wimax_nsp_get_type;
 	nm_wimax_nsp_network_type_get_type;
-	nm_wimax_nsp_new;
 local:
 	*;
 };

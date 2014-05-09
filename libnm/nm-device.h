@@ -110,8 +110,6 @@ typedef struct {
 
 GType nm_device_get_type (void);
 
-GObject * nm_device_new (DBusGConnection *connection, const char *path);
-
 const char *         nm_device_get_iface            (NMDevice *device);
 const char *         nm_device_get_ip_iface         (NMDevice *device);
 NMDeviceType         nm_device_get_device_type      (NMDevice *device);

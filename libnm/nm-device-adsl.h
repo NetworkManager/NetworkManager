@@ -62,7 +62,6 @@ typedef struct {
 
 GType nm_device_adsl_get_type (void);
 
-GObject *nm_device_adsl_new (DBusGConnection *connection, const char *path);
 gboolean nm_device_adsl_get_carrier (NMDeviceAdsl *device);
 
 G_END_DECLS

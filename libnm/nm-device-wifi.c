@@ -102,31 +102,6 @@ nm_device_wifi_error_quark (void)
 }
 
 /**
- * nm_device_wifi_new:
- * @connection: the #DBusGConnection
- * @path: the DBus object path of the device
- *
- * Creates a new #NMDeviceWifi.
- *
- * Returns: (transfer full): a new Wi-Fi device
- **/
-GObject *
-nm_device_wifi_new (DBusGConnection *connection, const char *path)
-{
-	GObject *device;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	device = g_object_new (NM_TYPE_DEVICE_WIFI,
-	                       NM_OBJECT_DBUS_CONNECTION, connection,
-	                       NM_OBJECT_DBUS_PATH, path,
-	                       NULL);
-	_nm_object_ensure_inited (NM_OBJECT (device));
-	return device;
-}
-
-/**
  * nm_device_wifi_get_hw_address:
  * @device: a #NMDeviceWifi
  *

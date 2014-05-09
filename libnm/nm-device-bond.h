@@ -66,8 +66,6 @@ typedef struct {
 
 GType nm_device_bond_get_type (void);
 
-GObject *nm_device_bond_new (DBusGConnection *connection, const char *path);
-
 const char      *nm_device_bond_get_hw_address (NMDeviceBond *device);
 gboolean         nm_device_bond_get_carrier    (NMDeviceBond *device);
 const GPtrArray *nm_device_bond_get_slaves     (NMDeviceBond *device);

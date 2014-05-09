@@ -525,7 +525,10 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 		return connection;
 
 	/* Create a new connection object for it */
-	connection = nm_remote_connection_new (priv->bus, path);
+	connection = g_object_new (NM_TYPE_REMOTE_CONNECTION,
+	                           NM_REMOTE_CONNECTION_BUS, priv->bus,
+	                           NM_CONNECTION_PATH, path,
+	                           NULL);
 	if (connection) {
 		g_async_initable_init_async (G_ASYNC_INITABLE (connection),
 		                             G_PRIORITY_DEFAULT, NULL,

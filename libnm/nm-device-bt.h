@@ -72,8 +72,6 @@ typedef struct {
 
 GType nm_device_bt_get_type (void);
 
-GObject *nm_device_bt_new (DBusGConnection *connection, const char *path);
-
 const char *nm_device_bt_get_hw_address   (NMDeviceBt *device);
 
 const char *nm_device_bt_get_name         (NMDeviceBt *device);

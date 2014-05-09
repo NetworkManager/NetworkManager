@@ -95,31 +95,6 @@ nm_device_wimax_error_quark (void)
 }
 
 /**
- * nm_device_wimax_new:
- * @connection: the #DBusGConnection
- * @path: the D-Bus object path of the WiMAX device
- *
- * Creates a new #NMDeviceWimax.
- *
- * Returns: (transfer full): a new WiMAX device
- **/
-GObject *
-nm_device_wimax_new (DBusGConnection *connection, const char *path)
-{
-	GObject *device;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	device = g_object_new (NM_TYPE_DEVICE_WIMAX,
-	                       NM_OBJECT_DBUS_CONNECTION, connection,
-	                       NM_OBJECT_DBUS_PATH, path,
-	                       NULL);
-	_nm_object_ensure_inited (NM_OBJECT (device));
-	return device;
-}
-
-/**
  * nm_device_wimax_get_hw_address:
  * @wimax: a #NMDeviceWimax
  *

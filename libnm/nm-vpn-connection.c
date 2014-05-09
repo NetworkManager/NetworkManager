@@ -54,27 +54,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 
 /**
- * nm_vpn_connection_new:
- * @connection: the #DBusGConnection
- * @path: the DBus object path of the new connection
- *
- * Creates a new #NMVpnConnection.
- *
- * Returns: (transfer full): a new connection object
- **/
-GObject *
-nm_vpn_connection_new (DBusGConnection *connection, const char *path)
-{
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	return g_object_new (NM_TYPE_VPN_CONNECTION,
-	                     NM_OBJECT_DBUS_CONNECTION, connection,
-	                     NM_OBJECT_DBUS_PATH, path,
-	                     NULL);
-}
-
-/**
  * nm_vpn_connection_get_banner:
  * @vpn: a #NMVpnConnection
  *

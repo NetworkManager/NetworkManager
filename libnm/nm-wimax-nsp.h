@@ -60,8 +60,6 @@ typedef struct {
 
 GType nm_wimax_nsp_get_type (void);
 
-GObject *nm_wimax_nsp_new (DBusGConnection *connection, const char *path);
-
 const char           * nm_wimax_nsp_get_name           (NMWimaxNsp *nsp);
 guint32                nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp);
 NMWimaxNspNetworkType  nm_wimax_nsp_get_network_type   (NMWimaxNsp *nsp);

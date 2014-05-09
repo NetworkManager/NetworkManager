@@ -51,6 +51,7 @@ typedef enum {
 GQuark nm_remote_connection_error_quark (void);
 
 /* Properties */
+#define NM_REMOTE_CONNECTION_BUS             "bus"
 #define NM_REMOTE_CONNECTION_UNSAVED         "unsaved"
 
 /* Signals */
@@ -109,9 +110,6 @@ typedef void (*NMRemoteConnectionGetSecretsFunc) (NMRemoteConnection *connection
                                                   gpointer user_data);
 
 GType nm_remote_connection_get_type (void);
-
-NMRemoteConnection *nm_remote_connection_new (DBusGConnection *bus,
-                                              const char *path);
 
 void nm_remote_connection_commit_changes (NMRemoteConnection *connection,
                                           NMRemoteConnectionResultFunc callback,
