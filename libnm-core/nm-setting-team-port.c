@@ -36,8 +36,6 @@
  *
  * The #NMSettingTeamPort object is a #NMSetting subclass that describes
  * optional properties that apply to team ports.
- *
- * Since: 0.9.10
  **/
 
 /**
@@ -46,8 +44,6 @@
  * Registers an error quark for #NMSettingTeamPort if necessary.
  *
  * Returns: the error quark used for #NMSettingTeamPort errors.
- *
- * Since: 0.9.10
  **/
 GQuark
 nm_setting_team_port_error_quark (void)
@@ -84,8 +80,6 @@ enum {
  * Creates a new #NMSettingTeamPort object with default values.
  *
  * Returns: (transfer full): the new empty #NMSettingTeamPort object
- *
- * Since: 0.9.10
  **/
 NMSetting *
 nm_setting_team_port_new (void)
@@ -98,8 +92,6 @@ nm_setting_team_port_new (void)
  * @setting: the #NMSettingTeamPort
  *
  * Returns: the #NMSettingTeamPort:config property of the setting
- *
- * Since: 0.9.10
  **/
 const char *
 nm_setting_team_port_get_config (NMSettingTeamPort *setting)

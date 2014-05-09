@@ -232,8 +232,6 @@ nm_active_connection_get_connection (NMActiveConnection *connection)
  *
  * Returns: the ID of the #NMConnection that backs the #NMActiveConnection.
  * This is the internal string used by the connection, and must not be modified.
- *
- * Since: 0.9.10
  **/
 const char *
 nm_active_connection_get_id (NMActiveConnection *connection)
@@ -270,8 +268,6 @@ nm_active_connection_get_uuid (NMActiveConnection *connection)
  *
  * Returns: the type of the #NMConnection that backs the #NMActiveConnection.
  * This is the internal string used by the connection, and must not be modified.
- *
- * Since: 0.9.10
  **/
 const char *
 nm_active_connection_get_connection_type (NMActiveConnection *connection)
@@ -362,8 +358,6 @@ nm_active_connection_get_default (NMActiveConnection *connection)
  * Returns: (transfer none): the #NMIP4Config, or %NULL if the
  *   connection is not in the %NM_ACTIVE_CONNECTION_STATE_ACTIVATED
  *   state.
- *
- * Since: 0.9.10
  **/
 NMIP4Config *
 nm_active_connection_get_ip4_config (NMActiveConnection *connection)
@@ -384,8 +378,6 @@ nm_active_connection_get_ip4_config (NMActiveConnection *connection)
  * Returns: (transfer none): the #NMDHCP4Config, or %NULL if the
  *   connection does not use DHCP, or is not in the
  *   %NM_ACTIVE_CONNECTION_STATE_ACTIVATED state.
- *
- * Since: 0.9.10
  **/
 NMDHCP4Config *
 nm_active_connection_get_dhcp4_config (NMActiveConnection *connection)
@@ -423,8 +415,6 @@ nm_active_connection_get_default6 (NMActiveConnection *connection)
  * Returns: (transfer none): the #NMIP6Config, or %NULL if the
  *   connection is not in the %NM_ACTIVE_CONNECTION_STATE_ACTIVATED
  *   state.
- *
- * Since: 0.9.10
  **/
 NMIP6Config *
 nm_active_connection_get_ip6_config (NMActiveConnection *connection)
@@ -445,8 +435,6 @@ nm_active_connection_get_ip6_config (NMActiveConnection *connection)
  * Returns: (transfer none): the #NMDHCP6Config, or %NULL if the
  *   connection does not use DHCPv6, or is not in the
  *   %NM_ACTIVE_CONNECTION_STATE_ACTIVATED state.
- *
- * Since: 0.9.10
  **/
 NMDHCP6Config *
 nm_active_connection_get_dhcp6_config (NMActiveConnection *connection)
@@ -464,8 +452,6 @@ nm_active_connection_get_dhcp6_config (NMActiveConnection *connection)
  * Whether the active connection is a VPN connection.
  *
  * Returns: %TRUE if the active connection is a VPN connection
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_active_connection_get_vpn (NMActiveConnection *connection)
@@ -669,8 +655,6 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 * NMActiveConnection:id:
 	 *
 	 * The active connection's ID
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ID,
@@ -695,8 +679,6 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 * NMActiveConnection:type:
 	 *
 	 * The active connection's type
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_TYPE,
@@ -759,8 +741,6 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 * NMActiveConnection:ip4-config:
 	 *
 	 * The #NMIP4Config of the connection.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP4_CONFIG,
@@ -773,8 +753,6 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 * NMActiveConnection:dhcp4-config:
 	 *
 	 * The #NMDHCP4Config of the connection.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP4_CONFIG,
@@ -799,8 +777,6 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 * NMActiveConnection:ip6-config:
 	 *
 	 * The #NMIP6Config of the connection.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP6_CONFIG,
@@ -813,8 +789,6 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 * NMActiveConnection:dhcp6-config:
 	 *
 	 * The #NMDHCP6Config of the connection.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP6_CONFIG,
@@ -827,8 +801,6 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 * NMActiveConnection:vpn:
 	 *
 	 * Whether the active connection is a VPN connection.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_VPN,

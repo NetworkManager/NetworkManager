@@ -41,8 +41,6 @@ G_BEGIN_DECLS
  * @NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY: the property was invalid
  * @NM_SETTING_BRIDGE_ERROR_MISSING_PROPERTY: the property was missing and is
  * required
- *
- * Since: 0.9.8
  */
 typedef enum {
 	NM_SETTING_BRIDGE_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
@@ -82,7 +80,6 @@ NMSetting *  nm_setting_bridge_new                (void);
 
 const char * nm_setting_bridge_get_interface_name (NMSettingBridge *setting);
 
-NM_AVAILABLE_IN_0_9_10
 const GByteArray *nm_setting_bridge_get_mac_address (NMSettingBridge *setting);
 
 gboolean     nm_setting_bridge_get_stp            (NMSettingBridge *setting);

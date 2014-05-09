@@ -135,8 +135,6 @@ nm_setting_ip6_config_get_method (NMSettingIP6Config *setting)
  * property.
  *
  * Returns: the configured hostname to send to the DHCP server
- *
- * Since: 0.9.8
  **/
 const char *
 nm_setting_ip6_config_get_dhcp_hostname (NMSettingIP6Config *setting)
@@ -246,8 +244,6 @@ nm_setting_ip6_config_remove_dns (NMSettingIP6Config *setting, guint32 i)
  * Removes the DNS server at index @i.
  *
  * Returns: %TRUE if the DNS server was found and removed; %FALSE if it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_ip6_config_remove_dns_by_value (NMSettingIP6Config *setting,
@@ -383,8 +379,6 @@ nm_setting_ip6_config_remove_dns_search (NMSettingIP6Config *setting, guint32 i)
  * Removes the DNS search domain @dns_search.
  *
  * Returns: %TRUE if the DNS search domain was found and removed; %FALSE if it was not.
- *
- * Since 0.9.10
  **/
 gboolean
 nm_setting_ip6_config_remove_dns_search_by_value (NMSettingIP6Config *setting,
@@ -524,8 +518,6 @@ nm_setting_ip6_config_remove_address (NMSettingIP6Config *setting, guint32 i)
  * Removes the address @address.
  *
  * Returns: %TRUE if the address was found and removed; %FALSE if it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_ip6_config_remove_address_by_value (NMSettingIP6Config *setting,
@@ -665,8 +657,6 @@ nm_setting_ip6_config_remove_route (NMSettingIP6Config *setting, guint32 i)
  * Removes the route @route.
  *
  * Returns: %TRUE if the route was found and removed; %FALSE if it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_ip6_config_remove_route_by_value (NMSettingIP6Config *setting,
@@ -1040,8 +1030,6 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 *
 	 * The specified name will be sent to the DHCP server when acquiring a
 	 * lease.
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP_HOSTNAME,

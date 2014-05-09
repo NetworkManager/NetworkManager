@@ -245,8 +245,6 @@ nm_setting_connection_get_uuid (NMSettingConnection *setting)
  * Returns the #NMSettingConnection:interface-name property of the connection.
  *
  * Returns: the connection's interface name
- *
- * Since: 0.9.10
  **/
 const char *
 nm_setting_connection_get_interface_name (NMSettingConnection *setting)
@@ -456,8 +454,6 @@ nm_setting_connection_remove_permission (NMSettingConnection *setting,
  * be a username. See #NMSettingConnection:permissions: for more details.
  *
  * Returns: %TRUE if the permission was found and removed; %FALSE if it was not.
- *
- * Since: 0.9.10
  */
 gboolean
 nm_setting_connection_remove_permission_by_value (NMSettingConnection *setting,
@@ -609,8 +605,6 @@ nm_setting_connection_is_slave_type (NMSettingConnection *setting,
  * @setting: the #NMSettingConnection
  *
  * Returns: the number of configured secondary connection UUIDs
- *
- * Since: 0.9.8
  **/
 guint32
 nm_setting_connection_get_num_secondaries (NMSettingConnection *setting)
@@ -626,8 +620,6 @@ nm_setting_connection_get_num_secondaries (NMSettingConnection *setting)
  * @idx: the zero-based index of the secondary connection UUID entry
  *
  * Returns: the secondary connection UUID at index @idx
- *
- * Since: 0.9.8
  **/
 const char *
 nm_setting_connection_get_secondary (NMSettingConnection *setting, guint32 idx)
@@ -651,8 +643,6 @@ nm_setting_connection_get_secondary (NMSettingConnection *setting, guint32 idx)
  *
  * Returns: %TRUE if the secondary connection UUID was added; %FALSE if the UUID
  * was already present
- *
- * Since: 0.9.8
  **/
 gboolean
 nm_setting_connection_add_secondary (NMSettingConnection *setting,
@@ -682,8 +672,6 @@ nm_setting_connection_add_secondary (NMSettingConnection *setting,
  * @idx: index number of the secondary connection UUID
  *
  * Removes the secondary coonnection UUID at index @idx.
- *
- * Since: 0.9.8
  **/
 void
 nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 idx)
@@ -710,8 +698,6 @@ nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 id
  * Removes the secondary coonnection UUID @sec_uuid.
  *
  * Returns: %TRUE if the secondary connection UUID was found and removed; %FALSE if it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_connection_remove_secondary_by_value (NMSettingConnection *setting,
@@ -741,8 +727,6 @@ nm_setting_connection_remove_secondary_by_value (NMSettingConnection *setting,
  *
  * Returns: the value contained in the #NMSettingConnection:gateway-ping-timeout
  * property.
- *
- * Since: 0.9.10
  **/
 guint32
 nm_setting_connection_get_gateway_ping_timeout (NMSettingConnection *setting)
@@ -1148,8 +1132,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * not be used. Setting this property restricts the interfaces a connection
 	 * can be used with, and if interface names change or are reordered the
 	 * connection may be applied to the wrong interface.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
@@ -1304,8 +1286,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * List of connection UUIDs that should be activated when the base
 	 * connection itself is activated. Currently only VPN connections are
 	 * supported.
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SECONDARIES,
@@ -1320,8 +1300,6 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * If greater than zero, delay success of IP addressing until either the
 	 * timeout is reached, or an IP gateway replies to a ping.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_GATEWAY_PING_TIMEOUT,

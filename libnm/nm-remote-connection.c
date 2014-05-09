@@ -278,8 +278,6 @@ nm_remote_connection_commit_changes (NMRemoteConnection *self,
  * NetworkManager.  The changes are not saved to disk until either
  * nm_remote_connection_save() or nm_remote_connection_commit_changes() is
  * called.
- *
- * Since: 0.9.10
  **/
 void
 nm_remote_connection_commit_changes_unsaved (NMRemoteConnection *connection,
@@ -316,8 +314,6 @@ nm_remote_connection_commit_changes_unsaved (NMRemoteConnection *connection,
  *
  * Saves the connection to disk if the connection has changes that have not yet
  * been written to disk, or if the connection has never been saved.
- *
- * Since: 0.9.10
  **/
 void
 nm_remote_connection_save (NMRemoteConnection *connection,
@@ -433,8 +429,6 @@ nm_remote_connection_get_secrets (NMRemoteConnection *self,
  * Returns: %TRUE if the remote connection contains changes that have not
  * been saved to disk, %FALSE if the connection is the same as its on-disk
  * representation.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_remote_connection_get_unsaved (NMRemoteConnection *connection)
@@ -896,8 +890,6 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	 *
 	 * %TRUE if the remote connection contains changes that have not been saved
 	 * to disk, %FALSE if the connection is the same as its on-disk representation.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_UNSAVED,

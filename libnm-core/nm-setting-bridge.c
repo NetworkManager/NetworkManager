@@ -40,8 +40,6 @@
  *
  * The #NMSettingBridge object is a #NMSetting subclass that describes properties
  * necessary for bridging connections.
- *
- * Since: 0.9.8
  **/
 
 /**
@@ -50,8 +48,6 @@
  * Registers an error quark for #NMSettingBridge if necessary.
  *
  * Returns: the error quark used for #NMSettingBridge errors.
- *
- * Since: 0.9.8
  **/
 GQuark
 nm_setting_bridge_error_quark (void)
@@ -103,8 +99,6 @@ enum {
  * Creates a new #NMSettingBridge object with default values.
  *
  * Returns: (transfer full): the new empty #NMSettingBridge object
- *
- * Since: 0.9.8
  **/
 NMSetting *
 nm_setting_bridge_new (void)
@@ -117,8 +111,6 @@ nm_setting_bridge_new (void)
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:interface-name property of the setting
- *
- * Since: 0.9.8
  **/
 const char *
 nm_setting_bridge_get_interface_name (NMSettingBridge *setting)
@@ -133,8 +125,6 @@ nm_setting_bridge_get_interface_name (NMSettingBridge *setting)
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:mac-address property of the setting
- *
- * Since: 0.9.10
  **/
 const GByteArray *
 nm_setting_bridge_get_mac_address (NMSettingBridge *setting)
@@ -149,8 +139,6 @@ nm_setting_bridge_get_mac_address (NMSettingBridge *setting)
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:stp property of the setting
- *
- * Since: 0.9.8
  **/
 gboolean
 nm_setting_bridge_get_stp (NMSettingBridge *setting)
@@ -165,8 +153,6 @@ nm_setting_bridge_get_stp (NMSettingBridge *setting)
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:priority property of the setting
- *
- * Since: 0.9.8
  **/
 guint16
 nm_setting_bridge_get_priority (NMSettingBridge *setting)
@@ -181,8 +167,6 @@ nm_setting_bridge_get_priority (NMSettingBridge *setting)
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:forward-delay property of the setting
- *
- * Since: 0.9.8
  **/
 guint16
 nm_setting_bridge_get_forward_delay (NMSettingBridge *setting)
@@ -197,8 +181,6 @@ nm_setting_bridge_get_forward_delay (NMSettingBridge *setting)
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:hello-time property of the setting
- *
- * Since: 0.9.8
  **/
 guint16
 nm_setting_bridge_get_hello_time (NMSettingBridge *setting)
@@ -213,8 +195,6 @@ nm_setting_bridge_get_hello_time (NMSettingBridge *setting)
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:max-age property of the setting
- *
- * Since: 0.9.8
  **/
 guint16
 nm_setting_bridge_get_max_age (NMSettingBridge *setting)
@@ -229,8 +209,6 @@ nm_setting_bridge_get_max_age (NMSettingBridge *setting)
  * @setting: the #NMSettingBridge
  *
  * Returns: the #NMSettingBridge:ageing-time property of the setting
- *
- * Since: 0.9.8
  **/
 guint
 nm_setting_bridge_get_ageing_time (NMSettingBridge *setting)
@@ -448,8 +426,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * NMSettingBridge:interface-name:
 	 *
 	 * The name of the virtual in-kernel bridging network interface
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
@@ -465,8 +441,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * If specified, the MAC address of bridge. When creating a new bridge, this
 	 * MAC address will be set. When matching an existing (outside
 	 * NetworkManager created) bridge, this MAC address must match.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
@@ -480,8 +454,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * NMSettingBridge:stp:
 	 *
 	 * Controls whether Spanning Tree Protocol (STP) is enabled for this bridge.
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_STP,
@@ -498,8 +470,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * Sets the Spanning Tree Protocol (STP) priority for this bridge.  Lower
 	 * values are "better"; the lowest priority bridge will be elected the root
 	 * bridge.
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY,
@@ -514,8 +484,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * NMSettingBridge:forward-delay:
 	 *
 	 * The Spanning Tree Protocol (STP) forwarding delay, in seconds.
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_FORWARD_DELAY,
@@ -530,8 +498,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * NMSettingBridge:hello-time:
 	 *
 	 * The Spanning Tree Protocol (STP) hello time, in seconds.
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HELLO_TIME,
@@ -546,8 +512,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * NMSettingBridge:max-age:
 	 *
 	 * The Spanning Tree Protocol (STP) maximum message age, in seconds.
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAX_AGE,
@@ -562,8 +526,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * NMSettingBridge:ageing-time:
 	 *
 	 * The Ethernet MAC address aging time, in seconds.
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AGEING_TIME,

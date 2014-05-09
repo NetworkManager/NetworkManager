@@ -138,7 +138,6 @@ typedef enum {
 } NMClientError;
 
 #define NM_CLIENT_ERROR nm_client_error_quark ()
-NM_AVAILABLE_IN_0_9_10
 GQuark nm_client_error_quark (void);
 
 typedef struct {
@@ -222,7 +221,6 @@ gboolean  nm_client_wimax_hardware_get_enabled (NMClient *client);
 
 const char *nm_client_get_version        (NMClient *client);
 NMState   nm_client_get_state            (NMClient *client);
-NM_AVAILABLE_IN_0_9_10
 gboolean  nm_client_get_startup          (NMClient *client);
 gboolean  nm_client_get_manager_running  (NMClient *client);
 const GPtrArray *nm_client_get_active_connections (NMClient *client);

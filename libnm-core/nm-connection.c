@@ -406,8 +406,6 @@ nm_connection_replace_settings (NMConnection *connection,
  *
  * Returns: %TRUE if the settings were valid and added to the connection, %FALSE
  * if they were not
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_connection_replace_settings_from_connection (NMConnection *connection,
@@ -898,8 +896,6 @@ EXIT:
  * cannot be normalized, the connection will not be modified.
  *
  * Returns: %TRUE if the connection is valid, %FALSE if it is not
- *
- * Since: 1.0
  **/
 gboolean
 nm_connection_normalize (NMConnection *connection,
@@ -1388,8 +1384,6 @@ nm_connection_get_path (NMConnection *connection)
  * NetworkManager, this is the name of the created interface.
  *
  * Returns: Name of the kernel interface or %NULL
- *
- * Since: 1.0
  */
 const char *
 nm_connection_get_interface_name (NMConnection *connection)
@@ -1548,8 +1542,6 @@ nm_connection_get_id (NMConnection *connection)
  * A shortcut to return the type from the connection's #NMSettingConnection.
  *
  * Returns: the type from the connection's 'connection' setting
- *
- * Since: 0.9.10
  **/
 const char *
 nm_connection_get_connection_type (NMConnection *connection)
@@ -1574,8 +1566,6 @@ nm_connection_get_connection_type (NMConnection *connection)
  *
  * Returns: (transfer full): the name of @connection's device,
  *   or %NULL if @connection is not a virtual connection type
- *
- * Since: 0.9.10
  */
 char *
 nm_connection_get_virtual_device_description (NMConnection *connection)
@@ -1664,8 +1654,6 @@ nm_connection_get_setting_bond (NMConnection *connection)
  * A shortcut to return any #NMSettingTeam the connection might contain.
  *
  * Returns: (transfer none): an #NMSettingTeam if the connection contains one, otherwise %NULL
- *
- * Since: 0.9.10
  **/
 NMSettingTeam *
 nm_connection_get_setting_team (NMConnection *connection)
@@ -1682,8 +1670,6 @@ nm_connection_get_setting_team (NMConnection *connection)
  * A shortcut to return any #NMSettingTeamPort the connection might contain.
  *
  * Returns: (transfer none): an #NMSettingTeamPort if the connection contains one, otherwise %NULL
- *
- * Since: 0.9.10
  **/
 NMSettingTeamPort *
 nm_connection_get_setting_team_port (NMConnection *connection)
@@ -1748,8 +1734,6 @@ nm_connection_get_setting_connection (NMConnection *connection)
  * A shortcut to return any #NMSettingDcb the connection might contain.
  *
  * Returns: (transfer none): an #NMSettingDcb if the connection contains one, otherwise NULL
- *
- * Since: 0.9.10
  **/
 NMSettingDcb *
 nm_connection_get_setting_dcb (NMConnection *connection)
@@ -1766,8 +1750,6 @@ nm_connection_get_setting_dcb (NMConnection *connection)
  * A shortcut to return any #NMSettingGeneric the connection might contain.
  *
  * Returns: (transfer none): an #NMSettingGeneric if the connection contains one, otherwise NULL
- *
- * Since: 0.9.10
  **/
 NMSettingGeneric *
 nm_connection_get_setting_generic (NMConnection *connection)
@@ -2176,8 +2158,6 @@ nm_connection_class_init (NMConnectionClass *klass)
 	 * The ::changed signal is emitted when any property of any property
 	 * (including secrets) of any setting of the connection is modified,
 	 * or when settings are added or removed.
-	 *
-	 * Since: 0.9.10
 	 */
 	signals[CHANGED] =
 		g_signal_new (NM_CONNECTION_CHANGED,

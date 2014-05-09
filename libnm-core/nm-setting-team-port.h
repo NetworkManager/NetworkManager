@@ -66,10 +66,8 @@ typedef struct {
 	void (*_reserved4) (void);
 } NMSettingTeamPortClass;
 
-NM_AVAILABLE_IN_0_9_10
 GType nm_setting_team_port_get_type (void);
 
-NM_AVAILABLE_IN_0_9_10
 NMSetting *  nm_setting_team_port_new (void);
 
 const char * nm_setting_team_port_get_config (NMSettingTeamPort *setting);

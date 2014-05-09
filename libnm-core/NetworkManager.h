@@ -116,8 +116,6 @@ typedef enum {
  *   appears to be able to reach the full Internet.
  *
  * (Corresponds to the NM_CONNECTIVITY type in nm-manager.xml.)
- *
- * Since: 0.9.8.6
  */
 typedef enum {
 	NM_CONNECTIVITY_UNKNOWN,

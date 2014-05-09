@@ -41,8 +41,6 @@ G_BEGIN_DECLS
  * @NM_SETTING_BRIDGE_PORT_ERROR_INVALID_PROPERTY: the property was invalid
  * @NM_SETTING_BRIDGE_PORT_ERROR_MISSING_PROPERTY: the property was missing and
  * is required
- *
- * Since: 0.9.8
  */
 typedef enum {
 	NM_SETTING_BRIDGE_PORT_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/

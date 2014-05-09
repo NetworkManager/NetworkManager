@@ -615,8 +615,6 @@ impl_vpn_plugin_new_secrets (NMVPNPlugin *plugin,
  * request new secrets when the secrets originally provided by NetworkManager
  * are insufficient, or the VPN process indicates that it needs additional
  * information to complete the request.
- *
- * Since: 0.9.10
  */
 void
 nm_vpn_plugin_secrets_required (NMVPNPlugin *plugin,

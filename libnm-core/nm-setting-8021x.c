@@ -286,8 +286,6 @@ nm_setting_802_1x_remove_eap_method (NMSetting8021x *setting, guint32 i)
  * Removes the allowed EAP method @method.
  *
  * Returns: %TRUE if the EAP method was founs and removed, %FALSE if it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_802_1x_remove_eap_method_by_value (NMSetting8021x *setting,
@@ -726,8 +724,6 @@ nm_setting_802_1x_remove_altsubject_match (NMSetting8021x *setting, guint32 i)
  *
  * Returns: %TRUE if the alternative subject name match was found and removed,
  *          %FALSE if it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_802_1x_remove_altsubject_match_by_value (NMSetting8021x *setting,
@@ -1309,8 +1305,6 @@ nm_setting_802_1x_remove_phase2_altsubject_match (NMSetting8021x *setting, guint
  *
  * Returns: %TRUE if the alternative subject name match for "phase 2" was found and removed,
  *          %FALSE if it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_802_1x_remove_phase2_altsubject_match_by_value (NMSetting8021x *setting,

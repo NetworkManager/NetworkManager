@@ -89,8 +89,6 @@ GQuark nm_setting_wireless_error_quark (void);
  *
  * Indicates AP/master mode where the wireless device is started as an access
  * point/hotspot.
- *
- * Since: 0.9.8
  */
 #define NM_SETTING_WIRELESS_MODE_AP     "ap"
 
@@ -131,21 +129,15 @@ const GByteArray *nm_setting_wireless_get_mac_address        (NMSettingWireless 
 const GByteArray *nm_setting_wireless_get_cloned_mac_address (NMSettingWireless *setting);
 
 const GSList     *nm_setting_wireless_get_mac_address_blacklist   (NMSettingWireless *setting);
-NM_AVAILABLE_IN_0_9_10
 guint32           nm_setting_wireless_get_num_mac_blacklist_items (NMSettingWireless *setting);
-NM_AVAILABLE_IN_0_9_10
 const char *      nm_setting_wireless_get_mac_blacklist_item      (NMSettingWireless *setting,
                                                                    guint32 idx);
-NM_AVAILABLE_IN_0_9_10
 gboolean          nm_setting_wireless_add_mac_blacklist_item      (NMSettingWireless *setting,
                                                                    const char *mac);
-NM_AVAILABLE_IN_0_9_10
 void              nm_setting_wireless_remove_mac_blacklist_item   (NMSettingWireless *setting,
                                                                    guint32 idx);
-NM_AVAILABLE_IN_0_9_10
 gboolean          nm_setting_wireless_remove_mac_blacklist_item_by_value (NMSettingWireless *setting,
                                                                           const char *mac);
-NM_AVAILABLE_IN_0_9_10
 void              nm_setting_wireless_clear_mac_blacklist_items   (NMSettingWireless *setting);
 
 guint32           nm_setting_wireless_get_mtu                (NMSettingWireless *setting);

@@ -585,8 +585,6 @@ device_supports_ap_ciphers (guint32 dev_caps,
  *
  * Returns: %TRUE if the device capabilities are compatible with the desired
  * @type, %FALSE if they are not.
- *
- * Since: 0.9.8
  **/
 gboolean
 nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
@@ -792,8 +790,6 @@ nm_utils_security_valid (NMUtilsSecurityType type,
  * Checks if @key is a valid WEP key
  *
  * Returns: %TRUE if @key is a WEP key, %FALSE if not
- *
- * Since: 0.9.8
  */
 gboolean
 nm_utils_wep_key_valid (const char *key, NMWepKeyType wep_type)
@@ -836,8 +832,6 @@ nm_utils_wep_key_valid (const char *key, NMWepKeyType wep_type)
  * Checks if @psk is a valid WPA PSK
  *
  * Returns: %TRUE if @psk is a WPA PSK, %FALSE if not
- *
- * Since: 0.9.8
  */
 gboolean
 nm_utils_wpa_psk_valid (const char *psk)
@@ -2035,8 +2029,6 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, int type)
  *
  * Return value: @buffer, or %NULL if @asc couldn't be parsed
  *   or would be shorter or longer than @length.
- *
- * Since: 0.9.10
  */
 guint8 *
 nm_utils_hwaddr_aton_len (const char *asc, gpointer buffer, gsize length)
@@ -2097,8 +2089,6 @@ nm_utils_hwaddr_aton_len (const char *asc, gpointer buffer, gsize length)
  * Converts @addr to textual form.
  *
  * Return value: (transfer full): the textual form of @addr
- *
- * Since: 0.9.10
  */
 char *
 nm_utils_hwaddr_ntoa_len (gconstpointer addr, gsize length)
@@ -2132,8 +2122,6 @@ nm_utils_hwaddr_ntoa_len (gconstpointer addr, gsize length)
  *
  * Return value: %TRUE if @asc appears to be a valid hardware address
  *   of some type, %FALSE if not.
- *
- * Since: 0.9.10
  */
 gboolean
 nm_utils_hwaddr_valid (const char *asc)
@@ -2163,8 +2151,6 @@ nm_utils_hwaddr_valid (const char *asc)
  * that index (returned_string[final_len] == '\0'),
  *
  * Return value: (transfer full): the textual form of @bytes
- *
- * Since: 0.9.10
  */
 /*
  * Code originally by Alex Larsson <alexl@redhat.com> and
@@ -2206,8 +2192,6 @@ nm_utils_bin2hexstr (const char *bytes, int len, int final_len)
  * Converts a hex string (2 characters) into its byte representation.
  *
  * Return value: a byte, or -1 if @hex doesn't represent a hex byte
- *
- * Since: 0.9.10
  */
 int
 nm_utils_hex2byte (const char *hex)
@@ -2231,8 +2215,6 @@ nm_utils_hex2byte (const char *hex)
  * length is @len/2.
  *
  * Return value: (transfer full): a array of bytes, or %NULL on error
- *
- * Since: 0.9.10
  */
 char *
 nm_utils_hexstr2bin (const char *hex, size_t len)
@@ -2269,8 +2251,6 @@ nm_utils_hexstr2bin (const char *hex, size_t len)
  * function in net/core/dev.c.
  *
  * Returns: %TRUE if interface name is valid, otherwise %FALSE is returned.
- *
- * Since: 0.9.8
  */
 gboolean
 nm_utils_iface_valid_name (const char *name)
@@ -2302,8 +2282,6 @@ nm_utils_iface_valid_name (const char *name)
  * Checks if @str is a UUID
  *
  * Returns: %TRUE if @str is a UUID, %FALSE if not
- *
- * Since: 0.9.8
  */
 gboolean
 nm_utils_is_uuid (const char *str)
@@ -2346,8 +2324,6 @@ static char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
  *
  * Returns: the input buffer @dst, or a pointer to an
  *  internal, static buffer. This function cannot fail.
- *
- * Since: 0.9.10
  **/
 const char *
 nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
@@ -2372,8 +2348,6 @@ nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
  * Returns: the input buffer @dst, or a pointer to an
  *  internal, static buffer. %NULL is not allowed as @in6addr,
  *  otherwise, this function cannot fail.
- *
- * Since: 0.9.10
  **/
 const char *
 nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst)
@@ -2405,8 +2379,6 @@ nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst)
  * underlying device driver.
  *
  * Returns: %TRUE or %FALSE
- *
- * Since: 0.9.10
  */
 gboolean
 nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_type)
@@ -2459,8 +2431,6 @@ static const NMUtilsPrivateData data = {
  * function for any reason.
  *
  * Returns: Who knows? It's a mystery.
- *
- * Since: 0.9.10
  */
 const NMUtilsPrivateData *
 nm_utils_get_private (void)

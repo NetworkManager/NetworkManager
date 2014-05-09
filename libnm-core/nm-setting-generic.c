@@ -35,8 +35,6 @@
  *
  * There are currently no properties on this object; it exists only to be
  * the "connection type" setting on #NMConnections for generic devices.
- *
- * Since: 0.9.10
  **/
 
 /**
@@ -45,8 +43,6 @@
  * Registers an error quark for #NMSettingGeneric if necessary.
  *
  * Returns: the error quark used for #NMSettingGeneric errors.
- *
- * Since: 0.9.10
  **/
 GQuark
 nm_setting_generic_error_quark (void)
@@ -79,8 +75,6 @@ typedef struct {
  * Creates a new #NMSettingGeneric object with default values.
  *
  * Returns: (transfer full): the new empty #NMSettingGeneric object
- *
- * Since: 0.9.10
  **/
 NMSetting *
 nm_setting_generic_new (void)

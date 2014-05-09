@@ -431,8 +431,6 @@ nm_setting_vlan_remove_priority (NMSettingVlan *setting,
  * properties.
  *
  * Returns: %TRUE if the priority mapping was found and removed; %FALSE if it was not.
- *
- * Since: 0.9.10
  */
 gboolean
 nm_setting_vlan_remove_priority_by_value (NMSettingVlan *setting,
@@ -469,8 +467,6 @@ nm_setting_vlan_remove_priority_by_value (NMSettingVlan *setting,
  * properties.
  *
  * Returns: %TRUE if the priority mapping was found and removed; %FALSE if it was not.
- *
- * Since: 0.9.10
  */
 gboolean
 nm_setting_vlan_remove_priority_str_by_value (NMSettingVlan *setting,

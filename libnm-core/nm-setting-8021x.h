@@ -167,7 +167,6 @@ guint32           nm_setting_802_1x_get_num_eap_methods              (NMSetting8
 const char *      nm_setting_802_1x_get_eap_method                   (NMSetting8021x *setting, guint32 i);
 gboolean          nm_setting_802_1x_add_eap_method                   (NMSetting8021x *setting, const char *eap);
 void              nm_setting_802_1x_remove_eap_method                (NMSetting8021x *setting, guint32 i);
-NM_AVAILABLE_IN_0_9_10
 gboolean          nm_setting_802_1x_remove_eap_method_by_value       (NMSetting8021x *setting, const char *eap);
 void              nm_setting_802_1x_clear_eap_methods                (NMSetting8021x *setting);
 
@@ -199,7 +198,6 @@ gboolean          nm_setting_802_1x_add_altsubject_match             (NMSetting8
                                                                       const char *altsubject_match);
 void              nm_setting_802_1x_remove_altsubject_match          (NMSetting8021x *setting,
                                                                       guint32 i);
-NM_AVAILABLE_IN_0_9_10
 gboolean          nm_setting_802_1x_remove_altsubject_match_by_value (NMSetting8021x *setting,
                                                                       const char *altsubject_match);
 void              nm_setting_802_1x_clear_altsubject_matches         (NMSetting8021x *setting);
@@ -241,7 +239,6 @@ gboolean          nm_setting_802_1x_add_phase2_altsubject_match             (NMS
                                                                              const char *phase2_altsubject_match);
 void              nm_setting_802_1x_remove_phase2_altsubject_match          (NMSetting8021x *setting,
                                                                              guint32 i);
-NM_AVAILABLE_IN_0_9_10
 gboolean          nm_setting_802_1x_remove_phase2_altsubject_match_by_value (NMSetting8021x *setting,
                                                                              const char *phase2_altsubject_match);
 void              nm_setting_802_1x_clear_phase2_altsubject_matches         (NMSetting8021x *setting);

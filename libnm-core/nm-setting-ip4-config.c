@@ -226,8 +226,6 @@ nm_setting_ip4_config_remove_dns (NMSettingIP4Config *setting, guint32 i)
  *
  * Returns: %TRUE if the DNS server was found and removed; %FALSE if it was not.
  * domain was already known
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_ip4_config_remove_dns_by_value (NMSettingIP4Config *setting, guint32 dns)
@@ -364,8 +362,6 @@ nm_setting_ip4_config_remove_dns_search (NMSettingIP4Config *setting, guint32 i)
  * Removes the DNS search domain @dns_search.
  *
  * Returns: %TRUE if the DNS search domain was found and removed; %FALSE if it was not.
- *
- * Since 0.9.10
  **/
 gboolean
 nm_setting_ip4_config_remove_dns_search_by_value (NMSettingIP4Config *setting,
@@ -533,8 +529,6 @@ nm_setting_ip4_config_remove_address (NMSettingIP4Config *setting, guint32 i)
  * Removes the address @address.
  *
  * Returns: %TRUE if the address was found and removed; %FALSE if it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_ip4_config_remove_address_by_value (NMSettingIP4Config *setting,
@@ -677,8 +671,6 @@ nm_setting_ip4_config_remove_route (NMSettingIP4Config *setting, guint32 i)
  * Removes the route @route.
  *
  * Returns: %TRUE if the route was found and removed; %FALSE if it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_ip4_config_remove_route_by_value (NMSettingIP4Config *setting,

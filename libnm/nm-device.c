@@ -144,8 +144,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
  * Registers an error quark for #NMDevice if necessary.
  *
  * Returns: the error quark used for #NMDevice errors.
- *
- * Since: 0.9.10
  **/
 GQuark
 nm_device_error_quark (void)
@@ -769,8 +767,6 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 * NMDevice:available-connections:
 	 *
 	 * The available connections (#NMRemoteConnection) of the device
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AVAILABLE_CONNECTIONS,
@@ -808,8 +804,6 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 *
 	 * The physical port ID of the device. (See
 	 * nm_device_get_physical_port_id().)
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHYSICAL_PORT_ID,
@@ -822,8 +816,6 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 * NMDevice:mtu:
 	 *
 	 * The MTU of the device.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MTU,
@@ -1128,8 +1120,6 @@ nm_device_get_firmware_version (NMDevice *device)
  *
  * Returns: the type description of the device. This is the internal
  * string used by the device, and must not be modified.
- *
- * Since: 0.9.10
  **/
 const char *
 nm_device_get_type_description (NMDevice *device)
@@ -1164,8 +1154,6 @@ nm_device_get_type_description (NMDevice *device)
  *
  * Returns: the current MAC of the device, or %NULL.
  * This is the internal string used by the device, and must not be modified.
- *
- * Since: 0.9.10
  **/
 const char *
 nm_device_get_hw_address (NMDevice *device)
@@ -1426,8 +1414,6 @@ nm_device_get_active_connection (NMDevice *device)
  * Returns: (element-type NMRemoteConnection): the #GPtrArray
  * containing #NMRemoteConnections. This is the internal copy used by
  * the connection, and must not be modified.
- *
- * Since: 0.9.8
  **/
 const GPtrArray *
 nm_device_get_available_connections (NMDevice *device)
@@ -1762,8 +1748,6 @@ get_short_vendor (NMDevice *device)
  *
  * Returns: a description of @device. If either the vendor or the
  *   product name is unknown, this returns the interface name.
- *
- * Since: 0.9.10
  */
 const char *
 nm_device_get_description (NMDevice *device)
@@ -1915,8 +1899,6 @@ find_duplicates (char     **names,
  * devices in @devices.
  *
  * Returns: (transfer full) (array zero-terminated=1): the device names
- *
- * Since: 0.9.10
  */
 char **
 nm_device_disambiguate_names (NMDevice **devices,
@@ -2027,8 +2009,6 @@ done:
  * Returns: the physical port ID of the device, or %NULL if the port
  *   ID is unknown. This is the internal string used by the device and
  *   must not be modified.
- *
- * Since: 0.9.10
  **/
 const char *
 nm_device_get_physical_port_id (NMDevice *device)
@@ -2053,8 +2033,6 @@ nm_device_get_physical_port_id (NMDevice *device)
  * Gets the  MTU of the #NMDevice.
  *
  * Returns: the MTU of the device.
- *
- * Since: 0.9.10
  **/
 guint32
 nm_device_get_mtu (NMDevice *device)
@@ -2072,8 +2050,6 @@ nm_device_get_mtu (NMDevice *device)
  * Whether the device is a software device.
  *
  * Returns: %TRUE if @device is a software device, %FALSE if it is a hardware device.
- *
- * Since: 1.0
  **/
 gboolean
 nm_device_is_software (NMDevice *device)
@@ -2156,8 +2132,6 @@ nm_device_disconnect (NMDevice *device,
  * @user_data: (closure): caller-specific data passed to @callback
  *
  * Deletes the software device. Hardware devices can't be deleted.
- *
- * Since: 1.0
  **/
 void
 nm_device_delete (NMDevice *device,
@@ -2297,8 +2271,6 @@ nm_device_filter_connections (NMDevice *device, const GSList *connections)
  * that can be used on @device.
  *
  * Returns: @device's associated #NMSetting type
- *
- * Since: 0.9.10
  */
 GType
 nm_device_get_setting_type (NMDevice *device)

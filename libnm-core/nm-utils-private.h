@@ -57,8 +57,6 @@ const NMUtilsPrivateData *nm_utils_get_private (void);
  *
  * This macro only exists inside the NetworkManager source tree and
  * is not part of the public API.
- *
- * Since: 0.9.10
  */
 #define NM_UTILS_PRIVATE_CALL(call) (nm_utils_get_private ()->call)
 

@@ -140,8 +140,6 @@ nm_device_bond_get_carrier (NMDeviceBond *device)
  * Returns: (element-type NMDevice): the #GPtrArray containing
  * #NMDevices that are slaves of @device. This is the internal
  * copy used by the device, and must not be modified.
- *
- * Since: 0.9.6.4
  **/
 const GPtrArray *
 nm_device_bond_get_slaves (NMDeviceBond *device)
@@ -335,8 +333,6 @@ nm_device_bond_class_init (NMDeviceBondClass *eth_class)
 	 * NMDeviceBond:slaves:
 	 *
 	 * The devices (#NMDevice) slaved to the bond device.
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SLAVES,

@@ -463,8 +463,6 @@ nm_setting_wireless_get_mac_address_blacklist (NMSettingWireless *setting)
  * @setting: the #NMSettingWireless
  *
  * Returns: the number of blacklisted MAC addresses
- *
- * Since: 0.9.10
  **/
 guint32
 nm_setting_wireless_get_num_mac_blacklist_items (NMSettingWireless *setting)
@@ -481,8 +479,6 @@ nm_setting_wireless_get_num_mac_blacklist_items (NMSettingWireless *setting)
  *
  * Returns: the blacklisted MAC address string (hex-digits-and-colons notation)
  * at index @idx
- *
- * Since: 0.9.10
  **/
 const char *
 nm_setting_wireless_get_mac_blacklist_item (NMSettingWireless *setting, guint32 idx)
@@ -506,8 +502,6 @@ nm_setting_wireless_get_mac_blacklist_item (NMSettingWireless *setting, guint32 
  *
  * Returns: %TRUE if the MAC address was added; %FALSE if the MAC address
  * is invalid or was already present
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_wireless_add_mac_blacklist_item (NMSettingWireless *setting, const char *mac)
@@ -540,8 +534,6 @@ nm_setting_wireless_add_mac_blacklist_item (NMSettingWireless *setting, const ch
  * @idx: index number of the MAC address
  *
  * Removes the MAC address at index @idx from the blacklist.
- *
- * Since: 0.9.10
  **/
 void
 nm_setting_wireless_remove_mac_blacklist_item (NMSettingWireless *setting, guint32 idx)
@@ -569,8 +561,6 @@ nm_setting_wireless_remove_mac_blacklist_item (NMSettingWireless *setting, guint
  * Removes the MAC address @mac from the blacklist.
  *
  * Returns: %TRUE if the MAC address was found and removed; %FALSE if it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_wireless_remove_mac_blacklist_item_by_value (NMSettingWireless *setting, const char *mac)
@@ -601,8 +591,6 @@ nm_setting_wireless_remove_mac_blacklist_item_by_value (NMSettingWireless *setti
  * @setting: the #NMSettingWireless
  *
  * Removes all blacklisted MAC addresses.
- *
- * Since: 0.9.10
  **/
 void
 nm_setting_wireless_clear_mac_blacklist_items (NMSettingWireless *setting)

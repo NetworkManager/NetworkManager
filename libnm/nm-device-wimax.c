@@ -707,8 +707,6 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 * NMDeviceWimax:nsps:
 	 *
 	 * List of all WiMAX Network Service Providers the device can see.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NSPS,

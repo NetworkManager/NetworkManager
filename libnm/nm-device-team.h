@@ -47,7 +47,6 @@ typedef enum {
 } NMDeviceTeamError;
 
 #define NM_DEVICE_TEAM_ERROR nm_device_team_error_quark ()
-NM_AVAILABLE_IN_0_9_10
 GQuark nm_device_team_error_quark (void);
 
 #define NM_DEVICE_TEAM_HW_ADDRESS  "hw-address"
@@ -70,10 +69,8 @@ typedef struct {
 	void (*_reserved6) (void);
 } NMDeviceTeamClass;
 
-NM_AVAILABLE_IN_0_9_10
 GType nm_device_team_get_type (void);
 
-NM_AVAILABLE_IN_0_9_10
 GObject *nm_device_team_new (DBusGConnection *connection, const char *path);
 
 const char      *nm_device_team_get_hw_address (NMDeviceTeam *device);

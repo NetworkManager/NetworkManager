@@ -261,8 +261,6 @@ nm_setting_wireless_security_remove_proto (NMSettingWirelessSecurity *setting, g
  * Removes a protocol from the allowed protocol list.
  *
  * Returns: %TRUE if the protocol was found and removed; %FALSE it it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_wireless_security_remove_proto_by_value (NMSettingWirelessSecurity *setting,
@@ -409,8 +407,6 @@ nm_setting_wireless_security_remove_pairwise (NMSettingWirelessSecurity *setting
  * algorithm list.
  *
  * Returns: %TRUE if the encryption algorith was found and removed; %FALSE it it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_wireless_security_remove_pairwise_by_value (NMSettingWirelessSecurity *setting,
@@ -559,8 +555,6 @@ nm_setting_wireless_security_remove_group (NMSettingWirelessSecurity *setting, g
  * algorithm list.
  *
  * Returns: %TRUE if the algorithm was found and removed; %FALSE it it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_wireless_security_remove_group_by_value (NMSettingWirelessSecurity *setting,

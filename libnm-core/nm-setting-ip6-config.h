@@ -216,7 +216,6 @@ guint32                nm_setting_ip6_config_get_num_dns            (NMSettingIP
 const struct in6_addr *nm_setting_ip6_config_get_dns                (NMSettingIP6Config *setting, guint32 i);
 gboolean               nm_setting_ip6_config_add_dns                (NMSettingIP6Config *setting, const struct in6_addr *dns);
 void                   nm_setting_ip6_config_remove_dns             (NMSettingIP6Config *setting, guint32 i);
-NM_AVAILABLE_IN_0_9_10
 gboolean               nm_setting_ip6_config_remove_dns_by_value    (NMSettingIP6Config *setting, const struct in6_addr *dns);
 void                   nm_setting_ip6_config_clear_dns              (NMSettingIP6Config *setting);
 
@@ -224,7 +223,6 @@ guint32                nm_setting_ip6_config_get_num_dns_searches       (NMSetti
 const char *           nm_setting_ip6_config_get_dns_search             (NMSettingIP6Config *setting, guint32 i);
 gboolean               nm_setting_ip6_config_add_dns_search             (NMSettingIP6Config *setting, const char *dns_search);
 void                   nm_setting_ip6_config_remove_dns_search          (NMSettingIP6Config *setting, guint32 i);
-NM_AVAILABLE_IN_0_9_10
 gboolean               nm_setting_ip6_config_remove_dns_search_by_value (NMSettingIP6Config *setting, const char *dns_search);
 void                   nm_setting_ip6_config_clear_dns_searches         (NMSettingIP6Config *setting);
 
@@ -232,7 +230,6 @@ guint32                nm_setting_ip6_config_get_num_addresses       (NMSettingI
 NMIP6Address *         nm_setting_ip6_config_get_address             (NMSettingIP6Config *setting, guint32 i);
 gboolean               nm_setting_ip6_config_add_address             (NMSettingIP6Config *setting, NMIP6Address *address);
 void                   nm_setting_ip6_config_remove_address          (NMSettingIP6Config *setting, guint32 i);
-NM_AVAILABLE_IN_0_9_10
 gboolean               nm_setting_ip6_config_remove_address_by_value (NMSettingIP6Config *setting, NMIP6Address *address);
 void                   nm_setting_ip6_config_clear_addresses         (NMSettingIP6Config *setting);
 
@@ -240,7 +237,6 @@ guint32                nm_setting_ip6_config_get_num_routes         (NMSettingIP
 NMIP6Route *           nm_setting_ip6_config_get_route              (NMSettingIP6Config *setting, guint32 i);
 gboolean               nm_setting_ip6_config_add_route              (NMSettingIP6Config *setting, NMIP6Route *route);
 void                   nm_setting_ip6_config_remove_route           (NMSettingIP6Config *setting, guint32 i);
-NM_AVAILABLE_IN_0_9_10
 gboolean               nm_setting_ip6_config_remove_route_by_value  (NMSettingIP6Config *setting, NMIP6Route *route);
 void                   nm_setting_ip6_config_clear_routes           (NMSettingIP6Config *setting);
 gboolean               nm_setting_ip6_config_get_ignore_auto_routes (NMSettingIP6Config *setting);

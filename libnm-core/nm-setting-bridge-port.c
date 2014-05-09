@@ -37,8 +37,6 @@
  *
  * The #NMSettingBridgePort object is a #NMSetting subclass that describes
  * optional properties that apply to bridge ports.
- *
- * Since: 0.9.8
  **/
 
 /**
@@ -47,8 +45,6 @@
  * Registers an error quark for #NMSettingBridgePort if necessary.
  *
  * Returns: the error quark used for #NMSettingBridgePort errors.
- *
- * Since: 0.9.8
  **/
 GQuark
 nm_setting_bridge_port_error_quark (void)
@@ -90,8 +86,6 @@ enum {
  * @setting: the #NMSettingBridgePort
  *
  * Returns: the #NMSettingBridgePort:priority property of the setting
- *
- * Since: 0.9.8
  **/
 guint16
 nm_setting_bridge_port_get_priority (NMSettingBridgePort *setting)
@@ -106,8 +100,6 @@ nm_setting_bridge_port_get_priority (NMSettingBridgePort *setting)
  * @setting: the #NMSettingBridgePort
  *
  * Returns: the #NMSettingBridgePort:path-cost property of the setting
- *
- * Since: 0.9.8
  **/
 guint16
 nm_setting_bridge_port_get_path_cost (NMSettingBridgePort *setting)
@@ -122,8 +114,6 @@ nm_setting_bridge_port_get_path_cost (NMSettingBridgePort *setting)
  * @setting: the #NMSettingBridgePort
  *
  * Returns: the #NMSettingBridgePort:hairpin-mode property of the setting
- *
- * Since: 0.9.8
  **/
 gboolean
 nm_setting_bridge_port_get_hairpin_mode (NMSettingBridgePort *setting)
@@ -181,8 +171,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
  * Creates a new #NMSettingBridgePort object with default values.
  *
  * Returns: (transfer full): the new empty #NMSettingBridgePort object
- *
- * Since: 0.9.8
  **/
 NMSetting *
 nm_setting_bridge_port_new (void)
@@ -257,8 +245,6 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	 * NMSettingBridgePort:priority:
 	 *
 	 * The Spanning Tree Protocol (STP) priority of this bridge port.
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY,
@@ -274,8 +260,6 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	 *
 	 * The Spanning Tree Protocol (STP) port cost for destinations via this
 	 * port.
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PATH_COST,
@@ -291,8 +275,6 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	 *
 	 * Enables or disabled "hairpin mode" for the port, which allows frames to
 	 * be sent back out through the port the frame was received on.
-	 *
-	 * Since: 0.9.8
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HAIRPIN_MODE,

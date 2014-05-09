@@ -78,26 +78,19 @@ GType nm_active_connection_get_type (void);
 GObject *nm_active_connection_new (DBusGConnection *connection, const char *path);
 
 const char * nm_active_connection_get_connection          (NMActiveConnection *connection);
-NM_AVAILABLE_IN_0_9_10
 const char * nm_active_connection_get_id                  (NMActiveConnection *connection);
 const char * nm_active_connection_get_uuid                (NMActiveConnection *connection);
-NM_AVAILABLE_IN_0_9_10
 const char * nm_active_connection_get_connection_type     (NMActiveConnection *connection);
 const char * nm_active_connection_get_specific_object     (NMActiveConnection *connection);
 const GPtrArray *nm_active_connection_get_devices         (NMActiveConnection *connection);
 NMActiveConnectionState nm_active_connection_get_state    (NMActiveConnection *connection);
 const char * nm_active_connection_get_master              (NMActiveConnection *connection);
 gboolean       nm_active_connection_get_default           (NMActiveConnection *connection);
-NM_AVAILABLE_IN_0_9_10
 NMIP4Config *  nm_active_connection_get_ip4_config        (NMActiveConnection *connection);
-NM_AVAILABLE_IN_0_9_10
 NMDHCP4Config *nm_active_connection_get_dhcp4_config      (NMActiveConnection *connection);
 gboolean       nm_active_connection_get_default6          (NMActiveConnection *connection);
-NM_AVAILABLE_IN_0_9_10
 NMIP6Config *  nm_active_connection_get_ip6_config        (NMActiveConnection *connection);
-NM_AVAILABLE_IN_0_9_10
 NMDHCP6Config *nm_active_connection_get_dhcp6_config      (NMActiveConnection *connection);
-NM_AVAILABLE_IN_0_9_10
 gboolean       nm_active_connection_get_vpn               (NMActiveConnection *connection);
 
 G_END_DECLS

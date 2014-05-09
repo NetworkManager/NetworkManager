@@ -147,7 +147,6 @@ NMVPNServiceState  nm_vpn_plugin_get_state      (NMVPNPlugin *plugin);
 void               nm_vpn_plugin_set_state      (NMVPNPlugin *plugin,
                                                  NMVPNServiceState state);
 
-NM_AVAILABLE_IN_0_9_10
 void               nm_vpn_plugin_secrets_required (NMVPNPlugin *plugin,
                                                    const char *message,
                                                    const char **hints);

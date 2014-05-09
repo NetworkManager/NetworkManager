@@ -38,8 +38,6 @@ G_BEGIN_DECLS
  * @NM_DEVICE_BRIDGE_ERROR_NOT_BRIDGE_CONNECTION: the connection was not of bridge type
  * @NM_DEVICE_BRIDGE_ERROR_INVALID_BRIDGE_CONNECTION: the bridge connection was invalid
  * @NM_DEVICE_BRIDGE_ERROR_INTERFACE_MISMATCH: the interfaces of the connection and the device mismatched
- *
- * Since: 0.9.8
  */
 typedef enum {
 	NM_DEVICE_BRIDGE_ERROR_UNKNOWN = 0,               /*< nick=UnknownError >*/

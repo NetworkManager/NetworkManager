@@ -346,8 +346,6 @@ request_scan_cb (DBusGProxy *proxy,
  * Request NM to scan for access points on the #NMDeviceWifi. This function only
  * instructs NM to perform scanning. Use nm_device_wifi_get_access_points()
  * to get available access points.
- *
- * Since: 0.9.8
  **/
 void
 nm_device_wifi_request_scan_simple (NMDeviceWifi *device,
@@ -790,8 +788,6 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 * NMDeviceWifi:access-points:
 	 *
 	 * List of all Wi-Fi access points the device can see.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACCESS_POINTS,

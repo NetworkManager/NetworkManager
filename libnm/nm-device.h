@@ -55,7 +55,6 @@ typedef enum {
 } NMDeviceError;
 
 #define NM_DEVICE_ERROR nm_device_error_quark ()
-NM_AVAILABLE_IN_0_9_10
 GQuark nm_device_error_quark (void);
 
 #define NM_DEVICE_DEVICE_TYPE "device-type"
@@ -121,9 +120,7 @@ const char *         nm_device_get_udi              (NMDevice *device);
 const char *         nm_device_get_driver           (NMDevice *device);
 const char *         nm_device_get_driver_version   (NMDevice *device);
 const char *         nm_device_get_firmware_version (NMDevice *device);
-NM_AVAILABLE_IN_0_9_10
 const char *         nm_device_get_type_description (NMDevice *device);
-NM_AVAILABLE_IN_0_9_10
 const char *         nm_device_get_hw_address       (NMDevice *device);
 NMDeviceCapabilities nm_device_get_capabilities     (NMDevice *device);
 gboolean             nm_device_get_managed          (NMDevice *device);
@@ -138,18 +135,13 @@ NMDeviceState        nm_device_get_state            (NMDevice *device);
 NMDeviceState        nm_device_get_state_reason     (NMDevice *device, NMDeviceStateReason *reason);
 NMActiveConnection * nm_device_get_active_connection(NMDevice *device);
 const GPtrArray *    nm_device_get_available_connections(NMDevice *device);
-NM_AVAILABLE_IN_0_9_10
 const char *         nm_device_get_physical_port_id (NMDevice *device);
-NM_AVAILABLE_IN_0_9_10
 guint32              nm_device_get_mtu              (NMDevice *device);
-NM_AVAILABLE_IN_1_0
 gboolean             nm_device_is_software          (NMDevice *device);
 
 const char *         nm_device_get_product           (NMDevice  *device);
 const char *         nm_device_get_vendor            (NMDevice  *device);
-NM_AVAILABLE_IN_0_9_10
 const char *         nm_device_get_description       (NMDevice  *device);
-NM_AVAILABLE_IN_0_9_10
 char **              nm_device_disambiguate_names    (NMDevice **devices,
                                                       int        num_devices);
 
@@ -159,7 +151,6 @@ void                 nm_device_disconnect           (NMDevice *device,
                                                      NMDeviceCallbackFn callback,
                                                      gpointer user_data);
 
-NM_AVAILABLE_IN_1_0
 void                 nm_device_delete               (NMDevice *device,
                                                      NMDeviceCallbackFn callback,
                                                      gpointer user_data);
@@ -174,7 +165,6 @@ gboolean             nm_device_connection_compatible (NMDevice *device,
                                                       NMConnection *connection,
                                                       GError **error);
 
-NM_AVAILABLE_IN_0_9_10
 GType                nm_device_get_setting_type     (NMDevice *device);
 
 G_END_DECLS

@@ -60,8 +60,6 @@ GQuark nm_setting_dcb_error_quark (void);
  * peer configuration advertisements
  *
  * DCB feature flags.
- *
- * Since: 0.9.10
  **/
 typedef enum {
 	NM_SETTING_DCB_FLAG_NONE      = 0x00000000,
@@ -74,8 +72,6 @@ typedef enum {
  * NM_SETTING_DCB_FCOE_MODE_FABRIC:
  *
  * Indicates that the FCoE controller should use "fabric" mode (default)
- *
- * Since: 0.9.10
  */
 #define NM_SETTING_DCB_FCOE_MODE_FABRIC  "fabric"
 
@@ -83,8 +79,6 @@ typedef enum {
  * NM_SETTING_DCB_FCOE_MODE_VN2VN:
  *
  * Indicates that the FCoE controller should use "VN2VN" mode.
- *
- * Since: 0.9.10
  */
 #define NM_SETTING_DCB_FCOE_MODE_VN2VN   "vn2vn"
 
@@ -125,10 +119,8 @@ typedef struct {
 	void (*_reserved4) (void);
 } NMSettingDcbClass;
 
-NM_AVAILABLE_IN_0_9_10
 GType nm_setting_dcb_get_type (void);
 
-NM_AVAILABLE_IN_0_9_10
 NMSetting *       nm_setting_dcb_new                      (void);
 
 NMSettingDcbFlags nm_setting_dcb_get_app_fcoe_flags     (NMSettingDcb *setting);

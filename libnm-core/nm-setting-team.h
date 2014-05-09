@@ -67,10 +67,8 @@ typedef struct {
 	void (*_reserved4) (void);
 } NMSettingTeamClass;
 
-NM_AVAILABLE_IN_0_9_10
 GType nm_setting_team_get_type (void);
 
-NM_AVAILABLE_IN_0_9_10
 NMSetting *  nm_setting_team_new                (void);
 
 const char * nm_setting_team_get_interface_name (NMSettingTeam *setting);

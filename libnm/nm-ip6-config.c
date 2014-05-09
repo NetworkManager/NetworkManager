@@ -159,8 +159,6 @@ register_properties (NMIP6Config *config)
  * Gets the IP6 gateway.
  *
  * Returns: the IPv6 gateway of the configuration.
- *
- * Since: 0.9.10
  **/
 const char *
 nm_ip6_config_get_gateway (NMIP6Config *config)
@@ -197,8 +195,6 @@ nm_ip6_config_get_addresses (NMIP6Config *config)
  * Gets the number of the domain name servers in the configuration.
  *
  * Returns: the number of domain name servers
- *
- * Since: 0.9.10
  **/
 guint32
 nm_ip6_config_get_num_nameservers (NMIP6Config *config)
@@ -218,8 +214,6 @@ nm_ip6_config_get_num_nameservers (NMIP6Config *config)
  *
  * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
  *          the IPv6 address of domain name server at index @iidx
- *
- * Since: 0.9.10
  **/
 const struct in6_addr *
 nm_ip6_config_get_nameserver (NMIP6Config *config, guint32 idx)
@@ -286,8 +280,6 @@ nm_ip6_config_get_domains (NMIP6Config *config)
  *
  * Returns: (element-type utf8): the #GPtrArray containing dns searches as strings.
  * This is the internal copy used by the configuration, and must not be modified.
- *
- * Since: 0.9.10
  **/
 const GPtrArray *
 nm_ip6_config_get_searches (NMIP6Config *config)
@@ -413,8 +405,6 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 * NMIP6Config:gateway:
 	 *
 	 * The IPv6 gateway as string
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_GATEWAY,
@@ -480,8 +470,6 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 * NMIP6Config:searches:
 	 *
 	 * The #GPtrArray containing dns search strings of the configuration.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_SEARCHES,

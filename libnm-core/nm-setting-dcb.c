@@ -40,8 +40,6 @@
  * DCB is a set of protocols (including 802.1Qbb, 802.1Qaz, 802.1Qau, and
  * 802.1AB) to eliminate packet loss in Ethernet networks and support the use
  * of storage technologies like Fibre Channel over Ethernet (FCoE) and iSCSI.
- *
- * Since: 0.9.10
  **/
 
 /**
@@ -50,8 +48,6 @@
  * Registers an error quark for #NMSettingDcb if necessary.
  *
  * Returns: the error quark used for #NMSettingDcb errors.
- *
- * Since: 0.9.10
  **/
 GQuark
 nm_setting_dcb_error_quark (void)
@@ -128,8 +124,6 @@ enum {
  * Creates a new #NMSettingDcb object with default values.
  *
  * Returns: (transfer full): the new empty #NMSettingDcb object
- *
- * Since: 0.9.10
  **/
 NMSetting *
 nm_setting_dcb_new (void)
@@ -142,8 +136,6 @@ nm_setting_dcb_new (void)
  * @setting: the #NMSettingDcb
  *
  * Returns: the #NMSettingDcb:app-fcoe-flags property of the setting
- *
- * Since: 0.9.10
  **/
 NMSettingDcbFlags
 nm_setting_dcb_get_app_fcoe_flags (NMSettingDcb *setting)
@@ -158,8 +150,6 @@ nm_setting_dcb_get_app_fcoe_flags (NMSettingDcb *setting)
  * @setting: the #NMSettingDcb
  *
  * Returns: the #NMSettingDcb:app-fcoe-priority property of the setting
- *
- * Since: 0.9.10
  **/
 gint
 nm_setting_dcb_get_app_fcoe_priority (NMSettingDcb *setting)
@@ -174,8 +164,6 @@ nm_setting_dcb_get_app_fcoe_priority (NMSettingDcb *setting)
  * @setting: the #NMSettingDcb
  *
  * Returns: the #NMSettingDcb:app-fcoe-mode property of the setting
- *
- * Since: 0.9.10
  **/
 const char *
 nm_setting_dcb_get_app_fcoe_mode (NMSettingDcb *setting)
@@ -190,8 +178,6 @@ nm_setting_dcb_get_app_fcoe_mode (NMSettingDcb *setting)
  * @setting: the #NMSettingDcb
  *
  * Returns: the #NMSettingDcb:app-iscsi-flags property of the setting
- *
- * Since: 0.9.10
  **/
 NMSettingDcbFlags
 nm_setting_dcb_get_app_iscsi_flags (NMSettingDcb *setting)
@@ -206,8 +192,6 @@ nm_setting_dcb_get_app_iscsi_flags (NMSettingDcb *setting)
  * @setting: the #NMSettingDcb
  *
  * Returns: the #NMSettingDcb:app-iscsi-priority property of the setting
- *
- * Since: 0.9.10
  **/
 gint
 nm_setting_dcb_get_app_iscsi_priority (NMSettingDcb *setting)
@@ -222,8 +206,6 @@ nm_setting_dcb_get_app_iscsi_priority (NMSettingDcb *setting)
  * @setting: the #NMSettingDcb
  *
  * Returns: the #NMSettingDcb:app-fip-flags property of the setting
- *
- * Since: 0.9.10
  **/
 NMSettingDcbFlags
 nm_setting_dcb_get_app_fip_flags (NMSettingDcb *setting)
@@ -238,8 +220,6 @@ nm_setting_dcb_get_app_fip_flags (NMSettingDcb *setting)
  * @setting: the #NMSettingDcb
  *
  * Returns: the #NMSettingDcb:app-fip-priority property of the setting
- *
- * Since: 0.9.10
  **/
 gint
 nm_setting_dcb_get_app_fip_priority (NMSettingDcb *setting)
@@ -254,8 +234,6 @@ nm_setting_dcb_get_app_fip_priority (NMSettingDcb *setting)
  * @setting: the #NMSettingDcb
  *
  * Returns: the #NMSettingDcb:priority-flow-control-flags property of the setting
- *
- * Since: 0.9.10
  **/
 NMSettingDcbFlags
 nm_setting_dcb_get_priority_flow_control_flags (NMSettingDcb *setting)
@@ -272,8 +250,6 @@ nm_setting_dcb_get_priority_flow_control_flags (NMSettingDcb *setting)
  *
  * Returns: %TRUE if flow control is enabled for the given @user_priority,
  * %FALSE if not enabled
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_dcb_get_priority_flow_control (NMSettingDcb *setting, guint user_priority)
@@ -292,8 +268,6 @@ nm_setting_dcb_get_priority_flow_control (NMSettingDcb *setting, guint user_prio
  *
  * These values are only valid when #NMSettingDcb:priority-flow-control includes
  * the %NM_SETTING_DCB_FLAG_ENABLE flag.
- *
- * Since: 0.9.10
  **/
 void
 nm_setting_dcb_set_priority_flow_control (NMSettingDcb *setting,
@@ -318,8 +292,6 @@ nm_setting_dcb_set_priority_flow_control (NMSettingDcb *setting,
  * @setting: the #NMSettingDcb
  *
  * Returns: the #NMSettingDcb:priority-group-flags property of the setting
- *
- * Since: 0.9.10
  **/
 NMSettingDcbFlags
 nm_setting_dcb_get_priority_group_flags (NMSettingDcb *setting)
@@ -337,8 +309,6 @@ nm_setting_dcb_get_priority_group_flags (NMSettingDcb *setting)
  * Returns: the group number @user_priority is assigned to.  These values are
  * only valid when #NMSettingDcb:priority-group-flags includes the
  * %NM_SETTING_DCB_FLAG_ENABLE flag.
- *
- * Since: 0.9.10
  **/
 guint
 nm_setting_dcb_get_priority_group_id (NMSettingDcb *setting, guint user_priority)
@@ -358,8 +328,6 @@ nm_setting_dcb_get_priority_group_id (NMSettingDcb *setting, guint user_priority
  *
  * These values are only valid when #NMSettingDcb:priority-group-flags includes
  * the %NM_SETTING_DCB_FLAG_ENABLE flag.
- *
- * Since: 0.9.10
  **/
 void
 nm_setting_dcb_set_priority_group_id (NMSettingDcb *setting,
@@ -387,8 +355,6 @@ nm_setting_dcb_set_priority_group_id (NMSettingDcb *setting,
  * Returns: the bandwidth percentage assigned to @group_id.  These values are
  * only valid when #NMSettingDcb:priority-group-flags includes the
  * %NM_SETTING_DCB_FLAG_ENABLE flag.
- *
- * Since: 0.9.10
  **/
 guint
 nm_setting_dcb_get_priority_group_bandwidth (NMSettingDcb *setting, guint group_id)
@@ -407,8 +373,6 @@ nm_setting_dcb_get_priority_group_bandwidth (NMSettingDcb *setting, guint group_
  *
  * These values are only valid when #NMSettingDcb:priority-group-flags includes
  * the %NM_SETTING_DCB_FLAG_ENABLE flag.
- *
- * Since: 0.9.10
  **/
 void
 nm_setting_dcb_set_priority_group_bandwidth (NMSettingDcb *setting,
@@ -436,8 +400,6 @@ nm_setting_dcb_set_priority_group_bandwidth (NMSettingDcb *setting,
  * Returns: the allowed bandwidth percentage of @user_priority in its priority group.
  * These values are only valid when #NMSettingDcb:priority-group-flags includes the
  * %NM_SETTING_DCB_FLAG_ENABLE flag.
- *
- * Since: 0.9.10
  **/
 guint
 nm_setting_dcb_get_priority_bandwidth (NMSettingDcb *setting, guint user_priority)
@@ -457,8 +419,6 @@ nm_setting_dcb_get_priority_bandwidth (NMSettingDcb *setting, guint user_priorit
  *
  * These values are only valid when #NMSettingDcb:priority-group-flags includes
  * the %NM_SETTING_DCB_FLAG_ENABLE flag.
- *
- * Since: 0.9.10
  **/
 void
 nm_setting_dcb_set_priority_bandwidth (NMSettingDcb *setting,
@@ -486,8 +446,6 @@ nm_setting_dcb_set_priority_bandwidth (NMSettingDcb *setting,
  * Returns: %TRUE if @user_priority may use all of the bandwidth allocated to its
  * assigned group, or %FALSE if not. These values are only valid when
  * #NMSettingDcb:priority-group-flags includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_dcb_get_priority_strict_bandwidth (NMSettingDcb *setting, guint user_priority)
@@ -507,8 +465,6 @@ nm_setting_dcb_get_priority_strict_bandwidth (NMSettingDcb *setting, guint user_
  *
  * These values are only valid when #NMSettingDcb:priority-group-flags includes
  * the %NM_SETTING_DCB_FLAG_ENABLE flag.
- *
- * Since: 0.9.10
  **/
 void
 nm_setting_dcb_set_priority_strict_bandwidth (NMSettingDcb *setting,
@@ -536,8 +492,6 @@ nm_setting_dcb_set_priority_strict_bandwidth (NMSettingDcb *setting,
  * Returns: the traffic class assigned to @user_priority. These values are only
  * valid when #NMSettingDcb:priority-group-flags includes the
  * %NM_SETTING_DCB_FLAG_ENABLE flag.
- *
- * Since: 0.9.10
  **/
 guint
 nm_setting_dcb_get_priority_traffic_class (NMSettingDcb *setting, guint user_priority)
@@ -556,8 +510,6 @@ nm_setting_dcb_get_priority_traffic_class (NMSettingDcb *setting, guint user_pri
  *
  * These values are only valid when #NMSettingDcb:priority-group-flags includes
  * the %NM_SETTING_DCB_FLAG_ENABLE flag.
- *
- * Since: 0.9.10
  **/
 void
 nm_setting_dcb_set_priority_traffic_class (NMSettingDcb *setting,
@@ -962,8 +914,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * Specifies the #NMSettingDcbFlags for the DCB FCoE application.  Flags may
 	 * be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
 	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_FCOE_FLAGS,
@@ -978,8 +928,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * The highest User Priority (0 - 7) which FCoE frames should use, or -1 for
 	 * default priority.  Only used when the #NMSettingDcb:app-fcoe-flags
 	 * property includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_FCOE_PRIORITY,
@@ -994,8 +942,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 *
 	 * The FCoE controller mode; either %NM_SETTING_DCB_FCOE_MODE_FABRIC
 	 * (default) or %NM_SETTING_DCB_FCOE_MODE_VN2VN.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_FCOE_MODE,
@@ -1011,8 +957,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * Specifies the #NMSettingDcbFlags for the DCB iSCSI application.  Flags
 	 * may be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
 	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_ISCSI_FLAGS,
@@ -1027,8 +971,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * The highest User Priority (0 - 7) which iSCSI frames should use, or -1
 	 * for default priority. Only used when the #NMSettingDcb:app-iscsi-flags
 	 * property includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_ISCSI_PRIORITY,
@@ -1044,8 +986,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * Specifies the #NMSettingDcbFlags for the DCB FIP application.  Flags may
 	 * be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
 	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_FIP_FLAGS,
@@ -1060,8 +1000,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * The highest User Priority (0 - 7) which FIP frames should use, or -1 for
 	 * default priority.  Only used when the #NMSettingDcb:app-fip-flags
 	 * property includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_FIP_PRIORITY,
@@ -1077,8 +1015,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * Specifies the #NMSettingDcbFlags for DCB Priority Flow Control (PFC).
 	 * Flags may be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
 	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PFC_FLAGS,
@@ -1094,8 +1030,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * Priority (0 - 7) and the value indicates whether or not the corresponding
 	 * priority should transmit priority pause.  Allowed values are 0 (do not
 	 * transmit pause) and 1 (transmit pause).
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PFC,
@@ -1110,8 +1044,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * Specifies the #NMSettingDcbFlags for DCB Priority Groups.  Flags may be
 	 * any combination of %NM_SETTING_DCB_FLAG_ENABLE,
 	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_FLAGS,
@@ -1126,8 +1058,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * An array of 8 uint values, where the array index corresponds to the User
 	 * Priority (0 - 7) and the value indicates the Priority Group ID.  Allowed
 	 * Priority Group ID values are 0 - 7 or 15 for the unrestricted group.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_ID,
@@ -1143,8 +1073,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * Priority Group ID (0 - 7) and the value indicates the percentage of link
 	 * bandwidth allocated to that group.  Allowed values are 0 - 100, and the
 	 * sum of all values must total 100 percent.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_BANDWIDTH,
@@ -1161,8 +1089,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * the priority's assigned group that the priority may use.  The sum of all
 	 * percentages for priorities which belong to the same group must total 100
 	 * percent.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_BANDWIDTH,
@@ -1179,8 +1105,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * use all of the bandwidth allocated to its assigned group.  Allowed values
 	 * are 0 (the priority may not utilize all bandwidth) or 1 (the priority may
 	 * utilize all bandwidth).
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_STRICT,
@@ -1195,8 +1119,6 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * An array of 8 uint values, where the array index corresponds to the User
 	 * Priority (0 - 7) and the value indicates the traffic class (0 - 7) to
 	 * which the priority is mapped.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_TRAFFIC_CLASS,

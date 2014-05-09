@@ -66,10 +66,8 @@ typedef struct {
 	void (*_reserved6) (void);
 } NMDeviceGenericClass;
 
-NM_AVAILABLE_IN_0_9_10
 GType nm_device_generic_get_type (void);
 
-NM_AVAILABLE_IN_0_9_10
 GObject *nm_device_generic_new (DBusGConnection *connection, const char *path);
 
 const char *nm_device_generic_get_hw_address (NMDeviceGeneric *device);

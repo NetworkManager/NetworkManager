@@ -41,8 +41,6 @@ G_BEGIN_DECLS
  * @NM_SETTING_GENERIC_ERROR_INVALID_PROPERTY: the property was invalid
  * @NM_SETTING_GENERIC_ERROR_MISSING_PROPERTY: the property was missing and
  * is required
- *
- * Since: 0.9.10
  */
 typedef enum {
 	NM_SETTING_GENERIC_ERROR_UNKNOWN = 0,      /*< nick=UnknownError >*/
@@ -67,10 +65,8 @@ typedef struct {
 	void (*_reserved4) (void);
 } NMSettingGenericClass;
 
-NM_AVAILABLE_IN_0_9_10
 GType nm_setting_generic_get_type (void);
 
-NM_AVAILABLE_IN_0_9_10
 NMSetting * nm_setting_generic_new              (void);
 
 G_END_DECLS

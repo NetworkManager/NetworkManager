@@ -134,13 +134,11 @@ void     nm_setting_vlan_remove_priority    (NMSettingVlan *setting,
                                              NMVlanPriorityMap map,
                                              guint32 idx);
 
-NM_AVAILABLE_IN_0_9_10
 gboolean nm_setting_vlan_remove_priority_by_value (NMSettingVlan *setting,
                                                    NMVlanPriorityMap map,
                                                    guint32 from,
                                                    guint32 to);
 
-NM_AVAILABLE_IN_0_9_10
 gboolean nm_setting_vlan_remove_priority_str_by_value (NMSettingVlan *setting,
                                                        NMVlanPriorityMap map,
                                                        const char *str);

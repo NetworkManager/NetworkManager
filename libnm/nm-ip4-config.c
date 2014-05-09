@@ -233,8 +233,6 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 * NMIP4Config:gateway:
 	 *
 	 * The IP4 gateway address of the configuration as string.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_GATEWAY,
@@ -293,8 +291,6 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 * NMIP4Config:searches:
 	 *
 	 * The #GPtrArray containing dns search strings of the configuration.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_SEARCHES,
@@ -341,8 +337,6 @@ nm_ip4_config_new (DBusGConnection *connection, const char *object_path)
  * Gets the IP4 gateway address.
  *
  * Returns: the IP4 address of the gateway.
- *
- * Since: 0.9.10
  **/
 const char *
 nm_ip4_config_get_gateway (NMIP4Config *config)
@@ -416,8 +410,6 @@ nm_ip4_config_get_domains (NMIP4Config *config)
  *
  * Returns: (element-type utf8): the #GPtrArray containing dns searches as strings. This is the
  * internal copy used by the configuration, and must not be modified.
- *
- * Since: 0.9.10
  **/
 const GPtrArray *
 nm_ip4_config_get_searches (NMIP4Config *config)

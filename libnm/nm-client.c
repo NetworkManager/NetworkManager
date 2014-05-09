@@ -127,8 +127,6 @@ static void proxy_name_owner_changed (DBusGProxy *proxy,
  * Registers an error quark for #NMClient if necessary.
  *
  * Returns: the error quark used for #NMClient errors.
- *
- * Since: 0.9.10
  **/
 GQuark
 nm_client_error_quark (void)
@@ -1029,8 +1027,6 @@ nm_client_get_state (NMClient *client)
  * connections at startup.
  *
  * Returns: whether the daemon is still starting up
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_client_get_startup (NMClient *client)
@@ -1136,8 +1132,6 @@ nm_client_get_permission_result (NMClient *client, NMClientPermission permission
  * Gets NetworkManager current logging level and domains.
  *
  * Returns: %TRUE on success, %FALSE otherwise
- *
- * Since: 0.9.8
  **/
 gboolean
 nm_client_get_logging (NMClient *client, char **level, char **domains, GError **error)
@@ -1179,8 +1173,6 @@ nm_client_get_logging (NMClient *client, char **level, char **domains, GError **
  * Sets NetworkManager logging level and/or domains.
  *
  * Returns: %TRUE on success, %FALSE otherwise
- *
- * Since: 0.9.8
  **/
 gboolean
 nm_client_set_logging (NMClient *client, const char *level, const char *domains, GError **error)
@@ -1227,8 +1219,6 @@ nm_client_set_logging (NMClient *client, const char *level, const char *domains,
  *
  * Returns: (transfer none): the appropriate #NMActiveConnection, if
  * any
- *
- * Since: 0.9.8.6
  */
 NMActiveConnection *
 nm_client_get_primary_connection (NMClient *client)
@@ -1249,8 +1239,6 @@ nm_client_get_primary_connection (NMClient *client)
  *
  * Returns: (transfer none): the appropriate #NMActiveConnection, if
  * any.
- *
- * Since: 0.9.8.6
  */
 NMActiveConnection *
 nm_client_get_activating_connection (NMClient *client)
@@ -1388,7 +1376,6 @@ proxy_name_owner_changed (DBusGProxy *proxy,
  * connectivity state first before returning any information.
  *
  * Returns: the current connectivity state
- * Since: 0.9.8.6
  */
 NMConnectivityState
 nm_client_get_connectivity (NMClient *client)
@@ -1417,7 +1404,6 @@ nm_client_get_connectivity (NMClient *client)
  * if you do not want to block.
  *
  * Returns: the (new) current connectivity state
- * Since: 0.9.8.6
  */
 NMConnectivityState
 nm_client_check_connectivity (NMClient *client,
@@ -1507,8 +1493,6 @@ check_connectivity_cancelled_cb (GCancellable *cancellable,
  * @callback when complete. Contrast nm_client_get_connectivity(),
  * which (immediately) returns the most recent known state without
  * re-checking, and nm_client_check_connectivity(), which blocks.
- *
- * Since: 0.9.8.6
  */
 void
 nm_client_check_connectivity_async (NMClient *client,
@@ -1553,7 +1537,6 @@ nm_client_check_connectivity_async (NMClient *client,
  * call.
  *
  * Returns: the (new) current connectivity state
- * Since: 0.9.8.6
  */
 NMConnectivityState
 nm_client_check_connectivity_finish (NMClient *client,
@@ -2184,8 +2167,6 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:startup:
 	 *
 	 * Whether the daemon is still starting up.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_STARTUP,
@@ -2307,8 +2288,6 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:connectivity:
 	 *
 	 * The network connectivity state.
-	 *
-	 * Since: 0.9.8.6
 	 */
 	g_object_class_install_property
 		(object_class, PROP_CONNECTIVITY,
@@ -2322,8 +2301,6 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * The #NMActiveConnection of the device with the default route;
 	 * see nm_client_get_primary_connection() for more details.
-	 *
-	 * Since: 0.9.8.6
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIMARY_CONNECTION,
@@ -2337,8 +2314,6 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * The #NMActiveConnection of the activating connection that is
 	 * likely to become the new #NMClient:primary-connection.
-	 *
-	 * Since: 0.9.8.6
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVATING_CONNECTION,
@@ -2351,8 +2326,6 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:devices:
 	 *
 	 * List of known network devices.
-	 *
-	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEVICES,

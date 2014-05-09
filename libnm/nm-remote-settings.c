@@ -267,8 +267,6 @@ add_connection_info_complete (NMRemoteSettings *self,
  *
  * Returns: (transfer none): the remote connection object on success, or %NULL if no
  *  matching object was found.
- *
- * Since: 0.9.10
  **/
 NMRemoteConnection *
 nm_remote_settings_get_connection_by_id (NMRemoteSettings *settings, const char *id)
@@ -717,8 +715,6 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
  * method.
  *
  * Returns: %TRUE if the request was successful, %FALSE if it failed
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
@@ -782,8 +778,6 @@ nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
 
  * Returns: %TRUE if NetworkManager at least tried to load @filenames,
  * %FALSE if an error occurred (eg, permission denied).
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_remote_settings_load_connections (NMRemoteSettings *settings,
@@ -837,8 +831,6 @@ nm_remote_settings_load_connections (NMRemoteSettings *settings,
  * the in-memory state matches the on-disk state.
  *
  * Return value: %TRUE on success, %FALSE on failure
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_remote_settings_reload_connections (NMRemoteSettings *settings,

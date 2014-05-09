@@ -136,19 +136,13 @@ char       *nm_utils_hwaddr_ntoa  (gconstpointer addr, int type);
 GByteArray *nm_utils_hwaddr_atoba (const char *asc, int type);
 guint8     *nm_utils_hwaddr_aton  (const char *asc, int type, gpointer buffer);
 
-NM_AVAILABLE_IN_0_9_10
 char       *nm_utils_hwaddr_ntoa_len  (gconstpointer addr, gsize length);
-NM_AVAILABLE_IN_0_9_10
 guint8     *nm_utils_hwaddr_aton_len  (const char *asc, gpointer buffer, gsize length);
 
-NM_AVAILABLE_IN_0_9_10
 gboolean    nm_utils_hwaddr_valid (const char *asc);
 
-NM_AVAILABLE_IN_0_9_10
 char *nm_utils_bin2hexstr (const char *bytes, int len, int final_len);
-NM_AVAILABLE_IN_0_9_10
 int   nm_utils_hex2byte   (const char *hex);
-NM_AVAILABLE_IN_0_9_10
 char *nm_utils_hexstr2bin (const char *hex, size_t len);
 
 gboolean    nm_utils_iface_valid_name(const char *name);
@@ -162,12 +156,9 @@ gboolean nm_utils_is_uuid (const char *str);
  * for both nm_utils_inet4_ntop() and nm_utils_inet6_ntop().
  **/
 #define NM_UTILS_INET_ADDRSTRLEN     INET6_ADDRSTRLEN
-NM_AVAILABLE_IN_0_9_10
 const char *nm_utils_inet4_ntop (in_addr_t inaddr, char *dst);
-NM_AVAILABLE_IN_0_9_10
 const char *nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst);
 
-NM_AVAILABLE_IN_0_9_10
 gboolean nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_type);
 
 G_END_DECLS

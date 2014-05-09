@@ -227,8 +227,6 @@ nm_setting_wired_get_mac_address_blacklist (NMSettingWired *setting)
  * @setting: the #NMSettingWired
  *
  * Returns: the number of blacklisted MAC addresses
- *
- * Since: 0.9.10
  **/
 guint32
 nm_setting_wired_get_num_mac_blacklist_items (NMSettingWired *setting)
@@ -245,8 +243,6 @@ nm_setting_wired_get_num_mac_blacklist_items (NMSettingWired *setting)
  *
  * Returns: the blacklisted MAC address string (hex-digits-and-colons notation)
  * at index @idx
- *
- * Since: 0.9.10
  **/
 const char *
 nm_setting_wired_get_mac_blacklist_item (NMSettingWired *setting, guint32 idx)
@@ -270,8 +266,6 @@ nm_setting_wired_get_mac_blacklist_item (NMSettingWired *setting, guint32 idx)
  *
  * Returns: %TRUE if the MAC address was added; %FALSE if the MAC address
  * is invalid or was already present
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_wired_add_mac_blacklist_item (NMSettingWired *setting, const char *mac)
@@ -304,8 +298,6 @@ nm_setting_wired_add_mac_blacklist_item (NMSettingWired *setting, const char *ma
  * @idx: index number of the MAC address
  *
  * Removes the MAC address at index @idx from the blacklist.
- *
- * Since: 0.9.10
  **/
 void
 nm_setting_wired_remove_mac_blacklist_item (NMSettingWired *setting, guint32 idx)
@@ -333,8 +325,6 @@ nm_setting_wired_remove_mac_blacklist_item (NMSettingWired *setting, guint32 idx
  * Removes the MAC address @mac from the blacklist.
  *
  * Returns: %TRUE if the MAC address was found and removed; %FALSE if it was not.
- *
- * Since: 0.9.10
  **/
 gboolean
 nm_setting_wired_remove_mac_blacklist_item_by_value (NMSettingWired *setting, const char *mac)
@@ -365,8 +355,6 @@ nm_setting_wired_remove_mac_blacklist_item_by_value (NMSettingWired *setting, co
  * @setting: the #NMSettingWired
  *
  * Removes all blacklisted MAC addresses.
- *
- * Since: 0.9.10
  **/
 void
 nm_setting_wired_clear_mac_blacklist_items (NMSettingWired *setting)
@@ -588,8 +576,6 @@ nm_setting_wired_remove_s390_option (NMSettingWired *setting,
  * Returns a list of valid s390 options.
  *
  * Returns: (transfer none): a %NULL-terminated array of strings of valid s390 options.
- *
- * Since: 0.9.10
  **/
 const char **
 nm_setting_wired_get_valid_s390_options (NMSettingWired *setting)
