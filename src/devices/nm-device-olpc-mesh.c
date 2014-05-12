@@ -128,12 +128,12 @@ constructor (GType type,
 
 	self = NM_DEVICE_OLPC_MESH (object);
 
-	nm_log_dbg (LOGD_HW | LOGD_OLPC_MESH, "(%s): kernel ifindex %d",
+	nm_log_dbg (LOGD_HW | LOGD_OLPC, "(%s): kernel ifindex %d",
 	            nm_device_get_iface (NM_DEVICE (self)),
 	            nm_device_get_ifindex (NM_DEVICE (self)));
 
 	if (!nm_platform_wifi_get_capabilities (nm_device_get_ifindex (NM_DEVICE (self)), &caps)) {
-		nm_log_warn (LOGD_HW | LOGD_OLPC_MESH, "(%s): failed to initialize WiFi driver",
+		nm_log_warn (LOGD_HW | LOGD_OLPC, "(%s): failed to initialize WiFi driver",
 		             nm_device_get_iface (NM_DEVICE (self)));
 		g_object_unref (object);
 		return NULL;
@@ -244,14 +244,14 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 
 	/* disconnect companion device, if it is connected */
 	if (nm_device_get_act_request (NM_DEVICE (priv->companion))) {
-		nm_log_info (LOGD_OLPC_MESH, "(%s): disconnecting companion device %s",
+		nm_log_info (LOGD_OLPC, "(%s): disconnecting companion device %s",
 		             nm_device_get_iface (dev),
 		             nm_device_get_iface (priv->companion));
 		/* FIXME: VPN stuff here is a bug; but we can't really change API now... */
 		nm_device_state_changed (NM_DEVICE (priv->companion),
 		                         NM_DEVICE_STATE_DISCONNECTED,
 		                         NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
-		nm_log_info (LOGD_OLPC_MESH, "(%s): companion %s disconnected",
+		nm_log_info (LOGD_OLPC, "(%s): companion %s disconnected",
 		             nm_device_get_iface (dev),
 		             nm_device_get_iface (priv->companion));
 	}
@@ -478,7 +478,7 @@ companion_state_changed_cb (NMDeviceWifi *companion,
 	    || state > NM_DEVICE_STATE_ACTIVATED)
 		return;
 
-	nm_log_dbg (LOGD_OLPC_MESH, "(%s): disconnecting mesh due to companion connectivity",
+	nm_log_dbg (LOGD_OLPC, "(%s): disconnecting mesh due to companion connectivity",
 	            nm_device_get_iface (NM_DEVICE (self)));
 	/* FIXME: VPN stuff here is a bug; but we can't really change API now... */
 	nm_device_state_changed (NM_DEVICE (self),
@@ -535,7 +535,7 @@ is_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 	                         NM_DEVICE_STATE_DISCONNECTED,
 	                         NM_DEVICE_STATE_REASON_NONE);
 
-	nm_log_info (LOGD_OLPC_MESH, "(%s): found companion WiFi device %s",
+	nm_log_info (LOGD_OLPC, "(%s): found companion WiFi device %s",
 	             nm_device_get_iface (NM_DEVICE (self)),
 	             nm_device_get_iface (other));
 

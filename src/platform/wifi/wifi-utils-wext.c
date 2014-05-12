@@ -411,7 +411,7 @@ wifi_wext_set_mesh_channel (WifiData *data, guint32 channel)
 	}
 
 	if (ioctl (wext->fd, SIOCSIWFREQ, &wrq) < 0) {
-		nm_log_err (LOGD_HW | LOGD_WIFI | LOGD_OLPC_MESH,
+		nm_log_err (LOGD_HW | LOGD_WIFI | LOGD_OLPC,
 		            "(%s): error setting channel to %d: %s",
 		            wext->parent.iface, channel, strerror (errno));
 		return FALSE;
@@ -442,7 +442,7 @@ wifi_wext_set_mesh_ssid (WifiData *data, const GByteArray *ssid)
 		return TRUE;
 
 	if (errno != ENODEV) {
-		nm_log_err (LOGD_HW | LOGD_WIFI | LOGD_OLPC_MESH,
+		nm_log_err (LOGD_HW | LOGD_WIFI | LOGD_OLPC,
 		            "(%s): error setting SSID to '%s': %s",
 		            wext->parent.iface,
 		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(null)",

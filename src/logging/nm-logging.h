@@ -50,7 +50,7 @@ enum {
 	LOGD_SUSPEND    = (1LL << 20), /* Suspend/Resume */
 	LOGD_CORE       = (1LL << 21), /* Core daemon and policy stuff */
 	LOGD_DEVICE     = (1LL << 22), /* Device state and activation */
-	LOGD_OLPC_MESH  = (1LL << 23),
+	LOGD_OLPC       = (1LL << 23),
 	LOGD_WIMAX      = (1LL << 24),
 	LOGD_INFINIBAND = (1LL << 25),
 	LOGD_FIREWALL   = (1LL << 26),
