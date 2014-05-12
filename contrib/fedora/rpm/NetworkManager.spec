@@ -50,7 +50,7 @@ Name: NetworkManager
 Summary: Network connection manager and user applications
 Epoch: 1
 Version: %{realversion}
-Release: %{release_version}%{snapshot}%{git_sha}%{?dist}
+Release: %{release_version}%{snapshot}.%{git_sha}%{?dist}
 Group: System Environment/Base
 License: GPLv2+
 URL: http://www.gnome.org/projects/NetworkManager/
