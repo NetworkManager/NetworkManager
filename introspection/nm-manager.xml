@@ -222,13 +222,14 @@
         <tp:docstring>
           A combination of logging domains separated by commas (','), or "NONE"
           to disable logging.  Each domain enables logging for operations
-          related to that domain.  Available domains are: [HW, RFKILL, ETHER,
+          related to that domain.  Available domains are: [PLATFORM, RFKILL, ETHER,
           WIFI, BT, MB, DHCP4, DHCP6, PPP, WIFI_SCAN, IP4, IP6, AUTOIP4, DNS,
           VPN, SHARING, SUPPLICANT, AGENTS, SETTINGS, SUSPEND, CORE, DEVICE,
-          OLPC, WIMAX, INFINIBAND, FIREWALL, ADSL, BOND, VLAN].  In addition to
-          these domains, the following special domains can be used: [NONE, ALL,
-          DEFAULT, DHCP, IP].  You can also specify that some domains should
-          log at a different level from the default by appending a colon (':')
+          OLPC, WIMAX, INFINIBAND, FIREWALL, ADSL, BOND, VLAN, BRIDGE, DBUS_PROPS,
+          TEAM, CONCHECK, DCB, DISPATCH].
+          In addition to these domains, the following special domains can be used:
+          [NONE, ALL, DEFAULT, DHCP, IP].  You can also specify that some domains
+          should log at a different level from the default by appending a colon (':')
           and a log level (eg, 'WIFI:DEBUG').  If an empty string is given, the
           log level is changed but the current set of log domains remains
           unchanged.
