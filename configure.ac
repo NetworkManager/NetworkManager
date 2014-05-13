@@ -800,6 +800,8 @@ src/rdisc/tests/Makefile
 src/devices/adsl/Makefile
 src/devices/wimax/Makefile
 src/devices/bluetooth/Makefile
+src/devices/wifi/Makefile
+src/devices/wifi/tests/Makefile
 src/devices/wwan/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile

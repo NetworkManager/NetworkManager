@@ -41,8 +41,6 @@
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
 #include "nm-device-ethernet.h"
-#include "nm-device-wifi.h"
-#include "nm-device-olpc-mesh.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
 #include "nm-device-team.h"
@@ -168,7 +166,6 @@ typedef struct {
 	const char *key;
 	const char *prop;
 	const char *hw_prop;
-	RfKillState (*other_enabled_func) (NMManager *);
 } RadioState;
 
 typedef struct {
@@ -1311,72 +1308,24 @@ manager_update_radio_enabled (NMManager *self,
 }
 
 static void
-manager_hidden_ap_found (NMDevice *device,
-                         NMAccessPoint *ap,
-                         gpointer user_data)
+update_rstate_from_rfkill (NMRfkillManager *rfkill_mgr, RadioState *rstate)
 {
-	NMManager *manager = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	const struct ether_addr *bssid;
-	GSList *iter;
-	GSList *connections;
-	gboolean done = FALSE;
-
-	g_return_if_fail (nm_ap_get_ssid (ap) == NULL);
-
-	bssid = nm_ap_get_address (ap);
-	g_assert (bssid);
-
-	/* Look for this AP's BSSID in the seen-bssids list of a connection,
-	 * and if a match is found, copy over the SSID */
-	connections = nm_settings_get_connections (priv->settings);
-	for (iter = connections; iter && !done; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingWireless *s_wifi;
-
-		s_wifi = nm_connection_get_setting_wireless (connection);
-		if (s_wifi) {
-			if (nm_settings_connection_has_seen_bssid (NM_SETTINGS_CONNECTION (connection), bssid))
-				nm_ap_set_ssid (ap, nm_setting_wireless_get_ssid (s_wifi));
-		}
-	}
-	g_slist_free (connections);
-}
-
-static RfKillState
-nm_manager_get_ipw_rfkill_state (NMManager *self)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-	RfKillState ipw_state = RFKILL_UNBLOCKED;
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = NM_DEVICE (iter->data);
-		RfKillState candidate_state;
-
-		if (nm_device_get_device_type (candidate) == NM_DEVICE_TYPE_WIFI) {
-			candidate_state = nm_device_wifi_get_ipw_rfkill_state (NM_DEVICE_WIFI (candidate));
-
-			if (candidate_state > ipw_state)
-				ipw_state = candidate_state;
-		}
-	}
-
-	return ipw_state;
-}
-
-static void
-update_rstate_from_rfkill (RadioState *rstate, RfKillState rfkill)
-{
-	if (rfkill == RFKILL_UNBLOCKED) {
+	switch (nm_rfkill_manager_get_rfkill_state (rfkill_mgr, rstate->rtype)) {
+	case RFKILL_UNBLOCKED:
 		rstate->sw_enabled = TRUE;
 		rstate->hw_enabled = TRUE;
-	} else if (rfkill == RFKILL_SOFT_BLOCKED) {
+		break;
+	case RFKILL_SOFT_BLOCKED:
 		rstate->sw_enabled = FALSE;
 		rstate->hw_enabled = TRUE;
-	} else if (rfkill == RFKILL_HARD_BLOCKED) {
+		break;
+	case RFKILL_HARD_BLOCKED:
 		rstate->sw_enabled = FALSE;
 		rstate->hw_enabled = FALSE;
+		break;
+	default:
+		g_warn_if_reached ();
+		break;
 	}
 }
 
@@ -1386,29 +1335,14 @@ manager_rfkill_update_one_type (NMManager *self,
                                 RfKillType rtype)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	RfKillState udev_state = RFKILL_UNBLOCKED;
-	RfKillState other_state = RFKILL_UNBLOCKED;
-	RfKillState composite;
 	gboolean old_enabled, new_enabled, old_rfkilled, new_rfkilled, old_hwe;
 
 	old_enabled = radio_enabled_for_rstate (rstate, TRUE);
 	old_rfkilled = rstate->hw_enabled && rstate->sw_enabled;
 	old_hwe = rstate->hw_enabled;
 
-	udev_state = nm_rfkill_manager_get_rfkill_state (priv->rfkill_mgr, rtype);
-
-	if (rstate->other_enabled_func)
-		other_state = rstate->other_enabled_func (self);
-
-	/* The composite state is the "worst" of either udev or other states */
-	if (udev_state == RFKILL_HARD_BLOCKED || other_state == RFKILL_HARD_BLOCKED)
-		composite = RFKILL_HARD_BLOCKED;
-	else if (udev_state == RFKILL_SOFT_BLOCKED || other_state == RFKILL_SOFT_BLOCKED)
-		composite = RFKILL_SOFT_BLOCKED;
-	else
-		composite = RFKILL_UNBLOCKED;
-
-	update_rstate_from_rfkill (rstate, composite);
+	/* recheck kernel rfkill state */
+	update_rstate_from_rfkill (priv->rfkill_mgr, rstate);
 
 	/* Print out all states affecting device enablement */
 	if (rstate->desc) {
@@ -1453,14 +1387,6 @@ nm_manager_rfkill_update (NMManager *self, RfKillType rtype)
 		for (i = 0; i < RFKILL_TYPE_MAX; i++)
 			manager_rfkill_update_one_type (self, &priv->radio_states[i], i);
 	}
-}
-
-static void
-manager_ipw_rfkill_state_changed (NMDeviceWifi *device,
-                                  GParamSpec *pspec,
-                                  gpointer user_data)
-{
-	nm_manager_rfkill_update (NM_MANAGER (user_data), RFKILL_TYPE_WLAN);
 }
 
 static void
@@ -1683,10 +1609,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	NMConnection *connection = NULL;
 	gboolean enabled = FALSE;
 	RfKillType rtype;
-	NMDeviceType devtype;
 	GSList *iter, *remove = NULL;
-
-	devtype = nm_device_get_device_type (device);
 
 	/* No duplicates */
 	if (nm_manager_get_device_by_udi (self, nm_device_get_udi (device)))
@@ -1725,22 +1648,6 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	if (priv->startup) {
 		g_signal_connect (device, "notify::" NM_DEVICE_HAS_PENDING_ACTION,
 		                  G_CALLBACK (device_has_pending_action_changed),
-		                  self);
-	}
-
-	if (devtype == NM_DEVICE_TYPE_WIFI) {
-		/* Attach to the access-point-added signal so that the manager can fill
-		 * non-SSID-broadcasting APs with an SSID.
-		 */
-		g_signal_connect (device, "hidden-ap-found",
-						  G_CALLBACK (manager_hidden_ap_found),
-						  self);
-
-		/* Hook up rfkill handling for ipw-based cards until they get converted
-		 * to use the kernel's rfkill subsystem in 2.6.33.
-		 */
-		g_signal_connect (device, "notify::" NM_DEVICE_WIFI_IPW_RFKILL_STATE,
-		                  G_CALLBACK (manager_ipw_rfkill_state_changed),
 		                  self);
 	}
 
@@ -2052,12 +1959,6 @@ platform_link_added (NMManager *self,
 			break;
 		case NM_LINK_TYPE_INFINIBAND:
 			device = nm_device_infiniband_new (plink);
-			break;
-		case NM_LINK_TYPE_OLPC_MESH:
-			device = nm_device_olpc_mesh_new (plink);
-			break;
-		case NM_LINK_TYPE_WIFI:
-			device = nm_device_wifi_new (plink);
 			break;
 		case NM_LINK_TYPE_BOND:
 			device = nm_device_bond_new (plink);
@@ -4100,14 +4001,13 @@ nm_manager_start (NMManager *self)
 	/* Set initial radio enabled/disabled state */
 	for (i = 0; i < RFKILL_TYPE_MAX; i++) {
 		RadioState *rstate = &priv->radio_states[i];
-		RfKillState udev_state;
 		gboolean enabled;
 
 		if (!rstate->desc)
 			continue;
 
-		udev_state = nm_rfkill_manager_get_rfkill_state (priv->rfkill_mgr, i);
-		update_rstate_from_rfkill (rstate, udev_state);
+		/* recheck kernel rfkill state */
+		update_rstate_from_rfkill (priv->rfkill_mgr, rstate);
 
 		if (rstate->desc) {
 			nm_log_info (LOGD_RFKILL, "%s %s by radio killswitch; %s by state file",
@@ -4730,7 +4630,6 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WLAN].prop = NM_MANAGER_WIRELESS_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WLAN].hw_prop = NM_MANAGER_WIRELESS_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WLAN].desc = "WiFi";
-	priv->radio_states[RFKILL_TYPE_WLAN].other_enabled_func = nm_manager_get_ipw_rfkill_state;
 	priv->radio_states[RFKILL_TYPE_WLAN].rtype = RFKILL_TYPE_WLAN;
 
 	priv->radio_states[RFKILL_TYPE_WWAN].user_enabled = TRUE;
@@ -4745,7 +4644,6 @@ nm_manager_init (NMManager *manager)
 	priv->radio_states[RFKILL_TYPE_WIMAX].prop = NM_MANAGER_WIMAX_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WIMAX].hw_prop = NM_MANAGER_WIMAX_HARDWARE_ENABLED;
 	priv->radio_states[RFKILL_TYPE_WIMAX].desc = "WiMAX";
-	priv->radio_states[RFKILL_TYPE_WIMAX].other_enabled_func = NULL;
 	priv->radio_states[RFKILL_TYPE_WIMAX].rtype = RFKILL_TYPE_WIMAX;
 
 	for (i = 0; i < RFKILL_TYPE_MAX; i++)

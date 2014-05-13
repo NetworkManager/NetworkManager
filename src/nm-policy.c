@@ -29,7 +29,6 @@
 
 #include "nm-policy.h"
 #include "NetworkManagerUtils.h"
-#include "nm-wifi-ap.h"
 #include "nm-activation-request.h"
 #include "nm-logging.h"
 #include "nm-device.h"

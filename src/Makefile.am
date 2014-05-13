@@ -7,6 +7,7 @@ SUBDIRS =				\
 	devices/adsl			\
 	devices/wwan			\
 	devices/bluetooth		\
+	devices/wifi                    \
 	dhcp-manager			\
 	ppp-manager			\
 	settings/plugins
@@ -78,8 +79,6 @@ nm_sources = \
 	devices/nm-device-infiniband.h \
 	devices/nm-device-macvlan.c \
 	devices/nm-device-macvlan.h \
-	devices/nm-device-olpc-mesh.c \
-	devices/nm-device-olpc-mesh.h \
 	devices/nm-device-private.h \
 	devices/nm-device-team.c \
 	devices/nm-device-team.h \
@@ -91,8 +90,6 @@ nm_sources = \
 	devices/nm-device-vlan.h \
 	devices/nm-device-vxlan.c \
 	devices/nm-device-vxlan.h \
-	devices/nm-device-wifi.c \
-	devices/nm-device-wifi.h \
 	\
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
@@ -241,10 +238,6 @@ nm_sources = \
 	nm-session-utils.h \
 	nm-sleep-monitor.h \
 	nm-types.h \
-	nm-wifi-ap-utils.c \
-	nm-wifi-ap-utils.h \
-	nm-wifi-ap.c \
-	nm-wifi-ap.h \
 	NetworkManagerUtils.c \
 	NetworkManagerUtils.h
 
@@ -297,13 +290,11 @@ glue_sources = \
 	nm-device-gre-glue.h \
 	nm-device-infiniband-glue.h \
 	nm-device-macvlan-glue.h \
-	nm-device-olpc-mesh-glue.h \
 	nm-device-team-glue.h \
 	nm-device-tun-glue.h \
 	nm-device-veth-glue.h \
 	nm-device-vlan-glue.h \
 	nm-device-vxlan-glue.h \
-	nm-device-wifi-glue.h \
 	nm-dhcp4-config-glue.h \
 	nm-dhcp6-config-glue.h \
 	nm-ip4-config-glue.h \
