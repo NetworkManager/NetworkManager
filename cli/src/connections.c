@@ -30,6 +30,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <netinet/ether.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include <nm-client.h>
 #include <nm-device-ethernet.h>
@@ -245,7 +247,7 @@ extern GMainLoop *loop;
 static ArgsInfo args_info;
 static guint progress_id = 0;  /* ID of event source for displaying progress */
 
-/* for readline TAB completion */
+/* for readline TAB completion in editor */
 typedef struct {
 	NmCli *nmc;
 	char *con_type;
@@ -5215,46 +5217,7 @@ error:
 
 
 /*----------------------------------------------------------------------------*/
-
-typedef char *CPFunction ();
-typedef char **CPPFunction ();
-/* History entry struct copied from libreadline's history.h */
-typedef struct _hist_entry {
-	char *line;
-	char *timestamp;
-	char *data;
-} HIST_ENTRY;
-
-typedef char *  (*ReadLineFunc)     (const char *);
-typedef void    (*AddHistoryFunc)   (const char *);
-typedef HIST_ENTRY** (*HistoryListFunc)  (void);
-typedef int     (*RlInsertTextFunc) (char *);
-typedef char ** (*RlCompletionMatchesFunc) (char *, CPFunction *);
-
-typedef struct {
-	ReadLineFunc readline_func;
-	AddHistoryFunc add_history_func;
-	HistoryListFunc history_list_func;
-	RlInsertTextFunc rl_insert_text_func;
-	void **rl_startup_hook_x;
-	RlCompletionMatchesFunc completion_matches_func;
-	void **rl_attempted_completion_function_x;
-	void **rl_completion_entry_function_x;
-	char **rl_line_buffer_x;
-	char **rl_prompt_x;
-	int *rl_attempted_completion_over_x;
-	int *rl_complete_with_tilde_expansion_x;
-	int *rl_completion_append_character_x;
-	const char **rl_completer_word_break_characters_x;
-	void (*rl_free_line_state_func) (void);
-	void (*rl_cleanup_after_signal_func) (void);
-	void **rl_completion_display_matches_hook_x;
-	void (*rl_display_match_list_func) (char **, int, int);
-	void (*rl_forced_update_display_func) (void);
-} EditLibSymbols;
-
-static EditLibSymbols edit_lib_symbols;
-static char *pre_input_deftext;
+/* Functions for readline TAB completion in editor */
 
 static void
 uuid_display_hook (char **array, int len, int max_len)
@@ -5275,20 +5238,19 @@ uuid_display_hook (char **array, int len, int max_len)
 				max = strlen (id);
 		}
 	}
-	edit_lib_symbols.rl_display_match_list_func (array, len, max_len + max + 3);
-	edit_lib_symbols.rl_forced_update_display_func ();
+	rl_display_match_list (array, len, max_len + max + 3);
+	rl_forced_update_display ();
 }
 
+static char *pre_input_deftext;
 static int
 set_deftext (void)
 {
-	if (   pre_input_deftext
-	    && edit_lib_symbols.rl_insert_text_func
-	    && edit_lib_symbols.rl_startup_hook_x) {
-		edit_lib_symbols.rl_insert_text_func (pre_input_deftext);
+	if (pre_input_deftext && rl_startup_hook) {
+		rl_insert_text (pre_input_deftext);
 		g_free (pre_input_deftext);
 		pre_input_deftext = NULL;
-		*edit_lib_symbols.rl_startup_hook_x = NULL;
+		rl_startup_hook = NULL;
 	}
 	return 0;
 }
@@ -5433,7 +5395,7 @@ gen_property_names (char *text, int state)
 	NMSetting *setting = NULL;
 	char **valid_props = NULL;
 	char *ret = NULL;
-	char *line = g_strdup (*edit_lib_symbols.rl_line_buffer_x);
+	const char *line = rl_line_buffer;
 	const char *setting_name;
 	char **strv = NULL;
 	const NameItem *valid_settings_arr;
@@ -5460,7 +5422,6 @@ gen_property_names (char *text, int state)
 		ret = gen_func_basic (text, state, (const char **) valid_props);
 	}
 
-	g_free (line);
 	g_strfreev (strv);
 	g_strfreev (valid_props);
 	if (setting)
@@ -5707,6 +5668,9 @@ should_complete_vpn_uuids (const char *prompt, const char *line)
 	return found;
 }
 
+/* from readline */
+extern int rl_complete_with_tilde_expansion;
+
 /*
  * Attempt to complete on the contents of TEXT.  START and END show the
  * region of TEXT that contains the word to complete.  We can use the
@@ -5717,8 +5681,8 @@ static char **
 nmcli_editor_tab_completion (char *text, int start, int end)
 {
 	char **match_array = NULL;
-	const char *line = *edit_lib_symbols.rl_line_buffer_x;
-	const char *prompt = *edit_lib_symbols.rl_prompt_x;
+	const char *line = rl_line_buffer;
+	const char *prompt = rl_prompt;
 	CPFunction *generator_func = NULL;
 	gboolean copy_char;
 	const char *p1;
@@ -5728,16 +5692,16 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 	int num;
 
 	/* Restore standard append character to space */
-	*edit_lib_symbols.rl_completion_append_character_x = ' ';
+	rl_completion_append_character = ' ';
 
 	/* Restore standard function for displaying matches */
-	*edit_lib_symbols.rl_completion_display_matches_hook_x = NULL;
+	rl_completion_display_matches_hook = NULL;
 
 	/* Disable default filename completion */
-	*edit_lib_symbols.rl_attempted_completion_over_x = 1;
+	rl_attempted_completion_over = 1;
 
 	/* Enable tilde expansion when filenames are completed */
-	*edit_lib_symbols.rl_complete_with_tilde_expansion_x = 1;
+	rl_complete_with_tilde_expansion = 1;
 
 	/* Filter out possible ANSI color escape sequences */
 	p1 = prompt;
@@ -5782,14 +5746,14 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 					if (num < 3) {
 						if (level == 0 && (!dot || dot >= line + end)) {
 							generator_func = gen_setting_names;
-							*edit_lib_symbols.rl_completion_append_character_x = '.';
+							rl_completion_append_character = '.';
 						} else
 							generator_func = gen_property_names;
 					} else if (num >= 3) {
 						if (num == 3 && should_complete_files (NULL, line))
-							*edit_lib_symbols.rl_attempted_completion_over_x = 0;
+							rl_attempted_completion_over = 0;
 						if (should_complete_vpn_uuids (NULL, line)) {
-							*edit_lib_symbols.rl_completion_display_matches_hook_x = uuid_display_hook;
+							rl_completion_display_matches_hook = uuid_display_hook;
 							generator_func = gen_vpn_uuids;
 						}
 					}
@@ -5798,7 +5762,7 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 				           && num <= 2) {
 					if (level == 0 && (!dot || dot >= line + end)) {
 						generator_func = gen_setting_names;
-						*edit_lib_symbols.rl_completion_append_character_x = '.';
+						rl_completion_append_character = '.';
 					} else
 						generator_func = gen_property_names;
 				} else if (should_complete_cmd (line, end, "nmcli", &num, &word)) {
@@ -5825,9 +5789,9 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 				if (   should_complete_cmd (line, end, "add", &num, NULL)
 				    || should_complete_cmd (line, end, "set", &num, NULL)) {
 					if (num <= 2 && should_complete_files (prompt_tmp, line))
-						*edit_lib_symbols.rl_attempted_completion_over_x = 0;
+						rl_attempted_completion_over = 0;
 					else if (should_complete_vpn_uuids (prompt_tmp, line)) {
-						*edit_lib_symbols.rl_completion_display_matches_hook_x = uuid_display_hook;
+						rl_completion_display_matches_hook = uuid_display_hook;
 						generator_func = gen_vpn_uuids;
 					}
 				}
@@ -5840,128 +5804,38 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 	}
 
 	if (generator_func)
-		match_array = edit_lib_symbols.completion_matches_func (text, generator_func);
+		match_array = rl_completion_matches (text, generator_func);
 
 	g_free (prompt_tmp);
 	g_free (word);
 	return match_array;
 }
 
-static GModule *
-load_cmd_line_edit_lib (void)
-{
-	GModule *module = NULL;
-	char *lib_path;
-	int i;
-	static const char * const edit_lib_table[] = {
-	    "libreadline.so.6", /* GNU Readline library version 6 - latest */
-	    "libreadline.so.5", /* GNU Readline library version 5 - previous */
-	    "libedit.so.0",     /* NetBSD Editline library port (http://www.thrysoee.dk/editline/) */
-	};
-
-	/* Try to load a library for line editing */
-	for (i = 0; i < G_N_ELEMENTS (edit_lib_table); i++) {
-		lib_path = g_module_build_path (NULL, edit_lib_table[i]);
-		module = g_module_open (lib_path, G_MODULE_BIND_LOCAL);
-		g_free (lib_path);
-		if (module)
-			break;
-	}
-	if (!module)
-		return NULL;
-
-	if (!g_module_symbol (module, "readline", (gpointer) (&edit_lib_symbols.readline_func)))
-		goto error;
-	if (!g_module_symbol (module, "add_history", (gpointer) (&edit_lib_symbols.add_history_func)))
-		goto error;
-	if (!g_module_symbol (module, "history_list", (gpointer) (&edit_lib_symbols.history_list_func)))
-		goto error;
-	if (!g_module_symbol (module, "rl_insert_text", (gpointer) (&edit_lib_symbols.rl_insert_text_func)))
-		goto error;
-	if (!g_module_symbol (module, "rl_startup_hook", (gpointer) (&edit_lib_symbols.rl_startup_hook_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_attempted_completion_function",
-	                      (gpointer) (&edit_lib_symbols.rl_attempted_completion_function_x)))
-		goto error;
-	if (!g_module_symbol (module, "completion_matches",
-	                      (gpointer) (&edit_lib_symbols.completion_matches_func)))
-		goto error;
-	if (!g_module_symbol (module, "rl_line_buffer",
-	                      (gpointer) (&edit_lib_symbols.rl_line_buffer_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_prompt",
-	                      (gpointer) (&edit_lib_symbols.rl_prompt_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_attempted_completion_over",
-	                      (gpointer) (&edit_lib_symbols.rl_attempted_completion_over_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_complete_with_tilde_expansion",
-	                      (gpointer) (&edit_lib_symbols.rl_complete_with_tilde_expansion_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_completion_append_character",
-	                      (gpointer) (&edit_lib_symbols.rl_completion_append_character_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_completer_word_break_characters",
-	                      (gpointer) (&edit_lib_symbols.rl_completer_word_break_characters_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_free_line_state",
-	                      (gpointer) (&edit_lib_symbols.rl_free_line_state_func)))
-		goto error;
-	if (!g_module_symbol (module, "rl_cleanup_after_signal",
-	                      (gpointer) (&edit_lib_symbols.rl_cleanup_after_signal_func)))
-		goto error;
-	if (!g_module_symbol (module, "rl_completion_display_matches_hook",
-	                      (gpointer) (&edit_lib_symbols.rl_completion_display_matches_hook_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_display_match_list",
-	                      (gpointer) (&edit_lib_symbols.rl_display_match_list_func)))
-		goto error;
-	if (!g_module_symbol (module, "rl_forced_update_display",
-	                      (gpointer) (&edit_lib_symbols.rl_forced_update_display_func)))
-		goto error;
-
-	/* Set a pointer to an alternative function to create matches */
-	*edit_lib_symbols.rl_attempted_completion_function_x = (CPPFunction *) nmcli_editor_tab_completion;
-
-	/* Use ' ' and '.' as word break characters */
-	*edit_lib_symbols.rl_completer_word_break_characters_x = ". ";
-
-	return module;
-error:
-	g_module_close (module);
-	return NULL;
-}
-
 void
 nmc_cleanup_readline (void)
 {
-	if (edit_lib_symbols.rl_free_line_state_func)
-		edit_lib_symbols.rl_free_line_state_func ();
-	if (edit_lib_symbols.rl_cleanup_after_signal_func)
-		edit_lib_symbols.rl_cleanup_after_signal_func ();
+	rl_free_line_state ();
+	rl_cleanup_after_signal ();
 }
 
+/* Reads data from user and adds it to history */
 static char *
-readline_x (const char *prompt)
+readline_x (const char *prompt, gboolean add_to_history)
 {
 	char *str;
 
-	if (edit_lib_symbols.readline_func) {
-		str = edit_lib_symbols.readline_func (prompt);
-		/* Return NULL, not empty string */
-		if (str && *str == '\0') {
-			g_free (str);
-			str = NULL;
-		}
-	} else
-		str = nmc_get_user_input (prompt);
+	str = readline (prompt);
+	/* Return NULL, not empty string */
+	if (str && *str == '\0') {
+		g_free (str);
+		str = NULL;
+	}
 
-	if (edit_lib_symbols.add_history_func && str && *str)
-		edit_lib_symbols.add_history_func (str);
+	if (add_to_history && str && *str)
+		add_history (str);
 
 	return str;
 }
-
 
 #define NMCLI_EDITOR_HISTORY ".nmcli-history"
 
@@ -5974,10 +5848,6 @@ load_history_cmds (const char *uuid)
 	char *line;
 	size_t i;
 	GError *err = NULL;
-
-	/* Nothing to do if readline library is not used */
-	if (!edit_lib_symbols.add_history_func)
-		return;
 
 	filename = g_build_filename (g_get_home_dir (), NMCLI_EDITOR_HISTORY, NULL);
 	kf = g_key_file_new ();
@@ -5992,7 +5862,7 @@ load_history_cmds (const char *uuid)
 	for (i = 0; keys && keys[i]; i++) {
 		line = g_key_file_get_string (kf, uuid, keys[i], NULL);
 		if (line && *line)
-			edit_lib_symbols.add_history_func (line);
+			add_history (line);
 		g_free (line);
 	}
 	g_strfreev (keys);
@@ -6012,9 +5882,7 @@ save_history_cmds (const char *uuid)
 	gsize len = 0;
 	GError *err = NULL;
 
-	if (edit_lib_symbols.history_list_func)
-		hist = edit_lib_symbols.history_list_func();
-
+	hist = history_list ();
 	if (hist) {
 		filename = g_build_filename (g_get_home_dir (), NMCLI_EDITOR_HISTORY, NULL);
 		kf = g_key_file_new ();
@@ -6645,7 +6513,7 @@ property_edit_submenu (NmCli *nmc,
 		if (nmc->editor_status_line)
 			editor_show_status_line (connection, dirty, temp_changes);
 
-		cmd_property_user = readline_x (prompt);
+		cmd_property_user = readline_x (prompt, TRUE);
 		if (!cmd_property_user || *cmd_property_user == '\0')
 			continue;
 		cmdsub = parse_editor_sub_cmd (g_strstrip (cmd_property_user), &cmd_property_arg);
@@ -6659,7 +6527,7 @@ property_edit_submenu (NmCli *nmc,
 			 */
 			if (!cmd_property_arg) {
 				tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-				prop_val_user = readline_x (tmp_prompt);
+				prop_val_user = readline_x (tmp_prompt, TRUE);
 				g_free (tmp_prompt);
 			} else
 				prop_val_user = g_strdup (cmd_property_arg);
@@ -6685,10 +6553,10 @@ property_edit_submenu (NmCli *nmc,
 			break;
 
 		case NMC_EDITOR_SUB_CMD_CHANGE:
-			*edit_lib_symbols.rl_startup_hook_x = set_deftext;
+			rl_startup_hook = set_deftext;
 			pre_input_deftext = nmc_setting_get_property_out2in (curr_setting, prop_name, NULL);
 			tmp_prompt = g_strdup_printf (_("Edit '%s' value: "), prop_name);
-			prop_val_user = readline_x (tmp_prompt);
+			prop_val_user = readline_x (tmp_prompt, TRUE);
 
 			nmc_property_get_gvalue (curr_setting, prop_name, &prop_g_value);
 			nmc_property_set_default_value (curr_setting, prop_name);
@@ -6876,7 +6744,7 @@ ask_check_setting (const char *arg,
 
 	if (!arg) {
 		printf (_("Available settings: %s\n"), valid_settings_str);
-		setting_name_user = nmc_get_user_input (EDITOR_PROMPT_SETTING);
+		setting_name_user = readline_x (EDITOR_PROMPT_SETTING, TRUE);
 	} else
 		setting_name_user = g_strdup (arg);
 
@@ -6902,7 +6770,7 @@ ask_check_property (const char *arg,
 
 	if (!arg) {
 		printf (_("Available properties: %s\n"), valid_props_str);
-		prop_name_user = readline_x (EDITOR_PROMPT_PROPERTY);
+		prop_name_user = readline_x (EDITOR_PROMPT_PROPERTY, TRUE);
 		if (prop_name_user)
 			g_strstrip (prop_name_user);
 	} else
@@ -7046,7 +6914,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			editor_show_status_line (connection, dirty, temp_changes);
 
 		/* Read user input */
-		cmd_user = readline_x (menu_ctx.main_prompt);
+		cmd_user = readline_x (menu_ctx.main_prompt, TRUE);
 
 		/* Get the remote connection again, it may have disapeared */
 		removed = refresh_remote_connection (&weak, &rem_con);
@@ -7084,7 +6952,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
 
 					tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-					prop_val_user = readline_x (tmp_prompt);
+					prop_val_user = readline_x (tmp_prompt, TRUE);
 					g_free (tmp_prompt);
 
 					/* Set property value */
@@ -7142,7 +7010,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
 
 					tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-					cmd_arg_v = readline_x (tmp_prompt);
+					cmd_arg_v = readline_x (tmp_prompt, TRUE);
 					g_free (tmp_prompt);
 				}
 
@@ -7833,7 +7701,6 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	char *tmp_str;
 	GError *error = NULL;
 	GError *err1 = NULL;
-	GModule *edit_lib_module = NULL;
 	nmc_arg_t exp_args[] = { {"type",     TRUE, &type,     FALSE},
 	                         {"con-name", TRUE, &con_name, FALSE},
 	                         {"id",       TRUE, &con_id,   FALSE},
@@ -7854,19 +7721,11 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
-	/* Load line editing library */
-	if (!(edit_lib_module = load_cmd_line_edit_lib ())) {
-		printf (_(">>> Command-line editing is not available. "
-		          "Consider installing a line editing library to enable the feature. <<<\n"
-		          "Supported libraries are:\n"
-		          "  - GNU Readline    (libreadline) http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html\n"
-		          "  - NetBSD Editline (libedit)     http://www.thrysoee.dk/editline/\n"));
-		edit_lib_symbols.readline_func = NULL;
-		edit_lib_symbols.add_history_func = NULL;
-		edit_lib_symbols.history_list_func = NULL;
-		edit_lib_symbols.rl_insert_text_func = NULL;
-		edit_lib_symbols.rl_startup_hook_x = NULL;
-	}
+	/* Setup some readline completion stuff */
+	/* Set a pointer to an alternative function to create matches */
+	rl_attempted_completion_function = (CPPFunction *) nmcli_editor_tab_completion;
+	/* Use ' ' and '.' as word break characters */
+	rl_completer_word_break_characters = ". ";
 
 	if (!con) {
 		if (con_id && !con_uuid && !con_path) {
@@ -7931,7 +7790,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 				printf (_("Error: invalid connection type; %s\n"), err1->message);
 			g_clear_error (&err1);
 
-			type_ask = readline_x (EDITOR_PROMPT_CON_TYPE);
+			type_ask = readline_x (EDITOR_PROMPT_CON_TYPE, TRUE);
 			type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
 			connection_type = check_valid_name (type_ask, nmc_valid_connection_types, &err1);
 			g_free (type_ask);
@@ -7983,9 +7842,6 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 	/* Run menu loop */
 	editor_menu_main (nmc, connection, connection_type);
-
-	if (edit_lib_module)
-		g_module_close (edit_lib_module);
 
 	if (connection)
 		g_object_unref (connection);
