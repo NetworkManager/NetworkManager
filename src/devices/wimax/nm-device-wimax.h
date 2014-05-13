@@ -68,18 +68,6 @@ GType nm_device_wimax_get_type (void);
 
 NMDevice   *nm_device_wimax_new            (NMPlatformLink *platform_device);
 
-NMWimaxNsp *nm_device_wimax_get_active_nsp (NMDeviceWimax *self);
-
-guint       nm_device_wimax_get_center_frequency (NMDeviceWimax *self);
-
-gint        nm_device_wimax_get_rssi       (NMDeviceWimax *self);
-
-gint        nm_device_wimax_get_cinr       (NMDeviceWimax *self);
-
-gint        nm_device_wimax_get_tx_power   (NMDeviceWimax *self);
-
-const char *nm_device_wimax_get_bsid       (NMDeviceWimax *self);
-
 G_END_DECLS
 
 #endif	/* NM_DEVICE_WIMAX_H */

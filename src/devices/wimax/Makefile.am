@@ -18,6 +18,8 @@ AM_CPPFLAGS = \
 
 pkglib_LTLIBRARIES = libnm-device-plugin-wimax.la
 
+SYMBOL_VIS_FILE=$(srcdir)/exports.ver
+
 libnm_device_plugin_wimax_la_SOURCES = \
 	nm-wimax-factory.c \
 	nm-device-wimax.c \
@@ -30,7 +32,10 @@ libnm_device_plugin_wimax_la_SOURCES = \
 	iwmxsdk.c \
 	iwmxsdk.h
 
-libnm_device_plugin_wimax_la_LDFLAGS = -module -avoid-version
+libnm_device_plugin_wimax_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script=$(SYMBOL_VIS_FILE)
+
 libnm_device_plugin_wimax_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(IWMX_SDK_LIBS) \
@@ -47,3 +52,12 @@ BUILT_SOURCES = \
 	nm-device-wimax-glue.h
 
 CLEANFILES = $(BUILT_SOURCES)
+EXTRA_DIST = $(SYMBOL_VIS_FILE)
+
+if ENABLE_TESTS
+
+check-local:
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-wimax.so $(SYMBOL_VIS_FILE)
+
+endif
+

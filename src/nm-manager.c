@@ -1804,6 +1804,7 @@ factory_component_added_cb (NMDeviceFactory *factory,
 
 #define PLUGIN_PREFIX "libnm-device-plugin-"
 #define PLUGIN_PATH_TAG "NMManager-plugin-path"
+#define PLUGIN_TYPEFUNC_TAG "typefunc"
 
 static void
 load_device_factories (NMManager *self)
@@ -1856,12 +1857,10 @@ load_device_factories (NMManager *self)
 		/* Make sure we don't double-load plugins */
 		dev_type = type_func ();
 		for (iter = priv->factories; iter; iter = iter->next) {
-			NMDeviceType t = NM_DEVICE_TYPE_UNKNOWN;
+			NMDeviceFactoryDeviceTypeFunc loaded_type_func;
 
-			g_object_get (G_OBJECT (iter->data),
-			              NM_DEVICE_FACTORY_DEVICE_TYPE, &t,
-			              NULL);
-			if (dev_type == t) {
+			loaded_type_func = g_object_get_data (G_OBJECT (iter->data), PLUGIN_TYPEFUNC_TAG);
+			if (dev_type == loaded_type_func ()) {
 				found = g_object_get_data (G_OBJECT (iter->data), PLUGIN_PATH_TAG);
 				break;
 			}
@@ -1902,6 +1901,7 @@ load_device_factories (NMManager *self)
 		                  self);
 		g_object_set_data_full (G_OBJECT (factory), PLUGIN_PATH_TAG,
 		                        g_strdup (g_module_name (plugin)), g_free);
+		g_object_set_data (G_OBJECT (factory), PLUGIN_TYPEFUNC_TAG, type_func);
 
 		nm_log_info (LOGD_HW, "Loaded device plugin: %s", g_module_name (plugin));
 	};
@@ -2011,12 +2011,12 @@ platform_link_added (NMManager *self,
 			 */
 			break;
 
+		case NM_LINK_TYPE_OLPC_MESH:
+		case NM_LINK_TYPE_WIFI:
 		case NM_LINK_TYPE_WIMAX:
-			/* If the WiMAX plugin is not installed, we can't control the
-			 * interface, so ignore it.
-			 */
-			break;
-
+			nm_log_info (LOGD_HW, "(%s): '%s' plugin not available; creating generic device",
+			             plink->name, plink->type_name);
+			/* fall through */
 		default:
 			device = nm_device_generic_new (plink);
 			break;
@@ -2064,7 +2064,7 @@ rfkill_manager_rfkill_changed_cb (NMRfkillManager *rfkill_mgr,
 	nm_manager_rfkill_update (NM_MANAGER (user_data), rtype);
 }
 
-GSList *
+const GSList *
 nm_manager_get_devices (NMManager *manager)
 {
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);

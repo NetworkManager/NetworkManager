@@ -71,24 +71,6 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 	return (NMDevice *) nm_device_wimax_new (plink);
 }
 
-enum {
-	PROP_0 = 0x1000,
-	PROP_DEVICE_TYPE,
-};
-
-static void
-get_property (GObject *object, guint prop, GValue *value, GParamSpec *pspec)
-{
-	switch (prop) {
-	case PROP_DEVICE_TYPE:
-		g_value_set_uint (value, PLUGIN_TYPE);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop, pspec);
-		break;
-	}
-}
-
 static void
 device_factory_interface_init (NMDeviceFactory *factory_iface)
 {
@@ -103,12 +85,5 @@ nm_wimax_factory_init (NMWimaxFactory *factory)
 static void
 nm_wimax_factory_class_init (NMWimaxFactoryClass *wf_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (wf_class);
-
-	object_class->get_property = get_property;
-
-	g_object_class_override_property (object_class,
-	                                  PROP_DEVICE_TYPE,
-	                                  NM_DEVICE_FACTORY_DEVICE_TYPE);
 }
 

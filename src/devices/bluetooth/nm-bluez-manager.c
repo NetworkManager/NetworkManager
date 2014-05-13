@@ -58,12 +58,6 @@ static void device_factory_interface_init (NMDeviceFactory *factory_iface);
 G_DEFINE_TYPE_EXTENDED (NMBluezManager, nm_bluez_manager, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
 
-enum {
-	PROP_0,
-	PROP_DEVICE_TYPE,
-	LAST_PROP
-};
-
 static void check_bluez_and_try_setup (NMBluezManager *self);
 
 /**************************************************************************/
@@ -377,20 +371,6 @@ check_bluez_and_try_setup (NMBluezManager *self)
 /*********************************************************************/
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case PROP_DEVICE_TYPE:
-		g_value_set_uint (value, PLUGIN_TYPE);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
 dispose (GObject *object)
 {
 	NMBluezManager *self = NM_BLUEZ_MANAGER (object);
@@ -443,11 +423,6 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 
 	/* virtual methods */
 	object_class->dispose = dispose;
-	object_class->get_property = get_property;
 	object_class->constructed = constructed;
-
-	g_object_class_override_property (object_class,
-	                                  PROP_DEVICE_TYPE,
-	                                  NM_DEVICE_FACTORY_DEVICE_TYPE);
 }
 

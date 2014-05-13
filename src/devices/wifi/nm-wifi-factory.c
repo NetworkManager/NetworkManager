@@ -43,11 +43,6 @@ static void device_factory_interface_init (NMDeviceFactory *factory_iface);
 G_DEFINE_TYPE_EXTENDED (NMWifiFactory, nm_wifi_factory, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
 
-enum {
-	PROP_0,
-	PROP_DEVICE_TYPE,
-};
-
 /**************************************************************************/
 
 #define PLUGIN_TYPE NM_DEVICE_TYPE_WIFI
@@ -77,19 +72,6 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 }
 
 static void
-get_property (GObject *object, guint prop, GValue *value, GParamSpec *pspec)
-{
-	switch (prop) {
-	case PROP_DEVICE_TYPE:
-		g_value_set_uint (value, PLUGIN_TYPE);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop, pspec);
-		break;
-	}
-}
-
-static void
 device_factory_interface_init (NMDeviceFactory *factory_iface)
 {
 	factory_iface->new_link = new_link;
@@ -103,12 +85,5 @@ nm_wifi_factory_init (NMWifiFactory *self)
 static void
 nm_wifi_factory_class_init (NMWifiFactoryClass *wf_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (wf_class);
-
-	object_class->get_property = get_property;
-
-	g_object_class_override_property (object_class,
-	                                  PROP_DEVICE_TYPE,
-	                                  NM_DEVICE_FACTORY_DEVICE_TYPE);
 }
 

@@ -69,9 +69,6 @@ typedef NMDeviceType (*NMDeviceFactoryDeviceTypeFunc) (void);
 #define NM_IS_DEVICE_FACTORY(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_FACTORY))
 #define NM_DEVICE_FACTORY_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactory))
 
-/* properties */
-#define NM_DEVICE_FACTORY_DEVICE_TYPE     "device-type"
-
 /* signals */
 #define NM_DEVICE_FACTORY_COMPONENT_ADDED "component-added"
 #define NM_DEVICE_FACTORY_DEVICE_ADDED    "device-added"

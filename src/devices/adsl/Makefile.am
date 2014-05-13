@@ -33,6 +33,8 @@ BUILT_SOURCES = $(GLIB_GENERATED) nm-device-adsl-glue.h
 
 pkglib_LTLIBRARIES = libnm-device-plugin-adsl.la
 
+SYMBOL_VIS_FILE=$(srcdir)/exports.ver
+
 libnm_device_plugin_adsl_la_SOURCES = \
 	nm-atm-manager.c \
 	nm-atm-manager.h \
@@ -41,10 +43,21 @@ libnm_device_plugin_adsl_la_SOURCES = \
 	\
 	$(BUILT_SOURCES)
 
-libnm_device_plugin_adsl_la_LDFLAGS = -module -avoid-version
+libnm_device_plugin_adsl_la_LDFLAGS = \
+	-module -avoid-version \
+	-Wl,--version-script=$(SYMBOL_VIS_FILE)
+
 libnm_device_plugin_adsl_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GUDEV_LIBS)
 
 CLEANFILES = $(BUILT_SOURCES)
+EXTRA_DIST = $(SYMBOL_VIS_FILE)
+
+if ENABLE_TESTS
+
+check-local:
+	$(top_srcdir)/tools/check-exports.sh $(builddir)/.libs/libnm-device-plugin-adsl.so $(SYMBOL_VIS_FILE)
+
+endif
 

@@ -45,14 +45,6 @@ interface_init (gpointer g_iface)
 	if (G_LIKELY (initialized))
 		return;
 
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_uint (NM_DEVICE_FACTORY_DEVICE_TYPE,
-		                    "Device type",
-		                    "Device type",
-		                    0, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
-		                    G_PARAM_READABLE));
-
 	/* Signals */
 	signals[DEVICE_ADDED] = g_signal_new (NM_DEVICE_FACTORY_DEVICE_ADDED,
 	                                      iface_type,
