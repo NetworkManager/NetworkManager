@@ -89,7 +89,7 @@ software_add (NMLinkType link_type, const char *name)
 	case NM_LINK_TYPE_DUMMY:
 		return nm_platform_dummy_add (name);
 	case NM_LINK_TYPE_BRIDGE:
-		return nm_platform_bridge_add (name);
+		return nm_platform_bridge_add (name, NULL, 0);
 	case NM_LINK_TYPE_BOND:
 		{
 			gboolean bond0_exists = nm_platform_link_exists ("bond0");
@@ -111,7 +111,7 @@ software_add (NMLinkType link_type, const char *name)
 
 		/* Don't call link_callback for the bridge interface */
 		parent_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, PARENT_NAME);
-		if (nm_platform_bridge_add (PARENT_NAME))
+		if (nm_platform_bridge_add (PARENT_NAME, NULL, 0))
 			wait_signal (parent_added);
 		free_signal (parent_added);
 

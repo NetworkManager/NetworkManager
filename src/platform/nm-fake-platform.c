@@ -185,7 +185,7 @@ link_added_emit (gpointer user_data)
 }
 
 static gboolean
-link_add (NMPlatform *platform, const char *name, NMLinkType type)
+link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *address, size_t address_len)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMFakePlatformLink device;
@@ -600,7 +600,7 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 {
 	NMFakePlatformLink *device;
 
-	if (!link_add (platform, name, NM_LINK_TYPE_VLAN))
+	if (!link_add (platform, name, NM_LINK_TYPE_VLAN, NULL, 0))
 		return FALSE;
 
 	device = link_get (platform, link_get_ifindex (platform, name));
@@ -651,7 +651,7 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
 	g_return_val_if_fail (parent_device != NULL, FALSE);
 
 	name = g_strdup_printf ("%s.%04x", parent_device->link.name, p_key);
-	success = link_add (platform, name, NM_LINK_TYPE_INFINIBAND);
+	success = link_add (platform, name, NM_LINK_TYPE_INFINIBAND, NULL, 0);
 	g_free (name);
 
 	return success;
@@ -1232,15 +1232,15 @@ static gboolean
 setup (NMPlatform *platform)
 {
 	/* skip zero element */
-	link_add (platform, NULL, NM_LINK_TYPE_NONE);
+	link_add (platform, NULL, NM_LINK_TYPE_NONE, NULL, 0);
 
 	/* add loopback interface */
-	link_add (platform, "lo", NM_LINK_TYPE_LOOPBACK);
+	link_add (platform, "lo", NM_LINK_TYPE_LOOPBACK, NULL, 0);
 
 	/* add some ethernets */
-	link_add (platform, "eth0", NM_LINK_TYPE_ETHERNET);
-	link_add (platform, "eth1", NM_LINK_TYPE_ETHERNET);
-	link_add (platform, "eth2", NM_LINK_TYPE_ETHERNET);
+	link_add (platform, "eth0", NM_LINK_TYPE_ETHERNET, NULL, 0);
+	link_add (platform, "eth1", NM_LINK_TYPE_ETHERNET, NULL, 0);
+	link_add (platform, "eth2", NM_LINK_TYPE_ETHERNET, NULL, 0);
 
 	return TRUE;
 }

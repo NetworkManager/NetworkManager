@@ -1871,9 +1871,10 @@ build_rtnl_link (int ifindex, const char *name, NMLinkType type)
 }
 
 static gboolean
-link_add (NMPlatform *platform, const char *name, NMLinkType type)
+link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *address, size_t address_len)
 {
 	int r;
+	struct nl_object *link;
 
 	if (type == NM_LINK_TYPE_BOND) {
 		/* When the kernel loads the bond module, either via explicit modprobe
@@ -1891,7 +1892,15 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type)
 	debug ("link: add link '%s' of type '%s' (%d)",
 	       name, type_to_string (type), (int) type);
 
-	return add_object (platform, build_rtnl_link (0, name, type));
+	link = build_rtnl_link (0, name, type);
+
+	g_assert ( (address != NULL) ^ (address_len == 0) );
+	if (address) {
+		auto_nl_addr struct nl_addr *nladdr = _nm_nl_addr_build (AF_LLC, address, address_len);
+
+		rtnl_link_set_addr ((struct rtnl_link *) link, nladdr);
+	}
+	return add_object (platform, link);
 }
 
 static struct rtnl_link *

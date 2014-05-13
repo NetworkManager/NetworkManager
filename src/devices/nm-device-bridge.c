@@ -444,7 +444,7 @@ nm_device_bridge_new_for_connection (NMConnection *connection)
 	iface = nm_connection_get_virtual_iface_name (connection);
 	g_return_val_if_fail (iface != NULL, NULL);
 
-	if (   !nm_platform_bridge_add (iface)
+	if (   !nm_platform_bridge_add (iface, NULL, 0)
 	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
 		nm_log_warn (LOGD_DEVICE | LOGD_BRIDGE, "(%s): failed to create bridge master interface for '%s': %s",
 		             iface, nm_connection_get_id (connection),
