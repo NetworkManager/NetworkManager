@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <netinet/ether.h>
+#include <readline/readline.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -1381,10 +1382,9 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 		nmc->timeout = 90;
 
 	if (argc == 0) {
-		if (nmc->ask) {
-			ifname = ifname_ask = nmc_get_user_input (_("Interface: "));
-			// TODO: list available devices when just Enter is pressed ?
-		}
+		if (nmc->ask)
+			ifname = ifname_ask = nmc_readline (_("Interface: "));
+
 		if (!ifname_ask) {
 			g_string_printf (nmc->return_text, _("Error: No interface specified."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -1516,10 +1516,9 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 		nmc->timeout = 10;
 
 	if (argc == 0) {
-		if (nmc->ask) {
-			ifname = ifname_ask = nmc_get_user_input (_("Interface: "));
-			// TODO: list available devices when just Enter is pressed ?
-		}
+		if (nmc->ask)
+			ifname = ifname_ask = nmc_readline (_("Interface: "));
+
 		if (!ifname_ask) {
 			g_string_printf (nmc->return_text, _("Error: No interface specified."));
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -2022,7 +2021,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		argv++;
 	} else {
 		if (nmc->ask) {
-			ssid_ask = nmc_get_user_input (_("SSID or BSSID: "));
+			ssid_ask = nmc_readline (_("SSID or BSSID: "));
 			param_user = ssid_ask ? ssid_ask : "";
 			bssid1_arr = nm_utils_hwaddr_atoba (param_user, ARPHRD_ETHER);
 		}
@@ -2201,7 +2200,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	if (ap_flags & NM_802_11_AP_FLAGS_PRIVACY) {
 		/* Ask for missing password when one is expected and '--ask' is used */
 		if (!password && nmc->ask)
-			password = passwd_ask = nmc_get_user_input (_("Password: "));
+			password = passwd_ask = nmc_readline (_("Password: "));
 
 		if (password) {
 			if (!connection)
@@ -2560,10 +2559,20 @@ do_device_wimax (NmCli *nmc, int argc, char **argv)
 }
 #endif
 
+static char **
+nmcli_device_tab_completion (char *text, int start, int end)
+{
+	/* Disable readline's default filename completion */
+	rl_attempted_completion_over = 1;
+	return NULL;
+}
+
 NMCResultCode
 do_devices (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
+
+	rl_attempted_completion_function = (CPPFunction *) nmcli_device_tab_completion;
 
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
