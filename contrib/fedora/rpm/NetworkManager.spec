@@ -30,6 +30,7 @@
 
 %global with_adsl 1
 %global with_bluetooth 1
+%global with_wimax 0
 %global with_wwan 1
 
 %if ! 0%{?rhel} && (! 0%{?fedora} || 0%{?fedora} < 20)
@@ -435,12 +436,16 @@ fi
 %files adsl
 %defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-adsl.so
+%else
+%exclude %{_libdir}/%{name}/libnm-device-plugin-adsl.so
 %endif
 
 %if 0%{?with_bluetooth}
 %files bluetooth
 %defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-bluetooth.so
+%else
+%exclude %{_libdir}/%{name}/libnm-device-plugin-bluetooth.so
 %endif
 
 %if 0%{?with_wwan}
@@ -448,12 +453,17 @@ fi
 %defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-wwan.so
 %{_libdir}/%{name}/libnm-wwan.so
+%else
+%exclude %{_libdir}/%{name}/libnm-device-plugin-wwan.so
+%exclude %{_libdir}/%{name}/libnm-wwan.so
 %endif
 
 %if 0%{?with_wimax}
 %files wimax
 %defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-wimax.so
+%else
+%exclude %{_libdir}/%{name}/libnm-device-plugin-wimax.so
 %endif
 
 %files devel
