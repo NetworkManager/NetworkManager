@@ -55,9 +55,9 @@ typedef struct {
 NMVPNService *
 nm_vpn_service_new (const char *namefile, GError **error)
 {
-	NMVPNService *self = NULL;
+	NMVPNService *self;
+	NMVPNServicePrivate *priv;
 	GKeyFile *kf;
-	char *dbus_service = NULL, *program = NULL, *name = NULL;
 
 	g_return_val_if_fail (namefile != NULL, NULL);
 	g_return_val_if_fail (g_path_is_absolute (namefile), NULL);
@@ -68,36 +68,29 @@ nm_vpn_service_new (const char *namefile, GError **error)
 		return NULL;
 	}
 
-	dbus_service = g_key_file_get_string (kf, VPN_CONNECTION_GROUP, "service", NULL);
-	if (!dbus_service) {
-		g_set_error (error, 0, 0, "VPN service file %s had no 'service' key", namefile);
-		goto out;
-	}
-
-	program = g_key_file_get_string (kf, VPN_CONNECTION_GROUP, "program", NULL);
-	if (!program) {
-		g_set_error (error, 0, 0, "VPN service file %s had no 'program' key", namefile);
-		goto out;
-	}
-
-	name = g_key_file_get_string (kf, VPN_CONNECTION_GROUP, "name", NULL);
-	if (!name) {
-		g_set_error (error, 0, 0, "VPN service file %s had no 'name' key", namefile);
-		goto out;
-	}
-
 	self = (NMVPNService *) g_object_new (NM_TYPE_VPN_SERVICE, NULL);
-	NM_VPN_SERVICE_GET_PRIVATE (self)->name = g_strdup (name);
-	NM_VPN_SERVICE_GET_PRIVATE (self)->dbus_service = g_strdup (dbus_service);
-	NM_VPN_SERVICE_GET_PRIVATE (self)->program = g_strdup (program);
-	NM_VPN_SERVICE_GET_PRIVATE (self)->namefile = g_strdup (namefile);
+	priv = NM_VPN_SERVICE_GET_PRIVATE (self);
+	priv->namefile = g_strdup (namefile);
 
- out:
+	priv->dbus_service = g_key_file_get_string (kf, VPN_CONNECTION_GROUP, "service", error);
+	if (!priv->dbus_service)
+		goto error;
+
+	priv->program = g_key_file_get_string (kf, VPN_CONNECTION_GROUP, "program", error);
+	if (!priv->program)
+		goto error;
+
+	priv->name = g_key_file_get_string (kf, VPN_CONNECTION_GROUP, "name", error);
+	if (!priv->name)
+		goto error;
+
 	g_key_file_free (kf);
-	g_free (dbus_service);
-	g_free (program);
-	g_free (name);
 	return self;
+
+error:
+	g_object_unref (self);
+	g_key_file_free (kf);
+	return NULL;
 }
 
 const char *
