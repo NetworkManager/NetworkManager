@@ -129,6 +129,7 @@ else
     DISTCHECK=no
     _DISTCHECK=false
 fi
+__DISTCHECK=$DISTCHECK
 
 if eval_bool "$DIST" 0; then
     DIST=yes
@@ -137,9 +138,13 @@ else
     DIST=no
     _DIST=false
 fi
+__DIST=$DIST
 
-if [[ "$DIST" == yes && "$DISTCHECK" == yes ]]; then
-    echo "WARNING: DIST and DISTCHECK cannot be both true. DIST will be ignored."
+if [[ "$RPM" == yes ]]; then
+    DISTCHECK=yes
+    _DISTCHECK=true
+fi
+if [[ "$DISTCHECK" == yes ]]; then
     DIST=no
     _DIST=false
 fi
@@ -150,12 +155,21 @@ fi
 
 echo "USER                  : \"$_USER\""
 echo "TOKEN                 : \"$_TOKEN\""
-echo "DRY_RUN               : $DRY_RUN"
-echo "RPM                   : $RPM"
 echo "NO_CHECK_UPSTREAM     : $NO_CHECK_UPSTREAM"
+echo "DRY_RUN               : $DRY_RUN"
+echo
 echo "OUT_OF_TREE_BUILD     : $OUT_OF_TREE_BUILD"
+if [[ $__DIST != $DIST ]]; then
+echo "DIST                  : $DIST (conflicts with DISTCHECK)"
+else
 echo "DIST                  : $DIST"
+fi
+if [[ $__DISTCHECK != $DISTCHECK ]]; then
+echo "DISTCHECK             : $DISTCHECK (implied by RPM)"
+else
 echo "DISTCHECK             : $DISTCHECK"
+fi
+echo "RPM                   : $RPM"
 
 for _BRANCH in "${REFS[@]}"; do
     _B="$(git rev-parse -q --verify "$_BRANCH")" || die "Error parsing revision \"$_BRANCH\""
