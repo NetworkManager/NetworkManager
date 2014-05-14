@@ -23,7 +23,7 @@
 #include <string.h>
 
 #include "nm-dispatcher.h"
-#include "nm-dispatcher-action.h"
+#include "nm-dispatcher-api.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-logging.h"

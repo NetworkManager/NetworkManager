@@ -37,7 +37,7 @@
 #include <dbus/dbus-glib.h>
 
 
-#include "nm-dispatcher-action.h"
+#include "nm-dispatcher-api.h"
 #include "nm-dispatcher-utils.h"
 #include "nm-glib-compat.h"
 
