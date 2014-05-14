@@ -401,6 +401,12 @@ nmc_string_to_bool (const char *str, gboolean *val_bool, GError **error)
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
+	if (g_strcmp0 (str, "o") == 0) {
+		g_set_error (error, 1, 0,
+		             _("'%s' is ambiguous (on x off)"), str);
+		return FALSE;
+	}
+
 	if (nmc_string_is_valid (str, s_true, NULL))
 		*val_bool = TRUE;
 	else if (nmc_string_is_valid (str, s_false, NULL))
