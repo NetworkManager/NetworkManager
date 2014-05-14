@@ -298,11 +298,11 @@ nm_vpn_service_get_active_connections (NMVPNService *service)
 }
 
 static void
-nm_vpn_service_name_owner_changed (NMDBusManager *mgr,
-							const char *name,
-							const char *old,
-							const char *new,
-							gpointer user_data)
+_name_owner_changed (NMDBusManager *mgr,
+                     const char *name,
+                     const char *old,
+                     const char *new,
+                     gpointer user_data)
 {
 	NMVPNService *service = NM_VPN_SERVICE (user_data);
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (service);
@@ -319,8 +319,8 @@ nm_vpn_service_name_owner_changed (NMDBusManager *mgr,
 		priv->start_timeout = 0;
 	}
 
-	old_owner_good = (old && (strlen (old) > 0));
-	new_owner_good = (new && (strlen (new) > 0));
+	old_owner_good = (old && old[0]);
+	new_owner_good = (new && new[0]);
 
 	if (!old_owner_good && new_owner_good) {
 		/* service just appeared */
@@ -344,7 +344,7 @@ nm_vpn_service_init (NMVPNService *self)
 
 	priv->name_owner_id = g_signal_connect (nm_dbus_manager_get (),
 	                                        NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
-	                                        G_CALLBACK (nm_vpn_service_name_owner_changed),
+	                                        G_CALLBACK (_name_owner_changed),
 	                                        self);
 }
 
