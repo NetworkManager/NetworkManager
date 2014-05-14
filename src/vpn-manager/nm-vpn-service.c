@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2012 Red Hat, Inc.
+ * Copyright (C) 2005 - 2014 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -38,9 +38,6 @@
 G_DEFINE_TYPE (NMVPNService, nm_vpn_service, G_TYPE_OBJECT)
 
 typedef struct {
-	gboolean disposed;
-
-	NMDBusManager *dbus_mgr;
 	char *name;
 	char *dbus_service;
 	char *program;
@@ -345,7 +342,7 @@ nm_vpn_service_activate (NMVPNService *service,
 
 	priv->connections = g_slist_prepend (priv->connections, g_object_ref (vpn));
 
-	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, priv->dbus_service))
+	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (), priv->dbus_service))
 		nm_vpn_connection_activate (vpn);
 	else if (priv->start_timeout == 0) {
 		nm_log_info (LOGD_VPN, "Starting VPN service '%s'...", priv->name);
@@ -410,8 +407,7 @@ nm_vpn_service_init (NMVPNService *self)
 {
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (self);
 
-	priv->dbus_mgr = nm_dbus_manager_get ();
-	priv->name_owner_id = g_signal_connect (priv->dbus_mgr,
+	priv->name_owner_id = g_signal_connect (nm_dbus_manager_get (),
 	                                        NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
 	                                        G_CALLBACK (nm_vpn_service_name_owner_changed),
 	                                        self);
@@ -423,34 +419,42 @@ dispose (GObject *object)
 	NMVPNService *self = NM_VPN_SERVICE (object);
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (self);
 
-	if (priv->disposed)
-		goto out;
-	priv->disposed = TRUE;
-
-	if (priv->start_timeout)
+	if (priv->start_timeout) {
 		g_source_remove (priv->start_timeout);
+		priv->start_timeout = 0;
+	}
 
 	nm_vpn_service_connections_stop (NM_VPN_SERVICE (object),
 	                                 FALSE,
 	                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 
-	g_signal_handler_disconnect (priv->dbus_mgr, priv->name_owner_id);
+	if (priv->name_owner_id) {
+		g_signal_handler_disconnect (nm_dbus_manager_get (), priv->name_owner_id);
+		priv->name_owner_id = 0;
+	}
 
-	if (priv->child_watch)
+	if (priv->child_watch) {
 		g_source_remove (priv->child_watch);
+		priv->child_watch = 0;
+	}
 
 	clear_quit_timeout (self);
 	service_quit (self);
 
-	priv->dbus_mgr = NULL;
+	G_OBJECT_CLASS (nm_vpn_service_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (object);
 
 	g_free (priv->name);
 	g_free (priv->dbus_service);
 	g_free (priv->program);
 	g_free (priv->namefile);
 
-out:
-	G_OBJECT_CLASS (nm_vpn_service_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_vpn_service_parent_class)->finalize (object);
 }
 
 static void
@@ -462,4 +466,5 @@ nm_vpn_service_class_init (NMVPNServiceClass *service_class)
 
 	/* virtual methods */
 	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 }
