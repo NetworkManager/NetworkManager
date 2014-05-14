@@ -30,6 +30,7 @@
 
 %global with_adsl 1
 %global with_bluetooth 1
+%global with_wifi 1
 %global with_wimax 0
 %global with_wwan 1
 
@@ -170,6 +171,18 @@ Obsoletes: NetworkManager-bt
 
 %description bluetooth
 This package contains NetworkManager support for Bluetooth devices.
+%endif
+
+
+%if 0%{?with_wifi}
+%package wifi
+Summary: Wifi plugin for NetworkManager
+Group: System Environment/Base
+Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: NetworkManager < 1:0.9.9.1-2
+
+%description wifi
+This package contains NetworkManager support for Wifi and OLPC devices.
 %endif
 
 
@@ -446,6 +459,14 @@ fi
 %{_libdir}/%{name}/libnm-device-plugin-bluetooth.so
 %else
 %exclude %{_libdir}/%{name}/libnm-device-plugin-bluetooth.so
+%endif
+
+%if 0%{?with_wifi}
+%files wifi
+%defattr(-,root,root,0755)
+%{_libdir}/%{name}/libnm-device-plugin-wifi.so
+%else
+%exclude %{_libdir}/%{name}/libnm-device-plugin-wifi.so
 %endif
 
 %if 0%{?with_wwan}
