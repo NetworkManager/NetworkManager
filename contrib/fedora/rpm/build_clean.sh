@@ -24,7 +24,7 @@ cd "$GITDIR" || die "could not change to $GITDIR"
 # check for a clean working directory.
 # We ignore the /contrib directory, because this is where the automation
 # scripts and the build results will be.
-if [[ "x$(git clean -ndx -e /contrib )" != x ]]; then
+if [[ "x$(git clean -ndx | grep '^Would remove contrib/.*$' -v)" != x ]]; then
     die "The working copy is not clean. Refuse to run. Try    git clean -e /contrib -dx -n"
 fi
 
