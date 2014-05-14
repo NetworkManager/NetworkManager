@@ -41,8 +41,6 @@
 #include "nm-dispatcher-utils.h"
 #include "nm-glib-compat.h"
 
-#define NMD_SCRIPT_DIR NMCONFDIR "/dispatcher.d"
-
 static GMainLoop *loop = NULL;
 static gboolean debug = FALSE;
 

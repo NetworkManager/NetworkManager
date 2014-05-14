@@ -31,6 +31,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
+static gboolean do_dispatch = TRUE;
 static GSList *requests = NULL;
 
 static void
@@ -134,12 +135,15 @@ fill_vpn_props (NMIP4Config *ip4_config,
 typedef struct {
 	DispatcherFunc callback;
 	gpointer user_data;
+	guint idle_id;
 } DispatchInfo;
 
 static void
 dispatcher_info_free (DispatchInfo *info)
 {
 	requests = g_slist_remove (requests, info);
+	if (info->idle_id)
+		g_source_remove (info->idle_id);
 	g_free (info);
 }
 
@@ -261,6 +265,18 @@ action_to_string (DispatcherAction action)
 	g_assert_not_reached ();
 }
 
+static gboolean
+dispatcher_idle_cb (gpointer user_data)
+{
+	DispatchInfo *info = user_data;
+
+	info->idle_id = 0;
+	if (info->callback)
+		info->callback (info, info->user_data);
+	dispatcher_info_free (info);
+	return G_SOURCE_REMOVE;
+}
+
 static gconstpointer
 _dispatcher_call (DispatcherAction action,
                   NMConnection *connection,
@@ -298,6 +314,16 @@ _dispatcher_call (DispatcherAction action,
 	/* VPN actions require at least an IPv4 config (for now) */
 	if (action == DISPATCHER_ACTION_VPN_UP)
 		g_return_val_if_fail (vpn_ip4_config != NULL, NULL);
+
+	if (do_dispatch == FALSE) {
+		info = g_malloc0 (sizeof (*info));
+		info->callback = callback;
+		info->user_data = user_data;
+		info->idle_id = g_idle_add (dispatcher_idle_cb, info);
+		requests = g_slist_append (requests, info);
+		nm_log_dbg (LOGD_DISPATCH, "ignoring request; no scripts in " NMD_SCRIPT_DIR);
+		return info;
+	}
 
 	g_connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
 	proxy = dbus_g_proxy_new_for_name (g_connection,
@@ -414,5 +440,34 @@ nm_dispatcher_call_cancel (gconstpointer call)
 	 */
 	if (g_slist_find (requests, call))
 		((DispatchInfo *) call)->callback = NULL;
+}
+
+static void
+dispatcher_dir_changed (GFileMonitor *monitor)
+{
+	GDir *dir;
+
+	/* Default to dispatching on any errors */
+	do_dispatch = TRUE;
+	dir = g_dir_open (NMD_SCRIPT_DIR, 0, NULL);
+	if (dir) {
+		do_dispatch = !!g_dir_read_name (dir);
+		g_dir_close (dir);
+	}
+}
+
+void
+nm_dispatcher_init (void)
+{
+	GFile *file;
+	static GFileMonitor *monitor;
+
+	file = g_file_new_for_path (NMD_SCRIPT_DIR);
+	monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
+	if (monitor) {
+		g_signal_connect (monitor, "changed", G_CALLBACK (dispatcher_dir_changed), NULL);
+		dispatcher_dir_changed (monitor);
+	}
+	g_object_unref (file);
 }
 

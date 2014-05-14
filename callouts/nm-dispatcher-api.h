@@ -20,6 +20,8 @@
 
 #include <dbus/dbus-glib.h>
 
+#define NMD_SCRIPT_DIR NMCONFDIR "/dispatcher.d"
+
 /* dbus-glib types for dispatcher call return value */
 #define DISPATCHER_TYPE_RESULT       (dbus_g_type_get_struct ("GValueArray", G_TYPE_STRING, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_INVALID))
 #define DISPATCHER_TYPE_RESULT_ARRAY (dbus_g_type_get_collection ("GPtrArray", DISPATCHER_TYPE_RESULT))

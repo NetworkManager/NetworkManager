@@ -54,6 +54,7 @@
 #include "nm-config.h"
 #include "nm-posix-signals.h"
 #include "nm-session-monitor.h"
+#include "nm-dispatcher.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -603,6 +604,8 @@ main (int argc, char *argv[])
 	/* Initialize DHCP manager */
 	dhcp_mgr = nm_dhcp_manager_get ();
 	g_assert (dhcp_mgr != NULL);
+
+	nm_dispatcher_init ();
 
 	settings = nm_settings_new (&error);
 	if (!settings) {

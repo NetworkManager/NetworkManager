@@ -61,4 +61,6 @@ gconstpointer nm_dispatcher_call_vpn (DispatcherAction action,
 
 void nm_dispatcher_call_cancel (gconstpointer call);
 
+void nm_dispatcher_init (void);
+
 #endif /* NM_DISPATCHER_H */
