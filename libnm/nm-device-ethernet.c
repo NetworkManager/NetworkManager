@@ -87,7 +87,6 @@ nm_device_ethernet_get_hw_address (NMDeviceEthernet *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->hw_address;
 }
 
@@ -105,7 +104,6 @@ nm_device_ethernet_get_permanent_hw_address (NMDeviceEthernet *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->perm_hw_address;
 }
 
@@ -122,7 +120,6 @@ nm_device_ethernet_get_speed (NMDeviceEthernet *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->speed;
 }
 
@@ -139,7 +136,6 @@ nm_device_ethernet_get_carrier (NMDeviceEthernet *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_ETHERNET_GET_PRIVATE (device)->carrier;
 }
 
@@ -267,8 +263,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceEthernet *device = NM_DEVICE_ETHERNET (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:

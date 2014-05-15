@@ -23,7 +23,6 @@
 #define NM_REMOTE_SETTINGS_H
 
 #include <gio/gio.h>
-#include <dbus/dbus-glib.h>
 #include <nm-connection.h>
 #include <nm-remote-connection.h>
 
@@ -105,10 +104,10 @@ struct _NMRemoteSettingsClass {
 
 GType nm_remote_settings_get_type (void);
 
-NMRemoteSettings *nm_remote_settings_new (DBusGConnection *bus);
+NMRemoteSettings *nm_remote_settings_new (GCancellable  *cancellable,
+                                          GError       **error);
 
-void              nm_remote_settings_new_async  (DBusGConnection      *bus,
-                                                 GCancellable         *cancellable,
+void              nm_remote_settings_new_async  (GCancellable         *cancellable,
                                                  GAsyncReadyCallback   callback,
                                                  gpointer              user_data);
 NMRemoteSettings *nm_remote_settings_new_finish (GAsyncResult         *result,

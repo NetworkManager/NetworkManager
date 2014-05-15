@@ -21,11 +21,10 @@
  * (that wraps direct D-Bus calls).
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm` list-connections-libnm.c -o list-connections-libnm
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` list-connections-libnm.c -o list-connections-libnm
  */
 
 #include <glib.h>
-#include <dbus/dbus-glib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -119,13 +118,14 @@ get_connections_cb (NMRemoteSettings *settings, gpointer user_data)
 static gboolean
 list_connections (gpointer data)
 {
-	DBusGConnection *bus = (DBusGConnection *) data;
 	NMRemoteSettings *settings;
 	gboolean settings_running;
+	GError *error = NULL;
 
 	/* Get system settings */
-	if (!(settings = nm_remote_settings_new (bus))) {
-		g_message ("Error: Could not get system settings.");
+	if (!(settings = nm_remote_settings_new (NULL, &error))) {
+		g_message ("Error: Could not get system settings: %s.", error->message);
+		g_error_free (error);
 		result = EXIT_FAILURE;
 		g_main_loop_quit (loop);
 		return FALSE;

@@ -83,7 +83,6 @@ nm_device_infiniband_get_hw_address (NMDeviceInfiniband *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_INFINIBAND (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_INFINIBAND_GET_PRIVATE (device)->hw_address;
 }
 
@@ -100,7 +99,6 @@ nm_device_infiniband_get_carrier (NMDeviceInfiniband *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_INFINIBAND (device), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_INFINIBAND_GET_PRIVATE (device)->carrier;
 }
 
@@ -216,8 +214,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceInfiniband *device = NM_DEVICE_INFINIBAND (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:

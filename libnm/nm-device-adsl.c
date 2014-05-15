@@ -75,7 +75,6 @@ nm_device_adsl_get_carrier (NMDeviceAdsl *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_ADSL (device), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_ADSL_GET_PRIVATE (device)->carrier;
 }
 

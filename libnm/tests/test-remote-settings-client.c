@@ -361,6 +361,7 @@ test_service_running (void)
 	guint quit_id;
 	int running_changed = 0;
 	gboolean running;
+	GError *error = NULL;
 
 	loop = g_main_loop_new (NULL, FALSE);
 
@@ -372,7 +373,11 @@ test_service_running (void)
 	/* Now kill the test service. */
 	nm_test_service_cleanup (sinfo);
 
-	settings2 = nm_remote_settings_new (bus);
+	settings2 = g_initable_new (NM_TYPE_REMOTE_SETTINGS, NULL, &error,
+	                            NM_REMOTE_SETTINGS_BUS, bus,
+	                            NULL);
+	g_assert_no_error (error);
+	g_assert (settings != NULL);
 
 	/* settings2 should know that NM is running, but the previously-created
 	 * settings hasn't gotten the news yet.
@@ -433,7 +438,10 @@ main (int argc, char **argv)
 
 	sinfo = nm_test_service_init ();
 
-	settings = nm_remote_settings_new (bus);
+	settings = g_initable_new (NM_TYPE_REMOTE_SETTINGS, NULL, &error,
+	                           NM_REMOTE_SETTINGS_BUS, bus,
+	                           NULL);
+	g_assert_no_error (error);
 	g_assert (settings != NULL);
 
 	/* FIXME: these tests assume that they get run in order, but g_test_run()

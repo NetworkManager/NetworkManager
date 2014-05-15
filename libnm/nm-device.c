@@ -420,8 +420,6 @@ get_property (GObject *object,
 	NMDevice *device = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
-	_nm_object_ensure_inited (NM_OBJECT (object));
-
 	switch (prop_id) {
 	case PROP_DEVICE_TYPE:
 		g_value_set_uint (value, nm_device_get_device_type (device));
@@ -978,7 +976,6 @@ nm_device_get_iface (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->iface;
 }
 
@@ -997,7 +994,6 @@ nm_device_get_ip_iface (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->ip_iface;
 }
 
@@ -1032,7 +1028,6 @@ nm_device_get_udi (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->udi;
 }
 
@@ -1050,7 +1045,6 @@ nm_device_get_driver (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->driver;
 }
 
@@ -1068,7 +1062,6 @@ nm_device_get_driver_version (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->driver_version;
 }
 
@@ -1086,7 +1079,6 @@ nm_device_get_firmware_version (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->firmware_version;
 }
 
@@ -1158,7 +1150,6 @@ nm_device_get_capabilities (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->capabilities;
 }
 
@@ -1175,7 +1166,6 @@ nm_device_get_managed (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->managed;
 }
 
@@ -1192,7 +1182,6 @@ nm_device_get_autoconnect (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->autoconnect;
 }
 
@@ -1237,7 +1226,6 @@ nm_device_get_firmware_missing (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->firmware_missing;
 }
 
@@ -1258,7 +1246,6 @@ nm_device_get_ip4_config (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->ip4_config;
 }
 
@@ -1280,7 +1267,6 @@ nm_device_get_dhcp4_config (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->dhcp4_config;
 }
 
@@ -1301,7 +1287,6 @@ nm_device_get_ip6_config (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->ip6_config;
 }
 
@@ -1323,7 +1308,6 @@ nm_device_get_dhcp6_config (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->dhcp6_config;
 }
 
@@ -1340,7 +1324,6 @@ nm_device_get_state (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NM_DEVICE_STATE_UNKNOWN);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->state;
 }
 
@@ -1359,7 +1342,6 @@ nm_device_get_state_reason (NMDevice *device, NMDeviceStateReason *reason)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NM_DEVICE_STATE_UNKNOWN);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	if (reason)
 		*reason = NM_DEVICE_GET_PRIVATE (device)->reason;
 	return NM_DEVICE_GET_PRIVATE (device)->state;
@@ -1379,7 +1361,6 @@ nm_device_get_active_connection (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->active_connection;
 }
 
@@ -1399,7 +1380,6 @@ nm_device_get_available_connections (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return handle_ptr_array_return (NM_DEVICE_GET_PRIVATE (device)->available_connections);
 }
 
@@ -1998,7 +1978,6 @@ nm_device_get_physical_port_id (NMDevice *device)
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	if (priv->physical_port_id && *priv->physical_port_id)
 		return priv->physical_port_id;
 	else
@@ -2018,7 +1997,6 @@ nm_device_get_mtu (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GET_PRIVATE (device)->mtu;
 }
 
@@ -2035,7 +2013,6 @@ nm_device_is_software (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return !!(NM_DEVICE_GET_PRIVATE (device)->capabilities & NM_DEVICE_CAP_IS_SOFTWARE);
 }
 

@@ -177,8 +177,6 @@ get_property (GObject *object,
 	NMIP4Config *self = NM_IP4_CONFIG (object);
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
-	_nm_object_ensure_inited (NM_OBJECT (object));
-
 	switch (prop_id) {
 	case PROP_GATEWAY:
 		g_value_set_string (value, nm_ip4_config_get_gateway (self));
@@ -319,7 +317,6 @@ nm_ip4_config_get_gateway (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->gateway;
 }
 
@@ -337,7 +334,6 @@ nm_ip4_config_get_addresses (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->addresses;
 }
 
@@ -356,7 +352,6 @@ nm_ip4_config_get_nameservers (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->nameservers;
 }
 
@@ -374,7 +369,6 @@ nm_ip4_config_get_domains (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return handle_ptr_array_return (NM_IP4_CONFIG_GET_PRIVATE (config)->domains);
 }
 
@@ -392,7 +386,6 @@ nm_ip4_config_get_searches (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return handle_ptr_array_return (NM_IP4_CONFIG_GET_PRIVATE (config)->searches);
 }
 
@@ -411,7 +404,6 @@ nm_ip4_config_get_wins_servers (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->wins;
 }
 
@@ -430,6 +422,5 @@ nm_ip4_config_get_routes (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->routes;
 }

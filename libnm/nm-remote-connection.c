@@ -82,7 +82,6 @@ typedef struct {
 	gboolean proxy_is_destroyed;
 	GSList *calls;
 
-	gboolean inited;
 	gboolean unsaved;
 
 	gboolean visible;
@@ -105,29 +104,6 @@ nm_remote_connection_error_quark (void)
 	if (G_UNLIKELY (quark == 0))
 		quark = g_quark_from_static_string ("nm-remote-connection-error-quark");
 	return quark;
-}
-
-/****************************************************************/
-
-static void
-_nm_remote_connection_ensure_inited (NMRemoteConnection *self)
-{
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
-	GError *error = NULL;
-
-	if (!priv->inited) {
-		if (!g_initable_init (G_INITABLE (self), NULL, &error)) {
-			/* Don't warn when the call times out because the settings service can't
-			 * be activated or whatever.
-			 */
-			if (!g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NO_REPLY)) {
-				g_warning ("%s: (NMRemoteConnection) error initializing: %s\n",
-				           __func__, error->message);
-			}
-			g_error_free (error);
-		}
-		priv->inited = TRUE;
-	}
 }
 
 /****************************************************************/
@@ -434,7 +410,6 @@ nm_remote_connection_get_unsaved (NMRemoteConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
 
-	_nm_remote_connection_ensure_inited (connection);
 	return NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->unsaved;
 }
 
@@ -542,28 +517,26 @@ properties_changed_cb (DBusGProxy *proxy,
 /****************************************************************/
 
 static void
-constructed (GObject *object)
+init_common (NMRemoteConnection *self)
 {
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
-
-	G_OBJECT_CLASS (nm_remote_connection_parent_class)->constructed (object);
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
 	g_assert (priv->bus);
-	g_assert (nm_connection_get_path (NM_CONNECTION (object)));
+	g_assert (nm_connection_get_path (NM_CONNECTION (self)));
 
 	priv->proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
-	                                                 nm_connection_get_path (NM_CONNECTION (object)),
+	                                                 nm_connection_get_path (NM_CONNECTION (self)),
 	                                                 NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
 	g_assert (priv->proxy);
 	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 
 	dbus_g_proxy_add_signal (priv->proxy, "Updated", G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "Updated", G_CALLBACK (updated_cb), object, NULL);
+	dbus_g_proxy_connect_signal (priv->proxy, "Updated", G_CALLBACK (updated_cb), self, NULL);
 
 	dbus_g_proxy_add_signal (priv->proxy, "Removed", G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "Removed", G_CALLBACK (removed_cb), object, NULL);
+	dbus_g_proxy_connect_signal (priv->proxy, "Removed", G_CALLBACK (removed_cb), self, NULL);
 
-	g_signal_connect (priv->proxy, "destroy", G_CALLBACK (proxy_destroy_cb), object);
+	g_signal_connect (priv->proxy, "destroy", G_CALLBACK (proxy_destroy_cb), self);
 
 	/* Monitor properties */
 	dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
@@ -575,11 +548,11 @@ constructed (GObject *object)
 	                         G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "PropertiesChanged",
 	                             G_CALLBACK (properties_changed_cb),
-	                             object,
+	                             self,
 	                             NULL);
 
 	priv->props_proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
-	                                                       nm_connection_get_path (NM_CONNECTION (object)),
+	                                                       nm_connection_get_path (NM_CONNECTION (self)),
 	                                                       DBUS_INTERFACE_PROPERTIES);
 	g_assert (priv->props_proxy);
 }
@@ -587,8 +560,11 @@ constructed (GObject *object)
 static gboolean
 init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
+	NMRemoteConnection *self = NM_REMOTE_CONNECTION (initable);
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (initable);
 	GHashTable *hash;
+
+	init_common (self);
 
 	if (!dbus_g_proxy_call (priv->proxy, "GetSettings", error,
 	                        G_TYPE_INVALID,
@@ -596,7 +572,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                        G_TYPE_INVALID))
 		return FALSE;
 	priv->visible = TRUE;
-	replace_settings (NM_REMOTE_CONNECTION (initable), hash);
+	replace_settings (self, hash);
 	g_hash_table_destroy (hash);
 
 	/* Get properties */
@@ -607,7 +583,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                        DBUS_TYPE_G_MAP_OF_VARIANT, &hash,
 	                        G_TYPE_INVALID))
 		return FALSE;
-	properties_changed_cb (priv->props_proxy, hash, NM_REMOTE_CONNECTION (initable));
+	properties_changed_cb (priv->props_proxy, hash, self);
 	g_hash_table_destroy (hash);
 
 	return TRUE;
@@ -623,10 +599,8 @@ init_async_complete (NMRemoteConnectionInitData *init_data, GError *error)
 {
 	if (error)
 		g_simple_async_result_take_error (init_data->result, error);
-	else {
+	else
 		g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
-		NM_REMOTE_CONNECTION_GET_PRIVATE (init_data->connection)->inited = TRUE;
-	}
 
 	g_simple_async_result_complete (init_data->result);
 	g_object_unref (init_data->result);
@@ -687,11 +661,12 @@ init_async (GAsyncInitable *initable, int io_priority,
 	NMRemoteConnectionInitData *init_data;
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (initable);
 
-
 	init_data = g_slice_new0 (NMRemoteConnectionInitData);
 	init_data->connection = NM_REMOTE_CONNECTION (initable);
 	init_data->result = g_simple_async_result_new (G_OBJECT (initable), callback,
 	                                               user_data, init_async);
+
+	init_common (init_data->connection);
 
 	dbus_g_proxy_begin_call (priv->proxy, "GetSettings",
 	                         init_get_settings_cb, init_data, NULL,
@@ -755,8 +730,6 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	_nm_remote_connection_ensure_inited (NM_REMOTE_CONNECTION (object));
-
 	switch (prop_id) {
 	case PROP_UNSAVED:
 		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->unsaved);
@@ -830,7 +803,6 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
-	object_class->constructed = constructed;
 
 	/* Properties */
 	/**

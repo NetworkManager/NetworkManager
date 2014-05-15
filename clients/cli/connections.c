@@ -8645,6 +8645,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 {
 	int i = 0;
 	gboolean real_cmd = FALSE;
+	GError *error = NULL;
 
 	if (argc == 0)
 		real_cmd = TRUE;
@@ -8672,8 +8673,9 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		args_info.argv = argv;
 
 		/* get system settings */
-		if (!(nmc->system_settings = nm_remote_settings_new (NULL))) {
-			g_string_printf (nmc->return_text, _("Error: Could not get system settings."));
+		if (!(nmc->system_settings = nm_remote_settings_new (NULL, &error))) {
+			g_string_printf (nmc->return_text, _("Error: Could not get system settings: %s."), error->message);
+			g_error_free (error);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			nmc->should_wait = FALSE;
 			return nmc->return_value;

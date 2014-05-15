@@ -77,7 +77,6 @@ nm_device_generic_get_hw_address (NMDeviceGeneric *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_GENERIC (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_GENERIC_GET_PRIVATE (device)->hw_address;
 }
 
@@ -88,7 +87,6 @@ get_type_description (NMDevice *device)
 {
 	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (device);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return priv->type_description;
 }
 
@@ -184,8 +182,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:

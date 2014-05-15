@@ -71,9 +71,6 @@ nm_vpn_connection_get_banner (NMVpnConnection *vpn)
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
 
-	/* We need to update vpn_state first in case it's unknown. */
-	_nm_object_ensure_inited (NM_OBJECT (vpn));
-
 	if (priv->vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
 		return NULL;
 
@@ -93,7 +90,6 @@ nm_vpn_connection_get_vpn_state (NMVpnConnection *vpn)
 {
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NM_VPN_CONNECTION_STATE_UNKNOWN);
 
-	_nm_object_ensure_inited (NM_OBJECT (vpn));
 	return NM_VPN_CONNECTION_GET_PRIVATE (vpn)->vpn_state;
 }
 
@@ -170,8 +166,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMVpnConnection *self = NM_VPN_CONNECTION (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_VPN_STATE:

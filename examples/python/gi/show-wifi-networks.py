@@ -62,7 +62,7 @@ def print_ap_info(ap):
     print
 
 if __name__ == "__main__":
-    nmc = NM.Client.new()
+    nmc = NM.Client.new(None)
     devs = nmc.get_devices()
 
     for dev in devs:

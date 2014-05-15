@@ -160,7 +160,8 @@ typedef struct {
 
 GType nm_client_get_type (void);
 
-NMClient *nm_client_new (void);
+NMClient *nm_client_new (GCancellable  *cancellable,
+                         GError       **error);
 
 void      nm_client_new_async  (GCancellable         *cancellable,
                                 GAsyncReadyCallback   callback,

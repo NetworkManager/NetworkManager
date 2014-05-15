@@ -131,7 +131,6 @@ G_DEFINE_TYPE_WITH_CODE (NMRemoteSettings, nm_remote_settings, G_TYPE_OBJECT,
 typedef struct {
 	DBusGConnection *bus;
 	gboolean private_bus;
-	gboolean inited;
 
 	DBusGProxy *proxy;
 	GHashTable *connections;
@@ -187,29 +186,6 @@ nm_remote_settings_error_quark (void)
 	if (G_UNLIKELY (!quark))
 		quark = g_quark_from_static_string ("nm-remote-settings-error-quark");
 	return quark;
-}
-
-/**********************************************************************/
-
-static void
-_nm_remote_settings_ensure_inited (NMRemoteSettings *self)
-{
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
-	GError *error = NULL;
-
-	if (!priv->inited) {
-		if (!g_initable_init (G_INITABLE (self), NULL, &error)) {
-			/* Don't warn when the call times out because the settings service can't
-			 * be activated or whatever.
-			 */
-			if (!g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NO_REPLY)) {
-				g_warning ("%s: (NMRemoteSettings) error initializing: %s\n",
-				           __func__, error->message);
-			}
-			g_error_free (error);
-		}
-		priv->inited = TRUE;
-	}
 }
 
 /**********************************************************************/
@@ -278,8 +254,6 @@ nm_remote_settings_get_connection_by_id (NMRemoteSettings *settings, const char 
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	_nm_remote_settings_ensure_inited (settings);
-
 	if (priv->service_running) {
 		GHashTableIter iter;
 		NMConnection *candidate;
@@ -315,8 +289,6 @@ nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings, const cha
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	_nm_remote_settings_ensure_inited (settings);
-
 	return priv->service_running ? g_hash_table_lookup (priv->connections, path) : NULL;
 }
 
@@ -341,8 +313,6 @@ nm_remote_settings_get_connection_by_uuid (NMRemoteSettings *settings, const cha
 	g_return_val_if_fail (uuid != NULL, NULL);
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	_nm_remote_settings_ensure_inited (settings);
 
 	if (priv->service_running) {
 		g_hash_table_iter_init (&iter, priv->connections);
@@ -529,18 +499,17 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 	                           NM_REMOTE_CONNECTION_BUS, priv->bus,
 	                           NM_CONNECTION_PATH, path,
 	                           NULL);
-	if (connection) {
-		g_async_initable_init_async (G_ASYNC_INITABLE (connection),
-		                             G_PRIORITY_DEFAULT, NULL,
-		                             connection_inited, self);
+	g_async_initable_init_async (G_ASYNC_INITABLE (connection),
+	                             G_PRIORITY_DEFAULT, NULL,
+	                             connection_inited, self);
 
-		/* Add the connection to the pending table to wait for it to retrieve
-		 * it's settings asynchronously over D-Bus.  The connection isn't
-		 * really valid until it has all its settings, so hide it until it does.
-		 */
-		move_connection (self, connection, NULL, priv->pending);
-		g_object_unref (connection); /* move_connection() takes a ref */
-	}
+	/* Add the connection to the pending table to wait for it to retrieve
+	 * it's settings asynchronously over D-Bus.  The connection isn't
+	 * really valid until it has all its settings, so hide it until it does.
+	 */
+	move_connection (self, connection, NULL, priv->pending);
+	g_object_unref (connection); /* move_connection() takes a ref */
+
 	return connection;
 }
 
@@ -615,8 +584,6 @@ nm_remote_settings_list_connections (NMRemoteSettings *settings)
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	_nm_remote_settings_ensure_inited (settings);
-
 	if (priv->service_running) {
 		g_hash_table_iter_init (&iter, priv->connections);
 		while (g_hash_table_iter_next (&iter, NULL, &value))
@@ -680,8 +647,6 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	_nm_remote_settings_ensure_inited (settings);
-
 	if (!priv->service_running)
 		return FALSE;
 
@@ -734,8 +699,6 @@ nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
 	g_return_val_if_fail (callback != NULL, FALSE);
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	_nm_remote_settings_ensure_inited (settings);
 
 	if (!priv->service_running)
 		return FALSE;
@@ -797,8 +760,6 @@ nm_remote_settings_load_connections (NMRemoteSettings *settings,
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	_nm_remote_settings_ensure_inited (settings);
-
 	if (!priv->service_running) {
 		g_set_error_literal (error, NM_REMOTE_SETTINGS_ERROR,
 		                     NM_REMOTE_SETTINGS_ERROR_SERVICE_UNAVAILABLE,
@@ -845,8 +806,6 @@ nm_remote_settings_reload_connections (NMRemoteSettings *settings,
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	_nm_remote_settings_ensure_inited (settings);
 
 	if (!priv->service_running) {
 		g_set_error_literal (error, NM_REMOTE_SETTINGS_ERROR,
@@ -934,8 +893,6 @@ nm_remote_settings_save_hostname (NMRemoteSettings *settings,
 	g_return_val_if_fail (callback != NULL, FALSE);
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	_nm_remote_settings_ensure_inited (settings);
 
 	if (!priv->service_running)
 		return FALSE;
@@ -1046,7 +1003,8 @@ name_owner_changed (DBusGProxy *proxy,
 
 /**
  * nm_remote_settings_new:
- * @bus: (allow-none): a valid and connected D-Bus connection
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
  *
  * Creates a new object representing the remote settings service.
  *
@@ -1057,13 +1015,11 @@ name_owner_changed (DBusGProxy *proxy,
  * Returns: the new remote settings object on success, or %NULL on failure
  **/
 NMRemoteSettings *
-nm_remote_settings_new (DBusGConnection *bus)
+nm_remote_settings_new (GCancellable  *cancellable,
+                        GError       **error)
 {
-	NMRemoteSettings *self;
-
-	self = g_object_new (NM_TYPE_REMOTE_SETTINGS, NM_REMOTE_SETTINGS_BUS, bus, NULL);
-	_nm_remote_settings_ensure_inited (self);
-	return self;
+	return g_initable_new (NM_TYPE_REMOTE_SETTINGS, cancellable, error,
+	                       NULL);
 }
 
 static void
@@ -1072,7 +1028,7 @@ remote_settings_inited (GObject *source, GAsyncResult *result, gpointer user_dat
 	GSimpleAsyncResult *simple = user_data;
 	GError *error = NULL;
 
-	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (source), result, &error))
+	if (!g_async_initable_new_finish (G_ASYNC_INITABLE (source), result, &error))
 		g_simple_async_result_take_error (simple, error);
 	else
 		g_simple_async_result_set_op_res_gpointer (simple, source, g_object_unref);
@@ -1082,7 +1038,6 @@ remote_settings_inited (GObject *source, GAsyncResult *result, gpointer user_dat
 
 /**
  * nm_remote_settings_new_async:
- * @bus: (allow-none): a valid and connected D-Bus connection
  * @cancellable: a #GCancellable, or %NULL
  * @callback: callback to call when the settings object is created
  * @user_data: data for @callback
@@ -1093,19 +1048,16 @@ remote_settings_inited (GObject *source, GAsyncResult *result, gpointer user_dat
  * result.
  **/
 void
-nm_remote_settings_new_async (DBusGConnection *bus, GCancellable *cancellable,
+nm_remote_settings_new_async (GCancellable *cancellable,
                               GAsyncReadyCallback callback, gpointer user_data)
 {
-	NMRemoteSettings *self;
 	GSimpleAsyncResult *simple;
 
 	simple = g_simple_async_result_new (NULL, callback, user_data, nm_remote_settings_new_async);
 
-	self = g_object_new (NM_TYPE_REMOTE_SETTINGS,
-	                     NM_REMOTE_SETTINGS_BUS, bus,
-	                     NULL);
-	g_async_initable_init_async (G_ASYNC_INITABLE (self), G_PRIORITY_DEFAULT,
-	                             cancellable, remote_settings_inited, simple);
+	g_async_initable_new_async (NM_TYPE_REMOTE_SETTINGS, G_PRIORITY_DEFAULT, cancellable,
+	                            remote_settings_inited, simple,
+	                            NULL);
 }
 
 /**
@@ -1153,11 +1105,9 @@ nm_remote_settings_init (NMRemoteSettings *self)
 }
 
 static void
-constructed (GObject *object)
+init_common (NMRemoteSettings *self)
 {
-	NMRemoteSettingsPrivate *priv;
-
-	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 
 	if (priv->private_bus == FALSE) {
 		/* D-Bus proxy for clearing connections on NameOwnerChanged */
@@ -1177,7 +1127,7 @@ constructed (GObject *object)
 		dbus_g_proxy_connect_signal (priv->dbus_proxy,
 		                             "NameOwnerChanged",
 		                             G_CALLBACK (name_owner_changed),
-		                             object, NULL);
+		                             self, NULL);
 	}
 
 	priv->proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
@@ -1191,7 +1141,7 @@ constructed (GObject *object)
 	                         G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "NewConnection",
 	                             G_CALLBACK (new_connection_cb),
-	                             object,
+	                             self,
 	                             NULL);
 
 	/* D-Bus properties proxy */
@@ -1210,7 +1160,7 @@ constructed (GObject *object)
 	                         G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "PropertiesChanged",
 	                             G_CALLBACK (properties_changed_cb),
-	                             object,
+	                             self,
 	                             NULL);
 }
 
@@ -1220,6 +1170,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	NMRemoteSettings *settings = NM_REMOTE_SETTINGS (initable);
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 	GHashTable *props;
+
+	init_common (settings);
 
 	if (priv->private_bus == FALSE) {
 		if (!dbus_g_proxy_call (priv->dbus_proxy, "NameHasOwner", error,
@@ -1264,10 +1216,6 @@ typedef struct {
 static void
 init_async_complete (NMRemoteSettingsInitData *init_data)
 {
-	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (init_data->settings);
-
-	priv->inited = TRUE;
-
 	g_simple_async_result_complete (init_data->result);
 	g_object_unref (init_data->result);
 	g_slice_free (NMRemoteSettingsInitData, init_data);
@@ -1358,6 +1306,8 @@ init_async (GAsyncInitable *initable, int io_priority,
 	init_data->result = g_simple_async_result_new (G_OBJECT (initable), callback,
 	                                               user_data, init_async);
 
+	init_common (init_data->settings);
+
 	if (priv->private_bus)
 		init_get_properties (init_data);
 	else {
@@ -1442,8 +1392,6 @@ get_property (GObject *object, guint prop_id,
 {
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
 
-	_nm_remote_settings_ensure_inited (NM_REMOTE_SETTINGS (object));
-
 	switch (prop_id) {
 	case PROP_BUS:
 		g_value_set_boxed (value, priv->bus);
@@ -1471,7 +1419,6 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 	g_type_class_add_private (class, sizeof (NMRemoteSettingsPrivate));
 
 	/* Virtual methods */
-	object_class->constructed = constructed;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;

@@ -150,7 +150,6 @@ nm_ip6_config_get_gateway (NMIP6Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return NM_IP6_CONFIG_GET_PRIVATE (config)->gateway;
 }
 
@@ -169,7 +168,6 @@ nm_ip6_config_get_addresses (NMIP6Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return NM_IP6_CONFIG_GET_PRIVATE (config)->addresses;
 }
 
@@ -186,7 +184,6 @@ nm_ip6_config_get_num_nameservers (NMIP6Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return g_slist_length (NM_IP6_CONFIG_GET_PRIVATE (config)->nameservers);
 }
 
@@ -209,7 +206,6 @@ nm_ip6_config_get_nameserver (NMIP6Config *config, guint32 idx)
 
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 
 	for (item = priv->nameservers; item && i < idx; i++)
@@ -235,7 +231,6 @@ nm_ip6_config_get_nameservers (NMIP6Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return NM_IP6_CONFIG_GET_PRIVATE (config)->nameservers;
 }
 
@@ -253,7 +248,6 @@ nm_ip6_config_get_domains (NMIP6Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return handle_ptr_array_return (NM_IP6_CONFIG_GET_PRIVATE (config)->domains);
 }
 
@@ -271,7 +265,6 @@ nm_ip6_config_get_searches (NMIP6Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return handle_ptr_array_return (NM_IP6_CONFIG_GET_PRIVATE (config)->searches);
 }
 
@@ -290,7 +283,6 @@ nm_ip6_config_get_routes (NMIP6Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return NM_IP6_CONFIG_GET_PRIVATE (config)->routes;
 }
 
@@ -328,8 +320,6 @@ get_property (GObject *object,
 {
 	NMIP6Config *self = NM_IP6_CONFIG (object);
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_GATEWAY:

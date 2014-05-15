@@ -109,7 +109,6 @@ nm_device_wimax_get_hw_address (NMDeviceWimax *wimax)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (wimax));
 	return NM_DEVICE_WIMAX_GET_PRIVATE (wimax)->hw_address;
 }
 
@@ -144,7 +143,6 @@ nm_device_wimax_get_active_nsp (NMDeviceWimax *wimax)
 		break;
 	}
 
-	_nm_object_ensure_inited (NM_OBJECT (wimax));
 	return NM_DEVICE_WIMAX_GET_PRIVATE (wimax)->active_nsp;
 }
 
@@ -163,7 +161,6 @@ nm_device_wimax_get_nsps (NMDeviceWimax *wimax)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (wimax));
 	return handle_ptr_array_return (NM_DEVICE_WIMAX_GET_PRIVATE (wimax)->nsps);
 }
 
@@ -245,7 +242,6 @@ nm_device_wimax_get_center_frequency (NMDeviceWimax *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (self));
 	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->center_freq;
 }
 
@@ -265,7 +261,6 @@ nm_device_wimax_get_rssi (NMDeviceWimax *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (self));
 	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->rssi;
 }
 
@@ -284,7 +279,6 @@ nm_device_wimax_get_cinr (NMDeviceWimax *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (self));
 	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->cinr;
 }
 
@@ -303,7 +297,6 @@ nm_device_wimax_get_tx_power (NMDeviceWimax *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (self));
 	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->tx_power;
 }
 
@@ -320,7 +313,6 @@ nm_device_wimax_get_bsid (NMDeviceWimax *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (self), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (self));
 	return NM_DEVICE_WIMAX_GET_PRIVATE (self)->bsid;
 }
 
@@ -403,8 +395,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:

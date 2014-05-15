@@ -24,8 +24,6 @@
 #include <gio/gio.h>
 #include "nm-object.h"
 
-void _nm_object_ensure_inited (NMObject *object);
-
 typedef gboolean (*PropertyMarshalFunc) (NMObject *, GParamSpec *, GValue *, gpointer);
 
 typedef GObject * (*NMObjectCreatorFunc) (DBusGConnection *, const char *);

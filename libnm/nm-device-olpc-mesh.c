@@ -83,7 +83,6 @@ nm_device_olpc_mesh_get_hw_address (NMDeviceOlpcMesh *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_OLPC_MESH (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_OLPC_MESH_GET_PRIVATE (device)->hw_address;
 }
 
@@ -100,7 +99,6 @@ nm_device_olpc_mesh_get_companion (NMDeviceOlpcMesh *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_OLPC_MESH (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_OLPC_MESH_GET_PRIVATE (device)->companion;
 }
 
@@ -117,7 +115,6 @@ nm_device_olpc_mesh_get_active_channel (NMDeviceOlpcMesh *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_OLPC_MESH (device), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_OLPC_MESH_GET_PRIVATE (device)->active_channel;
 }
 
@@ -215,8 +212,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceOlpcMesh *device = NM_DEVICE_OLPC_MESH (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:

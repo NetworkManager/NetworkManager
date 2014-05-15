@@ -402,8 +402,6 @@ nm_client_get_devices (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
-
 	return handle_ptr_array_return (NM_CLIENT_GET_PRIVATE (client)->devices);
 }
 
@@ -823,8 +821,6 @@ nm_client_get_active_connections (NMClient *client)
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
-
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	if (!priv->manager_running)
 		return NULL;
@@ -845,7 +841,6 @@ nm_client_wireless_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->wireless_enabled;
 }
 
@@ -888,7 +883,6 @@ nm_client_wireless_hardware_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->wireless_hw_enabled;
 }
 
@@ -905,7 +899,6 @@ nm_client_wwan_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->wwan_enabled;
 }
 
@@ -948,7 +941,6 @@ nm_client_wwan_hardware_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->wwan_hw_enabled;
 }
 
@@ -965,7 +957,6 @@ nm_client_wimax_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->wimax_enabled;
 }
 
@@ -1008,7 +999,6 @@ nm_client_wimax_hardware_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->wimax_hw_enabled;
 }
 
@@ -1029,8 +1019,6 @@ nm_client_get_version (NMClient *client)
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
-
 	return priv->manager_running ? priv->version : NULL;
 }
 
@@ -1046,8 +1034,6 @@ NMState
 nm_client_get_state (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
-
-	_nm_object_ensure_inited (NM_OBJECT (client));
 
 	return NM_CLIENT_GET_PRIVATE (client)->state;
 }
@@ -1066,8 +1052,6 @@ nm_client_get_startup (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
-
 	return NM_CLIENT_GET_PRIVATE (client)->startup;
 }
 
@@ -1084,7 +1068,6 @@ nm_client_networking_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->networking_enabled;
 }
 
@@ -1258,7 +1241,6 @@ nm_client_get_primary_connection (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->primary_connection;
 }
 
@@ -1278,7 +1260,6 @@ nm_client_get_activating_connection (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
 	return NM_CLIENT_GET_PRIVATE (client)->activating_connection;
 }
 
@@ -1413,14 +1394,9 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 NMConnectivityState
 nm_client_get_connectivity (NMClient *client)
 {
-	NMClientPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
-	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	_nm_object_ensure_inited (NM_OBJECT (client));
-
-	return priv->connectivity;
+	return NM_CLIENT_GET_PRIVATE (client)->connectivity;
 }
 
 /**
@@ -1594,6 +1570,8 @@ nm_client_check_connectivity_finish (NMClient *client,
 
 /**
  * nm_client_new:
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
  *
  * Creates a new #NMClient.
  *
@@ -1608,19 +1586,11 @@ nm_client_check_connectivity_finish (NMClient *client,
  * Returns: a new #NMClient or NULL on an error
  **/
 NMClient *
-nm_client_new (void)
+nm_client_new (GCancellable  *cancellable,
+               GError       **error)
 {
-	NMClient *client;
-
-	client = g_object_new (NM_TYPE_CLIENT, NM_OBJECT_DBUS_PATH, NM_DBUS_PATH, NULL);
-
-	/* NMObject's constructor() can fail on a D-Bus connection error. So we can
-	 * get NULL here instead of a valid NMClient object.
-	 */
-	if (client)
-		_nm_object_ensure_inited (NM_OBJECT (client));
-
-	return client;
+	return g_initable_new (NM_TYPE_CLIENT, cancellable, error,
+	                       NULL);
 }
 
 static void
@@ -1629,7 +1599,7 @@ client_inited (GObject *source, GAsyncResult *result, gpointer user_data)
 	GSimpleAsyncResult *simple = user_data;
 	GError *error = NULL;
 
-	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (source), result, &error))
+	if (!g_async_initable_new_finish (G_ASYNC_INITABLE (source), result, &error))
 		g_simple_async_result_take_error (simple, error);
 	else
 		g_simple_async_result_set_op_res_gpointer (simple, source, g_object_unref);
@@ -1657,21 +1627,13 @@ nm_client_new_async (GCancellable *cancellable,
                      GAsyncReadyCallback callback,
                      gpointer user_data)
 {
-	NMClient *client;
 	GSimpleAsyncResult *simple;
 
-	client = g_object_new (NM_TYPE_CLIENT, NM_OBJECT_DBUS_PATH, NM_DBUS_PATH, NULL);
-	/* When client is NULL, do no continue with initialization and run callback
-	 * directly with result == NULL indicating NMClient creation failure.
-	 */
-	if (!client) {
-		callback (NULL, NULL, user_data);
-		return;
-	}
-
 	simple = g_simple_async_result_new (NULL, callback, user_data, nm_client_new_async);
-	g_async_initable_init_async (G_ASYNC_INITABLE (client), G_PRIORITY_DEFAULT,
-	                             cancellable, client_inited, simple);
+
+	g_async_initable_new_async (NM_TYPE_CLIENT, G_PRIORITY_DEFAULT,
+	                            cancellable, client_inited, simple,
+	                            NULL);
 }
 
 /**
@@ -1778,7 +1740,6 @@ constructor (GType type,
              guint n_construct_params,
              GObjectConstructParam *construct_params)
 {
-	GObject *object;
 	guint i;
 	const char *dbus_path;
 
@@ -1798,24 +1759,14 @@ constructor (GType type,
 		}
 	}
 
-	object = G_OBJECT_CLASS (nm_client_parent_class)->constructor (type,
-	                                                               n_construct_params,
-	                                                               construct_params);
-
-	return object;
+	return G_OBJECT_CLASS (nm_client_parent_class)->constructor (type,
+	                                                             n_construct_params,
+	                                                             construct_params);
 }
 
 static void
 constructed (GObject *object)
 {
-	GError *error = NULL;
-
-	if (!nm_utils_init (&error)) {
-		g_warning ("Couldn't initilize nm-utils/crypto system: %d %s",
-		           error->code, error->message);
-		g_clear_error (&error);
-	}
-
 	G_OBJECT_CLASS (nm_client_parent_class)->constructed (object);
 
 	g_signal_connect (object, "notify::" NM_CLIENT_WIRELESS_ENABLED,
@@ -1833,6 +1784,9 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMClient *client = NM_CLIENT (initable);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+
+	if (!nm_utils_init (error))
+		return FALSE;
 
 	if (!nm_client_parent_initable_iface->init (initable, cancellable, error))
 		return FALSE;
@@ -1948,6 +1902,13 @@ init_async (GAsyncInitable *initable, int io_priority,
 {
 	NMClientInitData *init_data;
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (initable);
+	GError *error = NULL;
+
+	if (!nm_utils_init (&error)) {
+		g_simple_async_report_take_gerror_in_idle (G_OBJECT (initable),
+		                                           callback, user_data, error);
+		return;
+	}
 
 	init_data = g_slice_new0 (NMClientInitData);
 	init_data->client = NM_CLIENT (initable);
@@ -2066,8 +2027,6 @@ get_property (GObject *object,
 {
 	NMClient *self = NM_CLIENT (object);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_VERSION:

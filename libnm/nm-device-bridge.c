@@ -85,7 +85,6 @@ nm_device_bridge_get_hw_address (NMDeviceBridge *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BRIDGE (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_BRIDGE_GET_PRIVATE (device)->hw_address;
 }
 
@@ -102,7 +101,6 @@ nm_device_bridge_get_carrier (NMDeviceBridge *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BRIDGE (device), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_BRIDGE_GET_PRIVATE (device)->carrier;
 }
 
@@ -121,7 +119,6 @@ nm_device_bridge_get_slaves (NMDeviceBridge *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BRIDGE (device), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return handle_ptr_array_return (NM_DEVICE_BRIDGE_GET_PRIVATE (device)->slaves);
 }
 
@@ -234,8 +231,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceBridge *device = NM_DEVICE_BRIDGE (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:

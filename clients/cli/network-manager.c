@@ -611,8 +611,9 @@ do_general (NmCli *nmc, int argc, char **argv)
 			}
 
 			/* get system settings */
-			if (!(rem_settings = nm_remote_settings_new (NULL))) {
-				g_string_printf (nmc->return_text, _("Error: Could not get system settings."));
+			if (!(rem_settings = nm_remote_settings_new (NULL, &error))) {
+				g_string_printf (nmc->return_text, _("Error: Could not get system settings: %s."), error->message);
+				g_clear_error (&error);
 				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 				goto finish;
 			}

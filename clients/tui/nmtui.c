@@ -246,13 +246,23 @@ main (int argc, char **argv)
 
 	nm_editor_bindings_init ();
 
-	nm_client = nm_client_new ();
+	nm_client = nm_client_new (NULL, &error);
+	if (!nm_client) {
+		g_printerr (_("Could not contact NetworkManager: %s.\n"), error->message);
+		g_error_free (error);
+		exit (1);
+	}
 	if (!nm_client_get_manager_running (nm_client)) {
 		g_printerr ("%s\n", _("NetworkManager is not running."));
 		exit (1);
 	}
 
-	nm_settings = nm_remote_settings_new (NULL);
+	nm_settings = nm_remote_settings_new (NULL, &error);
+	if (!nm_settings) {
+		g_printerr (_("Could not contact NetworkManager: %s.\n"), error->message);
+		g_error_free (error);
+		exit (1);
+	}
 	g_signal_connect (nm_settings, NM_REMOTE_SETTINGS_CONNECTIONS_READ,
 	                  G_CALLBACK (connections_read), &got_connections);
 	/* coverity[loop_condition] */

@@ -197,6 +197,7 @@ int main (int argc, char *argv[])
 	NMClient *client;
 	const GPtrArray *devices;
 	int i;
+	GError *error = NULL;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	/* Initialize GType system */
@@ -204,9 +205,10 @@ int main (int argc, char *argv[])
 #endif
 
 	/* Get NMClient object */
-	client = nm_client_new ();
+	client = nm_client_new (NULL, &error);
 	if (!client) {
-		g_message ("Error: Could not create NMClient.");
+		g_message ("Error: Could not create NMClient: %s.", error->message);
+		g_error_free (error);
 		return EXIT_FAILURE;
 	}
 

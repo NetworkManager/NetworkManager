@@ -1360,19 +1360,12 @@ nm_setting_init (NMSetting *setting)
 {
 }
 
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
-
-	object = G_OBJECT_CLASS (nm_setting_parent_class)->constructor (type,
-	                                                                n_construct_params,
-	                                                                construct_params);
-
 	_ensure_setting_info (object, NM_SETTING_GET_PRIVATE (object));
-	return object;
+
+	G_OBJECT_CLASS (nm_setting_parent_class)->constructed (object);
 }
 
 static void
@@ -1399,7 +1392,7 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	g_type_class_add_private (setting_class, sizeof (NMSettingPrivate));
 
 	/* virtual methods */
-	object_class->constructor  = constructor;
+	object_class->constructed  = constructed;
 	object_class->get_property = get_property;
 
 	setting_class->update_one_secret = update_one_secret;

@@ -84,7 +84,6 @@ nm_device_bt_get_hw_address (NMDeviceBt *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BT (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_BT_GET_PRIVATE (device)->hw_address;
 }
 
@@ -101,7 +100,6 @@ nm_device_bt_get_name (NMDeviceBt *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BT (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_BT_GET_PRIVATE (device)->name;
 }
 
@@ -118,7 +116,6 @@ nm_device_bt_get_capabilities (NMDeviceBt *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BT (device), NM_BT_CAPABILITY_NONE);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_BT_GET_PRIVATE (device)->bt_capabilities;
 }
 
@@ -267,8 +264,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceBt *device = NM_DEVICE_BT (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:

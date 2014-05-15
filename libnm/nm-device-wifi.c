@@ -116,7 +116,6 @@ nm_device_wifi_get_hw_address (NMDeviceWifi *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_WIFI_GET_PRIVATE (device)->hw_address;
 }
 
@@ -134,7 +133,6 @@ nm_device_wifi_get_permanent_hw_address (NMDeviceWifi *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_WIFI_GET_PRIVATE (device)->perm_hw_address;
 }
 
@@ -151,7 +149,6 @@ nm_device_wifi_get_mode (NMDeviceWifi *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_WIFI_GET_PRIVATE (device)->mode;
 }
 
@@ -182,7 +179,6 @@ nm_device_wifi_get_bitrate (NMDeviceWifi *device)
 		return 0;
 	}
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_WIFI_GET_PRIVATE (device)->rate;
 }
 
@@ -199,7 +195,6 @@ nm_device_wifi_get_capabilities (NMDeviceWifi *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_WIFI_GET_PRIVATE (device)->wireless_caps;
 }
 
@@ -234,7 +229,6 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *device)
 		break;
 	}
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_WIFI_GET_PRIVATE (device)->active_ap;
 }
 
@@ -253,7 +247,6 @@ nm_device_wifi_get_access_points (NMDeviceWifi *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return handle_ptr_array_return (NM_DEVICE_WIFI_GET_PRIVATE (device)->aps);
 }
 
@@ -527,8 +520,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:

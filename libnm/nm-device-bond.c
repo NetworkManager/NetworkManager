@@ -85,7 +85,6 @@ nm_device_bond_get_hw_address (NMDeviceBond *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BOND (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_BOND_GET_PRIVATE (device)->hw_address;
 }
 
@@ -102,7 +101,6 @@ nm_device_bond_get_carrier (NMDeviceBond *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BOND (device), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_BOND_GET_PRIVATE (device)->carrier;
 }
 
@@ -121,7 +119,6 @@ nm_device_bond_get_slaves (NMDeviceBond *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BOND (device), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return handle_ptr_array_return (NM_DEVICE_BOND_GET_PRIVATE (device)->slaves);
 }
 
@@ -234,8 +231,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceBond *device = NM_DEVICE_BOND (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:

@@ -84,7 +84,6 @@ nm_device_vlan_get_hw_address (NMDeviceVlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VLAN (device), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_VLAN_GET_PRIVATE (device)->hw_address;
 }
 
@@ -101,7 +100,6 @@ nm_device_vlan_get_carrier (NMDeviceVlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VLAN (device), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_VLAN_GET_PRIVATE (device)->carrier;
 }
 
@@ -116,7 +114,6 @@ nm_device_vlan_get_vlan_id (NMDeviceVlan *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_VLAN (device), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (device));
 	return NM_DEVICE_VLAN_GET_PRIVATE (device)->vlan_id;
 }
 
@@ -244,8 +241,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDeviceVlan *device = NM_DEVICE_VLAN (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:

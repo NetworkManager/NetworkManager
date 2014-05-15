@@ -24,7 +24,7 @@
 from gi.repository import GLib, NM
 
 if __name__ == "__main__":
-    client = NM.Client.new()
+    client = NM.Client.new(None)
     acons = client.get_active_connections()
     for ac in acons:
         print "%s (%s) - %s" % (ac.get_id(), ac.get_uuid(), ac.get_connection_type())

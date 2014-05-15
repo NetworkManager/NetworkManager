@@ -24,7 +24,7 @@
  * because libnm handles much of the low-level stuff for you.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm` add-connection-libnm.c -o add-connection-libnm
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` add-connection-libnm.c -o add-connection-libnm
  */
 
 #include <glib.h>
@@ -106,9 +106,9 @@ add_connection (NMRemoteSettings *settings, GMainLoop *loop, const char *con_nam
 
 int main (int argc, char *argv[])
 {
-	DBusGConnection *bus;
 	NMRemoteSettings *settings;
 	GMainLoop *loop;
+	GError *error = NULL;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	/* Initialize GType system */
@@ -117,11 +117,13 @@ int main (int argc, char *argv[])
 
 	loop = g_main_loop_new (NULL, FALSE);
 
-	/* Get system bus */
-	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
-
 	/* Create our proxy for NetworkManager's settings service */
-	settings = nm_remote_settings_new (bus);
+	settings = nm_remote_settings_new (NULL, &error);
+	if (!settings) {
+		g_message ("Error: Could not get system settings: %s.", error->message);
+		g_error_free (error);
+		return 1;
+	}
 
 	/* Ask the settings service to add the new connection */
 	if (add_connection (settings, loop, "__Test connection__")) {
@@ -132,7 +134,6 @@ int main (int argc, char *argv[])
 
 	/* Clean up */
 	g_object_unref (settings);
-	dbus_g_connection_unref (bus);
 
 	return 0;
 }

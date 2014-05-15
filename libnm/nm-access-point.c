@@ -83,7 +83,6 @@ nm_access_point_get_flags (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NM_802_11_AP_FLAGS_NONE);
 
-	_nm_object_ensure_inited (NM_OBJECT (ap));
 	return NM_ACCESS_POINT_GET_PRIVATE (ap)->flags;
 }
 
@@ -100,7 +99,6 @@ nm_access_point_get_wpa_flags (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NM_802_11_AP_SEC_NONE);
 
-	_nm_object_ensure_inited (NM_OBJECT (ap));
 	return NM_ACCESS_POINT_GET_PRIVATE (ap)->wpa_flags;
 }
 
@@ -118,7 +116,6 @@ nm_access_point_get_rsn_flags (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NM_802_11_AP_SEC_NONE);
 
-	_nm_object_ensure_inited (NM_OBJECT (ap));
 	return NM_ACCESS_POINT_GET_PRIVATE (ap)->rsn_flags;
 }
 
@@ -136,7 +133,6 @@ nm_access_point_get_ssid (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (ap));
 	return NM_ACCESS_POINT_GET_PRIVATE (ap)->ssid;
 }
 
@@ -153,7 +149,6 @@ nm_access_point_get_frequency (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (ap));
 	return NM_ACCESS_POINT_GET_PRIVATE (ap)->frequency;
 }
 
@@ -171,7 +166,6 @@ nm_access_point_get_bssid (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (ap));
 	return NM_ACCESS_POINT_GET_PRIVATE (ap)->bssid;
 }
 
@@ -188,7 +182,6 @@ nm_access_point_get_mode (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (ap));
 	return NM_ACCESS_POINT_GET_PRIVATE (ap)->mode;
 }
 
@@ -205,7 +198,6 @@ nm_access_point_get_max_bitrate (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (ap));
 	return NM_ACCESS_POINT_GET_PRIVATE (ap)->max_bitrate;
 }
 
@@ -222,7 +214,6 @@ nm_access_point_get_strength (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (ap));
 	return NM_ACCESS_POINT_GET_PRIVATE (ap)->strength;
 }
 
@@ -409,8 +400,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMAccessPoint *ap = NM_ACCESS_POINT (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_FLAGS:

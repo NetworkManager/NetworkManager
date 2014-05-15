@@ -51,7 +51,7 @@ if __name__ == "__main__":
         sys.exit('Usage: %s <interface>' % sys.argv[0])
     dev_iface = sys.argv[1]
 
-    c = NM.Client.new()
+    c = NM.Client.new(None)
     dev = c.get_device_by_iface(dev_iface)
     if dev is None:
         sys.exit('Device \'%s\' not found' % dev_iface)

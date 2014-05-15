@@ -199,7 +199,6 @@ nm_active_connection_get_connection (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->connection;
 }
 
@@ -217,7 +216,6 @@ nm_active_connection_get_id (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->id;
 }
 
@@ -235,7 +233,6 @@ nm_active_connection_get_uuid (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->uuid;
 }
 
@@ -253,7 +250,6 @@ nm_active_connection_get_connection_type (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->type;
 }
 
@@ -271,7 +267,6 @@ nm_active_connection_get_specific_object (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->specific_object;
 }
 
@@ -289,7 +284,6 @@ nm_active_connection_get_devices (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return handle_ptr_array_return (NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->devices);
 }
 
@@ -306,7 +300,6 @@ nm_active_connection_get_state (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NM_ACTIVE_CONNECTION_STATE_UNKNOWN);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->state;
 }
 
@@ -324,7 +317,6 @@ nm_active_connection_get_default (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->is_default;
 }
 
@@ -343,7 +335,6 @@ nm_active_connection_get_ip4_config (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->ip4_config;
 }
 
@@ -363,7 +354,6 @@ nm_active_connection_get_dhcp4_config (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->dhcp4_config;
 }
 
@@ -381,7 +371,6 @@ nm_active_connection_get_default6 (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->is_default6;
 }
 
@@ -400,7 +389,6 @@ nm_active_connection_get_ip6_config (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->ip6_config;
 }
 
@@ -420,7 +408,6 @@ nm_active_connection_get_dhcp6_config (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->dhcp6_config;
 }
 
@@ -437,7 +424,6 @@ nm_active_connection_get_vpn (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), FALSE);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->is_vpn;
 }
 
@@ -455,7 +441,6 @@ nm_active_connection_get_master (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (connection));
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->master;
 }
 
@@ -507,8 +492,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMActiveConnection *self = NM_ACTIVE_CONNECTION (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_CONNECTION:

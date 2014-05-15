@@ -47,6 +47,9 @@ enum {
 static void
 nm_dhcp6_config_init (NMDhcp6Config *config)
 {
+	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (config);
+
+	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 }
 
 static gboolean
@@ -89,17 +92,6 @@ init_dbus (NMObject *object)
 }
 
 static void
-constructed (GObject *object)
-{
-	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
-
-	G_OBJECT_CLASS (nm_dhcp6_config_parent_class)->constructed (object);
-
-	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-
-}
-
-static void
 finalize (GObject *object)
 {
 	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
@@ -120,8 +112,6 @@ get_property (GObject *object,
 {
 	NMDhcp6Config *self = NM_DHCP6_CONFIG (object);
 
-	_nm_object_ensure_inited (NM_OBJECT (object));
-
 	switch (prop_id) {
 	case PROP_OPTIONS:
 		g_value_set_boxed (value, nm_dhcp6_config_get_options (self));
@@ -141,7 +131,6 @@ nm_dhcp6_config_class_init (NMDhcp6ConfigClass *config_class)
 	g_type_class_add_private (config_class, sizeof (NMDhcp6ConfigPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
 
@@ -178,7 +167,6 @@ nm_dhcp6_config_get_options (NMDhcp6Config *config)
 {
 	g_return_val_if_fail (NM_IS_DHCP6_CONFIG (config), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (config));
 	return NM_DHCP6_CONFIG_GET_PRIVATE (config)->options;
 }
 

@@ -66,7 +66,6 @@ nm_wimax_nsp_get_name (NMWimaxNsp *nsp)
 {
 	g_return_val_if_fail (NM_IS_WIMAX_NSP (nsp), NULL);
 
-	_nm_object_ensure_inited (NM_OBJECT (nsp));
 	return NM_WIMAX_NSP_GET_PRIVATE (nsp)->name;
 }
 
@@ -83,7 +82,6 @@ nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp)
 {
 	g_return_val_if_fail (NM_IS_WIMAX_NSP (nsp), 0);
 
-	_nm_object_ensure_inited (NM_OBJECT (nsp));
 	return NM_WIMAX_NSP_GET_PRIVATE (nsp)->signal_quality;
 }
 
@@ -100,7 +98,6 @@ nm_wimax_nsp_get_network_type (NMWimaxNsp *nsp)
 {
 	g_return_val_if_fail (NM_IS_WIMAX_NSP (nsp), NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN);
 
-	_nm_object_ensure_inited (NM_OBJECT (nsp));
 	return NM_WIMAX_NSP_GET_PRIVATE (nsp)->network_type;
 }
 
@@ -213,8 +210,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMWimaxNsp *nsp = NM_WIMAX_NSP (object);
-
-	_nm_object_ensure_inited (NM_OBJECT (object));
 
 	switch (prop_id) {
 	case PROP_NAME:
