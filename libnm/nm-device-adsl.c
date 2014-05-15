@@ -121,28 +121,20 @@ nm_device_adsl_init (NMDeviceAdsl *device)
 }
 
 static void
-register_properties (NMDeviceAdsl *device)
+init_dbus (NMObject *object)
 {
-	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (device);
+	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
-		{ NM_DEVICE_ADSL_CARRIER,              &priv->carrier },
+		{ NM_DEVICE_ADSL_CARRIER, &priv->carrier },
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (device),
+	NM_OBJECT_CLASS (nm_device_adsl_parent_class)->init_dbus (object);
+
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_ADSL);
+	_nm_object_register_properties (object,
 	                                priv->proxy,
 	                                property_info);
-}
-
-static void
-constructed (GObject *object)
-{
-	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (object);
-
-	G_OBJECT_CLASS (nm_device_adsl_parent_class)->constructed (object);
-
-	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_DEVICE_ADSL);
-	register_properties (NM_DEVICE_ADSL (object));
 }
 
 static void
@@ -190,15 +182,18 @@ static void
 nm_device_adsl_class_init (NMDeviceAdslClass *adsl_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (adsl_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (adsl_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (adsl_class);
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceAdslPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+
+	nm_object_class->init_dbus = init_dbus;
+
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type = get_setting_type;
 

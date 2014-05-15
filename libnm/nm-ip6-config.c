@@ -116,9 +116,9 @@ demarshal_ip6_routes_array (NMObject *object, GParamSpec *pspec, GValue *value, 
 }
 
 static void
-register_properties (NMIP6Config *config)
+init_dbus (NMObject *object)
 {
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_IP6_CONFIG_GATEWAY,      &priv->gateway, },
 		{ NM_IP6_CONFIG_ADDRESSES,    &priv->addresses, demarshal_ip6_address_array },
@@ -129,7 +129,10 @@ register_properties (NMIP6Config *config)
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (config),
+	NM_OBJECT_CLASS (nm_ip6_config_parent_class)->init_dbus (object);
+
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_IP6_CONFIG);
+	_nm_object_register_properties (object,
 	                                priv->proxy,
 	                                property_info);
 }
@@ -292,17 +295,6 @@ nm_ip6_config_get_routes (NMIP6Config *config)
 }
 
 static void
-constructed (GObject *object)
-{
-	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
-
-	G_OBJECT_CLASS (nm_ip6_config_parent_class)->constructed (object);
-
-	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_IP6_CONFIG);
-	register_properties (NM_IP6_CONFIG (object));
-}
-
-static void
 finalize (GObject *object)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (object);
@@ -373,13 +365,15 @@ static void
 nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (config_class);
 
 	g_type_class_add_private (config_class, sizeof (NMIP6ConfigPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
+
+	nm_object_class->init_dbus = init_dbus;
 
 	/* properties */
 

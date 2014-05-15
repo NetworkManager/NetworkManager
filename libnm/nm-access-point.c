@@ -460,9 +460,9 @@ demarshal_ssid (NMObject *object, GParamSpec *pspec, GValue *value, gpointer fie
 }
 
 static void
-register_properties (NMAccessPoint *ap)
+init_dbus (NMObject *object)
 {
-	NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
+	NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_ACCESS_POINT_FLAGS,       &priv->flags },
 		{ NM_ACCESS_POINT_WPA_FLAGS,   &priv->wpa_flags },
@@ -477,21 +477,12 @@ register_properties (NMAccessPoint *ap)
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (ap),
+	NM_OBJECT_CLASS (nm_access_point_parent_class)->init_dbus (object);
+
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_ACCESS_POINT);
+	_nm_object_register_properties (object,
 	                                priv->proxy,
 	                                property_info);
-}
-
-static void
-constructed (GObject *object)
-{
-	NMAccessPointPrivate *priv;
-
-	G_OBJECT_CLASS (nm_access_point_parent_class)->constructed (object);
-
-	priv = NM_ACCESS_POINT_GET_PRIVATE (object);
-	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_ACCESS_POINT);
-	register_properties (NM_ACCESS_POINT (object));
 }
 
 
@@ -499,14 +490,16 @@ static void
 nm_access_point_class_init (NMAccessPointClass *ap_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (ap_class);
 
 	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	nm_object_class->init_dbus = init_dbus;
 
 	/* properties */
 

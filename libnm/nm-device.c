@@ -182,9 +182,16 @@ demarshal_state_reason (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 }
 
 static void
-register_properties (NMDevice *device)
+device_state_changed (DBusGProxy *proxy,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data);
+
+static void
+init_dbus (NMObject *object)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_UDI,               &priv->udi },
 		{ NM_DEVICE_INTERFACE,         &priv->iface },
@@ -214,9 +221,28 @@ register_properties (NMDevice *device)
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (device),
+	NM_OBJECT_CLASS (nm_device_parent_class)->init_dbus (object);
+
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE);
+	_nm_object_register_properties (object,
 	                                priv->proxy,
 	                                property_info);
+
+	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
+	                                   G_TYPE_NONE,
+	                                   G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
+	                                   G_TYPE_INVALID);
+
+	dbus_g_proxy_add_signal (priv->proxy,
+	                         "StateChanged",
+	                         G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
+	                         G_TYPE_INVALID);
+
+	dbus_g_proxy_connect_signal (priv->proxy, "StateChanged",
+	                             G_CALLBACK (device_state_changed),
+	                             NM_DEVICE (object),
+	                             NULL);
+
 }
 
 typedef struct {
@@ -327,34 +353,14 @@ _nm_device_gtype_from_dtype (NMDeviceType dtype)
 static void
 constructed (GObject *object)
 {
-	NMDevicePrivate *priv;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
 
-	priv = NM_DEVICE_GET_PRIVATE (object);
 	/* Catch failure of subclasses to call _nm_device_set_device_type() */
 	g_warn_if_fail (priv->device_type != NM_DEVICE_TYPE_UNKNOWN);
 	/* Catch a subclass setting the wrong type */
 	g_warn_if_fail (G_OBJECT_TYPE (object) == _nm_device_gtype_from_dtype (priv->device_type));
-
-	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_DEVICE);
-
-	register_properties (NM_DEVICE (object));
-
-	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
-	                                   G_TYPE_NONE,
-	                                   G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
-	                                   G_TYPE_INVALID);
-
-	dbus_g_proxy_add_signal (priv->proxy,
-	                         "StateChanged",
-	                         G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
-	                         G_TYPE_INVALID);
-
-	dbus_g_proxy_connect_signal (priv->proxy, "StateChanged",
-	                             G_CALLBACK (device_state_changed),
-	                             NM_DEVICE (object),
-	                             NULL);
 }
 
 static void
@@ -527,6 +533,7 @@ static void
 nm_device_class_init (NMDeviceClass *device_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (device_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (device_class);
 
 	g_type_class_add_private (device_class, sizeof (NMDevicePrivate));
 
@@ -536,6 +543,8 @@ nm_device_class_init (NMDeviceClass *device_class)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	nm_object_class->init_dbus = init_dbus;
 
 	device_class->connection_compatible = connection_compatible;
 

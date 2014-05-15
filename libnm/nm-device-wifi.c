@@ -41,6 +41,7 @@ G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 #define NM_DEVICE_WIFI_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_WIFI, NMDeviceWifiPrivate))
 
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
+static void state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data);
 
 typedef struct {
 	NMDeviceWifi *device;
@@ -512,6 +513,11 @@ static void
 nm_device_wifi_init (NMDeviceWifi *device)
 {
 	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_WIFI);
+
+	g_signal_connect (device,
+	                  "notify::" NM_DEVICE_STATE,
+	                  G_CALLBACK (state_changed_cb),
+	                  NULL);
 }
 
 static void
@@ -579,9 +585,9 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-register_properties (NMDeviceWifi *device)
+init_dbus (NMObject *object)
 {
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_WIFI_HW_ADDRESS,           &priv->hw_address },
 		{ NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS, &priv->perm_hw_address },
@@ -593,7 +599,10 @@ register_properties (NMDeviceWifi *device)
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (device),
+	NM_OBJECT_CLASS (nm_device_wifi_parent_class)->init_dbus (object);
+
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_WIRELESS);
+	_nm_object_register_properties (object,
 	                                priv->proxy,
 	                                property_info);
 }
@@ -611,22 +620,6 @@ access_point_removed (NMDeviceWifi *self, NMAccessPoint *ap)
 		priv->rate = 0;
 		_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_BITRATE);
 	}
-}
-
-static void
-constructed (GObject *object)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
-
-	G_OBJECT_CLASS (nm_device_wifi_parent_class)->constructed (object);
-
-	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_DEVICE_WIRELESS);
-	register_properties (NM_DEVICE_WIFI (object));
-
-	g_signal_connect (NM_DEVICE (object),
-	                  "notify::" NM_DEVICE_STATE,
-	                  G_CALLBACK (state_changed_cb),
-	                  NULL);
 }
 
 static void
@@ -671,18 +664,22 @@ static void
 nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (wifi_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (wifi_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (wifi_class);
 
 	g_type_class_add_private (wifi_class, sizeof (NMDeviceWifiPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	nm_object_class->init_dbus = init_dbus;
+
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type = get_setting_type;
 	device_class->get_hw_address = get_hw_address;
+
 	wifi_class->access_point_removed = access_point_removed;
 
 	/* properties */

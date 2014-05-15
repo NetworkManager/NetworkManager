@@ -72,15 +72,18 @@ demarshal_dhcp4_options (NMObject *object, GParamSpec *pspec, GValue *value, gpo
 }
 
 static void
-register_properties (NMDhcp4Config *config)
+init_dbus (NMObject *object)
 {
-	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (config);
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DHCP4_CONFIG_OPTIONS,   &priv->options, demarshal_dhcp4_options },
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (config),
+	NM_OBJECT_CLASS (nm_dhcp4_config_parent_class)->init_dbus (object);
+
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DHCP4_CONFIG);
+	_nm_object_register_properties (object,
 	                                priv->proxy,
 	                                property_info);
 }
@@ -94,8 +97,6 @@ constructed (GObject *object)
 
 	priv->options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
-	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_DHCP4_CONFIG);
-	register_properties (NM_DHCP4_CONFIG (object));
 }
 
 static void
@@ -135,6 +136,7 @@ static void
 nm_dhcp4_config_class_init (NMDhcp4ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (config_class);
 
 	g_type_class_add_private (config_class, sizeof (NMDhcp4ConfigPrivate));
 
@@ -142,6 +144,8 @@ nm_dhcp4_config_class_init (NMDhcp4ConfigClass *config_class)
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
+
+	nm_object_class->init_dbus = init_dbus;
 
 	/* properties */
 

@@ -186,29 +186,21 @@ nm_device_modem_init (NMDeviceModem *device)
 }
 
 static void
-register_properties (NMDeviceModem *device)
+init_dbus (NMObject *object)
 {
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_MODEM_MODEM_CAPABILITIES,   &priv->caps },
 		{ NM_DEVICE_MODEM_CURRENT_CAPABILITIES, &priv->current_caps },
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (device),
+	NM_OBJECT_CLASS (nm_device_modem_parent_class)->init_dbus (object);
+
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_MODEM);
+	_nm_object_register_properties (object,
 	                                priv->proxy,
 	                                property_info);
-}
-
-static void
-constructed (GObject *object)
-{
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (object);
-
-	G_OBJECT_CLASS (nm_device_modem_parent_class)->constructed (object);
-
-	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_DEVICE_MODEM);
-	register_properties (NM_DEVICE_MODEM (object));
 }
 
 static void
@@ -248,14 +240,16 @@ static void
 nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (modem_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (modem_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (modem_class);
 
 	g_type_class_add_private (modem_class, sizeof (NMDeviceModemPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
+
+	nm_object_class->init_dbus = init_dbus;
 
 	device_class->get_type_description = get_type_description;
 	device_class->connection_compatible = connection_compatible;

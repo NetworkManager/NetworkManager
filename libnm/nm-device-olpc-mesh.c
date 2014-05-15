@@ -169,9 +169,9 @@ nm_device_olpc_mesh_init (NMDeviceOlpcMesh *device)
 }
 
 static void
-register_properties (NMDeviceOlpcMesh *device)
+init_dbus (NMObject *object)
 {
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (device);
+	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_OLPC_MESH_HW_ADDRESS,     &priv->hw_address },
 		{ NM_DEVICE_OLPC_MESH_COMPANION,      &priv->companion, NULL, NM_TYPE_DEVICE_WIFI },
@@ -179,20 +179,12 @@ register_properties (NMDeviceOlpcMesh *device)
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (device),
+	NM_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->init_dbus (object);
+
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_OLPC_MESH);
+	_nm_object_register_properties (object,
 	                                priv->proxy,
 	                                property_info);
-}
-
-static void
-constructed (GObject *object)
-{
-	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (object);
-
-	G_OBJECT_CLASS (nm_device_olpc_mesh_parent_class)->constructed (object);
-
-	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_DEVICE_OLPC_MESH);
-	register_properties (NM_DEVICE_OLPC_MESH (object));
 }
 
 static void
@@ -246,15 +238,18 @@ static void
 nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *olpc_mesh_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (olpc_mesh_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (olpc_mesh_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (olpc_mesh_class);
 
 	g_type_class_add_private (olpc_mesh_class, sizeof (NMDeviceOlpcMeshPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+
+	nm_object_class->init_dbus = init_dbus;
+
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type = get_setting_type;
 	device_class->get_hw_address = get_hw_address;

@@ -124,28 +124,21 @@ nm_vpn_connection_init (NMVpnConnection *connection)
 }
 
 static void
-register_properties (NMVpnConnection *connection)
+init_dbus (NMObject *object)
 {
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_VPN_CONNECTION_BANNER,    &priv->banner },
 		{ NM_VPN_CONNECTION_VPN_STATE, &priv->vpn_state },
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (connection),
+	NM_OBJECT_CLASS (nm_vpn_connection_parent_class)->init_dbus (object);
+
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_VPN_CONNECTION);
+	_nm_object_register_properties (object,
 	                                priv->proxy,
 	                                property_info);
-}
-
-static void
-constructed (GObject *object)
-{
-	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
-
-	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->constructed (object);
-
-	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_VPN_CONNECTION);
 
 	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
 	                                   G_TYPE_NONE,
@@ -157,8 +150,6 @@ constructed (GObject *object)
 	                             G_CALLBACK (vpn_state_changed_proxy),
 	                             object,
 	                             NULL);
-
-	register_properties (NM_VPN_CONNECTION (object));
 }
 
 static void
@@ -199,13 +190,15 @@ static void
 nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (connection_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (connection_class);
 
 	g_type_class_add_private (connection_class, sizeof (NMVpnConnectionPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
+
+	nm_object_class->init_dbus = init_dbus;
 
 	/* properties */
 

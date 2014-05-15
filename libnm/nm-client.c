@@ -170,10 +170,14 @@ wireless_enabled_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 	poke_wireless_devices_with_rf_status (NM_CLIENT (object));
 }
 
+static void client_recheck_permissions (DBusGProxy *proxy, gpointer user_data);
+static void active_connections_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data);
+static void object_creation_failed_cb (GObject *object, GError *error, char *failed_path);
+
 static void
-register_properties (NMClient *client)
+init_dbus (NMObject *object)
 {
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_CLIENT_VERSION,                   &priv->version },
 		{ NM_CLIENT_STATE,                     &priv->state },
@@ -193,9 +197,38 @@ register_properties (NMClient *client)
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (client),
+	NM_OBJECT_CLASS (nm_client_parent_class)->init_dbus (object);
+
+	priv->client_proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE);
+	_nm_object_register_properties (object,
 	                                priv->client_proxy,
 	                                property_info);
+
+	/* Permissions */
+	dbus_g_proxy_add_signal (priv->client_proxy, "CheckPermissions", G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->client_proxy,
+	                             "CheckPermissions",
+	                             G_CALLBACK (client_recheck_permissions),
+	                             object,
+	                             NULL);
+
+	if (_nm_object_is_connection_private (NM_OBJECT (object)))
+		priv->manager_running = TRUE;
+	else {
+		priv->bus_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
+		                                             DBUS_SERVICE_DBUS,
+		                                             DBUS_PATH_DBUS,
+		                                             DBUS_INTERFACE_DBUS);
+		g_assert (priv->bus_proxy);
+
+		dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
+		                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+		                         G_TYPE_INVALID);
+		dbus_g_proxy_connect_signal (priv->bus_proxy,
+		                             "NameOwnerChanged",
+		                             G_CALLBACK (proxy_name_owner_changed),
+		                             object, NULL);
+	}
 }
 
 #define NM_AUTH_PERMISSION_ENABLE_DISABLE_NETWORK     "org.freedesktop.NetworkManager.enable-disable-network"
@@ -1775,7 +1808,6 @@ constructor (GType type,
 static void
 constructed (GObject *object)
 {
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 	GError *error = NULL;
 
 	if (!nm_utils_init (&error)) {
@@ -1785,36 +1817,6 @@ constructed (GObject *object)
 	}
 
 	G_OBJECT_CLASS (nm_client_parent_class)->constructed (object);
-
-	priv->client_proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE);
-
-	register_properties (NM_CLIENT (object));
-
-	/* Permissions */
-	dbus_g_proxy_add_signal (priv->client_proxy, "CheckPermissions", G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->client_proxy,
-	                             "CheckPermissions",
-	                             G_CALLBACK (client_recheck_permissions),
-	                             object,
-	                             NULL);
-
-	if (_nm_object_is_connection_private (NM_OBJECT (object)))
-		priv->manager_running = TRUE;
-	else {
-		priv->bus_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
-		                                             DBUS_SERVICE_DBUS,
-		                                             DBUS_PATH_DBUS,
-		                                             DBUS_INTERFACE_DBUS);
-		g_assert (priv->bus_proxy);
-
-		dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
-		                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-		                         G_TYPE_INVALID);
-		dbus_g_proxy_connect_signal (priv->bus_proxy,
-		                             "NameOwnerChanged",
-		                             G_CALLBACK (proxy_name_owner_changed),
-		                             object, NULL);
-	}
 
 	g_signal_connect (object, "notify::" NM_CLIENT_WIRELESS_ENABLED,
 	                  G_CALLBACK (wireless_enabled_cb), NULL);
@@ -2126,6 +2128,7 @@ static void
 nm_client_class_init (NMClientClass *client_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (client_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (client_class);
 
 	g_type_class_add_private (client_class, sizeof (NMClientPrivate));
 
@@ -2136,6 +2139,8 @@ nm_client_class_init (NMClientClass *client_class)
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	nm_object_class->init_dbus = init_dbus;
 
 	/* properties */
 

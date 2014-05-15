@@ -220,9 +220,9 @@ nm_device_ethernet_init (NMDeviceEthernet *device)
 }
 
 static void
-register_properties (NMDeviceEthernet *device)
+init_dbus (NMObject *object)
 {
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_ETHERNET_HW_ADDRESS,           &priv->hw_address },
 		{ NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS, &priv->perm_hw_address },
@@ -231,20 +231,12 @@ register_properties (NMDeviceEthernet *device)
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (device),
+	NM_OBJECT_CLASS (nm_device_ethernet_parent_class)->init_dbus (object);
+
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_WIRED);
+	_nm_object_register_properties (object,
 	                                priv->proxy,
 	                                property_info);
-}
-
-static void
-constructed (GObject *object)
-{
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
-
-	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructed (object);
-
-	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_DEVICE_WIRED);
-	register_properties (NM_DEVICE_ETHERNET (object));
 }
 
 static void
@@ -301,15 +293,18 @@ static void
 nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (eth_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (eth_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (eth_class);
 
 	g_type_class_add_private (eth_class, sizeof (NMDeviceEthernetPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+
+	nm_object_class->init_dbus = init_dbus;
+
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type = get_setting_type;
 	device_class->get_hw_address = get_hw_address;

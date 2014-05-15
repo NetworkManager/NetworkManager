@@ -166,14 +166,21 @@ static void
 constructed (GObject *object)
 {
 	NMObject *self = NM_OBJECT (object);
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
 	if (G_OBJECT_CLASS (nm_object_parent_class)->constructed)
 		G_OBJECT_CLASS (nm_object_parent_class)->constructed (object);
 
-	priv->properties_proxy = _nm_object_new_proxy (self, NULL, "org.freedesktop.DBus.Properties");
+	NM_OBJECT_GET_CLASS (self)->init_dbus (self);
+}
 
-	if (_nm_object_is_connection_private (self))
+static void
+init_dbus (NMObject *object)
+{
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+
+	priv->properties_proxy = _nm_object_new_proxy (object, NULL, "org.freedesktop.DBus.Properties");
+
+	if (_nm_object_is_connection_private (object))
 		priv->nm_running = TRUE;
 	else {
 		priv->bus_proxy = dbus_g_proxy_new_for_name (priv->connection,
@@ -388,6 +395,8 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	nm_object_class->init_dbus = init_dbus;
 
 	/* Properties */
 

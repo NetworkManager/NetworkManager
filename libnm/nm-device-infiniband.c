@@ -172,29 +172,21 @@ nm_device_infiniband_init (NMDeviceInfiniband *device)
 }
 
 static void
-register_properties (NMDeviceInfiniband *device)
+init_dbus (NMObject *object)
 {
-	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (device);
+	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DEVICE_INFINIBAND_HW_ADDRESS, &priv->hw_address },
 		{ NM_DEVICE_INFINIBAND_CARRIER,    &priv->carrier },
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (device),
+	NM_OBJECT_CLASS (nm_device_infiniband_parent_class)->init_dbus (object);
+
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_INFINIBAND);
+	_nm_object_register_properties (object,
 	                                priv->proxy,
 	                                property_info);
-}
-
-static void
-constructed (GObject *object)
-{
-	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (object);
-
-	G_OBJECT_CLASS (nm_device_infiniband_parent_class)->constructed (object);
-
-	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_DEVICE_INFINIBAND);
-	register_properties (NM_DEVICE_INFINIBAND (object));
 }
 
 static void
@@ -244,15 +236,18 @@ static void
 nm_device_infiniband_class_init (NMDeviceInfinibandClass *eth_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (eth_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (eth_class);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (eth_class);
 
 	g_type_class_add_private (eth_class, sizeof (NMDeviceInfinibandPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+
+	nm_object_class->init_dbus = init_dbus;
+
 	device_class->connection_compatible = connection_compatible;
 	device_class->get_setting_type = get_setting_type;
 	device_class->get_hw_address = get_hw_address;

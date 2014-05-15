@@ -563,9 +563,9 @@ get_property (GObject *object,
 }
 
 static void
-register_properties (NMActiveConnection *connection)
+init_dbus (NMObject *object)
 {
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_ACTIVE_CONNECTION_CONNECTION,          &priv->connection },
 		{ NM_ACTIVE_CONNECTION_ID,                  &priv->id },
@@ -586,20 +586,12 @@ register_properties (NMActiveConnection *connection)
 		{ NULL },
 	};
 
-	_nm_object_register_properties (NM_OBJECT (connection),
+	NM_OBJECT_CLASS (nm_active_connection_parent_class)->init_dbus (object);
+
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_ACTIVE_CONNECTION);
+	_nm_object_register_properties (object,
 	                                priv->proxy,
 	                                property_info);
-}
-
-static void
-constructed (GObject *object)
-{
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
-
-	G_OBJECT_CLASS (nm_active_connection_parent_class)->constructed (object);
-
-	priv->proxy = _nm_object_new_proxy (NM_OBJECT (object), NULL, NM_DBUS_INTERFACE_ACTIVE_CONNECTION);
-	register_properties (NM_ACTIVE_CONNECTION (object));
 }
 
 
@@ -607,14 +599,16 @@ static void
 nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (ap_class);
 
 	g_type_class_add_private (ap_class, sizeof (NMActiveConnectionPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	nm_object_class->init_dbus = init_dbus;
 
 	/* properties */
 

@@ -72,6 +72,9 @@ typedef struct {
 	                                GError *error,
 	                                char *failed_path);
 
+	/* Methods */
+	void (*init_dbus) (NMObject *object);
+
 	/*< private >*/
 	gpointer padding[8];
 } NMObjectClass;
