@@ -66,6 +66,8 @@
 #include "common.h"
 #include "devices.h"
 
+/* define some prompts */
+#define PROMPT_INTERFACE _("Interface: ")
 
 /* Available fields for 'device status' */
 static NmcOutputField nmc_fields_dev_status[] = {
@@ -1383,7 +1385,7 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask)
-			ifname = ifname_ask = nmc_readline (_("Interface: "));
+			ifname = ifname_ask = nmc_readline (PROMPT_INTERFACE);
 
 		if (!ifname_ask) {
 			g_string_printf (nmc->return_text, _("Error: No interface specified."));
@@ -1517,7 +1519,7 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask)
-			ifname = ifname_ask = nmc_readline (_("Interface: "));
+			ifname = ifname_ask = nmc_readline (PROMPT_INTERFACE);
 
 		if (!ifname_ask) {
 			g_string_printf (nmc->return_text, _("Error: No interface specified."));
@@ -2559,12 +2561,73 @@ do_device_wimax (NmCli *nmc, int argc, char **argv)
 }
 #endif
 
+static gboolean
+is_single_word (const char* line)
+{
+	size_t n1, n2, n3;
+
+	n1 = strspn  (line,    " \t");
+	n2 = strcspn (line+n1, " \t\0") + n1;
+	n3 = strspn  (line+n2, " \t");
+
+	if (n3 == 0)
+		return TRUE;
+	else
+		return FALSE;
+}
+
+/* Global variable defined in nmcli.c */
+extern NmCli nm_cli;
+
+static char *
+gen_func_ifnames (char *text, int state)
+{
+	int i, j = 0;
+	const GPtrArray *devices;
+	const char **ifnames;
+	char *ret;
+
+	nm_cli.get_client (&nm_cli);
+	devices = nm_client_get_devices (nm_cli.client);
+	if (!devices || devices->len < 1)
+		return NULL;
+
+	ifnames = g_new (const char *, devices->len + 1);
+	for (i = 0; i < devices->len; i++) {
+		NMDevice *dev = g_ptr_array_index (devices, i);
+		const char *ifname = nm_device_get_iface (dev);
+		ifnames[j++] = ifname;
+	}
+	ifnames[j] = NULL;
+
+	ret = nmc_rl_gen_func_basic (text, state, ifnames);
+
+	g_free (ifnames);
+	return ret;
+}
+
 static char **
 nmcli_device_tab_completion (char *text, int start, int end)
 {
+	char **match_array = NULL;
+	CPFunction *generator_func = NULL;
+
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
-	return NULL;
+
+	/* Disable appending space after completion */
+	rl_completion_append_character = '\0';
+
+	if (!is_single_word (rl_line_buffer))
+		return NULL;
+
+	if (g_strcmp0 (rl_prompt, PROMPT_INTERFACE) == 0)
+		generator_func = gen_func_ifnames;
+
+	if (generator_func)
+		match_array = rl_completion_matches (text, generator_func);
+
+	return match_array;
 }
 
 NMCResultCode

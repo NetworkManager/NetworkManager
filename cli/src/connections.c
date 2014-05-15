@@ -71,6 +71,7 @@
 #define PROMPT_BOND_MASTER _("Bond master: ")
 #define PROMPT_TEAM_MASTER _("Team master: ")
 #define PROMPT_BRIDGE_MASTER _("Bridge master: ")
+#define PROMPT_CONNECTION _("Connection (name, UUID, or path): ")
 
 static const char *nmc_known_vpns[] =
 	{ "openvpn", "vpnc", "pptp", "openconnect", "openswan", "libreswan",
@@ -1963,10 +1964,8 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			line = nmc_readline (_("Connection (name, UUID, or path): "));
+			line = nmc_readline (PROMPT_CONNECTION);
 			name = line ? line : "";
-			// TODO: enhancement:  when just Enter is pressed (line is NULL), list
-			// available connections so that the user can select one
 		}
 	} else if (strcmp (*argv, "ifname") != 0) {
 		if (   strcmp (*argv, "id") == 0
@@ -2075,7 +2074,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			line = nmc_readline (_("Connection (name, UUID, or path): "));
+			line = nmc_readline (PROMPT_CONNECTION);
 			nmc_string_to_arg_array (line, "", &arg_arr, &arg_num);
 			arg_ptr = arg_arr;
 		}
@@ -8199,7 +8198,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			line = nmc_readline (_("Connection (name, UUID, or path): "));
+			line = nmc_readline (PROMPT_CONNECTION);
 			nmc_string_to_arg_array (line, "", &arg_arr, &arg_num);
 			arg_ptr = arg_arr;
 		}
@@ -8375,12 +8374,53 @@ connection_editor_thread_func (gpointer data)
 	return NULL;
 }
 
+static char *
+gen_func_connection_names (char *text, int state)
+{
+	int i = 0;
+	GSList *iter;
+	const char **connections;
+	char *ret;
+
+	if (!nm_cli.system_connections)
+		return NULL;
+
+	connections = g_new (const char *, g_slist_length (nm_cli.system_connections) + 1);
+	for (iter = nm_cli.system_connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *con = NM_CONNECTION (iter->data);
+		const char *id = nm_connection_get_id (con);
+		connections[i++] = id;
+	}
+	connections[i] = NULL;
+
+	ret = nmc_rl_gen_func_basic (text, state, connections);
+
+	g_free (connections);
+	return ret;
+}
+
 static char **
 nmcli_con_tab_completion (char *text, int start, int end)
 {
+	char **match_array = NULL;
+	CPFunction *generator_func = NULL;
+
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
-	return NULL;
+
+	/* Disable appending space after completion */
+	rl_completion_append_character = '\0';
+
+	if (!is_single_word (rl_line_buffer))
+		return NULL;
+
+	if (g_strcmp0 (rl_prompt, PROMPT_CONNECTION) == 0)
+		generator_func = gen_func_connection_names;
+
+	if (generator_func)
+		match_array = rl_completion_matches (text, generator_func);
+
+	return match_array;
 }
 
 static NMCResultCode
