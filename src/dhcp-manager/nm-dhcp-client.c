@@ -44,7 +44,7 @@ typedef struct {
 	guint32      timeout;
 	GByteArray * duid;
 
-	guchar       state;
+	NMDhcpState  state;
 	pid_t        pid;
 	guint        timeout_id;
 	guint        watch_id;
@@ -201,7 +201,7 @@ signal_remove (gpointer user_data)
 
 static void
 dhcp_client_set_state (NMDHCPClient *self,
-                       NMDHCPState state,
+                       NMDhcpState state,
                        gboolean emit_state,
                        gboolean remove_now)
 {
@@ -212,7 +212,7 @@ dhcp_client_set_state (NMDHCPClient *self,
 	if (emit_state)
 		g_signal_emit (G_OBJECT (self), signals[SIGNAL_STATE_CHANGED], 0, priv->state);
 
-	if (state == DHC_END || state == DHC_ABEND) {
+	if (state == NM_DHCP_STATE_DONE || state == NM_DHCP_STATE_FAIL) {
 		/* Start the remove signal timer */
 		if (remove_now) {
 			g_signal_emit (G_OBJECT (self), signals[SIGNAL_REMOVE], 0);
@@ -228,7 +228,7 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 {
 	NMDHCPClient *self = NM_DHCP_CLIENT (user_data);
 	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
-	NMDHCPState new_state;
+	NMDhcpState new_state;
 
 	if (priv->ipv6) {
 		nm_log_info (LOGD_DHCP6, "(%s): DHCPv6 client pid %d exited with status %d",
@@ -241,10 +241,10 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 	}
 
 	if (!WIFEXITED (status)) {
-		new_state = DHC_ABEND;
+		new_state = NM_DHCP_STATE_FAIL;
 		nm_log_warn (LOGD_DHCP, "DHCP client died abnormally");
 	} else
-		new_state = DHC_END;
+		new_state = NM_DHCP_STATE_DONE;
 
 	watch_cleanup (self);
 	timeout_cleanup (self);
@@ -519,7 +519,7 @@ nm_dhcp_client_stop (NMDHCPClient *self, gboolean release)
 
 	/* And clean stuff up */
 
-	dhcp_client_set_state (self, DHC_END, FALSE, TRUE);
+	dhcp_client_set_state (self, NM_DHCP_STATE_DONE, FALSE, TRUE);
 
 	g_hash_table_remove_all (priv->options);
 
@@ -529,71 +529,44 @@ nm_dhcp_client_stop (NMDHCPClient *self, gboolean release)
 
 /********************************************/
 
-static gboolean
-state_is_bound (guint32 state)
-{
-	if (   (state == DHC_BOUND4)
-	    || (state == DHC_BOUND6)
-	    || (state == DHC_RENEW4)
-	    || (state == DHC_RENEW6)
-	    || (state == DHC_REBOOT)
-	    || (state == DHC_REBIND4)
-	    || (state == DHC_REBIND6)
-	    || (state == DHC_IPV4LL))
-		return TRUE;
-
-	return FALSE;
-}
-
-static const char *state_table[] = {
-	[DHC_NBI]             = "nbi",
-	[DHC_PREINIT]         = "preinit",
-	[DHC_PREINIT6]        = "preinit6",
-	[DHC_BOUND4]          = "bound",
-	[DHC_BOUND6]          = "bound6",
-	[DHC_IPV4LL]          = "ipv4ll",
-	[DHC_RENEW4]          = "renew",
-	[DHC_RENEW6]          = "renew6",
-	[DHC_REBOOT]          = "reboot",
-	[DHC_REBIND4]         = "rebind",
-	[DHC_REBIND6]         = "rebind6",
-	[DHC_DEPREF6]         = "depref6",
-	[DHC_STOP]            = "stop",
-	[DHC_STOP6]           = "stop6",
-	[DHC_MEDIUM]          = "medium",
-	[DHC_TIMEOUT]         = "timeout",
-	[DHC_FAIL]            = "fail",
-	[DHC_EXPIRE]          = "expire",
-	[DHC_EXPIRE6]         = "expire6",
-	[DHC_RELEASE]         = "release",
-	[DHC_RELEASE6]        = "release6",
-	[DHC_START]           = "start",
-	[DHC_ABEND]           = "abend",
-	[DHC_END]             = "end",
+static const char *state_table[NM_DHCP_STATE_MAX + 1] = {
+	[NM_DHCP_STATE_UNKNOWN]  = "unknown",
+	[NM_DHCP_STATE_BOUND]    = "bound",
+	[NM_DHCP_STATE_TIMEOUT]  = "timeout",
+	[NM_DHCP_STATE_DONE]     = "done",
+	[NM_DHCP_STATE_FAIL]     = "fail",
 };
 
 static const char *
-state_to_string (NMDHCPState state)
+state_to_string (NMDhcpState state)
 {
 	if (state >= 0 && state < G_N_ELEMENTS (state_table))
 		return state_table[state];
 	return NULL;
 }
 
-static NMDHCPState
-string_to_state (const char *name)
+static NMDhcpState
+reason_to_state (const char *iface, const char *reason)
 {
-	int i;
+	if (g_ascii_strcasecmp (reason, "bound") == 0 ||
+	    g_ascii_strcasecmp (reason, "bound6") == 0 ||
+	    g_ascii_strcasecmp (reason, "renew") == 0 ||
+	    g_ascii_strcasecmp (reason, "renew6") == 0 ||
+	    g_ascii_strcasecmp (reason, "reboot") == 0 ||
+	    g_ascii_strcasecmp (reason, "rebind") == 0 ||
+	    g_ascii_strcasecmp (reason, "rebind6") == 0)
+		return NM_DHCP_STATE_BOUND;
+	else if (g_ascii_strcasecmp (reason, "timeout") == 0)
+		return NM_DHCP_STATE_TIMEOUT;
+	else if (g_ascii_strcasecmp (reason, "end") == 0)
+		return NM_DHCP_STATE_DONE;
+	else if (g_ascii_strcasecmp (reason, "fail") == 0 ||
+	         g_ascii_strcasecmp (reason, "abend") == 0 ||
+	         g_ascii_strcasecmp (reason, "nak") == 0)
+		return NM_DHCP_STATE_FAIL;
 
-	if (name) {
-		for (i = 0; i < G_N_ELEMENTS (state_table); i++) {
-			const char *n = state_table[i];
-
-			if (n && !strcasecmp (name, n))
-				return i;
-		}
-	}
-	return 255;
+	nm_log_dbg (LOGD_DHCP, "(%s): unmapped DHCP state '%s'", iface, reason);
+	return NM_DHCP_STATE_UNKNOWN;
 }
 
 static char *
@@ -665,44 +638,31 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	old_state = priv->state;
-	new_state = string_to_state (reason);
+	new_state = reason_to_state (priv->iface, reason);
 
 	/* Clear old and save new DHCP options */
 	g_hash_table_remove_all (priv->options);
 	g_hash_table_foreach (options, copy_option, priv->options);
 
-	if (old_state == new_state) {
-		/* dhclient will stay in the same state (or, really, provide the same
-		 * reason) for operations like RENEW and REBIND.  We need to ensure
-		 * that triggers various DHCP lease change code, so we need to pass
-		 * along same-state transitions for these states.
-		 */
-		if (   new_state != DHC_BOUND4
-		    && new_state != DHC_RENEW4
-		    && new_state != DHC_REBIND4
-		    && new_state != DHC_BOUND6
-		    && new_state != DHC_RENEW6
-		    && new_state != DHC_REBIND6)
-			return;
-	}
+	/* dhclient sends same-state transitions for RENEW/REBIND events, but
+	 * the lease may have changed, so handle same-state transitions for
+	 * these events.  Ignore same-state transitions for other events since
+	 * the lease won't have changed and the state was already handled.
+	 */
+	if ((old_state == new_state) && (new_state != NM_DHCP_STATE_BOUND))
+		return;
 
-	/* Handle changed device state */
-	if (state_is_bound (new_state)) {
+	if (new_state == NM_DHCP_STATE_BOUND) {
 		/* Cancel the timeout if the DHCP client is now bound */
 		timeout_cleanup (self);
 	}
 
-	if (priv->ipv6) {
-		nm_log_info (LOGD_DHCP6, "(%s): DHCPv6 state changed %s -> %s",
-		            priv->iface,
-		            state_to_string (old_state),
-		            state_to_string (new_state));
-	} else {
-		nm_log_info (LOGD_DHCP4, "(%s): DHCPv4 state changed %s -> %s",
-		            priv->iface,
-		            state_to_string (old_state),
-		            state_to_string (new_state));
-	}
+	nm_log_info (priv->ipv6 ? LOGD_DHCP6 : LOGD_DHCP4,
+	             "(%s): DHCPv%c state changed %s -> %s",
+	             priv->iface,
+	             priv->ipv6 ? '6' : '4',
+	             state_to_string (old_state),
+	             state_to_string (new_state));
 
 	dhcp_client_set_state (self, new_state, TRUE, FALSE);
 }
@@ -724,12 +684,11 @@ nm_dhcp_client_foreach_option (NMDHCPClient *self,
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
-	if (!state_is_bound (priv->state)) {
-		if (priv->ipv6) {
-			nm_log_warn (LOGD_DHCP6, "(%s): DHCPv6 client didn't bind to a lease.", priv->iface);
-		} else {
-			nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 client didn't bind to a lease.", priv->iface);
-		}
+	if (priv->state != NM_DHCP_STATE_BOUND) {
+		nm_log_warn (priv->ipv6 ? LOGD_DHCP6 : LOGD_DHCP4,
+		             "(%s): DHCPv%c client didn't bind to a lease.",
+		             priv->iface,
+		             priv->ipv6 ? '6' : '4');
 	}
 
 	g_hash_table_iter_init (&iter, priv->options);
@@ -1319,7 +1278,7 @@ nm_dhcp_client_get_ip4_config (NMDHCPClient *self, gboolean test)
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
-	if (test && !state_is_bound (priv->state)) {
+	if (test && (priv->state != NM_DHCP_STATE_BOUND)) {
 		nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 client didn't bind to a lease.", priv->iface);
 		return NULL;
 	}
@@ -1437,7 +1396,7 @@ nm_dhcp_client_get_ip6_config (NMDHCPClient *self, gboolean test)
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
-	if (test && !state_is_bound (priv->state)) {
+	if (test && (priv->state != NM_DHCP_STATE_BOUND)) {
 		nm_log_warn (LOGD_DHCP6, "(%s): DHCPv6 client didn't bind to a lease.", priv->iface);
 		return NULL;
 	}
@@ -1640,8 +1599,7 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDHCPClientClass, state_changed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__UINT,
+					  NULL, NULL, NULL,
 					  G_TYPE_NONE, 1, G_TYPE_UINT);
 
 	signals[SIGNAL_TIMEOUT] =

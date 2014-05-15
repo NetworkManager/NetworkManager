@@ -47,32 +47,14 @@
 #define NM_DHCP_CLIENT_SIGNAL_REMOVE        "remove"
 
 typedef enum {
-	DHC_NBI = 0,     /* no broadcast interfaces found */
-	DHC_PREINIT,     /* configuration started */
-	DHC_PREINIT6,    /* configuration started */
-	DHC_BOUND4,      /* IPv4 lease obtained */
-	DHC_BOUND6,      /* IPv6 lease obtained */
-	DHC_IPV4LL,      /* IPv4LL address obtained */
-	DHC_RENEW4,      /* IPv4 lease renewed */
-	DHC_RENEW6,      /* IPv6 lease renewed */
-	DHC_REBOOT,      /* have valid lease, but now obtained a different one */
-	DHC_REBIND4,     /* IPv4 new/different lease */
-	DHC_REBIND6,     /* IPv6 new/different lease */
-	DHC_DEPREF6,     /* IPv6 lease depreferred */
-	DHC_STOP,        /* remove old lease */
-	DHC_STOP6,       /* remove old lease */
-	DHC_MEDIUM,      /* media selection begun */
-	DHC_TIMEOUT,     /* timed out contacting DHCP server */
-	DHC_FAIL,        /* all attempts to contact server timed out, sleeping */
-	DHC_EXPIRE,      /* lease has expired, renewing */
-	DHC_EXPIRE6,     /* lease has expired, renewing */
-	DHC_RELEASE,     /* releasing lease */
-	DHC_RELEASE6,    /* releasing lease */
-	DHC_START,       /* sent when dhclient started OK */
-	DHC_ABEND,       /* dhclient exited abnormally */
-	DHC_END,         /* dhclient exited normally */
-	DHC_END_OPTIONS, /* last option in subscription sent */
-} NMDHCPState;
+	NM_DHCP_STATE_UNKNOWN = 0,
+	NM_DHCP_STATE_BOUND,        /* lease changed (state_is_bound) */
+	NM_DHCP_STATE_TIMEOUT,      /* TIMEOUT */
+	NM_DHCP_STATE_DONE,         /* END */
+	NM_DHCP_STATE_FAIL,          /* failed or quit unexpectedly */
+	__NM_DHCP_STATE_MAX,
+	NM_DHCP_STATE_MAX = __NM_DHCP_STATE_MAX - 1,
+} NMDhcpState;
 
 typedef struct {
 	GObject parent;
@@ -110,7 +92,7 @@ typedef struct {
 	GByteArray * (*get_duid) (NMDHCPClient *self);
 
 	/* Signals */
-	void (*state_changed) (NMDHCPClient *self, NMDHCPState state);
+	void (*state_changed) (NMDHCPClient *self, NMDhcpState state);
 	void (*timeout)       (NMDHCPClient *self);
 	void (*remove)        (NMDHCPClient *self);
 } NMDHCPClientClass;

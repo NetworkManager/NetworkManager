@@ -2699,7 +2699,7 @@ dhcp4_fail (NMDevice *device, gboolean timeout)
 
 static void
 dhcp4_state_changed (NMDHCPClient *client,
-                     NMDHCPState state,
+                     NMDhcpState state,
                      gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
@@ -2712,10 +2712,7 @@ dhcp4_state_changed (NMDHCPClient *client,
 	            nm_device_get_iface (device), state);
 
 	switch (state) {
-	case DHC_BOUND4:     /* lease obtained */
-	case DHC_RENEW4:     /* lease renewed */
-	case DHC_REBOOT:     /* have valid lease, but now obtained a different one */
-	case DHC_REBIND4:    /* new, different lease */
+	case NM_DHCP_STATE_BOUND:
 		config = nm_dhcp_client_get_ip4_config (priv->dhcp4_client, FALSE);
 		if (!config) {
 			nm_log_warn (LOGD_DHCP4, "(%s): failed to get IPv4 config in response to DHCP event.",
@@ -2740,12 +2737,11 @@ dhcp4_state_changed (NMDHCPClient *client,
 		g_object_unref (config);
 
 		break;
-	case DHC_TIMEOUT: /* timed out contacting DHCP server */
+	case NM_DHCP_STATE_TIMEOUT:
 		dhcp4_fail (device, TRUE);
 		break;
-	case DHC_END: /* dhclient exited normally */
-	case DHC_FAIL: /* all attempts to contact server timed out, sleeping */
-	case DHC_ABEND: /* dhclient exited abnormally */
+	case NM_DHCP_STATE_DONE:
+	case NM_DHCP_STATE_FAIL:
 		/* dhclient quit and can't get/renew a lease; so kill the connection */
 		dhcp4_fail (device, FALSE);
 		break;
@@ -3150,7 +3146,7 @@ dhcp6_fail (NMDevice *device, gboolean timeout)
 
 static void
 dhcp6_state_changed (NMDHCPClient *client,
-                     NMDHCPState state,
+                     NMDhcpState state,
                      gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
@@ -3162,10 +3158,7 @@ dhcp6_state_changed (NMDHCPClient *client,
 	            nm_device_get_iface (device), state);
 
 	switch (state) {
-	case DHC_BOUND6:
-	case DHC_RENEW6:     /* lease renewed */
-	case DHC_REBOOT:     /* have valid lease, but now obtained a different one */
-	case DHC_REBIND6:    /* new, different lease */
+	case NM_DHCP_STATE_BOUND:
 		g_clear_object (&priv->dhcp6_ip6_config);
 		priv->dhcp6_ip6_config = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, FALSE);
 
@@ -3188,10 +3181,10 @@ dhcp6_state_changed (NMDHCPClient *client,
 		} else if (priv->ip6_state == IP_DONE)
 			dhcp6_lease_change (device);
 		break;
-	case DHC_TIMEOUT: /* timed out contacting DHCP server */
+	case NM_DHCP_STATE_TIMEOUT:
 		dhcp6_fail (device, TRUE);
 		break;
-	case DHC_END: /* dhclient exited normally */
+	case NM_DHCP_STATE_DONE:
 		/* In IPv6 info-only mode, the client doesn't handle leases so it
 		 * may exit right after getting a response from the server.  That's
 		 * normal.  In that case we just ignore the exit.
@@ -3199,8 +3192,7 @@ dhcp6_state_changed (NMDHCPClient *client,
 		if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_OTHERCONF)
 			break;
 		/* Otherwise, fall through */
-	case DHC_FAIL: /* all attempts to contact server timed out, sleeping */
-	case DHC_ABEND: /* dhclient exited abnormally */
+	case NM_DHCP_STATE_FAIL:
 		/* dhclient quit and can't get/renew a lease; so kill the connection */
 		dhcp6_fail (device, FALSE);
 		break;
