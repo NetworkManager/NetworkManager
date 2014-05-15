@@ -38,8 +38,6 @@ G_DEFINE_TYPE (NMVPNManager, nm_vpn_manager, G_TYPE_OBJECT)
 #define NM_VPN_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_MANAGER, NMVPNManagerPrivate))
 
 typedef struct {
-	gboolean disposed;
-
 	GHashTable *services;
 	GFileMonitor *monitor;
 	guint monitor_id;
@@ -343,17 +341,16 @@ dispose (GObject *object)
 {
 	NMVPNManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (object);
 
-	if (!priv->disposed) {
-		priv->disposed = TRUE;
+	if (priv->monitor) {
+		if (priv->monitor_id)
+			g_signal_handler_disconnect (priv->monitor, priv->monitor_id);
+		g_file_monitor_cancel (priv->monitor);
+		g_clear_object (&priv->monitor);
+	}
 
-		if (priv->monitor) {
-			if (priv->monitor_id)
-				g_signal_handler_disconnect (priv->monitor, priv->monitor_id);
-			g_file_monitor_cancel (priv->monitor);
-			g_object_unref (priv->monitor);
-		}
-
+	if (priv->services) {
 		g_hash_table_destroy (priv->services);
+		priv->services = NULL;
 	}
 
 	G_OBJECT_CLASS (nm_vpn_manager_parent_class)->dispose (object);
