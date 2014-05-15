@@ -72,6 +72,9 @@ typedef struct {
 	/* Signals */
 	void (*nsp_added)   (NMDeviceWimax *self, NMWimaxNsp *nsp);
 	void (*nsp_removed) (NMDeviceWimax *self, NMWimaxNsp *nsp);
+
+	/*< private >*/
+	gpointer padding[4];
 } NMDeviceWimaxClass;
 
 GType nm_device_wimax_get_type (void);

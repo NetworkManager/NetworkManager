@@ -94,6 +94,7 @@ typedef struct {
 	                       NMDeviceState old_state,
 	                       NMDeviceStateReason reason);
 
+	/* Methods */
 	gboolean (*connection_compatible) (NMDevice *device,
 	                                   NMConnection *connection,
 	                                   GError **error);
@@ -103,10 +104,8 @@ typedef struct {
 
 	GType (*get_setting_type) (NMDevice *device);
 
-	/* Padding for future expansion */
-	void (*_reserved1) (void);
-	void (*_reserved2) (void);
-	void (*_reserved3) (void);
+	/*< private >*/
+	gpointer padding[8];
 } NMDeviceClass;
 
 GType nm_device_get_type (void);

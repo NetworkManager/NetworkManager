@@ -152,11 +152,8 @@ typedef struct {
 typedef struct {
 	NMSettingClass parent;
 
-	/* Padding for future expansion */
-	void (*_reserved1) (void);
-	void (*_reserved2) (void);
-	void (*_reserved3) (void);
-	void (*_reserved4) (void);
+	/*< private >*/
+	gpointer padding[4];
 } NMSetting8021xClass;
 
 GType nm_setting_802_1x_get_type (void);

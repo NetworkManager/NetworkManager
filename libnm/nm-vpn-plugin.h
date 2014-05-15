@@ -89,19 +89,6 @@ typedef struct {
 typedef struct {
 	GObjectClass parent;
 
-	/* virtual methods */
-	gboolean (*connect)      (NMVpnPlugin   *plugin,
-	                          NMConnection  *connection,
-	                          GError       **err);
-
-	gboolean (*need_secrets) (NMVpnPlugin *plugin,
-	                          NMConnection *connection,
-	                          char **setting_name,
-	                          GError **error);
-
-	gboolean (*disconnect)   (NMVpnPlugin   *plugin,
-	                          GError       **err);
-
 	/* Signals */
 	void (*state_changed)  (NMVpnPlugin *plugin,
 	                        NMVpnServiceState state);
@@ -123,7 +110,19 @@ typedef struct {
 	void (*ip6_config)     (NMVpnPlugin *plugin,
 	                        GHashTable  *config);
 
-	/* more methods */
+	/* virtual methods */
+	gboolean (*connect)      (NMVpnPlugin   *plugin,
+	                          NMConnection  *connection,
+	                          GError       **err);
+
+	gboolean (*need_secrets) (NMVpnPlugin *plugin,
+	                          NMConnection *connection,
+	                          char **setting_name,
+	                          GError **error);
+
+	gboolean (*disconnect)   (NMVpnPlugin   *plugin,
+	                          GError       **err);
+
 	gboolean (*new_secrets)  (NMVpnPlugin *plugin,
 	                          NMConnection *connection,
 	                          GError **error);
@@ -133,9 +132,8 @@ typedef struct {
 	                                 GHashTable *details,
 	                                 GError **error);
 
-	/* Padding for future expansion */
-	void (*_reserved1) (void);
-	void (*_reserved2) (void);
+	/*< private >*/
+	gpointer padding[8];
 } NMVpnPluginClass;
 
 GType  nm_vpn_plugin_get_type       (void);

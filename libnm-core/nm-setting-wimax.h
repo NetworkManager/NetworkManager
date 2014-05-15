@@ -60,6 +60,9 @@ typedef struct {
 
 typedef struct {
 	NMSettingClass parent;
+
+	/*< private >*/
+	gpointer padding[4];
 } NMSettingWimaxClass;
 
 GType nm_setting_wimax_get_type (void);

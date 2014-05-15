@@ -59,13 +59,8 @@ typedef struct {
 typedef struct {
 	NMDeviceClass parent;
 
-	/* Padding for future expansion */
-	void (*_reserved1) (void);
-	void (*_reserved2) (void);
-	void (*_reserved3) (void);
-	void (*_reserved4) (void);
-	void (*_reserved5) (void);
-	void (*_reserved6) (void);
+	/*< private >*/
+	gpointer padding[4];
 } NMDeviceOlpcMeshClass;
 
 GType nm_device_olpc_mesh_get_type (void);

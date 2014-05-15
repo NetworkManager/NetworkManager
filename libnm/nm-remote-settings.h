@@ -99,13 +99,8 @@ struct _NMRemoteSettingsClass {
 
 	void (*connections_read) (NMRemoteSettings *settings);
 
-	/* Padding for future expansion */
-	void (*_reserved1) (void);
-	void (*_reserved2) (void);
-	void (*_reserved3) (void);
-	void (*_reserved4) (void);
-	void (*_reserved5) (void);
-	void (*_reserved6) (void);
+	/*< private >*/
+	gpointer padding[8];
 };
 
 GType nm_remote_settings_get_type (void);

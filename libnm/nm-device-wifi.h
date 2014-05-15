@@ -78,13 +78,8 @@ typedef struct {
 	void (*access_point_added) (NMDeviceWifi *device, NMAccessPoint *ap);
 	void (*access_point_removed) (NMDeviceWifi *device, NMAccessPoint *ap);
 
-	/* Padding for future expansion */
-	void (*_reserved1) (void);
-	void (*_reserved2) (void);
-	void (*_reserved3) (void);
-	void (*_reserved4) (void);
-	void (*_reserved5) (void);
-	void (*_reserved6) (void);
+	/*< private >*/
+	gpointer padding[4];
 } NMDeviceWifiClass;
 
 GType nm_device_wifi_get_type (void);

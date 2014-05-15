@@ -134,14 +134,6 @@ struct _NMVpnPluginUiInterface {
 	 * by the caller.
 	 */
 	char * (*get_suggested_name) (NMVpnPluginUiInterface *iface, NMConnection *connection);
-
-	/* Padding for future expansion */
-	void (*_reserved1) (void);
-	void (*_reserved2) (void);
-	void (*_reserved3) (void);
-	void (*_reserved4) (void);
-	void (*_reserved5) (void);
-	void (*_reserved6) (void);
 };
 
 GType nm_vpn_plugin_ui_interface_get_type (void);

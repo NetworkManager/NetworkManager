@@ -166,6 +166,9 @@ typedef void (*NMSecretAgentDeleteSecretsFunc) (NMSecretAgent *agent,
 typedef struct {
 	GObjectClass parent;
 
+	/* Signals */
+	void (*registration_result) (NMSecretAgent *agent, GError *error);
+
 	/* Virtual methods for subclasses */
 
 	/* Called when the subclass should retrieve and return secrets.  Subclass
@@ -218,16 +221,8 @@ typedef struct {
 	                        NMSecretAgentDeleteSecretsFunc callback,
 	                        gpointer user_data);
 
-	/* Signals */
-	void (*registration_result) (NMSecretAgent *agent, GError *error);
-
-	/* Padding for future expansion */
-	void (*_reserved1) (void);
-	void (*_reserved2) (void);
-	void (*_reserved3) (void);
-	void (*_reserved4) (void);
-	void (*_reserved5) (void);
-	void (*_reserved6) (void);
+	/*< private >*/
+	gpointer padding[8];
 } NMSecretAgentClass;
 
 GType nm_secret_agent_get_type (void);

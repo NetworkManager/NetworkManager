@@ -60,11 +60,8 @@ typedef struct {
 typedef struct {
 	NMSettingClass parent;
 
-	/* Padding for future expansion */
-	void (*_reserved1) (void);
-	void (*_reserved2) (void);
-	void (*_reserved3) (void);
-	void (*_reserved4) (void);
+	/*< private >*/
+	gpointer padding[4];
 } NMSettingTeamClass;
 
 GType nm_setting_team_get_type (void);

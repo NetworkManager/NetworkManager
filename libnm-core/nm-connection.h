@@ -123,6 +123,9 @@ typedef struct {
 
 	/* Signals */
 	void (*secrets_updated) (NMConnection *connection, const char * setting);
+
+	/*< private >*/
+	gpointer padding[8];
 } NMConnectionClass;
 
 GType nm_connection_get_type (void);

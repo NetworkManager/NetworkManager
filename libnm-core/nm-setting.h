@@ -190,21 +190,21 @@ typedef struct {
 	                                  NMSettingSecretFlags flags,
 	                                  GError **error);
 
+	gboolean    (*clear_secrets_with_flags) (NMSetting *setting,
+	                                         GParamSpec *pspec,
+	                                         NMSettingClearSecretsWithFlagsFn func,
+	                                         gpointer user_data);
+
 	/* Returns TRUE if the given property contains the same value in both settings */
 	gboolean    (*compare_property)  (NMSetting *setting,
 	                                  NMSetting *other,
 	                                  const GParamSpec *prop_spec,
 	                                  NMSettingCompareFlags flags);
 
-	gboolean    (*clear_secrets_with_flags) (NMSetting *setting,
-	                                         GParamSpec *pspec,
-	                                         NMSettingClearSecretsWithFlagsFn func,
-	                                         gpointer user_data);
-
 	const char *(*get_virtual_iface_name) (NMSetting *setting);
 
-	/* Padding for future expansion */
-	void (*_reserved1) (void);
+	/*< private >*/
+	gpointer padding[8];
 } NMSettingClass;
 
 /**
