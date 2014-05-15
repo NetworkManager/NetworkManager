@@ -16,15 +16,19 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2012 Red Hat, Inc.
+ * (C) Copyright 2012 - 2014 Red Hat, Inc.
  */
 
 #include "config.h"
 
 #include <glib.h>
 #include <glib/gi18n.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include "common.h"
 #include "utils.h"
@@ -1024,5 +1028,76 @@ nmc_find_connection (GSList *list,
 	if (start)
 		*start = NULL;
 	return found;
+}
+
+/**
+ * nmc_cleanup_readline:
+ *
+ * Cleanup readline when nmcli is terminated with a signal.
+ * It makes sure the terminal is not garbled.
+ */
+void
+nmc_cleanup_readline (void)
+{
+	rl_free_line_state ();
+	rl_cleanup_after_signal ();
+}
+
+/**
+ * nmc_readline:
+ * @prompt: prompt to print (telling user what to enter)
+ * @add_to_history: whether the user input should be added to history
+ *
+ * Wrapper around libreadline's readline() function.
+ *
+ * Returns: the user provided string. In case the user entered empty string,
+ * this function returns NULL.
+ */
+char *
+nmc_readline (const char *prompt, gboolean add_to_history)
+{
+	char *str;
+
+	str = readline (prompt);
+	/* Return NULL, not empty string */
+	if (str && *str == '\0') {
+		g_free (str);
+		str = NULL;
+	}
+
+	if (add_to_history && str && *str)
+		add_history (str);
+
+	return str;
+}
+
+/**
+ * nmc_rl_gen_func_basic:
+ * @text: text to complete
+ * @state: readline state; says whether start from scratch (state == 0)
+ * @words: strings for completion
+ *
+ * Basic function generating list of completion strings for readline.
+ * See e.g. http://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC49
+ */
+char *
+nmc_rl_gen_func_basic (char *text, int state, const char **words)
+{
+	static int list_idx, len;
+	const char *name;
+
+	if (!state) {
+		list_idx = 0;
+		len = strlen (text);
+	}
+
+	/* Return the next name which partially matches one from the 'words' list. */
+	while ((name = words[list_idx])) {
+		list_idx++;
+
+		if (strncmp (name, text, len) == 0)
+			return g_strdup (name);
+	}
+	return NULL;
 }
 

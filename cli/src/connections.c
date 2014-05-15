@@ -5256,33 +5256,12 @@ set_deftext (void)
 }
 
 static char *
-gen_func_basic (char *text, int state, const char **words)
-{
-	static int list_idx, len;
-	const char *name;
-
-	if (!state) {
-		list_idx = 0;
-		len = strlen (text);
-	}
-
-	/* Return the next name which partially matches one from the 'words' list. */
-	while ((name = words[list_idx])) {
-		list_idx++;
-
-		if (strncmp (name, text, len) == 0)
-			return g_strdup (name);
-	}
-	return NULL;
-}
-
-static char *
 gen_nmcli_cmds_menu (char *text, int state)
 {
 	const char *words[] = { "goto", "set", "remove", "describe", "print", "verify",
 	                        "save", "activate", "back", "help", "quit", "nmcli",
 	                        NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
@@ -5291,49 +5270,49 @@ gen_nmcli_cmds_submenu (char *text, int state)
 	const char *words[] = { "set", "add", "change", "remove", "describe",
 	                        "print", "back", "help", "quit",
 	                        NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_nmcli (char *text, int state)
 {
 	const char *words[] = { "status-line", "save-confirmation", "prompt-color", NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_nmcli_prompt_color (char *text, int state)
 {
 	const char *words[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
 gen_func_bool_values (char *text, int state)
 {
 	const char *words[] = { "yes", "no", NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_verify0 (char *text, int state)
 {
 	const char *words[] = { "all", NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_print2 (char *text, int state)
 {
 	const char *words[] = { "setting", "connection", "all", NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_save (char *text, int state)
 {
 	const char *words[] = { "persistent", "temporary", NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
@@ -5419,7 +5398,7 @@ gen_property_names (char *text, int state)
 
 	if (setting) {
 		valid_props = nmc_setting_get_valid_properties (setting);
-		ret = gen_func_basic (text, state, (const char **) valid_props);
+		ret = nmc_rl_gen_func_basic (text, state, (const char **) valid_props);
 	}
 
 	g_strfreev (strv);
@@ -5455,7 +5434,7 @@ gen_compat_devices (char *text, int state)
 	}
 	compatible_devices[j] = NULL;
 
-	ret = gen_func_basic (text, state, compatible_devices);
+	ret = nmc_rl_gen_func_basic (text, state, compatible_devices);
 
 	g_free (compatible_devices);
 	return ret;
@@ -5483,7 +5462,7 @@ gen_vpn_uuids (char *text, int state)
 	}
 	uuids[i] = NULL;
 
-	ret = gen_func_basic (text, state, uuids);
+	ret = nmc_rl_gen_func_basic (text, state, uuids);
 
 	g_free (uuids);
 	return ret;
@@ -5809,32 +5788,6 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 	g_free (prompt_tmp);
 	g_free (word);
 	return match_array;
-}
-
-void
-nmc_cleanup_readline (void)
-{
-	rl_free_line_state ();
-	rl_cleanup_after_signal ();
-}
-
-/* Reads data from user and adds it to history */
-static char *
-readline_x (const char *prompt, gboolean add_to_history)
-{
-	char *str;
-
-	str = readline (prompt);
-	/* Return NULL, not empty string */
-	if (str && *str == '\0') {
-		g_free (str);
-		str = NULL;
-	}
-
-	if (add_to_history && str && *str)
-		add_history (str);
-
-	return str;
 }
 
 #define NMCLI_EDITOR_HISTORY ".nmcli-history"
@@ -6513,7 +6466,7 @@ property_edit_submenu (NmCli *nmc,
 		if (nmc->editor_status_line)
 			editor_show_status_line (connection, dirty, temp_changes);
 
-		cmd_property_user = readline_x (prompt, TRUE);
+		cmd_property_user = nmc_readline (prompt, TRUE);
 		if (!cmd_property_user || *cmd_property_user == '\0')
 			continue;
 		cmdsub = parse_editor_sub_cmd (g_strstrip (cmd_property_user), &cmd_property_arg);
@@ -6527,7 +6480,7 @@ property_edit_submenu (NmCli *nmc,
 			 */
 			if (!cmd_property_arg) {
 				tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-				prop_val_user = readline_x (tmp_prompt, TRUE);
+				prop_val_user = nmc_readline (tmp_prompt, TRUE);
 				g_free (tmp_prompt);
 			} else
 				prop_val_user = g_strdup (cmd_property_arg);
@@ -6556,7 +6509,7 @@ property_edit_submenu (NmCli *nmc,
 			rl_startup_hook = set_deftext;
 			pre_input_deftext = nmc_setting_get_property_out2in (curr_setting, prop_name, NULL);
 			tmp_prompt = g_strdup_printf (_("Edit '%s' value: "), prop_name);
-			prop_val_user = readline_x (tmp_prompt, TRUE);
+			prop_val_user = nmc_readline (tmp_prompt, TRUE);
 
 			nmc_property_get_gvalue (curr_setting, prop_name, &prop_g_value);
 			nmc_property_set_default_value (curr_setting, prop_name);
@@ -6744,7 +6697,7 @@ ask_check_setting (const char *arg,
 
 	if (!arg) {
 		printf (_("Available settings: %s\n"), valid_settings_str);
-		setting_name_user = readline_x (EDITOR_PROMPT_SETTING, TRUE);
+		setting_name_user = nmc_readline (EDITOR_PROMPT_SETTING, TRUE);
 	} else
 		setting_name_user = g_strdup (arg);
 
@@ -6770,7 +6723,7 @@ ask_check_property (const char *arg,
 
 	if (!arg) {
 		printf (_("Available properties: %s\n"), valid_props_str);
-		prop_name_user = readline_x (EDITOR_PROMPT_PROPERTY, TRUE);
+		prop_name_user = nmc_readline (EDITOR_PROMPT_PROPERTY, TRUE);
 		if (prop_name_user)
 			g_strstrip (prop_name_user);
 	} else
@@ -6914,7 +6867,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			editor_show_status_line (connection, dirty, temp_changes);
 
 		/* Read user input */
-		cmd_user = readline_x (menu_ctx.main_prompt, TRUE);
+		cmd_user = nmc_readline (menu_ctx.main_prompt, TRUE);
 
 		/* Get the remote connection again, it may have disapeared */
 		removed = refresh_remote_connection (&weak, &rem_con);
@@ -6952,7 +6905,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
 
 					tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-					prop_val_user = readline_x (tmp_prompt, TRUE);
+					prop_val_user = nmc_readline (tmp_prompt, TRUE);
 					g_free (tmp_prompt);
 
 					/* Set property value */
@@ -7010,7 +6963,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
 
 					tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-					cmd_arg_v = readline_x (tmp_prompt, TRUE);
+					cmd_arg_v = nmc_readline (tmp_prompt, TRUE);
 					g_free (tmp_prompt);
 				}
 
@@ -7790,7 +7743,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 				printf (_("Error: invalid connection type; %s\n"), err1->message);
 			g_clear_error (&err1);
 
-			type_ask = readline_x (EDITOR_PROMPT_CON_TYPE, TRUE);
+			type_ask = nmc_readline (EDITOR_PROMPT_CON_TYPE, TRUE);
 			type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
 			connection_type = check_valid_name (type_ask, nmc_valid_connection_types, &err1);
 			g_free (type_ask);

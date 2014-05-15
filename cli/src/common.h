@@ -59,4 +59,8 @@ NMConnection *nmc_find_connection (GSList *list,
                                    const char *filter_val,
                                    GSList **start);
 
+void nmc_cleanup_readline (void);
+char *nmc_readline (const char *prompt, gboolean add_to_history);
+char *nmc_rl_gen_func_basic (char *text, int state, const char **words);
+
 #endif /* NMC_COMMON_H */
