@@ -2654,6 +2654,7 @@ dhcp4_lease_change (NMDevice *self, NMIP4Config *config)
 		                    nm_device_get_connection (self),
 		                    self,
 		                    NULL,
+		                    NULL,
 		                    NULL);
 	}
 }
@@ -3101,7 +3102,7 @@ dhcp6_lease_change (NMDevice *device)
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
 	} else {
 		/* Notify dispatcher scripts of new DHCPv6 config */
-		nm_dispatcher_call (DISPATCHER_ACTION_DHCP6_CHANGE, connection, device, NULL, NULL);
+		nm_dispatcher_call (DISPATCHER_ACTION_DHCP6_CHANGE, connection, device, NULL, NULL, NULL);
 	}
 }
 
@@ -4560,6 +4561,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 		                    nm_device_get_connection (self),
 		                    self,
 		                    NULL,
+		                    NULL,
 		                    NULL);
 	}
 
@@ -4653,6 +4655,7 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 			nm_dispatcher_call (DISPATCHER_ACTION_DHCP6_CHANGE,
 			                    nm_device_get_connection (self),
 			                    self,
+			                    NULL,
 			                    NULL,
 			                    NULL);
 		}
@@ -6635,7 +6638,7 @@ nm_device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_ACTIVATED:
 		nm_log_info (LOGD_DEVICE, "Activation (%s) successful, device activated.",
 		             nm_device_get_iface (device));
-		nm_dispatcher_call (DISPATCHER_ACTION_UP, nm_act_request_get_connection (req), device, NULL, NULL);
+		nm_dispatcher_call (DISPATCHER_ACTION_UP, nm_act_request_get_connection (req), device, NULL, NULL, NULL);
 		break;
 	case NM_DEVICE_STATE_FAILED:
 		connection = nm_device_get_connection (device);
@@ -6685,7 +6688,7 @@ nm_device_state_changed (NMDevice *device,
 		delete_on_deactivate_unschedule (device);
 
 	if (old_state == NM_DEVICE_STATE_ACTIVATED)
-		nm_dispatcher_call (DISPATCHER_ACTION_DOWN, nm_act_request_get_connection (req), device, NULL, NULL);
+		nm_dispatcher_call (DISPATCHER_ACTION_DOWN, nm_act_request_get_connection (req), device, NULL, NULL, NULL);
 
 	/* IP-related properties are only valid when the device has IP configuration.
 	 * If it no longer does, ensure their change notifications are emitted.

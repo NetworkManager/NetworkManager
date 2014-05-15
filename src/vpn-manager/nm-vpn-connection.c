@@ -341,6 +341,7 @@ _set_vpn_state (NMVPNConnection *connection,
 		                        priv->ip4_config,
 		                        priv->ip6_config,
 		                        NULL,
+		                        NULL,
 		                        NULL);
 		break;
 	case STATE_DEACTIVATING:
@@ -355,6 +356,7 @@ _set_vpn_state (NMVPNConnection *connection,
 			                        priv->connection,
 			                        parent_dev,
 			                        priv->ip_iface,
+			                        NULL,
 			                        NULL,
 			                        NULL,
 			                        NULL,

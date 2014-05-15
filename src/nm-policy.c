@@ -326,7 +326,7 @@ _set_hostname (NMPolicy *policy,
 	nm_dns_manager_set_hostname (priv->dns_manager, priv->cur_hostname);
 
 	if (set_system_hostname (priv->cur_hostname, msg))
-		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL);
+		nm_dispatcher_call (DISPATCHER_ACTION_HOSTNAME, NULL, NULL, NULL, NULL, NULL);
 }
 
 static void
