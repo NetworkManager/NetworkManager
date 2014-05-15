@@ -184,58 +184,37 @@ nm_vpn_manager_deactivate_connection (NMVPNManager *self,
 	return success;
 }
 
-static char *
-service_name_from_file (const char *path)
-{
-	GKeyFile *kf = NULL;
-	char *service_name = NULL;
-
-	g_return_val_if_fail (g_path_is_absolute (path), NULL);
-
-	if (!g_str_has_suffix (path, ".name"))
-		return NULL;
-
-	kf = g_key_file_new ();
-	if (g_key_file_load_from_file (kf, path, G_KEY_FILE_NONE, NULL))
-		service_name = g_key_file_get_string (kf, VPN_CONNECTION_GROUP, "service", NULL);
-
-	g_key_file_free (kf);
-	return service_name;
-}
-
 static void
 try_add_service (NMVPNManager *self, const char *namefile)
 {
 	NMVPNManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (self);
 	NMVPNService *service = NULL;
+	GHashTableIter iter;
 	GError *error = NULL;
 	const char *service_name;
-	char *tmp;
 
 	g_return_if_fail (g_path_is_absolute (namefile));
 
 	/* Make sure we don't add dupes */
-	tmp = service_name_from_file (namefile);
-	if (tmp)
-		service = g_hash_table_lookup (priv->services, tmp);
-	g_free (tmp);
-	if (service)
-		return;
+	g_hash_table_iter_init (&iter, priv->services);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &service)) {
+		if (g_strcmp0 (namefile, nm_vpn_service_get_name_file (service)) == 0)
+			return;
+	}
 
-	/* New service, add it */
+	/* New service */
 	service = nm_vpn_service_new (namefile, &error);
-	if (!service) {
+	if (service) {
+		service_name = nm_vpn_service_get_dbus_service (service);
+		g_hash_table_insert (priv->services, (char *) service_name, service);
+		nm_log_info (LOGD_VPN, "VPN: loaded %s", service_name);
+	} else {
 		nm_log_warn (LOGD_VPN, "failed to load VPN service file %s: (%d) %s",
 		             namefile,
 		             error ? error->code : -1,
 		             error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
-		return;
 	}
-
-	service_name = nm_vpn_service_get_dbus_service (service);
-	g_hash_table_insert (priv->services, (char *) service_name, service);
-	nm_log_info (LOGD_VPN, "VPN: loaded %s", service_name);
 }
 
 static void

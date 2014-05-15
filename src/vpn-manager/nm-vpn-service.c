@@ -52,6 +52,8 @@ typedef struct {
 
 #define NM_VPN_SERVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_SERVICE, NMVPNServicePrivate))
 
+#define VPN_CONNECTION_GROUP "VPN Connection"
+
 NMVPNService *
 nm_vpn_service_new (const char *namefile, GError **error)
 {
