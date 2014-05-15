@@ -5430,7 +5430,7 @@ gen_compat_devices (char *text, int state)
 	compatible_devices = g_new (const char *, devices->len + 1);
 	for (i = 0; i < devices->len; i++) {
 		NMDevice *dev = g_ptr_array_index (devices, i);
-		const char *ifname = nm_device_get_ip_iface (dev);
+		const char *ifname = nm_device_get_iface (dev);
 		NMDevice *device = NULL;
 		const char *spec_object = NULL;
 
