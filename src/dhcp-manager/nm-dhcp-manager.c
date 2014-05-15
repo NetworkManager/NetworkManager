@@ -339,43 +339,36 @@ get_client_type (const char *client, GError **error)
 	return G_TYPE_INVALID;
 }
 
-#define REMOVE_ID_TAG "remove-id"
-#define TIMEOUT_ID_TAG "timeout-id"
+static void client_state_changed (NMDHCPClient *client, NMDhcpState state, NMDHCPManager *self);
 
 static void
 remove_client (NMDHCPManager *self, NMDHCPClient *client)
 {
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
-	guint id;
-
-	id = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (client), REMOVE_ID_TAG));
-	if (id)
-		g_signal_handler_disconnect (client, id);
-
-	id = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (client), TIMEOUT_ID_TAG));
-	if (id)
-		g_signal_handler_disconnect (client, id);
+	g_signal_handlers_disconnect_by_func (client, remove_client, self);
+	g_signal_handlers_disconnect_by_func (client, client_state_changed, self);
 
 	/* Stopping the client is left up to the controlling device
 	 * explicitly since we may want to quit NetworkManager but not terminate
 	 * the DHCP client.
 	 */
 
-	g_hash_table_remove (priv->clients, client);
+	g_hash_table_remove (NM_DHCP_MANAGER_GET_PRIVATE (self)->clients, client);
+}
+
+static void
+client_state_changed (NMDHCPClient *client, NMDhcpState state, NMDHCPManager *self)
+{
+	if (state == NM_DHCP_STATE_TIMEOUT)
+		remove_client (self, client);
 }
 
 static void
 add_client (NMDHCPManager *self, NMDHCPClient *client)
 {
 	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
-	guint id;
 
-	id = g_signal_connect_swapped (client, NM_DHCP_CLIENT_SIGNAL_REMOVE, G_CALLBACK (remove_client), self);
-	g_object_set_data (G_OBJECT (client), REMOVE_ID_TAG, GUINT_TO_POINTER (id));
-
-	id = g_signal_connect_swapped (client, NM_DHCP_CLIENT_SIGNAL_TIMEOUT, G_CALLBACK (remove_client), self);
-	g_object_set_data (G_OBJECT (client), TIMEOUT_ID_TAG, GUINT_TO_POINTER (id));
-
+	g_signal_connect_swapped (client, NM_DHCP_CLIENT_SIGNAL_REMOVE, G_CALLBACK (remove_client), self);
+	g_signal_connect (client, NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED, G_CALLBACK (client_state_changed), self);
 	g_hash_table_insert (priv->clients, client, g_object_ref (client));
 }
 

@@ -241,7 +241,6 @@ typedef struct {
 	/* DHCPv4 tracking */
 	NMDHCPClient *  dhcp4_client;
 	gulong          dhcp4_state_sigid;
-	gulong          dhcp4_timeout_sigid;
 	NMDHCP4Config * dhcp4_config;
 	NMIP4Config *   vpn4_config;  /* routes added by a VPN which uses this device */
 
@@ -279,7 +278,6 @@ typedef struct {
 	NMDHCPClient *  dhcp6_client;
 	NMRDiscDHCPLevel dhcp6_mode;
 	gulong          dhcp6_state_sigid;
-	gulong          dhcp6_timeout_sigid;
 	NMDHCP6Config * dhcp6_config;
 	/* IP6 config from DHCP */
 	NMIP6Config *   dhcp6_ip6_config;
@@ -2591,11 +2589,6 @@ dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 			priv->dhcp4_state_sigid = 0;
 		}
 
-		if (priv->dhcp4_timeout_sigid) {
-			g_signal_handler_disconnect (priv->dhcp4_client, priv->dhcp4_timeout_sigid);
-			priv->dhcp4_timeout_sigid = 0;
-		}
-
 		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP4, FALSE);
 
 		if (stop)
@@ -2738,6 +2731,7 @@ dhcp4_state_changed (NMDHCPClient *client,
 
 		break;
 	case NM_DHCP_STATE_TIMEOUT:
+		nm_dhcp_client_stop (client, FALSE);
 		dhcp4_fail (device, TRUE);
 		break;
 	case NM_DHCP_STATE_DONE:
@@ -2748,18 +2742,6 @@ dhcp4_state_changed (NMDHCPClient *client,
 	default:
 		break;
 	}
-}
-
-static void
-dhcp4_timeout (NMDHCPClient *client, gpointer user_data)
-{
-	NMDevice *device = NM_DEVICE (user_data);
-
-	g_return_if_fail (nm_device_get_act_request (device) != NULL);
-	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == FALSE);
-
-	nm_dhcp_client_stop (client, FALSE);
-	dhcp4_fail (device, TRUE);
 }
 
 static NMActStageReturn
@@ -2807,10 +2789,6 @@ dhcp4_start (NMDevice *self,
 	                                            NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
 	                                            G_CALLBACK (dhcp4_state_changed),
 	                                            self);
-	priv->dhcp4_timeout_sigid = g_signal_connect (priv->dhcp4_client,
-	                                              NM_DHCP_CLIENT_SIGNAL_TIMEOUT,
-	                                              G_CALLBACK (dhcp4_timeout),
-	                                              self);
 
 	nm_device_add_pending_action (self, PENDING_ACTION_DHCP4, TRUE);
 
@@ -3034,11 +3012,6 @@ dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
 			priv->dhcp6_state_sigid = 0;
 		}
 
-		if (priv->dhcp6_timeout_sigid) {
-			g_signal_handler_disconnect (priv->dhcp6_client, priv->dhcp6_timeout_sigid);
-			priv->dhcp6_timeout_sigid = 0;
-		}
-
 		nm_device_remove_pending_action (self, PENDING_ACTION_DHCP6, FALSE);
 
 		if (stop)
@@ -3145,6 +3118,26 @@ dhcp6_fail (NMDevice *device, gboolean timeout)
 }
 
 static void
+dhcp6_timeout (NMDevice *self, NMDHCPClient *client)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_dhcp_client_stop (client, FALSE);
+	if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_MANAGED)
+		dhcp6_fail (self, TRUE);
+	else {
+		/* not a hard failure; just live with the RA info */
+		nm_dhcp6_config_reset (priv->dhcp6_config);
+		if (priv->dhcp6_ip6_config)
+			g_object_unref (priv->dhcp6_ip6_config);
+		priv->dhcp6_ip6_config = NULL;
+
+		if (priv->ip6_state == IP_CONF)
+			nm_device_activate_schedule_ip6_config_result (self);
+	}
+}
+
+static void
 dhcp6_state_changed (NMDHCPClient *client,
                      NMDhcpState state,
                      gpointer user_data)
@@ -3182,7 +3175,7 @@ dhcp6_state_changed (NMDHCPClient *client,
 			dhcp6_lease_change (device);
 		break;
 	case NM_DHCP_STATE_TIMEOUT:
-		dhcp6_fail (device, TRUE);
+		dhcp6_timeout (device, client);
 		break;
 	case NM_DHCP_STATE_DONE:
 		/* In IPv6 info-only mode, the client doesn't handle leases so it
@@ -3198,30 +3191,6 @@ dhcp6_state_changed (NMDHCPClient *client,
 		break;
 	default:
 		break;
-	}
-}
-
-static void
-dhcp6_timeout (NMDHCPClient *client, gpointer user_data)
-{
-	NMDevice *device = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-
-	g_return_if_fail (nm_device_get_act_request (device) != NULL);
-	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == TRUE);
-
-	nm_dhcp_client_stop (client, FALSE);
-	if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_MANAGED)
-		dhcp6_fail (device, TRUE);
-	else {
-		/* not a hard failure; just live with the RA info */
-		nm_dhcp6_config_reset (priv->dhcp6_config);
-		if (priv->dhcp6_ip6_config)
-			g_object_unref (priv->dhcp6_ip6_config);
-		priv->dhcp6_ip6_config = NULL;
-
-		if (priv->ip6_state == IP_CONF)
-			nm_device_activate_schedule_ip6_config_result (device);
 	}
 }
 
@@ -3277,10 +3246,6 @@ dhcp6_start (NMDevice *self,
 		                                            NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
 		                                            G_CALLBACK (dhcp6_state_changed),
 		                                            self);
-		priv->dhcp6_timeout_sigid = g_signal_connect (priv->dhcp6_client,
-		                                              NM_DHCP_CLIENT_SIGNAL_TIMEOUT,
-		                                              G_CALLBACK (dhcp6_timeout),
-		                                              self);
 
 		s_ip6 = nm_connection_get_setting_ip6_config (connection);
 		if (!nm_setting_ip6_config_get_may_fail (s_ip6) ||

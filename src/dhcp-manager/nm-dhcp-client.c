@@ -48,7 +48,7 @@ typedef struct {
 	pid_t        pid;
 	guint        timeout_id;
 	guint        watch_id;
-	guint32      remove_id;
+	guint        remove_id;
 	GHashTable * options;
 	gboolean     info_only;
 
@@ -60,7 +60,6 @@ G_DEFINE_TYPE_EXTENDED (NMDHCPClient, nm_dhcp_client, G_TYPE_OBJECT, G_TYPE_FLAG
 
 enum {
 	SIGNAL_STATE_CHANGED,
-	SIGNAL_TIMEOUT,
 	SIGNAL_REMOVE,
 	LAST_SIGNAL
 };
@@ -175,21 +174,6 @@ stop (NMDHCPClient *self, gboolean release, const GByteArray *duid)
 }
 
 static gboolean
-daemon_timeout (gpointer user_data)
-{
-	NMDHCPClient *self = NM_DHCP_CLIENT (user_data);
-	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
-
-	if (priv->ipv6) {
-		nm_log_warn (LOGD_DHCP6, "(%s): DHCPv6 request timed out.", priv->iface);
-	} else {
-		nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 request timed out.", priv->iface);
-	}
-	g_signal_emit (G_OBJECT (self), signals[SIGNAL_TIMEOUT], 0);
-	return FALSE;
-}
-
-static gboolean
 signal_remove (gpointer user_data)
 {
 	NMDHCPClient *self = NM_DHCP_CLIENT (user_data);
@@ -221,6 +205,21 @@ dhcp_client_set_state (NMDHCPClient *self,
 				priv->remove_id = g_timeout_add_seconds (5, signal_remove, self);
 		}
 	}
+}
+
+static gboolean
+daemon_timeout (gpointer user_data)
+{
+	NMDHCPClient *self = NM_DHCP_CLIENT (user_data);
+	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+
+	priv->timeout_id = 0;
+	nm_log_warn (priv->ipv6 ? LOGD_DHCP6 : LOGD_DHCP4,
+	             "(%s): DHCPv%c request timed out.",
+	             priv->iface,
+	             priv->ipv6 ? '6' : '4');
+	dhcp_client_set_state (self, NM_DHCP_STATE_TIMEOUT, TRUE, FALSE);
+	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -1601,15 +1600,6 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 					  G_STRUCT_OFFSET (NMDHCPClientClass, state_changed),
 					  NULL, NULL, NULL,
 					  G_TYPE_NONE, 1, G_TYPE_UINT);
-
-	signals[SIGNAL_TIMEOUT] =
-		g_signal_new (NM_DHCP_CLIENT_SIGNAL_TIMEOUT,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDHCPClientClass, timeout),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__VOID,
-					  G_TYPE_NONE, 0);
 
 	signals[SIGNAL_REMOVE] =
 		g_signal_new (NM_DHCP_CLIENT_SIGNAL_REMOVE,

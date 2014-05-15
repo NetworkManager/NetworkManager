@@ -42,7 +42,6 @@
 #define NM_DHCP_CLIENT_PRIORITY  "priority"
 #define NM_DHCP_CLIENT_TIMEOUT   "timeout"
 
-#define NM_DHCP_CLIENT_SIGNAL_TIMEOUT       "timeout"
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
 #define NM_DHCP_CLIENT_SIGNAL_REMOVE        "remove"
 
@@ -93,7 +92,6 @@ typedef struct {
 
 	/* Signals */
 	void (*state_changed) (NMDHCPClient *self, NMDhcpState state);
-	void (*timeout)       (NMDHCPClient *self);
 	void (*remove)        (NMDHCPClient *self);
 } NMDHCPClientClass;
 
