@@ -110,7 +110,7 @@ fi
 
 if [[ "x$CHANGELOG" == x ]]; then
     cat <<EOF > "$TEMP/SOURCES/CHANGELOG"
-* $(LOCALE= date '+%a %b %d %Y') $USERNAME - %{version}-%{release_version}%{snapshot}.%{git_sha}
+* $(LC_TIME=C date '+%a %b %d %Y') $USERNAME - %{version}-%{release_version}%{snapshot}.%{git_sha}
 - Test build of NetworkManager ($DATE, $UUID)
 $(git log -n20 --date=local --format='- %h %s [%an] (%ci)')
 - ...
