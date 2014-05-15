@@ -1712,8 +1712,8 @@ nm_platform_ip6_route_get_all (int ifindex, gboolean include_default)
 
 gboolean
 nm_platform_ip4_route_add (int ifindex,
-		in_addr_t network, int plen,
-		in_addr_t gateway, int metric, int mss)
+                           in_addr_t network, int plen,
+                           in_addr_t gateway, int metric, int mss)
 {
 	reset_error ();
 
@@ -1740,7 +1740,8 @@ nm_platform_ip4_route_add (int ifindex,
 
 gboolean
 nm_platform_ip6_route_add (int ifindex,
-		struct in6_addr network, int plen, struct in6_addr gateway, int metric, int mss)
+                           struct in6_addr network, int plen, struct in6_addr gateway,
+                           int metric, int mss)
 {
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (0 <= plen && plen <= 128, FALSE);
@@ -1776,8 +1777,7 @@ nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metr
 }
 
 gboolean
-nm_platform_ip6_route_delete (int ifindex,
-		struct in6_addr network, int plen, int metric)
+nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, int metric)
 {
 	reset_error ();
 

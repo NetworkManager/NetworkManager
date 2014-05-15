@@ -3315,7 +3315,9 @@ clear_host_address (int family, const void *network, int plen, void *dst)
 }
 
 static struct nl_object *
-build_rtnl_route (int family, int ifindex, gconstpointer network, int plen, gconstpointer gateway, int metric, int mss)
+build_rtnl_route (int family, int ifindex,
+                  gconstpointer network, int plen, gconstpointer gateway,
+                  int metric, int mss)
 {
 	guint32 network_clean[4];
 	struct rtnl_route *rtnlroute;
@@ -3353,13 +3355,17 @@ build_rtnl_route (int family, int ifindex, gconstpointer network, int plen, gcon
 }
 
 static gboolean
-ip4_route_add (NMPlatform *platform, int ifindex, in_addr_t network, int plen, in_addr_t gateway, int metric, int mss)
+ip4_route_add (NMPlatform *platform, int ifindex,
+               in_addr_t network, int plen, in_addr_t gateway,
+               int metric, int mss)
 {
 	return add_object (platform, build_rtnl_route (AF_INET, ifindex, &network, plen, &gateway, metric, mss));
 }
 
 static gboolean
-ip6_route_add (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, struct in6_addr gateway, int metric, int mss)
+ip6_route_add (NMPlatform *platform, int ifindex,
+               struct in6_addr network, int plen, struct in6_addr gateway,
+               int metric, int mss)
 {
 	return add_object (platform, build_rtnl_route (AF_INET6, ifindex, &network, plen, &gateway, metric, mss));
 }

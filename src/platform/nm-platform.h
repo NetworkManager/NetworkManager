@@ -429,9 +429,11 @@ typedef struct {
 	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, gboolean include_default);
 	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, gboolean include_default);
 	gboolean (*ip4_route_add) (NMPlatform *, int ifindex,
-	                           in_addr_t network, int plen, in_addr_t gateway, int prio, int mss);
+	                           in_addr_t network, int plen, in_addr_t gateway,
+	                           int prio, int mss);
 	gboolean (*ip6_route_add) (NMPlatform *, int ifindex,
-	                           struct in6_addr network, int plen, struct in6_addr gateway, int prio, int mss);
+	                           struct in6_addr network, int plen, struct in6_addr gateway,
+	                           int prio, int mss);
 	gboolean (*ip4_route_delete) (NMPlatform *, int ifindex, in_addr_t network, int plen, int metric);
 	gboolean (*ip6_route_delete) (NMPlatform *, int ifindex, struct in6_addr network, int plen, int metric);
 	gboolean (*ip4_route_exists) (NMPlatform *, int ifindex, in_addr_t network, int plen, int metric);
@@ -571,9 +573,11 @@ GArray *nm_platform_ip4_route_get_all (int ifindex, gboolean include_default);
 GArray *nm_platform_ip6_route_get_all (int ifindex, gboolean include_default);
 gboolean nm_platform_route_set_metric (int ifindex, int metric);
 gboolean nm_platform_ip4_route_add (int ifindex,
-                                    in_addr_t network, int plen, in_addr_t gateway, int metric, int mss);
+                                    in_addr_t network, int plen, in_addr_t gateway,
+                                    int metric, int mss);
 gboolean nm_platform_ip6_route_add (int ifindex,
-                                    struct in6_addr network, int plen, struct in6_addr gateway, int metric, int mss);
+                                    struct in6_addr network, int plen, struct in6_addr gateway,
+                                    int metric, int mss);
 gboolean nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metric);
 gboolean nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, int metric);
 gboolean nm_platform_ip4_route_exists (int ifindex, in_addr_t network, int plen, int metric);
