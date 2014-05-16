@@ -1607,21 +1607,13 @@ nm_vpn_connection_get_ip6_internal_gateway (NMVPNConnection *connection)
 }
 
 void
-nm_vpn_connection_fail (NMVPNConnection *connection,
+nm_vpn_connection_stop (NMVPNConnection *connection,
+                        gboolean fail,
                         NMVPNConnectionStateReason reason)
 {
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
 
-	_set_vpn_state (connection, STATE_FAILED, reason);
-}
-
-void
-nm_vpn_connection_disconnect (NMVPNConnection *connection,
-                              NMVPNConnectionStateReason reason)
-{
-	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
-
-	_set_vpn_state (connection, STATE_DISCONNECTED, reason);
+	_set_vpn_state (connection, fail ? STATE_FAILED : STATE_DISCONNECTED, reason);
 }
 
 gboolean
@@ -1661,7 +1653,7 @@ plugin_need_secrets_cb  (DBusGProxy *proxy, DBusGProxyCall *call, void *user_dat
 		            priv->secrets_idx + 1,
 		            g_quark_to_string (error->domain),
 		            error->message);
-		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
+		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 		g_error_free (error);
 		return;
 	}
@@ -1673,7 +1665,7 @@ plugin_need_secrets_cb  (DBusGProxy *proxy, DBusGProxyCall *call, void *user_dat
 			nm_log_err (LOGD_VPN, "(%s/%s) final secrets request failed to provide sufficient secrets",
 			            nm_connection_get_uuid (priv->connection),
 			            nm_connection_get_id (priv->connection));
-			nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
+			_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 		} else {
 			nm_log_dbg (LOGD_VPN, "(%s/%s) service indicated additional secrets required",
 			            nm_connection_get_uuid (priv->connection),
@@ -1705,7 +1697,7 @@ plugin_new_secrets_cb  (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data
 		            nm_connection_get_id (priv->connection),
 		            g_quark_to_string (error->domain),
 		            error->message);
-		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
+		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 		g_error_free (error);
 	}
 }
@@ -1730,7 +1722,7 @@ get_secrets_cb (NMSettingsConnection *connection,
 	if (error) {
 		nm_log_err (LOGD_VPN, "Failed to request VPN secrets #%d: (%d) %s",
 		            priv->secrets_idx + 1, error->code, error->message);
-		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
+		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 	} else {
 		/* Cache the username for later */
 		if (agent_username) {
@@ -1814,7 +1806,7 @@ get_secrets (NMVPNConnection *self,
 			nm_log_err (LOGD_VPN, "failed to request VPN secrets #%d: (%d) %s",
 			            priv->secrets_idx + 1, error->code, error->message);
 		}
-		nm_vpn_connection_fail (self, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
+		_set_vpn_state (self, STATE_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 		g_clear_error (&error);
 	}
 }

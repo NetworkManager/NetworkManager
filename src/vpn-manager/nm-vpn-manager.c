@@ -136,7 +136,7 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 	existing = find_active_vpn_connection (manager,
 	                                       nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (vpn)));
 	if (existing)
-		nm_vpn_connection_disconnect (vpn, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
+		nm_vpn_connection_stop (vpn, FALSE, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
 
 	return nm_vpn_service_activate (service, vpn, error);
 }

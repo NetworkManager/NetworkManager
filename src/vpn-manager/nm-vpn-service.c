@@ -140,10 +140,7 @@ nm_vpn_service_connections_stop (NMVPNService *service,
 		NMVPNConnection *vpn = NM_VPN_CONNECTION (iter->data);
 
 		g_signal_handlers_disconnect_by_func (vpn, G_CALLBACK (connection_vpn_state_changed), service);
-		if (fail)
-			nm_vpn_connection_fail (vpn, reason);
-		else
-			nm_vpn_connection_disconnect (vpn, reason);
+		nm_vpn_connection_stop (vpn, fail, reason);
 		g_object_unref (vpn);
 	}
 	g_clear_pointer (&priv->connections, g_slist_free);

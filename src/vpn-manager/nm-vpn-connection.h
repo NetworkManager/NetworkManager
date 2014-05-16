@@ -77,9 +77,8 @@ const char *         nm_vpn_connection_get_banner      (NMVPNConnection *connect
 
 gboolean             nm_vpn_connection_deactivate      (NMVPNConnection *connection,
                                                         NMVPNConnectionStateReason reason);
-void                 nm_vpn_connection_fail            (NMVPNConnection *connection,
-                                                        NMVPNConnectionStateReason reason);
-void                 nm_vpn_connection_disconnect      (NMVPNConnection *connection,
+void                 nm_vpn_connection_stop            (NMVPNConnection *connection,
+                                                        gboolean fail,
                                                         NMVPNConnectionStateReason reason);
 
 NMIP4Config *        nm_vpn_connection_get_ip4_config  (NMVPNConnection *connection);
