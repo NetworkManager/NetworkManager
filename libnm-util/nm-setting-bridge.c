@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
+#include <linux/if_ether.h>
 
 #include "nm-setting-bridge.h"
 #include "nm-param-spec-specialized.h"
@@ -76,6 +77,7 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BRIDGE)
 
 typedef struct {
 	char *   interface_name;
+	GByteArray *mac_address;
 	gboolean stp;
 	guint16  priority;
 	guint16  forward_delay;
@@ -87,6 +89,7 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_INTERFACE_NAME,
+	PROP_MAC_ADDRESS,
 	PROP_STP,
 	PROP_PRIORITY,
 	PROP_FORWARD_DELAY,
@@ -125,6 +128,22 @@ nm_setting_bridge_get_interface_name (NMSettingBridge *setting)
 	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), 0);
 
 	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->interface_name;
+}
+
+/**
+ * nm_setting_bridge_get_mac_address:
+ * @setting: the #NMSettingBridge
+ *
+ * Returns: the #NMSettingBridge:mac-address property of the setting
+ *
+ * Since: 0.9.10
+ **/
+const GByteArray *
+nm_setting_bridge_get_mac_address (NMSettingBridge *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), NULL);
+
+	return NM_SETTING_BRIDGE_GET_PRIVATE (setting)->mac_address;
 }
 
 /**
@@ -280,6 +299,15 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
+	if (priv->mac_address && priv->mac_address->len != ETH_ALEN) {
+		g_set_error_literal (error,
+		                     NM_SETTING_BRIDGE_ERROR,
+		                     NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY,
+		                     _("is not a valid MAC address"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BRIDGE_SETTING_NAME, NM_SETTING_BRIDGE_MAC_ADDRESS);
+		return FALSE;
+	}
+
 	if (!check_range (priv->forward_delay,
 	                  BR_MIN_FORWARD_DELAY,
 	                  BR_MAX_FORWARD_DELAY,
@@ -331,6 +359,9 @@ finalize (GObject *object)
 
 	g_free (priv->interface_name);
 
+	if (priv->mac_address)
+		g_byte_array_free (priv->mac_address, TRUE);
+
 	G_OBJECT_CLASS (nm_setting_bridge_parent_class)->finalize (object);
 }
 
@@ -344,6 +375,11 @@ set_property (GObject *object, guint prop_id,
 	case PROP_INTERFACE_NAME:
 		g_free (priv->interface_name);
 		priv->interface_name = g_value_dup_string (value);
+		break;
+	case PROP_MAC_ADDRESS:
+		if (priv->mac_address)
+			g_byte_array_free (priv->mac_address, TRUE);
+		priv->mac_address = g_value_dup_boxed (value);
 		break;
 	case PROP_STP:
 		priv->stp = g_value_get_boolean (value);
@@ -379,6 +415,9 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_INTERFACE_NAME:
 		g_value_set_string (value, nm_setting_bridge_get_interface_name (setting));
+		break;
+	case PROP_MAC_ADDRESS:
+		g_value_set_boxed (value, nm_setting_bridge_get_mac_address (setting));
 		break;
 	case PROP_STP:
 		g_value_set_boolean (value, priv->stp);
@@ -434,6 +473,23 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                      "The name of the virtual in-kernel bridging network interface",
 		                      NULL,
 		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
+
+	/**
+	 * NMSettingBridge:mac-address:
+	 *
+	 * If specified, the MAC address of bridge. When creating a new bridge, this MAC address
+	 * will be set. When matching an existing (outside NetworkManager created) bridge, this
+	 * MAC address must match.
+	 *
+	 * Since: 0.9.10
+	 **/
+	g_object_class_install_property
+	    (object_class, PROP_MAC_ADDRESS,
+	     _nm_param_spec_specialized (NM_SETTING_BRIDGE_MAC_ADDRESS,
+	                          "MAC Address",
+	                          "The MAC address of the bridge",
+	                          DBUS_TYPE_G_UCHAR_ARRAY,
+	                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
 	/**
 	 * NMSettingBridge:stp:
