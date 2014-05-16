@@ -284,12 +284,16 @@ nm_vpn_service_activate (NMVPNService *service,
 	return TRUE;
 }
 
-const GSList *
-nm_vpn_service_get_active_connections (NMVPNService *service)
+NMVPNConnection *
+nm_vpn_service_get_vpn_for_connection (NMVPNService *service, NMConnection *connection)
 {
-	g_return_val_if_fail (NM_IS_VPN_SERVICE (service), NULL);
+	GSList *iter;
 
-	return NM_VPN_SERVICE_GET_PRIVATE (service)->connections;
+	for (iter = NM_VPN_SERVICE_GET_PRIVATE (service)->connections; iter; iter = iter->next) {
+		if (nm_vpn_connection_get_connection (NM_VPN_CONNECTION (iter->data)) == connection)
+			return NM_VPN_CONNECTION (iter->data);
+	}
+	return NULL;
 }
 
 static void

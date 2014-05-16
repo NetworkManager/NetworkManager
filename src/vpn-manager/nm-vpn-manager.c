@@ -80,25 +80,15 @@ find_active_vpn_connection (NMVPNManager *self, NMConnection *connection)
 {
 	NMVPNManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (self);
 	GHashTableIter iter;
-	gpointer data;
-	const GSList *active, *aiter;
+	NMVPNService *service;
 	NMVPNConnection *found = NULL;
 
 	g_return_val_if_fail (connection, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	g_hash_table_iter_init (&iter, priv->services);
-	while (g_hash_table_iter_next (&iter, NULL, &data) && (found == NULL)) {
-		active = nm_vpn_service_get_active_connections (NM_VPN_SERVICE (data));
-		for (aiter = active; aiter; aiter = g_slist_next (aiter)) {
-			NMVPNConnection *vpn = NM_VPN_CONNECTION (aiter->data);
-
-			if (nm_vpn_connection_get_connection (vpn) == connection) {
-				found = vpn;
-				break;
-			}
-		}
-	}
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &service) && !found)
+		found = nm_vpn_service_get_vpn_for_connection (service, connection);
 	return found;
 }
 
