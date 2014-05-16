@@ -102,6 +102,7 @@ check_connection_compatible (NMDevice *device,
 {
 	const char *iface;
 	NMSettingBridge *s_bridge;
+	const GByteArray *mac_address;
 
 	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
@@ -119,6 +120,21 @@ check_connection_compatible (NMDevice *device,
 		g_set_error (error, NM_BRIDGE_ERROR, NM_BRIDGE_ERROR_CONNECTION_INVALID,
 		             "The bridge connection virtual interface name did not match.");
 		return FALSE;
+	}
+
+	mac_address = nm_setting_bridge_get_mac_address (s_bridge);
+	if (mac_address) {
+		guint hw_len;
+		const guint8 *hw_addr;
+
+		hw_addr = nm_device_get_hw_address (device, &hw_len);
+		if (   !hw_addr
+		    || hw_len != mac_address->len
+		    || memcmp (mac_address->data, hw_addr, hw_len) != 0) {
+			g_set_error (error, NM_BRIDGE_ERROR, NM_BRIDGE_ERROR_CONNECTION_INVALID,
+			             "The bridge mac-address does not match the address of the device.");
+			return FALSE;
+		}
 	}
 
 	return TRUE;
