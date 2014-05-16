@@ -56,9 +56,6 @@ gboolean nm_vpn_service_activate (NMVPNService *service,
                                   NMVPNConnection *vpn,
                                   GError **error);
 
-NMVPNConnection *nm_vpn_service_get_vpn_for_connection (NMVPNService *service,
-                                                        NMConnection *connection);
-
 void nm_vpn_service_connections_stop (NMVPNService *service,
                                       gboolean fail,
                                       NMVPNConnectionStateReason reason);

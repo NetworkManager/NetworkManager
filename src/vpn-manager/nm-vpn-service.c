@@ -43,8 +43,10 @@ typedef struct {
 	char *program;
 	char *namefile;
 
+	NMVPNConnection *active;
+	GSList *pending;
+
 	GPid pid;
-	GSList *connections;
 	guint start_timeout;
 	guint child_watch;
 	gulong name_owner_id;
@@ -53,6 +55,8 @@ typedef struct {
 #define NM_VPN_SERVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_SERVICE, NMVPNServicePrivate))
 
 #define VPN_CONNECTION_GROUP "VPN Connection"
+
+static gboolean start_pending_vpn (NMVPNService *self);
 
 NMVPNService *
 nm_vpn_service_new (const char *namefile, GError **error)
@@ -118,12 +122,17 @@ connection_vpn_state_changed (NMVPNConnection *connection,
                               NMVPNConnectionStateReason reason,
                               gpointer user_data)
 {
-	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (user_data);
+	NMVPNService *self = NM_VPN_SERVICE (user_data);
+	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (self);
 
 	if (new_state == NM_VPN_CONNECTION_STATE_FAILED ||
 	    new_state == NM_VPN_CONNECTION_STATE_DISCONNECTED) {
-		/* Remove the connection from our list */
-		priv->connections = g_slist_remove (priv->connections, connection);
+		g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_vpn_state_changed), self);
+		if (connection == priv->active) {
+			priv->active = NULL;
+			start_pending_vpn (self);
+		} else
+			priv->pending = g_slist_remove (priv->pending, connection);
 		g_object_unref (connection);
 	}
 }
@@ -136,14 +145,22 @@ nm_vpn_service_connections_stop (NMVPNService *service,
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (service);
 	GSList *iter;
 
-	for (iter = priv->connections; iter; iter = iter->next) {
+	/* Just add priv->active to the beginning of priv->pending,
+	 * since we're going to clear priv->pending immediately anyway.
+	 */
+	if (priv->active) {
+		priv->pending = g_slist_prepend (priv->pending, priv->active);
+		priv->active = NULL;
+	}
+
+	for (iter = priv->pending; iter; iter = iter->next) {
 		NMVPNConnection *vpn = NM_VPN_CONNECTION (iter->data);
 
 		g_signal_handlers_disconnect_by_func (vpn, G_CALLBACK (connection_vpn_state_changed), service);
 		nm_vpn_connection_stop (vpn, fail, reason);
 		g_object_unref (vpn);
 	}
-	g_clear_pointer (&priv->connections, g_slist_free);
+	g_clear_pointer (&priv->pending, g_slist_free);
 }
 
 /*
@@ -217,8 +234,6 @@ nm_vpn_service_daemon_exec (NMVPNService *service, GError **error)
 	GError *spawn_error = NULL;
 
 	g_return_val_if_fail (NM_IS_VPN_SERVICE (service), FALSE);
-	g_return_val_if_fail (error != NULL, FALSE);
-	g_return_val_if_fail (*error == NULL, FALSE);
 
 	vpn_argv[0] = priv->program;
 	vpn_argv[1] = NULL;
@@ -250,6 +265,45 @@ nm_vpn_service_daemon_exec (NMVPNService *service, GError **error)
 	return success;
 }
 
+static gboolean
+start_active_vpn (NMVPNService *self, GError **error)
+{
+	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (self);
+
+	if (!priv->active)
+		return TRUE;
+
+	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (), priv->dbus_service)) {
+		/* Just activate the VPN */
+		nm_vpn_connection_activate (priv->active);
+		return TRUE;
+	} else if (priv->start_timeout == 0) {
+		/* VPN service not running, start it */
+		nm_log_info (LOGD_VPN, "Starting VPN service '%s'...", priv->name);
+		return nm_vpn_service_daemon_exec (self, error);
+	}
+
+	/* Already started VPN service, waiting for it to appear on D-Bus */
+	return TRUE;
+}
+
+static gboolean
+start_pending_vpn (NMVPNService *self)
+{
+	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (self);
+
+	g_assert (priv->active == NULL);
+
+	if (!priv->pending)
+		return TRUE;
+
+	/* Make next VPN active */
+	priv->active = g_slist_nth_data (priv->pending, 0);
+	priv->pending = g_slist_remove (priv->pending, priv->active);
+
+	return start_active_vpn (self, NULL);
+}
+
 gboolean
 nm_vpn_service_activate (NMVPNService *service,
                          NMVPNConnection *vpn,
@@ -268,29 +322,20 @@ nm_vpn_service_activate (NMVPNService *service,
 	                  G_CALLBACK (connection_vpn_state_changed),
 	                  service);
 
-	priv->connections = g_slist_prepend (priv->connections, g_object_ref (vpn));
+	/* Queue up the new VPN connection */
+	priv->pending = g_slist_append (priv->pending, g_object_ref (vpn));
 
-	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (), priv->dbus_service))
-		nm_vpn_connection_activate (vpn);
-	else if (priv->start_timeout == 0) {
-		nm_log_info (LOGD_VPN, "Starting VPN service '%s'...", priv->name);
-		if (!nm_vpn_service_daemon_exec (service, error))
-			return FALSE;
+	/* Tell the active VPN to deactivate and wait for it to quit before we
+	 * start the next VPN.  The just-queued VPN will then be started from
+	 * connection_vpn_state_changed().
+	 */
+	if (priv->active) {
+		nm_vpn_connection_deactivate (priv->active, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
+		return TRUE;
 	}
 
-	return TRUE;
-}
-
-NMVPNConnection *
-nm_vpn_service_get_vpn_for_connection (NMVPNService *service, NMConnection *connection)
-{
-	GSList *iter;
-
-	for (iter = NM_VPN_SERVICE_GET_PRIVATE (service)->connections; iter; iter = iter->next) {
-		if (nm_vpn_connection_get_connection (NM_VPN_CONNECTION (iter->data)) == connection)
-			return NM_VPN_CONNECTION (iter->data);
-	}
-	return NULL;
+	/* Otherwise start the next VPN */
+	return start_pending_vpn (service);
 }
 
 static void
@@ -302,9 +347,7 @@ _name_owner_changed (NMDBusManager *mgr,
 {
 	NMVPNService *service = NM_VPN_SERVICE (user_data);
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (service);
-	gboolean old_owner_good;
-	gboolean new_owner_good;
-	GSList *iter;
+	gboolean old_owner_good, new_owner_good, success;
 
 	if (strcmp (name, priv->dbus_service))
 		return;
@@ -319,11 +362,11 @@ _name_owner_changed (NMDBusManager *mgr,
 	new_owner_good = (new && new[0]);
 
 	if (!old_owner_good && new_owner_good) {
-		/* service just appeared */
+		/* service appeared */
 		nm_log_info (LOGD_VPN, "VPN service '%s' appeared; activating connections", priv->name);
-
-		for (iter = priv->connections; iter; iter = iter->next)
-			nm_vpn_connection_activate (NM_VPN_CONNECTION (iter->data));
+		/* Expect success because the VPN service has already appeared */
+		success = start_active_vpn (service, NULL);
+		g_warn_if_fail (success);
 	} else if (old_owner_good && !new_owner_good) {
 		/* service went away */
 		nm_log_info (LOGD_VPN, "VPN service '%s' disappeared", priv->name);

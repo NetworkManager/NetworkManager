@@ -1494,11 +1494,7 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	/* FIXME: remove when VPN activation can be queued */
-	if (priv->vpn_state == STATE_WAITING)
-		_set_vpn_state (connection, STATE_PREPARE, NM_VPN_CONNECTION_STATE_REASON_NONE);
-
-	g_return_if_fail (priv->vpn_state == STATE_PREPARE);
+	_set_vpn_state (connection, STATE_PREPARE, NM_VPN_CONNECTION_STATE_REASON_NONE);
 
 	bus = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
 	priv->proxy = dbus_g_proxy_new_for_name (bus,

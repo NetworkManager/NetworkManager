@@ -75,29 +75,11 @@ get_service_by_namefile (NMVPNManager *self, const char *namefile)
 	return NULL;
 }
 
-static NMVPNConnection *
-find_active_vpn_connection (NMVPNManager *self, NMConnection *connection)
-{
-	NMVPNManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (self);
-	GHashTableIter iter;
-	NMVPNService *service;
-	NMVPNConnection *found = NULL;
-
-	g_return_val_if_fail (connection, NULL);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-
-	g_hash_table_iter_init (&iter, priv->services);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &service) && !found)
-		found = nm_vpn_service_get_vpn_for_connection (service, connection);
-	return found;
-}
-
 gboolean
 nm_vpn_manager_activate_connection (NMVPNManager *manager,
                                     NMVPNConnection *vpn,
                                     GError **error)
 {
-	NMVPNConnection *existing = NULL;
 	NMConnection *connection;
 	NMSettingVPN *s_vpn;
 	NMVPNService *service;
@@ -132,11 +114,6 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 		             service_name);
 		return FALSE;
 	}
-
-	existing = find_active_vpn_connection (manager,
-	                                       nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (vpn)));
-	if (existing)
-		nm_vpn_connection_stop (vpn, FALSE, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
 
 	return nm_vpn_service_activate (service, vpn, error);
 }
