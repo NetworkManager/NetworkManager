@@ -63,8 +63,6 @@ typedef enum {
 } SecretsReq;
 
 typedef struct {
-	gboolean disposed;
-
 	NMConnection *connection;
 
 	guint32 secrets_id;
@@ -1795,38 +1793,26 @@ dispose (GObject *object)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_vpn_connection_parent_class)->dispose (object);
-		return;
-	}
-	priv->disposed = TRUE;
-
-	if (priv->connect_hash)
+	if (priv->connect_hash) {
 		g_hash_table_destroy (priv->connect_hash);
+		priv->connect_hash = NULL;
+	}
 
-	if (priv->ip6_internal_gw)
-		g_free (priv->ip6_internal_gw);
-	if (priv->ip6_external_gw)
-		g_free (priv->ip6_external_gw);
-
-	if (priv->ip4_config)
-		g_object_unref (priv->ip4_config);
-	if (priv->ip6_config)
-		g_object_unref (priv->ip6_config);
-
-	if (priv->connect_timeout)
+	if (priv->connect_timeout) {
 		g_source_remove (priv->connect_timeout);
-
-	if (priv->proxy)
-		g_object_unref (priv->proxy);
+		priv->connect_timeout = 0;
+	}
 
 	if (priv->secrets_id) {
 		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection),
 		                                       priv->secrets_id);
+		priv->secrets_id = 0;
 	}
 
+	g_clear_object (&priv->ip4_config);
+	g_clear_object (&priv->ip6_config);
+	g_clear_object (&priv->proxy);
 	g_clear_object (&priv->connection);
-	g_free (priv->username);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->dispose (object);
 }
@@ -1838,6 +1824,9 @@ finalize (GObject *object)
 
 	g_free (priv->banner);
 	g_free (priv->ip_iface);
+	g_free (priv->username);
+	g_free (priv->ip6_internal_gw);
+	g_free (priv->ip6_external_gw);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->finalize (object);
 }
