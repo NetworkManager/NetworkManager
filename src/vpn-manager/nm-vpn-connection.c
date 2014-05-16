@@ -84,7 +84,9 @@ typedef struct {
 	char *username;
 
 	VpnState vpn_state;
+	guint deactivating_idle_id;
 	NMVPNConnectionStateReason failure_reason;
+
 	DBusGProxy *proxy;
 	GHashTable *connect_hash;
 	guint connect_timeout;
@@ -132,6 +134,10 @@ static void plugin_interactive_secrets_required (DBusGProxy *proxy,
                                                  const char *message,
                                                  const char **secrets,
                                                  gpointer user_data);
+
+static void _set_vpn_state (NMVPNConnection *connection,
+                            VpnState vpn_state,
+                            NMVPNConnectionStateReason reason);
 
 /*********************************************************************/
 
@@ -239,6 +245,28 @@ vpn_cleanup (NMVPNConnection *connection, NMDevice *parent_dev)
 		nm_connection_clear_secrets (priv->connection);
 }
 
+static gboolean
+deactivating_to_disconnected (gpointer user_data)
+{
+	NMVPNConnection *self = NM_VPN_CONNECTION (user_data);
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	priv->deactivating_idle_id = 0;
+	_set_vpn_state (self, STATE_DISCONNECTED, NM_VPN_CONNECTION_STATE_REASON_NONE);
+	return G_SOURCE_REMOVE;
+}
+
+static void
+clear_deactivating_idle (NMVPNConnection *self)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	if (priv->deactivating_idle_id) {
+		g_source_remove (priv->deactivating_idle_id);
+		priv->deactivating_idle_id = 0;
+	}
+}
+
 static void
 _set_vpn_state (NMVPNConnection *connection,
                 VpnState vpn_state,
@@ -274,6 +302,8 @@ _set_vpn_state (NMVPNConnection *connection,
 		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection), priv->secrets_id);
 		priv->secrets_id = 0;
 	}
+
+	clear_deactivating_idle (connection);
 
 	/* The connection gets destroyed by the VPN manager when it enters the
 	 * disconnected/failed state, but we need to keep it around for a bit
@@ -312,6 +342,9 @@ _set_vpn_state (NMVPNConnection *connection,
 		                        priv->ip6_config,
 		                        NULL,
 		                        NULL);
+		break;
+	case STATE_DEACTIVATING:
+		priv->deactivating_idle_id = g_idle_add (deactivating_to_disconnected, connection);
 		break;
 	case STATE_FAILED:
 	case STATE_DISCONNECTED:
@@ -1591,6 +1624,23 @@ nm_vpn_connection_disconnect (NMVPNConnection *connection,
 	_set_vpn_state (connection, STATE_DISCONNECTED, reason);
 }
 
+gboolean
+nm_vpn_connection_deactivate (NMVPNConnection *connection,
+                              NMVPNConnectionStateReason reason)
+{
+	NMVPNConnectionPrivate *priv;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), FALSE);
+
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	if (priv->vpn_state > STATE_UNKNOWN && priv->vpn_state <= STATE_DEACTIVATING) {
+		_set_vpn_state (connection, STATE_DEACTIVATING, reason);
+		success = TRUE;
+	}
+	return success;
+}
+
 /******************************************************************************/
 
 static void
@@ -1837,6 +1887,8 @@ dispose (GObject *object)
 		g_source_remove (priv->connect_timeout);
 		priv->connect_timeout = 0;
 	}
+
+	clear_deactivating_idle (NM_VPN_CONNECTION (object));
 
 	if (priv->secrets_id) {
 		nm_settings_connection_cancel_secrets (NM_SETTINGS_CONNECTION (priv->connection),
