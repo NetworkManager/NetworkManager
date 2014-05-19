@@ -61,7 +61,7 @@ const char * nm_ip6_config_get_dbus_path (const NMIP6Config *config);
 NMIP6Config *nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6ConfigPrivacy use_temporary);
 gboolean nm_ip6_config_commit (const NMIP6Config *config, int ifindex, int priority);
 void nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting);
-void nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *setting);
+NMSetting *nm_ip6_config_create_setting (const NMIP6Config *config);
 
 /* Utility functions */
 void nm_ip6_config_merge (NMIP6Config *dst, const NMIP6Config *src);
