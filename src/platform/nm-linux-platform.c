@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+#include <dlfcn.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 #include <linux/ip.h>
@@ -58,6 +59,15 @@
 #define warning(...) nm_log_warn (LOGD_PLATFORM, __VA_ARGS__)
 #define error(...) nm_log_err (LOGD_PLATFORM, __VA_ARGS__)
 
+
+struct libnl_vtable
+{
+	void *handle;
+
+	int (*f_nl_has_capability) (int capability);
+};
+
+
 typedef struct {
 	struct nl_sock *nlh;
 	struct nl_sock *nlh_event;
@@ -85,6 +95,43 @@ void
 nm_linux_platform_setup (void)
 {
 	nm_platform_setup (NM_TYPE_LINUX_PLATFORM);
+}
+
+/******************************************************************/
+
+static int
+_nl_f_nl_has_capability (int capability)
+{
+	return FALSE;
+}
+
+static struct libnl_vtable *
+_nl_get_vtable ()
+{
+	static struct libnl_vtable vtable;
+
+	if (G_UNLIKELY (!vtable.f_nl_has_capability)) {
+		void *handle;
+
+		handle = dlopen ("libnl-3.so", RTLD_LAZY | RTLD_NOLOAD);
+		if (handle) {
+			vtable.handle = handle;
+			vtable.f_nl_has_capability = dlsym (handle, "nl_has_capability");
+		}
+
+		if (!vtable.f_nl_has_capability)
+			vtable.f_nl_has_capability = &_nl_f_nl_has_capability;
+
+		g_return_val_if_fail (vtable.handle, &vtable);
+	}
+
+	return &vtable;
+}
+
+static gboolean
+_nl_has_capability (int capability)
+{
+	return (_nl_get_vtable ()->f_nl_has_capability) (capability);
 }
 
 /******************************************************************/
@@ -1447,16 +1494,12 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	auto_nl_object struct nl_object *obj_cleanup = obj;
-	auto_nl_object struct nl_object *cached_object = NULL;
-	struct nl_object *object;
+	struct nl_object *object = obj;
 	int object_type;
 	int nle;
 
 	object_type = object_type_from_nl_object (obj);
 	g_return_val_if_fail (object_type != OBJECT_TYPE_UNKNOWN, FALSE);
-
-	cached_object = nm_nl_cache_search (choose_cache_by_type (platform, object_type), obj);
-	object = cached_object ? cached_object : obj;
 
 	switch (object_type) {
 	case OBJECT_TYPE_LINK:
@@ -3280,25 +3323,40 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 {
 	in_addr_t gateway = 0;
 	struct nl_object *route = build_rtnl_route (AF_INET, ifindex, &network, plen, &gateway, metric, 0);
+	uint8_t scope = RT_SCOPE_NOWHERE;
 
 	g_return_val_if_fail (route, FALSE);
 
-	/* When searching for a matching IPv4 route to delete, the kernel
-	 * searches for a matching scope, unless the RTM_DELROUTE message
-	 * specifies RT_SCOPE_NOWHERE (see fib_table_delete()).
-	 *
-	 * However, if we set the scope of @rtnlroute to RT_SCOPE_NOWHERE (or
-	 * leave it unset), rtnl_route_build_msg() will reset the scope to
-	 * rtnl_route_guess_scope() -- which might be the wrong scope.
-	 *
-	 * As a workaround, we set the scope to RT_SCOPE_UNIVERSE, so libnl
-	 * will not overwrite it. But this only works if we guess correctly.
-	 *
-	 * As a better workaround, we don't use @rtnlroute as argument for
-	 * rtnl_route_delete(), but we look into our cache, if we already have
-	 * this route ready.
-	 **/
-	rtnl_route_set_scope ((struct rtnl_route *) route, RT_SCOPE_UNIVERSE);
+	if (!_nl_has_capability (1 /* NL_CAPABILITY_ROUTE_BUILD_MSG_SET_SCOPE */)) {
+		/* When searching for a matching IPv4 route to delete, the kernel
+		 * searches for a matching scope, unless the RTM_DELROUTE message
+		 * specifies RT_SCOPE_NOWHERE (see fib_table_delete()).
+		 *
+		 * However, if we set the scope of @rtnlroute to RT_SCOPE_NOWHERE (or
+		 * leave it unset), rtnl_route_build_msg() will reset the scope to
+		 * rtnl_route_guess_scope() -- which probably guesses wrong.
+		 *
+		 * As a workaround, we look at the cached route and use that scope.
+		 *
+		 * Newer versions of libnl, no longer reset the scope if explicitly set to RT_SCOPE_NOWHERE.
+		 * So, this workaround is only needed unless we have NL_CAPABILITY_ROUTE_BUILD_MSG_SET_SCOPE.
+		 **/
+		struct nl_object *cached_object;
+
+		cached_object = nm_nl_cache_search (choose_cache_by_type (platform, OBJECT_TYPE_IP4_ROUTE), route);
+		if (cached_object) {
+			scope = rtnl_route_get_scope ((struct rtnl_route *) cached_object);
+			nl_object_put (cached_object);
+		}
+
+		if (scope == RT_SCOPE_NOWHERE) {
+			/* If we would set the scope to RT_SCOPE_NOWHERE, libnl would guess the scope.
+			 * But probably it will guess 'link' because we don't set the next hop
+			 * of the route we are about to delete. A better guess is 'global'. */
+			scope = RT_SCOPE_UNIVERSE;
+		}
+	}
+	rtnl_route_set_scope ((struct rtnl_route *) route, scope);
 
 	return delete_object (platform, route);
 }
