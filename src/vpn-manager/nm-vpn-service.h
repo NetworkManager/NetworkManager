@@ -56,8 +56,8 @@ gboolean nm_vpn_service_activate (NMVPNService *service,
                                   NMVPNConnection *vpn,
                                   GError **error);
 
-void nm_vpn_service_connections_stop (NMVPNService *service,
-                                      gboolean fail,
+void nm_vpn_service_stop_connections (NMVPNService *service,
+                                      gboolean quitting,
                                       NMVPNConnectionStateReason reason);
 
 #endif  /* NM_VPN_VPN_SERVICE_H */

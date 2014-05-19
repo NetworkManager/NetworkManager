@@ -186,7 +186,7 @@ vpn_dir_changed (GFileMonitor *monitor,
 			const char *service_name = nm_vpn_service_get_dbus_service (service);
 
 			/* Stop active VPN connections and destroy the service */
-			nm_vpn_service_connections_stop (service, TRUE,
+			nm_vpn_service_stop_connections (service, FALSE,
 			                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 			nm_log_info (LOGD_VPN, "VPN: unloaded %s", service_name);
 			g_hash_table_remove (priv->services, service_name);
@@ -258,6 +258,21 @@ nm_vpn_manager_init (NMVPNManager *self)
 }
 
 static void
+stop_all_services (NMVPNManager *self)
+{
+	NMVPNManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (self);
+	GHashTableIter iter;
+	NMVPNService *service;
+
+	g_hash_table_iter_init (&iter, priv->services);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &service)) {
+		nm_vpn_service_stop_connections (service,
+		                                 TRUE,
+		                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
+	}
+}
+
+static void
 dispose (GObject *object)
 {
 	NMVPNManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE (object);
@@ -270,6 +285,7 @@ dispose (GObject *object)
 	}
 
 	if (priv->services) {
+		stop_all_services (NM_VPN_MANAGER (object));
 		g_hash_table_destroy (priv->services);
 		priv->services = NULL;
 	}

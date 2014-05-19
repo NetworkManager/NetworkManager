@@ -138,8 +138,8 @@ connection_vpn_state_changed (NMVPNConnection *connection,
 }
 
 void
-nm_vpn_service_connections_stop (NMVPNService *service,
-                                 gboolean fail,
+nm_vpn_service_stop_connections (NMVPNService *service,
+                                 gboolean quitting,
                                  NMVPNConnectionStateReason reason)
 {
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (service);
@@ -157,7 +157,8 @@ nm_vpn_service_connections_stop (NMVPNService *service,
 		NMVPNConnection *vpn = NM_VPN_CONNECTION (iter->data);
 
 		g_signal_handlers_disconnect_by_func (vpn, G_CALLBACK (connection_vpn_state_changed), service);
-		nm_vpn_connection_stop (vpn, fail, reason);
+		/* Quitting terminates the VPN cleanly, otherwise failure is assumed */
+		nm_vpn_connection_stop (vpn, quitting ? FALSE : TRUE, reason);
 		g_object_unref (vpn);
 	}
 	g_clear_pointer (&priv->pending, g_slist_free);
@@ -185,7 +186,7 @@ _daemon_exec_timeout (gpointer data)
 
 	nm_log_warn (LOGD_VPN, "VPN service '%s' start timed out", priv->name);
 	priv->start_timeout = 0;
-	nm_vpn_service_connections_stop (self, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT);
+	nm_vpn_service_stop_connections (self, FALSE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT);
 	return G_SOURCE_REMOVE;
 }
 
@@ -218,7 +219,7 @@ nm_vpn_service_daemon_exec (NMVPNService *service, GError **error)
 		             NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_SERVICE_START_FAILED,
 		             "%s", spawn_error ? spawn_error->message : "unknown g_spawn_async() error");
 
-		nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED);
+		nm_vpn_service_stop_connections (service, FALSE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED);
 		if (spawn_error)
 			g_error_free (spawn_error);
 	}
@@ -333,7 +334,7 @@ _name_owner_changed (NMDBusManager *mgr,
 		/* service went away */
 		priv->service_running = FALSE;
 		nm_log_info (LOGD_VPN, "VPN service '%s' disappeared", priv->name);
-		nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
+		nm_vpn_service_stop_connections (service, FALSE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 	}
 }
 
@@ -359,9 +360,9 @@ dispose (GObject *object)
 		priv->start_timeout = 0;
 	}
 
-	nm_vpn_service_connections_stop (NM_VPN_SERVICE (object),
-	                                 FALSE,
-	                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
+	/* VPNService owner is required to stop connections before releasing */
+	g_assert (priv->active == NULL);
+	g_assert (priv->pending == NULL);
 
 	g_signal_handlers_disconnect_by_func (nm_dbus_manager_get (),
 	                                      G_CALLBACK (_name_owner_changed),
