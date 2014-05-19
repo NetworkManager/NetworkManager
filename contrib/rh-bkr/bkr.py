@@ -326,7 +326,7 @@ class UploadFileJenkins(UploadFile):
         self.jid = int(m.group(1))
         self.pattern = m.group(3)
         if not self.pattern:
-            self.pattern = '/NetworkManager(-glib|-tui)?-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-.*\.x86_64\.rpm'
+            self.pattern = '/NetworkManager(-adsl|-bluetooth|-debuginfo|-devel|-glib|-glib-devel|-tui|-wifi|-wwan)?-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-.*\.x86_64\.rpm'
         try:
             re.match(self.pattern, '')
         except:
@@ -439,7 +439,7 @@ class CmdSubmit(CmdBase):
             'WHITEBOARD'        : 'Test NetworkManager',
             'DISTRO_FAMILY'     : 'RedHatEnterpriseLinux7',
             'DISTRO_VARIANT'    : 'Workstation',
-            'DISTRO_NAME'       : 'RHEL-7.0-20140408.n.0',
+            'DISTRO_NAME'       : 'RHEL-7.0-20140502.n.0',
             'DISTRO_METHOD'     : 'nfs',
             'DISTRO_ARCH'       : 'x86_64',
             'TEST_URL'          : 'http://download.eng.brq.redhat.com/scratch/vbenes/NetworkManager-rhel-7.tar.gz',
@@ -531,6 +531,7 @@ class CmdSubmit(CmdBase):
                 m = re.match('.*J:([0-9]+).*', out)
                 if m:
                     print("URL: https://beaker.engineering.redhat.com/jobs/%s" % (m.group(1)))
+                    print("     https://beaker.engineering.redhat.com/jobs/mine");
 
 class CmdHelp(CmdBase):
 

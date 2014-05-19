@@ -27,6 +27,7 @@
 				<system_type value="Machine"/>
 			</hostRequires>
 			<partitions/>
+			<task name="/distribution/install" role="STANDALONE"/>
 			<task name="/distribution/pkginstall" role="STANDALONE">
 				<params>
 					<param name="PKGARGNAME" value="python-setuptools pexpect bash-completion iw net-tools teamd NetworkManager radvd wireshark"/>
