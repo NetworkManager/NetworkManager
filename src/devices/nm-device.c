@@ -1192,14 +1192,15 @@ device_link_changed (NMDevice *device, NMPlatformLink *info)
 		 * to auto-activate on the device.
 		 */
 		nm_device_emit_recheck_auto_activate (device);
-
-		/* Update DHCP, etc, if needed */
-		if (ip_ifname_changed)
-			update_for_ip_ifname_change (device);
 	}
 
 	if (klass->link_changed)
 		klass->link_changed (device, info);
+
+
+	/* Update DHCP, etc, if needed */
+	if (ip_ifname_changed)
+		update_for_ip_ifname_change (device);
 }
 
 static void
