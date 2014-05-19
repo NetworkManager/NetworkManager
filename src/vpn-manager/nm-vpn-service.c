@@ -46,10 +46,8 @@ typedef struct {
 	NMVPNConnection *active;
 	GSList *pending;
 
-	GPid pid;
 	guint start_timeout;
-	guint child_watch;
-	gulong name_owner_id;
+	gboolean service_running;
 } NMVPNServicePrivate;
 
 #define NM_VPN_SERVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_SERVICE, NMVPNServicePrivate))
@@ -89,6 +87,8 @@ nm_vpn_service_new (const char *namefile, GError **error)
 	priv->name = g_key_file_get_string (kf, VPN_CONNECTION_GROUP, "name", error);
 	if (!priv->name)
 		goto error;
+
+	priv->service_running = nm_dbus_manager_name_has_owner (nm_dbus_manager_get (), priv->dbus_service);
 
 	g_key_file_free (kf);
 	return self;
@@ -163,14 +163,8 @@ nm_vpn_service_connections_stop (NMVPNService *service,
 	g_clear_pointer (&priv->pending, g_slist_free);
 }
 
-/*
- * nm_vpn_service_child_setup
- *
- * Set the process group ID of the newly forked process
- *
- */
 static void
-nm_vpn_service_child_setup (gpointer user_data G_GNUC_UNUSED)
+_daemon_setup (gpointer user_data G_GNUC_UNUSED)
 {
 	/* We are in the child process at this point */
 	pid_t pid = getpid ();
@@ -183,38 +177,8 @@ nm_vpn_service_child_setup (gpointer user_data G_GNUC_UNUSED)
 	nm_unblock_posix_signals (NULL);
 }
 
-static void
-vpn_service_watch_cb (GPid pid, gint status, gpointer user_data)
-{
-	NMVPNService *service = NM_VPN_SERVICE (user_data);
-	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (service);
-
-	if (WIFEXITED (status)) {
-		guint err = WEXITSTATUS (status);
-
-		if (err != 0) {
-			nm_log_warn (LOGD_VPN, "VPN service '%s' exited with error: %d",
-			             priv->name, WSTOPSIG (status));
-		}
-	} else if (WIFSTOPPED (status)) {
-		nm_log_warn (LOGD_VPN, "VPN service '%s' stopped unexpectedly with signal %d",
-		             priv->name, WSTOPSIG (status));
-	} else if (WIFSIGNALED (status)) {
-		nm_log_warn (LOGD_VPN, "VPN service '%s' died with signal %d",
-		             priv->name, WTERMSIG (status));
-	} else {
-		nm_log_warn (LOGD_VPN, "VPN service '%s' died from an unknown cause", 
-		             priv->name);
-	}
-
-	priv->pid = 0;
-	priv->child_watch = 0;
-
-	nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
-}
-
 static gboolean
-nm_vpn_service_timeout (gpointer data)
+_daemon_exec_timeout (gpointer data)
 {
 	NMVPNService *self = NM_VPN_SERVICE (data);
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (self);
@@ -222,13 +186,14 @@ nm_vpn_service_timeout (gpointer data)
 	nm_log_warn (LOGD_VPN, "VPN service '%s' start timed out", priv->name);
 	priv->start_timeout = 0;
 	nm_vpn_service_connections_stop (self, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT);
-	return FALSE;
+	return G_SOURCE_REMOVE;
 }
 
 static gboolean
 nm_vpn_service_daemon_exec (NMVPNService *service, GError **error)
 {
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (service);
+	GPid pid;
 	char *vpn_argv[2];
 	gboolean success = FALSE;
 	GError *spawn_error = NULL;
@@ -238,15 +203,11 @@ nm_vpn_service_daemon_exec (NMVPNService *service, GError **error)
 	vpn_argv[0] = priv->program;
 	vpn_argv[1] = NULL;
 
-	success = g_spawn_async (NULL, vpn_argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
-	                         nm_vpn_service_child_setup, NULL, &priv->pid,
-	                         &spawn_error);
+	success = g_spawn_async (NULL, vpn_argv, NULL, 0, _daemon_setup, NULL, &pid, &spawn_error);
 	if (success) {
 		nm_log_info (LOGD_VPN, "VPN service '%s' started (%s), PID %d", 
-		             priv->name, priv->dbus_service, priv->pid);
-
-		priv->child_watch = g_child_watch_add (priv->pid, vpn_service_watch_cb, service);
-		priv->start_timeout = g_timeout_add_seconds (5, nm_vpn_service_timeout, service);
+		             priv->name, priv->dbus_service, pid);
+		priv->start_timeout = g_timeout_add_seconds (5, _daemon_exec_timeout, service);
 	} else {
 		nm_log_warn (LOGD_VPN, "VPN service '%s': could not launch the VPN service. error: (%d) %s.",
 		             priv->name,
@@ -273,7 +234,7 @@ start_active_vpn (NMVPNService *self, GError **error)
 	if (!priv->active)
 		return TRUE;
 
-	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (), priv->dbus_service)) {
+	if (priv->service_running) {
 		/* Just activate the VPN */
 		nm_vpn_connection_activate (priv->active);
 		return TRUE;
@@ -363,12 +324,14 @@ _name_owner_changed (NMDBusManager *mgr,
 
 	if (!old_owner_good && new_owner_good) {
 		/* service appeared */
+		priv->service_running = TRUE;
 		nm_log_info (LOGD_VPN, "VPN service '%s' appeared; activating connections", priv->name);
 		/* Expect success because the VPN service has already appeared */
 		success = start_active_vpn (service, NULL);
 		g_warn_if_fail (success);
 	} else if (old_owner_good && !new_owner_good) {
 		/* service went away */
+		priv->service_running = FALSE;
 		nm_log_info (LOGD_VPN, "VPN service '%s' disappeared", priv->name);
 		nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 	}
@@ -379,12 +342,10 @@ _name_owner_changed (NMDBusManager *mgr,
 static void
 nm_vpn_service_init (NMVPNService *self)
 {
-	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (self);
-
-	priv->name_owner_id = g_signal_connect (nm_dbus_manager_get (),
-	                                        NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
-	                                        G_CALLBACK (_name_owner_changed),
-	                                        self);
+	g_signal_connect (nm_dbus_manager_get (),
+	                  NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
+	                  G_CALLBACK (_name_owner_changed),
+	                  self);
 }
 
 static void
@@ -402,15 +363,9 @@ dispose (GObject *object)
 	                                 FALSE,
 	                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 
-	if (priv->name_owner_id) {
-		g_signal_handler_disconnect (nm_dbus_manager_get (), priv->name_owner_id);
-		priv->name_owner_id = 0;
-	}
-
-	if (priv->child_watch) {
-		g_source_remove (priv->child_watch);
-		priv->child_watch = 0;
-	}
+	g_signal_handlers_disconnect_by_func (nm_dbus_manager_get (),
+	                                      G_CALLBACK (_name_owner_changed),
+	                                      self);
 
 	G_OBJECT_CLASS (nm_vpn_service_parent_class)->dispose (object);
 }
