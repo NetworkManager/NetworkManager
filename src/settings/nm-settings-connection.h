@@ -162,6 +162,9 @@ void nm_settings_connection_set_autoconnect_blocked_reason (NMSettingsConnection
 
 gboolean nm_settings_connection_can_autoconnect (NMSettingsConnection *connection);
 
+void     nm_settings_connection_set_nm_generated (NMSettingsConnection *connection);
+gboolean nm_settings_connection_get_nm_generated (NMSettingsConnection *connection);
+
 G_END_DECLS
 
 #endif /* NM_SETTINGS_CONNECTION_H */

@@ -1572,7 +1572,9 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	            nm_connection_get_id (connection));
 
 	added = nm_settings_add_connection (priv->settings, connection, FALSE, &error);
-	if (!added) {
+	if (added)
+		nm_settings_connection_set_nm_generated (added);
+	else {
 		nm_log_warn (LOGD_SETTINGS, "(%s) Couldn't save generated connection '%s': %s",
 		             nm_device_get_iface (device),
 		             nm_connection_get_id (connection),
