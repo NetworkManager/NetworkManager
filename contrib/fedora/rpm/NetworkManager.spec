@@ -34,11 +34,23 @@
 %global with_wimax 0
 %global with_wwan 1
 
+# WiMAX still supported on <= F19
 %if ! 0%{?rhel} && (! 0%{?fedora} || 0%{?fedora} < 20)
-%ifnarch s390 s390x
-# No wimax or bluetooth on s390
 %global with_wimax 1
 %endif
+
+# Bluetooth requires the WWAN plugin
+%if 0%{?with_bluetooth}
+%global with_wwan 1
+%endif
+
+%ifarch s390 s390x
+# No hardware-based plugins on s390
+%global with_adsl 0
+%global with_bluetooth 0
+%global with_wifi 0
+%global with_wimax 0
+%global with_wwan 0
 %endif
 
 %if 0%{?rhel} || (0%{?fedora} > 19)
@@ -79,7 +91,6 @@ Requires: dbus-glib >= %{dbus_glib_version}
 Requires: glib2 >= %{glib2_version}
 Requires: iproute
 Requires: dhclient >= 12:4.1.0
-Requires: wpa_supplicant >= 1:0.7.3-1
 Requires: libnl3 >= %{libnl3_version}
 Requires: %{name}-glib%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: ppp = %{ppp_version}
@@ -106,7 +117,6 @@ BuildRequires: gobject-introspection-devel >= 0.10.3
 BuildRequires: gettext-devel
 BuildRequires: /usr/bin/autopoint
 BuildRequires: pkgconfig
-BuildRequires: wpa_supplicant
 BuildRequires: libnl3-devel >= %{libnl3_version}
 BuildRequires: perl(XML::Parser)
 BuildRequires: automake autoconf intltool libtool
@@ -129,7 +139,7 @@ BuildRequires: wimax-devel
 BuildRequires: systemd >= 200-3 systemd-devel
 BuildRequires: libsoup-devel
 BuildRequires: libndp-devel >= 1.0
-%if 0%{?rhel} || (0%{?fedora} && 0%{?fedora} > 19)
+%if 0%{?with_wwan} && (0%{?rhel} || (0%{?fedora} && 0%{?fedora} > 19))
 BuildRequires: ModemManager-glib-devel >= 1.0
 %endif
 %if 0%{?with_nmtui}
@@ -166,6 +176,11 @@ Summary: Bluetooth device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: NetworkManager-wwan
+%if 0%{?rhel} || (0%{?fedora} > 19)
+Requires: bluez >= 5.0
+%else
+Requires: bluez >= 4.101-5
+%endif
 Obsoletes: NetworkManager < 1:0.9.9.1-2
 Obsoletes: NetworkManager-bt
 
@@ -179,6 +194,7 @@ This package contains NetworkManager support for Bluetooth devices.
 Summary: Wifi plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: wpa_supplicant >= 1:1.1
 Obsoletes: NetworkManager < 1:0.9.9.1-2
 
 %description wifi
@@ -191,6 +207,7 @@ This package contains NetworkManager support for Wifi and OLPC devices.
 Summary: Mobile broadband device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: ModemManager
 Obsoletes: NetworkManager < 1:0.9.9.1-2
 
 %description wwan
