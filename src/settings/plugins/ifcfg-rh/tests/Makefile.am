@@ -8,8 +8,8 @@ AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
 	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/src/ \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/settings \
@@ -25,9 +25,6 @@ AM_LDFLAGS = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS)
-
-AM_LDADD = \
-	$(top_builddir)/libnm-util/libnm-util.la
 
 noinst_PROGRAMS = test-ifcfg-rh test-ifcfg-rh-utils
 
@@ -48,7 +45,7 @@ test_ifcfg_rh_utils_SOURCES = \
 	../shvar.c
 
 test_ifcfg_rh_utils_LDADD = \
-	$(AM_LDADD)
+	$(top_builddir)/src/libNetworkManager.la
 
 TESTS = test-ifcfg-rh-utils test-ifcfg-rh
 

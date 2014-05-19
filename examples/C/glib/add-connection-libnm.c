@@ -18,13 +18,13 @@
  */
 
 /*
- * The example shows how to add a new connection using libnm-glib and libnm-util.
+ * The example shows how to add a new connection using libnm.
  * Contrast this example with add-connection-dbus-glib.c, which is a bit lower
  * level and talks directly to NM using dbus-glib.  This example is simpler
- * because libnm-glib handles much of the low-level stuff for you.
+ * because libnm handles much of the low-level stuff for you.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm-util` add-connection-libnm-glib.c -o add-connection-libnm-glib
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm` add-connection-libnm.c -o add-connection-libnm
  */
 
 #include <glib.h>

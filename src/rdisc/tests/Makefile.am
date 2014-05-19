@@ -3,8 +3,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/src/platform \
-	-I${top_srcdir}/libnm-util \
-	-I${top_builddir}/libnm-util \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
 	-I${srcdir}/.. \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \

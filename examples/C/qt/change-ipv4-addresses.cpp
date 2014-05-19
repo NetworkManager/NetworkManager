@@ -22,7 +22,7 @@
  * It uses Qt and D-Bus libraries to do that.
  *
  * Standalone compilation:
- * g++ -Wall `pkg-config --libs --cflags NetworkManager QtCore QtDBus QtNetwork` change-ipv4-addresses.cpp -o change-ipv4-addresses
+ * g++ -Wall `pkg-config --libs --cflags QtCore QtDBus QtNetwork` `pkg-config --cflags libnm` change-ipv4-addresses.cpp -o change-ipv4-addresses
  *
  * You don't need to have NetworkManager devel package installed; you can just
  * grab NetworkManager.h and put it in the path

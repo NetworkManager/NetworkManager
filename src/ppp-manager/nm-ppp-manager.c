@@ -444,7 +444,7 @@ ppp_secrets_cb (NMActRequest *req,
 	/* This is sort of a hack but...
 	 * pppd plugin only ever needs username and password. Passing the full
 	 * connection there would mean some bloat: the plugin would need to link
-	 * against libnm-util just to parse this. So instead, let's just send what
+	 * against libnm just to parse this. So instead, let's just send what
 	 * it needs.
 	 */
 	dbus_g_method_return (priv->pending_secrets_context, username, password);

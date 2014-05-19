@@ -897,7 +897,7 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 }
 
 
-/* Max priority values from libnm-util/nm-setting-vlan.c */
+/* Max priority values from libnm-core/nm-setting-vlan.c */
 #define MAX_SKB_PRIO   G_MAXUINT32
 #define MAX_8021P_PRIO 7  /* Max 802.1p priority */
 

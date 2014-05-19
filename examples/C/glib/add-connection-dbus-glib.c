@@ -19,11 +19,11 @@
 
 /*
  * The example shows how to call AddConnection() D-Bus method to add
- * a connection to system settings service. It uses dbus-glib and libnm-util
+ * a connection to system settings service. It uses dbus-glib and libnm
  * libraries.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm-util` add-connection-glib.c -o add-connection-glib
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm` add-connection-glib.c -o add-connection-glib
  */
 
 #include <glib.h>

@@ -1051,7 +1051,7 @@ nm_platform_team_add (const char *name)
  * nm_platform_vlan_add:
  * @name: New interface name
  * @vlanid: VLAN identifier
- * @vlanflags: VLAN flags from libnm-util
+ * @vlanflags: VLAN flags from libnm
  *
  * Create a software VLAN device.
  */

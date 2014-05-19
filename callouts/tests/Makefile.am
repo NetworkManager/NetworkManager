@@ -2,8 +2,8 @@ if ENABLE_TESTS
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/callouts \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
@@ -18,7 +18,7 @@ test_dispatcher_envp_SOURCES = \
 	test-dispatcher-envp.c
 
 test_dispatcher_envp_LDADD = \
-	$(top_builddir)/libnm-util/libnm-util.la \
+	$(top_builddir)/libnm/libnm.la \
 	$(top_builddir)/callouts/libtest-dispatcher-envp.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)

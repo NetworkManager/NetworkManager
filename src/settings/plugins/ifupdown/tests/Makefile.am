@@ -2,8 +2,8 @@ if ENABLE_TESTS
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/settings \
 	-I$(srcdir)/../ \
@@ -20,9 +20,7 @@ test_ifupdown_SOURCES = \
 	../parser.c
 
 test_ifupdown_LDADD = \
-	$(top_builddir)/src/libNetworkManager.la \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(DBUS_LIBS)
+	$(top_builddir)/src/libNetworkManager.la
 
 TESTS = test-ifupdown
 

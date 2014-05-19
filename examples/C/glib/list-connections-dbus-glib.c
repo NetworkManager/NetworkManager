@@ -19,10 +19,10 @@
 /*
  * The example shows how to list connections from System Settings service using direct
  * D-Bus call of ListConnections method.
- * The example uses dbus-glib, libnm-util libraries.
+ * The example uses dbus-glib libraries and libnm headers.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm-util` list-connections-dbus.c -o list-connections-dbus
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1` `pkg-config --cflags libnm` list-connections-dbus.c -o list-connections-dbus
  */
 
 #include <glib.h>
@@ -30,7 +30,6 @@
 #include <stdio.h>
 
 #include <NetworkManager.h>
-#include <nm-utils.h>
 
 #define DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH    (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH))
 

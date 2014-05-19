@@ -20,10 +20,10 @@
 /*
  * The example shows how to call the D-Bus properties interface to get the
  * list of currently active connections known to NetworkManager.  It uses
- * dbus-glib and libnm-util libraries.
+ * dbus-glib and libnm libraries.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm-util` get-active-connections-dbus-glib.c -o get-active-connections-dbus-glib
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm` get-active-connections-dbus-glib.c -o get-active-connections-dbus-glib
  */
 
 #include <stdio.h>

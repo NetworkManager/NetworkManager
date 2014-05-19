@@ -105,7 +105,7 @@ typedef enum {
 
 /* NmCli - main structure */
 typedef struct _NmCli {
-	NMClient *client;                                 /* Pointer to NMClient of libnm-glib */
+	NMClient *client;                                 /* Pointer to NMClient of libnm */
 	NMClient *(*get_client) (struct _NmCli *nmc);     /* Pointer to function for creating NMClient */
 
 	NMCResultCode return_value;                       /* Return code of nmcli */

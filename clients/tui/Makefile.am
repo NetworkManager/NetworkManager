@@ -5,9 +5,10 @@ SUBDIRS = newt .
 AM_CPPFLAGS= \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/libnm-util \
-	-I$(top_srcdir)/libnm-glib \
+	-I$(top_srcdir)/libnm-core \
+	-I$(top_builddir)/libnm-core \
+	-I$(top_srcdir)/libnm \
+	-I$(top_builddir)/libnm \
 	-I$(srcdir)/newt \
 	$(GLIB_CFLAGS) \
 	$(NEWT_CFLAGS) \
@@ -113,8 +114,7 @@ nmtui_SOURCES = \
 	$(NULL)
 
 nmtui_LDADD = \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm-glib.la \
+	$(top_builddir)/libnm/libnm.la \
 	$(builddir)/newt/libnmt-newt.a \
 	$(GUDEV_LIBS) \
 	$(DBUS_LIBS) \

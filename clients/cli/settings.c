@@ -25,7 +25,7 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <libnm-util/nm-utils.h>
+#include <nm-utils.h>
 
 #include "utils.h"
 #include "common.h"
@@ -2340,7 +2340,7 @@ nmc_property_con_set_uuid (NMSetting *setting, const char *prop, const char *val
 #endif
 
 /* 'permissions' */
-/* define from libnm-util/nm-setting-connection.c */
+/* define from libnm-core/nm-setting-connection.c */
 #define PERM_USER_PREFIX  "user:"
 
 static gboolean
@@ -3913,7 +3913,7 @@ nmc_property_wired_set_s390_subchannels (NMSetting *setting, const char *prop, c
 	char **strv = NULL, **iter;
 	GPtrArray *s390_subchannels;
 
-	//FIXME: both libnm-util and ifcfg-rh also allow two strings (3rd is optional)
+	//FIXME: both libnm and ifcfg-rh also allow two strings (3rd is optional)
 	strv = nmc_strsplit_set (val, " ,\t", 0);
 	if (g_strv_length (strv) != 3) {
 		g_set_error (error, 1, 0, _("'%s' is not valid; 3 strings should be provided"),

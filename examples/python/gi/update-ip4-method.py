@@ -20,13 +20,13 @@
 
 #
 # This example updates a connection's IPv4 method with the Update() method
-# using the libnm-glib GObject-based convenience APIs.
+# using the libnm GObject-based convenience APIs.
 #
 # Configuration settings are described at
 # https://developer.gnome.org/NetworkManager/0.9/ref-settings.html
 #
 
-from gi.repository import GLib, NetworkManager, NMClient
+from gi.repository import GLib, NM
 import sys, struct, socket
 
 def ip_to_int(ip_string):
@@ -51,17 +51,17 @@ def connections_read_cb(settings, data):
         # add IPv4 setting if it doesn't yet exist
         s_ip4 = c.get_setting_ip4_config()
         if not s_ip4:
-            s_ip4 = NetworkManager.SettingIP4Config.new()
+            s_ip4 = NM.SettingIP4Config.new()
             c.add_setting(s_ip4)
 
         # set the method and change properties
-        s_ip4.set_property(NetworkManager.SETTING_IP4_CONFIG_METHOD, method)
+        s_ip4.set_property(NM.SETTING_IP4_CONFIG_METHOD, method)
         if method == "auto":
             # remove addresses
             s_ip4.clear_addresses()
         elif method == "manual":
             # Add the static IP address, prefix, and (optional) gateway
-            addr = NetworkManager.IP4Address.new()
+            addr = NM.IP4Address.new()
             addr.set_address(ip_to_int(sys.argv[3]))
             addr.set_prefix(int(sys.argv[4]))
             if len(sys.argv) == 6:
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     # create RemoteSettings object and attach to the "connections-read" signal
     # to wait for connections to be loaded asynchronously
-    settings = NMClient.RemoteSettings.new(None)
+    settings = NM.RemoteSettings.new(None)
     settings.connect('connections-read', connections_read_cb, (sys.argv[1], method, sys.argv))
 
     main_loop.run()

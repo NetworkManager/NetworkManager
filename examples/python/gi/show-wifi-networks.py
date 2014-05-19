@@ -20,11 +20,11 @@
 # Copyright (C) 2013 Red Hat, Inc.
 #
 
-from gi.repository import NetworkManager, NMClient
+from gi.repository import NM
 
 #
 # This example lists Wi-Fi access points NetworkManager scanned on Wi-Fi devices.
-# It calls libnm-glib functions using GObject introspection.
+# It calls libnm functions using GObject introspection.
 #
 # Note the second line of the file: coding=utf-8
 # It is necessary because we use unicode characters and python would produce
@@ -57,16 +57,16 @@ def print_ap_info(ap):
     print "SSID:      %s"      % (ap.get_ssid())
     print "BSSID:     %s"      % (ap.get_bssid())
     print "Frequency: %s"      % (frequency)
-    print "Channel:   %s"      % (NetworkManager.utils_wifi_freq_to_channel(frequency))
+    print "Channel:   %s"      % (NM.utils_wifi_freq_to_channel(frequency))
     print "Strength:  %s %s%%" % (signal_bars[(clamp(strength-5, 0, 99)+24)/25], strength)
     print
 
 if __name__ == "__main__":
-    nmc = NMClient.Client.new()
+    nmc = NM.Client.new()
     devs = nmc.get_devices()
 
     for dev in devs:
-        if dev.get_device_type() == NetworkManager.DeviceType.WIFI:
+        if dev.get_device_type() == NM.DeviceType.WIFI:
             print_device_info(dev)
             for ap in dev.get_access_points():
                 print_ap_info(ap)

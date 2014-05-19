@@ -17,12 +17,11 @@
  */
 
 /*
- * The example shows how to list connections from System Settings service using libnm-glib
+ * The example shows how to list connections from System Settings service using libnm
  * (that wraps direct D-Bus calls).
- * The example uses dbus-glib, libnm-util and libnm-glib libraries.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm-util libnm-glib` list-connections-libnm-glib.c -o list-connections-libnm-glib
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm` list-connections-libnm.c -o list-connections-libnm
  */
 
 #include <glib.h>

@@ -146,11 +146,11 @@ valgrind-*.log
 /docs/api/NetworkManager.types
 
 /examples/C/glib/add-connection-dbus-glib
-/examples/C/glib/add-connection-libnm-glib
+/examples/C/glib/add-connection-libnm
 /examples/C/glib/get-active-connections-dbus-glib
-/examples/C/glib/get-ap-info-libnm-glib
+/examples/C/glib/get-ap-info-libnm
 /examples/C/glib/list-connections-dbus-glib
-/examples/C/glib/list-connections-libnm-glib
+/examples/C/glib/list-connections-libnm
 /examples/C/glib/monitor-nm-running-GDBus
 /examples/C/glib/monitor-nm-running-dbus-glib
 /examples/C/glib/monitor-nm-state-GDBus

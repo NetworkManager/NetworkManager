@@ -18,11 +18,11 @@
 # Copyright (C) 2012 Red Hat, Inc.
 #
 
-from gi.repository import GLib, NetworkManager, NMClient
+from gi.repository import GLib, NM
 
 # This example asks settings service for all configured connections.
-# Unfortunately, at this time since libnm-glib still makes heavy use of
-# GValue and GHashTable (rather than GVariant), libnm-glib isn't fully
+# Unfortunately, at this time since libnm still makes heavy use of
+# GValue and GHashTable (rather than GVariant), libnm isn't fully
 # usable from GObject Introspection-ready languages. Most functions will
 # work fine, but e. g. nm_connection_to_hash() causes assertion failures.
 
@@ -41,7 +41,7 @@ def connections_read(settings):
 
 if __name__ == "__main__":
     main_loop = GLib.MainLoop()
-    settings = NMClient.RemoteSettings.new(None);
+    settings = NM.RemoteSettings.new(None);
 
     # connections are read asynchronously, so we need to wait for the
     # settings object to tell us that it's read all connections

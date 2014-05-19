@@ -31,7 +31,7 @@
 #include "nm-settings-flags.h"
 
 /* NOTE: ensure these capabilities match those in introspection/nm-secret-agent.xml and
- * libnm-glib/nm-secret-agent.h.
+ * libnm/nm-secret-agent.h.
  */
 typedef enum {
 	NM_SECRET_AGENT_CAPABILITY_NONE = 0x0,

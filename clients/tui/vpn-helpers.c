@@ -21,7 +21,7 @@
  * @short_description: VPN-related utilities
  *
  * This is copied directly from libnm-gtk and should probably
- * eventually move into libnm-glib.
+ * eventually move into libnm.
  *
  * It is also currently unused in nmtui.
  *

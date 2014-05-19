@@ -1,12 +1,10 @@
 SUBDIRS = cli tui
 
 AM_CPPFLAGS = \
-	-I${top_srcdir} \
-	-I${top_srcdir}/libnm-util \
-	-I${top_builddir}/libnm-util \
-	-I${top_srcdir}/libnm-glib \
-	-I${top_builddir}/libnm-glib \
-	-I${top_srcdir}/include \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
+	-I${top_srcdir}/libnm \
+	-I${top_builddir}/libnm \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
@@ -20,7 +18,6 @@ nm_online_CPPFLAGS = \
 	$(AM_CPPFLAGS)
 
 nm_online_LDADD = \
-	$(top_builddir)/libnm-glib/libnm-glib.la \
-	$(top_builddir)/libnm-util/libnm-util.la \
+	$(top_builddir)/libnm/libnm.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)

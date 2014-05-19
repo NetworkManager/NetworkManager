@@ -2,8 +2,8 @@ SUBDIRS = . tests
 
 AM_CPPFLAGS = \
 	-I${top_srcdir}/include \
-	-I${top_srcdir}/libnm-util \
-	-I${top_builddir}/libnm-util \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
@@ -44,7 +44,7 @@ nm_dispatcher_SOURCES = \
 	nm-dispatcher-utils.h
 
 nm_dispatcher_LDADD = \
-	$(top_builddir)/libnm-util/libnm-util.la \
+	$(top_builddir)/libnm/libnm.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 
@@ -63,7 +63,7 @@ libtest_dispatcher_envp_la_CPPFLAGS = \
 	$(AM_CPPFLAGS)
 
 libtest_dispatcher_envp_la_LIBADD = \
-	$(top_builddir)/libnm-util/libnm-util.la \
+	$(top_builddir)/libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
 

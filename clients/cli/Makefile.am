@@ -5,9 +5,10 @@ AM_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_builddir} \
 	-I${top_srcdir}/include \
-	-I${top_srcdir}/libnm-util \
-	-I${top_builddir}/libnm-util \
-	-I${top_srcdir}/libnm-glib \
+	-I${top_srcdir}/libnm-core \
+	-I${top_builddir}/libnm-core \
+	-I${top_srcdir}/libnm \
+	-I${top_builddir}/libnm \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
@@ -34,8 +35,7 @@ nmcli_LDADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS) \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm-glib.la
+	$(top_builddir)/libnm/libnm.la
 
 if BUILD_SETTING_DOCS
 settings-docs.c: settings-docs.xsl $(top_builddir)/libnm-util/nm-setting-docs.xml

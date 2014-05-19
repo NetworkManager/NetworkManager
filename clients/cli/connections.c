@@ -2220,7 +2220,7 @@ static const NameItem nmc_adsl_settings [] = {
 };
 
 /* PPPoE is a base connection type from historical reasons.
- * See libnm-util/nm-setting.c:_nm_setting_is_base_type()
+ * See libnm-core/nm-setting.c:_nm_setting_is_base_type()
  */
 static const NameItem nmc_pppoe_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
