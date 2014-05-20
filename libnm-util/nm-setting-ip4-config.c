@@ -1484,7 +1484,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "IPv4 connection, meaning it will never be assigned "
 						   "the default route by NetworkManager.",
 						   FALSE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMSettingIP4Config:may-fail:
@@ -1509,7 +1509,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "configuration to succeed if IPv4 configuration "
 						   "fails but IPv6 configuration completes successfully.",
 						   TRUE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 }
 
 
