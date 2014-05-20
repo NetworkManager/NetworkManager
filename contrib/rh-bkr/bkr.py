@@ -50,7 +50,7 @@ def nitrate_get_script_name_for_case(case):
     return name
 
 _nitrate_tags = {}
-def nitrate_get_tag_by_id(tag_id):
+def nitrate_get_tag_by_id(tag_id, fail_on_not_exists=False):
     if tag_id not in _nitrate_tags:
         tags = nitrate.Nitrate()._server.Tag.get_tags({'ids': [tag_id]})
         if not tags:
@@ -59,31 +59,45 @@ def nitrate_get_tag_by_id(tag_id):
             raise Error("tag with id %d appears more then once: %s" % (tag_id, repr(tags)))
         else:
             _nitrate_tags[tag_id] = tags[0]
-    return _nitrate_tags.get(tag_id, None)
+    t = _nitrate_tags.get(tag_id, None)
+    if fail_on_not_exists and t is None:
+        raise Exception("Tag with id='%s' does not exist" % (tag_id))
+    return t
 
 _nitrate_tags_searched_name = {}
-def nitrate_get_tag_by_name(tag_name):
+def nitrate_get_tag_by_name(tag_name, fail_on_not_exists=False):
     if tag_name not in _nitrate_tags_searched_name:
         tags = nitrate.Nitrate()._server.Tag.get_tags({'names': [tag_name]})
         for t in tags:
             _nitrate_tags[t['id']] = t
         _nitrate_tags_searched_name[tag_name] = 1
     tags = [ tag for tag_id, tag in _nitrate_tags.iteritems()  if tag['name'] == tag_name ]
-    if not tags:
-        return None
-    if len(tags) > 1:
-        raise Error("tag with name %d appears more then once: %s" % (tag_name, repr(tags)))
-    return tags[0]
+    t = None
+    if tags:
+        if len(tags) > 1:
+            raise Error("tag with name %d appears more then once: %s" % (tag_name, repr(tags)))
+        t = tags[0]
+    if fail_on_not_exists and t is None:
+        raise Exception("Tag with name='%s' does not exist" % (tag_name))
+    return t
 
 _nitrate_cases = {}
-def _nitrate_add_case(case):
+def _nitrate_add_case(case, tag_id=None):
     case_id = case['case_id']
+    tags = None
     if case_id in _nitrate_cases:
         case2 = _nitrate_cases[case_id]
-        tags = list(sorted(set(case['tag'] + case2['tag'])))
-        case2['tag'] = tags
+        tags = case['tag'] + case2['tag']
+        case = case2
     else:
         _nitrate_cases[case_id] = case
+    if tag_id is not None:
+        if tags is None:
+            tags = [tag_id]
+        else:
+            tags.append(tag_id)
+    if tags is not None:
+        case['tag'] = list(sorted(set(tags)))
 
 def _nitrate_base_filter(additional=None, default=None):
     # see https://tcms.engineering.redhat.com/plan/6726/networkmanager#treeview
@@ -106,14 +120,15 @@ def nitrate_get_cases_by_tag(tag=None, tag_name=None, tag_id=None):
         raise Error("Need one filter argument")
     if tag is None:
         if tag_name is not None:
-            tag = nitrate_get_tag_by_name(tag_name)
+            tag = nitrate_get_tag_by_name(tag_name, True)
         if tag_id is not None:
-            tag = nitrate_get_tag_by_id(tag_id)
+            tag = nitrate_get_tag_by_id(tag_id, True)
+
     tag_id = tag['id']
-    if not _nitrate_get_cases_all and tag_id not in _nitrate_cases_searched_by_tag:
+    if tag_id not in _nitrate_cases_searched_by_tag:
         cases = nitrate.Nitrate()._server.TestCase.filter(_nitrate_base_filter({'tag' : tag_id}))
         for case in cases:
-            _nitrate_add_case(case)
+            _nitrate_add_case(case, tag_id)
         _nitrate_cases_searched_by_tag[tag_id] = 1
     return [ case for case_id, case in _nitrate_cases.iteritems() if tag_id in case['tag'] ]
 
@@ -155,11 +170,13 @@ def nitrate_cases_get(tags=None, no_tags=None, include_all=False):
 
     # we have to fetch all the cases by tags esplicitly to merge them properly
     # in our cache.
-    if not tags or include_all:
-        # only blacklist of ~all~. Fetch first all.
-        cases_tag = [ nitrate_get_cases_all() ]
+    if not tags:
+        cases_tag = []
     else:
         cases_tag = [ nitrate_get_cases_by_tag(tag_name=tag) for tag in tags ]
+    if include_all:
+        # only blacklist of ~all~. Fetch first all.
+        cases_tag.append(nitrate_get_cases_all())
     if no_tags:
         cases_no_tag = [ nitrate_get_cases_by_tag(tag_name=tag) for tag in no_tags ]
 
@@ -211,7 +228,7 @@ def _nitrate_index_cases_by_tag_id(cases):
     for tag_id, t in by_tag.iteritems():
         l = list(t.values())
         by_tag[tag_id] = l
-        t2[nitrate_get_tag_by_id(tag_id)['name']] = l
+        t2[nitrate_get_tag_by_id(tag_id, True)['name']] = l
     return t2, by_tag
 
 
@@ -225,7 +242,7 @@ def nitrate_print_cases(cases, prefix=""):
             tag_ids = tuple(case['tag'])
             t = tags.get(tag_ids, None)
             if t is None:
-                t = ','.join(sorted(set([nitrate_get_tag_by_id(tag_id)['name']  for tag_id in tag_ids])))
+                t = ','.join(sorted(set([nitrate_get_tag_by_id(tag_id, True)['name']  for tag_id in tag_ids])))
                 tags[tag_ids] = t
             case['tag_names'] = t
         print("%s[%10s/%7d] = %-60s - %-20s - [ %s %s]" % (prefix, \
@@ -235,7 +252,7 @@ def nitrate_print_cases(cases, prefix=""):
             t, "(?) " if not _nitrate_get_cases_all else ""))
 
 def nitrate_get_cases_by_one_tag(tag_name):
-    tag = nitrate_get_tag_by_name(tag_name)
+    tag = nitrate_get_tag_by_name(tag_name, True)
     cases = nitrate_get_cases_all()
     cases_with_tag = nitrate_get_cases_by_tag(tag)
     cases = _nitrate_index_cases_by_case_id(cases)
@@ -440,7 +457,7 @@ class CmdSubmit(CmdBase):
             'WHITEBOARD'        : 'Test NetworkManager',
             'DISTRO_FAMILY'     : 'RedHatEnterpriseLinux7',
             'DISTRO_VARIANT'    : 'Workstation',
-            'DISTRO_NAME'       : 'RHEL-7.0-20140502.n.0',
+            'DISTRO_NAME'       : 'RHEL-7.0-20140507.0',
             'DISTRO_METHOD'     : 'nfs',
             'DISTRO_ARCH'       : 'x86_64',
             'TEST_URL'          : 'http://download.eng.brq.redhat.com/scratch/vbenes/NetworkManager-rhel-7.tar.gz',
