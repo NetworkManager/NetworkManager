@@ -891,6 +891,33 @@ nm_utils_match_connection (GSList *connections,
 		if (!nm_connection_diff (original, candidate, NM_SETTING_COMPARE_FLAG_INFERRABLE, &diffs)) {
 			if (!best_match)
 				best_match = check_possible_match (original, candidate, diffs, device_has_carrier);
+
+			if (!best_match && nm_logging_enabled (LOGL_DEBUG, LOGD_CORE)) {
+				GString *diff_string;
+				GHashTableIter s_iter, p_iter;
+				gpointer setting_name, setting;
+				gpointer property_name, value;
+
+				diff_string = g_string_new (NULL);
+				g_hash_table_iter_init (&s_iter, diffs);
+				while (g_hash_table_iter_next (&s_iter, &setting_name, &setting)) {
+					g_hash_table_iter_init (&p_iter, setting);
+					while (g_hash_table_iter_next (&p_iter, &property_name, &value)) {
+						if (diff_string->len)
+							g_string_append (diff_string, ", ");
+						g_string_append_printf (diff_string, "%s.%s",
+						                        (char *) setting_name,
+						                        (char *) property_name);
+					}
+				}
+
+				nm_log_dbg (LOGD_CORE, "Connection '%s' differs from candidate '%s' in %s",
+				            nm_connection_get_id (original),
+				            nm_connection_get_id (candidate),
+				            diff_string->str);
+				g_string_free (diff_string, TRUE);
+			}
+
 			g_hash_table_unref (diffs);
 			continue;
 		}
