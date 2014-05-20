@@ -336,38 +336,28 @@ nm_device_error_quark (void)
 
 #define QUEUED_PREFIX "queued state change to "
 
+static const char *state_table[] = {
+	[NM_DEVICE_STATE_UNKNOWN]      = QUEUED_PREFIX "unknown",
+	[NM_DEVICE_STATE_UNMANAGED]    = QUEUED_PREFIX "unmanaged",
+	[NM_DEVICE_STATE_UNAVAILABLE]  = QUEUED_PREFIX "unavailable",
+	[NM_DEVICE_STATE_DISCONNECTED] = QUEUED_PREFIX "disconnected",
+	[NM_DEVICE_STATE_PREPARE]      = QUEUED_PREFIX "prepare",
+	[NM_DEVICE_STATE_CONFIG]       = QUEUED_PREFIX "config",
+	[NM_DEVICE_STATE_NEED_AUTH]    = QUEUED_PREFIX "need-auth",
+	[NM_DEVICE_STATE_IP_CONFIG]    = QUEUED_PREFIX "ip-config",
+	[NM_DEVICE_STATE_IP_CHECK]     = QUEUED_PREFIX "ip-check",
+	[NM_DEVICE_STATE_SECONDARIES]  = QUEUED_PREFIX "secondaries",
+	[NM_DEVICE_STATE_ACTIVATED]    = QUEUED_PREFIX "activated",
+	[NM_DEVICE_STATE_DEACTIVATING] = QUEUED_PREFIX "deactivating",
+	[NM_DEVICE_STATE_FAILED]       = QUEUED_PREFIX "failed",
+};
+
 static const char *
 queued_state_to_string (NMDeviceState state)
 {
-	switch (state) {
-	case NM_DEVICE_STATE_UNMANAGED:
-		return QUEUED_PREFIX "unmanaged";
-	case NM_DEVICE_STATE_UNAVAILABLE:
-		return QUEUED_PREFIX "unavailable";
-	case NM_DEVICE_STATE_DISCONNECTED:
-		return QUEUED_PREFIX "disconnected";
-	case NM_DEVICE_STATE_PREPARE:
-		return QUEUED_PREFIX "prepare";
-	case NM_DEVICE_STATE_CONFIG:
-		return QUEUED_PREFIX "config";
-	case NM_DEVICE_STATE_NEED_AUTH:
-		return QUEUED_PREFIX "need-auth";
-	case NM_DEVICE_STATE_IP_CONFIG:
-		return QUEUED_PREFIX "ip-config";
-	case NM_DEVICE_STATE_IP_CHECK:
-		return QUEUED_PREFIX "ip-check";
-	case NM_DEVICE_STATE_SECONDARIES:
-		return QUEUED_PREFIX "secondaries";
-	case NM_DEVICE_STATE_ACTIVATED:
-		return QUEUED_PREFIX "activated";
-	case NM_DEVICE_STATE_DEACTIVATING:
-		return QUEUED_PREFIX "deactivating";
-	case NM_DEVICE_STATE_FAILED:
-		return QUEUED_PREFIX "failed";
-	default:
-		break;
-	}
-	return QUEUED_PREFIX "unknown";
+	if (state >= 0 && state < G_N_ELEMENTS (state_table))
+		return state_table[state];
+	return state_table[NM_DEVICE_STATE_UNKNOWN];
 }
 
 static const char *
@@ -376,132 +366,74 @@ state_to_string (NMDeviceState state)
 	return queued_state_to_string (state) + strlen (QUEUED_PREFIX);
 }
 
+static const char *reason_table[] = {
+	[NM_DEVICE_STATE_REASON_NONE]                     = "none",
+	[NM_DEVICE_STATE_REASON_NOW_MANAGED]              = "managed",
+	[NM_DEVICE_STATE_REASON_NOW_UNMANAGED]            = "unmanaged",
+	[NM_DEVICE_STATE_REASON_CONFIG_FAILED]            = "config-failed",
+	[NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE]    = "ip-config-unavailable",
+	[NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED]        = "ip-config-expired",
+	[NM_DEVICE_STATE_REASON_NO_SECRETS]               = "no-secrets",
+	[NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT]    = "supplicant-disconnect",
+	[NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED] = "supplicant-config-failed",
+	[NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED]        = "supplicant-failed",
+	[NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT]       = "supplicant-timeout",
+	[NM_DEVICE_STATE_REASON_PPP_START_FAILED]         = "ppp-start-failed",
+	[NM_DEVICE_STATE_REASON_PPP_DISCONNECT]           = "ppp-disconnect",
+	[NM_DEVICE_STATE_REASON_PPP_FAILED]               = "ppp-failed",
+	[NM_DEVICE_STATE_REASON_DHCP_START_FAILED]        = "dhcp-start-failed",
+	[NM_DEVICE_STATE_REASON_DHCP_ERROR]               = "dhcp-error",
+	[NM_DEVICE_STATE_REASON_DHCP_FAILED]              = "dhcp-failed",
+	[NM_DEVICE_STATE_REASON_SHARED_START_FAILED]      = "sharing-start-failed",
+	[NM_DEVICE_STATE_REASON_SHARED_FAILED]            = "sharing-failed",
+	[NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED]      = "autoip-start-failed",
+	[NM_DEVICE_STATE_REASON_AUTOIP_ERROR]             = "autoip-error",
+	[NM_DEVICE_STATE_REASON_AUTOIP_FAILED]            = "autoip-failed",
+	[NM_DEVICE_STATE_REASON_MODEM_BUSY]               = "modem-busy",
+	[NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE]       = "modem-no-dialtone",
+	[NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER]         = "modem-no-carrier",
+	[NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT]       = "modem-dial-timeout",
+	[NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED]        = "modem-dial-failed",
+	[NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED]        = "modem-init-failed",
+	[NM_DEVICE_STATE_REASON_GSM_APN_FAILED]           = "gsm-apn-failed",
+	[NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING] = "gsm-registration-idle",
+	[NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED]  = "gsm-registration-denied",
+	[NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT] = "gsm-registration-timeout",
+	[NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED]  = "gsm-registration-failed",
+	[NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED]     = "gsm-pin-check-failed",
+	[NM_DEVICE_STATE_REASON_FIRMWARE_MISSING]         = "firmware-missing",
+	[NM_DEVICE_STATE_REASON_REMOVED]                  = "removed",
+	[NM_DEVICE_STATE_REASON_SLEEPING]                 = "sleeping",
+	[NM_DEVICE_STATE_REASON_CONNECTION_REMOVED]       = "connection-removed",
+	[NM_DEVICE_STATE_REASON_USER_REQUESTED]           = "user-requested",
+	[NM_DEVICE_STATE_REASON_CARRIER]                  = "carrier-changed",
+	[NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED]       = "connection-assumed",
+	[NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE]     = "supplicant-available",
+	[NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND]          = "modem-not-found",
+	[NM_DEVICE_STATE_REASON_BT_FAILED]                = "bluetooth-failed",
+	[NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED]     = "gsm-sim-not-inserted",
+	[NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED]     = "gsm-sim-pin-required",
+	[NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED]     = "gsm-sim-puk-required",
+	[NM_DEVICE_STATE_REASON_GSM_SIM_WRONG]            = "gsm-sim-wrong",
+	[NM_DEVICE_STATE_REASON_INFINIBAND_MODE]          = "infiniband-mode",
+	[NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED]        = "dependency-failed",
+	[NM_DEVICE_STATE_REASON_BR2684_FAILED]            = "br2684-bridge-failed",
+	[NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE] = "modem-manager-unavailable",
+	[NM_DEVICE_STATE_REASON_SSID_NOT_FOUND]           = "ssid-not-found",
+	[NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED] = "secondary-connection-failed",
+	[NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED]          = "dcb-fcoe-failed",
+	[NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED]     = "teamd-control-failed",
+	[NM_DEVICE_STATE_REASON_MODEM_FAILED]             = "modem-failed",
+	[NM_DEVICE_STATE_REASON_MODEM_AVAILABLE]          = "modem-available",
+	[NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT]        = "sim-pin-incorrect",
+};
+
 static const char *
 reason_to_string (NMDeviceStateReason reason)
 {
-	switch (reason) {
-	case NM_DEVICE_STATE_REASON_NONE:
-		return "none";
-	case NM_DEVICE_STATE_REASON_NOW_MANAGED:
-		return "managed";
-	case NM_DEVICE_STATE_REASON_NOW_UNMANAGED:
-		return "unmanaged";
-	case NM_DEVICE_STATE_REASON_CONFIG_FAILED:
-		return "config-failed";
-	case NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE:
-		return "ip-config-unavailable";
-	case NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED:
-		return "ip-config-expired";
-	case NM_DEVICE_STATE_REASON_NO_SECRETS:
-		return "no-secrets";
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT:
-		return "supplicant-disconnect";
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED:
-		return "supplicant-config-failed";
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED:
-		return "supplicant-failed";
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT:
-		return "supplicant-timeout";
-	case NM_DEVICE_STATE_REASON_PPP_START_FAILED:
-		return "ppp-start-failed";
-	case NM_DEVICE_STATE_REASON_PPP_DISCONNECT:
-		return "ppp-disconnect";
-	case NM_DEVICE_STATE_REASON_PPP_FAILED:
-		return "ppp-failed";
-	case NM_DEVICE_STATE_REASON_DHCP_START_FAILED:
-		return "dhcp-start-failed";
-	case NM_DEVICE_STATE_REASON_DHCP_ERROR:
-		return "dhcp-error";
-	case NM_DEVICE_STATE_REASON_DHCP_FAILED:
-		return "dhcp-failed";
-	case NM_DEVICE_STATE_REASON_SHARED_START_FAILED:
-		return "sharing-start-failed";
-	case NM_DEVICE_STATE_REASON_SHARED_FAILED:
-		return "sharing-failed";
-	case NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED:
-		return "autoip-start-failed";
-	case NM_DEVICE_STATE_REASON_AUTOIP_ERROR:
-		return "autoip-error";
-	case NM_DEVICE_STATE_REASON_AUTOIP_FAILED:
-		return "autoip-failed";
-	case NM_DEVICE_STATE_REASON_MODEM_BUSY:
-		return "modem-busy";
-	case NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE:
-		return "modem-no-dialtone";
-	case NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER:
-		return "modem-no-carrier";
-	case NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT:
-		return "modem-dial-timeout";
-	case NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED:
-		return "modem-dial-failed";
-	case NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED:
-		return "modem-init-failed";
-	case NM_DEVICE_STATE_REASON_GSM_APN_FAILED:
-		return "gsm-apn-failed";
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING:
-		return "gsm-registration-idle";
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED:
-		return "gsm-registration-denied";
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT:
-		return "gsm-registration-timeout";
-	case NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED:
-		return "gsm-registration-failed";
-	case NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED:
-		return "gsm-pin-check-failed";
-	case NM_DEVICE_STATE_REASON_FIRMWARE_MISSING:
-		return "firmware-missing";
-	case NM_DEVICE_STATE_REASON_REMOVED:
-		return "removed";
-	case NM_DEVICE_STATE_REASON_SLEEPING:
-		return "sleeping";
-	case NM_DEVICE_STATE_REASON_CONNECTION_REMOVED:
-		return "connection-removed";
-	case NM_DEVICE_STATE_REASON_USER_REQUESTED:
-		return "user-requested";
-	case NM_DEVICE_STATE_REASON_CARRIER:
-		return "carrier-changed";
-	case NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED:
-		return "connection-assumed";
-	case NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE:
-		return "supplicant-available";
-	case NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND:
-		return "modem-not-found";
-	case NM_DEVICE_STATE_REASON_BT_FAILED:
-		return "bluetooth-failed";
-	case NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED:
-		return "gsm-sim-not-inserted";
-	case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
-		return "gsm-sim-pin-required";
-	case NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED:
-		return "gsm-sim-puk-required";
-	case NM_DEVICE_STATE_REASON_GSM_SIM_WRONG:
-		return "gsm-sim-wrong";
-	case NM_DEVICE_STATE_REASON_INFINIBAND_MODE:
-		return "infiniband-mode";
-	case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
-		return "dependency-failed";
-	case NM_DEVICE_STATE_REASON_BR2684_FAILED:
-		return "br2684-bridge-failed";
-	case NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE:
-		return "modem-manager-unavailable";
-	case NM_DEVICE_STATE_REASON_SSID_NOT_FOUND:
-		return "SSID not found";
-	case NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED:
-		return "secondary-connection-failed";
-	case NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED:
-		return "DCB-FCoE-failed";
-	case NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED:
-		return "teamd-control-failed";
-	case NM_DEVICE_STATE_REASON_MODEM_FAILED:
-		return "modem-failed";
-	case NM_DEVICE_STATE_REASON_MODEM_AVAILABLE:
-		return "modem-available";
-	case NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT:
-		return "sim-pin-incorrect";
-	default:
-		break;
-	}
-	return "unknown";
+	if (reason >= 0 && reason < G_N_ELEMENTS (reason_table))
+		return reason_table[reason];
+	return reason_table[NM_DEVICE_STATE_REASON_UNKNOWN];
 }
 
 /***********************************************************/
