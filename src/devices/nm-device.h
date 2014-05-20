@@ -218,7 +218,7 @@ typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
 GType nm_device_get_type (void);
 
 const char *    nm_device_get_path (NMDevice *dev);
-void            nm_device_set_path (NMDevice *dev, const char *path);
+void            nm_device_dbus_export   (NMDevice *device);
 
 const char *	nm_device_get_udi		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);

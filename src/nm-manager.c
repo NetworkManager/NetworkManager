@@ -1682,8 +1682,6 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *iface, *driver, *type_desc;
-	char *path;
-	static guint32 devcount = 0;
 	const GSList *unmanaged_specs;
 	gboolean user_unmanaged, sleeping;
 	NMConnection *connection = NULL;
@@ -1760,11 +1758,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	sleeping = manager_sleeping (self);
 	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_INTERNAL, sleeping);
 
-	path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
-	nm_device_set_path (device, path);
-	nm_dbus_manager_register_object (priv->dbus_mgr, path, device);
-	nm_log_info (LOGD_CORE, "(%s): exported as %s", iface, path);
-	g_free (path);
+	nm_device_dbus_export (device);
 
 	/* Don't generate a connection e.g. for devices NM just created, or
 	 * for the loopback, or when we're sleeping. */

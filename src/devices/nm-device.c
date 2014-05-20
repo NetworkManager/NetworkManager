@@ -453,16 +453,19 @@ device_has_capability (NMDevice *device, NMDeviceCapabilities caps)
 /***********************************************************/
 
 void
-nm_device_set_path (NMDevice *self, const char *path)
+nm_device_dbus_export (NMDevice *device)
 {
+	static guint32 devcount = 0;
 	NMDevicePrivate *priv;
 
-	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_DEVICE (device));
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
+	priv = NM_DEVICE_GET_PRIVATE (device);
 	g_return_if_fail (priv->path == NULL);
 
-	priv->path = g_strdup (path);
+	priv->path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
+	nm_log_info (LOGD_DEVICE, "(%s): exported as %s", priv->iface, priv->path);
+	nm_dbus_manager_register_object (nm_dbus_manager_get (), priv->path, device);
 }
 
 const char *
