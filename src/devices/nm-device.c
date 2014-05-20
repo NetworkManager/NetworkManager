@@ -314,10 +314,13 @@ static gboolean nm_device_set_ip6_config (NMDevice *dev,
                                           gboolean commit,
                                           NMDeviceStateReason *reason);
 
+static gboolean nm_device_master_add_slave (NMDevice *dev, NMDevice *slave, gboolean configure);
 static void nm_device_slave_notify_enslave (NMDevice *dev, gboolean success);
 static void nm_device_slave_notify_release (NMDevice *dev, NMDeviceStateReason reason);
 
 static void addrconf6_start_with_link_ready (NMDevice *self);
+
+static gboolean nm_device_get_default_unmanaged (NMDevice *device);
 
 /***********************************************************/
 
@@ -852,7 +855,7 @@ carrier_changed (NMDevice *device, gboolean carrier)
 	if (priv->ignore_carrier && !carrier)
 		return;
 
-	if (nm_device_is_master (device)) {
+	if (priv->is_master) {
 		/* Bridge/bond/team carrier does not affect its own activation,
 		 * but when carrier comes on, if there are slaves waiting,
 		 * it will restart them.
@@ -1217,7 +1220,7 @@ slave_state_changed (NMDevice *slave,
  *
  * Returns: %TRUE on success, %FALSE on failure
  */
-gboolean
+static gboolean
 nm_device_master_add_slave (NMDevice *dev, NMDevice *slave, gboolean configure)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
@@ -1324,18 +1327,6 @@ nm_device_master_check_slave_physical_port (NMDevice *dev, NMDevice *slave,
 			return;
 		}
 	}
-}
-
-/**
- * nm_device_is_master:
- * @dev: the device
- *
- * Returns: whether @dev can enslave other devices (eg, bridge or bond or team)
- */
-gboolean
-nm_device_is_master (NMDevice *dev)
-{
-	return NM_DEVICE_GET_PRIVATE (dev)->is_master;
 }
 
 /* release all slaves */
@@ -2892,7 +2883,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 		g_assert_cmpstr (method, ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
 
 	if (   strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) != 0
-	    && nm_device_is_master (self)
+	    && priv->is_master
 	    && !priv->carrier) {
 		nm_log_info (LOGD_IP4 | LOGD_DEVICE,
 		             "(%s): IPv4 config waiting until carrier is on",
@@ -3778,7 +3769,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 		g_assert_cmpstr (method, ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
 
 	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) != 0
-	    && nm_device_is_master (self)
+	    && priv->is_master
 	    && !priv->carrier) {
 		nm_log_info (LOGD_IP6 | LOGD_DEVICE,
 		             "(%s): IPv6 config waiting until carrier is on", ip_iface);
@@ -4725,6 +4716,30 @@ _update_ip4_address (NMDevice *self)
 	close (fd);
 }
 
+gboolean
+nm_device_get_is_nm_owned (NMDevice *device)
+{
+	return NM_DEVICE_GET_PRIVATE (device)->is_nm_owned;
+}
+
+gboolean
+nm_device_set_is_nm_owned (NMDevice *device,
+                           gboolean is_nm_owned)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (is_nm_owned == priv->is_nm_owned)
+		return TRUE;
+	if (!is_nm_owned)
+		return FALSE;
+	priv->is_nm_owned = TRUE;
+	return TRUE;
+}
+
 /*
  * delete_on_deactivate_link_delete
  *
@@ -4772,12 +4787,12 @@ delete_on_deactivate_unschedule (NMDevice *self)
 static void
 delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 {
-	NMDevicePrivate *priv;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	DeleteOnDeactivateData *data;
 
 	if (ifindex <= 0)
 		return;
-	if (!nm_device_get_is_nm_owned (self))
+	if (!priv->is_nm_owned)
 		return;
 	if (!nm_device_is_software (self))
 		return;
@@ -4786,8 +4801,6 @@ delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_UNAVAILABLE)
 		return;
 	delete_on_deactivate_unschedule (self); /* always cancel and reschedule */
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	data = g_new (DeleteOnDeactivateData, 1);
 	g_object_add_weak_pointer (G_OBJECT (self), (void **) &data->device);
@@ -4798,31 +4811,6 @@ delete_on_deactivate_check_and_schedule (NMDevice *self, int ifindex)
 
 	nm_log_dbg (LOGD_DEVICE, "delete_on_deactivate: schedule cleanup and delete virtual link #%d for [%s] (id=%u)",
 	                         ifindex, nm_device_get_iface (self), data->idle_add_id);
-}
-
-gboolean
-nm_device_get_is_nm_owned (NMDevice *device)
-{
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
-	return NM_DEVICE_GET_PRIVATE (device)->is_nm_owned;
-}
-
-gboolean
-nm_device_set_is_nm_owned (NMDevice *device,
-                           gboolean is_nm_owned)
-{
-	NMDevicePrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
-
-	priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if (is_nm_owned == priv->is_nm_owned)
-		return TRUE;
-	if (!is_nm_owned)
-		return FALSE;
-	priv->is_nm_owned = TRUE;
-	return TRUE;
 }
 
 static void
@@ -5821,18 +5809,6 @@ nm_device_get_managed (NMDevice *device)
 }
 
 /**
- * nm_device_get_default_unmanaged():
- * @device: the #NMDevice
- *
- * Returns: %TRUE if the device is by default unmanaged
- */
-gboolean
-nm_device_get_default_unmanaged (NMDevice *device)
-{
-	return nm_device_get_unmanaged_flag (device, NM_UNMANAGED_DEFAULT);
-}
-
-/**
  * nm_device_get_unmanaged_flag():
  * @device: the #NMDevice
  *
@@ -5842,6 +5818,18 @@ gboolean
 nm_device_get_unmanaged_flag (NMDevice *device, NMUnmanagedFlags flag)
 {
 	return NM_DEVICE_GET_PRIVATE (device)->unmanaged_flags & flag;
+}
+
+/**
+ * nm_device_get_default_unmanaged():
+ * @device: the #NMDevice
+ *
+ * Returns: %TRUE if the device is by default unmanaged
+ */
+static gboolean
+nm_device_get_default_unmanaged (NMDevice *device)
+{
+	return nm_device_get_unmanaged_flag (device, NM_UNMANAGED_DEFAULT);
 }
 
 void
