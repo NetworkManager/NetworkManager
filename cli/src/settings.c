@@ -564,16 +564,18 @@ NmcOutputField nmc_fields_setting_vlan[] = {
 NmcOutputField nmc_fields_setting_bridge[] = {
 	SETTING_FIELD ("name",  8),                                        /* 0 */
 	SETTING_FIELD (NM_SETTING_BRIDGE_INTERFACE_NAME, 15),              /* 1 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_STP, 5),                          /* 2 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_PRIORITY, 6),                     /* 3 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_FORWARD_DELAY, 6),                /* 4 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_HELLO_TIME, 6),                   /* 5 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_MAX_AGE, 6),                      /* 6 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_AGEING_TIME, 6),                  /* 7 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_MAC_ADDRESS, 19),                 /* 2 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_STP, 5),                          /* 3 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_PRIORITY, 6),                     /* 4 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_FORWARD_DELAY, 6),                /* 5 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_HELLO_TIME, 6),                   /* 6 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_MAX_AGE, 6),                      /* 7 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_AGEING_TIME, 6),                  /* 8 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_BRIDGE_ALL    "name"","\
                                          NM_SETTING_BRIDGE_INTERFACE_NAME","\
+                                         NM_SETTING_BRIDGE_MAC_ADDRESS","\
                                          NM_SETTING_BRIDGE_STP","\
                                          NM_SETTING_BRIDGE_PRIORITY","\
                                          NM_SETTING_BRIDGE_FORWARD_DELAY","\
@@ -1053,6 +1055,7 @@ nmc_property_bond_get_options (NMSetting *setting)
 
 /* --- NM_SETTING_BRIDGE_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_bridge_get_interface_name, NM_SETTING_BRIDGE_INTERFACE_NAME)
+DEFINE_HWADDR_GETTER (nmc_property_bridge_get_mac_address, NM_SETTING_BRIDGE_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_bridge_get_stp, NM_SETTING_BRIDGE_STP)
 DEFINE_GETTER (nmc_property_bridge_get_priority, NM_SETTING_BRIDGE_PRIORITY)
 DEFINE_GETTER (nmc_property_bridge_get_forward_delay, NM_SETTING_BRIDGE_FORWARD_DELAY)
@@ -4926,6 +4929,13 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE (BRIDGE, MAC_ADDRESS),
+	                    nmc_property_bridge_get_mac_address,
+	                    nmc_property_set_mac,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (BRIDGE, STP),
 	                    nmc_property_bridge_get_stp,
 	                    nmc_property_set_bool,
@@ -7127,12 +7137,13 @@ setting_bridge_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
 	set_val_str (arr, 1, nmc_property_bridge_get_interface_name (setting));
-	set_val_str (arr, 2, nmc_property_bridge_get_stp (setting));
-	set_val_str (arr, 3, nmc_property_bridge_get_priority (setting));
-	set_val_str (arr, 4, nmc_property_bridge_get_forward_delay (setting));
-	set_val_str (arr, 5, nmc_property_bridge_get_hello_time (setting));
-	set_val_str (arr, 6, nmc_property_bridge_get_max_age (setting));
-	set_val_str (arr, 7, nmc_property_bridge_get_ageing_time (setting));
+	set_val_str (arr, 2, nmc_property_bridge_get_mac_address (setting));
+	set_val_str (arr, 3, nmc_property_bridge_get_stp (setting));
+	set_val_str (arr, 4, nmc_property_bridge_get_priority (setting));
+	set_val_str (arr, 5, nmc_property_bridge_get_forward_delay (setting));
+	set_val_str (arr, 6, nmc_property_bridge_get_hello_time (setting));
+	set_val_str (arr, 7, nmc_property_bridge_get_max_age (setting));
+	set_val_str (arr, 8, nmc_property_bridge_get_ageing_time (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
