@@ -47,8 +47,7 @@
 #include "nm-bt-enum-types.h"
 #include "nm-utils.h"
 
-#define MM_OLD_DBUS_SERVICE  "org.freedesktop.ModemManager"
-#define MM_NEW_DBUS_SERVICE  "org.freedesktop.ModemManager1"
+#define MM_DBUS_SERVICE  "org.freedesktop.ModemManager1"
 
 G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
 
@@ -674,11 +673,6 @@ component_added (NMDevice *device, GObject *component)
 	g_signal_connect (modem, NM_MODEM_STATE_CHANGED, G_CALLBACK (modem_state_cb), self);
 	g_signal_connect (modem, NM_MODEM_REMOVED, G_CALLBACK (modem_removed_cb), self);
 
-	/* In the old ModemManager the data port is known from the very beginning;
-	 * while in the new ModemManager the data port is set afterwards when the bearer gets
-	 * created */
-	if (modem_data_port)
-		nm_device_set_ip_iface (NM_DEVICE (self), modem_data_port);
 	g_signal_connect (modem, "notify::" NM_MODEM_DATA_PORT, G_CALLBACK (data_port_changed_cb), self);
 
 	/* Kick off the modem connection */
@@ -1038,11 +1032,7 @@ mm_name_owner_changed (NMDBusManager *dbus_mgr,
 	gboolean new_owner_good;
 
 	/* Can't handle the signal if its not from the modem service */
-	if (   strcmp (MM_OLD_DBUS_SERVICE, name) != 0
-#if WITH_MODEM_MANAGER_1
-	    && strcmp (MM_NEW_DBUS_SERVICE, name) != 0
-#endif
-	    )
+	if (strcmp (MM_DBUS_SERVICE, name) != 0)
 		return;
 
 	old_owner_good = (old_owner && strlen (old_owner));
@@ -1096,11 +1086,7 @@ nm_device_bt_init (NMDeviceBt *self)
 	                                      self);
 
 	/* Initial check to see if ModemManager is running */
-	mm_running = nm_dbus_manager_name_has_owner (priv->dbus_mgr, MM_OLD_DBUS_SERVICE);
-#if WITH_MODEM_MANAGER_1
-	if (!mm_running)
-		mm_running = nm_dbus_manager_name_has_owner (priv->dbus_mgr, MM_NEW_DBUS_SERVICE);
-#endif
+	mm_running = nm_dbus_manager_name_has_owner (priv->dbus_mgr, MM_DBUS_SERVICE);
 	set_mm_running (self, mm_running);
 }
 
