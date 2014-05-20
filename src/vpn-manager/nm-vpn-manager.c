@@ -123,7 +123,7 @@ nm_vpn_manager_deactivate_connection (NMVPNManager *self,
                                       NMVPNConnection *connection,
                                       NMVPNConnectionStateReason reason)
 {
-	return nm_vpn_connection_deactivate (connection, reason);
+	return nm_vpn_connection_deactivate (connection, reason, FALSE);
 }
 
 static void

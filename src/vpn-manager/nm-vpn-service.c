@@ -157,8 +157,11 @@ nm_vpn_service_stop_connections (NMVPNService *service,
 		NMVPNConnection *vpn = NM_VPN_CONNECTION (iter->data);
 
 		g_signal_handlers_disconnect_by_func (vpn, G_CALLBACK (connection_vpn_state_changed), service);
-		/* Quitting terminates the VPN cleanly, otherwise failure is assumed */
-		nm_vpn_connection_stop (vpn, quitting ? FALSE : TRUE, reason);
+		if (quitting) {
+			/* Deactivate to allow pre-down before disconnecting */
+			nm_vpn_connection_deactivate (vpn, reason, quitting);
+		}
+		nm_vpn_connection_disconnect (vpn, reason, quitting);
 		g_object_unref (vpn);
 	}
 	g_clear_pointer (&priv->pending, g_slist_free);
@@ -292,7 +295,7 @@ nm_vpn_service_activate (NMVPNService *service,
 	 * connection_vpn_state_changed().
 	 */
 	if (priv->active) {
-		nm_vpn_connection_deactivate (priv->active, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
+		nm_vpn_connection_deactivate (priv->active, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED, FALSE);
 		return TRUE;
 	}
 

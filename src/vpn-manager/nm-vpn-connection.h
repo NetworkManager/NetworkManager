@@ -76,10 +76,11 @@ NMVPNConnectionState nm_vpn_connection_get_vpn_state   (NMVPNConnection *connect
 const char *         nm_vpn_connection_get_banner      (NMVPNConnection *connection);
 
 gboolean             nm_vpn_connection_deactivate      (NMVPNConnection *connection,
-                                                        NMVPNConnectionStateReason reason);
-void                 nm_vpn_connection_stop            (NMVPNConnection *connection,
-                                                        gboolean fail,
-                                                        NMVPNConnectionStateReason reason);
+                                                        NMVPNConnectionStateReason reason,
+                                                        gboolean quitting);
+void                 nm_vpn_connection_disconnect      (NMVPNConnection *connection,
+                                                        NMVPNConnectionStateReason reason,
+                                                        gboolean quitting);
 
 NMIP4Config *        nm_vpn_connection_get_ip4_config  (NMVPNConnection *connection);
 NMIP6Config *        nm_vpn_connection_get_ip6_config  (NMVPNConnection *connection);
