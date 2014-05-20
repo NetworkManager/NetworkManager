@@ -176,7 +176,7 @@ Summary: Bluetooth device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: NetworkManager-wwan
-%if 0%{?rhel} || (0%{?fedora} > 19)
+%if (0%{?fedora} > 19)
 Requires: bluez >= 5.0
 %else
 Requires: bluez >= 4.101-5
