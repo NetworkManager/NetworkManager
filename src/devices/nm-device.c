@@ -216,6 +216,7 @@ typedef struct {
 	guint           act_source6_id;
 	gpointer        act_source6_func;
 	guint           recheck_assume_id;
+	guint           dispatcher_id;
 
 	/* Link stuff */
 	guint           link_connected_id;
@@ -6464,6 +6465,29 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 
 /***********************************************************/
 
+static void
+dispatcher_pre_down_done (guint call_id, gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	g_return_if_fail (call_id == priv->dispatcher_id);
+
+	priv->dispatcher_id = 0;
+	nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
+}
+
+static void
+dispatcher_cleanup (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->dispatcher_id) {
+		nm_dispatcher_call_cancel (priv->dispatcher_id);
+		priv->dispatcher_id = 0;
+	}
+}
+
 static gboolean
 ip_config_valid (NMDeviceState state)
 {
@@ -6524,6 +6548,8 @@ nm_device_state_changed (NMDevice *device,
 
 	/* Clear any queued transitions */
 	nm_device_queued_state_clear (device);
+
+	dispatcher_cleanup (device);
 
 	/* Cache the activation request for the dispatcher */
 	req = priv->act_request ? g_object_ref (priv->act_request) : NULL;
@@ -6621,7 +6647,15 @@ nm_device_state_changed (NMDevice *device,
 		}
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
-		nm_device_queue_state (device, NM_DEVICE_STATE_DISCONNECTED, reason);
+		if (!nm_dispatcher_call (DISPATCHER_ACTION_PRE_DOWN,
+		                         nm_act_request_get_connection (req),
+		                         device,
+		                         dispatcher_pre_down_done,
+		                         device,
+		                         &priv->dispatcher_id)) {
+			/* Just proceed on errors */
+			dispatcher_pre_down_done (0, device);
+		}
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (priv->queued_act_request) {
@@ -6687,7 +6721,8 @@ nm_device_state_changed (NMDevice *device,
 	if (state > NM_DEVICE_STATE_DISCONNECTED)
 		delete_on_deactivate_unschedule (device);
 
-	if (old_state == NM_DEVICE_STATE_ACTIVATED)
+	if (   (old_state == NM_DEVICE_STATE_ACTIVATED || old_state == NM_DEVICE_STATE_DEACTIVATING)
+	    && (state != NM_DEVICE_STATE_DEACTIVATING))
 		nm_dispatcher_call (DISPATCHER_ACTION_DOWN, nm_act_request_get_connection (req), device, NULL, NULL, NULL);
 
 	/* IP-related properties are only valid when the device has IP configuration.
@@ -7185,6 +7220,8 @@ dispose (GObject *object)
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMPlatform *platform;
+
+	dispatcher_cleanup (self);
 
 	_cleanup_generic_pre (self, FALSE);
 
