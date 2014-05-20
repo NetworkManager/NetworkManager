@@ -1,6 +1,7 @@
 <job product="cpe:/o:redhat:enterprise_linux:7.0" retention_tag="active+1">
 	<whiteboard>
 		$WHITEBOARD $UUID
+		$ARGV
 	</whiteboard>
 	<recipeSet priority="Normal">
 		<recipe kernel_options="" kernel_options_post="" ks_meta="method=nfs" role="None" whiteboard="$WHITEBOARD $UUID">

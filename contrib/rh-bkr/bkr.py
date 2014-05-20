@@ -431,6 +431,7 @@ class CmdSubmit(CmdBase):
             raise Exception("--nitrate-status or --nitrate-exclude-status makes only sense with selecting nitrate tags")
 
         self.subs['TESTS'] = ','.join(sorted(set(tests)))
+        self.subs['ARGV'] = ("\"" + "\" \"".join(sys.argv) + "\"") if sys.argv else ''
 
         for (k,v) in self.subs.iteritems():
             self._print_substitution(k, v)
