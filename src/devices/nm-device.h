@@ -228,7 +228,6 @@ const char *	nm_device_get_ip_iface	(NMDevice *dev);
 int             nm_device_get_ip_ifindex(NMDevice *dev);
 const char *	nm_device_get_driver	(NMDevice *dev);
 const char *	nm_device_get_driver_version	(NMDevice *dev);
-const char *	nm_device_get_firmware_version	(NMDevice *dev);
 const char *	nm_device_get_type_desc (NMDevice *dev);
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 
@@ -355,10 +354,6 @@ gboolean nm_device_has_pending_action    (NMDevice *device);
 
 GPtrArray *nm_device_get_available_connections (NMDevice *device,
                                                 const char *specific_object);
-
-const char *nm_device_get_physical_port_id (NMDevice *device);
-
-guint32 nm_device_get_mtu (NMDevice *device);
 
 gboolean   nm_device_connection_is_available (NMDevice *device,
                                               NMConnection *connection,

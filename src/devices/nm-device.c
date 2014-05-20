@@ -450,24 +450,7 @@ device_has_capability (NMDevice *device, NMDeviceCapabilities caps)
 	return !!(NM_DEVICE_GET_PRIVATE (device)->capabilities & caps);
 }
 
-static gboolean
-nm_device_is_up (NMDevice *self)
-{
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-
-	if (NM_DEVICE_GET_CLASS (self)->is_up)
-		return NM_DEVICE_GET_CLASS (self)->is_up (self);
-
-	return TRUE;
-}
-
-static gboolean
-is_up (NMDevice *device)
-{
-	int ifindex = nm_device_get_ip_ifindex (device);
-
-	return ifindex > 0 ? nm_platform_link_is_up (ifindex) : TRUE;
-}
+/***********************************************************/
 
 void
 nm_device_set_path (NMDevice *self, const char *path)
@@ -498,9 +481,6 @@ nm_device_get_udi (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->udi;
 }
 
-/*
- * Get/set functions for iface
- */
 const char *
 nm_device_get_iface (NMDevice *self)
 {
@@ -585,9 +565,6 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 	g_free (old_ip_iface);
 }
 
-/*
- * Get/set functions for driver
- */
 const char *
 nm_device_get_driver (NMDevice *self)
 {
@@ -604,18 +581,6 @@ nm_device_get_driver_version (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->driver_version;
 }
 
-const char *
-nm_device_get_firmware_version (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, NULL);
-
-	return NM_DEVICE_GET_PRIVATE (self)->firmware_version;
-}
-
-
-/*
- * Get/set functions for type
- */
 NMDeviceType
 nm_device_get_device_type (NMDevice *self)
 {
@@ -682,6 +647,44 @@ nm_device_get_type_desc (NMDevice *self)
 
 	return NM_DEVICE_GET_PRIVATE (self)->type_desc;
 }
+
+gboolean
+nm_device_has_carrier (NMDevice *device)
+{
+	return NM_DEVICE_GET_PRIVATE (device)->carrier;
+}
+
+NMActRequest *
+nm_device_get_act_request (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	return NM_DEVICE_GET_PRIVATE (self)->act_request;
+}
+
+NMConnection *
+nm_device_get_connection (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	return priv->act_request ? nm_act_request_get_connection (priv->act_request) : NULL;
+}
+
+RfKillType
+nm_device_get_rfkill_type (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	return NM_DEVICE_GET_PRIVATE (self)->rfkill_type;
+}
+
+static const char *
+nm_device_get_physical_port_id (NMDevice *device)
+{
+	return NM_DEVICE_GET_PRIVATE (device)->physical_port_id;
+}
+
+/***********************************************************/
 
 static gboolean
 nm_device_uses_generated_connection (NMDevice *self)
@@ -893,12 +896,6 @@ carrier_changed (NMDevice *device, gboolean carrier)
 			                       NM_DEVICE_STATE_REASON_CARRIER);
 		}
 	}
-}
-
-gboolean
-nm_device_has_carrier (NMDevice *device)
-{
-	return NM_DEVICE_GET_PRIVATE (device)->carrier;
 }
 
 #define LINK_DISCONNECT_DELAY 4
@@ -1161,15 +1158,6 @@ nm_device_owns_iface (NMDevice *device, const char *iface)
 	if (NM_DEVICE_GET_CLASS (device)->owns_iface)
 		return NM_DEVICE_GET_CLASS (device)->owns_iface (device, iface);
 	return FALSE;
-}
-
-static void
-check_carrier (NMDevice *device)
-{
-	int ifindex = nm_device_get_ip_ifindex (device);
-
-	if (!device_has_capability (device, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
-		nm_device_set_carrier (device, nm_platform_link_is_connected (ifindex));
 }
 
 static void
@@ -1499,28 +1487,6 @@ nm_device_get_enslaved (NMDevice *device)
 	return NM_DEVICE_GET_PRIVATE (device)->enslaved;
 }
 
-/*
- * nm_device_get_act_request
- *
- * Return the devices activation request, if any.
- *
- */
-NMActRequest *
-nm_device_get_act_request (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, NULL);
-
-	return NM_DEVICE_GET_PRIVATE (self)->act_request;
-}
-
-NMConnection *
-nm_device_get_connection (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	return priv->act_request ? nm_act_request_get_connection (priv->act_request) : NULL;
-}
-
 static gboolean
 is_available (NMDevice *device)
 {
@@ -1576,12 +1542,12 @@ nm_device_set_enabled (NMDevice *self, gboolean enabled)
 		NM_DEVICE_GET_CLASS (self)->set_enabled (self, enabled);
 }
 
-RfKillType
-nm_device_get_rfkill_type (NMDevice *self)
+gboolean
+nm_device_get_autoconnect (NMDevice *device)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	return NM_DEVICE_GET_PRIVATE (self)->rfkill_type;
+	return NM_DEVICE_GET_PRIVATE (device)->autoconnect;
 }
 
 static gboolean
@@ -5439,6 +5405,25 @@ carrier_wait_timeout (gpointer user_data)
 	return G_SOURCE_REMOVE;
 }
 
+static gboolean
+nm_device_is_up (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	if (NM_DEVICE_GET_CLASS (self)->is_up)
+		return NM_DEVICE_GET_CLASS (self)->is_up (self);
+
+	return TRUE;
+}
+
+static gboolean
+is_up (NMDevice *device)
+{
+	int ifindex = nm_device_get_ip_ifindex (device);
+
+	return ifindex > 0 ? nm_platform_link_is_up (ifindex) : TRUE;
+}
+
 gboolean
 nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 {
@@ -5494,6 +5479,15 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 
 	_update_ip4_address (self);
 	return TRUE;
+}
+
+static void
+check_carrier (NMDevice *device)
+{
+	int ifindex = nm_device_get_ip_ifindex (device);
+
+	if (!device_has_capability (device, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
+		nm_device_set_carrier (device, nm_platform_link_is_connected (ifindex));
 }
 
 static gboolean
@@ -5939,14 +5933,6 @@ nm_device_set_dhcp_anycast_address (NMDevice *device, guint8 *addr)
 	}
 }
 
-gboolean
-nm_device_get_autoconnect (NMDevice *device)
-{
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
-
-	return NM_DEVICE_GET_PRIVATE (device)->autoconnect;
-}
-
 /**
  * nm_device_connection_is_available():
  * @device: the #NMDevice
@@ -6296,26 +6282,6 @@ nm_device_has_pending_action (NMDevice *device)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
 	return !!priv->pending_actions;
-}
-
-const char *
-nm_device_get_physical_port_id (NMDevice *device)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-
-	return priv->physical_port_id;
-}
-
-/**
- * nm_device_get_mtu:
- * @device: the #NMDevice
- *
- * Returns: MTU of the #NMDevice
- */
-guint32
-nm_device_get_mtu (NMDevice *device)
-{
-	return NM_DEVICE_GET_PRIVATE (device)->mtu;
 }
 
 /***********************************************************/
