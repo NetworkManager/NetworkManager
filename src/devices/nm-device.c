@@ -444,48 +444,6 @@ nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *val
 	return nm_platform_sysctl_set (nm_utils_ip6_property_path (nm_device_get_ip_iface (self), property), value);
 }
 
-static const char *ip6_properties_to_save[] = {
-	"accept_ra",
-	"accept_ra_defrtr",
-	"accept_ra_pinfo",
-	"accept_ra_rtr_pref",
-	"disable_ipv6",
-	"hop_limit",
-	"use_tempaddr",
-};
-
-static void
-save_ip6_properties (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *ifname = nm_device_get_ip_iface (self);
-	char *value;
-	int i;
-
-	g_hash_table_remove_all (priv->ip6_saved_properties);
-
-	for (i = 0; i < G_N_ELEMENTS (ip6_properties_to_save); i++) {
-		value = nm_platform_sysctl_get (nm_utils_ip6_property_path (ifname, ip6_properties_to_save[i]));
-		if (value) {
-			g_hash_table_insert (priv->ip6_saved_properties,
-			                     (char *) ip6_properties_to_save[i],
-			                     value);
-		}
-	}
-}
-
-static void
-restore_ip6_properties (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	GHashTableIter iter;
-	gpointer key, value;
-
-	g_hash_table_iter_init (&iter, priv->ip6_saved_properties);
-	while (g_hash_table_iter_next (&iter, &key, &value))
-		nm_device_ipv6_sysctl_set (self, key, value);
-}
-
 static gboolean
 device_has_capability (NMDevice *device, NMDeviceCapabilities caps)
 {
@@ -3713,6 +3671,48 @@ addrconf6_cleanup (NMDevice *self)
 }
 
 /******************************************/
+
+static const char *ip6_properties_to_save[] = {
+	"accept_ra",
+	"accept_ra_defrtr",
+	"accept_ra_pinfo",
+	"accept_ra_rtr_pref",
+	"disable_ipv6",
+	"hop_limit",
+	"use_tempaddr",
+};
+
+static void
+save_ip6_properties (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const char *ifname = nm_device_get_ip_iface (self);
+	char *value;
+	int i;
+
+	g_hash_table_remove_all (priv->ip6_saved_properties);
+
+	for (i = 0; i < G_N_ELEMENTS (ip6_properties_to_save); i++) {
+		value = nm_platform_sysctl_get (nm_utils_ip6_property_path (ifname, ip6_properties_to_save[i]));
+		if (value) {
+			g_hash_table_insert (priv->ip6_saved_properties,
+			                     (char *) ip6_properties_to_save[i],
+			                     value);
+		}
+	}
+}
+
+static void
+restore_ip6_properties (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	GHashTableIter iter;
+	gpointer key, value;
+
+	g_hash_table_iter_init (&iter, priv->ip6_saved_properties);
+	while (g_hash_table_iter_next (&iter, &key, &value))
+		nm_device_ipv6_sysctl_set (self, key, value);
+}
 
 static NMSettingIP6ConfigPrivacy
 use_tempaddr_clamp (NMSettingIP6ConfigPrivacy use_tempaddr)
