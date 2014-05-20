@@ -754,8 +754,7 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 	nm_dbus_manager_unregister_object (priv->dbus_mgr, device);
 	g_object_unref (device);
 
-	if (priv->startup)
-		check_if_startup_complete (manager);
+	check_if_startup_complete (manager);
 }
 
 static void
