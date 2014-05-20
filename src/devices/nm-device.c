@@ -4722,22 +4722,12 @@ nm_device_get_is_nm_owned (NMDevice *device)
 	return NM_DEVICE_GET_PRIVATE (device)->is_nm_owned;
 }
 
-gboolean
-nm_device_set_is_nm_owned (NMDevice *device,
-                           gboolean is_nm_owned)
+void
+nm_device_set_nm_owned (NMDevice *device)
 {
-	NMDevicePrivate *priv;
+	g_return_if_fail (NM_IS_DEVICE (device));
 
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
-
-	priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if (is_nm_owned == priv->is_nm_owned)
-		return TRUE;
-	if (!is_nm_owned)
-		return FALSE;
-	priv->is_nm_owned = TRUE;
-	return TRUE;
+	NM_DEVICE_GET_PRIVATE (device)->is_nm_owned = TRUE;
 }
 
 /*

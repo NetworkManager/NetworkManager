@@ -1086,7 +1086,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	}
 
 	if (device) {
-		nm_device_set_is_nm_owned (device, TRUE);
+		nm_device_set_nm_owned (device);
 		add_device (self, device, FALSE);
 		g_object_unref (device);
 	}

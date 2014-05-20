@@ -317,8 +317,7 @@ void nm_device_set_initial_unmanaged_flag (NMDevice *device,
                                            gboolean unmanaged);
 
 gboolean nm_device_get_is_nm_owned (NMDevice *device);
-gboolean nm_device_set_is_nm_owned (NMDevice *device,
-                                    gboolean is_nm_owned);
+void     nm_device_set_nm_owned    (NMDevice *device);
 
 gboolean nm_device_get_autoconnect (NMDevice *device);
 
