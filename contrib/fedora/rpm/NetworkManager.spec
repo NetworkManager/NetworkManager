@@ -460,6 +460,7 @@ fi
 %{systemd_dir}/NetworkManager-wait-online.service
 %{systemd_dir}/NetworkManager-dispatcher.service
 %{systemd_dir}/network-online.target.wants/NetworkManager-wait-online.service
+%dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
 
 %if 0%{?with_adsl}
@@ -548,6 +549,7 @@ fi
 
 %files config-server
 %defattr(-,root,root,0755)
+%dir %{_sysconfdir}/%{name}/conf.d
 %config %{_sysconfdir}/%{name}/conf.d/00-server.conf
 
 %if 0%{?with_nmtui}
