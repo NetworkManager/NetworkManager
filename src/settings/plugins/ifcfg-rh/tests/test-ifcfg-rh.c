@@ -12056,6 +12056,8 @@ test_read_bridge_main (void)
 {
 	NMConnection *connection;
 	NMSettingBridge *s_bridge;
+	const GByteArray *array;
+	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	char *routefile = NULL;
@@ -12088,6 +12090,11 @@ test_read_bridge_main (void)
 	g_assert_cmpuint (nm_setting_bridge_get_hello_time (s_bridge), ==, 7);
 	g_assert_cmpuint (nm_setting_bridge_get_max_age (s_bridge), ==, 39);
 	g_assert_cmpuint (nm_setting_bridge_get_ageing_time (s_bridge), ==, 235352);
+	/* MAC address */
+	array = nm_setting_bridge_get_mac_address (s_bridge);
+	g_assert (array);
+	g_assert_cmpint (array->len, ==, ETH_ALEN);
+	g_assert (memcmp (array->data, &expected_mac_address[0], ETH_ALEN) == 0);
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -12110,6 +12117,8 @@ test_write_bridge_main (void)
 	const guint32 gw = htonl (0x01010101);
 	const guint32 prefix = 24;
 	NMIP4Address *addr;
+	static unsigned char bridge_mac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
+	GByteArray *mac_array;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -12141,9 +12150,13 @@ test_write_bridge_main (void)
 	g_assert (s_bridge);
 	nm_connection_add_setting (connection, NM_SETTING (s_bridge));
 
+	mac_array = g_byte_array_sized_new (sizeof (bridge_mac));
+	g_byte_array_append (mac_array, bridge_mac, sizeof (bridge_mac));
 	g_object_set (s_bridge,
 	              NM_SETTING_BRIDGE_INTERFACE_NAME, "br0",
+	              NM_SETTING_BRIDGE_MAC_ADDRESS, mac_array,
 	              NULL);
+	g_byte_array_free (mac_array, TRUE);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();

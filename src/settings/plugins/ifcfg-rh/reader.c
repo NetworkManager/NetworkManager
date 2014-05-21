@@ -4508,6 +4508,7 @@ make_bridge_setting (shvarFile *ifcfg,
 	guint32 u;
 	gboolean stp = FALSE;
 	gboolean stp_set = FALSE;
+	GByteArray *array = NULL;
 
 	s_bridge = NM_SETTING_BRIDGE (nm_setting_bridge_new ());
 
@@ -4519,6 +4520,16 @@ make_bridge_setting (shvarFile *ifcfg,
 
 	g_object_set (s_bridge, NM_SETTING_BRIDGE_INTERFACE_NAME, value, NULL);
 	g_free (value);
+
+	if (read_mac_address (ifcfg, "MACADDR", ARPHRD_ETHER, &array, error)) {
+		if (array) {
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_MAC_ADDRESS, array, NULL);
+			g_byte_array_free (array, TRUE);
+		}
+	} else {
+		PARSE_WARNING ("%s", (*error)->message);
+		g_clear_error (error);
+	}
 
 	value = svGetValue (ifcfg, "STP", FALSE);
 	if (value) {
