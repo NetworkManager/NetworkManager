@@ -7794,13 +7794,12 @@ nm_device_remove_pending_action (NMDevice *device, const char *action, gboolean 
 
 	for (iter = priv->pending_actions; iter; iter = iter->next) {
 		if (!strcmp (action, iter->data)) {
-			g_free (iter->data);
-			priv->pending_actions = g_slist_delete_link (priv->pending_actions, iter);
 			nm_log_dbg (LOGD_DEVICE, "(%s): remove_pending_action (%d): '%s'",
 			            nm_device_get_iface (device),
-			            count + g_slist_length (iter),
+			            count + g_slist_length (iter->next), /* length excluding 'iter' */
 			            action);
-
+			g_free (iter->data);
+			priv->pending_actions = g_slist_delete_link (priv->pending_actions, iter);
 			if (priv->pending_actions == NULL)
 				g_object_notify (G_OBJECT (device), NM_DEVICE_HAS_PENDING_ACTION);
 			return TRUE;
