@@ -14,6 +14,8 @@ MEMORY=$((3*1024))
 
 mkdir "$SDIR"
 
+cd "$DIR"
+
 if [ "$OS" == "Red Hat Enterprise Linux" ]; then
     # qemu-kvm is installed in /usr/libexec on RHEL6
     # and redirects its output to VNC server
