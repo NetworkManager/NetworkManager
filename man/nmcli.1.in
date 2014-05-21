@@ -555,6 +555,9 @@ The value can be prefixed with \fBifname/\fP, \fBuuid/\fP or \fBid/\fP to disamb
 \(en STP maximum message age, in seconds (default: 20)
 .IP "\fI[ageing-time <0-1000000>]\fP" 42
 \(en the Ethernet MAC address aging time, in seconds (default: 300)
+.IP "\fI[mac <MAC address>]\fP" 42
+\(en MAC address of the bridge (note: this requires a recent kernel feature,
+originally introduced in 3.15 upstream kernel)
 .RE
 .RS
 .TP
