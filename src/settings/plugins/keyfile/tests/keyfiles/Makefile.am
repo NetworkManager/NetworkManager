@@ -3,6 +3,8 @@ KEYFILES = \
 	Test_GSM_Connection \
 	Test_Wireless_Connection \
 	Test_Wired_Connection_MAC_Case \
+	Test_MAC_Old_Format \
+	Test_MAC_IB_Old_Format \
 	Test_Wired_Connection_IP6 \
 	ATT_Data_Connect_BT \
 	ATT_Data_Connect_Plain \

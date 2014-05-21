@@ -554,17 +554,17 @@ mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, cons
 		}
 
 		/* If we found enough it's probably a string-format MAC address */
-		type = nm_utils_hwaddr_type (i + 1);
-		if (type > 0)
+		if (i+1 == ETH_ALEN || i+1 == INFINIBAND_ALEN) {
+			type = nm_utils_hwaddr_type (i + 1);
 			array = nm_utils_hwaddr_atoba (tmp_string, type);
+		}
 	}
 	g_free (tmp_string);
 
 	if (array == NULL) {
 		/* Old format; list of ints */
 		tmp_list = nm_keyfile_plugin_kf_get_integer_list (keyfile, setting_name, key, &length, NULL);
-		type = nm_utils_hwaddr_type (length);
-		if (type < 0) {
+		if (length == ETH_ALEN || length == INFINIBAND_ALEN) {
 			array = g_byte_array_sized_new (length);
 			for (i = 0; i < length; i++) {
 				int val = tmp_list[i];
