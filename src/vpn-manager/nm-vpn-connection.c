@@ -70,6 +70,7 @@ typedef enum {
 	STATE_NEED_AUTH,
 	STATE_CONNECT,
 	STATE_IP_CONFIG_GET,
+	STATE_PRE_UP,
 	STATE_ACTIVATED,
 	STATE_DEACTIVATING,
 	STATE_DISCONNECTED,
@@ -154,6 +155,7 @@ _state_to_nm_vpn_state (VpnState state)
 	case STATE_CONNECT:
 		return NM_VPN_CONNECTION_STATE_CONNECT;
 	case STATE_IP_CONFIG_GET:
+	case STATE_PRE_UP:
 		return NM_VPN_CONNECTION_STATE_IP_CONFIG_GET;
 	case STATE_ACTIVATED:
 		return NM_VPN_CONNECTION_STATE_ACTIVATED;
@@ -185,6 +187,7 @@ _state_to_ac_state (VpnState vpn_state)
 	case STATE_NEED_AUTH:
 	case STATE_CONNECT:
 	case STATE_IP_CONFIG_GET:
+	case STATE_PRE_UP:
 		return NM_ACTIVE_CONNECTION_STATE_ACTIVATING;
 	case STATE_ACTIVATED:
 		return NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
@@ -254,6 +257,16 @@ dispatcher_pre_down_done (guint call_id, gpointer user_data)
 
 	priv->dispatcher_id = 0;
 	_set_vpn_state (self, STATE_DISCONNECTED, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
+}
+
+static void
+dispatcher_pre_up_done (guint call_id, gpointer user_data)
+{
+	NMVPNConnection *self = NM_VPN_CONNECTION (user_data);
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+
+	priv->dispatcher_id = 0;
+	_set_vpn_state (self, STATE_ACTIVATED, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
 }
 
 static void
@@ -329,6 +342,20 @@ _set_vpn_state (NMVPNConnection *connection,
 		 * priv->secrets_req as NEED_AUTH is re-entered during interactive
 		 * secrets.
 		 */
+		break;
+	case STATE_PRE_UP:
+		if (!nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_PRE_UP,
+		                             priv->connection,
+		                             parent_dev,
+		                             priv->ip_iface,
+		                             priv->ip4_config,
+		                             priv->ip6_config,
+		                             dispatcher_pre_up_done,
+		                             connection,
+		                             &priv->dispatcher_id)) {
+			/* Just proceed on errors */
+			dispatcher_pre_up_done (0, connection);
+		}
 		break;
 	case STATE_ACTIVATED:
 		/* Secrets no longer needed now that we're connected */
@@ -625,6 +652,7 @@ static const char *state_table[] = {
 	[STATE_NEED_AUTH]     = "need-auth",
 	[STATE_CONNECT]       = "connect",
 	[STATE_IP_CONFIG_GET] = "ip-config-get",
+	[STATE_PRE_UP]        = "pre-up",
 	[STATE_ACTIVATED]     = "activated",
 	[STATE_DEACTIVATING]  = "deactivating",
 	[STATE_DISCONNECTED]  = "disconnected",
@@ -688,22 +716,13 @@ plugin_state_changed (DBusGProxy *proxy,
 		 */
 		nm_connection_clear_secrets (priv->connection);
 
-		switch (priv->vpn_state) {
-		case STATE_WAITING:
-		case STATE_PREPARE:
-		case STATE_NEED_AUTH:
-		case STATE_CONNECT:
-		case STATE_IP_CONFIG_GET:
-		case STATE_ACTIVATED:
+		if ((priv->vpn_state >= STATE_WAITING) && (priv->vpn_state <= STATE_ACTIVATED)) {
 			nm_log_info (LOGD_VPN, "VPN plugin state change reason: %s (%d)",
 			             vpn_reason_to_string (priv->failure_reason), priv->failure_reason);
 			_set_vpn_state (connection, STATE_FAILED, priv->failure_reason, FALSE);
 
 			/* Reset the failure reason */
 			priv->failure_reason = NM_VPN_CONNECTION_STATE_REASON_UNKNOWN;
-			break;
-		default:
-			break;
 		}
 	}
 }
@@ -868,7 +887,7 @@ nm_vpn_connection_apply_config (NMVPNConnection *connection)
 
 	nm_log_info (LOGD_VPN, "VPN connection '%s' (IP Config Get) complete.",
 	             nm_connection_get_id (priv->connection));
-	_set_vpn_state (connection, STATE_ACTIVATED, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
+	_set_vpn_state (connection, STATE_PRE_UP, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
 	return TRUE;
 }
 
@@ -1941,6 +1960,12 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->finalize (object);
 }
 
+static gboolean
+ip_config_valid (VpnState state)
+{
+	return (state == STATE_PRE_UP || state == STATE_ACTIVATED);
+}
+
 static void
 get_property (GObject *object, guint prop_id,
 		    GValue *value, GParamSpec *pspec)
@@ -1956,13 +1981,13 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->banner ? priv->banner : "");
 		break;
 	case PROP_IP4_CONFIG:
-		if (priv->vpn_state == STATE_ACTIVATED && priv->ip4_config)
+		if (ip_config_valid (priv->vpn_state) && priv->ip4_config)
 			g_value_set_boxed (value, nm_ip4_config_get_dbus_path (priv->ip4_config));
 		else
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_IP6_CONFIG:
-		if (priv->vpn_state == STATE_ACTIVATED && priv->ip6_config)
+		if (ip_config_valid (priv->vpn_state) && priv->ip6_config)
 			g_value_set_boxed (value, nm_ip6_config_get_dbus_path (priv->ip6_config));
 		else
 			g_value_set_boxed (value, "/");
