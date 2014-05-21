@@ -5253,6 +5253,36 @@ nm_device_get_ip6_config (NMDevice *self)
 /****************************************************************/
 
 static void
+ip_check_pre_up_done (guint call_id, gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	g_return_if_fail (call_id == priv->dispatcher_id);
+
+	priv->dispatcher_id = 0;
+	nm_device_queue_state (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+}
+
+static void
+ip_check_pre_up (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	g_warn_if_fail (priv->dispatcher_id == 0);
+
+	if (!nm_dispatcher_call (DISPATCHER_ACTION_PRE_UP,
+	                         nm_device_get_connection (self),
+	                         self,
+	                         ip_check_pre_up_done,
+	                         self,
+	                         &priv->dispatcher_id)) {
+		/* Just proceed on errors */
+		ip_check_pre_up_done (0, self);
+	}
+}
+
+static void
 ip_check_gw_ping_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -5306,9 +5336,9 @@ ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data)
 	} else
 		nm_log_warn (log_domain, "(%s): ping stopped unexpectedly with status %d", iface, status);
 
-	/* We've got connectivity, proceed to secondaries */
+	/* We've got connectivity, proceed to pre_up */
 	ip_check_gw_ping_cleanup (self);
-	nm_device_state_changed (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+	ip_check_pre_up (self);
 }
 
 static gboolean
@@ -5323,7 +5353,7 @@ ip_check_ping_timeout_cb (gpointer user_data)
 	             nm_device_get_iface (self));
 
 	ip_check_gw_ping_cleanup (self);
-	nm_device_state_changed (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+	ip_check_pre_up (self);
 	return FALSE;
 }
 
@@ -5426,9 +5456,9 @@ nm_device_start_ip_check (NMDevice *self)
 	if (buf[0])
 		spawn_ping (self, log_domain, ping_binary, buf, timeout);
 
-	/* If no ping was started, just advance to SECONDARIES */
+	/* If no ping was started, just advance to pre_up */
 	if (!priv->gw_ping.pid)
-		nm_device_queue_state (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+		ip_check_pre_up (self);
 }
 
 /****************************************************************/
