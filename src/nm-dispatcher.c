@@ -276,12 +276,16 @@ action_to_string (DispatcherAction action)
 	switch (action) {
 	case DISPATCHER_ACTION_HOSTNAME:
 		return "hostname";
+	case DISPATCHER_ACTION_PRE_UP:
+		return "pre-up";
 	case DISPATCHER_ACTION_UP:
 		return "up";
 	case DISPATCHER_ACTION_PRE_DOWN:
 		return "pre-down";
 	case DISPATCHER_ACTION_DOWN:
 		return "down";
+	case DISPATCHER_ACTION_VPN_PRE_UP:
+		return "vpn-pre-up";
 	case DISPATCHER_ACTION_VPN_UP:
 		return "vpn-up";
 	case DISPATCHER_ACTION_VPN_PRE_DOWN:
