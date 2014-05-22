@@ -233,8 +233,7 @@ svEscape (const char *s)
 		new[j++] = s[i];
 	}
 	new[j++] = '"';
-	new[j++] = '\0'
-;
+	new[j++] = '\0';
 	g_assert (j == slen + mangle - newline + 3);
 
 	return new;
