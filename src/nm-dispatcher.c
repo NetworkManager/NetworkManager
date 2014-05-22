@@ -270,36 +270,25 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	g_object_unref (proxy);
 }
 
+static const char *action_table[] = {
+	[DISPATCHER_ACTION_HOSTNAME]     = "hostname",
+	[DISPATCHER_ACTION_PRE_UP]       = "pre-up",
+	[DISPATCHER_ACTION_UP]           = "up",
+	[DISPATCHER_ACTION_PRE_DOWN]     = "pre-down",
+	[DISPATCHER_ACTION_DOWN]         = "down",
+	[DISPATCHER_ACTION_VPN_PRE_UP]   = "vpn-pre-up",
+	[DISPATCHER_ACTION_VPN_UP]       = "vpn-up",
+	[DISPATCHER_ACTION_VPN_PRE_DOWN] = "vpn-pre-down",
+	[DISPATCHER_ACTION_VPN_DOWN]     = "vpn-down",
+	[DISPATCHER_ACTION_DHCP4_CHANGE] = "dhcp4-change",
+	[DISPATCHER_ACTION_DHCP6_CHANGE] = "dhcp6-change",
+};
+
 static const char *
 action_to_string (DispatcherAction action)
 {
-	switch (action) {
-	case DISPATCHER_ACTION_HOSTNAME:
-		return "hostname";
-	case DISPATCHER_ACTION_PRE_UP:
-		return "pre-up";
-	case DISPATCHER_ACTION_UP:
-		return "up";
-	case DISPATCHER_ACTION_PRE_DOWN:
-		return "pre-down";
-	case DISPATCHER_ACTION_DOWN:
-		return "down";
-	case DISPATCHER_ACTION_VPN_PRE_UP:
-		return "vpn-pre-up";
-	case DISPATCHER_ACTION_VPN_UP:
-		return "vpn-up";
-	case DISPATCHER_ACTION_VPN_PRE_DOWN:
-		return "vpn-pre-down";
-	case DISPATCHER_ACTION_VPN_DOWN:
-		return "vpn-down";
-	case DISPATCHER_ACTION_DHCP4_CHANGE:
-		return "dhcp4-change";
-	case DISPATCHER_ACTION_DHCP6_CHANGE:
-		return "dhcp6-change";
-	default:
-		break;
-	}
-	g_assert_not_reached ();
+	g_assert (action >= 0 && action < G_N_ELEMENTS (action_table));
+	return action_table[action];
 }
 
 static gboolean
