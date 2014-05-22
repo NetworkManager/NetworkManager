@@ -119,7 +119,8 @@ EXTRA_DIST = \
 	ifcfg-test-fcoe-vn2vn \
 	ifcfg-test-team-master \
 	ifcfg-test-team-port \
-	ifcfg-test-team-port-empty-config
+	ifcfg-test-team-port-empty-config \
+	ifcfg-test-vlan-trailing-spaces
 
 # make target dependencies can't have colons in their names, which ends up
 # meaning that we can't add the alias files to EXTRA_DIST
