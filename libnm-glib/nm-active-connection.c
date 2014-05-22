@@ -209,10 +209,13 @@ _nm_active_connection_type_for_path_async (DBusGConnection *connection,
  * nm_active_connection_get_connection:
  * @connection: a #NMActiveConnection
  *
- * Gets the #NMConnection's DBus object path.
+ * Gets the #NMConnection's DBus object path.  This is often used with
+ * nm_remote_settings_get_connection_by_path() to retrieve the
+ * #NMRemoteConnection object that describes the connection.
  *
- * Returns: the object path of the #NMConnection inside of #NMActiveConnection.
- * This is the internal string used by the connection, and must not be modified.
+ * Returns: the object path of the #NMConnection which this #NMActiveConnection
+ * is an active instance of.  This is the internal string used by the
+ * connection, and must not be modified.
  **/
 const char *
 nm_active_connection_get_connection (NMActiveConnection *connection)
