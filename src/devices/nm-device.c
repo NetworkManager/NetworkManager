@@ -6259,6 +6259,91 @@ nm_device_has_pending_action (NMDevice *device)
 
 /***********************************************************/
 
+static void
+_cleanup_generic_pre (NMDevice *self, gboolean deconfigure)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	/* Clean up when device was deactivated during call to firewall */
+	if (priv->fw_manager) {
+		NMConnection *connection;
+
+		if (priv->fw_call) {
+			nm_firewall_manager_cancel_call (priv->fw_manager, priv->fw_call);
+			priv->fw_call = NULL;
+		}
+
+		connection = nm_device_get_connection (self);
+		if (deconfigure && connection) {
+			nm_firewall_manager_remove_from_zone (priv->fw_manager,
+			                                      nm_device_get_ip_iface (self),
+			                                      NULL);
+		}
+	}
+
+	ip_check_gw_ping_cleanup (self);
+
+	/* Break the activation chain */
+	activation_source_clear (self, TRUE, AF_INET);
+	activation_source_clear (self, TRUE, AF_INET6);
+
+	/* Clear any queued transitions */
+	nm_device_queued_state_clear (self);
+	nm_device_queued_ip_config_change_clear (self);
+
+	priv->ip4_state = priv->ip6_state = IP_NONE;
+
+	dhcp4_cleanup (self, deconfigure, FALSE);
+	arp_cleanup (self);
+	dhcp6_cleanup (self, deconfigure, FALSE);
+	linklocal6_cleanup (self);
+	addrconf6_cleanup (self);
+	dnsmasq_cleanup (self);
+	aipd_cleanup (self);
+}
+
+static void
+_cleanup_generic_post (NMDevice *self, gboolean deconfigure)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
+
+	/* Clean up IP configs; this does not actually deconfigure the
+	 * interface; the caller must flush routes and addresses explicitly.
+	 */
+	nm_device_set_ip4_config (self, NULL, TRUE, &ignored);
+	nm_device_set_ip6_config (self, NULL, TRUE, &ignored);
+	g_clear_object (&priv->dev_ip4_config);
+	g_clear_object (&priv->ext_ip4_config);
+	g_clear_object (&priv->vpn4_config);
+	g_clear_object (&priv->ip4_config);
+	g_clear_object (&priv->ac_ip6_config);
+	g_clear_object (&priv->ext_ip6_config);
+	g_clear_object (&priv->vpn6_config);
+	g_clear_object (&priv->ip6_config);
+
+	clear_act_request (self);
+
+	/* Clear legacy IPv4 address property */
+	if (priv->ip4_address) {
+		priv->ip4_address = 0;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_ADDRESS);
+	}
+
+	if (deconfigure) {
+		/* Check if the device was deactivated, and if so, delete_link.
+		 * Don't call delete_link synchronously because we are currently
+		 * handling a state change -- which is not reentrant. */
+		delete_on_deactivate_check_and_schedule (self, nm_device_get_ip_ifindex (self));
+	}
+
+	/* ip_iface should be cleared after flushing all routes and addreses, since
+	 * those are identified by ip_iface, not by iface (which might be a tty
+	 * or ATM device).
+	 */
+	nm_device_set_ip_iface (self, NULL);
+}
+
 /*
  * nm_device_cleanup
  *
@@ -6269,8 +6354,6 @@ static void
 nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 {
 	NMDevicePrivate *priv;
-	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
-	NMConnection *connection = NULL;
 	int ifindex;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
@@ -6286,39 +6369,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 	/* Save whether or not we tried IPv6 for later */
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	/* Clean up when device was deactivated during call to firewall */
-	if (priv->fw_call) {
-		nm_firewall_manager_cancel_call (priv->fw_manager, priv->fw_call);
-		priv->fw_call = NULL;
-	}
-
-	if (priv->act_request)
-		connection = nm_act_request_get_connection (priv->act_request);
-	if (connection) {
-		nm_firewall_manager_remove_from_zone (priv->fw_manager,
-		                                      nm_device_get_ip_iface (self),
-		                                      NULL);
-	}
-
-	ip_check_gw_ping_cleanup (self);
-
-	/* Break the activation chain */
-	activation_source_clear (self, TRUE, AF_INET);
-	activation_source_clear (self, TRUE, AF_INET6);
-
-	/* Clear any queued transitions */
-	nm_device_queued_state_clear (self);
-	nm_device_queued_ip_config_change_clear (self);
-
-	priv->ip4_state = priv->ip6_state = IP_NONE;
-
-	dhcp4_cleanup (self, TRUE, FALSE);
-	arp_cleanup (self);
-	dhcp6_cleanup (self, TRUE, FALSE);
-	linklocal6_cleanup (self);
-	addrconf6_cleanup (self);
-	dnsmasq_cleanup (self);
-	aipd_cleanup (self);
+	_cleanup_generic_pre (self, TRUE);
 
 	/* Turn off kernel IPv6 */
 	nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
@@ -6337,9 +6388,6 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 	priv->enslaved = FALSE;
 	g_object_notify (G_OBJECT (self), NM_DEVICE_MASTER);
 
-	/* Tear down an existing activation request */
-	clear_act_request (self);
-
 	/* Take out any entries in the routing table and any IP address the device had. */
 	ifindex = nm_device_get_ip_ifindex (self);
 	if (ifindex > 0) {
@@ -6347,28 +6395,7 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 		nm_platform_address_flush (ifindex);
 	}
 
-	/* Clean up nameservers and addresses */
-	nm_device_set_ip4_config (self, NULL, TRUE, &ignored);
-	nm_device_set_ip6_config (self, NULL, TRUE, &ignored);
-	g_clear_object (&priv->ext_ip4_config);
-	g_clear_object (&priv->vpn4_config);
-	g_clear_object (&priv->vpn6_config);
-	g_clear_object (&priv->ext_ip6_config);
-
-	/* Clear legacy IPv4 address property */
-	priv->ip4_address = 0;
-	g_object_notify (G_OBJECT (self), NM_DEVICE_IP4_ADDRESS);
-
-	/* Only clear ip_iface after flushing all routes and addreses, since
-	 * those are identified by ip_iface, not by iface (which might be a tty
-	 * or ATM device).
-	 */
-	nm_device_set_ip_iface (self, NULL);
-
-	/* Check if the device was deactivated, and if so, delete_link.
-	 * Don't call delete_link synchronously because we are currently
-	 * handling a state change -- which is not reentrant. */
-	delete_on_deactivate_check_and_schedule (self, ifindex);
+	_cleanup_generic_post (self, TRUE);
 }
 
 /***********************************************************/
@@ -7123,49 +7150,18 @@ dispose (GObject *object)
 		}
 	}
 
-	ip_check_gw_ping_cleanup (self);
-
-	/* Clear any queued transitions */
-	nm_device_queued_state_clear (self);
-	nm_device_queued_ip_config_change_clear (self);
-
-	/* Clean up and stop address configuration */
-	dhcp4_cleanup (self, deconfigure, FALSE);
-	arp_cleanup (self);
-	dhcp6_cleanup (self, deconfigure, FALSE);
-	linklocal6_cleanup (self);
-	addrconf6_cleanup (self);
-	dnsmasq_cleanup (self);
-	aipd_cleanup (self);
+	_cleanup_generic_pre (self, deconfigure);
 
 	g_warn_if_fail (priv->slaves == NULL);
 	g_assert (priv->master_ready_id == 0);
 
-	/* Take the device itself down and clear its IP configuration */
 	if (nm_device_get_managed (self) && deconfigure) {
-		NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
-
 		if (nm_device_get_act_request (self))
 			nm_device_cleanup (self, NM_DEVICE_STATE_REASON_REMOVED);
-		nm_device_set_ip4_config (self, NULL, TRUE, &ignored);
-		nm_device_set_ip6_config (self, NULL, TRUE, &ignored);
-
 		nm_device_take_down (self, FALSE);
-
 		restore_ip6_properties (self);
-
-		/* do a final check whether we should delete_link */
-		delete_on_deactivate_check_and_schedule (self, nm_device_get_ip_ifindex (self));
 	}
-	g_clear_object (&priv->dev_ip4_config);
-	g_clear_object (&priv->ext_ip4_config);
-	g_clear_object (&priv->vpn4_config);
-	g_clear_object (&priv->ip4_config);
-
-	g_clear_object (&priv->ac_ip6_config);
-	g_clear_object (&priv->ext_ip6_config);
-	g_clear_object (&priv->vpn6_config);
-	g_clear_object (&priv->ip6_config);
+	_cleanup_generic_post (self, deconfigure);
 
 	g_clear_pointer (&priv->ip6_saved_properties, g_hash_table_unref);
 
@@ -7191,24 +7187,13 @@ dispose (GObject *object)
 		priv->carrier_wait_id = 0;
 	}
 
-	activation_source_clear (self, TRUE, AF_INET);
-	activation_source_clear (self, TRUE, AF_INET6);
-
-	clear_act_request (self);
 	g_clear_object (&priv->queued_act_request);
 
 	platform = nm_platform_get ();
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip_changed), self);
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
 
-	/* Clean up when device was deactivated during call to firewall */
-	if (priv->fw_manager) {
-		if (priv->fw_call) {
-			nm_firewall_manager_cancel_call (priv->fw_manager, priv->fw_call);
-			priv->fw_call = NULL;
-		}
-		g_clear_object (&priv->fw_manager);
-	}
+	g_clear_object (&priv->fw_manager);
 
 out:
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
