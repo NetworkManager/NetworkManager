@@ -2502,9 +2502,8 @@ dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->dhcp4_config) {
+		g_clear_object (&priv->dhcp4_config);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
-		g_object_unref (priv->dhcp4_config);
-		priv->dhcp4_config = NULL;
 	}
 
 	if (priv->dhcp4_client) {
@@ -2524,8 +2523,7 @@ dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 		if (stop)
 			nm_dhcp_client_stop (priv->dhcp4_client, release);
 
-		g_object_unref (priv->dhcp4_client);
-		priv->dhcp4_client = NULL;
+		g_clear_object (&priv->dhcp4_client);
 	}
 }
 
@@ -2944,16 +2942,11 @@ dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_NONE;
-
-	if (priv->dhcp6_ip6_config) {
-		g_object_unref (priv->dhcp6_ip6_config);
-		priv->dhcp6_ip6_config = NULL;
-	}
+	g_clear_object (&priv->dhcp6_ip6_config);
 
 	if (priv->dhcp6_config) {
+		g_clear_object (&priv->dhcp6_config);
 		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
-		g_object_unref (priv->dhcp6_config);
-		priv->dhcp6_config = NULL;
 	}
 
 	if (priv->dhcp6_client) {
@@ -2972,8 +2965,7 @@ dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
 		if (stop)
 			nm_dhcp_client_stop (priv->dhcp6_client, release);
 
-		g_object_unref (priv->dhcp6_client);
-		priv->dhcp6_client = NULL;
+		g_clear_object (&priv->dhcp6_client);
 	}
 }
 
@@ -7169,11 +7161,10 @@ dispose (GObject *object)
 	g_clear_object (&priv->vpn4_config);
 	g_clear_object (&priv->ip4_config);
 
-	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->ac_ip6_config);
-	g_clear_object (&priv->dhcp6_ip6_config);
-	g_clear_object (&priv->vpn6_config);
 	g_clear_object (&priv->ext_ip6_config);
+	g_clear_object (&priv->vpn6_config);
+	g_clear_object (&priv->ip6_config);
 
 	g_clear_pointer (&priv->ip6_saved_properties, g_hash_table_unref);
 
