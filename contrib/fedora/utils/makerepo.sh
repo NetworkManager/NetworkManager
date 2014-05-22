@@ -162,6 +162,29 @@ pushd "$DIRNAME"
                 RELEASE_BASE_COMMIT="$(git rev-list -n1 --date-order --before="$DATE" origin/master 2>/dev/null)"
             fi
         fi
+        if [[ "x$RELEASE_BASE_COMMIT" == x ]]; then
+            KNOWN_BASE_COMMITS="$(cat <<EOF
+# NetworkManager
+08670c9163a5d0f15c57c7891ef899eb125d9423  7251704430cb206f2c29bfebc45bd0fb *NetworkManager-0.9.9.0.git20131003.tar.bz2
+
+# libnl3
+1a510c57e905c4beb06122b9688162c82d9b044f  d1111959652bd6ad87b2071f61c8c20c *libnl-doc-3.2.24.tar.gz
+c4d846f239036c05f516c1c71789e980b64b1e70  2e1c889494d274aca24ce5f6a748e66e *libnl-3.2.22.tar.gz
+EOF
+)"
+            OLDIFS="$IFS"
+            IFS=$'\n'
+            for KNOWN_BASE_COMMIT in $KNOWN_BASE_COMMITS; do
+                MATCH="$(echo "$KNOWN_BASE_COMMIT" | sed -n 's/^[0-9a-f]\{40\} \+\(.*\)$/\1/p')"
+                if [[ "x$MATCH" == x ]]; then
+                    continue
+                fi
+                if grep -q "$MATCH" ../sources; then
+                    RELEASE_BASE_COMMIT="$(echo "$KNOWN_BASE_COMMIT" | awk '{print $1}')"
+                fi
+            done
+            IFS="$OLDIFS"
+        fi
     fi
     if [[ x != "x$RELEASE_BASE_COMMIT" ]]; then
         if [[ "$RELEASE_BASE_COMMIT" == "-" ]]; then
