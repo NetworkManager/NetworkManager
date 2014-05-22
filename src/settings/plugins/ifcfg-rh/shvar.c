@@ -260,7 +260,8 @@ svGetValue (shvarFile *s, const char *key, gboolean verbatim)
 	for (s->current = s->lineList; s->current; s->current = s->current->next) {
 		line = s->current->data;
 		if (!strncmp (keyString, line, len)) {
-			value = g_strdup (line + len);
+			/* Strip trailing spaces before unescaping to preserve spaces quoted whitespace */
+			value = g_strchomp (g_strdup (line + len));
 			if (!verbatim)
 				svUnescape (value);
 			break;
