@@ -7136,6 +7136,7 @@ dispose (GObject *object)
 	linklocal6_cleanup (self);
 	addrconf6_cleanup (self);
 	dnsmasq_cleanup (self);
+	aipd_cleanup (self);
 
 	g_warn_if_fail (priv->slaves == NULL);
 	g_assert (priv->master_ready_id == 0);
@@ -7190,8 +7191,6 @@ dispose (GObject *object)
 		priv->carrier_wait_id = 0;
 	}
 
-	g_clear_pointer (&priv->physical_port_id, g_free);
-
 	activation_source_clear (self, TRUE, AF_INET);
 	activation_source_clear (self, TRUE, AF_INET6);
 
@@ -7201,6 +7200,15 @@ dispose (GObject *object)
 	platform = nm_platform_get ();
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip_changed), self);
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
+
+	/* Clean up when device was deactivated during call to firewall */
+	if (priv->fw_manager) {
+		if (priv->fw_call) {
+			nm_firewall_manager_cancel_call (priv->fw_manager, priv->fw_call);
+			priv->fw_call = NULL;
+		}
+		g_clear_object (&priv->fw_manager);
+	}
 
 out:
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
@@ -7212,11 +7220,8 @@ finalize (GObject *object)
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->fw_manager)
-		g_object_unref (priv->fw_manager);
-
 	g_slist_free_full (priv->pending_actions, g_free);
-
+	g_clear_pointer (&priv->physical_port_id, g_free);
 	g_free (priv->udi);
 	g_free (priv->path);
 	g_free (priv->iface);
