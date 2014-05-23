@@ -108,6 +108,14 @@ elif [[ "x$(ls -1d ./NetworkManager-openvpn-[0-9].*/ 2>/dev/null)" != x && -f Ne
     DIRNAME="$(basename "$(ls -1d ./NetworkManager-openvpn-[0-9].*/ || die "could not find directory")")"
     BUILD_NETWORMANAGER_OPENVPN=x
     SPEC=NetworkManager-openvpn.spec
+elif [[ "x$(ls -1d ./NetworkManager-openswan-[0-9].*/ 2>/dev/null)" != x && -f NetworkManager-openswan.spec ]]; then
+    DIRNAME="$(basename "$(ls -1d ./NetworkManager-openswan-[0-9].*/ || die "could not find directory")")"
+    BUILD_NETWORMANAGER_OPENSWAN=x
+    SPEC=NetworkManager-openswan.spec
+elif [[ "x$(ls -1d ./NetworkManager-openswan-[0-9].*/ 2>/dev/null)" != x && -f NetworkManager-libreswan.spec ]]; then
+    DIRNAME="$(basename "$(ls -1d ./NetworkManager-openswan-[0-9].*/ || die "could not find directory")")"
+    BUILD_NETWORMANAGER_LIBRESWAN=x
+    SPEC=NetworkManager-libreswan.spec
 else
     die "Could not detect dist-git type"
 fi
@@ -141,6 +149,9 @@ pushd "$DIRNAME"
     elif [[ "$BUILD_NETWORMANAGER_OPENVPN" != "" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-openvpn";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openvpn"
+    elif [[ "$BUILD_NETWORMANAGER_OPENSWAN" != "" || "$BUILD_NETWORMANAGER_LIBRESWAN" != "" ]]; then
+        git remote add origin "git://git.gnome.org/network-manager-openswan";
+        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openswan"
     else
         die "UNEXPECTED"
     fi
@@ -170,6 +181,9 @@ pushd "$DIRNAME"
 # libnl3
 1a510c57e905c4beb06122b9688162c82d9b044f  d1111959652bd6ad87b2071f61c8c20c *libnl-doc-3.2.24.tar.gz
 c4d846f239036c05f516c1c71789e980b64b1e70  2e1c889494d274aca24ce5f6a748e66e *libnl-3.2.22.tar.gz
+
+# NetworkManager-libreswan, NetworkManager-openswan
+64c90fd50e57854a3fff3784b92814ffa8159b05  6a373868f85ac3b7c953f7fd6c76e637 *NetworkManager-openswan-0.9.8.0.tar.xz
 EOF
 )"
             OLDIFS="$IFS"
