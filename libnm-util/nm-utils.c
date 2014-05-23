@@ -1946,10 +1946,7 @@ nm_utils_wifi_is_channel_valid (guint32 channel, const char *band)
  *
  * Returns the length in octets of a hardware address of type @type.
  *
- * Note that this only accepts %ARPHRD_ETHER and %ARPHRD_INFINIBAND,
- * not other types.
- *
- * Return value: the length
+ * Return value: the positive length, or -1 if the type is unknown/unsupported.
  */
 int
 nm_utils_hwaddr_len (int type)
@@ -1959,7 +1956,7 @@ nm_utils_hwaddr_len (int type)
 	else if (type == ARPHRD_INFINIBAND)
 		return INFINIBAND_ALEN;
 	else
-		g_return_val_if_reached (-1);
+		return -1;
 }
 
 /**
@@ -1970,6 +1967,7 @@ nm_utils_hwaddr_len (int type)
  * the raw address given its length.
  *
  * Return value: the type, either %ARPHRD_ETHER or %ARPHRD_INFINIBAND.
+ * If the length is unexpected, return -1 (unsupported type/length).
  *
  * Deprecated: This could not be extended to cover other types, since
  * there is not a one-to-one mapping between types and lengths. This
@@ -1986,7 +1984,7 @@ nm_utils_hwaddr_type (int len)
 	else if (len == INFINIBAND_ALEN)
 		return ARPHRD_INFINIBAND;
 	else
-		g_return_val_if_reached (-1);
+		return -1;
 }
 
 #define HEXVAL(c) ((c) <= '9' ? (c) - '0' : ((c) & 0x4F) - 'A' + 10)
@@ -2009,7 +2007,13 @@ nm_utils_hwaddr_type (int len)
 guint8 *
 nm_utils_hwaddr_aton (const char *asc, int type, gpointer buffer)
 {
-	return nm_utils_hwaddr_aton_len (asc, buffer, nm_utils_hwaddr_len (type));
+	int len = nm_utils_hwaddr_len (type);
+
+	if (len <= 0) {
+		g_return_val_if_reached (NULL);
+		return NULL;
+	}
+	return nm_utils_hwaddr_aton_len (asc, buffer, len);
 }
 
 /**
@@ -2029,9 +2033,14 @@ nm_utils_hwaddr_atoba (const char *asc, int type)
 	GByteArray *ba;
 	int len = nm_utils_hwaddr_len (type);
 
+	if (len <= 0) {
+		g_return_val_if_reached (NULL);
+		return NULL;
+	}
+
 	ba = g_byte_array_sized_new (len);
-	ba->len = len;
-	if (!nm_utils_hwaddr_aton (asc, type, ba->data)) {
+	g_byte_array_set_size (ba, len);
+	if (!nm_utils_hwaddr_aton_len (asc, ba->data, len)) {
 		g_byte_array_unref (ba);
 		return NULL;
 	}
@@ -2054,14 +2063,22 @@ nm_utils_hwaddr_atoba (const char *asc, int type)
 char *
 nm_utils_hwaddr_ntoa (gconstpointer addr, int type)
 {
-	return nm_utils_hwaddr_ntoa_len (addr, nm_utils_hwaddr_len (type));
+	int len = nm_utils_hwaddr_len (type);
+
+	if (len <= 0) {
+		g_return_val_if_reached (NULL);
+		return NULL;
+	}
+
+	return nm_utils_hwaddr_ntoa_len (addr, len);
 }
 
 /**
  * nm_utils_hwaddr_aton_len:
  * @asc: the ASCII representation of a hardware address
  * @buffer: buffer to store the result into
- * @length: the expected length in bytes of the result
+ * @length: the expected length in bytes of the result and
+ * the size of the buffer in bytes.
  *
  * Parses @asc and converts it to binary form in @buffer.
  * Bytes in @asc can be sepatared by colons (:), or hyphens (-), but not mixed.
@@ -2077,6 +2094,13 @@ nm_utils_hwaddr_aton_len (const char *asc, gpointer buffer, gsize length)
 	const char *in = asc;
 	guint8 *out = (guint8 *)buffer;
 	char delimiter = '\0';
+
+	if (!asc) {
+		g_return_val_if_reached (NULL);
+		return NULL;
+	}
+	g_return_val_if_fail (buffer, NULL);
+	g_return_val_if_fail (length, NULL);
 
 	while (length && *in) {
 		guint8 d1 = in[0], d2 = in[1];
@@ -2130,8 +2154,11 @@ char *
 nm_utils_hwaddr_ntoa_len (gconstpointer addr, gsize length)
 {
 	const guint8 *in = addr;
-	GString *out = g_string_new (NULL);
+	GString *out;
 
+	g_return_val_if_fail (addr && length, g_strdup (""));
+
+	out = g_string_new (NULL);
 	while (length--) {
 		if (out->len)
 			g_string_append_c (out, ':');
@@ -2156,8 +2183,11 @@ gboolean
 nm_utils_hwaddr_valid (const char *asc)
 {
 	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
-	int in_len = strlen (asc), out_len;
+	gsize in_len, out_len;
 
+	if (!asc && !*asc)
+		return FALSE;
+	in_len = strlen (asc);
 	if ((in_len + 1) % 3 != 0)
 		return FALSE;
 	out_len = (in_len + 1) / 3;
