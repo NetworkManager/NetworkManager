@@ -2469,6 +2469,14 @@ nmc_property_connection_set_secondaries (NMSetting *setting, const char *prop, c
 			                           "uuid", *iter, NULL);
 			if (!con)
 				printf (_("Warning: %s is not an UUID of any existing connection profile\n"), *iter);
+			else {
+				/* Currenly NM only supports VPN connections as secondaries */
+				if (!nm_connection_is_type (con, NM_SETTING_VPN_SETTING_NAME)) {
+					g_set_error (error, 1, 0, _("'%s' is not a VPN connection profile"), *iter);
+					g_strfreev (strv);
+					return FALSE;
+				}
+			}
 		} else {
 			con = nmc_find_connection (nm_cli.system_connections,
 			                           "id", *iter, NULL);
@@ -2477,6 +2485,14 @@ nmc_property_connection_set_secondaries (NMSetting *setting, const char *prop, c
 				g_strfreev (strv);
 				return FALSE;
 			}
+
+			/* Currenly NM only supports VPN connections as secondaries */
+			if (!nm_connection_is_type (con, NM_SETTING_VPN_SETTING_NAME)) {
+				g_set_error (error, 1, 0, _("'%s' is not a VPN connection profile"), *iter);
+				g_strfreev (strv);
+				return FALSE;
+			}
+
 			/* translate id to uuid */
 			g_free (*iter);
 			*iter = g_strdup (nm_connection_get_uuid (con));
