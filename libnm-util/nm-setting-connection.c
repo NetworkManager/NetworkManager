@@ -1350,7 +1350,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * NMSettingConnection:secondaries:
 	 *
 	 * List of connection UUIDs that should be activated when the base connection
-	 * itself is activated.
+	 * itself is activated. Currently only VPN connections are supported.
 	 *
 	 * Since: 0.9.8
 	 **/
@@ -1359,7 +1359,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		 _nm_param_spec_specialized (NM_SETTING_CONNECTION_SECONDARIES,
 		                             "Secondaries",
 		                             "List of connection UUIDs that should be activated "
-		                             "when the base connection itself is activated.",
+		                             "when the base connection itself is activated.  "
+		                             "Currently only VPN connections are supported.",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
 		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
