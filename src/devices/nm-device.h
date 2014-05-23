@@ -312,6 +312,7 @@ void nm_device_set_unmanaged (NMDevice *device,
                               NMUnmanagedFlags flag,
                               gboolean unmanaged,
                               NMDeviceStateReason reason);
+void nm_device_set_unmanaged_quitting (NMDevice *device);
 void nm_device_set_initial_unmanaged_flag (NMDevice *device,
                                            NMUnmanagedFlags flag,
                                            gboolean unmanaged);

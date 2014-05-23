@@ -321,6 +321,11 @@ static void addrconf6_start_with_link_ready (NMDevice *self);
 
 static gboolean nm_device_get_default_unmanaged (NMDevice *device);
 
+static void _set_state_full (NMDevice *device,
+                             NMDeviceState state,
+                             NMDeviceStateReason reason,
+                             gboolean quitting);
+
 /***********************************************************/
 
 static GQuark
@@ -5944,6 +5949,21 @@ nm_device_set_unmanaged (NMDevice *device,
 	}
 }
 
+void
+nm_device_set_unmanaged_quitting (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
+	/* It's OK to block here because we're quitting */
+	if (nm_device_is_activating (device) || priv->state == NM_DEVICE_STATE_ACTIVATED)
+		_set_state_full (device, NM_DEVICE_STATE_DEACTIVATING, NM_DEVICE_STATE_REASON_REMOVED, TRUE);
+
+	nm_device_set_unmanaged (device,
+	                         NM_UNMANAGED_INTERNAL,
+	                         TRUE,
+	                         NM_DEVICE_STATE_REASON_REMOVED);
+}
+
 /**
  * nm_device_set_initial_unmanaged_flag():
  * @device: the #NMDevice
@@ -6536,10 +6556,11 @@ notify_ip_properties (NMDevice *device)
 	g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG);
 }
 
-void
-nm_device_state_changed (NMDevice *device,
-                         NMDeviceState state,
-                         NMDeviceStateReason reason)
+static void
+_set_state_full (NMDevice *device,
+                 NMDeviceState state,
+                 NMDeviceStateReason reason,
+                 gboolean quitting)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	NMDeviceState old_state;
@@ -6677,14 +6698,20 @@ nm_device_state_changed (NMDevice *device,
 		}
 		break;
 	case NM_DEVICE_STATE_DEACTIVATING:
-		if (!nm_dispatcher_call (DISPATCHER_ACTION_PRE_DOWN,
-		                         nm_act_request_get_connection (req),
-		                         device,
-		                         dispatcher_pre_down_done,
-		                         device,
-		                         &priv->dispatcher_id)) {
-			/* Just proceed on errors */
-			dispatcher_pre_down_done (0, device);
+		if (quitting) {
+			nm_dispatcher_call_sync (DISPATCHER_ACTION_PRE_DOWN,
+			                         nm_act_request_get_connection (req),
+			                         device);
+		} else {
+			if (!nm_dispatcher_call (DISPATCHER_ACTION_PRE_DOWN,
+			                         nm_act_request_get_connection (req),
+			                         device,
+			                         dispatcher_pre_down_done,
+			                         device,
+			                         &priv->dispatcher_id)) {
+				/* Just proceed on errors */
+				dispatcher_pre_down_done (0, device);
+			}
 		}
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
@@ -6752,8 +6779,12 @@ nm_device_state_changed (NMDevice *device,
 		delete_on_deactivate_unschedule (device);
 
 	if (   (old_state == NM_DEVICE_STATE_ACTIVATED || old_state == NM_DEVICE_STATE_DEACTIVATING)
-	    && (state != NM_DEVICE_STATE_DEACTIVATING))
-		nm_dispatcher_call (DISPATCHER_ACTION_DOWN, nm_act_request_get_connection (req), device, NULL, NULL, NULL);
+	    && (state != NM_DEVICE_STATE_DEACTIVATING)) {
+		if (quitting)
+			nm_dispatcher_call_sync (DISPATCHER_ACTION_DOWN, nm_act_request_get_connection (req), device);
+		else
+			nm_dispatcher_call (DISPATCHER_ACTION_DOWN, nm_act_request_get_connection (req), device, NULL, NULL, NULL);
+	}
 
 	/* IP-related properties are only valid when the device has IP configuration.
 	 * If it no longer does, ensure their change notifications are emitted.
@@ -6766,6 +6797,14 @@ nm_device_state_changed (NMDevice *device,
 		g_object_unref (req);
 
 	priv->in_state_changed = FALSE;
+}
+
+void
+nm_device_state_changed (NMDevice *device,
+                         NMDeviceState state,
+                         NMDeviceStateReason reason)
+{
+	_set_state_full (device, state, reason, FALSE);
 }
 
 static gboolean

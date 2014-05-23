@@ -742,8 +742,12 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 		else if (!req)
 			unmanage = TRUE;
 
-		if (unmanage)
-			nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
+		if (unmanage) {
+			if (quitting)
+				nm_device_set_unmanaged_quitting (device);
+			else
+				nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
+		}
 	}
 
 	g_signal_handlers_disconnect_matched (device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, manager);
