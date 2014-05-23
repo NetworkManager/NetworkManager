@@ -272,7 +272,7 @@ gboolean nm_device_complete_connection (NMDevice *device,
 
 gboolean nm_device_check_connection_compatible (NMDevice *device, NMConnection *connection);
 
-gboolean nm_device_can_assume_connections (NMDevice *device);
+gboolean nm_device_can_assume_active_connection (NMDevice *device);
 
 gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);
 

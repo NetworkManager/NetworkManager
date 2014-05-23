@@ -175,8 +175,6 @@ typedef struct {
 } DeleteOnDeactivateData;
 
 typedef struct {
-	gboolean disposed;
-	gboolean initialized;
 	gboolean in_state_changed;
 
 	NMDeviceState state;
@@ -1847,6 +1845,18 @@ nm_device_check_connection_compatible (NMDevice *device, NMConnection *connectio
 	return NM_DEVICE_GET_CLASS (device)->check_connection_compatible (device, connection);
 }
 
+static gboolean
+string_in_list (const char *str, const char **array, gsize array_len)
+{
+	gsize i;
+
+	for (i = 0; i < array_len; i++) {
+		if (strcmp (str, array[i]) == 0)
+			return TRUE;
+	}
+	return FALSE;
+}
+
 /**
  * nm_device_can_assume_connections:
  * @device: #NMDevice instance
@@ -1854,19 +1864,70 @@ nm_device_check_connection_compatible (NMDevice *device, NMConnection *connectio
  * This is a convenience function to determine whether connection assumption
  * is available for this device.
  *
- * Use this function when you need to determine whether full cleanup should
- * be performed for this device or whether the device should be kept running
- * between NetworkManager runs.
- *
- * Returns: %TRUE for assumable connections and %FALS for full-cleanup connections.
- *
- * FIXME: Consider turning this method into (a) a device capability or (b) a class
- * method.
+ * Returns: %TRUE if the device is capable of assuming connections, %FALSE if not
  */
-gboolean
+static gboolean
 nm_device_can_assume_connections (NMDevice *device)
 {
 	return !!NM_DEVICE_GET_CLASS (device)->update_connection;
+}
+
+/**
+ * nm_device_can_assume_active_connection:
+ * @device: #NMDevice instance
+ *
+ * This is a convenience function to determine whether the device's active
+ * connection can be assumed if NetworkManager restarts.  This method returns
+ * %TRUE if and only if the device can assume connections, and the device has
+ * an active connection, and that active connection can be assumed.
+ *
+ * Returns: %TRUE if the device's active connection can be assumed, or %FALSE
+ * if there is no active connection or the active connection cannot be
+ * assumed.
+ */
+gboolean
+nm_device_can_assume_active_connection (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	NMConnection *connection;
+	const char *method;
+	const char *assumable_ip6_methods[] = {
+		NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+		NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		NM_SETTING_IP6_CONFIG_METHOD_DHCP,
+		NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+		NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	};
+	const char *assumable_ip4_methods[] = {
+		NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+		NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+	};
+
+	if (!nm_device_can_assume_connections (device))
+		return FALSE;
+
+	connection = nm_device_get_connection (device);
+	if (!connection)
+		return FALSE;
+
+	/* Can't assume connections that aren't yet configured
+	 * FIXME: what about bridges/bonds waiting for slaves?
+	 */
+	if (priv->state < NM_DEVICE_STATE_IP_CONFIG)
+		return FALSE;
+	if (priv->ip4_state != IP_DONE && priv->ip6_state != IP_DONE)
+		return FALSE;
+
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	if (!string_in_list (method, assumable_ip6_methods, G_N_ELEMENTS (assumable_ip6_methods)))
+		return FALSE;
+
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	if (!string_in_list (method, assumable_ip4_methods, G_N_ELEMENTS (assumable_ip4_methods)))
+		return FALSE;
+
+	return TRUE;
 }
 
 static gboolean
@@ -7051,7 +7112,6 @@ constructor (GType type,
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (device_ip_changed), dev);
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (link_changed_cb), dev);
 
-	priv->initialized = TRUE;
 	return object;
 
 error:
@@ -7121,47 +7181,14 @@ dispose (GObject *object)
 {
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean deconfigure = TRUE;
 	NMPlatform *platform;
 
-	if (priv->disposed || !priv->initialized)
-		goto out;
-
-	priv->disposed = TRUE;
-
-	/* Don't down can-assume-connection capable devices that are activated with
-	 * a connection that can be assumed.
-	 */
-	if (nm_device_can_assume_connections (self) && (priv->state == NM_DEVICE_STATE_ACTIVATED)) {
-		NMConnection *connection;
-		const char *method;
-
-		connection = nm_device_get_connection (self);
-		if (connection) {
-			/* Only static or DHCP IPv4 connections can be left up.
-			 * All IPv6 connections can be left up, so we don't have
-			 * to check that.
-			 */
-			method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-			if (   !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)
-			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)
-			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
-				deconfigure = FALSE;
-		}
-	}
-
-	_cleanup_generic_pre (self, deconfigure);
+	_cleanup_generic_pre (self, FALSE);
 
 	g_warn_if_fail (priv->slaves == NULL);
 	g_assert (priv->master_ready_id == 0);
 
-	if (nm_device_get_managed (self) && deconfigure) {
-		if (nm_device_get_act_request (self))
-			nm_device_cleanup (self, NM_DEVICE_STATE_REASON_REMOVED);
-		nm_device_take_down (self, FALSE);
-		restore_ip6_properties (self);
-	}
-	_cleanup_generic_post (self, deconfigure);
+	_cleanup_generic_post (self, FALSE);
 
 	g_clear_pointer (&priv->ip6_saved_properties, g_hash_table_unref);
 
@@ -7195,7 +7222,6 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->fw_manager);
 
-out:
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
 

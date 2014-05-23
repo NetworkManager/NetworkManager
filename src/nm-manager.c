@@ -737,7 +737,7 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 		 */
 		if (!quitting)  /* Forced removal; device already gone */
 			unmanage = TRUE;
-		else if (!nm_device_can_assume_connections (device))
+		else if (!nm_device_can_assume_active_connection (device))
 			unmanage = TRUE;
 		else if (!req)
 			unmanage = TRUE;
