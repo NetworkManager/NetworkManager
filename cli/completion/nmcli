@@ -419,7 +419,7 @@ _nmcli_compl_ARGS()
                 ;;
             vpn-type)
                 if [[ "${#words[@]}" -eq 2 ]]; then
-                    _nmcli_list "vpnc openvpn pptp openconnect openswan"
+                    _nmcli_list "vpnc openvpn pptp openconnect openswan libreswan ssh l2tp iodine"
                     return 0
                 fi
                 ;;

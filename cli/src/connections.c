@@ -400,7 +400,7 @@ usage_connection_add (void)
 	           "                  [priority <0-63>]\n"
 	           "                  [path-cost <1-65535>]\n"
 	           "                  [hairpin yes|no]\n\n"
-	           "    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan\n"
+	           "    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|ssh|l2tp|iodine|...\n"
 	           "                  [user <username>]\n\n"
 	           "    olpc-mesh:    ssid <SSID>\n"
 	           "                  [channel <1-13>]\n"
@@ -4758,14 +4758,14 @@ cleanup_bridge_slave:
 	} else if (!strcmp (con_type, NM_SETTING_VPN_SETTING_NAME)) {
 		/* Build up the settings required for 'vpn' */
 		gboolean success = FALSE;
-		const char *valid_vpns[] = { "openvpn", "vpnc", "pptp", "openconnect", "openswan", NULL };
+		const char *known_vpns[] = { "openvpn", "vpnc", "pptp", "openconnect", "openswan", "libreswan",
+		                             "ssh", "l2tp", "iodine", NULL };
 		const char *vpn_type = NULL;
 		char *vpn_type_ask = NULL;
 		const char *user_c = NULL;
 		char *user = NULL;
 		const char *st;
 		char *service_type = NULL;
-		GError *tmp_err = NULL;
 		nmc_arg_t exp_args[] = { {"vpn-type", TRUE, &vpn_type, !ask},
 		                         {"user",     TRUE, &user_c,   FALSE},
 		                         {NULL} };
@@ -4781,18 +4781,16 @@ cleanup_bridge_slave:
 			goto cleanup_vpn;
 		}
 
+		if (!(st = nmc_string_is_valid (vpn_type, known_vpns, NULL))) {
+			printf (_("Warning: 'vpn-type': %s not known.\n"), vpn_type);
+			st = vpn_type;
+		}
+		service_type = g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, st);
+
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		user = user_c ? g_strdup (user_c) : NULL;
 		if (ask)
 			do_questionnaire_vpn (&user);
-
-		if (!(st = nmc_string_is_valid (vpn_type, valid_vpns, &tmp_err))) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("Error: 'vpn-type': %s."), tmp_err->message);
-			g_clear_error (&tmp_err);
-			goto cleanup_vpn;
-		}
-		service_type = g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, st);
 
 		/* Add 'vpn' setting */
 		s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
