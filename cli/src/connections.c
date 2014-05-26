@@ -939,6 +939,9 @@ find_vpn_gateway_key (const char *vpn_type)
 	if (g_strcmp0 (vpn_type, "pptp") == 0)        return "gateway";
 	if (g_strcmp0 (vpn_type, "openconnect") == 0) return "gateway";
 	if (g_strcmp0 (vpn_type, "openswan") == 0)    return "right";
+	if (g_strcmp0 (vpn_type, "libreswan") == 0)   return "right";
+	if (g_strcmp0 (vpn_type, "ssh") == 0)         return "remote";
+	if (g_strcmp0 (vpn_type, "l2tp") == 0)        return "gateway";
 	return "";
 }
 
@@ -950,6 +953,8 @@ find_vpn_username_key (const char *vpn_type)
 	if (g_strcmp0 (vpn_type, "pptp") == 0)        return "user";
 	if (g_strcmp0 (vpn_type, "openconnect") == 0) return "username";
 	if (g_strcmp0 (vpn_type, "openswan") == 0)    return "leftxauthusername";
+	if (g_strcmp0 (vpn_type, "libreswan") == 0)   return "leftxauthusername";
+	if (g_strcmp0 (vpn_type, "l2tp") == 0)        return "user";
 	return "";
 }
 
