@@ -819,6 +819,15 @@ nmc_device_reason_to_string (NMDeviceStateReason reason)
 	case NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED:
 		return _("teamd control failed");
 
+	case NM_DEVICE_STATE_REASON_MODEM_FAILED:
+		return _("Modem failed or no longer available");
+
+	case NM_DEVICE_STATE_REASON_MODEM_AVAILABLE:
+		return _("Modem now ready and available");
+
+	case NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT:
+		return _("SIM PIN was incorrect");
+
 	default:
 		/* TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason) */
 		return _("Unknown");
