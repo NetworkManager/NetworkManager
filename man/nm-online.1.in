@@ -54,7 +54,13 @@ Exit immediately if NetworkManager is not running or connecting.
 Don't print anything.
 .TP
 .B \-s, \-\-wait-for-startup
-Wait for NetworkManager finishing its startup instead of establishing a connection.
+Wait for NetworkManager startup to complete, rather than waiting for
+network connectivity specifically. Startup is considered complete once
+NetworkManager has activated (or attempted to activate) every
+auto-activate connection which is available given the current network
+state. (This is generally only useful at boot time; after startup has
+completed, \fInm-online -s\fP will just return immediately, regardless
+of the current network state.)
 
 .SH EXIT STATUS
 
