@@ -414,22 +414,14 @@ mac_address_writer (GKeyFile *file,
 	GByteArray *array;
 	const char *setting_name = nm_setting_get_name (setting);
 	char *mac;
-	int type;
 
 	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY));
 
 	array = (GByteArray *) g_value_get_boxed (value);
-	if (!array)
+	if (!array || !array->len)
 		return;
 
-	type = nm_utils_hwaddr_type (array->len);
-	if (type < 0) {
-		nm_log_warn (LOGD_SETTINGS, "%s: invalid %s / %s MAC address length %d",
-		             __func__, setting_name, key, array->len);
-		return;
-	}
-
-	mac = nm_utils_hwaddr_ntoa (array->data, type);
+	mac = nm_utils_hwaddr_ntoa_len (array->data, array->len);
 	nm_keyfile_plugin_kf_set_string (file, setting_name, key, mac);
 	g_free (mac);
 }
