@@ -534,37 +534,43 @@ ip6_dns_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const ch
 }
 
 static void
-mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
+mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path, gsize enforce_length)
 {
 	const char *setting_name = nm_setting_get_name (setting);
 	char *tmp_string = NULL, *p;
 	gint *tmp_list;
 	GByteArray *array = NULL;
 	gsize length;
-	int i, type;
 
 	p = tmp_string = nm_keyfile_plugin_kf_get_string (keyfile, setting_name, key, NULL);
-	if (tmp_string) {
+	if (tmp_string && tmp_string[0]) {
 		/* Look for enough ':' characters to signify a MAC address */
-		i = 0;
+		guint i = 0;
+
 		while (*p) {
 			if (*p == ':')
 				i++;
 			p++;
 		}
 
-		/* If we found enough it's probably a string-format MAC address */
-		type = nm_utils_hwaddr_type (i + 1);
-		if (type >= 0)
-			array = nm_utils_hwaddr_atoba (tmp_string, type);
+		if (enforce_length == 0 || enforce_length == i+1) {
+			/* If we found enough it's probably a string-format MAC address */
+			array = g_byte_array_sized_new (i+1);
+			g_byte_array_set_size (array, i+1);
+			if (!nm_utils_hwaddr_aton_len (tmp_string, array->data, array->len)) {
+				g_byte_array_unref (array);
+				array = NULL;
+			}
+		}
 	}
 	g_free (tmp_string);
 
 	if (array == NULL) {
 		/* Old format; list of ints */
 		tmp_list = nm_keyfile_plugin_kf_get_integer_list (keyfile, setting_name, key, &length, NULL);
-		type = nm_utils_hwaddr_type (length);
-		if (type >= 0) {
+		if (length > 0 && (enforce_length == 0 || enforce_length == length)) {
+			gsize i;
+
 			array = g_byte_array_sized_new (length);
 			for (i = 0; i < length; i++) {
 				int val = tmp_list[i];
@@ -591,6 +597,18 @@ mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, cons
 		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid MAC address for %s / %s",
 		             __func__, setting_name, key);
 	}
+}
+
+static void
+mac_address_parser_ETHER (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
+{
+	mac_address_parser (setting, key, keyfile, keyfile_path, ETH_ALEN);
+}
+
+static void
+mac_address_parser_INFINIBAND (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
+{
+	mac_address_parser (setting, key, keyfile, keyfile_path, INFINIBAND_ALEN);
 }
 
 static void
@@ -910,35 +928,35 @@ static KeyParser key_parsers[] = {
 	{ NM_SETTING_WIRED_SETTING_NAME,
 	  NM_SETTING_WIRED_MAC_ADDRESS,
 	  TRUE,
-	  mac_address_parser },
+	  mac_address_parser_ETHER },
 	{ NM_SETTING_WIRED_SETTING_NAME,
 	  NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
 	  TRUE,
-	  mac_address_parser },
+	  mac_address_parser_ETHER },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_MAC_ADDRESS,
 	  TRUE,
-	  mac_address_parser },
+	  mac_address_parser_ETHER },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
 	  TRUE,
-	  mac_address_parser },
+	  mac_address_parser_ETHER },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_BSSID,
 	  TRUE,
-	  mac_address_parser },
+	  mac_address_parser_ETHER },
 	{ NM_SETTING_BLUETOOTH_SETTING_NAME,
 	  NM_SETTING_BLUETOOTH_BDADDR,
 	  TRUE,
-	  mac_address_parser },
+	  mac_address_parser_ETHER },
 	{ NM_SETTING_INFINIBAND_SETTING_NAME,
 	  NM_SETTING_INFINIBAND_MAC_ADDRESS,
 	  TRUE,
-	  mac_address_parser },
+	  mac_address_parser_INFINIBAND },
 	{ NM_SETTING_WIMAX_SETTING_NAME,
 	  NM_SETTING_WIMAX_MAC_ADDRESS,
 	  TRUE,
-	  mac_address_parser },
+	  mac_address_parser_ETHER },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_SSID,
 	  TRUE,
