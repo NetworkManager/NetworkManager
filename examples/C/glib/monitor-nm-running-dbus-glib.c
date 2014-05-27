@@ -71,8 +71,10 @@ main (int argc, char *argv[])
 	GError *err = NULL;
 	gboolean nm_running;
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	/* Initialize GType system */
 	g_type_init ();
+#endif
 
 	g_print ("Monitor 'org.freedesktop.NetworkManager' D-Bus name\n");
 	g_print ("===================================================\n");

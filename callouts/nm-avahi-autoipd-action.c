@@ -90,7 +90,9 @@ main (int argc, char *argv[])
 	dbus_bool_t result;
 	char *event, *iface, *address;
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
 
 	if (argc != 4) {
 		fprintf (stderr, "Error: expected 3 arguments (event, interface, address).\n");

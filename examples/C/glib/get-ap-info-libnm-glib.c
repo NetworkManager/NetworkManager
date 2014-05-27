@@ -200,8 +200,10 @@ int main (int argc, char *argv[])
 	const GPtrArray *devices;
 	int i;
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	/* Initialize GType system */
 	g_type_init ();
+#endif
 
 	/* Get system bus */
 	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);

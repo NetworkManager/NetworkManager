@@ -577,7 +577,9 @@ main (int argc, char **argv)
 {
 	g_test_init (&argc, &argv, NULL);
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
 
 	g_test_add_func ("/dhcp/dhclient/orig_missing", test_orig_missing);
 	g_test_add_func ("/dhcp/dhclient/override_client_id", test_override_client_id);

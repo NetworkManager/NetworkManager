@@ -426,7 +426,9 @@ main (int argc, char *argv[])
 	textdomain (GETTEXT_PACKAGE);
 #endif
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
 
 	nmc_init (&nm_cli);
 	g_idle_add (start, &args_info);

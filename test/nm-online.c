@@ -159,7 +159,9 @@ main (int argc, char *argv[])
 		return 2;
 	}
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
 
 	client = nm_client_new ();
 	if (!client) {

@@ -493,7 +493,10 @@ libnm_glib_init (void)
 {
 	libnm_glib_ctx	*ctx = NULL;
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
+
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
 	dbus_g_thread_init ();

@@ -848,7 +848,9 @@ int main (int argc, char **argv)
 	g_log_set_always_fatal (G_LOG_LEVEL_CRITICAL);
 #endif
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
 
 	if (!nm_utils_init (&error))
 		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);

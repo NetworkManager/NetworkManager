@@ -390,7 +390,9 @@ main (int argc, char *argv[])
 {
 	NMClient *client;
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
 
 	client = nm_client_new ();
 	if (!client) {

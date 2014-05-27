@@ -562,7 +562,10 @@ main (int argc, char *argv[])
 
 	nm_logging_syslog_openlog (debug);
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
+
 	dbus_threads_init_default ();
 
 	/* Ensure that non-exported properties don't leak out, and that the

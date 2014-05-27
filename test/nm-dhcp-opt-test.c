@@ -260,7 +260,9 @@ int main (int argc, char **argv)
 	DBusConnection *connection;
 	DBusError		 error;
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
 
 	dbus_error_init (&error);
 	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);

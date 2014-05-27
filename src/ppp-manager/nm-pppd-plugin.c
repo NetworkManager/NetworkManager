@@ -325,7 +325,9 @@ plugin_init (void)
 	DBusGConnection *bus;
 	GError *err = NULL;
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
 
 	g_message ("nm-ppp-plugin: (%s): initializing", __func__);
 

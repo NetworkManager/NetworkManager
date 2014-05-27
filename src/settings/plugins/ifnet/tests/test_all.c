@@ -455,7 +455,10 @@ main (int argc, char **argv)
 {
 	char *f;
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
+
 	nm_linux_platform_setup ();
 	nm_logging_setup ("WARN", "DEFAULT", NULL, NULL);
 

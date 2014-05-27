@@ -304,7 +304,10 @@ int main (int argc, char **argv)
 	gboolean success;
 
 	g_test_init (&argc, &argv, NULL);
+
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
 
 	success = nm_utils_init (&error);
 	g_assert_no_error (error);

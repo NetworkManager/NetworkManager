@@ -110,8 +110,10 @@ int main (int argc, char *argv[])
 	NMRemoteSettings *settings;
 	GMainLoop *loop;
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	/* Initialize GType system */
 	g_type_init ();
+#endif
 
 	loop = g_main_loop_new (NULL, FALSE);
 

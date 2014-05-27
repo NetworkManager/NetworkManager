@@ -408,7 +408,9 @@ main (int argc, char *argv[])
 			usage (argv[0]);
 	}
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
 
 	if (!nm_utils_init (&error)) {
 		fprintf (stderr, "ERR: failed to initialize libnm-util: %s", error->message);

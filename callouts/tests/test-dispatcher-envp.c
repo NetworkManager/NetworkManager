@@ -642,7 +642,10 @@ main (int argc, char **argv)
 	g_assert (argc > 1);
 
 	g_test_init (&argc, &argv, NULL);
+
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
 
 	g_test_add_data_func ("/dispatcher/old_up", argv[1], (GTestDataFunc) test_old_up);
 	g_test_add_data_func ("/dispatcher/old_down", argv[1], (GTestDataFunc) test_old_down);

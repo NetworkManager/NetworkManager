@@ -3342,7 +3342,10 @@ int main (int argc, char **argv)
 	GError *error = NULL;
 	char *base;
 
+#if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
+#endif
+
 	g_log_set_always_fatal (G_LOG_LEVEL_MASK);
 
 	if (!nm_utils_init (&error))
