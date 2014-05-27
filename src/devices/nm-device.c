@@ -855,6 +855,17 @@ nm_device_get_type_desc (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->type_desc;
 }
 
+static gboolean
+nm_device_uses_generated_connection (NMDevice *self)
+{
+	NMConnection *connection;
+
+	connection = nm_device_get_connection (self);
+	if (!connection)
+		return FALSE;
+	return nm_settings_connection_get_nm_generated (NM_SETTINGS_CONNECTION (connection));
+}
+
 static SlaveInfo *
 find_slave_info (NMDevice *self, NMDevice *slave)
 {
@@ -5221,6 +5232,17 @@ nm_device_set_ip4_config (NMDevice *self,
 
 		if (old_config != priv->ip4_config && old_config)
 			g_object_unref (old_config);
+
+		if (nm_device_uses_generated_connection (self)) {
+			NMConnection *connection = nm_device_get_connection (self);
+			NMSetting *s_ip4;
+
+			g_object_freeze_notify (G_OBJECT (connection));
+			nm_connection_remove_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+			s_ip4 = nm_ip4_config_create_setting (priv->ip4_config);
+			nm_connection_add_setting (connection, s_ip4);
+			g_object_thaw_notify (G_OBJECT (connection));
+		}
 	}
 
 	if (reason)
@@ -5312,6 +5334,17 @@ nm_device_set_ip6_config (NMDevice *self,
 
 		if (old_config != priv->ip6_config && old_config)
 			g_object_unref (old_config);
+
+		if (nm_device_uses_generated_connection (self)) {
+			NMConnection *connection = nm_device_get_connection (self);
+			NMSetting *s_ip6;
+
+			g_object_freeze_notify (G_OBJECT (connection));
+			nm_connection_remove_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+			s_ip6 = nm_ip6_config_create_setting (priv->ip6_config);
+			nm_connection_add_setting (connection, s_ip6);
+			g_object_thaw_notify (G_OBJECT (connection));
+		}
 	}
 
 	if (reason)
