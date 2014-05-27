@@ -3322,10 +3322,15 @@ static gboolean
 ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, int metric)
 {
 	in_addr_t gateway = 0;
+	struct rtnl_route *cached_object;
 	struct nl_object *route = build_rtnl_route (AF_INET, ifindex, &network, plen, &gateway, metric, 0);
 	uint8_t scope = RT_SCOPE_NOWHERE;
 
 	g_return_val_if_fail (route, FALSE);
+
+	/* when deleting an IPv4 route, several fields of the provided route must match.
+	 * Lookup in the cache so that we hopefully get the right values. */
+	cached_object = (struct rtnl_route *) nm_nl_cache_search (choose_cache_by_type (platform, OBJECT_TYPE_IP4_ROUTE), route);
 
 	if (!_nl_has_capability (1 /* NL_CAPABILITY_ROUTE_BUILD_MSG_SET_SCOPE */)) {
 		/* When searching for a matching IPv4 route to delete, the kernel
@@ -3341,23 +3346,33 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 		 * Newer versions of libnl, no longer reset the scope if explicitly set to RT_SCOPE_NOWHERE.
 		 * So, this workaround is only needed unless we have NL_CAPABILITY_ROUTE_BUILD_MSG_SET_SCOPE.
 		 **/
-		struct nl_object *cached_object;
 
-		cached_object = nm_nl_cache_search (choose_cache_by_type (platform, OBJECT_TYPE_IP4_ROUTE), route);
-		if (cached_object) {
-			scope = rtnl_route_get_scope ((struct rtnl_route *) cached_object);
-			nl_object_put (cached_object);
-		}
+		if (cached_object)
+			scope = rtnl_route_get_scope (cached_object);
 
 		if (scope == RT_SCOPE_NOWHERE) {
 			/* If we would set the scope to RT_SCOPE_NOWHERE, libnl would guess the scope.
-			 * But probably it will guess 'link' because we don't set the next hop
-			 * of the route we are about to delete. A better guess is 'global'. */
+			 * But probably it will guess 'link' because we set the next hop of the route
+			 * to zero (0.0.0.0). A better guess is 'global'. */
 			scope = RT_SCOPE_UNIVERSE;
 		}
 	}
 	rtnl_route_set_scope ((struct rtnl_route *) route, scope);
 
+	/* protocol defaults to RTPROT_STATIC, set to zero so that the kernel ignores the value */
+	rtnl_route_set_protocol ((struct rtnl_route *) route, 0);
+
+	if (cached_object)
+		rtnl_route_set_tos ((struct rtnl_route *) route, rtnl_route_get_tos (cached_object));
+
+	/* The following fields are also relevant when comparing the route, but the default values
+	 * are already as we want them:
+	 *
+	 * type: RTN_UNICAST (setting to zero would ignore the type, but we only want to delete RTN_UNICAST)
+	 * pref_src: NULL
+	 */
+
+	rtnl_route_put (cached_object);
 	return delete_object (platform, route);
 }
 
