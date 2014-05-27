@@ -125,7 +125,7 @@ if [[ -f ./.git/makerepo.gitignore ]]; then
 fi
 
 DEFAULT_BACKUP_PATTERN='*.[0-9][0-9][0-9][0-9][-.]*.orig'
-if ! grep -q -e "$DEFAULT_BACKUP_PATTERN" "./makerepo.gitignore" ; then
+if ! grep -F -q -e "$DEFAULT_BACKUP_PATTERN" "./makerepo.gitignore" ; then
     echo "$DEFAULT_BACKUP_PATTERN" >> ./makerepo.gitignore
 fi
 
