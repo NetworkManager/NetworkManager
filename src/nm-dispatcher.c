@@ -32,7 +32,7 @@
 #include "nm-glib-compat.h"
 
 static gboolean do_dispatch = TRUE;
-static GSList *requests = NULL;
+static GHashTable *requests = NULL;
 
 static void
 dump_object_to_props (GObject *object, GHashTable *hash)
@@ -133,6 +133,7 @@ fill_vpn_props (NMIP4Config *ip4_config,
 }
 
 typedef struct {
+	guint request_id;
 	DispatcherFunc callback;
 	gpointer user_data;
 	guint idle_id;
@@ -141,10 +142,26 @@ typedef struct {
 static void
 dispatcher_info_free (DispatchInfo *info)
 {
-	requests = g_slist_remove (requests, info);
 	if (info->idle_id)
 		g_source_remove (info->idle_id);
 	g_free (info);
+}
+
+static void
+_ensure_requests (void)
+{
+	if (G_UNLIKELY (requests == NULL)) {
+		requests = g_hash_table_new_full (g_direct_hash,
+		                                  g_direct_equal,
+		                                  NULL,
+		                                  (GDestroyNotify) dispatcher_info_free);
+	}
+}
+
+static void
+dispatcher_info_cleanup (DispatchInfo *info)
+{
+	g_hash_table_remove (requests, GUINT_TO_POINTER (info->request_id));
 }
 
 static const char *
@@ -247,7 +264,7 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	}
 
 	if (info->callback)
-		info->callback (info, info->user_data);
+		info->callback (info->request_id, info->user_data);
 
 	g_clear_error (&error);
 	g_object_unref (proxy);
@@ -288,8 +305,8 @@ dispatcher_idle_cb (gpointer user_data)
 
 	info->idle_id = 0;
 	if (info->callback)
-		info->callback (info, info->user_data);
-	dispatcher_info_free (info);
+		info->callback (info->request_id, info->user_data);
+	dispatcher_info_cleanup (info);
 	return G_SOURCE_REMOVE;
 }
 
@@ -303,7 +320,7 @@ _dispatcher_call (DispatcherAction action,
                   NMIP6Config *vpn_ip6_config,
                   DispatcherFunc callback,
                   gpointer user_data,
-                  gconstpointer *out_call_id)
+                  guint *out_call_id)
 {
 	DBusGProxy *proxy;
 	DBusGConnection *g_connection;
@@ -319,8 +336,11 @@ _dispatcher_call (DispatcherAction action,
 	DispatchInfo *info = NULL;
 	gboolean success = FALSE;
 	GError *error = NULL;
+	static guint request_counter = 1;
 
 	g_assert (!blocking || (!callback && !user_data));
+
+	_ensure_requests ();
 
 	/* All actions except 'hostname' require a device */
 	if (action == DISPATCHER_ACTION_HOSTNAME) {
@@ -340,6 +360,7 @@ _dispatcher_call (DispatcherAction action,
 	if (do_dispatch == FALSE) {
 		if (blocking == FALSE && (out_call_id || callback)) {
 			info = g_malloc0 (sizeof (*info));
+			info->request_id = request_counter++;
 			info->callback = callback;
 			info->user_data = user_data;
 			info->idle_id = g_idle_add (dispatcher_idle_cb, info);
@@ -422,12 +443,13 @@ _dispatcher_call (DispatcherAction action,
 		}
 	} else {
 		info = g_malloc0 (sizeof (*info));
+		info->request_id = request_counter++;
 		info->callback = callback;
 		info->user_data = user_data;
 		dbus_g_proxy_begin_call_with_timeout (proxy, "Action",
 		                                      dispatcher_done_cb,
 		                                      info,
-		                                      (GDestroyNotify) dispatcher_info_free,
+		                                      (GDestroyNotify) dispatcher_info_cleanup,
 		                                      30000,
 		                                      G_TYPE_STRING, action_to_string (action),
 		                                      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
@@ -458,10 +480,11 @@ _dispatcher_call (DispatcherAction action,
 done:
 	if (success && info) {
 		/* Track the request in case of cancelation */
-		requests = g_slist_append (requests, info);
+		g_hash_table_insert (requests, GUINT_TO_POINTER (info->request_id), info);
 		if (out_call_id)
-			*out_call_id = (gconstpointer) info;
-	}
+			*out_call_id = info->request_id;
+	} else if (out_call_id)
+		*out_call_id = 0;
 
 	return success;
 }
@@ -487,7 +510,7 @@ nm_dispatcher_call (DispatcherAction action,
                     NMDevice *device,
                     DispatcherFunc callback,
                     gpointer user_data,
-                    gconstpointer *out_call_id)
+                    guint *out_call_id)
 {
 	return _dispatcher_call (action, FALSE, connection, device, NULL, NULL,
 	                         NULL, callback, user_data, out_call_id);
@@ -540,7 +563,7 @@ nm_dispatcher_call_vpn (DispatcherAction action,
                         NMIP6Config *vpn_ip6_config,
                         DispatcherFunc callback,
                         gpointer user_data,
-                        gconstpointer *out_call_id)
+                        guint *out_call_id)
 {
 	return _dispatcher_call (action, FALSE, connection, parent_device, vpn_iface,
 	                         vpn_ip4_config, vpn_ip6_config, callback, user_data, out_call_id);
@@ -573,16 +596,20 @@ nm_dispatcher_call_vpn_sync (DispatcherAction action,
 }
 
 void
-nm_dispatcher_call_cancel (gconstpointer call_id)
+nm_dispatcher_call_cancel (guint call_id)
 {
-	/* 'call_id' is really a DispatchInfo pointer, just opaque to callers.
-	 * Look it up in our requests list, but don't access it directly before
-	 * we've made sure it's a valid request,since it may have long since been
-	 * freed.  Canceling just means the callback doesn't get called, so set
-	 * the DispatcherInfo's callback to NULL.
+	DispatchInfo *info;
+
+	_ensure_requests ();
+
+	/* Canceling just means the callback doesn't get called, so set the
+	 * DispatcherInfo's callback to NULL.
 	 */
-	if (g_slist_find (requests, call_id))
-		((DispatchInfo *) call_id)->callback = NULL;
+	info = g_hash_table_lookup (requests, GUINT_TO_POINTER (call_id));
+	if (info)
+		info->callback = NULL;
+	else
+		g_return_if_reached ();
 }
 
 static void

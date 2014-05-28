@@ -42,14 +42,14 @@ typedef enum {
 	DISPATCHER_ACTION_DHCP6_CHANGE
 } DispatcherAction;
 
-typedef void (*DispatcherFunc) (gconstpointer call_id, gpointer user_data);
+typedef void (*DispatcherFunc) (guint call_id, gpointer user_data);
 
 gboolean nm_dispatcher_call (DispatcherAction action,
                              NMConnection *connection,
                              NMDevice *device,
                              DispatcherFunc callback,
                              gpointer user_data,
-                             gconstpointer *out_call_id);
+                             guint *out_call_id);
 
 gboolean nm_dispatcher_call_sync (DispatcherAction action,
                                   NMConnection *connection,
@@ -63,7 +63,7 @@ gboolean nm_dispatcher_call_vpn (DispatcherAction action,
                                  NMIP6Config *vpn_ip6_config,
                                  DispatcherFunc callback,
                                  gpointer user_data,
-                                 gconstpointer *out_call_id);
+                                 guint *out_call_id);
 
 gboolean nm_dispatcher_call_vpn_sync (DispatcherAction action,
                                       NMConnection *connection,
@@ -72,7 +72,7 @@ gboolean nm_dispatcher_call_vpn_sync (DispatcherAction action,
                                       NMIP4Config *vpn_ip4_config,
                                       NMIP6Config *vpn_ip6_config);
 
-void nm_dispatcher_call_cancel (gconstpointer call_id);
+void nm_dispatcher_call_cancel (guint call_id);
 
 void nm_dispatcher_init (void);
 
