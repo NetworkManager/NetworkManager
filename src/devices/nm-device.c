@@ -105,6 +105,7 @@ enum {
 	IP6_CONFIG_CHANGED,
 	REMOVED,
 	RECHECK_AUTO_ACTIVATE,
+	RECHECK_ASSUME,
 	LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -237,6 +238,7 @@ typedef struct {
 	gpointer        act_source_func;
 	guint           act_source6_id;
 	gpointer        act_source6_func;
+	guint           recheck_assume_id;
 
 	/* Link stuff */
 	guint           link_connected_id;
@@ -2014,6 +2016,26 @@ gboolean
 nm_device_can_assume_connections (NMDevice *device)
 {
 	return !!NM_DEVICE_GET_CLASS (device)->update_connection;
+}
+
+static gboolean
+nm_device_emit_recheck_assume (gpointer self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->recheck_assume_id = 0;
+	if (!nm_device_get_act_request (self) && (priv->ip4_config || priv->ip6_config))
+		g_signal_emit (self, signals[RECHECK_ASSUME], 0);
+	return G_SOURCE_REMOVE;
+}
+
+void
+nm_device_queue_recheck_assume (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (nm_device_can_assume_connections (self) && !priv->recheck_assume_id)
+		priv->recheck_assume_id = g_idle_add (nm_device_emit_recheck_assume, self);
 }
 
 void
@@ -5243,6 +5265,8 @@ nm_device_set_ip4_config (NMDevice *self,
 			nm_connection_add_setting (connection, s_ip4);
 			g_object_thaw_notify (G_OBJECT (connection));
 		}
+
+		nm_device_queue_recheck_assume (self);
 	}
 
 	if (reason)
@@ -5345,6 +5369,8 @@ nm_device_set_ip6_config (NMDevice *self,
 			nm_connection_add_setting (connection, s_ip6);
 			g_object_thaw_notify (G_OBJECT (connection));
 		}
+
+		nm_device_queue_recheck_assume (self);
 	}
 
 	if (reason)
@@ -5788,6 +5814,11 @@ dispose (GObject *object)
 	g_clear_object (&priv->ext_ip6_config);
 
 	g_clear_pointer (&priv->ip6_saved_properties, g_hash_table_unref);
+
+	if (priv->recheck_assume_id) {
+		g_source_remove (priv->recheck_assume_id);
+		priv->recheck_assume_id = 0;
+	}
 
 	link_disconnect_action_cancel (self);
 
@@ -6432,6 +6463,13 @@ nm_device_class_init (NMDeviceClass *klass)
 
 	signals[RECHECK_AUTO_ACTIVATE] =
 		g_signal_new (NM_DEVICE_RECHECK_AUTO_ACTIVATE,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL, NULL,
+		              G_TYPE_NONE, 0);
+
+	signals[RECHECK_ASSUME] =
+		g_signal_new (NM_DEVICE_RECHECK_ASSUME,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,
