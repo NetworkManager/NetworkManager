@@ -621,9 +621,9 @@ class UtilParseCommitMessage:
     def result(self):
         if self._result is None and self._git_backend:
             message = git_commit_message(self.commit, self._git_notes)
-            data = []
-            no_bz_skipped = []
-            related = []
+            data = set()
+            no_bz_skipped = set()
+            related = set()
 
             while message:
                 match = None;
@@ -645,23 +645,24 @@ class UtilParseCommitMessage:
                 if m:
                     if self._no_bz is None or m not in self._no_bz:
                         if self._no_related and m.related:
-                            related.append(m)
+                            related.add(m)
                         else:
-                            data.append(m)
+                            data.add(m)
                     else:
-                        no_bz_skipped.append(m)
+                        no_bz_skipped.add(m)
 
                 # remove everything before the end of the match 'replace' group.
                 group = match.group('replace')
                 assert group, "need a replace match group, otherwise there is an endless loop";
                 message = message[match.end('replace'):];
 
-            self._result = list(set(data))
-            self._no_bz_skipped = list(set(no_bz_skipped))
+            # If a bug is marked as related in one commit, it cannot be
+            # also non-related.
+            data.difference_update(related);
 
-            related = set(related)
-            related.difference_update(self._result)
-            self._related = list(set(related))
+            self._result = list(data)
+            self._no_bz_skipped = list(no_bz_skipped)
+            self._related = list(related)
         return self._result
     @property
     def related(self):
