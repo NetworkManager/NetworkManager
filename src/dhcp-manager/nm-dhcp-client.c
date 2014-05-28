@@ -1388,10 +1388,16 @@ ip6_options_to_config (NMDHCPClient *self)
 
 	ip6_config = nm_ip6_config_new ();
 
-	str = g_hash_table_lookup (priv->options, "new_dhcp_lease_time");
+	str = g_hash_table_lookup (priv->options, "new_max_life");
 	if (str) {
-		address.lifetime = address.preferred = strtoul (str, NULL, 10);
-		nm_log_info (LOGD_DHCP6, "  lease time %d", address.lifetime);
+		address.lifetime = strtoul (str, NULL, 10);
+		nm_log_info (LOGD_DHCP6, "  valid_lft %d", address.lifetime);
+	}
+
+	str = g_hash_table_lookup (priv->options, "new_preferred_life");
+	if (str) {
+		address.preferred = strtoul (str, NULL, 10);
+		nm_log_info (LOGD_DHCP6, "  preferred_lft %d", address.preferred);
 	}
 
 	str = g_hash_table_lookup (priv->options, "new_ip6_address");
