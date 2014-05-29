@@ -3397,7 +3397,7 @@ static gboolean
 ip_route_exists (NMPlatform *platform, int family, int ifindex, gpointer network, int plen, int metric)
 {
 	auto_nl_object struct nl_object *object = build_rtnl_route (
-			family, ifindex, network, plen, INADDR_ANY, metric, 0);
+			family, ifindex, network, plen, NULL, metric, 0);
 	auto_nl_object struct nl_object *cached_object = nl_cache_search (
 			choose_cache (platform, object), object);
 
