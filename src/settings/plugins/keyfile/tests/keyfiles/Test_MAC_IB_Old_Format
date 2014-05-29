@@ -1,0 +1,13 @@
+[connection]
+id=Test InfiniBand Connection
+uuid=5680a56d-c99f-45ad-a6dd-b44d5c398c12
+type=infiniband
+
+[infiniband]
+mac-address=0;17;34;51;68;85;102;119;136;153;1;18;35;52;69;86;103;120;137;144;
+transport-mode=datagram
+mtu=1400
+
+[ipv4]
+method=auto
+

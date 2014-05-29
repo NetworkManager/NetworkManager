@@ -1,0 +1,10 @@
+[connection]
+id=Test MAC Old Format
+uuid=8980a26d-c99f-4aad-a6bd-b439bc348ca4
+type=802-3-ethernet
+
+[802-3-ethernet]
+mac-address=00:11:aa:BB:CC:55
+cloned-mac-address=00;22;170;187;204;254;
+mtu=1400
+

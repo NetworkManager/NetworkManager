@@ -880,8 +880,8 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		g_value_init (&val, DBUS_TYPE_G_UCHAR_ARRAY); \
 		g_object_get_property (G_OBJECT (setting), property_name, &val); \
 		array = g_value_get_boxed (&val); \
-		if (array) \
-			hwaddr = nm_utils_hwaddr_ntoa (array->data, nm_utils_hwaddr_type (array->len)); \
+		if (array && array->len) \
+			hwaddr = nm_utils_hwaddr_ntoa_len (array->data, array->len); \
 		g_value_unset (&val); \
 		return hwaddr; \
 	}

@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 - 2014 Red Hat, Inc.
  */
 
 #include <stdio.h>
@@ -964,6 +964,79 @@ test_read_wired_mac_case (void)
 	        TEST_WIRED_MAC_CASE_FILE,
 	        NM_SETTING_WIRED_SETTING_NAME,
 	        NM_SETTING_WIRED_MAC_ADDRESS);
+
+	g_object_unref (connection);
+}
+
+#define TEST_MAC_OLD_FORMAT_FILE TEST_KEYFILES_DIR"/Test_MAC_Old_Format"
+
+static void
+test_read_mac_old_format (void)
+{
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	GError *error = NULL;
+	gboolean success;
+	const GByteArray *array;
+	char expected_mac[ETH_ALEN] = { 0x00, 0x11, 0xaa, 0xbb, 0xcc, 0x55 };
+	char expected_cloned_mac[ETH_ALEN] = { 0x00, 0x16, 0xaa, 0xbb, 0xcc, 0xfe };
+
+	connection = nm_keyfile_plugin_connection_from_file (TEST_MAC_OLD_FORMAT_FILE, &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+
+	/* MAC address */
+	array = nm_setting_wired_get_mac_address (s_wired);
+	g_assert (array);
+	g_assert_cmpint (array->len, ==, ETH_ALEN);
+	g_assert (memcmp (array->data, expected_mac, ETH_ALEN) == 0);
+
+	/* Cloned MAC address */
+	array = nm_setting_wired_get_cloned_mac_address (s_wired);
+	g_assert (array);
+	g_assert_cmpint (array->len, ==, ETH_ALEN);
+	g_assert (memcmp (array->data, expected_cloned_mac, ETH_ALEN) == 0);
+
+	g_object_unref (connection);
+}
+
+#define TEST_MAC_IB_OLD_FORMAT_FILE TEST_KEYFILES_DIR"/Test_MAC_IB_Old_Format"
+
+static void
+test_read_mac_ib_old_format (void)
+{
+	NMConnection *connection;
+	NMSettingInfiniband *s_ib;
+	GError *error = NULL;
+	gboolean success;
+	const GByteArray *array;
+	guint8 expected_mac[INFINIBAND_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
+		0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89,
+		0x90 };
+
+	connection = nm_keyfile_plugin_connection_from_file (TEST_MAC_IB_OLD_FORMAT_FILE, &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	s_ib = nm_connection_get_setting_infiniband (connection);
+	g_assert (s_ib);
+
+	/* MAC address */
+	array = nm_setting_infiniband_get_mac_address (s_ib);
+	g_assert (array);
+	g_assert_cmpint (array->len, ==, INFINIBAND_ALEN);
+	g_assert_cmpint (memcmp (array->data, expected_mac, sizeof (expected_mac)), ==, 0);
 
 	g_object_unref (connection);
 }
@@ -3359,6 +3432,8 @@ int main (int argc, char **argv)
 	test_write_ip6_wired_connection ();
 
 	test_read_wired_mac_case ();
+	test_read_mac_old_format ();
+	test_read_mac_ib_old_format ();
 
 	test_read_valid_wireless_connection ();
 	test_write_wireless_connection ();
