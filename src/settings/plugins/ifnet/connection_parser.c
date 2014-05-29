@@ -2292,10 +2292,7 @@ write_wireless_setting (NMConnection *connection,
 	ifnet_set_data (ssid_str, "mac", NULL);
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
 	if (mac) {
-		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-				       mac->data[0], mac->data[1], mac->data[2],
-				       mac->data[3], mac->data[4],
-				       mac->data[5]);
+		tmp = nm_utils_hwaddr_ntoa_len (mac->data, mac->len);
 		ifnet_set_data (ssid_str, "mac", tmp);
 		g_free (tmp);
 	}
@@ -2324,10 +2321,7 @@ write_wireless_setting (NMConnection *connection,
 	wpa_set_data (ssid_str, "bssid", NULL);
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
 	if (bssid) {
-		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-				       bssid->data[0], bssid->data[1],
-				       bssid->data[2], bssid->data[3],
-				       bssid->data[4], bssid->data[5]);
+		tmp = nm_utils_hwaddr_ntoa_len (bssid->data, bssid->len);
 		wpa_set_data (ssid_str, "bssid", tmp);
 		g_free (tmp);
 	}
@@ -2366,10 +2360,7 @@ write_wired_setting (NMConnection *connection,
 	ifnet_set_data (conn_name, "mac", NULL);
 	mac = nm_setting_wired_get_mac_address (s_wired);
 	if (mac) {
-		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-				       mac->data[0], mac->data[1], mac->data[2],
-				       mac->data[3], mac->data[4],
-				       mac->data[5]);
+		tmp = nm_utils_hwaddr_ntoa_len (mac->data, mac->len);
 		ifnet_set_data (conn_name, "mac", tmp);
 		g_free (tmp);
 	}
