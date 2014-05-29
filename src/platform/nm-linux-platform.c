@@ -1278,12 +1278,20 @@ check_cache_items (NMPlatform *platform, struct nl_cache *cache, int ifindex)
 {
 	auto_nl_cache struct nl_cache *cloned_cache = nl_cache_clone (cache);
 	struct nl_object *object;
+	GPtrArray *objects_to_refresh = g_ptr_array_new_with_free_func ((GDestroyNotify) nl_object_put);
+	guint i;
 
 	for (object = nl_cache_get_first (cloned_cache); object; object = nl_cache_get_next (object)) {
-		g_assert (nl_object_get_cache (object) == cloned_cache);
-		if (object_has_ifindex (object, ifindex))
-			refresh_object (platform, object, TRUE, NM_PLATFORM_REASON_CACHE_CHECK);
+		if (object_has_ifindex (object, ifindex)) {
+			nl_object_get (object);
+			g_ptr_array_add (objects_to_refresh, object);
+		}
 	}
+
+	for (i = 0; i < objects_to_refresh->len; i++)
+		refresh_object (platform, object, TRUE, NM_PLATFORM_REASON_CACHE_CHECK);
+
+	g_ptr_array_free (objects_to_refresh, TRUE);
 }
 
 static void
