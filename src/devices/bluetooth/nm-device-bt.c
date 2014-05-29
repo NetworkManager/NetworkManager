@@ -63,7 +63,7 @@ typedef struct {
 
 	NMBluezDevice *bt_device;
 
-	char *bdaddr;
+	guint8 bdaddr[ETH_ALEN];
 	char *name;
 	guint32 capabilities;
 
@@ -170,8 +170,6 @@ check_connection_compatible (NMDevice *device,
 	NMSettingConnection *s_con;
 	NMSettingBluetooth *s_bt;
 	const GByteArray *array;
-	char *str;
-	int addr_match = FALSE;
 	guint32 bt_type;
 
 	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->check_connection_compatible (device, connection, error))
@@ -195,14 +193,6 @@ check_connection_compatible (NMDevice *device,
 		return FALSE;
 	}
 
-	array = nm_setting_bluetooth_get_bdaddr (s_bt);
-	if (!array || (array->len != ETH_ALEN)) {
-		g_set_error (error,
-		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INVALID,
-		             "The connection did not contain a valid Bluetooth address.");
-		return FALSE;
-	}
-
 	bt_type = get_connection_bt_type (connection);
 	if (!(bt_type & priv->capabilities)) {
 		g_set_error (error,
@@ -211,13 +201,22 @@ check_connection_compatible (NMDevice *device,
 		return FALSE;
 	}
 
-	str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-	                       array->data[0], array->data[1], array->data[2],
-	                       array->data[3], array->data[4], array->data[5]);
-	addr_match = !strcmp (priv->bdaddr, str);
-	g_free (str);
+	array = nm_setting_bluetooth_get_bdaddr (s_bt);
+	if (!array || (array->len != ETH_ALEN)) {
+		g_set_error (error,
+		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INVALID,
+		             "The connection did not contain a valid Bluetooth address.");
+		return FALSE;
+	}
 
-	return addr_match;
+	if (memcmp (priv->bdaddr, array->data, ETH_ALEN) != 0) {
+		g_set_error (error,
+		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INVALID,
+		             "The connection did not match the device's Bluetooth address.");
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 static gboolean
@@ -249,7 +248,6 @@ complete_connection (NMDevice *device,
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMSettingBluetooth *s_bt;
 	const GByteArray *setting_bdaddr;
-	struct ether_addr *devaddr = ether_aton (priv->bdaddr);
 	const char *ctype;
 	gboolean is_dun = FALSE, is_pan = FALSE;
 	NMSettingGsm *s_gsm;
@@ -357,7 +355,7 @@ complete_connection (NMDevice *device,
 	setting_bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
 	if (setting_bdaddr) {
 		/* Make sure the setting BT Address (if any) matches the device's */
-		if (memcmp (setting_bdaddr->data, devaddr->ether_addr_octet, ETH_ALEN)) {
+		if (memcmp (setting_bdaddr->data, priv->bdaddr, ETH_ALEN)) {
 			g_set_error_literal (error,
 			                     NM_SETTING_BLUETOOTH_ERROR,
 			                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
@@ -369,9 +367,9 @@ complete_connection (NMDevice *device,
 		const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
 
 		/* Lock the connection to this device by default */
-		if (memcmp (devaddr->ether_addr_octet, null_mac, ETH_ALEN)) {
+		if (memcmp (priv->bdaddr, null_mac, ETH_ALEN)) {
 			bdaddr = g_byte_array_sized_new (ETH_ALEN);
-			g_byte_array_append (bdaddr, devaddr->ether_addr_octet, ETH_ALEN);
+			g_byte_array_append (bdaddr, priv->bdaddr, ETH_ALEN);
 			g_object_set (G_OBJECT (s_bt), NM_SETTING_BLUETOOTH_BDADDR, bdaddr, NULL);
 			g_byte_array_free (bdaddr, TRUE);
 		}
@@ -1140,7 +1138,7 @@ constructed (GObject *object)
 	my_hwaddr = nm_device_get_hw_address (NM_DEVICE (object), &my_hwaddr_len);
 	g_assert (my_hwaddr);
 	g_assert_cmpint (my_hwaddr_len, ==, ETH_ALEN);
-	priv->bdaddr = nm_utils_hwaddr_ntoa (my_hwaddr, ARPHRD_ETHER);
+	memcpy (priv->bdaddr, my_hwaddr, ETH_ALEN);
 
 	/* Watch for BT device property changes */
 	g_signal_connect (priv->bt_device, "notify::" NM_BLUEZ_DEVICE_CONNECTED,
