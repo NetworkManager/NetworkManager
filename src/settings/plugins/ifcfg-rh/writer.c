@@ -50,6 +50,14 @@
 #include "utils.h"
 #include "crypto.h"
 
+
+static void
+svSetValue_free (shvarFile *s, const char *key, char *value, gboolean verbatim)
+{
+	svSetValue (s, key, value, verbatim);
+	g_free (value);
+}
+
 static void
 save_secret_flags (shvarFile *ifcfg,
                    const char *key,
