@@ -2154,18 +2154,26 @@ char *
 nm_utils_hwaddr_ntoa_len (gconstpointer addr, gsize length)
 {
 	const guint8 *in = addr;
-	GString *out;
+	char *out, *result;
+	const char *LOOKUP = "0123456789ABCDEF";
 
-	g_return_val_if_fail (addr && length, g_strdup (""));
-
-	out = g_string_new (NULL);
-	while (length--) {
-		if (out->len)
-			g_string_append_c (out, ':');
-		g_string_append_printf (out, "%02X", *in++);
+	if (!addr || !length) {
+		g_return_val_if_reached (g_strdup (""));
+		return g_strdup ("");
 	}
 
-	return g_string_free (out, FALSE);
+	result = out = g_malloc (length * 3);
+	for (;;) {
+		guint8 v = *in++;
+
+		*out++ = LOOKUP[v >> 4];
+		*out++ = LOOKUP[v & 0x0F];
+		if (--length == 0) {
+			*out = 0;
+			return result;
+		}
+		*out++ = ':';
+	}
 }
 
 /**
