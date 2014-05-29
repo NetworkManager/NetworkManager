@@ -707,11 +707,12 @@ check_ip6_method (NMConnection *orig,
 		allow = TRUE;
 	}
 
-	/* If the original connection method is 'link-local' and the candidate method
-	 * is 'ignore' we can take the connection, because NM didn't simply take care
+	/* If the generated connection method is 'link-local' or 'auto' and the candidate
+	 * method is 'ignore' we can take the connection, because NM didn't simply take care
 	 * of IPv6.
 	 */
-	if (   strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
+	if (  (   strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
+	       || strcmp (orig_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0)
 	    && strcmp (candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
 		allow = TRUE;
 	}
