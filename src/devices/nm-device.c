@@ -1875,9 +1875,8 @@ nm_device_generate_connection (NMDevice *device)
 	ip6_method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 	if (   g_strcmp0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
 	    && g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0
-	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))
-	    && !nm_platform_link_supports_slaves (priv->ifindex)) {
-		nm_log_dbg (LOGD_DEVICE, "(%s): ignoring generated connection (no IP, not master, no slaves)", ifname);
+	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))) {
+		nm_log_dbg (LOGD_DEVICE, "(%s): ignoring generated connection (no IP and not slave)", ifname);
 		g_object_unref (connection);
 		connection = NULL;
 	}
