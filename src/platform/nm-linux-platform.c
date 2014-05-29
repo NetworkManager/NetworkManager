@@ -386,6 +386,9 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 			struct nl_cache *cache;
 			int nle;
 
+			/* FIXME: every time we refresh *one* object, we request an
+			 * entire dump. E.g. check_cache_items() gets O(n2) complexitly. */
+
 			nle = nl_cache_alloc_and_fill (
 					nl_cache_ops_lookup (nl_object_get_type (needle)),
 					sock, &cache);
