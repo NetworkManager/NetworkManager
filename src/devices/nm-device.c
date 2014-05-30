@@ -2682,8 +2682,7 @@ dhcp4_fail (NMDevice *device, gboolean timeout)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
-	nm_dhcp4_config_reset (priv->dhcp4_config);
-
+	dhcp4_cleanup (device, TRUE, FALSE);
 	if (timeout || (priv->ip4_state == IP_CONF))
 		nm_device_activate_schedule_ip4_config_timeout (device);
 	else if (priv->ip4_state == IP_FAIL)
@@ -2731,7 +2730,6 @@ dhcp4_state_changed (NMDHCPClient *client,
 
 		break;
 	case NM_DHCP_STATE_TIMEOUT:
-		nm_dhcp_client_stop (client, FALSE);
 		dhcp4_fail (device, TRUE);
 		break;
 	case NM_DHCP_STATE_DONE:
@@ -3109,8 +3107,7 @@ dhcp6_fail (NMDevice *device, gboolean timeout)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
-	nm_dhcp6_config_reset (priv->dhcp6_config);
-
+	dhcp6_cleanup (device, TRUE, FALSE);
 	if (timeout || (priv->ip6_state == IP_CONF))
 		nm_device_activate_schedule_ip6_config_timeout (device);
 	else if (priv->ip6_state == IP_FAIL)
@@ -3122,16 +3119,11 @@ dhcp6_timeout (NMDevice *self, NMDHCPClient *client)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	nm_dhcp_client_stop (client, FALSE);
 	if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_MANAGED)
 		dhcp6_fail (self, TRUE);
 	else {
 		/* not a hard failure; just live with the RA info */
-		nm_dhcp6_config_reset (priv->dhcp6_config);
-		if (priv->dhcp6_ip6_config)
-			g_object_unref (priv->dhcp6_ip6_config);
-		priv->dhcp6_ip6_config = NULL;
-
+		dhcp6_cleanup (self, TRUE, FALSE);
 		if (priv->ip6_state == IP_CONF)
 			nm_device_activate_schedule_ip6_config_result (self);
 	}
