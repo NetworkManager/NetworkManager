@@ -691,7 +691,7 @@ check_ip6_method (NMConnection *orig,
 	if (!props)
 		return TRUE;
 
-	/* If the original connection is 'link-local' and the candidate is both 'auto'
+	/* If the generated connection is 'link-local' and the candidate is both 'auto'
 	 * and may-fail=TRUE, then the candidate is OK to use.  may-fail is included
 	 * in the decision because if the candidate is 'auto' but may-fail=FALSE, then
 	 * the connection could not possibly have been previously activated on the
@@ -741,7 +741,7 @@ check_ip4_method (NMConnection *orig,
 	if (!props)
 		return TRUE;
 
-	/* If the original connection is 'disabled' (device had no IP addresses)
+	/* If the generated connection is 'disabled' (device had no IP addresses)
 	 * but it has no carrier, that most likely means that IP addressing could
 	 * not complete and thus no IP addresses were assigned.  In that case, allow
 	 * matching to the "auto" method.
@@ -777,7 +777,7 @@ check_connection_interface_name (NMConnection *orig,
 	if (!props)
 		return TRUE;
 
-	/* If one of the interface name is NULL, we accept that connection */
+	/* If one of the interface names is NULL, we accept that connection */
 	s_con_orig = nm_connection_get_setting_connection (orig);
 	s_con_cand = nm_connection_get_setting_connection (candidate);
 	orig_ifname = nm_setting_connection_get_interface_name (s_con_orig);

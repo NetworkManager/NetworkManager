@@ -308,7 +308,7 @@ test_connection_match_ip6_method (void)
 	copy = nm_connection_duplicate (orig);
 	connections = g_slist_append (connections, copy);
 
-	/* Check that if the original connection is IPv6 method=link-local, and the
+	/* Check that if the generated connection is IPv6 method=link-local, and the
 	 * candidate is both method=auto and may-faily=true, that the candidate is
 	 * matched.
 	 */
@@ -344,7 +344,7 @@ test_connection_match_ip6_method_ignore (void)
 	copy = nm_connection_duplicate (orig);
 	connections = g_slist_append (connections, copy);
 
-	/* Check that if the original connection is IPv6 method=link-local, and the
+	/* Check that if the generated connection is IPv6 method=link-local, and the
 	 * candidate is method=ignore, that the candidate is matched.
 	 */
 	s_ip6 = nm_connection_get_setting_ip6_config (orig);
@@ -413,7 +413,7 @@ test_connection_match_ip4_method (void)
 	copy = nm_connection_duplicate (orig);
 	connections = g_slist_append (connections, copy);
 
-	/* Check that if the original connection is IPv4 method=disabled, and the
+	/* Check that if the generated connection is IPv4 method=disabled, and the
 	 * candidate is both method=auto and may-faily=true, and the device has no
 	 * carrier that the candidate is matched.
 	 */
@@ -453,8 +453,8 @@ test_connection_match_interface_name (void)
 	copy = nm_connection_duplicate (orig);
 	connections = g_slist_append (connections, copy);
 
-	/* Check that if the original connection is IPv6 method=link-local, and the
-	 * candidate is method=ignore, that the candidate is matched.
+	/* Check that if the generated connection has an interface name and the
+	 * candidate's interface name is NULL, that the candidate is matched.
 	 */
 	s_con = nm_connection_get_setting_connection (orig);
 	g_assert (s_con);
