@@ -395,7 +395,8 @@ usage_connection_add (void)
 	           "                  [forward-delay <2-30>]\n"
 	           "                  [hello-time <1-10>]\n"
 	           "                  [max-age <6-40>]\n"
-	           "                  [ageing-time <0-1000000>]\n\n"
+	           "                  [ageing-time <0-1000000>]\n"
+	           "                  [mac <MAC address>]\n\n"
 	           "    bridge-slave: master <master (ifname, or connection UUID or name)>\n"
 	           "                  [priority <0-63>]\n"
 	           "                  [path-cost <1-65535>]\n"
@@ -3320,8 +3321,8 @@ do_questionnaire_team_slave (char **config)
 }
 
 static void
-do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay,
-                         char **hello_time, char **max_age, char **ageing_time)
+do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **hello_time,
+                         char **max_age, char **ageing_time, char **mac)
 {
 	char *answer;
 	gboolean answer_bool;
@@ -3330,7 +3331,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay,
 	GError *error = NULL;
 
 	/* Ask for optional 'bridge' arguments. */
-	printf (_("There are 6 optional arguments for 'bridge' connection type.\n"));
+	printf (_("There are 7 optional arguments for 'bridge' connection type.\n"));
 	answer = nmc_get_user_input (_("Do you want to provide them? (yes/no) [yes] "));
 	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
 		g_free (answer);
@@ -3408,6 +3409,17 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay,
 				printf (_("Error: 'ageing-time': '%s' is not a valid number <0-1000000>.\n"),
 				        *ageing_time);
 				g_free (*ageing_time);
+			}
+		} while (once_more);
+	}
+	if (!*mac) {
+		do {
+			*mac = nmc_get_user_input (_("MAC [none]: "));
+			once_more = !check_and_convert_mac (*mac, NULL, ARPHRD_ETHER, "mac", &error);
+			if (once_more) {
+				printf ("%s\n", error->message);
+				g_clear_error (&error);
+				g_free (*mac);
 			}
 		} while (once_more);
 	}
@@ -4562,12 +4574,16 @@ cleanup_team_slave:
 		gboolean stp_bool;
 		unsigned long stp_prio_int, fwd_delay_int, hello_time_int,
 		              max_age_int, ageing_time_int;
+		const char *mac_c = NULL;
+		char *mac = NULL;
+		GByteArray *mac_array = NULL;
 		nmc_arg_t exp_args[] = { {"stp",           TRUE, &stp_c,         FALSE},
 		                         {"priority",      TRUE, &priority_c,    FALSE},
 		                         {"forward-delay", TRUE, &fwd_delay_c,   FALSE},
 		                         {"hello-time",    TRUE, &hello_time_c,  FALSE},
 		                         {"max-age",       TRUE, &max_age_c,     FALSE},
 		                         {"ageing-time",   TRUE, &ageing_time_c, FALSE},
+		                         {"mac",           TRUE, &mac_c,         FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
@@ -4580,9 +4596,10 @@ cleanup_team_slave:
 		hello_time = hello_time_c ? g_strdup (hello_time_c) : NULL;
 		max_age = max_age_c ? g_strdup (max_age_c) : NULL;
 		ageing_time = ageing_time_c ? g_strdup (ageing_time_c) : NULL;
+		mac = g_strdup (mac_c);
 		if (ask)
 			do_questionnaire_bridge (&stp, &priority, &fwd_delay, &hello_time,
-			                         &max_age, &ageing_time);
+			                         &max_age, &ageing_time, &mac);
 
 		/* Use connection's ifname as 'bridge' ifname if exists, else generate one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
@@ -4629,6 +4646,8 @@ cleanup_team_slave:
 			if (!bridge_prop_string_to_uint (ageing_time, "ageing-time", NM_TYPE_SETTING_BRIDGE,
 			                                 NM_SETTING_BRIDGE_AGEING_TIME, &ageing_time_int, error))
 				goto cleanup_bridge;
+		if (!check_and_convert_mac (mac, &mac_array, ARPHRD_ETHER, "mac", error))
+			goto cleanup_bridge;
 
 		/* Set bridge options */
 		g_object_set (s_bridge, NM_SETTING_BRIDGE_INTERFACE_NAME, bridge_ifname, NULL);
@@ -4644,6 +4663,8 @@ cleanup_team_slave:
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_MAX_AGE, max_age_int, NULL);
 		if (ageing_time)
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME, ageing_time_int, NULL);
+		if (mac_array)
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_MAC_ADDRESS, mac_array, NULL);
 
 		success = TRUE;
 cleanup_bridge:
@@ -4654,6 +4675,9 @@ cleanup_bridge:
 		g_free (hello_time);
 		g_free (max_age);
 		g_free (ageing_time);
+		g_free (mac);
+		if (mac_array)
+			g_byte_array_free (mac_array, TRUE);
 		if (!success)
 			return FALSE;
 

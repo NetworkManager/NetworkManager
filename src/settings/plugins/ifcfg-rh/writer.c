@@ -1379,6 +1379,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 	const char *iface;
 	guint32 i;
 	GString *opts;
+	const GByteArray *mac;
 	char *s;
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
@@ -1398,6 +1399,11 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 	svSetValue (ifcfg, "BRIDGING_OPTS", NULL, FALSE);
 	svSetValue (ifcfg, "STP", "no", FALSE);
 	svSetValue (ifcfg, "DELAY", NULL, FALSE);
+	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
+
+	mac = nm_setting_bridge_get_mac_address (s_bridge);
+	if (mac)
+		svSetValue_free (ifcfg, "MACADDR", nm_utils_hwaddr_ntoa_len (mac->data, mac->len), FALSE);
 
 	/* Bridge options */
 	opts = g_string_sized_new (32);

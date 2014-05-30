@@ -443,18 +443,21 @@ nm_platform_link_get_all (void)
  * nm_platform_link_add:
  * @name: Interface name
  * @type: Interface type
+ * @address: (allow-none): set the mac address of the link
+ * @address_len: the length of the @address
  *
  * Add a software interface. Sets platform->error to NM_PLATFORM_ERROR_EXISTS
  * if interface is already already exists.  Any link-added signal will be
  * emitted from an idle handler and not within this function.
  */
 static gboolean
-nm_platform_link_add (const char *name, NMLinkType type)
+nm_platform_link_add (const char *name, NMLinkType type, const void *address, size_t address_len)
 {
 	reset_error ();
 
 	g_return_val_if_fail (name, FALSE);
 	g_return_val_if_fail (klass->link_add, FALSE);
+	g_return_val_if_fail ( (address != NULL) ^ (address_len == 0) , FALSE);
 
 	if (nm_platform_link_exists (name)) {
 		debug ("link: already exists");
@@ -462,7 +465,7 @@ nm_platform_link_add (const char *name, NMLinkType type)
 		return FALSE;
 	}
 
-	return klass->link_add (platform, name, type);
+	return klass->link_add (platform, name, type, address, address_len);
 }
 
 /**
@@ -477,7 +480,7 @@ nm_platform_dummy_add (const char *name)
 	g_return_val_if_fail (name, FALSE);
 
 	debug ("link: adding dummy '%s'", name);
-	return nm_platform_link_add (name, NM_LINK_TYPE_DUMMY);
+	return nm_platform_link_add (name, NM_LINK_TYPE_DUMMY, NULL, 0);
 }
 
 /**
@@ -985,14 +988,16 @@ nm_platform_link_get_master (int slave)
 /**
  * nm_platform_bridge_add:
  * @name: New interface name
+ * @address: (allow-none): set the mac address of the new bridge
+ * @address_len: the length of the @address
  *
  * Create a software bridge.
  */
 gboolean
-nm_platform_bridge_add (const char *name)
+nm_platform_bridge_add (const char *name, const void *address, size_t address_len)
 {
 	debug ("link: adding bridge '%s'", name);
-	return nm_platform_link_add (name, NM_LINK_TYPE_BRIDGE);
+	return nm_platform_link_add (name, NM_LINK_TYPE_BRIDGE, address, address_len);
 }
 
 /**
@@ -1005,7 +1010,7 @@ gboolean
 nm_platform_bond_add (const char *name)
 {
 	debug ("link: adding bond '%s'", name);
-	return nm_platform_link_add (name, NM_LINK_TYPE_BOND);
+	return nm_platform_link_add (name, NM_LINK_TYPE_BOND, NULL, 0);
 }
 
 /**
@@ -1018,7 +1023,7 @@ gboolean
 nm_platform_team_add (const char *name)
 {
 	debug ("link: adding team '%s'", name);
-	return nm_platform_link_add (name, NM_LINK_TYPE_TEAM);
+	return nm_platform_link_add (name, NM_LINK_TYPE_TEAM, NULL, 0);
 }
 
 /**

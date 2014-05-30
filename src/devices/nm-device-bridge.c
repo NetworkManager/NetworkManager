@@ -102,6 +102,7 @@ check_connection_compatible (NMDevice *device,
 {
 	const char *iface;
 	NMSettingBridge *s_bridge;
+	const GByteArray *mac_address;
 
 	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_compatible (device, connection, error))
 		return FALSE;
@@ -119,6 +120,21 @@ check_connection_compatible (NMDevice *device,
 		g_set_error (error, NM_BRIDGE_ERROR, NM_BRIDGE_ERROR_CONNECTION_INVALID,
 		             "The bridge connection virtual interface name did not match.");
 		return FALSE;
+	}
+
+	mac_address = nm_setting_bridge_get_mac_address (s_bridge);
+	if (mac_address) {
+		guint hw_len;
+		const guint8 *hw_addr;
+
+		hw_addr = nm_device_get_hw_address (device, &hw_len);
+		if (   !hw_addr
+		    || hw_len != mac_address->len
+		    || memcmp (mac_address->data, hw_addr, hw_len) != 0) {
+			g_set_error (error, NM_BRIDGE_ERROR, NM_BRIDGE_ERROR_CONNECTION_INVALID,
+			             "The bridge mac-address does not match the address of the device.");
+			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -438,13 +454,22 @@ NMDevice *
 nm_device_bridge_new_for_connection (NMConnection *connection)
 {
 	const char *iface;
+	NMSettingBridge *s_bridge;
+	const GByteArray *mac_address;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
 	iface = nm_connection_get_virtual_iface_name (connection);
 	g_return_val_if_fail (iface != NULL, NULL);
 
-	if (   !nm_platform_bridge_add (iface)
+	s_bridge = nm_connection_get_setting_bridge (connection);
+	g_return_val_if_fail (s_bridge, NULL);
+
+	mac_address = nm_setting_bridge_get_mac_address (s_bridge);
+
+	if (   !nm_platform_bridge_add (iface,
+	                                mac_address ? mac_address->data : NULL,
+	                                mac_address ? mac_address->len : 0)
 	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
 		nm_log_warn (LOGD_DEVICE | LOGD_BRIDGE, "(%s): failed to create bridge master interface for '%s': %s",
 		             iface, nm_connection_get_id (connection),

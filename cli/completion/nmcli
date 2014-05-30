@@ -947,7 +947,7 @@ _nmcli()
                                     OPTIONS_IP=()
                                     ;;
                                 bridge)
-                                    OPTIONS_TYPED=(stp priority forward-delay hello-time max-age ageing-time)
+                                    OPTIONS_TYPED=(stp priority forward-delay hello-time max-age ageing-time mac)
                                     ;;
                                 bridge-|bridge-s|bridge-sl|bridge-sla|bridge-slav|bridge-slave)
                                     OPTIONS_TYPED=(master priority path-cost hairpin)

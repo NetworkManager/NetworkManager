@@ -96,7 +96,7 @@ do_dummy_add (char **argv)
 static gboolean
 do_bridge_add (char **argv)
 {
-	return nm_platform_bridge_add (argv[0]);
+	return nm_platform_bridge_add (argv[0], NULL, 0);
 }
 
 static gboolean

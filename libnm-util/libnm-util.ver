@@ -220,6 +220,7 @@ global:
 	nm_setting_bridge_get_forward_delay;
 	nm_setting_bridge_get_hello_time;
 	nm_setting_bridge_get_interface_name;
+	nm_setting_bridge_get_mac_address;
 	nm_setting_bridge_get_max_age;
 	nm_setting_bridge_get_priority;
 	nm_setting_bridge_get_stp;
