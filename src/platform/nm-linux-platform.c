@@ -386,6 +386,9 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 			struct nl_cache *cache;
 			int nle;
 
+			/* FIXME: every time we refresh *one* object, we request an
+			 * entire dump. E.g. check_cache_items() gets O(n2) complexitly. */
+
 			nle = nl_cache_alloc_and_fill (
 					nl_cache_ops_lookup (nl_object_get_type (needle)),
 					sock, &cache);
@@ -1278,12 +1281,20 @@ check_cache_items (NMPlatform *platform, struct nl_cache *cache, int ifindex)
 {
 	auto_nl_cache struct nl_cache *cloned_cache = nl_cache_clone (cache);
 	struct nl_object *object;
+	GPtrArray *objects_to_refresh = g_ptr_array_new_with_free_func ((GDestroyNotify) nl_object_put);
+	guint i;
 
 	for (object = nl_cache_get_first (cloned_cache); object; object = nl_cache_get_next (object)) {
-		g_assert (nl_object_get_cache (object) == cloned_cache);
-		if (object_has_ifindex (object, ifindex))
-			refresh_object (platform, object, TRUE, NM_PLATFORM_REASON_CACHE_CHECK);
+		if (object_has_ifindex (object, ifindex)) {
+			nl_object_get (object);
+			g_ptr_array_add (objects_to_refresh, object);
+		}
 	}
+
+	for (i = 0; i < objects_to_refresh->len; i++)
+		refresh_object (platform, object, TRUE, NM_PLATFORM_REASON_CACHE_CHECK);
+
+	g_ptr_array_free (objects_to_refresh, TRUE);
 }
 
 static void
@@ -1490,7 +1501,7 @@ add_object (NMPlatform *platform, struct nl_object *obj)
 
 /* Decreases the reference count if @obj for convenience */
 static gboolean
-delete_object (NMPlatform *platform, struct nl_object *obj)
+delete_object (NMPlatform *platform, struct nl_object *obj, gboolean do_refresh_object)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	auto_nl_object struct nl_object *obj_cleanup = obj;
@@ -1536,7 +1547,8 @@ delete_object (NMPlatform *platform, struct nl_object *obj)
 		return FALSE;
 	}
 
-	refresh_object (platform, object, TRUE, NM_PLATFORM_REASON_INTERNAL);
+	if (do_refresh_object)
+		refresh_object (platform, object, TRUE, NM_PLATFORM_REASON_INTERNAL);
 
 	return TRUE;
 }
@@ -1973,7 +1985,7 @@ link_delete (NMPlatform *platform, int ifindex)
 		return FALSE;
 	}
 
-	return delete_object (platform, build_rtnl_link (ifindex, NULL, NM_LINK_TYPE_NONE));
+	return delete_object (platform, build_rtnl_link (ifindex, NULL, NM_LINK_TYPE_NONE), TRUE);
 }
 
 static int
@@ -3163,13 +3175,13 @@ ip6_address_add (NMPlatform *platform,
 static gboolean
 ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
 {
-	return delete_object (platform, build_rtnl_addr (AF_INET, ifindex, &addr, NULL, plen, 0, 0, 0, NULL));
+	return delete_object (platform, build_rtnl_addr (AF_INET, ifindex, &addr, NULL, plen, 0, 0, 0, NULL), TRUE);
 }
 
 static gboolean
 ip6_address_delete (NMPlatform *platform, int ifindex, struct in6_addr addr, int plen)
 {
-	return delete_object (platform, build_rtnl_addr (AF_INET6, ifindex, &addr, NULL, plen, 0, 0, 0, NULL));
+	return delete_object (platform, build_rtnl_addr (AF_INET6, ifindex, &addr, NULL, plen, 0, 0, 0, NULL), TRUE);
 }
 
 static gboolean
@@ -3327,6 +3339,55 @@ ip6_route_add (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 	return add_object (platform, build_rtnl_route (AF_INET6, ifindex, &network, plen, &gateway, metric, mss));
 }
 
+static struct rtnl_route *
+route_search_cache (struct nl_cache *cache, int family, int ifindex, const void *network, int plen, int metric)
+{
+	guint32 network_clean[4], dst_clean[4];
+	struct nl_object *object;
+
+	clear_host_address (family, network, plen, network_clean);
+
+	for (object = nl_cache_get_first (cache); object; object = nl_cache_get_next (object)) {
+		struct nl_addr *dst;
+		struct rtnl_route *rtnlroute = (struct rtnl_route *) object;
+
+		if (!_route_match (rtnlroute, family, ifindex))
+			continue;
+
+		if (metric && metric != rtnl_route_get_priority (rtnlroute))
+			continue;
+
+		dst = rtnl_route_get_dst (rtnlroute);
+		if (   !dst
+		    || nl_addr_get_family (dst) != family
+		    || nl_addr_get_prefixlen (dst) != plen)
+			continue;
+
+		clear_host_address (family, nl_addr_get_binary_addr (dst), plen, dst_clean);
+		if (memcmp (dst_clean, network_clean,
+		            family == AF_INET ? sizeof (guint32) : sizeof (struct in6_addr)) != 0)
+			continue;
+
+		rtnl_route_get (rtnlroute);
+		return rtnlroute;
+	}
+	return NULL;
+}
+
+static gboolean
+refresh_route (NMPlatform *platform, int family, int ifindex, const void *network, int plen, int metric)
+{
+	struct nl_cache *cache;
+	auto_nl_object struct rtnl_route *cached_object = NULL;
+
+	cache = choose_cache_by_type (platform, family == AF_INET ? OBJECT_TYPE_IP4_ROUTE : OBJECT_TYPE_IP6_ROUTE);
+	cached_object = route_search_cache (cache, family, ifindex, network, plen, metric);
+
+	if (cached_object)
+		return refresh_object (platform, (struct nl_object *) cached_object, TRUE, NM_PLATFORM_REASON_INTERNAL);
+	return TRUE;
+}
+
 static gboolean
 ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, int metric)
 {
@@ -3334,12 +3395,17 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 	struct rtnl_route *cached_object;
 	struct nl_object *route = build_rtnl_route (AF_INET, ifindex, &network, plen, &gateway, metric, 0);
 	uint8_t scope = RT_SCOPE_NOWHERE;
+	struct nl_cache *cache;
 
 	g_return_val_if_fail (route, FALSE);
 
+	cache = choose_cache_by_type (platform, OBJECT_TYPE_IP4_ROUTE);
+
 	/* when deleting an IPv4 route, several fields of the provided route must match.
 	 * Lookup in the cache so that we hopefully get the right values. */
-	cached_object = (struct rtnl_route *) nm_nl_cache_search (choose_cache_by_type (platform, OBJECT_TYPE_IP4_ROUTE), route);
+	cached_object = (struct rtnl_route *) nl_cache_search (cache, route);
+	if (!cached_object)
+		cached_object = route_search_cache (cache, AF_INET, ifindex, &network, plen, metric);
 
 	if (!_nl_has_capability (1 /* NL_CAPABILITY_ROUTE_BUILD_MSG_SET_SCOPE */)) {
 		/* When searching for a matching IPv4 route to delete, the kernel
@@ -3382,7 +3448,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 	 */
 
 	rtnl_route_put (cached_object);
-	return delete_object (platform, route);
+	return delete_object (platform, route, FALSE) && refresh_route (platform, AF_INET, ifindex, &network, plen, metric);
 }
 
 static gboolean
@@ -3390,17 +3456,20 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 {
 	struct in6_addr gateway = IN6ADDR_ANY_INIT;
 
-	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, &network, plen, &gateway, metric, 0));
+	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, &network, plen, &gateway, metric, 0), FALSE) &&
+	    refresh_route (platform, AF_INET6, ifindex, &network, plen, metric);
 }
 
 static gboolean
 ip_route_exists (NMPlatform *platform, int family, int ifindex, gpointer network, int plen, int metric)
 {
-	auto_nl_object struct nl_object *object = build_rtnl_route (
-			family, ifindex, network, plen, INADDR_ANY, metric, 0);
-	auto_nl_object struct nl_object *cached_object = nl_cache_search (
-			choose_cache (platform, object), object);
+	auto_nl_object struct nl_object *object = build_rtnl_route (family, ifindex, network,
+	                                                            plen, NULL, metric, 0);
+	struct nl_cache *cache = choose_cache (platform, object);
+	auto_nl_object struct nl_object *cached_object = nl_cache_search (cache, object);
 
+	if (!cached_object)
+		cached_object = (struct nl_object *) route_search_cache (cache, family, ifindex, network, plen, metric);
 	return !!cached_object;
 }
 
