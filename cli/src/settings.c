@@ -21,6 +21,7 @@
 
 #include <net/if_arp.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -6367,10 +6368,16 @@ nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
 	return NULL;
 }
 
+#ifdef HAVE_INTROSPECTION
+#include "settings-docs.c"
+#else
+#define nmc_setting_get_property_doc(setting, prop) "(not available)"
+#endif
+
 /*
  * Create a description string for a property.
  *
- * It returns a description got from properties blurb, concatenated with
+ * It returns a description got from property documentation, concatenated with
  * nmcli specific description (if it exists).
  *
  * Returns: property description or NULL on failure. The caller must free the string.
@@ -6378,9 +6385,8 @@ nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
 char *
 nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 {
-	GParamSpec *spec;
 	const NmcPropertyFuncs *item;
-	const char *setting_desc = "";
+	const char *setting_desc = NULL;
 	const char *setting_desc_title = "";
 	const char *nmcli_desc = NULL;
 	const char *nmcli_desc_title = "";
@@ -6388,11 +6394,9 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
-	spec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
-	if (spec) {
-		setting_desc = g_param_spec_get_blurb (spec);
+	setting_desc = nmc_setting_get_property_doc (setting, prop);
+	if (setting_desc)
 		setting_desc_title = _("[NM property description]");
-	}
 
 	item = nmc_properties_find (nm_setting_get_name (setting), prop);
 	if (item && item->describe_func) {
@@ -6402,7 +6406,8 @@ nmc_setting_get_property_desc (NMSetting *setting, const char *prop)
 	}
 
 	return g_strdup_printf ("%s\n%s\n%s%s%s%s",
-	                        setting_desc_title, setting_desc,
+	                        setting_desc_title,
+	                        setting_desc ? setting_desc : "",
 	                        nmcli_nl, nmcli_desc_title, nmcli_nl,
 	                        nmcli_desc ? nmcli_desc : "");
 }
