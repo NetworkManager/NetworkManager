@@ -65,6 +65,23 @@ split_patch() {
     perl -e "$PERL_PROG" "$1" "$2"
 }
 
+get_patch_origin() {
+    local PATCH="$1"
+
+    (
+        cd "$srcdir"
+
+        local HASH="$(git log -n1 --format="%H" HEAD -- "$PATCH")"
+
+        if [[ "$HASH" == "" ]]; then
+            return
+        fi
+
+        printf "\n\nPatch \"%s\" was last modified in commit:\n\n" "$PATCH"
+        git log -n1 "$HASH" | sed 's/^[^ ]/    \0/'
+    )
+}
+
 unset REVERT_COUNT
 LOCAL=0
 for ARG; do
@@ -260,7 +277,7 @@ EOF
                 done
             )
             git add --all .
-            git commit --allow-empty -a -m "<< revert Patch${LAST_PATCH_N[$i]} \"${LAST_PATCH[$i]}\""
+            git commit --allow-empty -a -m "<< revert Patch${LAST_PATCH_N[$i]} \"${LAST_PATCH[$i]}\"$(get_patch_origin "${LAST_PATCH[$i]}")"
             BASECOMMIT=("`git rev-parse HEAD`" "${BASECOMMIT[@]}")
         done
 
@@ -270,7 +287,7 @@ EOF
 
             # create an empty commit, indicating the commit before starting to reapply
             BASECOMMIT_REVERT="${BASECOMMIT[$((i))]}"
-            COMMIT_MSG="$(git log -n1 --format='%s' "$BASECOMMIT_REVERT" | sed 's/<< revert \(Patch.*"\)$/-- before reapplying \1/')"
+            COMMIT_MSG="$(git log -n1 --format='%s%n%n%b' "$BASECOMMIT_REVERT" | sed '1s/<< revert \(Patch.*"\)$/-- before reapplying \1/')"
             git commit --allow-empty -m "$COMMIT_MSG"
 
             # first try git-am to preserve the commit message, otherwise just revert the last commit
@@ -278,12 +295,12 @@ EOF
                 # The tree to the version before should be identical after reapplying the patch.
                 # Just to be sure, reset the commit.
                 git reset "${BASECOMMIT[$((i+1))]}" -- .
-                COMMIT_MSG="$(git log -n1 --format='%s' "$BASECOMMIT_REVERT" | sed 's/<< revert \(Patch.*"\)$/-- after reapplying \1\n\ngit-am did not fully restore the previous state/')"
+                COMMIT_MSG="$(git log -n1 --format='%s%n%n%b' "$BASECOMMIT_REVERT" | sed '1s/<< revert \(Patch.*"\)$/-- after reapplying \1\n\ngit-am did not fully restore the previous state/')"
                 git commit -m "$COMMIT_MSG" || echo "NOTHING TO COMMIT"
             else
                 git am --abort
                 git reset "${BASECOMMIT[$((i+1))]}" -- .
-                COMMIT_MSG="$(git log -n1 --format='%s' "$BASECOMMIT_REVERT" | sed 's/<< revert \(Patch.*"\)$/>> reapply \1/')"
+                COMMIT_MSG="$(git log -n1 --format='%s%n%n%b' "$BASECOMMIT_REVERT" | sed '1s/<< revert \(Patch.*"\)$/>> reapply \1/')"
                 git commit --allow-empty -m "$COMMIT_MSG"
             fi
             git reset --hard HEAD
