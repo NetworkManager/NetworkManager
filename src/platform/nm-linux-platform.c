@@ -1292,7 +1292,7 @@ check_cache_items (NMPlatform *platform, struct nl_cache *cache, int ifindex)
 	}
 
 	for (i = 0; i < objects_to_refresh->len; i++)
-		refresh_object (platform, object, TRUE, NM_PLATFORM_REASON_CACHE_CHECK);
+		refresh_object (platform, objects_to_refresh->pdata[i], TRUE, NM_PLATFORM_REASON_CACHE_CHECK);
 
 	g_ptr_array_free (objects_to_refresh, TRUE);
 }
