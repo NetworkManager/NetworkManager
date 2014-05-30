@@ -211,7 +211,7 @@ check_connection_compatible (NMDevice *device,
 
 	if (memcmp (priv->bdaddr, array->data, ETH_ALEN) != 0) {
 		g_set_error (error,
-		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INVALID,
+		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INCOMPATIBLE,
 		             "The connection did not match the device's Bluetooth address.");
 		return FALSE;
 	}
