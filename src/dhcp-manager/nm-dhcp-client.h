@@ -131,12 +131,17 @@ NMIP4Config *nm_dhcp_client_get_ip4_config   (NMDHCPClient *self, gboolean test)
 
 NMIP6Config *nm_dhcp_client_get_ip6_config   (NMDHCPClient *self, gboolean test);
 
-/* Backend helpers */
+/* Backend helpers for subclasses */
 void nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name);
 
 void nm_dhcp_client_stop_pid (pid_t pid, const char *iface);
 
 void nm_dhcp_client_watch_child (NMDHCPClient *self, pid_t pid);
+
+void nm_dhcp_client_set_state (NMDHCPClient *self,
+                               NMDhcpState state,
+                               gboolean emit_state,
+                               gboolean remove_now);
 
 #endif /* NM_DHCP_CLIENT_H */
 
