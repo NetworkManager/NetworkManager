@@ -403,8 +403,10 @@ client_start (NMDHCPManager *self,
 	/* Kill any old client instance */
 	client = get_client_for_iface (self, iface, ipv6);
 	if (client) {
-		nm_dhcp_client_stop (client, FALSE);
+		g_object_ref (client);
 		remove_client (self, client);
+		nm_dhcp_client_stop (client, FALSE);
+		g_object_unref (client);
 	}
 
 	/* And make a new one */

@@ -140,7 +140,6 @@ void nm_dhcp_client_watch_child (NMDHCPClient *self, pid_t pid);
 
 void nm_dhcp_client_set_state (NMDHCPClient *self,
                                NMDhcpState state,
-                               gboolean emit_state,
                                gboolean remove_now);
 
 #endif /* NM_DHCP_CLIENT_H */

@@ -186,15 +186,12 @@ signal_remove (gpointer user_data)
 void
 nm_dhcp_client_set_state (NMDHCPClient *self,
                           NMDhcpState state,
-                          gboolean emit_state,
                           gboolean remove_now)
 {
 	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
 	priv->state = state;
-
-	if (emit_state)
-		g_signal_emit (G_OBJECT (self), signals[SIGNAL_STATE_CHANGED], 0, priv->state);
+	g_signal_emit (G_OBJECT (self), signals[SIGNAL_STATE_CHANGED], 0, priv->state);
 
 	if (state == NM_DHCP_STATE_DONE || state == NM_DHCP_STATE_FAIL) {
 		/* Start the remove signal timer */
@@ -218,7 +215,7 @@ daemon_timeout (gpointer user_data)
 	             "(%s): DHCPv%c request timed out.",
 	             priv->iface,
 	             priv->ipv6 ? '6' : '4');
-	nm_dhcp_client_set_state (self, NM_DHCP_STATE_TIMEOUT, TRUE, FALSE);
+	nm_dhcp_client_set_state (self, NM_DHCP_STATE_TIMEOUT, FALSE);
 	return G_SOURCE_REMOVE;
 }
 
@@ -249,7 +246,7 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 	timeout_cleanup (self);
 	priv->pid = -1;
 
-	nm_dhcp_client_set_state (self, new_state, TRUE, FALSE);
+	nm_dhcp_client_set_state (self, new_state, FALSE);
 }
 
 void
@@ -517,7 +514,7 @@ nm_dhcp_client_stop (NMDHCPClient *self, gboolean release)
 	g_assert (priv->pid == -1);
 
 	/* And clean stuff up */
-	nm_dhcp_client_set_state (self, NM_DHCP_STATE_DONE, FALSE, TRUE);
+	nm_dhcp_client_set_state (self, NM_DHCP_STATE_DONE, TRUE);
 
 	g_hash_table_remove_all (priv->options);
 	timeout_cleanup (self);
@@ -661,7 +658,7 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 	             state_to_string (old_state),
 	             state_to_string (new_state));
 
-	nm_dhcp_client_set_state (self, new_state, TRUE, FALSE);
+	nm_dhcp_client_set_state (self, new_state, FALSE);
 }
 
 #define NEW_TAG "new_"
