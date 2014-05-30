@@ -50,6 +50,14 @@
 #include "utils.h"
 #include "crypto.h"
 
+
+static void
+svSetValue_free (shvarFile *s, const char *key, char *value, gboolean verbatim)
+{
+	svSetValue (s, key, value, verbatim);
+	g_free (value);
+}
+
 static void
 save_secret_flags (shvarFile *ifcfg,
                    const char *key,
@@ -817,21 +825,15 @@ write_wireless_setting (NMConnection *connection,
 	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	device_mac = nm_setting_wireless_get_mac_address (s_wireless);
 	if (device_mac) {
-		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-		                       device_mac->data[0], device_mac->data[1], device_mac->data[2],
-		                       device_mac->data[3], device_mac->data[4], device_mac->data[5]);
-		svSetValue (ifcfg, "HWADDR", tmp, FALSE);
-		g_free (tmp);
+		svSetValue_free (ifcfg, "HWADDR",
+		                 nm_utils_hwaddr_ntoa_len (device_mac->data, device_mac->len), FALSE);
 	}
 
 	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
 	cloned_mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
 	if (cloned_mac) {
-		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-		                       cloned_mac->data[0], cloned_mac->data[1], cloned_mac->data[2],
-		                       cloned_mac->data[3], cloned_mac->data[4], cloned_mac->data[5]);
-		svSetValue (ifcfg, "MACADDR", tmp, FALSE);
-		g_free (tmp);
+		svSetValue_free (ifcfg, "MACADDR",
+		                 nm_utils_hwaddr_ntoa_len (cloned_mac->data, cloned_mac->len), FALSE);
 	}
 
 	svSetValue (ifcfg, "HWADDR_BLACKLIST", NULL, FALSE);
@@ -933,11 +935,8 @@ write_wireless_setting (NMConnection *connection,
 	svSetValue (ifcfg, "BSSID", NULL, FALSE);
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
 	if (bssid) {
-		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-		                       bssid->data[0], bssid->data[1], bssid->data[2],
-		                       bssid->data[3], bssid->data[4], bssid->data[5]);
-		svSetValue (ifcfg, "BSSID", tmp, FALSE);
-		g_free (tmp);
+		svSetValue_free (ifcfg, "BSSID",
+		                 nm_utils_hwaddr_ntoa_len (bssid->data, bssid->len), FALSE);
 	}
 
 	/* Ensure DEFAULTKEY and SECURITYMODE are cleared unless there's security;
@@ -1068,21 +1067,15 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	device_mac = nm_setting_wired_get_mac_address (s_wired);
 	if (device_mac) {
-		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-		                       device_mac->data[0], device_mac->data[1], device_mac->data[2],
-		                       device_mac->data[3], device_mac->data[4], device_mac->data[5]);
-		svSetValue (ifcfg, "HWADDR", tmp, FALSE);
-		g_free (tmp);
+		svSetValue_free (ifcfg, "HWADDR",
+		                 nm_utils_hwaddr_ntoa_len (device_mac->data, device_mac->len), FALSE);
 	}
 
 	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
 	cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
 	if (cloned_mac) {
-		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
-		                       cloned_mac->data[0], cloned_mac->data[1], cloned_mac->data[2],
-		                       cloned_mac->data[3], cloned_mac->data[4], cloned_mac->data[5]);
-		svSetValue (ifcfg, "MACADDR", tmp, FALSE);
-		g_free (tmp);
+		svSetValue_free (ifcfg, "MACADDR",
+		                 nm_utils_hwaddr_ntoa_len (cloned_mac->data, cloned_mac->len), FALSE);
 	}
 
 	svSetValue (ifcfg, "HWADDR_BLACKLIST", NULL, FALSE);
