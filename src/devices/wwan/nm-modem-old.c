@@ -733,9 +733,7 @@ modem_properties_changed (DBusGProxy *proxy,
 /*****************************************************************************/
 
 static gboolean
-check_connection_compatible (NMModem *modem,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMModem *modem, NMConnection *connection)
 {
 	NMModemOldPrivate *priv = NM_MODEM_OLD_GET_PRIVATE (modem);
 	NMSettingConnection *s_con;
@@ -760,26 +758,14 @@ check_connection_compatible (NMModem *modem,
 			return TRUE;
 
 		/* If the modem is only CDMA and the connection is not CDMA, error */
-		if ((priv->caps ^ NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO) == 0) {
-			g_set_error (error, NM_MODEM_ERROR, NM_MODEM_ERROR_CONNECTION_NOT_CDMA,
-				         "The connection was not a CDMA connection.");
+		if ((priv->caps ^ NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO) == 0)
 			return FALSE;
-		}
 	}
 
 	/* Validate 3GPP */
-	if (priv->caps & CAPS_3GPP) {
-		if (valid_gsm)
-			return TRUE;
+	if (priv->caps & CAPS_3GPP)
+		return valid_gsm;
 
-		g_set_error (error, NM_MODEM_ERROR, NM_MODEM_ERROR_CONNECTION_NOT_GSM,
-			         "The connection was not a GSM/UMTS/LTE connection.");
-		return FALSE;
-	}
-
-	g_set_error (error, NM_MODEM_ERROR, NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
-		         "The connection was not not compatible with this modem (caps 0x%X)",
-		         priv->caps);
 	return FALSE;
 }
 

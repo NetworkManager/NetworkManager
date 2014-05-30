@@ -456,15 +456,13 @@ match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_m
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingWired *s_wired;
 
-	if (!NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->check_connection_compatible (device, connection, error))
+	if (!NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
 	s_wired = nm_connection_get_setting_wired (connection);
@@ -472,38 +470,22 @@ check_connection_compatible (NMDevice *device,
 	if (nm_connection_is_type (connection, NM_SETTING_PPPOE_SETTING_NAME)) {
 		/* NOP */
 	} else if (nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)) {
-		if (!s_wired) {
-			g_set_error (error,
-			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INVALID,
-			             "The connection was not a valid wired connection.");
+		if (!s_wired)
 			return FALSE;
-		}
-	} else {
-		g_set_error (error,
-		             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_NOT_WIRED,
-		             "The connection was not a wired, bond, or PPPoE connection.");
+	} else
 		return FALSE;
-	}
 
 	if (s_wired) {
 		const GByteArray *mac;
 		gboolean try_mac = TRUE;
 		const GSList *mac_blacklist, *mac_blacklist_iter;
 
-		if (!match_subchans (self, s_wired, &try_mac)) {
-			g_set_error (error,
-			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
-			             "The connection's s390 subchannels did not match this device.");
+		if (!match_subchans (self, s_wired, &try_mac))
 			return FALSE;
-		}
 
 		mac = nm_setting_wired_get_mac_address (s_wired);
-		if (try_mac && mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN)) {
-			g_set_error (error,
-			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
-			             "The connection's MAC address did not match this device.");
+		if (try_mac && mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN))
 			return FALSE;
-		}
 
 		/* Check for MAC address blacklist */
 		mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
@@ -515,13 +497,9 @@ check_connection_compatible (NMDevice *device,
 				g_warn_if_reached ();
 				return FALSE;
 			}
-			if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0) {
-				g_set_error (error,
-				             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
-				             "The connection's MAC address (%s) is blacklisted in %s.",
-				             (char *) mac_blacklist_iter->data, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST);
+
+			if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0)
 				return FALSE;
-			}
 		}
 	}
 

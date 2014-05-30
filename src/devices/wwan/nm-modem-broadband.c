@@ -349,9 +349,7 @@ act_stage1_prepare (NMModem *_self,
 /*****************************************************************************/
 
 static gboolean
-check_connection_compatible (NMModem *_self,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMModem *_self, NMConnection *connection)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 	MMModemCapability modem_caps;
@@ -365,22 +363,12 @@ check_connection_compatible (NMModem *_self,
 		NMSettingGsm *s_gsm;
 
 		if (!g_str_equal (nm_setting_connection_get_connection_type (s_con),
-		                  NM_SETTING_GSM_SETTING_NAME)) {
-			g_set_error (error,
-			             NM_MODEM_ERROR,
-			             NM_MODEM_ERROR_CONNECTION_NOT_GSM,
-			             "The connection was not a 3GPP connection.");
+		                  NM_SETTING_GSM_SETTING_NAME))
 			return FALSE;
-		}
 
 		s_gsm = nm_connection_get_setting_gsm (connection);
-		if (!s_gsm) {
-			g_set_error (error,
-			             NM_MODEM_ERROR,
-			             NM_MODEM_ERROR_CONNECTION_INVALID,
-			             "The connection was not a valid 3GPP connection.");
+		if (!s_gsm)
 			return FALSE;
-		}
 
 		return TRUE;
 	}
@@ -389,30 +377,16 @@ check_connection_compatible (NMModem *_self,
 		NMSettingCdma *s_cdma;
 
 		if (!g_str_equal (nm_setting_connection_get_connection_type (s_con),
-		                  NM_SETTING_CDMA_SETTING_NAME)) {
-			g_set_error (error,
-			             NM_MODEM_ERROR,
-			             NM_MODEM_ERROR_CONNECTION_NOT_CDMA,
-			             "The connection was not a 3GPP2 connection.");
+		                  NM_SETTING_CDMA_SETTING_NAME))
 			return FALSE;
-		}
 
 		s_cdma = nm_connection_get_setting_cdma (connection);
-		if (!s_cdma) {
-			g_set_error (error,
-			             NM_MODEM_ERROR,
-			             NM_MODEM_ERROR_CONNECTION_INVALID,
-			             "The connection was not a valid 3GPP2 connection.");
+		if (!s_cdma)
 			return FALSE;
-		}
 
 		return TRUE;
 	}
 
-	g_set_error (error,
-	             NM_MODEM_ERROR,
-	             NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
-	             "Device is not a mobile broadband modem");
 	return FALSE;
 }
 

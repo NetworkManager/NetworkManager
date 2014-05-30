@@ -822,9 +822,7 @@ is_adhoc_wpa (NMConnection *connection)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -834,35 +832,22 @@ check_connection_compatible (NMDevice *device,
 	const GSList *mac_blacklist, *mac_blacklist_iter;
 	const char *mode;
 
-	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->check_connection_compatible (device, connection, error))
+	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
-	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIRELESS_SETTING_NAME)) {
-		g_set_error (error,
-		             NM_WIFI_ERROR, NM_WIFI_ERROR_CONNECTION_NOT_WIRELESS,
-		             "The connection was not a WiFi connection.");
+	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIRELESS_SETTING_NAME))
 		return FALSE;
-	}
 
 	s_wireless = nm_connection_get_setting_wireless (connection);
-	if (!s_wireless) {
-		g_set_error (error,
-		             NM_WIFI_ERROR, NM_WIFI_ERROR_CONNECTION_INVALID,
-		             "The connection was not a valid WiFi connection.");
+	if (!s_wireless)
 		return FALSE;
-	}
-
 
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
-	if (mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN)) {
-		g_set_error (error,
-		             NM_WIFI_ERROR, NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
-		             "The connection's MAC address did not match this device.");
+	if (mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN))
 		return FALSE;
-	}
 
 	/* Check for MAC address blacklist */
 	mac_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
@@ -874,55 +859,26 @@ check_connection_compatible (NMDevice *device,
 			g_warn_if_reached ();
 			continue;
 		}
-		if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0) {
-			g_set_error (error,
-			             NM_WIFI_ERROR, NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
-			             "The connection's MAC address (%s) is blacklisted in %s.",
-			             (char *) mac_blacklist_iter->data, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST);
+
+		if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0)
 			return FALSE;
-		}
 	}
 
-	if (is_adhoc_wpa (connection)) {
-		g_set_error_literal (error,
-		                     NM_WIFI_ERROR,
-		                     NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
-		                     "WPA Ad-Hoc disabled due to kernel bugs");
+	if (is_adhoc_wpa (connection))
 		return FALSE;
-	}
 
 	/* Early exit if supplicant or device doesn't support requested mode */
 	mode = nm_setting_wireless_get_mode (s_wireless);
 	if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0) {
-		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_ADHOC)) {
-			g_set_error_literal (error,
-			                     NM_WIFI_ERROR,
-			                     NM_WIFI_ERROR_ADHOC_MODE_UNSUPPORTED,
-			                     "Ad-Hoc mode is not supported by this device.");
+		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_ADHOC))
 			return FALSE;
-		}
 	} else if (g_strcmp0 (mode, NM_SETTING_WIRELESS_MODE_AP) == 0) {
-		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_AP)) {
-			g_set_error_literal (error,
-			                     NM_WIFI_ERROR,
-			                     NM_WIFI_ERROR_AP_MODE_UNSUPPORTED,
-			                     "Access Point (AP) mode is not supported by this device.");
+		if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_AP))
 			return FALSE;
-		}
 
 		if (priv->sup_iface) {
-			switch (nm_supplicant_interface_get_ap_support (priv->sup_iface)) {
-			case AP_SUPPORT_NO:
-				g_set_error_literal (error,
-				                     NM_WIFI_ERROR,
-				                     NM_WIFI_ERROR_AP_MODE_UNSUPPORTED,
-				                     "Access Point (AP) mode is not supported by the supplicant.");
+			if (nm_supplicant_interface_get_ap_support (priv->sup_iface) == AP_SUPPORT_NO)
 				return FALSE;
-			case AP_SUPPORT_YES:
-			case AP_SUPPORT_UNKNOWN:
-			default:
-				break;
-			}
 		}
 	}
 

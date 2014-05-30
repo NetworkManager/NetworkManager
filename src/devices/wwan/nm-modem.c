@@ -585,12 +585,10 @@ nm_modem_act_stage2_config (NMModem *self,
 /*****************************************************************************/
 
 gboolean
-nm_modem_check_connection_compatible (NMModem *self,
-                                      NMConnection *connection,
-                                      GError **error)
+nm_modem_check_connection_compatible (NMModem *self, NMConnection *connection)
 {
 	if (NM_MODEM_GET_CLASS (self)->check_connection_compatible)
-		return NM_MODEM_GET_CLASS (self)->check_connection_compatible (self, connection, error);
+		return NM_MODEM_GET_CLASS (self)->check_connection_compatible (self, connection);
 	return FALSE;
 }
 

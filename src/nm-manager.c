@@ -1062,14 +1062,10 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	/* Make sure we didn't create a device for this connection already */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *candidate = iter->data;
-		GError *error = NULL;
 
 		if (   g_strcmp0 (nm_device_get_iface (candidate), iface) == 0
-		    || nm_device_check_connection_compatible (candidate, connection, &error)) {
-			g_clear_error (&error);
+		    || nm_device_check_connection_compatible (candidate, connection))
 			goto out;
-		}
-		g_clear_error (&error);
 	}
 
 	/* Block notification of link added since we're creating the device
@@ -1516,7 +1512,7 @@ local_slist_free (void *loc)
 static gboolean
 match_connection_filter (NMConnection *connection, gpointer user_data)
 {
-	return nm_device_check_connection_compatible (NM_DEVICE (user_data), connection, NULL);
+	return nm_device_check_connection_compatible (NM_DEVICE (user_data), connection);
 }
 
 /**

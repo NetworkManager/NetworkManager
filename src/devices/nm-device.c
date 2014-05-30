@@ -1950,9 +1950,7 @@ nm_device_complete_connection (NMDevice *self,
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 	const char *config_iface, *device_iface;
@@ -1962,12 +1960,8 @@ check_connection_compatible (NMDevice *device,
 
 	config_iface = nm_setting_connection_get_interface_name (s_con);
 	device_iface = nm_device_get_iface (device);
-	if (config_iface && strcmp (config_iface, device_iface) != 0) {
-		g_set_error (error,
-		             NM_DEVICE_ERROR, NM_DEVICE_ERROR_CONNECTION_INVALID,
-		             "The connection is not valid for this interface.");
+	if (config_iface && strcmp (config_iface, device_iface) != 0)
 		return FALSE;
-	}
 
 	return TRUE;
 }
@@ -1976,7 +1970,6 @@ check_connection_compatible (NMDevice *device,
  * nm_device_check_connection_compatible:
  * @device: an #NMDevice
  * @connection: an #NMConnection
- * @error: return location for an error, or %NULL
  *
  * Checks if @connection could potentially be activated on @device.
  * This means only that @device has the proper capabilities, and that
@@ -1989,14 +1982,12 @@ check_connection_compatible (NMDevice *device,
  *   @device.
  */
 gboolean
-nm_device_check_connection_compatible (NMDevice *device,
-                                       NMConnection *connection,
-                                       GError **error)
+nm_device_check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
-	return NM_DEVICE_GET_CLASS (device)->check_connection_compatible (device, connection, error);
+	return NM_DEVICE_GET_CLASS (device)->check_connection_compatible (device, connection);
 }
 
 /**
@@ -7037,7 +7028,7 @@ capture_lease_config (NMDevice *device,
 		NMConnection *candidate = citer->data;
 		const char *method;
 
-		if (!nm_device_check_connection_compatible (device, candidate, NULL))
+		if (!nm_device_check_connection_compatible (device, candidate))
 			continue;
 
 		/* IPv4 leases */
@@ -7397,7 +7388,7 @@ nm_device_connection_is_available (NMDevice *device,
 		/* default-unmanaged  devices in UNMANAGED state have no available connections
 		 * so we must manually check whether the connection is available here.
 		 */
-		if (   nm_device_check_connection_compatible (device, connection, NULL)
+		if (   nm_device_check_connection_compatible (device, connection)
 		    && NM_DEVICE_GET_CLASS (device)->check_connection_available (device, connection, NULL))
 			return TRUE;
 	}
@@ -7409,7 +7400,7 @@ nm_device_connection_is_available (NMDevice *device,
 		 * activating but the network isn't available let the device recheck
 		 * availability.
 		 */
-		if (   nm_device_check_connection_compatible (device, connection, NULL)
+		if (   nm_device_check_connection_compatible (device, connection)
 		    && NM_DEVICE_GET_CLASS (device)->check_connection_available_wifi_hidden)
 			available = NM_DEVICE_GET_CLASS (device)->check_connection_available_wifi_hidden (device, connection);
 	}
@@ -7437,7 +7428,7 @@ _try_add_available_connection (NMDevice *self, NMConnection *connection)
 	if (nm_device_get_state (self) < NM_DEVICE_STATE_DISCONNECTED)
 		return FALSE;
 
-	if (nm_device_check_connection_compatible (self, connection, NULL)) {
+	if (nm_device_check_connection_compatible (self, connection)) {
 		if (NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, NULL)) {
 			g_hash_table_insert (NM_DEVICE_GET_PRIVATE (self)->available_connections,
 			                     g_object_ref (connection),

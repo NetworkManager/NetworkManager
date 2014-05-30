@@ -162,9 +162,7 @@ can_auto_connect (NMDevice *device,
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMSettingConnection *s_con;
@@ -172,49 +170,29 @@ check_connection_compatible (NMDevice *device,
 	const GByteArray *array;
 	guint32 bt_type;
 
-	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->check_connection_compatible (device, connection, error))
+	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
-	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_BLUETOOTH_SETTING_NAME)) {
-		g_set_error (error,
-		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_NOT_BT,
-		             "The connection was not a Bluetooth connection.");
+	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_BLUETOOTH_SETTING_NAME))
 		return FALSE;
-	}
 
 	s_bt = nm_connection_get_setting_bluetooth (connection);
-	if (!s_bt) {
-		g_set_error (error,
-		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INVALID,
-		             "The connection was not a valid Bluetooth connection.");
+	if (!s_bt)
 		return FALSE;
-	}
 
 	bt_type = get_connection_bt_type (connection);
-	if (!(bt_type & priv->capabilities)) {
-		g_set_error (error,
-		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INCOMPATIBLE,
-		             "The connection was not compatible with the device's capabilities.");
+	if (!(bt_type & priv->capabilities))
 		return FALSE;
-	}
 
 	array = nm_setting_bluetooth_get_bdaddr (s_bt);
-	if (!array || (array->len != ETH_ALEN)) {
-		g_set_error (error,
-		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INVALID,
-		             "The connection did not contain a valid Bluetooth address.");
+	if (!array || (array->len != ETH_ALEN))
 		return FALSE;
-	}
 
-	if (memcmp (priv->bdaddr, array->data, ETH_ALEN) != 0) {
-		g_set_error (error,
-		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INCOMPATIBLE,
-		             "The connection did not match the device's Bluetooth address.");
+	if (memcmp (priv->bdaddr, array->data, ETH_ALEN) != 0)
 		return FALSE;
-	}
 
 	return TRUE;
 }

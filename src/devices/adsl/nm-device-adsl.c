@@ -51,17 +51,6 @@ G_DEFINE_TYPE (NMDeviceAdsl, nm_device_adsl, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_ADSL, NMDeviceAdslPrivate))
 
-#define NM_ADSL_ERROR (nm_adsl_error_quark ())
-
-static GQuark
-nm_adsl_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-adsl-error");
-	return quark;
-}
-
 /**********************************************/
 
 typedef struct {
@@ -87,39 +76,25 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMSettingAdsl *s_adsl;
 	const char *protocol;
 
-	if (!NM_DEVICE_CLASS (nm_device_adsl_parent_class)->check_connection_compatible (device, connection, error))
+	if (!NM_DEVICE_CLASS (nm_device_adsl_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
-	if (!nm_connection_is_type (connection, NM_SETTING_ADSL_SETTING_NAME)) {
-		g_set_error (error,
-		             NM_ADSL_ERROR, NM_ADSL_ERROR_CONNECTION_NOT_ADSL,
-		             "The connection was not an ADSL connection.");
+	if (!nm_connection_is_type (connection, NM_SETTING_ADSL_SETTING_NAME))
 		return FALSE;
-	}
 
 	s_adsl = nm_connection_get_setting_adsl (connection);
-	if (!s_adsl) {
-		g_set_error (error,
-		             NM_ADSL_ERROR, NM_ADSL_ERROR_CONNECTION_INVALID,
-		             "The connection was not a valid ADSL connection.");
+	if (!s_adsl)
 		return FALSE;
-	}
 
 	/* FIXME: we don't yet support IPoATM */
 	protocol = nm_setting_adsl_get_protocol (s_adsl);
-	if (g_strcmp0 (protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM) == 0) {
-		g_set_error (error,
-		             NM_ADSL_ERROR, NM_ADSL_ERROR_CONNECTION_INVALID,
-		             "IPoATM connections are not yet supported.");
+	if (g_strcmp0 (protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM) == 0)
 		return FALSE;
-	}
 
 	return TRUE;
 }

@@ -119,7 +119,7 @@ bring_up (NMDevice *dev, gboolean *no_firmware)
 /******************************************************************/
 
 static gboolean
-match_parent (NMDeviceVlan *self, const char *parent, GError **error)
+match_parent (NMDeviceVlan *self, const char *parent)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
 
@@ -134,30 +134,19 @@ match_parent (NMDeviceVlan *self, const char *parent, GError **error)
 		 */
 
 		parent_req = nm_device_get_act_request (priv->parent);
-		if (!parent_req) {
-			g_set_error_literal (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
-			                     "Parent interface not active; could not match UUID");
+		if (!parent_req)
 			return FALSE;
-		}
 
 		parent_connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (parent_req));
-		if (!parent_connection) {
-			g_set_error_literal (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
-			                     "Parent interface had no connection; could not match UUID");
+		if (!parent_connection)
 			return FALSE;
-		}
-		if (g_strcmp0 (parent, nm_connection_get_uuid (parent_connection)) != 0) {
-			g_set_error_literal (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
-			                     "Parent interface UUID did not match connection UUID");
+
+		if (g_strcmp0 (parent, nm_connection_get_uuid (parent_connection)) != 0)
 			return FALSE;
-		}
 	} else {
 		/* interface name */
-		if (g_strcmp0 (parent, nm_device_get_ip_iface (priv->parent)) != 0) {
-			g_set_error_literal (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
-			                     "Parent interface name did not match connection");
+		if (g_strcmp0 (parent, nm_device_get_ip_iface (priv->parent)) != 0)
 			return FALSE;
-		}
 	}
 
 	return TRUE;
@@ -186,42 +175,31 @@ match_hwaddr (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hw
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMSettingVlan *s_vlan;
 	const char *parent, *iface = NULL;
 
-	if (!NM_DEVICE_CLASS (nm_device_vlan_parent_class)->check_connection_compatible (device, connection, error))
+	if (!NM_DEVICE_CLASS (nm_device_vlan_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
-	if (!s_vlan) {
-		g_set_error (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
-				     "The connection was not a VLAN connection.");
+	if (!s_vlan)
 		return FALSE;
-	}
 
-	if (nm_setting_vlan_get_id (s_vlan) != priv->vlan_id) {
-		g_set_error (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
-		             "The connection's VLAN ID did not match the device's VLAN ID.");
+	if (nm_setting_vlan_get_id (s_vlan) != priv->vlan_id)
 		return FALSE;
-	}
 
 	/* Check parent interface; could be an interface name or a UUID */
 	parent = nm_setting_vlan_get_parent (s_vlan);
 	if (parent) {
-		if (!match_parent (NM_DEVICE_VLAN (device), parent, error))
+		if (!match_parent (NM_DEVICE_VLAN (device), parent))
 			return FALSE;
 	} else {
 		/* Parent could be a MAC address in an NMSettingWired */
-		if (!match_hwaddr (device, connection, TRUE)) {
-			g_set_error (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
-					     "Failed to match the VLAN parent interface via hardware address.");
+		if (!match_hwaddr (device, connection, TRUE))
 			return FALSE;
-		}
 	}
 
 	/* Ensure the interface name matches.  If not specified we assume a match
@@ -230,11 +208,8 @@ check_connection_compatible (NMDevice *device,
 	 */
 	iface = nm_connection_get_virtual_iface_name (connection);
 	if (iface) {
-		if (g_strcmp0 (nm_device_get_ip_iface (device), iface) != 0) {
-			g_set_error (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
-					     "The VLAN connection virtual interface name did not match.");
+		if (g_strcmp0 (nm_device_get_ip_iface (device), iface) != 0)
 			return FALSE;
-		}
 	}
 
 	return TRUE;
@@ -345,7 +320,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 		/* Don't change a parent specified by UUID if it's still valid */
 		parent_connection = nm_connection_provider_get_connection_by_uuid (nm_connection_provider_get (), setting_parent);
-		if (parent_connection && nm_device_check_connection_compatible (parent, parent_connection, NULL))
+		if (parent_connection && nm_device_check_connection_compatible (parent, parent_connection))
 			new_parent = NULL;
 	}
 	if (new_parent)

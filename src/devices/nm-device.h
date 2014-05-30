@@ -140,9 +140,7 @@ typedef struct {
 	 * only the devices type and characteristics.  Does not use any live
 	 * network information like WiFi/WiMAX scan lists etc.
 	 */
-	gboolean    (* check_connection_compatible) (NMDevice *self,
-	                                             NMConnection *connection,
-	                                             GError **error);
+	gboolean    (* check_connection_compatible) (NMDevice *self, NMConnection *connection);
 
 	/* Checks whether the connection is likely available to be activated,
 	 * including any live network information like scan lists.  The connection
@@ -273,9 +271,7 @@ gboolean nm_device_complete_connection (NMDevice *device,
                                         const GSList *existing_connection,
                                         GError **error);
 
-gboolean nm_device_check_connection_compatible (NMDevice *device,
-                                                NMConnection *connection,
-                                                GError **error);
+gboolean nm_device_check_connection_compatible (NMDevice *device, NMConnection *connection);
 
 gboolean nm_device_can_assume_connections (NMDevice *device);
 

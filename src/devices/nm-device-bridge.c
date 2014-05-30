@@ -96,31 +96,23 @@ check_connection_available (NMDevice *device,
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	const char *iface;
 	NMSettingBridge *s_bridge;
 	const GByteArray *mac_address;
 
-	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_compatible (device, connection, error))
+	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
-	if (!s_bridge || !nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
-		g_set_error (error, NM_BRIDGE_ERROR, NM_BRIDGE_ERROR_CONNECTION_NOT_BRIDGE,
-		             "The connection was not a bridge connection.");
+	if (!s_bridge || !nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
 		return FALSE;
-	}
 
 	/* Bridge connections must specify the virtual interface name */
 	iface = nm_connection_get_virtual_iface_name (connection);
-	if (!iface || strcmp (nm_device_get_iface (device), iface)) {
-		g_set_error (error, NM_BRIDGE_ERROR, NM_BRIDGE_ERROR_CONNECTION_INVALID,
-		             "The bridge connection virtual interface name did not match.");
+	if (!iface || strcmp (nm_device_get_iface (device), iface))
 		return FALSE;
-	}
 
 	mac_address = nm_setting_bridge_get_mac_address (s_bridge);
 	if (mac_address) {
@@ -130,11 +122,8 @@ check_connection_compatible (NMDevice *device,
 		hw_addr = nm_device_get_hw_address (device, &hw_len);
 		if (   !hw_addr
 		    || hw_len != mac_address->len
-		    || memcmp (mac_address->data, hw_addr, hw_len) != 0) {
-			g_set_error (error, NM_BRIDGE_ERROR, NM_BRIDGE_ERROR_CONNECTION_INVALID,
-			             "The bridge mac-address does not match the address of the device.");
+		    || memcmp (mac_address->data, hw_addr, hw_len) != 0)
 			return FALSE;
-		}
 	}
 
 	return TRUE;

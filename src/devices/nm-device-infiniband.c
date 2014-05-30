@@ -211,44 +211,28 @@ ip4_config_pre_commit (NMDevice *self, NMIP4Config *config)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMSettingInfiniband *s_infiniband;
 	const GByteArray *mac;
 
-	if (!NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->check_connection_compatible (device, connection, error))
+	if (!NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
-	if (!nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
-		g_set_error (error,
-		             NM_INFINIBAND_ERROR,
-					 NM_INFINIBAND_ERROR_CONNECTION_NOT_INFINIBAND,
-		             "The connection was not an InfiniBand connection.");
+	if (!nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME))
 		return FALSE;
-	}
 
 	s_infiniband = nm_connection_get_setting_infiniband (connection);
-	if (!s_infiniband) {
-		g_set_error (error,
-		             NM_INFINIBAND_ERROR, NM_INFINIBAND_ERROR_CONNECTION_INVALID,
-		             "The connection was not a valid infiniband connection.");
+	if (!s_infiniband)
 		return FALSE;
-	}
 
 	if (s_infiniband) {
 		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
 		/* We only compare the last 8 bytes */
 		if (mac && memcmp (mac->data + INFINIBAND_ALEN - 8,
 		                   nm_device_get_hw_address (device, NULL) + INFINIBAND_ALEN - 8,
-		                   8)) {
-			g_set_error (error,
-			             NM_INFINIBAND_ERROR,
-			             NM_INFINIBAND_ERROR_CONNECTION_INCOMPATIBLE,
-			             "The connection's MAC address did not match this device.");
+		                   8))
 			return FALSE;
-		}
 	}
 
 	return TRUE;

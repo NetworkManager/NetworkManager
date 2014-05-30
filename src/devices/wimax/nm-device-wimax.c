@@ -311,44 +311,30 @@ set_enabled (NMDevice *device, gboolean enabled)
 /* NMDevice methods */
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 	NMSettingWimax *s_wimax;
 	const char *connection_type;
 	const GByteArray *mac;
 
-	if (!NM_DEVICE_CLASS (nm_device_wimax_parent_class)->check_connection_compatible (device, connection, error))
+	if (!NM_DEVICE_CLASS (nm_device_wimax_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
 	connection_type = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (connection_type, NM_SETTING_WIMAX_SETTING_NAME)) {
-		g_set_error (error,
-		             NM_WIMAX_ERROR, NM_WIMAX_ERROR_CONNECTION_NOT_WIMAX,
-		             "The connection was not a WiMAX connection.");
+	if (strcmp (connection_type, NM_SETTING_WIMAX_SETTING_NAME))
 		return FALSE;
-	}
 
 	s_wimax = nm_connection_get_setting_wimax (connection);
-	if (!s_wimax) {
-		g_set_error (error,
-		             NM_WIMAX_ERROR, NM_WIMAX_ERROR_CONNECTION_INVALID,
-		             "The connection was not a valid WiMAX connection.");
+	if (!s_wimax)
 		return FALSE;
-	}
 
 	mac = nm_setting_wimax_get_mac_address (s_wimax);
-	if (mac && memcmp (mac->data, nm_device_get_hw_address (device, NULL), ETH_ALEN)) {
-		g_set_error (error,
-					 NM_WIMAX_ERROR, NM_WIMAX_ERROR_CONNECTION_INCOMPATIBLE,
-					 "The connection's MAC address did not match this device.");
+	if (mac && memcmp (mac->data, nm_device_get_hw_address (device, NULL), ETH_ALEN))
 		return FALSE;
-	}
 
 	return TRUE;
 }

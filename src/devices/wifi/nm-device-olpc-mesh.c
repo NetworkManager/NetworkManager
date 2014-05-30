@@ -94,33 +94,23 @@ nm_olpc_mesh_error_quark (void)
 /*******************************************************************/
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 	NMSettingOlpcMesh *s_mesh;
 
-	if (!NM_DEVICE_CLASS (nm_device_olpc_mesh_parent_class)->check_connection_compatible (device, connection, error))
+	if (!NM_DEVICE_CLASS (nm_device_olpc_mesh_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 
-	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_OLPC_MESH_SETTING_NAME)) {
-		g_set_error (error,
-		             NM_OLPC_MESH_ERROR, NM_OLPC_MESH_ERROR_CONNECTION_NOT_MESH,
-		             "The connection was not a Mesh connection.");
+	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_OLPC_MESH_SETTING_NAME))
 		return FALSE;
-	}
 
 	s_mesh = nm_connection_get_setting_olpc_mesh (connection);
-	if (!s_mesh) {
-		g_set_error (error,
-		             NM_OLPC_MESH_ERROR, NM_OLPC_MESH_ERROR_CONNECTION_INVALID,
-		             "The connection was not a valid Mesh connection.");
+	if (!s_mesh)
 		return FALSE;
-	}
 
 	return TRUE;
 }

@@ -1131,7 +1131,7 @@ reset_autoconnect_all (NMPolicy *policy, NMDevice *device)
 
 	connections = nm_settings_get_connections (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		if (!device || nm_device_check_connection_compatible (device, iter->data, NULL)) {
+		if (!device || nm_device_check_connection_compatible (device, iter->data)) {
 			nm_settings_connection_reset_autoconnect_retries (iter->data);
 			nm_settings_connection_set_autoconnect_blocked_reason (iter->data, NM_DEVICE_STATE_REASON_NONE);
 		}
@@ -1177,7 +1177,7 @@ block_autoconnect_for_device (NMPolicy *policy, NMDevice *device)
 
 	connections = nm_settings_get_connections (priv->settings);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		if (nm_device_check_connection_compatible (device, iter->data, NULL)) {
+		if (nm_device_check_connection_compatible (device, iter->data)) {
 			nm_settings_connection_set_autoconnect_blocked_reason (NM_SETTINGS_CONNECTION (iter->data),
 			                                                       NM_DEVICE_STATE_REASON_USER_REQUESTED);
 		}

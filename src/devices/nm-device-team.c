@@ -109,30 +109,22 @@ check_connection_available (NMDevice *device,
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	const char *iface;
 	NMSettingTeam *s_team;
 
-	if (!NM_DEVICE_CLASS (nm_device_team_parent_class)->check_connection_compatible (device, connection, error))
+	if (!NM_DEVICE_CLASS (nm_device_team_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
 	s_team = nm_connection_get_setting_team (connection);
-	if (!s_team || !nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)) {
-		g_set_error (error, NM_TEAM_ERROR, NM_TEAM_ERROR_CONNECTION_NOT_TEAM,
-		             "The connection was not a team connection.");
+	if (!s_team || !nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME))
 		return FALSE;
-	}
 
 	/* Team connections must specify the virtual interface name */
 	iface = nm_connection_get_virtual_iface_name (connection);
-	if (!iface || strcmp (nm_device_get_iface (device), iface)) {
-		g_set_error (error, NM_TEAM_ERROR, NM_TEAM_ERROR_CONNECTION_NOT_TEAM,
-		             "The team connection virtual interface name did not match.");
+	if (!iface || strcmp (nm_device_get_iface (device), iface))
 		return FALSE;
-	}
 
 	/* FIXME: match team properties like mode, etc? */
 

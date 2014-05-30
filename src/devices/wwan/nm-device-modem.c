@@ -301,16 +301,12 @@ get_hw_address_length (NMDevice *device, gboolean *out_permanent)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
-
-	if (!NM_DEVICE_CLASS (nm_device_modem_parent_class)->check_connection_compatible (device, connection, error))
+	if (!NM_DEVICE_CLASS (nm_device_modem_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
-	return nm_modem_check_connection_compatible (priv->modem, connection, error);
+	return nm_modem_check_connection_compatible (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, connection);
 }
 
 static gboolean

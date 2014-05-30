@@ -68,29 +68,19 @@ get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-check_connection_compatible (NMDevice *device,
-                             NMConnection *connection,
-                             GError **error)
+check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 
-	if (!NM_DEVICE_CLASS (nm_device_generic_parent_class)->check_connection_compatible (device, connection, error))
+	if (!NM_DEVICE_CLASS (nm_device_generic_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
-	if (!nm_connection_is_type (connection, NM_SETTING_GENERIC_SETTING_NAME)) {
-		g_set_error (error,
-		             NM_DEVICE_GENERIC_ERROR, NM_DEVICE_GENERIC_ERROR_CONNECTION_NOT_GENERIC,
-		             "The connection was not a generic connection.");
+	if (!nm_connection_is_type (connection, NM_SETTING_GENERIC_SETTING_NAME))
 		return FALSE;
-	}
 
 	s_con = nm_connection_get_setting_connection (connection);
-	if (!nm_setting_connection_get_interface_name (s_con)) {
-		g_set_error (error,
-		             NM_DEVICE_GENERIC_ERROR, NM_DEVICE_GENERIC_ERROR_CONNECTION_INVALID,
-		             "The connection did not specify an interface name.");
+	if (!nm_setting_connection_get_interface_name (s_con))
 		return FALSE;
-	}
 
 	return TRUE;
 }
