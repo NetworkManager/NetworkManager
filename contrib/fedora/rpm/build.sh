@@ -34,6 +34,18 @@ get_version() {
     echo "$major.$minor.$micro.$nano"
 }
 
+write_changelog() {
+    if [[ "x$CHANGELOG" == x ]]; then
+        cat <<- EOF
+	* $(LC_TIME=C date '+%a %b %d %Y') $USERNAME - %{version}-%{release_version}%{snapshot}.%{git_sha}
+	- build of NetworkManager ($DATE, $UUID)
+	$(git log -n20 --date=local --format='- %h %s [%an] (%ci)')
+	- ...
+	EOF
+    else
+        echo "$CHANGELOG"
+    fi > "$TEMP/SOURCES/CHANGELOG"
+}
 
 ORIGDIR="$(readlink -f "$PWD")"
 SCRIPTDIR="$(dirname "$(readlink -f "$0")")"
@@ -83,16 +95,7 @@ cp "$SOURCE" "$TEMP/SOURCES/" || die "Could not copy source $SOURCE to $TEMP/SOU
 cp "$SOURCE_NETWORKMANAGER_CONF" "$TEMP/SOURCES/NetworkManager.conf" || die "Could not copy source $SOURCE_NETWORKMANAGER_CONF to $TEMP/SOURCES"
 cp "$SOURCE_SERVER_CONF" "$TEMP/SOURCES/00-server.conf" || die "Could not copy source $SOURCE_SERVER_CONF to $TEMP/SOURCES"
 
-if [[ "x$CHANGELOG" == x ]]; then
-    cat <<EOF > "$TEMP/SOURCES/CHANGELOG"
-* $(LC_TIME=C date '+%a %b %d %Y') $USERNAME - %{version}-%{release_version}%{snapshot}.%{git_sha}
-- Test build of NetworkManager ($DATE, $UUID)
-$(git log -n20 --date=local --format='- %h %s [%an] (%ci)')
-- ...
-EOF
-else
-    echo "$CHANGELOG" 2>/dev/null > "$TEMP/SOURCES/CHANGELOG"
-fi
+write_changelog
 
 sed -e "s/__VERSION__/$VERSION/g" \
     -e "s/__COMMIT__/$COMMIT/g" \
