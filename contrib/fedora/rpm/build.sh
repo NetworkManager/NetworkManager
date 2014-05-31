@@ -35,24 +35,6 @@ get_version() {
 }
 
 
-setup_nmtui() {
-    NMTUI="$(abs_path "$NMTUI" "")"
-    if [[ "$NMTUI" == "" ]]; then
-        NMTUI="$(ls -1 "$GITDIR"/nmtui-*.tar* 2>/dev/null | sort | head -n1)"
-    fi
-    if [[ "$NMTUI" != "" ]]; then
-        if [[ "$NMTUI_VERSION" == "" ]]; then
-            NMTUI_VERSION="$(basename "$NMTUI" | sed -n 's/^nmtui-\([0-9]\+\.[0-9]\+\.[0-9]\+\)\.tar.*$/\1/p')"
-            [[ "$NMTUI_VERSION" != "" ]] || die "error detecting nmtui version. Set NMTUI_VERSION?"
-        fi
-        WITH_NMTUI=1
-    else
-        echo "Build without nmtui"
-        NMTUI_VERSION=0
-        WITH_NMTUI=0
-    fi
-}
-
 ORIGDIR="$(readlink -f "$PWD")"
 SCRIPTDIR="$(dirname "$(readlink -f "$0")")"
 LOG "Change to directory \"$SCRIPTDIR\""
@@ -66,8 +48,6 @@ chmod +r "$BUILDLOG"
 
 exec > >(tee "$BUILDLOG")
 exec 2>&1
-
-setup_nmtui
 
 UUID=`uuidgen`
 RELEASE_VERSION="${RELEASE_VERSION:-$(git rev-list --first-parent HEAD | wc -l)}"
@@ -87,8 +67,6 @@ LOG "SPECFILE=$SPECFILE"
 LOG "SOURCE=$SOURCE"
 LOG "SOURCE_NETWORKMANAGER_CONF=$SOURCE_NETWORKMANAGER_CONF"
 LOG "SOURCE_SERVER_CONF=$SOURCE_SERVER_CONF"
-LOG "NMTUI=$NMTUI"
-LOG "NMTUI_VERSION=$NMTUI_VERSION"
 
 TEMP="$(mktemp -d "$SCRIPTDIR/NetworkManager.$DATE.XXXXXX")"
 TEMPBASE="$(basename "$TEMP")"
@@ -104,9 +82,6 @@ mkdir -p "$TEMP/SOURCES/" "$TEMP/SPECS/" || die "error creating SPECS directoy"
 cp "$SOURCE" "$TEMP/SOURCES/" || die "Could not copy source $SOURCE to $TEMP/SOURCES"
 cp "$SOURCE_NETWORKMANAGER_CONF" "$TEMP/SOURCES/NetworkManager.conf" || die "Could not copy source $SOURCE_NETWORKMANAGER_CONF to $TEMP/SOURCES"
 cp "$SOURCE_SERVER_CONF" "$TEMP/SOURCES/00-server.conf" || die "Could not copy source $SOURCE_SERVER_CONF to $TEMP/SOURCES"
-if [[ "$NMTUI" != "" ]]; then
-    cp "$NMTUI" "$TEMP/SOURCES/" || die "Could not copy source $NMTUI to $TEMP/SOURCES"
-fi
 
 if [[ "x$CHANGELOG" == x ]]; then
     cat <<EOF > "$TEMP/SOURCES/CHANGELOG"
@@ -122,15 +97,8 @@ fi
 sed -e "s/__VERSION__/$VERSION/g" \
     -e "s/__COMMIT__/$COMMIT/g" \
     -e "s/__SOURCE1__/$(basename "$SOURCE")/g" \
-    -e "s/__NMTUI_VERSION__/$NMTUI_VERSION/g" \
-    -e "s/__WITH_NMTUI__/$WITH_NMTUI/g" \
     -e "s/__RELEASE_VERSION__/$RELEASE_VERSION/g" \
    "$SPECFILE" |
-if [[ "$NMTUI" != "" ]]; then
-    sed -e 's/^__SOURCE_NMTUI__\([0-9]\+\)$/Source\1: '"$(basename "$NMTUI")"'/'
-else
-    sed -e '/^__SOURCE_NMTUI__\([0-9]\+\)$/d'
-fi |
 sed -e "/^__CHANGELOG__$/ \
         {
             r $TEMPBASE/SOURCES/CHANGELOG
