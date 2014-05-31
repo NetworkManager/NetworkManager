@@ -396,9 +396,6 @@ install -m 0755 test/.libs/nm-online %{buildroot}/%{_bindir}
 %{__cp} ORIG-docs/libnm-util/html/* $RPM_BUILD_ROOT%{_datadir}/gtk-doc/html/libnm-util/
 %endif
 
-mkdir -p $RPM_BUILD_ROOT%{systemd_dir}/network-online.target.wants
-ln -s ../NetworkManager-wait-online.service $RPM_BUILD_ROOT%{systemd_dir}/network-online.target.wants
-
 %clean
 %{__rm} -rf $RPM_BUILD_ROOT
 
