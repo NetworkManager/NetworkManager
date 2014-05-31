@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -vx
+#set -vx
 
 die() {
     echo "$*" >&2
@@ -67,9 +67,15 @@ VERSION="${VERSION:-$(get_version || die "Could not read $VERSION")}"
 COMMIT="${COMMIT:-$(git rev-parse --verify HEAD | sed 's/^\(.\{10\}\).*/\1/' || die "Error reading HEAD revision")}"
 USERNAME="${USERNAME:-"$(git config user.name) <$(git config user.email)>"}"
 SPECFILE="$(abs_path "$SPECFILE" "$SCRIPTDIR/NetworkManager.spec")"
+_SOURCE="$SOURCE"
 SOURCE="$(abs_path "$SOURCE" "$(ls -1 "$GITDIR/NetworkManager-$VERSION"*.tar* 2>/dev/null | head -n1)")"
+[[ -f "$SOURCE" ]] || die "could not find source ${_SOURCE:-$GITDIR/NetworkManager-$VERSION*.tar*} . Did you execute \`make dist\`? Otherwise set \$SOURCE variable"
 SOURCE_NETWORKMANAGER_CONF="$(abs_path "$SOURCE_NETWORKMANAGER_CONF" "$SCRIPTDIR/NetworkManager.conf")"
 SOURCE_SERVER_CONF="$(abs_path "$SOURCE_SERVER_CONF" "$SCRIPTDIR/00-server.conf")"
+
+TEMP="$(mktemp -d "$SCRIPTDIR/NetworkManager.$DATE.XXXXXX")"
+TEMPBASE="$(basename "$TEMP")"
+
 LOG "UUID=$UUID"
 LOG "VERSION=$VERSION"
 LOG "RELEASE_VERSION=$RELEASE_VERSION"
@@ -79,10 +85,7 @@ LOG "SPECFILE=$SPECFILE"
 LOG "SOURCE=$SOURCE"
 LOG "SOURCE_NETWORKMANAGER_CONF=$SOURCE_NETWORKMANAGER_CONF"
 LOG "SOURCE_SERVER_CONF=$SOURCE_SERVER_CONF"
-
-TEMP="$(mktemp -d "$SCRIPTDIR/NetworkManager.$DATE.XXXXXX")"
-TEMPBASE="$(basename "$TEMP")"
-echo "BASEDIR=$TEMP"
+LOG "BASEDIR=$TEMP"
 
 ln -snf "$TEMPBASE" ./latest0
 ln "$BUILDLOG" "$TEMPBASE/build.log"
@@ -98,9 +101,9 @@ cp "$SOURCE_SERVER_CONF" "$TEMP/SOURCES/00-server.conf" || die "Could not copy s
 write_changelog
 
 sed -e "s/__VERSION__/$VERSION/g" \
+    -e "s/__RELEASE_VERSION__/$RELEASE_VERSION/g" \
     -e "s/__COMMIT__/$COMMIT/g" \
     -e "s/__SOURCE1__/$(basename "$SOURCE")/g" \
-    -e "s/__RELEASE_VERSION__/$RELEASE_VERSION/g" \
    "$SPECFILE" |
 sed -e "/^__CHANGELOG__$/ \
         {
@@ -110,7 +113,16 @@ sed -e "/^__CHANGELOG__$/ \
 
 rpmbuild --define "_topdir $TEMP" -ba "$TEMPSPEC" || die "ERROR: rpmbuild FAILED"
 
-ls -la "$TEMP"/RPMS/*/*.rpm "$TEMP"/SRPMS/*.rpm
-
 ln -snf "$TEMPBASE" ./latest
+TEMP_LATEST="$(readlink -f .)"/latest
+
+LOG
+LOG
+LOG "Finished with success."
+LOG
+LOG "See \"$TEMP_LATEST/\" which symlinks to \"$TEMPBASE\""
+LOG
+LOG "Result:"
+ls -dla "$TEMP_LATEST" "$(dirname "$TEMP_LATEST")/$TEMPBASE/" "$TEMP_LATEST"/RPMS/*/ "$TEMP_LATEST"/RPMS/*/*.rpm "$TEMP_LATEST"/SRPMS/ "$TEMP_LATEST"/SRPMS/*.rpm | sed 's/^/    /'
+
 
