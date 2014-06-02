@@ -60,12 +60,18 @@ typedef struct {
 	char *iface;
 	FwAddToZoneFunc callback;
 	gpointer user_data;
+	guint id;
+	gboolean completed;
 } CBInfo;
 
 static void
 cb_info_free (CBInfo *info)
 {
 	g_return_if_fail (info != NULL);
+
+	if (!info->completed)
+		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone call cancelled [%u]", info->iface, info->id);
+
 	g_free (info->iface);
 	g_free (info);
 }
@@ -73,10 +79,15 @@ cb_info_free (CBInfo *info)
 static CBInfo *
 _cb_info_create (const char *iface, FwAddToZoneFunc callback, gpointer user_data)
 {
+	static guint id;
 	CBInfo *info;
 
-	info = g_malloc0 (sizeof (CBInfo));
+	info = g_malloc (sizeof (CBInfo));
+	if (++id == 0)
+		++id;
+	info->id = id;
 	info->iface = g_strdup (iface);
+	info->completed = FALSE;
 	info->callback = callback;
 	info->user_data = user_data;
 
@@ -95,16 +106,20 @@ add_or_change_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data
 	                            G_TYPE_INVALID)) {
 		g_assert (error);
 		if (g_strcmp0 (error->message, "ZONE_ALREADY_SET") != 0) {
-			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone add/change failed: (%d) %s",
-			             info->iface, error->code, error->message);
+			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone add/change failed [%u]: (%d) %s",
+			             info->iface, info->id, error->code, error->message);
 		} else {
-			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change failed: (%d) %s",
-			            info->iface, error->code, error->message);
+			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change failed [%u]: (%d) %s",
+			            info->iface, info->id, error->code, error->message);
 		}
+	} else {
+		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone add/change succeeded [%u]",
+		            info->iface, info->id);
 	}
 
 	info->callback (error, info->user_data);
 
+	info->completed = TRUE;
 	g_free (zone);
 	g_clear_error (&error);
 }
@@ -128,8 +143,8 @@ nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
 
 	info = _cb_info_create (iface, callback, user_data);
 
-	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s -> %s%s%s", iface, add ? "add" : "change",
-	                           zone?"\"":"", zone ? zone : "default", zone?"\"":"");
+	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s -> %s%s%s [%u]", iface, add ? "add" : "change",
+	                           zone?"\"":"", zone ? zone : "default", zone?"\"":"", info->id);
 	return dbus_g_proxy_begin_call_with_timeout (priv->proxy,
 	                                             add ? "addInterface" : "changeZone",
 	                                             add_or_change_cb,
@@ -154,11 +169,18 @@ remove_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 		g_assert (error);
 		/* ignore UNKNOWN_INTERFACE errors */
 		if (error->message && !strstr (error->message, "UNKNOWN_INTERFACE")) {
-			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone remove failed: (%d) %s",
-			             info->iface, error->code, error->message);
+			nm_log_warn (LOGD_FIREWALL, "(%s) firewall zone remove failed [%u]: (%d) %s",
+			             info->iface, info->id, error->code, error->message);
+		} else {
+			nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove failed [%u]: (%d) %s",
+			            info->iface, info->id, error->code, error->message);
 		}
+	} else {
+		nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove succeeded [%u]",
+		            info->iface, info->id);
 	}
 
+	info->completed = TRUE;
 	g_free (zone);
 	g_clear_error (&error);
 }
@@ -178,7 +200,8 @@ nm_firewall_manager_remove_from_zone (NMFirewallManager *self,
 
 	info = _cb_info_create (iface, NULL, NULL);
 
-	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove -> %s", iface, zone );
+	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove -> %s%s%s [%u]", iface,
+	                           zone?"\"":"", zone ? zone : "*", zone?"\"":"", info->id);
 	return dbus_g_proxy_begin_call_with_timeout (priv->proxy,
 	                                             "removeInterface",
 	                                             remove_cb,
