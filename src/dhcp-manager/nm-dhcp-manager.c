@@ -142,16 +142,14 @@ get_client_for_pid (NMDHCPManager *manager, GPid pid)
 }
 
 static NMDHCPClient *
-get_client_for_iface (NMDHCPManager *manager,
-                      const char *iface,
-                      gboolean ip6)
+get_client_for_ifindex (NMDHCPManager *manager, int ifindex, gboolean ip6)
 {
 	NMDHCPManagerPrivate *priv;
 	GHashTableIter iter;
 	gpointer value;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
-	g_return_val_if_fail (iface, NULL);
+	g_return_val_if_fail (ifindex > 0, NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
 
@@ -159,8 +157,8 @@ get_client_for_iface (NMDHCPManager *manager,
 	while (g_hash_table_iter_next (&iter, NULL, &value)) {
 		NMDHCPClient *candidate = NM_DHCP_CLIENT (value);
 
-		if (   !strcmp (iface, nm_dhcp_client_get_iface (candidate))
-		    && (nm_dhcp_client_get_ipv6 (candidate) == ip6))
+		if (   nm_dhcp_client_get_ifindex (candidate) == ifindex
+		    && nm_dhcp_client_get_ipv6 (candidate) == ip6)
 			return candidate;
 	}
 
@@ -381,7 +379,7 @@ client_start (NMDHCPManager *self,
 
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
@@ -390,7 +388,7 @@ client_start (NMDHCPManager *self,
 	g_return_val_if_fail (priv->client_type != 0, NULL);
 
 	/* Kill any old client instance */
-	client = get_client_for_iface (self, iface, ipv6);
+	client = get_client_for_ifindex (self, ifindex, ipv6);
 	if (client) {
 		g_object_ref (client);
 		remove_client (self, client);
