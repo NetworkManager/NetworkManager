@@ -671,7 +671,7 @@ ip6_addresses_with_prefix_from_strv (GBinding     *binding,
 	              NULL);
 
 	for (i = 0; strings[i]; i++) {
-		if (i > addrs->len) {
+		if (i >= addrs->len) {
 			addr = g_value_array_new (3);
 
 			g_value_init (&val, DBUS_TYPE_G_UCHAR_ARRAY);
