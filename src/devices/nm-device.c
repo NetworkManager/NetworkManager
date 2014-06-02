@@ -378,6 +378,7 @@ nm_device_init (NMDevice *self)
 	priv->dhcp_timeout = 0;
 	priv->rfkill_type = RFKILL_TYPE_UNKNOWN;
 	priv->autoconnect = DEFAULT_AUTOCONNECT;
+	priv->unmanaged_flags = NM_UNMANAGED_INTERNAL;
 	priv->available_connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 	priv->ip6_saved_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 }
@@ -7180,7 +7181,7 @@ nm_device_get_managed (NMDevice *device)
 	 */
 	managed = !(priv->unmanaged_flags & ~NM_UNMANAGED_DEFAULT);
 	if (managed && (priv->unmanaged_flags & NM_UNMANAGED_DEFAULT))
-		managed = (priv->state != NM_DEVICE_STATE_UNMANAGED);
+		managed = (priv->state > NM_DEVICE_STATE_UNMANAGED);
 
 	return managed;
 }
