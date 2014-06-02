@@ -104,8 +104,12 @@ ip_string_parse (const char *text,
 		    || (family == AF_INET && *prefix > 32)
 		    || (family == AF_INET6 && *prefix > 128))
 			valid = FALSE;
-	} else if (prefix)
-		*prefix = 32;
+	} else if (prefix) {
+		if (family == AF_INET)
+			*prefix = 32;
+		else
+			*prefix = 128;
+	}
 
 	return valid;
 }
