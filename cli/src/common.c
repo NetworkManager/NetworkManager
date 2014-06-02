@@ -1045,8 +1045,9 @@ nmc_cleanup_readline (void)
 
 /**
  * nmc_readline:
- * @prompt: prompt to print (telling user what to enter)
- * @add_to_history: whether the user input should be added to history
+ * @prompt_fmt: prompt to print (telling user what to enter). It is standard
+ *   printf() format string
+ * @...: a list of arguments according to the @prompt_fmt format string
  *
  * Wrapper around libreadline's readline() function.
  *
@@ -1054,9 +1055,14 @@ nmc_cleanup_readline (void)
  * this function returns NULL.
  */
 char *
-nmc_readline (const char *prompt, gboolean add_to_history)
+nmc_readline (const char *prompt_fmt, ...)
 {
-	char *str;
+	va_list args;
+	char *prompt, *str;
+
+	va_start (args, prompt_fmt);
+	prompt = g_strdup_vprintf (prompt_fmt, args);
+	va_end (args);
 
 	str = readline (prompt);
 	/* Return NULL, not empty string */
@@ -1065,9 +1071,10 @@ nmc_readline (const char *prompt, gboolean add_to_history)
 		str = NULL;
 	}
 
-	if (add_to_history && str && *str)
+	if (str && *str)
 		add_history (str);
 
+	g_free (prompt);
 	return str;
 }
 

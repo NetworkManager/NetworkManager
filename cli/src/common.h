@@ -60,7 +60,7 @@ NMConnection *nmc_find_connection (GSList *list,
                                    GSList **start);
 
 void nmc_cleanup_readline (void);
-char *nmc_readline (const char *prompt, gboolean add_to_history);
+char *nmc_readline (const char *prompt_fmt, ...) G_GNUC_PRINTF (1, 2);
 char *nmc_rl_gen_func_basic (char *text, int state, const char **words);
 
 #endif /* NMC_COMMON_H */

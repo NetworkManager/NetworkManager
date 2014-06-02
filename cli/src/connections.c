@@ -6438,7 +6438,7 @@ property_edit_submenu (NmCli *nmc,
 	NmcEditorSubCmd cmdsub;
 	gboolean cmd_property_loop = TRUE;
 	gboolean should_quit = FALSE;
-	char *prop_val_user, *tmp_prompt;
+	char *prop_val_user;
 	gboolean set_result;
 	GError *tmp_err = NULL;
 	char *prompt;
@@ -6466,7 +6466,7 @@ property_edit_submenu (NmCli *nmc,
 		if (nmc->editor_status_line)
 			editor_show_status_line (connection, dirty, temp_changes);
 
-		cmd_property_user = nmc_readline (prompt, TRUE);
+		cmd_property_user = nmc_readline ("%s", prompt);
 		if (!cmd_property_user || *cmd_property_user == '\0')
 			continue;
 		cmdsub = parse_editor_sub_cmd (g_strstrip (cmd_property_user), &cmd_property_arg);
@@ -6478,11 +6478,9 @@ property_edit_submenu (NmCli *nmc,
 			 *                   ADD adds the new value(s)
 			 * single values:  : both SET and ADD sets the new value
 			 */
-			if (!cmd_property_arg) {
-				tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-				prop_val_user = nmc_readline (tmp_prompt, TRUE);
-				g_free (tmp_prompt);
-			} else
+			if (!cmd_property_arg)
+				prop_val_user = nmc_readline (_("Enter '%s' value: "), prop_name);
+			else
 				prop_val_user = g_strdup (cmd_property_arg);
 
 			/* nmc_setting_set_property() only adds new value, thus we have to
@@ -6508,8 +6506,7 @@ property_edit_submenu (NmCli *nmc,
 		case NMC_EDITOR_SUB_CMD_CHANGE:
 			rl_startup_hook = set_deftext;
 			pre_input_deftext = nmc_setting_get_property_out2in (curr_setting, prop_name, NULL);
-			tmp_prompt = g_strdup_printf (_("Edit '%s' value: "), prop_name);
-			prop_val_user = nmc_readline (tmp_prompt, TRUE);
+			prop_val_user = nmc_readline (_("Edit '%s' value: "), prop_name);
 
 			nmc_property_get_gvalue (curr_setting, prop_name, &prop_g_value);
 			nmc_property_set_default_value (curr_setting, prop_name);
@@ -6520,7 +6517,6 @@ property_edit_submenu (NmCli *nmc,
 				nmc_property_set_gvalue (curr_setting, prop_name, &prop_g_value);
 			}
 			g_free (prop_val_user);
-			g_free (tmp_prompt);
 			if (G_IS_VALUE (&prop_g_value))
 				g_value_unset (&prop_g_value);
 			break;
@@ -6697,7 +6693,7 @@ ask_check_setting (const char *arg,
 
 	if (!arg) {
 		printf (_("Available settings: %s\n"), valid_settings_str);
-		setting_name_user = nmc_readline (EDITOR_PROMPT_SETTING, TRUE);
+		setting_name_user = nmc_readline (EDITOR_PROMPT_SETTING);
 	} else
 		setting_name_user = g_strdup (arg);
 
@@ -6723,7 +6719,7 @@ ask_check_property (const char *arg,
 
 	if (!arg) {
 		printf (_("Available properties: %s\n"), valid_props_str);
-		prop_name_user = nmc_readline (EDITOR_PROMPT_PROPERTY, TRUE);
+		prop_name_user = nmc_readline (EDITOR_PROMPT_PROPERTY);
 		if (prop_name_user)
 			g_strstrip (prop_name_user);
 	} else
@@ -6867,7 +6863,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			editor_show_status_line (connection, dirty, temp_changes);
 
 		/* Read user input */
-		cmd_user = nmc_readline (menu_ctx.main_prompt, TRUE);
+		cmd_user = nmc_readline ("%s", menu_ctx.main_prompt);
 
 		/* Get the remote connection again, it may have disapeared */
 		removed = refresh_remote_connection (&weak, &rem_con);
@@ -6890,7 +6886,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				if (menu_ctx.level == 1) {
 					const char *prop_name;
 					char *prop_val_user = NULL;
-					char *tmp_prompt;
 					const char *avals;
 					GError *tmp_err = NULL;
 
@@ -6904,9 +6899,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					if (avals)
 						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
 
-					tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-					prop_val_user = nmc_readline (tmp_prompt, TRUE);
-					g_free (tmp_prompt);
+					prop_val_user = nmc_readline (_("Enter '%s' value: "), prop_name);
 
 					/* Set property value */
 					if (!nmc_setting_set_property (menu_ctx.curr_setting, prop_name, prop_val_user, &tmp_err)) {
@@ -6921,7 +6914,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				NMSetting *ss = NULL;
 				gboolean created_ss = FALSE;
 				char *prop_name;
-				char *tmp_prompt;
 				GError *tmp_err = NULL;
 
 				if (cmd_arg_s) {
@@ -6962,9 +6954,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					if (avals)
 						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
 
-					tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-					cmd_arg_v = nmc_readline (tmp_prompt, TRUE);
-					g_free (tmp_prompt);
+					cmd_arg_v = nmc_readline (_("Enter '%s' value: "), prop_name);
 				}
 
 				/* Set property value */
@@ -7743,7 +7733,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 				printf (_("Error: invalid connection type; %s\n"), err1->message);
 			g_clear_error (&err1);
 
-			type_ask = nmc_readline (EDITOR_PROMPT_CON_TYPE, TRUE);
+			type_ask = nmc_readline (EDITOR_PROMPT_CON_TYPE);
 			type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
 			connection_type = check_valid_name (type_ask, nmc_valid_connection_types, &err1);
 			g_free (type_ask);
