@@ -43,7 +43,6 @@
 #define NM_DHCP_CLIENT_TIMEOUT   "timeout"
 
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
-#define NM_DHCP_CLIENT_SIGNAL_REMOVE        "remove"
 
 typedef enum {
 	NM_DHCP_STATE_UNKNOWN = 0,
@@ -92,7 +91,6 @@ typedef struct {
 
 	/* Signals */
 	void (*state_changed) (NMDHCPClient *self, NMDhcpState state);
-	void (*remove)        (NMDHCPClient *self);
 } NMDHCPClientClass;
 
 GType nm_dhcp_client_get_type (void);
@@ -138,9 +136,7 @@ void nm_dhcp_client_stop_pid (pid_t pid, const char *iface);
 
 void nm_dhcp_client_watch_child (NMDHCPClient *self, pid_t pid);
 
-void nm_dhcp_client_set_state (NMDHCPClient *self,
-                               NMDhcpState state,
-                               gboolean remove_now);
+void nm_dhcp_client_set_state (NMDHCPClient *self, NMDhcpState state);
 
 #endif /* NM_DHCP_CLIENT_H */
 

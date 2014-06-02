@@ -48,7 +48,6 @@ typedef struct {
 	pid_t        pid;
 	guint        timeout_id;
 	guint        watch_id;
-	guint        remove_id;
 	GHashTable * options;
 	gboolean     info_only;
 
@@ -60,7 +59,6 @@ G_DEFINE_TYPE_EXTENDED (NMDHCPClient, nm_dhcp_client, G_TYPE_OBJECT, G_TYPE_FLAG
 
 enum {
 	SIGNAL_STATE_CHANGED,
-	SIGNAL_REMOVE,
 	LAST_SIGNAL
 };
 
@@ -173,35 +171,11 @@ stop (NMDHCPClient *self, gboolean release, const GByteArray *duid)
 	priv->info_only = FALSE;
 }
 
-static gboolean
-signal_remove (gpointer user_data)
-{
-	NMDHCPClient *self = NM_DHCP_CLIENT (user_data);
-
-	NM_DHCP_CLIENT_GET_PRIVATE (self)->remove_id = 0;
-	g_signal_emit (G_OBJECT (self), signals[SIGNAL_REMOVE], 0);
-	return FALSE;
-}
-
 void
-nm_dhcp_client_set_state (NMDHCPClient *self,
-                          NMDhcpState state,
-                          gboolean remove_now)
+nm_dhcp_client_set_state (NMDHCPClient *self, NMDhcpState state)
 {
-	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
-
-	priv->state = state;
-	g_signal_emit (G_OBJECT (self), signals[SIGNAL_STATE_CHANGED], 0, priv->state);
-
-	if (state == NM_DHCP_STATE_DONE || state == NM_DHCP_STATE_FAIL) {
-		/* Start the remove signal timer */
-		if (remove_now) {
-			g_signal_emit (G_OBJECT (self), signals[SIGNAL_REMOVE], 0);
-		} else {
-			if (!priv->remove_id)
-				priv->remove_id = g_timeout_add_seconds (5, signal_remove, self);
-		}
-	}
+	NM_DHCP_CLIENT_GET_PRIVATE (self)->state = state;
+	g_signal_emit (G_OBJECT (self), signals[SIGNAL_STATE_CHANGED], 0, state);
 }
 
 static gboolean
@@ -215,7 +189,7 @@ daemon_timeout (gpointer user_data)
 	             "(%s): DHCPv%c request timed out.",
 	             priv->iface,
 	             priv->ipv6 ? '6' : '4');
-	nm_dhcp_client_set_state (self, NM_DHCP_STATE_TIMEOUT, FALSE);
+	nm_dhcp_client_set_state (self, NM_DHCP_STATE_TIMEOUT);
 	return G_SOURCE_REMOVE;
 }
 
@@ -246,7 +220,7 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 	timeout_cleanup (self);
 	priv->pid = -1;
 
-	nm_dhcp_client_set_state (self, new_state, FALSE);
+	nm_dhcp_client_set_state (self, new_state);
 }
 
 void
@@ -514,11 +488,11 @@ nm_dhcp_client_stop (NMDHCPClient *self, gboolean release)
 	g_assert (priv->pid == -1);
 
 	/* And clean stuff up */
-	nm_dhcp_client_set_state (self, NM_DHCP_STATE_DONE, TRUE);
-
 	g_hash_table_remove_all (priv->options);
 	timeout_cleanup (self);
 	watch_cleanup (self);
+
+	nm_dhcp_client_set_state (self, NM_DHCP_STATE_DONE);
 }
 
 /********************************************/
@@ -658,7 +632,7 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 	             state_to_string (old_state),
 	             state_to_string (new_state));
 
-	nm_dhcp_client_set_state (self, new_state, FALSE);
+	nm_dhcp_client_set_state (self, new_state);
 }
 
 #define NEW_TAG "new_"
@@ -1500,10 +1474,8 @@ dispose (GObject *object)
 	 * the DHCP client.
 	 */
 
-	if (priv->remove_id) {
-		g_source_remove (priv->remove_id);
-		priv->remove_id = 0;
-	}
+	watch_cleanup (self);
+	timeout_cleanup (self);
 
 	if (priv->options) {
 		g_hash_table_destroy (priv->options);
@@ -1595,14 +1567,5 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 					  G_STRUCT_OFFSET (NMDHCPClientClass, state_changed),
 					  NULL, NULL, NULL,
 					  G_TYPE_NONE, 1, G_TYPE_UINT);
-
-	signals[SIGNAL_REMOVE] =
-		g_signal_new (NM_DHCP_CLIENT_SIGNAL_REMOVE,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDHCPClientClass, remove),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__VOID,
-					  G_TYPE_NONE, 0);
 }
 

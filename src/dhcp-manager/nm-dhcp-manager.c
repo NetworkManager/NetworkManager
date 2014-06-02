@@ -344,7 +344,6 @@ static void client_state_changed (NMDHCPClient *client, NMDhcpState state, NMDHC
 static void
 remove_client (NMDHCPManager *self, NMDHCPClient *client)
 {
-	g_signal_handlers_disconnect_by_func (client, remove_client, self);
 	g_signal_handlers_disconnect_by_func (client, client_state_changed, self);
 
 	/* Stopping the client is left up to the controlling device
@@ -358,18 +357,8 @@ remove_client (NMDHCPManager *self, NMDHCPClient *client)
 static void
 client_state_changed (NMDHCPClient *client, NMDhcpState state, NMDHCPManager *self)
 {
-	if (state == NM_DHCP_STATE_TIMEOUT)
+	if (state >= NM_DHCP_STATE_TIMEOUT)
 		remove_client (self, client);
-}
-
-static void
-add_client (NMDHCPManager *self, NMDHCPClient *client)
-{
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
-
-	g_signal_connect_swapped (client, NM_DHCP_CLIENT_SIGNAL_REMOVE, G_CALLBACK (remove_client), self);
-	g_signal_connect (client, NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED, G_CALLBACK (client_state_changed), self);
-	g_hash_table_insert (priv->clients, client, g_object_ref (client));
 }
 
 static NMDHCPClient *
@@ -419,8 +408,8 @@ client_start (NMDHCPManager *self,
 	                       NM_DHCP_CLIENT_PRIORITY, priority,
 	                       NM_DHCP_CLIENT_TIMEOUT, timeout ? timeout : DHCP_TIMEOUT,
 	                       NULL);
-	g_return_val_if_fail (client != NULL, NULL);
-	add_client (self, client);
+	g_hash_table_insert (NM_DHCP_MANAGER_GET_PRIVATE (self)->clients, client, g_object_ref (client));
+	g_signal_connect (client, NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED, G_CALLBACK (client_state_changed), self);
 
 	if (ipv6)
 		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, hostname, info_only);
@@ -429,7 +418,6 @@ client_start (NMDHCPManager *self,
 
 	if (!success) {
 		remove_client (self, client);
-		g_object_unref (client);
 		client = NULL;
 	}
 
