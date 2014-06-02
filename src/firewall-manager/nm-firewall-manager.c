@@ -44,7 +44,6 @@ typedef struct {
 	guint           name_owner_id;
 	DBusGProxy *    proxy;
 	gboolean        running;
-	gboolean        disposed;
 } NMFirewallManagerPrivate;
 
 enum {
@@ -247,7 +246,7 @@ nm_firewall_manager_init (NMFirewallManager * self)
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (self);
 	DBusGConnection *bus;
 
-	priv->dbus_mgr = nm_dbus_manager_get ();
+	priv->dbus_mgr = g_object_ref (nm_dbus_manager_get ());
 	priv->name_owner_id = g_signal_connect (priv->dbus_mgr,
 	                                        NM_DBUS_MANAGER_NAME_OWNER_CHANGED,
 	                                        G_CALLBACK (name_owner_changed),
@@ -286,20 +285,14 @@ dispose (GObject *object)
 {
 	NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE (object);
 
-	if (priv->disposed)
-		goto out;
-	priv->disposed = TRUE;
-
 	if (priv->dbus_mgr) {
-		if (priv->name_owner_id)
-			g_signal_handler_disconnect (priv->dbus_mgr, priv->name_owner_id);
-		priv->dbus_mgr = NULL;
+		g_signal_handler_disconnect (priv->dbus_mgr, priv->name_owner_id);
+		priv->name_owner_id = 0;
+		g_clear_object (&priv->dbus_mgr);
 	}
 
-	if (priv->proxy)
-		g_object_unref (priv->proxy);
+	g_clear_object (&priv->proxy);
 
-out:
 	/* Chain up to the parent class */
 	G_OBJECT_CLASS (nm_firewall_manager_parent_class)->dispose (object);
 }
