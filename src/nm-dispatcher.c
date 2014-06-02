@@ -182,8 +182,19 @@ dispatch_result_to_string (DispatchResult result)
 	g_assert_not_reached ();
 }
 
+static gboolean
+validate_element (guint request_id, GValue *val, GType expected_type, guint idx, guint eltnum)
+{
+	if (G_VALUE_TYPE (val) != expected_type) {
+		nm_log_dbg (LOGD_DISPATCH, "(%u) result %d element %d invalid type %s",
+		            request_id, idx, eltnum, G_VALUE_TYPE_NAME (val));
+		return FALSE;
+	}
+	return TRUE;
+}
+
 static void
-dispatcher_results_process (GPtrArray *results)
+dispatcher_results_process (guint request_id, GPtrArray *results)
 {
 	guint i;
 
@@ -196,44 +207,43 @@ dispatcher_results_process (GPtrArray *results)
 		DispatchResult result;
 
 		if (item->n_values != 3) {
-			nm_log_dbg (LOGD_DISPATCH, "Unexpected number of items in "
-			            "dispatcher result (got %d, expectd 3)",
-			            item->n_values);
+			nm_log_dbg (LOGD_DISPATCH, "(%u) unexpected number of items in "
+			            "dispatcher result (got %d, expected 3)",
+			            request_id, item->n_values);
 			continue;
 		}
 
 		/* Script */
 		tmp = g_value_array_get_nth (item, 0);
-		if (G_VALUE_TYPE (tmp) != G_TYPE_STRING) {
-			nm_log_dbg (LOGD_DISPATCH, "Dispatcher result %d element 0 invalid type %s",
-			            i, G_VALUE_TYPE_NAME (tmp));
+		if (!validate_element (request_id, tmp, G_TYPE_STRING, i, 0))
 			continue;
-		}
 		script = g_value_get_string (tmp);
+		if (!script || strncmp (script, NMD_SCRIPT_DIR "/", STRLEN (NMD_SCRIPT_DIR "/")))
+			continue;
 
 		/* Result */
 		tmp = g_value_array_get_nth (item, 1);
-		if (G_VALUE_TYPE (tmp) != G_TYPE_UINT) {
-			nm_log_dbg (LOGD_DISPATCH, "Dispatcher result %d element 1 invalid type %s",
-			            i, G_VALUE_TYPE_NAME (tmp));
+		if (!validate_element (request_id, tmp, G_TYPE_UINT, i, 1))
 			continue;
-		}
 		result = g_value_get_uint (tmp);
 
 		/* Error */
 		tmp = g_value_array_get_nth (item, 2);
-		if (G_VALUE_TYPE (tmp) != G_TYPE_STRING) {
-			nm_log_dbg (LOGD_DISPATCH, "Dispatcher result %d element 2 invalid type %s",
-			            i, G_VALUE_TYPE_NAME (tmp));
+		if (!validate_element (request_id, tmp, G_TYPE_STRING, i, 2))
 			continue;
-		}
 		err = g_value_get_string (tmp);
 
-		if (result == DISPATCH_RESULT_SUCCESS)
-			nm_log_dbg (LOGD_DISPATCH, "Dispatcher script \"%s\" succeeded", script);
-		else {
-			nm_log_warn (LOGD_DISPATCH, "Dispatcher script \"%s\" failed with %s: %s",
-			             script, dispatch_result_to_string (result), err);
+
+		if (result == DISPATCH_RESULT_SUCCESS) {
+			nm_log_dbg (LOGD_DISPATCH, "(%u) %s succeeded",
+			            request_id,
+			            script + STRLEN (NMD_SCRIPT_DIR "/"));
+		} else {
+			nm_log_warn (LOGD_DISPATCH, "(%u) %s failed (%s): %s",
+			             request_id,
+			             script + STRLEN (NMD_SCRIPT_DIR "/"),
+			             dispatch_result_to_string (result),
+			             err ? err : "");
 		}
 	}
 }
@@ -256,11 +266,12 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	if (dbus_g_proxy_end_call (proxy, call, &error,
 	                           DISPATCHER_TYPE_RESULT_ARRAY, &results,
 	                           G_TYPE_INVALID)) {
-		dispatcher_results_process (results);
+		dispatcher_results_process (info->request_id, results);
 		free_results (results);
 	} else {
 		g_assert (error);
-		nm_log_warn (LOGD_DISPATCH, "Dispatcher failed: (%d) %s", error->code, error->message);
+		nm_log_warn (LOGD_DISPATCH, "(%u) failed: (%d) %s",
+		             info->request_id, error->code, error->message);
 	}
 
 	if (info->callback)
@@ -329,7 +340,12 @@ _dispatcher_call (DispatcherAction action,
 	DispatchInfo *info = NULL;
 	gboolean success = FALSE;
 	GError *error = NULL;
-	static guint request_counter = 1;
+	static guint request_counter = 0;
+	guint reqid = ++request_counter;
+
+	/* Wrapping protection */
+	if (G_UNLIKELY (!reqid))
+		reqid = ++request_counter;
 
 	g_assert (!blocking || (!callback && !user_data));
 
@@ -337,13 +353,15 @@ _dispatcher_call (DispatcherAction action,
 
 	/* All actions except 'hostname' require a device */
 	if (action == DISPATCHER_ACTION_HOSTNAME) {
-		nm_log_dbg (LOGD_DISPATCH, "dispatching action '%s'",
-		            action_to_string (action));
+		nm_log_dbg (LOGD_DISPATCH, "(%u) dispatching action '%s'",
+		            reqid, action_to_string (action));
 	} else {
 		g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-		nm_log_dbg (LOGD_DISPATCH, "(%s) dispatching action '%s'",
-		            nm_device_get_iface (device), action_to_string (action));
+		nm_log_dbg (LOGD_DISPATCH, "(%u) (%s) dispatching action '%s'",
+		            reqid,
+		            vpn_iface ? vpn_iface : nm_device_get_iface (device),
+		            action_to_string (action));
 	}
 
 	/* VPN actions require at least an IPv4 config (for now) */
@@ -353,12 +371,12 @@ _dispatcher_call (DispatcherAction action,
 	if (do_dispatch == FALSE) {
 		if (blocking == FALSE && (out_call_id || callback)) {
 			info = g_malloc0 (sizeof (*info));
-			info->request_id = request_counter++;
+			info->request_id = reqid;
 			info->callback = callback;
 			info->user_data = user_data;
 			info->idle_id = g_idle_add (dispatcher_idle_cb, info);
 		}
-		nm_log_dbg (LOGD_DISPATCH, "ignoring request; no scripts in " NMD_SCRIPT_DIR);
+		nm_log_dbg (LOGD_DISPATCH, "(%u) ignoring request; no scripts in " NMD_SCRIPT_DIR, reqid);
 		success = TRUE;
 		goto done;
 	}
@@ -369,7 +387,7 @@ _dispatcher_call (DispatcherAction action,
 	                                   NM_DISPATCHER_DBUS_PATH,
 	                                   NM_DISPATCHER_DBUS_IFACE);
 	if (!proxy) {
-		nm_log_err (LOGD_DISPATCH, "could not get dispatcher proxy!");
+		nm_log_err (LOGD_DISPATCH, "(%u) could not get dispatcher proxy!", reqid);
 		return FALSE;
 	}
 
@@ -428,15 +446,15 @@ _dispatcher_call (DispatcherAction action,
 		                                          DISPATCHER_TYPE_RESULT_ARRAY, &results,
 		                                          G_TYPE_INVALID);
 		if (success) {
-			dispatcher_results_process (results);
+			dispatcher_results_process (reqid, results);
 			free_results (results);
 		} else {
-			nm_log_warn (LOGD_DISPATCH, "Dispatcher failed: (%d) %s", error->code, error->message);
+			nm_log_warn (LOGD_DISPATCH, "(%u) failed: (%d) %s", reqid, error->code, error->message);
 			g_error_free (error);
 		}
 	} else {
 		info = g_malloc0 (sizeof (*info));
-		info->request_id = request_counter++;
+		info->request_id = reqid;
 		info->callback = callback;
 		info->user_data = user_data;
 		dbus_g_proxy_begin_call_with_timeout (proxy, "Action",
