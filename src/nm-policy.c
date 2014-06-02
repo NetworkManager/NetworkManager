@@ -1878,6 +1878,9 @@ firewall_started (NMFirewallManager *manager,
 		NMDevice *dev = NM_DEVICE (iter->data);
 
 		connection = nm_device_get_connection (dev);
+		if (!connection)
+			continue;
+
 		s_con = nm_connection_get_setting_connection (connection);
 		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
 			nm_firewall_manager_add_or_change_zone (priv->fw_manager,
