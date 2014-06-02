@@ -4899,7 +4899,6 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 	NMDevicePrivate *priv;
 	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 	NMConnection *connection = NULL;
-	NMSettingConnection *s_con = NULL;
 	int ifindex;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
@@ -4924,10 +4923,9 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 	if (priv->act_request)
 		connection = nm_act_request_get_connection (priv->act_request);
 	if (connection) {
-		s_con = nm_connection_get_setting_connection (connection);
 		nm_firewall_manager_remove_from_zone (priv->fw_manager,
 		                                      nm_device_get_ip_iface (self),
-		                                      nm_setting_connection_get_zone (s_con));
+		                                      NULL);
 	}
 
 	ip_check_gw_ping_cleanup (self);
