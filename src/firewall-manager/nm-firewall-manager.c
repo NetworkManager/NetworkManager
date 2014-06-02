@@ -70,6 +70,19 @@ cb_info_free (CBInfo *info)
 	g_free (info);
 }
 
+static CBInfo *
+_cb_info_create (const char *iface, FwAddToZoneFunc callback, gpointer user_data)
+{
+	CBInfo *info;
+
+	info = g_malloc0 (sizeof (CBInfo));
+	info->iface = g_strdup (iface);
+	info->callback = callback;
+	info->user_data = user_data;
+
+	return info;
+}
+
 static void
 add_or_change_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
@@ -113,10 +126,7 @@ nm_firewall_manager_add_or_change_zone (NMFirewallManager *self,
 		return NULL;
 	}
 
-	info = g_malloc0 (sizeof (*info));
-	info->iface = g_strdup (iface);
-	info->callback = callback;
-	info->user_data = user_data;
+	info = _cb_info_create (iface, callback, user_data);
 
 	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone %s -> %s%s%s", iface, add ? "add" : "change",
 	                           zone?"\"":"", zone ? zone : "default", zone?"\"":"");
@@ -166,8 +176,7 @@ nm_firewall_manager_remove_from_zone (NMFirewallManager *self,
 		return NULL;
 	}
 
-	info = g_malloc0 (sizeof (*info));
-	info->iface = g_strdup (iface);
+	info = _cb_info_create (iface, NULL, NULL);
 
 	nm_log_dbg (LOGD_FIREWALL, "(%s) firewall zone remove -> %s", iface, zone );
 	return dbus_g_proxy_begin_call_with_timeout (priv->proxy,
