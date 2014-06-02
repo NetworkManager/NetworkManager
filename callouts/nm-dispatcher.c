@@ -414,16 +414,26 @@ dispatch_one_script (Request *request)
 }
 
 static GSList *
-find_scripts (void)
+find_scripts (const char *str_action)
 {
 	GDir *dir;
 	const char *filename;
 	GSList *sorted = NULL;
 	GError *error = NULL;
+	const char *dirname;
 
-	if (!(dir = g_dir_open (NMD_SCRIPT_DIR, 0, &error))) {
+	if (   strcmp (str_action, NMD_ACTION_PRE_UP) == 0
+	    || strcmp (str_action, NMD_ACTION_VPN_PRE_UP) == 0)
+		dirname = NMD_PRE_UP_DIR;
+	else if (   strcmp (str_action, NMD_ACTION_PRE_DOWN) == 0
+	         || strcmp (str_action, NMD_ACTION_VPN_PRE_DOWN) == 0)
+		dirname = NMD_PRE_DOWN_DIR;
+	else
+		dirname = NMD_SCRIPT_DIR;
+
+	if (!(dir = g_dir_open (dirname, 0, &error))) {
 		g_warning ("Failed to open dispatcher directory '%s': (%d) %s",
-		           NMD_SCRIPT_DIR, error->code, error->message);
+		           dirname, error->code, error->message);
 		g_error_free (error);
 		return NULL;
 	}
@@ -436,7 +446,7 @@ find_scripts (void)
 		if (!check_filename (filename))
 			continue;
 
-		path = g_build_filename (NMD_SCRIPT_DIR, filename, NULL);
+		path = g_build_filename (dirname, filename, NULL);
 
 		err = stat (path, &st);
 		if (err)
@@ -476,7 +486,7 @@ impl_dispatch (Handler *h,
 	char **p;
 	char *iface = NULL;
 
-	sorted_scripts = find_scripts ();
+	sorted_scripts = find_scripts (str_action);
 
 	if (!sorted_scripts) {
 		dbus_g_method_return (context, g_ptr_array_new ());

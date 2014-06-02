@@ -20,7 +20,9 @@
 
 #include <dbus/dbus-glib.h>
 
-#define NMD_SCRIPT_DIR NMCONFDIR "/dispatcher.d"
+#define NMD_SCRIPT_DIR   NMCONFDIR "/dispatcher.d"
+#define NMD_PRE_UP_DIR   NMD_SCRIPT_DIR "/pre-up.d"
+#define NMD_PRE_DOWN_DIR NMD_SCRIPT_DIR "/pre-down.d"
 
 /* dbus-glib types for dispatcher call return value */
 #define DISPATCHER_TYPE_RESULT       (dbus_g_type_get_struct ("GValueArray", G_TYPE_STRING, G_TYPE_UINT, G_TYPE_STRING, G_TYPE_INVALID))
@@ -37,6 +39,19 @@
 #define NMD_DEVICE_PROPS_TYPE             "type"
 #define NMD_DEVICE_PROPS_STATE            "state"
 #define NMD_DEVICE_PROPS_PATH             "path"
+
+/* Actions */
+#define NMD_ACTION_HOSTNAME     "hostname"
+#define NMD_ACTION_PRE_UP       "pre-up"
+#define NMD_ACTION_UP           "up"
+#define NMD_ACTION_PRE_DOWN     "pre-down"
+#define NMD_ACTION_DOWN         "down"
+#define NMD_ACTION_VPN_PRE_UP   "vpn-pre-up"
+#define NMD_ACTION_VPN_UP       "vpn-up"
+#define NMD_ACTION_VPN_PRE_DOWN "vpn-pre-down"
+#define NMD_ACTION_VPN_DOWN     "vpn-down"
+#define NMD_ACTION_DHCP4_CHANGE "dhcp4-change"
+#define NMD_ACTION_DHCP6_CHANGE "dhcp6-change"
 
 typedef enum {
 	DISPATCH_RESULT_UNKNOWN = 0,

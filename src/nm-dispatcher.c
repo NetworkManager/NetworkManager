@@ -271,17 +271,17 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 }
 
 static const char *action_table[] = {
-	[DISPATCHER_ACTION_HOSTNAME]     = "hostname",
-	[DISPATCHER_ACTION_PRE_UP]       = "pre-up",
-	[DISPATCHER_ACTION_UP]           = "up",
-	[DISPATCHER_ACTION_PRE_DOWN]     = "pre-down",
-	[DISPATCHER_ACTION_DOWN]         = "down",
-	[DISPATCHER_ACTION_VPN_PRE_UP]   = "vpn-pre-up",
-	[DISPATCHER_ACTION_VPN_UP]       = "vpn-up",
-	[DISPATCHER_ACTION_VPN_PRE_DOWN] = "vpn-pre-down",
-	[DISPATCHER_ACTION_VPN_DOWN]     = "vpn-down",
-	[DISPATCHER_ACTION_DHCP4_CHANGE] = "dhcp4-change",
-	[DISPATCHER_ACTION_DHCP6_CHANGE] = "dhcp6-change",
+	[DISPATCHER_ACTION_HOSTNAME]     = NMD_ACTION_HOSTNAME,
+	[DISPATCHER_ACTION_PRE_UP]       = NMD_ACTION_PRE_UP,
+	[DISPATCHER_ACTION_UP]           = NMD_ACTION_UP,
+	[DISPATCHER_ACTION_PRE_DOWN]     = NMD_ACTION_PRE_DOWN,
+	[DISPATCHER_ACTION_DOWN]         = NMD_ACTION_DOWN,
+	[DISPATCHER_ACTION_VPN_PRE_UP]   = NMD_ACTION_VPN_PRE_UP,
+	[DISPATCHER_ACTION_VPN_UP]       = NMD_ACTION_VPN_UP,
+	[DISPATCHER_ACTION_VPN_PRE_DOWN] = NMD_ACTION_VPN_PRE_DOWN,
+	[DISPATCHER_ACTION_VPN_DOWN]     = NMD_ACTION_VPN_DOWN,
+	[DISPATCHER_ACTION_DHCP4_CHANGE] = NMD_ACTION_DHCP4_CHANGE,
+	[DISPATCHER_ACTION_DHCP6_CHANGE] = NMD_ACTION_DHCP6_CHANGE,
 };
 
 static const char *
@@ -605,32 +605,57 @@ nm_dispatcher_call_cancel (guint call_id)
 		g_return_if_reached ();
 }
 
+typedef struct {
+	const char *dir;
+	GFileMonitor *monitor;
+	gboolean has_scripts;
+} Monitor;
+
+static Monitor monitors[3] = {
+	{ NMD_SCRIPT_DIR,   NULL, TRUE },
+	{ NMD_PRE_UP_DIR,   NULL, TRUE },
+	{ NMD_PRE_DOWN_DIR, NULL, TRUE }
+};
+
 static void
-dispatcher_dir_changed (GFileMonitor *monitor)
+dispatcher_dir_changed (GFileMonitor *monitor,
+                        GFile *file,
+                        GFile *other_file,
+                        GFileMonitorEvent event_type,
+                        Monitor *item)
 {
 	GDir *dir;
+	guint i;
 
 	/* Default to dispatching on any errors */
-	do_dispatch = TRUE;
-	dir = g_dir_open (NMD_SCRIPT_DIR, 0, NULL);
+	item->has_scripts = TRUE;
+
+	dir = g_dir_open (item->dir, 0, NULL);
 	if (dir) {
-		do_dispatch = !!g_dir_read_name (dir);
+		item->has_scripts = !!g_dir_read_name (dir);
 		g_dir_close (dir);
 	}
+
+	/* Recheck all dirs for scripts and update global variable */
+	do_dispatch = FALSE;
+	for (i = 0; i < G_N_ELEMENTS (monitors); i++)
+		do_dispatch |= monitors[i].has_scripts;
 }
 
 void
 nm_dispatcher_init (void)
 {
 	GFile *file;
-	static GFileMonitor *monitor;
+	guint i;
 
-	file = g_file_new_for_path (NMD_SCRIPT_DIR);
-	monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
-	if (monitor) {
-		g_signal_connect (monitor, "changed", G_CALLBACK (dispatcher_dir_changed), NULL);
-		dispatcher_dir_changed (monitor);
+	for (i = 0; i < G_N_ELEMENTS (monitors); i++) {
+		file = g_file_new_for_path (monitors[i].dir);
+		monitors[i].monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
+		if (monitors[i].monitor) {
+			g_signal_connect (monitors[i].monitor, "changed", G_CALLBACK (dispatcher_dir_changed), &monitors[i]);
+			dispatcher_dir_changed (monitors[i].monitor, file, NULL, 0, &monitors[i]);
+		}
+		g_object_unref (file);
 	}
-	g_object_unref (file);
 }
 
