@@ -82,7 +82,7 @@ mac_filter (NmtNewtEntry *entry,
 {
 	NmtMacEntryPrivate *priv = NMT_MAC_ENTRY_GET_PRIVATE (entry);
 
-	if (position > priv->mac_str_length)
+	if (position >= priv->mac_str_length)
 		return FALSE;
 
 	return g_ascii_isxdigit (ch) || ch == ':';
@@ -116,8 +116,13 @@ mac_validator (NmtNewtEntry *entry,
 	if (g_ascii_isxdigit (p[0]) && !p[1]) {
 		char *fixed = g_strdup_printf ("%.*s:%c", (int)(p - text), text, *p);
 
-		g_object_set (G_OBJECT (entry), "text", fixed, NULL);
-		return TRUE;
+		nmt_newt_entry_set_text (entry, fixed);
+		g_free (fixed);
+
+		/* FIXME: NmtNewtEntry doesn't correctly deal with us calling set_text()
+		 * from inside the validator.
+		 */
+		nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (entry));
 	}
 
 	return FALSE;
