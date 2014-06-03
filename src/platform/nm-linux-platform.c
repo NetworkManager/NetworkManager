@@ -1552,7 +1552,7 @@ delete_object (NMPlatform *platform, struct nl_object *obj, gboolean do_refresh_
 		goto DEFAULT;
 	DEFAULT:
 	default:
-		error ("Netlink error deleting %s: %s", to_string_object (platform, obj), nl_geterror (nle));
+		error ("Netlink error deleting %s: %s (%d)", to_string_object (platform, obj), nl_geterror (nle), nle);
 		return FALSE;
 	}
 
