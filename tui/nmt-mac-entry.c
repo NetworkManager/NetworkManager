@@ -28,6 +28,8 @@
 
 #include "config.h"
 
+#include <string.h>
+
 #include <dbus/dbus-glib.h>
 #include <nm-utils.h>
 
@@ -80,7 +82,7 @@ mac_filter (NmtNewtEntry *entry,
 {
 	NmtMacEntryPrivate *priv = NMT_MAC_ENTRY_GET_PRIVATE (entry);
 
-	if (position > priv->mac_str_length)
+	if (position >= priv->mac_str_length)
 		return FALSE;
 
 	return g_ascii_isxdigit (ch) || ch == ':';
@@ -114,8 +116,13 @@ mac_validator (NmtNewtEntry *entry,
 	if (g_ascii_isxdigit (p[0]) && !p[1]) {
 		char *fixed = g_strdup_printf ("%.*s:%c", (int)(p - text), text, *p);
 
-		g_object_set (G_OBJECT (entry), "text", fixed, NULL);
-		return TRUE;
+		nmt_newt_entry_set_text (entry, fixed);
+		g_free (fixed);
+
+		/* FIXME: NmtNewtEntry doesn't correctly deal with us calling set_text()
+		 * from inside the validator.
+		 */
+		nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (entry));
 	}
 
 	return FALSE;
@@ -126,6 +133,17 @@ nmt_mac_entry_init (NmtMacEntry *entry)
 {
 	nmt_newt_entry_set_filter (NMT_NEWT_ENTRY (entry), mac_filter, NULL);
 	nmt_newt_entry_set_validator (NMT_NEWT_ENTRY (entry), mac_validator, NULL);
+}
+
+static void
+nmt_mac_entry_notify (GObject    *object,
+                      GParamSpec *pspec)
+{
+	if (G_OBJECT_CLASS (nmt_mac_entry_parent_class)->notify)
+		G_OBJECT_CLASS (nmt_mac_entry_parent_class)->notify (object, pspec);
+
+	if (pspec->owner_type == NMT_TYPE_NEWT_ENTRY && !strcmp (pspec->name, "text"))
+		g_object_notify (object, "mac-address");
 }
 
 static void
@@ -189,6 +207,7 @@ nmt_mac_entry_class_init (NmtMacEntryClass *entry_class)
 	g_type_class_add_private (entry_class, sizeof (NmtMacEntryPrivate));
 
 	/* virtual methods */
+	object_class->notify = nmt_mac_entry_notify;
 	object_class->set_property = nmt_mac_entry_set_property;
 	object_class->get_property = nmt_mac_entry_get_property;
 
