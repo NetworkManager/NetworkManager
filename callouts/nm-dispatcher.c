@@ -320,33 +320,33 @@ script_timeout_cb (gpointer user_data)
 }
 
 static inline gboolean
-check_permissions (struct stat *s, GError **error)
+check_permissions (struct stat *s, const char **out_error_msg)
 {
 	g_return_val_if_fail (s != NULL, FALSE);
-	g_return_val_if_fail (error != NULL, FALSE);
-	g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (out_error_msg != NULL, FALSE);
+	g_return_val_if_fail (*out_error_msg == NULL, FALSE);
 
 	/* Only accept regular files */
 	if (!S_ISREG (s->st_mode)) {
-		g_set_error (error, 0, 0, "not a regular file.");
+		*out_error_msg = "not a regular file.";
 		return FALSE;
 	}
 
 	/* Only accept files owned by root */
 	if (s->st_uid != 0) {
-		g_set_error (error, 0, 0, "not owned by root.");
+		*out_error_msg = "not owned by root.";
 		return FALSE;
 	}
 
 	/* Only accept files not writable by group or other, and not SUID */
 	if (s->st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
-		g_set_error (error, 0, 0, "writable by group or other, or set-UID.");
+		*out_error_msg = "writable by group or other, or set-UID.";
 		return FALSE;
 	}
 
 	/* Only accept files executable by the owner */
 	if (!(s->st_mode & S_IXUSR)) {
-		g_set_error (error, 0, 0, "not executable by owner.");
+		*out_error_msg = "not executable by owner.";
 		return FALSE;
 	}
 
@@ -442,6 +442,7 @@ find_scripts (const char *str_action)
 		char *path;
 		struct stat	st;
 		int err;
+		const char *err_msg = NULL;
 
 		if (!check_filename (filename))
 			continue;
@@ -451,10 +452,9 @@ find_scripts (const char *str_action)
 		err = stat (path, &st);
 		if (err)
 			g_warning ("Failed to stat '%s': %d", path, err);
-		else if (!check_permissions (&st, &error)) {
-			g_warning ("Cannot execute '%s': %s", path, error->message);
-			g_clear_error (&error);
-		} else {
+		else if (!check_permissions (&st, &err_msg))
+			g_warning ("Cannot execute '%s': %s", path, err_msg);
+		else {
 			/* success */
 			sorted = g_slist_insert_sorted (sorted, path, (GCompareFunc) g_strcmp0);
 		}
