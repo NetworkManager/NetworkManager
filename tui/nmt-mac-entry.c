@@ -28,6 +28,8 @@
 
 #include "config.h"
 
+#include <string.h>
+
 #include <dbus/dbus-glib.h>
 #include <nm-utils.h>
 
@@ -129,6 +131,17 @@ nmt_mac_entry_init (NmtMacEntry *entry)
 }
 
 static void
+nmt_mac_entry_notify (GObject    *object,
+                      GParamSpec *pspec)
+{
+	if (G_OBJECT_CLASS (nmt_mac_entry_parent_class)->notify)
+		G_OBJECT_CLASS (nmt_mac_entry_parent_class)->notify (object, pspec);
+
+	if (pspec->owner_type == NMT_TYPE_NEWT_ENTRY && !strcmp (pspec->name, "text"))
+		g_object_notify (object, "mac-address");
+}
+
+static void
 nmt_mac_entry_set_property (GObject      *object,
                             guint         prop_id,
                             const GValue *value,
@@ -189,6 +202,7 @@ nmt_mac_entry_class_init (NmtMacEntryClass *entry_class)
 	g_type_class_add_private (entry_class, sizeof (NmtMacEntryPrivate));
 
 	/* virtual methods */
+	object_class->notify = nmt_mac_entry_notify;
 	object_class->set_property = nmt_mac_entry_set_property;
 	object_class->get_property = nmt_mac_entry_get_property;
 
