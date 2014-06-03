@@ -4010,7 +4010,7 @@ out:
 
 
 static void
-fw_add_to_zone_cb (GError *error, gpointer user_data)
+fw_change_zone_cb (GError *error, gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -4059,8 +4059,8 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	priv->fw_call = nm_firewall_manager_add_or_change_zone (priv->fw_manager,
 	                                                        nm_device_get_ip_iface (self),
 	                                                        zone,
-	                                                        TRUE,
-	                                                        fw_add_to_zone_cb,
+	                                                        FALSE,
+	                                                        fw_change_zone_cb,
 	                                                        self);
 }
 
