@@ -1535,13 +1535,22 @@ delete_object (NMPlatform *platform, struct nl_object *obj, gboolean do_refresh_
 		debug("delete_object failed with \"%s\" (%d), meaning the object was already removed",
 		      nl_geterror (nle), nle);
 		break;
+	case -NLE_FAILURE:
+		if (object_type == OBJECT_TYPE_IP6_ADDRESS) {
+			/* On RHEL7 kernel, deleting a non existing address fails with ENXIO (which libnl maps to NLE_FAILURE) */
+			debug("delete_object for address failed with \"%s\" (%d), meaning the address was already removed",
+			      nl_geterror (nle), nle);
+			break;
+		}
+		goto DEFAULT;
 	case -NLE_NOADDR:
 		if (object_type == OBJECT_TYPE_IP4_ADDRESS || object_type == OBJECT_TYPE_IP6_ADDRESS) {
 			debug("delete_object for address failed with \"%s\" (%d), meaning the address was already removed",
 			      nl_geterror (nle), nle);
 			break;
 		}
-		/* fall-through to error, because we only expect this for addresses. */
+		goto DEFAULT;
+	DEFAULT:
 	default:
 		error ("Netlink error deleting %s: %s", to_string_object (platform, obj), nl_geterror (nle));
 		return FALSE;
