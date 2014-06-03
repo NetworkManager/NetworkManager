@@ -206,7 +206,7 @@ nmt_route_entry_set_property (GObject      *object,
 		priv->ip4_route = g_value_dup_boxed (value);
 		break;
 	case PROP_IP6_ROUTE:
-		g_return_if_fail (priv->family == AF_INET);
+		g_return_if_fail (priv->family == AF_INET6);
 		if (priv->ip6_route)
 			nm_ip6_route_unref (priv->ip6_route);
 		priv->ip6_route = g_value_dup_boxed (value);

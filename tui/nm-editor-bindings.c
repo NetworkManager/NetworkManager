@@ -772,7 +772,7 @@ ip6_addresses_to_strv (GBinding     *binding,
 	for (i = 0; i < addrs->len; i++) {
 		addrbytes = addrs->pdata[i];
 		if (IP6_ADDRESS_SET (addrbytes))
-			inet_ntop (AF_INET, addrbytes->data, buf, sizeof (buf));
+			inet_ntop (AF_INET6, addrbytes->data, buf, sizeof (buf));
 		else
 			buf[0] = '\0';
 		strings[i] = g_strdup (buf);
@@ -1002,7 +1002,7 @@ ip6_route_transform_to_next_hop_string (GBinding     *binding,
 		addrbytes = &in6addr_any;
 
 	if (IN6_ADDR_SET (addrbytes))
-		inet_ntop (AF_INET, &addrbytes, buf, sizeof (buf));
+		inet_ntop (AF_INET6, addrbytes, buf, sizeof (buf));
 	else
 		buf[0] = '\0';
 	g_value_set_string (target_value, buf);
@@ -1035,7 +1035,7 @@ ip6_route_transform_from_dest_string (GBinding     *binding,
 {
 	NMIP6Route *route;
 	const char *text;
-	const struct in6_addr *addrbytes;
+	struct in6_addr addrbytes;
 	guint32 prefix;
 
 	text = g_value_get_string (source_value);
@@ -1047,7 +1047,7 @@ ip6_route_transform_from_dest_string (GBinding     *binding,
 	              g_binding_get_source_property (binding), &route,
 	              NULL);
 
-	nm_ip6_route_set_dest (route, addrbytes);
+	nm_ip6_route_set_dest (route, &addrbytes);
 	nm_ip6_route_set_prefix (route, prefix);
 
 	g_value_take_boxed (target_value, route);
@@ -1062,21 +1062,21 @@ ip6_route_transform_from_next_hop_string (GBinding     *binding,
 {
 	NMIP6Route *route;
 	const char *text;
-	const struct in6_addr *addrbytes;
+	struct in6_addr addrbytes;
 
 	text = g_value_get_string (source_value);
 	if (*text) {
 		if (!ip_string_parse (text, AF_INET6, &addrbytes, NULL))
 			return FALSE;
 	} else
-		addrbytes = 0;
+		addrbytes = in6addr_any;
 
 	/* Fetch the original property value */
 	g_object_get (g_binding_get_source (binding),
 	              g_binding_get_source_property (binding), &route,
 	              NULL);
 
-	nm_ip6_route_set_next_hop (route, addrbytes);
+	nm_ip6_route_set_next_hop (route, &addrbytes);
 
 	g_value_take_boxed (target_value, route);
 	return TRUE;
