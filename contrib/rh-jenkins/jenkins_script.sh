@@ -12,6 +12,9 @@ REPO=ssh://Jenkins-nm-user/var/lib/git/NetworkManager.git
 
 MAKE_JOBS="-j $((3 * $(grep -c ^processor /proc/cpuinfo || echo 1)))"
 
+ulimit -c unlimited
+export NMTST_DEBUG="no-debug,sudo-cmd=$PWD/tools/test-sudo-wrapper.sh"
+
 git_notes() {
     if [[ "$GIT_NOTES_DISABLED" == true ]]; then
         return 0
