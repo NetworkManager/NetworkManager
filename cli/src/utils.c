@@ -309,7 +309,7 @@ char *
 nmc_colorize (NmcTermColor color, const char *fmt, ...)
 {
 	va_list args;
-	char *str;
+	char *str, *colored;
 	const char *ansi_color, *color_end;
 
 	va_start (args, fmt);
@@ -322,7 +322,9 @@ nmc_colorize (NmcTermColor color, const char *fmt, ...)
 	else
 		color_end = "";
 
-	return g_strdup_printf ("%s%s%s", ansi_color, str, color_end);
+	colored = g_strdup_printf ("%s%s%s", ansi_color, str, color_end);
+	g_free (str);
+	return colored;
 }
 
 /*
