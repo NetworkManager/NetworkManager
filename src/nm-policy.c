@@ -1886,7 +1886,7 @@ firewall_started (NMFirewallManager *manager,
 			nm_firewall_manager_add_or_change_zone (priv->fw_manager,
 			                                        nm_device_get_ip_iface (dev),
 			                                        nm_setting_connection_get_zone (s_con),
-			                                        TRUE, /* add zone */
+			                                        FALSE, /* still change zone */
 			                                        add_or_change_zone_cb,
 			                                        g_object_ref (dev));
 		}
