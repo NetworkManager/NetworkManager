@@ -38,6 +38,7 @@
 #define NM_DHCP_CLIENT_HWADDR    "hwaddr"
 #define NM_DHCP_CLIENT_IPV6      "ipv6"
 #define NM_DHCP_CLIENT_UUID      "uuid"
+#define NM_DHCP_CLIENT_PRIORITY  "priority"
 #define NM_DHCP_CLIENT_TIMEOUT   "timeout"
 
 #define NM_DHCP_CLIENT_SIGNAL_TIMEOUT       "timeout"

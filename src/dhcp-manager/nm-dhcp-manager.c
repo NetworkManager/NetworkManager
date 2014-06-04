@@ -384,6 +384,7 @@ client_start (NMDHCPManager *self,
               const char *iface,
               const GByteArray *hwaddr,
               const char *uuid,
+              guint priority,
               gboolean ipv6,
               const char *dhcp_client_id,
               guint32 timeout,
@@ -418,6 +419,7 @@ client_start (NMDHCPManager *self,
 	                       NM_DHCP_CLIENT_HWADDR, hwaddr,
 	                       NM_DHCP_CLIENT_IPV6, ipv6,
 	                       NM_DHCP_CLIENT_UUID, uuid,
+	                       NM_DHCP_CLIENT_PRIORITY, priority,
 	                       NM_DHCP_CLIENT_TIMEOUT, timeout ? timeout : DHCP_TIMEOUT,
 	                       NULL);
 	g_return_val_if_fail (client != NULL, NULL);
@@ -452,6 +454,7 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
                            const char *iface,
                            const GByteArray *hwaddr,
                            const char *uuid,
+                           guint priority,
                            NMSettingIP4Config *s_ip4,
                            guint32 timeout,
                            GByteArray *dhcp_anycast_addr)
@@ -469,7 +472,9 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 	if (send_hostname)
 		hostname = get_send_hostname (self, nm_setting_ip4_config_get_dhcp_hostname (s_ip4));
 
-	return client_start (self, iface, hwaddr, uuid, FALSE, nm_setting_ip4_config_get_dhcp_client_id (s_ip4), timeout, dhcp_anycast_addr, hostname, FALSE);
+	return client_start (self, iface, hwaddr, uuid, priority, FALSE,
+	                     nm_setting_ip4_config_get_dhcp_client_id (s_ip4),
+	                     timeout, dhcp_anycast_addr, hostname, FALSE);
 }
 
 /* Caller owns a reference to the NMDHCPClient on return */
@@ -478,6 +483,7 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
                            const char *iface,
                            const GByteArray *hwaddr,
                            const char *uuid,
+                           guint priority,
                            NMSettingIP6Config *s_ip6,
                            guint32 timeout,
                            GByteArray *dhcp_anycast_addr,
@@ -489,7 +495,8 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
 
 	hostname = get_send_hostname (self, nm_setting_ip6_config_get_dhcp_hostname (s_ip6));
 
-	return client_start (self, iface, hwaddr, uuid, TRUE, NULL, timeout, dhcp_anycast_addr, hostname, info_only);
+	return client_start (self, iface, hwaddr, uuid, priority, TRUE,
+	                     NULL, timeout, dhcp_anycast_addr, hostname, info_only);
 }
 
 void

@@ -334,6 +334,7 @@ add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32
 		route.gateway = 0;
 
 	route.source = NM_PLATFORM_SOURCE_VPN;
+	route.metric = nm_device_get_priority (parent_device);
 	nm_ip4_config_add_route (config, &route);
 
 	/* Ensure there's a route to the parent device's gateway through the
@@ -345,6 +346,7 @@ add_ip4_vpn_gateway_route (NMIP4Config *config, NMDevice *parent_device, guint32
 	route.network = parent_gw;
 	route.plen = 32;
 	route.source = NM_PLATFORM_SOURCE_VPN;
+	route.metric = nm_device_get_priority (parent_device);
 
 	nm_ip4_config_add_route (config, &route);
 }
@@ -381,6 +383,7 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 		route.gateway = in6addr_any;
 
 	route.source = NM_PLATFORM_SOURCE_VPN;
+	route.metric = nm_device_get_priority (parent_device);
 	nm_ip6_config_add_route (config, &route);
 
 	/* Ensure there's a route to the parent device's gateway through the
@@ -392,6 +395,7 @@ add_ip6_vpn_gateway_route (NMIP6Config *config,
 	route.network = *parent_gw;
 	route.plen = 128;
 	route.source = NM_PLATFORM_SOURCE_VPN;
+	route.metric = nm_device_get_priority (parent_device);
 
 	nm_ip6_config_add_route (config, &route);
 }
@@ -694,12 +698,12 @@ nm_vpn_connection_apply_config (NMVPNConnection *connection)
 		nm_platform_link_set_up (priv->ip_ifindex);
 
 		if (priv->ip4_config) {
-			if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex, 0))
+			if (!nm_ip4_config_commit (priv->ip4_config, priv->ip_ifindex))
 				return FALSE;
 		}
 
 		if (priv->ip6_config) {
-			if (!nm_ip6_config_commit (priv->ip6_config, priv->ip_ifindex, 0))
+			if (!nm_ip6_config_commit (priv->ip6_config, priv->ip_ifindex))
 				return FALSE;
 		}
 
@@ -907,6 +911,20 @@ nm_vpn_connection_config_get (DBusGProxy *proxy,
 	g_clear_object (&priv->ip6_config);
 }
 
+static guint
+vpn_routing_metric (NMVPNConnection *connection)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+
+	if (priv->ip_ifindex)
+		return NM_PLATFORM_ROUTE_METRIC_DEFAULT;
+	else {
+		NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (connection));
+
+		return nm_device_get_priority (parent_dev);
+	}
+}
+
 static void
 nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
                                   GHashTable *config_hash,
@@ -1033,6 +1051,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 			route.plen = nm_ip4_route_get_prefix (item);
 			route.gateway = nm_ip4_route_get_next_hop (item);
 			route.source = NM_PLATFORM_SOURCE_VPN;
+			route.metric = vpn_routing_metric (connection);
 
 			/* Ignore host routes to the VPN gateway since NM adds one itself
 			 * below.  Since NM knows more about the routing situation than
@@ -1179,6 +1198,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 			route.plen = nm_ip6_route_get_prefix (item);
 			route.gateway = *nm_ip6_route_get_next_hop (item);
 			route.source = NM_PLATFORM_SOURCE_VPN;
+			route.metric = vpn_routing_metric (connection);
 
 			/* Ignore host routes to the VPN gateway since NM adds one itself
 			 * below.  Since NM knows more about the routing situation than

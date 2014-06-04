@@ -356,7 +356,7 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 }
 
 gboolean
-nm_ip6_config_commit (const NMIP6Config *config, int ifindex, int priority)
+nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
 	int i;
@@ -384,17 +384,12 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex, int priority)
 			    && nm_ip6_config_destination_is_direct (config, &route.network, route.plen))
 				continue;
 
-			/* Don't add the default route when and the connection
+			/* Don't add the default route if the connection
 			 * is never supposed to be the default connection.
 			 */
 			if (nm_ip6_config_get_never_default (config) && IN6_IS_ADDR_UNSPECIFIED (&route.network))
 				continue;
 
-			/* Use the default metric only if the route was created by NM and
-			 * didn't already specify a metric.
-			 */
-			if (route.source != NM_PLATFORM_SOURCE_KERNEL && !route.metric)
-				route.metric = priority ? priority : NM_PLATFORM_ROUTE_METRIC_DEFAULT;
 			g_array_append_val (routes, route);
 		}
 

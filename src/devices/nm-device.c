@@ -2483,6 +2483,7 @@ aipd_get_ip4_config (NMDevice *self, guint32 lla)
 	route.network = htonl (0xE0000000L);
 	route.plen = 4;
 	route.source = NM_PLATFORM_SOURCE_IP4LL;
+	route.metric = nm_device_get_priority (self);
 	nm_ip4_config_add_route (config, &route);
 
 	return config;
@@ -2885,6 +2886,7 @@ dhcp4_start (NMDevice *self,
 	                                                nm_device_get_ip_iface (self),
 	                                                tmp,
 	                                                nm_connection_get_uuid (connection),
+	                                                nm_device_get_priority (self),
 	                                                s_ip4,
 	                                                priv->dhcp_timeout,
 	                                                priv->dhcp_anycast_address);
@@ -3325,6 +3327,7 @@ dhcp6_start (NMDevice *self,
 	                                                nm_device_get_ip_iface (self),
 	                                                tmp,
 	                                                nm_connection_get_uuid (connection),
+	                                                nm_device_get_priority (self),
 	                                                nm_connection_get_setting_ip6_config (connection),
 	                                                priv->dhcp_timeout,
 	                                                priv->dhcp_anycast_address,
@@ -3623,6 +3626,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 				route.plen = discovered_route->plen;
 				route.gateway = discovered_route->gateway;
 				route.source = NM_PLATFORM_SOURCE_RDISC;
+				route.metric = nm_device_get_priority (device);
 
 				nm_ip6_config_add_route (priv->ac_ip6_config, &route);
 			}
@@ -5279,7 +5283,7 @@ nm_device_set_ip4_config (NMDevice *self,
 
 	/* Always commit to nm-platform to update lifetimes */
 	if (commit && new_config) {
-		success = nm_ip4_config_commit (new_config, ip_ifindex, nm_device_get_priority (self));
+		success = nm_ip4_config_commit (new_config, ip_ifindex);
 		if (!success)
 			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 	}
@@ -5387,7 +5391,7 @@ nm_device_set_ip6_config (NMDevice *self,
 
 	/* Always commit to nm-platform to update lifetimes */
 	if (commit && new_config) {
-		success = nm_ip6_config_commit (new_config, ip_ifindex, nm_device_get_priority (self));
+		success = nm_ip6_config_commit (new_config, ip_ifindex);
 		if (!success)
 			reason_local = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 	}
