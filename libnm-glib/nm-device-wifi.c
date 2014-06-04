@@ -110,7 +110,7 @@ nm_device_wifi_error_quark (void)
  *
  * Creates a new #NMDeviceWifi.
  *
- * Returns: (transfer full): a new WiFi device
+ * Returns: (transfer full): a new Wi-Fi device
  **/
 GObject *
 nm_device_wifi_new (DBusGConnection *connection, const char *path)
@@ -216,7 +216,7 @@ nm_device_wifi_get_bitrate (NMDeviceWifi *device)
  * nm_device_wifi_get_capabilities:
  * @device: a #NMDeviceWifi
  *
- * Gets the WIFI capabilities of the #NMDeviceWifi.
+ * Gets the Wi-Fi capabilities of the #NMDeviceWifi.
  *
  * Returns: the capabilities
  **/
@@ -813,10 +813,10 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 
 	/**
 	 * NMDeviceWifi::access-point-added:
-	 * @device: the wifi device that received the signal
+	 * @device: the Wi-Fi device that received the signal
 	 * @ap: the new access point
 	 *
-	 * Notifies that a #NMAccessPoint is added to the wifi device.
+	 * Notifies that a #NMAccessPoint is added to the Wi-Fi device.
 	 **/
 	signals[ACCESS_POINT_ADDED] =
 		g_signal_new ("access-point-added",
@@ -830,10 +830,10 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 
 	/**
 	 * NMDeviceWifi::access-point-removed:
-	 * @device: the wifi device that received the signal
+	 * @device: the Wi-Fi device that received the signal
 	 * @ap: the removed access point
 	 *
-	 * Notifies that a #NMAccessPoint is removed from the wifi device.
+	 * Notifies that a #NMAccessPoint is removed from the Wi-Fi device.
 	 **/
 	signals[ACCESS_POINT_REMOVED] =
 		g_signal_new ("access-point-removed",

@@ -39,11 +39,11 @@
 
 /**
  * SECTION:nm-setting-wireless
- * @short_description: Describes connection properties for 802.11 WiFi networks
+ * @short_description: Describes connection properties for 802.11 Wi-Fi networks
  * @include: nm-setting-wireless.h
  *
  * The #NMSettingWireless object is a #NMSetting subclass that describes properties
- * necessary for connection to 802.11 WiFi networks.
+ * necessary for connection to 802.11 Wi-Fi networks.
  **/
 
 /**
@@ -1033,27 +1033,27 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:ssid:
 	 *
-	 * SSID of the WiFi network.
+	 * SSID of the Wi-Fi network.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SSID,
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SSID,
 							   "SSID",
-							   "SSID of the WiFi network.  Must be specified.",
+							   "SSID of the Wi-Fi network.  Must be specified.",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
 							   G_PARAM_READWRITE));
 
 	/**
 	 * NMSettingWireless:mode:
 	 *
-	 * WiFi network mode; one of 'infrastructure', 'adhoc' or 'ap'.  If blank,
+	 * Wi-Fi network mode; one of 'infrastructure', 'adhoc' or 'ap'.  If blank,
 	 * infrastructure is assumed.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MODE,
 		 g_param_spec_string (NM_SETTING_WIRELESS_MODE,
 						  "Mode",
-						  "WiFi network mode; one of 'infrastructure', "
+						  "Wi-Fi network mode; one of 'infrastructure', "
 						  "'adhoc' or 'ap'.  If blank, infrastructure is assumed.",
 						  NULL,
 						  G_PARAM_READWRITE));
@@ -1062,7 +1062,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * NMSettingWireless:band:
 	 *
 	 * 802.11 frequency band of the network.  One of 'a' for 5GHz 802.11a or
-	 * 'bg' for 2.4GHz 802.11.  This will lock associations to the WiFi network
+	 * 'bg' for 2.4GHz 802.11.  This will lock associations to the Wi-Fi network
 	 * to the specific band, i.e. if 'a' is specified, the device will not
 	 * associate with the same network in the 2.4GHz band even if the network's
 	 * settings are compatible.  This setting depends on specific driver
@@ -1074,7 +1074,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						  "Band",
 						  "802.11 frequency band of the network.  One of 'a' "
 						  "for 5GHz 802.11a or 'bg' for 2.4GHz 802.11.  This "
-						  "will lock associations to the WiFi network to the "
+						  "will lock associations to the Wi-Fi network to the "
 						  "specific band, i.e. if 'a' is specified, the device "
 						  "will not associate with the same network in the "
 						  "2.4GHz band even if the network's settings are "
@@ -1086,8 +1086,8 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:channel:
 	 *
-	 * Wireless channel to use for the WiFi connection.  The device will only
-	 * join (or create for Ad-Hoc networks) a WiFi network on the specified
+	 * Wireless channel to use for the Wi-Fi connection.  The device will only
+	 * join (or create for Ad-Hoc networks) a Wi-Fi network on the specified
 	 * channel.  Because channel numbers overlap between bands, this property
 	 * also requires the 'band' property to be set.
 	 **/
@@ -1095,9 +1095,9 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		(object_class, PROP_CHANNEL,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_CHANNEL,
 						"Channel",
-						"Wireless channel to use for the WiFi connection.  The "
+						"Wireless channel to use for the Wi-Fi connection.  The "
 						"device will only join (or create for Ad-Hoc networks) "
-						"a WiFi network on the specified channel.  Because "
+						"a Wi-Fi network on the specified channel.  Because "
 						"channel numbers overlap between bands, this property "
 						"also requires the 'band' property to be set.",
 						0, G_MAXUINT32, 0,
@@ -1165,7 +1165,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:mac-address:
 	 *
-	 * If specified, this connection will only apply to the WiFi device
+	 * If specified, this connection will only apply to the Wi-Fi device
 	 * whose permanent MAC address matches. This property does not change the MAC address
 	 * of the device (i.e. MAC spoofing).
 	 **/
@@ -1174,7 +1174,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_MAC_ADDRESS,
 							   "Device MAC Address",
 							   "If specified, this connection will only apply to "
-							   "the WiFi device whose permanent MAC address matches.  "
+							   "the Wi-Fi device whose permanent MAC address matches.  "
 							   "This property does not change the MAC address "
 							   "of the device (i.e. MAC spoofing).",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
@@ -1183,14 +1183,14 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:cloned-mac-address:
 	 *
-	 * If specified, request that the Wifi device use this MAC address instead of its
+	 * If specified, request that the Wi-Fi device use this MAC address instead of its
 	 * permanent MAC address.  This is known as MAC cloning or spoofing.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CLONED_MAC_ADDRESS,
 		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
 	                                     "Spoof MAC Address",
-	                                     "If specified, request that the WiFi device use "
+	                                     "If specified, request that the Wi-Fi device use "
 	                                     "this MAC address instead of its permanent MAC address.  "
 	                                     "This is known as MAC cloning or spoofing.",
 	                                     DBUS_TYPE_G_UCHAR_ARRAY,
@@ -1219,7 +1219,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * NMSettingWireless:seen-bssids:
 	 *
 	 * A list of BSSIDs (each BSSID formatted as a MAC address like
-	 * '00:11:22:33:44:55') that have been detected as part of the Wi-FI network.
+	 * '00:11:22:33:44:55') that have been detected as part of the Wi-Fi network.
 	 * NetworkManager internally tracks previously seen BSSIDs. The property is only
 	 * meant for reading and reflects the BSSID list of NetworkManager. The changes you
 	 * make to this property will not be preserved.
@@ -1230,7 +1230,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                             "Seen BSSIDS",
 		                             "A list of BSSIDs (each BSSID formatted as a MAC "
 		                             "address like 00:11:22:33:44:55') that have been "
-		                             "detected as part of the WiFI network. "
+		                             "detected as part of the Wi-Fi network. "
 		                             "NetworkManager internally tracks previously seen "
 		                             "BSSIDs. The property is only meant for reading "
 		                             "and reflects the BSSID list of NetworkManager. "

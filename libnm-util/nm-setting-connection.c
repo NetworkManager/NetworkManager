@@ -1098,7 +1098,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	/**
 	 * NMSettingConnection:id:
 	 *
-	 * A human readable unique idenfier for the connection, like "Work WiFi" or
+	 * A human readable unique idenfier for the connection, like "Work Wi-Fi" or
 	 * "T-Mobile 3G".
 	 **/
 	g_object_class_install_property
@@ -1119,7 +1119,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * never changed as long as the connection still applies to the same
 	 * network.  For example, should not be changed when the
 	 * #NMSettingConnection:id or #NMSettingIP4Config changes, but might need
-	 * to be re-created when the WiFi SSID, mobile broadband network provider,
+	 * to be re-created when the Wi-Fi SSID, mobile broadband network provider,
 	 * or #NMSettingConnection:type changes.
 	 *
 	 * The UUID must be in the format '2815492f-7e56-435e-b2e9-246bd7cdc664'
@@ -1139,7 +1139,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "still applies to the same network.  For example, "
 						  "it should not be changed when the user changes the "
 						  "connection's 'id', but should be recreated when the "
-						  "WiFi SSID, mobile broadband network provider, or the "
+						  "Wi-Fi SSID, mobile broadband network provider, or the "
 						  "connection type changes.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
@@ -1152,7 +1152,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * appropriate type (subject to restrictions imposed by other settings).
 	 *
 	 * For connection types where interface names cannot easily be
-	 * made persistent (e.g. mobile broadband or USB ethernet), this
+	 * made persistent (e.g. mobile broadband or USB Ethernet), this
 	 * property should not be used. Setting this property restricts
 	 * the interfaces a connection can be used with, and if interface
 	 * names change or are reordered the connection may be applied to
@@ -1170,7 +1170,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      "to restrictions imposed by other settings). For "
 		                      "connection types where interface names cannot easily "
 		                      "be made persistent (e.g. mobile broadband or USB "
-		                      "ethernet), this property should not be used. Setting "
+		                      "Ethernet), this property should not be used. Setting "
 		                      "this property restricts the interfaces a connection can "
 		                      "be used with, and if interface names change or are "
 		                      "reordered the connection may be applied to the wrong "
@@ -1183,7 +1183,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * The general hardware type of the device used for the network connection,
 	 * contains the name of the #NMSetting object that describes that hardware
-	 * type's parameters.  For example, for WiFi devices, the name of the
+	 * type's parameters.  For example, for Wi-Fi devices, the name of the
 	 * #NMSettingWireless setting.
 	 **/
 	g_object_class_install_property

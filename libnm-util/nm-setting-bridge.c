@@ -578,7 +578,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	/**
 	 * NMSettingBridge:ageing-time:
 	 *
-	 * The ethernet MAC address aging time, in seconds.
+	 * The Ethernet MAC address aging time, in seconds.
 	 *
 	 * Since: 0.9.8
 	 **/
@@ -586,7 +586,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		 (object_class, PROP_AGEING_TIME,
 		  g_param_spec_uint (NM_SETTING_BRIDGE_AGEING_TIME,
 		                     "AgeingTime",
-		                     "The ethernet MAC address aging time, in seconds.",
+		                     "The Ethernet MAC address aging time, in seconds.",
 		                     0, BR_MAX_AGEING_TIME, 300,
 		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
 }

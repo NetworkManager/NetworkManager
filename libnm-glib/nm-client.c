@@ -590,7 +590,7 @@ activate_nm_not_running (gpointer user_data)
  * @specific_object: (allow-none): the object path of a connection-type-specific
  *   object this activation should use. This parameter is currently ignored for
  *   wired and mobile broadband connections, and the value of %NULL should be used
- *   (ie, no specific object).  For WiFi or WiMAX connections, pass the object
+ *   (ie, no specific object).  For Wi-Fi or WiMAX connections, pass the object
  *   path of a #NMAccessPoint or #NMWimaxNsp owned by @device, which you can
  *   get using nm_object_get_path(), and which will be used to complete the
  *   details of the newly added connection.
@@ -600,7 +600,7 @@ activate_nm_not_running (gpointer user_data)
  * Starts a connection to a particular network using the configuration settings
  * from @connection and the network device @device.  Certain connection types
  * also take a "specific object" which is the object path of a connection-
- * specific object, like an #NMAccessPoint for WiFi connections, or an
+ * specific object, like an #NMAccessPoint for Wi-Fi connections, or an
  * #NMWimaxNsp for WiMAX connections, to which you wish to connect.  If the
  * specific object is not given, NetworkManager can, in some cases, automatically
  * determine which network to connect to given the settings in @connection.
@@ -680,7 +680,7 @@ add_activate_cb (DBusGProxy *proxy,
  * @specific_object: (allow-none): the object path of a connection-type-specific
  *   object this activation should use. This parameter is currently ignored for
  *   wired and mobile broadband connections, and the value of %NULL should be used
- *   (ie, no specific object).  For WiFi or WiMAX connections, pass the object
+ *   (ie, no specific object).  For Wi-Fi or WiMAX connections, pass the object
  *   path of a #NMAccessPoint or #NMWimaxNsp owned by @device, which you can
  *   get using nm_object_get_path(), and which will be used to complete the
  *   details of the newly added connection.

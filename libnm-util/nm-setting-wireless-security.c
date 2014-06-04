@@ -38,17 +38,17 @@
 
 /**
  * SECTION:nm-setting-wireless-security
- * @short_description: Describes connection properties for WiFi networks that
+ * @short_description: Describes connection properties for Wi-Fi networks that
  * use WEP, LEAP, WPA or WPA2/RSN security
  * @include: nm-setting-wireless-security.h
  *
  * The #NMSettingWirelessSecurity object is a #NMSetting subclass that describes
- * properties necessary for connection to encrypted WiFi networks.
+ * properties necessary for connection to encrypted Wi-Fi networks.
  *
  * It's a good idea to read up on wpa_supplicant configuration before using this
  * setting extensively, since most of the options here correspond closely with
  * the relevant wpa_supplicant configuration options.  To get a better overview
- * of how WiFi security works, you may want to get copies of the following books.
+ * of how Wi-Fi security works, you may want to get copies of the following books.
  *
  *  802.11 Wireless Networks: The Definitive Guide, Second Edition
  *       Author: Matthew Gast
@@ -167,7 +167,7 @@ nm_setting_wireless_security_get_key_mgmt (NMSettingWirelessSecurity *setting)
  * @setting: the #NMSettingWirelessSecurity
  *
  * Returns: the number of security protocols this connection allows when
- * connecting to secure WiFi networks
+ * connecting to secure Wi-Fi networks
  **/
 guint32
 nm_setting_wireless_security_get_num_protos (NMSettingWirelessSecurity *setting)
@@ -202,9 +202,9 @@ nm_setting_wireless_security_get_proto (NMSettingWirelessSecurity *setting, guin
  * @setting: the #NMSettingWirelessSecurity
  * @proto: the protocol to add, one of "wpa" or "rsn"
  *
- * Adds a WiFi security protocol (one of "wpa" or "rsn") to the allowed list;
+ * Adds a Wi-Fi security protocol (one of "wpa" or "rsn") to the allowed list;
  * only protocols in this list will be used when finding and connecting to
- * the WiFi network specified by this connection.  For example, if the
+ * the Wi-Fi network specified by this connection.  For example, if the
  * protocol list contains only "wpa" but the access point for the SSID specified
  * by this connection only supports WPA2/RSN, the connection cannot be used
  * with the access point.
@@ -1351,7 +1351,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * Key management used for the connection.  One of 'none' (WEP), 'ieee8021x'
 	 * (Dynamic WEP), 'wpa-none' (Ad-Hoc WPA-PSK), 'wpa-psk' (infrastructure
 	 * WPA-PSK), or 'wpa-eap' (WPA-Enterprise).  This property must be set for
-	 * any WiFi connection that uses security.
+	 * any Wi-Fi connection that uses security.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_KEY_MGMT,
@@ -1361,7 +1361,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "'none' (WEP), 'ieee8021x' (Dynamic WEP), 'wpa-none' "
 						  "(WPA-PSK Ad-Hoc), 'wpa-psk' (infrastructure WPA-PSK), "
 						  "or 'wpa-eap' (WPA-Enterprise).  This property must "
-						  "be set for any WiFi connection that uses security.",
+						  "be set for any Wi-Fi connection that uses security.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_REQUIRED));
 
@@ -1570,7 +1570,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * hexadecimal WPA key.  Otherwise, the key must be between 8 and 63 ASCII
 	 * characters (as specified in the 802.11i standard) and is interpreted as
 	 * a WPA passphrase, and is hashed to derive the actual WPA-PSK used when
-	 * connecting to the WiFi network.
+	 * connecting to the Wi-Fi network.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PSK,
@@ -1583,7 +1583,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "ASCII characters (as specified in the 802.11i standard) "
 						  "and is interpreted as a WPA passphrase, and is hashed "
 						  "to derive the actual WPA-PSK used when connecting to "
-						  "the WiFi network.",
+						  "the Wi-Fi network.",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
 
