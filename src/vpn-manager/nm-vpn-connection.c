@@ -373,15 +373,24 @@ _set_vpn_state (NMVPNConnection *connection,
 		if (   old_vpn_state >= STATE_ACTIVATED
 		    && old_vpn_state <= STATE_DEACTIVATING) {
 			/* Let dispatcher scripts know we're about to go down */
-			nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_DOWN,
-			                        priv->connection,
-			                        parent_dev,
-			                        priv->ip_iface,
-			                        NULL,
-			                        NULL,
-			                        NULL,
-			                        NULL,
-			                        NULL);
+			if (quitting) {
+				nm_dispatcher_call_vpn_sync (DISPATCHER_ACTION_VPN_DOWN,
+				                             priv->connection,
+				                             parent_dev,
+				                             priv->ip_iface,
+				                             NULL,
+				                             NULL);
+			} else {
+				nm_dispatcher_call_vpn (DISPATCHER_ACTION_VPN_DOWN,
+				                        priv->connection,
+				                        parent_dev,
+				                        priv->ip_iface,
+				                        NULL,
+				                        NULL,
+				                        NULL,
+				                        NULL,
+				                        NULL);
+			}
 		}
 
 		/* Tear down and clean up the connection */
