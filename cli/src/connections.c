@@ -30,6 +30,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <netinet/ether.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include <nm-client.h>
 #include <nm-device-ethernet.h>
@@ -62,6 +64,18 @@
 #define EDITOR_PROMPT_SETTING  _("Setting name? ")
 #define EDITOR_PROMPT_PROPERTY _("Property name? ")
 #define EDITOR_PROMPT_CON_TYPE _("Enter connection type: ")
+
+/* define some other prompts */
+#define PROMPT_CON_TYPE    _("Connection type: ")
+#define PROMPT_VPN_TYPE    _("VPN type: ")
+#define PROMPT_BOND_MASTER _("Bond master: ")
+#define PROMPT_TEAM_MASTER _("Team master: ")
+#define PROMPT_BRIDGE_MASTER _("Bridge master: ")
+#define PROMPT_CONNECTION _("Connection (name, UUID, or path): ")
+
+static const char *nmc_known_vpns[] =
+	{ "openvpn", "vpnc", "pptp", "openconnect", "openswan", "libreswan",
+	  "ssh", "l2tp", "iodine", NULL };
 
 /* Available fields for 'connection show' */
 static NmcOutputField nmc_fields_con_show[] = {
@@ -245,7 +259,7 @@ extern GMainLoop *loop;
 static ArgsInfo args_info;
 static guint progress_id = 0;  /* ID of event source for displaying progress */
 
-/* for readline TAB completion */
+/* for readline TAB completion in editor */
 typedef struct {
 	NmCli *nmc;
 	char *con_type;
@@ -253,6 +267,11 @@ typedef struct {
 	NMSetting *setting;
 } TabCompletionInfo;
 static TabCompletionInfo nmc_tab_completion = {NULL, NULL, NULL, NULL};
+
+/* Global variable defined in nmcli.c - used for TAB completion */
+extern NmCli nm_cli;
+
+static char *gen_connection_types (char *text, int state);
 
 static void
 usage (void)
@@ -1945,10 +1964,8 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			line = nmc_get_user_input (_("Connection (name, UUID, or path): "));
+			line = nmc_readline (PROMPT_CONNECTION);
 			name = line ? line : "";
-			// TODO: enhancement:  when just Enter is pressed (line is NULL), list
-			// available connections so that the user can select one
 		}
 	} else if (strcmp (*argv, "ifname") != 0) {
 		if (   strcmp (*argv, "id") == 0
@@ -2057,7 +2074,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			line = nmc_get_user_input (_("Connection (name, UUID, or path): "));
+			line = nmc_readline (PROMPT_CONNECTION);
 			nmc_string_to_arg_array (line, "", &arg_arr, &arg_num);
 			arg_ptr = arg_arr;
 		}
@@ -2562,18 +2579,29 @@ check_infiniband_p_key (const char *p_key, guint32 *p_key_int, GError **error)
 	return TRUE;
 }
 
+/* Checks InfiniBand mode.
+ * It accepts shortcuts and normalizes them ('mode' argument is modified on success).
+ */
 static gboolean
-check_infiniband_mode (const char *mode, GError **error)
+check_infiniband_mode (char *mode, GError **error)
 {
+	char *tmp;
+	const char *checked_mode;
+	const char *modes[] = { "datagram", "connected", NULL };
+
 	if (!mode)
 		return TRUE;
 
-	if (strcmp (mode, "datagram") && strcmp (mode, "connected")) {
+	tmp = g_strstrip (g_strdup (mode));
+	checked_mode = nmc_string_is_valid (tmp, modes, NULL);
+	g_free (tmp);
+	if (checked_mode) {
+		g_free (mode);
+		mode = g_strdup (checked_mode);
+	} else
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("Error: 'mode': '%s' is not a valid InfiniBand transport mode [datagram, connected]."), mode);
-		return FALSE;
-	}
-	return TRUE;
+	return !!checked_mode;
 }
 
 static gboolean
@@ -2808,26 +2836,79 @@ bridge_prop_string_to_uint (const char *str,
 	return TRUE;
 }
 
+#define WORD_YES "yes"
+#define WORD_NO  "no"
+#define WORD_LOC_YES _("yes")
+#define WORD_LOC_NO  _("no")
+static const char *
+prompt_yes_no (gboolean default_yes, char *delim)
+{
+	static char prompt[128] = { 0 };
+
+	if (!delim)
+		delim = "";
+
+	snprintf (prompt, sizeof (prompt), "(%s/%s) [%s]%s ",
+	          WORD_LOC_YES, WORD_LOC_NO,
+	          default_yes ? WORD_LOC_YES : WORD_LOC_NO, delim);
+
+	return prompt;
+}
+
+static void
+normalize_yes_no (char *yes_no)
+{
+	const char *tmp;
+	const char *strv[] = { WORD_LOC_YES, WORD_LOC_NO, NULL };
+
+	if (!yes_no)
+		return;
+
+	g_strstrip (yes_no);
+	tmp = nmc_string_is_valid (yes_no, strv, NULL);
+	if (g_strcmp0 (tmp, WORD_LOC_YES) == 0) {
+		g_free (yes_no);
+		yes_no = g_strdup (WORD_YES);
+	} else if (g_strcmp0 (tmp, WORD_LOC_NO) == 0) {
+		g_free (yes_no);
+		yes_no = g_strdup (WORD_NO);
+	}
+}
+
+static gboolean
+want_provide_opt_args (const char *type, int num)
+{
+	char *answer;
+	gboolean ret = TRUE;
+
+	/* Ask for optional arguments. */
+	printf (ngettext ("There is %d optional argument for '%s' connection type.\n",
+	                  "There are %d optional arguments for '%s' connection type.\n", num),
+	        num, type);
+	answer = nmc_readline (ngettext ("Do you want to provide it? %s",
+	                                 "Do you want to provide them? %s", num),
+	                       prompt_yes_no (TRUE, NULL));
+	answer = answer ? g_strstrip (answer) : NULL;
+	if (answer && matches (answer, WORD_LOC_YES) != 0)
+		ret = FALSE;
+	g_free (answer);
+	return ret;
+}
+
 static void
 do_questionnaire_ethernet (gboolean ethernet, char **mtu, char **mac, char **cloned_mac)
 {
-	char *answer;
-	gboolean answer_bool;
 	gboolean once_more;
 	GError *error = NULL;
 	const char *type = ethernet ? _("ethernet") : _("Wi-Fi");
 
 	/* Ask for optional arguments */
-	printf (_("There are 3 optional arguments for '%s' connection type.\n"), type);;
-	answer = nmc_get_user_input (_("Do you want to provide them? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	if (!want_provide_opt_args (type, 3))
 		return;
-	}
 
 	if (!*mtu) {
 		do {
-			*mtu = nmc_get_user_input (_("MTU [auto]: "));
+			*mtu = nmc_readline (_("MTU [auto]: "));
 			once_more = !check_and_convert_mtu (*mtu, NULL, &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -2838,7 +2919,7 @@ do_questionnaire_ethernet (gboolean ethernet, char **mtu, char **mac, char **clo
 	}
 	if (!*mac) {
 		do {
-			*mac = nmc_get_user_input (_("MAC [none]: "));
+			*mac = nmc_readline (_("MAC [none]: "));
 			once_more = !check_and_convert_mac (*mac, NULL, ARPHRD_ETHER, "mac", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -2849,7 +2930,7 @@ do_questionnaire_ethernet (gboolean ethernet, char **mtu, char **mac, char **clo
 	}
 	if (!*cloned_mac) {
 		do {
-			*cloned_mac = nmc_get_user_input (_("Cloned MAC [none]: "));
+			*cloned_mac = nmc_readline (_("Cloned MAC [none]: "));
 			once_more = !check_and_convert_mac (*cloned_mac, NULL, ARPHRD_ETHER, "cloned-mac", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -2858,30 +2939,24 @@ do_questionnaire_ethernet (gboolean ethernet, char **mtu, char **mac, char **clo
 			}
 		} while (once_more);
 	}
-
-	g_free (answer);
-	return;
 }
 
+#define WORD_DATAGRAM  "datagram"
+#define WORD_CONNECTED "connected"
+#define PROMPT_IB_MODE "(" WORD_DATAGRAM "/" WORD_CONNECTED ") [" WORD_DATAGRAM "]: "
 static void
 do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent, char **p_key)
 {
-	char *answer;
-	gboolean answer_bool;
 	gboolean once_more;
 	GError *error = NULL;
 
 	/* Ask for optional arguments */
-	printf (_("There are 5 optional arguments for 'InfiniBand' connection type.\n"));
-	answer = nmc_get_user_input (_("Do you want to provide them? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	if (!want_provide_opt_args (_("InfiniBand"), 5))
 		return;
-	}
 
 	if (!*mtu) {
 		do {
-			*mtu = nmc_get_user_input (_("MTU [auto]: "));
+			*mtu = nmc_readline (_("MTU [auto]: "));
 			once_more = !check_and_convert_mtu (*mtu, NULL, &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -2892,7 +2967,7 @@ do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent,
 	}
 	if (!*mac) {
 		do {
-			*mac = nmc_get_user_input (_("MAC [none]: "));
+			*mac = nmc_readline (_("MAC [none]: "));
 			once_more = !check_and_convert_mac (*mac, NULL, ARPHRD_INFINIBAND, "mac", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -2903,7 +2978,7 @@ do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent,
 	}
 	if (!*mode) {
 		do {
-			*mode = nmc_get_user_input (_("Transport mode (datagram or connected) [datagram]: "));
+			*mode = nmc_readline (_("Transport mode %s"), PROMPT_IB_MODE);
 			if (!*mode)
 				*mode = g_strdup ("datagram");
 			once_more = !check_infiniband_mode (*mode, &error);
@@ -2916,7 +2991,7 @@ do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent,
 	}
 	if (!*parent) {
 		do {
-			*parent = nmc_get_user_input (_("Parent interface [none]: "));
+			*parent = nmc_readline (_("Parent interface [none]: "));
 			once_more = !check_infiniband_parent (*parent, &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -2927,7 +3002,7 @@ do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent,
 	}
 	if (!*p_key) {
 		do {
-			*p_key = nmc_get_user_input (_("P_KEY [none]: "));
+			*p_key = nmc_readline (_("P_KEY [none]: "));
 			once_more = !check_infiniband_p_key (*p_key, NULL, &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -2941,9 +3016,6 @@ do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent,
 			}
 		} while (once_more);
 	}
-
-	g_free (answer);
-	return;
 }
 
 static void
@@ -2956,22 +3028,16 @@ do_questionnaire_wifi (char **mtu, char **mac, char **cloned_mac)
 static void
 do_questionnaire_wimax (char **mac)
 {
-	char *answer;
-	gboolean answer_bool;
 	gboolean once_more;
 	GError *error = NULL;
 
 	/* Ask for optional 'wimax' arguments. */
-	printf (_("There is 1 optional argument for 'WiMax' connection type.\n"));
-	answer = nmc_get_user_input (_("Do you want to provide it? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	if (!want_provide_opt_args (_("WiMAX"), 1))
 		return;
-	}
 
 	if (!*mac) {
 		do {
-			*mac = nmc_get_user_input (_("MAC [none]: "));
+			*mac = nmc_readline (_("MAC [none]: "));
 			once_more = !check_and_convert_mac (*mac, NULL, ARPHRD_ETHER, "mac", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -2980,35 +3046,26 @@ do_questionnaire_wimax (char **mac)
 			}
 		} while (once_more);
 	}
-
-	g_free (answer);
-	return;
 }
 
 static void
 do_questionnaire_pppoe (char **password, char **service, char **mtu, char **mac)
 {
-	char *answer;
-	gboolean answer_bool;
 	gboolean once_more;
 	GError *error = NULL;
 
 	/* Ask for optional 'pppoe' arguments. */
-	printf (_("There are 4 optional arguments for 'PPPoE' connection type.\n"));
-	answer = nmc_get_user_input (_("Do you want to provide them? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	if (!want_provide_opt_args (_("PPPoE"), 4))
 		return;
-	}
 
 	if (!*password)
-		*password = nmc_get_user_input (_("Password [none]: "));
+		*password = nmc_readline (_("Password [none]: "));
 	if (!*service)
-		*service = nmc_get_user_input (_("Service [none]: "));
+		*service = nmc_readline (_("Service [none]: "));
 
 	if (!*mtu) {
 		do {
-			*mtu = nmc_get_user_input (_("MTU [auto]: "));
+			*mtu = nmc_readline (_("MTU [auto]: "));
 			once_more = !check_and_convert_mtu (*mtu, NULL, &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -3019,7 +3076,7 @@ do_questionnaire_pppoe (char **password, char **service, char **mtu, char **mac)
 	}
 	if (!*mac) {
 		do {
-			*mac = nmc_get_user_input (_("MAC [none]: "));
+			*mac = nmc_readline (_("MAC [none]: "));
 			once_more = !check_and_convert_mac (*mac, NULL, ARPHRD_ETHER, "mac", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -3028,88 +3085,66 @@ do_questionnaire_pppoe (char **password, char **service, char **mtu, char **mac)
 			}
 		} while (once_more);
 	}
-
-	g_free (answer);
-	return;
 }
 
 static void
 do_questionnaire_mobile (char **user, char **password)
 {
-	char *answer;
-	gboolean answer_bool;
-
 	/* Ask for optional 'gsm' or 'cdma' arguments. */
-	printf (_("There are 2 optional arguments for 'mobile broadband' connection type.\n"));
-	answer = nmc_get_user_input (_("Do you want to provide them? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	if (!want_provide_opt_args (_("mobile broadband"), 2))
 		return;
-	}
 
 	if (!*user)
-		*user = nmc_get_user_input (_("Username [none]: "));
+		*user = nmc_readline (_("Username [none]: "));
 	if (!*password)
-		*password = nmc_get_user_input (_("Password [none]: "));
-
-	g_free (answer);
-	return;
+		*password = nmc_readline (_("Password [none]: "));
 }
 
+#define WORD_PANU      "panu"
+#define WORD_DUN_GSM   "dun-gsm"
+#define WORD_DUN_CDMA  "dun-cdma"
+#define PROMPT_BT_TYPE "(" WORD_PANU "/" WORD_DUN_GSM "/" WORD_DUN_CDMA ") [" WORD_PANU "]: "
 static void
 do_questionnaire_bluetooth (char **bt_type)
 {
-	char *answer;
-	gboolean answer_bool;
 	gboolean once_more;
 
 	/* Ask for optional 'bluetooth' arguments. */
-	printf (_("There is 1 optional argument for 'bluetooth' connection type.\n"));
-	answer = nmc_get_user_input (_("Do you want to provide it? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	if (!want_provide_opt_args (_("bluetooth"), 1))
 		return;
-	}
 
 	if (!*bt_type) {
+		const char *types[] = { "dun", "dun-gsm", "dun-cdma", "panu", NULL };
+		const char *tmp;
 		do {
-			*bt_type = nmc_get_user_input (_("Bluetooth type (panu, dun-gsm or dun-cdma) [panu]: "));
+			*bt_type = nmc_readline (_("Bluetooth type %s"), PROMPT_BT_TYPE);
 			if (!*bt_type)
 				*bt_type = g_strdup ("panu");
-			once_more =    strcmp (*bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN)
-			            && strcmp (*bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN"-gsm")
-			            && strcmp (*bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN"-cdma")
-			            && strcmp (*bt_type, NM_SETTING_BLUETOOTH_TYPE_PANU);
+			tmp = nmc_string_is_valid (*bt_type, types, NULL);
+			once_more = !tmp;
 			if (once_more) {
 				printf (_("Error: 'bt-type': '%s' is not a valid bluetooth type.\n"), *bt_type);
 				g_free (*bt_type);
 			}
 		} while (once_more);
+		g_free (*bt_type);
+		*bt_type = g_strdup (tmp);
 	}
-
-	g_free (answer);
-	return;
 }
 
 static void
 do_questionnaire_vlan (char **mtu, char **flags, char **ingress, char **egress)
 {
-	char *answer;
-	gboolean answer_bool;
 	gboolean once_more;
 	GError *error = NULL;
 
 	/* Ask for optional 'vlan' arguments. */
-	printf (_("There are 4 optional arguments for 'VLAN' connection type.\n"));
-	answer = nmc_get_user_input (_("Do you want to provide them? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	if (!want_provide_opt_args (_("VLAN"), 4))
 		return;
-	}
 
 	if (!*mtu) {
 		do {
-			*mtu = nmc_get_user_input (_("MTU [auto]: "));
+			*mtu = nmc_readline (_("MTU [auto]: "));
 			once_more = !check_and_convert_mtu (*mtu, NULL, &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -3120,7 +3155,7 @@ do_questionnaire_vlan (char **mtu, char **flags, char **ingress, char **egress)
 	}
 	if (!*flags) {
 		do {
-			*flags = nmc_get_user_input (_("VLAN flags (<0-7>) [none]: "));
+			*flags = nmc_readline (_("VLAN flags (<0-7>) [none]: "));
 			once_more = !check_and_convert_vlan_flags (*flags, NULL, &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -3131,7 +3166,7 @@ do_questionnaire_vlan (char **mtu, char **flags, char **ingress, char **egress)
 	}
 	if (!*ingress) {
 		do {
-			*ingress = nmc_get_user_input (_("Ingress priority maps [none]: "));
+			*ingress = nmc_readline (_("Ingress priority maps [none]: "));
 			once_more = !check_and_convert_vlan_prio_maps (*ingress, NM_VLAN_INGRESS_MAP, NULL, &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -3142,7 +3177,7 @@ do_questionnaire_vlan (char **mtu, char **flags, char **ingress, char **egress)
 	}
 	if (!*egress) {
 		do {
-			*egress = nmc_get_user_input (_("Egress priority maps [none]: "));
+			*egress = nmc_readline (_("Egress priority maps [none]: "));
 			once_more = !check_and_convert_vlan_prio_maps (*egress, NM_VLAN_EGRESS_MAP, NULL, &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -3151,34 +3186,30 @@ do_questionnaire_vlan (char **mtu, char **flags, char **ingress, char **egress)
 			}
 		} while (once_more);
 	}
-
-	g_free (answer);
-	return;
 }
 
+#define PROMPT_BOND_MODE _("Bonding mode [balance-rr]: ")
+#define WORD_MIIMON "miimon"
+#define WORD_ARP    "arp"
+#define PROMPT_BOND_MON_MODE "(" WORD_MIIMON "/" WORD_ARP ") [" WORD_MIIMON "]: "
 static void
 do_questionnaire_bond (char **mode, char **primary, char **miimon,
                        char **downdelay, char **updelay,
                        char **arpinterval, char **arpiptarget)
 {
-	char *answer, *monitor_mode;
-	gboolean answer_bool;
+	char *monitor_mode;
 	unsigned long tmp;
 	gboolean once_more;
 	GError *error = NULL;
 
 	/* Ask for optional 'bond' arguments. */
-	printf (_("There are optional arguments for 'bond' connection type.\n"));
-	answer = nmc_get_user_input (_("Do you want to provide them? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	if (!want_provide_opt_args (_("bond"), 7))
 		return;
-	}
 
 	if (!*mode) {
 		const char *mode_tmp;
 		do {
-			*mode = nmc_get_user_input (_("Bonding mode [balance-rr]: "));
+			*mode = nmc_readline (PROMPT_BOND_MODE);
 			if (!*mode)
 				*mode = g_strdup ("balance-rr");
 			mode_tmp = nmc_bond_validate_mode (*mode, &error);
@@ -3194,7 +3225,7 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 
 	if (g_strcmp0 (*mode, "active-backup") == 0 && !*primary) {
 		do {
-			*primary = nmc_get_user_input (_("Bonding primary interface [none]: "));
+			*primary = nmc_readline (_("Bonding primary interface [none]: "));
 			once_more = *primary && !nm_utils_iface_valid_name (*primary);
 			if (once_more) {
 				printf (_("Error: 'primary': '%s' is not a valid interface name.\n"),
@@ -3205,21 +3236,22 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 	}
 
 	do {
-		monitor_mode = nmc_get_user_input (_("Bonding monitoring mode (miimon or arp) [miimon]: "));
+		monitor_mode = nmc_readline (_("Bonding monitoring mode %s"), PROMPT_BOND_MON_MODE);
 		if (!monitor_mode)
-			monitor_mode = g_strdup ("miimon");
-		once_more = strcmp (monitor_mode, "miimon") && strcmp (monitor_mode, "arp");
+			monitor_mode = g_strdup (WORD_MIIMON);
+		g_strstrip (monitor_mode);
+		once_more = matches (monitor_mode, WORD_MIIMON) != 0 && matches (monitor_mode, WORD_ARP) != 0;
 		if (once_more) {
 			printf (_("Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"),
-			        monitor_mode, "miimon", "arp");
+			        monitor_mode, WORD_MIIMON, WORD_ARP);
 			g_free (monitor_mode);
 		}
 	} while (once_more);
 
-	if (strcmp (monitor_mode, "miimon") == 0) {
+	if (matches (monitor_mode, WORD_MIIMON) == 0) {
 		if (!*miimon) {
 			do {
-				*miimon = nmc_get_user_input (_("Bonding miimon [100]: "));
+				*miimon = nmc_readline (_("Bonding miimon [100]: "));
 				once_more = *miimon && !nmc_string_to_uint (*miimon, TRUE, 0, G_MAXUINT32, &tmp);
 				if (once_more) {
 					printf (_("Error: 'miimon': '%s' is not a valid number <0-%u>.\n"),
@@ -3230,7 +3262,7 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 		}
 		if (!*downdelay) {
 			do {
-				*downdelay = nmc_get_user_input (_("Bonding downdelay [0]: "));
+				*downdelay = nmc_readline (_("Bonding downdelay [0]: "));
 				once_more = *downdelay && !nmc_string_to_uint (*downdelay, TRUE, 0, G_MAXUINT32, &tmp);
 				if (once_more) {
 					printf (_("Error: 'downdelay': '%s' is not a valid number <0-%u>.\n"),
@@ -3241,7 +3273,7 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 		}
 		if (!*updelay) {
 			do {
-				*updelay = nmc_get_user_input (_("Bonding updelay [0]: "));
+				*updelay = nmc_readline (_("Bonding updelay [0]: "));
 				once_more = *updelay && !nmc_string_to_uint (*updelay, TRUE, 0, G_MAXUINT32, &tmp);
 				if (once_more) {
 					printf (_("Error: 'updelay': '%s' is not a valid number <0-%u>.\n"),
@@ -3253,7 +3285,7 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 	} else {
 		if (!*arpinterval) {
 			do {
-				*arpinterval = nmc_get_user_input (_("Bonding arp-interval [0]: "));
+				*arpinterval = nmc_readline (_("Bonding arp-interval [0]: "));
 				once_more = *arpinterval && !nmc_string_to_uint (*arpinterval, TRUE, 0, G_MAXUINT32, &tmp);
 				if (once_more) {
 					printf (_("Error: 'arp-interval': '%s' is not a valid number <0-%u>.\n"),
@@ -3264,35 +3296,27 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 		}
 		if (!*arpiptarget) {
 			//FIXME: verify the string
-			*arpiptarget = nmc_get_user_input (_("Bonding arp-ip-target [none]: "));
+			*arpiptarget = nmc_readline (_("Bonding arp-ip-target [none]: "));
 		}
 	}
 
-	g_free (answer);
 	g_free (monitor_mode);
-	return;
 }
 
 static void
 do_questionnaire_team_common (const char *type_name, char **config)
 {
-	char *answer;
-	gboolean answer_bool;
 	gboolean once_more;
 	char *json = NULL;
 	GError *error = NULL;
 
-	/* Ask for optional 'team' arguments. */
-	printf (_("There is 1 optional argument for '%s' connection type.\n"), type_name);
-	answer = nmc_get_user_input (_("Do you want to provide it? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	/* Ask for optional arguments. */
+	if (!want_provide_opt_args (type_name, 1))
 		return;
-	}
 
 	if (!*config) {
 		do {
-			*config = nmc_get_user_input (_("Team JSON configuration [none]: "));
+			*config = nmc_readline (_("Team JSON configuration [none]: "));
 			once_more = !nmc_team_check_config (*config, &json, &error);
 			if (once_more) {
 				printf ("Error: %s\n", error->message);
@@ -3303,8 +3327,6 @@ do_questionnaire_team_common (const char *type_name, char **config)
 	}
 
 	*config = json;
-	g_free (answer);
-	return;
 }
 
 /* Both team and team-slave curently have just ithe same one optional argument */
@@ -3324,28 +3346,23 @@ static void
 do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **hello_time,
                          char **max_age, char **ageing_time, char **mac)
 {
-	char *answer;
-	gboolean answer_bool;
 	unsigned long tmp;
 	gboolean once_more;
 	GError *error = NULL;
 
 	/* Ask for optional 'bridge' arguments. */
-	printf (_("There are 7 optional arguments for 'bridge' connection type.\n"));
-	answer = nmc_get_user_input (_("Do you want to provide them? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	if (!want_provide_opt_args (_("bridge"), 7))
 		return;
-	}
 
 	if (!*stp) {
 		gboolean stp_bool;
 		do {
-			*stp = nmc_get_user_input (_("Enable STP (yes/no) [yes]: "));
+			*stp = nmc_readline (_("Enable STP %s"), prompt_yes_no (TRUE, ":"));
 			*stp = *stp ? *stp : g_strdup ("yes");
+			normalize_yes_no (*stp);
 			once_more = !nmc_string_to_bool (*stp, &stp_bool, &error);
 			if (once_more) {
-				printf (_("Error: 'stp': '%s'.\n"), error->message);
+				printf (_("Error: 'stp': %s.\n"), error->message);
 				g_clear_error (&error);
 				g_free (*stp);
 			}
@@ -3353,7 +3370,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 	}
 	if (!*priority) {
 		do {
-			*priority = nmc_get_user_input (_("STP priority [32768]: "));
+			*priority = nmc_readline (_("STP priority [32768]: "));
 			*priority = *priority ? *priority : g_strdup ("32768");
 			once_more = !nmc_string_to_uint (*priority, TRUE, 0, G_MAXUINT16, &tmp);
 			if (once_more) {
@@ -3365,7 +3382,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 	}
 	if (!*fwd_delay) {
 		do {
-			*fwd_delay = nmc_get_user_input (_("Forward delay [15]: "));
+			*fwd_delay = nmc_readline (_("Forward delay [15]: "));
 			*fwd_delay = *fwd_delay ? *fwd_delay : g_strdup ("15");
 			once_more = !nmc_string_to_uint (*fwd_delay, TRUE, 2, 30, &tmp);
 			if (once_more) {
@@ -3378,7 +3395,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 
 	if (!*hello_time) {
 		do {
-			*hello_time = nmc_get_user_input (_("Hello time [2]: "));
+			*hello_time = nmc_readline (_("Hello time [2]: "));
 			*hello_time = *hello_time ? *hello_time : g_strdup ("2");
 			once_more = !nmc_string_to_uint (*hello_time, TRUE, 1, 10, &tmp);
 			if (once_more) {
@@ -3390,7 +3407,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 	}
 	if (!*max_age) {
 		do {
-			*max_age = nmc_get_user_input (_("Max age [20]: "));
+			*max_age = nmc_readline (_("Max age [20]: "));
 			*max_age = *max_age ? *max_age : g_strdup ("20");
 			once_more = !nmc_string_to_uint (*max_age, TRUE, 6, 40, &tmp);
 			if (once_more) {
@@ -3402,7 +3419,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 	}
 	if (!*ageing_time) {
 		do {
-			*ageing_time = nmc_get_user_input (_("MAC address ageing time [300]: "));
+			*ageing_time = nmc_readline (_("MAC address ageing time [300]: "));
 			*ageing_time = *ageing_time ? *ageing_time : g_strdup ("300");
 			once_more = !nmc_string_to_uint (*ageing_time, TRUE, 0, 1000000, &tmp);
 			if (once_more) {
@@ -3423,31 +3440,22 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 			}
 		} while (once_more);
 	}
-
-	g_free (answer);
-	return;
 }
 
 static void
 do_questionnaire_bridge_slave (char **priority, char **path_cost, char **hairpin)
 {
-	char *answer;
-	gboolean answer_bool;
 	unsigned long tmp;
 	gboolean once_more;
 	GError *error = NULL;
 
 	/* Ask for optional 'bridge-slave' arguments. */
-	printf (_("There are 3 optional arguments for 'bridge-slave' connection type.\n"));
-	answer = nmc_get_user_input (_("Do you want to provide them? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	if (!want_provide_opt_args (_("bridge-slave"), 3))
 		return;
-	}
 
 	if (!*priority) {
 		do {
-			*priority = nmc_get_user_input (_("Bridge port priority [32]: "));
+			*priority = nmc_readline (_("Bridge port priority [32]: "));
 			*priority = *priority ? *priority : g_strdup ("32");
 			once_more = !bridge_prop_string_to_uint (*priority, "priority", NM_TYPE_SETTING_BRIDGE_PORT,
 			                                         NM_SETTING_BRIDGE_PORT_PRIORITY, &tmp, &error);
@@ -3460,7 +3468,7 @@ do_questionnaire_bridge_slave (char **priority, char **path_cost, char **hairpin
 	}
 	if (!*path_cost) {
 		do {
-			*path_cost = nmc_get_user_input (_("Bridge port STP path cost [100]: "));
+			*path_cost = nmc_readline (_("Bridge port STP path cost [100]: "));
 			*path_cost = *path_cost ? *path_cost : g_strdup ("100");
 			once_more = !bridge_prop_string_to_uint (*path_cost, "path-cost", NM_TYPE_SETTING_BRIDGE_PORT,
 			                                         NM_SETTING_BRIDGE_PORT_PATH_COST, &tmp, &error);
@@ -3474,62 +3482,44 @@ do_questionnaire_bridge_slave (char **priority, char **path_cost, char **hairpin
 	if (!*hairpin) {
 		gboolean hairpin_bool;
 		do {
-			*hairpin = nmc_get_user_input (_("Hairpin (yes/no) [yes]: "));
+			*hairpin = nmc_readline (_("Hairpin %s"), prompt_yes_no (TRUE, ":"));
 			*hairpin = *hairpin ? *hairpin : g_strdup ("yes");
+			normalize_yes_no (*hairpin);
 			once_more = !nmc_string_to_bool (*hairpin, &hairpin_bool, &error);
 			if (once_more) {
-				printf (_("Error: 'hairpin': '%s'.\n"), error->message);
+				printf (_("Error: 'hairpin': %s.\n"), error->message);
 				g_clear_error (&error);
 				g_free (*hairpin);
 			}
 		} while (once_more);
 	}
-
-	g_free (answer);
-	return;
 }
 
 static void
 do_questionnaire_vpn (char **user)
 {
-	char *answer;
-	gboolean answer_bool;
-
 	/* Ask for optional 'vpn' arguments. */
-	printf (_("There is 1 optional argument for 'VPN' connection type.\n"));
-	answer = nmc_get_user_input (_("Do you want to provide it? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	if (!want_provide_opt_args (_("VPN"), 1))
 		return;
-	}
 
 	if (!*user)
-		*user = nmc_get_user_input (_("Username [none]: "));
-
-	g_free (answer);
-	return;
+		*user = nmc_readline (_("Username [none]: "));
 }
 
 static void
 do_questionnaire_olpc (char **channel, char **dhcp_anycast)
 {
-	char *answer;
-	gboolean answer_bool;
 	unsigned long tmp;
 	gboolean once_more;
 	GError *error = NULL;
 
 	/* Ask for optional 'olpc' arguments. */
-	printf (_("There are 2 optional arguments for 'OLPC Mesh' connection type.\n"));
-	answer = nmc_get_user_input (_("Do you want to provide them? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
-		g_free (answer);
+	if (!want_provide_opt_args (_("OLPC Mesh"), 2))
 		return;
-	}
 
 	if (!*channel) {
 		do {
-			*channel = nmc_get_user_input (_("OLPC Mesh channel [1]: "));
+			*channel = nmc_readline (_("OLPC Mesh channel [1]: "));
 			once_more = *channel && !nmc_string_to_uint (*channel, TRUE, 1, 13, &tmp);
 			if (once_more) {
 				printf (_("Error: 'channel': '%s' is not a valid number <1-13>.\n"),
@@ -3540,7 +3530,7 @@ do_questionnaire_olpc (char **channel, char **dhcp_anycast)
 	}
 	if (!*dhcp_anycast) {
 		do {
-			*dhcp_anycast = nmc_get_user_input (_("DHCP anycast MAC address [none]: "));
+			*dhcp_anycast = nmc_readline (_("DHCP anycast MAC address [none]: "));
 			once_more = !check_and_convert_mac (*dhcp_anycast, NULL, ARPHRD_ETHER, "dhcp-anycast", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
@@ -3549,9 +3539,6 @@ do_questionnaire_olpc (char **channel, char **dhcp_anycast)
 			}
 		} while (once_more);
 	}
-
-	g_free (answer);
-	return;
 }
 
 static gboolean
@@ -3594,7 +3581,7 @@ ask_for_ip_addresses (NMConnection *connection, int family)
 
 	ip_loop = TRUE;
 	do {
-		str = nmc_get_user_input (prompt);
+		str = nmc_readline ("%s", prompt);
 		split_address (str, &ip, &gw, &rest);
 		if (ip) {
 			if (family == 4)
@@ -3629,11 +3616,11 @@ static void
 do_questionnaire_ip (NMConnection *connection)
 {
 	char *answer;
-	gboolean answer_bool;
 
 	/* Ask for IP addresses */
-	answer = nmc_get_user_input (_("Do you want to add IP addresses? (yes/no) [yes] "));
-	if (answer && (!nmc_string_to_bool (answer, &answer_bool, NULL) || !answer_bool)) {
+	answer = nmc_readline (_("Do you want to add IP addresses? %s"), prompt_yes_no (TRUE, NULL));
+	answer = answer ? g_strstrip (answer) : NULL;
+	if (answer && matches (answer, WORD_LOC_YES) != 0) {
 		g_free (answer);
 		return;
 	}
@@ -3840,7 +3827,7 @@ cleanup_ib:
 			return FALSE;
 
 		if (!ssid && ask)
-			ssid = ssid_ask = nmc_get_user_input (_("SSID: "));
+			ssid = ssid_ask = nmc_readline (_("SSID: "));
 		if (!ssid) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'ssid' is required."));
@@ -3907,7 +3894,7 @@ cleanup_wifi:
 			return FALSE;
 
 		if (!nsp_name && ask)
-			nsp_name = nsp_name_ask = nmc_get_user_input (_("WiMAX NSP name: "));
+			nsp_name = nsp_name_ask = nmc_readline (_("WiMAX NSP name: "));
 		if (!nsp_name) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'nsp' is required."));
@@ -3965,7 +3952,7 @@ cleanup_wimax:
 			return FALSE;
 
 		if (!username && ask)
-			username = username_ask = nmc_get_user_input (_("PPPoE username: "));
+			username = username_ask = nmc_readline (_("PPPoE username: "));
 		if (!username) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'username' is required."));
@@ -4039,7 +4026,7 @@ cleanup_pppoe:
 			return FALSE;
 
 		if (!apn && ask && is_gsm)
-			apn = apn_ask = nmc_get_user_input (_("APN: "));
+			apn = apn_ask = nmc_readline (_("APN: "));
 		if (!apn && is_gsm) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'apn' is required."));
@@ -4101,7 +4088,7 @@ cleanup_mobile:
 			return FALSE;
 
 		if (!addr && ask)
-			addr = addr_ask = nmc_get_user_input (_("Bluetooth device address: "));
+			addr = addr_ask = nmc_readline (_("Bluetooth device address: "));
 		if (!addr) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'addr' is required."));
@@ -4192,14 +4179,14 @@ cleanup_bt:
 			return FALSE;
 
 		if (!parent && ask)
-			parent = parent_ask = nmc_get_user_input (_("VLAN parent device or connection UUID: "));
+			parent = parent_ask = nmc_readline (_("VLAN parent device or connection UUID: "));
 		if (!parent) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'dev' is required."));
 			return FALSE;
 		}
 		if (!vlan_id && ask)
-			vlan_id = vlan_id_ask = nmc_get_user_input (_("VLAN ID <0-4095>: "));
+			vlan_id = vlan_id_ask = nmc_readline (_("VLAN ID <0-4095>: "));
 		if (!vlan_id) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'id' is required."));
@@ -4402,11 +4389,14 @@ cleanup_bond:
 		                         {"type",   TRUE, &type,   FALSE},
 		                         {NULL} };
 
+		/* Set global variables for use in TAB completion */
+		nmc_tab_completion.con_type = NM_SETTING_BOND_SETTING_NAME;
+
 		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
 			return FALSE;
 
 		if (!master && ask)
-			master = master_ask = nmc_get_user_input (_("Bond master: "));
+			master = master_ask = nmc_readline (PROMPT_BOND_MASTER);
 		if (!master) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'master' is required."));
@@ -4499,11 +4489,14 @@ cleanup_team:
 		                         {"config", TRUE, &config_c, FALSE},
 		                         {NULL} };
 
+		/* Set global variables for use in TAB completion */
+		nmc_tab_completion.con_type = NM_SETTING_TEAM_SETTING_NAME;
+
 		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
 			return FALSE;
 
 		if (!master && ask)
-			master = master_ask = nmc_get_user_input (_("Team master: "));
+			master = master_ask = nmc_readline (PROMPT_TEAM_MASTER);
 		if (!master) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'master' is required."));
@@ -4703,11 +4696,14 @@ cleanup_bridge:
 		                         {"hairpin",   TRUE, &hairpin_c,   FALSE},
 		                         {NULL} };
 
+		/* Set global variables for use in TAB completion */
+		nmc_tab_completion.con_type = NM_SETTING_BRIDGE_SETTING_NAME;
+
 		if (!nmc_parse_args (exp_args, TRUE, &argc, &argv, error))
 			return FALSE;
 
 		if (!master && ask)
-			master = master_ask = nmc_get_user_input (_("Bridge master: "));
+			master = master_ask = nmc_readline (PROMPT_BRIDGE_MASTER);
 		if (!master) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'master' is required."));
@@ -4782,8 +4778,6 @@ cleanup_bridge_slave:
 	} else if (!strcmp (con_type, NM_SETTING_VPN_SETTING_NAME)) {
 		/* Build up the settings required for 'vpn' */
 		gboolean success = FALSE;
-		const char *known_vpns[] = { "openvpn", "vpnc", "pptp", "openconnect", "openswan", "libreswan",
-		                             "ssh", "l2tp", "iodine", NULL };
 		const char *vpn_type = NULL;
 		char *vpn_type_ask = NULL;
 		const char *user_c = NULL;
@@ -4798,14 +4792,15 @@ cleanup_bridge_slave:
 			return FALSE;
 
 		if (!vpn_type && ask)
-			vpn_type = vpn_type_ask = nmc_get_user_input (_("VPN type: "));
+			vpn_type = vpn_type_ask = nmc_readline (PROMPT_VPN_TYPE);
 		if (!vpn_type) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'vpn-type' is required."));
 			goto cleanup_vpn;
 		}
+		vpn_type = g_strstrip (vpn_type_ask);
 
-		if (!(st = nmc_string_is_valid (vpn_type, known_vpns, NULL))) {
+		if (!(st = nmc_string_is_valid (vpn_type, nmc_known_vpns, NULL))) {
 			printf (_("Warning: 'vpn-type': %s not known.\n"), vpn_type);
 			st = vpn_type;
 		}
@@ -4852,7 +4847,7 @@ cleanup_vpn:
 			return FALSE;
 
 		if (!ssid && ask)
-			ssid = ssid_ask = nmc_get_user_input (_("SSID: "));
+			ssid = ssid_ask = nmc_readline (_("SSID: "));
 		if (!ssid) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: 'ssid' is required."));
@@ -5040,6 +5035,140 @@ update_connection (gboolean persistent,
 		nm_remote_connection_commit_changes_unsaved (connection, callback, user_data);
 }
 
+static char *
+gen_func_vpn_types (char *text, int state)
+{
+	return nmc_rl_gen_func_basic (text, state, nmc_known_vpns);
+}
+
+static char *
+gen_func_bool_values_l10n (char *text, int state)
+{
+	const char *words[] = { WORD_LOC_YES, WORD_LOC_NO, NULL };
+	return nmc_rl_gen_func_basic (text, state, words);
+}
+
+static char *
+gen_func_ib_type (char *text, int state)
+{
+	const char *words[] = { "datagram", "connected", NULL };
+	return nmc_rl_gen_func_basic (text, state, words);
+}
+
+static char *
+gen_func_bt_type (char *text, int state)
+{
+	const char *words[] = { "panu", "dun-gsm", "dun-cdma", NULL };
+	return nmc_rl_gen_func_basic (text, state, words);
+}
+
+static char *
+gen_func_bond_mode (char *text, int state)
+{
+	const char *words[] = { "balance-rr", "active-backup", "balance-xor", "broadcast",
+	                        "802.3ad", "balance-tlb", "balance-alb", NULL };
+	return nmc_rl_gen_func_basic (text, state, words);
+}
+static char *
+gen_func_bond_mon_mode (char *text, int state)
+{
+	const char *words[] = { "miimon", "arp", NULL };
+	return nmc_rl_gen_func_basic (text, state, words);
+}
+
+static char *
+gen_func_master_ifnames (char *text, int state)
+{
+	GSList *iter;
+	GPtrArray *ifnames;
+	char *ret;
+	NMConnection *con;
+	NMSettingConnection *s_con;
+	const char *con_type, *ifname;
+
+	if (!nm_cli.system_connections)
+		return NULL;
+
+	/* Disable appending space after completion */
+	rl_completion_append_character = '\0';
+
+	ifnames = g_ptr_array_sized_new (20);
+	for (iter = nm_cli.system_connections; iter; iter = g_slist_next (iter)) {
+		con = NM_CONNECTION (iter->data);
+		s_con = nm_connection_get_setting_connection (con);
+		g_assert (s_con);
+		con_type = nm_setting_connection_get_connection_type (s_con);
+		if (g_strcmp0 (con_type, nmc_tab_completion.con_type) != 0)
+			continue;
+		ifname = nm_connection_get_virtual_iface_name (con);
+		g_ptr_array_add (ifnames, (gpointer) ifname);
+	}
+	g_ptr_array_add (ifnames, (gpointer) NULL);
+
+	ret = nmc_rl_gen_func_basic (text, state, (const char **) ifnames->pdata);
+
+	g_ptr_array_free (ifnames, TRUE);
+	return ret;
+}
+
+static gboolean
+is_single_word (const char* line)
+{
+	size_t n1, n2, n3;
+
+	n1 = strspn  (line,    " \t");
+	n2 = strcspn (line+n1, " \t\0") + n1;
+	n3 = strspn  (line+n2, " \t");
+
+	if (n3 == 0)
+		return TRUE;
+	else
+		return FALSE;
+}
+
+static char **
+nmcli_con_add_tab_completion (char *text, int start, int end)
+{
+	char **match_array = NULL;
+	CPFunction *generator_func = NULL;
+
+	/* Disable readline's default filename completion */
+	rl_attempted_completion_over = 1;
+
+	/* Restore standard append character to space */
+	rl_completion_append_character = ' ';
+
+	if (!is_single_word (rl_line_buffer))
+		return NULL;
+
+	if (g_strcmp0 (rl_prompt, PROMPT_CON_TYPE) == 0)
+		generator_func = gen_connection_types;
+	else if (g_strcmp0 (rl_prompt, PROMPT_VPN_TYPE) == 0)
+		generator_func = gen_func_vpn_types;
+	else if (   g_strcmp0 (rl_prompt, PROMPT_BOND_MASTER) == 0
+	         || g_strcmp0 (rl_prompt, PROMPT_TEAM_MASTER) == 0
+	         || g_strcmp0 (rl_prompt, PROMPT_BRIDGE_MASTER) == 0)
+		generator_func = gen_func_master_ifnames;
+	else if (   g_str_has_suffix (rl_prompt, prompt_yes_no (TRUE, NULL))
+	         || g_str_has_suffix (rl_prompt, prompt_yes_no (TRUE, ":"))
+	         || g_str_has_suffix (rl_prompt, prompt_yes_no (FALSE, NULL))
+	         || g_str_has_suffix (rl_prompt, prompt_yes_no (FALSE, ":")))
+		generator_func = gen_func_bool_values_l10n;
+	else if (g_str_has_suffix (rl_prompt, PROMPT_IB_MODE))
+		generator_func = gen_func_ib_type;
+	else if (g_str_has_suffix (rl_prompt, PROMPT_BT_TYPE))
+		generator_func = gen_func_bt_type;
+	else if (g_str_has_prefix (rl_prompt, PROMPT_BOND_MODE))
+		generator_func = gen_func_bond_mode;
+	else if (g_str_has_suffix (rl_prompt, PROMPT_BOND_MON_MODE))
+		generator_func = gen_func_bond_mon_mode;
+
+	if (generator_func)
+		match_array = rl_completion_matches (text, generator_func);
+
+	return match_array;
+}
+
 static NMCResultCode
 do_connection_add (NmCli *nmc, int argc, char **argv)
 {
@@ -5067,6 +5196,8 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	                         {"save",        TRUE, &save,        FALSE},
 	                         {NULL} };
 
+	rl_attempted_completion_function = (CPPFunction *) nmcli_con_add_tab_completion;
+
 	nmc->return_value = NMC_RESULT_SUCCESS;
 
 	if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, &error)) {
@@ -5079,7 +5210,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	if (!type && nmc->ask) {
 		char *types_tmp = get_valid_options_string (nmc_valid_connection_types);
 		printf ("Valid types: [%s]\n", types_tmp);
-		type = type_ask = nmc_get_user_input (_("Connection type: "));
+		type = type_ask = nmc_readline (PROMPT_CON_TYPE);
 		g_free (types_tmp);
 	}
 	if (!type) {
@@ -5087,6 +5218,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
+	type = g_strstrip (type_ask);
 
 	if (!(setting_name = check_valid_name (type, nmc_valid_connection_types, &error))) {
 		g_string_printf (nmc->return_text, _("Error: invalid connection type; %s."),
@@ -5124,7 +5256,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 		ifname_mandatory = FALSE;
 
 	if (!ifname && ifname_mandatory && nmc->ask) {
-		ifname = ifname_ask = nmc_get_user_input (_("Interface name [*]: "));
+		ifname = ifname_ask = nmc_readline (_("Interface name [*]: "));
 		if (!ifname)
 			ifname = ifname_ask = g_strdup ("*");
 	}
@@ -5215,46 +5347,7 @@ error:
 
 
 /*----------------------------------------------------------------------------*/
-
-typedef char *CPFunction ();
-typedef char **CPPFunction ();
-/* History entry struct copied from libreadline's history.h */
-typedef struct _hist_entry {
-	char *line;
-	char *timestamp;
-	char *data;
-} HIST_ENTRY;
-
-typedef char *  (*ReadLineFunc)     (const char *);
-typedef void    (*AddHistoryFunc)   (const char *);
-typedef HIST_ENTRY** (*HistoryListFunc)  (void);
-typedef int     (*RlInsertTextFunc) (char *);
-typedef char ** (*RlCompletionMatchesFunc) (char *, CPFunction *);
-
-typedef struct {
-	ReadLineFunc readline_func;
-	AddHistoryFunc add_history_func;
-	HistoryListFunc history_list_func;
-	RlInsertTextFunc rl_insert_text_func;
-	void **rl_startup_hook_x;
-	RlCompletionMatchesFunc completion_matches_func;
-	void **rl_attempted_completion_function_x;
-	void **rl_completion_entry_function_x;
-	char **rl_line_buffer_x;
-	char **rl_prompt_x;
-	int *rl_attempted_completion_over_x;
-	int *rl_complete_with_tilde_expansion_x;
-	int *rl_completion_append_character_x;
-	const char **rl_completer_word_break_characters_x;
-	void (*rl_free_line_state_func) (void);
-	void (*rl_cleanup_after_signal_func) (void);
-	void **rl_completion_display_matches_hook_x;
-	void (*rl_display_match_list_func) (char **, int, int);
-	void (*rl_forced_update_display_func) (void);
-} EditLibSymbols;
-
-static EditLibSymbols edit_lib_symbols;
-static char *pre_input_deftext;
+/* Functions for readline TAB completion in editor */
 
 static void
 uuid_display_hook (char **array, int len, int max_len)
@@ -5275,43 +5368,21 @@ uuid_display_hook (char **array, int len, int max_len)
 				max = strlen (id);
 		}
 	}
-	edit_lib_symbols.rl_display_match_list_func (array, len, max_len + max + 3);
-	edit_lib_symbols.rl_forced_update_display_func ();
+	rl_display_match_list (array, len, max_len + max + 3);
+	rl_forced_update_display ();
 }
 
+static char *pre_input_deftext;
 static int
 set_deftext (void)
 {
-	if (   pre_input_deftext
-	    && edit_lib_symbols.rl_insert_text_func
-	    && edit_lib_symbols.rl_startup_hook_x) {
-		edit_lib_symbols.rl_insert_text_func (pre_input_deftext);
+	if (pre_input_deftext && rl_startup_hook) {
+		rl_insert_text (pre_input_deftext);
 		g_free (pre_input_deftext);
 		pre_input_deftext = NULL;
-		*edit_lib_symbols.rl_startup_hook_x = NULL;
+		rl_startup_hook = NULL;
 	}
 	return 0;
-}
-
-static char *
-gen_func_basic (char *text, int state, const char **words)
-{
-	static int list_idx, len;
-	const char *name;
-
-	if (!state) {
-		list_idx = 0;
-		len = strlen (text);
-	}
-
-	/* Return the next name which partially matches one from the 'words' list. */
-	while ((name = words[list_idx])) {
-		list_idx++;
-
-		if (strncmp (name, text, len) == 0)
-			return g_strdup (name);
-	}
-	return NULL;
 }
 
 static char *
@@ -5320,7 +5391,7 @@ gen_nmcli_cmds_menu (char *text, int state)
 	const char *words[] = { "goto", "set", "remove", "describe", "print", "verify",
 	                        "save", "activate", "back", "help", "quit", "nmcli",
 	                        NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
@@ -5329,49 +5400,49 @@ gen_nmcli_cmds_submenu (char *text, int state)
 	const char *words[] = { "set", "add", "change", "remove", "describe",
 	                        "print", "back", "help", "quit",
 	                        NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_nmcli (char *text, int state)
 {
 	const char *words[] = { "status-line", "save-confirmation", "prompt-color", NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_nmcli_prompt_color (char *text, int state)
 {
 	const char *words[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
 gen_func_bool_values (char *text, int state)
 {
 	const char *words[] = { "yes", "no", NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_verify0 (char *text, int state)
 {
 	const char *words[] = { "all", NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_print2 (char *text, int state)
 {
 	const char *words[] = { "setting", "connection", "all", NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
 gen_cmd_save (char *text, int state)
 {
 	const char *words[] = { "persistent", "temporary", NULL };
-	return gen_func_basic (text, state, words);
+	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
@@ -5433,7 +5504,7 @@ gen_property_names (char *text, int state)
 	NMSetting *setting = NULL;
 	char **valid_props = NULL;
 	char *ret = NULL;
-	char *line = g_strdup (*edit_lib_symbols.rl_line_buffer_x);
+	const char *line = rl_line_buffer;
 	const char *setting_name;
 	char **strv = NULL;
 	const NameItem *valid_settings_arr;
@@ -5457,10 +5528,9 @@ gen_property_names (char *text, int state)
 
 	if (setting) {
 		valid_props = nmc_setting_get_valid_properties (setting);
-		ret = gen_func_basic (text, state, (const char **) valid_props);
+		ret = nmc_rl_gen_func_basic (text, state, (const char **) valid_props);
 	}
 
-	g_free (line);
 	g_strfreev (strv);
 	g_strfreev (valid_props);
 	if (setting)
@@ -5494,7 +5564,7 @@ gen_compat_devices (char *text, int state)
 	}
 	compatible_devices[j] = NULL;
 
-	ret = gen_func_basic (text, state, compatible_devices);
+	ret = nmc_rl_gen_func_basic (text, state, compatible_devices);
 
 	g_free (compatible_devices);
 	return ret;
@@ -5522,7 +5592,7 @@ gen_vpn_uuids (char *text, int state)
 	}
 	uuids[i] = NULL;
 
-	ret = gen_func_basic (text, state, uuids);
+	ret = nmc_rl_gen_func_basic (text, state, uuids);
 
 	g_free (uuids);
 	return ret;
@@ -5707,6 +5777,9 @@ should_complete_vpn_uuids (const char *prompt, const char *line)
 	return found;
 }
 
+/* from readline */
+extern int rl_complete_with_tilde_expansion;
+
 /*
  * Attempt to complete on the contents of TEXT.  START and END show the
  * region of TEXT that contains the word to complete.  We can use the
@@ -5717,8 +5790,8 @@ static char **
 nmcli_editor_tab_completion (char *text, int start, int end)
 {
 	char **match_array = NULL;
-	const char *line = *edit_lib_symbols.rl_line_buffer_x;
-	const char *prompt = *edit_lib_symbols.rl_prompt_x;
+	const char *line = rl_line_buffer;
+	const char *prompt = rl_prompt;
 	CPFunction *generator_func = NULL;
 	gboolean copy_char;
 	const char *p1;
@@ -5728,16 +5801,16 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 	int num;
 
 	/* Restore standard append character to space */
-	*edit_lib_symbols.rl_completion_append_character_x = ' ';
+	rl_completion_append_character = ' ';
 
 	/* Restore standard function for displaying matches */
-	*edit_lib_symbols.rl_completion_display_matches_hook_x = NULL;
+	rl_completion_display_matches_hook = NULL;
 
 	/* Disable default filename completion */
-	*edit_lib_symbols.rl_attempted_completion_over_x = 1;
+	rl_attempted_completion_over = 1;
 
 	/* Enable tilde expansion when filenames are completed */
-	*edit_lib_symbols.rl_complete_with_tilde_expansion_x = 1;
+	rl_complete_with_tilde_expansion = 1;
 
 	/* Filter out possible ANSI color escape sequences */
 	p1 = prompt;
@@ -5764,6 +5837,9 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 		generator_func = gen_setting_names;
 	else if (strcmp (prompt_tmp, EDITOR_PROMPT_PROPERTY) == 0)
 		generator_func = gen_property_names;
+	else if (   g_str_has_suffix (rl_prompt, prompt_yes_no (TRUE, NULL))
+	         || g_str_has_suffix (rl_prompt, prompt_yes_no (FALSE, NULL)))
+		generator_func = gen_func_bool_values_l10n;
 	else if (g_str_has_prefix (prompt_tmp, "nmcli")) {
 		if (!strchr (prompt_tmp, '.')) {
 			int level = g_str_has_prefix (prompt_tmp, "nmcli>") ? 0 : 1;
@@ -5782,14 +5858,14 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 					if (num < 3) {
 						if (level == 0 && (!dot || dot >= line + end)) {
 							generator_func = gen_setting_names;
-							*edit_lib_symbols.rl_completion_append_character_x = '.';
+							rl_completion_append_character = '.';
 						} else
 							generator_func = gen_property_names;
 					} else if (num >= 3) {
 						if (num == 3 && should_complete_files (NULL, line))
-							*edit_lib_symbols.rl_attempted_completion_over_x = 0;
+							rl_attempted_completion_over = 0;
 						if (should_complete_vpn_uuids (NULL, line)) {
-							*edit_lib_symbols.rl_completion_display_matches_hook_x = uuid_display_hook;
+							rl_completion_display_matches_hook = uuid_display_hook;
 							generator_func = gen_vpn_uuids;
 						}
 					}
@@ -5798,7 +5874,7 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 				           && num <= 2) {
 					if (level == 0 && (!dot || dot >= line + end)) {
 						generator_func = gen_setting_names;
-						*edit_lib_symbols.rl_completion_append_character_x = '.';
+						rl_completion_append_character = '.';
 					} else
 						generator_func = gen_property_names;
 				} else if (should_complete_cmd (line, end, "nmcli", &num, &word)) {
@@ -5825,9 +5901,9 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 				if (   should_complete_cmd (line, end, "add", &num, NULL)
 				    || should_complete_cmd (line, end, "set", &num, NULL)) {
 					if (num <= 2 && should_complete_files (prompt_tmp, line))
-						*edit_lib_symbols.rl_attempted_completion_over_x = 0;
+						rl_attempted_completion_over = 0;
 					else if (should_complete_vpn_uuids (prompt_tmp, line)) {
-						*edit_lib_symbols.rl_completion_display_matches_hook_x = uuid_display_hook;
+						rl_completion_display_matches_hook = uuid_display_hook;
 						generator_func = gen_vpn_uuids;
 					}
 				}
@@ -5840,128 +5916,12 @@ nmcli_editor_tab_completion (char *text, int start, int end)
 	}
 
 	if (generator_func)
-		match_array = edit_lib_symbols.completion_matches_func (text, generator_func);
+		match_array = rl_completion_matches (text, generator_func);
 
 	g_free (prompt_tmp);
 	g_free (word);
 	return match_array;
 }
-
-static GModule *
-load_cmd_line_edit_lib (void)
-{
-	GModule *module = NULL;
-	char *lib_path;
-	int i;
-	static const char * const edit_lib_table[] = {
-	    "libreadline.so.6", /* GNU Readline library version 6 - latest */
-	    "libreadline.so.5", /* GNU Readline library version 5 - previous */
-	    "libedit.so.0",     /* NetBSD Editline library port (http://www.thrysoee.dk/editline/) */
-	};
-
-	/* Try to load a library for line editing */
-	for (i = 0; i < G_N_ELEMENTS (edit_lib_table); i++) {
-		lib_path = g_module_build_path (NULL, edit_lib_table[i]);
-		module = g_module_open (lib_path, G_MODULE_BIND_LOCAL);
-		g_free (lib_path);
-		if (module)
-			break;
-	}
-	if (!module)
-		return NULL;
-
-	if (!g_module_symbol (module, "readline", (gpointer) (&edit_lib_symbols.readline_func)))
-		goto error;
-	if (!g_module_symbol (module, "add_history", (gpointer) (&edit_lib_symbols.add_history_func)))
-		goto error;
-	if (!g_module_symbol (module, "history_list", (gpointer) (&edit_lib_symbols.history_list_func)))
-		goto error;
-	if (!g_module_symbol (module, "rl_insert_text", (gpointer) (&edit_lib_symbols.rl_insert_text_func)))
-		goto error;
-	if (!g_module_symbol (module, "rl_startup_hook", (gpointer) (&edit_lib_symbols.rl_startup_hook_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_attempted_completion_function",
-	                      (gpointer) (&edit_lib_symbols.rl_attempted_completion_function_x)))
-		goto error;
-	if (!g_module_symbol (module, "completion_matches",
-	                      (gpointer) (&edit_lib_symbols.completion_matches_func)))
-		goto error;
-	if (!g_module_symbol (module, "rl_line_buffer",
-	                      (gpointer) (&edit_lib_symbols.rl_line_buffer_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_prompt",
-	                      (gpointer) (&edit_lib_symbols.rl_prompt_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_attempted_completion_over",
-	                      (gpointer) (&edit_lib_symbols.rl_attempted_completion_over_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_complete_with_tilde_expansion",
-	                      (gpointer) (&edit_lib_symbols.rl_complete_with_tilde_expansion_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_completion_append_character",
-	                      (gpointer) (&edit_lib_symbols.rl_completion_append_character_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_completer_word_break_characters",
-	                      (gpointer) (&edit_lib_symbols.rl_completer_word_break_characters_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_free_line_state",
-	                      (gpointer) (&edit_lib_symbols.rl_free_line_state_func)))
-		goto error;
-	if (!g_module_symbol (module, "rl_cleanup_after_signal",
-	                      (gpointer) (&edit_lib_symbols.rl_cleanup_after_signal_func)))
-		goto error;
-	if (!g_module_symbol (module, "rl_completion_display_matches_hook",
-	                      (gpointer) (&edit_lib_symbols.rl_completion_display_matches_hook_x)))
-		goto error;
-	if (!g_module_symbol (module, "rl_display_match_list",
-	                      (gpointer) (&edit_lib_symbols.rl_display_match_list_func)))
-		goto error;
-	if (!g_module_symbol (module, "rl_forced_update_display",
-	                      (gpointer) (&edit_lib_symbols.rl_forced_update_display_func)))
-		goto error;
-
-	/* Set a pointer to an alternative function to create matches */
-	*edit_lib_symbols.rl_attempted_completion_function_x = (CPPFunction *) nmcli_editor_tab_completion;
-
-	/* Use ' ' and '.' as word break characters */
-	*edit_lib_symbols.rl_completer_word_break_characters_x = ". ";
-
-	return module;
-error:
-	g_module_close (module);
-	return NULL;
-}
-
-void
-nmc_cleanup_readline (void)
-{
-	if (edit_lib_symbols.rl_free_line_state_func)
-		edit_lib_symbols.rl_free_line_state_func ();
-	if (edit_lib_symbols.rl_cleanup_after_signal_func)
-		edit_lib_symbols.rl_cleanup_after_signal_func ();
-}
-
-static char *
-readline_x (const char *prompt)
-{
-	char *str;
-
-	if (edit_lib_symbols.readline_func) {
-		str = edit_lib_symbols.readline_func (prompt);
-		/* Return NULL, not empty string */
-		if (str && *str == '\0') {
-			g_free (str);
-			str = NULL;
-		}
-	} else
-		str = nmc_get_user_input (prompt);
-
-	if (edit_lib_symbols.add_history_func && str && *str)
-		edit_lib_symbols.add_history_func (str);
-
-	return str;
-}
-
 
 #define NMCLI_EDITOR_HISTORY ".nmcli-history"
 
@@ -5974,10 +5934,6 @@ load_history_cmds (const char *uuid)
 	char *line;
 	size_t i;
 	GError *err = NULL;
-
-	/* Nothing to do if readline library is not used */
-	if (!edit_lib_symbols.add_history_func)
-		return;
 
 	filename = g_build_filename (g_get_home_dir (), NMCLI_EDITOR_HISTORY, NULL);
 	kf = g_key_file_new ();
@@ -5992,7 +5948,7 @@ load_history_cmds (const char *uuid)
 	for (i = 0; keys && keys[i]; i++) {
 		line = g_key_file_get_string (kf, uuid, keys[i], NULL);
 		if (line && *line)
-			edit_lib_symbols.add_history_func (line);
+			add_history (line);
 		g_free (line);
 	}
 	g_strfreev (keys);
@@ -6012,9 +5968,7 @@ save_history_cmds (const char *uuid)
 	gsize len = 0;
 	GError *err = NULL;
 
-	if (edit_lib_symbols.history_list_func)
-		hist = edit_lib_symbols.history_list_func();
-
+	hist = history_list ();
 	if (hist) {
 		filename = g_build_filename (g_get_home_dir (), NMCLI_EDITOR_HISTORY, NULL);
 		kf = g_key_file_new ();
@@ -6602,6 +6556,23 @@ is_connection_dirty (NMConnection *connection, NMRemoteConnection *remote)
 	                               NM_SETTING_COMPARE_FLAG_EXACT);
 }
 
+static gboolean
+confirm_quit (void)
+{
+	char *answer;
+	gboolean want_quit = FALSE;
+
+	answer = nmc_readline (_("The connection is not saved. "
+	                         "Do you really want to quit? %s"),
+	                       prompt_yes_no (FALSE, NULL));
+	answer = answer ? g_strstrip (answer) : NULL;
+	if (answer && matches (answer, WORD_LOC_YES) == 0)
+		want_quit = TRUE;
+
+	g_free (answer);
+	return want_quit;
+}
+
 /*
  * Submenu for detailed property editing
  * Return: TRUE - continue;  FALSE - should quit
@@ -6617,7 +6588,7 @@ property_edit_submenu (NmCli *nmc,
 	NmcEditorSubCmd cmdsub;
 	gboolean cmd_property_loop = TRUE;
 	gboolean should_quit = FALSE;
-	char *prop_val_user, *tmp_prompt;
+	char *prop_val_user;
 	gboolean set_result;
 	GError *tmp_err = NULL;
 	char *prompt;
@@ -6645,7 +6616,7 @@ property_edit_submenu (NmCli *nmc,
 		if (nmc->editor_status_line)
 			editor_show_status_line (connection, dirty, temp_changes);
 
-		cmd_property_user = readline_x (prompt);
+		cmd_property_user = nmc_readline ("%s", prompt);
 		if (!cmd_property_user || *cmd_property_user == '\0')
 			continue;
 		cmdsub = parse_editor_sub_cmd (g_strstrip (cmd_property_user), &cmd_property_arg);
@@ -6657,11 +6628,9 @@ property_edit_submenu (NmCli *nmc,
 			 *                   ADD adds the new value(s)
 			 * single values:  : both SET and ADD sets the new value
 			 */
-			if (!cmd_property_arg) {
-				tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-				prop_val_user = readline_x (tmp_prompt);
-				g_free (tmp_prompt);
-			} else
+			if (!cmd_property_arg)
+				prop_val_user = nmc_readline (_("Enter '%s' value: "), prop_name);
+			else
 				prop_val_user = g_strdup (cmd_property_arg);
 
 			/* nmc_setting_set_property() only adds new value, thus we have to
@@ -6685,10 +6654,9 @@ property_edit_submenu (NmCli *nmc,
 			break;
 
 		case NMC_EDITOR_SUB_CMD_CHANGE:
-			*edit_lib_symbols.rl_startup_hook_x = set_deftext;
+			rl_startup_hook = set_deftext;
 			pre_input_deftext = nmc_setting_get_property_out2in (curr_setting, prop_name, NULL);
-			tmp_prompt = g_strdup_printf (_("Edit '%s' value: "), prop_name);
-			prop_val_user = readline_x (tmp_prompt);
+			prop_val_user = nmc_readline (_("Edit '%s' value: "), prop_name);
 
 			nmc_property_get_gvalue (curr_setting, prop_name, &prop_g_value);
 			nmc_property_set_default_value (curr_setting, prop_name);
@@ -6699,7 +6667,6 @@ property_edit_submenu (NmCli *nmc,
 				nmc_property_set_gvalue (curr_setting, prop_name, &prop_g_value);
 			}
 			g_free (prop_val_user);
-			g_free (tmp_prompt);
 			if (G_IS_VALUE (&prop_g_value))
 				g_value_unset (&prop_g_value);
 			break;
@@ -6761,16 +6728,10 @@ property_edit_submenu (NmCli *nmc,
 
 		case NMC_EDITOR_SUB_CMD_QUIT:
 			if (is_connection_dirty (connection, *rem_con)) {
-				char *tmp_str;
-				do {
-					tmp_str = nmc_get_user_input (_("The connection is not saved. "
-					                                "Do you really want to quit? [y/n]\n"));
-				} while (!tmp_str);
-				if (matches (tmp_str, "yes") == 0) {
+				if (confirm_quit ()) {
 					cmd_property_loop = FALSE;
 					should_quit = TRUE;  /* we will quit nmcli */
 				}
-				g_free (tmp_str);
 			} else {
 				cmd_property_loop = FALSE;
 				should_quit = TRUE;  /* we will quit nmcli */
@@ -6876,7 +6837,7 @@ ask_check_setting (const char *arg,
 
 	if (!arg) {
 		printf (_("Available settings: %s\n"), valid_settings_str);
-		setting_name_user = nmc_get_user_input (EDITOR_PROMPT_SETTING);
+		setting_name_user = nmc_readline (EDITOR_PROMPT_SETTING);
 	} else
 		setting_name_user = g_strdup (arg);
 
@@ -6902,7 +6863,7 @@ ask_check_property (const char *arg,
 
 	if (!arg) {
 		printf (_("Available properties: %s\n"), valid_props_str);
-		prop_name_user = readline_x (EDITOR_PROMPT_PROPERTY);
+		prop_name_user = nmc_readline (EDITOR_PROMPT_PROPERTY);
 		if (prop_name_user)
 			g_strstrip (prop_name_user);
 	} else
@@ -6950,10 +6911,11 @@ confirm_connection_saving (NMConnection *local, NMConnection *remote)
 
 	if (ac_local && !ac_remote) {
 		char *answer;
-		answer = nmc_get_user_input (_("Saving the connection with 'autoconnect=yes'. "
-		                               "That might result in an immediate activation of the connection.\n"
-		                               "Do you still want to save? [yes] "));
-		if (!answer || matches (answer, "yes") == 0)
+		answer = nmc_readline (_("Saving the connection with 'autoconnect=yes'. "
+		                         "That might result in an immediate activation of the connection.\n"
+		                         "Do you still want to save? %s"), prompt_yes_no (TRUE, NULL));
+		answer = answer ? g_strstrip (answer) : NULL;
+		if (!answer || matches (answer, WORD_LOC_YES) == 0)
 			confirmed = TRUE;
 		else
 			confirmed = FALSE;
@@ -7046,7 +7008,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			editor_show_status_line (connection, dirty, temp_changes);
 
 		/* Read user input */
-		cmd_user = readline_x (menu_ctx.main_prompt);
+		cmd_user = nmc_readline ("%s", menu_ctx.main_prompt);
 
 		/* Get the remote connection again, it may have disapeared */
 		removed = refresh_remote_connection (&weak, &rem_con);
@@ -7069,7 +7031,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				if (menu_ctx.level == 1) {
 					const char *prop_name;
 					char *prop_val_user = NULL;
-					char *tmp_prompt;
 					const char *avals;
 					GError *tmp_err = NULL;
 
@@ -7083,9 +7044,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					if (avals)
 						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
 
-					tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-					prop_val_user = readline_x (tmp_prompt);
-					g_free (tmp_prompt);
+					prop_val_user = nmc_readline (_("Enter '%s' value: "), prop_name);
 
 					/* Set property value */
 					if (!nmc_setting_set_property (menu_ctx.curr_setting, prop_name, prop_val_user, &tmp_err)) {
@@ -7100,7 +7059,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				NMSetting *ss = NULL;
 				gboolean created_ss = FALSE;
 				char *prop_name;
-				char *tmp_prompt;
 				GError *tmp_err = NULL;
 
 				if (cmd_arg_s) {
@@ -7141,9 +7099,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					if (avals)
 						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
 
-					tmp_prompt = g_strdup_printf (_("Enter '%s' value: "), prop_name);
-					cmd_arg_v = readline_x (tmp_prompt);
-					g_free (tmp_prompt);
+					cmd_arg_v = nmc_readline (_("Enter '%s' value: "), prop_name);
 				}
 
 				/* Set property value */
@@ -7631,14 +7587,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 		case NMC_EDITOR_MAIN_CMD_QUIT:
 			if (is_connection_dirty (connection, rem_con)) {
-				char *tmp_str;
-				do {
-					tmp_str = nmc_get_user_input (_("The connection is not saved. "
-					                                "Do you really want to quit? [y/n]\n"));
-				} while (!tmp_str);
-				if (matches (tmp_str, "yes") == 0)
+				if (confirm_quit ())
 					cmd_loop = FALSE;  /* quit command loop */
-				g_free (tmp_str);
 			} else
 				cmd_loop = FALSE;  /* quit command loop */
 			break;
@@ -7833,7 +7783,6 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	char *tmp_str;
 	GError *error = NULL;
 	GError *err1 = NULL;
-	GModule *edit_lib_module = NULL;
 	nmc_arg_t exp_args[] = { {"type",     TRUE, &type,     FALSE},
 	                         {"con-name", TRUE, &con_name, FALSE},
 	                         {"id",       TRUE, &con_id,   FALSE},
@@ -7854,19 +7803,11 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		}
 	}
 
-	/* Load line editing library */
-	if (!(edit_lib_module = load_cmd_line_edit_lib ())) {
-		printf (_(">>> Command-line editing is not available. "
-		          "Consider installing a line editing library to enable the feature. <<<\n"
-		          "Supported libraries are:\n"
-		          "  - GNU Readline    (libreadline) http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html\n"
-		          "  - NetBSD Editline (libedit)     http://www.thrysoee.dk/editline/\n"));
-		edit_lib_symbols.readline_func = NULL;
-		edit_lib_symbols.add_history_func = NULL;
-		edit_lib_symbols.history_list_func = NULL;
-		edit_lib_symbols.rl_insert_text_func = NULL;
-		edit_lib_symbols.rl_startup_hook_x = NULL;
-	}
+	/* Setup some readline completion stuff */
+	/* Set a pointer to an alternative function to create matches */
+	rl_attempted_completion_function = (CPPFunction *) nmcli_editor_tab_completion;
+	/* Use ' ' and '.' as word break characters */
+	rl_completer_word_break_characters = ". ";
 
 	if (!con) {
 		if (con_id && !con_uuid && !con_path) {
@@ -7931,7 +7872,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 				printf (_("Error: invalid connection type; %s\n"), err1->message);
 			g_clear_error (&err1);
 
-			type_ask = readline_x (EDITOR_PROMPT_CON_TYPE);
+			type_ask = nmc_readline (EDITOR_PROMPT_CON_TYPE);
 			type = type_ask = type_ask ? g_strstrip (type_ask) : NULL;
 			connection_type = check_valid_name (type_ask, nmc_valid_connection_types, &err1);
 			g_free (type_ask);
@@ -7983,9 +7924,6 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 	/* Run menu loop */
 	editor_menu_main (nmc, connection, connection_type);
-
-	if (edit_lib_module)
-		g_module_close (edit_lib_module);
 
 	if (connection)
 		g_object_unref (connection);
@@ -8268,7 +8206,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 
 	if (argc == 0) {
 		if (nmc->ask) {
-			line = nmc_get_user_input (_("Connection (name, UUID, or path): "));
+			line = nmc_readline (PROMPT_CONNECTION);
 			nmc_string_to_arg_array (line, "", &arg_arr, &arg_num);
 			arg_ptr = arg_arr;
 		}
@@ -8444,10 +8382,61 @@ connection_editor_thread_func (gpointer data)
 	return NULL;
 }
 
+static char *
+gen_func_connection_names (char *text, int state)
+{
+	int i = 0;
+	GSList *iter;
+	const char **connections;
+	char *ret;
+
+	if (!nm_cli.system_connections)
+		return NULL;
+
+	connections = g_new (const char *, g_slist_length (nm_cli.system_connections) + 1);
+	for (iter = nm_cli.system_connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *con = NM_CONNECTION (iter->data);
+		const char *id = nm_connection_get_id (con);
+		connections[i++] = id;
+	}
+	connections[i] = NULL;
+
+	ret = nmc_rl_gen_func_basic (text, state, connections);
+
+	g_free (connections);
+	return ret;
+}
+
+static char **
+nmcli_con_tab_completion (char *text, int start, int end)
+{
+	char **match_array = NULL;
+	CPFunction *generator_func = NULL;
+
+	/* Disable readline's default filename completion */
+	rl_attempted_completion_over = 1;
+
+	/* Disable appending space after completion */
+	rl_completion_append_character = '\0';
+
+	if (!is_single_word (rl_line_buffer))
+		return NULL;
+
+	if (g_strcmp0 (rl_prompt, PROMPT_CONNECTION) == 0)
+		generator_func = gen_func_connection_names;
+
+	if (generator_func)
+		match_array = rl_completion_matches (text, generator_func);
+
+	return match_array;
+}
+
 static NMCResultCode
 parse_cmd (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
+
+	rl_attempted_completion_function = (CPPFunction *) nmcli_con_tab_completion;
 
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))

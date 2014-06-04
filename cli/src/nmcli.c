@@ -37,6 +37,7 @@
 
 #include "nmcli.h"
 #include "utils.h"
+#include "common.h"
 #include "connections.h"
 #include "devices.h"
 #include "network-manager.h"

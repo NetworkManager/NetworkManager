@@ -33,6 +33,7 @@ nmcli_SOURCES = \
 nmcli_LDADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
+	$(READLINE_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/libnm-glib/libnm-glib.la
 
