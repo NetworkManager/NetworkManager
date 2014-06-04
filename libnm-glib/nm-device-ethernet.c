@@ -194,7 +194,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	/* Wired setting optional for PPPoE */
 	if (!is_pppoe && !s_wired) {
 		g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_INVALID_ETHERNET_CONNECTION,
-		             "The connection was not a valid ethernet connection.");
+		             "The connection was not a valid Ethernet connection.");
 		return FALSE;
 	}
 

@@ -42,7 +42,7 @@
  *
  * The #NMSetting8021x object is a #NMSetting subclass that describes
  * properties necessary for connection to 802.1x-authenticated networks, such as
- * WPA and WPA2 Enterprise WiFi networks and wired 802.1x networks.  802.1x
+ * WPA and WPA2 Enterprise Wi-Fi networks and wired 802.1x networks.  802.1x
  * connections typically use certificates and/or EAP authentication methods to
  * securely verify, identify, and authenticate the client to the network itself,
  * instead of simply relying on a widely shared static key.
@@ -52,7 +52,7 @@
  * the relevant wpa_supplicant configuration options.
  *
  * Furthermore, to get a good idea of 802.1x, EAP, TLS, TTLS, etc and their
- * applications to WiFi and wired networks, you'll want to get copies of the
+ * applications to Wi-Fi and wired networks, you'll want to get copies of the
  * following books.
  *
  *  802.11 Wireless Networks: The Definitive Guide, Second Edition

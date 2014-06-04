@@ -141,7 +141,7 @@ typedef struct {
  * return them, or to return an error, this function should be called with
  * those secrets or the error.
  *
- * To easily create the hash table to return the WiFi PSK, you could do
+ * To easily create the hash table to return the Wi-Fi PSK, you could do
  * something like this:
  * <example>
  *  <title>Creating a secrets hash</title>

@@ -581,7 +581,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 		(object_class, PROP_DEVICE_TYPE,
 		 g_param_spec_uint (NM_DEVICE_DEVICE_TYPE,
 						  "Device Type",
-						  "Numeric device type (ie ethernet, wifi, etc)",
+						  "Numeric device type (ie Ethernet, Wi-Fi, etc)",
 						  NM_DEVICE_TYPE_UNKNOWN, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
 						  G_PARAM_READABLE));
 	/**
@@ -1059,7 +1059,7 @@ nm_device_get_ip_iface (NMDevice *device)
  * nm_device_get_device_type:
  * @device: a #NMDevice
  *
- * Returns the numeric type of the #NMDevice, ie ethernet, wifi, etc.
+ * Returns the numeric type of the #NMDevice, ie Ethernet, Wi-Fi, etc.
  *
  * Returns: the device type
  **/
@@ -2158,8 +2158,8 @@ nm_device_disconnect (NMDevice *device,
  *
  * Validates a given connection for a given #NMDevice object and returns
  * whether the connection may be activated with the device. For example if
- * @device is a WiFi device that supports only WEP encryption, the connection
- * will only be valid if it is a WiFi connection which describes a WEP or open
+ * @device is a Wi-Fi device that supports only WEP encryption, the connection
+ * will only be valid if it is a Wi-Fi connection which describes a WEP or open
  * network, and will not be valid if it describes a WPA network, or if it is
  * an Ethernet, Bluetooth, WWAN, etc connection that is incompatible with the
  * device.
@@ -2201,8 +2201,8 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
  *
  * Validates a given connection for a given #NMDevice object and returns
  * whether the connection may be activated with the device. For example if
- * @device is a WiFi device that supports only WEP encryption, the connection
- * will only be valid if it is a WiFi connection which describes a WEP or open
+ * @device is a Wi-Fi device that supports only WEP encryption, the connection
+ * will only be valid if it is a Wi-Fi connection which describes a WEP or open
  * network, and will not be valid if it describes a WPA network, or if it is
  * an Ethernet, Bluetooth, WWAN, etc connection that is incompatible with the
  * device.
@@ -2231,10 +2231,10 @@ nm_device_connection_compatible (NMDevice *device, NMConnection *connection, GEr
  *
  * Filters a given list of connections for a given #NMDevice object and return
  * connections which may be activated with the device. For example if @device
- * is a WiFi device that supports only WEP encryption, the returned list will
- * contain any WiFi connections in @connections that allow connection to
+ * is a Wi-Fi device that supports only WEP encryption, the returned list will
+ * contain any Wi-Fi connections in @connections that allow connection to
  * unencrypted or WEP-enabled SSIDs.  The returned list will not contain
- * Ethernet, Bluetooth, WiFi WPA connections, or any other connection that is
+ * Ethernet, Bluetooth, Wi-Fi WPA connections, or any other connection that is
  * incompatible with the device. To get the full list of connections see
  * nm_remote_settings_list_connections().
  *

@@ -1022,7 +1022,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * IPv6 configuration method.  If 'auto' is specified then the appropriate
 	 * automatic method (DHCP, PPP, advertisement, etc) is used for the
 	 * interface and most other properties can be left unset.  To force the use
-	 * of DHCP only, specify 'dhcp'; this  method is only valid for ethernet-
+	 * of DHCP only, specify 'dhcp'; this  method is only valid for Ethernet-
 	 * based hardware.  If 'link-local' is specified, then an IPv6 link-local
 	 * address will be assigned to the interface.  If 'manual' is specified,
 	 * static IP addressing is used and at least one IP address must be given
@@ -1039,7 +1039,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						      "advertisement, etc) is used for the device and "
 						      "most other properties can be left unset.  To force "
 						      "the use of DHCP only, specify 'dhcp'; this method "
-						      "is only valid for ethernet-based hardware.  If "
+						      "is only valid for Ethernet-based hardware.  If "
 						      "'link-local' is specified, then an IPv6 link-local "
 						      "address will be assigned to the interface.  If "
 						      "'manual' is specified, static IP addressing is "

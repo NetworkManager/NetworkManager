@@ -44,7 +44,7 @@
  * @short_description: Utility functions
  * @include: nm-utils.h
  *
- * A collection of utility functions for working SSIDs, IP addresses, WiFi
+ * A collection of utility functions for working SSIDs, IP addresses, Wi-Fi
  * access points and devices, among other things.
  */
 
@@ -259,7 +259,7 @@ nm_utils_deinit (void)
  * nm_utils_ssid_to_utf8:
  * @ssid: a byte array containing the SSID data
  *
- * WiFi SSIDs are byte arrays, they are _not_ strings.  Thus, an SSID may
+ * Wi-Fi SSIDs are byte arrays, they are _not_ strings.  Thus, an SSID may
  * contain embedded NULLs and other unprintable characters.  Often it is
  * useful to print the SSID out for debugging purposes, but that should be the
  * _only_ use of this function.  Do not use this function for any persistent
@@ -598,7 +598,7 @@ device_supports_ap_ciphers (guint32 dev_caps,
  * nm_utils_ap_mode_security_valid:
  * @type: the security type to check device capabilties against,
  * e.g. #NMU_SEC_STATIC_WEP
- * @wifi_caps: bitfield of the capabilities of the specific WiFi device, e.g.
+ * @wifi_caps: bitfield of the capabilities of the specific Wi-Fi device, e.g.
  * #NM_WIFI_DEVICE_CAP_CIPHER_WEP40
  *
  * Given a set of device capabilities, and a desired security type to check
@@ -636,7 +636,7 @@ nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
  * nm_utils_security_valid:
  * @type: the security type to check AP flags and device capabilties against,
  * e.g. #NMU_SEC_STATIC_WEP
- * @wifi_caps: bitfield of the capabilities of the specific WiFi device, e.g.
+ * @wifi_caps: bitfield of the capabilities of the specific Wi-Fi device, e.g.
  * #NM_WIFI_DEVICE_CAP_CIPHER_WEP40
  * @have_ap: whether the @ap_flags, @ap_wpa, and @ap_rsn arguments are valid
  * @adhoc: whether the capabilities being tested are from an Ad-Hoc AP (IBSS)
@@ -1810,7 +1810,7 @@ static struct cf_pair bg_table[] = {
  * nm_utils_wifi_freq_to_channel:
  * @freq: frequency
  *
- * Utility function to translate a WiFi frequency to its corresponding channel.
+ * Utility function to translate a Wi-Fi frequency to its corresponding channel.
  *
  * Returns: the channel represented by the frequency or 0
  **/
@@ -1837,7 +1837,7 @@ nm_utils_wifi_freq_to_channel (guint32 freq)
  * @channel: channel
  * @band: frequency band for wireless ("a" or "bg")
  *
- * Utility function to translate a WiFi channel to its corresponding frequency.
+ * Utility function to translate a Wi-Fi channel to its corresponding frequency.
  *
  * Returns: the frequency represented by the channel of the band,
  *          or -1 when the freq is invalid, or 0 when the band
@@ -1867,7 +1867,7 @@ nm_utils_wifi_channel_to_freq (guint32 channel, const char *band)
  * @direction: whether going downward (0 or less) or upward (1 or more)
  * @band: frequency band for wireless ("a" or "bg")
  *
- * Utility function to find out next/previous WiFi channel for a channel.
+ * Utility function to find out next/previous Wi-Fi channel for a channel.
  *
  * Returns: the next channel in the specified direction or 0
  **/
@@ -1914,7 +1914,7 @@ nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band)
  * @channel: channel
  * @band: frequency band for wireless ("a" or "bg")
  *
- * Utility function to verify WiFi channel validity.
+ * Utility function to verify Wi-Fi channel validity.
  *
  * Returns: %TRUE or %FALSE
  **/

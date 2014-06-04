@@ -184,7 +184,7 @@ nm_access_point_get_frequency (NMAccessPoint *ap)
  * nm_access_point_get_bssid:
  * @ap: a #NMAccessPoint
  *
- * Gets the Basic Service Set ID (BSSID) of the WiFi access point.
+ * Gets the Basic Service Set ID (BSSID) of the Wi-Fi access point.
  *
  * Returns: the BSSID of the access point. This is an internal string and must
  * not be modified or freed.
@@ -271,12 +271,12 @@ nm_access_point_get_strength (NMAccessPoint *ap)
  * @ap: an #NMAccessPoint to validate @connection against
  * @connection: an #NMConnection to validate against @ap
  *
- * Validates a given connection against a given WiFi access point to ensure that
+ * Validates a given connection against a given Wi-Fi access point to ensure that
  * the connection may be activated with that AP.  The connection must match the
  * @ap's SSID, (if given) BSSID, and other attributes like security settings,
  * channel, band, etc.
  *
- * Returns: %TRUE if the connection may be activated with this WiFi AP,
+ * Returns: %TRUE if the connection may be activated with this Wi-Fi AP,
  * %FALSE if it cannot be.
  **/
 gboolean

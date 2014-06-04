@@ -65,7 +65,7 @@ G_BEGIN_DECLS
  * @NM_CLIENT_PERMISSION_NONE: unknown or no permission
  * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_NETWORK: controls whether networking
  *  can be globally enabled or disabled
- * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI: controls whether WiFi can be
+ * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_WIFI: controls whether Wi-Fi can be
  *  globally enabled or disabled
  * @NM_CLIENT_PERMISSION_ENABLE_DISABLE_WWAN: controls whether WWAN (3G) can be
  *  globally enabled or disabled
@@ -76,8 +76,8 @@ G_BEGIN_DECLS
  * @NM_CLIENT_PERMISSION_NETWORK_CONTROL: controls whether networking connections
  *  can be started, stopped, and changed
  * @NM_CLIENT_PERMISSION_WIFI_SHARE_PROTECTED: controls whether a password
- *  protected WiFi hotspot can be created
- * @NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN: controls whether an open WiFi hotspot
+ *  protected Wi-Fi hotspot can be created
+ * @NM_CLIENT_PERMISSION_WIFI_SHARE_OPEN: controls whether an open Wi-Fi hotspot
  *  can be created
  * @NM_CLIENT_PERMISSION_SETTINGS_MODIFY_SYSTEM: controls whether connections
  *  that are available to all users can be modified

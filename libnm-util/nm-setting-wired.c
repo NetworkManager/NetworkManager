@@ -615,7 +615,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		g_set_error (error,
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-		             _("'%s' is not a valid ethernet port value"),
+		             _("'%s' is not a valid Ethernet port value"),
 		             priv->port);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_PORT);
 		return FALSE;
@@ -939,7 +939,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	/**
 	 * NMSettingWired:mac-address:
 	 *
-	 * If specified, this connection will only apply to the ethernet device
+	 * If specified, this connection will only apply to the Ethernet device
 	 * whose permanent MAC address matches. This property does not change the MAC address
 	 * of the device (i.e. MAC spoofing).
 	 **/
@@ -948,7 +948,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS,
 							   "Device MAC Address",
 							   "If specified, this connection will only apply to "
-							   "the ethernet device whose permanent MAC address matches.  "
+							   "the Ethernet device whose permanent MAC address matches.  "
 							   "This property does not change the MAC address "
 							   "of the device (i.e. MAC spoofing).",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
@@ -973,7 +973,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	/**
 	 * NMSettingWired:mac-address-blacklist:
 	 *
-	 * If specified, this connection will never apply to the ethernet device
+	 * If specified, this connection will never apply to the Ethernet device
 	 * whose permanent MAC address matches an address in the list.  Each
 	 * MAC address is in the standard hex-digits-and-colons notation
 	 * (00:11:22:33:44:55).
@@ -983,7 +983,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
 		                             "MAC Address Blacklist",
 		                             "If specified, this connection will never apply to "
-		                             "the ethernet device whose permanent MAC address matches "
+		                             "the Ethernet device whose permanent MAC address matches "
 		                             "an address in the list.  Each MAC address is in the "
 		                             "standard hex-digits-and-colons notation (00:11:22:33:44:55).",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
