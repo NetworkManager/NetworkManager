@@ -66,11 +66,10 @@ typedef struct {
 } LogDesc;
 
 static const char *level_names[LOGL_MAX] = {
-	/* Must be in sync with nm-logging.h */
-	"DEBUG",
-	"INFO",
-	"WARN",
-	"ERR",
+	[LOGL_DEBUG] = "DEBUG",
+	[LOGL_INFO] = "INFO",
+	[LOGL_WARN] = "WARN",
+	[LOGL_ERR] = "ERR",
 };
 
 static const LogDesc domain_descs[] = {
