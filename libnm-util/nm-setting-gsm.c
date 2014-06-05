@@ -602,7 +602,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	/**
 	 * NMSettingGsm:password-flags:
 	 *
-	 * Flags indicating how to handle #NMSettingGsm:password:.
+	 * Flags indicating how to handle the #NMSettingGsm:password property.
 	 **/
 	g_object_class_install_property (object_class, PROP_PASSWORD_FLAGS,
 		 g_param_spec_uint (NM_SETTING_GSM_PASSWORD_FLAGS,
@@ -621,8 +621,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	 * the user will be billed for their network usage and whether the user has
 	 * access to the Internet or just a provider-specific walled-garden, so it
 	 * is important to use the correct APN for the user's mobile broadband plan.
-	 * The APN may only be composed of the characters a-z, 0-9, ., and - per
-	 * GSM 03.60 Section 14.9.
+	 * The APN may only be composed of the characters a-z, 0-9, ., and - per GSM
+	 * 03.60 Section 14.9.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APN,
@@ -667,11 +667,17 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	 * NMSettingGsm:network-type:
 	 *
 	 * Network preference to force the device to only use specific network
-	 * technologies.  Permitted values are those specified by
-	 * #NMSettingGsmNetworkType.  Note that not all devices allow network
+	 * technologies. The permitted values are %NM_SETTING_GSM_NETWORK_TYPE_ANY,
+	 * %NM_SETTING_GSM_NETWORK_TYPE_UMTS_HSPA,
+	 * %NM_SETTING_GSM_NETWORK_TYPE_GPRS_EDGE,
+	 * %NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA,
+	 * %NM_SETTING_GSM_NETWORK_TYPE_PREFER_GPRS_EDGE,
+	 * %NM_SETTING_GSM_NETWORK_TYPE_PREFER_4G, and
+	 * %NM_SETTING_GSM_NETWORK_TYPE_4G.  Note that not all devices allow network
 	 * preference control.
 	 *
-	 * Deprecated: 0.9.10: No longer used. Network type setting should be done talking to ModemManager directly.
+	 * Deprecated: 0.9.10: No longer used. Network type setting should be done
+	 * by talking to ModemManager directly.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_TYPE,
@@ -696,7 +702,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	 * frequency band control.  Permitted values are those specified by
 	 * #NMSettingGsmNetworkBand.
 	 *
-	 * Deprecated: 0.9.10: No longer used. Band setting should be done talking to ModemManager directly.
+	 * Deprecated: 0.9.10: No longer used. Band setting should be done by
+	 * talking to ModemManager directly.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ALLOWED_BANDS,
@@ -715,8 +722,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	 * NMSettingGsm:pin:
 	 *
 	 * If the SIM is locked with a PIN it must be unlocked before any other
-	 * operations are requested.  Specify the PIN here to allow operation of
-	 * the device.
+	 * operations are requested.  Specify the PIN here to allow operation of the
+	 * device.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PIN,
@@ -731,7 +738,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	/**
 	 * NMSettingGsm:pin-flags:
 	 *
-	 * Flags indicating how to handle #NMSettingGsm:pin.
+	 * Flags indicating how to handle the #NMSettingGsm:pin property.
 	 **/
 	g_object_class_install_property (object_class, PROP_PIN_FLAGS,
 		 g_param_spec_uint (NM_SETTING_GSM_PIN_FLAGS,

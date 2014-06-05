@@ -3136,9 +3136,9 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * NMSetting8021x:eap:
 	 *
 	 * The allowed EAP method to be used when authenticating to the network with
-	 * 802.1x.  Valid methods are: "leap", "md5", "tls", "peap", "ttls", "pwd" and
-	 * "fast".  Each method requires different configuration using the
-	 * properties of this object; refer to wpa_supplicant documentation for the
+	 * 802.1x.  Valid methods are: "leap", "md5", "tls", "peap", "ttls", "pwd",
+	 * and "fast".  Each method requires different configuration using the
+	 * properties of this setting; refer to wpa_supplicant documentation for the
 	 * allowed combinations.
 	 **/
 	g_object_class_install_property
@@ -3158,8 +3158,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:identity:
 	 *
-	 * Identity string for EAP authentication methods.  Often the user's
-	 * user or login name.
+	 * Identity string for EAP authentication methods.  Often the user's user or
+	 * login name.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IDENTITY,
@@ -3205,8 +3205,19 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * NMSetting8021x:ca-cert:
 	 *
 	 * Contains the CA certificate if used by the EAP method specified in the
-	 * #NMSetting8021x:eap property.  Setting this property directly is
-	 * discouraged; use the nm_setting_802_1x_set_ca_cert() function instead.
+	 * #NMSetting8021x:eap property.
+	 *
+	 * Certificate data is specified using a "scheme"; two are currently
+	 * supported: blob and path. When using the blob scheme (which is backwards
+	 * compatible with NM 0.7.x) this property should be set to the
+	 * certificate's DER encoded data. When using the path scheme, this property
+	 * should be set to the full UTF-8 encoded path of the certificate, prefixed
+	 * with the string "file://" and ending with a terminating NUL byte. This
+	 * property can be unset even if the EAP method supports CA certificates,
+	 * but this allows man-in-the-middle attacks and is NOT recommended.
+	 *
+	 * Setting this property directly is discouraged; use the
+	 * nm_setting_802_1x_set_ca_cert() function instead.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CA_CERT,
@@ -3250,10 +3261,9 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:subject-match:
 	 *
-	 * Substring to be matched against the subject of the certificate
-	 * presented by the authentication server. When unset, no
-	 * verification of the authentication server certificate's subject
-	 * is performed.
+	 * Substring to be matched against the subject of the certificate presented
+	 * by the authentication server. When unset, no verification of the
+	 * authentication server certificate's subject is performed.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SUBJECT_MATCH,
@@ -3271,9 +3281,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * NMSetting8021x:altsubject-matches:
 	 *
 	 * List of strings to be matched against the altSubjectName of the
-	 * certificate presented by the authentication server. If the list
-	 * is empty, no verification of the server certificate's
-	 * altSubjectName is performed.
+	 * certificate presented by the authentication server. If the list is empty,
+	 * no verification of the server certificate's altSubjectName is performed.
 	 **/
 	 g_object_class_install_property
 		 (object_class, PROP_ALTSUBJECT_MATCHES,
@@ -3292,8 +3301,17 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * NMSetting8021x:client-cert:
 	 *
 	 * Contains the client certificate if used by the EAP method specified in
-	 * the #NMSetting8021x:eap property.  Setting this property directly is
-	 * discouraged; use the nm_setting_802_1x_set_client_cert() function instead.
+	 * the #NMSetting8021x:eap property.
+	 *
+	 * Certificate data is specified using a "scheme"; two are currently
+	 * supported: blob and path. When using the blob scheme (which is backwards
+	 * compatible with NM 0.7.x) this property should be set to the
+	 * certificate's DER encoded data. When using the path scheme, this property
+	 * should be set to the full UTF-8 encoded path of the certificate, prefixed
+	 * with the string "file://" and ending with a terminating NUL byte.
+	 *
+	 * Setting this property directly is discouraged; use the
+	 * nm_setting_802_1x_set_client_cert() function instead.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CLIENT_CERT,
@@ -3387,9 +3405,9 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * Specifies the allowed "phase 2" inner non-EAP authentication methods when
 	 * an EAP method that uses an inner TLS tunnel is specified in the
-	 * #NMSetting8021x:eap property.  Recognized non-EAP phase2 methods are
+	 * #NMSetting8021x:eap property.  Recognized non-EAP "phase 2" methods are
 	 * "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", and "tls".
-	 * Each 'phase 2' inner method requires specific parameters for successful
+	 * Each "phase 2" inner method requires specific parameters for successful
 	 * authentication; see the wpa_supplicant documentation for more details.
 	 **/
 	g_object_class_install_property
@@ -3412,8 +3430,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 *
 	 * Specifies the allowed "phase 2" inner EAP-based authentication methods
 	 * when an EAP method that uses an inner TLS tunnel is specified in the
-	 * #NMSetting8021x:eap property.  Recognized EAP-based phase2 methods are
-	 * "md5", "mschapv2", "otp", "gtc", and "tls". Each 'phase 2' inner method
+	 * #NMSetting8021x:eap property.  Recognized EAP-based "phase 2" methods are
+	 * "md5", "mschapv2", "otp", "gtc", and "tls". Each "phase 2" inner method
 	 * requires specific parameters for successful authentication; see the
 	 * wpa_supplicant documentation for more details.
 	 **/
@@ -3435,8 +3453,19 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:phase2-ca-cert:
 	 *
-	 * Contains the CA certificate if used by the EAP method specified in the
-	 * #NMSetting8021x:phase2-auth or #NMSetting8021x:phase2-autheap properties.
+	 * Contains the "phase 2" CA certificate if used by the EAP method specified
+	 * in the #NMSetting8021x:phase2-auth or #NMSetting8021x:phase2-autheap
+	 * properties.
+	 *
+	 * Certificate data is specified using a "scheme"; two are currently
+	 * supported: blob and path. When using the blob scheme (which is backwards
+	 * compatible with NM 0.7.x) this property should be set to the
+	 * certificate's DER encoded data. When using the path scheme, this property
+	 * should be set to the full UTF-8 encoded path of the certificate, prefixed
+	 * with the string "file://" and ending with a terminating NUL byte. This
+	 * property can be unset even if the EAP method supports CA certificates,
+	 * but this allows man-in-the-middle attacks and is NOT recommended.
+	 *
 	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_phase2_ca_cert() function instead.
 	 **/
@@ -3483,10 +3512,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:phase2-subject-match:
 	 *
-	 * Substring to be matched against the subject of the certificate
-	 * presented by the authentication server during the inner "phase
-	 * 2" authentication. When unset, no verification of the
-	 * authentication server certificate's subject is performed.
+	 * Substring to be matched against the subject of the certificate presented
+	 * by the authentication server during the inner "phase 2"
+	 * authentication. When unset, no verification of the authentication server
+	 * certificate's subject is performed.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_SUBJECT_MATCH,
@@ -3505,10 +3534,9 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * NMSetting8021x:phase2-altsubject-matches:
 	 *
 	 * List of strings to be matched against the altSubjectName of the
-	 * certificate presented by the authentication server during the
-	 * inner "phase 2" authentication. If the list is empty, no
-	 * verification of the server certificate's altSubjectName is
-	 * performed.
+	 * certificate presented by the authentication server during the inner
+	 * "phase 2" authentication. If the list is empty, no verification of the
+	 * server certificate's altSubjectName is performed.
 	 **/
 	 g_object_class_install_property
 		 (object_class, PROP_PHASE2_ALTSUBJECT_MATCHES,
@@ -3528,9 +3556,20 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:phase2-client-cert:
 	 *
-	 * Contains the client certificate if used by the EAP method specified in
-	 * the #NMSetting8021x:phase2-auth or #NMSetting8021x:phase2-autheap
-	 * properties.  Setting this property directly is discouraged; use the
+	 * Contains the "phase 2" client certificate if used by the EAP method
+	 * specified in the #NMSetting8021x:phase2-auth or
+	 * #NMSetting8021x:phase2-autheap properties.
+	 *
+	 * Certificate data is specified using a "scheme"; two are currently
+	 * supported: blob and path. When using the blob scheme (which is backwards
+	 * compatible with NM 0.7.x) this property should be set to the
+	 * certificate's DER encoded data. When using the path scheme, this property
+	 * should be set to the full UTF-8 encoded path of the certificate, prefixed
+	 * with the string "file://" and ending with a terminating NUL byte. This
+	 * property can be unset even if the EAP method supports CA certificates,
+	 * but this allows man-in-the-middle attacks and is NOT recommended.
+	 *
+	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_phase2_client_cert() function instead.
 	 **/
 	g_object_class_install_property
@@ -3555,9 +3594,9 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:password:
 	 *
-	 * Password used for EAP authentication methods. If both
-	 * #NMSetting8021x:password and #NMSetting8021x:password-raw are
-	 * specified, #NMSetting8021x:password is preferred.
+	 * UTF-8 encoded password used for EAP authentication methods. If both the
+	 * #NMSetting8021x:password property and the #NMSetting8021x:password-raw
+	 * property are specified, #NMSetting8021x:password is preferred.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD,
@@ -3570,7 +3609,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:password-flags:
 	 *
-	 * Flags indicating how to handle #NMSetting8021x:password:.
+	 * Flags indicating how to handle the #NMSetting8021x:password property.
 	 **/
 	g_object_class_install_property (object_class, PROP_PASSWORD_FLAGS,
 		 g_param_spec_uint (NM_SETTING_802_1X_PASSWORD_FLAGS,
@@ -3584,10 +3623,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:password-raw:
 	 *
-	 * Password used for EAP authentication methods delivered as a
-	 * UTF-8-encoded array of bytes. If both #NMSetting8021x:password
-	 * and #NMSetting8021x:password-raw are specified,
-	 * #NMSetting8021x:password is preferred.
+	 * Password used for EAP authentication methods, given as a byte array to
+	 * allow passwords in other encodings than UTF-8 to be used. If both the
+	 * #NMSetting8021x:password property and the #NMSetting8021x:password-raw
+	 * property are specified, #NMSetting8021x:password is preferred.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD_RAW,
@@ -3605,7 +3644,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:password-raw-flags:
 	 *
-	 * Flags indicating how to handle #NMSetting8021x:password-raw:.
+	 * Flags indicating how to handle the #NMSetting8021x:password-raw property.
 	 **/
 	g_object_class_install_property (object_class, PROP_PASSWORD_RAW_FLAGS,
 		 g_param_spec_uint (NM_SETTING_802_1X_PASSWORD_RAW_FLAGS,
@@ -3619,8 +3658,25 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:private-key:
 	 *
-	 * Contains the private key if the #NMSetting8021x:eap property is set to
-	 * 'tls'.  Setting this property directly is discouraged; use the
+	 * Contains the private key when the #NMSetting8021x:eap property is set to
+	 * "tls".
+	 *
+	 * Key data is specified using a "scheme"; two are currently supported: blob
+	 * and path. When using the blob scheme and private keys, this property
+	 * should be set to the key's encrypted PEM encoded data. When using private
+	 * keys with the path scheme, this property should be set to the full UTF-8
+	 * encoded path of the key, prefixed with the string "file://" and ending
+	 * with a terminating NUL byte. When using PKCS#12 format private keys and
+	 * the blob scheme, this property should be set to the PKCS#12 data and the
+	 * #NMSetting8021x:private-key-password property must be set to password
+	 * used to decrypt the PKCS#12 certificate and key. When using PKCS#12 files
+	 * and the path scheme, this property should be set to the full UTF-8
+	 * encoded path of the key, prefixed with the string "file://" and and
+	 * ending with a terminating NUL byte, and as with the blob scheme the
+	 * "private-key-password" property must be set to the password used to
+	 * decode the PKCS#12 private key and certificate.
+	 *
+	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_private_key() function instead.
 	 *
 	 * WARNING: #NMSetting8021x:private-key is not a "secret" property, and thus
@@ -3662,9 +3718,9 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:private-key-password:
 	 *
-	 * The password used to decrypt the private key specified in
-	 * #NMSetting8021x:private-key when the private key either uses the path
-	 * scheme, or if the private key is a PKCS#12 format key.  Setting this
+	 * The password used to decrypt the private key specified in the
+	 * #NMSetting8021x:private-key property when the private key either uses the
+	 * path scheme, or if the private key is a PKCS#12 format key.  Setting this
 	 * property directly is not generally necessary except when returning
 	 * secrets to NetworkManager; it is generally set automatically when setting
 	 * the private key by the nm_setting_802_1x_set_private_key() function.
@@ -3683,7 +3739,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:private-key-password-flags:
 	 *
-	 * Flags indicating how to handle #NMSetting8021x:private-key-password:.
+	 * Flags indicating how to handle the #NMSetting8021x:private-key-password
+	 * property.
 	 **/
 	g_object_class_install_property (object_class, PROP_PRIVATE_KEY_PASSWORD_FLAGS,
 		 g_param_spec_uint (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS,
@@ -3698,11 +3755,26 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:phase2-private-key:
 	 *
-	 * Private key data used by "phase 2" inner authentication methods.
+	 * Contains the "phase 2" inner private key when the
+	 * #NMSetting8021x:phase2-auth or #NMSetting8021x:phase2-autheap property is
+	 * set to "tls".
 	 *
-	 * Contains the "phase 2" inner private key if the #NMSetting8021x:phase2-auth
-	 * or #NMSetting8021x:phase2-autheap property is set to 'tls'.  Setting this
-	 * property directly is discouraged; use the
+	 * Key data is specified using a "scheme"; two are currently supported: blob
+	 * and path. When using the blob scheme and private keys, this property
+	 * should be set to the key's encrypted PEM encoded data. When using private
+	 * keys with the path scheme, this property should be set to the full UTF-8
+	 * encoded path of the key, prefixed with the string "file://" and ending
+	 * with a terminating NUL byte. When using PKCS#12 format private keys and
+	 * the blob scheme, this property should be set to the PKCS#12 data and the
+	 * #NMSetting8021x:phase2-private-key-password property must be set to
+	 * password used to decrypt the PKCS#12 certificate and key. When using
+	 * PKCS#12 files and the path scheme, this property should be set to the
+	 * full UTF-8 encoded path of the key, prefixed with the string "file://"
+	 * and and ending with a terminating NUL byte, and as with the blob scheme
+	 * the #NMSetting8021x:phase2-private-key-password property must be set to
+	 * the password used to decode the PKCS#12 private key and certificate.
+	 *
+	 * Setting this property directly is discouraged; use the
 	 * nm_setting_802_1x_set_phase2_private_key() function instead.
 	 **/
 	g_object_class_install_property
@@ -3739,12 +3811,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:phase2-private-key-password:
 	 *
-	 * The password used to decrypt the private key specified in
-	 * #NMSetting8021x:phase2-private-key when the private key either uses the
-	 * path scheme, or if the private key is a PKCS#12 format key.  Setting this
-	 * property directly is not generally necessary except when returning
-	 * secrets to NetworkManager; it is generally set automatically when setting
-	 * the private key by the nm_setting_802_1x_set_phase2_private_key() function.
+	 * The password used to decrypt the "phase 2" private key specified in the
+	 * #NMSetting8021x:phase2-private-key property when the private key either
+	 * uses the path scheme, or is a PKCS#12 format key.  Setting this property
+	 * directly is not generally necessary except when returning secrets to
+	 * NetworkManager; it is generally set automatically when setting the
+	 * private key by the nm_setting_802_1x_set_phase2_private_key() function.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_PRIVATE_KEY_PASSWORD,
@@ -3760,7 +3832,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:phase2-private-key-password-flags:
 	 *
-	 * Flags indicating how to handle #NMSetting8021x:phase2-private-key-password:.
+	 * Flags indicating how to handle the
+	 * #NMSetting8021x:phase2-private-key-password property.
 	 **/
 	g_object_class_install_property (object_class, PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS,
 		 g_param_spec_uint (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS,
@@ -3788,7 +3861,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:pin-flags:
 	 *
-	 * Flags indicating how to handle #NMSetting8021x:pin:.
+	 * Flags indicating how to handle the #NMSetting8021x:pin property.
 	 **/
 	g_object_class_install_property (object_class, PROP_PIN_FLAGS,
 		 g_param_spec_uint (NM_SETTING_802_1X_PIN_FLAGS,
@@ -3806,8 +3879,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * #NMSetting8021x:phase2-ca-path properties using the system CA directory
 	 * specified at configure time with the --system-ca-path switch.  The
 	 * certificates in this directory are added to the verification chain in
-	 * addition to any certificates specified by the #NMSetting8021x:ca-cert
-	 * and #NMSetting8021x:phase2-ca-cert properties.
+	 * addition to any certificates specified by the #NMSetting8021x:ca-cert and
+	 * #NMSetting8021x:phase2-ca-cert properties.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SYSTEM_CA_CERTS,

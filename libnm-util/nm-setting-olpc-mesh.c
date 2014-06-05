@@ -265,9 +265,9 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 	/**
 	 * NMSettingOlpcMesh:dhcp-anycast-address:
 	 *
-	 * Anycast DHCP address used when requesting an IP address via DHCP.  The
-	 * specific anycast address used determines which DHCP server class answers
-	 * the request.
+	 * Anycast DHCP MAC address used when requesting an IP address via DHCP.
+	 * The specific anycast address used determines which DHCP server class
+	 * answers the request.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP_ANYCAST_ADDRESS,

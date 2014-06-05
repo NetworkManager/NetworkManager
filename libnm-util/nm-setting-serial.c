@@ -255,8 +255,8 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 	/**
 	 * NMSettingSerial:baud:
 	 *
-	 * Speed to use for communication over the serial port.  Note that this value
-	 * usually has no effect for mobile broadband modems as they generally
+	 * Speed to use for communication over the serial port.  Note that this
+	 * value usually has no effect for mobile broadband modems as they generally
 	 * ignore speed settings and use the highest available speed.
 	 **/
 	g_object_class_install_property
@@ -273,7 +273,7 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 	/**
 	 * NMSettingSerial:bits:
 	 *
-	 * Byte-width of the serial communication.
+	 * Byte-width of the serial communication. The 8 in "8n1" for example.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_BITS,
@@ -303,7 +303,7 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 	 * NMSettingSerial:stopbits:
 	 *
 	 * Number of stop bits for communication on the serial port.  Either 1 or 2.
-	 * The 1 in '8n1' for example.
+	 * The 1 in "8n1" for example.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_STOPBITS,

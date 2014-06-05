@@ -353,9 +353,9 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	/**
 	 * NMSettingInfiniband:mac-address:
 	 *
-	 * If specified, this connection will only apply to the IPoIB
-	 * device whose permanent MAC address matches. This property does
-	 * not change the MAC address of the device (i.e. MAC spoofing).
+	 * If specified, this connection will only apply to the IPoIB device whose
+	 * permanent MAC address matches. This property does not change the MAC
+	 * address of the device (i.e. MAC spoofing).
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
@@ -387,8 +387,8 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	/**
 	 * NMSettingInfiniband:transport-mode:
 	 *
-	 * The IP-over-InfiniBand transport mode. Either 'datagram' or
-	 * 'connected'.
+	 * The IP-over-InfiniBand transport mode. Either "datagram" or
+	 * "connected".
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_TRANSPORT_MODE,
@@ -401,10 +401,10 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	/**
 	 * NMSettingInfiniband:p-key:
 	 *
-	 * The InfiniBand P_Key to use for this device. A value of -1
-	 * means to use the default P_Key (aka "the P_Key at index 0").
-	 * Otherwise it is a 16-bit unsigned integer, whose high bit
-	 * is set if it is a "full membership" P_Key.
+	 * The InfiniBand P_Key to use for this device. A value of -1 means to use
+	 * the default P_Key (aka "the P_Key at index 0").  Otherwise it is a 16-bit
+	 * unsigned integer, whose high bit is set if it is a "full membership"
+	 * P_Key.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_P_KEY,
@@ -418,8 +418,8 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	/**
 	 * NMSettingInfiniband:parent:
 	 *
-	 * The interface name of the parent device of this device. Normally
-	 * %NULL, but if #NMSettingInfiniband:p_key is set, then you must
+	 * The interface name of the parent device of this device. Normally %NULL,
+	 * but if the #NMSettingInfiniband:p_key property is set, then you must
 	 * specify the base device by setting either this property or
 	 * #NMSettingInfiniband:mac-address.
 	 **/

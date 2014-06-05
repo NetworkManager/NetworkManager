@@ -961,7 +961,9 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:app-fcoe-flags:
 	 *
-	 * Specifies the #NMSettingDcbFlags for the DCB FCoE application.
+	 * Specifies the #NMSettingDcbFlags for the DCB FCoE application.  Flags may
+	 * be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
+	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -979,8 +981,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * NMSettingDcb:app-fcoe-priority:
 	 *
 	 * The highest User Priority (0 - 7) which FCoE frames should use, or -1 for
-	 * default priority.  Only used when #NMSettingDcb:app-fcoe-flags includes
-	 * %NM_SETTING_DCB_FLAG_ENABLE.
+	 * default priority.  Only used when the #NMSettingDcb:app-fcoe-flags
+	 * property includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -998,8 +1000,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:app-fcoe-mode:
 	 *
-	 * The FCoE controller mode; either %NM_SETTING_DCB_FCOE_MODE_FABRIC (default)
-	 * or %NM_SETTING_DCB_FCOE_MODE_VN2VN.
+	 * The FCoE controller mode; either %NM_SETTING_DCB_FCOE_MODE_FABRIC
+	 * (default) or %NM_SETTING_DCB_FCOE_MODE_VN2VN.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1015,7 +1017,9 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:app-iscsi-flags:
 	 *
-	 * Specifies the #NMSettingDcbFlags for the DCB iSCSI application.
+	 * Specifies the #NMSettingDcbFlags for the DCB iSCSI application.  Flags
+	 * may be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
+	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1032,8 +1036,9 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:app-iscsi-priority:
 	 *
-	 * The highest User Priority (0 - 7) which iSCSI frames should use.  Only
-	 * used when #NMSettingDcb:app-iscsi-flags includes %NM_SETTING_DCB_FLAG_ENABLE.
+	 * The highest User Priority (0 - 7) which iSCSI frames should use, or -1
+	 * for default priority. Only used when the #NMSettingDcb:app-iscsi-flags
+	 * property includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1051,7 +1056,9 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:app-fip-flags:
 	 *
-	 * Specifies the #NMSettingDcbFlags for the DCB FIP application.
+	 * Specifies the #NMSettingDcbFlags for the DCB FIP application.  Flags may
+	 * be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
+	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1068,8 +1075,9 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:app-fip-priority:
 	 *
-	 * The highest User Priority (0 - 7) which FIP frames should use.  Only
-	 * used when #NMSettingDcb:app-fip-flags includes %NM_SETTING_DCB_FLAG_ENABLE.
+	 * The highest User Priority (0 - 7) which FIP frames should use, or -1 for
+	 * default priority.  Only used when the #NMSettingDcb:app-fip-flags
+	 * property includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1088,6 +1096,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * NMSettingDcb:priority-flow-control-flags:
 	 *
 	 * Specifies the #NMSettingDcbFlags for DCB Priority Flow Control (PFC).
+	 * Flags may be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
+	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1104,10 +1114,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:priority-flow-control:
 	 *
-	 * An array of 8 uint values, where the array index corresponds to the
-	 * User Priority (0 - 7) and the value indicates whether or not the
-	 * corresponding priority should transmit priority pause.  Allowed values
-	 * are 0 (do not transmit pause) and 1 (transmit pause).
+	 * An array of 8 uint values, where the array index corresponds to the User
+	 * Priority (0 - 7) and the value indicates whether or not the corresponding
+	 * priority should transmit priority pause.  Allowed values are 0 (do not
+	 * transmit pause) and 1 (transmit pause).
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1127,7 +1137,9 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:priority-group-flags:
 	 *
-	 * Specifies the #NMSettingDcbFlags for DCB Priority Groups.
+	 * Specifies the #NMSettingDcbFlags for DCB Priority Groups.  Flags may be
+	 * any combination of %NM_SETTING_DCB_FLAG_ENABLE,
+	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1144,10 +1156,9 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:priority-group-id:
 	 *
-	 * An array of 8 uint values, where the array index corresponds to the
-	 * User Priority (0 - 7) and the value indicates the Priority Group ID.
-	 * Allowed Priority Group ID values are 0 - 7 or 15 for the unrestricted
-	 * group.
+	 * An array of 8 uint values, where the array index corresponds to the User
+	 * Priority (0 - 7) and the value indicates the Priority Group ID.  Allowed
+	 * Priority Group ID values are 0 - 7 or 15 for the unrestricted group.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1167,9 +1178,9 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * NMSettingDcb:priority-group-bandwidth:
 	 *
 	 * An array of 8 uint values, where the array index corresponds to the
-	 * Priority Group ID (0 - 7) and the value indicates the percentage of
-	 * link bandwidth allocated to that group.  Allowed values are 0 - 100,
-	 * and the sum of all values must total 100 percent.
+	 * Priority Group ID (0 - 7) and the value indicates the percentage of link
+	 * bandwidth allocated to that group.  Allowed values are 0 - 100, and the
+	 * sum of all values must total 100 percent.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1188,11 +1199,11 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:priority-bandwidth:
 	 *
-	 * An array of 8 uint values, where the array index corresponds to the
-	 * User Priority (0 - 7) and the value indicates the percentage of bandwidth
-	 * of the priority's assigned group that the priority may use.  The sum of
-	 * all percentages for priorities which belong to the same group must total
-	 * 100 percent.
+	 * An array of 8 uint values, where the array index corresponds to the User
+	 * Priority (0 - 7) and the value indicates the percentage of bandwidth of
+	 * the priority's assigned group that the priority may use.  The sum of all
+	 * percentages for priorities which belong to the same group must total 100
+	 * percent.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1212,11 +1223,11 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:priority-strict-bandwidth:
 	 *
-	 * An array of 8 uint values, where the array index corresponds to the
-	 * User Priority (0 - 7) and the value indicates whether or not the
-	 * priority may use all of the bandwidth allocated to its assigned group.
-	 * Allowed values are 0 (the priority may not utilize all bandwidth) or
-	 * 1 (the priority may utilize all bandwidth).
+	 * An array of 8 uint values, where the array index corresponds to the User
+	 * Priority (0 - 7) and the value indicates whether or not the priority may
+	 * use all of the bandwidth allocated to its assigned group.  Allowed values
+	 * are 0 (the priority may not utilize all bandwidth) or 1 (the priority may
+	 * utilize all bandwidth).
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1237,9 +1248,9 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:priority-traffic-class:
 	 *
-	 * An array of 8 uint values, where the array index corresponds to the
-	 * User Priority (0 - 7) and the value indicates the traffic class (0 - 7)
-	 * to which the priority is mapped.
+	 * An array of 8 uint values, where the array index corresponds to the User
+	 * Priority (0 - 7) and the value indicates the traffic class (0 - 7) to
+	 * which the priority is mapped.
 	 *
 	 * Since: 0.9.10
 	 **/

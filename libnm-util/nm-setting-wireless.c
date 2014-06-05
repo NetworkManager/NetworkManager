@@ -1033,7 +1033,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:ssid:
 	 *
-	 * SSID of the Wi-Fi network.
+	 * SSID of the Wi-Fi network. Must be specified.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SSID,
@@ -1046,7 +1046,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:mode:
 	 *
-	 * Wi-Fi network mode; one of 'infrastructure', 'adhoc' or 'ap'.  If blank,
+	 * Wi-Fi network mode; one of "infrastructure", "adhoc" or "ap".  If blank,
 	 * infrastructure is assumed.
 	 **/
 	g_object_class_install_property
@@ -1061,9 +1061,9 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:band:
 	 *
-	 * 802.11 frequency band of the network.  One of 'a' for 5GHz 802.11a or
-	 * 'bg' for 2.4GHz 802.11.  This will lock associations to the Wi-Fi network
-	 * to the specific band, i.e. if 'a' is specified, the device will not
+	 * 802.11 frequency band of the network.  One of "a" for 5GHz 802.11a or
+	 * "bg" for 2.4GHz 802.11.  This will lock associations to the Wi-Fi network
+	 * to the specific band, i.e. if "a" is specified, the device will not
 	 * associate with the same network in the 2.4GHz band even if the network's
 	 * settings are compatible.  This setting depends on specific driver
 	 * capability and may not work with all drivers.
@@ -1089,7 +1089,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * Wireless channel to use for the Wi-Fi connection.  The device will only
 	 * join (or create for Ad-Hoc networks) a Wi-Fi network on the specified
 	 * channel.  Because channel numbers overlap between bands, this property
-	 * also requires the 'band' property to be set.
+	 * also requires the "band" property to be set.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CHANNEL,
@@ -1165,9 +1165,9 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:mac-address:
 	 *
-	 * If specified, this connection will only apply to the Wi-Fi device
-	 * whose permanent MAC address matches. This property does not change the MAC address
-	 * of the device (i.e. MAC spoofing).
+	 * If specified, this connection will only apply to the Wi-Fi device whose
+	 * permanent MAC address matches. This property does not change the MAC
+	 * address of the device (i.e. MAC spoofing).
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
@@ -1183,8 +1183,8 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:cloned-mac-address:
 	 *
-	 * If specified, request that the Wi-Fi device use this MAC address instead of its
-	 * permanent MAC address.  This is known as MAC cloning or spoofing.
+	 * If specified, request that the Wi-Fi device use this MAC address instead
+	 * of its permanent MAC address.  This is known as MAC cloning or spoofing.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CLONED_MAC_ADDRESS,
@@ -1201,7 +1201,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 *
 	 * A list of permanent MAC addresses of Wi-Fi devices to which this
 	 * connection should never apply.  Each MAC address should be given in the
-	 * standard hex-digits-and-colons notation (eg '00:11:22:33:44:55').
+	 * standard hex-digits-and-colons notation (eg "00:11:22:33:44:55").
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS_BLACKLIST,
@@ -1219,10 +1219,11 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * NMSettingWireless:seen-bssids:
 	 *
 	 * A list of BSSIDs (each BSSID formatted as a MAC address like
-	 * '00:11:22:33:44:55') that have been detected as part of the Wi-Fi network.
-	 * NetworkManager internally tracks previously seen BSSIDs. The property is only
-	 * meant for reading and reflects the BSSID list of NetworkManager. The changes you
-	 * make to this property will not be preserved.
+	 * "00:11:22:33:44:55") that have been detected as part of the Wi-Fi
+	 * network.  NetworkManager internally tracks previously seen BSSIDs. The
+	 * property is only meant for reading and reflects the BSSID list of
+	 * NetworkManager. The changes you make to this property will not be
+	 * preserved.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SEEN_BSSIDS,
@@ -1259,11 +1260,13 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 * NMSettingWireless:security:
 	 *
 	 * If the wireless connection has any security restrictions, like 802.1x,
-	 * WEP, or WPA, set this property to '802-11-wireless-security' and ensure
-	 * the connection contains a valid 802-11-wireless-security setting.
+	 * WEP, or WPA, set this property to
+	 * %NM_SETTING_WIRELESS_SECURITY_SETTING_NAME and ensure the connection
+	 * contains a valid #NMSettingWirelessSecurity setting.
 	 *
-	 * Deprecated: 0.9.10: No longer used. Security rescrictions are recognized by
-	 * the presence of NM_SETTING_WIRELESS_SECURITY_SETTING_NAME in the connection.
+	 * Deprecated: 0.9.10: No longer used. Security restrictions are recognized
+	 * by the presence of a #NMSettingWirelessSecurity setting in the
+	 * connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SEC,
@@ -1280,9 +1283,9 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/**
 	 * NMSettingWireless:hidden:
 	 *
-	 * If %TRUE, indicates this network is a non-broadcasting network that
-	 * hides its SSID.  In this case various workarounds may take place, such
-	 * as probe-scanning the SSID for more reliable network discovery.  However,
+	 * If %TRUE, indicates this network is a non-broadcasting network that hides
+	 * its SSID.  In this case various workarounds may take place, such as
+	 * probe-scanning the SSID for more reliable network discovery.  However,
 	 * these workarounds expose inherent insecurities with hidden SSID networks,
 	 * and thus hidden SSID networks should be used with caution.
 	 **/

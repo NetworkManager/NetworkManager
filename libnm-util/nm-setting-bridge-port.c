@@ -273,7 +273,8 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	/**
 	 * NMSettingBridgePort:path-cost:
 	 *
-	 * The Spanning Tree Protocol (STP) port cost for destinations via this port.
+	 * The Spanning Tree Protocol (STP) port cost for destinations via this
+	 * port.
 	 *
 	 * Since: 0.9.8
 	 **/
@@ -289,7 +290,7 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	/**
 	 * NMSettingBridgePort:hairpin-mode:
 	 *
-	 * Enables or disabled 'hairpin mode' for the port, which allows frames to
+	 * Enables or disabled "hairpin mode" for the port, which allows frames to
 	 * be sent back out through the port the frame was received on.
 	 *
 	 * Since: 0.9.8
