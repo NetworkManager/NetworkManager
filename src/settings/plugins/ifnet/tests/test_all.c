@@ -28,7 +28,6 @@
 #include <unistd.h>
 #include <nm-utils.h>
 
-#include "nm-test-helpers.h"
 #include "nm-linux-platform.h"
 #include "nm-logging.h"
 
@@ -37,6 +36,8 @@
 #include "wpa_parser.h"
 #include "connection_parser.h"
 #include "nm-config.h"
+
+#include "nm-test-utils.h"
 
 /* Fake NMConfig handling; the values it returns don't matter, so this
  * is easier than forcing it to read our own config file, etc.
@@ -450,16 +451,16 @@ test_missing_config ()
 	        "get connection should fail with 'Unknown config for eth8'");
 }
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
 	char *f;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
 	nm_linux_platform_setup ();
+
+	nmtst_init_assert_logging (&argc, &argv);
 	nm_logging_setup ("WARN", "DEFAULT", NULL, NULL);
 
 	f = g_build_filename (argv[1], "net", NULL);

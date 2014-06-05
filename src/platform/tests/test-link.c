@@ -1,4 +1,5 @@
 #include "test-common.h"
+#include "nm-test-utils.h"
 
 #define LO_INDEX 1
 #define LO_NAME "lo"
@@ -112,7 +113,7 @@ software_add (NMLinkType link_type, const char *name)
 		/* Don't call link_callback for the bridge interface */
 		parent_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, PARENT_NAME);
 		if (nm_platform_bridge_add (PARENT_NAME, NULL, 0))
-			wait_signal (parent_added);
+			accept_signal (parent_added);
 		free_signal (parent_added);
 
 		{
@@ -144,7 +145,7 @@ test_slave (int master, int type, SignalData *master_changed)
 	g_assert (ifindex > 0);
 	link_changed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, link_callback, ifindex);
 	link_removed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, link_callback, ifindex);
-	wait_signal (link_added);
+	accept_signal (link_added);
 
 	/* Set the slave up to see whether master's IFF_LOWER_UP is set correctly.
 	 *
@@ -182,7 +183,20 @@ test_slave (int master, int type, SignalData *master_changed)
 	}
 	g_assert (!nm_platform_link_is_up (ifindex));
 	g_assert (!nm_platform_link_is_connected (ifindex));
-	g_assert (!nm_platform_link_is_connected (master));
+	if (nm_platform_link_is_connected (master)) {
+		if (nm_platform_link_get_type (master) == NM_LINK_TYPE_TEAM) {
+			/* Older team versions (e.g. Fedora 17) have a bug that team master stays
+			 * IFF_LOWER_UP even if its slave is down. Double check it with iproute2 and if
+			 * `ip link` also claims master to be up, accept it. */
+			char *stdout = NULL;
+
+			nmtst_spawn_sync (NULL, &stdout, NULL, 0, "/sbin/ip", "link", "show", "dev", nm_platform_link_get_name (master));
+
+			g_assert (strstr (stdout, "LOWER_UP"));
+			g_free (stdout);
+		} else
+			g_assert_not_reached ();
+	}
 
 	/* Set slave up and see if master gets up too */
 	g_assert (nm_platform_link_set_up (ifindex)); no_error ();
@@ -246,7 +260,7 @@ test_software (NMLinkType link_type, const char *link_typename)
 	link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 	g_assert (software_add (link_type, DEVICE_NAME));
 	no_error ();
-	wait_signal (link_added);
+	accept_signal (link_added);
 	g_assert (nm_platform_link_exists (DEVICE_NAME));
 	ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);
 	g_assert (ifindex >= 0);
@@ -348,6 +362,13 @@ test_bridge (void)
 static void
 test_bond (void)
 {
+	if (SETUP == nm_linux_platform_setup &&
+	    !g_file_test ("/proc/1/net/bonding", G_FILE_TEST_IS_DIR) &&
+	    system("modprobe --show bonding") != 0) {
+		g_test_skip ("Skipping test for bonding: bonding module not available");
+		return;
+	}
+
 	test_software (NM_LINK_TYPE_BOND, "bond");
 }
 
@@ -381,7 +402,7 @@ test_internal (void)
 	/* Add device */
 	g_assert (nm_platform_dummy_add (DEVICE_NAME));
 	no_error ();
-	wait_signal (link_added);
+	accept_signal (link_added);
 
 	/* Try to add again */
 	g_assert (!nm_platform_dummy_add (DEVICE_NAME));
@@ -453,9 +474,11 @@ test_internal (void)
 static void
 test_external (void)
 {
+	NMPlatformLink link;
 	SignalData *link_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, DEVICE_NAME);
 	SignalData *link_changed, *link_removed;
 	int ifindex;
+	gboolean success;
 
 	run_command ("ip link add %s type %s", DEVICE_NAME, "dummy");
 	wait_signal (link_added);
@@ -467,6 +490,13 @@ test_external (void)
 	g_assert_cmpstr (nm_platform_link_get_type_name (ifindex), ==, DUMMY_TYPEDESC);
 	link_changed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_CHANGED, link_callback, ifindex);
 	link_removed = add_signal_ifindex (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_REMOVED, link_callback, ifindex);
+
+	success = nm_platform_link_get (ifindex, &link);
+	g_assert (success);
+	if (!link.driver) {
+		/* we still lack the notification via UDEV. Expect another link changed signal. */
+		wait_signal (link_changed);
+	}
 
 	/* Up/connected/arp */
 	g_assert (!nm_platform_link_is_up (ifindex));

@@ -314,7 +314,7 @@ nm_platform_sysctl_get_int_checked (const char *path, guint base, gint64 min, gi
 /**
  * nm_platform_query_devices:
  *
- * Emit #NMPlatform:link-added signals for all currently-known links.
+ * Emit #NMPlatform:link-changed ADDED signals for all currently-known links.
  * Should only be called at startup.
  */
 void
@@ -440,6 +440,27 @@ nm_platform_link_get_all (void)
 }
 
 /**
+ * nm_platform_link_get:
+ * @ifindex: ifindex of the link
+ * @link: (out): output NMPlatformLink structure.
+ *
+ * If a link with given @ifindex exists, fill the given NMPlatformLink
+ * structure.
+ *
+ * Returns: %TRUE, if such a link exists, %FALSE otherwise.
+ * If the link does not exist, the content of @link is undefined.
+ **/
+gboolean
+nm_platform_link_get (int ifindex, NMPlatformLink *link)
+{
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (link, FALSE);
+
+	g_return_val_if_fail (klass->link_get, FALSE);
+	return !!klass->link_get (platform, ifindex, link);
+}
+
+/**
  * nm_platform_link_add:
  * @name: Interface name
  * @type: Interface type
@@ -447,8 +468,8 @@ nm_platform_link_get_all (void)
  * @address_len: the length of the @address
  *
  * Add a software interface. Sets platform->error to NM_PLATFORM_ERROR_EXISTS
- * if interface is already already exists.  Any link-added signal will be
- * emitted from an idle handler and not within this function.
+ * if interface is already already exists.  Any link-changed ADDED signal will be
+ * emitted directly, before this function finishes.
  */
 static gboolean
 nm_platform_link_add (const char *name, NMLinkType type, const void *address, size_t address_len)

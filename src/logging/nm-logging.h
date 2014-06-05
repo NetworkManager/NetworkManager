@@ -22,6 +22,10 @@
 #ifndef NM_LOGGING_H
 #define NM_LOGGING_H
 
+#ifdef __NM_TEST_UTILS_H__
+#error nm-test-utils.h must be included as last header
+#endif
+
 #include <glib.h>
 #include <glib-object.h>
 

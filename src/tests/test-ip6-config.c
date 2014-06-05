@@ -24,6 +24,7 @@
 
 #include "nm-ip6-config.h"
 
+#include "nm-logging.h"
 #include "nm-test-utils.h"
 
 static NMIP6Config *
@@ -324,7 +325,7 @@ NMTST_DEFINE();
 int
 main (int argc, char **argv)
 {
-	nmtst_init (&argc, &argv);
+	nmtst_init_with_logging (&argc, &argv, NULL, "ALL");
 
 	g_test_add_func ("/ip6-config/subtract", test_subtract);
 	g_test_add_func ("/ip6-config/compare-with-source", test_compare_with_source);

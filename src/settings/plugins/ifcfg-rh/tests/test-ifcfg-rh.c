@@ -48,14 +48,15 @@
 #include <nm-setting-dcb.h>
 #include <nm-util-private.h>
 
-#include "nm-test-helpers.h"
 #include "NetworkManagerUtils.h"
-#include "nm-glib-compat.h"
 
 #include "common.h"
 #include "reader.h"
 #include "writer.h"
 #include "utils.h"
+#include "nm-logging.h"
+
+#include "nm-test-utils.h"
 
 #if 0
 static void
@@ -14377,27 +14378,11 @@ test_svUnescape ()
 
 #define TPATH "/settings/plugins/ifcfg-rh/"
 
+NMTST_DEFINE ();
+
 int main (int argc, char **argv)
 {
-	GError *error = NULL;
-	gboolean success;
-
-	g_test_init (&argc, &argv, NULL);
-#if GLIB_CHECK_VERSION(2,34,0)
-	/* consider even unexpected g_message()s to be fatal */
-	g_log_set_always_fatal (G_LOG_LEVEL_MASK);
-#else
-	/* g_test_expect_message() is dummied out, so allow warnings */
-	g_log_set_always_fatal (G_LOG_LEVEL_CRITICAL);
-#endif
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	success = nm_utils_init (&error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_init_assert_logging (&argc, &argv);
 
 	g_test_add_func (TPATH "svUnescape", test_svUnescape);
 

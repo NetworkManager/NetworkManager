@@ -1535,15 +1535,24 @@ delete_object (NMPlatform *platform, struct nl_object *obj, gboolean do_refresh_
 		debug("delete_object failed with \"%s\" (%d), meaning the object was already removed",
 		      nl_geterror (nle), nle);
 		break;
+	case -NLE_FAILURE:
+		if (object_type == OBJECT_TYPE_IP6_ADDRESS) {
+			/* On RHEL7 kernel, deleting a non existing address fails with ENXIO (which libnl maps to NLE_FAILURE) */
+			debug("delete_object for address failed with \"%s\" (%d), meaning the address was already removed",
+			      nl_geterror (nle), nle);
+			break;
+		}
+		goto DEFAULT;
 	case -NLE_NOADDR:
 		if (object_type == OBJECT_TYPE_IP4_ADDRESS || object_type == OBJECT_TYPE_IP6_ADDRESS) {
 			debug("delete_object for address failed with \"%s\" (%d), meaning the address was already removed",
 			      nl_geterror (nle), nle);
 			break;
 		}
-		/* fall-through to error, because we only expect this for addresses. */
+		goto DEFAULT;
+	DEFAULT:
 	default:
-		error ("Netlink error deleting %s: %s", to_string_object (platform, obj), nl_geterror (nle));
+		error ("Netlink error deleting %s: %s (%d)", to_string_object (platform, obj), nl_geterror (nle), nle);
 		return FALSE;
 	}
 
@@ -1627,7 +1636,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			return NL_OK;
 
 		nl_cache_remove (cached_object);
-		/* Don't announced removed interfaces that are not recognized by
+		/* Don't announce removed interfaces that are not recognized by
 		 * udev. They were either not yet discovered or they have been
 		 * already removed and announced.
 		 */
@@ -1866,6 +1875,22 @@ link_get_all (NMPlatform *platform)
 	}
 
 	return links;
+}
+
+static gboolean
+_nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *link)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	auto_nl_object struct rtnl_link *rtnllink;
+
+	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
+	if (rtnllink) {
+		if (link_is_announceable (platform, rtnllink)) {
+			if (init_link (platform, link, rtnllink))
+				return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 static struct nl_object *
@@ -3569,38 +3594,40 @@ udev_device_added (NMPlatform *platform,
 	auto_nl_object struct rtnl_link *rtnllink = NULL;
 	const char *ifname;
 	int ifindex;
-	gboolean is_changed;
+	gboolean was_announceable = FALSE;
 
 	ifname = g_udev_device_get_name (udev_device);
 	if (!ifname) {
-		debug ("failed to get device's interface");
+		debug ("udev-add: failed to get device's interface");
 		return;
 	}
 
 	if (g_udev_device_get_property (udev_device, "IFINDEX"))
 		ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	else {
-		warning ("(%s): failed to get device's ifindex", ifname);
+		warning ("(%s): udev-add: failed to get device's ifindex", ifname);
+		return;
+	}
+	if (ifindex <= 0) {
+		warning ("(%s): udev-add: retrieved invalid IFINDEX=%d", ifname, ifindex);
 		return;
 	}
 
 	if (!g_udev_device_get_sysfs_path (udev_device)) {
-		debug ("(%s): couldn't determine device path; ignoring...", ifname);
+		debug ("(%s): udev-add: couldn't determine device path; ignoring...", ifname);
 		return;
 	}
 
-	is_changed = g_hash_table_lookup_extended (priv->udev_devices, GINT_TO_POINTER (ifindex), NULL, NULL);
+	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
+	if (rtnllink)
+		was_announceable = link_is_announceable (platform, rtnllink);
+
 	g_hash_table_insert (priv->udev_devices, GINT_TO_POINTER (ifindex),
 	                     g_object_ref (udev_device));
 
-	/* Don't announce devices that have not yet been discovered via Netlink. */
-	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-	if (!rtnllink) {
-		debug ("%s: not found in link cache, ignoring...", ifname);
-		return;
-	}
-
-	announce_object (platform, (struct nl_object *) rtnllink, is_changed ? NM_PLATFORM_SIGNAL_CHANGED : NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_EXTERNAL);
+	/* Announce devices only if they also have been discovered via Netlink. */
+	if (rtnllink && link_is_announceable (platform, rtnllink))
+		announce_object (platform, (struct nl_object *) rtnllink, was_announceable ? NM_PLATFORM_SIGNAL_CHANGED : NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_EXTERNAL);
 }
 
 static void
@@ -3608,12 +3635,13 @@ udev_device_removed (NMPlatform *platform,
                      GUdevDevice *udev_device)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	auto_nl_object struct rtnl_link *rtnllink = NULL;
 	int ifindex = 0;
+	gboolean was_announceable = FALSE;
 
-	if (g_udev_device_get_property (udev_device, "IFINDEX")) {
+	if (g_udev_device_get_property (udev_device, "IFINDEX"))
 		ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
-		g_hash_table_remove (priv->udev_devices, GINT_TO_POINTER (ifindex));
-	} else {
+	else {
 		GHashTableIter iter;
 		gpointer key, value;
 
@@ -3625,19 +3653,24 @@ udev_device_removed (NMPlatform *platform,
 		while (g_hash_table_iter_next (&iter, &key, &value)) {
 			if ((GUdevDevice *)value == udev_device) {
 				ifindex = GPOINTER_TO_INT (key);
-				g_hash_table_iter_remove (&iter);
 				break;
 			}
 		}
 	}
 
-	/* Announce device removal if it's still in the Netlink cache. */
-	if (ifindex) {
-		auto_nl_object struct rtnl_link *device = rtnl_link_get (priv->link_cache, ifindex);
+	debug ("udev-remove: IFINDEX=%d", ifindex);
+	if (ifindex <= 0)
+		return;
 
-		if (device)
-			announce_object (platform, (struct nl_object *) device, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_EXTERNAL);
-	}
+	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
+	if (rtnllink)
+		was_announceable = link_is_announceable (platform, rtnllink);
+
+	g_hash_table_remove (priv->udev_devices, GINT_TO_POINTER (ifindex));
+
+	/* Announce device removal if it is no longer announceable. */
+	if (was_announceable && !link_is_announceable (platform, rtnllink))
+		announce_object (platform, (struct nl_object *) rtnllink, NM_PLATFORM_SIGNAL_REMOVED, NM_PLATFORM_REASON_EXTERNAL);
 }
 
 static void
@@ -3795,6 +3828,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;
 
+	platform_class->link_get = _nm_platform_link_get;
 	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;

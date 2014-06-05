@@ -39,11 +39,10 @@
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-8021x.h>
 
-#include "nm-test-helpers.h"
-#include "nm-glib-compat.h"
-
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
+
+#include "nm-test-utils.h"
 
 static gboolean
 validate_opt (const char *detail,
@@ -495,17 +494,13 @@ test_wifi_wpa_psk_types (void)
 	test_wifi_wpa_psk ("wifi-wep-psk-passphrase", TYPE_STRING, key2, (gconstpointer) key2, strlen (key2));
 }
 
+NMTST_DEFINE ();
+
 int main (int argc, char **argv)
 {
-	GError *error = NULL;
 	char *base;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
+	nmtst_init (&argc, &argv, TRUE);
 
 	/* The tests */
 	test_wifi_open ();

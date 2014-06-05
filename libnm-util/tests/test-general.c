@@ -25,7 +25,6 @@
 #include <netinet/ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-test-helpers.h"
 #include <nm-utils.h>
 
 #include "nm-setting-private.h"
@@ -44,7 +43,8 @@
 #include "nm-utils.h"
 #include "nm-util-private.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-glib-compat.h"
+
+#include "nm-test-utils.h"
 
 static void
 vpn_check_func (const char *key, const char *value, gpointer user_data)
@@ -2484,17 +2484,13 @@ test_setting_old_uuid (void)
 	g_assert (success == TRUE);
 }
 
+NMTST_DEFINE ();
+
 int main (int argc, char **argv)
 {
-	GError *error = NULL;
 	char *base;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
+	nmtst_init (&argc, &argv, TRUE);
 
 	/* The tests */
 	test_setting_vpn_items ();

@@ -40,12 +40,12 @@
 #include <nm-setting-gsm.h>
 #include <nm-setting-8021x.h>
 #include <nm-setting-infiniband.h>
-
-#include "nm-test-helpers.h"
-#include "nm-glib-compat.h"
+#include <nm-logging.h>
 
 #include "reader.h"
 #include "writer.h"
+
+#include "nm-test-utils.h"
 
 #define TEST_WIRED_FILE    TEST_KEYFILES_DIR"/Test_Wired_Connection"
 #define TEST_WIRELESS_FILE TEST_KEYFILES_DIR"/Test_Wireless_Connection"
@@ -3410,19 +3410,13 @@ test_read_missing_vlan_setting (void)
 	g_object_unref (connection);
 }
 
+NMTST_DEFINE ();
+
 int main (int argc, char **argv)
 {
-	GError *error = NULL;
 	char *base;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	g_log_set_always_fatal (G_LOG_LEVEL_MASK);
-
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
+	nmtst_init_assert_logging (&argc, &argv);
 
 	/* The tests */
 	test_read_valid_wired_connection ();

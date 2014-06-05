@@ -34,7 +34,7 @@ test_cleanup_internal ()
 
 	/* Create and set up device */
 	g_assert (nm_platform_dummy_add (DEVICE_NAME));
-	wait_signal (link_added);
+	accept_signal (link_added);
 	free_signal (link_added);
 	g_assert (nm_platform_link_set_up (nm_platform_link_get_ifindex (DEVICE_NAME)));
 	ifindex = nm_platform_link_get_ifindex (DEVICE_NAME);

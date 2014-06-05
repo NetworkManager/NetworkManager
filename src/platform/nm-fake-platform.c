@@ -36,8 +36,6 @@ typedef struct {
 	GArray *ip6_addresses;
 	GArray *ip4_routes;
 	GArray *ip6_routes;
-
-	GSList *link_added_ids;
 } NMFakePlatformPrivate;
 
 typedef struct {
@@ -163,25 +161,14 @@ link_get_all (NMPlatform *platform)
 	return links;
 }
 
-typedef struct {
-	NMPlatform *platform;
-	int ifindex;
-	guint id;
-} LinkAddedInfo;
-
 static gboolean
-link_added_emit (gpointer user_data)
+_nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *link)
 {
-	LinkAddedInfo *info = user_data;
-	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (info->platform);
-	NMFakePlatformLink *device;
+	NMFakePlatformLink *device = link_get (platform, ifindex);
 
-	priv->link_added_ids = g_slist_remove (priv->link_added_ids, GUINT_TO_POINTER (info->id));
-
-	device = link_get (info->platform, info->ifindex);
-	g_assert (device);
-	g_signal_emit_by_name (info->platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, info->ifindex, &device->link, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_INTERNAL);
-	return FALSE;
+	if (device)
+		*link = device->link;
+	return !!device;
 }
 
 static gboolean
@@ -189,23 +176,13 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *a
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	NMFakePlatformLink device;
-	LinkAddedInfo *info;
 
 	link_init (&device, priv->links->len, type, name);
 
 	g_array_append_val (priv->links, device);
 
-	if (device.link.ifindex) {
-		/* Platform requires LINK_ADDED signal emission from an idle handler */
-		info = g_new0 (LinkAddedInfo, 1);
-		info->platform = platform;
-		info->ifindex = device.link.ifindex;
-		info->id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
-		                            link_added_emit,
-		                            info,
-		                            g_free);
-		priv->link_added_ids = g_slist_prepend (priv->link_added_ids, GUINT_TO_POINTER (info->id));
-	}
+	if (device.link.ifindex)
+		g_signal_emit_by_name (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, device.link.ifindex, &device, NM_PLATFORM_SIGNAL_ADDED, NM_PLATFORM_REASON_INTERNAL);
 
 	return TRUE;
 }
@@ -850,6 +827,7 @@ ip4_address_add (NMPlatform *platform, int ifindex,
 	int i;
 
 	memset (&address, 0, sizeof (address));
+	address.source = NM_PLATFORM_SOURCE_KERNEL;
 	address.ifindex = ifindex;
 	address.address = addr;
 	address.peer_address = peer_addr;
@@ -891,6 +869,7 @@ ip6_address_add (NMPlatform *platform, int ifindex,
 	int i;
 
 	memset (&address, 0, sizeof (address));
+	address.source = NM_PLATFORM_SOURCE_KERNEL;
 	address.ifindex = ifindex;
 	address.address = addr;
 	address.peer_address = peer_addr;
@@ -1068,6 +1047,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, in_addr_t network, int plen,
 	guint i;
 
 	memset (&route, 0, sizeof (route));
+	route.source = NM_PLATFORM_SOURCE_KERNEL;
 	route.ifindex = ifindex;
 	route.network = network;
 	route.plen = plen;
@@ -1105,6 +1085,7 @@ ip6_route_add (NMPlatform *platform, int ifindex, struct in6_addr network, int p
 	guint i;
 
 	memset (&route, 0, sizeof (route));
+	route.source = NM_PLATFORM_SOURCE_KERNEL;
 	route.ifindex = ifindex;
 	route.network = network;
 	route.plen = plen;
@@ -1250,11 +1231,6 @@ nm_fake_platform_finalize (GObject *object)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (object);
 	int i;
-	GSList *iter;
-
-	for (iter = priv->link_added_ids; iter; iter = iter->next)
-		g_source_remove (GPOINTER_TO_UINT (iter->data));
-	g_slist_free (priv->link_added_ids);
 
 	g_hash_table_unref (priv->options);
 	for (i = 0; i < priv->links->len; i++) {
@@ -1288,6 +1264,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->sysctl_set = sysctl_set;
 	platform_class->sysctl_get = sysctl_get;
 
+	platform_class->link_get = _nm_platform_link_get;
 	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;

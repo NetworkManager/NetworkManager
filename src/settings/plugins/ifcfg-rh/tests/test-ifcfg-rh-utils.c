@@ -23,11 +23,10 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "nm-test-helpers.h"
-
 #include "common.h"
 #include "utils.h"
 
+#include "nm-test-utils.h"
 
 static void
 test_get_ifcfg_name (const char *desc,
@@ -114,9 +113,13 @@ test_ignored (const char *desc, const char *path, gboolean expected_ignored)
 	ASSERT (result == expected_ignored, desc, "unexpected ignore result for path '%s'", path);
 }
 
+NMTST_DEFINE ();
+
 int main (int argc, char **argv)
 {
 	char *base;
+
+	nmtst_init (&argc, &argv, TRUE);
 
 	/* The tests */
 	test_get_ifcfg_name ("get-ifcfg-name-bad", "/foo/bar/adfasdfadf", FALSE, NULL);

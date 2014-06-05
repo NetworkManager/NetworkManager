@@ -1,5 +1,6 @@
 #include "test-common.h"
-#include "nm-glib-compat.h"
+
+#include "nm-test-utils.h"
 
 SignalData *
 add_signal_full (const char *name, NMPlatformSignalChangeType change_type, GCallback callback, int ifindex, const char *ifname)
@@ -47,6 +48,9 @@ accept_signal (SignalData *data)
 void
 wait_signal (SignalData *data)
 {
+	if (data->received)
+		g_error ("Signal '%s' received before waiting for it.", data->name);
+
 	data->loop = g_main_loop_new (NULL, FALSE);
 	g_main_loop_run (data->loop);
 	g_clear_pointer (&data->loop, g_main_loop_unref);
@@ -95,6 +99,11 @@ link_callback (NMPlatform *platform, int ifindex, NMPlatformLink *received, NMPl
 	debug ("Received signal '%s-%s' ifindex %d ifname '%s'.", data->name, _change_type_to_string (data->change_type), ifindex, received->name);
 	data->received = TRUE;
 
+	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
+		g_assert (!nm_platform_link_get_name (ifindex));
+	else
+		g_assert (nm_platform_link_get_name (ifindex));
+
 	/* Check the data */
 	g_assert (received->ifindex > 0);
 	links = nm_platform_link_get_all ();
@@ -130,23 +139,27 @@ run_command (const char *format, ...)
 	g_free (command);
 }
 
+NMTST_DEFINE();
+
 int
 main (int argc, char **argv)
 {
 	int result;
+	const char *program = *argv;
 
-	openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_DAEMON);
+	nmtst_init_with_logging (&argc, &argv, NULL, "ALL");
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
+	if (SETUP == nm_linux_platform_setup && getuid() != 0) {
+		/* Try to exec as sudo, this function does not return, if a sudo-cmd is set. */
+		nmtst_reexec_sudo ();
+
+#ifdef REQUIRE_ROOT_TESTS
+		g_message ("Fail test: requires root privileges (%s)", program);
+		return EXIT_FAILURE;
+#else
+		g_message ("Skipping test: requires root privileges (%s)", program);
+		return 77;
 #endif
-
-	g_test_init (&argc, &argv, NULL);
-	/* Enable debug messages if called with --debug */
-	for (; *argv; argv++) {
-		if (!g_strcmp0 (*argv, "--debug")) {
-			nm_logging_setup ("debug", NULL, NULL, NULL);
-		}
 	}
 
 	SETUP ();
