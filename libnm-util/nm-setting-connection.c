@@ -1103,13 +1103,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ID,
-		 g_param_spec_string (NM_SETTING_CONNECTION_ID,
-						  "ID",
-						  "User-readable connection identifier/name.  Must be "
-						  "one or more characters and may change over the lifetime "
-						  "of the connection if the user decides to rename it.",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		 g_param_spec_string (NM_SETTING_CONNECTION_ID, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:uuid:
@@ -1129,20 +1126,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_UUID,
-		 g_param_spec_string (NM_SETTING_CONNECTION_UUID,
-						  "UUID",
-						  "Universally unique connection identifier.  Must be "
-						  "in the format '2815492f-7e56-435e-b2e9-246bd7cdc664' "
-						  "(ie, contains only hexadecimal characters and '-'). "
-						  "The UUID should be assigned when the connection is "
-						  "created and never changed as long as the connection "
-						  "still applies to the same network.  For example, "
-						  "it should not be changed when the user changes the "
-						  "connection's 'id', but should be recreated when the "
-						  "Wi-Fi SSID, mobile broadband network provider, or the "
-						  "connection type changes.",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		 g_param_spec_string (NM_SETTING_CONNECTION_UUID, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:interface-name:
@@ -1161,21 +1148,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
-		 g_param_spec_string (NM_SETTING_CONNECTION_INTERFACE_NAME,
-		                      "Interface name",
-		                      "Interface name this connection is bound to. "
-		                      "If not set, then the connection can be attached "
-		                      "to any interface of the appropriate type (subject "
-		                      "to restrictions imposed by other settings). For "
-		                      "connection types where interface names cannot easily "
-		                      "be made persistent (e.g. mobile broadband or USB "
-		                      "Ethernet), this property should not be used. Setting "
-		                      "this property restricts the interfaces a connection can "
-		                      "be used with, and if interface names change or are "
-		                      "reordered the connection may be applied to the wrong "
-		                      "interface.",
+		 g_param_spec_string (NM_SETTING_CONNECTION_INTERFACE_NAME, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:type:
@@ -1188,17 +1164,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_TYPE,
-		 g_param_spec_string (NM_SETTING_CONNECTION_TYPE,
-						  "Type",
-						  "Base type of the connection.  For hardware-dependent "
-						  "connections, should contain the setting name of the "
-						  "hardware-type specific setting (ie, '802-3-ethernet' "
-						  "or '802-11-wireless' or 'bluetooth', etc), and for "
-						  "non-hardware dependent connections like VPN or "
-						  "otherwise, should contain the setting name of that "
-						  "setting type (ie, 'vpn' or 'bridge', etc).",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
+		 g_param_spec_string (NM_SETTING_CONNECTION_TYPE, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:permissions:
@@ -1217,25 +1186,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 */
 	g_object_class_install_property
 		(object_class, PROP_PERMISSIONS,
-		 _nm_param_spec_specialized (NM_SETTING_CONNECTION_PERMISSIONS,
-		                  "Permissions",
-		                  "An array of strings defining what access a given "
-		                  "user has to this connection.  If this is NULL or "
-		                  "empty, all users are allowed to access this "
-		                  "connection.  Otherwise a user is allowed to access "
-		                  "this connection if and only if they are in this "
-		                  "array. Each entry is of the form "
-		                  "\"[type]:[id]:[reserved]\", for example: "
-		                  "\"user:dcbw:blah\"  At this time only the 'user' "
-		                  "[type] is allowed.  Any other values are ignored and "
-		                  "reserved for future use.  [id] is the username that "
-		                  "this permission refers to, which may not contain the "
-		                  "':' character.  Any [reserved] information (if "
-		                  "present) must be ignored and is reserved for future "
-		                  "use.  All of [type], [id], and [reserved] must be "
-		                  "valid UTF-8.",
-		                  DBUS_TYPE_G_LIST_OF_STRING,
-		                  G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_CONNECTION_PERMISSIONS, "", "",
+		                             DBUS_TYPE_G_LIST_OF_STRING,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:autoconnect:
@@ -1247,14 +1201,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AUTOCONNECT,
-		 g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT,
-						   "Autoconnect",
-						   "If TRUE, NetworkManager will activate this connection "
-						   "when its network resources are available.  If FALSE, "
-						   "the connection must be manually activated by the user "
-						   "or some other mechanism.",
-						   TRUE,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
+		 g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT, "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:timestamp:
@@ -1269,16 +1219,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_TIMESTAMP,
-		 g_param_spec_uint64 (NM_SETTING_CONNECTION_TIMESTAMP,
-		                      "Timestamp",
-		                      "Timestamp (in seconds since the Unix Epoch) that the "
-		                      "connection was last successfully activated.  NetworkManager "
-		                      "updates the connection timestamp periodically when the "
-		                      "connection is active to ensure that an active connection "
-		                      "has the latest timestamp. The property is only meant for "
-		                      "reading (changes to this property will not be preserved).",
+		 g_param_spec_uint64 (NM_SETTING_CONNECTION_TIMESTAMP, "", "",
 		                      0, G_MAXUINT64, 0,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:read-only:
@@ -1288,15 +1232,11 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * connection is read-only and cannot be modified.
 	 **/
 	g_object_class_install_property
-	    (object_class, PROP_READ_ONLY,
-	     g_param_spec_boolean (NM_SETTING_CONNECTION_READ_ONLY,
-	                      "Read-Only",
-	                      "If TRUE, the connection is read-only and cannot be "
-	                      "changed by the user or any other mechanism.  This is "
-	                      "normally set for system connections whose plugin "
-	                      "cannot yet write updated connections back out.",
-	                      FALSE,
-	                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
+		(object_class, PROP_READ_ONLY,
+		 g_param_spec_boolean (NM_SETTING_CONNECTION_READ_ONLY, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:zone:
@@ -1308,16 +1248,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ZONE,
-		 g_param_spec_string (NM_SETTING_CONNECTION_ZONE,
-						  "Zone",
-						  "The trust level of a the connection."
-						  "Free form case-insensitive string (for example "
-						  "\"Home\", \"Work\", \"Public\").  NULL or "
-						  "unspecified zone means the connection will be "
-						  "placed in the default zone as defined by the "
-						  "firewall.",
-						  NULL,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
+		 g_param_spec_string (NM_SETTING_CONNECTION_ZONE, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:master:
@@ -1326,12 +1260,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MASTER,
-		 g_param_spec_string (NM_SETTING_CONNECTION_MASTER,
-		                      "Master",
-		                      "Interface name of the master device or UUID of "
-		                      "the master connection",
+		 g_param_spec_string (NM_SETTING_CONNECTION_MASTER, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:slave-type:
@@ -1342,13 +1274,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SLAVE_TYPE,
-		 g_param_spec_string (NM_SETTING_CONNECTION_SLAVE_TYPE,
-		                      "Slave-Type",
-		                      "Setting name describing the type of slave "
-		                      "this connection is (ie, 'bond') or NULL if this "
-		                      "connection is not a slave.",
+		 g_param_spec_string (NM_SETTING_CONNECTION_SLAVE_TYPE, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:secondaries:
@@ -1361,13 +1290,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SECONDARIES,
-		 _nm_param_spec_specialized (NM_SETTING_CONNECTION_SECONDARIES,
-		                             "Secondaries",
-		                             "List of connection UUIDs that should be activated "
-		                             "when the base connection itself is activated.  "
-		                             "Currently only VPN connections are supported.",
+		 _nm_param_spec_specialized (NM_SETTING_CONNECTION_SECONDARIES, "", "",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:gateway-ping-timeout:
@@ -1379,11 +1305,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_GATEWAY_PING_TIMEOUT,
-		 g_param_spec_uint (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT,
-		                    "Gateway Ping Timeout",
-		                    "If greater than zero, delay success of IP "
-		                    "addressing until either the timeout is reached, or "
-		                    "an IP gateway replies to a ping.",
+		 g_param_spec_uint (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, "", "",
 		                    0, 30, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_STATIC_STRINGS));
 }

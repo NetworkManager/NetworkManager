@@ -3143,17 +3143,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_EAP,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_EAP,
-							   "EAP",
-							   "The allowed EAP method to be used when "
-							   "authenticating to the network with 802.1x. "
-							   "Valid methods are: 'leap', 'md5', 'tls', 'peap', "
-							   "'ttls', 'pwd', and 'fast'. Each method requires "
-							   "different configuration using the properties of "
-							   "this setting; refer to wpa_supplicant "
-							   "documentation for the allowed combinations.",
-							   DBUS_TYPE_G_LIST_OF_STRING,
-							   G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_EAP, "", "",
+		                             DBUS_TYPE_G_LIST_OF_STRING,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:identity:
@@ -3163,12 +3156,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IDENTITY,
-		 g_param_spec_string (NM_SETTING_802_1X_IDENTITY,
-						  "Identity",
-						  "Identity string for EAP authentication methods.  "
-						  "Often the user's user or login name.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_802_1X_IDENTITY, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:anonymous-identity:
@@ -3179,14 +3170,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ANONYMOUS_IDENTITY,
-		 g_param_spec_string (NM_SETTING_802_1X_ANONYMOUS_IDENTITY,
-						  "Anonymous identity",
-						  "Anonymous identity string for EAP authentication "
-						  "methods.  Used as the unencrypted identity with EAP "
-						  "types that support different tunneled identity like "
-						  "EAP-TTLS.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_802_1X_ANONYMOUS_IDENTITY, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:pac-file:
@@ -3195,11 +3182,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PAC_FILE,
-		 g_param_spec_string (NM_SETTING_802_1X_PAC_FILE,
-						  "PAC file",
-						  "UTF-8 encoded file path containing PAC for EAP-FAST.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_802_1X_PAC_FILE, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:ca-cert:
@@ -3221,24 +3207,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CA_CERT,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_CA_CERT,
-							   "CA certificate",
-							   "Contains the CA certificate if used by the EAP "
-							   "method specified in the 'eap' property.  "
-							   "Certificate data is specified using a 'scheme'; "
-							   "two are currently supported: blob and path.  "
-							   "When using the blob scheme (which is backwards "
-							   "compatible with NM 0.7.x) this property should "
-							   "be set to the certificate's DER encoded data.  "
-							   "When using the path scheme, this property should "
-							   "be set to the full UTF-8 encoded path of the "
-							   "certificate, prefixed with the string 'file://' "
-							   "and ending with a terminating NULL byte.  This "
-							   "property can be unset even if the EAP method "
-							   "supports CA certificates, but this allows "
-							   "man-in-the-middle attacks and is NOT recommended.",
-							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_CA_CERT, "", "",
+		                             DBUS_TYPE_G_UCHAR_ARRAY,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:ca-path:
@@ -3249,14 +3221,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CA_PATH,
-		 g_param_spec_string (NM_SETTING_802_1X_CA_PATH,
-						  "CA path",
-						  "UTF-8 encoded path to a directory containing PEM or "
-						  "DER formatted certificates to be added to the "
-						  "verification chain in addition to the certificate "
-						  "specified in the 'ca-cert' property.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_802_1X_CA_PATH, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:subject-match:
@@ -3267,15 +3235,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SUBJECT_MATCH,
-		 g_param_spec_string (NM_SETTING_802_1X_SUBJECT_MATCH,
-							  "Subject match",
-							  "Substring to be matched against the subject of "
-							  "the certificate presented by the authentication "
-							  "server. When unset, no verification of the "
-							  "authentication server certificate's subject is "
-							  "performed.",
-							  NULL,
-							  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_802_1X_SUBJECT_MATCH, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:altsubject-matches:
@@ -3284,18 +3247,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * certificate presented by the authentication server. If the list is empty,
 	 * no verification of the server certificate's altSubjectName is performed.
 	 **/
-	 g_object_class_install_property
-		 (object_class, PROP_ALTSUBJECT_MATCHES,
-		  _nm_param_spec_specialized (NM_SETTING_802_1X_ALTSUBJECT_MATCHES,
-									  "altSubjectName matches",
-									  "List of strings to be matched against "
-									  "the altSubjectName of the certificate "
-									  "presented by the authentication server. "
-									  "If the list is empty, no verification "
-									  "of the server certificate's "
-									  "altSubjectName is performed.",
-									  DBUS_TYPE_G_LIST_OF_STRING,
-									  G_PARAM_READWRITE));
+	g_object_class_install_property
+		(object_class, PROP_ALTSUBJECT_MATCHES,
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_ALTSUBJECT_MATCHES, "", "",
+		                             DBUS_TYPE_G_LIST_OF_STRING,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:client-cert:
@@ -3315,21 +3272,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CLIENT_CERT,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_CLIENT_CERT,
-							   "Client certificate",
-							   "Contains the client certificate if used by the "
-							   "EAP method specified in the 'eap' property.  "
-							   "Certificate data is specified using a 'scheme'; "
-							   "two are currently supported: blob and path.  "
-							   "When using the blob scheme (which is backwards "
-							   "compatible with NM 0.7.x) this property should "
-							   "be set to the certificate's DER encoded data.  "
-							   "When using the path scheme, this property should "
-							   "be set to the full UTF-8 encoded path of the "
-							   "certificate, prefixed with the string 'file://' "
-							   "and ending with a terminating NULL byte.",
-							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_CLIENT_CERT, "", "",
+		                             DBUS_TYPE_G_UCHAR_ARRAY,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase1-peapver:
@@ -3343,17 +3289,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE1_PEAPVER,
-		 g_param_spec_string (NM_SETTING_802_1X_PHASE1_PEAPVER,
-						  "Phase1 PEAPVER",
-						  "Forces which PEAP version is used when PEAP is set "
-						  "as the EAP method in 'eap' property.  When unset, "
-						  "the version reported by the server will be used.  "
-						  "Sometimes when using older RADIUS servers, it is "
-						  "necessary to force the client to use a particular "
-						  "PEAP version.  To do so, this property may be set to "
-						  "'0' or '1' to force that specific PEAP version.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_802_1X_PHASE1_PEAPVER, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase1-peaplabel:
@@ -3365,15 +3304,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE1_PEAPLABEL,
-		 g_param_spec_string (NM_SETTING_802_1X_PHASE1_PEAPLABEL,
-						  "Phase1 PEAP label",
-						  "Forces use of the new PEAP label during key "
-						  "derivation.  Some RADIUS servers may require forcing "
-						  "the new PEAP label to interoperate with PEAPv1.  "
-						  "Set to '1' to force use of the new PEAP label.  See "
-						  "the wpa_supplicant documentation for more details.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_802_1X_PHASE1_PEAPLABEL, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase1-fast-provisioning:
@@ -3387,18 +3321,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE1_FAST_PROVISIONING,
-		 g_param_spec_string (NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING,
-						  "Phase1 fast provisioning",
-						  "Enables or disables in-line provisioning of EAP-FAST "
-						  "credentials when FAST is specified as the EAP method "
-						  "in the #NMSetting8021x:eap property. Allowed values "
-						  "are '0' (disabled), '1' (allow unauthenticated "
-						  "provisioning), '2' (allow authenticated provisioning), "
-						  "and '3' (allow both authenticated and unauthenticated "
-						  "provisioning).  See the wpa_supplicant documentation "
-						  "for more details.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-auth:
@@ -3412,18 +3338,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_AUTH,
-		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_AUTH,
-						  "Phase2 auth",
-						  "Specifies the allowed 'phase 2' inner non-EAP "
-						  "authentication methods when an EAP method that uses "
-						  "an inner TLS tunnel is specified in the 'eap' "
-						  "property. Recognized non-EAP phase2 methods are 'pap', "
-						  "'chap', 'mschap', 'mschapv2', 'gtc', 'otp', 'md5', "
-						  "and 'tls'.  Each 'phase 2' inner method requires "
-						  "specific parameters for successful authentication; "
-						  "see the wpa_supplicant documentation for more details.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_AUTH, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-autheap:
@@ -3437,18 +3355,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_AUTHEAP,
-		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_AUTHEAP,
-						  "Phase2 autheap",
-						  "Specifies the allowed 'phase 2' inner EAP-based "
-						  "authentication methods when an EAP method that uses "
-						  "an inner TLS tunnel is specified in the 'eap' "
-						  "property. Recognized EAP-based 'phase 2' methods are "
-						  "'md5', 'mschapv2', 'otp', 'gtc', and 'tls'. Each "
-						  "'phase 2' inner method requires specific parameters "
-						  "for successful authentication; see the wpa_supplicant "
-						  "documentation for more details.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_AUTHEAP, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-ca-cert:
@@ -3471,25 +3381,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_CA_CERT,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_CA_CERT,
-							   "Phase2 CA certificate",
-							   "Contains the 'phase 2' CA certificate if used by "
-							   "the EAP method specified in the 'phase2-auth' or "
-							   "'phase2-autheap' properties.  Certificate data "
-							   "is specified using a 'scheme'; two are currently"
-							   "supported: blob and path. When using the blob "
-							   "scheme (which is backwards compatible with NM "
-							   "0.7.x) this property should be set to the "
-							   "certificate's DER encoded data. When using the "
-							   "path scheme, this property should be set to the "
-							   "full UTF-8 encoded path of the certificate, "
-							   "prefixed with the string 'file://' and ending "
-							   "with a terminating NULL byte.  This property can "
-							   "be unset even if the EAP method supports CA "
-							   "certificates, but this allows man-in-the-middle "
-							   "attacks and is NOT recommended.",
-							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_CA_CERT, "", "",
+		                             DBUS_TYPE_G_UCHAR_ARRAY,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-ca-path:
@@ -3500,14 +3395,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_CA_PATH,
-		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_CA_PATH,
-						  "Phase2 auth CA path",
-						  "UTF-8 encoded path to a directory containing PEM or "
-						  "DER formatted certificates to be added to the "
-						  "verification chain in addition to the certificate "
-						  "specified in the 'phase2-ca-cert' property.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_CA_PATH, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-subject-match:
@@ -3519,16 +3410,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_SUBJECT_MATCH,
-		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH,
-							  "Phase2 subject match",
-							  "Substring to be matched against the subject of "
-							  "the certificate presented by the authentication "
-							  "server during the inner 'phase2' "
-							  "authentication. When unset, no verification of "
-							  "the authentication server certificate's subject "
-							  "is performed.",
-							  NULL,
-							  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-altsubject-matches:
@@ -3538,20 +3423,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * "phase 2" authentication. If the list is empty, no verification of the
 	 * server certificate's altSubjectName is performed.
 	 **/
-	 g_object_class_install_property
-		 (object_class, PROP_PHASE2_ALTSUBJECT_MATCHES,
-		  _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES,
-									  "altSubjectName matches",
-									  "List of strings to be matched against "
-									  "List of strings to be matched against "
-									  "the altSubjectName of the certificate "
-									  "presented by the authentication server "
-									  "during the inner 'phase 2' "
-									  "authentication. If the list is empty, no "
-									  "verification of the server certificate's "
-									  "altSubjectName is performed.",
-									  DBUS_TYPE_G_LIST_OF_STRING,
-									  G_PARAM_READWRITE));
+	g_object_class_install_property
+		(object_class, PROP_PHASE2_ALTSUBJECT_MATCHES,
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES, "", "",
+		                             DBUS_TYPE_G_LIST_OF_STRING,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-client-cert:
@@ -3574,22 +3451,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_CLIENT_CERT,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
-							   "Phase2 client certificate",
-							   "Contains the 'phase 2' client certificate if "
-							   "used by the EAP method specified in the "
-							   "'phase2-auth' or 'phase2-autheap' properties. "
-							   "Certificate data is specified using a 'scheme'; "
-							   "two are currently supported: blob and path.  "
-							   "When using the blob scheme (which is backwards "
-							   "compatible with NM 0.7.x) this property should "
-							   "be set to the certificate's DER encoded data.  "
-							   "When using the path scheme, this property should "
-							   "be set to the full UTF-8 encoded path of the "
-							   "certificate, prefixed with the string 'file://' "
-							   "and ending with a terminating NULL byte.",
-							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_CLIENT_CERT, "", "",
+		                             DBUS_TYPE_G_UCHAR_ARRAY,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:password:
@@ -3600,25 +3465,24 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD,
-		 g_param_spec_string (NM_SETTING_802_1X_PASSWORD,
-						  "Password",
-						  "UTF-8 encoded password used for EAP authentication methods.",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
+		 g_param_spec_string (NM_SETTING_802_1X_PASSWORD, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:password-flags:
 	 *
 	 * Flags indicating how to handle the #NMSetting8021x:password property.
 	 **/
-	g_object_class_install_property (object_class, PROP_PASSWORD_FLAGS,
-		 g_param_spec_uint (NM_SETTING_802_1X_PASSWORD_FLAGS,
-		                    "Password Flags",
-		                    "Flags indicating how to handle the 802.1x password.",
+	g_object_class_install_property
+		(object_class, PROP_PASSWORD_FLAGS,
+		 g_param_spec_uint (NM_SETTING_802_1X_PASSWORD_FLAGS, "", "",
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:password-raw:
@@ -3630,30 +3494,24 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD_RAW,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PASSWORD_RAW,
-		                             "Password byte array",
-		                             "Password used for EAP authentication "
-		                             "methods, given as a byte array to allow "
-		                             "passwords in other encodings than UTF-8 "
-		                             "to be used.  If both 'password' and "
-		                             "'password-raw' are given, 'password' is "
-		                             "preferred.",
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_PASSWORD_RAW, "", "",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:password-raw-flags:
 	 *
 	 * Flags indicating how to handle the #NMSetting8021x:password-raw property.
 	 **/
-	g_object_class_install_property (object_class, PROP_PASSWORD_RAW_FLAGS,
-		 g_param_spec_uint (NM_SETTING_802_1X_PASSWORD_RAW_FLAGS,
-		                    "Password byte array Flags",
-		                    "Flags indicating how to handle the 802.1x password byte array.",
+	g_object_class_install_property
+		(object_class, PROP_PASSWORD_RAW_FLAGS,
+		 g_param_spec_uint (NM_SETTING_802_1X_PASSWORD_RAW_FLAGS, "", "",
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:private-key:
@@ -3687,33 +3545,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIVATE_KEY,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PRIVATE_KEY,
-							   "Private key",
-							   "Contains the private key when the 'eap' property "
-							   "is set to 'tls'.  Key data is specified using a "
-							   "'scheme'; two are currently supported: blob and "
-							   "path. When using the blob scheme and private "
-							   "keys, this property should be set to the key's "
-							   "encrypted PEM encoded data. When using private "
-							   "keys with the path scheme, this property should "
-							   "be set to the full UTF-8 encoded path of the key, "
-							   "prefixed with the string 'file://' and ending "
-							   "with a terminating NULL byte.  When using "
-							   "PKCS#12 format private keys and the blob "
-							   "scheme, this property should be set to the "
-							   "PKCS#12 data and the 'private-key-password' "
-							   "property must be set to password used to "
-							   "decrypt the PKCS#12 certificate and key.  When "
-							   "using PKCS#12 files and the path scheme, this "
-							   "property should be set to the full UTF-8 encoded "
-							   "path of the key, prefixed with the string "
-							   "'file://' and and ending with a terminating NULL "
-							   "byte, and as with the blob scheme the "
-							   "'private-key-password' property must be set to "
-							   "the password used to decode the PKCS#12 private "
-							   "key and certificate.",
-							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_PRIVATE_KEY, "", "",
+		                             DBUS_TYPE_G_UCHAR_ARRAY,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:private-key-password:
@@ -3727,14 +3562,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIVATE_KEY_PASSWORD,
-		 g_param_spec_string (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD,
-						  "Private key password",
-						  "The password used to decrypt the private key "
-						  "specified in the 'private-key' property when the "
-						  "private key either uses the path scheme, or if the "
-						  "private key is a PKCS#12 format key.",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
+		 g_param_spec_string (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:private-key-password-flags:
@@ -3742,15 +3573,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * Flags indicating how to handle the #NMSetting8021x:private-key-password
 	 * property.
 	 **/
-	g_object_class_install_property (object_class, PROP_PRIVATE_KEY_PASSWORD_FLAGS,
-		 g_param_spec_uint (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS,
-		                    "Private Key Password Flags",
-		                    "Flags indicating how to handle the 802.1x private "
-		                    "key password.",
+	g_object_class_install_property
+		(object_class, PROP_PRIVATE_KEY_PASSWORD_FLAGS,
+		 g_param_spec_uint (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS, "", "",
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-private-key:
@@ -3779,34 +3609,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_PRIVATE_KEY,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
-							   "Phase2 private key",
-							   "Contains the 'phase 2' inner private key when "
-							   "the 'phase2-auth' or 'phase2-autheap' property "
-							   "is set to 'tls'.  Key data is specified using a "
-							   "'scheme'; two are currently supported: blob and "
-							   "path. When using the blob scheme and private "
-							   "keys, this property should be set to the key's "
-							   "encrypted PEM encoded data. When using private "
-							   "keys with the path scheme, this property should "
-							   "be set to the full UTF-8 encoded path of the key, "
-							   "prefixed with the string 'file://' and ending "
-							   "with a terminating NULL byte.  When using "
-							   "PKCS#12 format private keys and the blob "
-							   "scheme, this property should be set to the "
-							   "PKCS#12 data and the 'phase2-private-key-password' "
-							   "property must be set to password used to "
-							   "decrypt the PKCS#12 certificate and key.  When "
-							   "using PKCS#12 files and the path scheme, this "
-							   "property should be set to the full UTF-8 encoded "
-							   "path of the key, prefixed with the string "
-							   "'file://' and and ending with a terminating NULL "
-							   "byte, and as with the blob scheme the "
-							   "'phase2-private-key-password' property must be "
-							   "set to the password used to decode the PKCS#12 "
-							   "private key and certificate.",
-							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, "", "",
+		                             DBUS_TYPE_G_UCHAR_ARRAY,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-private-key-password:
@@ -3820,14 +3626,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_PRIVATE_KEY_PASSWORD,
-		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD,
-						  "Phase2 private key password",
-						  "The password used to decrypt the 'phase 2' private "
-						  "key specified in the 'private-key' property when the "
-						  "phase2 private key either uses the path scheme, or "
-						  "if the phase2 private key is a PKCS#12 format key.",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
+		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-private-key-password-flags:
@@ -3835,15 +3637,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 * Flags indicating how to handle the
 	 * #NMSetting8021x:phase2-private-key-password property.
 	 **/
-	g_object_class_install_property (object_class, PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS,
-		 g_param_spec_uint (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS,
-		                    "Phase2 Private Key Password Flags",
-		                    "Flags indicating how to handle the 802.1x phase2 "
-		                    "private key password.",
+	g_object_class_install_property
+		(object_class, PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS,
+		 g_param_spec_uint (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS, "", "",
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:pin:
@@ -3852,25 +3653,24 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PIN,
-		 g_param_spec_string (NM_SETTING_802_1X_PIN,
-		                      "PIN",
-		                      "PIN used for EAP authentication methods.",
+		 g_param_spec_string (NM_SETTING_802_1X_PIN, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:pin-flags:
 	 *
 	 * Flags indicating how to handle the #NMSetting8021x:pin property.
 	 **/
-	g_object_class_install_property (object_class, PROP_PIN_FLAGS,
-		 g_param_spec_uint (NM_SETTING_802_1X_PIN_FLAGS,
-		                    "PIN Flags",
-		                    "Flags indicating how to handle the 802.1x PIN.",
+	g_object_class_install_property
+		(object_class, PROP_PIN_FLAGS,
+		 g_param_spec_uint (NM_SETTING_802_1X_PIN_FLAGS, "", "",
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:system-ca-certs:
@@ -3884,17 +3684,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SYSTEM_CA_CERTS,
-		 g_param_spec_boolean (NM_SETTING_802_1X_SYSTEM_CA_CERTS,
-							   "Use system CA certificates",
-							   "When TRUE, overrides 'ca-path' and 'phase2-ca-path' "
-							   "properties using the system CA directory "
-							   "specified at configure time with the "
-							   "--system-ca-path switch.  The certificates in "
-							   "this directory are added to the verification "
-							   "chain in addition to any certificates specified "
-							   "by the 'ca-cert' and 'phase2-ca-cert' properties.",
-							   FALSE,
-							   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		 g_param_spec_boolean (NM_SETTING_802_1X_SYSTEM_CA_CERTS, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/* Initialize crypto lbrary. */
 	if (!nm_utils_init (&error)) {
@@ -3902,5 +3695,4 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		           error->code, error->message);
 		g_error_free (error);
 	}
-
 }

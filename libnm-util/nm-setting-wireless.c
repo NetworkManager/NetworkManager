@@ -1037,11 +1037,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SSID,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SSID,
-							   "SSID",
-							   "SSID of the Wi-Fi network.  Must be specified.",
-							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SSID, "", "",
+		                             DBUS_TYPE_G_UCHAR_ARRAY,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:mode:
@@ -1051,12 +1050,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MODE,
-		 g_param_spec_string (NM_SETTING_WIRELESS_MODE,
-						  "Mode",
-						  "Wi-Fi network mode; one of 'infrastructure', "
-						  "'adhoc' or 'ap'.  If blank, infrastructure is assumed.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_WIRELESS_MODE, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:band:
@@ -1070,18 +1067,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_BAND,
-		 g_param_spec_string (NM_SETTING_WIRELESS_BAND,
-						  "Band",
-						  "802.11 frequency band of the network.  One of 'a' "
-						  "for 5GHz 802.11a or 'bg' for 2.4GHz 802.11.  This "
-						  "will lock associations to the Wi-Fi network to the "
-						  "specific band, i.e. if 'a' is specified, the device "
-						  "will not associate with the same network in the "
-						  "2.4GHz band even if the network's settings are "
-						  "compatible.  This setting depends on specific driver "
-						  "capability and may not work with all drivers.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_WIRELESS_BAND, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:channel:
@@ -1093,15 +1082,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CHANNEL,
-		 g_param_spec_uint (NM_SETTING_WIRELESS_CHANNEL,
-						"Channel",
-						"Wireless channel to use for the Wi-Fi connection.  The "
-						"device will only join (or create for Ad-Hoc networks) "
-						"a Wi-Fi network on the specified channel.  Because "
-						"channel numbers overlap between bands, this property "
-						"also requires the 'band' property to be set.",
-						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		 g_param_spec_uint (NM_SETTING_WIRELESS_CHANNEL, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:bssid:
@@ -1113,16 +1097,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_BSSID,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_BSSID,
-							   "BSSID",
-							   "If specified, directs the device to only associate "
-							   "with the given access point.  This capability is "
-							   "highly driver dependent and not supported by all "
-							   "devices.  Note: this property does not control "
-							   "the BSSID used when creating an Ad-Hoc network "
-							   "and is unlikely to in the future.",
-							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_BSSID, "", "",
+		                             DBUS_TYPE_G_UCHAR_ARRAY,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:rate:
@@ -1134,15 +1112,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_RATE,
-		 g_param_spec_uint (NM_SETTING_WIRELESS_RATE,
-						"Rate",
-						"If non-zero, directs the device to only use the "
-						"specified bitrate for communication with the access "
-						"point.  Units are in Kb/s, ie 5500 = 5.5 Mbit/s.  This "
-						"property is highly driver dependent and not all devices "
-						"support setting a static bitrate.",
-						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
+		 g_param_spec_uint (NM_SETTING_WIRELESS_RATE, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:tx-power:
@@ -1153,14 +1126,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_TX_POWER,
-		 g_param_spec_uint (NM_SETTING_WIRELESS_TX_POWER,
-						"TX Power",
-						"If non-zero, directs the device to use the specified "
-						"transmit power.  Units are dBm.  This property is highly "
-						"driver dependent and not all devices support setting a "
-						"static transmit power.",
-						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
+		 g_param_spec_uint (NM_SETTING_WIRELESS_TX_POWER, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:mac-address:
@@ -1171,14 +1140,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_MAC_ADDRESS,
-							   "Device MAC Address",
-							   "If specified, this connection will only apply to "
-							   "the Wi-Fi device whose permanent MAC address matches.  "
-							   "This property does not change the MAC address "
-							   "of the device (i.e. MAC spoofing).",
-							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_MAC_ADDRESS, "", "",
+		                             DBUS_TYPE_G_UCHAR_ARRAY,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:cloned-mac-address:
@@ -1188,13 +1153,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CLONED_MAC_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
-	                                     "Spoof MAC Address",
-	                                     "If specified, request that the Wi-Fi device use "
-	                                     "this MAC address instead of its permanent MAC address.  "
-	                                     "This is known as MAC cloning or spoofing.",
-	                                     DBUS_TYPE_G_UCHAR_ARRAY,
-	                                     G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "", "",
+		                             DBUS_TYPE_G_UCHAR_ARRAY,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:mac-address-blacklist:
@@ -1205,15 +1167,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS_BLACKLIST,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST,
-		                             "MAC Address Blacklist",
-		                             "A list of permanent MAC addresses of Wi-Fi "
-		                             "devices to which this connection should "
-		                             "never apply.  Each MAC address should be "
-		                             "given in the standard hex-digits-and-colons "
-		                             "notation (eg '00:11:22:33:44:55').",
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, "", "",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:seen-bssids:
@@ -1227,18 +1184,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SEEN_BSSIDS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SEEN_BSSIDS,
-		                             "Seen BSSIDS",
-		                             "A list of BSSIDs (each BSSID formatted as a MAC "
-		                             "address like 00:11:22:33:44:55') that have been "
-		                             "detected as part of the Wi-Fi network. "
-		                             "NetworkManager internally tracks previously seen "
-		                             "BSSIDs. The property is only meant for reading "
-		                             "and reflects the BSSID list of NetworkManager. "
-		                             "The changes you make to this property will not be "
-		                             "preserved.",
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SEEN_BSSIDS, "", "",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:mtu:
@@ -1248,13 +1197,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MTU,
-		 g_param_spec_uint (NM_SETTING_WIRELESS_MTU,
-						"MTU",
-						"If non-zero, only transmit packets of the specified "
-						"size or smaller, breaking larger packets up into "
-						"multiple Ethernet frames.",
-						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
+		 g_param_spec_uint (NM_SETTING_WIRELESS_MTU, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:security:
@@ -1270,15 +1216,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SEC,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SEC,
-						  "Security",
-						  "If the wireless connection has any security "
-						  "restrictions, like 802.1x, WEP, or WPA, set this "
-						  "property to '" NM_SETTING_WIRELESS_SECURITY_SETTING_NAME "' "
-						  "and ensure the connection contains a valid "
-						  NM_SETTING_WIRELESS_SECURITY_SETTING_NAME " setting.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_WIRELESS_SEC, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:hidden:
@@ -1291,15 +1232,8 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HIDDEN,
-		 g_param_spec_boolean (NM_SETTING_WIRELESS_HIDDEN,
-		                       "Hidden",
-		                       "If TRUE, indicates this network is a non-broadcasting "
-		                       "network that hides its SSID.  In this case various "
-		                       "workarounds may take place, such as probe-scanning "
-		                       "the SSID for more reliable network discovery.  "
-		                       "However, these workarounds expose inherent "
-		                       "insecurities with hidden SSID networks, and thus "
-		                       "hidden SSID networks should be used with caution.",
+		 g_param_spec_boolean (NM_SETTING_WIRELESS_HIDDEN, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE));
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 }

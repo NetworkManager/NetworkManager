@@ -795,11 +795,10 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
-		 g_param_spec_string (NM_SETTING_BOND_INTERFACE_NAME,
-		                      "InterfaceName",
-		                      "The name of the virtual in-kernel bonding network interface",
+		 g_param_spec_string (NM_SETTING_BOND_INTERFACE_NAME, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingBond:options:
@@ -810,12 +809,8 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	 **/
 	 g_object_class_install_property
 		 (object_class, PROP_OPTIONS,
-		 _nm_param_spec_specialized (NM_SETTING_BOND_OPTIONS,
-		                             "Options",
-		                             "Dictionary of key/value pairs of bonding "
-		                             "options.  Both keys and values must be "
-		                             "strings.  Option names must contain only "
-		                             "alphanumeric characters (ie, [a-zA-Z0-9]).",
+		 _nm_param_spec_specialized (NM_SETTING_BOND_OPTIONS, "", "",
 		                             DBUS_TYPE_G_MAP_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_STATIC_STRINGS));
 }

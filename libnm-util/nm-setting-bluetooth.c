@@ -279,11 +279,10 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_BDADDR,
-		 _nm_param_spec_specialized (NM_SETTING_BLUETOOTH_BDADDR,
-		                             "Bluetooth address",
-		                             "The Bluetooth address of the device",
+		 _nm_param_spec_specialized (NM_SETTING_BLUETOOTH_BDADDR, "", "",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingBluetooth:type:
@@ -293,12 +292,8 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_TYPE,
-		 g_param_spec_string (NM_SETTING_BLUETOOTH_TYPE,
-						  "Connection type",
-						  "Either '" NM_SETTING_BLUETOOTH_TYPE_DUN "' for "
-						  "Dial-Up Networking connections or "
-						  "'" NM_SETTING_BLUETOOTH_TYPE_PANU "' for "
-						  "Personal Area Networking connections.",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
+		 g_param_spec_string (NM_SETTING_BLUETOOTH_TYPE, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
 }

@@ -299,16 +299,10 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SERVICE,
-		 g_param_spec_string (NM_SETTING_PPPOE_SERVICE,
-						  "Service",
-						  "If specified, instruct PPPoE to only initiate sessions "
-						  "with access concentrators that provide the specified "
-						  "service.  For most providers, this should be left "
-						  "blank.  It is only required if there are multiple "
-						  "access concentrators or a specific service is known "
-						  "to be required.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_PPPOE_SERVICE, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingPPPOE:username:
@@ -317,11 +311,10 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_USERNAME,
-		 g_param_spec_string (NM_SETTING_PPPOE_USERNAME,
-						  "Username",
-						  "Username used to authenticate with the PPPoE service.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_PPPOE_USERNAME, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingPPPOE:password:
@@ -330,23 +323,22 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD,
-		 g_param_spec_string (NM_SETTING_PPPOE_PASSWORD,
-						  "Password",
-						  "Password used to authenticate with the PPPoE service.",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
+		 g_param_spec_string (NM_SETTING_PPPOE_PASSWORD, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingPPPOE:password-flags:
 	 *
 	 * Flags indicating how to handle the #NMSettingPPPOE:password property.
 	 **/
-	g_object_class_install_property (object_class, PROP_PASSWORD_FLAGS,
-		 g_param_spec_uint (NM_SETTING_PPPOE_PASSWORD_FLAGS,
-		                    "Password Flags",
-		                    "Flags indicating how to handle the PPPoE password.",
+	g_object_class_install_property
+		(object_class, PROP_PASSWORD_FLAGS,
+		 g_param_spec_uint (NM_SETTING_PPPOE_PASSWORD_FLAGS, "", "",
 		                    NM_SETTING_SECRET_FLAG_NONE,
 		                    NM_SETTING_SECRET_FLAGS_ALL,
 		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 }

@@ -822,14 +822,10 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SERVICE_TYPE,
-		 g_param_spec_string (NM_SETTING_VPN_SERVICE_TYPE,
-						  "Service type",
-						  "D-Bus service name of the VPN plugin that this "
-						  "setting uses to connect to its network.  i.e. "
-						  "org.freedesktop.NetworkManager.vpnc for the vpnc "
-						  "plugin.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_VPN_SERVICE_TYPE, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingVPN:user-name:
@@ -843,18 +839,10 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_USER_NAME,
-		 g_param_spec_string (NM_SETTING_VPN_USER_NAME,
-		                      "User name",
-		                      "If the VPN connection requires a user name for "
-		                      "authentication, that name should be provided here.  "
-		                      "If the connection is available to more than one "
-		                      "user, and the VPN requires each user to supply a "
-		                      "different name, then leave this property empty.  If "
-		                      "this property is empty, NetworkManager will "
-		                      "automatically supply the username of the user which "
-		                      "requested the VPN connection.",
+		 g_param_spec_string (NM_SETTING_VPN_USER_NAME, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE));
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingVPN:data:
@@ -864,13 +852,10 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DATA,
-		 _nm_param_spec_specialized (NM_SETTING_VPN_DATA,
-							   "Data",
-							   "Dictionary of key/value pairs of VPN plugin "
-							   "specific data.  Both keys and values must be "
-							   "strings.",
-							   DBUS_TYPE_G_MAP_OF_STRING,
-							   G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_VPN_DATA, "", "",
+		                             DBUS_TYPE_G_MAP_OF_STRING,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingVPN:secrets:
@@ -880,12 +865,9 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SECRETS,
-		 _nm_param_spec_specialized (NM_SETTING_VPN_SECRETS,
-							   "Secrets",
-							   "Dictionary of key/value pairs of VPN plugin "
-							   "specific secrets like passwords or private keys."
-							   "  Both keys and values must be strings.",
-							   DBUS_TYPE_G_MAP_OF_STRING,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET));
+		 _nm_param_spec_specialized (NM_SETTING_VPN_SECRETS, "", "",
+		                             DBUS_TYPE_G_MAP_OF_STRING,
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                             G_PARAM_STATIC_STRINGS));
 }
 

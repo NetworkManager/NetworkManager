@@ -1348,13 +1348,9 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NAME,
-		 g_param_spec_string (NM_SETTING_NAME,
-						  "Name",
-						  "The setting's name; these names are defined by the "
-						  "specification and cannot be changed after the object "
-						  "has been created.  Each setting class has a name, and "
-						  "all objects of that class share the same name.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_NAME, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 }
 

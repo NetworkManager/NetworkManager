@@ -969,13 +969,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_FCOE_FLAGS,
-		 g_param_spec_uint (NM_SETTING_DCB_APP_FCOE_FLAGS,
-		                    "App FCoE Flags",
-		                    "Specifies the flags for the DCB FCoE application. "
-		                    "Flags may be any combination of 0x1 (enable), 0x2 "
-		                    "(advertise), and 0x4 (willing).",
+		 g_param_spec_uint (NM_SETTING_DCB_APP_FCOE_FLAGS, "", "",
 		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:app-fcoe-priority:
@@ -988,14 +985,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_FCOE_PRIORITY,
-		 g_param_spec_int (NM_SETTING_DCB_APP_FCOE_PRIORITY,
-		                   "App FCoE Priority",
-		                   "The highest User Priority (0 - 7) which FCoE "
-		                   "frames should use, or -1 for default priority. Only "
-		                   "used when the 'app-fcoe-flags' property includes "
-		                   "the 'enabled' flag.",
+		 g_param_spec_int (NM_SETTING_DCB_APP_FCOE_PRIORITY, "", "",
 		                   -1, 7, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                   G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:app-fcoe-mode:
@@ -1007,12 +1000,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_FCOE_MODE,
-		 g_param_spec_string (NM_SETTING_DCB_APP_FCOE_MODE,
-		                      "App FCoE Mode",
-		                      "The FCoe controller mode; either 'fabric' (default) "
-		                      "or 'vn2vn'.",
+		 g_param_spec_string (NM_SETTING_DCB_APP_FCOE_MODE, "", "",
 		                      NM_SETTING_DCB_FCOE_MODE_FABRIC,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:app-iscsi-flags:
@@ -1025,13 +1016,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_ISCSI_FLAGS,
-		 g_param_spec_uint (NM_SETTING_DCB_APP_ISCSI_FLAGS,
-		                    "App iSCSI Flags",
-		                    "Specifies the flags for the DCB iSCSI application. "
-		                    "Flags may be any combination of 0x1 (enable), 0x2 "
-		                    "(advertise), and 0x4 (willing).",
+		 g_param_spec_uint (NM_SETTING_DCB_APP_ISCSI_FLAGS, "", "",
 		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:app-iscsi-priority:
@@ -1044,14 +1032,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_ISCSI_PRIORITY,
-		 g_param_spec_int (NM_SETTING_DCB_APP_ISCSI_PRIORITY,
-		                   "App iSCSI Priority",
-		                   "The highest User Priority (0 - 7) which iSCSI "
-		                   "frames should use, or -1 for default priority. Only "
-		                   "used when the 'app-iscsi-flags' property includes "
-		                   "the 'enabled' flag.",
+		 g_param_spec_int (NM_SETTING_DCB_APP_ISCSI_PRIORITY, "", "",
 		                   -1, 7, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                   G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:app-fip-flags:
@@ -1064,13 +1048,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_FIP_FLAGS,
-		 g_param_spec_uint (NM_SETTING_DCB_APP_FIP_FLAGS,
-		                    "App FIP Flags",
-		                    "Specifies the flags for the DCB FIP application. "
-		                    "Flags may be any combination of 0x1 (enable), 0x2 "
-		                    "(advertise), and 0x4 (willing).",
+		 g_param_spec_uint (NM_SETTING_DCB_APP_FIP_FLAGS, "", "",
 		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:app-fip-priority:
@@ -1083,14 +1064,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_FIP_PRIORITY,
-		 g_param_spec_int (NM_SETTING_DCB_APP_FIP_PRIORITY,
-		                   "App FIP Priority",
-		                   "The highest User Priority (0 - 7) which FIP "
-		                   "frames should use, or -1 for default priority. Only "
-		                   "used when the 'app-fip-flags' property includes "
-		                   "the 'enabled' flag.",
+		 g_param_spec_int (NM_SETTING_DCB_APP_FIP_PRIORITY, "", "",
 		                   -1, 7, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                   G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-flow-control-flags:
@@ -1103,13 +1080,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PFC_FLAGS,
-		 g_param_spec_uint (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS,
-		                    "Priority Flow Control Flags",
-		                    "Specifies the flags for DCB Priority Flow Control. "
-		                    "Flags may be any combination of 0x1 (enable), 0x2 "
-		                    "(advertise), and 0x4 (willing).",
+		 g_param_spec_uint (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS, "", "",
 		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-flow-control:
@@ -1123,16 +1097,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PFC,
-		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL,
-		                             "Priority Flow Control",
-		                             "An array of 8 uint values, where the array index "
-		                             "corresponds to the User Priority (0 - 7) and the "
-		                             "value indicates whether or not the corresponding "
-		                             "priority should transmit priority pause.  Allowed "
-		                             "values are 0 (do not transmit pause) and 1 "
-		                             "(transmit pause).",
+		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL, "", "",
 		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE));
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-group-flags:
@@ -1145,13 +1113,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_FLAGS,
-		 g_param_spec_uint (NM_SETTING_DCB_PRIORITY_GROUP_FLAGS,
-		                    "Priority Group Flags",
-		                    "Specifies the flags for DCB Priority Groups. "
-		                    "Flags may be any combination of 0x1 (enable), 0x2 "
-		                    "(advertise), and 0x4 (willing).",
+		 g_param_spec_uint (NM_SETTING_DCB_PRIORITY_GROUP_FLAGS, "", "",
 		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-group-id:
@@ -1164,15 +1129,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_ID,
-		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_GROUP_ID,
-		                             "Priority Group ID",
-		                             "An array of 8 uint values, where the array "
-		                             "index corresponds to the User Priority (0 - 7) "
-		                             "and the value indicates the Priority Group ID. "
-		                             "Allowed Priority Group ID values are 0 - 7 or "
-		                             "15 for the unrestricted group.",
+		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_GROUP_ID, "", "",
 		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE));
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-group-bandwidth:
@@ -1186,15 +1146,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_BANDWIDTH,
-		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH,
-		                             "Priority Group Bandwidth",
-		                             "An array of 8 uint values, where the array index "
-		                             "corresponds to the Priority Group ID (0 - 7) and "
-		                             "the value indicates the percentage of link bandwidth "
-		                             "allocated to that group.  Allowed values are 0 - 100, "
-		                             "and the sum of all values must total 100 percent.",
+		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH, "", "",
 		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE));
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-bandwidth:
@@ -1209,16 +1164,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_BANDWIDTH,
-		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_BANDWIDTH,
-		                             "Priority Bandwidth",
-		                             "An array of 8 uint values, where the array index "
-		                             "corresponds to the User Priority (0 - 7) and the "
-		                             "value indicates the percentage of bandwidth of "
-		                             "the priority's assigned group that the priority may "
-		                             "use.  The sum of all percentages for priorities which "
-		                             "belong to the same group must total 100 percent.",
+		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_BANDWIDTH, "", "",
 		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE));
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-strict-bandwidth:
@@ -1233,17 +1182,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_STRICT,
-		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH,
-		                             "Priority Strict Bandwidth",
-		                             "An array of 8 uint values, where the array index "
-		                             "corresponds to the User Priority (0 - 7) and the "
-		                             "value indicates whether or not the priority may "
-		                             "use all of the bandwidth allocated to its assigned "
-		                             "group. Allowed values are 0 (the priority may not "
-		                             "utilize all bandwidth) or 1 (the priority may "
-		                             "utilize all bandwidth).",
+		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH, "", "",
 		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE));
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-traffic-class:
@@ -1256,13 +1198,9 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_TRAFFIC_CLASS,
-		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS,
-		                             "Priority Traffic Class",
-		                             "An array of 8 uint values, where the array index "
-		                             "corresponds to the User Priority (0 - 7) and the "
-		                             "value indicates the traffic class (0 - 7) to which "
-		                             "the priority is mapped.",
+		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS, "", "",
 		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE));
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 }
 

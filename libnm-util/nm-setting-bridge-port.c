@@ -264,11 +264,10 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY,
-		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PRIORITY,
-		                    "Priority",
-		                    "The Spanning Tree Protocol (STP) priority of this bridge port",
+		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PRIORITY, "", "",
 		                    0, BR_MAX_PORT_PRIORITY, BR_DEF_PRIORITY,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingBridgePort:path-cost:
@@ -278,14 +277,12 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
-	 g_object_class_install_property
-		 (object_class, PROP_PATH_COST,
-		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PATH_COST,
-		                    "Path Cost",
-		                    "The Spanning Tree Protocol (STP) port cost for "
-		                    "destinations via this port.",
+	g_object_class_install_property
+		(object_class, PROP_PATH_COST,
+		 g_param_spec_uint (NM_SETTING_BRIDGE_PORT_PATH_COST, "", "",
 		                    0, BR_MAX_PATH_COST, 100,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingBridgePort:hairpin-mode:
@@ -295,13 +292,10 @@ nm_setting_bridge_port_class_init (NMSettingBridgePortClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
-	 g_object_class_install_property
-		 (object_class, PROP_HAIRPIN_MODE,
-		 g_param_spec_boolean (NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,
-		                       "Hairpin Mode",
-		                       "Enables or disabled 'hairpin mode' for the "
-		                       "port, which allows frames to be sent back out "
-		                       "through the port the frame was received on.",
+	g_object_class_install_property
+		(object_class, PROP_HAIRPIN_MODE,
+		 g_param_spec_boolean (NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
+		                       G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                       G_PARAM_STATIC_STRINGS));
 }
