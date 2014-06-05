@@ -1799,6 +1799,19 @@ nm_device_generate_connection (NMDevice *device)
 		return NULL;
 	}
 
+	if (ifindex)
+		master_ifindex = nm_platform_link_get_master (ifindex);
+	if (master_ifindex) {
+		NMDevice *master;
+
+		master = nm_manager_get_device_by_ifindex (nm_manager_get (), master_ifindex);
+		if (!master || !nm_device_get_act_request (master)) {
+			nm_log_dbg (LOGD_DEVICE, "(%s): cannot generate connection for slave before its master (%s)",
+			            ifname, nm_platform_link_get_name (master_ifindex));
+			return NULL;
+		}
+	}
+
 	connection = nm_connection_new ();
 	s_con = nm_setting_connection_new ();
 	uuid = nm_utils_uuid_generate ();
@@ -1816,9 +1829,7 @@ nm_device_generate_connection (NMDevice *device)
 	nm_connection_add_setting (connection, s_con);
 
 	/* If the device is a slave, update various slave settings */
-	if (ifindex)
-		master_ifindex = nm_platform_link_get_master (ifindex);
-	if (master_ifindex > 0) {
+	if (master_ifindex) {
 		const char *master_iface = nm_platform_link_get_name (master_ifindex);
 		const char *slave_type = NULL;
 		gboolean success = FALSE;
@@ -2317,9 +2328,13 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	/* If we have slaves that aren't yet enslaved, do that now */
 	for (iter = priv->slaves; iter; iter = g_slist_next (iter)) {
 		SlaveInfo *info = iter->data;
+		NMDeviceState slave_state = nm_device_get_state (info->slave);
 
-		if (nm_device_get_state (info->slave) == NM_DEVICE_STATE_IP_CONFIG)
+		if (slave_state == NM_DEVICE_STATE_IP_CONFIG)
 			nm_device_enslave_slave (self, info->slave, nm_device_get_connection (info->slave));
+		else if (   nm_device_uses_generated_connection (self)
+		         && slave_state <= NM_DEVICE_STATE_DISCONNECTED)
+			nm_device_queue_recheck_assume (info->slave);
 	}
 
 	nm_log_info (LOGD_DEVICE, "Activation (%s) Stage 2 of 5 (Device Configure) successful.", iface);
