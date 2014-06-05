@@ -183,7 +183,20 @@ test_slave (int master, int type, SignalData *master_changed)
 	}
 	g_assert (!nm_platform_link_is_up (ifindex));
 	g_assert (!nm_platform_link_is_connected (ifindex));
-	g_assert (!nm_platform_link_is_connected (master));
+	if (nm_platform_link_is_connected (master)) {
+		if (nm_platform_link_get_type (master) == NM_LINK_TYPE_TEAM) {
+			/* Older team versions (e.g. Fedora 17) have a bug that team master stays
+			 * IFF_LOWER_UP even if its slave is down. Double check it with iproute2 and if
+			 * `ip link` also claims master to be up, accept it. */
+			char *stdout = NULL;
+
+			nmtst_spawn_sync (NULL, &stdout, NULL, 0, "/sbin/ip", "link", "show", "dev", nm_platform_link_get_name (master));
+
+			g_assert (strstr (stdout, "LOWER_UP"));
+			g_free (stdout);
+		} else
+			g_assert_not_reached ();
+	}
 
 	/* Set slave up and see if master gets up too */
 	g_assert (nm_platform_link_set_up (ifindex)); no_error ();
