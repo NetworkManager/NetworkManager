@@ -917,14 +917,15 @@ _nm_device_type_for_path (DBusGConnection *connection,
 	}
 
 	if (!dbus_g_proxy_call (proxy,
-						    "Get", &err,
-						    G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
-						    G_TYPE_STRING, "DeviceType",
-						    G_TYPE_INVALID,
-						    G_TYPE_VALUE, &value, G_TYPE_INVALID)) {
-		g_object_unref (proxy);
+	                        "Get", &err,
+	                        G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
+	                        G_TYPE_STRING, "DeviceType",
+	                        G_TYPE_INVALID,
+	                        G_TYPE_VALUE, &value, G_TYPE_INVALID)) {
 		g_warning ("Error in get_property: %s\n", err->message);
 		g_error_free (err);
+		g_object_unref (proxy);
+		return G_TYPE_INVALID;
 	}
 	g_object_unref (proxy);
 
