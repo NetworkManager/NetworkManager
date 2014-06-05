@@ -1019,16 +1019,16 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	/**
 	 * NMSettingIP6Config:method:
 	 *
-	 * IPv6 configuration method.  If 'auto' is specified then the appropriate
-	 * automatic method (DHCP, PPP, advertisement, etc) is used for the
-	 * interface and most other properties can be left unset.  To force the use
-	 * of DHCP only, specify 'dhcp'; this  method is only valid for Ethernet-
-	 * based hardware.  If 'link-local' is specified, then an IPv6 link-local
-	 * address will be assigned to the interface.  If 'manual' is specified,
-	 * static IP addressing is used and at least one IP address must be given
-	 * in the 'addresses' property.  If 'ignore' is specified, IPv6
-	 * configuration is not done. This property must be set.  Note: the 'shared'
-	 * method is not yet supported.
+	 * IPv6 configuration method.  If "auto" is specified then the appropriate
+	 * automatic method (PPP, router advertisement, etc) is used for the device
+	 * and most other properties can be left unset.  To force the use of DHCP
+	 * only, specify "dhcp"; this method is only valid for Ethernet- based
+	 * hardware.  If "link-local" is specified, then an IPv6 link-local address
+	 * will be assigned to the interface.  If "manual" is specified, static IP
+	 * addressing is used and at least one IP address must be given in the
+	 * "addresses" property.  If "ignore" is specified, IPv6 configuration is
+	 * not done. This property must be set.  Note: the "shared" method is not
+	 * yet supported.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_METHOD,
@@ -1054,7 +1054,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	/**
 	 * NMSettingIP6Config:dhcp-hostname:
 	 *
-	 * The specified name will be sent to the DHCP server when acquiring a lease.
+	 * The specified name will be sent to the DHCP server when acquiring a
+	 * lease.
 	 *
 	 * Since: 0.9.8
 	 **/
@@ -1072,10 +1073,10 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 *
 	 * Array of DNS servers, where each member of the array is a byte array
 	 * containing the IPv6 address of the DNS server (in network byte order).
-	 * For the 'auto' method, these DNS servers are appended to those (if any)
-	 * returned by automatic configuration.  DNS servers cannot be used with
-	 * the 'shared' or 'link-local' methods as there is no usptream network. In
-	 * all other methods, these DNS servers are used as the only DNS servers for
+	 * For the "auto" method, these DNS servers are appended to those (if any)
+	 * returned by automatic configuration.  DNS servers cannot be used with the
+	 * "shared" or "link-local" methods as there is no usptream network. In all
+	 * other methods, these DNS servers are used as the only DNS servers for
 	 * this connection.
 	 **/
 	g_object_class_install_property
@@ -1098,11 +1099,11 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	/**
 	 * NMSettingIP6Config:dns-search:
 	 *
-	 * List of DNS search domains.  For the 'auto' method, these search domains
+	 * List of DNS search domains.  For the "auto" method, these search domains
 	 * are appended to those returned by automatic configuration. Search domains
-	 * cannot be used with the 'shared' or 'link-local' methods as there is no
-	 * upstream network.  In all other methods, these search domains are used
-	 * as the only search domains for this connection.
+	 * cannot be used with the "shared" or "link-local" methods as there is no
+	 * upstream network.  In all other methods, these search domains are used as
+	 * the only search domains for this connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
@@ -1127,10 +1128,10 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * address (network byte order), the second a 32-bit integer containing the
 	 * IPv6 address prefix, and the third a byte array containing the IPv6
 	 * address (network byte order) of the gateway associated with this address,
-	 * if any.  If no gateway is given, the third element should be given as
-	 * all zeros.  For the 'auto' method, given IP addresses are appended to
-	 * those returned by automatic configuration.  Addresses cannot be used with
-	 * the 'shared' or 'link-local' methods as the interface is automatically
+	 * if any.  If no gateway is given, the third element should be given as all
+	 * zeros.  For the "auto" method, given IP addresses are appended to those
+	 * returned by automatic configuration.  Addresses cannot be used with the
+	 * "shared" or "link-local" methods as the interface is automatically
 	 * assigned an address with these methods.
 	 **/
 	g_object_class_install_property
@@ -1158,14 +1159,14 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	/**
 	 * NMSettingIP6Config:routes:
 	 *
-	 * Array of IPv6 route structures.  Each IPv6 route structure is composed
-	 * of 4 members; the first being the destination IPv6 network or
-	 * address (network byte order) as a byte array, the second the destination
-	 * network or address IPv6 prefix, the third being the next-hop IPv6 address
+	 * Array of IPv6 route structures.  Each IPv6 route structure is composed of
+	 * 4 members; the first being the destination IPv6 network or address
+	 * (network byte order) as a byte array, the second the destination network
+	 * or address IPv6 prefix, the third being the next-hop IPv6 address
 	 * (network byte order) if any, and the fourth being the route metric. For
-	 * the 'auto' method, given IP routes are appended to those returned by
-	 * automatic configuration.  Routes cannot be used with the 'shared' or
-	 * 'link-local' methods because there is no upstream network.
+	 * the "auto" method, given IP routes are appended to those returned by
+	 * automatic configuration.  Routes cannot be used with the "shared" or
+	 * "link-local" methods because there is no upstream network.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
@@ -1189,9 +1190,9 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	/**
 	 * NMSettingIP6Config:ignore-auto-routes:
 	 *
-	 * When the method is set to 'auto' or 'dhcp' and this property is set to
+	 * When the method is set to "auto" or "dhcp" and this property is set to
 	 * %TRUE, automatically configured routes are ignored and only routes
-	 * specified in #NMSettingIP6Config:routes, if any, are used.
+	 * specified in the #NMSettingIP6Config:routes property, if any, are used.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_ROUTES,
@@ -1207,11 +1208,11 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	/**
 	 * NMSettingIP6Config:ignore-auto-dns:
 	 *
-	 * When the method is set to 'auto' or 'dhcp' and this property is set to
-	 * %TRUE, automatically configured nameservers and search domains are ignored
-	 * and only nameservers and search domains specified in
-	 * #NMSettingIP6Config:dns and #NMSettingIP6Config:dns-search, if any, are
-	 * used.
+	 * When the method is set to "auto" or "dhcp" and this property is set to
+	 * %TRUE, automatically configured nameservers and search domains are
+	 * ignored and only nameservers and search domains specified in the
+	 * #NMSettingIP6Config:dns and #NMSettingIP6Config:dns-search properties, if
+	 * any, are used.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_DNS,
@@ -1229,7 +1230,8 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * NMSettingIP6Config:never-default:
 	 *
 	 * If %TRUE, this connection will never be the default IPv6 connection,
-	 * meaning it will never be assigned the default IPv6 route by NetworkManager.
+	 * meaning it will never be assigned the default IPv6 route by
+	 * NetworkManager.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NEVER_DEFAULT,
@@ -1245,11 +1247,11 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * NMSettingIP6Config:may-fail:
 	 *
 	 * If %TRUE, allow overall network configuration to proceed even if IPv6
-	 * configuration times out.  Note that at least one IP configuration
-	 * must succeed or overall network configuration will still fail.  For
-	 * example, in IPv4-only networks, setting this property to %TRUE allows
-	 * the overall network configuration to succeed if IPv6 configuration fails
-	 * but IPv4 configuration completes successfully.
+	 * configuration times out.  Note that at least one IP configuration must
+	 * succeed or overall network configuration will still fail.  For example,
+	 * in IPv4-only networks, setting this property to %TRUE allows the overall
+	 * network configuration to succeed if IPv6 configuration fails but IPv4
+	 * configuration completes successfully.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAY_FAIL,
@@ -1269,13 +1271,13 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	/**
 	 * NMSettingIP6Config:ip6-privacy:
 	 *
-	 * Configure IPv6 Privacy Extensions for SLAAC, described in RFC4941.
-	 * If enabled, it makes the kernel generate a temporary IPv6 address
-	 * in addition to the public one generated from MAC address via
-	 * modified EUI-64.  This enhances privacy, but could cause problems
-	 * in some applications, on the other hand.  The permitted values
-	 * are: 0: disabled, 1: enabled (prefer public address),
-	 * 2: enabled (prefer temporary addresses).
+	 * Configure IPv6 Privacy Extensions for SLAAC, described in RFC4941.  If
+	 * enabled, it makes the kernel generate a temporary IPv6 address in
+	 * addition to the public one generated from MAC address via modified
+	 * EUI-64.  This enhances privacy, but could cause problems in some
+	 * applications, on the other hand.  The permitted values are: 0: disabled,
+	 * 1: enabled (prefer public address), 2: enabled (prefer temporary
+	 * addresses).
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP6_PRIVACY,

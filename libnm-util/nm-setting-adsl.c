@@ -409,7 +409,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 	/**
 	 * NMSettingAdsl:password-flags:
 	 *
-	 * Flags indicating how to handle #NMSettingAdsl:password:.
+	 * Flags indicating how to handle the #NMSettingAdsl:password property.
 	 **/
 	g_object_class_install_property (object_class, PROP_PASSWORD_FLAGS,
 		 g_param_spec_uint (NM_SETTING_ADSL_PASSWORD_FLAGS,
@@ -423,7 +423,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 	/**
 	 * NMSettingAdsl:protocol:
 	 *
-	 * ADSL connection protocol, can be pppoa, pppoe or ipoatm.
+	 * ADSL connection protocol.  Can be "pppoa", "pppoe" or "ipoatm".
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PROTOCOL,
@@ -436,7 +436,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 	/**
 	 * NMSettingAdsl:encapsulation:
 	 *
-	 * ADSL connection encapsulation, can be vcmux or llc.
+	 * Encapsulation of ADSL connection.  Can be "vcmux" or "llc".
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ENCAPSULATION,
@@ -449,7 +449,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 	/**
 	 * NMSettingAdsl:vpi:
 	 *
-	 * ADSL connection vpi.
+	 * VPI of ADSL connection
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_VPI,
@@ -462,7 +462,7 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 	/**
 	 * NMSettingAdsl:vci:
 	 *
-	 * ADSL connection vci.
+	 * VCI of ADSL connection
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_VCI,

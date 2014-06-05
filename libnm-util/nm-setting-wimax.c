@@ -251,9 +251,9 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *setting_class)
 	/**
 	 * NMSettingWimax:mac-address:
 	 *
-	 * If specified, this connection will only apply to the WiMAX device
-	 * whose MAC address matches. This property does not change the MAC address
-	 * of the device (known as MAC spoofing).
+	 * If specified, this connection will only apply to the WiMAX device whose
+	 * MAC address matches. This property does not change the MAC address of the
+	 * device (known as MAC spoofing).
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,

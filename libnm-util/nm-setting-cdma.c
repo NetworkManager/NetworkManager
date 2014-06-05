@@ -354,7 +354,7 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 	/**
 	 * NMSettingCdma:password-flags:
 	 *
-	 * Flags indicating how to handle #NMSettingCdma:password:.
+	 * Flags indicating how to handle the #NMSettingCdma:password property.
 	 **/
 	g_object_class_install_property (object_class, PROP_PASSWORD_FLAGS,
 		 g_param_spec_uint (NM_SETTING_CDMA_PASSWORD_FLAGS,

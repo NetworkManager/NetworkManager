@@ -804,9 +804,9 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	/**
 	 * NMSettingBond:options:
 	 *
-	 * Dictionary of key/value pairs of bonding options.  Both keys
-	 * and values must be strings. Option names must contain only
-	 * alphanumeric characters (ie, [a-zA-Z0-9]).
+	 * Dictionary of key/value pairs of bonding options.  Both keys and values
+	 * must be strings. Option names must contain only alphanumeric characters
+	 * (ie, [a-zA-Z0-9]).
 	 **/
 	 g_object_class_install_property
 		 (object_class, PROP_OPTIONS,

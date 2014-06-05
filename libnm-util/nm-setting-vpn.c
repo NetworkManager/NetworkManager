@@ -816,8 +816,8 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	/**
 	 * NMSettingVPN:service-type:
 	 *
-	 * D-Bus service name of the VPN plugin that this setting uses to connect
-	 * to its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc
+	 * D-Bus service name of the VPN plugin that this setting uses to connect to
+	 * its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc
 	 * plugin.
 	 **/
 	g_object_class_install_property
@@ -835,8 +835,8 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	 * NMSettingVPN:user-name:
 	 *
 	 * If the VPN connection requires a user name for authentication, that name
-	 * should be provided here.  If the connection is available to more than
-	 * one user, and the VPN requires each user to supply a different name, then
+	 * should be provided here.  If the connection is available to more than one
+	 * user, and the VPN requires each user to supply a different name, then
 	 * leave this property empty.  If this property is empty, NetworkManager
 	 * will automatically supply the username of the user which requested the
 	 * VPN connection.
@@ -859,8 +859,8 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	/**
 	 * NMSettingVPN:data:
 	 *
-	 * Dictionary of key/value pairs of VPN plugin specific data.  Both keys
-	 * and values must be strings.
+	 * Dictionary of key/value pairs of VPN plugin specific data.  Both keys and
+	 * values must be strings.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DATA,

@@ -288,7 +288,7 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
 	/**
 	 * NMSettingBluetooth:type:
 	 *
-	 * Either 'dun' for Dial-Up Networking connections or 'panu' for Personal
+	 * Either "dun" for Dial-Up Networking connections or "panu" for Personal
 	 * Area Networking connections to devices supporting the NAP profile.
 	 **/
 	g_object_class_install_property

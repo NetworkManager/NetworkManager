@@ -1221,17 +1221,17 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:method:
 	 *
-	 * IPv4 configuration method.  If 'auto' is specified then the appropriate
+	 * IPv4 configuration method.  If "auto" is specified then the appropriate
 	 * automatic method (DHCP, PPP, etc) is used for the interface and most
-	 * other properties can be left unset.  If 'link-local' is specified, then a
+	 * other properties can be left unset.  If "link-local" is specified, then a
 	 * link-local address in the 169.254/16 range will be assigned to the
-	 * interface.  If 'manual' is specified, static IP addressing is used and at
-	 * least one IP address must be given in the 'addresses' property.  If
-	 * 'shared' is specified (indicating that this connection will provide
+	 * interface.  If "manual" is specified, static IP addressing is used and at
+	 * least one IP address must be given in the "addresses" property.  If
+	 * "shared" is specified (indicating that this connection will provide
 	 * network access to other computers) then the interface is assigned an
 	 * address in the 10.42.x.1/24 range and a DHCP and forwarding DNS server
 	 * are started, and the interface is NAT-ed to the current default network
-	 * connection.  'disabled' means IPv4 will not be used on this connection.
+	 * connection.  "disabled" means IPv4 will not be used on this connection.
 	 * This property must be set.
 	 **/
 	g_object_class_install_property
@@ -1261,12 +1261,12 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:dns:
 	 *
-	 * List of DNS servers (network byte order).  For the 'auto' method, these
+	 * List of DNS servers (network byte order).  For the "auto" method, these
 	 * DNS servers are appended to those (if any) returned by automatic
-	 * configuration.  DNS servers cannot be used with the 'shared', 'link-local',
-	 * or 'disabled' methods as there is no upstream network.  In all other
-	 * methods, these DNS servers are used as the only DNS servers for this
-	 * connection.
+	 * configuration.  DNS servers cannot be used with the "shared",
+	 * "link-local", or "disabled" methods as there is no upstream network.  In
+	 * all other methods, these DNS servers are used as the only DNS servers for
+	 * this connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS,
@@ -1286,9 +1286,9 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:dns-search:
 	 *
-	 * List of DNS search domains.  For the 'auto' method, these search domains
+	 * List of DNS search domains.  For the "auto" method, these search domains
 	 * are appended to those returned by automatic configuration. Search domains
-	 * cannot be used with the 'shared', 'link-local', or 'disabled' methods as
+	 * cannot be used with the "shared", "link-local", or "disabled" methods as
 	 * there is no upstream network.  In all other methods, these search domains
 	 * are used as the only search domains for this connection.
 	 **/
@@ -1314,9 +1314,9 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * composed of 3 32-bit values; the first being the IPv4 address (network
 	 * byte order), the second the prefix (1 - 32), and last the IPv4 gateway
 	 * (network byte order). The gateway may be left as 0 if no gateway exists
-	 * for that subnet.  For the 'auto' method, given IP addresses are appended
+	 * for that subnet.  For the "auto" method, given IP addresses are appended
 	 * to those returned by automatic configuration.  Addresses cannot be used
-	 * with the 'shared', 'link-local', or 'disabled' methods as addressing is
+	 * with the "shared", "link-local", or "disabled" methods as addressing is
 	 * either automatic or disabled with these methods.
 	 **/
 	g_object_class_install_property
@@ -1349,14 +1349,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:routes:
 	 *
-	 * Array of IPv4 route structures.  Each IPv4 route structure is composed
-	 * of 4 32-bit values; the first being the destination IPv4 network or
-	 * address (network byte order), the second the destination network or
-	 * address prefix (1 - 32), the third being the next-hop (network byte
-	 * order) if any, and the fourth being the route metric. For the 'auto'
-	 * method, given IP routes are appended to those returned by automatic
-	 * configuration.  Routes cannot be used with the 'shared', 'link-local',
-	 * or 'disabled' methods because there is no upstream network.
+	 * Array of IPv4 route structures.  Each IPv4 route structure is composed of
+	 * 4 32-bit values; the first being the destination IPv4 network or address
+	 * (network byte order), the second the destination network or address
+	 * prefix (1 - 32), the third being the next-hop (network byte order) if
+	 * any, and the fourth being the route metric. For the "auto" method, given
+	 * IP routes are appended to those returned by automatic configuration.
+	 * Routes cannot be used with the "shared", "link-local", or "disabled"
+	 * methods because there is no upstream network.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
@@ -1380,9 +1380,9 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:ignore-auto-routes:
 	 *
-	 * When the method is set to 'auto' and this property to %TRUE, automatically
-	 * configured routes are ignored and only routes specified in
-	 * #NMSettingIP4Config:routes, if any, are used.
+	 * When the method is set to "auto" and this property to %TRUE,
+	 * automatically configured routes are ignored and only routes specified in
+	 * the #NMSettingIP4Config:routes property, if any, are used.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_ROUTES,
@@ -1398,10 +1398,11 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:ignore-auto-dns:
 	 *
-	 * When the method is set to 'auto' and this property to %TRUE, automatically
-	 * configured nameservers and search domains are ignored and only nameservers
-	 * and search domains specified in #NMSettingIP4Config:dns and
-	 * #NMSettingIP4Config:dns-search, if any, are used.
+	 * When the method is set to "auto" and this property to %TRUE,
+	 * automatically configured nameservers and search domains are ignored and
+	 * only nameservers and search domains specified in the
+	 * #NMSettingIP4Config:dns and #NMSettingIP4Config:dns-search properties, if
+	 * any, are used.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_DNS,
@@ -1436,9 +1437,9 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 *
 	 * If %TRUE, a hostname is sent to the DHCP server when acquiring a lease.
 	 * Some DHCP servers use this hostname to update DNS databases, essentially
-	 * providing a static hostname for the computer.  If
-	 * #NMSettingIP4Config:dhcp-hostname is empty and this property is TRUE,
-	 * the current persistent hostname of the computer is sent.
+	 * providing a static hostname for the computer.  If the
+	 * #NMSettingIP4Config:dhcp-hostname property is empty and this property is
+	 * %TRUE, the current persistent hostname of the computer is sent.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP_SEND_HOSTNAME,
@@ -1490,11 +1491,11 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * NMSettingIP4Config:may-fail:
 	 *
 	 * If %TRUE, allow overall network configuration to proceed even if IPv4
-	 * configuration times out.  Note that at least one IP configuration
-	 * must succeed or overall network configuration will still fail.  For
-	 * example, in IPv6-only networks, setting this property to %TRUE allows
-	 * the overall network configuration to succeed if IPv4 configuration fails
-	 * but IPv6 configuration completes successfully.
+	 * configuration times out.  Note that at least one IP configuration must
+	 * succeed or overall network configuration will still fail.  For example,
+	 * in IPv6-only networks, setting this property to %TRUE allows the overall
+	 * network configuration to succeed if IPv4 configuration fails but IPv6
+	 * configuration completes successfully.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAY_FAIL,

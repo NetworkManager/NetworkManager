@@ -567,8 +567,8 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	 * NMSettingPPP:noauth:
 	 *
 	 * If %TRUE, do not require the other side (usually the PPP server) to
-	 * authenticate itself to the client.  If %FALSE, require authentication from
-	 * the remote side.  In almost all cases, this should be %TRUE.
+	 * authenticate itself to the client.  If %FALSE, require authentication
+	 * from the remote side.  In almost all cases, this should be %TRUE.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NOAUTH,
@@ -662,7 +662,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:nodeflate:
 	 *
-	 * If %TRUE, 'deflate' compression will not be requested.
+	 * If %TRUE, "deflate" compression will not be requested.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NODEFLATE,
@@ -709,7 +709,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	 * NMSettingPPP:require-mppe-128:
 	 *
 	 * If %TRUE, 128-bit MPPE (Microsoft Point-to-Point Encrpytion) will be
-	 * required for the PPP session, and the 'require-mppe' property must also
+	 * required for the PPP session, and the "require-mppe" property must also
 	 * be set to %TRUE.  If 128-bit MPPE is not available the session will fail.
 	 **/
 	g_object_class_install_property
@@ -743,8 +743,8 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	 * NMSettingPPP:crtscts:
 	 *
 	 * If %TRUE, specify that pppd should set the serial port to use hardware
-	 * flow control with RTS and CTS signals.  This value should normally be
-	 * set to %FALSE.
+	 * flow control with RTS and CTS signals.  This value should normally be set
+	 * to %FALSE.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CRTSCTS,
@@ -811,7 +811,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	 *
 	 * If non-zero, instruct pppd to presume the connection to the peer has
 	 * failed if the specified number of LCP echo-requests go unanswered by the
-	 * peer.  The 'lcp-echo-interval' property must also be set to a non-zero
+	 * peer.  The "lcp-echo-interval" property must also be set to a non-zero
 	 * value if this property is used.
 	 **/
 	g_object_class_install_property

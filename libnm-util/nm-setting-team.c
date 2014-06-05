@@ -251,11 +251,10 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 	/**
 	 * NMSettingTeam:config:
 	 *
-	 * JSON configuration for the team network interface.
-	 * The property should contain raw JSON configuration data
-	 * suitable for teamd, because the value is passed directly to
-	 * teamd. If not specified, the default configuration is used.
-	 * See man teamd.conf for the format details.
+	 * The JSON configuration for the team network interface.  The property
+	 * should contain raw JSON configuration data suitable for teamd, because
+	 * the value is passed directly to teamd. If not specified, the default
+	 * configuration is used.  See man teamd.conf for the format details.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CONFIG,

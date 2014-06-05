@@ -752,9 +752,9 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 *
 	 * If given, specifies the kernel name of the VLAN interface. If not given,
 	 * a default name will be constructed from the interface described by the
-	 * parent interface and the #NMSettingVlan:id , ex 'eth2.1'. The parent
-	 * interface may be given by the #NMSettingVlan:parent property or by the
-	 * #NMSettingWired:mac-address property of an #NMSettingWired.
+	 * parent interface and the #NMSettingVlan:id property, eg "eth2.1". The
+	 * parent interface may be given by the #NMSettingVlan:parent property or by
+	 * the #NMSettingWired:mac-address property of an #NMSettingWired setting.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
@@ -775,8 +775,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 *
 	 * If given, specifies the parent interface name or parent connection UUID
 	 * from which this VLAN interface should be created.  If this property is
-	 * not specified, the connection must contain a #NMSettingWired:mac-address
-	 * in an #NMSettingWired setting.
+	 * not specified, the connection must contain an #NMSettingWired setting
+	 * with a #NMSettingWired:mac-address property.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
@@ -793,8 +793,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	/**
 	 * NMSettingVlan:id:
 	 *
-	 * The VLAN identifier the interface created by this connection should be
-	 * assigned.
+	 * The VLAN identifier that the interface created by this connection should
+	 * be assigned.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ID,
@@ -808,8 +808,11 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	/**
 	 * NMSettingVlan:flags:
 	 *
-	 * One or more of #NMVlanFlags which control the behavior and features of
-	 * the VLAN interface.
+	 * One or more flags which control the behavior and features of the VLAN
+	 * interface.  Flags include %NM_VLAN_FLAG_REORDER_HEADERS (reordering of
+	 * output packet headers), %NM_VLAN_FLAG_GVRP (use of the GVRP protocol),
+	 * and %NM_VLAN_FLAG_LOOSE_BINDING (loose binding of the interface to its
+	 * master device's operating state).
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_FLAGS,
@@ -828,8 +831,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * NMSettingVlan:ingress-priority-map:
 	 *
 	 * For incoming packets, a list of mappings from 802.1p priorities to Linux
-	 * SKB priorities.  The mapping is given in the format 'from:to' where both
-	 * 'from' and 'to' are unsigned integers, ie '7:3'.
+	 * SKB priorities.  The mapping is given in the format "from:to" where both
+	 * "from" and "to" are unsigned integers, ie "7:3".
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_INGRESS_PRIORITY_MAP,
@@ -847,8 +850,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 * NMSettingVlan:egress-priority-map:
 	 *
 	 * For outgoing packets, a list of mappings from Linux SKB priorities to
-	 * 802.1p priorities.  The mapping is given in the format 'from:to'
-	 * where both 'from' and 'to' are unsigned integers, ie '7:3'.
+	 * 802.1p priorities.  The mapping is given in the format "from:to" where
+	 * both "from" and "to" are unsigned integers, ie "7:3".
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_EGRESS_PRIORITY_MAP,

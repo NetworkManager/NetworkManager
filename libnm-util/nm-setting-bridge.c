@@ -462,7 +462,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	/**
 	 * NMSettingBridge:interface-name:
 	 *
-	 * The name of the virtual in-kernel briding network interface
+	 * The name of the virtual in-kernel bridging network interface
 	 *
 	 * Since: 0.9.8
 	 **/
@@ -477,9 +477,9 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	/**
 	 * NMSettingBridge:mac-address:
 	 *
-	 * If specified, the MAC address of bridge. When creating a new bridge, this MAC address
-	 * will be set. When matching an existing (outside NetworkManager created) bridge, this
-	 * MAC address must match.
+	 * If specified, the MAC address of bridge. When creating a new bridge, this
+	 * MAC address will be set. When matching an existing (outside
+	 * NetworkManager created) bridge, this MAC address must match.
 	 *
 	 * Since: 0.9.10
 	 **/
