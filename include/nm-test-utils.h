@@ -394,6 +394,57 @@ FAIL(const char *test_name, const char *fmt, ...)
 		FAIL (test_name, fmt, ## __VA_ARGS__); \
 	}
 
+
+#define nmtst_spawn_sync(working_directory, standard_out, standard_err, assert_exit_status, ...) \
+	__nmtst_spawn_sync (working_directory, standard_out, standard_err, assert_exit_status, ##__VA_ARGS__, NULL)
+inline static gint
+__nmtst_spawn_sync (const char *working_directory, char **standard_out, char **standard_err, int assert_exit_status, ...) G_GNUC_NULL_TERMINATED;
+inline static gint
+__nmtst_spawn_sync (const char *working_directory, char **standard_out, char **standard_err, int assert_exit_status, ...)
+{
+	gint exit_status = 0;
+	GError *error = NULL;
+	char *arg;
+	va_list va_args;
+	GPtrArray *argv = g_ptr_array_new ();
+	gboolean success;
+
+	va_start (va_args, assert_exit_status);
+	while ((arg = va_arg (va_args, char *)))
+		g_ptr_array_add (argv, arg);
+	va_end (va_args);
+
+	g_assert (argv->len >= 1);
+	g_ptr_array_add (argv, NULL);
+
+	success = g_spawn_sync (working_directory,
+	                        (char**) argv->pdata,
+	                        NULL,
+	                        0 /*G_SPAWN_DEFAULT*/,
+	                        NULL,
+	                        NULL,
+	                        standard_out,
+	                        standard_err,
+	                        &exit_status,
+	                        &error);
+	if (!success)
+		g_error ("nmtst_spawn_sync(%s): %s", ((char **) argv->pdata)[0], error->message);
+	g_assert (!error);
+
+	g_assert (!standard_out || *standard_out);
+	g_assert (!standard_err || *standard_err);
+
+	if (assert_exit_status != -1) {
+		/* exit status is a guint8 on success. Set @assert_exit_status to -1
+		 * not to check for the exit status. */
+		g_assert (WIFEXITED (exit_status));
+		g_assert_cmpint (WEXITSTATUS (exit_status), ==, assert_exit_status);
+	}
+
+	g_ptr_array_free (argv, TRUE);
+	return exit_status;
+}
+
 /*******************************************************************************/
 
 #ifdef NM_PLATFORM_H
