@@ -119,7 +119,7 @@ nmtst_inet4_from_string (const char *str)
 	return addr;
 }
 
-inline static struct in6_addr *
+inline static const struct in6_addr *
 nmtst_inet6_from_string (const char *str)
 {
 	static struct in6_addr addr;
