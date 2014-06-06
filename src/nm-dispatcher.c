@@ -31,6 +31,8 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
+#define CALL_TIMEOUT (1000 * 60 * 10)  /* 10 mintues for all scripts */
+
 static gboolean do_dispatch = TRUE;
 static GHashTable *requests = NULL;
 
@@ -428,7 +430,7 @@ _dispatcher_call (DispatcherAction action,
 		GPtrArray *results = NULL;
 
 		success = dbus_g_proxy_call_with_timeout (proxy, "Action",
-		                                          30000,
+		                                          CALL_TIMEOUT,
 		                                          &error,
 		                                          G_TYPE_STRING, action_to_string (action),
 		                                          DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
@@ -461,7 +463,7 @@ _dispatcher_call (DispatcherAction action,
 		                                      dispatcher_done_cb,
 		                                      info,
 		                                      (GDestroyNotify) dispatcher_info_cleanup,
-		                                      30000,
+		                                      CALL_TIMEOUT,
 		                                      G_TYPE_STRING, action_to_string (action),
 		                                      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
 		                                      DBUS_TYPE_G_MAP_OF_VARIANT, connection_props,
