@@ -481,16 +481,23 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 	g_object_thaw_notify (G_OBJECT (config));
 }
 
-void
-nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *setting)
+NMSetting *
+nm_ip6_config_create_setting (const NMIP6Config *config)
 {
+	NMSettingIP6Config *s_ip6;
 	const struct in6_addr *gateway;
 	guint naddresses, nroutes, nnameservers, nsearches;
 	const char *method = NULL;
 	int i;
 
-	if (!config)
-		return;
+	s_ip6 = NM_SETTING_IP6_CONFIG (nm_setting_ip6_config_new ());
+
+	if (!config) {
+		g_object_set (s_ip6,
+		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+		              NULL);
+		return NM_SETTING (s_ip6);
+	}
 
 	gateway = nm_ip6_config_get_gateway (config);
 	naddresses = nm_ip6_config_get_num_addresses (config);
@@ -527,15 +534,14 @@ nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *set
 		if (gateway)
 			nm_ip6_address_set_gateway (s_addr, gateway);
 
-		nm_setting_ip6_config_add_address (setting, s_addr);
+		nm_setting_ip6_config_add_address (s_ip6, s_addr);
 		nm_ip6_address_unref (s_addr);
 	}
 
-	/* Only use 'ignore' if the method wasn't previously set */
-	if (!method && !nm_setting_ip6_config_get_method (setting))
+	/* Use 'ignore' if the method wasn't previously set */
+	if (!method)
 		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
-	if (method)
-		g_object_set (setting, NM_SETTING_IP6_CONFIG_METHOD, method, NULL);
+	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, method, NULL);
 
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
@@ -557,7 +563,7 @@ nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *set
 			nm_ip6_route_set_next_hop (s_route, &route->gateway);
 		nm_ip6_route_set_metric (s_route, route->metric);
 
-		nm_setting_ip6_config_add_route (setting, s_route);
+		nm_setting_ip6_config_add_route (s_ip6, s_route);
 		nm_ip6_route_unref (s_route);
 	}
 
@@ -565,13 +571,15 @@ nm_ip6_config_update_setting (const NMIP6Config *config, NMSettingIP6Config *set
 	for (i = 0; i < nnameservers; i++) {
 		const struct in6_addr *nameserver = nm_ip6_config_get_nameserver (config, i);
 
-		nm_setting_ip6_config_add_dns (setting, nameserver);
+		nm_setting_ip6_config_add_dns (s_ip6, nameserver);
 	}
 	for (i = 0; i < nsearches; i++) {
 		const char *search = nm_ip6_config_get_search (config, i);
 
-		nm_setting_ip6_config_add_dns_search (setting, search);
+		nm_setting_ip6_config_add_dns_search (s_ip6, search);
 	}
+
+	return NM_SETTING (s_ip6);
 }
 
 /******************************************************************/

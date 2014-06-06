@@ -421,42 +421,56 @@ enslave_slave (NMDevice *device,
 		success = nm_platform_link_enslave (nm_device_get_ip_ifindex (device),
 		                                    nm_device_get_ip_ifindex (slave));
 		nm_device_bring_up (slave, TRUE, &no_firmware);
-	}
 
-	if (success) {
+		if (!success)
+			return FALSE;
+
 		nm_log_info (LOGD_BOND, "(%s): enslaved bond slave %s", iface, slave_iface);
-		g_object_notify (G_OBJECT (device), "slaves");
-	}
+	} else
+		nm_log_info (LOGD_BOND, "(%s): bond slave %s was enslaved", iface, slave_iface);
 
-	return success;
+	g_object_notify (G_OBJECT (device), NM_DEVICE_BOND_SLAVES);
+	return TRUE;
 }
 
 static gboolean
-release_slave (NMDevice *device, NMDevice *slave)
+release_slave (NMDevice *device,
+               NMDevice *slave,
+               gboolean configure)
 {
-	gboolean success, no_firmware = FALSE;
+	gboolean success = TRUE, no_firmware = FALSE;
 
-	success = nm_platform_link_release (nm_device_get_ip_ifindex (device),
-	                                    nm_device_get_ip_ifindex (slave));
+	if (configure) {
+		success = nm_platform_link_release (nm_device_get_ip_ifindex (device),
+		                                    nm_device_get_ip_ifindex (slave));
 
-	if (success) {
-		nm_log_info (LOGD_BOND, "(%s): released bond slave %s",
-		             nm_device_get_ip_iface (device),
-		             nm_device_get_ip_iface (slave));
+		if (success) {
+			nm_log_info (LOGD_BOND, "(%s): released bond slave %s",
+			             nm_device_get_ip_iface (device),
+			             nm_device_get_ip_iface (slave));
+		} else {
+			nm_log_warn (LOGD_BOND, "(%s): failed to release bond slave %s",
+			             nm_device_get_ip_iface (device),
+			             nm_device_get_ip_iface (slave));
+		}
 	} else {
-		nm_log_warn (LOGD_BOND, "(%s): failed to release bond slave %s",
+		nm_log_info (LOGD_BOND, "(%s): bond slave %s was released",
 		             nm_device_get_ip_iface (device),
 		             nm_device_get_ip_iface (slave));
 	}
-	g_object_notify (G_OBJECT (device), "slaves");
 
-	/* Kernel bonding code "closes" the slave when releasing it, (which clears
-	 * IFF_UP), so we must bring it back up here to ensure carrier changes and
-	 * other state is noticed by the now-released slave.
-	 */
-	if (!nm_device_bring_up (slave, TRUE, &no_firmware)) {
-		nm_log_warn (LOGD_BOND, "(%s): released bond slave could not be brought up.",
-		             nm_device_get_iface (slave));
+	if (success)
+		g_object_notify (G_OBJECT (device), NM_DEVICE_BOND_SLAVES);
+
+	if (configure) {
+		/* Kernel bonding code "closes" the slave when releasing it, (which clears
+		 * IFF_UP), so we must bring it back up here to ensure carrier changes and
+		 * other state is noticed by the now-released slave.
+		 */
+		if (!nm_device_bring_up (slave, TRUE, &no_firmware)) {
+			nm_log_warn (LOGD_BOND, "(%s): released bond slave could not be brought up.",
+			             nm_device_get_iface (slave));
+		}
 	}
 
 	return success;

@@ -379,16 +379,23 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 	g_object_thaw_notify (G_OBJECT (config));
 }
 
-void
-nm_ip4_config_update_setting (const NMIP4Config *config, NMSettingIP4Config *setting)
+NMSetting *
+nm_ip4_config_create_setting (const NMIP4Config *config)
 {
+	NMSettingIP4Config *s_ip4;
 	guint32 gateway;
 	guint naddresses, nroutes, nnameservers, nsearches;
 	const char *method = NULL;
 	int i;
 
-	if (!config)
-		return;
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
+
+	if (!config) {
+		g_object_set (s_ip4,
+		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+		              NULL);
+		return NM_SETTING (s_ip4);
+	}
 
 	gateway = nm_ip4_config_get_gateway (config);
 	naddresses = nm_ip4_config_get_num_addresses (config);
@@ -422,17 +429,16 @@ nm_ip4_config_update_setting (const NMIP4Config *config, NMSettingIP4Config *set
 			nm_ip4_address_set_gateway (s_addr, gateway);
 
 		if (*address->label)
-			NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (setting, s_addr, address->label));
+			NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, s_addr, address->label));
 		else
-			nm_setting_ip4_config_add_address (setting, s_addr);
+			nm_setting_ip4_config_add_address (s_ip4, s_addr);
 		nm_ip4_address_unref (s_addr);
 	}
 
-	/* Only use 'disabled' if the method wasn't previously set */
-	if (!method && !nm_setting_ip4_config_get_method (setting))
+	/* Use 'disabled' if the method wasn't previously set */
+	if (!method)
 		method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-	if (method)
-		g_object_set (setting, NM_SETTING_IP4_CONFIG_METHOD, method, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, method, NULL);
 
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
@@ -449,7 +455,7 @@ nm_ip4_config_update_setting (const NMIP4Config *config, NMSettingIP4Config *set
 		nm_ip4_route_set_next_hop (s_route, route->gateway);
 		nm_ip4_route_set_metric (s_route, route->metric);
 
-		nm_setting_ip4_config_add_route (setting, s_route);
+		nm_setting_ip4_config_add_route (s_ip4, s_route);
 		nm_ip4_route_unref (s_route);
 	}
 
@@ -457,13 +463,15 @@ nm_ip4_config_update_setting (const NMIP4Config *config, NMSettingIP4Config *set
 	for (i = 0; i < nnameservers; i++) {
 		guint32 nameserver = nm_ip4_config_get_nameserver (config, i);
 
-		nm_setting_ip4_config_add_dns (setting, nameserver);
+		nm_setting_ip4_config_add_dns (s_ip4, nameserver);
 	}
 	for (i = 0; i < nsearches; i++) {
 		const char *search = nm_ip4_config_get_search (config, i);
 
-		nm_setting_ip4_config_add_dns_search (setting, search);
+		nm_setting_ip4_config_add_dns_search (s_ip4, search);
 	}
+
+	return NM_SETTING (s_ip4);
 }
 
 /******************************************************************/

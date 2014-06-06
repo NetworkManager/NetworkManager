@@ -76,6 +76,7 @@
 #define NM_DEVICE_IP6_CONFIG_CHANGED    "ip6-config-changed"
 #define NM_DEVICE_REMOVED               "removed"
 #define NM_DEVICE_RECHECK_AUTO_ACTIVATE "recheck-auto-activate"
+#define NM_DEVICE_RECHECK_ASSUME        "recheck-assume"
 
 
 G_BEGIN_DECLS
@@ -197,7 +198,8 @@ typedef struct {
 	                                   gboolean configure);
 
 	gboolean        (* release_slave) (NMDevice *self,
-	                                   NMDevice *slave);
+	                                   NMDevice *slave,
+	                                   gboolean configure);
 
 	gboolean        (* have_any_ready_slaves) (NMDevice *self,
 	                                           const GSList *slaves);
