@@ -88,6 +88,8 @@ edit = @sed \
 dispatcherdir=$(sysconfdir)/NetworkManager/dispatcher.d
 install-data-hook:
 	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)
+	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/pre-down.d
+	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/pre-up.d
 
 BUILT_SOURCES = nm-dispatcher-glue.h
 
