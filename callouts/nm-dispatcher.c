@@ -434,7 +434,7 @@ find_scripts (const char *str_action)
 		dirname = NMD_SCRIPT_DIR;
 
 	if (!(dir = g_dir_open (dirname, 0, &error))) {
-		g_warning ("Failed to open dispatcher directory '%s': (%d) %s",
+		g_message ("Failed to open dispatcher directory '%s': (%d) %s",
 		           dirname, error->code, error->message);
 		g_error_free (error);
 		return NULL;
