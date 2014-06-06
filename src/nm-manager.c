@@ -276,6 +276,9 @@ nm_manager_error_quark (void)
 static void active_connection_state_changed (NMActiveConnection *active,
                                              GParamSpec *pspec,
                                              NMManager *self);
+static void active_connection_default_changed (NMActiveConnection *active,
+                                               GParamSpec *pspec,
+                                               NMManager *self);
 
 /* Returns: whether to notify D-Bus of the removal or not */
 static gboolean
@@ -291,6 +294,7 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 		priv->active_connections = g_slist_remove (priv->active_connections, active);
 		g_signal_emit (self, signals[ACTIVE_CONNECTION_REMOVED], 0, active);
 		g_signal_handlers_disconnect_by_func (active, active_connection_state_changed, self);
+		g_signal_handlers_disconnect_by_func (active, active_connection_default_changed, self);
 		g_object_unref (active);
 	}
 
@@ -344,6 +348,14 @@ active_connection_state_changed (NMActiveConnection *active,
 	nm_manager_update_state (self);
 }
 
+static void
+active_connection_default_changed (NMActiveConnection *active,
+                                   GParamSpec *pspec,
+                                   NMManager *self)
+{
+	nm_manager_update_state (self);
+}
+
 /**
  * active_connection_add():
  * @self: the #NMManager
@@ -364,6 +376,14 @@ active_connection_add (NMManager *self, NMActiveConnection *active)
 	g_signal_connect (active,
 	                  "notify::" NM_ACTIVE_CONNECTION_STATE,
 	                  G_CALLBACK (active_connection_state_changed),
+	                  self);
+	g_signal_connect (active,
+	                  "notify::" NM_ACTIVE_CONNECTION_DEFAULT,
+	                  G_CALLBACK (active_connection_default_changed),
+	                  self);
+	g_signal_connect (active,
+	                  "notify::" NM_ACTIVE_CONNECTION_DEFAULT6,
+	                  G_CALLBACK (active_connection_default_changed),
 	                  self);
 
 	g_signal_emit (self, signals[ACTIVE_CONNECTION_ADDED], 0, active);
