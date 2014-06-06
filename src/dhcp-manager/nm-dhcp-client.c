@@ -39,6 +39,7 @@ typedef struct {
 	GByteArray * hwaddr;
 	gboolean     ipv6;
 	char *       uuid;
+	guint        priority;
 	guint32      timeout;
 	GByteArray * duid;
 
@@ -72,6 +73,7 @@ enum {
 	PROP_HWADDR,
 	PROP_IPV6,
 	PROP_UUID,
+	PROP_PRIORITY,
 	PROP_TIMEOUT,
 	LAST_PROP
 };
@@ -795,10 +797,12 @@ nm_dhcp_client_foreach_option (NMDHCPClient *self,
 /********************************************/
 
 static gboolean
-ip4_process_dhcpcd_rfc3442_routes (const char *str,
+ip4_process_dhcpcd_rfc3442_routes (NMDHCPClient *self,
+                                   const char *str,
                                    NMIP4Config *ip4_config,
                                    guint32 *gwaddr)
 {
+	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	char **routes, **r;
 	gboolean have_routes = FALSE;
 
@@ -847,6 +851,7 @@ ip4_process_dhcpcd_rfc3442_routes (const char *str,
 			route.plen = rt_cidr;
 			route.gateway = rt_route;
 			route.source = NM_PLATFORM_SOURCE_DHCP;
+			route.metric = priv->priority;
 			nm_ip4_config_add_route (ip4_config, &route);
 		}
 	}
@@ -918,10 +923,12 @@ error:
 }
 
 static gboolean
-ip4_process_dhclient_rfc3442_routes (const char *str,
+ip4_process_dhclient_rfc3442_routes (NMDHCPClient *self,
+                                     const char *str,
                                      NMIP4Config *ip4_config,
                                      guint32 *gwaddr)
 {
+	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	char **octets, **o;
 	gboolean have_routes = FALSE;
 	NMPlatformIP4Route route;
@@ -950,6 +957,7 @@ ip4_process_dhclient_rfc3442_routes (const char *str,
 
 			/* normal route */
 			route.source = NM_PLATFORM_SOURCE_DHCP;
+			route.metric = priv->priority;
 			nm_ip4_config_add_route (ip4_config, &route);
 
 			nm_log_info (LOGD_DHCP4, "  classless static route %s/%d gw %s",
@@ -964,7 +972,8 @@ out:
 }
 
 static gboolean
-ip4_process_classless_routes (GHashTable *options,
+ip4_process_classless_routes (NMDHCPClient *self,
+                              GHashTable *options,
                               NMIP4Config *ip4_config,
                               guint32 *gwaddr)
 {
@@ -1020,15 +1029,16 @@ ip4_process_classless_routes (GHashTable *options,
 
 	if (strchr (str, '/')) {
 		/* dhcpcd format */
-		return ip4_process_dhcpcd_rfc3442_routes (str, ip4_config, gwaddr);
+		return ip4_process_dhcpcd_rfc3442_routes (self, str, ip4_config, gwaddr);
 	}
 
-	return ip4_process_dhclient_rfc3442_routes (str, ip4_config, gwaddr);
+	return ip4_process_dhclient_rfc3442_routes (self, str, ip4_config, gwaddr);
 }
 
 static void
-process_classful_routes (GHashTable *options, NMIP4Config *ip4_config)
+process_classful_routes (NMDHCPClient *self, GHashTable *options, NMIP4Config *ip4_config)
 {
+	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	const char *str;
 	char **searches, **s;
 
@@ -1070,6 +1080,7 @@ process_classful_routes (GHashTable *options, NMIP4Config *ip4_config)
 		}
 		route.gateway = rt_route;
 		route.source = NM_PLATFORM_SOURCE_DHCP;
+		route.metric = priv->priority;
 
 		nm_ip4_config_add_route (ip4_config, &route);
 		nm_log_info (LOGD_DHCP, "  static route %s",
@@ -1166,8 +1177,8 @@ ip4_options_to_config (NMDHCPClient *self)
 	/* Routes: if the server returns classless static routes, we MUST ignore
 	 * the 'static_routes' option.
 	 */
-	if (!ip4_process_classless_routes (priv->options, ip4_config, &gwaddr))
-		process_classful_routes (priv->options, ip4_config);
+	if (!ip4_process_classless_routes (self, priv->options, ip4_config, &gwaddr))
+		process_classful_routes (self, priv->options, ip4_config);
 
 	if (gwaddr) {
 		nm_log_info (LOGD_DHCP4, "  gateway %s", nm_utils_inet4_ntop (gwaddr, NULL));
@@ -1220,6 +1231,8 @@ ip4_options_to_config (NMDHCPClient *self)
 				route.plen = 32;
 				/* this will be a device route if gwaddr is 0 */
 				route.gateway = gwaddr;
+				route.source = NM_PLATFORM_SOURCE_DHCP;
+				route.metric = priv->priority;
 				nm_ip4_config_add_route (ip4_config, &route);
 				nm_log_dbg (LOGD_IP, "adding route for server identifier: %s",
 				                      nm_platform_ip4_route_to_string (&route));
@@ -1499,6 +1512,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_UUID:
 		g_value_set_string (value, priv->uuid);
 		break;
+	case PROP_PRIORITY:
+		g_value_set_uint (value, priv->priority);
+		break;
 	case PROP_TIMEOUT:
 		g_value_set_uint (value, priv->timeout);
 		break;
@@ -1530,6 +1546,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_UUID:
 		/* construct-only */
 		priv->uuid = g_value_dup_string (value);
+		break;
+	case PROP_PRIORITY:
+		/* construct-only */
+		priv->priority = g_value_get_uint (value);
 		break;
 	case PROP_TIMEOUT:
 		priv->timeout = g_value_get_uint (value);
@@ -1621,6 +1641,14 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 		                      "UUID",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_PRIORITY,
+		 g_param_spec_uint (NM_DHCP_CLIENT_PRIORITY,
+		                    "priority",
+		                    "Priority",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_TIMEOUT,

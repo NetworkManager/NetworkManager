@@ -658,9 +658,15 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 		if (ip_ifindex <= 0)
 			ip_ifindex = parent_ifindex;
 
-		if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, int_gw, NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
-			(void) nm_platform_ip4_route_add (parent_ifindex, gw_addr, 32, 0, NM_PLATFORM_ROUTE_METRIC_DEFAULT, parent_mss);
-			if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, int_gw, NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss))
+		if (!nm_platform_ip4_route_add (ip_ifindex, NM_PLATFORM_SOURCE_VPN,
+		                                0, 0, int_gw,
+		                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
+			(void) nm_platform_ip4_route_add (parent_ifindex, NM_PLATFORM_SOURCE_VPN,
+			                                  gw_addr, 32, 0,
+			                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT, parent_mss);
+			if (!nm_platform_ip4_route_add (ip_ifindex, NM_PLATFORM_SOURCE_VPN,
+			                                0, 0, int_gw,
+			                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss))
 				nm_log_err (LOGD_IP4 | LOGD_VPN, "Failed to set default route.");
 		}
 
@@ -669,9 +675,15 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 		int mss = nm_ip4_config_get_mss (ip4_config);
 
 		g_assert (ip_iface);
-		if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, gw_addr, NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
-			(void) nm_platform_ip4_route_add (ip_ifindex, gw_addr, 32, 0, NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss);
-			if (!nm_platform_ip4_route_add (ip_ifindex, 0, 0, gw_addr, NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
+		if (!nm_platform_ip4_route_add (ip_ifindex, NM_PLATFORM_SOURCE_USER,
+		                                0, 0, gw_addr,
+		                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
+			(void) nm_platform_ip4_route_add (ip_ifindex, NM_PLATFORM_SOURCE_USER,
+			                                  gw_addr, 32, 0,
+			                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss);
+			if (!nm_platform_ip4_route_add (ip_ifindex, NM_PLATFORM_SOURCE_USER,
+			                                0, 0, gw_addr,
+			                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
 				nm_log_err (LOGD_IP4, "Failed to set default route.");
 			}
 		}
@@ -852,9 +864,15 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 		if (ip_ifindex <= 0)
 			ip_ifindex = parent_ifindex;
 
-		if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *int_gw, NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
-			(void) nm_platform_ip6_route_add (parent_ifindex, *gw_addr, 128, in6addr_any, NM_PLATFORM_ROUTE_METRIC_DEFAULT, parent_mss);
-			if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *int_gw, NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
+		if (!nm_platform_ip6_route_add (ip_ifindex, NM_PLATFORM_SOURCE_VPN,
+		                                in6addr_any, 0, *int_gw,
+		                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
+			(void) nm_platform_ip6_route_add (parent_ifindex, NM_PLATFORM_SOURCE_VPN,
+			                                  *gw_addr, 128, in6addr_any,
+			                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT, parent_mss);
+			if (!nm_platform_ip6_route_add (ip_ifindex, NM_PLATFORM_SOURCE_VPN,
+			                                in6addr_any, 0, *int_gw,
+			                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
 				nm_log_err (LOGD_IP6 | LOGD_VPN, "Failed to set default route.");
 			}
 		}
@@ -863,9 +881,15 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	} else {
 		int mss = nm_ip6_config_get_mss (ip6_config);
 
-		if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *gw_addr, NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
-			(void) nm_platform_ip6_route_add (ip_ifindex, *gw_addr, 128, in6addr_any, NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss);
-			if (!nm_platform_ip6_route_add (ip_ifindex, in6addr_any, 0, *gw_addr, NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss))
+		if (!nm_platform_ip6_route_add (ip_ifindex, NM_PLATFORM_SOURCE_USER,
+		                                in6addr_any, 0, *gw_addr,
+		                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
+			(void) nm_platform_ip6_route_add (ip_ifindex, NM_PLATFORM_SOURCE_USER,
+			                                  *gw_addr, 128, in6addr_any,
+			                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss);
+			if (!nm_platform_ip6_route_add (ip_ifindex, NM_PLATFORM_SOURCE_USER,
+			                                in6addr_any, 0, *gw_addr,
+			                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss))
 				nm_log_err (LOGD_IP6, "Failed to set default route.");
 		}
 

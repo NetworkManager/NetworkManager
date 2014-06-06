@@ -1048,6 +1048,43 @@ init_ip6_address (NMPlatformIP6Address *address, struct rtnl_addr *rtnladdr)
 	return TRUE;
 }
 
+static guint
+source_to_rtprot (NMPlatformSource source)
+{
+	switch (source) {
+	case NM_PLATFORM_SOURCE_UNKNOWN:
+		return RTPROT_UNSPEC;
+	case NM_PLATFORM_SOURCE_KERNEL:
+		return RTPROT_KERNEL;
+	case NM_PLATFORM_SOURCE_DHCP:
+		return RTPROT_DHCP;
+	case NM_PLATFORM_SOURCE_RDISC:
+		return RTPROT_RA;
+
+	default:
+		return RTPROT_STATIC;
+	}
+}
+
+static NMPlatformSource
+rtprot_to_source (guint rtprot)
+{
+	switch (rtprot) {
+	case RTPROT_UNSPEC:
+		return NM_PLATFORM_SOURCE_UNKNOWN;
+	case RTPROT_REDIRECT:
+	case RTPROT_KERNEL:
+		return NM_PLATFORM_SOURCE_KERNEL;
+	case RTPROT_RA:
+		return NM_PLATFORM_SOURCE_RDISC;
+	case RTPROT_DHCP:
+		return NM_PLATFORM_SOURCE_DHCP;
+
+	default:
+		return NM_PLATFORM_SOURCE_USER;
+	}
+}
+
 static gboolean
 init_ip4_route (NMPlatformIP4Route *route, struct rtnl_route *rtnlroute)
 {
@@ -1083,6 +1120,7 @@ init_ip4_route (NMPlatformIP4Route *route, struct rtnl_route *rtnlroute)
 	}
 	route->metric = rtnl_route_get_priority (rtnlroute);
 	rtnl_route_get_metric (rtnlroute, RTAX_ADVMSS, &route->mss);
+	route->source = rtprot_to_source (rtnl_route_get_protocol (rtnlroute));
 
 	return TRUE;
 }
@@ -1122,6 +1160,7 @@ init_ip6_route (NMPlatformIP6Route *route, struct rtnl_route *rtnlroute)
 	}
 	route->metric = rtnl_route_get_priority (rtnlroute);
 	rtnl_route_get_metric (rtnlroute, RTAX_ADVMSS, &route->mss);
+	route->source = rtprot_to_source (rtnl_route_get_protocol (rtnlroute));
 
 	return TRUE;
 }
@@ -3263,7 +3302,6 @@ ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (_route_match ((struct rtnl_route *) object, AF_INET, ifindex)) {
 			if (init_ip4_route (&route, (struct rtnl_route *) object)) {
-				route.source = NM_PLATFORM_SOURCE_KERNEL;
 				if (route.plen != 0 || include_default)
 					g_array_append_val (routes, route);
 			}
@@ -3286,7 +3324,6 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (_route_match ((struct rtnl_route *) object, AF_INET6, ifindex)) {
 			if (init_ip6_route (&route, (struct rtnl_route *) object)) {
-				route.source = NM_PLATFORM_SOURCE_KERNEL;
 				if (route.plen != 0 || include_default)
 					g_array_append_val (routes, route);
 			}
@@ -3315,7 +3352,9 @@ clear_host_address (int family, const void *network, int plen, void *dst)
 }
 
 static struct nl_object *
-build_rtnl_route (int family, int ifindex, gconstpointer network, int plen, gconstpointer gateway, int metric, int mss)
+build_rtnl_route (int family, int ifindex, NMPlatformSource source,
+                  gconstpointer network, int plen, gconstpointer gateway,
+                  int metric, int mss)
 {
 	guint32 network_clean[4];
 	struct rtnl_route *rtnlroute;
@@ -3339,6 +3378,7 @@ build_rtnl_route (int family, int ifindex, gconstpointer network, int plen, gcon
 	rtnl_route_set_dst (rtnlroute, dst);
 	rtnl_route_set_priority (rtnlroute, metric);
 	rtnl_route_set_family (rtnlroute, family);
+	rtnl_route_set_protocol (rtnlroute, source_to_rtprot (source));
 
 	nexthop = _nm_rtnl_route_nh_alloc ();
 	rtnl_route_nh_set_ifindex (nexthop, ifindex);
@@ -3353,15 +3393,19 @@ build_rtnl_route (int family, int ifindex, gconstpointer network, int plen, gcon
 }
 
 static gboolean
-ip4_route_add (NMPlatform *platform, int ifindex, in_addr_t network, int plen, in_addr_t gateway, int metric, int mss)
+ip4_route_add (NMPlatform *platform, int ifindex, NMPlatformSource source,
+               in_addr_t network, int plen, in_addr_t gateway,
+               int metric, int mss)
 {
-	return add_object (platform, build_rtnl_route (AF_INET, ifindex, &network, plen, &gateway, metric, mss));
+	return add_object (platform, build_rtnl_route (AF_INET, ifindex, source, &network, plen, &gateway, metric, mss));
 }
 
 static gboolean
-ip6_route_add (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, struct in6_addr gateway, int metric, int mss)
+ip6_route_add (NMPlatform *platform, int ifindex, NMPlatformSource source,
+               struct in6_addr network, int plen, struct in6_addr gateway,
+               int metric, int mss)
 {
-	return add_object (platform, build_rtnl_route (AF_INET6, ifindex, &network, plen, &gateway, metric, mss));
+	return add_object (platform, build_rtnl_route (AF_INET6, ifindex, source, &network, plen, &gateway, metric, mss));
 }
 
 static struct rtnl_route *
@@ -3418,7 +3462,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 {
 	in_addr_t gateway = 0;
 	struct rtnl_route *cached_object;
-	struct nl_object *route = build_rtnl_route (AF_INET, ifindex, &network, plen, &gateway, metric, 0);
+	struct nl_object *route = build_rtnl_route (AF_INET, ifindex, NM_PLATFORM_SOURCE_UNKNOWN, &network, plen, &gateway, metric, 0);
 	uint8_t scope = RT_SCOPE_NOWHERE;
 	struct nl_cache *cache;
 
@@ -3459,9 +3503,6 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 	}
 	rtnl_route_set_scope ((struct rtnl_route *) route, scope);
 
-	/* protocol defaults to RTPROT_STATIC, set to zero so that the kernel ignores the value */
-	rtnl_route_set_protocol ((struct rtnl_route *) route, 0);
-
 	if (cached_object)
 		rtnl_route_set_tos ((struct rtnl_route *) route, rtnl_route_get_tos (cached_object));
 
@@ -3481,15 +3522,16 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 {
 	struct in6_addr gateway = IN6ADDR_ANY_INIT;
 
-	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, &network, plen, &gateway, metric, 0), FALSE) &&
+	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, NM_PLATFORM_SOURCE_UNKNOWN ,&network, plen, &gateway, metric, 0), FALSE) &&
 	    refresh_route (platform, AF_INET6, ifindex, &network, plen, metric);
 }
 
 static gboolean
 ip_route_exists (NMPlatform *platform, int family, int ifindex, gpointer network, int plen, int metric)
 {
-	auto_nl_object struct nl_object *object = build_rtnl_route (family, ifindex, network,
-	                                                            plen, NULL, metric, 0);
+	auto_nl_object struct nl_object *object = build_rtnl_route (family, ifindex,
+	                                                            NM_PLATFORM_SOURCE_UNKNOWN,
+	                                                            network, plen, NULL, metric, 0);
 	struct nl_cache *cache = choose_cache (platform, object);
 	auto_nl_object struct nl_object *cached_object = nl_cache_search (cache, object);
 

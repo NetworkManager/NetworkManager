@@ -43,12 +43,12 @@ test_cleanup_internal ()
 	/* Add routes and addresses */
 	g_assert (nm_platform_ip4_address_add (ifindex, addr4, 0, plen4, lifetime, preferred, NULL));
 	g_assert (nm_platform_ip6_address_add (ifindex, addr6, in6addr_any, plen6, lifetime, preferred, flags));
-	g_assert (nm_platform_ip4_route_add (ifindex, gateway4, 32, INADDR_ANY, metric, mss));
-	g_assert (nm_platform_ip4_route_add (ifindex, network4, plen4, gateway4, metric, mss));
-	g_assert (nm_platform_ip4_route_add (ifindex, 0, 0, gateway4, metric, mss));
-	g_assert (nm_platform_ip6_route_add (ifindex, gateway6, 128, in6addr_any, metric, mss));
-	g_assert (nm_platform_ip6_route_add (ifindex, network6, plen6, gateway6, metric, mss));
-	g_assert (nm_platform_ip6_route_add (ifindex, in6addr_any, 0, gateway6, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_PLATFORM_SOURCE_USER, gateway4, 32, INADDR_ANY, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_PLATFORM_SOURCE_USER, network4, plen4, gateway4, metric, mss));
+	g_assert (nm_platform_ip4_route_add (ifindex, NM_PLATFORM_SOURCE_USER, 0, 0, gateway4, metric, mss));
+	g_assert (nm_platform_ip6_route_add (ifindex, NM_PLATFORM_SOURCE_USER, gateway6, 128, in6addr_any, metric, mss));
+	g_assert (nm_platform_ip6_route_add (ifindex, NM_PLATFORM_SOURCE_USER, network6, plen6, gateway6, metric, mss));
+	g_assert (nm_platform_ip6_route_add (ifindex, NM_PLATFORM_SOURCE_USER, in6addr_any, 0, gateway6, metric, mss));
 
 	addresses4 = nm_platform_ip4_address_get_all (ifindex);
 	addresses6 = nm_platform_ip6_address_get_all (ifindex);
