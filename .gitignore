@@ -148,7 +148,7 @@ valgrind-*.log
 
 /callouts/nm-dhcp-client.action
 /callouts/nm-avahi-autoipd.action
-/callouts/nm-dispatcher.action
+/callouts/nm-dispatcher
 /callouts/org.freedesktop.nm_dispatcher.service
 /callouts/nm-modem-probe
 /dispatcher-daemon/NetworkManagerDispatcher
