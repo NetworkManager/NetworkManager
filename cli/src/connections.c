@@ -271,7 +271,7 @@ static TabCompletionInfo nmc_tab_completion = {NULL, NULL, NULL, NULL};
 /* Global variable defined in nmcli.c - used for TAB completion */
 extern NmCli nm_cli;
 
-static char *gen_connection_types (char *text, int state);
+static char *gen_connection_types (const char *text, int state);
 
 static void
 usage (void)
@@ -5036,48 +5036,48 @@ update_connection (gboolean persistent,
 }
 
 static char *
-gen_func_vpn_types (char *text, int state)
+gen_func_vpn_types (const char *text, int state)
 {
 	return nmc_rl_gen_func_basic (text, state, nmc_known_vpns);
 }
 
 static char *
-gen_func_bool_values_l10n (char *text, int state)
+gen_func_bool_values_l10n (const char *text, int state)
 {
 	const char *words[] = { WORD_LOC_YES, WORD_LOC_NO, NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
-gen_func_ib_type (char *text, int state)
+gen_func_ib_type (const char *text, int state)
 {
 	const char *words[] = { "datagram", "connected", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
-gen_func_bt_type (char *text, int state)
+gen_func_bt_type (const char *text, int state)
 {
 	const char *words[] = { "panu", "dun-gsm", "dun-cdma", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
-gen_func_bond_mode (char *text, int state)
+gen_func_bond_mode (const char *text, int state)
 {
 	const char *words[] = { "balance-rr", "active-backup", "balance-xor", "broadcast",
 	                        "802.3ad", "balance-tlb", "balance-alb", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 static char *
-gen_func_bond_mon_mode (char *text, int state)
+gen_func_bond_mon_mode (const char *text, int state)
 {
 	const char *words[] = { "miimon", "arp", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
-gen_func_master_ifnames (char *text, int state)
+gen_func_master_ifnames (const char *text, int state)
 {
 	GSList *iter;
 	GPtrArray *ifnames;
@@ -5127,10 +5127,10 @@ is_single_word (const char* line)
 }
 
 static char **
-nmcli_con_add_tab_completion (char *text, int start, int end)
+nmcli_con_add_tab_completion (const char *text, int start, int end)
 {
 	char **match_array = NULL;
-	CPFunction *generator_func = NULL;
+	rl_compentry_func_t *generator_func = NULL;
 
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
@@ -5196,7 +5196,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	                         {"save",        TRUE, &save,        FALSE},
 	                         {NULL} };
 
-	rl_attempted_completion_function = (CPPFunction *) nmcli_con_add_tab_completion;
+	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_con_add_tab_completion;
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 
@@ -5386,7 +5386,7 @@ set_deftext (void)
 }
 
 static char *
-gen_nmcli_cmds_menu (char *text, int state)
+gen_nmcli_cmds_menu (const char *text, int state)
 {
 	const char *words[] = { "goto", "set", "remove", "describe", "print", "verify",
 	                        "save", "activate", "back", "help", "quit", "nmcli",
@@ -5395,7 +5395,7 @@ gen_nmcli_cmds_menu (char *text, int state)
 }
 
 static char *
-gen_nmcli_cmds_submenu (char *text, int state)
+gen_nmcli_cmds_submenu (const char *text, int state)
 {
 	const char *words[] = { "set", "add", "change", "remove", "describe",
 	                        "print", "back", "help", "quit",
@@ -5404,49 +5404,49 @@ gen_nmcli_cmds_submenu (char *text, int state)
 }
 
 static char *
-gen_cmd_nmcli (char *text, int state)
+gen_cmd_nmcli (const char *text, int state)
 {
 	const char *words[] = { "status-line", "save-confirmation", "prompt-color", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
-gen_cmd_nmcli_prompt_color (char *text, int state)
+gen_cmd_nmcli_prompt_color (const char *text, int state)
 {
 	const char *words[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
-gen_func_bool_values (char *text, int state)
+gen_func_bool_values (const char *text, int state)
 {
 	const char *words[] = { "yes", "no", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
-gen_cmd_verify0 (char *text, int state)
+gen_cmd_verify0 (const char *text, int state)
 {
 	const char *words[] = { "all", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
-gen_cmd_print2 (char *text, int state)
+gen_cmd_print2 (const char *text, int state)
 {
 	const char *words[] = { "setting", "connection", "all", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
-gen_cmd_save (char *text, int state)
+gen_cmd_save (const char *text, int state)
 {
 	const char *words[] = { "persistent", "temporary", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
 static char *
-gen_connection_types (char *text, int state)
+gen_connection_types (const char *text, int state)
 {
 	static int list_idx, len;
 	const char *c_type, *a_type;
@@ -5470,7 +5470,7 @@ gen_connection_types (char *text, int state)
 }
 
 static char *
-gen_setting_names (char *text, int state)
+gen_setting_names (const char *text, int state)
 {
 	static int list_idx, len;
 	const char *s_name, *a_name;
@@ -5499,7 +5499,7 @@ gen_setting_names (char *text, int state)
 }
 
 static char *
-gen_property_names (char *text, int state)
+gen_property_names (const char *text, int state)
 {
 	NMSetting *setting = NULL;
 	char **valid_props = NULL;
@@ -5539,7 +5539,7 @@ gen_property_names (char *text, int state)
 }
 
 static char *
-gen_compat_devices (char *text, int state)
+gen_compat_devices (const char *text, int state)
 {
 	int i, j = 0;
 	const GPtrArray *devices;
@@ -5571,7 +5571,7 @@ gen_compat_devices (char *text, int state)
 }
 
 static char *
-gen_vpn_uuids (char *text, int state)
+gen_vpn_uuids (const char *text, int state)
 {
 	GSList *iter;
 	guint len;
@@ -5598,9 +5598,8 @@ gen_vpn_uuids (char *text, int state)
 	return ret;
 }
 
-typedef char * (*my_gen_func_ptr) (char *, int);
-static my_gen_func_ptr
-get_gen_func_cmd_nmcli (char *str)
+static rl_compentry_func_t *
+get_gen_func_cmd_nmcli (const char *str)
 {
 	if (!str)
 		return NULL;
@@ -5787,12 +5786,12 @@ extern int rl_complete_with_tilde_expansion;
  * array of matches, or NULL if there aren't any.
  */
 static char **
-nmcli_editor_tab_completion (char *text, int start, int end)
+nmcli_editor_tab_completion (const char *text, int start, int end)
 {
 	char **match_array = NULL;
 	const char *line = rl_line_buffer;
 	const char *prompt = rl_prompt;
-	CPFunction *generator_func = NULL;
+	rl_compentry_func_t *generator_func = NULL;
 	gboolean copy_char;
 	const char *p1;
 	char *p2, *prompt_tmp;
@@ -7805,7 +7804,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 	/* Setup some readline completion stuff */
 	/* Set a pointer to an alternative function to create matches */
-	rl_attempted_completion_function = (CPPFunction *) nmcli_editor_tab_completion;
+	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_editor_tab_completion;
 	/* Use ' ' and '.' as word break characters */
 	rl_completer_word_break_characters = ". ";
 
@@ -8383,7 +8382,7 @@ connection_editor_thread_func (gpointer data)
 }
 
 static char *
-gen_func_connection_names (char *text, int state)
+gen_func_connection_names (const char *text, int state)
 {
 	int i = 0;
 	GSList *iter;
@@ -8408,10 +8407,10 @@ gen_func_connection_names (char *text, int state)
 }
 
 static char **
-nmcli_con_tab_completion (char *text, int start, int end)
+nmcli_con_tab_completion (const char *text, int start, int end)
 {
 	char **match_array = NULL;
-	CPFunction *generator_func = NULL;
+	rl_compentry_func_t *generator_func = NULL;
 
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
@@ -8436,7 +8435,7 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
-	rl_attempted_completion_function = (CPPFunction *) nmcli_con_tab_completion;
+	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_con_tab_completion;
 
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))

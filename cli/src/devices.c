@@ -2580,7 +2580,7 @@ is_single_word (const char* line)
 extern NmCli nm_cli;
 
 static char *
-gen_func_ifnames (char *text, int state)
+gen_func_ifnames (const char *text, int state)
 {
 	int i, j = 0;
 	const GPtrArray *devices;
@@ -2607,10 +2607,10 @@ gen_func_ifnames (char *text, int state)
 }
 
 static char **
-nmcli_device_tab_completion (char *text, int start, int end)
+nmcli_device_tab_completion (const char *text, int start, int end)
 {
 	char **match_array = NULL;
-	CPFunction *generator_func = NULL;
+	rl_compentry_func_t *generator_func = NULL;
 
 	/* Disable readline's default filename completion */
 	rl_attempted_completion_over = 1;
@@ -2635,7 +2635,7 @@ do_devices (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
-	rl_attempted_completion_function = (CPPFunction *) nmcli_device_tab_completion;
+	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_device_tab_completion;
 
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))

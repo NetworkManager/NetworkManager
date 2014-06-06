@@ -1088,7 +1088,7 @@ nmc_readline (const char *prompt_fmt, ...)
  * See e.g. http://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC49
  */
 char *
-nmc_rl_gen_func_basic (char *text, int state, const char **words)
+nmc_rl_gen_func_basic (const char *text, int state, const char **words)
 {
 	static int list_idx, len;
 	const char *name;
