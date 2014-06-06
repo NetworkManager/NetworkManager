@@ -2078,7 +2078,7 @@ _lifetime_to_string (guint32 timestamp, guint32 lifetime, gint32 now, char *buf,
 	if (lifetime == NM_PLATFORM_LIFETIME_PERMANENT)
 		return "forever";
 
-	g_snprintf (buf, buf_size, "%dsec",
+	g_snprintf (buf, buf_size, "%usec",
 	            _rebase_relative_time_on_now (timestamp, lifetime, now));
 	return buf;
 }
