@@ -305,13 +305,20 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 	for (option = master_options; option->name; option++) {
 		gs_free char *str = nm_platform_master_get_option (ifindex, option->sysname);
-		int value = strtol (str, NULL, 10);
+		int value;
 
-		/* See comments in set_sysfs_uint() about centiseconds. */
-		if (option->user_hz_compensate)
-			value /= 100;
+		if (str) {
+			value = strtol (str, NULL, 10);
 
-		g_object_set (s_bridge, option->name, value, NULL);
+			/* See comments in set_sysfs_uint() about centiseconds. */
+			if (option->user_hz_compensate)
+				value /= 100;
+
+			g_object_set (s_bridge, option->name, value, NULL);
+		} else {
+			nm_log_warn (LOGD_BRIDGE, "(%s): failed to read bridge setting '%s'",
+			             nm_device_get_iface (device), option->sysname);
+		}
 	}
 }
 
