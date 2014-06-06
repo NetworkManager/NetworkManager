@@ -104,6 +104,7 @@ NMConnection *nm_utils_match_connection (GSList *connections,
 gint64 nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
 #define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
+gint64 nm_utils_get_monotonic_timestamp_ns (void);
 gint64 nm_utils_get_monotonic_timestamp_us (void);
 gint64 nm_utils_get_monotonic_timestamp_ms (void);
 gint32 nm_utils_get_monotonic_timestamp_s (void);

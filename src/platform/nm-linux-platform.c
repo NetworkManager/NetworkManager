@@ -136,6 +136,53 @@ _nl_has_capability (int capability)
 
 /******************************************************************/
 
+static guint32
+_get_expiry (guint32 now_s, guint32 lifetime_s)
+{
+	gint64 t = ((gint64) now_s) + ((gint64) lifetime_s);
+
+	return MIN (t, NM_PLATFORM_LIFETIME_PERMANENT - 1);
+}
+
+/* The rtnl_addr object contains relative lifetimes @valid and @preferred
+ * that count in seconds, starting from the moment when the kernel constructed
+ * the netlink message.
+ *
+ * There is also a field rtnl_addr_last_update_time(), which is the absolute
+ * time in 1/100th of a second of clock_gettime (CLOCK_MONOTONIC) when the address
+ * was modified (wrapping every 497 days).
+ * Immediately at the time when the address was last modified, #NOW and @last_update_time
+ * are the same, so (only) in that case @valid and @preferred are anchored at @last_update_time.
+ * However, this is not true in general. As time goes by, whenever kernel sends a new address
+ * via netlink, the lifetimes keep counting down.
+ *
+ * As we cache the rtnl_addr object we must know the absolute expiries.
+ * As a hack, modify the relative timestamps valid and preferred into absolute
+ * timestamps of scale nm_utils_get_monotonic_timestamp_s().
+ **/
+static void
+_rtnl_addr_hack_lifetimes_rel_to_abs (struct rtnl_addr *rtnladdr)
+{
+	guint32 a_valid  = rtnl_addr_get_valid_lifetime (rtnladdr);
+	guint32 a_preferred = rtnl_addr_get_preferred_lifetime (rtnladdr);
+	guint32 now;
+
+	if (a_valid == NM_PLATFORM_LIFETIME_PERMANENT &&
+	    a_preferred == NM_PLATFORM_LIFETIME_PERMANENT)
+		return;
+
+	now = (guint32) nm_utils_get_monotonic_timestamp_s ();
+
+	if (a_preferred > a_valid)
+		a_preferred = a_valid;
+
+	if (a_valid != NM_PLATFORM_LIFETIME_PERMANENT)
+		rtnl_addr_set_valid_lifetime (rtnladdr, _get_expiry (now, a_valid));
+	rtnl_addr_set_preferred_lifetime (rtnladdr, _get_expiry (now, a_preferred));
+}
+
+/******************************************************************/
+
 /* libnl library workarounds and additions */
 
 /* Automatic deallocation of local variables */
@@ -401,6 +448,9 @@ get_kernel_object (struct nl_sock *sock, struct nl_object *needle)
 			object = nl_cache_search (cache, needle);
 
 			nl_cache_free (cache);
+
+			if (object && (type == OBJECT_TYPE_IP4_ADDRESS || type == OBJECT_TYPE_IP6_ADDRESS))
+				_rtnl_addr_hack_lifetimes_rel_to_abs ((struct rtnl_addr *) object);
 
 			if (object)
 				debug ("get_kernel_object for type %d returned %p", type, object);
@@ -982,6 +1032,53 @@ hack_empty_master_iff_lower_up (NMPlatform *platform, struct nl_object *object)
 	rtnl_link_unset_flags (rtnllink, IFF_LOWER_UP);
 }
 
+static void
+_init_ip_address_lifetime (NMPlatformIPAddress *address, const struct rtnl_addr *rtnladdr)
+{
+	guint32 a_valid = rtnl_addr_get_valid_lifetime ((struct rtnl_addr *) rtnladdr);
+	guint32 a_preferred = rtnl_addr_get_preferred_lifetime ((struct rtnl_addr *) rtnladdr);
+
+	/* the meaning of the valid and preferred lifetimes is different from the
+	 * original meaning. See _rtnl_addr_hack_lifetimes_rel_to_abs().
+	 * Beware: this function expects hacked rtnl_addr objects.
+	 */
+
+	if (a_valid == NM_PLATFORM_LIFETIME_PERMANENT &&
+	    a_preferred == NM_PLATFORM_LIFETIME_PERMANENT) {
+		address->timestamp = 0;
+		address->lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
+		address->preferred = NM_PLATFORM_LIFETIME_PERMANENT;
+		return;
+	}
+
+	/* The valies are hacked and absolute expiry times. They must
+	 * be positive and preferred<=valid. */
+	g_assert (a_preferred <= a_valid &&
+	          a_valid > 0 &&
+	          a_preferred > 0);
+
+	/* The correct timestamp value would probably be rtnl_addr_get_last_update_time()
+	 * (after converting into the proper time scale).
+	 * But this is relatively complicated to convert and we don't actually need it.
+	 * Especially, because rtnl_addr_get_last_update_time() might be negative in
+	 * nm_utils_get_monotonic_timestamp_s() scale -- which we want to avoid.
+	 *
+	 * Remember: timestamp has no meaning, beyond anchoring the relative lifetimes
+	 * at some point in time. We choose this point to be "1 second".
+	 */
+	address->timestamp = 1;
+
+	/* account for the timestamp==1 by incrementing valid/preferred -- unless
+	 * it is NM_PLATFORM_LIFETIME_PERMANENT or already NM_PLATFORM_LIFETIME_PERMANENT-1
+	 * (i.e. the largest non-permanent lifetime). */
+	if (a_valid < NM_PLATFORM_LIFETIME_PERMANENT - 1)
+		a_valid += 1;
+	if (a_preferred < NM_PLATFORM_LIFETIME_PERMANENT - 1)
+		a_preferred += 1;
+	address->lifetime = a_valid;
+	address->preferred = a_preferred + 1;
+}
+
 static gboolean
 init_ip4_address (NMPlatformIP4Address *address, struct rtnl_addr *rtnladdr)
 {
@@ -993,11 +1090,10 @@ init_ip4_address (NMPlatformIP4Address *address, struct rtnl_addr *rtnladdr)
 
 	memset (address, 0, sizeof (*address));
 
+	address->source = NM_PLATFORM_SOURCE_KERNEL;
 	address->ifindex = rtnl_addr_get_ifindex (rtnladdr);
 	address->plen = rtnl_addr_get_prefixlen (rtnladdr);
-	address->timestamp = nm_utils_get_monotonic_timestamp_s ();
-	address->lifetime = rtnl_addr_get_valid_lifetime (rtnladdr);
-	address->preferred = rtnl_addr_get_preferred_lifetime (rtnladdr);
+	_init_ip_address_lifetime ((NMPlatformIPAddress *) address, rtnladdr);
 	if (!nladdr || nl_addr_get_len (nladdr) != sizeof (address->address)) {
 		g_return_val_if_reached (FALSE);
 		return FALSE;
@@ -1026,11 +1122,10 @@ init_ip6_address (NMPlatformIP6Address *address, struct rtnl_addr *rtnladdr)
 
 	memset (address, 0, sizeof (*address));
 
+	address->source = NM_PLATFORM_SOURCE_KERNEL;
 	address->ifindex = rtnl_addr_get_ifindex (rtnladdr);
 	address->plen = rtnl_addr_get_prefixlen (rtnladdr);
-	address->timestamp = nm_utils_get_monotonic_timestamp_s ();
-	address->lifetime = rtnl_addr_get_valid_lifetime (rtnladdr);
-	address->preferred = rtnl_addr_get_preferred_lifetime (rtnladdr);
+	_init_ip_address_lifetime ((NMPlatformIPAddress *) address, rtnladdr);
 	address->flags = rtnl_addr_get_flags (rtnladdr);
 	if (!nladdr || nl_addr_get_len (nladdr) != sizeof (address->address)) {
 		g_return_val_if_reached (FALSE);
@@ -1610,6 +1705,22 @@ ref_object (struct nl_object *obj, void *data)
 	*out = obj;
 }
 
+static gboolean
+_rtnl_addr_timestamps_equal_fuzzy (guint32 ts1, guint32 ts2)
+{
+	guint32 diff;
+
+	if (ts1 == ts2)
+		return TRUE;
+	if (ts1 == NM_PLATFORM_LIFETIME_PERMANENT ||
+	    ts2 == NM_PLATFORM_LIFETIME_PERMANENT)
+		return FALSE;
+
+	/** accept the timestamps as equal if they are within two seconds. */
+	diff = ts1 > ts2 ? ts1 - ts2 : ts2 - ts1;
+	return diff <= 2;
+}
+
 /* This function does all the magic to avoid race conditions caused
  * by concurrent usage of synchronous commands and an asynchronous cache. This
  * might be a nice future addition to libnl but it requires to do all operations
@@ -1627,6 +1738,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	auto_nl_object struct nl_object *kernel_object = NULL;
 	int event;
 	int nle;
+	ObjectType type;
 
 	event = nlmsg_hdr (msg)->nlmsg_type;
 
@@ -1640,8 +1752,10 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 	nl_msg_parse (msg, ref_object, &object);
 	g_return_val_if_fail (object, NL_OK);
 
+	type = object_type_from_nl_object (object);
+
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
-		if (object_type_from_nl_object (object) == OBJECT_TYPE_LINK) {
+		if (type == OBJECT_TYPE_LINK) {
 			const char *name = rtnl_link_get_name ((struct rtnl_link *) object);
 
 			debug ("netlink event (type %d) for link: %s (%d, family %d)",
@@ -1652,7 +1766,7 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 			debug ("netlink event (type %d)", event);
 	}
 
-	cache = choose_cache (platform, object);
+	cache = choose_cache_by_type (platform, type);
 	cached_object = nm_nl_cache_search (cache, object);
 	kernel_object = get_kernel_object (priv->nlh, object);
 
@@ -1712,8 +1826,24 @@ event_notification (struct nl_msg *msg, gpointer user_data)
 		 * This also catches notifications for internal addition or change, unless
 		 * another action occured very soon after it.
 		 */
-		if (!nl_object_diff (kernel_object, cached_object))
-			return NL_OK;
+		if (!nl_object_diff (kernel_object, cached_object)) {
+			if (type == OBJECT_TYPE_IP4_ADDRESS || type == OBJECT_TYPE_IP6_ADDRESS) {
+				struct rtnl_addr *c = (struct rtnl_addr *) cached_object;
+				struct rtnl_addr *k = (struct rtnl_addr *) kernel_object;
+
+				/* libnl nl_object_diff() ignores differences in timestamp. Let's care about
+				 * them (if they are large enough).
+				 *
+				 * Note that these valid and preferred timestamps are absolute, after
+				 * _rtnl_addr_hack_lifetimes_rel_to_abs(). */
+				if (   _rtnl_addr_timestamps_equal_fuzzy (rtnl_addr_get_preferred_lifetime (c),
+				                                          rtnl_addr_get_preferred_lifetime (k))
+				    && _rtnl_addr_timestamps_equal_fuzzy (rtnl_addr_get_valid_lifetime (c),
+				                                          rtnl_addr_get_valid_lifetime (k)))
+					return NL_OK;
+			} else
+				return NL_OK;
+		}
 		/* Handle external change */
 		nl_cache_remove (cached_object);
 		nle = nl_cache_add (cache, kernel_object);
@@ -3086,10 +3216,8 @@ ip4_address_get_all (NMPlatform *platform, int ifindex)
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
 		if (_address_match ((struct rtnl_addr *) object, AF_INET, ifindex)) {
-			if (init_ip4_address (&address, (struct rtnl_addr *) object)) {
-				address.source = NM_PLATFORM_SOURCE_KERNEL;
+			if (init_ip4_address (&address, (struct rtnl_addr *) object))
 				g_array_append_val (addresses, address);
-			}
 		}
 	}
 
@@ -3108,10 +3236,8 @@ ip6_address_get_all (NMPlatform *platform, int ifindex)
 
 	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object)) {
 		if (_address_match ((struct rtnl_addr *) object, AF_INET6, ifindex)) {
-			if (init_ip6_address (&address, (struct rtnl_addr *) object)) {
-				address.source = NM_PLATFORM_SOURCE_KERNEL;
+			if (init_ip6_address (&address, (struct rtnl_addr *) object))
 				g_array_append_val (addresses, address);
-			}
 		}
 	}
 
@@ -3180,6 +3306,12 @@ build_rtnl_addr (int family,
 
 	rtnl_addr_set_prefixlen (rtnladdr, plen);
 	if (lifetime) {
+		/* note that here we set the relative timestamps (ticking from *now*).
+		 * Contrary to the rtnl_addr objects from our cache, which have absolute
+		 * timestamps (see _rtnl_addr_hack_lifetimes_rel_to_abs()).
+		 *
+		 * This is correct, because we only use build_rtnl_addr() for
+		 * add_object(), delete_object() and cache search (ip_address_exists). */
 		rtnl_addr_set_valid_lifetime (rtnladdr, lifetime);
 		rtnl_addr_set_preferred_lifetime (rtnladdr, preferred);
 	}

@@ -3601,6 +3601,8 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 			address.timestamp = discovered_address->timestamp;
 			address.lifetime = discovered_address->lifetime;
 			address.preferred = discovered_address->preferred;
+			if (address.preferred > address.lifetime)
+				address.preferred = address.lifetime;
 			address.source = NM_PLATFORM_SOURCE_RDISC;
 			address.flags = ifa_flags;
 
