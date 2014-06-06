@@ -1,6 +1,6 @@
 [D-BUS Service]
 Name=org.freedesktop.nm_dispatcher
-Exec=@libexecdir@/nm-dispatcher.action
+Exec=@libexecdir@/nm-dispatcher
 User=root
 SystemdService=dbus-org.freedesktop.nm-dispatcher.service
 

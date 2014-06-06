@@ -441,7 +441,7 @@ fi
 %{_bindir}/nm-online
 %{_libexecdir}/nm-dhcp-helper
 %{_libexecdir}/nm-avahi-autoipd.action
-%{_libexecdir}/nm-dispatcher.action
+%{_libexecdir}/nm-dispatcher
 %dir %{_libdir}/NetworkManager
 %{_libdir}/NetworkManager/libnm-settings-plugin*.so
 %{_mandir}/man1/*

@@ -727,20 +727,27 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	if (nm_device_get_managed (device)) {
-		/* Leave configured interfaces up when quitting so they can be
-		 * taken over again if NM starts up, and to ensure connectivity while
-		 * NM is gone.  Assumed connections don't get taken down even if they
-		 * haven't been fully activated.
+		NMActRequest *req = nm_device_get_act_request (device);
+		gboolean unmanage = FALSE;
+
+		/* Leave activated interfaces up when quitting so their configuration
+		 * can be taken over when NM restarts.  This ensures connectivity while
+		 * NM is stopped. Devices which do not support connection assumption
+		 * cannot be left up.
 		 */
+		if (!quitting)  /* Forced removal; device already gone */
+			unmanage = TRUE;
+		else if (!nm_device_can_assume_active_connection (device))
+			unmanage = TRUE;
+		else if (!req)
+			unmanage = TRUE;
 
-		if (   !nm_device_can_assume_connections (device)
-		    || (nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED)
-		    || !quitting) {
-				NMActRequest *req = nm_device_get_act_request (device);
-
-				if (!req || !nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (req)))
-					nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
-			}
+		if (unmanage) {
+			if (quitting)
+				nm_device_set_unmanaged_quitting (device);
+			else
+				nm_device_set_unmanaged (device, NM_UNMANAGED_INTERNAL, TRUE, NM_DEVICE_STATE_REASON_REMOVED);
+		}
 	}
 
 	g_signal_handlers_disconnect_matched (device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, manager);
@@ -754,8 +761,7 @@ remove_device (NMManager *manager, NMDevice *device, gboolean quitting)
 	nm_dbus_manager_unregister_object (priv->dbus_mgr, device);
 	g_object_unref (device);
 
-	if (priv->startup)
-		check_if_startup_complete (manager);
+	check_if_startup_complete (manager);
 }
 
 static void
@@ -1087,7 +1093,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	}
 
 	if (device) {
-		nm_device_set_is_nm_owned (device, TRUE);
+		nm_device_set_nm_owned (device);
 		add_device (self, device, FALSE);
 		g_object_unref (device);
 	}
@@ -1683,8 +1689,6 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *iface, *driver, *type_desc;
-	char *path;
-	static guint32 devcount = 0;
 	const GSList *unmanaged_specs;
 	gboolean user_unmanaged, sleeping;
 	NMConnection *connection = NULL;
@@ -1761,11 +1765,7 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	sleeping = manager_sleeping (self);
 	nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_INTERNAL, sleeping);
 
-	path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
-	nm_device_set_path (device, path);
-	nm_dbus_manager_register_object (priv->dbus_mgr, path, device);
-	nm_log_info (LOGD_CORE, "(%s): exported as %s", iface, path);
-	g_free (path);
+	nm_device_dbus_export (device);
 
 	/* Don't generate a connection e.g. for devices NM just created, or
 	 * for the loopback, or when we're sleeping. */

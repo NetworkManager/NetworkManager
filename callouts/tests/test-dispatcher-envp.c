@@ -29,7 +29,7 @@
 #include "nm-setting-connection.h"
 #include "nm-dispatcher-utils.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-dispatcher-action.h"
+#include "nm-dispatcher-api.h"
 #include "nm-utils.h"
 
 /*******************************************/

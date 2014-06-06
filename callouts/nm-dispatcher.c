@@ -37,11 +37,9 @@
 #include <dbus/dbus-glib.h>
 
 
-#include "nm-dispatcher-action.h"
+#include "nm-dispatcher-api.h"
 #include "nm-dispatcher-utils.h"
 #include "nm-glib-compat.h"
-
-#define NMD_SCRIPT_DIR NMCONFDIR "/dispatcher.d"
 
 static GMainLoop *loop = NULL;
 static gboolean debug = FALSE;
@@ -322,33 +320,33 @@ script_timeout_cb (gpointer user_data)
 }
 
 static inline gboolean
-check_permissions (struct stat *s, GError **error)
+check_permissions (struct stat *s, const char **out_error_msg)
 {
 	g_return_val_if_fail (s != NULL, FALSE);
-	g_return_val_if_fail (error != NULL, FALSE);
-	g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (out_error_msg != NULL, FALSE);
+	g_return_val_if_fail (*out_error_msg == NULL, FALSE);
 
 	/* Only accept regular files */
 	if (!S_ISREG (s->st_mode)) {
-		g_set_error (error, 0, 0, "not a regular file.");
+		*out_error_msg = "not a regular file.";
 		return FALSE;
 	}
 
 	/* Only accept files owned by root */
 	if (s->st_uid != 0) {
-		g_set_error (error, 0, 0, "not owned by root.");
+		*out_error_msg = "not owned by root.";
 		return FALSE;
 	}
 
 	/* Only accept files not writable by group or other, and not SUID */
 	if (s->st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
-		g_set_error (error, 0, 0, "writable by group or other, or set-UID.");
+		*out_error_msg = "writable by group or other, or set-UID.";
 		return FALSE;
 	}
 
 	/* Only accept files executable by the owner */
 	if (!(s->st_mode & S_IXUSR)) {
-		g_set_error (error, 0, 0, "not executable by owner.");
+		*out_error_msg = "not executable by owner.";
 		return FALSE;
 	}
 
@@ -385,6 +383,8 @@ child_setup (gpointer user_data G_GNUC_UNUSED)
 	setpgid (pid, pid);
 }
 
+#define SCRIPT_TIMEOUT 600  /* 10 minutes */
+
 static void
 dispatch_one_script (Request *request)
 {
@@ -402,7 +402,7 @@ dispatch_one_script (Request *request)
 
 	if (g_spawn_async ("/", argv, request->envp, G_SPAWN_DO_NOT_REAP_CHILD, child_setup, request, &script->pid, &error)) {
 		request->script_watch_id = g_child_watch_add (script->pid, (GChildWatchFunc) script_watch_cb, script);
-		request->script_timeout_id = g_timeout_add_seconds (20, script_timeout_cb, script);
+		request->script_timeout_id = g_timeout_add_seconds (SCRIPT_TIMEOUT, script_timeout_cb, script);
 	} else {
 		g_warning ("Failed to execute script '%s': (%d) %s",
 		           script->script, error->code, error->message);
@@ -416,16 +416,26 @@ dispatch_one_script (Request *request)
 }
 
 static GSList *
-find_scripts (void)
+find_scripts (const char *str_action)
 {
 	GDir *dir;
 	const char *filename;
 	GSList *sorted = NULL;
 	GError *error = NULL;
+	const char *dirname;
 
-	if (!(dir = g_dir_open (NMD_SCRIPT_DIR, 0, &error))) {
+	if (   strcmp (str_action, NMD_ACTION_PRE_UP) == 0
+	    || strcmp (str_action, NMD_ACTION_VPN_PRE_UP) == 0)
+		dirname = NMD_PRE_UP_DIR;
+	else if (   strcmp (str_action, NMD_ACTION_PRE_DOWN) == 0
+	         || strcmp (str_action, NMD_ACTION_VPN_PRE_DOWN) == 0)
+		dirname = NMD_PRE_DOWN_DIR;
+	else
+		dirname = NMD_SCRIPT_DIR;
+
+	if (!(dir = g_dir_open (dirname, 0, &error))) {
 		g_warning ("Failed to open dispatcher directory '%s': (%d) %s",
-		           NMD_SCRIPT_DIR, error->code, error->message);
+		           dirname, error->code, error->message);
 		g_error_free (error);
 		return NULL;
 	}
@@ -434,19 +444,19 @@ find_scripts (void)
 		char *path;
 		struct stat	st;
 		int err;
+		const char *err_msg = NULL;
 
 		if (!check_filename (filename))
 			continue;
 
-		path = g_build_filename (NMD_SCRIPT_DIR, filename, NULL);
+		path = g_build_filename (dirname, filename, NULL);
 
 		err = stat (path, &st);
 		if (err)
 			g_warning ("Failed to stat '%s': %d", path, err);
-		else if (!check_permissions (&st, &error)) {
-			g_warning ("Cannot execute '%s': %s", path, error->message);
-			g_clear_error (&error);
-		} else {
+		else if (!check_permissions (&st, &err_msg))
+			g_warning ("Cannot execute '%s': %s", path, err_msg);
+		else {
 			/* success */
 			sorted = g_slist_insert_sorted (sorted, path, (GCompareFunc) g_strcmp0);
 		}
@@ -478,7 +488,7 @@ impl_dispatch (Handler *h,
 	char **p;
 	char *iface = NULL;
 
-	sorted_scripts = find_scripts ();
+	sorted_scripts = find_scripts (str_action);
 
 	if (!sorted_scripts) {
 		dbus_g_method_return (context, g_ptr_array_new ());

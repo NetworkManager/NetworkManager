@@ -218,7 +218,7 @@ typedef void (*NMDeviceAuthRequestFunc) (NMDevice *device,
 GType nm_device_get_type (void);
 
 const char *    nm_device_get_path (NMDevice *dev);
-void            nm_device_set_path (NMDevice *dev, const char *path);
+void            nm_device_dbus_export   (NMDevice *device);
 
 const char *	nm_device_get_udi		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);
@@ -228,7 +228,6 @@ const char *	nm_device_get_ip_iface	(NMDevice *dev);
 int             nm_device_get_ip_ifindex(NMDevice *dev);
 const char *	nm_device_get_driver	(NMDevice *dev);
 const char *	nm_device_get_driver_version	(NMDevice *dev);
-const char *	nm_device_get_firmware_version	(NMDevice *dev);
 const char *	nm_device_get_type_desc (NMDevice *dev);
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 
@@ -248,9 +247,7 @@ void            nm_device_set_vpn6_config   (NMDevice *dev, NMIP6Config *config)
 void            nm_device_capture_initial_config (NMDevice *dev);
 
 /* Master */
-gboolean        nm_device_master_add_slave  (NMDevice *dev, NMDevice *slave, gboolean configure);
 GSList *        nm_device_master_get_slaves (NMDevice *dev);
-gboolean        nm_device_is_master         (NMDevice *dev);
 
 /* Slave */
 NMDevice *      nm_device_get_master        (NMDevice *dev);
@@ -275,10 +272,7 @@ gboolean nm_device_complete_connection (NMDevice *device,
 
 gboolean nm_device_check_connection_compatible (NMDevice *device, NMConnection *connection);
 
-gboolean nm_device_can_assume_connections (NMDevice *device);
-
-NMConnection * nm_device_find_assumable_connection (NMDevice *device,
-                                                    const GSList *connections);
+gboolean nm_device_can_assume_active_connection (NMDevice *device);
 
 gboolean nm_device_spec_match_list (NMDevice *device, const GSList *specs);
 
@@ -313,19 +307,18 @@ typedef enum {
 } NMUnmanagedFlags;
 
 gboolean nm_device_get_managed (NMDevice *device);
-gboolean nm_device_get_default_unmanaged (NMDevice *device);
 gboolean nm_device_get_unmanaged_flag (NMDevice *device, NMUnmanagedFlags flag);
 void nm_device_set_unmanaged (NMDevice *device,
                               NMUnmanagedFlags flag,
                               gboolean unmanaged,
                               NMDeviceStateReason reason);
+void nm_device_set_unmanaged_quitting (NMDevice *device);
 void nm_device_set_initial_unmanaged_flag (NMDevice *device,
                                            NMUnmanagedFlags flag,
                                            gboolean unmanaged);
 
 gboolean nm_device_get_is_nm_owned (NMDevice *device);
-gboolean nm_device_set_is_nm_owned (NMDevice *device,
-                                    gboolean is_nm_owned);
+void     nm_device_set_nm_owned    (NMDevice *device);
 
 gboolean nm_device_get_autoconnect (NMDevice *device);
 
@@ -341,8 +334,6 @@ void nm_device_queue_state   (NMDevice *self,
                               NMDeviceState state,
                               NMDeviceStateReason reason);
 
-void nm_device_queue_ip_config_change (NMDevice *self);
-
 gboolean nm_device_get_firmware_missing (NMDevice *self);
 
 void nm_device_queue_activation (NMDevice *device, NMActRequest *req);
@@ -355,10 +346,6 @@ gboolean nm_device_has_pending_action    (NMDevice *device);
 
 GPtrArray *nm_device_get_available_connections (NMDevice *device,
                                                 const char *specific_object);
-
-const char *nm_device_get_physical_port_id (NMDevice *device);
-
-guint32 nm_device_get_mtu (NMDevice *device);
 
 gboolean   nm_device_connection_is_available (NMDevice *device,
                                               NMConnection *connection,

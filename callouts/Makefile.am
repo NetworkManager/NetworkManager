@@ -26,7 +26,7 @@ dbusservice_DATA = \
 	nm-avahi-autoipd.conf
 
 libexec_PROGRAMS = \
-	nm-dispatcher.action \
+	nm-dispatcher \
 	nm-avahi-autoipd.action
 
 
@@ -38,13 +38,13 @@ nm_avahi_autoipd_action_LDADD = \
 	$(GLIB_LIBS)
 
 
-nm_dispatcher_action_SOURCES = \
-	nm-dispatcher-action.c \
-	nm-dispatcher-action.h \
+nm_dispatcher_SOURCES = \
+	nm-dispatcher.c \
+	nm-dispatcher-api.h \
 	nm-dispatcher-utils.c \
 	nm-dispatcher-utils.h
 
-nm_dispatcher_action_LDADD = \
+nm_dispatcher_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)

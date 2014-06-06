@@ -34,8 +34,6 @@
 #define NM_IS_VPN_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_VPN_SERVICE))
 #define NM_VPN_SERVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_SERVICE, NMVPNServiceClass))
 
-#define VPN_CONNECTION_GROUP "VPN Connection"
-
 typedef struct {
 	GObject parent;
 } NMVPNService;
@@ -58,10 +56,8 @@ gboolean nm_vpn_service_activate (NMVPNService *service,
                                   NMVPNConnection *vpn,
                                   GError **error);
 
-const GSList *nm_vpn_service_get_active_connections (NMVPNService *service);
-
-void nm_vpn_service_connections_stop (NMVPNService *service,
-                                      gboolean fail,
+void nm_vpn_service_stop_connections (NMVPNService *service,
+                                      gboolean quitting,
                                       NMVPNConnectionStateReason reason);
 
 #endif  /* NM_VPN_VPN_SERVICE_H */

@@ -53,9 +53,9 @@
     <title>Dispatcher scripts</title>
     <para>
       NetworkManager will execute scripts in the
-      /etc/NetworkManager/dispatcher.d directory in alphabetical order
-      in response to network events.  Each script should be a regular
-      executable file, owned by root.  Furthermore, it must not be
+      /etc/NetworkManager/dispatcher.d directory or subdirectories in
+      alphabetical order in response to network events.  Each script should
+      be a regular executable file owned by root.  Furthermore, it must not be
       writable by group or other, and not setuid.
     </para>
     <para>
@@ -65,8 +65,29 @@
     <para>The actions are:</para>
     <variablelist class="dispatcher-options">
       <varlistentry>
+        <term><varname>pre-up</varname></term>
+        <listitem><para>The interface is connected to the network but is not
+        yet fully activated.  Scripts acting on this event must be placed or
+        symlinked into the /etc/NetworkManager/dispatcher.d/pre-up.d directory,
+        and NetworkManager will wait for script execution to complete before
+        indicating to applications that the interface is fully activated.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><varname>up</varname></term>
         <listitem><para>The interface has been activated.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><varname>pre-down</varname></term>
+        <listitem><para>The interface will be deactivated but has not yet been
+        disconnected from the network.  Scripts acting on this event must be
+        placed or symlinked into the /etc/NetworkManager/dispatcher.d/pre-down.d
+        directory, and NetworkManager will wait for script execution to complete
+        before disconnecting the interface from its network.  Note that this
+        event is not emitted for forced disconnections, like when carrier is
+        lost or a wireless signal fades.  It is only emitted when there is
+        an opportunity to cleanly handle a network disconnection event.
+        </para></listitem>
       </varlistentry>
       <varlistentry>
         <term><varname>down</varname></term>
@@ -75,9 +96,31 @@
         </para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><varname>vpn-pre-up</varname></term>
+        <listitem><para>The VPN is connected to the network but is not yet
+        fully activated.  Scripts acting on this event must be placed or
+        symlinked into the /etc/NetworkManager/dispatcher.d/pre-up.d directory,
+        and NetworkManager will wait for script execution to complete before
+        indicating to applications that the VPN is fully activated.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><varname>vpn-up</varname></term>
         <listitem><para>
           A VPN connection has been activated.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><varname>vpn-pre-down</varname></term>
+        <listitem><para>The VPN will be deactivated but has not yet been
+        disconnected from the network.  Scripts acting on this event must be
+        placed or symlinked into the /etc/NetworkManager/dispatcher.d/pre-down.d
+        directory, and NetworkManager will wait for script execution to complete
+        before disconnecting the VPN from its network.  Note that this
+        event is not emitted for forced disconnections, like when the VPN
+        terminates unexpectedly or general connectivity is lost.  It is only
+        emitted when there is an opportunity to cleanly handle a VPN
+        disconnection event.
         </para></listitem>
       </varlistentry>
       <varlistentry>
