@@ -1,4 +1,60 @@
 ==============================================
+NetworkManager-0.9.10
+Overview of changes since NetworkManager-0.9.8
+==============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* Added a new curses-based client called "nmtui" for easier console operation
+* Added interactive connection editing and creation mode to nmcli with detailed
+    help and tab completion support
+* nmcli bash completion has been greatly improved
+* Added support for Data Center Bridging (DCB) and FibreChannel over Ethernet (FCoE)
+* IPv6 autoconfiguration is now done in userspace with libndp instead of the kernel
+* The D-Bus daemon is no longer required for root-only operation
+* WiFi, ADSL, WWAN, and Bluetooth are now optional plugins, reducing install size
+* Added support for Infiniband Partitions
+* Network connection files are no longer watched by default, use "nmcli con reload"
+    to notice chagnes made externally or set "monitor-connection-files=true" in
+    NetworkManager.conf's [main] section
+* Connections can now be locked to interface names in addition to hardware/MAC addresses
+* A new "ignore-carrier" configuration option is available to ignore the carrier
+    on selected interfaces
+* A new "dns=none" option has been added to suppress changes to /etc/resolv.conf
+* Changes made to IP addresses, IP routes, and master/slave relationships from
+    external tools are now recognized and reflected in the D-Bus API
+* Assuming the existing configuration of interfaces without changing that
+    configuration is now more reliable
+* The 'root' user is no longer subject to PolicyKit access controls and usage
+    of D-Bus "at_console" permissions has been removed
+* Configuration file snippets can be dropped in /etc/NetworkManager/conf.d to
+    change smaller sets of configuration options
+* Added IP-level support for more software/virtual interfaces types including
+    GRE, macvlan, macvtap, tun, tap, veth, and vxlan interfaces
+* All network interfaces known to the kernel are now exposed through
+    the D-Bus interface
+* Improved support for routing-only VPNs like openswan/libreswan/strongswan
+* Added support for "temporary" connections which are not saved to disk until
+    requested
+* Added WWAN autoconnect support and fixed issues with airplane mode handling
+* NetworkManager-wait-online systemd service behavior is more reliable
+* The dispatcher timeout has increased to 10 minutes, and new "pre-up" and
+    "pre-down" events have been added which block activation until complete
+* NetworkManager no longer prevents Wake-on-LAN functionality from working
+* PPPoE now requires userland "rp-pppoe" to work around kernel bugs with
+    that prevent detecting server-side termination of the PPP link
+* An ARP announcement is now sent after IPv4 addresses are configured
+* Added a DNS plugin for dnssec-trigger for better DNSSEC operation
+* More properties are now exposed via the D-Bus properties interface in
+    addition to getter/setter functions
+* Added support for custom IP address ranges for Shared connections
+* Fatal connection failures now block automatic reconnection more reliably
+* VPN connection IP details are now available via the D-Bus interface
+* VPN plugins can now request additional/new secrets from the user during the
+    connection process
+
+
+==============================================
 NetworkManager-0.9.8
 Overview of changes since NetworkManager-0.9.6
 ==============================================
