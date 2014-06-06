@@ -2583,24 +2583,24 @@ check_infiniband_p_key (const char *p_key, guint32 *p_key_int, GError **error)
  * It accepts shortcuts and normalizes them ('mode' argument is modified on success).
  */
 static gboolean
-check_infiniband_mode (char *mode, GError **error)
+check_infiniband_mode (char **mode, GError **error)
 {
 	char *tmp;
 	const char *checked_mode;
 	const char *modes[] = { "datagram", "connected", NULL };
 
-	if (!mode)
+	if (!mode || !*mode)
 		return TRUE;
 
-	tmp = g_strstrip (g_strdup (mode));
+	tmp = g_strstrip (g_strdup (*mode));
 	checked_mode = nmc_string_is_valid (tmp, modes, NULL);
 	g_free (tmp);
 	if (checked_mode) {
-		g_free (mode);
-		mode = g_strdup (checked_mode);
+		g_free (*mode);
+		*mode = g_strdup (checked_mode);
 	} else
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("Error: 'mode': '%s' is not a valid InfiniBand transport mode [datagram, connected]."), mode);
+		             _("Error: 'mode': '%s' is not a valid InfiniBand transport mode [datagram, connected]."), *mode);
 	return !!checked_mode;
 }
 
@@ -2855,24 +2855,27 @@ prompt_yes_no (gboolean default_yes, char *delim)
 	return prompt;
 }
 
-static void
-normalize_yes_no (char *yes_no)
+static gboolean
+normalize_yes_no (char **yes_no)
 {
-	const char *tmp;
+	char *tmp;
+	const char *checked_yes_no;
 	const char *strv[] = { WORD_LOC_YES, WORD_LOC_NO, NULL };
 
-	if (!yes_no)
-		return;
+	if (!yes_no || !*yes_no)
+		return FALSE;
 
-	g_strstrip (yes_no);
-	tmp = nmc_string_is_valid (yes_no, strv, NULL);
-	if (g_strcmp0 (tmp, WORD_LOC_YES) == 0) {
-		g_free (yes_no);
-		yes_no = g_strdup (WORD_YES);
-	} else if (g_strcmp0 (tmp, WORD_LOC_NO) == 0) {
-		g_free (yes_no);
-		yes_no = g_strdup (WORD_NO);
+	tmp = g_strstrip (g_strdup (*yes_no));
+	checked_yes_no = nmc_string_is_valid (tmp, strv, NULL);
+	g_free (tmp);
+	if (g_strcmp0 (checked_yes_no, WORD_LOC_YES) == 0) {
+		g_free (*yes_no);
+		*yes_no = g_strdup (WORD_YES);
+	} else if (g_strcmp0 (checked_yes_no, WORD_LOC_NO) == 0) {
+		g_free (*yes_no);
+		*yes_no = g_strdup (WORD_NO);
 	}
+	return !!checked_yes_no;
 }
 
 static gboolean
@@ -2981,7 +2984,7 @@ do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent,
 			*mode = nmc_readline (_("Transport mode %s"), PROMPT_IB_MODE);
 			if (!*mode)
 				*mode = g_strdup ("datagram");
-			once_more = !check_infiniband_mode (*mode, &error);
+			once_more = !check_infiniband_mode (mode, &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
 				g_clear_error (&error);
@@ -3359,7 +3362,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 		do {
 			*stp = nmc_readline (_("Enable STP %s"), prompt_yes_no (TRUE, ":"));
 			*stp = *stp ? *stp : g_strdup ("yes");
-			normalize_yes_no (*stp);
+			normalize_yes_no (stp);
 			once_more = !nmc_string_to_bool (*stp, &stp_bool, &error);
 			if (once_more) {
 				printf (_("Error: 'stp': %s.\n"), error->message);
@@ -3484,7 +3487,7 @@ do_questionnaire_bridge_slave (char **priority, char **path_cost, char **hairpin
 		do {
 			*hairpin = nmc_readline (_("Hairpin %s"), prompt_yes_no (TRUE, ":"));
 			*hairpin = *hairpin ? *hairpin : g_strdup ("yes");
-			normalize_yes_no (*hairpin);
+			normalize_yes_no (hairpin);
 			once_more = !nmc_string_to_bool (*hairpin, &hairpin_bool, &error);
 			if (once_more) {
 				printf (_("Error: 'hairpin': %s.\n"), error->message);
@@ -3762,7 +3765,7 @@ cleanup_wired:
 			goto cleanup_ib;
 		if (!check_and_convert_mac (mac, &array, ARPHRD_INFINIBAND, "mac", error))
 			goto cleanup_ib;
-		if (!check_infiniband_mode (mode, error))
+		if (!check_infiniband_mode (&mode, error))
 			goto cleanup_ib;
 		if (p_key) {
 			if (!check_infiniband_p_key (p_key, &p_key_int, error))
