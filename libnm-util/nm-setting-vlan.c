@@ -808,7 +808,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	/**
 	 * NMSettingVlan:flags:
 	 *
-	 * One or more of %NMVlanFlags which control the behavior and features of
+	 * One or more of #NMVlanFlags which control the behavior and features of
 	 * the VLAN interface.
 	 **/
 	g_object_class_install_property

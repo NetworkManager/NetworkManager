@@ -919,9 +919,9 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						  G_PARAM_READWRITE));
 
 	/**
-	 * NMSettingEthernet:auto-negotiate:
+	 * NMSettingWired:auto-negotiate:
 	 *
-	 * If TRUE, allow auto-negotiation of port speed and duplex mode.  If FALSE,
+	 * If %TRUE, allow auto-negotiation of port speed and duplex mode.  If %FALSE,
 	 * do not allow auto-negotiation, in which case the 'speed' and 'duplex'
 	 * properties should be set.
 	 **/

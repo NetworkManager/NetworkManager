@@ -745,7 +745,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	/**
 	 * NMSettingGsm:home-only:
 	 *
-	 * When TRUE, only connections to the home network will be allowed.
+	 * When %TRUE, only connections to the home network will be allowed.
 	 * Connections to roaming networks will not be made.
 	 **/
 	g_object_class_install_property

@@ -1204,7 +1204,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * NMSettingConnection:permissions:
 	 * 
 	 * An array of strings defining what access a given user has to this
-	 * connection.  If this is NULL or empty, all users are allowed to access
+	 * connection.  If this is %NULL or empty, all users are allowed to access
 	 * this connection.  Otherwise a user is allowed to access this connection
 	 * if and only if they are in this list. Each entry is of the form
 	 * "[type]:[id]:[reserved]", for example:
@@ -1300,7 +1300,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 *
 	 * The trust level of a the connection.
 	 * Free form case-insensitive string (for example "Home", "Work", "Public").
-	 * NULL or unspecified zone means the connection will be placed in the
+	 * %NULL or unspecified zone means the connection will be placed in the
 	 * default zone as defined by the firewall.
 	 **/
 	g_object_class_install_property

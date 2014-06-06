@@ -566,9 +566,9 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:noauth:
 	 *
-	 * If TRUE, do not require the other side (usually the PPP server) to
-	 * authenticate itself to the client.  If FALSE, require authentication from
-	 * the remote side.  In almost all cases, this should be TRUE.
+	 * If %TRUE, do not require the other side (usually the PPP server) to
+	 * authenticate itself to the client.  If %FALSE, require authentication from
+	 * the remote side.  In almost all cases, this should be %TRUE.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NOAUTH,
@@ -584,7 +584,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:refuse-eap:
 	 *
-	 * If TRUE, the EAP authentication method will not be used.
+	 * If %TRUE, the EAP authentication method will not be used.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_REFUSE_EAP,
@@ -597,7 +597,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:refuse-pap:
 	 *
-	 * If TRUE, the PAP authentication method will not be used.
+	 * If %TRUE, the PAP authentication method will not be used.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_REFUSE_PAP,
@@ -610,7 +610,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:refuse-chap:
 	 *
-	 * If TRUE, the CHAP authentication method will not be used.
+	 * If %TRUE, the CHAP authentication method will not be used.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_REFUSE_CHAP,
@@ -623,7 +623,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:refuse-mschap:
 	 *
-	 * If TRUE, the MSCHAP authentication method will not be used.
+	 * If %TRUE, the MSCHAP authentication method will not be used.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_REFUSE_MSCHAP,
@@ -636,7 +636,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:refuse-mschapv2:
 	 *
-	 * If TRUE, the MSCHAPv2 authentication method will not be used.
+	 * If %TRUE, the MSCHAPv2 authentication method will not be used.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_REFUSE_MSCHAPV2,
@@ -649,7 +649,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:nobsdcomp:
 	 *
-	 * If TRUE, BSD compression will not be requested.
+	 * If %TRUE, BSD compression will not be requested.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NOBSDCOMP,
@@ -662,7 +662,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:nodeflate:
 	 *
-	 * If TRUE, 'deflate' compression will not be requested.
+	 * If %TRUE, 'deflate' compression will not be requested.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NODEFLATE,
@@ -675,7 +675,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:no-vj-comp:
 	 *
-	 * If TRUE, Van Jacobsen TCP header compression will not be requested.
+	 * If %TRUE, Van Jacobsen TCP header compression will not be requested.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NO_VJ_COMP,
@@ -688,7 +688,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:require-mppe:
 	 *
-	 * If TRUE, MPPE (Microsoft Point-to-Point Encrpytion) will be required for
+	 * If %TRUE, MPPE (Microsoft Point-to-Point Encrpytion) will be required for
 	 * the PPP session.  If either 64-bit or 128-bit MPPE is not available the
 	 * session will fail.  Note that MPPE is not used on mobile broadband
 	 * connections.
@@ -708,9 +708,9 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:require-mppe-128:
 	 *
-	 * If TRUE, 128-bit MPPE (Microsoft Point-to-Point Encrpytion) will be
+	 * If %TRUE, 128-bit MPPE (Microsoft Point-to-Point Encrpytion) will be
 	 * required for the PPP session, and the 'require-mppe' property must also
-	 * be set to TRUE.  If 128-bit MPPE is not available the session will fail.
+	 * be set to %TRUE.  If 128-bit MPPE is not available the session will fail.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_REQUIRE_MPPE_128,
@@ -727,8 +727,8 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:mppe-stateful:
 	 *
-	 * If TRUE, stateful MPPE is used.  See pppd documentation for more
-	 * information on stateful MPPE.",
+	 * If %TRUE, stateful MPPE is used.  See pppd documentation for more
+	 * information on stateful MPPE.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MPPE_STATEFUL,
@@ -742,9 +742,9 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 	/**
 	 * NMSettingPPP:crtscts:
 	 *
-	 * If TRUE, specify that pppd should set the serial port to use hardware
+	 * If %TRUE, specify that pppd should set the serial port to use hardware
 	 * flow control with RTS and CTS signals.  This value should normally be
-	 * set to FALSE.
+	 * set to %FALSE.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CRTSCTS,

@@ -961,7 +961,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:app-fcoe-flags:
 	 *
-	 * Specifies the %NMSettingDcbFlags for the DCB FCoE application.
+	 * Specifies the #NMSettingDcbFlags for the DCB FCoE application.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1015,7 +1015,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:app-iscsi-flags:
 	 *
-	 * Specifies the %NMSettingDcbFlags for the DCB iSCSI application.
+	 * Specifies the #NMSettingDcbFlags for the DCB iSCSI application.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1051,7 +1051,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:app-fip-flags:
 	 *
-	 * Specifies the %NMSettingDcbFlags for the DCB FIP application.
+	 * Specifies the #NMSettingDcbFlags for the DCB FIP application.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1087,7 +1087,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:priority-flow-control-flags:
 	 *
-	 * Specifies the %NMSettingDcbFlags for DCB Priority Flow Control (PFC).
+	 * Specifies the #NMSettingDcbFlags for DCB Priority Flow Control (PFC).
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1127,7 +1127,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:priority-group-flags:
 	 *
-	 * Specifies the %NMSettingDcbFlags for DCB Priority Groups.
+	 * Specifies the #NMSettingDcbFlags for DCB Priority Groups.
 	 *
 	 * Since: 0.9.10
 	 **/
@@ -1210,7 +1210,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                             G_PARAM_READWRITE));
 
 	/**
-	 * NMSettingDcb:priority-strict:
+	 * NMSettingDcb:priority-strict-bandwidth:
 	 *
 	 * An array of 8 uint values, where the array index corresponds to the
 	 * User Priority (0 - 7) and the value indicates whether or not the
@@ -1223,7 +1223,7 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_STRICT,
 		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH,
-		                             "Priority Strict",
+		                             "Priority Strict Bandwidth",
 		                             "An array of 8 uint values, where the array index "
 		                             "corresponds to the User Priority (0 - 7) and the "
 		                             "value indicates whether or not the priority may "
