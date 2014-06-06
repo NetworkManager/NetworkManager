@@ -4798,7 +4798,8 @@ cleanup_bridge_slave:
 			                     _("Error: 'vpn-type' is required."));
 			goto cleanup_vpn;
 		}
-		vpn_type = g_strstrip (vpn_type_ask);
+		if (vpn_type_ask)
+			vpn_type = g_strstrip (vpn_type_ask);
 
 		if (!(st = nmc_string_is_valid (vpn_type, nmc_known_vpns, NULL))) {
 			printf (_("Warning: 'vpn-type': %s not known.\n"), vpn_type);
@@ -5218,7 +5219,8 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
-	type = g_strstrip (type_ask);
+	if (type_ask)
+		type = g_strstrip (type_ask);
 
 	if (!(setting_name = check_valid_name (type, nmc_valid_connection_types, &error))) {
 		g_string_printf (nmc->return_text, _("Error: invalid connection type; %s."),
