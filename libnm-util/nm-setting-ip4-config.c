@@ -1380,7 +1380,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:ignore-auto-routes:
 	 *
-	 * When the method is set to 'auto' and this property to TRUE, automatically
+	 * When the method is set to 'auto' and this property to %TRUE, automatically
 	 * configured routes are ignored and only routes specified in
 	 * #NMSettingIP4Config:routes, if any, are used.
 	 **/
@@ -1398,7 +1398,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:ignore-auto-dns:
 	 *
-	 * When the method is set to 'auto' and this property to TRUE, automatically
+	 * When the method is set to 'auto' and this property to %TRUE, automatically
 	 * configured nameservers and search domains are ignored and only nameservers
 	 * and search domains specified in #NMSettingIP4Config:dns and
 	 * #NMSettingIP4Config:dns-search, if any, are used.
@@ -1434,7 +1434,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:dhcp-send-hostname:
 	 *
-	 * If TRUE, a hostname is sent to the DHCP server when acquiring a lease.
+	 * If %TRUE, a hostname is sent to the DHCP server when acquiring a lease.
 	 * Some DHCP servers use this hostname to update DNS databases, essentially
 	 * providing a static hostname for the computer.  If
 	 * #NMSettingIP4Config:dhcp-hostname is empty and this property is TRUE,
@@ -1457,7 +1457,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:dhcp-hostname:
 	 *
-	 * If the #NMSettingIP4Config:dhcp-send-hostname property is TRUE, then the
+	 * If the #NMSettingIP4Config:dhcp-send-hostname property is %TRUE, then the
 	 * specified name will be sent to the DHCP server when acquiring a lease.
 	 **/
 	g_object_class_install_property
@@ -1473,7 +1473,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:never-default:
 	 *
-	 * If TRUE, this connection will never be the default IPv4 connection,
+	 * If %TRUE, this connection will never be the default IPv4 connection,
 	 * meaning it will never be assigned the default route by NetworkManager.
 	 **/
 	g_object_class_install_property
@@ -1489,10 +1489,10 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:may-fail:
 	 *
-	 * If TRUE, allow overall network configuration to proceed even if IPv4
+	 * If %TRUE, allow overall network configuration to proceed even if IPv4
 	 * configuration times out.  Note that at least one IP configuration
 	 * must succeed or overall network configuration will still fail.  For
-	 * example, in IPv6-only networks, setting this property to TRUE allows
+	 * example, in IPv6-only networks, setting this property to %TRUE allows
 	 * the overall network configuration to succeed if IPv4 configuration fails
 	 * but IPv6 configuration completes successfully.
 	 **/

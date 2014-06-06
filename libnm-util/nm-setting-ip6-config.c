@@ -1190,7 +1190,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * NMSettingIP6Config:ignore-auto-routes:
 	 *
 	 * When the method is set to 'auto' or 'dhcp' and this property is set to
-	 * TRUE, automatically configured routes are ignored and only routes
+	 * %TRUE, automatically configured routes are ignored and only routes
 	 * specified in #NMSettingIP6Config:routes, if any, are used.
 	 **/
 	g_object_class_install_property
@@ -1208,7 +1208,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * NMSettingIP6Config:ignore-auto-dns:
 	 *
 	 * When the method is set to 'auto' or 'dhcp' and this property is set to
-	 * TRUE, automatically configured nameservers and search domains are ignored
+	 * %TRUE, automatically configured nameservers and search domains are ignored
 	 * and only nameservers and search domains specified in
 	 * #NMSettingIP6Config:dns and #NMSettingIP6Config:dns-search, if any, are
 	 * used.
@@ -1228,7 +1228,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	/**
 	 * NMSettingIP6Config:never-default:
 	 *
-	 * If TRUE, this connection will never be the default IPv6 connection,
+	 * If %TRUE, this connection will never be the default IPv6 connection,
 	 * meaning it will never be assigned the default IPv6 route by NetworkManager.
 	 **/
 	g_object_class_install_property
@@ -1244,10 +1244,10 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	/**
 	 * NMSettingIP6Config:may-fail:
 	 *
-	 * If TRUE, allow overall network configuration to proceed even if IPv6
+	 * If %TRUE, allow overall network configuration to proceed even if IPv6
 	 * configuration times out.  Note that at least one IP configuration
 	 * must succeed or overall network configuration will still fail.  For
-	 * example, in IPv4-only networks, setting this property to TRUE allows
+	 * example, in IPv4-only networks, setting this property to %TRUE allows
 	 * the overall network configuration to succeed if IPv6 configuration fails
 	 * but IPv4 configuration completes successfully.
 	 **/

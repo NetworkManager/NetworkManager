@@ -3802,7 +3802,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/**
 	 * NMSetting8021x:system-ca-certs:
 	 *
-	 * When TRUE, overrides #NMSetting8021x:ca-path and
+	 * When %TRUE, overrides the #NMSetting8021x:ca-path and
 	 * #NMSetting8021x:phase2-ca-path properties using the system CA directory
 	 * specified at configure time with the --system-ca-path switch.  The
 	 * certificates in this directory are added to the verification chain in

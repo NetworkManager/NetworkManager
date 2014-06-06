@@ -1634,7 +1634,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 * NMSettingWirelessSecurity:wep-key-type:
 	 *
 	 * Controls the interpretation of WEP keys.  Allowed values are those given
-	 * by %NMWepKeyType.  If set to 1 and the keys are hexadecimal, they must be
+	 * by #NMWepKeyType.  If set to 1 and the keys are hexadecimal, they must be
 	 * either 10 or 26 characters in length.  If set to 1 and the keys are
 	 * ASCII keys, they must be either 5 or 13 characters in length.  If set to
 	 * 2, the passphrase is hashed using the de-facto MD5 method to derive the
