@@ -2050,7 +2050,7 @@ static gboolean
 _nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *link)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nl_object struct rtnl_link *rtnllink;
+	auto_nl_object struct rtnl_link *rtnllink = NULL;
 
 	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
 	if (rtnllink) {
