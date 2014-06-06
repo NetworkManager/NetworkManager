@@ -2193,7 +2193,7 @@ nm_utils_hwaddr_valid (const char *asc)
 	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
 	gsize in_len, out_len;
 
-	if (!asc && !*asc)
+	if (!asc || !*asc)
 		return FALSE;
 	in_len = strlen (asc);
 	if ((in_len + 1) % 3 != 0)
