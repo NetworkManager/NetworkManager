@@ -1602,7 +1602,7 @@ assume_connection (NMManager *self, NMDevice *device, NMConnection *connection)
 		                         NM_DEVICE_STATE_DISCONNECTED,
 		                         NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 	}
-	g_return_if_fail (nm_device_get_state (device) >= NM_DEVICE_STATE_DISCONNECTED);
+	g_return_val_if_fail (nm_device_get_state (device) >= NM_DEVICE_STATE_DISCONNECTED, FALSE);
 
 	subject = nm_auth_subject_new_internal ();
 	active = _new_active_connection (self, connection, NULL, device, subject, &error);
