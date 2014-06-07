@@ -173,7 +173,7 @@ dump_access_point (NMAccessPoint *ap)
 	g_print ("\tSsid: %s\n",
 	         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 
-	str = nm_access_point_get_hw_address (ap);
+	str = nm_access_point_get_bssid (ap);
 	g_print ("\tMAC Address: %s\n", str);
 
 	g_print ("\tFlags: 0x%X\n", nm_access_point_get_flags (ap));
