@@ -1076,7 +1076,7 @@ _init_ip_address_lifetime (NMPlatformIPAddress *address, const struct rtnl_addr 
 	if (a_preferred < NM_PLATFORM_LIFETIME_PERMANENT - 1)
 		a_preferred += 1;
 	address->lifetime = a_valid;
-	address->preferred = a_preferred + 1;
+	address->preferred = a_preferred;
 }
 
 static gboolean
