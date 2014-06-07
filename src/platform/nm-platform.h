@@ -169,8 +169,9 @@ typedef struct {
 	/* Timestamp in seconds in the reference system of nm_utils_get_monotonic_timestamp_*().
 	 * This value is mainly used to anchor the relative lifetime and preferred values.
 	 * For addresses originating from DHCP it might be set to nm_utils_get_monotonic_timestamp_s()
-	 * of when the lease was received. For addresses from platform/kernel it is set to 1.
-	 * For permanent addresses it is mostly set to 0.
+	 * of when the lease was received. For addresses from platform/kernel it might be set to
+	 * when the address was last modified. For permanent addresses it is mostly set to 0.
+	 * For non-permanent addresses it should not be 0 (because 0 is not a valid timestamp).
 	 */ \
 	guint32 timestamp; \
 	guint32 lifetime;   /* seconds since timestamp */ \
