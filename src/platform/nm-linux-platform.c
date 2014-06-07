@@ -1049,6 +1049,75 @@ _get_remaining_time (guint32 start_timestamp, guint32 end_timestamp)
 	return end_timestamp - start_timestamp;
 }
 
+/* _timestamp_nl_to_ms:
+ * @timestamp_nl: a timestamp from ifa_cacheinfo.
+ * @monotonic_ms: *now* in CLOCK_MONOTONIC. Needed to estimate the current
+ * uptime and how often timestamp_nl wrapped.
+ *
+ * Convert the timestamp from ifa_cacheinfo to CLOCK_MONOTONIC milliseconds.
+ * The ifa_cacheinfo fields tstamp and cstamp contains timestamps that counts
+ * with in 1/100th of a second of clock_gettime(CLOCK_MONOTONIC). However,
+ * the uint32 counter wraps every 497 days of uptime, so we have to compensate
+ * for that. */
+static gint64
+_timestamp_nl_to_ms (guint32 timestamp_nl, gint64 monotonic_ms)
+{
+	const gint64 WRAP_INTERVAL = (((gint64) G_MAXUINT32) + 1) * (1000 / 100);
+	gint64 timestamp_nl_ms;
+
+	/* convert timestamp from 1/100th of a second to msec. */
+	timestamp_nl_ms = ((gint64) timestamp_nl) * (1000 / 100);
+
+	/* timestamp wraps every 497 days. Try to compensate for that.*/
+	if (timestamp_nl_ms > monotonic_ms) {
+		/* timestamp_nl_ms is in the future. Truncate it to *now* */
+		timestamp_nl_ms = monotonic_ms;
+	} else if (monotonic_ms >= WRAP_INTERVAL) {
+		timestamp_nl_ms += (monotonic_ms / WRAP_INTERVAL) * WRAP_INTERVAL;
+		if (timestamp_nl_ms > monotonic_ms)
+			timestamp_nl_ms -= WRAP_INTERVAL;
+	}
+
+	return timestamp_nl_ms;
+}
+
+static guint32
+_rtnl_addr_last_update_time_to_nm (const struct rtnl_addr *rtnladdr)
+{
+	guint32 last_update_time = rtnl_addr_get_last_update_time ((struct rtnl_addr *) rtnladdr);
+	struct timespec tp;
+	gint64 now_nl, now_nm, result;
+
+	/* timestamp is unset. Default to 1. */
+	if (!last_update_time)
+		return 1;
+
+	/* do all the calculations in milliseconds scale */
+
+	clock_gettime (CLOCK_MONOTONIC, &tp);
+	now_nm = nm_utils_get_monotonic_timestamp_ms ();
+	now_nl = (((gint64) tp.tv_sec) * ((gint64) 1000)) +
+	         (tp.tv_nsec / (NM_UTILS_NS_PER_SECOND/1000));
+
+	result = now_nm - (now_nl - _timestamp_nl_to_ms (last_update_time, now_nl));
+
+	/* converting the last_update_time into nm_utils_get_monotonic_timestamp_ms() scale is
+	 * a good guess but fails in the following situations:
+	 *
+	 * - If the address existed before start of the process, the timestamp in nm scale would
+	 *   be negative or zero. In this case we default to 1.
+	 * - during hibernation, the CLOCK_MONOTONIC/last_update_time drifts from
+	 *   nm_utils_get_monotonic_timestamp_ms() scale.
+	 */
+	if (result <= 1000)
+		return 1;
+
+	if (result > now_nm)
+		return now_nm / 1000;
+
+	return result / 1000;
+}
+
 static void
 _init_ip_address_lifetime (NMPlatformIPAddress *address, const struct rtnl_addr *rtnladdr)
 {
@@ -1083,17 +1152,15 @@ _init_ip_address_lifetime (NMPlatformIPAddress *address, const struct rtnl_addr 
 		return;
 	}
 
-	/* The correct timestamp value would probably be rtnl_addr_get_last_update_time()
-	 * (after converting into the proper time scale).
-	 * But this is relatively complicated to convert and we don't actually need it.
-	 * Especially, because rtnl_addr_get_last_update_time() might be negative in
-	 * nm_utils_get_monotonic_timestamp_s() scale -- which we want to avoid.
-	 *
-	 * Remember: timestamp has no meaning, beyond anchoring the relative lifetimes
-	 * at some point in time. We choose this point to be "1 second".
+	/* _rtnl_addr_last_update_time_to_nm() might be wrong, so don't rely on
+	 * timestamp to have any meaning beyond anchoring the relative durations
+	 * @lifetime and @preferred.
 	 */
-	address->timestamp = 1;
+	address->timestamp = _rtnl_addr_last_update_time_to_nm (rtnladdr);
 
+	/* We would expect @timestamp to be less then @a_valid. Just to be sure,
+	 * fix it up. */
+	address->timestamp = MIN (address->timestamp, a_valid - 1);
 	address->lifetime = _get_remaining_time (address->timestamp, a_valid);
 	address->preferred = _get_remaining_time (address->timestamp, a_preferred);
 }
