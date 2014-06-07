@@ -96,7 +96,7 @@ show_access_point_info (NMAccessPoint *ap)
 	wpa_flags = nm_access_point_get_wpa_flags (ap);
 	rsn_flags = nm_access_point_get_rsn_flags (ap);
 	ssid = nm_access_point_get_ssid (ap);
-	hwaddr = nm_access_point_get_hw_address (ap);
+	hwaddr = nm_access_point_get_bssid (ap);
 	freq = nm_access_point_get_frequency (ap);
 	mode = nm_access_point_get_mode (ap);
 	bitrate = nm_access_point_get_max_bitrate (ap);
