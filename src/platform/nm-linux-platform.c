@@ -1032,6 +1032,23 @@ hack_empty_master_iff_lower_up (NMPlatform *platform, struct nl_object *object)
 	rtnl_link_unset_flags (rtnllink, IFF_LOWER_UP);
 }
 
+static guint32
+_get_remaining_time (guint32 start_timestamp, guint32 end_timestamp)
+{
+	/* Return the remaining time between @start_timestamp until @end_timestamp.
+	 *
+	 * If @end_timestamp is NM_PLATFORM_LIFETIME_PERMANENT, it returns
+	 * NM_PLATFORM_LIFETIME_PERMANENT. If @start_timestamp already passed
+	 * @end_timestamp it returns 0. Beware, NMPlatformIPAddress treats a @lifetime
+	 * of 0 as permanent.
+	 */
+	if (end_timestamp == NM_PLATFORM_LIFETIME_PERMANENT)
+		return NM_PLATFORM_LIFETIME_PERMANENT;
+	if (start_timestamp >= end_timestamp)
+		return 0;
+	return end_timestamp - start_timestamp;
+}
+
 static void
 _init_ip_address_lifetime (NMPlatformIPAddress *address, const struct rtnl_addr *rtnladdr)
 {
@@ -1057,6 +1074,15 @@ _init_ip_address_lifetime (NMPlatformIPAddress *address, const struct rtnl_addr 
 	          a_valid > 0 &&
 	          a_preferred > 0);
 
+	if (a_valid <= 1) {
+		/* Since we want to have positive @timestamp and @valid != 0,
+		 * we must handle this case special. */
+		address->timestamp = 1;
+		address->lifetime = 1; /* Extend the lifetime by one second */
+		address->preferred = 0; /* no longer preferred. */
+		return;
+	}
+
 	/* The correct timestamp value would probably be rtnl_addr_get_last_update_time()
 	 * (after converting into the proper time scale).
 	 * But this is relatively complicated to convert and we don't actually need it.
@@ -1068,15 +1094,8 @@ _init_ip_address_lifetime (NMPlatformIPAddress *address, const struct rtnl_addr 
 	 */
 	address->timestamp = 1;
 
-	/* account for the timestamp==1 by incrementing valid/preferred -- unless
-	 * it is NM_PLATFORM_LIFETIME_PERMANENT or already NM_PLATFORM_LIFETIME_PERMANENT-1
-	 * (i.e. the largest non-permanent lifetime). */
-	if (a_valid < NM_PLATFORM_LIFETIME_PERMANENT - 1)
-		a_valid += 1;
-	if (a_preferred < NM_PLATFORM_LIFETIME_PERMANENT - 1)
-		a_preferred += 1;
-	address->lifetime = a_valid;
-	address->preferred = a_preferred;
+	address->lifetime = _get_remaining_time (address->timestamp, a_valid);
+	address->preferred = _get_remaining_time (address->timestamp, a_preferred);
 }
 
 static gboolean
