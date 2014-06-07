@@ -1564,18 +1564,18 @@ array_contains_ip6_address (const GArray *addresses, const NMPlatformIP6Address 
  * on the new timestamp @now.
  */
 static guint32
-_rebase_relative_time_on_now (guint32 timestamp, guint32 duration, guint32 now)
+_rebase_relative_time_on_now (guint32 timestamp, guint32 duration, guint32 now, guint32 padding)
 {
 	gint64 t;
 
 	if (duration == NM_PLATFORM_LIFETIME_PERMANENT)
 		return NM_PLATFORM_LIFETIME_PERMANENT;
 
-	/* For timestamp>now, just accept it and calculate the expected(?) result. */
+	/* For timestamp > now, just accept it and calculate the expected(?) result. */
 	t = (gint64) timestamp + (gint64) duration - (gint64) now;
 
-	/* Pad the timestamp by 5 seconds to avoid potential races. */
-	t += 5;
+	/* Optional padding to avoid potential races. */
+	t += (gint64) padding;
 
 	if (t <= 0)
 		return 0;
@@ -1585,7 +1585,7 @@ _rebase_relative_time_on_now (guint32 timestamp, guint32 duration, guint32 now)
 }
 
 static gboolean
-_address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 *out_lifetime, guint32 *out_preferred)
+_address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 padding, guint32 *out_lifetime, guint32 *out_preferred)
 {
 	gint32 lifetime, preferred;
 
@@ -1593,10 +1593,10 @@ _address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 
 		*out_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		*out_preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 	} else {
-		lifetime = _rebase_relative_time_on_now (address->timestamp, address->lifetime, now);
+		lifetime = _rebase_relative_time_on_now (address->timestamp, address->lifetime, now, padding);
 		if (!lifetime)
 			return FALSE;
-		preferred = _rebase_relative_time_on_now (address->timestamp, address->preferred, now);
+		preferred = _rebase_relative_time_on_now (address->timestamp, address->preferred, now, padding);
 		if (preferred > lifetime) {
 			g_warn_if_reached ();
 			preferred = lifetime;
@@ -1645,7 +1645,8 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 		const NMPlatformIP4Address *known_address = &g_array_index (known_addresses, NMPlatformIP4Address, i);
 		guint32 lifetime, preferred;
 
-		if (!_address_get_lifetime ((NMPlatformIPAddress *) known_address, now, &lifetime, &preferred))
+		/* add a padding of 5 seconds to avoid potential races. */
+		if (!_address_get_lifetime ((NMPlatformIPAddress *) known_address, now, 5, &lifetime, &preferred))
 			continue;
 
 		if (!nm_platform_ip4_address_add (ifindex, known_address->address, known_address->peer_address, known_address->plen, lifetime, preferred, known_address->label))
@@ -1696,7 +1697,8 @@ nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses)
 		const NMPlatformIP6Address *known_address = &g_array_index (known_addresses, NMPlatformIP6Address, i);
 		guint32 lifetime, preferred;
 
-		if (!_address_get_lifetime ((NMPlatformIPAddress *) known_address, now, &lifetime, &preferred))
+		/* add a padding of 5 seconds to avoid potential races. */
+		if (!_address_get_lifetime ((NMPlatformIPAddress *) known_address, now, 5, &lifetime, &preferred))
 			continue;
 
 		if (!nm_platform_ip6_address_add (ifindex, known_address->address,
@@ -2079,7 +2081,7 @@ _lifetime_to_string (guint32 timestamp, guint32 lifetime, gint32 now, char *buf,
 		return "forever";
 
 	g_snprintf (buf, buf_size, "%usec",
-	            _rebase_relative_time_on_now (timestamp, lifetime, now));
+	            _rebase_relative_time_on_now (timestamp, lifetime, now, 0));
 	return buf;
 }
 
