@@ -5,9 +5,9 @@
 # other distribution.
 
 %define dbus_version 1.1
-%define dbus_glib_version 0.94
+%define dbus_glib_version 0.100
 
-%define glib2_version	2.24.0
+%define glib2_version	2.32.0
 %define wireless_tools_version 1:28-0pre9
 %define libnl3_version 3.2.7
 %define ppp_version 2.4.5
@@ -16,6 +16,8 @@
 %define git_sha __COMMIT__
 %define realversion __VERSION__
 %define release_version __RELEASE_VERSION__
+
+%define obsoletes_nmver 1:0.9.9.95-1
 
 %global with_nmtui 1
 
@@ -100,7 +102,7 @@ Requires: udev
 Requires: iptables
 Requires: readline
 Obsoletes: dhcdbd
-Obsoletes: NetworkManager < 1:0.9.9.1-2
+Obsoletes: NetworkManager < %{obsoletes_nmver}
 
 Conflicts: NetworkManager-vpnc < 1:0.7.0.99-1
 Conflicts: NetworkManager-openvpn < 1:0.7.0.99-1
@@ -165,7 +167,7 @@ services.
 Summary: ADSL device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
-Obsoletes: NetworkManager < 1:0.9.9.1-2
+Obsoletes: NetworkManager < %{obsoletes_nmver}
 Obsoletes: NetworkManager-atm
 
 %description adsl
@@ -184,7 +186,7 @@ Requires: bluez >= 5.0
 %else
 Requires: bluez >= 4.101-5
 %endif
-Obsoletes: NetworkManager < 1:0.9.9.1-2
+Obsoletes: NetworkManager < %{obsoletes_nmver}
 Obsoletes: NetworkManager-bt
 
 %description bluetooth
@@ -198,7 +200,7 @@ Summary: Wifi plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: wpa_supplicant >= 1:1.1
-Obsoletes: NetworkManager < 1:0.9.9.1-2
+Obsoletes: NetworkManager < %{obsoletes_nmver}
 
 %description wifi
 This package contains NetworkManager support for Wifi and OLPC devices.
@@ -211,10 +213,10 @@ Summary: Mobile broadband device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: ModemManager
-Obsoletes: NetworkManager < 1:0.9.9.1-2
+Obsoletes: NetworkManager < %{obsoletes_nmver}
 
 %description wwan
-This package contains NetworkManager support for mobile broadband (3G) devices.
+This package contains NetworkManager support for mobile broadband (WWAN) devices.
 %endif
 
 
