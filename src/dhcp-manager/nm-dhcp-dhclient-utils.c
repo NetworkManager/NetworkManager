@@ -27,6 +27,7 @@
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
+#include "NetworkManagerUtils.h"
 
 #define CLIENTID_TAG            "send dhcp-client-identifier"
 #define CLIENTID_FORMAT         CLIENTID_TAG " \"%s\"; # added by NetworkManager"
@@ -530,6 +531,7 @@ nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
 	GSList *parsed = NULL, *iter, *leases = NULL;
 	char **line, **split = NULL;
 	GHashTable *hash = NULL;
+	gint32 now_monotonic_ts;
 
 	g_return_val_if_fail (contents != NULL, NULL);
 
@@ -570,6 +572,7 @@ nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
 		g_date_time_ref (now);
 	else
 		now = g_date_time_new_now_utc ();
+	now_monotonic_ts = nm_utils_get_monotonic_timestamp_s ();
 
 	for (iter = parsed; iter; iter = g_slist_next (iter)) {
 		NMIP4Config *ip4;
@@ -593,7 +596,7 @@ nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
 			continue;
 
 		/* scale expiry to seconds (and CLAMP into the range of guint32) */
-		expiry = CLAMP (expiry / G_TIME_SPAN_SECOND, 0, G_MAXUINT32-1);
+		expiry = CLAMP (expiry / G_TIME_SPAN_SECOND, 0, NM_PLATFORM_LIFETIME_PERMANENT-1);
 		if (expiry <= 0) {
 			/* the address is already expired. Don't even add it. */
 			continue;
@@ -624,6 +627,7 @@ nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
 		if (!address.plen)
 			address.plen = nm_utils_ip4_get_default_prefix (address.address);
 
+		address.timestamp = now_monotonic_ts;
 		address.lifetime = address.preferred = expiry;
 		address.source = NM_PLATFORM_SOURCE_DHCP;
 
