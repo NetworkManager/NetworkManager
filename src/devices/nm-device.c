@@ -2629,8 +2629,11 @@ ip4_config_merge_and_apply (NMDevice *self,
 
 	/* Merge user overrides into the composite config */
 	connection = nm_device_get_connection (self);
-	if (connection)
-		nm_ip4_config_merge_setting (composite, nm_connection_get_setting_ip4_config (connection));
+	if (connection) {
+		nm_ip4_config_merge_setting (composite,
+		                             nm_connection_get_setting_ip4_config (connection),
+		                             nm_device_get_priority (self));
+	}
 
 	/* Allow setting MTU etc */
 	if (commit) {
@@ -3071,8 +3074,11 @@ ip6_config_merge_and_apply (NMDevice *self,
 
 	/* Merge user overrides into the composite config */
 	connection = nm_device_get_connection (self);
-	if (connection)
-		nm_ip6_config_merge_setting (composite, nm_connection_get_setting_ip6_config (connection));
+	if (connection) {
+		nm_ip6_config_merge_setting (composite,
+		                             nm_connection_get_setting_ip6_config (connection),
+		                             nm_device_get_priority (self));
+	}
 
 	nm_ip6_config_addresses_sort (composite,
 	    priv->rdisc ? priv->rdisc_use_tempaddr : NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
