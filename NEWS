@@ -15,7 +15,7 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * WiFi, ADSL, WWAN, and Bluetooth are now optional plugins, reducing install size
 * Added support for Infiniband Partitions
 * Network connection files are no longer watched by default, use "nmcli con reload"
-    to notice chagnes made externally or set "monitor-connection-files=true" in
+    to notice changes made externally or set "monitor-connection-files=true" in
     NetworkManager.conf's [main] section
 * Connections can now be locked to interface names in addition to hardware/MAC addresses
 * A new "ignore-carrier" configuration option is available to ignore the carrier
