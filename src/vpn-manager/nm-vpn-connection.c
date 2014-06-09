@@ -1208,7 +1208,9 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		nm_ip4_config_set_never_default (config, g_value_get_boolean (val));
 
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
-	nm_ip4_config_merge_setting (config, nm_connection_get_setting_ip4_config (priv->connection));
+	nm_ip4_config_merge_setting (config,
+	                             nm_connection_get_setting_ip4_config (priv->connection),
+	                             vpn_routing_metric (connection));
 
 	priv->ip4_config = config;
 	nm_ip4_config_export (config);
@@ -1352,7 +1354,9 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 		nm_ip6_config_set_never_default (config, g_value_get_boolean (val));
 
 	/* Merge in user overrides from the NMConnection's IPv6 setting */
-	nm_ip6_config_merge_setting (config, nm_connection_get_setting_ip6_config (priv->connection));
+	nm_ip6_config_merge_setting (config,
+	                             nm_connection_get_setting_ip6_config (priv->connection),
+	                             vpn_routing_metric (connection));
 
 	priv->ip6_config = config;
 	nm_ip6_config_export (config);

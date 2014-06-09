@@ -61,7 +61,7 @@ const char * nm_ip4_config_get_dbus_path (const NMIP4Config *config);
 /* Integration with nm-platform and nm-setting */
 NMIP4Config *nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf);
 gboolean nm_ip4_config_commit (const NMIP4Config *config, int ifindex);
-void nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting);
+void nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, int default_route_metric);
 NMSetting *nm_ip4_config_create_setting (const NMIP4Config *config);
 
 /* Utility functions */

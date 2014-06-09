@@ -401,7 +401,7 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 }
 
 void
-nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting)
+nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, int default_route_metric)
 {
 	guint naddresses, nroutes, nnameservers, nsearches;
 	int i;
@@ -457,6 +457,8 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting)
 		route.plen = nm_ip6_route_get_prefix (s_route);
 		route.gateway = *nm_ip6_route_get_next_hop (s_route);
 		route.metric = nm_ip6_route_get_metric (s_route);
+		if (!route.metric)
+			route.metric = default_route_metric;
 		route.source = NM_PLATFORM_SOURCE_USER;
 
 		nm_ip6_config_add_route (config, &route);

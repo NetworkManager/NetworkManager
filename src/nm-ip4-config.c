@@ -296,7 +296,7 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex)
 }
 
 void
-nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting)
+nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, int default_route_metric)
 {
 	guint naddresses, nroutes, nnameservers, nsearches;
 	int i;
@@ -355,6 +355,8 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting)
 		route.plen = nm_ip4_route_get_prefix (s_route);
 		route.gateway = nm_ip4_route_get_next_hop (s_route);
 		route.metric = nm_ip4_route_get_metric (s_route);
+		if (!route.metric)
+			route.metric = default_route_metric;
 		route.source = NM_PLATFORM_SOURCE_USER;
 
 		nm_ip4_config_add_route (config, &route);
