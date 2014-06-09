@@ -2107,12 +2107,6 @@ _lifetime_to_string (guint32 timestamp, guint32 lifetime, gint32 now, char *buf,
 static const char *
 _lifetime_summary_to_string (gint32 now, guint32 timestamp, guint32 preferred, guint32 lifetime, char *buf, size_t buf_size)
 {
-	if (timestamp == 0) {
-		if (preferred == NM_PLATFORM_LIFETIME_PERMANENT && lifetime == NM_PLATFORM_LIFETIME_PERMANENT)
-			return "";
-		if (preferred == 0 && lifetime == 0)
-			return " lifetime unset";
-	}
 	g_snprintf (buf, buf_size, " lifetime %d-%u[%u,%u]",
 	            (signed) now, (unsigned) timestamp, (unsigned) preferred, (unsigned) lifetime);
 	return buf;
