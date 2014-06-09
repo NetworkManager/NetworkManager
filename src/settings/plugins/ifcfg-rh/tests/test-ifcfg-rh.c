@@ -1852,10 +1852,6 @@ test_read_wired_ipv6_manual (void)
 	guint32 expected_prefix1 = 56;
 	guint32 expected_prefix2 = 64;
 	guint32 expected_prefix3 = 96;
-	const char *expected_route1_dest = "9876::1234";
-	guint32 expected_route1_prefix = 96;
-	const char *expected_route1_nexthop = "9876::7777";
-	guint32 expected_route1_metric = 2;
 	const char *expected_dns1 = "1:2:3:4::a";
 	const char *expected_dns2 = "1:2:3:4::b";
 	NMIP6Address *ip6_addr;
@@ -2059,39 +2055,25 @@ test_read_wired_ipv6_manual (void)
 		TEST_IFCFG_WIRED_IPV6_MANUAL);
 
 	/* Routes */
-	ASSERT (nm_setting_ip6_config_get_num_routes (s_ip6) == 1,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value",
-		TEST_IFCFG_WIRED_IPV6_MANUAL,
-		NM_SETTING_IP6_CONFIG_SETTING_NAME,
-		NM_SETTING_IP6_CONFIG_ROUTES);
-
+	g_assert_cmpint (nm_setting_ip6_config_get_num_routes (s_ip6), ==, 2);
 	/* Route #1 */
 	ip6_route = nm_setting_ip6_config_get_route (s_ip6, 0);
-	ASSERT (ip6_route,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: missing IP6 route #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-
-	ASSERT (inet_pton (AF_INET6, expected_route1_dest, &addr) > 0,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert IP route dest #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_route_get_dest (ip6_route), &addr),
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 route dest #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-
-	ASSERT (nm_ip6_route_get_prefix (ip6_route) == expected_route1_prefix,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 route #1 prefix",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-
-	ASSERT (inet_pton (AF_INET6, expected_route1_nexthop, &addr) > 0,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert IP route next_hop #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_ip6_route_get_next_hop (ip6_route), &addr),
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 route next hop #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-
-	ASSERT (nm_ip6_route_get_metric (ip6_route) == expected_route1_metric,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected IP6 route #1 metric",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
+	g_assert (ip6_route);
+	g_assert_cmpint (inet_pton (AF_INET6, "9876::1234", &addr), >, 0);
+	g_assert_cmpint (memcmp (nm_ip6_route_get_dest (ip6_route), &addr, sizeof (struct in6_addr)), ==, 0);
+	g_assert_cmpint (nm_ip6_route_get_prefix (ip6_route), ==, 96);
+	g_assert_cmpint (inet_pton (AF_INET6, "9876::7777", &addr), >, 0);
+	g_assert_cmpint (memcmp (nm_ip6_route_get_next_hop (ip6_route), &addr, sizeof (struct in6_addr)), ==, 0);
+	g_assert_cmpint (nm_ip6_route_get_metric (ip6_route), ==, 2);
+	/* Route #2 */
+	ip6_route = nm_setting_ip6_config_get_route (s_ip6, 1);
+	g_assert (ip6_route);
+	g_assert_cmpint (inet_pton (AF_INET6, "abbe::cafe", &addr), >, 0);
+	g_assert_cmpint (memcmp (nm_ip6_route_get_dest (ip6_route), &addr, sizeof (struct in6_addr)), ==, 0);
+	g_assert_cmpint (nm_ip6_route_get_prefix (ip6_route), ==, 64);
+	g_assert_cmpint (inet_pton (AF_INET6, "::", &addr), >, 0);
+	g_assert_cmpint (memcmp (nm_ip6_route_get_next_hop (ip6_route), &addr, sizeof (struct in6_addr)), ==, 0);
+	g_assert_cmpint (nm_ip6_route_get_metric (ip6_route), ==, 777);
 
 	/* DNS Addresses */
 	ASSERT (nm_setting_ip6_config_get_num_dns (s_ip6) == 2,
