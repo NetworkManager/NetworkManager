@@ -311,20 +311,22 @@ nmt_editor_class_init (NmtEditorClass *entry_class)
 	 *
 	 * The connection being edited.
 	 */
-	g_object_class_install_property (object_class, PROP_CONNECTION,
-	                                 g_param_spec_object ("connection", "", "",
-	                                                      NM_TYPE_CONNECTION,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_CONNECTION,
+		 g_param_spec_object ("connection", "", "",
+		                      NM_TYPE_CONNECTION,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtEditor:type-data:
 	 *
 	 * The #NmEditorConnectionTypeData for #NmtEditor:connection.
 	 */
-	g_object_class_install_property (object_class, PROP_TYPE_DATA,
-	                                 g_param_spec_pointer ("type-data", "", "",
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_CONSTRUCT_ONLY |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_TYPE_DATA,
+		 g_param_spec_pointer ("type-data", "", "",
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 }

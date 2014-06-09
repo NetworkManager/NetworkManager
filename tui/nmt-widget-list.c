@@ -443,49 +443,54 @@ nmt_widget_list_class_init (NmtWidgetListClass *list_class)
 	 *
 	 * Callback called to create a new widget.
 	 */
-	g_object_class_install_property (object_class, PROP_CREATE_CALLBACK,
-	                                 g_param_spec_pointer ("create-callback", "", "",
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_CREATE_CALLBACK,
+		 g_param_spec_pointer ("create-callback", "", "",
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtWidgetList:user-data:
 	 *
 	 * User data for #NmtWidgetList:create-callback
 	 */
-	g_object_class_install_property (object_class, PROP_USER_DATA,
-	                                 g_param_spec_pointer ("user-data", "", "",
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_USER_DATA,
+		 g_param_spec_pointer ("user-data", "", "",
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtWidgetList:destroy-notify:
 	 *
 	 * #GDestroyNotify for #NmtWidgetList:user-data
 	 */
-	g_object_class_install_property (object_class, PROP_DESTROY_NOTIFY,
-	                                 g_param_spec_pointer ("destroy-notify", "", "",
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_DESTROY_NOTIFY,
+		 g_param_spec_pointer ("destroy-notify", "", "",
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtWidgetList:length:
 	 *
 	 * The length of the widget list; changing this value will add or
 	 * remove widgets from the list.
 	 */
-	g_object_class_install_property (object_class, PROP_LENGTH,
-	                                 g_param_spec_int ("length", "", "",
-	                                                   0, G_MAXINT, 0,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_LENGTH,
+		 g_param_spec_int ("length", "", "",
+		                   0, G_MAXINT, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtWidgetList:empty-widget:
 	 *
 	 * If non-%NULL, this widget will be displayed when there are
 	 * no "real" widgets in the list.
 	 */
-	g_object_class_install_property (object_class, PROP_EMPTY_WIDGET,
-	                                 g_param_spec_object ("empty-widget", "", "",
-	                                                      NMT_TYPE_NEWT_WIDGET,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_EMPTY_WIDGET,
+		 g_param_spec_object ("empty-widget", "", "",
+		                      NMT_TYPE_NEWT_WIDGET,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 }

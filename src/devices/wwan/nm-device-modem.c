@@ -620,25 +620,24 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_MODEM,
-		 g_param_spec_object (NM_DEVICE_MODEM_MODEM,
-		                      "Modem",
-		                      "Modem",
+		 g_param_spec_object (NM_DEVICE_MODEM_MODEM, "", "",
 		                      NM_TYPE_MODEM,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
-	g_object_class_install_property (object_class, PROP_CAPABILITIES,
-		g_param_spec_uint (NM_DEVICE_MODEM_CAPABILITIES,
-		                   "Modem Capabilities",
-		                   "Modem Capabilities",
-		                   0, G_MAXUINT32, NM_DEVICE_MODEM_CAPABILITY_NONE,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_CAPABILITIES,
+		 g_param_spec_uint (NM_DEVICE_MODEM_CAPABILITIES, "", "",
+		                    0, G_MAXUINT32, NM_DEVICE_MODEM_CAPABILITY_NONE,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
-	g_object_class_install_property (object_class, PROP_CURRENT_CAPABILITIES,
-		g_param_spec_uint (NM_DEVICE_MODEM_CURRENT_CAPABILITIES,
-		                   "Current modem Capabilities",
-		                   "Current modem Capabilities",
-		                   0, G_MAXUINT32, NM_DEVICE_MODEM_CAPABILITY_NONE,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_CURRENT_CAPABILITIES,
+		 g_param_spec_uint (NM_DEVICE_MODEM_CURRENT_CAPABILITIES, "", "",
+		                    0, G_MAXUINT32, NM_DEVICE_MODEM_CAPABILITY_NONE,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (mclass),

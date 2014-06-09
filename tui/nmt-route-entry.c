@@ -270,54 +270,59 @@ nmt_route_entry_class_init (NmtRouteEntryClass *entry_class)
 	 *
 	 * The address family of the route, eg, %AF_INET
 	 */
-	g_object_class_install_property (object_class, PROP_FAMILY,
-	                                 g_param_spec_int ("family", "", "",
-	                                                   0, G_MAXINT, 0,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_CONSTRUCT_ONLY |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_FAMILY,
+		 g_param_spec_int ("family", "", "",
+		                   0, G_MAXINT, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT_ONLY |
+		                   G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtRouteEntry:ip-entry-width:
 	 *
 	 * The width in characters of the IP address entries
 	 */
-	g_object_class_install_property (object_class, PROP_IP_ENTRY_WIDTH,
-	                                 g_param_spec_int ("ip-entry-width", "", "",
-	                                                   0, G_MAXINT, 0,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_CONSTRUCT_ONLY |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_IP_ENTRY_WIDTH,
+		 g_param_spec_int ("ip-entry-width", "", "",
+		                   0, G_MAXINT, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT_ONLY |
+		                   G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtRouteEntry:metric-entry-width:
 	 *
 	 * The width in characters of the metric entry
 	 */
-	g_object_class_install_property (object_class, PROP_METRIC_ENTRY_WIDTH,
-	                                 g_param_spec_int ("metric-entry-width", "", "",
-	                                                   0, G_MAXINT, 0,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_CONSTRUCT_ONLY |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_METRIC_ENTRY_WIDTH,
+		 g_param_spec_int ("metric-entry-width", "", "",
+		                   0, G_MAXINT, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT_ONLY |
+		                   G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtRouteEntry:ip4-route:
 	 *
 	 * The contents of the entries, as an #NMIP4Route. Only valid
 	 * if #NmtRouteEntry:family is %AF_INET.
 	 */
-	g_object_class_install_property (object_class, PROP_IP4_ROUTE,
-	                                 g_param_spec_boxed ("ip4-route", "", "",
-	                                                     nm_ip4_route_get_type (),
-	                                                     G_PARAM_READWRITE |
-	                                                     G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_IP4_ROUTE,
+		 g_param_spec_boxed ("ip4-route", "", "",
+		                     nm_ip4_route_get_type (),
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtRouteEntry:ip6-route:
 	 *
 	 * The contents of the entries, as an #NMIP6Route. Only valid
 	 * if #NmtRouteEntry:family is %AF_INET6.
 	 */
-	g_object_class_install_property (object_class, PROP_IP6_ROUTE,
-	                                 g_param_spec_boxed ("ip6-route", "", "",
-	                                                     nm_ip6_route_get_type (),
-	                                                     G_PARAM_READWRITE |
-	                                                     G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_IP6_ROUTE,
+		 g_param_spec_boxed ("ip6-route", "", "",
+		                     nm_ip6_route_get_type (),
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 }

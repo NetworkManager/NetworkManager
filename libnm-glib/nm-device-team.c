@@ -322,11 +322,10 @@ nm_device_team_class_init (NMDeviceTeamClass *eth_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_TEAM_HW_ADDRESS,
-		                      "Active MAC Address",
-		                      "Currently set hardware MAC address",
+		 g_param_spec_string (NM_DEVICE_TEAM_HW_ADDRESS, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceTeam:carrier:
@@ -335,11 +334,10 @@ nm_device_team_class_init (NMDeviceTeamClass *eth_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_TEAM_CARRIER,
-		                       "Carrier",
-		                       "Carrier",
+		 g_param_spec_boolean (NM_DEVICE_TEAM_CARRIER, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceTeam:slaves:
@@ -348,9 +346,8 @@ nm_device_team_class_init (NMDeviceTeamClass *eth_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SLAVES,
-		 g_param_spec_boxed (NM_DEVICE_TEAM_SLAVES,
-		                     "Slaves",
-		                     "Slaves",
+		 g_param_spec_boxed (NM_DEVICE_TEAM_SLAVES, "", "",
 		                     NM_TYPE_OBJECT_ARRAY,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 }

@@ -343,11 +343,10 @@ nm_device_bt_class_init (NMDeviceBtClass *bt_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_BT_HW_ADDRESS,
-		                      "MAC Address",
-		                      "Hardware MAC address",
+		 g_param_spec_string (NM_DEVICE_BT_HW_ADDRESS, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceBt:name:
@@ -356,11 +355,10 @@ nm_device_bt_class_init (NMDeviceBtClass *bt_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NAME,
-		 g_param_spec_string (NM_DEVICE_BT_NAME,
-		                      "Name",
-		                      "Device name",
+		 g_param_spec_string (NM_DEVICE_BT_NAME, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceBt:bt-capabilities:
@@ -369,11 +367,10 @@ nm_device_bt_class_init (NMDeviceBtClass *bt_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_BT_CAPABILITIES,
-		 g_param_spec_uint (NM_DEVICE_BT_CAPABILITIES,
-		                    "BtCapabilities",
-		                    "Bluetooth capabilities",
+		 g_param_spec_uint (NM_DEVICE_BT_CAPABILITIES, "", "",
 		                    NM_BT_CAPABILITY_NONE, G_MAXUINT32, NM_BT_CAPABILITY_NONE,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 }
 

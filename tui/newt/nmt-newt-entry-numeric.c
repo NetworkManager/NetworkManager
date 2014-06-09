@@ -193,21 +193,23 @@ nmt_newt_entry_numeric_class_init (NmtNewtEntryNumericClass *entry_class)
 	 * is non-negative, then the entry will not allow negative numbers
 	 * to be entered.
 	 */
-	g_object_class_install_property (object_class, PROP_MINIMUM,
-	                                 g_param_spec_int ("minimum", "", "",
-	                                                   G_MININT, G_MAXINT, 0,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_CONSTRUCT_ONLY |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_MINIMUM,
+		 g_param_spec_int ("minimum", "", "",
+		                   G_MININT, G_MAXINT, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT_ONLY |
+		                   G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtNewtEntryNumeric:maximum:
 	 *
 	 * The maximum #NmtNewtWidget:valid value for the entry.
 	 */
-	g_object_class_install_property (object_class, PROP_MAXIMUM,
-	                                 g_param_spec_int ("maximum", "", "",
-	                                                   G_MININT, G_MAXINT, G_MAXINT,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_CONSTRUCT_ONLY |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_MAXIMUM,
+		 g_param_spec_int ("maximum", "", "",
+		                   G_MININT, G_MAXINT, G_MAXINT,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT_ONLY |
+		                   G_PARAM_STATIC_STRINGS));
 }

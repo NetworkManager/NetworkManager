@@ -293,11 +293,10 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *eth_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_INFINIBAND_HW_ADDRESS,
-		                      "Active MAC Address",
-		                      "Currently set hardware MAC address",
+		 g_param_spec_string (NM_DEVICE_INFINIBAND_HW_ADDRESS, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceInfiniband:carrier:
@@ -306,11 +305,10 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *eth_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_INFINIBAND_CARRIER,
-		                       "Carrier",
-		                       "Carrier",
+		 g_param_spec_boolean (NM_DEVICE_INFINIBAND_CARRIER, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 }
 

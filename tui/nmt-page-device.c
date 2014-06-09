@@ -136,16 +136,18 @@ nmt_page_device_class_init (NmtPageDeviceClass *page_device_class)
 	object_class->finalize     = nmt_page_device_finalize;
 
 	/* properties */
-	g_object_class_install_property (object_class, PROP_DEVICE_ENTRY,
-	                                 g_param_spec_object ("device-entry", "", "",
-	                                                      NMT_TYPE_DEVICE_ENTRY,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property (object_class, PROP_SHOW_BY_DEFAULT,
-	                                 g_param_spec_boolean ("show-by-default", "", "",
-	                                                       TRUE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_CONSTRUCT_ONLY |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_DEVICE_ENTRY,
+		 g_param_spec_object ("device-entry", "", "",
+		                      NMT_TYPE_DEVICE_ENTRY,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_SHOW_BY_DEFAULT,
+		 g_param_spec_boolean ("show-by-default", "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 }

@@ -2254,30 +2254,26 @@ nm_policy_class_init (NMPolicyClass *policy_class)
 
 	g_object_class_install_property
 		(object_class, PROP_DEFAULT_IP4_DEVICE,
-		 g_param_spec_object (NM_POLICY_DEFAULT_IP4_DEVICE,
-		                      "Default IP4 device",
-		                      "Default IP4 device",
+		 g_param_spec_object (NM_POLICY_DEFAULT_IP4_DEVICE, "", "",
 		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property
 		(object_class, PROP_DEFAULT_IP6_DEVICE,
-		 g_param_spec_object (NM_POLICY_DEFAULT_IP6_DEVICE,
-		                      "Default IP6 device",
-		                      "Default IP6 device",
+		 g_param_spec_object (NM_POLICY_DEFAULT_IP6_DEVICE, "", "",
 		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property
 		(object_class, PROP_ACTIVATING_IP4_DEVICE,
-		 g_param_spec_object (NM_POLICY_ACTIVATING_IP4_DEVICE,
-		                      "Activating default IP4 device",
-		                      "Activating default IP4 device",
+		 g_param_spec_object (NM_POLICY_ACTIVATING_IP4_DEVICE, "", "",
 		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property
 		(object_class, PROP_ACTIVATING_IP6_DEVICE,
-		 g_param_spec_object (NM_POLICY_ACTIVATING_IP6_DEVICE,
-		                      "Activating default IP6 device",
-		                      "Activating default IP6 device",
+		 g_param_spec_object (NM_POLICY_ACTIVATING_IP6_DEVICE, "", "",
 		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 }

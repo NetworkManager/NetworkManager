@@ -371,19 +371,17 @@ nm_bluez4_adapter_class_init (NMBluez4AdapterClass *config_class)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_BLUEZ4_ADAPTER_PATH,
-		                      "DBus Path",
-		                      "DBus Path",
+		 g_param_spec_string (NM_BLUEZ4_ADAPTER_PATH, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_ADDRESS,
-		 g_param_spec_string (NM_BLUEZ4_ADAPTER_ADDRESS,
-		                      "Address",
-		                      "Address",
+		 g_param_spec_string (NM_BLUEZ4_ADAPTER_ADDRESS, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	signals[INITIALIZED] = g_signal_new ("initialized",

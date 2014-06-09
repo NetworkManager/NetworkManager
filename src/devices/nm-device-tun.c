@@ -242,49 +242,37 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_OWNER,
-		 g_param_spec_int64 (NM_DEVICE_TUN_OWNER,
-		                     "Owner",
-		                     "Owner",
+		 g_param_spec_int64 (NM_DEVICE_TUN_OWNER, "", "",
 		                     -1, G_MAXUINT32, -1,
 		                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_GROUP,
-		 g_param_spec_int64 (NM_DEVICE_TUN_GROUP,
-		                     "Group",
-		                     "Group",
+		 g_param_spec_int64 (NM_DEVICE_TUN_GROUP, "", "",
 		                     -1, G_MAXUINT32, -1,
 		                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_MODE,
-		 g_param_spec_string (NM_DEVICE_TUN_MODE,
-		                      "Mode",
-		                      "Mode",
+		 g_param_spec_string (NM_DEVICE_TUN_MODE, "", "",
 		                      "tun",
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_NO_PI,
-		 g_param_spec_boolean (NM_DEVICE_TUN_NO_PI,
-		                      "No Protocol Info",
-		                      "No Protocol Info",
-		                      FALSE,
-		                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boolean (NM_DEVICE_TUN_NO_PI, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_VNET_HDR,
-		 g_param_spec_boolean (NM_DEVICE_TUN_VNET_HDR,
-		                       "Virtio networking header",
-		                       "Virtio networking header",
+		 g_param_spec_boolean (NM_DEVICE_TUN_VNET_HDR, "", "",
 		                       FALSE,
 		                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_MULTI_QUEUE,
-		 g_param_spec_boolean (NM_DEVICE_TUN_MULTI_QUEUE,
-		                       "Multi-queue",
-		                       "Multi-queue",
+		 g_param_spec_boolean (NM_DEVICE_TUN_MULTI_QUEUE, "", "",
 		                       FALSE,
 		                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 

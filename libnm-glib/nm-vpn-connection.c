@@ -237,26 +237,26 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 	 *
 	 * The VPN state of the active VPN connection.
 	 **/
-	g_object_class_install_property (object_class, PROP_VPN_STATE,
-	                                 g_param_spec_uint (NM_VPN_CONNECTION_VPN_STATE,
-	                                                    "VpnState",
-	                                                    "Current VPN state",
-	                                                    NM_VPN_CONNECTION_STATE_UNKNOWN,
-	                                                    NM_VPN_CONNECTION_STATE_DISCONNECTED,
-	                                                    NM_VPN_CONNECTION_STATE_UNKNOWN,
-	                                                    G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_VPN_STATE,
+		 g_param_spec_uint (NM_VPN_CONNECTION_VPN_STATE, "", "",
+		                    NM_VPN_CONNECTION_STATE_UNKNOWN,
+		                    NM_VPN_CONNECTION_STATE_DISCONNECTED,
+		                    NM_VPN_CONNECTION_STATE_UNKNOWN,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMVPNConnection:banner:
 	 *
 	 * The VPN login banner of the active VPN connection.
 	 **/
-	g_object_class_install_property (object_class, PROP_BANNER,
-	                                 g_param_spec_string (NM_VPN_CONNECTION_BANNER,
-	                                                      "Banner",
-	                                                      "Login Banner",
-	                                                      NULL,
-	                                                      G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_BANNER,
+		 g_param_spec_string (NM_VPN_CONNECTION_BANNER, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 	signals[VPN_STATE_CHANGED] =

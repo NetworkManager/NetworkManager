@@ -723,11 +723,10 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_WIFI_HW_ADDRESS,
-						  "Active MAC Address",
-						  "Currently set hardware MAC address",
-						  NULL,
-						  G_PARAM_READABLE));
+		 g_param_spec_string (NM_DEVICE_WIFI_HW_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWifi:perm-hw-address:
@@ -736,11 +735,10 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PERM_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS,
-						  "Permanent MAC Address",
-						  "Permanent hardware MAC address",
-						  NULL,
-						  G_PARAM_READABLE));
+		 g_param_spec_string (NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWifi:mode:
@@ -749,11 +747,10 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MODE,
-		 g_param_spec_uint (NM_DEVICE_WIFI_MODE,
-					    "Mode",
-					    "Mode",
-					    NM_802_11_MODE_UNKNOWN, NM_802_11_MODE_AP, NM_802_11_MODE_INFRA,
-					    G_PARAM_READABLE));
+		 g_param_spec_uint (NM_DEVICE_WIFI_MODE, "", "",
+		                    NM_802_11_MODE_UNKNOWN, NM_802_11_MODE_AP, NM_802_11_MODE_INFRA,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWifi:bitrate:
@@ -762,11 +759,10 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_BITRATE,
-		 g_param_spec_uint (NM_DEVICE_WIFI_BITRATE,
-					    "Bit Rate",
-					    "Bit Rate",
-					    0, G_MAXUINT32, 0,
-					    G_PARAM_READABLE));
+		 g_param_spec_uint (NM_DEVICE_WIFI_BITRATE, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWifi:active-access-point:
@@ -775,11 +771,10 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_ACCESS_POINT,
-		 g_param_spec_object (NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT,
-						 "Active Access Point",
-						 "Active Access Point",
-						 NM_TYPE_ACCESS_POINT,
-						 G_PARAM_READABLE));
+		 g_param_spec_object (NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT, "", "",
+		                      NM_TYPE_ACCESS_POINT,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWifi:wireless-capabilities:
@@ -788,11 +783,10 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_WIRELESS_CAPABILITIES,
-		 g_param_spec_uint (NM_DEVICE_WIFI_CAPABILITIES,
-		                    "Wireless Capabilities",
-		                    "Wireless Capabilities",
+		 g_param_spec_uint (NM_DEVICE_WIFI_CAPABILITIES, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWifi:access-points:
@@ -803,11 +797,10 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACCESS_POINTS,
-		 g_param_spec_boxed (NM_DEVICE_WIFI_ACCESS_POINTS,
-		                     "AccessPoints",
-		                     "Access Points",
+		 g_param_spec_boxed (NM_DEVICE_WIFI_ACCESS_POINTS, "", "",
 		                     NM_TYPE_OBJECT_ARRAY,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 

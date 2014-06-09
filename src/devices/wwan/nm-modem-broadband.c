@@ -979,9 +979,8 @@ nm_modem_broadband_class_init (NMModemBroadbandClass *klass)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_MODEM,
-		 g_param_spec_object (NM_MODEM_BROADBAND_MODEM,
-		                      "Modem",
-		                      "Broadband modem object",
+		 g_param_spec_object (NM_MODEM_BROADBAND_MODEM, "", "",
 		                      MM_GDBUS_TYPE_OBJECT,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 }

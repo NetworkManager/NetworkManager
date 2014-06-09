@@ -562,19 +562,17 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_COMPANION,
-		 g_param_spec_boxed (NM_DEVICE_OLPC_MESH_COMPANION,
-		                     "Companion device",
-		                     "Companion device object path",
+		 g_param_spec_boxed (NM_DEVICE_OLPC_MESH_COMPANION, "", "",
 		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CHANNEL,
-		 g_param_spec_uint (NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL,
-		                   "Active channel",
-		                   "Active channel",
-		                   0, G_MAXUINT32, 0,
-		                   G_PARAM_READABLE));
+		 g_param_spec_uint (NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

@@ -231,24 +231,26 @@ nmt_ip_entry_class_init (NmtIPEntryClass *entry_class)
 	 *
 	 * The address family. Eg, %AF_INET
 	 */
-	g_object_class_install_property (object_class, PROP_FAMILY,
-	                                 g_param_spec_int ("family", "", "",
-	                                                   0, G_MAXINT, 0,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_CONSTRUCT_ONLY |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_FAMILY,
+		 g_param_spec_int ("family", "", "",
+		                   0, G_MAXINT, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT_ONLY |
+		                   G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtIPEntry:prefix:
 	 *
 	 * If %TRUE, the entry accepts address/prefix combinations. If
 	 * %FALSE it accepts just addresses.
 	 */
-	g_object_class_install_property (object_class, PROP_PREFIX,
-	                                 g_param_spec_boolean ("prefix", "", "",
-	                                                       FALSE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_CONSTRUCT_ONLY |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_PREFIX,
+		 g_param_spec_boolean ("prefix", "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtIPEntry:optional:
 	 *
@@ -256,10 +258,11 @@ nmt_ip_entry_class_init (NmtIPEntryClass *entry_class)
 	 * empty. If %FALSE, it will only be valid when it contains a
 	 * valid address or address/prefix.
 	 */
-	g_object_class_install_property (object_class, PROP_OPTIONAL,
-	                                 g_param_spec_boolean ("optional", "", "",
-	                                                       FALSE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_CONSTRUCT_ONLY |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_OPTIONAL,
+		 g_param_spec_boolean ("optional", "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 }

@@ -207,21 +207,23 @@ nmt_editor_page_class_init (NmtEditorPageClass *page_class)
 	 *
 	 * The page's #NMConnection.
 	 */
-	g_object_class_install_property (object_class, PROP_CONNECTION,
-	                                 g_param_spec_object ("connection", "", "",
-	                                                      NM_TYPE_CONNECTION,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_CONNECTION,
+		 g_param_spec_object ("connection", "", "",
+		                      NM_TYPE_CONNECTION,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtEditorPage:title:
 	 *
 	 * The page's title.
 	 */
-	g_object_class_install_property (object_class, PROP_TITLE,
-	                                 g_param_spec_string ("title", "", "",
-	                                                      NULL,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_TITLE,
+		 g_param_spec_string ("title", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 }

@@ -153,27 +153,24 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
-		 g_param_spec_boxed (NM_DEVICE_MACVLAN_PARENT,
-		                     "Parent",
-		                     "Parent device",
+		 g_param_spec_boxed (NM_DEVICE_MACVLAN_PARENT, "", "",
 		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_MODE,
-		 g_param_spec_string (NM_DEVICE_MACVLAN_MODE,
-		                      "Mode",
-		                      "Mode: 'private', 'vepa', 'bridge', or 'passthru'",
+		 g_param_spec_string (NM_DEVICE_MACVLAN_MODE, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_NO_PROMISC,
-		 g_param_spec_boolean (NM_DEVICE_MACVLAN_NO_PROMISC,
-		                       "No-promisc",
-		                       "No promiscuous mode",
+		 g_param_spec_boolean (NM_DEVICE_MACVLAN_NO_PROMISC, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

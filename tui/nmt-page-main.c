@@ -319,9 +319,10 @@ nmt_page_main_class_init (NmtPageMainClass *main_class)
 	 *
 	 * The page's connection's #NMEditorConnectionTypeData
 	 */
-	g_object_class_install_property (object_class, PROP_TYPE_DATA,
-	                                 g_param_spec_pointer ("type-data", "", "",
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_CONSTRUCT_ONLY |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_TYPE_DATA,
+		 g_param_spec_pointer ("type-data", "", "",
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 }

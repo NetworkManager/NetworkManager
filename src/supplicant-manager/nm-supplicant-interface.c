@@ -1472,12 +1472,12 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	object_class->get_property = get_property;
 
 	/* Properties */
-	g_object_class_install_property (object_class, PROP_SCANNING,
-		g_param_spec_boolean ("scanning",
-		                      "Scanning",
-		                      "Scanning",
-		                      FALSE,
-		                      G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_SCANNING,
+		 g_param_spec_boolean ("scanning", "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	signals[STATE] =

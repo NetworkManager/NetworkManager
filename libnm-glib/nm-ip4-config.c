@@ -240,11 +240,10 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_GATEWAY,
-	     g_param_spec_string (NM_IP4_CONFIG_GATEWAY,
-	                          "Gateway",
-	                          "Gateway",
+	     g_param_spec_string (NM_IP4_CONFIG_GATEWAY, "", "",
 	                          NULL,
-	                          G_PARAM_READABLE));
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP4Config:addresses:
@@ -253,10 +252,9 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ADDRESSES,
-	     g_param_spec_pointer (NM_IP4_CONFIG_ADDRESSES,
-	                           "Addresses",
-	                           "Addresses",
-	                           G_PARAM_READABLE));
+	     g_param_spec_pointer (NM_IP4_CONFIG_ADDRESSES, "", "",
+	                           G_PARAM_READABLE |
+	                           G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP4Config:routes:
@@ -265,10 +263,9 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ROUTES,
-	     g_param_spec_pointer (NM_IP4_CONFIG_ROUTES,
-	                           "Routes",
-	                           "Routes",
-	                           G_PARAM_READABLE));
+	     g_param_spec_pointer (NM_IP4_CONFIG_ROUTES, "", "",
+	                           G_PARAM_READABLE |
+	                           G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP4Config:nameservers:
@@ -277,11 +274,10 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_NAMESERVERS,
-	     g_param_spec_boxed (NM_IP4_CONFIG_NAMESERVERS,
-	                         "Nameservers",
-	                         "Nameservers",
+	     g_param_spec_boxed (NM_IP4_CONFIG_NAMESERVERS, "", "",
 	                         NM_TYPE_UINT_ARRAY,
-	                         G_PARAM_READABLE));
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP4Config:domains:
@@ -290,11 +286,10 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_DOMAINS,
-	     g_param_spec_boxed (NM_IP4_CONFIG_DOMAINS,
-	                         "Domains",
-	                         "Domains",
+	     g_param_spec_boxed (NM_IP4_CONFIG_DOMAINS, "", "",
 	                         NM_TYPE_STRING_ARRAY,
-	                         G_PARAM_READABLE));
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP4Config:searches:
@@ -305,11 +300,10 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_SEARCHES,
-	     g_param_spec_boxed (NM_IP4_CONFIG_SEARCHES,
-	                         "Searches",
-	                         "DNS searches",
+	     g_param_spec_boxed (NM_IP4_CONFIG_SEARCHES, "", "",
 	                         NM_TYPE_STRING_ARRAY,
-	                         G_PARAM_READABLE));
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP4Config:wins-servers:
@@ -318,11 +312,10 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_WINS_SERVERS,
-	     g_param_spec_boxed (NM_IP4_CONFIG_WINS_SERVERS,
-	                         "WINS Servers",
-	                         "WINS Servers",
+	     g_param_spec_boxed (NM_IP4_CONFIG_WINS_SERVERS, "", "",
 	                         NM_TYPE_UINT_ARRAY,
-	                         G_PARAM_READABLE));
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 }
 
 /**

@@ -194,83 +194,73 @@ nm_device_gre_class_init (NMDeviceGreClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
-		 g_param_spec_boxed (NM_DEVICE_GRE_PARENT,
-		                     "Parent",
-		                     "Parent device",
+		 g_param_spec_boxed (NM_DEVICE_GRE_PARENT, "", "",
 		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_INPUT_FLAGS,
-		 g_param_spec_uint (NM_DEVICE_GRE_INPUT_FLAGS,
-		                    "Input flags",
-		                    "Input flags",
+		 g_param_spec_uint (NM_DEVICE_GRE_INPUT_FLAGS, "", "",
 		                    0, G_MAXUINT16, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_OUTPUT_FLAGS,
-		 g_param_spec_uint (NM_DEVICE_GRE_OUTPUT_FLAGS,
-		                    "Output flags",
-		                    "Output flags",
+		 g_param_spec_uint (NM_DEVICE_GRE_OUTPUT_FLAGS, "", "",
 		                    0, G_MAXUINT16, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_INPUT_KEY,
-		 g_param_spec_uint (NM_DEVICE_GRE_INPUT_KEY,
-		                    "Input key",
-		                    "Input key",
+		 g_param_spec_uint (NM_DEVICE_GRE_INPUT_KEY, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_OUTPUT_KEY,
-		 g_param_spec_uint (NM_DEVICE_GRE_OUTPUT_KEY,
-		                    "Output key",
-		                    "Output key",
+		 g_param_spec_uint (NM_DEVICE_GRE_OUTPUT_KEY, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_LOCAL,
-		 g_param_spec_string (NM_DEVICE_GRE_LOCAL,
-		                      "Local",
-		                      "Local",
+		 g_param_spec_string (NM_DEVICE_GRE_LOCAL, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_REMOTE,
-		 g_param_spec_string (NM_DEVICE_GRE_REMOTE,
-		                      "Remote",
-		                      "Remote",
+		 g_param_spec_string (NM_DEVICE_GRE_REMOTE, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_TTL,
-		 g_param_spec_uchar (NM_DEVICE_GRE_TTL,
-		                     "TTL",
-		                     "TTL",
+		 g_param_spec_uchar (NM_DEVICE_GRE_TTL, "", "",
 		                     0, 255, 0,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_TOS,
-		 g_param_spec_uchar (NM_DEVICE_GRE_TOS,
-		                     "ToS",
-		                     "ToS",
+		 g_param_spec_uchar (NM_DEVICE_GRE_TOS, "", "",
 		                     0, 255, 0,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_PATH_MTU_DISCOVERY,
-		 g_param_spec_boolean (NM_DEVICE_GRE_PATH_MTU_DISCOVERY,
-		                       "Path MTU Discovery",
-		                       "Path MTU Discovery",
+		 g_param_spec_boolean (NM_DEVICE_GRE_PATH_MTU_DISCOVERY, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

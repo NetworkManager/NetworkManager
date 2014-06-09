@@ -383,11 +383,12 @@ nmt_newt_section_class_init (NmtNewtSectionClass *section_class)
 	 * %TRUE if the section is open (ie, its body is visible), %FALSE
 	 * if not.
 	 */
-	g_object_class_install_property (object_class, PROP_OPEN,
-	                                 g_param_spec_boolean ("open", "", "",
-	                                                       FALSE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_OPEN,
+		 g_param_spec_boolean ("open", "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/* globals */
 	closed_glyph = nmt_newt_locale_from_utf8 ("\342\225\220"); /* ═ */

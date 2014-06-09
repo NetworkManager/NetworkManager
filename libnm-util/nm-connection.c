@@ -1829,11 +1829,10 @@ nm_connection_class_init (NMConnectionClass *klass)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_CONNECTION_PATH,
-						  "Path",
-						  "Path",
-						  NULL,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		 g_param_spec_string (NM_CONNECTION_PATH, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 

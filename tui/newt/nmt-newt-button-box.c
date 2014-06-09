@@ -376,10 +376,11 @@ nmt_newt_button_box_class_init (NmtNewtButtonBoxClass *bbox_class)
 
 	container_class->remove = nmt_newt_button_box_remove;
 
-	g_object_class_install_property (object_class, PROP_ORIENTATION,
-	                                 g_param_spec_int ("orientation", "", "",
-	                                                   0, G_MAXINT, 0,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_CONSTRUCT_ONLY |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_ORIENTATION,
+		 g_param_spec_int ("orientation", "", "",
+		                   0, G_MAXINT, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT_ONLY |
+		                   G_PARAM_STATIC_STRINGS));
 }

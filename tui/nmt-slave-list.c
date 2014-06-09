@@ -229,12 +229,13 @@ nmt_slave_list_class_init (NmtSlaveListClass *list_class)
 	 *
 	 * The master #NMConnection whose slaves are being displayed.
 	 */
-	g_object_class_install_property (object_class, PROP_MASTER,
-	                                 g_param_spec_object ("master", "", "",
-	                                                      NM_TYPE_CONNECTION,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_MASTER,
+		 g_param_spec_object ("master", "", "",
+		                      NM_TYPE_CONNECTION,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtSlaveList:type-filter:
 	 *
@@ -246,19 +247,21 @@ nmt_slave_list_class_init (NmtSlaveListClass *list_class)
 	 * taken to an editor window for the new slave after clicking
 	 * "Add".
 	 */
-	g_object_class_install_property (object_class, PROP_TYPE_FILTER,
-	                                 g_param_spec_pointer ("type-filter", "", "",
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_CONSTRUCT_ONLY |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_TYPE_FILTER,
+		 g_param_spec_pointer ("type-filter", "", "",
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtSlaveList:type-filter-data:
 	 *
 	 * User data passed to #NmtSlaveList:type-filter
 	 */
-	g_object_class_install_property (object_class, PROP_TYPE_FILTER_DATA,
-	                                 g_param_spec_pointer ("type-filter-data", "", "",
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_CONSTRUCT_ONLY |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_TYPE_FILTER_DATA,
+		 g_param_spec_pointer ("type-filter-data", "", "",
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 }

@@ -2133,21 +2133,17 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_VISIBLE,
-		 g_param_spec_boolean (NM_SETTINGS_CONNECTION_VISIBLE,
-		                       "Visible",
-		                       "Visible",
+		 g_param_spec_boolean (NM_SETTINGS_CONNECTION_VISIBLE, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_UNSAVED,
-		 g_param_spec_boolean (NM_SETTINGS_CONNECTION_UNSAVED,
-		                       "Unsaved",
-		                       "TRUE when the connection has not yet been saved "
-		                       "to permanent storage (eg disk) or when it "
-		                       "has been changed but not yet saved.",
+		 g_param_spec_boolean (NM_SETTINGS_CONNECTION_UNSAVED, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 

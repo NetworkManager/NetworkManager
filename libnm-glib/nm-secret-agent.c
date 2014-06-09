@@ -1004,11 +1004,10 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IDENTIFIER,
-		 g_param_spec_string (NM_SECRET_AGENT_IDENTIFIER,
-						      "Identifier",
-						      "Identifier",
-						      NULL,
-						      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_string (NM_SECRET_AGENT_IDENTIFIER, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSecretAgent:auto-register:
@@ -1023,11 +1022,10 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AUTO_REGISTER,
-		 g_param_spec_boolean (NM_SECRET_AGENT_AUTO_REGISTER,
-						       "Auto Register",
-						       "Auto Register",
-						       TRUE,
-						       G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		 g_param_spec_boolean (NM_SECRET_AGENT_AUTO_REGISTER, "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSecretAgent:registered:
@@ -1036,11 +1034,10 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_REGISTERED,
-		 g_param_spec_boolean (NM_SECRET_AGENT_REGISTERED,
-		                       "Registered",
-		                       "Registered",
+		 g_param_spec_boolean (NM_SECRET_AGENT_REGISTERED, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSecretAgent:capabilities:
@@ -1049,12 +1046,11 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CAPABILITIES,
-		 g_param_spec_flags (NM_SECRET_AGENT_CAPABILITIES,
-		                     "Capabilities",
-		                     "Capabilities",
+		 g_param_spec_flags (NM_SECRET_AGENT_CAPABILITIES, "", "",
 		                     NM_TYPE_SECRET_AGENT_CAPABILITIES,
 		                     NM_SECRET_AGENT_CAPABILITY_NONE,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSecretAgent::registration-result:

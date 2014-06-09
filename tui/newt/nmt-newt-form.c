@@ -627,117 +627,127 @@ nmt_newt_form_class_init (NmtNewtFormClass *form_class)
 	 * The form's title. If non-%NULL, this will be displayed above
 	 * the form in its border.
 	 */
-	g_object_class_install_property (object_class, PROP_TITLE,
-	                                 g_param_spec_string ("title", "", "",
-	                                                      NULL,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_STATIC_STRINGS |
-	                                                      G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_TITLE,
+		 g_param_spec_string ("title", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS |
+		                      G_PARAM_CONSTRUCT_ONLY));
 	/**
 	 * NmtNewtForm:fullscreen:
 	 *
 	 * If %TRUE, the form will fill the entire "screen" (ie, terminal
 	 * window).
 	 */
-	g_object_class_install_property (object_class, PROP_FULLSCREEN,
-	                                 g_param_spec_boolean ("fullscreen", "", "",
-	                                                       FALSE,
-	                                                       G_PARAM_WRITABLE |
-	                                                       G_PARAM_STATIC_STRINGS |
-	                                                       G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_FULLSCREEN,
+		 g_param_spec_boolean ("fullscreen", "", "",
+		                       FALSE,
+		                       G_PARAM_WRITABLE |
+		                       G_PARAM_STATIC_STRINGS |
+		                       G_PARAM_CONSTRUCT_ONLY));
 	/**
 	 * NmtNewtForm:fullscreen-vertical:
 	 *
 	 * If %TRUE, the form will fill the entire "screen" (ie, terminal
 	 * window) vertically, but not necessarily horizontally.
 	 */
-	g_object_class_install_property (object_class, PROP_FULLSCREEN_VERTICAL,
-	                                 g_param_spec_boolean ("fullscreen-vertical", "", "",
-	                                                       FALSE,
-	                                                       G_PARAM_WRITABLE |
-	                                                       G_PARAM_STATIC_STRINGS |
-	                                                       G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_FULLSCREEN_VERTICAL,
+		 g_param_spec_boolean ("fullscreen-vertical", "", "",
+		                       FALSE,
+		                       G_PARAM_WRITABLE |
+		                       G_PARAM_STATIC_STRINGS |
+		                       G_PARAM_CONSTRUCT_ONLY));
 	/**
 	 * NmtNewtForm:fullscreen-horizontal:
 	 *
 	 * If %TRUE, the form will fill the entire "screen" (ie, terminal
 	 * window) horizontally, but not necessarily vertically.
 	 */
-	g_object_class_install_property (object_class, PROP_FULLSCREEN_HORIZONTAL,
-	                                 g_param_spec_boolean ("fullscreen-horizontal", "", "",
-	                                                       FALSE,
-	                                                       G_PARAM_WRITABLE |
-	                                                       G_PARAM_STATIC_STRINGS |
-	                                                       G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_FULLSCREEN_HORIZONTAL,
+		 g_param_spec_boolean ("fullscreen-horizontal", "", "",
+		                       FALSE,
+		                       G_PARAM_WRITABLE |
+		                       G_PARAM_STATIC_STRINGS |
+		                       G_PARAM_CONSTRUCT_ONLY));
 	/**
 	 * NmtNewtForm:x:
 	 *
 	 * The form's x coordinate. By default, the form will be centered
 	 * on the screen.
 	 */
-	g_object_class_install_property (object_class, PROP_X,
-	                                 g_param_spec_uint ("x", "", "",
-	                                                    0, G_MAXUINT, 0,
-	                                                    G_PARAM_READWRITE |
-	                                                    G_PARAM_STATIC_STRINGS |
-	                                                    G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_X,
+		 g_param_spec_uint ("x", "", "",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS |
+		                    G_PARAM_CONSTRUCT_ONLY));
 	/**
 	 * NmtNewtForm:y:
 	 *
 	 * The form's y coordinate. By default, the form will be centered
 	 * on the screen.
 	 */
-	g_object_class_install_property (object_class, PROP_Y,
-	                                 g_param_spec_uint ("y", "", "",
-	                                                    0, G_MAXUINT, 0,
-	                                                    G_PARAM_READWRITE |
-	                                                    G_PARAM_STATIC_STRINGS |
-	                                                    G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_Y,
+		 g_param_spec_uint ("y", "", "",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS |
+		                    G_PARAM_CONSTRUCT_ONLY));
 	/**
 	 * NmtNewtForm:width:
 	 *
 	 * The form's width. By default, this will be determined by the
 	 * width of the form's content.
 	 */
-	g_object_class_install_property (object_class, PROP_WIDTH,
-	                                 g_param_spec_uint ("width", "", "",
-	                                                    0, G_MAXUINT, 0,
-	                                                    G_PARAM_READWRITE |
-	                                                    G_PARAM_STATIC_STRINGS |
-	                                                    G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_WIDTH,
+		 g_param_spec_uint ("width", "", "",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS |
+		                    G_PARAM_CONSTRUCT_ONLY));
 	/**
 	 * NmtNewtForm:height:
 	 *
 	 * The form's height. By default, this will be determined by the
 	 * height of the form's content.
 	 */
-	g_object_class_install_property (object_class, PROP_HEIGHT,
-	                                 g_param_spec_uint ("height", "", "",
-	                                                    0, G_MAXUINT, 0,
-	                                                    G_PARAM_READWRITE |
-	                                                    G_PARAM_STATIC_STRINGS |
-	                                                    G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_HEIGHT,
+		 g_param_spec_uint ("height", "", "",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS |
+		                    G_PARAM_CONSTRUCT_ONLY));
 	/**
 	 * NmtNewtForm:padding:
 	 *
 	 * The padding between the form's content and its border.
 	 */
-	g_object_class_install_property (object_class, PROP_PADDING,
-	                                 g_param_spec_uint ("padding", "", "",
-	                                                    0, G_MAXUINT, 1,
-	                                                    G_PARAM_READWRITE |
-	                                                    G_PARAM_STATIC_STRINGS |
-	                                                    G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_PADDING,
+		 g_param_spec_uint ("padding", "", "",
+		                    0, G_MAXUINT, 1,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS |
+		                    G_PARAM_CONSTRUCT_ONLY));
 	/**
 	 * NmtNewtForm:escape-exits:
 	 *
 	 * If %TRUE, then hitting the Escape key will cause the form to
 	 * exit.
 	 */
-	g_object_class_install_property (object_class, PROP_ESCAPE_EXITS,
-	                                 g_param_spec_boolean ("escape-exits", "", "",
-	                                                       FALSE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_STATIC_STRINGS |
-	                                                       G_PARAM_CONSTRUCT_ONLY));
+	g_object_class_install_property
+		(object_class, PROP_ESCAPE_EXITS,
+		 g_param_spec_boolean ("escape-exits", "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS |
+		                       G_PARAM_CONSTRUCT_ONLY));
 }

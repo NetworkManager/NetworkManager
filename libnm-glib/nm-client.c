@@ -2171,12 +2171,12 @@ nm_client_class_init (NMClientClass *client_class)
 	 *
 	 * The NetworkManager version.
 	 **/
-	g_object_class_install_property (object_class, PROP_VERSION,
-	                                 g_param_spec_string (NM_CLIENT_VERSION,
-	                                                      "Version",
-	                                                      "NetworkManager version",
-	                                                       NULL,
-	                                                       G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_VERSION,
+		 g_param_spec_string (NM_CLIENT_VERSION, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient:state:
@@ -2185,11 +2185,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_CLIENT_STATE,
-						    "State",
-						    "NetworkManager state",
-						    NM_STATE_UNKNOWN, NM_STATE_CONNECTED_GLOBAL, NM_STATE_UNKNOWN,
-						    G_PARAM_READABLE));
+		 g_param_spec_uint (NM_CLIENT_STATE, "", "",
+		                    NM_STATE_UNKNOWN, NM_STATE_CONNECTED_GLOBAL, NM_STATE_UNKNOWN,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient:startup:
@@ -2200,11 +2199,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_STARTUP,
-		 g_param_spec_boolean (NM_CLIENT_STARTUP,
-		                       "Startup",
-		                       "Whether the daemon is still starting up",
+		 g_param_spec_boolean (NM_CLIENT_STARTUP, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient::manager-running:
@@ -2213,11 +2211,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MANAGER_RUNNING,
-		 g_param_spec_boolean (NM_CLIENT_MANAGER_RUNNING,
-						       "ManagerRunning",
-						       "Whether NetworkManager is running",
-						       FALSE,
-						       G_PARAM_READABLE));
+		 g_param_spec_boolean (NM_CLIENT_MANAGER_RUNNING, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient::networking-enabled:
@@ -2226,11 +2223,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NETWORKING_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_NETWORKING_ENABLED,
-						   "NetworkingEnabled",
-						   "Is networking enabled",
-						   TRUE,
-						   G_PARAM_READWRITE));
+		 g_param_spec_boolean (NM_CLIENT_NETWORKING_ENABLED, "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient::wireless-enabled:
@@ -2239,11 +2235,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_WIRELESS_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WIRELESS_ENABLED,
-						   "WirelessEnabled",
-						   "Is wireless enabled",
-						   FALSE,
-						   G_PARAM_READWRITE));
+		 g_param_spec_boolean (NM_CLIENT_WIRELESS_ENABLED, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient::wireless-hardware-enabled:
@@ -2252,11 +2247,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_WIRELESS_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WIRELESS_HARDWARE_ENABLED,
-						   "WirelessHardwareEnabled",
-						   "Is wireless hardware enabled",
-						   TRUE,
-						   G_PARAM_READABLE));
+		 g_param_spec_boolean (NM_CLIENT_WIRELESS_HARDWARE_ENABLED, "", "",
+		                       TRUE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient::wwan-enabled:
@@ -2265,11 +2259,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_WWAN_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WWAN_ENABLED,
-		                       "WwanEnabled",
-		                       "Is WWAN enabled",
+		 g_param_spec_boolean (NM_CLIENT_WWAN_ENABLED, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE));
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient::wwan-hardware-enabled:
@@ -2278,11 +2271,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_WWAN_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WWAN_HARDWARE_ENABLED,
-		                       "WwanHardwareEnabled",
-		                       "Is WWAN hardware enabled",
+		 g_param_spec_boolean (NM_CLIENT_WWAN_HARDWARE_ENABLED, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient::wimax-enabled:
@@ -2291,11 +2283,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_WIMAX_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WIMAX_ENABLED,
-		                       "WimaxEnabled",
-		                       "Is WiMAX enabled",
+		 g_param_spec_boolean (NM_CLIENT_WIMAX_ENABLED, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE));
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient::wimax-hardware-enabled:
@@ -2304,11 +2295,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_WIMAX_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_CLIENT_WIMAX_HARDWARE_ENABLED,
-		                       "WimaxHardwareEnabled",
-		                       "Is WiMAX hardware enabled",
+		 g_param_spec_boolean (NM_CLIENT_WIMAX_HARDWARE_ENABLED, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient::active-connections:
@@ -2318,11 +2308,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTIONS,
-		 g_param_spec_boxed (NM_CLIENT_ACTIVE_CONNECTIONS,
-						   "Active connections",
-						   "Active connections",
-						   NM_TYPE_OBJECT_ARRAY,
-						   G_PARAM_READABLE));
+		 g_param_spec_boxed (NM_CLIENT_ACTIVE_CONNECTIONS, "", "",
+		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient:connectivity:
@@ -2333,11 +2322,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 */
 	g_object_class_install_property
 		(object_class, PROP_CONNECTIVITY,
-		 g_param_spec_uint (NM_CLIENT_CONNECTIVITY,
-		                    "Connectivity",
-		                    "Connectivity state",
+		 g_param_spec_uint (NM_CLIENT_CONNECTIVITY, "", "",
 		                    NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient:primary-connection:
@@ -2349,11 +2337,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIMARY_CONNECTION,
-		 g_param_spec_object (NM_CLIENT_PRIMARY_CONNECTION,
-		                      "Primary connection",
-		                      "Primary connection",
+		 g_param_spec_object (NM_CLIENT_PRIMARY_CONNECTION, "", "",
 		                      NM_TYPE_ACTIVE_CONNECTION,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient:activating-connection:
@@ -2365,11 +2352,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVATING_CONNECTION,
-		 g_param_spec_object (NM_CLIENT_ACTIVATING_CONNECTION,
-		                      "Activating connection",
-		                      "Activating connection",
+		 g_param_spec_object (NM_CLIENT_ACTIVATING_CONNECTION, "", "",
 		                      NM_TYPE_ACTIVE_CONNECTION,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMClient:devices:
@@ -2380,11 +2366,10 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEVICES,
-		 g_param_spec_boxed (NM_CLIENT_DEVICES,
-		                     "Devices",
-		                     "Devices",
+		 g_param_spec_boxed (NM_CLIENT_DEVICES, "", "",
 		                     NM_TYPE_OBJECT_ARRAY,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 

@@ -261,50 +261,55 @@ nmt_password_fields_class_init (NmtPasswordFieldsClass *entry_class)
 	 *
 	 * The width in characters of the password entry
 	 */
-	g_object_class_install_property (object_class, PROP_WIDTH,
-	                                 g_param_spec_int ("width", "", "",
-	                                                   -1, 80, -1,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_WIDTH,
+		 g_param_spec_int ("width", "", "",
+		                   -1, 80, -1,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtPasswordFields:extras:
 	 *
 	 * The extra widgets to show
 	 */
-	g_object_class_install_property (object_class, PROP_EXTRAS,
-	                                 g_param_spec_uint ("extras", "", "",
-	                                                    0, 0xFFFF, 0,
-	                                                    G_PARAM_READWRITE |
-	                                                    G_PARAM_CONSTRUCT_ONLY |
-	                                                    G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_EXTRAS,
+		 g_param_spec_uint ("extras", "", "",
+		                    0, 0xFFFF, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtPasswordFields:password:
 	 *
 	 * The entered password.
 	 */
-	g_object_class_install_property (object_class, PROP_PASSWORD,
-	                                 g_param_spec_string ("password", "", "",
-	                                                      NULL,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_PASSWORD,
+		 g_param_spec_string ("password", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtPasswordFields:always-ask:
 	 *
 	 * The current state of the "Always ask" checkbox.
 	 */
-	g_object_class_install_property (object_class, PROP_ALWAYS_ASK,
-	                                 g_param_spec_boolean ("always-ask", "", "",
-	                                                       FALSE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_ALWAYS_ASK,
+		 g_param_spec_boolean ("always-ask", "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtPasswordFields:show-password:
 	 *
 	 * The current state of the "Show password" checkbox.
 	 */
-	g_object_class_install_property (object_class, PROP_SHOW_PASSWORD,
-	                                 g_param_spec_boolean ("show-password", "", "",
-	                                                       FALSE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_SHOW_PASSWORD,
+		 g_param_spec_boolean ("show-password", "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 }

@@ -324,11 +324,10 @@ nm_device_vlan_class_init (NMDeviceVlanClass *eth_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_VLAN_HW_ADDRESS,
-		                      "Active MAC Address",
-		                      "Currently set hardware MAC address",
+		 g_param_spec_string (NM_DEVICE_VLAN_HW_ADDRESS, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceVlan:carrier:
@@ -337,11 +336,10 @@ nm_device_vlan_class_init (NMDeviceVlanClass *eth_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_VLAN_CARRIER,
-		                       "Carrier",
-		                       "Carrier",
+		 g_param_spec_boolean (NM_DEVICE_VLAN_CARRIER, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceVlan:vlan-id:
@@ -350,9 +348,8 @@ nm_device_vlan_class_init (NMDeviceVlanClass *eth_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_VLAN_ID,
-		 g_param_spec_uint (NM_DEVICE_VLAN_VLAN_ID,
-		                    "VLAN ID",
-		                    "VLAN ID",
+		 g_param_spec_uint (NM_DEVICE_VLAN_VLAN_ID, "", "",
 		                    0, 4095, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 }

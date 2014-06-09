@@ -1486,35 +1486,31 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_BUS,
-		 g_param_spec_boxed (NM_REMOTE_SETTINGS_BUS,
-		                     "DBusGConnection",
-		                     "DBusGConnection",
+		 g_param_spec_boxed (NM_REMOTE_SETTINGS_BUS, "", "",
 		                     DBUS_TYPE_G_CONNECTION,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_SERVICE_RUNNING,
-		 g_param_spec_boolean (NM_REMOTE_SETTINGS_SERVICE_RUNNING,
-		                       "Service running",
-		                       "Is service running",
+		 g_param_spec_boolean (NM_REMOTE_SETTINGS_SERVICE_RUNNING, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_HOSTNAME,
-		 g_param_spec_string (NM_REMOTE_SETTINGS_HOSTNAME,
-		                      "Hostname",
-		                      "Persistent hostname",
+		 g_param_spec_string (NM_REMOTE_SETTINGS_HOSTNAME, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_CAN_MODIFY,
-		 g_param_spec_boolean (NM_REMOTE_SETTINGS_CAN_MODIFY,
-		                       "CanModify",
-		                       "Can modify anything (hostname, connections, etc)",
+		 g_param_spec_boolean (NM_REMOTE_SETTINGS_CAN_MODIFY, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	signals[NEW_CONNECTION] = 

@@ -662,11 +662,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CONNECTION,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_CONNECTION,
-						      "Connection",
-						      "Connection",
-						      NULL,
-						      G_PARAM_READABLE));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_CONNECTION, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:id:
@@ -677,11 +676,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ID,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_ID,
-						      "ID",
-						      "ID",
-						      NULL,
-						      G_PARAM_READABLE));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_ID, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:uuid:
@@ -690,11 +688,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_UUID,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_UUID,
-						      "UUID",
-						      "UUID",
-						      NULL,
-						      G_PARAM_READABLE));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_UUID, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:type:
@@ -705,11 +702,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_TYPE,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_TYPE,
-						      "Type",
-						      "Type",
-						      NULL,
-						      G_PARAM_READABLE));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_TYPE, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:specific-object:
@@ -718,11 +714,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SPECIFIC_OBJECT,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
-						      "Specific object",
-						      "Specific object",
-						      NULL,
-						      G_PARAM_READABLE));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:device:
@@ -731,11 +726,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEVICES,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DEVICES,
-						       "Devices",
-						       "Devices",
-						       NM_TYPE_OBJECT_ARRAY,
-						       G_PARAM_READABLE));
+		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DEVICES, "", "",
+		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:state:
@@ -744,13 +738,12 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_ACTIVE_CONNECTION_STATE,
-							  "State",
-							  "State",
-							  NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
-							  NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
-							  NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
-							  G_PARAM_READABLE));
+		 g_param_spec_uint (NM_ACTIVE_CONNECTION_STATE, "", "",
+		                    NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
+		                    NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+		                    NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:default:
@@ -759,11 +752,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEFAULT,
-		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT,
-							   "Default",
-							   "Is the default IPv4 active connection",
-							   FALSE,
-							   G_PARAM_READABLE));
+		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:ip4-config:
@@ -774,11 +766,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP4_CONFIG,
-		 g_param_spec_object (NM_ACTIVE_CONNECTION_IP4_CONFIG,
-		                      "IP4 Config",
-		                      "IP4 Config",
+		 g_param_spec_object (NM_ACTIVE_CONNECTION_IP4_CONFIG, "", "",
 		                      NM_TYPE_IP4_CONFIG,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:dhcp4-config:
@@ -789,11 +780,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP4_CONFIG,
-		 g_param_spec_object (NM_ACTIVE_CONNECTION_DHCP4_CONFIG,
-		                      "DHCP4 Config",
-		                      "DHCP4 Config",
+		 g_param_spec_object (NM_ACTIVE_CONNECTION_DHCP4_CONFIG, "", "",
 		                      NM_TYPE_DHCP4_CONFIG,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:default6:
@@ -802,11 +792,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEFAULT6,
-		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT6,
-							   "Default6",
-							   "Is the default IPv6 active connection",
-							   FALSE,
-							   G_PARAM_READABLE));
+		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT6, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:ip6-config:
@@ -817,11 +806,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP6_CONFIG,
-		 g_param_spec_object (NM_ACTIVE_CONNECTION_IP6_CONFIG,
-		                      "IP6 Config",
-		                      "IP6 Config",
+		 g_param_spec_object (NM_ACTIVE_CONNECTION_IP6_CONFIG, "", "",
 		                      NM_TYPE_IP6_CONFIG,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:dhcp6-config:
@@ -832,11 +820,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP6_CONFIG,
-		 g_param_spec_object (NM_ACTIVE_CONNECTION_DHCP6_CONFIG,
-		                      "DHCP6 Config",
-		                      "DHCP6 Config",
+		 g_param_spec_object (NM_ACTIVE_CONNECTION_DHCP6_CONFIG, "", "",
 		                      NM_TYPE_DHCP6_CONFIG,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:vpn:
@@ -847,11 +834,10 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_VPN,
-		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_VPN,
-		                       "VPN",
-		                       "Is a VPN connection",
+		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_VPN, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMActiveConnection:master:
@@ -860,9 +846,8 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MASTER,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_MASTER,
-						      "Master",
-						      "Path of the master device",
-						      NULL,
-						      G_PARAM_READABLE));
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_MASTER, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 }

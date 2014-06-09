@@ -158,11 +158,10 @@ nm_device_veth_class_init (NMDeviceVethClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_PEER,
-		 g_param_spec_boxed (NM_DEVICE_VETH_PEER,
-		                     "Peer",
-		                     "Peer device",
+		 g_param_spec_boxed (NM_DEVICE_VETH_PEER, "", "",
 		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

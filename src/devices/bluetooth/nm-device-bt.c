@@ -1238,27 +1238,24 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_BT_NAME,
-		 g_param_spec_string (NM_DEVICE_BT_NAME,
-		                      "Bluetooth device name",
-		                      "Bluetooth device name",
+		 g_param_spec_string (NM_DEVICE_BT_NAME, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_BT_CAPABILITIES,
-		 g_param_spec_uint (NM_DEVICE_BT_CAPABILITIES,
-		                    "Bluetooth device capabilities",
-		                    "Bluetooth device capabilities",
+		 g_param_spec_uint (NM_DEVICE_BT_CAPABILITIES, "", "",
 		                    NM_BT_CAPABILITY_NONE, G_MAXUINT, NM_BT_CAPABILITY_NONE,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_BT_DEVICE,
-		 g_param_spec_object (NM_DEVICE_BT_DEVICE,
-		                      "NMBluezDevice object for the Device",
-		                      "NMBluezDevice object for the Device",
+		 g_param_spec_object (NM_DEVICE_BT_DEVICE, "", "",
 		                      NM_TYPE_BLUEZ_DEVICE,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	signals[PPP_STATS] =

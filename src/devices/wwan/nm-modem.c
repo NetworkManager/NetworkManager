@@ -965,86 +965,76 @@ nm_modem_class_init (NMModemClass *klass)
 
 	g_object_class_install_property
 		(object_class, PROP_UID,
-		 g_param_spec_string (NM_MODEM_UID,
-		                      "UID",
-		                      "Modem unique ID",
+		 g_param_spec_string (NM_MODEM_UID, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_MODEM_PATH,
-		                      "DBus path",
-		                      "DBus path",
+		 g_param_spec_string (NM_MODEM_PATH, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DRIVER,
-		 g_param_spec_string (NM_MODEM_DRIVER,
-		                      "Driver",
-		                      "Driver",
+		 g_param_spec_string (NM_MODEM_DRIVER, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_CONTROL_PORT,
-		 g_param_spec_string (NM_MODEM_CONTROL_PORT,
-		                      "Control port",
-		                      "The port controlling the modem",
+		 g_param_spec_string (NM_MODEM_CONTROL_PORT, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DATA_PORT,
-		 g_param_spec_string (NM_MODEM_DATA_PORT,
-		                      "Data port",
-		                      "The port to connect to",
+		 g_param_spec_string (NM_MODEM_DATA_PORT, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_IP_METHOD,
-		 g_param_spec_uint (NM_MODEM_IP_METHOD,
-		                    "IP method",
-		                    "IP method",
+		 g_param_spec_uint (NM_MODEM_IP_METHOD, "", "",
 		                    MM_MODEM_IP_METHOD_PPP,
 		                    MM_MODEM_IP_METHOD_DHCP,
 		                    MM_MODEM_IP_METHOD_PPP,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_IP_TIMEOUT,
-		 g_param_spec_uint (NM_MODEM_IP_TIMEOUT,
-		                    "IP timeout",
-		                    "IP timeout",
+		 g_param_spec_uint (NM_MODEM_IP_TIMEOUT, "", "",
 		                    0, 360, 20,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_STATE,
-		 g_param_spec_enum (NM_MODEM_STATE,
-		                   "State",
-		                   "State",
-		                   NM_TYPE_MODEM_STATE,
-		                   NM_MODEM_STATE_UNKNOWN,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_enum (NM_MODEM_STATE, "", "",
+		                    NM_TYPE_MODEM_STATE,
+		                    NM_MODEM_STATE_UNKNOWN,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DEVICE_ID,
-		 g_param_spec_string (NM_MODEM_DEVICE_ID,
-		                      "DeviceId",
-		                      "Device ID",
+		 g_param_spec_string (NM_MODEM_DEVICE_ID, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_SIM_ID,
-		 g_param_spec_string (NM_MODEM_SIM_ID,
-		                      "SimId",
-		                      "Sim ID",
+		 g_param_spec_string (NM_MODEM_SIM_ID, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 

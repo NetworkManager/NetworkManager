@@ -638,18 +638,16 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
-		 g_param_spec_object (NM_DEVICE_VLAN_PARENT,
-		                      "Parent",
-		                      "Parent",
+		 g_param_spec_object (NM_DEVICE_VLAN_PARENT, "", "",
 		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property
 		(object_class, PROP_VLAN_ID,
-		 g_param_spec_uint (NM_DEVICE_VLAN_ID,
-		                    "VLAN ID",
-		                    "VLAN ID",
+		 g_param_spec_uint (NM_DEVICE_VLAN_ID, "", "",
 		                    0, 4095, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

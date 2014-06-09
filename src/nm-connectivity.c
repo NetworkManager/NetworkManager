@@ -382,34 +382,30 @@ nm_connectivity_class_init (NMConnectivityClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_URI,
-		 g_param_spec_string (NM_CONNECTIVITY_URI,
-		                      "URI",
-		                      "Connectivity check URI",
+		 g_param_spec_string (NM_CONNECTIVITY_URI, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE));
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_INTERVAL,
-		 g_param_spec_uint (NM_CONNECTIVITY_INTERVAL,
-		                    "Interval",
-		                    "Connectivity check interval in seconds",
+		 g_param_spec_uint (NM_CONNECTIVITY_INTERVAL, "", "",
 		                    0, G_MAXUINT, 300,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_RESPONSE,
-		 g_param_spec_string (NM_CONNECTIVITY_RESPONSE,
-		                      "Response",
-		                      "Expected connectivity check reponse",
+		 g_param_spec_string (NM_CONNECTIVITY_RESPONSE, "", "",
 		                      DEFAULT_RESPONSE,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_CONNECTIVITY_STATE,
-		                    "State",
-		                    "Connectivity state",
+		 g_param_spec_uint (NM_CONNECTIVITY_STATE, "", "",
 		                    NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 }
 

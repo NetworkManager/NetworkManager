@@ -210,31 +210,28 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *klass)
 
 	g_object_class_install_property
 		(object_class, PROP_NAME,
-		 g_param_spec_string (NM_WIMAX_NSP_NAME,
-							  "Name",
-							  "Name",
-							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_string (NM_WIMAX_NSP_NAME, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_SIGNAL_QUALITY,
-		 g_param_spec_uint (NM_WIMAX_NSP_SIGNAL_QUALITY,
-							"SignalQuality",
-							"SignalQuality",
-							0,
-							100,
-							0,
-							G_PARAM_READWRITE));
+		 g_param_spec_uint (NM_WIMAX_NSP_SIGNAL_QUALITY, "", "",
+		                    0,
+		                    100,
+		                    0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_TYPE,
-		 g_param_spec_uint (NM_WIMAX_NSP_NETWORK_TYPE,
-		                    "NetworkType",
-		                    "NetworkType",
+		 g_param_spec_uint (NM_WIMAX_NSP_NETWORK_TYPE, "", "",
 		                    NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,
 		                    NM_WIMAX_NSP_NETWORK_TYPE_ROAMING_PARTNER,
 		                    NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

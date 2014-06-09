@@ -3413,57 +3413,56 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	klass->scanning_allowed = scanning_allowed;
 
 	/* Properties */
-	g_object_class_install_property (object_class, PROP_PERM_HW_ADDRESS,
-		g_param_spec_string (NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS,
-		                     "Permanent MAC Address",
-		                     "Permanent hardware MAC address",
-		                     NULL,
-		                     G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_PERM_HW_ADDRESS,
+		 g_param_spec_string (NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
-	g_object_class_install_property (object_class, PROP_MODE,
-		g_param_spec_uint (NM_DEVICE_WIFI_MODE,
-		                   "Mode",
-		                   "Mode",
-		                   NM_802_11_MODE_UNKNOWN,
-		                   NM_802_11_MODE_AP,
-		                   NM_802_11_MODE_INFRA,
-		                   G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_MODE,
+		 g_param_spec_uint (NM_DEVICE_WIFI_MODE, "", "",
+		                    NM_802_11_MODE_UNKNOWN,
+		                    NM_802_11_MODE_AP,
+		                    NM_802_11_MODE_INFRA,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
-	g_object_class_install_property (object_class, PROP_BITRATE,
-		g_param_spec_uint (NM_DEVICE_WIFI_BITRATE,
-		                   "Bitrate",
-		                   "Bitrate",
-		                   0, G_MAXUINT32, 0,
-		                   G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_BITRATE,
+		 g_param_spec_uint (NM_DEVICE_WIFI_BITRATE, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_ACCESS_POINTS,
-		 g_param_spec_boxed (NM_DEVICE_WIFI_ACCESS_POINTS,
-		                     "Access points",
-		                     "Access points",
+		 g_param_spec_boxed (NM_DEVICE_WIFI_ACCESS_POINTS, "", "",
 		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
-	g_object_class_install_property (object_class, PROP_ACTIVE_ACCESS_POINT,
-		g_param_spec_boxed (NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT,
-		                    "Active access point",
-		                    "Currently active access point",
-		                    DBUS_TYPE_G_OBJECT_PATH,
-		                    G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE_ACCESS_POINT,
+		 g_param_spec_boxed (NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT, "", "",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
-	g_object_class_install_property (object_class, PROP_CAPABILITIES,
-		g_param_spec_uint (NM_DEVICE_WIFI_CAPABILITIES,
-		                   "Wireless Capabilities",
-		                   "Wireless Capabilities",
-		                   0, G_MAXUINT32, NM_WIFI_DEVICE_CAP_NONE,
-		                   G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_CAPABILITIES,
+		 g_param_spec_uint (NM_DEVICE_WIFI_CAPABILITIES, "", "",
+		                    0, G_MAXUINT32, NM_WIFI_DEVICE_CAP_NONE,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
-	g_object_class_install_property (object_class, PROP_SCANNING,
-		g_param_spec_boolean (NM_DEVICE_WIFI_SCANNING,
-		                   "Scanning",
-		                   "Scanning",
-		                   FALSE,
-		                   G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_SCANNING,
+		 g_param_spec_boolean (NM_DEVICE_WIFI_SCANNING, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	signals[ACCESS_POINT_ADDED] =

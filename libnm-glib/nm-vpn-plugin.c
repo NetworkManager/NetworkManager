@@ -955,21 +955,19 @@ nm_vpn_plugin_class_init (NMVPNPluginClass *plugin_class)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_DBUS_SERVICE_NAME,
-		 g_param_spec_string (NM_VPN_PLUGIN_DBUS_SERVICE_NAME,
-		                      "DBus service name",
-		                      "DBus service name",
+		 g_param_spec_string (NM_VPN_PLUGIN_DBUS_SERVICE_NAME, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_VPN_PLUGIN_STATE,
-		                    "State",
-		                    "Current VPN service state",
+		 g_param_spec_uint (NM_VPN_PLUGIN_STATE, "", "",
 		                    NM_VPN_SERVICE_STATE_UNKNOWN,
 		                    NM_VPN_SERVICE_STATE_STOPPED,
 		                    NM_VPN_SERVICE_STATE_INIT,
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 	signals[STATE_CHANGED] =

@@ -261,32 +261,35 @@ nmt_newt_textbox_class_init (NmtNewtTextboxClass *textbox_class)
 	 *
 	 * The textbox's text
 	 */
-	g_object_class_install_property (object_class, PROP_TEXT,
-	                                 g_param_spec_string ("text", "", "",
-	                                                      "",
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_TEXT,
+		 g_param_spec_string ("text", "", "",
+		                      "",
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtNewtTextbox:flags:
 	 *
 	 * The textbox's flags
 	 */
-	g_object_class_install_property (object_class, PROP_FLAGS,
-	                                 g_param_spec_uint ("flags", "", "",
-	                                                    0, G_MAXUINT, 0,
-	                                                    G_PARAM_READWRITE |
-	                                                    G_PARAM_CONSTRUCT_ONLY |
-	                                                    G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_FLAGS,
+		 g_param_spec_uint ("flags", "", "",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtNewtTextbox:wrap-width:
 	 *
 	 * The width in characters at which the textbox's text
 	 * will wrap, or 0 if it does not wrap.
 	 */
-	g_object_class_install_property (object_class, PROP_WRAP_WIDTH,
-	                                 g_param_spec_int ("wrap-width", "", "",
-	                                                   0, G_MAXINT, 0,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_CONSTRUCT_ONLY |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_WRAP_WIDTH,
+		 g_param_spec_int ("wrap-width", "", "",
+		                   0, G_MAXINT, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT_ONLY |
+		                   G_PARAM_STATIC_STRINGS));
 }

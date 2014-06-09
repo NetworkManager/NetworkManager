@@ -866,27 +866,24 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_BUS,
-		 g_param_spec_boxed (NM_REMOTE_CONNECTION_BUS,
-							 "DBusGConnection",
-							 "DBusGConnection",
-							 DBUS_TYPE_G_CONNECTION,
-							 G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_boxed (NM_REMOTE_CONNECTION_BUS, "", "",
+		                     DBUS_TYPE_G_CONNECTION,
+		                     G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/* These are needed so _nm_object_create() can create NMRemoteConnections */
 	g_object_class_install_property
 		(object_class, PROP_DBUS_CONNECTION,
-		 g_param_spec_boxed (NM_REMOTE_CONNECTION_DBUS_CONNECTION,
-		                     "DBusGConnection",
-		                     "DBusGConnection",
+		 g_param_spec_boxed (NM_REMOTE_CONNECTION_DBUS_CONNECTION, "", "",
 		                     DBUS_TYPE_G_CONNECTION,
-		                     G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+		                     G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+		                     G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property
 		(object_class, PROP_DBUS_PATH,
-		 g_param_spec_string (NM_REMOTE_CONNECTION_DBUS_PATH,
-		                      "Object Path",
-		                      "DBus Object Path",
+		 g_param_spec_string (NM_REMOTE_CONNECTION_DBUS_PATH, "", "",
 		                      NULL,
-		                      G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMRemoteConnection:unsaved:
@@ -896,12 +893,12 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	 *
 	 * Since: 0.9.10
 	 **/
-	g_object_class_install_property (object_class, PROP_UNSAVED,
-		 g_param_spec_boolean (NM_REMOTE_CONNECTION_UNSAVED,
-		                       "Unsaved",
-		                       "Unsaved",
+	g_object_class_install_property
+		(object_class, PROP_UNSAVED,
+		 g_param_spec_boolean (NM_REMOTE_CONNECTION_UNSAVED, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	/**

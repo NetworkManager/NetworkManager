@@ -7652,252 +7652,221 @@ nm_device_class_init (NMDeviceClass *klass)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_PLATFORM_DEVICE,
-		 g_param_spec_pointer (NM_DEVICE_PLATFORM_DEVICE,
-		                       "Platform Device",
-		                       "NMPlatform device object",
-		                       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_pointer (NM_DEVICE_PLATFORM_DEVICE, "", "",
+		                       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_UDI,
-		 g_param_spec_string (NM_DEVICE_UDI,
-		                      "UDI",
-		                      "Unique Device Identifier",
+		 g_param_spec_string (NM_DEVICE_UDI, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_IFACE,
-		 g_param_spec_string (NM_DEVICE_IFACE,
-		                      "Interface",
-		                      "Interface",
+		 g_param_spec_string (NM_DEVICE_IFACE, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_IP_IFACE,
-		 g_param_spec_string (NM_DEVICE_IP_IFACE,
-		                      "IP Interface",
-		                      "IP Interface",
+		 g_param_spec_string (NM_DEVICE_IP_IFACE, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DRIVER,
-		 g_param_spec_string (NM_DEVICE_DRIVER,
-		                      "Driver",
-		                      "Driver",
+		 g_param_spec_string (NM_DEVICE_DRIVER, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DRIVER_VERSION,
-		 g_param_spec_string (NM_DEVICE_DRIVER_VERSION,
-		                      "Driver Version",
-		                      "Driver Version",
+		 g_param_spec_string (NM_DEVICE_DRIVER_VERSION, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_FIRMWARE_VERSION,
-		 g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION,
-		                      "Firmware Version",
-		                      "Firmware Version",
+		 g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_CAPABILITIES,
-		 g_param_spec_uint (NM_DEVICE_CAPABILITIES,
-		                    "Capabilities",
-		                    "Capabilities",
+		 g_param_spec_uint (NM_DEVICE_CAPABILITIES, "", "",
 		                    0, G_MAXUINT32, NM_DEVICE_CAP_NONE,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_CARRIER,
-		                       "Carrier",
-		                       "Carrier",
+		 g_param_spec_boolean (NM_DEVICE_CARRIER, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_MTU,
-		 g_param_spec_uint (NM_DEVICE_MTU,
-		                    "MTU",
-		                    "MTU",
+		 g_param_spec_uint (NM_DEVICE_MTU, "", "",
 		                    0, G_MAXUINT32, 1500,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_IP4_ADDRESS,
-		 g_param_spec_uint (NM_DEVICE_IP4_ADDRESS,
-		                    "IP4 address",
-		                    "IP4 address",
+		 g_param_spec_uint (NM_DEVICE_IP4_ADDRESS, "", "",
 		                    0, G_MAXUINT32, 0, /* FIXME */
-		                    G_PARAM_READWRITE));
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_IP4_CONFIG,
-		 g_param_spec_boxed (NM_DEVICE_IP4_CONFIG,
-		                     "IP4 Config",
-		                     "IP4 Config",
+		 g_param_spec_boxed (NM_DEVICE_IP4_CONFIG, "", "",
 		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READWRITE));
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DHCP4_CONFIG,
-		 g_param_spec_boxed (NM_DEVICE_DHCP4_CONFIG,
-		                     "DHCP4 Config",
-		                     "DHCP4 Config",
+		 g_param_spec_boxed (NM_DEVICE_DHCP4_CONFIG, "", "",
 		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READWRITE));
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_IP6_CONFIG,
-		 g_param_spec_boxed (NM_DEVICE_IP6_CONFIG,
-		                     "IP6 Config",
-		                     "IP6 Config",
+		 g_param_spec_boxed (NM_DEVICE_IP6_CONFIG, "", "",
 		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READWRITE));
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DHCP6_CONFIG,
-		 g_param_spec_boxed (NM_DEVICE_DHCP6_CONFIG,
-		                     "DHCP6 Config",
-		                     "DHCP6 Config",
+		 g_param_spec_boxed (NM_DEVICE_DHCP6_CONFIG, "", "",
 		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READWRITE));
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_DEVICE_STATE,
-		                    "State",
-		                    "State",
+		 g_param_spec_uint (NM_DEVICE_STATE, "", "",
 		                    0, G_MAXUINT32, NM_DEVICE_STATE_UNKNOWN,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_STATE_REASON,
-		 g_param_spec_boxed (NM_DEVICE_STATE_REASON,
-		                     "StateReason",
-		                     "StateReason",
+		 g_param_spec_boxed (NM_DEVICE_STATE_REASON, "", "",
 		                     DBUS_TYPE_STATE_REASON_STRUCT,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTION,
-		 g_param_spec_boxed (NM_DEVICE_ACTIVE_CONNECTION,
-		                     "ActiveConnection",
-		                     "ActiveConnection",
+		 g_param_spec_boxed (NM_DEVICE_ACTIVE_CONNECTION, "", "",
 		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DEVICE_TYPE,
-		 g_param_spec_uint (NM_DEVICE_DEVICE_TYPE,
-		                    "DeviceType",
-		                    "DeviceType",
+		 g_param_spec_uint (NM_DEVICE_DEVICE_TYPE, "", "",
 		                    0, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_MANAGED,
-		 g_param_spec_boolean (NM_DEVICE_MANAGED,
-		                       "Managed",
-		                       "Managed",
+		 g_param_spec_boolean (NM_DEVICE_MANAGED, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_AUTOCONNECT,
-		 g_param_spec_boolean (NM_DEVICE_AUTOCONNECT,
-		                       "Autoconnect",
-		                       "Autoconnect",
+		 g_param_spec_boolean (NM_DEVICE_AUTOCONNECT, "", "",
 		                       DEFAULT_AUTOCONNECT,
-		                       G_PARAM_READWRITE));
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_FIRMWARE_MISSING,
-		 g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING,
-		                       "FirmwareMissing",
-		                       "Firmware missing",
+		 g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_TYPE_DESC,
-		 g_param_spec_string (NM_DEVICE_TYPE_DESC,
-		                      "Type Description",
-		                      "Device type description",
+		 g_param_spec_string (NM_DEVICE_TYPE_DESC, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_RFKILL_TYPE,
-		 g_param_spec_uint (NM_DEVICE_RFKILL_TYPE,
-		                    "Rfkill Type",
-		                    "Type of rfkill switch (if any) supported by this device",
+		 g_param_spec_uint (NM_DEVICE_RFKILL_TYPE, "", "",
 		                    RFKILL_TYPE_WLAN,
 		                    RFKILL_TYPE_MAX,
 		                    RFKILL_TYPE_UNKNOWN,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_IFINDEX,
-		 g_param_spec_int (NM_DEVICE_IFINDEX,
-		                   "Ifindex",
-		                   "Ifindex",
+		 g_param_spec_int (NM_DEVICE_IFINDEX, "", "",
 		                   0, G_MAXINT, 0,
-		                   G_PARAM_READABLE));
+		                   G_PARAM_READABLE |
+		                   G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_AVAILABLE_CONNECTIONS,
-		 g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS,
-		                     "AvailableConnections",
-		                     "AvailableConnections",
+		 g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS, "", "",
 		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_PHYSICAL_PORT_ID,
-		 g_param_spec_string (NM_DEVICE_PHYSICAL_PORT_ID,
-		                      "PhysicalPortId",
-		                      "PhysicalPortId",
+		 g_param_spec_string (NM_DEVICE_PHYSICAL_PORT_ID, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_IS_MASTER,
-		 g_param_spec_boolean (NM_DEVICE_IS_MASTER,
-		                       "IsMaster",
-		                       "IsMaster",
+		 g_param_spec_boolean (NM_DEVICE_IS_MASTER, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_MASTER,
-		 g_param_spec_object (NM_DEVICE_MASTER,
-		                      "Master",
-		                      "Master",
+		 g_param_spec_object (NM_DEVICE_MASTER, "", "",
 		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_HW_ADDRESS,
-		                      "Hardware Address",
-		                      "Hardware address",
+		 g_param_spec_string (NM_DEVICE_HW_ADDRESS, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_HAS_PENDING_ACTION,
-		 g_param_spec_boolean (NM_DEVICE_HAS_PENDING_ACTION,
-		                       "Has pending action",
-		                       "Has pending action",
+		 g_param_spec_boolean (NM_DEVICE_HAS_PENDING_ACTION, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	signals[STATE_CHANGED] =
