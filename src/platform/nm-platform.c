@@ -1436,6 +1436,7 @@ nm_platform_ip4_address_add (int ifindex,
 		addr.address = address;
 		addr.peer_address = peer_address;
 		addr.plen = plen;
+		addr.timestamp = 0; /* set it at zero, which to_string will treat as *now* */
 		addr.lifetime = lifetime;
 		addr.preferred = preferred;
 		if (label)
@@ -1470,6 +1471,7 @@ nm_platform_ip6_address_add (int ifindex,
 		addr.address = address;
 		addr.peer_address = peer_address;
 		addr.plen = plen;
+		addr.timestamp = 0; /* set it to zero, which to_string will treat as *now* */
 		addr.lifetime = lifetime;
 		addr.preferred = preferred;
 		addr.flags = flags;
@@ -1571,6 +1573,17 @@ _rebase_relative_time_on_now (guint32 timestamp, guint32 duration, guint32 now, 
 	if (duration == NM_PLATFORM_LIFETIME_PERMANENT)
 		return NM_PLATFORM_LIFETIME_PERMANENT;
 
+	if (timestamp == 0) {
+		/* if the @timestamp is zero, assume it was just left unset and that the relative
+		 * @duration starts counting from @now. This is convenient to construct an address
+		 * and print it in nm_platform_ip4_address_to_string().
+		 *
+		 * In general it does not make sense to set the @duration without anchoring at
+		 * @timestamp because you don't know the absolute expiration time when looking
+		 * at the address at a later moment. */
+		timestamp = now;
+	}
+
 	/* For timestamp > now, just accept it and calculate the expected(?) result. */
 	t = (gint64) timestamp + (gint64) duration - (gint64) now;
 
@@ -1597,13 +1610,18 @@ _address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 
 		if (!lifetime)
 			return FALSE;
 		preferred = _rebase_relative_time_on_now (address->timestamp, address->preferred, now, padding);
-		if (preferred > lifetime) {
-			g_warn_if_reached ();
-			preferred = lifetime;
-		}
 
 		*out_lifetime = lifetime;
-		*out_preferred = preferred;
+		*out_preferred = MIN (preferred, lifetime);
+
+		/* Assert that non-permanent addresses have a (positive) @timestamp. _rebase_relative_time_on_now()
+		 * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always
+		 * should have a valid @timestamp, otherwise on every re-sync, their lifetime will be extended anew.
+		 */
+		g_return_val_if_fail (   address->timestamp != 0
+		                      || (   address->lifetime  == NM_PLATFORM_LIFETIME_PERMANENT
+		                          && address->preferred == NM_PLATFORM_LIFETIME_PERMANENT), TRUE);
+		g_return_val_if_fail (preferred <= lifetime, TRUE);
 	}
 	return TRUE;
 }
