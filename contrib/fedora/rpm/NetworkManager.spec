@@ -153,10 +153,11 @@ BuildRequires: teamd-devel
 
 
 %description
-NetworkManager is a system network service that manages your network devices
-and connections, attempting to keep active network connectivity when available.
-It manages ethernet, WiFi, mobile broadband (WWAN), and PPPoE devices, and
-provides VPN integration with a variety of different VPN services.
+NetworkManager is a system service that manages network interfaces and
+connections based on user or automatic configuration. It supports
+Ethernet, Bridge, Bond, VLAN, Team, InfiniBand, Wi-Fi, mobile broadband
+(WWAN), PPPoE and other devices, and supports a variety of different VPN
+services.
 
 
 %if 0%{?with_adsl}
