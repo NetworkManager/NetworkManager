@@ -28,6 +28,19 @@
 				<system_type value="Machine"/>
 			</hostRequires>
 			<partitions/>
+			<task name="/distribution/command" role="STANDALONE">
+				<params>
+					<param name="CMDS_TO_RUN" value="
+						    sed -i -e 's/^ *\(Storage\|SystemMaxUse\|RateLimitBurst\|RateLimitInterval\)=.*/#\0/'
+						           -e '$$a\Storage=persistent'
+						           -e '$$a\SystemMaxUse=2G'
+						           -e '$$a\RateLimitBurst=0/'
+						           -e '$$a\RateLimitInterval=0/'
+						           /etc/systemd/journald.conf ;
+						    systemctl restart systemd-journald.service ;
+						"/>
+				</params>
+			</task>
 			<task name="/distribution/pkginstall" role="STANDALONE">
 				<params>
 					<param name="PKGARGNAME" value="python-setuptools pexpect bash-completion iw net-tools teamd NetworkManager radvd wireshark git"/>
