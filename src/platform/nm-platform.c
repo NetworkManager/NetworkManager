@@ -2506,31 +2506,32 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 int
 nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatformIPAddress *b)
 {
-	gint64 ta, tb;
+	gint64 ta = 0, tb = 0;
 
 	_CMP_POINTER (a, b);
 
 	if (a->lifetime == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0)
 		ta = G_MAXINT64;
-	else
+	else if (a->timestamp)
 		ta = ((gint64) a->timestamp) + a->lifetime;
 
 	if (b->lifetime == NM_PLATFORM_LIFETIME_PERMANENT || b->lifetime == 0)
 		tb = G_MAXINT64;
-	else
+	else if (b->timestamp)
 		tb = ((gint64) b->timestamp) + b->lifetime;
 
 	if (ta == tb) {
 		/* if the lifetime is equal, compare the preferred time. */
+		ta = tb = 0;
 
 		if (a->preferred == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0 /* liftime==0 means permanent! */)
 			ta = G_MAXINT64;
-		else
+		else if (a->timestamp)
 			ta = ((gint64) a->timestamp) + a->preferred;
 
 		if (b->preferred == NM_PLATFORM_LIFETIME_PERMANENT|| b->lifetime == 0)
 			tb = G_MAXINT64;
-		else
+		else if (b->timestamp)
 			tb = ((gint64) b->timestamp) + b->preferred;
 
 		if (ta == tb)
