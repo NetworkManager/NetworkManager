@@ -1097,7 +1097,7 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 	GMatchInfo *match_info;
 	NMIP6Route *route;
 	struct in6_addr ip6_addr;
-	char *dest = NULL, *prefix = NULL, *next_hop = NULL, *metric = NULL;
+	char *dest = NULL, *prefix = NULL, *metric = NULL;
 	long int prefix_int, metric_int;
 	gboolean success = FALSE;
 
@@ -1185,22 +1185,23 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 
 		/* Next hop */
 		g_regex_match (regex_via, *iter, 0, &match_info);
-		if (!g_match_info_matches (match_info)) {
-			g_match_info_free (match_info);
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-			             "Missing IP6 route gateway address in record: '%s'", *iter);
-			goto error;
-		}
-		next_hop = g_match_info_fetch (match_info, 1);
-		g_match_info_free (match_info);
-		if (inet_pton (AF_INET6, next_hop, &ip6_addr) != 1) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-			             "Invalid IP6 route gateway address '%s'", next_hop);
+		if (g_match_info_matches (match_info)) {
+			char *next_hop = g_match_info_fetch (match_info, 1);
+			if (inet_pton (AF_INET6, next_hop, &ip6_addr) != 1) {
+				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				             "Invalid IPv6 route nexthop address '%s'",
+				             next_hop);
+				g_match_info_free (match_info);
+				g_free (next_hop);
+				goto error;
+			}
 			g_free (next_hop);
-			goto error;
+		} else {
+			/* Missing "via" is taken as :: */
+			ip6_addr = in6addr_any;
 		}
 		nm_ip6_route_set_next_hop (route, &ip6_addr);
-		g_free (next_hop);
+		g_match_info_free (match_info);
 
 		/* Metric */
 		g_regex_match (regex_metric, *iter, 0, &match_info);
