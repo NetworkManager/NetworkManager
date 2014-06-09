@@ -17,7 +17,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2005 - 2013 Red Hat, Inc.
+ * Copyright 2005 - 2014 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -105,7 +105,7 @@ _nm_utils_convert_string_list_to_string (const GValue *src_value, GValue *dest_v
 	for (iter = strings; iter; iter = iter->next) {
 		if (iter != strings)
 			g_string_append_c (printable, ',');
-		g_string_append (printable, iter->data);
+		g_string_append (printable, iter->data ? iter->data : "(null)");
 	}
 
 	g_value_take_string (dest_value, g_string_free (printable, FALSE));
