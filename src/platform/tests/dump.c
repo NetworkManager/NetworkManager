@@ -13,7 +13,6 @@ dump_interface (NMPlatformLink *link)
 	GArray *ip4_addresses;
 	const NMPlatformIP6Address *ip6_address;
 	const NMPlatformIP4Address *ip4_address;
-	char addrstr[INET6_ADDRSTRLEN];
 	GArray *ip6_routes;
 	GArray *ip4_routes;
 	const NMPlatformIP6Route *ip6_route;
@@ -73,14 +72,12 @@ dump_interface (NMPlatformLink *link)
 
 	for (i = 0; i < ip4_addresses->len; i++) {
 		ip4_address = &g_array_index (ip4_addresses, NMPlatformIP4Address, i);
-		inet_ntop (AF_INET, &ip4_address->address, addrstr, sizeof (addrstr));
-		printf ("    ip4-address %s/%d lifetime %u preferred %u\n", addrstr, ip4_address->plen, ip4_address->lifetime, ip4_address->preferred);
+		printf ("    ip4-address %s\n", nm_platform_ip4_address_to_string (ip4_address));
 	}
 
 	for (i = 0; i < ip6_addresses->len; i++) {
 		ip6_address = &g_array_index (ip6_addresses, NMPlatformIP6Address, i);
-		inet_ntop (AF_INET6, &ip6_address->address, addrstr, sizeof (addrstr));
-		printf ("    ip6-address %s/%d lifetime %u preferred %u\n", addrstr, ip6_address->plen, ip6_address->lifetime, ip6_address->preferred);
+		printf ("    ip6-address %s\n", nm_platform_ip6_address_to_string (ip6_address));
 	}
 
 	g_array_unref (ip4_addresses);
