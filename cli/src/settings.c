@@ -3218,17 +3218,19 @@ _parse_ipv4_route (const char *route, GError **error)
 {
 	char *value = g_strdup (route);
 	char **routev;
-	NMIP4Route *ip4route;
+	guint len;
+	NMIP4Route *ip4route = NULL;
 
 	routev = nmc_strsplit_set (g_strstrip (value), " \t", 0);
-	if (g_strv_length (routev) < 2 || g_strv_length (routev) > 3) {
-		g_set_error (error, 1, 0, _("'%s' is not valid (use ip/[prefix] next-hop [metric])"),
+	len = g_strv_length (routev);
+	if (len < 1 || len > 3) {
+		g_set_error (error, 1, 0, _("'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric])"),
 		             route);
-		g_free (value);
-		g_strfreev (routev);
-		return NULL;
+		goto finish;
 	}
-	ip4route = nmc_parse_and_build_ip4_route (routev[0], routev[1], routev[2], error);
+	ip4route = nmc_parse_and_build_ip4_route (routev[0], routev[1], len >= 2 ? routev[2] : NULL, error);
+
+finish:
 	g_free (value);
 	g_strfreev (routev);
 	return ip4route;
@@ -3284,10 +3286,12 @@ static const char *
 nmc_property_ipv4_describe_routes (NMSetting *setting, const char *prop)
 {
 	return _("Enter a list of IPv4 routes formatted as:\n"
-	         "  ip/[prefix] next-hop [metric],...\n"
+	         "  ip[/prefix] [next-hop] [metric],...\n\n"
 	         "Missing prefix is regarded as a prefix of 32.\n"
+	         "Missing next-hop is regarded as 0.0.0.0.\n"
 	         "Missing metric is regarded as a metric of 0.\n\n"
-	         "Example: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n");
+	         "Examples: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
+	         "          10.1.2.0/24\n");
 }
 
 static char *
@@ -3529,17 +3533,19 @@ _parse_ipv6_route (const char *route, GError **error)
 {
 	char *value = g_strdup (route);
 	char **routev;
-	NMIP6Route *ip6route;
+	guint len;
+	NMIP6Route *ip6route = NULL;
 
 	routev = nmc_strsplit_set (g_strstrip (value), " \t", 0);
-	if (g_strv_length (routev) < 2 || g_strv_length (routev) > 3) {
-		g_set_error (error, 1, 0, _("'%s' is not valid (use <dest IP>/prefix <next-hop IP> [metric])"),
+	len = g_strv_length (routev);
+	if (len < 1 || len > 3) {
+		g_set_error (error, 1, 0, _("'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric])"),
 		             route);
-		g_free (value);
-		g_strfreev (routev);
-		return NULL;
+		goto finish;
 	}
-	ip6route = nmc_parse_and_build_ip6_route (routev[0], routev[1], routev[2], error);
+	ip6route = nmc_parse_and_build_ip6_route (routev[0], routev[1], len >= 2 ? routev[2] : NULL, error);
+
+finish:
 	g_free (value);
 	g_strfreev (routev);
 	return ip6route;
@@ -3595,10 +3601,12 @@ static const char *
 nmc_property_ipv6_describe_routes (NMSetting *setting, const char *prop)
 {
 	return _("Enter a list of IPv6 routes formatted as:\n"
-	         "  ip/[prefix] next-hop [metric],...\n"
+	         "  ip[/prefix] [next-hop] [metric],...\n\n"
 	         "Missing prefix is regarded as a prefix of 128.\n"
+	         "Missing next-hop is regarded as \"::\".\n"
 	         "Missing metric is regarded as a metric of 0.\n\n"
-	         "Example: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:beef::3 2\n");
+	         "Examples: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:beef::3 2\n"
+	         "          abbe::/64 55\n");
 }
 
 static gboolean
