@@ -8,4 +8,5 @@ EXTRA_DIST = \
 	show-bssids.py \
 	disconnect-device.py \
 	get-active-connection-uuids.py \
-	list-devices.py
+	list-devices.py \
+	update-ip4-method.py
