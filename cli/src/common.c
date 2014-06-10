@@ -586,6 +586,14 @@ _parse_and_build_route (int family,
 		}
 	}
 
+	/* We don't accept default routes as NetworkManager handles it itself */
+	if (   (family == AF_INET && out->dst.ip4_dst == 0)
+	    || (family == AF_INET6 && IN6_IS_ADDR_UNSPECIFIED (&out->dst.ip6_dst))) {
+		g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+		                     _("default route cannot be added (NetworkManager handles it by itself)"));
+		goto finish;
+	}
+
 	success = TRUE;
 
 finish:
