@@ -40,8 +40,8 @@ gboolean print_dhcp6_config (NMDHCP6Config *dhcp6, NmCli *nmc, const char *group
 NMIP4Address *nmc_parse_and_build_ip4_address (const char *ip_str, const char *gw_str, GError **error);
 NMIP6Address *nmc_parse_and_build_ip6_address (const char *ip_str, const char *gw_str, GError **error);
 
-NMIP4Route *nmc_parse_and_build_ip4_route (const char *ip_str, const char *next_hop_str, const char *metric_str, GError **error);
-NMIP6Route *nmc_parse_and_build_ip6_route (const char *ip_str, const char *next_hop_str, const char *metric_str, GError **error);
+NMIP4Route *nmc_parse_and_build_ip4_route (const char *first, const char *second, const char *third, GError **error);
+NMIP6Route *nmc_parse_and_build_ip6_route (const char *first, const char *second, const char *third, GError **error);
 
 const char * nmc_device_state_to_string (NMDeviceState state);
 const char * nmc_device_reason_to_string (NMDeviceStateReason reason);

@@ -487,131 +487,181 @@ finish:
 	return addr;
 }
 
+typedef struct {
+	long int prefix;
+	long int metric;
+	union _IpDest {
+		guint32 ip4_dst;
+		struct in6_addr ip6_dst;
+	} dst;
+	union _IpNextHop {
+		guint32 ip4_nh;
+		struct in6_addr ip6_nh;
+	} nh;
+} ParsedRoute;
+
 /*
- * Parse IPv4 routes from strings to NMIP4Route stucture.
- * ip_str is the IPv4 route in the form of address/prefix
- * next_hop_str is the next_hop address
- * metric_str is the route metric
+ * _parse_and_build_route:
+ * @family: AF_INET or AF_INET6
+ * @first: the route destination in the form of "address/prefix"
+     (/prefix is optional)
+ * @second: (allow-none): next hop address, if third is not NULL. Otherwise it could be
+     either next hop address or metric. (It can be NULL when @third is NULL).
+ * @third: (allow-none): route metric
+ * @out: (out): route struct to fill
+ * @error: location to store GError
+ *
+ * Parse route from strings and fill @out parameter.
+ *
+ * Returns: %TRUE on success, %FALSE on failure
  */
-NMIP4Route *
-nmc_parse_and_build_ip4_route (const char *ip_str, const char *next_hop_str, const char *metric_str, GError **error)
+static gboolean
+_parse_and_build_route (int family,
+                        const char *first,
+                        const char *second,
+                        const char *third,
+                        ParsedRoute *out,
+                        GError **error)
 {
-	NMIP4Route *route = NULL;
-	guint32 ip4_addr, next_hop_addr;
-	char *tmp;
-	char *plen;
-	long int prefix, metric;
+	int max_prefix;
+	char *tmp, *plen;
+	gboolean success = FALSE;
 
-	g_return_val_if_fail (ip_str != NULL, NULL);
-	g_return_val_if_fail (next_hop_str != NULL, NULL);
-	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+	g_return_val_if_fail (family == AF_INET || family == AF_INET6, FALSE);
+	g_return_val_if_fail (first != NULL, FALSE);
+	g_return_val_if_fail (second || !third, FALSE);
+	g_return_val_if_fail (out, FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	tmp = g_strdup (ip_str);
+	max_prefix = (family == AF_INET) ? 32 : 128;
+	/* initialize default values */
+	out->prefix = max_prefix;
+	out->metric = 0;
+	if (family == AF_INET)
+		out->nh.ip4_nh = 0;
+	else
+		out->nh.ip6_nh = in6addr_any;
+
+	tmp = g_strdup (first);
 	plen = strchr (tmp, '/');  /* prefix delimiter */
 	if (plen)
 		*plen++ = '\0';
 
-	if (inet_pton (AF_INET, tmp, &ip4_addr) < 1) {
+	if (inet_pton (family, tmp, family == AF_INET ? (void *) &out->dst.ip4_dst : (void *) &out->dst.ip6_dst) < 1) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("invalid IPv4 route '%s'"), tmp);
+		             _("invalid route destination address '%s'"), tmp);
 		goto finish;
 	}
 
-	prefix = 32;
 	if (plen) {
-		if (!nmc_string_to_int (plen, TRUE, 0, 32, &prefix)) {
+		if (!nmc_string_to_int (plen, TRUE, 0, max_prefix, &out->prefix)) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid prefix '%s'; <0-32> allowed"), plen);
+			             _("invalid prefix '%s'; <0-%d> allowed"),
+			             plen, max_prefix);
 			goto finish;
 		}
 	}
 
-	if (inet_pton (AF_INET, next_hop_str, &next_hop_addr) < 1) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("invalid next hop address '%s'"), next_hop_str);
-		goto finish;
+	if (second) {
+		if (inet_pton (family, second, family == AF_INET ? (void *) &out->nh.ip4_nh : (void *) &out->nh.ip6_nh) < 1) {
+			if (third) {
+				g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
+				             _("invalid next hop address '%s'"), second);
+				goto finish;
+			} else {
+				/* 'second' can be a metric */
+				if (!nmc_string_to_int (second, TRUE, 0, G_MAXUINT32, &out->metric)) {
+					g_set_error (error, 1, 0, _("the second component of route ('%s') is neither "
+					                            "a next hop address nor a metric"), second);
+					goto finish;
+				}
+			}
+		}
 	}
 
-	metric = 0;
-	if (metric_str) {
-		if (!nmc_string_to_int (metric_str, TRUE, 0, G_MAXUINT32, &metric)) {
-			g_set_error (error, 1, 0, _("invalid metric '%s'"), metric_str);
+	if (third) {
+		if (!nmc_string_to_int (third, TRUE, 0, G_MAXUINT32, &out->metric)) {
+			g_set_error (error, 1, 0, _("invalid metric '%s'"), third);
 			goto finish;
 		}
 	}
 
-	route = nm_ip4_route_new ();
-	nm_ip4_route_set_dest (route, ip4_addr);
-	nm_ip4_route_set_prefix (route, (guint32) prefix);
-	nm_ip4_route_set_next_hop (route, next_hop_addr);
-	nm_ip4_route_set_metric (route, (guint32) metric);
+	success = TRUE;
 
 finish:
 	g_free (tmp);
+	return success;
+}
+
+/*
+ * nmc_parse_and_build_ip4_route:
+ * @first: the IPv4 route destination in the form of "address/prefix"
+     (/prefix is optional)
+ * @second: (allow-none): next hop address, if third is not NULL. Otherwise it could be
+     either next hop address or metric. (It can be NULL when @third is NULL).
+ * @third: (allow-none): route metric
+ * @error: location to store GError
+ *
+ * Parse IPv4 route from strings to NMIP4Route stucture.
+ *
+ * Returns: route as a NMIP4Route object, or %NULL on failure
+ */
+NMIP4Route *
+nmc_parse_and_build_ip4_route (const char *first,
+                               const char *second,
+                               const char *third,
+                               GError **error)
+{
+	ParsedRoute tmp_route;
+	NMIP4Route *route = NULL;
+
+	g_return_val_if_fail (first != NULL, NULL);
+	g_return_val_if_fail (second || !third, NULL);
+	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+	if (_parse_and_build_route (AF_INET, first, second, third, &tmp_route, error)) {
+		route = nm_ip4_route_new ();
+		nm_ip4_route_set_dest (route, tmp_route.dst.ip4_dst);
+		nm_ip4_route_set_prefix (route, (guint32) tmp_route.prefix);
+		nm_ip4_route_set_next_hop (route, tmp_route.nh.ip4_nh);
+		nm_ip4_route_set_metric (route, (guint32) tmp_route.metric);
+	}
 	return route;
 }
 
 /*
+ * nmc_parse_and_build_ip6_route:
+ * @first: the IPv6 route destination in the form of "address/prefix"
+     (/prefix is optional)
+ * @second: (allow-none): next hop address, if third is not NULL. Otherwise it could be
+     either next hop address or metric. (It can be NULL when @third is NULL).
+ * @third: (allow-none): route metric
+ * @error: location to store GError
+ *
  * Parse IPv6 route from strings to NMIP6Route stucture.
- * ip_str is the IPv6 route in the form address/prefix
- * next_hop_str is the next hop
- * metric_str is the route metric
+ *
+ * Returns: route as a NMIP6Route object, or %NULL on failure
  */
 NMIP6Route *
-nmc_parse_and_build_ip6_route (const char *ip_str, const char *next_hop_str, const char *metric_str, GError **error)
+nmc_parse_and_build_ip6_route (const char *first,
+                               const char *second,
+                               const char *third,
+                               GError **error)
 {
+	ParsedRoute tmp_route;
 	NMIP6Route *route = NULL;
-	struct in6_addr ip_addr, next_hop_addr;
-	char *tmp;
-	char *plen;
-	long int prefix, metric;
 
-	g_return_val_if_fail (ip_str != NULL, NULL);
+	g_return_val_if_fail (first != NULL, NULL);
+	g_return_val_if_fail (second || !third, NULL);
 	g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
-	tmp = g_strdup (ip_str);
-	plen = strchr (tmp, '/');  /* prefix delimiter */
-	if (plen)
-		*plen++ = '\0';
-
-	if (inet_pton (AF_INET6, tmp, &ip_addr) < 1) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("invalid IPv6 route '%s'"), tmp);
-		goto finish;
+	if (_parse_and_build_route (AF_INET6, first, second, third, &tmp_route, error)) {
+		route = nm_ip6_route_new ();
+		nm_ip6_route_set_dest (route, &tmp_route.dst.ip6_dst);
+		nm_ip6_route_set_prefix (route, (guint32) tmp_route.prefix);
+		nm_ip6_route_set_next_hop (route, &tmp_route.nh.ip6_nh);
+		nm_ip6_route_set_metric (route, (guint32) tmp_route.metric);
 	}
-
-	prefix = 128;
-	if (plen) {
-		if (!nmc_string_to_int (plen, TRUE, 0, 128, &prefix)) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid prefix '%s'; <0-128> allowed"), plen);
-			goto finish;
-		}
-	}
-
-	if (inet_pton (AF_INET6, next_hop_str, &next_hop_addr) < 1) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("invalid next hop address '%s'"), next_hop_str);
-		goto finish;
-	}
-
-	metric = 0;
-	if (metric_str) {
-		if (!nmc_string_to_int (metric_str, TRUE, 0, G_MAXUINT32, &metric)) {
-			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid metric '%s'"), metric_str);
-			goto finish;
-		}
-	}
-
-	route = nm_ip6_route_new ();
-	nm_ip6_route_set_dest (route, &ip_addr);
-	nm_ip6_route_set_prefix (route, (guint32) prefix);
-	nm_ip6_route_set_next_hop (route, &next_hop_addr);
-	nm_ip6_route_set_metric (route, (guint32) metric);
-
-finish:
-	g_free (tmp);
 	return route;
 }
 
