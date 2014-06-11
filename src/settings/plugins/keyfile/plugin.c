@@ -110,7 +110,8 @@ update_connection (SCPluginKeyfile *self,
 	tmp = nm_keyfile_connection_new (NULL, name, &error);
 	if (!tmp) {
 		/* Error; remove the connection */
-		nm_log_warn (LOGD_SETTINGS, "    %s", (error && error->message) ? error->message : "(unknown)");
+		nm_log_warn (LOGD_SETTINGS, "    error in connection %s: %s", name,
+		             (error && error->message) ? error->message : "(unknown)");
 		g_clear_error (&error);
 		remove_connection (self, connection);
 		return;
