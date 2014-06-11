@@ -53,6 +53,8 @@ G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
 
 #define NM_TEAM_ERROR (nm_team_error_quark ())
 
+static gboolean teamd_start (NMDevice *dev, NMSettingTeam *s_team);
+
 typedef struct {
 #if WITH_TEAMDCTL
 	struct teamdctl *tdc;
@@ -226,7 +228,8 @@ update_connection (NMDevice *device, NMConnection *connection)
 	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, NULL, NULL);
 
 #if WITH_TEAMDCTL
-	if (ensure_teamd_connection (device)) {
+	teamd_start (device, s_team);
+	if (NM_DEVICE_TEAM_GET_PRIVATE (device)->teamd_pid > 0 && ensure_teamd_connection (device)) {
 		const char *config = NULL;
 		int err;
 
@@ -503,9 +506,8 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team)
 #endif
 	    priv->teamd_timeout)
 	{
-		/* FIXME g_assert that this never hits. For now, be more reluctant, and try to recover. */
-		g_warn_if_reached ();
-		teamd_cleanup (dev, FALSE);
+		/* Just return if teamd_start() was already called */
+		return TRUE;
 	}
 
 	teamd_binary = teamd_paths;
