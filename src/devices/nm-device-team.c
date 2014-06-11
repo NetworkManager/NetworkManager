@@ -855,6 +855,8 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceTeamPrivate));
 
+	parent_class->connection_type = NM_SETTING_TEAM_SETTING_NAME;
+
 	/* virtual methods */
 	object_class->constructed = constructed;
 	object_class->get_property = get_property;
