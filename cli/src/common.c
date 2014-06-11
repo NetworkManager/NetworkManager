@@ -554,9 +554,9 @@ _parse_and_build_route (int family,
 	}
 
 	if (plen) {
-		if (!nmc_string_to_int (plen, TRUE, 0, max_prefix, &out->prefix)) {
+		if (!nmc_string_to_int (plen, TRUE, 1, max_prefix, &out->prefix)) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			             _("invalid prefix '%s'; <0-%d> allowed"),
+			             _("invalid prefix '%s'; <1-%d> allowed"),
 			             plen, max_prefix);
 			goto finish;
 		}
