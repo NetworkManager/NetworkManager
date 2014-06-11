@@ -36,11 +36,39 @@ git_notes() {
     git push "$REPO" refs/notes/test:refs/notes/test
 }
 
+join() {
+    local IFS="$1"
+    shift
+    echo "$*"
+}
+
+git_notes_flags() {
+    local FLAGS=()
+    if [[ "$OUT_OF_TREE_BUILD" == true ]]; then
+        FLAGS=("${FLAGS[@]}" "+O")
+    else
+        FLAGS=("${FLAGS[@]}" "-O")
+    fi
+    if [[ "$DISTCHECK" == true ]]; then
+        FLAGS=("${FLAGS[@]}" "+D")
+    elif [[ "$DIST" == true ]]; then
+        FLAGS=("${FLAGS[@]}" "+d")
+    else
+        FLAGS=("${FLAGS[@]}" "-D")
+    fi
+    if [[ "$RPM" == true ]]; then
+        FLAGS=("${FLAGS[@]}" "+R")
+    else
+        FLAGS=("${FLAGS[@]}" "-R")
+    fi
+    join ' ' "${FLAGS[@]}"
+}
+
 git_notes_ok() {
-    git_notes "Tested: OK   $DATE $BUILD_URL"
+    git_notes "Tested: OK   $DATE $BUILD_URL $(git_notes_flags)"
 }
 git_notes_fail() {
-    git_notes "Tested: FAIL $DATE $BUILD_URL"
+    git_notes "Tested: FAIL $DATE $BUILD_URL $(git_notes_flags)"
 }
 
 trap "git_notes_fail; exit 1" ERR
