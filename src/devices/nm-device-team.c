@@ -478,8 +478,9 @@ teamd_child_setup (gpointer user_data G_GNUC_UNUSED)
 }
 
 static gboolean
-teamd_start (NMDevice *dev, NMSettingTeam *s_team, NMDeviceTeamPrivate *priv)
+teamd_start (NMDevice *dev, NMSettingTeam *s_team)
 {
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
 	const char *iface = nm_device_get_ip_iface (dev);
 	char *tmp_str;
 	const char *config;
@@ -597,8 +598,10 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team, NMDeviceTeamPrivate *priv)
 }
 
 static void
-teamd_stop (NMDevice *dev, NMDeviceTeamPrivate *priv)
+teamd_stop (NMDevice *dev)
 {
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
+
 	if (priv->teamd_pid > 0) {
 		nm_log_info (LOGD_TEAM, "Deactivation (%s) stopping teamd...",
 		             nm_device_get_ip_iface (dev));
@@ -612,7 +615,6 @@ teamd_stop (NMDevice *dev, NMDeviceTeamPrivate *priv)
 static NMActStageReturn
 act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
-	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	NMConnection *connection;
 	NMSettingTeam *s_team;
@@ -625,7 +627,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		g_assert (connection);
 		s_team = nm_connection_get_setting_team (connection);
 		g_assert (s_team);
-		if (teamd_start (dev, s_team, priv))
+		if (teamd_start (dev, s_team))
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 		else
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
@@ -636,9 +638,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 static void
 deactivate (NMDevice *dev)
 {
-	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (dev);
-
-	teamd_stop (dev, priv);
+	teamd_stop (dev);
 }
 
 static gboolean
