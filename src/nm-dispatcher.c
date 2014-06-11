@@ -20,6 +20,7 @@
  */
 
 #include <glib.h>
+#include <gio/gio.h>
 #include <string.h>
 
 #include "nm-dispatcher.h"
