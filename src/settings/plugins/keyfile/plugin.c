@@ -77,43 +77,26 @@ connection_removed_cb (NMSettingsConnection *obj, gpointer user_data)
 	                     nm_connection_get_uuid (NM_CONNECTION (obj)));
 }
 
-static NMSettingsConnection *
-_internal_new_connection (SCPluginKeyfile *self,
-                          const char *full_path,
-                          NMConnection *source,
-                          GError **error)
-{
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
-	NMKeyfileConnection *connection;
-
-	connection = nm_keyfile_connection_new (source, full_path, error);
-	if (connection) {
-		g_hash_table_insert (priv->connections,
-		                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (connection)),
-		                     connection);
-		g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
-		                  G_CALLBACK (connection_removed_cb),
-		                  self);
-	}
-
-	return (NMSettingsConnection *) connection;
-}
-
 /* Monitoring */
 
 static void
 remove_connection (SCPluginKeyfile *self, NMKeyfileConnection *connection)
 {
+	gboolean removed;
+
 	g_return_if_fail (connection != NULL);
 
 	nm_log_info (LOGD_SETTINGS, "removed %s.", nm_keyfile_connection_get_path (connection));
 
 	/* Removing from the hash table should drop the last reference */
 	g_object_ref (connection);
-	g_hash_table_remove (SC_PLUGIN_KEYFILE_GET_PRIVATE (self)->connections,
-	                     nm_connection_get_uuid (NM_CONNECTION (connection)));
+	g_signal_handlers_disconnect_by_func (connection, connection_removed_cb, self);
+	removed = g_hash_table_remove (SC_PLUGIN_KEYFILE_GET_PRIVATE (self)->connections,
+	                               nm_connection_get_uuid (NM_CONNECTION (connection)));
 	nm_settings_connection_signal_remove (NM_SETTINGS_CONNECTION (connection));
 	g_object_unref (connection);
+
+	g_return_if_fail (removed);
 }
 
 static void
@@ -174,6 +157,7 @@ new_connection (SCPluginKeyfile *self,
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
 	NMKeyfileConnection *tmp, *connection;
 	GError *error = NULL;
+	const char *uuid;
 
 	if (out_old_path)
 		*out_old_path = NULL;
@@ -187,7 +171,8 @@ new_connection (SCPluginKeyfile *self,
 	}
 
 	/* Connection renames will show as different paths but same UUID */
-	connection = g_hash_table_lookup (priv->connections, nm_connection_get_uuid (NM_CONNECTION (tmp)));
+	uuid = nm_connection_get_uuid (NM_CONNECTION (tmp));
+	connection = g_hash_table_lookup (priv->connections, uuid);
 	if (connection) {
 		nm_log_info (LOGD_SETTINGS, "rename %s -> %s", nm_keyfile_connection_get_path (connection), name);
 		if (!nm_settings_connection_replace_settings (NM_SETTINGS_CONNECTION (connection),
@@ -203,9 +188,7 @@ new_connection (SCPluginKeyfile *self,
 		nm_keyfile_connection_set_path (connection, name);
 	} else {
 		nm_log_info (LOGD_SETTINGS, "new connection %s", name);
-		g_hash_table_insert (priv->connections,
-		                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (tmp)),
-		                     tmp);
+		g_hash_table_insert (priv->connections, g_strdup (uuid), tmp);
 		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, tmp);
 
 		g_signal_connect (tmp, NM_SETTINGS_CONNECTION_REMOVED,
@@ -445,6 +428,7 @@ add_connection (NMSystemConfigInterface *config,
                 GError **error)
 {
 	SCPluginKeyfile *self = SC_PLUGIN_KEYFILE (config);
+	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (self);
 	NMSettingsConnection *added = NULL;
 	char *path = NULL;
 
@@ -452,8 +436,16 @@ add_connection (NMSystemConfigInterface *config,
 		if (!nm_keyfile_plugin_write_connection (connection, NULL, &path, error))
 			return NULL;
 	}
-		
-	added = _internal_new_connection (self, path, connection, error);
+
+	added = (NMSettingsConnection *) nm_keyfile_connection_new (connection, path, error);
+	if (added) {
+		g_hash_table_insert (priv->connections,
+		                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (added))),
+		                     added);
+		g_signal_connect (added, NM_SETTINGS_CONNECTION_REMOVED,
+		                  G_CALLBACK (connection_removed_cb),
+		                  self);
+	}
 	g_free (path);
 	return added;
 }
@@ -615,7 +607,7 @@ sc_plugin_keyfile_init (SCPluginKeyfile *plugin)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (plugin);
 
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static void
