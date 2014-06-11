@@ -137,7 +137,7 @@ _internal_new_connection (SCPluginExample *self,
 	connection = nm_example_connection_new (full_path, source, error);
 	if (connection) {
 		g_hash_table_insert (priv->connections,
-		                     (gpointer) nm_example_connection_get_path (connection),
+		                     g_strdup (nm_example_connection_get_path (connection)),
 		                     connection);
 	}
 
@@ -356,7 +356,7 @@ dir_changed (GFileMonitor *monitor,
 
 					/* Re-insert the connection back into the hash with the new filename */
 					g_hash_table_insert (priv->connections,
-					                     (gpointer) nm_example_connection_get_path (found),
+					                     g_strdup (nm_example_connection_get_path (found)),
 					                     found);
 
 					/* Get rid of the temporary connection */
@@ -364,7 +364,7 @@ dir_changed (GFileMonitor *monitor,
 				} else {
 					/* Completely new connection, not a rename. */
 					g_hash_table_insert (priv->connections,
-					                     (gpointer) nm_example_connection_get_path (connection),
+					                     g_strdup (nm_example_connection_get_path (connection)),
 					                     connection);
 					/* Tell NM we found a new connection */
 					g_signal_emit_by_name (config, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
@@ -435,7 +435,7 @@ setup_monitoring (NMSystemConfigInterface *config)
 	/* Initialize connection hash here; we use the connection hash as the 
 	 * "are we initialized yet" variable.
 	 */
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 
 	if (nm_config_get_monitor_connection_files (nm_config_get ())) {
 		/* Set up the watch for our config directory */
