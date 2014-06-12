@@ -269,7 +269,7 @@ _nmcli_compl_ARGS()
         case "${words[0]}" in
             level)
                 if [[ "${#words[@]}" -eq 2 ]]; then
-                    _nmcli_list "ERROR WARN INFO DEBUG"
+                    _nmcli_list "ERR WARN INFO DEBUG"
                    return 0
                 fi
                 ;;
