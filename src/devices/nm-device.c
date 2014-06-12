@@ -5269,6 +5269,17 @@ nm_device_get_ip6_config (NMDevice *self)
 /****************************************************************/
 
 static void
+dispatcher_cleanup (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->dispatcher_id) {
+		nm_dispatcher_call_cancel (priv->dispatcher_id);
+		priv->dispatcher_id = 0;
+	}
+}
+
+static void
 ip_check_pre_up_done (guint call_id, gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
@@ -6536,17 +6547,6 @@ dispatcher_pre_down_done (guint call_id, gpointer user_data)
 
 	priv->dispatcher_id = 0;
 	nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, priv->dispatcher_pre_down_reason);
-}
-
-static void
-dispatcher_cleanup (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->dispatcher_id) {
-		nm_dispatcher_call_cancel (priv->dispatcher_id);
-		priv->dispatcher_id = 0;
-	}
 }
 
 static gboolean
