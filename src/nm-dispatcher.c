@@ -37,6 +37,18 @@
 static gboolean do_dispatch = TRUE;
 static GHashTable *requests = NULL;
 
+typedef struct {
+	const char *dir;
+	GFileMonitor *monitor;
+	gboolean has_scripts;
+} Monitor;
+
+static Monitor monitors[3] = {
+	{ NMD_SCRIPT_DIR_DEFAULT,  NULL, TRUE },
+	{ NMD_SCRIPT_DIR_PRE_UP,   NULL, TRUE },
+	{ NMD_SCRIPT_DIR_PRE_DOWN, NULL, TRUE }
+};
+
 static void
 dump_object_to_props (GObject *object, GHashTable *hash)
 {
@@ -642,18 +654,6 @@ nm_dispatcher_call_cancel (guint call_id)
 		info->callback = NULL;
 	}
 }
-
-typedef struct {
-	const char *dir;
-	GFileMonitor *monitor;
-	gboolean has_scripts;
-} Monitor;
-
-static Monitor monitors[3] = {
-	{ NMD_SCRIPT_DIR_DEFAULT,  NULL, TRUE },
-	{ NMD_SCRIPT_DIR_PRE_UP,   NULL, TRUE },
-	{ NMD_SCRIPT_DIR_PRE_DOWN, NULL, TRUE }
-};
 
 static void
 dispatcher_dir_changed (GFileMonitor *monitor,
