@@ -902,7 +902,6 @@ echo "  wimax: $enable_wimax"
 echo "  ppp: $enable_ppp"
 echo "  modemmanager-1: $with_modem_manager_1"
 echo "  concheck: $enable_concheck"
-echo "  libndp: $libndp_location"
 echo "  libteamdctl: $enable_teamdctl"
 echo "  nmtui: $build_nmtui"
 echo
