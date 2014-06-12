@@ -34,20 +34,40 @@
 
 #define CALL_TIMEOUT (1000 * 60 * 10)  /* 10 mintues for all scripts */
 
-static gboolean do_dispatch = TRUE;
 static GHashTable *requests = NULL;
 
 typedef struct {
-	const char *dir;
+	const char *const dir;
 	GFileMonitor *monitor;
 	gboolean has_scripts;
 } Monitor;
 
-static Monitor monitors[3] = {
-	{ NMD_SCRIPT_DIR_DEFAULT,  NULL, TRUE },
-	{ NMD_SCRIPT_DIR_PRE_UP,   NULL, TRUE },
-	{ NMD_SCRIPT_DIR_PRE_DOWN, NULL, TRUE }
+enum {
+	MONITOR_INDEX_DEFAULT,
+	MONITOR_INDEX_PRE_UP,
+	MONITOR_INDEX_PRE_DOWN,
 };
+
+static Monitor monitors[3] = {
+	[MONITOR_INDEX_DEFAULT]  = { NMD_SCRIPT_DIR_DEFAULT,  NULL, TRUE },
+	[MONITOR_INDEX_PRE_UP]   = { NMD_SCRIPT_DIR_PRE_UP,   NULL, TRUE },
+	[MONITOR_INDEX_PRE_DOWN] = { NMD_SCRIPT_DIR_PRE_DOWN, NULL, TRUE },
+};
+
+static const Monitor*
+_get_monitor_by_action (DispatcherAction action)
+{
+	switch (action) {
+	case DISPATCHER_ACTION_PRE_UP:
+	case DISPATCHER_ACTION_VPN_PRE_UP:
+		return &monitors[MONITOR_INDEX_PRE_UP];
+	case DISPATCHER_ACTION_PRE_DOWN:
+	case DISPATCHER_ACTION_VPN_PRE_DOWN:
+		return &monitors[MONITOR_INDEX_PRE_DOWN];
+	default:
+		return &monitors[MONITOR_INDEX_DEFAULT];
+	}
+}
 
 static void
 dump_object_to_props (GObject *object, GHashTable *hash)
@@ -397,15 +417,16 @@ _dispatcher_call (DispatcherAction action,
 	if (action == DISPATCHER_ACTION_VPN_UP)
 		g_return_val_if_fail (vpn_ip4_config != NULL, FALSE);
 
-	if (do_dispatch == FALSE) {
+	if (!_get_monitor_by_action(action)->has_scripts) {
 		if (blocking == FALSE && (out_call_id || callback)) {
 			info = g_malloc0 (sizeof (*info));
 			info->request_id = reqid;
 			info->callback = callback;
 			info->user_data = user_data;
 			info->idle_id = g_idle_add (dispatcher_idle_cb, info);
-		}
-		nm_log_dbg (LOGD_DISPATCH, "(%u) ignoring request; no scripts in " NMD_SCRIPT_DIR_DEFAULT, reqid);
+			nm_log_dbg (LOGD_DISPATCH, "(%u) simulate request; no scripts in %s",  reqid, _get_monitor_by_action(action)->dir);
+		} else
+			nm_log_dbg (LOGD_DISPATCH, "(%u) ignoring request; no scripts in %s", reqid, _get_monitor_by_action(action)->dir);
 		success = TRUE;
 		goto done;
 	}
@@ -663,21 +684,15 @@ dispatcher_dir_changed (GFileMonitor *monitor,
                         Monitor *item)
 {
 	GDir *dir;
-	guint i;
-
-	/* Default to dispatching on any errors */
-	item->has_scripts = TRUE;
 
 	dir = g_dir_open (item->dir, 0, NULL);
 	if (dir) {
 		item->has_scripts = !!g_dir_read_name (dir);
 		g_dir_close (dir);
+	} else {
+		/* Default to dispatching on error opening the directory */
+		item->has_scripts = TRUE;
 	}
-
-	/* Recheck all dirs for scripts and update global variable */
-	do_dispatch = FALSE;
-	for (i = 0; i < G_N_ELEMENTS (monitors); i++)
-		do_dispatch |= monitors[i].has_scripts;
 }
 
 void
