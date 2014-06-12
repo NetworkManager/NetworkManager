@@ -203,6 +203,12 @@ dispatcher_results_process (guint request_id, GPtrArray *results)
 
 	g_return_if_fail (results != NULL);
 
+	if (results->len == 0) {
+		nm_log_dbg (LOGD_DISPATCH, "(%u) succeeded but no scripts invoked",
+		            request_id);
+		return;
+	}
+
 	for (i = 0; i < results->len; i++) {
 		GValueArray *item = g_ptr_array_index (results, i);
 		GValue *tmp;
@@ -221,8 +227,10 @@ dispatcher_results_process (guint request_id, GPtrArray *results)
 		if (!validate_element (request_id, tmp, G_TYPE_STRING, i, 0))
 			continue;
 		script = g_value_get_string (tmp);
-		if (!script || strncmp (script, NMD_SCRIPT_DIR_DEFAULT "/", STRLEN (NMD_SCRIPT_DIR_DEFAULT "/")))
-			continue;
+		if (!script)
+			script = "(unknown)";
+		else if (!strncmp (script, NMD_SCRIPT_DIR_DEFAULT "/", STRLEN (NMD_SCRIPT_DIR_DEFAULT "/")))
+			script += STRLEN (NMD_SCRIPT_DIR_DEFAULT "/"),
 
 		/* Result */
 		tmp = g_value_array_get_nth (item, 1);
@@ -240,11 +248,11 @@ dispatcher_results_process (guint request_id, GPtrArray *results)
 		if (result == DISPATCH_RESULT_SUCCESS) {
 			nm_log_dbg (LOGD_DISPATCH, "(%u) %s succeeded",
 			            request_id,
-			            script + STRLEN (NMD_SCRIPT_DIR_DEFAULT "/"));
+			            script);
 		} else {
 			nm_log_warn (LOGD_DISPATCH, "(%u) %s failed (%s): %s",
 			             request_id,
-			             script + STRLEN (NMD_SCRIPT_DIR_DEFAULT "/"),
+			             script,
 			             dispatch_result_to_string (result),
 			             err ? err : "");
 		}
@@ -356,15 +364,21 @@ _dispatcher_call (DispatcherAction action,
 
 	/* All actions except 'hostname' require a device */
 	if (action == DISPATCHER_ACTION_HOSTNAME) {
-		nm_log_dbg (LOGD_DISPATCH, "(%u) dispatching action '%s'",
-		            reqid, action_to_string (action));
+		nm_log_dbg (LOGD_DISPATCH, "(%u) dispatching action '%s'%s",
+		            reqid, action_to_string (action),
+		            blocking
+		                ? " (blocking)"
+		                : (callback ? " (with callback)" : ""));
 	} else {
 		g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-		nm_log_dbg (LOGD_DISPATCH, "(%u) (%s) dispatching action '%s'",
+		nm_log_dbg (LOGD_DISPATCH, "(%u) (%s) dispatching action '%s'%s",
 		            reqid,
 		            vpn_iface ? vpn_iface : nm_device_get_iface (device),
-		            action_to_string (action));
+		            action_to_string (action),
+		            blocking
+		                ? " (blocking)"
+		                : (callback ? " (with callback)" : ""));
 	}
 
 	/* VPN actions require at least an IPv4 config (for now) */
@@ -620,10 +634,13 @@ nm_dispatcher_call_cancel (guint call_id)
 	 * DispatcherInfo's callback to NULL.
 	 */
 	info = g_hash_table_lookup (requests, GUINT_TO_POINTER (call_id));
-	if (info)
+	g_return_if_fail (info);
+
+	if (info && info->callback) {
+		nm_log_dbg (LOGD_DISPATCH, "(%u) cancelling dispatcher callback action",
+		            call_id);
 		info->callback = NULL;
-	else
-		g_return_if_reached ();
+	}
 }
 
 typedef struct {
