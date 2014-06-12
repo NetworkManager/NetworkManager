@@ -66,12 +66,19 @@ Currently the following types are supported:
     you must have a kerberos ticket. The username is parsed from the ticket
     name as returned by klist.
 
-  - jenkins://[BUILDNR](/[FILEREGEX]): the jenkins build server builds
+  - jenkins://[BUILDNR](/[URIREGEX]): the jenkins build server builds
     RPM packages for RHEL-7.0 and stores them as artifacts. By using this
     URI, it will resolve the URLs for the build number BUILDNR.
-    If FILEREGEX is specified, this regex is used to restrict the number of
-    found files. Otherwise, a default regex is used that selects only NetworkManager
-    and NetworkManager-glib packages.
+    If URIREGEX is specified, this regex is used to restrict the number of
+    found files. Otherwise, a default regex is used that relevant packages.
+
+  - brew://[ID](/[URIREGEX]): fetches URLs from
+    https://brewweb.devel.redhat.com/buildinfo?buildID=ID, i.e. from
+    the officially build packages.
+
+  - brewtask://[ID](/[URIREGEX]): fetches URLs from
+    https://brewweb.devel.redhat.com/kinfo?taskID=ID, i.e. the builds
+    when doing a scratch build with rhpkg.
 
   - everything else is treated as file://, but without globbing
 

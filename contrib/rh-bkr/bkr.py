@@ -296,6 +296,8 @@ class UploadFile:
         self.uri = uri
     def url(self):
         raise NotImplementedError("not implemented")
+    def init(self):
+        pass
     def prepare(self, dry_run):
         raise NotImplementedError("not implemented")
 class UploadFileUrl(UploadFile):
@@ -333,41 +335,116 @@ class UploadFileSsh(UploadFile):
         out = _call(args, stderr=subprocess.STDOUT, reason='upload file', dry_run=dry_run, verbose=True);
         for l in out.splitlines():
             print('++ ' + l)
-class UploadFileJenkins(UploadFile):
-    jenkins_base_url = 'http://10.34.131.51:8080/job/NetworkManager/'
+class UploadFile_ParseWebsite(UploadFile):
     def __init__(self, uri):
+        self._pattern = None
+        self._urls = None
         UploadFile.__init__(self, uri)
-        m = re.match('^jenkins://([0-9]+)(/(.+)|/?)?$', uri)
-        if not m:
-            raise Exception("Error detecting uri scheme jenkins:// from '%s'. Expected is 'jenkins://[ID]/[regex-wildcard]" % uri)
-        self.jid = int(m.group(1))
-        self.pattern = m.group(3)
-        if not self.pattern:
-            self.pattern = '/NetworkManager(-adsl|-bluetooth|-debuginfo|-devel|-glib|-glib-devel|-tui|-wifi|-wwan)?-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-.*\.x86_64\.rpm'
-        try:
-            re.match(self.pattern, '')
-        except:
-            raise Exception("Error in uri scheme '%s': expects a valid regular expression" % uri)
 
-        mainpage = '%s%d/' % (UploadFileJenkins.jenkins_base_url, self.jid)
-        urls = []
-        p = urllib.urlopen(mainpage)
+    DefaultPattern = '^.*/NetworkManager(-adsl|-bluetooth|-debuginfo|-devel|-glib|-glib-devel|-tui|-wifi|-wwan)?-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-[^ /]*\.x86_64\.rpm$'
+    @property
+    def pattern(self):
+        if self._pattern is not None:
+            return self._pattern
+        return UploadFile_ParseWebsite.DefaultPattern
+    def set_pattern(self, value):
+        if not value:
+            self._pattern = None
+        else:
+            try:
+                re.match(value, '')
+            except:
+                raise Exception("Error in uri scheme '%s': expects a valid regular expression" % uri)
+            self._pattern = value
+
+    @property
+    def pattern_is_default(self):
+        return self._pattern is None
+    def is_matching_url(self, url):
+        if re.match('^.*/([^/]+\.(src|x86_64)\.rpm)$', url):
+            if re.search(self.pattern, url):
+                return True
+        return False
+
+    def init(self):
+        if self._urls is not None:
+            return
+        self.parse_uri()
+
+        p = urllib.urlopen(self._mainpage)
         page = p.read()
         p.close()
-        for a in re.finditer('href=[\'"](artifact/[^\'"]+)[\'"]', page):
-            m = re.match('^artifact/.*' + self.pattern + '.*$', a.group(1))
-            if m:
-                u = mainpage + m.group(0)
-                if not u.endswith('/*fingerprint*/') and \
-                   not u.endswith('/*view*/'):
-                    urls.append(u)
+
+        urls = list(self.parse_urls(page))
         if not urls:
-            raise Exception("Could not detect any URLs on jenkins for '%s' (see %s%s/)" % (self.uri, UploadFileJenkins.jenkins_base_url, self.jid))
-        self.urls = urls
+            self.raise_no_urls()
+        self._urls = urls
+
     def url(self):
-        return self.urls
+        self.init()
+        return self._urls
+
     def prepare(self, dry_run):
+        self.init()
         pass
+
+class UploadFileJenkins(UploadFile_ParseWebsite):
+    jenkins_base_url = 'http://10.34.131.51:8080/job/NetworkManager/'
+    def __init__(self, uri):
+        UploadFile_ParseWebsite.__init__(self, uri)
+    def parse_uri(self):
+        m = re.match('^jenkins://([0-9]+)(/(.+)|/?)?$', self.uri)
+        if not m:
+            raise Exception("Error detecting uri scheme jenkins:// from '%s'. Expected is 'jenkins://[ID]/[regex-wildcard]" % (self.uri))
+        self._id = int(m.group(1))
+        self.set_pattern(m.group(3))
+        self._mainpage = '%s%d/' % (UploadFileJenkins.jenkins_base_url, self._id)
+    def parse_urls(self, page):
+        for a in re.finditer('href=[\'"](artifact/[^\'"]*\.rpm)[\'"]', page):
+            url = self._mainpage + a.group(1)
+            if self.is_matching_url(url):
+                yield url
+    def raise_no_urls(self):
+        raise Exception("Could not detect any URLs on jenkins for '%s' (see %s%s/)" % (self.uri, UploadFileJenkins.jenkins_base_url, self._id))
+
+class UploadFileBrew(UploadFile_ParseWebsite):
+    brew_base_url = 'https://brewweb.devel.redhat.com/'
+    def __init__(self, uri):
+        UploadFile_ParseWebsite.__init__(self, uri)
+    def parse_uri(self):
+        if self.uri.startswith('brew://'):
+            self._type = "brew"
+        elif self.uri.startswith('brewtask://'):
+            self._type = "brewtask"
+        else:
+            raise Exception("Unexpected URI %s" % (self.uri))
+
+        if self._type == "brew":
+            m = re.match('^brew://([0-9]+)(/(.+)|/?)?$', self.uri)
+        elif self._type == "brewtask":
+            m = re.match('^brewtask://([0-9]+)(/(.+)|/?)?$', self.uri)
+        if not m:
+            raise Exception("Error detecting uri scheme %s:// from '%s'. Expected is '%s://[ID]/[regex-wildcard]" % (self._type, self.uri, self._type))
+        self._id = int(m.group(1))
+        self.set_pattern(m.group(3))
+        if self._type == "brew":
+            self._mainpage = '%sbuildinfo?buildID=%s' % (UploadFileBrew.brew_base_url, self._id)
+        elif self._type == "brewtask":
+            self._mainpage = '%staskinfo?taskID=%s' % (UploadFileBrew.brew_base_url, self._id)
+    def parse_urls(self, page):
+        if self._type == "brew":
+            p = 'href=[\'"](http://download.devel.redhat.com/brewroot/packages/[^\'"]*\.rpm)[\'"]'
+        elif self._type == "brewtask":
+            p = 'href=[\'"](http://download.devel.redhat.com/brewroot/work/tasks/[^\'"]*\.rpm)[\'"]'
+
+        for a in re.finditer(p, page):
+            url = a.group(1)
+            if self.is_matching_url(url):
+                yield url
+    def raise_no_urls(self):
+        if self.pattern_is_default:
+            raise Exception("Could not detect any URLs on brew for '%s' (see \"%s\"). Try giving a pattern \"%s://%s/.*\"" % (self.uri, self._mainpage, self._type, self._id))
+        raise Exception("Could not detect any URLs on brew for '%s' (see \"%s\")" % (self.uri, self._mainpage))
 
 class CmdBase:
     def __init__(self, name):
@@ -384,7 +461,7 @@ class CmdSubmit(CmdBase):
 
         self.parser = argparse.ArgumentParser(prog=sys.argv[0] + " " + name, description='Submit job to beaker.')
         self.parser.add_argument('--no-test', action='store_true', help='do submit the job to beaker')
-        self.parser.add_argument('--rpm', '-r', action='append')
+        self.parser.add_argument('--rpm', '-r', action='append', help='Filenames of RPMs. Supports (local) files, file://, jenkins://, brew:// and brewtask:// URI schemes')
         self.parser.add_argument('--nitrate-tag', '-t', action='append', help='Query nitrate for tests having this tag. Output is appended to $TESTS. Specifying more then once combines them as AND')
         self.parser.add_argument('--nitrate-all', '-a', action='store_true', help='Query all nitrate tests')
         self.parser.add_argument('--nitrate-exclude-tag', '-T', action='append', help='Query nitrate for tests not having this tag. Output is appended to $TESTS. In combination with --nitrate-tag this blacklists cases (after selecting then)')
@@ -401,11 +478,16 @@ class CmdSubmit(CmdBase):
         self.rpm = []
         for r in self.options.rpm:
             if r.startswith('http://') or r.startswith('https://'):
-                self.rpm.append((r, UploadFileUrl(r)));
+                ctor = UploadFileUrl
             elif r.startswith('jenkins://'):
-                self.rpm.append((r, UploadFileJenkins(r)))
+                ctor = UploadFileJenkins
+            elif r.startswith('brew://') or r.startswith('brewtask://'):
+                ctor = UploadFileBrew
             else:
-                self.rpm.append((r, UploadFileSsh(r)))
+                ctor = UploadFileSsh
+            uf = ctor(r)
+            uf.init()
+            self.rpm.append((r, uf))
 
     def _print_substitution(self, k, v):
         if is_sequence(v):
