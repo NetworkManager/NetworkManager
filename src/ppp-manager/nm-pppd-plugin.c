@@ -19,6 +19,7 @@
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
+#include <config.h>
 #include <string.h>
 #include <pppd/pppd.h>
 #include <pppd/fsm.h>
@@ -26,9 +27,14 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <dlfcn.h>
 #include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
+
+#define INET6
+#include <pppd/eui64.h>
+#include <pppd/ipv6cp.h>
 
 #include "NetworkManager.h"
 #include "nm-pppd-plugin.h"
@@ -128,7 +134,6 @@ str_to_gvalue (const char *str)
 	val = g_slice_new0 (GValue);
 	g_value_init (val, G_TYPE_STRING);
 	g_value_set_string (val, str);
-
 	return val;
 }
 
@@ -140,7 +145,6 @@ uint_to_gvalue (guint32 i)
 	val = g_slice_new0 (GValue);
 	g_value_init (val, G_TYPE_UINT);
 	g_value_set_uint (val, i);
-
 	return val;
 }
 
@@ -230,9 +234,51 @@ nm_ip_up (void *data, int arg)
 		g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_WINS, val);
 	}
 
-	g_message ("nm-ppp-plugin: (%s): sending Ip4Config to NetworkManager...", __func__);
+	g_message ("nm-ppp-plugin: (%s): sending IPv4 config to NetworkManager...", __func__);
 
 	dbus_g_proxy_call_no_reply (proxy, "SetIp4Config",
+	                            DBUS_TYPE_G_MAP_OF_VARIANT, hash, G_TYPE_INVALID,
+	                            G_TYPE_INVALID);
+
+	g_hash_table_destroy (hash);
+}
+
+static GValue *
+eui64_to_gvalue (eui64_t eui)
+{
+	GValue *val;
+	guint64 iid;
+
+	G_STATIC_ASSERT (sizeof (iid) == sizeof (eui));
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, G_TYPE_UINT64);
+	memcpy (&iid, &eui, sizeof (eui));
+	g_value_set_uint64 (val, iid);
+	return val;
+}
+
+static void
+nm_ip6_up (void *data, int arg)
+{
+	ipv6cp_options *ho = &ipv6cp_hisoptions[0];
+	ipv6cp_options *go = &ipv6cp_gotoptions[0];
+	GHashTable *hash;
+
+	g_return_if_fail (DBUS_IS_G_PROXY (proxy));
+
+	g_message ("nm-ppp-plugin: (%s): ip6-up event", __func__);
+
+	hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, value_destroy);
+	g_hash_table_insert (hash, NM_PPP_IP6_CONFIG_INTERFACE, str_to_gvalue (ifname));
+	g_hash_table_insert (hash, NM_PPP_IP6_CONFIG_OUR_IID, eui64_to_gvalue (go->ourid));
+	g_hash_table_insert (hash, NM_PPP_IP6_CONFIG_PEER_IID, eui64_to_gvalue (ho->hisid));
+
+	/* DNS is done via DHCPv6 or router advertisements */
+
+	g_message ("nm-ppp-plugin: (%s): sending IPv6 config to NetworkManager...", __func__);
+
+	dbus_g_proxy_call_no_reply (proxy, "SetIp6Config",
 	                            DBUS_TYPE_G_MAP_OF_VARIANT, hash, G_TYPE_INVALID,
 	                            G_TYPE_INVALID);
 
@@ -319,6 +365,27 @@ nm_exit_notify (void *data, int arg)
 	proxy = NULL;
 }
 
+static void
+add_ip6_notifier (void)
+{
+	static struct notifier **notifier = NULL;
+	static gsize load_once = 0;
+
+	if (g_once_init_enter (&load_once)) {
+		void *handle = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
+
+		if (handle) {
+			notifier = dlsym (handle, "ipv6_up_notifier");
+			dlclose (handle);
+		}
+		g_once_init_leave (&load_once, 1);
+	}
+	if (notifier)
+		add_notifier (notifier, nm_ip6_up, NULL);
+	else
+		g_message ("nm-ppp-plugin: no IPV6CP notifier support; IPv6 not available");
+}
+
 int
 plugin_init (void)
 {
@@ -356,6 +423,7 @@ plugin_init (void)
 	add_notifier (&phasechange, nm_phasechange, NULL);
 	add_notifier (&ip_up_notifier, nm_ip_up, NULL);
 	add_notifier (&exitnotify, nm_exit_notify, proxy);
+	add_ip6_notifier ();
 
 	return 0;
 }

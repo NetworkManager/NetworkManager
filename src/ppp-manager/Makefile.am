@@ -20,8 +20,8 @@ nm_pppd_plugin_la_SOURCES = \
 nm_pppd_plugin_la_LDFLAGS = -module -avoid-version
 
 nm_pppd_plugin_la_LIBADD = \
-	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	-ldl
 
 endif
