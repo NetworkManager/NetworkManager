@@ -2157,10 +2157,8 @@ nm_utils_hwaddr_ntoa_len (gconstpointer addr, gsize length)
 	char *out, *result;
 	const char *LOOKUP = "0123456789ABCDEF";
 
-	if (!addr || !length) {
-		g_return_val_if_reached (g_strdup (""));
-		return g_strdup ("");
-	}
+	g_return_val_if_fail (addr != NULL, g_strdup (""));
+	g_return_val_if_fail (length != 0, g_strdup (""));
 
 	result = out = g_malloc (length * 3);
 	for (;;) {

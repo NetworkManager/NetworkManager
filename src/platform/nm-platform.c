@@ -2542,7 +2542,6 @@ _change_type_to_string (NMPlatformSignalChangeType change_type)
 		return "removed";
 	default:
 		g_return_val_if_reached ("UNKNOWN");
-		return "UNKNOWN";
 	}
 }
 
