@@ -410,6 +410,8 @@ bluez_disconnect_cb (GDBusConnection *dbus_connection,
 		g_error_free (error);
 	} else
 		g_variant_unref (variant);
+
+	g_object_unref (NM_BLUEZ_DEVICE (user_data));
 }
 
 void
@@ -449,7 +451,7 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 	                        10000,
 	                        NULL,
 	                        (GAsyncReadyCallback) bluez_disconnect_cb,
-	                        self);
+	                        g_object_ref (self));
 
 	priv->connection_bt_type = NM_BT_CAPABILITY_NONE;
 }
