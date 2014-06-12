@@ -866,10 +866,14 @@ simple_disconnect_ready (MMModemSimple *modem_iface,
 }
 
 static void
-disconnect (NMModem *self,
+disconnect (NMModem *modem,
             gboolean warn)
 {
+	NMModemBroadband *self = NM_MODEM_BROADBAND (modem);
 	SimpleDisconnectContext *ctx;
+
+	if (!self->priv->simple_iface)
+		return;
 
 	ctx = g_slice_new (SimpleDisconnectContext);
 	ctx->self = g_object_ref (self);
