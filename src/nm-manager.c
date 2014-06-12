@@ -1719,6 +1719,30 @@ recheck_assume_connection (NMDevice *device, gpointer user_data)
 	}
 }
 
+static void
+device_ip_iface_changed (NMDevice *device,
+                         GParamSpec *pspec,
+                         NMManager *self)
+{
+	const char *ip_iface = nm_device_get_ip_iface (device);
+	GSList *iter;
+
+	/* Remove NMDevice objects that are actually child devices of others,
+	 * when the other device finally knows its IP interface name.  For example,
+	 * remove the PPP interface that's a child of a WWAN device, since it's
+	 * not really a standalone NMDevice.
+	 */
+	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
+		NMDevice *candidate = NM_DEVICE (iter->data);
+
+		if (   candidate != device
+		    && g_strcmp0 (nm_device_get_iface (candidate), ip_iface) == 0) {
+			remove_device (self, candidate, FALSE);
+			break;
+		}
+	}
+}
+
 /**
  * add_device:
  * @self: the #NMManager
@@ -1772,6 +1796,10 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 
 	g_signal_connect (device, NM_DEVICE_REMOVED,
 	                  G_CALLBACK (device_removed_cb),
+	                  self);
+
+	g_signal_connect (device, "notify::" NM_DEVICE_IP_IFACE,
+	                  G_CALLBACK (device_ip_iface_changed),
 	                  self);
 
 	if (priv->startup) {
