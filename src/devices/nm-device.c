@@ -217,6 +217,7 @@ typedef struct {
 	gpointer        act_source6_func;
 	guint           recheck_assume_id;
 	guint           dispatcher_id;
+	NMDeviceStateReason dispatcher_pre_down_reason;
 
 	/* Link stuff */
 	guint           link_connected_id;
@@ -831,8 +832,12 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean configure)
 		reason = NM_DEVICE_STATE_REASON_NONE;
 	else if (priv->state == NM_DEVICE_STATE_FAILED)
 		reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
-	else
+	else if (priv->state_reason != NM_DEVICE_STATE_REASON_NONE)
 		reason = priv->state_reason;
+	else {
+		g_warn_if_reached ();
+		reason = NM_DEVICE_STATE_REASON_UNKNOWN;
+	}
 	nm_device_slave_notify_release (info->slave, reason);
 
 	free_slave_info (info);
@@ -6530,7 +6535,7 @@ dispatcher_pre_down_done (guint call_id, gpointer user_data)
 	g_return_if_fail (call_id == priv->dispatcher_id);
 
 	priv->dispatcher_id = 0;
-	nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
+	nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, priv->dispatcher_pre_down_reason);
 }
 
 static void
@@ -6709,6 +6714,7 @@ _set_state_full (NMDevice *device,
 			                         nm_act_request_get_connection (req),
 			                         device);
 		} else {
+			priv->dispatcher_pre_down_reason = reason;
 			if (!nm_dispatcher_call (DISPATCHER_ACTION_PRE_DOWN,
 			                         nm_act_request_get_connection (req),
 			                         device,
