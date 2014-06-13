@@ -231,7 +231,7 @@ static void
 track_new_connection (SCPluginIfnet *self, NMIfnetConnection *connection)
 {
 	g_hash_table_insert (SC_PLUGIN_IFNET_GET_PRIVATE (self)->connections,
-	                     (gpointer) nm_connection_get_uuid (NM_CONNECTION (connection)),
+	                     g_strdup (nm_connection_get_uuid (NM_CONNECTION (connection))),
 	                     g_object_ref (connection));
 	g_signal_connect (connection, NM_SETTINGS_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed_cb),
@@ -432,7 +432,7 @@ init (NMSystemConfigInterface *config)
 
 	nm_log_info (LOGD_SETTINGS, "Initializing!");
 
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 	priv->unmanaged_well_known = !is_managed_plugin ();
 	nm_log_info (LOGD_SETTINGS, "management mode: %s",
 	             priv->unmanaged_well_known ? "unmanaged" : "managed");
