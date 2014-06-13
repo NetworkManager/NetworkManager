@@ -181,7 +181,19 @@ typelibdir = $(libdir)/girepository-1.0
 typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 
 CLEANFILES += $(gir_DATA) $(typelib_DATA)
+
+noinst_DATA = nm-setting-docs.xml
+
+nm-setting-docs.xml: generate-setting-docs.py NetworkManager-1.0.gir libnm-util.la
+	$(srcdir)/generate-setting-docs.py \
+		--gir $(builddir)/NetworkManager-1.0.gir \
+		--output $@
+
 endif
+
+DISTCLEANFILES = nm-setting-docs.xml
+
+EXTRA_DIST += generate-setting-docs.py
 
 if ENABLE_TESTS
 

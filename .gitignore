@@ -169,6 +169,7 @@ valgrind-*.log
 /test/libnm_glib_test
 /test/nm-online
 /test/nmtestdevices
+/libnm-util/nm-setting-docs.xml
 /libnm-util/test-crypto
 /libnm-util/tests/test-crypto
 /libnm-util/tests/test-settings-defaults

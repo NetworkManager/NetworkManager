@@ -44,6 +44,17 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-ifupdown \
 	--enable-ifnet
 
+if HAVE_INTROSPECTION
+dist-check-introspection:
+else
+dist-check-introspection:
+	@echo "*** gobject-introspection is needed to run 'make dist'. ***"
+	@echo "*** It was not enabled when 'configure' ran.            ***"
+	@false
+endif
+
+dist: dist-check-introspection
+
 DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 
 pkgconfigdir = $(libdir)/pkgconfig
