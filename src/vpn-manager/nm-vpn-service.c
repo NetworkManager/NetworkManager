@@ -209,8 +209,8 @@ nm_vpn_service_daemon_exec (NMVPNService *service, GError **error)
 
 	success = g_spawn_async (NULL, vpn_argv, NULL, 0, _daemon_setup, NULL, &pid, &spawn_error);
 	if (success) {
-		nm_log_info (LOGD_VPN, "VPN service '%s' started (%s), PID %d", 
-		             priv->name, priv->dbus_service, pid);
+		nm_log_info (LOGD_VPN, "VPN service '%s' started (%s), PID %ld",
+		             priv->name, priv->dbus_service, (long int) pid);
 		priv->start_timeout = g_timeout_add_seconds (5, _daemon_exec_timeout, service);
 	} else {
 		nm_log_warn (LOGD_VPN, "VPN service '%s': could not launch the VPN service. error: (%d) %s.",
