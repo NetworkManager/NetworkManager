@@ -1316,8 +1316,6 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 		g_clear_error (&verify_error);
 		g_object_unref (connection);
 		connection = NULL;
-		nm_log_warn (LOGD_SETTINGS, "Connection failed to verify: %s",
-		             verify_error ? g_type_name (nm_connection_lookup_setting_type_by_quark (verify_error->domain)) : "(unknown)");
 	}
 
 out:
