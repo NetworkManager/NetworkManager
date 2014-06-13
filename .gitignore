@@ -115,7 +115,6 @@ valgrind-*.log
 /docs/libnm-util/version.xml
 
 /docs/api/version.xml
-/docs/api/generate-settings-spec
 /docs/api/settings-spec.html
 /docs/api/settings-spec.xml
 /docs/api/spec.html
