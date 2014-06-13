@@ -49,6 +49,7 @@ typedef struct {
 	struct nl_cb *nl_cb;
 	guint32 *freqs;
 	int num_freqs;
+	int phy;
 } WifiDataNl80211;
 
 static int
@@ -76,7 +77,7 @@ error_handler (struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
 }
 
 static struct nl_msg *
-_nl80211_alloc_msg (int id, int ifindex, guint32 cmd, guint32 flags)
+_nl80211_alloc_msg (int id, int ifindex, int phy, guint32 cmd, guint32 flags)
 {
 	struct nl_msg *msg;
 
@@ -84,6 +85,8 @@ _nl80211_alloc_msg (int id, int ifindex, guint32 cmd, guint32 flags)
 	if (msg) {
 		genlmsg_put (msg, 0, 0, id, 0, flags, cmd, 0);
 		NLA_PUT_U32 (msg, NL80211_ATTR_IFINDEX, ifindex);
+		if (phy != -1)
+			NLA_PUT_U32 (msg, NL80211_ATTR_WIPHY, phy);
 	}
 	return msg;
 
@@ -95,7 +98,7 @@ _nl80211_alloc_msg (int id, int ifindex, guint32 cmd, guint32 flags)
 static struct nl_msg *
 nl80211_alloc_msg (WifiDataNl80211 *nl80211, guint32 cmd, guint32 flags)
 {
-	return _nl80211_alloc_msg (nl80211->id, nl80211->parent.ifindex, cmd, flags);
+	return _nl80211_alloc_msg (nl80211->id, nl80211->parent.ifindex, nl80211->phy, cmd, flags);
 }
 
 /* NOTE: this function consumes 'msg' */
@@ -618,7 +621,7 @@ nl80211_wowlan_handler (struct nl_msg *msg, void *arg)
 	info->enabled = FALSE;
 
 	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		       genlmsg_attrlen (gnlh, 0), NULL) < 0)
+	               genlmsg_attrlen (gnlh, 0), NULL) < 0)
 		return NL_SKIP;
 
 	if (tb[NL80211_ATTR_WOWLAN_TRIGGERS])
@@ -635,13 +638,13 @@ wifi_nl80211_get_wowlan (WifiData *data)
 	struct nl80211_wowlan_info info;
 
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WOWLAN, 0);
-
 	nl80211_send_and_recv (nl80211, msg, nl80211_wowlan_handler, &info);
 
 	return info.enabled;
 }
 
 struct nl80211_device_info {
+	int phy;
 	guint32 *freqs;
 	int num_freqs;
 	guint32 caps;
@@ -686,8 +689,11 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 	               genlmsg_attrlen (gnlh, 0), NULL) < 0)
 		return NL_SKIP;
 
-	if (tb[NL80211_ATTR_WIPHY_BANDS] == NULL)
+	if (   tb[NL80211_ATTR_WIPHY] == NULL
+	    || tb[NL80211_ATTR_WIPHY_BANDS] == NULL)
 		return NL_SKIP;
+
+	info->phy = nla_get_u32 (tb[NL80211_ATTR_WIPHY]);
 
 	if (tb[NL80211_ATTR_MAX_NUM_SCAN_SSIDS]) {
 		info->can_scan_ssid =
@@ -852,6 +858,8 @@ wifi_nl80211_init (const char *iface, int ifindex)
 	if (nl80211->nl_cb == NULL)
 		goto error;
 
+	nl80211->phy = -1;
+
 	msg = nl80211_alloc_msg (nl80211, NL80211_CMD_GET_WIPHY, 0);
 
 	if (nl80211_send_and_recv (nl80211, msg, nl80211_wiphy_info_handler,
@@ -897,6 +905,7 @@ wifi_nl80211_init (const char *iface, int ifindex)
 		goto error;
 	}
 
+	nl80211->phy = device_info.phy;
 	nl80211->freqs = device_info.freqs;
 	nl80211->num_freqs = device_info.num_freqs;
 	nl80211->parent.caps = device_info.caps;
@@ -944,7 +953,7 @@ wifi_nl80211_is_wifi (const char *iface)
 
 	nl_cb = nl_cb_alloc (NL_CB_DEFAULT);
 	if (nl_cb) {
-		msg = _nl80211_alloc_msg (id, ifindex, NL80211_CMD_GET_INTERFACE, 0);
+		msg = _nl80211_alloc_msg (id, ifindex, -1, NL80211_CMD_GET_INTERFACE, 0);
 		if (_nl80211_send_and_recv (nl_sock,
 			                        nl_cb,
 			                        msg,
