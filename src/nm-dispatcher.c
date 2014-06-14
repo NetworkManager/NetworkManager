@@ -22,6 +22,7 @@
 #include <glib.h>
 #include <gio/gio.h>
 #include <string.h>
+#include <errno.h>
 
 #include "nm-dispatcher.h"
 #include "nm-dispatcher-api.h"
@@ -38,6 +39,7 @@ static GHashTable *requests = NULL;
 
 typedef struct {
 	GFileMonitor *monitor;
+	const char *const description;
 	const char *const dir;
 	const guint16 dir_len;
 	char has_scripts;
@@ -50,10 +52,10 @@ enum {
 };
 
 static Monitor monitors[3] = {
-#define MONITORS_INIT_SET(INDEX, SCRIPT_DIR)   [INDEX] = { .dir_len = STRLEN (SCRIPT_DIR), .dir = SCRIPT_DIR, .has_scripts = TRUE }
-	MONITORS_INIT_SET (MONITOR_INDEX_DEFAULT,  NMD_SCRIPT_DIR_DEFAULT),
-	MONITORS_INIT_SET (MONITOR_INDEX_PRE_UP,   NMD_SCRIPT_DIR_PRE_UP),
-	MONITORS_INIT_SET (MONITOR_INDEX_PRE_DOWN, NMD_SCRIPT_DIR_PRE_DOWN),
+#define MONITORS_INIT_SET(INDEX, USE, SCRIPT_DIR)   [INDEX] = { .dir_len = STRLEN (SCRIPT_DIR), .dir = SCRIPT_DIR, .description = ("" USE), .has_scripts = TRUE }
+	MONITORS_INIT_SET (MONITOR_INDEX_DEFAULT,  "default",  NMD_SCRIPT_DIR_DEFAULT),
+	MONITORS_INIT_SET (MONITOR_INDEX_PRE_UP,   "pre-up",   NMD_SCRIPT_DIR_PRE_UP),
+	MONITORS_INIT_SET (MONITOR_INDEX_PRE_DOWN, "pre-down", NMD_SCRIPT_DIR_PRE_DOWN),
 };
 
 static const Monitor*
@@ -698,16 +700,44 @@ dispatcher_dir_changed (GFileMonitor *monitor,
                         GFileMonitorEvent event_type,
                         Monitor *item)
 {
+	const char *name;
+	char *full_name;
 	GDir *dir;
+	GError *error = NULL;
 
-	dir = g_dir_open (item->dir, 0, NULL);
+	dir = g_dir_open (item->dir, 0, &error);
 	if (dir) {
-		item->has_scripts = !!g_dir_read_name (dir);
+		int errsv = 0;
+
+		item->has_scripts = FALSE;
+		errno = 0;
+		while (!item->has_scripts
+		    && (name = g_dir_read_name (dir))) {
+			full_name = g_build_filename (item->dir, name, NULL);
+			item->has_scripts = g_file_test (full_name, G_FILE_TEST_IS_EXECUTABLE);
+			g_free (full_name);
+		}
+		errsv = errno;
 		g_dir_close (dir);
+		if (item->has_scripts)
+			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' has scripts", item->description, item->dir);
+		else if (errsv == 0)
+			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' has no scripts", item->description, item->dir);
+		else {
+			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' error reading (%s)", item->description, item->dir, strerror (errsv));
+			item->has_scripts = TRUE;
+		}
 	} else {
-		/* Default to dispatching on error opening the directory */
-		item->has_scripts = TRUE;
+		if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
+			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' does not exist", item->description, item->dir);
+			item->has_scripts = FALSE;
+		} else {
+			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' error (%s)", item->description, item->dir, error->message);
+			item->has_scripts = TRUE;
+		}
+		g_error_free (error);
 	}
+
 }
 
 void
