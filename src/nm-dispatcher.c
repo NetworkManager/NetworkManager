@@ -221,7 +221,7 @@ dispatcher_results_process (guint request_id, GPtrArray *results)
 		if (!validate_element (request_id, tmp, G_TYPE_STRING, i, 0))
 			continue;
 		script = g_value_get_string (tmp);
-		if (!script || strncmp (script, NMD_SCRIPT_DIR "/", STRLEN (NMD_SCRIPT_DIR "/")))
+		if (!script || strncmp (script, NMD_SCRIPT_DIR_DEFAULT "/", STRLEN (NMD_SCRIPT_DIR_DEFAULT "/")))
 			continue;
 
 		/* Result */
@@ -240,11 +240,11 @@ dispatcher_results_process (guint request_id, GPtrArray *results)
 		if (result == DISPATCH_RESULT_SUCCESS) {
 			nm_log_dbg (LOGD_DISPATCH, "(%u) %s succeeded",
 			            request_id,
-			            script + STRLEN (NMD_SCRIPT_DIR "/"));
+			            script + STRLEN (NMD_SCRIPT_DIR_DEFAULT "/"));
 		} else {
 			nm_log_warn (LOGD_DISPATCH, "(%u) %s failed (%s): %s",
 			             request_id,
-			             script + STRLEN (NMD_SCRIPT_DIR "/"),
+			             script + STRLEN (NMD_SCRIPT_DIR_DEFAULT "/"),
 			             dispatch_result_to_string (result),
 			             err ? err : "");
 		}
@@ -379,7 +379,7 @@ _dispatcher_call (DispatcherAction action,
 			info->user_data = user_data;
 			info->idle_id = g_idle_add (dispatcher_idle_cb, info);
 		}
-		nm_log_dbg (LOGD_DISPATCH, "(%u) ignoring request; no scripts in " NMD_SCRIPT_DIR, reqid);
+		nm_log_dbg (LOGD_DISPATCH, "(%u) ignoring request; no scripts in " NMD_SCRIPT_DIR_DEFAULT, reqid);
 		success = TRUE;
 		goto done;
 	}
@@ -633,9 +633,9 @@ typedef struct {
 } Monitor;
 
 static Monitor monitors[3] = {
-	{ NMD_SCRIPT_DIR,   NULL, TRUE },
-	{ NMD_PRE_UP_DIR,   NULL, TRUE },
-	{ NMD_PRE_DOWN_DIR, NULL, TRUE }
+	{ NMD_SCRIPT_DIR_DEFAULT,  NULL, TRUE },
+	{ NMD_SCRIPT_DIR_PRE_UP,   NULL, TRUE },
+	{ NMD_SCRIPT_DIR_PRE_DOWN, NULL, TRUE }
 };
 
 static void
