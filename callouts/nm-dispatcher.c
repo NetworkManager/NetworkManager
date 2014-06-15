@@ -426,12 +426,12 @@ find_scripts (const char *str_action)
 
 	if (   strcmp (str_action, NMD_ACTION_PRE_UP) == 0
 	    || strcmp (str_action, NMD_ACTION_VPN_PRE_UP) == 0)
-		dirname = NMD_PRE_UP_DIR;
+		dirname = NMD_SCRIPT_DIR_PRE_UP;
 	else if (   strcmp (str_action, NMD_ACTION_PRE_DOWN) == 0
 	         || strcmp (str_action, NMD_ACTION_VPN_PRE_DOWN) == 0)
-		dirname = NMD_PRE_DOWN_DIR;
+		dirname = NMD_SCRIPT_DIR_PRE_DOWN;
 	else
-		dirname = NMD_SCRIPT_DIR;
+		dirname = NMD_SCRIPT_DIR_DEFAULT;
 
 	if (!(dir = g_dir_open (dirname, 0, &error))) {
 		g_message ("Failed to open dispatcher directory '%s': (%d) %s",
