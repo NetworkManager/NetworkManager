@@ -67,7 +67,7 @@
 					<param name="TESTS" value="$TESTS"/>
 					<param name="TEST_MAPPER" value="True"/>
 					<param name="COMPONENT" value="NetworkManager"/>
-					<param name="GIT_URL" value="https://gerrit.dqe.lab.eng.bos.redhat.com/cgit/NetworkManager.git"/>
+					<param name="GIT_URL" value="http://git.app.eng.bos.redhat.com/git/desktopqe/NetworkManager.git"/>
 					<param name="TYPE" value="TEST"/>
 				</params>
 			</task>
