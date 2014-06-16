@@ -34,12 +34,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_BT_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_BT))
 #define NM_DEVICE_BT_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_BT, NMDeviceBtClass))
 
-typedef enum {
-	NM_BT_ERROR_CONNECTION_NOT_BT = 0,   /*< nick=ConnectionNotBt >*/
-	NM_BT_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
-	NM_BT_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
-} NMBtError;
-
 #define NM_DEVICE_BT_NAME         "name"
 #define NM_DEVICE_BT_CAPABILITIES "bt-capabilities"
 #define NM_DEVICE_BT_DEVICE       "bt-device"

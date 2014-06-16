@@ -24,7 +24,7 @@ AM_CPPFLAGS = \
 GLIB_GENERATED = nm-bt-enum-types.h nm-bt-enum-types.c
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
-nm_bt_enum_types_sources = $(srcdir)/nm-device-bt.h
+nm_bt_enum_types_sources = $(srcdir)/nm-bt-error.h
 
 nm-device-bt-glue.h: $(top_srcdir)/introspection/nm-device-bt.xml
 	dbus-binding-tool --prefix=nm_device_bt --mode=glib-server --output=$@ $<
@@ -47,6 +47,8 @@ libnm_device_plugin_bluetooth_la_SOURCES = \
 	nm-bluez4-manager.h \
 	nm-bluez5-manager.c \
 	nm-bluez5-manager.h \
+	nm-bt-error.h \
+	nm-bt-error.c \
 	\
 	nm-device-bt.c \
 	nm-device-bt.h \
