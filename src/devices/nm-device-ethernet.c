@@ -369,7 +369,7 @@ update_permanent_hw_address (NMDevice *dev)
 			memset (epaddr->data, 0, ETH_ALEN);
 	}
 
-	if (memcmp (priv->perm_hw_addr, epaddr->data, ETH_ALEN)) {
+	if (!nm_utils_hwaddr_matches (priv->perm_hw_addr, ETH_ALEN, epaddr->data, ETH_ALEN)) {
 		memcpy (priv->perm_hw_addr, epaddr->data, ETH_ALEN);
 		g_object_notify (G_OBJECT (dev), NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS);
 	}
@@ -473,7 +473,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 			return FALSE;
 
 		mac = nm_setting_wired_get_mac_address (s_wired);
-		if (try_mac && mac && memcmp (mac->data, priv->perm_hw_addr, ETH_ALEN))
+		if (try_mac && mac && !nm_utils_hwaddr_matches (mac->data, mac->len, priv->perm_hw_addr, ETH_ALEN))
 			return FALSE;
 
 		/* Check for MAC address blacklist */
@@ -487,7 +487,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 				return FALSE;
 			}
 
-			if (memcmp (addr, priv->perm_hw_addr, ETH_ALEN) == 0)
+			if (nm_utils_hwaddr_matches (addr, ETH_ALEN, priv->perm_hw_addr, ETH_ALEN))
 				return FALSE;
 		}
 	}
@@ -1462,7 +1462,7 @@ complete_connection (NMDevice *device,
 	setting_mac = nm_setting_wired_get_mac_address (s_wired);
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-		if (memcmp (setting_mac->data, priv->perm_hw_addr, ETH_ALEN)) {
+		if (!nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, priv->perm_hw_addr, ETH_ALEN)) {
 			g_set_error_literal (error,
 			                     NM_SETTING_WIRED_ERROR,
 			                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
@@ -1471,10 +1471,9 @@ complete_connection (NMDevice *device,
 		}
 	} else {
 		GByteArray *mac;
-		const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
 
 		/* Lock the connection to this device by default */
-		if (memcmp (priv->perm_hw_addr, null_mac, ETH_ALEN)) {
+		if (!nm_utils_hwaddr_matches (priv->perm_hw_addr, ETH_ALEN, NULL, ETH_ALEN)) {
 			mac = g_byte_array_sized_new (ETH_ALEN);
 			g_byte_array_append (mac, priv->perm_hw_addr, ETH_ALEN);
 			g_object_set (G_OBJECT (s_wired), NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
@@ -1503,7 +1502,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 	NMSettingWired *s_wired = nm_connection_get_setting_wired (connection);
 	guint maclen;
 	const guint8 *mac = nm_device_get_hw_address (device, &maclen);
-	static const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
 	const char *mac_prop = NM_SETTING_WIRED_MAC_ADDRESS;
 	GByteArray *array;
 	GHashTableIter iter;
@@ -1517,14 +1515,14 @@ update_connection (NMDevice *device, NMConnection *connection)
 	/* If the device reports a permanent address, use that for the MAC address
 	 * and the current MAC, if different, is the cloned MAC.
 	 */
-	if (memcmp (priv->perm_hw_addr, null_mac, ETH_ALEN)) {
+	if (!nm_utils_hwaddr_matches (priv->perm_hw_addr, ETH_ALEN, NULL, ETH_ALEN)) {
 		array = g_byte_array_sized_new (ETH_ALEN);
 		g_byte_array_append (array, priv->perm_hw_addr, ETH_ALEN);
 		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, array, NULL);
 		g_byte_array_unref (array);
 
 		mac_prop = NULL;
-		if (mac && memcmp (priv->perm_hw_addr, mac, ETH_ALEN))
+		if (mac && !nm_utils_hwaddr_matches (priv->perm_hw_addr, ETH_ALEN, mac, ETH_ALEN))
 			mac_prop = NM_SETTING_WIRED_CLONED_MAC_ADDRESS;
 	}
 

@@ -901,7 +901,7 @@ nm_ap_set_address (NMAccessPoint *ap, const guint8 *addr)
 
 	priv = NM_AP_GET_PRIVATE (ap);
 
-	if (memcmp (addr, priv->address, sizeof (priv->address))) {
+	if (!nm_utils_hwaddr_matches (addr, ETH_ALEN, priv->address, sizeof (priv->address))) {
 		memcpy (NM_AP_GET_PRIVATE (ap)->address, addr, sizeof (priv->address));
 		g_object_notify (G_OBJECT (ap), NM_AP_HW_ADDRESS);
 	}
@@ -1124,7 +1124,7 @@ nm_ap_check_compatible (NMAccessPoint *self,
 		return FALSE;
 
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
-	if (bssid && memcmp (bssid->data, priv->address, ETH_ALEN))
+	if (bssid && !nm_utils_hwaddr_matches (bssid->data, bssid->len, priv->address, ETH_ALEN))
 		return FALSE;
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
@@ -1237,7 +1237,7 @@ nm_ap_match_in_list (NMAccessPoint *find_ap,
 		/* BSSID match */
 		if (   (strict_match || nm_ethernet_address_is_valid (find_addr))
 		    && nm_ethernet_address_is_valid (list_addr)
-		    && memcmp (list_addr, find_addr, ETH_ALEN) != 0)
+		    && !nm_utils_hwaddr_matches (list_addr, ETH_ALEN, find_addr, ETH_ALEN))
 			continue;
 
 		/* mode match */

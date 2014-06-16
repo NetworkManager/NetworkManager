@@ -585,18 +585,22 @@ nm_match_spec_string (const GSList *specs, const char *match)
 gboolean
 nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 {
-	char *hwaddr_match;
-	gboolean matched;
+	const GSList *iter;
 
 	g_return_val_if_fail (hwaddr != NULL, FALSE);
 
-	if (nm_match_spec_string (specs, hwaddr))
-		return TRUE;
+	for (iter = specs; iter; iter = g_slist_next (iter)) {
+		const char *spec_str = iter->data;
 
-	hwaddr_match = g_strdup_printf ("mac:%s", hwaddr);
-	matched = nm_match_spec_string (specs, hwaddr_match);
-	g_free (hwaddr_match);
-	return matched;
+		if (   !g_ascii_strncasecmp (spec_str, "mac:", 4)
+		    && nm_utils_hwaddr_matches (spec_str + 4, -1, hwaddr, -1))
+			return TRUE;
+
+		if (nm_utils_hwaddr_matches (spec_str, -1, hwaddr, -1))
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 gboolean

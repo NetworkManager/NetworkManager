@@ -1508,8 +1508,7 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 		setting_mac = nm_setting_wired_get_mac_address (s_wired);
 		if (setting_mac) {
 			/* A connection mac-locked to this device */
-			if (hwaddr_len == setting_mac->len &&
-				!memcmp (setting_mac->data, hwaddr, hwaddr_len))
+			if (nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, hwaddr, hwaddr_len))
 				return TRUE;
 		} else {
 			/* A connection that applies to any wired device */

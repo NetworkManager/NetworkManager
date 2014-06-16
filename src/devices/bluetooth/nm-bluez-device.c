@@ -314,9 +314,9 @@ connection_compatible (NMBluezDevice *self, NMConnection *connection)
 		return FALSE;
 	}
 	bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
-	if (!bdaddr || bdaddr->len != ETH_ALEN)
+	if (!bdaddr)
 		return FALSE;
-	if (memcmp (bdaddr->data, priv->bin_address, ETH_ALEN) != 0)
+	if (!nm_utils_hwaddr_matches (bdaddr->data, bdaddr->len, priv->bin_address, ETH_ALEN))
 		return FALSE;
 
 	bt_type = nm_setting_bluetooth_get_connection_type (s_bt);

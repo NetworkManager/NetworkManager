@@ -440,7 +440,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 				continue;
 			}
 
-			if (memcmp (ifcfg_mac->data, ibft_mac, ETH_ALEN)) {
+			if (!nm_utils_hwaddr_matches (ibft_mac, ETH_ALEN, ifcfg_mac->data, ifcfg_mac->len)) {
 				/* This record isn't for the current device, ignore it */
 				skip = TRUE;
 				continue;

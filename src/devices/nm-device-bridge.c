@@ -122,8 +122,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 		hw_addr = nm_device_get_hw_address (device, &hw_len);
 		if (   !hw_addr
-		    || hw_len != mac_address->len
-		    || memcmp (mac_address->data, hw_addr, hw_len) != 0)
+		    || !nm_utils_hwaddr_matches (mac_address->data, mac_address->len, hw_addr, hw_len))
 			return FALSE;
 	}
 

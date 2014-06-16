@@ -327,7 +327,8 @@ nmt_device_entry_set_mac_address (NmtDeviceEntry *deventry,
 		g_clear_pointer (&priv->mac_address, g_byte_array_unref);
 		changed = TRUE;
 	} else if (   mac_address && priv->mac_address
-	           && memcmp (mac_address->data, priv->mac_address->data, mac_address->len) != 0) {
+	           && !nm_utils_hwaddr_matches (mac_address->data, mac_address->len,
+	                                        priv->mac_address->data, priv->mac_address->len)) {
 		g_byte_array_unref (priv->mac_address);
 		priv->mac_address = g_boxed_copy (DBUS_TYPE_G_UCHAR_ARRAY, mac_address);
 		changed = TRUE;

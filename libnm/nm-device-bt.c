@@ -147,8 +147,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	NMSettingBluetooth *s_bt;
 	const char *ctype;
 	const GByteArray *mac;
-	const char *hw_str;
-	guint8 hw_mac[ETH_ALEN];
+	const char *hw_addr;
 	NMBluetoothCapabilities dev_caps;
 	NMBluetoothCapabilities bt_type;
 
@@ -170,15 +169,15 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	}
 
 	/* Check BT address */
-	hw_str = nm_device_bt_get_hw_address (NM_DEVICE_BT (device));
-	if (hw_str) {
-		if (!nm_utils_hwaddr_aton (hw_str, hw_mac, ETH_ALEN)) {
+	hw_addr = nm_device_bt_get_hw_address (NM_DEVICE_BT (device));
+	if (hw_addr) {
+		if (!nm_utils_hwaddr_valid (hw_addr, ETH_ALEN)) {
 			g_set_error (error, NM_DEVICE_BT_ERROR, NM_DEVICE_BT_ERROR_INVALID_DEVICE_MAC,
 			             "Invalid device MAC address.");
 			return FALSE;
 		}
 		mac = nm_setting_bluetooth_get_bdaddr (s_bt);
-		if (mac && memcmp (mac->data, hw_mac, ETH_ALEN)) {
+		if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len, hw_addr, -1)) {
 			g_set_error (error, NM_DEVICE_BT_ERROR, NM_DEVICE_BT_ERROR_MAC_MISMATCH,
 			             "The MACs of the device and the connection didn't match.");
 			return FALSE;

@@ -884,6 +884,7 @@ global:
 	nm_utils_hwaddr_atoba;
 	nm_utils_hwaddr_aton;
 	nm_utils_hwaddr_len;
+	nm_utils_hwaddr_matches;
 	nm_utils_hwaddr_ntoa;
 	nm_utils_hwaddr_valid;
 	nm_utils_iface_valid_name;

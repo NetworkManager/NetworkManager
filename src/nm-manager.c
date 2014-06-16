@@ -856,8 +856,7 @@ get_device_from_hwaddr (NMManager *self, const GByteArray *setting_mac)
 		NMDevice *device = iter->data;
 
 		device_mac = nm_device_get_hw_address (iter->data, &device_mac_len);
-		if (   setting_mac->len == device_mac_len
-		    && memcmp (setting_mac->data, device_mac, device_mac_len) == 0)
+		if (nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, device_mac, device_mac_len))
 			return device;
 	}
 	return NULL;

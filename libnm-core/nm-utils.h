@@ -146,6 +146,10 @@ GByteArray *nm_utils_hwaddr_atoba (const char *asc, gsize length);
 guint8     *nm_utils_hwaddr_aton  (const char *asc, gpointer buffer, gsize length);
 
 gboolean    nm_utils_hwaddr_valid (const char *asc, gssize length);
+gboolean    nm_utils_hwaddr_matches (gconstpointer hwaddr1,
+                                     gssize        hwaddr1_len,
+                                     gconstpointer hwaddr2,
+                                     gssize        hwaddr2_len);
 
 char *nm_utils_bin2hexstr (const char *bytes, int len, int final_len);
 int   nm_utils_hex2byte   (const char *hex);

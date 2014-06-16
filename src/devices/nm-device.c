@@ -6953,7 +6953,7 @@ nm_device_set_hw_addr (NMDevice *self, const guint8 *addr,
 	g_return_val_if_fail (addr != NULL, FALSE);
 
 	/* Do nothing if current MAC is same */
-	if (cur_addr && !memcmp (cur_addr, addr, len)) {
+	if (cur_addr && nm_utils_hwaddr_matches (cur_addr, len, addr, len)) {
 		_LOGD (LOGD_DEVICE | hw_log_domain, "no MAC address change needed");
 		return TRUE;
 	}
@@ -6968,7 +6968,7 @@ nm_device_set_hw_addr (NMDevice *self, const guint8 *addr,
 		/* MAC address succesfully changed; update the current MAC to match */
 		nm_device_update_hw_address (self);
 		cur_addr = nm_device_get_hw_address (self, NULL);
-		if (memcmp (cur_addr, addr, len) == 0) {
+		if (nm_utils_hwaddr_matches (cur_addr, len, addr, len)) {
 			_LOGI (LOGD_DEVICE | hw_log_domain, "%s MAC address to %s",
 			       detail, mac_str);
 		} else {

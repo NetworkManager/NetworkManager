@@ -2114,6 +2114,94 @@ nm_utils_hwaddr_valid (const char *asc, gssize length)
 }
 
 /**
+ * nm_utils_hwaddr_matches:
+ * @hwaddr1: pointer to a binary or ASCII hardware address, or %NULL
+ * @hwaddr1_len: size of @hwaddr1, or -1 if @hwaddr1 is ASCII
+ * @hwaddr2: pointer to a binary or ASCII hardware address, or %NULL
+ * @hwaddr2_len: size of @hwaddr2, or -1 if @hwaddr2 is ASCII
+ *
+ * Generalized hardware address comparison function. Tests if @hwaddr1 and
+ * @hwaddr2 "equal" (or more precisely, "equivalent"), with several advantages
+ * over a simple memcmp():
+ *
+ *   1. If @hwaddr1_len or @hwaddr2_len is -1, then the corresponding address is
+ *      assumed to be ASCII rather than binary, and will be converted to binary
+ *      before being compared.
+ *
+ *   2. If @hwaddr1 or @hwaddr2 is %NULL, it is treated instead as though it was
+ *      a zero-filled buffer @hwaddr1_len or @hwaddr2_len bytes long.
+ *
+ *   3. If @hwaddr1 and @hwaddr2 are InfiniBand hardware addresses (that is, if
+ *      they are %INFINIBAND_ALEN bytes long in binary form) then only the last
+ *      8 bytes are compared, since those are the only bytes that matter for
+ *      InfiniBand hardware address matching.
+ *
+ * If a passed-in ASCII hardware address cannot be parsed, or would parse to an
+ * address larger than %NM_UTILS_HWADDR_LEN_MAX, then it will silently fail to
+ * match. (This means that externally-provided address strings do not need to be
+ * sanity-checked before comparing them against known good addresses; they are
+ * guaranteed to not match if they are invalid.)
+ *
+ * Return value: %TRUE if @hwaddr1 and @hwaddr2 are equivalent, %FALSE if they are
+ *   different (or either of them is invalid).
+ */
+gboolean
+nm_utils_hwaddr_matches (gconstpointer hwaddr1,
+                         gssize        hwaddr1_len,
+                         gconstpointer hwaddr2,
+                         gssize        hwaddr2_len)
+{
+	guint8 buf1[NM_UTILS_HWADDR_LEN_MAX], buf2[NM_UTILS_HWADDR_LEN_MAX];
+
+	if (hwaddr1_len == -1) {
+		g_return_val_if_fail (hwaddr1 != NULL, FALSE);
+
+		hwaddr1_len = hwaddr_binary_len (hwaddr1);
+		if (hwaddr1_len > NM_UTILS_HWADDR_LEN_MAX)
+			return FALSE;
+		if (!nm_utils_hwaddr_aton (hwaddr1, buf1, hwaddr1_len))
+			return FALSE;
+
+		hwaddr1 = buf1;
+	} else {
+		g_return_val_if_fail (hwaddr1_len > 0 && hwaddr1_len <= NM_UTILS_HWADDR_LEN_MAX, FALSE);
+
+		if (!hwaddr1) {
+			memset (buf1, 0, hwaddr1_len);
+			hwaddr1 = buf1;
+		}
+	}
+
+	if (hwaddr2_len == -1) {
+		g_return_val_if_fail (hwaddr2 != NULL, FALSE);
+
+		if (!nm_utils_hwaddr_aton (hwaddr2, buf2, hwaddr1_len))
+			return FALSE;
+
+		hwaddr2 = buf2;
+		hwaddr2_len = hwaddr1_len;
+	} else {
+		g_return_val_if_fail (hwaddr2_len > 0 && hwaddr2_len <= NM_UTILS_HWADDR_LEN_MAX, FALSE);
+
+		if (!hwaddr2) {
+			memset (buf2, 0, hwaddr2_len);
+			hwaddr2 = buf2;
+		}
+	}
+
+	if (hwaddr1_len != hwaddr2_len)
+		return FALSE;
+
+	if (hwaddr1_len == INFINIBAND_ALEN) {
+		hwaddr1 = (guint8 *)hwaddr1 + INFINIBAND_ALEN - 8;
+		hwaddr2 = (guint8 *)hwaddr2 + INFINIBAND_ALEN - 8;
+		hwaddr1_len = hwaddr2_len = 8;
+	}
+
+	return !memcmp (hwaddr1, hwaddr2, hwaddr1_len);
+}
+
+/**
  * nm_utils_bin2hexstr:
  * @bytes: an array of bytes
  * @len: the length of the @bytes array

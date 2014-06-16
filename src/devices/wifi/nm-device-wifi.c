@@ -416,7 +416,7 @@ find_active_ap (NMDeviceWifi *self,
 				continue;
 			}
 
-			if (memcmp (bssid, ap_bssid, ETH_ALEN)) {
+			if (!nm_utils_hwaddr_matches (bssid, ETH_ALEN, ap_bssid, ETH_ALEN)) {
 				_LOGD (LOGD_WIFI, "      BSSID mismatch");
 				continue;
 			}
@@ -828,7 +828,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
-	if (mac && memcmp (mac->data, priv->perm_hw_addr, ETH_ALEN))
+	if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len, priv->perm_hw_addr, ETH_ALEN))
 		return FALSE;
 
 	/* Check for MAC address blacklist */
@@ -839,10 +839,10 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 		if (!nm_utils_hwaddr_aton (mac_blacklist_iter->data, addr, ETH_ALEN)) {
 			g_warn_if_reached ();
-			continue;
+			return FALSE;
 		}
 
-		if (memcmp (&addr, priv->perm_hw_addr, ETH_ALEN) == 0)
+		if (nm_utils_hwaddr_matches (addr, ETH_ALEN, priv->perm_hw_addr, ETH_ALEN))
 			return FALSE;
 	}
 
@@ -1120,7 +1120,7 @@ complete_connection (NMDevice *device,
 	setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-		if (memcmp (setting_mac->data, priv->perm_hw_addr, ETH_ALEN)) {
+		if (!nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, priv->perm_hw_addr, ETH_ALEN)) {
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_ERROR,
 			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
@@ -1129,13 +1129,12 @@ complete_connection (NMDevice *device,
 		}
 	} else {
 		GByteArray *mac;
-		const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
 
 		/* Lock the connection to this device by default if it uses a
 		 * permanent MAC address (ie not a 'locally administered' one)
 		 */
 		if (   !(priv->perm_hw_addr[0] & 0x02)
-		    && memcmp (priv->perm_hw_addr, null_mac, ETH_ALEN)) {
+		    && !nm_utils_hwaddr_matches (priv->perm_hw_addr, ETH_ALEN, NULL, ETH_ALEN)) {
 			mac = g_byte_array_sized_new (ETH_ALEN);
 			g_byte_array_append (mac, priv->perm_hw_addr, ETH_ALEN);
 			g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_MAC_ADDRESS, mac, NULL);
@@ -2539,7 +2538,7 @@ update_permanent_hw_address (NMDevice *device)
 		memcpy (epaddr->data, nm_device_get_hw_address (device, NULL), ETH_ALEN);
 	}
 
-	if (memcmp (priv->perm_hw_addr, epaddr->data, ETH_ALEN)) {
+	if (!nm_utils_hwaddr_matches (priv->perm_hw_addr, ETH_ALEN, epaddr->data, ETH_ALEN)) {
 		memcpy (priv->perm_hw_addr, epaddr->data, ETH_ALEN);
 		g_object_notify (G_OBJECT (device), NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS);
 	}

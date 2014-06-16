@@ -1944,6 +1944,69 @@ test_hwaddr_aton_malformed (void)
 }
 
 static void
+test_hwaddr_equal (void)
+{
+	const char *string = "00:1a:2b:03:44:05";
+	const char *upper_string = "00:1A:2B:03:44:05";
+	const char *bad_string = "0:1a:2b:3:44:5";
+	const guint8 binary[ETH_ALEN] = { 0x00, 0x1A, 0x2B, 0x03, 0x44, 0x05 };
+	const char *other_string = "1a:2b:03:44:05:00";
+	const guint8 other_binary[ETH_ALEN] = { 0x1A, 0x2B, 0x03, 0x44, 0x05, 0x00 };
+	const char *long_string = "00:1a:2b:03:44:05:06:07";
+	const guint8 long_binary[8] = { 0x00, 0x1A, 0x2B, 0x03, 0x44, 0x05, 0x06, 0x07 };
+	const char *null_string = "00:00:00:00:00:00";
+	const guint8 null_binary[ETH_ALEN] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+	g_assert (nm_utils_hwaddr_matches (string, -1, string, -1));
+	g_assert (nm_utils_hwaddr_matches (string, -1, upper_string, -1));
+	g_assert (nm_utils_hwaddr_matches (string, -1, bad_string, -1));
+	g_assert (nm_utils_hwaddr_matches (string, -1, binary, sizeof (binary)));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, other_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, other_binary, sizeof (other_binary)));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, long_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, long_binary, sizeof (long_binary)));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, null_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, null_binary, sizeof (null_binary)));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, NULL, ETH_ALEN));
+
+	g_assert (nm_utils_hwaddr_matches (binary, sizeof (binary), string, -1));
+	g_assert (nm_utils_hwaddr_matches (binary, sizeof (binary), upper_string, -1));
+	g_assert (nm_utils_hwaddr_matches (binary, sizeof (binary), bad_string, -1));
+	g_assert (nm_utils_hwaddr_matches (binary, sizeof (binary), binary, sizeof (binary)));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), other_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), other_binary, sizeof (other_binary)));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), long_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), long_binary, sizeof (long_binary)));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), null_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), null_binary, sizeof (null_binary)));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), NULL, ETH_ALEN));
+
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, upper_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, bad_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, binary, sizeof (binary)));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, other_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, other_binary, sizeof (other_binary)));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, long_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, long_binary, sizeof (long_binary)));
+	g_assert (nm_utils_hwaddr_matches (null_string, -1, null_string, -1));
+	g_assert (nm_utils_hwaddr_matches (null_string, -1, null_binary, sizeof (null_binary)));
+	g_assert (nm_utils_hwaddr_matches (null_string, -1, NULL, ETH_ALEN));
+
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), upper_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), bad_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), binary, sizeof (binary)));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), other_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), other_binary, sizeof (other_binary)));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), long_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), long_binary, sizeof (long_binary)));
+	g_assert (nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), null_string, -1));
+	g_assert (nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), null_binary, sizeof (null_binary)));
+	g_assert (nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), NULL, ETH_ALEN));
+}
+
+static void
 test_connection_changed_cb (NMConnection *connection, gboolean *data)
 {
 	*data = TRUE;
@@ -2656,6 +2719,7 @@ int main (int argc, char **argv)
 	test_hwaddr_aton_ib_normal ();
 	test_hwaddr_aton_no_leading_zeros ();
 	test_hwaddr_aton_malformed ();
+	test_hwaddr_equal ();
 
 	test_ip4_prefix_to_netmask ();
 	test_ip4_netmask_to_prefix ();

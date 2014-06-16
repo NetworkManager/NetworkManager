@@ -332,7 +332,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	mac = nm_setting_wimax_get_mac_address (s_wimax);
-	if (mac && memcmp (mac->data, nm_device_get_hw_address (device, NULL), ETH_ALEN))
+	if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len, nm_device_get_hw_address (device, NULL), ETH_ALEN))
 		return FALSE;
 
 	return TRUE;
@@ -452,7 +452,7 @@ complete_connection (NMDevice *device,
 	hw_address = nm_device_get_hw_address (device, NULL);
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-		if (memcmp (setting_mac->data, hw_address, ETH_ALEN)) {
+		if (!nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, hw_address, ETH_ALEN)) {
 			g_set_error (error,
 				         NM_SETTING_WIMAX_ERROR,
 				         NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
@@ -461,10 +461,9 @@ complete_connection (NMDevice *device,
 		}
 	} else {
 		GByteArray *mac;
-		const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
 
 		/* Lock the connection to this device by default */
-		if (memcmp (hw_address, null_mac, ETH_ALEN)) {
+		if (!nm_utils_hwaddr_matches (hw_address, ETH_ALEN, NULL, ETH_ALEN)) {
 			mac = g_byte_array_sized_new (ETH_ALEN);
 			g_byte_array_append (mac, hw_address, ETH_ALEN);
 			g_object_set (G_OBJECT (s_wimax), NM_SETTING_WIMAX_MAC_ADDRESS, mac, NULL);

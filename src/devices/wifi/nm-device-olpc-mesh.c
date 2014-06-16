@@ -349,8 +349,7 @@ check_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 
 	my_addr = nm_device_get_hw_address (NM_DEVICE (self), NULL);
 	their_addr = nm_device_get_hw_address (other, &their_addr_len);
-	if (   (their_addr_len != ETH_ALEN)
-	    || (memcmp (my_addr, their_addr, ETH_ALEN) != 0))
+	if (!nm_utils_hwaddr_matches (my_addr, ETH_ALEN, their_addr, their_addr_len))
 		return FALSE;
 
 	g_assert (priv->companion == NULL);

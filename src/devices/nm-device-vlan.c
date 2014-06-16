@@ -171,8 +171,7 @@ match_hwaddr (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hw
 
 	  device_mac = nm_device_get_hw_address (device, &device_mac_len);
 
-	  return (   mac->len == device_mac_len
-	          && memcmp (mac->data, device_mac, device_mac_len) == 0);
+	  return nm_utils_hwaddr_matches (mac->data, mac->len, device_mac, device_mac_len);
 }
 
 static gboolean
