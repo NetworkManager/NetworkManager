@@ -53,6 +53,7 @@ typedef struct {
 	gboolean usable;
 	NMBluetoothCapabilities connection_bt_type;
 
+	char *adapter_address;
 	char *address;
 	char *name;
 	guint32 capabilities;
@@ -263,7 +264,7 @@ check_emit_usable (NMBluezDevice *self)
 	new_usable = (priv->initialized && priv->capabilities && priv->name &&
 	              ((priv->bluez_version == 4) ||
 	               (priv->bluez_version == 5 && priv->adapter5 && priv->adapter_powered) ) &&
-	              priv->dbus_connection && priv->address);
+	              priv->dbus_connection && priv->address && priv->adapter_address);
 
 	if (!new_usable)
 		goto END;
@@ -548,6 +549,18 @@ nm_bluez_device_connect_finish (NMBluezDevice *self,
 
 /***********************************************************/
 
+static void
+set_adapter_address (NMBluezDevice *self, const char *address)
+{
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+
+	g_return_if_fail (address);
+
+	if (priv->adapter_address)
+		g_free (priv->adapter_address);
+	priv->adapter_address = g_strdup (address);
+}
+
 static guint32
 convert_uuids_to_capabilities (const char **strings, int bluez_version)
 {
@@ -734,6 +747,10 @@ adapter5_on_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 		priv->adapter_powered = VARIANT_IS_OF_TYPE_BOOLEAN (v) ? g_variant_get_boolean (v) : FALSE;
 		if (v)
 			g_variant_unref (v);
+
+		v = g_dbus_proxy_get_cached_property (priv->adapter5, "Address");
+		if (VARIANT_IS_OF_TYPE_STRING (v))
+			set_adapter_address (self, g_variant_get_string (v, NULL));
 
 		priv->initialized = TRUE;
 		g_signal_emit (self, signals[INITIALIZED], 0, TRUE);
@@ -940,7 +957,10 @@ on_bus_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 /********************************************************************/
 
 NMBluezDevice *
-nm_bluez_device_new (const char *path, NMConnectionProvider *provider, int bluez_version)
+nm_bluez_device_new (const char *path,
+                     const char *adapter_address,
+                     NMConnectionProvider *provider,
+                     int bluez_version)
 {
 	NMBluezDevice *self;
 	NMBluezDevicePrivate *priv;
@@ -961,8 +981,10 @@ nm_bluez_device_new (const char *path, NMConnectionProvider *provider, int bluez
 	priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
 	priv->bluez_version = bluez_version;
-
 	priv->provider = provider;
+	g_return_val_if_fail (bluez_version == 5 || (bluez_version == 4 && adapter_address), NULL);
+	if (adapter_address)
+		set_adapter_address (self, adapter_address);
 
 	g_signal_connect (priv->provider,
 	                  NM_CP_SIGNAL_CONNECTION_ADDED,
@@ -1054,6 +1076,7 @@ finalize (GObject *object)
 	nm_log_dbg (LOGD_BT, "bluez[%s]: finalize NMBluezDevice", priv->path);
 
 	g_free (priv->path);
+	g_free (priv->adapter_address);
 	g_free (priv->address);
 	g_free (priv->name);
 	g_free (priv->bt_iface);
