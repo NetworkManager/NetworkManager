@@ -28,6 +28,8 @@
 #include <signal.h>
 #include <pthread.h>
 #include <locale.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -270,6 +272,40 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
+static gboolean nmcli_sigint = FALSE;
+static pthread_mutex_t sigint_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+gboolean
+nmc_seen_sigint (void)
+{
+	gboolean sigint;
+
+	pthread_mutex_lock (&sigint_mutex);
+	sigint = nmcli_sigint;
+	pthread_mutex_unlock (&sigint_mutex);
+	return sigint;
+}
+
+void
+nmc_clear_sigint (void)
+{
+	pthread_mutex_lock (&sigint_mutex);
+	nmcli_sigint = FALSE;
+	pthread_mutex_unlock (&sigint_mutex);
+}
+
+static int
+event_hook_for_readline (void)
+{
+	/* Make readline() exit on SIGINT */
+	if (nmc_seen_sigint ()) {
+		rl_echo_signal_char (SIGINT);
+		rl_delete_text (0, rl_end);
+		rl_stuff_char ('\n');
+	}
+	return 0;
+}
+
 void *signal_handling_thread (void *arg);
 /*
  * Thread function waiting for signals and processing them.
@@ -287,6 +323,18 @@ signal_handling_thread (void *arg) {
 
 		switch (signo) {
 		case SIGINT:
+			if (nmc_get_in_readline ()) {
+				/* Don't quit when in readline, only signal we received SIGINT */
+				pthread_mutex_lock (&sigint_mutex);
+				nmcli_sigint = TRUE;
+				pthread_mutex_unlock (&sigint_mutex);
+			} else {
+				/* We can quit nmcli */
+				nmc_cleanup_readline ();
+				printf (_("\nError: nmcli terminated by signal %d."), signo);
+				exit (1);
+			}
+			break;
 		case SIGQUIT:
 		case SIGTERM:
 			nmc_cleanup_readline ();
@@ -430,6 +478,9 @@ main (int argc, char *argv[])
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif
+
+	/* readline init */
+	rl_event_hook = event_hook_for_readline;
 
 	nmc_init (&nm_cli);
 	g_idle_add (start, &args_info);

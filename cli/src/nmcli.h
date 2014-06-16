@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2012 Red Hat, Inc.
+ * (C) Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 #ifndef NMC_NMCLI_H
@@ -136,5 +136,8 @@ typedef struct _NmCli {
 /* Error quark for GError domain */
 #define NMCLI_ERROR (nmcli_error_quark ())
 GQuark nmcli_error_quark (void);
+
+gboolean nmc_seen_sigint (void);
+void     nmc_clear_sigint (void);
 
 #endif /* NMC_NMCLI_H */
