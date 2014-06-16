@@ -22,6 +22,7 @@
 #include <glib.h>
 #include <gio/gio.h>
 #include <string.h>
+#include <errno.h>
 
 #include "nm-dispatcher.h"
 #include "nm-dispatcher-api.h"
@@ -32,10 +33,45 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
-#define CALL_TIMEOUT (1000 * 60 * 10)  /* 10 mintues for all scripts */
+#define CALL_TIMEOUT (1000 * 60 * 10)  /* 10 minutes for all scripts */
 
-static gboolean do_dispatch = TRUE;
 static GHashTable *requests = NULL;
+
+typedef struct {
+	GFileMonitor *monitor;
+	const char *const description;
+	const char *const dir;
+	const guint16 dir_len;
+	char has_scripts;
+} Monitor;
+
+enum {
+	MONITOR_INDEX_DEFAULT,
+	MONITOR_INDEX_PRE_UP,
+	MONITOR_INDEX_PRE_DOWN,
+};
+
+static Monitor monitors[3] = {
+#define MONITORS_INIT_SET(INDEX, USE, SCRIPT_DIR)   [INDEX] = { .dir_len = STRLEN (SCRIPT_DIR), .dir = SCRIPT_DIR, .description = ("" USE), .has_scripts = TRUE }
+	MONITORS_INIT_SET (MONITOR_INDEX_DEFAULT,  "default",  NMD_SCRIPT_DIR_DEFAULT),
+	MONITORS_INIT_SET (MONITOR_INDEX_PRE_UP,   "pre-up",   NMD_SCRIPT_DIR_PRE_UP),
+	MONITORS_INIT_SET (MONITOR_INDEX_PRE_DOWN, "pre-down", NMD_SCRIPT_DIR_PRE_DOWN),
+};
+
+static const Monitor*
+_get_monitor_by_action (DispatcherAction action)
+{
+	switch (action) {
+	case DISPATCHER_ACTION_PRE_UP:
+	case DISPATCHER_ACTION_VPN_PRE_UP:
+		return &monitors[MONITOR_INDEX_PRE_UP];
+	case DISPATCHER_ACTION_PRE_DOWN:
+	case DISPATCHER_ACTION_VPN_PRE_DOWN:
+		return &monitors[MONITOR_INDEX_PRE_DOWN];
+	default:
+		return &monitors[MONITOR_INDEX_DEFAULT];
+	}
+}
 
 static void
 dump_object_to_props (GObject *object, GHashTable *hash)
@@ -136,6 +172,7 @@ fill_vpn_props (NMIP4Config *ip4_config,
 }
 
 typedef struct {
+	DispatcherAction action;
 	guint request_id;
 	DispatcherFunc callback;
 	gpointer user_data;
@@ -197,17 +234,25 @@ validate_element (guint request_id, GValue *val, GType expected_type, guint idx,
 }
 
 static void
-dispatcher_results_process (guint request_id, GPtrArray *results)
+dispatcher_results_process (guint request_id, DispatcherAction action, GPtrArray *results)
 {
 	guint i;
+	const Monitor *monitor = _get_monitor_by_action (action);
 
 	g_return_if_fail (results != NULL);
+
+	if (results->len == 0) {
+		nm_log_dbg (LOGD_DISPATCH, "(%u) succeeded but no scripts invoked",
+		            request_id);
+		return;
+	}
 
 	for (i = 0; i < results->len; i++) {
 		GValueArray *item = g_ptr_array_index (results, i);
 		GValue *tmp;
 		const char *script, *err;
 		DispatchResult result;
+		const char *script_validation_msg = "";
 
 		if (item->n_values != 3) {
 			nm_log_dbg (LOGD_DISPATCH, "(%u) unexpected number of items in "
@@ -221,8 +266,18 @@ dispatcher_results_process (guint request_id, GPtrArray *results)
 		if (!validate_element (request_id, tmp, G_TYPE_STRING, i, 0))
 			continue;
 		script = g_value_get_string (tmp);
-		if (!script || strncmp (script, NMD_SCRIPT_DIR "/", STRLEN (NMD_SCRIPT_DIR "/")))
-			continue;
+		if (!script) {
+			script_validation_msg = " (path is NULL)";
+			script = "(unknown)";
+		} else if (!strncmp (script, monitor->dir, monitor->dir_len)            /* check: prefixed by script directory */
+		    && script[monitor->dir_len] == '/' && script[monitor->dir_len+1]    /* check: with additional "/?" */
+		    && !strchr (&script[monitor->dir_len+1], '/')) {                    /* check: and no further '/' */
+			/* we expect the script to lie inside monitor->dir. If it does,
+			 * strip the directory name. Otherwise show the full path and a warning. */
+			script += monitor->dir_len + 1;
+		} else
+			script_validation_msg = " (unexpected path)";
+
 
 		/* Result */
 		tmp = g_value_array_get_nth (item, 1);
@@ -238,15 +293,15 @@ dispatcher_results_process (guint request_id, GPtrArray *results)
 
 
 		if (result == DISPATCH_RESULT_SUCCESS) {
-			nm_log_dbg (LOGD_DISPATCH, "(%u) %s succeeded",
+			nm_log_dbg (LOGD_DISPATCH, "(%u) %s succeeded%s",
 			            request_id,
-			            script + STRLEN (NMD_SCRIPT_DIR "/"));
+			            script, script_validation_msg);
 		} else {
-			nm_log_warn (LOGD_DISPATCH, "(%u) %s failed (%s): %s",
+			nm_log_warn (LOGD_DISPATCH, "(%u) %s failed (%s): %s%s",
 			             request_id,
-			             script + STRLEN (NMD_SCRIPT_DIR "/"),
+			             script,
 			             dispatch_result_to_string (result),
-			             err ? err : "");
+			             err ? err : "", script_validation_msg);
 		}
 	}
 }
@@ -269,7 +324,7 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	if (dbus_g_proxy_end_call (proxy, call, &error,
 	                           DISPATCHER_TYPE_RESULT_ARRAY, &results,
 	                           G_TYPE_INVALID)) {
-		dispatcher_results_process (info->request_id, results);
+		dispatcher_results_process (info->request_id, info->action, results);
 		free_results (results);
 	} else {
 		g_assert (error);
@@ -356,30 +411,38 @@ _dispatcher_call (DispatcherAction action,
 
 	/* All actions except 'hostname' require a device */
 	if (action == DISPATCHER_ACTION_HOSTNAME) {
-		nm_log_dbg (LOGD_DISPATCH, "(%u) dispatching action '%s'",
-		            reqid, action_to_string (action));
+		nm_log_dbg (LOGD_DISPATCH, "(%u) dispatching action '%s'%s",
+		            reqid, action_to_string (action),
+		            blocking
+		                ? " (blocking)"
+		                : (callback ? " (with callback)" : ""));
 	} else {
 		g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-		nm_log_dbg (LOGD_DISPATCH, "(%u) (%s) dispatching action '%s'",
+		nm_log_dbg (LOGD_DISPATCH, "(%u) (%s) dispatching action '%s'%s",
 		            reqid,
 		            vpn_iface ? vpn_iface : nm_device_get_iface (device),
-		            action_to_string (action));
+		            action_to_string (action),
+		            blocking
+		                ? " (blocking)"
+		                : (callback ? " (with callback)" : ""));
 	}
 
 	/* VPN actions require at least an IPv4 config (for now) */
 	if (action == DISPATCHER_ACTION_VPN_UP)
 		g_return_val_if_fail (vpn_ip4_config != NULL, FALSE);
 
-	if (do_dispatch == FALSE) {
+	if (!_get_monitor_by_action(action)->has_scripts) {
 		if (blocking == FALSE && (out_call_id || callback)) {
 			info = g_malloc0 (sizeof (*info));
+			info->action = action;
 			info->request_id = reqid;
 			info->callback = callback;
 			info->user_data = user_data;
 			info->idle_id = g_idle_add (dispatcher_idle_cb, info);
-		}
-		nm_log_dbg (LOGD_DISPATCH, "(%u) ignoring request; no scripts in " NMD_SCRIPT_DIR, reqid);
+			nm_log_dbg (LOGD_DISPATCH, "(%u) simulate request; no scripts in %s",  reqid, _get_monitor_by_action(action)->dir);
+		} else
+			nm_log_dbg (LOGD_DISPATCH, "(%u) ignoring request; no scripts in %s", reqid, _get_monitor_by_action(action)->dir);
 		success = TRUE;
 		goto done;
 	}
@@ -449,7 +512,7 @@ _dispatcher_call (DispatcherAction action,
 		                                          DISPATCHER_TYPE_RESULT_ARRAY, &results,
 		                                          G_TYPE_INVALID);
 		if (success) {
-			dispatcher_results_process (reqid, results);
+			dispatcher_results_process (reqid, action, results);
 			free_results (results);
 		} else {
 			nm_log_warn (LOGD_DISPATCH, "(%u) failed: (%d) %s", reqid, error->code, error->message);
@@ -457,6 +520,7 @@ _dispatcher_call (DispatcherAction action,
 		}
 	} else {
 		info = g_malloc0 (sizeof (*info));
+		info->action = action;
 		info->request_id = reqid;
 		info->callback = callback;
 		info->user_data = user_data;
@@ -620,23 +684,14 @@ nm_dispatcher_call_cancel (guint call_id)
 	 * DispatcherInfo's callback to NULL.
 	 */
 	info = g_hash_table_lookup (requests, GUINT_TO_POINTER (call_id));
-	if (info)
+	g_return_if_fail (info);
+
+	if (info && info->callback) {
+		nm_log_dbg (LOGD_DISPATCH, "(%u) cancelling dispatcher callback action",
+		            call_id);
 		info->callback = NULL;
-	else
-		g_return_if_reached ();
+	}
 }
-
-typedef struct {
-	const char *dir;
-	GFileMonitor *monitor;
-	gboolean has_scripts;
-} Monitor;
-
-static Monitor monitors[3] = {
-	{ NMD_SCRIPT_DIR,   NULL, TRUE },
-	{ NMD_PRE_UP_DIR,   NULL, TRUE },
-	{ NMD_PRE_DOWN_DIR, NULL, TRUE }
-};
 
 static void
 dispatcher_dir_changed (GFileMonitor *monitor,
@@ -645,22 +700,44 @@ dispatcher_dir_changed (GFileMonitor *monitor,
                         GFileMonitorEvent event_type,
                         Monitor *item)
 {
+	const char *name;
+	char *full_name;
 	GDir *dir;
-	guint i;
+	GError *error = NULL;
 
-	/* Default to dispatching on any errors */
-	item->has_scripts = TRUE;
-
-	dir = g_dir_open (item->dir, 0, NULL);
+	dir = g_dir_open (item->dir, 0, &error);
 	if (dir) {
-		item->has_scripts = !!g_dir_read_name (dir);
+		int errsv = 0;
+
+		item->has_scripts = FALSE;
+		errno = 0;
+		while (!item->has_scripts
+		    && (name = g_dir_read_name (dir))) {
+			full_name = g_build_filename (item->dir, name, NULL);
+			item->has_scripts = g_file_test (full_name, G_FILE_TEST_IS_EXECUTABLE);
+			g_free (full_name);
+		}
+		errsv = errno;
 		g_dir_close (dir);
+		if (item->has_scripts)
+			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' has scripts", item->description, item->dir);
+		else if (errsv == 0)
+			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' has no scripts", item->description, item->dir);
+		else {
+			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' error reading (%s)", item->description, item->dir, strerror (errsv));
+			item->has_scripts = TRUE;
+		}
+	} else {
+		if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
+			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' does not exist", item->description, item->dir);
+			item->has_scripts = FALSE;
+		} else {
+			nm_log_dbg (LOGD_DISPATCH, "dispatcher: %s script directory '%s' error (%s)", item->description, item->dir, error->message);
+			item->has_scripts = TRUE;
+		}
+		g_error_free (error);
 	}
 
-	/* Recheck all dirs for scripts and update global variable */
-	do_dispatch = FALSE;
-	for (i = 0; i < G_N_ELEMENTS (monitors); i++)
-		do_dispatch |= monitors[i].has_scripts;
 }
 
 void
