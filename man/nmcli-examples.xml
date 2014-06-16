@@ -9,7 +9,7 @@ Copyright (C) 2013 - 2014 Red Hat, Inc.
 <refentry id="nmcli-examples">
   <refentryinfo>
     <title>nmcli-examples</title>
-    <date>15 January 2014</date>
+    <date>16 June 2014</date>
     <author>NetworkManager developers</author>
   </refentryinfo>
 
@@ -250,9 +250,15 @@ $ nmcli -p con show my-con-em1
     <para>
       The first command adds an Ethernet connection profile named <emphasis>my-con-em1</emphasis>
       that is bound to interface name <emphasis>em1</emphasis>. The profile is configured
-      with static IP addresses. The second and third commands modify DNS parameters of the
-      new connection profile. The last <emphasis>con show</emphasis> command displays the
-      profile so that all parameters can be reviewed.
+      with static IP addresses. Three addresses are added, two IPv4 addresses and one IPv6.
+      The first IP 192.168.100.100 has a prefix of 24 (netmask equivalent of 255.255.255.0).
+      Gateway entry for the first IP address will become the default route if this profile
+      is activated on em1 interface (and there is no connection with higher priority).
+      The second two addresses don't specify a prefix, so a default prefix will be used, i.e.
+      32 for IPv4 and 128 for IPv6.
+      The second and third commands modify DNS parameters of the new connection profile.
+      The last <emphasis>con show</emphasis> command displays the profile so that all
+      parameters can be reviewed.
     </para>
 
     <example><title>Escaping colon characters in tabular mode</title>
