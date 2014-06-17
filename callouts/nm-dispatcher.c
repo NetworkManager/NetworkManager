@@ -454,6 +454,8 @@ find_scripts (const char *str_action)
 		err = stat (path, &st);
 		if (err)
 			g_warning ("Failed to stat '%s': %d", path, err);
+		else if (S_ISDIR (st.st_mode))
+			; /* silently skip. */
 		else if (!check_permissions (&st, &err_msg))
 			g_warning ("Cannot execute '%s': %s", path, err_msg);
 		else {
