@@ -61,9 +61,9 @@
 					<param name="CMDS_TO_RUN" value="systemctl restart NetworkManager.service"/>
 				</params>
 			</task>
-			<task name="/qe/desktop/simpletestharness_dev" role="STANDALONE">
+			<task name="/qe/desktop/simpletestharness" role="STANDALONE">
 				<params>
-					<param name="GIT_TARGETBRANCH" value="rhel-7"/>
+					<param name="GIT_TARGETBRANCH" value="$GIT_TARGETBRANCH"/>
 					<param name="TESTS" value="$TESTS"/>
 					<param name="TEST_MAPPER" value="True"/>
 					<param name="COMPONENT" value="NetworkManager"/>

@@ -535,6 +535,16 @@ class CmdSubmit(CmdBase):
         for (k,v) in self.subs.iteritems():
             self._print_substitution(k, v)
 
+    def _process_line_get_GIT_TARGETBRANCH(self, key, replacement, index=None, none=None):
+        # we default to 'master', unless there is an RPM that looks like it's from
+        # rhel-7.0.
+        if self.rpm is not None:
+            for x in self.rpm:
+                for u in x[1].url():
+                    if re.match(r'^.*/NetworkManager-0.9.9.1-[1-9][0-9]*.git20140326.4dba720.el7[^/]*$', u):
+                        return 'rhel-7'
+        return 'master'
+
     DefaultReplacements = {
             'WHITEBOARD'        : 'Test NetworkManager',
             'DISTRO_FAMILY'     : 'RedHatEnterpriseLinux7',
@@ -543,6 +553,7 @@ class CmdSubmit(CmdBase):
             'DISTRO_METHOD'     : 'nfs',
             'DISTRO_ARCH'       : 'x86_64',
             'TEST_URL'          : 'http://download.eng.brq.redhat.com/scratch/vbenes/NetworkManager-rhel-7.tar.gz',
+            'GIT_TARGETBRANCH'  : _process_line_get_GIT_TARGETBRANCH,
             'UUID'              : str(uuid.uuid4()),
         }
     def _process_line_get(self, key, replacement, index=None, none=None):
@@ -555,6 +566,8 @@ class CmdSubmit(CmdBase):
                     replacement[key] = None
                     return none
                 v = CmdSubmit.DefaultReplacements[key]
+                if not isinstance(v, basestring):
+                    v = v(self, key, replacement, index, none)
         else:
             v = self.subs[key];
             if is_sequence(v):
@@ -584,7 +597,7 @@ class CmdSubmit(CmdBase):
             elif m.group('name0'):
                 r = r + self._process_line_get(m.group('name0'), replacements, none='')
             elif m.group('name1'):
-                r = r + self._process_line_get(m.group('name1'), m.group('index1'), replacements, none='')
+                r = r + self._process_line_get(m.group('name1'), replacements, index=m.group('index1'), none='')
             else:
                 r = r + '$' + name
             l = m.group('rest')
