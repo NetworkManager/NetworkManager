@@ -1132,6 +1132,7 @@ nmc_set_in_readline (gboolean in_readline)
  *
  * Wrapper around libreadline's readline() function.
  * If user pressed Ctrl-C, readline() is called again.
+ * If user pressed Ctrl-D on empty line, nmcli will quit.
  *
  * Returns: the user provided string. In case the user entered empty string,
  * this function returns NULL.
@@ -1157,6 +1158,12 @@ readline_mark:
 	if (str && *str)
 		add_history (str);
 
+	/*-- React on Ctrl-C and Ctrl-D --*/
+	/* We quit on Ctrl-D when line is empty */
+	if (str == NULL) {
+		/* Send SIGQUIT to itself */
+		kill (getpid (), SIGQUIT);
+	}
 	/* In case of Ctrl-C we call readline again to get new prompt (repeat) */
 	if (nmc_seen_sigint ()) {
 		nmc_clear_sigint ();
