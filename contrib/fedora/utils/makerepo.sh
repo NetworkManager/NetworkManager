@@ -137,8 +137,11 @@ else
     die "Could not detect dist-git type"
 fi
 
-if [[ -f ./.git/makerepo.gitignore ]]; then
-    /bin/cp ./.git/makerepo.gitignore ./
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+if [[ "x$CURRENT_BRANCH" != x && -f "./.git/makerepo.gitignore-$CURRENT_BRANCH" ]]; then
+    /bin/cp "./.git/makerepo.gitignore-$CURRENT_BRANCH" ./makerepo.gitignore
+elif [[ -f ./.git/makerepo.gitignore ]]; then
+    /bin/cp "./.git/makerepo.gitignore" ./makerepo.gitignore
 fi
 
 DEFAULT_BACKUP_PATTERN='*.[0-9][0-9][0-9][0-9][-.]*.orig'
