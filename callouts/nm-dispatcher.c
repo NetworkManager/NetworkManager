@@ -459,7 +459,9 @@ find_scripts (const char *str_action)
 		else {
 			/* success */
 			sorted = g_slist_insert_sorted (sorted, path, (GCompareFunc) g_strcmp0);
+			path = NULL;
 		}
+		g_free (path);
 	}
 	g_dir_close (dir);
 
