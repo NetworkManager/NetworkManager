@@ -331,14 +331,16 @@ signal_handling_thread (void *arg) {
 			} else {
 				/* We can quit nmcli */
 				nmc_cleanup_readline ();
-				printf (_("\nError: nmcli terminated by signal %d."), signo);
+				printf (_("\nError: nmcli terminated by signal %s (%d)\n"),
+				        strsignal (signo), signo);
 				exit (1);
 			}
 			break;
 		case SIGQUIT:
 		case SIGTERM:
 			nmc_cleanup_readline ();
-			printf (_("\nError: nmcli terminated by signal %d."), signo);
+			printf (_("\nError: nmcli terminated by signal %s (%d)\n"),
+			        strsignal (signo), signo);
 			exit (1);
 			break;
 		default:
@@ -368,14 +370,14 @@ setup_signals (void)
 	/* Block all signals of interest. */
 	status = pthread_sigmask (SIG_BLOCK, &signal_set, NULL);
 	if (status != 0) {
-		fprintf (stderr, _("Failed to set signal mask: %d"), status);
+		fprintf (stderr, _("Failed to set signal mask: %d\n"), status);
 		return FALSE;
 	}
 
-       /* Create the signal handling thread. */
+	/* Create the signal handling thread. */
 	status = pthread_create (&signal_thread_id, NULL, signal_handling_thread, NULL);
 	if (status != 0) {
-		fprintf (stderr, _("Failed to create signal handling thread: %d"), status);
+		fprintf (stderr, _("Failed to create signal handling thread: %d\n"), status);
 		return FALSE;
 	}
 
