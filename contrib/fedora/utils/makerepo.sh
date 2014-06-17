@@ -237,7 +237,11 @@ EOF
         git commit -m '*** add all'
         [[ x == "x$(git diff HEAD "$ORIG_HEAD")" ]] || die "error recreating initial tarball"
     fi
-    cat ../makerepo.gitignore > .gitignore
+    (
+        cat ../makerepo.gitignore;
+        sed -n 's/^%patch\([0-9]\+\) \+.*-b \+\([^ ]\+\).*$/*\2/p' ../"$SPEC";
+    ) | LANG=C sort | LANG=C uniq > .gitignore
+
     git rm --cached -r .
     git add --all .
     git commit -m "*** clean state (ignored files removed)"
