@@ -7,10 +7,13 @@ die() {
 }
 
 usage() {
-    echo "USAGE: $0 [-h|--help|-?|help]"
+    echo "USAGE: $0 [-h|--help|-?|help] [-f|--force] [-c|--clean]"
     echo
     echo "Does all the steps from a clean working directory to an RPM of NetworkManager"
     echo
+    echo "Options:"
+    echo "  --force: force build, even if working directory is not clean and has local modifications"
+    echo "  --clean: run \`git-clean -fdx :/\` before build"
 }
 
 
@@ -53,11 +56,11 @@ if [[ $IGNORE_DIRTY != 1 ]]; then
     # check for a clean working directory.
     # We ignore the /contrib directory, because this is where the automation
     # scripts and the build results will be.
-    if [[ "x$(git clean -ndx | grep '^Would remove contrib/.*$' -v)" != x ]]; then
-        die "The working directory is not clean. Refuse to run. Try    git clean -e /contrib -dx -n"
+    if [[ "x$(LANG=C git clean -ndx | grep '^Would remove contrib/.*$' -v)" != x ]]; then
+        die "The working directory is not clean. Refuse to run. Try \`$0 --force\`, \`$0 --clean\`, or \`git clean -e :/contrib -dx -n\`"
     fi
     if [[ "x$(git status --porcelain)" != x ]]; then
-        die "The working directory has local changes. Refuse to run. Try $0 --force"
+        die "The working directory has local changes. Refuse to run. Try \`$0 --force\`"
     fi
 fi
 
