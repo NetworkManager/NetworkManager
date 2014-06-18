@@ -6064,6 +6064,7 @@ editor_show_setting (NMSetting *setting, NmCli *nmc)
 	printf (_("['%s' setting values]\n"),
 	        nm_setting_get_name (setting));
 
+	nmc->print_output = NMC_PRINT_NORMAL;
 	nmc->multiline_output = TRUE;
 	nmc->escape_values = 0;
 
