@@ -43,7 +43,6 @@
 #include "nm-device-ethernet.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
-#include "nm-device-team.h"
 #include "nm-device-bridge.h"
 #include "nm-device-vlan.h"
 #include "nm-device-generic.h"
@@ -1103,8 +1102,6 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
 		device = nm_device_bond_new_for_connection (connection);
-	} else if (nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)) {
-		device = nm_device_team_new_for_connection (connection);
 	} else if (nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		device = nm_device_bridge_new_for_connection (connection);
 	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
@@ -2145,9 +2142,6 @@ platform_link_added (NMManager *self,
 			break;
 		case NM_LINK_TYPE_BOND:
 			device = nm_device_bond_new (plink);
-			break;
-		case NM_LINK_TYPE_TEAM:
-			device = nm_device_team_new (plink);
 			break;
 		case NM_LINK_TYPE_BRIDGE:
 			device = nm_device_bridge_new (plink);

@@ -40,6 +40,7 @@ typedef enum {
 	NM_DEVICE_TEAM_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 	NM_DEVICE_TEAM_ERROR_TEAMCTL_FAILURE,         /*< nick=TeamCtlFailure >*/
 	NM_DEVICE_TEAM_ERROR_NO_SUPPORT,              /*< nick=NoSupport >*/
+	NM_DEVICE_TEAM_ERROR_PLATFORM_FAILURE,        /*< nick=PlatformFailure >*/
 } NMTeamError;
 
 #define NM_DEVICE_TEAM_SLAVES "slaves"
@@ -57,7 +58,7 @@ typedef struct {
 GType nm_device_team_get_type (void);
 
 NMDevice *nm_device_team_new (NMPlatformLink *platform_device);
-NMDevice *nm_device_team_new_for_connection (NMConnection *connection);
+NMDevice *nm_device_team_new_for_connection (NMConnection *connection, GError **error);
 
 G_END_DECLS
 

@@ -42,6 +42,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
+#include "nm-team-enum-types.h"
 #include "nm-posix-signals.h"
 
 #include "nm-device-team-glue.h"
@@ -780,7 +781,7 @@ nm_device_team_new (NMPlatformLink *platform_device)
 }
 
 NMDevice *
-nm_device_team_new_for_connection (NMConnection *connection)
+nm_device_team_new_for_connection (NMConnection *connection, GError **error)
 {
 	const char *iface;
 
@@ -791,7 +792,10 @@ nm_device_team_new_for_connection (NMConnection *connection)
 
 	if (   !nm_platform_team_add (iface)
 	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
-		nm_log_warn (LOGD_DEVICE | LOGD_TEAM, "(%s): failed to create team master interface for '%s': %s",
+		g_set_error (error,
+		             NM_DEVICE_TEAM_ERROR,
+		             NM_DEVICE_TEAM_ERROR_PLATFORM_FAILURE,
+		             "failed to create team master interface '%s' for connection '%s': %s",
 		             iface, nm_connection_get_id (connection),
 		             nm_platform_get_error_msg ());
 		return NULL;

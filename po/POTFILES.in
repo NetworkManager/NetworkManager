@@ -53,8 +53,8 @@ src/devices/nm-device-bond.c
 src/devices/nm-device-bridge.c
 src/devices/nm-device-ethernet.c
 src/devices/nm-device-infiniband.c
-src/devices/nm-device-team.c
 src/devices/nm-device-vlan.c
+src/devices/team/nm-device-team.c
 src/devices/wifi/nm-device-olpc-mesh.c
 src/devices/wwan/nm-modem-broadband.c
 src/devices/wwan/nm-modem-old.c
