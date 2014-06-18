@@ -51,7 +51,7 @@ G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_TEAM, NMDeviceTeamPrivate))
 
-#define NM_TEAM_ERROR (nm_team_error_quark ())
+#define NM_DEVICE_TEAM_ERROR (nm_device_team_error_quark ())
 
 static gboolean teamd_start (NMDevice *dev, NMSettingTeam *s_team);
 
@@ -75,7 +75,7 @@ enum {
 /******************************************************************/
 
 static GQuark
-nm_team_error_quark (void)
+nm_device_team_error_quark (void)
 {
 	static GQuark quark = 0;
 	if (!quark)
@@ -889,5 +889,5 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_team_object_info);
 
-	dbus_g_error_domain_register (NM_TEAM_ERROR, NULL, NM_TYPE_TEAM_ERROR);
+	dbus_g_error_domain_register (NM_DEVICE_TEAM_ERROR, NULL, NM_TYPE_TEAM_ERROR);
 }
