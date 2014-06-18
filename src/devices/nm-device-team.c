@@ -245,44 +245,63 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 /******************************************************************/
 
-gboolean
-nm_team_update_slave_connection (NMDevice *slave, NMConnection *connection)
+static gboolean
+master_update_slave_connection (NMDevice *self,
+                                   NMDevice *slave,
+                                   NMConnection *connection,
+                                   GError **error)
 {
-	NMSettingTeamPort *s_port;
-	const char *iface = nm_device_get_iface (slave);
-	char *port_config = NULL;
-	gboolean with_teamdctl = FALSE;
-	int err = 0;
 #if WITH_TEAMDCTL
-	const char *master_iface;
-	int master_ifindex;
+	NMSettingTeamPort *s_port;
+	char *port_config = NULL;
+	int err = 0;
 	struct teamdctl *tdc;
 	const char *team_port_config = NULL;
 #endif
+	const char *iface = nm_device_get_iface (self);
+	const char *iface_slave = nm_device_get_iface (slave);
 
-	g_return_val_if_fail (NM_IS_DEVICE (slave), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-
-#if WITH_TEAMDCTL
-	master_ifindex = nm_platform_link_get_master (nm_device_get_ifindex (slave));
-	g_assert (master_ifindex > 0);
-	master_iface = nm_platform_link_get_name (master_ifindex);
-	g_assert (master_iface);
-
+#if !WITH_TEAMDCTL
+	g_set_error (error,
+	             NM_DEVICE_TEAM_ERROR,
+	             NM_DEVICE_TEAM_ERROR_NO_SUPPORT,
+	             "update slave connection for slave '%s' failed for team master '%s' because compiled without libteamctl support",
+	             iface_slave, iface);
+	return FALSE;
+#else
 	tdc = teamdctl_alloc ();
-	g_assert (tdc);
-	err = teamdctl_connect (tdc, master_iface, NULL, NULL);
+	if (!tdc) {
+		g_set_error (error,
+		             NM_DEVICE_TEAM_ERROR,
+		             NM_DEVICE_TEAM_ERROR_TEAMCTL_FAILURE,
+		             "update slave connection for slave '%s' failed to connect to teamd for master %s (out of memory?)",
+		             iface_slave, iface);
+		g_return_val_if_reached (FALSE);
+	}
+
+	err = teamdctl_connect (tdc, iface, NULL, NULL);
 	if (err) {
-		nm_log_err (LOGD_TEAM, "(%s): failed to connect to teamd for master %s (err=%d)",
-		            iface, master_iface, err);
 		teamdctl_free (tdc);
+		g_set_error (error,
+		             NM_DEVICE_TEAM_ERROR,
+		             NM_DEVICE_TEAM_ERROR_TEAMCTL_FAILURE,
+		             "update slave connection for slave '%s' failed to connect to teamd for master %s (err=%d)",
+		             iface_slave, iface, err);
 		return FALSE;
 	}
-	err = teamdctl_port_config_get_raw_direct (tdc, iface, (char **)&team_port_config);
+
+	err = teamdctl_port_config_get_raw_direct (tdc, iface_slave, (char **)&team_port_config);
 	port_config = g_strdup (team_port_config);
 	teamdctl_free (tdc);
-	with_teamdctl = TRUE;
-#endif
+	if (err) {
+		g_set_error (error,
+		             NM_DEVICE_TEAM_ERROR,
+		             NM_DEVICE_TEAM_ERROR_TEAMCTL_FAILURE,
+		             "update slave connection for slave '%s' failed to get configuration from teamd master %s (err=%d)",
+		             iface_slave, iface, err);
+		g_free (port_config);
+		return FALSE;
+	}
 
 	s_port = nm_connection_get_setting_team_port (connection);
 	if (!s_port) {
@@ -293,17 +312,12 @@ nm_team_update_slave_connection (NMDevice *slave, NMConnection *connection)
 	g_object_set (G_OBJECT (s_port), NM_SETTING_TEAM_PORT_CONFIG, port_config, NULL);
 	g_free (port_config);
 
-	if (!with_teamdctl || err != 0) {
-		if (!with_teamdctl)
-			nm_log_err (LOGD_TEAM, "(%s): failed to read teamd port configuration "
-			                       " (compiled without libteamdctl support)", iface);
-		else
-			nm_log_err (LOGD_TEAM, "(%s): failed to read teamd port configuration (err=%d)",
-			            iface, err);
-		return FALSE;
-	}
-
+	g_object_set (nm_connection_get_setting_connection (connection),
+	              NM_SETTING_CONNECTION_MASTER, iface,
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
+	              NULL);
 	return TRUE;
+#endif
 }
 
 /******************************************************************/
@@ -871,6 +885,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
 	parent_class->update_connection = update_connection;
+	parent_class->master_update_slave_connection = master_update_slave_connection;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->deactivate = deactivate;

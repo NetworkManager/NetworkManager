@@ -1557,8 +1557,28 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	NMConnection *connection = NULL, *matched;
 	NMSettingsConnection *added = NULL;
 	GError *error = NULL;
+	NMDevice *master = NULL;
+	int ifindex = nm_device_get_ifindex (device);
 
 	nm_device_capture_initial_config (device);
+
+	if (ifindex) {
+		int master_ifindex = nm_platform_link_get_master (ifindex);
+
+		if (master_ifindex) {
+			master = nm_manager_get_device_by_ifindex (manager, master_ifindex);
+			if (!master) {
+				nm_log_dbg (LOGD_DEVICE, "(%s): cannot generate connection for slave before its master (%s/%d)",
+				            nm_device_get_iface (device), nm_platform_link_get_name (master_ifindex), master_ifindex);
+				return NULL;
+			}
+			if (!nm_device_get_act_request (master)) {
+				nm_log_dbg (LOGD_DEVICE, "(%s): cannot generate connection for slave before master %s activates",
+				            nm_device_get_iface (device), nm_device_get_iface (master));
+				return NULL;
+			}
+		}
+	}
 
 	/* The core of the API is nm_device_generate_connection() function and
 	 * update_connection() virtual method and the convenient connection_type
@@ -1566,7 +1586,7 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	 * update_connection() implemented, otherwise nm_device_generate_connection()
 	 * returns NULL.
 	 */
-	connection = nm_device_generate_connection (device);
+	connection = nm_device_generate_connection (device, master);
 	if (!connection)
 		return NULL;
 

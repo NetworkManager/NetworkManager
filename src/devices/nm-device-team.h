@@ -38,6 +38,8 @@ typedef enum {
 	NM_DEVICE_TEAM_ERROR_CONNECTION_NOT_TEAM = 0, /*< nick=ConnectionNotTeam >*/
 	NM_DEVICE_TEAM_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
 	NM_DEVICE_TEAM_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
+	NM_DEVICE_TEAM_ERROR_TEAMCTL_FAILURE,         /*< nick=TeamCtlFailure >*/
+	NM_DEVICE_TEAM_ERROR_NO_SUPPORT,              /*< nick=NoSupport >*/
 } NMTeamError;
 
 #define NM_DEVICE_TEAM_SLAVES "slaves"
@@ -56,8 +58,6 @@ GType nm_device_team_get_type (void);
 
 NMDevice *nm_device_team_new (NMPlatformLink *platform_device);
 NMDevice *nm_device_team_new_for_connection (NMConnection *connection);
-
-gboolean nm_team_update_slave_connection (NMDevice *slave, NMConnection *connection);
 
 G_END_DECLS
 

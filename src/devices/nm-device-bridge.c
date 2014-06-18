@@ -322,27 +322,21 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 }
 
-/**
- * nm_bridge_update_slave_connection:
- * @slave: the slave #NMDevice, is *not* necessarily a bridge interface
- * @connection: the #NMConnection to update with the bridge port settings
- *
- * Reads bridge port configuration and updates @connection with those
- * properties.
- *
- * Returns: %TRUE if the port configuration was read and @connection updated,
- * %FALSE if not.
- */
-gboolean
-nm_bridge_update_slave_connection (NMDevice *slave, NMConnection *connection)
+static gboolean
+master_update_slave_connection (NMDevice *self,
+                                NMDevice *slave,
+                                NMConnection *connection,
+                                GError **error)
 {
+	NMSettingConnection *s_con;
 	NMSettingBridgePort *s_port;
-	int ifindex = nm_device_get_ifindex (slave);
+	int ifindex_slave = nm_device_get_ifindex (slave);
+	const char *iface = nm_device_get_iface (self);
 	const Option *option;
 
-	g_return_val_if_fail (NM_IS_DEVICE (slave), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (ifindex_slave > 0, FALSE);
 
+	s_con = nm_connection_get_setting_connection (connection);
 	s_port = nm_connection_get_setting_bridge_port (connection);
 	if (!s_port) {
 		s_port = (NMSettingBridgePort *) nm_setting_bridge_port_new ();
@@ -350,7 +344,7 @@ nm_bridge_update_slave_connection (NMDevice *slave, NMConnection *connection)
 	}
 
 	for (option = slave_options; option->name; option++) {
-		gs_free char *str = nm_platform_slave_get_option (ifindex, option->sysname);
+		gs_free char *str = nm_platform_slave_get_option (ifindex_slave, option->sysname);
 		int value;
 
 		if (str) {
@@ -367,6 +361,10 @@ nm_bridge_update_slave_connection (NMDevice *slave, NMConnection *connection)
 		}
 	}
 
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_MASTER, iface,
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
+	              NULL);
 	return TRUE;
 }
 
@@ -566,6 +564,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	parent_class->complete_connection = complete_connection;
 
 	parent_class->update_connection = update_connection;
+	parent_class->master_update_slave_connection = master_update_slave_connection;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->enslave_slave = enslave_slave;
