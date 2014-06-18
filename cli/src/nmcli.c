@@ -481,6 +481,10 @@ main (int argc, char *argv[])
 
 	/* readline init */
 	rl_event_hook = event_hook_for_readline;
+	/* Set 0.01s timeout to mitigate slowness in readline when a broken version is used.
+	 * See https://bugzilla.redhat.com/show_bug.cgi?id=1109946
+	 */
+	rl_set_keyboard_input_timeout (10000);
 
 	nmc_init (&nm_cli);
 	g_idle_add (start, &args_info);
