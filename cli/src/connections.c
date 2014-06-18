@@ -5437,6 +5437,38 @@ gen_cmd_verify0 (const char *text, int state)
 }
 
 static char *
+gen_cmd_print0 (const char *text, int state)
+{
+	static char **words = NULL;
+	char *ret = NULL;
+
+	if (!state) {
+		GHashTable *settings;
+		GHashTableIter iter;
+		const char *setting_name;
+		int i = 0;
+
+		settings = nm_connection_to_hash (nmc_tab_completion.connection, NM_SETTING_HASH_FLAG_NO_SECRETS);
+		words = g_new (char *, g_hash_table_size (settings) + 2);
+		g_hash_table_iter_init (&iter, settings);
+		while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, NULL))
+			words [i++] = g_strdup (setting_name);
+		words[i++] = g_strdup ("all");
+		words[i] = NULL;
+		g_hash_table_unref (settings);
+	}
+
+	if (words) {
+		ret = nmc_rl_gen_func_basic (text, state, (const char **) words);
+		if (ret == NULL) {
+			g_strfreev (words);
+			words = NULL;
+		}
+	}
+	return ret;
+}
+
+static char *
 gen_cmd_print2 (const char *text, int state)
 {
 	const char *words[] = { "setting", "connection", "all", NULL };
@@ -5886,10 +5918,13 @@ nmcli_editor_tab_completion (const char *text, int start, int end)
 						generator_func = gen_cmd_nmcli;
 					else if (num == 3)
 						generator_func = get_gen_func_cmd_nmcli (word);
-				} else if (   should_complete_cmd (line, end, "print", &num, NULL)
-				           || should_complete_cmd (line, end, "verify", &num, NULL)) {
-					if (num <= 2)
-						generator_func = gen_cmd_verify0;
+				} else if (should_complete_cmd (line, end, "print", &num, NULL) && num <= 2) {
+					if (level == 0 && (!dot || dot >= line + end))
+						generator_func = gen_cmd_print0;
+					else
+						generator_func = gen_property_names;
+				} else if (should_complete_cmd (line, end, "verify", &num, NULL) && num <= 2) {
+					generator_func = gen_cmd_verify0;
 				} else if (should_complete_cmd (line, end, "activate", &num, NULL) && num <= 2) {
 					generator_func = gen_compat_devices;
 				} else if (should_complete_cmd (line, end, "save", &num, NULL) && num <= 2) {
