@@ -6112,7 +6112,7 @@ editor_main_usage (void)
 	          "remove   <setting>[.<prop>] | <prop> :: remove setting or reset property value\n"
 	          "set      [<setting>.<prop> <value>]  :: set property value\n"
 	          "describe [<setting>.<prop>]          :: describe property\n"
-	          "print    [all]                       :: print the connection\n"
+	          "print    [all | <setting>[.<prop>]]  :: print the connection\n"
 	          "verify   [all]                       :: verify the connection\n"
 	          "save     [persistent|temporary]      :: save the connection\n"
 	          "activate [<ifname>] [/<ap>|<nsp>]    :: activate the connection\n"
@@ -7330,16 +7330,54 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				if (strcmp (cmd_arg, "all") == 0)
 					editor_show_connection (connection, nmc);
 				else {
-					const char *s = check_valid_name (cmd_arg, valid_settings_arr, NULL);
-					if (s) {
-						NMSetting *ss = nm_connection_get_setting_by_name (connection, s);
-						if (ss)
-							editor_show_setting (ss, nmc);
-						else
-							printf (_("Error: '%s' setting not present\n"), s);
+					NMSetting *ss = NULL;
+					gboolean whole_setting;
+					char *user_s;
+
+					/* cmd_arg_s != NULL means argument is "setting.property" */
+					whole_setting = !cmd_arg_s && !menu_ctx.curr_setting;
+					user_s = whole_setting ? cmd_arg_p : cmd_arg_s ? cmd_arg_s : NULL;
+					if (user_s) {
+						const char *s_name;
+						s_name = check_valid_name (user_s, valid_settings_arr, NULL);
+						if (!s_name) {
+							printf (_("Error: unknown setting: '%s'\n"), user_s);
+							break;
+						}
+						ss = nm_connection_get_setting_by_name (connection, s_name);
+						if (!ss) {
+							printf (_("Error: '%s' setting not present in the connection\n"), s_name);
+							break;
+						}
+					} else
+						ss = menu_ctx.curr_setting;
+
+					if (whole_setting) {
+						/* Print the whole setting */
+						editor_show_setting (ss, nmc);
+					} else {
+						GError *err = NULL;
+						char *prop_name = is_property_valid (ss, cmd_arg_p, &err);
+						if (prop_name) {
+							/* Print one property */
+							char *prop_val = nmc_setting_get_property (ss, prop_name, NULL);
+							printf ("%s.%s: %s\n", nm_setting_get_name (ss),prop_name , prop_val);
+							g_free (prop_val);
+						} else {
+							/* If the string is not a property, try it as a setting */
+							NMSetting *s_tmp;
+							s_tmp = is_setting_valid (connection, valid_settings_arr, cmd_arg_p);
+							if (s_tmp) {
+								/* Print the whole setting */
+								editor_show_setting (s_tmp, nmc);
+							} else
+								printf (_("Error: invalid property: %s%s\n"),
+								        err->message,
+								        cmd_arg_s ? "" : _(", neither a valid setting name"));
+							g_clear_error (&err);
+						}
+						g_free (prop_name);
 					}
-					else
-						printf (_("Error: unknown setting: '%s'\n"), cmd_arg);
 				}
 			} else {
 				if (menu_ctx.curr_setting)
