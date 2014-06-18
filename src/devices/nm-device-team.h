@@ -35,9 +35,9 @@ G_BEGIN_DECLS
 #define NM_DEVICE_TEAM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_TEAM, NMDeviceTeamClass))
 
 typedef enum {
-	NM_TEAM_ERROR_CONNECTION_NOT_TEAM = 0, /*< nick=ConnectionNotTeam >*/
-	NM_TEAM_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
-	NM_TEAM_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
+	NM_DEVICE_TEAM_ERROR_CONNECTION_NOT_TEAM = 0, /*< nick=ConnectionNotTeam >*/
+	NM_DEVICE_TEAM_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
+	NM_DEVICE_TEAM_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 } NMTeamError;
 
 #define NM_DEVICE_TEAM_SLAVES "slaves"
