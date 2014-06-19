@@ -28,9 +28,7 @@
 #include <glib/gi18n.h>
 #include <gio/gio.h>
 #include <netinet/ether.h>
-#if WITH_TEAMDCTL
 #include <teamdctl.h>
-#endif
 #include <stdlib.h>
 
 #include "nm-device-team.h"
@@ -57,9 +55,7 @@ G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
 static gboolean teamd_start (NMDevice *dev, NMSettingTeam *s_team);
 
 typedef struct {
-#if WITH_TEAMDCTL
 	struct teamdctl *tdc;
-#endif
 	GPid teamd_pid;
 	guint teamd_process_watch;
 	guint teamd_timeout;
@@ -191,7 +187,6 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-#if WITH_TEAMDCTL
 static gboolean
 ensure_teamd_connection (NMDevice *self)
 {
@@ -213,7 +208,6 @@ ensure_teamd_connection (NMDevice *self)
 
 	return !!priv->tdc;
 }
-#endif
 
 static void
 update_connection (NMDevice *device, NMConnection *connection)
@@ -228,7 +222,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, NULL, NULL);
 
-#if WITH_TEAMDCTL
 	teamd_start (device, s_team);
 	if (NM_DEVICE_TEAM_GET_PRIVATE (device)->teamd_pid > 0 && ensure_teamd_connection (device)) {
 		const char *config = NULL;
@@ -241,7 +234,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 		else
 			nm_log_err (LOGD_TEAM, "(%s): failed to read teamd config (err=%d)", iface, err);
 	}
-#endif
 }
 
 /******************************************************************/
@@ -252,24 +244,14 @@ master_update_slave_connection (NMDevice *self,
                                    NMConnection *connection,
                                    GError **error)
 {
-#if WITH_TEAMDCTL
 	NMSettingTeamPort *s_port;
 	char *port_config = NULL;
 	int err = 0;
 	struct teamdctl *tdc;
 	const char *team_port_config = NULL;
-#endif
 	const char *iface = nm_device_get_iface (self);
 	const char *iface_slave = nm_device_get_iface (slave);
 
-#if !WITH_TEAMDCTL
-	g_set_error (error,
-	             NM_DEVICE_TEAM_ERROR,
-	             NM_DEVICE_TEAM_ERROR_NO_SUPPORT,
-	             "update slave connection for slave '%s' failed for team master '%s' because compiled without libteamctl support",
-	             iface_slave, iface);
-	return FALSE;
-#else
 	tdc = teamdctl_alloc ();
 	if (!tdc) {
 		g_set_error (error,
@@ -318,7 +300,6 @@ master_update_slave_connection (NMDevice *self,
 	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
 	              NULL);
 	return TRUE;
-#endif
 }
 
 /******************************************************************/
@@ -385,13 +366,11 @@ teamd_cleanup (NMDevice *dev, gboolean device_state_failed)
 		priv->teamd_pid = 0;
 	}
 
-#if WITH_TEAMDCTL
 	if (priv->tdc) {
 		teamdctl_disconnect (priv->tdc);
 		teamdctl_free (priv->tdc);
 		priv->tdc = NULL;
 	}
-#endif
 
 	teamd_timeout_remove (dev);
 
@@ -429,12 +408,10 @@ teamd_dbus_appeared (GDBusConnection *connection,
 
 	nm_log_info (LOGD_TEAM, "(%s): teamd appeared on D-Bus", nm_device_get_iface (dev));
 	teamd_timeout_remove (dev);
-#if WITH_TEAMDCTL
 	if (!ensure_teamd_connection (dev)) {
 		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 		return;
 	}
-#endif
 	nm_device_activate_schedule_stage2_device_config (dev);
 }
 
@@ -516,9 +493,7 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team)
 	if (priv->teamd_dbus_watch ||
 	    priv->teamd_process_watch ||
 	    priv->teamd_pid > 0 ||
-#if WITH_TEAMDCTL
 	    priv->tdc ||
-#endif
 	    priv->teamd_timeout)
 	{
 		/* Just return if teamd_start() was already called */
@@ -664,9 +639,7 @@ enslave_slave (NMDevice *device,
                NMConnection *connection,
                gboolean configure)
 {
-#if WITH_TEAMDCTL
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (device);
-#endif
 	gboolean success = TRUE, no_firmware = FALSE;
 	const char *iface = nm_device_get_ip_iface (device);
 	const char *slave_iface = nm_device_get_ip_iface (slave);
@@ -682,7 +655,6 @@ enslave_slave (NMDevice *device,
 			const char *config = nm_setting_team_port_get_config (s_team_port);
 
 			if (config) {
-#if WITH_TEAMDCTL
 				if (!priv->tdc) {
 					nm_log_warn (LOGD_TEAM, "(%s): enslaved team port %s config not changed, not connected to teamd",
 					             iface, slave_iface);
@@ -699,10 +671,6 @@ enslave_slave (NMDevice *device,
 						return FALSE;
 					}
 				}
-#else
-				nm_log_warn (LOGD_TEAM, "(%s): enslaved team port %s config not changed due to lack of Teamd control support",
-				             iface, slave_iface);
-#endif
 			}
 		}
 		success = nm_platform_link_enslave (nm_device_get_ip_ifindex (device),

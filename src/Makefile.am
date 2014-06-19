@@ -5,7 +5,6 @@ include $(GLIB_MAKEFILE)
 SUBDIRS =				\
 	.				\
 	devices/adsl			\
-	devices/team			\
 	devices/wifi			\
 	dhcp-manager			\
 	ppp-manager			\
@@ -19,6 +18,10 @@ endif
 
 if WITH_WIMAX
 SUBDIRS += devices/wimax
+endif
+
+if WITH_TEAMDCTL
+SUBDIRS += devices/team
 endif
 
 if ENABLE_TESTS
