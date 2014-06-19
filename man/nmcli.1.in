@@ -21,7 +21,7 @@
 .\"
 .\" Copyright (C) 2010 - 2014 Red Hat, Inc.
 .\"
-.TH NMCLI "1" "28 February 2014"
+.TH NMCLI "1" "11 July 2014"
 
 .SH NAME
 nmcli \- command\(hyline tool for controlling NetworkManager
@@ -683,7 +683,7 @@ of its latest state.
 .B device - show and manage network interfaces
 .br
 .TP
-.SS \fICOMMAND\fP := { status | show | connect | disconnect | wifi | wimax }
+.SS \fICOMMAND\fP := { status | show | connect | disconnect | delete | wifi | wimax }
 .sp
 .RS
 .TP
@@ -710,6 +710,14 @@ If '--wait' option is not specified, the default timeout will be 90 seconds.
 .br
 Disconnect a device and prevent the device from automatically activating further
 connections without user/manual intervention.
+.br
+If '--wait' option is not specified, the default timeout will be 10 seconds.
+.TP
+.B delete <ifname>
+.br
+Delete a device. The command removes the interface from the system. Note that
+this only works for software devices like bonds, bridges, teams, etc.
+Hardware devices (like Ethernet) cannot be deleted by the command.
 .br
 If '--wait' option is not specified, the default timeout will be 10 seconds.
 .TP

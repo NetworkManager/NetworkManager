@@ -278,14 +278,15 @@ usage (void)
 	fprintf (stderr,
 	         _("Usage: nmcli device { COMMAND | help }\n\n"
 #if WITH_WIMAX
-	           "COMMAND := { status | show | connect | disconnect | wifi | wimax }\n\n"
+	           "COMMAND := { status | show | connect | disconnect | delete | wifi | wimax }\n\n"
 #else
-	           "COMMAND := { status | show | connect | disconnect | wifi }\n\n"
+	           "COMMAND := { status | show | connect | disconnect | delete | wifi }\n\n"
 #endif
 	           "  status\n\n"
 	           "  show [<ifname>]\n\n"
 	           "  connect <ifname>\n\n"
 	           "  disconnect <ifname>\n\n"
+	           "  delete <ifname>\n\n"
 	           "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
 	           "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
 	           "                         [bssid <BSSID>] [name <name>] [private yes|no]\n\n"
@@ -348,6 +349,20 @@ usage_device_disconnect (void)
 	           "Disconnect the device.\n"
 	           "The command disconnects the device and prevents it from auto-activating\n"
 	           "further connections without user/manual intervention.\n\n"));
+}
+
+static void
+usage_device_delete (void)
+{
+	fprintf (stderr,
+	         _("Usage: nmcli device delete { ARGUMENTS | help }\n"
+	           "\n"
+	           "ARGUMENTS := <ifname>\n"
+	           "\n"
+	           "Deletes the software device.\n"
+	           "The command removes the interface. It only works for software devices\n"
+	           "(like bonds, bridges, etc.). Hardware devices cannot be deleted by the\n"
+	           "command.\n\n"));
 }
 
 static void
@@ -1589,6 +1604,106 @@ error:
 }
 
 static void
+delete_device_cb (NMDevice *device, GError *error, gpointer user_data)
+{
+	NmCli *nmc = (NmCli *) user_data;
+
+	if (error) {
+		g_string_printf (nmc->return_text, _("Error: Device '%s' (%s) deletion failed: %s"),
+		                 nm_device_get_iface (device),
+		                 nm_object_get_path (NM_OBJECT (device)),
+		                 error->message ? error->message : _("(unknown)"));
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	}
+	quit ();
+}
+
+static NMCResultCode
+do_device_delete (NmCli *nmc, int argc, char **argv)
+{
+	NMDevice **devices;
+	NMDevice *device = NULL;
+	const char *ifname = NULL;
+	char *ifname_ask = NULL;
+	int i;
+
+	/* Set default timeout for delete operation. */
+	if (nmc->timeout == -1)
+		nmc->timeout = 10;
+
+	if (argc == 0) {
+		if (nmc->ask)
+			ifname = ifname_ask = nmc_readline (PROMPT_INTERFACE);
+
+		if (!ifname_ask) {
+			g_string_printf (nmc->return_text, _("Error: No interface specified."));
+			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+			goto error;
+		}
+	} else
+		ifname = *argv;
+
+	if (!ifname) {
+		g_string_printf (nmc->return_text, _("Error: No interface specified."));
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
+
+	if (next_arg (&argc, &argv) == 0) {
+		g_string_printf (nmc->return_text, _("Error: extra argument not allowed: '%s'."), *argv);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
+
+	nmc->get_client (nmc);
+	if (!nm_client_get_manager_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		goto error;
+	}
+
+	if (!nmc_versions_match (nmc))
+		goto error;
+
+	devices = get_devices_sorted (nmc->client);
+	for (i = 0; devices[i]; i++) {
+		NMDevice *candidate = devices[i];
+		const char *dev_iface = nm_device_get_iface (candidate);
+
+		if (!g_strcmp0 (dev_iface, ifname))
+			device = candidate;
+	}
+	g_free (devices);
+
+	if (!device) {
+		g_string_printf (nmc->return_text, _("Error: Device '%s' not found."), ifname);
+		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+		goto error;
+	}
+
+	if (!nm_device_is_software (device)) {
+		g_string_printf (nmc->return_text, _("Error: Device '%s' is a hardware device. It can't be deleted."), ifname);
+		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+		goto error;
+	}
+
+	/*
+	 * Use nowait_flag instead of should_wait, because exiting has to be postponed
+	 * till delete_device_cb() is called, giving NM time to check our permissions.
+	 */
+	nmc->nowait_flag = (nmc->timeout == 0);
+	nmc->should_wait = TRUE;
+	nm_device_delete (device, delete_device_cb, nmc);
+
+	/* Start progress indication */
+	if (nmc->print_output == NMC_PRINT_PRETTY)
+		progress_id = g_timeout_add (120, progress_cb, device);
+
+error:
+	return nmc->return_value;
+}
+
+static void
 show_acces_point_info (NMDevice *device, NmCli *nmc)
 {
 	NMAccessPoint *active_ap = NULL;
@@ -2683,6 +2798,13 @@ do_devices (NmCli *nmc, int argc, char **argv)
 				goto usage_exit;
 			}
 			nmc->return_value = do_device_disconnect (nmc, argc-1, argv+1);
+		}
+		else if (matches (*argv, "delete") == 0) {
+			if (nmc_arg_is_help (*(argv+1))) {
+				usage_device_delete ();
+				goto usage_exit;
+			}
+			nmc->return_value = do_device_delete (nmc, argc-1, argv+1);
 		}
 		else if (matches (*argv, "wifi") == 0) {
 			if (nmc_arg_is_help (*(argv+1))) {

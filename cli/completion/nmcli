@@ -1164,7 +1164,7 @@ _nmcli()
             ;;
         d|de|dev|devi|devic|device)
             if [[ ${#words[@]} -eq 2 ]]; then
-                _nmcli_compl_COMMAND "$command" status show connect disconnect wifi wimax
+                _nmcli_compl_COMMAND "$command" status show connect disconnect delete wifi wimax
             elif [[ ${#words[@]} -gt 2 ]]; then
                 case "$command" in
                     s|st|sta|stat|statu|status)
@@ -1174,7 +1174,8 @@ _nmcli()
                         ;;
                     sh|sho|show| \
                     c|co|con|conn|conne|connec|connect| \
-                    d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect)
+                    d|di|dis|disc|disco|discon|disconn|disconne|disconnec|disconnect| \
+                    de|del|dele|delet|delete)
                         if [[ ${#words[@]} -eq 3 ]]; then
                             _nmcli_compl_COMMAND_nl "${words[2]}" "$(_nmcli_dev_status DEVICE)"
                         fi
