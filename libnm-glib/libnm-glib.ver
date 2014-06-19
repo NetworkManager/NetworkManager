@@ -104,6 +104,7 @@ global:
 	nm_device_bt_new;
 	nm_device_connection_compatible;
 	nm_device_connection_valid;
+	nm_device_delete;
 	nm_device_disambiguate_names;
 	nm_device_disconnect;
 	nm_device_error_get_type;
