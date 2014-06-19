@@ -252,9 +252,10 @@ nmt_newt_button_class_init (NmtNewtButtonClass *button_class)
 	 *
 	 * The button's label
 	 */
-	g_object_class_install_property (object_class, PROP_LABEL,
-	                                 g_param_spec_string ("label", "", "",
-	                                                      NULL,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_LABEL,
+		 g_param_spec_string ("label", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 }

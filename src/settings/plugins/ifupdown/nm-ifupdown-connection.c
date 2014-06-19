@@ -161,9 +161,8 @@ nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connectio
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_IFBLOCK,
-		 g_param_spec_pointer (NM_IFUPDOWN_CONNECTION_IFBLOCK,
-						   "ifblock",
-						   "",
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_pointer (NM_IFUPDOWN_CONNECTION_IFBLOCK, "", "",
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 }
 

@@ -876,11 +876,10 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_SLAVES,
-		 g_param_spec_boxed (NM_DEVICE_TEAM_SLAVES,
-		                     "Slaves",
-		                     "Slaves",
+		 g_param_spec_boxed (NM_DEVICE_TEAM_SLAVES, "", "",
 		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

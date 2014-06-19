@@ -1612,51 +1612,45 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 
 	g_object_class_install_property
 		(object_class, PROP_IFACE,
-		 g_param_spec_string (NM_DHCP_CLIENT_INTERFACE,
-		                      "iface",
-		                      "Interface",
+		 g_param_spec_string (NM_DHCP_CLIENT_INTERFACE, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_HWADDR,
-		 g_param_spec_boxed (NM_DHCP_CLIENT_HWADDR,
-		                     "hwaddr",
-		                     "hardware address",
+		 g_param_spec_boxed (NM_DHCP_CLIENT_HWADDR, "", "",
 		                     G_TYPE_BYTE_ARRAY,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_IPV6,
-		 g_param_spec_boolean (NM_DHCP_CLIENT_IPV6,
-		                       "ipv6",
-		                       "IPv6",
+		 g_param_spec_boolean (NM_DHCP_CLIENT_IPV6, "", "",
 		                       FALSE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_UUID,
-		 g_param_spec_string (NM_DHCP_CLIENT_UUID,
-		                      "uuid",
-		                      "UUID",
+		 g_param_spec_string (NM_DHCP_CLIENT_UUID, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY,
-		 g_param_spec_uint (NM_DHCP_CLIENT_PRIORITY,
-		                    "priority",
-		                    "Priority",
+		 g_param_spec_uint (NM_DHCP_CLIENT_PRIORITY, "", "",
 		                    0, G_MAXUINT, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_TIMEOUT,
-		 g_param_spec_uint (NM_DHCP_CLIENT_TIMEOUT,
-		                    "timeout",
-		                    "Timeout",
+		 g_param_spec_uint (NM_DHCP_CLIENT_TIMEOUT, "", "",
 		                    0, G_MAXUINT, 45,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 	signals[SIGNAL_STATE_CHANGED] =

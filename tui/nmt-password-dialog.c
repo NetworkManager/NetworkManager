@@ -261,23 +261,25 @@ nmt_password_dialog_class_init (NmtPasswordDialogClass *dialog_class)
 	 *
 	 * The request ID from the #NmtSecretAgent
 	 */
-	g_object_class_install_property (object_class, PROP_REQUEST_ID,
-	                                 g_param_spec_string ("request-id", "", "",
-	                                                      NULL,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_REQUEST_ID,
+		 g_param_spec_string ("request-id", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtPasswordDialog:prompt:
 	 *
 	 * The prompt text.
 	 */
-	g_object_class_install_property (object_class, PROP_PROMPT,
-	                                 g_param_spec_string ("prompt", "", "",
-	                                                      NULL,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_PROMPT,
+		 g_param_spec_string ("prompt", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtPasswordDialog:secrets:
 	 *
@@ -285,12 +287,13 @@ nmt_password_dialog_class_init (NmtPasswordDialogClass *dialog_class)
 	 *
 	 * Element-Type: #NmtSecretAgentSecret.
 	 */
-	g_object_class_install_property (object_class, PROP_SECRETS,
-	                                 g_param_spec_boxed ("secrets", "", "",
-	                                                     G_TYPE_PTR_ARRAY,
-	                                                     G_PARAM_READWRITE |
-	                                                     G_PARAM_CONSTRUCT_ONLY |
-	                                                     G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_SECRETS,
+		 g_param_spec_boxed ("secrets", "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_CONSTRUCT_ONLY |
+		                     G_PARAM_STATIC_STRINGS));
 }
 
 /**

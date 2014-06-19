@@ -325,19 +325,21 @@ nmt_newt_popup_class_init (NmtNewtPopupClass *popup_class)
 	 *
 	 * The index of the currently-active entry.
 	 */
-	g_object_class_install_property (object_class, PROP_ACTIVE,
-	                                 g_param_spec_uint ("active", "", "",
-	                                                   0, G_MAXUINT, 0,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE,
+		 g_param_spec_uint ("active", "", "",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtNewtPopup:active-id:
 	 *
 	 * The textual ID of the currently-active entry.
 	 */
-	g_object_class_install_property (object_class, PROP_ACTIVE_ID,
-	                                 g_param_spec_string ("active-id", "", "",
-	                                                      NULL,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE_ID,
+		 g_param_spec_string ("active-id", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 }

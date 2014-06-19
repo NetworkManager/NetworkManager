@@ -169,22 +169,15 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 	/**
 	 * NMSettingTeamPort:config:
 	 *
-	 * The config of team port
-	 * JSON configuration for the team port.
-	 * The property should contain raw JSON configuration data
-	 * suitable for teamd, because the value is passed directly to
-	 * teamd. If not specified, the default configuration is used.
-	 * See man teamd.conf for the format details.
+	 * The JSON configuration for the team port. The property should contain raw
+	 * JSON configuration data suitable for teamd, because the value is passed
+	 * directly to teamd. If not specified, the default configuration is
+	 * used. See man teamd.conf for the format details.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CONFIG,
-		 g_param_spec_string (NM_SETTING_TEAM_PORT_CONFIG,
-		                      "Config",
-		                      "JSON configuration for the team port. "
-		                      "The property should contain raw JSON configuration data "
-		                      "suitable for teamd, because the value is passed directly to "
-		                      "teamd. If not specified, the dafault configuration is used. "
-		                      "See man teamd.conf for the format details.",
+		 g_param_spec_string (NM_SETTING_TEAM_PORT_CONFIG, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
+		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
 }

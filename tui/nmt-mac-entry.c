@@ -217,20 +217,22 @@ nmt_mac_entry_class_init (NmtMacEntryClass *entry_class)
 	 * The length in bytes of the hardware address type the entry
 	 * accepts: either %ETH_ALEN or %INFINIBAND_ALEN.
 	 */
-	g_object_class_install_property (object_class, PROP_MAC_LENGTH,
-	                                 g_param_spec_int ("mac-length", "", "",
-	                                                   0, INFINIBAND_ALEN, ETH_ALEN,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_MAC_LENGTH,
+		 g_param_spec_int ("mac-length", "", "",
+		                   0, INFINIBAND_ALEN, ETH_ALEN,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtMacEntry:mac-address:
 	 *
 	 * The MAC address, in binary (in the same format used by the various
 	 * #NMSetting "mac-address" properties).
 	 */
-	g_object_class_install_property (object_class, PROP_MAC_ADDRESS,
-	                                 g_param_spec_boxed ("mac-address", "", "",
-	                                                     DBUS_TYPE_G_UCHAR_ARRAY,
-	                                                     G_PARAM_READWRITE |
-	                                                     G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_MAC_ADDRESS,
+		 g_param_spec_boxed ("mac-address", "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 }

@@ -241,28 +241,22 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_NAME,
-		 g_param_spec_string (NM_SETTING_WIMAX_NETWORK_NAME,
-							  "NetworkName",
-							  "Network Service Provider (NSP) name of the WiMAX "
-							  "network this connection should use.",
-							  NULL,
-							  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_WIMAX_NETWORK_NAME, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWimax:mac-address:
 	 *
-	 * If specified, this connection will only apply to the WiMAX device
-	 * whose MAC address matches. This property does not change the MAC address
-	 * of the device (known as MAC spoofing).
+	 * If specified, this connection will only apply to the WiMAX device whose
+	 * MAC address matches. This property does not change the MAC address of the
+	 * device (known as MAC spoofing).
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_WIMAX_MAC_ADDRESS,
-							   "MAC Address",
-							   "If specified, this connection will only apply to "
-							   "the WiMAX device whose MAC address matches.  "
-							   "This property does not change the MAC address "
-							   "of the device (known as MAC spoofing).",
-							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE));
+		 _nm_param_spec_specialized (NM_SETTING_WIMAX_MAC_ADDRESS, "", "",
+		                             DBUS_TYPE_G_UCHAR_ARRAY,
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 }

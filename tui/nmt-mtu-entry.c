@@ -183,9 +183,10 @@ nmt_mtu_entry_class_init (NmtMtuEntryClass *entry_class)
 	 *
 	 * The contents of the entry, as a number.
 	 */
-	g_object_class_install_property (object_class, PROP_MTU,
-	                                 g_param_spec_int ("mtu", "", "",
-	                                                   0, G_MAXINT, 0,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_MTU,
+		 g_param_spec_int ("mtu", "", "",
+		                   0, G_MAXINT, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_STATIC_STRINGS));
 }

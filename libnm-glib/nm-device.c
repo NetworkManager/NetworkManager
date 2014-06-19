@@ -552,11 +552,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE,
-		 g_param_spec_string (NM_DEVICE_INTERFACE,
-						  "Interface",
-						  "Interface name",
-						  NULL,
-						  G_PARAM_READABLE));
+		 g_param_spec_string (NM_DEVICE_INTERFACE, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:ip-interface:
@@ -566,11 +565,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP_INTERFACE,
-		 g_param_spec_string (NM_DEVICE_IP_INTERFACE,
-						  "IP Interface",
-						  "IP Interface name",
-						  NULL,
-						  G_PARAM_READABLE));
+		 g_param_spec_string (NM_DEVICE_IP_INTERFACE, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:device-type:
@@ -579,11 +577,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEVICE_TYPE,
-		 g_param_spec_uint (NM_DEVICE_DEVICE_TYPE,
-						  "Device Type",
-						  "Numeric device type (ie ethernet, wifi, etc)",
-						  NM_DEVICE_TYPE_UNKNOWN, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
-						  G_PARAM_READABLE));
+		 g_param_spec_uint (NM_DEVICE_DEVICE_TYPE, "", "",
+		                    NM_DEVICE_TYPE_UNKNOWN, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 	/**
 	 * NMDevice:udi:
 	 *
@@ -596,11 +593,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_UDI,
-		 g_param_spec_string (NM_DEVICE_UDI,
-						  "UDI",
-						  "Unique Device Identifier",
-						  NULL,
-						  G_PARAM_READABLE));
+		 g_param_spec_string (NM_DEVICE_UDI, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:driver:
@@ -609,11 +605,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DRIVER,
-		 g_param_spec_string (NM_DEVICE_DRIVER,
-						  "Driver",
-						  "Driver",
-						  NULL,
-						  G_PARAM_READABLE));
+		 g_param_spec_string (NM_DEVICE_DRIVER, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:driver-version:
@@ -622,11 +617,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DRIVER_VERSION,
-		 g_param_spec_string (NM_DEVICE_DRIVER_VERSION,
-		                      "Driver Version",
-		                      "Driver Version",
+		 g_param_spec_string (NM_DEVICE_DRIVER_VERSION, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:firmware-version:
@@ -635,11 +629,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_FIRMWARE_VERSION,
-		 g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION,
-		                      "Firmware Version",
-		                      "Firmware Version",
+		 g_param_spec_string (NM_DEVICE_FIRMWARE_VERSION, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:capabilities:
@@ -648,11 +641,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CAPABILITIES,
-		 g_param_spec_uint (NM_DEVICE_CAPABILITIES,
-						  "Capabilities",
-						  "Capabilities",
-						  0, G_MAXUINT32, 0,
-						  G_PARAM_READABLE));
+		 g_param_spec_uint (NM_DEVICE_CAPABILITIES, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:managed:
@@ -661,11 +653,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MANAGED,
-		 g_param_spec_boolean (NM_DEVICE_MANAGED,
-						  "Managed",
-						  "Managed",
-						  FALSE,
-						  G_PARAM_READABLE));
+		 g_param_spec_boolean (NM_DEVICE_MANAGED, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:autoconnect:
@@ -674,11 +665,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AUTOCONNECT,
-		 g_param_spec_boolean (NM_DEVICE_AUTOCONNECT,
-		                       "Autoconnect",
-		                       "Autoconnect",
+		 g_param_spec_boolean (NM_DEVICE_AUTOCONNECT, "", "",
 		                       TRUE,
-		                       G_PARAM_READWRITE));
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:firmware-missing:
@@ -688,11 +678,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_FIRMWARE_MISSING,
-		 g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING,
-						  "FirmwareMissing",
-						  "Firmware missing",
-						  FALSE,
-						  G_PARAM_READABLE));
+		 g_param_spec_boolean (NM_DEVICE_FIRMWARE_MISSING, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:ip4-config:
@@ -701,11 +690,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP4_CONFIG,
-		 g_param_spec_object (NM_DEVICE_IP4_CONFIG,
-						  "IP4 Config",
-						  "IP4 Config",
-						  NM_TYPE_IP4_CONFIG,
-						  G_PARAM_READABLE));
+		 g_param_spec_object (NM_DEVICE_IP4_CONFIG, "", "",
+		                      NM_TYPE_IP4_CONFIG,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:dhcp4-config:
@@ -714,11 +702,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP4_CONFIG,
-		 g_param_spec_object (NM_DEVICE_DHCP4_CONFIG,
-						  "DHCP4 Config",
-						  "DHCP4 Config",
-						  NM_TYPE_DHCP4_CONFIG,
-						  G_PARAM_READABLE));
+		 g_param_spec_object (NM_DEVICE_DHCP4_CONFIG, "", "",
+		                      NM_TYPE_DHCP4_CONFIG,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:ip6-config:
@@ -727,11 +714,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP6_CONFIG,
-		 g_param_spec_object (NM_DEVICE_IP6_CONFIG,
-		                      "IP6 Config",
-		                      "IP6 Config",
+		 g_param_spec_object (NM_DEVICE_IP6_CONFIG, "", "",
 		                      NM_TYPE_IP6_CONFIG,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:dhcp6-config:
@@ -740,11 +726,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP6_CONFIG,
-		 g_param_spec_object (NM_DEVICE_DHCP6_CONFIG,
-						  "DHCP6 Config",
-						  "DHCP6 Config",
-						  NM_TYPE_DHCP6_CONFIG,
-						  G_PARAM_READABLE));
+		 g_param_spec_object (NM_DEVICE_DHCP6_CONFIG, "", "",
+		                      NM_TYPE_DHCP6_CONFIG,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:state:
@@ -753,11 +738,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_DEVICE_STATE,
-						  "State",
-						  "State",
-						  0, G_MAXUINT32, 0,
-						  G_PARAM_READABLE));
+		 g_param_spec_uint (NM_DEVICE_STATE, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:state-reason:
@@ -766,11 +750,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_STATE_REASON,
-		 g_param_spec_boxed (NM_DEVICE_STATE_REASON,
-		                     "StateReason",
-		                     "StateReason",
+		 g_param_spec_boxed (NM_DEVICE_STATE_REASON, "", "",
 		                     DBUS_G_TYPE_UINT_STRUCT,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:active-connection:
@@ -779,11 +762,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTION,
-		 g_param_spec_object (NM_DEVICE_ACTIVE_CONNECTION,
-		                      "ActiveConnection",
-		                      "Active Connection",
+		 g_param_spec_object (NM_DEVICE_ACTIVE_CONNECTION, "", "",
 		                      NM_TYPE_ACTIVE_CONNECTION,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:available-connections:
@@ -794,11 +776,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AVAILABLE_CONNECTIONS,
-		 g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS,
-							 "AvailableConnections",
-							 "Available Connections",
-							 NM_TYPE_OBJECT_ARRAY,
-							 G_PARAM_READABLE));
+		 g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS, "", "",
+		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:vendor:
@@ -807,11 +788,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_VENDOR,
-		 g_param_spec_string (NM_DEVICE_VENDOR,
-						  "Vendor",
-						  "Vendor string",
-						  NULL,
-						  G_PARAM_READABLE));
+		 g_param_spec_string (NM_DEVICE_VENDOR, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:product:
@@ -820,11 +800,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRODUCT,
-		 g_param_spec_string (NM_DEVICE_PRODUCT,
-						  "Product",
-						  "Product string",
-						  NULL,
-						  G_PARAM_READABLE));
+		 g_param_spec_string (NM_DEVICE_PRODUCT, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:physical-port-id:
@@ -836,11 +815,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHYSICAL_PORT_ID,
-		 g_param_spec_string (NM_DEVICE_PHYSICAL_PORT_ID,
-		                      "Physical Port ID",
-		                      "Physical port ID",
+		 g_param_spec_string (NM_DEVICE_PHYSICAL_PORT_ID, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:mtu:
@@ -851,11 +829,10 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MTU,
-		 g_param_spec_uint (NM_DEVICE_MTU,
-		                    "MTU",
-		                    "MTU",
+		 g_param_spec_uint (NM_DEVICE_MTU, "", "",
 		                    0, G_MAXUINT32, 1500,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 
@@ -1059,7 +1036,7 @@ nm_device_get_ip_iface (NMDevice *device)
  * nm_device_get_device_type:
  * @device: a #NMDevice
  *
- * Returns the numeric type of the #NMDevice, ie ethernet, wifi, etc.
+ * Returns the numeric type of the #NMDevice, ie Ethernet, Wi-Fi, etc.
  *
  * Returns: the device type
  **/
@@ -2158,8 +2135,8 @@ nm_device_disconnect (NMDevice *device,
  *
  * Validates a given connection for a given #NMDevice object and returns
  * whether the connection may be activated with the device. For example if
- * @device is a WiFi device that supports only WEP encryption, the connection
- * will only be valid if it is a WiFi connection which describes a WEP or open
+ * @device is a Wi-Fi device that supports only WEP encryption, the connection
+ * will only be valid if it is a Wi-Fi connection which describes a WEP or open
  * network, and will not be valid if it describes a WPA network, or if it is
  * an Ethernet, Bluetooth, WWAN, etc connection that is incompatible with the
  * device.
@@ -2201,8 +2178,8 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
  *
  * Validates a given connection for a given #NMDevice object and returns
  * whether the connection may be activated with the device. For example if
- * @device is a WiFi device that supports only WEP encryption, the connection
- * will only be valid if it is a WiFi connection which describes a WEP or open
+ * @device is a Wi-Fi device that supports only WEP encryption, the connection
+ * will only be valid if it is a Wi-Fi connection which describes a WEP or open
  * network, and will not be valid if it describes a WPA network, or if it is
  * an Ethernet, Bluetooth, WWAN, etc connection that is incompatible with the
  * device.
@@ -2231,10 +2208,10 @@ nm_device_connection_compatible (NMDevice *device, NMConnection *connection, GEr
  *
  * Filters a given list of connections for a given #NMDevice object and return
  * connections which may be activated with the device. For example if @device
- * is a WiFi device that supports only WEP encryption, the returned list will
- * contain any WiFi connections in @connections that allow connection to
+ * is a Wi-Fi device that supports only WEP encryption, the returned list will
+ * contain any Wi-Fi connections in @connections that allow connection to
  * unencrypted or WEP-enabled SSIDs.  The returned list will not contain
- * Ethernet, Bluetooth, WiFi WPA connections, or any other connection that is
+ * Ethernet, Bluetooth, Wi-Fi WPA connections, or any other connection that is
  * incompatible with the device. To get the full list of connections see
  * nm_remote_settings_list_connections().
  *

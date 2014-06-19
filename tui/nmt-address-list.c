@@ -265,20 +265,22 @@ nmt_address_list_class_init (NmtAddressListClass *list_class)
 	 *
 	 * The type of address the list holds.
 	 */
-	g_object_class_install_property (object_class, PROP_LIST_TYPE,
-	                                 g_param_spec_uint ("list-type", "", "",
-	                                                    0, G_MAXUINT, 0,
-	                                                    G_PARAM_READWRITE |
-	                                                    G_PARAM_CONSTRUCT_ONLY |
-	                                                    G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_LIST_TYPE,
+		 g_param_spec_uint ("list-type", "", "",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtAddressList:strings:
 	 *
 	 * The strings in the list's entries.
 	 */
-	g_object_class_install_property (object_class, PROP_STRINGS,
-	                                 g_param_spec_boxed ("strings", "", "",
-	                                                     G_TYPE_STRV,
-	                                                     G_PARAM_READWRITE |
-	                                                     G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_STRINGS,
+		 g_param_spec_boxed ("strings", "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 }

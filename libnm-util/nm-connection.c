@@ -582,7 +582,7 @@ nm_connection_diff (NMConnection *a,
  *
  * Validates the connection and all its settings.  Each setting's properties
  * have allowed values, and some values are dependent on other values.  For
- * example, if a WiFi connection is security enabled, the #NMSettingWireless
+ * example, if a Wi-Fi connection is security enabled, the #NMSettingWireless
  * setting object's 'security' property must contain the setting name of the
  * #NMSettingWirelessSecurity object, which must also be present in the 
  * connection for the connection to be valid.  As another example, the
@@ -987,7 +987,7 @@ nm_connection_to_hash (NMConnection *connection, NMSettingHashFlags flags)
  * %NM_SETTING_WIRELESS_SETTING_NAME or %NM_SETTING_WIRED_SETTING_NAME)
  *
  * A convenience function to check if the given @connection is a particular
- * type (ie wired, wifi, ppp, etc). Checks the #NMSettingConnection:type
+ * type (ie wired, Wi-Fi, ppp, etc). Checks the #NMSettingConnection:type
  * property of the connection and matches that against @type.
  *
  * Returns: %TRUE if the connection is of the given @type, %FALSE if not
@@ -1829,11 +1829,10 @@ nm_connection_class_init (NMConnectionClass *klass)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_CONNECTION_PATH,
-						  "Path",
-						  "Path",
-						  NULL,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+		 g_param_spec_string (NM_CONNECTION_PATH, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 

@@ -420,11 +420,10 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_GATEWAY,
-	     g_param_spec_string (NM_IP6_CONFIG_GATEWAY,
-	                          "Gateway",
-	                          "Gateway",
+	     g_param_spec_string (NM_IP6_CONFIG_GATEWAY, "", "",
 	                          NULL,
-	                          G_PARAM_READABLE));
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP6Config:addresses:
@@ -435,11 +434,10 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ADDRESSES,
-	     g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES,
-	                         "Addresses",
-	                         "Addresses",
+	     g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES, "", "",
 	                         NM_TYPE_IP6_ADDRESS_OBJECT_ARRAY,
-	                         G_PARAM_READABLE));
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP6Config:routes:
@@ -450,11 +448,10 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ROUTES,
-	     g_param_spec_boxed (NM_IP6_CONFIG_ROUTES,
-	                         "Routes",
-	                         "Routes",
+	     g_param_spec_boxed (NM_IP6_CONFIG_ROUTES, "", "",
 	                         NM_TYPE_IP6_ROUTE_OBJECT_ARRAY,
-	                         G_PARAM_READABLE));
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP6Config:nameservers:
@@ -464,11 +461,10 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_NAMESERVERS,
-	     g_param_spec_boxed (NM_IP6_CONFIG_NAMESERVERS,
-	                        "Nameservers",
-	                        "Nameservers",
-	                        NM_TYPE_IP6_ADDRESS_ARRAY,
-	                        G_PARAM_READABLE));
+	     g_param_spec_boxed (NM_IP6_CONFIG_NAMESERVERS, "", "",
+	                         NM_TYPE_IP6_ADDRESS_ARRAY,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP6Config:domains:
@@ -477,11 +473,10 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_DOMAINS,
-	     g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS,
-	                        "Domains",
-	                        "Domains",
-	                        NM_TYPE_STRING_ARRAY,
-	                        G_PARAM_READABLE));
+	     g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS, "", "",
+	                         NM_TYPE_STRING_ARRAY,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP6Config:searches:
@@ -492,11 +487,10 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_SEARCHES,
-	     g_param_spec_boxed (NM_IP6_CONFIG_SEARCHES,
-	                        "Searches",
-	                        "DNS Searches",
-	                        NM_TYPE_STRING_ARRAY,
-	                        G_PARAM_READABLE));
+	     g_param_spec_boxed (NM_IP6_CONFIG_SEARCHES, "", "",
+	                         NM_TYPE_STRING_ARRAY,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 }
 

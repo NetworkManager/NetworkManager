@@ -203,11 +203,10 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_TYPE_DESCRIPTION,
-		 g_param_spec_string (NM_DEVICE_GENERIC_TYPE_DESCRIPTION,
-		                      "Type Description",
-		                      "Type description",
+		 g_param_spec_string (NM_DEVICE_GENERIC_TYPE_DESCRIPTION, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

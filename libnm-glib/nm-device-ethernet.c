@@ -194,7 +194,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	/* Wired setting optional for PPPoE */
 	if (!is_pppoe && !s_wired) {
 		g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_INVALID_ETHERNET_CONNECTION,
-		             "The connection was not a valid ethernet connection.");
+		             "The connection was not a valid Ethernet connection.");
 		return FALSE;
 	}
 
@@ -350,11 +350,10 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_ETHERNET_HW_ADDRESS,
-						  "Active MAC Address",
-						  "Currently set hardware MAC address",
-						  NULL,
-						  G_PARAM_READABLE));
+		 g_param_spec_string (NM_DEVICE_ETHERNET_HW_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceEthernet:perm-hw-address:
@@ -363,11 +362,10 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PERM_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS,
-						  "Permanent MAC Address",
-						  "Permanent hardware MAC address",
-						  NULL,
-						  G_PARAM_READABLE));
+		 g_param_spec_string (NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceEthernet:speed:
@@ -376,11 +374,10 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SPEED,
-		 g_param_spec_uint (NM_DEVICE_ETHERNET_SPEED,
-					    "Speed",
-					    "Speed",
-					    0, G_MAXUINT32, 0,
-					    G_PARAM_READABLE));
+		 g_param_spec_uint (NM_DEVICE_ETHERNET_SPEED, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceEthernet:carrier:
@@ -389,11 +386,10 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_ETHERNET_CARRIER,
-					    "Carrier",
-					    "Carrier",
-					    FALSE,
-					    G_PARAM_READABLE));
+		 g_param_spec_boolean (NM_DEVICE_ETHERNET_CARRIER, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 }
 

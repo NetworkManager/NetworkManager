@@ -156,11 +156,10 @@ nm_dhcp6_config_class_init (NMDHCP6ConfigClass *config_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_OPTIONS,
-		 g_param_spec_boxed (NM_DHCP6_CONFIG_OPTIONS,
-						       "Options",
-						       "Options",
-						       G_TYPE_HASH_TABLE,
-						       G_PARAM_READABLE));
+		 g_param_spec_boxed (NM_DHCP6_CONFIG_OPTIONS, "", "",
+		                     G_TYPE_HASH_TABLE,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 }
 
 /**

@@ -1735,47 +1735,40 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	object_class->finalize = finalize;
 
 	obj_properties[PROP_GATEWAY] =
-		 g_param_spec_string (NM_IP4_CONFIG_GATEWAY,
-		                      "Gateway",
-		                      "IP4 gateway",
-		                       NULL,
-		                       G_PARAM_READABLE);
+		 g_param_spec_string (NM_IP4_CONFIG_GATEWAY, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ADDRESSES] =
-		 g_param_spec_boxed (NM_IP4_CONFIG_ADDRESSES,
-		                     "Addresses",
-		                     "IP4 addresses",
+		 g_param_spec_boxed (NM_IP4_CONFIG_ADDRESSES, "", "",
 		                     DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-		                     G_PARAM_READABLE);
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ROUTES] =
-		 g_param_spec_boxed (NM_IP4_CONFIG_ROUTES,
-		                     "Routes",
-		                     "Routes",
+		 g_param_spec_boxed (NM_IP4_CONFIG_ROUTES, "", "",
 		                     DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-		                     G_PARAM_READABLE);
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_NAMESERVERS] =
-		 g_param_spec_boxed (NM_IP4_CONFIG_NAMESERVERS,
-		                     "Nameservers",
-		                     "DNS list",
+		 g_param_spec_boxed (NM_IP4_CONFIG_NAMESERVERS, "", "",
 		                     DBUS_TYPE_G_UINT_ARRAY,
-		                     G_PARAM_READABLE);
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DOMAINS] =
-		 g_param_spec_boxed (NM_IP4_CONFIG_DOMAINS,
-		                     "Domains",
-		                     "Domains",
+		 g_param_spec_boxed (NM_IP4_CONFIG_DOMAINS, "", "",
 		                     DBUS_TYPE_G_ARRAY_OF_STRING,
-		                     G_PARAM_READABLE);
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_SEARCHES] =
-		 g_param_spec_boxed (NM_IP4_CONFIG_SEARCHES,
-		                     "Searches",
-		                     "Searches",
+		 g_param_spec_boxed (NM_IP4_CONFIG_SEARCHES, "", "",
 		                     DBUS_TYPE_G_ARRAY_OF_STRING,
-		                     G_PARAM_READABLE);
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_WINS_SERVERS] =
-		 g_param_spec_boxed (NM_IP4_CONFIG_WINS_SERVERS,
-		                     "WinsServers",
-		                     "WINS server list",
+		 g_param_spec_boxed (NM_IP4_CONFIG_WINS_SERVERS, "", "",
 		                     DBUS_TYPE_G_UINT_ARRAY,
-		                     G_PARAM_READABLE);
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, LAST_PROP, obj_properties);
 

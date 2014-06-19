@@ -295,29 +295,32 @@ nmt_newt_label_class_init (NmtNewtLabelClass *label_class)
 	 *
 	 * The label's text
 	 */
-	g_object_class_install_property (object_class, PROP_TEXT,
-	                                 g_param_spec_string ("text", "", "",
-	                                                      NULL,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_TEXT,
+		 g_param_spec_string ("text", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtNewtLabel:style:
 	 *
 	 * The label's #NmtNewtLabelStyle
 	 */
-	g_object_class_install_property (object_class, PROP_STYLE,
-	                                 g_param_spec_int ("style", "", "",
-	                                                   0, G_MAXINT, 0,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_STYLE,
+		 g_param_spec_int ("style", "", "",
+		                   0, G_MAXINT, 0,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtNewtLabel:highlight:
 	 *
 	 * Whether the label is highlighted.
 	 */
-	g_object_class_install_property (object_class, PROP_HIGHLIGHT,
-	                                 g_param_spec_boolean ("highlight", "", "",
-	                                                       FALSE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_HIGHLIGHT,
+		 g_param_spec_boolean ("highlight", "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 }

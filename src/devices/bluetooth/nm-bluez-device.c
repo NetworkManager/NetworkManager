@@ -1119,51 +1119,45 @@ nm_bluez_device_class_init (NMBluezDeviceClass *config_class)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_BLUEZ_DEVICE_PATH,
-		                      "DBus Path",
-		                      "DBus Path",
+		 g_param_spec_string (NM_BLUEZ_DEVICE_PATH, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_ADDRESS,
-		 g_param_spec_string (NM_BLUEZ_DEVICE_ADDRESS,
-		                      "Address",
-		                      "Address",
+		 g_param_spec_string (NM_BLUEZ_DEVICE_ADDRESS, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_NAME,
-		 g_param_spec_string (NM_BLUEZ_DEVICE_NAME,
-		                      "Name",
-		                      "Name",
+		 g_param_spec_string (NM_BLUEZ_DEVICE_NAME, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_CAPABILITIES,
-		 g_param_spec_uint (NM_BLUEZ_DEVICE_CAPABILITIES,
-		                      "Capabilities",
-		                      "Capabilities",
-		                      0, G_MAXUINT, 0,
-		                      G_PARAM_READABLE));
+		 g_param_spec_uint (NM_BLUEZ_DEVICE_CAPABILITIES, "", "",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_USABLE,
-		 g_param_spec_boolean (NM_BLUEZ_DEVICE_USABLE,
-		                       "Usable",
-		                       "Usable",
+		 g_param_spec_boolean (NM_BLUEZ_DEVICE_USABLE, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_CONNECTED,
-		 g_param_spec_boolean (NM_BLUEZ_DEVICE_CONNECTED,
-		                       "Connected",
-		                       "Connected",
+		 g_param_spec_boolean (NM_BLUEZ_DEVICE_CONNECTED, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	signals[INITIALIZED] = g_signal_new ("initialized",

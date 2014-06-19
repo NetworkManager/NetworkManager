@@ -622,22 +622,24 @@ nmt_newt_widget_class_init (NmtNewtWidgetClass *widget_class)
 	 *
 	 * The widget's parent widget, or %NULL if it has no parent.
 	 */
-	g_object_class_install_property (object_class, PROP_PARENT,
-	                                 g_param_spec_object ("parent", "", "",
-	                                                      NMT_TYPE_NEWT_WIDGET,
-	                                                      G_PARAM_READABLE |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_PARENT,
+		 g_param_spec_object ("parent", "", "",
+		                      NMT_TYPE_NEWT_WIDGET,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtNewtWidget:visible:
 	 *
 	 * Whether the widget is visible. Invisible widgets do not get
 	 * realized or sized.
 	 */
-	g_object_class_install_property (object_class, PROP_VISIBLE,
-	                                 g_param_spec_boolean ("visible", "", "",
-	                                                       TRUE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_VISIBLE,
+		 g_param_spec_boolean ("visible", "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtNewtWidget:valid:
 	 *
@@ -645,20 +647,22 @@ nmt_newt_widget_class_init (NmtNewtWidgetClass *widget_class)
 	 * determine their own validity. A container, by default, is
 	 * considered valid if all of its children are valid.
 	 */
-	g_object_class_install_property (object_class, PROP_VALID,
-	                                 g_param_spec_boolean ("valid", "", "",
-	                                                       TRUE,
-	                                                       G_PARAM_READABLE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_VALID,
+		 g_param_spec_boolean ("valid", "", "",
+		                       TRUE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtNewtWidget:exit-on-activate:
 	 *
 	 * If %TRUE, the widget will call nmt_newt_form_quit() on its form
 	 * when it is activated.
 	 */
-	g_object_class_install_property (object_class, PROP_EXIT_ON_ACTIVATE,
-	                                 g_param_spec_boolean ("exit-on-activate", "", "",
-	                                                       FALSE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_EXIT_ON_ACTIVATE,
+		 g_param_spec_boolean ("exit-on-activate", "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 }

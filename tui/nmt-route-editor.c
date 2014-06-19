@@ -210,10 +210,11 @@ nmt_route_editor_class_init (NmtRouteEditorClass *entry_class)
 	 * The #NMSettingIP4Config or #NMSettingIP6Config whose routes are
 	 * being edited.
 	 */
-	g_object_class_install_property (object_class, PROP_SETTING,
-	                                 g_param_spec_object ("setting", "", "",
-	                                                      NM_TYPE_SETTING,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_SETTING,
+		 g_param_spec_object ("setting", "", "",
+		                      NM_TYPE_SETTING,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 }

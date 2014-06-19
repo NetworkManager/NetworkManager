@@ -1658,41 +1658,35 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 
 	/* properties */
 	obj_properties[PROP_GATEWAY] =
-	    g_param_spec_string (NM_IP6_CONFIG_GATEWAY,
-	                         "Gateway",
-	                         "IP6 Gateway",
+	    g_param_spec_string (NM_IP6_CONFIG_GATEWAY, "", "",
 	                         NULL,
-	                         G_PARAM_READABLE);
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ADDRESSES] =
-	    g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES,
-	                        "Addresses",
-	                        "IP6 addresses",
+	    g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES, "", "",
 	                        DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
-	                        G_PARAM_READABLE);
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ROUTES] =
-	    g_param_spec_boxed (NM_IP6_CONFIG_ROUTES,
-	                        "Routes",
-	                        "Routes",
+	    g_param_spec_boxed (NM_IP6_CONFIG_ROUTES, "", "",
 	                        DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
-	                        G_PARAM_READABLE);
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_NAMESERVERS] =
-	    g_param_spec_boxed (NM_IP6_CONFIG_NAMESERVERS,
-	                        "Nameservers",
-	                        "DNS list",
+	    g_param_spec_boxed (NM_IP6_CONFIG_NAMESERVERS, "", "",
 	                        DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
-	                        G_PARAM_READABLE);
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_DOMAINS] =
-	    g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS,
-	                        "Domains",
-	                        "Domains",
+	    g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS, "", "",
 	                        DBUS_TYPE_G_ARRAY_OF_STRING,
-	                        G_PARAM_READABLE);
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_SEARCHES] =
-	    g_param_spec_boxed (NM_IP6_CONFIG_SEARCHES,
-	                        "Searches",
-	                        "Searches",
+	    g_param_spec_boxed (NM_IP6_CONFIG_SEARCHES, "", "",
 	                        DBUS_TYPE_G_ARRAY_OF_STRING,
-	                        G_PARAM_READABLE);
+	                        G_PARAM_READABLE |
+	                        G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, LAST_PROP, obj_properties);
 

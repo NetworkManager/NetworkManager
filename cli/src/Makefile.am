@@ -3,6 +3,7 @@ bin_PROGRAMS = \
 
 AM_CPPFLAGS = \
 	-I${top_srcdir} \
+	-I${top_builddir} \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/include \
 	-I${top_srcdir}/libnm-util \
@@ -37,4 +38,13 @@ nmcli_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/libnm-glib/libnm-glib.la
 
+if HAVE_INTROSPECTION
+settings-docs.c: settings-docs.xsl $(top_builddir)/libnm-util/nm-setting-docs.xml
+	$(AM_V_GEN) xsltproc --output $@ $^
 
+BUILT_SOURCES = settings-docs.c
+endif
+
+DISTCLEANFILES = settings-docs.c
+
+EXTRA_DIST = settings-docs.c settings-docs.xsl

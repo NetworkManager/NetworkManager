@@ -179,11 +179,10 @@ nm_dhcp6_config_class_init (NMDHCP6ConfigClass *config_class)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_OPTIONS,
-		 g_param_spec_boxed (NM_DHCP6_CONFIG_OPTIONS,
-		                     "Options",
-		                     "DHCP configuration options returned by the server",
+		 g_param_spec_boxed (NM_DHCP6_CONFIG_OPTIONS, "", "",
 		                     DBUS_TYPE_G_MAP_OF_VARIANT,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (config_class),

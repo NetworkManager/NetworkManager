@@ -115,7 +115,6 @@ valgrind-*.log
 /docs/libnm-util/version.xml
 
 /docs/api/version.xml
-/docs/api/generate-settings-spec
 /docs/api/settings-spec.html
 /docs/api/settings-spec.xml
 /docs/api/spec.html
@@ -169,6 +168,7 @@ valgrind-*.log
 /test/libnm_glib_test
 /test/nm-online
 /test/nmtestdevices
+/libnm-util/nm-setting-docs.xml
 /libnm-util/test-crypto
 /libnm-util/tests/test-crypto
 /libnm-util/tests/test-settings-defaults
@@ -218,10 +218,9 @@ valgrind-*.log
 /data/server.conf
 
 /cli/src/nmcli
+/cli/src/settings-docs.c
 
 /tui/newt/libnmt-newt.a
 /tui/nmtui
-
-/tools/generate-settings-spec
 
 /vapi/*.vapi

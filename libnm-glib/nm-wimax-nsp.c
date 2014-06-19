@@ -305,11 +305,10 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NAME,
-		 g_param_spec_string (NM_WIMAX_NSP_NAME,
-							  "Name",
-							  "Name",
-							  NULL,
-							  G_PARAM_READABLE));
+		 g_param_spec_string (NM_WIMAX_NSP_NAME, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMWimaxNsp:signal-quality:
@@ -318,11 +317,10 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SIGNAL_QUALITY,
-		 g_param_spec_uint (NM_WIMAX_NSP_SIGNAL_QUALITY,
-		                    "Signal Quality",
-		                    "Signal Quality",
+		 g_param_spec_uint (NM_WIMAX_NSP_SIGNAL_QUALITY, "", "",
 		                    0, 100, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMWimaxNsp:network-type:
@@ -331,9 +329,8 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_TYPE,
-		 g_param_spec_uint (NM_WIMAX_NSP_NETWORK_TYPE,
-		                    "Network Type",
-		                    "Network Type",
+		 g_param_spec_uint (NM_WIMAX_NSP_NETWORK_TYPE, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 }

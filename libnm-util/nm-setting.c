@@ -38,7 +38,7 @@
  *
  * Each #NMSetting contains properties that describe configuration that applies
  * to a specific network layer (like IPv4 or IPv6 configuration) or device type
- * (like Ethernet, or WiFi).  A collection of individual settings together
+ * (like Ethernet, or Wi-Fi).  A collection of individual settings together
  * make up an #NMConnection. Each property is strongly typed and usually has
  * a number of allowed values.  See each #NMSetting subclass for a description
  * of properties and allowed values.
@@ -143,13 +143,13 @@ _ensure_registered (void)
  *
  * 0: reserved for the Connection setting
  *
- * 1: hardware-related settings like Ethernet, WiFi, Infiniband, Bridge, etc.
+ * 1: hardware-related settings like Ethernet, Wi-Fi, InfiniBand, Bridge, etc.
  * These priority 1 settings are also "base types", which means that at least
  * one of them is required for the connection to be valid, and their name is
  * valid in the 'type' property of the Connection setting.
  *
  * 2: hardware-related auxiliary settings that require a base setting to be
- * successful first, like WiFi security, 802.1x, etc.
+ * successful first, like Wi-Fi security, 802.1x, etc.
  *
  * 3: hardware-independent settings that are required before IP connectivity
  * can be established, like PPP, PPPoE, etc.
@@ -216,7 +216,7 @@ _nm_setting_type_is_base_type (GType type)
 {
 	/* Historical oddity: PPPoE is a base-type even though it's not
 	 * priority 1.  It needs to be sorted *after* lower-level stuff like
-	 * WiFi security or 802.1x for secrets, but it's still allowed as a
+	 * Wi-Fi security or 802.1x for secrets, but it's still allowed as a
 	 * base type.
 	 */
 	return _get_setting_type_priority (type) == 1 || (type == NM_TYPE_SETTING_PPPOE);
@@ -1344,17 +1344,13 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	 *
 	 * The setting's name, which uniquely identifies the setting within the
 	 * connection.  Each setting type has a name unique to that type, for
-	 * example 'ppp' or 'wireless' or 'wired'.
+	 * example "ppp" or "wireless" or "wired".
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NAME,
-		 g_param_spec_string (NM_SETTING_NAME,
-						  "Name",
-						  "The setting's name; these names are defined by the "
-						  "specification and cannot be changed after the object "
-						  "has been created.  Each setting class has a name, and "
-						  "all objects of that class share the same name.",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SETTING_NAME, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 }
 

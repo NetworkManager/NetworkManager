@@ -218,11 +218,10 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_PARENT_IFACE,
-		 g_param_spec_string (NM_PPP_MANAGER_PARENT_IFACE,
-		                      "ParentIface",
-		                      "Parent interface",
+		 g_param_spec_string (NM_PPP_MANAGER_PARENT_IFACE, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 	signals[STATE_CHANGED] =

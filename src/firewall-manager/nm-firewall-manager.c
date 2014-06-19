@@ -340,12 +340,12 @@ nm_firewall_manager_class_init (NMFirewallManagerClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
-	g_object_class_install_property (object_class, PROP_AVAILABLE,
-		g_param_spec_boolean (NM_FIREWALL_MANAGER_AVAILABLE,
-		                      "Available",
-		                      "Available",
-		                      FALSE,
-		                      G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_AVAILABLE,
+		 g_param_spec_boolean (NM_FIREWALL_MANAGER_AVAILABLE, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	signals[STARTED] =
 		g_signal_new ("started",

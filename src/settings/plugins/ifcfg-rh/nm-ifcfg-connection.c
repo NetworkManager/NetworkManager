@@ -411,18 +411,16 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_UNMANAGED_SPEC,
-		 g_param_spec_string (NM_IFCFG_CONNECTION_UNMANAGED_SPEC,
-						  "Unmanaged spec",
-						  "Unmanaged spec",
-						  NULL,
-						  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_IFCFG_CONNECTION_UNMANAGED_SPEC, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property
 		(object_class, PROP_UNRECOGNIZED_SPEC,
-		 g_param_spec_string (NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC,
-		                      "Unrecognized spec",
-		                      "Unrecognized spec",
+		 g_param_spec_string (NM_IFCFG_CONNECTION_UNRECOGNIZED_SPEC, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE));
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	signals[IFCFG_CHANGED] =
 		g_signal_new ("ifcfg-changed",

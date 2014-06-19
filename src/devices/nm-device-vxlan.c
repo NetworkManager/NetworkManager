@@ -240,131 +240,115 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
-		 g_param_spec_boxed (NM_DEVICE_VXLAN_PARENT,
-		                     "Parent",
-		                     "Parent device",
+		 g_param_spec_boxed (NM_DEVICE_VXLAN_PARENT, "", "",
 		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_ID,
-		 g_param_spec_uint (NM_DEVICE_VXLAN_ID,
-		                    "Id",
-		                    "Id",
+		 g_param_spec_uint (NM_DEVICE_VXLAN_ID, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_GROUP,
-		 g_param_spec_string (NM_DEVICE_VXLAN_GROUP,
-		                      "Group",
-		                      "Group",
+		 g_param_spec_string (NM_DEVICE_VXLAN_GROUP, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_LOCAL,
-		 g_param_spec_string (NM_DEVICE_VXLAN_LOCAL,
-		                      "Local",
-		                      "Local",
+		 g_param_spec_string (NM_DEVICE_VXLAN_LOCAL, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_TOS,
-		 g_param_spec_uchar (NM_DEVICE_VXLAN_TOS,
-		                     "ToS",
-		                     "ToS",
+		 g_param_spec_uchar (NM_DEVICE_VXLAN_TOS, "", "",
 		                     0, 255, 0,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_TTL,
-		 g_param_spec_uchar (NM_DEVICE_VXLAN_TTL,
-		                     "TTL",
-		                     "TTL",
+		 g_param_spec_uchar (NM_DEVICE_VXLAN_TTL, "", "",
 		                     0, 255, 0,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_LEARNING,
-		 g_param_spec_boolean (NM_DEVICE_VXLAN_LEARNING,
-		                       "Learning",
-		                       "Learning",
+		 g_param_spec_boolean (NM_DEVICE_VXLAN_LEARNING, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_AGEING,
-		 g_param_spec_uint (NM_DEVICE_VXLAN_AGEING,
-		                    "Ageing",
-		                    "Ageing",
+		 g_param_spec_uint (NM_DEVICE_VXLAN_AGEING, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_LIMIT,
-		 g_param_spec_uint (NM_DEVICE_VXLAN_LIMIT,
-		                    "Limit",
-		                    "Limit",
+		 g_param_spec_uint (NM_DEVICE_VXLAN_LIMIT, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DST_PORT,
-		 g_param_spec_uint (NM_DEVICE_VXLAN_DST_PORT,
-		                    "Destination port",
-		                    "Destination port",
+		 g_param_spec_uint (NM_DEVICE_VXLAN_DST_PORT, "", "",
 		                    0, 65535, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_SRC_PORT_MIN,
-		 g_param_spec_uint (NM_DEVICE_VXLAN_SRC_PORT_MIN,
-		                    "Source port min",
-		                    "Minimum source port",
+		 g_param_spec_uint (NM_DEVICE_VXLAN_SRC_PORT_MIN, "", "",
 		                    0, 65535, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_SRC_PORT_MAX,
-		 g_param_spec_uint (NM_DEVICE_VXLAN_SRC_PORT_MAX,
-		                    "Source port max",
-		                    "Maximum source port",
+		 g_param_spec_uint (NM_DEVICE_VXLAN_SRC_PORT_MAX, "", "",
 		                    0, 65535, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_PROXY,
-		 g_param_spec_boolean (NM_DEVICE_VXLAN_PROXY,
-		                       "Proxy",
-		                       "Proxy",
+		 g_param_spec_boolean (NM_DEVICE_VXLAN_PROXY, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_RSC,
-		 g_param_spec_boolean (NM_DEVICE_VXLAN_RSC,
-		                       "RSC",
-		                       "RSC",
+		 g_param_spec_boolean (NM_DEVICE_VXLAN_RSC, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_L2MISS,
-		 g_param_spec_boolean (NM_DEVICE_VXLAN_L2MISS,
-		                       "L2miss",
-		                       "L2miss",
+		 g_param_spec_boolean (NM_DEVICE_VXLAN_L2MISS, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_L3MISS,
-		 g_param_spec_boolean (NM_DEVICE_VXLAN_L3MISS,
-		                       "L3miss",
-		                       "L3miss",
+		 g_param_spec_boolean (NM_DEVICE_VXLAN_L3MISS, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

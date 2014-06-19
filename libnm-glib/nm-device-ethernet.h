@@ -38,8 +38,8 @@ G_BEGIN_DECLS
 /**
  * NMDeviceEthernetError:
  * @NM_DEVICE_ETHERNET_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_ETHERNET_ERROR_NOT_ETHERNET_CONNECTION: the connection was not of ethernet or PPPoE type
- * @NM_DEVICE_ETHERNET_ERROR_INVALID_ETHERNET_CONNECTION: the ethernet connection was invalid
+ * @NM_DEVICE_ETHERNET_ERROR_NOT_ETHERNET_CONNECTION: the connection was not of Ethernet or PPPoE type
+ * @NM_DEVICE_ETHERNET_ERROR_INVALID_ETHERNET_CONNECTION: the Ethernet connection was invalid
  * @NM_DEVICE_ETHERNET_ERROR_INVALID_DEVICE_MAC: the device's MAC was invalid
  * @NM_DEVICE_ETHERNET_ERROR_MAC_MISMATCH: the MACs of the connection and the device mismatched
  */

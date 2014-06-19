@@ -288,10 +288,11 @@ nmt_newt_component_class_init (NmtNewtComponentClass *component_class)
 	 *
 	 * The component's #newtComponent
 	 */
-	g_object_class_install_property (object_class, PROP_COMPONENT,
-	                                 g_param_spec_pointer ("component", "", "",
-	                                                       G_PARAM_READABLE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_COMPONENT,
+		 g_param_spec_pointer ("component", "", "",
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtNewtComponent:sensitive:
 	 *
@@ -299,9 +300,10 @@ nmt_newt_component_class_init (NmtNewtComponentClass *component_class)
 	 * be skipped over in the keyboard tab chain, and may be displayed
 	 * differently.
 	 */
-	g_object_class_install_property (object_class, PROP_SENSITIVE,
-	                                 g_param_spec_boolean ("sensitive", "", "",
-	                                                       TRUE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_SENSITIVE,
+		 g_param_spec_boolean ("sensitive", "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 }

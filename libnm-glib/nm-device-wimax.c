@@ -618,11 +618,10 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_WIMAX_HW_ADDRESS,
-		                      "MAC Address",
-		                      "Hardware MAC address",
+		 g_param_spec_string (NM_DEVICE_WIMAX_HW_ADDRESS, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWimax:active-nsp:
@@ -631,11 +630,10 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_NSP,
-		 g_param_spec_object (NM_DEVICE_WIMAX_ACTIVE_NSP,
-							  "Active NSP",
-							  "Active NSP",
-							  NM_TYPE_WIMAX_NSP,
-							  G_PARAM_READABLE));
+		 g_param_spec_object (NM_DEVICE_WIMAX_ACTIVE_NSP, "", "",
+		                      NM_TYPE_WIMAX_NSP,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWimax:center-frequency:
@@ -646,11 +644,10 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CENTER_FREQ,
-		 g_param_spec_uint (NM_DEVICE_WIMAX_CENTER_FREQUENCY,
-		                    "Center frequency",
-		                    "Center frequency",
+		 g_param_spec_uint (NM_DEVICE_WIMAX_CENTER_FREQUENCY, "", "",
 		                    0, G_MAXUINT, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWimax:rssi:
@@ -662,11 +659,10 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_RSSI,
-		 g_param_spec_int (NM_DEVICE_WIMAX_RSSI,
-		                   "RSSI",
-		                   "RSSI",
+		 g_param_spec_int (NM_DEVICE_WIMAX_RSSI, "", "",
 		                   G_MININT, G_MAXINT, 0,
-		                   G_PARAM_READABLE));
+		                   G_PARAM_READABLE |
+		                   G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWimax:cinr:
@@ -677,11 +673,10 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CINR,
-		 g_param_spec_int (NM_DEVICE_WIMAX_CINR,
-		                   "CINR",
-		                   "CINR",
+		 g_param_spec_int (NM_DEVICE_WIMAX_CINR, "", "",
 		                   G_MININT, G_MAXINT, 0,
-		                   G_PARAM_READABLE));
+		                   G_PARAM_READABLE |
+		                   G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWimax:tx-power:
@@ -692,11 +687,10 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_TX_POWER,
-		 g_param_spec_int (NM_DEVICE_WIMAX_TX_POWER,
-		                   "TX Power",
-		                   "TX Power",
+		 g_param_spec_int (NM_DEVICE_WIMAX_TX_POWER, "", "",
 		                   G_MININT, G_MAXINT, 0,
-		                   G_PARAM_READABLE));
+		                   G_PARAM_READABLE |
+		                   G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWimax:bsid:
@@ -706,11 +700,10 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_BSID,
-		 g_param_spec_string (NM_DEVICE_WIMAX_BSID,
-		                      "BSID",
-		                      "BSID",
+		 g_param_spec_string (NM_DEVICE_WIMAX_BSID, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWimax:nsps:
@@ -721,11 +714,10 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NSPS,
-		 g_param_spec_boxed (NM_DEVICE_WIMAX_NSPS,
-		                     "NSPs",
-		                     "Network Service Providers",
+		 g_param_spec_boxed (NM_DEVICE_WIMAX_NSPS, "", "",
 		                     NM_TYPE_OBJECT_ARRAY,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 

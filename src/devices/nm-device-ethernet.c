@@ -1748,19 +1748,17 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_PERM_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS,
-							  "Permanent MAC Address",
-							  "Permanent hardware MAC address",
-							  NULL,
-							  G_PARAM_READABLE));
+		 g_param_spec_string (NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_SPEED,
-		 g_param_spec_uint (NM_DEVICE_ETHERNET_SPEED,
-						   "Speed",
-						   "Speed",
-						   0, G_MAXUINT32, 0,
-						   G_PARAM_READABLE));
+		 g_param_spec_uint (NM_DEVICE_ETHERNET_SPEED, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),

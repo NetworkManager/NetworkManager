@@ -266,11 +266,10 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_GENERIC_HW_ADDRESS,
-		                      "Hardware Address",
-		                      "Hardware address",
+		 g_param_spec_string (NM_DEVICE_GENERIC_HW_ADDRESS, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceGeneric:type-description:
@@ -280,10 +279,9 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_TYPE_DESCRIPTION,
-		 g_param_spec_string (NM_DEVICE_GENERIC_TYPE_DESCRIPTION,
-		                      "Type Description",
-		                      "Type description",
+		 g_param_spec_string (NM_DEVICE_GENERIC_TYPE_DESCRIPTION, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 }
 

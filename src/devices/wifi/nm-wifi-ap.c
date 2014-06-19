@@ -219,81 +219,72 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_FLAGS,
-		 g_param_spec_uint (NM_AP_FLAGS,
-							"Flags",
-							"Flags",
-							NM_802_11_AP_FLAGS_NONE,
-							NM_802_11_AP_FLAGS_PRIVACY,
-							NM_802_11_AP_FLAGS_NONE,
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_uint (NM_AP_FLAGS, "", "",
+		                    NM_802_11_AP_FLAGS_NONE,
+		                    NM_802_11_AP_FLAGS_PRIVACY,
+		                    NM_802_11_AP_FLAGS_NONE,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_WPA_FLAGS,
-		 g_param_spec_uint (NM_AP_WPA_FLAGS,
-							"WPA Flags",
-							"WPA Flags",
-							NM_802_11_AP_SEC_NONE,
-							all_sec_flags,
-							NM_802_11_AP_SEC_NONE,
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_uint (NM_AP_WPA_FLAGS, "", "",
+		                    NM_802_11_AP_SEC_NONE,
+		                    all_sec_flags,
+		                    NM_802_11_AP_SEC_NONE,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_RSN_FLAGS,
-		 g_param_spec_uint (NM_AP_RSN_FLAGS,
-							"RSN Flags",
-							"RSN Flags",
-							NM_802_11_AP_SEC_NONE,
-							all_sec_flags,
-							NM_802_11_AP_SEC_NONE,
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_uint (NM_AP_RSN_FLAGS, "", "",
+		                    NM_802_11_AP_SEC_NONE,
+		                    all_sec_flags,
+		                    NM_802_11_AP_SEC_NONE,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_SSID,
-	     g_param_spec_boxed (NM_AP_SSID,
-	                         "SSID",
-	                         "SSID",
+	     g_param_spec_boxed (NM_AP_SSID, "", "",
 	                         DBUS_TYPE_G_UCHAR_ARRAY,
-	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_FREQUENCY,
-		 g_param_spec_uint (NM_AP_FREQUENCY,
-							"Frequency",
-							"Frequency",
-							0, 10000, 0,
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_uint (NM_AP_FREQUENCY, "", "",
+		                    0, 10000, 0,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_AP_HW_ADDRESS,
-							  "MAC Address",
-							  "Hardware MAC address",
-							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_string (NM_AP_HW_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 	
 	g_object_class_install_property
 		(object_class, PROP_MODE,
-		 g_param_spec_uint (NM_AP_MODE,
-						   "Mode",
-						   "Mode",
-						   NM_802_11_MODE_ADHOC, NM_802_11_MODE_INFRA, NM_802_11_MODE_INFRA,
-						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_uint (NM_AP_MODE, "", "",
+		                    NM_802_11_MODE_ADHOC, NM_802_11_MODE_INFRA, NM_802_11_MODE_INFRA,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_MAX_BITRATE,
-		 g_param_spec_uint (NM_AP_MAX_BITRATE,
-							"Max Bitrate",
-							"Max Bitrate",
-							0, G_MAXUINT16, 0,
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_uint (NM_AP_MAX_BITRATE, "", "",
+		                    0, G_MAXUINT16, 0,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_STRENGTH,
-		 g_param_spec_char (NM_AP_STRENGTH,
-							"Strength",
-							"Strength",
-							G_MININT8, G_MAXINT8, 0,
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_char (NM_AP_STRENGTH, "", "",
+		                    G_MININT8, G_MAXINT8, 0,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                    G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (ap_class),

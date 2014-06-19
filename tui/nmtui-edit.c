@@ -336,40 +336,45 @@ nmt_add_connection_class_init (NmtAddConnectionClass *add_class)
 
 	form_class->show = nmt_add_connection_show;
 
-	g_object_class_install_property (object_class, PROP_PRIMARY_TEXT,
-	                                 g_param_spec_string ("primary-text", "", "",
-	                                                      _("Select the type of connection you wish to create."),
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property (object_class, PROP_SECONDARY_TEXT,
-	                                 g_param_spec_string ("secondary-text", "", "",
+	g_object_class_install_property
+		(object_class, PROP_PRIMARY_TEXT,
+		 g_param_spec_string ("primary-text", "", "",
+		                      _("Select the type of connection you wish to create."),
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_SECONDARY_TEXT,
+		 g_param_spec_string ("secondary-text", "", "",
 #if 0
-	                                                      _("If you are creating a VPN, and the VPN connection you "
-	                                                        "wish to create does not appear in the list, you may "
-	                                                        "not have the correct VPN plugin installed."),
+		                      _("If you are creating a VPN, and the VPN connection you "
+		                      "wish to create does not appear in the list, you may "
+		                      "not have the correct VPN plugin installed."),
 #else
-	                                                      NULL,
+		                      NULL,
 #endif
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property (object_class, PROP_MASTER,
-	                                 g_param_spec_object ("master", "", "",
-	                                                      NM_TYPE_CONNECTION,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property (object_class, PROP_TYPE_FILTER,
-	                                 g_param_spec_pointer ("type-filter", "", "",
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_CONSTRUCT_ONLY |
-	                                                       G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property (object_class, PROP_TYPE_FILTER_DATA,
-	                                 g_param_spec_pointer ("type-filter-data", "", "",
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_CONSTRUCT_ONLY |
-	                                                       G_PARAM_STATIC_STRINGS));
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_MASTER,
+		 g_param_spec_object ("master", "", "",
+		                      NM_TYPE_CONNECTION,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_TYPE_FILTER,
+		 g_param_spec_pointer ("type-filter", "", "",
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_TYPE_FILTER_DATA,
+		 g_param_spec_pointer ("type-filter-data", "", "",
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 }
 
 void

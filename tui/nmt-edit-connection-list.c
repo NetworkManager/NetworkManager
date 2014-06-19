@@ -490,12 +490,13 @@ nmt_edit_connection_list_class_init (NmtEditConnectionListClass *list_class)
 	 * indicating the types (as in the main connection list). If %FALSE,
 	 * they will not be grouped (as in slave connection lists).
 	 */
-	g_object_class_install_property (object_class, PROP_GROUPED,
-	                                 g_param_spec_boolean ("grouped", "", "",
-	                                                       TRUE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_CONSTRUCT_ONLY |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_GROUPED,
+		 g_param_spec_boolean ("grouped", "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 	
 	/**
 	 * NmtEditConnectionListFilter:
@@ -513,21 +514,23 @@ nmt_edit_connection_list_class_init (NmtEditConnectionListClass *list_class)
 	 * A callback function for filtering which connections appear in
 	 * the list.
 	 */
-	g_object_class_install_property (object_class, PROP_CONNECTION_FILTER,
-	                                 g_param_spec_pointer ("connection-filter", "", "",
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_CONSTRUCT_ONLY |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_CONNECTION_FILTER,
+		 g_param_spec_pointer ("connection-filter", "", "",
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtEditConnectionList:connection-filter-data:
 	 *
 	 * Data for the #NmtEditConnectionList:connection-filter.
 	 */
-	g_object_class_install_property (object_class, PROP_CONNECTION_FILTER_DATA,
-	                                 g_param_spec_pointer ("connection-filter-data", "", "",
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_CONSTRUCT_ONLY |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_CONNECTION_FILTER_DATA,
+		 g_param_spec_pointer ("connection-filter-data", "", "",
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NmtEditConnectionList:extra-widget:
@@ -535,12 +538,13 @@ nmt_edit_connection_list_class_init (NmtEditConnectionListClass *list_class)
 	 * An extra button widget to display at the bottom of the button
 	 * box.
 	 */
-	g_object_class_install_property (object_class, PROP_EXTRA_WIDGET,
-	                                 g_param_spec_object ("extra-widget", "", "",
-	                                                      NMT_TYPE_NEWT_WIDGET,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_EXTRA_WIDGET,
+		 g_param_spec_object ("extra-widget", "", "",
+		                      NMT_TYPE_NEWT_WIDGET,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NmtEditConnectionList:connections:
@@ -549,20 +553,22 @@ nmt_edit_connection_list_class_init (NmtEditConnectionListClass *list_class)
 	 *
 	 * Element-Type: #NMConnection
 	 */
-	g_object_class_install_property (object_class, PROP_CONNECTIONS,
-	                                 g_param_spec_boxed ("connections", "", "",
-	                                                     G_TYPE_PTR_ARRAY,
-	                                                     G_PARAM_READABLE |
-	                                                     G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_CONNECTIONS,
+		 g_param_spec_boxed ("connections", "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NmtEditConnectionList:num-connections:
 	 *
 	 * The number of connections in the widget.
 	 */
-	g_object_class_install_property (object_class, PROP_NUM_CONNECTIONS,
-	                                 g_param_spec_int ("num-connections", "", "",
-	                                                   0, G_MAXINT, 0,
-	                                                   G_PARAM_READABLE |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_NUM_CONNECTIONS,
+		 g_param_spec_int ("num-connections", "", "",
+		                   0, G_MAXINT, 0,
+		                   G_PARAM_READABLE |
+		                   G_PARAM_STATIC_STRINGS));
 }

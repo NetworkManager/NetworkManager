@@ -1936,35 +1936,31 @@ nm_settings_class_init (NMSettingsClass *class)
 
 	g_object_class_install_property
 		(object_class, PROP_UNMANAGED_SPECS,
-		 g_param_spec_boxed (NM_SETTINGS_UNMANAGED_SPECS,
-							 "Unamanged device specs",
-							 "Unmanaged device specs",
-							 DBUS_TYPE_G_LIST_OF_STRING,
-							 G_PARAM_READABLE));
+		 g_param_spec_boxed (NM_SETTINGS_UNMANAGED_SPECS, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_HOSTNAME,
-		 g_param_spec_string (NM_SETTINGS_HOSTNAME,
-		                      "Hostname",
-		                      "Persistent hostname",
+		 g_param_spec_string (NM_SETTINGS_HOSTNAME, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_CAN_MODIFY,
-		 g_param_spec_boolean (NM_SETTINGS_CAN_MODIFY,
-		                       "CanModify",
-		                       "Can modify anything (hostname, connections, etc)",
+		 g_param_spec_boolean (NM_SETTINGS_CAN_MODIFY, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_CONNECTIONS,
-		 g_param_spec_boxed (NM_SETTINGS_CONNECTIONS,
-		                     "Connections",
-		                     "Connections",
+		 g_param_spec_boxed (NM_SETTINGS_CONNECTIONS, "", "",
 		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 	signals[PROPERTIES_CHANGED] = 

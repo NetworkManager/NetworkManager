@@ -217,19 +217,21 @@ nmt_newt_checkbox_class_init (NmtNewtCheckboxClass *checkbox_class)
 	 *
 	 * The checkbox's label
 	 */
-	g_object_class_install_property (object_class, PROP_LABEL,
-	                                 g_param_spec_string ("label", "", "",
-	                                                      NULL,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_LABEL,
+		 g_param_spec_string ("label", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtNewtCheckbox:active:
 	 *
 	 * The checkbox's checked state
 	 */
-	g_object_class_install_property (object_class, PROP_ACTIVE,
-	                                 g_param_spec_boolean ("active", "", "",
-	                                                       FALSE,
-	                                                       G_PARAM_READWRITE |
-	                                                       G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE,
+		 g_param_spec_boolean ("active", "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 }

@@ -348,19 +348,21 @@ nmt_newt_stack_class_init (NmtNewtStackClass *stack_class)
 	 *
 	 * The index of the active page
 	 */
-	g_object_class_install_property (object_class, PROP_ACTIVE,
-	                                 g_param_spec_uint ("active", "", "",
-	                                                    0, G_MAXUINT, 0,
-	                                                    G_PARAM_READWRITE |
-	                                                    G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE,
+		 g_param_spec_uint ("active", "", "",
+		                    0, G_MAXUINT, 0,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtNewtStack:active-id:
 	 *
 	 * The ID of the active page
 	 */
-	g_object_class_install_property (object_class, PROP_ACTIVE_ID,
-	                                 g_param_spec_string ("active-id", "", "",
-	                                                      NULL,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE_ID,
+		 g_param_spec_string ("active-id", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 }

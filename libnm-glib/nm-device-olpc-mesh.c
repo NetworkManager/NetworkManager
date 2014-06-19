@@ -297,11 +297,10 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *olpc_mesh_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_OLPC_MESH_HW_ADDRESS,
-		                      "MAC Address",
-		                      "Hardware MAC address",
+		 g_param_spec_string (NM_DEVICE_OLPC_MESH_HW_ADDRESS, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceOlpcMesh:companion:
@@ -310,11 +309,10 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *olpc_mesh_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_COMPANION,
-		 g_param_spec_object (NM_DEVICE_OLPC_MESH_COMPANION,
-		                     "Companion device",
-		                     "Companion device",
-		                     NM_TYPE_DEVICE_WIFI,
-		                     G_PARAM_READABLE));
+		 g_param_spec_object (NM_DEVICE_OLPC_MESH_COMPANION, "", "",
+		                      NM_TYPE_DEVICE_WIFI,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceOlpcMesh:active-channel:
@@ -323,11 +321,10 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *olpc_mesh_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CHANNEL,
-		 g_param_spec_uint (NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL,
-		                    "Active channel",
-		                    "Active channel",
+		 g_param_spec_uint (NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 }
 

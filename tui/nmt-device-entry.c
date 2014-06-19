@@ -538,22 +538,24 @@ nmt_device_entry_class_init (NmtDeviceEntryClass *deventry_class)
 	 *
 	 * The entry's label
 	 */
-	g_object_class_install_property (object_class, PROP_LABEL,
-	                                 g_param_spec_string ("label", "", "",
-	                                                      NULL,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_CONSTRUCT_ONLY |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_LABEL,
+		 g_param_spec_string ("label", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtDeviceEntry:width:
 	 *
 	 * The entry's width in characters
 	 */
-	g_object_class_install_property (object_class, PROP_WIDTH,
-	                                 g_param_spec_int ("width", "", "",
-	                                                   -1, 80, -1,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_WIDTH,
+		 g_param_spec_int ("width", "", "",
+		                   -1, 80, -1,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtDeviceEntry:hardware-type:
 	 *
@@ -561,29 +563,32 @@ nmt_device_entry_class_init (NmtDeviceEntryClass *deventry_class)
 	 * if the entry is for a virtual device and should not accept
 	 * hardware addresses.
 	 */
-	g_object_class_install_property (object_class, PROP_HARDWARE_TYPE,
-	                                 g_param_spec_gtype ("hardware-type", "", "",
-	                                                     G_TYPE_NONE,
-	                                                     G_PARAM_READWRITE |
-	                                                     G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_HARDWARE_TYPE,
+		 g_param_spec_gtype ("hardware-type", "", "",
+		                     G_TYPE_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtDeviceEntry:interface-name:
 	 *
 	 * The interface name of the device identified by the entry.
 	 */
-	g_object_class_install_property (object_class, PROP_INTERFACE_NAME,
-	                                 g_param_spec_string ("interface-name", "", "",
-	                                                      NULL,
-	                                                      G_PARAM_READWRITE |
-	                                                      G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_INTERFACE_NAME,
+		 g_param_spec_string ("interface-name", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtDeviceEntry:mac-address:
 	 *
 	 * The hardware address of the device identified by the entry.
 	 */
-	g_object_class_install_property (object_class, PROP_MAC_ADDRESS,
-	                                 g_param_spec_boxed ("mac-address", "", "",
-	                                                     DBUS_TYPE_G_UCHAR_ARRAY,
-	                                                     G_PARAM_READWRITE |
-	                                                     G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_MAC_ADDRESS,
+		 g_param_spec_boxed ("mac-address", "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 }

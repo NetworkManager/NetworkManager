@@ -33,25 +33,22 @@ interface_init (gpointer g_iface)
 
 	/* Properties */
 	g_object_interface_install_property (g_iface,
-		 g_param_spec_string (NM_VPN_PLUGIN_UI_INTERFACE_NAME,
-							  "Name",
-							  "VPN Plugin name",
-							  NULL,
-							  G_PARAM_READABLE));
+		 g_param_spec_string (NM_VPN_PLUGIN_UI_INTERFACE_NAME, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_interface_install_property (g_iface,
-		 g_param_spec_string (NM_VPN_PLUGIN_UI_INTERFACE_DESC,
-							  "Desc",
-							  "VPN Plugin description",
-							  NULL,
-							  G_PARAM_READABLE));
+		 g_param_spec_string (NM_VPN_PLUGIN_UI_INTERFACE_DESC, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_interface_install_property (g_iface,
-		 g_param_spec_string (NM_VPN_PLUGIN_UI_INTERFACE_SERVICE,
-							  "Service",
-							  "VPN Plugin D-Bus service name",
-							  NULL,
-							  G_PARAM_READABLE));
+		 g_param_spec_string (NM_VPN_PLUGIN_UI_INTERFACE_SERVICE, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	initialized = TRUE;
 }

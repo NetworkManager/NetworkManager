@@ -94,7 +94,7 @@ typedef enum {
 /**
  * NMVlanFlags:
  * @NM_VLAN_FLAG_REORDER_HEADERS: indicates that this interface should reorder
- *  outgoing packet headers to look more like a non-VLAN ethernet interface
+ *  outgoing packet headers to look more like a non-VLAN Ethernet interface
  * @NM_VLAN_FLAG_GVRP: indicates that this interface should use GVRP to register
  *  itself with it's switch
  * @NM_VLAN_FLAG_LOOSE_BINDING: indicates that this interface's operating

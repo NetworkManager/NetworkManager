@@ -353,20 +353,16 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	/**
 	 * NMSettingInfiniband:mac-address:
 	 *
-	 * If specified, this connection will only apply to the IPoIB
-	 * device whose permanent MAC address matches. This property does
-	 * not change the MAC address of the device (i.e. MAC spoofing).
+	 * If specified, this connection will only apply to the IPoIB device whose
+	 * permanent MAC address matches. This property does not change the MAC
+	 * address of the device (i.e. MAC spoofing).
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_INFINIBAND_MAC_ADDRESS,
-		                             "Device MAC Address",
-		                             "If specified, this connection will only apply to "
-		                             "the IPoIB device whose permanent MAC address matches.  "
-		                             "This property does not change the MAC address "
-		                             "of the device (i.e. MAC spoofing).",
+		 _nm_param_spec_specialized (NM_SETTING_INFINIBAND_MAC_ADDRESS, "", "",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingInfiniband:mtu:
@@ -376,59 +372,52 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MTU,
-		 g_param_spec_uint (NM_SETTING_INFINIBAND_MTU,
-		                    "MTU",
-		                    "If non-zero, only transmit packets of the specified "
-		                    "size or smaller, breaking larger packets up into "
-		                    "multiple frames.",
+		 g_param_spec_uint (NM_SETTING_INFINIBAND_MTU, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingInfiniband:transport-mode:
 	 *
-	 * The IP-over-InfiniBand transport mode. Either 'datagram' or
-	 * 'connected'.
+	 * The IP-over-InfiniBand transport mode. Either "datagram" or
+	 * "connected".
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_TRANSPORT_MODE,
-		 g_param_spec_string (NM_SETTING_INFINIBAND_TRANSPORT_MODE,
-		                      "Transport Mode",
-		                      "The IPoIB transport mode. Either 'datagram' or 'connected'.",
+		 g_param_spec_string (NM_SETTING_INFINIBAND_TRANSPORT_MODE, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingInfiniband:p-key:
 	 *
-	 * The InfiniBand P_Key to use for this device. A value of -1
-	 * means to use the default P_Key (aka "the P_Key at index 0").
-	 * Otherwise it is a 16-bit unsigned integer, whose high bit
-	 * is set if it is a "full membership" P_Key.
+	 * The InfiniBand P_Key to use for this device. A value of -1 means to use
+	 * the default P_Key (aka "the P_Key at index 0").  Otherwise it is a 16-bit
+	 * unsigned integer, whose high bit is set if it is a "full membership"
+	 * P_Key.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_P_KEY,
-		 g_param_spec_int (NM_SETTING_INFINIBAND_P_KEY,
-		                   "P_Key",
-		                   "The InfiniBand P_Key. Either -1 for the "
-		                   "default, or a 16-bit unsigned integer.",
+		 g_param_spec_int (NM_SETTING_INFINIBAND_P_KEY, "", "",
 		                   -1, 0xFFFF, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                   G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingInfiniband:parent:
 	 *
-	 * The interface name of the parent device of this device. Normally
-	 * %NULL, but if #NMSettingInfiniband:p_key is set, then you must
+	 * The interface name of the parent device of this device. Normally %NULL,
+	 * but if the #NMSettingInfiniband:p_key property is set, then you must
 	 * specify the base device by setting either this property or
 	 * #NMSettingInfiniband:mac-address.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
-		 g_param_spec_string (NM_SETTING_INFINIBAND_PARENT,
-		                      "Parent",
-		                      "The interface name of the parent device, or NULL",
+		 g_param_spec_string (NM_SETTING_INFINIBAND_PARENT, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 }

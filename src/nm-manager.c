@@ -5009,141 +5009,124 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_VERSION,
-		 g_param_spec_string (NM_MANAGER_VERSION,
-		                      "Version",
-		                      "NetworkManager version",
+		 g_param_spec_string (NM_MANAGER_VERSION, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_MANAGER_STATE,
-		                    "State",
-		                    "Current state",
+		 g_param_spec_uint (NM_MANAGER_STATE, "", "",
 		                    0, NM_STATE_DISCONNECTED, 0,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_STARTUP,
-		 g_param_spec_boolean (NM_MANAGER_STARTUP,
-		                       "Startup",
-		                       "Is NetworkManager still starting up",
+		 g_param_spec_boolean (NM_MANAGER_STARTUP, "", "",
 		                       TRUE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_NETWORKING_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_NETWORKING_ENABLED,
-		                       "NetworkingEnabled",
-		                       "Is networking enabled",
+		 g_param_spec_boolean (NM_MANAGER_NETWORKING_ENABLED, "", "",
 		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_WIRELESS_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WIRELESS_ENABLED,
-		                       "WirelessEnabled",
-		                       "Is wireless enabled",
+		 g_param_spec_boolean (NM_MANAGER_WIRELESS_ENABLED, "", "",
 		                       TRUE,
-		                       G_PARAM_READWRITE));
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_WIRELESS_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WIRELESS_HARDWARE_ENABLED,
-		                       "WirelessHardwareEnabled",
-		                       "RF kill state",
+		 g_param_spec_boolean (NM_MANAGER_WIRELESS_HARDWARE_ENABLED, "", "",
 		                       TRUE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_WWAN_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WWAN_ENABLED,
-		                       "WwanEnabled",
-		                       "Is mobile broadband enabled",
+		 g_param_spec_boolean (NM_MANAGER_WWAN_ENABLED, "", "",
 		                       TRUE,
-		                       G_PARAM_READWRITE));
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_WWAN_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WWAN_HARDWARE_ENABLED,
-		                       "WwanHardwareEnabled",
-		                       "Whether WWAN is disabled by a hardware switch or not",
+		 g_param_spec_boolean (NM_MANAGER_WWAN_HARDWARE_ENABLED, "", "",
 		                       TRUE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_WIMAX_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WIMAX_ENABLED,
-		                       "WimaxEnabled",
-		                       "Is WiMAX enabled",
+		 g_param_spec_boolean (NM_MANAGER_WIMAX_ENABLED, "", "",
 		                       TRUE,
-		                       G_PARAM_READWRITE));
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_WIMAX_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WIMAX_HARDWARE_ENABLED,
-		                       "WimaxHardwareEnabled",
-		                       "Whether WiMAX is disabled by a hardware switch or not",
+		 g_param_spec_boolean (NM_MANAGER_WIMAX_HARDWARE_ENABLED, "", "",
 		                       TRUE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTIONS,
-		 g_param_spec_boxed (NM_MANAGER_ACTIVE_CONNECTIONS,
-		                     "Active connections",
-		                     "Active connections",
+		 g_param_spec_boxed (NM_MANAGER_ACTIVE_CONNECTIONS, "", "",
 		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_CONNECTIVITY,
-		 g_param_spec_uint (NM_MANAGER_CONNECTIVITY,
-		                    "Connectivity",
-		                    "Connectivity state",
+		 g_param_spec_uint (NM_MANAGER_CONNECTIVITY, "", "",
 		                    NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
-		                    G_PARAM_READABLE));
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_PRIMARY_CONNECTION,
-		 g_param_spec_boxed (NM_MANAGER_PRIMARY_CONNECTION,
-		                     "Primary connection",
-		                     "Primary connection",
+		 g_param_spec_boxed (NM_MANAGER_PRIMARY_CONNECTION, "", "",
 		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_ACTIVATING_CONNECTION,
-		 g_param_spec_boxed (NM_MANAGER_ACTIVATING_CONNECTION,
-		                     "Activating connection",
-		                     "Activating connection",
+		 g_param_spec_boxed (NM_MANAGER_ACTIVATING_CONNECTION, "", "",
 		                     DBUS_TYPE_G_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/* Hostname is not exported over D-Bus */
 	g_object_class_install_property
 		(object_class, PROP_HOSTNAME,
-		 g_param_spec_string (NM_MANAGER_HOSTNAME,
-		                      "Hostname",
-		                      "Hostname",
+		 g_param_spec_string (NM_MANAGER_HOSTNAME, "", "",
 		                      NULL,
-		                      G_PARAM_READABLE));
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* Sleeping is not exported over D-Bus */
 	g_object_class_install_property
 		(object_class, PROP_SLEEPING,
-		 g_param_spec_boolean (NM_MANAGER_SLEEPING,
-		                       "Sleeping",
-		                       "Sleeping",
+		 g_param_spec_boolean (NM_MANAGER_SLEEPING, "", "",
 		                       FALSE,
-		                       G_PARAM_READABLE));
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
 		(object_class, PROP_DEVICES,
-		 g_param_spec_boxed (NM_MANAGER_DEVICES,
-		                     "Devices",
-		                     "Devices",
+		 g_param_spec_boxed (NM_MANAGER_DEVICES, "", "",
 		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
-		                     G_PARAM_READABLE));
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 	signals[DEVICE_ADDED] =

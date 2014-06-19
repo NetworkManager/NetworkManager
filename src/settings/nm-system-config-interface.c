@@ -33,38 +33,34 @@ interface_init (gpointer g_iface)
 	/* Properties */
 	g_object_interface_install_property
 		(g_iface,
-		 g_param_spec_string (NM_SYSTEM_CONFIG_INTERFACE_NAME,
-							  "Name",
-							  "Plugin name",
-							  NULL,
-							  G_PARAM_READABLE));
+		 g_param_spec_string (NM_SYSTEM_CONFIG_INTERFACE_NAME, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_interface_install_property
 		(g_iface,
-		 g_param_spec_string (NM_SYSTEM_CONFIG_INTERFACE_INFO,
-							  "Info",
-							  "Plugin information",
-							  NULL,
-							  G_PARAM_READABLE));
+		 g_param_spec_string (NM_SYSTEM_CONFIG_INTERFACE_INFO, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_interface_install_property
 		(g_iface,
-		 g_param_spec_uint (NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES,
-							  "Capabilities",
-							  "Plugin capabilties",
-							  NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE,
-							  (  NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS
-							   | NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME),
-							  NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE,
-							  G_PARAM_READABLE));
+		 g_param_spec_uint (NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, "", "",
+		                    NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE,
+		                    (  NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS
+		                    | NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME),
+		                    NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	g_object_interface_install_property
 		(g_iface,
-		 g_param_spec_string (NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME,
-							  "Hostname",
-							  "Configured hostname",
-							  NULL,
-							  G_PARAM_READWRITE));
+		 g_param_spec_string (NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 	g_signal_new (NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,

@@ -243,11 +243,10 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SSID,
-		 _nm_param_spec_specialized (NM_SETTING_OLPC_MESH_SSID,
-		                             "SSID",
-		                             "SSID of the mesh network to join.",
+		 _nm_param_spec_specialized (NM_SETTING_OLPC_MESH_SSID, "", "",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
+		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingOlpcMesh:channel:
@@ -256,28 +255,22 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CHANNEL,
-		 g_param_spec_uint (NM_SETTING_OLPC_MESH_CHANNEL,
-		                    "Channel",
-		                    "Channel on which the mesh network to join is located.",
+		 g_param_spec_uint (NM_SETTING_OLPC_MESH_CHANNEL, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE));
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingOlpcMesh:dhcp-anycast-address:
 	 *
-	 * Anycast DHCP address used when requesting an IP address via DHCP.  The
-	 * specific anycast address used determines which DHCP server class answers
-	 * the request.
+	 * Anycast DHCP MAC address used when requesting an IP address via DHCP.
+	 * The specific anycast address used determines which DHCP server class
+	 * answers the request.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP_ANYCAST_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
-		                             "Anycast DHCP MAC address",
-		                             "Anycast DHCP MAC address used when "
-		                             "requesting an IP address via DHCP.  The "
-		                             "specific anycast address used determines "
-		                             "which DHCP server class answers the "
-		                             "the request.",
+		 _nm_param_spec_specialized (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, "", "",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE));
+		                             G_PARAM_READWRITE |
+		                             G_PARAM_STATIC_STRINGS));
 }

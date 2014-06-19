@@ -360,12 +360,13 @@ nmt_route_table_class_init (NmtRouteTableClass *table_class)
 	 *
 	 * The network address family of the routes, eg %AF_INET
 	 */
-	g_object_class_install_property (object_class, PROP_FAMILY,
-	                                 g_param_spec_int ("family", "", "",
-	                                                   -1, G_MAXINT, -1,
-	                                                   G_PARAM_READWRITE |
-	                                                   G_PARAM_CONSTRUCT_ONLY |
-	                                                   G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_FAMILY,
+		 g_param_spec_int ("family", "", "",
+		                   -1, G_MAXINT, -1,
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT_ONLY |
+		                   G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtRouteTable:ip4-routes:
 	 *
@@ -374,11 +375,12 @@ nmt_route_table_class_init (NmtRouteTableClass *table_class)
 	 *
 	 * Only valid if #NmtRouteTable:family is %AF_INET
 	 */
-	g_object_class_install_property (object_class, PROP_IP4_ROUTES,
-	                                 g_param_spec_boxed ("ip4-routes", "", "",
-	                                                     DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-	                                                     G_PARAM_READWRITE |
-	                                                     G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_IP4_ROUTES,
+		 g_param_spec_boxed ("ip4-routes", "", "",
+		                     DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 	/**
 	 * NmtRouteTable:ip6-routes:
 	 *
@@ -387,9 +389,10 @@ nmt_route_table_class_init (NmtRouteTableClass *table_class)
 	 *
 	 * Only valid if #NmtRouteTable:family is %AF_INET6
 	 */
-	g_object_class_install_property (object_class, PROP_IP6_ROUTES,
-	                                 g_param_spec_boxed ("ip6-routes", "", "",
-	                                                     DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
-	                                                     G_PARAM_READWRITE |
-	                                                     G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property
+		(object_class, PROP_IP6_ROUTES,
+		 g_param_spec_boxed ("ip6-routes", "", "",
+		                     DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 }

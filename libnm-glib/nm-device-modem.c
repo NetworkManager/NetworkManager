@@ -273,12 +273,12 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	 * a firmware reload or other reinitialization to switch between eg
 	 * CDMA/EVDO and GSM/UMTS.
 	 **/
-	g_object_class_install_property (object_class, PROP_MODEM_CAPS,
-		g_param_spec_uint (NM_DEVICE_MODEM_MODEM_CAPABILITIES,
-		                   "Modem capabilities",
-		                   "Modem capabilities",
-		                   0, G_MAXUINT32, 0,
-		                   G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_MODEM_CAPS,
+		 g_param_spec_uint (NM_DEVICE_MODEM_MODEM_CAPABILITIES, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceModem:current-capabilities:
@@ -286,11 +286,11 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	 * The generic family of access technologies the modem currently supports
 	 * without a firmware reload or reinitialization.
 	 **/
-	g_object_class_install_property (object_class, PROP_CURRENT_CAPS,
-		g_param_spec_uint (NM_DEVICE_MODEM_CURRENT_CAPABILITIES,
-		                   "Current capabilities",
-		                   "Current capabilities",
-		                   0, G_MAXUINT32, 0,
-		                   G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_CURRENT_CAPS,
+		 g_param_spec_uint (NM_DEVICE_MODEM_CURRENT_CAPABILITIES, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 }
 

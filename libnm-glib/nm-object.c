@@ -405,11 +405,10 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CONNECTION,
-		 g_param_spec_boxed (NM_OBJECT_DBUS_CONNECTION,
-							 "Connection",
-							 "Connection",
-							 DBUS_TYPE_G_CONNECTION,
-							 G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_boxed (NM_OBJECT_DBUS_CONNECTION, "", "",
+		                     DBUS_TYPE_G_CONNECTION,
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMObject:path:
@@ -418,11 +417,10 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_OBJECT_DBUS_PATH,
-							  "Object Path",
-							  "DBus Object Path",
-							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		 g_param_spec_string (NM_OBJECT_DBUS_PATH, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 
