@@ -1913,6 +1913,11 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	svSetValue (ifcfg, "PREFIX", NULL, FALSE);
 	svSetValue (ifcfg, "NETMASK", NULL, FALSE);
 	svSetValue (ifcfg, "GATEWAY", NULL, FALSE);
+	/* Clear out zero-indexed IP address fields */
+	svSetValue (ifcfg, "IPADDR0", NULL, FALSE);
+	svSetValue (ifcfg, "PREFIX0", NULL, FALSE);
+	svSetValue (ifcfg, "NETMASK0", NULL, FALSE);
+	svSetValue (ifcfg, "GATEWAY0", NULL, FALSE);
 
 	/* Write out IPADDR<n>, PREFIX<n>, GATEWAY<n> for current IP addresses
 	 * without labels. Unset obsolete NETMASK<n>.
@@ -1926,10 +1931,22 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		if (i > 0 && NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i)))
 			continue;
 
-		addr_key = g_strdup_printf ("IPADDR%d", n);
-		prefix_key = g_strdup_printf ("PREFIX%d", n);
-		netmask_key = g_strdup_printf ("NETMASK%d", n);
-		gw_key = g_strdup_printf ("GATEWAY%d", n);
+		if (n == 0) {
+			/* Instead of index 0 use un-numbered variables.
+			 * It's needed for compatibility with ifup that only recognizes 'GATEAWAY'
+			 * See https://bugzilla.redhat.com/show_bug.cgi?id=771673
+			 * and https://bugzilla.redhat.com/show_bug.cgi?id=1105770
+			 */
+			addr_key = g_strdup ("IPADDR");
+			prefix_key = g_strdup ("PREFIX");
+			netmask_key = g_strdup ("NETMASK");
+			gw_key = g_strdup ("GATEWAY");
+		} else {
+			addr_key = g_strdup_printf ("IPADDR%d", n);
+			prefix_key = g_strdup_printf ("PREFIX%d", n);
+			netmask_key = g_strdup_printf ("NETMASK%d", n);
+			gw_key = g_strdup_printf ("GATEWAY%d", n);
+		}
 
 		addr = nm_setting_ip4_config_get_address (s_ip4, i);
 
