@@ -342,9 +342,9 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	--with-wext=no \
 %endif
 %if 0%{?with_teamctl}
-	--enable-teamctl=yes \
+	--enable-teamdctl=yes \
 %else
-	--enable-teamctl=no \
+	--enable-teamdctl=no \
 %endif
 	--enable-polkit=yes \
 	--enable-modify-system=yes \
