@@ -1436,6 +1436,7 @@ nm_platform_ip4_address_add (int ifindex,
 		addr.address = address;
 		addr.peer_address = peer_address;
 		addr.plen = plen;
+		addr.timestamp = 0; /* set it at zero, which to_string will treat as *now* */
 		addr.lifetime = lifetime;
 		addr.preferred = preferred;
 		if (label)
@@ -1470,6 +1471,7 @@ nm_platform_ip6_address_add (int ifindex,
 		addr.address = address;
 		addr.peer_address = peer_address;
 		addr.plen = plen;
+		addr.timestamp = 0; /* set it to zero, which to_string will treat as *now* */
 		addr.lifetime = lifetime;
 		addr.preferred = preferred;
 		addr.flags = flags;
@@ -1571,6 +1573,17 @@ _rebase_relative_time_on_now (guint32 timestamp, guint32 duration, guint32 now, 
 	if (duration == NM_PLATFORM_LIFETIME_PERMANENT)
 		return NM_PLATFORM_LIFETIME_PERMANENT;
 
+	if (timestamp == 0) {
+		/* if the @timestamp is zero, assume it was just left unset and that the relative
+		 * @duration starts counting from @now. This is convenient to construct an address
+		 * and print it in nm_platform_ip4_address_to_string().
+		 *
+		 * In general it does not make sense to set the @duration without anchoring at
+		 * @timestamp because you don't know the absolute expiration time when looking
+		 * at the address at a later moment. */
+		timestamp = now;
+	}
+
 	/* For timestamp > now, just accept it and calculate the expected(?) result. */
 	t = (gint64) timestamp + (gint64) duration - (gint64) now;
 
@@ -1597,13 +1610,18 @@ _address_get_lifetime (const NMPlatformIPAddress *address, guint32 now, guint32 
 		if (!lifetime)
 			return FALSE;
 		preferred = _rebase_relative_time_on_now (address->timestamp, address->preferred, now, padding);
-		if (preferred > lifetime) {
-			g_warn_if_reached ();
-			preferred = lifetime;
-		}
 
 		*out_lifetime = lifetime;
-		*out_preferred = preferred;
+		*out_preferred = MIN (preferred, lifetime);
+
+		/* Assert that non-permanent addresses have a (positive) @timestamp. _rebase_relative_time_on_now()
+		 * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always
+		 * should have a valid @timestamp, otherwise on every re-sync, their lifetime will be extended anew.
+		 */
+		g_return_val_if_fail (   address->timestamp != 0
+		                      || (   address->lifetime  == NM_PLATFORM_LIFETIME_PERMANENT
+		                          && address->preferred == NM_PLATFORM_LIFETIME_PERMANENT), TRUE);
+		g_return_val_if_fail (preferred <= lifetime, TRUE);
 	}
 	return TRUE;
 }
@@ -2089,12 +2107,6 @@ _lifetime_to_string (guint32 timestamp, guint32 lifetime, gint32 now, char *buf,
 static const char *
 _lifetime_summary_to_string (gint32 now, guint32 timestamp, guint32 preferred, guint32 lifetime, char *buf, size_t buf_size)
 {
-	if (timestamp == 0) {
-		if (preferred == NM_PLATFORM_LIFETIME_PERMANENT && lifetime == NM_PLATFORM_LIFETIME_PERMANENT)
-			return "";
-		if (preferred == 0 && lifetime == 0)
-			return " lifetime unset";
-	}
 	g_snprintf (buf, buf_size, " lifetime %d-%u[%u,%u]",
 	            (signed) now, (unsigned) timestamp, (unsigned) preferred, (unsigned) lifetime);
 	return buf;
@@ -2494,31 +2506,32 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 int
 nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatformIPAddress *b)
 {
-	gint64 ta, tb;
+	gint64 ta = 0, tb = 0;
 
 	_CMP_POINTER (a, b);
 
 	if (a->lifetime == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0)
 		ta = G_MAXINT64;
-	else
+	else if (a->timestamp)
 		ta = ((gint64) a->timestamp) + a->lifetime;
 
 	if (b->lifetime == NM_PLATFORM_LIFETIME_PERMANENT || b->lifetime == 0)
 		tb = G_MAXINT64;
-	else
+	else if (b->timestamp)
 		tb = ((gint64) b->timestamp) + b->lifetime;
 
 	if (ta == tb) {
 		/* if the lifetime is equal, compare the preferred time. */
+		ta = tb = 0;
 
 		if (a->preferred == NM_PLATFORM_LIFETIME_PERMANENT || a->lifetime == 0 /* liftime==0 means permanent! */)
 			ta = G_MAXINT64;
-		else
+		else if (a->timestamp)
 			ta = ((gint64) a->timestamp) + a->preferred;
 
 		if (b->preferred == NM_PLATFORM_LIFETIME_PERMANENT|| b->lifetime == 0)
 			tb = G_MAXINT64;
-		else
+		else if (b->timestamp)
 			tb = ((gint64) b->timestamp) + b->preferred;
 
 		if (ta == tb)
