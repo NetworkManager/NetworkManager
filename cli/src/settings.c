@@ -3289,7 +3289,7 @@ nmc_property_ipv4_describe_routes (NMSetting *setting, const char *prop)
 	         "  ip[/prefix] [next-hop] [metric],...\n\n"
 	         "Missing prefix is regarded as a prefix of 32.\n"
 	         "Missing next-hop is regarded as 0.0.0.0.\n"
-	         "Missing metric is regarded as a metric of 0.\n\n"
+	         "Missing metric or 0 means a default metric (NM/kernel will set a default value).\n\n"
 	         "Examples: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 	         "          10.1.2.0/24\n");
 }
@@ -3604,7 +3604,7 @@ nmc_property_ipv6_describe_routes (NMSetting *setting, const char *prop)
 	         "  ip[/prefix] [next-hop] [metric],...\n\n"
 	         "Missing prefix is regarded as a prefix of 128.\n"
 	         "Missing next-hop is regarded as \"::\".\n"
-	         "Missing metric is regarded as a metric of 0.\n\n"
+	         "Missing metric or 0 means a default metric (NM/kernel will set a default value).\n\n"
 	         "Examples: 2001:db8:beef:2::/64 2001:db8:beef::2, 2001:db8:beef:3::/64 2001:db8:beef::3 2\n"
 	         "          abbe::/64 55\n");
 }
