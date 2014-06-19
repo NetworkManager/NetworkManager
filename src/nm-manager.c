@@ -1074,6 +1074,7 @@ static NMDevice *
 system_create_virtual_device (NMManager *self, NMConnection *connection)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *error = NULL;
 	GSList *iter;
 	char *iface = NULL;
 	NMDevice *device = NULL, *parent = NULL;
@@ -1110,6 +1111,21 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		device = nm_device_vlan_new_for_connection (connection, parent);
 	} else if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
 		device = nm_device_infiniband_new_partition (connection, parent);
+	} else {
+		for (iter = priv->factories; iter; iter = iter->next) {
+			device = nm_device_factory_create_virtual_device_for_connection (NM_DEVICE_FACTORY (iter->data), connection, &error);
+
+			if (device || error) {
+				if (device)
+					g_assert_no_error (error);
+				else {
+					nm_log_err (LOGD_DEVICE, "(%s) failed to create virtual device: %s",
+					            nm_connection_get_id (connection), error ? error->message : "(unknown error)");
+					g_clear_error (&error);
+				}
+				break;
+			}
+		}
 	}
 
 	if (device) {
