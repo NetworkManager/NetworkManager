@@ -8284,6 +8284,152 @@ test_write_wired_aliases (void)
 }
 
 static void
+test_write_gateway (void)
+{
+	NMConnection *connection, *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *uuid, *testfile = NULL, *val;
+	gboolean success;
+	GError *error = NULL;
+	shvarFile *f;
+	NMIP4Address *addr;
+	const char *ip1_str = "1.1.1.3";
+	const char *ip2_str = "2.2.2.5";
+	const char *gw1_str = "1.1.1.254";
+	const char *gw2_str = "2.2.2.254";
+	struct in_addr ip1, ip2, gw1, gw2;
+	const guint32 prefix = 24;
+
+	connection = nm_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Static Addresses Gateway",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP4_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+
+	inet_pton (AF_INET, ip1_str, &ip1);
+	inet_pton (AF_INET, ip2_str, &ip2);
+	inet_pton (AF_INET, gw1_str, &gw1);
+	inet_pton (AF_INET, gw2_str, &gw2);
+
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, ip1.s_addr);
+	nm_ip4_address_set_prefix (addr, prefix);
+	nm_ip4_address_set_gateway (addr, gw1.s_addr);
+	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_ip4_address_unref (addr);
+
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, ip2.s_addr);
+	nm_ip4_address_set_prefix (addr, prefix);
+	nm_ip4_address_set_gateway (addr, gw2.s_addr);
+	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_ip4_address_unref (addr);
+
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	f = svOpenFile (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (f);
+
+	/* re-read the file to check that the keys was written as IPADDR, GATEWAY and IPADDR1, GATEWAY1 */
+	val = svGetValue (f, "IPADDR", FALSE);
+	g_assert (val);
+	g_assert_cmpstr (val, ==, ip1_str);
+	g_free (val);
+
+	val = svGetValue (f, "IPADDR1", FALSE);
+	g_assert (val);
+	g_assert_cmpstr (val, ==, ip2_str);
+	g_free (val);
+
+	val = svGetValue (f, "IPADDR0", FALSE);
+	g_assert (val == NULL);
+
+	val = svGetValue (f, "PREFIX", FALSE);
+	g_assert (val);
+	g_assert_cmpstr (val, ==, "24");
+	g_free (val);
+
+	val = svGetValue (f, "PREFIX1", FALSE);
+	g_assert (val);
+	g_assert_cmpstr (val, ==, "24");
+	g_free (val);
+
+	val = svGetValue (f, "PREFIX0", FALSE);
+	g_assert (val == NULL);
+
+	val = svGetValue (f, "GATEWAY", FALSE);
+	g_assert (val);
+	g_assert_cmpstr (val, ==, gw1_str);
+	g_free (val);
+
+	val = svGetValue (f, "GATEWAY1", FALSE);
+	g_assert (val);
+	g_assert_cmpstr (val, ==, gw2_str);
+	g_free (val);
+
+	val = svGetValue (f, "GATEWAY0", FALSE);
+	g_assert (val == NULL);
+
+
+	svCloseFile (f);
+
+	/* reread will be normalized, so we must normalize connection too. */
+	nm_utils_normalize_connection (connection, TRUE);
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL,
+	                               NULL, NULL, NULL, NULL, &error, NULL);
+	unlink (testfile);
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	success = nm_connection_verify (reread, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+
+static void
 test_write_wifi_open (void)
 {
 	NMConnection *connection;
@@ -14459,6 +14605,7 @@ int main (int argc, char **argv)
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_PATH, NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
 	test_write_wired_8021x_tls (NM_SETTING_802_1X_CK_SCHEME_BLOB, NM_SETTING_SECRET_FLAG_NONE);
 	test_write_wired_aliases ();
+	g_test_add_func (TPATH "ipv4/write-static-addresses-GATEWAY", test_write_gateway);
 	test_write_wifi_open ();
 	test_write_wifi_open_hex_ssid ();
 	test_write_wifi_wep ();
