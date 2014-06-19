@@ -7265,10 +7265,11 @@ constructed (GObject *object)
 	if (priv->ifindex > 0) {
 		priv->is_software = nm_platform_link_is_software (priv->ifindex);
 		priv->physical_port_id = nm_platform_link_get_physical_port_id (priv->ifindex);
-	}
-
-	if (priv->ifindex > 0)
 		priv->mtu = nm_platform_link_get_mtu (priv->ifindex);
+	}
+	/* Indicate software device in capabilities. */
+	if (priv->is_software)
+		priv->capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
 
 	priv->con_provider = nm_connection_provider_get ();
 	g_assert (priv->con_provider);
