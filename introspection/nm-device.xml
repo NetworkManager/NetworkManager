@@ -147,6 +147,15 @@
       </tp:docstring>
     </method>
 
+    <method name="Delete">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_delete"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <tp:docstring>
+        Deletes a software device from NetworkManager and removes the interface from the system.
+        The method returns an error when called for a hardware device.
+      </tp:docstring>
+    </method>
+
     <signal name="StateChanged">
       <arg name="new_state" type="u" tp:type="NM_DEVICE_STATE">
         <tp:docstring>

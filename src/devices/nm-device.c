@@ -71,6 +71,7 @@
 #include "nm-dns-manager.h"
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
+static void impl_device_delete     (NMDevice *device, DBusGMethodInvocation *context);
 
 #include "nm-device-glue.h"
 
@@ -4939,6 +4940,46 @@ impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context)
 	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
 	               TRUE,
 	               disconnect_cb,
+	               NULL);
+}
+
+static void
+delete_cb (NMDevice *device,
+           DBusGMethodInvocation *context,
+           GError *error,
+           gpointer user_data)
+{
+	if (error) {
+		dbus_g_method_return_error (context, error);
+		return;
+	}
+
+	/* Authorized */
+	nm_platform_link_delete (nm_device_get_ifindex (device));
+	dbus_g_method_return (context);
+}
+
+static void
+impl_device_delete (NMDevice *device, DBusGMethodInvocation *context)
+{
+	GError *error = NULL;
+
+	if (!nm_device_is_software (device)) {
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_SOFTWARE,
+		                             "This device is not a software device");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Ask the manager to authenticate this request for us */
+	g_signal_emit (device, signals[AUTH_REQUEST], 0,
+	               context,
+	               NULL,
+	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	               TRUE,
+	               delete_cb,
 	               NULL);
 }
 
