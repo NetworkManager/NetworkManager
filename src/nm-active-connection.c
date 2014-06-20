@@ -250,6 +250,8 @@ nm_active_connection_set_default (NMActiveConnection *self, gboolean is_default)
 
 	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (self));
 
+	is_default = !!is_default;
+
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	if (priv->is_default == is_default)
 		return;
@@ -272,6 +274,8 @@ nm_active_connection_set_default6 (NMActiveConnection *self, gboolean is_default
 	NMActiveConnectionPrivate *priv;
 
 	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (self));
+
+	is_default6 = !!is_default6;
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	if (priv->is_default6 == is_default6)
@@ -696,10 +700,10 @@ set_property (GObject *object, guint prop_id,
 			priv->specific_object = g_value_dup_boxed (value);
 		break;
 	case PROP_DEFAULT:
-		priv->is_default = g_value_get_boolean (value);
+		priv->is_default = !!g_value_get_boolean (value);
 		break;
 	case PROP_DEFAULT6:
-		priv->is_default6 = g_value_get_boolean (value);
+		priv->is_default6 = !!g_value_get_boolean (value);
 		break;
 	case PROP_VPN:
 		priv->vpn = g_value_get_boolean (value);
