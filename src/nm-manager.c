@@ -2390,9 +2390,8 @@ ensure_master_active_connection (NMManager *self,
 		/* If we're passed a connection and a device, we require that connection
 		 * be already activated on the device, eg returned from find_master().
 		 */
-		if (master_connection)
-			g_assert (device_connection == master_connection);
-		else if (!is_compatible_with_slave (device_connection, connection)) {
+		g_assert (!master_connection || master_connection == device_connection);
+		if (device_connection && !is_compatible_with_slave (device_connection, connection)) {
 			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
 			             "The active connection on %s is not a valid master for '%s'",
 			             nm_device_get_iface (master_device),
@@ -2404,6 +2403,7 @@ ensure_master_active_connection (NMManager *self,
 		if (   (master_state == NM_DEVICE_STATE_ACTIVATED)
 		    || nm_device_is_activating (master_device)) {
 			/* Device already using master_connection */
+			g_assert (device_connection);
 			return NM_ACTIVE_CONNECTION (nm_device_get_act_request (master_device));
 		}
 

@@ -216,7 +216,11 @@ typedef struct {
 	guint           act_source6_id;
 	gpointer        act_source6_func;
 	guint           recheck_assume_id;
-	guint           dispatcher_id;
+	struct {
+		guint               call_id;
+		NMDeviceState       post_state;
+		NMDeviceStateReason post_state_reason;
+	}               dispatcher;
 
 	/* Link stuff */
 	guint           link_connected_id;
@@ -831,8 +835,12 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean configure)
 		reason = NM_DEVICE_STATE_REASON_NONE;
 	else if (priv->state == NM_DEVICE_STATE_FAILED)
 		reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
-	else
+	else if (priv->state_reason != NM_DEVICE_STATE_REASON_NONE)
 		reason = priv->state_reason;
+	else {
+		g_warn_if_reached ();
+		reason = NM_DEVICE_STATE_REASON_UNKNOWN;
+	}
 	nm_device_slave_notify_release (info->slave, reason);
 
 	free_slave_info (info);
@@ -5264,32 +5272,55 @@ nm_device_get_ip6_config (NMDevice *self)
 /****************************************************************/
 
 static void
-ip_check_pre_up_done (guint call_id, gpointer user_data)
+dispatcher_cleanup (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->dispatcher.call_id) {
+		nm_dispatcher_call_cancel (priv->dispatcher.call_id);
+		priv->dispatcher.call_id = 0;
+		priv->dispatcher.post_state = NM_DEVICE_STATE_UNKNOWN;
+		priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
+	}
+}
+
+static void
+dispatcher_complete_proceed_state (guint call_id, gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	g_return_if_fail (call_id == priv->dispatcher_id);
+	g_return_if_fail (call_id == priv->dispatcher.call_id);
 
-	priv->dispatcher_id = 0;
-	nm_device_queue_state (self, NM_DEVICE_STATE_SECONDARIES, NM_DEVICE_STATE_REASON_NONE);
+	priv->dispatcher.call_id = 0;
+	nm_device_queue_state (self, priv->dispatcher.post_state,
+	                       priv->dispatcher.post_state_reason);
+	priv->dispatcher.post_state = NM_DEVICE_STATE_UNKNOWN;
+	priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
 }
+
+/****************************************************************/
 
 static void
 ip_check_pre_up (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	g_warn_if_fail (priv->dispatcher_id == 0);
+	if (priv->dispatcher.call_id != 0) {
+		g_warn_if_reached ();
+		dispatcher_cleanup (self);
+	}
 
+	priv->dispatcher.post_state = NM_DEVICE_STATE_SECONDARIES;
+	priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
 	if (!nm_dispatcher_call (DISPATCHER_ACTION_PRE_UP,
 	                         nm_device_get_connection (self),
 	                         self,
-	                         ip_check_pre_up_done,
+	                         dispatcher_complete_proceed_state,
 	                         self,
-	                         &priv->dispatcher_id)) {
+	                         &priv->dispatcher.call_id)) {
 		/* Just proceed on errors */
-		ip_check_pre_up_done (0, self);
+		dispatcher_complete_proceed_state (0, self);
 	}
 }
 
@@ -6521,29 +6552,6 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason)
 
 /***********************************************************/
 
-static void
-dispatcher_pre_down_done (guint call_id, gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	g_return_if_fail (call_id == priv->dispatcher_id);
-
-	priv->dispatcher_id = 0;
-	nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
-}
-
-static void
-dispatcher_cleanup (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->dispatcher_id) {
-		nm_dispatcher_call_cancel (priv->dispatcher_id);
-		priv->dispatcher_id = 0;
-	}
-}
-
 static gboolean
 ip_config_valid (NMDeviceState state)
 {
@@ -6709,14 +6717,16 @@ _set_state_full (NMDevice *device,
 			                         nm_act_request_get_connection (req),
 			                         device);
 		} else {
+			priv->dispatcher.post_state = NM_DEVICE_STATE_DISCONNECTED;
+			priv->dispatcher.post_state_reason = reason;
 			if (!nm_dispatcher_call (DISPATCHER_ACTION_PRE_DOWN,
 			                         nm_act_request_get_connection (req),
 			                         device,
-			                         dispatcher_pre_down_done,
+			                         dispatcher_complete_proceed_state,
 			                         device,
-			                         &priv->dispatcher_id)) {
+			                         &priv->dispatcher.call_id)) {
 				/* Just proceed on errors */
-				dispatcher_pre_down_done (0, device);
+				dispatcher_complete_proceed_state (0, device);
 			}
 		}
 		break;
