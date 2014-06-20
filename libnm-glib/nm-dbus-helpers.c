@@ -68,13 +68,8 @@ _nm_dbus_new_connection (GError **error)
 	}
 #endif
 
-	if (connection == NULL) {
-#ifdef LIBNM_GLIB_TEST
-		connection = dbus_g_bus_get (DBUS_BUS_SESSION, error);
-#else
+	if (connection == NULL)
 		connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, error);
-#endif
-	}
 
 	return connection;
 }

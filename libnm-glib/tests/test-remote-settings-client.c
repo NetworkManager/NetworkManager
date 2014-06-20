@@ -392,6 +392,7 @@ main (int argc, char **argv)
 	ret = g_test_run ();
 
 	cleanup ();
+	dbus_g_connection_unref (bus);
 
 	return ret;
 }
