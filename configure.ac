@@ -267,7 +267,7 @@ AC_SUBST(GUDEV_CFLAGS)
 AC_SUBST(GUDEV_LIBS)
 
 GOBJECT_INTROSPECTION_CHECK([0.9.6])
-if test -z "$INTROSPECTION_MAKEFILE"; then
+if test -n "$INTROSPECTION_MAKEFILE"; then
     AC_DEFINE(HAVE_INTROSPECTION, [1], [Define if you have gobject-introspection])
 fi
 
