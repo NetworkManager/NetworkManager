@@ -328,8 +328,18 @@ dispatcher_done_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		free_results (results);
 	} else {
 		g_assert (error);
-		nm_log_warn (LOGD_DISPATCH, "(%u) failed: (%d) %s",
-		             info->request_id, error->code, error->message);
+
+		if (!g_error_matches (error, DBUS_GERROR, DBUS_GERROR_REMOTE_EXCEPTION)) {
+			nm_log_warn (LOGD_DISPATCH, "(%u) failed to call dispatcher scripts: (%s:%d) %s",
+			             info->request_id, g_quark_to_string (error->domain),
+			             error->code, error->message);
+		} else if (!dbus_g_error_has_name (error, "org.freedesktop.systemd1.LoadFailed")) {
+			nm_log_warn (LOGD_DISPATCH, "(%u) failed to call dispatcher scripts: (%s) %s",
+			             info->request_id, dbus_g_error_get_name (error), error->message);
+		} else {
+			nm_log_dbg (LOGD_DISPATCH, "(%u) failed to call dispatcher scripts: (%s) %s",
+			            info->request_id, dbus_g_error_get_name (error), error->message);
+		}
 	}
 
 	if (info->callback)
