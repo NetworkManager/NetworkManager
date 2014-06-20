@@ -19,7 +19,7 @@ test_nm_client_SOURCES = \
 
 test_nm_client_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm-glib-test.la \
+	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
 
@@ -30,7 +30,7 @@ test_remote_settings_client_SOURCES = \
 
 test_remote_settings_client_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm-glib-test.la \
+	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
 

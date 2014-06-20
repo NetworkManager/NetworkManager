@@ -127,6 +127,7 @@ name_exists (GDBusConnection *c, const char *name)
 static ServiceInfo *
 service_init (void)
 {
+	DBusGConnection *bus;
 	ServiceInfo *sinfo;
 	const char *args[2] = { fake_exec, NULL };
 	GError *error = NULL;
@@ -165,8 +166,18 @@ service_init (void)
 	                                      NULL, NULL);
 	test_assert (sinfo->proxy);
 
-	sinfo->client = nm_client_new ();
+	bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+	g_assert_no_error (error);
+
+	sinfo->client = g_object_new (NM_TYPE_CLIENT,
+	                              NM_OBJECT_DBUS_CONNECTION, bus,
+	                              NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
+	                              NULL);
 	test_assert (sinfo->client != NULL);
+
+	dbus_g_connection_unref (bus);
+	g_initable_init (G_INITABLE (sinfo->client), NULL, &error);
+	g_assert_no_error (error);
 
 	return sinfo;
 }

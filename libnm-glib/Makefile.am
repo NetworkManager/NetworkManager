@@ -18,8 +18,7 @@ BUILT_SOURCES = \
 
 
 noinst_LTLIBRARIES = \
-	libdeprecated-nm-glib.la \
-	libnm-glib-test.la
+	libdeprecated-nm-glib.la
 
 #####################################################
 # Deprecated original libnm_glib bits
@@ -175,27 +174,6 @@ libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib-vpn.ver \
 	-version-info "3:0:2"
 
 BUILT_SOURCES += $(GLIB_GENERATED)
-
-#####################################################
-# Test libnm-glib stuff
-#####################################################
-
-libnm_glib_test_la_CFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	$(GUDEV_CFLAGS) \
-	-DLIBNM_GLIB_TEST \
-	-DNMRUNDIR=\"$(nmrundir)\"
-
-libnm_glib_test_la_SOURCES = \
-	$(libnminclude_HEADERS) \
-	$(libnm_glib_la_SOURCES)
-
-libnm_glib_test_la_LIBADD = \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS) \
-	$(GUDEV_LIBS)
 
 #####################################################
 
