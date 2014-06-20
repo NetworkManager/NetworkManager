@@ -274,6 +274,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 
 static gboolean nmcli_sigint = FALSE;
 static pthread_mutex_t sigint_mutex = PTHREAD_MUTEX_INITIALIZER;
+static gboolean nmcli_sigquit_internal = FALSE;
 
 gboolean
 nmc_seen_sigint (void)
@@ -292,6 +293,12 @@ nmc_clear_sigint (void)
 	pthread_mutex_lock (&sigint_mutex);
 	nmcli_sigint = FALSE;
 	pthread_mutex_unlock (&sigint_mutex);
+}
+
+void
+nmc_set_sigquit_internal (void)
+{
+	nmcli_sigquit_internal = TRUE;
 }
 
 static int
@@ -339,8 +346,9 @@ signal_handling_thread (void *arg) {
 		case SIGQUIT:
 		case SIGTERM:
 			nmc_cleanup_readline ();
-			printf (_("\nError: nmcli terminated by signal %s (%d)\n"),
-			        strsignal (signo), signo);
+			if (!nmcli_sigquit_internal)
+				printf (_("\nError: nmcli terminated by signal %s (%d)\n"),
+				        strsignal (signo), signo);
 			exit (1);
 			break;
 		default:

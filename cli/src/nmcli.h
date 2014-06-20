@@ -139,5 +139,7 @@ GQuark nmcli_error_quark (void);
 
 gboolean nmc_seen_sigint (void);
 void     nmc_clear_sigint (void);
+void     nmc_set_sigquit_internal (void);
+
 
 #endif /* NMC_NMCLI_H */

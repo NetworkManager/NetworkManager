@@ -1162,7 +1162,11 @@ readline_mark:
 	/* We quit on Ctrl-D when line is empty */
 	if (str == NULL) {
 		/* Send SIGQUIT to itself */
+		nmc_set_sigquit_internal ();
 		kill (getpid (), SIGQUIT);
+		/* Sleep in this thread so that we don't do anything else until exit */
+		for (;;)
+			sleep (3);
 	}
 	/* In case of Ctrl-C we call readline again to get new prompt (repeat) */
 	if (nmc_seen_sigint ()) {
