@@ -9,4 +9,5 @@ EXTRA_DIST = \
 	disconnect-device.py \
 	get-active-connection-uuids.py \
 	list-devices.py \
-	update-ip4-method.py
+	update-ip4-method.py \
+	is-wwan-default.py
