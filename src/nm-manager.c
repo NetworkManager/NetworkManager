@@ -845,8 +845,7 @@ static NMDevice *
 get_device_from_hwaddr (NMManager *self, const GByteArray *setting_mac)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	const guint8 *device_mac;
-	guint device_mac_len;
+	const char *device_mac;
 	GSList *iter;
 
 	if (!setting_mac)
@@ -855,8 +854,10 @@ get_device_from_hwaddr (NMManager *self, const GByteArray *setting_mac)
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *device = iter->data;
 
-		device_mac = nm_device_get_hw_address (iter->data, &device_mac_len);
-		if (nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, device_mac, device_mac_len))
+		device_mac = nm_device_get_hw_address (iter->data);
+		if (!device_mac)
+			continue;
+		if (nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, device_mac, -1))
 			return device;
 	}
 	return NULL;

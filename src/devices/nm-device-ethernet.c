@@ -101,7 +101,7 @@ typedef enum {
 } DcbWait;
 
 typedef struct {
-	guint8              perm_hw_addr[ETH_ALEN];    /* Permanent MAC address */
+	char *              perm_hw_addr;              /* Permanent MAC address */
 	guint8              initial_hw_addr[ETH_ALEN]; /* Initial MAC address (as seen when NM starts) */
 
 	guint32             speed;
@@ -339,7 +339,9 @@ update_permanent_hw_address (NMDevice *dev)
 	struct ifreq req;
 	struct ethtool_perm_addr *epaddr = NULL;
 	int fd, ret, errsv;
-	const guint8 *mac;
+	const char *mac;
+
+	g_return_if_fail (priv->perm_hw_addr == NULL);
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
@@ -362,17 +364,14 @@ update_permanent_hw_address (NMDevice *dev)
 	if ((ret < 0) || !nm_ethernet_address_is_valid (epaddr->data)) {
 		_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address (error %d)", errsv);
 		/* Fall back to current address */
-		mac = nm_device_get_hw_address (dev, NULL);
+		mac = nm_device_get_hw_address (dev);
 		if (mac)
-			memcpy (epaddr->data, mac, ETH_ALEN);
+			nm_utils_hwaddr_aton (mac, epaddr->data, ETH_ALEN);
 		else
 			memset (epaddr->data, 0, ETH_ALEN);
 	}
 
-	if (!nm_utils_hwaddr_matches (priv->perm_hw_addr, ETH_ALEN, epaddr->data, ETH_ALEN)) {
-		memcpy (priv->perm_hw_addr, epaddr->data, ETH_ALEN);
-		g_object_notify (G_OBJECT (dev), NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS);
-	}
+	priv->perm_hw_addr = nm_utils_hwaddr_ntoa (epaddr->data, ETH_ALEN);
 
 	g_free (epaddr);
 	close (fd);
@@ -383,18 +382,16 @@ update_initial_hw_address (NMDevice *dev)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	gs_free char *tmp_str = NULL;
-	const guint8 *mac;
+	const char *mac;
 
 	/* This sets initial MAC address from current MAC address. It should only
 	 * be called from NMDevice constructor() to really get the initial address.
 	 */
-	mac = nm_device_get_hw_address (dev, NULL);
+	mac = nm_device_get_hw_address (dev);
 	if (mac)
-		memcpy (priv->initial_hw_addr, mac, ETH_ALEN);
+		nm_utils_hwaddr_aton (mac, priv->initial_hw_addr, ETH_ALEN);
 
-	_LOGD (LOGD_DEVICE | LOGD_ETHER, "read initial MAC address %s",
-	       (tmp_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ETH_ALEN)));
+	_LOGD (LOGD_DEVICE | LOGD_ETHER, "read initial MAC address %s", mac);
 }
 
 static guint32
@@ -473,7 +470,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 			return FALSE;
 
 		mac = nm_setting_wired_get_mac_address (s_wired);
-		if (try_mac && mac && !nm_utils_hwaddr_matches (mac->data, mac->len, priv->perm_hw_addr, ETH_ALEN))
+		if (try_mac && mac && !nm_utils_hwaddr_matches (mac->data, mac->len, priv->perm_hw_addr, -1))
 			return FALSE;
 
 		/* Check for MAC address blacklist */
@@ -487,7 +484,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 				return FALSE;
 			}
 
-			if (nm_utils_hwaddr_matches (addr, ETH_ALEN, priv->perm_hw_addr, ETH_ALEN))
+			if (nm_utils_hwaddr_matches (addr, ETH_ALEN, priv->perm_hw_addr, -1))
 				return FALSE;
 		}
 	}
@@ -1462,7 +1459,7 @@ complete_connection (NMDevice *device,
 	setting_mac = nm_setting_wired_get_mac_address (s_wired);
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-		if (!nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, priv->perm_hw_addr, ETH_ALEN)) {
+		if (!nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, priv->perm_hw_addr, -1)) {
 			g_set_error_literal (error,
 			                     NM_SETTING_WIRED_ERROR,
 			                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
@@ -1473,9 +1470,8 @@ complete_connection (NMDevice *device,
 		GByteArray *mac;
 
 		/* Lock the connection to this device by default */
-		if (!nm_utils_hwaddr_matches (priv->perm_hw_addr, ETH_ALEN, NULL, ETH_ALEN)) {
-			mac = g_byte_array_sized_new (ETH_ALEN);
-			g_byte_array_append (mac, priv->perm_hw_addr, ETH_ALEN);
+		if (!nm_utils_hwaddr_matches (priv->perm_hw_addr, -1, NULL, ETH_ALEN)) {
+			mac = nm_utils_hwaddr_atoba (priv->perm_hw_addr, ETH_ALEN);
 			g_object_set (G_OBJECT (s_wired), NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
 			g_byte_array_free (mac, TRUE);
 		}
@@ -1500,8 +1496,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	NMSettingWired *s_wired = nm_connection_get_setting_wired (connection);
-	guint maclen;
-	const guint8 *mac = nm_device_get_hw_address (device, &maclen);
+	const char *mac = nm_device_get_hw_address (device);
 	const char *mac_prop = NM_SETTING_WIRED_MAC_ADDRESS;
 	GByteArray *array;
 	GHashTableIter iter;
@@ -1515,20 +1510,18 @@ update_connection (NMDevice *device, NMConnection *connection)
 	/* If the device reports a permanent address, use that for the MAC address
 	 * and the current MAC, if different, is the cloned MAC.
 	 */
-	if (!nm_utils_hwaddr_matches (priv->perm_hw_addr, ETH_ALEN, NULL, ETH_ALEN)) {
-		array = g_byte_array_sized_new (ETH_ALEN);
-		g_byte_array_append (array, priv->perm_hw_addr, ETH_ALEN);
+	if (!nm_utils_hwaddr_matches (priv->perm_hw_addr, -1, NULL, ETH_ALEN)) {
+		array = nm_utils_hwaddr_atoba (priv->perm_hw_addr, ETH_ALEN);
 		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, array, NULL);
 		g_byte_array_unref (array);
 
 		mac_prop = NULL;
-		if (mac && !nm_utils_hwaddr_matches (priv->perm_hw_addr, ETH_ALEN, mac, ETH_ALEN))
+		if (mac && !nm_utils_hwaddr_matches (priv->perm_hw_addr, -1, mac, -1))
 			mac_prop = NM_SETTING_WIRED_CLONED_MAC_ADDRESS;
 	}
 
-	if (mac_prop && mac && maclen == ETH_ALEN) {
-		array = g_byte_array_sized_new (ETH_ALEN);
-		g_byte_array_append (array, (guint8 *) mac, maclen);
+	if (mac_prop && mac && nm_utils_hwaddr_valid (mac, ETH_ALEN)) {
+		array = nm_utils_hwaddr_atoba (mac, ETH_ALEN);
 		g_object_set (s_wired, mac_prop, array, NULL);
 		g_byte_array_unref (array);
 	}
@@ -1633,6 +1626,7 @@ finalize (GObject *object)
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
+	g_free (priv->perm_hw_addr);
 	g_clear_object (&priv->supplicant.mgr);
 	g_free (priv->subchan1);
 	g_free (priv->subchan2);
@@ -1653,7 +1647,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PERM_HW_ADDRESS:
-		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ETH_ALEN));
+		g_value_set_string (value, priv->perm_hw_addr);
 		break;
 	case PROP_SPEED:
 		g_value_set_uint (value, priv->speed);

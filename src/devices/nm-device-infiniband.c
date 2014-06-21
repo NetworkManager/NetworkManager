@@ -209,7 +209,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (s_infiniband) {
 		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
 		if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len,
-		                                     nm_device_get_hw_address (device, NULL), INFINIBAND_ALEN))
+		                                     nm_device_get_hw_address (device), -1))
 			return FALSE;
 	}
 
@@ -225,7 +225,7 @@ complete_connection (NMDevice *device,
 {
 	NMSettingInfiniband *s_infiniband;
 	const GByteArray *setting_mac;
-	const guint8 *hw_address;
+	const char *hw_address;
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_INFINIBAND_SETTING_NAME,
@@ -241,7 +241,7 @@ complete_connection (NMDevice *device,
 	}
 
 	setting_mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-	hw_address = nm_device_get_hw_address (device, NULL);
+	hw_address = nm_device_get_hw_address (device);
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's MAC */
 		if (!nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, hw_address, INFINIBAND_ALEN)) {
@@ -255,8 +255,7 @@ complete_connection (NMDevice *device,
 		GByteArray *mac;
 
 		/* Lock the connection to this device by default */
-		mac = g_byte_array_sized_new (INFINIBAND_ALEN);
-		g_byte_array_append (mac, hw_address, INFINIBAND_ALEN);
+		mac = nm_utils_hwaddr_atoba (hw_address, INFINIBAND_ALEN);
 		g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_MAC_ADDRESS, mac, NULL);
 		g_byte_array_free (mac, TRUE);
 	}
@@ -271,8 +270,7 @@ static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMSettingInfiniband *s_infiniband = nm_connection_get_setting_infiniband (connection);
-	guint maclen;
-	gconstpointer mac = nm_device_get_hw_address (device, &maclen);
+	const char *mac = nm_device_get_hw_address (device);
 	GByteArray *array;
 	char *mode_path, *contents = NULL;
 	const char *transport_mode = "datagram";
@@ -282,9 +280,8 @@ update_connection (NMDevice *device, NMConnection *connection)
 		nm_connection_add_setting (connection, (NMSetting *) s_infiniband);
 	}
 
-	if (mac && !nm_utils_hwaddr_matches (mac, maclen, NULL, INFINIBAND_ALEN)) {
-		array = g_byte_array_sized_new (maclen);
-		g_byte_array_append (array, (guint8 *) mac, maclen);
+	if (mac && !nm_utils_hwaddr_matches (mac, -1, NULL, INFINIBAND_ALEN)) {
+		array = nm_utils_hwaddr_atoba (mac, INFINIBAND_ALEN);
 		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, array, NULL);
 		g_byte_array_unref (array);
 	}

@@ -341,15 +341,14 @@ static gboolean
 check_companion (NMDeviceOlpcMesh *self, NMDevice *other)
 {
 	NMDeviceOlpcMeshPrivate *priv = NM_DEVICE_OLPC_MESH_GET_PRIVATE (self);
-	const guint8 *my_addr, *their_addr;
-	guint their_addr_len;
+	const char *my_addr, *their_addr;
 
 	if (!NM_IS_DEVICE_WIFI (other))
 		return FALSE;
 
-	my_addr = nm_device_get_hw_address (NM_DEVICE (self), NULL);
-	their_addr = nm_device_get_hw_address (other, &their_addr_len);
-	if (!nm_utils_hwaddr_matches (my_addr, ETH_ALEN, their_addr, their_addr_len))
+	my_addr = nm_device_get_hw_address (NM_DEVICE (self));
+	their_addr = nm_device_get_hw_address (other);
+	if (!nm_utils_hwaddr_matches (my_addr, -1, their_addr, -1))
 		return FALSE;
 
 	g_assert (priv->companion == NULL);

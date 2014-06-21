@@ -117,12 +117,11 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 	mac_address = nm_setting_bridge_get_mac_address (s_bridge);
 	if (mac_address) {
-		guint hw_len;
-		const guint8 *hw_addr;
+		const char *hw_addr;
 
-		hw_addr = nm_device_get_hw_address (device, &hw_len);
+		hw_addr = nm_device_get_hw_address (device);
 		if (   !hw_addr
-		    || !nm_utils_hwaddr_matches (mac_address->data, mac_address->len, hw_addr, hw_len))
+		    || !nm_utils_hwaddr_matches (hw_addr, -1, mac_address->data, mac_address->len))
 			return FALSE;
 	}
 
