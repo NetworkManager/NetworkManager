@@ -2576,11 +2576,6 @@ dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->dhcp4_config) {
-		g_clear_object (&priv->dhcp4_config);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
-	}
-
 	if (priv->dhcp4_client) {
 		/* Stop any ongoing DHCP transaction on this device */
 		if (priv->dhcp4_state_sigid) {
@@ -2599,6 +2594,11 @@ dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 			nm_dhcp_client_stop (priv->dhcp4_client, release);
 
 		g_clear_object (&priv->dhcp4_client);
+	}
+
+	if (priv->dhcp4_config) {
+		g_clear_object (&priv->dhcp4_config);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
 	}
 }
 
@@ -3023,11 +3023,6 @@ dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
 	priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_NONE;
 	g_clear_object (&priv->dhcp6_ip6_config);
 
-	if (priv->dhcp6_config) {
-		g_clear_object (&priv->dhcp6_config);
-		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
-	}
-
 	if (priv->dhcp6_client) {
 		if (priv->dhcp6_state_sigid) {
 			g_signal_handler_disconnect (priv->dhcp6_client, priv->dhcp6_state_sigid);
@@ -3045,6 +3040,11 @@ dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
 			nm_dhcp_client_stop (priv->dhcp6_client, release);
 
 		g_clear_object (&priv->dhcp6_client);
+	}
+
+	if (priv->dhcp6_config) {
+		g_clear_object (&priv->dhcp6_config);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
 	}
 }
 
