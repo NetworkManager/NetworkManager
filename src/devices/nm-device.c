@@ -800,6 +800,7 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
  * @dev: the master device
  * @slave: the slave device to release
  * @configure: whether @dev needs to actually release @slave
+ * @reason: the state change reason for the @slave
  *
  * If @dev is capable of enslaving other devices (ie it's a bridge, bond, team,
  * etc) then this function releases the previously enslaved @slave and/or
@@ -809,12 +810,11 @@ nm_device_enslave_slave (NMDevice *dev, NMDevice *slave, NMConnection *connectio
  *  other devices, or if @slave was never enslaved.
  */
 static gboolean
-nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean configure)
+nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean configure, NMDeviceStateReason reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
 	SlaveInfo *info;
 	gboolean success = FALSE;
-	NMDeviceStateReason reason;
 
 	g_return_val_if_fail (slave != NULL, FALSE);
 	g_return_val_if_fail (NM_DEVICE_GET_CLASS (dev)->release_slave != NULL, FALSE);
@@ -831,13 +831,10 @@ nm_device_release_one_slave (NMDevice *dev, NMDevice *slave, gboolean configure)
 		 */
 	}
 
-	if (!configure)
+	if (!configure) {
+		g_warn_if_fail (reason == NM_DEVICE_STATE_REASON_NONE);
 		reason = NM_DEVICE_STATE_REASON_NONE;
-	else if (priv->state == NM_DEVICE_STATE_FAILED)
-		reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
-	else if (priv->state_reason != NM_DEVICE_STATE_REASON_NONE)
-		reason = priv->state_reason;
-	else {
+	} else if (reason == NM_DEVICE_STATE_REASON_NONE) {
 		g_warn_if_reached ();
 		reason = NM_DEVICE_STATE_REASON_UNKNOWN;
 	}
@@ -1081,7 +1078,7 @@ device_link_changed (NMDevice *device, NMPlatformLink *info)
 			             nm_platform_link_get_name (info->master));
 		}
 	} else if (priv->enslaved && !info->master)
-		nm_device_release_one_slave (priv->master, device, FALSE);
+		nm_device_release_one_slave (priv->master, device, FALSE, NM_DEVICE_STATE_REASON_NONE);
 
 	if (klass->link_changed)
 		klass->link_changed (device, info);
@@ -1211,7 +1208,7 @@ slave_state_changed (NMDevice *slave,
 	}
 
 	if (release) {
-		nm_device_release_one_slave (self, slave, TRUE);
+		nm_device_release_one_slave (self, slave, TRUE, reason);
 		/* Bridge/bond/team interfaces are left up until manually deactivated */
 		if (priv->slaves == NULL && priv->state == NM_DEVICE_STATE_ACTIVATED) {
 			nm_log_dbg (LOGD_DEVICE, "(%s): last slave removed; remaining activated",
@@ -1346,15 +1343,20 @@ static void
 nm_device_master_release_slaves (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceStateReason reason;
 
 	/* Don't release the slaves if this connection doesn't belong to NM. */
 	if (nm_device_uses_generated_connection (self))
 		return;
 
+	reason = priv->state_reason;
+	if (priv->state == NM_DEVICE_STATE_FAILED)
+		reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
+
 	while (priv->slaves) {
 		SlaveInfo *info = priv->slaves->data;
 
-		nm_device_release_one_slave (self, info->slave, TRUE);
+		nm_device_release_one_slave (self, info->slave, TRUE, reason);
 	}
 }
 
