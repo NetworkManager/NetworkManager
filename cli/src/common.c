@@ -1124,6 +1124,9 @@ nmc_set_in_readline (gboolean in_readline)
 	pthread_mutex_unlock (&readline_mutex);
 }
 
+/* Global variable defined in nmcli.c */
+extern NmCli nm_cli;
+
 /**
  * nmc_readline:
  * @prompt_fmt: prompt to print (telling user what to enter). It is standard
@@ -1131,7 +1134,8 @@ nmc_set_in_readline (gboolean in_readline)
  * @...: a list of arguments according to the @prompt_fmt format string
  *
  * Wrapper around libreadline's readline() function.
- * If user pressed Ctrl-C, readline() is called again.
+ * If user pressed Ctrl-C, readline() is called again (if not in editor and
+ * line is empty, nmcli will quit).
  * If user pressed Ctrl-D on empty line, nmcli will quit.
  *
  * Returns: the user provided string. In case the user entered empty string,
@@ -1168,11 +1172,23 @@ readline_mark:
 		for (;;)
 			sleep (3);
 	}
-	/* In case of Ctrl-C we call readline again to get new prompt (repeat) */
+	/* Ctrl-C */
 	if (nmc_seen_sigint ()) {
 		nmc_clear_sigint ();
-		g_free (str);
-		goto readline_mark;
+		if (nm_cli.in_editor || *str) {
+			/* In editor, or the line is not empty */
+			/* Call readline again to get new prompt (repeat) */
+			g_free (str);
+			goto readline_mark;
+		} else {
+			/* Not in editor and line is empty */
+			/* Send SIGQUIT to itself */
+			nmc_set_sigquit_internal ();
+			kill (getpid (), SIGQUIT);
+			/* Sleep in this thread so that we don't do anything else until exit */
+			for (;;)
+				sleep (3);
+		}
 	}
 	g_free (prompt);
 

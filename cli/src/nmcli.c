@@ -307,7 +307,6 @@ event_hook_for_readline (void)
 	/* Make readline() exit on SIGINT */
 	if (nmc_seen_sigint ()) {
 		rl_echo_signal_char (SIGINT);
-		rl_delete_text (0, rl_end);
 		rl_stuff_char ('\n');
 	}
 	return 0;
@@ -433,6 +432,7 @@ nmc_init (NmCli *nmc)
 	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
 	nmc->nocheck_ver = FALSE;
 	nmc->ask = FALSE;
+	nmc->in_editor = FALSE;
 	nmc->editor_status_line = FALSE;
 	nmc->editor_save_confirmation = TRUE;
 	nmc->editor_prompt_color = NMC_TERM_COLOR_NORMAL;

@@ -7982,6 +7982,9 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		editor_init_new_connection (nmc, connection);
 	}
 
+	/* nmcli runs the editor */
+	nmc->in_editor = TRUE;
+
 	printf ("\n");
 	printf (_("===| nmcli interactive connection editor |==="));
 	printf ("\n\n");
