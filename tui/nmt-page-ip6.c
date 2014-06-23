@@ -185,7 +185,8 @@ nmt_page_ip6_constructed (GObject *object)
 	widget = nmt_newt_checkbox_new (_("Require IPv6 addressing for this connection"));
 	g_object_bind_property (s_ip6, NM_SETTING_IP6_CONFIG_MAY_FAIL,
 	                        widget, "active",
-	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
+	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL |
+	                        G_BINDING_INVERT_BOOLEAN);
 	nmt_page_grid_append (grid, NULL, widget, NULL);
 
 	G_OBJECT_CLASS (nmt_page_ip6_parent_class)->constructed (object);
