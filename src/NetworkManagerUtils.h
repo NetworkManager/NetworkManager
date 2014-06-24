@@ -43,6 +43,22 @@ int nm_spawn_process (const char *args);
 /* macro to return strlen() of a compile time string. */
 #define STRLEN(str)     ( sizeof ("" str) - 1 )
 
+/**
+ * str_if_set:
+ * @str: input string that will be returned if @str is not %NULL
+ * @fallback: if @str is %NULL, return @fallback instead
+ *
+ * This utility function is useful when printing a string to avoid passing
+ * %NULL. E.g. printf ("%s", str_if_set (get_string(), "(none)"));
+ *
+ * Returns: either @str or @fallback, depending on whether @str is %NULL.
+ */
+static inline const char *
+str_if_set (const char *str, const char *fallback)
+{
+	return str ? str : fallback;
+}
+
 gboolean nm_match_spec_string (const GSList *specs, const char *string);
 gboolean nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
 gboolean nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
