@@ -90,6 +90,8 @@ typedef struct {
 G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
 
 static const char *to_string_object (NMPlatform *platform, struct nl_object *obj);
+static gboolean _address_match (struct rtnl_addr *addr, int family, int ifindex);
+static gboolean _route_match (struct rtnl_route *rtnlroute, int family, int ifindex);
 
 void
 nm_linux_platform_setup (void)
@@ -1576,9 +1578,6 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 		{
 			NMPlatformIP4Address address;
 
-			if (!init_ip4_address (&address, (struct rtnl_addr *) object))
-				return;
-
 			/* Address deletion is sometimes accompanied by route deletion. We need to
 			 * check all routes belonging to the same interface.
 			 */
@@ -1590,6 +1589,12 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 				break;
 			}
 
+			if (!_address_match ((struct rtnl_addr *) object, AF_INET, 0)) {
+				nm_log_dbg (LOGD_PLATFORM, "skip announce unmatching IP4 address %s", to_string_ip4_address ((struct rtnl_addr *) object));
+				return;
+			}
+			if (!init_ip4_address (&address, (struct rtnl_addr *) object))
+				return;
 			g_signal_emit_by_name (platform, sig, address.ifindex, &address, change_type, reason);
 		}
 		return;
@@ -1597,6 +1602,10 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 		{
 			NMPlatformIP6Address address;
 
+			if (!_address_match ((struct rtnl_addr *) object, AF_INET6, 0)) {
+				nm_log_dbg (LOGD_PLATFORM, "skip announce unmatching IP6 address %s", to_string_ip6_address ((struct rtnl_addr *) object));
+				return;
+			}
 			if (!init_ip6_address (&address, (struct rtnl_addr *) object))
 				return;
 			g_signal_emit_by_name (platform, sig, address.ifindex, &address, change_type, reason);
@@ -1606,6 +1615,10 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 		{
 			NMPlatformIP4Route route;
 
+			if (!_route_match ((struct rtnl_route *) object, AF_INET, 0)) {
+				nm_log_dbg (LOGD_PLATFORM, "skip announce unmatching IP4 route %s", to_string_ip4_route ((struct rtnl_route *) object));
+				return;
+			}
 			if (init_ip4_route (&route, (struct rtnl_route *) object))
 				g_signal_emit_by_name (platform, sig, route.ifindex, &route, change_type, reason);
 		}
@@ -1614,6 +1627,10 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 		{
 			NMPlatformIP6Route route;
 
+			if (!_route_match ((struct rtnl_route *) object, AF_INET6, 0)) {
+				nm_log_dbg (LOGD_PLATFORM, "skip announce unmatching IP6 route %s", to_string_ip6_route ((struct rtnl_route *) object));
+				return;
+			}
 			if (init_ip6_route (&route, (struct rtnl_route *) object))
 				g_signal_emit_by_name (platform, sig, route.ifindex, &route, change_type, reason);
 		}
@@ -3287,7 +3304,7 @@ _address_match (struct rtnl_addr *addr, int family, int ifindex)
 	g_return_val_if_fail (addr, FALSE);
 
 	return rtnl_addr_get_family (addr) == family &&
-	       rtnl_addr_get_ifindex (addr) == ifindex;
+	       (ifindex == 0 || rtnl_addr_get_ifindex (addr) == ifindex);
 }
 
 static GArray *
@@ -3502,6 +3519,9 @@ _route_match (struct rtnl_route *rtnlroute, int family, int ifindex)
 	    rtnl_route_get_family (rtnlroute) != family ||
 	    rtnl_route_get_nnexthops (rtnlroute) != 1)
 		return FALSE;
+
+	if (ifindex == 0)
+		return TRUE;
 
 	nexthop = rtnl_route_nexthop_n (rtnlroute, 0);
 	return rtnl_route_nh_get_ifindex (nexthop) == ifindex;
