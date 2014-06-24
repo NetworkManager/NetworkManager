@@ -396,14 +396,9 @@ test_read_wired_static (const char *file,
 	GError *error = NULL;
 	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
-	const char *expected_dns1 = "4.2.2.1";
-	const char *expected_dns2 = "4.2.2.2";
-	guint32 addr;
 	struct in6_addr addr6;
 	const char *expected6_address1 = "dead:beaf::1";
 	const char *expected6_address2 = "dead:beaf::2";
-	const char *expected6_dns1 = "1:2:3:4::a";
-	const char *expected6_dns2 = "1:2:3:4::b";
 	NMIP4Address *ip4_addr;
 	NMIP6Address *ip6_addr;
 	gboolean success;
@@ -442,10 +437,8 @@ test_read_wired_static (const char *file,
 
 	/* DNS Addresses */
 	g_assert_cmpint (nm_setting_ip4_config_get_num_dns (s_ip4), ==, 2);
-	g_assert_cmpint (inet_pton (AF_INET, expected_dns1, &addr), >, 0);
-	g_assert_cmpint (nm_setting_ip4_config_get_dns (s_ip4, 0), ==, addr);
-	g_assert_cmpint (inet_pton (AF_INET, expected_dns2, &addr), >, 0);
-	g_assert_cmpint (nm_setting_ip4_config_get_dns (s_ip4, 1), ==, addr);
+	g_assert_cmpstr (nm_setting_ip4_config_get_dns (s_ip4, 0), ==, "4.2.2.1");
+	g_assert_cmpstr (nm_setting_ip4_config_get_dns (s_ip4, 1), ==, "4.2.2.2");
 
 	/* IP addresses */
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 1);
@@ -464,10 +457,8 @@ test_read_wired_static (const char *file,
 
 		/* DNS Addresses */
 		g_assert_cmpint (nm_setting_ip6_config_get_num_dns (s_ip6), ==, 2);
-		g_assert_cmpint (inet_pton (AF_INET6, expected6_dns1, &addr6), >, 0);
-		g_assert (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 0), &addr6));
-		g_assert_cmpint (inet_pton (AF_INET6, expected6_dns2, &addr6), >, 0);
-		g_assert (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 1), &addr6));
+		g_assert_cmpstr (nm_setting_ip6_config_get_dns (s_ip6, 0), ==, "1:2:3:4::a");
+		g_assert_cmpstr (nm_setting_ip6_config_get_dns (s_ip6, 1), ==, "1:2:3:4::b");
 
 		/* IP addresses */
 		g_assert_cmpint (nm_setting_ip6_config_get_num_addresses (s_ip6), ==, 2);
@@ -553,9 +544,6 @@ test_read_wired_dhcp (void)
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
 	const char *tmp;
 	const char *expected_id = "System test-wired-dhcp";
-	const char *expected_dns1 = "4.2.2.1";
-	const char *expected_dns2 = "4.2.2.2";
-	guint32 addr;
 	const char *expected_dhcp_hostname = "foobar";
 
 	connection = connection_from_file (TEST_IFCFG_WIRED_DHCP,
@@ -673,23 +661,13 @@ test_read_wired_dhcp (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET, expected_dns1, &addr) > 0,
-	        "wired-dhcp-verify-ip4", "failed to verify %s: couldn't convert DNS IP address #1",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr,
+	ASSERT (strcmp (nm_setting_ip4_config_get_dns (s_ip4, 0), "4.2.2.1") == 0,
 	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET, expected_dns2, &addr) > 0,
-	        "wired-dhcp-verify-ip4", "failed to verify %s: couldn't convert DNS IP address #2",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr,
+	ASSERT (strcmp (nm_setting_ip4_config_get_dns (s_ip4, 1), "4.2.2.2") == 0,
 	        "wired-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -732,10 +710,8 @@ test_read_wired_dhcp_plus_ip (void)
 
 	/* DNS Addresses */
 	g_assert_cmpint (nm_setting_ip4_config_get_num_dns (s_ip4), ==, 2);
-	g_assert_cmpint (inet_pton (AF_INET, "4.2.2.1", &addr4), >, 0);
-	g_assert_cmpint (nm_setting_ip4_config_get_dns (s_ip4, 0), ==, addr4);
-	g_assert_cmpint (inet_pton (AF_INET, "4.2.2.2", &addr4), >, 0);
-	g_assert_cmpint (nm_setting_ip4_config_get_dns (s_ip4, 1), ==, addr4);
+	g_assert_cmpstr (nm_setting_ip4_config_get_dns (s_ip4, 0), ==, "4.2.2.1");
+	g_assert_cmpstr (nm_setting_ip4_config_get_dns (s_ip4, 1), ==, "4.2.2.2");
 
 	/* IP addresses */
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
@@ -761,10 +737,8 @@ test_read_wired_dhcp_plus_ip (void)
 
 	/* DNS Addresses */
 	g_assert_cmpint (nm_setting_ip6_config_get_num_dns (s_ip6), ==, 2);
-	g_assert_cmpint (inet_pton (AF_INET6, "1:2:3:4::a", &addr6), >, 0);
-	g_assert (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 0), &addr6));
-	g_assert_cmpint (inet_pton (AF_INET6, "1:2:3:4::b", &addr6), >, 0);
-	g_assert (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 1), &addr6));
+	g_assert_cmpstr (nm_setting_ip6_config_get_dns (s_ip6, 0), ==, "1:2:3:4::a");
+	g_assert_cmpstr (nm_setting_ip6_config_get_dns (s_ip6, 1), ==, "1:2:3:4::b");
 
 	/* IP addresses */
 	g_assert_cmpint (nm_setting_ip6_config_get_num_addresses (s_ip6), ==, 3);
@@ -1533,8 +1507,6 @@ test_read_wired_ipv6_manual (void)
 	guint32 expected_prefix1 = 56;
 	guint32 expected_prefix2 = 64;
 	guint32 expected_prefix3 = 96;
-	const char *expected_dns1 = "1:2:3:4::a";
-	const char *expected_dns2 = "1:2:3:4::b";
 	NMIP6Address *ip6_addr;
 	NMIP6Route *ip6_route;
 	struct in6_addr addr;
@@ -1762,19 +1734,13 @@ test_read_wired_ipv6_manual (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET6, expected_dns1, &addr) > 0,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert DNS IP address #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 0), &addr),
+	ASSERT (strcmp (nm_setting_ip6_config_get_dns (s_ip6, 0), "1:2:3:4::a") == 0,
 		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value #1",
 		TEST_IFCFG_WIRED_IPV6_MANUAL,
 		NM_SETTING_IP6_CONFIG_SETTING_NAME,
 		NM_SETTING_IP6_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET6, expected_dns2, &addr) > 0,
-		"wired-ipv6-manual-verify-ip6", "failed to verify %s: couldn't convert DNS IP address #2",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 1), &addr),
+	ASSERT (strcmp (nm_setting_ip6_config_get_dns (s_ip6, 1), "1:2:3:4::b") == 0,
 		"wired-ipv6-manual-verify-ip6", "failed to verify %s: unexpected %s / %s key value #2",
 		TEST_IFCFG_WIRED_IPV6_MANUAL,
 		NM_SETTING_IP6_CONFIG_SETTING_NAME,
@@ -1814,7 +1780,6 @@ test_read_wired_ipv6_only (void)
 	const char *expected_id = "System test-wired-ipv6-only";
 	const char *expected_address1 = "1001:abba::1234";
 	guint32 expected_prefix1 = 56;
-	const char *expected_dns1 = "1:2:3:4::a";
 	NMIP6Address *ip6_addr;
 	struct in6_addr addr;
 	const char *method;
@@ -1928,10 +1893,7 @@ test_read_wired_ipv6_only (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET6, expected_dns1, &addr) > 0,
-		"wired-ipv6-only-verify-ip6", "failed to verify %s: couldn't convert DNS IP address #1",
-		TEST_IFCFG_WIRED_IPV6_MANUAL);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 0), &addr),
+	ASSERT (strcmp (nm_setting_ip6_config_get_dns (s_ip6, 0), "1:2:3:4::a") == 0,
 		"wired-ipv6-only-verify-ip6", "failed to verify %s: unexpected %s / %s key value #1",
 		TEST_IFCFG_WIRED_IPV6_MANUAL,
 		NM_SETTING_IP6_CONFIG_SETTING_NAME,
@@ -3559,9 +3521,6 @@ test_read_wifi_wep_adhoc (void)
 	const char *expected_ssid = "blahblah";
 	const char *expected_mode = "adhoc";
 	const char *expected_wep_key0 = "0123456789abcdef0123456789";
-	guint32 addr;
-	const char *expected_dns1 = "4.2.2.1";
-	const char *expected_dns2 = "4.2.2.2";
 
 	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_ADHOC,
 	                                   NULL,
@@ -3761,23 +3720,13 @@ test_read_wifi_wep_adhoc (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET, expected_dns1, &addr) > 0,
-	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: couldn't convert DNS IP address #1",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr,
+	ASSERT (strcmp (nm_setting_ip4_config_get_dns (s_ip4, 0), "4.2.2.1") == 0,
 	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET, expected_dns2, &addr) > 0,
-	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: couldn't convert DNS IP address #2",
-	        TEST_IFCFG_WIFI_WEP_ADHOC,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr,
+	ASSERT (strcmp (nm_setting_ip4_config_get_dns (s_ip4, 1), "4.2.2.2") == 0,
 	        "wifi-wep-adhoc-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -6335,8 +6284,8 @@ test_write_wired_static (void)
 	const guint32 ip1 = htonl (0x01010103);
 	const guint32 ip2 = htonl (0x01010105);
 	const guint32 gw = htonl (0x01010101);
-	const guint32 dns1 = htonl (0x04020201);
-	const guint32 dns2 = htonl (0x04020202);
+	const char *dns1 = "4.2.2.1";
+	const char *dns2 = "4.2.2.2";
 	const guint32 prefix = 24;
 	const char *dns_search1 = "foobar.com";
 	const char *dns_search2 = "lab.foobar.com";
@@ -6344,7 +6293,8 @@ test_write_wired_static (void)
 	const char *dns_search4 = "lab6.foobar.com";
 	struct in6_addr ip6, ip6_1, ip6_2;
 	struct in6_addr route1_dest, route2_dest, route1_nexthop, route2_nexthop;
-	struct in6_addr dns6_1, dns6_2;
+	const char *dns6_1 = "fade:0102:0103::face";
+	const char *dns6_2 = "cafe:ffff:eeee:dddd:cccc:bbbb:aaaa:feed";
 	const guint32 route1_prefix = 64, route2_prefix = 128;
 	const guint32 route1_metric = 99, route2_metric = 1;
 	NMIP4Address *addr;
@@ -6366,8 +6316,6 @@ test_write_wired_static (void)
 	inet_pton (AF_INET6, "2222:aaaa:bbbb:cccc:dddd:eeee:5555:6666", &route1_nexthop);
 	inet_pton (AF_INET6, "::", &route2_dest);
 	inet_pton (AF_INET6, "2222:aaaa::9999", &route2_nexthop);
-	inet_pton (AF_INET6, "fade:0102:0103::face", &dns6_1);
-	inet_pton (AF_INET6, "cafe:ffff:eeee:dddd:cccc:bbbb:aaaa:feed", &dns6_2);
 
 	connection = nm_simple_connection_new ();
 
@@ -6468,8 +6416,8 @@ test_write_wired_static (void)
 	nm_ip6_route_unref (route6);
 
 	/* DNS servers */
-	nm_setting_ip6_config_add_dns (s_ip6, &dns6_1);
-	nm_setting_ip6_config_add_dns (s_ip6, &dns6_2);
+	nm_setting_ip6_config_add_dns (s_ip6, dns6_1);
+	nm_setting_ip6_config_add_dns (s_ip6, dns6_2);
 
 	/* DNS domains */
 	nm_setting_ip6_config_add_dns_search (s_ip6, dns_search3);
@@ -6770,7 +6718,7 @@ test_write_wired_static_ip6_only (void)
 	static const char *mac = "31:33:33:37:be:cd";
 	char *uuid;
 	struct in6_addr ip6;
-	struct in6_addr dns6;
+	const char *dns6 = "fade:0102:0103::face";
 	NMIP6Address *addr6;
 	gboolean success;
 	GError *error = NULL;
@@ -6782,7 +6730,6 @@ test_write_wired_static_ip6_only (void)
 	gboolean ignore_error = FALSE;
 
 	inet_pton (AF_INET6, "1003:1234:abcd::1", &ip6);
-	inet_pton (AF_INET6, "fade:0102:0103::face", &dns6);
 
 	connection = nm_simple_connection_new ();
 
@@ -6829,7 +6776,7 @@ test_write_wired_static_ip6_only (void)
 	nm_ip6_address_unref (addr6);
 
 	/* DNS server */
-	nm_setting_ip6_config_add_dns (s_ip6, &dns6);
+	nm_setting_ip6_config_add_dns (s_ip6, dns6);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "wired-static-ip6-only-write", "failed to verify connection: %s",
@@ -6903,7 +6850,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	static const char *mac = "31:33:33:37:be:cd";
 	char *uuid;
 	struct in6_addr ip6;
-	struct in6_addr dns6;
+	const char *dns6 = "fade:0102:0103::face";
 	NMIP6Address *addr6;
 	gboolean success;
 	GError *error = NULL;
@@ -6923,7 +6870,6 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	}
 
 	inet_pton (AF_INET6, "1003:1234:abcd::1", &ip6);
-	inet_pton (AF_INET6, "fade:0102:0103::face", &dns6);
 	if (gateway6)
 		inet_ntop (AF_INET6, gateway6, s_gateway6, sizeof (s_gateway6));
 
@@ -6976,7 +6922,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	nm_ip6_address_unref (addr6);
 
 	/* DNS server */
-	nm_setting_ip6_config_add_dns (s_ip6, &dns6);
+	nm_setting_ip6_config_add_dns (s_ip6, dns6);
 
 	g_assert (nm_connection_verify (connection, &error));
 
@@ -7202,8 +7148,8 @@ test_write_wired_static_routes (void)
 	const guint32 ip1 = htonl (0x01010103);
 	const guint32 ip2 = htonl (0x01010105);
 	const guint32 gw = htonl (0x01010101);
-	const guint32 dns1 = htonl (0x04020201);
-	const guint32 dns2 = htonl (0x04020202);
+	const char *dns1 = "4.2.2.1";
+	const char *dns2 = "4.2.2.2";
 	const guint32 route_dst1 = htonl (0x01020300);
 	const guint32 route_dst2= htonl (0x03020100);
 	const guint32 route_gw1 = htonl (0xdeadbeef);
@@ -8487,7 +8433,7 @@ test_write_wifi_wep_adhoc (void)
 	NMIP4Address *addr;
 	const guint32 ip1 = htonl (0x01010103);
 	const guint32 gw = htonl (0x01010101);
-	const guint32 dns1 = htonl (0x04020201);
+	const char *dns1 = "4.2.2.1";
 	const guint32 prefix = 24;
 
 	connection = nm_simple_connection_new ();
@@ -9486,7 +9432,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	NMIP4Address *addr;
 	const guint32 ip1 = htonl (0x01010103);
 	const guint32 gw = htonl (0x01010101);
-	const guint32 dns1 = htonl (0x04020201);
+	const char *dns1 = "4.2.2.1";
 	const guint32 prefix = 24;
 
 	connection = nm_simple_connection_new ();

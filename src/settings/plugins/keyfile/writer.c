@@ -104,29 +104,13 @@ ip4_dns_writer (GKeyFile *file,
                 const char *key,
                 const GValue *value)
 {
-	GArray *array;
 	char **list;
-	int i, num = 0;
 
-	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_UINT_ARRAY));
-
-	array = (GArray *) g_value_get_boxed (value);
-	if (!array || !array->len)
-		return;
-
-	list = g_new0 (char *, array->len + 1);
-
-	for (i = 0; i < array->len; i++) {
-		char *buf = g_new (char, INET_ADDRSTRLEN);
-		guint32 addr;
-
-		addr = g_array_index (array, guint32, i);
-		nm_utils_inet4_ntop (addr, buf);
-		list[num++] = buf;
+	list = g_value_get_boxed (value);
+	if (list && list[0]) {
+		nm_keyfile_plugin_kf_set_string_list (file, nm_setting_get_name (setting), key,
+		                                      (const char **) list, g_strv_length (list));
 	}
-
-	nm_keyfile_plugin_kf_set_string_list (file, nm_setting_get_name (setting), key, (const char **) list, num);
-	g_strfreev (list);
 }
 
 static void
@@ -148,12 +132,21 @@ write_ip4_values (GKeyFile *file,
 
 	output = g_string_sized_new (2*INET_ADDRSTRLEN + 10);
 	for (i = 0; i < array->len; i++) {
-		GArray *tuple = g_ptr_array_index (array, i);
+		if (is_route) {
+			NMIP4Route *route = array->pdata[i];
 
-		addr = g_array_index (tuple, guint32, 0);
-		plen = g_array_index (tuple, guint32, 1);
-		gw = g_array_index (tuple, guint32, 2);
-		metric = is_route ? g_array_index (tuple, guint32, 3) : 0;
+			addr = nm_ip4_route_get_dest (route);
+			plen = nm_ip4_route_get_prefix (route);
+			gw = nm_ip4_route_get_next_hop (route);
+			metric = nm_ip4_route_get_metric (route);
+		} else {
+			NMIP4Address *address = array->pdata[i];
+
+			addr = nm_ip4_address_get_address (address);
+			plen = nm_ip4_address_get_prefix (address);
+			gw = nm_ip4_address_get_gateway (address);
+			metric = 0;
+		}
 
 		g_string_set_size (output, 0);
 		g_string_append_printf (output, "%s/%u",
@@ -187,8 +180,6 @@ ip4_addr_writer (GKeyFile *file,
 	GPtrArray *array;
 	const char *setting_name = nm_setting_get_name (setting);
 
-	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT));
-
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (array && array->len)
 		write_ip4_values (file, setting_name, array, FALSE);
@@ -216,8 +207,6 @@ ip4_route_writer (GKeyFile *file,
 	GPtrArray *array;
 	const char *setting_name = nm_setting_get_name (setting);
 
-	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT));
-
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (array && array->len)
 		write_ip4_values (file, setting_name, array, TRUE);
@@ -231,79 +220,38 @@ ip6_dns_writer (GKeyFile *file,
                 const char *key,
                 const GValue *value)
 {
-	GPtrArray *array;
-	GByteArray *byte_array;
 	char **list;
-	int i, num = 0;
 
-	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR));
-
-	array = (GPtrArray *) g_value_get_boxed (value);
-	if (!array || !array->len)
-		return;
-
-	list = g_new0 (char *, array->len + 1);
-
-	for (i = 0; i < array->len; i++) {
-		char *buf = g_new (char, INET6_ADDRSTRLEN);
-
-		byte_array = g_ptr_array_index (array, i);
-		nm_utils_inet6_ntop ((const struct in6_addr *) byte_array->data, buf);
-		list[num++] = buf;
+	list = g_value_get_boxed (value);
+	if (list && list[0]) {
+		nm_keyfile_plugin_kf_set_string_list (file, nm_setting_get_name (setting), key,
+		                                      (const char **) list, g_strv_length (list));
 	}
-
-	nm_keyfile_plugin_kf_set_string_list (file, nm_setting_get_name (setting), key, (const char **) list, num);
-	g_strfreev (list);
-}
-
-static void
-ip6_array_to_addr (GValueArray *values,
-                   guint32 idx,
-                   char *buf,
-                   struct in6_addr *out_addr)
-{
-	GByteArray *byte_array;
-	GValue *addr_val;
-	const struct in6_addr *addr;
-
-	addr_val = g_value_array_get_nth (values, idx);
-	byte_array = g_value_get_boxed (addr_val);
-	addr = (const struct in6_addr *) byte_array->data;
-
-	nm_utils_inet6_ntop (addr, buf);
-
-	if (out_addr)
-		*out_addr = *addr;
 }
 
 static char *
-ip6_array_to_addr_prefix (GValueArray *values, gboolean force_write_gateway)
+ip6_values_to_addr_prefix (const struct in6_addr *addr, guint prefix, const struct in6_addr *gw,
+                           gboolean force_write_gateway)
 {
-	GValue *prefix_val;
-	char *ret = NULL;
 	GString *ip6_str;
 	char buf[INET6_ADDRSTRLEN];
-	struct in6_addr addr;
 
 	/* address */
-	ip6_array_to_addr (values, 0, buf, NULL);
+	nm_utils_inet6_ntop (addr, buf);
 
 	/* Enough space for the address, '/', and the prefix */
 	ip6_str = g_string_sized_new ((INET6_ADDRSTRLEN * 2) + 5);
 
 	/* prefix */
 	g_string_append (ip6_str, buf);
-	prefix_val = g_value_array_get_nth (values, 1);
-	g_string_append_printf (ip6_str, "/%u", g_value_get_uint (prefix_val));
+	g_string_append_printf (ip6_str, "/%u", prefix);
 
-	ip6_array_to_addr (values, 2, buf, &addr);
-	if (force_write_gateway || !IN6_IS_ADDR_UNSPECIFIED (&addr))
+	/* gateway */
+	nm_utils_inet6_ntop (gw, buf);
+	if (force_write_gateway || !IN6_IS_ADDR_UNSPECIFIED (gw))
 		g_string_append_printf (ip6_str, ",%s", buf);
 
-	ret = ip6_str->str;
-	g_string_free (ip6_str, FALSE);
-
-	return ret;
+	return g_string_free (ip6_str, FALSE);
 }
 
 static void
@@ -318,24 +266,19 @@ ip6_addr_writer (GKeyFile *file,
 	const char *setting_name = nm_setting_get_name (setting);
 	int i, j;
 
-	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS));
-
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (!array || !array->len)
 		return;
 
 	for (i = 0, j = 1; i < array->len; i++) {
-		GValueArray *values = g_ptr_array_index (array, i);
+		NMIP6Address *addr = array->pdata[i];
 		char *key_name, *ip6_addr;
 
-		if (values->n_values != 3) {
-			nm_log_warn (LOGD_SETTINGS, "%s: error writing IP6 address %d (address array "
-			             "length %d is not 3)", __func__, i, values->n_values);
-			continue;
-		}
-
-		/* we allow omitting the gateway if it's :: */
-		ip6_addr = ip6_array_to_addr_prefix (values, FALSE);
+		ip6_addr = ip6_values_to_addr_prefix (nm_ip6_address_get_address (addr),
+		                                      nm_ip6_address_get_prefix (addr),
+		                                      nm_ip6_address_get_gateway (addr),
+		                                      /* we allow omitting the gateway if it's :: */
+		                                      FALSE);
 		/* Write it out */
 		key_name = g_strdup_printf ("address%d", j++);
 		nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, ip6_addr);
@@ -357,14 +300,12 @@ ip6_route_writer (GKeyFile *file,
 	GString *output;
 	int i, j;
 
-	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE));
-
 	array = (GPtrArray *) g_value_get_boxed (value);
 	if (!array || !array->len)
 		return;
 
 	for (i = 0, j = 1; i < array->len; i++) {
-		GValueArray *values = g_ptr_array_index (array, i);
+		NMIP6Route *route = array->pdata[i];
 		char *key_name;
 		char *addr_str;
 		guint metric;
@@ -372,8 +313,7 @@ ip6_route_writer (GKeyFile *file,
 		output = g_string_new ("");
 
 		/* Metric */
-		value = g_value_array_get_nth (values, 3);
-		metric = g_value_get_uint (value);
+		metric = nm_ip6_route_get_metric (route);
 
 		/* Address, prefix and next hop
 		 * We allow omitting the gateway ::, if we also omit the metric
@@ -385,7 +325,10 @@ ip6_route_writer (GKeyFile *file,
 		 * But if possible, we omit them both (",::,0") or only the metric
 		 * (",0").
 		 **/
-		addr_str = ip6_array_to_addr_prefix (values, metric != 0);
+		addr_str = ip6_values_to_addr_prefix (nm_ip6_route_get_dest (route),
+		                                      nm_ip6_route_get_prefix (route),
+		                                      nm_ip6_route_get_next_hop (route),
+		                                      metric != 0);
 		g_string_append (output, addr_str);
 		g_free (addr_str);
 

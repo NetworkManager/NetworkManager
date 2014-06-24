@@ -789,9 +789,6 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		GValue val = G_VALUE_INIT; \
 		g_value_init (&val, G_TYPE_STRING); \
 		g_object_get_property (G_OBJECT (setting), property_name, &val); \
-		/* Getters return allocated values, and returning the string \
-		 * the GValue copied from the object without unsetting the \
-		 * GValue fulfills that requirement. */ \
 		s = g_value_dup_string (&val); \
 		g_value_unset (&val); \
 		return s; \
@@ -1200,8 +1197,82 @@ DEFINE_GETTER (nmc_property_ib_get_parent, NM_SETTING_INFINIBAND_PARENT)
 DEFINE_GETTER (nmc_property_ipv4_get_method, NM_SETTING_IP4_CONFIG_METHOD)
 DEFINE_GETTER (nmc_property_ipv4_get_dns, NM_SETTING_IP4_CONFIG_DNS)
 DEFINE_GETTER (nmc_property_ipv4_get_dns_search, NM_SETTING_IP4_CONFIG_DNS_SEARCH)
-DEFINE_GETTER (nmc_property_ipv4_get_addresses, NM_SETTING_IP4_CONFIG_ADDRESSES)
-DEFINE_GETTER (nmc_property_ipv4_get_routes, NM_SETTING_IP4_CONFIG_ROUTES)
+
+static char *
+nmc_property_ipv4_get_addresses (NMSetting *setting)
+{
+	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (setting);
+	GString *printable;
+	guint32 num_addresses, i;
+	NMIP4Address *addr;
+	char buf[INET_ADDRSTRLEN];
+
+	printable = g_string_new (NULL);
+
+	num_addresses = nm_setting_ip4_config_get_num_addresses (s_ip4);
+	for (i = 0; i < num_addresses; i++) {
+		addr = nm_setting_ip4_config_get_address (s_ip4, i);
+
+		if (printable->len > 0)
+			g_string_append (printable, "; ");
+
+		g_string_append (printable, "{ ");
+
+		nm_utils_inet4_ntop (nm_ip4_address_get_address (addr), buf);
+		g_string_append_printf (printable, "ip = %s", buf);
+
+		g_string_append_printf (printable, "/%u", nm_ip4_address_get_prefix (addr));
+
+		if (nm_ip4_address_get_gateway (addr)) {
+			nm_utils_inet4_ntop (nm_ip4_address_get_gateway (addr), buf);
+			g_string_append_printf (printable, ", gw = %s", buf);
+		}
+
+		g_string_append (printable, " }");
+	}
+
+	return g_string_free (printable, FALSE);
+}
+
+static char *
+nmc_property_ipv4_get_routes (NMSetting *setting)
+{
+	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (setting);
+	GString *printable;
+	guint32 num_routes, i;
+	NMIP4Route *route;
+	char buf[INET_ADDRSTRLEN];
+
+	printable = g_string_new (NULL);
+
+	num_routes = nm_setting_ip4_config_get_num_routes (s_ip4);
+	for (i = 0; i < num_routes; i++) {
+		route = nm_setting_ip4_config_get_route (s_ip4, i);
+
+		if (printable->len > 0)
+			g_string_append (printable, "; ");
+
+		g_string_append (printable, "{ ");
+
+		nm_utils_inet4_ntop (nm_ip4_route_get_dest (route), buf);
+		g_string_append_printf (printable, "ip = %s", buf);
+
+		g_string_append_printf (printable, "/%u", nm_ip4_route_get_prefix (route));
+
+		if (nm_ip4_route_get_next_hop (route)) {
+			nm_utils_inet4_ntop (nm_ip4_route_get_next_hop (route), buf);
+			g_string_append_printf (printable, ", nh = %s", buf);
+		}
+
+		if (nm_ip4_route_get_metric (route))
+			g_string_append_printf (printable, ", mt = %u", nm_ip4_route_get_metric (route));
+
+		g_string_append (printable, " }");
+	}
+
+	return g_string_free (printable, FALSE);
+}
+
 DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_routes, NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES)
 DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_dns, NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS)
 DEFINE_GETTER (nmc_property_ipv4_get_dhcp_client_id, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID)
@@ -1214,8 +1285,82 @@ DEFINE_GETTER (nmc_property_ipv4_get_may_fail, NM_SETTING_IP4_CONFIG_MAY_FAIL)
 DEFINE_GETTER (nmc_property_ipv6_get_method, NM_SETTING_IP6_CONFIG_METHOD)
 DEFINE_GETTER (nmc_property_ipv6_get_dns, NM_SETTING_IP6_CONFIG_DNS)
 DEFINE_GETTER (nmc_property_ipv6_get_dns_search, NM_SETTING_IP6_CONFIG_DNS_SEARCH)
-DEFINE_GETTER (nmc_property_ipv6_get_addresses, NM_SETTING_IP6_CONFIG_ADDRESSES)
-DEFINE_GETTER (nmc_property_ipv6_get_routes, NM_SETTING_IP6_CONFIG_ROUTES)
+
+static char *
+nmc_property_ipv6_get_addresses (NMSetting *setting)
+{
+	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
+	GString *printable;
+	guint32 num_addresses, i;
+	NMIP6Address *addr;
+	char buf[INET6_ADDRSTRLEN];
+
+	printable = g_string_new (NULL);
+
+	num_addresses = nm_setting_ip6_config_get_num_addresses (s_ip6);
+	for (i = 0; i < num_addresses; i++) {
+		addr = nm_setting_ip6_config_get_address (s_ip6, i);
+
+		if (printable->len > 0)
+			g_string_append (printable, "; ");
+
+		g_string_append (printable, "{ ");
+
+		nm_utils_inet6_ntop (nm_ip6_address_get_address (addr), buf);
+		g_string_append_printf (printable, "ip = %s", buf);
+
+		g_string_append_printf (printable, "/%u", nm_ip6_address_get_prefix (addr));
+
+		if (nm_ip6_address_get_gateway (addr)) {
+			nm_utils_inet6_ntop (nm_ip6_address_get_gateway (addr), buf);
+			g_string_append_printf (printable, ", gw = %s", buf);
+		}
+
+		g_string_append (printable, " }");
+	}
+
+	return g_string_free (printable, FALSE);
+}
+
+static char *
+nmc_property_ipv6_get_routes (NMSetting *setting)
+{
+	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
+	GString *printable;
+	guint32 num_routes, i;
+	NMIP6Route *route;
+	char buf[INET6_ADDRSTRLEN];
+
+	printable = g_string_new (NULL);
+
+	num_routes = nm_setting_ip6_config_get_num_routes (s_ip6);
+	for (i = 0; i < num_routes; i++) {
+		route = nm_setting_ip6_config_get_route (s_ip6, i);
+
+		if (printable->len > 0)
+			g_string_append (printable, "; ");
+
+		g_string_append (printable, "{ ");
+
+		nm_utils_inet6_ntop (nm_ip6_route_get_dest (route), buf);
+		g_string_append_printf (printable, "ip = %s", buf);
+
+		g_string_append_printf (printable, "/%u", nm_ip6_route_get_prefix (route));
+
+		if (nm_ip6_route_get_next_hop (route)) {
+			nm_utils_inet6_ntop (nm_ip6_route_get_next_hop (route), buf);
+			g_string_append_printf (printable, ", nh = %s", buf);
+		}
+
+		if (nm_ip6_route_get_metric (route))
+			g_string_append_printf (printable, ", mt = %u", nm_ip6_route_get_metric (route));
+
+		g_string_append (printable, " }");
+	}
+
+	return g_string_free (printable, FALSE);
+}
+
 DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_routes, NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES)
 DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_dns, NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS)
 DEFINE_GETTER (nmc_property_ipv6_get_never_default, NM_SETTING_IP6_CONFIG_NEVER_DEFAULT)
@@ -2885,19 +3030,20 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_ipv4_allowed_method, ipv4_valid_methods)
 static gboolean
 nmc_property_ipv4_set_dns (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	char **strv = NULL, **iter;
+	char **strv = NULL, **iter, *addr;
 	guint32 ip4_addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	strv = nmc_strsplit_set (val, " \t,", 0);
 	for (iter = strv; iter && *iter; iter++) {
-		if (inet_pton (AF_INET, g_strstrip (*iter), &ip4_addr) < 1) {
-			g_set_error (error, 1, 0, _("invalid IPv4 address '%s'"), *iter);
+		addr = g_strstrip (*iter);
+		if (inet_pton (AF_INET, addr, &ip4_addr) < 1) {
+			g_set_error (error, 1, 0, _("invalid IPv4 address '%s'"), addr);
 			g_strfreev (strv);
 			return FALSE;
 		}
-		nm_setting_ip4_config_add_dns (NM_SETTING_IP4_CONFIG (setting), ip4_addr);
+		nm_setting_ip4_config_add_dns (NM_SETTING_IP4_CONFIG (setting), addr);
 	}
 	g_strfreev (strv);
 	return TRUE;
@@ -2916,7 +3062,7 @@ _validate_and_remove_ipv4_dns (NMSettingIP4Config *setting,
 		return FALSE;
 	}
 
-	ret = nm_setting_ip4_config_remove_dns_by_value (setting, ip4_addr);
+	ret = nm_setting_ip4_config_remove_dns_by_value (setting, dns);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain DNS server '%s'"), dns);
 	return ret;
@@ -3230,19 +3376,20 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_ipv6_allowed_method, ipv6_valid_methods)
 static gboolean
 nmc_property_ipv6_set_dns (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	char **strv = NULL, **iter;
+	char **strv = NULL, **iter, *addr;
 	struct in6_addr ip6_addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	strv = nmc_strsplit_set (val, " \t,", 0);
 	for (iter = strv; iter && *iter; iter++) {
-		if (inet_pton (AF_INET6, g_strstrip (*iter), &ip6_addr) < 1) {
-			g_set_error (error, 1, 0, _("invalid IPv6 address '%s'"), *iter);
+		addr = g_strstrip (*iter);
+		if (inet_pton (AF_INET6, addr, &ip6_addr) < 1) {
+			g_set_error (error, 1, 0, _("invalid IPv6 address '%s'"), addr);
 			g_strfreev (strv);
 			return FALSE;
 		}
-		nm_setting_ip6_config_add_dns (NM_SETTING_IP6_CONFIG (setting), &ip6_addr);
+		nm_setting_ip6_config_add_dns (NM_SETTING_IP6_CONFIG (setting), addr);
 	}
 	g_strfreev (strv);
 	return TRUE;
@@ -3261,7 +3408,7 @@ _validate_and_remove_ipv6_dns (NMSettingIP6Config *setting,
 		return FALSE;
 	}
 
-	ret = nm_setting_ip6_config_remove_dns_by_value (setting, &ip6_addr);
+	ret = nm_setting_ip6_config_remove_dns_by_value (setting, dns);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain DNS server '%s'"), dns);
 	return ret;

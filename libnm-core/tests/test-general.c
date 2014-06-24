@@ -388,7 +388,7 @@ test_setting_ip4_config_labels (void)
 	g_object_set (G_OBJECT (s_ip4),
 	              NM_SETTING_IP4_CONFIG_ADDRESSES, addrs,
 	              NULL);
-	g_boxed_free (DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT, addrs);
+	g_ptr_array_unref (addrs);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
@@ -455,99 +455,6 @@ test_setting_ip4_config_labels (void)
 	g_clear_error (&error);
 
 	g_object_unref (s_ip4);
-}
-
-#define OLD_DBUS_TYPE_G_IP6_ADDRESS (dbus_g_type_get_struct ("GValueArray", DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, G_TYPE_INVALID))
-#define OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS (dbus_g_type_get_collection ("GPtrArray", OLD_DBUS_TYPE_G_IP6_ADDRESS))
-
-/* Test that setting the IPv6 setting's 'addresses' property using the old
- * IPv6 address format still works, i.e. that the GValue transformation function
- * from old->new is working correctly.
- */
-static void
-test_setting_ip6_config_old_address_array (void)
-{
-	NMSettingIP6Config *s_ip6;
-	GPtrArray *addresses, *read_addresses;
-	GValueArray *array, *read_array;
-	GValue element = G_VALUE_INIT, written_value = G_VALUE_INIT, read_value = G_VALUE_INIT;
-	GByteArray *ba;
-	const guint8 addr[16] = { 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11,
-	                          0x11, 0x22, 0x33, 0x44, 0x66, 0x77, 0x88, 0x99 };
-	const guint8 gw[16] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-	guint32 prefix = 56;
-	GValue *read_addr, *read_prefix, *read_gw;
-
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
-	ASSERT (s_ip6 != NULL,
-	        "ip6-old-addr", "error creating IP6 setting");
-
-	g_value_init (&written_value, OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS);
-
-	addresses = g_ptr_array_new ();
-	array = g_value_array_new (3);
-
-	/* IP address */
-	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-	ba = g_byte_array_new ();
-	g_byte_array_append (ba, &addr[0], sizeof (addr));
-	g_value_take_boxed (&element, ba);
-	g_value_array_append (array, &element);
-	g_value_unset (&element);
-
-	/* Prefix */
-	g_value_init (&element, G_TYPE_UINT);
-	g_value_set_uint (&element, prefix);
-	g_value_array_append (array, &element);
-	g_value_unset (&element);
-
-	g_ptr_array_add (addresses, array);
-	g_value_set_boxed (&written_value, addresses);
-
-	/* Set the address array on the object */
-	g_object_set_property (G_OBJECT (s_ip6), NM_SETTING_IP6_CONFIG_ADDRESSES, &written_value);
-
-	/* Get it back so we can compare it */
-	g_value_init (&read_value, DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS);
-	g_object_get_property (G_OBJECT (s_ip6), NM_SETTING_IP6_CONFIG_ADDRESSES, &read_value);
-
-	ASSERT (G_VALUE_HOLDS (&read_value, DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS),
-	        "ip6-old-addr", "wrong addresses property value type '%s'",
-	        G_VALUE_TYPE_NAME (&read_value));
-
-	read_addresses = (GPtrArray *) g_value_get_boxed (&read_value);
-	ASSERT (read_addresses != NULL,
-	        "ip6-old-addr", "missing addresses on readback");
-	ASSERT (read_addresses->len == 1,
-	        "ip6-old-addr", "expected one address on readback");
-
-	read_array = (GValueArray *) g_ptr_array_index (read_addresses, 0);
-
-	read_addr = g_value_array_get_nth (read_array, 0);
-	ba = g_value_get_boxed (read_addr);
-	ASSERT (ba->len == sizeof (addr),
-	        "ip6-old-addr", "unexpected address item length %d", ba->len);
-	ASSERT (memcmp (ba->data, &addr[0], sizeof (addr)) == 0,
-	        "ip6-old-addr", "unexpected failure comparing addresses");
-
-	read_prefix = g_value_array_get_nth (read_array, 1);
-	ASSERT (g_value_get_uint (read_prefix) == prefix,
-	        "ip6-old-addr", "unexpected failure comparing prefix");
-
-	/* Ensure the gateway is all zeros, which is how the 2-item to 3-item
-	 * conversion happens.
-	 */
-	read_gw = g_value_array_get_nth (read_array, 2);
-	ba = g_value_get_boxed (read_gw);
-	ASSERT (ba->len == sizeof (gw),
-	        "ip6-old-addr", "unexpected gateway item length %d", ba->len);
-	ASSERT (memcmp (ba->data, &gw[0], sizeof (gw)) == 0,
-	        "ip6-old-addr", "unexpected failure comparing gateways");
-
-	g_value_unset (&written_value);
-	g_value_unset (&read_value);
-	g_object_unref (s_ip6);
 }
 
 static void
@@ -2372,14 +2279,14 @@ test_setting_ip4_changed_signal (void)
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	ASSERT_CHANGED (nm_setting_ip4_config_add_dns (s_ip4, 0x1122));
+	ASSERT_CHANGED (nm_setting_ip4_config_add_dns (s_ip4, "11.22.0.0"));
 	ASSERT_CHANGED (nm_setting_ip4_config_remove_dns (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i <= priv->dns->len*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
 	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_dns (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip4_config_add_dns (s_ip4, 0x3344);
+	nm_setting_ip4_config_add_dns (s_ip4, "33.44.0.0");
 	ASSERT_CHANGED (nm_setting_ip4_config_clear_dns (s_ip4));
 
 	ASSERT_CHANGED (nm_setting_ip4_config_add_dns_search (s_ip4, "foobar.com"));
@@ -2443,14 +2350,14 @@ test_setting_ip6_changed_signal (void)
 	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
-	ASSERT_CHANGED (nm_setting_ip6_config_add_dns (s_ip6, &t));
+	ASSERT_CHANGED (nm_setting_ip6_config_add_dns (s_ip6, "1:2:3::4:5:6"));
 	ASSERT_CHANGED (nm_setting_ip6_config_remove_dns (s_ip6, 0));
 
 	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
 	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_dns (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip6_config_add_dns (s_ip6, &t);
+	nm_setting_ip6_config_add_dns (s_ip6, "1:2:3::4:5:6");
 	ASSERT_CHANGED (nm_setting_ip6_config_clear_dns (s_ip6));
 
 	ASSERT_CHANGED (nm_setting_ip6_config_add_dns_search (s_ip6, "foobar.com"));
@@ -3251,7 +3158,6 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_vpn_update_secrets", test_setting_vpn_update_secrets);
 	g_test_add_func ("/core/general/test_setting_vpn_modify_during_foreach", test_setting_vpn_modify_during_foreach);
 	g_test_add_func ("/core/general/test_setting_ip4_config_labels", test_setting_ip4_config_labels);
-	g_test_add_func ("/core/general/test_setting_ip6_config_old_address_array", test_setting_ip6_config_old_address_array);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_spaces", test_setting_gsm_apn_spaces);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_bad_chars", test_setting_gsm_apn_bad_chars);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_underscore", test_setting_gsm_apn_underscore);

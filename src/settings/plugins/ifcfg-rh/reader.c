@@ -1106,25 +1106,26 @@ make_ip4_setting (shvarFile *ifcfg,
 		struct in6_addr ip6_dns;
 
 		tag = g_strdup_printf ("DNS%u", i);
-		if (!read_ip4_address (ifcfg, tag, &dns, error)) {
-			gboolean valid = TRUE;
+		value = svGetValue (ifcfg, tag, FALSE);
+		if (value) {
+			if (!read_ip4_address (ifcfg, tag, &dns, error)) {
+				gboolean valid = TRUE;
 
-			/* Ignore IPv6 addresses */
-			dns = 0;
-			value = svGetValue (ifcfg, tag, FALSE);
-			if (value)
+				/* Ignore IPv6 addresses */
 				valid = parse_ip6_address (value, &ip6_dns, NULL);
-			g_free (value);
-
-			if (!valid) {
-				g_free (tag);
-				goto done;
+				if (!valid) {
+					g_free (tag);
+					goto done;
+				}
+				g_clear_error (error);
+				dns = 0;
 			}
-			g_clear_error (error);
+
+			if (dns && !nm_setting_ip4_config_add_dns (s_ip4, value))
+				PARSE_WARNING ("duplicate DNS server %s", tag);
+			g_free (value);
 		}
 
-		if (dns && !nm_setting_ip4_config_add_dns (s_ip4, dns))
-			PARSE_WARNING ("duplicate DNS server %s", tag);
 		g_free (tag);
 	}
 
@@ -1223,9 +1224,10 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 	g_return_if_fail (s_ip4 != NULL);
 	g_return_if_fail (filename != NULL);
 
-	base_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	if (!base_addr)
+	if (nm_setting_ip4_config_get_num_addresses (s_ip4) == 0)
 		return;
+
+	base_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 
 	dirname = g_path_get_dirname (filename);
 	g_return_if_fail (dirname != NULL);
@@ -1497,7 +1499,7 @@ make_ip6_setting (shvarFile *ifcfg,
 
 		ip6_dns = in6addr_any;
 		if (parse_ip6_address (value, &ip6_dns, NULL)) {
-			if (!IN6_IS_ADDR_UNSPECIFIED (&ip6_dns) && !nm_setting_ip6_config_add_dns (s_ip6, &ip6_dns))
+			if (!IN6_IS_ADDR_UNSPECIFIED (&ip6_dns) && !nm_setting_ip6_config_add_dns (s_ip6, value))
 				PARSE_WARNING ("duplicate DNS server %s", tag);
 		} else {
 			/* Maybe an IPv4 address? If so ignore it */

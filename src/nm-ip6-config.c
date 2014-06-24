@@ -470,8 +470,12 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, i
 		nm_ip6_config_reset_domains (config);
 		nm_ip6_config_reset_searches (config);
 	}
-	for (i = 0; i < nnameservers; i++)
-		nm_ip6_config_add_nameserver (config, nm_setting_ip6_config_get_dns (setting, i));
+	for (i = 0; i < nnameservers; i++) {
+		 struct in6_addr ip;
+
+		if (inet_pton (AF_INET6, nm_setting_ip6_config_get_dns (setting, i), &ip) == 1)
+			nm_ip6_config_add_nameserver (config, &ip);
+	}
 	for (i = 0; i < nsearches; i++)
 		nm_ip6_config_add_search (config, nm_setting_ip6_config_get_dns_search (setting, i));
 
@@ -571,7 +575,7 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 	for (i = 0; i < nnameservers; i++) {
 		const struct in6_addr *nameserver = nm_ip6_config_get_nameserver (config, i);
 
-		nm_setting_ip6_config_add_dns (s_ip6, nameserver);
+		nm_setting_ip6_config_add_dns (s_ip6, nm_utils_inet6_ntop (nameserver, NULL));
 	}
 	for (i = 0; i < nsearches; i++) {
 		const char *search = nm_ip6_config_get_search (config, i);

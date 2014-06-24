@@ -119,7 +119,7 @@ ip4_addresses_with_prefix_to_strv (GBinding     *binding,
                                    gpointer      user_data)
 {
 	GPtrArray *addrs;
-	GArray *addr;
+	NMIP4Address *addr;
 	guint32 addrbytes, prefix;
 	char buf[INET_ADDRSTRLEN], **strings;
 	int i;
@@ -129,8 +129,8 @@ ip4_addresses_with_prefix_to_strv (GBinding     *binding,
 
 	for (i = 0; i < addrs->len; i++) {
 		addr = addrs->pdata[i];
-		addrbytes = g_array_index (addr, guint32, 0);
-		prefix = g_array_index (addr, guint32, 1);
+		addrbytes = nm_ip4_address_get_address (addr);
+		prefix = nm_ip4_address_get_prefix (addr);
 
 		if (addrbytes) {
 			strings[i] = g_strdup_printf ("%s/%d",
@@ -152,8 +152,8 @@ ip4_addresses_with_prefix_from_strv (GBinding     *binding,
 {
 	char **strings;
 	GPtrArray *addrs;
-	GArray *addr;
-	guint32 *addrvals;
+	NMIP4Address *addr;
+	guint32 addrbytes, prefix;
 	int i;
 
 	strings = g_value_get_boxed (source_value);
@@ -164,24 +164,19 @@ ip4_addresses_with_prefix_from_strv (GBinding     *binding,
 
 	for (i = 0; strings[i]; i++) {
 		if (i >= addrs->len) {
-			guint32 val;
-
-			addr = g_array_sized_new (FALSE, FALSE, sizeof (guint32), 3);
-			val = 0;
-			g_array_append_val (addr, val);
-			val = 32;
-			g_array_append_val (addr, val);
-			val = 0;
-			g_array_append_val (addr, val);
+			addr = nm_ip4_address_new ();
+			nm_ip4_address_set_prefix (addr, 32);
 			g_ptr_array_add (addrs, addr);
 		} else
 			addr = addrs->pdata[i];
-		addrvals = (guint32 *)addr->data;
 
-		if (!ip_string_parse (strings[i], AF_INET, &addrvals[0], &addrvals[1])) {
+		if (!ip_string_parse (strings[i], AF_INET, &addrbytes, &prefix)) {
 			g_ptr_array_unref (addrs);
 			return FALSE;
 		}
+
+		nm_ip4_address_set_address (addr, addrbytes);
+		nm_ip4_address_set_prefix (addr, prefix);
 	}
 
 	g_ptr_array_set_size (addrs, i);
@@ -199,16 +194,14 @@ ip4_addresses_with_prefix_from_strv (GBinding     *binding,
  *   (eg, "strings")
  * @flags: %GBindingFlags
  *
- * Binds the %DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT property
- * @source_property on @source to the %G_TYPE_STRV property
- * @target_property on @target.
+ * Binds the #GPtrArray-of-#NMIP4Address property @source_property on @source to
+ * the %G_TYPE_STRV property @target_property on @target.
  *
- * Each address/prefix/gateway triplet in @source_property will be
- * converted to a string of the form "ip.ad.dr.ess/prefix" in
- * @target_property (and vice versa if %G_BINDING_BIDIRECTIONAL) is
- * specified. The "gateway" fields in @source_property are ignored
- * when converting to strings, and unmodified when converting from
- * strings.
+ * Each #NMIP4Address in @source_property will be converted to a string of the
+ * form "ip.ad.dr.ess/prefix" in @target_property (and vice versa if
+ * %G_BINDING_BIDIRECTIONAL) is specified. The "gateway" fields in
+ * @source_property are ignored when converting to strings, and unmodified when
+ * converting from strings.
  */
 void
 nm_editor_bind_ip4_addresses_with_prefix_to_strv (gpointer       source,
@@ -226,55 +219,23 @@ nm_editor_bind_ip4_addresses_with_prefix_to_strv (gpointer       source,
 }
 
 static gboolean
-ip4_addresses_to_strv (GBinding     *binding,
-                       const GValue *source_value,
-                       GValue       *target_value,
-                       gpointer      user_data)
-{
-	GArray *addrs;
-	guint32 addrbytes;
-	char buf[INET_ADDRSTRLEN], **strings;
-	int i;
-
-	addrs = g_value_get_boxed (source_value);
-	strings = g_new0 (char *, addrs->len + 1);
-
-	for (i = 0; i < addrs->len; i++) {
-		addrbytes = g_array_index (addrs, guint32, i);
-		if (addrbytes)
-			inet_ntop (AF_INET, &addrbytes, buf, sizeof (buf));
-		else
-			buf[0] = '\0';
-		strings[i] = g_strdup (buf);
-	}
-
-	g_value_take_boxed (target_value, strings);
-	return TRUE;
-}
-
-static gboolean
-ip4_addresses_from_strv (GBinding     *binding,
-                         const GValue *source_value,
-                         GValue       *target_value,
-                         gpointer      user_data)
+ip4_addresses_check_and_copy (GBinding     *binding,
+                              const GValue *source_value,
+                              GValue       *target_value,
+                              gpointer      user_data)
 {
 	char **strings;
-	GArray *addrs;
 	guint32 addr;
 	int i;
 
 	strings = g_value_get_boxed (source_value);
-	addrs = g_array_new (FALSE, FALSE, sizeof (guint32));
 
 	for (i = 0; strings[i]; i++) {
-		if (!ip_string_parse (strings[i], AF_INET, &addr, NULL)) {
-			g_array_unref (addrs);
+		if (!ip_string_parse (strings[i], AF_INET, &addr, NULL))
 			return FALSE;
-		}
-		g_array_append_val (addrs, addr);
 	}
 
-	g_value_take_boxed (target_value, addrs);
+	g_value_set_boxed (target_value, strings);
 	return TRUE;
 }
 
@@ -288,12 +249,9 @@ ip4_addresses_from_strv (GBinding     *binding,
  *   (eg, "strings")
  * @flags: %GBindingFlags
  *
- * Binds the %DBUS_TYPE_G_UINT_ARRAY property @source_property on
- * @source to the %G_TYPE_STRV property @target_property on @target.
- *
- * Each address in @source_property will be converted to a string of
- * the form "ip.ad.dr.ess" in @target_property (and vice versa if
- * %G_BINDING_BIDIRECTIONAL) is specified.
+ * Binds the %G_TYPE_STRV property @source_property on @source to the
+ * %G_TYPE_STRV property @target_property on @target, verifying that
+ * each string is a valid IPv4 address when copying.
  */
 void
 nm_editor_bind_ip4_addresses_to_strv (gpointer       source,
@@ -305,8 +263,8 @@ nm_editor_bind_ip4_addresses_to_strv (gpointer       source,
 	g_object_bind_property_full (source, source_property,
 	                             target, target_property,
 	                             flags,
-	                             ip4_addresses_to_strv,
-	                             ip4_addresses_from_strv,
+	                             ip4_addresses_check_and_copy,
+	                             ip4_addresses_check_and_copy,
 	                             NULL, NULL);
 }
 
@@ -317,7 +275,7 @@ ip4_gateway_to_string (GBinding     *binding,
                        gpointer      user_data)
 {
 	GPtrArray *addrs;
-	GArray *addr;
+	NMIP4Address *addr;
 	guint32 gateway = 0;
 	const char *str;
 	char buf[INET_ADDRSTRLEN];
@@ -326,7 +284,7 @@ ip4_gateway_to_string (GBinding     *binding,
 	addrs = g_value_get_boxed (source_value);
 	for (i = 0; i < addrs->len; i++) {
 		addr = addrs->pdata[i];
-		gateway = g_array_index (addr, guint32, 2);
+		gateway = nm_ip4_address_get_gateway (addr);
 		if (gateway)
 			break;
 	}
@@ -347,8 +305,8 @@ ip4_gateway_from_string (GBinding     *binding,
 {
 	const char *text;
 	GPtrArray *addrs;
-	GArray *addr;
-	guint32 addrbytes, *addrvals;
+	NMIP4Address *addr;
+	guint32 addrbytes;
 	int i;
 
 	text = g_value_get_string (source_value);
@@ -364,17 +322,15 @@ ip4_gateway_from_string (GBinding     *binding,
 		return FALSE;
 	}
 	addr = addrs->pdata[0];
-	addrvals = (guint32 *)addr->data;
-	if (addrbytes == addrvals[2]) {
+	if (addrbytes == nm_ip4_address_get_gateway (addr)) {
 		g_ptr_array_unref (addrs);
 		return FALSE;
 	}
-	addrvals[2] = addrbytes;
+	nm_ip4_address_set_gateway (addr, addrbytes);
 
 	for (i = 1; i < addrs->len; i++) {
 	     addr = addrs->pdata[i];
-	     addrvals = (guint32 *)addr->data;
-	     addrvals[2] = 0;
+	     nm_ip4_address_set_gateway (addr, 0);
 	}
 
 	g_value_take_boxed (target_value, addrs);
@@ -391,13 +347,12 @@ ip4_gateway_from_string (GBinding     *binding,
  *   (eg, "text")
  * @flags: %GBindingFlags
  *
- * Binds the %DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT property
- * @source_property on @source to the %G_TYPE_STRING property
- * @target_property on @target.
+ * Binds the #GPtrArray-of-#NMIP4Route property @source_property on @source to
+ * the %G_TYPE_STRING property @target_property on @target.
  *
- * Specifically, this binds the "gateway" field of the first address
- * in @source_property; all other addresses in @source_property are
- * ignored, and its "address" and "prefix" fields are unmodified.
+ * Specifically, this binds the "gateway" field of the first address in
+ * @source_property; all other addresses in @source_property are ignored, and
+ * its "address" and "prefix" fields are unmodified.
  */
 void
 nm_editor_bind_ip4_gateway_to_string (gpointer       source,
@@ -572,13 +527,13 @@ ip4_route_transform_from_metric_string (GBinding     *binding,
  * @metric_target_property: the property on @metric_target
  * @flags: %GBindingFlags
  *
- * Binds the #NMIP4Route-valued property @source_property on @source
- * to the three indicated string-valued target properties (and vice
- * versa if %G_BINDING_BIDIRECTIONAL is specified).
+ * Binds the #NMIP4Route-valued property @source_property on @source to the
+ * three indicated string-valued target properties (and vice versa if
+ * %G_BINDING_BIDIRECTIONAL is specified).
  *
  * @dest_target_property should be an "address/prefix" string, as with
- * nm_editor_bind_ip4_addresses_with_prefix_to_strv(). @next_hop_target
- * is a plain IP address, and @metric_target is a number.
+ * nm_editor_bind_ip4_addresses_with_prefix_to_strv(). @next_hop_target_property
+ * is a plain IP address, and @metric_target_property is a number.
  */
 void
 nm_editor_bind_ip4_route_to_strings (gpointer       source,
@@ -612,8 +567,7 @@ nm_editor_bind_ip4_route_to_strings (gpointer       source,
 }
 
 #define IP6_ADDRESS_SET(addr) (   addr	  \
-                               && addr->len == sizeof (struct in6_addr) \
-                               && memcmp (addr->data, &in6addr_any, addr->len) != 0)
+                               && memcmp (addr, &in6addr_any, sizeof (struct in6_addr)) != 0)
 
 static gboolean
 ip6_addresses_with_prefix_to_strv (GBinding     *binding,
@@ -622,9 +576,8 @@ ip6_addresses_with_prefix_to_strv (GBinding     *binding,
                                    gpointer      user_data)
 {
 	GPtrArray *addrs;
-	GValueArray *addr;
-	GValue *val;
-	GByteArray *addrbytes;
+	NMIP6Address *addr;
+	const struct in6_addr *addrbytes;
 	guint prefix;
 	char **strings, buf[INET6_ADDRSTRLEN];
 	int i;
@@ -634,14 +587,12 @@ ip6_addresses_with_prefix_to_strv (GBinding     *binding,
 
 	for (i = 0; i < addrs->len; i++) {
 		addr = addrs->pdata[i];
-		val = g_value_array_get_nth (addr, 0);
-		addrbytes = g_value_get_boxed (val);
-		val = g_value_array_get_nth (addr, 1);
-		prefix = g_value_get_uint (val);
+		addrbytes = nm_ip6_address_get_address (addr);
+		prefix = nm_ip6_address_get_prefix (addr);
 
 		if (IP6_ADDRESS_SET (addrbytes)) {
 			strings[i] = g_strdup_printf ("%s/%d",
-			                              inet_ntop (AF_INET6, addrbytes->data, buf, sizeof (buf)),
+			                              inet_ntop (AF_INET6, addrbytes, buf, sizeof (buf)),
 			                              prefix);
 		} else
 			strings[i] = g_strdup ("");
@@ -659,10 +610,9 @@ ip6_addresses_with_prefix_from_strv (GBinding     *binding,
 {
 	char **strings;
 	GPtrArray *addrs;
-	GValueArray *addr;
+	NMIP6Address *addr;
+	struct in6_addr addrbytes;
 	guint32 prefix;
-	GValue val = G_VALUE_INIT, *valp;
-	GByteArray *ba;
 	int i;
 
 	strings = g_value_get_boxed (source_value);
@@ -674,42 +624,19 @@ ip6_addresses_with_prefix_from_strv (GBinding     *binding,
 
 	for (i = 0; strings[i]; i++) {
 		if (i >= addrs->len) {
-			addr = g_value_array_new (3);
-
-			g_value_init (&val, DBUS_TYPE_G_UCHAR_ARRAY);
-			ba = g_byte_array_sized_new (sizeof (struct in6_addr));
-			g_byte_array_append (ba, (guint8 *) &in6addr_any, sizeof (struct in6_addr));
-			g_value_take_boxed (&val, ba);
-			g_value_array_append (addr, &val);
-			g_value_unset (&val);
-
-			g_value_init (&val, G_TYPE_UINT);
-			g_value_set_uint (&val, 128);
-			g_value_array_append (addr, &val);
-			g_value_unset (&val);
-
-			g_value_init (&val, DBUS_TYPE_G_UCHAR_ARRAY);
-			ba = g_byte_array_sized_new (sizeof (struct in6_addr));
-			g_byte_array_append (ba, (guint8 *) &in6addr_any, sizeof (struct in6_addr));
-			g_value_take_boxed (&val, ba);
-			g_value_array_append (addr, &val);
-			g_value_unset (&val);
-
+			addr = nm_ip6_address_new ();
+			nm_ip6_address_set_prefix (addr, 128);
 			g_ptr_array_add (addrs, addr);
 		} else
 			addr = addrs->pdata[i];
 
-		valp = g_value_array_get_nth (addr, 0);
-		ba = g_value_get_boxed (valp);
-		g_assert (ba->len == sizeof (struct in6_addr));
-
-		if (!ip_string_parse (strings[i], AF_INET6, ba->data, &prefix)) {
+		if (!ip_string_parse (strings[i], AF_INET6, &addrbytes, &prefix)) {
 			g_ptr_array_unref (addrs);
 			return FALSE;
 		}
 
-		valp = g_value_array_get_nth (addr, 1);
-		g_value_set_uint (valp, prefix);
+		nm_ip6_address_set_address (addr, &addrbytes);
+		nm_ip6_address_set_prefix (addr, prefix);
 	}
 
 	g_ptr_array_set_size (addrs, i);
@@ -727,16 +654,14 @@ ip6_addresses_with_prefix_from_strv (GBinding     *binding,
  *   (eg, "strings")
  * @flags: %GBindingFlags
  *
- * Binds the %DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS property
- * @source_property on @source to the %G_TYPE_STRV property
- * @target_property on @target.
+ * Binds the #GPtrArray-of-#NMIP6Address property @source_property on @source to
+ * the %G_TYPE_STRV property @target_property on @target.
  *
- * Each address/prefix/gateway triplet in @source_property will be
- * converted to a string of the form "ip::ad:dr:ess/prefix" in
- * @target_property (and vice versa if %G_BINDING_BIDIRECTIONAL) is
- * specified. The "gateway" fields in @source_property are ignored
- * when converting to strings, and unmodified when converting from
- * strings.
+ * Each #NMIP6Address in triplet in @source_property will be converted to a
+ * string of the form "ip::ad:dr:ess/prefix" in @target_property (and vice versa
+ * if %G_BINDING_BIDIRECTIONAL) is specified. The "gateway" fields in
+ * @source_property are ignored when converting to strings, and unmodified when
+ * converting from strings.
  */
 void
 nm_editor_bind_ip6_addresses_with_prefix_to_strv (gpointer       source,
@@ -754,61 +679,23 @@ nm_editor_bind_ip6_addresses_with_prefix_to_strv (gpointer       source,
 }
 
 static gboolean
-ip6_addresses_to_strv (GBinding     *binding,
-                       const GValue *source_value,
-                       GValue       *target_value,
-                       gpointer      user_data)
-{
-	GPtrArray *addrs;
-	GByteArray *addrbytes;
-	char buf[INET6_ADDRSTRLEN], **strings;
-	int i;
-
-	addrs = g_value_get_boxed (source_value);
-	strings = g_new0 (char *, addrs->len + 1);
-
-	for (i = 0; i < addrs->len; i++) {
-		addrbytes = addrs->pdata[i];
-		if (IP6_ADDRESS_SET (addrbytes))
-			inet_ntop (AF_INET6, addrbytes->data, buf, sizeof (buf));
-		else
-			buf[0] = '\0';
-		strings[i] = g_strdup (buf);
-	}
-
-	g_value_take_boxed (target_value, strings);
-	return TRUE;
-}
-
-static gboolean
-ip6_addresses_from_strv (GBinding     *binding,
-                         const GValue *source_value,
-                         GValue       *target_value,
-                         gpointer      user_data)
+ip6_addresses_check_and_copy (GBinding     *binding,
+                              const GValue *source_value,
+                              GValue       *target_value,
+                              gpointer      user_data)
 {
 	char **strings;
-	GPtrArray *addrs;
-	GByteArray *addr;
-	struct in6_addr addrbytes;
+	struct in6_addr addr;
 	int i;
 
 	strings = g_value_get_boxed (source_value);
-	addrs = g_ptr_array_new ();
 
 	for (i = 0; strings[i]; i++) {
-		if (!ip_string_parse (strings[i], AF_INET6, &addrbytes, NULL)) {
-			while (i--)
-				g_byte_array_unref (addrs->pdata[i]);
-			g_ptr_array_unref (addrs);
+		if (!ip_string_parse (strings[i], AF_INET6, &addr, NULL))
 			return FALSE;
-		}
-
-		addr = g_byte_array_sized_new (sizeof (addrbytes));
-		g_byte_array_append (addr, (guint8 *)&addrbytes, sizeof (addrbytes));
-		g_ptr_array_add (addrs, addr);
 	}
 
-	g_value_take_boxed (target_value, addrs);
+	g_value_set_boxed (target_value, strings);
 	return TRUE;
 }
 
@@ -822,13 +709,9 @@ ip6_addresses_from_strv (GBinding     *binding,
  *   (eg, "strings")
  * @flags: %GBindingFlags
  *
- * Binds the %DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR property
- * @source_property on @source to the %G_TYPE_STRV property
- * @target_property on @target.
- *
- * Each address in @source_property will be converted to a string of
- * the form "ip::ad:dr:ess" in @target_property (and vice versa if
- * %G_BINDING_BIDIRECTIONAL) is specified.
+ * Binds the %G_TYPE_STRV property @source_property on @source to the
+ * %G_TYPE_STRV property @target_property on @target, verifying that
+ * each string is a valid IPv6 address when copying.
  */
 void
 nm_editor_bind_ip6_addresses_to_strv (gpointer       source,
@@ -840,8 +723,8 @@ nm_editor_bind_ip6_addresses_to_strv (gpointer       source,
 	g_object_bind_property_full (source, source_property,
 	                             target, target_property,
 	                             flags,
-	                             ip6_addresses_to_strv,
-	                             ip6_addresses_from_strv,
+	                             ip6_addresses_check_and_copy,
+	                             ip6_addresses_check_and_copy,
 	                             NULL, NULL);
 }
 
@@ -852,9 +735,8 @@ ip6_gateway_to_string (GBinding     *binding,
                        gpointer      user_data)
 {
 	GPtrArray *addrs;
-	GValueArray *addr;
-	GValue *val;
-	GByteArray *gateway;
+	NMIP6Address *addr;
+	const struct in6_addr *gateway;
 	char buf[INET6_ADDRSTRLEN];
 	const char *str;
 
@@ -863,11 +745,10 @@ ip6_gateway_to_string (GBinding     *binding,
 		return FALSE;
 
 	addr = addrs->pdata[0];
-	val = g_value_array_get_nth (addr, 2);
-	gateway = g_value_get_boxed (val);
+	gateway = nm_ip6_address_get_gateway (addr);
 
 	if (IP6_ADDRESS_SET (gateway))
-		str = inet_ntop (AF_INET6, gateway->data, buf, sizeof (buf));
+		str = inet_ntop (AF_INET6, gateway, buf, sizeof (buf));
 	else
 		str = "";
 	g_value_set_string (target_value, str);
@@ -882,10 +763,8 @@ ip6_gateway_from_string (GBinding     *binding,
 {
 	GPtrArray *addrs;
 	const char *text;
-	GValueArray *addr;
+	NMIP6Address *addr;
 	struct in6_addr gateway;
-	GValue *val;
-	GByteArray *ba;
 	int i;
 
 	text = g_value_get_string (source_value);
@@ -902,20 +781,11 @@ ip6_gateway_from_string (GBinding     *binding,
 	}
 
 	addr = addrs->pdata[0];
-
-	ba = g_byte_array_sized_new (sizeof (gateway));
-	g_byte_array_append (ba, (guint8 *) &gateway, sizeof (gateway));
-
-	val = g_value_array_get_nth (addr, 2);
-	g_value_take_boxed (val, ba);
+	nm_ip6_address_set_gateway (addr, &gateway);
 
 	for (i = 1; i < addrs->len; i++) {
 		addr = addrs->pdata[i];
-		val = g_value_array_get_nth (addr, 2);
-		ba = g_value_get_boxed (val);
-
-		if (ba)
-			memset (ba->data, 0, ba->len);
+		nm_ip6_address_set_gateway (addr, &in6addr_any);
 	}
 
 	g_value_take_boxed (target_value, addrs);
@@ -932,13 +802,12 @@ ip6_gateway_from_string (GBinding     *binding,
  *   (eg, "text")
  * @flags: %GBindingFlags
  *
- * Binds the %DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS property
- * @source_property on @source to the %G_TYPE_STRING property
- * @target_property on @target.
+ * Binds the #GPtrArray-of-#NMIP6Address property @source_property on @source to
+ * the %G_TYPE_STRING property @target_property on @target.
  *
- * Specifically, this binds the "gateway" field of the first address
- * in @source_property; all other addresses in @source_property are
- * ignored, and its "address" and "prefix" fields are unmodified.
+ * Specifically, this binds the "gateway" field of the first address in
+ * @source_property; all other addresses in @source_property are ignored, and
+ * its "address" and "prefix" fields are unmodified.
  */
 void
 nm_editor_bind_ip6_gateway_to_string (gpointer       source,
@@ -954,8 +823,6 @@ nm_editor_bind_ip6_gateway_to_string (gpointer       source,
 	                             ip6_gateway_from_string,
 	                             NULL, NULL);
 }
-
-#define IN6_ADDR_SET(bytes) (memcmp (bytes, &in6addr_any, sizeof (struct in6_addr)) != 0)
 
 static gboolean
 ip6_route_transform_to_dest_string (GBinding     *binding,
@@ -973,7 +840,7 @@ ip6_route_transform_to_dest_string (GBinding     *binding,
 	else
 		addrbytes = &in6addr_any;
 
-	if (IN6_ADDR_SET (addrbytes)) {
+	if (IP6_ADDRESS_SET (addrbytes)) {
 		string = g_strdup_printf ("%s/%d",
 		                          inet_ntop (AF_INET6, addrbytes, buf, sizeof (buf)),
 		                          (int) nm_ip6_route_get_prefix (route));
@@ -999,7 +866,7 @@ ip6_route_transform_to_next_hop_string (GBinding     *binding,
 	else
 		addrbytes = &in6addr_any;
 
-	if (IN6_ADDR_SET (addrbytes))
+	if (IP6_ADDRESS_SET (addrbytes))
 		inet_ntop (AF_INET6, addrbytes, buf, sizeof (buf));
 	else
 		buf[0] = '\0';
@@ -1017,7 +884,7 @@ ip6_route_transform_to_metric_string (GBinding     *binding,
 	char *string;
 
 	route = g_value_get_boxed (source_value);
-	if (route && IN6_ADDR_SET (nm_ip6_route_get_dest (route))) {
+	if (route && IP6_ADDRESS_SET (nm_ip6_route_get_dest (route))) {
 		string = g_strdup_printf ("%lu", (gulong) nm_ip6_route_get_metric (route));
 		g_value_take_string (target_value, string);
 	} else

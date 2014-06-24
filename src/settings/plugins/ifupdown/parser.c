@@ -447,7 +447,7 @@ ifupdown_ip4_add_dns (NMSettingIP4Config *s_ip4, const char *dns)
 			continue;
 		}
 
-		if (!nm_setting_ip4_config_add_dns (s_ip4, addr))
+		if (!nm_setting_ip4_config_add_dns (s_ip4, *iter))
 			nm_log_warn (LOGD_SETTINGS, "    duplicate DNS domain '%s'", *iter);
 	}
 	g_strfreev (list);
@@ -582,7 +582,7 @@ ifupdown_ip6_add_dns (NMSettingIP6Config *s_ip6, const char *dns)
 			continue;
 		}
 
-		if (!nm_setting_ip6_config_add_dns (s_ip6, &addr))
+		if (!nm_setting_ip6_config_add_dns (s_ip6, *iter))
 			nm_log_warn (LOGD_SETTINGS, "    duplicate DNS domain '%s'", *iter);
 	}
 	g_strfreev (list);

@@ -146,12 +146,6 @@ test_read_valid_wired_connection (void)
 	const char *expected_uuid = "4e80a56d-c99f-4aad-a6dd-b449bc398c57";
 	const guint64 expected_timestamp = 6654332;
 	guint64 timestamp;
-	const char *expected_dns1 = "4.2.2.1";
-	const char *expected_dns2 = "4.2.2.2";
-	guint32 addr;
-	struct in6_addr addr6;
-	const char *expected6_dns1 = "1111:dddd::aaaa";
-	const char *expected6_dns2 = "1::cafe";
 	const char *expected6_dnssearch1 = "super-domain.com";
 	const char *expected6_dnssearch2 = "redhat.com";
 	const char *expected6_dnssearch3 = "gnu.org";
@@ -291,23 +285,13 @@ test_read_valid_wired_connection (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET, expected_dns1, &addr) > 0,
-	        "connection-verify-wired", "failed to verify %s: couldn't convert DNS IP address #1",
-	        TEST_WIRED_FILE,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr,
+	ASSERT (strcmp (nm_setting_ip4_config_get_dns (s_ip4, 0), "4.2.2.1") == 0,
 	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_WIRED_FILE,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET, expected_dns2, &addr) > 0,
-	        "connection-verify-wired", "failed to verify %s: couldn't convert DNS IP address #2",
-	        TEST_WIRED_FILE,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr,
+	ASSERT (strcmp (nm_setting_ip4_config_get_dns (s_ip4, 1), "4.2.2.2") == 0,
 	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_WIRED_FILE,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -360,23 +344,13 @@ test_read_valid_wired_connection (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET6, expected6_dns1, &addr6) > 0,
-	        "connection-verify-wired", "failed to verify %s: couldn't convert DNS IP6 address #1",
-	        TEST_WIRED_FILE,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_DNS);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 0), &addr6),
+	ASSERT (strcmp (nm_setting_ip6_config_get_dns (s_ip6, 0), "1111:dddd::aaaa") == 0,
 	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_WIRED_FILE,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET6, expected6_dns2, &addr6) > 0,
-	        "connection-verify-wired", "failed to verify %s: couldn't convert DNS IP address #2",
-	        TEST_WIRED_FILE,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_DNS);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 1), &addr6),
+	ASSERT (strcmp (nm_setting_ip6_config_get_dns (s_ip6, 1), "1::cafe") == 0,
 	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_WIRED_FILE,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
@@ -541,8 +515,6 @@ test_write_wired_connection (void)
 	GError *error = NULL;
 	pid_t owner_grp;
 	uid_t owner_uid;
-	guint32 addr;
-	struct in6_addr addr6;
 	const char *dns1 = "4.2.2.1";
 	const char *dns2 = "4.2.2.2";
 	const char *address1 = "192.168.0.5";
@@ -618,10 +590,8 @@ test_write_wired_connection (void)
 	add_one_ip4_route (s_ip4, route4, route4_nh, 6, 4);
 
 	/* DNS servers */
-	inet_pton (AF_INET, dns1, &addr);
-	nm_setting_ip4_config_add_dns (s_ip4, addr);
-	inet_pton (AF_INET, dns2, &addr);
-	nm_setting_ip4_config_add_dns (s_ip4, addr);
+	nm_setting_ip4_config_add_dns (s_ip4, dns1);
+	nm_setting_ip4_config_add_dns (s_ip4, dns2);
 
 	/* IP6 setting */
 
@@ -643,10 +613,8 @@ test_write_wired_connection (void)
 	add_one_ip6_route (s_ip6, route6_4, route6_4_nh, 62, 0);
 
 	/* DNS servers */
-	inet_pton (AF_INET6, dns6_1, &addr6);
-	nm_setting_ip6_config_add_dns (s_ip6, &addr6);
-	inet_pton (AF_INET6, dns6_2, &addr6);
-	nm_setting_ip6_config_add_dns (s_ip6, &addr6);
+	nm_setting_ip6_config_add_dns (s_ip6, dns6_1);
+	nm_setting_ip6_config_add_dns (s_ip6, dns6_2);
 
 	/* DNS searches */
 	nm_setting_ip6_config_add_dns_search (s_ip6, "wallaceandgromit.com");
@@ -801,7 +769,6 @@ test_write_ip6_wired_connection (void)
 	GError *error = NULL;
 	pid_t owner_grp;
 	uid_t owner_uid;
-	struct in6_addr addr6;
 	const char *dns = "1::cafe";
 	const char *address = "abcd::beef";
 	const char *gw = "dcba::beef";
@@ -849,8 +816,7 @@ test_write_ip6_wired_connection (void)
 	add_one_ip6_address (s_ip6, address, 64, gw);
 
 	/* DNS servers */
-	inet_pton (AF_INET6, dns, &addr6);
-	nm_setting_ip6_config_add_dns (s_ip6, &addr6);
+	nm_setting_ip6_config_add_dns (s_ip6, dns);
 
 	/* DNS searches */
 	nm_setting_ip6_config_add_dns_search (s_ip6, "wallaceandgromit.com");

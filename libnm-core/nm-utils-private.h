@@ -44,6 +44,32 @@ void        _nm_utils_strdict_to_dbus   (const GValue *prop_value,
 void        _nm_utils_strdict_from_dbus (const GValue *dbus_value,
                                          GValue *prop_value);
 
+void        _nm_utils_ip4_dns_to_dbus         (const GValue *prop_value,
+                                               GValue *dbus_value);
+void        _nm_utils_ip4_dns_from_dbus       (const GValue *dbus_value,
+                                               GValue *prop_value);
+void        _nm_utils_ip4_addresses_to_dbus   (const GValue *prop_value,
+                                               GValue *dbus_value);
+void        _nm_utils_ip4_addresses_from_dbus (const GValue *dbus_value,
+                                               GValue *prop_value);
+void        _nm_utils_ip4_routes_to_dbus      (const GValue *prop_value,
+                                               GValue *dbus_value);
+void        _nm_utils_ip4_routes_from_dbus    (const GValue *dbus_value,
+                                               GValue *prop_value);
+
+void        _nm_utils_ip6_dns_to_dbus         (const GValue *prop_value,
+                                               GValue *dbus_value);
+void        _nm_utils_ip6_dns_from_dbus       (const GValue *dbus_value,
+                                               GValue *prop_value);
+void        _nm_utils_ip6_addresses_to_dbus   (const GValue *prop_value,
+                                               GValue *dbus_value);
+void        _nm_utils_ip6_addresses_from_dbus (const GValue *dbus_value,
+                                               GValue *prop_value);
+void        _nm_utils_ip6_routes_to_dbus      (const GValue *prop_value,
+                                               GValue *dbus_value);
+void        _nm_utils_ip6_routes_from_dbus    (const GValue *dbus_value,
+                                               GValue *prop_value);
+
 GSList *    _nm_utils_strv_to_slist (char **strv);
 char **     _nm_utils_slist_to_strv (GSList *slist);
 

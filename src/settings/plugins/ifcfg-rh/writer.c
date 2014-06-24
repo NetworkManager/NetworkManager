@@ -1955,19 +1955,15 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	num = nm_setting_ip4_config_get_num_dns (s_ip4);
 	for (i = 0; i < 254; i++) {
-		char buf[INET_ADDRSTRLEN + 1];
-		guint32 ip;
+		const char *dns;
 
 		addr_key = g_strdup_printf ("DNS%d", i + 1);
 
 		if (i >= num)
 			svSetValue (ifcfg, addr_key, NULL, FALSE);
 		else {
-			ip = nm_setting_ip4_config_get_dns (s_ip4, i);
-
-			memset (buf, 0, sizeof (buf));
-			inet_ntop (AF_INET, (const void *) &ip, &buf[0], sizeof (buf));
-			svSetValue (ifcfg, addr_key, &buf[0], FALSE);
+			dns = nm_setting_ip4_config_get_dns (s_ip4, i);
+			svSetValue (ifcfg, addr_key, dns, FALSE);
 		}
 		g_free (addr_key);
 	}
@@ -2278,6 +2274,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	char ipv6_defaultgw[INET6_ADDRSTRLEN];
 	NMIP6Address *addr;
 	const struct in6_addr *ip;
+	const char *dns;
 	GString *ip_str1, *ip_str2, *ip_ptr;
 	char *route6_path;
 
@@ -2372,11 +2369,8 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		if (i >= num)
 			svSetValue (ifcfg, addr_key, NULL, FALSE);
 		else {
-			ip = nm_setting_ip6_config_get_dns (s_ip6, i);
-
-			memset (buf, 0, sizeof (buf));
-			inet_ntop (AF_INET6, (const void *) ip, buf, sizeof (buf));
-			svSetValue (ifcfg, addr_key, buf, FALSE);
+			dns = nm_setting_ip6_config_get_dns (s_ip6, i);
+			svSetValue (ifcfg, addr_key, dns, FALSE);
 		}
 		g_free (addr_key);
 	}

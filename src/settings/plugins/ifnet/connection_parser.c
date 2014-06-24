@@ -2438,15 +2438,10 @@ write_ip4_setting (NMConnection *connection, const char *conn_name, GError **err
 	if (num > 0) {
 		dns = g_string_new (NULL);
 		for (i = 0; i < num; i++) {
-			char buf[INET_ADDRSTRLEN + 1];
-			guint32 ip;
+			const char *ip;
 
 			ip = nm_setting_ip4_config_get_dns (s_ip4, i);
-
-			memset (buf, 0, sizeof (buf));
-			inet_ntop (AF_INET, (const void *) &ip, &buf[0],
-				   sizeof (buf));
-			g_string_append_printf (dns, " %s", buf);
+			g_string_append_printf (dns, " %s", ip);
 		}
 		ifnet_set_data (conn_name, "dns_servers", dns->str);
 		g_string_free (dns, TRUE);
@@ -2652,17 +2647,15 @@ write_ip6_setting (NMConnection *connection, const char *conn_name, GError **err
 		const char *dns_servers = ifnet_get_data (conn_name, "dns_servers");
 		gchar *tmp;
 		GString *dns_string = g_string_new (NULL);
+		const char *dns;
 
 		if (!dns_servers)
 			dns_servers = "";
 		for (i = 0; i < num; i++) {
-			ip = nm_setting_ip6_config_get_dns (s_ip6, i);
+			dns = nm_setting_ip6_config_get_dns (s_ip6, i);
 
-			memset (buf, 0, sizeof (buf));
-			inet_ntop (AF_INET6, (const void *) ip, buf,
-				   sizeof (buf));
-			if (!strstr (dns_servers, buf))
-				g_string_append_printf (dns_string, "%s ", buf);
+			if (!strstr (dns_servers, dns))
+				g_string_append_printf (dns_string, "%s ", dns);
 		}
 		tmp = g_strdup_printf ("%s %s", dns_servers, dns_string->str);
 		ifnet_set_data (conn_name, "dns_servers", tmp);

@@ -367,10 +367,10 @@ ip4_setting_add_from_block (const GPtrArray *block,
 	nm_setting_ip4_config_add_address (s_ip4, addr);
 	nm_ip4_address_unref (addr);
 
-	if (dns1)
-		nm_setting_ip4_config_add_dns (s_ip4, dns1);
-	if (dns2)
-		nm_setting_ip4_config_add_dns (s_ip4, dns2);
+	if (s_dns1)
+		nm_setting_ip4_config_add_dns (s_ip4, s_dns1);
+	if (s_dns2)
+		nm_setting_ip4_config_add_dns (s_ip4, s_dns2);
 
 success:
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));

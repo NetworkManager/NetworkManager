@@ -160,8 +160,8 @@ test_read_ibft_static (void)
 	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	g_assert_cmpint (nm_setting_ip4_config_get_num_dns (s_ip4), ==, 2);
-	nmtst_assert_ip4_address_equals (nm_setting_ip4_config_get_dns (s_ip4, 0), "10.16.255.2");
-	nmtst_assert_ip4_address_equals (nm_setting_ip4_config_get_dns (s_ip4, 1), "10.16.255.3");
+	g_assert_cmpstr (nm_setting_ip4_config_get_dns (s_ip4, 0), ==, "10.16.255.2");
+	g_assert_cmpstr (nm_setting_ip4_config_get_dns (s_ip4, 1), ==, "10.16.255.3");
 
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 1);
 	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);

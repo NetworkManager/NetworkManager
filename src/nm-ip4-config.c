@@ -367,8 +367,12 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 		nm_ip4_config_reset_domains (config);
 		nm_ip4_config_reset_searches (config);
 	}
-	for (i = 0; i < nnameservers; i++)
-		nm_ip4_config_add_nameserver (config, nm_setting_ip4_config_get_dns (setting, i));
+	for (i = 0; i < nnameservers; i++) {
+		guint32 ip;
+
+		if (inet_pton (AF_INET, nm_setting_ip4_config_get_dns (setting, i), &ip) == 1)
+			nm_ip4_config_add_nameserver (config, ip);
+	}
 	for (i = 0; i < nsearches; i++)
 		nm_ip4_config_add_search (config, nm_setting_ip4_config_get_dns_search (setting, i));
 
@@ -460,7 +464,7 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 	for (i = 0; i < nnameservers; i++) {
 		guint32 nameserver = nm_ip4_config_get_nameserver (config, i);
 
-		nm_setting_ip4_config_add_dns (s_ip4, nameserver);
+		nm_setting_ip4_config_add_dns (s_ip4, nm_utils_inet4_ntop (nameserver, NULL));
 	}
 	for (i = 0; i < nsearches; i++) {
 		const char *search = nm_ip4_config_get_search (config, i);
