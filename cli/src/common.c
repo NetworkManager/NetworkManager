@@ -1101,6 +1101,32 @@ nmc_cleanup_readline (void)
 	rl_cleanup_after_signal ();
 }
 
+
+static gboolean nmcli_in_readline = FALSE;
+static pthread_mutex_t readline_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+gboolean
+nmc_get_in_readline (void)
+{
+	gboolean in_readline;
+
+	pthread_mutex_lock (&readline_mutex);
+	in_readline = nmcli_in_readline;
+	pthread_mutex_unlock (&readline_mutex);
+	return in_readline;
+}
+
+void
+nmc_set_in_readline (gboolean in_readline)
+{
+	pthread_mutex_lock (&readline_mutex);
+	nmcli_in_readline = in_readline;
+	pthread_mutex_unlock (&readline_mutex);
+}
+
+/* Global variable defined in nmcli.c */
+extern NmCli nm_cli;
+
 /**
  * nmc_readline:
  * @prompt_fmt: prompt to print (telling user what to enter). It is standard
@@ -1108,6 +1134,9 @@ nmc_cleanup_readline (void)
  * @...: a list of arguments according to the @prompt_fmt format string
  *
  * Wrapper around libreadline's readline() function.
+ * If user pressed Ctrl-C, readline() is called again (if not in editor and
+ * line is empty, nmcli will quit).
+ * If user pressed Ctrl-D on empty line, nmcli will quit.
  *
  * Returns: the user provided string. In case the user entered empty string,
  * this function returns NULL.
@@ -1122,17 +1151,52 @@ nmc_readline (const char *prompt_fmt, ...)
 	prompt = g_strdup_vprintf (prompt_fmt, args);
 	va_end (args);
 
+readline_mark:
+	/* We are in readline -> Ctrl-C should not quit nmcli */
+	nmc_set_in_readline (TRUE);
 	str = readline (prompt);
+	/* We are outside readline -> Ctrl-C should quit nmcli */
+	nmc_set_in_readline (FALSE);
+
+	/* Add string to the history */
+	if (str && *str)
+		add_history (str);
+
+	/*-- React on Ctrl-C and Ctrl-D --*/
+	/* We quit on Ctrl-D when line is empty */
+	if (str == NULL) {
+		/* Send SIGQUIT to itself */
+		nmc_set_sigquit_internal ();
+		kill (getpid (), SIGQUIT);
+		/* Sleep in this thread so that we don't do anything else until exit */
+		for (;;)
+			sleep (3);
+	}
+	/* Ctrl-C */
+	if (nmc_seen_sigint ()) {
+		nmc_clear_sigint ();
+		if (nm_cli.in_editor || *str) {
+			/* In editor, or the line is not empty */
+			/* Call readline again to get new prompt (repeat) */
+			g_free (str);
+			goto readline_mark;
+		} else {
+			/* Not in editor and line is empty */
+			/* Send SIGQUIT to itself */
+			nmc_set_sigquit_internal ();
+			kill (getpid (), SIGQUIT);
+			/* Sleep in this thread so that we don't do anything else until exit */
+			for (;;)
+				sleep (3);
+		}
+	}
+	g_free (prompt);
+
 	/* Return NULL, not empty string */
 	if (str && *str == '\0') {
 		g_free (str);
 		str = NULL;
 	}
-
-	if (str && *str)
-		add_history (str);
-
-	g_free (prompt);
 	return str;
 }
 

@@ -28,6 +28,8 @@
 #include <signal.h>
 #include <pthread.h>
 #include <locale.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -270,6 +272,46 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 	return nmc->return_value;
 }
 
+static gboolean nmcli_sigint = FALSE;
+static pthread_mutex_t sigint_mutex = PTHREAD_MUTEX_INITIALIZER;
+static gboolean nmcli_sigquit_internal = FALSE;
+
+gboolean
+nmc_seen_sigint (void)
+{
+	gboolean sigint;
+
+	pthread_mutex_lock (&sigint_mutex);
+	sigint = nmcli_sigint;
+	pthread_mutex_unlock (&sigint_mutex);
+	return sigint;
+}
+
+void
+nmc_clear_sigint (void)
+{
+	pthread_mutex_lock (&sigint_mutex);
+	nmcli_sigint = FALSE;
+	pthread_mutex_unlock (&sigint_mutex);
+}
+
+void
+nmc_set_sigquit_internal (void)
+{
+	nmcli_sigquit_internal = TRUE;
+}
+
+static int
+event_hook_for_readline (void)
+{
+	/* Make readline() exit on SIGINT */
+	if (nmc_seen_sigint ()) {
+		rl_echo_signal_char (SIGINT);
+		rl_stuff_char ('\n');
+	}
+	return 0;
+}
+
 void *signal_handling_thread (void *arg);
 /*
  * Thread function waiting for signals and processing them.
@@ -287,10 +329,25 @@ signal_handling_thread (void *arg) {
 
 		switch (signo) {
 		case SIGINT:
+			if (nmc_get_in_readline ()) {
+				/* Don't quit when in readline, only signal we received SIGINT */
+				pthread_mutex_lock (&sigint_mutex);
+				nmcli_sigint = TRUE;
+				pthread_mutex_unlock (&sigint_mutex);
+			} else {
+				/* We can quit nmcli */
+				nmc_cleanup_readline ();
+				printf (_("\nError: nmcli terminated by signal %s (%d)\n"),
+				        strsignal (signo), signo);
+				exit (1);
+			}
+			break;
 		case SIGQUIT:
 		case SIGTERM:
 			nmc_cleanup_readline ();
-			printf (_("\nError: nmcli terminated by signal %d."), signo);
+			if (!nmcli_sigquit_internal)
+				printf (_("\nError: nmcli terminated by signal %s (%d)\n"),
+				        strsignal (signo), signo);
 			exit (1);
 			break;
 		default:
@@ -320,14 +377,14 @@ setup_signals (void)
 	/* Block all signals of interest. */
 	status = pthread_sigmask (SIG_BLOCK, &signal_set, NULL);
 	if (status != 0) {
-		fprintf (stderr, _("Failed to set signal mask: %d"), status);
+		fprintf (stderr, _("Failed to set signal mask: %d\n"), status);
 		return FALSE;
 	}
 
-       /* Create the signal handling thread. */
+	/* Create the signal handling thread. */
 	status = pthread_create (&signal_thread_id, NULL, signal_handling_thread, NULL);
 	if (status != 0) {
-		fprintf (stderr, _("Failed to create signal handling thread: %d"), status);
+		fprintf (stderr, _("Failed to create signal handling thread: %d\n"), status);
 		return FALSE;
 	}
 
@@ -375,6 +432,7 @@ nmc_init (NmCli *nmc)
 	memset (&nmc->print_fields, '\0', sizeof (NmcPrintFields));
 	nmc->nocheck_ver = FALSE;
 	nmc->ask = FALSE;
+	nmc->in_editor = FALSE;
 	nmc->editor_status_line = FALSE;
 	nmc->editor_save_confirmation = TRUE;
 	nmc->editor_prompt_color = NMC_TERM_COLOR_NORMAL;
@@ -430,6 +488,13 @@ main (int argc, char *argv[])
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif
+
+	/* readline init */
+	rl_event_hook = event_hook_for_readline;
+	/* Set 0.01s timeout to mitigate slowness in readline when a broken version is used.
+	 * See https://bugzilla.redhat.com/show_bug.cgi?id=1109946
+	 */
+	rl_set_keyboard_input_timeout (10000);
 
 	nmc_init (&nm_cli);
 	g_idle_add (start, &args_info);

@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2012 Red Hat, Inc.
+ * (C) Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 #ifndef NMC_NMCLI_H
@@ -128,6 +128,7 @@ typedef struct _NmCli {
 	NmcPrintFields print_fields;                      /* Structure with field indices to print */
 	gboolean nocheck_ver;                             /* Don't check nmcli and NM versions: option '--nocheck' */
 	gboolean ask;                                     /* Ask for missing parameters: option '--ask' */
+	gboolean in_editor;                               /* Whether running the editor - nmcli con edit' */
 	gboolean editor_status_line;                      /* Whether to display status line in connection editor */
 	gboolean editor_save_confirmation;                /* Whether to ask for confirmation on saving connections with 'autoconnect=yes' */
 	NmcTermColor editor_prompt_color;                 /* Color of prompt in connection editor */
@@ -136,5 +137,10 @@ typedef struct _NmCli {
 /* Error quark for GError domain */
 #define NMCLI_ERROR (nmcli_error_quark ())
 GQuark nmcli_error_quark (void);
+
+gboolean nmc_seen_sigint (void);
+void     nmc_clear_sigint (void);
+void     nmc_set_sigquit_internal (void);
+
 
 #endif /* NMC_NMCLI_H */
