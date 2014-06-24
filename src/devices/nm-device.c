@@ -4062,7 +4062,7 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 			nm_log_info (LOGD_DEVICE, "Activation (%s) connection '%s' waiting on master '%s'",
 			             nm_device_get_iface (self),
 			             nm_connection_get_id (nm_device_get_connection (self)),
-			             nm_device_get_iface (master_device));
+			             master_device ? nm_device_get_iface (master_device) : "(unknown)");
 		}
 		goto out;
 	}
