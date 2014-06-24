@@ -564,6 +564,36 @@ _nm_utils_hash_values_to_slist (GHashTable *hash)
 	return list;
 }
 
+void
+_nm_utils_strdict_to_dbus (const GValue *prop_value,
+                           GValue *dbus_value)
+{
+	g_value_set_boxed (dbus_value, g_value_get_boxed (prop_value));
+}
+
+void
+_nm_utils_strdict_from_dbus (const GValue *dbus_value,
+                             GValue *prop_value)
+{
+	g_value_set_boxed (prop_value, g_value_get_boxed (dbus_value));
+}
+
+GHashTable *
+_nm_utils_copy_strdict (GHashTable *strdict)
+{
+	GHashTable *copy;
+	GHashTableIter iter;
+	gpointer key, value;
+
+	copy = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	if (strdict) {
+		g_hash_table_iter_init (&iter, strdict);
+		while (g_hash_table_iter_next (&iter, &key, &value))
+			g_hash_table_insert (copy, g_strdup (key), g_strdup (value));
+	}
+	return copy;
+}
+
 GSList *
 _nm_utils_strv_to_slist (char **strv)
 {

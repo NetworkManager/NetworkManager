@@ -707,17 +707,10 @@ finalize (GObject *object)
 }
 
 static void
-copy_hash (gpointer key, gpointer value, gpointer user_data)
-{
-	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), g_strdup (value));
-}
-
-static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (object);
-	GHashTable *new_hash;
 
 	switch (prop_id) {
 	case PROP_PORT:
@@ -759,11 +752,8 @@ set_property (GObject *object, guint prop_id,
 		priv->s390_nettype = g_value_dup_string (value);
 		break;
 	case PROP_S390_OPTIONS:
-		/* Must make a deep copy of the hash table here... */
-		g_hash_table_remove_all (priv->s390_options);
-		new_hash = g_value_get_boxed (value);
-		if (new_hash)
-			g_hash_table_foreach (new_hash, copy_hash, priv->s390_options);
+		g_hash_table_unref (priv->s390_options);
+		priv->s390_options = _nm_utils_copy_strdict (g_value_get_boxed (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -810,7 +800,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_wired_get_s390_nettype (setting));
 		break;
 	case PROP_S390_OPTIONS:
-		g_value_set_boxed (value, priv->s390_options);
+		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->s390_options));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -998,12 +988,18 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 * and values must be strings.  Allowed keys include "portno", "layer2",
 	 * "portname", "protocol", among others.  Key names must contain only
 	 * alphanumeric characters (ie, [a-zA-Z0-9]).
+	 *
+	 * Type: GHashTable(utf8,utf8)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_S390_OPTIONS,
 		 g_param_spec_boxed (NM_SETTING_WIRED_S390_OPTIONS, "", "",
-		                     DBUS_TYPE_G_MAP_OF_STRING,
+		                     G_TYPE_HASH_TABLE,
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRED_S390_OPTIONS,
+	                                      DBUS_TYPE_G_MAP_OF_STRING,
+	                                      _nm_utils_strdict_to_dbus,
+	                                      _nm_utils_strdict_from_dbus);
 }

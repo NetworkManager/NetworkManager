@@ -899,7 +899,7 @@ write_setting_value (NMSetting *setting,
 
 		array = (char **) g_value_get_boxed (value);
 		nm_keyfile_plugin_kf_set_string_list (info->keyfile, setting_name, key, (const gchar **const) array, g_strv_length (array));
-	} else if (type == DBUS_TYPE_G_MAP_OF_STRING) {
+	} else if (type == G_TYPE_HASH_TABLE) {
 		write_hash_of_string (info->keyfile, setting, key, value);
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
 		if (!write_array_of_uint (info->keyfile, setting, key, value)) {

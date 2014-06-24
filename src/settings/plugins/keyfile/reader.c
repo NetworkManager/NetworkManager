@@ -1141,7 +1141,7 @@ read_one_setting_value (NMSetting *setting,
 		sa = nm_keyfile_plugin_kf_get_string_list (info->keyfile, setting_name, key, &length, NULL);
 		g_object_set (setting, key, sa, NULL);
 		g_strfreev (sa);
-	} else if (type == DBUS_TYPE_G_MAP_OF_STRING) {
+	} else if (type == G_TYPE_HASH_TABLE) {
 		read_hash_of_string (info->keyfile, setting, key);
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
 		if (!read_array_of_uint (info->keyfile, setting, key)) {

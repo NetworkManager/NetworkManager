@@ -401,11 +401,41 @@ nmc_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
 }
 
 static void
+nmc_convert_string_hash_to_string (const GValue *src_value, GValue *dest_value)
+{
+	GHashTable *hash;
+	GHashTableIter iter;
+	const char *key, *value;
+	GString *string;
+
+	hash = (GHashTable *) g_value_get_boxed (src_value);
+
+	string = g_string_new (NULL);
+	if (hash) {
+		g_hash_table_iter_init (&iter, hash);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
+			if (string->len)
+				g_string_append_c (string, ',');
+			g_string_append_printf (string, "%s=%s", key, value);
+		}
+	}
+
+	g_value_take_string (dest_value, g_string_free (string, FALSE));
+}
+
+static void
 nmc_value_transforms_register (void)
 {
 	g_value_register_transform_func (G_TYPE_STRV,
 	                                 G_TYPE_STRING,
 	                                 nmc_convert_strv_to_string);
+
+	/* This depends on the fact that all of the hash-table-valued properties
+	 * in libnm-core are string->string.
+	 */
+	g_value_register_transform_func (G_TYPE_HASH_TABLE,
+	                                 G_TYPE_STRING,
+	                                 nmc_convert_string_hash_to_string);
 }
 
 static NMClient *

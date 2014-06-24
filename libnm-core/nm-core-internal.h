@@ -63,5 +63,7 @@ gboolean    _nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *s
 
 GSList *    _nm_utils_hash_values_to_slist (GHashTable *hash);
 
+GHashTable *_nm_utils_copy_strdict (GHashTable *strdict);
+
 
 #endif
