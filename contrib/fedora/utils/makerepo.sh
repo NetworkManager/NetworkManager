@@ -144,11 +144,6 @@ elif [[ -f ./.git/makerepo.gitignore ]]; then
     /bin/cp "./.git/makerepo.gitignore" ./makerepo.gitignore
 fi
 
-DEFAULT_BACKUP_PATTERN='*.[0-9][0-9][0-9][0-9][-.]*.orig'
-if ! grep -F -q -e "$DEFAULT_BACKUP_PATTERN" "./makerepo.gitignore" ; then
-    echo "$DEFAULT_BACKUP_PATTERN" >> ./makerepo.gitignore
-fi
-
 pushd "$DIRNAME"
     git init .
     # if you have a local clone of upstream, symlink it as ../.git/local.
@@ -238,8 +233,9 @@ EOF
         [[ x == "x$(git diff HEAD "$ORIG_HEAD")" ]] || die "error recreating initial tarball"
     fi
     (
-        cat ../makerepo.gitignore;
+        cat ../makerepo.gitignore 2>/dev/null;
         sed -n 's/^%patch\([0-9]\+\) \+.*-b \+\([^ ]\+\).*$/*\2/p' ../"$SPEC";
+        echo '*.[0-9][0-9][0-9][0-9][-.]*.orig'
     ) | LANG=C sort | LANG=C uniq > .gitignore
 
     git rm --cached -r .
