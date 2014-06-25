@@ -1,8 +1,11 @@
 # SPEC file to build NetworkManager for testing. It aims for a similar
 # configuration as rhel-7.0 and Fedora rawhide
 #
-# This spec file is not used to create any packages for RHEL, Fedora or any
+# This spec file is not used as is to create official packages for RHEL, Fedora or any
 # other distribution.
+#
+# Note that it contains __PLACEHOLDERS__ that will be replaced by the accompanying 'build.sh' script.
+
 
 %define dbus_version 1.1
 %define dbus_glib_version 0.100
@@ -16,6 +19,7 @@
 %define git_sha __COMMIT__
 %define realversion __VERSION__
 %define release_version __RELEASE_VERSION__
+%define epoch_version 1
 
 %define obsoletes_nmver 1:0.9.9.95-1
 
@@ -62,11 +66,13 @@
 
 %global _hardened_build 1
 
+%define git_sha_version %(test -n '%{git_sha}' && echo '.%{git_sha}')
+
 Name: NetworkManager
 Summary: Network connection manager and user applications
-Epoch: 1
+Epoch: %{epoch_version}
 Version: %{realversion}
-Release: %{release_version}%{snapshot}.%{git_sha}%{?dist}
+Release: %{release_version}%{snapshot}%{git_sha_version}%{?dist}
 Group: System Environment/Base
 License: GPLv2+
 URL: http://www.gnome.org/projects/NetworkManager/
