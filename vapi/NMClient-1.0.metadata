@@ -1,6 +1,6 @@
-RemoteSettings.new_async skip
+RemoteSettings.new_finish symbol_type="function"
 RemoteConnection.updated#virtual_method skip
-Client.new_async skip
+Client.new_finish symbol_type="function"
 
 ACTIVE_CONNECTION_* cheader_filename="nm-active-connection.h" name="ACTIVE_CONNECTION_(.+)" parent="NM.ActiveConnection"
 CLIENT_*            cheader_filename="nm-client.h"            name="CLIENT_(.+)"       parent="NM.Client"
