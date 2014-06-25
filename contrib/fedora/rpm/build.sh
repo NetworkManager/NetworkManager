@@ -37,8 +37,8 @@ get_version() {
 write_changelog() {
     if [[ "x$CHANGELOG" == x ]]; then
         cat <<- EOF
-	* $(LC_TIME=C date '+%a %b %d %Y') $USERNAME - %{version}-%{release_version}%{snapshot}.%{git_sha}
-	- build of NetworkManager ($DATE, $UUID)
+	* $(LC_TIME=C date '+%a %b %d %Y') $USERNAME - %{epoch_version}:%{version}-%{release_version}%{snapshot}%{git_sha_version}
+	- build of NetworkManager ($DATE, uuid: $UUID, git: $COMMIT_FULL)
 	$(git log -n20 --date=local --format='- %h %s [%an] (%ci)')
 	- ...
 	EOF
@@ -64,6 +64,7 @@ exec 2>&1
 UUID=`uuidgen`
 RELEASE_VERSION="${RELEASE_VERSION:-$(git rev-list --first-parent HEAD | wc -l)}"
 VERSION="${VERSION:-$(get_version || die "Could not read $VERSION")}"
+COMMIT_FULL="${COMMIT_FULL:-$(git rev-parse --verify HEAD || die "Error reading HEAD revision")}"
 COMMIT="${COMMIT:-$(git rev-parse --verify HEAD | sed 's/^\(.\{10\}\).*/\1/' || die "Error reading HEAD revision")}"
 USERNAME="${USERNAME:-"$(git config user.name) <$(git config user.email)>"}"
 SPECFILE="$(abs_path "$SPECFILE" "$SCRIPTDIR/NetworkManager.spec")"
@@ -103,6 +104,7 @@ write_changelog
 sed -e "s/__VERSION__/$VERSION/g" \
     -e "s/__RELEASE_VERSION__/$RELEASE_VERSION/g" \
     -e "s/__COMMIT__/$COMMIT/g" \
+    -e "s/__COMMIT_FULL__/$COMMIT_FULL/g" \
     -e "s/__SOURCE1__/$(basename "$SOURCE")/g" \
    "$SPECFILE" |
 sed -e "/^__CHANGELOG__$/ \
