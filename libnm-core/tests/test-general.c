@@ -721,7 +721,7 @@ test_connection_to_dbus_deprecated_props (void)
 {
 	NMConnection *connection;
 	NMSetting *s_wireless;
-	GByteArray *ssid;
+	GBytes *ssid;
 	NMSettingWirelessSecurity *s_wsec;
 	GHashTable *hash, *wireless_hash;
 	GValue *sec_val;
@@ -732,12 +732,11 @@ test_connection_to_dbus_deprecated_props (void)
 	                                              NULL);
 
 	s_wireless = nm_setting_wireless_new ();
-	ssid = g_byte_array_new ();
-	g_byte_array_append (ssid, (const guint8 *) "1234567", 7);
+	ssid = g_bytes_new ("1234567", 7);
 	g_object_set (s_wireless,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NULL);
-	g_byte_array_unref (ssid);
+	g_bytes_unref (ssid);
 	nm_connection_add_setting (connection, s_wireless);
 
 	/* Hash should not have an 802-11-wireless.security property */
@@ -962,7 +961,7 @@ test_connection_replace_settings_from_connection ()
 	gboolean success;
 	NMSettingConnection *s_con;
 	NMSetting *setting;
-	GByteArray *ssid;
+	GBytes *ssid;
 	char *uuid = NULL;
 	const char *expected_id = "Awesome connection";
 
@@ -988,13 +987,12 @@ test_connection_replace_settings_from_connection ()
 	setting = nm_setting_wireless_new ();
 	g_assert (setting);
 
-	ssid = g_byte_array_new ();
-	g_byte_array_append (ssid, (const guint8 *) "1234567", 7);
+	ssid = g_bytes_new ("1234567", 7);
 	g_object_set (setting,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
 	              NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 	nm_connection_add_setting (replacement, setting);
 
 	/* Replace settings and test */
@@ -1709,7 +1707,7 @@ test_connection_good_base_types (void)
 	NMSetting *setting;
 	gboolean success;
 	GError *error = NULL;
-	GByteArray *array;
+	GBytes *ssid;
 	const char *bdaddr = "11:22:33:44:55:66";
 
 	/* Try a basic wired connection */
@@ -1740,13 +1738,12 @@ test_connection_good_base_types (void)
 	add_generic_settings (connection, NM_SETTING_WIRELESS_SETTING_NAME);
 
 	setting = nm_setting_wireless_new ();
-	array = g_byte_array_new ();
-	g_byte_array_append (array, (const guint8 *) "1234567", 7);
+	ssid = g_bytes_new ("1234567", 7);
 	g_object_set (setting,
-	              NM_SETTING_WIRELESS_SSID, array,
+	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
 	              NULL);
-	g_byte_array_free (array, TRUE);
+	g_bytes_unref (ssid);
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
@@ -2908,14 +2905,14 @@ _add_setting_fcn_olpc_mesh (NMConnection *con)
 {
 	NMSetting *setting;
 	const char *ssid_data = "ssid-test";
-	GByteArray *ssid = g_byte_array_new ();
+	GBytes *ssid;
 
-	g_byte_array_append (ssid, (const guint8 *) ssid_data, strlen (ssid_data));
+	ssid = g_bytes_new (ssid_data, strlen (ssid_data));
 	setting = g_object_new (NM_TYPE_SETTING_OLPC_MESH,
 	                        NM_SETTING_OLPC_MESH_SSID, ssid,
 	                        NM_SETTING_OLPC_MESH_CHANNEL, 1,
 	                        NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	nm_connection_add_setting (con, setting);
 	return setting;
@@ -2984,13 +2981,13 @@ _add_setting_fcn_wireless (NMConnection *con)
 {
 	NMSetting *setting;
 	const char *ssid_data = "ssid-test";
-	GByteArray *ssid = g_byte_array_new ();
+	GBytes *ssid;
 
-	g_byte_array_append (ssid, (const guint8 *) ssid_data, strlen (ssid_data));
+	ssid = g_bytes_new (ssid_data, strlen (ssid_data));
 	setting = g_object_new (NM_TYPE_SETTING_WIRELESS,
 	                        NM_SETTING_WIRELESS_SSID, ssid,
 	                        NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	nm_connection_add_setting (con, setting);
 	return setting;

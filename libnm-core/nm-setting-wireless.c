@@ -65,7 +65,7 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_WIRELESS)
 #define NM_SETTING_WIRELESS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRELESS, NMSettingWirelessPrivate))
 
 typedef struct {
-	GByteArray *ssid;
+	GBytes *ssid;
 	char *mode;
 	char *band;
 	guint32 channel;
@@ -315,7 +315,7 @@ nm_setting_wireless_new (void)
  *
  * Returns: the #NMSettingWireless:ssid property of the setting
  **/
-const GByteArray *
+GBytes *
 nm_setting_wireless_get_ssid (NMSettingWireless *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
@@ -703,6 +703,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	const char *valid_modes[] = { NM_SETTING_WIRELESS_MODE_INFRA, NM_SETTING_WIRELESS_MODE_ADHOC, NM_SETTING_WIRELESS_MODE_AP, NULL };
 	const char *valid_bands[] = { "a", "bg", NULL };
 	GSList *iter;
+	gsize length;
 
 	if (!priv->ssid) {
 		g_set_error_literal (error,
@@ -713,7 +714,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (!priv->ssid->len || priv->ssid->len > 32) {
+	length = g_bytes_get_size (priv->ssid);
+	if (length == 0 || length > 32) {
 		g_set_error_literal (error,
 		                     NM_SETTING_WIRELESS_ERROR,
 		                     NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
@@ -845,7 +847,7 @@ finalize (GObject *object)
 	g_free (priv->band);
 
 	if (priv->ssid)
-		g_byte_array_free (priv->ssid, TRUE);
+		g_bytes_unref (priv->ssid);
 	g_free (priv->bssid);
 	g_free (priv->device_mac_address);
 	g_free (priv->cloned_mac_address);
@@ -864,7 +866,7 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_SSID:
 		if (priv->ssid)
-			g_byte_array_free (priv->ssid, TRUE);
+			g_bytes_unref (priv->ssid);
 		priv->ssid = g_value_dup_boxed (value);
 		break;
 	case PROP_MODE:
@@ -992,9 +994,13 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_SSID,
 		 g_param_spec_boxed (NM_SETTING_WIRELESS_SSID, "", "",
-		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRELESS_SSID,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_bytes_to_dbus,
+	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSettingWireless:mode:

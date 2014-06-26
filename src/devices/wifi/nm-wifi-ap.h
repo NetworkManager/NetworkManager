@@ -67,7 +67,7 @@ void        nm_ap_set_supplicant_path (NMAccessPoint *ap,
                                        const char *path);
 
 const GByteArray *nm_ap_get_ssid (const NMAccessPoint * ap);
-void              nm_ap_set_ssid (NMAccessPoint * ap, const GByteArray * ssid);
+void              nm_ap_set_ssid (NMAccessPoint * ap, const guint8 * ssid, gsize len);
 
 NM80211ApFlags nm_ap_get_flags (NMAccessPoint *ap);
 void           nm_ap_set_flags (NMAccessPoint *ap, NM80211ApFlags flags);

@@ -222,6 +222,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	NMConnection *connection;
 	NMSettingOlpcMesh *s_mesh;
 	guint32 channel;
+	GBytes *ssid;
 	const char *anycast_addr;
 
 	connection = nm_device_get_connection (device);
@@ -233,8 +234,11 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	channel = nm_setting_olpc_mesh_get_channel (s_mesh);
 	if (channel != 0)
 		_mesh_set_channel (self, channel);
+
+	ssid = nm_setting_olpc_mesh_get_ssid (s_mesh);
 	nm_platform_mesh_set_ssid (nm_device_get_ifindex (device),
-	                           nm_setting_olpc_mesh_get_ssid (s_mesh));
+	                           g_bytes_get_data (ssid, NULL),
+	                           g_bytes_get_size (ssid));
 
 	anycast_addr = nm_setting_olpc_mesh_get_dhcp_anycast_address (s_mesh);
 	nm_device_set_dhcp_anycast_address (device, anycast_addr);

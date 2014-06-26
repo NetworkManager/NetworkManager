@@ -236,7 +236,9 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	const char *ctype, *ap_bssid;
-	const GByteArray *setting_ssid;
+	GBytes *setting_ssid;
+	const guint8 *setting_ssid_data;
+	gsize setting_ssid_len;
 	const GByteArray *ap_ssid;
 	const char *setting_bssid;
 	const char *setting_mode;
@@ -258,9 +260,12 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 	ap_ssid = nm_access_point_get_ssid (ap);
 	g_warn_if_fail (ap_ssid != NULL);
 	setting_ssid = nm_setting_wireless_get_ssid (s_wifi);
-	if (!setting_ssid || !ap_ssid || (setting_ssid->len != ap_ssid->len))
+	if (!setting_ssid || !ap_ssid)
 		return FALSE;
-	if (memcmp (setting_ssid->data, ap_ssid->data, ap_ssid->len) != 0)
+	setting_ssid_data = g_bytes_get_data (setting_ssid, &setting_ssid_len);
+	if (setting_ssid_len != ap_ssid->len)
+		return FALSE;
+	if (memcmp (setting_ssid_data, ap_ssid->data, ap_ssid->len) != 0)
 		return FALSE;
 
 	/* BSSID checks */

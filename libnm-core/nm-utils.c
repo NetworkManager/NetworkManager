@@ -626,6 +626,35 @@ _nm_utils_copy_array_to_slist (const GPtrArray *array,
 	return g_slist_reverse (slist);
 }
 
+void
+_nm_utils_bytes_to_dbus (const GValue *prop_value,
+                         GValue *dbus_value)
+{
+	GBytes *bytes = g_value_get_boxed (prop_value);
+	GByteArray *ba = NULL;
+
+	if (bytes) {
+		ba = g_byte_array_new ();
+		g_byte_array_append (ba,
+		                     g_bytes_get_data (bytes, NULL),
+		                     g_bytes_get_size (bytes));
+	}
+
+	g_value_take_boxed (dbus_value, ba);
+}
+
+void
+_nm_utils_bytes_from_dbus (const GValue *dbus_value,
+                           GValue *prop_value)
+{
+	GByteArray *ba = g_value_dup_boxed (dbus_value);
+	GBytes *bytes = NULL;
+
+	if (ba)
+		bytes = g_byte_array_free_to_bytes (ba);
+	g_value_take_boxed (prop_value, bytes);
+}
+
 GSList *
 _nm_utils_strv_to_slist (char **strv)
 {

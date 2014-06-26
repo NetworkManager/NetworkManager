@@ -134,11 +134,12 @@ ssid_transform_to_entry (GBinding     *binding,
                          GValue       *target_value,
                          gpointer      user_data)
 {
-	GByteArray *ssid;
+	GBytes *ssid;
 	char *utf8;
 
 	ssid = g_value_get_boxed (source_value);
-	utf8 = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
+	utf8 = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+	                              g_bytes_get_size (ssid));
 	g_value_take_string (target_value, utf8);
 	return TRUE;
 }
@@ -151,14 +152,14 @@ ssid_transform_from_entry (GBinding     *binding,
 {
 	NMSettingWireless *s_wireless = user_data;
 	const char *text;
-	const GByteArray *old_ssid;
-	GByteArray *ssid;
+	GBytes *old_ssid, *ssid;
 	char *utf8;
 
 	text = g_value_get_string (source_value);
 
 	old_ssid = nm_setting_wireless_get_ssid (s_wireless);
-	utf8 = nm_utils_ssid_to_utf8 (old_ssid->data, old_ssid->len);
+	utf8 = nm_utils_ssid_to_utf8 (g_bytes_get_data (old_ssid, NULL),
+	                              g_bytes_get_size (old_ssid));
 
 	if (!g_strcmp0 (text, utf8)) {
 		g_free (utf8);
@@ -166,8 +167,7 @@ ssid_transform_from_entry (GBinding     *binding,
 	}
 	g_free (utf8);
 
-	ssid = g_byte_array_new ();
-	g_byte_array_append (ssid, (guint8 *)text, strlen (text));
+	ssid = g_bytes_new (text, strlen (text));
 	g_value_take_boxed (target_value, ssid);
 	return TRUE;
 }

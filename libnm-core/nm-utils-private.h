@@ -44,6 +44,11 @@ void        _nm_utils_strdict_to_dbus   (const GValue *prop_value,
 void        _nm_utils_strdict_from_dbus (const GValue *dbus_value,
                                          GValue *prop_value);
 
+void        _nm_utils_bytes_to_dbus     (const GValue *prop_value,
+                                         GValue *dbus_value);
+void        _nm_utils_bytes_from_dbus   (const GValue *dbus_value,
+                                         GValue *prop_value);
+
 void        _nm_utils_ip4_dns_to_dbus         (const GValue *prop_value,
                                                GValue *dbus_value);
 void        _nm_utils_ip4_dns_from_dbus       (const GValue *dbus_value,

@@ -663,19 +663,22 @@ wep_key_type_to_string (NMWepKeyType type)
 }
 
 static char *
-byte_array_to_string (const GByteArray *array)
+bytes_to_string (GBytes *bytes)
 {
+	const guint8 *data;
+	gsize len;
 	GString *cert = NULL;
 	int i;
 
-	if (array && array->len > 0)
-		cert = g_string_new (NULL);
+	if (!bytes)
+		return NULL;
+	data = g_bytes_get_data (bytes, &len);
 
-	for (i = 0; array && i < array->len; i++) {
-		g_string_append_printf (cert, "%02X", array->data[i]);
-	}
+	cert = g_string_new (NULL);
+	for (i = 0; i < len; i++)
+		g_string_append_printf (cert, "%02X", data[i]);
 
-	return cert ? g_string_free (cert, FALSE) : NULL;
+	return g_string_free (cert, FALSE);
 }
 
 static char *
@@ -843,7 +846,7 @@ nmc_property_802_1X_get_ca_cert (NMSetting *setting)
 
 	scheme = nm_setting_802_1x_get_ca_cert_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		ca_cert_str = byte_array_to_string (nm_setting_802_1x_get_ca_cert_blob (s_8021X));
+		ca_cert_str = bytes_to_string (nm_setting_802_1x_get_ca_cert_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		ca_cert_str = g_strdup (nm_setting_802_1x_get_ca_cert_path (s_8021X));
 
@@ -859,7 +862,7 @@ nmc_property_802_1X_get_client_cert (NMSetting *setting)
 
 	scheme = nm_setting_802_1x_get_client_cert_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		client_cert_str = byte_array_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
+		client_cert_str = bytes_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		client_cert_str = g_strdup (nm_setting_802_1x_get_client_cert_path (s_8021X));
 
@@ -875,7 +878,7 @@ nmc_property_802_1X_get_phase2_ca_cert (NMSetting *setting)
 
 	scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_ca_cert_str = byte_array_to_string (nm_setting_802_1x_get_phase2_ca_cert_blob (s_8021X));
+		phase2_ca_cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_ca_cert_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		phase2_ca_cert_str = g_strdup (nm_setting_802_1x_get_phase2_ca_cert_path (s_8021X));
 
@@ -891,7 +894,7 @@ nmc_property_802_1X_get_phase2_client_cert (NMSetting *setting)
 
 	scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_client_cert_str = byte_array_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
+		phase2_client_cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		phase2_client_cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_path (s_8021X));
 
@@ -902,7 +905,7 @@ static char *
 nmc_property_802_1X_get_password_raw (NMSetting *setting)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	return byte_array_to_string (nm_setting_802_1x_get_password_raw (s_8021X));
+	return bytes_to_string (nm_setting_802_1x_get_password_raw (s_8021X));
 }
 
 static char *
@@ -914,7 +917,7 @@ nmc_property_802_1X_get_private_key (NMSetting *setting)
 
 	scheme = nm_setting_802_1x_get_private_key_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		private_key_str = byte_array_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
+		private_key_str = bytes_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		private_key_str = g_strdup (nm_setting_802_1x_get_private_key_path (s_8021X));
 
@@ -930,7 +933,7 @@ nmc_property_802_1X_get_phase2_private_key (NMSetting *setting)
 
 	scheme = nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_private_key_str = byte_array_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
+		phase2_private_key_str = bytes_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		phase2_private_key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
 
@@ -1382,12 +1385,14 @@ static char *
 nmc_property_olpc_get_ssid (NMSetting *setting)
 {
 	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
-	const GByteArray *ssid;
+	GBytes *ssid;
 	char *ssid_str = NULL;
 
 	ssid = nm_setting_olpc_mesh_get_ssid (s_olpc_mesh);
-	if (ssid)
-		ssid_str = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
+	if (ssid) {
+		ssid_str = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+		                                  g_bytes_get_size (ssid));
+	}
 
 	return ssid_str;
 }
@@ -1525,12 +1530,14 @@ static char *
 nmc_property_wireless_get_ssid (NMSetting *setting)
 {
 	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
-	const GByteArray *ssid;
+	GBytes *ssid;
 	char *ssid_str = NULL;
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	if (ssid)
-		ssid_str = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
+	if (ssid) {
+		ssid_str = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+		                                  g_bytes_get_size (ssid));
+	}
 
 	return ssid_str;
 }

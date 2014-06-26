@@ -2282,7 +2282,7 @@ fill_wpa_ciphers (shvarFile *ifcfg,
 static char *
 parse_wpa_psk (shvarFile *ifcfg,
                const char *file,
-               const GByteArray *ssid,
+               GBytes *ssid,
                GError **error)
 {
 	shvarFile *keys_ifcfg;
@@ -3038,7 +3038,7 @@ error:
 static NMSetting *
 make_wpa_setting (shvarFile *ifcfg,
                   const char *file,
-                  const GByteArray *ssid,
+                  GBytes *ssid,
                   gboolean adhoc,
                   NMSetting8021x **s_8021x,
                   GError **error)
@@ -3208,7 +3208,7 @@ error:
 static NMSetting *
 make_wireless_security_setting (shvarFile *ifcfg,
                                 const char *file,
-                                const GByteArray *ssid,
+                                GBytes *ssid,
                                 gboolean adhoc,
                                 NMSetting8021x **s_8021x,
                                 GError **error)
@@ -3243,7 +3243,7 @@ make_wireless_setting (shvarFile *ifcfg,
                        GError **error)
 {
 	NMSettingWireless *s_wireless;
-	GByteArray *array = NULL;
+	GBytes *bytes = NULL;
 	char *value = NULL;
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
@@ -3324,10 +3324,9 @@ make_wireless_setting (shvarFile *ifcfg,
 			goto error;
 		}
 
-		array = g_byte_array_sized_new (ssid_len);
-		g_byte_array_append (array, (const guint8 *) p, ssid_len);
-		g_object_set (s_wireless, NM_SETTING_WIRELESS_SSID, array, NULL);
-		g_byte_array_free (array, TRUE);
+		bytes = g_bytes_new (p, ssid_len);
+		g_object_set (s_wireless, NM_SETTING_WIRELESS_SSID, bytes, NULL);
+		g_bytes_unref (bytes);
 		g_free (value);
 	}
 
@@ -3420,7 +3419,7 @@ wireless_connection_from_ifcfg (const char *file,
 	NMSetting *con_setting = NULL;
 	NMSetting *wireless_setting = NULL;
 	NMSetting8021x *s_8021x = NULL;
-	const GByteArray *ssid;
+	GBytes *ssid;
 	NMSetting *security_setting = NULL;
 	char *printable_ssid = NULL;
 	const char *mode;
@@ -3442,9 +3441,10 @@ wireless_connection_from_ifcfg (const char *file,
 	nm_connection_add_setting (connection, wireless_setting);
 
 	ssid = nm_setting_wireless_get_ssid (NM_SETTING_WIRELESS (wireless_setting));
-	if (ssid)
-		printable_ssid = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
-	else
+	if (ssid) {
+		printable_ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+		                                        g_bytes_get_size (ssid));
+	} else
 		printable_ssid = g_strdup_printf ("unmanaged");
 
 	mode = nm_setting_wireless_get_mode (NM_SETTING_WIRELESS (wireless_setting));

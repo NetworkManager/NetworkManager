@@ -114,7 +114,7 @@ set_items (NMSetting *setting, const KeyData *items)
 {
 	const KeyData *item;
 	GParamSpec *pspec;
-	GByteArray *tmp;
+	GBytes *tmp;
 
 	for (item = items; item && item->key; item++) {
 		g_assert (item->key);
@@ -138,12 +138,11 @@ set_items (NMSetting *setting, const KeyData *items)
 
 			g_assert (item->str == NULL);
 			g_object_set (G_OBJECT (setting), item->key, foo, NULL);
-		} else if (pspec->value_type == DBUS_TYPE_G_UCHAR_ARRAY) {
+		} else if (pspec->value_type == G_TYPE_BYTES) {
 			g_assert (item->str);
-			tmp = g_byte_array_sized_new (strlen (item->str));
-			g_byte_array_append (tmp, (const guint8 *) item->str, strlen (item->str));
+			tmp = g_bytes_new (item->str, strlen (item->str));
 			g_object_set (G_OBJECT (setting), item->key, tmp, NULL);
-			g_byte_array_free (tmp, TRUE);
+			g_bytes_unref (tmp);
 		} else {
 			/* Special types, check based on property name */
 			if (!strcmp (item->key, NM_SETTING_WIRELESS_SECURITY_PROTO))
@@ -223,7 +222,7 @@ create_basic (const char *ssid,
 {
 	NMConnection *connection;
 	NMSettingWireless *s_wifi = NULL;
-	GByteArray *tmp;
+	GBytes *tmp;
 
 	connection = nm_simple_connection_new ();
 
@@ -231,10 +230,9 @@ create_basic (const char *ssid,
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
 	/* SSID */
-	tmp = g_byte_array_sized_new (strlen (ssid));
-	g_byte_array_append (tmp, (const guint8 *) ssid, strlen (ssid));
+	tmp = g_bytes_new (ssid, strlen (ssid));
 	g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_SSID, tmp, NULL);
-	g_byte_array_free (tmp, TRUE);
+	g_bytes_unref (tmp);
 
 	/* BSSID */
 	if (bssid)

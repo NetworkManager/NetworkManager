@@ -50,7 +50,7 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_OLPC_MESH)
 #define NM_SETTING_OLPC_MESH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_OLPC_MESH, NMSettingOlpcMeshPrivate))
 
 typedef struct {
-	GByteArray *ssid;
+	GBytes *ssid;
 	guint32 channel;
 	char *dhcp_anycast_addr;
 } NMSettingOlpcMeshPrivate;
@@ -81,7 +81,7 @@ nm_setting_olpc_mesh_init (NMSettingOlpcMesh *setting)
 {
 }
 
-const GByteArray *
+GBytes *
 nm_setting_olpc_mesh_get_ssid (NMSettingOlpcMesh *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_OLPC_MESH (setting), NULL);
@@ -109,6 +109,7 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingOlpcMeshPrivate *priv = NM_SETTING_OLPC_MESH_GET_PRIVATE (setting);
+	gsize length;
 
 	if (!priv->ssid) {
 		g_set_error_literal (error,
@@ -119,7 +120,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (!priv->ssid->len || priv->ssid->len > 32) {
+	length = g_bytes_get_size (priv->ssid);
+	if (length == 0 || length > 32) {
 		g_set_error_literal (error,
 		                     NM_SETTING_OLPC_MESH_ERROR,
 		                     NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY,
@@ -156,7 +158,7 @@ finalize (GObject *object)
 	NMSettingOlpcMeshPrivate *priv = NM_SETTING_OLPC_MESH_GET_PRIVATE (object);
 
 	if (priv->ssid)
-		g_byte_array_free (priv->ssid, TRUE);
+		g_bytes_unref (priv->ssid);
 	g_free (priv->dhcp_anycast_addr);
 
 	G_OBJECT_CLASS (nm_setting_olpc_mesh_parent_class)->finalize (object);
@@ -171,7 +173,7 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_SSID:
 		if (priv->ssid)
-			g_byte_array_free (priv->ssid, TRUE);
+			g_bytes_unref (priv->ssid);
 		priv->ssid = g_value_dup_boxed (value);
 		break;
 	case PROP_CHANNEL:
@@ -232,10 +234,14 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_SSID,
 		 g_param_spec_boxed (NM_SETTING_OLPC_MESH_SSID, "", "",
-		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_TYPE_BYTES,
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_OLPC_MESH_SSID,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_bytes_to_dbus,
+	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSettingOlpcMesh:channel:

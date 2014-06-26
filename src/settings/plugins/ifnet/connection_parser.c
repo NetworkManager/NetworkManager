@@ -880,7 +880,7 @@ make_wireless_connection_setting (const char *conn_name,
                                   NMSetting8021x **s_8021x,
                                   GError **error)
 {
-	GByteArray *array;
+	GBytes *bytes;
 	const char *mac = NULL;
 	NMSettingWireless *wireless_setting = NULL;
 	gboolean adhoc = FALSE;
@@ -949,10 +949,9 @@ make_wireless_connection_setting (const char *conn_name,
 				     conn_name, ssid_len);
 			goto error;
 		}
-		array = g_byte_array_sized_new (ssid_len);
-		g_byte_array_append (array, (const guint8 *) (converted ? converted : conn_name), ssid_len);
-		g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, array, NULL);
-		g_byte_array_free (array, TRUE);
+		bytes = g_bytes_new (converted ? converted : conn_name, ssid_len);
+		g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, bytes, NULL);
+		g_bytes_unref (bytes);
 		g_free (converted);
 	} else {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
@@ -1721,7 +1720,7 @@ error:
 
 typedef NMSetting8021xCKScheme (*SchemeFunc) (NMSetting8021x * setting);
 typedef const char *(*PathFunc) (NMSetting8021x * setting);
-typedef const GByteArray *(*BlobFunc) (NMSetting8021x * setting);
+typedef GBytes *(*BlobFunc) (NMSetting8021x * setting);
 
 typedef struct ObjectType {
 	const char *setting_key;
@@ -1807,13 +1806,13 @@ static const ObjectType phase2_p12_type = {
 static gboolean
 write_object (NMSetting8021x *s_8021x,
               const char *conn_name,
-              const GByteArray *override_data,
+              GBytes *override_data,
               const ObjectType *objtype,
               GError **error)
 {
 	NMSetting8021xCKScheme scheme;
 	const char *path = NULL;
-	const GByteArray *blob = NULL;
+	GBytes *blob = NULL;
 
 	g_return_val_if_fail (conn_name != NULL, FALSE);
 	g_return_val_if_fail (objtype != NULL, FALSE);
@@ -1861,8 +1860,8 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 	char *password = NULL;
 	const ObjectType *otype = NULL;
 	gboolean is_pkcs12 = FALSE, success = FALSE;
-	const GByteArray *blob = NULL;
-	GByteArray *enc_key = NULL;
+	GBytes *blob = NULL;
+	GBytes *enc_key = NULL;
 	gchar *generated_pw = NULL;
 
 	/* CA certificate */
@@ -1909,12 +1908,16 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 	 * private key file, it'll be encrypted, so we don't need to re-encrypt.
 	 */
 	if (blob && !is_pkcs12) {
+		GByteArray *tmp_enc_key;
+
 		/* Encrypt the unencrypted private key with the fake password */
-		enc_key =
-		    nm_utils_rsa_key_encrypt (blob->data, blob->len, password, &generated_pw,
-					      error);
-		if (!enc_key)
+		tmp_enc_key =
+		    nm_utils_rsa_key_encrypt (g_bytes_get_data (blob, NULL), g_bytes_get_size (blob),
+					      password, &generated_pw, error);
+		if (!tmp_enc_key)
 			goto out;
+
+		enc_key = g_byte_array_free_to_bytes (tmp_enc_key);
 
 		if (generated_pw)
 			password = generated_pw;
@@ -1952,8 +1955,8 @@ out:
 		g_free (generated_pw);
 	}
 	if (enc_key) {
-		memset (enc_key->data, 0, enc_key->len);
-		g_byte_array_free (enc_key, TRUE);
+		memset ((gpointer) g_bytes_get_data (enc_key, NULL), 0, g_bytes_get_size (enc_key));
+		g_bytes_unref (enc_key);
 	}
 	return success;
 }
@@ -2224,7 +2227,9 @@ write_wireless_setting (NMConnection *connection,
                         GError **error)
 {
 	NMSettingWireless *s_wireless;
-	const GByteArray *ssid;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *mac, *bssid, *mode;
 	char buf[33];
 	guint32 mtu, i;
@@ -2246,7 +2251,8 @@ write_wireless_setting (NMConnection *connection,
 			     NM_SETTING_WIRELESS_SETTING_NAME);
 		return FALSE;
 	}
-	if (!ssid->len || ssid->len > 32) {
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	if (!ssid_len || ssid_len > 32) {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
 			     "Invalid SSID in '%s' setting",
 			     NM_SETTING_WIRELESS_SETTING_NAME);
@@ -2257,8 +2263,8 @@ write_wireless_setting (NMConnection *connection,
 	 * the hex notation of the SSID instead. (Because openrc doesn't
 	 * support these characters, see bug #356337)
 	 */
-	for (i = 0; i < ssid->len; i++) {
-		if (!g_ascii_isalnum (ssid->data[i])) {
+	for (i = 0; i < ssid_len; i++) {
+		if (!g_ascii_isalnum (ssid_data[i])) {
 			hex_ssid = TRUE;
 			break;
 		}
@@ -2268,16 +2274,16 @@ write_wireless_setting (NMConnection *connection,
 		GString *str;
 
 		/* Hex SSIDs don't get quoted */
-		str = g_string_sized_new (ssid->len * 2 + 3);
+		str = g_string_sized_new (ssid_len * 2 + 3);
 		g_string_append (str, "0x");
-		for (i = 0; i < ssid->len; i++)
-			g_string_append_printf (str, "%02X", ssid->data[i]);
+		for (i = 0; i < ssid_len; i++)
+			g_string_append_printf (str, "%02X", ssid_data[i]);
 		update_wireless_ssid (connection, conn_name, str->str, hex_ssid);
 		ssid_str = g_string_free (str, FALSE);
 	} else {
 		/* Printable SSIDs get quoted */
 		memset (buf, 0, sizeof (buf));
-		memcpy (buf, ssid->data, ssid->len);
+		memcpy (buf, ssid_data, ssid_len);
 		g_strstrip (buf);
 		update_wireless_ssid (connection, conn_name, buf, hex_ssid);
 		ssid_str = g_strdup (buf);
@@ -2927,7 +2933,9 @@ static gchar *
 get_wireless_name (NMConnection * connection)
 {
 	NMSettingWireless *s_wireless;
-	const GByteArray *ssid;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	gboolean hex_ssid = FALSE;
 	gchar *result = NULL;
 	char buf[33];
@@ -2938,12 +2946,13 @@ get_wireless_name (NMConnection * connection)
 		return NULL;
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	if (!ssid->len || ssid->len > 32) {
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	if (!ssid_len || ssid_len > 32) {
 		return NULL;
 	}
 
-	for (i = 0; i < ssid->len; i++) {
-		if (!g_ascii_isprint (ssid->data[i])) {
+	for (i = 0; i < ssid_len; i++) {
+		if (!g_ascii_isprint (ssid_data[i])) {
 			hex_ssid = TRUE;
 			break;
 		}
@@ -2952,15 +2961,15 @@ get_wireless_name (NMConnection * connection)
 	if (hex_ssid) {
 		GString *str;
 
-		str = g_string_sized_new (ssid->len * 2 + 3);
+		str = g_string_sized_new (ssid_len * 2 + 3);
 		g_string_append (str, "0x");
-		for (i = 0; i < ssid->len; i++)
-			g_string_append_printf (str, "%02X", ssid->data[i]);
+		for (i = 0; i < ssid_len; i++)
+			g_string_append_printf (str, "%02X", ssid_data[i]);
 		result = g_strdup (str->str);
 		g_string_free (str, TRUE);
 	} else {
 		memset (buf, 0, sizeof (buf));
-		memcpy (buf, ssid->data, ssid->len);
+		memcpy (buf, ssid_data, ssid_len);
 		result = g_strdup_printf ("%s", buf);
 		g_strstrip (result);
 	}

@@ -652,12 +652,12 @@ unescape_semicolons (char *str)
 	}
 }
 
-static GByteArray *
-get_uchar_array (GKeyFile *keyfile,
-                 const char *setting_name,
-                 const char *key,
-                 gboolean zero_terminate,
-                 gboolean unescape_semicolon)
+static GBytes *
+get_bytes (GKeyFile *keyfile,
+           const char *setting_name,
+           const char *key,
+           gboolean zero_terminate,
+           gboolean unescape_semicolon)
 {
 	GByteArray *array = NULL;
 	char *tmp_string;
@@ -711,21 +711,21 @@ get_uchar_array (GKeyFile *keyfile,
 
 	if (array->len == 0) {
 		g_byte_array_free (array, TRUE);
-		array = NULL;
-	}
-	return array;
+		return NULL;
+	} else
+		return g_byte_array_free_to_bytes (array);
 }
 
 static void
 ssid_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	GByteArray *array;
+	GBytes *bytes;
 
-	array = get_uchar_array (keyfile, setting_name, key, FALSE, TRUE);
-	if (array) {
-		g_object_set (setting, key, array, NULL);
-		g_byte_array_free (array, TRUE);
+	bytes = get_bytes (keyfile, setting_name, key, FALSE, TRUE);
+	if (bytes) {
+		g_object_set (setting, key, bytes, NULL);
+		g_bytes_unref (bytes);
 	} else {
 		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid SSID for %s / %s",
 		             __func__, setting_name, key);
@@ -736,12 +736,12 @@ static void
 password_raw_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	GByteArray *array;
+	GBytes *bytes;
 
-	array = get_uchar_array (keyfile, setting_name, key, FALSE, TRUE);
-	if (array) {
-		g_object_set (setting, key, array, NULL);
-		g_byte_array_free (array, TRUE);
+	bytes = get_bytes (keyfile, setting_name, key, FALSE, TRUE);
+	if (bytes) {
+		g_object_set (setting, key, bytes, NULL);
+		g_bytes_unref (bytes);
 	} else {
 		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid raw password for %s / %s",
 		             __func__, setting_name, key);
@@ -749,7 +749,7 @@ password_raw_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, con
 }
 
 static char *
-get_cert_path (const char *keyfile_path, GByteArray *cert_path)
+get_cert_path (const char *keyfile_path, const guint8 *cert_path, gsize cert_path_len)
 {
 	const char *base;
 	char *p = NULL, *path, *dirname, *tmp;
@@ -757,8 +757,8 @@ get_cert_path (const char *keyfile_path, GByteArray *cert_path)
 	g_return_val_if_fail (keyfile_path != NULL, NULL);
 	g_return_val_if_fail (cert_path != NULL, NULL);
 
-	base = path = g_malloc0 (cert_path->len + 1);
-	memcpy (path, cert_path->data, cert_path->len);
+	base = path = g_malloc0 (cert_path_len + 1);
+	memcpy (path, cert_path, cert_path_len);
 
 	if (path[0] == '/')
 		return path;
@@ -791,37 +791,46 @@ has_cert_ext (const char *path)
 }
 
 static gboolean
-handle_as_scheme (GByteArray *array, NMSetting *setting, const char *key)
+handle_as_scheme (GBytes *bytes, NMSetting *setting, const char *key)
 {
+	const guint8 *data;
+	gsize data_len;
+
+	data = g_bytes_get_data (bytes, &data_len);
+
 	/* It's the PATH scheme, can just set plain data */
-	if (   (array->len > strlen (SCHEME_PATH))
-	    && g_str_has_prefix ((const char *) array->data, SCHEME_PATH)
-	    && (array->data[array->len - 1] == '\0')) {
-		g_object_set (setting, key, array, NULL);
+	if (   (data_len > strlen (SCHEME_PATH))
+	    && g_str_has_prefix ((const char *) data, SCHEME_PATH)
+	    && (data[data_len - 1] == '\0')) {
+		g_object_set (setting, key, bytes, NULL);
 		return TRUE;
 	}
 	return FALSE;
 }
 
 static gboolean
-handle_as_path (GByteArray *array,
+handle_as_path (GBytes *bytes,
                 NMSetting *setting,
                 const char *key,
                 const char *keyfile_path)
 {
-	gsize validate_len = array->len;
-	GByteArray *val;
+	const guint8 *data;
+	gsize data_len;
+	gsize validate_len;
 	char *path;
 	gboolean exists, success = FALSE;
 
-	if (array->len > 500 || array->len < 1)
+	data = g_bytes_get_data (bytes, &data_len);
+	if (data_len > 500 || data_len < 1)
 		return FALSE;
 
 	/* If there's a trailing NULL tell g_utf8_validate() to to until the NULL */
-	if (array->data[array->len - 1] == '\0')
+	if (data[data_len - 1] == '\0')
 		validate_len = -1;
+	else
+		validate_len = data_len;
 
-	if (g_utf8_validate ((const char *) array->data, validate_len, NULL) == FALSE)
+	if (g_utf8_validate ((const char *) data, validate_len, NULL) == FALSE)
 		return FALSE;
 
 	/* Might be a bare path without the file:// prefix; in that case
@@ -829,18 +838,22 @@ handle_as_path (GByteArray *array,
 	 * relative path to the current directory.
 	 */
 
-	path = get_cert_path (keyfile_path, array);
+	path = get_cert_path (keyfile_path, data, data_len);
 	exists = g_file_test (path, G_FILE_TEST_EXISTS);
 	if (   exists
-	    || memchr (array->data, '/', array->len)
+	    || memchr (data, '/', data_len)
 	    || has_cert_ext (path)) {
+		GByteArray *tmp;
+		GBytes *val;
+
 		/* Construct the proper value as required for the PATH scheme */
-		val = g_byte_array_sized_new (strlen (SCHEME_PATH) + strlen (path) + 1);
-		g_byte_array_append (val, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
-		g_byte_array_append (val, (const guint8 *) path, strlen (path));
-		g_byte_array_append (val, (const guint8 *) "\0", 1);
+		tmp = g_byte_array_sized_new (strlen (SCHEME_PATH) + strlen (path) + 1);
+		g_byte_array_append (tmp, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
+		g_byte_array_append (tmp, (const guint8 *) path, strlen (path));
+		g_byte_array_append (tmp, (const guint8 *) "\0", 1);
+		val = g_byte_array_free_to_bytes (tmp);
 		g_object_set (setting, key, val, NULL);
-		g_byte_array_free (val, TRUE);
+		g_bytes_unref (val);
 		success = TRUE;
 
 		/* Warn if the certificate didn't exist */
@@ -856,28 +869,28 @@ static void
 cert_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	GByteArray *array;
+	GBytes *bytes;
 	gboolean success = FALSE;
 
-	array = get_uchar_array (keyfile, setting_name, key, TRUE, FALSE);
-	if (array && array->len > 0) {
+	bytes = get_bytes (keyfile, setting_name, key, TRUE, FALSE);
+	if (bytes) {
 		/* Try as a path + scheme (ie, starts with "file://") */
-		success = handle_as_scheme (array, setting, key);
+		success = handle_as_scheme (bytes, setting, key);
 
 		/* If not, it might be a plain path */
 		if (success == FALSE)
-			success = handle_as_path (array, setting, key, keyfile_path);
+			success = handle_as_path (bytes, setting, key, keyfile_path);
 
 		/* If neither of those two, assume blob with certificate data */
 		if (success == FALSE)
-			g_object_set (setting, key, array, NULL);
+			g_object_set (setting, key, bytes, NULL);
 	} else {
 		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid key/cert value for %s / %s",
 		             __func__, setting_name, key);
 	}
 
-	if (array)
-		g_byte_array_free (array, TRUE);
+	if (bytes)
+		g_bytes_unref (bytes);
 }
 
 typedef struct {
@@ -1107,9 +1120,10 @@ read_one_setting_value (NMSetting *setting,
 		uint_val = g_ascii_strtoull (tmp_str, NULL, 10);
 		g_free (tmp_str);
 		g_object_set (setting, key, uint_val, NULL);
- 	} else if (type == DBUS_TYPE_G_UCHAR_ARRAY) {
+ 	} else if (type == G_TYPE_BYTES) {
 		gint *tmp;
 		GByteArray *array;
+		GBytes *bytes;
 		gsize length;
 		int i;
 
@@ -1128,8 +1142,9 @@ read_one_setting_value (NMSetting *setting,
 				g_byte_array_append (array, (const unsigned char *) &v, sizeof (v));
 		}
 
-		g_object_set (setting, key, array, NULL);
-		g_byte_array_free (array, TRUE);
+		bytes = g_byte_array_free_to_bytes (array);
+		g_object_set (setting, key, bytes, NULL);
+		g_bytes_unref (bytes);
 		g_free (tmp);
 	} else if (type == G_TYPE_STRV) {
 		gchar **sa;

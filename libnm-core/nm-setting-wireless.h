@@ -116,7 +116,7 @@ GType nm_setting_wireless_get_type (void);
 
 NMSetting *nm_setting_wireless_new (void);
 
-const GByteArray *nm_setting_wireless_get_ssid               (NMSettingWireless *setting);
+GBytes           *nm_setting_wireless_get_ssid               (NMSettingWireless *setting);
 const char       *nm_setting_wireless_get_mode               (NMSettingWireless *setting);
 const char       *nm_setting_wireless_get_band               (NMSettingWireless *setting);
 guint32           nm_setting_wireless_get_channel            (NMSettingWireless *setting);

@@ -1126,7 +1126,7 @@ test_write_wireless_connection (void)
 	NMSettingIP6Config *s_ip6;
 	char *uuid;
 	const char *bssid = "aa:b9:a1:74:55:44";
-	GByteArray *ssid;
+	GBytes *ssid;
 	unsigned char tmpssid[] = { 0x31, 0x33, 0x33, 0x37 };
 	gboolean success;
 	NMConnection *reread;
@@ -1158,8 +1158,7 @@ test_write_wireless_connection (void)
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_wireless));
 
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 
 	g_object_set (s_wireless,
 	              NM_SETTING_WIRELESS_BSSID, bssid,
@@ -1167,7 +1166,7 @@ test_write_wireless_connection (void)
 	              NM_SETTING_WIRED_MTU, 1000,
 	              NULL);
 
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* IP4 setting */
 
@@ -1221,7 +1220,9 @@ test_read_string_ssid (void)
 	NMConnection *connection;
 	NMSettingWireless *s_wireless;
 	GError *error = NULL;
-	const GByteArray *array;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *expected_ssid = "blah blah ssid 1234";
 
 	connection = nm_keyfile_plugin_connection_from_file (TEST_STRING_SSID_FILE, NULL);
@@ -1240,14 +1241,15 @@ test_read_string_ssid (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME);
 
 	/* SSID */
-	array = nm_setting_wireless_get_ssid (s_wireless);
-	ASSERT (array != NULL,
+	ssid = nm_setting_wireless_get_ssid (s_wireless);
+	ASSERT (ssid != NULL,
 	        "connection-verify-wireless", "failed to verify %s: missing %s / %s key",
 	        TEST_STRING_SSID_FILE,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SSID);
-	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
-	g_assert (memcmp (array->data, expected_ssid, array->len) == 0);
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
+	g_assert (memcmp (ssid_data, expected_ssid, ssid_len) == 0);
 
 	g_object_unref (connection);
 }
@@ -1260,7 +1262,7 @@ test_write_string_ssid (void)
 	NMSettingWireless *s_wireless;
 	NMSettingIP4Config *s_ip4;
 	char *uuid, *testfile = NULL, *tmp;
-	GByteArray *ssid;
+	GBytes *ssid;
 	unsigned char tmpssid[] = { 65, 49, 50, 51, 32, 46, 92, 46, 36, 37, 126, 93 };
 	gboolean success;
 	NMConnection *reread;
@@ -1289,10 +1291,9 @@ test_write_string_ssid (void)
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_wireless));
 
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 	g_object_set (s_wireless, NM_SETTING_WIRELESS_SSID, ssid, NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* IP4 setting */
 
@@ -1350,7 +1351,9 @@ test_read_intlist_ssid (void)
 	NMSettingWireless *s_wifi;
 	GError *error = NULL;
 	gboolean success;
-	const GByteArray *array;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *expected_ssid = "blah1234";
 
 	connection = nm_keyfile_plugin_connection_from_file (TEST_INTLIST_SSID_FILE, &error);
@@ -1365,10 +1368,11 @@ test_read_intlist_ssid (void)
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
-	array = nm_setting_wireless_get_ssid (s_wifi);
-	g_assert (array != NULL);
-	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
-	g_assert_cmpint (memcmp (array->data, expected_ssid, strlen (expected_ssid)), ==, 0);
+	ssid = nm_setting_wireless_get_ssid (s_wifi);
+	g_assert (ssid != NULL);
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
+	g_assert_cmpint (memcmp (ssid_data, expected_ssid, strlen (expected_ssid)), ==, 0);
 
 	g_object_unref (connection);
 }
@@ -1381,7 +1385,7 @@ test_write_intlist_ssid (void)
 	NMSettingWireless *s_wifi;
 	NMSettingIP4Config *s_ip4;
 	char *uuid, *testfile = NULL;
-	GByteArray *ssid;
+	GBytes *ssid;
 	unsigned char tmpssid[] = { 65, 49, 50, 51, 0, 50, 50 };
 	gboolean success;
 	NMConnection *reread;
@@ -1414,10 +1418,9 @@ test_write_intlist_ssid (void)
 	g_assert (s_wifi);
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 	g_object_set (s_wifi, NM_SETTING_WIRELESS_SSID, ssid, NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* IP4 setting */
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
@@ -1474,7 +1477,9 @@ test_read_intlike_ssid (void)
 	NMSettingWireless *s_wifi;
 	GError *error = NULL;
 	gboolean success;
-	const GByteArray *array;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *expected_ssid = "101";
 
 	connection = nm_keyfile_plugin_connection_from_file (TEST_INTLIKE_SSID_FILE, &error);
@@ -1489,10 +1494,11 @@ test_read_intlike_ssid (void)
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
-	array = nm_setting_wireless_get_ssid (s_wifi);
-	g_assert (array != NULL);
-	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
-	g_assert_cmpint (memcmp (array->data, expected_ssid, strlen (expected_ssid)), ==, 0);
+	ssid = nm_setting_wireless_get_ssid (s_wifi);
+	g_assert (ssid != NULL);
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
+	g_assert_cmpint (memcmp (ssid_data, expected_ssid, strlen (expected_ssid)), ==, 0);
 
 	g_object_unref (connection);
 }
@@ -1506,7 +1512,9 @@ test_read_intlike_ssid_2 (void)
 	NMSettingWireless *s_wifi;
 	GError *error = NULL;
 	gboolean success;
-	const GByteArray *array;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *expected_ssid = "11;12;13;";
 
 	connection = nm_keyfile_plugin_connection_from_file (TEST_INTLIKE_SSID_2_FILE, &error);
@@ -1521,10 +1529,11 @@ test_read_intlike_ssid_2 (void)
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
-	array = nm_setting_wireless_get_ssid (s_wifi);
-	g_assert (array != NULL);
-	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
-	g_assert_cmpint (memcmp (array->data, expected_ssid, strlen (expected_ssid)), ==, 0);
+	ssid = nm_setting_wireless_get_ssid (s_wifi);
+	g_assert (ssid != NULL);
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
+	g_assert_cmpint (memcmp (ssid_data, expected_ssid, strlen (expected_ssid)), ==, 0);
 
 	g_object_unref (connection);
 }
@@ -1537,7 +1546,7 @@ test_write_intlike_ssid (void)
 	NMSettingWireless *s_wifi;
 	NMSettingIP4Config *s_ip4;
 	char *uuid, *testfile = NULL;
-	GByteArray *ssid;
+	GBytes *ssid;
 	unsigned char tmpssid[] = { 49, 48, 49 };
 	gboolean success;
 	NMConnection *reread;
@@ -1569,10 +1578,9 @@ test_write_intlike_ssid (void)
 	g_assert (s_wifi);
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 	g_object_set (s_wifi, NM_SETTING_WIRELESS_SSID, ssid, NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* IP4 setting */
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
@@ -1624,7 +1632,7 @@ test_write_intlike_ssid_2 (void)
 	NMSettingWireless *s_wifi;
 	NMSettingIP4Config *s_ip4;
 	char *uuid, *testfile = NULL;
-	GByteArray *ssid;
+	GBytes *ssid;
 	unsigned char tmpssid[] = { 49, 49, 59, 49, 50, 59, 49, 51, 59};
 	gboolean success;
 	NMConnection *reread;
@@ -1656,10 +1664,9 @@ test_write_intlike_ssid_2 (void)
 	g_assert (s_wifi);
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 	g_object_set (s_wifi, NM_SETTING_WIRELESS_SSID, ssid, NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* IP4 setting */
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
@@ -2190,7 +2197,7 @@ test_read_wired_8021x_tls_blob_connection (void)
 	GError *error = NULL;
 	const char *tmp;
 	gboolean success;
-	const GByteArray *array;
+	GBytes *blob;
 
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_TLS_BLOB_FILE, &error);
 	if (connection == NULL) {
@@ -2234,9 +2241,9 @@ test_read_wired_8021x_tls_blob_connection (void)
 	g_assert (tmp == NULL);
 
 	/* Validate the path */
-	array = nm_setting_802_1x_get_ca_cert_blob (s_8021x);
-	g_assert (array != NULL);
-	g_assert_cmpint (array->len, ==, 568);
+	blob = nm_setting_802_1x_get_ca_cert_blob (s_8021x);
+	g_assert (blob != NULL);
+	g_assert_cmpint (g_bytes_get_size (blob), ==, 568);
 
 	tmp = nm_setting_802_1x_get_client_cert_path (s_8021x);
 	g_assert_cmpstr (tmp, ==, "/home/dcbw/Desktop/certinfra/client.pem");
@@ -3175,7 +3182,9 @@ test_read_new_wireless_group_names (void)
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	const GByteArray *array;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *expected_ssid = "foobar";
 	GError *error = NULL;
 	gboolean success;
@@ -3191,10 +3200,11 @@ test_read_new_wireless_group_names (void)
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
-	array = nm_setting_wireless_get_ssid (s_wifi);
-	g_assert (array);
-	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
-	g_assert_cmpint (memcmp (array->data, expected_ssid, array->len), ==, 0);
+	ssid = nm_setting_wireless_get_ssid (s_wifi);
+	g_assert (ssid);
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
+	g_assert_cmpint (memcmp (ssid_data, expected_ssid, ssid_len), ==, 0);
 
 	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wifi), ==, NM_SETTING_WIRELESS_MODE_INFRA);
 
@@ -3215,7 +3225,7 @@ test_write_new_wireless_group_names (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	char *uuid;
-	GByteArray *ssid;
+	GBytes *ssid;
 	unsigned char tmpssid[] = { 0x31, 0x33, 0x33, 0x37 };
 	const char *expected_psk = "asdfasdfasdfa12315";
 	gboolean success;
@@ -3246,13 +3256,12 @@ test_write_new_wireless_group_names (void)
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
 	              NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* WiFi security setting */
 	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();

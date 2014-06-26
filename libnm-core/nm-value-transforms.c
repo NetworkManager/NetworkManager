@@ -92,33 +92,6 @@ _nm_utils_convert_gvalue_hash_to_string (const GValue *src_value, GValue *dest_v
 	g_string_free (printable, FALSE);
 }
 
-static void
-_nm_utils_convert_byte_array_to_string (const GValue *src_value, GValue *dest_value)
-{
-	GArray *array;
-	GString *printable;
-	guint i = 0;
-
-	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_UCHAR_ARRAY));
-
-	array = (GArray *) g_value_get_boxed (src_value);
-
-	printable = g_string_new ("[");
-	if (array) {
-		while (i < MIN (array->len, 35)) {
-			if (i > 0)
-				g_string_append_c (printable, ' ');
-			g_string_append_printf (printable, "0x%02X",
-			                        g_array_index (array, unsigned char, i++));
-		}
-		if (i < array->len)
-			g_string_append (printable, " ... ");
-	}
-	g_string_append_c (printable, ']');
-
-	g_value_take_string (dest_value, g_string_free (printable, FALSE));
-}
-
 void
 _nm_value_transforms_register (void)
 {
@@ -134,9 +107,6 @@ _nm_value_transforms_register (void)
 		g_value_register_transform_func (DBUS_TYPE_G_MAP_OF_VARIANT,
 		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_gvalue_hash_to_string);
-		g_value_register_transform_func (DBUS_TYPE_G_UCHAR_ARRAY,
-		                                 G_TYPE_STRING,
-		                                 _nm_utils_convert_byte_array_to_string);
 		registered = TRUE;
 	}
 }

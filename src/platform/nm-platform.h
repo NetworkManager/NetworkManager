@@ -433,7 +433,7 @@ typedef struct {
 
 	guint32     (*mesh_get_channel)      (NMPlatform *, int ifindex);
 	gboolean    (*mesh_set_channel)      (NMPlatform *, int ifindex, guint32 channel);
-	gboolean    (*mesh_set_ssid)         (NMPlatform *, int ifindex, const GByteArray *ssid);
+	gboolean    (*mesh_set_ssid)         (NMPlatform *, int ifindex, const guint8 *ssid, gsize len);
 
 	GArray * (*ip4_address_get_all) (NMPlatform *, int ifindex);
 	GArray * (*ip6_address_get_all) (NMPlatform *, int ifindex);
@@ -573,7 +573,7 @@ void        nm_platform_wifi_indicate_addressing_running (int ifindex, gboolean 
 
 guint32     nm_platform_mesh_get_channel      (int ifindex);
 gboolean    nm_platform_mesh_set_channel      (int ifindex, guint32 channel);
-gboolean    nm_platform_mesh_set_ssid         (int ifindex, const GByteArray *ssid);
+gboolean    nm_platform_mesh_set_ssid         (int ifindex, const guint8 *ssid, gsize len);
 
 GArray *nm_platform_ip4_address_get_all (int ifindex);
 GArray *nm_platform_ip6_address_get_all (int ifindex);

@@ -391,24 +391,29 @@ ssid_writer (GKeyFile *file,
              const char *key,
              const GValue *value)
 {
-	GByteArray *array;
+	GBytes *bytes;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *setting_name = nm_setting_get_name (setting);
 	gboolean new_format = TRUE;
 	unsigned int semicolons = 0;
 	int i, *tmp_array;
 	char *ssid;
 
-	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY));
+	g_return_if_fail (G_VALUE_HOLDS (value, G_TYPE_BYTES));
 
-	array = (GByteArray *) g_value_get_boxed (value);
-	if (!array || !array->len)
+	bytes = g_value_get_boxed (value);
+	if (!bytes)
+		return;
+	ssid_data = g_bytes_get_data (bytes, &ssid_len);
+	if (ssid_len == 0)
 		return;
 
 	/* Check whether each byte is printable.  If not, we have to use an
 	 * integer list, otherwise we can just use a string.
 	 */
-	for (i = 0; i < array->len; i++) {
-		char c = array->data[i] & 0xFF;
+	for (i = 0; i < ssid_len; i++) {
+		char c = ssid_data[i] & 0xFF;
 		if (!g_ascii_isprint (c)) {
 			new_format = FALSE;
 			break;
@@ -418,26 +423,26 @@ ssid_writer (GKeyFile *file,
 	}
 
 	if (new_format) {
-		ssid = g_malloc0 (array->len + semicolons + 1);
+		ssid = g_malloc0 (ssid_len + semicolons + 1);
 		if (semicolons == 0)
-			memcpy (ssid, array->data, array->len);
+			memcpy (ssid, ssid_data, ssid_len);
 		else {
 			/* Escape semicolons with backslashes to make strings
 			 * containing ';', such as '16;17;' unambiguous */
 			int j = 0;
-			for (i = 0; i < array->len; i++) {
-				if (array->data[i] == ';')
+			for (i = 0; i < ssid_len; i++) {
+				if (ssid_data[i] == ';')
 					ssid[j++] = '\\';
-				ssid[j++] = array->data[i];
+				ssid[j++] = ssid_data[i];
 			}
 		}
 		nm_keyfile_plugin_kf_set_string (file, setting_name, key, ssid);
 		g_free (ssid);
 	} else {
-		tmp_array = g_new (gint, array->len);
-		for (i = 0; i < array->len; i++)
-			tmp_array[i] = (int) array->data[i];
-		nm_keyfile_plugin_kf_set_integer_list (file, setting_name, key, tmp_array, array->len);
+		tmp_array = g_new (gint, ssid_len);
+		for (i = 0; i < ssid_len; i++)
+			tmp_array[i] = (int) ssid_data[i];
+		nm_keyfile_plugin_kf_set_integer_list (file, setting_name, key, tmp_array, ssid_len);
 		g_free (tmp_array);
 	}
 }
@@ -474,7 +479,7 @@ typedef struct ObjectType {
 	NMSetting8021xCKScheme (*scheme_func) (NMSetting8021x *setting);
 	NMSetting8021xCKFormat (*format_func) (NMSetting8021x *setting);
 	const char *           (*path_func)   (NMSetting8021x *setting);
-	const GByteArray *     (*blob_func)   (NMSetting8021x *setting);
+	GBytes *               (*blob_func)   (NMSetting8021x *setting);
 } ObjectType;
 
 static const ObjectType objtypes[10] = {
@@ -531,7 +536,8 @@ static const ObjectType objtypes[10] = {
 
 static gboolean
 write_cert_key_file (const char *path,
-                     const GByteArray *data,
+                     const guint8 *data,
+                     gsize data_len,
                      GError **error)
 {
 	char *tmppath;
@@ -564,8 +570,8 @@ write_cert_key_file (const char *path,
 	}
 
 	errno = 0;
-	written = write (fd, data->data, data->len);
-	if (written != data->len) {
+	written = write (fd, data, data_len);
+	if (written != data_len) {
 		close (fd);
 		unlink (tmppath);
 		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
@@ -633,13 +639,16 @@ cert_writer (GKeyFile *file,
 
 		nm_keyfile_plugin_kf_set_string (file, setting_name, key, path);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		const GByteArray *blob;
+		GBytes *blob;
+		const guint8 *blob_data;
+		gsize blob_len;
 		gboolean success;
 		GError *error = NULL;
 		char *new_path;
 
 		blob = objtype->blob_func (NM_SETTING_802_1X (setting));
 		g_assert (blob);
+		blob_data = g_bytes_get_data (blob, &blob_len);
 
 		if (objtype->format_func) {
 			/* Get the extension for a private key */
@@ -648,7 +657,7 @@ cert_writer (GKeyFile *file,
 				ext = "p12";
 		} else {
 			/* DER or PEM format certificate? */
-			if (blob->len > 2 && blob->data[0] == 0x30 && blob->data[1] == 0x82)
+			if (blob_len > 2 && blob_data[0] == 0x30 && blob_data[1] == 0x82)
 				ext = "der";
 		}
 
@@ -658,7 +667,7 @@ cert_writer (GKeyFile *file,
 		new_path = g_strdup_printf ("%s/%s-%s.%s", keyfile_dir, uuid, objtype->suffix, ext);
 		g_assert (new_path);
 
-		success = write_cert_key_file (new_path, blob, &error);
+		success = write_cert_key_file (new_path, blob_data, blob_len, &error);
 		if (success) {
 			/* Write the path value to the keyfile */
 			nm_keyfile_plugin_kf_set_string (file, setting_name, key, new_path);
@@ -822,19 +831,23 @@ write_setting_value (NMSetting *setting,
 		nm_keyfile_plugin_kf_set_boolean (info->keyfile, setting_name, key, g_value_get_boolean (value));
 	} else if (type == G_TYPE_CHAR) {
 		nm_keyfile_plugin_kf_set_integer (info->keyfile, setting_name, key, (int) g_value_get_schar (value));
-	} else if (type == DBUS_TYPE_G_UCHAR_ARRAY) {
-		GByteArray *array;
+	} else if (type == G_TYPE_BYTES) {
+		GBytes *bytes;
+		const guint8 *data;
+		gsize len = 0;
 
-		array = (GByteArray *) g_value_get_boxed (value);
-		if (array && array->len > 0) {
+		bytes = g_value_get_boxed (value);
+		data = bytes ? g_bytes_get_data (bytes, &len) : NULL;
+
+		if (data != NULL && len > 0) {
 			int *tmp_array;
 			int i;
 
-			tmp_array = g_new (gint, array->len);
-			for (i = 0; i < array->len; i++)
-				tmp_array[i] = (int) array->data[i];
+			tmp_array = g_new (gint, len);
+			for (i = 0; i < len; i++)
+				tmp_array[i] = (int) data[i];
 
-			nm_keyfile_plugin_kf_set_integer_list (info->keyfile, setting_name, key, tmp_array, array->len);
+			nm_keyfile_plugin_kf_set_integer_list (info->keyfile, setting_name, key, tmp_array, len);
 			g_free (tmp_array);
 		}
 	} else if (type == G_TYPE_STRV) {

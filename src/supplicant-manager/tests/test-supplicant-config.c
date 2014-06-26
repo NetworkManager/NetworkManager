@@ -120,7 +120,7 @@ test_wifi_open (void)
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
-	GByteArray *ssid;
+	GBytes *ssid;
 	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
 	const char *bssid_str = "11:22:33:44:55:66";
 
@@ -143,8 +143,7 @@ test_wifi_open (void)
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
-	ssid = g_byte_array_sized_new (sizeof (ssid_data));
-	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+	ssid = g_bytes_new (ssid_data, sizeof (ssid_data));
 
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
@@ -153,7 +152,7 @@ test_wifi_open (void)
 	              NM_SETTING_WIRELESS_BAND, "bg",
 	              NULL);
 
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -216,7 +215,7 @@ test_wifi_wep_key (const char *detail,
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
-	GByteArray *ssid;
+	GBytes *ssid;
 	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
 	const char *bssid_str = "11:22:33:44:55:66";
 
@@ -239,8 +238,7 @@ test_wifi_wep_key (const char *detail,
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
-	ssid = g_byte_array_sized_new (sizeof (ssid_data));
-	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+	ssid = g_bytes_new (ssid_data, sizeof (ssid_data));
 
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
@@ -249,7 +247,7 @@ test_wifi_wep_key (const char *detail,
 	              NM_SETTING_WIRELESS_BAND, "bg",
 	              NULL);
 
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* Wifi Security setting */
 	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
@@ -354,7 +352,7 @@ test_wifi_wpa_psk (const char *detail,
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
-	GByteArray *ssid;
+	GBytes *ssid;
 	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
 	const char *bssid_str = "11:22:33:44:55:66";
 
@@ -377,8 +375,7 @@ test_wifi_wpa_psk (const char *detail,
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
-	ssid = g_byte_array_sized_new (sizeof (ssid_data));
-	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+	ssid = g_bytes_new (ssid_data, sizeof (ssid_data));
 
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
@@ -387,7 +384,7 @@ test_wifi_wpa_psk (const char *detail,
 	              NM_SETTING_WIRELESS_BAND, "bg",
 	              NULL);
 
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* Wifi Security setting */
 	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();

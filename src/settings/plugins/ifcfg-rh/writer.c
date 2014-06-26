@@ -197,7 +197,7 @@ typedef struct ObjectType {
 	const char *setting_key;
 	NMSetting8021xCKScheme (*scheme_func)(NMSetting8021x *setting);
 	const char *           (*path_func)  (NMSetting8021x *setting);
-	const GByteArray *     (*blob_func)  (NMSetting8021x *setting);
+	GBytes *               (*blob_func)  (NMSetting8021x *setting);
 	const char *ifcfg_key;
 	const char *suffix;
 } ObjectType;
@@ -282,7 +282,7 @@ write_object (NMSetting8021x *s_8021x,
 {
 	NMSetting8021xCKScheme scheme;
 	const char *path = NULL;
-	const GByteArray *blob = NULL;
+	GBytes *blob = NULL;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (objtype != NULL, FALSE);
@@ -347,7 +347,10 @@ write_object (NMSetting8021x *s_8021x,
 		 * can use paths from now on instead of pushing around the certificate
 		 * data itself.
 		 */
-		success = write_secret_file (new_file, (const char *) blob->data, blob->len, &write_error);
+		success = write_secret_file (new_file,
+		                             (const char *) g_bytes_get_data (blob, NULL),
+		                             g_bytes_get_size (blob),
+		                             &write_error);
 		if (success) {
 			svSetValue (ifcfg, objtype->ifcfg_key, new_file, FALSE);
 			g_free (new_file);
@@ -800,7 +803,9 @@ write_wireless_setting (NMConnection *connection,
 {
 	NMSettingWireless *s_wireless;
 	char *tmp, *tmp2;
-	const GByteArray *ssid;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *mode, *bssid;
 	const char *device_mac, *cloned_mac;
 	char buf[33];
@@ -852,7 +857,8 @@ write_wireless_setting (NMConnection *connection,
 		             "Missing SSID in '%s' setting", NM_SETTING_WIRELESS_SETTING_NAME);
 		return FALSE;
 	}
-	if (!ssid->len || ssid->len > 32) {
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	if (!ssid_len || ssid_len > 32) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Invalid SSID in '%s' setting", NM_SETTING_WIRELESS_SETTING_NAME);
 		return FALSE;
@@ -861,8 +867,8 @@ write_wireless_setting (NMConnection *connection,
 	/* If the SSID contains any non-printable characters, we need to use the
 	 * hex notation of the SSID instead.
 	 */
-	for (i = 0; i < ssid->len; i++) {
-		if (!g_ascii_isprint (ssid->data[i])) {
+	for (i = 0; i < ssid_len; i++) {
+		if (!g_ascii_isprint (ssid_data[i])) {
 			hex_ssid = TRUE;
 			break;
 		}
@@ -872,16 +878,16 @@ write_wireless_setting (NMConnection *connection,
 		GString *str;
 
 		/* Hex SSIDs don't get quoted */
-		str = g_string_sized_new (ssid->len * 2 + 3);
+		str = g_string_sized_new (ssid_len * 2 + 3);
 		g_string_append (str, "0x");
-		for (i = 0; i < ssid->len; i++)
-			g_string_append_printf (str, "%02X", ssid->data[i]);
+		for (i = 0; i < ssid_len; i++)
+			g_string_append_printf (str, "%02X", ssid_data[i]);
 		svSetValue (ifcfg, "ESSID", str->str, TRUE);
 		g_string_free (str, TRUE);
 	} else {
 		/* Printable SSIDs always get quoted */
 		memset (buf, 0, sizeof (buf));
-		memcpy (buf, ssid->data, ssid->len);
+		memcpy (buf, ssid_data, ssid_len);
 		tmp = svEscape (buf);
 
 		/* svEscape will usually quote the string, but just for consistency,

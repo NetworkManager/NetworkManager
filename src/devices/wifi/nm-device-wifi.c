@@ -985,6 +985,8 @@ complete_connection (NMDevice *device,
 	char *str_ssid = NULL;
 	NMAccessPoint *ap = NULL;
 	const GByteArray *ssid = NULL;
+	GByteArray *tmp_ssid = NULL;
+	GBytes *setting_ssid = NULL;
 	GSList *iter;
 	gboolean hidden = FALSE;
 
@@ -1002,8 +1004,8 @@ complete_connection (NMDevice *device,
 			return FALSE;
 		}
 
-		ssid = nm_setting_wireless_get_ssid (s_wifi);
-		if (!ssid || !ssid->len) {
+		setting_ssid = nm_setting_wireless_get_ssid (s_wifi);
+		if (!setting_ssid || g_bytes_get_size (setting_ssid) == 0) {
 			g_set_error_literal (error,
 			                     NM_WIFI_ERROR,
 			                     NM_WIFI_ERROR_CONNECTION_INVALID,
@@ -1066,7 +1068,13 @@ complete_connection (NMDevice *device,
 			 * for the SSID.  The AP object will still be used for encryption
 			 * settings and such.
 			 */
-			ssid = nm_setting_wireless_get_ssid (s_wifi);
+			setting_ssid = nm_setting_wireless_get_ssid (s_wifi);
+			if (setting_ssid) {
+				ssid = tmp_ssid = g_byte_array_new ();
+				g_byte_array_append (tmp_ssid,
+				                     g_bytes_get_data (setting_ssid, NULL),
+				                     g_bytes_get_size (setting_ssid));
+			}
 		}
 
 		if (ssid == NULL) {
@@ -1086,8 +1094,11 @@ complete_connection (NMDevice *device,
 		if (!nm_ap_complete_connection (ap,
 		                                connection,
 		                                is_manf_default_ssid (ssid),
-		                                error))
+		                                error)) {
+			if (tmp_ssid)
+				g_byte_array_unref (tmp_ssid);
 			return FALSE;
+		}
 	}
 
 	/* The kernel doesn't support Ad-Hoc WPA connections well at this time,
@@ -1099,6 +1110,8 @@ complete_connection (NMDevice *device,
 		                     NM_SETTING_WIRELESS_ERROR,
 		                     NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 		                     "WPA Ad-Hoc disabled due to kernel bugs");
+		if (tmp_ssid)
+			g_byte_array_unref (tmp_ssid);
 		return FALSE;
 	}
 
@@ -1113,6 +1126,8 @@ complete_connection (NMDevice *device,
 	                           NULL,
 	                           TRUE);
 	g_free (str_ssid);
+	if (tmp_ssid)
+		g_byte_array_unref (tmp_ssid);
 
 	if (hidden)
 		g_object_set (s_wifi, NM_SETTING_WIRELESS_HIDDEN, TRUE, NULL);
@@ -1474,20 +1489,25 @@ build_hidden_probe_list (NMDeviceWifi *self)
 	                                                           hidden_filter_func,
 	                                                           NULL);
 	if (connections && connections->data) {
-		ssids = g_ptr_array_sized_new (max_scan_ssids - 1);
-		g_ptr_array_add (ssids, nullssid);  /* Add wildcard SSID */
+		ssids = g_ptr_array_new_full (max_scan_ssids - 1, (GDestroyNotify) g_byte_array_unref);
+		g_ptr_array_add (ssids, g_byte_array_ref (nullssid));  /* Add wildcard SSID */
 	}
 
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *connection = iter->data;
 		NMSettingWireless *s_wifi;
-		const GByteArray *ssid;
+		GBytes *ssid;
+		GByteArray *ssid_array;
 
 		s_wifi = (NMSettingWireless *) nm_connection_get_setting_wireless (connection);
 		g_assert (s_wifi);
 		ssid = nm_setting_wireless_get_ssid (s_wifi);
 		g_assert (ssid);
-		g_ptr_array_add (ssids, (gpointer) ssid);
+		ssid_array = g_byte_array_new ();
+		g_byte_array_append (ssid_array,
+		                     g_bytes_get_data (ssid, NULL),
+		                     g_bytes_get_size (ssid));
+		g_ptr_array_add (ssids, ssid_array);
 	}
 	g_slist_free (connections);
 
@@ -1536,10 +1556,8 @@ request_wireless_scan (gpointer user_data)
 			nm_device_add_pending_action (NM_DEVICE (self), "scan", TRUE);
 		}
 
-		if (ssids) {
-			/* Elements owned by the connections, so we don't free them here */
-			g_ptr_array_free (ssids, TRUE);
-		}
+		if (ssids)
+			g_ptr_array_unref (ssids);
 	} else
 		_LOGD (LOGD_WIFI_SCAN, "scan requested but not allowed at this time");
 
@@ -1657,7 +1675,11 @@ try_fill_ssid_for_hidden_ap (NMAccessPoint *ap)
 		s_wifi = nm_connection_get_setting_wireless (connection);
 		if (s_wifi) {
 			if (nm_settings_connection_has_seen_bssid (NM_SETTINGS_CONNECTION (connection), bssid)) {
-				nm_ap_set_ssid (ap, nm_setting_wireless_get_ssid (s_wifi));
+				GBytes *ssid = nm_setting_wireless_get_ssid (s_wifi);
+
+				nm_ap_set_ssid (ap,
+				                g_bytes_get_data (ssid, NULL),
+				                g_bytes_get_size (ssid));
 				break;
 			}
 		}
@@ -2190,7 +2212,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 		if (devstate == NM_DEVICE_STATE_CONFIG) {
 			NMConnection *connection;
 			NMSettingWireless *s_wifi;
-			const GByteArray *ssid;
+			GBytes *ssid;
 
 			connection = nm_device_get_connection (NM_DEVICE (self));
 			g_return_if_fail (connection);
@@ -2205,7 +2227,8 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			       "Activation: (wifi) Stage 2 of 5 (Device Configure) successful.  %s '%s'.",
 			       priv->mode == NM_802_11_MODE_AP ? "Started Wi-Fi Hotspot" :
 			       "Connected to wireless network",
-			       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
+			       ssid ? nm_utils_escape_ssid (g_bytes_get_data (ssid, NULL),
+			                                    g_bytes_get_size (ssid)) : "(none)");
 			nm_device_activate_schedule_stage3_ip_config_start (device);
 		} else if (devstate == NM_DEVICE_STATE_ACTIVATED)
 			periodic_update (self, NULL);
@@ -3028,9 +3051,11 @@ activation_success_handler (NMDevice *device)
 		 * instead.
 		 */
 
-		/* If the better match was a hidden AP, update it's SSID */
-		if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len))
-			nm_ap_set_ssid (tmp_ap, nm_ap_get_ssid (ap));
+		/* If the better match was a hidden AP, update its SSID */
+		if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len)) {
+			ssid = nm_ap_get_ssid (ap);
+			nm_ap_set_ssid (tmp_ap, ssid->data, ssid->len);
+		}
 
 		nm_active_connection_set_specific_object (NM_ACTIVE_CONNECTION (req),
 		                                          nm_ap_get_dbus_path (tmp_ap));
