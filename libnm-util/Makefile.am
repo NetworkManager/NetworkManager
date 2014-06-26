@@ -191,7 +191,7 @@ nm-setting-docs.xml: generate-setting-docs.py NetworkManager-1.0.gir libnm-util.
 
 endif
 
-DISTCLEANFILES = nm-setting-docs.xml
+DISTCLEANFILES += nm-setting-docs.xml
 
 EXTRA_DIST += generate-setting-docs.py
 
