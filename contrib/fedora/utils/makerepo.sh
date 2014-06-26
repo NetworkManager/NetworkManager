@@ -144,14 +144,34 @@ elif [[ -f ./.git/makerepo.gitignore ]]; then
     /bin/cp "./.git/makerepo.gitignore" ./makerepo.gitignore
 fi
 
+get_local_mirror() {
+    local URL="$1"
+
+    if [[ -z "$URL" ]]; then
+        return
+    fi
+
+    local DIRNAME="$(echo $URL.git | sed -e 's#^.*/\([^/]\+\)$#\1#' -e 's/\(.*\)\.git$/\1/')"
+    local FULLNAME="$srcdir/.git/.makerepo-${DIRNAME}.git"
+
+    if [[ ! -d "$FULLNAME" ]]; then
+        if [[ -f "$FULLNAME" ]]; then
+            # create a file with name $FULLNAME, to suppress local mirroring
+            return
+        fi
+        git clone --mirror --bare "$URL" "$FULLNAME/"
+    fi
+    (
+        cd "$FULLNAME"
+        git fetch origin --prune
+        git gc
+    )
+    echo "$FULLNAME"
+}
+
 pushd "$DIRNAME"
     git init .
     # if you have a local clone of upstream, symlink it as ../.git/local.
-    LOCAL_GIT="$(readlink -f ../.git/local/)"
-    if [[ -d "$LOCAL_GIT" ]]; then
-        git remote add local "$LOCAL_GIT/"
-        git fetch local
-    fi
     if [[ "$BUILD_NETWORMANAGER" != "" ]]; then
         git remote add origin "git://anongit.freedesktop.org/NetworkManager/NetworkManager"
         git remote 'set-url' --push origin "ssh://$USER@git.freedesktop.org/git/NetworkManager/NetworkManager"
@@ -170,7 +190,21 @@ pushd "$DIRNAME"
     else
         die "UNEXPECTED"
     fi
+    LOCAL_MIRROR_URL="$(LANG=C git remote -v | sed -n 's/^origin\t*\([^\t].*\) (fetch)/\1/p')"
+    LOCAL_MIRROR="$(get_local_mirror "$LOCAL_MIRROR_URL")"
+    if [[ -n "$LOCAL_MIRROR" ]]; then
+        git remote add local-mirror "$LOCAL_MIRROR"
+        git fetch local-mirror
+    fi
+    LOCAL_GIT="$(readlink -f ../.git/local/)"
+    if [[ -d "$LOCAL_GIT" ]]; then
+        git remote add local "$LOCAL_GIT/"
+        git fetch local
+    fi
     git fetch origin
+    if [[ -n "$LOCAL_MIRROR" ]]; then
+        git remote remove local-mirror
+    fi
     git commit --allow-empty -m '*** empty initial commit'  # useful, to rebase the following commit
     git add -f -A .
     git commit -m '*** add all'
