@@ -276,7 +276,7 @@ impl_settings_get_connection_by_uuid (NMSettings *self,
                                       DBusGMethodInvocation *context)
 {
 	NMSettingsConnection *connection = NULL;
-	NMAuthSubject *subject;
+	NMAuthSubject *subject = NULL;
 	GError *error = NULL;
 	char *error_desc = NULL;
 
