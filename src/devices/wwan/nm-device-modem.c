@@ -24,16 +24,12 @@
 
 #include "nm-device-modem.h"
 #include "nm-modem.h"
-#include "nm-modem-old.h"
 #include "nm-device-private.h"
 #include "nm-rfkill-manager.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-settings-connection.h"
-
-#if WITH_MODEM_MANAGER_1
 #include "nm-modem-broadband.h"
-#endif
 
 G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 
