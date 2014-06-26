@@ -1338,6 +1338,11 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE));
 
+	/**
+	 * NMSettingIP4Config:address-labels:
+	 *
+	 * Internal use only.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESS_LABELS,
 		 _nm_param_spec_specialized ("address-labels",
