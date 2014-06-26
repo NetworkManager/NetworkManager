@@ -81,7 +81,7 @@
  *
  * (Corresponds to the NM_VPN_SERVICE_STATE type in nm-vpn-connection.xml.)
  */
-typedef enum NMVpnServiceState {
+typedef enum {
 	NM_VPN_SERVICE_STATE_UNKNOWN = 0,
 	NM_VPN_SERVICE_STATE_INIT,
 	NM_VPN_SERVICE_STATE_SHUTDOWN,
@@ -111,7 +111,7 @@ typedef enum NMVpnServiceState {
  *
  * (Corresponds to the NM_VPN_CONNECTION_STATE type in nm-vpn-connection.xml.)
  */
-typedef enum NMVpnConnectionState {
+typedef enum {
 	NM_VPN_CONNECTION_STATE_UNKNOWN = 0,
 	NM_VPN_CONNECTION_STATE_PREPARE,
 	NM_VPN_CONNECTION_STATE_NEED_AUTH,
@@ -153,7 +153,7 @@ typedef enum NMVpnConnectionState {
  *
  * (Corresponds to the NM_VPN_CONNECTION_STATE_REASON type in nm-vpn-connection.xml.)
  */
-typedef enum NMVpnConnectionStateReason {
+typedef enum {
 	NM_VPN_CONNECTION_STATE_REASON_UNKNOWN = 0,
 	NM_VPN_CONNECTION_STATE_REASON_NONE,
 	NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED,

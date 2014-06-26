@@ -1,5 +1,8 @@
 {
 global:
+	nm_802_11_ap_flags_get_type;
+	nm_802_11_ap_security_flags_get_type;
+	nm_802_11_mode_get_type;
 	nm_access_point_connection_valid;
 	nm_access_point_filter_connections;
 	nm_access_point_get_bssid;
@@ -30,6 +33,8 @@ global:
 	nm_active_connection_get_uuid;
 	nm_active_connection_get_vpn;
 	nm_active_connection_new;
+	nm_active_connection_state_get_type;
+	nm_bluetooth_capabilities_get_type;
 	nm_client_activate_connection;
 	nm_client_add_and_activate_connection;
 	nm_client_check_connectivity;
@@ -130,6 +135,7 @@ global:
 	nm_connection_to_hash;
 	nm_connection_update_secrets;
 	nm_connection_verify;
+	nm_connectivity_state_get_type;
 	nm_device_adsl_error_get_type;
 	nm_device_adsl_error_quark;
 	nm_device_adsl_get_carrier;
@@ -156,6 +162,7 @@ global:
 	nm_device_bt_get_name;
 	nm_device_bt_get_type;
 	nm_device_bt_new;
+	nm_device_capabilities_get_type;
 	nm_device_connection_compatible;
 	nm_device_connection_valid;
 	nm_device_delete;
@@ -212,6 +219,7 @@ global:
 	nm_device_infiniband_get_type;
 	nm_device_infiniband_new;
 	nm_device_is_software;
+	nm_device_modem_capabilities_get_type;
 	nm_device_modem_error_get_type;
 	nm_device_modem_error_quark;
 	nm_device_modem_get_current_capabilities;
@@ -226,6 +234,8 @@ global:
 	nm_device_olpc_mesh_get_type;
 	nm_device_olpc_mesh_new;
 	nm_device_set_autoconnect;
+	nm_device_state_get_type;
+	nm_device_state_reason_get_type;
 	nm_device_team_error_get_type;
 	nm_device_team_error_quark;
 	nm_device_team_get_carrier;
@@ -233,6 +243,7 @@ global:
 	nm_device_team_get_slaves;
 	nm_device_team_get_type;
 	nm_device_team_new;
+	nm_device_type_get_type;
 	nm_device_vlan_error_get_type;
 	nm_device_vlan_error_quark;
 	nm_device_vlan_get_carrier;
@@ -240,6 +251,7 @@ global:
 	nm_device_vlan_get_type;
 	nm_device_vlan_get_vlan_id;
 	nm_device_vlan_new;
+	nm_device_wifi_capabilities_get_type;
 	nm_device_wifi_error_get_type;
 	nm_device_wifi_error_quark;
 	nm_device_wifi_get_access_point_by_path;
@@ -876,6 +888,7 @@ global:
 	nm_setting_wireless_security_remove_proto_by_value;
 	nm_setting_wireless_security_set_wep_key;
 	nm_ssid_get_type;
+	nm_state_get_type;
 	nm_string_array_get_type;
 	nm_uint_array_get_type;
 	nm_utils_ap_mode_security_valid;
@@ -934,6 +947,10 @@ global:
 	nm_vpn_connection_get_type;
 	nm_vpn_connection_get_vpn_state;
 	nm_vpn_connection_new;
+	nm_vpn_connection_state_get_type;
+	nm_vpn_connection_state_reason_get_type;
+	nm_vpn_plugin_failure_get_type;
+	nm_vpn_service_state_get_type;
 	nm_wep_key_type_get_type;
 	nm_wimax_nsp_connection_valid;
 	nm_wimax_nsp_filter_connections;
