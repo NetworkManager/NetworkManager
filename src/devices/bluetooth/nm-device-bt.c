@@ -221,7 +221,7 @@ complete_connection (NMDevice *device,
 	NMSettingGsm *s_gsm;
 	NMSettingCdma *s_cdma;
 	NMSettingSerial *s_serial;
-	NMSettingPPP *s_ppp;
+	NMSettingPpp *s_ppp;
 	const char *format = NULL, *preferred = NULL;
 
 	s_gsm = nm_connection_get_setting_gsm (connection);

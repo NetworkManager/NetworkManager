@@ -90,9 +90,9 @@ vpn_check_empty_func (const char *key, const char *value, gpointer user_data)
 static void
 test_setting_vpn_items (void)
 {
-	NMSettingVPN *s_vpn;
+	NMSettingVpn *s_vpn;
 
-	s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
+	s_vpn = (NMSettingVpn *) nm_setting_vpn_new ();
 	ASSERT (s_vpn != NULL,
 	        "vpn-items",
 	        "error creating vpn setting");
@@ -182,7 +182,7 @@ static void
 test_setting_vpn_update_secrets (void)
 {
 	NMConnection *connection;
-	NMSettingVPN *s_vpn;
+	NMSettingVpn *s_vpn;
 	GHashTable *settings, *vpn, *secrets;
 	GValue val = G_VALUE_INIT;
 	gboolean success;
@@ -198,7 +198,7 @@ test_setting_vpn_update_secrets (void)
 	        "vpn-update-secrets",
 	        "error creating connection");
 
-	s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
+	s_vpn = (NMSettingVpn *) nm_setting_vpn_new ();
 	ASSERT (s_vpn != NULL,
 	        "vpn-update-secrets",
 	        "error creating vpn setting");
@@ -240,7 +240,7 @@ test_setting_vpn_update_secrets (void)
 
 #define TO_DEL_NUM 50
 typedef struct {
-	NMSettingVPN *s_vpn;
+	NMSettingVpn *s_vpn;
 	char *to_del[TO_DEL_NUM];
 	guint called;
 } IterInfo;
@@ -267,12 +267,12 @@ del_iter_func (const char *key, const char *value, gpointer user_data)
 static void
 test_setting_vpn_modify_during_foreach (void)
 {
-	NMSettingVPN *s_vpn;
+	NMSettingVpn *s_vpn;
 	IterInfo info;
 	char *key, *val;
 	int i, u = 0;
 
-	s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
+	s_vpn = (NMSettingVpn *) nm_setting_vpn_new ();
 	g_assert (s_vpn);
 
 	for (i = 0; i < TO_DEL_NUM * 2; i++) {
@@ -2291,7 +2291,7 @@ test_setting_vpn_changed_signal (void)
 {
 	NMConnection *connection;
 	gboolean changed = FALSE;
-	NMSettingVPN *s_vpn;
+	NMSettingVpn *s_vpn;
 
 	connection = nm_connection_new ();
 	g_signal_connect (connection,
@@ -2299,7 +2299,7 @@ test_setting_vpn_changed_signal (void)
 	                  (GCallback) test_connection_changed_cb,
 	                  &changed);
 
-	s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
+	s_vpn = (NMSettingVpn *) nm_setting_vpn_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 
 	ASSERT_CHANGED (nm_setting_vpn_add_data_item (s_vpn, "foobar", "baz"));

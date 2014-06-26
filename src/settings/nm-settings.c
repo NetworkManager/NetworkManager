@@ -783,7 +783,7 @@ secret_agent_registered (NMAgentManager *agent_mgr,
 static void
 openconnect_migrate_hack (NMConnection *connection)
 {
-	NMSettingVPN *s_vpn;
+	NMSettingVpn *s_vpn;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NOT_SAVED;
 
 	/* Huge hack.  There were some openconnect changes that needed to happen

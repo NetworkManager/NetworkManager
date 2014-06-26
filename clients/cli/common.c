@@ -286,7 +286,7 @@ print_ip6_config (NMIP6Config *cfg6,
 }
 
 gboolean
-print_dhcp4_config (NMDHCP4Config *dhcp4,
+print_dhcp4_config (NMDhcp4Config *dhcp4,
                     NmCli *nmc,
                     const char *group_prefix,
                     const char *one_field)
@@ -334,7 +334,7 @@ print_dhcp4_config (NMDHCP4Config *dhcp4,
 }
 
 gboolean
-print_dhcp6_config (NMDHCP6Config *dhcp6,
+print_dhcp6_config (NMDhcp6Config *dhcp6,
                     NmCli *nmc,
                     const char *group_prefix,
                     const char *one_field)

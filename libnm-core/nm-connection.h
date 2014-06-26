@@ -231,10 +231,10 @@ NMSettingInfiniband *      nm_connection_get_setting_infiniband        (NMConnec
 NMSettingIP4Config *       nm_connection_get_setting_ip4_config        (NMConnection *connection);
 NMSettingIP6Config *       nm_connection_get_setting_ip6_config        (NMConnection *connection);
 NMSettingOlpcMesh *        nm_connection_get_setting_olpc_mesh         (NMConnection *connection);
-NMSettingPPP *             nm_connection_get_setting_ppp               (NMConnection *connection);
-NMSettingPPPOE *           nm_connection_get_setting_pppoe             (NMConnection *connection);
+NMSettingPpp *             nm_connection_get_setting_ppp               (NMConnection *connection);
+NMSettingPppoe *           nm_connection_get_setting_pppoe             (NMConnection *connection);
 NMSettingSerial *          nm_connection_get_setting_serial            (NMConnection *connection);
-NMSettingVPN *             nm_connection_get_setting_vpn               (NMConnection *connection);
+NMSettingVpn *             nm_connection_get_setting_vpn               (NMConnection *connection);
 NMSettingWimax *           nm_connection_get_setting_wimax             (NMConnection *connection);
 NMSettingAdsl *            nm_connection_get_setting_adsl              (NMConnection *connection);
 NMSettingWired *           nm_connection_get_setting_wired             (NMConnection *connection);

@@ -30,14 +30,14 @@
 G_BEGIN_DECLS
 
 #define NM_TYPE_DHCP6_CONFIG            (nm_dhcp6_config_get_type ())
-#define NM_DHCP6_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP6_CONFIG, NMDHCP6Config))
-#define NM_DHCP6_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP6_CONFIG, NMDHCP6ConfigClass))
+#define NM_DHCP6_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP6_CONFIG, NMDhcp6Config))
+#define NM_DHCP6_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP6_CONFIG, NMDhcp6ConfigClass))
 #define NM_IS_DHCP6_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP6_CONFIG))
 #define NM_IS_DHCP6_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP6_CONFIG))
 
 typedef struct {
 	NMObject parent;
-} NMDHCP6Config;
+} NMDhcp6Config;
 
 typedef struct {
 	NMObjectClass parent;
@@ -49,7 +49,7 @@ typedef struct {
 	void (*_reserved4) (void);
 	void (*_reserved5) (void);
 	void (*_reserved6) (void);
-} NMDHCP6ConfigClass;
+} NMDhcp6ConfigClass;
 
 #define NM_DHCP6_CONFIG_OPTIONS "options"
 
@@ -57,9 +57,9 @@ GType nm_dhcp6_config_get_type (void);
 
 GObject *nm_dhcp6_config_new (DBusGConnection *connection, const char *object_path);
 
-GHashTable * nm_dhcp6_config_get_options (NMDHCP6Config *config);
+GHashTable * nm_dhcp6_config_get_options (NMDhcp6Config *config);
 
-const char * nm_dhcp6_config_get_one_option (NMDHCP6Config *config, const char *option);
+const char * nm_dhcp6_config_get_one_option (NMDhcp6Config *config, const char *option);
 
 G_END_DECLS
 

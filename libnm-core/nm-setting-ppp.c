@@ -31,7 +31,7 @@
  * that require PPP to deliver IP capability
  * @include: nm-setting-ppp.h
  *
- * The #NMSettingPPP object is a #NMSetting subclass that describes properties
+ * The #NMSettingPpp object is a #NMSetting subclass that describes properties
  * necessary for connection to networks that require PPP transport, like PPPoE
  * cable and DSL modems and some mobile broadband devices.
  **/
@@ -39,9 +39,9 @@
 /**
  * nm_setting_ppp_error_quark:
  *
- * Registers an error quark for #NMSettingPPP if necessary.
+ * Registers an error quark for #NMSettingPpp if necessary.
  *
- * Returns: the error quark used for #NMSettingPPP errors.
+ * Returns: the error quark used for #NMSettingPpp errors.
  **/
 GQuark
 nm_setting_ppp_error_quark (void)
@@ -54,14 +54,14 @@ nm_setting_ppp_error_quark (void)
 }
 
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingPPP, nm_setting_ppp, NM_TYPE_SETTING,
+G_DEFINE_TYPE_WITH_CODE (NMSettingPpp, nm_setting_ppp, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_PPP_SETTING_NAME,
                                                g_define_type_id,
                                                3,
                                                NM_SETTING_PPP_ERROR))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_PPP)
 
-#define NM_SETTING_PPP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PPP, NMSettingPPPPrivate))
+#define NM_SETTING_PPP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PPP, NMSettingPppPrivate))
 
 typedef struct {
 	gboolean noauth;
@@ -82,7 +82,7 @@ typedef struct {
 	guint32 mtu;
 	guint32 lcp_echo_failure;
 	guint32 lcp_echo_interval;
-} NMSettingPPPPrivate;
+} NMSettingPppPrivate;
 
 enum {
 	PROP_0,
@@ -111,9 +111,9 @@ enum {
 /**
  * nm_setting_ppp_new:
  *
- * Creates a new #NMSettingPPP object with default values.
+ * Creates a new #NMSettingPpp object with default values.
  *
- * Returns: (transfer full): the new empty #NMSettingPPP object
+ * Returns: (transfer full): the new empty #NMSettingPpp object
  **/
 NMSetting *
 nm_setting_ppp_new (void)
@@ -123,12 +123,12 @@ nm_setting_ppp_new (void)
 
 /**
  * nm_setting_ppp_get_noauth:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:noauth property of the setting
+ * Returns: the #NMSettingPpp:noauth property of the setting
  **/
 gboolean
-nm_setting_ppp_get_noauth (NMSettingPPP *setting)
+nm_setting_ppp_get_noauth (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -137,12 +137,12 @@ nm_setting_ppp_get_noauth (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_refuse_eap:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:refuse-eap property of the setting
+ * Returns: the #NMSettingPpp:refuse-eap property of the setting
  **/
 gboolean
-nm_setting_ppp_get_refuse_eap (NMSettingPPP *setting)
+nm_setting_ppp_get_refuse_eap (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -151,12 +151,12 @@ nm_setting_ppp_get_refuse_eap (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_refuse_pap:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:refuse-pap property of the setting
+ * Returns: the #NMSettingPpp:refuse-pap property of the setting
  **/
 gboolean
-nm_setting_ppp_get_refuse_pap (NMSettingPPP *setting)
+nm_setting_ppp_get_refuse_pap (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -165,12 +165,12 @@ nm_setting_ppp_get_refuse_pap (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_refuse_chap:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:refuse-chap property of the setting
+ * Returns: the #NMSettingPpp:refuse-chap property of the setting
  **/
 gboolean
-nm_setting_ppp_get_refuse_chap (NMSettingPPP *setting)
+nm_setting_ppp_get_refuse_chap (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -179,12 +179,12 @@ nm_setting_ppp_get_refuse_chap (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_refuse_mschap:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:refuse-mschap property of the setting
+ * Returns: the #NMSettingPpp:refuse-mschap property of the setting
  **/
 gboolean
-nm_setting_ppp_get_refuse_mschap (NMSettingPPP *setting)
+nm_setting_ppp_get_refuse_mschap (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -193,12 +193,12 @@ nm_setting_ppp_get_refuse_mschap (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_refuse_mschapv2:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:refuse-mschapv2 property of the setting
+ * Returns: the #NMSettingPpp:refuse-mschapv2 property of the setting
  **/
 gboolean
-nm_setting_ppp_get_refuse_mschapv2 (NMSettingPPP *setting)
+nm_setting_ppp_get_refuse_mschapv2 (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -207,12 +207,12 @@ nm_setting_ppp_get_refuse_mschapv2 (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_nobsdcomp:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:nobsdcomp property of the setting
+ * Returns: the #NMSettingPpp:nobsdcomp property of the setting
  **/
 gboolean
-nm_setting_ppp_get_nobsdcomp (NMSettingPPP *setting)
+nm_setting_ppp_get_nobsdcomp (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -221,12 +221,12 @@ nm_setting_ppp_get_nobsdcomp (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_nodeflate:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:nodeflate property of the setting
+ * Returns: the #NMSettingPpp:nodeflate property of the setting
  **/
 gboolean
-nm_setting_ppp_get_nodeflate (NMSettingPPP *setting)
+nm_setting_ppp_get_nodeflate (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -235,12 +235,12 @@ nm_setting_ppp_get_nodeflate (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_no_vj_comp:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:no-vj-comp property of the setting
+ * Returns: the #NMSettingPpp:no-vj-comp property of the setting
  **/
 gboolean
-nm_setting_ppp_get_no_vj_comp (NMSettingPPP *setting)
+nm_setting_ppp_get_no_vj_comp (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -249,12 +249,12 @@ nm_setting_ppp_get_no_vj_comp (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_require_mppe:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:require-mppe property of the setting
+ * Returns: the #NMSettingPpp:require-mppe property of the setting
  **/
 gboolean
-nm_setting_ppp_get_require_mppe (NMSettingPPP *setting)
+nm_setting_ppp_get_require_mppe (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -263,12 +263,12 @@ nm_setting_ppp_get_require_mppe (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_require_mppe_128:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:require-mppe-128 property of the setting
+ * Returns: the #NMSettingPpp:require-mppe-128 property of the setting
  **/
 gboolean
-nm_setting_ppp_get_require_mppe_128 (NMSettingPPP *setting)
+nm_setting_ppp_get_require_mppe_128 (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -277,12 +277,12 @@ nm_setting_ppp_get_require_mppe_128 (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_mppe_stateful:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:mppe-stateful property of the setting
+ * Returns: the #NMSettingPpp:mppe-stateful property of the setting
  **/
 gboolean
-nm_setting_ppp_get_mppe_stateful (NMSettingPPP *setting)
+nm_setting_ppp_get_mppe_stateful (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -291,12 +291,12 @@ nm_setting_ppp_get_mppe_stateful (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_crtscts:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:crtscts property of the setting
+ * Returns: the #NMSettingPpp:crtscts property of the setting
  **/
 gboolean
-nm_setting_ppp_get_crtscts (NMSettingPPP *setting)
+nm_setting_ppp_get_crtscts (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
 
@@ -305,12 +305,12 @@ nm_setting_ppp_get_crtscts (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_baud:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:baud property of the setting
+ * Returns: the #NMSettingPpp:baud property of the setting
  **/
 guint32
-nm_setting_ppp_get_baud (NMSettingPPP *setting)
+nm_setting_ppp_get_baud (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), 0);
 
@@ -319,12 +319,12 @@ nm_setting_ppp_get_baud (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_mru:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:mru property of the setting
+ * Returns: the #NMSettingPpp:mru property of the setting
  **/
 guint32
-nm_setting_ppp_get_mru (NMSettingPPP *setting)
+nm_setting_ppp_get_mru (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), 0);
 
@@ -333,12 +333,12 @@ nm_setting_ppp_get_mru (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_mtu:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:mtu property of the setting
+ * Returns: the #NMSettingPpp:mtu property of the setting
  **/
 guint32
-nm_setting_ppp_get_mtu (NMSettingPPP *setting)
+nm_setting_ppp_get_mtu (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), 0);
 
@@ -347,12 +347,12 @@ nm_setting_ppp_get_mtu (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_lcp_echo_failure:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:lcp-echo-failure property of the setting
+ * Returns: the #NMSettingPpp:lcp-echo-failure property of the setting
  **/
 guint32
-nm_setting_ppp_get_lcp_echo_failure (NMSettingPPP *setting)
+nm_setting_ppp_get_lcp_echo_failure (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), 0);
 
@@ -361,12 +361,12 @@ nm_setting_ppp_get_lcp_echo_failure (NMSettingPPP *setting)
 
 /**
  * nm_setting_ppp_get_lcp_echo_interval:
- * @setting: the #NMSettingPPP
+ * @setting: the #NMSettingPpp
  *
- * Returns: the #NMSettingPPP:lcp-echo-interval property of the setting
+ * Returns: the #NMSettingPpp:lcp-echo-interval property of the setting
  **/
 guint32
-nm_setting_ppp_get_lcp_echo_interval (NMSettingPPP *setting)
+nm_setting_ppp_get_lcp_echo_interval (NMSettingPpp *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), 0);
 
@@ -376,7 +376,7 @@ nm_setting_ppp_get_lcp_echo_interval (NMSettingPPP *setting)
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	NMSettingPPPPrivate *priv = NM_SETTING_PPP_GET_PRIVATE (setting);
+	NMSettingPppPrivate *priv = NM_SETTING_PPP_GET_PRIVATE (setting);
 
 	/* FIXME: Do we even want this or can we just let pppd evaluate the options? */
 	if (priv->mru > 0) {
@@ -408,7 +408,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 }
 
 static void
-nm_setting_ppp_init (NMSettingPPP *setting)
+nm_setting_ppp_init (NMSettingPpp *setting)
 {
 }
 
@@ -416,7 +416,7 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMSettingPPPPrivate *priv = NM_SETTING_PPP_GET_PRIVATE (object);
+	NMSettingPppPrivate *priv = NM_SETTING_PPP_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_NOAUTH:
@@ -483,7 +483,7 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMSettingPPP *setting = NM_SETTING_PPP (object);
+	NMSettingPpp *setting = NM_SETTING_PPP (object);
 
 	switch (prop_id) {
 	case PROP_NOAUTH:
@@ -547,12 +547,12 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
+nm_setting_ppp_class_init (NMSettingPppClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingPPPPrivate));
+	g_type_class_add_private (setting_class, sizeof (NMSettingPppPrivate));
 
 	/* virtual methods */
 	object_class->set_property = set_property;
@@ -561,7 +561,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 
 	/* Properties */
 	/**
-	 * NMSettingPPP:noauth:
+	 * NMSettingPpp:noauth:
 	 *
 	 * If %TRUE, do not require the other side (usually the PPP server) to
 	 * authenticate itself to the client.  If %FALSE, require authentication
@@ -576,7 +576,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:refuse-eap:
+	 * NMSettingPpp:refuse-eap:
 	 *
 	 * If %TRUE, the EAP authentication method will not be used.
 	 **/
@@ -589,7 +589,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:refuse-pap:
+	 * NMSettingPpp:refuse-pap:
 	 *
 	 * If %TRUE, the PAP authentication method will not be used.
 	 **/
@@ -602,7 +602,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:refuse-chap:
+	 * NMSettingPpp:refuse-chap:
 	 *
 	 * If %TRUE, the CHAP authentication method will not be used.
 	 **/
@@ -615,7 +615,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:refuse-mschap:
+	 * NMSettingPpp:refuse-mschap:
 	 *
 	 * If %TRUE, the MSCHAP authentication method will not be used.
 	 **/
@@ -628,7 +628,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:refuse-mschapv2:
+	 * NMSettingPpp:refuse-mschapv2:
 	 *
 	 * If %TRUE, the MSCHAPv2 authentication method will not be used.
 	 **/
@@ -641,7 +641,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:nobsdcomp:
+	 * NMSettingPpp:nobsdcomp:
 	 *
 	 * If %TRUE, BSD compression will not be requested.
 	 **/
@@ -655,7 +655,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:nodeflate:
+	 * NMSettingPpp:nodeflate:
 	 *
 	 * If %TRUE, "deflate" compression will not be requested.
 	 **/
@@ -669,7 +669,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:no-vj-comp:
+	 * NMSettingPpp:no-vj-comp:
 	 *
 	 * If %TRUE, Van Jacobsen TCP header compression will not be requested.
 	 **/
@@ -683,7 +683,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:require-mppe:
+	 * NMSettingPpp:require-mppe:
 	 *
 	 * If %TRUE, MPPE (Microsoft Point-to-Point Encrpytion) will be required for
 	 * the PPP session.  If either 64-bit or 128-bit MPPE is not available the
@@ -699,7 +699,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:require-mppe-128:
+	 * NMSettingPpp:require-mppe-128:
 	 *
 	 * If %TRUE, 128-bit MPPE (Microsoft Point-to-Point Encrpytion) will be
 	 * required for the PPP session, and the "require-mppe" property must also
@@ -713,7 +713,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:mppe-stateful:
+	 * NMSettingPpp:mppe-stateful:
 	 *
 	 * If %TRUE, stateful MPPE is used.  See pppd documentation for more
 	 * information on stateful MPPE.
@@ -727,7 +727,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:crtscts:
+	 * NMSettingPpp:crtscts:
 	 *
 	 * If %TRUE, specify that pppd should set the serial port to use hardware
 	 * flow control with RTS and CTS signals.  This value should normally be set
@@ -742,7 +742,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:baud:
+	 * NMSettingPpp:baud:
 	 *
 	 * If non-zero, instruct pppd to set the serial port to the specified
 	 * baudrate.  This value should normally be left as 0 to automatically
@@ -758,7 +758,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:mru:
+	 * NMSettingPpp:mru:
 	 *
 	 * If non-zero, instruct pppd to request that the peer send packets no
 	 * larger than the specified size.  If non-zero, the MRU should be between
@@ -773,7 +773,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:mtu:
+	 * NMSettingPpp:mtu:
 	 *
 	 * If non-zero, instruct pppd to send packets no larger than the specified
 	 * size.
@@ -788,7 +788,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:lcp-echo-failure:
+	 * NMSettingPpp:lcp-echo-failure:
 	 *
 	 * If non-zero, instruct pppd to presume the connection to the peer has
 	 * failed if the specified number of LCP echo-requests go unanswered by the
@@ -805,7 +805,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingPPP:lcp-echo-interval:
+	 * NMSettingPpp:lcp-echo-interval:
 	 *
 	 * If non-zero, instruct pppd to send an LCP echo-request frame to the peer
 	 * every n seconds (where n is the specified value).  Note that some PPP

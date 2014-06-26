@@ -59,10 +59,10 @@ typedef struct {
 	NMActiveConnectionState state;
 	gboolean is_default;
 	NMIP4Config *ip4_config;
-	NMDHCP4Config *dhcp4_config;
+	NMDhcp4Config *dhcp4_config;
 	gboolean is_default6;
 	NMIP6Config *ip6_config;
-	NMDHCP6Config *dhcp6_config;
+	NMDhcp6Config *dhcp6_config;
 	gboolean is_vpn;
 	char *master;
 } NMActiveConnectionPrivate;
@@ -124,7 +124,7 @@ _nm_active_connection_type_for_path (DBusGConnection *connection,
 		return G_TYPE_INVALID;
 	}
 
-	/* Have to create an NMVPNConnection if it's a VPN connection, otherwise
+	/* Have to create an NMVpnConnection if it's a VPN connection, otherwise
 	 * a plain NMActiveConnection.
 	 */
 	if (dbus_g_proxy_call (proxy,
@@ -372,14 +372,14 @@ nm_active_connection_get_ip4_config (NMActiveConnection *connection)
  * nm_active_connection_get_dhcp4_config:
  * @connection: an #NMActiveConnection
  *
- * Gets the current #NMDHCP4Config (if any) associated with the
+ * Gets the current #NMDhcp4Config (if any) associated with the
  * #NMActiveConnection.
  *
- * Returns: (transfer none): the #NMDHCP4Config, or %NULL if the
+ * Returns: (transfer none): the #NMDhcp4Config, or %NULL if the
  *   connection does not use DHCP, or is not in the
  *   %NM_ACTIVE_CONNECTION_STATE_ACTIVATED state.
  **/
-NMDHCP4Config *
+NMDhcp4Config *
 nm_active_connection_get_dhcp4_config (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
@@ -429,14 +429,14 @@ nm_active_connection_get_ip6_config (NMActiveConnection *connection)
  * nm_active_connection_get_dhcp6_config:
  * @connection: an #NMActiveConnection
  *
- * Gets the current #NMDHCP6Config (if any) associated with the
+ * Gets the current #NMDhcp6Config (if any) associated with the
  * #NMActiveConnection.
  *
- * Returns: (transfer none): the #NMDHCP6Config, or %NULL if the
+ * Returns: (transfer none): the #NMDhcp6Config, or %NULL if the
  *   connection does not use DHCPv6, or is not in the
  *   %NM_ACTIVE_CONNECTION_STATE_ACTIVATED state.
  **/
-NMDHCP6Config *
+NMDhcp6Config *
 nm_active_connection_get_dhcp6_config (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
@@ -752,7 +752,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	/**
 	 * NMActiveConnection:dhcp4-config:
 	 *
-	 * The #NMDHCP4Config of the connection.
+	 * The #NMDhcp4Config of the connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP4_CONFIG,
@@ -788,7 +788,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	/**
 	 * NMActiveConnection:dhcp6-config:
 	 *
-	 * The #NMDHCP6Config of the connection.
+	 * The #NMDhcp6Config of the connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP6_CONFIG,

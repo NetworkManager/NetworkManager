@@ -1345,7 +1345,7 @@ DEFINE_GETTER (nmc_property_vpn_get_user_name, NM_SETTING_VPN_USER_NAME)
 static char *
 nmc_property_vpn_get_data (NMSetting *setting)
 {
-	NMSettingVPN *s_vpn = NM_SETTING_VPN (setting);
+	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
 	GString *data_item_str;
 
 	data_item_str = g_string_new (NULL);
@@ -1357,7 +1357,7 @@ nmc_property_vpn_get_data (NMSetting *setting)
 static char *
 nmc_property_vpn_get_secrets (NMSetting *setting)
 {
-	NMSettingVPN *s_vpn = NM_SETTING_VPN (setting);
+	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
 	GString *secret_str;
 
 	secret_str = g_string_new (NULL);
@@ -3741,7 +3741,7 @@ nmc_property_vlan_remove_egress_priority_map (NMSetting *setting,
 /* 'data' */
 DEFINE_SETTER_OPTIONS (nmc_property_vpn_set_data,
                        NM_SETTING_VPN,
-                       NMSettingVPN,
+                       NMSettingVpn,
                        nm_setting_vpn_add_data_item,
                        NULL,
                        NULL)
@@ -3752,7 +3752,7 @@ DEFINE_REMOVER_OPTION (nmc_property_vpn_remove_option_data,
 /* 'secrets' */
 DEFINE_SETTER_OPTIONS (nmc_property_vpn_set_secrets,
                        NM_SETTING_VPN,
-                       NMSettingVPN,
+                       NMSettingVpn,
                        nm_setting_vpn_add_secret,
                        NULL,
                        NULL)
@@ -6668,7 +6668,7 @@ setting_serial_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 static gboolean
 setting_ppp_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
-	NMSettingPPP *s_ppp = NM_SETTING_PPP (setting);
+	NMSettingPpp *s_ppp = NM_SETTING_PPP (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -6711,7 +6711,7 @@ setting_ppp_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 static gboolean
 setting_pppoe_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
-	NMSettingPPPOE *s_pppoe = NM_SETTING_PPPOE (setting);
+	NMSettingPppoe *s_pppoe = NM_SETTING_PPPOE (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -6858,7 +6858,7 @@ setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 static gboolean
 setting_vpn_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
-	NMSettingVPN *s_vpn = NM_SETTING_VPN (setting);
+	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 

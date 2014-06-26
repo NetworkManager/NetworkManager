@@ -1575,8 +1575,8 @@ make_pppoe_connection_setting (NMConnection *connection,
                                const char *conn_name,
                                GError **error)
 {
-	NMSettingPPPOE *s_pppoe;
-	NMSettingPPP *s_ppp;
+	NMSettingPppoe *s_pppoe;
+	NMSettingPpp *s_ppp;
 	const char *value;
 
 	s_pppoe = NM_SETTING_PPPOE (nm_setting_pppoe_new ());
@@ -1600,7 +1600,7 @@ make_pppoe_connection_setting (NMConnection *connection,
 	nm_connection_add_setting (connection, NM_SETTING (s_pppoe));
 
 	/* PPP setting */
-	s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
+	s_ppp = (NMSettingPpp *) nm_setting_ppp_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ppp));
 }
 
@@ -2717,7 +2717,7 @@ write_ip6_setting (NMConnection *connection, const char *conn_name, GError **err
 }
 
 static gboolean
-write_pppoe_setting (const char *conn_name, NMSettingPPPOE * s_pppoe)
+write_pppoe_setting (const char *conn_name, NMSettingPppoe * s_pppoe)
 {
 	const gchar *value;
 
@@ -2776,7 +2776,7 @@ ifnet_update_parsers_by_connection (NMConnection *connection,
 		if (!write_wireless_setting (connection, conn_name, &no_8021x, &new_name, error))
 			goto out;
 	} else if (!strcmp (type, NM_SETTING_PPPOE_SETTING_NAME)) {
-		NMSettingPPPOE *s_pppoe;
+		NMSettingPppoe *s_pppoe;
 
 		/* Writing pppoe setting */
 		s_pppoe = nm_connection_get_setting_pppoe (connection);

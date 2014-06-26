@@ -29,14 +29,14 @@
 #include "nm-utils.h"
 
 
-G_DEFINE_TYPE (NMDHCP4Config, nm_dhcp4_config, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMDhcp4Config, nm_dhcp4_config, G_TYPE_OBJECT)
 
-#define NM_DHCP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP4_CONFIG, NMDHCP4ConfigPrivate))
+#define NM_DHCP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP4_CONFIG, NMDhcp4ConfigPrivate))
 
 typedef struct {
 	char *dbus_path;
 	GHashTable *options;
-} NMDHCP4ConfigPrivate;
+} NMDhcp4ConfigPrivate;
 
 
 enum {
@@ -47,14 +47,14 @@ enum {
 };
 
 
-NMDHCP4Config *
+NMDhcp4Config *
 nm_dhcp4_config_new (void)
 {
 	return NM_DHCP4_CONFIG (g_object_new (NM_TYPE_DHCP4_CONFIG, NULL));
 }
 
 void
-nm_dhcp4_config_add_option (NMDHCP4Config *self,
+nm_dhcp4_config_add_option (NMDhcp4Config *self,
                             const char *key,
                             const char *option)
 {
@@ -72,7 +72,7 @@ nm_dhcp4_config_add_option (NMDHCP4Config *self,
 }
 
 void
-nm_dhcp4_config_reset (NMDHCP4Config *self)
+nm_dhcp4_config_reset (NMDhcp4Config *self)
 {
 	g_return_if_fail (NM_IS_DHCP4_CONFIG (self));
 
@@ -81,7 +81,7 @@ nm_dhcp4_config_reset (NMDHCP4Config *self)
 }
 
 const char *
-nm_dhcp4_config_get_option (NMDHCP4Config *self, const char *key)
+nm_dhcp4_config_get_option (NMDhcp4Config *self, const char *key)
 {
 	GValue *value;
 
@@ -94,7 +94,7 @@ nm_dhcp4_config_get_option (NMDHCP4Config *self, const char *key)
 
 /* Caller owns the list, but not the values in the list */
 GSList *
-nm_dhcp4_config_list_options (NMDHCP4Config *self)
+nm_dhcp4_config_list_options (NMDhcp4Config *self)
 {
 	GHashTableIter iter;
 	const char *option = NULL;
@@ -110,7 +110,7 @@ nm_dhcp4_config_list_options (NMDHCP4Config *self)
 }
 
 const char *
-nm_dhcp4_config_get_dbus_path (NMDHCP4Config *self)
+nm_dhcp4_config_get_dbus_path (NMDhcp4Config *self)
 {
 	g_return_val_if_fail (NM_IS_DHCP4_CONFIG (self), NULL);
 
@@ -127,9 +127,9 @@ nm_gvalue_destroy (gpointer data)
 }
 
 static void
-nm_dhcp4_config_init (NMDHCP4Config *self)
+nm_dhcp4_config_init (NMDhcp4Config *self)
 {
-	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (self);
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (self);
 	static guint32 counter = 0;
 
 	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH "/DHCP4Config/%d", counter++);
@@ -141,7 +141,7 @@ nm_dhcp4_config_init (NMDHCP4Config *self)
 static void
 finalize (GObject *object)
 {
-	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
 
 	g_free (priv->dbus_path);
 	g_hash_table_destroy (priv->options);
@@ -153,7 +153,7 @@ static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
-	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_OPTIONS:
@@ -166,11 +166,11 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_dhcp4_config_class_init (NMDHCP4ConfigClass *config_class)
+nm_dhcp4_config_class_init (NMDhcp4ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 
-	g_type_class_add_private (config_class, sizeof (NMDHCP4ConfigPrivate));
+	g_type_class_add_private (config_class, sizeof (NMDhcp4ConfigPrivate));
 
 	/* virtual methods */
 	object_class->get_property = get_property;

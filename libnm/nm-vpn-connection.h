@@ -31,26 +31,26 @@
 G_BEGIN_DECLS
 
 #define NM_TYPE_VPN_CONNECTION            (nm_vpn_connection_get_type ())
-#define NM_VPN_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_CONNECTION, NMVPNConnection))
-#define NM_VPN_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_VPN_CONNECTION, NMVPNConnectionClass))
+#define NM_VPN_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_CONNECTION, NMVpnConnection))
+#define NM_VPN_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_VPN_CONNECTION, NMVpnConnectionClass))
 #define NM_IS_VPN_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_VPN_CONNECTION))
 #define NM_IS_VPN_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_VPN_CONNECTION))
-#define NM_VPN_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_CONNECTION, NMVPNConnectionClass))
+#define NM_VPN_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_CONNECTION, NMVpnConnectionClass))
 
 #define NM_VPN_CONNECTION_VPN_STATE "vpn-state"
 #define NM_VPN_CONNECTION_BANNER "banner"
 
 typedef struct {
 	NMActiveConnection parent;
-} NMVPNConnection;
+} NMVpnConnection;
 
 typedef struct {
 	NMActiveConnectionClass parent;
 
 	/* Signals */
-	void (*vpn_state_changed) (NMVPNConnection *connection,
-	                           NMVPNConnectionState state,
-	                           NMVPNConnectionStateReason reason);
+	void (*vpn_state_changed) (NMVpnConnection *connection,
+	                           NMVpnConnectionState state,
+	                           NMVpnConnectionStateReason reason);
 
 	/* Padding for future expansion */
 	void (*_reserved1) (void);
@@ -59,14 +59,14 @@ typedef struct {
 	void (*_reserved4) (void);
 	void (*_reserved5) (void);
 	void (*_reserved6) (void);
-} NMVPNConnectionClass;
+} NMVpnConnectionClass;
 
 GType nm_vpn_connection_get_type (void);
 
 GObject * nm_vpn_connection_new (DBusGConnection *connection, const char *path);
 
-NMVPNConnectionState  nm_vpn_connection_get_vpn_state  (NMVPNConnection *vpn);
-const char *          nm_vpn_connection_get_banner (NMVPNConnection *vpn);
+NMVpnConnectionState  nm_vpn_connection_get_vpn_state  (NMVpnConnection *vpn);
+const char *          nm_vpn_connection_get_banner (NMVpnConnection *vpn);
 
 G_END_DECLS
 

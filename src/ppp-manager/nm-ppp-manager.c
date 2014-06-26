@@ -524,7 +524,7 @@ set_ip_config_common (NMPPPManager *self,
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
 	NMConnection *connection;
-	NMSettingPPP *s_ppp;
+	NMSettingPpp *s_ppp;
 	GValue *val;
 
 	val = g_hash_table_lookup (hash, iface_prop);
@@ -894,8 +894,8 @@ pppd_timed_out (gpointer data)
 
 static NMCmdLine *
 create_pppd_cmd_line (NMPPPManager *self,
-                      NMSettingPPP *setting, 
-                      NMSettingPPPOE *pppoe,
+                      NMSettingPpp *setting,
+                      NMSettingPppoe *pppoe,
                       NMSettingAdsl  *adsl,
                       const char *ppp_name,
                       GError **err)
@@ -1097,7 +1097,7 @@ pppd_child_setup (gpointer user_data G_GNUC_UNUSED)
 }
 
 static void
-pppoe_fill_defaults (NMSettingPPP *setting)
+pppoe_fill_defaults (NMSettingPpp *setting)
 {
 	if (!nm_setting_ppp_get_mtu (setting))
 		g_object_set (setting, NM_SETTING_PPP_MTU, (guint32) 1492, NULL);
@@ -1110,7 +1110,7 @@ pppoe_fill_defaults (NMSettingPPP *setting)
 	              NM_SETTING_PPP_NODEFLATE, TRUE,
 	              NULL);
 
-	/* FIXME: These commented settings should be set as well, update NMSettingPPP first. */
+	/* FIXME: These commented settings should be set as well, update NMSettingPpp first. */
 #if 0
 	setting->noipdefault = TRUE;
 	setting->default_asyncmap = TRUE;
@@ -1132,9 +1132,9 @@ nm_ppp_manager_start (NMPPPManager *manager,
 {
 	NMPPPManagerPrivate *priv;
 	NMConnection *connection;
-	NMSettingPPP *s_ppp;
+	NMSettingPpp *s_ppp;
 	gboolean s_ppp_created = FALSE;
-	NMSettingPPPOE *pppoe_setting;
+	NMSettingPppoe *pppoe_setting;
 	NMSettingAdsl *adsl_setting;
 	NMCmdLine *ppp_cmd;
 	char *cmd_str;

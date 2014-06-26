@@ -28,16 +28,16 @@
 G_BEGIN_DECLS
 
 #define NM_TYPE_SETTING_PPP            (nm_setting_ppp_get_type ())
-#define NM_SETTING_PPP(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_PPP, NMSettingPPP))
-#define NM_SETTING_PPP_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_PPP, NMSettingPPPClass))
+#define NM_SETTING_PPP(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_PPP, NMSettingPpp))
+#define NM_SETTING_PPP_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_PPP, NMSettingPppClass))
 #define NM_IS_SETTING_PPP(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SETTING_PPP))
 #define NM_IS_SETTING_PPP_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SETTING_PPP))
-#define NM_SETTING_PPP_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING_PPP, NMSettingPPPClass))
+#define NM_SETTING_PPP_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING_PPP, NMSettingPppClass))
 
 #define NM_SETTING_PPP_SETTING_NAME "ppp"
 
 /**
- * NMSettingPPPError:
+ * NMSettingPppError:
  * @NM_SETTING_PPP_ERROR_UNKNOWN: unknown or unclassified error
  * @NM_SETTING_PPP_ERROR_INVALID_PROPERTY: the property was invalid
  * @NM_SETTING_PPP_ERROR_MISSING_PROPERTY: the property was missing and is
@@ -50,7 +50,7 @@ typedef enum {
 	NM_SETTING_PPP_ERROR_INVALID_PROPERTY,        /*< nick=InvalidProperty >*/
 	NM_SETTING_PPP_ERROR_MISSING_PROPERTY,        /*< nick=MissingProperty >*/
 	NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED /*< nick=RequireMPPENotAllowed >*/
-} NMSettingPPPError;
+} NMSettingPppError;
 
 #define NM_SETTING_PPP_ERROR nm_setting_ppp_error_quark ()
 GQuark nm_setting_ppp_error_quark (void);
@@ -76,7 +76,7 @@ GQuark nm_setting_ppp_error_quark (void);
 
 typedef struct {
 	NMSetting parent;
-} NMSettingPPP;
+} NMSettingPpp;
 
 typedef struct {
 	NMSettingClass parent;
@@ -86,29 +86,29 @@ typedef struct {
 	void (*_reserved2) (void);
 	void (*_reserved3) (void);
 	void (*_reserved4) (void);
-} NMSettingPPPClass;
+} NMSettingPppClass;
 
 GType nm_setting_ppp_get_type (void);
 
 NMSetting *nm_setting_ppp_new                   (void);
-gboolean   nm_setting_ppp_get_noauth            (NMSettingPPP *setting);
-gboolean   nm_setting_ppp_get_refuse_eap        (NMSettingPPP *setting);
-gboolean   nm_setting_ppp_get_refuse_pap        (NMSettingPPP *setting);
-gboolean   nm_setting_ppp_get_refuse_chap       (NMSettingPPP *setting);
-gboolean   nm_setting_ppp_get_refuse_mschap     (NMSettingPPP *setting);
-gboolean   nm_setting_ppp_get_refuse_mschapv2   (NMSettingPPP *setting);
-gboolean   nm_setting_ppp_get_nobsdcomp         (NMSettingPPP *setting);
-gboolean   nm_setting_ppp_get_nodeflate         (NMSettingPPP *setting);
-gboolean   nm_setting_ppp_get_no_vj_comp        (NMSettingPPP *setting);
-gboolean   nm_setting_ppp_get_require_mppe      (NMSettingPPP *setting);
-gboolean   nm_setting_ppp_get_require_mppe_128  (NMSettingPPP *setting);
-gboolean   nm_setting_ppp_get_mppe_stateful     (NMSettingPPP *setting);
-gboolean   nm_setting_ppp_get_crtscts           (NMSettingPPP *setting);
-guint32    nm_setting_ppp_get_baud              (NMSettingPPP *setting);
-guint32    nm_setting_ppp_get_mru               (NMSettingPPP *setting);
-guint32    nm_setting_ppp_get_mtu               (NMSettingPPP *setting);
-guint32    nm_setting_ppp_get_lcp_echo_failure  (NMSettingPPP *setting);
-guint32    nm_setting_ppp_get_lcp_echo_interval (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_noauth            (NMSettingPpp *setting);
+gboolean   nm_setting_ppp_get_refuse_eap        (NMSettingPpp *setting);
+gboolean   nm_setting_ppp_get_refuse_pap        (NMSettingPpp *setting);
+gboolean   nm_setting_ppp_get_refuse_chap       (NMSettingPpp *setting);
+gboolean   nm_setting_ppp_get_refuse_mschap     (NMSettingPpp *setting);
+gboolean   nm_setting_ppp_get_refuse_mschapv2   (NMSettingPpp *setting);
+gboolean   nm_setting_ppp_get_nobsdcomp         (NMSettingPpp *setting);
+gboolean   nm_setting_ppp_get_nodeflate         (NMSettingPpp *setting);
+gboolean   nm_setting_ppp_get_no_vj_comp        (NMSettingPpp *setting);
+gboolean   nm_setting_ppp_get_require_mppe      (NMSettingPpp *setting);
+gboolean   nm_setting_ppp_get_require_mppe_128  (NMSettingPpp *setting);
+gboolean   nm_setting_ppp_get_mppe_stateful     (NMSettingPpp *setting);
+gboolean   nm_setting_ppp_get_crtscts           (NMSettingPpp *setting);
+guint32    nm_setting_ppp_get_baud              (NMSettingPpp *setting);
+guint32    nm_setting_ppp_get_mru               (NMSettingPpp *setting);
+guint32    nm_setting_ppp_get_mtu               (NMSettingPpp *setting);
+guint32    nm_setting_ppp_get_lcp_echo_failure  (NMSettingPpp *setting);
+guint32    nm_setting_ppp_get_lcp_echo_interval (NMSettingPpp *setting);
 
 G_END_DECLS
 

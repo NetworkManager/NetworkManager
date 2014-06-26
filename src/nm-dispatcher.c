@@ -94,7 +94,7 @@ dump_object_to_props (GObject *object, GHashTable *hash)
 }
 
 static void
-dump_dhcp4_to_props (NMDHCP4Config *config, GHashTable *hash)
+dump_dhcp4_to_props (NMDhcp4Config *config, GHashTable *hash)
 {
 	GSList *options, *iter;
 
@@ -110,7 +110,7 @@ dump_dhcp4_to_props (NMDHCP4Config *config, GHashTable *hash)
 }
 
 static void
-dump_dhcp6_to_props (NMDHCP6Config *config, GHashTable *hash)
+dump_dhcp6_to_props (NMDhcp6Config *config, GHashTable *hash)
 {
 	GSList *options, *iter;
 
@@ -135,8 +135,8 @@ fill_device_props (NMDevice *device,
 {
 	NMIP4Config *ip4_config;
 	NMIP6Config *ip6_config;
-	NMDHCP4Config *dhcp4_config;
-	NMDHCP6Config *dhcp6_config;
+	NMDhcp4Config *dhcp4_config;
+	NMDhcp6Config *dhcp6_config;
 
 	/* If the action is for a VPN, send the VPN's IP interface instead of the device's */
 	value_hash_add_str (dev_hash, NMD_DEVICE_PROPS_IP_INTERFACE, nm_device_get_ip_iface (device));

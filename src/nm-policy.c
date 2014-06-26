@@ -415,7 +415,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 	}
 
 	if (best4) {
-		NMDHCP4Config *dhcp4_config;
+		NMDhcp4Config *dhcp4_config;
 
 		/* Grab a hostname out of the device's DHCP4 config */
 		dhcp4_config = nm_device_get_dhcp4_config (best4);
@@ -434,7 +434,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 			}
 		}
 	} else if (best6) {
-		NMDHCP6Config *dhcp6_config;
+		NMDhcp6Config *dhcp6_config;
 
 		/* Grab a hostname out of the device's DHCP6 config */
 		dhcp6_config = nm_device_get_dhcp6_config (best6);
@@ -523,7 +523,7 @@ get_best_ip4_config (NMPolicy *policy,
                      int *out_ip_ifindex,
                      NMActiveConnection **out_ac,
                      NMDevice **out_device,
-                     NMVPNConnection **out_vpn)
+                     NMVpnConnection **out_vpn)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	const GSList *connections, *iter;
@@ -535,11 +535,11 @@ get_best_ip4_config (NMPolicy *policy,
 	connections = nm_manager_get_active_connections (priv->manager);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMActiveConnection *active = NM_ACTIVE_CONNECTION (iter->data);
-		NMVPNConnection *candidate;
+		NMVpnConnection *candidate;
 		NMIP4Config *vpn_ip4;
 		NMConnection *tmp;
 		NMSettingIP4Config *s_ip4;
-		NMVPNConnectionState vpn_state;
+		NMVpnConnectionState vpn_state;
 
 		if (!NM_IS_VPN_CONNECTION (active))
 			continue;
@@ -608,7 +608,7 @@ update_ip4_dns (NMPolicy *policy, NMDnsManager *dns_mgr)
 {
 	NMIP4Config *ip4_config;
 	const char *ip_iface = NULL;
-	NMVPNConnection *vpn = NULL;
+	NMVpnConnection *vpn = NULL;
 	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 
 	ip4_config = get_best_ip4_config (policy, TRUE, &ip_iface, NULL, NULL, NULL, &vpn);
@@ -629,7 +629,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMDevice *best = NULL, *default_device;
 	NMConnection *connection = NULL;
-	NMVPNConnection *vpn = NULL;
+	NMVpnConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
 	NMIP4Config *ip4_config = NULL;
 	const char *ip_iface = NULL;
@@ -721,7 +721,7 @@ get_best_ip6_config (NMPolicy *policy,
                      int *out_ip_ifindex,
                      NMActiveConnection **out_ac,
                      NMDevice **out_device,
-                     NMVPNConnection **out_vpn)
+                     NMVpnConnection **out_vpn)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	const GSList *connections, *iter;
@@ -733,11 +733,11 @@ get_best_ip6_config (NMPolicy *policy,
 	connections = nm_manager_get_active_connections (priv->manager);
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMActiveConnection *active = NM_ACTIVE_CONNECTION (iter->data);
-		NMVPNConnection *candidate;
+		NMVpnConnection *candidate;
 		NMIP6Config *vpn_ip6;
 		NMConnection *tmp;
 		NMSettingIP6Config *s_ip6;
-		NMVPNConnectionState vpn_state;
+		NMVpnConnectionState vpn_state;
 
 		if (!NM_IS_VPN_CONNECTION (active))
 			continue;
@@ -806,7 +806,7 @@ update_ip6_dns (NMPolicy *policy, NMDnsManager *dns_mgr)
 {
 	NMIP6Config *ip6_config;
 	const char *ip_iface = NULL;
-	NMVPNConnection *vpn = NULL;
+	NMVpnConnection *vpn = NULL;
 	NMDnsIPConfigType dns_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
 
 	ip6_config = get_best_ip6_config (policy, TRUE, &ip_iface, NULL, NULL, NULL, &vpn);
@@ -827,7 +827,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMDevice *best = NULL, *default_device6;
 	NMConnection *connection = NULL;
-	NMVPNConnection *vpn = NULL;
+	NMVpnConnection *vpn = NULL;
 	NMActiveConnection *best_ac = NULL;
 	NMIP6Config *ip6_config = NULL;
 	const char *ip_iface = NULL;
@@ -1726,7 +1726,7 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 /**************************************************************************/
 
 static void
-vpn_connection_activated (NMPolicy *policy, NMVPNConnection *vpn)
+vpn_connection_activated (NMPolicy *policy, NMVpnConnection *vpn)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMIP4Config *ip4_config;
@@ -1753,7 +1753,7 @@ vpn_connection_activated (NMPolicy *policy, NMVPNConnection *vpn)
 }
 
 static void
-vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
+vpn_connection_deactivated (NMPolicy *policy, NMVpnConnection *vpn)
 {
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (policy);
 	NMIP4Config *ip4_config;
@@ -1779,10 +1779,10 @@ vpn_connection_deactivated (NMPolicy *policy, NMVPNConnection *vpn)
 }
 
 static void
-vpn_connection_state_changed (NMVPNConnection *vpn,
-                              NMVPNConnectionState new_state,
-                              NMVPNConnectionState old_state,
-                              NMVPNConnectionStateReason reason,
+vpn_connection_state_changed (NMVpnConnection *vpn,
+                              NMVpnConnectionState new_state,
+                              NMVpnConnectionState old_state,
+                              NMVpnConnectionStateReason reason,
                               NMPolicy *policy)
 {
 	if (new_state == NM_VPN_CONNECTION_STATE_ACTIVATED)

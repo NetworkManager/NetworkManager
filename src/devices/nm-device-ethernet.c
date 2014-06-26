@@ -1073,7 +1073,7 @@ pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reas
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMConnection *connection;
-	NMSettingPPPOE *s_pppoe;
+	NMSettingPppoe *s_pppoe;
 	NMActRequest *req;
 	GError *err = NULL;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
@@ -1466,7 +1466,7 @@ complete_connection (NMDevice *device,
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	NMSettingWired *s_wired;
-	NMSettingPPPOE *s_pppoe;
+	NMSettingPppoe *s_pppoe;
 	const GByteArray *setting_mac;
 
 	s_pppoe = nm_connection_get_setting_pppoe (connection);

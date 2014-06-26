@@ -27,15 +27,15 @@
 #include "nm-object-private.h"
 #include "nm-utils.h"
 
-G_DEFINE_TYPE (NMDHCP4Config, nm_dhcp4_config, NM_TYPE_OBJECT)
+G_DEFINE_TYPE (NMDhcp4Config, nm_dhcp4_config, NM_TYPE_OBJECT)
 
-#define NM_DHCP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP4_CONFIG, NMDHCP4ConfigPrivate))
+#define NM_DHCP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP4_CONFIG, NMDhcp4ConfigPrivate))
 
 typedef struct {
 	DBusGProxy *proxy;
 
 	GHashTable *options;
-} NMDHCP4ConfigPrivate;
+} NMDhcp4ConfigPrivate;
 
 enum {
 	PROP_0,
@@ -45,14 +45,14 @@ enum {
 };
 
 static void
-nm_dhcp4_config_init (NMDHCP4Config *config)
+nm_dhcp4_config_init (NMDhcp4Config *config)
 {
 }
 
 static gboolean
 demarshal_dhcp4_options (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
 {
-	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
 	GHashTable *new_options;
 	GHashTableIter iter;
 	const char *key;
@@ -72,9 +72,9 @@ demarshal_dhcp4_options (NMObject *object, GParamSpec *pspec, GValue *value, gpo
 }
 
 static void
-register_properties (NMDHCP4Config *config)
+register_properties (NMDhcp4Config *config)
 {
-	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (config);
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (config);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DHCP4_CONFIG_OPTIONS,   &priv->options, demarshal_dhcp4_options },
 		{ NULL },
@@ -88,7 +88,7 @@ register_properties (NMDHCP4Config *config)
 static void
 constructed (GObject *object)
 {
-	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
 
 	G_OBJECT_CLASS (nm_dhcp4_config_parent_class)->constructed (object);
 
@@ -101,7 +101,7 @@ constructed (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
+	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
 
 	if (priv->options)
 		g_hash_table_destroy (priv->options);
@@ -117,7 +117,7 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-	NMDHCP4Config *self = NM_DHCP4_CONFIG (object);
+	NMDhcp4Config *self = NM_DHCP4_CONFIG (object);
 
 	_nm_object_ensure_inited (NM_OBJECT (object));
 
@@ -132,11 +132,11 @@ get_property (GObject *object,
 }
 
 static void
-nm_dhcp4_config_class_init (NMDHCP4ConfigClass *config_class)
+nm_dhcp4_config_class_init (NMDhcp4ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 
-	g_type_class_add_private (config_class, sizeof (NMDHCP4ConfigPrivate));
+	g_type_class_add_private (config_class, sizeof (NMDhcp4ConfigPrivate));
 
 	/* virtual methods */
 	object_class->constructed = constructed;
@@ -146,7 +146,7 @@ nm_dhcp4_config_class_init (NMDHCP4ConfigClass *config_class)
 	/* properties */
 
 	/**
-	 * NMDHCP4Config:options:
+	 * NMDhcp4Config:options:
 	 *
 	 * The #GHashTable containing options of the configuration.
 	 *
@@ -165,7 +165,7 @@ nm_dhcp4_config_class_init (NMDHCP4ConfigClass *config_class)
  * @connection: the #DBusGConnection
  * @object_path: the DBus object path of the device
  *
- * Creates a new #NMDHCP4Config.
+ * Creates a new #NMDhcp4Config.
  *
  * Returns: (transfer full): a new configuration
  **/
@@ -180,7 +180,7 @@ nm_dhcp4_config_new (DBusGConnection *connection, const char *object_path)
 
 /**
  * nm_dhcp4_config_get_options:
- * @config: a #NMDHCP4Config
+ * @config: a #NMDhcp4Config
  *
  * Gets all the options contained in the configuration.
  *
@@ -188,7 +188,7 @@ nm_dhcp4_config_new (DBusGConnection *connection, const char *object_path)
  * This is the internal copy used by the configuration, and must not be modified.
  **/
 GHashTable *
-nm_dhcp4_config_get_options (NMDHCP4Config *config)
+nm_dhcp4_config_get_options (NMDhcp4Config *config)
 {
 	g_return_val_if_fail (NM_IS_DHCP4_CONFIG (config), NULL);
 
@@ -198,7 +198,7 @@ nm_dhcp4_config_get_options (NMDHCP4Config *config)
 
 /**
  * nm_dhcp4_config_get_one_option:
- * @config: a #NMDHCP4Config
+ * @config: a #NMDhcp4Config
  * @option: the option to retrieve
  *
  * Gets one option by option name.
@@ -207,7 +207,7 @@ nm_dhcp4_config_get_options (NMDHCP4Config *config)
  * configuration, and must not be modified.
  **/
 const char *
-nm_dhcp4_config_get_one_option (NMDHCP4Config *config, const char *option)
+nm_dhcp4_config_get_one_option (NMDhcp4Config *config, const char *option)
 {
 	g_return_val_if_fail (NM_IS_DHCP4_CONFIG (config), NULL);
 

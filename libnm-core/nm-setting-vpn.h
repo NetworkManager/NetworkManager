@@ -28,11 +28,11 @@
 G_BEGIN_DECLS
 
 #define NM_TYPE_SETTING_VPN            (nm_setting_vpn_get_type ())
-#define NM_SETTING_VPN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_VPN, NMSettingVPN))
-#define NM_SETTING_VPN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_VPN, NMSettingVPNClass))
+#define NM_SETTING_VPN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_VPN, NMSettingVpn))
+#define NM_SETTING_VPN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_VPN, NMSettingVpnClass))
 #define NM_IS_SETTING_VPN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SETTING_VPN))
 #define NM_IS_SETTING_VPN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SETTING_VPN))
-#define NM_SETTING_VPN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING_VPN, NMSettingVPNClass))
+#define NM_SETTING_VPN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING_VPN, NMSettingVpnClass))
 
 #define NM_SETTING_VPN_SETTING_NAME "vpn"
 
@@ -59,7 +59,7 @@ GQuark nm_setting_vpn_error_quark (void);
 
 typedef struct {
 	NMSetting parent;
-} NMSettingVPN;
+} NMSettingVpn;
 
 typedef struct {
 	NMSettingClass parent;
@@ -69,45 +69,45 @@ typedef struct {
 	void (*_reserved2) (void);
 	void (*_reserved3) (void);
 	void (*_reserved4) (void);
-} NMSettingVPNClass;
+} NMSettingVpnClass;
 
 /**
- * NMVPNIterFunc:
+ * NMVpnIterFunc:
  * @key: the name of the data or secret item
  * @value: the value of the data or secret item
  * @user_data: User data passed to nm_setting_vpn_foreach_data_item() or
  * nm_setting_vpn_foreach_secret()
  **/
-typedef void (*NMVPNIterFunc) (const char *key, const char *value, gpointer user_data);
+typedef void (*NMVpnIterFunc) (const char *key, const char *value, gpointer user_data);
 
 GType nm_setting_vpn_get_type (void);
 
 NMSetting        *nm_setting_vpn_new               (void);
-const char       *nm_setting_vpn_get_service_type  (NMSettingVPN *setting);
-const char       *nm_setting_vpn_get_user_name     (NMSettingVPN *setting);
+const char       *nm_setting_vpn_get_service_type  (NMSettingVpn *setting);
+const char       *nm_setting_vpn_get_user_name     (NMSettingVpn *setting);
 
-guint32           nm_setting_vpn_get_num_data_items (NMSettingVPN *setting);
-void              nm_setting_vpn_add_data_item     (NMSettingVPN *setting,
+guint32           nm_setting_vpn_get_num_data_items (NMSettingVpn *setting);
+void              nm_setting_vpn_add_data_item     (NMSettingVpn *setting,
                                                     const char *key,
                                                     const char *item);
-const char *      nm_setting_vpn_get_data_item     (NMSettingVPN *setting,
+const char *      nm_setting_vpn_get_data_item     (NMSettingVpn *setting,
                                                     const char *key);
-gboolean          nm_setting_vpn_remove_data_item  (NMSettingVPN *setting,
+gboolean          nm_setting_vpn_remove_data_item  (NMSettingVpn *setting,
                                                     const char *key);
-void              nm_setting_vpn_foreach_data_item (NMSettingVPN *setting,
-                                                    NMVPNIterFunc func,
+void              nm_setting_vpn_foreach_data_item (NMSettingVpn *setting,
+                                                    NMVpnIterFunc func,
                                                     gpointer user_data);
 
-guint32           nm_setting_vpn_get_num_secrets   (NMSettingVPN *setting);
-void              nm_setting_vpn_add_secret        (NMSettingVPN *setting,
+guint32           nm_setting_vpn_get_num_secrets   (NMSettingVpn *setting);
+void              nm_setting_vpn_add_secret        (NMSettingVpn *setting,
                                                     const char *key,
                                                     const char *secret);
-const char *      nm_setting_vpn_get_secret        (NMSettingVPN *setting,
+const char *      nm_setting_vpn_get_secret        (NMSettingVpn *setting,
                                                     const char *key);
-gboolean          nm_setting_vpn_remove_secret     (NMSettingVPN *setting,
+gboolean          nm_setting_vpn_remove_secret     (NMSettingVpn *setting,
                                                     const char *key);
-void              nm_setting_vpn_foreach_secret    (NMSettingVPN *setting,
-                                                    NMVPNIterFunc func,
+void              nm_setting_vpn_foreach_secret    (NMSettingVpn *setting,
+                                                    NMVpnIterFunc func,
                                                     gpointer user_data);
 
 G_END_DECLS

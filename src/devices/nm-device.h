@@ -237,8 +237,8 @@ int			nm_device_get_priority (NMDevice *dev);
 
 const guint8 *  nm_device_get_hw_address (NMDevice *dev, guint *out_len);
 
-NMDHCP4Config * nm_device_get_dhcp4_config (NMDevice *dev);
-NMDHCP6Config * nm_device_get_dhcp6_config (NMDevice *dev);
+NMDhcp4Config * nm_device_get_dhcp4_config (NMDevice *dev);
+NMDhcp6Config * nm_device_get_dhcp6_config (NMDevice *dev);
 
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
 void            nm_device_set_vpn4_config   (NMDevice *dev, NMIP4Config *config);

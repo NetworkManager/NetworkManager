@@ -253,9 +253,9 @@ typedef struct {
 	NMIP4Config *   wwan_ip4_config; /* WWAN configuration */
 
 	/* DHCPv4 tracking */
-	NMDHCPClient *  dhcp4_client;
+	NMDhcpClient *  dhcp4_client;
 	gulong          dhcp4_state_sigid;
-	NMDHCP4Config * dhcp4_config;
+	NMDhcp4Config * dhcp4_config;
 	NMIP4Config *   vpn4_config;  /* routes added by a VPN which uses this device */
 
 	guint           arp_round2_id;
@@ -290,10 +290,10 @@ typedef struct {
 
 	GHashTable *   ip6_saved_properties;
 
-	NMDHCPClient *  dhcp6_client;
+	NMDhcpClient *  dhcp6_client;
 	NMRDiscDHCPLevel dhcp6_mode;
 	gulong          dhcp6_state_sigid;
-	NMDHCP6Config * dhcp6_config;
+	NMDhcp6Config * dhcp6_config;
 	/* IP6 config from DHCP */
 	NMIP6Config *   dhcp6_ip6_config;
 
@@ -2683,7 +2683,7 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 }
 
 static void
-dhcp4_update_config (NMDevice *self, NMDHCP4Config *config, GHashTable *options)
+dhcp4_update_config (NMDevice *self, NMDhcp4Config *config, GHashTable *options)
 {
 	GHashTableIter iter;
 	const char *key, *value;
@@ -2699,7 +2699,7 @@ dhcp4_update_config (NMDevice *self, NMDHCP4Config *config, GHashTable *options)
 }
 
 static void
-dhcp4_state_changed (NMDHCPClient *client,
+dhcp4_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
                      NMIP4Config *ip4_config,
                      GHashTable *options,
@@ -3119,7 +3119,7 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 }
 
 static void
-dhcp6_timeout (NMDevice *self, NMDHCPClient *client)
+dhcp6_timeout (NMDevice *self, NMDhcpClient *client)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -3134,7 +3134,7 @@ dhcp6_timeout (NMDevice *self, NMDHCPClient *client)
 }
 
 static void
-dhcp6_update_config (NMDevice *self, NMDHCP6Config *config, GHashTable *options)
+dhcp6_update_config (NMDevice *self, NMDhcp6Config *config, GHashTable *options)
 {
 	GHashTableIter iter;
 	const char *key, *value;
@@ -3150,7 +3150,7 @@ dhcp6_update_config (NMDevice *self, NMDHCP6Config *config, GHashTable *options)
 }
 
 static void
-dhcp6_state_changed (NMDHCPClient *client,
+dhcp6_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
                      NMIP6Config *ip6_config,
                      GHashTable *options,
@@ -5023,7 +5023,7 @@ nm_device_is_activating (NMDevice *self)
 
 /* IP Configuration stuff */
 
-NMDHCP4Config *
+NMDhcp4Config *
 nm_device_get_dhcp4_config (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
@@ -5282,7 +5282,7 @@ nm_device_set_wwan_ip6_config (NMDevice *self, NMIP6Config *config)
 		_LOGW (LOGD_IP6, "failed to set WWAN IPv6 configuration");
 }
 
-NMDHCP6Config *
+NMDhcp6Config *
 nm_device_get_dhcp6_config (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);

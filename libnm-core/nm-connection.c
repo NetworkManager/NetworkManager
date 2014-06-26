@@ -1843,32 +1843,32 @@ nm_connection_get_setting_olpc_mesh (NMConnection *connection)
  * nm_connection_get_setting_ppp:
  * @connection: the #NMConnection
  *
- * A shortcut to return any #NMSettingPPP the connection might contain.
+ * A shortcut to return any #NMSettingPpp the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingPPP if the connection contains one, otherwise %NULL
+ * Returns: (transfer none): an #NMSettingPpp if the connection contains one, otherwise %NULL
  **/
-NMSettingPPP *
+NMSettingPpp *
 nm_connection_get_setting_ppp (NMConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	return (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
+	return (NMSettingPpp *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
 }
 
 /**
  * nm_connection_get_setting_pppoe:
  * @connection: the #NMConnection
  *
- * A shortcut to return any #NMSettingPPPOE the connection might contain.
+ * A shortcut to return any #NMSettingPppoe the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingPPPOE if the connection contains one, otherwise %NULL
+ * Returns: (transfer none): an #NMSettingPppoe if the connection contains one, otherwise %NULL
  **/
-NMSettingPPPOE *
+NMSettingPppoe *
 nm_connection_get_setting_pppoe (NMConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	return (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
+	return (NMSettingPppoe *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
 }
 
 /**
@@ -1891,16 +1891,16 @@ nm_connection_get_setting_serial (NMConnection *connection)
  * nm_connection_get_setting_vpn:
  * @connection: the #NMConnection
  *
- * A shortcut to return any #NMSettingVPN the connection might contain.
+ * A shortcut to return any #NMSettingVpn the connection might contain.
  *
- * Returns: (transfer none): an #NMSettingVPN if the connection contains one, otherwise %NULL
+ * Returns: (transfer none): an #NMSettingVpn if the connection contains one, otherwise %NULL
  **/
-NMSettingVPN *
+NMSettingVpn *
 nm_connection_get_setting_vpn (NMConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	return (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+	return (NMSettingVpn *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
 }
 
 /**

@@ -36,7 +36,7 @@
  * @short_description: Describes connection properties for Virtual Private Networks
  * @include: nm-setting-vpn.h
  *
- * The #NMSettingVPN object is a #NMSetting subclass that describes properties
+ * The #NMSettingVpn object is a #NMSetting subclass that describes properties
  * necessary for connection to Virtual Private Networks.  NetworkManager uses
  * a plugin architecture to allow easier use of new VPN types, and this
  * setting abstracts the configuration for those plugins.  Since the configuration
@@ -48,9 +48,9 @@
 /**
  * nm_setting_vpn_error_quark:
  *
- * Registers an error quark for #NMSettingVPN if necessary.
+ * Registers an error quark for #NMSettingVpn if necessary.
  *
- * Returns: the error quark used for #NMSettingVPN errors.
+ * Returns: the error quark used for #NMSettingVpn errors.
  **/
 GQuark
 nm_setting_vpn_error_quark (void)
@@ -63,14 +63,14 @@ nm_setting_vpn_error_quark (void)
 }
 
 
-G_DEFINE_TYPE_WITH_CODE (NMSettingVPN, nm_setting_vpn, NM_TYPE_SETTING,
+G_DEFINE_TYPE_WITH_CODE (NMSettingVpn, nm_setting_vpn, NM_TYPE_SETTING,
                          _nm_register_setting (NM_SETTING_VPN_SETTING_NAME,
                                                g_define_type_id,
                                                1,
                                                NM_SETTING_VPN_ERROR))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_VPN)
 
-#define NM_SETTING_VPN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VPN, NMSettingVPNPrivate))
+#define NM_SETTING_VPN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VPN, NMSettingVpnPrivate))
 
 typedef struct {
 	char *service_type;
@@ -98,7 +98,7 @@ typedef struct {
 	 * freed with g_free().  Should contain secrets only.
 	 */
 	GHashTable *secrets;
-} NMSettingVPNPrivate;
+} NMSettingVpnPrivate;
 
 enum {
 	PROP_0,
@@ -113,9 +113,9 @@ enum {
 /**
  * nm_setting_vpn_new:
  *
- * Creates a new #NMSettingVPN object with default values.
+ * Creates a new #NMSettingVpn object with default values.
  *
- * Returns: (transfer full): the new empty #NMSettingVPN object
+ * Returns: (transfer full): the new empty #NMSettingVpn object
  **/
 NMSetting *
 nm_setting_vpn_new (void)
@@ -125,7 +125,7 @@ nm_setting_vpn_new (void)
 
 /**
  * nm_setting_vpn_get_service_type:
- * @setting: the #NMSettingVPN
+ * @setting: the #NMSettingVpn
  *
  * Returns the service name of the VPN, which identifies the specific VPN
  * plugin that should be used to connect to this VPN.
@@ -133,7 +133,7 @@ nm_setting_vpn_new (void)
  * Returns: the VPN plugin's service name
  **/
 const char *
-nm_setting_vpn_get_service_type (NMSettingVPN *setting)
+nm_setting_vpn_get_service_type (NMSettingVpn *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
 
@@ -142,12 +142,12 @@ nm_setting_vpn_get_service_type (NMSettingVPN *setting)
 
 /**
  * nm_setting_vpn_get_user_name:
- * @setting: the #NMSettingVPN
+ * @setting: the #NMSettingVpn
  *
- * Returns: the #NMSettingVPN:user-name property of the setting
+ * Returns: the #NMSettingVpn:user-name property of the setting
  **/
 const char *
-nm_setting_vpn_get_user_name (NMSettingVPN *setting)
+nm_setting_vpn_get_user_name (NMSettingVpn *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
 
@@ -156,14 +156,14 @@ nm_setting_vpn_get_user_name (NMSettingVPN *setting)
 
 /**
  * nm_setting_vpn_get_num_data_items:
- * @setting: the #NMSettingVPN
+ * @setting: the #NMSettingVpn
  *
  * Gets number of key/value pairs of VPN configuration data.
  *
  * Returns: the number of VPN plugin specific configuration data items
  **/
 guint32
-nm_setting_vpn_get_num_data_items (NMSettingVPN *setting)
+nm_setting_vpn_get_num_data_items (NMSettingVpn *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), 0);
 
@@ -172,7 +172,7 @@ nm_setting_vpn_get_num_data_items (NMSettingVPN *setting)
 
 /**
  * nm_setting_vpn_add_data_item:
- * @setting: the #NMSettingVPN
+ * @setting: the #NMSettingVpn
  * @key: a name that uniquely identifies the given value @item
  * @item: the value to be referenced by @key
  *
@@ -181,7 +181,7 @@ nm_setting_vpn_get_num_data_items (NMSettingVPN *setting)
  * or other secrets, which is what nm_setting_vpn_add_secret() is for.
  **/
 void
-nm_setting_vpn_add_data_item (NMSettingVPN *setting,
+nm_setting_vpn_add_data_item (NMSettingVpn *setting,
                               const char *key,
                               const char *item)
 {
@@ -198,7 +198,7 @@ nm_setting_vpn_add_data_item (NMSettingVPN *setting,
 
 /**
  * nm_setting_vpn_get_data_item:
- * @setting: the #NMSettingVPN
+ * @setting: the #NMSettingVpn
  * @key: the name of the data item to retrieve
  *
  * Retrieves the data item of a key/value relationship previously established
@@ -207,7 +207,7 @@ nm_setting_vpn_add_data_item (NMSettingVPN *setting,
  * Returns: the data item, if any
  **/
 const char *
-nm_setting_vpn_get_data_item (NMSettingVPN *setting, const char *key)
+nm_setting_vpn_get_data_item (NMSettingVpn *setting, const char *key)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
 
@@ -216,7 +216,7 @@ nm_setting_vpn_get_data_item (NMSettingVPN *setting, const char *key)
 
 /**
  * nm_setting_vpn_remove_data_item:
- * @setting: the #NMSettingVPN
+ * @setting: the #NMSettingVpn
  * @key: the name of the data item to remove
  *
  * Deletes a key/value relationship previously established by
@@ -226,7 +226,7 @@ nm_setting_vpn_get_data_item (NMSettingVPN *setting, const char *key)
  * %FALSE if it was not.
  **/
 gboolean
-nm_setting_vpn_remove_data_item (NMSettingVPN *setting, const char *key)
+nm_setting_vpn_remove_data_item (NMSettingVpn *setting, const char *key)
 {
 	gboolean found;
 
@@ -240,7 +240,7 @@ nm_setting_vpn_remove_data_item (NMSettingVPN *setting, const char *key)
 
 static void
 foreach_item_helper (GHashTable *hash,
-                     NMVPNIterFunc func,
+                     NMVpnIterFunc func,
                      gpointer user_data)
 {
 	GList *keys, *liter;
@@ -269,7 +269,7 @@ foreach_item_helper (GHashTable *hash,
 
 /**
  * nm_setting_vpn_foreach_data_item:
- * @setting: a #NMSettingVPN
+ * @setting: a #NMSettingVpn
  * @func: (scope call): an user provided function
  * @user_data: data to be passed to @func
  *
@@ -278,8 +278,8 @@ foreach_item_helper (GHashTable *hash,
  * during iteration will not be part of the iteration.
  */
 void
-nm_setting_vpn_foreach_data_item (NMSettingVPN *setting,
-                                  NMVPNIterFunc func,
+nm_setting_vpn_foreach_data_item (NMSettingVpn *setting,
+                                  NMVpnIterFunc func,
                                   gpointer user_data)
 {
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
@@ -289,14 +289,14 @@ nm_setting_vpn_foreach_data_item (NMSettingVPN *setting,
 
 /**
  * nm_setting_vpn_get_num_secrets:
- * @setting: the #NMSettingVPN
+ * @setting: the #NMSettingVpn
  *
  * Gets number of VPN plugin specific secrets in the setting.
  *
  * Returns: the number of VPN plugin specific secrets
  **/
 guint32
-nm_setting_vpn_get_num_secrets (NMSettingVPN *setting)
+nm_setting_vpn_get_num_secrets (NMSettingVpn *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), 0);
 
@@ -305,7 +305,7 @@ nm_setting_vpn_get_num_secrets (NMSettingVPN *setting)
 
 /**
  * nm_setting_vpn_add_secret:
- * @setting: the #NMSettingVPN
+ * @setting: the #NMSettingVpn
  * @key: a name that uniquely identifies the given secret @secret
  * @secret: the secret to be referenced by @key
  *
@@ -313,7 +313,7 @@ nm_setting_vpn_get_num_secrets (NMSettingVPN *setting)
  * setting which may be retrieved later.
  **/
 void
-nm_setting_vpn_add_secret (NMSettingVPN *setting,
+nm_setting_vpn_add_secret (NMSettingVpn *setting,
                            const char *key,
                            const char *secret)
 {
@@ -330,7 +330,7 @@ nm_setting_vpn_add_secret (NMSettingVPN *setting,
 
 /**
  * nm_setting_vpn_get_secret:
- * @setting: the #NMSettingVPN
+ * @setting: the #NMSettingVpn
  * @key: the name of the secret to retrieve
  *
  * Retrieves the secret of a key/value relationship previously established
@@ -339,7 +339,7 @@ nm_setting_vpn_add_secret (NMSettingVPN *setting,
  * Returns: the secret, if any
  **/
 const char *
-nm_setting_vpn_get_secret (NMSettingVPN *setting, const char *key)
+nm_setting_vpn_get_secret (NMSettingVpn *setting, const char *key)
 {
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
 
@@ -348,7 +348,7 @@ nm_setting_vpn_get_secret (NMSettingVPN *setting, const char *key)
 
 /**
  * nm_setting_vpn_remove_secret:
- * @setting: the #NMSettingVPN
+ * @setting: the #NMSettingVpn
  * @key: the name of the secret to remove
  *
  * Deletes a key/value relationship previously established by
@@ -358,7 +358,7 @@ nm_setting_vpn_get_secret (NMSettingVPN *setting, const char *key)
  * %FALSE if it was not.
  **/
 gboolean
-nm_setting_vpn_remove_secret (NMSettingVPN *setting, const char *key)
+nm_setting_vpn_remove_secret (NMSettingVpn *setting, const char *key)
 {
 	gboolean found;
 
@@ -372,7 +372,7 @@ nm_setting_vpn_remove_secret (NMSettingVPN *setting, const char *key)
 
 /**
  * nm_setting_vpn_foreach_secret:
- * @setting: a #NMSettingVPN
+ * @setting: a #NMSettingVpn
  * @func: (scope call): an user provided function
  * @user_data: data to be passed to @func
  *
@@ -381,8 +381,8 @@ nm_setting_vpn_remove_secret (NMSettingVPN *setting, const char *key)
  * iteration will not be part of the iteration.
  */
 void
-nm_setting_vpn_foreach_secret (NMSettingVPN *setting,
-                               NMVPNIterFunc func,
+nm_setting_vpn_foreach_secret (NMSettingVpn *setting,
+                               NMVpnIterFunc func,
                                gpointer user_data)
 {
 	g_return_if_fail (NM_IS_SETTING_VPN (setting));
@@ -393,7 +393,7 @@ nm_setting_vpn_foreach_secret (NMSettingVPN *setting,
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
 	if (!priv->service_type) {
 		g_set_error_literal (error,
@@ -432,7 +432,7 @@ update_secret_string (NMSetting *setting,
                       const char *value,
                       GError **error)
 {
-	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
 	g_return_val_if_fail (key != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
 	g_return_val_if_fail (value != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
@@ -456,7 +456,7 @@ update_secret_hash (NMSetting *setting,
                     GHashTable *secrets,
                     GError **error)
 {
-	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 	GHashTableIter iter;
 	const char *name, *value;
 	NMSettingUpdateSecretResult result = NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
@@ -540,7 +540,7 @@ get_secret_flags (NMSetting *setting,
                   NMSettingSecretFlags *out_flags,
                   GError **error)
 {
-	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 	gboolean success = FALSE;
 	char *flags_key;
 	gpointer val;
@@ -593,8 +593,8 @@ need_secrets (NMSetting *setting)
 }
 
 static gboolean
-compare_one_secret (NMSettingVPN *a,
-                    NMSettingVPN *b,
+compare_one_secret (NMSettingVpn *a,
+                    NMSettingVpn *b,
                     NMSettingCompareFlags flags)
 {
 	GHashTable *a_secrets, *b_secrets;
@@ -660,7 +660,7 @@ clear_secrets_with_flags (NMSetting *setting,
                           NMSettingClearSecretsWithFlagsFn func,
                           gpointer user_data)
 {
-	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 	GHashTableIter iter;
 	const char *secret;
 	gboolean changed = TRUE;
@@ -697,9 +697,9 @@ destroy_one_secret (gpointer data)
 }
 
 static void
-nm_setting_vpn_init (NMSettingVPN *setting)
+nm_setting_vpn_init (NMSettingVpn *setting)
 {
-	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
 	priv->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	priv->secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_one_secret);
@@ -708,7 +708,7 @@ nm_setting_vpn_init (NMSettingVPN *setting)
 static void
 finalize (GObject *object)
 {
-	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (object);
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (object);
 
 	g_free (priv->service_type);
 	g_free (priv->user_name);
@@ -730,7 +730,7 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (object);
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (object);
 	GHashTable *new_hash;
 
 	switch (prop_id) {
@@ -766,8 +766,8 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMSettingVPN *setting = NM_SETTING_VPN (object);
-	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
+	NMSettingVpn *setting = NM_SETTING_VPN (object);
+	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
 	switch (prop_id) {
 	case PROP_SERVICE_TYPE:
@@ -789,12 +789,12 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
+nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
 
-	g_type_class_add_private (setting_class, sizeof (NMSettingVPNPrivate));
+	g_type_class_add_private (setting_class, sizeof (NMSettingVpnPrivate));
 
 	/* virtual methods */
 	object_class->set_property = set_property;
@@ -811,7 +811,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 
 	/* Properties */
 	/**
-	 * NMSettingVPN:service-type:
+	 * NMSettingVpn:service-type:
 	 *
 	 * D-Bus service name of the VPN plugin that this setting uses to connect to
 	 * its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc
@@ -825,7 +825,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingVPN:user-name:
+	 * NMSettingVpn:user-name:
 	 *
 	 * If the VPN connection requires a user name for authentication, that name
 	 * should be provided here.  If the connection is available to more than one
@@ -842,7 +842,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingVPN:data:
+	 * NMSettingVpn:data:
 	 *
 	 * Dictionary of key/value pairs of VPN plugin specific data.  Both keys and
 	 * values must be strings.
@@ -855,7 +855,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingVPN:secrets:
+	 * NMSettingVpn:secrets:
 	 *
 	 * Dictionary of key/value pairs of VPN plugin specific secrets like
 	 * passwords or private keys.  Both keys and values must be strings.

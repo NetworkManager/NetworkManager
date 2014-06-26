@@ -26,15 +26,15 @@
 #include "nm-object-private.h"
 #include "nm-active-connection.h"
 
-G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
+G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
 
-#define NM_VPN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_CONNECTION, NMVPNConnectionPrivate))
+#define NM_VPN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_CONNECTION, NMVpnConnectionPrivate))
 
 typedef struct {
 	DBusGProxy *proxy;
 	char *banner;
-	NMVPNConnectionState vpn_state;
-} NMVPNConnectionPrivate;
+	NMVpnConnectionState vpn_state;
+} NMVpnConnectionPrivate;
 
 enum {
 	PROP_0,
@@ -58,7 +58,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
  * @connection: the #DBusGConnection
  * @path: the DBus object path of the new connection
  *
- * Creates a new #NMVPNConnection.
+ * Creates a new #NMVpnConnection.
  *
  * Returns: (transfer full): a new connection object
  **/
@@ -76,17 +76,17 @@ nm_vpn_connection_new (DBusGConnection *connection, const char *path)
 
 /**
  * nm_vpn_connection_get_banner:
- * @vpn: a #NMVPNConnection
+ * @vpn: a #NMVpnConnection
  *
- * Gets the VPN login banner of the active #NMVPNConnection.
+ * Gets the VPN login banner of the active #NMVpnConnection.
  *
  * Returns: the VPN login banner of the VPN connection. This is the internal
  * string used by the connection, and must not be modified.
  **/
 const char *
-nm_vpn_connection_get_banner (NMVPNConnection *vpn)
+nm_vpn_connection_get_banner (NMVpnConnection *vpn)
 {
-	NMVPNConnectionPrivate *priv;
+	NMVpnConnectionPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NULL);
 
@@ -103,14 +103,14 @@ nm_vpn_connection_get_banner (NMVPNConnection *vpn)
 
 /**
  * nm_vpn_connection_get_vpn_state:
- * @vpn: a #NMVPNConnection
+ * @vpn: a #NMVpnConnection
  *
- * Gets the current #NMVPNConnection state.
+ * Gets the current #NMVpnConnection state.
  *
  * Returns: the VPN state of the active VPN connection.
  **/
-NMVPNConnectionState
-nm_vpn_connection_get_vpn_state (NMVPNConnection *vpn)
+NMVpnConnectionState
+nm_vpn_connection_get_vpn_state (NMVpnConnection *vpn)
 {
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NM_VPN_CONNECTION_STATE_UNKNOWN);
 
@@ -120,12 +120,12 @@ nm_vpn_connection_get_vpn_state (NMVPNConnection *vpn)
 
 static void
 vpn_state_changed_proxy (DBusGProxy *proxy,
-                         NMVPNConnectionState vpn_state,
-                         NMVPNConnectionStateReason reason,
+                         NMVpnConnectionState vpn_state,
+                         NMVpnConnectionStateReason reason,
                          gpointer user_data)
 {
-	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnection *connection = NM_VPN_CONNECTION (user_data);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
 	if (priv->vpn_state != vpn_state) {
 		priv->vpn_state = vpn_state;
@@ -137,17 +137,17 @@ vpn_state_changed_proxy (DBusGProxy *proxy,
 /*****************************************************************************/
 
 static void
-nm_vpn_connection_init (NMVPNConnection *connection)
+nm_vpn_connection_init (NMVpnConnection *connection)
 {
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
 	priv->vpn_state = NM_VPN_CONNECTION_STATE_UNKNOWN;
 }
 
 static void
-register_properties (NMVPNConnection *connection)
+register_properties (NMVpnConnection *connection)
 {
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_VPN_CONNECTION_BANNER,    &priv->banner },
 		{ NM_VPN_CONNECTION_VPN_STATE, &priv->vpn_state },
@@ -162,7 +162,7 @@ register_properties (NMVPNConnection *connection)
 static void
 constructed (GObject *object)
 {
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->constructed (object);
 
@@ -185,7 +185,7 @@ constructed (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
 	g_free (priv->banner);
 	g_object_unref (priv->proxy);
@@ -199,7 +199,7 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-	NMVPNConnection *self = NM_VPN_CONNECTION (object);
+	NMVpnConnection *self = NM_VPN_CONNECTION (object);
 
 	_nm_object_ensure_inited (NM_OBJECT (object));
 
@@ -217,11 +217,11 @@ get_property (GObject *object,
 }
 
 static void
-nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
+nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (connection_class);
 
-	g_type_class_add_private (connection_class, sizeof (NMVPNConnectionPrivate));
+	g_type_class_add_private (connection_class, sizeof (NMVpnConnectionPrivate));
 
 	/* virtual methods */
 	object_class->constructed = constructed;
@@ -231,7 +231,7 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 	/* properties */
 
 	/**
-	 * NMVPNConnection:vpn-state:
+	 * NMVpnConnection:vpn-state:
 	 *
 	 * The VPN state of the active VPN connection.
 	 **/
@@ -245,7 +245,7 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMVPNConnection:banner:
+	 * NMVpnConnection:banner:
 	 *
 	 * The VPN login banner of the active VPN connection.
 	 **/
@@ -261,7 +261,7 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 		g_signal_new ("vpn-state-changed",
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMVPNConnectionClass, vpn_state_changed),
+		              G_STRUCT_OFFSET (NMVpnConnectionClass, vpn_state_changed),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2,
 		              G_TYPE_UINT, G_TYPE_UINT);

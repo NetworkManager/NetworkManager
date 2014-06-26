@@ -27,15 +27,15 @@
 #include "nm-object-private.h"
 #include "nm-utils.h"
 
-G_DEFINE_TYPE (NMDHCP6Config, nm_dhcp6_config, NM_TYPE_OBJECT)
+G_DEFINE_TYPE (NMDhcp6Config, nm_dhcp6_config, NM_TYPE_OBJECT)
 
-#define NM_DHCP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP6_CONFIG, NMDHCP6ConfigPrivate))
+#define NM_DHCP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP6_CONFIG, NMDhcp6ConfigPrivate))
 
 typedef struct {
 	DBusGProxy *proxy;
 
 	GHashTable *options;
-} NMDHCP6ConfigPrivate;
+} NMDhcp6ConfigPrivate;
 
 enum {
 	PROP_0,
@@ -45,14 +45,14 @@ enum {
 };
 
 static void
-nm_dhcp6_config_init (NMDHCP6Config *config)
+nm_dhcp6_config_init (NMDhcp6Config *config)
 {
 }
 
 static gboolean
 demarshal_dhcp6_options (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
 {
-	NMDHCP6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
+	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
 	GHashTable *new_options;
 	GHashTableIter iter;
 	const char *key;
@@ -72,9 +72,9 @@ demarshal_dhcp6_options (NMObject *object, GParamSpec *pspec, GValue *value, gpo
 }
 
 static void
-register_properties (NMDHCP6Config *config)
+register_properties (NMDhcp6Config *config)
 {
-	NMDHCP6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (config);
+	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (config);
 	const NMPropertiesInfo property_info[] = {
 		{ NM_DHCP6_CONFIG_OPTIONS,   &priv->options, demarshal_dhcp6_options },
 		{ NULL },
@@ -88,7 +88,7 @@ register_properties (NMDHCP6Config *config)
 static void
 constructed (GObject *object)
 {
-	NMDHCP6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
+	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
 
 	G_OBJECT_CLASS (nm_dhcp6_config_parent_class)->constructed (object);
 
@@ -101,7 +101,7 @@ constructed (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMDHCP6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
+	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
 
 	if (priv->options)
 		g_hash_table_destroy (priv->options);
@@ -117,7 +117,7 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-	NMDHCP6Config *self = NM_DHCP6_CONFIG (object);
+	NMDhcp6Config *self = NM_DHCP6_CONFIG (object);
 
 	_nm_object_ensure_inited (NM_OBJECT (object));
 
@@ -132,11 +132,11 @@ get_property (GObject *object,
 }
 
 static void
-nm_dhcp6_config_class_init (NMDHCP6ConfigClass *config_class)
+nm_dhcp6_config_class_init (NMDhcp6ConfigClass *config_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
 
-	g_type_class_add_private (config_class, sizeof (NMDHCP6ConfigPrivate));
+	g_type_class_add_private (config_class, sizeof (NMDhcp6ConfigPrivate));
 
 	/* virtual methods */
 	object_class->constructed = constructed;
@@ -146,7 +146,7 @@ nm_dhcp6_config_class_init (NMDHCP6ConfigClass *config_class)
 	/* properties */
 
 	/**
-	 * NMDHCP6Config:options:
+	 * NMDhcp6Config:options:
 	 *
 	 * The #GHashTable containing options of the configuration.
 	 *
@@ -165,7 +165,7 @@ nm_dhcp6_config_class_init (NMDHCP6ConfigClass *config_class)
  * @connection: the #DBusGConnection
  * @object_path: the DBus object path of the device
  *
- * Creates a new #NMDHCP6Config.
+ * Creates a new #NMDhcp6Config.
  *
  * Returns: (transfer full): a new configuration
  **/
@@ -180,7 +180,7 @@ nm_dhcp6_config_new (DBusGConnection *connection, const char *object_path)
 
 /**
  * nm_dhcp6_config_get_options:
- * @config: a #NMDHCP6Config
+ * @config: a #NMDhcp6Config
  *
  * Gets all the options contained in the configuration.
  *
@@ -188,7 +188,7 @@ nm_dhcp6_config_new (DBusGConnection *connection, const char *object_path)
  * This is the internal copy used by the configuration, and must not be modified.
  **/
 GHashTable *
-nm_dhcp6_config_get_options (NMDHCP6Config *config)
+nm_dhcp6_config_get_options (NMDhcp6Config *config)
 {
 	g_return_val_if_fail (NM_IS_DHCP6_CONFIG (config), NULL);
 
@@ -198,7 +198,7 @@ nm_dhcp6_config_get_options (NMDHCP6Config *config)
 
 /**
  * nm_dhcp6_config_get_one_option:
- * @config: a #NMDHCP6Config
+ * @config: a #NMDhcp6Config
  * @option: the option to retrieve
  *
  * Gets one option by option name.
@@ -207,7 +207,7 @@ nm_dhcp6_config_get_options (NMDHCP6Config *config)
  * configuration, and must not be modified.
  **/
 const char *
-nm_dhcp6_config_get_one_option (NMDHCP6Config *config, const char *option)
+nm_dhcp6_config_get_one_option (NMDhcp6Config *config, const char *option)
 {
 	g_return_val_if_fail (NM_IS_DHCP6_CONFIG (config), NULL);
 

@@ -32,7 +32,7 @@ interface_init (gpointer g_iface)
 	/* Properties */
 
 	/**
-	 * NMVPNPluginUiInterface:name:
+	 * NMVpnPluginUiInterface:name:
 	 *
 	 * Short display name of the VPN plugin.
 	 */
@@ -43,7 +43,7 @@ interface_init (gpointer g_iface)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMVPNPluginUiInterface:desc:
+	 * NMVpnPluginUiInterface:desc:
 	 *
 	 * Longer description of the VPN plugin.
 	 */
@@ -54,7 +54,7 @@ interface_init (gpointer g_iface)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMVPNPluginUiInterface:service:
+	 * NMVpnPluginUiInterface:service:
 	 *
 	 * D-Bus service name of the plugin's VPN service.
 	 */

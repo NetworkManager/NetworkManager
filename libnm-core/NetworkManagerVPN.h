@@ -68,7 +68,7 @@
 #define NM_DBUS_VPN_SIGNAL_IP4_CONFIG     "IP4Config"
 
 /**
- * NMVPNServiceState:
+ * NMVpnServiceState:
  * @NM_VPN_SERVICE_STATE_UNKNOWN: The state of the VPN plugin is unknown.
  * @NM_VPN_SERVICE_STATE_INIT: The VPN plugin is initialized.
  * @NM_VPN_SERVICE_STATE_SHUTDOWN: Not used.
@@ -81,7 +81,7 @@
  *
  * (Corresponds to the NM_VPN_SERVICE_STATE type in nm-vpn-connection.xml.)
  */
-typedef enum NMVPNServiceState {
+typedef enum NMVpnServiceState {
 	NM_VPN_SERVICE_STATE_UNKNOWN = 0,
 	NM_VPN_SERVICE_STATE_INIT,
 	NM_VPN_SERVICE_STATE_SHUTDOWN,
@@ -89,11 +89,11 @@ typedef enum NMVPNServiceState {
 	NM_VPN_SERVICE_STATE_STARTED,
 	NM_VPN_SERVICE_STATE_STOPPING,
 	NM_VPN_SERVICE_STATE_STOPPED
-} NMVPNServiceState;
+} NMVpnServiceState;
 
 
 /**
- * NMVPNConnectionState:
+ * NMVpnConnectionState:
  * @NM_VPN_CONNECTION_STATE_UNKNOWN: The state of the VPN connection is
  *   unknown.
  * @NM_VPN_CONNECTION_STATE_PREPARE: The VPN connection is preparing to
@@ -111,7 +111,7 @@ typedef enum NMVPNServiceState {
  *
  * (Corresponds to the NM_VPN_CONNECTION_STATE type in nm-vpn-connection.xml.)
  */
-typedef enum NMVPNConnectionState {
+typedef enum NMVpnConnectionState {
 	NM_VPN_CONNECTION_STATE_UNKNOWN = 0,
 	NM_VPN_CONNECTION_STATE_PREPARE,
 	NM_VPN_CONNECTION_STATE_NEED_AUTH,
@@ -120,10 +120,10 @@ typedef enum NMVPNConnectionState {
 	NM_VPN_CONNECTION_STATE_ACTIVATED,
 	NM_VPN_CONNECTION_STATE_FAILED,
 	NM_VPN_CONNECTION_STATE_DISCONNECTED
-} NMVPNConnectionState;
+} NMVpnConnectionState;
 
 /**
- * NMVPNConnectionStateReason:
+ * NMVpnConnectionStateReason:
  * @NM_VPN_CONNECTION_STATE_REASON_UNKNOWN: The reason for the VPN connection
  *   state change is unknown.
  * @NM_VPN_CONNECTION_STATE_REASON_NONE: No reason was given for the VPN
@@ -153,7 +153,7 @@ typedef enum NMVPNConnectionState {
  *
  * (Corresponds to the NM_VPN_CONNECTION_STATE_REASON type in nm-vpn-connection.xml.)
  */
-typedef enum NMVPNConnectionStateReason {
+typedef enum NMVpnConnectionStateReason {
 	NM_VPN_CONNECTION_STATE_REASON_UNKNOWN = 0,
 	NM_VPN_CONNECTION_STATE_REASON_NONE,
 	NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED,
@@ -166,10 +166,10 @@ typedef enum NMVPNConnectionStateReason {
 	NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS,
 	NM_VPN_CONNECTION_STATE_REASON_LOGIN_FAILED,
 	NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED
-} NMVPNConnectionStateReason;
+} NMVpnConnectionStateReason;
 
 /**
- * NMVPNPluginFailure:
+ * NMVpnPluginFailure:
  * @NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED: Login failed.
  * @NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED: Connect failed.
  * @NM_VPN_PLUGIN_FAILURE_BAD_IP_CONFIG: Invalid IP configuration returned from
@@ -183,7 +183,7 @@ typedef enum {
 	NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED,
 	NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED,
 	NM_VPN_PLUGIN_FAILURE_BAD_IP_CONFIG
-} NMVPNPluginFailure;
+} NMVpnPluginFailure;
 
 
 /*** Generic config ***/

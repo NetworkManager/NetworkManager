@@ -82,9 +82,9 @@ typedef struct {
 	gboolean firmware_missing;
 	gboolean autoconnect;
 	NMIP4Config *ip4_config;
-	NMDHCP4Config *dhcp4_config;
+	NMDhcp4Config *dhcp4_config;
 	NMIP6Config *ip6_config;
-	NMDHCP6Config *dhcp6_config;
+	NMDhcp6Config *dhcp6_config;
 	NMDeviceState state;
 	NMDeviceState last_seen_state;
 	NMDeviceStateReason reason;
@@ -694,7 +694,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 	/**
 	 * NMDevice:dhcp4-config:
 	 *
-	 * The #NMDHCP4Config of the device.
+	 * The #NMDhcp4Config of the device.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP4_CONFIG,
@@ -718,7 +718,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 	/**
 	 * NMDevice:dhcp6-config:
 	 *
-	 * The #NMDHCP6Config of the device.
+	 * The #NMDhcp6Config of the device.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP6_CONFIG,
@@ -1287,16 +1287,16 @@ nm_device_get_ip4_config (NMDevice *device)
  * nm_device_get_dhcp4_config:
  * @device: a #NMDevice
  *
- * Gets the current #NMDHCP4Config associated with the #NMDevice.
+ * Gets the current #NMDhcp4Config associated with the #NMDevice.
  *
  * Note that as of NetworkManager 0.9.10, you can alternatively use
  * nm_active_connection_get_dhcp4_config(), which also works with VPN
  * connections.
  *
- * Returns: (transfer none): the #NMDHCP4Config or %NULL if the device is not activated or not
+ * Returns: (transfer none): the #NMDhcp4Config or %NULL if the device is not activated or not
  * using DHCP.
  **/
-NMDHCP4Config *
+NMDhcp4Config *
 nm_device_get_dhcp4_config (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
@@ -1330,16 +1330,16 @@ nm_device_get_ip6_config (NMDevice *device)
  * nm_device_get_dhcp6_config:
  * @device: a #NMDevice
  *
- * Gets the current #NMDHCP6Config associated with the #NMDevice.
+ * Gets the current #NMDhcp6Config associated with the #NMDevice.
  *
  * Note that as of NetworkManager 0.9.10, you can alternatively use
  * nm_active_connection_get_dhcp6_config(), which also works with VPN
  * connections.
  *
- * Returns: (transfer none): the #NMDHCP6Config or %NULL if the device is not activated or not
+ * Returns: (transfer none): the #NMDhcp6Config or %NULL if the device is not activated or not
  * using DHCP.
  **/
-NMDHCP6Config *
+NMDhcp6Config *
 nm_device_get_dhcp6_config (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);

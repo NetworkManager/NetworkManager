@@ -30,14 +30,14 @@
 G_BEGIN_DECLS
 
 #define NM_TYPE_DHCP4_CONFIG            (nm_dhcp4_config_get_type ())
-#define NM_DHCP4_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP4_CONFIG, NMDHCP4Config))
-#define NM_DHCP4_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP4_CONFIG, NMDHCP4ConfigClass))
+#define NM_DHCP4_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP4_CONFIG, NMDhcp4Config))
+#define NM_DHCP4_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP4_CONFIG, NMDhcp4ConfigClass))
 #define NM_IS_DHCP4_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP4_CONFIG))
 #define NM_IS_DHCP4_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP4_CONFIG))
 
 typedef struct {
 	NMObject parent;
-} NMDHCP4Config;
+} NMDhcp4Config;
 
 typedef struct {
 	NMObjectClass parent;
@@ -49,7 +49,7 @@ typedef struct {
 	void (*_reserved4) (void);
 	void (*_reserved5) (void);
 	void (*_reserved6) (void);
-} NMDHCP4ConfigClass;
+} NMDhcp4ConfigClass;
 
 #define NM_DHCP4_CONFIG_OPTIONS "options"
 
@@ -57,9 +57,9 @@ GType nm_dhcp4_config_get_type (void);
 
 GObject *nm_dhcp4_config_new (DBusGConnection *connection, const char *object_path);
 
-GHashTable * nm_dhcp4_config_get_options (NMDHCP4Config *config);
+GHashTable * nm_dhcp4_config_get_options (NMDhcp4Config *config);
 
-const char * nm_dhcp4_config_get_one_option (NMDHCP4Config *config, const char *option);
+const char * nm_dhcp4_config_get_one_option (NMDhcp4Config *config, const char *option);
 
 G_END_DECLS
 

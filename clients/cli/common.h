@@ -34,8 +34,8 @@
 
 gboolean print_ip4_config (NMIP4Config *cfg4, NmCli *nmc, const char *group_prefix, const char *one_field);
 gboolean print_ip6_config (NMIP6Config *cfg6, NmCli *nmc, const char *group_prefix, const char *one_field);
-gboolean print_dhcp4_config (NMDHCP4Config *dhcp4, NmCli *nmc, const char *group_prefix, const char *one_field);
-gboolean print_dhcp6_config (NMDHCP6Config *dhcp6, NmCli *nmc, const char *group_prefix, const char *one_field);
+gboolean print_dhcp4_config (NMDhcp4Config *dhcp4, NmCli *nmc, const char *group_prefix, const char *one_field);
+gboolean print_dhcp6_config (NMDhcp6Config *dhcp6, NmCli *nmc, const char *group_prefix, const char *one_field);
 
 NMIP4Address *nmc_parse_and_build_ip4_address (const char *ip_str, const char *gw_str, GError **error);
 NMIP6Address *nmc_parse_and_build_ip6_address (const char *ip_str, const char *gw_str, GError **error);

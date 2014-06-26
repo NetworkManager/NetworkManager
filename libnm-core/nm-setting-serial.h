@@ -43,7 +43,7 @@ G_BEGIN_DECLS
  * @NM_SETTING_SERIAL_ERROR_MISSING_PROPERTY: the property was missing and is
  * required
  * @NM_SETTING_SERIAL_ERROR_MISSING_PPP_SETTING: one of the properties of the
- * setting requires the connection to contain an #NMSettingPPP setting
+ * setting requires the connection to contain an #NMSettingPpp setting
  */
 typedef enum {
 	NM_SETTING_SERIAL_ERROR_UNKNOWN = 0,        /*< nick=UnknownError >*/

@@ -274,7 +274,7 @@ export_vpn_to_file_cb (GtkWidget *dialog, gint response, gpointer user_data)
 	GError *error = NULL;
 	NMVpnPluginUiInterface *plugin;
 	NMSettingConnection *s_con = NULL;
-	NMSettingVPN *s_vpn = NULL;
+	NMSettingVpn *s_vpn = NULL;
 	const char *service_type;
 	const char *id = NULL;
 	gboolean success = FALSE;
@@ -363,7 +363,7 @@ vpn_export (NMConnection *connection)
 {
 	GtkWidget *dialog;
 	NMVpnPluginUiInterface *plugin;
-	NMSettingVPN *s_vpn = NULL;
+	NMSettingVpn *s_vpn = NULL;
 	const char *service_type;
 	const char *home_folder;
 
@@ -405,7 +405,7 @@ vpn_export (NMConnection *connection)
 gboolean
 vpn_supports_ipv6 (NMConnection *connection)
 {
-	NMSettingVPN *s_vpn;
+	NMSettingVpn *s_vpn;
 	const char *service_type;
 	NMVpnPluginUiInterface *plugin;
 	guint32 capabilities;

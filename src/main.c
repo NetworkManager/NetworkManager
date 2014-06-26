@@ -344,11 +344,11 @@ main (int argc, char *argv[])
 	gboolean success, show_version = FALSE;
 	int i;
 	NMManager *manager = NULL;
-	gs_unref_object NMVPNManager *vpn_manager = NULL;
+	gs_unref_object NMVpnManager *vpn_manager = NULL;
 	gs_unref_object NMDnsManager *dns_mgr = NULL;
 	gs_unref_object NMDBusManager *dbus_mgr = NULL;
 	gs_unref_object NMSupplicantManager *sup_mgr = NULL;
-	gs_unref_object NMDHCPManager *dhcp_mgr = NULL;
+	gs_unref_object NMDhcpManager *dhcp_mgr = NULL;
 	gs_unref_object NMFirewallManager *fw_mgr = NULL;
 	gs_unref_object NMSettings *settings = NULL;
 	gs_unref_object NMConfig *config = NULL;
