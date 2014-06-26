@@ -388,13 +388,13 @@ get_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_FLAGS:
-		g_value_set_uint (value, nm_access_point_get_flags (ap));
+		g_value_set_flags (value, nm_access_point_get_flags (ap));
 		break;
 	case PROP_WPA_FLAGS:
-		g_value_set_uint (value, nm_access_point_get_wpa_flags (ap));
+		g_value_set_flags (value, nm_access_point_get_wpa_flags (ap));
 		break;
 	case PROP_RSN_FLAGS:
-		g_value_set_uint (value, nm_access_point_get_rsn_flags (ap));
+		g_value_set_flags (value, nm_access_point_get_rsn_flags (ap));
 		break;
 	case PROP_SSID:
 		g_value_set_boxed (value, nm_access_point_get_ssid (ap));
@@ -409,7 +409,7 @@ get_property (GObject *object,
 		g_value_set_string (value, nm_access_point_get_bssid (ap));
 		break;
 	case PROP_MODE:
-		g_value_set_uint (value, nm_access_point_get_mode (ap));
+		g_value_set_enum (value, nm_access_point_get_mode (ap));
 		break;
 	case PROP_MAX_BITRATE:
 		g_value_set_uint (value, nm_access_point_get_max_bitrate (ap));
@@ -474,12 +474,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_FLAGS,
-		 g_param_spec_uint (NM_ACCESS_POINT_FLAGS, "", "",
-		                    NM_802_11_AP_FLAGS_NONE,
-		                    NM_802_11_AP_FLAGS_PRIVACY,
-		                    NM_802_11_AP_FLAGS_NONE,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_ACCESS_POINT_FLAGS, "", "",
+		                     NM_TYPE_802_11_AP_FLAGS,
+		                     NM_802_11_AP_FLAGS_NONE,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMAccessPoint:wpa-flags:
@@ -488,10 +487,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_WPA_FLAGS,
-		 g_param_spec_uint (NM_ACCESS_POINT_WPA_FLAGS, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_ACCESS_POINT_WPA_FLAGS, "", "",
+		                     NM_TYPE_802_11_AP_SECURITY_FLAGS,
+		                     NM_802_11_AP_SEC_NONE,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMAccessPoint:rsn-flags:
@@ -500,10 +500,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_RSN_FLAGS,
-		 g_param_spec_uint (NM_ACCESS_POINT_RSN_FLAGS, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_ACCESS_POINT_RSN_FLAGS, "", "",
+		                     NM_TYPE_802_11_AP_SECURITY_FLAGS,
+		                     NM_802_11_AP_SEC_NONE,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMAccessPoint:ssid:
@@ -564,8 +565,9 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MODE,
-		 g_param_spec_uint (NM_ACCESS_POINT_MODE, "", "",
-		                    NM_802_11_MODE_ADHOC, NM_802_11_MODE_INFRA, NM_802_11_MODE_INFRA,
+		 g_param_spec_enum (NM_ACCESS_POINT_MODE, "", "",
+		                    NM_TYPE_802_11_MODE,
+		                    NM_802_11_MODE_INFRA,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 

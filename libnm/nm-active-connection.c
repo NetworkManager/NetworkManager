@@ -417,7 +417,7 @@ get_property (GObject *object,
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_active_connection_get_devices (self)));
 		break;
 	case PROP_STATE:
-		g_value_set_uint (value, nm_active_connection_get_state (self));
+		g_value_set_enum (value, nm_active_connection_get_state (self));
 		break;
 	case PROP_DEFAULT:
 		g_value_set_boolean (value, nm_active_connection_get_default (self));
@@ -581,9 +581,8 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_ACTIVE_CONNECTION_STATE, "", "",
-		                    NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
-		                    NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+		 g_param_spec_enum (NM_ACTIVE_CONNECTION_STATE, "", "",
+		                    NM_TYPE_ACTIVE_CONNECTION_STATE,
 		                    NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));

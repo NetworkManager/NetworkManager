@@ -27,6 +27,7 @@
 #include "nm-utils-private.h"
 #include "nm-glib-compat.h"
 #include "nm-setting-private.h"
+#include "nm-core-enum-types.h"
 
 /**
  * SECTION:nm-setting-ip6-config
@@ -1006,7 +1007,7 @@ set_property (GObject *object, guint prop_id,
 		priv->may_fail = g_value_get_boolean (value);
 		break;
 	case PROP_IP6_PRIVACY:
-		priv->ip6_privacy = g_value_get_int (value);
+		priv->ip6_privacy = g_value_get_enum (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1052,7 +1053,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, priv->may_fail);
 		break;
 	case PROP_IP6_PRIVACY:
-		g_value_set_int (value, priv->ip6_privacy);
+		g_value_set_enum (value, priv->ip6_privacy);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1268,13 +1269,12 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP6_PRIVACY,
-		 g_param_spec_int (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, "", "",
-		                   NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
-		                   NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
-		                   NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_CONSTRUCT |
-		                   G_PARAM_STATIC_STRINGS));
+		 g_param_spec_enum (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, "", "",
+		                    NM_TYPE_SETTING_IP6_CONFIG_PRIVACY,
+		                    NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    G_PARAM_STATIC_STRINGS));
 }
 
 /********************************************************************/

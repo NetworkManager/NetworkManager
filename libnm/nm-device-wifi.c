@@ -588,7 +588,7 @@ get_property (GObject *object,
 		g_value_set_string (value, nm_device_wifi_get_permanent_hw_address (self));
 		break;
 	case PROP_MODE:
-		g_value_set_uint (value, nm_device_wifi_get_mode (self));
+		g_value_set_enum (value, nm_device_wifi_get_mode (self));
 		break;
 	case PROP_BITRATE:
 		g_value_set_uint (value, nm_device_wifi_get_bitrate (self));
@@ -597,7 +597,7 @@ get_property (GObject *object,
 		g_value_set_object (value, nm_device_wifi_get_active_access_point (self));
 		break;
 	case PROP_WIRELESS_CAPABILITIES:
-		g_value_set_uint (value, nm_device_wifi_get_capabilities (self));
+		g_value_set_flags (value, nm_device_wifi_get_capabilities (self));
 		break;
 	case PROP_ACCESS_POINTS:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_device_wifi_get_access_points (self)));
@@ -753,8 +753,9 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MODE,
-		 g_param_spec_uint (NM_DEVICE_WIFI_MODE, "", "",
-		                    NM_802_11_MODE_UNKNOWN, NM_802_11_MODE_AP, NM_802_11_MODE_INFRA,
+		 g_param_spec_enum (NM_DEVICE_WIFI_MODE, "", "",
+		                    NM_TYPE_802_11_MODE,
+		                    NM_802_11_MODE_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
@@ -789,10 +790,11 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_WIRELESS_CAPABILITIES,
-		 g_param_spec_uint (NM_DEVICE_WIFI_CAPABILITIES, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_DEVICE_WIFI_CAPABILITIES, "", "",
+		                     NM_TYPE_DEVICE_WIFI_CAPABILITIES,
+		                     NM_WIFI_DEVICE_CAP_NONE,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceWifi:access-points:

@@ -690,6 +690,10 @@ get_property_for_dbus (NMSetting *setting,
 		dbus_value = property->to_dbus (&prop_value);
 	else if (property->dbus_type)
 		dbus_value = g_dbus_gvalue_to_gvariant (&prop_value, property->dbus_type);
+	else if (g_type_is_a (prop_value.g_type, G_TYPE_ENUM))
+		dbus_value = g_variant_new_int32 (g_value_get_enum (&prop_value));
+	else if (g_type_is_a (prop_value.g_type, G_TYPE_FLAGS))
+		dbus_value = g_variant_new_uint32 (g_value_get_flags (&prop_value));
 	else
 		dbus_value = g_dbus_gvalue_to_gvariant (&prop_value, variant_type_for_gtype (prop_value.g_type));
 	g_value_unset (&prop_value);

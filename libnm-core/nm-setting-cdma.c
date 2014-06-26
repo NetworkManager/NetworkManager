@@ -25,6 +25,7 @@
 #include "nm-setting-cdma.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
+#include "nm-core-enum-types.h"
 
 /**
  * SECTION:nm-setting-cdma
@@ -243,7 +244,7 @@ set_property (GObject *object, guint prop_id,
 		priv->password = g_value_dup_string (value);
 		break;
 	case PROP_PASSWORD_FLAGS:
-		priv->password_flags = g_value_get_uint (value);
+		priv->password_flags = g_value_get_flags (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -268,7 +269,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_cdma_get_password (setting));
 		break;
 	case PROP_PASSWORD_FLAGS:
-		g_value_set_uint (value, nm_setting_cdma_get_password_flags (setting));
+		g_value_set_flags (value, nm_setting_cdma_get_password_flags (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -343,10 +344,9 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD_FLAGS,
-		 g_param_spec_uint (NM_SETTING_CDMA_PASSWORD_FLAGS, "", "",
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_CDMA_PASSWORD_FLAGS, "", "",
+		                     NM_TYPE_SETTING_SECRET_FLAGS,
+		                     NM_SETTING_SECRET_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 }

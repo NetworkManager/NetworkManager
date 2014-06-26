@@ -31,6 +31,7 @@
 #include "nm-device-bt.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
+#include "nm-enum-types.h"
 
 G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
 
@@ -257,7 +258,7 @@ get_property (GObject *object,
 		g_value_set_string (value, nm_device_bt_get_name (device));
 		break;
 	case PROP_BT_CAPABILITIES:
-		g_value_set_uint (value, nm_device_bt_get_capabilities (device));
+		g_value_set_flags (value, nm_device_bt_get_capabilities (device));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -319,9 +320,10 @@ nm_device_bt_class_init (NMDeviceBtClass *bt_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_BT_CAPABILITIES,
-		 g_param_spec_uint (NM_DEVICE_BT_CAPABILITIES, "", "",
-		                    NM_BT_CAPABILITY_NONE, G_MAXUINT32, NM_BT_CAPABILITY_NONE,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_DEVICE_BT_CAPABILITIES, "", "",
+		                     NM_TYPE_BLUETOOTH_CAPABILITIES,
+		                     NM_BT_CAPABILITY_NONE,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 }

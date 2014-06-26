@@ -29,6 +29,7 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
+#include "nm-core-enum-types.h"
 
 /**
  * SECTION:nm-setting-wireless-security
@@ -1165,6 +1166,15 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_setting_wireless_security_parent_class)->finalize (object);
 }
 
+/* NMSettingWirelessSecurity:wep-key-type is an enum, but needs to be marshalled
+ * as 'u', not 'i', for backward-compatibility.
+ */
+static GVariant *
+wep_key_type_to_dbus (const GValue *from)
+{
+	return g_variant_new_uint32 (g_value_get_enum (from));
+}
+
 static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
@@ -1220,24 +1230,24 @@ set_property (GObject *object, guint prop_id,
 		priv->wep_key3 = g_value_dup_string (value);
 		break;
 	case PROP_WEP_KEY_FLAGS:
-		priv->wep_key_flags = g_value_get_uint (value);
+		priv->wep_key_flags = g_value_get_flags (value);
 		break;
 	case PROP_PSK:
 		g_free (priv->psk);
 		priv->psk = g_value_dup_string (value);
 		break;
 	case PROP_PSK_FLAGS:
-		priv->psk_flags = g_value_get_uint (value);
+		priv->psk_flags = g_value_get_flags (value);
 		break;
 	case PROP_LEAP_PASSWORD:
 		g_free (priv->leap_password);
 		priv->leap_password = g_value_dup_string (value);
 		break;
 	case PROP_LEAP_PASSWORD_FLAGS:
-		priv->leap_password_flags = g_value_get_uint (value);
+		priv->leap_password_flags = g_value_get_flags (value);
 		break;
 	case PROP_WEP_KEY_TYPE:
-		priv->wep_key_type = g_value_get_uint (value);
+		priv->wep_key_type = g_value_get_enum (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1287,22 +1297,22 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->wep_key3);
 		break;
 	case PROP_WEP_KEY_FLAGS:
-		g_value_set_uint (value, priv->wep_key_flags);
+		g_value_set_flags (value, priv->wep_key_flags);
 		break;
 	case PROP_PSK:
 		g_value_set_string (value, priv->psk);
 		break;
 	case PROP_PSK_FLAGS:
-		g_value_set_uint (value, priv->psk_flags);
+		g_value_set_flags (value, priv->psk_flags);
 		break;
 	case PROP_LEAP_PASSWORD:
 		g_value_set_string (value, priv->leap_password);
 		break;
 	case PROP_LEAP_PASSWORD_FLAGS:
-		g_value_set_uint (value, priv->leap_password_flags);
+		g_value_set_flags (value, priv->leap_password_flags);
 		break;
 	case PROP_WEP_KEY_TYPE:
-		g_value_set_uint (value, priv->wep_key_type);
+		g_value_set_enum (value, priv->wep_key_type);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1499,12 +1509,11 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_WEP_KEY_FLAGS,
-		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, "", "",
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, "", "",
+		                     NM_TYPE_SETTING_SECRET_FLAGS,
+		                     NM_SETTING_SECRET_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWirelessSecurity:psk:
@@ -1532,12 +1541,11 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PSK_FLAGS,
-		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS, "", "",
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS, "", "",
+		                     NM_TYPE_SETTING_SECRET_FLAGS,
+		                     NM_SETTING_SECRET_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWirelessSecurity:leap-password:
@@ -1561,12 +1569,11 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_LEAP_PASSWORD_FLAGS,
-		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS, "", "",
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS, "", "",
+		                     NM_TYPE_SETTING_SECRET_FLAGS,
+		                     NM_SETTING_SECRET_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWirelessSecurity:wep-key-type:
@@ -1580,11 +1587,15 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_WEP_KEY_TYPE,
-		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, "", "",
-		                    NM_WEP_KEY_TYPE_UNKNOWN,
-		                    NM_WEP_KEY_TYPE_LAST,
+		 g_param_spec_enum (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, "", "",
+		                    NM_TYPE_WEP_KEY_TYPE,
 		                    NM_WEP_KEY_TYPE_UNKNOWN,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class,
+	                                      NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
+	                                      G_VARIANT_TYPE_UINT32,
+	                                      wep_key_type_to_dbus,
+	                                      NULL);
 }

@@ -102,7 +102,7 @@ GQuark nm_setting_error_quark (void);
  * is to be stored and/or requested when it is needed.
  *
  **/
-typedef enum {
+typedef enum { /*< flags >*/
 	NM_SETTING_SECRET_FLAG_NONE         = 0x00000000,
 	NM_SETTING_SECRET_FLAG_AGENT_OWNED  = 0x00000001,
 	NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002,

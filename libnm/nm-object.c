@@ -1318,6 +1318,28 @@ demarshal_generic (NMObject *object,
 			*param = g_bytes_new (val, length);
 		else
 			*param = NULL;
+	} else if (G_IS_PARAM_SPEC_ENUM (pspec)) {
+		int *param = (int *) field;
+
+		if (g_variant_is_of_type (value, G_VARIANT_TYPE_INT32))
+			*param = g_variant_get_int32 (value);
+		else if (g_variant_is_of_type (value, G_VARIANT_TYPE_UINT32))
+			*param = g_variant_get_uint32 (value);
+		else {
+			success = FALSE;
+			goto done;
+		}
+	} else if (G_IS_PARAM_SPEC_FLAGS (pspec)) {
+		guint *param = (guint *) field;
+
+		if (g_variant_is_of_type (value, G_VARIANT_TYPE_INT32))
+			*param = g_variant_get_int32 (value);
+		else if (g_variant_is_of_type (value, G_VARIANT_TYPE_UINT32))
+			*param = g_variant_get_uint32 (value);
+		else {
+			success = FALSE;
+			goto done;
+		}
 	} else if (pspec->value_type == G_TYPE_BOOLEAN)
 		HANDLE_TYPE (G_VARIANT_TYPE_BOOLEAN, gboolean, g_variant_get_boolean);
 	else if (pspec->value_type == G_TYPE_UCHAR)
