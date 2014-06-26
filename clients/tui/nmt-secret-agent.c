@@ -329,13 +329,15 @@ request_secrets_from_ui (NmtSecretAgentRequest *request)
 
 	if (nm_connection_is_type (request->connection, NM_SETTING_WIRELESS_SETTING_NAME)) {
 		NMSettingWireless *s_wireless;
-		char *ssid;
+		const GByteArray *ssid;
+		char *ssid_utf8;
 
 		s_wireless = nm_connection_get_setting_wireless (request->connection);
-		ssid = nm_utils_ssid_to_utf8 (nm_setting_wireless_get_ssid (s_wireless));
+		ssid = nm_setting_wireless_get_ssid (s_wireless);
+		ssid_utf8 = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
 
 		title = _("Authentication required by wireless network");
-		msg = g_strdup_printf (_("Passwords or encryption keys are required to access the wireless network '%s'."), ssid);
+		msg = g_strdup_printf (_("Passwords or encryption keys are required to access the wireless network '%s'."), ssid_utf8);
 
 		ok = add_wireless_secrets (request, secrets);
 	} else if (nm_connection_is_type (request->connection, NM_SETTING_WIRED_SETTING_NAME)) {

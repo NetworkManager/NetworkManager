@@ -261,7 +261,8 @@ nm_utils_deinit (void)
 
 /**
  * nm_utils_ssid_to_utf8:
- * @ssid: a byte array containing the SSID data
+ * @ssid: pointer to a buffer containing the SSID data
+ * @len: length of the SSID data in @ssid
  *
  * Wi-Fi SSIDs are byte arrays, they are _not_ strings.  Thus, an SSID may
  * contain embedded NULLs and other unprintable characters.  Often it is
@@ -291,15 +292,15 @@ nm_utils_deinit (void)
  * Returns %NULL on errors.
  **/
 char *
-nm_utils_ssid_to_utf8 (const GByteArray *ssid)
+nm_utils_ssid_to_utf8 (const guint8 *ssid, gsize len)
 {
 	char *converted = NULL;
 	char *lang, *e1 = NULL, *e2 = NULL, *e3 = NULL;
 
 	g_return_val_if_fail (ssid != NULL, NULL);
 
-	if (g_utf8_validate ((const gchar *) ssid->data, ssid->len, NULL))
-		return g_strndup ((const gchar *) ssid->data, ssid->len);
+	if (g_utf8_validate ((const gchar *) ssid, len, NULL))
+		return g_strndup ((const gchar *) ssid, len);
 
 	/* LANG may be a good encoding hint */
 	g_get_charset ((const char **)(&e1));
@@ -314,15 +315,15 @@ nm_utils_ssid_to_utf8 (const GByteArray *ssid)
 		g_free (lang);
 	}
 
-	converted = g_convert ((const gchar *) ssid->data, ssid->len, "UTF-8", e1, NULL, NULL, NULL);
+	converted = g_convert ((const gchar *) ssid, len, "UTF-8", e1, NULL, NULL, NULL);
 	if (!converted && e2)
-		converted = g_convert ((const gchar *) ssid->data, ssid->len, "UTF-8", e2, NULL, NULL, NULL);
+		converted = g_convert ((const gchar *) ssid, len, "UTF-8", e2, NULL, NULL, NULL);
 
 	if (!converted && e3)
-		converted = g_convert ((const gchar *) ssid->data, ssid->len, "UTF-8", e3, NULL, NULL, NULL);
+		converted = g_convert ((const gchar *) ssid, len, "UTF-8", e3, NULL, NULL, NULL);
 
 	if (!converted) {
-		converted = g_convert_with_fallback ((const gchar *) ssid->data, ssid->len,
+		converted = g_convert_with_fallback ((const gchar *) ssid, len,
 		                                     "UTF-8", e1, "?", NULL, NULL, NULL);
 	}
 
@@ -342,7 +343,7 @@ nm_utils_ssid_to_utf8 (const GByteArray *ssid)
  * Returns: %TRUE if the SSID is "empty", %FALSE if it is not
  **/
 gboolean
-nm_utils_is_empty_ssid (const guint8 * ssid, int len)
+nm_utils_is_empty_ssid (const guint8 *ssid, gsize len)
 {
 	/* Single white space is for Linksys APs */
 	if (len == 1 && ssid[0] == ' ')
@@ -372,7 +373,7 @@ nm_utils_is_empty_ssid (const guint8 * ssid, int len)
  * and will be overwritten by subsequent calls to this function
  **/
 const char *
-nm_utils_escape_ssid (const guint8 * ssid, guint32 len)
+nm_utils_escape_ssid (const guint8 *ssid, gsize len)
 {
 	static char escaped[ESSID_MAX_SIZE * 2 + 1];
 	const guint8 *s = ssid;
@@ -399,8 +400,10 @@ nm_utils_escape_ssid (const guint8 * ssid, guint32 len)
 
 /**
  * nm_utils_same_ssid:
- * @ssid1: first SSID data to compare
- * @ssid2: second SSID data to compare
+ * @ssid1: the first SSID to compare
+ * @len1: length of the SSID data in @ssid1
+ * @ssid2: the second SSID to compare
+ * @len2: length of the SSID data in @ssid2
  * @ignore_trailing_null: %TRUE to ignore one trailing NULL byte
  *
  * Earlier versions of the Linux kernel added a NULL byte to the end of the
@@ -413,30 +416,29 @@ nm_utils_escape_ssid (const guint8 * ssid, guint32 len)
  * Returns: %TRUE if the SSIDs are the same, %FALSE if they are not
  **/
 gboolean
-nm_utils_same_ssid (const GByteArray * ssid1,
-                    const GByteArray * ssid2,
+nm_utils_same_ssid (const guint8 *ssid1, gsize len1,
+                    const guint8 *ssid2, gsize len2,
                     gboolean ignore_trailing_null)
 {
-	guint32 ssid1_len, ssid2_len;
+	g_return_val_if_fail (ssid1 != NULL || len1 == 0, FALSE);
+	g_return_val_if_fail (ssid2 != NULL || len2 == 0, FALSE);
 
-	if (ssid1 == ssid2)
+	if (ssid1 == ssid2 && len1 == len2)
 		return TRUE;
 	if (!ssid1 || !ssid2)
 		return FALSE;
 
-	ssid1_len = ssid1->len;
-	ssid2_len = ssid2->len;
-	if (ssid1_len && ssid2_len && ignore_trailing_null) {
-		if (ssid1->data[ssid1_len - 1] == '\0')
-			ssid1_len--;
-		if (ssid2->data[ssid2_len - 1] == '\0')
-			ssid2_len--;
+	if (ignore_trailing_null) {
+		if (len1 && ssid1[len1 - 1] == '\0')
+			len1--;
+		if (len2 && ssid2[len2 - 1] == '\0')
+			len2--;
 	}
 
-	if (ssid1_len != ssid2_len)
+	if (len1 != len2)
 		return FALSE;
 
-	return memcmp (ssid1->data, ssid2->data, ssid1_len) == 0 ? TRUE : FALSE;
+	return memcmp (ssid1, ssid2, len1) == 0 ? TRUE : FALSE;
 }
 
 static void
@@ -2123,6 +2125,7 @@ make_key (const char *cipher,
  * nm_utils_rsa_key_encrypt_helper:
  * @cipher: cipher to use for encryption ("DES-EDE3-CBC" or "AES-128-CBC")
  * @data: RSA private key data to be encrypted
+ * @len: length of @data
  * @in_password: (allow-none): existing password to use, if any
  * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
  *  and returned in this argument
@@ -2137,7 +2140,8 @@ make_key (const char *cipher,
  **/
 static GByteArray *
 nm_utils_rsa_key_encrypt_helper (const char *cipher,
-                                 const GByteArray *data,
+                                 const guint8 *data,
+                                 gsize len,
                                  const char *in_password,
                                  char **out_password,
                                  GError **error)
@@ -2154,7 +2158,7 @@ nm_utils_rsa_key_encrypt_helper (const char *cipher,
 
 	g_return_val_if_fail (!g_strcmp0 (cipher, CIPHER_DES_EDE3_CBC) || !g_strcmp0 (cipher, CIPHER_AES_CBC), NULL);
 	g_return_val_if_fail (data != NULL, NULL);
-	g_return_val_if_fail (data->len > 0, NULL);
+	g_return_val_if_fail (len > 0, NULL);
 	if (out_password)
 		g_return_val_if_fail (*out_password == NULL, NULL);
 
@@ -2177,7 +2181,7 @@ nm_utils_rsa_key_encrypt_helper (const char *cipher,
 	if (!key)
 		goto out;
 
-	enc = crypto_encrypt (cipher, data, salt, salt_len, key, key_len, &enc_len, error);
+	enc = crypto_encrypt (cipher, data, len, salt, salt_len, key, key_len, &enc_len, error);
 	if (!enc)
 		goto out;
 
@@ -2231,6 +2235,7 @@ out:
 /**
  * nm_utils_rsa_key_encrypt:
  * @data: RSA private key data to be encrypted
+ * @len: length of @data
  * @in_password: (allow-none): existing password to use, if any
  * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
  *  and returned in this argument
@@ -2244,7 +2249,8 @@ out:
  * certificate/private key file.
  **/
 GByteArray *
-nm_utils_rsa_key_encrypt (const GByteArray *data,
+nm_utils_rsa_key_encrypt (const guint8 *data,
+                          gsize len,
                           const char *in_password,
                           char **out_password,
                           GError **error)
@@ -2252,7 +2258,7 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
 
 
 	return nm_utils_rsa_key_encrypt_helper (CIPHER_DES_EDE3_CBC,
-	                                        data,
+	                                        data, len,
 	                                        in_password,
 	                                        out_password,
 	                                        error);
@@ -2261,6 +2267,7 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
 /**
  * nm_utils_rsa_key_encrypt_aes:
  * @data: RSA private key data to be encrypted
+ * @len: length of @data
  * @in_password: (allow-none): existing password to use, if any
  * @out_password: (out) (allow-none): if @in_password was %NULL, a random password will be generated
  *  and returned in this argument
@@ -2274,14 +2281,15 @@ nm_utils_rsa_key_encrypt (const GByteArray *data,
  * certificate/private key file.
  **/
 GByteArray *
-nm_utils_rsa_key_encrypt_aes (const GByteArray *data,
+nm_utils_rsa_key_encrypt_aes (const guint8 *data,
+                              gsize len,
                               const char *in_password,
                               char **out_password,
                               GError **error)
 {
 
 	return nm_utils_rsa_key_encrypt_helper (CIPHER_AES_CBC,
-	                                        data,
+	                                        data, len,
 	                                        in_password,
 	                                        out_password,
 	                                        error);

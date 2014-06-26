@@ -420,9 +420,15 @@ find_active_ap (NMDeviceWifi *self,
 				continue;
 			}
 
-			if ((i == 0) && !nm_utils_same_ssid (ssid, ap_ssid, TRUE)) {
-				_LOGD (LOGD_WIFI, "      SSID mismatch");
-				continue;
+			if (i == 0) {
+				if (   (ssid && !ap_ssid)
+				    || (ap_ssid && !ssid)
+				    || (ssid && ap_ssid && !nm_utils_same_ssid (ssid->data, ssid->len,
+				                                                ap_ssid->data, ap_ssid->len,
+				                                                TRUE))) {
+					_LOGD (LOGD_WIFI, "      SSID mismatch");
+					continue;
+				}
 			}
 
 			apmode = nm_ap_get_mode (ap);
@@ -1097,7 +1103,7 @@ complete_connection (NMDevice *device,
 	}
 
 	g_assert (ssid);
-	str_ssid = nm_utils_ssid_to_utf8 (ssid);
+	str_ssid = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_WIRELESS_SETTING_NAME,
@@ -1508,11 +1514,13 @@ request_wireless_scan (gpointer user_data)
 
 		if (nm_logging_enabled (LOGL_DEBUG, LOGD_WIFI_SCAN)) {
 			if (ssids) {
+				const GByteArray *ssid;
 				guint i;
 				char *foo;
 
 				for (i = 0; i < ssids->len; i++) {
-					foo = nm_utils_ssid_to_utf8 (g_ptr_array_index (ssids, i));
+					ssid = g_ptr_array_index (ssids, i);
+					foo = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
 					_LOGD (LOGD_WIFI_SCAN, "(%d) probe scanning SSID '%s'",
 					            i, foo ? foo : "<hidden>");
 					g_free (foo);

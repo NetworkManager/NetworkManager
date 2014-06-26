@@ -301,16 +301,17 @@ test_encrypt_private_key (const char *path,
 
 	/* Now re-encrypt the private key */
 	if (is_cipher_aes (path))
-		encrypted = nm_utils_rsa_key_encrypt_aes (array, password, NULL, &error);
+		encrypted = nm_utils_rsa_key_encrypt_aes (array->data, array->len, password, NULL, &error);
 	else
-		encrypted = nm_utils_rsa_key_encrypt (array, password, NULL, &error);
+		encrypted = nm_utils_rsa_key_encrypt (array->data, array->len, password, NULL, &error);
 	ASSERT (encrypted != NULL, desc,
 	        "couldn't re-encrypt private key file '%s': %d %s",
 	        path, error->code, error->message);
 
 	/* Then re-decrypt the private key */
 	key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-	re_decrypted = crypto_decrypt_private_key_data (encrypted, password, &key_type, &error);
+	re_decrypted = crypto_decrypt_private_key_data (encrypted->data, encrypted->len,
+	                                                password, &key_type, &error);
 	ASSERT (re_decrypted != NULL, desc,
 	        "couldn't read private key file '%s': %d %s",
 	        path, error->code, error->message);

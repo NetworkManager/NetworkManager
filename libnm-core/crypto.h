@@ -72,7 +72,8 @@ gboolean crypto_init (GError **error);
 
 void crypto_deinit (void);
 
-GByteArray *crypto_decrypt_private_key_data (const GByteArray *contents,
+GByteArray *crypto_decrypt_private_key_data (const guint8 *data,
+                                             gsize data_len,
                                              const char *password,
                                              NMCryptoKeyType *out_key_type,
                                              GError **error);
@@ -88,9 +89,10 @@ GByteArray *crypto_load_and_verify_certificate (const char *file,
 
 gboolean crypto_is_pkcs12_file (const char *file, GError **error);
 
-gboolean crypto_is_pkcs12_data (const GByteArray *data);
+gboolean crypto_is_pkcs12_data (const guint8 *data, gsize len);
 
-NMCryptoFileFormat crypto_verify_private_key_data (const GByteArray *contents,
+NMCryptoFileFormat crypto_verify_private_key_data (const guint8 *data,
+                                                   gsize data_len,
                                                    const char *password,
                                                    GError **error);
 
@@ -110,7 +112,8 @@ gboolean crypto_md5_hash (const char *salt,
 
 char * crypto_decrypt (const char *cipher,
                        int key_type,
-                       GByteArray *data,
+                       const guint8 *data,
+                       gsize data_len,
                        const char *iv,
                        const gsize iv_len,
                        const char *key,
@@ -119,7 +122,8 @@ char * crypto_decrypt (const char *cipher,
                        GError **error);
 
 char * crypto_encrypt (const char *cipher,
-                       const GByteArray *data,
+                       const guint8 *data,
+                       gsize data_len,
                        const char *iv,
                        gsize iv_len,
                        const char *key,
@@ -129,15 +133,17 @@ char * crypto_encrypt (const char *cipher,
 
 gboolean crypto_randomize (void *buffer, gsize buffer_len, GError **error);
 
-NMCryptoFileFormat crypto_verify_cert (const unsigned char *data,
+NMCryptoFileFormat crypto_verify_cert (const guint8 *data,
                                        gsize len,
                                        GError **error);
 
-gboolean crypto_verify_pkcs12 (const GByteArray *data,
+gboolean crypto_verify_pkcs12 (const guint8 *data,
+                               gsize data_len,
                                const char *password,
                                GError **error);
 
-gboolean crypto_verify_pkcs8 (const GByteArray *data,
+gboolean crypto_verify_pkcs8 (const guint8 *data,
+                              gsize data_len,
                               gboolean is_encrypted,
                               const char *password,
                               GError **error);

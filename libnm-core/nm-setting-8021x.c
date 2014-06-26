@@ -1872,7 +1872,7 @@ nm_setting_802_1x_get_private_key_format (NMSetting8021x *setting)
 
 	switch (nm_setting_802_1x_get_private_key_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (crypto_is_pkcs12_data (priv->private_key))
+		if (crypto_is_pkcs12_data (priv->private_key->data, priv->private_key->len))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
 		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
@@ -2152,7 +2152,8 @@ nm_setting_802_1x_get_phase2_private_key_format (NMSetting8021x *setting)
 
 	switch (nm_setting_802_1x_get_phase2_private_key_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (crypto_is_pkcs12_data (priv->phase2_private_key))
+		if (crypto_is_pkcs12_data (priv->phase2_private_key->data,
+		                           priv->phase2_private_key->len))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
 		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
@@ -2209,7 +2210,8 @@ need_private_key_password (const GByteArray *blob,
 		if (path)
 			format = crypto_verify_private_key (path, password, NULL);
 		else if (blob)
-			format = crypto_verify_private_key_data (blob, password, NULL);
+			format = crypto_verify_private_key_data (blob->data, blob->len,
+			                                         password, NULL);
 		else
 			g_warning ("%s: unknown private key password scheme", __func__);
 	}
@@ -2298,7 +2300,8 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 		}
 
 		/* If the private key is PKCS#12, check that it matches the client cert */
-		if (crypto_is_pkcs12_data (priv->phase2_private_key)) {
+		if (crypto_is_pkcs12_data (priv->phase2_private_key->data,
+		                           priv->phase2_private_key->len)) {
 			if (priv->phase2_private_key->len != priv->phase2_client_cert->len) {
 				g_set_error (error,
 				             NM_SETTING_802_1X_ERROR,
@@ -2356,7 +2359,8 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 		}
 
 		/* If the private key is PKCS#12, check that it matches the client cert */
-		if (crypto_is_pkcs12_data (priv->private_key)) {
+		if (crypto_is_pkcs12_data (priv->private_key->data,
+		                           priv->private_key->len)) {
 			if (priv->private_key->len != priv->client_cert->len) {
 				g_set_error (error,
 				             NM_SETTING_802_1X_ERROR,

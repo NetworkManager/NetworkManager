@@ -1109,6 +1109,7 @@ nm_ap_check_compatible (NMAccessPoint *self,
 	NMAccessPointPrivate *priv;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
+	const GByteArray *ssid;
 	const char *mode;
 	const char *band;
 	const char *bssid;
@@ -1123,7 +1124,15 @@ nm_ap_check_compatible (NMAccessPoint *self,
 	if (s_wireless == NULL)
 		return FALSE;
 	
-	if (!nm_utils_same_ssid (nm_setting_wireless_get_ssid (s_wireless), priv->ssid, TRUE))
+	ssid = nm_setting_wireless_get_ssid (s_wireless);
+	if (   (ssid && !priv->ssid)
+	    || (priv->ssid && !ssid))
+		return FALSE;
+
+	if (   ssid && priv->ssid &&
+	    !nm_utils_same_ssid (ssid->data, ssid->len,
+	                         priv->ssid->data, priv->ssid->len,
+	                         TRUE))
 		return FALSE;
 
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
@@ -1233,8 +1242,13 @@ nm_ap_match_in_list (NMAccessPoint *find_ap,
 		 * let matching continue on BSSID and other properties
 		 */
 		if (   (!list_ssid && find_ssid)
-		    || (list_ssid && !find_ssid)
-		    || !nm_utils_same_ssid (list_ssid, find_ssid, TRUE))
+		    || (list_ssid && !find_ssid))
+			continue;
+		if (   list_ssid
+		    && find_ssid
+		    && !nm_utils_same_ssid (list_ssid->data, list_ssid->len,
+		                            find_ssid->data, find_ssid->len,
+		                            TRUE))
 			continue;
 
 		/* BSSID match */

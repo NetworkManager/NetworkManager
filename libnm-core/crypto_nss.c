@@ -134,7 +134,8 @@ crypto_md5_hash (const char *salt,
 char *
 crypto_decrypt (const char *cipher,
                 int key_type,
-                GByteArray *data,
+                const guint8 *data,
+                gsize data_len,
                 const char *iv,
                 const gsize iv_len,
                 const char *key,
@@ -180,7 +181,7 @@ crypto_decrypt (const char *cipher,
 		return NULL;
 	}
 
-	output = g_malloc0 (data->len);
+	output = g_malloc0 (data_len);
 
 	slot = PK11_GetBestSlot (cipher_mech, NULL);
 	if (!slot) {
@@ -221,9 +222,9 @@ crypto_decrypt (const char *cipher,
 	s = PK11_CipherOp (ctx,
 	                   (unsigned char *) output,
 	                   &decrypted_len,
-	                   data->len,
-	                   data->data,
-	                   data->len);
+	                   data_len,
+	                   data,
+	                   data_len);
 	if (s != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
@@ -232,7 +233,7 @@ crypto_decrypt (const char *cipher,
 		goto out;
 	}
 
-	if (decrypted_len > data->len) {
+	if (decrypted_len > data_len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
 		             _("Failed to decrypt the private key: decrypted data too large."));
@@ -242,7 +243,7 @@ crypto_decrypt (const char *cipher,
 	s = PK11_DigestFinal (ctx,
 	                      (unsigned char *) (output + decrypted_len),
 	                      &extra,
-	                      data->len - decrypted_len);
+	                      data_len - decrypted_len);
 	if (s != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
@@ -251,7 +252,7 @@ crypto_decrypt (const char *cipher,
 		goto out;
 	}
 	decrypted_len += extra;
-	pad_len = data->len - decrypted_len;
+	pad_len = data_len - decrypted_len;
 
 	/* Check if the padding at the end of the decrypted data is valid */
 	if (pad_len == 0 || pad_len > real_iv_len) {
@@ -265,7 +266,7 @@ crypto_decrypt (const char *cipher,
 	 * should contain the padding size.
 	 */
 	for (i = pad_len; i > 0; i--) {
-		if (output[data->len - i] != pad_len) {
+		if (output[data_len - i] != pad_len) {
 			g_set_error (error, NM_CRYPTO_ERROR,
 			             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
 			             _("Failed to decrypt the private key."));
@@ -289,7 +290,7 @@ out:
 	if (!success) {
 		if (output) {
 			/* Don't expose key material */
-			memset (output, 0, data->len);
+			memset (output, 0, data_len);
 			g_free (output);
 			output = NULL;
 		}
@@ -299,7 +300,8 @@ out:
 
 char *
 crypto_encrypt (const char *cipher,
-                const GByteArray *data,
+                const guint8 *data,
+                gsize data_len,
                 const char *iv,
                 gsize iv_len,
                 const char *key,
@@ -336,13 +338,13 @@ crypto_encrypt (const char *cipher,
 	/* If data->len % ivlen == 0, then we add another complete block
 	 * onto the end so that the decrypter knows there's padding.
 	 */
-	pad_len = iv_len - (data->len % iv_len);
-	output_len = padded_buf_len = data->len + pad_len;
+	pad_len = iv_len - (data_len % iv_len);
+	output_len = padded_buf_len = data_len + pad_len;
 	padded_buf = g_malloc0 (padded_buf_len);
 
-	memcpy (padded_buf, data->data, data->len);
+	memcpy (padded_buf, data, data_len);
 	for (i = 0; i < pad_len; i++)
-		padded_buf[data->len + i] = (guint8) (pad_len & 0xFF);
+		padded_buf[data_len + i] = (guint8) (pad_len & 0xFF);
 
 	output = g_malloc0 (output_len);
 
@@ -440,7 +442,8 @@ crypto_verify_cert (const unsigned char *data,
 }
 
 gboolean
-crypto_verify_pkcs12 (const GByteArray *data,
+crypto_verify_pkcs12 (const guint8 *data,
+                      gsize data_len,
                       const char *password,
                       GError **error)
 {
@@ -498,7 +501,7 @@ crypto_verify_pkcs12 (const GByteArray *data,
 		goto error;
 	}
 
-	s = SEC_PKCS12DecoderUpdate (p12ctx, data->data, data->len);
+	s = SEC_PKCS12DecoderUpdate (p12ctx, (guint8 *)data, data_len);
 	if (s != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
@@ -532,7 +535,8 @@ error:
 }
 
 gboolean
-crypto_verify_pkcs8 (const GByteArray *data,
+crypto_verify_pkcs8 (const guint8 *data,
+                     gsize data_len,
                      gboolean is_encrypted,
                      const char *password,
                      GError **error)

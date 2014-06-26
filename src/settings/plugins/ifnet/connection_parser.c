@@ -1911,7 +1911,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 	if (blob && !is_pkcs12) {
 		/* Encrypt the unencrypted private key with the fake password */
 		enc_key =
-		    nm_utils_rsa_key_encrypt (blob, password, &generated_pw,
+		    nm_utils_rsa_key_encrypt (blob->data, blob->len, password, &generated_pw,
 					      error);
 		if (!enc_key)
 			goto out;

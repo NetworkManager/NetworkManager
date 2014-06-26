@@ -97,7 +97,7 @@ show_access_point_info (NMAccessPoint *ap)
 	strength = nm_access_point_get_strength (ap);
 
 	/* Convert to strings */
-	ssid_str = nm_utils_ssid_to_utf8 (ssid);
+	ssid_str = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
 	freq_str = g_strdup_printf ("%u MHz", freq);
 	bitrate_str = g_strdup_printf ("%u Mbit/s", bitrate/1000);
 	strength_str = g_strdup_printf ("%u", strength);
@@ -163,7 +163,7 @@ show_wifi_device_info (NMDevice *device)
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		if ((active_ap = nm_device_wifi_get_active_access_point (NM_DEVICE_WIFI (device)))) {
 			active_ssid = nm_access_point_get_ssid (active_ap);
-			active_ssid_str = nm_utils_ssid_to_utf8 (active_ssid);
+			active_ssid_str = nm_utils_ssid_to_utf8 (active_ssid->data, active_ssid->len);
 		}
 	}
 
