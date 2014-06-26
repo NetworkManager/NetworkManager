@@ -347,7 +347,7 @@ crypto_verify_cert (const unsigned char *data,
                     GError **error)
 {
 	gnutls_x509_crt_t der;
-	gnutls_datum dt;
+	gnutls_datum_t dt;
 	int err;
 
 	err = gnutls_x509_crt_init (&der);
@@ -387,7 +387,7 @@ crypto_verify_pkcs12 (const GByteArray *data,
                       GError **error)
 {
 	gnutls_pkcs12_t p12;
-	gnutls_datum dt;
+	gnutls_datum_t dt;
 	gboolean success = FALSE;
 	int err;
 
@@ -441,7 +441,7 @@ crypto_verify_pkcs8 (const GByteArray *data,
                      GError **error)
 {
 	gnutls_x509_privkey_t p8;
-	gnutls_datum dt;
+	gnutls_datum_t dt;
 	int err;
 
 	g_return_val_if_fail (data != NULL, FALSE);
