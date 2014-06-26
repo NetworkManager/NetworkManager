@@ -1293,6 +1293,11 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMSettingIP4Config:address-labels:
+	 *
+	 * Internal use only.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESS_LABELS,
 		 _nm_param_spec_specialized ("address-labels", "", "",
