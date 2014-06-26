@@ -93,7 +93,6 @@ static gboolean impl_settings_list_connections (NMSettings *self,
 
 static void impl_settings_get_connection_by_uuid (NMSettings *self,
                                                   const char *uuid,
-                                                  char **out_object_path,
                                                   DBusGMethodInvocation *context);
 
 static void impl_settings_add_connection (NMSettings *self,
@@ -272,7 +271,6 @@ nm_settings_get_connection_by_uuid (NMSettings *self, const char *uuid)
 static void
 impl_settings_get_connection_by_uuid (NMSettings *self,
                                       const char *uuid,
-                                      char **out_object_path,
                                       DBusGMethodInvocation *context)
 {
 	NMSettingsConnection *connection = NULL;
