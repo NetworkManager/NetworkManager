@@ -390,13 +390,8 @@ PKG_CHECK_MODULES(UUID, uuid)
 AC_SUBST(UUID_CFLAGS)
 AC_SUBST(UUID_LIBS)
 
-dnl
 dnl Checks for readline library - used by nmcli
-dnl
-#PKG_CHECK_MODULES(READLINE, readline)
-AC_CHECK_LIB(readline, readline, [READLINE_LIBS=-lreadline], [AC_MSG_ERROR(readline library is required)])
-AC_CHECK_HEADERS(readline/readline.h, [], [AC_MSG_ERROR(readline/readline.h - readline devel files required)])
-AC_SUBST(READLINE_LIBS)
+AX_LIB_READLINE
 
 # Intel WiMAX SDK checks
 PKG_CHECK_MODULES(IWMX_SDK, [libiWmxSdk-0 >= 1.5.1], [have_wimax=yes],[have_wimax=no])
