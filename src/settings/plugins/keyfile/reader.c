@@ -1155,7 +1155,7 @@ read_one_setting_value (NMSetting *setting,
 		g_strfreev (sa);
 	} else if (type == G_TYPE_HASH_TABLE) {
 		read_hash_of_string (info->keyfile, setting, key);
-	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
+	} else if (type == G_TYPE_ARRAY) {
 		if (!read_array_of_uint (info->keyfile, setting, key)) {
 			nm_log_warn (LOGD_SETTINGS, "Unhandled setting property type (read): '%s/%s' : '%s'",
 			             setting_name, key, G_VALUE_TYPE_NAME (value));

@@ -749,6 +749,8 @@ nm_setting_dcb_init (NMSettingDcb *setting)
 {
 }
 
+G_STATIC_ASSERT (sizeof (guint) == sizeof (gboolean));
+
 static inline void
 set_uint_array (const GValue *v, uint *a, size_t len)
 {
@@ -763,6 +765,35 @@ set_uint_array (const GValue *v, uint *a, size_t len)
 	}
 }
 #define SET_UINT_ARRAY(v, a)  set_uint_array (v, a, G_N_ELEMENTS (a))
+
+static inline void
+take_uint_array (GValue *v, uint *a, size_t len)
+{
+	GArray *dst = g_array_sized_new (FALSE, TRUE, sizeof (guint), len);
+
+	g_array_append_vals (dst, a, len);
+	g_value_take_boxed (v, dst);
+}
+
+#define TAKE_UINT_ARRAY(v, a) take_uint_array (v, a, G_N_ELEMENTS (a))
+
+static void
+_nm_setting_dcb_uint_array_to_dbus (const GValue *prop_value,
+                                    GValue *dbus_value)
+{
+	GArray *src = g_value_get_boxed (prop_value);
+
+	take_uint_array (dbus_value, (guint *) src->data, src->len);
+}
+
+static void
+_nm_setting_dcb_uint_array_from_dbus (const GValue *dbus_value,
+                                      GValue *prop_value)
+{
+	GArray *src = g_value_get_boxed (dbus_value);
+
+	set_uint_array (prop_value, (guint *) src->data, src->len);
+}
 
 static void
 set_property (GObject *object, guint prop_id,
@@ -820,14 +851,6 @@ set_property (GObject *object, guint prop_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
-}
-
-#define TAKE_UINT_ARRAY(v, a) \
-{ \
-	guint len = G_N_ELEMENTS (a); \
-	GArray *dst = g_array_sized_new (FALSE, TRUE, sizeof (guint), len); \
-	g_array_append_vals (dst, (a), len); \
-	g_value_take_boxed (v, dst); \
 }
 
 static void
@@ -1021,17 +1044,22 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	/**
 	 * NMSettingDcb:priority-flow-control:
 	 *
-	 * An array of 8 uint values, where the array index corresponds to the User
+	 * An array of 8 boolean values, where the array index corresponds to the User
 	 * Priority (0 - 7) and the value indicates whether or not the corresponding
-	 * priority should transmit priority pause.  Allowed values are 0 (do not
-	 * transmit pause) and 1 (transmit pause).
+	 * priority should transmit priority pause.
+	 *
+	 * Element-type: gboolean
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PFC,
 		 g_param_spec_boxed (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL, "", "",
-		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_DCB_PRIORITY_FLOW_CONTROL,
+	                                      DBUS_TYPE_G_UINT_ARRAY,
+	                                      _nm_setting_dcb_uint_array_to_dbus,
+	                                      _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
 	 * NMSettingDcb:priority-group-flags:
@@ -1053,13 +1081,19 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * An array of 8 uint values, where the array index corresponds to the User
 	 * Priority (0 - 7) and the value indicates the Priority Group ID.  Allowed
 	 * Priority Group ID values are 0 - 7 or 15 for the unrestricted group.
+	 *
+	 * Element-type: guint
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_ID,
 		 g_param_spec_boxed (NM_SETTING_DCB_PRIORITY_GROUP_ID, "", "",
-		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_DCB_PRIORITY_GROUP_ID,
+	                                      DBUS_TYPE_G_UINT_ARRAY,
+	                                      _nm_setting_dcb_uint_array_to_dbus,
+	                                      _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
 	 * NMSettingDcb:priority-group-bandwidth:
@@ -1068,13 +1102,19 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * Priority Group ID (0 - 7) and the value indicates the percentage of link
 	 * bandwidth allocated to that group.  Allowed values are 0 - 100, and the
 	 * sum of all values must total 100 percent.
+	 *
+	 * Element-type: guint
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_BANDWIDTH,
 		 g_param_spec_boxed (NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH, "", "",
-		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH,
+	                                      DBUS_TYPE_G_UINT_ARRAY,
+	                                      _nm_setting_dcb_uint_array_to_dbus,
+	                                      _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
 	 * NMSettingDcb:priority-bandwidth:
@@ -1084,29 +1124,39 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * the priority's assigned group that the priority may use.  The sum of all
 	 * percentages for priorities which belong to the same group must total 100
 	 * percent.
+	 *
+	 * Element-type: guint
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_BANDWIDTH,
 		 g_param_spec_boxed (NM_SETTING_DCB_PRIORITY_BANDWIDTH, "", "",
-		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_DCB_PRIORITY_BANDWIDTH,
+	                                      DBUS_TYPE_G_UINT_ARRAY,
+	                                      _nm_setting_dcb_uint_array_to_dbus,
+	                                      _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
 	 * NMSettingDcb:priority-strict-bandwidth:
 	 *
-	 * An array of 8 uint values, where the array index corresponds to the User
+	 * An array of 8 boolean values, where the array index corresponds to the User
 	 * Priority (0 - 7) and the value indicates whether or not the priority may
-	 * use all of the bandwidth allocated to its assigned group.  Allowed values
-	 * are 0 (the priority may not utilize all bandwidth) or 1 (the priority may
-	 * utilize all bandwidth).
+	 * use all of the bandwidth allocated to its assigned group.
+	 *
+	 * Element-type: gboolean
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_STRICT,
 		 g_param_spec_boxed (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH, "", "",
-		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH,
+	                                      DBUS_TYPE_G_UINT_ARRAY,
+	                                      _nm_setting_dcb_uint_array_to_dbus,
+	                                      _nm_setting_dcb_uint_array_from_dbus);
 
 	/**
 	 * NMSettingDcb:priority-traffic-class:
@@ -1114,11 +1164,17 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 * An array of 8 uint values, where the array index corresponds to the User
 	 * Priority (0 - 7) and the value indicates the traffic class (0 - 7) to
 	 * which the priority is mapped.
+	 *
+	 * Element-type: guint
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_TRAFFIC_CLASS,
 		 g_param_spec_boxed (NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS, "", "",
-		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_TYPE_ARRAY,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS,
+	                                      DBUS_TYPE_G_UINT_ARRAY,
+	                                      _nm_setting_dcb_uint_array_to_dbus,
+	                                      _nm_setting_dcb_uint_array_from_dbus);
 }

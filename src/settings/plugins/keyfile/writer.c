@@ -857,7 +857,7 @@ write_setting_value (NMSetting *setting,
 		nm_keyfile_plugin_kf_set_string_list (info->keyfile, setting_name, key, (const gchar **const) array, g_strv_length (array));
 	} else if (type == G_TYPE_HASH_TABLE) {
 		write_hash_of_string (info->keyfile, setting, key, value);
-	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
+	} else if (type == G_TYPE_ARRAY) {
 		if (!write_array_of_uint (info->keyfile, setting, key, value)) {
 			nm_log_warn (LOGD_SETTINGS, "Unhandled setting property type (write) '%s/%s' : '%s'", 
 			             setting_name, key, g_type_name (type));
