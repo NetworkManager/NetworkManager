@@ -21,7 +21,6 @@
 #ifndef NM_SETTING_PRIVATE_H
 #define NM_SETTING_PRIVATE_H
 
-#include "nm-setting.h"
 #include "nm-glib-compat.h"
 
 #define NM_SETTING_SECRET_FLAGS_ALL \
@@ -102,11 +101,6 @@ static void __attribute__((constructor)) register_setting (void) \
 { g_type_init (); g_type_ensure (x); }
 
 NMSetting *nm_setting_find_in_list (GSList *settings_list, const char *setting_name);
-
-/* Private NMSettingIP4Config methods */
-#include "nm-setting-ip4-config.h"
-const char *nm_setting_ip4_config_get_address_label      (NMSettingIP4Config *setting, guint32 i);
-gboolean    nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting, NMIP4Address *address, const char *label);
 
 NMSettingVerifyResult _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
                                                                         gboolean allow_missing,
