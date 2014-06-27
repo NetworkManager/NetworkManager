@@ -2189,6 +2189,7 @@ platform_link_added (NMManager *self,
 			break;
 
 		case NM_LINK_TYPE_OLPC_MESH:
+		case NM_LINK_TYPE_TEAM:
 		case NM_LINK_TYPE_WIFI:
 		case NM_LINK_TYPE_WIMAX:
 			nm_log_info (LOGD_HW, "(%s): '%s' plugin not available; creating generic device",
