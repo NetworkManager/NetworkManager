@@ -11,7 +11,19 @@ OTHER_FILES= \
 	$(top_srcdir)/tools/doc-generator.xsl \
 	$(top_srcdir)/introspection/generic-types.xml
 
-GENERATED_FILES = spec.html settings-spec.xml
+GENERATED_FILES = spec.html
+
+if SETTING_DOCS_AVAILABLE
+
+settings-spec.xml: settings-spec.xsl $(top_builddir)/libnm-util/nm-setting-docs.xml
+	$(AM_V_GEN) xsltproc --output $@ $^
+
+# Top-level SGML file includes (depends on) settings-spec.xml
+$(DOC_MAIN_SGML_FILE): settings-spec.xml
+
+GENERATED_FILES += settings-spec.xml
+
+endif
 
 if ENABLE_GTK_DOC
 
@@ -20,15 +32,9 @@ spec.html: $(XMLS) $(OTHER_FILES) html-build.stamp
 	mkdir -p $(builddir)/html/
 	cp spec.html $(builddir)/html/
 
-settings-spec.xml: settings-spec.xsl $(top_builddir)/libnm-util/nm-setting-docs.xml
-	$(AM_V_GEN) xsltproc --output $@ $^
-
 all: $(GENERATED_FILES)
 
 endif
-
-# Top-level SGML file includes (depends on) settings-spec.xml
-$(DOC_MAIN_SGML_FILE): settings-spec.xml
 
 ####################################
 

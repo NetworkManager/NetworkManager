@@ -54,7 +54,17 @@
       setting names (like "wimax" or "bluetooth") to a dictionary of
       key/value pairs that represents each itself.
     </para>
-    <xi:include href="settings-spec.xml" />
+    <xi:include href="settings-spec.xml">
+      <xi:fallback>
+	<section>
+	  <title>Configuration Settings</title>
+	  <note><para>
+	    (NetworkManager was built without full introspection support. Setting
+	    documentation is not available.)
+	  </para></note>
+	</section>
+      </xi:fallback>
+    </xi:include>
     <section id="secrets-flags">
       <title>Secret flag types</title>
       <para>

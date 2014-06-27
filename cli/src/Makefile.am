@@ -38,7 +38,7 @@ nmcli_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/libnm-glib/libnm-glib.la
 
-if HAVE_INTROSPECTION
+if BUILD_SETTING_DOCS
 settings-docs.c: settings-docs.xsl $(top_builddir)/libnm-util/nm-setting-docs.xml
 	$(AM_V_GEN) xsltproc --output $@ $^
 

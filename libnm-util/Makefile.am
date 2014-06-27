@@ -182,6 +182,10 @@ typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 
 CLEANFILES += $(gir_DATA) $(typelib_DATA)
 
+endif
+
+if BUILD_SETTING_DOCS
+
 noinst_DATA = nm-setting-docs.xml
 
 nm-setting-docs.xml: generate-setting-docs.py NetworkManager-1.0.gir libnm-util.la

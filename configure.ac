@@ -267,9 +267,6 @@ AC_SUBST(GUDEV_CFLAGS)
 AC_SUBST(GUDEV_LIBS)
 
 GOBJECT_INTROSPECTION_CHECK([0.9.6])
-if test -n "$INTROSPECTION_MAKEFILE"; then
-    AC_DEFINE(HAVE_INTROSPECTION, [1], [Define if you have gobject-introspection])
-fi
 
 # Qt4
 PKG_CHECK_MODULES(QT, [QtCore >= 4 QtDBus QtNetwork], [have_qt=yes],[have_qt=no])
@@ -771,6 +768,27 @@ if test "$enable_gtk_doc" != "yes" \
 	install_pregen_manpages=yes
 fi
 AM_CONDITIONAL(INSTALL_PREGEN_MANPAGES, test "x${install_pregen_manpages}" = "xyes")
+
+# check if we can build setting property documentation
+if test -n "$INTROSPECTION_MAKEFILE" -a "$enable_gtk_doc" = "yes"; then
+    # If g-i is installed we know we have python, but we might not have pygobject
+    if python -c 'from gi.repository import GObject' >& /dev/null; then
+        AC_DEFINE(BUILD_SETTING_DOCS, [1], [Define if you we can build nm-setting-docs.xml])
+	build_setting_docs=yes
+    fi
+fi
+
+# check for pre-built setting docs
+if test "$build_setting_docs" != "yes" \
+	-a -f man/nm-settings.xml \
+	-a -f docs/api/settings-spec.xml \
+	-a -f cli/src/settings-docs.c; then
+    AC_DEFINE(HAVE_SETTING_DOCS, [1], [Define if you have pre-built settings docs])
+    have_setting_docs=yes
+fi
+
+AM_CONDITIONAL(BUILD_SETTING_DOCS, test "$build_setting_docs" = "yes")
+AM_CONDITIONAL(SETTING_DOCS_AVAILABLE, test "$build_setting_docs" = "yes" -o "$have_setting_docs" = "yes")
 
 
 AC_CONFIG_FILES([

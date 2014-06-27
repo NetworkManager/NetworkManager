@@ -44,16 +44,15 @@ DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-ifupdown \
 	--enable-ifnet
 
-if HAVE_INTROSPECTION
-dist-check-introspection:
+if BUILD_SETTING_DOCS
+dist-check-setting-docs:
 else
-dist-check-introspection:
-	@echo "*** gobject-introspection is needed to run 'make dist'. ***"
-	@echo "*** It was not enabled when 'configure' ran.            ***"
+dist-check-setting-docs:
+	@echo "*** gobject-introspection and pygobject are needed to run 'make dist'. ***"
 	@false
 endif
 
-dist: dist-check-introspection
+dist: dist-check-setting-docs
 
 DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 

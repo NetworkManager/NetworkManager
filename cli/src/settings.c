@@ -6368,7 +6368,7 @@ nmc_setting_get_property_allowed_values (NMSetting *setting, const char *prop)
 	return NULL;
 }
 
-#ifdef HAVE_INTROSPECTION
+#if defined (BUILD_SETTING_DOCS) || defined (HAVE_SETTING_DOCS)
 #include "settings-docs.c"
 #else
 #define nmc_setting_get_property_doc(setting, prop) _("(not available)")
