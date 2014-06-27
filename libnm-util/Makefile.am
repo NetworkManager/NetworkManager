@@ -189,7 +189,9 @@ if BUILD_SETTING_DOCS
 noinst_DATA = nm-setting-docs.xml
 
 nm-setting-docs.xml: generate-setting-docs.py NetworkManager-1.0.gir libnm-util.la
-	$(srcdir)/generate-setting-docs.py \
+	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
+	export LD_LIBRARY_PATH=$(abs_builddir)/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
+	strace -o /tmp/strace.out $(srcdir)/generate-setting-docs.py \
 		--gir $(builddir)/NetworkManager-1.0.gir \
 		--output $@
 
