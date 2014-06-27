@@ -243,6 +243,19 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 }
 
+static gboolean
+master_update_slave_connection (NMDevice *self,
+                                NMDevice *slave,
+                                NMConnection *connection,
+                                GError **error)
+{
+	g_object_set (nm_connection_get_setting_connection (connection),
+	              NM_SETTING_CONNECTION_MASTER, nm_device_get_iface (self),
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_BOND_SETTING_NAME,
+	              NULL);
+	return TRUE;
+}
+
 static void
 set_arp_targets (NMDevice *device,
                  const char *value,
@@ -590,6 +603,7 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->complete_connection = complete_connection;
 
 	parent_class->update_connection = update_connection;
+	parent_class->master_update_slave_connection = master_update_slave_connection;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->enslave_slave = enslave_slave;

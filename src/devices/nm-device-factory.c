@@ -104,3 +104,20 @@ nm_device_factory_new_link (NMDeviceFactory *factory,
 	return NULL;
 }
 
+NMDevice *
+nm_device_factory_create_virtual_device_for_connection (NMDeviceFactory *factory,
+                                                        NMConnection *connection,
+                                                        GError **error)
+{
+	NMDeviceFactory *interface;
+
+	g_return_val_if_fail (factory, NULL);
+	g_return_val_if_fail (connection, NULL);
+	g_return_val_if_fail (!error || !*error, NULL);
+
+	interface = NM_DEVICE_FACTORY_GET_INTERFACE (factory);
+	if (interface->create_virtual_device_for_connection)
+		return interface->create_virtual_device_for_connection (factory, connection, error);
+	return NULL;
+}
+

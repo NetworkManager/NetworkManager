@@ -57,8 +57,6 @@ GType nm_device_bridge_get_type (void);
 NMDevice *nm_device_bridge_new (NMPlatformLink *platform_device);
 NMDevice *nm_device_bridge_new_for_connection (NMConnection *connection);
 
-gboolean nm_bridge_update_slave_connection (NMDevice *slave, NMConnection *connection);
-
 G_END_DECLS
 
 #endif	/* NM_DEVICE_BRIDGE_H */

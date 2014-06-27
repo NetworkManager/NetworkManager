@@ -5,7 +5,7 @@ include $(GLIB_MAKEFILE)
 SUBDIRS =				\
 	.				\
 	devices/adsl			\
-	devices/wifi                    \
+	devices/wifi			\
 	dhcp-manager			\
 	ppp-manager			\
 	settings/plugins
@@ -18,6 +18,10 @@ endif
 
 if WITH_WIMAX
 SUBDIRS += devices/wimax
+endif
+
+if WITH_TEAMDCTL
+SUBDIRS += devices/team
 endif
 
 if ENABLE_TESTS
@@ -84,8 +88,6 @@ nm_sources = \
 	devices/nm-device-macvlan.c \
 	devices/nm-device-macvlan.h \
 	devices/nm-device-private.h \
-	devices/nm-device-team.c \
-	devices/nm-device-team.h \
 	devices/nm-device-tun.c \
 	devices/nm-device-tun.h \
 	devices/nm-device-veth.c \
@@ -296,7 +298,6 @@ glue_sources = \
 	nm-device-gre-glue.h \
 	nm-device-infiniband-glue.h \
 	nm-device-macvlan-glue.h \
-	nm-device-team-glue.h \
 	nm-device-tun-glue.h \
 	nm-device-veth-glue.h \
 	nm-device-vlan-glue.h \
@@ -351,10 +352,6 @@ if SESSION_TRACKING_CK
 AM_CPPFLAGS += -DCKDB_PATH=\"${CKDB_PATH}\"
 endif
 
-if WITH_TEAMDCTL
-AM_CPPFLAGS += ${LIBTEAMDCTL_CFLAGS}
-endif
-
 libNetworkManager_la_SOURCES = \
 	$(nm_sources) \
 	$(glue_sources)
@@ -373,10 +370,6 @@ libNetworkManager_la_LIBADD = \
 
 if WITH_CONCHECK
 libNetworkManager_la_LIBADD += $(LIBSOUP_LIBS)
-endif
-
-if WITH_TEAMDCTL
-libNetworkManager_la_LIBADD += $(LIBTEAMDCTL_LIBS)
 endif
 
 NetworkManager_LDFLAGS = -rdynamic

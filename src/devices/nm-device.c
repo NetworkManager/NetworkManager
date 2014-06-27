@@ -70,10 +70,6 @@
 #include "nm-config.h"
 #include "nm-dns-manager.h"
 
-#include "nm-device-bridge.h"
-#include "nm-device-bond.h"
-#include "nm-device-team.h"
-
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
 #include "nm-device-glue.h"
@@ -1627,20 +1623,67 @@ device_has_config (NMDevice *device)
 	return FALSE;
 }
 
+/**
+ * nm_device_master_update_slave_connection:
+ * @self: the master #NMDevice
+ * @slave: the slave #NMDevice
+ * @connection: the #NMConnection to update with the slave settings
+ * @GError: (out): error description
+ *
+ * Reads the slave configuration for @slave and updates @connection with those
+ * properties. This invokes a virtual function on the master device @self.
+ *
+ * Returns: %TRUE if the configuration was read and @connection updated,
+ * %FALSE on failure.
+ */
+gboolean
+nm_device_master_update_slave_connection (NMDevice *self,
+                                          NMDevice *slave,
+                                          NMConnection *connection,
+                                          GError **error)
+{
+	NMDeviceClass *klass;
+	gboolean success;
+	const char *iface;
+
+	g_return_val_if_fail (self, FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (slave, FALSE);
+	g_return_val_if_fail (connection, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
+	g_return_val_if_fail (nm_connection_get_setting_connection (connection), FALSE);
+
+	iface = nm_device_get_iface (self);
+	g_return_val_if_fail (iface, FALSE);
+
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (klass->master_update_slave_connection) {
+		success = klass->master_update_slave_connection (self, slave, connection, error);
+
+		g_return_val_if_fail (!error || (success && !*error) || *error, success);
+		return success;
+	}
+
+	g_set_error (error,
+	             NM_DEVICE_ERROR,
+	             NM_DEVICE_ERROR_UNSUPPORTED_DEVICE_TYPE,
+	             "master device '%s' cannot update a slave connection for slave device '%s' (master type not supported?)",
+	             iface, nm_device_get_iface (slave));
+	return FALSE;
+}
+
 NMConnection *
-nm_device_generate_connection (NMDevice *device)
+nm_device_generate_connection (NMDevice *device, NMDevice *master)
 {
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (device);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	const char *ifname = nm_device_get_iface (device);
-	int ifindex = nm_device_get_ifindex (device);
 	NMConnection *connection;
 	NMSetting *s_con;
 	NMSetting *s_ip4;
 	NMSetting *s_ip6;
 	gs_free char *uuid = NULL;
 	gs_free char *name = NULL;
-	int master_ifindex = 0;
 	const char *ip4_method, *ip6_method;
 	GError *error = NULL;
 
@@ -1652,19 +1695,6 @@ nm_device_generate_connection (NMDevice *device)
 	if (!device_has_config (device)) {
 		nm_log_dbg (LOGD_DEVICE, "(%s): device has no existing configuration", ifname);
 		return NULL;
-	}
-
-	if (ifindex)
-		master_ifindex = nm_platform_link_get_master (ifindex);
-	if (master_ifindex) {
-		NMDevice *master;
-
-		master = nm_manager_get_device_by_ifindex (nm_manager_get (), master_ifindex);
-		if (!master || !nm_device_get_act_request (master)) {
-			nm_log_dbg (LOGD_DEVICE, "(%s): cannot generate connection for slave before its master (%s)",
-			            ifname, nm_platform_link_get_name (master_ifindex));
-			return NULL;
-		}
 	}
 
 	connection = nm_connection_new ();
@@ -1684,36 +1714,18 @@ nm_device_generate_connection (NMDevice *device)
 	nm_connection_add_setting (connection, s_con);
 
 	/* If the device is a slave, update various slave settings */
-	if (master_ifindex) {
-		const char *master_iface = nm_platform_link_get_name (master_ifindex);
-		const char *slave_type = NULL;
-		gboolean success = FALSE;
-
-		switch (nm_platform_link_get_type (master_ifindex)) {
-		case NM_LINK_TYPE_BRIDGE:
-			slave_type = NM_SETTING_BRIDGE_SETTING_NAME;
-			success = nm_bridge_update_slave_connection (device, connection);
-			break;
-		case NM_LINK_TYPE_BOND:
-			slave_type = NM_SETTING_BOND_SETTING_NAME;
-			success = TRUE;
-			break;
-		case NM_LINK_TYPE_TEAM:
-			slave_type = NM_SETTING_TEAM_SETTING_NAME;
-			success = nm_team_update_slave_connection (device, connection);
-			break;
-		default:
-			g_warn_if_reached ();
-			break;
+	if (master) {
+		if (!nm_device_master_update_slave_connection (master,
+		                                               device,
+		                                               connection,
+		                                               &error))
+		{
+			nm_log_err (LOGD_DEVICE, "(%s): master device '%s' failed to update slave connection: %s",
+			            ifname, nm_device_get_iface (master), error ? error->message : "(unknown error)");
+			g_error_free (error);
+			g_object_unref (connection);
+			return NULL;
 		}
-
-		if (!success)
-			nm_log_err (LOGD_DEVICE, "(%s): failed to read slave configuration", ifname);
-
-		g_object_set (s_con,
-		              NM_SETTING_CONNECTION_MASTER, master_iface,
-		              NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type,
-		              NULL);
 	} else {
 		/* Only regular and master devices get IP configuration; slaves do not */
 		s_ip4 = nm_ip4_config_create_setting (priv->ip4_config);

@@ -94,6 +94,7 @@ typedef enum {
 	NM_DEVICE_ERROR_CONNECTION_ACTIVATING = 0, /*< nick=ConnectionActivating >*/
 	NM_DEVICE_ERROR_CONNECTION_INVALID,        /*< nick=ConnectionInvalid >*/
 	NM_DEVICE_ERROR_NOT_ACTIVE,                /*< nick=NotActive >*/
+	NM_DEVICE_ERROR_UNSUPPORTED_DEVICE_TYPE,   /*< nick=UnsupportedDeviceType >*/
 } NMDeviceError;
 
 struct _NMDevice {
@@ -192,6 +193,11 @@ typedef struct {
 	/* Update the connection with currently configured L2 settings */
 	void            (* update_connection) (NMDevice *device, NMConnection *connection);
 
+	gboolean (*master_update_slave_connection) (NMDevice *self,
+	                                            NMDevice *slave,
+	                                            NMConnection *connection,
+	                                            GError **error);
+
 	gboolean        (* enslave_slave) (NMDevice *self,
 	                                   NMDevice *slave,
 	                                   NMConnection *connection,
@@ -258,7 +264,12 @@ NMConnection *  nm_device_get_connection	(NMDevice *dev);
 gboolean        nm_device_is_available   (NMDevice *dev);
 gboolean        nm_device_has_carrier    (NMDevice *dev);
 
-NMConnection * nm_device_generate_connection (NMDevice *device);
+NMConnection * nm_device_generate_connection (NMDevice *device, NMDevice *master);
+
+gboolean nm_device_master_update_slave_connection (NMDevice *master,
+                                                   NMDevice *slave,
+                                                   NMConnection *connection,
+                                                   GError **error);
 
 NMConnection * nm_device_get_best_auto_connection (NMDevice *dev,
                                                    GSList *connections,

@@ -28,9 +28,7 @@
 #include <glib/gi18n.h>
 #include <gio/gio.h>
 #include <netinet/ether.h>
-#if WITH_TEAMDCTL
 #include <teamdctl.h>
-#endif
 #include <stdlib.h>
 
 #include "nm-device-team.h"
@@ -42,6 +40,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
+#include "nm-team-enum-types.h"
 #include "nm-posix-signals.h"
 
 #include "nm-device-team-glue.h"
@@ -51,14 +50,12 @@ G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_TEAM, NMDeviceTeamPrivate))
 
-#define NM_TEAM_ERROR (nm_team_error_quark ())
+#define NM_DEVICE_TEAM_ERROR (nm_device_team_error_quark ())
 
 static gboolean teamd_start (NMDevice *dev, NMSettingTeam *s_team);
 
 typedef struct {
-#if WITH_TEAMDCTL
 	struct teamdctl *tdc;
-#endif
 	GPid teamd_pid;
 	guint teamd_process_watch;
 	guint teamd_timeout;
@@ -75,7 +72,7 @@ enum {
 /******************************************************************/
 
 static GQuark
-nm_team_error_quark (void)
+nm_device_team_error_quark (void)
 {
 	static GQuark quark = 0;
 	if (!quark)
@@ -190,7 +187,6 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
-#if WITH_TEAMDCTL
 static gboolean
 ensure_teamd_connection (NMDevice *self)
 {
@@ -212,7 +208,6 @@ ensure_teamd_connection (NMDevice *self)
 
 	return !!priv->tdc;
 }
-#endif
 
 static void
 update_connection (NMDevice *device, NMConnection *connection)
@@ -227,7 +222,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, NULL, NULL);
 
-#if WITH_TEAMDCTL
 	teamd_start (device, s_team);
 	if (NM_DEVICE_TEAM_GET_PRIVATE (device)->teamd_pid > 0 && ensure_teamd_connection (device)) {
 		const char *config = NULL;
@@ -240,49 +234,57 @@ update_connection (NMDevice *device, NMConnection *connection)
 		else
 			nm_log_err (LOGD_TEAM, "(%s): failed to read teamd config (err=%d)", iface, err);
 	}
-#endif
 }
 
 /******************************************************************/
 
-gboolean
-nm_team_update_slave_connection (NMDevice *slave, NMConnection *connection)
+static gboolean
+master_update_slave_connection (NMDevice *self,
+                                   NMDevice *slave,
+                                   NMConnection *connection,
+                                   GError **error)
 {
 	NMSettingTeamPort *s_port;
-	const char *iface = nm_device_get_iface (slave);
 	char *port_config = NULL;
-	gboolean with_teamdctl = FALSE;
 	int err = 0;
-#if WITH_TEAMDCTL
-	const char *master_iface;
-	int master_ifindex;
 	struct teamdctl *tdc;
 	const char *team_port_config = NULL;
-#endif
-
-	g_return_val_if_fail (NM_IS_DEVICE (slave), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-
-#if WITH_TEAMDCTL
-	master_ifindex = nm_platform_link_get_master (nm_device_get_ifindex (slave));
-	g_assert (master_ifindex > 0);
-	master_iface = nm_platform_link_get_name (master_ifindex);
-	g_assert (master_iface);
+	const char *iface = nm_device_get_iface (self);
+	const char *iface_slave = nm_device_get_iface (slave);
 
 	tdc = teamdctl_alloc ();
-	g_assert (tdc);
-	err = teamdctl_connect (tdc, master_iface, NULL, NULL);
+	if (!tdc) {
+		g_set_error (error,
+		             NM_DEVICE_TEAM_ERROR,
+		             NM_DEVICE_TEAM_ERROR_TEAMCTL_FAILURE,
+		             "update slave connection for slave '%s' failed to connect to teamd for master %s (out of memory?)",
+		             iface_slave, iface);
+		g_return_val_if_reached (FALSE);
+	}
+
+	err = teamdctl_connect (tdc, iface, NULL, NULL);
 	if (err) {
-		nm_log_err (LOGD_TEAM, "(%s): failed to connect to teamd for master %s (err=%d)",
-		            iface, master_iface, err);
 		teamdctl_free (tdc);
+		g_set_error (error,
+		             NM_DEVICE_TEAM_ERROR,
+		             NM_DEVICE_TEAM_ERROR_TEAMCTL_FAILURE,
+		             "update slave connection for slave '%s' failed to connect to teamd for master %s (err=%d)",
+		             iface_slave, iface, err);
 		return FALSE;
 	}
-	err = teamdctl_port_config_get_raw_direct (tdc, iface, (char **)&team_port_config);
+
+	err = teamdctl_port_config_get_raw_direct (tdc, iface_slave, (char **)&team_port_config);
 	port_config = g_strdup (team_port_config);
 	teamdctl_free (tdc);
-	with_teamdctl = TRUE;
-#endif
+	if (err) {
+		g_set_error (error,
+		             NM_DEVICE_TEAM_ERROR,
+		             NM_DEVICE_TEAM_ERROR_TEAMCTL_FAILURE,
+		             "update slave connection for slave '%s' failed to get configuration from teamd master %s (err=%d)",
+		             iface_slave, iface, err);
+		g_free (port_config);
+		return FALSE;
+	}
 
 	s_port = nm_connection_get_setting_team_port (connection);
 	if (!s_port) {
@@ -293,16 +295,10 @@ nm_team_update_slave_connection (NMDevice *slave, NMConnection *connection)
 	g_object_set (G_OBJECT (s_port), NM_SETTING_TEAM_PORT_CONFIG, port_config, NULL);
 	g_free (port_config);
 
-	if (!with_teamdctl || err != 0) {
-		if (!with_teamdctl)
-			nm_log_err (LOGD_TEAM, "(%s): failed to read teamd port configuration "
-			                       " (compiled without libteamdctl support)", iface);
-		else
-			nm_log_err (LOGD_TEAM, "(%s): failed to read teamd port configuration (err=%d)",
-			            iface, err);
-		return FALSE;
-	}
-
+	g_object_set (nm_connection_get_setting_connection (connection),
+	              NM_SETTING_CONNECTION_MASTER, iface,
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_TEAM_SETTING_NAME,
+	              NULL);
 	return TRUE;
 }
 
@@ -370,13 +366,11 @@ teamd_cleanup (NMDevice *dev, gboolean device_state_failed)
 		priv->teamd_pid = 0;
 	}
 
-#if WITH_TEAMDCTL
 	if (priv->tdc) {
 		teamdctl_disconnect (priv->tdc);
 		teamdctl_free (priv->tdc);
 		priv->tdc = NULL;
 	}
-#endif
 
 	teamd_timeout_remove (dev);
 
@@ -414,12 +408,10 @@ teamd_dbus_appeared (GDBusConnection *connection,
 
 	nm_log_info (LOGD_TEAM, "(%s): teamd appeared on D-Bus", nm_device_get_iface (dev));
 	teamd_timeout_remove (dev);
-#if WITH_TEAMDCTL
 	if (!ensure_teamd_connection (dev)) {
 		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 		return;
 	}
-#endif
 	nm_device_activate_schedule_stage2_device_config (dev);
 }
 
@@ -501,9 +493,7 @@ teamd_start (NMDevice *dev, NMSettingTeam *s_team)
 	if (priv->teamd_dbus_watch ||
 	    priv->teamd_process_watch ||
 	    priv->teamd_pid > 0 ||
-#if WITH_TEAMDCTL
 	    priv->tdc ||
-#endif
 	    priv->teamd_timeout)
 	{
 		/* Just return if teamd_start() was already called */
@@ -649,9 +639,7 @@ enslave_slave (NMDevice *device,
                NMConnection *connection,
                gboolean configure)
 {
-#if WITH_TEAMDCTL
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (device);
-#endif
 	gboolean success = TRUE, no_firmware = FALSE;
 	const char *iface = nm_device_get_ip_iface (device);
 	const char *slave_iface = nm_device_get_ip_iface (slave);
@@ -667,7 +655,6 @@ enslave_slave (NMDevice *device,
 			const char *config = nm_setting_team_port_get_config (s_team_port);
 
 			if (config) {
-#if WITH_TEAMDCTL
 				if (!priv->tdc) {
 					nm_log_warn (LOGD_TEAM, "(%s): enslaved team port %s config not changed, not connected to teamd",
 					             iface, slave_iface);
@@ -684,10 +671,6 @@ enslave_slave (NMDevice *device,
 						return FALSE;
 					}
 				}
-#else
-				nm_log_warn (LOGD_TEAM, "(%s): enslaved team port %s config not changed due to lack of Teamd control support",
-				             iface, slave_iface);
-#endif
 			}
 		}
 		success = nm_platform_link_enslave (nm_device_get_ip_ifindex (device),
@@ -766,7 +749,7 @@ nm_device_team_new (NMPlatformLink *platform_device)
 }
 
 NMDevice *
-nm_device_team_new_for_connection (NMConnection *connection)
+nm_device_team_new_for_connection (NMConnection *connection, GError **error)
 {
 	const char *iface;
 
@@ -777,7 +760,10 @@ nm_device_team_new_for_connection (NMConnection *connection)
 
 	if (   !nm_platform_team_add (iface)
 	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
-		nm_log_warn (LOGD_DEVICE | LOGD_TEAM, "(%s): failed to create team master interface for '%s': %s",
+		g_set_error (error,
+		             NM_DEVICE_TEAM_ERROR,
+		             NM_DEVICE_TEAM_ERROR_PLATFORM_FAILURE,
+		             "failed to create team master interface '%s' for connection '%s': %s",
 		             iface, nm_connection_get_id (connection),
 		             nm_platform_get_error_msg ());
 		return NULL;
@@ -871,6 +857,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	parent_class->check_connection_available = check_connection_available;
 	parent_class->complete_connection = complete_connection;
 	parent_class->update_connection = update_connection;
+	parent_class->master_update_slave_connection = master_update_slave_connection;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->deactivate = deactivate;
@@ -889,5 +876,5 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_team_object_info);
 
-	dbus_g_error_domain_register (NM_TEAM_ERROR, NULL, NM_TYPE_TEAM_ERROR);
+	dbus_g_error_domain_register (NM_DEVICE_TEAM_ERROR, NULL, NM_TYPE_TEAM_ERROR);
 }

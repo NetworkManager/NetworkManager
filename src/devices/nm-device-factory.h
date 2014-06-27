@@ -95,6 +95,24 @@ struct _NMDeviceFactory {
 	                               NMPlatformLink *plink,
 	                               GError **error);
 
+	/**
+	 * create_virtual_device_for_connection:
+	 * @factory: the #NMDeviceFactory
+	 * @connection: the #NMConnection
+	 * @error: a @GError in case of failure
+	 *
+	 * Virtual device types (such as team, bond, bridge) may need to be created.
+	 * This function tries to create a device based on the given @connection.
+	 *
+	 * Returns: the newly created #NMDevice. If the factory does not support the
+	 * connection type, it should return %NULL and leave @error unset. On error
+	 * it should set @error and return %NULL.
+	 */
+	NMDevice * (*create_virtual_device_for_connection) (NMDeviceFactory *factory,
+	                                                    NMConnection *connection,
+	                                                    GError **error);
+
+
 	/* Signals */
 
 	/**
@@ -127,6 +145,10 @@ GType      nm_device_factory_get_type    (void);
 NMDevice * nm_device_factory_new_link    (NMDeviceFactory *factory,
                                           NMPlatformLink *plink,
                                           GError **error);
+
+NMDevice * nm_device_factory_create_virtual_device_for_connection (NMDeviceFactory *factory,
+                                                                   NMConnection *connection,
+                                                                   GError **error);
 
 /* For use by implementations */
 gboolean   nm_device_factory_emit_component_added (NMDeviceFactory *factory,

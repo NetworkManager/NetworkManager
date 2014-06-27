@@ -36,6 +36,7 @@
 
 %global with_adsl 1
 %global with_bluetooth 1
+%global with_team 1
 %global with_wifi 1
 %global with_wimax 0
 %global with_wwan 1
@@ -59,8 +60,8 @@
 %global with_wwan 0
 %endif
 
-%if 0%{?rhel} || (0%{?fedora} > 19)
-%global with_teamctl 1
+%if (0%{?fedora} && 0%{?fedora} <= 19)
+%global with_team 0
 %endif
 
 
@@ -155,9 +156,6 @@ BuildRequires: ModemManager-glib-devel >= 1.0
 %if 0%{?with_nmtui}
 BuildRequires: newt-devel
 %endif
-%if 0%{?with_teamctl}
-BuildRequires: teamd-devel
-%endif
 
 
 %description
@@ -197,6 +195,19 @@ Obsoletes: NetworkManager-bt
 
 %description bluetooth
 This package contains NetworkManager support for Bluetooth devices.
+%endif
+
+
+%if 0%{?with_team}
+%package team
+Summary: Team device plugin for NetworkManager
+Group: System Environment/Base
+BuildRequires: teamd-devel
+Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+Obsoletes: NetworkManager < %{obsoletes_nmver}
+
+%description team
+This package contains NetworkManager support for team devices.
 %endif
 
 
@@ -347,7 +358,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %else
 	--with-wext=no \
 %endif
-%if 0%{?with_teamctl}
+%if 0%{?with_team}
 	--enable-teamdctl=yes \
 %else
 	--enable-teamdctl=no \
@@ -487,6 +498,12 @@ fi
 %{_libdir}/%{name}/libnm-device-plugin-bluetooth.so
 %else
 %exclude %{_libdir}/%{name}/libnm-device-plugin-bluetooth.so
+%endif
+
+%if 0%{?with_team}
+%files team
+%defattr(-,root,root,0755)
+%{_libdir}/%{name}/libnm-device-plugin-team.so
 %endif
 
 %if 0%{?with_wifi}
