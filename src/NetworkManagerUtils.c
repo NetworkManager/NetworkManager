@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2012 Red Hat, Inc.
+ * Copyright (C) 2004 - 2014 Red Hat, Inc.
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
@@ -1572,5 +1572,19 @@ fail:
 	else
 		nm_log_err (LOGD_CORE, "Failed asserting path component: \"%s\"", name);
 	g_error ("FATAL: Failed asserting path component: %s", name ? name : "(null)");
+}
+
+gboolean
+nm_utils_is_specific_hostname (const char *name)
+{
+	if (!name)
+		return FALSE;
+	if (   strcmp (name, "(none)")
+	    && strcmp (name, "localhost")
+	    && strcmp (name, "localhost6")
+	    && strcmp (name, "localhost.localdomain")
+	    && strcmp (name, "localhost6.localdomain6"))
+		return TRUE;
+	return FALSE;
 }
 
