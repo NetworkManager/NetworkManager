@@ -3999,6 +3999,7 @@ setup (NMPlatform *platform)
 	int channel_flags;
 	gboolean status;
 	int nle;
+	struct nl_object *object;
 
 	/* Initialize netlink socket for requests */
 	priv->nlh = setup_socket (FALSE, platform);
@@ -4039,6 +4040,9 @@ setup (NMPlatform *platform)
 	rtnl_addr_alloc_cache (priv->nlh, &priv->address_cache);
 	rtnl_route_alloc_cache (priv->nlh, AF_UNSPEC, 0, &priv->route_cache);
 	g_assert (priv->link_cache && priv->address_cache && priv->route_cache);
+
+	for (object = nl_cache_get_first (priv->address_cache); object; object = nl_cache_get_next (object))
+		_rtnl_addr_hack_lifetimes_rel_to_abs ((struct rtnl_addr *) object);
 
 	/* Set up udev monitoring */
 	priv->udev_client = g_udev_client_new (udev_subsys);
