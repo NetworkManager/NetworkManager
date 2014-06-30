@@ -52,6 +52,7 @@
 #include "nm-settings-error.h"
 #include "nm-config.h"
 #include "nm-logging.h"
+#include "NetworkManagerUtils.h"
 
 #include "nm-ifcfg-connection.h"
 #include "nm-inotify-helper.h"
@@ -648,10 +649,10 @@ plugin_get_hostname (SCPluginIfcfg *plugin)
 	hostname = svGetValue (network, "HOSTNAME", FALSE);
 	ignore_localhost = svTrueValue (network, "NM_IGNORE_HOSTNAME_LOCALHOST", FALSE);
 	if (ignore_localhost) {
-		/* Ignore a hostname of 'localhost' or 'localhost.localdomain' to preserve
-		 * 'network' service behavior.
+		/* Ignore a default hostname ('localhost[6]' or 'localhost[6].localdomain[6]')
+		 * to preserve 'network' service behavior.
 		 */
-		if (hostname && (!strcmp (hostname, "localhost") || !strcmp (hostname, "localhost.localdomain"))) {
+		if (hostname && !nm_utils_is_specific_hostname (hostname)) {
 			g_free (hostname);
 			hostname = NULL;
 		}

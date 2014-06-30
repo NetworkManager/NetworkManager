@@ -507,8 +507,7 @@ nm_dhcp_manager_set_default_hostname (NMDHCPManager *manager, const char *hostna
 	g_clear_pointer (&priv->default_hostname, g_free);
 
 	/* Never send 'localhost'-type names to the DHCP server */
-	if (g_strcmp0 (hostname, "localhost.localdomain") == 0 ||
-	    g_strcmp0 (hostname, "localhost6.localdomain6") == 0)
+	if (!nm_utils_is_specific_hostname (hostname))
 		return;
 
 	priv->default_hostname = g_strdup (hostname);

@@ -972,8 +972,7 @@ nm_dns_manager_set_hostname (NMDnsManager *mgr,
 
 	/* Certain hostnames we don't want to include in resolv.conf 'searches' */
 	if (   hostname
-	    && strcmp (hostname, "localhost.localdomain")
-	    && strcmp (hostname, "localhost6.localdomain6")
+	    && nm_utils_is_specific_hostname (hostname)
 	    && !strstr (hostname, ".in-addr.arpa")
 	    && strchr (hostname, '.')) {
 		filtered = hostname;

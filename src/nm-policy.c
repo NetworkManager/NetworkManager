@@ -2084,10 +2084,7 @@ nm_policy_new (NMManager *manager, NMSettings *settings)
 	memset (hostname, 0, sizeof (hostname));
 	if (gethostname (&hostname[0], HOST_NAME_MAX) == 0) {
 		/* only cache it if it's a valid hostname */
-		if (   strlen (hostname)
-		    && strcmp (hostname, "localhost")
-		    && strcmp (hostname, "localhost.localdomain")
-		    && strcmp (hostname, "(none)"))
+		if (*hostname && nm_utils_is_specific_hostname (hostname))
 			priv->orig_hostname = g_strdup (hostname);
 	}
 
