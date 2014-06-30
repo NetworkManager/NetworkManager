@@ -388,11 +388,12 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 
 	/* Try a persistent hostname first */
 	g_object_get (G_OBJECT (priv->manager), NM_MANAGER_HOSTNAME, &configured_hostname, NULL);
-	if (configured_hostname) {
+	if (configured_hostname && nm_utils_is_specific_hostname (configured_hostname)) {
 		_set_hostname (policy, configured_hostname, "from system configuration");
 		g_free (configured_hostname);
 		return;
 	}
+	g_free (configured_hostname);
 
 	/* Try automatically determined hostname from the best device's IP config */
 	if (!best4)
