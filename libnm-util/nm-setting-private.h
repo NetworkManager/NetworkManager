@@ -30,6 +30,22 @@
 	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
 	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
 
+/**
+ * NMSettingVerifyResult:
+ * @NM_SETTING_VERIFY_SUCCESS: the setting verifies successfully
+ * @NM_SETTING_VERIFY_ERROR: the setting has a serious misconfiguration
+ * @NM_SETTING_VERIFY_NORMALIZABLE: the setting is valid but has properties
+ * that should be normalized
+ * @NM_SETTING_VERIFY_NORMALIZABLE_ERROR: the setting is invalid but the
+ * errors can be fixed by nm_connection_normalize().
+ */
+typedef enum {
+	NM_SETTING_VERIFY_SUCCESS       = TRUE,
+	NM_SETTING_VERIFY_ERROR         = FALSE,
+	NM_SETTING_VERIFY_NORMALIZABLE  = 2,
+	NM_SETTING_VERIFY_NORMALIZABLE_ERROR = 3,
+} NMSettingVerifyResult;
+
 void _nm_register_setting (const char *name,
                            const GType type,
                            const guint32 priority,
@@ -91,6 +107,20 @@ NMSetting *nm_setting_find_in_list (GSList *settings_list, const char *setting_n
 #include "nm-setting-ip4-config.h"
 const char *nm_setting_ip4_config_get_address_label      (NMSettingIP4Config *setting, guint32 i);
 gboolean    nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting, NMIP4Address *address, const char *label);
+
+NMSettingVerifyResult _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
+                                                                        gboolean allow_missing,
+                                                                        const char *setting_name,
+                                                                        const char *setting_property,
+                                                                        GQuark error_quark,
+                                                                        gint e_invalid_property,
+                                                                        gint e_missing_property,
+                                                                        GSList *all_settings,
+                                                                        GError **error);
+
+NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
+                                          GSList    *all_settings,
+                                          GError    **error);
 
 #endif  /* NM_SETTING_PRIVATE_H */
 

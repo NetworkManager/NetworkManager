@@ -445,8 +445,7 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 
 	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
-	nm_utils_normalize_connection (new_connection, TRUE);
-	if (!nm_connection_verify (new_connection, error))
+	if (!nm_connection_normalize (new_connection, NULL, NULL, error))
 		return FALSE;
 
 	/* Do nothing if there's nothing to update */

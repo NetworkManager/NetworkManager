@@ -2484,6 +2484,119 @@ test_setting_old_uuid (void)
 	g_assert (success == TRUE);
 }
 
+/*
+ * nm_connection_verify() modifies the connection by setting
+ * the interface-name property to the virtual_iface_name of
+ * the type specific settings.
+ *
+ * It would be preferable of verify() not to touch the connection,
+ * but as it is now, stick with it and test it.
+ **/
+static void
+test_connection_verify_sets_interface_name (void)
+{
+	NMConnection *con;
+	NMSettingConnection *s_con;
+	NMSettingBond *s_bond;
+	GError *error = NULL;
+	gboolean success;
+
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_object_set (G_OBJECT (s_con),
+	              NM_SETTING_CONNECTION_ID, "test1",
+	              NM_SETTING_CONNECTION_UUID, "22001632-bbb4-4616-b277-363dce3dfb5b",
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BOND_SETTING_NAME,
+	              NULL);
+	s_bond = (NMSettingBond *) nm_setting_bond_new ();
+	g_object_set (G_OBJECT (s_bond),
+	              NM_SETTING_BOND_INTERFACE_NAME, "bond-x",
+	              NULL);
+
+	con = nm_connection_new ();
+	nm_connection_add_setting (con, NM_SETTING (s_con));
+	nm_connection_add_setting (con, NM_SETTING (s_bond));
+
+	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, NULL);
+
+	/* for backward compatiblity, normalizes the interface name */
+	success = nm_connection_verify (con, &error);
+	g_assert (success && !error);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, "bond-x");
+
+	g_object_unref (con);
+}
+
+/*
+ * Test normalization of interface-name
+ **/
+static void
+test_connection_normalize_virtual_iface_name (void)
+{
+	NMConnection *con;
+	NMSettingConnection *s_con;
+	NMSettingVlan *s_vlan;
+	NMSetting *setting;
+	GError *error = NULL;
+	gboolean success;
+	const char *IFACE_NAME = "iface";
+	const char *IFACE_VIRT = "iface-X";
+	gboolean modified = FALSE;
+
+	con = nm_connection_new ();
+
+	setting = nm_setting_ip4_config_new ();
+	g_object_set (setting,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NULL);
+	nm_connection_add_setting (con, setting);
+
+	setting = nm_setting_ip6_config_new ();
+	g_object_set (setting,
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NULL);
+	nm_connection_add_setting (con, setting);
+
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	g_object_set (G_OBJECT (s_con),
+	              NM_SETTING_CONNECTION_ID, "test1",
+	              NM_SETTING_CONNECTION_UUID, "22001632-bbb4-4616-b277-363dce3dfb5b",
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_VLAN_SETTING_NAME,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, IFACE_NAME,
+	              NULL);
+	s_vlan = (NMSettingVlan *) nm_setting_vlan_new ();
+	g_object_set (G_OBJECT (s_vlan),
+	              NM_SETTING_VLAN_INTERFACE_NAME, IFACE_VIRT,
+	              NM_SETTING_VLAN_PARENT, "eth0",
+	              NULL);
+
+	nm_connection_add_setting (con, NM_SETTING (s_con));
+	nm_connection_add_setting (con, NM_SETTING (s_vlan));
+
+	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
+	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_VIRT);
+
+	/* for backward compatiblity, normalizes the interface name */
+	success = nm_connection_verify (con, &error);
+	g_assert (success && !error);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
+	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_VIRT);
+
+	success = nm_connection_normalize (con, NULL, &modified, &error);
+	g_assert (success && !error);
+	g_assert (modified);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
+	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_NAME);
+
+	success = nm_connection_verify (con, &error);
+	g_assert (success && !error);
+
+	g_object_unref (con);
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -2521,6 +2634,8 @@ int main (int argc, char **argv)
 	test_connection_replace_settings ();
 	test_connection_replace_settings_from_connection ();
 	test_connection_new_from_hash ();
+	test_connection_verify_sets_interface_name ();
+	test_connection_normalize_virtual_iface_name ();
 
 	test_setting_connection_permissions_helpers ();
 	test_setting_connection_permissions_property ();

@@ -24,6 +24,7 @@
  */
 
 #include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-setting.h"
 #include "nm-setting-private.h"
@@ -517,13 +518,24 @@ nm_setting_get_name (NMSetting *setting)
 gboolean
 nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (!error || *error == NULL, FALSE);
+	NMSettingVerifyResult result = _nm_setting_verify (setting, all_settings, error);
+
+	if (result == NM_SETTING_VERIFY_NORMALIZABLE)
+		g_clear_error (error);
+
+	return result == NM_SETTING_VERIFY_SUCCESS || result == NM_SETTING_VERIFY_NORMALIZABLE;
+}
+
+NMSettingVerifyResult
+_nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
+{
+	g_return_val_if_fail (NM_IS_SETTING (setting), NM_SETTING_VERIFY_ERROR);
+	g_return_val_if_fail (!error || *error == NULL, NM_SETTING_VERIFY_ERROR);
 
 	if (NM_SETTING_GET_CLASS (setting)->verify)
 		return NM_SETTING_GET_CLASS (setting)->verify (setting, all_settings, error);
 
-	return TRUE;
+	return NM_SETTING_VERIFY_SUCCESS;
 }
 
 static gboolean
@@ -1257,6 +1269,87 @@ nm_setting_get_virtual_iface_name (NMSetting *setting)
 		return NM_SETTING_GET_CLASS (setting)->get_virtual_iface_name (setting);
 
 	return NULL;
+}
+
+
+NMSettingVerifyResult
+_nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
+                                                  gboolean allow_missing,
+                                                  const char *setting_name,
+                                                  const char *setting_property,
+                                                  GQuark error_quark,
+                                                  gint e_invalid_property,
+                                                  gint e_missing_property,
+                                                  GSList *all_settings,
+                                                  GError **error)
+{
+	NMSettingConnection *s_con;
+	const char *con_name;
+
+	s_con = NM_SETTING_CONNECTION (nm_setting_find_in_list (all_settings, NM_SETTING_CONNECTION_SETTING_NAME));
+	con_name = s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
+	if (!interface_name && !con_name) {
+		if (allow_missing)
+			return NM_SETTING_VERIFY_SUCCESS;
+
+		g_set_error_literal (error,
+		                     NM_SETTING_CONNECTION_ERROR,
+		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+		return NM_SETTING_VERIFY_ERROR;
+	}
+	if (!con_name && !nm_utils_iface_valid_name (interface_name)) {
+		/* the interface_name is invalid, we cannot normalize it. Only do this if !con_name,
+		 * because if con_name is set, it can overwrite interface_name. */
+		g_set_error_literal (error,
+		                     error_quark,
+		                     e_invalid_property,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
+		return NM_SETTING_VERIFY_ERROR;
+	}
+	if (!con_name) {
+		/* NMSettingConnection has interface not set, it should be normalized to interface_name */
+		g_set_error_literal (error,
+		                     NM_SETTING_CONNECTION_ERROR,
+		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+		return NM_SETTING_VERIFY_NORMALIZABLE;
+	}
+	if (!nm_utils_iface_valid_name (con_name)) {
+		/* NMSettingConnection:interface_name is invalid, we cannot normalize it. */
+		g_set_error_literal (error,
+		                     NM_SETTING_CONNECTION_ERROR,
+		                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+		return NM_SETTING_VERIFY_ERROR;
+	}
+	if (!interface_name) {
+		/* Normalize by setting NMSettingConnection:interface_name. */
+		g_set_error_literal (error,
+		                     error_quark,
+		                     e_missing_property,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
+		return NM_SETTING_VERIFY_NORMALIZABLE;
+	}
+	if (strcmp (con_name, interface_name) != 0) {
+		/* con_name and interface_name are different. It can be normalized by setting interface_name
+		 * to con_name. */
+		g_set_error_literal (error,
+		                     error_quark,
+		                     e_missing_property,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
+		/* we would like to make this a NORMALIZEABLE_ERROR, but that might
+		 * break older connections. */
+		return NM_SETTING_VERIFY_NORMALIZABLE;
+	}
+
+	return NM_SETTING_VERIFY_SUCCESS;
 }
 
 /*****************************************************************************/

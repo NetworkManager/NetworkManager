@@ -93,8 +93,6 @@ void        value_hash_add_object_property (GHashTable *hash,
                                             const char *prop,
                                             GType val_type);
 
-void nm_utils_normalize_connection (NMConnection *connection,
-                                    gboolean      default_enable_ipv6);
 const char *nm_utils_get_ip_config_method (NMConnection *connection,
                                            GType         ip_setting_type);
 

@@ -537,20 +537,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			s_wired = iter->data;
 	}
 
-	/* If interface_name is specified, it must be a valid interface name. We
-	 * don't check that it matches parent and/or id, because we allowing
-	 * renaming vlans to arbitrary names.
-	 */
-	if (priv->interface_name && !nm_utils_iface_valid_name (priv->interface_name)) {
-		g_set_error (error,
-		             NM_SETTING_VLAN_ERROR,
-		             NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
-		             _("'%s' is not a valid interface name"),
-		             priv->interface_name);
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_INTERFACE_NAME);
-		return FALSE;
-	}
-
 	if (priv->parent) {
 		if (nm_utils_is_uuid (priv->parent)) {
 			/* If we have an NMSettingConnection:master with slave-type="vlan",
@@ -582,7 +568,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             priv->parent);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_PARENT);
 			return FALSE;
-		} 
+		}
 	} else {
 		/* If parent is NULL, the parent must be specified via
 		 * NMSettingWired:mac-address.
@@ -609,7 +595,17 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	return TRUE;
+	/* If interface_name is specified, it must be a valid interface name. We
+	 * don't check that it matches parent and/or id, because we allow
+	 * renaming vlans to arbitrary names.
+	 */
+	return _nm_setting_verify_deprecated_virtual_iface_name (
+	         priv->interface_name, TRUE,
+	         NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_INTERFACE_NAME,
+	         NM_SETTING_VLAN_ERROR,
+	         NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
+	         NM_SETTING_VLAN_ERROR_MISSING_PROPERTY,
+	         all_settings, error);
 }
 
 static const char *

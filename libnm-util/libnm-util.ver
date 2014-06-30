@@ -13,6 +13,7 @@ global:
 	nm_connection_for_each_setting_value;
 	nm_connection_get_connection_type;
 	nm_connection_get_id;
+	nm_connection_get_interface_name;
 	nm_connection_get_path;
 	nm_connection_get_setting;
 	nm_connection_get_setting_802_1x;
@@ -52,6 +53,7 @@ global:
 	nm_connection_need_secrets;
 	nm_connection_new;
 	nm_connection_new_from_hash;
+	nm_connection_normalize;
 	nm_connection_remove_setting;
 	nm_connection_replace_settings;
 	nm_connection_replace_settings_from_connection;

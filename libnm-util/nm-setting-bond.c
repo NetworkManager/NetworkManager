@@ -491,24 +491,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	const char *arp_ip_target = NULL;
 	const char *primary;
 
-	if (!priv->interface_name || !strlen(priv->interface_name)) {
-		g_set_error_literal (error,
-		                     NM_SETTING_BOND_ERROR,
-		                     NM_SETTING_BOND_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_INTERFACE_NAME);
-		return FALSE;
-	}
-
-	if (!nm_utils_iface_valid_name (priv->interface_name)) {
-		g_set_error_literal (error,
-		                     NM_SETTING_BOND_ERROR,
-		                     NM_SETTING_BOND_ERROR_INVALID_PROPERTY,
-		                     _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_INTERFACE_NAME);
-		return FALSE;
-	}
-
 	g_hash_table_iter_init (&iter, priv->options);
 	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value)) {
 		if (!value[0] || !nm_setting_bond_validate_option (key, value)) {
@@ -688,7 +670,13 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	return TRUE;
+	return _nm_setting_verify_deprecated_virtual_iface_name (
+	         priv->interface_name, FALSE,
+	         NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_INTERFACE_NAME,
+	         NM_SETTING_BOND_ERROR,
+	         NM_SETTING_BOND_ERROR_INVALID_PROPERTY,
+	         NM_SETTING_BOND_ERROR_MISSING_PROPERTY,
+	         all_settings, error);
 }
 
 static const char *

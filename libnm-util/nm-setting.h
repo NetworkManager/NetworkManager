@@ -173,7 +173,7 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Virtual functions */
-	gboolean    (*verify)            (NMSetting  *setting,
+	gint        (*verify)            (NMSetting  *setting,
 	                                  GSList     *all_settings,
 	                                  GError     **error);
 

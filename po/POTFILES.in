@@ -14,6 +14,7 @@ libnm-util/crypto.c
 libnm-util/crypto_gnutls.c
 libnm-util/crypto_nss.c
 libnm-util/nm-connection.c
+libnm-util/nm-setting.c
 libnm-util/nm-setting-8021x.c
 libnm-util/nm-setting-adsl.c
 libnm-util/nm-setting-bluetooth.c
