@@ -215,16 +215,18 @@ stop (NMDHCPClient *self, gboolean release, const GByteArray *duid)
 
 void
 nm_dhcp_client_set_state (NMDHCPClient *self,
-                          NMDhcpState state,
+                          NMDhcpState new_state,
                           GObject *ip_config,
                           GHashTable *options)
 {
 	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
-	if (state == NM_DHCP_STATE_BOUND) {
-		/* Cancel the timeout if the DHCP client is now bound */
+	if (new_state >= NM_DHCP_STATE_BOUND)
 		timeout_cleanup (self);
+	if (new_state >= NM_DHCP_STATE_TIMEOUT)
+		watch_cleanup (self);
 
+	if (new_state == NM_DHCP_STATE_BOUND) {
 		g_assert (   (priv->ipv6 && NM_IS_IP6_CONFIG (ip_config))
 		          || (!priv->ipv6 && NM_IS_IP4_CONFIG (ip_config)));
 		g_assert (options);
@@ -234,10 +236,25 @@ nm_dhcp_client_set_state (NMDHCPClient *self,
 		g_assert (options == NULL);
 	}
 
-	priv->state = state;
+	/* The client may send same-state transitions for RENEW/REBIND events and
+	 * the lease may have changed, so handle same-state transitions for the
+	 * BOUND state.  Ignore same-state transitions for other events since
+	 * the lease won't have changed and the state was already handled.
+	 */
+	if ((priv->state == new_state) && (new_state != NM_DHCP_STATE_BOUND))
+		return;
+
+	nm_log_info (priv->ipv6 ? LOGD_DHCP6 : LOGD_DHCP4,
+	             "(%s): DHCPv%c state changed %s -> %s",
+	             priv->iface,
+	             priv->ipv6 ? '6' : '4',
+	             state_to_string (priv->state),
+	             state_to_string (new_state));
+
+	priv->state = new_state;
 	g_signal_emit (G_OBJECT (self),
 	               signals[SIGNAL_STATE_CHANGED], 0,
-	               state,
+	               new_state,
 	               ip_config,
 	               options);
 }
@@ -280,8 +297,6 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 	} else
 		new_state = NM_DHCP_STATE_DONE;
 
-	watch_cleanup (self);
-	timeout_cleanup (self);
 	priv->pid = -1;
 
 	nm_dhcp_client_set_state (self, new_state, NULL, NULL);
@@ -551,10 +566,6 @@ nm_dhcp_client_stop (NMDHCPClient *self, gboolean release)
 		nm_log_info (LOGD_DHCP, "(%s): canceled DHCP transaction", priv->iface);
 	g_assert (priv->pid == -1);
 
-	/* And clean stuff up */
-	timeout_cleanup (self);
-	watch_cleanup (self);
-
 	nm_dhcp_client_set_state (self, NM_DHCP_STATE_DONE, NULL, NULL);
 }
 
@@ -654,21 +665,6 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	old_state = priv->state;
 	new_state = reason_to_state (priv->iface, reason);
-
-	/* dhclient sends same-state transitions for RENEW/REBIND events, but
-	 * the lease may have changed, so handle same-state transitions for
-	 * these events.  Ignore same-state transitions for other events since
-	 * the lease won't have changed and the state was already handled.
-	 */
-	if ((old_state == new_state) && (new_state != NM_DHCP_STATE_BOUND))
-		return;
-
-	nm_log_info (priv->ipv6 ? LOGD_DHCP6 : LOGD_DHCP4,
-	             "(%s): DHCPv%c state changed %s -> %s",
-	             priv->iface,
-	             priv->ipv6 ? '6' : '4',
-	             state_to_string (old_state),
-	             state_to_string (new_state));
 
 	if (new_state == NM_DHCP_STATE_BOUND) {
 		/* Copy options */

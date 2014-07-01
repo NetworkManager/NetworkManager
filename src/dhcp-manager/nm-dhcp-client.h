@@ -132,7 +132,7 @@ void nm_dhcp_client_stop_pid (pid_t pid, const char *iface);
 void nm_dhcp_client_watch_child (NMDHCPClient *self, pid_t pid);
 
 void nm_dhcp_client_set_state (NMDHCPClient *self,
-                               NMDhcpState state,
+                               NMDhcpState new_state,
                                GObject *ip_config,   /* NMIP4Config or NMIP6Config */
                                GHashTable *options); /* str:str hash */
 
