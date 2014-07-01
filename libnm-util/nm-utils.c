@@ -2215,7 +2215,8 @@ nm_utils_hwaddr_valid (const char *asc)
  * Return value: (transfer full): the textual form of @bytes
  *
  * Since: 0.9.10
- *
+ */
+/*
  * Code originally by Alex Larsson <alexl@redhat.com> and
  *  copyright Red Hat, Inc. under terms of the LGPL.
  */
