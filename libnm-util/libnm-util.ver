@@ -610,6 +610,7 @@ global:
 	nm_utils_deinit;
 	nm_utils_escape_ssid;
 	nm_utils_file_is_pkcs12;
+	nm_utils_get_private;
 	nm_utils_gvalue_hash_dup;
 	nm_utils_hex2byte;
 	nm_utils_hexstr2bin;

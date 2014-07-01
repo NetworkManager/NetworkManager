@@ -39,7 +39,7 @@
 #include <nm-setting-vlan.h>
 #include <nm-setting-team.h>
 #include <nm-setting-team-port.h>
-#include <nm-util-private.h>
+#include <nm-utils-private.h>
 #include <nm-utils.h>
 
 #include "nm-logging.h"
@@ -1928,7 +1928,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		NMIP4Address *addr;
 		guint32 ip;
 
-		if (i > 0 && NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i)))
+		if (i > 0 && NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i)))
 			continue;
 
 		if (n == 0) {
@@ -2203,7 +2203,7 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 		guint32 ip;
 		shvarFile *ifcfg;
 
-		label = NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i));
+		label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i));
 		if (!label)
 			continue;
 		if (   strncmp (label, base_name, base_name_len) != 0

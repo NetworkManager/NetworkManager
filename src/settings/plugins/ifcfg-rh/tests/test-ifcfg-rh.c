@@ -46,7 +46,7 @@
 #include <nm-setting-serial.h>
 #include <nm-setting-vlan.h>
 #include <nm-setting-dcb.h>
-#include <nm-util-private.h>
+#include <nm-utils-private.h>
 
 #include "NetworkManagerUtils.h"
 
@@ -2953,7 +2953,7 @@ test_read_wired_aliases_good (void)
 		        TEST_IFCFG_ALIASES_GOOD,
 		        i);
 
-		ASSERT (g_strcmp0 (NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i)), expected_label[j]) == 0,
+		ASSERT (g_strcmp0 (NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i)), expected_label[j]) == 0,
 		        "aliases-good-verify-ip4", "failed to verify %s: unexpected IP4 address label #%d",
 		        TEST_IFCFG_ALIASES_GOOD,
 		        i);
@@ -3080,7 +3080,7 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 			"aliases-bad-verify-ip4", "failed to verify %s: unexpected IP4 address gateway",
 			base);
 
-	ASSERT (g_strcmp0 (NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0)), expected_label) == 0,
+	ASSERT (g_strcmp0 (NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0)), expected_label) == 0,
 			"aliases-bad-verify-ip4", "failed to verify %s: unexpected IP4 address label",
 			base);
 
@@ -8152,7 +8152,7 @@ test_write_wired_aliases (void)
 		nm_ip4_address_set_address (addr, ip[i]);
 		nm_ip4_address_set_prefix (addr, prefix);
 		nm_ip4_address_set_gateway (addr, gw);
-		NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, label[i]));
+		NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, label[i]));
 		nm_ip4_address_unref (addr);
 	}
 
@@ -8260,7 +8260,7 @@ test_write_wired_aliases (void)
 		        testfile,
 		        i);
 
-		ASSERT (g_strcmp0 (NM_UTIL_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i)), label[j]) == 0,
+		ASSERT (g_strcmp0 (NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i)), label[j]) == 0,
 		        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected IP4 address label #%d",
 		        testfile,
 		        i);
