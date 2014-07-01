@@ -340,6 +340,7 @@ get_client_type (const char *client, GError **error)
 static void client_state_changed (NMDHCPClient *client,
                                   NMDhcpState state,
                                   GObject *ip_config,
+                                  GHashTable *options,
                                   NMDHCPManager *self);
 
 static void
@@ -359,6 +360,7 @@ static void
 client_state_changed (NMDHCPClient *client,
                       NMDhcpState state,
                       GObject *ip_config,
+                      GHashTable *options,
                       NMDHCPManager *self)
 {
 	if (state >= NM_DHCP_STATE_TIMEOUT)

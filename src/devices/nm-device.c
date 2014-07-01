@@ -2603,12 +2603,6 @@ dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 	}
 }
 
-static void
-dhcp4_add_option_cb (const char *key, const char *value, gpointer user_data)
-{
-	nm_dhcp4_config_add_option (NM_DHCP4_CONFIG (user_data), key, value);
-}
-
 static gboolean
 ip4_config_merge_and_apply (NMDevice *self,
                             NMIP4Config *config,
@@ -2688,9 +2682,26 @@ dhcp4_fail (NMDevice *device, gboolean timeout)
 }
 
 static void
+dhcp4_update_config (NMDevice *self, NMDHCP4Config *config, GHashTable *options)
+{
+	GHashTableIter iter;
+	const char *key, *value;
+
+	/* Update the DHCP4 config object with new DHCP options */
+	nm_dhcp4_config_reset (config);
+
+	g_hash_table_iter_init (&iter, options);
+	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value))
+		nm_dhcp4_config_add_option (config, key, value);
+
+	g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP4_CONFIG);
+}
+
+static void
 dhcp4_state_changed (NMDHCPClient *client,
                      NMDhcpState state,
                      NMIP4Config *ip4_config,
+                     GHashTable *options,
                      gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
@@ -2713,12 +2724,7 @@ dhcp4_state_changed (NMDHCPClient *client,
 			break;
 		}
 
-		/* Update the DHCP4 config object with new DHCP options */
-		nm_dhcp4_config_reset (priv->dhcp4_config);
-		nm_dhcp_client_foreach_option (priv->dhcp4_client,
-			                           dhcp4_add_option_cb,
-			                           priv->dhcp4_config);
-		g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG);
+		dhcp4_update_config (device, priv->dhcp4_config, options);
 
 		if (priv->ip4_state == IP_CONF)
 			nm_device_activate_schedule_ip4_config_result (device, ip4_config);
@@ -3020,12 +3026,6 @@ dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
 	}
 }
 
-static void
-dhcp6_add_option_cb (const char *key, const char *value, gpointer user_data)
-{
-	nm_dhcp6_config_add_option (NM_DHCP6_CONFIG (user_data), key, value);
-}
-
 static gboolean
 ip6_config_merge_and_apply (NMDevice *self,
                             gboolean commit,
@@ -3124,9 +3124,26 @@ dhcp6_timeout (NMDevice *self, NMDHCPClient *client)
 }
 
 static void
+dhcp6_update_config (NMDevice *self, NMDHCP6Config *config, GHashTable *options)
+{
+	GHashTableIter iter;
+	const char *key, *value;
+
+	/* Update the DHCP6 config object with new DHCP options */
+	nm_dhcp6_config_reset (config);
+
+	g_hash_table_iter_init (&iter, options);
+	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value))
+		nm_dhcp6_config_add_option (config, key, value);
+
+	g_object_notify (G_OBJECT (self), NM_DEVICE_DHCP6_CONFIG);
+}
+
+static void
 dhcp6_state_changed (NMDHCPClient *client,
                      NMDhcpState state,
                      NMIP6Config *ip6_config,
+                     GHashTable *options,
                      gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
@@ -3143,15 +3160,7 @@ dhcp6_state_changed (NMDHCPClient *client,
 		g_clear_object (&priv->dhcp6_ip6_config);
 		if (ip6_config) {
 			priv->dhcp6_ip6_config = g_object_ref (ip6_config);
-
-			/* Update the DHCP6 config object with new DHCP options */
-			nm_dhcp6_config_reset (priv->dhcp6_config);
-			if (priv->dhcp6_ip6_config) {
-				nm_dhcp_client_foreach_option (priv->dhcp6_client,
-					                           dhcp6_add_option_cb,
-					                           priv->dhcp6_config);
-			}
-			g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG);
+			dhcp6_update_config (device, priv->dhcp6_config, options);
 		}
 
 		if (priv->ip6_state == IP_CONF) {

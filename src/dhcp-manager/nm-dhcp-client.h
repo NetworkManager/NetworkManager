@@ -90,7 +90,10 @@ typedef struct {
 	GByteArray * (*get_duid) (NMDHCPClient *self);
 
 	/* Signals */
-	void (*state_changed) (NMDHCPClient *self, NMDhcpState state, GObject *ip_config);
+	void (*state_changed) (NMDHCPClient *self,
+	                       NMDhcpState state,
+	                       GObject *ip_config,
+	                       GHashTable *options);
 } NMDHCPClientClass;
 
 GType nm_dhcp_client_get_type (void);
@@ -121,14 +124,6 @@ void nm_dhcp_client_new_options (NMDHCPClient *self,
                                  GHashTable *options,
                                  const char *reason);
 
-typedef void (*NMDhcpClientForeachFunc) (const char *key,
-                                         const char *value,
-                                         gpointer user_data);
-
-gboolean nm_dhcp_client_foreach_option (NMDHCPClient *self,
-                                        NMDhcpClientForeachFunc callback,
-                                        gpointer user_data);
-
 /* Backend helpers for subclasses */
 void nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name);
 
@@ -136,7 +131,10 @@ void nm_dhcp_client_stop_pid (pid_t pid, const char *iface);
 
 void nm_dhcp_client_watch_child (NMDHCPClient *self, pid_t pid);
 
-void nm_dhcp_client_set_state (NMDHCPClient *self, NMDhcpState state);
+void nm_dhcp_client_set_state (NMDHCPClient *self,
+                               NMDhcpState state,
+                               GObject *ip_config,   /* NMIP4Config or NMIP6Config */
+                               GHashTable *options); /* str:str hash */
 
 #endif /* NM_DHCP_CLIENT_H */
 
