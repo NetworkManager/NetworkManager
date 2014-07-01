@@ -97,6 +97,8 @@ nm_sources = \
 	\
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
+	dhcp-manager/nm-dhcp-utils.c \
+	dhcp-manager/nm-dhcp-utils.h \
 	dhcp-manager/nm-dhcp-dhclient.c \
 	dhcp-manager/nm-dhcp-dhclient.h \
 	dhcp-manager/nm-dhcp-dhclient-utils.c \
