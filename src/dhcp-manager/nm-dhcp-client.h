@@ -90,7 +90,7 @@ typedef struct {
 	GByteArray * (*get_duid) (NMDHCPClient *self);
 
 	/* Signals */
-	void (*state_changed) (NMDHCPClient *self, NMDhcpState state);
+	void (*state_changed) (NMDHCPClient *self, NMDhcpState state, GObject *ip_config);
 } NMDHCPClientClass;
 
 GType nm_dhcp_client_get_type (void);
@@ -124,10 +124,6 @@ void nm_dhcp_client_new_options (NMDHCPClient *self,
 gboolean nm_dhcp_client_foreach_option (NMDHCPClient *self,
                                         GHFunc func,
                                         gpointer user_data);
-
-NMIP4Config *nm_dhcp_client_get_ip4_config   (NMDHCPClient *self, gboolean test);
-
-NMIP6Config *nm_dhcp_client_get_ip6_config   (NMDHCPClient *self, gboolean test);
 
 /* Backend helpers for subclasses */
 void nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name);

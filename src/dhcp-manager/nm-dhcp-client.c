@@ -175,8 +175,33 @@ stop (NMDHCPClient *self, gboolean release, const GByteArray *duid)
 void
 nm_dhcp_client_set_state (NMDHCPClient *self, NMDhcpState state)
 {
-	NM_DHCP_CLIENT_GET_PRIVATE (self)->state = state;
-	g_signal_emit (G_OBJECT (self), signals[SIGNAL_STATE_CHANGED], 0, state);
+	NMDHCPClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
+	NMIP4Config *ip4_config = NULL;
+	NMIP6Config *ip6_config = NULL;
+
+	priv->state = state;
+	if (priv->state == NM_DHCP_STATE_BOUND && g_hash_table_size (priv->options)) {
+		if (priv->ipv6) {
+			ip6_config = nm_dhcp_utils_ip6_config_from_options (priv->iface,
+			                                                    priv->options,
+			                                                    priv->priority,
+			                                                    priv->info_only);
+			g_warn_if_fail (ip6_config != NULL);
+		} else {
+			ip4_config = nm_dhcp_utils_ip4_config_from_options (priv->iface,
+			                                                    priv->options,
+			                                                    priv->priority);
+			g_warn_if_fail (ip4_config != NULL);
+		}
+	}
+
+	g_signal_emit (G_OBJECT (self),
+	               signals[SIGNAL_STATE_CHANGED], 0,
+	               state,
+	               ip6_config ? (GObject *) ip6_config : (GObject *) ip4_config);
+
+	g_clear_object (&ip4_config);
+	g_clear_object (&ip6_config);
 }
 
 static gboolean
@@ -692,55 +717,6 @@ nm_dhcp_client_foreach_option (NMDHCPClient *self,
 
 /********************************************/
 
-NMIP4Config *
-nm_dhcp_client_get_ip4_config (NMDHCPClient *self, gboolean test)
-{
-	NMDHCPClientPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
-
-	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
-
-	if (test && (priv->state != NM_DHCP_STATE_BOUND)) {
-		nm_log_warn (LOGD_DHCP4, "(%s): DHCPv4 client didn't bind to a lease.", priv->iface);
-		return NULL;
-	}
-
-	if (!g_hash_table_size (priv->options)) {
-		/* We never got a response from the DHCP client */
-		return NULL;
-	}
-
-	return nm_dhcp_utils_ip4_config_from_options (priv->iface, priv->options, priv->priority);
-}
-
-NMIP6Config *
-nm_dhcp_client_get_ip6_config (NMDHCPClient *self, gboolean test)
-{
-	NMDHCPClientPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
-
-	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
-
-	if (test && (priv->state != NM_DHCP_STATE_BOUND)) {
-		nm_log_warn (LOGD_DHCP6, "(%s): DHCPv6 client didn't bind to a lease.", priv->iface);
-		return NULL;
-	}
-
-	if (!g_hash_table_size (priv->options)) {
-		/* We never got a response from the DHCP client */
-		return NULL;
-	}
-
-	return nm_dhcp_utils_ip6_config_from_options (priv->iface,
-	                                              priv->options,
-	                                              priv->priority,
-	                                              priv->info_only);
-}
-
-/********************************************/
-
 static void
 nm_dhcp_client_init (NMDHCPClient *self)
 {
@@ -928,6 +904,6 @@ nm_dhcp_client_class_init (NMDHCPClientClass *client_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDHCPClientClass, state_changed),
 					  NULL, NULL, NULL,
-					  G_TYPE_NONE, 1, G_TYPE_UINT);
+					  G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_OBJECT);
 }
 

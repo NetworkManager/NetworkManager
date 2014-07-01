@@ -337,7 +337,10 @@ get_client_type (const char *client, GError **error)
 	return G_TYPE_INVALID;
 }
 
-static void client_state_changed (NMDHCPClient *client, NMDhcpState state, NMDHCPManager *self);
+static void client_state_changed (NMDHCPClient *client,
+                                  NMDhcpState state,
+                                  GObject *ip_config,
+                                  NMDHCPManager *self);
 
 static void
 remove_client (NMDHCPManager *self, NMDHCPClient *client)
@@ -353,7 +356,10 @@ remove_client (NMDHCPManager *self, NMDHCPClient *client)
 }
 
 static void
-client_state_changed (NMDHCPClient *client, NMDhcpState state, NMDHCPManager *self)
+client_state_changed (NMDHCPClient *client,
+                      NMDhcpState state,
+                      GObject *ip_config,
+                      NMDHCPManager *self)
 {
 	if (state >= NM_DHCP_STATE_TIMEOUT)
 		remove_client (self, client);

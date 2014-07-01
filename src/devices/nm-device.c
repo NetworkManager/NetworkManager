@@ -2692,21 +2692,21 @@ dhcp4_fail (NMDevice *device, gboolean timeout)
 static void
 dhcp4_state_changed (NMDHCPClient *client,
                      NMDhcpState state,
+                     NMIP4Config *ip4_config,
                      gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-	NMIP4Config *config;
 
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == FALSE);
+	g_return_if_fail (!ip4_config || NM_IS_IP4_CONFIG (ip4_config));
 
 	nm_log_dbg (LOGD_DHCP4, "(%s): new DHCPv4 client state %d",
 	            nm_device_get_iface (device), state);
 
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
-		config = nm_dhcp_client_get_ip4_config (priv->dhcp4_client, FALSE);
-		if (!config) {
+		if (!ip4_config) {
 			nm_log_warn (LOGD_DHCP4, "(%s): failed to get IPv4 config in response to DHCP event.",
 					     nm_device_get_ip_iface (device));
 			nm_device_state_changed (device,
@@ -2723,11 +2723,9 @@ dhcp4_state_changed (NMDHCPClient *client,
 		g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP4_CONFIG);
 
 		if (priv->ip4_state == IP_CONF)
-			nm_device_activate_schedule_ip4_config_result (device, config);
+			nm_device_activate_schedule_ip4_config_result (device, ip4_config);
 		else if (priv->ip4_state == IP_DONE)
-			dhcp4_lease_change (device, config);
-		g_object_unref (config);
-
+			dhcp4_lease_change (device, ip4_config);
 		break;
 	case NM_DHCP_STATE_TIMEOUT:
 		dhcp4_fail (device, TRUE);
@@ -3132,12 +3130,14 @@ dhcp6_timeout (NMDevice *self, NMDHCPClient *client)
 static void
 dhcp6_state_changed (NMDHCPClient *client,
                      NMDhcpState state,
+                     NMIP6Config *ip6_config,
                      gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
 	g_return_if_fail (nm_dhcp_client_get_ipv6 (client) == TRUE);
+	g_return_if_fail (!ip6_config || NM_IS_IP6_CONFIG (ip6_config));
 
 	nm_log_dbg (LOGD_DHCP6, "(%s): new DHCPv6 client state %d",
 	            nm_device_get_iface (device), state);
@@ -3145,16 +3145,18 @@ dhcp6_state_changed (NMDHCPClient *client,
 	switch (state) {
 	case NM_DHCP_STATE_BOUND:
 		g_clear_object (&priv->dhcp6_ip6_config);
-		priv->dhcp6_ip6_config = nm_dhcp_client_get_ip6_config (priv->dhcp6_client, FALSE);
+		if (ip6_config) {
+			priv->dhcp6_ip6_config = g_object_ref (ip6_config);
 
-		/* Update the DHCP6 config object with new DHCP options */
-		nm_dhcp6_config_reset (priv->dhcp6_config);
-		if (priv->dhcp6_ip6_config) {
-			nm_dhcp_client_foreach_option (priv->dhcp6_client,
-			                               dhcp6_add_option_cb,
-			                               priv->dhcp6_config);
+			/* Update the DHCP6 config object with new DHCP options */
+			nm_dhcp6_config_reset (priv->dhcp6_config);
+			if (priv->dhcp6_ip6_config) {
+				nm_dhcp_client_foreach_option (priv->dhcp6_client,
+					                           dhcp6_add_option_cb,
+					                           priv->dhcp6_config);
+			}
+			g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG);
 		}
-		g_object_notify (G_OBJECT (device), NM_DEVICE_DHCP6_CONFIG);
 
 		if (priv->ip6_state == IP_CONF) {
 			if (priv->dhcp6_ip6_config == NULL) {
