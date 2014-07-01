@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* nm-dhcp-manager.c - Handle the DHCP daemon for NetworkManager
- *
- * This program is free software; you can redistribute it and/or modify
+/* This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2, or (at your option)
  * any later version.
@@ -15,19 +13,18 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2011 Red Hat, Inc.
+ * Copyright (C) 2008 - 2014 Red Hat, Inc.
  *
  */
 
 #include <glib.h>
-#include <dbus/dbus-glib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
 
 #include <nm-utils.h>
 
-#include "nm-dhcp-manager.h"
+#include "nm-dhcp-utils.h"
 #include "nm-logging.h"
 
 #include "nm-test-utils.h"
@@ -37,43 +34,15 @@ typedef struct {
 	const char *value;
 } Option;
 
-static void
-destroy_gvalue (gpointer data)
-{
-	GValue *value = (GValue *) data;
-
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
-
-static GValue *
-string_to_byte_array_gvalue (const char *str)
-{
-	GByteArray *array;
-	GValue *val;
-
-	array = g_byte_array_sized_new (strlen (str));
-	g_byte_array_append (array, (const guint8 *) str, strlen (str));
-
-	val = g_slice_new0 (GValue);
-	g_value_init (val, DBUS_TYPE_G_UCHAR_ARRAY);
-	g_value_take_boxed (val, array);
-
-	return val;
-}
-
 static GHashTable *
 fill_table (Option *test_options, GHashTable *table)
 {
 	Option *opt;
 
 	if (!table)
-		table = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, destroy_gvalue);
-	for (opt = test_options; opt->name; opt++) {
-		g_hash_table_insert (table,
-		                     (gpointer) opt->name,
-		                     string_to_byte_array_gvalue (opt->value));
-	}
+		table = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
+	for (opt = test_options; opt->name; opt++)
+		g_hash_table_insert (table, (gpointer) opt->name, (gpointer) opt->value);
 	return table;
 }
 
@@ -99,9 +68,8 @@ static Option generic_options[] = {
 };
 
 static void
-test_generic_options (gconstpointer test_data)
+test_generic_options (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const NMPlatformIP4Address *address;
@@ -119,7 +87,7 @@ test_generic_options (gconstpointer test_data)
 	const char *expected_route2_gw = "10.1.1.1";
 
 	options = fill_table (generic_options, NULL);
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-generic", "failed to parse DHCP4 options");
 
@@ -217,9 +185,8 @@ static Option wins_options[] = {
 };
 
 static void
-test_wins_options (gconstpointer test_data)
+test_wins_options (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const NMPlatformIP4Address *address;
@@ -229,8 +196,7 @@ test_wins_options (gconstpointer test_data)
 
 	options = fill_table (generic_options, NULL);
 	options = fill_table (wins_options, options);
-
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-wins", "failed to parse DHCP4 options");
 
@@ -299,9 +265,8 @@ ip4_test_gateway (const char *test,
 }
 
 static void
-test_classless_static_routes_1 (gconstpointer test_data)
+test_classless_static_routes_1 (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const char *expected_route1_dest = "192.168.10.0";
@@ -316,8 +281,7 @@ test_classless_static_routes_1 (gconstpointer test_data)
 
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
-
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-classless-1", "failed to parse DHCP4 options");
 
@@ -333,9 +297,8 @@ test_classless_static_routes_1 (gconstpointer test_data)
 }
 
 static void
-test_classless_static_routes_2 (gconstpointer test_data)
+test_classless_static_routes_2 (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const char *expected_route1_dest = "192.168.10.0";
@@ -350,8 +313,7 @@ test_classless_static_routes_2 (gconstpointer test_data)
 
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
-
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-classless-2", "failed to parse DHCP4 options");
 
@@ -367,9 +329,8 @@ test_classless_static_routes_2 (gconstpointer test_data)
 }
 
 static void
-test_fedora_dhclient_classless_static_routes (gconstpointer test_data)
+test_fedora_dhclient_classless_static_routes (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const char *expected_route1_dest = "129.210.177.128";
@@ -385,8 +346,7 @@ test_fedora_dhclient_classless_static_routes (gconstpointer test_data)
 
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
-
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-fedora-dhclient-classless", "failed to parse DHCP4 options");
 
@@ -405,9 +365,8 @@ test_fedora_dhclient_classless_static_routes (gconstpointer test_data)
 }
 
 static void
-test_dhclient_invalid_classless_routes_1 (gconstpointer test_data)
+test_dhclient_invalid_classless_routes_1 (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const char *expected_route1_dest = "192.168.10.0";
@@ -423,7 +382,7 @@ test_dhclient_invalid_classless_routes_1 (gconstpointer test_data)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*ignoring invalid classless static routes*");
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-dhclient-classless-invalid-1", "failed to parse DHCP4 options");
 	g_test_assert_expected_messages ();
@@ -439,9 +398,8 @@ test_dhclient_invalid_classless_routes_1 (gconstpointer test_data)
 }
 
 static void
-test_dhcpcd_invalid_classless_routes_1 (gconstpointer test_data)
+test_dhcpcd_invalid_classless_routes_1 (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const char *expected_route1_dest = "10.1.1.5";
@@ -459,7 +417,7 @@ test_dhcpcd_invalid_classless_routes_1 (gconstpointer test_data)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*ignoring invalid classless static routes*");
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-dhcpcd-classless-invalid-1", "failed to parse DHCP4 options");
 	g_test_assert_expected_messages ();
@@ -478,9 +436,8 @@ test_dhcpcd_invalid_classless_routes_1 (gconstpointer test_data)
 }
 
 static void
-test_dhclient_invalid_classless_routes_2 (gconstpointer test_data)
+test_dhclient_invalid_classless_routes_2 (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const char *expected_route1_dest = "10.1.1.5";
@@ -497,7 +454,7 @@ test_dhclient_invalid_classless_routes_2 (gconstpointer test_data)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*ignoring invalid classless static routes*");
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-dhclient-classless-invalid-2", "failed to parse DHCP4 options");
 	g_test_assert_expected_messages ();
@@ -516,9 +473,8 @@ test_dhclient_invalid_classless_routes_2 (gconstpointer test_data)
 }
 
 static void
-test_dhcpcd_invalid_classless_routes_2 (gconstpointer test_data)
+test_dhcpcd_invalid_classless_routes_2 (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const char *expected_route1_dest = "10.1.1.5";
@@ -535,7 +491,7 @@ test_dhcpcd_invalid_classless_routes_2 (gconstpointer test_data)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*ignoring invalid classless static routes*");
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-dhcpcd-classless-invalid-2", "failed to parse DHCP4 options");
 	g_test_assert_expected_messages ();
@@ -556,9 +512,8 @@ test_dhcpcd_invalid_classless_routes_2 (gconstpointer test_data)
 }
 
 static void
-test_dhclient_invalid_classless_routes_3 (gconstpointer test_data)
+test_dhclient_invalid_classless_routes_3 (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const char *expected_route1_dest = "192.168.10.0";
@@ -573,7 +528,7 @@ test_dhclient_invalid_classless_routes_3 (gconstpointer test_data)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*ignoring invalid classless static routes*");
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-dhclient-classless-invalid-3", "failed to parse DHCP4 options");
 	g_test_assert_expected_messages ();
@@ -588,9 +543,8 @@ test_dhclient_invalid_classless_routes_3 (gconstpointer test_data)
 }
 
 static void
-test_dhcpcd_invalid_classless_routes_3 (gconstpointer test_data)
+test_dhcpcd_invalid_classless_routes_3 (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const char *expected_route1_dest = "192.168.10.0";
@@ -605,7 +559,7 @@ test_dhcpcd_invalid_classless_routes_3 (gconstpointer test_data)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*DHCP provided invalid classless static route*");
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-dhcpcd-classless-invalid-3", "failed to parse DHCP4 options");
 	g_test_assert_expected_messages ();
@@ -620,9 +574,8 @@ test_dhcpcd_invalid_classless_routes_3 (gconstpointer test_data)
 }
 
 static void
-test_dhclient_gw_in_classless_routes (gconstpointer test_data)
+test_dhclient_gw_in_classless_routes (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const char *expected_route1_dest = "192.168.10.0";
@@ -635,8 +588,7 @@ test_dhclient_gw_in_classless_routes (gconstpointer test_data)
 
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
-
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-dhclient-classless-gateway", "failed to parse DHCP4 options");
 
@@ -653,9 +605,8 @@ test_dhclient_gw_in_classless_routes (gconstpointer test_data)
 }
 
 static void
-test_dhcpcd_gw_in_classless_routes (gconstpointer test_data)
+test_dhcpcd_gw_in_classless_routes (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const char *expected_route1_dest = "192.168.10.0";
@@ -668,8 +619,7 @@ test_dhcpcd_gw_in_classless_routes (gconstpointer test_data)
 
 	options = fill_table (generic_options, NULL);
 	options = fill_table (data, options);
-
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-dhcpcd-classless-gateway", "failed to parse DHCP4 options");
 
@@ -691,9 +641,8 @@ static Option escaped_searches_options[] = {
 };
 
 static void
-test_escaped_domain_searches (gconstpointer test_data)
+test_escaped_domain_searches (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const char *expected_search0 = "host1";
@@ -702,8 +651,7 @@ test_escaped_domain_searches (gconstpointer test_data)
 
 	options = fill_table (generic_options, NULL);
 	options = fill_table (escaped_searches_options, options);
-
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-escaped-domain-searches", "failed to parse DHCP4 options");
 
@@ -726,9 +674,8 @@ static Option invalid_escaped_searches_options[] = {
 };
 
 static void
-test_invalid_escaped_domain_searches (gconstpointer test_data)
+test_invalid_escaped_domain_searches (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 
@@ -737,7 +684,7 @@ test_invalid_escaped_domain_searches (gconstpointer test_data)
 
 	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
 	                       "*invalid domain search*");
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-invalid-escaped-domain-searches", "failed to parse DHCP4 options");
 	g_test_assert_expected_messages ();
@@ -750,17 +697,17 @@ test_invalid_escaped_domain_searches (gconstpointer test_data)
 }
 
 static void
-test_ip4_missing_prefix (const char *client, const char *ip, guint32 expected_prefix)
+test_ip4_missing_prefix (const char *ip, guint32 expected_prefix)
 {
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const NMPlatformIP4Address *address;
 
 	options = fill_table (generic_options, NULL);
-	g_hash_table_insert (options, "new_ip_address", string_to_byte_array_gvalue (ip));
+	g_hash_table_insert (options, "new_ip_address", (gpointer) ip);
 	g_hash_table_remove (options, "new_subnet_mask");
 
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-ip4-missing-prefix", "failed to parse DHCP4 options");
 
@@ -779,33 +726,26 @@ test_ip4_missing_prefix (const char *client, const char *ip, guint32 expected_pr
 }
 
 static void
-test_ip4_missing_prefix_24 (gconstpointer test_data)
+test_ip4_missing_prefix_24 (void)
 {
-	const char *client = test_data;
-
-	test_ip4_missing_prefix (client, "192.168.1.10", 24);
+	test_ip4_missing_prefix ("192.168.1.10", 24);
 }
 
 static void
-test_ip4_missing_prefix_16 (gconstpointer test_data)
+test_ip4_missing_prefix_16 (void)
 {
-	const char *client = test_data;
-
-	test_ip4_missing_prefix (client, "172.16.54.50", 16);
+	test_ip4_missing_prefix ("172.16.54.50", 16);
 }
 
 static void
-test_ip4_missing_prefix_8 (gconstpointer test_data)
+test_ip4_missing_prefix_8 (void)
 {
-	const char *client = test_data;
-
-	test_ip4_missing_prefix (client, "10.1.2.3", 8);
+	test_ip4_missing_prefix ("10.1.2.3", 8);
 }
 
 static void
-test_ip4_prefix_classless (gconstpointer test_data)
+test_ip4_prefix_classless (void)
 {
-	const char *client = test_data;
 	GHashTable *options;
 	NMIP4Config *ip4_config;
 	const NMPlatformIP4Address *address;
@@ -816,10 +756,10 @@ test_ip4_prefix_classless (gconstpointer test_data)
 	 */
 
 	options = fill_table (generic_options, NULL);
-	g_hash_table_insert (options, "new_ip_address", string_to_byte_array_gvalue ("172.16.54.22"));
-	g_hash_table_insert (options, "new_subnet_mask", string_to_byte_array_gvalue ("255.255.252.0"));
+	g_hash_table_insert (options, "new_ip_address", "172.16.54.22");
+	g_hash_table_insert (options, "new_subnet_mask", "255.255.252.0");
 
-	ip4_config = nm_dhcp_manager_test_ip4_options_to_config (client, "eth0", options, "rebind");
+	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
 	        "dhcp-ip4-prefix-classless", "failed to parse DHCP4 options");
 
@@ -841,96 +781,28 @@ NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
-	char *path;
-	const char *clients[2][2] = { {DHCLIENT_PATH, "dhclient"}, {DHCPCD_PATH, "dhcpcd"} };
-	guint32 i;
-
 	nmtst_init_assert_logging (&argc, &argv);
 	nm_logging_setup ("WARN", "DEFAULT", NULL, NULL);
 
-	for (i = 0; i < 2; i++) {
-		const char *client_path = clients[i][0];
-		const char *client = clients[i][1];
-
-		if (!client_path || !strlen (client_path))
-			continue;
-
-		path = g_strdup_printf ("/dhcp/%s/generic-options", client);
-		g_test_add_data_func (path, client, test_generic_options);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/wins-options", client);
-		g_test_add_data_func (path, client, test_wins_options);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/classless-static-routes-1", client);
-		g_test_add_data_func (path, client, test_classless_static_routes_1);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/classless-static-routes-2", client);
-		g_test_add_data_func (path, client, test_classless_static_routes_2);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/fedora-dhclient-classless-static-routes", client);
-		g_test_add_data_func (path, client, test_fedora_dhclient_classless_static_routes);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/dhclient-invalid-classless-routes-1", client);
-		g_test_add_data_func (path, client, test_dhclient_invalid_classless_routes_1);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/dhcpcd-invalid-classless-routes-1", client);
-		g_test_add_data_func (path, client, test_dhcpcd_invalid_classless_routes_1);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/dhclient-invalid-classless-routes-2", client);
-		g_test_add_data_func (path, client, test_dhclient_invalid_classless_routes_2);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/dhcpcd-invalid-classless-routes-2", client);
-		g_test_add_data_func (path, client, test_dhcpcd_invalid_classless_routes_2);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/dhclient-invalid-classless-routes-3", client);
-		g_test_add_data_func (path, client, test_dhclient_invalid_classless_routes_3);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/dhcpcd-invalid-classless-routes-3", client);
-		g_test_add_data_func (path, client, test_dhcpcd_invalid_classless_routes_3);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/dhclient-gw-in-classless-routes", client);
-		g_test_add_data_func (path, client, test_dhclient_gw_in_classless_routes);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/dhcpcd-gw-in-classless-routes", client);
-		g_test_add_data_func (path, client, test_dhcpcd_gw_in_classless_routes);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/escaped-domain-searches", client);
-		g_test_add_data_func (path, client, test_escaped_domain_searches);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/invalid-escaped-domain-searches", client);
-		g_test_add_data_func (path, client, test_invalid_escaped_domain_searches);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/ip4-missing-prefix-24", client);
-		g_test_add_data_func (path, client, test_ip4_missing_prefix_24);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/ip4-missing-prefix-16", client);
-		g_test_add_data_func (path, client, test_ip4_missing_prefix_16);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/ip4-missing-prefix-8", client);
-		g_test_add_data_func (path, client, test_ip4_missing_prefix_8);
-		g_free (path);
-
-		path = g_strdup_printf ("/dhcp/%s/ip4-prefix-classless", client);
-		g_test_add_data_func (path, client, test_ip4_prefix_classless);
-		g_free (path);
-	}
+	g_test_add_func ("/dhcp/generic-options", test_generic_options);
+	g_test_add_func ("/dhcp/wins-options", test_wins_options);
+	g_test_add_func ("/dhcp/classless-static-routes-1", test_classless_static_routes_1);
+	g_test_add_func ("/dhcp/classless-static-routes-2", test_classless_static_routes_2);
+	g_test_add_func ("/dhcp/fedora-dhclient-classless-static-routes", test_fedora_dhclient_classless_static_routes);
+	g_test_add_func ("/dhcp/dhclient-invalid-classless-routes-1", test_dhclient_invalid_classless_routes_1);
+	g_test_add_func ("/dhcp/dhcpcd-invalid-classless-routes-1", test_dhcpcd_invalid_classless_routes_1);
+	g_test_add_func ("/dhcp/dhclient-invalid-classless-routes-2", test_dhclient_invalid_classless_routes_2);
+	g_test_add_func ("/dhcp/dhcpcd-invalid-classless-routes-2", test_dhcpcd_invalid_classless_routes_2);
+	g_test_add_func ("/dhcp/dhclient-invalid-classless-routes-3", test_dhclient_invalid_classless_routes_3);
+	g_test_add_func ("/dhcp/dhcpcd-invalid-classless-routes-3", test_dhcpcd_invalid_classless_routes_3);
+	g_test_add_func ("/dhcp/dhclient-gw-in-classless-routes", test_dhclient_gw_in_classless_routes);
+	g_test_add_func ("/dhcp/dhcpcd-gw-in-classless-routes", test_dhcpcd_gw_in_classless_routes);
+	g_test_add_func ("/dhcp/escaped-domain-searches", test_escaped_domain_searches);
+	g_test_add_func ("/dhcp/invalid-escaped-domain-searches", test_invalid_escaped_domain_searches);
+	g_test_add_func ("/dhcp/ip4-missing-prefix-24", test_ip4_missing_prefix_24);
+	g_test_add_func ("/dhcp/ip4-missing-prefix-16", test_ip4_missing_prefix_16);
+	g_test_add_func ("/dhcp/ip4-missing-prefix-8", test_ip4_missing_prefix_8);
+	g_test_add_func ("/dhcp/ip4-prefix-classless", test_ip4_prefix_classless);
 
 	return g_test_run ();
 }

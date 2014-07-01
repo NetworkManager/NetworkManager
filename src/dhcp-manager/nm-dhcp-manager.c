@@ -517,35 +517,6 @@ nm_dhcp_manager_get_lease_ip_configs (NMDHCPManager *self,
 	return NULL;
 }
 
-NMIP4Config *
-nm_dhcp_manager_test_ip4_options_to_config (const char *dhcp_client,
-                                            const char *iface,
-                                            GHashTable *options,
-                                            const char *reason)
-{
-	NMDHCPClient *client;
-	NMIP4Config *config;
-	GType client_type;
-	GError *error = NULL;
-
-	client_type = get_client_type (dhcp_client, &error);
-	if (!client_type) {
-		nm_log_err (LOGD_DHCP4, "error: %s", error ? error->message : "(unknown)");
-		g_clear_error (&error);
-		return NULL;
-	}
-
-	client = (NMDHCPClient *) g_object_new (client_type,
-	                                        NM_DHCP_CLIENT_INTERFACE, iface,
-	                                        NULL);
-	g_return_val_if_fail (client != NULL, NULL);
-	nm_dhcp_client_new_options (client, options, reason);
-	config = nm_dhcp_client_get_ip4_config (client, TRUE);
-	g_object_unref (client);
-
-	return config;
-}
-
 /***************************************************/
 
 NMDHCPManager *
