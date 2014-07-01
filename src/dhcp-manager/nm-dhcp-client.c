@@ -596,25 +596,47 @@ garray_to_string (GArray *array, const char *key)
 	return converted;
 }
 
+#define OLD_TAG "old_"
+#define NEW_TAG "new_"
+
 static void
-copy_option (gpointer key,
-             gpointer value,
+copy_option (const char * key,
+             GValue *value,
              gpointer user_data)
 {
 	GHashTable *hash = user_data;
-	const char *str_key = (const char *) key;
 	char *str_value = NULL;
+	const char **p;
+	static const char *ignored_keys[] = {
+		"interface",
+		"pid",
+		"reason",
+		"dhcp_message_type",
+		NULL
+	};
 
-	if (G_VALUE_TYPE (value) != DBUS_TYPE_G_UCHAR_ARRAY) {
-		nm_log_warn (LOGD_DHCP, "unexpected key %s value type was not "
-		             "DBUS_TYPE_G_UCHAR_ARRAY",
-		             str_key);
+	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY)) {
+		nm_log_warn (LOGD_DHCP, "key %s value type was not DBUS_TYPE_G_UCHAR_ARRAY", key);
 		return;
 	}
 
-	str_value = garray_to_string ((GArray *) g_value_get_boxed (value), str_key);
+	if (g_str_has_prefix (key, OLD_TAG))
+		return;
+
+	/* Filter out stuff that's not actually new DHCP options */
+	for (p = ignored_keys; *p; p++) {
+		if (!strcmp (*p, key))
+			return;
+	}
+
+	if (g_str_has_prefix (key, NEW_TAG))
+		key += STRLEN (NEW_TAG);
+	if (!key[0])
+		return;
+
+	str_value = garray_to_string ((GArray *) g_value_get_boxed (value), key);
 	if (str_value)
-		g_hash_table_insert (hash, g_strdup (str_key), str_value);
+		g_hash_table_insert (hash, g_strdup (key), str_value);
 }
 
 void
@@ -636,7 +658,7 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 
 	/* Clear old and save new DHCP options */
 	g_hash_table_remove_all (priv->options);
-	g_hash_table_foreach (options, copy_option, priv->options);
+	g_hash_table_foreach (options, (GHFunc) copy_option, priv->options);
 
 	/* dhclient sends same-state transitions for RENEW/REBIND events, but
 	 * the lease may have changed, so handle same-state transitions for
@@ -661,20 +683,17 @@ nm_dhcp_client_new_options (NMDHCPClient *self,
 	nm_dhcp_client_set_state (self, new_state);
 }
 
-#define NEW_TAG "new_"
-#define OLD_TAG "old_"
-
 gboolean
 nm_dhcp_client_foreach_option (NMDHCPClient *self,
-                               GHFunc func,
+                               NMDhcpClientForeachFunc callback,
                                gpointer user_data)
 {
 	NMDHCPClientPrivate *priv;
 	GHashTableIter iter;
-	gpointer iterkey, itervalue;
+	const char *key, *value;
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
-	g_return_val_if_fail (func != NULL, FALSE);
+	g_return_val_if_fail (callback != NULL, FALSE);
 
 	priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 
@@ -686,32 +705,9 @@ nm_dhcp_client_foreach_option (NMDHCPClient *self,
 	}
 
 	g_hash_table_iter_init (&iter, priv->options);
-	while (g_hash_table_iter_next (&iter, &iterkey, &itervalue)) {
-		const char *key = iterkey, *value = itervalue;
-		const char **p;
-		static const char *filter_options[] = {
-			"interface", "pid", "reason", "dhcp_message_type", NULL
-		};
-		gboolean ignore = FALSE;
+	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value))
+		callback (key, value, user_data);
 
-		/* Filter out stuff that's not actually new DHCP options */
-		for (p = filter_options; *p; p++) {
-			if (!strcmp (*p, key) || !strncmp (key, OLD_TAG, strlen (OLD_TAG))) {
-				ignore = TRUE;
-				break;
-			}
-		}
-
-		if (!ignore) {
-			const char *tmp_key = key;
-
-			/* Remove the "new_" prefix that dhclient passes back */
-			if (!strncmp (key, NEW_TAG, strlen (NEW_TAG)))
-				tmp_key = key + strlen (NEW_TAG);
-
-			func ((gpointer) tmp_key, (gpointer) value, user_data);
-		}
-	}
 	return TRUE;
 }
 

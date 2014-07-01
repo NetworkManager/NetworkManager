@@ -121,8 +121,12 @@ void nm_dhcp_client_new_options (NMDHCPClient *self,
                                  GHashTable *options,
                                  const char *reason);
 
+typedef void (*NMDhcpClientForeachFunc) (const char *key,
+                                         const char *value,
+                                         gpointer user_data);
+
 gboolean nm_dhcp_client_foreach_option (NMDHCPClient *self,
-                                        GHFunc func,
+                                        NMDhcpClientForeachFunc callback,
                                         gpointer user_data);
 
 /* Backend helpers for subclasses */

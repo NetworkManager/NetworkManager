@@ -232,7 +232,7 @@ ip4_process_classless_routes (GHashTable *options,
 	 *
 	 * 192.168.10.0/24 192.168.1.1 10.0.0.0/8 10.17.66.41
 	 */
-	str = g_hash_table_lookup (options, "new_classless_static_routes");
+	str = g_hash_table_lookup (options, "classless_static_routes");
 
 	/* dhclient doesn't have actual support for rfc3442 classless static routes
 	 * upstream.  Thus, people resort to defining the option in dhclient.conf
@@ -243,11 +243,11 @@ ip4_process_classless_routes (GHashTable *options,
 	 * See https://lists.isc.org/pipermail/dhcp-users/2008-December/007629.html
 	 */
 	if (!str)
-		str = g_hash_table_lookup (options, "new_rfc3442_classless_static_routes");
+		str = g_hash_table_lookup (options, "rfc3442_classless_static_routes");
 
 	/* Microsoft version; same as rfc3442 but with a different option # (249) */
 	if (!str)
-		str = g_hash_table_lookup (options, "new_ms_classless_static_routes");
+		str = g_hash_table_lookup (options, "ms_classless_static_routes");
 
 	if (!str || !strlen (str))
 		return FALSE;
@@ -275,7 +275,7 @@ process_classful_routes (GHashTable *options, guint priority, NMIP4Config *ip4_c
 	const char *str;
 	char **searches, **s;
 
-	str = g_hash_table_lookup (options, "new_static_routes");
+	str = g_hash_table_lookup (options, "static_routes");
 	if (!str)
 		return;
 
@@ -386,14 +386,14 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 	memset (&address, 0, sizeof (address));
 	address.timestamp = nm_utils_get_monotonic_timestamp_s ();
 
-	str = g_hash_table_lookup (options, "new_ip_address");
+	str = g_hash_table_lookup (options, "ip_address");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
 		address.address = tmp_addr;
 		nm_log_info (LOGD_DHCP4, "  address %s", str);
 	} else
 		goto error;
 
-	str = g_hash_table_lookup (options, "new_subnet_mask");
+	str = g_hash_table_lookup (options, "subnet_mask");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
 		plen = nm_utils_ip4_netmask_to_prefix (tmp_addr);
 		nm_log_info (LOGD_DHCP4, "  plen %d (%s)", plen, str);
@@ -417,7 +417,7 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 		/* If the gateway wasn't provided as a classless static route with a
 		 * subnet length of 0, try to find it using the old-style 'routers' option.
 		 */
-		str = g_hash_table_lookup (options, "new_routers");
+		str = g_hash_table_lookup (options, "routers");
 		if (str) {
 			char **routers = g_strsplit (str, " ", 0);
 			char **s;
@@ -447,7 +447,7 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 	 * dhcp server may not be reachable via unicast, and a host
 	 * specific route is needed.
 	 **/
-	str = g_hash_table_lookup (options, "new_dhcp_server_identifier");
+	str = g_hash_table_lookup (options, "dhcp_server_identifier");
 	if (str) {
 		if (inet_pton (AF_INET, str, &tmp_addr) > 0) {
 			NMPlatformIP4Route route;
@@ -472,7 +472,7 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 			nm_log_warn (LOGD_DHCP4, "ignoring invalid server identifier '%s'", str);
 	}
 
-	str = g_hash_table_lookup (options, "new_dhcp_lease_time");
+	str = g_hash_table_lookup (options, "dhcp_lease_time");
 	if (str) {
 		address.lifetime = address.preferred = strtoul (str, NULL, 10);
 		nm_log_info (LOGD_DHCP4, "  lease time %d", address.lifetime);
@@ -481,11 +481,11 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 	address.source = NM_PLATFORM_SOURCE_DHCP;
 	nm_ip4_config_add_address (ip4_config, &address);
 
-	str = g_hash_table_lookup (options, "new_host_name");
+	str = g_hash_table_lookup (options, "host_name");
 	if (str)
 		nm_log_info (LOGD_DHCP4, "  hostname '%s'", str);
 
-	str = g_hash_table_lookup (options, "new_domain_name_servers");
+	str = g_hash_table_lookup (options, "domain_name_servers");
 	if (str) {
 		char **searches = g_strsplit (str, " ", 0);
 		char **s;
@@ -500,7 +500,7 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 		g_strfreev (searches);
 	}
 
-	str = g_hash_table_lookup (options, "new_domain_name");
+	str = g_hash_table_lookup (options, "domain_name");
 	if (str) {
 		char **domains = g_strsplit (str, " ", 0);
 		char **s;
@@ -512,11 +512,11 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 		g_strfreev (domains);
 	}
 
-	str = g_hash_table_lookup (options, "new_domain_search");
+	str = g_hash_table_lookup (options, "domain_search");
 	if (str)
 		process_domain_search (str, ip4_add_domain_search, ip4_config);
 
-	str = g_hash_table_lookup (options, "new_netbios_name_servers");
+	str = g_hash_table_lookup (options, "netbios_name_servers");
 	if (str) {
 		char **searches = g_strsplit (str, " ", 0);
 		char **s;
@@ -531,7 +531,7 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 		g_strfreev (searches);
 	}
 
-	str = g_hash_table_lookup (options, "new_interface_mtu");
+	str = g_hash_table_lookup (options, "interface_mtu");
 	if (str) {
 		int int_mtu;
 
@@ -544,13 +544,13 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 			nm_ip4_config_set_mtu (ip4_config, int_mtu);
 	}
 
-	str = g_hash_table_lookup (options, "new_nis_domain");
+	str = g_hash_table_lookup (options, "nis_domain");
 	if (str) {
 		nm_log_info (LOGD_DHCP4, "  NIS domain '%s'", str);
 		nm_ip4_config_set_nis_domain (ip4_config, str);
 	}
 
-	str = g_hash_table_lookup (options, "new_nis_servers");
+	str = g_hash_table_lookup (options, "nis_servers");
 	if (str) {
 		char **searches = g_strsplit (str, " ", 0);
 		char **s;
@@ -607,19 +607,19 @@ nm_dhcp_utils_ip6_config_from_options (const char *iface,
 
 	ip6_config = nm_ip6_config_new ();
 
-	str = g_hash_table_lookup (options, "new_max_life");
+	str = g_hash_table_lookup (options, "max_life");
 	if (str) {
 		address.lifetime = strtoul (str, NULL, 10);
 		nm_log_info (LOGD_DHCP6, "  valid_lft %d", address.lifetime);
 	}
 
-	str = g_hash_table_lookup (options, "new_preferred_life");
+	str = g_hash_table_lookup (options, "preferred_life");
 	if (str) {
 		address.preferred = strtoul (str, NULL, 10);
 		nm_log_info (LOGD_DHCP6, "  preferred_lft %d", address.preferred);
 	}
 
-	str = g_hash_table_lookup (options, "new_ip6_address");
+	str = g_hash_table_lookup (options, "ip6_address");
 	if (str) {
 		if (!inet_pton (AF_INET6, str, &tmp_addr)) {
 			nm_log_warn (LOGD_DHCP6, "(%s): DHCP returned invalid address '%s'",
@@ -636,11 +636,11 @@ nm_dhcp_utils_ip6_config_from_options (const char *iface,
 		goto error;
 	}
 
-	str = g_hash_table_lookup (options, "new_host_name");
+	str = g_hash_table_lookup (options, "host_name");
 	if (str)
 		nm_log_info (LOGD_DHCP6, "  hostname '%s'", str);
 
-	str = g_hash_table_lookup (options, "new_dhcp6_name_servers");
+	str = g_hash_table_lookup (options, "dhcp6_name_servers");
 	if (str) {
 		char **searches = g_strsplit (str, " ", 0);
 		char **s;
@@ -655,7 +655,7 @@ nm_dhcp_utils_ip6_config_from_options (const char *iface,
 		g_strfreev (searches);
 	}
 
-	str = g_hash_table_lookup (options, "new_dhcp6_domain_search");
+	str = g_hash_table_lookup (options, "dhcp6_domain_search");
 	if (str)
 		process_domain_search (str, ip6_add_domain_search, ip6_config);
 

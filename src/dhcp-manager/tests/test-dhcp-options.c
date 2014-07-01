@@ -47,23 +47,21 @@ fill_table (Option *test_options, GHashTable *table)
 }
 
 static Option generic_options[] = {
-	{ "new_subnet_mask",            "255.255.255.0" },
-	{ "new_ip_address",             "192.168.1.106" },
-	{ "new_network_number",         "192.168.1.0" },
-	{ "interface",                  "eth0" },
-	{ "reason",                     "BOUND" },
-	{ "new_expiry",                 "1232324877" },
-	{ "new_dhcp_lease_time",        "3600" },
-	{ "new_dhcp_server_identifier", "192.168.1.1" },
-	{ "new_routers",                "192.168.1.1" },
-	{ "new_domain_name_servers",    "216.254.95.2 216.231.41.2" },
-	{ "new_dhcp_message_type",      "5" },
-	{ "new_broadcast_address",      "192.168.1.255" },
-	{ "new_domain_search",          "foobar.com blah.foobar.com" },
-	{ "new_host_name",              "nmreallywhipsthe" },
-	{ "new_domain_name",            "lamasass.com" },
-	{ "new_interface_mtu",          "987" },
-	{ "new_static_routes",          "10.1.1.5 10.1.1.1 100.99.88.56 10.1.1.1" },
+	{ "subnet_mask",            "255.255.255.0" },
+	{ "ip_address",             "192.168.1.106" },
+	{ "network_number",         "192.168.1.0" },
+	{ "expiry",                 "1232324877" },
+	{ "dhcp_lease_time",        "3600" },
+	{ "dhcp_server_identifier", "192.168.1.1" },
+	{ "routers",                "192.168.1.1" },
+	{ "domain_name_servers",    "216.254.95.2 216.231.41.2" },
+	{ "dhcp_message_type",      "5" },
+	{ "broadcast_address",      "192.168.1.255" },
+	{ "domain_search",          "foobar.com blah.foobar.com" },
+	{ "host_name",              "nmreallywhipsthe" },
+	{ "domain_name",            "lamasass.com" },
+	{ "interface_mtu",          "987" },
+	{ "static_routes",          "10.1.1.5 10.1.1.1 100.99.88.56 10.1.1.1" },
 	{ NULL, NULL }
 };
 
@@ -180,7 +178,7 @@ test_generic_options (void)
 }
 
 static Option wins_options[] = {
-	{ "new_netbios_name_servers", "63.12.199.5 150.4.88.120" },
+	{ "netbios_name_servers", "63.12.199.5 150.4.88.120" },
 	{ NULL, NULL }
 };
 
@@ -275,7 +273,7 @@ test_classless_static_routes_1 (void)
 	const char *expected_route2_gw = "10.17.66.41";
 	static Option data[] = {
 		/* dhclient custom format */
-		{ "new_rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 8 10 10 17 66 41" },
+		{ "rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 8 10 10 17 66 41" },
 		{ NULL, NULL }
 	};
 
@@ -307,7 +305,7 @@ test_classless_static_routes_2 (void)
 	const char *expected_route2_gw = "10.17.66.41";
 	static Option data[] = {
 		/* dhcpcd format */
-		{ "new_classless_static_routes", "192.168.10.0/24 192.168.1.1 10.0.0.0/8 10.17.66.41" },
+		{ "classless_static_routes", "192.168.10.0/24 192.168.1.1 10.0.0.0/8 10.17.66.41" },
 		{ NULL, NULL }
 	};
 
@@ -340,7 +338,7 @@ test_fedora_dhclient_classless_static_routes (void)
 	const char *expected_gateway = "192.168.0.113";
 	static Option data[] = {
 		/* Fedora dhclient format */
-		{ "new_classless_static_routes", "0 192.168.0.113 25.129.210.177.132 192.168.0.113 7.2 10.34.255.6" },
+		{ "classless_static_routes", "0 192.168.0.113 25.129.210.177.132 192.168.0.113 7.2 10.34.255.6" },
 		{ NULL, NULL }
 	};
 
@@ -373,7 +371,7 @@ test_dhclient_invalid_classless_routes_1 (void)
 	const char *expected_route1_gw = "192.168.1.1";
 	static Option data[] = {
 		/* dhclient format */
-		{ "new_rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 45 10 17 66 41" },
+		{ "rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 45 10 17 66 41" },
 		{ NULL, NULL }
 	};
 
@@ -408,7 +406,7 @@ test_dhcpcd_invalid_classless_routes_1 (void)
 	const char *expected_route2_gw = "10.1.1.1";
 	static Option data[] = {
 		/* dhcpcd format */
-		{ "new_classless_static_routes", "192.168.10.0/24 192.168.1.1 10.0.adfadf/44 10.17.66.41" },
+		{ "classless_static_routes", "192.168.10.0/24 192.168.1.1 10.0.adfadf/44 10.17.66.41" },
 		{ NULL, NULL }
 	};
 
@@ -445,7 +443,7 @@ test_dhclient_invalid_classless_routes_2 (void)
 	const char *expected_route2_dest = "100.99.88.56";
 	const char *expected_route2_gw = "10.1.1.1";
 	static Option data[] = {
-		{ "new_rfc3442_classless_static_routes", "45 10 17 66 41 24 192 168 10 192 168 1 1" },
+		{ "rfc3442_classless_static_routes", "45 10 17 66 41 24 192 168 10 192 168 1 1" },
 		{ NULL, NULL }
 	};
 
@@ -482,7 +480,7 @@ test_dhcpcd_invalid_classless_routes_2 (void)
 	const char *expected_route2_dest = "100.99.88.56";
 	const char *expected_route2_gw = "10.1.1.1";
 	static Option data[] = {
-		{ "new_classless_static_routes", "10.0.adfadf/44 10.17.66.41 192.168.10.0/24 192.168.1.1" },
+		{ "classless_static_routes", "10.0.adfadf/44 10.17.66.41 192.168.10.0/24 192.168.1.1" },
 		{ NULL, NULL }
 	};
 
@@ -519,7 +517,7 @@ test_dhclient_invalid_classless_routes_3 (void)
 	const char *expected_route1_dest = "192.168.10.0";
 	const char *expected_route1_gw = "192.168.1.1";
 	static Option data[] = {
-		{ "new_rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 32 128 10 17 66 41" },
+		{ "rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 32 128 10 17 66 41" },
 		{ NULL, NULL }
 	};
 
@@ -550,7 +548,7 @@ test_dhcpcd_invalid_classless_routes_3 (void)
 	const char *expected_route1_dest = "192.168.10.0";
 	const char *expected_route1_gw = "192.168.1.1";
 	static Option data[] = {
-		{ "new_classless_static_routes", "192.168.10.0/24 192.168.1.1 128/32 10.17.66.41" },
+		{ "classless_static_routes", "192.168.10.0/24 192.168.1.1 128/32 10.17.66.41" },
 		{ NULL, NULL }
 	};
 
@@ -582,7 +580,7 @@ test_dhclient_gw_in_classless_routes (void)
 	const char *expected_route1_gw = "192.168.1.1";
 	const char *expected_gateway = "192.2.3.4";
 	static Option data[] = {
-		{ "new_rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 0 192 2 3 4" },
+		{ "rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 0 192 2 3 4" },
 		{ NULL, NULL }
 	};
 
@@ -613,7 +611,7 @@ test_dhcpcd_gw_in_classless_routes (void)
 	const char *expected_route1_gw = "192.168.1.1";
 	const char *expected_gateway = "192.2.3.4";
 	static Option data[] = {
-		{ "new_classless_static_routes", "192.168.10.0/24 192.168.1.1 0.0.0.0/0 192.2.3.4" },
+		{ "classless_static_routes", "192.168.10.0/24 192.168.1.1 0.0.0.0/0 192.2.3.4" },
 		{ NULL, NULL }
 	};
 
@@ -636,7 +634,7 @@ test_dhcpcd_gw_in_classless_routes (void)
 }
 
 static Option escaped_searches_options[] = {
-	{ "new_domain_search", "host1\\032host2\\032host3" },
+	{ "domain_search", "host1\\032host2\\032host3" },
 	{ NULL, NULL }
 };
 
@@ -669,7 +667,7 @@ test_escaped_domain_searches (void)
 }
 
 static Option invalid_escaped_searches_options[] = {
-	{ "new_domain_search", "host1\\aahost2\\032host3" },
+	{ "domain_search", "host1\\aahost2\\032host3" },
 	{ NULL, NULL }
 };
 
@@ -704,8 +702,8 @@ test_ip4_missing_prefix (const char *ip, guint32 expected_prefix)
 	const NMPlatformIP4Address *address;
 
 	options = fill_table (generic_options, NULL);
-	g_hash_table_insert (options, "new_ip_address", (gpointer) ip);
-	g_hash_table_remove (options, "new_subnet_mask");
+	g_hash_table_insert (options, "ip_address", (gpointer) ip);
+	g_hash_table_remove (options, "subnet_mask");
 
 	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,
@@ -756,8 +754,8 @@ test_ip4_prefix_classless (void)
 	 */
 
 	options = fill_table (generic_options, NULL);
-	g_hash_table_insert (options, "new_ip_address", "172.16.54.22");
-	g_hash_table_insert (options, "new_subnet_mask", "255.255.252.0");
+	g_hash_table_insert (options, "ip_address", "172.16.54.22");
+	g_hash_table_insert (options, "subnet_mask", "255.255.252.0");
 
 	ip4_config = nm_dhcp_utils_ip4_config_from_options ("eth0", options, 0);
 	ASSERT (ip4_config != NULL,

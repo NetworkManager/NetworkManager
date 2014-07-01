@@ -2604,11 +2604,9 @@ dhcp4_cleanup (NMDevice *self, gboolean stop, gboolean release)
 }
 
 static void
-dhcp4_add_option_cb (gpointer key, gpointer value, gpointer user_data)
+dhcp4_add_option_cb (const char *key, const char *value, gpointer user_data)
 {
-	nm_dhcp4_config_add_option (NM_DHCP4_CONFIG (user_data),
-	                            (const char *) key,
-	                            (const char *) value);
+	nm_dhcp4_config_add_option (NM_DHCP4_CONFIG (user_data), key, value);
 }
 
 static gboolean
@@ -3023,11 +3021,9 @@ dhcp6_cleanup (NMDevice *self, gboolean stop, gboolean release)
 }
 
 static void
-dhcp6_add_option_cb (gpointer key, gpointer value, gpointer user_data)
+dhcp6_add_option_cb (const char *key, const char *value, gpointer user_data)
 {
-	nm_dhcp6_config_add_option (NM_DHCP6_CONFIG (user_data),
-	                            (const char *) key,
-	                            (const char *) value);
+	nm_dhcp6_config_add_option (NM_DHCP6_CONFIG (user_data), key, value);
 }
 
 static gboolean
