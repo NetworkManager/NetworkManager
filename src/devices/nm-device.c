@@ -7549,7 +7549,7 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_DHCP4_CONFIG:
-		if (ip_config_valid (priv->state) && priv->dhcp4_client)
+		if (ip_config_valid (priv->state) && priv->dhcp4_config)
 			g_value_set_boxed (value, nm_dhcp4_config_get_dbus_path (priv->dhcp4_config));
 		else
 			g_value_set_boxed (value, "/");
@@ -7561,7 +7561,7 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_DHCP6_CONFIG:
-		if (ip_config_valid (priv->state) && priv->dhcp6_client)
+		if (ip_config_valid (priv->state) && priv->dhcp6_config)
 			g_value_set_boxed (value, nm_dhcp6_config_get_dbus_path (priv->dhcp6_config));
 		else
 			g_value_set_boxed (value, "/");
