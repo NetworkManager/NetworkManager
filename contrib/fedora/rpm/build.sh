@@ -72,7 +72,8 @@ _SOURCE="$SOURCE"
 SOURCE="$(abs_path "$SOURCE" "$(ls -1 "$GITDIR/NetworkManager-$VERSION"*.tar* 2>/dev/null | head -n1)")"
 [[ -f "$SOURCE" ]] || die "could not find source ${_SOURCE:-$GITDIR/NetworkManager-$VERSION*.tar*} . Did you execute \`make dist\`? Otherwise set \$SOURCE variable"
 SOURCE_NETWORKMANAGER_CONF="$(abs_path "$SOURCE_NETWORKMANAGER_CONF" "$SCRIPTDIR/NetworkManager.conf")"
-SOURCE_SERVER_CONF="$(abs_path "$SOURCE_SERVER_CONF" "$SCRIPTDIR/00-server.conf")"
+SOURCE_CONFIG_SERVER="$(abs_path "$SOURCE_CONFIG_SERVER" "$SCRIPTDIR/00-server.conf")"
+SOURCE_CONFIG_CONNECTIVITY_FEDORA="$(abs_path "$SOURCE_CONFIG_CONNECTIVITY_FEDORA" "$SCRIPTDIR/20-connectivity-fedora.conf")"
 
 TEMP="$(mktemp -d "$SCRIPTDIR/NetworkManager.$DATE.XXXXXX")"
 TEMPBASE="$(basename "$TEMP")"
@@ -85,7 +86,8 @@ LOG "USERNAME=$USERNAME"
 LOG "SPECFILE=$SPECFILE"
 LOG "SOURCE=$SOURCE"
 LOG "SOURCE_NETWORKMANAGER_CONF=$SOURCE_NETWORKMANAGER_CONF"
-LOG "SOURCE_SERVER_CONF=$SOURCE_SERVER_CONF"
+LOG "SOURCE_CONFIG_SERVER=$SOURCE_CONFIG_SERVER"
+LOG "SOURCE_CONFIG_CONNECTIVITY_FEDORA=$SOURCE_CONFIG_CONNECTIVITY_FEDORA"
 LOG "BASEDIR=$TEMP"
 
 ln -snf "$TEMPBASE" ./latest0
@@ -97,7 +99,8 @@ mkdir -p "$TEMP/SOURCES/" "$TEMP/SPECS/" || die "error creating SPECS directoy"
 
 cp "$SOURCE" "$TEMP/SOURCES/" || die "Could not copy source $SOURCE to $TEMP/SOURCES"
 cp "$SOURCE_NETWORKMANAGER_CONF" "$TEMP/SOURCES/NetworkManager.conf" || die "Could not copy source $SOURCE_NETWORKMANAGER_CONF to $TEMP/SOURCES"
-cp "$SOURCE_SERVER_CONF" "$TEMP/SOURCES/00-server.conf" || die "Could not copy source $SOURCE_SERVER_CONF to $TEMP/SOURCES"
+cp "$SOURCE_CONFIG_SERVER" "$TEMP/SOURCES/00-server.conf" || die "Could not copy source $SOURCE_CONFIG_SERVER to $TEMP/SOURCES"
+cp "$SOURCE_CONFIG_CONNECTIVITY_FEDORA" "$TEMP/SOURCES/20-connectivity-fedora.conf" || die "Could not copy source $SOURCE_CONFIG_CONNECTIVITY_FEDORA to $TEMP/SOURCES"
 
 write_changelog
 
