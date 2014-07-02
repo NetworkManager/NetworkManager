@@ -38,10 +38,10 @@ typedef struct {
 	char *gateway;
 	GSList *addresses;
 	GSList *routes;
-	GArray *nameservers;
+	char **nameservers;
 	char **domains;
 	char **searches;
-	GArray *wins;
+	char **wins;
 } NMIP4ConfigPrivate;
 
 enum {
@@ -62,8 +62,10 @@ nm_ip4_config_init (NMIP4Config *config)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
+	priv->nameservers = g_new0 (char *, 1);
 	priv->domains = g_new0 (char *, 1);
 	priv->searches = g_new0 (char *, 1);
+	priv->wins = g_new0 (char *, 1);
 }
 
 static gboolean
@@ -83,14 +85,30 @@ demarshal_ip4_address_array (NMObject *object, GParamSpec *pspec, GValue *value,
 static gboolean
 demarshal_ip4_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
 {
-	if (!_nm_uint_array_demarshal (value, (GArray **) field))
+	GArray *ip_array;
+	char ***obj_field;
+	int i;
+
+	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_UINT_ARRAY))
 		return FALSE;
 
-	if (!strcmp (pspec->name, NM_IP4_CONFIG_NAMESERVERS))
-		_nm_object_queue_notify (object, NM_IP4_CONFIG_NAMESERVERS);
-	else if (!strcmp (pspec->name, NM_IP4_CONFIG_WINS_SERVERS))
-		_nm_object_queue_notify (object, NM_IP4_CONFIG_WINS_SERVERS);
+	ip_array = g_value_get_boxed (value);
 
+	obj_field = field;
+	if (*obj_field)
+		g_strfreev (*obj_field);
+
+	*obj_field = g_new (char *, ip_array->len + 1);
+	for (i = 0; i < ip_array->len; i++) {
+		guint32 ip = g_array_index (ip_array, guint32, i);
+		const char *str;
+
+		str = nm_utils_inet4_ntop (ip, NULL);
+		(*obj_field)[i] = g_strdup (str);
+	}
+	(*obj_field)[i] = NULL;
+
+	_nm_object_queue_notify (object, pspec->name);
 	return TRUE;
 }
 
@@ -141,14 +159,10 @@ finalize (GObject *object)
 	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
 	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
 
-	if (priv->nameservers)
-		g_array_free (priv->nameservers, TRUE);
-
-	if (priv->wins)
-		g_array_free (priv->wins, TRUE);
-
+	g_strfreev (priv->nameservers);
 	g_strfreev (priv->domains);
 	g_strfreev (priv->searches);
+	g_strfreev (priv->wins);
 
 	g_object_unref (priv->proxy);
 
@@ -175,7 +189,7 @@ get_property (GObject *object,
 		nm_utils_ip4_routes_to_gvalue (priv->routes, value);
 		break;
 	case PROP_NAMESERVERS:
-		g_value_set_boxed (value, nm_ip4_config_get_nameservers (self));
+		g_value_set_boxed (value, (char **) nm_ip4_config_get_nameservers (self));
 		break;
 	case PROP_DOMAINS:
 		g_value_set_boxed (value, (char **) nm_ip4_config_get_domains (self));
@@ -184,7 +198,7 @@ get_property (GObject *object,
 		g_value_set_boxed (value, (char **) nm_ip4_config_get_searches (self));
 		break;
 	case PROP_WINS_SERVERS:
-		g_value_set_boxed (value, nm_ip4_config_get_wins_servers (self));
+		g_value_set_boxed (value, (char **) nm_ip4_config_get_wins_servers (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -245,12 +259,12 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	/**
 	 * NMIP4Config:nameservers:
 	 *
-	 * The #GArray containing name servers (#guint32s) of the configuration.
+	 * The array containing name server IP addresses of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_NAMESERVERS,
 	     g_param_spec_boxed (NM_IP4_CONFIG_NAMESERVERS, "", "",
-	                         NM_TYPE_UINT_ARRAY,
+	                         G_TYPE_STRV,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS));
 
@@ -281,12 +295,12 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	/**
 	 * NMIP4Config:wins-servers:
 	 *
-	 * The #GArray containing WINS servers (#guint32s) of the configuration.
+	 * The array containing WINS server IP addresses of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_WINS_SERVERS,
 	     g_param_spec_boxed (NM_IP4_CONFIG_WINS_SERVERS, "", "",
-	                         NM_TYPE_UINT_ARRAY,
+	                         G_TYPE_STRV,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS));
 }
@@ -330,16 +344,14 @@ nm_ip4_config_get_addresses (NMIP4Config *config)
  *
  * Gets the domain name servers (DNS).
  *
- * Returns: (element-type guint32): the #GArray containing #guint32s.
- * This is the internal copy used by the configuration and must not be
- * modified.
+ * Returns: the array of nameserver IP addresses
  **/
-const GArray *
+const char * const *
 nm_ip4_config_get_nameservers (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	return NM_IP4_CONFIG_GET_PRIVATE (config)->nameservers;
+	return (const char * const *) NM_IP4_CONFIG_GET_PRIVATE (config)->nameservers;
 }
 
 /**
@@ -384,12 +396,12 @@ nm_ip4_config_get_searches (NMIP4Config *config)
  * This is the internal copy used by the configuration and must not be
  * modified.
  **/
-const GArray *
+const char * const *
 nm_ip4_config_get_wins_servers (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	return NM_IP4_CONFIG_GET_PRIVATE (config)->wins;
+	return (const char * const *) NM_IP4_CONFIG_GET_PRIVATE (config)->wins;
 }
 
 /**

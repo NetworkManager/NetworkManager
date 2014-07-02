@@ -63,10 +63,10 @@ GType nm_ip4_config_get_type (void);
 const char *        nm_ip4_config_get_gateway      (NMIP4Config *config);
 const GSList *      nm_ip4_config_get_addresses    (NMIP4Config *config);
 const GSList *      nm_ip4_config_get_routes       (NMIP4Config *config);
-const GArray *      nm_ip4_config_get_nameservers  (NMIP4Config *config);
+const char * const *nm_ip4_config_get_nameservers  (NMIP4Config *config);
 const char * const *nm_ip4_config_get_domains      (NMIP4Config *config);
 const char * const *nm_ip4_config_get_searches     (NMIP4Config *config);
-const GArray *      nm_ip4_config_get_wins_servers (NMIP4Config *config);
+const char * const *nm_ip4_config_get_wins_servers (NMIP4Config *config);
 
 G_END_DECLS
 
