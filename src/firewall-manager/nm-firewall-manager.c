@@ -263,12 +263,11 @@ nm_firewall_manager_get (void)
 {
 	static NMFirewallManager *singleton = NULL;
 
-	if (!singleton)
+	if (G_UNLIKELY (!singleton)) {
 		singleton = NM_FIREWALL_MANAGER (g_object_new (NM_TYPE_FIREWALL_MANAGER, NULL));
-	else
-		g_object_ref (singleton);
+		g_assert (singleton);
+	}
 
-	g_assert (singleton);
 	return singleton;
 }
 

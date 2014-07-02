@@ -251,8 +251,7 @@ typedef struct {
 	NMDnsMasqManager *dnsmasq_manager;
 	gulong            dnsmasq_state_id;
 
-	/* Firewall Manager */
-	NMFirewallManager *fw_manager;
+	/* Firewall */
 	DBusGProxyCall    *fw_call;
 
 	/* avahi-autoipd stuff */
@@ -4142,7 +4141,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	zone = nm_setting_connection_get_zone (s_con);
 	nm_log_dbg (LOGD_DEVICE, "Activation (%s) setting firewall zone '%s'",
 	            nm_device_get_iface (self), zone ? zone : "default");
-	priv->fw_call = nm_firewall_manager_add_or_change_zone (priv->fw_manager,
+	priv->fw_call = nm_firewall_manager_add_or_change_zone (nm_firewall_manager_get (),
 	                                                        nm_device_get_ip_iface (self),
 	                                                        zone,
 	                                                        FALSE,
@@ -6425,23 +6424,21 @@ nm_device_has_pending_action (NMDevice *device)
 static void
 _cleanup_generic_pre (NMDevice *self, gboolean deconfigure)
 {
+	NMConnection *connection;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	/* Clean up when device was deactivated during call to firewall */
-	if (priv->fw_manager) {
-		NMConnection *connection;
 
-		if (priv->fw_call) {
-			nm_firewall_manager_cancel_call (priv->fw_manager, priv->fw_call);
-			priv->fw_call = NULL;
-		}
+	if (priv->fw_call) {
+		nm_firewall_manager_cancel_call (nm_firewall_manager_get (), priv->fw_call);
+		priv->fw_call = NULL;
+	}
 
-		connection = nm_device_get_connection (self);
-		if (deconfigure && connection) {
-			nm_firewall_manager_remove_from_zone (priv->fw_manager,
-			                                      nm_device_get_ip_iface (self),
-			                                      NULL);
-		}
+	connection = nm_device_get_connection (self);
+	if (deconfigure && connection) {
+		nm_firewall_manager_remove_from_zone (nm_firewall_manager_get (),
+		                                      nm_device_get_ip_iface (self),
+		                                      NULL);
 	}
 
 	ip_check_gw_ping_cleanup (self);
@@ -7234,8 +7231,6 @@ constructor (GType type,
 	if (NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities (dev);
 
-	priv->fw_manager = nm_firewall_manager_get ();
-
 	device_get_driver_info (priv->iface, &priv->driver_version, &priv->firmware_version);
 
 	/* Watch for external IP config changes */
@@ -7355,8 +7350,6 @@ dispose (GObject *object)
 	platform = nm_platform_get ();
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (device_ip_changed), self);
 	g_signal_handlers_disconnect_by_func (platform, G_CALLBACK (link_changed_cb), self);
-
-	g_clear_object (&priv->fw_manager);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
