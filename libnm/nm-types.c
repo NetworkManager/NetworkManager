@@ -134,67 +134,6 @@ _nm_uint_array_demarshal (GValue *value, GArray **dest)
 /*****************************/
 
 static gpointer
-_nm_string_array_copy (GPtrArray *src)
-{
-	GPtrArray *dest;
-	int i;
-
-	dest = g_ptr_array_sized_new (src->len);
-	for (i = 0; i < src->len; i++)
-		g_ptr_array_add (dest, g_strdup (g_ptr_array_index (src, i)));
-	return dest;
-}
-
-static void
-_nm_string_array_free (GPtrArray *array)
-{
-	int i;
-
-	for (i = 0; i < array->len; i++)
-		g_free (g_ptr_array_index (array, i));
-	g_ptr_array_free (array, TRUE);
-}
-
-GType
-nm_string_array_get_type (void)
-{
-	static GType our_type = 0;
-
-	if (our_type == 0)
-		our_type = g_boxed_type_register_static (g_intern_static_string ("NMStringArray"),
-		                                         (GBoxedCopyFunc) _nm_string_array_copy,
-		                                         (GBoxedFreeFunc) _nm_string_array_free);
-	return our_type;
-}
-
-gboolean
-_nm_string_array_demarshal (GValue *value, GPtrArray **dest)
-{
-	char **array;
-
-	if (!G_VALUE_HOLDS (value, G_TYPE_STRV))
-		return FALSE;
-
-	if (*dest) {
-		g_boxed_free (NM_TYPE_STRING_ARRAY, *dest);
-		*dest = NULL;
-	}
-
-	array = (char **) g_value_get_boxed (value);
-	if (array && array[0]) {
-		int i;
-
-		*dest = g_ptr_array_new ();
-		for (i = 0; array[i]; i++)
-			g_ptr_array_add (*dest, g_strdup (array[i]));
-	}
-
-	return TRUE;
-}
-
-/*****************************/
-
-static gpointer
 _nm_object_array_copy (GPtrArray *src)
 {
 	GPtrArray *dest;

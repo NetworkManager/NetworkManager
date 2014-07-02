@@ -39,8 +39,8 @@ typedef struct {
 	GSList *addresses;
 	GSList *routes;
 	GArray *nameservers;
-	GPtrArray *domains;
-	GPtrArray *searches;
+	char **domains;
+	char **searches;
 	GArray *wins;
 } NMIP4ConfigPrivate;
 
@@ -60,6 +60,10 @@ enum {
 static void
 nm_ip4_config_init (NMIP4Config *config)
 {
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	priv->domains = g_new0 (char *, 1);
+	priv->searches = g_new0 (char *, 1);
 }
 
 static gboolean
@@ -91,16 +95,6 @@ demarshal_ip4_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 }
 
 static gboolean
-demarshal_string_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
-{
-	if (!_nm_string_array_demarshal (value, (GPtrArray **) field))
-		return FALSE;
-
-	_nm_object_queue_notify (object, pspec->name);
-	return TRUE;
-}
-
-static gboolean
 demarshal_ip4_routes_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
@@ -123,8 +117,8 @@ init_dbus (NMObject *object)
 		{ NM_IP4_CONFIG_ADDRESSES,    &priv->addresses, demarshal_ip4_address_array },
 		{ NM_IP4_CONFIG_ROUTES,       &priv->routes, demarshal_ip4_routes_array },
 		{ NM_IP4_CONFIG_NAMESERVERS,  &priv->nameservers, demarshal_ip4_array },
-		{ NM_IP4_CONFIG_DOMAINS,      &priv->domains, demarshal_string_array },
-		{ NM_IP4_CONFIG_SEARCHES,     &priv->searches, demarshal_string_array },
+		{ NM_IP4_CONFIG_DOMAINS,      &priv->domains, },
+		{ NM_IP4_CONFIG_SEARCHES,     &priv->searches, },
 		{ NM_IP4_CONFIG_WINS_SERVERS, &priv->wins, demarshal_ip4_array },
 		{ NULL },
 	};
@@ -153,15 +147,8 @@ finalize (GObject *object)
 	if (priv->wins)
 		g_array_free (priv->wins, TRUE);
 
-	if (priv->domains) {
-		g_ptr_array_set_free_func (priv->domains, g_free);
-		g_ptr_array_free (priv->domains, TRUE);
-	}
-
-	if (priv->searches) {
-		g_ptr_array_set_free_func (priv->searches, g_free);
-		g_ptr_array_free (priv->searches, TRUE);
-	}
+	g_strfreev (priv->domains);
+	g_strfreev (priv->searches);
 
 	g_object_unref (priv->proxy);
 
@@ -191,10 +178,10 @@ get_property (GObject *object,
 		g_value_set_boxed (value, nm_ip4_config_get_nameservers (self));
 		break;
 	case PROP_DOMAINS:
-		g_value_set_boxed (value, nm_ip4_config_get_domains (self));
+		g_value_set_boxed (value, (char **) nm_ip4_config_get_domains (self));
 		break;
 	case PROP_SEARCHES:
-		g_value_set_boxed (value, nm_ip4_config_get_searches (self));
+		g_value_set_boxed (value, (char **) nm_ip4_config_get_searches (self));
 		break;
 	case PROP_WINS_SERVERS:
 		g_value_set_boxed (value, nm_ip4_config_get_wins_servers (self));
@@ -270,24 +257,24 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	/**
 	 * NMIP4Config:domains:
 	 *
-	 * The #GPtrArray containing domain strings of the configuration.
+	 * The array containing domain strings of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_DOMAINS,
 	     g_param_spec_boxed (NM_IP4_CONFIG_DOMAINS, "", "",
-	                         NM_TYPE_STRING_ARRAY,
+	                         G_TYPE_STRV,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP4Config:searches:
 	 *
-	 * The #GPtrArray containing dns search strings of the configuration.
+	 * The array containing DNS search strings of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_SEARCHES,
 	     g_param_spec_boxed (NM_IP4_CONFIG_SEARCHES, "", "",
-	                         NM_TYPE_STRING_ARRAY,
+	                         G_TYPE_STRV,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS));
 
@@ -361,32 +348,30 @@ nm_ip4_config_get_nameservers (NMIP4Config *config)
  *
  * Gets the domain names.
  *
- * Returns: (element-type utf8): the #GPtrArray containing domains as strings. This is the
- * internal copy used by the configuration, and must not be modified.
+ * Returns: the array of domains. (This is never %NULL, though it may be 0-length).
  **/
-const GPtrArray *
+const char * const *
 nm_ip4_config_get_domains (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	return handle_ptr_array_return (NM_IP4_CONFIG_GET_PRIVATE (config)->domains);
+	return (const char * const *) NM_IP4_CONFIG_GET_PRIVATE (config)->domains;
 }
 
 /**
  * nm_ip4_config_get_searches:
  * @config: a #NMIP4Config
  *
- * Gets the dns searches.
+ * Gets the DNS searches.
  *
- * Returns: (element-type utf8): the #GPtrArray containing dns searches as strings. This is the
- * internal copy used by the configuration, and must not be modified.
+ * Returns: the array of DNS search strings. (This is never %NULL, though it may be 0-length).
  **/
-const GPtrArray *
+const char * const *
 nm_ip4_config_get_searches (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	return handle_ptr_array_return (NM_IP4_CONFIG_GET_PRIVATE (config)->searches);
+	return (const char * const *) NM_IP4_CONFIG_GET_PRIVATE (config)->searches;
 }
 
 /**

@@ -1142,6 +1142,11 @@ demarshal_generic (NMObject *object,
 			success = FALSE;
 			goto done;
 		}
+	} else if (pspec->value_type == G_TYPE_STRV) {
+		char ***param = (char ***)field;
+		if (*param)
+			g_strfreev (*param);
+		*param = g_value_dup_boxed (value);
 	HANDLE_TYPE(BOOLEAN, boolean, boolean)
 	HANDLE_TYPE(CHAR, char, schar)
 	HANDLE_TYPE(UCHAR, uchar, uchar)

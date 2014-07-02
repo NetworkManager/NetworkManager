@@ -65,8 +65,8 @@ const GSList *         nm_ip6_config_get_routes          (NMIP6Config *config);
 guint32                nm_ip6_config_get_num_nameservers (NMIP6Config *config);
 const struct in6_addr *nm_ip6_config_get_nameserver      (NMIP6Config *config, guint32 idx);
 const GSList *         nm_ip6_config_get_nameservers     (NMIP6Config *config);
-const GPtrArray *      nm_ip6_config_get_domains         (NMIP6Config *config);
-const GPtrArray *      nm_ip6_config_get_searches        (NMIP6Config *config);
+const char * const *   nm_ip6_config_get_domains         (NMIP6Config *config);
+const char * const *   nm_ip6_config_get_searches        (NMIP6Config *config);
 
 G_END_DECLS
 

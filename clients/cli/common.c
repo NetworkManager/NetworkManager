@@ -81,7 +81,6 @@ print_ip4_config (NMIP4Config *cfg4,
 {
 	GSList *list, *iter;
 	const GArray *array;
-	const GPtrArray *ptr_array;
 	char **addr_arr = NULL;
 	char **route_arr = NULL;
 	char **dns_arr = NULL;
@@ -150,14 +149,7 @@ print_ip4_config (NMIP4Config *cfg4,
 	}
 
 	/* domains */
-	ptr_array = nm_ip4_config_get_domains (cfg4);
-	if (ptr_array) {
-		domain_arr = g_new (char *, ptr_array->len + 1);
-		for (i = 0; i < ptr_array->len; i++)
-			domain_arr[i] = g_strdup (g_ptr_array_index (ptr_array, i));
-
-		domain_arr[i] = NULL;
-	}
+	domain_arr = g_strdupv ((char **) nm_ip4_config_get_domains (cfg4));
 
 	/* WINS */
 	array = nm_ip4_config_get_wins_servers (cfg4);
@@ -193,7 +185,6 @@ print_ip6_config (NMIP6Config *cfg6,
                   const char *one_field)
 {
 	GSList *list, *iter;
-	const GPtrArray *ptr_array;
 	char **addr_arr = NULL;
 	char **route_arr = NULL;
 	char **dns_arr = NULL;
@@ -260,14 +251,7 @@ print_ip6_config (NMIP6Config *cfg6,
 	dns_arr[i] = NULL;
 
 	/* domains */
-	ptr_array = nm_ip6_config_get_domains (cfg6);
-	if (ptr_array) {
-		domain_arr = g_new (char *, ptr_array->len + 1);
-		for (i = 0; i < ptr_array->len; i++)
-			domain_arr[i] = g_strdup (g_ptr_array_index (ptr_array, i));
-
-		domain_arr[i] = NULL;
-	}
+	domain_arr = g_strdupv ((char **) nm_ip6_config_get_domains (cfg6));
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_strc (arr, 0, group_prefix);
