@@ -4127,15 +4127,12 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	NMDevicePrivate *priv;
 	NMConnection *connection;
 	NMSettingConnection *s_con = NULL;
-	NMDeviceState state;
 	const char *zone;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->act_request);
-
-	state = nm_device_get_state (self);
 
 	/* Add the interface to the specified firewall zone */
 	connection = nm_device_get_connection (self);
