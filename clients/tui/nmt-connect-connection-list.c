@@ -213,7 +213,7 @@ static char *
 hash_ap (NMAccessPoint *ap)
 {
 	unsigned char input[66];
-	const GByteArray *ssid;
+	GBytes *ssid;
 	NM80211Mode mode;
 	guint32 flags;
 	guint32 wpa_flags;
@@ -223,7 +223,7 @@ hash_ap (NMAccessPoint *ap)
 
 	ssid = nm_access_point_get_ssid (ap);
 	if (ssid)
-		memcpy (input, ssid->data, ssid->len);
+		memcpy (input, g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid));
 
 	mode = nm_access_point_get_mode (ap);
 	if (mode == NM_802_11_MODE_INFRA)
@@ -266,7 +266,7 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 	NMAccessPoint *ap;
 	const GPtrArray *aps;
 	GHashTable *seen_ssids;
-	const GByteArray *ssid;
+	GBytes *ssid;
 	char *ap_hash;
 	GSList *iter;
 	int i;
@@ -294,7 +294,8 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 		nmtconn->device = nmtdev->device;
 		nmtconn->ap = g_object_ref (ap);
 		ssid = nm_access_point_get_ssid (ap);
-		nmtconn->ssid = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
+		nmtconn->ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+		                                       g_bytes_get_size (ssid));
 
 		for (iter = connections; iter; iter = iter->next) {
 			conn = iter->data;

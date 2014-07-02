@@ -1147,6 +1147,13 @@ demarshal_generic (NMObject *object,
 		if (*param)
 			g_strfreev (*param);
 		*param = g_value_dup_boxed (value);
+	} else if (pspec->value_type == G_TYPE_BYTES) {
+		GBytes **param = (GBytes **)field;
+		GByteArray *val;
+		if (*param)
+			g_bytes_unref (*param);
+		val = g_value_get_boxed (value);
+		*param = g_bytes_new (val->data, val->len);
 	HANDLE_TYPE(BOOLEAN, boolean, boolean)
 	HANDLE_TYPE(CHAR, char, schar)
 	HANDLE_TYPE(UCHAR, uchar, uchar)

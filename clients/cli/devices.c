@@ -495,7 +495,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	NM80211ApSecurityFlags wpa_flags, rsn_flags;
 	guint32 freq, bitrate;
 	guint8 strength;
-	const GByteArray *ssid;
+	GBytes *ssid;
 	const char *bssid;
 	NM80211Mode mode;
 	char *channel_str, *freq_str, *ssid_str = NULL, *ssid_hex_str = NULL,
@@ -528,8 +528,12 @@ fill_output_access_point (gpointer data, gpointer user_data)
 
 	/* Convert to strings */
 	if (ssid) {
-		ssid_str = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
-		ssid_hex_str = ssid_to_hex ((const char *) ssid->data, ssid->len);
+		const guint8 *ssid_data;
+		gsize ssid_len;
+
+		ssid_data = g_bytes_get_data (ssid, &ssid_len);
+		ssid_str = nm_utils_ssid_to_utf8 (ssid_data, ssid_len);
+		ssid_hex_str = ssid_to_hex ((const char *) ssid_data, ssid_len);
 	}
 	channel_str = g_strdup_printf ("%u", nm_utils_wifi_freq_to_channel (freq));
 	freq_str = g_strdup_printf (_("%u MHz"), freq);
@@ -2050,12 +2054,12 @@ find_ap_on_device (NMDevice *device, GByteArray *bssid, const char *ssid)
 
 		if (ssid) {
 			/* Parameter is SSID */
-			const GByteArray *candidate_ssid;
+			GBytes *candidate_ssid;
 
 			candidate_ssid = nm_access_point_get_ssid (candidate_ap);
 			if (candidate_ssid) {
-				char *ssid_tmp = nm_utils_ssid_to_utf8 (candidate_ssid->data,
-				                                        candidate_ssid->len);
+				char *ssid_tmp = nm_utils_ssid_to_utf8 (g_bytes_get_data (candidate_ssid, NULL),
+				                                        g_bytes_get_size (candidate_ssid));
 
 				/* Compare SSIDs */
 				if (strcmp (ssid, ssid_tmp) == 0) {

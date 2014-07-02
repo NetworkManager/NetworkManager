@@ -32,9 +32,6 @@
 
 G_BEGIN_DECLS
 
-#define NM_TYPE_SSID  (nm_ssid_get_type ())
-GType     nm_ssid_get_type (void) G_GNUC_CONST;
-
 #define NM_TYPE_UINT_ARRAY  (nm_uint_array_get_type ())
 GType     nm_uint_array_get_type (void) G_GNUC_CONST;
 

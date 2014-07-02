@@ -25,7 +25,6 @@
 #include "nm-types.h"
 #include "nm-object-private.h"
 
-gboolean _nm_ssid_demarshal (GValue *value, GByteArray **dest);
 gboolean _nm_uint_array_demarshal (GValue *value, GArray **dest);
 gboolean _nm_object_array_demarshal (GValue *value,
                                      GPtrArray **dest,

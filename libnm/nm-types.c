@@ -29,59 +29,6 @@
 #include "nm-setting-ip6-config.h"
 
 static gpointer
-_nm_ssid_copy (GByteArray *src)
-{
-	GByteArray *dest;
-
-	dest = g_byte_array_sized_new (src->len);
-	g_byte_array_append (dest, src->data, src->len);
-	return dest;
-}
-
-static void
-_nm_ssid_free (GByteArray *ssid)
-{
-	g_byte_array_free (ssid, TRUE);
-}
-
-GType
-nm_ssid_get_type (void)
-{
-	static GType our_type = 0;
-
-	if (our_type == 0)
-		our_type = g_boxed_type_register_static (g_intern_static_string ("NMSsid"),
-		                                         (GBoxedCopyFunc) _nm_ssid_copy,
-		                                         (GBoxedFreeFunc) _nm_ssid_free);
-	return our_type;
-}
-
-gboolean
-_nm_ssid_demarshal (GValue *value, GByteArray **dest)
-{
-	GByteArray *array;
-
-	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY))
-		return FALSE;
-
-	if (*dest) {
-		g_boxed_free (NM_TYPE_SSID, *dest);
-		*dest = NULL;
-	}
-
-	array = (GByteArray *) g_value_get_boxed (value);
-	if (array && (array->len > 0)) {
-		*dest = g_byte_array_sized_new (array->len);
-		(*dest)->len = array->len;
-		memcpy ((*dest)->data, array->data, array->len);
-	}
-
-	return TRUE;
-}
-
-/*****************************/
-
-static gpointer
 _nm_uint_array_copy (GArray *src)
 {
 	GArray *dest;

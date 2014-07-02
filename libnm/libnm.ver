@@ -862,7 +862,6 @@ global:
 	nm_simple_connection_new;
 	nm_simple_connection_new_clone;
 	nm_simple_connection_new_from_dbus;
-	nm_ssid_get_type;
 	nm_state_get_type;
 	nm_uint_array_get_type;
 	nm_utils_ap_mode_security_valid;

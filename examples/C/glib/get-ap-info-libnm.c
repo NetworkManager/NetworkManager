@@ -79,7 +79,7 @@ show_access_point_info (NMAccessPoint *ap)
 {
 	guint32 flags, wpa_flags, rsn_flags, freq, bitrate;
 	guint8 strength;
-	const GByteArray *ssid; 
+	GBytes *ssid; 
 	const char *hwaddr;
 	NM80211Mode mode;
 	char *freq_str, *ssid_str, *bitrate_str, *strength_str, *wpa_flags_str, *rsn_flags_str;
@@ -97,7 +97,7 @@ show_access_point_info (NMAccessPoint *ap)
 	strength = nm_access_point_get_strength (ap);
 
 	/* Convert to strings */
-	ssid_str = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
+	ssid_str = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid));
 	freq_str = g_strdup_printf ("%u MHz", freq);
 	bitrate_str = g_strdup_printf ("%u Mbit/s", bitrate/1000);
 	strength_str = g_strdup_printf ("%u", strength);
@@ -155,7 +155,7 @@ show_wifi_device_info (NMDevice *device)
 	const char *iface;
 	const char *driver;
 	guint32 speed;
-	const GByteArray *active_ssid; 
+	GBytes *active_ssid; 
 	char *active_ssid_str = NULL;
 	int i;
 
@@ -163,7 +163,8 @@ show_wifi_device_info (NMDevice *device)
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 		if ((active_ap = nm_device_wifi_get_active_access_point (NM_DEVICE_WIFI (device)))) {
 			active_ssid = nm_access_point_get_ssid (active_ap);
-			active_ssid_str = nm_utils_ssid_to_utf8 (active_ssid->data, active_ssid->len);
+			active_ssid_str = nm_utils_ssid_to_utf8 (g_bytes_get_data (active_ssid, NULL),
+			                                         g_bytes_get_size (active_ssid));
 		}
 	}
 
