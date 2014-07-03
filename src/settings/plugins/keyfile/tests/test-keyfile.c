@@ -1376,7 +1376,7 @@ test_write_string_ssid (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -1500,7 +1500,7 @@ test_write_intlist_ssid (void)
 	g_assert_no_error (error);
 	g_assert (reread);
 
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -1651,7 +1651,7 @@ test_write_intlike_ssid (void)
 	g_assert_no_error (error);
 	g_assert (reread);
 
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -1738,7 +1738,7 @@ test_write_intlike_ssid_2 (void)
 	g_assert_no_error (error);
 	g_assert (reread);
 
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -1992,7 +1992,7 @@ test_write_bt_dun_connection (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -2225,7 +2225,7 @@ test_write_gsm_connection (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -3218,7 +3218,7 @@ test_write_new_wired_group_name (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
 	g_assert_no_error (error);
 	g_assert (reread);
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	/* Look at the keyfile itself to ensure we wrote out the new group names and type */
 	kf = g_key_file_new ();
@@ -3348,7 +3348,7 @@ test_write_new_wireless_group_names (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
 	g_assert_no_error (error);
 	g_assert (reread);
-	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	/* Look at the keyfile itself to ensure we wrote out the new group names and type */
 	kf = g_key_file_new ();
