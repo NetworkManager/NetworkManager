@@ -1281,43 +1281,45 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	 * bridge port with all default settings).
 	 */
 	s_con = nm_connection_get_setting_connection (connection);
-	if (s_con) {
-		ctype = nm_setting_connection_get_connection_type (s_con);
-		if (ctype) {
-			setting = nm_connection_get_setting_by_name (connection, ctype);
-			if (!setting) {
-				NMSetting *base_setting;
-				GType base_setting_type;
+	if (!s_con) {
+		s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+		nm_connection_add_setting (connection, NM_SETTING (s_con));
+	}
+	ctype = nm_setting_connection_get_connection_type (s_con);
+	if (ctype) {
+		setting = nm_connection_get_setting_by_name (connection, ctype);
+		if (!setting) {
+			NMSetting *base_setting;
+			GType base_setting_type;
 
-				base_setting_type = nm_setting_lookup_type (ctype);
-				if (base_setting_type != G_TYPE_INVALID) {
-					base_setting = (NMSetting *) g_object_new (base_setting_type, NULL);
-					g_assert (base_setting);
-					nm_connection_add_setting (connection, base_setting);
-				}
+			base_setting_type = nm_setting_lookup_type (ctype);
+			if (base_setting_type != G_TYPE_INVALID) {
+				base_setting = (NMSetting *) g_object_new (base_setting_type, NULL);
+				g_assert (base_setting);
+				nm_connection_add_setting (connection, base_setting);
 			}
 		}
-
-		/* Make sure that we have 'id' even if not explictly specified in the keyfile */
-		if (!nm_setting_connection_get_id (s_con)) {
-			char *base_name;
-
-			base_name = g_path_get_basename (filename);
-			g_object_set (s_con, NM_SETTING_CONNECTION_ID, base_name, NULL);
-			g_free (base_name);
-		}
-
-		/* Make sure that we have 'uuid' even if not explictly specified in the keyfile */
-		if (!nm_setting_connection_get_uuid (s_con)) {
-			char *hashed_uuid;
-
-			hashed_uuid = nm_utils_uuid_generate_from_string (filename);
-			g_object_set (s_con, NM_SETTING_CONNECTION_UUID, hashed_uuid, NULL);
-			g_free (hashed_uuid);
-		}
-
-		ensure_slave_setting (connection);
 	}
+
+	/* Make sure that we have 'id' even if not explictly specified in the keyfile */
+	if (!nm_setting_connection_get_id (s_con)) {
+		char *base_name;
+
+		base_name = g_path_get_basename (filename);
+		g_object_set (s_con, NM_SETTING_CONNECTION_ID, base_name, NULL);
+		g_free (base_name);
+	}
+
+	/* Make sure that we have 'uuid' even if not explictly specified in the keyfile */
+	if (!nm_setting_connection_get_uuid (s_con)) {
+		char *hashed_uuid;
+
+		hashed_uuid = nm_utils_uuid_generate_from_string (filename);
+		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, hashed_uuid, NULL);
+		g_free (hashed_uuid);
+	}
+
+	ensure_slave_setting (connection);
 
 	/* Handle vpn secrets after the 'vpn' setting was read */
 	if (vpn_secrets) {
