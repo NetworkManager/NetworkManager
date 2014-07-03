@@ -406,7 +406,8 @@ bluez_disconnect_cb (GDBusConnection *dbus_connection,
 
 	variant = g_dbus_connection_call_finish (dbus_connection, res, &error);
 	if (!variant) {
-		nm_log_warn (LOGD_BT, "bluez[%s]: failed to disconnect: %s", priv->path, error->message);
+		if (!strstr (error->message, "org.bluez.Error.NotConnected"))
+			nm_log_warn (LOGD_BT, "bluez[%s]: failed to disconnect: %s", priv->path, error->message);
 		g_error_free (error);
 	} else
 		g_variant_unref (variant);
