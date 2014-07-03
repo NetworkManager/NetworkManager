@@ -1280,16 +1280,18 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	s_con = nm_connection_get_setting_connection (connection);
 	if (s_con) {
 		ctype = nm_setting_connection_get_connection_type (s_con);
-		setting = nm_connection_get_setting_by_name (connection, ctype);
-		if (ctype && !setting) {
-			NMSetting *base_setting;
-			GType base_setting_type;
+		if (ctype) {
+			setting = nm_connection_get_setting_by_name (connection, ctype);
+			if (!setting) {
+				NMSetting *base_setting;
+				GType base_setting_type;
 
-			base_setting_type = nm_connection_lookup_setting_type (ctype);
-			if (base_setting_type != G_TYPE_INVALID) {
-				base_setting = (NMSetting *) g_object_new (base_setting_type, NULL);
-				g_assert (base_setting);
-				nm_connection_add_setting (connection, base_setting);
+				base_setting_type = nm_connection_lookup_setting_type (ctype);
+				if (base_setting_type != G_TYPE_INVALID) {
+					base_setting = (NMSetting *) g_object_new (base_setting_type, NULL);
+					g_assert (base_setting);
+					nm_connection_add_setting (connection, base_setting);
+				}
 			}
 		}
 
