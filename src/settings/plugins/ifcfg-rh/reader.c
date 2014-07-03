@@ -3040,10 +3040,12 @@ eap_ttls_reader (const char *eap_method,
 			if (!eap_tls_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
 				goto done;
 			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, "tls", NULL);
-		} else if (!strcmp (*iter, "eap-mschapv2") || !strcmp (*iter, "eap-md5")) {
+		} else if (   !strcmp (*iter, "eap-mschapv2")
+		           || !strcmp (*iter, "eap-md5")
+		           || !strcmp (*iter, "eap-gtc")) {
 			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
 				goto done;
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, (*iter + strlen ("eap-")), NULL);
+			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, (*iter + STRLEN ("eap-")), NULL);
 		} else {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",

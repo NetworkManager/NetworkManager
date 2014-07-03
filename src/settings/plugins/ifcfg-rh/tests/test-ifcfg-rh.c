@@ -2827,6 +2827,41 @@ test_read_write_802_1X_subj_matches (void)
 	g_object_unref (reread);
 }
 
+static void
+test_read_802_1x_ttls_eapgtc (void)
+{
+	NMConnection *connection;
+	NMSetting8021x *s_8021x;
+	GError *error = NULL;
+	gboolean success;
+
+	/* Test that EAP-* inner methods are correctly read into the
+	 * NMSetting8021x::autheap property.
+	 */
+
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-802-1x-ttls-eapgtc",
+	                                   NULL, TYPE_WIRELESS, NULL, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* ===== 802.1x SETTING ===== */
+	s_8021x = nm_connection_get_setting_802_1x (connection);
+	g_assert (s_8021x);
+
+	/* EAP methods */
+	g_assert_cmpint (nm_setting_802_1x_get_num_eap_methods (s_8021x), ==, 1);
+	g_assert_cmpstr (nm_setting_802_1x_get_eap_method (s_8021x, 0), ==, "ttls");
+
+	/* Auth methods */
+	g_assert_cmpstr (nm_setting_802_1x_get_phase2_auth (s_8021x), ==, NULL);
+	g_assert_cmpstr (nm_setting_802_1x_get_phase2_autheap (s_8021x), ==, "gtc");
+
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_ALIASES_GOOD TEST_IFCFG_DIR"/network-scripts/ifcfg-aliasem0"
 
 static void
@@ -14548,6 +14583,7 @@ int main (int argc, char **argv)
 	test_read_wired_8021x_tls_secret_flags (TEST_IFCFG_WIRED_8021X_TLS_ALWAYS,
 	                                        NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED);
 	g_test_add_func (TPATH "802-1x/subj-matches", test_read_write_802_1X_subj_matches);
+	g_test_add_func (TPATH "802-1x/ttls-eapgtc", test_read_802_1x_ttls_eapgtc);
 	test_read_wired_aliases_good ();
 	test_read_wired_aliases_bad_1 ();
 	test_read_wired_aliases_bad_2 ();
