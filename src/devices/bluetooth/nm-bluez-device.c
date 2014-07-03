@@ -761,6 +761,23 @@ adapter5_on_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 }
 
 static void
+_take_one_variant_property (NMBluezDevice *self, const char *property, GVariant *v)
+{
+	if (v) {
+		if (!g_strcmp0 (property, "Address"))
+			_take_variant_property_address (self, v);
+		else if (!g_strcmp0 (property, "Connected"))
+			_take_variant_property_connected (self, v);
+		else if (!g_strcmp0 (property, "Name"))
+			_take_variant_property_name (self, v);
+		else if (!g_strcmp0 (property, "UUIDs"))
+			_take_variant_property_uuids (self, v);
+		else
+			g_variant_unref (v);
+	}
+}
+
+static void
 _set_properties (NMBluezDevice *self, GVariant *properties)
 {
 	GVariantIter i;
@@ -769,20 +786,8 @@ _set_properties (NMBluezDevice *self, GVariant *properties)
 
 	g_object_freeze_notify (G_OBJECT (self));
 	g_variant_iter_init (&i, properties);
-	while (g_variant_iter_next (&i, "{&sv}", &property, &v)) {
-		if (!property) {
-			g_variant_unref (v);
-		} else if (!strcmp (property, "Address")) {
-			_take_variant_property_address (self, v);
-		} else if (!strcmp (property, "Connected")) {
-			_take_variant_property_connected (self, v);
-		} else if (!strcmp (property, "Name")) {
-			_take_variant_property_name (self, v);
-		} else if (!strcmp (property, "UUIDs")) {
-			_take_variant_property_uuids (self, v);
-		} else
-			g_variant_unref (v);
-	}
+	while (g_variant_iter_next (&i, "{&sv}", &property, &v))
+		_take_one_variant_property (self, property, v);
 	g_object_thaw_notify (G_OBJECT (self));
 }
 
@@ -795,10 +800,27 @@ properties_changed (GDBusProxy *proxy,
 	NMBluezDevice *self = NM_BLUEZ_DEVICE (user_data);
 
 	_set_properties (self, changed_properties);
-
 	check_emit_usable (self);
 }
 
+static void
+bluez4_property_changed (GDBusProxy *proxy,
+                         const char *sender,
+                         const char *signal_name,
+                         GVariant   *parameters,
+                         gpointer user_data)
+{
+	NMBluezDevice *self = NM_BLUEZ_DEVICE (user_data);
+
+	if (g_strcmp0 (signal_name, "PropertyChanged") == 0) {
+		const char *property = NULL;
+		GVariant *v = NULL;
+
+		g_variant_get (parameters, "(&sv)", &property, &v);
+		_take_one_variant_property (self, property, v);
+		check_emit_usable (self);
+	}
+}
 
 static void
 get_properties_cb_4 (GObject *source_object, GAsyncResult *res, gpointer user_data)
@@ -842,7 +864,6 @@ get_properties_cb_4 (GObject *source_object, GAsyncResult *res, gpointer user_da
 END:
 	g_object_unref (self);
 }
-
 
 static void
 query_properties (NMBluezDevice *self)
@@ -903,6 +924,11 @@ on_proxy_acquired (GObject *object, GAsyncResult *res, NMBluezDevice *self)
 	} else {
 		g_signal_connect (priv->proxy, "g-properties-changed",
 		                  G_CALLBACK (properties_changed), self);
+		if (priv->bluez_version == 4) {
+			/* Watch for custom Bluez4 PropertyChanged signals */
+			g_signal_connect (priv->proxy, "g-signal",
+			                  G_CALLBACK (bluez4_property_changed), self);
+		}
 
 		query_properties (self);
 	}
@@ -1050,6 +1076,8 @@ finalize (GObject *object)
 	g_free (priv->name);
 	g_free (priv->bt_iface);
 
+	if (priv->proxy)
+		g_signal_handlers_disconnect_by_data (priv->proxy, object);
 	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_bluez_device_parent_class)->finalize (object);
