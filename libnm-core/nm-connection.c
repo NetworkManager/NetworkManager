@@ -677,8 +677,6 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 	gpointer value;
 	GSList *all_settings = NULL, *setting_i;
 	NMSettingVerifyResult success = NM_SETTING_VERIFY_ERROR;
-	NMSetting *base;
-	const char *ctype;
 	GError *normalizable_error = NULL;
 	NMSettingVerifyResult normalizable_error_type = NM_SETTING_VERIFY_SUCCESS;
 
@@ -749,36 +747,6 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 		g_clear_error (&verify_error);
 	}
 	g_slist_free (all_settings);
-
-	/* Now make sure the given 'type' setting can actually be the base setting
-	 * of the connection.  Can't have type=ppp for example.
-	 */
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (!ctype) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
-		                     "connection type missing");
-		goto EXIT;
-	}
-
-	base = nm_connection_get_setting_by_name (connection, ctype);
-	if (!base) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
-		                     "base setting GType not found");
-		goto EXIT;
-	}
-
-	if (!_nm_setting_is_base_type (base)) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
-		             "connection type '%s' is not a base type",
-		             ctype);
-		goto EXIT;
-	}
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
