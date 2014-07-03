@@ -671,16 +671,8 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 	GError *normalizable_error = NULL;
 	NMSettingVerifyResult normalizable_error_type = NM_SETTING_VERIFY_SUCCESS;
 
-	if (error)
-		g_return_val_if_fail (*error == NULL, NM_SETTING_VERIFY_ERROR);
-
-	if (!NM_IS_CONNECTION (connection)) {
-		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_UNKNOWN,
-		                     "invalid connection; failed verification");
-		g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_SETTING_VERIFY_ERROR);
-	}
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_SETTING_VERIFY_ERROR);
+	g_return_val_if_fail (!error || !*error, NM_SETTING_VERIFY_ERROR);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
