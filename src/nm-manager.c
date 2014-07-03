@@ -2129,6 +2129,12 @@ platform_link_added (NMManager *self,
 		}
 	}
 
+	/* Ignore Bluetooth PAN interfaces; they are handled by their NMDeviceBt
+	 * parent and don't get a separate interface.
+	 */
+	if (!strncmp (plink->name, "bnep", STRLEN ("bnep")))
+		return;
+
 	if (device == NULL) {
 		int parent_ifindex = -1;
 		NMDevice *parent;
