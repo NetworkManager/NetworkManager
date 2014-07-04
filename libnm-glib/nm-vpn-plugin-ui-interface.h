@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,8 +15,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2010 Red Hat, Inc.
- * Copyright (C) 2008 Novell, Inc.
+ * Copyright 2008 - 2010 Red Hat, Inc.
+ * Copyright 2008 Novell, Inc.
  */
 
 #ifndef NM_VPN_PLUGIN_UI_INTERFACE_H

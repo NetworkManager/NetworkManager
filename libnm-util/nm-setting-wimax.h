@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2009 Novell, Inc.
+ * Copyright 2009 Novell, Inc.
  */
 
 #ifndef NM_SETTING_WIMAX_H
