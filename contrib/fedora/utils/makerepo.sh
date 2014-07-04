@@ -82,36 +82,61 @@ get_patch_origin() {
     )
 }
 
+print_synopsis() {
+    echo "SYNOPSIS: $(basename "$0") [--dist|-d DIST] [local|--local|-l] [-?|-h|--help|help] [NUM]"
+    echo "  - If [NUM] is omitted, it will revert all patches from the spec file,"
+    echo "    otherwise only the last NUM patches."
+    echo "  - When specifying 'local', it will also call \`$FEDPKG local\` to configure"
+    echo "    and build the output directory."
+    echo "  - '--dist' implies '--local'. This argument is passed to ${FEDPKG}."
+    echo "  TIP: symlink your local git clone of upstream to './.git/local'."
+}
+
 unset REVERT_COUNT
 LOCAL=0
-for ARG; do
+DIST=""
+while [ $# -ne 0 ]; do
+    ARG="$1"
+    shift
     case "$ARG" in
         -h|'-?'|help|--help)
-            echo "SYNOPSIS: $(basename "$0") [local|-l] [-?|-h|--help|help] [NUM]"
-            echo "  - If [NUM] is omitted, it will revert all patches from the spec file,"
-            echo "    otherwise only the last NUM patches."
-            echo "  - When specifying 'local', it will also call \`$FEDPKG local\` to configure"
-            echo "    and build the output directory."
-            echo "  TIP: symlink your local git clone of upstream to './.git/local'."
+            print_synopsis
             exit 0
             ;;
-        local|-l)
+        local|--local|-l)
             LOCAL=1
+            ;;
+        --dist|-d)
+            LOCAL=1
+            DIST="$1"
+            shift
+            if [ "x$DIST" = x ]; then
+                print_synopsis
+                die "--dist needs an argument"
+            fi
             ;;
         *)
             if [ -n "${REVERT_COUNT+x}" ]; then
+                print_synopsis
                 die "invalid argument \"$ARG\""
             fi
             case "$ARG" in
-                ''|*[!0-9]*) die "invalid argument \"$ARG\": should be an integer (number of patches to revert)";;
+                ''|*[!0-9]*)
+                    print_synopsis
+                    die "invalid argument \"$ARG\": should be an integer (number of patches to revert)"
+                    ;;
             esac
             REVERT_COUNT="$ARG"
             ;;
     esac
 done
 
+if [ "x$DIST" != x ]; then
+    DIST=" --dist $DIST"
+fi
+
 # generate the clean dir
-$FEDPKG prep || die "error while \`$FEDPKG prep\`"
+$FEDPKG $DIST prep || die "error while \`$FEDPKG$DIST prep\`"
 
 if [[ "x$(ls -1d ./NetworkManager-[0-9].*/ 2>/dev/null)" != x && -f NetworkManager.spec ]]; then
     DIRNAME="$(basename "$(ls -1d ./NetworkManager-[0-9].*/ || die "could not find directory")")"
@@ -355,7 +380,7 @@ popd
 if [[ $LOCAL != 0 ]]; then
     rm -rf ./.makerepo.git/
     mv "$DIRNAME/.git" ./.makerepo.git/
-    $FEDPKG local
+    $FEDPKG $DIST local
     mv ./.makerepo.git/ "$DIRNAME/.git"
     pushd "$DIRNAME"
         git checkout -- .gitignore
