@@ -1757,12 +1757,12 @@ _nm_client_is_object_path (const char *string)
  * (was set to default value (NULL)).
  *
  * It allows this python code:
- * from gi.repository import NMClient
- * nmclient = NMClient.Client()
+ * from gi.repository import NM
+ * nmclient = NM.Client()
  * print nmclient.get_active_connections()
  *
  * instead of proper
- * nmclient = NMClient.Client().new()
+ * nmclient = NM.Client().new()
  *
  * Note:
  * A nice overview of GObject construction is here:

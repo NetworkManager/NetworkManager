@@ -3,6 +3,8 @@ include $(GLIB_MAKEFILE)
 SUBDIRS = \
 	. \
 	include \
+	libnm-core \
+	libnm \
 	libnm-util \
 	libnm-glib \
 	introspection \

@@ -129,7 +129,7 @@ _ensure_registered (void)
  * @error_quark: the setting's error quark
  *
  * INTERNAL ONLY: registers a setting's internal properties, like its priority
- * and its error quark type, with libnm-util.
+ * and its error quark type, with libnm.
  *
  * A setting's priority should roughly follow the OSI layer model, but it also
  * controls which settings get asked for secrets first.  Thus settings which
@@ -680,7 +680,7 @@ should_compare_prop (NMSetting *setting,
  * @a: a #NMSetting
  * @b: a second #NMSetting to compare with the first
  * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
- * @invert_results: this parameter is used internally by libnm-util and should
+ * @invert_results: this parameter is used internally by libnm and should
  * be set to %FALSE.  If %TRUE inverts the meaning of the #NMSettingDiffResult.
  * @results: (inout) (transfer full) (element-type utf8 guint32): if the
  * settings differ, on return a hash table mapping the differing keys to one or

@@ -25,7 +25,7 @@
 #include "nm-glib-compat.h"
 #include "NetworkManager.h"
 #include "nm-secret-agent.h"
-#include "nm-glib-enum-types.h"
+#include "nm-enum-types.h"
 #include "nm-dbus-helpers-private.h"
 
 static void impl_secret_agent_get_secrets (NMSecretAgent *self,

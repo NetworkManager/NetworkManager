@@ -109,7 +109,7 @@ int main (int argc, char **argv)
 #endif
 
 	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
+		FAIL ("nm-utils-init", "failed to initialize libnm: %s", error->message);
 
 	/* The tests */
 	test_defaults (NM_TYPE_SETTING_CONNECTION, NM_SETTING_CONNECTION_SETTING_NAME);

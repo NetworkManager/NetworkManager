@@ -48,9 +48,9 @@ const NMUtilsPrivateData *nm_utils_get_private (void);
 
 /**
  * NM_UTILS_PRIVATE_CALL:
- * @call: a call to a private libnm-util function
+ * @call: a call to a private libnm function
  *
- * Used to call private libnm-util functions. Eg, if there was a
+ * Used to call private libnm functions. Eg, if there was a
  * private function called nm_foo_get_bar(), you could call it like:
  *
  *   bar = NM_UTILS_PRIVATE_CALL (nm_foo_get_bar (foo, x, y, z));

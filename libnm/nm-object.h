@@ -64,7 +64,7 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Signals */
-	/* The "object-creation-failed" signal is PRIVATE for libnm-glib and
+	/* The "object-creation-failed" signal is PRIVATE for libnm and
 	 * is not meant for any external usage.  It indicates that an error
 	 * occured during creation of an object.
 	 */

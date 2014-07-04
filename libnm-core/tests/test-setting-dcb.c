@@ -296,7 +296,7 @@ test_dcb_bandwidth_sums (void)
 	g_clear_error (&error);
 }
 
-#define TPATH "/libnm-util/settings/dcb/"
+#define TPATH "/libnm/settings/dcb/"
 
 int main (int argc, char **argv)
 {

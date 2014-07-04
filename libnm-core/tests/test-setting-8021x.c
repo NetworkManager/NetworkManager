@@ -417,7 +417,7 @@ int main (int argc, char **argv)
 #endif
 
 	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
+		FAIL ("nm-utils-init", "failed to initialize libnm: %s", error->message);
 
 	/* Test phase1 and phase2 path scheme */
 	test_private_key_import (argv[1], argv[2], NM_SETTING_802_1X_CK_SCHEME_PATH);

@@ -177,7 +177,7 @@ test_device_added (void)
 	                  &info);
 	info.quit_count++;
 
-	/* Wait for libnm-glib to find the device */
+	/* Wait for libnm to find the device */
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
@@ -326,7 +326,7 @@ test_wifi_ap_added_removed (void)
 	                  &info);
 	info.quit_count = 1;
 
-	/* Wait for libnm-glib to find the device */
+	/* Wait for libnm to find the device */
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
@@ -367,7 +367,7 @@ test_wifi_ap_added_removed (void)
 	                  &info);
 	info.quit_count++;
 
-	/* Wait for libnm-glib to find the AP */
+	/* Wait for libnm to find the AP */
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
@@ -406,7 +406,7 @@ test_wifi_ap_added_removed (void)
 	                  &info);
 	info.quit_count++;
 
-	/* Wait for libnm-glib to find the AP */
+	/* Wait for libnm to find the AP */
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
@@ -549,7 +549,7 @@ test_wimax_nsp_added_removed (void)
 	                  &info);
 	info.quit_count = 1;
 
-	/* Wait for libnm-glib to find the device */
+	/* Wait for libnm to find the device */
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
@@ -590,7 +590,7 @@ test_wimax_nsp_added_removed (void)
 	                  &info);
 	info.quit_count++;
 
-	/* Wait for libnm-glib to find the AP */
+	/* Wait for libnm to find the AP */
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
@@ -629,7 +629,7 @@ test_wimax_nsp_added_removed (void)
 	                  &info);
 	info.quit_count++;
 
-	/* Wait for libnm-glib to find the AP */
+	/* Wait for libnm to find the AP */
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
@@ -735,7 +735,7 @@ test_devices_array (void)
 	                  (GCallback) da_device_added_cb,
 	                  &info);
 
-	/* Wait for libnm-glib to find the device */
+	/* Wait for libnm to find the device */
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
@@ -780,7 +780,7 @@ test_devices_array (void)
 	                  &info);
 	info.quit_count = 2;
 
-	/* Wait for libnm-glib to find the device */
+	/* Wait for libnm to find the device */
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
@@ -887,11 +887,11 @@ main (int argc, char **argv)
 
 	loop = g_main_loop_new (NULL, FALSE);
 
-	g_test_add_func ("/libnm-glib/device-added", test_device_added);
-	g_test_add_func ("/libnm-glib/wifi-ap-added-removed", test_wifi_ap_added_removed);
-	g_test_add_func ("/libnm-glib/wimax-nsp-added-removed", test_wimax_nsp_added_removed);
-	g_test_add_func ("/libnm-glib/devices-array", test_devices_array);
-	g_test_add_func ("/libnm-glib/client-manager-running", test_client_manager_running);
+	g_test_add_func ("/libnm/device-added", test_device_added);
+	g_test_add_func ("/libnm/wifi-ap-added-removed", test_wifi_ap_added_removed);
+	g_test_add_func ("/libnm/wimax-nsp-added-removed", test_wimax_nsp_added_removed);
+	g_test_add_func ("/libnm/devices-array", test_devices_array);
+	g_test_add_func ("/libnm/client-manager-running", test_client_manager_running);
 
 	return g_test_run ();
 }

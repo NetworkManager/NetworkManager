@@ -19,8 +19,8 @@
 
 /* D-Bus-related definitions for NetworkManager VPN plugins.
  *
- * Note that although this header is installed as part of libnm-util, it is also
- * used by some external code that does not link to libnm-util.
+ * Note that although this header is installed as part of libnm, it is also
+ * used by some external code that does not link to libnm.
  */
 
 #ifndef NETWORK_MANAGER_VPN_H

@@ -164,6 +164,16 @@ valgrind-*.log
 /src/supplicant-manager/tests/test-supplicant-config
 /src/dhcp-manager/nm-dhcp-helper
 /system-settings/src
+/libnm-core/nm-version.h
+/libnm-core/tests/test-crypto
+/libnm-core/tests/test-settings-defaults
+/libnm-core/tests/test-general
+/libnm-core/tests/test-need-secrets
+/libnm-core/tests/test-secrets
+/libnm-core/tests/test-setting-8021x
+/libnm-core/tests/test-setting-dcb
+/libnm/tests/test-nm-client
+/libnm/tests/test-remote-settings-client
 /libnm-util/nm-version.h
 /libnm-util/nm-setting-docs.xml
 /libnm-util/test-crypto

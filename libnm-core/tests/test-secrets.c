@@ -651,7 +651,7 @@ test_update_secrets_whole_connection_bad_setting (void)
 	g_hash_table_insert (wsec_hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
 
 	/* Steal the wsec setting hash so it's not deallocated, and stuff it back
-	 * in with a different name so we ensure libnm-util is returning the right
+	 * in with a different name so we ensure libnm is returning the right
 	 * error when it finds an entry in the connection hash that doesn't match
 	 * any setting in the connection.
 	 */
@@ -728,7 +728,7 @@ int main (int argc, char **argv)
 #endif
 
 	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
+		FAIL ("nm-utils-init", "failed to initialize libnm: %s", error->message);
 
 	/* The tests */
 	test_need_tls_secrets_path ();

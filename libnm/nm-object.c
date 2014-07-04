@@ -428,7 +428,7 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	 * Indicates that an error occured while creating an #NMObject object
 	 * during property handling of @master_object.
 	 *
-	 * Note: Be aware that the signal is private for libnm-glib's internal
+	 * Note: Be aware that the signal is private for libnm's internal
 	 *       use.
 	 **/
 	signals[OBJECT_CREATION_FAILED] =
@@ -876,7 +876,7 @@ object_created (GObject *obj, const char *path, gpointer user_data)
 		GError *error;
 		error = g_error_new (NM_OBJECT_ERROR,
 		                     NM_OBJECT_ERROR_OBJECT_CREATION_FAILURE,
-		                     "Creating object for path '%s' failed in libnm-glib.",
+		                     "Creating object for path '%s' failed in libnm.",
 		                     path);
 		/* Emit a signal about the error. */
 		g_signal_emit (odata->self, signals[OBJECT_CREATION_FAILED], 0, error, path);
