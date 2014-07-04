@@ -1146,6 +1146,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * all other methods, these DNS servers are used as the only DNS servers for
 	 * this connection.
 	 **/
+	/* plugins docs
+	 * ---keyfile---
+	 * property: dns
+	 * format: list of DNS IP addresses
+	 * description: List of DNS servers.
+	 * example: dns=1.2.3.4;8.8.8.8;8.8.4.4;
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_DNS,
 		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS, "", "",
@@ -1181,6 +1189,16 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * with the "shared", "link-local", or "disabled" methods as addressing is
 	 * either automatic or disabled with these methods.
 	 **/
+	/* plugins docs
+	 * ---keyfile---
+	 * property: addresses
+	 * variable: address1, address2, ...
+	 * format: address/plen[,gateway]
+	 * description: List of static IP addresses.
+	 * example: address1=192.168.100.100/24,192.168.100.1
+	 *   address2=10.1.1.5/24
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
 		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ADDRESSES, "", "",
@@ -1201,6 +1219,16 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * Routes cannot be used with the "shared", "link-local", or "disabled"
 	 * methods because there is no upstream network.
 	 **/
+	/* plugins docs
+	 * ---keyfile---
+	 * property: routes
+	 * variable: route1, route2, ...
+	 * format: route/plen[,gateway,metric]
+	 * description: List of IP routes.
+	 * example: route1=8.8.8.0/24,10.1.1.1,77
+	 *   route2=7.7.0.0/16
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
 		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ROUTES, "", "",

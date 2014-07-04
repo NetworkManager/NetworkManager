@@ -1061,6 +1061,14 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * other methods, these DNS servers are used as the only DNS servers for
 	 * this connection.
 	 **/
+	/* plugins docs
+	 * ---keyfile---
+	 * property: dns
+	 * format: list of DNS IP addresses
+	 * description: List of DNS servers.
+	 * example: dns=2001:4860:4860::8888;2001:4860:4860::8844;
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_DNS,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_DNS, "", "",
@@ -1098,6 +1106,15 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * "shared" or "link-local" methods as the interface is automatically
 	 * assigned an address with these methods.
 	 **/
+	/* plugins docs
+	 * ---keyfile---
+	 * property: addresses
+	 * variable: address1, address2, ...
+	 * format: address/plen[,gateway]
+	 * description: List of static IP addresses.
+	 * example: address1=abbe::cafe/96,abbe::1
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ADDRESSES, "", "",
@@ -1118,6 +1135,15 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * automatic configuration.  Routes cannot be used with the "shared" or
 	 * "link-local" methods because there is no upstream network.
 	 **/
+	/* plugins docs
+	 * ---keyfile---
+	 * property: routes
+	 * variable: route1, route2, ...
+	 * format: route/plen[,gateway,metric]
+	 * description: List of IP routes.
+	 * example: route1=2001:4860:4860::/64,2620:52:0:2219:222:68ff:fe11:5403
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
 		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ROUTES, "", "",

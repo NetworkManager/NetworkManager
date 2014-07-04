@@ -468,6 +468,16 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * Since: 0.9.10
 	 **/
+	/* plugins docs
+	 * ---keyfile---
+	 * property: mac-address
+	 * format: ususal hex-digits-and-colons notation
+	 * description: MAC address in traditional hex-digits-and-colons notation,
+	 *   or semicolon separated list of 6 decimal bytes (obsolete)
+	 * example: mac-address=00:22:68:12:79:A2
+	 *  mac-address=0;34;104;18;121;162;
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
 		 _nm_param_spec_specialized (NM_SETTING_BRIDGE_MAC_ADDRESS, "", "",

@@ -928,6 +928,15 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 * whose permanent MAC address matches. This property does not change the
 	 * MAC address of the device (i.e. MAC spoofing).
 	 **/
+	/* plugins docs
+	 * ---keyfile---
+	 * property: mac-address
+	 * format: ususal hex-digits-and-colons notation
+	 * description: MAC address in traditional hex-digits-and-colons notation
+	 *   (e.g. 00:22:68:12:79:A2), or semicolon separated list of 6 bytes (obsolete)
+	 *   (e.g. 0;34;104;18;121;162)
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
 		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS, "", "",
@@ -942,6 +951,15 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 * If specified, request that the device use this MAC address instead of its
 	 * permanent MAC address.  This is known as MAC cloning or spoofing.
 	 **/
+	/* plugins docs
+	 * ---keyfile---
+	 * property: cloned-mac-address
+	 * format: ususal hex-digits-and-colons notation
+	 * description: Cloned MAC address in traditional hex-digits-and-colons notation
+	 *   (e.g. 00:22:68:12:79:B2), or semicolon separated list of 6 bytes (obsolete)
+	 *   (e.g. 0;34;104;18;121;178).
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_CLONED_MAC_ADDRESS,
 		 _nm_param_spec_specialized (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "", "",
@@ -958,6 +976,14 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 * address is in the standard hex-digits-and-colons notation
 	 * (00:11:22:33:44:55).
 	 **/
+	/* plugins docs
+	 * ---keyfile---
+	 * property: mac-address-blacklist
+	 * format: list of MACs (separated with semicolons)
+	 * description: MAC address blacklist.
+	 * example: mac-address-blacklist= 00:22:68:12:79:A6;00:22:68:12:79:78
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS_BLACKLIST,
 		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, "", "",

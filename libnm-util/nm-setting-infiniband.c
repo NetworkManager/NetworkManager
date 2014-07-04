@@ -398,6 +398,15 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 * permanent MAC address matches. This property does not change the MAC
 	 * address of the device (i.e. MAC spoofing).
 	 **/
+	/* plugins docs
+	 * ---keyfile---
+	 * property: mac-address
+	 * format: ususal hex-digits-and-colons notation
+	 * description: MAC address in traditional hex-digits-and-colons notation, or
+	 *   or semicolon separated list of 20 decimal bytes (obsolete)
+	 * example: mac-address= 80:00:00:6d:fe:80:00:00:00:00:00:00:00:02:55:00:70:33:cf:01
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
 		 _nm_param_spec_specialized (NM_SETTING_INFINIBAND_MAC_ADDRESS, "", "",
