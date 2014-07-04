@@ -52,7 +52,8 @@ This is a new stable release of NetworkManager.  Notable changes include:
 * VPN connection IP details are now available via the D-Bus interface
 * VPN plugins can now request additional/new secrets from the user during the
     connection process
-
+* 'veth' interfaces are now unmanaged by default to cooperate better with
+    external tools
 
 ==============================================
 NetworkManager-0.9.8
