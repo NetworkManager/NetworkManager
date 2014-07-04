@@ -189,7 +189,7 @@ noinst_DATA = nm-setting-docs.xml
 nm-setting-docs.xml: generate-setting-docs.py NetworkManager-1.0.gir NetworkManager-1.0.typelib libnm-util.la
 	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
-	strace -o /tmp/strace.out $(srcdir)/generate-setting-docs.py \
+	$(srcdir)/generate-setting-docs.py \
 		--gir $(builddir)/NetworkManager-1.0.gir \
 		--output $@
 
