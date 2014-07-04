@@ -86,7 +86,7 @@ unset REVERT_COUNT
 LOCAL=0
 for ARG; do
     case "$ARG" in
-        -h|-?|help|--help)
+        -h|'-?'|help|--help)
             echo "SYNOPSIS: $(basename "$0") [local|-l] [-?|-h|--help|help] [NUM]"
             echo "  - If [NUM] is omitted, it will revert all patches from the spec file,"
             echo "    otherwise only the last NUM patches."
