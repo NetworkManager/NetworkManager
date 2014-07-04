@@ -501,7 +501,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 
 		for (i = 0; udis[i] != NULL; i++) {
 			/* Verify unmanaged specification and add it to the list */
-			if (!strncmp (udis[i], "mac:", 4) && nm_utils_hwaddr_valid (udis[i] + 4)) {
+			if (!strncmp (udis[i], "mac:", 4) && nm_utils_hwaddr_valid (udis[i] + 4, -1)) {
 				specs = g_slist_append (specs, udis[i]);
 			} else if (!strncmp (udis[i], "interface-name:", 15) && nm_utils_iface_valid_name (udis[i] + 15)) {
 				specs = g_slist_append (specs, udis[i]);

@@ -494,7 +494,7 @@ test_connection_match_wired (void)
 	copy = nm_connection_duplicate (orig);
 	connections = g_slist_append (connections, copy);
 
-	mac = nm_utils_hwaddr_atoba ("52:54:00:ab:db:23", ARPHRD_ETHER);
+	mac = nm_utils_hwaddr_atoba ("52:54:00:ab:db:23", ETH_ALEN);
 	s_wired = nm_connection_get_setting_wired (orig);
 	g_assert (s_wired);
 	g_object_set (G_OBJECT (s_wired),

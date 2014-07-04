@@ -506,7 +506,7 @@ read_mac_address (const char *conn_name, GByteArray **array, GError **error)
 	if (!value || !strlen (value))
 		return TRUE;
 
-	*array = nm_utils_hwaddr_atoba (value, ARPHRD_ETHER);
+	*array = nm_utils_hwaddr_atoba (value, ETH_ALEN);
 	if (!*array) {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
 					 "The MAC address '%s' was invalid.", value);
@@ -982,7 +982,7 @@ make_wireless_connection_setting (const char *conn_name,
 	if (value) {
 		GByteArray *bssid;
 
-		bssid = nm_utils_hwaddr_atoba (value, ARPHRD_ETHER);
+		bssid = nm_utils_hwaddr_atoba (value, ETH_ALEN);
 		if (!bssid) {
 			g_set_error (error, ifnet_plugin_error_quark (), 0,
 						 "Invalid BSSID '%s'", value);
@@ -2293,7 +2293,7 @@ write_wireless_setting (NMConnection *connection,
 	ifnet_set_data (ssid_str, "mac", NULL);
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
 	if (mac) {
-		tmp = nm_utils_hwaddr_ntoa_len (mac->data, mac->len);
+		tmp = nm_utils_hwaddr_ntoa (mac->data, mac->len);
 		ifnet_set_data (ssid_str, "mac", tmp);
 		g_free (tmp);
 	}
@@ -2322,7 +2322,7 @@ write_wireless_setting (NMConnection *connection,
 	wpa_set_data (ssid_str, "bssid", NULL);
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
 	if (bssid) {
-		tmp = nm_utils_hwaddr_ntoa_len (bssid->data, bssid->len);
+		tmp = nm_utils_hwaddr_ntoa (bssid->data, bssid->len);
 		wpa_set_data (ssid_str, "bssid", tmp);
 		g_free (tmp);
 	}
@@ -2361,7 +2361,7 @@ write_wired_setting (NMConnection *connection,
 	ifnet_set_data (conn_name, "mac", NULL);
 	mac = nm_setting_wired_get_mac_address (s_wired);
 	if (mac) {
-		tmp = nm_utils_hwaddr_ntoa_len (mac->data, mac->len);
+		tmp = nm_utils_hwaddr_ntoa (mac->data, mac->len);
 		ifnet_set_data (conn_name, "mac", tmp);
 		g_free (tmp);
 	}

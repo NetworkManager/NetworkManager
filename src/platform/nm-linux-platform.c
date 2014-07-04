@@ -2516,7 +2516,7 @@ link_set_address (NMPlatform *platform, int ifindex, gconstpointer address, size
 	rtnl_link_set_addr (change, nladdr);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_PLATFORM)) {
-		char *mac = nm_utils_hwaddr_ntoa_len (address, length);
+		char *mac = nm_utils_hwaddr_ntoa (address, length);
 
 		debug ("link: change %d: address %s (%lu bytes)", ifindex, mac, (unsigned long) length);
 		g_free (mac);

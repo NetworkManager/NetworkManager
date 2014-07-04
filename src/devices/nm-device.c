@@ -6927,7 +6927,7 @@ nm_device_update_hw_address (NMDevice *self)
 			memcpy (priv->hw_addr, hwaddr, hwaddrlen);
 
 			_LOGD (LOGD_HW | LOGD_DEVICE, "hardware address now %s",
-			       (tmp_str = nm_utils_hwaddr_ntoa_len (hwaddr, hwaddrlen)));
+			       (tmp_str = nm_utils_hwaddr_ntoa (hwaddr, hwaddrlen)));
 			g_object_notify (G_OBJECT (self), NM_DEVICE_HW_ADDRESS);
 		}
 	} else {
@@ -6959,7 +6959,7 @@ nm_device_set_hw_addr (NMDevice *self, const guint8 *addr,
 		return TRUE;
 	}
 
-	mac_str = nm_utils_hwaddr_ntoa_len (addr, len);
+	mac_str = nm_utils_hwaddr_ntoa (addr, len);
 
 	/* Can't change MAC address while device is up */
 	nm_device_take_down (self, FALSE);
@@ -7030,7 +7030,7 @@ spec_match_list (NMDevice *self, const GSList *specs)
 		return TRUE;
 
 	if (priv->hw_addr_len) {
-		hwaddr_str = nm_utils_hwaddr_ntoa_len (priv->hw_addr, priv->hw_addr_len);
+		hwaddr_str = nm_utils_hwaddr_ntoa (priv->hw_addr, priv->hw_addr_len);
 		matched = nm_match_spec_hwaddr (specs, hwaddr_str);
 		g_free (hwaddr_str);
 	}
@@ -7386,7 +7386,7 @@ set_property (GObject *object, guint prop_id,
 		}
 
 		priv->hw_addr_len = count;
-		if (!nm_utils_hwaddr_aton_len (hw_addr, priv->hw_addr, priv->hw_addr_len)) {
+		if (!nm_utils_hwaddr_aton (hw_addr, priv->hw_addr, priv->hw_addr_len)) {
 			g_warning ("Could not parse hw-address '%s'", hw_addr);
 			memset (priv->hw_addr, 0, sizeof (priv->hw_addr));
 		}
@@ -7519,7 +7519,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_HW_ADDRESS:
 		if (priv->hw_addr_len)
-			g_value_take_string (value, nm_utils_hwaddr_ntoa_len (priv->hw_addr, priv->hw_addr_len));
+			g_value_take_string (value, nm_utils_hwaddr_ntoa (priv->hw_addr, priv->hw_addr_len));
 		else
 			g_value_set_string (value, NULL);
 		break;

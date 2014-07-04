@@ -316,8 +316,7 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	if (NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->spec_match_list (device, specs))
 		return TRUE;
 
-	hwaddr_str = nm_utils_hwaddr_ntoa (nm_device_get_hw_address (device, NULL),
-	                                   ARPHRD_INFINIBAND);
+	hwaddr_str = nm_utils_hwaddr_ntoa (nm_device_get_hw_address (device, NULL), INFINIBAND_ALEN);
 
 	/* InfiniBand hardware address matches only need to match the last
 	 * 8 bytes. In string format, that means we skip the first 36

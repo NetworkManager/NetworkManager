@@ -176,7 +176,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->freq);
 		break;
 	case PROP_HW_ADDRESS:
-		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->address, ARPHRD_ETHER));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->address, ETH_ALEN));
 		break;
 	case PROP_MODE:
 		g_value_set_uint (value, priv->mode);

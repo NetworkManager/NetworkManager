@@ -635,13 +635,13 @@ periodic_update (NMDeviceWifi *self, NMAccessPoint *ignore_ap)
 
 		if (new_ap) {
 			new_bssid = nm_ap_get_address (new_ap);
-			new_addr = nm_utils_hwaddr_ntoa (new_bssid, ARPHRD_ETHER);
+			new_addr = nm_utils_hwaddr_ntoa (new_bssid, ETH_ALEN);
 			new_ssid = nm_ap_get_ssid (new_ap);
 		}
 
 		if (priv->current_ap) {
 			old_bssid = nm_ap_get_address (priv->current_ap);
-			old_addr = nm_utils_hwaddr_ntoa (old_bssid, ARPHRD_ETHER);
+			old_addr = nm_utils_hwaddr_ntoa (old_bssid, ETH_ALEN);
 			old_ssid = nm_ap_get_ssid (priv->current_ap);
 		}
 
@@ -2571,7 +2571,7 @@ update_initial_hw_address (NMDevice *device)
 	memcpy (priv->initial_hw_addr, nm_device_get_hw_address (device, NULL), ETH_ALEN);
 
 	_LOGD (LOGD_DEVICE | LOGD_ETHER, "read initial MAC address %s",
-	       (mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ARPHRD_ETHER)));
+	       (mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ETH_ALEN)));
 	g_free (mac_str);
 }
 
@@ -3268,7 +3268,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PERM_HW_ADDRESS:
-		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ARPHRD_ETHER));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (priv->perm_hw_addr, ETH_ALEN));
 		break;
 	case PROP_MODE:
 		g_value_set_uint (value, priv->mode);

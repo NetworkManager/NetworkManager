@@ -1814,7 +1814,7 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *connection,
 		return;  /* Already in the list */
 
 	/* Add the new BSSID; let the hash take ownership of the allocated BSSID string */
-	bssid_str = nm_utils_hwaddr_ntoa (seen_bssid, ARPHRD_ETHER);
+	bssid_str = nm_utils_hwaddr_ntoa (seen_bssid, ETH_ALEN);
 	g_hash_table_insert (priv->seen_bssids, mac_dup (seen_bssid), bssid_str);
 
 	/* Build up a list of all the BSSIDs in string form */

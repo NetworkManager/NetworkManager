@@ -1049,7 +1049,7 @@ set_link_status (NMDeviceWimax *self, WIMAX_API_LINK_STATUS_INFO_EX *link_status
 		conv_rssi = sdk_rssi_to_dbm (link_status->RSSI);
 		conv_cinr = sdk_cinr_to_db (link_status->CINR);
 		conv_tx_pow = sdk_tx_pow_to_dbm (link_status->txPWR);
-		new_bsid = nm_utils_hwaddr_ntoa_len (link_status->bsId, 6);
+		new_bsid = nm_utils_hwaddr_ntoa (link_status->bsId, 6);
 	}
 
 	if (priv->center_freq != center_freq) {

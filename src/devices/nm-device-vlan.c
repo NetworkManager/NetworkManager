@@ -95,7 +95,7 @@ update_initial_hw_address (NMDevice *dev)
 	memcpy (priv->initial_hw_addr, nm_device_get_hw_address (dev, NULL), ETH_ALEN);
 
 	_LOGD (LOGD_DEVICE | LOGD_VLAN, "read initial MAC address %s",
-	       (mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ARPHRD_ETHER)));
+	       (mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ETH_ALEN)));
 }
 
 static guint32

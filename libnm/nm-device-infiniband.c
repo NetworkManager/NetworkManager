@@ -130,7 +130,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 
 	hwaddr_str = nm_device_infiniband_get_hw_address (NM_DEVICE_INFINIBAND (device));
 	if (hwaddr_str) {
-		hwaddr = nm_utils_hwaddr_aton (hwaddr_str, ARPHRD_INFINIBAND, hwaddr_buf);
+		hwaddr = nm_utils_hwaddr_aton (hwaddr_str, hwaddr_buf, INFINIBAND_ALEN);
 		if (!hwaddr) {
 			g_set_error (error, NM_DEVICE_INFINIBAND_ERROR, NM_DEVICE_INFINIBAND_ERROR_INVALID_DEVICE_MAC,
 			             "Invalid device MAC address.");

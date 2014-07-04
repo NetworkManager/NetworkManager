@@ -1910,7 +1910,7 @@ test_hwaddr_aton_ether_normal (void)
 	guint8 buf[100];
 	guint8 expected[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
 
-	g_assert (nm_utils_hwaddr_aton ("00:11:22:33:44:55", ARPHRD_ETHER, buf) != NULL);
+	g_assert (nm_utils_hwaddr_aton ("00:11:22:33:44:55", buf, ETH_ALEN) != NULL);
 	g_assert (memcmp (buf, expected, sizeof (expected)) == 0);
 }
 
@@ -1923,7 +1923,7 @@ test_hwaddr_aton_ib_normal (void)
 		0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89,
 		0x90 };
 
-	g_assert (nm_utils_hwaddr_aton (source, ARPHRD_INFINIBAND, buf) != NULL);
+	g_assert (nm_utils_hwaddr_aton (source, buf, INFINIBAND_ALEN) != NULL);
 	g_assert (memcmp (buf, expected, sizeof (expected)) == 0);
 }
 
@@ -1933,7 +1933,7 @@ test_hwaddr_aton_no_leading_zeros (void)
 	guint8 buf[100];
 	guint8 expected[ETH_ALEN] = { 0x00, 0x1A, 0x2B, 0x03, 0x44, 0x05 };
 
-	g_assert (nm_utils_hwaddr_aton ("0:1a:2B:3:44:5", ARPHRD_ETHER, buf) != NULL);
+	g_assert (nm_utils_hwaddr_aton ("0:1a:2B:3:44:5", buf, ETH_ALEN) != NULL);
 	g_assert (memcmp (buf, expected, sizeof (expected)) == 0);
 }
 
@@ -1942,7 +1942,7 @@ test_hwaddr_aton_malformed (void)
 {
 	guint8 buf[100];
 
-	g_assert (nm_utils_hwaddr_aton ("0:1a:2B:3:a@%%", ARPHRD_ETHER, buf) == NULL);
+	g_assert (nm_utils_hwaddr_aton ("0:1a:2B:3:a@%%", buf, ETH_ALEN) == NULL);
 }
 
 static void
@@ -2658,6 +2658,7 @@ int main (int argc, char **argv)
 	test_hwaddr_aton_ib_normal ();
 	test_hwaddr_aton_no_leading_zeros ();
 	test_hwaddr_aton_malformed ();
+
 	test_ip4_prefix_to_netmask ();
 	test_ip4_netmask_to_prefix ();
 

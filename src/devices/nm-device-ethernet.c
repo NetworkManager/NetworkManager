@@ -396,7 +396,7 @@ update_initial_hw_address (NMDevice *dev)
 		memcpy (priv->initial_hw_addr, mac, ETH_ALEN);
 
 	_LOGD (LOGD_DEVICE | LOGD_ETHER, "read initial MAC address %s",
-	       (tmp_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ARPHRD_ETHER)));
+	       (tmp_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ETH_ALEN)));
 }
 
 static guint32
@@ -1657,7 +1657,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PERM_HW_ADDRESS:
-		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ARPHRD_ETHER));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->perm_hw_addr, ETH_ALEN));
 		break;
 	case PROP_SPEED:
 		g_value_set_uint (value, priv->speed);

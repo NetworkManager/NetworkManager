@@ -203,7 +203,7 @@ bind_device_to_connection (SCPluginIfupdown *self,
 		return;
 	}
 
-	mac_address = nm_utils_hwaddr_atoba (address, ARPHRD_ETHER);
+	mac_address = nm_utils_hwaddr_atoba (address, ETH_ALEN);
 	if (!mac_address) {
 		nm_log_warn (LOGD_SETTINGS, "failed to parse MAC address '%s' for %s",
 		             address, iface);

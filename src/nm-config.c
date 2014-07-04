@@ -278,7 +278,7 @@ nm_config_set_ethernet_no_auto_default (NMConfig *config, NMDevice *device)
 	}
 
 	hwaddr = nm_device_get_hw_address (device, &hwaddr_len);
-	hwaddr_str = nm_utils_hwaddr_ntoa_len (hwaddr, hwaddr_len);
+	hwaddr_str = nm_utils_hwaddr_ntoa (hwaddr, hwaddr_len);
 	g_string_append (updated, hwaddr_str);
 	g_free (hwaddr_str);
 	g_string_append_c (updated, '\n');

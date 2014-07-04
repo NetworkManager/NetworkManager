@@ -507,12 +507,11 @@ nm_setting_wireless_add_mac_blacklist_item (NMSettingWireless *setting, const ch
 {
 	NMSettingWirelessPrivate *priv;
 	GSList *iter;
-	guint8 buf[32];
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), FALSE);
 	g_return_val_if_fail (mac != NULL, FALSE);
 
-	if (!nm_utils_hwaddr_aton (mac, ARPHRD_ETHER, buf))
+	if (!nm_utils_hwaddr_valid (mac, ETH_ALEN))
 		return FALSE;
 
 	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
@@ -566,12 +565,11 @@ nm_setting_wireless_remove_mac_blacklist_item_by_value (NMSettingWireless *setti
 {
 	NMSettingWirelessPrivate *priv;
 	GSList *iter;
-	guint8 buf[32];
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), FALSE);
 	g_return_val_if_fail (mac != NULL, FALSE);
 
-	if (!nm_utils_hwaddr_aton (mac, ARPHRD_ETHER, buf))
+	if (!nm_utils_hwaddr_valid (mac, ETH_ALEN))
 		return FALSE;
 
 	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);

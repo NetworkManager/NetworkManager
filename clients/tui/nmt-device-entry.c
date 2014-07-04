@@ -141,14 +141,15 @@ device_entry_parse (NmtDeviceEntry  *deventry,
 		words[1][len - 2] = '\0';
 	}
 
-	if (   nm_utils_hwaddr_aton (words[0], priv->arptype, buf)
+	len = nm_utils_hwaddr_len (priv->arptype);
+	if (   nm_utils_hwaddr_aton (words[0], buf, len)
 	    && (!words[1] || nm_utils_iface_valid_name (words[1]))) {
 		*mac_address = words[0];
 		*interface_name = NULL;
 		g_free (words);
 		return TRUE;
 	} else if (   nm_utils_iface_valid_name (words[0])
-	           && (!words[1] || nm_utils_hwaddr_aton (words[1], priv->arptype, buf))) {
+	           && (!words[1] || nm_utils_hwaddr_aton (words[1], buf, len))) {
 		*interface_name = words[0];
 		*mac_address = NULL;
 		g_free (words);
@@ -258,7 +259,7 @@ update_entry (NmtDeviceEntry *deventry)
 	}
 
 	if (priv->mac_address) {
-		mac = nm_utils_hwaddr_ntoa (priv->mac_address->data, priv->arptype);
+		mac = nm_utils_hwaddr_ntoa (priv->mac_address->data, priv->mac_address->len);
 		mac_device = find_device_by_mac_address (deventry, mac);
 	} else {
 		mac = NULL;
@@ -363,7 +364,7 @@ entry_text_changed (GObject    *object,
 	if (mac) {
 		GByteArray *mac_address;
 
-		mac_address = nm_utils_hwaddr_atoba (mac, priv->arptype);
+		mac_address = nm_utils_hwaddr_atoba (mac, nm_utils_hwaddr_len (priv->arptype));
 		nmt_device_entry_set_mac_address (deventry, mac_address);
 		g_byte_array_unref (mac_address);
 		g_free (mac);
