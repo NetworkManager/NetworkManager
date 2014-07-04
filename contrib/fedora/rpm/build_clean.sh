@@ -7,13 +7,14 @@ die() {
 }
 
 usage() {
-    echo "USAGE: $0 [-h|--help|-?|help] [-f|--force] [-c|--clean]"
+    echo "USAGE: $0 [-h|--help|-?|help] [-f|--force] [-c|--clean] [-Q|--quick]"
     echo
     echo "Does all the steps from a clean working directory to an RPM of NetworkManager"
     echo
     echo "Options:"
     echo "  --force: force build, even if working directory is not clean and has local modifications"
     echo "  --clean: run \`git-clean -fdx :/\` before build"
+    echo "  --quick: only run \`make dist\` instead of \`make distcheck\`"
 }
 
 
@@ -28,6 +29,7 @@ cd "$GITDIR" || die "could not change to $GITDIR"
 
 IGNORE_DIRTY=0
 GIT_CLEAN=0
+QUICK=0
 
 for A; do
     case "$A" in
@@ -40,6 +42,9 @@ for A; do
             ;;
         -c|--clean)
             GIT_CLEAN=1
+            ;;
+        -Q|--quick)
+            QUICK=1
             ;;
         *)
             usage
@@ -66,9 +71,14 @@ fi
 
 ./autogen.sh --enable-gtk-doc || die "Error autogen.sh"
 
-make -j 10 || die "Error make"
-
-make distcheck || die "Error make distcheck"
+if [[ $QUICK == 1 ]]; then
+    make -C libnm-util || die "Error make -C libnm-util"
+    make -C libnm-glib || die "Error make -C libnm-glib"
+    make dist || die "Error make distcheck"
+else
+    make -j 10 || die "Error make"
+    make distcheck || die "Error make distcheck"
+fi
 
 "$SCRIPTDIR"/build.sh
 
