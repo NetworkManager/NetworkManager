@@ -13,7 +13,11 @@
 %define glib2_version	2.32.0
 %define wireless_tools_version 1:28-0pre9
 %define libnl3_version 3.2.7
+
 %define ppp_version 2.4.5
+%if (0%{?fedora} && 0%{?fedora} > 20)
+%define ppp_version 2.4.6
+%endif
 
 %define snapshot %{nil}
 %define git_sha __COMMIT__
