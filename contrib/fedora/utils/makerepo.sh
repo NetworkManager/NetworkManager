@@ -255,6 +255,7 @@ pushd "$DIRNAME"
 # libnl3
 1a510c57e905c4beb06122b9688162c82d9b044f  d1111959652bd6ad87b2071f61c8c20c *libnl-doc-3.2.24.tar.gz
 c4d846f239036c05f516c1c71789e980b64b1e70  2e1c889494d274aca24ce5f6a748e66e *libnl-3.2.22.tar.gz
+0446731124bea8c1b447cc52a5ad5ae5750810ff  636769646f5b81b0caead81eab151b45 *libnl-3.2.25-rc1.tar.gz
 
 # NetworkManager-libreswan, NetworkManager-openswan
 64c90fd50e57854a3fff3784b92814ffa8159b05  6a373868f85ac3b7c953f7fd6c76e637 *NetworkManager-openswan-0.9.8.0.tar.xz
@@ -269,6 +270,7 @@ EOF
                 fi
                 if grep -q "$MATCH" ../sources; then
                     RELEASE_BASE_COMMIT="$(echo "$KNOWN_BASE_COMMIT" | awk '{print $1}')"
+                    break
                 fi
             done
             IFS="$OLDIFS"
