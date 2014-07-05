@@ -29,7 +29,7 @@
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
 
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 
 #define DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH    (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH))
 
@@ -74,7 +74,7 @@ int main (int argc, char *argv[])
 	/* Get system bus */
 	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
 
-	/* Create a D-Bus proxy; NM_DBUS_* defined in NetworkManager.h */
+	/* Create a D-Bus proxy; NM_DBUS_* defined in nm-dbus-interface.h */
 	proxy = dbus_g_proxy_new_for_name (bus,
 	                                   NM_DBUS_SERVICE,
 	                                   NM_DBUS_PATH_SETTINGS,

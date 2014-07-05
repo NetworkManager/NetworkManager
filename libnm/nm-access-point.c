@@ -32,7 +32,7 @@
 #include <nm-utils.h>
 
 #include "nm-access-point.h"
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-types-private.h"
 #include "nm-object-private.h"
 

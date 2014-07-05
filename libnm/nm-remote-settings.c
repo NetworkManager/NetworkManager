@@ -20,7 +20,7 @@
  */
 
 #include <string.h>
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <nm-connection.h>
 
 #include "nm-dbus-glib-types.h"

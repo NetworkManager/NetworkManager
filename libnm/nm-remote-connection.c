@@ -23,7 +23,7 @@
 #include <gio/gio.h>
 #include <glib/gi18n.h>
 
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <nm-utils.h>
 #include <nm-setting-connection.h>
 #include "nm-remote-connection.h"

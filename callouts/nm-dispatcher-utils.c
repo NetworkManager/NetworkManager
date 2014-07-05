@@ -23,7 +23,7 @@
 
 #include <glib-object.h>
 
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <nm-dbus-glib-types.h>
 #include <nm-connection.h>
 #include <nm-setting-ip4-config.h>

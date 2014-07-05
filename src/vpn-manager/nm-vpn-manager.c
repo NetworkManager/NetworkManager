@@ -27,7 +27,7 @@
 #include "nm-vpn-connection.h"
 #include "nm-setting-vpn.h"
 #include "nm-dbus-manager.h"
-#include "NetworkManagerVPN.h"
+#include "nm-vpn-dbus-interface.h"
 #include "nm-enum-types.h"
 #include "nm-logging.h"
 

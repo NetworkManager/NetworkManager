@@ -24,7 +24,7 @@
 #include <string.h>
 #include <netinet/ether.h>
 
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-vpn.h>

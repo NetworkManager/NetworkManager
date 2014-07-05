@@ -28,7 +28,7 @@
 
 #include <QtCore/QDebug>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 
 
 void listConnections(QDBusInterface& interface) {

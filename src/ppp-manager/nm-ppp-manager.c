@@ -41,7 +41,7 @@
 #endif
 #include <linux/if_ppp.h>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "NetworkManagerUtils.h"
 #include "nm-glib-compat.h"
 #include "nm-ppp-manager.h"

@@ -27,8 +27,8 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "NetworkManager.h"
-#include "NetworkManagerVPN.h"
+#include "nm-dbus-interface.h"
+#include "nm-vpn-dbus-interface.h"
 #include "nm-vpn-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-vpn.h"

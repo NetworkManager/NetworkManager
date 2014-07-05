@@ -25,7 +25,7 @@
  * g++ -Wall `pkg-config --libs --cflags QtCore QtDBus QtNetwork` `pkg-config --cflags libnm` change-ipv4-addresses.cpp -o change-ipv4-addresses
  *
  * You don't need to have NetworkManager devel package installed; you can just
- * grab NetworkManager.h and put it in the path
+ * grab nm-dbus-interface.h and put it in the path
  */
 
 #include <QtDBus/QDBusConnection>
@@ -40,7 +40,7 @@
 
 #include "arpa/inet.h"
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 
 typedef QMap<QString, QMap<QString, QVariant> > Connection;
 Q_DECLARE_METATYPE(Connection)

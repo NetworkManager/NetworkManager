@@ -25,7 +25,7 @@
 #include <net/ethernet.h>
 #include <glib.h>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 
 typedef struct WifiData WifiData;
 

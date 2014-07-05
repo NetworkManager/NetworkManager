@@ -21,7 +21,7 @@
 #include <glib.h>
 #include <string.h>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-dbus-manager.h"
 #include "nm-dhcp6-config.h"
 #include "nm-dhcp6-config-glue.h"

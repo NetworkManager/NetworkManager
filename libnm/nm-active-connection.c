@@ -21,7 +21,7 @@
 
 #include <string.h>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-active-connection.h"
 #include "nm-object-private.h"
 #include "nm-types-private.h"

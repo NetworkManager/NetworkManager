@@ -21,7 +21,7 @@
 #include <glib.h>
 #include <string.h>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-dbus-manager.h"
 #include "nm-bluez4-adapter.h"
 #include "nm-bluez-device.h"

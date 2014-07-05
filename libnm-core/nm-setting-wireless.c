@@ -26,8 +26,8 @@
 #include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
-#include "NetworkManager.h"
 #include "nm-setting-wireless.h"
+#include "nm-dbus-interface.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"

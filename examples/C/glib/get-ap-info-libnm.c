@@ -33,7 +33,7 @@
 #include <nm-device.h>
 #include <nm-device-wifi.h>
 #include <nm-access-point.h>
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <nm-utils.h>
 
 /* Convert flags to string */

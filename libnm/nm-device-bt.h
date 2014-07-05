@@ -22,7 +22,7 @@
 #ifndef NM_DEVICE_BT_H
 #define NM_DEVICE_BT_H
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-device.h"
 
 G_BEGIN_DECLS

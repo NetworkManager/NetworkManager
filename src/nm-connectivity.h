@@ -25,7 +25,7 @@
 #include <glib-object.h>
 #include <gio/gio.h>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-types.h"
 
 #define NM_TYPE_CONNECTIVITY            (nm_connectivity_get_type ())

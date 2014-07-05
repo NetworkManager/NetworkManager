@@ -24,7 +24,7 @@
 #include <glib/gi18n.h>
 #include <gudev/gudev.h>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-adsl.h"
 #include "nm-device-wifi.h"

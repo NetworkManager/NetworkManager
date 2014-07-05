@@ -26,7 +26,7 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include <NetworkManager.h>
+#include "nm-dbus-interface.h"
 #include "nm-client.h"
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"

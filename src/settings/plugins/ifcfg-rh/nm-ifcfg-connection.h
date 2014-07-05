@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <nm-settings-connection.h>
 
 #define NM_TYPE_IFCFG_CONNECTION            (nm_ifcfg_connection_get_type ())

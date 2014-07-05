@@ -23,8 +23,8 @@
  * used by some external code that does not link to libnm.
  */
 
-#ifndef NETWORK_MANAGER_H
-#define NETWORK_MANAGER_H
+#ifndef NM_DBUS_INTERFACE_H
+#define NM_DBUS_INTERFACE_H
 
 #include "nm-version.h"
 
@@ -607,4 +607,4 @@ typedef enum /*< flags >*/ {
 	NM_SECRET_AGENT_CAPABILITY_LAST = NM_SECRET_AGENT_CAPABILITY_VPN_HINTS
 } NMSecretAgentCapabilities;
 
-#endif /* NETWORK_MANAGER_H */
+#endif /* NM_DBUS_INTERFACE_H */

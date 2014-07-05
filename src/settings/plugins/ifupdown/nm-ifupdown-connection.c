@@ -23,7 +23,7 @@
 
 #include <string.h>
 #include <glib/gstdio.h>
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <nm-utils.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-settings-connection.h>

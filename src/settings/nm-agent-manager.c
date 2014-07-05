@@ -26,7 +26,7 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-logging.h"
 #include "nm-agent-manager.h"
 #include "nm-secret-agent.h"

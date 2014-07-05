@@ -21,7 +21,7 @@
 #include <glib.h>
 #include "nm-types.h"
 #include "nm-active-connection.h"
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-logging.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-dbus-manager.h"

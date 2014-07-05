@@ -32,7 +32,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <nm-connection.h>
 #include <nm-setting-8021x.h>
 #include <nm-setting-bluetooth.h>

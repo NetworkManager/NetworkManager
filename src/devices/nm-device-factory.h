@@ -24,7 +24,7 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-device.h"
 
 /* WARNING: this file is private API between NetworkManager and its internal

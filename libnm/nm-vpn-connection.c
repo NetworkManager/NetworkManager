@@ -21,7 +21,7 @@
 
 #include <string.h>
 #include "nm-vpn-connection.h"
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-utils.h"
 #include "nm-object-private.h"
 #include "nm-active-connection.h"

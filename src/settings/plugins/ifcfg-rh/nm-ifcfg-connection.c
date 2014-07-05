@@ -24,7 +24,7 @@
 
 #include <glib/gstdio.h>
 
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>

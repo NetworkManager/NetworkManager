@@ -20,7 +20,7 @@
  */
 
 #include "nm-wimax-nsp.h"
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-wimax.h"
 #include "nm-wimax-nsp-glue.h"

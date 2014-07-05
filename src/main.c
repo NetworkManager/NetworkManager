@@ -40,7 +40,7 @@
 #include <sys/resource.h>
 
 #include "gsystem-local-alloc.h"
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
 #include "nm-linux-platform.h"

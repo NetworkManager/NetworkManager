@@ -31,7 +31,7 @@
 
 #include <QtCore/QDebug>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 
 typedef QMap<QString, QMap<QString, QVariant> > Connection;
 Q_DECLARE_METATYPE(Connection)

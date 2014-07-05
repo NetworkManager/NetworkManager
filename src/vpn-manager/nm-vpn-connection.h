@@ -24,7 +24,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include "NetworkManagerVPN.h"
+#include "nm-vpn-dbus-interface.h"
 #include "nm-device.h"
 #include "nm-auth-subject.h"
 #include "nm-active-connection.h"

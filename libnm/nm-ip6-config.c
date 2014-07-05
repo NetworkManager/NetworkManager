@@ -23,7 +23,7 @@
 
 #include <nm-setting-ip6-config.h>
 #include "nm-ip6-config.h"
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-types-private.h"
 #include "nm-object-private.h"
 #include "nm-utils.h"

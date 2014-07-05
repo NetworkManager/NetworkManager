@@ -31,7 +31,7 @@
 
 #include <nm-connection.h>
 #include <nm-setting-connection.h>
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <nm-utils.h>
 #include <nm-remote-settings.h>
 

@@ -23,7 +23,7 @@
 
 #include <glib.h>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "wifi-utils.h"
 
 struct WifiData {
