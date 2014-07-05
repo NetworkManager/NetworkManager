@@ -1027,6 +1027,15 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * not done. This property must be set.  Note: the "shared" method is not
 	 * yet supported.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: method
+	 * variable: IPV6INIT, IPV6FORWARDING, IPV6_AUTOCONF, DHCPV6C
+	 * default:  IPV6INIT=yes; IPV6FORWARDING=no; IPV6_AUTOCONF=!IPV6FORWARDING, DHCPV6=no
+	 * description: Method used for IPv4 protocol configuration.
+	 *   ignore ~ IPV6INIT=no; auto ~ IPV6_AUTOCONF=yes; dhcp ~ IPV6_AUTOCONF=no and DHCPV6C=yes
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_METHOD,
 		 g_param_spec_string (NM_SETTING_IP6_CONFIG_METHOD, "", "",
@@ -1043,6 +1052,13 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: dhcp-hostname
+	 * variable: DHCP_HOSTNAME
+	 * description: Hostname to send the DHCP server.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_DHCP_HOSTNAME,
 		 g_param_spec_string (NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME, "", "",
@@ -1067,6 +1083,13 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * format: list of DNS IP addresses
 	 * description: List of DNS servers.
 	 * example: dns=2001:4860:4860::8888;2001:4860:4860::8844;
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: dns
+	 * variable: DNS1, DNS2, ...
+	 * format:   string
+	 * description: List of DNS servers. NetworkManager uses the variables both
+	 *   for IPv4 and IPv6.
 	 * ---end---
 	 */
 	g_object_class_install_property
@@ -1114,6 +1137,11 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * description: List of static IP addresses.
 	 * example: address1=abbe::cafe/96,abbe::1
 	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: addresses
+	 * variable: IPV6ADDR, IPV6_DEFAULTGW, IPV6ADDR_SECONDARIES
+	 * description: List of static IP addresses.
+	 * ---end---
 	 */
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
@@ -1143,6 +1171,12 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * description: List of IP routes.
 	 * example: route1=2001:4860:4860::/64,2620:52:0:2219:222:68ff:fe11:5403
 	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: routes
+	 * variable: (none)
+	 * description: List of static routes. They are not stored in ifcfg-* file,
+	 *   but in route6-* file instead in the form of command line for 'ip route add'.
+	 * ---end---
 	 */
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
@@ -1159,6 +1193,14 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * %TRUE, automatically configured routes are ignored and only routes
 	 * specified in the #NMSettingIP6Config:routes property, if any, are used.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: ignore-auto-routes
+	 * variable: IPV6_PEERROUTES(+)
+	 * default: yes
+	 * description: IPV6_PEERROUTES has the opposite meaning as 'ignore-auto-routes' property.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_ROUTES,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES, "", "",
@@ -1176,6 +1218,14 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * #NMSettingIP6Config:dns and #NMSettingIP6Config:dns-search properties, if
 	 * any, are used.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: ignore-auto-dns
+	 * variable: IPV6_PEERDNS(+)
+	 * default: yes
+	 * description: IPV6_PEERDNS has the opposite meaning as 'ignore-auto-dns' property.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_DNS,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS, "", "",
@@ -1191,6 +1241,16 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * meaning it will never be assigned the default IPv6 route by
 	 * NetworkManager.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: never-default
+	 * variable: IPV6_DEFROUTE(+), (and IPV6_DEFAULTGW, IPV6_DEFAULTDEV in /etc/sysconfig/network)
+	 * default: IPV6_DEFROUTE=yes (when no variable specified)
+	 * description: IPV6_DEFROUTE=no tells NetworkManager that this connection
+	 *   should not be assigned the default IPv6 route. IPV6_DEFROUTE has the opposite
+	 *   meaning as 'never-default' property.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_NEVER_DEFAULT,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, "", "",
@@ -1209,6 +1269,14 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * network configuration to succeed if IPv6 configuration fails but IPv4
 	 * configuration completes successfully.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: may-fail
+	 * variable: IPV6_FAILURE_FATAL(+)
+	 * default: no
+	 * description: IPV6_FAILURE_FATAL has the opposite meaning as 'may-fail' property.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MAY_FAIL,
 		 g_param_spec_boolean (NM_SETTING_IP6_CONFIG_MAY_FAIL, "", "",
@@ -1228,6 +1296,13 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * 1: enabled (prefer public address), 2: enabled (prefer temporary
 	 * addresses).
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: ip6-privacy
+	 * variable: IPV6_PRIVACY, IPV6_PRIVACY_PREFER_PUBLIC_IP(+)
+	 * description: Configure IPv6 Privacy Extensions for SLAAC (RFC4941).
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_IP6_PRIVACY,
 		 g_param_spec_int (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, "", "",

@@ -451,6 +451,13 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: interface-name
+	 * variable: DEVICE
+	 * description: Bridge interface name.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE_NAME,
 		 g_param_spec_string (NM_SETTING_BRIDGE_INTERFACE_NAME, "", "",
@@ -477,6 +484,13 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 * example: mac-address=00:22:68:12:79:A2
 	 *  mac-address=0;34;104;18;121;162;
 	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: mac-address
+	 * variable: MACADDR(+)
+	 * description: MAC address of the bridge. Note that this requires a recent
+	 *   kernel support, originally introduced in 3.15 upstream kernel)
+	 *   MACADDR for bridges is an NM extension.
+	 * ---end---
 	 */
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
@@ -493,6 +507,14 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: stp
+	 * variable: STP
+	 * default: no
+	 * description: Span tree protocol participation.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_STP,
 		 g_param_spec_boolean (NM_SETTING_BRIDGE_STP, "", "",
@@ -511,6 +533,15 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: priority
+	 * variable: BRIDGING_OPTS: priority=
+	 * values: 0 - 32768
+	 * default: 32768
+	 * description: STP priority.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_PRIORITY, "", "",
@@ -527,6 +558,15 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: forward-delay
+	 * variable: DELAY
+	 * values: 2 - 30
+	 * default: 15
+	 * description: STP forwarding delay.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_FORWARD_DELAY,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_FORWARD_DELAY, "", "",
@@ -543,6 +583,15 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: hello-time
+	 * variable: BRIDGING_OPTS: hello_time=
+	 * values: 1 - 10
+	 * default: 2
+	 * description: STP hello time.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_HELLO_TIME,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_HELLO_TIME, "", "",
@@ -559,6 +608,15 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: max-age
+	 * variable: BRIDGING_OPTS: max_age=
+	 * values: 6 - 40
+	 * default: 20
+	 * description: STP maximum message age.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MAX_AGE,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_MAX_AGE, "", "",
@@ -575,6 +633,15 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 *
 	 * Since: 0.9.8
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: ageing-time
+	 * variable: BRIDGING_OPTS: ageing_time=
+	 * values: 0 - 1000000
+	 * default: 300
+	 * description: Ethernet MAC ageing time.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_AGEING_TIME,
 		 g_param_spec_uint (NM_SETTING_BRIDGE_AGEING_TIME, "", "",

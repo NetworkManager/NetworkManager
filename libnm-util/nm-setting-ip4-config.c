@@ -1128,6 +1128,16 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * connection.  "disabled" means IPv4 will not be used on this connection.
 	 * This property must be set.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: method
+	 * variable: BOOTPROTO
+	 * format:   string
+	 * values:   none, dhcp (bootp), static, ibft, autoip, shared
+	 * default:  none
+	 * description: Method used for IPv4 protocol configuration.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_METHOD,
 		 g_param_spec_string (NM_SETTING_IP4_CONFIG_METHOD, "", "",
@@ -1153,6 +1163,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * description: List of DNS servers.
 	 * example: dns=1.2.3.4;8.8.8.8;8.8.4.4;
 	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: dns
+	 * variable: DNS1, DNS2, ...
+	 * format:   string
+	 * description: List of DNS servers. Even if NetworkManager supports many DNS
+	 *   servers, initscripts and resolver only care about the first three, usually.
+	 * example: DNS1=1.2.3.4 DNS2=10.0.0.254 DNS3=8.8.8.8
+	 * ---end---
 	 */
 	g_object_class_install_property
 		(object_class, PROP_DNS,
@@ -1170,6 +1188,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * there is no upstream network.  In all other methods, these search domains
 	 * are used as the only search domains for this connection.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: dns-search
+	 * variable: DOMAIN
+	 * format:   string (space-separated domains)
+	 * description: List of DNS search domains.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
 		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS_SEARCH, "", "",
@@ -1197,6 +1223,12 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * description: List of static IP addresses.
 	 * example: address1=192.168.100.100/24,192.168.100.1
 	 *   address2=10.1.1.5/24
+	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: addresses
+	 * variable: IPADDR, PREFIX, GATEWAY, IPADDR1, PREFIX1, GATEWAY1, ...
+	 * description: List of static IP addresses.
+	 * example: IPADDR 10.5.5.23 PREFIX=24 GATEWAY=10.5.5.1
 	 * ---end---
 	 */
 	g_object_class_install_property
@@ -1228,6 +1260,12 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * example: route1=8.8.8.0/24,10.1.1.1,77
 	 *   route2=7.7.0.0/16
 	 * ---end---
+	 * ---ifcfg-rh---
+	 * property: routes
+	 * variable: ADDRESS1, NETMASK1, GATEWAY1, METRIC1, ...
+	 * description: List of static routes. They are not stored in ifcfg-* file,
+	 *   but in route-* file instead.
+	 * ---end---
 	 */
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
@@ -1244,6 +1282,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * automatically configured routes are ignored and only routes specified in
 	 * the #NMSettingIP4Config:routes property, if any, are used.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: ignore-auto-routes
+	 * variable: PEERROUTES(+)
+	 * default: yes
+	 * description: PEERROUTES has the opposite meaning as 'ignore-auto-routes' property.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_ROUTES,
 		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, "", "",
@@ -1261,6 +1307,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * #NMSettingIP4Config:dns and #NMSettingIP4Config:dns-search properties, if
 	 * any, are used.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: ignore-auto-dns
+	 * variable: PEERDNS
+	 * default: yes
+	 * description: PEERDNS has the opposite meaning as 'ignore-auto-dns' property.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_AUTO_DNS,
 		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, "", "",
@@ -1275,6 +1329,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * A string sent to the DHCP server to identify the local machine which the
 	 * DHCP server may use to customize the DHCP lease and options.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: dhcp-client-id
+	 * variable: DHCP_CLIENT_ID(+)
+	 * description: A string sent to the DHCP server to identify the local machine.
+	 * example: DHCP_CLIENT_ID=ax-srv-1
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_DHCP_CLIENT_ID,
 		 g_param_spec_string (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, "", "",
@@ -1291,6 +1353,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * #NMSettingIP4Config:dhcp-hostname property is empty and this property is
 	 * %TRUE, the current persistent hostname of the computer is sent.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: dhcp-send-hostname
+	 * variable: DHCP_SEND_HOSTNAME(+)
+	 * default: yes
+	 * description: Whether DHCP_HOSTNAME should be sent to the DHCP server.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_DHCP_SEND_HOSTNAME,
 		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME, "", "",
@@ -1305,6 +1375,13 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * If the #NMSettingIP4Config:dhcp-send-hostname property is %TRUE, then the
 	 * specified name will be sent to the DHCP server when acquiring a lease.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: dhcp-hostname
+	 * variable: DHCP_HOSTNAME
+	 * description: Hostname to send to the DHCP server.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_DHCP_HOSTNAME,
 		 g_param_spec_string (NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, "", "",
@@ -1319,6 +1396,16 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * If %TRUE, this connection will never be the default IPv4 connection,
 	 * meaning it will never be assigned the default route by NetworkManager.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: never-default
+	 * variable: DEFROUTE (GATEWAYDEV in /etc/sysconfig/network)
+	 * default: yes
+	 * description: DEFROUTE=no tells NetworkManager that this connection
+	 *   should not be assigned the default route. DEFROUTE has the opposite
+	 *   meaning as 'never-default' property.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_NEVER_DEFAULT,
 		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, "", "",
@@ -1337,6 +1424,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 * network configuration to succeed if IPv4 configuration fails but IPv6
 	 * configuration completes successfully.
 	 **/
+	/* plugins docs
+	 * ---ifcfg-rh---
+	 * property: may-fail
+	 * variable: IPV4_FAILURE_FATAL(+)
+	 * default: no
+	 * description: IPV4_FAILURE_FATAL has the opposite meaning as 'may-fail' property.
+	 * ---end---
+	 */
 	g_object_class_install_property
 		(object_class, PROP_MAY_FAIL,
 		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_MAY_FAIL, "", "",
