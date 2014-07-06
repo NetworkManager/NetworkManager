@@ -23,6 +23,10 @@
 #ifndef NM_SETTING_WIRELESS_H
 #define NM_SETTING_WIRELESS_H
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include <nm-setting.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-dbus-interface.h>

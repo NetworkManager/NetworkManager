@@ -21,6 +21,10 @@
 #ifndef NM_DEVICE_OLPC_MESH_H
 #define NM_DEVICE_OLPC_MESH_H
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 

@@ -15,6 +15,7 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm-core \
 	-DG_LOG_DOMAIN=\""NetworkManager-wifi"\" \
+	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(DBUS_CFLAGS)
 

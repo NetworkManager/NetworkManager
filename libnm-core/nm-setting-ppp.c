@@ -29,7 +29,6 @@
  * SECTION:nm-setting-ppp
  * @short_description: Describes connection properties for devices/networks
  * that require PPP to deliver IP capability
- * @include: nm-setting-ppp.h
  *
  * The #NMSettingPpp object is a #NMSetting subclass that describes properties
  * necessary for connection to networks that require PPP transport, like PPPoE

@@ -33,9 +33,6 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <nm-client.h>
-#include <nm-setting-connection.h>
-#include <nm-remote-settings.h>
 
 #include "nmcli.h"
 #include "utils.h"

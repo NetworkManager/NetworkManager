@@ -11,6 +11,7 @@ AM_CPPFLAGS= \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/src/platform \
 	-DG_LOG_DOMAIN=\""NetworkManager-ifnet"\" \
+	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(CHECK_CFLAGS) \
 	$(GLIB_CFLAGS) \

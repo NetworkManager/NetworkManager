@@ -22,6 +22,10 @@
 #ifndef NM_SETTING_IP6_CONFIG_H
 #define NM_SETTING_IP6_CONFIG_H
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include <arpa/inet.h>
 
 #include "nm-setting.h"

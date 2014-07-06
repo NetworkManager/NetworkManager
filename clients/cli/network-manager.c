@@ -25,8 +25,6 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <nm-client.h>
-#include <nm-setting-connection.h>
 
 #include "utils.h"
 #include "network-manager.h"

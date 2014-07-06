@@ -30,7 +30,6 @@
 /**
  * SECTION:nm-setting-gsm
  * @short_description: Describes GSM/3GPP-based mobile broadband properties
- * @include: nm-setting-gsm.h
  *
  * The #NMSettingGsm object is a #NMSetting subclass that describes
  * properties that allow connections to 3GPP-based mobile broadband

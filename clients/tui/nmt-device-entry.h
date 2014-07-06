@@ -21,8 +21,7 @@
 
 #include "nmt-page-grid.h"
 
-#include <nm-connection.h>
-#include <nm-device.h>
+#include <NetworkManager.h>
 
 G_BEGIN_DECLS
 

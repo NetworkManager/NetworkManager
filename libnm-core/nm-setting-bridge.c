@@ -36,7 +36,6 @@
 /**
  * SECTION:nm-setting-bridge
  * @short_description: Describes connection properties for bridges
- * @include: nm-setting-bridge.h
  *
  * The #NMSettingBridge object is a #NMSetting subclass that describes properties
  * necessary for bridging connections.

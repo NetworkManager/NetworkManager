@@ -33,7 +33,6 @@
 /**
  * SECTION:nm-setting-team
  * @short_description: Describes connection properties for teams
- * @include: nm-setting-team.h
  *
  * The #NMSettingTeam object is a #NMSetting subclass that describes properties
  * necessary for team connections.

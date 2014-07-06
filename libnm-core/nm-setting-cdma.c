@@ -29,7 +29,6 @@
 /**
  * SECTION:nm-setting-cdma
  * @short_description: Describes CDMA-based mobile broadband properties
- * @include: nm-setting-cdma.h
  *
  * The #NMSettingCdma object is a #NMSetting subclass that describes
  * properties that allow connections to IS-95-based mobile broadband

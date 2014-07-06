@@ -22,6 +22,10 @@
 #ifndef NM_WIMAX_NSP_H
 #define NM_WIMAX_NSP_H
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include <glib.h>
 #include <glib-object.h>
 #include <nm-dbus-interface.h>

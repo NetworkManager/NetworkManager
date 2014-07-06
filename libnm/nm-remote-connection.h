@@ -22,6 +22,10 @@
 #ifndef __NM_REMOTE_CONNECTION_H__
 #define __NM_REMOTE_CONNECTION_H__
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 

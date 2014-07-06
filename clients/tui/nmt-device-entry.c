@@ -41,9 +41,7 @@
 #include <linux/if_arp.h>
 
 #include <glib/gi18n-lib.h>
-#include <nm-device.h>
-#include <nm-device-infiniband.h>
-#include <nm-utils.h>
+#include <NetworkManager.h>
 
 #include "nmtui.h"
 #include "nmt-device-entry.h"

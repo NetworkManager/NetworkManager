@@ -21,6 +21,10 @@
 #ifndef NM_SETTING_TEAM_PORT_H
 #define NM_SETTING_TEAM_PORT_H
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include <nm-setting.h>
 
 G_BEGIN_DECLS

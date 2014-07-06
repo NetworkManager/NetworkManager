@@ -9,6 +9,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/libnm \
 	-I$(top_builddir)/libnm \
 	-DG_LOG_DOMAIN=\""libnm"\" \
+	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE
 
 include $(top_srcdir)/libnm-core/Makefile.libnm-core
@@ -26,6 +27,7 @@ libnm_la_CFLAGS = \
 libnmincludedir = $(includedir)/libnm
 
 libnminclude_HEADERS =			\
+	NetworkManager.h		\
 	nm-access-point.h		\
 	nm-active-connection.h		\
 	nm-client.h			\

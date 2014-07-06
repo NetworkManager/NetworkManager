@@ -22,6 +22,10 @@
 #ifndef NM_OBJECT_H
 #define NM_OBJECT_H
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>

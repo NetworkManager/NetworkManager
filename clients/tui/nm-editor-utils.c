@@ -28,16 +28,7 @@
 #include "config.h"
 
 #include <glib/gi18n.h>
-#include <nm-utils.h>
-
-#include <nm-device-bond.h>
-#include <nm-device-bridge.h>
-#include <nm-device-team.h>
-#include <nm-device-ethernet.h>
-#include <nm-device-infiniband.h>
-#include <nm-device-team.h>
-#include <nm-device-vlan.h>
-#include <nm-device-wifi.h>
+#include <NetworkManager.h>
 
 #include "nm-editor-utils.h"
 #if 0

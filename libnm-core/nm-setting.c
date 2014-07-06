@@ -32,7 +32,6 @@
 /**
  * SECTION:nm-setting
  * @short_description: Describes related configuration information
- * @include: nm-setting.h
  *
  * Each #NMSetting contains properties that describe configuration that applies
  * to a specific network layer (like IPv4 or IPv6 configuration) or device type

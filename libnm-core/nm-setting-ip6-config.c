@@ -33,7 +33,6 @@
 /**
  * SECTION:nm-setting-ip6-config
  * @short_description: Describes IPv6 addressing, routing, and name service properties
- * @include: nm-setting-ip6-config.h
  *
  * The #NMSettingIP6Config object is a #NMSetting subclass that describes
  * properties related to IPv6 addressing, routing, and Domain Name Service

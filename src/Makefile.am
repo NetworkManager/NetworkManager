@@ -41,6 +41,7 @@ AM_CPPFLAGS =				\
 	-I$(top_builddir)/libnm-core	\
 	-I$(top_srcdir)/callouts	\
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION	\
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE
 
 # add each subdirectory that contains a libNM source file. $(sort) is being used

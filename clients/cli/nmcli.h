@@ -20,10 +20,7 @@
 #ifndef NMC_NMCLI_H
 #define NMC_NMCLI_H
 
-#include <glib.h>
-
-#include <nm-client.h>
-#include <nm-remote-settings.h>
+#include <NetworkManager.h>
 
 /* nmcli exit codes */
 typedef enum {

@@ -21,6 +21,10 @@
 #ifndef NM_SECRET_AGENT_H
 #define NM_SECRET_AGENT_H
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include <nm-connection.h>
 
 G_BEGIN_DECLS

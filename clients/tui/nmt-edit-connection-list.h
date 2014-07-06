@@ -21,7 +21,7 @@
 
 #include "nmt-newt.h"
 
-#include <nm-remote-connection.h>
+#include <NetworkManager.h>
 
 G_BEGIN_DECLS
 

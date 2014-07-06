@@ -37,7 +37,6 @@
  * SECTION:nm-setting-wireless-security
  * @short_description: Describes connection properties for Wi-Fi networks that
  * use WEP, LEAP, WPA or WPA2/RSN security
- * @include: nm-setting-wireless-security.h
  *
  * The #NMSettingWirelessSecurity object is a #NMSetting subclass that describes
  * properties necessary for connection to encrypted Wi-Fi networks.

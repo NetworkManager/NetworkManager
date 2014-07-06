@@ -30,7 +30,6 @@
 /**
  * SECTION:nm-setting-adsl
  * @short_description: Describes ADSL-based properties
- * @include: nm-setting-adsl.h
  *
  * The #NMSettingAdsl object is a #NMSetting subclass that describes
  * properties of ADSL connections.

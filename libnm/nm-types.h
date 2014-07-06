@@ -21,6 +21,10 @@
 #ifndef NM_TYPES_H
 #define NM_TYPES_H
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include <glib.h>
 #include <glib-object.h>
 

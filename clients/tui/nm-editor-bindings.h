@@ -19,10 +19,7 @@
 #ifndef NM_EDITOR_BINDINGS_H
 #define NM_EDITOR_BINDINGS_H
 
-#include <glib-object.h>
-#include <nm-connection.h>
-#include <nm-setting-wireless-security.h>
-#include <nm-setting-vlan.h>
+#include <NetworkManager.h>
 
 G_BEGIN_DECLS
 

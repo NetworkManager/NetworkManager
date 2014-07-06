@@ -7,6 +7,7 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/libnm-core \
 	-I${srcdir}/.. \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(LIBNDP_CFLAGS)

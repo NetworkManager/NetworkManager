@@ -28,13 +28,7 @@
  */
 
 #include <glib.h>
-#include <nm-remote-settings.h>
-
-#include <nm-connection.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-utils.h>
+#include <NetworkManager.h>
 
 static void
 added_cb (NMRemoteSettings *settings,

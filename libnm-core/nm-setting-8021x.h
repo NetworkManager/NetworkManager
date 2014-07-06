@@ -23,6 +23,10 @@
 #ifndef NM_SETTING_8021X_H
 #define NM_SETTING_8021X_H
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include <nm-setting.h>
 
 G_BEGIN_DECLS

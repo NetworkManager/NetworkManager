@@ -23,6 +23,10 @@
 #ifndef NM_CONNECTION_H
 #define NM_CONNECTION_H
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include <glib.h>
 #include <glib-object.h>
 #include <nm-setting.h>

@@ -35,7 +35,6 @@
 /**
  * SECTION:nm-setting-ip4-config
  * @short_description: Describes IPv4 addressing, routing, and name service properties
- * @include: nm-setting-ip4-config.h
  *
  * The #NMSettingIP4Config object is a #NMSetting subclass that describes
  * properties related to IPv4 addressing, routing, and Domain Name Service

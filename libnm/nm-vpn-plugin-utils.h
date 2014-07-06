@@ -21,6 +21,10 @@
 #ifndef NM_VPN_PLUGIN_UTILS_H
 #define NM_VPN_PLUGIN_UTILS_H
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include <glib.h>
 #include <nm-setting.h>
 

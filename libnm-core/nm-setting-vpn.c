@@ -34,7 +34,6 @@
 /**
  * SECTION:nm-setting-vpn
  * @short_description: Describes connection properties for Virtual Private Networks
- * @include: nm-setting-vpn.h
  *
  * The #NMSettingVpn object is a #NMSetting subclass that describes properties
  * necessary for connection to Virtual Private Networks.  NetworkManager uses

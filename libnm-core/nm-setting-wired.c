@@ -36,7 +36,6 @@
 /**
  * SECTION:nm-setting-wired
  * @short_description: Describes connection properties for Ethernet-based networks
- * @include: nm-setting-wired.h
  *
  * The #NMSettingWired object is a #NMSetting subclass that describes properties
  * necessary for connection to Ethernet networks.

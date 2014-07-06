@@ -34,7 +34,6 @@
 /**
  * SECTION:nm-setting-bluetooth
  * @short_description: Describes Bluetooth connection properties
- * @include: nm-setting-bluetooth.h
  *
  * The #NMSettingBluetooth object is a #NMSetting subclass that describes
  * properties necessary for connection to devices that provide network

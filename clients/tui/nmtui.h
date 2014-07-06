@@ -19,8 +19,7 @@
 #ifndef NMTUI_H
 #define NMTUI_H
 
-#include <nm-client.h>
-#include <nm-remote-settings.h>
+#include <NetworkManager.h>
 
 G_BEGIN_DECLS
 

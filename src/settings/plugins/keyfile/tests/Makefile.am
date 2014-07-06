@@ -15,6 +15,7 @@ AM_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
 	-DG_LOG_DOMAIN=\""NetworkManager-keyfile"\" \
+	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DTEST_KEYFILES_DIR=\"$(abs_srcdir)/keyfiles\" \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/keyfiles\" \

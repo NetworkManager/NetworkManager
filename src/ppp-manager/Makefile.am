@@ -5,6 +5,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/libnm-core \
 	-I${top_builddir}/libnm-core \
 	-DG_LOG_DOMAIN=\""nm-pppd-plugin"\" \
+	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS)

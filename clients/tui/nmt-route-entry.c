@@ -33,8 +33,7 @@
 #include <stdlib.h>
 
 #include <glib/gi18n-lib.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
+#include <NetworkManager.h>
 
 #include "nmt-route-entry.h"
 #include "nmt-ip-entry.h"

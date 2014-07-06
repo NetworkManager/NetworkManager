@@ -27,7 +27,6 @@
 /**
  * SECTION:nm-setting-generic
  * @short_description: Describes connection properties for generic devices
- * @include: nm-setting-generic.h
  *
  * The #NMSettingGeneric object is a #NMSetting subclass that describes
  * optional properties that apply to "generic" devices (ie, devices that

@@ -35,8 +35,6 @@
 #include <dbus/dbus-glib.h>
 #include <glib/gi18n-lib.h>
 
-#include <nm-utils.h>
-
 #include "nmt-secret-agent.h"
 #include "nmt-newt.h"
 

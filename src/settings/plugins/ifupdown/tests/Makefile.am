@@ -8,6 +8,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/settings \
 	-I$(srcdir)/../ \
 	-DG_LOG_DOMAIN=\""NetworkManager-ifupdown"\" \
+	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	-DTEST_ENI_DIR=\"$(abs_srcdir)\"

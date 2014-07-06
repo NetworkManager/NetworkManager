@@ -30,7 +30,6 @@
  * SECTION:nm-setting-serial
  * @short_description: Describes connection properties for devices that use
  * serial communications
- * @include: nm-setting-serial.h
  *
  * The #NMSettingSerial object is a #NMSetting subclass that describes
  * properties necessary for connections that may use serial communications,

@@ -25,7 +25,6 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <nm-utils.h>
 
 #include "utils.h"
 #include "common.h"

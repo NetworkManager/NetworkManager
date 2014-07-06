@@ -58,7 +58,6 @@
 /**
  * SECTION:nm-connection
  * @short_description: Describes a connection to specific network or provider
- * @include: nm-connection.h
  *
  * An #NMConnection describes all the settings and configuration values that
  * are necessary to configure network devices for operation on a specific

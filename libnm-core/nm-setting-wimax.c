@@ -32,7 +32,6 @@
 /**
  * SECTION:nm-setting-wimax
  * @short_description: Describes 802.16e Mobile WiMAX connection properties
- * @include: nm-setting-wimax.h
  *
  * The #NMSettingWimax object is a #NMSetting subclass that describes properties
  * necessary for connection to 802.16e Mobile WiMAX networks.

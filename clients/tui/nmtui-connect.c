@@ -32,7 +32,6 @@
 #include <stdlib.h>
 
 #include <glib/gi18n-lib.h>
-#include <nm-utils.h>
 
 #include "nmt-newt.h"
 

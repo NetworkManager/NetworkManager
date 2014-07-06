@@ -40,7 +40,7 @@
 
 #include <glib/gi18n.h>
 
-#include "nm-client.h"
+#include <NetworkManager.h>
 
 #define PROGRESS_STEPS 15
 #define WAIT_STARTUP_TAG "wait-startup"

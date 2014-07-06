@@ -30,7 +30,6 @@
 /**
  * SECTION:nm-setting-pppoe
  * @short_description: Describes PPPoE connection properties
- * @include: nm-setting-pppoe.h
  *
  * The #NMSettingPppoe object is a #NMSetting subclass that describes
  * properties necessary for connection to networks that require PPPoE connections

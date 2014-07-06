@@ -29,7 +29,7 @@
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
 
-#include <nm-dbus-interface.h>
+#include <NetworkManager.h>
 
 #define DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH    (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH))
 

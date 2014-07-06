@@ -22,14 +22,6 @@
 #ifndef NMC_COMMON_H
 #define NMC_COMMON_H
 
-#include <glib.h>
-
-#include <nm-ip4-config.h>
-#include <nm-ip6-config.h>
-#include <nm-dhcp4-config.h>
-#include <nm-dhcp6-config.h>
-#include <nm-device.h>
-
 #include "nmcli.h"
 
 gboolean print_ip4_config (NMIP4Config *cfg4, NmCli *nmc, const char *group_prefix, const char *one_field);

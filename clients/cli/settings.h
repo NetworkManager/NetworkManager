@@ -20,30 +20,6 @@
 #ifndef NMC_SETTINGS_H
 #define NMC_SETTINGS_H
 
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-adsl.h>
-#include <nm-setting-8021x.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-wireless-security.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
-#include <nm-setting-serial.h>
-#include <nm-setting-ppp.h>
-#include <nm-setting-pppoe.h>
-#include <nm-setting-gsm.h>
-#include <nm-setting-cdma.h>
-#include <nm-setting-bluetooth.h>
-#include <nm-setting-olpc-mesh.h>
-#include <nm-setting-vpn.h>
-#include <nm-setting-wimax.h>
-#include <nm-setting-infiniband.h>
-#include <nm-setting-bond.h>
-#include <nm-setting-bridge.h>
-#include <nm-setting-bridge-port.h>
-#include <nm-setting-vlan.h>
-#include <nm-setting-dcb.h>
-
 #include "nmcli.h"
 #include "utils.h"
 

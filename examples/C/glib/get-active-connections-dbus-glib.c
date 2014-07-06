@@ -30,12 +30,7 @@
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 
-#include <nm-connection.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-dbus-interface.h>
-#include <nm-utils.h>
+#include <NetworkManager.h>
 
 #define DBUS_TYPE_G_MAP_OF_VARIANT          (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
 #define DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT   (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_MAP_OF_VARIANT))

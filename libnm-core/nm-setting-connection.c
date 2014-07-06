@@ -32,7 +32,6 @@
 /**
  * SECTION:nm-setting-connection
  * @short_description: Describes general connection properties
- * @include: nm-setting-connection.h
  *
  * The #NMSettingConnection object is a #NMSetting subclass that describes
  * properties that apply to all #NMConnection objects, regardless of what type

@@ -33,10 +33,7 @@
 #include <glib.h>
 #include <glib/gi18n-lib.h>
 
-#include <nm-client.h>
-#include <nm-connection.h>
-#include <nm-remote-settings.h>
-#include <nm-utils.h>
+#include <NetworkManager.h>
 
 #include "nmt-newt.h"
 #include "nm-editor-bindings.h"

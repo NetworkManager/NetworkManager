@@ -31,7 +31,6 @@
 
 #include <glib.h>
 #include <glib/gi18n-lib.h>
-#include <nm-utils.h>
 
 #include "nmt-page-wifi.h"
 #include "nmt-mac-entry.h"

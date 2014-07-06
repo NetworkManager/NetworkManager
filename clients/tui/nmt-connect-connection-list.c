@@ -29,9 +29,7 @@
 #include <stdlib.h>
 #include <glib/gi18n-lib.h>
 
-#include <nm-access-point.h>
-#include <nm-device-wifi.h>
-#include <nm-utils.h>
+#include <NetworkManager.h>
 
 #include "nmtui.h"
 #include "nmt-connect-connection-list.h"

@@ -21,6 +21,10 @@
 #ifndef NM_DEVICE_BRIDGE_H
 #define NM_DEVICE_BRIDGE_H
 
+#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
+#error "Only <NetworkManager.h> can be included directly."
+#endif
+
 #include "nm-device.h"
 
 G_BEGIN_DECLS

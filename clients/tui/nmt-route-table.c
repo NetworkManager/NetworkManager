@@ -32,7 +32,8 @@
 
 #include <glib/gi18n-lib.h>
 #include <dbus/dbus-glib.h>
-#include <nm-utils.h>
+#include <NetworkManager.h>
+#include <nm-utils-private.h>
 
 #include "nmt-route-table.h"
 #include "nmt-route-entry.h"

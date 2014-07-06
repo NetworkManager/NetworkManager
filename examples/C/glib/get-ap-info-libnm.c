@@ -29,12 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <nm-client.h>
-#include <nm-device.h>
-#include <nm-device-wifi.h>
-#include <nm-access-point.h>
-#include <nm-dbus-interface.h>
-#include <nm-utils.h>
+#include <NetworkManager.h>
 
 /* Convert flags to string */
 static char *

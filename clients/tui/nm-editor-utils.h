@@ -19,8 +19,7 @@
 #ifndef NM_EDITOR_UTILS_H
 #define NM_EDITOR_UTILS_H
 
-#include <glib-object.h>
-#include <nm-remote-settings.h>
+#include <NetworkManager.h>
 
 G_BEGIN_DECLS
 

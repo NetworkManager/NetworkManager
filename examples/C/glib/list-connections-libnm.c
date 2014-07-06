@@ -29,11 +29,7 @@
 #include <stdlib.h>
 #include <signal.h>
 
-#include <nm-connection.h>
-#include <nm-setting-connection.h>
-#include <nm-dbus-interface.h>
-#include <nm-utils.h>
-#include <nm-remote-settings.h>
+#include <NetworkManager.h>
 
 
 /* Global variables */

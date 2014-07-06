@@ -37,7 +37,6 @@
 /**
  * SECTION:nm-setting-wireless
  * @short_description: Describes connection properties for 802.11 Wi-Fi networks
- * @include: nm-setting-wireless.h
  *
  * The #NMSettingWireless object is a #NMSetting subclass that describes properties
  * necessary for connection to 802.11 Wi-Fi networks.

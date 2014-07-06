@@ -37,7 +37,6 @@
 /**
  * SECTION:nm-setting-bond
  * @short_description: Describes connection properties for bonds
- * @include: nm-setting-bond.h
  *
  * The #NMSettingBond object is a #NMSetting subclass that describes properties
  * necessary for bond connections.

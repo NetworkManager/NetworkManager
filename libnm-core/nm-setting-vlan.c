@@ -34,7 +34,6 @@
 /**
  * SECTION:nm-setting-vlan
  * @short_description: Describes connection properties for VLAN interfaces
- * @include: nm-setting-vlan.h
  *
  * The #NMSettingVlan object is a #NMSetting subclass that describes properties
  * necessary for connection to VLAN interfaces.

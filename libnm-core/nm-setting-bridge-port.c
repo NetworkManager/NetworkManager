@@ -33,7 +33,6 @@
 /**
  * SECTION:nm-setting-bridge-port
  * @short_description: Describes connection properties for bridge ports
- * @include: nm-setting-bridge-port.h
  *
  * The #NMSettingBridgePort object is a #NMSetting subclass that describes
  * optional properties that apply to bridge ports.

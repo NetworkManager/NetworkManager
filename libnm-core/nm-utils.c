@@ -37,7 +37,6 @@
 /**
  * SECTION:nm-utils
  * @short_description: Utility functions
- * @include: nm-utils.h
  *
  * A collection of utility functions for working with SSIDs, IP addresses, Wi-Fi
  * access points and devices, among other things.

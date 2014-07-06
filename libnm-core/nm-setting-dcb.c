@@ -33,7 +33,6 @@
 /**
  * SECTION:nm-setting-dcb
  * @short_description: Connection properties for Data Center Bridging
- * @include: nm-setting-dcb.h
  *
  * The #NMSettingDcb object is a #NMSetting subclass that describes properties
  * for enabling and using Data Center Bridging (DCB) on Ethernet networks.

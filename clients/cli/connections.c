@@ -33,25 +33,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include <nm-client.h>
-#include <nm-device-ethernet.h>
-#include <nm-device-adsl.h>
-#include <nm-device-wifi.h>
-#if WITH_WIMAX
-#include <nm-device-wimax.h>
-#endif
-#include <nm-device-modem.h>
-#include <nm-device-bt.h>
-#include <nm-device-olpc-mesh.h>
-#include <nm-device-infiniband.h>
-#include <nm-device-bond.h>
-#include <nm-device-team.h>
-#include <nm-device-bridge.h>
-#include <nm-device-vlan.h>
-#include <nm-remote-settings.h>
-#include <nm-vpn-connection.h>
-#include <nm-utils.h>
-
 #include "utils.h"
 #include "common.h"
 #include "settings.h"

@@ -20,8 +20,6 @@
 #ifndef NMC_UTILS_H
 #define NMC_UTILS_H
 
-#include <glib.h>
-
 #include "nmcli.h"
 
 /* === Types === */

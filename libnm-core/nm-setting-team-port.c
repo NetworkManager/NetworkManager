@@ -32,7 +32,6 @@
 /**
  * SECTION:nm-setting-team-port
  * @short_description: Describes connection properties for team ports
- * @include: nm-setting-team-port.h
  *
  * The #NMSettingTeamPort object is a #NMSetting subclass that describes
  * optional properties that apply to team ports.

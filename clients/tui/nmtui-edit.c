@@ -28,7 +28,7 @@
 #include <stdlib.h>
 
 #include <glib/gi18n-lib.h>
-#include <nm-utils.h>
+#include <NetworkManager.h>
 
 #include "nmtui.h"
 #include "nmtui-edit.h"

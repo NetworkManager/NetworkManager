@@ -35,7 +35,6 @@
 /**
  * SECTION:nm-setting-8021x
  * @short_description: Describes 802.1x-authenticated connection properties
- * @include: nm-setting-8021x.h
  *
  * The #NMSetting8021x object is a #NMSetting subclass that describes
  * properties necessary for connection to 802.1x-authenticated networks, such as
