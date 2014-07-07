@@ -128,12 +128,23 @@ setting_changed_cb (NMSetting *setting,
 	g_signal_emit (self, signals[CHANGED], 0);
 }
 
+static gboolean
+_setting_release (gpointer key, gpointer value, gpointer user_data)
+{
+	g_signal_handlers_disconnect_by_func (user_data, setting_changed_cb, value);
+	return TRUE;
+}
+
 static void
 _nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 {
-	g_hash_table_insert (NM_CONNECTION_GET_PRIVATE (connection)->settings,
-	                     (gpointer) G_OBJECT_TYPE_NAME (setting),
-	                     setting);
+	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
+	const char *name = G_OBJECT_TYPE_NAME (setting);
+	NMSetting *s_old;
+
+	if ((s_old = g_hash_table_lookup (priv->settings, (gpointer) name)))
+		g_signal_handlers_disconnect_by_func (s_old, setting_changed_cb, connection);
+	g_hash_table_insert (priv->settings, (gpointer) name, setting);
 	/* Listen for property changes so we can emit the 'changed' signal */
 	g_signal_connect (setting, "notify", (GCallback) setting_changed_cb, connection);
 }
@@ -290,7 +301,7 @@ hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
 	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
 
 	if ((changed = g_hash_table_size (priv->settings) > 0))
-		g_hash_table_remove_all (priv->settings);
+		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
 
 	g_hash_table_iter_init (&iter, new);
 	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
@@ -376,7 +387,7 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 	if ((changed = g_hash_table_size (priv->settings) > 0))
-		g_hash_table_remove_all (priv->settings);
+		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
 
 	if (g_hash_table_size (NM_CONNECTION_GET_PRIVATE (new_connection)->settings)) {
 		g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (new_connection)->settings);
@@ -1884,12 +1895,8 @@ static void
 nm_connection_private_free (NMConnectionPrivate *priv)
 {
 	NMConnection *self = priv->self;
-	GHashTableIter iter;
-	NMSetting *setting;
 
-	g_hash_table_iter_init (&iter, priv->settings);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting))
-		g_signal_handlers_disconnect_by_func (setting, setting_changed_cb, self);
+	g_hash_table_foreach_remove (priv->settings, _setting_release, self);
 	g_hash_table_destroy (priv->settings);
 
 	g_slice_free (NMConnectionPrivate, priv);
