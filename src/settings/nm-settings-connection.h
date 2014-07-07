@@ -25,7 +25,6 @@
 #include <net/ethernet.h>
 
 #include <nm-connection.h>
-#include "nm-settings-flags.h"
 #include "nm-types.h"
 
 G_BEGIN_DECLS
@@ -110,7 +109,7 @@ typedef void (*NMSettingsConnectionSecretsFunc) (NMSettingsConnection *connectio
 guint32 nm_settings_connection_get_secrets (NMSettingsConnection *connection,
                                             NMAuthSubject *subject,
                                             const char *setting_name,
-                                            NMSettingsGetSecretsFlags flags,
+                                            NMSecretAgentGetSecretsFlags flags,
                                             const char **hints,
                                             NMSettingsConnectionSecretsFunc callback,
                                             gpointer callback_data,

@@ -727,12 +727,12 @@ nm_modem_get_secrets (NMModem *self,
                       const char *hint)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (self);
-	NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+	NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 	cancel_get_secrets (self);
 
 	if (request_new)
-		flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
+		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 	priv->secrets_id = nm_act_request_get_secrets (priv->act_request,
 	                                               setting_name,
 	                                               flags,
@@ -765,7 +765,7 @@ nm_modem_act_stage1_prepare (NMModem *self,
 	NMActStageReturn ret;
 	GPtrArray *hints = NULL;
 	const char *setting_name = NULL;
-	NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+	NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 	NMConnection *connection;
 
 	if (priv->act_request)
@@ -784,7 +784,7 @@ nm_modem_act_stage1_prepare (NMModem *self,
 
 	/* Secrets required... */
 	if (priv->secrets_tries++)
-		flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
+		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 
 	priv->secrets_id = nm_act_request_get_secrets (req,
 	                                               setting_name,

@@ -673,7 +673,7 @@ request_start (gpointer user_data)
 typedef struct {
 	Request parent;
 
-	NMSettingsGetSecretsFlags flags;
+	NMSecretAgentGetSecretsFlags flags;
 	NMConnection *connection;
 	char *setting_name;
 	char **hints;
@@ -733,7 +733,7 @@ connection_request_new_get (NMConnection *connection,
                             GHashTable *existing_secrets,
                             const char *setting_name,
                             const char *verb,
-                            NMSettingsGetSecretsFlags flags,
+                            NMSecretAgentGetSecretsFlags flags,
                             const char **hints,
                             NMAgentSecretsResultFunc callback,
                             gpointer callback_data,
@@ -1036,7 +1036,7 @@ get_next_cb (Request *parent)
 	 * secrets to the agent.  We shouldn't leak system-owned secrets to
 	 * unprivileged users.
 	 */
-	if (   (req->flags != NM_SETTINGS_GET_SECRETS_FLAG_NONE)
+	if (   (req->flags != NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE)
 	    && (req->existing_secrets || has_system_secrets (req->connection))) {
 		nm_log_dbg (LOGD_AGENTS, "(%p/%s/%s) request has system secrets; checking agent %s for MODIFY",
 		            req, parent->detail, req->setting_name, agent_dbus_owner);
@@ -1084,7 +1084,7 @@ get_start (gpointer user_data)
 	if (setting_secrets && g_hash_table_size (setting_secrets)) {
 		NMConnection *tmp;
 		GError *error = NULL;
-		gboolean new_secrets = (req->flags & NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW);
+		gboolean new_secrets = (req->flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
 
 		/* The connection already had secrets; check if any more are required.
 		 * If no more are required, we're done.  If secrets are still needed,
@@ -1099,7 +1099,7 @@ get_start (gpointer user_data)
 			g_clear_error (&error);
 		} else {
 			/* Do we have everything we need? */
-			if (   (req->flags & NM_SETTINGS_GET_SECRETS_FLAG_ONLY_SYSTEM)
+			if (   (req->flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM)
 			    || ((nm_connection_need_secrets (tmp, NULL) == NULL) && (new_secrets == FALSE))) {
 				nm_log_dbg (LOGD_AGENTS, "(%p/%s/%s) system settings secrets sufficient",
 				            req, parent->detail, req->setting_name);
@@ -1171,7 +1171,7 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
                               NMAuthSubject *subject,
                               GHashTable *existing_secrets,
                               const char *setting_name,
-                              NMSettingsGetSecretsFlags flags,
+                              NMSecretAgentGetSecretsFlags flags,
                               const char **hints,
                               NMAgentSecretsResultFunc callback,
                               gpointer callback_data,
@@ -1217,7 +1217,7 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 	g_hash_table_insert (priv->requests, GUINT_TO_POINTER (parent->reqid), req);
 
 	/* Kick off the request */
-	if (!(req->flags & NM_SETTINGS_GET_SECRETS_FLAG_ONLY_SYSTEM))
+	if (!(req->flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM))
 		request_add_agents (self, parent);
 	parent->idle_id = g_idle_add (get_start, req);
 	return parent->reqid;

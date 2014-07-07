@@ -1821,7 +1821,7 @@ get_secrets (NMVpnConnection *self,
              const char **hints)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
-	NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_NONE;
+	NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE;
 	GError *error = NULL;
 
 	g_return_if_fail (secrets_idx < SECRETS_REQ_LAST);
@@ -1834,21 +1834,21 @@ get_secrets (NMVpnConnection *self,
 
 	switch (priv->secrets_idx) {
 	case SECRETS_REQ_SYSTEM:
-		flags = NM_SETTINGS_GET_SECRETS_FLAG_ONLY_SYSTEM;
+		flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM;
 		break;
 	case SECRETS_REQ_EXISTING:
-		flags = NM_SETTINGS_GET_SECRETS_FLAG_NONE;
+		flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE;
 		break;
 	case SECRETS_REQ_NEW:
 	case SECRETS_REQ_INTERACTIVE:
-		flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+		flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 		break;
 	default:
 		g_assert_not_reached ();
 	}
 
 	if (nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (self)))
-		flags |= NM_SETTINGS_GET_SECRETS_FLAG_USER_REQUESTED;
+		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED;
 
 	priv->secrets_id = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (priv->connection),
 	                                                       nm_active_connection_get_subject (NM_ACTIVE_CONNECTION (self)),

@@ -106,7 +106,7 @@ get_secrets_cb (NMSettingsConnection *connection,
 guint32
 nm_act_request_get_secrets (NMActRequest *self,
                             const char *setting_name,
-                            NMSettingsGetSecretsFlags flags,
+                            NMSecretAgentGetSecretsFlags flags,
                             const char *hint,
                             NMActRequestSecretsFunc callback,
                             gpointer callback_data)
@@ -128,7 +128,7 @@ nm_act_request_get_secrets (NMActRequest *self,
 	info->callback_data = callback_data;
 
 	if (nm_active_connection_get_user_requested (NM_ACTIVE_CONNECTION (self)))
-		flags |= NM_SETTINGS_GET_SECRETS_FLAG_USER_REQUESTED;
+		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED;
 
 	connection = nm_active_connection_get_connection (NM_ACTIVE_CONNECTION (self));
 	call_id = nm_settings_connection_get_secrets (NM_SETTINGS_CONNECTION (connection),

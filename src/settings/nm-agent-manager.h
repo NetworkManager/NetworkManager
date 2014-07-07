@@ -24,7 +24,6 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <nm-connection.h>
-#include "nm-settings-flags.h"
 #include "nm-secret-agent.h"
 #include "nm-types.h"
 
@@ -68,7 +67,7 @@ typedef void (*NMAgentSecretsResultFunc) (NMAgentManager *manager,
                                           const char *agent_uname,
                                           gboolean agent_has_modify,
                                           const char *setting_name,
-                                          NMSettingsGetSecretsFlags flags,
+                                          NMSecretAgentGetSecretsFlags flags,
                                           GHashTable *secrets,
                                           GError *error,
                                           gpointer user_data,
@@ -80,7 +79,7 @@ guint32 nm_agent_manager_get_secrets (NMAgentManager *manager,
                                       NMAuthSubject *subject,
                                       GHashTable *existing_secrets,
                                       const char *setting_name,
-                                      NMSettingsGetSecretsFlags flags,
+                                      NMSecretAgentGetSecretsFlags flags,
                                       const char **hints,
                                       NMAgentSecretsResultFunc callback,
                                       gpointer callback_data,

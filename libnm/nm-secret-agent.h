@@ -73,32 +73,6 @@ typedef enum /*< flags >*/ {
 	NM_SECRET_AGENT_CAPABILITY_LAST = NM_SECRET_AGENT_CAPABILITY_VPN_HINTS
 } NMSecretAgentCapabilities;
 
-/**
- * NMSecretAgentGetSecretsFlags:
- * @NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE: no special behavior; by default no
- * user interaction is allowed and requests for secrets are fulfilled from
- * persistent storage, or if no secrets are available an error is returned.
- * @NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION: allows the request to
- * interact with the user, possibly prompting via UI for secrets if any are
- * required, or if none are found in persistent storage.
- * @NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW: explicitly prompt for new
- * secrets from the user.  This flag signals that NetworkManager thinks any
- * existing secrets are invalid or wrong.  This flag implies that interaction
- * is allowed.
- * @NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED: set if the request was
- * initiated by user-requested action via the D-Bus interface, as opposed to
- * automatically initiated by NetworkManager in response to (for example) scan
- * results or carrier changes.
- *
- * #NMSecretAgentGetSecretsFlags values modify the behavior of a GetSecrets request.
- */
-typedef enum /*< flags >*/ {
-	NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE = 0x0,
-	NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
-	NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW = 0x2,
-	NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED = 0x4
-} NMSecretAgentGetSecretsFlags;
-
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
 #define NM_SECRET_AGENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SECRET_AGENT, NMSecretAgentClass))

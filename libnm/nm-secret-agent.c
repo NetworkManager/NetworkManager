@@ -741,6 +741,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	g_return_if_fail (nm_connection_get_path (connection));
 	g_return_if_fail (setting_name != NULL);
 	g_return_if_fail (strlen (setting_name) > 0);
+	g_return_if_fail (!(flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM));
 	g_return_if_fail (callback != NULL);
 
 	NM_SECRET_AGENT_GET_CLASS (self)->get_secrets (self,

@@ -714,7 +714,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
                        const char *agent_username,
                        gboolean agent_has_modify,
                        const char *setting_name,
-                       NMSettingsGetSecretsFlags flags,
+                       NMSecretAgentGetSecretsFlags flags,
                        GHashTable *secrets,
                        GError *error,
                        gpointer user_data,
@@ -766,7 +766,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 		 */
 		for_each_secret (NM_CONNECTION (self), secrets, has_system_owned_secrets, &agent_had_system);
 		if (agent_had_system) {
-			if (flags == NM_SETTINGS_GET_SECRETS_FLAG_NONE) {
+			if (flags == NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE) {
 				/* No user interaction was allowed when requesting secrets; the
 				 * agent is being bad.  Remove system-owned secrets.
 				 */
@@ -804,7 +804,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	/* If no user interaction was allowed, make sure that no "unsaved" secrets
 	 * came back.  Unsaved secrets by definition require user interaction.
 	 */
-	if (flags == NM_SETTINGS_GET_SECRETS_FLAG_NONE)
+	if (flags == NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE)
 		for_each_secret (NM_CONNECTION (self), secrets, clear_unsaved_secrets, NULL);
 
 	/* Update the connection with our existing secrets from backing storage */
@@ -884,7 +884,7 @@ guint32
 nm_settings_connection_get_secrets (NMSettingsConnection *self,
                                     NMAuthSubject *subject,
                                     const char *setting_name,
-                                    NMSettingsGetSecretsFlags flags,
+                                    NMSecretAgentGetSecretsFlags flags,
                                     const char **hints,
                                     NMSettingsConnectionSecretsFunc callback,
                                     gpointer callback_data,
@@ -1533,7 +1533,7 @@ dbus_secrets_auth_cb (NMSettingsConnection *self,
 		call_id = nm_settings_connection_get_secrets (self,
 			                                          subject,
 			                                          setting_name,
-			                                          NM_SETTINGS_GET_SECRETS_FLAG_USER_REQUESTED,
+			                                          NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED,
 			                                          NULL,
 			                                          dbus_get_agent_secrets_cb,
 			                                          context,

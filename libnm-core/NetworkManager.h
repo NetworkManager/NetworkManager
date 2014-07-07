@@ -555,4 +555,37 @@ typedef enum {
 	NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
 } NMActiveConnectionState;
 
+/**
+ * NMSecretAgentGetSecretsFlags:
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE: no special behavior; by default no
+ *   user interaction is allowed and requests for secrets are fulfilled from
+ *   persistent storage, or if no secrets are available an error is returned.
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION: allows the request to
+ *   interact with the user, possibly prompting via UI for secrets if any are
+ *   required, or if none are found in persistent storage.
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW: explicitly prompt for new
+ *   secrets from the user.  This flag signals that NetworkManager thinks any
+ *   existing secrets are invalid or wrong.  This flag implies that interaction
+ *   is allowed.
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED: set if the request was
+ *   initiated by user-requested action via the D-Bus interface, as opposed to
+ *   automatically initiated by NetworkManager in response to (for example) scan
+ *   results or carrier changes.
+ * @NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM: (Internal flag, not part of
+ *   the D-Bus API.)
+ *
+ * #NMSecretAgentGetSecretsFlags values modify the behavior of a GetSecrets request.
+ *
+ * (Corresponds to the NM_SECRET_AGENT_GET_SECRETS_FLAGS type in nm-secret-agent.xml.)
+ */
+typedef enum { /*< flags >*/
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE = 0x0,
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION = 0x1,
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW = 0x2,
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_USER_REQUESTED = 0x4,
+
+	/* Internal to NM; not part of the D-Bus API */
+	NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM = 0x80000000
+} NMSecretAgentGetSecretsFlags;
+
 #endif /* NETWORK_MANAGER_H */

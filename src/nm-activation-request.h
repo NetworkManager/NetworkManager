@@ -27,7 +27,6 @@
 #include "nm-types.h"
 #include "nm-connection.h"
 #include "nm-active-connection.h"
-#include "nm-settings-flags.h"
 
 #define NM_TYPE_ACT_REQUEST            (nm_act_request_get_type ())
 #define NM_ACT_REQUEST(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ACT_REQUEST, NMActRequest))
@@ -72,7 +71,7 @@ typedef void (*NMActRequestSecretsFunc) (NMActRequest *req,
 
 guint32 nm_act_request_get_secrets (NMActRequest *req,
                                     const char *setting_name,
-                                    NMSettingsGetSecretsFlags flags,
+                                    NMSecretAgentGetSecretsFlags flags,
                                     const char *hint,
                                     NMActRequestSecretsFunc callback,
                                     gpointer callback_data);

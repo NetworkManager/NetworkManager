@@ -28,7 +28,6 @@
 
 #include <nm-connection.h>
 #include "nm-types.h"
-#include "nm-settings-flags.h"
 
 /* NOTE: ensure these capabilities match those in introspection/nm-secret-agent.xml and
  * libnm/nm-secret-agent.h.
@@ -95,7 +94,7 @@ gconstpointer nm_secret_agent_get_secrets  (NMSecretAgent *agent,
                                             NMConnection *connection,
                                             const char *setting_name,
                                             const char **hints,
-                                            NMSettingsGetSecretsFlags flags,
+                                            NMSecretAgentGetSecretsFlags flags,
                                             NMSecretAgentCallback callback,
                                             gpointer callback_data);
 
