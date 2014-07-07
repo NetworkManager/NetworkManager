@@ -158,6 +158,10 @@ elif [[ "x$(ls -1d ./NetworkManager-openswan-[0-9].*/ 2>/dev/null)" != x && -f N
     DIRNAME="$(basename "$(ls -1d ./NetworkManager-openswan-[0-9].*/ || die "could not find directory")")"
     BUILD_NETWORMANAGER_LIBRESWAN=x
     SPEC=NetworkManager-libreswan.spec
+elif [[ "x$(ls -1d ./wireless_tools.[0-9]*/ 2>/dev/null)" != x && -f wireless-tools.spec ]]; then
+    DIRNAME="$(basename "$(ls -1d ./wireless_tools.[0-9]*/ || die "could not find directory")")"
+    BUILD_WIRELESS_TOOLS=x
+    SPEC=wireless-tools.spec
 else
     die "Could not detect dist-git type"
 fi
@@ -212,6 +216,8 @@ pushd "$DIRNAME"
     elif [[ "$BUILD_NETWORMANAGER_OPENSWAN" != "" || "$BUILD_NETWORMANAGER_LIBRESWAN" != "" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-openswan";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openswan"
+    elif [[ "$BUILD_WIRELESS_TOOLS" != "" ]]; then
+        :
     else
         die "UNEXPECTED"
     fi
@@ -226,9 +232,11 @@ pushd "$DIRNAME"
         git remote add local "$LOCAL_GIT/"
         git fetch local
     fi
-    git fetch origin
-    if [[ -n "$LOCAL_MIRROR" ]]; then
-        git remote remove local-mirror
+    if [[ "$(git remote | grep '^origin$')x" != x ]]; then
+        git fetch origin
+        if [[ -n "$LOCAL_MIRROR" ]]; then
+            git remote remove local-mirror
+        fi
     fi
     git commit --allow-empty -m '*** empty initial commit'  # useful, to rebase the following commit
     git add -f -A .
