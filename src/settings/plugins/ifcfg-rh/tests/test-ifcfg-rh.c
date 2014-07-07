@@ -14409,8 +14409,11 @@ test_read_team_port_empty_config (void)
 	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, "team0");
 
-	/* Empty TEAM_PORT_CONFIG means no team-port setting */
-	g_assert (nm_connection_get_setting_team_port (connection) == NULL);
+	/* Normalization adds a team-port setting */
+	g_assert (nm_connection_get_setting_team_port (connection));
+
+	/* empty/missing config */
+	g_assert (!nm_setting_team_port_get_config (nm_connection_get_setting_team_port (connection)));
 
 	g_object_unref (connection);
 }

@@ -741,7 +741,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 	gboolean is_slave;
+	const char *slave_setting_type = NULL;
 	GSList *iter;
+	const char *normerr_slave_setting_type = NULL;
+	const char *normerr_missing_slave_type = NULL;
+	const char *normerr_missing_slave_type_port = NULL;
 
 	if (!priv->id) {
 		g_set_error_literal (error,
@@ -862,10 +866,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	is_slave = (   priv->slave_type
-	            && (   !strcmp (priv->slave_type, NM_SETTING_BOND_SETTING_NAME)
-	                || !strcmp (priv->slave_type, NM_SETTING_BRIDGE_SETTING_NAME)
-	                || !strcmp (priv->slave_type, NM_SETTING_TEAM_SETTING_NAME)));
+	is_slave = FALSE;
+	if (priv->slave_type)
+		is_slave = _nm_setting_slave_type_is_valid (priv->slave_type, &slave_setting_type);
 
 	if (priv->slave_type && !is_slave) {
 		g_set_error (error,
@@ -873,7 +876,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
 		             _("Unknown slave type '%s'"), priv->slave_type);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
-		return NM_SETTING_VERIFY_ERROR;
+		return FALSE;
 	}
 
 	if (is_slave) {
@@ -883,17 +886,52 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
 			                     _("Slave connections need a valid '" NM_SETTING_CONNECTION_MASTER "' property"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER);
-			return NM_SETTING_VERIFY_ERROR;
+			return FALSE;
 		}
+		if (   slave_setting_type
+		    && all_settings /* only check for an existing slave-setting when having @all_settings */
+		    && !nm_setting_find_in_list (all_settings, slave_setting_type))
+			normerr_slave_setting_type = slave_setting_type;
 	} else {
 		if (priv->master) {
-			g_set_error_literal (error,
-			                     NM_SETTING_CONNECTION_ERROR,
-			                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
-			                     _("Cannot set '" NM_SETTING_CONNECTION_MASTER "' without '" NM_SETTING_CONNECTION_SLAVE_TYPE "'"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
-			return NM_SETTING_VERIFY_ERROR;
+			const char *slave_type;
+			NMSetting *s_port;
+
+			if (   all_settings
+			    && (slave_type = _nm_setting_slave_type_detect_from_settings (all_settings, &s_port))) {
+				normerr_missing_slave_type = slave_type;
+				normerr_missing_slave_type_port = nm_setting_get_name (s_port);
+			} else {
+				g_set_error_literal (error,
+				                     NM_SETTING_CONNECTION_ERROR,
+				                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+				                     _("Cannot set '" NM_SETTING_CONNECTION_MASTER "' without '" NM_SETTING_CONNECTION_SLAVE_TYPE "'"));
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
+				return FALSE;
+			}
 		}
+	}
+
+	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
+
+	if (normerr_slave_setting_type) {
+		g_set_error (error,
+		             NM_SETTING_CONNECTION_ERROR,
+		             NM_SETTING_CONNECTION_ERROR_SLAVE_SETTING_NOT_FOUND,
+		             _("slave-type '%s' requires a '%s' setting in the connection"),
+		             priv->slave_type, normerr_slave_setting_type);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+	}
+
+	if (normerr_missing_slave_type) {
+		g_set_error (error,
+		             NM_SETTING_CONNECTION_ERROR,
+		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		             _("Detect a slave connection with '" NM_SETTING_CONNECTION_MASTER "' set and a port type '%s'. '" NM_SETTING_CONNECTION_SLAVE_TYPE "' should be set to '%s'"),
+		             normerr_missing_slave_type_port, normerr_missing_slave_type);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 
 	return TRUE;

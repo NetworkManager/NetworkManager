@@ -103,6 +103,30 @@ nm_setting_team_port_get_config (NMSettingTeamPort *setting)
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
+	if (all_settings) {
+		NMSettingConnection *s_con;
+		const char *slave_type;
+
+		s_con = NM_SETTING_CONNECTION (_nm_setting_find_in_list_required (all_settings,
+		                                                                  NM_SETTING_CONNECTION_SETTING_NAME,
+		                                                                  error, NULL, NULL));
+		if (!s_con)
+			return FALSE;
+
+		slave_type = nm_setting_connection_get_slave_type (s_con);
+		if (   slave_type
+		    && strcmp (slave_type, NM_SETTING_TEAM_SETTING_NAME)) {
+			g_set_error (error,
+			             NM_SETTING_CONNECTION_ERROR,
+			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("A connection with a '%s' setting must have the slave-type set to '%s'. Instead it is '%s'"),
+			             NM_SETTING_TEAM_PORT_SETTING_NAME,
+			             NM_SETTING_TEAM_SETTING_NAME,
+			             slave_type);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_SLAVE_TYPE);
+			return FALSE;
+		}
+	}
 	return TRUE;
 }
 

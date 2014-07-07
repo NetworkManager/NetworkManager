@@ -25,7 +25,7 @@
 #include <dbus/dbus-glib.h>
 #include <string.h>
 #include "nm-connection.h"
-#include "nm-utils.h"
+#include "nm-utils-internal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-private.h"
 
@@ -581,6 +581,46 @@ _normalize_virtual_iface_name (NMConnection *self)
 }
 
 static gboolean
+_normalize_connection_slave_type (NMConnection *self)
+{
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
+	const char *slave_type, *port_type;
+	GSList *all_settings;
+
+	if (!s_con)
+		return FALSE;
+	if (!nm_setting_connection_get_master (s_con))
+		return FALSE;
+
+	slave_type = nm_setting_connection_get_slave_type (s_con);
+	if (slave_type) {
+		if (   _nm_setting_slave_type_is_valid (slave_type, &port_type)
+		    && port_type) {
+			NMSetting *s_port;
+
+			s_port = nm_connection_get_setting_by_name (self, port_type);
+			if (!s_port) {
+				GType p_type = nm_setting_lookup_type (port_type);
+
+				g_return_val_if_fail (p_type, FALSE);
+				nm_connection_add_setting (self, g_object_new (p_type, NULL));
+				return TRUE;
+			}
+		}
+	} else {
+		all_settings = _nm_utils_hash_values_to_slist (NM_CONNECTION_GET_PRIVATE (self)->settings);
+
+		if ((slave_type = _nm_setting_slave_type_detect_from_settings (all_settings, NULL))) {
+			g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type, NULL);
+			g_slist_free (all_settings);
+			return TRUE;
+		}
+		g_slist_free (all_settings);
+	}
+	return FALSE;
+}
+
+static gboolean
 _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
@@ -837,6 +877,7 @@ nm_connection_normalize (NMConnection *connection,
 	 * errors, because in that case we rather fail without touching the settings. */
 
 	was_modified |= _normalize_virtual_iface_name (connection);
+	was_modified |= _normalize_connection_slave_type (connection);
 	was_modified |= _normalize_ip_config (connection, parameters);
 
 	/* Verify anew. */

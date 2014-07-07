@@ -288,6 +288,65 @@ _nm_setting_compare_priority (gconstpointer a, gconstpointer b)
 
 /*************************************************************/
 
+gboolean
+_nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_type)
+{
+	const char *port_type = NULL;
+	gboolean found = TRUE;
+
+	if (!slave_type)
+		found = FALSE;
+	else if (!strcmp (slave_type, NM_SETTING_BOND_SETTING_NAME))
+		;
+	else if (!strcmp (slave_type, NM_SETTING_BRIDGE_SETTING_NAME))
+		port_type = NM_SETTING_BRIDGE_PORT_SETTING_NAME;
+	else if (!strcmp (slave_type, NM_SETTING_TEAM_SETTING_NAME))
+		port_type = NM_SETTING_TEAM_PORT_SETTING_NAME;
+	else
+		found = FALSE;
+
+	if (out_port_type)
+		*out_port_type = port_type;
+	return found;
+}
+
+
+const char *
+_nm_setting_slave_type_detect_from_settings (GSList *all_settings, NMSetting **out_s_port)
+{
+	GSList *iter;
+	const char *slave_type = NULL;
+	NMSetting *s_port = NULL;
+
+	for (iter = all_settings; iter; iter = iter->next) {
+		NMSetting *s_iter = NM_SETTING (iter->data);
+		const char *name = nm_setting_get_name (s_iter);
+		const char *i_slave_type = NULL;
+
+		if (!strcmp (name, NM_SETTING_BRIDGE_PORT_SETTING_NAME))
+			i_slave_type = NM_SETTING_BRIDGE_SETTING_NAME;
+		else if (!strcmp (name, NM_SETTING_TEAM_PORT_SETTING_NAME))
+			i_slave_type = NM_SETTING_TEAM_SETTING_NAME;
+		else
+			continue;
+
+		if (slave_type) {
+			/* there are more then one matching port types, cannot detect the slave type. */
+			slave_type = NULL;
+			s_port = NULL;
+			break;
+		}
+		slave_type = i_slave_type;
+		s_port = s_iter;
+	}
+
+	if (out_s_port)
+		*out_s_port = s_port;
+	return slave_type;
+}
+
+/*************************************************************/
+
 static void
 destroy_gvalue (gpointer data)
 {

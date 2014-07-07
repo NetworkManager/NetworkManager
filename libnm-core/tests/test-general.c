@@ -2658,6 +2658,64 @@ test_connection_normalize_virtual_iface_name (void)
 	g_object_unref (con);
 }
 
+static void
+test_connection_normalize_slave_type_1 (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingConnection *s_con;
+
+	con = nmtst_create_minimal_connection ("test_connection_normalize_slave_type_1",
+	                                       "cc4cd5df-45dc-483e-b291-6b76c2338ecb",
+	                                       NM_SETTING_WIRED_SETTING_NAME, &s_con);
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_MASTER, "master0",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, "invalid-type",
+	              NULL);
+
+	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (!nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, "bridge",
+	              NULL);
+
+	g_assert (!nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_SLAVE_SETTING_NOT_FOUND);
+	g_assert (nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
+}
+
+static void
+test_connection_normalize_slave_type_2 (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingConnection *s_con;
+
+	con = nmtst_create_minimal_connection ("test_connection_normalize_slave_type_2",
+	                                       "40bea008-ca72-439a-946b-e65f827656f9",
+	                                       NM_SETTING_WIRED_SETTING_NAME, &s_con);
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_MASTER, "master0",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, "invalid-type",
+	              NULL);
+
+	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (!nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NULL,
+	              NULL);
+	nm_connection_add_setting (con, nm_setting_bridge_port_new ());
+
+	g_assert (nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NULL);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+	g_assert (nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -2697,6 +2755,8 @@ int main (int argc, char **argv)
 	test_connection_new_from_hash ();
 	test_connection_verify_sets_interface_name ();
 	test_connection_normalize_virtual_iface_name ();
+	test_connection_normalize_slave_type_1 ();
+	test_connection_normalize_slave_type_2 ();
 
 	test_setting_connection_permissions_helpers ();
 	test_setting_connection_permissions_property ();
