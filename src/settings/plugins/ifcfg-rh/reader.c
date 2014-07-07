@@ -434,16 +434,15 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 
 		/* HWADDR */
 		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_HWADDR_TAG, &skip))) {
-			struct ether_addr *ibft_mac;
+			guint8 *ibft_mac[ETH_ALEN];
 
-			ibft_mac = ether_aton (p);
-			if (!ibft_mac) {
+			if (!nm_utils_hwaddr_aton (p, ibft_mac, ETH_ALEN)) {
 				PARSE_WARNING ("malformed iscsiadm record: invalid hwaddress.");
 				skip = TRUE;
 				continue;
 			}
 
-			if (memcmp (ifcfg_mac->data, (guint8 *) ibft_mac->ether_addr_octet, ETH_ALEN)) {
+			if (memcmp (ifcfg_mac->data, ibft_mac, ETH_ALEN)) {
 				/* This record isn't for the current device, ignore it */
 				skip = TRUE;
 				continue;
@@ -3570,13 +3569,12 @@ make_wireless_setting (shvarFile *ifcfg,
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {
 		char **list = NULL, **iter;
-		struct ether_addr addr;
 
 		list = g_strsplit_set (value, " \t", 0);
 		for (iter = list; iter && *iter; iter++) {
 			if (**iter == '\0')
 				continue;
-			if (!ether_aton_r (*iter, &addr)) {
+			if (!nm_utils_hwaddr_valid (*iter, ETH_ALEN)) {
 				PARSE_WARNING ("invalid MAC in HWADDR_BLACKLIST '%s'", *iter);
 				continue;
 			}
@@ -3946,13 +3944,12 @@ make_wired_setting (shvarFile *ifcfg,
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {
 		char **list = NULL, **iter;
-		struct ether_addr addr;
 
 		list = g_strsplit_set (value, " \t", 0);
 		for (iter = list; iter && *iter; iter++) {
 			if (**iter == '\0')
 				continue;
-			if (!ether_aton_r (*iter, &addr)) {
+			if (!nm_utils_hwaddr_valid (*iter, ETH_ALEN)) {
 				PARSE_WARNING ("invalid MAC in HWADDR_BLACKLIST '%s'", *iter);
 				continue;
 			}

@@ -799,9 +799,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	for (iter = priv->mac_address_blacklist; iter; iter = iter->next) {
-		struct ether_addr addr;
-
-		if (!ether_aton_r (iter->data, &addr)) {
+		if (!nm_utils_hwaddr_valid (iter->data, ETH_ALEN)) {
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_ERROR,
 			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
@@ -813,9 +811,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	for (iter = priv->seen_bssids; iter; iter = iter->next) {
-		struct ether_addr addr;
-
-		if (!ether_aton_r (iter->data, &addr)) {
+		if (!nm_utils_hwaddr_valid (iter->data, ETH_ALEN)) {
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_ERROR,
 			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,

@@ -78,8 +78,8 @@ void                   nm_ap_set_wpa_flags (NMAccessPoint *ap, NM80211ApSecurity
 NM80211ApSecurityFlags nm_ap_get_rsn_flags (NMAccessPoint *ap);
 void                   nm_ap_set_rsn_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags);
 
-const struct ether_addr *nm_ap_get_address (const NMAccessPoint *ap);
-void                     nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr *addr);
+const guint8 *nm_ap_get_address (const NMAccessPoint *ap);
+void          nm_ap_set_address (NMAccessPoint *ap, const guint8 *addr);
 
 NM80211Mode nm_ap_get_mode (NMAccessPoint *ap);
 void        nm_ap_set_mode (NMAccessPoint *ap, const NM80211Mode mode);

@@ -240,7 +240,7 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 	const GByteArray *setting_ssid;
 	const GByteArray *ap_ssid;
 	const GByteArray *setting_bssid;
-	struct ether_addr *ap_bssid;
+	guint8 ap_bssid[ETH_ALEN];
 	const char *setting_mode;
 	NM80211Mode ap_mode;
 	const char *setting_band;
@@ -271,12 +271,11 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 	setting_bssid = nm_setting_wireless_get_bssid (s_wifi);
 	if (setting_bssid && ap_bssid_str) {
 		g_assert (setting_bssid->len == ETH_ALEN);
-		ap_bssid = ether_aton (ap_bssid_str);
-		g_warn_if_fail (ap_bssid);
-		if (ap_bssid) {
-			if (memcmp (ap_bssid->ether_addr_octet, setting_bssid->data, ETH_ALEN) != 0)
+		if (nm_utils_hwaddr_aton (ap_bssid_str, ap_bssid, ETH_ALEN)) {
+			if (memcmp (ap_bssid, setting_bssid->data, ETH_ALEN) != 0)
 				return FALSE;
-		}
+		} else
+			g_warn_if_reached ();
 	}
 
 	/* Mode */

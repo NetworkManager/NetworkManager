@@ -28,6 +28,7 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
 #include <nm-setting-pppoe.h>
+#include <nm-utils.h>
 
 #include "nm-device-ethernet.h"
 #include "nm-device-private.h"
@@ -170,21 +171,20 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	if (s_wired) {
 		const GByteArray *mac;
 		const char *perm_str;
-		struct ether_addr *perm_mac;
+		guint8 perm_mac[ETH_ALEN];
 
 		/* FIXME: filter using s390 subchannels when they are exported over the bus */
 
 		/* Check MAC address */
 		perm_str = nm_device_ethernet_get_permanent_hw_address (NM_DEVICE_ETHERNET (device));
 		if (perm_str) {
-			perm_mac = ether_aton (perm_str);
-			if (!perm_mac) {
+			if (!nm_utils_hwaddr_aton (perm_str, perm_mac, ETH_ALEN)) {
 				g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_INVALID_DEVICE_MAC,
 				             "Invalid device MAC address.");
 				return FALSE;
 			}
 			mac = nm_setting_wired_get_mac_address (s_wired);
-			if (mac && perm_mac && memcmp (mac->data, perm_mac->ether_addr_octet, ETH_ALEN)) {
+			if (mac && memcmp (mac->data, perm_mac, ETH_ALEN)) {
 				g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_MAC_MISMATCH,
 				             "The MACs of the device and the connection didn't match.");
 				return FALSE;

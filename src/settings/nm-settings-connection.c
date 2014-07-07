@@ -1732,15 +1732,11 @@ mac_equal (gconstpointer a, gconstpointer b)
 }
 
 static guint8 *
-mac_dup (const struct ether_addr *old)
+mac_dup (const guint8 *old)
 {
-	guint8 *new;
-
 	g_return_val_if_fail (old != NULL, NULL);
 
-	new = g_malloc0 (ETH_ALEN);
-	memcpy (new, old, ETH_ALEN);
-	return new;
+	return g_memdup (old, ETH_ALEN);
 }
 
 /**
@@ -1778,7 +1774,7 @@ nm_settings_connection_get_seen_bssids (NMSettingsConnection *connection)
  **/
 gboolean
 nm_settings_connection_has_seen_bssid (NMSettingsConnection *connection,
-                                       const struct ether_addr *bssid)
+                                       const guint8 *bssid)
 {
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (bssid != NULL, FALSE);
@@ -1796,7 +1792,7 @@ nm_settings_connection_has_seen_bssid (NMSettingsConnection *connection,
  **/
 void
 nm_settings_connection_add_seen_bssid (NMSettingsConnection *connection,
-                                       const struct ether_addr *seen_bssid)
+                                       const guint8 *seen_bssid)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
 	const char *connection_uuid;
@@ -1856,12 +1852,12 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *connection,
 static void
 add_seen_bssid_string (NMSettingsConnection *self, const char *bssid)
 {
-	struct ether_addr mac;
+	guint8 mac[ETH_ALEN];
 
 	g_return_if_fail (bssid != NULL);
-	if (ether_aton_r (bssid, &mac)) {
+	if (nm_utils_hwaddr_aton (bssid, mac, ETH_ALEN)) {
 		g_hash_table_insert (NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->seen_bssids,
-		                     mac_dup (&mac),
+		                     mac_dup (mac),
 		                     g_strdup (bssid));
 	}
 }

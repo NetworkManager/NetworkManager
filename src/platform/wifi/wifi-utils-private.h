@@ -47,7 +47,7 @@ struct WifiData {
 	/* Return current bitrate in Kbps */
 	guint32 (*get_rate) (WifiData *data);
 
-	gboolean (*get_bssid) (WifiData *data, struct ether_addr *out_bssid);
+	gboolean (*get_bssid) (WifiData *data, guint8 *out_bssid);
 
 	/* Return a signal strength percentage 0 - 100% for the current BSSID;
 	 * return -1 on errors or if not associated.

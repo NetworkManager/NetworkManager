@@ -622,9 +622,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	for (mac_blacklist_iter = priv->mac_address_blacklist; mac_blacklist_iter;
 	     mac_blacklist_iter = mac_blacklist_iter->next) {
-		struct ether_addr addr;
-
-		if (!ether_aton_r (mac_blacklist_iter->data, &addr)) {
+		if (!nm_utils_hwaddr_valid (mac_blacklist_iter->data, ETH_ALEN)) {
 			g_set_error (error,
 			             NM_SETTING_WIRED_ERROR,
 			             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,

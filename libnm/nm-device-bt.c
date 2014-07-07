@@ -27,6 +27,7 @@
 
 #include <nm-setting-connection.h>
 #include <nm-setting-bluetooth.h>
+#include <nm-utils.h>
 
 #include "nm-device-bt.h"
 #include "nm-device-private.h"
@@ -148,7 +149,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	const char *ctype;
 	const GByteArray *mac;
 	const char *hw_str;
-	struct ether_addr *hw_mac;
+	guint8 hw_mac[ETH_ALEN];
 	NMBluetoothCapabilities dev_caps;
 	NMBluetoothCapabilities bt_type;
 
@@ -172,14 +173,13 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	/* Check BT address */
 	hw_str = nm_device_bt_get_hw_address (NM_DEVICE_BT (device));
 	if (hw_str) {
-		hw_mac = ether_aton (hw_str);
-		if (!hw_mac) {
+		if (!nm_utils_hwaddr_aton (hw_str, hw_mac, ETH_ALEN)) {
 			g_set_error (error, NM_DEVICE_BT_ERROR, NM_DEVICE_BT_ERROR_INVALID_DEVICE_MAC,
 			             "Invalid device MAC address.");
 			return FALSE;
 		}
 		mac = nm_setting_bluetooth_get_bdaddr (s_bt);
-		if (mac && hw_mac && memcmp (mac->data, hw_mac->ether_addr_octet, ETH_ALEN)) {
+		if (mac && memcmp (mac->data, hw_mac, ETH_ALEN)) {
 			g_set_error (error, NM_DEVICE_BT_ERROR, NM_DEVICE_BT_ERROR_MAC_MISMATCH,
 			             "The MACs of the device and the connection didn't match.");
 			return FALSE;

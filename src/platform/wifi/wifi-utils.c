@@ -120,12 +120,12 @@ wifi_utils_get_ssid (WifiData *data)
 }
 
 gboolean
-wifi_utils_get_bssid (WifiData *data, struct ether_addr *out_bssid)
+wifi_utils_get_bssid (WifiData *data, guint8 *out_bssid)
 {
 	g_return_val_if_fail (data != NULL, FALSE);
 	g_return_val_if_fail (out_bssid != NULL, FALSE);
 
-	memset (out_bssid, 0, sizeof (*out_bssid));
+	memset (out_bssid, 0, ETH_ALEN);
 	return data->get_bssid (data, out_bssid);
 }
 

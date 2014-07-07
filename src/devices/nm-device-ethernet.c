@@ -361,7 +361,7 @@ update_permanent_hw_address (NMDevice *dev)
 	errno = 0;
 	ret = ioctl (fd, SIOCETHTOOL, &req);
 	errsv = errno;
-	if ((ret < 0) || !nm_ethernet_address_is_valid ((struct ether_addr *) epaddr->data)) {
+	if ((ret < 0) || !nm_ethernet_address_is_valid (epaddr->data)) {
 		_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address (error %d)", errsv);
 		/* Fall back to current address */
 		mac = nm_device_get_hw_address (dev, NULL);
@@ -371,8 +371,8 @@ update_permanent_hw_address (NMDevice *dev)
 			memset (epaddr->data, 0, ETH_ALEN);
 	}
 
-	if (memcmp (&priv->perm_hw_addr, epaddr->data, ETH_ALEN)) {
-		memcpy (&priv->perm_hw_addr, epaddr->data, ETH_ALEN);
+	if (memcmp (priv->perm_hw_addr, epaddr->data, ETH_ALEN)) {
+		memcpy (priv->perm_hw_addr, epaddr->data, ETH_ALEN);
 		g_object_notify (G_OBJECT (dev), NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS);
 	}
 
@@ -475,21 +475,21 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 			return FALSE;
 
 		mac = nm_setting_wired_get_mac_address (s_wired);
-		if (try_mac && mac && memcmp (mac->data, &priv->perm_hw_addr, ETH_ALEN))
+		if (try_mac && mac && memcmp (mac->data, priv->perm_hw_addr, ETH_ALEN))
 			return FALSE;
 
 		/* Check for MAC address blacklist */
 		mac_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
 		for (mac_blacklist_iter = mac_blacklist; mac_blacklist_iter;
 			 mac_blacklist_iter = g_slist_next (mac_blacklist_iter)) {
-			struct ether_addr addr;
+			guint8 addr[ETH_ALEN];
 
-			if (!ether_aton_r (mac_blacklist_iter->data, &addr)) {
+			if (!nm_utils_hwaddr_aton (mac_blacklist_iter->data, addr, ETH_ALEN)) {
 				g_warn_if_reached ();
 				return FALSE;
 			}
 
-			if (memcmp (&addr, &priv->perm_hw_addr, ETH_ALEN) == 0)
+			if (memcmp (addr, priv->perm_hw_addr, ETH_ALEN) == 0)
 				return FALSE;
 		}
 	}
