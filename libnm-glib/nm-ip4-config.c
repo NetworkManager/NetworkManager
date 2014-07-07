@@ -361,7 +361,7 @@ nm_ip4_config_get_gateway (NMIP4Config *config)
  *
  * Gets the IP4 addresses (containing the address, prefix, and gateway).
  *
- * Returns: (element-type NetworkManager.IP4Address): the #GSList containing #NMIP4Address<!-- -->es.
+ * Returns: (element-type NMIP4Address): the #GSList containing #NMIP4Address<!-- -->es.
  * This is the internal copy used by the configuration and must not be modified.
  **/
 const GSList *
@@ -455,7 +455,7 @@ nm_ip4_config_get_wins_servers (NMIP4Config *config)
  *
  * Gets the routes.
  *
- * Returns: (element-type NetworkManager.IP4Route): the #GSList containing
+ * Returns: (element-type NMIP4Route): the #GSList containing
  * #NMIP4Routes. This is the internal copy used by the configuration,
  * and must not be modified.
  **/

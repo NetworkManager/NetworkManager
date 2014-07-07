@@ -308,7 +308,7 @@ nm_active_connection_get_specific_object (NMActiveConnection *connection)
  *
  * Gets the #NMDevices used for the active connections.
  *
- * Returns: (element-type NMClient.Device): the #GPtrArray containing #NMDevices.
+ * Returns: (element-type NMDevice): the #GPtrArray containing #NMDevices.
  * This is the internal copy used by the connection, and must not be modified.
  **/
 const GPtrArray *

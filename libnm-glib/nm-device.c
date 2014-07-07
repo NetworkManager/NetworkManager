@@ -1425,7 +1425,7 @@ nm_device_get_active_connection (NMDevice *device)
  * Gets the #NMRemoteConnections currently known to the daemon that could
  * be activated on @device.
  *
- * Returns: (element-type NMClient.RemoteConnection): the #GPtrArray
+ * Returns: (element-type NMRemoteConnection): the #GPtrArray
  * containing #NMRemoteConnections. This is the internal copy used by
  * the connection, and must not be modified.
  *
@@ -2204,7 +2204,7 @@ nm_device_connection_compatible (NMDevice *device, NMConnection *connection, GEr
 /**
  * nm_device_filter_connections:
  * @device: an #NMDevice to filter connections for
- * @connections: (element-type NetworkManager.Connection): a list of #NMConnection objects to filter
+ * @connections: (element-type NMConnection): a list of #NMConnection objects to filter
  *
  * Filters a given list of connections for a given #NMDevice object and return
  * connections which may be activated with the device. For example if @device
@@ -2215,7 +2215,7 @@ nm_device_connection_compatible (NMDevice *device, NMConnection *connection, GEr
  * incompatible with the device. To get the full list of connections see
  * nm_remote_settings_list_connections().
  *
- * Returns: (transfer container) (element-type NetworkManager.Connection): a
+ * Returns: (transfer container) (element-type NMConnection): a
  * list of #NMConnection objects that could be activated with the given @device.
  * The elements of the list are owned by their creator and should not be freed
  * by the caller, but the returned list itself is owned by the caller and should

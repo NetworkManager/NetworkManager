@@ -377,7 +377,7 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 /**
  * nm_access_point_filter_connections:
  * @ap: an #NMAccessPoint to filter connections for
- * @connections: (element-type NetworkManager.Connection): a list of
+ * @connections: (element-type NMConnection): a list of
  * #NMConnection objects to filter
  *
  * Filters a given list of connections for a given #NMAccessPoint object and
@@ -390,7 +390,7 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
  * for a given #NMDevice using nm_device_filter_connections() and finally
  * filter that list with this function.
  *
- * Returns: (transfer container) (element-type NetworkManager.Connection): a
+ * Returns: (transfer container) (element-type NMConnection): a
  * list of #NMConnection objects that could be activated with the given @ap.
  * The elements of the list are owned by their creator and should not be freed
  * by the caller, but the returned list itself is owned by the caller and should

@@ -270,7 +270,7 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *device)
  *
  * Gets all the scanned access points of the #NMDeviceWifi.
  *
- * Returns: (element-type NMClient.AccessPoint): a #GPtrArray containing all the
+ * Returns: (element-type NMAccessPoint): a #GPtrArray containing all the
  * scanned #NMAccessPoints.
  * The returned array is owned by the client and should not be modified.
  **/

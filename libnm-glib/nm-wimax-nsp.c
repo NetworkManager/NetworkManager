@@ -173,14 +173,14 @@ nm_wimax_nsp_connection_valid (NMWimaxNsp *nsp, NMConnection *connection)
 /**
  * nm_wimax_nsp_filter_connections:
  * @nsp: an #NMWimaxNsp to filter connections for
- * @connections: (element-type NetworkManager.Connection): a list of
+ * @connections: (element-type NMConnection): a list of
  * #NMConnection objects to filter
  *
  * Filters a given list of connections for a given #NMWimaxNsp object and
  * return connections which may be activated with the access point.  Any
  * returned connections will match the @nsp's network name and other attributes.
  *
- * Returns: (transfer container) (element-type NetworkManager.Connection): a
+ * Returns: (transfer container) (element-type NMConnection): a
  * list of #NMConnection objects that could be activated with the given @nsp.
  * The elements of the list are owned by their creator and should not be freed
  * by the caller, but the returned list itself is owned by the caller and should

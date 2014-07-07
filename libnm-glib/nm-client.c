@@ -364,7 +364,7 @@ client_recheck_permissions (DBusGProxy *proxy, gpointer user_data)
  * returned array is, and then you may use device-specific methods such as
  * nm_device_ethernet_get_hw_address().
  *
- * Returns: (transfer none) (element-type NMClient.Device): a #GPtrArray
+ * Returns: (transfer none) (element-type NMDevice): a #GPtrArray
  * containing all the #NMDevices.  The returned array is owned by the
  * #NMClient object and should not be modified.
  **/
@@ -783,7 +783,7 @@ nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
  *
  * Gets the active connections.
  *
- * Returns: (transfer none) (element-type NMClient.ActiveConnection): a #GPtrArray
+ * Returns: (transfer none) (element-type NMActiveConnection): a #GPtrArray
  *  containing all the active #NMActiveConnections.
  * The returned array is owned by the client and should not be modified.
  **/
@@ -2304,7 +2304,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient::active-connections:
 	 *
 	 * The active connections.
-	 * Type: GPtrArray<NMClient.ActiveConnection>
+	 * Type: GPtrArray<NMActiveConnection>
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTIONS,
@@ -2376,7 +2376,7 @@ nm_client_class_init (NMClientClass *client_class)
 	/**
 	 * NMClient::device-added:
 	 * @client: the client that received the signal
-	 * @device: (type NMClient.Device): the new device
+	 * @device: (type NMDevice): the new device
 	 *
 	 * Notifies that a #NMDevice is added.
 	 **/
@@ -2392,7 +2392,7 @@ nm_client_class_init (NMClientClass *client_class)
 	/**
 	 * NMClient::device-removed:
 	 * @client: the client that received the signal
-	 * @device: (type NMClient.Device): the removed device
+	 * @device: (type NMDevice): the removed device
 	 *
 	 * Notifies that a #NMDevice is removed.
 	 **/

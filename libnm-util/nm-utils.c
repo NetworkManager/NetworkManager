@@ -894,7 +894,7 @@ nm_utils_wpa_psk_valid (const char *psk)
  * this serialization is not guaranteed to be stable and the #GArray may be
  * extended in the future.
  *
- * Returns: (transfer full) (element-type NetworkManager.IP4Address): a newly allocated #GSList of #NMIP4Address objects
+ * Returns: (transfer full) (element-type NMIP4Address): a newly allocated #GSList of #NMIP4Address objects
  **/
 GSList *
 nm_utils_ip4_addresses_from_gvalue (const GValue *value)
@@ -976,7 +976,7 @@ nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value)
  * format of this serialization is not guaranteed to be stable and may be
  * extended in the future.
  *
- * Returns: (transfer full) (element-type NetworkManager.IP4Route): a newly allocated #GSList of #NMIP4Route objects
+ * Returns: (transfer full) (element-type NMIP4Route): a newly allocated #GSList of #NMIP4Route objects
  **/
 GSList *
 nm_utils_ip4_routes_from_gvalue (const GValue *value)
@@ -1133,7 +1133,7 @@ nm_utils_ip4_get_default_prefix (guint32 ip)
  * this serialization is not guaranteed to be stable and the #GValueArray may be
  * extended in the future.
  *
- * Returns: (transfer full) (element-type NetworkManager.IP6Address): a newly allocated #GSList of #NMIP6Address objects
+ * Returns: (transfer full) (element-type NMIP6Address): a newly allocated #GSList of #NMIP6Address objects
  **/
 GSList *
 nm_utils_ip6_addresses_from_gvalue (const GValue *value)
@@ -1270,7 +1270,7 @@ nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
  * into a #GSList of #NMIP6Route objects.  The specific format of this serialization
  * is not guaranteed to be stable and may be extended in the future.
  *
- * Returns: (transfer full) (element-type NetworkManager.IP6Route): a newly allocated #GSList of #NMIP6Route objects
+ * Returns: (transfer full) (element-type NMIP6Route): a newly allocated #GSList of #NMIP6Route objects
  **/
 GSList *
 nm_utils_ip6_routes_from_gvalue (const GValue *value)

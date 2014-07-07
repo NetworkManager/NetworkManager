@@ -145,7 +145,7 @@ nm_device_team_get_carrier (NMDeviceTeam *device)
  *
  * Gets the devices currently enslaved to @device.
  *
- * Returns: (element-type NMClient.Device): the #GPtrArray containing
+ * Returns: (element-type NMDevice): the #GPtrArray containing
  * #NMDevices that are slaves of @device. This is the internal
  * copy used by the device, and must not be modified.
  *

@@ -180,7 +180,7 @@ nm_device_wimax_get_active_nsp (NMDeviceWimax *wimax)
  *
  * Gets all the scanned NSPs of the #NMDeviceWimax.
  *
- * Returns: (element-type NMClient.WimaxNsp): a #GPtrArray containing
+ * Returns: (element-type NMWimaxNsp): a #GPtrArray containing
  *          all the scanned #NMWimaxNsps.
  * The returned array is owned by the client and should not be modified.
  **/

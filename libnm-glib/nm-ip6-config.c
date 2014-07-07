@@ -179,7 +179,7 @@ nm_ip6_config_get_gateway (NMIP6Config *config)
  *
  * Gets the IP6 addresses (containing the address, prefix, and gateway).
  *
- * Returns: (element-type NetworkManager.IP6Address): the #GSList containing
+ * Returns: (element-type NMIP6Address): the #GSList containing
  * #NMIP6Address<!-- -->es. This is the internal copy used by the configuration
  * and must not be modified.
  **/
@@ -306,7 +306,7 @@ nm_ip6_config_get_searches (NMIP6Config *config)
  *
  * Gets the routes.
  *
- * Returns: (element-type NetworkManager.IP6Route): the #GSList containing
+ * Returns: (element-type NMIP6Route): the #GSList containing
  * #NMIP6Routes. This is the internal copy used by the configuration,
  * and must not be modified.
  **/

@@ -597,7 +597,7 @@ fetch_connections_done (DBusGProxy *proxy,
  * nm_remote_settings_list_connections:
  * @settings: the %NMRemoteSettings
  *
- * Returns: (transfer container) (element-type NMClient.RemoteConnection): a
+ * Returns: (transfer container) (element-type NMRemoteConnection): a
  * list containing all connections provided by the remote settings service.
  * Each element of the returned list is a %NMRemoteConnection instance, which is
  * owned by the %NMRemoteSettings object and should not be freed by the caller.
