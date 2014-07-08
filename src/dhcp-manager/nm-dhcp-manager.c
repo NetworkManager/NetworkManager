@@ -379,7 +379,8 @@ client_start (NMDHCPManager *self,
               guint32 timeout,
               GByteArray *dhcp_anycast_addr,
               const char *hostname,
-              gboolean info_only)
+              gboolean info_only,
+              NMSettingIP6ConfigPrivacy privacy)
 {
 	NMDHCPManagerPrivate *priv;
 	NMDHCPClient *client;
@@ -418,7 +419,7 @@ client_start (NMDHCPManager *self,
 	g_signal_connect (client, NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED, G_CALLBACK (client_state_changed), self);
 
 	if (ipv6)
-		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, hostname, info_only);
+		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, hostname, info_only, privacy);
 	else
 		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname);
 
@@ -460,7 +461,8 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 	if (send_hostname)
 		hostname = get_send_hostname (self, dhcp_hostname);
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, FALSE,
-	                     dhcp_client_id, timeout, dhcp_anycast_addr, hostname, FALSE);
+	                     dhcp_client_id, timeout, dhcp_anycast_addr, hostname,
+	                     FALSE, 0);
 }
 
 /* Caller owns a reference to the NMDHCPClient on return */
@@ -474,15 +476,18 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
                            const char *dhcp_hostname,
                            guint32 timeout,
                            GByteArray *dhcp_anycast_addr,
-                           gboolean info_only)
+                           gboolean info_only,
+                           NMSettingIP6ConfigPrivacy privacy)
 {
 	const char *hostname;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 
 	hostname = dhcp_hostname ? get_send_hostname (self, dhcp_hostname) : NULL;
+
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, TRUE,
-	                     NULL, timeout, dhcp_anycast_addr, hostname, info_only);
+	                     NULL, timeout, dhcp_anycast_addr, hostname, info_only,
+	                     privacy);
 }
 
 void

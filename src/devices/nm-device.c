@@ -3239,7 +3239,8 @@ dhcp6_start (NMDevice *self,
 	                                                nm_setting_ip6_config_get_dhcp_hostname (s_ip6),
 	                                                priv->dhcp_timeout,
 	                                                priv->dhcp_anycast_address,
-	                                                (dhcp_opt == NM_RDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE);
+	                                                (dhcp_opt == NM_RDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE,
+	                                                nm_setting_ip6_config_get_ip6_privacy (s_ip6));
 	if (tmp)
 		g_byte_array_free (tmp, TRUE);
 

@@ -72,6 +72,7 @@ typedef struct {
 	                           GByteArray *anycast_addr,
 	                           const char *hostname,
 	                           gboolean info_only,
+	                           NMSettingIP6ConfigPrivacy privacy,
 	                           const GByteArray *duid);
 
 	void (*stop)              (NMDHCPClient *self,
@@ -116,7 +117,8 @@ gboolean nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 gboolean nm_dhcp_client_start_ip6 (NMDHCPClient *self,
                                    GByteArray *dhcp_anycast_addr,
                                    const char *hostname,
-                                   gboolean info_only);
+                                   gboolean info_only,
+                                   NMSettingIP6ConfigPrivacy privacy);
 
 void nm_dhcp_client_stop (NMDHCPClient *self, gboolean release);
 

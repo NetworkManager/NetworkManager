@@ -172,6 +172,7 @@ ip6_start (NMDHCPClient *client,
            GByteArray *dhcp_anycast_addr,
            const char *hostname,
            gboolean info_only,
+           NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid)
 {
 	nm_log_warn (LOGD_DHCP6, "the dhcpcd backend does not support IPv6.");

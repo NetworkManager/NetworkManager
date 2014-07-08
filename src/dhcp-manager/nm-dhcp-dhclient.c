@@ -500,6 +500,7 @@ ip6_start (NMDHCPClient *client,
            GByteArray *dhcp_anycast_addr,
            const char *hostname,
            gboolean info_only,
+           NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);

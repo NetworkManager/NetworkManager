@@ -473,7 +473,8 @@ gboolean
 nm_dhcp_client_start_ip6 (NMDHCPClient *self,
                           GByteArray *dhcp_anycast_addr,
                           const char *hostname,
-                          gboolean info_only)
+                          gboolean info_only,
+                          NMSettingIP6ConfigPrivacy privacy)
 {
 	NMDHCPClientPrivate *priv;
 	char *escaped;
@@ -506,6 +507,7 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
 	                                                   dhcp_anycast_addr,
 	                                                   hostname,
 	                                                   info_only,
+	                                                   privacy,
 	                                                   priv->duid);
 }
 
