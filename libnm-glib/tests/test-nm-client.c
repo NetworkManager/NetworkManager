@@ -284,10 +284,6 @@ test_device_added (void)
 
 	service_init ();
 
-	/* Give NMClient a chance to initialize */
-	g_timeout_add_seconds (5, loop_quit, loop);
-	g_main_loop_run (loop);
-
 	devices = nm_client_get_devices (_sinfo->client);
 	test_assert (devices == NULL);
 
@@ -441,10 +437,6 @@ test_wifi_ap_added_removed (void)
 	char *expected_path = NULL;
 
 	service_init ();
-
-	/* Give NMClient a chance to initialize */
-	g_timeout_add_seconds (5, loop_quit, loop);
-	g_main_loop_run (loop);
 
 	/*************************************/
 	/* Add the wifi device */
@@ -665,10 +657,6 @@ test_wimax_nsp_added_removed (void)
 
 	service_init ();
 
-	/* Give NMClient a chance to initialize */
-	g_timeout_add_seconds (5, loop_quit, loop);
-	g_main_loop_run (loop);
-
 	/*************************************/
 	/* Add the wimax device */
 	add_device ("AddWimaxDevice", "wmx0", NULL);
@@ -848,10 +836,6 @@ test_devices_array (void)
 	GVariant *ret;
 
 	service_init ();
-
-	/* Give NMClient a chance to initialize */
-	g_timeout_add_seconds (5, loop_quit, loop);
-	g_main_loop_run (loop);
 
 	/*************************************/
 	/* Add some devices */
