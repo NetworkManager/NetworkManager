@@ -49,7 +49,9 @@ _vapi_name = $(subst /,_,$(subst -,_,$(subst .,_,$(1))))
 
 define vapigen
 $(1): $$($(_vapi_name)_GIR)
-	$(_vapigen_silent_prefix) $(VAPIGEN) $(_vapigen_silent_opts) \
+	$(_vapigen_silent_prefix) \
+	G_DEBUG='' \
+	$(VAPIGEN) $(_vapigen_silent_opts) \
 	  --library $(1:.vapi=) \
 	  $(foreach _vapi_metadatadir_name,$(if $($(_vapi_name)_METADATADIRS),$($(_vapi_name)_METADATADIRS),$(VAPIGEN_METADATADIRS)),--metadatadir $(_vapi_metadatadir_name)) \
 	  $(foreach _vapi_dir_name,$(if $($(_vapi_name)_VAPIDIRS),$($(_vapi_name)_VAPIDIRS),$(VAPIGEN_VAPIDIRS)),--vapidir $(_vapi_dir_name)) \
