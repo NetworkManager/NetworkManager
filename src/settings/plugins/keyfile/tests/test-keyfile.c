@@ -1376,8 +1376,7 @@ test_write_string_ssid (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-			"connection-write", "written and re-read connection weren't the same");
+	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -1501,8 +1500,7 @@ test_write_intlist_ssid (void)
 	g_assert_no_error (error);
 	g_assert (reread);
 
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -1653,8 +1651,7 @@ test_write_intlike_ssid (void)
 	g_assert_no_error (error);
 	g_assert (reread);
 
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -1741,8 +1738,7 @@ test_write_intlike_ssid_2 (void)
 	g_assert_no_error (error);
 	g_assert (reread);
 
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -1996,8 +1992,7 @@ test_write_bt_dun_connection (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-			"connection-write", "written and re-read connection weren't the same");
+	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -2230,8 +2225,7 @@ test_write_gsm_connection (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-			"connection-write", "written and re-read connection weren't the same");
+	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -3224,7 +3218,7 @@ test_write_new_wired_group_name (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
 	g_assert_no_error (error);
 	g_assert (reread);
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
 
 	/* Look at the keyfile itself to ensure we wrote out the new group names and type */
 	kf = g_key_file_new ();
@@ -3354,7 +3348,7 @@ test_write_new_wireless_group_names (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
 	g_assert_no_error (error);
 	g_assert (reread);
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, FALSE, reread, FALSE);
 
 	/* Look at the keyfile itself to ensure we wrote out the new group names and type */
 	kf = g_key_file_new ();
