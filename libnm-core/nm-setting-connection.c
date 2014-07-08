@@ -754,7 +754,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_ID);
 		return FALSE;
-	} else if (!strlen (priv->id)) {
+	} else if (!priv->id[0]) {
 		g_set_error_literal (error,
 		                     NM_SETTING_CONNECTION_ERROR,
 		                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -831,35 +831,46 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
 		return FALSE;
-	} else if (!strlen (priv->type)) {
-		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is empty"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
-		return FALSE;
-	}
+	} else {
+		GType base_type;
 
-	/* Make sure the corresponding 'type' item is present */
-	if (all_settings) {
-		NMSetting *s_base;
+		if (!priv->type[0]) {
+			g_set_error_literal (error,
+			                     NM_SETTING_CONNECTION_ERROR,
+			                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("property is empty"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
+			return FALSE;
+		}
 
-		s_base = nm_setting_find_in_list (all_settings, priv->type);
-		if (!s_base) {
+		base_type = nm_setting_lookup_type (priv->type);
+		if (base_type == G_TYPE_INVALID) {
 			g_set_error (error,
 			             NM_SETTING_CONNECTION_ERROR,
-			             NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND,
-			             _("requires presence of '%s' setting in the connection"),
+			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("connection type '%s' is not valid"),
 			             priv->type);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
 			return FALSE;
 		}
 
-		if (!_nm_setting_is_base_type (s_base)) {
+		if (!_nm_setting_type_is_base_type (base_type)) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
-			             _("connection type '%s' is not a base type"),
+			             _("connection type '%s' is not a valid base type"),
+			             priv->type);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
+			return FALSE;
+		}
+
+		/* Make sure the corresponding 'type' item is present */
+		if (   all_settings
+		    && !nm_setting_find_in_list (all_settings, priv->type)) {
+			g_set_error (error,
+			             NM_SETTING_CONNECTION_ERROR,
+			             NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND,
+			             _("requires presence of '%s' setting in the connection"),
 			             priv->type);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
 			return FALSE;
