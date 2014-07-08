@@ -1288,6 +1288,34 @@ nm_setting_get_virtual_iface_name (NMSetting *setting)
 	return NULL;
 }
 
+NMSetting *
+_nm_setting_find_in_list_required (GSList *all_settings,
+                                   const char *setting_name,
+                                   GError **error,
+                                   const char *error_prefix_setting_name,
+                                   const char *error_prefix_property_name)
+{
+	NMSetting *setting;
+
+	g_return_val_if_fail (!error || !*error, NULL);
+	g_return_val_if_fail (all_settings, NULL);
+	g_return_val_if_fail (setting_name, NULL);
+	g_return_val_if_fail (!error_prefix_setting_name == !error_prefix_property_name, NULL);
+
+	setting = nm_setting_find_in_list (all_settings, setting_name);
+	if (!setting) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             !strcmp (setting_name, NM_SETTING_CONNECTION_SETTING_NAME)
+		                 ? NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND
+		                 : NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
+		             _("Missing '%s' setting"),
+		             setting_name);
+		if (error_prefix_setting_name)
+			g_prefix_error (error, "%s.%s: ", error_prefix_setting_name, error_prefix_property_name);
+	}
+	return setting;
+}
 
 NMSettingVerifyResult
 _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,

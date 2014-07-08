@@ -90,6 +90,12 @@ static void __attribute__((constructor)) register_setting (void) \
 
 NMSetting *nm_setting_find_in_list (GSList *settings_list, const char *setting_name);
 
+NMSetting * _nm_setting_find_in_list_required (GSList *all_settings,
+                                               const char *setting_name,
+                                               GError **error,
+                                               const char *error_prefix_setting_name,
+                                               const char *error_prefix_property_name);
+
 NMSettingVerifyResult _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
                                                                         gboolean allow_missing,
                                                                         const char *setting_name,
