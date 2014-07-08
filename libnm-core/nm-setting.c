@@ -311,6 +311,29 @@ _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_t
 }
 
 
+NMSetting *
+_nm_setting_find_in_list_base_type (GSList *all_settings)
+{
+	GSList *iter;
+	NMSetting *setting = NULL;
+
+	for (iter = all_settings; iter; iter = iter->next) {
+		NMSetting *s_iter = NM_SETTING (iter->data);
+
+		if (!_nm_setting_is_base_type (s_iter))
+			continue;
+
+		if (setting) {
+			/* FIXME: currently, if there is more than one matching base type,
+			 * we cannot detect the base setting.
+			 * See: https://bugzilla.gnome.org/show_bug.cgi?id=696936#c8 */
+			return NULL;
+		}
+		setting = s_iter;
+	}
+	return setting;
+}
+
 const char *
 _nm_setting_slave_type_detect_from_settings (GSList *all_settings, NMSetting **out_s_port)
 {

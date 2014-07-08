@@ -2659,6 +2659,332 @@ test_connection_normalize_virtual_iface_name (void)
 }
 
 static void
+_test_connection_normalize_type_normalizable_setting (const char *type,
+                                                      void (*prepare_normalizable_fcn) (NMConnection *con))
+{
+	NMSettingConnection *s_con;
+	NMSetting *s_base;
+	GType base_type;
+	gs_unref_object NMConnection *con = NULL;
+	gs_free char *id = g_strdup_printf ("%s[%s]", G_STRFUNC, type);
+
+	base_type = nm_setting_lookup_type (type);
+	g_assert (base_type != G_TYPE_INVALID);
+	g_assert (_nm_setting_type_is_base_type (base_type));
+
+	con = nmtst_create_minimal_connection (id, NULL, NULL, &s_con);
+
+	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+
+	g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, type, NULL);
+
+	if (prepare_normalizable_fcn)
+		prepare_normalizable_fcn (con);
+
+	g_assert (!nm_connection_get_setting_by_name (con, type));
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND);
+
+	s_base = nm_connection_get_setting_by_name (con, type);
+	g_assert (s_base);
+	g_assert (G_OBJECT_TYPE (s_base) == base_type);
+}
+
+static void
+_test_connection_normalize_type_unnormalizable_setting (const char *type)
+{
+	NMSettingConnection *s_con;
+	GType base_type;
+	gs_unref_object NMConnection *con = NULL;
+	gs_free char *id = g_strdup_printf ("%s[%s]", G_STRFUNC, type);
+
+	base_type = nm_setting_lookup_type (type);
+	g_assert (base_type != G_TYPE_INVALID);
+	g_assert (_nm_setting_type_is_base_type (base_type));
+
+	con = nmtst_create_minimal_connection (id, NULL, NULL, &s_con);
+
+	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+
+	g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, type, NULL);
+
+	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND);
+}
+
+static void
+_test_connection_normalize_type_normalizable_type (const char *type,
+                                                   NMSetting *(*add_setting_fcn) (NMConnection *con))
+{
+	NMSettingConnection *s_con;
+	NMSetting *s_base;
+	GType base_type;
+	gs_unref_object NMConnection *con = NULL;
+	gs_free char *id = g_strdup_printf ("%s[%s]", G_STRFUNC, type);
+
+	base_type = nm_setting_lookup_type (type);
+	g_assert (base_type != G_TYPE_INVALID);
+	g_assert (_nm_setting_type_is_base_type (base_type));
+
+	con = nmtst_create_minimal_connection (id, NULL, NULL, &s_con);
+
+	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+
+	if (add_setting_fcn)
+		s_base = add_setting_fcn (con);
+	else {
+		s_base = NM_SETTING (g_object_new (base_type, NULL));
+		nm_connection_add_setting (con, s_base);
+	}
+
+	g_assert (!nm_connection_get_connection_type (con));
+	g_assert (nm_connection_get_setting_by_name (con, type) == s_base);
+
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+
+	g_assert_cmpstr (nm_connection_get_connection_type (con), ==, type);
+	g_assert (nm_connection_get_setting_by_name (con, type) == s_base);
+}
+
+static NMSetting *
+_add_setting_fcn_adsl (NMConnection *con)
+{
+	NMSetting *setting;
+
+	setting = g_object_new (NM_TYPE_SETTING_ADSL,
+	                        NM_SETTING_ADSL_USERNAME, "test-user",
+	                        NM_SETTING_ADSL_PROTOCOL, NM_SETTING_ADSL_PROTOCOL_PPPOA,
+	                        NM_SETTING_ADSL_ENCAPSULATION, NM_SETTING_ADSL_ENCAPSULATION_VCMUX,
+	                        NULL);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_bluetooth (NMConnection *con)
+{
+	NMSetting *setting;
+	GByteArray *bdaddr = nm_utils_hwaddr_atoba ("11:22:33:44:55:66", ETH_ALEN);
+
+	setting = g_object_new (NM_TYPE_SETTING_BLUETOOTH,
+	                        NM_SETTING_BLUETOOTH_BDADDR, bdaddr,
+	                        NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
+	                        NULL);
+	g_byte_array_free (bdaddr, TRUE);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_bond (NMConnection *con)
+{
+	NMSetting *setting;
+	NMSettingConnection *s_con;
+
+	setting = g_object_new (NM_TYPE_SETTING_BOND, NULL);
+
+	nm_connection_add_setting (con, setting);
+
+	s_con = nm_connection_get_setting_connection (con);
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "test-bond",
+	              NULL);
+
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_bridge (NMConnection *con)
+{
+	NMSetting *setting;
+	NMSettingConnection *s_con;
+
+	setting = g_object_new (NM_TYPE_SETTING_BRIDGE, NULL);
+
+	nm_connection_add_setting (con, setting);
+
+	s_con = nm_connection_get_setting_connection (con);
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "test-bridge",
+	              NULL);
+
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_cdma (NMConnection *con)
+{
+	NMSetting *setting;
+
+	setting = g_object_new (NM_TYPE_SETTING_CDMA,
+	                        NM_SETTING_CDMA_NUMBER, "test-number",
+	                        NULL);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_infiniband (NMConnection *con)
+{
+	NMSetting *setting;
+
+	setting = g_object_new (NM_TYPE_SETTING_INFINIBAND,
+	                        NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",
+	                        NULL);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_olpc_mesh (NMConnection *con)
+{
+	NMSetting *setting;
+	const char *ssid_data = "ssid-test";
+	GByteArray *ssid = g_byte_array_new ();
+
+	g_byte_array_append (ssid, (const guint8 *) ssid_data, strlen (ssid_data));
+	setting = g_object_new (NM_TYPE_SETTING_OLPC_MESH,
+	                        NM_SETTING_OLPC_MESH_SSID, ssid,
+	                        NM_SETTING_OLPC_MESH_CHANNEL, 1,
+	                        NULL);
+	g_byte_array_free (ssid, TRUE);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_team (NMConnection *con)
+{
+	NMSetting *setting;
+	NMSettingConnection *s_con;
+
+	setting = g_object_new (NM_TYPE_SETTING_TEAM, NULL);
+
+	nm_connection_add_setting (con, setting);
+
+	s_con = nm_connection_get_setting_connection (con);
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "test-team",
+	              NULL);
+
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_vlan (NMConnection *con)
+{
+	NMSetting *setting;
+
+	setting = g_object_new (NM_TYPE_SETTING_VLAN,
+	                        NM_SETTING_VLAN_PARENT, "test-parent",
+	                        NULL);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_vpn (NMConnection *con)
+{
+	NMSetting *setting;
+
+	setting = g_object_new (NM_TYPE_SETTING_VPN,
+	                        NM_SETTING_VPN_SERVICE_TYPE, "test-vpn-service-type",
+	                        NULL);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_wimax (NMConnection *con)
+{
+	NMSetting *setting;
+
+	setting = g_object_new (NM_TYPE_SETTING_WIMAX,
+	                        NM_SETTING_WIMAX_NETWORK_NAME, "test-network",
+	                        NULL);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_wireless (NMConnection *con)
+{
+	NMSetting *setting;
+	const char *ssid_data = "ssid-test";
+	GByteArray *ssid = g_byte_array_new ();
+
+	g_byte_array_append (ssid, (const guint8 *) ssid_data, strlen (ssid_data));
+	setting = g_object_new (NM_TYPE_SETTING_WIRELESS,
+	                        NM_SETTING_WIRELESS_SSID, ssid,
+	                        NULL);
+	g_byte_array_free (ssid, TRUE);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static void
+_prepare_normalizable_fcn_vlan (NMConnection *con)
+{
+	GByteArray *mac_addr = nm_utils_hwaddr_atoba ("11:22:33:44:55:66", ETH_ALEN);
+
+	nm_connection_add_setting (con, g_object_new (NM_TYPE_SETTING_WIRED,
+	                                              NM_SETTING_WIRED_MAC_ADDRESS, mac_addr,
+	                                              NULL));
+	g_byte_array_free (mac_addr, TRUE);
+}
+
+static void
+test_connection_normalize_type (void)
+{
+	guint i;
+	struct {
+		const char *type;
+		gboolean normalizable;
+		NMSetting *(*add_setting_fcn) (NMConnection *con);
+		void (*prepare_normalizable_fcn) (NMConnection *con);
+	} types[] = {
+		{ NM_SETTING_GENERIC_SETTING_NAME, TRUE },
+		{ NM_SETTING_GSM_SETTING_NAME, TRUE },
+		{ NM_SETTING_WIRED_SETTING_NAME, TRUE },
+		{ NM_SETTING_VLAN_SETTING_NAME, TRUE, _add_setting_fcn_vlan, _prepare_normalizable_fcn_vlan },
+
+		{ NM_SETTING_ADSL_SETTING_NAME, FALSE, _add_setting_fcn_adsl },
+		{ NM_SETTING_BLUETOOTH_SETTING_NAME, FALSE, _add_setting_fcn_bluetooth },
+		{ NM_SETTING_BOND_SETTING_NAME, FALSE, _add_setting_fcn_bond },
+		{ NM_SETTING_BRIDGE_SETTING_NAME, FALSE, _add_setting_fcn_bridge },
+		{ NM_SETTING_CDMA_SETTING_NAME, FALSE, _add_setting_fcn_cdma },
+		{ NM_SETTING_INFINIBAND_SETTING_NAME, FALSE, _add_setting_fcn_infiniband },
+		{ NM_SETTING_OLPC_MESH_SETTING_NAME, FALSE, _add_setting_fcn_olpc_mesh },
+		{ NM_SETTING_TEAM_SETTING_NAME, FALSE, _add_setting_fcn_team },
+		{ NM_SETTING_VLAN_SETTING_NAME, FALSE, _add_setting_fcn_vlan },
+		{ NM_SETTING_VPN_SETTING_NAME, FALSE, _add_setting_fcn_vpn },
+		{ NM_SETTING_WIMAX_SETTING_NAME, FALSE, _add_setting_fcn_wimax },
+		{ NM_SETTING_WIRELESS_SETTING_NAME, FALSE, _add_setting_fcn_wireless },
+		{ 0 },
+	};
+
+	for (i = 0; types[i].type; i++) {
+		const char *type = types[i].type;
+
+		if (types[i].normalizable)
+			_test_connection_normalize_type_normalizable_setting (type, types[i].prepare_normalizable_fcn);
+		else
+			_test_connection_normalize_type_unnormalizable_setting (type);
+		_test_connection_normalize_type_normalizable_type (type, types[i].add_setting_fcn);
+	}
+}
+
+static void
 test_connection_normalize_slave_type_1 (void)
 {
 	gs_unref_object NMConnection *con = NULL;
@@ -2755,6 +3081,7 @@ int main (int argc, char **argv)
 	test_connection_new_from_hash ();
 	test_connection_verify_sets_interface_name ();
 	test_connection_normalize_virtual_iface_name ();
+	test_connection_normalize_type ();
 	test_connection_normalize_slave_type_1 ();
 	test_connection_normalize_slave_type_2 ();
 

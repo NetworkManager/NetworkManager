@@ -581,6 +581,41 @@ _normalize_virtual_iface_name (NMConnection *self)
 }
 
 static gboolean
+_normalize_connection_type (NMConnection *self)
+{
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
+	NMSetting *s_base = NULL;
+	const char *type;
+	GSList *all_settings;
+
+	type = nm_setting_connection_get_connection_type (s_con);
+
+	if (type) {
+		s_base = nm_connection_get_setting_by_name (self, type);
+
+		if (!s_base) {
+			GType base_type = nm_setting_lookup_type (type);
+
+			g_return_val_if_fail (base_type, FALSE);
+			nm_connection_add_setting (self, g_object_new (base_type, NULL));
+			return TRUE;
+		}
+	} else {
+		all_settings = _nm_utils_hash_values_to_slist (NM_CONNECTION_GET_PRIVATE (self)->settings);
+
+		s_base =  _nm_setting_find_in_list_base_type (all_settings);
+		g_return_val_if_fail (s_base, FALSE);
+
+		type = nm_setting_get_name (s_base);
+		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, type, NULL);
+		g_slist_free (all_settings);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+static gboolean
 _normalize_connection_slave_type (NMConnection *self)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
@@ -876,6 +911,7 @@ nm_connection_normalize (NMConnection *connection,
 	 * We only do this, after verifying that the connection contains no un-normalizable
 	 * errors, because in that case we rather fail without touching the settings. */
 
+	was_modified |= _normalize_connection_type (connection);
 	was_modified |= _normalize_virtual_iface_name (connection);
 	was_modified |= _normalize_connection_slave_type (connection);
 	was_modified |= _normalize_ip_config (connection, parameters);
