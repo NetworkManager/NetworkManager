@@ -3802,11 +3802,6 @@ wireless_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
-
 	return connection;
 }
 
@@ -4020,11 +4015,6 @@ wired_connection_from_ifcfg (const char *file,
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
-
 	return connection;
 }
 
@@ -4183,11 +4173,6 @@ infiniband_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, infiniband_setting);
 
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
-
 	return connection;
 }
 
@@ -4308,11 +4293,6 @@ bond_connection_from_ifcfg (const char *file,
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
-
 	return connection;
 }
 
@@ -4418,11 +4398,6 @@ team_connection_from_ifcfg (const char *file,
 
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
-
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
 
 	return connection;
 }
@@ -4603,11 +4578,6 @@ bridge_connection_from_ifcfg (const char *file,
 		return NULL;
 	}
 	nm_connection_add_setting (connection, bridge_setting);	
-
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
 
 	return connection;
 }
@@ -4921,10 +4891,6 @@ vlan_connection_from_ifcfg (const char *file,
 
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
 
 	return connection;
 }
