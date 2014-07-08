@@ -3438,6 +3438,90 @@ test_read_missing_id_uuid (void)
 	g_object_unref (connection);
 }
 
+static void
+test_read_minimal ()
+{
+	NMConnection *connection = NULL;
+	gs_unref_object NMConnection *con_archetype = NULL;
+	NMSettingConnection *s_con;
+
+	con_archetype = nmtst_create_minimal_connection ("Test_minimal_x",
+	                                                 "a15bd68f-c32b-40b8-8d27-49e472a85919",
+	                                                 NM_SETTING_WIRED_SETTING_NAME,
+	                                                 &s_con);
+	nmtst_connection_normalize (con_archetype);
+
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_1");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connection),
+	              NULL);
+	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
+	g_clear_object (&connection);
+
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_2");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connection),
+	              NULL);
+	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
+	g_clear_object (&connection);
+}
+
+static void
+test_read_minimal_slave ()
+{
+	NMConnection *connection = NULL;
+	gs_unref_object NMConnection *con_archetype = NULL;
+	NMSettingConnection *s_con;
+
+	con_archetype = nmtst_create_minimal_connection ("Test_minimal_slave_x",
+	                                                 "a56b4ca5-7075-43d4-82c7-5d0cb15f7654",
+	                                                 NM_SETTING_WIRED_SETTING_NAME,
+	                                                 &s_con);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_MASTER, "br0",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, "bridge",
+	              NULL);
+	nmtst_connection_normalize (con_archetype);
+
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_slave_1");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connection),
+	              NULL);
+	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
+	g_clear_object (&connection);
+
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_slave_2");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connection),
+	              NULL);
+	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
+	g_clear_object (&connection);
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_slave_3");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connection),
+	              NULL);
+	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
+	g_clear_object (&connection);
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_slave_4");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connection),
+	              NULL);
+	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
+	g_clear_object (&connection);
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -3499,6 +3583,9 @@ int main (int argc, char **argv)
 
 	g_test_add_func ("/keyfile/test_read_missing_vlan_setting ", test_read_missing_vlan_setting);
 	g_test_add_func ("/keyfile/test_read_missing_id_uuid ", test_read_missing_id_uuid);
+
+	g_test_add_func ("/keyfile/test_read_minimal", test_read_minimal);
+	g_test_add_func ("/keyfile/test_read_minimal_slave", test_read_minimal_slave);
 
 	return g_test_run ();
 }

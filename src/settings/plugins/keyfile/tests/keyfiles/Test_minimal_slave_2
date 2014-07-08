@@ -1,0 +1,7 @@
+[connection]
+master=br0
+
+[802-3-ethernet]
+
+[bridge-port]
+
