@@ -724,6 +724,71 @@ nmtst_create_minimal_connection (const char *id, const char *uuid, const char *t
 	return con;
 }
 
+inline static gboolean
+_nmtst_connection_normalize_v (NMConnection *connection, va_list args)
+{
+	GError *error = NULL;
+	gboolean success;
+	gboolean was_modified = FALSE;
+	GHashTable *parameters = NULL;
+	const char *p_name;
+
+	g_assert (NM_IS_CONNECTION (connection));
+
+	while ((p_name = va_arg (args, const char *))) {
+		if (!parameters)
+			parameters =  g_hash_table_new (g_str_hash, g_str_equal);
+		g_hash_table_insert (parameters, (gpointer *) p_name, va_arg (args, gpointer));
+	}
+
+	success = nm_connection_normalize (connection,
+	                                   parameters,
+	                                   &was_modified,
+	                                   &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	if (parameters)
+		g_hash_table_destroy (parameters);
+
+	return was_modified;
+}
+
+inline static gboolean
+_nmtst_connection_normalize (NMConnection *connection, ...)
+{
+	gboolean was_modified;
+	va_list args;
+
+	va_start (args, connection);
+	was_modified = _nmtst_connection_normalize_v (connection, args);
+	va_end (args);
+
+	return was_modified;
+}
+#define nmtst_connection_normalize(connection, ...) \
+    _nmtst_connection_normalize(connection, ##__VA_ARGS__, NULL)
+
+inline static NMConnection *
+_nmtst_connection_duplicate_and_normalize (NMConnection *connection, ...)
+{
+	gboolean was_modified;
+	va_list args;
+
+	g_assert (NM_IS_CONNECTION (connection));
+
+	connection = nm_connection_duplicate (connection);
+
+	va_start (args, connection);
+	was_modified = _nmtst_connection_normalize_v (connection, args);
+	va_end (args);
+
+	return connection;
+}
+#define nmtst_connection_duplicate_and_normalize(connection, ...) \
+    _nmtst_connection_duplicate_and_normalize(connection, ##__VA_ARGS__, NULL)
+
 #endif
+
 
 #endif /* __NM_TEST_UTILS_H__ */
