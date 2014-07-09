@@ -902,7 +902,16 @@ nm_connection_normalize (NMConnection *connection,
 	    success == NM_SETTING_VERIFY_SUCCESS) {
 		if (normalizable_error)
 			g_propagate_error (error, normalizable_error);
-		goto EXIT;
+		if (modified)
+			*modified = FALSE;
+		if (success == NM_SETTING_VERIFY_ERROR && error && !*error) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_UNKNOWN,
+			                     _("Unexpected failure to verify the connection"));
+			g_return_val_if_reached (FALSE);
+		}
+		return success == NM_SETTING_VERIFY_SUCCESS;
 	}
 	g_assert (success == NM_SETTING_VERIFY_NORMALIZABLE || success == NM_SETTING_VERIFY_NORMALIZABLE_ERROR);
 	g_clear_error (&normalizable_error);
@@ -919,17 +928,26 @@ nm_connection_normalize (NMConnection *connection,
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);
 
-	/* we would expect, that after normalization, the connection can be verified. */
-	g_return_val_if_fail (success == NM_SETTING_VERIFY_SUCCESS, success);
-
-	/* we would expect, that the connection was modified during normalization. */
-	g_return_val_if_fail (was_modified, success);
-
-EXIT:
 	if (modified)
 		*modified = was_modified;
 
-	return success == NM_SETTING_VERIFY_SUCCESS;
+	if (success != NM_SETTING_VERIFY_SUCCESS) {
+		/* we would expect, that after normalization, the connection can be verified.
+		 * Also treat NM_SETTING_VERIFY_NORMALIZABLE as failure, because there is something
+		 * odd going on. */
+		if (error && !*error) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_UNKNOWN,
+			                     _("Unexpected failure to normalize the connection"));
+		}
+		g_return_val_if_reached (FALSE);
+	}
+
+	/* we would expect, that the connection was modified during normalization. */
+	g_return_val_if_fail (was_modified, TRUE);
+
+	return TRUE;
 }
 
 /**
