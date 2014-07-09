@@ -397,8 +397,8 @@ dispose (GObject *object)
 	NMConnectivity *self = NM_CONNECTIVITY (object);
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
-	g_free (priv->uri);
-	g_free (priv->response);
+	g_clear_pointer (&priv->uri, g_free);
+	g_clear_pointer (&priv->response, g_free);
 
 #if WITH_CONCHECK
 	if (priv->soup_session) {
