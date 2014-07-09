@@ -403,6 +403,7 @@ find_base_config (NMConfig *config, GError **error)
 		g_propagate_error (error, my_error);
 		return FALSE;
 	}
+	g_clear_error (&my_error);
 
 	/* If for some reason no config file exists, use the default
 	 * config file path.
