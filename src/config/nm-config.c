@@ -384,9 +384,9 @@ find_base_config (NMConfig *config, GError **error)
 	}
 
 	if (!g_error_matches (my_error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
-		g_warning ("Default config file %s invalid: %s\n",
-		           NM_OLD_SYSTEM_CONF_FILE,
-		           my_error->message);
+		nm_log_warn (LOGD_CORE, "Old default config file %s invalid: %s\n",
+		             NM_OLD_SYSTEM_CONF_FILE,
+		             my_error->message);
 	}
 	g_clear_error (&my_error);
 
@@ -397,9 +397,9 @@ find_base_config (NMConfig *config, GError **error)
 	}
 
 	if (!g_error_matches (my_error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_NOT_FOUND)) {
-		g_warning ("Default config file %s invalid: %s\n",
-		           NM_DEFAULT_SYSTEM_CONF_FILE,
-		           my_error->message);
+		nm_log_warn (LOGD_CORE, "Default config file %s invalid: %s\n",
+		             NM_DEFAULT_SYSTEM_CONF_FILE,
+		             my_error->message);
 		g_propagate_error (error, my_error);
 		return FALSE;
 	}
@@ -409,8 +409,8 @@ find_base_config (NMConfig *config, GError **error)
 	 * config file path.
 	 */
 	priv->nm_conf_path = g_strdup (NM_DEFAULT_SYSTEM_CONF_FILE);
-	g_warning ("No config file found or given; using %s\n",
-	           NM_DEFAULT_SYSTEM_CONF_FILE);
+	nm_log_info (LOGD_CORE, "No config file found or given; using %s\n",
+	             NM_DEFAULT_SYSTEM_CONF_FILE);
 	return TRUE;
 }
 
@@ -517,7 +517,7 @@ nm_config_new (GError **error)
 		else if (!strcmp (value, "false") || !strcmp (value, "no") || !strcmp (value, "off"))
 			priv->monitor_connection_files = FALSE;
 		else {
-			g_warning ("Unrecognized value for main.monitor-connection-files: %s. Assuming 'false'", value);
+			nm_log_warn (LOGD_CORE, "Unrecognized value for main.monitor-connection-files: %s. Assuming 'false'", value);
 			priv->monitor_connection_files = FALSE;
 		}
 		g_free (value);
