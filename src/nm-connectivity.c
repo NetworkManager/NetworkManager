@@ -112,6 +112,7 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 	const char *nm_header;
 
 	self = NM_CONNECTIVITY (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
+	/* it is safe to unref @self here, @simple holds yet another reference. */
 	g_object_unref (self);
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 	priv->pending_checks--;
