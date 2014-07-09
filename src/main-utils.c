@@ -40,9 +40,7 @@
 static gboolean
 sighup_handler (gpointer user_data)
 {
-	/* Reread config stuff like system config files, VPN service files, etc */
-	nm_log_info (LOGD_CORE, "caught SIGHUP, not supported yet.");
-
+	nm_main_config_reload ();
 	return G_SOURCE_CONTINUE;
 }
 

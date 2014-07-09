@@ -175,6 +175,12 @@ _init_nm_debug (const char *debug)
 	}
 }
 
+void
+nm_main_config_reload ()
+{
+	nm_log_info (LOGD_CORE, "reloading configuration not supported.");
+}
+
 static void
 manager_configure_quit (NMManager *manager, gpointer user_data)
 {

@@ -481,6 +481,12 @@ main (int argc, char *argv[])
 /*******************************************************/
 /* Stub functions */
 
+void
+nm_main_config_reload ()
+{
+	nm_log_info (LOGD_CORE, "reloading configuration not supported");
+}
+
 gconstpointer nm_config_get (void);
 const char *nm_config_get_dhcp_client (gpointer unused);
 gboolean nm_config_get_configure_and_quit (gpointer unused);
