@@ -38,7 +38,23 @@
 #define NM_OLD_SYSTEM_CONF_FILE        NMCONFDIR "/nm-system-settings.conf"
 #define NM_NO_AUTO_DEFAULT_STATE_FILE  NMSTATEDIR "/no-auto-default.state"
 
+struct NMConfigCmdLineOptions {
+	char *config_path;
+	char *config_dir;
+	char *no_auto_default_file;
+	char *plugins;
+	char *connectivity_uri;
+
+	/* We store interval as signed internally to track whether it's
+	 * set or not via GOptionEntry
+	 */
+	int connectivity_interval;
+	char *connectivity_response;
+};
+
 typedef struct {
+	NMConfigCmdLineOptions cli;
+
 	char *nm_conf_path;
 	char *config_dir;
 	char *config_description;
@@ -57,7 +73,7 @@ typedef struct {
 	char *debug;
 
 	char *connectivity_uri;
-	gint connectivity_interval;
+	guint connectivity_interval;
 	char *connectivity_response;
 
 	char **no_auto_default;
@@ -65,8 +81,6 @@ typedef struct {
 
 	gboolean configure_and_quit;
 } NMConfigPrivate;
-
-static NMConfig *singleton = NULL;
 
 G_DEFINE_TYPE (NMConfig, nm_config, G_TYPE_OBJECT)
 
@@ -202,10 +216,7 @@ nm_config_get_connectivity_interval (NMConfig *config)
 {
 	g_return_val_if_fail (config != NULL, 0);
 
-	/* We store interval as signed internally to track whether it's
-	 * set or not, but report as unsigned to callers.
-	 */
-	return MAX (NM_CONFIG_GET_PRIVATE (config)->connectivity_interval, 0);
+	return NM_CONFIG_GET_PRIVATE (config)->connectivity_interval;
 }
 
 const char *
@@ -348,30 +359,76 @@ nm_config_set_ethernet_no_auto_default (NMConfig *config, NMDevice *device)
 
 /************************************************************************/
 
-static char *cli_config_path;
-static char *cli_config_dir;
-static char *cli_no_auto_default_file;
-static char *cli_plugins;
-static char *cli_connectivity_uri;
-static int cli_connectivity_interval = -1;
-static char *cli_connectivity_response;
-
-static GOptionEntry config_options[] = {
-	{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli_config_path, N_("Config file location"), N_("/path/to/config.file") },
-	{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli_config_dir, N_("Config directory location"), N_("/path/to/config/dir") },
-	{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli_no_auto_default_file, "no-auto-default.state location", NULL },
-	{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli_plugins, N_("List of plugins separated by ','"), N_("plugin1,plugin2") },
-
-	/* These three are hidden for now, and should eventually just go away. */
-	{ "connectivity-uri", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli_connectivity_uri, N_("An http(s) address for checking internet connectivity"), "http://example.com" },
-	{ "connectivity-interval", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &cli_connectivity_interval, N_("The interval between connectivity checks (in seconds)"), "60" },
-	{ "connectivity-response", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli_connectivity_response, N_("The expected start of the response"), N_("Bingo!") },
-	{NULL}
-};
-GOptionEntry *
-nm_config_get_options (void)
+static void
+_nm_config_cmd_line_options_clear (NMConfigCmdLineOptions *cli)
 {
-	return config_options;
+	g_clear_pointer (&cli->config_path, g_free);
+	g_clear_pointer (&cli->config_dir, g_free);
+	g_clear_pointer (&cli->no_auto_default_file, g_free);
+	g_clear_pointer (&cli->plugins, g_free);
+	g_clear_pointer (&cli->connectivity_uri, g_free);
+	g_clear_pointer (&cli->connectivity_response, g_free);
+	cli->connectivity_interval = -1;
+}
+
+static void
+_nm_config_cmd_line_options_copy (const NMConfigCmdLineOptions *cli, NMConfigCmdLineOptions *dst)
+{
+	g_return_if_fail (cli);
+	g_return_if_fail (dst);
+	g_return_if_fail (cli != dst);
+
+	_nm_config_cmd_line_options_clear (dst);
+	dst->config_dir = g_strdup (cli->config_dir);
+	dst->config_path = g_strdup (cli->config_path);
+	dst->no_auto_default_file = g_strdup (cli->no_auto_default_file);
+	dst->plugins = g_strdup (cli->plugins);
+	dst->connectivity_uri = g_strdup (cli->connectivity_uri);
+	dst->connectivity_response = g_strdup (cli->connectivity_response);
+	dst->connectivity_interval = cli->connectivity_interval;
+}
+
+NMConfigCmdLineOptions *
+nm_config_cmd_line_options_new ()
+{
+	NMConfigCmdLineOptions *cli = g_new0 (NMConfigCmdLineOptions, 1);
+
+	_nm_config_cmd_line_options_clear (cli);
+	return cli;
+}
+
+void
+nm_config_cmd_line_options_free (NMConfigCmdLineOptions *cli)
+{
+	g_return_if_fail (cli);
+
+	_nm_config_cmd_line_options_clear (cli);
+	g_free (cli);
+}
+
+void
+nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
+                                           GOptionContext *opt_ctx)
+{
+	g_return_if_fail (opt_ctx);
+	g_return_if_fail (cli);
+
+	{
+		GOptionEntry config_options[] = {
+			{ "config", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_path, N_("Config file location"), N_("/path/to/config.file") },
+			{ "config-dir", 0, 0, G_OPTION_ARG_FILENAME, &cli->config_dir, N_("Config directory location"), N_("/path/to/config/dir") },
+			{ "no-auto-default", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_FILENAME, &cli->no_auto_default_file, "no-auto-default.state location", NULL },
+			{ "plugins", 0, 0, G_OPTION_ARG_STRING, &cli->plugins, N_("List of plugins separated by ','"), N_("plugin1,plugin2") },
+
+				/* These three are hidden for now, and should eventually just go away. */
+			{ "connectivity-uri", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli->connectivity_uri, N_("An http(s) address for checking internet connectivity"), "http://example.com" },
+			{ "connectivity-interval", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &cli->connectivity_interval, N_("The interval between connectivity checks (in seconds)"), "60" },
+			{ "connectivity-response", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &cli->connectivity_response, N_("The expected start of the response"), N_("Bingo!") },
+			{ 0 },
+		};
+
+		g_option_context_add_main_entries (opt_ctx, config_options, NULL);
+	}
 }
 
 /************************************************************************/
@@ -447,10 +504,10 @@ find_base_config (NMConfig *config, GError **error)
 	GError *my_error = NULL;
 
 	/* Try a user-specified config file first */
-	if (cli_config_path) {
+	if (priv->cli.config_path) {
 		/* Bad user-specific config file path is a hard error */
-		if (read_config (config, cli_config_path, error)) {
-			priv->nm_conf_path = g_strdup (cli_config_path);
+		if (read_config (config, priv->cli.config_path, error)) {
+			priv->nm_conf_path = g_strdup (priv->cli.config_path);
 			return TRUE;
 		} else
 			return FALSE;
@@ -502,11 +559,25 @@ find_base_config (NMConfig *config, GError **error)
 
 /************************************************************************/
 
+NM_DEFINE_SINGLETON_DESTRUCTOR (NMConfig);
+NM_DEFINE_SINGLETON_WEAK_REF (NMConfig);
+
 NMConfig *
 nm_config_get (void)
 {
-	g_assert (singleton);
-	return singleton;
+	g_assert (singleton_instance);
+	return singleton_instance;
+}
+
+NMConfig *
+nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error)
+{
+	g_assert (!singleton_instance);
+
+	singleton_instance = nm_config_new (cli, error);
+	if (singleton_instance)
+		nm_singleton_instance_weak_ref_register ();
+	return singleton_instance;
 }
 
 static int
@@ -518,9 +589,8 @@ sort_asciibetically (gconstpointer a, gconstpointer b)
 	return strcmp (s1, s2);
 }
 
-/* call this function only once! */
 NMConfig *
-nm_config_new (GError **error)
+nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 {
 	NMConfigPrivate *priv = NULL;
 	GFile *dir;
@@ -530,21 +600,25 @@ nm_config_new (GError **error)
 	const char *name;
 	int i;
 	GString *config_description;
+	NMConfig *self;
 
-	g_assert (!singleton);
-	singleton = NM_CONFIG (g_object_new (NM_TYPE_CONFIG, NULL));
-	priv = NM_CONFIG_GET_PRIVATE (singleton);
+	self = NM_CONFIG (g_object_new (NM_TYPE_CONFIG, NULL));
+	priv = NM_CONFIG_GET_PRIVATE (self);
+
+	if (!cli)
+		_nm_config_cmd_line_options_clear (&priv->cli);
+	else
+		_nm_config_cmd_line_options_copy (cli, &priv->cli);
 
 	/* First read the base config file */
-	if (!find_base_config (singleton, error)) {
-		g_object_unref (singleton);
-		singleton = NULL;
+	if (!find_base_config (self, error)) {
+		g_object_unref (self);
 		return NULL;
 	}
 
 	/* Now read the overrides in the config dir */
-	if (cli_config_dir)
-		priv->config_dir = g_strdup (cli_config_dir);
+	if (priv->cli.config_dir)
+		priv->config_dir = g_strdup (priv->cli.config_dir);
 	else
 		priv->config_dir = g_strdup (NM_DEFAULT_SYSTEM_CONF_DIR);
 
@@ -572,27 +646,27 @@ nm_config_new (GError **error)
 	g_ptr_array_sort (confs, sort_asciibetically);
 	priv->config_description = g_string_free (config_description, FALSE);
 	for (i = 0; i < confs->len; i++) {
-		if (!read_config (singleton, confs->pdata[i], error)) {
-			g_object_unref (singleton);
-			singleton = NULL;
+		if (!read_config (self, confs->pdata[i], error)) {
+			g_object_unref (self);
+			self = NULL;
 			break;
 		}
 	}
 	g_ptr_array_unref (confs);
-	if (!singleton)
+	if (!self)
 		return NULL;
 
 	/* Handle no-auto-default key and state file */
 	priv->no_auto_default = g_key_file_get_string_list (priv->keyfile, "main", "no-auto-default", NULL, NULL);
-	if (cli_no_auto_default_file)
-		priv->no_auto_default_file = g_strdup (cli_no_auto_default_file);
+	if (priv->cli.no_auto_default_file)
+		priv->no_auto_default_file = g_strdup (priv->cli.no_auto_default_file);
 	else
 		priv->no_auto_default_file = g_strdup (NM_NO_AUTO_DEFAULT_STATE_FILE);
-	merge_no_auto_default_state (singleton);
+	merge_no_auto_default_state (self);
 
 	/* Now let command-line options override the config files, and fill in priv. */
-	if (cli_plugins && cli_plugins[0])
-		g_key_file_set_value (priv->keyfile, "main", "plugins", cli_plugins);
+	if (priv->cli.plugins && priv->cli.plugins[0])
+		g_key_file_set_value (priv->keyfile, "main", "plugins", priv->cli.plugins);
 	priv->plugins = g_key_file_get_string_list (priv->keyfile, "main", "plugins", NULL, NULL);
 	if (!priv->plugins && STRLEN (CONFIG_PLUGINS_DEFAULT) > 0)
 		priv->plugins = g_strsplit (CONFIG_PLUGINS_DEFAULT, ",", -1);
@@ -609,23 +683,23 @@ nm_config_new (GError **error)
 
 	priv->debug = g_key_file_get_value (priv->keyfile, "main", "debug", NULL);
 
-	if (cli_connectivity_uri && cli_connectivity_uri[0])
-		g_key_file_set_value (priv->keyfile, "connectivity", "uri", cli_connectivity_uri);
+	if (priv->cli.connectivity_uri && priv->cli.connectivity_uri[0])
+		g_key_file_set_value (priv->keyfile, "connectivity", "uri", priv->cli.connectivity_uri);
 	priv->connectivity_uri = g_key_file_get_value (priv->keyfile, "connectivity", "uri", NULL);
 
-	if (cli_connectivity_interval >= 0)
-		g_key_file_set_integer (priv->keyfile, "connectivity", "interval", cli_connectivity_interval);
+	if (priv->cli.connectivity_interval >= 0)
+		g_key_file_set_integer (priv->keyfile, "connectivity", "interval", priv->cli.connectivity_interval);
 	priv->connectivity_interval = g_key_file_get_integer (priv->keyfile, "connectivity", "interval", NULL);
 
-	if (cli_connectivity_response && cli_connectivity_response[0])
-		g_key_file_set_value (priv->keyfile, "connectivity", "response", cli_connectivity_response);
+	if (priv->cli.connectivity_response && priv->cli.connectivity_response[0])
+		g_key_file_set_value (priv->keyfile, "connectivity", "response", priv->cli.connectivity_response);
 	priv->connectivity_response = g_key_file_get_value (priv->keyfile, "connectivity", "response", NULL);
 
 	priv->ignore_carrier = g_key_file_get_string_list (priv->keyfile, "main", "ignore-carrier", NULL, NULL);
 
 	priv->configure_and_quit = _get_bool_value (priv->keyfile, "main", "configure-and-quit", FALSE);
 
-	return singleton;
+	return self;
 }
 
 static void
@@ -637,8 +711,6 @@ nm_config_init (NMConfig *config)
 
 	priv->keyfile = g_key_file_new ();
 	g_key_file_set_list_separator (priv->keyfile, ',');
-
-	priv->connectivity_interval = -1;
 }
 
 static void
@@ -662,14 +734,7 @@ finalize (GObject *gobject)
 	g_strfreev (priv->no_auto_default);
 	g_strfreev (priv->ignore_carrier);
 
-	singleton = NULL;
-
-	g_clear_pointer (&cli_config_path, g_free);
-	g_clear_pointer (&cli_config_dir, g_free);
-	g_clear_pointer (&cli_no_auto_default_file, g_free);
-	g_clear_pointer (&cli_plugins, g_free);
-	g_clear_pointer (&cli_connectivity_uri, g_free);
-	g_clear_pointer (&cli_connectivity_response, g_free);
+	_nm_config_cmd_line_options_clear (&priv->cli);
 
 	G_OBJECT_CLASS (nm_config_parent_class)->finalize (gobject);
 }

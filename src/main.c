@@ -217,7 +217,7 @@ manager_configure_quit (NMManager *manager, gpointer user_data)
 }
 
 static void
-do_early_setup (int *argc, char **argv[])
+do_early_setup (int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 {
 	GOptionEntry options[] = {
 		{ "version", 'V', 0, G_OPTION_ARG_NONE, &global_opt.show_version, N_("Print NetworkManager version and exit"), NULL },
@@ -234,11 +234,13 @@ do_early_setup (int *argc, char **argv[])
 		{NULL}
 	};
 
+	config_cli = nm_config_cmd_line_options_new ();
 	if (!nm_main_utils_early_setup ("NetworkManager",
 	                                argc,
 	                                argv,
 	                                options,
-	                                nm_config_get_options (),
+	                                (void (*)(gpointer, GOptionContext *)) nm_config_cmd_line_options_add_to_entries,
+	                                config_cli,
 	                                _("NetworkManager monitors all network connections and automatically\nchooses the best connection to use.  It also allows the user to\nspecify wireless access points which wireless cards in the computer\nshould associate with.")))
 		exit (1);
 
@@ -267,6 +269,7 @@ main (int argc, char *argv[])
 	GError *error = NULL;
 	gboolean wrote_pidfile = FALSE;
 	char *bad_domains = NULL;
+	NMConfigCmdLineOptions *config_cli;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
@@ -276,7 +279,8 @@ main (int argc, char *argv[])
 
 	main_loop = g_main_loop_new (NULL, FALSE);
 
-	do_early_setup (&argc, &argv);
+	config_cli = nm_config_cmd_line_options_new ();
+	do_early_setup (&argc, &argv, config_cli);
 
 	if (global_opt.g_fatal_warnings)
 		_set_g_fatal_warnings ();
@@ -338,7 +342,9 @@ main (int argc, char *argv[])
 	}
 
 	/* Read the config file and CLI overrides */
-	config = nm_config_new (&error);
+	config = nm_config_setup (config_cli, &error);
+	nm_config_cmd_line_options_free (config_cli);
+	config_cli = NULL;
 	if (config == NULL) {
 		fprintf (stderr, _("Failed to read configuration: (%d) %s\n"),
 		         error ? error->code : -1,
