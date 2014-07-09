@@ -33,7 +33,8 @@ gboolean nm_main_utils_early_setup (const char *progname,
                                     char **argv[],
                                     int *argc,
                                     GOptionEntry *options,
-                                    GOptionEntry *more_options,
+                                    void (*option_context_hook) (gpointer user_data, GOptionContext *opt_ctx),
+                                    gpointer option_context_hook_data,
                                     const char *summary);
 
 #endif /* __MAIN_UTILS_H__ */

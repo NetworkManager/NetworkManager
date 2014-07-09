@@ -315,6 +315,7 @@ main (int argc, char *argv[])
 	                                &argc,
 	                                options,
 	                                NULL,
+	                                NULL,
 	                                _("nm-iface-helper is a small, standalone process that manages a single network interface.")))
 		exit (1);
 

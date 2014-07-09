@@ -36,6 +36,8 @@ G_BEGIN_DECLS
 #define NM_IS_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_CONFIG))
 #define NM_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_CONFIG, NMConfigClass))
 
+typedef struct NMConfigCmdLineOptions NMConfigCmdLineOptions;
+
 struct _NMConfig {
 	GObject parent;
 };
@@ -71,8 +73,13 @@ gboolean nm_config_get_ignore_carrier (NMConfig *config, NMDevice *device);
 char *nm_config_get_value (NMConfig *config, const char *group, const char *key, GError **error);
 
 /* for main.c only */
-GOptionEntry *nm_config_get_options (void);
-NMConfig *nm_config_new (GError **error);
+NMConfigCmdLineOptions *nm_config_cmd_line_options_new (void);
+void                    nm_config_cmd_line_options_free (NMConfigCmdLineOptions *cli);
+void                    nm_config_cmd_line_options_add_to_entries (NMConfigCmdLineOptions *cli,
+                                                                   GOptionContext *opt_ctx);
+
+NMConfig *nm_config_new (const NMConfigCmdLineOptions *cli, GError **error);
+NMConfig *nm_config_setup (const NMConfigCmdLineOptions *cli, GError **error);
 
 G_END_DECLS
 
