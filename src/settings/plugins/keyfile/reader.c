@@ -1213,7 +1213,6 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	gsize length;
 	int i;
 	gboolean vpn_secrets = FALSE;
-	const char *ctype;
 	GError *verify_error = NULL;
 
 	if (stat (filename, &statbuf) != 0 || !S_ISREG (statbuf.st_mode)) {
@@ -1250,30 +1249,10 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 			nm_connection_add_setting (connection, setting);
 	}
 
-	/* Make sure that we have the base device type setting even if
-	 * the keyfile didn't include it, which can happen when the base
-	 * device type setting is all default values (like ethernet where
-	 * the MAC address isn't given, or VLAN when the VLAN ID is zero).
-	 */
 	s_con = nm_connection_get_setting_connection (connection);
 	if (!s_con) {
 		s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 		nm_connection_add_setting (connection, NM_SETTING (s_con));
-	}
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (ctype) {
-		setting = nm_connection_get_setting_by_name (connection, ctype);
-		if (!setting) {
-			NMSetting *base_setting;
-			GType base_setting_type;
-
-			base_setting_type = nm_setting_lookup_type (ctype);
-			if (base_setting_type != G_TYPE_INVALID) {
-				base_setting = (NMSetting *) g_object_new (base_setting_type, NULL);
-				g_assert (base_setting);
-				nm_connection_add_setting (connection, base_setting);
-			}
-		}
 	}
 
 	/* Make sure that we have 'id' even if not explictly specified in the keyfile */
