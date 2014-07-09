@@ -67,7 +67,7 @@ signal_handling_thread (void *arg)
 			break;
 		case SIGHUP:
 			/* Reread config stuff like system config files, VPN service files, etc */
-			nm_log_info (LOGD_CORE, "caught signal %d, not supported yet.", signo);
+			nm_main_config_reload ();
 			break;
 		case SIGPIPE:
 			/* silently ignore signal */
