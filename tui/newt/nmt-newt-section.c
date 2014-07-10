@@ -394,11 +394,11 @@ nmt_newt_section_class_init (NmtNewtSectionClass *section_class)
 	open_glyph   = nmt_newt_locale_from_utf8 ("\342\225\244"); /* ╤ */
 	line_glyph   = nmt_newt_locale_from_utf8 ("\342\224\202"); /* │ */
 	end_glyph    = nmt_newt_locale_from_utf8 ("\342\224\224"); /* └ */
-	if (!closed_glyph || !open_glyph || !line_glyph || !end_glyph) {
-		g_clear_pointer (&closed_glyph, g_free);
-		g_clear_pointer (&open_glyph, g_free);
-		g_clear_pointer (&line_glyph, g_free);
-		g_clear_pointer (&end_glyph, g_free);
+	if (!*closed_glyph || !*open_glyph || !*line_glyph || !*end_glyph) {
+		g_free (closed_glyph);
+		g_free (open_glyph);
+		g_free (line_glyph);
+		g_free (end_glyph);
 
 		closed_glyph = g_strdup ("-");
 		open_glyph   = g_strdup ("+");
