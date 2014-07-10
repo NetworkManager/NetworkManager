@@ -292,6 +292,11 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		atexit (nmtst_free);
 		g_once_init_leave (&atexit_registered, 1);
 	}
+
+#ifdef NETWORK_MANAGER_UTILS_H
+	/* ensure that monotonic timestamp is called (because it initially logs a line) */
+	nm_utils_get_monotonic_timestamp_s ();
+#endif
 }
 
 #ifdef NM_LOGGING_H
