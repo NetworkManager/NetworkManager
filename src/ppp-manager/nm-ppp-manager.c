@@ -42,6 +42,7 @@
 #include <linux/if_ppp.h>
 
 #include "NetworkManager.h"
+#include "NetworkManagerUtils.h"
 #include "nm-glib-compat.h"
 #include "nm-ppp-manager.h"
 #include "nm-setting-connection.h"
@@ -1109,22 +1110,6 @@ out:
 	return priv->pid > 0;
 }
 
-static gboolean
-ensure_killed (gpointer data)
-{
-	int pid = GPOINTER_TO_INT (data);
-
-	if (kill (pid, 0) == 0)
-		kill (pid, SIGKILL);
-
-	/* ensure the child is reaped */
-	nm_log_dbg (LOGD_PPP, "waiting for pppd pid %d to exit", pid);
-	waitpid (pid, NULL, 0);
-	nm_log_dbg (LOGD_PPP, "pppd pid %d cleaned up", pid);
-
-	return FALSE;
-}
-
 static void
 _ppp_cleanup (NMPPPManager *manager)
 {
@@ -1159,17 +1144,7 @@ _ppp_cleanup (NMPPPManager *manager)
 	}
 
 	if (priv->pid) {
-		if (kill (priv->pid, SIGTERM) == 0)
-			g_timeout_add_seconds (2, ensure_killed, GINT_TO_POINTER (priv->pid));
-		else {
-			kill (priv->pid, SIGKILL);
-
-			/* ensure the child is reaped */
-			nm_log_dbg (LOGD_PPP, "waiting for pppd pid %d to exit", priv->pid);
-			waitpid (priv->pid, NULL, 0);
-			nm_log_dbg (LOGD_PPP, "pppd pid %d cleaned up", priv->pid);
-		}
-
+		nm_utils_kill_child_async (priv->pid, SIGTERM, LOGD_PPP, "pppd", 2000, NULL, NULL);
 		priv->pid = 0;
 	}
 }

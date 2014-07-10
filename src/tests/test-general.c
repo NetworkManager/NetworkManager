@@ -24,8 +24,9 @@
 #include <netinet/ether.h>
 
 #include "NetworkManagerUtils.h"
-#include "nm-utils.h"
+#include "nm-logging.h"
 
+#include "nm-test-utils.h"
 
 static void
 test_nm_utils_ascii_str_to_int64_check (const char *str, guint base, gint64 min,
@@ -588,14 +589,12 @@ test_connection_no_match_ip4_addr (void)
 
 /*******************************************/
 
+NMTST_DEFINE ();
+
 int
 main (int argc, char **argv)
 {
-	g_test_init (&argc, &argv, NULL);
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nmtst_init_with_logging (&argc, &argv, NULL, "ALL");
 
 	g_test_add_func ("/general/nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
 	g_test_add_func ("/general/nm_utils_ip6_address_clear_host_address", test_nm_utils_ip6_address_clear_host_address);

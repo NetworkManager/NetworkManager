@@ -28,6 +28,7 @@
 #include "nm-dns-plugin.h"
 #include "nm-logging.h"
 #include "nm-posix-signals.h"
+#include "NetworkManagerUtils.h"
 
 typedef struct {
 	gboolean disposed;
@@ -196,29 +197,6 @@ nm_dns_plugin_child_spawn (NMDnsPlugin *self,
 	return priv->pid;
 }
 
-typedef struct {
-	int pid;
-	char *progname;
-} KillInfo;
-
-static gboolean
-ensure_killed (gpointer data)
-{
-	KillInfo *info = data;
-
-	if (kill (info->pid, 0) == 0)
-		kill (info->pid, SIGKILL);
-
-	/* ensure the child is reaped */
-	nm_log_dbg (LOGD_DNS, "waiting for %s pid %d to exit", info->progname, info->pid);
-	waitpid (info->pid, NULL, 0);
-	nm_log_dbg (LOGD_DNS, "dnsmasq pid %d cleaned up", info->pid);
-
-	g_free (info->progname);
-	g_free (info);
-	return FALSE;
-}
-
 gboolean nm_dns_plugin_child_kill (NMDnsPlugin *self)
 {
 	NMDnsPluginPrivate *priv = NM_DNS_PLUGIN_GET_PRIVATE (self);
@@ -229,21 +207,7 @@ gboolean nm_dns_plugin_child_kill (NMDnsPlugin *self)
 	}
 
 	if (priv->pid) {
-		KillInfo *info;
-
-		if (kill (priv->pid, SIGTERM) == 0) {
-			info = g_malloc0 (sizeof (KillInfo));
-			info->pid = priv->pid;
-			info->progname = g_strdup (priv->progname);
-			g_timeout_add_seconds (2, ensure_killed, info);
-		} else {
-			kill (priv->pid, SIGKILL);
-
-			/* ensure the child is reaped */
-			nm_log_dbg (LOGD_DNS, "waiting for %s pid %d to exit", priv->progname, priv->pid);
-			waitpid (priv->pid, NULL, 0);
-			nm_log_dbg (LOGD_DNS, "%s pid %d cleaned up", priv->progname, priv->pid);
-		}
+		nm_utils_kill_child_async (priv->pid, SIGTERM, LOGD_DNS, priv->progname, 2000, NULL, NULL);
 		priv->pid = 0;
 		g_free (priv->progname);
 		priv->progname = NULL;

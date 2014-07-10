@@ -304,37 +304,6 @@ master_update_slave_connection (NMDevice *self,
 
 /******************************************************************/
 
-static gboolean
-ensure_killed (gpointer data)
-{
-	int pid = GPOINTER_TO_INT (data);
-
-	if (kill (pid, 0) == 0)
-		kill (pid, SIGKILL);
-
-	/* ensure the child is reaped */
-	nm_log_dbg (LOGD_TEAM, "waiting for teamd pid %d to exit", pid);
-	waitpid (pid, NULL, 0);
-	nm_log_dbg (LOGD_TEAM, "teamd pid %d cleaned up", pid);
-
-	return FALSE;
-}
-
-static void
-service_kill (int pid)
-{
-	if (kill (pid, SIGTERM) == 0)
-		g_timeout_add_seconds (2, ensure_killed, GINT_TO_POINTER (pid));
-	else {
-		kill (pid, SIGKILL);
-
-		/* ensure the child is reaped */
-		nm_log_dbg (LOGD_TEAM, "waiting for teamd pid %d to exit", pid);
-		waitpid (pid, NULL, 0);
-		nm_log_dbg (LOGD_TEAM, "teamd pid %d cleaned up", pid);
-	}
-}
-
 static void
 teamd_timeout_remove (NMDevice *dev)
 {
@@ -362,7 +331,7 @@ teamd_cleanup (NMDevice *dev, gboolean device_state_failed)
 	}
 
 	if (priv->teamd_pid > 0) {
-		service_kill (priv->teamd_pid);
+		nm_utils_kill_child_async (priv->teamd_pid, SIGTERM, LOGD_TEAM, "teamd", 2000, NULL, NULL);
 		priv->teamd_pid = 0;
 	}
 

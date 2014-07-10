@@ -26,6 +26,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <resolv.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -143,6 +145,426 @@ nm_spawn_process (const char *args)
 	g_strfreev (argv);
 	return status;
 }
+
+/******************************************************************************************/
+
+typedef struct {
+	pid_t pid;
+	guint64 log_domain;
+	union {
+		struct {
+			gint64 wait_start_us;
+			guint source_timeout_kill_id;
+		} async;
+		struct {
+			gboolean success;
+			int child_status;
+		} sync;
+	};
+	NMUtilsKillChildAsyncCb callback;
+	void *user_data;
+
+	char log_name[1]; /* variable-length object, must be last element!! */
+} KillChildAsyncData;
+
+#define LOG_NAME_FMT "kill child process '%s' (%ld)"
+#define LOG_NAME_ARGS log_name,(long)pid
+
+static KillChildAsyncData *
+_kc_async_data_alloc (pid_t pid, guint64 log_domain, const char *log_name, NMUtilsKillChildAsyncCb callback, void *user_data)
+{
+	KillChildAsyncData *data;
+	size_t log_name_len;
+
+	/* append the name at the end of our KillChildAsyncData. */
+	log_name_len = strlen (LOG_NAME_FMT) + 20 + strlen (log_name);
+	data = g_malloc (sizeof (KillChildAsyncData) - 1 + log_name_len);
+	g_snprintf (data->log_name, log_name_len, LOG_NAME_FMT, LOG_NAME_ARGS);
+
+	data->pid = pid;
+	data->user_data = user_data;
+	data->callback = callback;
+	data->log_domain = log_domain;
+
+	return data;
+}
+
+#define KC_EXIT_TO_STRING_BUF_SIZE 128
+static const char *
+_kc_exit_to_string (char *buf, int exit)
+#define _kc_exit_to_string(buf, exit) ( G_STATIC_ASSERT_EXPR(sizeof (buf) == KC_EXIT_TO_STRING_BUF_SIZE && sizeof ((buf)[0]) == 1), _kc_exit_to_string (buf, exit) )
+{
+	if (WIFEXITED (exit))
+		g_snprintf (buf, KC_EXIT_TO_STRING_BUF_SIZE, "normally with status %d", WEXITSTATUS (exit));
+	else if (WIFSIGNALED (exit))
+		g_snprintf (buf, KC_EXIT_TO_STRING_BUF_SIZE, "by signal %d", WTERMSIG (exit));
+	else
+		g_snprintf (buf, KC_EXIT_TO_STRING_BUF_SIZE, "with unexpected status %d", exit);
+	return buf;
+}
+
+static const char *
+_kc_signal_to_string (int sig)
+{
+	switch (sig) {
+	case 0:  return "no signal (0)";
+	case SIGKILL:  return "SIGKILL (" G_STRINGIFY (SIGKILL) ")";
+	case SIGTERM:  return "SIGTERM (" G_STRINGIFY (SIGTERM) ")";
+	default:
+		return "Unexpected signal";
+	}
+}
+
+#define KC_WAITED_TO_STRING 100
+static const char *
+_kc_waited_to_string (char *buf, gint64 wait_start_us)
+#define _kc_waited_to_string(buf, wait_start_us) ( G_STATIC_ASSERT_EXPR(sizeof (buf) == KC_WAITED_TO_STRING && sizeof ((buf)[0]) == 1), _kc_waited_to_string (buf, wait_start_us) )
+{
+	g_snprintf (buf, KC_WAITED_TO_STRING, " (%ld usec elapsed)", (long) (nm_utils_get_monotonic_timestamp_us () - wait_start_us));
+	return buf;
+}
+
+static void
+_kc_cb_watch_child (GPid pid, gint status, gpointer user_data)
+{
+	KillChildAsyncData *data = user_data;
+	char buf_exit[KC_EXIT_TO_STRING_BUF_SIZE], buf_wait[KC_WAITED_TO_STRING];
+
+	if (data->async.source_timeout_kill_id)
+		g_source_remove (data->async.source_timeout_kill_id);
+
+	nm_log_dbg (data->log_domain, "%s: terminated %s%s",
+	            data->log_name, _kc_exit_to_string (buf_exit, status),
+	            _kc_waited_to_string (buf_wait, data->async.wait_start_us));
+
+	if (data->callback)
+		data->callback (pid, TRUE, status, data->user_data);
+
+	g_free (data);
+}
+
+static gboolean
+_kc_cb_timeout_grace_period (void *user_data)
+{
+	KillChildAsyncData *data = user_data;
+	int ret, errsv;
+
+	data->async.source_timeout_kill_id = 0;
+
+	if ((ret = kill (data->pid, SIGKILL)) != 0) {
+		errsv = errno;
+		/* ESRCH means, process does not exist or is already a zombie. */
+		if (errsv != ESRCH) {
+			nm_log_err (LOGD_CORE | data->log_domain, "%s: kill(SIGKILL) returned unexpected return value %d: (%s, %d)",
+			            data->log_name, ret, strerror (errsv), errsv);
+		}
+	} else {
+		nm_log_dbg (data->log_domain, "%s: process not terminated after %ld usec. Sending SIGKILL signal",
+		            data->log_name, (long) (nm_utils_get_monotonic_timestamp_us () - data->async.wait_start_us));
+	}
+
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+_kc_invoke_callback_idle (gpointer user_data)
+{
+	KillChildAsyncData *data = user_data;
+
+	if (data->sync.success) {
+		char buf_exit[KC_EXIT_TO_STRING_BUF_SIZE];
+
+		nm_log_dbg (data->log_domain, "%s: invoke callback: terminated %s",
+		            data->log_name, _kc_exit_to_string (buf_exit, data->sync.child_status));
+	} else
+		nm_log_dbg (data->log_domain, "%s: invoke callback: killing child failed", data->log_name);
+
+	data->callback (data->pid, data->sync.success, data->sync.child_status, data->user_data);
+	g_free (data);
+
+	return G_SOURCE_REMOVE;
+}
+
+static void
+_kc_invoke_callback (pid_t pid, guint64 log_domain, const char *log_name, NMUtilsKillChildAsyncCb callback, void *user_data, gboolean success, int child_status)
+{
+	KillChildAsyncData *data;
+
+	if (!callback)
+		return;
+
+	data = _kc_async_data_alloc (pid, log_domain, log_name, callback, user_data);
+	data->sync.success = success;
+	data->sync.child_status = child_status;
+
+	g_idle_add (_kc_invoke_callback_idle, data);
+}
+
+/* nm_utils_kill_child_async:
+ * @pid: the process id of the process to kill
+ * @sig: signal to send initially. Set to 0 to send not signal.
+ * @log_domain: the logging domain used for logging (LOGD_NONE to suppress logging)
+ * @log_name: (allow-none): for logging, the name of the processes to kill
+ * @wait_before_kill_msec: Waittime in milliseconds before sending %SIGKILL signal. Set this value
+ * to zero, not to send %SIGKILL. If @sig is already %SIGKILL, this parameter is ignored.
+ * @callback: (allow-none): callback after the child terminated. This function will always
+ *   be invoked asynchronously.
+ * @user_data: passed on to callback
+ *
+ * Uses g_child_watch_add(), so note the glib comment: if you obtain pid from g_spawn_async() or
+ * g_spawn_async_with_pipes() you will need to pass %G_SPAWN_DO_NOT_REAP_CHILD as flag to the spawn
+ * function for the child watching to work.
+ * Also note, that you must g_source_remove() any other child watchers for @pid because glib
+ * supports only one watcher per child.
+ **/
+void
+nm_utils_kill_child_async (pid_t pid, int sig, guint64 log_domain,
+                           const char *log_name, guint32 wait_before_kill_msec,
+                           NMUtilsKillChildAsyncCb callback, void *user_data)
+{
+	int status = 0, errsv;
+	pid_t ret;
+	KillChildAsyncData *data;
+	char buf_exit[KC_EXIT_TO_STRING_BUF_SIZE];
+
+	g_return_if_fail (pid > 0);
+	g_return_if_fail (log_name != NULL);
+
+	/* let's see if the child already terminated... */
+	ret = waitpid (pid, &status, WNOHANG);
+	if (ret > 0) {
+		nm_log_dbg (log_domain, LOG_NAME_FMT ": process %ld already terminated %s",
+		            LOG_NAME_ARGS, (long) ret, _kc_exit_to_string (buf_exit, status));
+		_kc_invoke_callback (pid, log_domain, log_name, callback, user_data, TRUE, status);
+		return;
+	} else if (ret != 0) {
+		errsv = errno;
+		/* ECHILD means, the process is not a child/does not exist or it has SIGCHILD blocked. */
+		if (errsv != ECHILD) {
+			nm_log_err (LOGD_CORE | log_domain, LOG_NAME_FMT ": unexpected error while waitpid: %s (%d)",
+			            LOG_NAME_ARGS, strerror (errsv), errsv);
+			_kc_invoke_callback (pid, log_domain, log_name, callback, user_data, FALSE, -1);
+			return;
+		}
+	}
+
+	/* send the first signal. */
+	if (kill (pid, sig) != 0) {
+		errsv = errno;
+		/* ESRCH means, process does not exist or is already a zombie. */
+		if (errsv != ESRCH) {
+			nm_log_err (LOGD_CORE | log_domain, LOG_NAME_FMT ": unexpected error sending %s: %s (%d)",
+			            LOG_NAME_ARGS, _kc_signal_to_string (sig), strerror (errsv), errsv);
+			_kc_invoke_callback (pid, log_domain, log_name, callback, user_data, FALSE, -1);
+			return;
+		}
+
+		/* let's try again with waitpid, probably there was a race... */
+		ret = waitpid (pid, &status, 0);
+		if (ret > 0) {
+			nm_log_dbg (log_domain, LOG_NAME_FMT ": process %ld already terminated %s",
+			            LOG_NAME_ARGS, (long) ret, _kc_exit_to_string (buf_exit, status));
+			_kc_invoke_callback (pid, log_domain, log_name, callback, user_data, TRUE, status);
+		} else {
+			errsv = errno;
+			nm_log_err (LOGD_CORE | log_domain, LOG_NAME_FMT ": failed due to unexpected return value %ld by waitpid (%s, %d) after sending %s",
+			            LOG_NAME_ARGS, (long) ret, strerror (errsv), errsv, _kc_signal_to_string (sig));
+			_kc_invoke_callback (pid, log_domain, log_name, callback, user_data, FALSE, -1);
+		}
+		return;
+	}
+
+	data = _kc_async_data_alloc (pid, log_domain, log_name, callback, user_data);
+	data->async.wait_start_us = nm_utils_get_monotonic_timestamp_us ();
+
+	if (sig != SIGKILL && wait_before_kill_msec > 0) {
+		data->async.source_timeout_kill_id = g_timeout_add (wait_before_kill_msec, _kc_cb_timeout_grace_period, data);
+		nm_log_dbg (log_domain, "%s: wait for process to terminate after sending %s (send SIGKILL in %ld milliseconds)...",
+		            data->log_name,  _kc_signal_to_string (sig), (long) wait_before_kill_msec);
+	} else {
+		data->async.source_timeout_kill_id = 0;
+		nm_log_dbg (log_domain, "%s: wait for process to terminate after sending %s...",
+		            data->log_name, _kc_signal_to_string (sig));
+	}
+
+	g_child_watch_add (pid, _kc_cb_watch_child, data);
+}
+
+/* nm_utils_kill_child_sync:
+ * @pid: process id to kill
+ * @sig: signal to sent initially. If 0, no signal is sent. If %SIGKILL, the
+ * second %SIGKILL signal is not sent after @wait_before_kill_msec milliseconds.
+ * @log_domain: log debug information for this domain. Errors and warnings are logged both
+ * as %LOGD_CORE and @log_domain.
+ * @log_name: (allow-none): name of the process to kill for logging.
+ * @child_status: (out) (allow-none): return the exit status of the child, if no error occured.
+ * @wait_before_kill_msec: Waittime in milliseconds before sending %SIGKILL signal. Set this value
+ * to zero, not to send %SIGKILL. If @sig is already %SIGKILL, this parameter has not effect.
+ * @sleep_duration_msec: the synchronous function sleeps repeatedly waiting for the child to terminate.
+ * Set to zero, to use the default (meaning 20 wakeups per seconds).
+ *
+ * Kill a child process synchronously and wait. The function first checks if the child already terminated
+ * and if it did, return the exit status. Otherwise send one @sig signal. @sig  will always be
+ * sent unless the child already exited. If the child does not exit within @wait_before_kill_msec milliseconds,
+ * the function will send %SIGKILL and waits for the child indefinitly. If @wait_before_kill_msec is zero, no
+ * %SIGKILL signal will be sent.
+ **/
+gboolean
+nm_utils_kill_child_sync (pid_t pid, int sig, guint64 log_domain, const char *log_name,
+                          int *child_status, guint32 wait_before_kill_msec,
+                          guint32 sleep_duration_msec)
+{
+	int status = 0, errsv;
+	pid_t ret;
+	gboolean success = FALSE;
+	gboolean was_waiting = FALSE, send_kill = FALSE;
+	char buf_exit[KC_EXIT_TO_STRING_BUF_SIZE];
+	char buf_wait[KC_WAITED_TO_STRING];
+	gint64 wait_start_us;
+
+	g_return_val_if_fail (pid > 0, FALSE);
+	g_return_val_if_fail (log_name != NULL, FALSE);
+
+	/* check if the child process already terminated... */
+	ret = waitpid (pid, &status, WNOHANG);
+	if (ret > 0) {
+		nm_log_dbg (log_domain, LOG_NAME_FMT ": process %ld already terminated %s",
+		            LOG_NAME_ARGS, (long) ret, _kc_exit_to_string (buf_exit, status));
+		success = TRUE;
+		goto out;
+	} else if (ret != 0) {
+		errsv = errno;
+		/* ECHILD means, the process is not a child/does not exist or it has SIGCHILD blocked. */
+		if (errsv != ECHILD) {
+			nm_log_err (LOGD_CORE | log_domain, LOG_NAME_FMT ": unexpected error while waitpid: %s (%d)",
+			            LOG_NAME_ARGS, strerror (errsv), errsv);
+			goto out;
+		}
+	}
+
+	/* send first signal @sig */
+	if (kill (pid, sig) != 0) {
+		errsv = errno;
+		/* ESRCH means, process does not exist or is already a zombie. */
+		if (errsv != ESRCH) {
+			nm_log_err (LOGD_CORE | log_domain, LOG_NAME_FMT ": failed to send %s: %s (%d)",
+			            LOG_NAME_ARGS, _kc_signal_to_string (sig), strerror (errsv), errsv);
+		} else {
+			/* let's try again with waitpid, probably there was a race... */
+			ret = waitpid (pid, &status, 0);
+			if (ret > 0) {
+				nm_log_dbg (log_domain, LOG_NAME_FMT ": process %ld already terminated %s",
+				            LOG_NAME_ARGS, (long) ret, _kc_exit_to_string (buf_exit, status));
+				success = TRUE;
+			} else {
+				errsv = errno;
+				nm_log_err (LOGD_CORE | log_domain, LOG_NAME_FMT ": failed due to unexpected return value %ld by waitpid (%s, %d) after sending %s",
+				            LOG_NAME_ARGS, (long) ret, strerror (errsv), errsv, _kc_signal_to_string (sig));
+			}
+		}
+		goto out;
+	}
+
+	wait_start_us = nm_utils_get_monotonic_timestamp_us ();
+
+	/* wait for the process to terminated... */
+	if (sig != SIGKILL) {
+		gint64 wait_until, now;
+		gulong sleep_time, sleep_duration_usec;
+		int loop_count = 0;
+
+		sleep_duration_usec = (sleep_duration_msec <= 0) ? (G_USEC_PER_SEC / 20) : MIN (G_MAXULONG, ((gint64) sleep_duration_msec) * 1000L);
+		wait_until = wait_before_kill_msec <= 0 ? 0 : wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
+
+		while (TRUE) {
+			ret = waitpid (pid, &status, WNOHANG);
+			if (ret > 0) {
+				nm_log_dbg (log_domain, LOG_NAME_FMT ": after sending %s, process %ld exited %s%s",
+				            LOG_NAME_ARGS, _kc_signal_to_string (sig), (long) ret, _kc_exit_to_string (buf_exit, status),
+				            was_waiting ? _kc_waited_to_string (buf_wait, wait_start_us) : "");
+				success = TRUE;
+				goto out;
+			}
+			if (ret == -1) {
+				errsv = errno;
+				/* ECHILD means, the process is not a child/does not exist or it has SIGCHILD blocked. */
+				if (errsv != ECHILD) {
+					nm_log_err (LOGD_CORE | log_domain, LOG_NAME_FMT ": after sending %s, waitpid failed with %s (%d)%s",
+					            LOG_NAME_ARGS, _kc_signal_to_string (sig), strerror (errsv), errsv,
+					           was_waiting ? _kc_waited_to_string (buf_wait, wait_start_us) : "");
+					goto out;
+				}
+			}
+
+			if (!wait_until)
+				break;
+
+			now = nm_utils_get_monotonic_timestamp_us ();
+			if (now >= wait_until)
+				break;
+
+			if (!was_waiting) {
+				nm_log_dbg (log_domain, LOG_NAME_FMT ": waiting up to %ld milliseconds for process to terminate normally after sending %s...",
+				            LOG_NAME_ARGS, (long) MAX (wait_before_kill_msec, 0), _kc_signal_to_string (sig));
+				was_waiting = TRUE;
+			}
+
+			sleep_time = MIN (wait_until - now, sleep_duration_usec);
+			if (loop_count < 20) {
+				/* At the beginning we expect the process to die fast.
+				 * Limit the sleep time, the limit doubles with every iteration. */
+				sleep_time = MIN (sleep_time, (((guint64) 1) << loop_count++) * G_USEC_PER_SEC / 2000);
+			}
+			g_usleep (sleep_time);
+		}
+
+		/* send SIGKILL, if called with @wait_before_kill_msec > 0 */
+		if (wait_until) {
+			nm_log_dbg (log_domain, LOG_NAME_FMT ": sending SIGKILL...", LOG_NAME_ARGS);
+
+			send_kill = TRUE;
+			if (kill (pid, SIGKILL) != 0) {
+				errsv = errno;
+				/* ESRCH means, process does not exist or is already a zombie. */
+				if (errsv != ESRCH) {
+					nm_log_err (LOGD_CORE | log_domain, LOG_NAME_FMT ": failed to send SIGKILL (after sending %s), %s (%d)",
+								LOG_NAME_ARGS, _kc_signal_to_string (sig), strerror (errsv), errsv);
+					goto out;
+				}
+			}
+		}
+	}
+
+	if (!was_waiting) {
+		nm_log_dbg (log_domain, LOG_NAME_FMT ": waiting for process to terminate after sending %s%s...",
+		            LOG_NAME_ARGS, _kc_signal_to_string (sig), send_kill ? " and SIGKILL" : "");
+	}
+
+	/* block until the child terminates. */
+	while ((ret = waitpid (pid, &status, 0)) <= 0) {
+		errsv = errno;
+
+		if (errsv != EINTR) {
+			nm_log_err (LOGD_CORE | log_domain, LOG_NAME_FMT ": after sending %s%s, waitpid failed with %s (%d)%s",
+			            LOG_NAME_ARGS, _kc_signal_to_string (sig), send_kill ? " and SIGKILL" : "", strerror (errsv), errsv,
+			            _kc_waited_to_string (buf_wait, wait_start_us));
+			goto out;
+		}
+	}
+
+	nm_log_dbg (log_domain, LOG_NAME_FMT ": after sending %s%s, process %ld exited %s%s",
+	            LOG_NAME_ARGS, _kc_signal_to_string (sig), send_kill ? " and SIGKILL" : "", (long) ret,
+	            _kc_exit_to_string (buf_exit, status), _kc_waited_to_string (buf_wait, wait_start_us));
+	success = TRUE;
+out:
+	if (child_status)
+		*child_status = success ? status : -1;
+	return success;
+}
+#undef LOG_NAME_FMT
+#undef LOG_NAME_ARGS
+
+/******************************************************************************************/
 
 gboolean
 nm_match_spec_string (const GSList *specs, const char *match)
