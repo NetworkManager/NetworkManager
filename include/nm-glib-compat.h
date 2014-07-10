@@ -106,6 +106,17 @@ __g_type_ensure (GType type)
 
 #endif
 
+
+#if GLIB_CHECK_VERSION (2, 35, 0)
+/* For glib >= 2.36, g_type_init() is deprecated.
+ * But since 2.35.1 (7c42ab23b55c43ab96d0ac2124b550bf1f49c1ec) this function
+ * does nothing. Replace the call with empty statement. */
+#define nm_g_type_init()     G_STMT_START { (void) 0; } G_STMT_END
+#else
+#define nm_g_type_init()     G_STMT_START { g_type_init (); } G_STMT_END
+#endif
+
+
 /* g_test_initialized() is only available since glib 2.36. */
 #if !GLIB_CHECK_VERSION (2, 36, 0)
 #define g_test_initialized() (g_test_config_vars->test_initialized)
