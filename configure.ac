@@ -33,6 +33,8 @@ AM_PROG_CC_C_O
 # C++ only required if --enable-qt=yes
 AC_PROG_CXX
 
+AC_PROG_LN_S
+
 dnl Initialize libtool
 LT_PREREQ([2.2])
 LT_INIT([disable-static])
