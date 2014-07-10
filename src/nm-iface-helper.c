@@ -336,9 +336,7 @@ main (int argc, char *argv[])
 	gconstpointer tmp;
 	gs_free NMUtilsIPv6IfaceId *iid = NULL;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_g_type_init ();
 
 	setpgid (getpid (), getpid ());
 

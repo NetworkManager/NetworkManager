@@ -953,9 +953,7 @@ main (int argc, char *argv[])
 {
 	DBusGConnection *bus;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_g_type_init ();
 
 	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
 

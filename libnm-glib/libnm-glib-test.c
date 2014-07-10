@@ -38,6 +38,7 @@
 #include "nm-active-connection.h"
 #include "nm-vpn-connection.h"
 #include "nm-setting-ip4-config.h"
+#include "nm-glib-compat.h"
 
 static gboolean
 test_wireless_enabled (NMClient *client)
@@ -392,9 +393,7 @@ main (int argc, char *argv[])
 {
 	NMClient *client;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_g_type_init ();
 
 	client = nm_client_new ();
 	if (!client) {

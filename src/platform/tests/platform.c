@@ -866,9 +866,7 @@ main (int argc, char **argv)
 	const command_t *command = NULL;
 	gboolean status = TRUE;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_g_type_init ();
 
 	if (*argv && !g_strcmp0 (argv[1], "--fake")) {
 		nm_fake_platform_setup ();

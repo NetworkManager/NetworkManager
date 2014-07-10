@@ -302,9 +302,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 
 	__nmtst_internal.assert_logging = !!assert_logging;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_g_type_init ();
 
 	is_debug = g_test_verbose ();
 

@@ -6,15 +6,14 @@
 #include "nm-fake-platform.h"
 #include "nm-linux-platform.h"
 #include "nm-logging.h"
+#include "nm-glib-compat.h"
 
 int
 main (int argc, char **argv)
 {
 	GMainLoop *loop;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_g_type_init ();
 
 	loop = g_main_loop_new (NULL, FALSE);
 	nm_logging_setup ("debug", NULL, NULL, NULL);

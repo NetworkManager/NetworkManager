@@ -38,6 +38,7 @@
 #include "nm-dbus-interface.h"
 #include "nm-pppd-plugin.h"
 #include "nm-ppp-status.h"
+#include "nm-glib-compat.h"
 
 int plugin_init (void);
 
@@ -372,9 +373,7 @@ plugin_init (void)
 	GDBusConnection *bus;
 	GError *err = NULL;
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	nm_g_type_init ();
 
 	g_message ("nm-ppp-plugin: (%s): initializing", __func__);
 
