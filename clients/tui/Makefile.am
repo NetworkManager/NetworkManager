@@ -25,7 +25,7 @@ links = nmtui-edit nmtui-connect nmtui-hostname
 
 install-exec-hook:
 	for link in $(links); do \
-		ln -f $(DESTDIR)$(bindir)/nmtui $(DESTDIR)$(bindir)/$$link; \
+		cd $(DESTDIR)$(bindir) && $(LN_S) -f nmtui $$link; \
 	done
 
 uninstall-hook:
