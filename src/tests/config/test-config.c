@@ -100,7 +100,7 @@ test_config_simple (void)
 	g_assert_cmpstr (nm_config_get_path (config), ==, SRCDIR "/NetworkManager.conf");
 	g_assert_cmpstr (nm_config_get_dhcp_client (config), ==, "dhclient");
 	g_assert_cmpstr (nm_config_get_log_level (config), ==, "INFO");
-	g_assert_cmpint (nm_config_get_connectivity_interval (config), ==, 100);
+	g_assert_cmpint (nm_config_data_get_connectivity_interval (nm_config_get_data_orig (config)), ==, 100);
 
 	plugins = nm_config_get_plugins (config);
 	g_assert_cmpint (g_strv_length ((char **)plugins), ==, 3);
@@ -159,7 +159,7 @@ test_config_override (void)
 	g_assert_cmpstr (nm_config_get_path (config), ==, SRCDIR "/NetworkManager.conf");
 	g_assert_cmpstr (nm_config_get_dhcp_client (config), ==, "dhclient");
 	g_assert_cmpstr (nm_config_get_log_level (config), ==, "INFO");
-	g_assert_cmpint (nm_config_get_connectivity_interval (config), ==, 12);
+	g_assert_cmpint (nm_config_data_get_connectivity_interval (nm_config_get_data_orig (config)), ==, 12);
 
 	plugins = nm_config_get_plugins (config);
 	g_assert_cmpint (g_strv_length ((char **)plugins), ==, 4);
@@ -241,8 +241,8 @@ test_config_confdir (void)
 	g_assert_cmpstr (nm_config_get_dhcp_client (config), ==, "dhcpcd");
 	g_assert_cmpstr (nm_config_get_log_level (config), ==, "INFO");
 	g_assert_cmpstr (nm_config_get_log_domains (config), ==, "PLATFORM,DNS,WIFI");
-	g_assert_cmpstr (nm_config_get_connectivity_uri (config), ==, "http://example.net");
-	g_assert_cmpint (nm_config_get_connectivity_interval (config), ==, 100);
+	g_assert_cmpstr (nm_config_data_get_connectivity_uri (nm_config_get_data_orig (config)), ==, "http://example.net");
+	g_assert_cmpint (nm_config_data_get_connectivity_interval (nm_config_get_data_orig (config)), ==, 100);
 
 	plugins = nm_config_get_plugins (config);
 	g_assert_cmpint (g_strv_length ((char **)plugins), ==, 5);

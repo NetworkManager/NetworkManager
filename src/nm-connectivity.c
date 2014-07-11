@@ -348,15 +348,15 @@ nm_connectivity_check_finish (NMConnectivity  *self,
 NMConnectivity *
 nm_connectivity_new (void)
 {
-	NMConfig *config = nm_config_get ();
+	NMConfigData *config_data = nm_config_get_data (nm_config_get ());
 
 	/* NMConnectivity is (almost) independent from NMConfig and works
 	 * fine without it. As convenience, the default constructor nm_connectivity_new()
 	 * uses the parameters from NMConfig to create an instance. */
 	return g_object_new (NM_TYPE_CONNECTIVITY,
-	                     NM_CONNECTIVITY_URI, nm_config_get_connectivity_uri (config),
-	                     NM_CONNECTIVITY_INTERVAL, nm_config_get_connectivity_interval (config),
-	                     NM_CONNECTIVITY_RESPONSE, nm_config_get_connectivity_response (config),
+	                     NM_CONNECTIVITY_URI, nm_config_data_get_connectivity_uri (config_data),
+	                     NM_CONNECTIVITY_INTERVAL, nm_config_data_get_connectivity_interval (config_data),
+	                     NM_CONNECTIVITY_RESPONSE, nm_config_data_get_connectivity_response (config_data),
 	                     NULL);
 }
 

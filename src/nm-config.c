@@ -55,6 +55,9 @@ struct NMConfigCmdLineOptions {
 typedef struct {
 	NMConfigCmdLineOptions cli;
 
+	NMConfigData *config_data;
+	NMConfigData *config_data_orig;
+
 	char *nm_conf_path;
 	char *config_dir;
 	char *config_description;
@@ -71,10 +74,6 @@ typedef struct {
 	char *log_domains;
 
 	char *debug;
-
-	char *connectivity_uri;
-	guint connectivity_interval;
-	char *connectivity_response;
 
 	char **no_auto_default;
 	char **ignore_carrier;
@@ -122,6 +121,25 @@ _get_bool_value (GKeyFile *keyfile,
 }
 
 /************************************************************************/
+
+NMConfigData *
+nm_config_get_data (NMConfig *config)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+
+	return NM_CONFIG_GET_PRIVATE (config)->config_data;
+}
+
+/* The NMConfigData instance is reloadable and will be swapped on reload.
+ * nm_config_get_data_orig() returns the original configuration, when the NMConfig
+ * instance was created. */
+NMConfigData *
+nm_config_get_data_orig (NMConfig *config)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+
+	return NM_CONFIG_GET_PRIVATE (config)->config_data_orig;
+}
 
 const char *
 nm_config_get_path (NMConfig *config)
@@ -201,30 +219,6 @@ nm_config_get_debug (NMConfig *config)
 	g_return_val_if_fail (config != NULL, NULL);
 
 	return NM_CONFIG_GET_PRIVATE (config)->debug;
-}
-
-const char *
-nm_config_get_connectivity_uri (NMConfig *config)
-{
-	g_return_val_if_fail (config != NULL, NULL);
-
-	return NM_CONFIG_GET_PRIVATE (config)->connectivity_uri;
-}
-
-guint
-nm_config_get_connectivity_interval (NMConfig *config)
-{
-	g_return_val_if_fail (config != NULL, 0);
-
-	return NM_CONFIG_GET_PRIVATE (config)->connectivity_interval;
-}
-
-const char *
-nm_config_get_connectivity_response (NMConfig *config)
-{
-	g_return_val_if_fail (config != NULL, NULL);
-
-	return NM_CONFIG_GET_PRIVATE (config)->connectivity_response;
 }
 
 gboolean
@@ -601,6 +595,8 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 	int i;
 	GString *config_description;
 	NMConfig *self;
+	char *connectivity_uri, *connectivity_response;
+	guint connectivity_interval;
 
 	self = NM_CONFIG (g_object_new (NM_TYPE_CONFIG, NULL));
 	priv = NM_CONFIG_GET_PRIVATE (self);
@@ -685,19 +681,28 @@ nm_config_new (const NMConfigCmdLineOptions *cli, GError **error)
 
 	if (priv->cli.connectivity_uri && priv->cli.connectivity_uri[0])
 		g_key_file_set_value (priv->keyfile, "connectivity", "uri", priv->cli.connectivity_uri);
-	priv->connectivity_uri = g_key_file_get_value (priv->keyfile, "connectivity", "uri", NULL);
+	connectivity_uri = g_key_file_get_value (priv->keyfile, "connectivity", "uri", NULL);
 
 	if (priv->cli.connectivity_interval >= 0)
 		g_key_file_set_integer (priv->keyfile, "connectivity", "interval", priv->cli.connectivity_interval);
-	priv->connectivity_interval = g_key_file_get_integer (priv->keyfile, "connectivity", "interval", NULL);
+	connectivity_interval = g_key_file_get_integer (priv->keyfile, "connectivity", "interval", NULL);
 
 	if (priv->cli.connectivity_response && priv->cli.connectivity_response[0])
 		g_key_file_set_value (priv->keyfile, "connectivity", "response", priv->cli.connectivity_response);
-	priv->connectivity_response = g_key_file_get_value (priv->keyfile, "connectivity", "response", NULL);
+	connectivity_response = g_key_file_get_value (priv->keyfile, "connectivity", "response", NULL);
 
 	priv->ignore_carrier = g_key_file_get_string_list (priv->keyfile, "main", "ignore-carrier", NULL, NULL);
 
 	priv->configure_and_quit = _get_bool_value (priv->keyfile, "main", "configure-and-quit", FALSE);
+
+	priv->config_data = g_object_new (NM_TYPE_CONFIG_DATA,
+	                                  NM_CONFIG_DATA_CONNECTIVITY_URI, connectivity_uri,
+	                                  NM_CONFIG_DATA_CONNECTIVITY_INTERVAL, connectivity_interval,
+	                                  NM_CONFIG_DATA_CONNECTIVITY_RESPONSE, connectivity_response,
+	                                  NULL);
+	priv->config_data_orig = g_object_ref (priv->config_data);
+	g_free (connectivity_uri);
+	g_free (connectivity_response);
 
 	return self;
 }
@@ -729,12 +734,13 @@ finalize (GObject *gobject)
 	g_free (priv->log_level);
 	g_free (priv->log_domains);
 	g_free (priv->debug);
-	g_free (priv->connectivity_uri);
-	g_free (priv->connectivity_response);
 	g_strfreev (priv->no_auto_default);
 	g_strfreev (priv->ignore_carrier);
 
 	_nm_config_cmd_line_options_clear (&priv->cli);
+
+	g_clear_object (&priv->config_data);
+	g_clear_object (&priv->config_data_orig);
 
 	G_OBJECT_CLASS (nm_config_parent_class)->finalize (gobject);
 }
