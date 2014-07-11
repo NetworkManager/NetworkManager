@@ -114,6 +114,22 @@ check_ip6_route (NMSettingIP6Config *config, int idx, const char *destination_st
 	g_assert (nm_ip6_route_get_metric (route) == metric);
 }
 
+static NMConnection *
+keyfile_read_connection_from_file (const char *filename)
+{
+	GError *error = NULL;
+	NMConnection *connection;
+
+	g_assert (filename);
+
+	connection = nm_keyfile_plugin_connection_from_file (filename, &error);
+	g_assert_no_error (error);
+
+	nmtst_assert_connection_verifies_without_normalization (connection);
+
+	return connection;
+}
+
 static void
 test_read_valid_wired_connection (void)
 {
