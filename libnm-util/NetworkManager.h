@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright 2004 - 2013 Red Hat, Inc.
+ * Copyright 2004 - 2014 Red Hat, Inc.
  */
 
 /* Definitions related to NetworkManager's D-Bus interfaces.
@@ -179,6 +179,7 @@ typedef enum {
  * @NM_DEVICE_CAP_NONE: device has no special capabilities
  * @NM_DEVICE_CAP_NM_SUPPORTED: NetworkManager supports this device
  * @NM_DEVICE_CAP_CARRIER_DETECT: this device can indicate carrier status
+ * @NM_DEVICE_CAP_IS_SOFTWARE: this device is a software device
  *
  * General device capability flags.
  *
@@ -187,7 +188,8 @@ typedef enum {
 typedef enum {
 	NM_DEVICE_CAP_NONE           = 0x00000000,
 	NM_DEVICE_CAP_NM_SUPPORTED   = 0x00000001,
-	NM_DEVICE_CAP_CARRIER_DETECT = 0x00000002
+	NM_DEVICE_CAP_CARRIER_DETECT = 0x00000002,
+	NM_DEVICE_CAP_IS_SOFTWARE    = 0x00000004,
 } NMDeviceCapabilities;
 
 
