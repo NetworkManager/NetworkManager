@@ -128,10 +128,11 @@ static NmcOutputField nmc_fields_dev_show_cap[] = {
 	{"NAME",            N_("NAME"),            13},  /* 0 */
 	{"CARRIER-DETECT",  N_("CARRIER-DETECT"),  16},  /* 1 */
 	{"SPEED",           N_("SPEED"),           10},  /* 2 */
+	{"IS-SOFTWARE",     N_("IS-SOFTWARE"),     12},  /* 3 */
 	{NULL,              NULL,                   0}
 };
-#define NMC_FIELDS_DEV_SHOW_CAP_ALL     "NAME,CARRIER-DETECT,SPEED"
-#define NMC_FIELDS_DEV_SHOW_CAP_COMMON  "NAME,CARRIER-DETECT,SPEED"
+#define NMC_FIELDS_DEV_SHOW_CAP_ALL     "NAME,CARRIER-DETECT,SPEED,IS-SOFTWARE"
+#define NMC_FIELDS_DEV_SHOW_CAP_COMMON  "NAME,CARRIER-DETECT,SPEED,IS-SOFTWARE"
 
 /* Available fields for 'device show' - wired properties part */
 static NmcOutputField nmc_fields_dev_show_wired_prop[] = {
@@ -837,6 +838,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			set_val_strc (arr, 0, nmc_fields_dev_show_sections[1].name);  /* "CAPABILITIES" */
 			set_val_strc (arr, 1, (caps & NM_DEVICE_CAP_CARRIER_DETECT) ? _("yes") : _("no"));
 			set_val_str  (arr, 2, speed_str);
+			set_val_strc (arr, 3, (caps & NM_DEVICE_CAP_IS_SOFTWARE) ? _("yes") : _("no"));
 			g_ptr_array_add (nmc->output_data, arr);
 
 			print_data (nmc);  /* Print all data */
