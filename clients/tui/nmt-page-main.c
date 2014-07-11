@@ -41,10 +41,12 @@
 #include "nmt-page-bond.h"
 #include "nmt-page-bridge.h"
 #include "nmt-page-bridge-port.h"
+#include "nmt-page-dsl.h"
 #include "nmt-page-ethernet.h"
 #include "nmt-page-infiniband.h"
 #include "nmt-page-ip4.h"
 #include "nmt-page-ip6.h"
+#include "nmt-page-ppp.h"
 #include "nmt-page-team.h"
 #include "nmt-page-team-port.h"
 #include "nmt-page-vlan.h"
@@ -204,7 +206,11 @@ nmt_page_main_constructed (GObject *object)
 		add_section_for_page (grid, nmt_page_bridge_new (conn, deventry));
 	else if (nm_connection_is_type (conn, NM_SETTING_INFINIBAND_SETTING_NAME))
 		add_section_for_page (grid, nmt_page_infiniband_new (conn, deventry));
-	else if (nm_connection_is_type (conn, NM_SETTING_TEAM_SETTING_NAME))
+	else if (nm_connection_is_type (conn, NM_SETTING_PPPOE_SETTING_NAME)) {
+		add_section_for_page (grid, nmt_page_dsl_new (conn));
+		add_section_for_page (grid, nmt_page_ethernet_new (conn, deventry));
+		add_section_for_page (grid, nmt_page_ppp_new (conn));
+	} else if (nm_connection_is_type (conn, NM_SETTING_TEAM_SETTING_NAME))
 		add_section_for_page (grid, nmt_page_team_new (conn, deventry));
 	else if (nm_connection_is_type (conn, NM_SETTING_VLAN_SETTING_NAME))
 		add_section_for_page (grid, nmt_page_vlan_new (conn, deventry));
