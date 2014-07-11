@@ -2773,7 +2773,9 @@ dhcp4_start (NMDevice *self,
 	                                                tmp,
 	                                                nm_connection_get_uuid (connection),
 	                                                nm_device_get_priority (self),
-	                                                s_ip4,
+	                                                nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4),
+	                                                nm_setting_ip4_config_get_dhcp_hostname (s_ip4),
+	                                                nm_setting_ip4_config_get_dhcp_client_id (s_ip4),
 	                                                priv->dhcp_timeout,
 	                                                priv->dhcp_anycast_address);
 
@@ -3209,7 +3211,8 @@ dhcp6_start (NMDevice *self,
 		g_assert (connection);
 	}
 
-	/* Begin a DHCP transaction on the interface */
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
 
 	/* Clear old exported DHCP options */
 	if (priv->dhcp6_config)
@@ -3233,7 +3236,7 @@ dhcp6_start (NMDevice *self,
 	                                                tmp,
 	                                                nm_connection_get_uuid (connection),
 	                                                nm_device_get_priority (self),
-	                                                nm_connection_get_setting_ip6_config (connection),
+	                                                nm_setting_ip6_config_get_dhcp_hostname (s_ip6),
 	                                                priv->dhcp_timeout,
 	                                                priv->dhcp_anycast_address,
 	                                                (dhcp_opt == NM_RDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE);

@@ -447,26 +447,20 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
                            const GByteArray *hwaddr,
                            const char *uuid,
                            guint priority,
-                           NMSettingIP4Config *s_ip4,
+                           gboolean send_hostname,
+                           const char *dhcp_hostname,
+                           const char *dhcp_client_id,
                            guint32 timeout,
                            GByteArray *dhcp_anycast_addr)
 {
-	const char *hostname = NULL, *method;
-	gboolean send_hostname;
+	const char *hostname = NULL;
 
-	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 
-	method = nm_setting_ip4_config_get_method (s_ip4);
-	g_return_val_if_fail (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0, NULL);
-
-	send_hostname = nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4);
 	if (send_hostname)
-		hostname = get_send_hostname (self, nm_setting_ip4_config_get_dhcp_hostname (s_ip4));
-
+		hostname = get_send_hostname (self, dhcp_hostname);
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, FALSE,
-	                     nm_setting_ip4_config_get_dhcp_client_id (s_ip4),
-	                     timeout, dhcp_anycast_addr, hostname, FALSE);
+	                     dhcp_client_id, timeout, dhcp_anycast_addr, hostname, FALSE);
 }
 
 /* Caller owns a reference to the NMDHCPClient on return */
@@ -477,7 +471,7 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
                            const GByteArray *hwaddr,
                            const char *uuid,
                            guint priority,
-                           NMSettingIP6Config *s_ip6,
+                           const char *dhcp_hostname,
                            guint32 timeout,
                            GByteArray *dhcp_anycast_addr,
                            gboolean info_only)
@@ -486,8 +480,7 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 
-	hostname = get_send_hostname (self, nm_setting_ip6_config_get_dhcp_hostname (s_ip6));
-
+	hostname = dhcp_hostname ? get_send_hostname (self, dhcp_hostname) : NULL;
 	return client_start (self, iface, ifindex, hwaddr, uuid, priority, TRUE,
 	                     NULL, timeout, dhcp_anycast_addr, hostname, info_only);
 }
