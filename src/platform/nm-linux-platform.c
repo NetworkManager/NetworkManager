@@ -3517,7 +3517,8 @@ _route_match (struct rtnl_route *rtnlroute, int family, int ifindex)
 	    rtnl_route_get_table (rtnlroute) != RT_TABLE_MAIN ||
 	    rtnl_route_get_protocol (rtnlroute) == RTPROT_KERNEL ||
 	    rtnl_route_get_family (rtnlroute) != family ||
-	    rtnl_route_get_nnexthops (rtnlroute) != 1)
+	    rtnl_route_get_nnexthops (rtnlroute) != 1 ||
+	    rtnl_route_get_flags (rtnlroute) & RTM_F_CLONED)
 		return FALSE;
 
 	if (ifindex == 0)
