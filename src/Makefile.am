@@ -287,6 +287,8 @@ nm_sources = \
 	nm-active-connection.h \
 	nm-config.c \
 	nm-config.h \
+	nm-config-data.c \
+	nm-config-data.h \
 	nm-connection-provider.c \
 	nm-connection-provider.h \
 	nm-connectivity.c \
