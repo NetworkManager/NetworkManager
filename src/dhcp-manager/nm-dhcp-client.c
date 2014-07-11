@@ -120,6 +120,48 @@ nm_dhcp_client_get_uuid (NMDHCPClient *self)
 
 /********************************************/
 
+static const char *state_table[NM_DHCP_STATE_MAX + 1] = {
+	[NM_DHCP_STATE_UNKNOWN]  = "unknown",
+	[NM_DHCP_STATE_BOUND]    = "bound",
+	[NM_DHCP_STATE_TIMEOUT]  = "timeout",
+	[NM_DHCP_STATE_DONE]     = "done",
+	[NM_DHCP_STATE_FAIL]     = "fail",
+};
+
+static const char *
+state_to_string (NMDhcpState state)
+{
+	if (state >= 0 && state < G_N_ELEMENTS (state_table))
+		return state_table[state];
+	return NULL;
+}
+
+static NMDhcpState
+reason_to_state (const char *iface, const char *reason)
+{
+	if (g_ascii_strcasecmp (reason, "bound") == 0 ||
+	    g_ascii_strcasecmp (reason, "bound6") == 0 ||
+	    g_ascii_strcasecmp (reason, "renew") == 0 ||
+	    g_ascii_strcasecmp (reason, "renew6") == 0 ||
+	    g_ascii_strcasecmp (reason, "reboot") == 0 ||
+	    g_ascii_strcasecmp (reason, "rebind") == 0 ||
+	    g_ascii_strcasecmp (reason, "rebind6") == 0)
+		return NM_DHCP_STATE_BOUND;
+	else if (g_ascii_strcasecmp (reason, "timeout") == 0)
+		return NM_DHCP_STATE_TIMEOUT;
+	else if (g_ascii_strcasecmp (reason, "end") == 0)
+		return NM_DHCP_STATE_DONE;
+	else if (g_ascii_strcasecmp (reason, "fail") == 0 ||
+	         g_ascii_strcasecmp (reason, "abend") == 0 ||
+	         g_ascii_strcasecmp (reason, "nak") == 0)
+		return NM_DHCP_STATE_FAIL;
+
+	nm_log_dbg (LOGD_DHCP, "(%s): unmapped DHCP state '%s'", iface, reason);
+	return NM_DHCP_STATE_UNKNOWN;
+}
+
+/********************************************/
+
 static void
 timeout_cleanup (NMDHCPClient *self)
 {
@@ -517,46 +559,6 @@ nm_dhcp_client_stop (NMDHCPClient *self, gboolean release)
 }
 
 /********************************************/
-
-static const char *state_table[NM_DHCP_STATE_MAX + 1] = {
-	[NM_DHCP_STATE_UNKNOWN]  = "unknown",
-	[NM_DHCP_STATE_BOUND]    = "bound",
-	[NM_DHCP_STATE_TIMEOUT]  = "timeout",
-	[NM_DHCP_STATE_DONE]     = "done",
-	[NM_DHCP_STATE_FAIL]     = "fail",
-};
-
-static const char *
-state_to_string (NMDhcpState state)
-{
-	if (state >= 0 && state < G_N_ELEMENTS (state_table))
-		return state_table[state];
-	return NULL;
-}
-
-static NMDhcpState
-reason_to_state (const char *iface, const char *reason)
-{
-	if (g_ascii_strcasecmp (reason, "bound") == 0 ||
-	    g_ascii_strcasecmp (reason, "bound6") == 0 ||
-	    g_ascii_strcasecmp (reason, "renew") == 0 ||
-	    g_ascii_strcasecmp (reason, "renew6") == 0 ||
-	    g_ascii_strcasecmp (reason, "reboot") == 0 ||
-	    g_ascii_strcasecmp (reason, "rebind") == 0 ||
-	    g_ascii_strcasecmp (reason, "rebind6") == 0)
-		return NM_DHCP_STATE_BOUND;
-	else if (g_ascii_strcasecmp (reason, "timeout") == 0)
-		return NM_DHCP_STATE_TIMEOUT;
-	else if (g_ascii_strcasecmp (reason, "end") == 0)
-		return NM_DHCP_STATE_DONE;
-	else if (g_ascii_strcasecmp (reason, "fail") == 0 ||
-	         g_ascii_strcasecmp (reason, "abend") == 0 ||
-	         g_ascii_strcasecmp (reason, "nak") == 0)
-		return NM_DHCP_STATE_FAIL;
-
-	nm_log_dbg (LOGD_DHCP, "(%s): unmapped DHCP state '%s'", iface, reason);
-	return NM_DHCP_STATE_UNKNOWN;
-}
 
 static char *
 garray_to_string (GArray *array, const char *key)
