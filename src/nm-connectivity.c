@@ -69,8 +69,8 @@ nm_connectivity_get_state (NMConnectivity *connectivity)
 	return NM_CONNECTIVITY_GET_PRIVATE (connectivity)->state;
 }
 
-static const char *
-state_name (NMConnectivityState state)
+const char *
+nm_connectivity_state_to_string (NMConnectivityState state)
 {
 	switch (state) {
 	case NM_CONNECTIVITY_UNKNOWN:
@@ -84,7 +84,7 @@ state_name (NMConnectivityState state)
 	case NM_CONNECTIVITY_FULL:
 		return "FULL";
 	default:
-		return "???";
+		g_return_val_if_reached ("???");
 	}
 }
 
@@ -95,7 +95,8 @@ update_state (NMConnectivity *self, NMConnectivityState state)
 
 	if (priv->state != state) {
 		nm_log_dbg (LOGD_CONCHECK, "Connectivity state changed from %s to %s",
-		            state_name (priv->state), state_name (state));
+		            nm_connectivity_state_to_string (priv->state),
+		            nm_connectivity_state_to_string (state));
 		priv->state = state;
 		g_object_notify (G_OBJECT (self), NM_CONNECTIVITY_STATE);
 	}

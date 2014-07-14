@@ -51,6 +51,8 @@ typedef struct {
 
 GType nm_connectivity_get_type (void);
 
+const char *nm_connectivity_state_to_string (NMConnectivityState state);
+
 NMConnectivity      *nm_connectivity_new          (void);
 
 void                 nm_connectivity_set_online   (NMConnectivity       *self,
