@@ -483,12 +483,6 @@ deactivate (NMDevice *device)
 
 /**************************************************************/
 
-static guint
-get_hw_address_length (NMDevice *device, gboolean *out_permanent)
-{
-	return 0;
-}
-
 static gboolean
 carrier_update_cb (gpointer user_data)
 {
@@ -621,7 +615,6 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 
-	parent_class->get_hw_address_length = get_hw_address_length;
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	parent_class->deactivate = deactivate;
