@@ -84,8 +84,8 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_CONNECTION,
-	PROP_PATH,
+	PROP_DBUS_CONNECTION,
+	PROP_DBUS_PATH,
 
 	LAST_PROP
 };
@@ -343,13 +343,13 @@ set_property (GObject *object, guint prop_id,
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_CONNECTION:
+	case PROP_DBUS_CONNECTION:
 		/* Construct only */
 		priv->connection = g_value_dup_boxed (value);
 		if (!priv->connection)
 			priv->connection = _nm_dbus_new_connection (NULL);
 		break;
-	case PROP_PATH:
+	case PROP_DBUS_PATH:
 		/* Construct only */
 		priv->path = g_value_dup_string (value);
 		break;
@@ -366,10 +366,10 @@ get_property (GObject *object, guint prop_id,
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_CONNECTION:
+	case PROP_DBUS_CONNECTION:
 		g_value_set_boxed (value, priv->connection);
 		break;
-	case PROP_PATH:
+	case PROP_DBUS_PATH:
 		g_value_set_string (value, priv->path);
 		break;
 	default:
@@ -401,7 +401,7 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	 * The #DBusGConnection of the object.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_CONNECTION,
+		(object_class, PROP_DBUS_CONNECTION,
 		 g_param_spec_boxed (NM_OBJECT_DBUS_CONNECTION, "", "",
 		                     DBUS_TYPE_G_CONNECTION,
 		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
@@ -413,7 +413,7 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	 * The DBus object path.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_PATH,
+		(object_class, PROP_DBUS_PATH,
 		 g_param_spec_string (NM_OBJECT_DBUS_PATH, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
