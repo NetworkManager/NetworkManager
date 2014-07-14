@@ -87,4 +87,7 @@ typedef void (*NMObjectTypeAsyncFunc) (DBusGConnection *, const char *, NMObject
 void _nm_object_register_type_func (GType base_type, NMObjectTypeFunc type_func,
                                     NMObjectTypeAsyncFunc type_async_func);
 
+#define NM_OBJECT_NM_RUNNING "nm-running-internal"
+gboolean _nm_object_get_nm_running (NMObject *self);
+
 #endif /* NM_OBJECT_PRIVATE_H */
