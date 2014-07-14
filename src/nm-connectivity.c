@@ -41,10 +41,11 @@ typedef struct {
 	char *uri;
 	char *response;
 	guint interval;
+	gboolean online; /* whether periodic connectivity checking is enabled. */
 
 #if WITH_CONCHECK
 	SoupSession *soup_session;
-	guint pending_checks;
+	gboolean initial_check_obsoleted;
 	guint check_id;
 #endif
 
@@ -103,24 +104,33 @@ update_state (NMConnectivity *self, NMConnectivityState state)
 }
 
 #if WITH_CONCHECK
+typedef struct {
+	GSimpleAsyncResult *simple;
+	char *uri;
+	char *response;
+	guint check_id_when_scheduled;
+} ConCheckCbData;
+
 static void
 nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_data)
 {
-	GSimpleAsyncResult *simple = user_data;
 	NMConnectivity *self;
 	NMConnectivityPrivate *priv;
+	ConCheckCbData *cb_data = user_data;
+	GSimpleAsyncResult *simple = cb_data->simple;
 	NMConnectivityState new_state;
 	const char *nm_header;
+	const char *uri = cb_data->uri;
+	const char *response = cb_data->response ? cb_data->response : DEFAULT_RESPONSE;
 
 	self = NM_CONNECTIVITY (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
 	/* it is safe to unref @self here, @simple holds yet another reference. */
 	g_object_unref (self);
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-	priv->pending_checks--;
 
 	if (SOUP_STATUS_IS_TRANSPORT_ERROR (msg->status_code)) {
 		nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' failed with '%s'.",
-		             priv->uri, msg->reason_phrase);
+		             uri, msg->reason_phrase);
 		new_state = NM_CONNECTIVITY_LIMITED;
 		goto done;
 	}
@@ -128,32 +138,48 @@ nm_connectivity_check_cb (SoupSession *session, SoupMessage *msg, gpointer user_
 	/* Check headers; if we find the NM-specific one we're done */
 	nm_header = soup_message_headers_get_one (msg->response_headers, "X-NetworkManager-Status");
 	if (g_strcmp0 (nm_header, "online") == 0) {
-		nm_log_dbg (LOGD_CONCHECK, "Connectivity check for uri '%s' with Status header successful.", priv->uri);
+		nm_log_dbg (LOGD_CONCHECK, "Connectivity check for uri '%s' with Status header successful.", uri);
 		new_state = NM_CONNECTIVITY_FULL;
 	} else if (msg->status_code == SOUP_STATUS_OK) {
 		/* check response */
-		if (msg->response_body->data &&	(g_str_has_prefix (msg->response_body->data, priv->response))) {
+		if (msg->response_body->data && g_str_has_prefix (msg->response_body->data, response)) {
 			nm_log_dbg (LOGD_CONCHECK, "Connectivity check for uri '%s' successful.",
-			            priv->uri);
+			            uri);
 			new_state = NM_CONNECTIVITY_FULL;
 		} else {
 			nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' did not match expected response '%s'; assuming captive portal.",
-			             priv->uri, priv->response);
+			             uri, response);
 			new_state = NM_CONNECTIVITY_PORTAL;
 		}
 	} else {
 		nm_log_info (LOGD_CONCHECK, "Connectivity check for uri '%s' returned status '%d %s'; assuming captive portal.",
-		             priv->uri, msg->status_code, msg->reason_phrase);
+		             uri, msg->status_code, msg->reason_phrase);
 		new_state = NM_CONNECTIVITY_PORTAL;
 	}
 
  done:
-	update_state (self, new_state);
+	/* Only update the state, if the call was done from external, or if the periodic check
+	 * is still the one that called this async check. */
+	if (!cb_data->check_id_when_scheduled || cb_data->check_id_when_scheduled == priv->check_id) {
+		/* Only update the state, if the URI and response parameters did not change
+		 * since invocation.
+		 * The interval does not matter for exernal calls, and for internal calls
+		 * we don't reach this line if the interval changed. */
+		if (   !g_strcmp0 (cb_data->uri, priv->uri)
+		    && !g_strcmp0 (cb_data->response, priv->response))
+			update_state (self, new_state);
+	}
 
 	g_simple_async_result_set_op_res_gssize (simple, new_state);
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
+
+	g_free (cb_data->uri);
+	g_free (cb_data->response);
+	g_slice_free (ConCheckCbData, cb_data);
 }
+
+#define IS_PERIODIC_CHECK(callback)  (callback == run_check_complete)
 
 static void
 run_check_complete (GObject      *object,
@@ -186,39 +212,54 @@ idle_start_periodic_checks (gpointer user_data)
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
 	priv->check_id = g_timeout_add_seconds (priv->interval, run_check, self);
-	if (!priv->pending_checks)
+	if (!priv->initial_check_obsoleted)
 		run_check (self);
 
 	return FALSE;
 }
 #endif
 
-void
-nm_connectivity_set_online (NMConnectivity *self,
-                            gboolean        online)
+static void
+_reschedule_periodic_checks (NMConnectivity *self, gboolean force_reschedule)
 {
-#if WITH_CONCHECK
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-#endif
-
-	nm_log_dbg (LOGD_CONCHECK, "nm_connectivity_set_online(%s)", online ? "TRUE" : "FALSE");
 
 #if WITH_CONCHECK
-	if (online && priv->uri && priv->interval) {
-		if (!priv->check_id)
+	if (priv->online && priv->uri && priv->interval) {
+		if (force_reschedule || !priv->check_id) {
+			if (priv->check_id)
+				g_source_remove (priv->check_id);
 			priv->check_id = g_timeout_add (0, idle_start_periodic_checks, self);
-
-		return;
-	} else if (priv->check_id) {
-		g_source_remove (priv->check_id);
-		priv->check_id = 0;
+			priv->initial_check_obsoleted = FALSE;
+		}
+	} else {
+		if (priv->check_id) {
+			g_source_remove (priv->check_id);
+			priv->check_id = 0;
+		}
 	}
+	if (priv->check_id)
+		return;
 #endif
 
 	/* Either @online is %TRUE but we aren't checking connectivity, or
 	 * @online is %FALSE. Either way we can update our status immediately.
 	 */
-	update_state (self, online ? NM_CONNECTIVITY_FULL : NM_CONNECTIVITY_NONE);
+	update_state (self, priv->online ? NM_CONNECTIVITY_FULL : NM_CONNECTIVITY_NONE);
+}
+
+void
+nm_connectivity_set_online (NMConnectivity *self,
+                            gboolean        online)
+{
+	NMConnectivityPrivate *priv= NM_CONNECTIVITY_GET_PRIVATE (self);
+
+	online = !!online;
+	if (priv->online != online) {
+		nm_log_dbg (LOGD_CONCHECK, "connectivity: set %s", online ? "online" : "offline");
+		priv->online = online;
+		_reschedule_periodic_checks (self, FALSE);
+	}
 }
 
 void
@@ -227,38 +268,44 @@ nm_connectivity_check_async (NMConnectivity      *self,
                              gpointer             user_data)
 {
 	NMConnectivityPrivate *priv;
-#if WITH_CONCHECK
-	SoupMessage *msg;
-#endif
 	GSimpleAsyncResult *simple;
 
 	g_return_if_fail (NM_IS_CONNECTIVITY (self));
 	priv = NM_CONNECTIVITY_GET_PRIVATE (self);
-
-#if WITH_CONCHECK
-	if (callback == run_check_complete)
-		nm_log_dbg (LOGD_CONCHECK, "Periodic connectivity check started with uri '%s'.", priv->uri);
-	else
-#endif
-		nm_log_dbg (LOGD_CONCHECK, "Connectivity check started with uri '%s'.", priv->uri);
 
 	simple = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
 	                                    nm_connectivity_check_async);
 
 #if WITH_CONCHECK
 	if (priv->uri && priv->interval) {
+		SoupMessage *msg;
+		ConCheckCbData *cb_data = g_slice_new (ConCheckCbData);
+
 		msg = soup_message_new ("GET", priv->uri);
 		soup_message_set_flags (msg, SOUP_MESSAGE_NO_REDIRECT);
 		/* Disable HTTP/1.1 keepalive; the connection should not persist */
 		soup_message_headers_append (msg->request_headers, "Connection", "close");
+		cb_data->simple = simple;
+		cb_data->uri = g_strdup (priv->uri);
+		cb_data->response = g_strdup (priv->response);
+
+		/* For internal calls (periodic), remember the check-id at time of scheduling. */
+		cb_data->check_id_when_scheduled = IS_PERIODIC_CHECK (callback) ? priv->check_id : 0;
+
 		soup_session_queue_message (priv->soup_session,
 		                            msg,
 		                            nm_connectivity_check_cb,
-		                            simple);
-		priv->pending_checks++;
+		                            cb_data);
+		priv->initial_check_obsoleted = TRUE;
 
+		nm_log_dbg (LOGD_CONCHECK, "%sconnectivity check: send request to '%s'", IS_PERIODIC_CHECK (callback) ? "periodic " : "", priv->uri);
 		return;
+	} else {
+		g_warn_if_fail (!IS_PERIODIC_CHECK (callback));
+		nm_log_dbg (LOGD_CONCHECK, "connectivity check: faking request. Connectivity check disabled");
 	}
+#else
+	nm_log_dbg (LOGD_CONCHECK, "connectivity check: faking request. Compiled without connectivity-check support");
 #endif
 
 	g_simple_async_result_set_op_res_gssize (simple, priv->state);
@@ -281,38 +328,21 @@ nm_connectivity_check_finish (NMConnectivity  *self,
 	return (NMConnectivityState) g_simple_async_result_get_op_res_gssize (simple);
 }
 
+/**************************************************************************/
 
 NMConnectivity *
 nm_connectivity_new (void)
 {
-	NMConnectivity *self;
-	NMConfig *config;
-	const char *check_response;
+	NMConfig *config = nm_config_get ();
 
-	config = nm_config_get ();
-	check_response = nm_config_get_connectivity_response (config);
-
-	self = g_object_new (NM_TYPE_CONNECTIVITY,
+	/* NMConnectivity is (almost) independent from NMConfig and works
+	 * fine without it. As convenience, the default constructor nm_connectivity_new()
+	 * uses the parameters from NMConfig to create an instance. */
+	return g_object_new (NM_TYPE_CONNECTIVITY,
 	                     NM_CONNECTIVITY_URI, nm_config_get_connectivity_uri (config),
 	                     NM_CONNECTIVITY_INTERVAL, nm_config_get_connectivity_interval (config),
-	                     NM_CONNECTIVITY_RESPONSE, check_response ? check_response : DEFAULT_RESPONSE,
+	                     NM_CONNECTIVITY_RESPONSE, nm_config_get_connectivity_response (config),
 	                     NULL);
-	g_return_val_if_fail (self != NULL, NULL);
-	update_state (self, NM_CONNECTIVITY_NONE);
-
-	return self;
-}
-
-static char *
-get_non_empty_string_value (const GValue *val)
-{
-	const char *s;
-
-	s = g_value_get_string (val);
-	if (s && s[0])
-		return g_strdup (s);
-	else
-		return NULL;
 }
 
 static void
@@ -321,32 +351,48 @@ set_property (GObject *object, guint property_id,
 {
 	NMConnectivity *self = NM_CONNECTIVITY (object);
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
+	const char *uri, *response;
+	guint interval;
 
 	switch (property_id) {
 	case PROP_URI:
-		g_free (priv->uri);
-		priv->uri = get_non_empty_string_value (value);
-
+		uri = g_value_get_string (value);
+		if (uri && !*uri)
+			uri = NULL;
 #if WITH_CONCHECK
-		if (priv->uri) {
-			SoupURI *uri = soup_uri_new (priv->uri);
+		if (uri) {
+			SoupURI *soup_uri = soup_uri_new (uri);
 
-			if (!uri || !SOUP_URI_VALID_FOR_HTTP (uri)) {
-				nm_log_err (LOGD_CONCHECK, "Invalid uri '%s' for connectivity check.", priv->uri);
-				g_free (priv->uri);
-				priv->uri = NULL;
+			if (!soup_uri || !SOUP_URI_VALID_FOR_HTTP (soup_uri)) {
+				nm_log_err (LOGD_CONCHECK, "Invalid uri '%s' for connectivity check.", uri);
+				uri = NULL;
 			}
-			if (uri)
-				soup_uri_free (uri);
+			if (soup_uri)
+				soup_uri_free (soup_uri);
 		}
 #endif
+		if (g_strcmp0 (uri, priv->uri) != 0) {
+			g_free (priv->uri);
+			priv->uri = g_strdup (uri);
+			_reschedule_periodic_checks (self, TRUE);
+		}
 		break;
 	case PROP_INTERVAL:
-		priv->interval = g_value_get_uint (value);
+		interval = g_value_get_uint (value);
+		if (priv->interval != interval) {
+			priv->interval = interval;
+			_reschedule_periodic_checks (self, TRUE);
+		}
 		break;
 	case PROP_RESPONSE:
-		g_free (priv->response);
-		priv->response = get_non_empty_string_value (value);
+		response = g_value_get_string (value);
+		if (g_strcmp0 (response, priv->response) != 0) {
+			/* a response %NULL means, DEFAULT_RESPONSE. Any other response
+			 * (including "") is accepted. */
+			g_free (priv->response);
+			priv->response = g_strdup (response);
+			_reschedule_periodic_checks (self, TRUE);
+		}
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -369,7 +415,10 @@ get_property (GObject *object, guint property_id,
 		g_value_set_uint (value, priv->interval);
 		break;
 	case PROP_RESPONSE:
-		g_value_set_string (value, priv->response);
+		if (priv->response)
+			g_value_set_string (value, priv->response);
+		else
+			g_value_set_static_string (value, DEFAULT_RESPONSE);
 		break;
 	case PROP_STATE:
 		g_value_set_uint (value, priv->state);
@@ -384,11 +433,12 @@ get_property (GObject *object, guint property_id,
 static void
 nm_connectivity_init (NMConnectivity *self)
 {
-#if WITH_CONCHECK
 	NMConnectivityPrivate *priv = NM_CONNECTIVITY_GET_PRIVATE (self);
 
+#if WITH_CONCHECK
 	priv->soup_session = soup_session_async_new_with_options (SOUP_SESSION_TIMEOUT, 15, NULL);
 #endif
+	priv->state = NM_CONNECTIVITY_NONE;
 }
 
 
