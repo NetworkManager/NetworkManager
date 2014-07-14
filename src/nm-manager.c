@@ -4274,12 +4274,9 @@ connectivity_changed (NMConnectivity *connectivity,
                       gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
-	NMConnectivityState state;
-	static const char *connectivity_states[] = { "UNKNOWN", "NONE", "PORTAL", "LIMITED", "FULL" };
 
-	state = nm_connectivity_get_state (connectivity);
 	nm_log_dbg (LOGD_CORE, "connectivity checking indicates %s",
-	            connectivity_states[state]);
+	            nm_connectivity_state_to_string (nm_connectivity_get_state (connectivity)));
 
 	nm_manager_update_state (self);
 	g_object_notify (G_OBJECT (self), NM_MANAGER_CONNECTIVITY);
