@@ -41,14 +41,16 @@ static gboolean debug = FALSE;
 static void nm_object_initable_iface_init (GInitableIface *iface);
 static void nm_object_async_initable_iface_init (GAsyncInitableIface *iface);
 
+static GHashTable *type_funcs, *type_async_funcs;
+
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMObject, nm_object, G_TYPE_OBJECT,
+                                  type_funcs = g_hash_table_new (NULL, NULL);
+                                  type_async_funcs = g_hash_table_new (NULL, NULL);
                                   G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_object_initable_iface_init);
                                   G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_object_async_initable_iface_init);
                                   )
 
 #define NM_OBJECT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_OBJECT, NMObjectPrivate))
-
-static GHashTable *type_funcs, *type_async_funcs;
 
 typedef struct {
 	PropertyMarshalFunc func;
@@ -382,11 +384,6 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (nm_object_class);
 
 	g_type_class_add_private (nm_object_class, sizeof (NMObjectPrivate));
-
-	if (!type_funcs) {
-		type_funcs = g_hash_table_new (NULL, NULL);
-		type_async_funcs = g_hash_table_new (NULL, NULL);
-	}
 
 	/* virtual methods */
 	object_class->constructor = constructor;
