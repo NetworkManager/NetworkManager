@@ -6,7 +6,8 @@ EXTRA_DIST = \
      nm-gvaluearray-compat.h \
      nm-test-utils.h \
      nm-version.h.in \
-     nm-settings-flags.h
+     nm-settings-flags.h \
+     nm-utils-internal.h
 
 NetworkManagerincludedir=$(includedir)/NetworkManager
 
