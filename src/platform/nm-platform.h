@@ -29,6 +29,7 @@
 #include <linux/if_addr.h>
 
 #include <NetworkManager.h>
+#include "gsystem-local-alloc.h"
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
 #define NM_PLATFORM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PLATFORM, NMPlatform))
@@ -623,12 +624,5 @@ gboolean nm_platform_check_support_kernel_extended_ifa_flags (void);
 void nm_platform_addr_flags2str (int flags, char *buf, size_t size);
 
 int nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatformIPAddress *b);
-
-#define auto_g_free __attribute__((cleanup(put_g_free)))
-static void __attribute__((unused))
-put_g_free (void *ptr)
-{
-	g_clear_pointer ((gpointer *) ptr, g_free);
-}
 
 #endif /* NM_PLATFORM_H */

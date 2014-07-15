@@ -23,7 +23,6 @@
 
 #include "nm-ip4-config.h"
 
-#include "libgsystem.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"

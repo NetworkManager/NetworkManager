@@ -38,7 +38,6 @@ endif
 
 AM_CPPFLAGS =				\
 	-I$(top_srcdir)/include		\
-	-I${top_srcdir}/libgsystem	\
 	-I$(top_srcdir)/libnm-util	\
 	-I$(top_builddir)/libnm-util	\
 	-I$(top_srcdir)/callouts	\
@@ -58,7 +57,7 @@ sbin_PROGRAMS = NetworkManager
 NetworkManager_SOURCES = \
 	main.c
 
-NetworkManager_LDADD = libNetworkManager.la $(top_builddir)/libgsystem.la $(LIBNDP_LIBS)
+NetworkManager_LDADD = libNetworkManager.la $(LIBNDP_LIBS)
 
 noinst_LTLIBRARIES = libNetworkManager.la
 
@@ -356,7 +355,6 @@ libNetworkManager_la_SOURCES = \
 	$(glue_sources)
 
 libNetworkManager_la_LIBADD = \
-	$(top_builddir)/libgsystem.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \

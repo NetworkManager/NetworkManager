@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <dbus/dbus-glib.h>
 
-#include "libgsystem.h"
+#include "gsystem-local-alloc.h"
 
 #include "nm-activation-request.h"
 #include "nm-logging.h"

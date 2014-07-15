@@ -543,7 +543,7 @@ link_get_master (NMPlatform *platform, int slave)
 static gboolean
 master_set_option (NMPlatform *platform, int master, const char *option, const char *value)
 {
-	auto_g_free char *path = g_strdup_printf ("master:%d:%s", master, option);
+	gs_free char *path = g_strdup_printf ("master:%d:%s", master, option);
 
 	return sysctl_set (platform, path, value);
 }
@@ -551,7 +551,7 @@ master_set_option (NMPlatform *platform, int master, const char *option, const c
 static char *
 master_get_option (NMPlatform *platform, int master, const char *option)
 {
-	auto_g_free char *path = g_strdup_printf ("master:%d:%s", master, option);
+	gs_free char *path = g_strdup_printf ("master:%d:%s", master, option);
 
 	return sysctl_get (platform, path);
 }
@@ -559,7 +559,7 @@ master_get_option (NMPlatform *platform, int master, const char *option)
 static gboolean
 slave_set_option (NMPlatform *platform, int slave, const char *option, const char *value)
 {
-	auto_g_free char *path = g_strdup_printf ("slave:%d:%s", slave, option);
+	gs_free char *path = g_strdup_printf ("slave:%d:%s", slave, option);
 
 	return sysctl_set (platform, path, value);
 }
@@ -567,7 +567,7 @@ slave_set_option (NMPlatform *platform, int slave, const char *option, const cha
 static char *
 slave_get_option (NMPlatform *platform, int slave, const char *option)
 {
-	auto_g_free char *path = g_strdup_printf ("slave:%d:%s", slave, option);
+	gs_free char *path = g_strdup_printf ("slave:%d:%s", slave, option);
 
 	return sysctl_get (platform, path);
 }

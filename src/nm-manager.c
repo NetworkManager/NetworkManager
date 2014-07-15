@@ -1537,17 +1537,6 @@ done:
 	g_clear_error (&error);
 }
 
-/* This should really be moved to gsystem. */
-#define free_slist __attribute__ ((cleanup(local_slist_free)))
-static void
-local_slist_free (void *loc)
-{
-	GSList **location = loc;
-
-	if (location)
-		g_slist_free (*location);
-}
-
 static gboolean
 match_connection_filter (NMConnection *connection, gpointer user_data)
 {
@@ -1566,7 +1555,7 @@ static NMConnection *
 get_existing_connection (NMManager *manager, NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	free_slist GSList *connections = nm_manager_get_activatable_connections (manager);
+	gs_free_slist GSList *connections = nm_manager_get_activatable_connections (manager);
 	NMConnection *connection = NULL, *matched;
 	NMSettingsConnection *added = NULL;
 	GError *error = NULL;

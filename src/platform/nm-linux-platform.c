@@ -598,8 +598,8 @@ ethtool_get (const char *name, gpointer edata)
 static int
 ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *string)
 {
-	auto_g_free struct ethtool_sset_info *info = NULL;
-	auto_g_free struct ethtool_gstrings *strings = NULL;
+	gs_free struct ethtool_sset_info *info = NULL;
+	gs_free struct ethtool_gstrings *strings = NULL;
 	guint32 len, i;
 
 	info = g_malloc0 (sizeof (*info) + sizeof (guint32));
@@ -2472,7 +2472,7 @@ link_supports_vlans (NMPlatform *platform, int ifindex)
 {
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
 	const char *name = nm_platform_link_get_name (ifindex);
-	auto_g_free struct ethtool_gfeatures *features = NULL;
+	gs_free struct ethtool_gfeatures *features = NULL;
 	int idx, block, bit, size;
 
 	/* Only ARPHRD_ETHER links can possibly support VLANs. */
@@ -2684,7 +2684,7 @@ link_option_path (int master, const char *category, const char *option)
 static gboolean
 link_set_option (int master, const char *category, const char *option, const char *value)
 {
-	auto_g_free char *path = link_option_path (master, category, option);
+	gs_free char *path = link_option_path (master, category, option);
 
 	return path && nm_platform_sysctl_set (path, value);
 }
@@ -2692,7 +2692,7 @@ link_set_option (int master, const char *category, const char *option, const cha
 static char *
 link_get_option (int master, const char *category, const char *option)
 {
-	auto_g_free char *path = link_option_path (master, category, option);
+	gs_free char *path = link_option_path (master, category, option);
 
 	return path ? nm_platform_sysctl_get (path) : NULL;
 }
@@ -2771,7 +2771,7 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
 	g_free (path);
 
 	if (success) {
-		auto_g_free char *ifname = g_strdup_printf ("%s.%04x", parent_name, p_key);
+		gs_free char *ifname = g_strdup_printf ("%s.%04x", parent_name, p_key);
 		auto_nl_object struct rtnl_link *rtnllink = _nm_rtnl_link_alloc (0, ifname);
 
 		success = refresh_object (platform, (struct nl_object *) rtnllink, FALSE, NM_PLATFORM_REASON_INTERNAL);
@@ -2784,7 +2784,7 @@ static gboolean
 veth_get_properties (NMPlatform *platform, int ifindex, NMPlatformVethProperties *props)
 {
 	const char *ifname;
-	auto_g_free struct ethtool_stats *stats = NULL;
+	gs_free struct ethtool_stats *stats = NULL;
 	int peer_ifindex_stat;
 
 	ifname = nm_platform_link_get_name (ifindex);

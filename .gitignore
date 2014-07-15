@@ -30,6 +30,8 @@ cscope.*out
 valgrind-*.log
 *-glue.h
 
+/libgsystem/
+
 /ABOUT-NLS
 /COPYING
 /INSTALL
