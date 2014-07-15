@@ -833,7 +833,7 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 		             NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
 		             "connection type '%s' is not a base type",
 		             ctype);
-		return FALSE;
+		goto EXIT;
 	}
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
