@@ -85,8 +85,6 @@ valgrind-*.log
 /m4/wint_t.m4
 /m4/xsize.m4
 
-/include/nm-version.h
-
 /docs/libnm-glib/*.stamp
 /docs/libnm-glib/html/
 /docs/libnm-glib/tmpl/
@@ -168,6 +166,7 @@ valgrind-*.log
 /test/libnm_glib_test
 /test/nm-online
 /test/nmtestdevices
+/libnm-util/nm-version.h
 /libnm-util/nm-setting-docs.xml
 /libnm-util/test-crypto
 /libnm-util/tests/test-crypto

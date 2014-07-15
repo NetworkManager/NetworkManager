@@ -1,8 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* NetworkManager -- Network link manager
- *
- * Dan Williams <dcbw@redhat.com>
- *
+/*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -17,7 +14,13 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 - 2013 Red Hat, Inc.
+ * Copyright 2004 - 2013 Red Hat, Inc.
+ */
+
+/* Definitions related to NetworkManager's D-Bus interfaces.
+ *
+ * Note that although this header is installed as part of libnm-util, it is also
+ * used by some external code that does not link to libnm-util.
  */
 
 #ifndef NETWORK_MANAGER_H
@@ -28,11 +31,11 @@
 /*
  * dbus services details
  */
-#define	NM_DBUS_SERVICE                     "org.freedesktop.NetworkManager"
+#define NM_DBUS_SERVICE                     "org.freedesktop.NetworkManager"
 
-#define	NM_DBUS_PATH                        "/org/freedesktop/NetworkManager"
-#define	NM_DBUS_INTERFACE                   "org.freedesktop.NetworkManager"
-#define	NM_DBUS_INTERFACE_DEVICE            NM_DBUS_INTERFACE ".Device"
+#define NM_DBUS_PATH                        "/org/freedesktop/NetworkManager"
+#define NM_DBUS_INTERFACE                   "org.freedesktop.NetworkManager"
+#define NM_DBUS_INTERFACE_DEVICE            NM_DBUS_INTERFACE ".Device"
 #define NM_DBUS_INTERFACE_DEVICE_WIRED      NM_DBUS_INTERFACE_DEVICE ".Wired"
 #define NM_DBUS_INTERFACE_DEVICE_ADSL       NM_DBUS_INTERFACE_DEVICE ".Adsl"
 #define NM_DBUS_INTERFACE_DEVICE_WIRELESS   NM_DBUS_INTERFACE_DEVICE ".Wireless"
@@ -87,6 +90,8 @@
  * @NM_STATE_CONNECTED_GLOBAL: there is global IPv4 and/or IPv6 Internet connectivity
  *
  * #NMState values indicate the current overall networking state.
+ *
+ * (Corresponds to the NM_STATE type in nm-manager.xml.)
  **/
 typedef enum {
 	NM_STATE_UNKNOWN          = 0,
@@ -112,6 +117,8 @@ typedef enum {
  *   does not appear to be able to reach the full Internet.
  * @NM_CONNECTIVITY_FULL: The host is connected to a network, and
  *   appears to be able to reach the full Internet.
+ *
+ * (Corresponds to the NM_CONNECTIVITY type in nm-manager.xml.)
  *
  * Since: 0.9.8.6
  */
@@ -145,6 +152,8 @@ typedef enum {
  *
  * #NMDeviceType values indicate the type of hardware represented by
  * an #NMDevice.
+ *
+ * (Corresponds to the NM_DEVICE_TYPE type in nm-device.xml.)
  **/
 typedef enum {
 	NM_DEVICE_TYPE_UNKNOWN    = 0,
@@ -172,6 +181,8 @@ typedef enum {
  * @NM_DEVICE_CAP_CARRIER_DETECT: this device can indicate carrier status
  *
  * General device capability flags.
+ *
+ * (Corresponds to the NM_DEVICE_CAP type in nm-device-wifi.xml.)
  **/
 typedef enum {
 	NM_DEVICE_CAP_NONE           = 0x00000000,
@@ -193,6 +204,8 @@ typedef enum {
  * @NM_WIFI_DEVICE_CAP_ADHOC: device supports Ad-Hoc mode
  *
  * 802.11 specific device encryption and authentication capabilities.
+ *
+ * (Corresponds to the NM_802_11_DEVICE_CAP type in nm-device-wifi.xml.)
  **/
 typedef enum {
 	NM_WIFI_DEVICE_CAP_NONE          = 0x00000000,
@@ -213,7 +226,9 @@ typedef enum {
  * @NM_802_11_AP_FLAGS_PRIVACY: access point requires authentication and
  * encryption (usually means WEP)
  *
- * 802.11 access point flags. 
+ * 802.11 access point flags.
+ *
+ * (Corresponds to the NM_802_11_AP_FLAGS type in nm-access-point.xml.)
  **/
 typedef enum {
 	NM_802_11_AP_FLAGS_NONE    = 0x00000000,
@@ -236,7 +251,7 @@ typedef enum {
  * @NM_802_11_AP_SEC_GROUP_TKIP: TKIP is supported for group/broadcast encryption
  * @NM_802_11_AP_SEC_GROUP_CCMP: AES/CCMP is supported for group/broadcast
  * encryption
- * @NM_802_11_AP_SEC_KEY_MGMT_PSK: WPA/RSN Pre-Shared Key encryption is 
+ * @NM_802_11_AP_SEC_KEY_MGMT_PSK: WPA/RSN Pre-Shared Key encryption is
  * supported
  * @NM_802_11_AP_SEC_KEY_MGMT_802_1X: 802.1x authentication and key management
  * is supported
@@ -244,6 +259,8 @@ typedef enum {
  * 802.11 access point security and authentication flags.  These flags describe
  * the current security requirements of an access point as determined from the
  * access point's beacon.
+ *
+ * (Corresponds to the NM_802_11_AP_SEC type in nm-access-point.xml.)
  **/
 typedef enum {
 	NM_802_11_AP_SEC_NONE            = 0x00000000,
@@ -273,6 +290,8 @@ typedef enum {
  *   access point objects; used only for hotspot mode on the local machine.
  *
  * Indicates the 802.11 mode an access point or device is currently in.
+ *
+ * (Corresponds to the NM_802_11_MODE type in generic-types.xml.)
  **/
 typedef enum {
 	NM_802_11_MODE_UNKNOWN = 0,
@@ -289,6 +308,8 @@ typedef enum {
  *
  * #NMBluetoothCapabilities values indicate the usable capabilities of a
  * Bluetooth device.
+ *
+ * (Corresponds to the NM_BT_CAPABILITY type in nm-device-bt.xml.)
  **/
 typedef enum {
 	NM_BT_CAPABILITY_NONE = 0x00000000,
@@ -311,6 +332,8 @@ typedef enum {
  * technology families a modem device supports.  For more information on the
  * specific access technologies the device supports use the ModemManager D-Bus
  * API.
+ *
+ * (Corresponds to the NM_DEVICE_MODEM_CAPABILITY type in nm-device-modem.xml.)
  **/
 typedef enum {
 	NM_DEVICE_MODEM_CAPABILITY_NONE      = 0x00000000,
@@ -359,6 +382,7 @@ typedef enum {
  * @NM_DEVICE_STATE_FAILED: the device failed to connect to the requested
  *   network and is cleaning up the connection request
  *
+ * (Corresponds to the NM_DEVICE_STATE type in nm-device.xml.)
  **/
 typedef enum {
 	NM_DEVICE_STATE_UNKNOWN      = 0,
@@ -377,191 +401,135 @@ typedef enum {
 } NMDeviceState;
 
 
-/*
+/**
+ * NMDeviceStateReason:
+ * @NM_DEVICE_STATE_REASON_NONE: No reason given
+ * @NM_DEVICE_STATE_REASON_UNKNOWN: Unknown error
+ * @NM_DEVICE_STATE_REASON_NOW_MANAGED: Device is now managed
+ * @NM_DEVICE_STATE_REASON_NOW_UNMANAGED: Device is now unmanaged
+ * @NM_DEVICE_STATE_REASON_CONFIG_FAILED: The device could not be readied for configuration
+ * @NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE: IP configuration could not be reserved (no available address, timeout, etc)
+ * @NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED: The IP config is no longer valid
+ * @NM_DEVICE_STATE_REASON_NO_SECRETS: Secrets were required, but not provided
+ * @NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT: 802.1x supplicant disconnected
+ * @NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED: 802.1x supplicant configuration failed
+ * @NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED: 802.1x supplicant failed
+ * @NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT: 802.1x supplicant took too long to authenticate
+ * @NM_DEVICE_STATE_REASON_PPP_START_FAILED: PPP service failed to start
+ * @NM_DEVICE_STATE_REASON_PPP_DISCONNECT: PPP service disconnected
+ * @NM_DEVICE_STATE_REASON_PPP_FAILED: PPP failed
+ * @NM_DEVICE_STATE_REASON_DHCP_START_FAILED: DHCP client failed to start
+ * @NM_DEVICE_STATE_REASON_DHCP_ERROR: DHCP client error
+ * @NM_DEVICE_STATE_REASON_DHCP_FAILED: DHCP client failed
+ * @NM_DEVICE_STATE_REASON_SHARED_START_FAILED: Shared connection service failed to start
+ * @NM_DEVICE_STATE_REASON_SHARED_FAILED: Shared connection service failed
+ * @NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED: AutoIP service failed to start
+ * @NM_DEVICE_STATE_REASON_AUTOIP_ERROR: AutoIP service error
+ * @NM_DEVICE_STATE_REASON_AUTOIP_FAILED: AutoIP service failed
+ * @NM_DEVICE_STATE_REASON_MODEM_BUSY: The line is busy
+ * @NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE: No dial tone
+ * @NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER: No carrier could be established
+ * @NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT: The dialing request timed out
+ * @NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED: The dialing attempt failed
+ * @NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED: Modem initialization failed
+ * @NM_DEVICE_STATE_REASON_GSM_APN_FAILED: Failed to select the specified APN
+ * @NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING: Not searching for networks
+ * @NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED: Network registration denied
+ * @NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT: Network registration timed out
+ * @NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED: Failed to register with the requested network
+ * @NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED: PIN check failed
+ * @NM_DEVICE_STATE_REASON_FIRMWARE_MISSING: Necessary firmware for the device may be missing
+ * @NM_DEVICE_STATE_REASON_REMOVED: The device was removed
+ * @NM_DEVICE_STATE_REASON_SLEEPING: NetworkManager went to sleep
+ * @NM_DEVICE_STATE_REASON_CONNECTION_REMOVED: The device's active connection disappeared
+ * @NM_DEVICE_STATE_REASON_USER_REQUESTED: Device disconnected by user or client
+ * @NM_DEVICE_STATE_REASON_CARRIER: Carrier/link changed
+ * @NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED: The device's existing connection was assumed
+ * @NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE: The supplicant is now available
+ * @NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND: The modem could not be found
+ * @NM_DEVICE_STATE_REASON_BT_FAILED: The Bluetooth connection failed or timed out
+ * @NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED: GSM Modem's SIM Card not inserted
+ * @NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED: GSM Modem's SIM Pin required
+ * @NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED: GSM Modem's SIM Puk required
+ * @NM_DEVICE_STATE_REASON_GSM_SIM_WRONG: GSM Modem's SIM wrong
+ * @NM_DEVICE_STATE_REASON_INFINIBAND_MODE: InfiniBand device does not support connected mode
+ * @NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED: A dependency of the connection failed
+ * @NM_DEVICE_STATE_REASON_BR2684_FAILED: Problem with the RFC 2684 Ethernet over ADSL bridge
+ * @NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE: ModemManager not running
+ * @NM_DEVICE_STATE_REASON_SSID_NOT_FOUND: The WiFi network could not be found
+ * @NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED: A secondary connection of the base connection failed
+ * @NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED: DCB or FCoE setup failed
+ * @NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED: teamd control failed
+ * @NM_DEVICE_STATE_REASON_MODEM_FAILED: Modem failed or no longer available
+ * @NM_DEVICE_STATE_REASON_MODEM_AVAILABLE: Modem now ready and available
+ * @NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT: SIM PIN was incorrect
+ *
  * Device state change reason codes
+ *
+ * (Corresponds to the NM_DEVICE_STATE_REASON type in nm-device.xml.)
  */
 typedef enum {
-	/* No reason given */
 	NM_DEVICE_STATE_REASON_NONE = 0,
-
-	/* Unknown error */
 	NM_DEVICE_STATE_REASON_UNKNOWN = 1,
-
-	/* Device is now managed */
 	NM_DEVICE_STATE_REASON_NOW_MANAGED = 2,
-
-	/* Device is now unmanaged */
 	NM_DEVICE_STATE_REASON_NOW_UNMANAGED = 3,
-
-	/* The device could not be readied for configuration */
 	NM_DEVICE_STATE_REASON_CONFIG_FAILED = 4,
-
-	/* IP configuration could not be reserved (no available address, timeout, etc) */
 	NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE = 5,
-
-	/* The IP config is no longer valid */
 	NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED = 6,
-
-	/* Secrets were required, but not provided */
 	NM_DEVICE_STATE_REASON_NO_SECRETS = 7,
-
-	/* 802.1x supplicant disconnected */
 	NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8,
-
-	/* 802.1x supplicant configuration failed */
 	NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED = 9,
-
-	/* 802.1x supplicant failed */
 	NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED = 10,
-
-	/* 802.1x supplicant took too long to authenticate */
 	NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT = 11,
-
-	/* PPP service failed to start */
 	NM_DEVICE_STATE_REASON_PPP_START_FAILED = 12,
-
-	/* PPP service disconnected */
 	NM_DEVICE_STATE_REASON_PPP_DISCONNECT = 13,
-
-	/* PPP failed */
 	NM_DEVICE_STATE_REASON_PPP_FAILED = 14,
-
-	/* DHCP client failed to start */
 	NM_DEVICE_STATE_REASON_DHCP_START_FAILED = 15,
-
-	/* DHCP client error */
 	NM_DEVICE_STATE_REASON_DHCP_ERROR = 16,
-
-	/* DHCP client failed */
 	NM_DEVICE_STATE_REASON_DHCP_FAILED = 17,
-
-	/* Shared connection service failed to start */
 	NM_DEVICE_STATE_REASON_SHARED_START_FAILED = 18,
-
-	/* Shared connection service failed */
 	NM_DEVICE_STATE_REASON_SHARED_FAILED = 19,
-
-	/* AutoIP service failed to start */
 	NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED = 20,
-
-	/* AutoIP service error */
 	NM_DEVICE_STATE_REASON_AUTOIP_ERROR = 21,
-
-	/* AutoIP service failed */
 	NM_DEVICE_STATE_REASON_AUTOIP_FAILED = 22,
-
-	/* The line is busy */
 	NM_DEVICE_STATE_REASON_MODEM_BUSY = 23,
-
-	/* No dial tone */
 	NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE = 24,
-
-	/* No carrier could be established */
 	NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER = 25,
-
-	/* The dialing request timed out */
 	NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT = 26,
-
-	/* The dialing attempt failed */
 	NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED = 27,
-
-	/* Modem initialization failed */
 	NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED = 28,
-
-	/* Failed to select the specified APN */
 	NM_DEVICE_STATE_REASON_GSM_APN_FAILED = 29,
-
-	/* Not searching for networks */
 	NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING = 30,
-
-	/* Network registration denied */
 	NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED = 31,
-
-	/* Network registration timed out */
 	NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT = 32,
-
-	/* Failed to register with the requested network */
 	NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED = 33,
-
-	/* PIN check failed */
 	NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED = 34,
-
-	/* Necessary firmware for the device may be missing */
 	NM_DEVICE_STATE_REASON_FIRMWARE_MISSING = 35,
-
-	/* The device was removed */
 	NM_DEVICE_STATE_REASON_REMOVED = 36,
-
-	/* NetworkManager went to sleep */
 	NM_DEVICE_STATE_REASON_SLEEPING = 37,
-
-	/* The device's active connection disappeared */
 	NM_DEVICE_STATE_REASON_CONNECTION_REMOVED = 38,
-
-	/* Device disconnected by user or client */
 	NM_DEVICE_STATE_REASON_USER_REQUESTED = 39,
-
-	/* Carrier/link changed */
 	NM_DEVICE_STATE_REASON_CARRIER = 40,
-
-	/* The device's existing connection was assumed */
 	NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED = 41,
-
-	/* The supplicant is now available */
 	NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE = 42,
-
-	/* The modem could not be found */
 	NM_DEVICE_STATE_REASON_MODEM_NOT_FOUND = 43,
-
-	/* The Bluetooth connection failed or timed out */
 	NM_DEVICE_STATE_REASON_BT_FAILED = 44,
-
-	/* GSM Modem's SIM Card not inserted */
 	NM_DEVICE_STATE_REASON_GSM_SIM_NOT_INSERTED = 45,
-
-	/* GSM Modem's SIM Pin required */
 	NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED = 46,
-
-	/* GSM Modem's SIM Puk required */
 	NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED = 47,
-
-	/* GSM Modem's SIM wrong */
 	NM_DEVICE_STATE_REASON_GSM_SIM_WRONG = 48,
-
-	/* InfiniBand device does not support connected mode */
 	NM_DEVICE_STATE_REASON_INFINIBAND_MODE = 49,
-
-	/* A dependency of the connection failed */
 	NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED = 50,
-
-	/* Problem with the RFC 2684 Ethernet over ADSL bridge */
 	NM_DEVICE_STATE_REASON_BR2684_FAILED = 51,
-
-	/* ModemManager not running */
 	NM_DEVICE_STATE_REASON_MODEM_MANAGER_UNAVAILABLE = 52,
-
-	/* The WiFi network could not be found */
 	NM_DEVICE_STATE_REASON_SSID_NOT_FOUND = 53,
-
-	/* A secondary connection of the base connection failed */
 	NM_DEVICE_STATE_REASON_SECONDARY_CONNECTION_FAILED = 54,
-
-	/* DCB or FCoE setup failed */
 	NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED = 55,
-
-	/* teamd control failed */
 	NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED = 56,
-
-	/* Modem failed or no longer available */
 	NM_DEVICE_STATE_REASON_MODEM_FAILED = 57,
-
-	/* Modem now ready and available */
 	NM_DEVICE_STATE_REASON_MODEM_AVAILABLE = 58,
-
-	/* SIM PIN was incorrect */
 	NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT = 59,
 
-	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;
 
@@ -579,6 +547,8 @@ typedef enum {
  * #NMActiveConnectionState values indicate the state of a connection to a
  * specific network while it is starting, connected, or disconnecting from that
  * network.
+ *
+ * (Corresponds to the NM_ACTIVE_CONNECTION_STATE type in nm-active-connection.xml.)
  **/
 typedef enum {
 	NM_ACTIVE_CONNECTION_STATE_UNKNOWN = 0,
@@ -589,4 +559,3 @@ typedef enum {
 } NMActiveConnectionState;
 
 #endif /* NETWORK_MANAGER_H */
-

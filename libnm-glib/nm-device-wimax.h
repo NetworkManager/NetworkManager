@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,8 +15,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2011 - 2012 Red Hat, Inc.
- * Copyright (C) 2009 Novell, Inc.
+ * Copyright 2011 - 2012 Red Hat, Inc.
+ * Copyright 2009 Novell, Inc.
  */
 
 #ifndef NM_DEVICE_WIMAX_H
@@ -79,12 +77,12 @@ typedef struct {
 GType nm_device_wimax_get_type (void);
 
 GObject         *nm_device_wimax_new             (DBusGConnection *connection,
-												  const char *path);
+                                                  const char *path);
 
 const char      *nm_device_wimax_get_hw_address  (NMDeviceWimax *wimax);
 NMWimaxNsp      *nm_device_wimax_get_active_nsp  (NMDeviceWimax *wimax);
 NMWimaxNsp      *nm_device_wimax_get_nsp_by_path (NMDeviceWimax *wimax,
-												  const char *path);
+                                                  const char *path);
 
 const GPtrArray *nm_device_wimax_get_nsps        (NMDeviceWimax *wimax);
 

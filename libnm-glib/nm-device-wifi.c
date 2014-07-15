@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,8 +15,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2012 Red Hat, Inc.
+ * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright 2007 - 2012 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -270,7 +268,7 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *device)
  *
  * Gets all the scanned access points of the #NMDeviceWifi.
  *
- * Returns: (element-type NMClient.AccessPoint): a #GPtrArray containing all the
+ * Returns: (element-type NMAccessPoint): a #GPtrArray containing all the
  * scanned #NMAccessPoints.
  * The returned array is owned by the client and should not be modified.
  **/
@@ -419,7 +417,7 @@ clean_up_aps (NMDeviceWifi *self, gboolean notify)
  **/
 void
 _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device,
-                                                gboolean enabled)
+                                      gboolean enabled)
 {
 	g_return_if_fail (NM_IS_DEVICE_WIFI (device));
 
@@ -813,13 +811,13 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	signals[ACCESS_POINT_ADDED] =
 		g_signal_new ("access-point-added",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_added),
-				    NULL, NULL,
-				    g_cclosure_marshal_VOID__OBJECT,
-				    G_TYPE_NONE, 1,
-				    G_TYPE_OBJECT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_added),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
 
 	/**
 	 * NMDeviceWifi::access-point-removed:
@@ -830,11 +828,11 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 **/
 	signals[ACCESS_POINT_REMOVED] =
 		g_signal_new ("access-point-removed",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_removed),
-				    NULL, NULL,
-				    g_cclosure_marshal_VOID__OBJECT,
-				    G_TYPE_NONE, 1,
-				    G_TYPE_OBJECT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMDeviceWifiClass, access_point_removed),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
 }

@@ -137,7 +137,7 @@
       </arg>
     </method>
 
-    <property name="State" type="u" access="read" tp:type="NM_VPN_CONNECTION_STATE">
+    <property name="State" type="u" access="read" tp:type="NM_VPN_SERVICE_STATE">
       <tp:docstring>
         The state of the plugin.
       </tp:docstring>
@@ -147,7 +147,7 @@
       <tp:docstring>
         Emitted when the plugin state changes.
       </tp:docstring>
-      <arg name="state" type="u" tp:type="NM_VPN_CONNECTION_STATE">
+      <arg name="state" type="u" tp:type="NM_VPN_SERVICE_STATE">
         <tp:docstring>
           The new state of the plugin.
         </tp:docstring>
@@ -250,6 +250,44 @@
         </tp:docstring>
       </arg>
     </signal>
+
+    <tp:enum name="NM_VPN_SERVICE_STATE" type="u">
+      <tp:enumvalue suffix="UNKNOWN" value="0">
+        <tp:docstring>
+          The state of the VPN plugin is unknown.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="INIT" value="1">
+        <tp:docstring>
+          The VPN plugin is initialized.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="SHUTDOWN" value="2">
+        <tp:docstring>
+          (Not used.)
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="STARTING" value="3">
+        <tp:docstring>
+          The plugin is attempting to connect to a VPN server.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="STARTED" value="4">
+        <tp:docstring>
+          The plugin has connected to a VPN server.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="STOPPING" value="5">
+        <tp:docstring>
+          The plugin is disconnecting from the VPN server.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="STOPPED" value="6">
+        <tp:docstring>
+          The plugin has disconnected from the VPN server.
+        </tp:docstring>
+      </tp:enumvalue>
+    </tp:enum>
 
     <tp:enum name="NM_VPN_PLUGIN_FAILURE" type="u">
       <tp:enumvalue suffix="LOGIN_FAILED" value="0">

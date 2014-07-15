@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2012 Red Hat, Inc.
+ * Copyright 2012 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -147,7 +145,7 @@ nm_device_bridge_get_carrier (NMDeviceBridge *device)
  *
  * Gets the devices currently slaved to @device.
  *
- * Returns: (element-type NMClient.Device): the #GPtrArray containing
+ * Returns: (element-type NMDevice): the #GPtrArray containing
  * #NMDevices that are slaves of @device. This is the internal
  * copy used by the device, and must not be modified.
  *

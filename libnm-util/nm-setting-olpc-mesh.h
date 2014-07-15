@@ -1,10 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * Dan Williams <dcbw@redhat.com>
- * Tambet Ingo <tambet@gmail.com>
- * Sjoerd Simons <sjoerd.simons@collabora.co.uk>
- * Daniel Drake <dsd@laptop.org>
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -20,9 +15,9 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
- * (C) Copyright 2007 - 2008 Novell, Inc.
- * (C) Copyright 2009 One Laptop per Child
+ * Copyright 2007 - 2008 Red Hat, Inc.
+ * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright 2009 One Laptop per Child
  */
 
 #ifndef NM_SETTING_OLPC_MESH_H

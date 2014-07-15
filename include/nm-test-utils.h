@@ -1,5 +1,4 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
 /*
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2014 Red Hat, Inc.
+ * Copyright 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_TEST_UTILS_H__
@@ -682,4 +681,3 @@ nmtst_ip6_config_clone (NMIP6Config *config)
 
 
 #endif /* __NM_TEST_UTILS_H__ */
-

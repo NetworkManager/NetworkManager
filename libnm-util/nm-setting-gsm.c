@@ -1,9 +1,6 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 /*
- * Dan Williams <dcbw@redhat.com>
- * Tambet Ingo <tambet@gmail.com>
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -19,8 +16,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2013 Red Hat, Inc.
- * (C) Copyright 2007 - 2008 Novell, Inc.
+ * Copyright 2007 - 2013 Red Hat, Inc.
+ * Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include <string.h>
@@ -424,7 +421,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE (object);
 	char *tmp;
@@ -483,7 +480,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingGsm *setting = NM_SETTING_GSM (object);
 
@@ -584,7 +581,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		(object_class, PROP_PASSWORD,
 		 g_param_spec_string (NM_SETTING_GSM_PASSWORD, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -657,7 +655,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                   NM_SETTING_GSM_NETWORK_TYPE_ANY,
 		                   NM_SETTING_GSM_NETWORK_TYPE_4G,
 		                   NM_SETTING_GSM_NETWORK_TYPE_ANY,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -676,7 +675,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                    NM_SETTING_GSM_BAND_UNKNOWN,
 		                    NM_SETTING_GSM_BANDS_MAX,
 		                    NM_SETTING_GSM_BAND_ANY,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -690,7 +690,8 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		(object_class, PROP_PIN,
 		 g_param_spec_string (NM_SETTING_GSM_PIN, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**

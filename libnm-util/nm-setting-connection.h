@@ -1,9 +1,6 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 /*
- * Dan Williams <dcbw@redhat.com>
- * Tambet Ingo <tambet@gmail.com>
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -19,8 +16,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2014 Red Hat, Inc.
- * (C) Copyright 2007 - 2008 Novell, Inc.
+ * Copyright 2007 - 2014 Red Hat, Inc.
+ * Copyright 2007 - 2008 Novell, Inc.
  */
 
 #ifndef NM_SETTING_CONNECTION_H
@@ -136,7 +133,7 @@ gboolean    nm_setting_connection_remove_permission_by_value (NMSettingConnectio
 
 const char *nm_setting_connection_get_master           (NMSettingConnection *setting);
 gboolean    nm_setting_connection_is_slave_type        (NMSettingConnection *setting,
-							const char *type);
+                                                        const char *type);
 const char *nm_setting_connection_get_slave_type       (NMSettingConnection *setting);
 
 guint32     nm_setting_connection_get_num_secondaries  (NMSettingConnection *setting);

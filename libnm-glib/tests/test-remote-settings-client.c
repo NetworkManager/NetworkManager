@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2010 - 2011 Red Hat, Inc.
+ * Copyright 2010 - 2011 Red Hat, Inc.
  *
  */
 
@@ -392,6 +392,7 @@ main (int argc, char **argv)
 	ret = g_test_run ();
 
 	cleanup ();
+	dbus_g_connection_unref (bus);
 
 	return ret;
 }

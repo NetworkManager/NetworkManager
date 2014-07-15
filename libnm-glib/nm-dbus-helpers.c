@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2013 Red Hat, Inc.
+ * Copyright 2013 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -70,13 +68,8 @@ _nm_dbus_new_connection (GError **error)
 	}
 #endif
 
-	if (connection == NULL) {
-#ifdef LIBNM_GLIB_TEST
-		connection = dbus_g_bus_get (DBUS_BUS_SESSION, error);
-#else
+	if (connection == NULL)
 		connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, error);
-#endif
-	}
 
 	return connection;
 }
@@ -104,4 +97,3 @@ _nm_dbus_new_proxy_for_connection (DBusGConnection *connection,
 
 	return dbus_g_proxy_new_for_name (connection, NM_DBUS_SERVICE, path, interface);
 }
-

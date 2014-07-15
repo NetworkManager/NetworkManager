@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,8 +15,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2012 Red Hat, Inc.
+ * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright 2007 - 2012 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -93,9 +91,9 @@ nm_device_ethernet_new (DBusGConnection *connection, const char *path)
 	g_return_val_if_fail (path != NULL, NULL);
 
 	device = g_object_new (NM_TYPE_DEVICE_ETHERNET,
-						   NM_OBJECT_DBUS_CONNECTION, connection,
-						   NM_OBJECT_DBUS_PATH, path,
-						   NULL);
+	                       NM_OBJECT_DBUS_CONNECTION, connection,
+	                       NM_OBJECT_DBUS_PATH, path,
+	                       NULL);
 	_nm_object_ensure_inited (NM_OBJECT (device));
 	return device;
 }
@@ -392,4 +390,3 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 }
-

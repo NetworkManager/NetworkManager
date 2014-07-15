@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 Red Hat, Inc.
+ * Copyright 2011 Red Hat, Inc.
  */
 
 #ifndef NM_SETTING_PRIVATE_H
@@ -123,4 +123,3 @@ NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
                                           GError    **error);
 
 #endif  /* NM_SETTING_PRIVATE_H */
-

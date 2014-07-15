@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,8 +15,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2014 Red Hat, Inc.
- * Copyright (C) 2008 Novell, Inc.
+ * Copyright 2007 - 2014 Red Hat, Inc.
+ * Copyright 2008 Novell, Inc.
  */
 
 #include <string.h>
@@ -106,9 +104,9 @@ nm_active_connection_new (DBusGConnection *connection, const char *path)
 	g_return_val_if_fail (path != NULL, NULL);
 
 	return g_object_new (NM_TYPE_ACTIVE_CONNECTION,
-						 NM_OBJECT_DBUS_CONNECTION, connection,
-						 NM_OBJECT_DBUS_PATH, path,
-						 NULL);
+	                     NM_OBJECT_DBUS_CONNECTION, connection,
+	                     NM_OBJECT_DBUS_PATH, path,
+	                     NULL);
 }
 
 static GType
@@ -308,7 +306,7 @@ nm_active_connection_get_specific_object (NMActiveConnection *connection)
  *
  * Gets the #NMDevices used for the active connections.
  *
- * Returns: (element-type NMClient.Device): the #GPtrArray containing #NMDevices.
+ * Returns: (element-type NMDevice): the #GPtrArray containing #NMDevices.
  * This is the internal copy used by the connection, and must not be modified.
  **/
 const GPtrArray *

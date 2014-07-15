@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,8 +15,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright 2007 - 2011 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -125,7 +123,7 @@ _nm_remote_connection_ensure_inited (NMRemoteConnection *self)
 			 */
 			if (!g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NO_REPLY)) {
 				g_warning ("%s: (NMRemoteConnection) error initializing: %s\n",
-					       __func__, error->message);
+				           __func__, error->message);
 			}
 			g_error_free (error);
 		}
@@ -712,8 +710,8 @@ init_get_settings_cb (DBusGProxy *proxy,
 
 static void
 init_async (GAsyncInitable *initable, int io_priority,
-			GCancellable *cancellable, GAsyncReadyCallback callback,
-			gpointer user_data)
+            GCancellable *cancellable, GAsyncReadyCallback callback,
+            gpointer user_data)
 {
 	NMRemoteConnectionInitData *init_data;
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (initable);
@@ -868,7 +866,8 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		(object_class, PROP_BUS,
 		 g_param_spec_boxed (NM_REMOTE_CONNECTION_BUS, "", "",
 		                     DBUS_TYPE_G_CONNECTION,
-		                     G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+		                     G_PARAM_WRITABLE |
+		                     G_PARAM_CONSTRUCT_ONLY |
 		                     G_PARAM_STATIC_STRINGS));
 
 	/* These are needed so _nm_object_create() can create NMRemoteConnections */
@@ -876,13 +875,15 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		(object_class, PROP_DBUS_CONNECTION,
 		 g_param_spec_boxed (NM_REMOTE_CONNECTION_DBUS_CONNECTION, "", "",
 		                     DBUS_TYPE_G_CONNECTION,
-		                     G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+		                     G_PARAM_WRITABLE |
+		                     G_PARAM_CONSTRUCT_ONLY |
 		                     G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property
 		(object_class, PROP_DBUS_PATH,
 		 g_param_spec_string (NM_REMOTE_CONNECTION_DBUS_PATH, "", "",
 		                      NULL,
-		                      G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_WRITABLE |
+		                      G_PARAM_CONSTRUCT_ONLY |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -908,7 +909,7 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	 * This signal is emitted when a connection changes, and it is
 	 * still visible to the user.
 	 */
-	signals[UPDATED] = 
+	signals[UPDATED] =
 		g_signal_new (NM_REMOTE_CONNECTION_UPDATED,
 		              G_TYPE_FROM_CLASS (remote_class),
 		              G_SIGNAL_RUN_FIRST,
@@ -924,12 +925,12 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	 * This signal is emitted when a connection is either deleted or becomes
 	 * invisible to the current user.
 	 */
-	signals[REMOVED] = 
+	signals[REMOVED] =
 		g_signal_new (NM_REMOTE_CONNECTION_REMOVED,
 		              G_TYPE_FROM_CLASS (remote_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMRemoteConnectionClass, removed),
-	 	              NULL, NULL,
+		              NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
 

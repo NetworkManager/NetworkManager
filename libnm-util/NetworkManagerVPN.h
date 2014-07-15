@@ -1,7 +1,5 @@
-/* NetworkManager -- Network link manager
- *
- * Dan Williams <dcbw@redhat.com>
- *
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+/*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -16,7 +14,13 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * Copyright 2004 Red Hat, Inc.
+ */
+
+/* D-Bus-related definitions for NetworkManager VPN plugins.
+ *
+ * Note that although this header is installed as part of libnm-util, it is also
+ * used by some external code that does not link to libnm-util.
  */
 
 #ifndef NETWORK_MANAGER_VPN_H
@@ -25,11 +29,11 @@
 /*
  * dbus services details
  */
-#define	NM_DBUS_PATH_VPN                  "/org/freedesktop/NetworkManager/VPN/Manager"
-#define	NM_DBUS_INTERFACE_VPN             "org.freedesktop.NetworkManager.VPN.Manager"
+#define NM_DBUS_PATH_VPN                  "/org/freedesktop/NetworkManager/VPN/Manager"
+#define NM_DBUS_INTERFACE_VPN             "org.freedesktop.NetworkManager.VPN.Manager"
 
-#define	NM_DBUS_PATH_VPN_CONNECTION       "/org/freedesktop/NetworkManager/VPN/Connection"
-#define	NM_DBUS_INTERFACE_VPN_CONNECTION  "org.freedesktop.NetworkManager.VPN.Connection"
+#define NM_DBUS_PATH_VPN_CONNECTION       "/org/freedesktop/NetworkManager/VPN/Connection"
+#define NM_DBUS_INTERFACE_VPN_CONNECTION  "org.freedesktop.NetworkManager.VPN.Connection"
 
 #define NM_VPN_DBUS_PLUGIN_PATH           "/org/freedesktop/NetworkManager/VPN/Plugin"
 #define NM_VPN_DBUS_PLUGIN_INTERFACE      "org.freedesktop.NetworkManager.VPN.Plugin"
@@ -37,37 +41,47 @@
 /*
  * VPN Errors
  */
-#define NM_DBUS_NO_ACTIVE_VPN_CONNECTION	"org.freedesktop.NetworkManager.VPNConnections.NoActiveVPNConnection"
-#define NM_DBUS_NO_VPN_CONNECTIONS			"org.freedesktop.NetworkManager.VPNConnections.NoVPNConnections"
-#define NM_DBUS_INVALID_VPN_CONNECTION		"org.freedesktop.NetworkManager.VPNConnections.InvalidVPNConnection"
+#define NM_DBUS_NO_ACTIVE_VPN_CONNECTION "org.freedesktop.NetworkManager.VPNConnections.NoActiveVPNConnection"
+#define NM_DBUS_NO_VPN_CONNECTIONS       "org.freedesktop.NetworkManager.VPNConnections.NoVPNConnections"
+#define NM_DBUS_INVALID_VPN_CONNECTION   "org.freedesktop.NetworkManager.VPNConnections.InvalidVPNConnection"
 
-#define NM_DBUS_VPN_ERROR_PREFIX		"org.freedesktop.NetworkManager.VPN.Error"
-#define NM_DBUS_VPN_STARTING_IN_PROGRESS	"StartingInProgress"
-#define NM_DBUS_VPN_ALREADY_STARTED		"AlreadyStarted"
-#define NM_DBUS_VPN_STOPPING_IN_PROGRESS	"StoppingInProgress"
-#define NM_DBUS_VPN_ALREADY_STOPPED		"AlreadyStopped"
-#define NM_DBUS_VPN_WRONG_STATE			"WrongState"
-#define NM_DBUS_VPN_BAD_ARGUMENTS			"BadArguments"
-#define NM_DBUS_VPN_INTERACTIVE_NOT_SUPPORTED	"InteractiveNotSupported"
+#define NM_DBUS_VPN_ERROR_PREFIX              "org.freedesktop.NetworkManager.VPN.Error"
+#define NM_DBUS_VPN_STARTING_IN_PROGRESS      "StartingInProgress"
+#define NM_DBUS_VPN_ALREADY_STARTED           "AlreadyStarted"
+#define NM_DBUS_VPN_STOPPING_IN_PROGRESS      "StoppingInProgress"
+#define NM_DBUS_VPN_ALREADY_STOPPED           "AlreadyStopped"
+#define NM_DBUS_VPN_WRONG_STATE               "WrongState"
+#define NM_DBUS_VPN_BAD_ARGUMENTS             "BadArguments"
+#define NM_DBUS_VPN_INTERACTIVE_NOT_SUPPORTED "InteractiveNotSupported"
 
 
 /*
  * VPN daemon signals
  */
-#define NM_DBUS_VPN_SIGNAL_LOGIN_BANNER		"LoginBanner"
-#define NM_DBUS_VPN_SIGNAL_LOGIN_FAILED		"LoginFailed"
-#define NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED	"LaunchFailed"
-#define NM_DBUS_VPN_SIGNAL_CONNECT_FAILED	"ConnectFailed"
-#define NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD	"VPNConfigBad"
-#define NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD	"IPConfigBad"
-#define NM_DBUS_VPN_SIGNAL_STATE_CHANGE		"StateChange"
-#define NM_DBUS_VPN_SIGNAL_IP4_CONFIG		"IP4Config"
+#define NM_DBUS_VPN_SIGNAL_LOGIN_BANNER   "LoginBanner"
+#define NM_DBUS_VPN_SIGNAL_LOGIN_FAILED   "LoginFailed"
+#define NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED  "LaunchFailed"
+#define NM_DBUS_VPN_SIGNAL_CONNECT_FAILED "ConnectFailed"
+#define NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD "VPNConfigBad"
+#define NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD  "IPConfigBad"
+#define NM_DBUS_VPN_SIGNAL_STATE_CHANGE   "StateChange"
+#define NM_DBUS_VPN_SIGNAL_IP4_CONFIG     "IP4Config"
 
-/*
+/**
+ * NMVPNServiceState:
+ * @NM_VPN_SERVICE_UNKNOWN: The state of the VPN plugin is unknown.
+ * @NM_VPN_SERVICE_INIT: The VPN plugin is initialized.
+ * @NM_VPN_SERVICE_SHUTDOWN: Not used.
+ * @NM_VPN_SERVICE_STARTING: The plugin is attempting to connect to a VPN server.
+ * @NM_VPN_SERVICE_STARTED: The plugin has connected to a VPN server.
+ * @NM_VPN_SERVICE_STOPPING: The plugin is disconnecting from the VPN server.
+ * @NM_VPN_SERVICE_STOPPED: The plugin has disconnected from the VPN server.
+ *
  * VPN daemon states
+ *
+ * (Corresponds to the NM_VPN_SERVICE_STATE type in nm-vpn-connection.xml.)
  */
-typedef enum NMVPNServiceState
-{
+typedef enum NMVPNServiceState {
 	NM_VPN_SERVICE_STATE_UNKNOWN = 0,
 	NM_VPN_SERVICE_STATE_INIT,
 	NM_VPN_SERVICE_STATE_SHUTDOWN,
@@ -78,11 +92,26 @@ typedef enum NMVPNServiceState
 } NMVPNServiceState;
 
 
-/*
+/**
+ * NMVPNConnectionState:
+ * @NM_VPN_CONNECTION_STATE_UNKNOWN: The state of the VPN connection is
+ *   unknown.
+ * @NM_VPN_CONNECTION_STATE_PREPARE: The VPN connection is preparing to
+ *   connect.
+ * @NM_VPN_CONNECTION_STATE_NEED_AUTH: The VPN connection needs authorization
+ *   credentials.
+ * @NM_VPN_CONNECTION_STATE_CONNECT: The VPN connection is being established.
+ * @NM_VPN_CONNECTION_STATE_IP_CONFIG_GET: The VPN connection is getting an IP
+ *   address.
+ * @NM_VPN_CONNECTION_STATE_ACTIVATED: The VPN connection is active.
+ * @NM_VPN_CONNECTION_STATE_FAILED: The VPN connection failed.
+ * @NM_VPN_CONNECTION_STATE_DISCONNECTED: The VPN connection is disconnected.
+ *
  * VPN connection states
+ *
+ * (Corresponds to the NM_VPN_CONNECTION_STATE type in nm-vpn-connection.xml.)
  */
-typedef enum NMVPNConnectionState
-{
+typedef enum NMVPNConnectionState {
 	NM_VPN_CONNECTION_STATE_UNKNOWN = 0,
 	NM_VPN_CONNECTION_STATE_PREPARE,
 	NM_VPN_CONNECTION_STATE_NEED_AUTH,
@@ -93,8 +122,38 @@ typedef enum NMVPNConnectionState
 	NM_VPN_CONNECTION_STATE_DISCONNECTED
 } NMVPNConnectionState;
 
-typedef enum NMVPNConnectionStateReason
-{
+/**
+ * NMVPNConnectionStateReason:
+ * @NM_VPN_CONNECTION_STATE_REASON_UNKNOWN: The reason for the VPN connection
+ *   state change is unknown.
+ * @NM_VPN_CONNECTION_STATE_REASON_NONE: No reason was given for the VPN
+ *   connection state change.
+ * @NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED: The VPN connection changed
+ *   state because the user disconnected it.
+ * @NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED: The VPN connection
+ *   changed state because the device it was using was disconnected.
+ * @NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED: The service providing the
+ *   VPN connection was stopped.
+ * @NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID: The IP config of the VPN
+ *   connection was invalid.
+ * @NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT: The connection attempt to
+ *   the VPN service timed out.
+ * @NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT: A timeout occurred
+ *   while starting the service providing the VPN connection.
+ * @NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED: Starting the service
+ *   starting the service providing the VPN connection failed.
+ * @NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS: Necessary secrets for the VPN
+ *   connection were not provided.
+ * @NM_VPN_CONNECTION_STATE_REASON_LOGIN_FAILED: Authentication to the VPN
+ *   server failed.
+ * @NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED: The connection was
+ *   deleted from settings.
+ *
+ * VPN connection state reasons
+ *
+ * (Corresponds to the NM_VPN_CONNECTION_STATE_REASON type in nm-vpn-connection.xml.)
+ */
+typedef enum NMVPNConnectionStateReason {
 	NM_VPN_CONNECTION_STATE_REASON_UNKNOWN = 0,
 	NM_VPN_CONNECTION_STATE_REASON_NONE,
 	NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED,
@@ -109,6 +168,17 @@ typedef enum NMVPNConnectionStateReason
 	NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED
 } NMVPNConnectionStateReason;
 
+/**
+ * NMVPNPluginFailure:
+ * @NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED: Login failed.
+ * @NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED: Connect failed.
+ * @NM_VPN_PLUGIN_FAILURE_BAD_IP_CONFIG: Invalid IP configuration returned from
+ *   the VPN plugin.
+ *
+ * VPN plugin failure reasons
+ *
+ * (Corresponds to the NM_VPN_PLUGIN_FAILURE type in nm-vpn-plugin.xml.)
+ */
 typedef enum {
 	NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED,
 	NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED,

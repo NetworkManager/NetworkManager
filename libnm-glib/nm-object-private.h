@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2011 Red Hat, Inc.
+ * Copyright 2008 - 2011 Red Hat, Inc.
  */
 
 #ifndef NM_OBJECT_PRIVATE_H
@@ -47,8 +45,8 @@ DBusGProxy *_nm_object_new_proxy (NMObject *self,
 gboolean _nm_object_is_connection_private (NMObject *self);
 
 void _nm_object_register_properties (NMObject *object,
-									 DBusGProxy *proxy,
-									 const NMPropertiesInfo *info);
+                                     DBusGProxy *proxy,
+                                     const NMPropertiesInfo *info);
 
 gboolean _nm_object_reload_properties (NMObject *object, GError **error);
 

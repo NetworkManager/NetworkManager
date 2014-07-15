@@ -1,7 +1,5 @@
-/* NetworkManager -- Network link manager
- *
- * Dan Williams <dcbw@redhat.com>
- *
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+/*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -16,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 Red Hat, Inc.
+ * Copyright 2008 Red Hat, Inc.
  */
 
 #ifndef DBUS_GLIB_TYPES_H
@@ -40,4 +38,3 @@
 #define DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE      (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_IP6_ROUTE))
 
 #endif /* DBUS_GLIB_TYPES_H */
-

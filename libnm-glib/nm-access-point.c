@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,8 +15,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2011 Red Hat, Inc.
+ * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright 2007 - 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -88,9 +86,9 @@ nm_access_point_new (DBusGConnection *connection, const char *path)
 	g_return_val_if_fail (path != NULL, NULL);
 
 	return (GObject *) g_object_new (NM_TYPE_ACCESS_POINT,
-								    NM_OBJECT_DBUS_CONNECTION, connection,
-								    NM_OBJECT_DBUS_PATH, path,
-								    NULL);
+	                                 NM_OBJECT_DBUS_CONNECTION, connection,
+	                                 NM_OBJECT_DBUS_PATH, path,
+	                                 NULL);
 }
 
 /**
@@ -377,7 +375,7 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 /**
  * nm_access_point_filter_connections:
  * @ap: an #NMAccessPoint to filter connections for
- * @connections: (element-type NetworkManager.Connection): a list of
+ * @connections: (element-type NMConnection): a list of
  * #NMConnection objects to filter
  *
  * Filters a given list of connections for a given #NMAccessPoint object and
@@ -390,7 +388,7 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
  * for a given #NMDevice using nm_device_filter_connections() and finally
  * filter that list with this function.
  *
- * Returns: (transfer container) (element-type NetworkManager.Connection): a
+ * Returns: (transfer container) (element-type NMConnection): a
  * list of #NMConnection objects that could be activated with the given @ap.
  * The elements of the list are owned by their creator and should not be freed
  * by the caller, but the returned list itself is owned by the caller and should

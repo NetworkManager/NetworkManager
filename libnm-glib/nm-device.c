@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,8 +15,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2012 Red Hat, Inc.
+ * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright 2007 - 2012 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -346,9 +344,9 @@ constructed (GObject *object)
 	register_properties (NM_DEVICE (object));
 
 	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
-									   G_TYPE_NONE,
-									   G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
-									   G_TYPE_INVALID);
+	                                   G_TYPE_NONE,
+	                                   G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
+	                                   G_TYPE_INVALID);
 
 	dbus_g_proxy_add_signal (priv->proxy,
 	                         "StateChanged",
@@ -356,9 +354,9 @@ constructed (GObject *object)
 	                         G_TYPE_INVALID);
 
 	dbus_g_proxy_connect_signal (priv->proxy, "StateChanged",
-								 G_CALLBACK (device_state_changed),
-								 NM_DEVICE (object),
-								 NULL);
+	                             G_CALLBACK (device_state_changed),
+	                             NM_DEVICE (object),
+	                             NULL);
 }
 
 static void
@@ -847,12 +845,12 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	signals[STATE_CHANGED] =
 		g_signal_new ("state-changed",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMDeviceClass, state_changed),
-				    NULL, NULL, NULL,
-				    G_TYPE_NONE, 3,
-				    G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMDeviceClass, state_changed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 3,
+		              G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
 
 /**
@@ -1425,7 +1423,7 @@ nm_device_get_active_connection (NMDevice *device)
  * Gets the #NMRemoteConnections currently known to the daemon that could
  * be activated on @device.
  *
- * Returns: (element-type NMClient.RemoteConnection): the #GPtrArray
+ * Returns: (element-type NMRemoteConnection): the #GPtrArray
  * containing #NMRemoteConnections. This is the internal copy used by
  * the connection, and must not be modified.
  *
@@ -2163,7 +2161,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	device_iface = nm_device_get_iface (device);
 	if (config_iface && g_strcmp0 (config_iface, device_iface) != 0) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INTERFACE_MISMATCH,
-					 "The interface names of the device and the connection didn't match.");
+		             "The interface names of the device and the connection didn't match.");
 		return FALSE;
 	}
 
@@ -2204,7 +2202,7 @@ nm_device_connection_compatible (NMDevice *device, NMConnection *connection, GEr
 /**
  * nm_device_filter_connections:
  * @device: an #NMDevice to filter connections for
- * @connections: (element-type NetworkManager.Connection): a list of #NMConnection objects to filter
+ * @connections: (element-type NMConnection): a list of #NMConnection objects to filter
  *
  * Filters a given list of connections for a given #NMDevice object and return
  * connections which may be activated with the device. For example if @device
@@ -2215,7 +2213,7 @@ nm_device_connection_compatible (NMDevice *device, NMConnection *connection, GEr
  * incompatible with the device. To get the full list of connections see
  * nm_remote_settings_list_connections().
  *
- * Returns: (transfer container) (element-type NetworkManager.Connection): a
+ * Returns: (transfer container) (element-type NMConnection): a
  * list of #NMConnection objects that could be activated with the given @device.
  * The elements of the list are owned by their creator and should not be freed
  * by the caller, but the returned list itself is owned by the caller and should

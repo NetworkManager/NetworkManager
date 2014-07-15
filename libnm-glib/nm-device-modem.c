@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,8 +15,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2011 - 2012 Red Hat, Inc.
- * Copyright (C) 2008 Novell, Inc.
+ * Copyright 2011 - 2012 Red Hat, Inc.
+ * Copyright 2008 Novell, Inc.
  */
 
 #include <config.h>
@@ -36,9 +34,7 @@
 
 G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                        NM_TYPE_DEVICE_MODEM, \
-                                        NMDeviceModemPrivate))
+#define NM_DEVICE_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MODEM, NMDeviceModemPrivate))
 
 typedef struct {
 	DBusGProxy *proxy;
@@ -293,4 +289,3 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 }
-

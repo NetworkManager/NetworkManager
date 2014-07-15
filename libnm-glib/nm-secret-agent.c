@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2011 Red Hat, Inc.
+ * Copyright 2010 - 2011 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -55,9 +55,7 @@ static void impl_secret_agent_delete_secrets (NMSecretAgent *self,
 
 G_DEFINE_ABSTRACT_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
 
-#define NM_SECRET_AGENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                        NM_TYPE_SECRET_AGENT, \
-                                        NMSecretAgentPrivate))
+#define NM_SECRET_AGENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SECRET_AGENT, NMSecretAgentPrivate))
 
 static gboolean auto_register_cb (gpointer user_data);
 
@@ -124,11 +122,11 @@ get_nm_owner (NMSecretAgent *self)
 
 	if (!priv->nm_owner) {
 		if (!dbus_g_proxy_call_with_timeout (priv->dbus_proxy,
-			                                 "GetNameOwner", 2000, &error,
-			                                 G_TYPE_STRING, NM_DBUS_SERVICE,
-			                                 G_TYPE_INVALID,
-			                                 G_TYPE_STRING, &owner,
-			                                 G_TYPE_INVALID))
+		                                     "GetNameOwner", 2000, &error,
+		                                     G_TYPE_STRING, NM_DBUS_SERVICE,
+		                                     G_TYPE_INVALID,
+		                                     G_TYPE_STRING, &owner,
+		                                     G_TYPE_INVALID))
 			return NULL;
 
 		priv->nm_owner = g_strdup (owner);
@@ -1006,7 +1004,8 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 		(object_class, PROP_IDENTIFIER,
 		 g_param_spec_string (NM_SECRET_AGENT_IDENTIFIER, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT_ONLY |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1024,7 +1023,8 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 		(object_class, PROP_AUTO_REGISTER,
 		 g_param_spec_boolean (NM_SECRET_AGENT_AUTO_REGISTER, "", "",
 		                       TRUE,
-		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1049,7 +1049,8 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 		 g_param_spec_flags (NM_SECRET_AGENT_CAPABILITIES, "", "",
 		                     NM_TYPE_SECRET_AGENT_CAPABILITIES,
 		                     NM_SECRET_AGENT_CAPABILITY_NONE,
-		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_CONSTRUCT |
 		                     G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1062,10 +1063,10 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 	 **/
 	signals[REGISTRATION_RESULT] =
 		g_signal_new (NM_SECRET_AGENT_REGISTRATION_RESULT,
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  0, NULL, NULL, NULL,
-					  G_TYPE_NONE, 1, G_TYPE_POINTER);
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL, NULL,
+		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (class),
 	                                 &dbus_glib_nm_secret_agent_object_info);
@@ -1074,4 +1075,3 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 	                              NM_DBUS_INTERFACE_SECRET_AGENT,
 	                              NM_TYPE_SECRET_AGENT_ERROR);
 }
-

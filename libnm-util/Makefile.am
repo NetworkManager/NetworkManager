@@ -23,6 +23,8 @@ endif
 lib_LTLIBRARIES=libnm-util.la
 
 libnm_util_include_HEADERS = 		\
+	NetworkManager.h		\
+	NetworkManagerVPN.h		\
 	nm-connection.h			\
 	nm-setting.h			\
 	nm-setting-8021x.h		\
@@ -52,7 +54,8 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-wireless-security.h	\
 	nm-setting-vpn.h		\
 	nm-utils-enum-types.h		\
-	nm-utils.h
+	nm-utils.h			\
+	nm-version.h
 
 libnm_util_la_private_headers = \
 	crypto.h			\
@@ -101,7 +104,7 @@ libnm_util_la_SOURCES = \
 
 GLIB_GENERATED = nm-utils-enum-types.h nm-utils-enum-types.c
 BUILT_SOURCES = $(GLIB_GENERATED)
-nm_utils_enum_types_sources = $(libnm_util_include_HEADERS)
+nm_utils_enum_types_sources = $(filter-out NetworkManager%,$(libnm_util_include_HEADERS))
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
@@ -152,7 +155,7 @@ pkgconfig_DATA = libnm-util.pc
 DISTCLEANFILES = libnm-util.pc
 CLEANFILES = 
 
-EXTRA_DIST = libnm-util.pc.in libnm-util.ver
+EXTRA_DIST = libnm-util.pc.in libnm-util.ver nm-version.h.in
 
 -include $(INTROSPECTION_MAKEFILE)
 INTROSPECTION_GIRS =
@@ -160,7 +163,7 @@ INTROSPECTION_SCANNER_ARGS = --add-include-path=$(srcdir)
 INTROSPECTION_COMPILER_ARGS = --includedir=$(srcdir)
 
 if HAVE_INTROSPECTION
-introspection_sources = $(libnm_util_include_HEADERS) $(libnm_util_la_csources) $(top_srcdir)/include/NetworkManager.h $(top_srcdir)/include/NetworkManagerVPN.h
+introspection_sources = $(libnm_util_include_HEADERS) $(libnm_util_la_csources)
 
 NetworkManager-1.0.gir: libnm-util.la
 NetworkManager_1_0_gir_INCLUDES = GObject-2.0 DBusGLib-1.0

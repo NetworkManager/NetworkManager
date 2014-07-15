@@ -794,7 +794,6 @@ AM_CONDITIONAL(SETTING_DOCS_AVAILABLE, test "$build_setting_docs" = "yes" -o "$h
 AC_CONFIG_FILES([
 Makefile
 include/Makefile
-include/nm-version.h
 src/Makefile
 src/tests/Makefile
 src/config/tests/Makefile
@@ -829,6 +828,7 @@ src/devices/wifi/Makefile
 src/devices/wifi/tests/Makefile
 src/devices/wwan/Makefile
 libnm-util/libnm-util.pc
+libnm-util/nm-version.h
 libnm-util/Makefile
 libnm-util/tests/Makefile
 libnm-util/tests/certs/Makefile

@@ -1,8 +1,6 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 /*
- * Thomas Graf <tgraf@redhat.com>
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -18,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 - 2013 Red Hat, Inc.
+ * Copyright 2011 - 2013 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -313,8 +311,8 @@ nm_setting_bond_validate_option (const char *name,
 			case TYPE_STR:
 				return validate_list (name, value, &defaults[i]);
 			case TYPE_BOTH:
-				return    validate_int (name, value, &defaults[i])
-				       || validate_list (name, value, &defaults[i]);
+				return (   validate_int (name, value, &defaults[i])
+				        || validate_list (name, value, &defaults[i]));
 			case TYPE_IP:
 				return validate_ip (name, value);
 			case TYPE_IFNAME:
@@ -753,7 +751,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_OPTIONS:
 		g_value_set_boxed (value, priv->options);
-        break;
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -785,7 +783,8 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 		(object_class, PROP_INTERFACE_NAME,
 		 g_param_spec_string (NM_SETTING_BOND_INTERFACE_NAME, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -799,6 +798,7 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 		 (object_class, PROP_OPTIONS,
 		 _nm_param_spec_specialized (NM_SETTING_BOND_OPTIONS, "", "",
 		                             DBUS_TYPE_G_MAP_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 }

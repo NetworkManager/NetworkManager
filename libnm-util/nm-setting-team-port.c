@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * Copyright (C) 2013 Jiri Pirko <jiri@resnulli.us>
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -16,6 +14,8 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
+ *
+ * Copyright 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
 #include <string.h>
@@ -178,6 +178,7 @@ nm_setting_team_port_class_init (NMSettingTeamPortClass *setting_class)
 		(object_class, PROP_CONFIG,
 		 g_param_spec_string (NM_SETTING_TEAM_PORT_CONFIG, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 }

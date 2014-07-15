@@ -1,8 +1,6 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 /*
- * Dan Williams <dcbw@redhat.com>
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -18,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2013 Red Hat, Inc.
+ * Copyright 2013 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -987,7 +985,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		(object_class, PROP_APP_FCOE_PRIORITY,
 		 g_param_spec_int (NM_SETTING_DCB_APP_FCOE_PRIORITY, "", "",
 		                   -1, 7, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1002,7 +1001,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		(object_class, PROP_APP_FCOE_MODE,
 		 g_param_spec_string (NM_SETTING_DCB_APP_FCOE_MODE, "", "",
 		                      NM_SETTING_DCB_FCOE_MODE_FABRIC,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1034,7 +1034,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		(object_class, PROP_APP_ISCSI_PRIORITY,
 		 g_param_spec_int (NM_SETTING_DCB_APP_ISCSI_PRIORITY, "", "",
 		                   -1, 7, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1066,7 +1067,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		(object_class, PROP_APP_FIP_PRIORITY,
 		 g_param_spec_int (NM_SETTING_DCB_APP_FIP_PRIORITY, "", "",
 		                   -1, 7, -1,
-		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
+		                   G_PARAM_READWRITE |
+		                   G_PARAM_CONSTRUCT |
 		                   G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -1203,4 +1205,3 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 		                             G_PARAM_READWRITE |
 		                             G_PARAM_STATIC_STRINGS));
 }
-

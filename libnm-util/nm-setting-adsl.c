@@ -1,10 +1,6 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 /*
- * Dan Williams <dcbw@redhat.com>
- * Hicham HAOUARI <hicham.haouari@gmail.com>
- * Pantelis Koukousoulas <pktoss@gmail.com>
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -20,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 - 2013 Red Hat, Inc.
+ * Copyright 2011 - 2013 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -401,7 +397,8 @@ nm_setting_adsl_class_init (NMSettingAdslClass *setting_class)
 		(object_class, PROP_PASSWORD,
 		 g_param_spec_string (NM_SETTING_ADSL_PASSWORD, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET |
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_SECRET |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**

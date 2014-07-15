@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright 2007 - 2008 Red Hat, Inc.
  */
 
 #ifndef NM_TYPES_PRIVATE_H
@@ -31,9 +29,9 @@ gboolean _nm_ssid_demarshal (GValue *value, GByteArray **dest);
 gboolean _nm_uint_array_demarshal (GValue *value, GArray **dest);
 gboolean _nm_string_array_demarshal (GValue *value, GPtrArray **dest);
 gboolean _nm_object_array_demarshal (GValue *value,
-                                    GPtrArray **dest,
-                                    DBusGConnection *connection,
-                                    NMObjectCreatorFunc func);
+                                     GPtrArray **dest,
+                                     DBusGConnection *connection,
+                                     NMObjectCreatorFunc func);
 gboolean _nm_ip6_address_array_demarshal (GValue *value, GSList **dest);
 
 #endif /* NM_TYPES_PRIVATE_H */

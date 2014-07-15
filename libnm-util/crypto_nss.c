@@ -18,7 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2009 Red Hat, Inc.
+ * Copyright 2007 - 2009 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -560,4 +560,3 @@ crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 	}
 	return TRUE;
 }
-

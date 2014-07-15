@@ -16,8 +16,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 - 2013 Red Hat, Inc.
- * (C) Copyright 2009 Novell, Inc.
+ * Copyright 2011 - 2013 Red Hat, Inc.
+ * Copyright 2009 Novell, Inc.
  */
 
 #include <string.h>
@@ -179,7 +179,7 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
+              const GValue *value, GParamSpec *pspec)
 {
 	NMSettingWimaxPrivate *priv = NM_SETTING_WIMAX_GET_PRIVATE (object);
 
@@ -201,7 +201,7 @@ set_property (GObject *object, guint prop_id,
 
 static void
 get_property (GObject *object, guint prop_id,
-		    GValue *value, GParamSpec *pspec)
+              GValue *value, GParamSpec *pspec)
 {
 	NMSettingWimax *setting = NM_SETTING_WIMAX (object);
 

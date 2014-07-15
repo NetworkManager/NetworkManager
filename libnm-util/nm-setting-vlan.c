@@ -1,8 +1,6 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 /*
- * Weiping Pan <wpan@redhat.com>
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -18,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 - 2014 Red Hat, Inc.
+ * Copyright 2011 - 2014 Red Hat, Inc.
  */
 
 #include <stdlib.h>
@@ -756,7 +754,9 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		(object_class, PROP_INTERFACE_NAME,
 		 g_param_spec_string (NM_SETTING_VLAN_INTERFACE_NAME, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -771,7 +771,9 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		(object_class, PROP_PARENT,
 		 g_param_spec_string (NM_SETTING_VLAN_PARENT, "", "",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_CONSTRUCT |
+		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -784,7 +786,9 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		(object_class, PROP_ID,
 		 g_param_spec_uint (NM_SETTING_VLAN_ID, "", "",
 		                    0, 4095, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_INFERRABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -800,7 +804,9 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		(object_class, PROP_FLAGS,
 		 g_param_spec_uint (NM_SETTING_VLAN_FLAGS, "", "",
 		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_INFERRABLE |
+		                    G_PARAM_READWRITE |
+		                    G_PARAM_CONSTRUCT |
+		                    NM_SETTING_PARAM_INFERRABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -814,7 +820,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		(object_class, PROP_INGRESS_PRIORITY_MAP,
 		 _nm_param_spec_specialized (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, "", "",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 
 	/**
@@ -828,6 +835,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		(object_class, PROP_EGRESS_PRIORITY_MAP,
 		 _nm_param_spec_specialized (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, "", "",
 		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
+		                             G_PARAM_READWRITE |
+		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
 }

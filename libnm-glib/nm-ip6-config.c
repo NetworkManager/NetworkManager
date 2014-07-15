@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
- * libnm_glib -- Access network status & information from glib applications
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -17,8 +15,8 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2008 - 2014 Red Hat, Inc.
+ * Copyright 2007 - 2008 Novell, Inc.
+ * Copyright 2008 - 2014 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -70,9 +68,9 @@ GObject *
 nm_ip6_config_new (DBusGConnection *connection, const char *object_path)
 {
 	return (GObject *) g_object_new (NM_TYPE_IP6_CONFIG,
-									 NM_OBJECT_DBUS_CONNECTION, connection,
-									 NM_OBJECT_DBUS_PATH, object_path,
-									 NULL);
+	                                 NM_OBJECT_DBUS_CONNECTION, connection,
+	                                 NM_OBJECT_DBUS_PATH, object_path,
+	                                 NULL);
 }
 
 static gboolean
@@ -179,7 +177,7 @@ nm_ip6_config_get_gateway (NMIP6Config *config)
  *
  * Gets the IP6 addresses (containing the address, prefix, and gateway).
  *
- * Returns: (element-type NetworkManager.IP6Address): the #GSList containing
+ * Returns: (element-type NMIP6Address): the #GSList containing
  * #NMIP6Address<!-- -->es. This is the internal copy used by the configuration
  * and must not be modified.
  **/
@@ -306,7 +304,7 @@ nm_ip6_config_get_searches (NMIP6Config *config)
  *
  * Gets the routes.
  *
- * Returns: (element-type NetworkManager.IP6Route): the #GSList containing
+ * Returns: (element-type NMIP6Route): the #GSList containing
  * #NMIP6Routes. This is the internal copy used by the configuration,
  * and must not be modified.
  **/
@@ -493,4 +491,3 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	                         G_PARAM_STATIC_STRINGS));
 
 }
-

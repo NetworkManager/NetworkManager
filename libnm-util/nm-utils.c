@@ -1,11 +1,6 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
-/* NetworkManager -- Network link manager
- *
- * Ray Strode <rstrode@redhat.com>
- * Dan Williams <dcbw@redhat.com>
- * Tambet Ingo <tambet@gmail.com>
- *
+/*
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -21,7 +16,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 - 2013 Red Hat, Inc.
+ * Copyright 2005 - 2013 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -144,7 +139,7 @@ init_lang_to_encodings_hash (void)
 		langToEncodings5 = g_hash_table_new (g_str_hash, g_str_equal);
 		while (enc->lang) {
 			g_hash_table_insert (langToEncodings5, (gpointer) enc->lang,
-					(gpointer) &enc->encodings);
+			                     (gpointer) &enc->encodings);
 			enc++;
 		}
 	}
@@ -155,7 +150,7 @@ init_lang_to_encodings_hash (void)
 		langToEncodings2 = g_hash_table_new (g_str_hash, g_str_equal);
 		while (enc->lang) {
 			g_hash_table_insert (langToEncodings2, (gpointer) enc->lang,
-					(gpointer) &enc->encodings);
+			                     (gpointer) &enc->encodings);
 			enc++;
 		}
 	}
@@ -184,8 +179,7 @@ get_encodings_for_lang (const char *lang,
 	init_lang_to_encodings_hash ();
 
 	tmp_lang = g_strdup (lang);
-	if ((encodings = g_hash_table_lookup (langToEncodings5, tmp_lang)))
-	{
+	if ((encodings = g_hash_table_lookup (langToEncodings5, tmp_lang))) {
 		*encoding1 = (char *) encodings->encoding1;
 		*encoding2 = (char *) encodings->encoding2;
 		*encoding3 = (char *) encodings->encoding3;
@@ -195,8 +189,7 @@ get_encodings_for_lang (const char *lang,
 	/* Truncate tmp_lang to length of 2 */
 	if (strlen (tmp_lang) > 2)
 		tmp_lang[2] = '\0';
-	if (!success && (encodings = g_hash_table_lookup (langToEncodings2, tmp_lang)))
-	{
+	if (!success && (encodings = g_hash_table_lookup (langToEncodings2, tmp_lang))) {
 		*encoding1 = (char *) encodings->encoding1;
 		*encoding2 = (char *) encodings->encoding2;
 		*encoding3 = (char *) encodings->encoding3;
@@ -219,7 +212,7 @@ static gboolean initialized = FALSE;
  * uses libnm-util.  Sets up an atexit() handler to ensure de-initialization
  * is performed, but calling nm_utils_deinit() to explicitly deinitialize
  * libnm-util can also be done.  This function can be called more than once.
- * 
+ *
  * Returns: %TRUE if the initialization was successful, %FALSE on failure.
  **/
 gboolean
@@ -340,16 +333,16 @@ nm_utils_ssid_to_utf8 (const GByteArray *ssid)
 gboolean
 nm_utils_is_empty_ssid (const guint8 * ssid, int len)
 {
-        /* Single white space is for Linksys APs */
-        if (len == 1 && ssid[0] == ' ')
-                return TRUE;
+	/* Single white space is for Linksys APs */
+	if (len == 1 && ssid[0] == ' ')
+		return TRUE;
 
-        /* Otherwise, if the entire ssid is 0, we assume it is hidden */
-        while (len--) {
-                if (ssid[len] != '\0')
-                        return FALSE;
-        }
-        return TRUE;
+	/* Otherwise, if the entire ssid is 0, we assume it is hidden */
+	while (len--) {
+		if (ssid[len] != '\0')
+			return FALSE;
+	}
+	return TRUE;
 }
 
 #define ESSID_MAX_SIZE 32
@@ -475,8 +468,8 @@ nm_utils_gvalue_hash_dup (GHashTable *hash)
 	g_return_val_if_fail (hash != NULL, NULL);
 
 	table = g_hash_table_new_full (g_str_hash, g_str_equal,
-						    (GDestroyNotify) g_free,
-						    value_destroy);
+	                               (GDestroyNotify) g_free,
+	                               value_destroy);
 
 	g_hash_table_foreach (hash, value_dup, table);
 
@@ -675,7 +668,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		    || ((type == NMU_SEC_LEAP) && !adhoc)) {
 			if (wifi_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
 				return TRUE;
-			else 
+			else
 				return FALSE;
 		}
 	}
@@ -894,7 +887,7 @@ nm_utils_wpa_psk_valid (const char *psk)
  * this serialization is not guaranteed to be stable and the #GArray may be
  * extended in the future.
  *
- * Returns: (transfer full) (element-type NetworkManager.IP4Address): a newly allocated #GSList of #NMIP4Address objects
+ * Returns: (transfer full) (element-type NMIP4Address): a newly allocated #GSList of #NMIP4Address objects
  **/
 GSList *
 nm_utils_ip4_addresses_from_gvalue (const GValue *value)
@@ -912,7 +905,7 @@ nm_utils_ip4_addresses_from_gvalue (const GValue *value)
 			g_warning ("Ignoring invalid IP4 address");
 			continue;
 		}
-		
+
 		addr = nm_ip4_address_new ();
 		nm_ip4_address_set_address (addr, g_array_index (array, guint32, 0));
 		nm_ip4_address_set_prefix (addr, g_array_index (array, guint32, 1));
@@ -976,7 +969,7 @@ nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value)
  * format of this serialization is not guaranteed to be stable and may be
  * extended in the future.
  *
- * Returns: (transfer full) (element-type NetworkManager.IP4Route): a newly allocated #GSList of #NMIP4Route objects
+ * Returns: (transfer full) (element-type NMIP4Route): a newly allocated #GSList of #NMIP4Route objects
  **/
 GSList *
 nm_utils_ip4_routes_from_gvalue (const GValue *value)
@@ -1133,7 +1126,7 @@ nm_utils_ip4_get_default_prefix (guint32 ip)
  * this serialization is not guaranteed to be stable and the #GValueArray may be
  * extended in the future.
  *
- * Returns: (transfer full) (element-type NetworkManager.IP6Address): a newly allocated #GSList of #NMIP6Address objects
+ * Returns: (transfer full) (element-type NMIP6Address): a newly allocated #GSList of #NMIP6Address objects
  **/
 GSList *
 nm_utils_ip6_addresses_from_gvalue (const GValue *value)
@@ -1168,7 +1161,7 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 		ba_addr = g_value_get_boxed (tmp);
 		if (ba_addr->len != 16) {
 			g_warning ("%s: ignoring invalid IP6 address of length %d",
-			            __func__, ba_addr->len);
+			           __func__, ba_addr->len);
 			continue;
 		}
 
@@ -1176,7 +1169,7 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 		prefix = g_value_get_uint (tmp);
 		if (prefix > 128) {
 			g_warning ("%s: ignoring invalid IP6 prefix %d",
-			            __func__, prefix);
+			           __func__, prefix);
 			continue;
 		}
 
@@ -1185,7 +1178,7 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 			ba_gw = g_value_get_boxed (tmp);
 			if (ba_gw->len != 16) {
 				g_warning ("%s: ignoring invalid IP6 gateway address of length %d",
-				            __func__, ba_gw->len);
+				           __func__, ba_gw->len);
 				continue;
 			}
 		}
@@ -1270,7 +1263,7 @@ nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
  * into a #GSList of #NMIP6Route objects.  The specific format of this serialization
  * is not guaranteed to be stable and may be extended in the future.
  *
- * Returns: (transfer full) (element-type NetworkManager.IP6Route): a newly allocated #GSList of #NMIP6Route objects
+ * Returns: (transfer full) (element-type NMIP6Route): a newly allocated #GSList of #NMIP6Route objects
  **/
 GSList *
 nm_utils_ip6_routes_from_gvalue (const GValue *value)
@@ -1298,7 +1291,7 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 		dest = g_value_get_boxed (g_value_array_get_nth (route_values, 0));
 		if (dest->len != 16) {
 			g_warning ("%s: ignoring invalid IP6 dest address of length %d",
-			            __func__, dest->len);
+			           __func__, dest->len);
 			continue;
 		}
 
@@ -1307,7 +1300,7 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 		next_hop = g_value_get_boxed (g_value_array_get_nth (route_values, 2));
 		if (next_hop->len != 16) {
 			g_warning ("%s: ignoring invalid IP6 next_hop address of length %d",
-			            __func__, next_hop->len);
+			           __func__, next_hop->len);
 			continue;
 		}
 
@@ -1334,7 +1327,7 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
  * Utility function to convert a #GSList of #NMIP6Route objects into a #GPtrArray of
  * #GValueArrays of (#GArray of #guchars), #guint32, (#GArray of #guchars), and #guint32
  * representing a list of NetworkManager IPv6 routes (which is a tuple of destination,
- * prefix, next hop, and metric).  The specific format of this serialization is not 
+ * prefix, next hop, and metric).  The specific format of this serialization is not
  * guaranteed to be stable and may be extended in the future.
  **/
 void
@@ -1899,7 +1892,7 @@ nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band)
 		if (channel == pair->chan)
 			return channel;
 		if ((channel < (pair+1)->chan) && (channel > pair->chan)) {
-			if (direction > 0)	
+			if (direction > 0)
 				return (pair+1)->chan;
 			else
 				return pair->chan;
@@ -2235,8 +2228,7 @@ nm_utils_bin2hexstr (const char *bytes, int len, int final_len)
 		g_return_val_if_fail (final_len < buflen, NULL);
 
 	result = g_malloc0 (buflen);
-	for (i = 0; i < len; i++)
-	{
+	for (i = 0; i < len; i++) {
 		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf];
 		result[2*i+1] = hex_digits[bytes[i] & 0xf];
 	}
