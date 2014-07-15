@@ -3,7 +3,6 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/libnm-util \
 	-I${top_srcdir}/libnm-glib \
 	-I${top_srcdir}/include \
-	-I${top_builddir}/include \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS)
 

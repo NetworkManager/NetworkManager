@@ -5,7 +5,6 @@ SUBDIRS = . tests
 AM_CPPFLAGS = \
 	-I${top_srcdir} \
 	-I${top_srcdir}/include \
-	-I${top_builddir}/include \
 	-DG_LOG_DOMAIN=\""libnm-util"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
@@ -53,8 +52,10 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-wireless.h		\
 	nm-setting-wireless-security.h	\
 	nm-setting-vpn.h		\
+	nm-utils.h
+
+nodist_libnm_util_include_HEADERS = \
 	nm-utils-enum-types.h		\
-	nm-utils.h			\
 	nm-version.h
 
 libnm_util_la_private_headers = \
@@ -163,7 +164,7 @@ INTROSPECTION_SCANNER_ARGS = --add-include-path=$(srcdir)
 INTROSPECTION_COMPILER_ARGS = --includedir=$(srcdir)
 
 if HAVE_INTROSPECTION
-introspection_sources = $(libnm_util_include_HEADERS) $(libnm_util_la_csources)
+introspection_sources = $(libnm_util_include_HEADERS) $(nodist_libnm_util_include_HEADERS) $(libnm_util_la_csources)
 
 NetworkManager-1.0.gir: libnm-util.la
 NetworkManager_1_0_gir_INCLUDES = GObject-2.0 DBusGLib-1.0

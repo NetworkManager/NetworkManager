@@ -1,6 +1,5 @@
 AM_CPPFLAGS= \
 	-I$(top_srcdir)/include \
-	-I$(top_builddir)/include \
 	-DG_LOG_DOMAIN=\""nmtui"\" \
 	$(GLIB_CFLAGS) \
 	$(NEWT_CFLAGS) \
