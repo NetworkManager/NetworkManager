@@ -90,10 +90,10 @@ gboolean nm_device_get_enslaved (NMDevice *device);
 
 NMDevice *nm_device_master_get_slave_by_ifindex (NMDevice *dev, int ifindex);
 
-void nm_device_master_check_slave_physical_port (NMDevice *dev, NMDevice *slave,
+void nm_device_master_check_slave_physical_port (NMDevice *self, NMDevice *slave,
                                                  guint64 log_domain);
 
-void nm_device_set_carrier (NMDevice *device, gboolean carrier);
+void nm_device_set_carrier (NMDevice *self, gboolean carrier);
 
 void nm_device_emit_recheck_auto_activate (NMDevice *device);
 void nm_device_queue_recheck_assume (NMDevice *device);

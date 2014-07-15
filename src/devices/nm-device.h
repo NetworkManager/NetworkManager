@@ -260,7 +260,7 @@ NMConnection *  nm_device_get_connection	(NMDevice *dev);
 gboolean        nm_device_is_available   (NMDevice *dev);
 gboolean        nm_device_has_carrier    (NMDevice *dev);
 
-NMConnection * nm_device_generate_connection (NMDevice *device, NMDevice *master);
+NMConnection * nm_device_generate_connection (NMDevice *self, NMDevice *master);
 
 gboolean nm_device_master_update_slave_connection (NMDevice *master,
                                                    NMDevice *slave,
