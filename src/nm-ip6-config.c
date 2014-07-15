@@ -24,7 +24,6 @@
 #include "nm-ip6-config.h"
 
 #include "nm-glib-compat.h"
-#include "libgsystem.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"

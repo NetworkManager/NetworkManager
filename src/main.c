@@ -39,7 +39,7 @@
 #include <string.h>
 #include <sys/resource.h>
 
-#include "libgsystem.h"
+#include "gsystem-local-alloc.h"
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"

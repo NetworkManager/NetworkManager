@@ -38,7 +38,7 @@
 #include <linux/if.h>
 #include <netlink/route/addr.h>
 
-#include "libgsystem.h"
+#include "gsystem-local-alloc.h"
 #include "nm-glib-compat.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
