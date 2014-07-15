@@ -20,6 +20,12 @@
  * (C) Copyright 2004 - 2013 Red Hat, Inc.
  */
 
+/* Definitions related to NetworkManager's D-Bus interfaces.
+ *
+ * Note that although this header is installed as part of libnm-util, it is also
+ * used by some external code that does not link to libnm-util.
+ */
+
 #ifndef NETWORK_MANAGER_H
 #define NETWORK_MANAGER_H
 

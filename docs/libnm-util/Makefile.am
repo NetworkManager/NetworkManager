@@ -50,7 +50,6 @@ extra_files =
 # CFLAGS and LDFLAGS for compiling scan program. Only needed
 # if $(DOC_MODULE).types is non-empty.
 GTKDOC_CFLAGS =				\
-	-I$(top_srcdir)/include		\
 	-I$(top_srcdir)/libnm-util	\
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS)			\

@@ -19,6 +19,12 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
+/* D-Bus-related definitions for NetworkManager VPN plugins.
+ *
+ * Note that although this header is installed as part of libnm-util, it is also
+ * used by some external code that does not link to libnm-util.
+ */
+
 #ifndef NETWORK_MANAGER_VPN_H
 #define NETWORK_MANAGER_VPN_H
 
