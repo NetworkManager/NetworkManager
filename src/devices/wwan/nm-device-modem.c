@@ -158,8 +158,10 @@ modem_ip4_config_result (NMModem *self,
 		             error && error->message ? error->message : "(unknown)");
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-	} else
-		nm_device_activate_schedule_ip4_config_result (device, config);
+	} else {
+		nm_device_set_wwan_ip4_config (device, config);
+		nm_device_activate_schedule_ip4_config_result (device, NULL);
+	}
 }
 
 static void

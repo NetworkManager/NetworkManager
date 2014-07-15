@@ -98,4 +98,6 @@ void nm_device_set_carrier (NMDevice *device, gboolean carrier);
 void nm_device_emit_recheck_auto_activate (NMDevice *device);
 void nm_device_queue_recheck_assume (NMDevice *device);
 
+void nm_device_set_wwan_ip4_config (NMDevice *device, NMIP4Config *config);
+
 #endif	/* NM_DEVICE_PRIVATE_H */
