@@ -25,7 +25,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <nm-connection.h>
-#include <nm-settings-connection.h>
+#include "nm-types.h"
 
 G_BEGIN_DECLS
 

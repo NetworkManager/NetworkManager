@@ -14,9 +14,6 @@ AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""NetworkManager-ifnet"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	$(POLKIT_CFLAGS) \
-	$(GUDEV_CFLAGS) \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 	-DSBINDIR=\"$(sbindir)\"
 

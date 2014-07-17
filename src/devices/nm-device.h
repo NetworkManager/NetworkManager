@@ -28,15 +28,8 @@
 
 #include "NetworkManager.h"
 #include "nm-types.h"
-#include "nm-activation-request.h"
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
-#include "nm-dhcp4-config.h"
-#include "nm-dhcp6-config.h"
 #include "nm-connection.h"
 #include "nm-rfkill-manager.h"
-#include "nm-connection-provider.h"
-#include "nm-platform.h"
 
 /* Properties */
 #define NM_DEVICE_UDI              "udi"

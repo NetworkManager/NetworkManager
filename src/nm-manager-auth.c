@@ -32,6 +32,7 @@
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-auth-subject.h"
+#include "nm-session-monitor.h"
 
 struct NMAuthChain {
 	guint32 refcount;

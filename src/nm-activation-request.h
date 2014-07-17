@@ -23,6 +23,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
+
 #include "nm-types.h"
 #include "nm-connection.h"
 #include "nm-active-connection.h"
@@ -35,9 +36,9 @@
 #define NM_IS_ACT_REQUEST_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_ACT_REQUEST))
 #define NM_ACT_REQUEST_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACT_REQUEST, NMActRequestClass))
 
-typedef struct {
+struct _NMActRequest {
 	NMActiveConnection parent;
-} NMActRequest;
+};
 
 typedef struct {
 	NMActiveConnectionClass parent;

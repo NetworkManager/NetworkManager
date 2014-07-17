@@ -1,7 +1,5 @@
 AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	$(POLKIT_CFLAGS) \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/src/settings \
 	-I$(top_srcdir)/include \

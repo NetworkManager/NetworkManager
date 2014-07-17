@@ -25,9 +25,7 @@
 #include <glib.h>
 #include <stdio.h>
 
-#include "nm-device.h"
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
+#include "nm-types.h"
 #include "nm-connection.h"
 
 typedef enum {

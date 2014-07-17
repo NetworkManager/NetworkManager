@@ -52,6 +52,7 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-ip4-config.h"
+#include "nm-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-platform.h"
 #include "nm-manager-auth.h"

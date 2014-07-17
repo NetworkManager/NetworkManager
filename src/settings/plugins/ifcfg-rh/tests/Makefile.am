@@ -6,7 +6,6 @@ SUBDIRS=network-scripts
 
 AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util \

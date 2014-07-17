@@ -24,6 +24,7 @@
 #include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-settings-connection.h"
+#include "nm-platform.h"
 
 #define NM_TYPE_WIFI_FACTORY (nm_wifi_factory_get_type ())
 #define NM_WIFI_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_WIFI_FACTORY, NMWifiFactory))

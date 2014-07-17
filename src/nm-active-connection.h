@@ -24,7 +24,6 @@
 #include <glib-object.h>
 #include "nm-types.h"
 #include "nm-connection.h"
-#include "nm-auth-subject.h"
 
 #define NM_TYPE_ACTIVE_CONNECTION            (nm_active_connection_get_type ())
 #define NM_ACTIVE_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnection))
@@ -57,9 +56,9 @@
 #define NM_ACTIVE_CONNECTION_INT_MASTER         "int-master"
 #define NM_ACTIVE_CONNECTION_INT_MASTER_READY   "int-master-ready"
 
-typedef struct {
+struct _NMActiveConnection {
 	GObject parent;
-} NMActiveConnection;
+};
 
 typedef struct {
 	GObjectClass parent;

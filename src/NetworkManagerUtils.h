@@ -26,12 +26,7 @@
 #include <stdio.h>
 #include <net/ethernet.h>
 
-#include "nm-ip4-config.h"
-#include "nm-setting-ip4-config.h"
-#include "nm-ip6-config.h"
-#include "nm-setting-ip6-config.h"
 #include "nm-connection.h"
-#include "nm-setting-private.h"
 
 gboolean nm_ethernet_address_is_valid (const struct ether_addr *test_addr);
 

@@ -11,8 +11,6 @@ AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""NetworkManager-ifupdown"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	$(POLKIT_CFLAGS) \
 	-DTEST_ENI_DIR=\"$(abs_srcdir)\"
 
 noinst_PROGRAMS = test-ifupdown

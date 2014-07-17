@@ -23,6 +23,8 @@
 
 #include <glib-object.h>
 
+#include "nm-types.h"
+
 G_BEGIN_DECLS
 
 #define NM_TYPE_SESSION_MONITOR         (nm_session_monitor_get_type ())
@@ -34,7 +36,6 @@ G_BEGIN_DECLS
 
 #define NM_SESSION_MONITOR_CHANGED "changed"
 
-typedef struct _NMSessionMonitor         NMSessionMonitor;
 typedef struct _NMSessionMonitorClass    NMSessionMonitorClass;
 
 GType             nm_session_monitor_get_type     (void) G_GNUC_CONST;

@@ -54,6 +54,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"
 #include "nm-posix-signals.h"
+#include "nm-platform.h"
 
 static void impl_ppp_manager_need_secrets (NMPPPManager *manager,
                                            DBusGMethodInvocation *context);

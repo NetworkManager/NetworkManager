@@ -4,8 +4,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/src/settings \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
+	$(GLIB_CFLAGS)
 
 noinst_PROGRAMS = \
 	test-wired-defname

@@ -30,6 +30,7 @@
 
 #include <NetworkManager.h>
 #include "gsystem-local-alloc.h"
+#include "nm-types.h"
 
 #define NM_TYPE_PLATFORM            (nm_platform_get_type ())
 #define NM_PLATFORM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PLATFORM, NMPlatform))
@@ -120,7 +121,7 @@ typedef enum {
 	int ifindex; \
 	;
 
-typedef struct {
+struct _NMPlatformLink {
 	__NMPlatformObject_COMMON;
 	char name[IFNAMSIZ];
 	NMLinkType type;
@@ -133,7 +134,7 @@ typedef struct {
 	gboolean connected;
 	gboolean arp;
 	guint mtu;
-} NMPlatformLink;
+};
 
 typedef enum {
 	NM_PLATFORM_SIGNAL_ADDED,
@@ -208,24 +209,24 @@ typedef struct {
  * NMPlatformIP4Address:
  * @timestamp: timestamp as returned by nm_utils_get_monotonic_timestamp_s()
  **/
-typedef struct {
+struct _NMPlatformIP4Address {
 	__NMPlatformIPAddress_COMMON;
 	in_addr_t address;
 	in_addr_t peer_address;  /* PTP peer address */
 	char label[IFNAMSIZ];
-} NMPlatformIP4Address;
+};
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Address, address));
 
 /**
  * NMPlatformIP6Address:
  * @timestamp: timestamp as returned by nm_utils_get_monotonic_timestamp_s()
  **/
-typedef struct {
+struct _NMPlatformIP6Address {
 	__NMPlatformIPAddress_COMMON;
 	struct in6_addr address;
 	struct in6_addr peer_address;
 	guint flags; /* ifa_flags from <linux/if_addr.h>, field type "unsigned int" is as used in rtnl_addr_get_flags. */
-} NMPlatformIP6Address;
+};
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Address, address));
 
 #undef __NMPlatformIPAddress_COMMON
@@ -249,18 +250,18 @@ typedef struct {
 	};
 } NMPlatformIPRoute;
 
-typedef struct {
+struct _NMPlatformIP4Route {
 	__NMPlatformIPRoute_COMMON;
 	in_addr_t network;
 	in_addr_t gateway;
-} NMPlatformIP4Route;
+};
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP4Route, network));
 
-typedef struct {
+struct _NMPlatformIP6Route {
 	__NMPlatformIPRoute_COMMON;
 	struct in6_addr network;
 	struct in6_addr gateway;
-} NMPlatformIP6Route;
+};
 G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPRoute, network_ptr) == G_STRUCT_OFFSET (NMPlatformIP6Route, network));
 
 #undef __NMPlatformIPRoute_COMMON

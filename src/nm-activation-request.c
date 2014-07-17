@@ -37,7 +37,7 @@
 #include "nm-active-connection.h"
 #include "nm-settings-connection.h"
 #include "nm-posix-signals.h"
-
+#include "nm-auth-subject.h"
 
 G_DEFINE_TYPE (NMActRequest, nm_act_request, NM_TYPE_ACTIVE_CONNECTION)
 

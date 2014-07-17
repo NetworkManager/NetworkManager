@@ -22,6 +22,8 @@
 
 #include <glib-object.h>
 
+#include "nm-types.h"
+
 G_BEGIN_DECLS
 
 #define NM_TYPE_SLEEP_MONITOR         (nm_sleep_monitor_get_type ())
@@ -34,7 +36,6 @@ G_BEGIN_DECLS
 #define NM_SLEEP_MONITOR_SLEEPING "sleeping"
 #define NM_SLEEP_MONITOR_RESUMING "resuming"
 
-typedef struct _NMSleepMonitor         NMSleepMonitor;
 typedef struct _NMSleepMonitorClass    NMSleepMonitorClass;
 
 GType           nm_sleep_monitor_get_type     (void) G_GNUC_CONST;

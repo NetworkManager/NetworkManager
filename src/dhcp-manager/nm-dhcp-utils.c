@@ -27,6 +27,7 @@
 #include "nm-dhcp-utils.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
+#include "nm-platform.h"
 
 /********************************************/
 

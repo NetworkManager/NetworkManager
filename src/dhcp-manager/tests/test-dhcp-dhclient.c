@@ -25,6 +25,7 @@
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-utils.h"
 #include "nm-ip4-config.h"
+#include "nm-platform.h"
 
 #define DEBUG 0
 

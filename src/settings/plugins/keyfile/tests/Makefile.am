@@ -14,7 +14,6 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/../ \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	$(POLKIT_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
 	-DG_LOG_DOMAIN=\""NetworkManager-keyfile"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \

@@ -7,17 +7,13 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/src \
 	-I${top_srcdir}/src/logging \
 	-I${top_srcdir}/src/devices \
-	-I${top_srcdir}/src/settings \
 	-I${top_srcdir}/src/platform \
-	-I${top_srcdir}/src/ppp-manager \
 	-I${top_srcdir}/include \
 	-I${top_builddir}/libnm-util \
 	-I${top_srcdir}/libnm-util \
 	-DG_LOG_DOMAIN=\""NetworkManager-adsl"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(DBUS_CFLAGS) \
-	$(POLKIT_CFLAGS) \
-	$(LIBNL_CFLAGS) \
 	$(GUDEV_CFLAGS)
 
 GLIB_GENERATED = nm-adsl-enum-types.h nm-adsl-enum-types.c

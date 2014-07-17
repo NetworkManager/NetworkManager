@@ -28,6 +28,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
+#include "nm-platform.h"
 
 #define debug(...) nm_log_dbg (LOGD_IP6, __VA_ARGS__)
 #define warning(...) nm_log_warn (LOGD_IP6, __VA_ARGS__)

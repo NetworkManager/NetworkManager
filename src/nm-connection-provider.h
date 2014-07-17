@@ -19,12 +19,12 @@
 #include <glib-object.h>
 #include <nm-connection.h>
 
+#include "nm-types.h"
+
 #define NM_TYPE_CONNECTION_PROVIDER      (nm_connection_provider_get_type ())
 #define NM_CONNECTION_PROVIDER(obj)      (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONNECTION_PROVIDER, NMConnectionProvider))
 #define NM_IS_CONNECTION_PROVIDER(obj)   (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_CONNECTION_PROVIDER))
 #define NM_CONNECTION_PROVIDER_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_CONNECTION_PROVIDER, NMConnectionProvider))
-
-typedef struct _NMConnectionProvider NMConnectionProvider;
 
 #define NM_CP_SIGNAL_CONNECTION_ADDED        "cp-connection-added"
 #define NM_CP_SIGNAL_CONNECTION_UPDATED      "cp-connection-updated"

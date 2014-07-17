@@ -37,7 +37,6 @@ AM_CPPFLAGS = \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	$(POLKIT_CFLAGS) \
 	$(NSS_CFLAGS) \
 	-DG_LOG_DOMAIN=\""NetworkManager-ifcfg-rh"\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \

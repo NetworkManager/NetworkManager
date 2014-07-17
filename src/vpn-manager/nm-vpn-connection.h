@@ -27,6 +27,7 @@
 #include "NetworkManagerVPN.h"
 #include "nm-device.h"
 #include "nm-auth-subject.h"
+#include "nm-active-connection.h"
 
 #define NM_TYPE_VPN_CONNECTION            (nm_vpn_connection_get_type ())
 #define NM_VPN_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_CONNECTION, NMVPNConnection))

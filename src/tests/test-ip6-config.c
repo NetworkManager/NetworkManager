@@ -25,6 +25,7 @@
 #include "nm-ip6-config.h"
 
 #include "nm-logging.h"
+#include "nm-platform.h"
 #include "nm-test-utils.h"
 
 static NMIP6Config *

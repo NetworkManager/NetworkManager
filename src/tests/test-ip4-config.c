@@ -23,6 +23,7 @@
 #include <arpa/inet.h>
 
 #include "nm-ip4-config.h"
+#include "nm-platform.h"
 
 static void
 addr_init (NMPlatformIP4Address *a, const char *addr, const char *peer, guint plen)
