@@ -118,6 +118,14 @@ nm_dhcp_client_get_uuid (NMDHCPClient *self)
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->uuid;
 }
 
+const GByteArray *
+nm_dhcp_client_get_duid (NMDHCPClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->duid;
+}
+
 /********************************************/
 
 static const char *state_table[NM_DHCP_STATE_MAX + 1] = {
