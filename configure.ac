@@ -1024,6 +1024,8 @@ examples/python/Makefile
 examples/python/dbus/Makefile
 examples/python/gi/Makefile
 examples/ruby/Makefile
+examples/lua/Makefile
+examples/lua/lgi/Makefile
 examples/C/Makefile
 examples/C/glib/Makefile
 examples/C/qt/Makefile
