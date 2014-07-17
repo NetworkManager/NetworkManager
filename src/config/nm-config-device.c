@@ -38,7 +38,6 @@ nm_config_device_spec_match_list (NMConfigDevice *self, const char **config_spec
 {
 	GSList *specs = NULL;
 	gboolean match;
-	char buf[NM_UTILS_HWADDR_LEN_MAX + 1], *tmp;
 	int i;
 
 	g_return_val_if_fail (NM_IS_CONFIG_DEVICE (self), FALSE);
@@ -46,28 +45,13 @@ nm_config_device_spec_match_list (NMConfigDevice *self, const char **config_spec
 	if (!config_specs)
 		return FALSE;
 
-	/* For compatibility, we allow an untagged MAC address, and for convenience,
-	 * we allow untagged interface names as well.
-	 */
-	for (i = 0; config_specs[i]; i++) {
-		if (g_strcmp0 (config_specs[i], "*") == 0)
-			specs = g_slist_prepend (specs, g_strdup (config_specs[i]));
-		else if (nm_utils_iface_valid_name (config_specs[i]))
-			specs = g_slist_prepend (specs, g_strdup_printf ("interface-name:%s", config_specs[i]));
-		else if (   nm_utils_hwaddr_aton (config_specs[i], ARPHRD_ETHER, buf)
-		         || nm_utils_hwaddr_aton (config_specs[i], ARPHRD_INFINIBAND, buf)) {
-			tmp = g_ascii_strdown (config_specs[i], -1);
-			specs = g_slist_prepend (specs, g_strdup_printf ("mac:%s", tmp));
-			g_free (tmp);
-		} else
-			specs = g_slist_prepend (specs, g_strdup (config_specs[i]));
-	}
-
+	for (i = 0; config_specs[i]; i++)
+		specs = g_slist_prepend (specs, (char *) config_specs[i]);
 	specs = g_slist_reverse (specs);
 
 	match = NM_CONFIG_DEVICE_GET_INTERFACE (self)->spec_match_list (self, specs);
 
-	g_slist_free_full (specs, g_free);
+	g_slist_free (specs);
 	return match;
 }
 

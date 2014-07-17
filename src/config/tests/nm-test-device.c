@@ -26,6 +26,7 @@
 #include "nm-test-device.h"
 #include "nm-config-device.h"
 #include "nm-utils.h"
+#include "NetworkManagerUtils.h"
 
 static void nm_test_device_config_device_interface_init (NMConfigDeviceInterface *iface);
 
@@ -60,15 +61,8 @@ static gboolean
 spec_match_list (NMConfigDevice *device, const GSList *specs)
 {
 	NMTestDevice *self = NM_TEST_DEVICE (device);
-	const GSList *iter;
-	const char *spec;
 
-	for (iter = specs; iter; iter = iter->next) {
-		spec = iter->data;
-		if (g_str_has_prefix (spec, "mac:") && !strcmp (spec + 4, self->hwaddr))
-			return TRUE;
-	}
-	return FALSE;
+	return nm_match_spec_hwaddr (specs, self->hwaddr);
 }
 
 static const guint8 *

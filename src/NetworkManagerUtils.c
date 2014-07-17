@@ -589,6 +589,9 @@ nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 
 	g_return_val_if_fail (hwaddr != NULL, FALSE);
 
+	if (nm_match_spec_string (specs, hwaddr))
+		return TRUE;
+
 	hwaddr_match = g_strdup_printf ("mac:%s", hwaddr);
 	matched = nm_match_spec_string (specs, hwaddr_match);
 	g_free (hwaddr_match);
@@ -602,6 +605,9 @@ nm_match_spec_interface_name (const GSList *specs, const char *interface_name)
 	gboolean matched;
 
 	g_return_val_if_fail (interface_name != NULL, FALSE);
+
+	if (nm_match_spec_string (specs, interface_name))
+		return TRUE;
 
 	iface_match = g_strdup_printf ("interface-name:%s", interface_name);
 	matched = nm_match_spec_string (specs, iface_match);
