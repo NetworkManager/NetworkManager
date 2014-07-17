@@ -57,7 +57,7 @@ sbin_PROGRAMS = NetworkManager
 NetworkManager_SOURCES = \
 	main.c
 
-NetworkManager_LDADD = libNetworkManager.la $(LIBNDP_LIBS)
+NetworkManager_LDADD = libNetworkManager.la
 
 noinst_LTLIBRARIES = libNetworkManager.la
 
@@ -364,6 +364,7 @@ libNetworkManager_la_LIBADD = \
 	$(LIBNL_LIBS) \
 	$(POLKIT_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
+	$(LIBNDP_LIBS) \
 	$(LIBDL) \
 	$(LIBM)
 

@@ -26,6 +26,5 @@ noinst_PROGRAMS = \
 rdisc_SOURCES = \
 	rdisc.c
 rdisc_LDADD = \
-	$(top_builddir)/src/libNetworkManager.la \
-	$(LIBNDP_LIBS)
+	$(top_builddir)/src/libNetworkManager.la
 
