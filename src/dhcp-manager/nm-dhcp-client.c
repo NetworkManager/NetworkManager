@@ -426,38 +426,21 @@ generate_duid_from_machine_id (void)
 	return duid;
 }
 
-static char *
-escape_duid (const GByteArray *duid)
-{
-	guint32 i = 0;
-	GString *s;
-
-	g_return_val_if_fail (duid != NULL, NULL);
-
-	s = g_string_sized_new (40);
-	while (i < duid->len) {
-		if (s->len)
-			g_string_append_c (s, ':');
-		g_string_append_printf (s, "%02x", duid->data[i++]);
-	}
-	return g_string_free (s, FALSE);
-}
-
 static GByteArray *
 get_duid (NMDHCPClient *self)
 {
 	static GByteArray *duid = NULL;
 	GByteArray *copy = NULL;
-	char *escaped;
+	char *str;
 
 	if (G_UNLIKELY (duid == NULL)) {
 		duid = generate_duid_from_machine_id ();
 		g_assert (duid);
 
 		if (nm_logging_enabled (LOGL_DEBUG, LOGD_DHCP6)) {
-			escaped = escape_duid (duid);
-			nm_log_dbg (LOGD_DHCP6, "Generated DUID %s", escaped);
-			g_free (escaped);
+			str = nm_dhcp_utils_duid_to_string (duid);
+			nm_log_dbg (LOGD_DHCP6, "Generated DUID %s", str);
+			g_free (str);
 		}
 	}
 
@@ -477,7 +460,7 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
                           NMSettingIP6ConfigPrivacy privacy)
 {
 	NMDHCPClientPrivate *priv;
-	char *escaped;
+	char *str;
 
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), FALSE);
 
@@ -493,9 +476,9 @@ nm_dhcp_client_start_ip6 (NMDHCPClient *self,
 		priv->duid = NM_DHCP_CLIENT_GET_CLASS (self)->get_duid (self);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_DHCP)) {
-		escaped = escape_duid (priv->duid);
-		nm_log_dbg (LOGD_DHCP, "(%s): DHCPv6 DUID is '%s'", priv->iface, escaped);
-		g_free (escaped);
+		str = nm_dhcp_utils_duid_to_string (priv->duid);
+		nm_log_dbg (LOGD_DHCP, "(%s): DHCPv6 DUID is '%s'", priv->iface, str);
+		g_free (str);
 	}
 
 	priv->info_only = info_only;

@@ -33,5 +33,7 @@ NMIP6Config *nm_dhcp_utils_ip6_config_from_options (const char *iface,
                                                     guint priority,
                                                     gboolean info_only);
 
+char *       nm_dhcp_utils_duid_to_string          (const GByteArray *duid);
+
 #endif /* NM_DHCP_UTILS_H */
 
