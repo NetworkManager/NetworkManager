@@ -21,7 +21,7 @@
 #ifndef NM_TEST_DEVICE_H
 #define NM_TEST_DEVICE_H
 
-#include <glib-object.h>
+#include <nm-device.h>
 
 G_BEGIN_DECLS
 
@@ -33,19 +33,17 @@ G_BEGIN_DECLS
 #define NM_TEST_DEVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_TEST_DEVICE, NMTestDeviceClass))
 
 typedef struct {
-	GObject parent;
+	NMDevice parent;
 
-	char *hwaddr;
-	guint8 *hwaddr_bytes;
 } NMTestDevice;
 
 typedef struct {
-	GObjectClass parent;
+	NMDeviceClass parent;
 } NMTestDeviceClass;
 
 GType nm_test_device_get_type (void);
 
-NMTestDevice *nm_test_device_new (const char *hwaddr);
+NMDevice *nm_test_device_new (const char *hwaddr);
 
 G_END_DECLS
 

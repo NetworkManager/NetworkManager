@@ -64,8 +64,6 @@ noinst_LTLIBRARIES = libNetworkManager.la
 nm_sources = \
 	config/nm-config.c \
 	config/nm-config.h \
-	config/nm-config-device.c \
-	config/nm-config-device.h \
 	\
 	devices/nm-device.c \
 	devices/nm-device.h \

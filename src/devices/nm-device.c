@@ -70,7 +70,6 @@
 #include "nm-manager-auth.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-dispatcher.h"
-#include "nm-config-device.h"
 #include "nm-config.h"
 #include "nm-dns-manager.h"
 
@@ -79,10 +78,7 @@ static void impl_device_delete     (NMDevice *device, DBusGMethodInvocation *con
 
 #include "nm-device-glue.h"
 
-static void nm_device_config_device_interface_init (NMConfigDeviceInterface *iface);
-
-G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMDevice, nm_device, G_TYPE_OBJECT,
-                                  G_IMPLEMENT_INTERFACE (NM_TYPE_CONFIG_DEVICE, nm_device_config_device_interface_init))
+G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
@@ -7143,13 +7139,6 @@ nm_device_init (NMDevice *self)
 	priv->ip6_saved_properties = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 }
 
-static void
-nm_device_config_device_interface_init (NMConfigDeviceInterface *iface)
-{
-	iface->spec_match_list = (gboolean (*) (NMConfigDevice *, const GSList *)) nm_device_spec_match_list;
-	iface->get_hw_address = (const guint8 * (*) (NMConfigDevice *, guint *)) nm_device_get_hw_address;
-}
-
 /*
  * Get driver info from SIOCETHTOOL ioctl() for 'iface'
  * Returns driver and firmware versions to 'driver_version and' 'firmware_version'
@@ -7256,7 +7245,7 @@ constructed (GObject *object)
 
 	/* Have to call update_initial_hw_address() before calling get_ignore_carrier() */
 	if (device_has_capability (dev, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		priv->ignore_carrier = nm_config_get_ignore_carrier (nm_config_get (), NM_CONFIG_DEVICE (dev));
+		priv->ignore_carrier = nm_config_get_ignore_carrier (nm_config_get (), dev);
 
 		check_carrier (dev);
 		nm_log_info (LOGD_HW,

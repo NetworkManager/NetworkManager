@@ -27,6 +27,7 @@
 #include "nm-logging.h"
 #include "nm-utils.h"
 #include "nm-glib-compat.h"
+#include "nm-device.h"
 
 #include <gio/gio.h>
 #include <glib/gi18n.h>
@@ -177,11 +178,20 @@ nm_config_get_value (NMConfig *config, const char *group, const char *key, GErro
 }
 
 gboolean
-nm_config_get_ignore_carrier (NMConfig *config, NMConfigDevice *device)
+nm_config_get_ignore_carrier (NMConfig *config, NMDevice *device)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
+	GSList *specs = NULL;
+	int i;
+	gboolean match;
 
-	return nm_config_device_spec_match_list (device, (const char **) priv->ignore_carrier);
+	for (i = 0; priv->ignore_carrier[i]; i++)
+		specs = g_slist_prepend (specs, priv->ignore_carrier[i]);
+
+	match = nm_device_spec_match_list (device, specs);
+
+	g_slist_free (specs);
+	return match;
 }
 
 /************************************************************************/
@@ -227,18 +237,29 @@ merge_no_auto_default_state (NMConfig *config)
 }
 
 gboolean
-nm_config_get_ethernet_can_auto_default (NMConfig *config, NMConfigDevice *device)
+nm_config_get_ethernet_can_auto_default (NMConfig *config, NMDevice *device)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
+	GSList *specs = NULL;
+	int i;
+	gboolean match;
 
-	return !nm_config_device_spec_match_list (device, (const char **) priv->no_auto_default);
+	for (i = 0; priv->no_auto_default[i]; i++)
+		specs = g_slist_prepend (specs, priv->no_auto_default[i]);
+
+	match = nm_device_spec_match_list (device, specs);
+
+	g_slist_free (specs);
+	return !match;
 }
 
 void
-nm_config_set_ethernet_no_auto_default (NMConfig *config, NMConfigDevice *device)
+nm_config_set_ethernet_no_auto_default (NMConfig *config, NMDevice *device)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
-	char *current;
+	const guint8 *hwaddr;
+	guint hwaddr_len;
+	char *current, *hwaddr_str;
 	GString *updated;
 	GError *error = NULL;
 
@@ -253,7 +274,10 @@ nm_config_set_ethernet_no_auto_default (NMConfig *config, NMConfigDevice *device
 			g_string_append_c (updated, '\n');
 	}
 
-	g_string_append (updated, nm_config_device_get_hwaddr (device));
+	hwaddr = nm_device_get_hw_address (device, &hwaddr_len);
+	hwaddr_str = nm_utils_hwaddr_ntoa_len (hwaddr, hwaddr_len);
+	g_string_append (updated, hwaddr_str);
+	g_free (hwaddr_str);
 	g_string_append_c (updated, '\n');
 
 	if (!g_file_set_contents (priv->no_auto_default_file, updated->str, updated->len, &error)) {
