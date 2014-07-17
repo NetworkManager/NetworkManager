@@ -225,7 +225,6 @@ nm_dhcp_dhclient_create_config (const char *interface,
 		add_also_request (alsoreq, "dhcp6.name-servers");
 		add_also_request (alsoreq, "dhcp6.domain-search");
 		add_also_request (alsoreq, "dhcp6.client-id");
-		add_also_request (alsoreq, "dhcp6.server-id");
 	} else {
 		add_ip4_config (new_contents, dhcp_client_id, hostname);
 		add_also_request (alsoreq, "rfc3442-classless-static-routes");
