@@ -9,7 +9,6 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/settings \
 	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-DG_LOG_DOMAIN=\""NetworkManager-ifnet"\" \
@@ -35,7 +34,6 @@ libnm_settings_plugin_ifnet_la_LDFLAGS = -module -avoid-version
 
 libnm_settings_plugin_ifnet_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm-glib.la \
 	lib-ifnet-io.la\
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS)

@@ -4,7 +4,6 @@ if ENABLE_TESTS
 
 AM_CPPFLAGS= \
 	-I$(srcdir)/../ \
-	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/include \
