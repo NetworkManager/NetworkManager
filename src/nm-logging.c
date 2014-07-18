@@ -134,6 +134,13 @@ nm_logging_error_quark (void)
 
 /************************************************************************/
 
+static void
+_ensure_initialized ()
+{
+	if (G_UNLIKELY (!logging_set_up))
+		nm_logging_setup ("INFO", "DEFAULT", NULL, NULL);
+}
+
 static gboolean
 match_log_level (const char  *level,
                  guint32     *out_level,
@@ -295,6 +302,8 @@ nm_logging_all_levels_to_string (void)
 const char *
 nm_logging_domains_to_string (void)
 {
+	_ensure_initialized ();
+
 	if (G_UNLIKELY (!logging_domains_to_string)) {
 		const LogDesc *diter;
 		GString *str;
@@ -364,6 +373,8 @@ nm_logging_enabled (guint32 level, guint64 domain)
 {
 	g_return_val_if_fail (level < LOGL_MAX, FALSE);
 
+	_ensure_initialized ();
+
 	return !!(logging[level] & domain);
 }
 
@@ -384,8 +395,7 @@ _nm_log (const char *loc,
 
 	g_return_if_fail (level < LOGL_MAX);
 
-	if (G_UNLIKELY (!logging_set_up))
-		nm_logging_setup ("INFO", "DEFAULT", NULL, NULL);
+	_ensure_initialized ();
 
 	if (!(logging[level] & domain))
 		return;
