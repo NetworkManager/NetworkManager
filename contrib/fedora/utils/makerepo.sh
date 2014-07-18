@@ -162,6 +162,10 @@ elif [[ "x$(ls -1d ./wireless_tools.[0-9]*/ 2>/dev/null)" != x && -f wireless-to
     DIRNAME="$(basename "$(ls -1d ./wireless_tools.[0-9]*/ || die "could not find directory")")"
     BUILD_WIRELESS_TOOLS=x
     SPEC=wireless-tools.spec
+elif [[ "x$(ls -1d ./umip-[0-9]*/ 2>/dev/null)" != x && -f mipv6-daemon.spec ]]; then
+    DIRNAME="$(basename "$(ls -1d ./umip-[0-9]*/ || die "could not find directory")")"
+    BUILD_MIPV6_DAEMON=x
+    SPEC=mipv6-daemon.spec
 else
     die "Could not detect dist-git type"
 fi
@@ -216,6 +220,8 @@ pushd "$DIRNAME"
     elif [[ "$BUILD_NETWORMANAGER_OPENSWAN" != "" || "$BUILD_NETWORMANAGER_LIBRESWAN" != "" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-openswan";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openswan"
+    elif [[ "$BUILD_MIPV6_DAEMON" != "" ]]; then
+        git remote add origin "git://git.umip.org/umip.git";
     elif [[ "$BUILD_WIRELESS_TOOLS" != "" ]]; then
         :
     else
@@ -271,6 +277,9 @@ c4d846f239036c05f516c1c71789e980b64b1e70  2e1c889494d274aca24ce5f6a748e66e *libn
 
 # NetworkManager-libreswan, NetworkManager-openswan
 64c90fd50e57854a3fff3784b92814ffa8159b05  6a373868f85ac3b7c953f7fd6c76e637 *NetworkManager-openswan-0.9.8.0.tar.xz
+
+# mipv6-daemon
+428974c2d0d8e75a2750a3ab0488708c5dfdd8e3  8e3ebd242e7926822bbdf5ce77c1d076 *mipv6-daemon-1.0.tar.gz
 EOF
 )"
             OLDIFS="$IFS"
