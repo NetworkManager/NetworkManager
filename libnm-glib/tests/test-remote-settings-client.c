@@ -44,8 +44,6 @@ NMRemoteConnection *remote = NULL;
 static void
 cleanup (void)
 {
-	if (settings)
-		g_object_unref (settings);
 	kill (spid, SIGTERM);
 }
 
@@ -392,6 +390,7 @@ main (int argc, char **argv)
 	ret = g_test_run ();
 
 	cleanup ();
+	g_object_unref (settings);
 	dbus_g_connection_unref (bus);
 
 	return ret;
