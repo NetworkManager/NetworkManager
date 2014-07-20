@@ -64,7 +64,6 @@ typedef struct {
 	GSList *connections;
 
 	NMConnection *pan_connection;
-	NMConnection *pan_connection_original;
 	gboolean pan_connection_no_autocreate;
 } NMBluezDevicePrivate;
 
@@ -233,9 +232,10 @@ pan_connection_check_create (NMBluezDevice *self)
 		g_assert (connection_compatible (self, added));
 		g_assert (nm_connection_compare (added, connection, NM_SETTING_COMPARE_FLAG_EXACT));
 
+		nm_settings_connection_set_flags (NM_SETTINGS_CONNECTION (added), NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED, TRUE);
+
 		priv->connections = g_slist_prepend (priv->connections, g_object_ref (added));
 		priv->pan_connection = added;
-		priv->pan_connection_original = connection;
 		nm_log_dbg (LOGD_BT, "bluez[%s] added new Bluetooth connection for NAP device: '%s' (%s)", priv->path, id, uuid);
 	} else {
 		nm_log_warn (LOGD_BT, "bluez[%s] couldn't add new Bluetooth connection for NAP device: '%s' (%s): %d / %s",
@@ -243,8 +243,8 @@ pan_connection_check_create (NMBluezDevice *self)
 		             (error && error->message) ? error->message : "(unknown)");
 		g_clear_error (&error);
 
-		g_object_unref (connection);
 	}
+	g_object_unref (connection);
 
 	g_free (id);
 	g_free (uuid);
@@ -354,10 +354,8 @@ cp_connection_removed (NMConnectionProvider *provider,
 
 	if (g_slist_find (priv->connections, connection)) {
 		priv->connections = g_slist_remove (priv->connections, connection);
-		if (priv->pan_connection == connection) {
+		if (priv->pan_connection == connection)
 			priv->pan_connection = NULL;
-			g_clear_object (&priv->pan_connection_original);
-		}
 		g_object_unref (connection);
 		check_emit_usable (self);
 	}
@@ -1022,12 +1020,10 @@ dispose (GObject *object)
 	if (priv->pan_connection) {
 		/* Check whether we want to remove the created connection. If so, we take a reference
 		 * and delete it at the end of dispose(). */
-		if (   nm_settings_connection_get_unsaved (NM_SETTINGS_CONNECTION (priv->pan_connection))
-		    && nm_connection_compare (priv->pan_connection, priv->pan_connection_original, NM_SETTING_COMPARE_FLAG_EXACT))
+		if (nm_settings_connection_get_nm_generated (NM_SETTINGS_CONNECTION (priv->pan_connection)))
 			to_delete = g_object_ref (priv->pan_connection);
 
 		priv->pan_connection = NULL;
-		g_clear_object (&priv->pan_connection_original);
 	}
 
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_added, self);
