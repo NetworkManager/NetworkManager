@@ -61,7 +61,6 @@ GQuark nm_remote_connection_error_quark (void);
 
 /* Signals */
 #define NM_REMOTE_CONNECTION_UPDATED         "updated"
-#define NM_REMOTE_CONNECTION_REMOVED         "removed"
 
 typedef struct {
 	NMConnection parent;
@@ -73,8 +72,6 @@ typedef struct {
 	/* Signals */
 	void (*updated) (NMRemoteConnection *connection,
 	                 GHashTable *new_settings);
-
-	void (*removed) (NMRemoteConnection *connection);
 
 	/*< private >*/
 	gpointer padding[8];

@@ -27,6 +27,7 @@
 #endif
 
 #include <gio/gio.h>
+#include <nm-object.h>
 #include <nm-connection.h>
 #include <nm-remote-connection.h>
 
@@ -62,13 +63,13 @@ typedef enum {
 GQuark nm_remote_settings_error_quark (void);
 
 
-#define NM_REMOTE_SETTINGS_BUS             "bus"
 #define NM_REMOTE_SETTINGS_NM_RUNNING      "nm-running"
+#define NM_REMOTE_SETTINGS_CONNECTIONS     "connections"
 #define NM_REMOTE_SETTINGS_HOSTNAME        "hostname"
 #define NM_REMOTE_SETTINGS_CAN_MODIFY      "can-modify"
 
-#define NM_REMOTE_SETTINGS_NEW_CONNECTION    "new-connection"
-#define NM_REMOTE_SETTINGS_CONNECTIONS_READ  "connections-read"
+#define NM_REMOTE_SETTINGS_CONNECTION_ADDED   "connection-added"
+#define NM_REMOTE_SETTINGS_CONNECTION_REMOVED "connection-removed"
 
 typedef struct _NMRemoteSettings NMRemoteSettings;
 typedef struct _NMRemoteSettingsClass NMRemoteSettingsClass;
@@ -90,17 +91,17 @@ typedef void (*NMRemoteSettingsSaveHostnameFunc) (NMRemoteSettings *settings,
 
 
 struct _NMRemoteSettings {
-	GObject parent;
+	NMObject parent;
 };
 
 struct _NMRemoteSettingsClass {
-	GObjectClass parent;
+	NMObjectClass parent;
 
 	/* Signals */
-	void (*new_connection) (NMRemoteSettings *settings,
-	                        NMRemoteConnection *connection);
-
-	void (*connections_read) (NMRemoteSettings *settings);
+	void (*connection_added)   (NMRemoteSettings *settings,
+	                            NMRemoteConnection *connection);
+	void (*connection_removed) (NMRemoteSettings *settings,
+	                            NMRemoteConnection *connection);
 
 	/*< private >*/
 	gpointer padding[8];

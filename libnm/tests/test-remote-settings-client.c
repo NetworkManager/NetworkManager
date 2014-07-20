@@ -119,9 +119,17 @@ set_visible_cb (DBusGProxy *proxy,
 }
 
 static void
-invis_removed_cb (NMRemoteConnection *connection, gboolean *done)
+visible_changed_cb (GObject *object, GParamSpec *pspec, gboolean *done)
 {
-	*done = TRUE;
+	if (!nm_remote_connection_get_visible (NM_REMOTE_CONNECTION (object)))
+		*done = TRUE;
+}
+
+static void
+connection_removed_cb (NMRemoteSettings *s, NMRemoteConnection *connection, gboolean *done)
+{
+	if (connection == remote)
+		*done = TRUE;
 }
 
 static void
@@ -140,13 +148,15 @@ test_make_invisible (void)
 	time_t start, now;
 	GSList *list, *iter;
 	DBusGProxy *proxy;
-	gboolean done = FALSE, has_settings = FALSE;
+	gboolean visible_changed = FALSE, connection_removed = FALSE;
+	gboolean has_settings = FALSE;
 	char *path;
 
 	g_assert (remote != NULL);
 
 	/* Listen for the remove event when the connection becomes invisible */
-	g_signal_connect (remote, "removed", G_CALLBACK (invis_removed_cb), &done);
+	g_signal_connect (remote, "notify::" NM_REMOTE_CONNECTION_VISIBLE, G_CALLBACK (visible_changed_cb), &visible_changed);
+	g_signal_connect (settings, "connection-removed", G_CALLBACK (connection_removed_cb), &connection_removed);
 
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (remote)));
 	proxy = dbus_g_proxy_new_for_name (bus,
@@ -164,11 +174,12 @@ test_make_invisible (void)
 	do {
 		now = time (NULL);
 		g_main_context_iteration (NULL, FALSE);
-	} while ((done == FALSE) && (now - start < 5));
-	g_assert (done == TRUE);
+	} while ((!visible_changed || !connection_removed) && (now - start < 5));
+	g_assert (visible_changed == TRUE);
+	g_assert (connection_removed == TRUE);
 
-	g_assert (remote);
-	g_signal_handlers_disconnect_by_func (remote, G_CALLBACK (invis_removed_cb), &done);
+	g_signal_handlers_disconnect_by_func (remote, G_CALLBACK (visible_changed_cb), &visible_changed);
+	g_signal_handlers_disconnect_by_func (settings, G_CALLBACK (connection_removed_cb), &connection_removed);
 
 	/* Ensure NMRemoteSettings no longer has the connection */
 	list = nm_remote_settings_list_connections (settings);
@@ -213,7 +224,7 @@ test_make_visible (void)
 	g_assert (remote != NULL);
 
 	/* Wait for the new-connection signal when the connection is visible again */
-	g_signal_connect (settings, NM_REMOTE_SETTINGS_NEW_CONNECTION,
+	g_signal_connect (settings, NM_REMOTE_SETTINGS_CONNECTION_ADDED,
 	                  G_CALLBACK (vis_new_connection_cb), &new);
 
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (remote)));
@@ -275,9 +286,10 @@ deleted_cb (DBusGProxy *proxy,
 }
 
 static void
-removed_cb (NMRemoteConnection *connection, gboolean *done)
+removed_cb (NMRemoteSettings *s, NMRemoteConnection *connection, gboolean *done)
 {
-	*done = TRUE;
+	if (connection == remote)
+		*done = TRUE;
 }
 
 static void
@@ -298,7 +310,7 @@ test_remove_connection (void)
 	g_assert (connection);
 	g_assert (remote == connection);
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (connection)));
-	g_signal_connect (connection, "removed", G_CALLBACK (removed_cb), &done);
+	g_signal_connect (settings, "connection-removed", G_CALLBACK (removed_cb), &done);
 
 	proxy = dbus_g_proxy_new_for_name (bus,
 	                                   NM_DBUS_SERVICE,
@@ -373,7 +385,7 @@ test_nm_running (void)
 	nm_test_service_cleanup (sinfo);
 
 	settings2 = g_initable_new (NM_TYPE_REMOTE_SETTINGS, NULL, &error,
-	                            NM_REMOTE_SETTINGS_BUS, bus,
+	                            NM_OBJECT_DBUS_CONNECTION, bus,
 	                            NULL);
 	g_assert_no_error (error);
 	g_assert (settings != NULL);
@@ -438,7 +450,7 @@ main (int argc, char **argv)
 	sinfo = nm_test_service_init ();
 
 	settings = g_initable_new (NM_TYPE_REMOTE_SETTINGS, NULL, &error,
-	                           NM_REMOTE_SETTINGS_BUS, bus,
+	                           NM_OBJECT_DBUS_CONNECTION, bus,
 	                           NULL);
 	g_assert_no_error (error);
 	g_assert (settings != NULL);

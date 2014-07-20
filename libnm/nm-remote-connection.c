@@ -57,7 +57,6 @@ enum {
 
 enum {
 	UPDATED,
-	REMOVED,
 
 	LAST_SIGNAL
 };
@@ -453,8 +452,6 @@ replace_settings (NMRemoteConnection *self, GHashTable *new_settings)
 		           error ? error->code : -1,
 		           (error && error->message) ? error->message : "(unknown)");
 		g_clear_error (&error);
-
-		g_signal_emit (self, signals[REMOVED], 0);
 	}
 }
 
@@ -477,11 +474,7 @@ updated_get_settings_cb (DBusGProxy *proxy,
 
 		g_error_free (error);
 
-		/* Connection is no longer visible to this user.  Let the settings
-		 * service handle this via 'visible'.  The settings service will emit
-		 * the "removed" signal for us since it handles the lifetime of this
-		 * object.
-		 */
+		/* Connection is no longer visible to this user. */
 		hash = g_hash_table_new (g_str_hash, g_str_equal);
 		nm_connection_replace_settings (NM_CONNECTION (self), hash, NULL);
 		g_hash_table_destroy (hash);
@@ -512,12 +505,6 @@ updated_cb (DBusGProxy *proxy, gpointer user_data)
 		                         updated_get_settings_cb, self, NULL,
 		                         G_TYPE_INVALID);
 	}
-}
-
-static void
-removed_cb (DBusGProxy *proxy, gpointer user_data)
-{
-	g_signal_emit (G_OBJECT (user_data), signals[REMOVED], 0);
 }
 
 static void
@@ -557,9 +544,6 @@ init_common (NMRemoteConnection *self)
 
 	dbus_g_proxy_add_signal (priv->proxy, "Updated", G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "Updated", G_CALLBACK (updated_cb), self, NULL);
-
-	dbus_g_proxy_add_signal (priv->proxy, "Removed", G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "Removed", G_CALLBACK (removed_cb), self, NULL);
 
 	g_signal_connect (priv->proxy, "destroy", G_CALLBACK (proxy_destroy_cb), self);
 
@@ -906,22 +890,6 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		              G_TYPE_FROM_CLASS (remote_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMRemoteConnectionClass, updated),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
-
-	/**
-	 * NMRemoteConnection::removed:
-	 * @connection: a #NMConnection
-	 *
-	 * This signal is emitted when a connection is either deleted or becomes
-	 * invisible to the current user.
-	 */
-	signals[REMOVED] =
-		g_signal_new (NM_REMOTE_CONNECTION_REMOVED,
-		              G_TYPE_FROM_CLASS (remote_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMRemoteConnectionClass, removed),
 		              NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
