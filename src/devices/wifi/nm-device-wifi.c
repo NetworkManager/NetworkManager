@@ -1169,7 +1169,6 @@ is_available (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMSupplicantInterface *sup_iface;
 	guint32 state;
 
 	if (!priv->enabled) {
@@ -1178,14 +1177,13 @@ is_available (NMDevice *dev)
 		return FALSE;
 	}
 
-	sup_iface = priv->sup_iface;
-	if (!sup_iface) {
+	if (!priv->sup_iface) {
 		nm_log_dbg (LOGD_WIFI, "(%s): not available because supplicant not running",
 		            nm_device_get_iface (dev));
 		return FALSE;
 	}
 
-	state = nm_supplicant_interface_get_state (sup_iface);
+	state = nm_supplicant_interface_get_state (priv->sup_iface);
 	if (   state < NM_SUPPLICANT_INTERFACE_STATE_READY
 	    || state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED) {
 		nm_log_dbg (LOGD_WIFI, "(%s): not available because supplicant interface not ready",
