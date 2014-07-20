@@ -57,6 +57,7 @@ GQuark nm_remote_connection_error_quark (void);
 /* Properties */
 #define NM_REMOTE_CONNECTION_BUS             "bus"
 #define NM_REMOTE_CONNECTION_UNSAVED         "unsaved"
+#define NM_REMOTE_CONNECTION_VISIBLE         "visible"
 
 /* Signals */
 #define NM_REMOTE_CONNECTION_UPDATED         "updated"
@@ -137,6 +138,8 @@ void nm_remote_connection_get_secrets (NMRemoteConnection *connection,
                                        gpointer user_data);
 
 gboolean nm_remote_connection_get_unsaved (NMRemoteConnection *connection);
+
+gboolean nm_remote_connection_get_visible (NMRemoteConnection *connection);
 
 G_END_DECLS
 

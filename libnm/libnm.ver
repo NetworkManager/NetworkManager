@@ -355,6 +355,7 @@ global:
 	nm_remote_connection_get_secrets;
 	nm_remote_connection_get_type;
 	nm_remote_connection_get_unsaved;
+	nm_remote_connection_get_visible;
 	nm_remote_connection_save;
 	nm_remote_settings_add_connection;
 	nm_remote_settings_add_connection_unsaved;

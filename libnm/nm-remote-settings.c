@@ -349,9 +349,7 @@ connection_removed_cb (NMRemoteConnection *remote, gpointer user_data)
 	g_hash_table_remove (priv->pending, path);
 }
 
-static void connection_visible_cb (NMRemoteConnection *remote,
-                                   gboolean visible,
-                                   gpointer user_data);
+static void connection_visible_changed_cb (GObject *object, GParamSpec *spec, gpointer user_data);
 
 /* Takes a reference to the connection when adding to 'to' */
 static void
@@ -378,21 +376,22 @@ move_connection (NMRemoteSettings *self,
 	}
 
 	if (!g_signal_handler_find (remote, G_SIGNAL_MATCH_FUNC,
-	                            0, 0, NULL, connection_visible_cb, NULL)) {
+	                            0, 0, NULL, connection_visible_changed_cb, NULL)) {
 		g_signal_connect (remote,
-		                  "visible",
-		                  G_CALLBACK (connection_visible_cb),
+		                  "notify::" NM_REMOTE_CONNECTION_VISIBLE,
+		                  G_CALLBACK (connection_visible_changed_cb),
 		                  self);
 	}
 }
 
 static void
-connection_visible_cb (NMRemoteConnection *remote,
-                       gboolean visible,
-                       gpointer user_data)
+connection_visible_changed_cb (GObject *object,
+                               GParamSpec *pspec,
+                               gpointer user_data)
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	NMRemoteConnection *remote = NM_REMOTE_CONNECTION (object);
 	const char *path;
 
 	path = nm_connection_get_path (NM_CONNECTION (remote));
@@ -402,7 +401,7 @@ connection_visible_cb (NMRemoteConnection *remote,
 	 * hash until it becomes visible again.  When it does, we move it back to
 	 * the normal connections hash.
 	 */
-	if (visible) {
+	if (nm_remote_connection_get_visible (remote)) {
 		/* Connection visible to this user again */
 		if (g_hash_table_lookup (priv->pending, path)) {
 			/* Move connection from pending to visible hash; emit for clients */
@@ -1091,7 +1090,7 @@ forget_connection (gpointer user_data)
 	g_signal_handlers_disconnect_matched (remote, G_SIGNAL_MATCH_FUNC,
 	                                      0, 0, NULL, connection_removed_cb, NULL);
 	g_signal_handlers_disconnect_matched (remote, G_SIGNAL_MATCH_FUNC,
-	                                      0, 0, NULL, connection_visible_cb, NULL);
+	                                      0, 0, NULL, connection_visible_changed_cb, NULL);
 	g_object_unref (remote);
 }
 

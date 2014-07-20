@@ -50,6 +50,7 @@ enum {
 	PROP_DBUS_CONNECTION,
 	PROP_DBUS_PATH,
 	PROP_UNSAVED,
+	PROP_VISIBLE,
 
 	LAST_PROP
 };
@@ -57,7 +58,6 @@ enum {
 enum {
 	UPDATED,
 	REMOVED,
-	VISIBLE,
 
 	LAST_SIGNAL
 };
@@ -413,6 +413,30 @@ nm_remote_connection_get_unsaved (NMRemoteConnection *connection)
 	return NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->unsaved;
 }
 
+/**
+ * nm_remote_connection_get_visible:
+ * @connection: the #NMRemoteConnection
+ *
+ * Checks if the connection is visible to the current user.  If the
+ * connection is not visible then it is essentially useless; it will
+ * not contain any settings, and operations such as
+ * nm_remote_connection_save() and nm_remote_connection_delete() will
+ * always fail. (#NMRemoteSettings will not normally return
+ * non-visible connections to callers, but it is possible for a
+ * connection's visibility to change after you already have a
+ * reference to it.)
+ *
+ * Returns: %TRUE if the remote connection is visible to the current
+ * user, %FALSE if not.
+ **/
+gboolean
+nm_remote_connection_get_visible (NMRemoteConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
+
+	return NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->visible;
+}
+
 /****************************************************************/
 
 static void
@@ -443,6 +467,7 @@ updated_get_settings_cb (DBusGProxy *proxy,
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 	GHashTable *new_settings;
 	GError *error = NULL;
+	gboolean visible;
 
 	dbus_g_proxy_end_call (proxy, call, &error,
 	                       DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &new_settings,
@@ -461,17 +486,17 @@ updated_get_settings_cb (DBusGProxy *proxy,
 		nm_connection_replace_settings (NM_CONNECTION (self), hash, NULL);
 		g_hash_table_destroy (hash);
 
-		priv->visible = FALSE;
-		g_signal_emit (self, signals[VISIBLE], 0, FALSE);
+		visible = FALSE;
 	} else {
 		replace_settings (self, new_settings);
 		g_hash_table_destroy (new_settings);
 
-		/* Settings service will handle announcing the connection to clients */
-		if (priv->visible == FALSE) {
-			priv->visible = TRUE;
-			g_signal_emit (self, signals[VISIBLE], 0, TRUE);
-		}
+		visible = TRUE;
+	}
+
+	if (visible != priv->visible) {
+		priv->visible = visible;
+		g_object_notify (G_OBJECT (self), NM_REMOTE_CONNECTION_VISIBLE);
 	}
 }
 
@@ -734,6 +759,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_UNSAVED:
 		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->unsaved);
 		break;
+	case PROP_VISIBLE:
+		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->visible);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -847,6 +875,24 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMRemoteConnection:visible:
+	 *
+	 * %TRUE if the remote connection is visible to the current user, %FALSE if
+	 * not.  If the connection is not visible then it is essentially useless; it
+	 * will not contain any settings, and operations such as
+	 * nm_remote_connection_save() and nm_remote_connection_delete() will always
+	 * fail. (#NMRemoteSettings will not normally return non-visible connections
+	 * to callers, but it is possible for a connection's visibility to change
+	 * after you already have a reference to it.)
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_VISIBLE,
+		 g_param_spec_boolean (NM_REMOTE_CONNECTION_VISIBLE, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
+
 	/* Signals */
 	/**
 	 * NMRemoteConnection::updated:
@@ -879,15 +925,6 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		              NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
-
-	/* Private signal */
-	signals[VISIBLE] =
-		g_signal_new ("visible",
-		              G_TYPE_FROM_CLASS (remote_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              g_cclosure_marshal_VOID__BOOLEAN,
-		              G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 }
 
 static void
