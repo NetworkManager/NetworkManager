@@ -1583,7 +1583,9 @@ announce_object (NMPlatform *platform, const struct nl_object *object, NMPlatfor
 			 */
 			switch (change_type) {
 			case NM_PLATFORM_SIGNAL_REMOVED:
-				check_cache_items (platform, priv->route_cache, address.ifindex);
+				check_cache_items (platform,
+				                   priv->route_cache,
+				                   rtnl_addr_get_ifindex ((struct rtnl_addr *) object));
 				break;
 			default:
 				break;
