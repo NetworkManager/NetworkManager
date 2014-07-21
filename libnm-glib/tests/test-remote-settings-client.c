@@ -49,9 +49,12 @@ cleanup (void)
 
 #define test_assert(condition) \
 do { \
-	if (!G_LIKELY (condition)) \
+	gboolean _condition = ( condition ); \
+	\
+	if (G_UNLIKELY (!_condition)) { \
 		cleanup (); \
-	g_assert (condition); \
+		g_assert (!"test_assert() failed for" # condition); \
+	} \
 } while (0)
 
 /*******************************************************************/
