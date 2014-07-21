@@ -15,6 +15,12 @@
       </tp:docstring>
     </property>
 
+    <property name="Parent" type="o" access="read">
+      <tp:docstring>
+        Object path of the parent device of this VLAN device.
+      </tp:docstring>
+    </property>
+
     <property name="VlanId" type="u" access="read">
       <tp:docstring>
         The VLAN ID of this VLAN interface.

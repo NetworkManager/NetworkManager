@@ -67,6 +67,8 @@ enum {
 	PROP_PARENT,
 	PROP_VLAN_ID,
 
+	PROP_INT_PARENT_DEVICE,
+
 	LAST_PROP
 };
 
@@ -477,6 +479,12 @@ get_property (GObject *object, guint prop_id,
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
 
 	switch (prop_id) {
+	case PROP_PARENT:
+		g_value_set_boxed (value, priv->parent ? nm_device_get_path (priv->parent) : "/");
+		break;
+	case PROP_INT_PARENT_DEVICE:
+		g_value_set_object (value, priv->parent);
+		break;
 	case PROP_VLAN_ID:
 		g_value_set_uint (value, priv->vlan_id);
 		break;
@@ -493,7 +501,7 @@ set_property (GObject *object, guint prop_id,
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_PARENT:
+	case PROP_INT_PARENT_DEVICE:
 		nm_device_vlan_set_parent (NM_DEVICE_VLAN (object), g_value_get_object (value));
 		break;
 	case PROP_VLAN_ID:
@@ -564,16 +572,24 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_PARENT,
-		 g_param_spec_object (NM_DEVICE_VLAN_PARENT, "", "",
-		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_DEVICE_VLAN_PARENT, "", "",
+		                     DBUS_TYPE_G_OBJECT_PATH,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property
 		(object_class, PROP_VLAN_ID,
 		 g_param_spec_uint (NM_DEVICE_VLAN_ID, "", "",
 		                    0, 4095, 0,
 		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 		                    G_PARAM_STATIC_STRINGS));
+
+	/* Internal properties */
+	g_object_class_install_property
+	    (object_class, PROP_INT_PARENT_DEVICE,
+	     g_param_spec_object (NM_DEVICE_VLAN_INT_PARENT_DEVICE, "", "",
+	                          NM_TYPE_DEVICE,
+	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
@@ -613,7 +629,7 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 
 	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_VLAN,
 	                                    NM_DEVICE_PLATFORM_DEVICE, plink,
-	                                    NM_DEVICE_VLAN_PARENT, parent,
+	                                    NM_DEVICE_VLAN_INT_PARENT_DEVICE, parent,
 	                                    NM_DEVICE_DRIVER, "8021q",
 	                                    NM_DEVICE_TYPE_DESC, "VLAN",
 	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_VLAN,
@@ -663,7 +679,7 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 
 	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_VLAN,
 	                                    NM_DEVICE_IFACE, iface,
-	                                    NM_DEVICE_VLAN_PARENT, parent,
+	                                    NM_DEVICE_VLAN_INT_PARENT_DEVICE, parent,
 	                                    NM_DEVICE_DRIVER, "8021q",
 	                                    NM_DEVICE_TYPE_DESC, "VLAN",
 	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_VLAN,
