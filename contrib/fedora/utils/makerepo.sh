@@ -187,6 +187,8 @@ get_local_mirror() {
     local DIRNAME="$(echo $URL.git | sed -e 's#^.*/\([^/]\+\)$#\1#' -e 's/\(.*\)\.git$/\1/')"
     local FULLNAME="$srcdir/.git/.makerepo-${DIRNAME}.git"
 
+    [[ -n "$NO_REMOTE" ]] && return
+
     if [[ ! -d "$FULLNAME" ]]; then
         if [[ -f "$FULLNAME" ]]; then
             # create a file with name $FULLNAME, to suppress local mirroring
@@ -238,7 +240,7 @@ pushd "$DIRNAME"
         git remote add local "$LOCAL_GIT/"
         git fetch local
     fi
-    if [[ "$(git remote | grep '^origin$')x" != x ]]; then
+    if [[ "$(git remote | grep '^origin$')x" != x && -z "$NO_REMOTE" ]]; then
         git fetch origin
         if [[ -n "$LOCAL_MIRROR" ]]; then
             git remote remove local-mirror
@@ -303,7 +305,8 @@ EOF
             RELEASE_BASE_COMMIT=
         else
             # verify the base commit...
-            RELEASE_BASE_COMMIT="$(git rev-parse --verify -q "$RELEASE_BASE_COMMIT" 2>/dev/null)" || die "error detecting RELEASE_BASE_COMMIT=$RELEASE_BASE_COMMIT"
+            RELEASE_BASE_COMMIT="$(git rev-parse --verify -q "$RELEASE_BASE_COMMIT^{commit}" 2>/dev/null)"
+            [[ x == "x$RELEASE_BASE_COMMIT" ]] && test -z "$NO_REMOTE" && die "error detecting RELEASE_BASE_COMMIT=$RELEASE_BASE_COMMIT"
         fi
     fi
     if [[ x != "x$RELEASE_BASE_COMMIT" ]]; then
