@@ -111,6 +111,10 @@ const char *nm_dhcp_client_get_uuid (NMDHCPClient *self);
 
 const GByteArray *nm_dhcp_client_get_duid (NMDHCPClient *self);
 
+const GByteArray *nm_dhcp_client_get_hw_addr (NMDHCPClient *self);
+
+guint32 nm_dhcp_client_get_priority (NMDHCPClient *self);
+
 gboolean nm_dhcp_client_start_ip4 (NMDHCPClient *self,
                                    const char *dhcp_client_id,
                                    GByteArray *dhcp_anycast_addr,

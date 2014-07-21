@@ -126,6 +126,22 @@ nm_dhcp_client_get_duid (NMDHCPClient *self)
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->duid;
 }
 
+const GByteArray *
+nm_dhcp_client_get_hw_addr (NMDHCPClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->hwaddr;
+}
+
+guint32
+nm_dhcp_client_get_priority (NMDHCPClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), G_MAXUINT32);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->priority;
+}
+
 /********************************************/
 
 static const char *state_table[NM_DHCP_STATE_MAX + 1] = {
