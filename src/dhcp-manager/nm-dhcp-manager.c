@@ -142,16 +142,14 @@ get_client_for_pid (NMDHCPManager *manager, GPid pid)
 }
 
 static NMDHCPClient *
-get_client_for_iface (NMDHCPManager *manager,
-                      const char *iface,
-                      gboolean ip6)
+get_client_for_ifindex (NMDHCPManager *manager, int ifindex, gboolean ip6)
 {
 	NMDHCPManagerPrivate *priv;
 	GHashTableIter iter;
 	gpointer value;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
-	g_return_val_if_fail (iface, NULL);
+	g_return_val_if_fail (ifindex > 0, NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
 
@@ -159,8 +157,8 @@ get_client_for_iface (NMDHCPManager *manager,
 	while (g_hash_table_iter_next (&iter, NULL, &value)) {
 		NMDHCPClient *candidate = NM_DHCP_CLIENT (value);
 
-		if (   !strcmp (iface, nm_dhcp_client_get_iface (candidate))
-		    && (nm_dhcp_client_get_ipv6 (candidate) == ip6))
+		if (   nm_dhcp_client_get_ifindex (candidate) == ifindex
+		    && nm_dhcp_client_get_ipv6 (candidate) == ip6)
 			return candidate;
 	}
 
@@ -339,49 +337,40 @@ get_client_type (const char *client, GError **error)
 	return G_TYPE_INVALID;
 }
 
-#define REMOVE_ID_TAG "remove-id"
-#define TIMEOUT_ID_TAG "timeout-id"
+static void client_state_changed (NMDHCPClient *client,
+                                  NMDhcpState state,
+                                  GObject *ip_config,
+                                  GHashTable *options,
+                                  NMDHCPManager *self);
 
 static void
 remove_client (NMDHCPManager *self, NMDHCPClient *client)
 {
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
-	guint id;
-
-	id = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (client), REMOVE_ID_TAG));
-	if (id)
-		g_signal_handler_disconnect (client, id);
-
-	id = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (client), TIMEOUT_ID_TAG));
-	if (id)
-		g_signal_handler_disconnect (client, id);
+	g_signal_handlers_disconnect_by_func (client, client_state_changed, self);
 
 	/* Stopping the client is left up to the controlling device
 	 * explicitly since we may want to quit NetworkManager but not terminate
 	 * the DHCP client.
 	 */
 
-	g_hash_table_remove (priv->clients, client);
+	g_hash_table_remove (NM_DHCP_MANAGER_GET_PRIVATE (self)->clients, client);
 }
 
 static void
-add_client (NMDHCPManager *self, NMDHCPClient *client)
+client_state_changed (NMDHCPClient *client,
+                      NMDhcpState state,
+                      GObject *ip_config,
+                      GHashTable *options,
+                      NMDHCPManager *self)
 {
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
-	guint id;
-
-	id = g_signal_connect_swapped (client, NM_DHCP_CLIENT_SIGNAL_REMOVE, G_CALLBACK (remove_client), self);
-	g_object_set_data (G_OBJECT (client), REMOVE_ID_TAG, GUINT_TO_POINTER (id));
-
-	id = g_signal_connect_swapped (client, NM_DHCP_CLIENT_SIGNAL_TIMEOUT, G_CALLBACK (remove_client), self);
-	g_object_set_data (G_OBJECT (client), TIMEOUT_ID_TAG, GUINT_TO_POINTER (id));
-
-	g_hash_table_insert (priv->clients, client, g_object_ref (client));
+	if (state >= NM_DHCP_STATE_TIMEOUT)
+		remove_client (self, client);
 }
 
 static NMDHCPClient *
 client_start (NMDHCPManager *self,
               const char *iface,
+              int ifindex,
               const GByteArray *hwaddr,
               const char *uuid,
               guint priority,
@@ -390,7 +379,8 @@ client_start (NMDHCPManager *self,
               guint32 timeout,
               GByteArray *dhcp_anycast_addr,
               const char *hostname,
-              gboolean info_only)
+              gboolean info_only,
+              NMSettingIP6ConfigPrivacy privacy)
 {
 	NMDHCPManagerPrivate *priv;
 	NMDHCPClient *client;
@@ -398,7 +388,7 @@ client_start (NMDHCPManager *self,
 
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
@@ -407,32 +397,34 @@ client_start (NMDHCPManager *self,
 	g_return_val_if_fail (priv->client_type != 0, NULL);
 
 	/* Kill any old client instance */
-	client = get_client_for_iface (self, iface, ipv6);
+	client = get_client_for_ifindex (self, ifindex, ipv6);
 	if (client) {
-		nm_dhcp_client_stop (client, FALSE);
+		g_object_ref (client);
 		remove_client (self, client);
+		nm_dhcp_client_stop (client, FALSE);
+		g_object_unref (client);
 	}
 
 	/* And make a new one */
 	client = g_object_new (priv->client_type,
 	                       NM_DHCP_CLIENT_INTERFACE, iface,
+	                       NM_DHCP_CLIENT_IFINDEX, ifindex,
 	                       NM_DHCP_CLIENT_HWADDR, hwaddr,
 	                       NM_DHCP_CLIENT_IPV6, ipv6,
 	                       NM_DHCP_CLIENT_UUID, uuid,
 	                       NM_DHCP_CLIENT_PRIORITY, priority,
 	                       NM_DHCP_CLIENT_TIMEOUT, timeout ? timeout : DHCP_TIMEOUT,
 	                       NULL);
-	g_return_val_if_fail (client != NULL, NULL);
-	add_client (self, client);
+	g_hash_table_insert (NM_DHCP_MANAGER_GET_PRIVATE (self)->clients, client, g_object_ref (client));
+	g_signal_connect (client, NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED, G_CALLBACK (client_state_changed), self);
 
 	if (ipv6)
-		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, hostname, info_only);
+		success = nm_dhcp_client_start_ip6 (client, dhcp_anycast_addr, hostname, info_only, privacy);
 	else
 		success = nm_dhcp_client_start_ip4 (client, dhcp_client_id, dhcp_anycast_addr, hostname);
 
 	if (!success) {
 		remove_client (self, client);
-		g_object_unref (client);
 		client = NULL;
 	}
 
@@ -452,51 +444,50 @@ get_send_hostname (NMDHCPManager *self, const char *setting_hostname)
 NMDHCPClient *
 nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
                            const char *iface,
+                           int ifindex,
                            const GByteArray *hwaddr,
                            const char *uuid,
                            guint priority,
-                           NMSettingIP4Config *s_ip4,
+                           gboolean send_hostname,
+                           const char *dhcp_hostname,
+                           const char *dhcp_client_id,
                            guint32 timeout,
                            GByteArray *dhcp_anycast_addr)
 {
-	const char *hostname = NULL, *method;
-	gboolean send_hostname;
+	const char *hostname = NULL;
 
-	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 
-	method = nm_setting_ip4_config_get_method (s_ip4);
-	g_return_val_if_fail (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0, NULL);
-
-	send_hostname = nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4);
 	if (send_hostname)
-		hostname = get_send_hostname (self, nm_setting_ip4_config_get_dhcp_hostname (s_ip4));
-
-	return client_start (self, iface, hwaddr, uuid, priority, FALSE,
-	                     nm_setting_ip4_config_get_dhcp_client_id (s_ip4),
-	                     timeout, dhcp_anycast_addr, hostname, FALSE);
+		hostname = get_send_hostname (self, dhcp_hostname);
+	return client_start (self, iface, ifindex, hwaddr, uuid, priority, FALSE,
+	                     dhcp_client_id, timeout, dhcp_anycast_addr, hostname,
+	                     FALSE, 0);
 }
 
 /* Caller owns a reference to the NMDHCPClient on return */
 NMDHCPClient *
 nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
                            const char *iface,
+                           int ifindex,
                            const GByteArray *hwaddr,
                            const char *uuid,
                            guint priority,
-                           NMSettingIP6Config *s_ip6,
+                           const char *dhcp_hostname,
                            guint32 timeout,
                            GByteArray *dhcp_anycast_addr,
-                           gboolean info_only)
+                           gboolean info_only,
+                           NMSettingIP6ConfigPrivacy privacy)
 {
 	const char *hostname;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 
-	hostname = get_send_hostname (self, nm_setting_ip6_config_get_dhcp_hostname (s_ip6));
+	hostname = dhcp_hostname ? get_send_hostname (self, dhcp_hostname) : NULL;
 
-	return client_start (self, iface, hwaddr, uuid, priority, TRUE,
-	                     NULL, timeout, dhcp_anycast_addr, hostname, info_only);
+	return client_start (self, iface, ifindex, hwaddr, uuid, priority, TRUE,
+	                     NULL, timeout, dhcp_anycast_addr, hostname, info_only,
+	                     privacy);
 }
 
 void
@@ -530,35 +521,6 @@ nm_dhcp_manager_get_lease_ip_configs (NMDHCPManager *self,
 	if (priv->get_lease_ip_configs_func)
 		return priv->get_lease_ip_configs_func (iface, uuid, ipv6);
 	return NULL;
-}
-
-NMIP4Config *
-nm_dhcp_manager_test_ip4_options_to_config (const char *dhcp_client,
-                                            const char *iface,
-                                            GHashTable *options,
-                                            const char *reason)
-{
-	NMDHCPClient *client;
-	NMIP4Config *config;
-	GType client_type;
-	GError *error = NULL;
-
-	client_type = get_client_type (dhcp_client, &error);
-	if (!client_type) {
-		nm_log_err (LOGD_DHCP4, "error: %s", error ? error->message : "(unknown)");
-		g_clear_error (&error);
-		return NULL;
-	}
-
-	client = (NMDHCPClient *) g_object_new (client_type,
-	                                        NM_DHCP_CLIENT_INTERFACE, iface,
-	                                        NULL);
-	g_return_val_if_fail (client != NULL, NULL);
-	nm_dhcp_client_new_options (client, options, reason);
-	config = nm_dhcp_client_get_ip4_config (client, TRUE);
-	g_object_unref (client);
-
-	return config;
 }
 
 /***************************************************/

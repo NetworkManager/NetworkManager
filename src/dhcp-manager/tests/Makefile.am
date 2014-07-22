@@ -3,6 +3,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/libnm-util \
 	-I${top_builddir}/libnm-util \
 	-I$(top_srcdir)/src/dhcp-manager \
+	-I$(top_srcdir)/src/logging \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/platform \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
@@ -10,9 +11,11 @@ AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	-DTESTDIR="\"$(abs_srcdir)\""
 
-noinst_PROGRAMS = test-dhcp-dhclient
+noinst_PROGRAMS = \
+	test-dhcp-dhclient \
+	test-dhcp-options
 
-####### policy /etc/hosts test #######
+####### dhclient leases test #######
 
 test_dhcp_dhclient_SOURCES = \
 	test-dhcp-dhclient.c
@@ -20,7 +23,17 @@ test_dhcp_dhclient_SOURCES = \
 test_dhcp_dhclient_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
-TESTS = test-dhcp-dhclient
+####### DHCP options test #######
+
+test_dhcp_options_SOURCES = \
+	test-dhcp-options.c
+
+test_dhcp_options_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la
+
+#################################
+
+TESTS = test-dhcp-dhclient test-dhcp-options
 
 EXTRA_DIST = \
 	test-dhclient-duid.leases \

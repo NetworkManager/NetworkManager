@@ -25,9 +25,6 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
-
 #include "nm-dhcp-client.h"
 #include "nm-ip4-config.h"
 #include "nm-dhcp4-config.h"
@@ -66,22 +63,27 @@ void           nm_dhcp_manager_set_default_hostname (NMDHCPManager *manager,
 
 NMDHCPClient * nm_dhcp_manager_start_ip4     (NMDHCPManager *manager,
                                               const char *iface,
+                                              int ifindex,
                                               const GByteArray *hwaddr,
                                               const char *uuid,
                                               guint priority,
-                                              NMSettingIP4Config *s_ip4,
+                                              gboolean send_hostname,
+                                              const char *dhcp_hostname,
+                                              const char *dhcp_client_id,
                                               guint32 timeout,
                                               GByteArray *dhcp_anycast_addr);
 
 NMDHCPClient * nm_dhcp_manager_start_ip6     (NMDHCPManager *manager,
                                               const char *iface,
+                                              int ifindex,
                                               const GByteArray *hwaddr,
                                               const char *uuid,
                                               guint priority,
-                                              NMSettingIP6Config *s_ip6,
+                                              const char *dhcp_hostname,
                                               guint32 timeout,
                                               GByteArray *dhcp_anycast_addr,
-                                              gboolean info_only);
+                                              gboolean info_only,
+                                              NMSettingIP6ConfigPrivacy privacy);
 
 GSList *       nm_dhcp_manager_get_lease_ip_configs (NMDHCPManager *self,
                                                      const char *iface,
@@ -89,11 +91,6 @@ GSList *       nm_dhcp_manager_get_lease_ip_configs (NMDHCPManager *self,
                                                      gboolean ipv6);
 
 /* For testing only */
-NMIP4Config *nm_dhcp_manager_test_ip4_options_to_config (const char *dhcp_client,
-                                                         const char *iface,
-                                                         GHashTable *options,
-                                                         const char *reason);
-
 extern const char* nm_dhcp_helper_path;
 
 #endif /* NM_DHCP_MANAGER_H */

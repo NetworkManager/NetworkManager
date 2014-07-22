@@ -35,43 +35,24 @@
 #define NM_DHCP_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_CLIENT, NMDHCPClientClass))
 
 #define NM_DHCP_CLIENT_INTERFACE "iface"
+#define NM_DHCP_CLIENT_IFINDEX   "ifindex"
 #define NM_DHCP_CLIENT_HWADDR    "hwaddr"
 #define NM_DHCP_CLIENT_IPV6      "ipv6"
 #define NM_DHCP_CLIENT_UUID      "uuid"
 #define NM_DHCP_CLIENT_PRIORITY  "priority"
 #define NM_DHCP_CLIENT_TIMEOUT   "timeout"
 
-#define NM_DHCP_CLIENT_SIGNAL_TIMEOUT       "timeout"
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
-#define NM_DHCP_CLIENT_SIGNAL_REMOVE        "remove"
 
 typedef enum {
-	DHC_NBI = 0,     /* no broadcast interfaces found */
-	DHC_PREINIT,     /* configuration started */
-	DHC_PREINIT6,    /* configuration started */
-	DHC_BOUND4,      /* IPv4 lease obtained */
-	DHC_BOUND6,      /* IPv6 lease obtained */
-	DHC_IPV4LL,      /* IPv4LL address obtained */
-	DHC_RENEW4,      /* IPv4 lease renewed */
-	DHC_RENEW6,      /* IPv6 lease renewed */
-	DHC_REBOOT,      /* have valid lease, but now obtained a different one */
-	DHC_REBIND4,     /* IPv4 new/different lease */
-	DHC_REBIND6,     /* IPv6 new/different lease */
-	DHC_DEPREF6,     /* IPv6 lease depreferred */
-	DHC_STOP,        /* remove old lease */
-	DHC_STOP6,       /* remove old lease */
-	DHC_MEDIUM,      /* media selection begun */
-	DHC_TIMEOUT,     /* timed out contacting DHCP server */
-	DHC_FAIL,        /* all attempts to contact server timed out, sleeping */
-	DHC_EXPIRE,      /* lease has expired, renewing */
-	DHC_EXPIRE6,     /* lease has expired, renewing */
-	DHC_RELEASE,     /* releasing lease */
-	DHC_RELEASE6,    /* releasing lease */
-	DHC_START,       /* sent when dhclient started OK */
-	DHC_ABEND,       /* dhclient exited abnormally */
-	DHC_END,         /* dhclient exited normally */
-	DHC_END_OPTIONS, /* last option in subscription sent */
-} NMDHCPState;
+	NM_DHCP_STATE_UNKNOWN = 0,
+	NM_DHCP_STATE_BOUND,        /* lease changed (state_is_bound) */
+	NM_DHCP_STATE_TIMEOUT,      /* TIMEOUT */
+	NM_DHCP_STATE_DONE,         /* END */
+	NM_DHCP_STATE_FAIL,          /* failed or quit unexpectedly */
+	__NM_DHCP_STATE_MAX,
+	NM_DHCP_STATE_MAX = __NM_DHCP_STATE_MAX - 1,
+} NMDhcpState;
 
 typedef struct {
 	GObject parent;
@@ -82,20 +63,21 @@ typedef struct {
 
 	/* Methods */
 
-	GPid (*ip4_start)     (NMDHCPClient *self,
-	                       const char *dhcp_client_id,
-	                       GByteArray *anycast_addr,
-	                       const char *hostname);
+	gboolean (*ip4_start)     (NMDHCPClient *self,
+	                           const char *dhcp_client_id,
+	                           GByteArray *anycast_addr,
+	                           const char *hostname);
 
-	GPid (*ip6_start)     (NMDHCPClient *self,
-	                       GByteArray *anycast_addr,
-	                       const char *hostname,
-	                       gboolean info_only,
-	                       const GByteArray *duid);
+	gboolean (*ip6_start)     (NMDHCPClient *self,
+	                           GByteArray *anycast_addr,
+	                           const char *hostname,
+	                           gboolean info_only,
+	                           NMSettingIP6ConfigPrivacy privacy,
+	                           const GByteArray *duid);
 
-	void (*stop)          (NMDHCPClient *self,
-	                       gboolean release,
-	                       const GByteArray *duid);
+	void (*stop)              (NMDHCPClient *self,
+	                           gboolean release,
+	                           const GByteArray *duid);
 
 	/**
 	 * get_duid:
@@ -109,20 +91,29 @@ typedef struct {
 	GByteArray * (*get_duid) (NMDHCPClient *self);
 
 	/* Signals */
-	void (*state_changed) (NMDHCPClient *self, NMDHCPState state);
-	void (*timeout)       (NMDHCPClient *self);
-	void (*remove)        (NMDHCPClient *self);
+	void (*state_changed) (NMDHCPClient *self,
+	                       NMDhcpState state,
+	                       GObject *ip_config,
+	                       GHashTable *options);
 } NMDHCPClientClass;
 
 GType nm_dhcp_client_get_type (void);
 
-GPid nm_dhcp_client_get_pid (NMDHCPClient *self);
+pid_t nm_dhcp_client_get_pid (NMDHCPClient *self);
 
 const char *nm_dhcp_client_get_iface (NMDHCPClient *self);
+
+int         nm_dhcp_client_get_ifindex (NMDHCPClient *self);
 
 gboolean nm_dhcp_client_get_ipv6 (NMDHCPClient *self);
 
 const char *nm_dhcp_client_get_uuid (NMDHCPClient *self);
+
+const GByteArray *nm_dhcp_client_get_duid (NMDHCPClient *self);
+
+const GByteArray *nm_dhcp_client_get_hw_addr (NMDHCPClient *self);
+
+guint32 nm_dhcp_client_get_priority (NMDHCPClient *self);
 
 gboolean nm_dhcp_client_start_ip4 (NMDHCPClient *self,
                                    const char *dhcp_client_id,
@@ -132,7 +123,8 @@ gboolean nm_dhcp_client_start_ip4 (NMDHCPClient *self,
 gboolean nm_dhcp_client_start_ip6 (NMDHCPClient *self,
                                    GByteArray *dhcp_anycast_addr,
                                    const char *hostname,
-                                   gboolean info_only);
+                                   gboolean info_only,
+                                   NMSettingIP6ConfigPrivacy privacy);
 
 void nm_dhcp_client_stop (NMDHCPClient *self, gboolean release);
 
@@ -140,18 +132,17 @@ void nm_dhcp_client_new_options (NMDHCPClient *self,
                                  GHashTable *options,
                                  const char *reason);
 
-gboolean nm_dhcp_client_foreach_option (NMDHCPClient *self,
-                                        GHFunc func,
-                                        gpointer user_data);
-
-NMIP4Config *nm_dhcp_client_get_ip4_config   (NMDHCPClient *self, gboolean test);
-
-NMIP6Config *nm_dhcp_client_get_ip6_config   (NMDHCPClient *self, gboolean test);
-
-/* Backend helpers */
+/* Backend helpers for subclasses */
 void nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name);
 
-void nm_dhcp_client_stop_pid (GPid pid, const char *iface);
+void nm_dhcp_client_stop_pid (pid_t pid, const char *iface);
+
+void nm_dhcp_client_watch_child (NMDHCPClient *self, pid_t pid);
+
+void nm_dhcp_client_set_state (NMDHCPClient *self,
+                               NMDhcpState new_state,
+                               GObject *ip_config,   /* NMIP4Config or NMIP6Config */
+                               GHashTable *options); /* str:str hash */
 
 #endif /* NM_DHCP_CLIENT_H */
 

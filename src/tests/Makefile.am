@@ -14,26 +14,12 @@ AM_CPPFLAGS = \
 	$(DBUS_CFLAGS)
 
 noinst_PROGRAMS = \
-	test-dhcp-options \
 	test-general \
 	test-general-with-expect \
 	test-ip4-config \
 	test-ip6-config \
 	test-dcb \
 	test-resolvconf-capture
-
-####### DHCP options test #######
-
-test_dhcp_options_SOURCES = \
-	test-dhcp-options.c
-
-test_dhcp_options_CPPFLAGS = \
-	$(AM_CPPFLAGS) \
-	-DDHCLIENT_PATH=\"$(DHCLIENT_PATH)\" \
-	-DDHCPCD_PATH=\"$(DHCPCD_PATH)\"
-
-test_dhcp_options_LDADD = \
-	$(top_builddir)/src/libNetworkManager.la
 
 ####### ip4 config test #######
 
