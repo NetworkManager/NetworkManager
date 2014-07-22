@@ -35,18 +35,15 @@ test_remote_settings_client_LDADD = \
 
 ###########################################
 
-TEST_NM_BIN = test-fake-nm.py
-TEST_RSS_BIN = test-remote-settings-service.py
-
-EXTRA_DIST = $(TEST_RSS_BIN) $(TEST_NM_BIN)
+TEST_NM_SERVICE = $(top_srcdir)/tools/test-networkmanager-service.py
 
 check-local: test-nm-client test-remote-settings-client
 	if test -z "$$DBUS_SESSION_BUS_ADDRESS" ; then \
-	    dbus-launch --exit-with-session $(abs_builddir)/test-nm-client $(abs_srcdir) $(TEST_NM_BIN); \
-	    dbus-launch --exit-with-session $(abs_builddir)/test-remote-settings-client $(abs_srcdir) $(TEST_RSS_BIN); \
+	    dbus-launch --exit-with-session $(abs_builddir)/test-nm-client $(abs_srcdir) $(TEST_NM_SERVICE); \
+	    dbus-launch --exit-with-session $(abs_builddir)/test-remote-settings-client $(abs_srcdir) $(TEST_NM_SERVICE); \
 	else \
-	    $(abs_builddir)/test-nm-client $(abs_srcdir) $(TEST_NM_BIN); \
-	    $(abs_builddir)/test-remote-settings-client $(abs_srcdir) $(TEST_RSS_BIN); \
+	    $(abs_builddir)/test-nm-client $(abs_srcdir) $(TEST_NM_SERVICE); \
+	    $(abs_builddir)/test-remote-settings-client $(abs_srcdir) $(TEST_NM_SERVICE); \
 	fi;
 
 endif
