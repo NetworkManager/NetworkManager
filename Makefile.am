@@ -8,8 +8,7 @@ SUBDIRS = \
 	introspection \
 	src \
 	callouts \
-	cli \
-	tui \
+	clients \
 	tools \
 	policy \
 	data \

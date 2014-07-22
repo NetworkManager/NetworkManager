@@ -47,3 +47,14 @@ endif
 DISTCLEANFILES = settings-docs.c
 
 EXTRA_DIST = settings-docs.c settings-docs.xsl
+
+completiondir = $(datadir)/bash-completion/completions
+
+install-data-hook:
+	$(mkinstalldirs) $(DESTDIR)$(completiondir)
+	$(INSTALL_DATA) $(srcdir)/nmcli-completion $(DESTDIR)$(completiondir)/nmcli
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(completiondir)/nmcli
+
+EXTRA_DIST += nmcli-completion

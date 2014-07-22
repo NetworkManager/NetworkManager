@@ -839,11 +839,10 @@ libnm-glib/tests/Makefile
 callouts/Makefile
 callouts/tests/Makefile
 tools/Makefile
-cli/Makefile
-cli/src/Makefile
-cli/completion/Makefile
-tui/Makefile
-tui/newt/Makefile
+clients/Makefile
+clients/cli/Makefile
+clients/tui/Makefile
+clients/tui/newt/Makefile
 test/Makefile
 initscript/RedHat/NetworkManager
 initscript/Debian/NetworkManager
