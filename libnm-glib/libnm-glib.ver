@@ -104,6 +104,7 @@ global:
 	nm_device_bt_new;
 	nm_device_connection_compatible;
 	nm_device_connection_valid;
+	nm_device_delete;
 	nm_device_disambiguate_names;
 	nm_device_disconnect;
 	nm_device_error_get_type;
@@ -156,6 +157,7 @@ global:
 	nm_device_infiniband_get_hw_address;
 	nm_device_infiniband_get_type;
 	nm_device_infiniband_new;
+	nm_device_is_software;
 	nm_device_modem_error_get_type;
 	nm_device_modem_error_quark;
 	nm_device_modem_get_current_capabilities;

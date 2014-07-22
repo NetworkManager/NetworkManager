@@ -95,6 +95,7 @@ typedef enum {
 	NM_DEVICE_ERROR_CONNECTION_INVALID,        /*< nick=ConnectionInvalid >*/
 	NM_DEVICE_ERROR_NOT_ACTIVE,                /*< nick=NotActive >*/
 	NM_DEVICE_ERROR_UNSUPPORTED_DEVICE_TYPE,   /*< nick=UnsupportedDeviceType >*/
+	NM_DEVICE_ERROR_NOT_SOFTWARE,              /*< nick=NotSoftware >*/
 } NMDeviceError;
 
 struct _NMDevice {

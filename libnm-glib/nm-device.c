@@ -2065,18 +2065,38 @@ nm_device_get_mtu (NMDevice *device)
 	return NM_DEVICE_GET_PRIVATE (device)->mtu;
 }
 
+/**
+ * nm_device_is_software:
+ * @device: a #NMDevice
+ *
+ * Whether the device is a software device.
+ *
+ * Returns: %TRUE if @device is a software device, %FALSE if it is a hardware device.
+ *
+ * Since: 1.0
+ **/
+gboolean
+nm_device_is_software (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	_nm_object_ensure_inited (NM_OBJECT (device));
+	return !!(NM_DEVICE_GET_PRIVATE (device)->capabilities & NM_DEVICE_CAP_IS_SOFTWARE);
+}
+
 typedef struct {
 	NMDevice *device;
-	NMDeviceDeactivateFn fn;
+	NMDeviceCallbackFn fn;
 	gpointer user_data;
-} DeactivateInfo;
+	const char *method;
+} DeviceCallbackInfo;
 
 static void
-deactivate_cb (DBusGProxy *proxy,
-               DBusGProxyCall *call,
-               gpointer user_data)
+device_operation_cb (DBusGProxy *proxy,
+                     DBusGProxyCall *call,
+                     gpointer user_data)
 {
-	DeactivateInfo *info = user_data;
+	DeviceCallbackInfo *info = user_data;
 	GError *error = NULL;
 
 	dbus_g_proxy_end_call (proxy, call, &error,
@@ -2084,16 +2104,17 @@ deactivate_cb (DBusGProxy *proxy,
 	if (info->fn)
 		info->fn (info->device, error, info->user_data);
 	else if (error) {
-		g_warning ("%s: device %s deactivation failed: (%d) %s",
+		g_warning ("%s: device %s %s failed: (%d) %s",
 		           __func__,
 		           nm_object_get_path (NM_OBJECT (info->device)),
+		           info->method,
 		           error ? error->code : -1,
 		           error && error->message ? error->message : "(unknown)");
 	}
 	g_clear_error (&error);
 
 	g_object_unref (info->device);
-	g_slice_free (DeactivateInfo, info);
+	g_slice_free (DeviceCallbackInfo, info);
 }
 
 /**
@@ -2109,20 +2130,52 @@ deactivate_cb (DBusGProxy *proxy,
  **/
 void
 nm_device_disconnect (NMDevice *device,
-                      NMDeviceDeactivateFn callback,
+                      NMDeviceCallbackFn callback,
                       gpointer user_data)
 {
-	DeactivateInfo *info;
+	DeviceCallbackInfo *info;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 
-	info = g_slice_new (DeactivateInfo);
+	info = g_slice_new (DeviceCallbackInfo);
 	info->fn = callback;
 	info->user_data = user_data;
+	info->method = "Disconnect";
 	info->device = g_object_ref (device);
 
 	dbus_g_proxy_begin_call (NM_DEVICE_GET_PRIVATE (device)->proxy, "Disconnect",
-	                         deactivate_cb, info, NULL,
+	                         device_operation_cb, info, NULL,
+	                         G_TYPE_INVALID);
+}
+
+/**
+ * nm_device_delete:
+ * @device: a #NMDevice
+ * @callback: (scope async) (allow-none): callback to be called when delete
+ * operation completes
+ * @user_data: (closure): caller-specific data passed to @callback
+ *
+ * Deletes the software device. Hardware devices can't be deleted.
+ *
+ * Since: 1.0
+ **/
+void
+nm_device_delete (NMDevice *device,
+                  NMDeviceCallbackFn callback,
+                  gpointer user_data)
+{
+	DeviceCallbackInfo *info;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	info = g_slice_new (DeviceCallbackInfo);
+	info->fn = callback;
+	info->user_data = user_data;
+	info->method = "Delete";
+	info->device = g_object_ref (device);
+
+	dbus_g_proxy_begin_call (NM_DEVICE_GET_PRIVATE (device)->proxy, "Delete",
+	                         device_operation_cb, info, NULL,
 	                         G_TYPE_INVALID);
 }
 

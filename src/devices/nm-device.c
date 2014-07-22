@@ -71,6 +71,7 @@
 #include "nm-dns-manager.h"
 
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
+static void impl_device_delete     (NMDevice *device, DBusGMethodInvocation *context);
 
 #include "nm-device-glue.h"
 
@@ -4943,6 +4944,46 @@ impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context)
 }
 
 static void
+delete_cb (NMDevice *device,
+           DBusGMethodInvocation *context,
+           GError *error,
+           gpointer user_data)
+{
+	if (error) {
+		dbus_g_method_return_error (context, error);
+		return;
+	}
+
+	/* Authorized */
+	nm_platform_link_delete (nm_device_get_ifindex (device));
+	dbus_g_method_return (context);
+}
+
+static void
+impl_device_delete (NMDevice *device, DBusGMethodInvocation *context)
+{
+	GError *error = NULL;
+
+	if (!nm_device_is_software (device)) {
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_NOT_SOFTWARE,
+		                             "This device is not a software device");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Ask the manager to authenticate this request for us */
+	g_signal_emit (device, signals[AUTH_REQUEST], 0,
+	               context,
+	               NULL,
+	               NM_AUTH_PERMISSION_NETWORK_CONTROL,
+	               TRUE,
+	               delete_cb,
+	               NULL);
+}
+
+static void
 _device_activate (NMDevice *self, NMActRequest *req)
 {
 	NMDevicePrivate *priv;
@@ -7265,10 +7306,11 @@ constructed (GObject *object)
 	if (priv->ifindex > 0) {
 		priv->is_software = nm_platform_link_is_software (priv->ifindex);
 		priv->physical_port_id = nm_platform_link_get_physical_port_id (priv->ifindex);
-	}
-
-	if (priv->ifindex > 0)
 		priv->mtu = nm_platform_link_get_mtu (priv->ifindex);
+	}
+	/* Indicate software device in capabilities. */
+	if (priv->is_software)
+		priv->capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
 
 	priv->con_provider = nm_connection_provider_get ();
 	g_assert (priv->con_provider);
