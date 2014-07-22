@@ -3636,6 +3636,29 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 	nm_device_activate_schedule_ip6_config_result (device);
 }
 
+static void
+addrconf6_start_with_link_ready (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMUtilsIPv6IfaceId iid;
+
+	g_assert (priv->rdisc);
+
+	if (NM_DEVICE_GET_CLASS (self)->get_ip_iface_identifier (self, &iid))
+		nm_rdisc_set_iid (priv->rdisc, iid);
+	else
+		nm_log_warn (LOGD_IP6, "(%s): failed to get interface identifier", nm_device_get_ip_iface (self));
+
+	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
+	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
+	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
+	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
+
+	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
+	                                                     G_CALLBACK (rdisc_config_changed), self);
+	nm_rdisc_start (priv->rdisc);
+}
+
 static gboolean
 addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 {
@@ -3673,29 +3696,6 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 		g_return_val_if_fail (ret == NM_ACT_STAGE_RETURN_POSTPONE, TRUE);
 
 	return TRUE;
-}
-
-static void
-addrconf6_start_with_link_ready (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMUtilsIPv6IfaceId iid;
-
-	g_assert (priv->rdisc);
-
-	if (NM_DEVICE_GET_CLASS (self)->get_ip_iface_identifier (self, &iid))
-		nm_rdisc_set_iid (priv->rdisc, iid);
-	else
-		nm_log_warn (LOGD_IP6, "(%s): failed to get interface identifier", nm_device_get_ip_iface (self));
-
-	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
-
-	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
-	                                                     G_CALLBACK (rdisc_config_changed), self);
-	nm_rdisc_start (priv->rdisc);
 }
 
 static void
