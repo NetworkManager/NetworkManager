@@ -61,6 +61,7 @@ struct sd_dhcp6_client {
         uint8_t mac_addr[MAX_MAC_ADDR_LEN];
         size_t mac_addr_len;
         uint16_t arp_type;
+        char ifname[IFNAMSIZ];
         DHCP6IA ia_na;
         be32_t transaction_id;
         usec_t transaction_start;
@@ -632,11 +633,7 @@ error:
 }
 
 static int client_ensure_iaid(sd_dhcp6_client *client) {
-        /* name is a pointer to memory in the udev_device struct, so must
-           have the same scope */
-#if 0 /* NM_IGNORED */
-        _cleanup_udev_device_unref_ struct udev_device *device = NULL;
-        const char *name = NULL;
+        const char *name;
         uint64_t id;
 
         assert(client);
@@ -644,27 +641,7 @@ static int client_ensure_iaid(sd_dhcp6_client *client) {
         if (client->ia_na.id)
                 return 0;
 
-        if (detect_container(NULL) <= 0) {
-                /* not in a container, udev will be around */
-                _cleanup_udev_unref_ struct udev *udev;
-                char ifindex_str[2 + DECIMAL_STR_MAX(int)];
-
-                udev = udev_new();
-                if (!udev)
-                        return -ENOMEM;
-
-                sprintf(ifindex_str, "n%d", client->index);
-                device = udev_device_new_from_device_id(udev, ifindex_str);
-                if (!device)
-                        return -errno;
-
-                if (udev_device_get_is_initialized(device) <= 0)
-                        /* not yet ready */
-                        return -EBUSY;
-
-                name = net_get_name(device);
-        }
-
+	name = client->ifname;
         if (name)
                 siphash24((uint8_t*)&id, name, strlen(name), HASH_KEY.bytes);
         else
@@ -676,9 +653,6 @@ static int client_ensure_iaid(sd_dhcp6_client *client) {
         client->ia_na.id = (id & 0xffffffff) ^ (id >> 32);
 
         return 0;
-#else
-	return -1;
-#endif
 }
 
 static int client_parse_message(sd_dhcp6_client *client,
@@ -1256,3 +1230,17 @@ int sd_dhcp6_client_new(sd_dhcp6_client **ret)
 
         return 0;
 }
+
+/*******************************************/
+/* NetworkManager additions */
+
+int sd_dhcp6_client_set_ifname(sd_dhcp6_client *client, const char *ifname)
+{
+        assert_return(client, -EINVAL);
+        assert_return(ifname, -EINVAL);
+        assert_return(strlen (ifname) < sizeof (client->ifname), -EINVAL);
+
+        strcpy(client->ifname, ifname);
+        return 0;
+}
+

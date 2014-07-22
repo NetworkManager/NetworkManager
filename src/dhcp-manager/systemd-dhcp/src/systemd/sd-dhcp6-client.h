@@ -47,6 +47,7 @@ int sd_dhcp6_client_set_mac(sd_dhcp6_client *client, const uint8_t *addr,
                             size_t addr_len, uint16_t arp_type);
 int sd_dhcp6_client_set_duid(sd_dhcp6_client *client, uint16_t type, uint8_t *duid,
                              size_t duid_len);
+int sd_dhcp6_client_set_ifname(sd_dhcp6_client *client, const char *ifname);
 int sd_dhcp6_client_set_request_option(sd_dhcp6_client *client,
                                        uint16_t option);
 
