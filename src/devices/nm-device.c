@@ -315,7 +315,7 @@ static gboolean nm_device_master_add_slave (NMDevice *dev, NMDevice *slave, gboo
 static void nm_device_slave_notify_enslave (NMDevice *dev, gboolean success);
 static void nm_device_slave_notify_release (NMDevice *dev, NMDeviceStateReason reason);
 
-static void addrconf6_start_with_link_ready (NMDevice *self);
+static gboolean addrconf6_start_with_link_ready (NMDevice *self);
 
 static gboolean nm_device_get_default_unmanaged (NMDevice *device);
 
@@ -3396,9 +3396,12 @@ linklocal6_complete (NMDevice *self)
 	nm_log_dbg (LOGD_DEVICE, "[%s] linklocal6: waiting for link-local addresses successful, continue with method %s",
 	             nm_device_get_iface (self), method);
 
-	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0)
-		addrconf6_start_with_link_ready (self);
-	else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)
+	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
+		if (!addrconf6_start_with_link_ready (self)) {
+			/* Time out IPv6 instead of failing the entire activation */
+			nm_device_activate_schedule_ip6_config_timeout (self);
+		}
+	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)
 		nm_device_activate_schedule_ip6_config_result (self);
 	else
 		g_return_if_fail (FALSE);
@@ -3636,7 +3639,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 	nm_device_activate_schedule_ip6_config_result (device);
 }
 
-static void
+static gboolean
 addrconf6_start_with_link_ready (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -3644,10 +3647,11 @@ addrconf6_start_with_link_ready (NMDevice *self)
 
 	g_assert (priv->rdisc);
 
-	if (NM_DEVICE_GET_CLASS (self)->get_ip_iface_identifier (self, &iid))
-		nm_rdisc_set_iid (priv->rdisc, iid);
-	else
+	if (!NM_DEVICE_GET_CLASS (self)->get_ip_iface_identifier (self, &iid)) {
 		nm_log_warn (LOGD_IP6, "(%s): failed to get interface identifier", nm_device_get_ip_iface (self));
+		return FALSE;
+	}
+	nm_rdisc_set_iid (priv->rdisc, iid);
 
 	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
@@ -3657,9 +3661,10 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
 	                                                     G_CALLBACK (rdisc_config_changed), self);
 	nm_rdisc_start (priv->rdisc);
+	return TRUE;
 }
 
-static gboolean
+static NMActStageReturn
 addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -3690,12 +3695,14 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 
 	/* ensure link local is ready... */
 	ret = linklocal6_start (self);
-	if (ret == NM_ACT_STAGE_RETURN_SUCCESS)
-		addrconf6_start_with_link_ready (self);
-	else
-		g_return_val_if_fail (ret == NM_ACT_STAGE_RETURN_POSTPONE, TRUE);
+	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
+		/* success; wait for the LL address to show up */
+		return TRUE;
+	}
 
-	return TRUE;
+	/* success; already have the LL address; kick off router discovery */
+	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
+	return addrconf6_start_with_link_ready (self);
 }
 
 static void
