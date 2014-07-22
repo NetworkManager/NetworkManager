@@ -381,8 +381,8 @@ nm_logging_enabled (guint32 level, guint64 domain)
 void
 _nm_log (const char *loc,
          const char *func,
-         guint64 domain,
          guint32 level,
+         guint64 domain,
          const char *fmt,
          ...)
 {
