@@ -384,6 +384,7 @@ do {                                                                    \
                 _found;                                                 \
         })
 
+#if 0 /* NM_IGNORED */
 /* Define C11 thread_local attribute even on older gcc compiler
  * version */
 #ifndef thread_local
@@ -409,3 +410,4 @@ do {                                                                    \
 #endif
 
 #include "log.h"
+#endif

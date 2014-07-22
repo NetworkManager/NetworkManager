@@ -27,6 +27,8 @@
 typedef uint64_t usec_t;
 typedef uint64_t nsec_t;
 
+#include "nm-sd-adapt.h"
+
 #define NSEC_FMT "%" PRIu64
 #define USEC_FMT "%" PRIu64
 

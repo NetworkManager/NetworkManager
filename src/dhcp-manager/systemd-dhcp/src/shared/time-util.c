@@ -19,6 +19,8 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <time.h>
 #include <string.h>
 #include <sys/timex.h>
@@ -26,7 +28,9 @@
 
 #include "util.h"
 #include "time-util.h"
+#if 0 /* NM_IGNORED */
 #include "strv.h"
+#endif
 
 usec_t now(clockid_t clock_id) {
         struct timespec ts;
@@ -118,6 +122,7 @@ struct timespec *timespec_store(struct timespec *ts, usec_t u)  {
         return ts;
 }
 
+#if 0 /* NM_IGNORED */
 usec_t timeval_load(const struct timeval *tv) {
         assert(tv);
 
@@ -272,6 +277,7 @@ char *format_timestamp_relative(char *buf, size_t l, usec_t t) {
         buf[l-1] = 0;
         return buf;
 }
+#endif
 
 char *format_timespan(char *buf, size_t l, usec_t t, usec_t accuracy) {
         static const struct {
@@ -383,6 +389,7 @@ char *format_timespan(char *buf, size_t l, usec_t t, usec_t accuracy) {
         return buf;
 }
 
+#if 0 /* NM_IGNORED */
 void dual_timestamp_serialize(FILE *f, const char *name, dual_timestamp *t) {
 
         assert(f);
@@ -974,6 +981,7 @@ bool timezone_is_valid(const char *name) {
 
         return true;
 }
+#endif
 
 clockid_t clock_boottime_or_monotonic(void) {
         static clockid_t clock = -1;
@@ -992,3 +1000,4 @@ clockid_t clock_boottime_or_monotonic(void) {
 
         return clock;
 }
+

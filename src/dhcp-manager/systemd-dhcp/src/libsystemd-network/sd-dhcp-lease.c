@@ -18,6 +18,8 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -28,7 +30,9 @@
 
 #include "util.h"
 #include "list.h"
+#if 0 /* NM_IGNORED */
 #include "mkdir.h"
+#endif
 #include "fileio.h"
 #include "in-addr-util.h"
 

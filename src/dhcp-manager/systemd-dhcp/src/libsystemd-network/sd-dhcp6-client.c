@@ -19,14 +19,18 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include "nm-sd-adapt.h"
+
 #include <errno.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <linux/if_infiniband.h>
 
+#if 0 /* NM_IGNORED */
 #include "udev.h"
 #include "udev-util.h"
 #include "virt.h"
+#endif
 #include "siphash24.h"
 #include "util.h"
 #include "refcnt.h"
@@ -630,6 +634,7 @@ error:
 static int client_ensure_iaid(sd_dhcp6_client *client) {
         /* name is a pointer to memory in the udev_device struct, so must
            have the same scope */
+#if 0 /* NM_IGNORED */
         _cleanup_udev_device_unref_ struct udev_device *device = NULL;
         const char *name = NULL;
         uint64_t id;
@@ -671,6 +676,9 @@ static int client_ensure_iaid(sd_dhcp6_client *client) {
         client->ia_na.id = (id & 0xffffffff) ^ (id >> 32);
 
         return 0;
+#else
+	return -1;
+#endif
 }
 
 static int client_parse_message(sd_dhcp6_client *client,
@@ -1199,8 +1207,10 @@ sd_dhcp6_client *sd_dhcp6_client_unref(sd_dhcp6_client *client) {
 int sd_dhcp6_client_new(sd_dhcp6_client **ret)
 {
         _cleanup_dhcp6_client_unref_ sd_dhcp6_client *client = NULL;
+#if 0 /* NM_IGNORED */
         sd_id128_t machine_id;
         int r;
+#endif
         size_t t;
 
         assert_return(ret, -EINVAL);
@@ -1217,6 +1227,7 @@ int sd_dhcp6_client_new(sd_dhcp6_client **ret)
 
         client->fd = -1;
 
+#if 0 /* NM_IGNORED */
         /* initialize DUID */
         client->duid.en.type = htobe16(DHCP6_DUID_EN);
         client->duid.en.pen = htobe32(SYSTEMD_PEN);
@@ -1229,6 +1240,7 @@ int sd_dhcp6_client_new(sd_dhcp6_client **ret)
         /* a bit of snake-oil perhaps, but no need to expose the machine-id
            directly */
         siphash24(client->duid.en.id, &machine_id, sizeof(machine_id), HASH_KEY.bytes);
+#endif
 
         client->req_opts_len = ELEMENTSOF(default_req_opts);
 
