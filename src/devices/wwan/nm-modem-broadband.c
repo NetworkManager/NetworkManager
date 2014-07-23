@@ -280,9 +280,9 @@ create_gsm_connect_properties (NMModem *modem,
 	if (str)
 		mm_simple_connect_properties_set_number (properties, str);
 
+	/* Blank APN ("") means the default subscription APN */
 	str = nm_setting_gsm_get_apn (setting);
-	if (str)
-		mm_simple_connect_properties_set_apn (properties, str);
+	mm_simple_connect_properties_set_apn (properties, str ? str : "");
 
 	str = nm_setting_gsm_get_network_id (setting);
 	if (str)
