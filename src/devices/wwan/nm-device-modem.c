@@ -592,6 +592,18 @@ nm_device_modem_init (NMDeviceModem *self)
 }
 
 static void
+constructed (GObject *object)
+{
+	G_OBJECT_CLASS (nm_device_modem_parent_class)->constructed (object);
+
+	/* DHCP is always done by the modem firmware, not by the network, and
+	 * by the time we get around to DHCP the firmware should already know
+	 * the IP addressing details.  So the DHCP timeout can be much shorter.
+	 */
+	nm_device_set_dhcp_timeout (NM_DEVICE (object), 15);
+}
+
+static void
 set_modem (NMDeviceModem *self, NMModem *modem)
 {
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (self);
@@ -684,6 +696,7 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
+	object_class->constructed = constructed;
 
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
