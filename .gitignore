@@ -181,7 +181,6 @@ valgrind-*.log
 /libnm-glib/tests/test-nm-client
 /libnm-glib/tests/test-remote-settings-client
 /src/tests/test-dcb
-/src/tests/test-dhcp-options
 /src/tests/test-general
 /src/tests/test-general-with-expect
 /src/tests/test-ip4-config
@@ -191,6 +190,7 @@ valgrind-*.log
 /src/devices/wifi/tests/test-wifi-ap-utils
 /src/dnsmasq-manager/tests/test-dnsmasq-utils
 /src/dhcp-manager/tests/test-dhcp-dhclient
+/src/dhcp-manager/tests/test-dhcp-options
 /src/dhcp-manager/tests/test-dnsmasq-utils
 /src/config/tests/test-config
 
