@@ -69,13 +69,13 @@
 
 /**
  * NMVPNServiceState:
- * @NM_VPN_SERVICE_UNKNOWN: The state of the VPN plugin is unknown.
- * @NM_VPN_SERVICE_INIT: The VPN plugin is initialized.
- * @NM_VPN_SERVICE_SHUTDOWN: Not used.
- * @NM_VPN_SERVICE_STARTING: The plugin is attempting to connect to a VPN server.
- * @NM_VPN_SERVICE_STARTED: The plugin has connected to a VPN server.
- * @NM_VPN_SERVICE_STOPPING: The plugin is disconnecting from the VPN server.
- * @NM_VPN_SERVICE_STOPPED: The plugin has disconnected from the VPN server.
+ * @NM_VPN_SERVICE_STATE_UNKNOWN: The state of the VPN plugin is unknown.
+ * @NM_VPN_SERVICE_STATE_INIT: The VPN plugin is initialized.
+ * @NM_VPN_SERVICE_STATE_SHUTDOWN: Not used.
+ * @NM_VPN_SERVICE_STATE_STARTING: The plugin is attempting to connect to a VPN server.
+ * @NM_VPN_SERVICE_STATE_STARTED: The plugin has connected to a VPN server.
+ * @NM_VPN_SERVICE_STATE_STOPPING: The plugin is disconnecting from the VPN server.
+ * @NM_VPN_SERVICE_STATE_STOPPED: The plugin has disconnected from the VPN server.
  *
  * VPN daemon states
  *
