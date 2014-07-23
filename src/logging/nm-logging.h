@@ -92,20 +92,13 @@ typedef enum {
 GQuark nm_logging_error_quark    (void);
 
 
-#define nm_log_err(domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_ERR, ## __VA_ARGS__ )
-
-#define nm_log_warn(domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_WARN, ## __VA_ARGS__ )
-
-#define nm_log_info(domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_INFO, ## __VA_ARGS__ )
-
-#define nm_log_dbg(domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_DEBUG, ## __VA_ARGS__ )
+#define nm_log_err(domain, ...)     nm_log ((domain), LOGL_ERR,   __VA_ARGS__)
+#define nm_log_warn(domain, ...)    nm_log ((domain), LOGL_WARN,  __VA_ARGS__)
+#define nm_log_info(domain, ...)    nm_log ((domain), LOGL_INFO,  __VA_ARGS__)
+#define nm_log_dbg(domain, ...)     nm_log ((domain), LOGL_DEBUG, __VA_ARGS__)
 
 #define nm_log(domain, level, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, level, ## __VA_ARGS__ )
+	_nm_log (G_STRLOC, G_STRFUNC, domain, level, __VA_ARGS__)
 
 void _nm_log (const char *loc,
               const char *func,
