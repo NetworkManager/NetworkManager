@@ -3155,10 +3155,17 @@ dhcp6_fail (NMDevice *device, gboolean timeout)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
 	dhcp6_cleanup (device, TRUE, FALSE);
-	if (timeout || (priv->ip6_state == IP_CONF))
-		nm_device_activate_schedule_ip6_config_timeout (device);
-	else if (priv->ip6_state == IP_FAIL)
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+
+	if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_MANAGED) {
+		if (timeout || (priv->ip6_state == IP_CONF))
+			nm_device_activate_schedule_ip6_config_timeout (device);
+		else if (priv->ip6_state == IP_FAIL)
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+	} else {
+		/* not a hard failure; just live with the RA info */
+		if (priv->ip6_state == IP_CONF)
+			nm_device_activate_schedule_ip6_config_result (device);
+	}
 }
 
 static void
