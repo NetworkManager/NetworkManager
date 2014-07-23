@@ -463,8 +463,8 @@ complete_connection (NMModem *_self,
 		NMSettingGsm *s_gsm;
 
 		s_gsm = nm_connection_get_setting_gsm (connection);
-		if (!s_gsm || !nm_setting_gsm_get_apn (s_gsm)) {
-			/* Need an APN at least */
+		if (!s_gsm) {
+			/* Need a GSM setting at least */
 			g_set_error_literal (error,
 			                     NM_SETTING_GSM_ERROR,
 			                     NM_SETTING_GSM_ERROR_MISSING_PROPERTY,
