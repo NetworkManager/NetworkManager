@@ -28,10 +28,7 @@
 
 #include <nm-connection.h>
 
-#include "nm-settings-connection.h"
-#include "nm-system-config-interface.h"
-#include "nm-device.h"
-#include "nm-secret-agent.h"
+#include "nm-types.h"
 
 #define NM_TYPE_SETTINGS            (nm_settings_get_type ())
 #define NM_SETTINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTINGS, NMSettings))
@@ -52,9 +49,9 @@
 #define NM_SETTINGS_SIGNAL_CONNECTION_VISIBILITY_CHANGED "connection-visibility-changed"
 #define NM_SETTINGS_SIGNAL_AGENT_REGISTERED              "agent-registered"
 
-typedef struct {
+struct _NMSettings {
 	GObject parent_instance;
-} NMSettings;
+};
 
 typedef struct {
 	GObjectClass parent_class;

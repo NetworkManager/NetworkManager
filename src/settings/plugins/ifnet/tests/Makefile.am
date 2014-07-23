@@ -4,7 +4,6 @@ if ENABLE_TESTS
 
 AM_CPPFLAGS= \
 	-I$(srcdir)/../ \
-	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/include \
@@ -17,8 +16,6 @@ AM_CPPFLAGS= \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(CHECK_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	$(POLKIT_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
 	-DTEST_WPA_SUPPLICANT_CONF='"$(srcdir)/wpa_supplicant.conf"' \
 	-DSYSCONFDIR=\"nonexistent\"

@@ -10,10 +10,7 @@ AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""NetworkManager-wimax"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(DBUS_CFLAGS) \
-	$(POLKIT_CFLAGS) \
-	$(IWMX_SDK_CFLAGS) \
-	$(LIBNL_CFLAGS) \
-	$(GUDEV_CFLAGS)
+	$(IWMX_SDK_CFLAGS)
 
 pkglib_LTLIBRARIES = libnm-device-plugin-wimax.la
 

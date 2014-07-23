@@ -34,6 +34,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-dhcp-client.h"
 #include "nm-dhcp-utils.h"
+#include "nm-platform.h"
 
 typedef struct {
 	char *       iface;

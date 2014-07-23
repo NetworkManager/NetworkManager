@@ -58,9 +58,11 @@
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
 #include "nm-settings-error.h"
+#include "nm-system-config-interface.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-manager-auth.h"
+#include "nm-auth-subject.h"
 #include "nm-session-monitor.h"
 #include "plugins/keyfile/plugin.h"
 #include "nm-agent-manager.h"
@@ -1578,7 +1580,7 @@ default_wired_clear_tag (NMSettings *self,
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (default_wired_connection_updated_by_user_cb), self);
 
 	if (add_to_no_auto_default)
-		nm_config_set_ethernet_no_auto_default (NM_SETTINGS_GET_PRIVATE (self)->config, NM_CONFIG_DEVICE (device));
+		nm_config_set_ethernet_no_auto_default (NM_SETTINGS_GET_PRIVATE (self)->config, device);
 }
 
 void
@@ -1603,7 +1605,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	if (   !nm_device_get_managed (device)
 	    || g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG)
 	    || have_connection_for_device (self, device)
-	    || !nm_config_get_ethernet_can_auto_default (priv->config, NM_CONFIG_DEVICE (device)))
+	    || !nm_config_get_ethernet_can_auto_default (priv->config, device))
 		return;
 
 	hw_address = nm_device_get_hw_address (device, &len);

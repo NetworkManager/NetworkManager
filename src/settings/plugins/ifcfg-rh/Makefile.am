@@ -32,13 +32,11 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/posix-signals \
 	-I$(top_srcdir)/src/config \
 	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	$(POLKIT_CFLAGS) \
 	$(NSS_CFLAGS) \
 	-DG_LOG_DOMAIN=\""NetworkManager-ifcfg-rh"\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
@@ -53,7 +51,6 @@ libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
 libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm-glib.la \
 	libifcfg-rh-io.la \
 	$(GLIB_LIBS)
 

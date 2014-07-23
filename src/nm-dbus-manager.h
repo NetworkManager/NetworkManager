@@ -27,6 +27,8 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 
+#include "nm-types.h"
+
 G_BEGIN_DECLS
 
 typedef gboolean (* NMDBusSignalHandlerFunc) (DBusConnection * connection,
@@ -45,9 +47,9 @@ typedef gboolean (* NMDBusSignalHandlerFunc) (DBusConnection * connection,
 #define NM_DBUS_MANAGER_PRIVATE_CONNECTION_NEW           "private-connection-new"
 #define NM_DBUS_MANAGER_PRIVATE_CONNECTION_DISCONNECTED  "private-connection-disconnected"
 
-typedef struct {
+struct _NMDBusManager {
 	GObject parent;
-} NMDBusManager;
+};
 
 typedef struct {
 	GObjectClass parent;

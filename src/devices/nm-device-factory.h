@@ -25,7 +25,6 @@
 #include <glib-object.h>
 
 #include "NetworkManager.h"
-#include "nm-platform.h"
 #include "nm-device.h"
 
 /* WARNING: this file is private API between NetworkManager and its internal

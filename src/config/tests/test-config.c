@@ -163,7 +163,7 @@ test_config_no_auto_default (void)
 	GError *error = NULL;
 	int fd, nwrote;
 	char *state_file;
-	NMTestDevice *dev1, *dev2, *dev3, *dev4;
+	NMDevice *dev1, *dev2, *dev3, *dev4;
 
 	fd = g_file_open_tmp (NULL, &state_file, &error);
 	g_assert_no_error (error);
@@ -185,13 +185,13 @@ test_config_no_auto_default (void)
 	dev3 = nm_test_device_new ("33:33:33:33:33:33");
 	dev4 = nm_test_device_new ("44:44:44:44:44:44");
 
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev1)));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev2)));
-	g_assert (nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev3)));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev4)));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev1));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev2));
+	g_assert (nm_config_get_ethernet_can_auto_default (config, dev3));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev4));
 
-	nm_config_set_ethernet_no_auto_default (config, NM_CONFIG_DEVICE (dev3));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev3)));
+	nm_config_set_ethernet_no_auto_default (config, dev3);
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev3));
 
 	g_object_unref (config);
 
@@ -201,10 +201,10 @@ test_config_no_auto_default (void)
 	config = nm_config_new (&error);
 	g_assert_no_error (error);
 
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev1)));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev2)));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev3)));
-	g_assert (!nm_config_get_ethernet_can_auto_default (config, NM_CONFIG_DEVICE (dev4)));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev1));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev2));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev3));
+	g_assert (!nm_config_get_ethernet_can_auto_default (config, dev4));
 
 	g_object_unref (config);
 

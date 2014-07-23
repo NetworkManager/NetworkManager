@@ -26,6 +26,7 @@
 #include <nm-connection.h>
 #include "nm-settings-flags.h"
 #include "nm-secret-agent.h"
+#include "nm-types.h"
 
 #define NM_TYPE_AGENT_MANAGER            (nm_agent_manager_get_type ())
 #define NM_AGENT_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AGENT_MANAGER, NMAgentManager))
@@ -45,9 +46,9 @@ typedef enum {
 	NM_AGENT_MANAGER_ERROR_USER_CANCELED       /*< nick=UserCanceled >*/
 } NMAgentManagerError;
 
-typedef struct {
+struct _NMAgentManager {
 	GObject parent;
-} NMAgentManager;
+};
 
 typedef struct {
 	GObjectClass parent;

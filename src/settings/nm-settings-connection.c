@@ -38,6 +38,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-logging.h"
 #include "nm-manager-auth.h"
+#include "nm-auth-subject.h"
 #include "nm-agent-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-properties-changed-signal.h"

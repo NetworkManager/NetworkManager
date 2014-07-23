@@ -35,6 +35,9 @@
 #include "nm-device-private.h"
 #include "nm-enum-types.h"
 #include "nm-dbus-manager.h"
+#include "nm-connection-provider.h"
+#include "nm-activation-request.h"
+#include "nm-ip4-config.h"
 #include "nm-platform.h"
 #include "nm-utils.h"
 

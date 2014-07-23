@@ -36,6 +36,9 @@
 #include "nm-setting-vpn.h"
 #include "nm-setting-connection.h"
 #include "nm-enum-types.h"
+#include "nm-auth-subject.h"
+#include "nm-dbus-manager.h"
+#include "nm-session-monitor.h"
 
 G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, G_TYPE_OBJECT)
 

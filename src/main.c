@@ -55,6 +55,7 @@
 #include "nm-posix-signals.h"
 #include "nm-session-monitor.h"
 #include "nm-dispatcher.h"
+#include "nm-settings.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION

@@ -22,6 +22,7 @@
 
 #include "nm-device-factory.h"
 #include "nm-device-wimax.h"
+#include "nm-platform.h"
 
 #define NM_TYPE_WIMAX_FACTORY            (nm_wimax_factory_get_type ())
 #define NM_WIMAX_FACTORY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_WIMAX_FACTORY, NMWimaxFactory))

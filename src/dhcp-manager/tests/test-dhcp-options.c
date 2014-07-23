@@ -26,6 +26,7 @@
 
 #include "nm-dhcp-utils.h"
 #include "nm-logging.h"
+#include "nm-platform.h"
 
 #include "nm-test-utils.h"
 

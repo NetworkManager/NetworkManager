@@ -22,8 +22,7 @@
 #ifndef NM_POLICY_H
 #define NM_POLICY_H
 
-#include "nm-manager.h"
-#include "nm-settings.h"
+#include "nm-types.h"
 
 #define NM_TYPE_POLICY            (nm_policy_get_type ())
 #define NM_POLICY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_POLICY, NMPolicy))
@@ -37,9 +36,9 @@
 #define NM_POLICY_ACTIVATING_IP4_DEVICE "activating-ip4-device"
 #define NM_POLICY_ACTIVATING_IP6_DEVICE "activating-ip6-device"
 
-typedef struct {
+struct _NMPolicy {
 	GObject parent;
-} NMPolicy;
+};
 
 typedef struct {
 	GObjectClass parent;

@@ -26,6 +26,7 @@
 #include <gio/gio.h>
 
 #include "NetworkManager.h"
+#include "nm-types.h"
 
 #define NM_TYPE_CONNECTIVITY            (nm_connectivity_get_type ())
 #define NM_CONNECTIVITY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONNECTIVITY, NMConnectivity))
@@ -40,9 +41,9 @@
 #define NM_CONNECTIVITY_RESPONSE  "response"
 #define NM_CONNECTIVITY_STATE     "state"
 
-typedef struct {
+struct _NMConnectivity {
 	GObject parent;
-} NMConnectivity;
+};
 
 typedef struct {
 	GObjectClass parent;

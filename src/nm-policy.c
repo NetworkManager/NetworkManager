@@ -43,6 +43,11 @@
 #include "nm-dispatcher.h"
 #include "nm-utils.h"
 #include "nm-glib-compat.h"
+#include "nm-manager.h"
+#include "nm-settings.h"
+#include "nm-settings-connection.h"
+#include "nm-dhcp4-config.h"
+#include "nm-dhcp6-config.h"
 
 typedef struct {
 	NMManager *manager;

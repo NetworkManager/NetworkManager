@@ -22,10 +22,11 @@
 #ifndef NM_SETTINGS_CONNECTION_H
 #define NM_SETTINGS_CONNECTION_H
 
+#include <net/ethernet.h>
+
 #include <nm-connection.h>
 #include "nm-settings-flags.h"
-#include "nm-auth-subject.h"
-#include <net/ethernet.h>
+#include "nm-types.h"
 
 G_BEGIN_DECLS
 
@@ -49,7 +50,6 @@ G_BEGIN_DECLS
 #define NM_SETTINGS_CONNECTION_VISIBLE "visible"
 #define NM_SETTINGS_CONNECTION_UNSAVED "unsaved"
 
-typedef struct _NMSettingsConnection NMSettingsConnection;
 typedef struct _NMSettingsConnectionClass NMSettingsConnectionClass;
 
 typedef void (*NMSettingsConnectionCommitFunc) (NMSettingsConnection *connection,

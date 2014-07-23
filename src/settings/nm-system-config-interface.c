@@ -20,6 +20,7 @@
  */
 
 #include "nm-system-config-interface.h"
+#include "nm-settings-connection.h"
 
 static void
 interface_init (gpointer g_iface)

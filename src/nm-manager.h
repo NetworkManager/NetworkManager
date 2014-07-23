@@ -25,9 +25,9 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
-#include "nm-device.h"
-#include "nm-settings.h"
-#include "nm-auth-subject.h"
+
+#include "nm-types.h"
+#include "nm-connection.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
 #define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))
@@ -77,9 +77,9 @@ typedef enum {
 #define NM_MANAGER_ACTIVE_CONNECTION_REMOVED "active-connection-removed"
 
 
-typedef struct {
+struct _NMManager {
 	GObject parent;
-} NMManager;
+};
 
 typedef struct {
 	GObjectClass parent;

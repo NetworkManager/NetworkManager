@@ -33,6 +33,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-logging.h"
+#include "nm-auth-subject.h"
 
 G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
 

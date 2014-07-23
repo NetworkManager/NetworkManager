@@ -15,10 +15,7 @@ AM_CPPFLAGS = \
 	-I${top_srcdir}/libnm-util \
 	-DG_LOG_DOMAIN=\""NetworkManager-bluetooth"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
-	$(DBUS_CFLAGS) \
-	$(POLKIT_CFLAGS) \
-	$(LIBNL_CFLAGS) \
-	$(GUDEV_CFLAGS)
+	$(DBUS_CFLAGS)
 
 GLIB_GENERATED = nm-bt-enum-types.h nm-bt-enum-types.c
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM

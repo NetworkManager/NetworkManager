@@ -27,9 +27,8 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include <nm-connection.h>
-#include "nm-dbus-manager.h"
+#include "nm-types.h"
 #include "nm-settings-flags.h"
-#include "nm-auth-subject.h"
 
 /* NOTE: ensure these capabilities match those in introspection/nm-secret-agent.xml and
  * libnm-glib/nm-secret-agent.h.
@@ -46,9 +45,9 @@ typedef enum {
 #define NM_IS_SECRET_AGENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SECRET_AGENT))
 #define NM_SECRET_AGENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgentClass))
 
-typedef struct {
+struct _NMSecretAgent {
 	GObject parent;
-} NMSecretAgent;
+};
 
 typedef struct {
 	GObjectClass parent;

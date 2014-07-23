@@ -6,12 +6,10 @@ SUBDIRS=network-scripts
 
 AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
-	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/src/ \
 	-I$(top_srcdir)/src/logging \
 	-I$(top_srcdir)/src/platform \
@@ -31,8 +29,7 @@ AM_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS)
 
 AM_LDADD = \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm-glib.la
+	$(top_builddir)/libnm-util/libnm-util.la
 
 noinst_PROGRAMS = test-ifcfg-rh test-ifcfg-rh-utils
 

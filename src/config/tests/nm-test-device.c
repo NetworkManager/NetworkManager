@@ -24,78 +24,82 @@
 #include <netinet/ether.h>
 
 #include "nm-test-device.h"
-#include "nm-config-device.h"
-#include "nm-utils.h"
+#include "nm-device-private.h"
 
-static void nm_test_device_config_device_interface_init (NMConfigDeviceInterface *iface);
+static GObjectClass *g_object_class;
 
-G_DEFINE_TYPE_WITH_CODE (NMTestDevice, nm_test_device, G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (NM_TYPE_CONFIG_DEVICE, nm_test_device_config_device_interface_init))
+G_DEFINE_TYPE (NMTestDevice, nm_test_device, NM_TYPE_DEVICE)
 
 static void
 nm_test_device_init (NMTestDevice *self)
 {
 }
 
+/* We jump over NMDevice's construct/destruct methods, which require NMPlatform
+ * and NMConnectionProvider to be initialized.
+ */
+
+static GObject*
+constructor (GType type,
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
+{
+	return g_object_class->constructor (type,
+	                                    n_construct_params,
+	                                    construct_params);
+}
+
+static void
+constructed (GObject *object)
+{
+	NMDevice *device = NM_DEVICE (object);
+
+	nm_device_update_hw_address (device);
+
+	g_object_class->constructed (object);
+}
+
+static void
+dispose (GObject *object)
+{
+	g_object_class->dispose (object);
+}
+
 static void
 finalize (GObject *object)
 {
-	NMTestDevice *self = NM_TEST_DEVICE (object);
+	g_object_class->finalize (object);
+}
 
-	g_free (self->hwaddr);
-	g_free (self->hwaddr_bytes);
-
-	G_OBJECT_CLASS (nm_test_device_parent_class)->finalize (object);
+static guint
+get_hw_address_length (NMDevice *dev, gboolean *out_permanent)
+{
+	if (out_permanent)
+		*out_permanent = TRUE;
+	return ETH_ALEN;
 }
 
 static void
 nm_test_device_class_init (NMTestDeviceClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
+	g_object_class = g_type_class_peek (G_TYPE_OBJECT);
+
+	object_class->constructor = constructor;
+	object_class->constructed = constructed;
+	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	device_class->get_hw_address_length = get_hw_address_length;
 }
 
-static gboolean
-spec_match_list (NMConfigDevice *device, const GSList *specs)
-{
-	NMTestDevice *self = NM_TEST_DEVICE (device);
-	const GSList *iter;
-	const char *spec;
-
-	for (iter = specs; iter; iter = iter->next) {
-		spec = iter->data;
-		if (g_str_has_prefix (spec, "mac:") && !strcmp (spec + 4, self->hwaddr))
-			return TRUE;
-	}
-	return FALSE;
-}
-
-static const guint8 *
-get_hw_address (NMConfigDevice *device, guint *out_len)
-{
-	NMTestDevice *self = NM_TEST_DEVICE (device);
-
-	if (out_len)
-		*out_len = ETH_ALEN;
-	return self->hwaddr_bytes;
-}
-
-static void
-nm_test_device_config_device_interface_init (NMConfigDeviceInterface *iface)
-{
-	iface->spec_match_list = spec_match_list;
-	iface->get_hw_address = get_hw_address;
-}
-
-NMTestDevice *
+NMDevice *
 nm_test_device_new (const char *hwaddr)
 {
-	NMTestDevice *self = g_object_new (NM_TYPE_TEST_DEVICE, NULL);
-
-	self->hwaddr = g_strdup (hwaddr);
-	self->hwaddr_bytes = g_malloc (ETH_ALEN);
-	nm_utils_hwaddr_aton (hwaddr, ARPHRD_ETHER, self->hwaddr_bytes);
-
-	return self;
+	return g_object_new (NM_TYPE_TEST_DEVICE,
+	                     NM_DEVICE_IFACE, "dummy:",
+	                     NM_DEVICE_HW_ADDRESS, hwaddr,
+	                     NULL);
 }
