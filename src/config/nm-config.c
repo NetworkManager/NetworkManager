@@ -185,6 +185,9 @@ nm_config_get_ignore_carrier (NMConfig *config, NMDevice *device)
 	int i;
 	gboolean match;
 
+	if (!priv->ignore_carrier)
+		return FALSE;
+
 	for (i = 0; priv->ignore_carrier[i]; i++)
 		specs = g_slist_prepend (specs, priv->ignore_carrier[i]);
 
