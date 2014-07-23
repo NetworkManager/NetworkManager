@@ -75,5 +75,5 @@ EXTRA_DIST = test-secret-agent.py
 
 ###########################################
 
-TESTS = test-dhcp-options test-ip4-config test-ip6-config test-dcb test-resolvconf-capture test-general test-general-with-expect
+TESTS = test-ip4-config test-ip6-config test-dcb test-resolvconf-capture test-general test-general-with-expect
 
