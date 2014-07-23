@@ -30,6 +30,7 @@
 #include "nm-types.h"
 #include "nm-connection.h"
 #include "nm-rfkill-manager.h"
+#include "NetworkManagerUtils.h"
 
 /* Properties */
 #define NM_DEVICE_UDI              "udi"
@@ -55,12 +56,13 @@
 #define NM_DEVICE_AVAILABLE_CONNECTIONS "available-connections"
 #define NM_DEVICE_PHYSICAL_PORT_ID "physical-port-id"
 #define NM_DEVICE_MTU              "mtu"
-#define NM_DEVICE_TYPE_DESC        "type-desc"    /* Internal only */
-#define NM_DEVICE_RFKILL_TYPE      "rfkill-type"  /* Internal only */
-#define NM_DEVICE_IFINDEX          "ifindex"      /* Internal only */
-#define NM_DEVICE_IS_MASTER        "is-master"    /* Internal only */
-#define NM_DEVICE_MASTER           "master"       /* Internal only */
-#define NM_DEVICE_HW_ADDRESS       "hw-address"   /* Internal only */
+#define NM_DEVICE_HW_ADDRESS       "hw-address"
+
+#define NM_DEVICE_TYPE_DESC        "type-desc"      /* Internal only */
+#define NM_DEVICE_RFKILL_TYPE      "rfkill-type"    /* Internal only */
+#define NM_DEVICE_IFINDEX          "ifindex"        /* Internal only */
+#define NM_DEVICE_IS_MASTER        "is-master"      /* Internal only */
+#define NM_DEVICE_MASTER           "master"         /* Internal only */
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
 /* Internal signals */
@@ -115,10 +117,10 @@ typedef struct {
 	/* Carrier state (IFF_LOWER_UP) */
 	void            (*carrier_changed) (NMDevice *, gboolean carrier);
 
-	void        (* update_hw_address) (NMDevice *self);
 	void        (* update_permanent_hw_address) (NMDevice *self);
 	void        (* update_initial_hw_address) (NMDevice *self);
-	guint       (* get_hw_address_length) (NMDevice *self, gboolean *out_permanent);
+
+	gboolean    (* get_ip_iface_identifier) (NMDevice *self, NMUtilsIPv6IfaceId *out_iid);
 
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 

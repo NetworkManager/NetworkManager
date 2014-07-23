@@ -3,6 +3,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/src/logging \
+	-I${top_srcdir}/src/platform \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/devices/wifi \
 	-I$(top_builddir)/src \

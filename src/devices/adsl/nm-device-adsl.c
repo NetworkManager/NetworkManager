@@ -142,9 +142,6 @@ set_nas_iface (NMDeviceAdsl *self, int idx, const char *name)
 
 	g_warn_if_fail (priv->nas_ifname == NULL);
 	priv->nas_ifname = g_strdup (name);
-
-	/* Update NAS interface's MAC address */
-	nm_device_update_hw_address (NM_DEVICE (self));
 }
 
 static gboolean
@@ -482,20 +479,9 @@ deactivate (NMDevice *device)
 		priv->nas_ifindex = -1;
 	g_free (priv->nas_ifname);
 	priv->nas_ifname = NULL;
-
-	/* Poke NMDevice to notice that our hw_address is no longer valid */
-	nm_device_update_hw_address (NM_DEVICE (self));
 }
 
 /**************************************************************/
-
-static guint
-get_hw_address_length (NMDevice *device, gboolean *out_permanent)
-{
-	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (device);
-
-	return priv->nas_ifname ? ETH_ALEN : 0;
-}
 
 static gboolean
 carrier_update_cb (gpointer user_data)
@@ -629,7 +615,6 @@ nm_device_adsl_class_init (NMDeviceAdslClass *klass)
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 
-	parent_class->get_hw_address_length = get_hw_address_length;
 	parent_class->act_stage2_config = act_stage2_config;
 	parent_class->act_stage3_ip4_config_start = act_stage3_ip4_config_start;
 	parent_class->deactivate = deactivate;

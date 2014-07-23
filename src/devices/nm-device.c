@@ -315,7 +315,7 @@ static gboolean nm_device_master_add_slave (NMDevice *dev, NMDevice *slave, gboo
 static void nm_device_slave_notify_enslave (NMDevice *dev, gboolean success);
 static void nm_device_slave_notify_release (NMDevice *dev, NMDeviceStateReason reason);
 
-static void addrconf6_start_with_link_ready (NMDevice *self);
+static gboolean addrconf6_start_with_link_ready (NMDevice *self);
 
 static gboolean nm_device_get_default_unmanaged (NMDevice *device);
 
@@ -323,6 +323,8 @@ static void _set_state_full (NMDevice *device,
                              NMDeviceState state,
                              NMDeviceStateReason reason,
                              gboolean quitting);
+
+static void nm_device_update_hw_address (NMDevice *dev);
 
 /***********************************************************/
 
@@ -571,6 +573,38 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 	if (g_strcmp0 (old_ip_iface, priv->ip_iface))
 		g_object_notify (G_OBJECT (self), NM_DEVICE_IP_IFACE);
 	g_free (old_ip_iface);
+}
+
+static gboolean
+get_ip_iface_identifier (NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
+{
+	NMLinkType link_type;
+	const guint8 *hwaddr = NULL;
+	size_t hwaddr_len = 0;
+	int ifindex;
+	gboolean success;
+
+	/* If we get here, we *must* have a kernel netdev, which implies an ifindex */
+	ifindex = nm_device_get_ip_ifindex (self);
+	g_assert (ifindex);
+
+	link_type = nm_platform_link_get_type (ifindex);
+	g_return_val_if_fail (link_type > NM_LINK_TYPE_UNKNOWN, 0);
+
+	hwaddr = nm_platform_link_get_address (ifindex, &hwaddr_len);
+	if (!hwaddr_len)
+		return FALSE;
+
+	success = nm_utils_get_ipv6_interface_identifier (link_type,
+	                                                  hwaddr,
+	                                                  hwaddr_len,
+	                                                  out_iid);
+	if (!success) {
+		nm_log_warn (LOGD_HW, "(%s): failed to generate interface identifier "
+		             "for link type %u hwaddr_len %zu",
+		             nm_device_get_ip_iface (self), link_type, hwaddr_len);
+	}
+	return success;
 }
 
 const char *
@@ -2751,6 +2785,8 @@ dhcp4_start (NMDevice *self,
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingIP4Config *s_ip4;
+	const guint8 *hw_addr;
+	size_t hw_addr_len = 0;
 	GByteArray *tmp = NULL;
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -2760,9 +2796,10 @@ dhcp4_start (NMDevice *self,
 		g_object_unref (priv->dhcp4_config);
 	priv->dhcp4_config = nm_dhcp4_config_new ();
 
-	if (priv->hw_addr_len) {
-		tmp = g_byte_array_sized_new (priv->hw_addr_len);
-		g_byte_array_append (tmp, priv->hw_addr, priv->hw_addr_len);
+	hw_addr = nm_platform_link_get_address (nm_device_get_ip_ifindex (self), &hw_addr_len);
+	if (hw_addr_len) {
+		tmp = g_byte_array_sized_new (hw_addr_len);
+		g_byte_array_append (tmp, hw_addr, hw_addr_len);
 	}
 
 	/* Begin DHCP on the interface */
@@ -3205,6 +3242,8 @@ dhcp6_start (NMDevice *self,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	GByteArray *tmp = NULL;
+	const guint8 *hw_addr;
+	size_t hw_addr_len = 0;
 
 	if (!connection) {
 		connection = nm_device_get_connection (self);
@@ -3225,9 +3264,10 @@ dhcp6_start (NMDevice *self,
 		priv->dhcp6_ip6_config = NULL;
 	}
 
-	if (priv->hw_addr_len) {
-		tmp = g_byte_array_sized_new (priv->hw_addr_len);
-		g_byte_array_append (tmp, priv->hw_addr, priv->hw_addr_len);
+	hw_addr = nm_platform_link_get_address (nm_device_get_ip_ifindex (self), &hw_addr_len);
+	if (hw_addr_len) {
+		tmp = g_byte_array_sized_new (hw_addr_len);
+		g_byte_array_append (tmp, hw_addr, hw_addr_len);
 	}
 
 	priv->dhcp6_client = nm_dhcp_manager_start_ip6 (nm_dhcp_manager_get (),
@@ -3356,9 +3396,12 @@ linklocal6_complete (NMDevice *self)
 	nm_log_dbg (LOGD_DEVICE, "[%s] linklocal6: waiting for link-local addresses successful, continue with method %s",
 	             nm_device_get_iface (self), method);
 
-	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0)
-		addrconf6_start_with_link_ready (self);
-	else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)
+	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_AUTO) == 0) {
+		if (!addrconf6_start_with_link_ready (self)) {
+			/* Time out IPv6 instead of failing the entire activation */
+			nm_device_activate_schedule_ip6_config_timeout (self);
+		}
+	} else if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)
 		nm_device_activate_schedule_ip6_config_result (self);
 	else
 		g_return_if_fail (FALSE);
@@ -3597,6 +3640,31 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *device
 }
 
 static gboolean
+addrconf6_start_with_link_ready (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMUtilsIPv6IfaceId iid;
+
+	g_assert (priv->rdisc);
+
+	if (!NM_DEVICE_GET_CLASS (self)->get_ip_iface_identifier (self, &iid)) {
+		nm_log_warn (LOGD_IP6, "(%s): failed to get interface identifier", nm_device_get_ip_iface (self));
+		return FALSE;
+	}
+	nm_rdisc_set_iid (priv->rdisc, iid);
+
+	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
+	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
+	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
+	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
+
+	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
+	                                                     G_CALLBACK (rdisc_config_changed), self);
+	nm_rdisc_start (priv->rdisc);
+	return TRUE;
+}
+
+static NMActStageReturn
 addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
@@ -3627,34 +3695,14 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 
 	/* ensure link local is ready... */
 	ret = linklocal6_start (self);
-	if (ret == NM_ACT_STAGE_RETURN_SUCCESS)
-		addrconf6_start_with_link_ready (self);
-	else
-		g_return_val_if_fail (ret == NM_ACT_STAGE_RETURN_POSTPONE, TRUE);
+	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
+		/* success; wait for the LL address to show up */
+		return TRUE;
+	}
 
-	return TRUE;
-}
-
-static void
-addrconf6_start_with_link_ready (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	g_assert (priv->rdisc);
-
-	/* FIXME: what if interface has no lladdr, like PPP? */
-	if (priv->hw_addr_len)
-		nm_rdisc_set_lladdr (priv->rdisc, (const char *) priv->hw_addr, priv->hw_addr_len);
-
-	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
-	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
-
-	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
-	                                                     G_CALLBACK (rdisc_config_changed), self);
-
-	nm_rdisc_start (priv->rdisc);
+	/* success; already have the LL address; kick off router discovery */
+	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
+	return addrconf6_start_with_link_ready (self);
 }
 
 static void
@@ -6923,12 +6971,6 @@ nm_device_get_state (NMDevice *device)
 /***********************************************************/
 /* NMConfigDevice interface related stuff */
 
-static guint
-nm_device_get_hw_address_length (NMDevice *dev, gboolean *out_permanent)
-{
-	return NM_DEVICE_GET_CLASS (dev)->get_hw_address_length (dev, out_permanent);
-}
-
 const guint8 *
 nm_device_get_hw_address (NMDevice *dev, guint *out_len)
 {
@@ -6940,68 +6982,46 @@ nm_device_get_hw_address (NMDevice *dev, guint *out_len)
 	if (out_len)
 		*out_len = priv->hw_addr_len;
 
-	if (priv->hw_addr_len == 0)
-		return NULL;
-	else
-		return priv->hw_addr;
+	return priv->hw_addr_len ? priv->hw_addr : NULL;
 }
 
-gboolean
+static void
 nm_device_update_hw_address (NMDevice *dev)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (dev);
-	gboolean changed = FALSE, permanent = FALSE;
+	int ifindex = nm_device_get_ifindex (dev);
+	const char *iface = nm_device_get_iface (dev);
+	const guint8 *hwaddr;
+	gsize hwaddrlen = 0;
 
-	priv->hw_addr_len = nm_device_get_hw_address_length (dev, &permanent);
+	if (ifindex <= 0)
+		return;
 
-	/* If the address can't be changed, don't bother trying */
-	if (permanent)
-		return FALSE;
+	hwaddr = nm_platform_link_get_address (ifindex, &hwaddrlen);
+	g_assert (hwaddrlen <= sizeof (priv->hw_addr));
+	if (hwaddrlen) {
+		if (hwaddrlen != priv->hw_addr_len || memcmp (priv->hw_addr, hwaddr, hwaddrlen)) {
+			memcpy (priv->hw_addr, hwaddr, hwaddrlen);
 
-	if (priv->hw_addr_len) {
-		int ifindex = nm_device_get_ip_ifindex (dev);
-		gsize addrlen;
-		const guint8 *binaddr;
+			if (nm_logging_enabled (LOGL_DEBUG, LOGD_HW | LOGD_DEVICE)) {
+				char *addrstr = nm_utils_hwaddr_ntoa_len (hwaddr, hwaddrlen);
 
-		g_return_val_if_fail (ifindex > 0, FALSE);
-
-		binaddr = nm_platform_link_get_address (ifindex, &addrlen);
-
-		if (addrlen != priv->hw_addr_len) {
-			nm_log_err (LOGD_HW | LOGD_DEVICE,
-			            "(%s): hardware address is wrong length (got %zd, expected %d)",
-			            nm_device_get_iface (dev), addrlen, priv->hw_addr_len);
-		} else {
-			changed = !!memcmp (priv->hw_addr, binaddr, addrlen);
-			if (changed) {
-				char *addrstr = nm_utils_hwaddr_ntoa_len (binaddr, priv->hw_addr_len);
-
-				memcpy (priv->hw_addr, binaddr, addrlen);
-				nm_log_dbg (LOGD_HW | LOGD_DEVICE,
-				            "(%s): hardware address is %s",
-				            nm_device_get_iface (dev), addrstr);
+				nm_log_dbg (LOGD_HW | LOGD_DEVICE, "(%s): hardware address now %s", iface, addrstr);
 				g_free (addrstr);
-				g_object_notify (G_OBJECT (dev), NM_DEVICE_HW_ADDRESS);
 			}
+			g_object_notify (G_OBJECT (dev), NM_DEVICE_HW_ADDRESS);
 		}
 	} else {
-		int i;
-
-		/* hw_addr_len is now 0; see if hw_addr was already empty */
-		for (i = 0; i < sizeof (priv->hw_addr) && !changed; i++) {
-			if (priv->hw_addr[i])
-				changed = TRUE;
-		}
-		if (changed) {
+		/* Invalid or no hardware address */
+		if (priv->hw_addr_len != 0) {
 			memset (priv->hw_addr, 0, sizeof (priv->hw_addr));
 			nm_log_dbg (LOGD_HW | LOGD_DEVICE,
 			            "(%s): previous hardware address is no longer valid",
-			            nm_device_get_iface (dev));
+			            iface);
 			g_object_notify (G_OBJECT (dev), NM_DEVICE_HW_ADDRESS);
 		}
 	}
-
-	return changed;
+	priv->hw_addr_len = hwaddrlen;
 }
 
 gboolean
@@ -7105,17 +7125,6 @@ spec_match_list (NMDevice *device, const GSList *specs)
 		matched = nm_match_spec_interface_name (specs, nm_device_get_iface (device));
 
 	return matched;
-}
-
-static guint
-get_hw_address_length (NMDevice *dev, gboolean *out_permanent)
-{
-	size_t len;
-
-	if (nm_platform_link_get_address (nm_device_get_ip_ifindex (dev), &len))
-		return len;
-	else
-		return 0;
 }
 
 /***********************************************************/
@@ -7364,7 +7373,8 @@ set_property (GObject *object, guint prop_id,
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
 	NMPlatformLink *platform_device;
-	const char *hw_addr;
+	const char *hw_addr, *p;
+	guint count;
  
 	switch (prop_id) {
 	case PROP_PLATFORM_DEVICE:
@@ -7443,16 +7453,21 @@ set_property (GObject *object, guint prop_id,
 		priv->is_master = g_value_get_boolean (value);
 		break;
 	case PROP_HW_ADDRESS:
-		priv->hw_addr_len = nm_device_get_hw_address_length (NM_DEVICE (object), NULL);
+		/* construct only */
+		p = hw_addr = g_value_get_string (value);
 
-		hw_addr = g_value_get_string (value);
-		if (!hw_addr)
-			break;
-		if (priv->hw_addr_len == 0) {
-			g_warn_if_fail (*hw_addr == '\0');
+		/* Hardware address length is the number of ':' plus 1 */
+		count = 1;
+		while (p && *p) {
+			if (*p++ == ':')
+				count++;
+		}
+		if (count < ETH_ALEN || count > NM_UTILS_HWADDR_LEN_MAX) {
+			g_warn_if_fail (!hw_addr || *hw_addr == '\0');
 			break;
 		}
 
+		priv->hw_addr_len = count;
 		if (!nm_utils_hwaddr_aton_len (hw_addr, priv->hw_addr, priv->hw_addr_len)) {
 			g_warning ("Could not parse hw-address '%s'", hw_addr);
 			memset (priv->hw_addr, 0, sizeof (priv->hw_addr));
@@ -7633,7 +7648,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->bring_up = bring_up;
 	klass->take_down = take_down;
 	klass->carrier_changed = carrier_changed;
-	klass->get_hw_address_length = get_hw_address_length;
+	klass->get_ip_iface_identifier = get_ip_iface_identifier;
 
 	/* Properties */
 	g_object_class_install_property

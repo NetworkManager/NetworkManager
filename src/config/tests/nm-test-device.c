@@ -52,10 +52,6 @@ constructor (GType type,
 static void
 constructed (GObject *object)
 {
-	NMDevice *device = NM_DEVICE (object);
-
-	nm_device_update_hw_address (device);
-
 	g_object_class->constructed (object);
 }
 
@@ -71,19 +67,10 @@ finalize (GObject *object)
 	g_object_class->finalize (object);
 }
 
-static guint
-get_hw_address_length (NMDevice *dev, gboolean *out_permanent)
-{
-	if (out_permanent)
-		*out_permanent = TRUE;
-	return ETH_ALEN;
-}
-
 static void
 nm_test_device_class_init (NMTestDeviceClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	g_object_class = g_type_class_peek (G_TYPE_OBJECT);
 
@@ -91,8 +78,6 @@ nm_test_device_class_init (NMTestDeviceClass *klass)
 	object_class->constructed = constructed;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
-
-	device_class->get_hw_address_length = get_hw_address_length;
 }
 
 NMDevice *

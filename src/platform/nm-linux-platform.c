@@ -2527,13 +2527,23 @@ link_get_address (NMPlatform *platform, int ifindex, size_t *length)
 {
 	auto_nl_object struct rtnl_link *rtnllink = link_get (platform, ifindex);
 	struct nl_addr *nladdr;
+	size_t l = 0;
+	gconstpointer a = NULL;
 
-	nladdr = rtnllink ? rtnl_link_get_addr (rtnllink) : NULL;
+	if (rtnllink &&
+	    (nladdr = rtnl_link_get_addr (rtnllink))) {
+		l = nl_addr_get_len (nladdr);
+		if (l > NM_UTILS_HWADDR_LEN_MAX) {
+			if (length)
+				*length = 0;
+			g_return_val_if_reached (NULL);
+		} else if (l > 0)
+			a = nl_addr_get_binary_addr (nladdr);
+	}
 
 	if (length)
-		*length = nladdr ? nl_addr_get_len (nladdr) : 0;
-
-	return nladdr ? nl_addr_get_binary_addr (nladdr) : NULL;
+		*length = l;
+	return a;
 }
 
 static gboolean

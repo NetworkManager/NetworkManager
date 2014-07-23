@@ -129,9 +129,8 @@ gboolean nm_utils_wifi_is_channel_valid (guint32 channel, const char *band);
 /**
  * NM_UTILS_HWADDR_LEN_MAX:
  *
- * The maximum length of a hardware address of a type known by
- * nm_utils_hwaddr_len() or nm_utils_hwaddr_aton(). This can be used
- * as the size of the buffer passed to nm_utils_hwaddr_aton().
+ * The maximum length of hardware addresses handled by NetworkManager itself,
+ * nm_utils_hwaddr_len(), and nm_utils_hwaddr_aton().
  */
 #define NM_UTILS_HWADDR_LEN_MAX 20 /* INFINIBAND_ALEN */
 

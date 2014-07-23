@@ -111,15 +111,6 @@ guint32 nm_device_bt_get_capabilities (NMDeviceBt *self)
 	return NM_DEVICE_BT_GET_PRIVATE (self)->capabilities;
 }
 
-static guint
-get_hw_address_length (NMDevice *device, gboolean *out_permanent)
-{
-	/* HW address is the Bluetooth HW address of the remote device */
-	if (out_permanent)
-		*out_permanent = TRUE;   /* the bdaddr of the remote device will never change */
-	return ETH_ALEN;
-}
-
 static guint32
 get_connection_bt_type (NMConnection *connection)
 {
@@ -1207,7 +1198,6 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	device_class->get_hw_address_length = get_hw_address_length;
 	device_class->can_auto_connect = can_auto_connect;
 	device_class->deactivate = deactivate;
 	device_class->act_stage2_config = act_stage2_config;
