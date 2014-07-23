@@ -51,7 +51,7 @@
  * @minor: minor version (e.g. 2 for version 1.2.5)
  * @micro: micro version (e.g. 5 for version 1.2.5)
  *
- * Returns %TRUE if the version of the NetworkManager header files
+ * Returns: %TRUE if the version of the NetworkManager header files
  * is the same as or newer than the passed-in version.
  */
 #define NM_CHECK_VERSION(major,minor,micro)                         \
