@@ -29,7 +29,9 @@
 #include "nm-activation-request.h"
 #include "nm-connection.h"
 #include "nm-ip4-config.h"
+#include "nm-ip6-config.h"
 #include "nm-pppd-plugin.h"
+#include "NetworkManagerUtils.h"
 
 #define NM_TYPE_PPP_MANAGER            (nm_ppp_manager_get_type ())
 #define NM_PPP_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PPP_MANAGER, NMPPPManager))
@@ -50,6 +52,10 @@ typedef struct {
 	/* Signals */
 	void (*state_changed) (NMPPPManager *manager, NMPPPStatus status);
 	void (*ip4_config) (NMPPPManager *manager, const char *iface, NMIP4Config *config);
+	void (*ip6_config) (NMPPPManager *manager,
+	                    const char *iface,
+	                    const NMUtilsIPv6IfaceId *iid,
+	                    NMIP6Config *config);
 	void (*stats) (NMPPPManager *manager, guint32 in_bytes, guint32 out_bytes);
 } NMPPPManagerClass;
 

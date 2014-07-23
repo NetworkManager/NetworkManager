@@ -11,6 +11,7 @@ global:
 	nm_modem_get_control_port;
 	nm_modem_get_data_port;
 	nm_modem_get_driver;
+	nm_modem_get_iid;
 	nm_modem_get_path;
 	nm_modem_get_secrets;
 	nm_modem_get_state;

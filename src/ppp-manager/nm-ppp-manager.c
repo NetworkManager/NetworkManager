@@ -67,6 +67,10 @@ static gboolean impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
                                                  GHashTable *config,
                                                  GError **err);
 
+static gboolean impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
+                                                 GHashTable *config,
+                                                 GError **err);
+
 #include "nm-ppp-manager-glue.h"
 
 static void _ppp_cleanup  (NMPPPManager *manager);
@@ -101,6 +105,7 @@ G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, G_TYPE_OBJECT)
 enum {
 	STATE_CHANGED,
 	IP4_CONFIG,
+	IP6_CONFIG,
 	STATS,
 
 	LAST_SIGNAL
@@ -132,6 +137,7 @@ nm_ppp_manager_error_quark (void)
 static void
 nm_ppp_manager_init (NMPPPManager *manager)
 {
+	NM_PPP_MANAGER_GET_PRIVATE (manager)->monitor_fd = -1;
 }
 
 static void
@@ -245,6 +251,14 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 		              G_TYPE_STRING,
 		              G_TYPE_OBJECT);
 
+	signals[IP6_CONFIG] =
+		g_signal_new ("ip6-config",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMPPPManagerClass, ip6_config),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_OBJECT);
+
 	signals[STATS] =
 		g_signal_new ("stats",
 		              G_OBJECT_CLASS_TYPE (object_class),
@@ -300,8 +314,12 @@ monitor_stats (NMPPPManager *manager)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 
+	/* already monitoring */
+	if (priv->monitor_fd >= 0)
+		return;
+
 	priv->monitor_fd = socket (AF_INET, SOCK_DGRAM, 0);
-	if (priv->monitor_fd > 0) {
+	if (priv->monitor_fd >= 0) {
 		g_warn_if_fail (priv->monitor_id == 0);
 		if (priv->monitor_id)
 			g_source_remove (priv->monitor_id);
@@ -499,19 +517,51 @@ static gboolean impl_ppp_manager_set_state (NMPPPManager *manager,
 }
 
 static gboolean
+set_ip_config_common (NMPPPManager *self,
+                      GHashTable *hash,
+                      const char *iface_prop,
+                      guint32 *out_mtu)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
+	NMConnection *connection;
+	NMSettingPPP *s_ppp;
+	GValue *val;
+
+	val = g_hash_table_lookup (hash, iface_prop);
+	if (!val || !G_VALUE_HOLDS_STRING (val)) {
+		nm_log_err (LOGD_PPP, "no interface received!");
+		return FALSE;
+	}
+	if (priv->ip_iface == NULL)
+		priv->ip_iface = g_value_dup_string (val);
+
+	/* Got successful IP config; obviously the secrets worked */
+	connection = nm_act_request_get_connection (priv->act_req);
+	g_assert (connection);
+	g_object_set_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES, NULL);
+
+	/* Get any custom MTU */
+	s_ppp = nm_connection_get_setting_ppp (connection);
+	if (s_ppp && out_mtu)
+		*out_mtu = nm_setting_ppp_get_mtu (s_ppp);
+
+	monitor_stats (self);
+	return TRUE;
+}
+
+static gboolean
 impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
                                  GHashTable *config_hash,
                                  GError **err)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-	NMConnection *connection;
-	NMSettingPPP *s_ppp;
 	NMIP4Config *config;
 	NMPlatformIP4Address address;
 	GValue *val;
 	int i;
+	guint32 mtu = 0;
 
-	nm_log_info (LOGD_PPP, "PPP manager(IP Config Get) reply received.");
+	nm_log_info (LOGD_PPP, "PPP manager (IPv4 Config Get) reply received.");
 
 	remove_timeout_handler (manager);
 
@@ -557,35 +607,89 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 			nm_ip4_config_add_wins (config, g_array_index (wins, guint, i));
 	}
 
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_INTERFACE);
-	if (!val || !G_VALUE_HOLDS_STRING (val)) {
-		nm_log_err (LOGD_PPP, "no interface received!");
+	if (!set_ip_config_common (manager, config_hash, NM_PPP_IP4_CONFIG_INTERFACE, &mtu))
 		goto out;
-	}
-	priv->ip_iface = g_value_dup_string (val);
 
-	/* Got successful IP4 config; obviously the secrets worked */
-	connection = nm_act_request_get_connection (priv->act_req);
-	g_assert (connection);
-	g_object_set_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES, NULL);
-
-	/* Merge in custom MTU */
-	s_ppp = nm_connection_get_setting_ppp (connection);
-	if (s_ppp) {
-		guint32 mtu = nm_setting_ppp_get_mtu (s_ppp);
-
-		if (mtu)
-			nm_ip4_config_set_mtu (config, mtu);
-	}
+	if (mtu)
+		nm_ip4_config_set_mtu (config, mtu);
 
 	/* Push the IP4 config up to the device */
 	g_signal_emit (manager, signals[IP4_CONFIG], 0, priv->ip_iface, config);
 
-	monitor_stats (manager);
-
- out:
+out:
 	g_object_unref (config);
+	return TRUE;
+}
 
+/* Converts the named Interface Identifier item to an IPv6 LL address and
+ * returns the IID.
+ */
+static gboolean
+iid_value_to_ll6_addr (GHashTable *hash,
+                       const char *prop,
+                       struct in6_addr *out_addr,
+                       NMUtilsIPv6IfaceId *out_iid)
+{
+	GValue *val;
+	guint64 iid;
+
+	val = g_hash_table_lookup (hash, prop);
+	if (!val || !G_VALUE_HOLDS (val, G_TYPE_UINT64)) {
+		nm_log_dbg (LOGD_PPP, "pppd plugin property '%s' missing or not a uint64", prop);
+		return FALSE;
+	}
+
+	iid = g_value_get_uint64 (val);
+	g_return_val_if_fail (iid != 0, FALSE);
+
+	/* Construct an IPv6 LL address from the interface identifier.  See
+	 * http://tools.ietf.org/html/rfc4291#section-2.5.1 (IPv6) and
+	 * http://tools.ietf.org/html/rfc5072#section-4.1 (IPv6 over PPP).
+	 */
+	memset (out_addr->s6_addr, 0, sizeof (out_addr->s6_addr));
+	out_addr->s6_addr16[0] = htons (0xfe80);
+	memcpy (out_addr->s6_addr + 8, &iid, sizeof (iid));
+	if (out_iid)
+		nm_utils_ipv6_interface_identfier_get_from_addr (out_iid, out_addr);
+	return TRUE;
+}
+
+static gboolean
+impl_ppp_manager_set_ip6_config (NMPPPManager *manager,
+                                 GHashTable *hash,
+                                 GError **err)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+	NMIP6Config *config;
+	NMPlatformIP6Address addr;
+	struct in6_addr a;
+	NMUtilsIPv6IfaceId iid = NM_UTILS_IPV6_IFACE_ID_INIT;
+
+	nm_log_info (LOGD_PPP, "PPP manager (IPv6 Config Get) reply received.");
+
+	remove_timeout_handler (manager);
+
+	config = nm_ip6_config_new ();
+
+	memset (&addr, 0, sizeof (addr));
+	addr.plen = 64;
+
+	if (iid_value_to_ll6_addr (hash, NM_PPP_IP6_CONFIG_PEER_IID, &a, NULL)) {
+		nm_ip6_config_set_gateway (config, &a);
+		addr.peer_address = a;
+	}
+
+	if (iid_value_to_ll6_addr (hash, NM_PPP_IP6_CONFIG_OUR_IID, &addr.address, &iid)) {
+		nm_ip6_config_add_address (config, &addr);
+
+		if (set_ip_config_common (manager, hash, NM_PPP_IP6_CONFIG_INTERFACE, NULL)) {
+			/* Push the IPv6 config and interface identifier up to the device */
+			g_signal_emit (manager, signals[IP6_CONFIG], 0, priv->ip_iface, &iid, config);
+		}
+	} else
+		nm_log_err (LOGD_PPP, "invalid IPv6 address received!");
+
+	g_object_unref (config);
 	return TRUE;
 }
 
@@ -1127,11 +1231,11 @@ _ppp_cleanup (NMPPPManager *manager)
 		priv->monitor_id = 0;
 	}
 
-	if (priv->monitor_fd) {
+	if (priv->monitor_fd >= 0) {
 		/* Get the stats one last time */
 		monitor_cb (manager);
 		close (priv->monitor_fd);
-		priv->monitor_fd = 0;
+		priv->monitor_fd = -1;
 	}
 
 	if (priv->ppp_timeout_handler) {

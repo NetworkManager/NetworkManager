@@ -42,25 +42,50 @@ G_BEGIN_DECLS
 #define NM_MODEM_DRIVER       "driver"
 #define NM_MODEM_CONTROL_PORT "control-port"
 #define NM_MODEM_DATA_PORT    "data-port"
-#define NM_MODEM_IP_METHOD    "ip-method"
+#define NM_MODEM_IP4_METHOD   "ip4-method"
+#define NM_MODEM_IP6_METHOD   "ip6-method"
 #define NM_MODEM_IP_TIMEOUT   "ip-timeout"
 #define NM_MODEM_STATE        "state"
 #define NM_MODEM_DEVICE_ID    "device-id"
 #define NM_MODEM_SIM_ID       "sim-id"
+#define NM_MODEM_IP_TYPES     "ip-types"   /* Supported IP types */
 
 /* Signals */
 #define NM_MODEM_PPP_STATS         "ppp-stats"
 #define NM_MODEM_PPP_FAILED        "ppp-failed"
 #define NM_MODEM_PREPARE_RESULT    "prepare-result"
 #define NM_MODEM_IP4_CONFIG_RESULT "ip4-config-result"
+#define NM_MODEM_IP6_CONFIG_RESULT "ip6-config-result"
 #define NM_MODEM_AUTH_REQUESTED    "auth-requested"
 #define NM_MODEM_AUTH_RESULT       "auth-result"
 #define NM_MODEM_REMOVED           "removed"
 #define NM_MODEM_STATE_CHANGED     "state-changed"
 
-#define MM_MODEM_IP_METHOD_PPP    0
-#define MM_MODEM_IP_METHOD_STATIC 1
-#define MM_MODEM_IP_METHOD_DHCP   2
+typedef enum {
+	NM_MODEM_IP_METHOD_UNKNOWN = 0,
+	NM_MODEM_IP_METHOD_PPP,
+	NM_MODEM_IP_METHOD_STATIC,
+	NM_MODEM_IP_METHOD_AUTO,  /* DHCP and/or SLAAC */
+} NMModemIPMethod;
+
+/**
+ * NMModemIPType:
+ * @NM_MODEM_IP_TYPE_UNKNOWN: unknown or no IP support
+ * @NM_MODEM_IP_TYPE_IPV4: IPv4-only bearers are supported
+ * @NM_MODEM_IP_TYPE_IPV6: IPv6-only bearers are supported
+ * @NM_MODEM_IP_TYPE_IPV4V6: dual-stack IPv4 + IPv6 bearers are supported
+ *
+ * Indicates what IP protocols the modem supports for an IP bearer.  Any
+ * combination of flags is possible.  For example, (%NM_MODEM_IP_TYPE_IPV4 |
+ * %NM_MODEM_IP_TYPE_IPV6) indicates that the modem supports IPv4 and IPv6
+ * but not simultaneously on the same bearer.
+ */ 
+typedef enum {
+	NM_MODEM_IP_TYPE_UNKNOWN = 0x0,
+	NM_MODEM_IP_TYPE_IPV4 = 0x1,
+	NM_MODEM_IP_TYPE_IPV6 = 0x2,
+	NM_MODEM_IP_TYPE_IPV4V6 = 0x4
+} NMModemIPType;
 
 typedef enum {
 	NM_MODEM_ERROR_CONNECTION_NOT_GSM,      /*< nick=ConnectionNotGsm >*/
@@ -68,6 +93,7 @@ typedef enum {
 	NM_MODEM_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
 	NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
 	NM_MODEM_ERROR_INITIALIZATION_FAILED,   /*< nick=InitializationFailed >*/
+	NM_MODEM_ERROR_IP_CONFIG_INVALID,       /*< nick=IpConfigInvalid >*/
 } NMModemError;
 
 typedef enum {  /*< underscore_name=nm_modem_state >*/
@@ -122,6 +148,12 @@ typedef struct {
 	                                                    NMActRequest *req,
 	                                                    NMDeviceStateReason *reason);
 
+	/* Request the IP6 config; when the config returns the modem
+	 * subclass should emit the ip6_config_result signal.
+	 */
+	NMActStageReturn (*stage3_ip6_config_request) (NMModem *self,
+	                                               NMDeviceStateReason *reason);
+
 	void (*set_mm_enabled)                     (NMModem *self, gboolean enabled);
 
 	void (*disconnect)                         (NMModem *self, gboolean warn);
@@ -136,6 +168,10 @@ typedef struct {
 
 	void (*prepare_result)    (NMModem *self, gboolean success, NMDeviceStateReason reason);
 	void (*ip4_config_result) (NMModem *self, NMIP4Config *config, GError *error);
+	void (*ip6_config_result) (NMModem *self,
+	                           NMIP6Config *config,
+	                           gboolean do_slaac,
+	                           GError *error);
 
 	void (*auth_requested)    (NMModem *self);
 	void (*auth_result)       (NMModem *self, GError *error);
@@ -154,6 +190,7 @@ const char *nm_modem_get_uid          (NMModem *modem);
 const char *nm_modem_get_control_port (NMModem *modem);
 const char *nm_modem_get_data_port    (NMModem *modem);
 const char *nm_modem_get_driver       (NMModem *modem);
+gboolean    nm_modem_get_iid          (NMModem *modem, NMUtilsIPv6IfaceId *out_iid);
 
 gboolean    nm_modem_owns_port        (NMModem *modem, const char *iface);
 
@@ -182,8 +219,7 @@ NMActStageReturn nm_modem_stage3_ip4_config_start (NMModem *modem,
                                                    NMDeviceStateReason *reason);
 
 NMActStageReturn nm_modem_stage3_ip6_config_start (NMModem *modem,
-                                                   NMDevice *device,
-                                                   NMDeviceClass *device_class,
+                                                   NMActRequest *req,
                                                    NMDeviceStateReason *reason);
 
 void nm_modem_ip4_pre_commit (NMModem *modem, NMDevice *device, NMIP4Config *config);
@@ -209,8 +245,19 @@ void          nm_modem_set_state (NMModem *self,
 void          nm_modem_set_prev_state (NMModem *self, const char *reason);
 const char *  nm_modem_state_to_string (NMModemState state);
 
+NMModemIPType nm_modem_get_supported_ip_types (NMModem *self);
+
 /* For the modem-manager only */
 void          nm_modem_emit_removed (NMModem *self);
+
+NMModemIPType nm_modem_get_connection_ip_type (NMModem *self,
+                                               NMConnection *connection,
+                                               GError **error);
+
+/* For subclasses */
+void nm_modem_emit_ip6_config_result (NMModem *self,
+                                      NMIP6Config *config,
+                                      GError *error);
 
 G_END_DECLS
 
