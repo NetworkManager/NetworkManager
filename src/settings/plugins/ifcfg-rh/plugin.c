@@ -670,7 +670,7 @@ plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
 	char *hostname_eol;
 	gboolean ret;
 #if HAVE_SELINUX
-	security_context_t se_ctx_prev, se_ctx = NULL;
+	security_context_t se_ctx_prev = NULL, se_ctx = NULL;
 	struct stat file_stat = { .st_mode = 0 };
 
 	/* Get default context for HOSTNAME_FILE and set it for fscreate */
