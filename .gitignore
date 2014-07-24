@@ -114,6 +114,19 @@ valgrind-*.log
 /docs/libnm-util/libnm-util.types
 /docs/libnm-util/version.xml
 
+/docs/libnm/*.stamp
+/docs/libnm/html/
+/docs/libnm/tmpl/
+/docs/libnm/xml/
+/docs/libnm/libnm-*.txt
+/docs/libnm/libnm.args
+/docs/libnm/libnm.hierarchy
+/docs/libnm/libnm.interfaces
+/docs/libnm/libnm.prerequisites
+/docs/libnm/libnm.signals
+/docs/libnm/libnm.types
+/docs/libnm/version.xml
+
 /docs/api/version.xml
 /docs/api/settings-spec.html
 /docs/api/settings-spec.xml

@@ -880,6 +880,8 @@ docs/libnm-glib/Makefile
 docs/libnm-glib/version.xml
 docs/libnm-util/Makefile
 docs/libnm-util/version.xml
+docs/libnm/Makefile
+docs/libnm/version.xml
 NetworkManager.pc
 examples/Makefile
 examples/shell/Makefile
