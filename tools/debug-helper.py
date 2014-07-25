@@ -46,7 +46,7 @@ if args.do_set_mm_logging:
 if args.do_set_wpa_logging:
     print "Setting wpa_supplicant log level to '" + args.do_set_wpa_logging + "'"
 
-    if 'debug' in args.do_set_wpa_logging or 'msgdump' in args.do_set_wpa_logging: 
+    if 'debug' in args.do_set_wpa_logging or 'msgdump' in args.do_set_wpa_logging:
 	print "Enabling timestamps for wpasupplicant debugging logs"
         use_timestamps = dbus.Boolean(True, variant_level=1)
     else:
