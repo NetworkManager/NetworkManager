@@ -1,3 +1,5 @@
 EXTRA_DIST = \
+	check-exports.sh \
 	doc-generator.xsl \
-	check-exports.sh
+	run-test-valgrind.sh \
+	test-sudo-wrapper.sh
