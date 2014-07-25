@@ -138,37 +138,35 @@ fi
 # generate the clean dir
 $FEDPKG $DIST prep || die "error while \`$FEDPKG$DIST prep\`"
 
-if [[ "x$(ls -1d ./NetworkManager-[0-9].*/ 2>/dev/null)" != x && -f NetworkManager.spec ]]; then
-    DIRNAME="$(basename "$(ls -1d ./NetworkManager-[0-9].*/ || die "could not find directory")")"
-    BUILD_NETWORMANAGER=x
-    SPEC=NetworkManager.spec
-elif [[ "x$(ls -1d ./libnl-[0-9].*/ 2>/dev/null)" != x && -f libnl3.spec ]]; then
-    DIRNAME="$(basename "$(ls -1d ./libnl-[0-9].*/ || die "could not find directory")")"
-    BUILD_LIBNL3=x
-    SPEC=libnl3.spec
-elif [[ "x$(ls -1d ./NetworkManager-openvpn-[0-9].*/ 2>/dev/null)" != x && -f NetworkManager-openvpn.spec ]]; then
-    DIRNAME="$(basename "$(ls -1d ./NetworkManager-openvpn-[0-9].*/ || die "could not find directory")")"
-    BUILD_NETWORMANAGER_OPENVPN=x
-    SPEC=NetworkManager-openvpn.spec
-elif [[ "x$(ls -1d ./NetworkManager-openswan-[0-9].*/ 2>/dev/null)" != x && -f NetworkManager-openswan.spec ]]; then
-    DIRNAME="$(basename "$(ls -1d ./NetworkManager-openswan-[0-9].*/ || die "could not find directory")")"
-    BUILD_NETWORMANAGER_OPENSWAN=x
-    SPEC=NetworkManager-openswan.spec
-elif [[ "x$(ls -1d ./NetworkManager-openswan-[0-9].*/ 2>/dev/null)" != x && -f NetworkManager-libreswan.spec ]]; then
-    DIRNAME="$(basename "$(ls -1d ./NetworkManager-openswan-[0-9].*/ || die "could not find directory")")"
-    BUILD_NETWORMANAGER_LIBRESWAN=x
-    SPEC=NetworkManager-libreswan.spec
-elif [[ "x$(ls -1d ./wireless_tools.[0-9]*/ 2>/dev/null)" != x && -f wireless-tools.spec ]]; then
-    DIRNAME="$(basename "$(ls -1d ./wireless_tools.[0-9]*/ || die "could not find directory")")"
-    BUILD_WIRELESS_TOOLS=x
-    SPEC=wireless-tools.spec
-elif [[ "x$(ls -1d ./umip-[0-9]*/ 2>/dev/null)" != x && -f mipv6-daemon.spec ]]; then
-    DIRNAME="$(basename "$(ls -1d ./umip-[0-9]*/ || die "could not find directory")")"
-    BUILD_MIPV6_DAEMON=x
-    SPEC=mipv6-daemon.spec
-else
-    die "Could not detect dist-git type"
-fi
+detect_build_type() {
+    local TEST_DIR="./$1/"
+    local TEST_SPEC="$2"
+    local TEST_BUILD_TYPE="$3"
+
+    if [[ -n "$BUILD_TYPE" || -z "$1" || "x$(ls -1d $TEST_DIR 2>/dev/null)" == x || ! -f "$TEST_SPEC" ]]; then
+        return 1
+    fi
+
+    DIRNAME="$(ls -1d $TEST_DIR)" || die "could not find directory"
+    DIRNAME="$(basename "$DIRNAME")"
+    SPEC="$TEST_SPEC"
+
+    if [[ -n "$TEST_BUILD_TYPE" ]]; then
+        BUILD_TYPE="$TEST_BUILD_TYPE"
+    else
+        BUILD_TYPE="${TEST_SPEC%.spec}"
+    fi
+}
+
+BUILD_TYPE=
+detect_build_type 'NetworkManager-[0-9]*' NetworkManager.spec
+detect_build_type 'libnl-[0-9]*' libnl3.spec
+detect_build_type 'NetworkManager-openvpn-[0-9]*' NetworkManager-openvpn.spec
+detect_build_type 'NetworkManager-openswan-[0-9]*' NetworkManager-openswan.spec
+detect_build_type 'wireless_tools.[0-9]*' wireless-tools.spec
+detect_build_type 'umip-[0-9]*' mipv6-daemon.spec
+
+[[ -n "$BUILD_TYPE" ]] || die "Could not detect dist-git type"
 
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
 if [[ "x$CURRENT_BRANCH" != x && -f "./.git/makerepo.gitignore-$CURRENT_BRANCH" ]]; then
@@ -207,27 +205,23 @@ get_local_mirror() {
 pushd "$DIRNAME"
     git init .
     # if you have a local clone of upstream, symlink it as ../.git/local.
-    if [[ "$BUILD_NETWORMANAGER" != "" ]]; then
+    if [[ "$BUILD_TYPE" == "NetworkManager" ]]; then
         git remote add origin "git://anongit.freedesktop.org/NetworkManager/NetworkManager"
         git remote 'set-url' --push origin "ssh://$USER@git.freedesktop.org/git/NetworkManager/NetworkManager"
         git config notes.displayRef refs/notes/bugs
         git config --add remote.origin.fetch refs/tags/*:refs/tags/*
         git config --add remote.origin.fetch refs/notes/bugs:refs/notes/bugs
-    elif [[ "$BUILD_LIBNL3" != "" ]]; then
+    elif [[ "$BUILD_TYPE" == "libnl3" ]]; then
         git remote add origin "git://github.com/thom311/libnl.git"
         git remote 'set-url' --push origin "git@github.com:thom311/libnl.git"
-    elif [[ "$BUILD_NETWORMANAGER_OPENVPN" != "" ]]; then
+    elif [[ "$BUILD_TYPE" == "NetworkManager-openvpn" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-openvpn";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openvpn"
-    elif [[ "$BUILD_NETWORMANAGER_OPENSWAN" != "" || "$BUILD_NETWORMANAGER_LIBRESWAN" != "" ]]; then
+    elif [[ "$BUILD_TYPE" == "NetworkManager-openswan" || "$BUILD_TYPE" == "NetworkManager-libreswan" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-openswan";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openswan"
-    elif [[ "$BUILD_MIPV6_DAEMON" != "" ]]; then
+    elif [[ "$BUILD_TYPE" == "mipv6-daemon" ]]; then
         git remote add origin "git://git.umip.org/umip.git";
-    elif [[ "$BUILD_WIRELESS_TOOLS" != "" ]]; then
-        :
-    else
-        die "UNEXPECTED"
     fi
     LOCAL_MIRROR_URL="$(LANG=C git remote -v | sed -n 's/^origin\t*\([^\t].*\) (fetch)/\1/p')"
     LOCAL_MIRROR="$(get_local_mirror "$LOCAL_MIRROR_URL")"
@@ -253,15 +247,15 @@ pushd "$DIRNAME"
     if [[ "x$RELEASE_BASE_COMMIT" == x ]]; then
         # if RELEASE_BASE_COMMIT is not set, try detecting the BASE_COMMIT...
 
-        if [[ "$BUILD_NETWORMANAGER" != "" ]]; then
+        if [[ "$BUILD_TYPE" == "NetworkManager" ]]; then
             # try to find the commit from which the original tarball originates
             # and base the new branch on to of it.
             RELEASE_BASE_COMMIT="$(sed -n 's/^NM_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
-        elif [[ "$BUILD_LIBNL3" != "" ]]; then
+        elif [[ "$BUILD_TYPE" == "libnl3" ]]; then
             # try to find the commit from which the original tarball originates
             # and base the new branch on to of it.
             RELEASE_BASE_COMMIT="$(sed -n 's/^LIBNL_GIT_SHA=\(.*\)/\1/p' configure 2>/dev/null)"
-        elif [[ "$BUILD_NETWORMANAGER_OPENVPN" != "" ]]; then
+        elif [[ "$BUILD_TYPE" == "NetworkManager-openvpn" ]]; then
             DATE="$(sed -n 's/%global snapshot .git\(20[0-3][0-9]\)\([0-1][0-9]\)\([0-3][0-9]\)/\1-\2-\3/p' "../$SPEC")"
             if [[ "x$DATE" != x ]]; then
                 RELEASE_BASE_COMMIT="$(git rev-list -n1 --date-order --before="$DATE" origin/master 2>/dev/null)"
