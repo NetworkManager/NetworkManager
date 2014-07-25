@@ -12,7 +12,6 @@ SUBDIRS = \
 	tools \
 	policy \
 	data \
-	test \
 	po \
 	docs \
 	man \

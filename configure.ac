@@ -843,7 +843,6 @@ clients/Makefile
 clients/cli/Makefile
 clients/tui/Makefile
 clients/tui/newt/Makefile
-test/Makefile
 initscript/RedHat/NetworkManager
 initscript/Debian/NetworkManager
 initscript/Slackware/rc.networkmanager
