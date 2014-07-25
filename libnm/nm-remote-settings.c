@@ -1014,7 +1014,7 @@ name_owner_changed (DBusGProxy *proxy,
 
 			dbus_g_proxy_begin_call (priv->props_proxy, "GetAll",
 			                         nm_appeared_got_properties, self, NULL,
-			                         G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS,
+			                         G_TYPE_STRING, NM_DBUS_INTERFACE_SETTINGS,
 			                         G_TYPE_INVALID);
 		} else {
 			priv->service_running = FALSE;
@@ -1179,7 +1179,7 @@ constructed (GObject *object)
 
 	priv->proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
 	                                                 NM_DBUS_PATH_SETTINGS,
-	                                                 NM_DBUS_IFACE_SETTINGS);
+	                                                 NM_DBUS_INTERFACE_SETTINGS);
 	g_assert (priv->proxy);
 	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 
@@ -1242,7 +1242,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	/* Get properties */
 	if (!dbus_g_proxy_call (priv->props_proxy, "GetAll", error,
-	                        G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS,
+	                        G_TYPE_STRING, NM_DBUS_INTERFACE_SETTINGS,
 	                        G_TYPE_INVALID,
 	                        DBUS_TYPE_G_MAP_OF_VARIANT, &props,
 	                        G_TYPE_INVALID))
@@ -1313,7 +1313,7 @@ init_get_properties (NMRemoteSettingsInitData *init_data)
 
 	dbus_g_proxy_begin_call (priv->props_proxy, "GetAll",
 	                         init_async_got_properties, init_data, NULL,
-	                         G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS,
+	                         G_TYPE_STRING, NM_DBUS_INTERFACE_SETTINGS,
 	                         G_TYPE_INVALID);
 }
 

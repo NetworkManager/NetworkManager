@@ -2032,7 +2032,7 @@ nm_settings_class_init (NMSettingsClass *class)
 	                              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	dbus_g_error_domain_register (NM_SETTINGS_ERROR,
-	                              NM_DBUS_IFACE_SETTINGS,
+	                              NM_DBUS_INTERFACE_SETTINGS,
 	                              NM_TYPE_SETTINGS_ERROR);
 
 	/* And register all the settings errors with D-Bus */

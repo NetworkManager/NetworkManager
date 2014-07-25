@@ -61,7 +61,7 @@ const QString getConnection(const QString& connectionUuid, Connection *found_con
     QDBusInterface interface(
         NM_DBUS_SERVICE,
         NM_DBUS_PATH_SETTINGS,
-        NM_DBUS_IFACE_SETTINGS,
+        NM_DBUS_INTERFACE_SETTINGS,
         QDBusConnection::systemBus());
 
     // Get connection list and find the connection with 'connectionUuid'
@@ -71,7 +71,7 @@ const QString getConnection(const QString& connectionUuid, Connection *found_con
         ifaceForSettings = new QDBusInterface(
                                     NM_DBUS_SERVICE,
                                     connection.path(),
-                                    NM_DBUS_IFACE_SETTINGS_CONNECTION,
+                                    NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
                                     QDBusConnection::systemBus());
         QDBusReply<Connection> result2 = ifaceForSettings->call("GetSettings");
         delete ifaceForSettings;
@@ -120,7 +120,7 @@ void changeConnection(const QString& uuid)
         QDBusInterface interface(
             NM_DBUS_SERVICE,
             conPath,
-            NM_DBUS_IFACE_SETTINGS_CONNECTION,
+            NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
             QDBusConnection::systemBus());
 
         // Call Update() D-Bus method to update connection

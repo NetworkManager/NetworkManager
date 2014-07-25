@@ -576,7 +576,7 @@ constructed (GObject *object)
 
 	priv->proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
 	                                                 nm_connection_get_path (NM_CONNECTION (object)),
-	                                                 NM_DBUS_IFACE_SETTINGS_CONNECTION);
+	                                                 NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
 	g_assert (priv->proxy);
 	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 
@@ -625,7 +625,7 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	/* Get properties */
 	hash = NULL;
 	if (!dbus_g_proxy_call (priv->props_proxy, "GetAll", error,
-	                        G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS_CONNECTION,
+	                        G_TYPE_STRING, NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
 	                        G_TYPE_INVALID,
 	                        DBUS_TYPE_G_MAP_OF_VARIANT, &hash,
 	                        G_TYPE_INVALID))
@@ -698,7 +698,7 @@ init_get_settings_cb (DBusGProxy *proxy,
 	/* Grab properties */
 	dbus_g_proxy_begin_call (priv->props_proxy, "GetAll",
 	                         init_async_got_properties, init_data, NULL,
-	                         G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS_CONNECTION,
+	                         G_TYPE_STRING, NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
 	                         G_TYPE_INVALID);
 }
 

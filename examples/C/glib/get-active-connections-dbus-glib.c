@@ -55,7 +55,7 @@ print_connection (DBusGConnection *bus, const char *path)
 	proxy = dbus_g_proxy_new_for_name (bus,
 	                                   NM_DBUS_SERVICE,
 	                                   path,
-	                                   NM_DBUS_IFACE_SETTINGS_CONNECTION);
+	                                   NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
 	g_assert (proxy);
 
 	/* Request the all the configuration of the Connection */

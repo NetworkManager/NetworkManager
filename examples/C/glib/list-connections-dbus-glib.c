@@ -78,7 +78,7 @@ int main (int argc, char *argv[])
 	proxy = dbus_g_proxy_new_for_name (bus,
 	                                   NM_DBUS_SERVICE,
 	                                   NM_DBUS_PATH_SETTINGS,
-	                                   NM_DBUS_IFACE_SETTINGS);
+	                                   NM_DBUS_INTERFACE_SETTINGS);
 
 	/* List connections of system settings service */
 	list_connections (proxy);

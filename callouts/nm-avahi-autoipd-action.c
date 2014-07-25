@@ -28,8 +28,8 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 
-#define NM_AVAHI_AUTOIPD_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
-#define NM_AVAHI_AUTOIPD_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
+#define NM_AVAHI_AUTOIPD_DBUS_SERVICE   "org.freedesktop.nm_avahi_autoipd"
+#define NM_AVAHI_AUTOIPD_DBUS_INTERFACE "org.freedesktop.nm_avahi_autoipd"
 
 static DBusConnection *
 dbus_init (void)
@@ -113,7 +113,7 @@ main (int argc, char *argv[])
 	if (connection == NULL)
 		exit (1);
 
-	message = dbus_message_new_signal ("/", NM_AVAHI_AUTOIPD_DBUS_IFACE, "Event");
+	message = dbus_message_new_signal ("/", NM_AVAHI_AUTOIPD_DBUS_INTERFACE, "Event");
 	if (message == NULL) {
 		fprintf (stderr, "Error: not enough memory to send autoip Event signal.\n");
 		exit (1);

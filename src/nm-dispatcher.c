@@ -464,7 +464,7 @@ _dispatcher_call (DispatcherAction action,
 	proxy = dbus_g_proxy_new_for_name (g_connection,
 	                                   NM_DISPATCHER_DBUS_SERVICE,
 	                                   NM_DISPATCHER_DBUS_PATH,
-	                                   NM_DISPATCHER_DBUS_IFACE);
+	                                   NM_DISPATCHER_DBUS_INTERFACE);
 	if (!proxy) {
 		nm_log_err (LOGD_DISPATCH, "(%u) could not get dispatcher proxy!", reqid);
 		return FALSE;

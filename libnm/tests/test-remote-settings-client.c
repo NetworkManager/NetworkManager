@@ -153,7 +153,7 @@ test_make_invisible (void)
 	proxy = dbus_g_proxy_new_for_name (bus,
 	                                   NM_DBUS_SERVICE,
 	                                   path,
-	                                   NM_DBUS_IFACE_SETTINGS_CONNECTION);
+	                                   NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
 	g_assert (proxy != NULL);
 
 	/* Bypass the NMRemoteSettings object so we can test it independently */
@@ -221,7 +221,7 @@ test_make_visible (void)
 	proxy = dbus_g_proxy_new_for_name (bus,
 	                                   NM_DBUS_SERVICE,
 	                                   path,
-	                                   NM_DBUS_IFACE_SETTINGS_CONNECTION);
+	                                   NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
 	g_assert (proxy != NULL);
 
 	/* Bypass the NMRemoteSettings object so we can test it independently */
@@ -304,7 +304,7 @@ test_remove_connection (void)
 	proxy = dbus_g_proxy_new_for_name (bus,
 	                                   NM_DBUS_SERVICE,
 	                                   path,
-	                                   NM_DBUS_IFACE_SETTINGS_CONNECTION);
+	                                   NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
 	g_assert (proxy != NULL);
 
 	/* Bypass the NMRemoteSettings object so we can test it independently */

@@ -65,12 +65,12 @@
 #define NM_DBUS_INTERFACE_DEVICE_GRE        NM_DBUS_INTERFACE_DEVICE ".Gre"
 
 
-#define NM_DBUS_IFACE_SETTINGS            "org.freedesktop.NetworkManager.Settings"
+#define NM_DBUS_INTERFACE_SETTINGS        "org.freedesktop.NetworkManager.Settings"
 #define NM_DBUS_PATH_SETTINGS             "/org/freedesktop/NetworkManager/Settings"
 
-#define NM_DBUS_IFACE_SETTINGS_CONNECTION "org.freedesktop.NetworkManager.Settings.Connection"
+#define NM_DBUS_INTERFACE_SETTINGS_CONNECTION "org.freedesktop.NetworkManager.Settings.Connection"
 #define NM_DBUS_PATH_SETTINGS_CONNECTION  "/org/freedesktop/NetworkManager/Settings/Connection"
-#define NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS "org.freedesktop.NetworkManager.Settings.Connection.Secrets"
+#define NM_DBUS_INTERFACE_SETTINGS_CONNECTION_SECRETS "org.freedesktop.NetworkManager.Settings.Connection.Secrets"
 
 #define NM_DBUS_INTERFACE_AGENT_MANAGER   NM_DBUS_INTERFACE ".AgentManager"
 #define NM_DBUS_PATH_AGENT_MANAGER        "/org/freedesktop/NetworkManager/AgentManager"
