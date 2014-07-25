@@ -129,7 +129,7 @@ build_section_for_page (NmtEditorPage *page,
 
 	g_return_val_if_fail (nmt_newt_widget_get_parent (NMT_NEWT_WIDGET (page)) == NULL, NULL);
 
-	section = nmt_newt_section_new ();
+	section = nmt_newt_section_new (TRUE);
 
 	toggle = nmt_newt_toggle_button_new (_("Hide"), _("Show"));
 
