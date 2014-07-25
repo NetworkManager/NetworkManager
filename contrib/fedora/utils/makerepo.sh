@@ -160,9 +160,11 @@ detect_build_type() {
 
 BUILD_TYPE=
 detect_build_type 'NetworkManager-[0-9]*' NetworkManager.spec
+detect_build_type 'network-manager-applet-[0-9]*' network-manager-applet.spec
 detect_build_type 'libnl-[0-9]*' libnl3.spec
 detect_build_type 'NetworkManager-openvpn-[0-9]*' NetworkManager-openvpn.spec
 detect_build_type 'NetworkManager-openswan-[0-9]*' NetworkManager-openswan.spec
+detect_build_type 'NetworkManager-vpnc-[0-9]*' NetworkManager-vpnc.spec
 detect_build_type 'wireless_tools.[0-9]*' wireless-tools.spec
 detect_build_type 'umip-[0-9]*' mipv6-daemon.spec
 
@@ -214,12 +216,18 @@ pushd "$DIRNAME"
     elif [[ "$BUILD_TYPE" == "libnl3" ]]; then
         git remote add origin "git://github.com/thom311/libnl.git"
         git remote 'set-url' --push origin "git@github.com:thom311/libnl.git"
+    elif [[ "$BUILD_TYPE" == "network-manager-applet" ]]; then
+        git remote add origin "git://git.gnome.org/network-manager-applet";
+        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-applet"
     elif [[ "$BUILD_TYPE" == "NetworkManager-openvpn" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-openvpn";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openvpn"
     elif [[ "$BUILD_TYPE" == "NetworkManager-openswan" || "$BUILD_TYPE" == "NetworkManager-libreswan" ]]; then
         git remote add origin "git://git.gnome.org/network-manager-openswan";
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-openswan"
+    elif [[ "$BUILD_TYPE" == "NetworkManager-vpnc" ]]; then
+        git remote add origin "git://git.gnome.org/network-manager-vpnc";
+        git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-vpnc"
     elif [[ "$BUILD_TYPE" == "mipv6-daemon" ]]; then
         git remote add origin "git://git.umip.org/umip.git";
     fi
@@ -271,8 +279,15 @@ pushd "$DIRNAME"
 c4d846f239036c05f516c1c71789e980b64b1e70  2e1c889494d274aca24ce5f6a748e66e *libnl-3.2.22.tar.gz
 0446731124bea8c1b447cc52a5ad5ae5750810ff  636769646f5b81b0caead81eab151b45 *libnl-3.2.25-rc1.tar.gz
 
+# NetworkManager-libreswan, NetworkManager-applet
+5d4f17e205f71972d4143f9760426a366b4129d7  9cc0e383c216d4bc31622a0cfb53aaa7 *network-manager-applet-0.9.9.0.git20140123.5d4f17e.tar.bz2
+
 # NetworkManager-libreswan, NetworkManager-openswan
 64c90fd50e57854a3fff3784b92814ffa8159b05  6a373868f85ac3b7c953f7fd6c76e637 *NetworkManager-openswan-0.9.8.0.tar.xz
+
+# NetworkManager-vpnc
+89bdcd324f2e257eca59168a7d0be5608438aab0  abb26a6c3c8d6c1d91c78471aff86b3a *NetworkManager-vpnc-0.9.8.2.tar.xz
+c37a79d43ebe1192ba8dcc5036cd668631b6473e  d87db7021629cef7c110a371dd42b7a8 *NetworkManager-vpnc-0.9.9.0.git20140131.tar.bz2
 
 # mipv6-daemon
 428974c2d0d8e75a2750a3ab0488708c5dfdd8e3  8e3ebd242e7926822bbdf5ce77c1d076 *mipv6-daemon-1.0.tar.gz
