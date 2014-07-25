@@ -2203,7 +2203,7 @@ nm_client_class_init (NMClientClass *client_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient::manager-running:
+	 * NMClient:manager-running:
 	 *
 	 * Whether the daemon is running.
 	 **/
@@ -2215,7 +2215,7 @@ nm_client_class_init (NMClientClass *client_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient::networking-enabled:
+	 * NMClient:networking-enabled:
 	 *
 	 * Whether networking is enabled.
 	 **/
@@ -2227,7 +2227,7 @@ nm_client_class_init (NMClientClass *client_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient::wireless-enabled:
+	 * NMClient:wireless-enabled:
 	 *
 	 * Whether wireless is enabled.
 	 **/
@@ -2239,7 +2239,7 @@ nm_client_class_init (NMClientClass *client_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient::wireless-hardware-enabled:
+	 * NMClient:wireless-hardware-enabled:
 	 *
 	 * Whether the wireless hardware is enabled.
 	 **/
@@ -2251,7 +2251,7 @@ nm_client_class_init (NMClientClass *client_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient::wwan-enabled:
+	 * NMClient:wwan-enabled:
 	 *
 	 * Whether WWAN functionality is enabled.
 	 **/
@@ -2263,7 +2263,7 @@ nm_client_class_init (NMClientClass *client_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient::wwan-hardware-enabled:
+	 * NMClient:wwan-hardware-enabled:
 	 *
 	 * Whether the WWAN hardware is enabled.
 	 **/
@@ -2275,7 +2275,7 @@ nm_client_class_init (NMClientClass *client_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient::wimax-enabled:
+	 * NMClient:wimax-enabled:
 	 *
 	 * Whether WiMAX functionality is enabled.
 	 **/
@@ -2287,7 +2287,7 @@ nm_client_class_init (NMClientClass *client_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient::wimax-hardware-enabled:
+	 * NMClient:wimax-hardware-enabled:
 	 *
 	 * Whether the WiMAX hardware is enabled.
 	 **/
@@ -2299,7 +2299,7 @@ nm_client_class_init (NMClientClass *client_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient::active-connections:
+	 * NMClient:active-connections:
 	 *
 	 * The active connections.
 	 * Type: GPtrArray<NMActiveConnection>

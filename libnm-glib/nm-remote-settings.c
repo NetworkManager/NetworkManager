@@ -1482,6 +1482,13 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 	object_class->dispose = dispose;
 
 	/* Properties */
+
+	/**
+	 * NMRemoteSettings:bus:
+	 *
+	 * The #DBusGConnection that the #NMRemoteSettings is connected to. Defaults
+	 * to the system bus if not specified.
+	 */
 	g_object_class_install_property
 		(object_class, PROP_BUS,
 		 g_param_spec_boxed (NM_REMOTE_SETTINGS_BUS, "", "",
@@ -1490,6 +1497,11 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		                     G_PARAM_CONSTRUCT_ONLY |
 		                     G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMRemoteSettings:service-running:
+	 *
+	 * Whether the settings service is running.
+	 */
 	g_object_class_install_property
 		(object_class, PROP_SERVICE_RUNNING,
 		 g_param_spec_boolean (NM_REMOTE_SETTINGS_SERVICE_RUNNING, "", "",
@@ -1497,6 +1509,12 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMRemoteSettings:hostname:
+	 *
+	 * The machine hostname stored in persistent configuration. This can be
+	 * modified by calling nm_remote_settings_save_hostname().
+	 */
 	g_object_class_install_property
 		(object_class, PROP_HOSTNAME,
 		 g_param_spec_string (NM_REMOTE_SETTINGS_HOSTNAME, "", "",
@@ -1504,6 +1522,11 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMRemoteSettings:can-modify:
+	 *
+	 * If %TRUE, adding and modifying connections is supported.
+	 */
 	g_object_class_install_property
 		(object_class, PROP_CAN_MODIFY,
 		 g_param_spec_boolean (NM_REMOTE_SETTINGS_CAN_MODIFY, "", "",

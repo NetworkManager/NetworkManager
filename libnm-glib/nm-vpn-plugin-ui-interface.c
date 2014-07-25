@@ -30,18 +30,34 @@ interface_init (gpointer g_iface)
 		return;
 
 	/* Properties */
+
+	/**
+	 * NMVPNPluginUiInterface:name:
+	 *
+	 * Short display name of the VPN plugin.
+	 */
 	g_object_interface_install_property (g_iface,
 		 g_param_spec_string (NM_VPN_PLUGIN_UI_INTERFACE_NAME, "", "",
 		                      NULL,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMVPNPluginUiInterface:desc:
+	 *
+	 * Longer description of the VPN plugin.
+	 */
 	g_object_interface_install_property (g_iface,
 		 g_param_spec_string (NM_VPN_PLUGIN_UI_INTERFACE_DESC, "", "",
 		                      NULL,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMVPNPluginUiInterface:service:
+	 *
+	 * D-Bus service name of the plugin's VPN service.
+	 */
 	g_object_interface_install_property (g_iface,
 		 g_param_spec_string (NM_VPN_PLUGIN_UI_INTERFACE_SERVICE, "", "",
 		                      NULL,

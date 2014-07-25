@@ -391,7 +391,7 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	/* porperties */
+	/* Properties */
 
 	/**
 	 * NMObject:connection:

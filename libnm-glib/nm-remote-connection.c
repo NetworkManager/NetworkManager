@@ -862,6 +862,11 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	object_class->constructed = constructed;
 
 	/* Properties */
+	/**
+	 * NMRemoteConnection:bus:
+	 *
+	 * The #DBusGConnection that the #NMRemoteConnection is connected to.
+	 */
 	g_object_class_install_property
 		(object_class, PROP_BUS,
 		 g_param_spec_boxed (NM_REMOTE_CONNECTION_BUS, "", "",

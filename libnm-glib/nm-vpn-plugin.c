@@ -951,6 +951,12 @@ nm_vpn_plugin_class_init (NMVPNPluginClass *plugin_class)
 	plugin_class->state_changed = state_changed;
 
 	/* properties */
+
+	/**
+	 * NMVPNPlugin:service-name:
+	 *
+	 * The D-Bus service name of this plugin.
+	 */
 	g_object_class_install_property
 		(object_class, PROP_DBUS_SERVICE_NAME,
 		 g_param_spec_string (NM_VPN_PLUGIN_DBUS_SERVICE_NAME, "", "",
@@ -959,6 +965,11 @@ nm_vpn_plugin_class_init (NMVPNPluginClass *plugin_class)
 		                      G_PARAM_CONSTRUCT_ONLY |
 		                      G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMVPNPlugin:state:
+	 *
+	 * The state of the plugin.
+	 */
 	g_object_class_install_property
 		(object_class, PROP_STATE,
 		 g_param_spec_uint (NM_VPN_PLUGIN_STATE, "", "",
