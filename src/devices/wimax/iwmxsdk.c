@@ -36,7 +36,7 @@
 #include <WiMaxAPI.h>
 #include <WiMaxAPIEx.h>
 
-#include "logging/nm-logging.h"
+#include "nm-logging.h"
 #include "iwmxsdk.h"
 
 static WIMAX_API_DEVICE_ID g_api;

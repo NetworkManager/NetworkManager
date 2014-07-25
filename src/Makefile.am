@@ -26,7 +26,6 @@ endif
 
 if ENABLE_TESTS
 SUBDIRS += \
-	config/tests \
 	dhcp-manager/tests \
 	dnsmasq-manager/tests \
 	platform \
@@ -62,9 +61,6 @@ NetworkManager_LDADD = libNetworkManager.la
 noinst_LTLIBRARIES = libNetworkManager.la
 
 nm_sources = \
-	config/nm-config.c \
-	config/nm-config.h \
-	\
 	devices/nm-device.c \
 	devices/nm-device.h \
 	devices/nm-device-bond.c \
@@ -125,9 +121,6 @@ nm_sources = \
 	firewall-manager/nm-firewall-manager.c \
 	firewall-manager/nm-firewall-manager.h \
 	\
-	logging/nm-logging.c \
-	logging/nm-logging.h \
-	\
 	platform/nm-fake-platform.c \
 	platform/nm-fake-platform.h \
 	platform/nm-linux-platform.c \
@@ -146,9 +139,6 @@ nm_sources = \
 	rdisc/nm-lndp-rdisc.h \
 	rdisc/nm-rdisc.c \
 	rdisc/nm-rdisc.h \
-	\
-	posix-signals/nm-posix-signals.c \
-	posix-signals/nm-posix-signals.h \
 	\
 	ppp-manager/nm-ppp-manager.c \
 	ppp-manager/nm-ppp-manager.h \
@@ -207,6 +197,8 @@ nm_sources = \
 	nm-activation-request.h \
 	nm-active-connection.c \
 	nm-active-connection.h \
+	nm-config.c \
+	nm-config.h \
 	nm-connection-provider.c \
 	nm-connection-provider.h \
 	nm-connectivity.c \
@@ -227,6 +219,8 @@ nm_sources = \
 	nm-ip4-config.h \
 	nm-ip6-config.c \
 	nm-ip6-config.h \
+	nm-logging.c \
+	nm-logging.h \
 	nm-manager-auth.c \
 	nm-manager-auth.h \
 	nm-auth-subject.c \
@@ -235,6 +229,8 @@ nm_sources = \
 	nm-manager.h \
 	nm-policy.c \
 	nm-policy.h \
+	nm-posix-signals.c \
+	nm-posix-signals.h \
 	nm-properties-changed-signal.c \
 	nm-properties-changed-signal.h \
 	nm-rfkill-manager.c \

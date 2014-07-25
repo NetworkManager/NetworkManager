@@ -796,7 +796,7 @@ Makefile
 include/Makefile
 src/Makefile
 src/tests/Makefile
-src/config/tests/Makefile
+src/tests/config/Makefile
 src/dhcp-manager/Makefile
 src/dhcp-manager/tests/Makefile
 src/dnsmasq-manager/tests/Makefile

@@ -76,8 +76,6 @@ src/dhcp-manager/nm-dhcp-dhclient.c
 src/dhcp-manager/nm-dhcp-dhclient-utils.c
 src/dhcp-manager/nm-dhcp-manager.c
 src/dns-manager/nm-dns-manager.c
-src/logging/nm-logging.c
-src/config/nm-config.c
 src/devices/adsl/nm-device-adsl.c
 src/devices/bluetooth/nm-bluez-device.c
 src/devices/bluetooth/nm-device-bt.c
@@ -89,6 +87,8 @@ src/devices/nm-device-vlan.c
 src/devices/team/nm-device-team.c
 src/devices/wifi/nm-device-olpc-mesh.c
 src/devices/wwan/nm-modem-broadband.c
+src/nm-config.c
+src/nm-logging.c
 src/nm-manager.c
 src/nm-sleep-monitor-systemd.c
 src/settings/plugins/ifcfg-rh/reader.c
