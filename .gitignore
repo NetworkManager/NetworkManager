@@ -193,6 +193,7 @@ valgrind-*.log
 /libnm-util/tests/test-crypto
 /libnm-util/tests/test-settings-defaults
 /libnm-util/tests/test-general
+/libnm-util/tests/test-libnm-linking
 /libnm-util/tests/test-need-secrets
 /libnm-util/tests/test-secrets
 /libnm-util/tests/test-setting-8021x

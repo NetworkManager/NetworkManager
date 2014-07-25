@@ -24,6 +24,7 @@
 #include <string.h>
 #include <netinet/ether.h>
 #include <linux/if_infiniband.h>
+#include <sys/wait.h>
 
 #include <nm-utils.h>
 
@@ -2445,6 +2446,25 @@ test_connection_normalize_virtual_iface_name (void)
 	g_object_unref (con);
 }
 
+static void
+test_libnm_linking (void)
+{
+	char *argv[] = { "./test-libnm-linking", NULL };
+	char *out, *err;
+	int status;
+	GError *error = NULL;
+
+	g_spawn_sync (BUILD_DIR, argv, NULL, G_SPAWN_DEFAULT, NULL, NULL,
+	              &out, &err, &status, &error);
+	g_assert_no_error (error);
+
+	g_assert (WIFSIGNALED (status));
+
+	g_assert (strstr (err, "Mixing libnm") != NULL);
+	g_free (out);
+	g_free (err);
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -2519,6 +2539,8 @@ int main (int argc, char **argv)
 	test_setting_wireless_changed_signal ();
 	test_setting_wireless_security_changed_signal ();
 	test_setting_802_1x_changed_signal ();
+
+	test_libnm_linking ();
 
 	base = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", base);

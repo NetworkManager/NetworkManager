@@ -26,6 +26,7 @@
 #include <netinet/ether.h>
 #include <linux/if_infiniband.h>
 #include <uuid/uuid.h>
+#include <gmodule.h>
 
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -200,6 +201,18 @@ get_encodings_for_lang (const char *lang,
 }
 
 /* init, deinit for libnm_util */
+
+static void __attribute__((constructor))
+_check_symbols (void)
+{
+	GModule *self;
+	gpointer func;
+
+	self = g_module_open (NULL, 0);
+	if (g_module_symbol (self, "nm_util_get_private", &func))
+		g_error ("libnm-util symbols detected; Mixing libnm with libnm-util/libnm-glib is not supported");
+	g_module_close (self);
+}
 
 static gboolean initialized = FALSE;
 
