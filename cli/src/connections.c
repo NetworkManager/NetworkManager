@@ -2203,17 +2203,6 @@ static const NameItem nmc_cdma_settings [] = {
 	{ NULL, NULL, NULL, FALSE }
 };
 
-static const NameItem nmc_mobile_settings [] = {
-	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
-	{ NM_SETTING_SERIAL_SETTING_NAME,     NULL,   NULL, FALSE },
-	{ NM_SETTING_PPP_SETTING_NAME,        NULL,   NULL, FALSE },
-	{ NM_SETTING_GSM_SETTING_NAME,        NULL,   NULL, TRUE  },
-	{ NM_SETTING_CDMA_SETTING_NAME,       NULL,   NULL, TRUE  },
-	{ NM_SETTING_IP4_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
-	{ NM_SETTING_IP6_CONFIG_SETTING_NAME, NULL,   NULL, FALSE },
-	{ NULL, NULL, NULL, FALSE }
-};
-
 static const NameItem nmc_bluetooth_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,   NULL, TRUE  },
 	{ NM_SETTING_BLUETOOTH_SETTING_NAME,  NULL,   NULL, TRUE  },
