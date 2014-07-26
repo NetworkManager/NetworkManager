@@ -68,13 +68,13 @@ typedef struct RemoteCall RemoteCall;
 typedef void (*RemoteCallFetchResultCb) (RemoteCall *call, DBusGProxyCall *proxy_call, GError *error);
 
 
-typedef struct RemoteCall {
+struct RemoteCall {
 	NMRemoteConnection *self;
 	DBusGProxyCall *call;
 	RemoteCallFetchResultCb fetch_result_cb;
 	GFunc callback;
 	gpointer user_data;
-} RemoteCall;
+};
 
 typedef struct {
 	DBusGConnection *bus;
