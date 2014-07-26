@@ -130,6 +130,7 @@ software_add (NMLinkType link_type, const char *name)
 	default:
 		g_error ("Link type %d unhandled.", link_type);
 	}
+	g_assert_not_reached ();
 }
 
 static void
@@ -188,12 +189,12 @@ test_slave (int master, int type, SignalData *master_changed)
 			/* Older team versions (e.g. Fedora 17) have a bug that team master stays
 			 * IFF_LOWER_UP even if its slave is down. Double check it with iproute2 and if
 			 * `ip link` also claims master to be up, accept it. */
-			char *stdout = NULL;
+			char *stdout_str = NULL;
 
-			nmtst_spawn_sync (NULL, &stdout, NULL, 0, "/sbin/ip", "link", "show", "dev", nm_platform_link_get_name (master));
+			nmtst_spawn_sync (NULL, &stdout_str, NULL, 0, "/sbin/ip", "link", "show", "dev", nm_platform_link_get_name (master));
 
-			g_assert (strstr (stdout, "LOWER_UP"));
-			g_free (stdout);
+			g_assert (strstr (stdout_str, "LOWER_UP"));
+			g_free (stdout_str);
 		} else
 			g_assert_not_reached ();
 	}
