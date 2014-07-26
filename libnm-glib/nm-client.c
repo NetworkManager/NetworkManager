@@ -2302,7 +2302,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:active-connections:
 	 *
 	 * The active connections.
-	 * Type: GPtrArray<NMActiveConnection>
+	 * Type: GLib.PtrArray
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTIONS,
