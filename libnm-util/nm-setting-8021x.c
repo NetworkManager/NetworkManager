@@ -89,6 +89,11 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_802_1X)
 
 #define NM_SETTING_802_1X_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_802_1X, NMSetting8021xPrivate))
 
+G_STATIC_ASSERT ( (NM_SETTING_802_1X_CK_FORMAT_UNKNOWN == (NMSetting8021xCKFormat) NM_CRYPTO_FILE_FORMAT_UNKNOWN) );
+G_STATIC_ASSERT ( (NM_SETTING_802_1X_CK_FORMAT_X509    == (NMSetting8021xCKFormat) NM_CRYPTO_FILE_FORMAT_X509) );
+G_STATIC_ASSERT ( (NM_SETTING_802_1X_CK_FORMAT_RAW_KEY == (NMSetting8021xCKFormat) NM_CRYPTO_FILE_FORMAT_RAW_KEY) );
+G_STATIC_ASSERT ( (NM_SETTING_802_1X_CK_FORMAT_PKCS12  == (NMSetting8021xCKFormat) NM_CRYPTO_FILE_FORMAT_PKCS12) );
+
 typedef struct {
 	GSList *eap; /* GSList of strings */
 	char *identity;
@@ -1821,7 +1826,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 
 	if (out_format)
-		*out_format = format;
+		*out_format = (NMSetting8021xCKFormat) format;
 	return priv->private_key != NULL;
 }
 
@@ -2132,7 +2137,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
 
 	if (out_format)
-		*out_format = format;
+		*out_format = (NMSetting8021xCKFormat) format;
 	return priv->phase2_private_key != NULL;
 }
 
