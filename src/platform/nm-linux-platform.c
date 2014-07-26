@@ -1740,15 +1740,14 @@ add_object (NMPlatform *platform, struct nl_object *obj)
 
 /* Decreases the reference count if @obj for convenience */
 static gboolean
-delete_object (NMPlatform *platform, struct nl_object *obj, gboolean do_refresh_object)
+delete_object (NMPlatform *platform, struct nl_object *object, gboolean do_refresh_object)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
-	auto_nl_object struct nl_object *obj_cleanup = obj;
-	struct nl_object *object = obj;
 	int object_type;
 	int nle;
+	gboolean result = FALSE;
 
-	object_type = object_type_from_nl_object (obj);
+	object_type = object_type_from_nl_object (object);
 	g_return_val_if_fail (object_type != OBJECT_TYPE_UNKNOWN, FALSE);
 
 	switch (object_type) {
@@ -1791,14 +1790,18 @@ delete_object (NMPlatform *platform, struct nl_object *obj, gboolean do_refresh_
 		goto DEFAULT;
 	DEFAULT:
 	default:
-		error ("Netlink error deleting %s: %s (%d)", to_string_object (platform, obj), nl_geterror (nle), nle);
-		return FALSE;
+		error ("Netlink error deleting %s: %s (%d)", to_string_object (platform, object), nl_geterror (nle), nle);
+		goto out;
 	}
 
 	if (do_refresh_object)
 		refresh_object (platform, object, TRUE, NM_PLATFORM_REASON_INTERNAL);
 
-	return TRUE;
+	result = TRUE;
+
+out:
+	nl_object_put (object);
+	return result;
 }
 
 static void
