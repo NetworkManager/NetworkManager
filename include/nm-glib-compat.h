@@ -24,7 +24,24 @@
 #include <glib.h>
 #include <glib-object.h>
 
+
+#ifdef __clang__
+
+#undef G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+#undef G_GNUC_END_IGNORE_DEPRECATIONS
+
+#define G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
+    _Pragma("clang diagnostic push") \
+    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+
+#define G_GNUC_END_IGNORE_DEPRECATIONS \
+    _Pragma("clang diagnostic pop")
+
+#endif
+
+
 #include "nm-gvaluearray-compat.h"
+
 
 #if !GLIB_CHECK_VERSION(2,34,0)
 static inline void

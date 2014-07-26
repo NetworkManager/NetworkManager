@@ -30,6 +30,7 @@
 
 #include <glib/gi18n-lib.h>
 
+#include "nm-glib-compat.h"
 #include "nmt-newt-utils.h"
 
 static void

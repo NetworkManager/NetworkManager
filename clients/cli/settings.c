@@ -30,6 +30,7 @@
 #include "utils.h"
 #include "common.h"
 #include "settings.h"
+#include "nm-glib-compat.h"
 
 /* Forward declarations */
 static char *wep_key_type_to_string (NMWepKeyType type);
