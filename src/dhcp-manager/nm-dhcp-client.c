@@ -607,7 +607,7 @@ static const char *state_table[] = {
 static const char *
 state_to_string (NMDHCPState state)
 {
-	if (state >= 0 && state < G_N_ELEMENTS (state_table))
+	if ((gsize) state < G_N_ELEMENTS (state_table))
 		return state_table[state];
 	return NULL;
 }
