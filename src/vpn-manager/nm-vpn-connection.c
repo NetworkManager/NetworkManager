@@ -176,7 +176,7 @@ _state_to_nm_vpn_state (VpnState state)
 	case STATE_FAILED:
 		return NM_VPN_CONNECTION_STATE_FAILED;
 	default:
-		return STATE_UNKNOWN;
+		return NM_VPN_CONNECTION_STATE_UNKNOWN;
 	}
 }
 
