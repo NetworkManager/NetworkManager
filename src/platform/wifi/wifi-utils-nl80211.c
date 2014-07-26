@@ -679,11 +679,20 @@ static int nl80211_wiphy_info_handler (struct nl_msg *msg, void *arg)
 	static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 		[NL80211_FREQUENCY_ATTR_FREQ] = { .type = NLA_U32 },
 		[NL80211_FREQUENCY_ATTR_DISABLED] = { .type = NLA_FLAG },
+#ifdef NL80211_FREQUENCY_ATTR_NO_IR
+		[NL80211_FREQUENCY_ATTR_NO_IR] = { .type = NLA_FLAG },
+#else
 		[NL80211_FREQUENCY_ATTR_PASSIVE_SCAN] = { .type = NLA_FLAG },
 		[NL80211_FREQUENCY_ATTR_NO_IBSS] = { .type = NLA_FLAG },
+#endif
 		[NL80211_FREQUENCY_ATTR_RADAR] = { .type = NLA_FLAG },
 		[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = { .type = NLA_U32 },
 	};
+#ifdef NL80211_FREQUENCY_ATTR_NO_IR
+	G_STATIC_ASSERT (NL80211_FREQUENCY_ATTR_PASSIVE_SCAN == NL80211_FREQUENCY_ATTR_NO_IR && NL80211_FREQUENCY_ATTR_NO_IBSS == NL80211_FREQUENCY_ATTR_NO_IR);
+#else
+	G_STATIC_ASSERT (NL80211_FREQUENCY_ATTR_PASSIVE_SCAN != NL80211_FREQUENCY_ATTR_NO_IBSS);
+#endif
 
 	if (nla_parse (tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
 	               genlmsg_attrlen (gnlh, 0), NULL) < 0)
