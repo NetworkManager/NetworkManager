@@ -186,6 +186,8 @@ test_make_invisible (void)
 	} while ((done == FALSE) && (now - start < 5));
 	test_assert (done == TRUE);
 
+	g_signal_handlers_disconnect_by_func (remote, G_CALLBACK (invis_removed_cb), &done);
+
 	/* Ensure NMRemoteSettings no longer has the connection */
 	list = nm_remote_settings_list_connections (settings);
 	for (iter = list; iter; iter = g_slist_next (iter)) {
