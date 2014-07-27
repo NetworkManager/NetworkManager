@@ -114,7 +114,7 @@ static void
 _string_array_to_string (const GPtrArray *strings, GValue *dest_value)
 {
 	GString *printable;
-	int i;
+	guint i;
 
 	printable = g_string_new (NULL);
 	for (i = 0; strings && i < strings->len; i++) {
