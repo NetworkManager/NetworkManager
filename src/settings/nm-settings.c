@@ -52,6 +52,7 @@
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-bond.h>
 #include <nm-utils.h>
+#include "nm-core-internal.h"
 
 #include "nm-device-ethernet.h"
 #include "nm-dbus-glib-types.h"
@@ -1763,13 +1764,8 @@ get_connections (NMConnectionProvider *provider)
 	GSList *list = NULL;
 	NMSettings *self = NM_SETTINGS (provider);
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	GHashTableIter iter;
-	NMSettingsConnection *connection;
 
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection))
-		list = g_slist_prepend (list, connection);
-	list = g_slist_reverse (list);
+	list = _nm_utils_hash_values_to_slist (priv->connections);
 
 	/* Cache the list every call so we can keep it 'const' for callers */
 	g_slist_free (priv->get_connections_cache);

@@ -29,6 +29,7 @@
 #include <nm-setting-vpn.h>
 #include <nm-setting-wireless.h>
 #include <nm-utils.h>
+#include "nm-core-internal.h"
 
 #include "nm-settings-connection.h"
 #include "nm-session-monitor.h"
@@ -1162,7 +1163,7 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (dupl_con));
 		if (bssid_list && s_wifi)
 			g_object_set (s_wifi, NM_SETTING_WIRELESS_SEEN_BSSIDS, bssid_list, NULL);
-		g_slist_free_full (bssid_list, g_free);
+		g_slist_free (bssid_list);
 
 		/* 802-11-wireless.security property is deprecated. But we set it here so that
 		 * we don't disturb old clients that might expect it being properly set for
@@ -1745,24 +1746,15 @@ mac_dup (const guint8 *old)
  *
  * Returns current list of seen BSSIDs for the connection.
  *
- * Returns: (transfer full) list of seen BSSIDs (in the standard hex-digits-and-colons notation).
- * The caller is responsible for freeing the list.
+ * Returns: (transfer container) list of seen BSSIDs (in the standard hex-digits-and-colons notation).
+ * The caller is responsible for freeing the list, but not the content.
  **/
 GSList *
 nm_settings_connection_get_seen_bssids (NMSettingsConnection *connection)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
-	GHashTableIter iter;
-	char *bssid_str;
-	GSList *bssid_list = NULL;
-
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), NULL);
 
-	g_hash_table_iter_init (&iter, priv->seen_bssids);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &bssid_str))
-		bssid_list = g_slist_prepend (bssid_list, g_strdup (bssid_str));
-
-	return bssid_list;
+	return _nm_utils_hash_values_to_slist (NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->seen_bssids);
 }
 
 /**

@@ -41,6 +41,7 @@
 #include "nm-setting-wired.h"
 #include "nm-setting-ppp.h"
 #include "nm-utils.h"
+#include "nm-core-internal.h"
 
 #include "nm-ifupdown-connection.h"
 #include "plugin.h"
@@ -505,9 +506,7 @@ static GSList*
 SCPluginIfupdown_get_connections (NMSystemConfigInterface *config)
 {
 	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
-	GSList *connections = NULL;
-	GHashTableIter iter;
-	gpointer value;
+	GSList *connections;
 
 	nm_log_info (LOGD_SETTINGS, "(%d) ... get_connections.", GPOINTER_TO_UINT(config));
 
@@ -516,9 +515,7 @@ SCPluginIfupdown_get_connections (NMSystemConfigInterface *config)
 		return NULL;
 	}
 
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &value))
-		connections = g_slist_prepend (connections, value);
+	connections = _nm_utils_hash_values_to_slist (priv->connections);
 
 	nm_log_info (LOGD_SETTINGS, "(%d) connections count: %d", GPOINTER_TO_UINT(config), g_slist_length(connections));
 	return connections;

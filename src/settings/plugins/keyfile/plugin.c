@@ -36,6 +36,7 @@
 #include <nm-utils.h>
 #include <nm-config.h>
 #include <nm-logging.h>
+#include "nm-core-internal.h"
 
 #include "plugin.h"
 #include "nm-system-config-interface.h"
@@ -372,20 +373,13 @@ static GSList *
 get_connections (NMSystemConfigInterface *config)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
-	GHashTableIter iter;
-	gpointer data = NULL;
-	GSList *list = NULL;
 
 	if (!priv->initialized) {
 		setup_monitoring (config);
 		read_connections (config);
 		priv->initialized = TRUE;
 	}
-
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, NULL, &data))
-		list = g_slist_prepend (list, data);
-	return list;
+	return _nm_utils_hash_values_to_slist (priv->connections);
 }
 
 static gboolean
