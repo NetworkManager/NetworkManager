@@ -61,4 +61,7 @@ gboolean    _nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *s
 	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
 
 
+GSList *    _nm_utils_hash_values_to_slist (GHashTable *hash);
+
+
 #endif
