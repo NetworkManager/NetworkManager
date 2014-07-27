@@ -700,9 +700,9 @@ parse_output_fields (const char *fields_str,
 							break;
 						}
 					}
+					if (found)
+						break;
 				}
-				if (found)
-					break;
 			}
 			if (found) {
 				/* Add index to array, and field name (or NULL) to group_fields array */
