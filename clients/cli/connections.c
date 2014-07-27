@@ -2518,6 +2518,9 @@ check_and_convert_mtu (const char *mtu, guint32 *mtu_int, GError **error)
 {
 	unsigned long local_mtu_int;
 
+	if (mtu_int)
+		*mtu_int = 0;
+
 	if (!mtu)
 		return TRUE;
 
