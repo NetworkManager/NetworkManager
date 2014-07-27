@@ -32,6 +32,7 @@ CFILE_GLOB=$(top_srcdir)/libnm-core/*.c $(top_srcdir)/libnm/*.c
 IGNORE_HFILES= \
 	crypto.h \
 	nm-dbus-helpers-private.h \
+	nm-core-internal.h \
 	nm-device-private.h \
 	nm-object-cache.h \
 	nm-object-private.h \

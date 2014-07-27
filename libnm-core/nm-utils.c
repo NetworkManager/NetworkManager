@@ -2479,23 +2479,4 @@ nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_typ
 	}
 }
 
-/***********************************************************/
 
-static const NMUtilsPrivateData data = {
-	.nm_setting_ip4_config_get_address_label = nm_setting_ip4_config_get_address_label,
-	.nm_setting_ip4_config_add_address_with_label = nm_setting_ip4_config_add_address_with_label,
-};
-
-/**
- * nm_utils_get_private:
- *
- * Entry point for NetworkManager-internal API.  You should not use this
- * function for any reason.
- *
- * Returns: Who knows? It's a mystery.
- */
-const NMUtilsPrivateData *
-nm_utils_get_private (void)
-{
-	return &data;
-}

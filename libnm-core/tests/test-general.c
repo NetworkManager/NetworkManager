@@ -39,7 +39,7 @@
 #include "nm-setting-vlan.h"
 #include "nm-setting-bond.h"
 #include "nm-utils.h"
-#include "nm-utils-private.h"
+#include "nm-core-internal.h"
 #include "nm-dbus-glib-types.h"
 
 #include "nm-test-utils.h"
@@ -330,7 +330,7 @@ test_setting_ip4_config_labels (void)
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
 	g_assert_cmpstr (label, ==, NULL);
 
 	/* addr 2 */
@@ -338,12 +338,12 @@ test_setting_ip4_config_labels (void)
 	nm_ip4_address_set_address (addr, 0x02020202);
 	nm_ip4_address_set_prefix (addr, 24);
 
-	NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "eth0:1"));
+	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "eth0:1");
 	nm_ip4_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 1));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
 	g_assert_cmpstr (label, ==, "eth0:1");
 
 	/* addr 3 */
@@ -351,12 +351,12 @@ test_setting_ip4_config_labels (void)
 	nm_ip4_address_set_address (addr, 0x03030303);
 	nm_ip4_address_set_prefix (addr, 24);
 
-	NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, NULL));
+	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, NULL);
 	nm_ip4_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 2));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 2);
 	g_assert_cmpstr (label, ==, NULL);
 
 	/* Remove addr 1 and re-verify remaining addresses */
@@ -366,12 +366,12 @@ test_setting_ip4_config_labels (void)
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
 	g_assert_cmpstr (label, ==, "eth0:1");
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 1));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
 	g_assert_cmpstr (label, ==, NULL);
 
 
@@ -395,12 +395,12 @@ test_setting_ip4_config_labels (void)
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
 	g_assert_cmpstr (label, ==, NULL);
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 1));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
 	g_assert_cmpstr (label, ==, NULL);
 
 	/* Setting labels now will leave addresses untouched */
@@ -414,12 +414,12 @@ test_setting_ip4_config_labels (void)
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
 	g_assert_cmpstr (label, ==, "eth0:1");
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 1));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
 	g_assert_cmpstr (label, ==, NULL);
 
 	/* Setting labels to a value that's too short or too long will result in

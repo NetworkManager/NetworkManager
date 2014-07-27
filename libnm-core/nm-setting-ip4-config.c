@@ -30,6 +30,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-setting-private.h"
+#include "nm-core-internal.h"
 
 
 /**
@@ -435,7 +436,7 @@ nm_setting_ip4_config_get_address (NMSettingIP4Config *setting, guint32 i)
 }
 
 const char *
-nm_setting_ip4_config_get_address_label (NMSettingIP4Config *setting, guint32 i)
+_nm_setting_ip4_config_get_address_label (NMSettingIP4Config *setting, guint32 i)
 {
 	NMSettingIP4ConfigPrivate *priv;
 
@@ -462,13 +463,13 @@ gboolean
 nm_setting_ip4_config_add_address (NMSettingIP4Config *setting,
                                    NMIP4Address *address)
 {
-	return nm_setting_ip4_config_add_address_with_label (setting, address, NULL);
+	return _nm_setting_ip4_config_add_address_with_label (setting, address, NULL);
 }
 
 gboolean
-nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting,
-                                              NMIP4Address *address,
-                                              const char *label)
+_nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting,
+                                               NMIP4Address *address,
+                                               const char *label)
 {
 	NMSettingIP4ConfigPrivate *priv;
 	NMIP4Address *copy;
