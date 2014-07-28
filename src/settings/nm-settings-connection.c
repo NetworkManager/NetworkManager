@@ -82,6 +82,7 @@ enum {
 	PROP_0 = 0,
 	PROP_VISIBLE,
 	PROP_UNSAVED,
+	PROP_FLAGS,
 };
 
 enum {
@@ -96,6 +97,8 @@ typedef struct {
 	NMAgentManager *agent_mgr;
 	NMSessionMonitor *session_monitor;
 	guint session_changed_id;
+
+	NMSettingsConnectionFlags flags;
 
 	/* TRUE if the connection has not yet been saved to disk,
 	 * or if it contains changes that have not been saved to disk.
@@ -1602,6 +1605,50 @@ nm_settings_connection_get_unsaved (NMSettingsConnection *self)
 
 /**************************************************************/
 
+NMSettingsConnectionFlags
+nm_settings_connection_get_flags (NMSettingsConnection *self)
+{
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NM_SETTINGS_CONNECTION_FLAGS_NONE);
+
+	return NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->flags;
+}
+
+NMSettingsConnectionFlags
+nm_settings_connection_set_flags (NMSettingsConnection *self, NMSettingsConnectionFlags flags, gboolean set)
+{
+	NMSettingsConnectionFlags new_flags;
+
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NM_SETTINGS_CONNECTION_FLAGS_NONE);
+	g_return_val_if_fail ((flags & ~NM_SETTINGS_CONNECTION_FLAGS_ALL) == 0, NM_SETTINGS_CONNECTION_FLAGS_NONE);
+
+	new_flags = NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->flags;
+	if (set)
+		new_flags |= flags;
+	else
+		new_flags &= ~flags;
+	return nm_settings_connection_set_flags_all (self, new_flags);
+}
+
+NMSettingsConnectionFlags
+nm_settings_connection_set_flags_all (NMSettingsConnection *self, NMSettingsConnectionFlags flags)
+{
+	NMSettingsConnectionPrivate *priv;
+	NMSettingsConnectionFlags old_flags;
+
+	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), NM_SETTINGS_CONNECTION_FLAGS_NONE);
+	g_return_val_if_fail ((flags & ~NM_SETTINGS_CONNECTION_FLAGS_ALL) == 0, NM_SETTINGS_CONNECTION_FLAGS_NONE);
+	priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	old_flags = priv->flags;
+	if (old_flags != flags) {
+		priv->flags = flags;
+		g_object_notify (G_OBJECT (self), NM_SETTINGS_CONNECTION_FLAGS);
+	}
+	return old_flags;
+}
+
+/*************************************************************/
+
 /**
  * nm_settings_connection_get_timestamp:
  * @connection: the #NMSettingsConnection
@@ -2064,7 +2111,8 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (object);
+	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (object);
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 
 	switch (prop_id) {
 	case PROP_VISIBLE:
@@ -2072,6 +2120,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_UNSAVED:
 		g_value_set_boolean (value, priv->unsaved);
+		break;
+	case PROP_FLAGS:
+		g_value_set_uint (value, nm_settings_connection_get_flags (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2083,7 +2134,16 @@ static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
-	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+	NMSettingsConnection *self = NM_SETTINGS_CONNECTION (object);
+
+	switch (prop_id) {
+	case PROP_FLAGS:
+		nm_settings_connection_set_flags_all (self, g_value_get_uint (value));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -2116,6 +2176,15 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property
+	    (object_class, PROP_FLAGS,
+	     g_param_spec_uint (NM_SETTINGS_CONNECTION_FLAGS, "", "",
+	                        NM_SETTINGS_CONNECTION_FLAGS_NONE,
+	                        NM_SETTINGS_CONNECTION_FLAGS_ALL,
+	                        NM_SETTINGS_CONNECTION_FLAGS_NONE,
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
 

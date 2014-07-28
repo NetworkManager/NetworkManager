@@ -48,6 +48,24 @@ G_BEGIN_DECLS
 /* Properties */
 #define NM_SETTINGS_CONNECTION_VISIBLE "visible"
 #define NM_SETTINGS_CONNECTION_UNSAVED "unsaved"
+#define NM_SETTINGS_CONNECTION_FLAGS   "flags"
+
+
+/**
+ * NMSettingsConnectionFlags:
+ * @NM_SETTINGS_CONNECTION_FLAGS_NONE: no flag set
+ * @NM_SETTINGS_CONNECTION_FLAGS_ALL: special mask, for all known flags
+ *
+ * #NMSettingsConnection flags.
+ **/
+typedef enum
+{
+	NM_SETTINGS_CONNECTION_FLAGS_NONE                               = 0x00,
+
+	__NM_SETTINGS_CONNECTION_FLAGS_LAST,
+	NM_SETTINGS_CONNECTION_FLAGS_ALL = ((__NM_SETTINGS_CONNECTION_FLAGS_LAST - 1) << 1) - 1,
+} NMSettingsConnectionFlags;
+
 
 typedef struct _NMSettingsConnectionClass NMSettingsConnectionClass;
 
@@ -128,6 +146,10 @@ gboolean nm_settings_connection_check_permission (NMSettingsConnection *self,
 void nm_settings_connection_signal_remove (NMSettingsConnection *self);
 
 gboolean nm_settings_connection_get_unsaved (NMSettingsConnection *self);
+
+NMSettingsConnectionFlags nm_settings_connection_get_flags (NMSettingsConnection *connection);
+NMSettingsConnectionFlags nm_settings_connection_set_flags (NMSettingsConnection *connection, NMSettingsConnectionFlags flags, gboolean set);
+NMSettingsConnectionFlags nm_settings_connection_set_flags_all (NMSettingsConnection *connection, NMSettingsConnectionFlags flags);
 
 gboolean nm_settings_connection_get_timestamp (NMSettingsConnection *connection,
                                                guint64 *out_timestamp);
