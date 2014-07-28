@@ -38,9 +38,6 @@
 #include "settings.h"
 #include "connections.h"
 
-/* Activation timeout waiting for bond/team/bridge slaves (in seconds) */
-#define SLAVES_UP_TIMEOUT 10
-
 /* define some prompts for connection editor */
 #define EDITOR_PROMPT_SETTING  _("Setting name? ")
 #define EDITOR_PROMPT_PROPERTY _("Property name? ")
@@ -1632,6 +1629,39 @@ vpn_connection_state_reason_to_string (NMVpnConnectionStateReason reason)
 }
 
 static void
+device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
+{
+	NmCli *nmc = (NmCli *) user_data;
+	NMActiveConnection *active;
+	NMDeviceState state;
+	NMActiveConnectionState ac_state;
+
+	active = nm_device_get_active_connection (device);
+	state = nm_device_get_state (device);
+
+	ac_state = active ? nm_active_connection_get_state (active) : NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
+
+	if (ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+		if (nmc->print_output == NMC_PRINT_PRETTY)
+			nmc_terminal_erase_line ();
+		printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
+		        nm_object_get_path (NM_OBJECT (active)));
+		quit ();
+	} else if (   ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING
+	           && state == NM_DEVICE_STATE_IP_CONFIG) {
+		if (nmc->print_output == NMC_PRINT_PRETTY)
+			nmc_terminal_erase_line ();
+		printf (_("Connection successfully activated (master waiting for slaves) (D-Bus active path: %s)\n"),
+		        nm_object_get_path (NM_OBJECT (active)));
+		quit ();
+	} else if (ac_state != NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
+		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		quit ();
+	}
+}
+
+static void
 active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpointer user_data)
 {
 	NmCli *nmc = (NmCli *) user_data;
@@ -1650,6 +1680,24 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpoin
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
+	} else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
+		/* activating master connection does not automatically activate any slaves, so their
+		 * active connection state will not progress beyond ACTIVATING state.
+		 * Monitor the device instead. */
+		const GPtrArray *devices;
+		NMDevice *device;
+
+		devices = nm_active_connection_get_devices (active);
+		device = devices && devices->len ? g_ptr_array_index (devices, 0) : NULL;
+		if (   device
+		    && (   NM_IS_DEVICE_BOND (device)
+		        || NM_IS_DEVICE_TEAM (device)
+		        || NM_IS_DEVICE_BRIDGE (device))) {
+			g_signal_handlers_disconnect_by_func (active, G_CALLBACK (active_connection_state_cb), nmc);
+			g_signal_connect (device, "notify::" NM_DEVICE_STATE, G_CALLBACK (device_state_cb), nmc);
+
+			device_state_cb (device, NULL, nmc);
+		}
 	}
 }
 
@@ -1743,35 +1791,6 @@ typedef struct {
 	NMDevice *device;
 } ActivateConnectionInfo;
 
-static gboolean
-master_iface_slaves_check (gpointer user_data)
-{
-	ActivateConnectionInfo *info = (ActivateConnectionInfo *) user_data;
-	NmCli *nmc = info->nmc;
-	NMDevice *device = info->device;
-	const GPtrArray *slaves = NULL;
-
-	if (NM_IS_DEVICE_BOND (device))
-		slaves = nm_device_bond_get_slaves (NM_DEVICE_BOND (device));
-	else if (NM_IS_DEVICE_TEAM (device))
-		slaves = nm_device_team_get_slaves (NM_DEVICE_TEAM (device));
-	else if (NM_IS_DEVICE_BRIDGE (device))
-		slaves = nm_device_bridge_get_slaves (NM_DEVICE_BRIDGE (device));
-	else
-		g_warning ("%s: should not be reached.", __func__);
-
-	if (!slaves) {
-		g_string_printf (nmc->return_text,
-		                 _("Error: Device '%s' is waiting for slaves before proceeding with activation."),
-		                 nm_device_get_iface (device));
-		nmc->return_value = NMC_RESULT_ERROR_TIMEOUT_EXPIRED;
-		quit ();
-	}
-
-	g_free (info);
-	return FALSE;
-}
-
 static void
 activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *error, gpointer user_data)
 {
@@ -1826,14 +1845,6 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 
 			/* Start timer not to loop forever when signals are not emitted */
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
-
-			/* Check for bond or team or bridge slaves */
-			if (   NM_IS_DEVICE_BOND (device)
-			    || NM_IS_DEVICE_TEAM (device)
-			    || NM_IS_DEVICE_BRIDGE (device)) {
-				g_timeout_add_seconds (SLAVES_UP_TIMEOUT, master_iface_slaves_check, info);
-				return; /* info will be freed in master_iface_slaves_check () */
-			}
 		}
 	}
 	g_free (info);
