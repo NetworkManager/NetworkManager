@@ -559,8 +559,7 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 		s_route = nm_ip6_route_new ();
 		nm_ip6_route_set_dest (s_route, &route->network);
 		nm_ip6_route_set_prefix (s_route, route->plen);
-		if (!IN6_IS_ADDR_UNSPECIFIED (&route->network))
-			nm_ip6_route_set_next_hop (s_route, &route->gateway);
+		nm_ip6_route_set_next_hop (s_route, &route->gateway);
 		nm_ip6_route_set_metric (s_route, route->metric);
 
 		nm_setting_ip6_config_add_route (s_ip6, s_route);
