@@ -35,6 +35,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
+#include "libnm-util/nm-utils.h"
 #include "nm-dns-manager.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
@@ -130,12 +131,8 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 
 	num = nm_ip4_config_get_num_nameservers (src);
 	for (i = 0; i < num; i++) {
-		guint32 addr;
-		char buf[INET_ADDRSTRLEN];
-
-		addr = nm_ip4_config_get_nameserver (src, i);
-		if (inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN) > 0)
-			add_string_item (rc->nameservers, buf);
+		add_string_item (rc->nameservers,
+		                 nm_utils_inet4_ntop (nm_ip4_config_get_nameserver (src, i), NULL));
 	}
 
 	num = nm_ip4_config_get_num_domains (src);
@@ -161,12 +158,8 @@ merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 	/* NIS stuff */
 	num = nm_ip4_config_get_num_nis_servers (src);
 	for (i = 0; i < num; i++) {
-		guint32 addr;
-		char buf[INET_ADDRSTRLEN];
-
-		addr = nm_ip4_config_get_nis_server (src, i);
-		if (inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN) > 0)
-			add_string_item (rc->nis_servers, buf);
+		add_string_item (rc->nis_servers,
+		                 nm_utils_inet4_ntop (nm_ip4_config_get_nis_server (src, i), NULL));
 	}
 
 	if (nm_ip4_config_get_nis_domain (src)) {
@@ -187,25 +180,21 @@ merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
 	num = nm_ip6_config_get_num_nameservers (src);
 	for (i = 0; i < num; i++) {
 		const struct in6_addr *addr;
-		char buf[INET6_ADDRSTRLEN];
-		char *tmp;
+		char buf[NM_UTILS_INET_ADDRSTRLEN + 50];
 
 		addr = nm_ip6_config_get_nameserver (src, i);
 
 		/* inet_ntop is probably supposed to do this for us, but it doesn't */
-		if (IN6_IS_ADDR_V4MAPPED (addr)) {
-			if (inet_ntop (AF_INET, &(addr->s6_addr32[3]), buf, INET_ADDRSTRLEN) > 0)
-				add_string_item (rc->nameservers, buf);
-		} else {
-			if (inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN) > 0) {
-				if (iface && IN6_IS_ADDR_LINKLOCAL (addr)) {
-					tmp = g_strdup_printf ("%s%%%s", buf, iface);
-					add_string_item (rc->nameservers, tmp);
-					g_free (tmp);
-				} else
-					add_string_item (rc->nameservers, buf);
+		if (IN6_IS_ADDR_V4MAPPED (addr))
+			nm_utils_inet4_ntop (addr->s6_addr32[3], buf);
+		else {
+			nm_utils_inet6_ntop (addr, buf);
+			if (iface && IN6_IS_ADDR_LINKLOCAL (addr)) {
+				g_strlcat (buf, "%", sizeof (buf));
+				g_strlcat (buf, iface, sizeof (buf));
 			}
 		}
+		add_string_item (rc->nameservers, buf);
 	}
 
 	num = nm_ip6_config_get_num_domains (src);
