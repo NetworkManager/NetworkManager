@@ -3553,7 +3553,7 @@ ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (_route_match ((struct rtnl_route *) object, AF_INET, ifindex)) {
 			if (init_ip4_route (&route, (struct rtnl_route *) object)) {
-				if (route.plen != 0 || include_default)
+				if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&route) || include_default)
 					g_array_append_val (routes, route);
 			}
 		}
@@ -3575,7 +3575,7 @@ ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (_route_match ((struct rtnl_route *) object, AF_INET6, ifindex)) {
 			if (init_ip6_route (&route, (struct rtnl_route *) object)) {
-				if (route.plen != 0 || include_default)
+				if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&route) || include_default)
 					g_array_append_val (routes, route);
 			}
 		}

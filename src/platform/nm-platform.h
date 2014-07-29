@@ -250,6 +250,9 @@ typedef struct {
 	};
 } NMPlatformIPRoute;
 
+#define NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route) \
+	( ((const NMPlatformIPRoute *) (route))->plen <= 0 )
+
 struct _NMPlatformIP4Route {
 	__NMPlatformIPRoute_COMMON;
 	in_addr_t network;
