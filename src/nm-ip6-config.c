@@ -308,7 +308,7 @@ nm_ip6_config_capture (int ifindex, gboolean capture_resolv_conf, NMSettingIP6Co
 	for (i = 0; i < priv->routes->len; i++) {
 		const NMPlatformIP6Route *route = &g_array_index (priv->routes, NMPlatformIP6Route, i);
 
-		if (IN6_IS_ADDR_UNSPECIFIED (&route->network)) {
+		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
 			if (route->metric < lowest_metric) {
 				priv->gateway = route->gateway;
 				lowest_metric = route->metric;
@@ -387,7 +387,8 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 			/* Don't add the default route if the connection
 			 * is never supposed to be the default connection.
 			 */
-			if (nm_ip6_config_get_never_default (config) && IN6_IS_ADDR_UNSPECIFIED (&route.network))
+			if (   nm_ip6_config_get_never_default (config)
+			    && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&route))
 				continue;
 
 			g_array_append_val (routes, route);

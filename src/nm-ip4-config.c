@@ -198,7 +198,7 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 	for (i = 0; i < priv->routes->len; i++) {
 		const NMPlatformIP4Route *route = &g_array_index (priv->routes, NMPlatformIP4Route, i);
 
-		if (route->network == 0) {
+		if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
 			if (route->metric < lowest_metric) {
 				priv->gateway = route->gateway;
 				lowest_metric = route->metric;
@@ -276,7 +276,8 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex)
 			/* Don't add the default route if the connection
 			 * is never supposed to be the default connection.
 			 */
-			if (nm_ip4_config_get_never_default (config) && route.network == 0)
+			if (   nm_ip4_config_get_never_default (config)
+			    && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&route))
 				continue;
 
 			g_array_append_val (routes, route);
