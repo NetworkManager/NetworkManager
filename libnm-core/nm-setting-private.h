@@ -133,11 +133,22 @@ typedef gboolean (*NMSettingPropertySetFunc)    (NMSetting     *setting,
                                                  const char    *property,
                                                  const GValue  *value,
                                                  GError       **error);
+typedef gboolean (*NMSettingPropertyNotSetFunc) (NMSetting     *setting,
+                                                 GHashTable    *connection_hash,
+                                                 const char    *property,
+                                                 GError       **error);
 
 void _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
                                                const char *property_name,
                                                GType dbus_type,
                                                NMSettingPropertyGetFunc get_func,
                                                NMSettingPropertySetFunc set_func);
+
+void _nm_setting_class_override_property (NMSettingClass *setting_class,
+                                          const char *property_name,
+                                          GType dbus_type,
+                                          NMSettingPropertyGetFunc get_func,
+                                          NMSettingPropertySetFunc set_func,
+                                          NMSettingPropertyNotSetFunc not_set_func);
 
 #endif  /* NM_SETTING_PRIVATE_H */

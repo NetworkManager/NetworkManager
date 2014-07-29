@@ -378,6 +378,7 @@ typedef struct {
 	GType dbus_type;
 	NMSettingPropertyGetFunc get_func;
 	NMSettingPropertySetFunc set_func;
+	NMSettingPropertyNotSetFunc not_set_func;
 } NMSettingProperty;
 
 static GQuark setting_property_overrides_quark;
@@ -404,9 +405,11 @@ find_property (GArray *properties, const char *name)
 static void
 add_property_override (NMSettingClass *setting_class,
                        const char *property_name,
+                       GParamSpec *param_spec,
                        GType dbus_type,
                        NMSettingPropertyGetFunc get_func,
-                       NMSettingPropertySetFunc set_func)
+                       NMSettingPropertySetFunc set_func,
+                       NMSettingPropertyNotSetFunc not_set_func)
 {
 	GType setting_type = G_TYPE_FROM_CLASS (setting_class);
 	GArray *overrides;
@@ -416,9 +419,11 @@ add_property_override (NMSettingClass *setting_class,
 
 	memset (&override, 0, sizeof (override));
 	override.name = property_name;
+	override.param_spec = param_spec;
 	override.dbus_type = dbus_type;
 	override.get_func = get_func;
 	override.set_func = set_func;
+	override.not_set_func = not_set_func;
 
 	overrides = g_type_get_qdata (setting_type, setting_property_overrides_quark);
 	if (!overrides) {
@@ -468,8 +473,56 @@ _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
 	g_return_if_fail (!g_object_class_find_property (G_OBJECT_CLASS (setting_class), property_name));
 
 	add_property_override (setting_class,
-	                       property_name, dbus_type,
-	                       get_func, set_func);
+	                       property_name, NULL, dbus_type,
+	                       get_func, set_func, NULL);
+}
+
+/**
+ * _nm_setting_class_override_property:
+ * @setting_class: the setting class
+ * @property_name: the name of the property to override
+ * @dbus_type: the type of the property (in its D-Bus representation)
+ * @get_func: (allow-none): function to call to get the value of the property
+ * @set_func: (allow-none): function to call to set the value of the property
+ * @not_set_func: (allow-none): function to call to indicate the property was not set
+ *
+ * Overrides the D-Bus representation of the #GObject property named
+ * @property_name on @setting_class.
+ *
+ * When serializing a setting to D-Bus, if @get_func is non-%NULL, then it will
+ * be called to get the property's value. If it returns %TRUE, the value will be
+ * added to the hash, and if %FALSE, it will not. (If @get_func is %NULL, the
+ * property will be read normally with g_object_get_property(), and added to the
+ * hash if it is not the default value.)
+ *
+ * When deserializing a D-Bus representation into a setting, if @property_name
+ * is present, then @set_func will be called to set (and/or verify) it. If it
+ * returns %TRUE, the value is considered to have been successfully set; if it
+ * returns %FALSE then the deserializing operation as a whole will fail with the
+ * returned #GError. (If @set_func is %NULL then the property will be set normally
+ * with g_object_set_property().)
+ *
+ * If @not_set_func is non-%NULL, then it will be called when deserializing a
+ * representation that does NOT contain @property_name. This can be used, eg, if
+ * a new property needs to be initialized from some older deprecated property
+ * when it is not present.
+ */
+void
+_nm_setting_class_override_property (NMSettingClass *setting_class,
+                                     const char *property_name,
+                                     GType dbus_type,
+                                     NMSettingPropertyGetFunc get_func,
+                                     NMSettingPropertySetFunc set_func,
+                                     NMSettingPropertyNotSetFunc not_set_func)
+{
+	GParamSpec *param_spec;
+
+	param_spec = g_object_class_find_property (G_OBJECT_CLASS (setting_class), property_name);
+	g_return_if_fail (param_spec != NULL);
+
+	add_property_override (setting_class,
+	                       property_name, param_spec, dbus_type,
+	                       get_func, set_func, not_set_func);
 }
 
 static GArray *
@@ -691,10 +744,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 		const NMSettingProperty *property = &properties[i];
 		GValue *value = g_hash_table_lookup (setting_hash, property->name);
 
-		if (!value)
-			continue;
-
-		if (property->set_func) {
+		if (value && property->set_func) {
 			if (!property->set_func (setting,
 			                         connection_hash,
 			                         property->name,
@@ -704,7 +754,16 @@ _nm_setting_new_from_dbus (GType setting_type,
 				setting = NULL;
 				break;
 			}
-		} else if (property->param_spec) {
+		} else if (!value && property->not_set_func) {
+			if (!property->not_set_func (setting,
+			                             connection_hash,
+			                             property->name,
+			                             error)) {
+				g_object_unref (setting);
+				setting = NULL;
+				break;
+			}
+		} else if (value && property->param_spec) {
 			if (!(property->param_spec->flags & G_PARAM_WRITABLE))
 				continue;
 
