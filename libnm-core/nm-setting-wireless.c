@@ -27,7 +27,6 @@
 
 #include "nm-setting-wireless.h"
 #include "nm-dbus-interface.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-utils-private.h"
@@ -997,10 +996,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SSID,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SSID, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRELESS_SSID, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:mode:
@@ -1058,10 +1057,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_BSSID,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_BSSID, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRELESS_BSSID, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:rate:
@@ -1105,10 +1104,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_MAC_ADDRESS, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRELESS_MAC_ADDRESS, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:cloned-mac-address:
@@ -1118,10 +1117,10 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CLONED_MAC_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:mac-address-blacklist:
@@ -1132,11 +1131,11 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS_BLACKLIST,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_FUZZY_IGNORE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_FUZZY_IGNORE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:seen-bssids:
@@ -1150,11 +1149,11 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SEEN_BSSIDS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SEEN_BSSIDS, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_FUZZY_IGNORE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRELESS_SEEN_BSSIDS, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_FUZZY_IGNORE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWireless:mtu:

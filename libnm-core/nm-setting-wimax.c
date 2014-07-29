@@ -26,7 +26,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-wimax.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-setting-private.h"
 
 /**
@@ -251,8 +250,8 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_WIMAX_MAC_ADDRESS, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIMAX_MAC_ADDRESS, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 }

@@ -24,7 +24,6 @@
 #include <net/ethernet.h>
 #include <glib/gi18n.h>
 
-#include "nm-param-spec-specialized.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-cdma.h"
@@ -271,11 +270,11 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_BDADDR,
-		 _nm_param_spec_specialized (NM_SETTING_BLUETOOTH_BDADDR, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_BLUETOOTH_BDADDR, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingBluetooth:type:

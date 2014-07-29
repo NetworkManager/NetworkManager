@@ -27,7 +27,6 @@
 
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-utils-private.h"
@@ -1389,10 +1388,10 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PROTO,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PROTO, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRELESS_SECURITY_PROTO, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWirelessSecurity:pairwise:
@@ -1404,10 +1403,10 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PAIRWISE,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRELESS_SECURITY_PAIRWISE, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWirelessSecurity:group:
@@ -1419,10 +1418,10 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_GROUP,
-		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_GROUP, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRELESS_SECURITY_GROUP, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWirelessSecurity:leap-username:

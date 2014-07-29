@@ -26,9 +26,9 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
-#include "nm-test-utils.h"
+#include "nm-property-compare.h"
 
-extern gint _gvalues_compare (const GValue *value1, const GValue *value2);
+#include "nm-test-utils.h"
 
 static void
 compare_ints (void)
@@ -41,13 +41,13 @@ compare_ints (void)
 
 	g_value_set_int (&value1, 5);
 	g_value_set_int (&value2, 5);
-	g_assert (_gvalues_compare (&value1, &value2) == 0);
+	g_assert (nm_property_compare (&value1, &value2) == 0);
 
 	g_value_set_int (&value2, 10);
-	g_assert (_gvalues_compare (&value1, &value2) < 0);
+	g_assert (nm_property_compare (&value1, &value2) < 0);
 
 	g_value_set_int (&value2, 1);
-	g_assert (_gvalues_compare (&value1, &value2) > 0);
+	g_assert (nm_property_compare (&value1, &value2) > 0);
 }
 
 static void
@@ -63,12 +63,12 @@ compare_strings (void)
 
 	g_value_set_string (&value1, str1);
 	g_value_set_string (&value2, str1);
-	g_assert (_gvalues_compare (&value1, &value2) == 0);
+	g_assert (nm_property_compare (&value1, &value2) == 0);
 
 	g_value_set_string (&value2, str2);
-	g_assert (_gvalues_compare (&value1, &value2) < 0);
+	g_assert (nm_property_compare (&value1, &value2) < 0);
 
-	g_assert (_gvalues_compare (&value2, &value1) > 0);
+	g_assert (nm_property_compare (&value2, &value1) > 0);
 }
 
 static void
@@ -86,16 +86,16 @@ compare_strv (void)
 
 	g_value_set_boxed (&value1, strv1);
 	g_value_set_boxed (&value2, strv1);
-	g_assert (_gvalues_compare (&value1, &value2) == 0);
+	g_assert (nm_property_compare (&value1, &value2) == 0);
 
 	g_value_set_boxed (&value2, strv2);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 
 	g_value_set_boxed (&value2, strv3);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 
 	g_value_set_boxed (&value2, strv4);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 }
 
 static void
@@ -120,16 +120,16 @@ compare_garrays (void)
 
 	g_value_set_boxed (&value1, array1);
 	g_value_set_boxed (&value2, array2);
-	g_assert (_gvalues_compare (&value1, &value2) == 0);
+	g_assert (nm_property_compare (&value1, &value2) == 0);
 
 	g_array_remove_index (array2, 0);
 	g_value_set_boxed (&value2, array2);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 
 	i = 7;
 	g_array_prepend_val (array2, i);
 	g_value_set_boxed (&value2, array2);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 }
 
 static void
@@ -154,15 +154,15 @@ compare_ptrarrays (void)
 	g_ptr_array_add (array2, "world");
 	g_value_set_boxed (&value2, array2);
 
-	g_assert (_gvalues_compare (&value1, &value2) == 0);
+	g_assert (nm_property_compare (&value1, &value2) == 0);
 
 	g_ptr_array_add (array2, "boo");
 	g_value_set_boxed (&value2, array2);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 
 	g_ptr_array_add (array1, "booz");
 	g_value_set_boxed (&value1, array1);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 }
 
 static void
@@ -189,15 +189,15 @@ compare_str_hash (void)
 
 	g_value_set_boxed (&value1, hash1);
 	g_value_set_boxed (&value2, hash2);
-	g_assert (_gvalues_compare (&value1, &value2) == 0);
+	g_assert (nm_property_compare (&value1, &value2) == 0);
 
 	g_hash_table_remove (hash2, "key2");
 	g_value_set_boxed (&value2, hash2);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 
 	g_hash_table_insert (hash2, "key2", "moon");
 	g_value_set_boxed (&value2, hash2);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 }
 
 static GValue *
@@ -260,15 +260,15 @@ compare_gvalue_hash (void)
 
 	g_value_set_boxed (&value1, hash1);
 	g_value_set_boxed (&value2, hash2);
-	g_assert (_gvalues_compare (&value1, &value2) == 0);
+	g_assert (nm_property_compare (&value1, &value2) == 0);
 
 	g_hash_table_remove (hash2, "key2");
 	g_value_set_boxed (&value2, hash2);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 
 	g_hash_table_insert (hash2, "key2", str_to_gvalue ("moon"));
 	g_value_set_boxed (&value2, hash2);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 }
 
 static void
@@ -365,15 +365,15 @@ compare_ip6_addresses (void)
 
 	g_value_set_boxed (&value1, array1);
 	g_value_set_boxed (&value2, array1);
-	g_assert (_gvalues_compare (&value1, &value2) == 0);
+	g_assert (nm_property_compare (&value1, &value2) == 0);
 
 	g_value_set_boxed (&value1, array1);
 	g_value_set_boxed (&value2, array2);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 
 	g_value_set_boxed (&value1, array1);
 	g_value_set_boxed (&value2, array3);
-	g_assert (_gvalues_compare (&value1, &value2) != 0);
+	g_assert (nm_property_compare (&value1, &value2) != 0);
 }
 
 NMTST_DEFINE ();

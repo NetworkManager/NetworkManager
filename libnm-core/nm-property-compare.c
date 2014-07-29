@@ -16,16 +16,12 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2011 Red Hat, Inc.
+ * Copyright 2007 - 2014 Red Hat, Inc.
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#include "nm-param-spec-specialized.h"
+#include "nm-property-compare.h"
 #include "nm-glib-compat.h"
-
-struct _NMParamSpecSpecialized {
-	GParamSpec parent;
-};
 
 #include <string.h>
 #include <math.h>
@@ -33,11 +29,6 @@ struct _NMParamSpecSpecialized {
 #include <dbus/dbus-glib.h>
 
 #include "nm-dbus-glib-types.h"
-
-/***********************************************************/
-/* _gvalues_compare */
-
-gint _gvalues_compare (const GValue *value1, const GValue *value2);
 
 static gboolean
 type_is_fixed_size (GType type, gsize *tsize)
@@ -84,7 +75,7 @@ type_is_fixed_size (GType type, gsize *tsize)
 #define FLOAT_FACTOR 0.00000001
 
 static gint
-_gvalues_compare_fixed (const GValue *value1, const GValue *value2)
+nm_property_compare_fixed (const GValue *value1, const GValue *value2)
 {
 	int ret = 0;
 
@@ -175,7 +166,7 @@ _gvalues_compare_fixed (const GValue *value1, const GValue *value2)
 }
 
 static gint
-_gvalues_compare_string (const GValue *value1, const GValue *value2)
+nm_property_compare_string (const GValue *value1, const GValue *value2)
 {
 	const char *str1 = g_value_get_string (value1);
 	const char *str2 = g_value_get_string (value2);
@@ -192,7 +183,7 @@ _gvalues_compare_string (const GValue *value1, const GValue *value2)
 }
 
 static gint
-_gvalues_compare_strv (const GValue *value1, const GValue *value2)
+nm_property_compare_strv (const GValue *value1, const GValue *value2)
 {
 	char **strv1;
 	char **strv2;
@@ -248,7 +239,7 @@ iterate_collection (const GValue *value, gpointer user_data)
 }
 
 static gint
-_gvalues_compare_collection (const GValue *value1, const GValue *value2)
+nm_property_compare_collection (const GValue *value1, const GValue *value2)
 {
 	gint ret;
 	guint len1;
@@ -285,7 +276,7 @@ _gvalues_compare_collection (const GValue *value1, const GValue *value2)
 			for (iter1 = list1, iter2 = list2, ret = 0;
 			     ret == 0 && iter1 && iter2;
 			     iter1 = iter1->next, iter2 = iter2->next)
-				ret = _gvalues_compare ((GValue *) iter1->data, (GValue *) iter2->data);
+				ret = nm_property_compare ((GValue *) iter1->data, (GValue *) iter2->data);
 		}
 
 		g_slist_free_full (list1, _gvalue_destroy);
@@ -321,13 +312,13 @@ compare_one_map_item (gpointer key, gpointer val, gpointer user_data)
 
 	value2 = (GValue *) g_hash_table_lookup (info->hash2, key);
 	if (value2)
-		info->ret = _gvalues_compare ((GValue *) val, value2);
+		info->ret = nm_property_compare ((GValue *) val, value2);
 	else
 		info->ret = 1;
 }
 
 static gint
-_gvalues_compare_map (const GValue *value1, const GValue *value2)
+nm_property_compare_map (const GValue *value1, const GValue *value2)
 {
 	GHashTable *hash1 = NULL;
 	GHashTable *hash2 = NULL;
@@ -487,10 +478,10 @@ _gvalue_ip6_route_compare (const GValue *value1, const GValue *value2)
 }
 
 static gint
-_gvalues_compare_struct (const GValue *value1, const GValue *value2)
+nm_property_compare_struct (const GValue *value1, const GValue *value2)
 {
 	/* value1 and value2 must contain the same type since
-	 * _gvalues_compare() enforced that already.
+	 * nm_property_compare() enforced that already.
 	 */
 
 	if (G_VALUE_HOLDS (value1, DBUS_TYPE_G_IP6_ADDRESS)) {
@@ -503,8 +494,8 @@ _gvalues_compare_struct (const GValue *value1, const GValue *value2)
 	}
 }
 
-gint
-_gvalues_compare (const GValue *value1, const GValue *value2)
+int
+nm_property_compare (const GValue *value1, const GValue *value2)
 {
 	GType type1;
 	GType type2;
@@ -524,9 +515,9 @@ _gvalues_compare (const GValue *value1, const GValue *value2)
 		return type1 < type2 ? -1 : type1 > type2;
 
 	if (type_is_fixed_size (type1, NULL))
-		ret = _gvalues_compare_fixed (value1, value2);
+		ret = nm_property_compare_fixed (value1, value2);
 	else if (type1 == G_TYPE_STRING)
-		ret = _gvalues_compare_string (value1, value2);
+		ret = nm_property_compare_string (value1, value2);
 	else if (G_VALUE_HOLDS_BOXED (value1)) {
 		gpointer p1 = g_value_get_boxed (value1);
 		gpointer p2 = g_value_get_boxed (value2);
@@ -538,15 +529,15 @@ _gvalues_compare (const GValue *value1, const GValue *value2)
 		else if (!p2)
 			ret = -1; /* The comparision functions below don't handle NULLs */
 		else if (type1 == G_TYPE_STRV)
-			ret = _gvalues_compare_strv (value1, value2);
+			ret = nm_property_compare_strv (value1, value2);
 		else if (dbus_g_type_is_collection (type1))
-			ret = _gvalues_compare_collection (value1, value2);
+			ret = nm_property_compare_collection (value1, value2);
 		else if (dbus_g_type_is_map (type1))
-			ret = _gvalues_compare_map (value1, value2);
+			ret = nm_property_compare_map (value1, value2);
 		else if (dbus_g_type_is_struct (type1))
-			ret = _gvalues_compare_struct (value1, value2);
+			ret = nm_property_compare_struct (value1, value2);
 		else if (type1 == G_TYPE_VALUE)
-			ret = _gvalues_compare ((GValue *) g_value_get_boxed (value1), (GValue *) g_value_get_boxed (value2));
+			ret = nm_property_compare ((GValue *) g_value_get_boxed (value1), (GValue *) g_value_get_boxed (value2));
 		else {
 			g_warning ("Don't know how to compare boxed types '%s'", g_type_name (type1));
 			ret = value1 == value2;
@@ -557,81 +548,4 @@ _gvalues_compare (const GValue *value1, const GValue *value2)
 	}
 
 	return ret;
-}
-
-/***********************************************************/
-
-static void
-param_specialized_init (GParamSpec *pspec)
-{
-}
-
-static void
-param_specialized_set_default (GParamSpec *pspec, GValue *value)
-{
-	value->data[0].v_pointer = NULL;
-}
-
-static gboolean
-param_specialized_validate (GParamSpec *pspec, GValue *value)
-{
-	NMParamSpecSpecialized *sspec = NM_PARAM_SPEC_SPECIALIZED (pspec);
-	GType value_type = G_VALUE_TYPE (value);
-	gboolean changed = FALSE;
-
-	if (!g_value_type_compatible (value_type, G_PARAM_SPEC_VALUE_TYPE (sspec))) {
-		g_value_reset (value);
-		changed = TRUE;
-	}
-
-	return changed;
-}
-
-static gint
-param_specialized_values_cmp (GParamSpec *pspec,
-                              const GValue *value1,
-                              const GValue *value2)
-{
-	return _gvalues_compare (value1, value2);
-}
-
-GType
-_nm_param_spec_specialized_get_type (void)
-{
-	static GType type;
-
-	if (G_UNLIKELY (type) == 0) {
-		static const GParamSpecTypeInfo pspec_info = {
-			sizeof (NMParamSpecSpecialized),
-			0,
-			param_specialized_init,
-			G_TYPE_OBJECT, /* value_type */
-			NULL,          /* finalize */
-			param_specialized_set_default,
-			param_specialized_validate,
-			param_specialized_values_cmp,
-		};
-		type = g_param_type_register_static ("NMParamSpecSpecialized", &pspec_info);
-	}
-
-	return type;
-}
-
-GParamSpec *
-_nm_param_spec_specialized (const char *name,
-                            const char *nick,
-                            const char *blurb,
-                            GType specialized_type,
-                            GParamFlags flags)
-{
-	NMParamSpecSpecialized *pspec;
-
-	g_return_val_if_fail (g_type_is_a (specialized_type, G_TYPE_BOXED), NULL);
-
-	pspec = g_param_spec_internal (NM_TYPE_PARAM_SPEC_SPECIALIZED,
-	                               name, nick, blurb, flags);
-
-	G_PARAM_SPEC (pspec)->value_type = specialized_type;
-
-	return G_PARAM_SPEC (pspec);
 }

@@ -28,6 +28,7 @@
 #include "nm-setting-connection.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
+#include "nm-property-compare.h"
 
 /**
  * SECTION:nm-setting
@@ -912,7 +913,7 @@ compare_property (NMSetting *setting,
 {
 	GValue value1 = G_VALUE_INIT;
 	GValue value2 = G_VALUE_INIT;
-	gboolean different;
+	int cmp;
 
 	/* Handle compare flags */
 	if (prop_spec->flags & NM_SETTING_PARAM_SECRET) {
@@ -944,12 +945,12 @@ compare_property (NMSetting *setting,
 	g_value_init (&value2, prop_spec->value_type);
 	g_object_get_property (G_OBJECT (other), prop_spec->name, &value2);
 
-	different = g_param_values_cmp ((GParamSpec *) prop_spec, &value1, &value2);
+	cmp = nm_property_compare (&value1, &value2);
 
 	g_value_unset (&value1);
 	g_value_unset (&value2);
 
-	return different == 0 ? TRUE : FALSE;
+	return cmp == 0;
 }
 
 /**

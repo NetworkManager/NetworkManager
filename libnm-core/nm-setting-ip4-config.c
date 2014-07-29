@@ -25,7 +25,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-ip4-config.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
@@ -1240,10 +1239,10 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS,
-		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS, "", "",
-		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP4_CONFIG_DNS, "", "",
+		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP4Config:dns-search:
@@ -1256,10 +1255,10 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
-		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS_SEARCH, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP4_CONFIG_DNS_SEARCH, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP4Config:addresses:
@@ -1275,11 +1274,11 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
-		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ADDRESSES, "", "",
-		                             DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP4_CONFIG_ADDRESSES, "", "",
+		                     DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP4Config:address-labels:
@@ -1288,11 +1287,11 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESS_LABELS,
-		 _nm_param_spec_specialized ("address-labels", "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed ("address-labels", "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP4Config:routes:
@@ -1308,11 +1307,11 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
-		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ROUTES, "", "",
-		                             DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP4_CONFIG_ROUTES, "", "",
+		                     DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP4Config:ignore-auto-routes:

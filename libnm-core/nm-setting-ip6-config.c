@@ -24,7 +24,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-ip6-config.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
@@ -1047,10 +1046,10 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS,
-		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_DNS, "", "",
-		                             DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_DNS, "", "",
+		                     DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP6Config:dns-search:
@@ -1063,10 +1062,10 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
-		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_DNS_SEARCH, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_DNS_SEARCH, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP6Config:addresses:
@@ -1084,11 +1083,11 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
-		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ADDRESSES, "", "",
-		                             DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_ADDRESSES, "", "",
+		                     DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP6Config:routes:
@@ -1104,11 +1103,11 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
-		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ROUTES, "", "",
-		                             DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_ROUTES, "", "",
+		                     DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP6Config:ignore-auto-routes:

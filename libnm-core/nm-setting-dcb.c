@@ -24,7 +24,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-dcb.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
@@ -1029,10 +1028,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PFC,
-		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL, "", "",
-		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL, "", "",
+		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-group-flags:
@@ -1057,10 +1056,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_ID,
-		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_GROUP_ID, "", "",
-		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_DCB_PRIORITY_GROUP_ID, "", "",
+		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-group-bandwidth:
@@ -1072,10 +1071,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_BANDWIDTH,
-		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH, "", "",
-		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH, "", "",
+		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-bandwidth:
@@ -1088,10 +1087,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_BANDWIDTH,
-		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_BANDWIDTH, "", "",
-		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_DCB_PRIORITY_BANDWIDTH, "", "",
+		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-strict-bandwidth:
@@ -1104,10 +1103,10 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_STRICT,
-		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH, "", "",
-		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH, "", "",
+		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-traffic-class:
@@ -1118,8 +1117,8 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_TRAFFIC_CLASS,
-		 _nm_param_spec_specialized (NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS, "", "",
-		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS, "", "",
+		                     DBUS_TYPE_G_UINT_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 }

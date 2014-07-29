@@ -25,7 +25,6 @@
 
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
 
@@ -1289,10 +1288,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 */
 	g_object_class_install_property
 		(object_class, PROP_PERMISSIONS,
-		 _nm_param_spec_specialized (NM_SETTING_CONNECTION_PERMISSIONS, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_CONNECTION_PERMISSIONS, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:autoconnect:
@@ -1403,11 +1402,11 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SECONDARIES,
-		 _nm_param_spec_specialized (NM_SETTING_CONNECTION_SECONDARIES, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_FUZZY_IGNORE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_CONNECTION_SECONDARIES, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_FUZZY_IGNORE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:gateway-ping-timeout:

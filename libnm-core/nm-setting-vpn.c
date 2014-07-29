@@ -26,7 +26,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-vpn.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-private.h"
@@ -845,10 +844,10 @@ nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DATA,
-		 _nm_param_spec_specialized (NM_SETTING_VPN_DATA, "", "",
-		                             DBUS_TYPE_G_MAP_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_VPN_DATA, "", "",
+		                     DBUS_TYPE_G_MAP_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingVpn:secrets:
@@ -858,9 +857,9 @@ nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SECRETS,
-		 _nm_param_spec_specialized (NM_SETTING_VPN_SECRETS, "", "",
-		                             DBUS_TYPE_G_MAP_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_SECRET |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_VPN_SECRETS, "", "",
+		                     DBUS_TYPE_G_MAP_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_SECRET |
+		                     G_PARAM_STATIC_STRINGS));
 }

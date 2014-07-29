@@ -26,7 +26,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-wired.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
@@ -907,11 +906,11 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRED_MAC_ADDRESS, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWired:cloned-mac-address:
@@ -921,11 +920,11 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CLONED_MAC_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
     
 	/**
 	 * NMSettingWired:mac-address-blacklist:
@@ -937,11 +936,11 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS_BLACKLIST,
-		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_FUZZY_IGNORE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_FUZZY_IGNORE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWired:mtu:
@@ -971,11 +970,11 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_S390_SUBCHANNELS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRED_S390_SUBCHANNELS, "", "",
-		                             DBUS_TYPE_G_ARRAY_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRED_S390_SUBCHANNELS, "", "",
+		                     DBUS_TYPE_G_ARRAY_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWired:s390-nettype:
@@ -1001,9 +1000,9 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_S390_OPTIONS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRED_S390_OPTIONS, "", "",
-		                             DBUS_TYPE_G_MAP_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRED_S390_OPTIONS, "", "",
+		                     DBUS_TYPE_G_MAP_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 }

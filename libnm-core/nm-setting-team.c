@@ -24,7 +24,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-team.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"

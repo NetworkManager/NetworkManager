@@ -25,7 +25,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-vlan.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-connection.h"
@@ -753,11 +752,11 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_INGRESS_PRIORITY_MAP,
-		 _nm_param_spec_specialized (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingVlan:egress-priority-map:
@@ -768,11 +767,11 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_EGRESS_PRIORITY_MAP,
-		 _nm_param_spec_specialized (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name", G_TYPE_STRING,
 	                                          _nm_setting_get_deprecated_virtual_interface_name,

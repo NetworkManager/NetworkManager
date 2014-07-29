@@ -26,7 +26,6 @@
 
 #include "nm-setting-olpc-mesh.h"
 #include "nm-dbus-interface.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-utils-private.h"
@@ -234,11 +233,11 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SSID,
-		 _nm_param_spec_specialized (NM_SETTING_OLPC_MESH_SSID, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_OLPC_MESH_SSID, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingOlpcMesh:channel:
@@ -263,8 +262,8 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP_ANYCAST_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 }

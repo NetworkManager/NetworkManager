@@ -25,7 +25,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-8021x.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "crypto.h"
@@ -3135,10 +3134,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_EAP,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_EAP, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_EAP, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:identity:
@@ -3199,10 +3198,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CA_CERT,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_CA_CERT, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_CA_CERT, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:ca-path:
@@ -3241,10 +3240,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ALTSUBJECT_MATCHES,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_ALTSUBJECT_MATCHES, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_ALTSUBJECT_MATCHES, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:client-cert:
@@ -3264,10 +3263,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CLIENT_CERT,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_CLIENT_CERT, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_CLIENT_CERT, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase1-peapver:
@@ -3373,10 +3372,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_CA_CERT,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_CA_CERT, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_PHASE2_CA_CERT, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-ca-path:
@@ -3417,10 +3416,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_ALTSUBJECT_MATCHES,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES, "", "",
+		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-client-cert:
@@ -3443,10 +3442,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_CLIENT_CERT,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_CLIENT_CERT, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_PHASE2_CLIENT_CERT, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:password:
@@ -3487,11 +3486,11 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD_RAW,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PASSWORD_RAW, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_SECRET |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_PASSWORD_RAW, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_SECRET |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:password-raw-flags:
@@ -3539,10 +3538,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIVATE_KEY,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PRIVATE_KEY, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_PRIVATE_KEY, "", "",
+		                     DBUS_TYPE_G_UCHAR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:private-key-password:
@@ -3604,7 +3603,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_PRIVATE_KEY,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, "", "",
+		 g_param_spec_boxed (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, "", "",
 		                             DBUS_TYPE_G_UCHAR_ARRAY,
 		                             G_PARAM_READWRITE |
 		                             G_PARAM_STATIC_STRINGS));
