@@ -29,14 +29,6 @@
 #include <nm-connection.h>
 #include "nm-types.h"
 
-/* NOTE: ensure these capabilities match those in introspection/nm-secret-agent.xml and
- * libnm/nm-secret-agent.h.
- */
-typedef enum {
-	NM_SECRET_AGENT_CAPABILITY_NONE = 0x0,
-	NM_SECRET_AGENT_CAPABILITY_VPN_HINTS = 0x1,
-} NMSecretAgentCapabilities;
-
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
 #define NM_SECRET_AGENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SECRET_AGENT, NMSecretAgentClass))

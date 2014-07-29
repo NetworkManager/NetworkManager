@@ -55,24 +55,6 @@ typedef enum {
 	NM_SECRET_AGENT_ERROR_NO_SECRETS,         /*< nick=NoSecrets >*/
 } NMSecretAgentError;
 
-/**
- * NMSecretAgentCapabilities:
- * @NM_SECRET_AGENT_CAPABILITY_NONE: the agent supports no special capabilities
- * @NM_SECRET_AGENT_CAPABILITY_VPN_HINTS: the agent supports sending hints given
- * by the NMSecretAgentClass::get_secrets() class method to VPN plugin
- * authentication dialogs.
- * @NM_SECRET_AGENT_CAPABILITY_LAST: bounds checking value; should not be used.
- *
- * #NMSecretAgentCapabilities indicate various capabilities of the agent.
- */
-typedef enum /*< flags >*/ {
-	NM_SECRET_AGENT_CAPABILITY_NONE = 0x0,
-	NM_SECRET_AGENT_CAPABILITY_VPN_HINTS = 0x1,
-
-	/* boundary value */
-	NM_SECRET_AGENT_CAPABILITY_LAST = NM_SECRET_AGENT_CAPABILITY_VPN_HINTS
-} NMSecretAgentCapabilities;
-
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
 #define NM_SECRET_AGENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SECRET_AGENT, NMSecretAgentClass))

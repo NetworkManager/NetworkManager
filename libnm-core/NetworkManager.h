@@ -588,4 +588,23 @@ typedef enum { /*< flags >*/
 	NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM = 0x80000000
 } NMSecretAgentGetSecretsFlags;
 
+/**
+ * NMSecretAgentCapabilities:
+ * @NM_SECRET_AGENT_CAPABILITY_NONE: the agent supports no special capabilities
+ * @NM_SECRET_AGENT_CAPABILITY_VPN_HINTS: the agent supports passing hints to
+ * VPN plugin authentication dialogs.
+ * @NM_SECRET_AGENT_CAPABILITY_LAST: bounds checking value; should not be used.
+ *
+ * #NMSecretAgentCapabilities indicate various capabilities of the agent.
+ *
+ * (Corresponds to the NM_SECRET_AGENT_CAPABILITIES type in nm-secret-agent.xml.)
+ */
+typedef enum /*< flags >*/ {
+	NM_SECRET_AGENT_CAPABILITY_NONE = 0x0,
+	NM_SECRET_AGENT_CAPABILITY_VPN_HINTS = 0x1,
+
+	/* boundary value */
+	NM_SECRET_AGENT_CAPABILITY_LAST = NM_SECRET_AGENT_CAPABILITY_VPN_HINTS
+} NMSecretAgentCapabilities;
+
 #endif /* NETWORK_MANAGER_H */
