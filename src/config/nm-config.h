@@ -58,7 +58,7 @@ const char *nm_config_get_log_level (NMConfig *config);
 const char *nm_config_get_log_domains (NMConfig *config);
 const char *nm_config_get_debug (NMConfig *config);
 const char *nm_config_get_connectivity_uri (NMConfig *config);
-const guint nm_config_get_connectivity_interval (NMConfig *config);
+guint nm_config_get_connectivity_interval (NMConfig *config);
 const char *nm_config_get_connectivity_response (NMConfig *config);
 
 gboolean nm_config_get_ethernet_can_auto_default (NMConfig *config, NMDevice *device);

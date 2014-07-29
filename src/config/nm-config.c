@@ -150,7 +150,7 @@ nm_config_get_connectivity_uri (NMConfig *config)
 	return NM_CONFIG_GET_PRIVATE (config)->connectivity_uri;
 }
 
-const guint
+guint
 nm_config_get_connectivity_interval (NMConfig *config)
 {
 	g_return_val_if_fail (config != NULL, 0);
