@@ -1481,6 +1481,11 @@ check_connectivity_cb (DBusGProxy *proxy,
 	CheckConnectivityData *ccd = g_simple_async_result_get_op_res_gpointer (simple);
 	GError *error = NULL;
 
+	if (ccd->cancellable) {
+		g_signal_handler_disconnect (ccd->cancellable, ccd->cancelled_id);
+		ccd->cancelled_id = 0;
+	}
+
 	if (!dbus_g_proxy_end_call (proxy, call, &error,
 	                            G_TYPE_UINT, &ccd->connectivity,
 	                            G_TYPE_INVALID))
