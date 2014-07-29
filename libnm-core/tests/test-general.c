@@ -772,6 +772,60 @@ test_connection_to_dbus_setting_name (void)
 }
 
 static void
+test_connection_to_dbus_deprecated_props (void)
+{
+	NMConnection *connection;
+	NMSetting *s_wireless;
+	GByteArray *ssid;
+	NMSettingWirelessSecurity *s_wsec;
+	GHashTable *hash, *wireless_hash;
+	GValue *sec_val;
+
+	connection = nmtst_create_minimal_connection ("test-connection-to-dbus-deprecated-props",
+	                                              NULL,
+	                                              NM_SETTING_WIRELESS_SETTING_NAME,
+	                                              NULL);
+
+	s_wireless = nm_setting_wireless_new ();
+	ssid = g_byte_array_new ();
+	g_byte_array_append (ssid, (const guint8 *) "1234567", 7);
+	g_object_set (s_wireless,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NULL);
+	g_byte_array_unref (ssid);
+	nm_connection_add_setting (connection, s_wireless);
+
+	/* Hash should not have an 802-11-wireless.security property */
+	hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	g_assert (hash != NULL);
+
+	wireless_hash = g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (wireless_hash != NULL);
+
+	sec_val = g_hash_table_lookup (wireless_hash, "security");
+	g_assert (sec_val == NULL);
+
+	g_hash_table_destroy (hash);
+
+	/* Now add an NMSettingWirelessSecurity and try again */
+	s_wsec = make_test_wsec_setting ("test-connection-to-dbus-deprecated-props");
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	g_assert (hash != NULL);
+
+	wireless_hash = g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SETTING_NAME);
+	g_assert (wireless_hash != NULL);
+
+	sec_val = g_hash_table_lookup (wireless_hash, "security");
+	g_assert (G_VALUE_HOLDS_STRING (sec_val));
+	g_assert_cmpstr (g_value_get_string (sec_val), ==, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+
+	g_hash_table_destroy (hash);
+	g_object_unref (connection);
+}
+
+static void
 test_setting_new_from_dbus (void)
 {
 	NMSettingWirelessSecurity *s_wsec;
@@ -3167,6 +3221,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_old_uuid", test_setting_old_uuid);
 
 	g_test_add_func ("/core/general/test_connection_to_dbus_setting_name", test_connection_to_dbus_setting_name);
+	g_test_add_func ("/core/general/test_connection_to_dbus_deprecated_props", test_connection_to_dbus_deprecated_props);
 	g_test_add_func ("/core/general/test_setting_new_from_dbus", test_setting_new_from_dbus);
 	g_test_add_func ("/core/general/test_connection_replace_settings", test_connection_replace_settings);
 	g_test_add_func ("/core/general/test_connection_replace_settings_from_connection", test_connection_replace_settings_from_connection);

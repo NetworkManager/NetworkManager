@@ -78,9 +78,6 @@ GQuark nm_setting_wireless_error_quark (void);
 #define NM_SETTING_WIRELESS_SEEN_BSSIDS "seen-bssids"
 #define NM_SETTING_WIRELESS_HIDDEN      "hidden"
 
-/* Deprecated */
-#define NM_SETTING_WIRELESS_SEC         "security"
-
 /**
  * NM_SETTING_WIRELESS_MODE_ADHOC:
  *

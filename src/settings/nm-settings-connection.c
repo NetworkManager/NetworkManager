@@ -1165,18 +1165,6 @@ get_settings_auth_cb (NMSettingsConnection *self,
 			g_object_set (s_wifi, NM_SETTING_WIRELESS_SEEN_BSSIDS, bssid_list, NULL);
 		g_slist_free (bssid_list);
 
-		/* 802-11-wireless.security property is deprecated. But we set it here so that
-		 * we don't disturb old clients that might expect it being properly set for
-		 * secured Wi-Fi connections.
-		 */
-		if (nm_connection_get_setting_wireless_security (NM_CONNECTION (dupl_con))) {
-			s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (dupl_con));
-			g_assert (s_wifi);
-			g_object_set (s_wifi,
-			              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-			              NULL);
-		}
-
 		/* Secrets should *never* be returned by the GetSettings method, they
 		 * get returned by the GetSecrets method which can be better
 		 * protected against leakage of secrets to unprivileged callers.

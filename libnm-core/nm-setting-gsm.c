@@ -71,8 +71,6 @@ typedef struct {
 
 	char *apn; /* NULL for dynamic */
 	char *network_id; /* for manual registration or NULL for automatic */
-	int network_type; /* One of the NM_SETTING_GSM_NETWORK_TYPE_* */
-	guint32 allowed_bands;     /* A bitfield of NM_SETTING_GSM_BAND_* */
 
 	char *pin;
 	NMSettingSecretFlags pin_flags;
@@ -88,10 +86,8 @@ enum {
 	PROP_PASSWORD_FLAGS,
 	PROP_APN,
 	PROP_NETWORK_ID,
-	PROP_NETWORK_TYPE,
 	PROP_PIN,
 	PROP_PIN_FLAGS,
-	PROP_ALLOWED_BANDS,
 	PROP_HOME_ONLY,
 
 	LAST_PROP
@@ -423,12 +419,6 @@ set_property (GObject *object, guint prop_id,
 		if (tmp)
 			priv->network_id = g_strstrip (tmp);
 		break;
-	case PROP_NETWORK_TYPE:
-		priv->network_type = g_value_get_int (value);
-		break;
-	case PROP_ALLOWED_BANDS:
-		priv->allowed_bands = g_value_get_uint (value);
-		break;
 	case PROP_PIN:
 		g_free (priv->pin);
 		priv->pin = g_value_dup_string (value);
@@ -469,12 +459,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_NETWORK_ID:
 		g_value_set_string (value, nm_setting_gsm_get_network_id (setting));
-		break;
-	case PROP_NETWORK_TYPE:
-		g_value_set_int (value, NM_SETTING_GSM_GET_PRIVATE (setting)->network_type);
-		break;
-	case PROP_ALLOWED_BANDS:
-		g_value_set_uint (value, NM_SETTING_GSM_GET_PRIVATE (setting)->allowed_bands);
 		break;
 	case PROP_PIN:
 		g_value_set_string (value, nm_setting_gsm_get_pin (setting));
@@ -601,42 +585,6 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingGsm:network-type:
-	 *
-	 * (Unused)
-	 *
-	 * Deprecated: 0.9.10: No longer used. Network type setting should be done
-	 * by talking to ModemManager directly.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_NETWORK_TYPE,
-		 g_param_spec_int (NM_SETTING_GSM_NETWORK_TYPE, "", "",
-		                   -1 /* NM_SETTING_GSM_NETWORK_TYPE_ANY */,
-		                   5  /* NM_SETTING_GSM_NETWORK_TYPE_4G */,
-		                   -1 /* NM_SETTING_GSM_NETWORK_TYPE_ANY */,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_CONSTRUCT |
-		                   G_PARAM_STATIC_STRINGS));
-
-	/**
-	 * NMSettingGsm:allowed-bands:
-	 *
-	 * (Unused)
-	 *
-	 * Deprecated: 0.9.10: No longer used. Band setting should be done by
-	 * talking to ModemManager directly.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_ALLOWED_BANDS,
-		 g_param_spec_uint (NM_SETTING_GSM_ALLOWED_BANDS, "", "",
-		                    0      /* NM_SETTING_GSM_BAND_UNKNOWN */,
-		                    0x3fff /* NM_SETTING_GSM_BANDS_MAX */,
-		                    1      /* NM_SETTING_GSM_BAND_ANY */,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    G_PARAM_STATIC_STRINGS));
-
-	/**
 	 * NMSettingGsm:pin:
 	 *
 	 * If the SIM is locked with a PIN it must be unlocked before any other
@@ -677,4 +625,12 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		                       FALSE,
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	/* Ignore incoming deprecated properties */
+	_nm_setting_class_add_dbus_only_property (parent_class, "allowed-bands",
+	                                          G_TYPE_UINT,
+	                                          NULL, NULL);
+	_nm_setting_class_add_dbus_only_property (parent_class, "network-type",
+	                                          G_TYPE_INT,
+	                                          NULL, NULL);
 }
