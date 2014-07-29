@@ -88,7 +88,9 @@ nm_simple_connection_new_from_dbus (GHashTable *hash, GError **error)
 			goto failed;
 		}
 
-		setting = _nm_setting_new_from_dbus (type, setting_hash);
+		setting = _nm_setting_new_from_dbus (type, setting_hash, hash, error);
+		if (!setting)
+			goto failed;
 		nm_connection_add_setting (connection, setting);
 	}
 

@@ -680,7 +680,7 @@ test_setting_to_dbus_all (void)
 
 	s_wsec = make_test_wsec_setting ("setting-to-dbus-all");
 
-	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NM_CONNECTION_SERIALIZE_ALL);
+	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL);
 
 	/* Make sure all keys are there */
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
@@ -704,7 +704,7 @@ test_setting_to_dbus_no_secrets (void)
 
 	s_wsec = make_test_wsec_setting ("setting-to-dbus-no-secrets");
 
-	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NM_CONNECTION_SERIALIZE_NO_SECRETS);
+	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_NO_SECRETS);
 
 	/* Make sure non-secret keys are there */
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
@@ -730,7 +730,7 @@ test_setting_to_dbus_only_secrets (void)
 
 	s_wsec = make_test_wsec_setting ("setting-to-dbus-only-secrets");
 
-	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 
 	/* Make sure non-secret keys are there */
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT) == NULL,
@@ -778,10 +778,10 @@ test_setting_new_from_dbus (void)
 	GHashTable *hash;
 
 	s_wsec = make_test_wsec_setting ("setting-to-dbus-all");
-	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NM_CONNECTION_SERIALIZE_ALL);
+	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL);
 	g_object_unref (s_wsec);
 
-	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, hash);
+	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, hash, NULL, NULL);
 	g_hash_table_destroy (hash);
 
 	g_assert (s_wsec);

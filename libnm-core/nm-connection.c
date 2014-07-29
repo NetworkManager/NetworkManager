@@ -1268,7 +1268,7 @@ nm_connection_to_dbus (NMConnection *connection, NMConnectionSerializationFlags 
 	while (g_hash_table_iter_next (&iter, &key, &data)) {
 		NMSetting *setting = NM_SETTING (data);
 
-		setting_hash = _nm_setting_to_dbus (setting, flags);
+		setting_hash = _nm_setting_to_dbus (setting, connection, flags);
 		if (setting_hash)
 			g_hash_table_insert (ret, g_strdup (nm_setting_get_name (setting)), setting_hash);
 	}
