@@ -259,27 +259,27 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex)
 	{
 		int count = nm_ip4_config_get_num_routes (config);
 		GArray *routes = g_array_sized_new (FALSE, FALSE, sizeof (NMPlatformIP4Route), count);
-		NMPlatformIP4Route route;
+		const NMPlatformIP4Route *route;
 		gboolean success;
 
 		for (i = 0; i < count; i++) {
-			memcpy (&route, nm_ip4_config_get_route (config, i), sizeof (route));
+			route = nm_ip4_config_get_route (config, i);
 
 			/* Don't add the route if it's more specific than one of the subnets
 			 * the device already has an IP address on.
 			 */
-			if (   route.gateway == 0
-			    && nm_ip4_config_destination_is_direct (config, route.network, route.plen))
+			if (   route->gateway == 0
+			    && nm_ip4_config_destination_is_direct (config, route->network, route->plen))
 				continue;
 
 			/* Don't add the default route if the connection
 			 * is never supposed to be the default connection.
 			 */
 			if (   nm_ip4_config_get_never_default (config)
-			    && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&route))
+			    && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
 				continue;
 
-			g_array_append_val (routes, route);
+			g_array_append_vals (routes, route, 1);
 		}
 
 		success = nm_platform_ip4_route_sync (ifindex, routes);
