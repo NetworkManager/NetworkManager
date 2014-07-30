@@ -127,6 +127,9 @@ ip4_start (NMDHCPClient *client,
 
 	g_ptr_array_add (argv, (gpointer) "-L");	/* Disable built-in IPv4LL since we use avahi-autoipd */
 
+	/* --noarp. Don't request or claim the address by ARP; this also disables IPv4LL. */
+	g_ptr_array_add (argv, (gpointer) "-A");
+
 	g_ptr_array_add (argv, (gpointer) "-G");	/* Let NM handle routing */
 
 	g_ptr_array_add (argv, (gpointer) "-c");	/* Set script file */
