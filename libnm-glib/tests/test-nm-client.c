@@ -33,9 +33,6 @@
 #include "nm-device-wimax.h"
 #include "nm-glib-compat.h"
 
-static const char *fake_path;
-static const char *fake_bin;
-static const char *fake_exec;
 static GMainLoop *loop = NULL;
 
 /*******************************************************************/
@@ -129,7 +126,7 @@ service_init (void)
 {
 	DBusGConnection *bus;
 	ServiceInfo *sinfo;
-	const char *args[2] = { fake_exec, NULL };
+	const char *args[2] = { TEST_NM_SERVICE, NULL };
 	GError *error = NULL;
 	int i = 100;
 
@@ -142,7 +139,7 @@ service_init (void)
 	sinfo->bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL,  NULL);
 	test_assert (sinfo->bus);
 
-	if (!g_spawn_async (fake_path, (char **) args, NULL, 0, NULL, NULL, &sinfo->pid, &error))
+	if (!g_spawn_async (NULL, (char **) args, NULL, 0, NULL, NULL, &sinfo->pid, &error))
 		test_assert_no_error (error);
 
 	/* Wait until the service is registered on the bus */
@@ -924,17 +921,11 @@ test_devices_array (void)
 int
 main (int argc, char **argv)
 {
-	g_assert (argc == 3);
-
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif
 
 	g_test_init (&argc, &argv, NULL);
-
-	fake_path = argv[1];
-	fake_bin = argv[2];
-	fake_exec = g_strdup_printf ("%s/%s", argv[1], argv[2]);
 
 	loop = g_main_loop_new (NULL, FALSE);
 

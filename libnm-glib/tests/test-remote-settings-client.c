@@ -358,12 +358,10 @@ test_remove_connection (void)
 int
 main (int argc, char **argv)
 {
-    char *service_argv[3] = { NULL, NULL, NULL };
+    char *service_argv[2] = { TEST_NM_SERVICE, NULL };
 	int ret;
 	GError *error = NULL;
 	int i = 100;
-
-	g_assert (argc == 3);
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
@@ -377,9 +375,8 @@ main (int argc, char **argv)
 		g_assert (error == NULL);
 	}
 
-	service_argv[0] = g_strdup_printf ("%s/%s", argv[1], argv[2]);
-	if (!g_spawn_async (argv[1], service_argv, NULL, 0, NULL, NULL, &spid, &error)) {
-		g_warning ("Error spawning %s: %s", argv[2], error->message);
+	if (!g_spawn_async (NULL, service_argv, NULL, 0, NULL, NULL, &spid, &error)) {
+		g_warning ("Error spawning %s: %s", TEST_NM_SERVICE, error->message);
 		g_assert (error == NULL);
 	}
 
