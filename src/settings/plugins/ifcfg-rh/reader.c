@@ -4724,7 +4724,6 @@ static NMSetting *
 make_vlan_setting (shvarFile *ifcfg,
                    const char *file,
                    char **out_master,
-                   NMSetting8021x **s_8021x,
                    GError **error)
 {
 	NMSettingVlan *s_vlan = NULL;
@@ -4866,7 +4865,7 @@ vlan_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	vlan_setting = make_vlan_setting (ifcfg, file, &master, &s_8021x, error);
+	vlan_setting = make_vlan_setting (ifcfg, file, &master, error);
 	if (!vlan_setting) {
 		g_object_unref (connection);
 		return NULL;
