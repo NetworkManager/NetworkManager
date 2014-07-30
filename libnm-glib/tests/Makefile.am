@@ -12,7 +12,11 @@ AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
-noinst_PROGRAMS = test-nm-client test-remote-settings-client
+noinst_PROGRAMS = $(TESTS)
+
+TESTS = test-nm-client test-remote-settings-client
+
+TESTS_ENVIRONMENT = $(srcdir)/libnm-glib-test-launch.sh
 
 ####### NMClient and non-settings tests #######
 
@@ -38,15 +42,6 @@ test_remote_settings_client_LDADD = \
 
 ###########################################
 
-EXTRA_DIST = test-fake-nm.py test-remote-settings-service.py
-
-check-local: test-nm-client test-remote-settings-client
-	if test -z "$$DBUS_SESSION_BUS_ADDRESS" ; then \
-	    dbus-launch --exit-with-session $(abs_builddir)/test-nm-client; \
-	    dbus-launch --exit-with-session $(abs_builddir)/test-remote-settings-client; \
-	else \
-	    $(abs_builddir)/test-nm-client; \
-	    $(abs_builddir)/test-remote-settings-client; \
-	fi;
-
 endif
+
+EXTRA_DIST = test-fake-nm.py test-remote-settings-service.py libnm-glib-test-launch.sh
