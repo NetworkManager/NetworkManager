@@ -258,7 +258,7 @@ devices.
 %package devel
 Summary: Libraries and headers for adding NetworkManager support to applications
 Group: Development/Libraries
-Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: %{name} = %{epoch}:%{version}-%{release}
 Requires: dbus-devel >= %{dbus_version}
 Requires: dbus-glib >= %{dbus_glib_version}
 Requires: pkgconfig
@@ -295,7 +295,6 @@ NetworkManager functionality from applications that use glib.
 %package config-connectivity-fedora
 Summary: NetworkManager config file for connectivity checking via Fedora servers
 Group: System Environment/Base
-Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 
 %description config-connectivity-fedora
 This adds a NetworkManager configuration file to enable connectivity checking
@@ -304,7 +303,6 @@ via Fedora infrastructure.
 %package config-server
 Summary: NetworkManager config file for "server-like" defaults
 Group: System Environment/Base
-Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 
 %description config-server
 This adds a NetworkManager configuration file to make it behave more
@@ -320,7 +318,7 @@ deployments.
 %package tui
 Summary: NetworkManager curses-based UI
 Group: System Environment/Base
-Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: %{name} = %{epoch}:%{version}-%{release}
 Requires: %{name}-glib%{?_isa} = %{epoch}:%{version}-%{release}
 
 %description tui
