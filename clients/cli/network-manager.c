@@ -299,7 +299,7 @@ nm_connectivity_to_string (NMConnectivityState connectivity)
 static gboolean
 show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_flds)
 {
-	gboolean nm_running, startup = FALSE;
+	gboolean startup = FALSE;
 	NMState state = NM_STATE_UNKNOWN;
 	NMConnectivityState connectivity = NM_CONNECTIVITY_UNKNOWN;
 	const char *net_enabled_str;
@@ -335,42 +335,37 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 
 	nmc->get_client (nmc); /* create NMClient */
 
-	nm_running = nm_client_get_nm_running (nmc->client);
-	if (nm_running) {
-		if (!nmc_versions_match (nmc))
-			return FALSE;
-
-		state = nm_client_get_state (nmc->client);
-		startup = nm_client_get_startup (nmc->client);
-		connectivity = nm_client_get_connectivity (nmc->client);
-		net_enabled_str = nm_client_networking_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-		wireless_hw_enabled_str = nm_client_wireless_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-		wireless_enabled_str = nm_client_wireless_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-		wwan_hw_enabled_str = nm_client_wwan_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-		wwan_enabled_str = nm_client_wwan_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-#if WITH_WIMAX
-		wimax_hw_enabled_str = nm_client_wimax_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-		wimax_enabled_str = nm_client_wimax_get_enabled (nmc->client) ? _("enabled") : _("disabled");
-#endif
-	} else {
-#if WITH_WIMAX
-		net_enabled_str = wireless_hw_enabled_str = wireless_enabled_str =
-		wwan_hw_enabled_str = wwan_enabled_str = wimax_hw_enabled_str = wimax_enabled_str = _("unknown");
-#else
-		net_enabled_str = wireless_hw_enabled_str = wireless_enabled_str =
-		wwan_hw_enabled_str = wwan_enabled_str = _("unknown");
-#endif
+	if (!nm_client_get_nm_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		return FALSE;
 	}
+
+	if (!nmc_versions_match (nmc))
+		return FALSE;
+
+	state = nm_client_get_state (nmc->client);
+	startup = nm_client_get_startup (nmc->client);
+	connectivity = nm_client_get_connectivity (nmc->client);
+	net_enabled_str = nm_client_networking_get_enabled (nmc->client) ? _("enabled") : _("disabled");
+	wireless_hw_enabled_str = nm_client_wireless_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
+	wireless_enabled_str = nm_client_wireless_get_enabled (nmc->client) ? _("enabled") : _("disabled");
+	wwan_hw_enabled_str = nm_client_wwan_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
+	wwan_enabled_str = nm_client_wwan_get_enabled (nmc->client) ? _("enabled") : _("disabled");
+#if WITH_WIMAX
+	wimax_hw_enabled_str = nm_client_wimax_hardware_get_enabled (nmc->client) ? _("enabled") : _("disabled");
+	wimax_enabled_str = nm_client_wimax_get_enabled (nmc->client) ? _("enabled") : _("disabled");
+#endif
 
 	nmc->print_fields.header_name = pretty_header_name ? (char *) pretty_header_name : _("NetworkManager status");
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 	g_ptr_array_add (nmc->output_data, arr);
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, 0);
-	set_val_strc (arr, 0, nm_running ? _("running") : _("not running"));
-	set_val_strc (arr, 1, nm_running ? nm_client_get_version (nmc->client) : _("unknown"));
+	set_val_strc (arr, 0, _("running"));
+	set_val_strc (arr, 1, nm_client_get_version (nmc->client));
 	set_val_strc (arr, 2, nm_state_to_string (state));
-	set_val_strc (arr, 3, nm_running ? (startup ? _("starting") : _("started")) : _("unknown"));
+	set_val_strc (arr, 3, startup ? _("starting") : _("started"));
 	set_val_strc (arr, 4, nm_connectivity_to_string (connectivity));
 	set_val_strc (arr, 5, net_enabled_str);
 	set_val_strc (arr, 6, wireless_hw_enabled_str);
