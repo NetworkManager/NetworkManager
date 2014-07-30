@@ -390,9 +390,13 @@ typedef struct {
 	const char *name;
 	GParamSpec *param_spec;
 	GType dbus_type;
+
 	NMSettingPropertyGetFunc get_func;
 	NMSettingPropertySetFunc set_func;
 	NMSettingPropertyNotSetFunc not_set_func;
+
+	NMSettingPropertyTransformFunc to_dbus;
+	NMSettingPropertyTransformFunc from_dbus;
 } NMSettingProperty;
 
 static GQuark setting_property_overrides_quark;
@@ -423,7 +427,9 @@ add_property_override (NMSettingClass *setting_class,
                        GType dbus_type,
                        NMSettingPropertyGetFunc get_func,
                        NMSettingPropertySetFunc set_func,
-                       NMSettingPropertyNotSetFunc not_set_func)
+                       NMSettingPropertyNotSetFunc not_set_func,
+                       NMSettingPropertyTransformFunc to_dbus,
+                       NMSettingPropertyTransformFunc from_dbus)
 {
 	GType setting_type = G_TYPE_FROM_CLASS (setting_class);
 	GArray *overrides;
@@ -438,6 +444,8 @@ add_property_override (NMSettingClass *setting_class,
 	override.get_func = get_func;
 	override.set_func = set_func;
 	override.not_set_func = not_set_func;
+	override.to_dbus = to_dbus;
+	override.from_dbus = from_dbus;
 
 	overrides = g_type_get_qdata (setting_type, setting_property_overrides_quark);
 	if (!overrides) {
@@ -488,7 +496,8 @@ _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
 
 	add_property_override (setting_class,
 	                       property_name, NULL, dbus_type,
-	                       get_func, set_func, NULL);
+	                       get_func, set_func, NULL,
+	                       NULL, NULL);
 }
 
 /**
@@ -536,7 +545,42 @@ _nm_setting_class_override_property (NMSettingClass *setting_class,
 
 	add_property_override (setting_class,
 	                       property_name, param_spec, dbus_type,
-	                       get_func, set_func, not_set_func);
+	                       get_func, set_func, not_set_func,
+	                       NULL, NULL);
+}
+
+/**
+ * _nm_setting_class_transform_property:
+ * @setting_class: the setting class
+ * @property: the name of the property to transform
+ * @dbus_type: the type of the property (in its D-Bus representation)
+ * @to_dbus: function to convert from object to D-Bus format
+ * @from_dbus: function to convert from D-Bus to object format
+ *
+ * Indicates that @property on @setting_class does not have the same format as
+ * its corresponding D-Bus representation, and so must be transformed when
+ * serializing/deserializing.
+ *
+ * The transformation will also be used by nm_setting_compare(), meaning that
+ * the underlying object property does not need to be of a type that
+ * nm_property_compare() recognizes, as long as it recognizes @dbus_type.
+ */
+void
+_nm_setting_class_transform_property (NMSettingClass *setting_class,
+                                      const char *property,
+                                      GType dbus_type,
+                                      NMSettingPropertyTransformFunc to_dbus,
+                                      NMSettingPropertyTransformFunc from_dbus)
+{
+	GParamSpec *param_spec;
+
+	param_spec = g_object_class_find_property (G_OBJECT_CLASS (setting_class), property);
+	g_return_if_fail (param_spec != NULL);
+
+	add_property_override (setting_class,
+	                       property, param_spec, dbus_type,
+	                       NULL, NULL, NULL,
+	                       to_dbus, from_dbus);
 }
 
 static GArray *
@@ -681,6 +725,16 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 
 			/* Don't serialize values with default values */
 			set = !g_param_value_defaults (prop_spec, value);
+
+			/* Convert the property value if necessary */
+			if (set && property->to_dbus) {
+				GValue *dbus_value = g_slice_new0 (GValue);
+
+				g_value_init (dbus_value, property->dbus_type);
+				property->to_dbus (value, dbus_value);
+				destroy_gvalue (value);
+				value = dbus_value;
+			}
 		} else
 			g_assert_not_reached ();
 
@@ -781,7 +835,15 @@ _nm_setting_new_from_dbus (GType setting_type,
 			if (!(property->param_spec->flags & G_PARAM_WRITABLE))
 				continue;
 
-			g_object_set_property (G_OBJECT (setting), property->param_spec->name, value);
+			if (property->from_dbus)  {
+				GValue object_value = G_VALUE_INIT;
+
+				g_value_init (&object_value, property->param_spec->value_type);
+				property->from_dbus (value, &object_value);
+				g_object_set_property (G_OBJECT (setting), property->param_spec->name, &object_value);
+				g_value_unset (&object_value);
+			} else
+				g_object_set_property (G_OBJECT (setting), property->param_spec->name, value);
 		}
 	}
 
@@ -911,6 +973,7 @@ compare_property (NMSetting *setting,
                   const GParamSpec *prop_spec,
                   NMSettingCompareFlags flags)
 {
+	const NMSettingProperty *property;
 	GValue value1 = G_VALUE_INIT;
 	GValue value2 = G_VALUE_INIT;
 	int cmp;
@@ -939,13 +1002,29 @@ compare_property (NMSetting *setting,
 			return TRUE;
 	}
 
+	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), prop_spec->name);
+	g_return_val_if_fail (property != NULL, FALSE);
+
 	g_value_init (&value1, prop_spec->value_type);
 	g_object_get_property (G_OBJECT (setting), prop_spec->name, &value1);
 
 	g_value_init (&value2, prop_spec->value_type);
 	g_object_get_property (G_OBJECT (other), prop_spec->name, &value2);
 
-	cmp = nm_property_compare (&value1, &value2);
+	if (property->to_dbus) {
+		GValue dbus_value1 = G_VALUE_INIT, dbus_value2 = G_VALUE_INIT;
+
+		g_value_init (&dbus_value1, property->dbus_type);
+		property->to_dbus (&value1, &dbus_value1);
+		g_value_init (&dbus_value2, property->dbus_type);
+		property->to_dbus (&value2, &dbus_value2);
+
+		cmp = nm_property_compare (&dbus_value1, &dbus_value2);
+
+		g_value_unset (&dbus_value1);
+		g_value_unset (&dbus_value2);
+	} else
+		cmp = nm_property_compare (&value1, &value2);
 
 	g_value_unset (&value1);
 	g_value_unset (&value2);

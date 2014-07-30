@@ -158,4 +158,13 @@ void _nm_setting_class_override_property (NMSettingClass *setting_class,
                                           NMSettingPropertySetFunc set_func,
                                           NMSettingPropertyNotSetFunc not_set_func);
 
+typedef void (*NMSettingPropertyTransformFunc) (const GValue *from,
+                                                GValue       *to);
+
+void _nm_setting_class_transform_property (NMSettingClass *setting_class,
+                                           const char *property_name,
+                                           GType dbus_type,
+                                           NMSettingPropertyTransformFunc to_dbus,
+                                           NMSettingPropertyTransformFunc from_dbus);
+
 #endif  /* NM_SETTING_PRIVATE_H */
