@@ -168,8 +168,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	}
 
 	if (s_wired) {
-		const GByteArray *mac;
-		const char *perm_addr;
+		const char *perm_addr, *setting_addr;
 
 		/* FIXME: filter using s390 subchannels when they are exported over the bus */
 
@@ -181,8 +180,8 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 				             "Invalid device MAC address.");
 				return FALSE;
 			}
-			mac = nm_setting_wired_get_mac_address (s_wired);
-			if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len, perm_addr, -1)) {
+			setting_addr = nm_setting_wired_get_mac_address (s_wired);
+			if (setting_addr && !nm_utils_hwaddr_matches (setting_addr, -1, perm_addr, -1)) {
 				g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_MAC_MISMATCH,
 				             "The MACs of the device and the connection didn't match.");
 				return FALSE;

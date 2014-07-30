@@ -51,7 +51,7 @@ G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 #define NM_VLAN_ERROR (nm_vlan_error_quark ())
 
 typedef struct {
-	guint8 initial_hw_addr[ETH_ALEN];
+	char *initial_hw_addr;
 
 	gboolean disposed;
 	gboolean invalid;
@@ -88,12 +88,9 @@ update_initial_hw_address (NMDevice *dev)
 {
 	NMDeviceVlan *self = NM_DEVICE_VLAN (dev);
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-	const char *mac_str;
 
-	mac_str = nm_device_get_hw_address (dev);
-	nm_utils_hwaddr_aton (mac_str, priv->initial_hw_addr, ETH_ALEN);
-
-	_LOGD (LOGD_DEVICE | LOGD_VLAN, "read initial MAC address %s", mac_str);
+	priv->initial_hw_addr = g_strdup (nm_device_get_hw_address (dev));
+	_LOGD (LOGD_DEVICE | LOGD_VLAN, "read initial MAC address %s", priv->initial_hw_addr);
 }
 
 static guint32
@@ -157,20 +154,20 @@ static gboolean
 match_hwaddr (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hwaddr)
 {
 	  NMSettingWired *s_wired;
-	  const GByteArray *mac;
+	  const char *setting_mac;
 	  const char *device_mac;
 
 	  s_wired = nm_connection_get_setting_wired (connection);
 	  if (!s_wired)
 		  return !fail_if_no_hwaddr;
 
-	  mac = nm_setting_wired_get_mac_address (s_wired);
-	  if (!mac)
+	  setting_mac = nm_setting_wired_get_mac_address (s_wired);
+	  if (!setting_mac)
 		  return !fail_if_no_hwaddr;
 
 	  device_mac = nm_device_get_hw_address (device);
 
-	  return nm_utils_hwaddr_matches (mac->data, mac->len, device_mac, -1);
+	  return nm_utils_hwaddr_matches (setting_mac, -1, device_mac, -1);
 }
 
 static gboolean
@@ -333,7 +330,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	NMConnection *connection;
 	NMSettingVlan *s_vlan;
 	NMSettingWired *s_wired;
-	const GByteArray *cloned_mac;
+	const char *cloned_mac;
 	NMActStageReturn ret;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -352,8 +349,8 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	if (s_wired) {
 		/* Set device MAC address if the connection wants to change it */
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-		if (cloned_mac && (cloned_mac->len == ETH_ALEN))
-			nm_device_set_hw_addr (dev, (const guint8 *) cloned_mac->data, "set", LOGD_VLAN);
+		if (cloned_mac)
+			nm_device_set_hw_addr (dev, cloned_mac, "set", LOGD_VLAN);
 	}
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
@@ -606,6 +603,17 @@ dispose (GObject *object)
 }
 
 static void
+finalize (GObject *object)
+{
+	NMDeviceVlan *self = NM_DEVICE_VLAN (object);
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
+
+	g_free (priv->initial_hw_addr);
+
+	G_OBJECT_CLASS (nm_device_vlan_parent_class)->finalize (object);
+}
+
+static void
 nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -620,6 +628,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 
 	parent_class->update_initial_hw_address = update_initial_hw_address;
 	parent_class->get_generic_capabilities = get_generic_capabilities;

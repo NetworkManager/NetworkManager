@@ -35,7 +35,7 @@ test_config (const char *orig,
              const char *hostname,
              const char *dhcp_client_id,
              const char *iface,
-             GByteArray *anycast_addr)
+             const char *anycast_addr)
 {
 	char *new;
 

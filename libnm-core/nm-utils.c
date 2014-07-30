@@ -2230,6 +2230,28 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 	return !memcmp (hwaddr1, hwaddr2, hwaddr1_len);
 }
 
+void
+_nm_utils_hwaddr_to_dbus (const GValue *prop_value,
+                          GValue *dbus_value)
+{
+	const char *str = g_value_get_string (prop_value);
+	GByteArray *array;
+
+	array = str ? nm_utils_hwaddr_atoba (str, hwaddr_binary_len (str)) : NULL;
+	g_value_take_boxed (dbus_value, array);
+}
+
+void
+_nm_utils_hwaddr_from_dbus (const GValue *dbus_value,
+                            GValue *prop_value)
+{
+	GByteArray *array = g_value_get_boxed (dbus_value);
+	char *str;
+
+	str = array ? nm_utils_hwaddr_ntoa (array->data, array->len) : NULL;
+	g_value_take_string (prop_value, str);
+}
+
 /**
  * nm_utils_bin2hexstr:
  * @bytes: an array of bytes

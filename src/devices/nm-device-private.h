@@ -52,7 +52,7 @@ gboolean nm_device_bring_up (NMDevice *self, gboolean wait, gboolean *no_firmwar
 
 void nm_device_take_down (NMDevice *self, gboolean block);
 
-gboolean nm_device_set_hw_addr (NMDevice *device, const guint8 *addr,
+gboolean nm_device_set_hw_addr (NMDevice *device, const char *addr,
                                 const char *detail, guint64 hw_log_domain);
 
 gboolean nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6);
@@ -75,7 +75,7 @@ gboolean nm_device_activate_ip6_state_in_conf (NMDevice *device);
 gboolean nm_device_activate_ip6_state_in_wait (NMDevice *device);
 
 void nm_device_set_dhcp_timeout (NMDevice *device, guint32 timeout);
-void nm_device_set_dhcp_anycast_address (NMDevice *device, guint8 *addr);
+void nm_device_set_dhcp_anycast_address (NMDevice *device, const char *addr);
 
 gboolean nm_device_dhcp4_renew (NMDevice *device, gboolean release);
 gboolean nm_device_dhcp6_renew (NMDevice *device, gboolean release);

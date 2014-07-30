@@ -141,10 +141,10 @@ void nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *conne
 GSList *nm_settings_connection_get_seen_bssids (NMSettingsConnection *connection);
 
 gboolean nm_settings_connection_has_seen_bssid (NMSettingsConnection *connection,
-                                                const guint8 *bssid);
+                                                const char *bssid);
 
 void nm_settings_connection_add_seen_bssid (NMSettingsConnection *connection,
-                                            const guint8 *seen_bssid);
+                                            const char *seen_bssid);
 
 void nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *connection);
 

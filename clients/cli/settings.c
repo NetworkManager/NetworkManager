@@ -810,22 +810,6 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		return secret_flags_to_string (v); \
 	}
 
-#define DEFINE_HWADDR_GETTER(func_name, property_name) \
-	static char * \
-	func_name (NMSetting *setting) \
-	{ \
-		GValue val = G_VALUE_INIT; \
-		GArray *array; \
-		char *hwaddr = NULL; \
-		g_value_init (&val, DBUS_TYPE_G_UCHAR_ARRAY); \
-		g_object_get_property (G_OBJECT (setting), property_name, &val); \
-		array = g_value_get_boxed (&val); \
-		if (array && array->len) \
-			hwaddr = nm_utils_hwaddr_ntoa (array->data, array->len); \
-		g_value_unset (&val); \
-		return hwaddr; \
-	}
-
 /* --- NM_SETTING_802_1X_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_802_1X_get_eap, NM_SETTING_802_1X_EAP)
 DEFINE_GETTER (nmc_property_802_1X_get_identity, NM_SETTING_802_1X_IDENTITY)
@@ -966,7 +950,7 @@ DEFINE_GETTER (nmc_property_adsl_get_vpi, NM_SETTING_ADSL_VPI)
 DEFINE_GETTER (nmc_property_adsl_get_vci, NM_SETTING_ADSL_VCI)
 
 /* --- NM_SETTING_BLUETOOTH_SETTING_NAME property get functions --- */
-DEFINE_HWADDR_GETTER (nmc_property_bluetooth_get_bdaddr, NM_SETTING_BLUETOOTH_BDADDR)
+DEFINE_GETTER (nmc_property_bluetooth_get_bdaddr, NM_SETTING_BLUETOOTH_BDADDR)
 DEFINE_GETTER (nmc_property_bluetooth_get_type, NM_SETTING_BLUETOOTH_TYPE)
 
 static char *
@@ -989,7 +973,7 @@ nmc_property_bond_get_options (NMSetting *setting)
 }
 
 /* --- NM_SETTING_BRIDGE_SETTING_NAME property get functions --- */
-DEFINE_HWADDR_GETTER (nmc_property_bridge_get_mac_address, NM_SETTING_BRIDGE_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_bridge_get_mac_address, NM_SETTING_BRIDGE_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_bridge_get_stp, NM_SETTING_BRIDGE_STP)
 DEFINE_GETTER (nmc_property_bridge_get_priority, NM_SETTING_BRIDGE_PRIORITY)
 DEFINE_GETTER (nmc_property_bridge_get_forward_delay, NM_SETTING_BRIDGE_FORWARD_DELAY)
@@ -1181,7 +1165,7 @@ DEFINE_SECRET_FLAGS_GETTER (nmc_property_gsm_get_pin_flags, NM_SETTING_GSM_PIN_F
 DEFINE_GETTER (nmc_property_gsm_get_home_only, NM_SETTING_GSM_HOME_ONLY)
 
 /* --- NM_SETTING_INFINIBAND_SETTING_NAME property get functions --- */
-DEFINE_HWADDR_GETTER (nmc_property_ib_get_mac_address, NM_SETTING_INFINIBAND_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_ib_get_mac_address, NM_SETTING_INFINIBAND_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_ib_get_transport_mode, NM_SETTING_INFINIBAND_TRANSPORT_MODE)
 
 static char *
@@ -1247,7 +1231,7 @@ nmc_property_ipv6_get_ip6_privacy (NMSetting *setting)
 
 /* --- NM_SETTING_OLPC_MESH_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_olpc_get_channel, NM_SETTING_OLPC_MESH_CHANNEL)
-DEFINE_HWADDR_GETTER (nmc_property_olpc_get_anycast_address, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS)
+DEFINE_GETTER (nmc_property_olpc_get_anycast_address, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS)
 
 static char *
 nmc_property_olpc_get_ssid (NMSetting *setting)
@@ -1352,15 +1336,15 @@ nmc_property_vpn_get_secrets (NMSetting *setting)
 
 /* --- NM_SETTING_WIMAX_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_wimax_get_network_name, NM_SETTING_WIMAX_NETWORK_NAME)
-DEFINE_HWADDR_GETTER (nmc_property_wimax_get_mac_address, NM_SETTING_WIMAX_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wimax_get_mac_address, NM_SETTING_WIMAX_MAC_ADDRESS)
 
 /* --- NM_SETTING_WIRED_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_wired_get_port, NM_SETTING_WIRED_PORT)
 DEFINE_GETTER (nmc_property_wired_get_speed, NM_SETTING_WIRED_SPEED)
 DEFINE_GETTER (nmc_property_wired_get_duplex, NM_SETTING_WIRED_DUPLEX)
 DEFINE_GETTER (nmc_property_wired_get_auto_negotiate, NM_SETTING_WIRED_AUTO_NEGOTIATE)
-DEFINE_HWADDR_GETTER (nmc_property_wired_get_mac_address, NM_SETTING_WIRED_MAC_ADDRESS)
-DEFINE_HWADDR_GETTER (nmc_property_wired_get_cloned_mac_address, NM_SETTING_WIRED_CLONED_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wired_get_mac_address, NM_SETTING_WIRED_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wired_get_cloned_mac_address, NM_SETTING_WIRED_CLONED_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_wired_get_mac_address_blacklist, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST)
 DEFINE_GETTER (nmc_property_wired_get_s390_subchannels, NM_SETTING_WIRED_S390_SUBCHANNELS)
 DEFINE_GETTER (nmc_property_wired_get_s390_nettype, NM_SETTING_WIRED_S390_NETTYPE)
@@ -1383,11 +1367,11 @@ nmc_property_wired_get_mtu (NMSetting *setting)
 DEFINE_GETTER (nmc_property_wireless_get_mode, NM_SETTING_WIRELESS_MODE)
 DEFINE_GETTER (nmc_property_wireless_get_band, NM_SETTING_WIRELESS_BAND)
 DEFINE_GETTER (nmc_property_wireless_get_channel, NM_SETTING_WIRELESS_CHANNEL)
-DEFINE_HWADDR_GETTER (nmc_property_wireless_get_bssid, NM_SETTING_WIRELESS_BSSID)
+DEFINE_GETTER (nmc_property_wireless_get_bssid, NM_SETTING_WIRELESS_BSSID)
 DEFINE_GETTER (nmc_property_wireless_get_rate, NM_SETTING_WIRELESS_RATE)
 DEFINE_GETTER (nmc_property_wireless_get_tx_power, NM_SETTING_WIRELESS_TX_POWER)
-DEFINE_HWADDR_GETTER (nmc_property_wireless_get_mac_address, NM_SETTING_WIRELESS_MAC_ADDRESS)
-DEFINE_HWADDR_GETTER (nmc_property_wireless_get_cloned_mac_address, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wireless_get_mac_address, NM_SETTING_WIRELESS_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wireless_get_cloned_mac_address, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_wireless_get_mac_address_blacklist, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST)
 DEFINE_GETTER (nmc_property_wireless_get_seen_bssids, NM_SETTING_WIRELESS_SEEN_BSSIDS)
 DEFINE_GETTER (nmc_property_wireless_get_hidden, NM_SETTING_WIRELESS_HIDDEN)
@@ -2061,18 +2045,14 @@ nmc_property_set_ssid (NMSetting *setting, const char *prop, const char *val, GE
 static gboolean
 nmc_property_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	GByteArray *array;
-
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	array = nm_utils_hwaddr_atoba (val, ETH_ALEN);
-	if (!array) {
+	if (!nm_utils_hwaddr_valid (val, ETH_ALEN)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid Ethernet MAC"), val);
 		return FALSE;
 	}
 
-	g_object_set (setting, prop, array, NULL);
-	g_byte_array_free (array, TRUE);
+	g_object_set (setting, prop, val, NULL);
 	return TRUE;
 }
 
@@ -2830,18 +2810,14 @@ nmc_property_bond_allowed_options (NMSetting *setting, const char *prop)
 static gboolean
 nmc_property_ib_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	GByteArray *array;
-
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	array = nm_utils_hwaddr_atoba (val, INFINIBAND_ALEN);
-	if (!array) {
+	if (!nm_utils_hwaddr_valid (val, INFINIBAND_ALEN)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid InfiniBand MAC"), val);
 		return FALSE;
 	}
 
-	g_object_set (setting, prop, array, NULL);
-	g_byte_array_free (array, TRUE);
+	g_object_set (setting, prop, val, NULL);
 	return TRUE;
 }
 

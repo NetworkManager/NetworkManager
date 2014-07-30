@@ -34,4 +34,9 @@ gboolean    _nm_utils_gvalue_array_validate (GValueArray *elements,
 
 void        _nm_value_transforms_register (void);
 
+void        _nm_utils_hwaddr_to_dbus   (const GValue *prop_value,
+                                        GValue *dbus_value);
+void        _nm_utils_hwaddr_from_dbus (const GValue *dbus_value,
+                                        GValue *prop_value);
+
 #endif

@@ -152,8 +152,6 @@ nmt_mac_entry_set_property (GObject      *object,
                             GParamSpec   *pspec)
 {
 	NmtMacEntryPrivate *priv = NMT_MAC_ENTRY_GET_PRIVATE (object);
-	GByteArray *addr;
-	char *addr_str;
 
 	switch (prop_id) {
 	case PROP_MAC_LENGTH:
@@ -161,13 +159,7 @@ nmt_mac_entry_set_property (GObject      *object,
 		priv->mac_str_length = priv->mac_length * 3 - 1;
 		break;
 	case PROP_MAC_ADDRESS:
-		addr = g_value_get_boxed (value);
-		if (addr) {
-			addr_str = nm_utils_hwaddr_ntoa (addr->data, addr->len);
-			nmt_newt_entry_set_text (NMT_NEWT_ENTRY (object), addr_str);
-			g_free (addr_str);
-		} else
-			nmt_newt_entry_set_text (NMT_NEWT_ENTRY (object), "");
+		nmt_newt_entry_set_text (NMT_NEWT_ENTRY (object), g_value_get_string (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -182,15 +174,13 @@ nmt_mac_entry_get_property (GObject    *object,
                             GParamSpec *pspec)
 {
 	NmtMacEntryPrivate *priv = NMT_MAC_ENTRY_GET_PRIVATE (object);
-	GByteArray *addr;
 
 	switch (prop_id) {
 	case PROP_MAC_LENGTH:
 		g_value_set_int (value, priv->mac_length);
 		break;
 	case PROP_MAC_ADDRESS:
-		addr = nm_utils_hwaddr_atoba (nmt_newt_entry_get_text (NMT_NEWT_ENTRY (object)), ETH_ALEN);
-		g_value_take_boxed (value, addr);
+		g_value_set_boxed (value, nmt_newt_entry_get_text (NMT_NEWT_ENTRY (object)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -225,13 +215,13 @@ nmt_mac_entry_class_init (NmtMacEntryClass *entry_class)
 	/**
 	 * NmtMacEntry:mac-address:
 	 *
-	 * The MAC address, in binary (in the same format used by the various
-	 * #NMSetting "mac-address" properties).
+	 * The MAC address, as a string (as with the various #NMSetting
+	 * "mac-address" properties).
 	 */
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_boxed ("mac-address", "", "",
-		                     DBUS_TYPE_G_UCHAR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string ("mac-address", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 }

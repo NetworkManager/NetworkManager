@@ -348,7 +348,7 @@ nm_dhcp_client_watch_child (NMDhcpClient *self, pid_t pid)
 gboolean
 nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                           const char *dhcp_client_id,
-                          GByteArray *dhcp_anycast_addr,
+                          const char *dhcp_anycast_addr,
                           const char *hostname)
 {
 	NMDhcpClientPrivate *priv;
@@ -480,7 +480,7 @@ get_duid (NMDhcpClient *self)
 
 gboolean
 nm_dhcp_client_start_ip6 (NMDhcpClient *self,
-                          GByteArray *dhcp_anycast_addr,
+                          const char *dhcp_anycast_addr,
                           const char *hostname,
                           gboolean info_only,
                           NMSettingIP6ConfigPrivacy privacy)

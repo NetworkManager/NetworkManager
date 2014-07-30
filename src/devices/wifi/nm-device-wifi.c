@@ -116,8 +116,8 @@ static guint signals[LAST_SIGNAL] = { 0 };
 struct _NMDeviceWifiPrivate {
 	gboolean          disposed;
 
-	char *            perm_hw_addr;              /* Permanent MAC address */
-	guint8            initial_hw_addr[ETH_ALEN]; /* Initial MAC address (as seen when NM starts) */
+	char *            perm_hw_addr;    /* Permanent MAC address */
+	char *            initial_hw_addr; /* Initial MAC address (as seen when NM starts) */
 
 	gint8             invalid_strength_counter;
 
@@ -377,7 +377,7 @@ find_active_ap (NMDeviceWifi *self,
 	_LOGD (LOGD_WIFI, "active BSSID: %02x:%02x:%02x:%02x:%02x:%02x",
 	       bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
 
-	if (!nm_ethernet_address_is_valid (bssid))
+	if (!nm_ethernet_address_is_valid (bssid, ETH_ALEN))
 		return NULL;
 
 	ssid = nm_platform_wifi_get_ssid (ifindex);
@@ -399,24 +399,23 @@ find_active_ap (NMDeviceWifi *self,
 		/* Find this SSID + BSSID in the device's AP list */
 		for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
 			NMAccessPoint *ap = NM_AP (iter->data);
-			const guint8 *ap_bssid = nm_ap_get_address (ap);
+			const char *ap_bssid = nm_ap_get_address (ap);
 			const GByteArray *ap_ssid = nm_ap_get_ssid (ap);
 			NM80211Mode apmode;
 			guint32 apfreq;
 
-			_LOGD (LOGD_WIFI, "    AP: %s%s%s  %02x:%02x:%02x:%02x:%02x:%02x",
+			_LOGD (LOGD_WIFI, "    AP: %s%s%s  %s",
 			       ap_ssid ? "'" : "",
 			       ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
 			       ap_ssid ? "'" : "",
-			       ap_bssid[0], ap_bssid[1], ap_bssid[2],
-			       ap_bssid[3], ap_bssid[4], ap_bssid[5]);
+			       ap_bssid);
 
 			if (ap == ignore_ap) {
 				_LOGD (LOGD_WIFI, "      ignored");
 				continue;
 			}
 
-			if (!nm_utils_hwaddr_matches (bssid, ETH_ALEN, ap_bssid, ETH_ALEN)) {
+			if (!nm_utils_hwaddr_matches (bssid, ETH_ALEN, ap_bssid, -1)) {
 				_LOGD (LOGD_WIFI, "      BSSID mismatch");
 				continue;
 			}
@@ -468,14 +467,14 @@ find_active_ap (NMDeviceWifi *self,
 	 * we can't match the AP based on frequency at all, just give up.
 	 */
 	if (match_nofreq && ((found_a_band != found_bg_band) || (devfreq == 0))) {
-		const guint8 *ap_bssid = nm_ap_get_address (match_nofreq);
+		const char *ap_bssid = nm_ap_get_address (match_nofreq);
 		const GByteArray *ap_ssid = nm_ap_get_ssid (match_nofreq);
 
-		_LOGD (LOGD_WIFI, "    matched %s%s%s  %02x:%02x:%02x:%02x:%02x:%02x",
+		_LOGD (LOGD_WIFI, "    matched %s%s%s  %s",
 		       ap_ssid ? "'" : "",
 		       ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
 		       ap_ssid ? "'" : "",
-		       ap_bssid[0], ap_bssid[1], ap_bssid[2], ap_bssid[3], ap_bssid[4], ap_bssid[5]);
+		       ap_bssid);
 
 		active_ap = match_nofreq;
 		goto done;
@@ -602,8 +601,11 @@ periodic_update (NMDeviceWifi *self, NMAccessPoint *ignore_ap)
 		/* 0x02 means "locally administered" and should be OR-ed into
 		 * the first byte of IBSS BSSIDs.
 		 */
-		if ((bssid[0] & 0x02) && nm_ethernet_address_is_valid (bssid))
-			nm_ap_set_address (priv->current_ap, bssid);
+		if ((bssid[0] & 0x02) && nm_ethernet_address_is_valid (bssid, ETH_ALEN)) {
+			char *bssid_str = nm_utils_hwaddr_ntoa (bssid, ETH_ALEN);
+			nm_ap_set_address (priv->current_ap, bssid_str);
+			g_free (bssid_str);
+		}
 	}
 
 	new_ap = find_active_ap (self, ignore_ap, FALSE);
@@ -619,31 +621,26 @@ periodic_update (NMDeviceWifi *self, NMAccessPoint *ignore_ap)
 	}
 
 	if (new_ap != priv->current_ap) {
-		const guint8 *new_bssid = NULL;
+		const char *new_bssid = NULL;
 		const GByteArray *new_ssid = NULL;
-		const guint8 *old_bssid = NULL;
+		const char *old_bssid = NULL;
 		const GByteArray *old_ssid = NULL;
-		char *old_addr = NULL, *new_addr = NULL;
 
 		if (new_ap) {
 			new_bssid = nm_ap_get_address (new_ap);
-			new_addr = nm_utils_hwaddr_ntoa (new_bssid, ETH_ALEN);
 			new_ssid = nm_ap_get_ssid (new_ap);
 		}
 
 		if (priv->current_ap) {
 			old_bssid = nm_ap_get_address (priv->current_ap);
-			old_addr = nm_utils_hwaddr_ntoa (old_bssid, ETH_ALEN);
 			old_ssid = nm_ap_get_ssid (priv->current_ap);
 		}
 
 		_LOGI (LOGD_WIFI, "roamed from BSSID %s (%s) to %s (%s)",
-		       old_addr ? old_addr : "(none)",
+		       old_bssid ? old_bssid : "(none)",
 		       old_ssid ? nm_utils_escape_ssid (old_ssid->data, old_ssid->len) : "(none)",
-		       new_addr ? new_addr : "(none)",
+		       new_bssid ? new_bssid : "(none)",
 		       new_ssid ? nm_utils_escape_ssid (new_ssid->data, new_ssid->len) : "(none)");
-		g_free (old_addr);
-		g_free (new_addr);
 
 		set_current_ap (self, new_ap, TRUE, FALSE);
 	}
@@ -810,7 +807,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
-	const GByteArray *mac;
+	const char *mac;
 	const GSList *mac_blacklist, *mac_blacklist_iter;
 	const char *mode;
 
@@ -828,21 +825,19 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
-	if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len, priv->perm_hw_addr, -1))
+	if (mac && !nm_utils_hwaddr_matches (mac, -1, priv->perm_hw_addr, -1))
 		return FALSE;
 
 	/* Check for MAC address blacklist */
 	mac_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
 	for (mac_blacklist_iter = mac_blacklist; mac_blacklist_iter;
 	     mac_blacklist_iter = g_slist_next (mac_blacklist_iter)) {
-		guint8 addr[ETH_ALEN];
-
-		if (!nm_utils_hwaddr_aton (mac_blacklist_iter->data, addr, ETH_ALEN)) {
+		if (!nm_utils_hwaddr_valid (mac_blacklist_iter->data, ETH_ALEN)) {
 			g_warn_if_reached ();
 			return FALSE;
 		}
 
-		if (nm_utils_hwaddr_matches (addr, ETH_ALEN, priv->perm_hw_addr, -1))
+		if (nm_utils_hwaddr_matches (mac_blacklist_iter->data, -1, priv->perm_hw_addr, -1))
 			return FALSE;
 	}
 
@@ -980,7 +975,7 @@ complete_connection (NMDevice *device,
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
-	const GByteArray *setting_mac;
+	const char *setting_mac;
 	char *str_ssid = NULL;
 	NMAccessPoint *ap = NULL;
 	const GByteArray *ssid = NULL;
@@ -1119,7 +1114,7 @@ complete_connection (NMDevice *device,
 	setting_mac = nm_setting_wireless_get_mac_address (s_wifi);
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-		if (!nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, priv->perm_hw_addr, -1)) {
+		if (!nm_utils_hwaddr_matches (setting_mac, -1, priv->perm_hw_addr, -1)) {
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_ERROR,
 			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
@@ -1127,7 +1122,6 @@ complete_connection (NMDevice *device,
 			return FALSE;
 		}
 	} else {
-		GByteArray *mac;
 		guint8 perm_hw_addr[ETH_ALEN];
 
 		/* Lock the connection to this device by default if it uses a
@@ -1136,9 +1130,9 @@ complete_connection (NMDevice *device,
 		nm_utils_hwaddr_aton (priv->perm_hw_addr, perm_hw_addr, ETH_ALEN);
 		if (   !(perm_hw_addr[0] & 0x02)
 		    && !nm_utils_hwaddr_matches (perm_hw_addr, ETH_ALEN, NULL, ETH_ALEN)) {
-			mac = nm_utils_hwaddr_atoba (priv->perm_hw_addr, ETH_ALEN);
-			g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_MAC_ADDRESS, mac, NULL);
-			g_byte_array_free (mac, TRUE);
+			g_object_set (G_OBJECT (s_wifi),
+			              NM_SETTING_WIRELESS_MAC_ADDRESS, priv->perm_hw_addr,
+			              NULL);
 		}
 	}
 
@@ -1389,7 +1383,6 @@ scanning_allowed (NMDeviceWifi *self)
 	if (connection) {
 		NMSettingWireless *s_wifi;
 		const char *ip4_method = NULL;
-		const GByteArray *bssid;
 
 		/* Don't scan when a shared connection is active; it makes drivers mad */
 		ip4_method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
@@ -1403,8 +1396,7 @@ scanning_allowed (NMDeviceWifi *self)
 		 */
 		s_wifi = nm_connection_get_setting_wireless (connection);
 		g_assert (s_wifi);
-		bssid = nm_setting_wireless_get_bssid (s_wifi);
-		if (bssid && bssid->len == ETH_ALEN)
+		if (nm_setting_wireless_get_bssid (s_wifi))
 			return FALSE;
 	}
 
@@ -1639,7 +1631,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 static void
 try_fill_ssid_for_hidden_ap (NMAccessPoint *ap)
 {
-	const guint8 *bssid;
+	const char *bssid;
 	const GSList *connections, *iter;
 
 	g_return_if_fail (nm_ap_get_ssid (ap) == NULL);
@@ -1664,9 +1656,6 @@ try_fill_ssid_for_hidden_ap (NMAccessPoint *ap)
 	}
 }
 
-#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
-#define MAC_ARG(x) ((guint8*)(x))[0],((guint8*)(x))[1],((guint8*)(x))[2],((guint8*)(x))[3],((guint8*)(x))[4],((guint8*)(x))[5]
-
 /*
  * merge_scanned_ap
  *
@@ -1686,7 +1675,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *found_ap = NULL;
 	const GByteArray *ssid;
-	const guint8 *bssid;
+	const char *bssid;
 	gboolean strict_match = TRUE;
 
 	/* Let the manager try to fill in the SSID from seen-bssids lists */
@@ -1699,14 +1688,13 @@ merge_scanned_ap (NMDeviceWifi *self,
 		ssid = nm_ap_get_ssid (merge_ap);
 		if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {
 			/* Yay, matched it, no longer treat as hidden */
-			_LOGD (LOGD_WIFI_SCAN, "matched hidden AP " MAC_FMT " => '%s'",
-			       MAC_ARG (bssid),
-			       nm_utils_escape_ssid (ssid->data, ssid->len));
+			_LOGD (LOGD_WIFI_SCAN, "matched hidden AP %s => '%s'",
+			       bssid, nm_utils_escape_ssid (ssid->data, ssid->len));
 			nm_ap_set_broadcast (merge_ap, FALSE);
 		} else {
 			/* Didn't have an entry for this AP in the database */
-			_LOGD (LOGD_WIFI_SCAN, "failed to match hidden AP " MAC_FMT,
-			       MAC_ARG (bssid));
+			_LOGD (LOGD_WIFI_SCAN, "failed to match hidden AP %s",
+			       bssid);
 		}
 	}
 
@@ -1723,9 +1711,9 @@ merge_scanned_ap (NMDeviceWifi *self,
 	if (!found_ap)
 		found_ap = nm_ap_match_in_list (merge_ap, priv->ap_list, strict_match);
 	if (found_ap) {
-		_LOGD (LOGD_WIFI_SCAN, "merging AP '%s' " MAC_FMT " (%p) with existing (%p)",
+		_LOGD (LOGD_WIFI_SCAN, "merging AP '%s' %s (%p) with existing (%p)",
 		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-		            MAC_ARG (bssid),
+		            bssid,
 		            merge_ap,
 		            found_ap);
 
@@ -1745,10 +1733,9 @@ merge_scanned_ap (NMDeviceWifi *self,
 		nm_ap_set_fake (found_ap, FALSE);
 	} else {
 		/* New entry in the list */
-		_LOGD (LOGD_WIFI_SCAN, "adding new AP '%s' " MAC_FMT " (%p)",
+		_LOGD (LOGD_WIFI_SCAN, "adding new AP '%s' %s (%p)",
 		       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-		       MAC_ARG (bssid),
-		       merge_ap);
+		       bssid, merge_ap);
 
 		g_object_ref (merge_ap);
 		priv->ap_list = g_slist_prepend (priv->ap_list, merge_ap);
@@ -1804,14 +1791,14 @@ cull_scan_list (NMDeviceWifi *self)
 	/* Remove outdated APs */
 	for (elt = outdated_list; elt; elt = g_slist_next (elt)) {
 		NMAccessPoint *outdated_ap = NM_AP (elt->data);
-		const guint8 *bssid;
+		const char *bssid;
 		const GByteArray *ssid;
 
 		bssid = nm_ap_get_address (outdated_ap);
 		ssid = nm_ap_get_ssid (outdated_ap);
 		_LOGD (LOGD_WIFI_SCAN,
-		       "   removing %02x:%02x:%02x:%02x:%02x:%02x (%s%s%s)",
-		       bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5],
+		       "   removing %s (%s%s%s)",
+		       bssid,
 		       ssid ? "'" : "",
 		       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
 		       ssid ? "'" : "");
@@ -2533,7 +2520,7 @@ update_permanent_hw_address (NMDevice *device)
 	errno = 0;
 	ret = ioctl (fd, SIOCETHTOOL, &req);
 	errsv = errno;
-	if ((ret < 0) || !nm_ethernet_address_is_valid (epaddr->data)) {
+	if ((ret < 0) || !nm_ethernet_address_is_valid (epaddr->data, ETH_ALEN)) {
 		_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address (error %d)",
 		       errsv);
 		/* Fall back to current address */
@@ -2551,15 +2538,13 @@ update_initial_hw_address (NMDevice *device)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	const char *mac_str;
 
 	/* This sets initial MAC address from current MAC address. It should only
 	 * be called from NMDevice constructor() to really get the initial address.
 	 */
-	mac_str = nm_device_get_hw_address (device);
-	nm_utils_hwaddr_aton (mac_str, priv->initial_hw_addr, ETH_ALEN);
+	priv->initial_hw_addr = g_strdup (nm_device_get_hw_address (device));
 
-	_LOGD (LOGD_DEVICE | LOGD_ETHER, "read initial MAC address %s", mac_str);
+	_LOGD (LOGD_DEVICE | LOGD_ETHER, "read initial MAC address %s", priv->initial_hw_addr);
 }
 
 static NMActStageReturn
@@ -2572,7 +2557,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	NMActRequest *req;
 	NMConnection *connection;
 	NMSettingWireless *s_wireless;
-	const GByteArray *cloned_mac;
+	const char *cloned_mac;
 	GSList *iter;
 	const char *mode;
 	const char *ap_path;
@@ -2615,8 +2600,8 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 
 	/* Set spoof MAC to the interface */
 	cloned_mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
-	if (cloned_mac && (cloned_mac->len == ETH_ALEN))
-		nm_device_set_hw_addr (device, (const guint8 *) cloned_mac->data, "set", LOGD_WIFI);
+	if (cloned_mac)
+		nm_device_set_hw_addr (device, cloned_mac, "set", LOGD_WIFI);
 
 	/* AP mode never uses a specific object or existing scanned AP */
 	if (priv->mode != NM_802_11_MODE_AP) {
@@ -2653,12 +2638,8 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 
 	if (nm_ap_get_mode (ap) == NM_802_11_MODE_INFRA)
 		nm_ap_set_broadcast (ap, FALSE);
-	else if (nm_ap_is_hotspot (ap)) {
-		guint8 addr[ETH_ALEN];
-
-		nm_utils_hwaddr_aton (nm_device_get_hw_address (device), addr, ETH_ALEN);
-		nm_ap_set_address (ap, addr);
-	}
+	else if (nm_ap_is_hotspot (ap))
+		nm_ap_set_address (ap, nm_device_get_hw_address (device));
 
 	priv->ap_list = g_slist_prepend (priv->ap_list, ap);
 	nm_ap_export_to_dbus (ap);
@@ -3021,8 +3002,11 @@ activation_success_handler (NMDevice *device)
 	 * the BSSID off the card and fill in the BSSID of the activation AP.
 	 */
 	nm_platform_wifi_get_bssid (ifindex, bssid);
-	if (!nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
-		nm_ap_set_address (ap, bssid);
+	if (!nm_ethernet_address_is_valid (nm_ap_get_address (ap), -1)) {
+		char *bssid_str = nm_utils_hwaddr_ntoa (bssid, ETH_ALEN);
+		nm_ap_set_address (ap, bssid_str);
+		g_free (bssid_str);
+	}
 	if (!nm_ap_get_freq (ap))
 		nm_ap_set_freq (ap, nm_platform_wifi_get_frequency (ifindex));
 	if (!nm_ap_get_max_bitrate (ap))
@@ -3255,6 +3239,7 @@ finalize (GObject *object)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	g_free (priv->perm_hw_addr);
+	g_free (priv->initial_hw_addr);
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->finalize (object);
 }

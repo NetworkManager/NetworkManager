@@ -403,29 +403,6 @@ ip6_route_writer (GKeyFile *file,
 
 
 static void
-mac_address_writer (GKeyFile *file,
-                    const char *keyfile_dir,
-                    const char *uuid,
-                    NMSetting *setting,
-                    const char *key,
-                    const GValue *value)
-{
-	GByteArray *array;
-	const char *setting_name = nm_setting_get_name (setting);
-	char *mac;
-
-	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY));
-
-	array = (GByteArray *) g_value_get_boxed (value);
-	if (!array || !array->len)
-		return;
-
-	mac = nm_utils_hwaddr_ntoa (array->data, array->len);
-	nm_keyfile_plugin_kf_set_string (file, setting_name, key, mac);
-	g_free (mac);
-}
-
-static void
 write_hash_of_string (GKeyFile *file,
                       NMSetting *setting,
                       const char *key,
@@ -773,9 +750,6 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME,
 	  NM_SETTING_CONNECTION_TYPE,
 	  setting_alias_writer },
-	{ NM_SETTING_BRIDGE_SETTING_NAME,
-	  NM_SETTING_BRIDGE_MAC_ADDRESS,
-	  mac_address_writer },
 	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP4_CONFIG_ADDRESSES,
 	  ip4_addr_writer },
@@ -797,30 +771,6 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	  NM_SETTING_IP6_CONFIG_DNS,
 	  ip6_dns_writer },
-	{ NM_SETTING_WIRED_SETTING_NAME,
-	  NM_SETTING_WIRED_MAC_ADDRESS,
-	  mac_address_writer },
-	{ NM_SETTING_WIRED_SETTING_NAME,
-	  NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
-	  mac_address_writer },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,
-	  NM_SETTING_WIRELESS_MAC_ADDRESS,
-	  mac_address_writer },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,
-	  NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
-	  mac_address_writer },
-	{ NM_SETTING_WIRELESS_SETTING_NAME,
-	  NM_SETTING_WIRELESS_BSSID,
-	  mac_address_writer },
-	{ NM_SETTING_BLUETOOTH_SETTING_NAME,
-	  NM_SETTING_BLUETOOTH_BDADDR,
-	  mac_address_writer },
-	{ NM_SETTING_INFINIBAND_SETTING_NAME,
-	  NM_SETTING_INFINIBAND_MAC_ADDRESS,
-	  mac_address_writer },
-	{ NM_SETTING_WIMAX_SETTING_NAME,
-	  NM_SETTING_WIMAX_MAC_ADDRESS,
-	  mac_address_writer },
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_SSID,
 	  ssid_writer },

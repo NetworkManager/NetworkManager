@@ -67,7 +67,7 @@
 
 static gboolean
 complete_connection (const char *ssid,
-                     const guint8 bssid[ETH_ALEN],
+                     const char *bssid,
                      NM80211Mode mode,
                      guint32 flags,
                      guint32 wpa_flags,
@@ -218,7 +218,7 @@ fill_8021x (NMConnection *connection, const KeyData items[])
 
 static NMConnection *
 create_basic (const char *ssid,
-              const guint8 *bssid,
+              const char *bssid,
               NM80211Mode mode)
 {
 	NMConnection *connection;
@@ -237,12 +237,8 @@ create_basic (const char *ssid,
 	g_byte_array_free (tmp, TRUE);
 
 	/* BSSID */
-	if (bssid) {
-		tmp = g_byte_array_sized_new (ETH_ALEN);
-		g_byte_array_append (tmp, bssid, ETH_ALEN);
-		g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_BSSID, tmp, NULL);
-		g_byte_array_free (tmp, TRUE);
-	}
+	if (bssid)
+		g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_BSSID, bssid, NULL);
 
 	if (mode == NM_802_11_MODE_INFRA)
 		g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_MODE, "infrastructure", NULL);
@@ -260,7 +256,7 @@ static void
 test_lock_bssid (void)
 {
 	NMConnection *src, *expected;
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const char *ssid = "blahblah";
 	gboolean success;
 	GError *error = NULL;
@@ -284,7 +280,7 @@ static void
 test_open_ap_empty_connection (void)
 {
 	NMConnection *src, *expected;
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const char *ssid = "blahblah";
 	gboolean success;
 	GError *error = NULL;
@@ -312,7 +308,7 @@ static void
 test_open_ap_leap_connection_1 (gconstpointer add_wifi)
 {
 	NMConnection *src;
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const KeyData src_wsec[] = { { NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, "Bill Smith", 0 }, { NULL } };
 	gboolean success;
 	GError *error = NULL;
@@ -344,7 +340,7 @@ static void
 test_open_ap_leap_connection_2 (void)
 {
 	NMConnection *src;
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const KeyData src_wsec[] = { { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 }, { NULL } };
 	gboolean success;
 	GError *error = NULL;
@@ -374,7 +370,7 @@ static void
 test_open_ap_wep_connection (gconstpointer add_wifi)
 {
 	NMConnection *src;
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const KeyData src_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, "11111111111111111111111111", 0 },
 	    { NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, NULL, 0 },
@@ -415,7 +411,7 @@ test_ap_wpa_psk_connection_base (const char *key_mgmt,
 {
 	NMConnection *src;
 	const char *ssid = "blahblah";
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const KeyData exp_wifi[] = {
 		{ NM_SETTING_WIRELESS_SSID, ssid, 0 },
 		{ NM_SETTING_WIRELESS_MODE, "infrastructure", 0 },
@@ -525,7 +521,7 @@ test_ap_wpa_eap_connection_base (const char *key_mgmt,
                                  guint error_code)
 {
 	NMConnection *src;
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const KeyData src_empty[] = { { NULL } };
 	const KeyData src_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt, 0 },
@@ -731,7 +727,7 @@ static void
 test_priv_ap_empty_connection (void)
 {
 	NMConnection *src, *expected;
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const char *ssid = "blahblah";
 	const KeyData exp_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", 0 },
@@ -766,7 +762,7 @@ test_priv_ap_leap_connection_1 (gconstpointer add_wifi)
 {
 	NMConnection *src, *expected;
 	const char *ssid = "blahblah";
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const char *leap_username = "Bill Smith";
 	const KeyData src_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
@@ -811,7 +807,7 @@ static void
 test_priv_ap_leap_connection_2 (void)
 {
 	NMConnection *src;
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const KeyData src_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
 	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap", 0 },
@@ -845,7 +841,7 @@ test_priv_ap_dynamic_wep_1 (void)
 {
 	NMConnection *src, *expected;
 	const char *ssid = "blahblah";
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const KeyData src_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
 	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
@@ -893,7 +889,7 @@ test_priv_ap_dynamic_wep_2 (void)
 {
 	NMConnection *src, *expected;
 	const char *ssid = "blahblah";
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const KeyData src_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
 	    { NULL } };
@@ -939,7 +935,7 @@ static void
 test_priv_ap_dynamic_wep_3 (void)
 {
 	NMConnection *src;
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const KeyData src_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared", 0 },
 	    { NULL } };
@@ -1052,7 +1048,7 @@ test_wpa_ap_empty_connection (gconstpointer data)
 {
 	guint idx = GPOINTER_TO_UINT (data);
 	NMConnection *src, *expected;
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const char *ssid = "blahblah";
 	const KeyData exp_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", 0 },
@@ -1090,7 +1086,7 @@ test_wpa_ap_leap_connection_1 (gconstpointer data)
 	guint idx = GPOINTER_TO_UINT (data);
 	NMConnection *src;
 	const char *ssid = "blahblah";
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const char *leap_username = "Bill Smith";
 	const KeyData src_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
@@ -1125,7 +1121,7 @@ test_wpa_ap_leap_connection_2 (gconstpointer data)
 {
 	guint idx = GPOINTER_TO_UINT (data);
 	NMConnection *src;
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const KeyData src_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
 	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap", 0 },
@@ -1159,7 +1155,7 @@ test_wpa_ap_dynamic_wep_connection (gconstpointer data)
 {
 	guint idx = GPOINTER_TO_UINT (data);
 	NMConnection *src;
-	const guint8 bssid[ETH_ALEN] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	const char *bssid = "01:02:03:04:05:06";
 	const KeyData src_wsec[] = {
 	    { NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0 },
 	    { NULL } };

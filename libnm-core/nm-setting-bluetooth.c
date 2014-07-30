@@ -29,6 +29,8 @@
 #include "nm-setting-cdma.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-private.h"
+#include "nm-utils.h"
+#include "nm-utils-private.h"
 
 /**
  * SECTION:nm-setting-bluetooth
@@ -65,7 +67,7 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BLUETOOTH)
 #define NM_SETTING_BLUETOOTH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BLUETOOTH, NMSettingBluetoothPrivate))
 
 typedef struct {
-	GByteArray *bdaddr;
+	char *bdaddr;
 	char *type;
 } NMSettingBluetoothPrivate;
 
@@ -115,7 +117,7 @@ nm_setting_bluetooth_get_connection_type (NMSettingBluetooth *setting)
  *
  * Returns: the Bluetooth address
  **/
-const GByteArray *
+const char *
 nm_setting_bluetooth_get_bdaddr (NMSettingBluetooth *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_BLUETOOTH (setting), NULL);
@@ -137,7 +139,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->bdaddr && priv->bdaddr->len != ETH_ALEN) {
+	if (!nm_utils_hwaddr_valid (priv->bdaddr, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_BLUETOOTH_ERROR,
 		                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
@@ -199,8 +201,7 @@ finalize (GObject *object)
 {
 	NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE (object);
 
-	if (priv->bdaddr)
-		g_byte_array_free (priv->bdaddr, TRUE);
+	g_free (priv->bdaddr);
 	g_free (priv->type);
 
 	G_OBJECT_CLASS (nm_setting_bluetooth_parent_class)->finalize (object);
@@ -214,9 +215,8 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_BDADDR:
-		if (priv->bdaddr)
-			g_byte_array_free (priv->bdaddr, TRUE);
-		priv->bdaddr = g_value_dup_boxed (value);
+		g_free (priv->bdaddr);
+		priv->bdaddr = g_value_dup_string (value);
 		break;
 	case PROP_TYPE:
 		g_free (priv->type);
@@ -236,7 +236,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_BDADDR:
-		g_value_set_boxed (value, nm_setting_bluetooth_get_bdaddr (setting));
+		g_value_set_string (value, nm_setting_bluetooth_get_bdaddr (setting));
 		break;
 	case PROP_TYPE:
 		g_value_set_string (value, nm_setting_bluetooth_get_connection_type (setting));
@@ -270,11 +270,15 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_BDADDR,
-		 g_param_spec_boxed (NM_SETTING_BLUETOOTH_BDADDR, "", "",
-		                     DBUS_TYPE_G_UCHAR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_SETTING_BLUETOOTH_BDADDR, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_BLUETOOTH_BDADDR,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_hwaddr_to_dbus,
+	                                      _nm_utils_hwaddr_from_dbus);
 
 	/**
 	 * NMSettingBluetooth:type:

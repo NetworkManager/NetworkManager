@@ -244,36 +244,6 @@ make_connection_setting (const char *file,
 	return NM_SETTING (s_con);
 }
 
-static gboolean
-read_mac_address (shvarFile *ifcfg, const char *key, gsize len,
-                  GByteArray **array, GError **error)
-{
-	char *value = NULL;
-
-	g_return_val_if_fail (ifcfg != NULL, FALSE);
-	g_return_val_if_fail (array != NULL, FALSE);
-	g_return_val_if_fail (*array == NULL, FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
-
-	value = svGetValue (ifcfg, key, FALSE);
-	if (!value || !strlen (value)) {
-		g_free (value);
-		return TRUE;
-	}
-
-	*array = nm_utils_hwaddr_atoba (value, len);
-	if (!*array) {
-		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-		             "%s: the MAC address '%s' was invalid.", key, value);
-		g_free (value);
-		return FALSE;
-	}
-
-	g_free (value);
-	return TRUE;
-}
-
 /* Returns TRUE on missing address or valid address */
 static gboolean
 read_ip4_address (shvarFile *ifcfg,
@@ -3282,29 +3252,22 @@ make_wireless_setting (shvarFile *ifcfg,
 	NMSettingWireless *s_wireless;
 	GByteArray *array = NULL;
 	GSList *macaddr_blacklist = NULL;
-	char *value;
+	char *value = NULL;
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 
-	if (read_mac_address (ifcfg, "HWADDR", ETH_ALEN, &array, error)) {
-		if (array) {
-			g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS, array, NULL);
-			g_byte_array_free (array, TRUE);
-		}
-	} else {
-		g_object_unref (s_wireless);
-		return NULL;
+	value = svGetValue (ifcfg, "HWADDR", FALSE);
+	if (value) {
+		value = g_strstrip (value);
+		g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS, value, NULL);
+		g_free (value);
 	}
 
-	array = NULL;
-	if (read_mac_address (ifcfg, "MACADDR", ETH_ALEN, &array, error)) {
-		if (array) {
-			g_object_set (s_wireless, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, array, NULL);
-			g_byte_array_free (array, TRUE);
-		}
-	} else {
-		PARSE_WARNING ("%s", (*error)->message);
-		g_clear_error (error);
+	value = svGetValue (ifcfg, "MACADDR", FALSE);
+	if (value) {
+		value = g_strstrip (value);
+		g_object_set (s_wireless, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, value, NULL);
+		g_free (value);
 	}
 
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
@@ -3415,18 +3378,8 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "BSSID", FALSE);
 	if (value) {
-		GByteArray *bssid;
-
-		bssid = nm_utils_hwaddr_atoba (value, ETH_ALEN);
-		if (!bssid) {
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-			             "Invalid BSSID '%s'", value);
-			g_free (value);
-			goto error;
-		}
-
-		g_object_set (s_wireless, NM_SETTING_WIRELESS_BSSID, bssid, NULL);
-		g_byte_array_free (bssid, TRUE);
+		value = g_strstrip (value);
+		g_object_set (s_wireless, NM_SETTING_WIRELESS_BSSID, value, NULL);
 		g_free (value);
 	}
 
@@ -3557,7 +3510,6 @@ make_wired_setting (shvarFile *ifcfg,
 	NMSettingWired *s_wired;
 	char *value = NULL;
 	int mtu;
-	GByteArray *mac = NULL;
 	GSList *macaddr_blacklist = NULL;
 	char *nettype;
 
@@ -3575,14 +3527,11 @@ make_wired_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	if (read_mac_address (ifcfg, "HWADDR", ETH_ALEN, &mac, error)) {
-		if (mac) {
-			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
-			g_byte_array_free (mac, TRUE);
-		}
-	} else {
-		g_object_unref (s_wired);
-		return NULL;
+	value = svGetValue (ifcfg, "HWADDR", FALSE);
+	if (value) {
+		value = g_strstrip (value);
+		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, value, NULL);
+		g_free (value);
 	}
 
 	value = svGetValue (ifcfg, "SUBCHANNELS", FALSE);
@@ -3666,15 +3615,11 @@ make_wired_setting (shvarFile *ifcfg,
 	}
 	g_free (value);
 
-	mac = NULL;
-	if (read_mac_address (ifcfg, "MACADDR", ETH_ALEN, &mac, error)) {
-		if (mac) {
-			g_object_set (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, mac, NULL);
-			g_byte_array_free (mac, TRUE);
-		}
-	} else {
-		PARSE_WARNING ("%s", (*error)->message);
-		g_clear_error (error);
+	value = svGetValue (ifcfg, "MACADDR", FALSE);
+	if (value) {
+		value = g_strstrip (value);
+		g_object_set (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, value, NULL);
+		g_free (value);
 	}
 
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
@@ -3834,7 +3779,6 @@ make_infiniband_setting (shvarFile *ifcfg,
 {
 	NMSettingInfiniband *s_infiniband;
 	char *value = NULL;
-	GByteArray *mac = NULL;
 	int mtu;
 
 	s_infiniband = NM_SETTING_INFINIBAND (nm_setting_infiniband_new ());
@@ -3851,14 +3795,11 @@ make_infiniband_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	if (read_mac_address (ifcfg, "HWADDR", INFINIBAND_ALEN, &mac, error)) {
-		if (mac) {
-			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, mac, NULL);
-			g_byte_array_free (mac, TRUE);
-		}
-	} else {
-		g_object_unref (s_infiniband);
-		return NULL;
+	value = svGetValue (ifcfg, "HWADDR", FALSE);
+	if (value) {
+		value = g_strstrip (value);
+		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, value, NULL);
+		g_free (value);
 	}
 
 	if (svTrueValue (ifcfg, "CONNECTED_MODE", FALSE))
@@ -4221,7 +4162,6 @@ make_bridge_setting (shvarFile *ifcfg,
 	guint32 u;
 	gboolean stp = FALSE;
 	gboolean stp_set = FALSE;
-	GByteArray *array = NULL;
 
 	s_bridge = NM_SETTING_BRIDGE (nm_setting_bridge_new ());
 
@@ -4232,14 +4172,11 @@ make_bridge_setting (shvarFile *ifcfg,
 	}
 	g_free (value);
 
-	if (read_mac_address (ifcfg, "MACADDR", ETH_ALEN, &array, error)) {
-		if (array) {
-			g_object_set (s_bridge, NM_SETTING_BRIDGE_MAC_ADDRESS, array, NULL);
-			g_byte_array_free (array, TRUE);
-		}
-	} else {
-		PARSE_WARNING ("%s", (*error)->message);
-		g_clear_error (error);
+	value = svGetValue (ifcfg, "MACADDR", FALSE);
+	if (value) {
+		value = g_strstrip (value);
+		g_object_set (s_bridge, NM_SETTING_BRIDGE_MAC_ADDRESS, value, NULL);
+		g_free (value);
 	}
 
 	value = svGetValue (ifcfg, "STP", FALSE);

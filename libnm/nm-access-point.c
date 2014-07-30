@@ -238,7 +238,7 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 	const char *ctype, *ap_bssid;
 	const GByteArray *setting_ssid;
 	const GByteArray *ap_ssid;
-	const GByteArray *setting_bssid;
+	const char *setting_bssid;
 	const char *setting_mode;
 	NM80211Mode ap_mode;
 	const char *setting_band;
@@ -268,7 +268,7 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 	g_warn_if_fail (ap_bssid);
 	setting_bssid = nm_setting_wireless_get_bssid (s_wifi);
 	if (setting_bssid && ap_bssid) {
-		if (!nm_utils_hwaddr_matches (ap_bssid, -1, setting_bssid->data, setting_bssid->len))
+		if (!nm_utils_hwaddr_matches (ap_bssid, -1, setting_bssid, -1))
 			return FALSE;
 	}
 

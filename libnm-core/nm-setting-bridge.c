@@ -29,7 +29,6 @@
 #include "nm-setting-private.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
-#include "nm-dbus-glib-types.h"
 
 /**
  * SECTION:nm-setting-bridge
@@ -64,7 +63,7 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BRIDGE)
 #define NM_SETTING_BRIDGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE, NMSettingBridgePrivate))
 
 typedef struct {
-	GByteArray *mac_address;
+	char *   mac_address;
 	gboolean stp;
 	guint16  priority;
 	guint16  forward_delay;
@@ -104,7 +103,7 @@ nm_setting_bridge_new (void)
  *
  * Returns: the #NMSettingBridge:mac-address property of the setting
  **/
-const GByteArray *
+const char *
 nm_setting_bridge_get_mac_address (NMSettingBridge *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_BRIDGE (setting), NULL);
@@ -234,7 +233,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingBridgePrivate *priv = NM_SETTING_BRIDGE_GET_PRIVATE (setting);
 
-	if (priv->mac_address && priv->mac_address->len != ETH_ALEN) {
+	if (priv->mac_address && !nm_utils_hwaddr_valid (priv->mac_address, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_BRIDGE_ERROR,
 		                     NM_SETTING_BRIDGE_ERROR_INVALID_PROPERTY,
@@ -284,8 +283,7 @@ finalize (GObject *object)
 {
 	NMSettingBridgePrivate *priv = NM_SETTING_BRIDGE_GET_PRIVATE (object);
 
-	if (priv->mac_address)
-		g_byte_array_free (priv->mac_address, TRUE);
+	g_free (priv->mac_address);
 
 	G_OBJECT_CLASS (nm_setting_bridge_parent_class)->finalize (object);
 }
@@ -298,9 +296,8 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_MAC_ADDRESS:
-		if (priv->mac_address)
-			g_byte_array_free (priv->mac_address, TRUE);
-		priv->mac_address = g_value_dup_boxed (value);
+		g_free (priv->mac_address);
+		priv->mac_address = g_value_dup_string (value);
 		break;
 	case PROP_STP:
 		priv->stp = g_value_get_boolean (value);
@@ -335,7 +332,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_MAC_ADDRESS:
-		g_value_set_boxed (value, nm_setting_bridge_get_mac_address (setting));
+		g_value_set_string (value, nm_setting_bridge_get_mac_address (setting));
 		break;
 	case PROP_STP:
 		g_value_set_boolean (value, priv->stp);
@@ -385,11 +382,15 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_boxed (NM_SETTING_BRIDGE_MAC_ADDRESS, "", "",
-		                     DBUS_TYPE_G_UCHAR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_SETTING_BRIDGE_MAC_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_BRIDGE_MAC_ADDRESS,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_hwaddr_to_dbus,
+	                                      _nm_utils_hwaddr_from_dbus);
 
 	/**
 	 * NMSettingBridge:stp:

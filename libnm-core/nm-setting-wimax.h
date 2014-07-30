@@ -73,7 +73,7 @@ GType nm_setting_wimax_get_type (void);
 
 NMSetting        *nm_setting_wimax_new              (void);
 const char       *nm_setting_wimax_get_network_name (NMSettingWimax *setting);
-const GByteArray *nm_setting_wimax_get_mac_address  (NMSettingWimax *setting);
+const char       *nm_setting_wimax_get_mac_address  (NMSettingWimax *setting);
 
 G_END_DECLS
 

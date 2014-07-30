@@ -65,11 +65,11 @@ typedef struct {
 
 	gboolean (*ip4_start)     (NMDhcpClient *self,
 	                           const char *dhcp_client_id,
-	                           GByteArray *anycast_addr,
+	                           const char *anycast_addr,
 	                           const char *hostname);
 
 	gboolean (*ip6_start)     (NMDhcpClient *self,
-	                           GByteArray *anycast_addr,
+	                           const char *anycast_addr,
 	                           const char *hostname,
 	                           gboolean info_only,
 	                           NMSettingIP6ConfigPrivacy privacy,
@@ -117,11 +117,11 @@ guint32 nm_dhcp_client_get_priority (NMDhcpClient *self);
 
 gboolean nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                                    const char *dhcp_client_id,
-                                   GByteArray *dhcp_anycast_addr,
+                                   const char *dhcp_anycast_addr,
                                    const char *hostname);
 
 gboolean nm_dhcp_client_start_ip6 (NMDhcpClient *self,
-                                   GByteArray *dhcp_anycast_addr,
+                                   const char *dhcp_anycast_addr,
                                    const char *hostname,
                                    gboolean info_only,
                                    NMSettingIP6ConfigPrivacy privacy);

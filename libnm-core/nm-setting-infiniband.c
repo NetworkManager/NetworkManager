@@ -61,7 +61,7 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_INFINIBAND)
 #define NM_SETTING_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_INFINIBAND, NMSettingInfinibandPrivate))
 
 typedef struct {
-	GByteArray *mac_address;
+	char *mac_address;
 	char *transport_mode;
 	guint32 mtu;
 	int p_key;
@@ -98,7 +98,7 @@ nm_setting_infiniband_new (void)
  *
  * Returns: the #NMSettingInfiniband:mac-address property of the setting
  **/
-const GByteArray *
+const char *
 nm_setting_infiniband_get_mac_address (NMSettingInfiniband *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_INFINIBAND (setting), NULL);
@@ -202,7 +202,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (setting);
 	guint32 normerr_max_mtu = 0;
 
-	if (priv->mac_address && priv->mac_address->len != INFINIBAND_ALEN) {
+	if (priv->mac_address && !nm_utils_hwaddr_valid (priv->mac_address, INFINIBAND_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_INFINIBAND_ERROR,
 		                     NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
@@ -320,8 +320,7 @@ finalize (GObject *object)
 	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (object);
 
 	g_free (priv->transport_mode);
-	if (priv->mac_address)
-		g_byte_array_free (priv->mac_address, TRUE);
+	g_free (priv->mac_address);
 	g_free (priv->parent);
 	g_free (priv->virtual_iface_name);
 
@@ -336,9 +335,8 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_MAC_ADDRESS:
-		if (priv->mac_address)
-			g_byte_array_free (priv->mac_address, TRUE);
-		priv->mac_address = g_value_dup_boxed (value);
+		g_free (priv->mac_address);
+		priv->mac_address = g_value_dup_string (value);
 		break;
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);
@@ -370,7 +368,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_MAC_ADDRESS:
-		g_value_set_boxed (value, nm_setting_infiniband_get_mac_address (setting));
+		g_value_set_string (value, nm_setting_infiniband_get_mac_address (setting));
 		break;
 	case PROP_MTU:
 		g_value_set_uint (value, nm_setting_infiniband_get_mtu (setting));
@@ -415,11 +413,15 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_boxed (NM_SETTING_INFINIBAND_MAC_ADDRESS, "", "",
-		                     DBUS_TYPE_G_UCHAR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_SETTING_INFINIBAND_MAC_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_INFINIBAND_MAC_ADDRESS,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_hwaddr_to_dbus,
+	                                      _nm_utils_hwaddr_from_dbus);
 
 	/**
 	 * NMSettingInfiniband:mtu:

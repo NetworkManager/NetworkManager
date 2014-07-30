@@ -534,7 +534,7 @@ static void
 mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path, gsize enforce_length)
 {
 	const char *setting_name = nm_setting_get_name (setting);
-	char *tmp_string = NULL, *p;
+	char *tmp_string = NULL, *p, *mac_str;
 	gint *tmp_list;
 	GByteArray *array = NULL;
 	gsize length;
@@ -587,13 +587,16 @@ mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, cons
 		g_free (tmp_list);
 	}
 
-	if (array) {
-		g_object_set (setting, key, array, NULL);
-		g_byte_array_free (array, TRUE);
-	} else {
+	if (!array) {
 		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid MAC address for %s / %s",
 		             __func__, setting_name, key);
+		return;
 	}
+
+	mac_str = nm_utils_hwaddr_ntoa (array->data, array->len);
+	g_object_set (setting, key, mac_str, NULL);
+	g_free (mac_str);
+	g_byte_array_free (array, TRUE);
 }
 
 static void

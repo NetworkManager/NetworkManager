@@ -93,7 +93,7 @@ typedef struct {
 GType nm_setting_bluetooth_get_type (void);
 
 NMSetting *       nm_setting_bluetooth_new                 (void);
-const GByteArray *nm_setting_bluetooth_get_bdaddr          (NMSettingBluetooth *setting);
+const char *      nm_setting_bluetooth_get_bdaddr          (NMSettingBluetooth *setting);
 const char *      nm_setting_bluetooth_get_connection_type (NMSettingBluetooth *setting);
 
 G_END_DECLS

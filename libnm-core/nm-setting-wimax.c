@@ -27,6 +27,8 @@
 
 #include "nm-setting-wimax.h"
 #include "nm-setting-private.h"
+#include "nm-utils.h"
+#include "nm-utils-private.h"
 
 /**
  * SECTION:nm-setting-wimax
@@ -62,7 +64,7 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_WIMAX)
 
 typedef struct {
 	char *network_name;
-	GByteArray *mac_address;
+	char *mac_address;
 } NMSettingWimaxPrivate;
 
 enum {
@@ -112,7 +114,7 @@ nm_setting_wimax_get_network_name (NMSettingWimax *setting)
  *
  * Returns: the MAC address
  **/
-const GByteArray *
+const char *
 nm_setting_wimax_get_mac_address (NMSettingWimax *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIMAX (setting), NULL);
@@ -143,7 +145,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->mac_address && priv->mac_address->len != ETH_ALEN) {
+	if (priv->mac_address && !nm_utils_hwaddr_valid (priv->mac_address, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_WIMAX_ERROR,
 		                     NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
@@ -166,8 +168,7 @@ finalize (GObject *object)
 	NMSettingWimaxPrivate *priv = NM_SETTING_WIMAX_GET_PRIVATE (object);
 
 	g_free (priv->network_name);
-	if (priv->mac_address)
-		g_byte_array_free (priv->mac_address, TRUE);
+	g_free (priv->mac_address);
 
 	G_OBJECT_CLASS (nm_setting_wimax_parent_class)->finalize (object);
 }
@@ -184,9 +185,8 @@ set_property (GObject *object, guint prop_id,
 		priv->network_name = g_value_dup_string (value);
 		break;
 	case PROP_MAC_ADDRESS:
-		if (priv->mac_address)
-			g_byte_array_free (priv->mac_address, TRUE);
-		priv->mac_address = g_value_dup_boxed (value);
+		g_free (priv->mac_address);
+		priv->mac_address = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -205,7 +205,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_wimax_get_network_name (setting));
 		break;
 	case PROP_MAC_ADDRESS:
-		g_value_set_boxed (value, nm_setting_wimax_get_mac_address (setting));
+		g_value_set_string (value, nm_setting_wimax_get_mac_address (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -250,8 +250,12 @@ nm_setting_wimax_class_init (NMSettingWimaxClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_boxed (NM_SETTING_WIMAX_MAC_ADDRESS, "", "",
-		                     DBUS_TYPE_G_UCHAR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_SETTING_WIMAX_MAC_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIMAX_MAC_ADDRESS,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_hwaddr_to_dbus,
+	                                      _nm_utils_hwaddr_from_dbus);
 }

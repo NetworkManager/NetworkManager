@@ -327,9 +327,6 @@ nm_supplicant_config_get_blobs (NMSupplicantConfig * self)
 	return NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->blobs;
 }
 
-#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
-#define MAC_ARG(x) ((guint8*)(x))[0],((guint8*)(x))[1],((guint8*)(x))[2],((guint8*)(x))[3],((guint8*)(x))[4],((guint8*)(x))[5]
-
 #define TWO_GHZ_FREQS  "2412,2417,2422,2427,2432,2437,2442,2447,2452,2457,2462,2467,2472,2484"
 #define FIVE_GHZ_FREQS "4915,4920,4925,4935,4940,4945,4960,4980,5035,5040,5045,5055,5060,5080," \
                          "5170,5180,5190,5200,5210,5220,5230,5240,5260,5280,5300,5320,5500," \
@@ -345,7 +342,8 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	NMSupplicantConfigPrivate *priv;
 	gboolean is_adhoc, is_ap;
 	const char *mode, *band;
-	const GByteArray *id;
+	const GByteArray *ssid;
+	const char *bssid;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
@@ -360,8 +358,8 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	else
 		priv->ap_scan = 1;
 
-	id = nm_setting_wireless_get_ssid (setting);
-	if (!nm_supplicant_config_add_option (self, "ssid", (char *) id->data, id->len, FALSE)) {
+	ssid = nm_setting_wireless_get_ssid (setting);
+	if (!nm_supplicant_config_add_option (self, "ssid", (char *) ssid->data, ssid->len, FALSE)) {
 		nm_log_warn (LOGD_SUPPLICANT, "Error adding SSID to supplicant config.");
 		return FALSE;
 	}
@@ -400,19 +398,14 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 			return FALSE;
 	}
 
-	id = nm_setting_wireless_get_bssid (setting);
-	if (id && id->len) {
-		char *str_bssid;
-
-		str_bssid = g_strdup_printf (MAC_FMT, MAC_ARG (id->data));
+	bssid = nm_setting_wireless_get_bssid (setting);
+	if (bssid) {
 		if (!nm_supplicant_config_add_option (self, "bssid",
-		                                      str_bssid, strlen (str_bssid),
+		                                      bssid, strlen (bssid),
 		                                      FALSE)) {
-			g_free (str_bssid);
 			nm_log_warn (LOGD_SUPPLICANT, "Error adding BSSID to supplicant config.");
 			return FALSE;
 		}
-		g_free (str_bssid);
 	}
 
 	band = nm_setting_wireless_get_band (setting);

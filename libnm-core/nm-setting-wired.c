@@ -68,8 +68,8 @@ typedef struct {
 	guint32 speed;
 	char *duplex;
 	gboolean auto_negotiate;
-	GByteArray *device_mac_address;
-	GByteArray *cloned_mac_address;
+	char *device_mac_address;
+	char *cloned_mac_address;
 	GSList *mac_address_blacklist;
 	guint32 mtu;
 	GPtrArray *s390_subchannels;
@@ -179,7 +179,7 @@ nm_setting_wired_get_auto_negotiate (NMSettingWired *setting)
  *
  * Returns: the #NMSettingWired:mac-address property of the setting
  **/
-const GByteArray *
+const char *
 nm_setting_wired_get_mac_address (NMSettingWired *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
@@ -193,7 +193,7 @@ nm_setting_wired_get_mac_address (NMSettingWired *setting)
  *
  * Returns: the #NMSettingWired:cloned-mac-address property of the setting
  **/
-const GByteArray *
+const char *
 nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
@@ -205,7 +205,7 @@ nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting)
  * nm_setting_wired_get_mac_address_blacklist:
  * @setting: the #NMSettingWired
  *
- * Returns: (element-type GLib.ByteArray): the #NMSettingWired:mac-address-blacklist
+ * Returns: (element-type utf8): the #NMSettingWired:mac-address-blacklist
  * property of the setting
  **/
 const GSList *
@@ -606,7 +606,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->device_mac_address && priv->device_mac_address->len != ETH_ALEN) {
+	if (priv->device_mac_address && !nm_utils_hwaddr_valid (priv->device_mac_address, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_WIRED_ERROR,
 		                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
@@ -662,7 +662,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (priv->cloned_mac_address && priv->cloned_mac_address->len != ETH_ALEN) {
+	if (priv->cloned_mac_address && !nm_utils_hwaddr_valid (priv->cloned_mac_address, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_WIRED_ERROR,
 		                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
@@ -693,12 +693,8 @@ finalize (GObject *object)
 
 	g_hash_table_destroy (priv->s390_options);
 
-	if (priv->device_mac_address)
-		g_byte_array_free (priv->device_mac_address, TRUE);
-
-	if (priv->cloned_mac_address)
-		g_byte_array_free (priv->cloned_mac_address, TRUE);
-
+	g_free (priv->device_mac_address);
+	g_free (priv->cloned_mac_address);
 	g_slist_free_full (priv->mac_address_blacklist, g_free);
 
 	if (priv->s390_subchannels) {
@@ -738,14 +734,12 @@ set_property (GObject *object, guint prop_id,
 		priv->auto_negotiate = g_value_get_boolean (value);
 		break;
 	case PROP_MAC_ADDRESS:
-		if (priv->device_mac_address)
-			g_byte_array_free (priv->device_mac_address, TRUE);
-		priv->device_mac_address = g_value_dup_boxed (value);
+		g_free (priv->device_mac_address);
+		priv->device_mac_address = g_value_dup_string (value);
 		break;
 	case PROP_CLONED_MAC_ADDRESS:
-		if (priv->cloned_mac_address)
-			g_byte_array_free (priv->cloned_mac_address, TRUE);
-		priv->cloned_mac_address = g_value_dup_boxed (value);
+		g_free (priv->cloned_mac_address);
+		priv->cloned_mac_address = g_value_dup_string (value);
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
 		g_slist_free_full (priv->mac_address_blacklist, g_free);
@@ -799,10 +793,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, nm_setting_wired_get_auto_negotiate (setting));
 		break;
 	case PROP_MAC_ADDRESS:
-		g_value_set_boxed (value, nm_setting_wired_get_mac_address (setting));
+		g_value_set_string (value, nm_setting_wired_get_mac_address (setting));
 		break;
 	case PROP_CLONED_MAC_ADDRESS:
-		g_value_set_boxed (value, nm_setting_wired_get_cloned_mac_address (setting));
+		g_value_set_string (value, nm_setting_wired_get_cloned_mac_address (setting));
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
 		g_value_set_boxed (value, nm_setting_wired_get_mac_address_blacklist (setting));
@@ -906,11 +900,15 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_boxed (NM_SETTING_WIRED_MAC_ADDRESS, "", "",
-		                     DBUS_TYPE_G_UCHAR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_SETTING_WIRED_MAC_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRED_MAC_ADDRESS,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_hwaddr_to_dbus,
+	                                      _nm_utils_hwaddr_from_dbus);
 
 	/**
 	 * NMSettingWired:cloned-mac-address:
@@ -920,12 +918,16 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CLONED_MAC_ADDRESS,
-		 g_param_spec_boxed (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "", "",
-		                     DBUS_TYPE_G_UCHAR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     NM_SETTING_PARAM_INFERRABLE |
-		                     G_PARAM_STATIC_STRINGS));
-    
+		 g_param_spec_string (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_hwaddr_to_dbus,
+	                                      _nm_utils_hwaddr_from_dbus);
+
 	/**
 	 * NMSettingWired:mac-address-blacklist:
 	 *

@@ -232,7 +232,7 @@ typedef struct {
 
 	/* Generic DHCP stuff */
 	guint32         dhcp_timeout;
-	GByteArray *    dhcp_anycast_address;
+	char *          dhcp_anycast_address;
 
 	/* IP4 configuration info */
 	NMIP4Config *   ip4_config;     /* Combined config from VPN, settings, and device */
@@ -6076,23 +6076,17 @@ nm_device_set_dhcp_timeout (NMDevice *self, guint32 timeout)
 }
 
 void
-nm_device_set_dhcp_anycast_address (NMDevice *self, guint8 *addr)
+nm_device_set_dhcp_anycast_address (NMDevice *self, const char *addr)
 {
 	NMDevicePrivate *priv;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_if_fail (!addr || nm_utils_hwaddr_valid (addr, ETH_ALEN));
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->dhcp_anycast_address) {
-		g_byte_array_free (priv->dhcp_anycast_address, TRUE);
-		priv->dhcp_anycast_address = NULL;
-	}
-
-	if (addr) {
-		priv->dhcp_anycast_address = g_byte_array_sized_new (ETH_ALEN);
-		g_byte_array_append (priv->dhcp_anycast_address, addr, ETH_ALEN);
-	}
+	g_free (priv->dhcp_anycast_address);
+	priv->dhcp_anycast_address = g_strdup (addr);
 }
 
 /**
@@ -6984,46 +6978,47 @@ nm_device_update_hw_address (NMDevice *self)
 }
 
 gboolean
-nm_device_set_hw_addr (NMDevice *self, const guint8 *addr,
+nm_device_set_hw_addr (NMDevice *self, const char *addr,
                        const char *detail, guint64 hw_log_domain)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	char *mac_str = NULL;
 	gboolean success = FALSE;
 	const char *cur_addr = nm_device_get_hw_address (self);
+	guint8 addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
 
 	g_return_val_if_fail (addr != NULL, FALSE);
 
 	/* Do nothing if current MAC is same */
-	if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, priv->hw_addr_len)) {
+	if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {
 		_LOGD (LOGD_DEVICE | hw_log_domain, "no MAC address change needed");
 		return TRUE;
 	}
-
-	mac_str = nm_utils_hwaddr_ntoa (addr, priv->hw_addr_len);
+	if (!nm_utils_hwaddr_aton (addr, addr_bytes, priv->hw_addr_len)) {
+		_LOGW (LOGD_DEVICE | hw_log_domain, "invalid MAC address %s", addr);
+		return FALSE;
+	}
 
 	/* Can't change MAC address while device is up */
 	nm_device_take_down (self, FALSE);
 
-	success = nm_platform_link_set_address (nm_device_get_ip_ifindex (self), addr, priv->hw_addr_len);
+	success = nm_platform_link_set_address (nm_device_get_ip_ifindex (self), addr_bytes, priv->hw_addr_len);
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
 		nm_device_update_hw_address (self);
 		cur_addr = nm_device_get_hw_address (self);
-		if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, priv->hw_addr_len)) {
+		if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, -1)) {
 			_LOGI (LOGD_DEVICE | hw_log_domain, "%s MAC address to %s",
-			       detail, mac_str);
+			       detail, addr);
 		} else {
 			_LOGW (LOGD_DEVICE | hw_log_domain,
-			       "new MAC address %s not successfully set", mac_str);
+			       "new MAC address %s not successfully set", addr);
 			success = FALSE;
 		}
 	} else {
 		_LOGW (LOGD_DEVICE | hw_log_domain, "failed to %s MAC address to %s",
-		       detail, mac_str);
+		       detail, addr);
 	}
 	nm_device_bring_up (self, TRUE, NULL);
-	g_free (mac_str);
 
 	return success;
 }
@@ -7316,8 +7311,7 @@ finalize (GObject *object)
 	g_free (priv->driver_version);
 	g_free (priv->firmware_version);
 	g_free (priv->type_desc);
-	if (priv->dhcp_anycast_address)
-		g_byte_array_free (priv->dhcp_anycast_address, TRUE);
+	g_free (priv->dhcp_anycast_address);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }

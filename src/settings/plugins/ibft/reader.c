@@ -489,29 +489,26 @@ wired_setting_add_from_block (const GPtrArray *block,
                               GError **error)
 {
 	NMSetting *s_wired = NULL;
-	const char *hwaddr_str = NULL;
-	GByteArray *hwaddr;
+	const char *hwaddr = NULL;
 
 	g_assert (block);
 	g_assert (connection);
 
-	if (!parse_ibft_config (block, NULL, ISCSI_HWADDR_TAG, &hwaddr_str, NULL)) {
+	if (!parse_ibft_config (block, NULL, ISCSI_HWADDR_TAG, &hwaddr, NULL)) {
 		g_set_error_literal (error, IBFT_PLUGIN_ERROR, 0,
 		                     "iBFT: malformed iscsiadm record: missing " ISCSI_HWADDR_TAG);
 		return FALSE;
 	}
 
-	hwaddr = nm_utils_hwaddr_atoba (hwaddr_str, ETH_ALEN);
-	if (!hwaddr) {
+	if (!nm_utils_hwaddr_valid (hwaddr, ETH_ALEN)) {
 		g_set_error (error, IBFT_PLUGIN_ERROR, 0,
 		             "iBFT: malformed iscsiadm record: invalid " ISCSI_HWADDR_TAG " '%s'.",
-		             hwaddr_str);
+		             hwaddr);
 		return FALSE;
 	}
 
 	s_wired = nm_setting_wired_new ();
 	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, hwaddr, NULL);
-	g_byte_array_unref (hwaddr);
 
 	nm_connection_add_setting (connection, s_wired);
 	return TRUE;

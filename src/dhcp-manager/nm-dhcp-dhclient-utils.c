@@ -129,7 +129,7 @@ char *
 nm_dhcp_dhclient_create_config (const char *interface,
                                 gboolean is_ip6,
                                 const char *dhcp_client_id,
-                                GByteArray *anycast_addr,
+                                const char *anycast_addr,
                                 const char *hostname,
                                 const char *orig_path,
                                 const char *orig_contents)
@@ -137,6 +137,8 @@ nm_dhcp_dhclient_create_config (const char *interface,
 	GString *new_contents;
 	GPtrArray *alsoreq;
 	int i;
+
+	g_return_val_if_fail (!anycast_addr || nm_utils_hwaddr_valid (anycast_addr, ETH_ALEN), NULL);
 
 	new_contents = g_string_new (_("# Created by NetworkManager\n"));
 	alsoreq = g_ptr_array_sized_new (5);
@@ -246,21 +248,13 @@ nm_dhcp_dhclient_create_config (const char *interface,
 
 	g_string_append_c (new_contents, '\n');
 
-	if (anycast_addr && anycast_addr->len == 6) {
-		const guint8 *p_anycast_addr = anycast_addr->data;
-
+	if (anycast_addr) {
 		g_string_append_printf (new_contents, "interface \"%s\" {\n"
 		                        " initial-interval 1; \n"
-		                        " anycast-mac ethernet %02x:%02x:%02x:%02x:%02x:%02x;\n"
+		                        " anycast-mac ethernet %s;\n"
 		                        "}\n",
-		                        interface,
-		                        p_anycast_addr[0], p_anycast_addr[1],
-		                        p_anycast_addr[2], p_anycast_addr[3],
-		                        p_anycast_addr[4], p_anycast_addr[5]);
+		                        interface, anycast_addr);
 	}
-
-	/* Finally, assert that anycast_addr was unset or a 48 bit mac address. */
-	g_return_val_if_fail (!anycast_addr || anycast_addr->len == 6, g_string_free (new_contents, FALSE));
 
 	return g_string_free (new_contents, FALSE);
 }

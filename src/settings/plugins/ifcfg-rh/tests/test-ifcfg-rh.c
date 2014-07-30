@@ -186,7 +186,7 @@ test_read_basic (void)
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
 	GError *error = NULL;
-	const GByteArray *array;
+	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 	const char *expected_id = "System test-minimal";
 	guint64 expected_timestamp = 0;
@@ -218,10 +218,9 @@ test_read_basic (void)
 	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 0);
 
 	/* MAC address */
-	array = nm_setting_wired_get_mac_address (s_wired);
-	g_assert (array);
-	g_assert_cmpint (array->len, ==, ETH_ALEN);
-	g_assert (memcmp (array->data, &expected_mac_address[0], ETH_ALEN) == 0);
+	mac = nm_setting_wired_get_mac_address (s_wired);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, ETH_ALEN));
 
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -246,7 +245,7 @@ test_read_variables_corner_cases (void)
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
 	GError *error = NULL;
-	const GByteArray *array;
+	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 	const char *expected_zone = "'";
 	const char *expected_id = "\"";
@@ -275,10 +274,9 @@ test_read_variables_corner_cases (void)
 	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 0);
 
 	/* MAC address */
-	array = nm_setting_wired_get_mac_address (s_wired);
-	g_assert (array);
-	g_assert_cmpint (array->len, ==, ETH_ALEN);
-	g_assert (memcmp (array->data, &expected_mac_address[0], ETH_ALEN) == 0);
+	mac = nm_setting_wired_get_mac_address (s_wired);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, ETH_ALEN));
 
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -396,7 +394,7 @@ test_read_wired_static (const char *file,
 	NMSettingIP6Config *s_ip6;
 	char *unmanaged = NULL;
 	GError *error = NULL;
-	const GByteArray *array;
+	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
 	const char *expected_dns1 = "4.2.2.1";
 	const char *expected_dns2 = "4.2.2.2";
@@ -432,10 +430,9 @@ test_read_wired_static (const char *file,
 	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 1492);
 
 	/* MAC address */
-	array = nm_setting_wired_get_mac_address (s_wired);
-	g_assert (array);
-	g_assert_cmpint (array->len, ==, ETH_ALEN);
-	g_assert (memcmp (array->data, &expected_mac_address[0], ETH_ALEN) == 0);
+	mac = nm_setting_wired_get_mac_address (s_wired);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, ETH_ALEN));
 
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -552,7 +549,7 @@ test_read_wired_dhcp (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
-	const GByteArray *array;
+	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0xee };
 	const char *tmp;
 	const char *expected_id = "System test-wired-dhcp";
@@ -623,18 +620,13 @@ test_read_wired_dhcp (void)
 	        NM_SETTING_WIRED_SETTING_NAME);
 
 	/* MAC address */
-	array = nm_setting_wired_get_mac_address (s_wired);
-	ASSERT (array != NULL,
+	mac = nm_setting_wired_get_mac_address (s_wired);
+	ASSERT (mac != NULL,
 	        "wired-dhcp-verify-wired", "failed to verify %s: missing %s / %s key",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_WIRED_SETTING_NAME,
 	        NM_SETTING_WIRED_MAC_ADDRESS);
-	ASSERT (array->len == ETH_ALEN,
-	        "wired-dhcp-verify-wired", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_WIRED_DHCP,
-	        NM_SETTING_WIRED_SETTING_NAME,
-	        NM_SETTING_WIRED_MAC_ADDRESS);
-	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
+	ASSERT (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)),
 	        "wired-dhcp-verify-wired", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIRED_DHCP,
 	        NM_SETTING_WIRED_SETTING_NAME,
@@ -2843,6 +2835,7 @@ test_read_wifi_open (void)
 	GError *error = NULL;
 	const char *tmp;
 	const GByteArray *array;
+	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 	const char *expected_id = "System blahblah (test-wifi-open)";
 	guint64 expected_timestamp = 0;
@@ -2914,18 +2907,13 @@ test_read_wifi_open (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME);
 
 	/* MAC address */
-	array = nm_setting_wireless_get_mac_address (s_wireless);
-	ASSERT (array != NULL,
+	mac = nm_setting_wireless_get_mac_address (s_wireless);
+	ASSERT (mac != NULL,
 	        "wifi-open-verify-wireless", "failed to verify %s: missing %s / %s key",
 	        TEST_IFCFG_WIFI_OPEN,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_MAC_ADDRESS);
-	ASSERT (array->len == ETH_ALEN,
-	        "wifi-open-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_WIFI_OPEN,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MAC_ADDRESS);
-	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
+	ASSERT (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)),
 	        "wifi-open-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_OPEN,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
@@ -3309,6 +3297,7 @@ test_read_wifi_wep (void)
 	GError *error = NULL;
 	const char *tmp;
 	const GByteArray *array;
+	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 	const char *expected_id = "System blahblah (test-wifi-wep)";
 	guint64 expected_timestamp = 0;
@@ -3382,18 +3371,13 @@ test_read_wifi_wep (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME);
 
 	/* MAC address */
-	array = nm_setting_wireless_get_mac_address (s_wireless);
-	ASSERT (array != NULL,
+	mac = nm_setting_wireless_get_mac_address (s_wireless);
+	ASSERT (mac != NULL,
 	        "wifi-wep-verify-wireless", "failed to verify %s: missing %s / %s key",
 	        TEST_IFCFG_WIFI_WEP,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_MAC_ADDRESS);
-	ASSERT (array->len == ETH_ALEN,
-	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_WIFI_WEP,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MAC_ADDRESS);
-	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
+	ASSERT (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)),
 	        "wifi-wep-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WEP,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
@@ -4376,6 +4360,7 @@ test_read_wifi_wpa_psk (void)
 	GError *error = NULL;
 	const char *tmp;
 	const GByteArray *array;
+	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 	const char *expected_id = "System blahblah (test-wifi-wpa-psk)";
 	guint64 expected_timestamp = 0;
@@ -4458,18 +4443,13 @@ test_read_wifi_wpa_psk (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME);
 
 	/* MAC address */
-	array = nm_setting_wireless_get_mac_address (s_wireless);
-	ASSERT (array != NULL,
+	mac = nm_setting_wireless_get_mac_address (s_wireless);
+	ASSERT (mac != NULL,
 	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: missing %s / %s key",
 	        TEST_IFCFG_WIFI_WPA_PSK,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_MAC_ADDRESS);
-	ASSERT (array->len == ETH_ALEN,
-	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_WIFI_WPA_PSK,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_MAC_ADDRESS);
-	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
+	ASSERT (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)),
 	        "wifi-wpa-psk-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WPA_PSK,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
@@ -5866,7 +5846,7 @@ test_read_wired_qeth_static (void)
 	GError *error = NULL;
 	const char *tmp;
 	const char *expected_id = "System test-wired-qeth-static";
-	const GByteArray *array;
+	const char *mac;
 	const char *expected_channel0 = "0.0.0600";
 	const char *expected_channel1 = "0.0.0601";
 	const char *expected_channel2 = "0.0.0602";
@@ -5920,8 +5900,8 @@ test_read_wired_qeth_static (void)
 	        NM_SETTING_WIRED_SETTING_NAME);
 
 	/* MAC address */
-	array = nm_setting_wired_get_mac_address (s_wired);
-	ASSERT (array == NULL,
+	mac = nm_setting_wired_get_mac_address (s_wired);
+	ASSERT (mac == NULL,
 	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected %s / %s key",
 	        TEST_IFCFG_WIRED_QETH_STATIC,
 	        NM_SETTING_WIRED_SETTING_NAME,
@@ -6354,8 +6334,7 @@ test_write_wired_static (void)
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4, *reread_s_ip4;
 	NMSettingIP6Config *s_ip6, *reread_s_ip6;
-	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
-	GByteArray *mac;
+	static const char *mac = "31:33:33:37:be:cd";
 	guint32 mtu = 1492;
 	char *uuid;
 	const guint32 ip1 = htonl (0x01010103);
@@ -6414,14 +6393,10 @@ test_write_wired_static (void)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	mac = g_byte_array_sized_new (sizeof (tmpmac));
-	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
-
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
 	              NM_SETTING_WIRED_MTU, mtu,
 	              NULL);
-	g_byte_array_free (mac, TRUE);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -6797,8 +6772,7 @@ test_write_wired_static_ip6_only (void)
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
-	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
-	GByteArray *mac;
+	static const char *mac = "31:33:33:37:be:cd";
 	char *uuid;
 	struct in6_addr ip6;
 	struct in6_addr dns6;
@@ -6834,10 +6808,7 @@ test_write_wired_static_ip6_only (void)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	mac = g_byte_array_sized_new (sizeof (tmpmac));
-	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
 	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
-	g_byte_array_free (mac, TRUE);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -6934,8 +6905,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
-	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
-	GByteArray *mac;
+	static const char *mac = "31:33:33:37:be:cd";
 	char *uuid;
 	struct in6_addr ip6;
 	struct in6_addr dns6;
@@ -6983,10 +6953,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	mac = g_byte_array_sized_new (sizeof (tmpmac));
-	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
 	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
-	g_byte_array_free (mac, TRUE);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -7234,8 +7201,7 @@ test_write_wired_static_routes (void)
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
-	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
-	GByteArray *mac;
+	static const char *mac = "31:33:33:37:be:cd";
 	guint32 mtu = 1492;
 	char *uuid;
 	const guint32 ip1 = htonl (0x01010103);
@@ -7280,14 +7246,10 @@ test_write_wired_static_routes (void)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	mac = g_byte_array_sized_new (sizeof (tmpmac));
-	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
-
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
 	              NM_SETTING_WIRED_MTU, mtu,
 	              NULL);
-	g_byte_array_free (mac, TRUE);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -8128,11 +8090,9 @@ test_write_wifi_open (void)
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
-	GByteArray *bssid;
-	const unsigned char bssid_data[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
+	const char *bssid = "11:22:33:44:55:66";
 	guint32 channel = 9, mtu = 1345;
-	GByteArray *mac;
-	const unsigned char mac_data[] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
+	const char *mac = "aa:bb:cc:dd:ee:ff";
 	shvarFile *ifcfg;
 	char *tmp;
 
@@ -8157,10 +8117,6 @@ test_write_wifi_open (void)
 
 	ssid = g_byte_array_sized_new (sizeof (ssid_data));
 	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
-	bssid = g_byte_array_sized_new (sizeof (bssid_data));
-	g_byte_array_append (bssid, bssid_data, sizeof (bssid_data));
-	mac = g_byte_array_sized_new (sizeof (mac_data));
-	g_byte_array_append (mac, mac_data, sizeof (mac_data));
 
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
@@ -8173,8 +8129,6 @@ test_write_wifi_open (void)
 	              NULL);
 
 	g_byte_array_free (ssid, TRUE);
-	g_byte_array_free (bssid, TRUE);
-	g_byte_array_free (mac, TRUE);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -11448,7 +11402,7 @@ test_read_bridge_main (void)
 {
 	NMConnection *connection;
 	NMSettingBridge *s_bridge;
-	const GByteArray *array;
+	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x16, 0x41, 0x11, 0x22, 0x33 };
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
@@ -11482,11 +11436,11 @@ test_read_bridge_main (void)
 	g_assert_cmpuint (nm_setting_bridge_get_hello_time (s_bridge), ==, 7);
 	g_assert_cmpuint (nm_setting_bridge_get_max_age (s_bridge), ==, 39);
 	g_assert_cmpuint (nm_setting_bridge_get_ageing_time (s_bridge), ==, 235352);
+
 	/* MAC address */
-	array = nm_setting_bridge_get_mac_address (s_bridge);
-	g_assert (array);
-	g_assert_cmpint (array->len, ==, ETH_ALEN);
-	g_assert (memcmp (array->data, &expected_mac_address[0], ETH_ALEN) == 0);
+	mac = nm_setting_bridge_get_mac_address (s_bridge);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, ETH_ALEN));
 
 	g_free (unmanaged);
 	g_free (keyfile);
@@ -11509,8 +11463,7 @@ test_write_bridge_main (void)
 	const guint32 gw = htonl (0x01010101);
 	const guint32 prefix = 24;
 	NMIP4Address *addr;
-	static unsigned char bridge_mac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
-	GByteArray *mac_array;
+	static const char *mac = "31:33:33:37:be:cd";
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -11543,12 +11496,9 @@ test_write_bridge_main (void)
 	g_assert (s_bridge);
 	nm_connection_add_setting (connection, NM_SETTING (s_bridge));
 
-	mac_array = g_byte_array_sized_new (sizeof (bridge_mac));
-	g_byte_array_append (mac_array, bridge_mac, sizeof (bridge_mac));
 	g_object_set (s_bridge,
-	              NM_SETTING_BRIDGE_MAC_ADDRESS, mac_array,
+	              NM_SETTING_BRIDGE_MAC_ADDRESS, mac,
 	              NULL);
-	g_byte_array_free (mac_array, TRUE);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -11672,8 +11622,7 @@ test_write_bridge_component (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSetting *s_port;
-	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
-	GByteArray *mac;
+	static const char *mac = "31:33:33:37:be:cd";
 	guint32 mtu = 1492;
 	char *uuid;
 	gboolean success;
@@ -11709,14 +11658,10 @@ test_write_bridge_component (void)
 	g_assert (s_wired);
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	mac = g_byte_array_sized_new (sizeof (tmpmac));
-	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
-
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
 	              NM_SETTING_WIRED_MTU, mtu,
 	              NULL);
-	g_byte_array_free (mac, TRUE);
 
 	/* Bridge port */
 	s_port = nm_setting_bridge_port_new ();
@@ -12468,8 +12413,7 @@ test_write_bond_slave (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
-	GByteArray *mac;
+	static const char *mac = "31:33:33:37:be:cd";
 	guint32 mtu = 1492;
 	char *uuid;
 	gboolean success;
@@ -12502,14 +12446,10 @@ test_write_bond_slave (void)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	mac = g_byte_array_sized_new (sizeof (tmpmac));
-	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
-
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
 	              NM_SETTING_WIRED_MTU, mtu,
 	              NULL);
-	g_byte_array_free (mac, TRUE);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "bond-slave-write", "failed to verify connection: %s",
@@ -12576,7 +12516,7 @@ test_read_infiniband (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
-	const GByteArray *array;
+	const char *mac;
 	char expected_mac_address[INFINIBAND_ALEN] = { 0x80, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22 };
 	const char *transport_mode;
 
@@ -12607,18 +12547,13 @@ test_read_infiniband (void)
 	        NM_SETTING_INFINIBAND_SETTING_NAME);
 
 	/* MAC address */
-	array = nm_setting_infiniband_get_mac_address (s_infiniband);
-	ASSERT (array != NULL,
+	mac = nm_setting_infiniband_get_mac_address (s_infiniband);
+	ASSERT (mac != NULL,
 	        "infiniband-verify-infiniband", "failed to verify %s: missing %s / %s key",
 	        TEST_IFCFG_INFINIBAND,
 	        NM_SETTING_INFINIBAND_SETTING_NAME,
 	        NM_SETTING_INFINIBAND_MAC_ADDRESS);
-	ASSERT (array->len == INFINIBAND_ALEN,
-	        "infiniband-verify-infiniband", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_IFCFG_INFINIBAND,
-	        NM_SETTING_INFINIBAND_SETTING_NAME,
-	        NM_SETTING_INFINIBAND_MAC_ADDRESS);
-	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
+	ASSERT (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)),
 	        "infiniband-verify-infiniband", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_INFINIBAND,
 	        NM_SETTING_INFINIBAND_SETTING_NAME,
@@ -12653,8 +12588,7 @@ test_write_infiniband (void)
 	NMSettingInfiniband *s_infiniband;
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
-	unsigned char tmpmac[INFINIBAND_ALEN] = { 0x80, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22 };
-	GByteArray *mac;
+	const char *mac = "80:00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff:00:11:22";
 	guint32 mtu = 65520;
 	char *uuid;
 	const guint32 ip1 = htonl (0x01010103);
@@ -12689,15 +12623,11 @@ test_write_infiniband (void)
 	s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_infiniband));
 
-	mac = g_byte_array_sized_new (sizeof (tmpmac));
-	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
-
 	g_object_set (s_infiniband,
 	              NM_SETTING_INFINIBAND_MAC_ADDRESS, mac,
 	              NM_SETTING_INFINIBAND_MTU, mtu,
 	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",
 	              NULL);
-	g_byte_array_free (mac, TRUE);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -12830,11 +12760,7 @@ test_write_bond_slave_ib (void)
 	NMConnection *reread;
 	NMSettingConnection *s_con;
 	NMSettingInfiniband *s_infiniband;
-	static unsigned char tmpmac[] = { 
-		0x80, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-		0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x11, 0x22
-	};
-	GByteArray *mac;
+	static const char *mac = "80:00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff:00:11:22";
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -12866,15 +12792,11 @@ test_write_bond_slave_ib (void)
 	s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_infiniband));
 
-	mac = g_byte_array_sized_new (sizeof (tmpmac));
-	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
-
 	g_object_set (s_infiniband,
 	              NM_SETTING_INFINIBAND_MAC_ADDRESS, mac,
 	              NM_SETTING_INFINIBAND_MTU, 2044,
 	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
 	              NULL);
-	g_byte_array_free (mac, TRUE);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
 	        "bond-slave-write-ib", "failed to verify connection: %s",

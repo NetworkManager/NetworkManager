@@ -498,20 +498,20 @@ guess_connection_type (const char *conn_name)
 /* Reading mac address for setting connection option.
  * Unmanaged device mac address is required by NetworkManager*/
 static gboolean
-read_mac_address (const char *conn_name, GByteArray **array, GError **error)
+read_mac_address (const char *conn_name, const char **mac, GError **error)
 {
 	const char *value = ifnet_get_data (conn_name, "mac");
 
 	if (!value || !strlen (value))
 		return TRUE;
 
-	*array = nm_utils_hwaddr_atoba (value, ETH_ALEN);
-	if (!*array) {
+	if (!nm_utils_hwaddr_valid (value, ETH_ALEN)) {
 		g_set_error (error, ifnet_plugin_error_quark (), 0,
-					 "The MAC address '%s' was invalid.", value);
+		             "The MAC address '%s' was invalid.", value);
 		return FALSE;
 	}
 
+	*mac = value;
 	return TRUE;
 }
 
@@ -520,7 +520,7 @@ make_wired_connection_setting (NMConnection *connection,
                                const char *conn_name,
                                GError **error)
 {
-	GByteArray *mac = NULL;
+	const char *mac = NULL;
 	NMSettingWired *s_wired = NULL;
 	const char *value = NULL;
 
@@ -544,7 +544,6 @@ make_wired_connection_setting (NMConnection *connection,
 		if (mac) {
 			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS,
 				      mac, NULL);
-			g_byte_array_free (mac, TRUE);
 		}
 	} else {
 		g_object_unref (s_wired);
@@ -881,7 +880,8 @@ make_wireless_connection_setting (const char *conn_name,
                                   NMSetting8021x **s_8021x,
                                   GError **error)
 {
-	GByteArray *array, *mac = NULL;
+	GByteArray *array;
+	const char *mac = NULL;
 	NMSettingWireless *wireless_setting = NULL;
 	gboolean adhoc = FALSE;
 	const char *value;
@@ -903,8 +903,6 @@ make_wireless_connection_setting (const char *conn_name,
 			g_object_set (wireless_setting,
 				      NM_SETTING_WIRELESS_MAC_ADDRESS, mac,
 				      NULL);
-			g_byte_array_free (mac, TRUE);
-
 		}
 	} else {
 		g_object_unref (wireless_setting);
@@ -979,18 +977,14 @@ make_wireless_connection_setting (const char *conn_name,
 	/* BSSID setting */
 	value = wpa_get_value (conn_name, "bssid");
 	if (value) {
-		GByteArray *bssid;
-
-		bssid = nm_utils_hwaddr_atoba (value, ETH_ALEN);
-		if (!bssid) {
+		if (!nm_utils_hwaddr_valid (value, ETH_ALEN)) {
 			g_set_error (error, ifnet_plugin_error_quark (), 0,
 						 "Invalid BSSID '%s'", value);
 			goto error;
 		}
 
 		g_object_set (wireless_setting, NM_SETTING_WIRELESS_BSSID,
-			      bssid, NULL);
-		g_byte_array_free (bssid, TRUE);
+			      value, NULL);
 
 	}
 
@@ -2230,8 +2224,8 @@ write_wireless_setting (NMConnection *connection,
                         GError **error)
 {
 	NMSettingWireless *s_wireless;
-	const GByteArray *ssid, *mac, *bssid;
-	const char *mode;
+	const GByteArray *ssid;
+	const char *mac, *bssid, *mode;
 	char buf[33];
 	guint32 mtu, i;
 	gboolean adhoc = FALSE, hex_ssid = FALSE;
@@ -2291,11 +2285,8 @@ write_wireless_setting (NMConnection *connection,
 
 	ifnet_set_data (ssid_str, "mac", NULL);
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
-	if (mac) {
-		tmp = nm_utils_hwaddr_ntoa (mac->data, mac->len);
-		ifnet_set_data (ssid_str, "mac", tmp);
-		g_free (tmp);
-	}
+	if (mac)
+		ifnet_set_data (ssid_str, "mac", mac);
 
 	ifnet_set_data (ssid_str, "mtu", NULL);
 	mtu = nm_setting_wireless_get_mtu (s_wireless);
@@ -2320,11 +2311,8 @@ write_wireless_setting (NMConnection *connection,
 
 	wpa_set_data (ssid_str, "bssid", NULL);
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
-	if (bssid) {
-		tmp = nm_utils_hwaddr_ntoa (bssid->data, bssid->len);
-		wpa_set_data (ssid_str, "bssid", tmp);
-		g_free (tmp);
-	}
+	if (bssid)
+		wpa_set_data (ssid_str, "bssid", bssid);
 
 	if (nm_connection_get_setting_wireless_security (connection)) {
 		if (!write_wireless_security_setting
@@ -2345,7 +2333,7 @@ write_wired_setting (NMConnection *connection,
                      GError **error)
 {
 	NMSettingWired *s_wired;
-	const GByteArray *mac;
+	const char *mac;
 	char *tmp;
 	guint32 mtu;
 
@@ -2359,11 +2347,8 @@ write_wired_setting (NMConnection *connection,
 
 	ifnet_set_data (conn_name, "mac", NULL);
 	mac = nm_setting_wired_get_mac_address (s_wired);
-	if (mac) {
-		tmp = nm_utils_hwaddr_ntoa (mac->data, mac->len);
-		ifnet_set_data (conn_name, "mac", tmp);
-		g_free (tmp);
-	}
+	if (mac)
+		ifnet_set_data (conn_name, "mac", mac);
 
 	ifnet_set_data (conn_name, "mtu", NULL);
 	mtu = nm_setting_wired_get_mtu (s_wired);

@@ -749,6 +749,42 @@ test_setting_to_dbus_only_secrets (void)
 }
 
 static void
+test_setting_to_dbus_transform (void)
+{
+	NMSetting *s_wired;
+	GHashTable *hash;
+	GValue *val;
+	const char *test_mac_address = "11:22:33:44:55:66";
+	GByteArray *dbus_mac_address;
+	GByteArray *cmp_mac_address;
+
+	s_wired = nm_setting_wired_new ();
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_MAC_ADDRESS, test_mac_address,
+	              NULL);
+
+	g_assert_cmpstr (nm_setting_wired_get_mac_address (NM_SETTING_WIRED (s_wired)), ==, test_mac_address);
+
+	hash = _nm_setting_to_dbus (s_wired, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	g_assert (hash != NULL);
+
+	val = g_hash_table_lookup (hash, NM_SETTING_WIRED_MAC_ADDRESS);
+	g_assert (val != NULL);
+	g_assert (G_VALUE_HOLDS (val, DBUS_TYPE_G_UCHAR_ARRAY));
+
+	dbus_mac_address = g_value_get_boxed (val);
+
+	cmp_mac_address = nm_utils_hwaddr_atoba (test_mac_address, ETH_ALEN);
+
+	g_assert_cmpint (dbus_mac_address->len, ==, cmp_mac_address->len);
+	g_assert (memcmp (dbus_mac_address->data, cmp_mac_address->data, ETH_ALEN) == 0);
+
+	g_byte_array_unref (cmp_mac_address);
+	g_hash_table_unref (hash);
+	g_object_unref (s_wired);
+}
+
+static void
 test_connection_to_dbus_setting_name (void)
 {
 	NMConnection *connection;
@@ -843,6 +879,32 @@ test_setting_new_from_dbus (void)
 	g_assert_cmpstr (nm_setting_wireless_security_get_leap_username (s_wsec), ==, "foobarbaz");
 	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "random psk");
 	g_object_unref (s_wsec);
+}
+
+static void
+test_setting_new_from_dbus_transform (void)
+{
+	NMSetting *s_wired;
+	GHashTable *hash;
+	GValue val = { 0, };
+	const char *test_mac_address = "11:22:33:44:55:66";
+	GByteArray *dbus_mac_address;
+	GError *error = NULL;
+
+	hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_value_unset);
+
+	dbus_mac_address = nm_utils_hwaddr_atoba (test_mac_address, ETH_ALEN);
+	g_value_init (&val, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_value_take_boxed (&val, dbus_mac_address);
+	g_hash_table_insert (hash, NM_SETTING_WIRED_MAC_ADDRESS, &val);
+
+	s_wired = _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRED, hash, NULL, &error);
+	g_assert_no_error (error);
+
+	g_assert_cmpstr (nm_setting_wired_get_mac_address (NM_SETTING_WIRED (s_wired)), ==, test_mac_address);
+
+	g_hash_table_unref (hash);
+	g_object_unref (s_wired);
 }
 
 static NMConnection *
@@ -1739,7 +1801,7 @@ test_connection_good_base_types (void)
 	gboolean success;
 	GError *error = NULL;
 	GByteArray *array;
-	const guint8 bdaddr[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
+	const char *bdaddr = "11:22:33:44:55:66";
 
 	/* Try a basic wired connection */
 	connection = nm_simple_connection_new ();
@@ -1788,13 +1850,10 @@ test_connection_good_base_types (void)
 	add_generic_settings (connection, NM_SETTING_BLUETOOTH_SETTING_NAME);
 
 	setting = nm_setting_bluetooth_new ();
-	array = g_byte_array_new ();
-	g_byte_array_append (array, bdaddr, sizeof (bdaddr));
 	g_object_set (setting,
-	              NM_SETTING_BLUETOOTH_BDADDR, array,
+	              NM_SETTING_BLUETOOTH_BDADDR, bdaddr,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
 	              NULL);
-	g_byte_array_free (array, TRUE);
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
@@ -2861,13 +2920,11 @@ static NMSetting *
 _add_setting_fcn_bluetooth (NMConnection *con)
 {
 	NMSetting *setting;
-	GByteArray *bdaddr = nm_utils_hwaddr_atoba ("11:22:33:44:55:66", ETH_ALEN);
 
 	setting = g_object_new (NM_TYPE_SETTING_BLUETOOTH,
-	                        NM_SETTING_BLUETOOTH_BDADDR, bdaddr,
+	                        NM_SETTING_BLUETOOTH_BDADDR, "11:22:33:44:55:66",
 	                        NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
 	                        NULL);
-	g_byte_array_free (bdaddr, TRUE);
 
 	nm_connection_add_setting (con, setting);
 	return setting;
@@ -3033,12 +3090,9 @@ _add_setting_fcn_wireless (NMConnection *con)
 static void
 _prepare_normalizable_fcn_vlan (NMConnection *con)
 {
-	GByteArray *mac_addr = nm_utils_hwaddr_atoba ("11:22:33:44:55:66", ETH_ALEN);
-
 	nm_connection_add_setting (con, g_object_new (NM_TYPE_SETTING_WIRED,
-	                                              NM_SETTING_WIRED_MAC_ADDRESS, mac_addr,
+	                                              NM_SETTING_WIRED_MAC_ADDRESS, "11:22:33:44:55:66",
 	                                              NULL));
-	g_byte_array_free (mac_addr, TRUE);
 }
 
 static void
@@ -3203,6 +3257,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_to_dbus_all", test_setting_to_dbus_all);
 	g_test_add_func ("/core/general/test_setting_to_dbus_no_secrets", test_setting_to_dbus_no_secrets);
 	g_test_add_func ("/core/general/test_setting_to_dbus_only_secrets", test_setting_to_dbus_only_secrets);
+	g_test_add_func ("/core/general/test_setting_to_dbus_transform", test_setting_to_dbus_transform);
 	g_test_add_func ("/core/general/test_setting_compare_id", test_setting_compare_id);
 #define ADD_FUNC(func, secret_flags, comp_flags, remove_secret) \
 	g_test_add_data_func_full ("/core/general/" G_STRINGIFY (func), \
@@ -3221,6 +3276,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_connection_to_dbus_setting_name", test_connection_to_dbus_setting_name);
 	g_test_add_func ("/core/general/test_connection_to_dbus_deprecated_props", test_connection_to_dbus_deprecated_props);
 	g_test_add_func ("/core/general/test_setting_new_from_dbus", test_setting_new_from_dbus);
+	g_test_add_func ("/core/general/test_setting_new_from_dbus_transform", test_setting_new_from_dbus_transform);
 	g_test_add_func ("/core/general/test_connection_replace_settings", test_connection_replace_settings);
 	g_test_add_func ("/core/general/test_connection_replace_settings_from_connection", test_connection_replace_settings_from_connection);
 	g_test_add_func ("/core/general/test_connection_replace_settings_bad", test_connection_replace_settings_bad);

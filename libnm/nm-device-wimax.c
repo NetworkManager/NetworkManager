@@ -322,8 +322,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	NMSettingConnection *s_con;
 	NMSettingWimax *s_wimax;
 	const char *ctype;
-	const GByteArray *mac;
-	const char *hw_addr;
+	const char *hwaddr, *setting_hwaddr;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -343,15 +342,15 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	}
 
 	/* Check MAC address */
-	hw_addr = nm_device_wimax_get_hw_address (NM_DEVICE_WIMAX (device));
-	if (hw_addr) {
-		if (!nm_utils_hwaddr_valid (hw_addr, ETH_ALEN)) {
+	hwaddr = nm_device_wimax_get_hw_address (NM_DEVICE_WIMAX (device));
+	if (hwaddr) {
+		if (!nm_utils_hwaddr_valid (hwaddr, ETH_ALEN)) {
 			g_set_error (error, NM_DEVICE_WIMAX_ERROR, NM_DEVICE_WIMAX_ERROR_INVALID_DEVICE_MAC,
 			             "Invalid device MAC address.");
 			return FALSE;
 		}
-		mac = nm_setting_wimax_get_mac_address (s_wimax);
-		if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len, hw_addr, -1)) {
+		setting_hwaddr = nm_setting_wimax_get_mac_address (s_wimax);
+		if (setting_hwaddr && !nm_utils_hwaddr_matches (setting_hwaddr, -1, hwaddr, -1)) {
 			g_set_error (error, NM_DEVICE_WIMAX_ERROR, NM_DEVICE_WIMAX_ERROR_MAC_MISMATCH,
 			             "The MACs of the device and the connection didn't match.");
 			return FALSE;

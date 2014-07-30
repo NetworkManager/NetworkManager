@@ -54,7 +54,6 @@ typedef struct {
 	NMBluetoothCapabilities connection_bt_type;
 
 	char *address;
-	guint8 bin_address[ETH_ALEN];
 	char *name;
 	guint32 capabilities;
 	gboolean connected;
@@ -166,7 +165,6 @@ pan_connection_check_create (NMBluezDevice *self)
 	NMConnection *added;
 	NMSetting *setting;
 	char *uuid, *id;
-	GByteArray *bdaddr_array;
 	GError *error = NULL;
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
@@ -200,15 +198,12 @@ pan_connection_check_create (NMBluezDevice *self)
 	nm_connection_add_setting (connection, setting);
 
 	/* Setting: Bluetooth */
-	bdaddr_array = g_byte_array_sized_new (sizeof (priv->bin_address));
-	g_byte_array_append (bdaddr_array, priv->bin_address, sizeof (priv->bin_address));
 	setting = nm_setting_bluetooth_new ();
 	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_BLUETOOTH_BDADDR, bdaddr_array,
+	              NM_SETTING_BLUETOOTH_BDADDR, priv->address,
 	              NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
 	              NULL);
 	nm_connection_add_setting (connection, setting);
-	g_byte_array_free (bdaddr_array, TRUE);
 
 	/* Setting: IPv4 */
 	setting = nm_setting_ip4_config_new ();
@@ -300,7 +295,7 @@ connection_compatible (NMBluezDevice *self, NMConnection *connection)
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	NMSettingBluetooth *s_bt;
 	const char *bt_type;
-	const GByteArray *bdaddr;
+	const char *bdaddr;
 
 	if (!nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME))
 		return FALSE;
@@ -309,14 +304,13 @@ connection_compatible (NMBluezDevice *self, NMConnection *connection)
 	if (!s_bt)
 		return FALSE;
 
-	if (!priv->address) {
-		/* unless address is set, bin_address is not initialized. */
+	if (!priv->address)
 		return FALSE;
-	}
+
 	bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
 	if (!bdaddr)
 		return FALSE;
-	if (!nm_utils_hwaddr_matches (bdaddr->data, bdaddr->len, priv->bin_address, ETH_ALEN))
+	if (!nm_utils_hwaddr_matches (bdaddr, -1, priv->address, -1))
 		return FALSE;
 
 	bt_type = nm_setting_bluetooth_get_connection_type (s_bt);
@@ -611,8 +605,6 @@ _set_property_capabilities (NMBluezDevice *self, const char **uuids)
 /**
  * priv->address can only be set one to a certain (non NULL) value. Every later attempt
  * to reset it to another value will be ignored and a warning will be logged.
- *
- * When setting the address for the first time, we also set bin_address.
  **/
 static void
 _set_property_address (NMBluezDevice *self, const char *addr)
@@ -632,13 +624,11 @@ _set_property_address (NMBluezDevice *self, const char *addr)
 		return;
 	}
 
-	if (!nm_utils_hwaddr_aton (addr, priv->bin_address, ETH_ALEN)) {
-		if (priv->address)
-			nm_log_warn (LOGD_BT, "bluez[%s] cannot reset address from '%s' to '%s' (invalid value)", priv->path, priv->address, addr);
-		else
-			nm_log_warn (LOGD_BT, "bluez[%s] cannot reset address from NULL to '%s' (invalid value)", priv->path, addr);
+	if (!nm_utils_hwaddr_valid (addr, ETH_ALEN)) {
+		nm_log_warn (LOGD_BT, "bluez[%s] cannot set address to '%s' (invalid value)", priv->path, addr);
 		return;
 	}
+
 	priv->address = g_strdup (addr);
 	g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_ADDRESS);
 }

@@ -79,7 +79,7 @@ test_read_ibft_dhcp (void)
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
 	GError *error = NULL;
-	const GByteArray *array;
+	const char *mac_address;
 	const char *expected_mac_address = "00:33:21:98:b9:f1";
 	GPtrArray *block;
 
@@ -103,9 +103,9 @@ test_read_ibft_dhcp (void)
 	/* ===== WIRED SETTING ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
-	array = nm_setting_wired_get_mac_address (s_wired);
-	g_assert (array);
-	nmtst_assert_hwaddr_equals (array->data, array->len, expected_mac_address);
+	mac_address = nm_setting_wired_get_mac_address (s_wired);
+	g_assert (mac_address);
+	g_assert (nm_utils_hwaddr_matches (mac_address, -1, expected_mac_address, -1));
 	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 0);
 
 	/* ===== IPv4 SETTING ===== */
@@ -124,7 +124,7 @@ test_read_ibft_static (void)
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
 	GError *error = NULL;
-	const GByteArray *array;
+	const char *mac_address;
 	const char *expected_mac_address = "00:33:21:98:b9:f0";
 	NMIP4Address *ip4_addr;
 	GPtrArray *block;
@@ -149,9 +149,9 @@ test_read_ibft_static (void)
 	/* ===== WIRED SETTING ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
-	array = nm_setting_wired_get_mac_address (s_wired);
-	g_assert (array);
-	nmtst_assert_hwaddr_equals (array->data, array->len, expected_mac_address);
+	mac_address = nm_setting_wired_get_mac_address (s_wired);
+	g_assert (mac_address);
+	g_assert (nm_utils_hwaddr_matches (mac_address, -1, expected_mac_address, -1));
 	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 0);
 
 	/* ===== IPv4 SETTING ===== */
@@ -224,7 +224,7 @@ test_read_ibft_vlan (void)
 	NMSettingWired *s_wired;
 	NMSettingVlan *s_vlan;
 	NMSettingIP4Config *s_ip4;
-	const GByteArray *array;
+	const char *mac_address;
 	const char *expected_mac_address = "00:33:21:98:b9:f0";
 	NMIP4Address *ip4_addr;
 	GError *error = NULL;
@@ -243,9 +243,9 @@ test_read_ibft_vlan (void)
 	/* ===== WIRED SETTING ===== */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
-	array = nm_setting_wired_get_mac_address (s_wired);
-	g_assert (array);
-	nmtst_assert_hwaddr_equals (array->data, array->len, expected_mac_address);
+	mac_address = nm_setting_wired_get_mac_address (s_wired);
+	g_assert (mac_address);
+	g_assert (nm_utils_hwaddr_matches (mac_address, -1, expected_mac_address, -1));
 
 	/* ===== VLAN SETTING ===== */
 	s_vlan = nm_connection_get_setting_vlan (connection);

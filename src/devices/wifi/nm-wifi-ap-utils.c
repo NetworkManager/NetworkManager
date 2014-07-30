@@ -466,7 +466,7 @@ verify_adhoc (NMSettingWirelessSecurity *s_wsec,
 
 gboolean
 nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
-                                 const guint8 *ap_bssid,
+                                 const char *bssid,
                                  NM80211Mode ap_mode,
                                  guint32 ap_flags,
                                  guint32 ap_wpa_flags,
@@ -500,14 +500,8 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 		return FALSE;
 	}
 
-	if (lock_bssid && !nm_setting_wireless_get_bssid (s_wifi)) {
-		GByteArray *bssid;
-
-		bssid = g_byte_array_sized_new (ETH_ALEN);
-		g_byte_array_append (bssid, ap_bssid, ETH_ALEN);
+	if (lock_bssid && !nm_setting_wireless_get_bssid (s_wifi))
 		g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_BSSID, bssid, NULL);
-		g_byte_array_free (bssid, TRUE);
-	}
 
 	/* And mode */
 	mode = nm_setting_wireless_get_mode (s_wifi);

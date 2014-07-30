@@ -842,7 +842,7 @@ nm_manager_get_state (NMManager *manager)
 /*******************************************************************/
 
 static NMDevice *
-get_device_from_hwaddr (NMManager *self, const GByteArray *setting_mac)
+get_device_from_hwaddr (NMManager *self, const char *setting_mac)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *device_mac;
@@ -857,7 +857,7 @@ get_device_from_hwaddr (NMManager *self, const GByteArray *setting_mac)
 		device_mac = nm_device_get_hw_address (iter->data);
 		if (!device_mac)
 			continue;
-		if (nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, device_mac, -1))
+		if (nm_utils_hwaddr_matches (setting_mac, -1, device_mac, -1))
 			return device;
 	}
 	return NULL;
@@ -873,7 +873,7 @@ find_vlan_parent (NMManager *self,
 	NMConnection *parent_connection;
 	const char *parent_iface;
 	NMDevice *parent = NULL;
-	const GByteArray *setting_mac;
+	const char *setting_mac;
 	GSList *iter;
 
 	/* The 'parent' property could be given by an interface name, a
@@ -926,7 +926,7 @@ find_infiniband_parent (NMManager *self,
 	NMSettingInfiniband *s_infiniband;
 	const char *parent_iface;
 	NMDevice *parent = NULL;
-	const GByteArray *setting_mac;
+	const char *setting_mac;
 
 	s_infiniband = nm_connection_get_setting_infiniband (connection);
 	g_return_val_if_fail (s_infiniband != NULL, NULL);

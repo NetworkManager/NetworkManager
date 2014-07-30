@@ -146,8 +146,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	NMSettingConnection *s_con;
 	NMSettingBluetooth *s_bt;
 	const char *ctype;
-	const GByteArray *mac;
-	const char *hw_addr;
+	const char *hw_addr, *setting_addr;
 	NMBluetoothCapabilities dev_caps;
 	NMBluetoothCapabilities bt_type;
 
@@ -176,8 +175,8 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 			             "Invalid device MAC address.");
 			return FALSE;
 		}
-		mac = nm_setting_bluetooth_get_bdaddr (s_bt);
-		if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len, hw_addr, -1)) {
+		setting_addr = nm_setting_bluetooth_get_bdaddr (s_bt);
+		if (setting_addr && !nm_utils_hwaddr_matches (setting_addr, -1, hw_addr, -1)) {
 			g_set_error (error, NM_DEVICE_BT_ERROR, NM_DEVICE_BT_ERROR_MAC_MISMATCH,
 			             "The MACs of the device and the connection didn't match.");
 			return FALSE;

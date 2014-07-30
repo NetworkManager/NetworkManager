@@ -76,7 +76,7 @@ GType nm_setting_olpc_mesh_get_type (void);
 NMSetting *       nm_setting_olpc_mesh_new                      (void);
 const GByteArray *nm_setting_olpc_mesh_get_ssid                 (NMSettingOlpcMesh *setting);
 guint32           nm_setting_olpc_mesh_get_channel              (NMSettingOlpcMesh *setting);
-const GByteArray *nm_setting_olpc_mesh_get_dhcp_anycast_address (NMSettingOlpcMesh *setting);
+const char *      nm_setting_olpc_mesh_get_dhcp_anycast_address (NMSettingOlpcMesh *setting);
 
 G_END_DECLS
 

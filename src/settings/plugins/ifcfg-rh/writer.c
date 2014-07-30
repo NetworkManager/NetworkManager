@@ -51,13 +51,6 @@
 
 
 static void
-svSetValue_free (shvarFile *s, const char *key, char *value, gboolean verbatim)
-{
-	svSetValue (s, key, value, verbatim);
-	g_free (value);
-}
-
-static void
 save_secret_flags (shvarFile *ifcfg,
                    const char *key,
                    NMSettingSecretFlags flags)
@@ -807,8 +800,9 @@ write_wireless_setting (NMConnection *connection,
 {
 	NMSettingWireless *s_wireless;
 	char *tmp, *tmp2;
-	const GByteArray *ssid, *device_mac, *cloned_mac, *bssid;
-	const char *mode;
+	const GByteArray *ssid;
+	const char *mode, *bssid;
+	const char *device_mac, *cloned_mac;
 	char buf[33];
 	guint32 mtu, chan, i;
 	gboolean adhoc = FALSE, hex_ssid = FALSE;
@@ -821,19 +815,11 @@ write_wireless_setting (NMConnection *connection,
 		return FALSE;
 	}
 
-	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	device_mac = nm_setting_wireless_get_mac_address (s_wireless);
-	if (device_mac) {
-		svSetValue_free (ifcfg, "HWADDR",
-		                 nm_utils_hwaddr_ntoa (device_mac->data, device_mac->len), FALSE);
-	}
+	svSetValue (ifcfg, "HWADDR", device_mac, FALSE);
 
-	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
 	cloned_mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
-	if (cloned_mac) {
-		svSetValue_free (ifcfg, "MACADDR",
-		                 nm_utils_hwaddr_ntoa (cloned_mac->data, cloned_mac->len), FALSE);
-	}
+	svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
 
 	svSetValue (ifcfg, "HWADDR_BLACKLIST", NULL, FALSE);
 	macaddr_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
@@ -931,12 +917,8 @@ write_wireless_setting (NMConnection *connection,
 		g_free (tmp);
 	}
 
-	svSetValue (ifcfg, "BSSID", NULL, FALSE);
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
-	if (bssid) {
-		svSetValue_free (ifcfg, "BSSID",
-		                 nm_utils_hwaddr_ntoa (bssid->data, bssid->len), FALSE);
-	}
+	svSetValue (ifcfg, "BSSID", bssid, FALSE);
 
 	/* Ensure DEFAULTKEY and SECURITYMODE are cleared unless there's security;
 	 * otherwise there's no way to detect WEP vs. open when WEP keys aren't
@@ -993,9 +975,8 @@ static gboolean
 write_infiniband_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingInfiniband *s_infiniband;
-	const GByteArray *mac;
 	char *tmp;
-	const char *transport_mode, *parent;
+	const char *mac, *transport_mode, *parent;
 	guint32 mtu;
 	int p_key;
 
@@ -1006,13 +987,8 @@ write_infiniband_setting (NMConnection *connection, shvarFile *ifcfg, GError **e
 		return FALSE;
 	}
 
-	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-	if (mac) {
-		tmp = nm_utils_hwaddr_ntoa (mac->data, mac->len);
-		svSetValue (ifcfg, "HWADDR", tmp, FALSE);
-		g_free (tmp);
-	}
+	svSetValue (ifcfg, "HWADDR", mac, FALSE);
 
 	svSetValue (ifcfg, "MTU", NULL, FALSE);
 	mtu = nm_setting_infiniband_get_mtu (s_infiniband);
@@ -1048,7 +1024,7 @@ static gboolean
 write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingWired *s_wired;
-	const GByteArray *device_mac, *cloned_mac;
+	const char *device_mac, *cloned_mac;
 	char *tmp;
 	const char *nettype, *portname, *ctcprot, *s390_key, *s390_val;
 	guint32 mtu, num_opts, i;
@@ -1063,19 +1039,11 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		return FALSE;
 	}
 
-	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	device_mac = nm_setting_wired_get_mac_address (s_wired);
-	if (device_mac) {
-		svSetValue_free (ifcfg, "HWADDR",
-		                 nm_utils_hwaddr_ntoa (device_mac->data, device_mac->len), FALSE);
-	}
+	svSetValue (ifcfg, "HWADDR", device_mac, FALSE);
 
-	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
 	cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-	if (cloned_mac) {
-		svSetValue_free (ifcfg, "MACADDR",
-		                 nm_utils_hwaddr_ntoa (cloned_mac->data, cloned_mac->len), FALSE);
-	}
+	svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
 
 	svSetValue (ifcfg, "HWADDR_BLACKLIST", NULL, FALSE);
 	macaddr_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
@@ -1245,24 +1213,18 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	if (s_wired) {
-		const GByteArray *device_mac, *cloned_mac;
+		const char *device_mac, *cloned_mac;
 		guint32 mtu;
 
 		*wired = TRUE;
 
 		device_mac = nm_setting_wired_get_mac_address (s_wired);
-		if (device_mac) {
-			tmp = nm_utils_hwaddr_ntoa (device_mac->data, device_mac->len);
-			svSetValue (ifcfg, "HWADDR", tmp, FALSE);
-			g_free (tmp);
-		}
+		if (device_mac)
+			svSetValue (ifcfg, "HWADDR", device_mac, FALSE);
 
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-		if (cloned_mac) {
-			tmp = nm_utils_hwaddr_ntoa (cloned_mac->data, device_mac->len);
-			svSetValue (ifcfg, "MACADDR", tmp, FALSE);
-			g_free (tmp);
-		}
+		if (cloned_mac)
+			svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
 
 		mtu = nm_setting_wired_get_mtu (s_wired);
 		if (mtu) {
@@ -1378,7 +1340,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 	const char *iface;
 	guint32 i;
 	GString *opts;
-	const GByteArray *mac;
+	const char *mac;
 	char *s;
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
@@ -1398,11 +1360,9 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 	svSetValue (ifcfg, "BRIDGING_OPTS", NULL, FALSE);
 	svSetValue (ifcfg, "STP", "no", FALSE);
 	svSetValue (ifcfg, "DELAY", NULL, FALSE);
-	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
 
 	mac = nm_setting_bridge_get_mac_address (s_bridge);
-	if (mac)
-		svSetValue_free (ifcfg, "MACADDR", nm_utils_hwaddr_ntoa (mac->data, mac->len), FALSE);
+	svSetValue (ifcfg, "MACADDR", mac, FALSE);
 
 	/* Bridge options */
 	opts = g_string_sized_new (32);

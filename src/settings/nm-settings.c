@@ -1472,12 +1472,12 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 	gpointer data;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	const GByteArray *setting_mac;
-	const char *hwaddr;
+	const char *setting_hwaddr;
+	const char *device_hwaddr;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
 
-	hwaddr = nm_device_get_hw_address (device);
+	device_hwaddr = nm_device_get_hw_address (device);
 
 	/* Find a wired connection locked to the given MAC address, if any */
 	g_hash_table_iter_init (&iter, priv->connections);
@@ -1505,10 +1505,10 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 
 		g_assert (s_wired != NULL);
 
-		setting_mac = nm_setting_wired_get_mac_address (s_wired);
-		if (setting_mac && hwaddr) {
+		setting_hwaddr = nm_setting_wired_get_mac_address (s_wired);
+		if (setting_hwaddr) {
 			/* A connection mac-locked to this device */
-			if (nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, hwaddr, -1))
+			if (nm_utils_hwaddr_matches (setting_hwaddr, -1, device_hwaddr, -1))
 				return TRUE;
 		} else {
 			/* A connection that applies to any wired device */
