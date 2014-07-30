@@ -117,7 +117,7 @@ nm_ifcfg_connection_new (NMConnection *source,
 	else {
 		char *keyfile = NULL, *routefile = NULL, *route6file = NULL;
 
-		tmp = connection_from_file (full_path, NULL, NULL, NULL,
+		tmp = connection_from_file (full_path, NULL, NULL,
 		                            &unhandled_spec,
 		                            &keyfile,
 		                            &routefile,
@@ -269,7 +269,7 @@ commit_changes (NMSettingsConnection *connection,
 	 * it if it's really changed.
 	 */
 	if (priv->path) {
-		reread = connection_from_file (priv->path, NULL, NULL, NULL,
+		reread = connection_from_file (priv->path, NULL, NULL,
 		                               NULL, NULL, NULL, NULL,
 		                               &error, NULL);
 		g_clear_error (&error);
