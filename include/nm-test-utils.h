@@ -958,5 +958,51 @@ nmtst_assert_connection_unnormalizable (NMConnection *con,
 
 #endif
 
+static inline void
+nmtst_assert_ip4_address_equals (guint32 addr, const char *expected, const char *loc)
+{
+    guint32 addr2 = nmtst_inet4_from_string (expected);
+
+    if (addr != addr2)
+        g_error ("assert: %s: ip4 address '%s' expected, but got %s",
+                 loc, expected ? expected : "any", nm_utils_inet4_ntop (addr, NULL));
+}
+#define nmtst_assert_ip4_address_equals(addr, expected) \
+    nmtst_assert_ip4_address_equals (addr, expected, G_STRLOC)
+
+#ifdef __NM_UTILS_H__
+static inline void
+nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const char *expected, const char *loc)
+{
+	guint8 buf2[NM_UTILS_HWADDR_LEN_MAX];
+	gsize hwaddr2_len = 1;
+	const char *p;
+	gboolean success;
+
+	g_assert (hwaddr1_len > 0 && hwaddr1_len <= NM_UTILS_HWADDR_LEN_MAX);
+
+	g_assert (expected);
+	for (p = expected; *p; p++) {
+		if (*p == ':' || *p == '-')
+			hwaddr2_len++;
+	}
+	g_assert (hwaddr2_len <= NM_UTILS_HWADDR_LEN_MAX);
+	g_assert (nm_utils_hwaddr_aton (expected, buf2, hwaddr2_len));
+
+	/* Manually check the entire hardware address instead of using
+	 * nm_utils_hwaddr_matches() because that function doesn't compare
+	 * entire InfiniBand addresses for various (legitimate) reasons.
+	 */
+	success = (hwaddr1_len == hwaddr2_len);
+	if (success)
+		success = !memcmp (hwaddr1, buf2, hwaddr1_len);
+	if (!success) {
+		g_error ("assert: %s: hwaddr '%s' (%zd) expected, but got %s (%zd)",
+		         loc, expected, hwaddr2_len, nm_utils_hwaddr_ntoa (hwaddr1, hwaddr1_len), hwaddr1_len);
+	}
+}
+#define nmtst_assert_hwaddr_equals(hwaddr1, hwaddr1_len, expected) \
+    nmtst_assert_hwaddr_equals (hwaddr1, hwaddr1_len, expected, G_STRLOC)
+#endif
 
 #endif /* __NM_TEST_UTILS_H__ */
