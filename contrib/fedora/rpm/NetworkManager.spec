@@ -423,8 +423,6 @@ mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/conf.d
 %{__rm} -f $RPM_BUILD_ROOT%{_libdir}/pppd/%{ppp_version}/*.la
 %{__rm} -f $RPM_BUILD_ROOT%{_libdir}/NetworkManager/*.la
 
-install -m 0755 test/.libs/nm-online %{buildroot}/%{_bindir}
-
 %if %{regen_docs}
 # install the pristine docs
 %{__cp} ORIG-docs/libnm-glib/html/* $RPM_BUILD_ROOT%{_datadir}/gtk-doc/html/libnm-glib/

@@ -164,10 +164,6 @@ valgrind-*.log
 /src/supplicant-manager/tests/test-supplicant-config
 /src/dhcp-manager/nm-dhcp-helper
 /system-settings/src
-/test/libnm-glib-test
-/test/libnm_glib_test
-/test/nm-online
-/test/nmtestdevices
 /libnm-util/nm-version.h
 /libnm-util/nm-setting-docs.xml
 /libnm-util/test-crypto
@@ -187,12 +183,12 @@ valgrind-*.log
 /src/tests/test-ip6-config
 /src/tests/test-wifi-ap-utils
 /src/tests/test-resolvconf-capture
+/src/tests/config/test-config
 /src/devices/wifi/tests/test-wifi-ap-utils
 /src/dnsmasq-manager/tests/test-dnsmasq-utils
 /src/dhcp-manager/tests/test-dhcp-dhclient
 /src/dhcp-manager/tests/test-dhcp-options
 /src/dhcp-manager/tests/test-dnsmasq-utils
-/src/config/tests/test-config
 
 /src/settings/plugins/keyfile/tests/test-keyfile
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
@@ -219,10 +215,10 @@ valgrind-*.log
 /data/org.freedesktop.NetworkManager.service
 /data/server.conf
 
-/cli/src/nmcli
-/cli/src/settings-docs.c
-
-/tui/newt/libnmt-newt.a
-/tui/nmtui
+clients/cli/nmcli
+clients/cli/settings-docs.c
+clients/tui/newt/libnmt-newt.a
+clients/tui/nmtui
+clients/nm-online
 
 /vapi/*.vapi

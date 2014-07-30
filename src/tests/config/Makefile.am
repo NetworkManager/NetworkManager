@@ -3,7 +3,6 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/src/ \
-	-I$(top_srcdir)/src/config \
 	-I$(top_srcdir)/src/devices \
 	-I${top_srcdir}/src/platform \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
