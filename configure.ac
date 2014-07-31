@@ -693,17 +693,23 @@ AC_DEFINE_UNQUOTED(KERNEL_FIRMWARE_DIR, "$KERNEL_FIRMWARE_DIR", [Define to path 
 AC_SUBST(KERNEL_FIRMWARE_DIR)
 
 PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4 >= 2.26], [have_libsoup=yes],[have_libsoup=no])
-if test "$have_libsoup" = "yes"; then
-	AC_DEFINE(HAVE_LIBSOUP, 1, [Define if you have libsoup])
+AC_ARG_WITH(libsoup, AS_HELP_STRING([--with-libsoup=yes|no], [Link against libsoup]), [], [with_libsoup=${have_libsoup}])
+if test "$with_libsoup" != "no"; then
+	if test "$have_libsoup" != "yes"; then
+		AC_MSG_ERROR(libsoup library not found)
+	fi
+	with_libsoup='yes'
+	AC_DEFINE(WITH_LIBSOUP, 1, [Define if you have libsoup])
 else
-	AC_DEFINE(HAVE_LIBSOUP, 0, [Define if you have libsoup])
+	AC_DEFINE(WITH_LIBSOUP, 0, [Define if you have libsoup])
 fi
+AM_CONDITIONAL(WITH_LIBSOUP, test "$with_libsoup" != "no")
 
 AC_ARG_ENABLE(concheck, AS_HELP_STRING([--enable-concheck], [enable connectivity checking support]),
-                     [enable_concheck=${enableval}], [enable_concheck=${have_libsoup}])
+                     [enable_concheck=${enableval}], [enable_concheck=${with_libsoup}])
 if (test "${enable_concheck}" = "yes"); then
-	if test x"$have_libsoup" = x"no"; then
-		AC_MSG_ERROR(Connectivity checking requires libsoup development headers)
+	if test x"$with_libsoup" = x"no"; then
+		AC_MSG_ERROR(Connectivity checking requires libsoup)
 	fi
 	AC_SUBST(LIBSOUP_CFLAGS)
 	AC_SUBST(LIBSOUP_LIBS)
