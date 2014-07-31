@@ -17,6 +17,8 @@ TESTS = test-nm-client test-remote-settings-client
 ####### NMClient and non-settings tests #######
 
 test_nm_client_SOURCES = \
+	common.c \
+	common.h \
 	test-nm-client.c
 
 test_nm_client_LDADD = \
@@ -28,6 +30,8 @@ test_nm_client_LDADD = \
 ####### remote settings client test #######
 
 test_remote_settings_client_SOURCES = \
+	common.c \
+	common.h \
 	test-remote-settings-client.c
 
 test_remote_settings_client_LDADD = \

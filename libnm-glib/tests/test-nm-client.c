@@ -33,160 +33,64 @@
 #include "nm-device-wimax.h"
 #include "nm-glib-compat.h"
 
+#include "common.h"
+
 static GMainLoop *loop = NULL;
+static NMTestServiceInfo *sinfo;
 
 /*******************************************************************/
-
-typedef struct {
-	GDBusConnection *bus;
-	GDBusProxy *proxy;
-	GPid pid;
-	NMClient *client;
-} ServiceInfo;
 
 #define test_assert(condition) \
 do { \
 	if (!G_LIKELY (condition)) \
-		service_cleanup (); \
+		nm_test_service_cleanup (sinfo); \
 	g_assert (condition); \
 } while (0)
 
 #define test_assert_cmpint(a, b, c) \
 do { \
 	if (!G_LIKELY (a b c)) \
-		service_cleanup (); \
+		nm_test_service_cleanup (sinfo); \
 	g_assert_cmpint (a, b, c); \
 } while (0)
 
 #define test_assert_cmpstr(a, b, c) \
 do { \
 	if (!G_LIKELY (g_str_hash (a) b g_str_hash (c))) \
-		service_cleanup (); \
+		nm_test_service_cleanup (sinfo); \
 	g_assert_cmpstr (a, b, c); \
 } while (0)
 
 #define test_assert_no_error(e) \
 do { \
 	if (G_UNLIKELY (e)) \
-		service_cleanup (); \
+		nm_test_service_cleanup (sinfo); \
 	g_assert_no_error (e); \
 } while (0)
 
-static ServiceInfo * sinfo_static = NULL;
-
-static void
-service_cleanup (void)
+static NMClient *
+test_client_new (void)
 {
-	ServiceInfo *info = sinfo_static;
-
-	sinfo_static = NULL;
-
-	if (info) {
-		if (info->proxy)
-			g_object_unref (info->proxy);
-		if (info->bus)
-			g_object_unref (info->bus);
-		if (info->client)
-			g_object_unref (info->client);
-		if (info->pid)
-			kill (info->pid, SIGTERM);
-		memset (info, 0, sizeof (*info));
-		g_free (info);
-	} else
-		g_assert_not_reached ();
-}
-
-static gboolean
-name_exists (GDBusConnection *c, const char *name)
-{
-	GVariant *reply;
-	gboolean exists = FALSE;
-
-	reply = g_dbus_connection_call_sync (c,
-	                                     DBUS_SERVICE_DBUS,
-	                                     DBUS_PATH_DBUS,
-	                                     DBUS_INTERFACE_DBUS,
-	                                     "GetNameOwner",
-	                                     g_variant_new ("(s)", name),
-	                                     NULL,
-	                                     G_DBUS_CALL_FLAGS_NO_AUTO_START,
-	                                     -1,
-	                                     NULL,
-	                                     NULL);
-	if (reply != NULL) {
-		exists = TRUE;
-		g_variant_unref (reply);
-	}
-
-	return exists;
-}
-
-static ServiceInfo *
-service_init (void)
-{
+	NMClient *client;
 	DBusGConnection *bus;
-	ServiceInfo *sinfo;
-	const char *args[2] = { TEST_NM_SERVICE, NULL };
 	GError *error = NULL;
-	int i = 100;
-
-	g_assert (!sinfo_static);
-
-	sinfo = g_malloc0 (sizeof (*sinfo));
-
-	sinfo_static = sinfo;
-
-	sinfo->bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL,  NULL);
-	test_assert (sinfo->bus);
-
-	if (!g_spawn_async (NULL, (char **) args, NULL, 0, NULL, NULL, &sinfo->pid, &error))
-		test_assert_no_error (error);
-
-	/* Wait until the service is registered on the bus */
-	while (i > 0) {
-		g_usleep (G_USEC_PER_SEC / 50);
-		if (name_exists (sinfo->bus, "org.freedesktop.NetworkManager"))
-			break;
-		i--;
-	}
-	test_assert (i > 0);
-
-	/* Grab a proxy to our fake NM service to trigger tests */
-	sinfo->proxy = g_dbus_proxy_new_sync (sinfo->bus,
-	                                      G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
-	                                        G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS |
-	                                        G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-	                                      NULL,
-	                                      NM_DBUS_SERVICE,
-	                                      NM_DBUS_PATH,
-	                                      "org.freedesktop.NetworkManager.LibnmGlibTest",
-	                                      NULL, NULL);
-	test_assert (sinfo->proxy);
 
 	bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
 	g_assert_no_error (error);
 
-	sinfo->client = g_object_new (NM_TYPE_CLIENT,
-	                              NM_OBJECT_DBUS_CONNECTION, bus,
-	                              NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
-	                              NULL);
-	test_assert (sinfo->client != NULL);
+	client = g_object_new (NM_TYPE_CLIENT,
+	                       NM_OBJECT_DBUS_CONNECTION, bus,
+	                       NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
+	                       NULL);
+	test_assert (client != NULL);
 
 	dbus_g_connection_unref (bus);
-	g_initable_init (G_INITABLE (sinfo->client), NULL, &error);
+
+	g_initable_init (G_INITABLE (client), NULL, &error);
 	g_assert_no_error (error);
 
-	return sinfo;
+	return client;
 }
-
-static ServiceInfo *
-service_get (void)
-{
-	g_assert (sinfo_static);
-	return sinfo_static;
-}
-
-#define _sinfo (service_get ())
 
 /*******************************************************************/
 
@@ -203,7 +107,7 @@ add_device (const char *method, const char *ifname, char **out_path)
 	GError *error = NULL;
 	GVariant *ret;
 
-	ret = g_dbus_proxy_call_sync (_sinfo->proxy,
+	ret = g_dbus_proxy_call_sync (sinfo->proxy,
 	                              method,
 	                              g_variant_new ("(s)", ifname),
 	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
@@ -275,25 +179,27 @@ devices_notify_cb (NMClient *c,
 static void
 test_device_added (void)
 {
+	NMClient *client;
 	const GPtrArray *devices;
 	NMDevice *device;
 	DeviceAddedInfo info = { loop, FALSE, FALSE, 0, 0 };
 
-	service_init ();
+	sinfo = nm_test_service_init ();
+	client = test_client_new ();
 
-	devices = nm_client_get_devices (_sinfo->client);
+	devices = nm_client_get_devices (client);
 	test_assert (devices == NULL);
 
 	/* Tell the test service to add a new device */
 	add_device ("AddWiredDevice", "eth0", NULL);
 
-	g_signal_connect (_sinfo->client,
+	g_signal_connect (client,
 	                  "device-added",
 	                  (GCallback) device_added_cb,
 	                  &info);
 	info.quit_count++;
 
-	g_signal_connect (_sinfo->client,
+	g_signal_connect (client,
 	                  "notify::devices",
 	                  (GCallback) devices_notify_cb,
 	                  &info);
@@ -306,10 +212,10 @@ test_device_added (void)
 	test_assert (info.signaled);
 	test_assert (info.notified);
 
-	g_signal_handlers_disconnect_by_func (_sinfo->client, device_added_cb, &info);
-	g_signal_handlers_disconnect_by_func (_sinfo->client, devices_notify_cb, &info);
+	g_signal_handlers_disconnect_by_func (client, device_added_cb, &info);
+	g_signal_handlers_disconnect_by_func (client, devices_notify_cb, &info);
 
-	devices = nm_client_get_devices (_sinfo->client);
+	devices = nm_client_get_devices (client);
 	test_assert (devices);
 	test_assert_cmpint (devices->len, ==, 1);
 
@@ -317,7 +223,8 @@ test_device_added (void)
 	test_assert (device);
 	test_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
 
-	service_cleanup ();
+	g_object_unref (client);
+	g_clear_pointer (&sinfo, nm_test_service_cleanup);
 }
 
 /*******************************************************************/
@@ -427,19 +334,21 @@ wifi_ap_remove_notify_cb (NMDeviceWifi *w,
 static void
 test_wifi_ap_added_removed (void)
 {
+	NMClient *client;
 	NMDeviceWifi *wifi;
 	WifiApInfo info = { loop, FALSE, FALSE, 0, 0 };
 	GVariant *ret;
 	GError *error = NULL;
 	char *expected_path = NULL;
 
-	service_init ();
+	sinfo = nm_test_service_init ();
+	client = test_client_new ();
 
 	/*************************************/
 	/* Add the wifi device */
 	add_device ("AddWifiDevice", "wlan0", NULL);
 
-	g_signal_connect (_sinfo->client,
+	g_signal_connect (client,
 	                  "device-added",
 	                  (GCallback) wifi_device_added_cb,
 	                  &info);
@@ -450,9 +359,9 @@ test_wifi_ap_added_removed (void)
 	g_main_loop_run (loop);
 
 	test_assert (info.found);
-	g_signal_handlers_disconnect_by_func (_sinfo->client, wifi_device_added_cb, &info);
+	g_signal_handlers_disconnect_by_func (client, wifi_device_added_cb, &info);
 
-	wifi = (NMDeviceWifi *) nm_client_get_device_by_iface (_sinfo->client, "wlan0");
+	wifi = (NMDeviceWifi *) nm_client_get_device_by_iface (client, "wlan0");
 	test_assert (NM_IS_DEVICE_WIFI (wifi));
 
 	/*************************************/
@@ -461,7 +370,7 @@ test_wifi_ap_added_removed (void)
 	info.notified = FALSE;
 	info.quit_id = 0;
 
-	ret = g_dbus_proxy_call_sync (_sinfo->proxy,
+	ret = g_dbus_proxy_call_sync (sinfo->proxy,
 	                              "AddWifiAp",
 	                              g_variant_new ("(sss)", "wlan0", "test-ap", expected_bssid),
 	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
@@ -503,7 +412,7 @@ test_wifi_ap_added_removed (void)
 	info.notified = FALSE;
 	info.quit_id = 0;
 
-	ret = g_dbus_proxy_call_sync (_sinfo->proxy,
+	ret = g_dbus_proxy_call_sync (sinfo->proxy,
 	                              "RemoveWifiAp",
 	                              g_variant_new ("(so)", "wlan0", expected_path),
 	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
@@ -536,7 +445,9 @@ test_wifi_ap_added_removed (void)
 
 	g_free (info.ap_path);
 	g_free (expected_path);
-	service_cleanup ();
+
+	g_object_unref (client);
+	g_clear_pointer (&sinfo, nm_test_service_cleanup);
 }
 
 /*******************************************************************/
@@ -646,19 +557,21 @@ wimax_nsp_remove_notify_cb (NMDeviceWimax *w,
 static void
 test_wimax_nsp_added_removed (void)
 {
+	NMClient *client;
 	NMDeviceWimax *wimax;
 	WimaxNspInfo info = { loop, FALSE, FALSE, 0, 0 };
 	GVariant *ret;
 	GError *error = NULL;
 	char *expected_path = NULL;
 
-	service_init ();
+	sinfo = nm_test_service_init ();
+	client = test_client_new ();
 
 	/*************************************/
 	/* Add the wimax device */
 	add_device ("AddWimaxDevice", "wmx0", NULL);
 
-	g_signal_connect (_sinfo->client,
+	g_signal_connect (client,
 	                  "device-added",
 	                  (GCallback) wimax_device_added_cb,
 	                  &info);
@@ -669,9 +582,9 @@ test_wimax_nsp_added_removed (void)
 	g_main_loop_run (loop);
 
 	test_assert (info.found);
-	g_signal_handlers_disconnect_by_func (_sinfo->client, wimax_device_added_cb, &info);
+	g_signal_handlers_disconnect_by_func (client, wimax_device_added_cb, &info);
 
-	wimax = (NMDeviceWimax *) nm_client_get_device_by_iface (_sinfo->client, "wmx0");
+	wimax = (NMDeviceWimax *) nm_client_get_device_by_iface (client, "wmx0");
 	test_assert (NM_IS_DEVICE_WIMAX (wimax));
 
 	/*************************************/
@@ -680,7 +593,7 @@ test_wimax_nsp_added_removed (void)
 	info.notified = FALSE;
 	info.quit_id = 0;
 
-	ret = g_dbus_proxy_call_sync (_sinfo->proxy,
+	ret = g_dbus_proxy_call_sync (sinfo->proxy,
 	                              "AddWimaxNsp",
 	                              g_variant_new ("(ss)", "wmx0", expected_nsp_name),
 	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
@@ -722,7 +635,7 @@ test_wimax_nsp_added_removed (void)
 	info.notified = FALSE;
 	info.quit_id = 0;
 
-	ret = g_dbus_proxy_call_sync (_sinfo->proxy,
+	ret = g_dbus_proxy_call_sync (sinfo->proxy,
 	                              "RemoveWimaxNsp",
 	                              g_variant_new ("(so)", "wmx0", expected_path),
 	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
@@ -755,7 +668,9 @@ test_wimax_nsp_added_removed (void)
 
 	g_free (info.nsp_path);
 	g_free (expected_path);
-	service_cleanup ();
+
+	g_object_unref (client);
+	g_clear_pointer (&sinfo, nm_test_service_cleanup);
 }
 
 /*******************************************************************/
@@ -825,6 +740,7 @@ da_devices_notify_cb (NMClient *c,
 static void
 test_devices_array (void)
 {
+	NMClient *client;
 	DaInfo info = { loop };
 	char *paths[3] = { NULL, NULL, NULL };
 	NMDevice *device;
@@ -832,7 +748,8 @@ test_devices_array (void)
 	GError *error = NULL;
 	GVariant *ret;
 
-	service_init ();
+	sinfo = nm_test_service_init ();
+	client = test_client_new ();
 
 	/*************************************/
 	/* Add some devices */
@@ -841,7 +758,7 @@ test_devices_array (void)
 	add_device ("AddWiredDevice", "eth1", &paths[2]);
 	info.quit_count = 3;
 
-	g_signal_connect (_sinfo->client,
+	g_signal_connect (client,
 	                  "device-added",
 	                  (GCallback) da_device_added_cb,
 	                  &info);
@@ -851,25 +768,25 @@ test_devices_array (void)
 	g_main_loop_run (loop);
 
 	test_assert_cmpint (info.quit_count, ==, 0);
-	g_signal_handlers_disconnect_by_func (_sinfo->client, da_device_added_cb, &info);
+	g_signal_handlers_disconnect_by_func (client, da_device_added_cb, &info);
 
 	/* Ensure the devices now exist */
-	devices = nm_client_get_devices (_sinfo->client);
+	devices = nm_client_get_devices (client);
 	test_assert (devices);
 	test_assert_cmpint (devices->len, ==, 3);
 
-	device = nm_client_get_device_by_iface (_sinfo->client, "wlan0");
+	device = nm_client_get_device_by_iface (client, "wlan0");
 	test_assert (NM_IS_DEVICE_WIFI (device));
 
-	device = nm_client_get_device_by_iface (_sinfo->client, "eth0");
+	device = nm_client_get_device_by_iface (client, "eth0");
 	test_assert (NM_IS_DEVICE_ETHERNET (device));
 
-	device = nm_client_get_device_by_iface (_sinfo->client, "eth1");
+	device = nm_client_get_device_by_iface (client, "eth1");
 	test_assert (NM_IS_DEVICE_ETHERNET (device));
 
 	/********************************/
 	/* Now remove the device in the middle */
-	ret = g_dbus_proxy_call_sync (_sinfo->proxy,
+	ret = g_dbus_proxy_call_sync (sinfo->proxy,
 	                              "RemoveDevice",
 	                              g_variant_new ("(o)", paths[1]),
 	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
@@ -880,12 +797,12 @@ test_devices_array (void)
 	test_assert (ret);
 	g_variant_unref (ret);
 
-	g_signal_connect (_sinfo->client,
+	g_signal_connect (client,
 	                  "device-removed",
 	                  (GCallback) da_device_removed_cb,
 	                  &info);
 
-	g_signal_connect (_sinfo->client,
+	g_signal_connect (client,
 	                  "notify::devices",
 	                  (GCallback) da_devices_notify_cb,
 	                  &info);
@@ -896,24 +813,26 @@ test_devices_array (void)
 	g_main_loop_run (loop);
 
 	test_assert_cmpint (info.quit_count, ==, 0);
-	g_signal_handlers_disconnect_by_func (_sinfo->client, da_device_removed_cb, &info);
-	g_signal_handlers_disconnect_by_func (_sinfo->client, da_devices_notify_cb, &info);
+	g_signal_handlers_disconnect_by_func (client, da_device_removed_cb, &info);
+	g_signal_handlers_disconnect_by_func (client, da_devices_notify_cb, &info);
 
 	/* Ensure only two are left */
-	devices = nm_client_get_devices (_sinfo->client);
+	devices = nm_client_get_devices (client);
 	test_assert (devices);
 	test_assert_cmpint (devices->len, ==, 2);
 
-	device = nm_client_get_device_by_iface (_sinfo->client, "wlan0");
+	device = nm_client_get_device_by_iface (client, "wlan0");
 	test_assert (NM_IS_DEVICE_WIFI (device));
 
-	device = nm_client_get_device_by_iface (_sinfo->client, "eth1");
+	device = nm_client_get_device_by_iface (client, "eth1");
 	test_assert (NM_IS_DEVICE_ETHERNET (device));
 
 	g_free (paths[0]);
 	g_free (paths[1]);
 	g_free (paths[2]);
-	service_cleanup ();
+
+	g_object_unref (client);
+	g_clear_pointer (&sinfo, nm_test_service_cleanup);
 }
 
 /*******************************************************************/

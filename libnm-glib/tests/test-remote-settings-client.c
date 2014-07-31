@@ -33,26 +33,21 @@
 #include <nm-utils.h>
 
 #include "nm-remote-settings.h"
+#include "common.h"
 
-static GPid spid = 0;
+static NMTestServiceInfo *sinfo;
 static NMRemoteSettings *settings = NULL;
 DBusGConnection *bus = NULL;
 NMRemoteConnection *remote = NULL;
 
 /*******************************************************************/
 
-static void
-cleanup (void)
-{
-	kill (spid, SIGTERM);
-}
-
 #define test_assert(condition) \
 do { \
 	gboolean _condition = !!( condition ); \
 	\
 	if (G_UNLIKELY (!_condition)) { \
-		cleanup (); \
+		nm_test_service_cleanup (sinfo); \
 		g_assert (!"test_assert() failed for" # condition); \
 	} \
 } while (0)
@@ -358,10 +353,8 @@ test_remove_connection (void)
 int
 main (int argc, char **argv)
 {
-    char *service_argv[2] = { TEST_NM_SERVICE, NULL };
 	int ret;
 	GError *error = NULL;
-	int i = 100;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
@@ -375,21 +368,7 @@ main (int argc, char **argv)
 		g_assert (error == NULL);
 	}
 
-	if (!g_spawn_async (NULL, service_argv, NULL, 0, NULL, NULL, &spid, &error)) {
-		g_warning ("Error spawning %s: %s", TEST_NM_SERVICE, error->message);
-		g_assert (error == NULL);
-	}
-
-	/* Wait until the service is registered on the bus */
-	while (i > 0) {
-		g_usleep (G_USEC_PER_SEC / 50);
-		if (dbus_bus_name_has_owner (dbus_g_connection_get_connection (bus),
-		                             "org.freedesktop.NetworkManager",
-		                             NULL))
-			break;
-		i--;
-	}
-	test_assert (i > 0);
+	sinfo = nm_test_service_init ();
 
 	settings = nm_remote_settings_new (bus);
 	test_assert (settings != NULL);
@@ -401,7 +380,7 @@ main (int argc, char **argv)
 
 	ret = g_test_run ();
 
-	cleanup ();
+	nm_test_service_cleanup (sinfo);
 	g_object_unref (settings);
 	dbus_g_connection_unref (bus);
 
