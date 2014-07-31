@@ -106,7 +106,7 @@ Requires: glib2 >= %{glib2_version}
 Requires: iproute
 Requires: dhclient >= 12:4.1.0
 Requires: libnl3 >= %{libnl3_version}
-Requires: %{name}-glib%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: ppp = %{ppp_version}
 Requires: avahi-autoipd
 Requires: dnsmasq
@@ -256,7 +256,7 @@ devices.
 
 
 %package devel
-Summary: Libraries and headers for adding NetworkManager support to applications
+Summary: Headers defining the NetworkManager D-Bus APIs
 Group: Development/Libraries
 Requires: %{name} = %{epoch}:%{version}-%{release}
 Requires: dbus-devel >= %{dbus_version}
@@ -269,18 +269,19 @@ from applications.
 
 
 %package glib
-Summary: Libraries for adding NetworkManager support to applications that use glib.
+Summary: Libraries for adding NetworkManager support to applications (old API).
 Group: Development/Libraries
 Requires: dbus >= %{dbus_version}
 Requires: dbus-glib >= %{dbus_glib_version}
 
 %description glib
 This package contains the libraries that make it easier to use some NetworkManager
-functionality from applications that use glib.
+functionality from applications that use glib.  This is the older NetworkManager API.
+See also NetworkManager-libnm.
 
 
 %package glib-devel
-Summary: Header files for adding NetworkManager support to applications that use glib.
+Summary: Header files for adding NetworkManager support to applications (old API).
 Group: Development/Libraries
 Requires: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: %{name}-glib%{?_isa} = %{epoch}:%{version}-%{release}
@@ -290,7 +291,36 @@ Requires: dbus-glib-devel >= %{dbus_glib_version}
 
 %description glib-devel
 This package contains the header and pkg-config files for development applications using
-NetworkManager functionality from applications that use glib.
+NetworkManager functionality from applications that use glib.  This is the older
+NetworkManager API. See also NetworkManager-libnm-devel.
+
+
+%package libnm
+Summary: Libraries for adding NetworkManager support to applications (new API).
+Group: Development/Libraries
+Requires: dbus >= %{dbus_version}
+Requires: dbus-glib >= %{dbus_glib_version}
+
+%description libnm
+This package contains the libraries that make it easier to use some NetworkManager
+functionality from applications.  This is the new NetworkManager API.  See also
+NetworkManager-glib.
+
+
+%package libnm-devel
+Summary: Header files for adding NetworkManager support to applications (new API).
+Group: Development/Libraries
+Requires: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: glib2-devel
+Requires: pkgconfig
+Requires: dbus-glib-devel >= %{dbus_glib_version}
+
+%description libnm-devel
+This package contains the header and pkg-config files for development applications using
+NetworkManager functionality from applications.  This is the new NetworkManager API.
+See also NetworkManager-glib-devel.
+
 
 %package config-connectivity-fedora
 Summary: NetworkManager config file for connectivity checking via Fedora servers
@@ -319,7 +349,7 @@ deployments.
 Summary: NetworkManager curses-based UI
 Group: System Environment/Base
 Requires: %{name} = %{epoch}:%{version}-%{release}
-Requires: %{name}-glib%{?_isa} = %{epoch}:%{version}-%{release}
+Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 
 %description tui
 This adds a curses-based "TUI" (Text User Interface) to
@@ -584,6 +614,24 @@ fi
 %{_datadir}/gtk-doc/html/libnm-glib/*
 %dir %{_datadir}/gtk-doc/html/libnm-util
 %{_datadir}/gtk-doc/html/libnm-util/*
+
+%files libnm
+%defattr(-,root,root,0755)
+%{_libdir}/libnm.so.*
+%{_libdir}/libnm-vpn.so.*
+%{_libdir}/girepository-1.0/NM-1.0.typelib
+
+%files libnm-devel
+%defattr(-,root,root,0755)
+%dir %{_includedir}/libnm
+%{_includedir}/libnm/*.h
+%{_libdir}/pkgconfig/libnm.pc
+%{_libdir}/pkgconfig/libnm-vpn.pc
+%{_libdir}/libnm.so
+%{_libdir}/libnm-vpn.so
+%{_datadir}/gir-1.0/NM-1.0.gir
+%dir %{_datadir}/gtk-doc/html/libnm
+%{_datadir}/gtk-doc/html/libnm/*
 
 %files config-connectivity-fedora
 %defattr(-,root,root,0755)
