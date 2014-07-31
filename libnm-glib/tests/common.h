@@ -24,6 +24,7 @@ typedef struct {
 	GDBusConnection *bus;
 	GDBusProxy *proxy;
 	GPid pid;
+	int keepalive_fd;
 } NMTestServiceInfo;
 
 NMTestServiceInfo *nm_test_service_init (void);

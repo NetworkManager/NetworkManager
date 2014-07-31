@@ -858,6 +858,9 @@ class Settings(dbus.service.Object):
 
 ###################################################################
 
+def stdin_cb(io, condition):
+    mainloop.quit()
+
 def quit_cb(user_data):
     mainloop.quit()
 
@@ -872,7 +875,11 @@ def main():
     if not bus.request_name("org.freedesktop.NetworkManager"):
         sys.exit(1)
 
-    # quit after inactivity to ensure we don't stick around if tests fail
+    # Watch stdin; if it closes, assume our parent has crashed, and exit
+    io = GLib.IOChannel.unix_new(0)
+    io.add_watch(GLib.IOCondition.HUP, stdin_cb)
+
+    # also quit after inactivity to ensure we don't stick around if the above fails somehow
     GLib.timeout_add_seconds(20, quit_cb, None)
 
     try:

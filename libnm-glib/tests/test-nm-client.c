@@ -40,34 +40,6 @@ static NMTestServiceInfo *sinfo;
 
 /*******************************************************************/
 
-#define test_assert(condition) \
-do { \
-	if (!G_LIKELY (condition)) \
-		nm_test_service_cleanup (sinfo); \
-	g_assert (condition); \
-} while (0)
-
-#define test_assert_cmpint(a, b, c) \
-do { \
-	if (!G_LIKELY (a b c)) \
-		nm_test_service_cleanup (sinfo); \
-	g_assert_cmpint (a, b, c); \
-} while (0)
-
-#define test_assert_cmpstr(a, b, c) \
-do { \
-	if (!G_LIKELY (g_str_hash (a) b g_str_hash (c))) \
-		nm_test_service_cleanup (sinfo); \
-	g_assert_cmpstr (a, b, c); \
-} while (0)
-
-#define test_assert_no_error(e) \
-do { \
-	if (G_UNLIKELY (e)) \
-		nm_test_service_cleanup (sinfo); \
-	g_assert_no_error (e); \
-} while (0)
-
 static NMClient *
 test_client_new (void)
 {
@@ -82,7 +54,7 @@ test_client_new (void)
 	                       NM_OBJECT_DBUS_CONNECTION, bus,
 	                       NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
 	                       NULL);
-	test_assert (client != NULL);
+	g_assert (client != NULL);
 
 	dbus_g_connection_unref (bus);
 
@@ -114,9 +86,9 @@ add_device (const char *method, const char *ifname, char **out_path)
 	                              3000,
 	                              NULL,
 	                              &error);
-	test_assert_no_error (error);
-	test_assert (ret);
-	test_assert_cmpstr (g_variant_get_type_string (ret), ==, "(o)");
+	g_assert_no_error (error);
+	g_assert (ret);
+	g_assert_cmpstr (g_variant_get_type_string (ret), ==, "(o)");
 	if (out_path)
 		g_variant_get (ret, "(o)", out_path);
 	g_variant_unref (ret);
@@ -149,8 +121,8 @@ device_added_cb (NMClient *c,
                  NMDevice *device,
                  DeviceAddedInfo *info)
 {
-	test_assert (device);
-	test_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
+	g_assert (device);
+	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
 	info->signaled = TRUE;
 	device_add_check_quit (info);
 }
@@ -164,12 +136,12 @@ devices_notify_cb (NMClient *c,
 	NMDevice *device;
 
 	devices = nm_client_get_devices (c);
-	test_assert (devices);
-	test_assert_cmpint (devices->len, ==, 1);
+	g_assert (devices);
+	g_assert_cmpint (devices->len, ==, 1);
 
 	device = g_ptr_array_index (devices, 0);
-	test_assert (device);
-	test_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
+	g_assert (device);
+	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
 
 	info->notified = TRUE;
 
@@ -188,7 +160,7 @@ test_device_added (void)
 	client = test_client_new ();
 
 	devices = nm_client_get_devices (client);
-	test_assert (devices == NULL);
+	g_assert (devices == NULL);
 
 	/* Tell the test service to add a new device */
 	add_device ("AddWiredDevice", "eth0", NULL);
@@ -209,19 +181,19 @@ test_device_added (void)
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
-	test_assert (info.signaled);
-	test_assert (info.notified);
+	g_assert (info.signaled);
+	g_assert (info.notified);
 
 	g_signal_handlers_disconnect_by_func (client, device_added_cb, &info);
 	g_signal_handlers_disconnect_by_func (client, devices_notify_cb, &info);
 
 	devices = nm_client_get_devices (client);
-	test_assert (devices);
-	test_assert_cmpint (devices->len, ==, 1);
+	g_assert (devices);
+	g_assert_cmpint (devices->len, ==, 1);
 
 	device = g_ptr_array_index (devices, 0);
-	test_assert (device);
-	test_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
+	g_assert (device);
+	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
 
 	g_object_unref (client);
 	g_clear_pointer (&sinfo, nm_test_service_cleanup);
@@ -257,7 +229,7 @@ wifi_device_added_cb (NMClient *c,
                       NMDevice *device,
                       WifiApInfo *info)
 {
-	test_assert_cmpstr (nm_device_get_iface (device), ==, "wlan0");
+	g_assert_cmpstr (nm_device_get_iface (device), ==, "wlan0");
 	info->found = TRUE;
 	wifi_check_quit (info);
 }
@@ -266,7 +238,7 @@ static void
 got_ap_path (WifiApInfo *info, const char *path)
 {
 	if (info->ap_path)
-		test_assert_cmpstr (info->ap_path, ==, path);
+		g_assert_cmpstr (info->ap_path, ==, path);
 	else
 		info->ap_path = g_strdup (path);
 }
@@ -276,8 +248,8 @@ wifi_ap_added_cb (NMDeviceWifi *w,
                   NMAccessPoint *ap,
                   WifiApInfo *info)
 {
-	test_assert (ap);
-	test_assert_cmpstr (nm_access_point_get_bssid (ap), ==, expected_bssid);
+	g_assert (ap);
+	g_assert_cmpstr (nm_access_point_get_bssid (ap), ==, expected_bssid);
 	got_ap_path (info, nm_object_get_path (NM_OBJECT (ap)));
 
 	info->signaled = TRUE;
@@ -293,12 +265,12 @@ wifi_ap_add_notify_cb (NMDeviceWifi *w,
 	NMAccessPoint *ap;
 
 	aps = nm_device_wifi_get_access_points (w);
-	test_assert (aps);
-	test_assert_cmpint (aps->len, ==, 1);
+	g_assert (aps);
+	g_assert_cmpint (aps->len, ==, 1);
 
 	ap = g_ptr_array_index (aps, 0);
-	test_assert (ap);
-	test_assert_cmpstr (nm_access_point_get_bssid (ap), ==, "66:55:44:33:22:11");
+	g_assert (ap);
+	g_assert_cmpstr (nm_access_point_get_bssid (ap), ==, "66:55:44:33:22:11");
 	got_ap_path (info, nm_object_get_path (NM_OBJECT (ap)));
 
 	info->notified = TRUE;
@@ -310,8 +282,8 @@ wifi_ap_removed_cb (NMDeviceWifi *w,
                     NMAccessPoint *ap,
                     WifiApInfo *info)
 {
-	test_assert (ap);
-	test_assert_cmpstr (info->ap_path, ==, nm_object_get_path (NM_OBJECT (ap)));
+	g_assert (ap);
+	g_assert_cmpstr (info->ap_path, ==, nm_object_get_path (NM_OBJECT (ap)));
 
 	info->signaled = TRUE;
 	wifi_check_quit (info);
@@ -325,7 +297,7 @@ wifi_ap_remove_notify_cb (NMDeviceWifi *w,
 	const GPtrArray *aps;
 
 	aps = nm_device_wifi_get_access_points (w);
-	test_assert (aps == NULL);
+	g_assert (aps == NULL);
 
 	info->notified = TRUE;
 	wifi_check_quit (info);
@@ -358,11 +330,11 @@ test_wifi_ap_added_removed (void)
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
-	test_assert (info.found);
+	g_assert (info.found);
 	g_signal_handlers_disconnect_by_func (client, wifi_device_added_cb, &info);
 
 	wifi = (NMDeviceWifi *) nm_client_get_device_by_iface (client, "wlan0");
-	test_assert (NM_IS_DEVICE_WIFI (wifi));
+	g_assert (NM_IS_DEVICE_WIFI (wifi));
 
 	/*************************************/
 	/* Add the wifi device */
@@ -377,9 +349,9 @@ test_wifi_ap_added_removed (void)
 	                              3000,
 	                              NULL,
 	                              &error);
-	test_assert_no_error (error);
-	test_assert (ret);
-	test_assert_cmpstr (g_variant_get_type_string (ret), ==, "(o)");
+	g_assert_no_error (error);
+	g_assert (ret);
+	g_assert_cmpstr (g_variant_get_type_string (ret), ==, "(o)");
 	g_variant_get (ret, "(o)", &expected_path);
 	g_variant_unref (ret);
 
@@ -399,10 +371,10 @@ test_wifi_ap_added_removed (void)
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
-	test_assert (info.signaled);
-	test_assert (info.notified);
-	test_assert (info.ap_path);
-	test_assert_cmpstr (info.ap_path, ==, expected_path);
+	g_assert (info.signaled);
+	g_assert (info.notified);
+	g_assert (info.ap_path);
+	g_assert_cmpstr (info.ap_path, ==, expected_path);
 	g_signal_handlers_disconnect_by_func (wifi, wifi_ap_added_cb, &info);
 	g_signal_handlers_disconnect_by_func (wifi, wifi_ap_add_notify_cb, &info);
 
@@ -419,7 +391,7 @@ test_wifi_ap_added_removed (void)
 	                              3000,
 	                              NULL,
 	                              &error);
-	test_assert_no_error (error);
+	g_assert_no_error (error);
 	g_clear_pointer (&ret, g_variant_unref);
 
 	g_signal_connect (wifi,
@@ -438,8 +410,8 @@ test_wifi_ap_added_removed (void)
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
-	test_assert (info.signaled);
-	test_assert (info.notified);
+	g_assert (info.signaled);
+	g_assert (info.notified);
 	g_signal_handlers_disconnect_by_func (wifi, wifi_ap_removed_cb, &info);
 	g_signal_handlers_disconnect_by_func (wifi, wifi_ap_remove_notify_cb, &info);
 
@@ -480,7 +452,7 @@ wimax_device_added_cb (NMClient *c,
                        NMDevice *device,
                        WimaxNspInfo *info)
 {
-	test_assert_cmpstr (nm_device_get_iface (device), ==, "wmx0");
+	g_assert_cmpstr (nm_device_get_iface (device), ==, "wmx0");
 	info->found = TRUE;
 	wimax_check_quit (info);
 }
@@ -489,7 +461,7 @@ static void
 got_nsp_path (WimaxNspInfo *info, const char *path)
 {
 	if (info->nsp_path)
-		test_assert_cmpstr (info->nsp_path, ==, path);
+		g_assert_cmpstr (info->nsp_path, ==, path);
 	else
 		info->nsp_path = g_strdup (path);
 }
@@ -499,8 +471,8 @@ wimax_nsp_added_cb (NMDeviceWimax *w,
                     NMWimaxNsp *nsp,
                     WimaxNspInfo *info)
 {
-	test_assert (nsp);
-	test_assert_cmpstr (nm_wimax_nsp_get_name (nsp), ==, expected_nsp_name);
+	g_assert (nsp);
+	g_assert_cmpstr (nm_wimax_nsp_get_name (nsp), ==, expected_nsp_name);
 	got_nsp_path (info, nm_object_get_path (NM_OBJECT (nsp)));
 
 	info->signaled = TRUE;
@@ -516,12 +488,12 @@ wimax_nsp_add_notify_cb (NMDeviceWimax *w,
 	NMWimaxNsp *nsp;
 
 	nsps = nm_device_wimax_get_nsps (w);
-	test_assert (nsps);
-	test_assert_cmpint (nsps->len, ==, 1);
+	g_assert (nsps);
+	g_assert_cmpint (nsps->len, ==, 1);
 
 	nsp = g_ptr_array_index (nsps, 0);
-	test_assert (nsp);
-	test_assert_cmpstr (nm_wimax_nsp_get_name (nsp), ==, expected_nsp_name);
+	g_assert (nsp);
+	g_assert_cmpstr (nm_wimax_nsp_get_name (nsp), ==, expected_nsp_name);
 	got_nsp_path (info, nm_object_get_path (NM_OBJECT (nsp)));
 
 	info->notified = TRUE;
@@ -533,8 +505,8 @@ wimax_nsp_removed_cb (NMDeviceWimax *w,
                       NMWimaxNsp *nsp,
                       WimaxNspInfo *info)
 {
-	test_assert (nsp);
-	test_assert_cmpstr (info->nsp_path, ==, nm_object_get_path (NM_OBJECT (nsp)));
+	g_assert (nsp);
+	g_assert_cmpstr (info->nsp_path, ==, nm_object_get_path (NM_OBJECT (nsp)));
 
 	info->signaled = TRUE;
 	wimax_check_quit (info);
@@ -548,7 +520,7 @@ wimax_nsp_remove_notify_cb (NMDeviceWimax *w,
 	const GPtrArray *nsps;
 
 	nsps = nm_device_wimax_get_nsps (w);
-	test_assert (nsps == NULL);
+	g_assert (nsps == NULL);
 
 	info->notified = TRUE;
 	wimax_check_quit (info);
@@ -581,11 +553,11 @@ test_wimax_nsp_added_removed (void)
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
-	test_assert (info.found);
+	g_assert (info.found);
 	g_signal_handlers_disconnect_by_func (client, wimax_device_added_cb, &info);
 
 	wimax = (NMDeviceWimax *) nm_client_get_device_by_iface (client, "wmx0");
-	test_assert (NM_IS_DEVICE_WIMAX (wimax));
+	g_assert (NM_IS_DEVICE_WIMAX (wimax));
 
 	/*************************************/
 	/* Add the wimax NSP */
@@ -600,9 +572,9 @@ test_wimax_nsp_added_removed (void)
 	                              3000,
 	                              NULL,
 	                              &error);
-	test_assert_no_error (error);
-	test_assert (ret);
-	test_assert_cmpstr (g_variant_get_type_string (ret), ==, "(o)");
+	g_assert_no_error (error);
+	g_assert (ret);
+	g_assert_cmpstr (g_variant_get_type_string (ret), ==, "(o)");
 	g_variant_get (ret, "(o)", &expected_path);
 	g_variant_unref (ret);
 
@@ -622,10 +594,10 @@ test_wimax_nsp_added_removed (void)
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
-	test_assert (info.signaled);
-	test_assert (info.notified);
-	test_assert (info.nsp_path);
-	test_assert_cmpstr (info.nsp_path, ==, expected_path);
+	g_assert (info.signaled);
+	g_assert (info.notified);
+	g_assert (info.nsp_path);
+	g_assert_cmpstr (info.nsp_path, ==, expected_path);
 	g_signal_handlers_disconnect_by_func (wimax, wimax_nsp_added_cb, &info);
 	g_signal_handlers_disconnect_by_func (wimax, wimax_nsp_add_notify_cb, &info);
 
@@ -642,7 +614,7 @@ test_wimax_nsp_added_removed (void)
 	                              3000,
 	                              NULL,
 	                              &error);
-	test_assert_no_error (error);
+	g_assert_no_error (error);
 	g_clear_pointer (&ret, g_variant_unref);
 
 	g_signal_connect (wimax,
@@ -661,8 +633,8 @@ test_wimax_nsp_added_removed (void)
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
-	test_assert (info.signaled);
-	test_assert (info.notified);
+	g_assert (info.signaled);
+	g_assert (info.notified);
 	g_signal_handlers_disconnect_by_func (wimax, wimax_nsp_removed_cb, &info);
 	g_signal_handlers_disconnect_by_func (wimax, wimax_nsp_remove_notify_cb, &info);
 
@@ -707,7 +679,7 @@ da_device_removed_cb (NMClient *c,
                       NMDevice *device,
                       DaInfo *info)
 {
-	test_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
+	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
 	info->signaled = TRUE;
 	da_check_quit (info);
 }
@@ -723,14 +695,14 @@ da_devices_notify_cb (NMClient *c,
 	const char *iface;
 
 	devices = nm_client_get_devices (c);
-	test_assert (devices);
-	test_assert_cmpint (devices->len, ==, 2);
+	g_assert (devices);
+	g_assert_cmpint (devices->len, ==, 2);
 
 	for (i = 0; i < devices->len; i++) {
 		device = g_ptr_array_index (devices, i);
 		iface = nm_device_get_iface (device);
 
-		test_assert (!strcmp (iface, "wlan0") || !strcmp (iface, "eth1"));
+		g_assert (!strcmp (iface, "wlan0") || !strcmp (iface, "eth1"));
 	}
 
 	info->notified = TRUE;
@@ -767,22 +739,22 @@ test_devices_array (void)
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
-	test_assert_cmpint (info.quit_count, ==, 0);
+	g_assert_cmpint (info.quit_count, ==, 0);
 	g_signal_handlers_disconnect_by_func (client, da_device_added_cb, &info);
 
 	/* Ensure the devices now exist */
 	devices = nm_client_get_devices (client);
-	test_assert (devices);
-	test_assert_cmpint (devices->len, ==, 3);
+	g_assert (devices);
+	g_assert_cmpint (devices->len, ==, 3);
 
 	device = nm_client_get_device_by_iface (client, "wlan0");
-	test_assert (NM_IS_DEVICE_WIFI (device));
+	g_assert (NM_IS_DEVICE_WIFI (device));
 
 	device = nm_client_get_device_by_iface (client, "eth0");
-	test_assert (NM_IS_DEVICE_ETHERNET (device));
+	g_assert (NM_IS_DEVICE_ETHERNET (device));
 
 	device = nm_client_get_device_by_iface (client, "eth1");
-	test_assert (NM_IS_DEVICE_ETHERNET (device));
+	g_assert (NM_IS_DEVICE_ETHERNET (device));
 
 	/********************************/
 	/* Now remove the device in the middle */
@@ -793,8 +765,8 @@ test_devices_array (void)
 	                              3000,
 	                              NULL,
 	                              &error);
-	test_assert_no_error (error);
-	test_assert (ret);
+	g_assert_no_error (error);
+	g_assert (ret);
 	g_variant_unref (ret);
 
 	g_signal_connect (client,
@@ -812,20 +784,20 @@ test_devices_array (void)
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
-	test_assert_cmpint (info.quit_count, ==, 0);
+	g_assert_cmpint (info.quit_count, ==, 0);
 	g_signal_handlers_disconnect_by_func (client, da_device_removed_cb, &info);
 	g_signal_handlers_disconnect_by_func (client, da_devices_notify_cb, &info);
 
 	/* Ensure only two are left */
 	devices = nm_client_get_devices (client);
-	test_assert (devices);
-	test_assert_cmpint (devices->len, ==, 2);
+	g_assert (devices);
+	g_assert_cmpint (devices->len, ==, 2);
 
 	device = nm_client_get_device_by_iface (client, "wlan0");
-	test_assert (NM_IS_DEVICE_WIFI (device));
+	g_assert (NM_IS_DEVICE_WIFI (device));
 
 	device = nm_client_get_device_by_iface (client, "eth1");
-	test_assert (NM_IS_DEVICE_ETHERNET (device));
+	g_assert (NM_IS_DEVICE_ETHERNET (device));
 
 	g_free (paths[0]);
 	g_free (paths[1]);

@@ -64,7 +64,12 @@ nm_test_service_init (void)
 	info->bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL,  &error);
 	g_assert_no_error (error);
 
-	g_spawn_async (NULL, (char **) args, NULL, 0, NULL, NULL, &info->pid, &error);
+	/* Spawn the test service. info->keepalive_fd will be a pipe to the service's
+	 * stdin; if it closes, the service will exit immediately. We use this to
+	 * make sure the service exits if the test program crashes.
+	 */
+	g_spawn_async_with_pipes (NULL, (char **) args, NULL, 0, NULL, NULL,
+	                          &info->pid, &info->keepalive_fd, NULL, NULL, &error);
 	g_assert_no_error (error);
 
 	/* Wait until the service is registered on the bus */
@@ -107,6 +112,7 @@ nm_test_service_cleanup (NMTestServiceInfo *info)
 	g_assert (i > 0);
 
 	g_object_unref (info->bus);
+	close (info->keepalive_fd);
 
 	memset (info, 0, sizeof (*info));
 	g_free (info);
