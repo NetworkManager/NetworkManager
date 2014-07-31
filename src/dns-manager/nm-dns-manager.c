@@ -47,7 +47,7 @@
 #include "nm-dns-dnsmasq.h"
 #include "nm-dns-unbound.h"
 
-#if HAVE_LIBSOUP
+#if WITH_LIBSOUP
 #include <libsoup/soup.h>
 
 #ifdef SOUP_CHECK_VERSION

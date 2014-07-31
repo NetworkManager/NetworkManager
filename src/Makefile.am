@@ -362,7 +362,7 @@ libNetworkManager_la_LIBADD = \
 	$(LIBDL) \
 	$(LIBM)
 
-if WITH_CONCHECK
+if WITH_LIBSOUP
 libNetworkManager_la_LIBADD += $(LIBSOUP_LIBS)
 endif
 
