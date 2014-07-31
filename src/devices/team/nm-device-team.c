@@ -422,12 +422,7 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 	const char *iface = nm_device_get_ip_iface (device);
 	char *tmp_str = NULL;
 	const char *config;
-	const char **teamd_binary = NULL;
-	static const char *teamd_paths[] = {
-		"/usr/bin/teamd",
-		"/usr/local/bin/teamd",
-		NULL
-	};
+	const char *teamd_binary;
 	GPtrArray *argv;
 	GError *error = NULL;
 	gboolean ret;
@@ -443,21 +438,15 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 		return TRUE;
 	}
 
-	teamd_binary = teamd_paths;
-	while (*teamd_binary != NULL) {
-		if (g_file_test (*teamd_binary, G_FILE_TEST_EXISTS))
-			break;
-		teamd_binary++;
-	}
-
-	if (!*teamd_binary) {
+	teamd_binary = nm_utils_find_helper ("teamd", NULL, NULL);
+	if (!teamd_binary) {
 		_LOGW (LOGD_TEAM, "Activation: (team) failed to start teamd: teamd binary not found");
 		return FALSE;
 	}
 
 	/* Kill teamd for same named device first if it is there */
 	argv = g_ptr_array_new ();
-	g_ptr_array_add (argv, (gpointer) *teamd_binary);
+	g_ptr_array_add (argv, (gpointer) teamd_binary);
 	g_ptr_array_add (argv, (gpointer) "-k");
 	g_ptr_array_add (argv, (gpointer) "-t");
 	g_ptr_array_add (argv, (gpointer) iface);
@@ -472,7 +461,7 @@ teamd_start (NMDevice *device, NMSettingTeam *s_team)
 
 	/* Start teamd now */
 	argv = g_ptr_array_new ();
-	g_ptr_array_add (argv, (gpointer) *teamd_binary);
+	g_ptr_array_add (argv, (gpointer) teamd_binary);
 	g_ptr_array_add (argv, (gpointer) "-o");
 	g_ptr_array_add (argv, (gpointer) "-n");
 	g_ptr_array_add (argv, (gpointer) "-U");

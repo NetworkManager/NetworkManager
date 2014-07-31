@@ -42,13 +42,13 @@
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-dhcp-manager.h"
 #include "nm-posix-signals.h"
+#include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMDhcpDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
 #define NM_DHCP_DHCLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientPrivate))
 
 typedef struct {
-	const char *path;
 	char *conf_file;
 	const char *def_leasefile;
 	char *lease_file;
@@ -56,27 +56,13 @@ typedef struct {
 } NMDhcpDhclientPrivate;
 
 const char *
-nm_dhcp_dhclient_get_path (const char *try_first)
+nm_dhcp_dhclient_get_path (void)
 {
-	static const char *dhclient_paths[] = {
-		"/sbin/dhclient",
-		"/usr/sbin/dhclient",
-		"/usr/pkg/sbin/dhclient",
-		"/usr/local/sbin/dhclient",
-		NULL
-	};
-	const char **path = dhclient_paths;
+	const char *path = NULL;
 
-	if (strlen (try_first) && g_file_test (try_first, G_FILE_TEST_EXISTS))
-		return try_first;
-
-	while (*path != NULL) {
-		if (g_file_test (*path, G_FILE_TEST_EXISTS))
-			break;
-		path++;
-	}
-
-	return *path;
+	if (WITH_DHCLIENT)
+		path = nm_utils_find_helper ("dhclient", DHCLIENT_PATH, NULL);
+	return path;
 }
 
 /**
@@ -335,7 +321,7 @@ dhclient_start (NMDhcpClient *client,
 	GPtrArray *argv = NULL;
 	pid_t pid;
 	GError *error = NULL;
-	const char *iface, *uuid, *system_bus_address;
+	const char *iface, *uuid, *system_bus_address, *dhclient_path = NULL;
 	char *binary_name, *cmd_str, *pid_file = NULL, *system_bus_address_env = NULL;
 	gboolean ipv6, success;
 	guint log_domain;
@@ -349,8 +335,9 @@ dhclient_start (NMDhcpClient *client,
 
 	log_domain = ipv6 ? LOGD_DHCP6 : LOGD_DHCP4;
 
-	if (!g_file_test (priv->path, G_FILE_TEST_EXISTS)) {
-		nm_log_warn (log_domain, "%s does not exist.", priv->path);
+	dhclient_path = nm_dhcp_dhclient_get_path ();
+	if (!dhclient_path) {
+		nm_log_warn (log_domain, "dhclient could not be found");
 		return FALSE;
 	}
 
@@ -359,7 +346,7 @@ dhclient_start (NMDhcpClient *client,
 		                        iface);
 
 	/* Kill any existing dhclient from the pidfile */
-	binary_name = g_path_get_basename (priv->path);
+	binary_name = g_path_get_basename (dhclient_path);
 	nm_dhcp_client_stop_existing (pid_file, binary_name);
 	g_free (binary_name);
 
@@ -411,7 +398,7 @@ dhclient_start (NMDhcpClient *client,
 	}
 
 	argv = g_ptr_array_new ();
-	g_ptr_array_add (argv, (gpointer) priv->path);
+	g_ptr_array_add (argv, (gpointer) dhclient_path);
 
 	g_ptr_array_add (argv, (gpointer) "-d");
 
@@ -607,8 +594,6 @@ nm_dhcp_dhclient_init (NMDhcpDhclient *self)
 {
 	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 	const char **iter = &def_leasefiles[0];
-
-	priv->path = nm_dhcp_dhclient_get_path (DHCLIENT_PATH);
 
 	while (iter && *iter) {
 		if (g_file_test (*iter, G_FILE_TEST_EXISTS)) {

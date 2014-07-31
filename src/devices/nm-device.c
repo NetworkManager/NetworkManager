@@ -2508,27 +2508,17 @@ static NMActStageReturn
 aipd_start (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	char *argv[6], *cmdline;
-	const char **aipd_binary = NULL;
-	static const char *aipd_paths[] = {
-		"/usr/sbin/avahi-autoipd",
-		"/usr/local/sbin/avahi-autoipd",
-		NULL
-	};
+	const char *argv[6];
+	char *cmdline;
+	const char *aipd_binary;
 	int i = 0;
 	GError *error = NULL;
 
 	aipd_cleanup (self);
 
 	/* Find avahi-autoipd */
-	aipd_binary = aipd_paths;
-	while (*aipd_binary != NULL) {
-		if (g_file_test (*aipd_binary, G_FILE_TEST_EXISTS))
-			break;
-		aipd_binary++;
-	}
-
-	if (!*aipd_binary) {
+	aipd_binary = nm_utils_find_helper ("avahi-autoipd", NULL, NULL);
+	if (!aipd_binary) {
 		_LOGW (LOGD_DEVICE | LOGD_AUTOIP4,
 		       "Activation: Stage 3 of 5 (IP Configure Start) failed"
 		       " to start avahi-autoipd: not found");
@@ -2536,20 +2526,20 @@ aipd_start (NMDevice *self, NMDeviceStateReason *reason)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	argv[i++] = (char *) (*aipd_binary);
+	argv[i++] = aipd_binary;
 	argv[i++] = "--script";
-	argv[i++] = (char *) nm_device_autoipd_helper_path;
+	argv[i++] = nm_device_autoipd_helper_path;
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_AUTOIP4))
 		argv[i++] = "--debug";
-	argv[i++] = (char *) nm_device_get_ip_iface (self);
+	argv[i++] = nm_device_get_ip_iface (self);
 	argv[i++] = NULL;
 
-	cmdline = g_strjoinv (" ", argv);
+	cmdline = g_strjoinv (" ", (char **) argv);
 	_LOGD (LOGD_AUTOIP4, "running: %s", cmdline);
 	g_free (cmdline);
 
-	if (!g_spawn_async ("/", argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
+	if (!g_spawn_async ("/", (char **) argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    &aipd_child_setup, NULL, &(priv->aipd_pid), &error)) {
 		_LOGW (LOGD_DEVICE | LOGD_AUTOIP4,
 		       "Activation: Stage 3 of 5 (IP Configure Start) failed"

@@ -643,10 +643,16 @@ if test "$with_dhclient" = "no" -a "$with_dhcpcd" = "no"; then
 fi
 # Add substitutions
 if test "$with_dhclient" != "no"; then
+	AC_DEFINE(WITH_DHCLIENT, TRUE, [Define if you have dhclient])
 	AC_SUBST(DHCLIENT_PATH, $with_dhclient)
+else
+	AC_DEFINE(WITH_DHCLIENT, FALSE, [Define if you have dhclient])
 fi
 if test "$with_dhcpcd" != "no"; then
+	AC_DEFINE(WITH_DHCPCD, TRUE, [Define if you have dhcpcd])
 	AC_SUBST(DHCPCD_PATH, $with_dhcpcd)
+else
+	AC_DEFINE(WITH_DHCPCD, FALSE, [Define if you have dhcpcd])
 fi
 
 # resolvconf and netconfig support

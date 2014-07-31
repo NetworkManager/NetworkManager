@@ -45,7 +45,7 @@ GSList *nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
                                                const char *uuid,
                                                gboolean ipv6);
 
-const char *nm_dhcp_dhclient_get_path (const char *try_first);
+const char *nm_dhcp_dhclient_get_path (void);
 
 #endif /* __NETWORKMANAGER_DHCP_DHCLIENT_H__ */
 

@@ -62,6 +62,10 @@ gboolean nm_utils_kill_child_sync (pid_t pid, int sig, guint64 log_domain, const
                                    int *child_status, guint32 wait_before_kill_msec,
                                    guint32 sleep_duration_msec);
 
+const char *nm_utils_find_helper (const char *progname,
+                                  const char *try_first,
+                                  GError **error);
+
 gboolean nm_match_spec_string (const GSList *specs, const char *string);
 gboolean nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
 gboolean nm_match_spec_s390_subchannels (const GSList *specs, const char *subchannels);
