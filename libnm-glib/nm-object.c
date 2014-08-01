@@ -159,8 +159,6 @@ constructor (GType type,
 		return NULL;
 	}
 
-	_nm_object_cache_add (NM_OBJECT (object));
-
 	return object;
 }
 
@@ -573,6 +571,8 @@ _nm_object_create (GType type, DBusGConnection *connection, const char *path)
 	                       NM_OBJECT_DBUS_CONNECTION, connection,
 	                       NM_OBJECT_DBUS_PATH, path,
 	                       NULL);
+	if (NM_IS_OBJECT (object))
+		_nm_object_cache_add (NM_OBJECT (object));
 	if (!g_initable_init (G_INITABLE (object), NULL, &error)) {
 		dbgmsg ("Could not create object for %s: %s", path, error->message);
 		g_error_free (error);
@@ -656,6 +656,8 @@ async_got_type (GType type, gpointer user_data)
 	                       NM_OBJECT_DBUS_PATH, async_data->path,
 	                       NULL);
 	g_warn_if_fail (object != NULL);
+	if (NM_IS_OBJECT (object))
+		_nm_object_cache_add (NM_OBJECT (object));
 	g_async_initable_init_async (G_ASYNC_INITABLE (object), G_PRIORITY_DEFAULT,
 	                             NULL, async_inited, async_data);
 }

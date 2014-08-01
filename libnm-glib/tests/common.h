@@ -15,23 +15,17 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2008 Red Hat, Inc.
+ * Copyright 2014 Red Hat, Inc.
  */
 
-#ifndef NM_OBJECT_CACHE_H
-#define NM_OBJECT_CACHE_H
+#include <gio/gio.h>
 
-#include <glib.h>
-#include <glib-object.h>
-#include "nm-object.h"
+typedef struct {
+	GDBusConnection *bus;
+	GDBusProxy *proxy;
+	GPid pid;
+	int keepalive_fd;
+} NMTestServiceInfo;
 
-G_BEGIN_DECLS
-
-/* Returns referenced object from the cache */
-NMObject *_nm_object_cache_get (const char *path);
-void _nm_object_cache_add (NMObject *object);
-void _nm_object_cache_clear (void);
-
-G_END_DECLS
-
-#endif /* NM_OBJECT_CACHE_H */
+NMTestServiceInfo *nm_test_service_init (void);
+void nm_test_service_cleanup (NMTestServiceInfo *info);

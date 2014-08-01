@@ -6,14 +6,19 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
+	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\" \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
-noinst_PROGRAMS = test-nm-client test-remote-settings-client
+noinst_PROGRAMS = $(TESTS)
+
+TESTS = test-nm-client test-remote-settings-client
 
 ####### NMClient and non-settings tests #######
 
 test_nm_client_SOURCES = \
+	common.c \
+	common.h \
 	test-nm-client.c
 
 test_nm_client_LDADD = \
@@ -25,6 +30,8 @@ test_nm_client_LDADD = \
 ####### remote settings client test #######
 
 test_remote_settings_client_SOURCES = \
+	common.c \
+	common.h \
 	test-remote-settings-client.c
 
 test_remote_settings_client_LDADD = \
@@ -35,15 +42,8 @@ test_remote_settings_client_LDADD = \
 
 ###########################################
 
-TEST_NM_SERVICE = $(top_srcdir)/tools/test-networkmanager-service.py
-
-check-local: test-nm-client test-remote-settings-client
-	if test -z "$$DBUS_SESSION_BUS_ADDRESS" ; then \
-	    dbus-launch --exit-with-session $(abs_builddir)/test-nm-client $(abs_srcdir) $(TEST_NM_SERVICE); \
-	    dbus-launch --exit-with-session $(abs_builddir)/test-remote-settings-client $(abs_srcdir) $(TEST_NM_SERVICE); \
-	else \
-	    $(abs_builddir)/test-nm-client $(abs_srcdir) $(TEST_NM_SERVICE); \
-	    $(abs_builddir)/test-remote-settings-client $(abs_srcdir) $(TEST_NM_SERVICE); \
-	fi;
+TESTS_ENVIRONMENT = $(srcdir)/libnm-glib-test-launch.sh
 
 endif
+
+EXTRA_DIST = libnm-glib-test-launch.sh
