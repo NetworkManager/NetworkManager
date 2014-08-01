@@ -35,7 +35,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
-#include "libnm-util/nm-utils.h"
+#include "nm-utils.h"
 #include "nm-dns-manager.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
