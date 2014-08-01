@@ -5,3 +5,5 @@ EXTRA_DIST = \
      nm-gvaluearray-compat.h \
      nm-test-utils.h \
      nm-settings-flags.h
+
+CLEANFILES=nm-version.h

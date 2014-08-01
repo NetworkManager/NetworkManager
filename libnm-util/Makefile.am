@@ -154,7 +154,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-util.pc
 
 DISTCLEANFILES = libnm-util.pc
-CLEANFILES = 
+CLEANFILES = nm-version.h
 
 EXTRA_DIST = libnm-util.pc.in libnm-util.ver nm-version.h.in
 
