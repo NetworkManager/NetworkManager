@@ -37,7 +37,7 @@
 char *
 utils_single_quote_string (const char *str)
 {
-	static const char const drop_chars[] = "\r\n"; /* drop CR and LF */
+	static const char *drop_chars = "\r\n"; /* drop CR and LF */
 	static const char escape_char = '\\'; /* escape char is backslash */
 	static const char quote_char = '\'';  /* quote char is single quote */
 	size_t i, slen, j = 0;

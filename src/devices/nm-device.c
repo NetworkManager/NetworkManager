@@ -364,7 +364,7 @@ static const char *state_table[] = {
 static const char *
 queued_state_to_string (NMDeviceState state)
 {
-	if (state >= 0 && state < G_N_ELEMENTS (state_table))
+	if ((gsize) state < G_N_ELEMENTS (state_table))
 		return state_table[state];
 	return state_table[NM_DEVICE_STATE_UNKNOWN];
 }
@@ -440,7 +440,7 @@ static const char *reason_table[] = {
 static const char *
 reason_to_string (NMDeviceStateReason reason)
 {
-	if (reason >= 0 && reason < G_N_ELEMENTS (reason_table))
+	if ((gsize) reason < G_N_ELEMENTS (reason_table))
 		return reason_table[reason];
 	return reason_table[NM_DEVICE_STATE_REASON_UNKNOWN];
 }

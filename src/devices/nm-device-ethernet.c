@@ -1234,7 +1234,7 @@ dcb_state (NMDevice *device, gboolean timeout)
 			if (!dcb_enable (device)) {
 				dcb_carrier_cleanup (device);
 				nm_device_state_changed (device,
-				                         NM_ACT_STAGE_RETURN_FAILURE,
+				                         NM_DEVICE_STATE_FAILED,
 				                         NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED);
 			}
 		}
@@ -1258,7 +1258,7 @@ dcb_state (NMDevice *device, gboolean timeout)
 			if (!dcb_configure (device)) {
 				dcb_carrier_cleanup (device);
 				nm_device_state_changed (device,
-				                         NM_ACT_STAGE_RETURN_FAILURE,
+				                         NM_DEVICE_STATE_FAILED,
 				                         NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED);
 			}
 		}

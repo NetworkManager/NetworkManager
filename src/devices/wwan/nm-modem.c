@@ -132,7 +132,7 @@ static const char *state_table[] = {
 const char *
 nm_modem_state_to_string (NMModemState state)
 {
-	if (state >= 0 && state < G_N_ELEMENTS (state_table))
+	if ((gsize) state < G_N_ELEMENTS (state_table))
 		return state_table[state];
 	return NULL;
 }

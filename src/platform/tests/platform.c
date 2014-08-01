@@ -532,6 +532,9 @@ parse_ip_address (int family, char *str, gpointer address, int *plen)
 {
 	char *endptr;
 
+	if (plen)
+		*plen = 0;
+
 	if (plen) {
 		char *ptr = strchr (str, '/');
 		if (ptr) {

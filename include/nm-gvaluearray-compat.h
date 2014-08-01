@@ -22,6 +22,8 @@
 
 #include <glib.h>
 
+#include "nm-glib-compat.h"
+
 #define g_value_array_get_type() \
   G_GNUC_EXTENSION ({ \
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS \

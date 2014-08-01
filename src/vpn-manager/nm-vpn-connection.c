@@ -176,7 +176,7 @@ _state_to_nm_vpn_state (VpnState state)
 	case STATE_FAILED:
 		return NM_VPN_CONNECTION_STATE_FAILED;
 	default:
-		return STATE_UNKNOWN;
+		return NM_VPN_CONNECTION_STATE_UNKNOWN;
 	}
 }
 
@@ -665,7 +665,7 @@ static const char *state_table[] = {
 static const char *
 vpn_state_to_string (VpnState state)
 {
-	if (state >= 0 && state < G_N_ELEMENTS (state_table))
+	if ((gsize) state < G_N_ELEMENTS (state_table))
 		return state_table[state];
 	return "unknown";
 }

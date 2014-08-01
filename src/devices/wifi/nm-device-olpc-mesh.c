@@ -190,7 +190,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 		/* FIXME: VPN stuff here is a bug; but we can't really change API now... */
 		nm_device_state_changed (NM_DEVICE (priv->companion),
 		                         NM_DEVICE_STATE_DISCONNECTED,
-		                         NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
+		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 		nm_log_info (LOGD_OLPC, "(%s): companion %s disconnected",
 		             nm_device_get_iface (dev),
 		             nm_device_get_iface (priv->companion));
@@ -316,7 +316,7 @@ companion_state_changed_cb (NMDeviceWifi *companion,
 	/* FIXME: VPN stuff here is a bug; but we can't really change API now... */
 	nm_device_state_changed (NM_DEVICE (self),
 	                         NM_DEVICE_STATE_DISCONNECTED,
-	                         NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
+	                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
 }
 
 static gboolean

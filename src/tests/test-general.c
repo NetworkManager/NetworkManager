@@ -67,7 +67,7 @@ test_nm_utils_ascii_str_to_int64_do (const char *str, guint base, gint64 min,
 		NULL,
 	};
 	const char **ws_pre, **ws_post, **null;
-	int i;
+	guint i;
 
 	if (str == NULL || exp_errno != 0) {
 		test_nm_utils_ascii_str_to_int64_check (str, base, min, max, fallback, exp_errno, exp_val);
