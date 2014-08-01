@@ -1383,7 +1383,7 @@ fill_8021x (const char *ssid,
 		char *lower = NULL;
 
 		lower = g_ascii_strdown (*iter, -1);
-		while (eap->method && !found) {
+		while (eap->method) {
 			if (strcmp (eap->method, lower))
 				goto next;
 
@@ -1404,6 +1404,7 @@ fill_8021x (const char *ssid,
 			}
 			nm_setting_802_1x_add_eap_method (s_8021x, lower);
 			found = TRUE;
+			break;
 
 		next:
 			eap++;

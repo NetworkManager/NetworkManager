@@ -49,7 +49,7 @@ cleanup (void)
 
 #define test_assert(condition) \
 do { \
-	gboolean _condition = ( condition ); \
+	gboolean _condition = !!( condition ); \
 	\
 	if (G_UNLIKELY (!_condition)) { \
 		cleanup (); \
@@ -70,6 +70,7 @@ add_cb (NMRemoteSettings *s,
 
 	*((gboolean *) user_data) = TRUE;
 	remote = connection;
+	g_object_add_weak_pointer (G_OBJECT (connection), (void **) &remote);
 }
 
 #define TEST_CON_ID "blahblahblah"
@@ -186,6 +187,9 @@ test_make_invisible (void)
 	} while ((done == FALSE) && (now - start < 5));
 	test_assert (done == TRUE);
 
+	g_assert (remote);
+	g_signal_handlers_disconnect_by_func (remote, G_CALLBACK (invis_removed_cb), &done);
+
 	/* Ensure NMRemoteSettings no longer has the connection */
 	list = nm_remote_settings_list_connections (settings);
 	for (iter = list; iter; iter = g_slist_next (iter)) {
@@ -196,6 +200,7 @@ test_make_invisible (void)
 	}
 
 	/* And ensure the invisible connection no longer has any settings */
+	g_assert (remote);
 	nm_connection_for_each_setting_value (NM_CONNECTION (remote),
 	                                      invis_has_settings_cb,
 	                                      &has_settings);
@@ -251,7 +256,10 @@ test_make_visible (void)
 	} while ((new == NULL) && (now - start < 5));
 
 	/* Ensure the new connection is the same as the one we made visible again */
+	test_assert (new);
 	test_assert (new == remote);
+
+	g_signal_handlers_disconnect_by_func (settings, G_CALLBACK (vis_new_connection_cb), &new);
 
 	/* Ensure NMRemoteSettings has the connection */
 	list = nm_remote_settings_list_connections (settings);
@@ -309,6 +317,8 @@ test_remove_connection (void)
 	test_assert (g_slist_length (list) > 0);
 
 	connection = NM_REMOTE_CONNECTION (list->data);
+	g_assert (connection);
+	g_assert (remote == connection);
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (connection)));
 	g_signal_connect (connection, "removed", G_CALLBACK (removed_cb), &done);
 
@@ -327,6 +337,8 @@ test_remove_connection (void)
 		g_main_context_iteration (NULL, FALSE);
 	} while ((done == FALSE) && (now - start < 5));
 	test_assert (done == TRUE);
+
+	g_assert (!remote);
 
 	/* Ensure NMRemoteSettings no longer has the connection */
 	list = nm_remote_settings_list_connections (settings);
