@@ -3,10 +3,12 @@
 # libnm/, because that's incompatible with the Makefile.introspection rules.)
 
 core = $(top_srcdir)/libnm-core
+core_build = $(top_builddir)/libnm-core
 
 libnm_core_headers =				\
+	$(core_build)/nm-core-enum-types.h	\
+	$(core_build)/nm-version.h		\
 	$(core)/nm-connection.h			\
-	$(core)/nm-core-enum-types.h		\
 	$(core)/nm-dbus-interface.h		\
 	$(core)/nm-setting-8021x.h		\
 	$(core)/nm-setting-adsl.h		\
@@ -36,7 +38,6 @@ libnm_core_headers =				\
 	$(core)/nm-setting-wireless.h		\
 	$(core)/nm-setting.h			\
 	$(core)/nm-utils.h			\
-	$(core)/nm-version.h			\
 	$(core)/nm-vpn-dbus-interface.h
 
 libnm_core_private_headers =			\
@@ -46,9 +47,9 @@ libnm_core_private_headers =			\
 	$(core)/nm-utils-private.h
 
 libnm_core_sources =				\
+	$(core_build)/nm-core-enum-types.c	\
 	$(core)/crypto.c			\
 	$(core)/nm-connection.c			\
-	$(core)/nm-core-enum-types.c		\
 	$(core)/nm-param-spec-specialized.c	\
 	$(core)/nm-setting-8021x.c		\
 	$(core)/nm-setting-adsl.c		\
