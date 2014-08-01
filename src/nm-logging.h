@@ -29,6 +29,8 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include "nm-utils-internal.h"
+
 /* Log domains */
 enum {
 	LOGD_NONE       = 0LL,
@@ -92,45 +94,58 @@ typedef enum {
 GQuark nm_logging_error_quark    (void);
 
 
-#define nm_log_err(domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_ERR, ## __VA_ARGS__ )
+#define nm_log_err(domain, ...)     nm_log (LOGL_ERR,   (domain), __VA_ARGS__)
+#define nm_log_warn(domain, ...)    nm_log (LOGL_WARN,  (domain), __VA_ARGS__)
+#define nm_log_info(domain, ...)    nm_log (LOGL_INFO,  (domain), __VA_ARGS__)
+#define nm_log_dbg(domain, ...)     nm_log (LOGL_DEBUG, (domain), __VA_ARGS__)
 
-#define nm_log_warn(domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_WARN, ## __VA_ARGS__ )
+/* nm_log() only evaluates it's argument list after checking
+ * whether logging for the given level/domain is enabled.  */
+#define nm_log(level, domain, ...) \
+    G_STMT_START { \
+        if (nm_logging_enabled ((level), (domain))) { \
+            _nm_log (G_STRLOC, G_STRFUNC, (level), (domain), __VA_ARGS__); \
+        } \
+    } G_STMT_END
 
-#define nm_log_info(domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_INFO, ## __VA_ARGS__ )
 
-#define nm_log_dbg(domain, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, LOGL_DEBUG, ## __VA_ARGS__ )
+#define _nm_log_ptr(level, domain, self, ...) \
+   nm_log ((level), (domain), "[%p] " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), self _NM_UTILS_MACRO_REST(__VA_ARGS__))
 
-#define nm_log(domain, level, ...) \
-	_nm_log (G_STRLOC, G_STRFUNC, domain, level, ## __VA_ARGS__ )
+/* log a message for an object (with providing a generic @self pointer) */
+#define nm_log_ptr(level, domain, self, ...) \
+    G_STMT_START { \
+        if ((level) <= LOGL_DEBUG) { \
+            _nm_log_ptr ((level), (domain), (self), __VA_ARGS__); \
+        } else { \
+            nm_log ((level), (domain), __VA_ARGS__); \
+        } \
+    } G_STMT_END
+
+
+#define _nm_log_obj(level, domain, self, ...) \
+    _nm_log_ptr ((level), (domain), (self), __VA_ARGS__)
+
+/* log a message for an object (with providing a @self pointer to a GObject).
+ * Contrary to nm_log_ptr(), @self must be a GObject type (or %NULL).
+ * As of now, nm_log_obj() is identical to nm_log_ptr(), but we might change that */
+#define nm_log_obj(level, domain, self, ...) \
+    nm_log_ptr ((level), (domain), (self), __VA_ARGS__)
+
 
 void _nm_log (const char *loc,
               const char *func,
-              guint64 domain,
               guint32 level,
+              guint64 domain,
               const char *fmt,
               ...) __attribute__((__format__ (__printf__, 5, 6)));
 
-char *nm_logging_level_to_string (void);
-char *nm_logging_domains_to_string (void);
+const char *nm_logging_level_to_string (void);
+const char *nm_logging_domains_to_string (void);
 gboolean nm_logging_enabled (guint32 level, guint64 domain);
 
 const char *nm_logging_all_levels_to_string (void);
 const char *nm_logging_all_domains_to_string (void);
-
-/* Undefine the nm-utils.h logging stuff to ensure errors */
-#undef nm_get_timestamp
-#undef nm_info
-#undef nm_info_str
-#undef nm_debug
-#undef nm_debug_str
-#undef nm_warning
-#undef nm_warning_str
-#undef nm_error
-#undef nm_error_str
 
 gboolean nm_logging_setup (const char  *level,
                            const char  *domains,
