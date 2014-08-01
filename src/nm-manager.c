@@ -1652,6 +1652,7 @@ recheck_assume_connection (NMDevice *device, gpointer user_data)
 	NMManager *self = NM_MANAGER (user_data);
 	NMConnection *connection;
 	gboolean was_unmanaged = FALSE, success, generated;
+	NMDeviceState state;
 
 	if (manager_sleeping (self))
 		return FALSE;
@@ -1665,7 +1666,12 @@ recheck_assume_connection (NMDevice *device, gpointer user_data)
 		return FALSE;
 	}
 
-	if (nm_device_get_state (device) == NM_DEVICE_STATE_UNMANAGED) {
+	state = nm_device_get_state (device);
+
+	if (state > NM_DEVICE_STATE_DISCONNECTED)
+		return FALSE;
+
+	if (state == NM_DEVICE_STATE_UNMANAGED) {
 		was_unmanaged = TRUE;
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_UNAVAILABLE,
