@@ -1665,7 +1665,6 @@ nm_device_master_update_slave_connection (NMDevice *self,
 {
 	NMDeviceClass *klass;
 	gboolean success;
-	const char *iface;
 
 	g_return_val_if_fail (self, FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -1674,8 +1673,7 @@ nm_device_master_update_slave_connection (NMDevice *self,
 	g_return_val_if_fail (!error || !*error, FALSE);
 	g_return_val_if_fail (nm_connection_get_setting_connection (connection), FALSE);
 
-	iface = nm_device_get_iface (self);
-	g_return_val_if_fail (iface, FALSE);
+	g_return_val_if_fail (nm_device_get_iface (self), FALSE);
 
 	klass = NM_DEVICE_GET_CLASS (self);
 	if (klass->master_update_slave_connection) {
@@ -1689,7 +1687,7 @@ nm_device_master_update_slave_connection (NMDevice *self,
 	             NM_DEVICE_ERROR,
 	             NM_DEVICE_ERROR_UNSUPPORTED_DEVICE_TYPE,
 	             "master device '%s' cannot update a slave connection for slave device '%s' (master type not supported?)",
-	             iface, nm_device_get_iface (slave));
+	             nm_device_get_iface (self), nm_device_get_iface (slave));
 	return FALSE;
 }
 
@@ -4005,7 +4003,6 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *iface;
 	NMActiveConnection *master;
 	NMDevice *master_device;
 
@@ -4014,7 +4011,6 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 
 	priv->ip4_state = priv->ip6_state = IP_WAIT;
 
-	iface = nm_device_get_iface (self);
 	_LOGI (LOGD_DEVICE, "Activation: Stage 3 of 5 (IP Configure Start) started...");
 	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
@@ -4133,14 +4129,12 @@ nm_device_activate_ip4_config_timeout (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *iface;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET);
 
-	iface = nm_device_get_iface (self);
 	_LOGI (LOGD_DEVICE | LOGD_IP4,
 	       "Activation: Stage 4 of 5 (IPv4 Configure Timeout) started...");
 
@@ -4214,14 +4208,12 @@ nm_device_activate_ip6_config_timeout (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *iface;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET6);
 
-	iface = nm_device_get_iface (self);
 	_LOGI (LOGD_DEVICE | LOGD_IP6,
 	       "Activation: Stage 4 of 5 (IPv6 Configure Timeout) started...");
 
@@ -4496,14 +4488,13 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActRequest *req;
-	const char *iface, *method;
+	const char *method;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET);
 
-	iface = nm_device_get_iface (self);
 	_LOGI (LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv4 Commit) started...");
 
 	req = nm_device_get_act_request (self);
@@ -4604,14 +4595,12 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	guint level = (priv->ip6_state == IP_DONE) ? LOGL_DEBUG : LOGL_INFO;
 	NMActRequest *req;
-	const char *iface;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET6);
 
-	iface = nm_device_get_iface (self);
 	_LOG (level, LOGD_DEVICE, "Activation: Stage 5 of 5 (IPv6 Commit) started...");
 
 	req = nm_device_get_act_request (self);
@@ -5378,15 +5367,12 @@ ip_check_ping_watch_cb (GPid pid, gint status, gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const char *iface;
 	guint log_domain = priv->gw_ping.log_domain;
 
 	if (!priv->gw_ping.watch)
 		return;
 	priv->gw_ping.watch = 0;
 	priv->gw_ping.pid = 0;
-
-	iface = nm_device_get_iface (self);
 
 	if (WIFEXITED (status)) {
 		if (WEXITSTATUS (status) == 0)
@@ -6970,15 +6956,12 @@ gboolean
 nm_device_set_hw_addr (NMDevice *self, const guint8 *addr,
                        const char *detail, guint64 hw_log_domain)
 {
-	const char *iface;
 	char *mac_str = NULL;
 	gboolean success = FALSE;
 	guint len;
 	const guint8 *cur_addr = nm_device_get_hw_address (self, &len);
 
 	g_return_val_if_fail (addr != NULL, FALSE);
-
-	iface = nm_device_get_iface (self);
 
 	/* Do nothing if current MAC is same */
 	if (cur_addr && !memcmp (cur_addr, addr, len)) {
