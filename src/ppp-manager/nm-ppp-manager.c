@@ -41,7 +41,7 @@
 #endif
 #include <linux/if_ppp.h>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "NetworkManagerUtils.h"
 #include "nm-glib-compat.h"
 #include "nm-ppp-manager.h"
@@ -444,7 +444,7 @@ ppp_secrets_cb (NMActRequest *req,
 	/* This is sort of a hack but...
 	 * pppd plugin only ever needs username and password. Passing the full
 	 * connection there would mean some bloat: the plugin would need to link
-	 * against libnm-util just to parse this. So instead, let's just send what
+	 * against libnm just to parse this. So instead, let's just send what
 	 * it needs.
 	 */
 	dbus_g_method_return (priv->pending_secrets_context, username, password);
@@ -466,7 +466,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	guint32 tries;
 	GPtrArray *hints = NULL;
 	GError *error = NULL;
-	NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+	NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 	connection = nm_act_request_get_connection (priv->act_req);
 
@@ -492,7 +492,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	 */
 	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES));
 	if (tries > 1)
-		flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
+		flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 
 	priv->secrets_id = nm_act_request_get_secrets (priv->act_req,
 	                                               priv->secrets_setting_name,
@@ -524,7 +524,7 @@ set_ip_config_common (NMPPPManager *self,
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
 	NMConnection *connection;
-	NMSettingPPP *s_ppp;
+	NMSettingPpp *s_ppp;
 	GValue *val;
 
 	val = g_hash_table_lookup (hash, iface_prop);
@@ -894,8 +894,8 @@ pppd_timed_out (gpointer data)
 
 static NMCmdLine *
 create_pppd_cmd_line (NMPPPManager *self,
-                      NMSettingPPP *setting, 
-                      NMSettingPPPOE *pppoe,
+                      NMSettingPpp *setting,
+                      NMSettingPppoe *pppoe,
                       NMSettingAdsl  *adsl,
                       const char *ppp_name,
                       GError **err)
@@ -1097,7 +1097,7 @@ pppd_child_setup (gpointer user_data G_GNUC_UNUSED)
 }
 
 static void
-pppoe_fill_defaults (NMSettingPPP *setting)
+pppoe_fill_defaults (NMSettingPpp *setting)
 {
 	if (!nm_setting_ppp_get_mtu (setting))
 		g_object_set (setting, NM_SETTING_PPP_MTU, (guint32) 1492, NULL);
@@ -1110,7 +1110,7 @@ pppoe_fill_defaults (NMSettingPPP *setting)
 	              NM_SETTING_PPP_NODEFLATE, TRUE,
 	              NULL);
 
-	/* FIXME: These commented settings should be set as well, update NMSettingPPP first. */
+	/* FIXME: These commented settings should be set as well, update NMSettingPpp first. */
 #if 0
 	setting->noipdefault = TRUE;
 	setting->default_asyncmap = TRUE;
@@ -1132,9 +1132,9 @@ nm_ppp_manager_start (NMPPPManager *manager,
 {
 	NMPPPManagerPrivate *priv;
 	NMConnection *connection;
-	NMSettingPPP *s_ppp;
+	NMSettingPpp *s_ppp;
 	gboolean s_ppp_created = FALSE;
-	NMSettingPPPOE *pppoe_setting;
+	NMSettingPppoe *pppoe_setting;
 	NMSettingAdsl *adsl_setting;
 	NMCmdLine *ppp_cmd;
 	char *cmd_str;

@@ -34,32 +34,4 @@ gboolean    _nm_utils_gvalue_array_validate (GValueArray *elements,
 
 void        _nm_value_transforms_register (void);
 
-/***********************************************************/
-
-typedef struct NMUtilsPrivateData {
-	const char * (*nm_setting_ip4_config_get_address_label)      (NMSettingIP4Config *setting,
-	                                                              guint32             i);
-	gboolean     (*nm_setting_ip4_config_add_address_with_label) (NMSettingIP4Config *setting,
-	                                                              NMIP4Address       *address,
-	                                                              const char         *label);
-} NMUtilsPrivateData;
-
-const NMUtilsPrivateData *nm_utils_get_private (void);
-
-/**
- * NM_UTILS_PRIVATE_CALL:
- * @call: a call to a private libnm-util function
- *
- * Used to call private libnm-util functions. Eg, if there was a
- * private function called nm_foo_get_bar(), you could call it like:
- *
- *   bar = NM_UTILS_PRIVATE_CALL (nm_foo_get_bar (foo, x, y, z));
- *
- * This macro only exists inside the NetworkManager source tree and
- * is not part of the public API.
- *
- * Since: 0.9.10
- */
-#define NM_UTILS_PRIVATE_CALL(call) (nm_utils_get_private ()->call)
-
 #endif

@@ -75,7 +75,6 @@ typedef struct {
 	GArray *dns;        /* array of guint32; elements in network byte order */
 	GSList *dns_search; /* list of strings */
 	GSList *addresses;  /* array of NMIP4Address */
-	GSList *address_labels; /* list of strings */
 	GSList *routes;     /* array of NMIP4Route */
 	gboolean ignore_auto_routes;
 	gboolean ignore_auto_dns;
@@ -92,7 +91,6 @@ enum {
 	PROP_DNS,
 	PROP_DNS_SEARCH,
 	PROP_ADDRESSES,
-	PROP_ADDRESS_LABELS,
 	PROP_ROUTES,
 	PROP_IGNORE_AUTO_ROUTES,
 	PROP_IGNORE_AUTO_DNS,
@@ -439,19 +437,6 @@ nm_setting_ip4_config_get_address (NMSettingIP4Config *setting, guint32 i)
 	return (NMIP4Address *) g_slist_nth_data (priv->addresses, i);
 }
 
-const char *
-nm_setting_ip4_config_get_address_label (NMSettingIP4Config *setting, guint32 i)
-{
-	NMSettingIP4ConfigPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
-
-	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->address_labels), NULL);
-
-	return (const char *) g_slist_nth_data (priv->address_labels, i);
-}
-
 /**
  * nm_setting_ip4_config_add_address:
  * @setting: the #NMSettingIP4Config
@@ -466,14 +451,6 @@ nm_setting_ip4_config_get_address_label (NMSettingIP4Config *setting, guint32 i)
 gboolean
 nm_setting_ip4_config_add_address (NMSettingIP4Config *setting,
                                    NMIP4Address *address)
-{
-	return nm_setting_ip4_config_add_address_with_label (setting, address, NULL);
-}
-
-gboolean
-nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting,
-                                              NMIP4Address *address,
-                                              const char *label)
 {
 	NMSettingIP4ConfigPrivate *priv;
 	NMIP4Address *copy;
@@ -490,8 +467,6 @@ nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting,
 
 	copy = nm_ip4_address_dup (address);
 	priv->addresses = g_slist_append (priv->addresses, copy);
-	priv->address_labels = g_slist_append (priv->address_labels, g_strdup (label));
-
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ADDRESSES);
 	return TRUE;
 }
@@ -507,21 +482,16 @@ void
 nm_setting_ip4_config_remove_address (NMSettingIP4Config *setting, guint32 i)
 {
 	NMSettingIP4ConfigPrivate *priv;
-	GSList *addr, *label;
+	GSList *elt;
 
 	g_return_if_fail (NM_IS_SETTING_IP4_CONFIG (setting));
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	addr = g_slist_nth (priv->addresses, i);
-	label = g_slist_nth (priv->address_labels, i);
-	g_return_if_fail (addr != NULL && label != NULL);
+	elt = g_slist_nth (priv->addresses, i);
+	g_return_if_fail (elt != NULL);
 
-	nm_ip4_address_unref ((NMIP4Address *) addr->data);
-	priv->addresses = g_slist_delete_link (priv->addresses, addr);
-	if (label->data)
-		g_free (label->data);
-	priv->address_labels = g_slist_delete_link (priv->address_labels, label);
-
+	nm_ip4_address_unref ((NMIP4Address *) elt->data);
+	priv->addresses = g_slist_delete_link (priv->addresses, elt);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ADDRESSES);
 }
 
@@ -573,8 +543,6 @@ nm_setting_ip4_config_clear_addresses (NMSettingIP4Config *setting)
 
 	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
 	priv->addresses = NULL;
-	g_slist_free_full (priv->address_labels, g_free);
-	priv->address_labels = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ADDRESSES);
 }
 
@@ -847,34 +815,10 @@ nm_setting_ip4_config_get_may_fail (NMSettingIP4Config *setting)
 }
 
 static gboolean
-verify_label (const char *label)
-{
-	const char *p;
-	char *iface;
-
-	p = strchr (label, ':');
-	if (!p)
-		return FALSE;
-	iface = g_strndup (label, p - label);
-	if (!nm_utils_iface_valid_name (iface)) {
-		g_free (iface);
-		return FALSE;
-	}
-	g_free (iface);
-
-	for (p++; *p; p++) {
-		if (!g_ascii_isalnum (*p) && *p != '_')
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	GSList *iter, *l_iter;
+	GSList *iter;
 	int i;
 
 	if (!priv->method) {
@@ -961,11 +905,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	/* Validate addresses */
-	for (iter = priv->addresses, l_iter = priv->address_labels, i = 0;
-	     iter && l_iter;
-	     iter = g_slist_next (iter), l_iter = g_slist_next (l_iter), i++) {
+	for (iter = priv->addresses, i = 0; iter; iter = g_slist_next (iter), i++) {
 		NMIP4Address *addr = (NMIP4Address *) iter->data;
-		const char *label = (const char *) l_iter->data;
 		guint32 prefix = nm_ip4_address_get_prefix (addr);
 
 		if (!nm_ip4_address_get_address (addr)) {
@@ -987,27 +928,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_ADDRESSES);
 			return FALSE;
 		}
-
-		if (label && !verify_label (label)) {
-			g_set_error (error,
-			             NM_SETTING_IP4_CONFIG_ERROR,
-			             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
-			             _("%d. IPv4 address has invalid label '%s'"),
-			             i+1, label);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, "address-labels");
-			return FALSE;
-		}
-	}
-
-	if (iter || l_iter) {
-		g_set_error (error,
-		             NM_SETTING_IP4_CONFIG_ERROR,
-		             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
-		             _("IPv4 address / label count mismatch (%d vs %d)"),
-		             g_slist_length (priv->addresses),
-		             g_slist_length (priv->address_labels));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, "address-labels");
-		return FALSE;
 	}
 
 	/* Validate routes */
@@ -1063,7 +983,6 @@ finalize (GObject *object)
 
 	g_slist_free_full (priv->dns_search, g_free);
 	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
-	g_slist_free_full (priv->address_labels, g_free);
 	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
 
 	G_OBJECT_CLASS (nm_setting_ip4_config_parent_class)->finalize (object);
@@ -1075,7 +994,6 @@ set_property (GObject *object, guint prop_id,
 {
 	NMSettingIP4Config *setting = NM_SETTING_IP4_CONFIG (object);
 	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	GSList *iter;
 
 	switch (prop_id) {
 	case PROP_METHOD:
@@ -1095,24 +1013,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_ADDRESSES:
 		g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
 		priv->addresses = nm_utils_ip4_addresses_from_gvalue (value);
-
-		if (g_slist_length (priv->addresses) != g_slist_length (priv->address_labels)) {
-			g_slist_free_full (priv->address_labels, g_free);
-			priv->address_labels = NULL;
-			for (iter = priv->addresses; iter; iter = iter->next)
-				priv->address_labels = g_slist_prepend (priv->address_labels, NULL);
-		}
-		break;
-	case PROP_ADDRESS_LABELS:
-		g_slist_free_full (priv->address_labels, g_free);
-		priv->address_labels = g_value_dup_boxed (value);
-		/* NULLs get converted to "" when this is sent over D-Bus. */
-		for (iter = priv->address_labels; iter; iter = iter->next) {
-			if (!g_strcmp0 (iter->data, "")) {
-				g_free (iter->data);
-				iter->data = NULL;
-			}
-		}
 		break;
 	case PROP_ROUTES:
 		g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
@@ -1166,9 +1066,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ADDRESSES:
 		nm_utils_ip4_addresses_to_gvalue (priv->addresses, value);
-		break;
-	case PROP_ADDRESS_LABELS:
-		g_value_set_boxed (value, priv->address_labels);
 		break;
 	case PROP_ROUTES:
 		nm_utils_ip4_routes_to_gvalue (priv->routes, value);
@@ -1288,19 +1185,6 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_ADDRESSES,
 		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ADDRESSES, "", "",
 		                             DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
-
-	/**
-	 * NMSettingIP4Config:address-labels:
-	 *
-	 * Internal use only.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_ADDRESS_LABELS,
-		 _nm_param_spec_specialized ("address-labels", "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
 		                             G_PARAM_READWRITE |
 		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));

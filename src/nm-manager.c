@@ -199,7 +199,7 @@ typedef struct {
 	gboolean sleeping;
 	gboolean net_enabled;
 
-	NMVPNManager *vpn_manager;
+	NMVpnManager *vpn_manager;
 
 	DBusGProxy *aipd_proxy;
 	NMSleepMonitor *sleep_monitor;
@@ -3492,7 +3492,7 @@ nm_manager_deactivate_connection (NMManager *manager,
 	}
 
 	if (NM_IS_VPN_CONNECTION (active)) {
-		NMVPNConnectionStateReason vpn_reason = NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED;
+		NMVpnConnectionStateReason vpn_reason = NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED;
 
 		if (reason == NM_DEVICE_STATE_REASON_CONNECTION_REMOVED)
 			vpn_reason = NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED;

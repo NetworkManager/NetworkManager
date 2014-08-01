@@ -26,7 +26,7 @@
 #include <net/ethernet.h>
 #include <netinet/ether.h>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-setting-bluetooth.h"
 
 #include "nm-bluez-common.h"

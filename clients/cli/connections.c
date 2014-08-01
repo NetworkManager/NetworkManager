@@ -33,25 +33,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include <nm-client.h>
-#include <nm-device-ethernet.h>
-#include <nm-device-adsl.h>
-#include <nm-device-wifi.h>
-#if WITH_WIMAX
-#include <nm-device-wimax.h>
-#endif
-#include <nm-device-modem.h>
-#include <nm-device-bt.h>
-#include <nm-device-olpc-mesh.h>
-#include <nm-device-infiniband.h>
-#include <nm-device-bond.h>
-#include <nm-device-team.h>
-#include <nm-device-bridge.h>
-#include <nm-device-vlan.h>
-#include <nm-remote-settings.h>
-#include <nm-vpn-connection.h>
-#include <nm-utils.h>
-
 #include "utils.h"
 #include "common.h"
 #include "settings.h"
@@ -567,7 +548,7 @@ active_connection_state_to_string (NMActiveConnectionState state)
 }
 
 static const char *
-vpn_connection_state_to_string (NMVPNConnectionState state)
+vpn_connection_state_to_string (NMVpnConnectionState state)
 {
 	switch (state) {
 	case NM_VPN_CONNECTION_STATE_PREPARE:
@@ -1088,7 +1069,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		/* DHCP4 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[2].name) == 0) {
 			gboolean b1 = FALSE;
-			NMDHCP4Config *dhcp4 = nm_active_connection_get_dhcp4_config (acon);
+			NMDhcp4Config *dhcp4 = nm_active_connection_get_dhcp4_config (acon);
 
 			b1 = print_dhcp4_config (dhcp4, nmc, "DHCP4", group_fld);
 			was_output = was_output || b1;
@@ -1106,7 +1087,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		/* DHCP6 */
 		if (strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[4].name) == 0) {
 			gboolean b1 = FALSE;
-			NMDHCP6Config *dhcp6 = nm_active_connection_get_dhcp6_config (acon);
+			NMDhcp6Config *dhcp6 = nm_active_connection_get_dhcp6_config (acon);
 
 			b1 = print_dhcp6_config (dhcp6, nmc, "DHCP6", group_fld);
 			was_output = was_output || b1;
@@ -1117,8 +1098,8 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		    strcasecmp (nmc_fields_con_active_details_groups[group_idx].name,  nmc_fields_con_active_details_groups[5].name) == 0) {
 			NMConnection *con;
 			NMSettingConnection *s_con;
-			NMSettingVPN *s_vpn;
-			NMVPNConnectionState vpn_state;
+			NMSettingVpn *s_vpn;
+			NMVpnConnectionState vpn_state;
 			char *type_str, *banner_str, *vpn_state_str;
 			const char *username = NULL;
 			char **vpn_data_array = NULL;
@@ -1625,7 +1606,7 @@ find_device_for_connection (NmCli *nmc,
 }
 
 static const char *
-vpn_connection_state_reason_to_string (NMVPNConnectionStateReason reason)
+vpn_connection_state_reason_to_string (NMVpnConnectionStateReason reason)
 {
 	switch (reason) {
 	case NM_VPN_CONNECTION_STATE_REASON_UNKNOWN:
@@ -1680,9 +1661,9 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpoin
 }
 
 static void
-vpn_connection_state_cb (NMVPNConnection *vpn,
-                         NMVPNConnectionState state,
-                         NMVPNConnectionStateReason reason,
+vpn_connection_state_cb (NMVpnConnection *vpn,
+                         NMVpnConnectionState state,
+                         NMVpnConnectionStateReason reason,
                          gpointer user_data)
 {
 	NmCli *nmc = (NmCli *) user_data;
@@ -1752,7 +1733,7 @@ progress_device_cb (gpointer user_data)
 static gboolean
 progress_vpn_cb (gpointer user_data)
 {
-	NMVPNConnection *vpn = (NMVPNConnection *) user_data;
+	NMVpnConnection *vpn = (NMVpnConnection *) user_data;
 	const char *str;
 
 	str = NM_IS_VPN_CONNECTION (vpn) ?
@@ -2220,7 +2201,7 @@ static const NameItem nmc_adsl_settings [] = {
 };
 
 /* PPPoE is a base connection type from historical reasons.
- * See libnm-util/nm-setting.c:_nm_setting_is_base_type()
+ * See libnm-core/nm-setting.c:_nm_setting_is_base_type()
  */
 static const NameItem nmc_pppoe_settings [] = {
 	{ NM_SETTING_CONNECTION_SETTING_NAME, NULL,       NULL, TRUE  },
@@ -3643,7 +3624,7 @@ complete_connection_by_type (NMConnection *connection,
 	NMSettingInfiniband *s_infiniband;
 	NMSettingWireless *s_wifi;
 	NMSettingWimax *s_wimax;
-	NMSettingPPPOE *s_pppoe;
+	NMSettingPppoe *s_pppoe;
 	NMSettingGsm *s_gsm;
 	NMSettingCdma *s_cdma;
 	NMSettingBluetooth *s_bt;
@@ -3653,7 +3634,7 @@ complete_connection_by_type (NMConnection *connection,
 	NMSettingTeamPort *s_team_port;
 	NMSettingBridge *s_bridge;
 	NMSettingBridgePort *s_bridge_port;
-	NMSettingVPN *s_vpn;
+	NMSettingVpn *s_vpn;
 	NMSettingOlpcMesh *s_olpc_mesh;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
@@ -3968,7 +3949,7 @@ cleanup_wimax:
 			goto cleanup_pppoe;
 
 		/* Add 'pppoe' setting */
-		s_pppoe = (NMSettingPPPOE *) nm_setting_pppoe_new ();
+		s_pppoe = (NMSettingPppoe *) nm_setting_pppoe_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_pppoe));
 		g_object_set (s_pppoe, NM_SETTING_PPPOE_USERNAME, username, NULL);
 		g_object_set (s_pppoe, NM_SETTING_PPPOE_PASSWORD, password, NULL);
@@ -4808,7 +4789,7 @@ cleanup_bridge_slave:
 			do_questionnaire_vpn (&user);
 
 		/* Add 'vpn' setting */
-		s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
+		s_vpn = (NMSettingVpn *) nm_setting_vpn_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 
 		g_object_set (s_vpn, NM_SETTING_VPN_SERVICE_TYPE, service_type, NULL);
@@ -8645,6 +8626,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 {
 	int i = 0;
 	gboolean real_cmd = FALSE;
+	GError *error = NULL;
 
 	if (argc == 0)
 		real_cmd = TRUE;
@@ -8672,8 +8654,9 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		args_info.argv = argv;
 
 		/* get system settings */
-		if (!(nmc->system_settings = nm_remote_settings_new (NULL))) {
-			g_string_printf (nmc->return_text, _("Error: Could not get system settings."));
+		if (!(nmc->system_settings = nm_remote_settings_new (NULL, &error))) {
+			g_string_printf (nmc->return_text, _("Error: Could not get system settings: %s."), error->message);
+			g_error_free (error);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 			nmc->should_wait = FALSE;
 			return nmc->return_value;

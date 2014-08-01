@@ -33,9 +33,6 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <nm-client.h>
-#include <nm-setting-connection.h>
-#include <nm-remote-settings.h>
 
 #include "nmcli.h"
 #include "utils.h"
@@ -394,10 +391,13 @@ setup_signals (void)
 static NMClient *
 nmc_get_client (NmCli *nmc)
 {
+	GError *error = NULL;
+
 	if (!nmc->client) {
-		nmc->client = nm_client_new ();
+		nmc->client = nm_client_new (NULL, &error);
 		if (!nmc->client) {
-			g_critical (_("Error: Could not create NMClient object."));
+			g_critical (_("Error: Could not create NMClient object: %s."), error->message);
+			g_clear_error (&error);
 			exit (NMC_RESULT_ERROR_UNKNOWN);
 		}
 	}

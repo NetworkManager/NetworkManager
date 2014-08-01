@@ -17,25 +17,19 @@
  */
 
 /*
- * The example shows how to list connections from System Settings service using libnm-glib
+ * The example shows how to list connections from System Settings service using libnm
  * (that wraps direct D-Bus calls).
- * The example uses dbus-glib, libnm-util and libnm-glib libraries.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm-util libnm-glib` list-connections-libnm-glib.c -o list-connections-libnm-glib
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` list-connections-libnm.c -o list-connections-libnm
  */
 
 #include <glib.h>
-#include <dbus/dbus-glib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 
-#include <nm-connection.h>
-#include <nm-setting-connection.h>
 #include <NetworkManager.h>
-#include <nm-utils.h>
-#include <nm-remote-settings.h>
 
 
 /* Global variables */
@@ -120,13 +114,14 @@ get_connections_cb (NMRemoteSettings *settings, gpointer user_data)
 static gboolean
 list_connections (gpointer data)
 {
-	DBusGConnection *bus = (DBusGConnection *) data;
 	NMRemoteSettings *settings;
 	gboolean settings_running;
+	GError *error = NULL;
 
 	/* Get system settings */
-	if (!(settings = nm_remote_settings_new (bus))) {
-		g_message ("Error: Could not get system settings.");
+	if (!(settings = nm_remote_settings_new (NULL, &error))) {
+		g_message ("Error: Could not get system settings: %s.", error->message);
+		g_error_free (error);
 		result = EXIT_FAILURE;
 		g_main_loop_quit (loop);
 		return FALSE;

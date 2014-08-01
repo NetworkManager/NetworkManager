@@ -40,7 +40,7 @@
 
 #include <glib/gi18n.h>
 
-#include "nm-client.h"
+#include <NetworkManager.h>
 
 #define PROGRESS_STEPS 15
 #define WAIT_STARTUP_TAG "wait-startup"
@@ -143,6 +143,7 @@ main (int argc, char *argv[])
 	NMState state = NM_STATE_UNKNOWN;
 	GMainLoop *loop;
 	gint64 remaining_ms;
+	GError *error = NULL;
 
 	GOptionEntry options[] = {
 		{"timeout", 't', 0, G_OPTION_ARG_INT, &t_secs, N_("Time to wait for a connection, in seconds (without the option, default value is 30)"), "<timeout>"},
@@ -191,9 +192,10 @@ main (int argc, char *argv[])
 	g_type_init ();
 #endif
 
-	client = nm_client_new ();
+	client = nm_client_new (NULL, &error);
 	if (!client) {
-		g_printerr (_("Error: Could not create NMClient object."));
+		g_printerr (_("Error: Could not create NMClient object: %s."), error->message);
+		g_error_free (error);
 		return 2;
 	}
 

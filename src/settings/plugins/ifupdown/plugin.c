@@ -36,7 +36,7 @@
 
 #include "interface_parser.h"
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-system-config-interface.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-wireless.h"

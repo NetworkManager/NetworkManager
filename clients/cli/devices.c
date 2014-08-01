@@ -29,39 +29,6 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
-#include <nm-client.h>
-#include <nm-device.h>
-#include <nm-device-ethernet.h>
-#include <nm-device-adsl.h>
-#include <nm-device-wifi.h>
-#include <nm-device-modem.h>
-#include <nm-device-bt.h>
-#include <nm-device-olpc-mesh.h>
-#if WITH_WIMAX
-#include <nm-device-wimax.h>
-#endif
-#include <nm-device-infiniband.h>
-#include <nm-device-bond.h>
-#include <nm-device-bridge.h>
-#include <nm-device-vlan.h>
-#include <nm-utils.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-setting-ip6-config.h>
-#include <nm-vpn-connection.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-adsl.h>
-#include <nm-setting-pppoe.h>
-#include <nm-setting-wireless.h>
-#include <nm-setting-gsm.h>
-#include <nm-setting-cdma.h>
-#include <nm-setting-bluetooth.h>
-#include <nm-setting-olpc-mesh.h>
-#if WITH_WIMAX
-#include <nm-setting-wimax.h>
-#endif
-#include <nm-setting-infiniband.h>
-
 #include "utils.h"
 #include "common.h"
 #include "devices.h"
@@ -742,8 +709,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 	gboolean was_output = FALSE;
 	NMIP4Config *cfg4;
 	NMIP6Config *cfg6;
-	NMDHCP4Config *dhcp4;
-	NMDHCP6Config *dhcp6;
+	NMDhcp4Config *dhcp4;
+	NMDhcp6Config *dhcp6;
 	const char *base_hdr = _("Device details");
 	GPtrArray *fields_in_section = NULL;
 

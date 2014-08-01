@@ -31,7 +31,7 @@
 
 #include <QtCore/QDebug>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 
 typedef QMap<QString, QMap<QString, QVariant> > Connection;
 Q_DECLARE_METATYPE(Connection)
@@ -68,7 +68,7 @@ int main() {
     QDBusInterface interface(
         NM_DBUS_SERVICE,
         NM_DBUS_PATH_SETTINGS,
-        NM_DBUS_IFACE_SETTINGS,
+        NM_DBUS_INTERFACE_SETTINGS,
         QDBusConnection::systemBus());
 
     addConnection(interface, "__Test connection__");

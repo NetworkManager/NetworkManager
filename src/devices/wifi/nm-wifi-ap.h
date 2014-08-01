@@ -24,7 +24,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 #include "nm-connection.h"
 
 #define NM_TYPE_AP            (nm_ap_get_type ())

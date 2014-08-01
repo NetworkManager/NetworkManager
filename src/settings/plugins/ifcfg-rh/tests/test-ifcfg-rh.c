@@ -12006,8 +12006,8 @@ test_write_wired_pppoe (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
-	NMSettingPPPOE *s_pppoe;
-	NMSettingPPP *s_ppp;
+	NMSettingPppoe *s_pppoe;
+	NMSettingPpp *s_ppp;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -12041,7 +12041,7 @@ test_write_wired_pppoe (void)
 	              NULL);
 
 	/* PPPoE setting */
-	s_pppoe = (NMSettingPPPOE *) nm_setting_pppoe_new ();
+	s_pppoe = (NMSettingPppoe *) nm_setting_pppoe_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_pppoe));
 
 	g_object_set (G_OBJECT (s_pppoe),
@@ -12051,7 +12051,7 @@ test_write_wired_pppoe (void)
 	              NULL);
 
 	/* PPP setting */
-	s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
+	s_ppp = (NMSettingPpp *) nm_setting_ppp_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ppp));
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
@@ -12075,7 +12075,7 @@ test_write_vpn (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIP4Config *s_ip4;
-	NMSettingVPN *s_vpn;
+	NMSettingVpn *s_vpn;
 	char *uuid;
 	gboolean success;
 	GError *error = NULL;
@@ -12097,7 +12097,7 @@ test_write_vpn (void)
 	g_free (uuid);
 
 	/* VPN setting */
-	s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
+	s_vpn = (NMSettingVpn *) nm_setting_vpn_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 
 	g_object_set (s_vpn,
@@ -12139,7 +12139,7 @@ test_write_mobile_broadband (gboolean gsm)
 	NMSettingIP4Config *s_ip4;
 	NMSettingGsm *s_gsm;
 	NMSettingCdma *s_cdma;
-	NMSettingPPP *s_ppp;
+	NMSettingPpp *s_ppp;
 	NMSettingSerial *s_serial;
 	char *uuid;
 	gboolean success;
@@ -12195,7 +12195,7 @@ test_write_mobile_broadband (gboolean gsm)
 	              NULL);
 
 	/* PPP setting */
-	s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
+	s_ppp = (NMSettingPpp *) nm_setting_ppp_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ppp));
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,

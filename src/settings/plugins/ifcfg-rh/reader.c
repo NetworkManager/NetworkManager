@@ -35,7 +35,7 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <nm-connection.h>
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-vlan.h>

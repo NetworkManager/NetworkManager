@@ -31,6 +31,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-dispatcher-api.h"
 #include "nm-utils.h"
+#include "nm-utils-private.h"
 
 /*******************************************/
 

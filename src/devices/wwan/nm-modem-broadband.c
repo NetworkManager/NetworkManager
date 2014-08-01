@@ -267,7 +267,7 @@ create_gsm_connect_properties (NMModem *modem,
                                GError **error)
 {
 	NMSettingGsm *setting;
-	NMSettingPPP *s_ppp;
+	NMSettingPpp *s_ppp;
 	MMSimpleConnectProperties *properties;
 	const gchar *str;
 	NMModemIPType ip_type;
@@ -444,14 +444,14 @@ complete_connection (NMModem *_self,
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 	MMModemCapability modem_caps;
-	NMSettingPPP *s_ppp;
+	NMSettingPpp *s_ppp;
 
 	modem_caps = mm_modem_get_current_capabilities (self->priv->modem_iface);
 
 	/* PPP settings common to 3GPP and 3GPP2 */
 	s_ppp = nm_connection_get_setting_ppp (connection);
 	if (!s_ppp) {
-		s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
+		s_ppp = (NMSettingPpp *) nm_setting_ppp_new ();
 		g_object_set (G_OBJECT (s_ppp),
 		              NM_SETTING_PPP_LCP_ECHO_FAILURE, 5,
 		              NM_SETTING_PPP_LCP_ECHO_INTERVAL, 30,

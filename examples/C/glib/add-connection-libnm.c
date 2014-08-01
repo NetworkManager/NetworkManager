@@ -18,23 +18,17 @@
  */
 
 /*
- * The example shows how to add a new connection using libnm-glib and libnm-util.
+ * The example shows how to add a new connection using libnm.
  * Contrast this example with add-connection-dbus-glib.c, which is a bit lower
  * level and talks directly to NM using dbus-glib.  This example is simpler
- * because libnm-glib handles much of the low-level stuff for you.
+ * because libnm handles much of the low-level stuff for you.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm-util` add-connection-libnm-glib.c -o add-connection-libnm-glib
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` add-connection-libnm.c -o add-connection-libnm
  */
 
 #include <glib.h>
-#include <nm-remote-settings.h>
-
-#include <nm-connection.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-ip4-config.h>
-#include <nm-utils.h>
+#include <NetworkManager.h>
 
 static void
 added_cb (NMRemoteSettings *settings,
@@ -106,9 +100,9 @@ add_connection (NMRemoteSettings *settings, GMainLoop *loop, const char *con_nam
 
 int main (int argc, char *argv[])
 {
-	DBusGConnection *bus;
 	NMRemoteSettings *settings;
 	GMainLoop *loop;
+	GError *error = NULL;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	/* Initialize GType system */
@@ -117,11 +111,13 @@ int main (int argc, char *argv[])
 
 	loop = g_main_loop_new (NULL, FALSE);
 
-	/* Get system bus */
-	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
-
 	/* Create our proxy for NetworkManager's settings service */
-	settings = nm_remote_settings_new (bus);
+	settings = nm_remote_settings_new (NULL, &error);
+	if (!settings) {
+		g_message ("Error: Could not get system settings: %s.", error->message);
+		g_error_free (error);
+		return 1;
+	}
 
 	/* Ask the settings service to add the new connection */
 	if (add_connection (settings, loop, "__Test connection__")) {
@@ -132,7 +128,6 @@ int main (int argc, char *argv[])
 
 	/* Clean up */
 	g_object_unref (settings);
-	dbus_g_connection_unref (bus);
 
 	return 0;
 }

@@ -20,22 +20,17 @@
 /*
  * The example shows how to call the D-Bus properties interface to get the
  * list of currently active connections known to NetworkManager.  It uses
- * dbus-glib and libnm-util libraries.
+ * dbus-glib and libnm libraries.
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm-util` get-active-connections-dbus-glib.c -o get-active-connections-dbus-glib
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm` get-active-connections-dbus-glib.c -o get-active-connections-dbus-glib
  */
 
 #include <stdio.h>
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 
-#include <nm-connection.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-setting-ip4-config.h>
 #include <NetworkManager.h>
-#include <nm-utils.h>
 
 #define DBUS_TYPE_G_MAP_OF_VARIANT          (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
 #define DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT   (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_MAP_OF_VARIANT))
@@ -55,7 +50,7 @@ print_connection (DBusGConnection *bus, const char *path)
 	proxy = dbus_g_proxy_new_for_name (bus,
 	                                   NM_DBUS_SERVICE,
 	                                   path,
-	                                   NM_DBUS_IFACE_SETTINGS_CONNECTION);
+	                                   NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
 	g_assert (proxy);
 
 	/* Request the all the configuration of the Connection */
@@ -205,7 +200,7 @@ int main (int argc, char *argv[])
 	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
 
 	/* Create a D-Bus proxy to get the object properties from the NM Manager
-	 * object.  NM_DBUS_* defines are from NetworkManager.h.
+	 * object.  NM_DBUS_* defines are from nm-dbus-interface.h.
 	 */
 	props_proxy = dbus_g_proxy_new_for_name (bus,
 	                                         NM_DBUS_SERVICE,

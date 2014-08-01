@@ -833,6 +833,13 @@ src/devices/team/Makefile
 src/devices/wifi/Makefile
 src/devices/wifi/tests/Makefile
 src/devices/wwan/Makefile
+libnm-core/nm-version.h
+libnm-core/Makefile
+libnm-core/tests/Makefile
+libnm/libnm.pc
+libnm/libnm-vpn.pc
+libnm/Makefile
+libnm/tests/Makefile
 libnm-util/libnm-util.pc
 libnm-util/nm-version.h
 libnm-util/Makefile
@@ -873,6 +880,8 @@ docs/libnm-glib/Makefile
 docs/libnm-glib/version.xml
 docs/libnm-util/Makefile
 docs/libnm-util/version.xml
+docs/libnm/Makefile
+docs/libnm/version.xml
 NetworkManager.pc
 examples/Makefile
 examples/shell/Makefile

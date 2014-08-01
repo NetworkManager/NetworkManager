@@ -20,7 +20,7 @@
 #
 
 import sys
-from gi.repository import GLib, NetworkManager, NMClient
+from gi.repository import GLib, NM
 
 #
 # This example demonstrates how to get and change firewall zone in a
@@ -32,7 +32,7 @@ from gi.repository import GLib, NetworkManager, NMClient
 # If you used D-Bus calls, you would call GetSettings() and then Update().
 #
 # Links:
-# https://developer.gnome.org/libnm-glib/0.9/
+# https://developer.gnome.org/libnm/1.0/
 # https://wiki.gnome.org/GObjectIntrospection
 # https://wiki.gnome.org/PyGObject
 #
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         sys.exit('Usage: %s <connection name or UUID> [new zone]' % sys.argv[0])
 
     main_loop = GLib.MainLoop()
-    settings = NMClient.RemoteSettings.new(None);
+    settings = NM.RemoteSettings.new(None);
 
     # Connections are read asynchronously, so we have to wait for the
     # 'settings' object to tell us that all connections have been read.

@@ -25,7 +25,6 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <libnm-util/nm-utils.h>
 
 #include "utils.h"
 #include "common.h"
@@ -421,11 +420,9 @@ NmcOutputField nmc_fields_setting_gsm[] = {
 	SETTING_FIELD (NM_SETTING_GSM_PASSWORD_FLAGS, 20),                 /* 4 */
 	SETTING_FIELD (NM_SETTING_GSM_APN, 25),                            /* 5 */
 	SETTING_FIELD (NM_SETTING_GSM_NETWORK_ID, 12),                     /* 6 */
-	SETTING_FIELD (NM_SETTING_GSM_NETWORK_TYPE, 15),                   /* 7 */
-	SETTING_FIELD (NM_SETTING_GSM_ALLOWED_BANDS, 15),                  /* 8 */
-	SETTING_FIELD (NM_SETTING_GSM_PIN, 10),                            /* 9 */
-	SETTING_FIELD (NM_SETTING_GSM_PIN_FLAGS, 20),                      /* 10 */
-	SETTING_FIELD (NM_SETTING_GSM_HOME_ONLY, 10),                      /* 11 */
+	SETTING_FIELD (NM_SETTING_GSM_PIN, 10),                            /* 7 */
+	SETTING_FIELD (NM_SETTING_GSM_PIN_FLAGS, 20),                      /* 8 */
+	SETTING_FIELD (NM_SETTING_GSM_HOME_ONLY, 10),                      /* 9 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_GSM_ALL     "name"","\
@@ -435,8 +432,6 @@ NmcOutputField nmc_fields_setting_gsm[] = {
                                        NM_SETTING_GSM_PASSWORD_FLAGS","\
                                        NM_SETTING_GSM_APN","\
                                        NM_SETTING_GSM_NETWORK_ID","\
-                                       NM_SETTING_GSM_NETWORK_TYPE","\
-                                       NM_SETTING_GSM_ALLOWED_BANDS","\
                                        NM_SETTING_GSM_PIN","\
                                        NM_SETTING_GSM_PIN_FLAGS","\
                                        NM_SETTING_GSM_HOME_ONLY
@@ -690,56 +685,6 @@ byte_array_to_string (const GByteArray *array)
 	}
 
 	return cert ? g_string_free (cert, FALSE) : NULL;
-}
-
-static char *
-allowed_bands_to_string (guint32 bands)
-{
-	GString *band_str;
-
-	if (bands == NM_SETTING_GSM_BAND_UNKNOWN)
-		return g_strdup (_("0 (unknown)"));
-
-	band_str = g_string_new (NULL);
-	g_string_printf (band_str, "%d (", bands);
-
-	if (bands & NM_SETTING_GSM_BAND_ANY)
-		g_string_append (band_str, _("any, "));
-	if (bands & NM_SETTING_GSM_BAND_EGSM)
-		g_string_append (band_str, _("900 MHz, "));
-	if (bands & NM_SETTING_GSM_BAND_DCS)
-		g_string_append (band_str, _("1800 MHz, "));
-	if (bands & NM_SETTING_GSM_BAND_PCS)
-		g_string_append (band_str, _("1900 MHz, "));
-	if (bands & NM_SETTING_GSM_BAND_G850)
-		g_string_append (band_str, _("850 MHz, "));
-	if (bands & NM_SETTING_GSM_BAND_U2100)
-		g_string_append (band_str, _("WCDMA 3GPP UMTS 2100 MHz, "));
-	if (bands & NM_SETTING_GSM_BAND_U1800)
-		g_string_append (band_str, _("WCDMA 3GPP UMTS 1800 MHz, "));
-	if (bands & NM_SETTING_GSM_BAND_U17IV)
-		g_string_append (band_str, _("WCDMA 3GPP UMTS 1700/2100 MHz, "));
-	if (bands & NM_SETTING_GSM_BAND_U800)
-		g_string_append (band_str, _("WCDMA 3GPP UMTS 800 MHz, "));
-	if (bands & NM_SETTING_GSM_BAND_U850)
-		g_string_append (band_str, _("WCDMA 3GPP UMTS 850 MHz, "));
-	if (bands & NM_SETTING_GSM_BAND_U900)
-		g_string_append (band_str, _("WCDMA 3GPP UMTS 900 MHz, "));
-	if (bands & NM_SETTING_GSM_BAND_U17IX)
-		g_string_append (band_str, _("WCDMA 3GPP UMTS 1700 MHz, "));
-	if (bands & NM_SETTING_GSM_BAND_U1900)
-		g_string_append (band_str, _("WCDMA 3GPP UMTS 1900 MHz, "));
-	if (bands & NM_SETTING_GSM_BAND_U2600)
-		g_string_append (band_str, _("WCDMA 3GPP UMTS 2600 MHz, "));
-
-	if (band_str->str[band_str->len-1] == '(')
-		g_string_append (band_str, _("unknown"));
-	else
-		g_string_truncate (band_str, band_str->len-2);  /* chop off trailing ', ' */
-
-	g_string_append_c (band_str, ')');
-
-	return g_string_free (band_str, FALSE);
 }
 
 static char *
@@ -1245,17 +1190,6 @@ DEFINE_GETTER (nmc_property_gsm_get_password, NM_SETTING_GSM_PASSWORD)
 DEFINE_SECRET_FLAGS_GETTER (nmc_property_gsm_get_password_flags, NM_SETTING_GSM_PASSWORD_FLAGS)
 DEFINE_GETTER (nmc_property_gsm_get_apn, NM_SETTING_GSM_APN)
 DEFINE_GETTER (nmc_property_gsm_get_network_id, NM_SETTING_GSM_NETWORK_ID)
-DEFINE_GETTER (nmc_property_gsm_get_network_type, NM_SETTING_GSM_NETWORK_TYPE)
-
-static char *
-nmc_property_gsm_get_allowed_bands (NMSetting *setting)
-{
-	NMSettingGsm *s_gsm = NM_SETTING_GSM (setting);
-G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-	return allowed_bands_to_string (nm_setting_gsm_get_allowed_bands (s_gsm));
-G_GNUC_END_IGNORE_DEPRECATIONS
-}
-
 DEFINE_GETTER (nmc_property_gsm_get_pin, NM_SETTING_GSM_PIN)
 DEFINE_SECRET_FLAGS_GETTER (nmc_property_gsm_get_pin_flags, NM_SETTING_GSM_PIN_FLAGS)
 DEFINE_GETTER (nmc_property_gsm_get_home_only, NM_SETTING_GSM_HOME_ONLY)
@@ -1410,7 +1344,7 @@ DEFINE_GETTER (nmc_property_vpn_get_user_name, NM_SETTING_VPN_USER_NAME)
 static char *
 nmc_property_vpn_get_data (NMSetting *setting)
 {
-	NMSettingVPN *s_vpn = NM_SETTING_VPN (setting);
+	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
 	GString *data_item_str;
 
 	data_item_str = g_string_new (NULL);
@@ -1422,7 +1356,7 @@ nmc_property_vpn_get_data (NMSetting *setting)
 static char *
 nmc_property_vpn_get_secrets (NMSetting *setting)
 {
-	NMSettingVPN *s_vpn = NM_SETTING_VPN (setting);
+	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
 	GString *secret_str;
 
 	secret_str = g_string_new (NULL);
@@ -2087,26 +2021,6 @@ nmc_property_set_string (NMSetting *setting, const char *prop, const char *val, 
 }
 
 static gboolean
-nmc_property_set_int (NMSetting *setting, const char *prop, const char *val, GError **error)
-{
-	long val_int;
-
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nmc_string_to_int (val, TRUE, G_MININT, G_MAXINT, &val_int)) {
-		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), val);
-		return FALSE;
-	}
-
-	/* Validate the number according to the property spec */
-	if (!validate_int (setting, prop, (gint) val_int, error))
-		return FALSE;
-
-	g_object_set (setting, prop, val_int, NULL);
-	return TRUE;
-}
-
-static gboolean
 nmc_property_set_uint (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	unsigned long val_int;
@@ -2340,7 +2254,7 @@ nmc_property_con_set_uuid (NMSetting *setting, const char *prop, const char *val
 #endif
 
 /* 'permissions' */
-/* define from libnm-util/nm-setting-connection.c */
+/* define from libnm-core/nm-setting-connection.c */
 #define PERM_USER_PREFIX  "user:"
 
 static gboolean
@@ -3826,7 +3740,7 @@ nmc_property_vlan_remove_egress_priority_map (NMSetting *setting,
 /* 'data' */
 DEFINE_SETTER_OPTIONS (nmc_property_vpn_set_data,
                        NM_SETTING_VPN,
-                       NMSettingVPN,
+                       NMSettingVpn,
                        nm_setting_vpn_add_data_item,
                        NULL,
                        NULL)
@@ -3837,7 +3751,7 @@ DEFINE_REMOVER_OPTION (nmc_property_vpn_remove_option_data,
 /* 'secrets' */
 DEFINE_SETTER_OPTIONS (nmc_property_vpn_set_secrets,
                        NM_SETTING_VPN,
-                       NMSettingVPN,
+                       NMSettingVpn,
                        nm_setting_vpn_add_secret,
                        NULL,
                        NULL)
@@ -3913,7 +3827,7 @@ nmc_property_wired_set_s390_subchannels (NMSetting *setting, const char *prop, c
 	char **strv = NULL, **iter;
 	GPtrArray *s390_subchannels;
 
-	//FIXME: both libnm-util and ifcfg-rh also allow two strings (3rd is optional)
+	//FIXME: both libnm and ifcfg-rh also allow two strings (3rd is optional)
 	strv = nmc_strsplit_set (val, " ,\t", 0);
 	if (g_strv_length (strv) != 3) {
 		g_set_error (error, 1, 0, _("'%s' is not valid; 3 strings should be provided"),
@@ -5285,20 +5199,6 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (GSM, NETWORK_TYPE),
-	                    nmc_property_gsm_get_network_type,
-	                    nmc_property_set_int,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
-	nmc_add_prop_funcs (GLUE (GSM, ALLOWED_BANDS),
-	                    nmc_property_gsm_get_allowed_bands,
-	                    nmc_property_set_uint,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    nmc_property_out2in_cut_paren);
 	nmc_add_prop_funcs (GLUE (GSM, PIN),
 	                    nmc_property_gsm_get_pin,
 	                    nmc_property_set_string,
@@ -6767,7 +6667,7 @@ setting_serial_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 static gboolean
 setting_ppp_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
-	NMSettingPPP *s_ppp = NM_SETTING_PPP (setting);
+	NMSettingPpp *s_ppp = NM_SETTING_PPP (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -6810,7 +6710,7 @@ setting_ppp_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 static gboolean
 setting_pppoe_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
-	NMSettingPPPOE *s_pppoe = NM_SETTING_PPPOE (setting);
+	NMSettingPppoe *s_pppoe = NM_SETTING_PPPOE (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -6860,11 +6760,9 @@ setting_gsm_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 	set_val_str (arr, 4, nmc_property_gsm_get_password_flags (setting));
 	set_val_str (arr, 5, nmc_property_gsm_get_apn (setting));
 	set_val_str (arr, 6, nmc_property_gsm_get_network_id (setting));
-	set_val_str (arr, 7, nmc_property_gsm_get_network_type (setting));
-	set_val_str (arr, 8, nmc_property_gsm_get_allowed_bands (setting));
-	set_val_str (arr, 9, nmc_property_gsm_get_pin (setting));
-	set_val_str (arr, 10, nmc_property_gsm_get_pin_flags (setting));
-	set_val_str (arr, 11, nmc_property_gsm_get_home_only (setting));
+	set_val_str (arr, 7, nmc_property_gsm_get_pin (setting));
+	set_val_str (arr, 8, nmc_property_gsm_get_pin_flags (setting));
+	set_val_str (arr, 9, nmc_property_gsm_get_home_only (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -6959,7 +6857,7 @@ setting_olpc_mesh_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 static gboolean
 setting_vpn_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 {
-	NMSettingVPN *s_vpn = NM_SETTING_VPN (setting);
+	NMSettingVpn *s_vpn = NM_SETTING_VPN (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 

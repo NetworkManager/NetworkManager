@@ -28,7 +28,7 @@
 
 #include <QtCore/QDebug>
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 
 
 void listConnections(QDBusInterface& interface) {
@@ -44,7 +44,7 @@ int main() {
     QDBusInterface interface(
         NM_DBUS_SERVICE,
         NM_DBUS_PATH_SETTINGS,
-        NM_DBUS_IFACE_SETTINGS,
+        NM_DBUS_INTERFACE_SETTINGS,
         QDBusConnection::systemBus());
 
     listConnections(interface);

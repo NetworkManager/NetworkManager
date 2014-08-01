@@ -22,10 +22,10 @@
  * It uses Qt and D-Bus libraries to do that.
  *
  * Standalone compilation:
- * g++ -Wall `pkg-config --libs --cflags NetworkManager QtCore QtDBus QtNetwork` change-ipv4-addresses.cpp -o change-ipv4-addresses
+ * g++ -Wall `pkg-config --libs --cflags QtCore QtDBus QtNetwork` `pkg-config --cflags libnm` change-ipv4-addresses.cpp -o change-ipv4-addresses
  *
  * You don't need to have NetworkManager devel package installed; you can just
- * grab NetworkManager.h and put it in the path
+ * grab nm-dbus-interface.h and put it in the path
  */
 
 #include <QtDBus/QDBusConnection>
@@ -40,7 +40,7 @@
 
 #include "arpa/inet.h"
 
-#include "NetworkManager.h"
+#include "nm-dbus-interface.h"
 
 typedef QMap<QString, QMap<QString, QVariant> > Connection;
 Q_DECLARE_METATYPE(Connection)
@@ -61,7 +61,7 @@ const QString getConnection(const QString& connectionUuid, Connection *found_con
     QDBusInterface interface(
         NM_DBUS_SERVICE,
         NM_DBUS_PATH_SETTINGS,
-        NM_DBUS_IFACE_SETTINGS,
+        NM_DBUS_INTERFACE_SETTINGS,
         QDBusConnection::systemBus());
 
     // Get connection list and find the connection with 'connectionUuid'
@@ -71,7 +71,7 @@ const QString getConnection(const QString& connectionUuid, Connection *found_con
         ifaceForSettings = new QDBusInterface(
                                     NM_DBUS_SERVICE,
                                     connection.path(),
-                                    NM_DBUS_IFACE_SETTINGS_CONNECTION,
+                                    NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
                                     QDBusConnection::systemBus());
         QDBusReply<Connection> result2 = ifaceForSettings->call("GetSettings");
         delete ifaceForSettings;
@@ -120,7 +120,7 @@ void changeConnection(const QString& uuid)
         QDBusInterface interface(
             NM_DBUS_SERVICE,
             conPath,
-            NM_DBUS_IFACE_SETTINGS_CONNECTION,
+            NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
             QDBusConnection::systemBus());
 
         // Call Update() D-Bus method to update connection

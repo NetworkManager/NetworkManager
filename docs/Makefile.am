@@ -1,2 +1,2 @@
-SUBDIRS = libnm-glib libnm-util api
+SUBDIRS = libnm-glib libnm-util libnm api
 

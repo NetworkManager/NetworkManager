@@ -9,6 +9,7 @@ AM_CPPFLAGS = \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
+	-DBUILD_DIR=\"$(abs_builddir)\" \
 	-DTEST_CERT_DIR=\"$(top_srcdir)/libnm-util/tests/certs/\"
 
 noinst_PROGRAMS = \
@@ -17,7 +18,8 @@ noinst_PROGRAMS = \
 	test-secrets \
 	test-general \
 	test-setting-8021x \
-	test-setting-dcb
+	test-setting-dcb \
+	test-libnm-linking
 
 test_settings_defaults_SOURCES = \
 	test-settings-defaults.c
@@ -51,6 +53,8 @@ test_general_LDADD = \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)
 
+test_general_DEPENDENCIES = test-libnm-linking
+
 test_setting_8021x_SOURCES = \
 	test-setting-8021x.c
 
@@ -63,6 +67,15 @@ test_setting_dcb_SOURCES = \
 	test-setting-dcb.c
 
 test_setting_dcb_LDADD = \
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS)
+
+test_libnm_linking_SOURCES = \
+	test-libnm-linking.c
+
+test_libnm_linking_LDADD = \
+	$(top_builddir)/libnm/libnm.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS)

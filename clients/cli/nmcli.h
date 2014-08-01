@@ -20,10 +20,7 @@
 #ifndef NMC_NMCLI_H
 #define NMC_NMCLI_H
 
-#include <glib.h>
-
-#include <nm-client.h>
-#include <nm-remote-settings.h>
+#include <NetworkManager.h>
 
 /* nmcli exit codes */
 typedef enum {
@@ -105,7 +102,7 @@ typedef enum {
 
 /* NmCli - main structure */
 typedef struct _NmCli {
-	NMClient *client;                                 /* Pointer to NMClient of libnm-glib */
+	NMClient *client;                                 /* Pointer to NMClient of libnm */
 	NMClient *(*get_client) (struct _NmCli *nmc);     /* Pointer to function for creating NMClient */
 
 	NMCResultCode return_value;                       /* Return code of nmcli */

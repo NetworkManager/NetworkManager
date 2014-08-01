@@ -30,8 +30,7 @@
 #include <glib.h>
 #include <glib/gi18n-lib.h>
 
-#include <nm-device.h>
-#include <nm-utils.h>
+#include <NetworkManager.h>
 
 #include "nmt-page-main.h"
 #include "nmt-device-entry.h"

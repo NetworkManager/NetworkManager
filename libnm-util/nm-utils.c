@@ -26,6 +26,7 @@
 #include <netinet/ether.h>
 #include <linux/if_infiniband.h>
 #include <uuid/uuid.h>
+#include <gmodule.h>
 
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -201,6 +202,18 @@ get_encodings_for_lang (const char *lang,
 }
 
 /* init, deinit for libnm_util */
+
+static void __attribute__((constructor))
+_check_symbols (void)
+{
+	GModule *self;
+	gpointer func;
+
+	self = g_module_open (NULL, 0);
+	if (g_module_symbol (self, "nm_device_state_get_type", &func))
+		g_error ("libnm symbols detected; Mixing libnm with libnm-util/libnm-glib is not supported");
+	g_module_close (self);
+}
 
 static gboolean initialized = FALSE;
 
@@ -2490,13 +2503,10 @@ nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_typ
 
 /***********************************************************/
 
-/* Unused prototype to make the compiler happy */
-const NMUtilsPrivateData *nm_util_get_private (void);
+/* Unused prototypes to make the compiler happy */
+gconstpointer nm_utils_get_private (void);
+gconstpointer nm_util_get_private (void);
 
-static const NMUtilsPrivateData data = {
-	.nm_setting_ip4_config_get_address_label = nm_setting_ip4_config_get_address_label,
-	.nm_setting_ip4_config_add_address_with_label = nm_setting_ip4_config_add_address_with_label,
-};
 
 /**
  * nm_utils_get_private:
@@ -2508,10 +2518,11 @@ static const NMUtilsPrivateData data = {
  *
  * Since: 0.9.10
  */
-const NMUtilsPrivateData *
+gconstpointer
 nm_utils_get_private (void)
 {
-	return &data;
+	/* We told you not to use it! */
+	g_assert_not_reached ();
 }
 
 /**
@@ -2523,9 +2534,9 @@ nm_utils_get_private (void)
  *
  * Since: 0.9.10
  */
-const NMUtilsPrivateData *
+gconstpointer
 nm_util_get_private (void)
 {
-	/* Compat function to preserve ABI */
-	return nm_utils_get_private ();
+	/* We told you not to use it! */
+	g_assert_not_reached ();
 }

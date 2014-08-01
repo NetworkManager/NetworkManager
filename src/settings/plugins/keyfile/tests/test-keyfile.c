@@ -2215,7 +2215,6 @@ test_write_gsm_connection (void)
 	              NM_SETTING_GSM_PIN, "123456",
 	              NM_SETTING_GSM_NETWORK_ID, "254098",
 	              NM_SETTING_GSM_HOME_ONLY, TRUE,
-	              NM_SETTING_GSM_NETWORK_TYPE, NM_SETTING_GSM_NETWORK_TYPE_PREFER_UMTS_HSPA,
 	              NULL);
 
 	/* Write out the connection */
@@ -2292,7 +2291,7 @@ test_read_wired_8021x_tls_blob_connection (void)
 	g_assert_cmpint (nm_setting_802_1x_get_ca_cert_scheme (s_8021x), ==, NM_SETTING_802_1X_CK_SCHEME_BLOB);
 
 	/* Make sure it's not a path, since it's a blob */
-	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL,
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL,
 	                       "*assertion*scheme == NM_SETTING_802_1X_CK_SCHEME_PATH*");
 	tmp = nm_setting_802_1x_get_ca_cert_path (s_8021x);
 	g_test_assert_expected_messages ();

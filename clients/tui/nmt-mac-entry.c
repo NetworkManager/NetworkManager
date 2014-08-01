@@ -31,7 +31,7 @@
 #include <string.h>
 
 #include <dbus/dbus-glib.h>
-#include <nm-utils.h>
+#include <NetworkManager.h>
 
 #include "nmt-mac-entry.h"
 

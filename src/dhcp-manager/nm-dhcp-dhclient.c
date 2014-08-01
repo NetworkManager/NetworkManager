@@ -43,9 +43,9 @@
 #include "nm-dhcp-manager.h"
 #include "nm-posix-signals.h"
 
-G_DEFINE_TYPE (NMDHCPDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
+G_DEFINE_TYPE (NMDhcpDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
-#define NM_DHCP_DHCLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCLIENT, NMDHCPDhclientPrivate))
+#define NM_DHCP_DHCLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientPrivate))
 
 typedef struct {
 	const char *path;
@@ -53,7 +53,7 @@ typedef struct {
 	const char *def_leasefile;
 	char *lease_file;
 	char *pid_file;
-} NMDHCPDhclientPrivate;
+} NMDhcpDhclientPrivate;
 
 const char *
 nm_dhcp_dhclient_get_path (const char *try_first)
@@ -325,12 +325,12 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 }
 
 static gboolean
-dhclient_start (NMDHCPClient *client,
+dhclient_start (NMDhcpClient *client,
                 const char *mode_opt,
                 const GByteArray *duid,
                 gboolean release)
 {
-	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
 	pid_t pid;
 	GError *error = NULL;
@@ -475,12 +475,12 @@ dhclient_start (NMDHCPClient *client,
 }
 
 static gboolean
-ip4_start (NMDHCPClient *client,
+ip4_start (NMDhcpClient *client,
            const char *dhcp_client_id,
            GByteArray *dhcp_anycast_addr,
            const char *hostname)
 {
-	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	const char *iface, *uuid;
 
 	iface = nm_dhcp_client_get_iface (client);
@@ -496,14 +496,14 @@ ip4_start (NMDHCPClient *client,
 }
 
 static gboolean
-ip6_start (NMDHCPClient *client,
+ip6_start (NMDhcpClient *client,
            GByteArray *dhcp_anycast_addr,
            const char *hostname,
            gboolean info_only,
            NMSettingIP6ConfigPrivacy privacy,
            const GByteArray *duid)
 {
-	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	const char *iface, *uuid;
 
 	iface = nm_dhcp_client_get_iface (client);
@@ -519,9 +519,9 @@ ip6_start (NMDHCPClient *client,
 }
 
 static void
-stop (NMDHCPClient *client, gboolean release, const GByteArray *duid)
+stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 {
-	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 
 	/* Chain up to parent */
 	NM_DHCP_CLIENT_CLASS (nm_dhcp_dhclient_parent_class)->stop (client, release, duid);
@@ -548,9 +548,9 @@ stop (NMDHCPClient *client, gboolean release, const GByteArray *duid)
 }
 
 static GByteArray *
-get_duid (NMDHCPClient *client)
+get_duid (NMDhcpClient *client)
 {
-	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	GByteArray *duid = NULL;
 	char *leasefile;
 	GError *error = NULL;
@@ -599,9 +599,9 @@ static const char *def_leasefiles[] = {
 };
 
 static void
-nm_dhcp_dhclient_init (NMDHCPDhclient *self)
+nm_dhcp_dhclient_init (NMDhcpDhclient *self)
 {
-	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (self);
 	const char **iter = &def_leasefiles[0];
 
 	priv->path = nm_dhcp_dhclient_get_path (DHCLIENT_PATH);
@@ -622,7 +622,7 @@ nm_dhcp_dhclient_init (NMDHCPDhclient *self)
 static void
 dispose (GObject *object)
 {
-	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (object);
+	NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (object);
 
 	g_free (priv->pid_file);
 	g_free (priv->conf_file);
@@ -632,12 +632,12 @@ dispose (GObject *object)
 }
 
 static void
-nm_dhcp_dhclient_class_init (NMDHCPDhclientClass *dhclient_class)
+nm_dhcp_dhclient_class_init (NMDhcpDhclientClass *dhclient_class)
 {
-	NMDHCPClientClass *client_class = NM_DHCP_CLIENT_CLASS (dhclient_class);
+	NMDhcpClientClass *client_class = NM_DHCP_CLIENT_CLASS (dhclient_class);
 	GObjectClass *object_class = G_OBJECT_CLASS (dhclient_class);
 
-	g_type_class_add_private (dhclient_class, sizeof (NMDHCPDhclientPrivate));
+	g_type_class_add_private (dhclient_class, sizeof (NMDhcpDhclientPrivate));
 
 	/* virtual methods */
 	object_class->dispose = dispose;

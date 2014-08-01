@@ -27,11 +27,11 @@
 #include "nm-vpn-connection.h"
 
 #define NM_TYPE_VPN_MANAGER            (nm_vpn_manager_get_type ())
-#define NM_VPN_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_MANAGER, NMVPNManager))
-#define NM_VPN_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_VPN_MANAGER, NMVPNManagerClass))
+#define NM_VPN_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_MANAGER, NMVpnManager))
+#define NM_VPN_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_VPN_MANAGER, NMVpnManagerClass))
 #define NM_IS_VPN_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_VPN_MANAGER))
 #define NM_IS_VPN_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_VPN_MANAGER))
-#define NM_VPN_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_MANAGER, NMVPNManagerClass))
+#define NM_VPN_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_MANAGER, NMVpnManagerClass))
 
 typedef enum
 {
@@ -39,7 +39,7 @@ typedef enum
 	NM_VPN_MANAGER_ERROR_CONNECTION_INVALID,    /*< nick=ConnectionInvalid >*/
 	NM_VPN_MANAGER_ERROR_SERVICE_INVALID,       /*< nick=ServiceInvalid >*/
 	NM_VPN_MANAGER_ERROR_SERVICE_START_FAILED,  /*< nick=ServiceStartFailed >*/
-} NMVPNManagerError;
+} NMVpnManagerError;
 
 #define NM_VPN_MANAGER_ERROR (nm_vpn_manager_error_quark ())
 
@@ -49,22 +49,22 @@ GType nm_vpn_manager_error_get_type (void);
 
 typedef struct {
 	GObject parent;
-} NMVPNManager;
+} NMVpnManager;
 
 typedef struct {
 	GObjectClass parent;
-} NMVPNManagerClass;
+} NMVpnManagerClass;
 
 GType nm_vpn_manager_get_type (void);
 
-NMVPNManager *nm_vpn_manager_get (void);
+NMVpnManager *nm_vpn_manager_get (void);
 
-gboolean nm_vpn_manager_activate_connection (NMVPNManager *manager,
-                                             NMVPNConnection *vpn,
+gboolean nm_vpn_manager_activate_connection (NMVpnManager *manager,
+                                             NMVpnConnection *vpn,
                                              GError **error);
 
-gboolean nm_vpn_manager_deactivate_connection (NMVPNManager *manager,
-                                               NMVPNConnection *connection,
-                                               NMVPNConnectionStateReason reason);
+gboolean nm_vpn_manager_deactivate_connection (NMVpnManager *manager,
+                                               NMVpnConnection *connection,
+                                               NMVpnConnectionStateReason reason);
 
 #endif /* NM_VPN_MANAGER_H */

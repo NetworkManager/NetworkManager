@@ -20,16 +20,14 @@
 
 #
 # This example shows how to add a new NM connection profile.
-# The code uses libnm-util (NetworkManager) and libnm-glib (NMClient)
-# via GObject Introspection.
+# The code uses libnm (NM) via GObject Introspection.
 #
 # Documentation links:
-# https://developer.gnome.org/libnm-glib/0.9/
-# https://developer.gnome.org/libnm-util/0.9/
-# https://developer.gnome.org/NetworkManager/0.9/ref-settings.html
+# https://developer.gnome.org/libnm/1.0/
+# https://developer.gnome.org/NetworkManager/1.0/ref-settings.html
 #
 
-from gi.repository import GLib, NetworkManager, NMClient
+from gi.repository import GLib, NM
 import sys, uuid
 
 main_loop = None
@@ -39,19 +37,19 @@ def print_values(setting, key, value, flags, data):
 
 # create an Ethernet connection and return it
 def create_profile(name):
-    profile = NetworkManager.Connection.new()
-    s_con = NetworkManager.SettingConnection.new()
-    s_con.set_property(NetworkManager.SETTING_CONNECTION_ID, name)
-    s_con.set_property(NetworkManager.SETTING_CONNECTION_UUID, str(uuid.uuid4()))
-    s_con.set_property(NetworkManager.SETTING_CONNECTION_TYPE, "802-3-ethernet")
+    profile = NM.Connection.new()
+    s_con = NM.SettingConnection.new()
+    s_con.set_property(NM.SETTING_CONNECTION_ID, name)
+    s_con.set_property(NM.SETTING_CONNECTION_UUID, str(uuid.uuid4()))
+    s_con.set_property(NM.SETTING_CONNECTION_TYPE, "802-3-ethernet")
 
-    s_wired = NetworkManager.SettingWired.new()
+    s_wired = NM.SettingWired.new()
 
-    s_ip4 = NetworkManager.SettingIP4Config.new()
-    s_ip4.set_property(NetworkManager.SETTING_IP4_CONFIG_METHOD, "auto")
+    s_ip4 = NM.SettingIP4Config.new()
+    s_ip4.set_property(NM.SETTING_IP4_CONFIG_METHOD, "auto")
 
-    s_ip6 = NetworkManager.SettingIP6Config.new()
-    s_ip6.set_property(NetworkManager.SETTING_IP6_CONFIG_METHOD, "auto")
+    s_ip6 = NM.SettingIP6Config.new()
+    s_ip6.set_property(NM.SETTING_IP6_CONFIG_METHOD, "auto")
 
     profile.add_setting(s_con)
     profile.add_setting(s_ip4)
@@ -86,7 +84,7 @@ if __name__ == "__main__":
     main_loop = GLib.MainLoop()
 
     # create RemoteSettings object
-    settings = NMClient.RemoteSettings.new(None);
+    settings = NM.RemoteSettings.new(None);
 
     # create a connection profile for NM
     con = create_profile(profile_name)

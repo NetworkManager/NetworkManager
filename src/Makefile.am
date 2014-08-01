@@ -37,10 +37,11 @@ endif
 
 AM_CPPFLAGS =				\
 	-I$(top_srcdir)/include		\
-	-I$(top_srcdir)/libnm-util	\
-	-I$(top_builddir)/libnm-util	\
+	-I$(top_srcdir)/libnm-core	\
+	-I$(top_builddir)/libnm-core	\
 	-I$(top_srcdir)/callouts	\
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
+	-DNETWORKMANAGER_COMPILATION	\
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE
 
 # add each subdirectory that contains a libNM source file. $(sort) is being used
@@ -351,7 +352,7 @@ libNetworkManager_la_SOURCES = \
 	$(glue_sources)
 
 libNetworkManager_la_LIBADD = \
-	$(top_builddir)/libnm-util/libnm-util.la \
+	$(top_builddir)/libnm-core/libnm-core.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \

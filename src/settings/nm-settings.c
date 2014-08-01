@@ -32,7 +32,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <nm-connection.h>
 #include <nm-setting-8021x.h>
 #include <nm-setting-bluetooth.h>
@@ -783,7 +783,7 @@ secret_agent_registered (NMAgentManager *agent_mgr,
 static void
 openconnect_migrate_hack (NMConnection *connection)
 {
-	NMSettingVPN *s_vpn;
+	NMSettingVpn *s_vpn;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NOT_SAVED;
 
 	/* Huge hack.  There were some openconnect changes that needed to happen
@@ -2032,7 +2032,7 @@ nm_settings_class_init (NMSettingsClass *class)
 	                              G_TYPE_NONE, 1, G_TYPE_OBJECT);
 
 	dbus_g_error_domain_register (NM_SETTINGS_ERROR,
-	                              NM_DBUS_IFACE_SETTINGS,
+	                              NM_DBUS_INTERFACE_SETTINGS,
 	                              NM_TYPE_SETTINGS_ERROR);
 
 	/* And register all the settings errors with D-Bus */

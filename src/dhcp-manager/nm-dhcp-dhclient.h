@@ -25,19 +25,19 @@
 #include "nm-dhcp-client.h"
 
 #define NM_TYPE_DHCP_DHCLIENT            (nm_dhcp_dhclient_get_type ())
-#define NM_DHCP_DHCLIENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_DHCLIENT, NMDHCPDhclient))
-#define NM_DHCP_DHCLIENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_DHCLIENT, NMDHCPDhclientClass))
+#define NM_DHCP_DHCLIENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclient))
+#define NM_DHCP_DHCLIENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientClass))
 #define NM_IS_DHCP_DHCLIENT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP_DHCLIENT))
 #define NM_IS_DHCP_DHCLIENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_DHCLIENT))
-#define NM_DHCP_DHCLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_DHCLIENT, NMDHCPDhclientClass))
+#define NM_DHCP_DHCLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientClass))
 
 typedef struct {
-	NMDHCPClient parent;
-} NMDHCPDhclient;
+	NMDhcpClient parent;
+} NMDhcpDhclient;
 
 typedef struct {
-	NMDHCPClientClass parent;
-} NMDHCPDhclientClass;
+	NMDhcpClientClass parent;
+} NMDhcpDhclientClass;
 
 GType nm_dhcp_dhclient_get_type (void);
 

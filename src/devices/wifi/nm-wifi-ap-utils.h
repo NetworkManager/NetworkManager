@@ -23,7 +23,7 @@
 
 #include <net/ethernet.h>
 
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include <nm-connection.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>

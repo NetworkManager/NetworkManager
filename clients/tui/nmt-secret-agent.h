@@ -19,7 +19,7 @@
 #ifndef NMT_SECRET_AGENT_H
 #define NMT_SECRET_AGENT_H
 
-#include <nm-secret-agent.h>
+#include <NetworkManager.h>
 
 G_BEGIN_DECLS
 

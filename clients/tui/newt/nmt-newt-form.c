@@ -273,7 +273,7 @@ nmt_newt_form_destroy (NmtNewtForm *form)
 
 /* A "normal" newt program would call newtFormRun() to run newt's main loop
  * and process events. But we want to let GLib's main loop control the program
- * (eg, so libnm-glib can process D-Bus notifications). So we call this function
+ * (eg, so libnm can process D-Bus notifications). So we call this function
  * to run a single iteration of newt's main loop (or rather, to run newt's
  * main loop for 1ms) whenever there are events for newt to process (redrawing
  * or keypresses).

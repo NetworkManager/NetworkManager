@@ -18,11 +18,10 @@
 
 /*
  * The example shows how to get info about APs visible by Wi-Fi devices 
- * using libnm-glib (that wraps direct D-Bus calls).
- * The example uses dbus-glib, libnm-util and libnm-glib libraries.
+ * using libnm (that wraps direct D-Bus calls).
  *
  * Compile with:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 dbus-glib-1 libnm-util libnm-glib` get-ap-info-libnm-glib.c -o get-ap-info-libnm-glib
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` get-ap-info-libnm.c -o get-ap-info-libnm
  */
 
 #include <glib.h>
@@ -30,12 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <nm-client.h>
-#include <nm-device.h>
-#include <nm-device-wifi.h>
-#include <nm-access-point.h>
 #include <NetworkManager.h>
-#include <nm-utils.h>
 
 /* Convert flags to string */
 static char *
@@ -195,24 +189,21 @@ show_wifi_device_info (NMDevice *device)
 
 int main (int argc, char *argv[])
 {
-	DBusGConnection *bus;
 	NMClient *client;
 	const GPtrArray *devices;
 	int i;
+	GError *error = NULL;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	/* Initialize GType system */
 	g_type_init ();
 #endif
 
-	/* Get system bus */
-	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
-
 	/* Get NMClient object */
-	client = nm_client_new ();
+	client = nm_client_new (NULL, &error);
 	if (!client) {
-		dbus_g_connection_unref (bus);
-		g_message ("Error: Could not create NMClient.");
+		g_message ("Error: Could not create NMClient: %s.", error->message);
+		g_error_free (error);
 		return EXIT_FAILURE;
 	}
 
@@ -227,7 +218,6 @@ int main (int argc, char *argv[])
 	}
 
 	g_object_unref (client);
-	dbus_g_connection_unref (bus);
 
 	return EXIT_SUCCESS;
 }

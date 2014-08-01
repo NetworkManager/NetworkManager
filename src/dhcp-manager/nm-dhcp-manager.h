@@ -32,7 +32,7 @@
 typedef enum {
 	NM_DHCP_MANAGER_ERROR_BAD_CLIENT = 0, /*< nick=BadClient >*/
 	NM_DHCP_MANAGER_ERROR_INTERNAL = 1,   /*< nick=InternalError >*/
-} NMDHCPManagerError;
+} NMDhcpManagerError;
 
 #define NM_DHCP_MANAGER_ERROR (nm_dhcp_manager_error_quark ())
 
@@ -40,28 +40,28 @@ GQuark nm_dhcp_manager_error_quark    (void);
 
 
 #define NM_TYPE_DHCP_MANAGER            (nm_dhcp_manager_get_type ())
-#define NM_DHCP_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_MANAGER, NMDHCPManager))
-#define NM_DHCP_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_MANAGER, NMDHCPManagerClass))
+#define NM_DHCP_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_MANAGER, NMDhcpManager))
+#define NM_DHCP_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_MANAGER, NMDhcpManagerClass))
 #define NM_IS_DHCP_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP_MANAGER))
 #define NM_IS_DHCP_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_MANAGER))
-#define NM_DHCP_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_MANAGER, NMDHCPManagerClass))
+#define NM_DHCP_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_MANAGER, NMDhcpManagerClass))
 
 typedef struct {
 	GObject parent;
-} NMDHCPManager;
+} NMDhcpManager;
 
 typedef struct {
 	GObjectClass parent;
-} NMDHCPManagerClass;
+} NMDhcpManagerClass;
 
 GType nm_dhcp_manager_get_type (void);
 
-NMDHCPManager *nm_dhcp_manager_get (void);
+NMDhcpManager *nm_dhcp_manager_get (void);
 
-void           nm_dhcp_manager_set_default_hostname (NMDHCPManager *manager,
+void           nm_dhcp_manager_set_default_hostname (NMDhcpManager *manager,
                                                      const char *hostname);
 
-NMDHCPClient * nm_dhcp_manager_start_ip4     (NMDHCPManager *manager,
+NMDhcpClient * nm_dhcp_manager_start_ip4     (NMDhcpManager *manager,
                                               const char *iface,
                                               int ifindex,
                                               const GByteArray *hwaddr,
@@ -73,7 +73,7 @@ NMDHCPClient * nm_dhcp_manager_start_ip4     (NMDHCPManager *manager,
                                               guint32 timeout,
                                               GByteArray *dhcp_anycast_addr);
 
-NMDHCPClient * nm_dhcp_manager_start_ip6     (NMDHCPManager *manager,
+NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
                                               const char *iface,
                                               int ifindex,
                                               const GByteArray *hwaddr,
@@ -85,7 +85,7 @@ NMDHCPClient * nm_dhcp_manager_start_ip6     (NMDHCPManager *manager,
                                               gboolean info_only,
                                               NMSettingIP6ConfigPrivacy privacy);
 
-GSList *       nm_dhcp_manager_get_lease_ip_configs (NMDHCPManager *self,
+GSList *       nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
                                                      const char *iface,
                                                      const char *uuid,
                                                      gboolean ipv6);

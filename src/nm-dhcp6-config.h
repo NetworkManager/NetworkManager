@@ -27,37 +27,37 @@
 #include "nm-types.h"
 
 #define NM_TYPE_DHCP6_CONFIG            (nm_dhcp6_config_get_type ())
-#define NM_DHCP6_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP6_CONFIG, NMDHCP6Config))
-#define NM_DHCP6_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP6_CONFIG, NMDHCP6ConfigClass))
+#define NM_DHCP6_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP6_CONFIG, NMDhcp6Config))
+#define NM_DHCP6_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP6_CONFIG, NMDhcp6ConfigClass))
 #define NM_IS_DHCP6_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP6_CONFIG))
 #define NM_IS_DHCP6_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP6_CONFIG))
-#define NM_DHCP6_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP6_CONFIG, NMDHCP6ConfigClass))
+#define NM_DHCP6_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP6_CONFIG, NMDhcp6ConfigClass))
 
-struct _NMDHCP6Config {
+struct _NMDhcp6Config {
 	GObject parent;
 };
 
 typedef struct {
 	GObjectClass parent;
 
-} NMDHCP6ConfigClass;
+} NMDhcp6ConfigClass;
 
 #define NM_DHCP6_CONFIG_OPTIONS "options"
 
 GType nm_dhcp6_config_get_type (void);
 
-NMDHCP6Config *nm_dhcp6_config_new (void);
+NMDhcp6Config *nm_dhcp6_config_new (void);
 
-const char *nm_dhcp6_config_get_dbus_path (NMDHCP6Config *config);
+const char *nm_dhcp6_config_get_dbus_path (NMDhcp6Config *config);
 
-void nm_dhcp6_config_add_option (NMDHCP6Config *config,
+void nm_dhcp6_config_add_option (NMDhcp6Config *config,
                                  const char *key,
                                  const char *option);
 
-void nm_dhcp6_config_reset (NMDHCP6Config *config);
+void nm_dhcp6_config_reset (NMDhcp6Config *config);
 
-const char *nm_dhcp6_config_get_option (NMDHCP6Config *config, const char *option);
+const char *nm_dhcp6_config_get_option (NMDhcp6Config *config, const char *option);
 
-GSList *nm_dhcp6_config_list_options (NMDHCP6Config *self);
+GSList *nm_dhcp6_config_list_options (NMDhcp6Config *self);
 
 #endif /* NM_DHCP6_CONFIG_H */

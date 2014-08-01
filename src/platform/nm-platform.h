@@ -28,7 +28,7 @@
 #include <linux/if.h>
 #include <linux/if_addr.h>
 
-#include <NetworkManager.h>
+#include <nm-dbus-interface.h>
 #include "gsystem-local-alloc.h"
 #include "nm-types.h"
 

@@ -35,8 +35,6 @@
 #include <dbus/dbus-glib.h>
 #include <glib/gi18n-lib.h>
 
-#include <nm-utils.h>
-
 #include "nmt-secret-agent.h"
 #include "nmt-newt.h"
 
@@ -298,7 +296,7 @@ static gboolean
 add_pppoe_secrets (NmtSecretAgentRequest *request,
                    GPtrArray             *secrets)
 {
-	NMSettingPPPOE *s_pppoe = nm_connection_get_setting_pppoe (request->connection);
+	NMSettingPppoe *s_pppoe = nm_connection_get_setting_pppoe (request->connection);
 	NmtSecretAgentSecret *secret;
 
 	secret = nmt_secret_agent_secret_new (_("Username"),

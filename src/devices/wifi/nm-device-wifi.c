@@ -2167,8 +2167,8 @@ handle_8021x_or_psk_auth_fail (NMDeviceWifi *self,
 		nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 		nm_act_request_get_secrets (req,
 		                            setting_name,
-		                            NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION
-		                              | NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW,
+		                            NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION
+		                              | NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW,
 		                            NULL,
 		                            wifi_secrets_cb,
 		                            self);
@@ -2396,10 +2396,10 @@ handle_auth_or_fail (NMDeviceWifi *self,
 	nm_connection_clear_secrets (connection);
 	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (setting_name) {
-		NMSettingsGetSecretsFlags flags = NM_SETTINGS_GET_SECRETS_FLAG_ALLOW_INTERACTION;
+		NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
 		if (new_secrets)
-			flags |= NM_SETTINGS_GET_SECRETS_FLAG_REQUEST_NEW;
+			flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 		nm_act_request_get_secrets (req, setting_name, flags, NULL, wifi_secrets_cb, self);
 
 		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));

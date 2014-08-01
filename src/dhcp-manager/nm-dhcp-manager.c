@@ -79,12 +79,12 @@ typedef struct {
 	GHashTable *        clients;
 	DBusGProxy *        proxy;
 	char *              default_hostname;
-} NMDHCPManagerPrivate;
+} NMDhcpManagerPrivate;
 
 
-#define NM_DHCP_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_MANAGER, NMDHCPManagerPrivate))
+#define NM_DHCP_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_MANAGER, NMDhcpManagerPrivate))
 
-G_DEFINE_TYPE (NMDHCPManager, nm_dhcp_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMDhcpManager, nm_dhcp_manager, G_TYPE_OBJECT)
 
 static char *
 garray_to_string (GArray *array, const char *key)
@@ -119,10 +119,10 @@ garray_to_string (GArray *array, const char *key)
 	return converted;
 }
 
-static NMDHCPClient *
-get_client_for_pid (NMDHCPManager *manager, GPid pid)
+static NMDhcpClient *
+get_client_for_pid (NMDhcpManager *manager, GPid pid)
 {
-	NMDHCPManagerPrivate *priv;
+	NMDhcpManagerPrivate *priv;
 	GHashTableIter iter;
 	gpointer value;
 
@@ -132,7 +132,7 @@ get_client_for_pid (NMDHCPManager *manager, GPid pid)
 
 	g_hash_table_iter_init (&iter, priv->clients);
 	while (g_hash_table_iter_next (&iter, NULL, &value)) {
-		NMDHCPClient *candidate = NM_DHCP_CLIENT (value);
+		NMDhcpClient *candidate = NM_DHCP_CLIENT (value);
 
 		if (nm_dhcp_client_get_pid (candidate) == pid)
 			return candidate;
@@ -141,10 +141,10 @@ get_client_for_pid (NMDHCPManager *manager, GPid pid)
 	return NULL;
 }
 
-static NMDHCPClient *
-get_client_for_ifindex (NMDHCPManager *manager, int ifindex, gboolean ip6)
+static NMDhcpClient *
+get_client_for_ifindex (NMDhcpManager *manager, int ifindex, gboolean ip6)
 {
-	NMDHCPManagerPrivate *priv;
+	NMDhcpManagerPrivate *priv;
 	GHashTableIter iter;
 	gpointer value;
 
@@ -155,7 +155,7 @@ get_client_for_ifindex (NMDHCPManager *manager, int ifindex, gboolean ip6)
 
 	g_hash_table_iter_init (&iter, priv->clients);
 	while (g_hash_table_iter_next (&iter, NULL, &value)) {
-		NMDHCPClient *candidate = NM_DHCP_CLIENT (value);
+		NMDhcpClient *candidate = NM_DHCP_CLIENT (value);
 
 		if (   nm_dhcp_client_get_ifindex (candidate) == ifindex
 		    && nm_dhcp_client_get_ipv6 (candidate) == ip6)
@@ -189,8 +189,8 @@ nm_dhcp_manager_handle_event (DBusGProxy *proxy,
                               GHashTable *options,
                               gpointer user_data)
 {
-	NMDHCPManager *manager = NM_DHCP_MANAGER (user_data);
-	NMDHCPClient *client;
+	NMDhcpManager *manager = NM_DHCP_MANAGER (user_data);
+	NMDhcpClient *client;
 	char *iface = NULL;
 	char *pid_str = NULL;
 	char *reason = NULL;
@@ -244,9 +244,9 @@ out:
 static void
 new_connection_cb (NMDBusManager *mgr,
                    DBusGConnection *connection,
-                   NMDHCPManager *self)
+                   NMDhcpManager *self)
 {
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 	DBusGProxy *proxy;
 
 	/* Create a new proxy for the client */
@@ -266,9 +266,9 @@ new_connection_cb (NMDBusManager *mgr,
 static void
 dis_connection_cb (NMDBusManager *mgr,
                    DBusGConnection *connection,
-                   NMDHCPManager *self)
+                   NMDhcpManager *self)
 {
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 	DBusGProxy *proxy;
 
 	proxy = g_hash_table_lookup (priv->proxies, connection);
@@ -337,14 +337,14 @@ get_client_type (const char *client, GError **error)
 	return G_TYPE_INVALID;
 }
 
-static void client_state_changed (NMDHCPClient *client,
+static void client_state_changed (NMDhcpClient *client,
                                   NMDhcpState state,
                                   GObject *ip_config,
                                   GHashTable *options,
-                                  NMDHCPManager *self);
+                                  NMDhcpManager *self);
 
 static void
-remove_client (NMDHCPManager *self, NMDHCPClient *client)
+remove_client (NMDhcpManager *self, NMDhcpClient *client)
 {
 	g_signal_handlers_disconnect_by_func (client, client_state_changed, self);
 
@@ -357,18 +357,18 @@ remove_client (NMDHCPManager *self, NMDHCPClient *client)
 }
 
 static void
-client_state_changed (NMDHCPClient *client,
+client_state_changed (NMDhcpClient *client,
                       NMDhcpState state,
                       GObject *ip_config,
                       GHashTable *options,
-                      NMDHCPManager *self)
+                      NMDhcpManager *self)
 {
 	if (state >= NM_DHCP_STATE_TIMEOUT)
 		remove_client (self, client);
 }
 
-static NMDHCPClient *
-client_start (NMDHCPManager *self,
+static NMDhcpClient *
+client_start (NMDhcpManager *self,
               const char *iface,
               int ifindex,
               const GByteArray *hwaddr,
@@ -382,8 +382,8 @@ client_start (NMDHCPManager *self,
               gboolean info_only,
               NMSettingIP6ConfigPrivacy privacy)
 {
-	NMDHCPManagerPrivate *priv;
-	NMDHCPClient *client;
+	NMDhcpManagerPrivate *priv;
+	NMDhcpClient *client;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (self, NULL);
@@ -432,17 +432,17 @@ client_start (NMDHCPManager *self,
 }
 
 static const char *
-get_send_hostname (NMDHCPManager *self, const char *setting_hostname)
+get_send_hostname (NMDhcpManager *self, const char *setting_hostname)
 {
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
 	/* Always prefer the explicit dhcp-send-hostname if given */
 	return setting_hostname ? setting_hostname : priv->default_hostname;
 }
 
-/* Caller owns a reference to the NMDHCPClient on return */
-NMDHCPClient *
-nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
+/* Caller owns a reference to the NMDhcpClient on return */
+NMDhcpClient *
+nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
                            const char *iface,
                            int ifindex,
                            const GByteArray *hwaddr,
@@ -465,9 +465,9 @@ nm_dhcp_manager_start_ip4 (NMDHCPManager *self,
 	                     FALSE, 0);
 }
 
-/* Caller owns a reference to the NMDHCPClient on return */
-NMDHCPClient *
-nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
+/* Caller owns a reference to the NMDhcpClient on return */
+NMDhcpClient *
+nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
                            const char *iface,
                            int ifindex,
                            const GByteArray *hwaddr,
@@ -491,9 +491,9 @@ nm_dhcp_manager_start_ip6 (NMDHCPManager *self,
 }
 
 void
-nm_dhcp_manager_set_default_hostname (NMDHCPManager *manager, const char *hostname)
+nm_dhcp_manager_set_default_hostname (NMDhcpManager *manager, const char *hostname)
 {
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
+	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
 
 	g_clear_pointer (&priv->default_hostname, g_free);
 
@@ -505,12 +505,12 @@ nm_dhcp_manager_set_default_hostname (NMDHCPManager *manager, const char *hostna
 }
 
 GSList *
-nm_dhcp_manager_get_lease_ip_configs (NMDHCPManager *self,
+nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
                                       const char *iface,
                                       const char *uuid,
                                       gboolean ipv6)
 {
-	NMDHCPManagerPrivate *priv;
+	NMDhcpManagerPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
@@ -525,10 +525,10 @@ nm_dhcp_manager_get_lease_ip_configs (NMDHCPManager *self,
 
 /***************************************************/
 
-NMDHCPManager *
+NMDhcpManager *
 nm_dhcp_manager_get (void)
 {
-	static NMDHCPManager *singleton = NULL;
+	static NMDhcpManager *singleton = NULL;
 
 	if (G_UNLIKELY (singleton == NULL))
 		singleton = g_object_new (NM_TYPE_DHCP_MANAGER, NULL);
@@ -537,9 +537,9 @@ nm_dhcp_manager_get (void)
 }
 
 static void
-nm_dhcp_manager_init (NMDHCPManager *self)
+nm_dhcp_manager_init (NMDhcpManager *self)
 {
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 	const char *client;
 	GError *error = NULL;
 #if !HAVE_DBUS_GLIB_100
@@ -597,7 +597,7 @@ nm_dhcp_manager_init (NMDHCPManager *self)
 static void
 dispose (GObject *object)
 {
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (object);
+	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (object);
 	GList *values, *iter;
 
 	if (priv->clients) {
@@ -630,7 +630,7 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (object);
+	NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (object);
 
 	g_free (priv->default_hostname);
 
@@ -641,11 +641,11 @@ finalize (GObject *object)
 }
 
 static void
-nm_dhcp_manager_class_init (NMDHCPManagerClass *manager_class)
+nm_dhcp_manager_class_init (NMDhcpManagerClass *manager_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
 
-	g_type_class_add_private (manager_class, sizeof (NMDHCPManagerPrivate));
+	g_type_class_add_private (manager_class, sizeof (NMDhcpManagerPrivate));
 
 	/* virtual methods */
 	object_class->finalize = finalize;

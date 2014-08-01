@@ -1180,7 +1180,7 @@ read_setting (GKeyFile *file, const char *keyfile_path, const char *group)
 }
 
 static void
-read_vpn_secrets (GKeyFile *file, NMSettingVPN *s_vpn)
+read_vpn_secrets (GKeyFile *file, NMSettingVpn *s_vpn)
 {
 	char **keys, **iter;
 
@@ -1318,7 +1318,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 
 	/* Handle vpn secrets after the 'vpn' setting was read */
 	if (vpn_secrets) {
-		NMSettingVPN *s_vpn;
+		NMSettingVpn *s_vpn;
 
 		s_vpn = nm_connection_get_setting_vpn (connection);
 		if (s_vpn)

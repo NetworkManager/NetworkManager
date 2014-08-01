@@ -937,7 +937,7 @@ main (int argc, char **argv)
 #endif
 
 	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm-util: %s", error->message);
+		FAIL ("nm-utils-init", "failed to initialize libnm: %s", error->message);
 	nm_logging_setup ("WARN", "DEFAULT", NULL, NULL);
 
 	g_test_init (&argc, &argv, NULL);
