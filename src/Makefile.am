@@ -78,6 +78,7 @@ nm_sources = \
 	devices/nm-device-gre.h \
 	devices/nm-device-infiniband.c \
 	devices/nm-device-infiniband.h \
+	devices/nm-device-logging.h \
 	devices/nm-device-macvlan.c \
 	devices/nm-device-macvlan.h \
 	devices/nm-device-private.h \
