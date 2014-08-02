@@ -43,6 +43,8 @@
 
 #include "nm-device-vlan-glue.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF(NMDeviceVlan);
 
 G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 
@@ -88,14 +90,12 @@ update_initial_hw_address (NMDevice *dev)
 {
 	NMDeviceVlan *self = NM_DEVICE_VLAN (dev);
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-	char *mac_str;
+	gs_free char *mac_str = NULL;
 
 	memcpy (priv->initial_hw_addr, nm_device_get_hw_address (dev, NULL), ETH_ALEN);
 
-	mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ARPHRD_ETHER);
-	nm_log_dbg (LOGD_DEVICE | LOGD_VLAN, "(%s): read initial MAC address %s",
-	            nm_device_get_iface (dev), mac_str);
-	g_free (mac_str);
+	_LOGD (LOGD_DEVICE | LOGD_VLAN, "read initial MAC address %s",
+	       (mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ARPHRD_ETHER)));
 }
 
 static guint32
@@ -283,6 +283,7 @@ nm_device_vlan_set_parent (NMDeviceVlan *device, NMDevice *parent)
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
+	NMDeviceVlan *self = NM_DEVICE_VLAN (device);
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
 	NMSettingVlan *s_vlan = nm_connection_get_setting_vlan (connection);
 	int ifindex = nm_device_get_ifindex (device);
@@ -297,8 +298,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 	}
 
 	if (!nm_platform_vlan_get_info (ifindex, &parent_ifindex, &vlan_id)) {
-		nm_log_warn (LOGD_VLAN, "(%s): failed to get VLAN interface info while updating connection.",
-		             nm_device_get_iface (device));
+		_LOGW (LOGD_VLAN, "failed to get VLAN interface info while updating connection.");
 		return;
 	}
 
@@ -485,7 +485,7 @@ nm_device_vlan_new_for_connection (NMConnection *connection, NMDevice *parent)
 	                              nm_setting_vlan_get_id (s_vlan),
 	                              nm_setting_vlan_get_flags (s_vlan))
 	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
-		nm_log_warn (LOGD_DEVICE | LOGD_VLAN, "(%s): failed to add VLAN interface for '%s'",
+		nm_log_warn (LOGD_DEVICE | LOGD_VLAN, "(%s) failed to add VLAN interface for '%s'",
 		             iface, nm_connection_get_id (connection));
 		g_free (iface);
 		return NULL;
@@ -515,10 +515,9 @@ nm_device_vlan_init (NMDeviceVlan * self)
 static void
 constructed (GObject *object)
 {
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
-	NMDevice *device = NM_DEVICE (object);
-	const char *iface = nm_device_get_iface (device);
-	int ifindex = nm_device_get_ifindex (device);
+	NMDeviceVlan *self = NM_DEVICE_VLAN (object);
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
+	int ifindex = nm_device_get_ifindex (NM_DEVICE (self));
 	int parent_ifindex = -1, itype;
 	int vlan_id;
 
@@ -526,20 +525,20 @@ constructed (GObject *object)
 		G_OBJECT_CLASS (nm_device_vlan_parent_class)->constructed (object);
 
 	if (!priv->parent) {
-		nm_log_err (LOGD_VLAN, "(%s): no parent specified.", iface);
+		_LOGE (LOGD_VLAN, "no parent specified.");
 		priv->invalid = TRUE;
 		return;
 	}
 
 	itype = nm_platform_link_get_type (ifindex);
 	if (itype != NM_LINK_TYPE_VLAN) {
-		nm_log_err (LOGD_VLAN, "(%s): failed to get VLAN interface type.", iface);
+		_LOGE (LOGD_VLAN, "failed to get VLAN interface type.");
 		priv->invalid = TRUE;
 		return;
 	}
 
 	if (!nm_platform_vlan_get_info (ifindex, &parent_ifindex, &vlan_id)) {
-		nm_log_warn (LOGD_VLAN, "(%s): failed to get VLAN interface info.", iface);
+		_LOGW (LOGD_VLAN, "failed to get VLAN interface info.");
 		priv->invalid = TRUE;
 		return;
 	}
@@ -547,16 +546,15 @@ constructed (GObject *object)
 	if (   parent_ifindex < 0
 	    || parent_ifindex != nm_device_get_ip_ifindex (priv->parent)
 	    || vlan_id < 0) {
-		nm_log_warn (LOGD_VLAN, "(%s): VLAN parent ifindex (%d) or VLAN ID (%d) invalid.",
-		             iface, parent_ifindex, priv->vlan_id);
+		_LOGW (LOGD_VLAN, "VLAN parent ifindex (%d) or VLAN ID (%d) invalid.",
+		       parent_ifindex, priv->vlan_id);
 		priv->invalid = TRUE;
 		return;
 	}
 
 	priv->vlan_id = vlan_id;
-	nm_log_dbg (LOGD_HW | LOGD_VLAN, "(%s): kernel ifindex %d", iface, ifindex);
-	nm_log_info (LOGD_HW | LOGD_VLAN, "(%s): VLAN ID %d with parent %s",
-	             iface, priv->vlan_id, nm_device_get_iface (priv->parent));
+	_LOGI (LOGD_HW | LOGD_VLAN, "VLAN ID %d with parent %s",
+	       priv->vlan_id, nm_device_get_iface (priv->parent));
 }
 
 static void

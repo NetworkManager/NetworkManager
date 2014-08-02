@@ -31,6 +31,9 @@
 
 #include "nm-device-tun-glue.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF(NMDeviceTun);
+
 G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE_GENERIC)
 
 #define NM_DEVICE_TUN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_TUN, NMDeviceTunPrivate))
@@ -55,15 +58,14 @@ enum {
 };
 
 static void
-reload_tun_properties (NMDeviceTun *device)
+reload_tun_properties (NMDeviceTun *self)
 {
-	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (device);
-	GObject *object = G_OBJECT (device);
+	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
+	GObject *object = G_OBJECT (self);
 	NMPlatformTunProperties props;
 
-	if (!nm_platform_tun_get_properties (nm_device_get_ifindex (NM_DEVICE (device)), &props)) {
-		nm_log_warn (LOGD_HW, "(%s): could not read tun properties",
-		             nm_device_get_iface (NM_DEVICE (device)));
+	if (!nm_platform_tun_get_properties (nm_device_get_ifindex (NM_DEVICE (self)), &props)) {
+		_LOGD (LOGD_HW, "could not read tun properties");
 		return;
 	}
 
@@ -137,18 +139,18 @@ nm_device_tun_init (NMDeviceTun *self)
 static void
 constructed (GObject *object)
 {
+	NMDeviceTun *self = NM_DEVICE_TUN (object);
 	gboolean properties_read;
-	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (object);
+	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
 
-	properties_read = nm_platform_tun_get_properties (nm_device_get_ifindex (NM_DEVICE (object)), &priv->props);
+	properties_read = nm_platform_tun_get_properties (nm_device_get_ifindex (NM_DEVICE (self)), &priv->props);
 
 	G_OBJECT_CLASS (nm_device_tun_parent_class)->constructed (object);
 
 	if (!properties_read) {
 		/* Error reading the tun properties. Maybe this was due to a race. Try again a bit later. */
-		nm_log_dbg (LOGD_HW, "(%s): could not read tun properties (retry)",
-		                     nm_device_get_iface (NM_DEVICE (object)));
-		priv->delay_tun_get_properties_id = g_timeout_add_seconds (1, delay_tun_get_properties_cb, object);
+		_LOGD (LOGD_HW, "could not read tun properties (retry)");
+		priv->delay_tun_get_properties_id = g_timeout_add_seconds (1, delay_tun_get_properties_cb, self);
 	}
 }
 

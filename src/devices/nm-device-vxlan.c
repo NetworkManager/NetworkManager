@@ -32,6 +32,9 @@
 
 #include "nm-device-vxlan-glue.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF(NMDeviceVxlan);
+
 G_DEFINE_TYPE (NMDeviceVxlan, nm_device_vxlan, NM_TYPE_DEVICE_GENERIC)
 
 #define NM_DEVICE_VXLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_VXLAN, NMDeviceVxlanPrivate))
@@ -67,13 +70,13 @@ enum {
 static void
 update_properties (NMDevice *device)
 {
+	NMDeviceVxlan *self = NM_DEVICE_VXLAN (device);
 	NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE (device);
 	GObject *object = G_OBJECT (device);
 	NMPlatformVxlanProperties props;
 
 	if (!nm_platform_vxlan_get_properties (nm_device_get_ifindex (device), &props)) {
-		nm_log_warn (LOGD_HW, "(%s): could not read vxlan properties",
-		             nm_device_get_iface (device));
+		_LOGW (LOGD_HW, "could not read vxlan properties");
 		return;
 	}
 

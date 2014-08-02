@@ -499,7 +499,7 @@ nm_device_get_udi (NMDevice *self)
 const char *
 nm_device_get_iface (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DEVICE (self), 0);
 
 	return NM_DEVICE_GET_PRIVATE (self)->iface;
 }
@@ -7122,7 +7122,7 @@ constructor (GType type,
 	self = NM_DEVICE (object);
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	_LOGD (LOGD_DEVICE, "constructor(): %s", G_OBJECT_TYPE_NAME (self));
+	_LOGD (LOGD_DEVICE, "constructor(): %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), priv->ifindex);
 
 	if (!priv->iface) {
 		_LOGE (LOGD_DEVICE, "No device interface provided, ignoring");

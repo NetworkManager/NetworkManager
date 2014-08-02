@@ -36,6 +36,9 @@
 
 #include "nm-device-veth-glue.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF(NMDeviceVeth);
+
 G_DEFINE_TYPE (NMDeviceVeth, nm_device_veth, NM_TYPE_DEVICE_ETHERNET)
 
 #define NM_DEVICE_VETH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_VETH, NMDeviceVethPrivate))
@@ -79,8 +82,7 @@ get_peer (NMDeviceVeth *self)
 		return priv->peer;
 
 	if (!nm_platform_veth_get_properties (nm_device_get_ifindex (device), &props)) {
-		nm_log_warn (LOGD_HW, "(%s): could not read veth properties",
-		             nm_device_get_iface (device));
+		_LOGW (LOGD_HW, "could not read veth properties");
 		return NULL;
 	}
 

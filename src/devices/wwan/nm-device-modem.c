@@ -33,6 +33,9 @@
 #include "nm-modem-broadband.h"
 #include "NetworkManagerUtils.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF(NMDeviceModem);
+
 G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_MODEM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MODEM, NMDeviceModemPrivate))
@@ -89,7 +92,8 @@ modem_prepare_result (NMModem *modem,
                       NMDeviceStateReason reason,
                       gpointer user_data)
 {
-	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
+	NMDevice *device = NM_DEVICE (self);
 	NMDeviceState state;
 
 	state = nm_device_get_state (device);
@@ -104,8 +108,7 @@ modem_prepare_result (NMModem *modem,
 			 * the SIM if the incorrect PIN continues to be used.
 			 */
 			g_object_set (G_OBJECT (device), NM_DEVICE_AUTOCONNECT, FALSE, NULL);
-			nm_log_info (LOGD_MB, "(%s): disabling autoconnect due to failed SIM PIN",
-			             nm_device_get_iface (device));
+			_LOGI (LOGD_MB, "disabling autoconnect due to failed SIM PIN");
 		}
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
@@ -145,19 +148,19 @@ modem_auth_result (NMModem *modem, GError *error, gpointer user_data)
 }
 
 static void
-modem_ip4_config_result (NMModem *self,
+modem_ip4_config_result (NMModem *modem,
                          NMIP4Config *config,
                          GError *error,
                          gpointer user_data)
 {
-	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
+	NMDevice *device = NM_DEVICE (self);
 
 	g_return_if_fail (nm_device_activate_ip4_state_in_conf (device) == TRUE);
 
 	if (error) {
-		nm_log_warn (LOGD_MB | LOGD_IP4, "retrieving IPv4 configuration failed: (%d) %s",
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
+		_LOGW (LOGD_MB | LOGD_IP4, "retrieving IPv4 configuration failed: (%d) %s",
+		       error->code, error->message ? error->message : "(unknown)");
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	} else {
@@ -167,13 +170,14 @@ modem_ip4_config_result (NMModem *self,
 }
 
 static void
-modem_ip6_config_result (NMModem *self,
+modem_ip6_config_result (NMModem *modem,
                          NMIP6Config *config,
                          gboolean do_slaac,
                          GError *error,
                          gpointer user_data)
 {
-	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceModem *self = NM_DEVICE_MODEM (user_data);
+	NMDevice *device = NM_DEVICE (self);
 	NMActStageReturn ret;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	NMIP6Config *ignored = NULL;
@@ -182,9 +186,8 @@ modem_ip6_config_result (NMModem *self,
 	g_return_if_fail (nm_device_activate_ip6_state_in_conf (device) == TRUE);
 
 	if (error) {
-		nm_log_warn (LOGD_MB | LOGD_IP6, "retrieving IPv6 configuration failed: (%d) %s",
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
+		_LOGW (LOGD_MB | LOGD_IP6, "retrieving IPv6 configuration failed: (%d) %s",
+		       error->code, error->message ? error->message : "(unknown)");
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 		return;
@@ -200,7 +203,7 @@ modem_ip6_config_result (NMModem *self,
 		if (got_config)
 			nm_device_activate_schedule_ip6_config_result (device);
 		else {
-			nm_log_warn (LOGD_MB | LOGD_IP6, "retrieving IPv6 configuration failed: SLAAC not requested and no addresses");
+			_LOGW (LOGD_MB | LOGD_IP6, "retrieving IPv6 configuration failed: SLAAC not requested and no addresses");
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 		}
 		return;
@@ -333,6 +336,7 @@ device_state_changed (NMDevice *device,
                       NMDeviceState old_state,
                       NMDeviceStateReason reason)
 {
+	NMDeviceModem *self = NM_DEVICE_MODEM (device);
 	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
 	NMConnection *connection = nm_device_get_connection (device);
 
@@ -341,9 +345,8 @@ device_state_changed (NMDevice *device,
 	if (new_state == NM_DEVICE_STATE_UNAVAILABLE &&
 	    old_state < NM_DEVICE_STATE_UNAVAILABLE) {
 		/* Log initial modem state */
-		nm_log_info (LOGD_MB, "(%s): modem state '%s'",
-		             nm_device_get_iface (device),
-		             nm_modem_state_to_string (nm_modem_get_state (priv->modem)));
+		_LOGI (LOGD_MB, "modem state '%s'",
+		       nm_modem_state_to_string (nm_modem_get_state (priv->modem)));
 	}
 
 	nm_modem_device_state_changed (priv->modem, new_state, old_state, reason);
@@ -526,23 +529,22 @@ set_enabled (NMDevice *device, gboolean enabled)
 }
 
 static gboolean
-is_available (NMDevice *dev)
+is_available (NMDevice *device)
 {
-	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (dev);
+	NMDeviceModem *self = NM_DEVICE_MODEM (device);
+	NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE (device);
 	NMModemState modem_state;
 
 	if (!priv->rf_enabled) {
-		nm_log_dbg (LOGD_MB, "(%s): not available because WWAN airplane mode is on",
-		            nm_device_get_iface (dev));
+		_LOGD (LOGD_MB, "not available because WWAN airplane mode is on");
 		return FALSE;
 	}
 
 	g_assert (priv->modem);
 	modem_state = nm_modem_get_state (priv->modem);
 	if (modem_state <= NM_MODEM_STATE_INITIALIZING) {
-		nm_log_dbg (LOGD_MB, "(%s): not available because modem is not ready (%s)",
-		            nm_device_get_iface (dev),
-		            nm_modem_state_to_string (modem_state));
+		_LOGD (LOGD_MB, "not available because modem is not ready (%s)",
+		       nm_modem_state_to_string (modem_state));
 		return FALSE;
 	}
 

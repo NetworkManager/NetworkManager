@@ -31,6 +31,9 @@
 
 #include "nm-device-gre-glue.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF(NMDeviceGre);
+
 G_DEFINE_TYPE (NMDeviceGre, nm_device_gre, NM_TYPE_DEVICE_GENERIC)
 
 #define NM_DEVICE_GRE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_GRE, NMDeviceGrePrivate))
@@ -60,13 +63,13 @@ enum {
 static void
 update_properties (NMDevice *device)
 {
-	NMDeviceGrePrivate *priv = NM_DEVICE_GRE_GET_PRIVATE (device);
+	NMDeviceGre *self = NM_DEVICE_GRE (device);
+	NMDeviceGrePrivate *priv = NM_DEVICE_GRE_GET_PRIVATE (self);
 	GObject *object = G_OBJECT (device);
 	NMPlatformGreProperties props;
 
 	if (!nm_platform_gre_get_properties (nm_device_get_ifindex (device), &props)) {
-		nm_log_warn (LOGD_HW, "(%s): could not read gre properties",
-		             nm_device_get_iface (device));
+		_LOGW (LOGD_HW, "could not read gre properties");
 		return;
 	}
 

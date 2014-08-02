@@ -40,6 +40,8 @@
 
 #include "nm-device-bond-glue.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF(NMDeviceBond);
 
 G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE)
 
@@ -181,14 +183,13 @@ complete_connection (NMDevice *device,
 static gboolean
 set_bond_attr (NMDevice *device, const char *attr, const char *value)
 {
+	NMDeviceBond *self = NM_DEVICE_BOND (device);
 	gboolean ret;
 	int ifindex = nm_device_get_ifindex (device);
 
 	ret = nm_platform_master_set_option (ifindex, attr, value);
-	if (!ret) {
-		nm_log_warn (LOGD_HW, "(%s): failed to set bonding attribute "
-		             "'%s' to '%s'", nm_device_get_ip_iface (device), attr, value);
-	}
+	if (!ret)
+		_LOGW (LOGD_HW, "failed to set bonding attribute '%s' to '%s'", attr, value);
 	return ret;
 }
 
@@ -423,8 +424,8 @@ enslave_slave (NMDevice *device,
                NMConnection *connection,
                gboolean configure)
 {
+	NMDeviceBond *self = NM_DEVICE_BOND (device);
 	gboolean success = TRUE, no_firmware = FALSE;
-	const char *iface = nm_device_get_ip_iface (device);
 	const char *slave_iface = nm_device_get_ip_iface (slave);
 
 	nm_device_master_check_slave_physical_port (device, slave, LOGD_BOND);
@@ -438,9 +439,9 @@ enslave_slave (NMDevice *device,
 		if (!success)
 			return FALSE;
 
-		nm_log_info (LOGD_BOND, "(%s): enslaved bond slave %s", iface, slave_iface);
+		_LOGI (LOGD_BOND, "enslaved bond slave %s", slave_iface);
 	} else
-		nm_log_info (LOGD_BOND, "(%s): bond slave %s was enslaved", iface, slave_iface);
+		_LOGI (LOGD_BOND, "bond slave %s was enslaved", slave_iface);
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_BOND_SLAVES);
 	return TRUE;
@@ -451,6 +452,7 @@ release_slave (NMDevice *device,
                NMDevice *slave,
                gboolean configure)
 {
+	NMDeviceBond *self = NM_DEVICE_BOND (device);
 	gboolean success = TRUE, no_firmware = FALSE;
 
 	if (configure) {
@@ -458,17 +460,14 @@ release_slave (NMDevice *device,
 		                                    nm_device_get_ip_ifindex (slave));
 
 		if (success) {
-			nm_log_info (LOGD_BOND, "(%s): released bond slave %s",
-			             nm_device_get_ip_iface (device),
-			             nm_device_get_ip_iface (slave));
+			_LOGI (LOGD_BOND, "released bond slave %s",
+			       nm_device_get_ip_iface (slave));
 		} else {
-			nm_log_warn (LOGD_BOND, "(%s): failed to release bond slave %s",
-			             nm_device_get_ip_iface (device),
-			             nm_device_get_ip_iface (slave));
+			_LOGW (LOGD_BOND, "failed to release bond slave %s",
+			       nm_device_get_ip_iface (slave));
 		}
 	} else {
-		nm_log_info (LOGD_BOND, "(%s): bond slave %s was released",
-		             nm_device_get_ip_iface (device),
+		_LOGI (LOGD_BOND, "bond slave %s was released",
 		             nm_device_get_ip_iface (slave));
 	}
 
@@ -480,10 +479,8 @@ release_slave (NMDevice *device,
 		 * IFF_UP), so we must bring it back up here to ensure carrier changes and
 		 * other state is noticed by the now-released slave.
 		 */
-		if (!nm_device_bring_up (slave, TRUE, &no_firmware)) {
-			nm_log_warn (LOGD_BOND, "(%s): released bond slave could not be brought up.",
-			             nm_device_get_iface (slave));
-		}
+		if (!nm_device_bring_up (slave, TRUE, &no_firmware))
+			_LOGW (LOGD_BOND, "released bond slave could not be brought up.");
 	}
 
 	return success;
@@ -530,16 +527,6 @@ nm_device_bond_new_for_connection (NMConnection *connection)
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BOND,
 	                                  NM_DEVICE_IS_MASTER, TRUE,
 	                                  NULL);
-}
-
-static void
-constructed (GObject *object)
-{
-	G_OBJECT_CLASS (nm_device_bond_parent_class)->constructed (object);
-
-	nm_log_dbg (LOGD_HW | LOGD_BOND, "(%s): kernel ifindex %d",
-	            nm_device_get_iface (NM_DEVICE (object)),
-	            nm_device_get_ifindex (NM_DEVICE (object)));
 }
 
 static void
@@ -592,7 +579,6 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 	parent_class->connection_type = NM_SETTING_BOND_SETTING_NAME;
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 

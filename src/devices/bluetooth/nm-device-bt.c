@@ -49,6 +49,9 @@
 
 #define MM_DBUS_SERVICE  "org.freedesktop.ModemManager1"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF(NMDeviceBt);
+
 G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_BT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BT, NMDeviceBtPrivate))
@@ -427,7 +430,8 @@ modem_prepare_result (NMModem *modem,
                       NMDeviceStateReason reason,
                       gpointer user_data)
 {
-	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceBt *self = NM_DEVICE_BT (user_data);
+	NMDevice *device = NM_DEVICE (self);
 	NMDeviceState state;
 
 	state = nm_device_get_state (device);
@@ -460,8 +464,7 @@ modem_prepare_result (NMModem *modem,
 			 * the SIM if the incorrect PIN continues to be used.
 			 */
 			g_object_set (G_OBJECT (device), NM_DEVICE_AUTOCONNECT, FALSE, NULL);
-			nm_log_info (LOGD_MB, "(%s): disabling autoconnect due to failed SIM PIN",
-			             nm_device_get_iface (device));
+			_LOGI (LOGD_MB, "disabling autoconnect due to failed SIM PIN");
 		}
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
@@ -481,21 +484,20 @@ device_state_changed (NMDevice *device,
 }
 
 static void
-modem_ip4_config_result (NMModem *self,
+modem_ip4_config_result (NMModem *modem,
                          NMIP4Config *config,
                          GError *error,
                          gpointer user_data)
 {
-	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceBt *self = NM_DEVICE_BT (user_data);
+	NMDevice *device = NM_DEVICE (self);
 
 	g_return_if_fail (nm_device_activate_ip4_state_in_conf (device) == TRUE);
 
 	if (error) {
-		nm_log_warn (LOGD_MB | LOGD_IP4 | LOGD_BT,
-		             "(%s): retrieving IP4 configuration failed: (%d) %s",
-		             nm_device_get_ip_iface (device),
-		             error ? error->code : -1,
-		             error && error->message ? error->message : "(unknown)");
+		_LOGW (LOGD_MB | LOGD_IP4 | LOGD_BT,
+		       "retrieving IP4 configuration failed: (%d) %s",
+		       error->code, error->message ? error->message : "(unknown)");
 
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 	} else
@@ -638,16 +640,14 @@ component_added (NMDevice *device, GObject *component)
 	 */
 	state = nm_device_get_state (NM_DEVICE (self));
 	if (state != NM_DEVICE_STATE_CONFIG) {
-		nm_log_warn (LOGD_BT | LOGD_MB,
-		             "(%s): modem found but device not in correct state (%d)",
-		             nm_device_get_iface (NM_DEVICE (self)),
-		             nm_device_get_state (NM_DEVICE (self)));
+		_LOGW (LOGD_BT | LOGD_MB,
+		       "modem found but device not in correct state (%d)",
+		       nm_device_get_state (NM_DEVICE (self)));
 		return TRUE;
 	}
 
-	nm_log_info (LOGD_BT | LOGD_MB,
-	             "Activation (%s/bluetooth) Stage 2 of 5 (Device Configure) modem found.",
-	             nm_device_get_iface (NM_DEVICE (self)));
+	_LOGI (LOGD_BT | LOGD_MB,
+	       "Activation: (bluetooth) Stage 2 of 5 (Device Configure) modem found.");
 
 	if (priv->modem) {
 		g_warn_if_reached ();
@@ -696,11 +696,9 @@ check_connect_continue (NMDeviceBt *self)
 	if (!priv->connected || !priv->have_iface)
 		return;
 
-	nm_log_info (LOGD_BT, "Activation (%s %s/bluetooth) Stage 2 of 5 (Device Configure) "
-	             "successful.  Will connect via %s.",
-	             nm_device_get_iface (device),
-	             nm_device_get_ip_iface (device),
-	             dun ? "DUN" : (pan ? "PAN" : "unknown"));
+	_LOGI (LOGD_BT,
+	       "Activation: (bluetooth) Stage 2 of 5 (Device Configure) successful. Will connect via %s.",
+	       dun ? "DUN" : (pan ? "PAN" : "unknown"));
 
 	/* Kill the connect timeout since we're connected now */
 	if (priv->timeout_id) {
@@ -715,9 +713,8 @@ check_connect_continue (NMDeviceBt *self)
 		/* Wait for ModemManager to find the modem */
 		priv->timeout_id = g_timeout_add_seconds (30, modem_find_timeout, self);
 
-		nm_log_info (LOGD_BT | LOGD_MB, "Activation (%s/bluetooth) Stage 2 of 5 (Device Configure) "
-		             "waiting for modem to appear.",
-		             nm_device_get_iface (device));
+		_LOGI (LOGD_BT | LOGD_MB,
+		       "Activation: (bluetooth) Stage 2 of 5 (Device Configure) waiting for modem to appear.");
 	} else
 		g_assert_not_reached ();
 }
@@ -736,8 +733,8 @@ bluez_connect_cb (GObject *object,
 	                                         res, &error);
 
 	if (!device) {
-		nm_log_warn (LOGD_BT, "Error connecting with bluez: %s",
-		             error && error->message ? error->message : "(unknown)");
+		_LOGW (LOGD_BT, "Error connecting with bluez: %s",
+		       error && error->message ? error->message : "(unknown)");
 		g_clear_error (&error);
 
 		nm_device_state_changed (NM_DEVICE (self),
@@ -753,8 +750,7 @@ bluez_connect_cb (GObject *object,
 		nm_device_set_ip_iface (NM_DEVICE (self), device);
 	}
 
-	nm_log_dbg (LOGD_BT, "(%s): connect request successful",
-	            nm_device_get_iface (NM_DEVICE (self)));
+	_LOGD (LOGD_BT, "connect request successful");
 
 	/* Stage 3 gets scheduled when Bluez says we're connected */
 	priv->have_iface = TRUE;
@@ -775,8 +771,7 @@ bluez_connected_changed (NMBluezDevice *bt_device,
 	connected = nm_bluez_device_get_connected (bt_device);
 	if (connected) {
 		if (state == NM_DEVICE_STATE_CONFIG) {
-			nm_log_dbg (LOGD_BT, "(%s): connected to the device",
-			            nm_device_get_iface (device));
+			_LOGD (LOGD_BT, "connected to the device");
 
 			priv->connected = TRUE;
 			check_connect_continue (self);
@@ -787,13 +782,10 @@ bluez_connected_changed (NMBluezDevice *bt_device,
 		/* Bluez says we're disconnected from the device.  Suck. */
 
 		if (nm_device_is_activating (device)) {
-			nm_log_info (LOGD_BT,
-			             "Activation (%s/bluetooth): bluetooth link disconnected.",
-			             nm_device_get_iface (device));
+			_LOGI (LOGD_BT, "Activation: (bluetooth) bluetooth link disconnected.");
 			fail = TRUE;
 		} else if (state == NM_DEVICE_STATE_ACTIVATED) {
-			nm_log_info (LOGD_BT, "(%s): bluetooth link disconnected.",
-			             nm_device_get_iface (device));
+			_LOGI (LOGD_BT, "bluetooth link disconnected.");
 			fail = TRUE;
 		}
 
@@ -809,8 +801,7 @@ bt_connect_timeout (gpointer user_data)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (user_data);
 
-	nm_log_dbg (LOGD_BT, "(%s): initial connection timed out",
-	            nm_device_get_iface (NM_DEVICE (self)));
+	_LOGD (LOGD_BT, "initial connection timed out");
 
 	NM_DEVICE_BT_GET_PRIVATE (self)->timeout_id = 0;
 	nm_device_state_changed (NM_DEVICE (self),
@@ -822,6 +813,7 @@ bt_connect_timeout (gpointer user_data)
 static NMActStageReturn
 act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
+	NMDeviceBt *self = NM_DEVICE_BT (device);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMConnection *connection;
 
@@ -838,8 +830,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	nm_log_dbg (LOGD_BT, "(%s): requesting connection to the device",
-	            nm_device_get_iface (device));
+	_LOGD (LOGD_BT, "requesting connection to the device");
 
 	/* Connect to the BT device */
 	nm_bluez_device_connect_async (priv->bt_device,
@@ -963,8 +954,7 @@ handle_availability_change (NMDeviceBt *self,
 
 	state = nm_device_get_state (device);
 	if (state < NM_DEVICE_STATE_UNAVAILABLE) {
-		nm_log_dbg (LOGD_BT, "(%s): availability blocked by UNMANAGED state",
-		            nm_device_get_iface (device));
+		_LOGD (LOGD_BT, "availability blocked by UNMANAGED state");
 		return;
 	}
 
@@ -974,7 +964,7 @@ handle_availability_change (NMDeviceBt *self,
 
 	if (available) {
 		if (state != NM_DEVICE_STATE_UNAVAILABLE)
-			nm_log_warn (LOGD_CORE | LOGD_BT, "not in expected unavailable state!");
+			_LOGW (LOGD_CORE | LOGD_BT, "not in expected unavailable state!");
 
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_DISCONNECTED,
@@ -995,9 +985,8 @@ set_mm_running (NMDeviceBt *self, gboolean running)
 	if (priv->mm_running == running)
 		return;
 
-	nm_log_dbg (LOGD_BT, "(%s): ModemManager now %s",
-	            nm_device_get_iface (NM_DEVICE (self)),
-	            running ? "available" : "unavailable");
+	_LOGD (LOGD_BT, "ModemManager now %s",
+	       running ? "available" : "unavailable");
 
 	old_available = nm_device_is_available (NM_DEVICE (self));
 	priv->mm_running = running;
