@@ -20,7 +20,6 @@
 
 #include <config.h>
 #include <string.h>
-#include <netinet/ether.h>
 
 #include "nm-glib-compat.h"
 

@@ -29,8 +29,6 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <netinet/ether.h>
-#include <linux/if_infiniband.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>

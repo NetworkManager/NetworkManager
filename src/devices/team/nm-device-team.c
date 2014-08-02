@@ -27,7 +27,6 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <gio/gio.h>
-#include <netinet/ether.h>
 #include <teamdctl.h>
 #include <stdlib.h>
 

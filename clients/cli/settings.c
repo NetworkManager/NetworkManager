@@ -19,8 +19,6 @@
 
 #include "config.h"
 
-#include <linux/if_ether.h>
-#include <linux/if_infiniband.h>
 #include <stdio.h>
 #include <stdlib.h>
 

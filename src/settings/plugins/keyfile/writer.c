@@ -40,7 +40,6 @@
 #include <nm-utils.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <netinet/ether.h>
 
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"

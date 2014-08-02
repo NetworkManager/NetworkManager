@@ -21,7 +21,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <netinet/ether.h>
 
 #include "nm-wifi-ap.h"
 #include "nm-wifi-ap-utils.h"

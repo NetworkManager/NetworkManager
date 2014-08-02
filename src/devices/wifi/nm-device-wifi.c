@@ -24,7 +24,6 @@
 #include <dbus/dbus.h>
 #include <netinet/in.h>
 #include <string.h>
-#include <net/ethernet.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -32,7 +31,6 @@
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
 #include <sys/ioctl.h>
-#include <netinet/ether.h>
 #include <errno.h>
 
 #include "nm-glib-compat.h"

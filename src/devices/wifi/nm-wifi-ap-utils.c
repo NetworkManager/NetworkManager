@@ -23,6 +23,7 @@
 #include <stdlib.h>
 
 #include "nm-wifi-ap-utils.h"
+#include "nm-utils.h"
 
 static gboolean
 verify_no_wep (NMSettingWirelessSecurity *s_wsec, const char *tag, GError **error)

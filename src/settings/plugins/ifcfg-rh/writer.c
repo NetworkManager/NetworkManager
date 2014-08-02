@@ -27,7 +27,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <netinet/ether.h>
 
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>

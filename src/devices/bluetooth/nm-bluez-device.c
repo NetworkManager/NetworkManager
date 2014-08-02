@@ -23,8 +23,6 @@
 #include <glib/gi18n.h>
 #include <gio/gio.h>
 #include <string.h>
-#include <net/ethernet.h>
-#include <netinet/ether.h>
 
 #include "nm-dbus-interface.h"
 #include "nm-setting-bluetooth.h"

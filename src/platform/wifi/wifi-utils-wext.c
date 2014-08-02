@@ -41,7 +41,6 @@
 #include <sys/types.h>
 #include <linux/types.h>
 #include <sys/socket.h>
-#include <linux/if.h>
 #include <linux/wireless.h>
 
 

@@ -24,7 +24,6 @@
 #include <glib/gi18n.h>
 
 #include <linux/if_infiniband.h>
-#include <netinet/ether.h>
 
 #include "nm-device-infiniband.h"
 #include "nm-logging.h"

@@ -24,7 +24,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <netinet/ether.h>
-#include <linux/if_infiniband.h>
 #include <uuid/uuid.h>
 #include <gmodule.h>
 

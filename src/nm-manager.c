@@ -22,7 +22,6 @@
 #include <config.h>
 
 #include <stdlib.h>
-#include <netinet/ether.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>

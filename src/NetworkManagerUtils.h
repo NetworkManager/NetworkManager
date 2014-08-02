@@ -24,7 +24,6 @@
 
 #include <glib.h>
 #include <stdio.h>
-#include <net/ethernet.h>
 
 #include "nm-connection.h"
 #include "nm-platform.h"

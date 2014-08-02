@@ -23,7 +23,6 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
-#include <netinet/ether.h>
 #include <stdlib.h>
 
 #include "gsystem-local-alloc.h"

@@ -26,7 +26,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <glib.h>
-#include <netinet/ether.h>
 #include <dbus/dbus-glib.h>
 
 #include "nm-supplicant-config.h"

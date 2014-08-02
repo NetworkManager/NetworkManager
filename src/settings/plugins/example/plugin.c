@@ -22,7 +22,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <netinet/ether.h>
 #include <string.h>
 
 #include <gmodule.h>

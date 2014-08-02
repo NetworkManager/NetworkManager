@@ -36,8 +36,6 @@
 #include <nm-setting-8021x.h>
 #include <nm-utils.h>
 #include <arpa/inet.h>
-#include <netinet/ether.h>
-#include <linux/if_infiniband.h>
 #include <string.h>
 
 #include "nm-dbus-glib-types.h"

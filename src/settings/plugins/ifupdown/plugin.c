@@ -25,8 +25,6 @@
 #include <string.h>
 #include <sys/inotify.h>
 
-#include <net/ethernet.h>
-#include <netinet/ether.h>
 
 #include <gmodule.h>
 #include <glib-object.h>

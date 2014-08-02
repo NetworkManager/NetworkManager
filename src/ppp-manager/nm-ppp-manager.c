@@ -32,7 +32,6 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <asm/types.h>
-#include <linux/if.h>
 #include <sys/stat.h>
 
 #include <linux/ppp_defs.h>

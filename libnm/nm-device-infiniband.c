@@ -20,8 +20,6 @@
 
 #include <config.h>
 #include <string.h>
-#include <linux/if_infiniband.h>
-#include <netinet/ether.h>
 
 #include "nm-glib-compat.h"
 

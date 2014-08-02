@@ -21,7 +21,6 @@
 #ifndef NM_WIFI_AP_UTILS_H
 #define NM_WIFI_AP_UTILS_H
 
-#include <net/ethernet.h>
 
 #include <nm-dbus-interface.h>
 #include <nm-connection.h>

@@ -24,7 +24,6 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
-#include <netinet/ether.h>
 #include <errno.h>
 #include <glib/gi18n.h>
 

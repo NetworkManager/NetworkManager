@@ -35,7 +35,6 @@
 #include <sys/wait.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <linux/if.h>
 #include <netlink/route/addr.h>
 
 #include "gsystem-local-alloc.h"

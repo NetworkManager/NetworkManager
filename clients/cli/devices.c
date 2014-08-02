@@ -23,7 +23,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <netinet/ether.h>
 #include <readline/readline.h>
 
 #include <glib.h>

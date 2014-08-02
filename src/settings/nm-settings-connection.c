@@ -22,7 +22,6 @@
 #include "config.h"
 
 #include <string.h>
-#include <netinet/ether.h>
 
 #include <nm-dbus-interface.h>
 #include <dbus/dbus-glib-lowlevel.h>

@@ -30,9 +30,7 @@
 #include <linux/version.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <linux/if.h>
 #include <errno.h>
-#include <netinet/ether.h>
 
 #include <gudev/gudev.h>
 

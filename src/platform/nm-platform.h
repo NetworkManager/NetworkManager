@@ -24,7 +24,6 @@
 #include <glib-object.h>
 #include "nm-glib-compat.h"
 #include <netinet/in.h>
-#include <net/ethernet.h>
 #include <linux/if.h>
 #include <linux/if_addr.h>
 

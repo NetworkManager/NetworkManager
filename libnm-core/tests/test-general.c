@@ -22,8 +22,6 @@
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 #include <string.h>
-#include <netinet/ether.h>
-#include <linux/if_infiniband.h>
 
 #include <nm-utils.h>
 

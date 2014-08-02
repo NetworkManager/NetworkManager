@@ -21,7 +21,6 @@
 #include <glib.h>
 #include <string.h>
 #include <errno.h>
-#include <netinet/ether.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"

@@ -27,6 +27,10 @@
 
 #include <glib.h>
 
+/* For ETH_ALEN and INFINIBAND_ALEN */
+#include <linux/if_ether.h>
+#include <linux/if_infiniband.h>
+
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
 
