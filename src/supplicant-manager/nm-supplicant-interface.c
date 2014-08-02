@@ -1080,7 +1080,7 @@ add_network_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 			                            add_blob_cb,
 			                            self,
 			                            NULL,
-			                            DBUS_TYPE_STRING, name,
+			                            G_TYPE_STRING, name,
 			                            DBUS_TYPE_G_UCHAR_ARRAY, data,
 			                            G_TYPE_INVALID);
 		nm_call_store_add (priv->assoc_pcalls, priv->iface_proxy, call);
