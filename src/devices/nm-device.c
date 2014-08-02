@@ -74,6 +74,9 @@
 #include "nm-device-bond.h"
 #include "nm-device-team.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF (NMDevice);
+
 static void impl_device_disconnect (NMDevice *device, DBusGMethodInvocation *context);
 
 #include "nm-device-glue.h"
@@ -566,7 +569,7 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 				nm_platform_link_set_up (priv->ip_ifindex);
 		} else {
 			/* Device IP interface must always be a kernel network interface */
-			nm_log_warn (LOGD_HW, "(%s): failed to look up interface index", iface);
+			_LOGW (LOGD_HW, "failed to look up interface index");
 		}
 	}
 
