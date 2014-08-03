@@ -55,13 +55,6 @@ enum {
 	LAST_PROP
 };
 
-enum {
-	UPDATED,
-
-	LAST_SIGNAL
-};
-static guint signals[LAST_SIGNAL] = { 0 };
-
 typedef struct RemoteCall RemoteCall;
 typedef void (*RemoteCallFetchResultCb) (RemoteCall *call, DBusGProxyCall *proxy_call, GError *error);
 
@@ -443,9 +436,7 @@ replace_settings (NMRemoteConnection *self, GHashTable *new_settings)
 {
 	GError *error = NULL;
 
-	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, &error))
-		g_signal_emit (self, signals[UPDATED], 0, new_settings);
-	else {
+	if (!nm_connection_replace_settings (NM_CONNECTION (self), new_settings, &error)) {
 		g_warning ("%s: error updating connection %s settings: (%d) %s",
 		           __func__,
 		           nm_connection_get_path (NM_CONNECTION (self)),
@@ -876,23 +867,6 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
-
-	/* Signals */
-	/**
-	 * NMRemoteConnection::updated:
-	 * @connection: a #NMConnection
-	 *
-	 * This signal is emitted when a connection changes, and it is
-	 * still visible to the user.
-	 */
-	signals[UPDATED] =
-		g_signal_new (NM_REMOTE_CONNECTION_UPDATED,
-		              G_TYPE_FROM_CLASS (remote_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMRemoteConnectionClass, updated),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
 }
 
 static void
