@@ -118,6 +118,7 @@ global:
 	nm_connection_get_uuid;
 	nm_connection_get_virtual_device_description;
 	nm_connection_is_type;
+	nm_connection_is_virtual;
 	nm_connection_need_secrets;
 	nm_connection_normalize;
 	nm_connection_remove_setting;

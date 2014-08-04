@@ -1474,6 +1474,40 @@ nm_connection_get_connection_type (NMConnection *connection)
 }
 
 /**
+ * nm_connection_is_virtual:
+ * @connection: an #NMConnection
+ *
+ * Checks if @connection refers to a virtual device (and thus can potentially be
+ * activated even if the device it refers to doesn't exist).
+ *
+ * Returns: whether @connection refers to a virtual device
+ */
+gboolean
+nm_connection_is_virtual (NMConnection *connection)
+{
+	const char *type;
+
+	type = nm_connection_get_connection_type (connection);
+	g_return_val_if_fail (type != NULL, FALSE);
+
+	if (   !strcmp (type, NM_SETTING_BOND_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_TEAM_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_BRIDGE_SETTING_NAME)
+	    || !strcmp (type, NM_SETTING_VLAN_SETTING_NAME))
+		return TRUE;
+
+	if (!strcmp (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+		NMSettingInfiniband *s_ib;
+
+		s_ib = nm_connection_get_setting_infiniband (connection);
+		g_return_val_if_fail (s_ib != NULL, FALSE);
+		return nm_setting_infiniband_get_virtual_interface_name (s_ib) != NULL;
+	}
+
+	return FALSE;
+}
+
+/**
  * nm_connection_get_virtual_device_description:
  * @connection: an #NMConnection for a virtual device type
  *

@@ -961,89 +961,68 @@ get_virtual_iface_name (NMManager *self,
                         NMDevice **out_parent)
 {
 	NMDevice *parent = NULL;
+	const char *ifname;
 
 	if (out_parent)
 		*out_parent = NULL;
 
-	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
-		return g_strdup (nm_connection_get_interface_name (connection));
+	if (!nm_connection_is_virtual (connection))
+		return NULL;
 
-	if (nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME))
-		return g_strdup (nm_connection_get_interface_name (connection));
-
-	if (nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
-		return g_strdup (nm_connection_get_interface_name (connection));
+	ifname = nm_connection_get_interface_name (connection);
 
 	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		NMSettingVlan *s_vlan;
-		const char *ifname;
 		char *vname;
 
 		s_vlan = nm_connection_get_setting_vlan (connection);
 		g_return_val_if_fail (s_vlan != NULL, NULL);
 
 		parent = find_vlan_parent (self, connection);
-		if (parent) {
-			ifname = nm_connection_get_interface_name (connection);
+		if (!parent)
+			return NULL;
 
-			if (!nm_device_supports_vlans (parent)) {
-				nm_log_warn (LOGD_DEVICE, "(%s): No support for VLANs on interface %s of type %s",
-				             ifname ? ifname : nm_connection_get_id (connection),
-				             nm_device_get_ip_iface (parent),
-				             nm_device_get_type_desc (parent));
-				return NULL;
-			}
-
-			/* If the connection doesn't specify the interface name for the VLAN
-			 * device, we create one for it using the VLAN ID and the parent
-			 * interface's name.
-			 */
-			if (ifname)
-				vname = g_strdup (ifname);
-			else {
-				vname = nm_utils_new_vlan_name (nm_device_get_ip_iface (parent),
-				                                nm_setting_vlan_get_id (s_vlan));
-			}
-			if (out_parent)
-				*out_parent = parent;
-			return vname;
+		if (!nm_device_supports_vlans (parent)) {
+			nm_log_warn (LOGD_DEVICE, "(%s): No support for VLANs on interface %s of type %s",
+			             ifname ? ifname : nm_connection_get_id (connection),
+			             nm_device_get_ip_iface (parent),
+			             nm_device_get_type_desc (parent));
+			return NULL;
 		}
-	}
 
-	if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
-		parent = find_infiniband_parent (self, connection);
-		if (parent) {
-			NMSettingInfiniband *s_infiniband;
-
-			s_infiniband = nm_connection_get_setting_infiniband (connection);
-			if (out_parent)
-				*out_parent = parent;
-			return g_strdup (nm_setting_infiniband_get_virtual_interface_name (s_infiniband));
+		/* If the connection doesn't specify the interface name for the VLAN
+		 * device, we create one for it using the VLAN ID and the parent
+		 * interface's name.
+		 */
+		if (ifname)
+			vname = g_strdup (ifname);
+		else {
+			vname = nm_utils_new_vlan_name (nm_device_get_ip_iface (parent),
+			                                nm_setting_vlan_get_id (s_vlan));
 		}
+		if (out_parent)
+			*out_parent = parent;
+		return vname;
 	}
-
-	return NULL;
-}
-
-static gboolean
-connection_needs_virtual_device (NMConnection *connection)
-{
-	if (   nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)
-	    || nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME))
-		return TRUE;
 
 	if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
 		NMSettingInfiniband *s_infiniband;
 
+		parent = find_infiniband_parent (self, connection);
+		if (!parent)
+			return NULL;
+
 		s_infiniband = nm_connection_get_setting_infiniband (connection);
-		g_return_val_if_fail (s_infiniband != NULL, FALSE);
-		if (nm_setting_infiniband_get_p_key (s_infiniband) != -1)
-			return TRUE;
+		if (out_parent)
+			*out_parent = parent;
+		return g_strdup (nm_setting_infiniband_get_virtual_interface_name (s_infiniband));
 	}
 
-	return FALSE;
+	/* For any other virtual connection, NMSettingConnection:interface-name is
+	 * the virtual device name.
+	 */
+	g_return_val_if_fail (ifname != NULL, NULL);
+	return g_strdup (ifname);
 }
 
 /***************************/
@@ -1149,7 +1128,7 @@ system_create_virtual_devices (NMManager *self)
 		NMConnection *connection = iter->data;
 
 		/* We only create a virtual interface if the connection can autoconnect */
-		if (   connection_needs_virtual_device (connection)
+		if (   nm_connection_is_virtual (connection)
 		    && nm_settings_connection_can_autoconnect (NM_SETTINGS_CONNECTION (connection)))
 			system_create_virtual_device (self, connection);
 	}
@@ -1163,7 +1142,7 @@ connection_added (NMSettings *settings,
 {
 	NMConnection *connection = NM_CONNECTION (settings_connection);
 
-	if (connection_needs_virtual_device (connection)) {
+	if (nm_connection_is_virtual (connection)) {
 		NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
 
 		g_assert (s_con);
@@ -2439,7 +2418,7 @@ find_master (NMManager *self,
 				NMConnection *candidate = iter->data;
 				char *vname;
 
-				if (connection_needs_virtual_device (candidate)) {
+				if (nm_connection_is_virtual (candidate)) {
 					vname = get_virtual_iface_name (self, candidate, NULL);
 					if (   g_strcmp0 (master, vname) == 0
 					    && is_compatible_with_slave (candidate, connection))
@@ -2620,7 +2599,7 @@ ensure_master_active_connection (NMManager *self,
 		/* Device described by master_connection may be a virtual one that's
 		 * not created yet.
 		 */
-		if (!found_device && connection_needs_virtual_device (master_connection)) {
+		if (!found_device && nm_connection_is_virtual (master_connection)) {
 			master_ac = nm_manager_activate_connection (self,
 			                                            master_connection,
 			                                            NULL,
@@ -2679,7 +2658,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 
 	device = nm_active_connection_get_device (active);
 	if (!device) {
-		if (!connection_needs_virtual_device (connection)) {
+		if (!nm_connection_is_virtual (connection)) {
 			NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
 
 			g_assert (s_con);
@@ -3109,7 +3088,7 @@ validate_activation_request (NMManager *self,
 			goto error;
 		}
 	} else {
-		gboolean is_software = connection_needs_virtual_device (connection);
+		gboolean is_software = nm_connection_is_virtual (connection);
 
 		/* VPN and software-device connections don't need a device yet */
 		if (!vpn && !is_software) {
