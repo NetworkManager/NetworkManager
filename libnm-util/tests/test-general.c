@@ -25,6 +25,7 @@
 #include <netinet/ether.h>
 #include <linux/if_infiniband.h>
 #include <sys/wait.h>
+#include <sys/resource.h>
 
 #include <nm-utils.h>
 
@@ -2447,6 +2448,26 @@ test_connection_normalize_virtual_iface_name (void)
 }
 
 static void
+_test_libnm_linking_setup_child_process (gpointer user_data)
+{
+	int val;
+	struct rlimit limit;
+
+	/* the child process is supposed to crash. We don't want it
+	 * to write a core dump. */
+
+	val = getrlimit (RLIMIT_CORE, &limit);
+	if (val == 0) {
+		limit.rlim_cur = 0;
+		val = setrlimit (RLIMIT_CORE, &limit);
+		if (val == 0)
+			return;
+	}
+	/* on error, do not crash or fail assertion. Instead just exit */
+	exit (1);
+}
+
+static void
 test_libnm_linking (void)
 {
 	char *argv[] = { "./test-libnm-linking", NULL };
@@ -2454,7 +2475,8 @@ test_libnm_linking (void)
 	int status;
 	GError *error = NULL;
 
-	g_spawn_sync (BUILD_DIR, argv, NULL, 0 /*G_SPAWN_DEFAULT*/, NULL, NULL,
+	g_spawn_sync (BUILD_DIR, argv, NULL, 0 /*G_SPAWN_DEFAULT*/,
+	              _test_libnm_linking_setup_child_process, NULL,
 	              &out, &err, &status, &error);
 	g_assert_no_error (error);
 
