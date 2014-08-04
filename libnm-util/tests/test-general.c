@@ -2454,7 +2454,7 @@ test_libnm_linking (void)
 	int status;
 	GError *error = NULL;
 
-	g_spawn_sync (BUILD_DIR, argv, NULL, G_SPAWN_DEFAULT, NULL, NULL,
+	g_spawn_sync (BUILD_DIR, argv, NULL, 0 /*G_SPAWN_DEFAULT*/, NULL, NULL,
 	              &out, &err, &status, &error);
 	g_assert_no_error (error);
 
