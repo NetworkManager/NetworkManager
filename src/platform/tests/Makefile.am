@@ -110,6 +110,6 @@ test_cleanup_linux_CPPFLAGS = \
 test_cleanup_linux_LDADD = $(PLATFORM_LDADD)
 
 #@VALGRIND_RULES@
-TESTS = test-link-fake test-address-fake test-route-fake test-cleanup-fake test-link-linux test-address-linux test-route-linux test-cleanup-linux
+TESTS = test-link-fake test-address-fake test-route-fake test-cleanup-fake test-address-linux test-route-linux test-cleanup-linux
 
 
