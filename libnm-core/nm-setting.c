@@ -462,14 +462,13 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnectionSerializationFlags flags)
 NMSetting *
 _nm_setting_new_from_dbus (GType setting_type, GHashTable *hash)
 {
-	GHashTableIter iter;
 	NMSetting *setting;
-	const char *prop_name;
-	GValue *src_value;
 	GObjectClass *class;
-	guint n_params = 0;
-	GParameter *params;
-	int i;
+	GHashTableIter iter;
+	const char *prop_name;
+	GParamSpec **property_specs;
+	guint n_property_specs;
+	guint i;
 
 	g_return_val_if_fail (G_TYPE_IS_INSTANTIATABLE (setting_type), NULL);
 	g_return_val_if_fail (hash != NULL, NULL);
@@ -478,35 +477,36 @@ _nm_setting_new_from_dbus (GType setting_type, GHashTable *hash)
 	 * already been used.
 	 */
 	class = g_type_class_ref (setting_type);
-	params = g_new0 (GParameter, g_hash_table_size (hash));
 
+	/* Check for invalid properties first. */
 	g_hash_table_iter_init (&iter, hash);
-	while (g_hash_table_iter_next (&iter, (gpointer) &prop_name, (gpointer) &src_value)) {
-		GValue *dst_value = &params[n_params].value;
-		GParamSpec *param_spec;
-
-		param_spec = g_object_class_find_property (class, prop_name);
-		if (!param_spec) {
+	while (g_hash_table_iter_next (&iter, (gpointer) &prop_name, NULL)) {
+		if (!g_object_class_find_property (class, prop_name)) {
 			/* Oh, we're so nice and only warn, maybe it should be a fatal error? */
 			g_warning ("Ignoring invalid property '%s'", prop_name);
 			continue;
 		}
-
-		/* 'name' doesn't get deserialized */
-		if (strcmp (g_param_spec_get_name (param_spec), NM_SETTING_NAME) == 0)
-			continue;
-
-		g_value_init (dst_value, G_VALUE_TYPE (src_value));
-		g_value_copy (src_value, dst_value);
-		params[n_params++].name = prop_name;
 	}
 
-	setting = (NMSetting *) g_object_newv (setting_type, n_params, params);
+	/* Now build the setting object from the legitimate properties */
+	setting = (NMSetting *) g_object_new (setting_type, NULL);
 
-	for (i = 0; i < n_params; i++)
-		g_value_unset (&params[i].value);
+	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
+	for (i = 0; i < n_property_specs; i++) {
+		GParamSpec *prop_spec = property_specs[i];
+		GValue *value;
 
-	g_free (params);
+		/* 'name' doesn't get deserialized */
+		if (strcmp (prop_spec->name, NM_SETTING_NAME) == 0)
+			continue;
+
+		value = g_hash_table_lookup (hash, prop_spec->name);
+		if (!value)
+			continue;
+
+		g_object_set_property (G_OBJECT (setting), prop_spec->name, value);
+	}
+	g_free (property_specs);
 	g_type_class_unref (class);
 
 	return setting;
