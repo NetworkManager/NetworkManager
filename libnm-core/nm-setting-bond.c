@@ -67,13 +67,11 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BOND)
 #define NM_SETTING_BOND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BOND, NMSettingBondPrivate))
 
 typedef struct {
-	char *interface_name;
 	GHashTable *options;
 } NMSettingBondPrivate;
 
 enum {
 	PROP_0,
-	PROP_INTERFACE_NAME,
 	PROP_OPTIONS,
 	LAST_PROP
 };
@@ -129,20 +127,6 @@ NMSetting *
 nm_setting_bond_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_BOND, NULL);
-}
-
-/**
- * nm_setting_bond_get_interface_name:
- * @setting: the #NMSettingBond
- *
- * Returns: the #NMSettingBond:interface-name property of the setting
- **/
-const char *
-nm_setting_bond_get_interface_name (NMSettingBond *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NULL);
-
-	return NM_SETTING_BOND_GET_PRIVATE (setting)->interface_name;
 }
 
 /**
@@ -662,13 +646,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	return _nm_setting_verify_deprecated_virtual_iface_name (
-	         priv->interface_name, FALSE,
-	         NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_INTERFACE_NAME,
-	         NM_SETTING_BOND_ERROR,
-	         NM_SETTING_BOND_ERROR_INVALID_PROPERTY,
-	         NM_SETTING_BOND_ERROR_MISSING_PROPERTY,
-	         all_settings, error);
+	return _nm_setting_verify_required_virtual_interface_name (all_settings, error);
 }
 
 static void
@@ -687,7 +665,6 @@ finalize (GObject *object)
 {
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (object);
 
-	g_free (priv->interface_name);
 	g_hash_table_destroy (priv->options);
 
 	G_OBJECT_CLASS (nm_setting_bond_parent_class)->finalize (object);
@@ -707,10 +684,6 @@ set_property (GObject *object, guint prop_id,
 	GHashTable *new_hash;
 
 	switch (prop_id) {
-	case PROP_INTERFACE_NAME:
-		g_free (priv->interface_name);
-		priv->interface_name = g_value_dup_string (value);
-		break;
 	case PROP_OPTIONS:
 		/* Must make a deep copy of the hash table here... */
 		g_hash_table_remove_all (priv->options);
@@ -729,12 +702,8 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (object);
-	NMSettingBond *setting = NM_SETTING_BOND (object);
 
 	switch (prop_id) {
-	case PROP_INTERFACE_NAME:
-		g_value_set_string (value, nm_setting_bond_get_interface_name (setting));
-		break;
 	case PROP_OPTIONS:
 		g_value_set_boxed (value, priv->options);
 		break;
@@ -760,19 +729,6 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 
 	/* Properties */
 	/**
-	 * NMSettingBond:interface-name:
-	 *
-	 * The name of the virtual in-kernel bonding network interface
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_INTERFACE_NAME,
-		 g_param_spec_string (NM_SETTING_BOND_INTERFACE_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
-
-	/**
 	 * NMSettingBond:options:
 	 *
 	 * Dictionary of key/value pairs of bonding options.  Both keys and values
@@ -786,4 +742,8 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 		                             G_PARAM_READWRITE |
 		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
+
+	 _nm_setting_class_add_dbus_only_property (parent_class, "interface-name", G_TYPE_STRING,
+	                                           _nm_setting_get_deprecated_virtual_interface_name,
+	                                           _nm_setting_set_deprecated_virtual_interface_name);
 }

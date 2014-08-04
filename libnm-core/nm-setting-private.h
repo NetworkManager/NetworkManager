@@ -101,15 +101,18 @@ NMSetting * _nm_setting_find_in_list_required (GSList *all_settings,
                                                const char *error_prefix_setting_name,
                                                const char *error_prefix_property_name);
 
-NMSettingVerifyResult _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
-                                                                        gboolean allow_missing,
-                                                                        const char *setting_name,
-                                                                        const char *setting_property,
-                                                                        GQuark error_quark,
-                                                                        gint e_invalid_property,
-                                                                        gint e_missing_property,
-                                                                        GSList *all_settings,
-                                                                        GError **error);
+NMSettingVerifyResult _nm_setting_verify_required_virtual_interface_name (GSList *all_settings,
+                                                                          GError **error);
+
+gboolean _nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
+                                                            NMConnection *connection,
+                                                            const char *property,
+                                                            GValue *value);
+gboolean _nm_setting_set_deprecated_virtual_interface_name (NMSetting *setting,
+                                                            GHashTable *connection_hash,
+                                                            const char *property,
+                                                            const GValue *value,
+                                                            GError **error);
 
 NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
                                           GSList    *all_settings,

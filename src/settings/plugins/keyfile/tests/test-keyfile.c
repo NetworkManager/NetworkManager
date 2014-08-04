@@ -2980,10 +2980,6 @@ test_write_bridge_main (void)
 	g_assert (s_bridge);
 	nm_connection_add_setting (connection, NM_SETTING (s_bridge));
 
-	g_object_set (s_bridge,
-	              NM_SETTING_BRIDGE_INTERFACE_NAME, "br0",
-	              NULL);
-
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	g_assert (s_ip4);

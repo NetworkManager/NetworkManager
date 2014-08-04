@@ -273,6 +273,19 @@ nm_setting_lookup_type_by_quark (GQuark error_quark)
 	return G_TYPE_INVALID;
 }
 
+static GQuark
+_nm_setting_lookup_error_quark (const char *name)
+{
+	SettingInfo *info;
+
+	g_return_val_if_fail (name != NULL, 0);
+
+	_ensure_registered ();
+
+	info = g_hash_table_lookup (registered_settings, name);
+	return info ? info->error_quark : 0;
+}
+
 gint
 _nm_setting_compare_priority (gconstpointer a, gconstpointer b)
 {
@@ -1623,88 +1636,83 @@ _nm_setting_find_in_list_required (GSList *all_settings,
 }
 
 NMSettingVerifyResult
-_nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
-                                                  gboolean allow_missing,
-                                                  const char *setting_name,
-                                                  const char *setting_property,
-                                                  GQuark error_quark,
-                                                  gint e_invalid_property,
-                                                  gint e_missing_property,
-                                                  GSList *all_settings,
-                                                  GError **error)
+_nm_setting_verify_required_virtual_interface_name (GSList *all_settings,
+                                                    GError **error)
 {
 	NMSettingConnection *s_con;
-	const char *con_name;
-
-	if (!all_settings) {
-		/* nm_setting_verify() was called without passing on any other settings.
-		 * Perform a relaxed verification, the setting might be valid when checked
-		 * together with a NMSettingConnection as part of a NMConnection. */
-		if (interface_name && !nm_utils_iface_valid_name (interface_name)) {
-			/* Only if the interace name is invalid, there is an normalizable warning */
-			g_set_error_literal (error,
-			                     error_quark,
-			                     e_invalid_property,
-			                     _("property is invalid"));
-			g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
-		}
-		return NM_SETTING_VERIFY_SUCCESS;
-	}
+	const char *interface_name;
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_find_in_list (all_settings, NM_SETTING_CONNECTION_SETTING_NAME));
-	con_name = s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
-	if (!interface_name && !con_name) {
-		if (allow_missing)
-			return NM_SETTING_VERIFY_SUCCESS;
-
+	interface_name = s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
+	if (!interface_name) {
 		g_set_error_literal (error,
 		                     NM_SETTING_CONNECTION_ERROR,
 		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
 		return NM_SETTING_VERIFY_ERROR;
-	}
-	if (!con_name && !nm_utils_iface_valid_name (interface_name)) {
-		/* the interface_name is invalid, we cannot normalize it. Only do this if !con_name,
-		 * because if con_name is set, it can overwrite interface_name. */
-		g_set_error_literal (error,
-		                     error_quark,
-		                     e_invalid_property,
-		                     _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-		return NM_SETTING_VERIFY_ERROR;
-	}
-	if (!con_name) {
-		/* NMSettingConnection has interface not set, it should be normalized to interface_name */
-		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
-		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
-	}
-	if (!nm_utils_iface_valid_name (con_name)) {
-		/* NMSettingConnection:interface_name is invalid, we cannot normalize it. */
-		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
-		return NM_SETTING_VERIFY_ERROR;
-	}
-	if (interface_name && strcmp (con_name, interface_name) != 0) {
-		/* con_name and interface_name are different. It can be normalized by setting interface_name
-		 * to con_name. */
-		g_set_error_literal (error,
-		                     error_quark,
-		                     e_invalid_property,
-		                     _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 
 	return NM_SETTING_VERIFY_SUCCESS;
+}
+
+gboolean
+_nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
+                                                   NMConnection *connection,
+                                                   const char *property,
+                                                   GValue *value)
+{
+	NMSettingConnection *s_con;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_return_val_if_fail (s_con != NULL, FALSE);
+
+	if (nm_setting_connection_get_interface_name (s_con)) {
+		g_value_set_string (value, nm_setting_connection_get_interface_name (s_con));
+		return TRUE;
+	} else
+		return FALSE;
+}
+
+gboolean
+_nm_setting_set_deprecated_virtual_interface_name (NMSetting *setting,
+                                                   GHashTable *connection_hash,
+                                                   const char *property,
+                                                   const GValue *value,
+                                                   GError **error)
+{
+	const char *interface_name;
+	GQuark error_domain;
+	char *error_enum_name;
+	GEnumClass *enum_class;
+	GEnumValue *enum_val;
+	int error_code = 0;
+
+	/* If the virtual setting type hash contains an interface name, it must be
+	 * valid (even if it's going to be ignored in favor of
+	 * NMSettingConnection:interface-name). Other than that, we don't have to
+	 * check anything here; NMSettingConnection:interface-name will do the rest.
+	 */
+	interface_name = g_value_get_string (value);
+	if (!interface_name || nm_utils_iface_valid_name (interface_name))
+		return TRUE;
+
+	/* For compatibility reasons, we have to use the right error domain... */
+	error_domain = _nm_setting_lookup_error_quark (nm_setting_get_name (setting));
+	error_enum_name = g_strdup_printf ("%sError", G_OBJECT_TYPE_NAME (setting));
+	enum_class = g_type_class_ref (g_type_from_name (error_enum_name));
+	g_free (error_enum_name);
+	if (enum_class) {
+		enum_val = g_enum_get_value_by_nick (enum_class, "InvalidProperty");
+		if (enum_val)
+			error_code = enum_val->value;
+		g_type_class_unref (enum_class);
+	}
+
+	g_set_error_literal (error, error_domain, error_code,
+	                     _("invalid value in compatibility property"));
+	g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property);
+	return FALSE;
 }
 
 /*****************************************************************************/

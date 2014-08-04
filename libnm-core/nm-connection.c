@@ -511,58 +511,6 @@ nm_connection_diff (NMConnection *a,
 }
 
 static gboolean
-_normalize_virtual_iface_name (NMConnection *self)
-{
-	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (self);
-	GHashTableIter h_iter;
-	NMSetting *setting;
-	NMSettingConnection *s_con;
-	const char *interface_name;
-	char *virtual_iface_name = NULL;
-	gboolean was_modified = FALSE;
-	const char *prop_name = NULL;
-
-	/* search for settings that might need normalization of the interface name. */
-	g_hash_table_iter_init (&h_iter, priv->settings);
-	while (   !prop_name
-	       && g_hash_table_iter_next (&h_iter, NULL, (void **) &setting)) {
-		if (NM_IS_SETTING_BOND (setting))
-			prop_name = NM_SETTING_BOND_INTERFACE_NAME;
-		else if (NM_IS_SETTING_BRIDGE (setting))
-			prop_name = NM_SETTING_BRIDGE_INTERFACE_NAME;
-		else if (NM_IS_SETTING_TEAM (setting))
-			prop_name = NM_SETTING_TEAM_INTERFACE_NAME;
-		else if (NM_IS_SETTING_VLAN (setting))
-			prop_name = NM_SETTING_VLAN_INTERFACE_NAME;
-	}
-	if (!prop_name)
-		return FALSE;
-
-	s_con = nm_connection_get_setting_connection (self);
-	g_return_val_if_fail (s_con, FALSE);
-
-	interface_name = nm_setting_connection_get_interface_name (s_con);
-
-	/* read the potential virtual_iface_name from the setting. */
-	g_object_get (setting, prop_name, &virtual_iface_name, NULL);
-
-	if (g_strcmp0 (interface_name, virtual_iface_name) != 0) {
-		if (interface_name) {
-			/* interface_name is set and overwrites the virtual_iface_name. */
-			g_object_set (setting, prop_name, interface_name, NULL);
-		} else {
-			/* interface in NMSettingConnection must be set. */
-			g_object_set (s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, virtual_iface_name, NULL);
-		}
-		was_modified = TRUE;
-	}
-
-	g_free (virtual_iface_name);
-
-	return was_modified;
-}
-
-static gboolean
 _normalize_connection_type (NMConnection *self)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
@@ -924,7 +872,6 @@ nm_connection_normalize (NMConnection *connection,
 	 * errors, because in that case we rather fail without touching the settings. */
 
 	was_modified |= _normalize_connection_type (connection);
-	was_modified |= _normalize_virtual_iface_name (connection);
 	was_modified |= _normalize_connection_slave_type (connection);
 	was_modified |= _normalize_ip_config (connection, parameters);
 	was_modified |= _normalize_infiniband_mtu (connection, parameters);

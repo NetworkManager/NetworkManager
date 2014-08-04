@@ -472,7 +472,6 @@ global:
 	nm_setting_bond_add_option;
 	nm_setting_bond_error_get_type;
 	nm_setting_bond_error_quark;
-	nm_setting_bond_get_interface_name;
 	nm_setting_bond_get_num_options;
 	nm_setting_bond_get_option;
 	nm_setting_bond_get_option_by_name;
@@ -487,7 +486,6 @@ global:
 	nm_setting_bridge_get_ageing_time;
 	nm_setting_bridge_get_forward_delay;
 	nm_setting_bridge_get_hello_time;
-	nm_setting_bridge_get_interface_name;
 	nm_setting_bridge_get_mac_address;
 	nm_setting_bridge_get_max_age;
 	nm_setting_bridge_get_priority;
@@ -728,7 +726,6 @@ global:
 	nm_setting_team_error_get_type;
 	nm_setting_team_error_quark;
 	nm_setting_team_get_config;
-	nm_setting_team_get_interface_name;
 	nm_setting_team_get_type;
 	nm_setting_team_new;
 	nm_setting_team_port_error_get_type;
@@ -745,7 +742,6 @@ global:
 	nm_setting_vlan_error_quark;
 	nm_setting_vlan_get_flags;
 	nm_setting_vlan_get_id;
-	nm_setting_vlan_get_interface_name;
 	nm_setting_vlan_get_num_priorities;
 	nm_setting_vlan_get_parent;
 	nm_setting_vlan_get_priority;
