@@ -680,7 +680,7 @@ test_setting_to_hash_all (void)
 
 	s_wsec = make_test_wsec_setting ("setting-to-hash-all");
 
-	hash = nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ALL);
+	hash = _nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ALL);
 
 	/* Make sure all keys are there */
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
@@ -704,7 +704,7 @@ test_setting_to_hash_no_secrets (void)
 
 	s_wsec = make_test_wsec_setting ("setting-to-hash-no-secrets");
 
-	hash = nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_NO_SECRETS);
+	hash = _nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_NO_SECRETS);
 
 	/* Make sure non-secret keys are there */
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
@@ -730,7 +730,7 @@ test_setting_to_hash_only_secrets (void)
 
 	s_wsec = make_test_wsec_setting ("setting-to-hash-only-secrets");
 
-	hash = nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+	hash = _nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ONLY_SECRETS);
 
 	/* Make sure non-secret keys are there */
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT) == NULL,
@@ -778,10 +778,10 @@ test_setting_new_from_hash (void)
 	GHashTable *hash;
 
 	s_wsec = make_test_wsec_setting ("setting-to-hash-all");
-	hash = nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ALL);
+	hash = _nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ALL);
 	g_object_unref (s_wsec);
 
-	s_wsec = (NMSettingWirelessSecurity *) nm_setting_new_from_hash (NM_TYPE_SETTING_WIRELESS_SECURITY, hash);
+	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_hash (NM_TYPE_SETTING_WIRELESS_SECURITY, hash);
 	g_hash_table_destroy (hash);
 
 	g_assert (s_wsec);

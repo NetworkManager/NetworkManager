@@ -248,12 +248,6 @@ typedef enum {
 	NM_SETTING_HASH_FLAG_ONLY_SECRETS = 0x00000002,
 } NMSettingHashFlags;
 
-GHashTable *nm_setting_to_hash       (NMSetting *setting,
-                                      NMSettingHashFlags flags);
-
-NMSetting  *nm_setting_new_from_hash (GType setting_type,
-                                      GHashTable *hash);
-
 NMSetting *nm_setting_duplicate      (NMSetting *setting);
 
 const char *nm_setting_get_name      (NMSetting *setting);
@@ -300,9 +294,6 @@ void        nm_setting_clear_secrets_with_flags (NMSetting *setting,
                                                  gpointer user_data);
 
 GPtrArray  *nm_setting_need_secrets   (NMSetting *setting);
-gboolean    nm_setting_update_secrets (NMSetting *setting,
-                                       GHashTable *secrets,
-                                       GError **error);
 
 gboolean    nm_setting_get_secret_flags (NMSetting *setting,
                                          const char *secret_name,

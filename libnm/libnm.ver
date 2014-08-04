@@ -676,7 +676,6 @@ global:
 	nm_setting_lookup_type;
 	nm_setting_lookup_type_by_quark;
 	nm_setting_need_secrets;
-	nm_setting_new_from_hash;
 	nm_setting_olpc_mesh_error_get_type;
 	nm_setting_olpc_mesh_error_quark;
 	nm_setting_olpc_mesh_get_channel;
@@ -736,9 +735,7 @@ global:
 	nm_setting_team_port_get_config;
 	nm_setting_team_port_get_type;
 	nm_setting_team_port_new;
-	nm_setting_to_hash;
 	nm_setting_to_string;
-	nm_setting_update_secrets;
 	nm_setting_verify;
 	nm_setting_vlan_add_priority;
 	nm_setting_vlan_add_priority_str;

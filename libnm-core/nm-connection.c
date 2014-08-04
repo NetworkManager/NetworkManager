@@ -308,7 +308,7 @@ hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
 		GType type = nm_setting_lookup_type (setting_name);
 
 		if (type) {
-			NMSetting *setting = nm_setting_new_from_hash (type, setting_hash);
+			NMSetting *setting = _nm_setting_new_from_hash (type, setting_hash);
 
 			if (setting) {
 				_nm_connection_add_setting (connection, setting);
@@ -1264,7 +1264,7 @@ nm_connection_to_hash (NMConnection *connection, NMSettingHashFlags flags)
 	while (g_hash_table_iter_next (&iter, &key, &data)) {
 		NMSetting *setting = NM_SETTING (data);
 
-		setting_hash = nm_setting_to_hash (setting, flags);
+		setting_hash = _nm_setting_to_hash (setting, flags);
 		if (setting_hash)
 			g_hash_table_insert (ret, g_strdup (nm_setting_get_name (setting)), setting_hash);
 	}

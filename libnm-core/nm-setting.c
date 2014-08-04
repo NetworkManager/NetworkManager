@@ -380,7 +380,7 @@ destroy_gvalue (gpointer data)
 }
 
 /**
- * nm_setting_to_hash:
+ * _nm_setting_to_hash:
  * @setting: the #NMSetting
  * @flags: hash flags, e.g. %NM_SETTING_HASH_FLAG_ALL
  *
@@ -392,7 +392,7 @@ destroy_gvalue (gpointer data)
  * describing the setting's properties
  **/
 GHashTable *
-nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
+_nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 {
 	GHashTable *hash;
 	GParamSpec **property_specs;
@@ -444,7 +444,7 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 }
 
 /**
- * nm_setting_new_from_hash:
+ * _nm_setting_new_from_hash:
  * @setting_type: the #NMSetting type which the hash contains properties for
  * @hash: (element-type utf8 GObject.Value): the #GHashTable containing a
  * string to GValue mapping of properties that apply to the setting
@@ -460,7 +460,7 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
  * hash table, or %NULL on failure
  **/
 NMSetting *
-nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
+_nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
 {
 	GHashTableIter iter;
 	NMSetting *setting;
@@ -1103,7 +1103,7 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 }
 
 /**
- * nm_setting_update_secrets:
+ * _nm_setting_update_secrets:
  * @setting: the #NMSetting
  * @secrets: (element-type utf8 GObject.Value): a #GHashTable mapping
  * string to #GValue of setting property names and secrets
@@ -1112,15 +1112,9 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
  * Update the setting's secrets, given a hash table of secrets intended for that
  * setting (deserialized from D-Bus for example).
  *
- * Returns: %TRUE if the secrets were successfully updated, %FALSE on failure to
+ * Returns: an #NMSettingUpdateSecretResult
  * update one or more of the secrets.
  **/
-gboolean
-nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **error)
-{
-	return _nm_setting_update_secrets (setting, secrets, error) != NM_SETTING_UPDATE_SECRET_ERROR;
-}
-
 NMSettingUpdateSecretResult
 _nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **error)
 {

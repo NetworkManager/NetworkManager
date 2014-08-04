@@ -114,4 +114,10 @@ NMSetting *_nm_setting_find_in_list_base_type (GSList *all_settings);
 gboolean _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_type);
 const char * _nm_setting_slave_type_detect_from_settings (GSList *all_settings, NMSetting **out_s_port);
 
+GHashTable *_nm_setting_to_hash       (NMSetting *setting,
+                                       NMSettingHashFlags flags);
+
+NMSetting  *_nm_setting_new_from_hash (GType setting_type,
+                                       GHashTable *hash);
+
 #endif  /* NM_SETTING_PRIVATE_H */
