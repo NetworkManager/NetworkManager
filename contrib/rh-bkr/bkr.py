@@ -341,7 +341,7 @@ class UploadFile_ParseWebsite(UploadFile):
         self._urls = None
         UploadFile.__init__(self, uri)
 
-    DefaultPattern = '^.*/NetworkManager(-adsl|-bluetooth|-debuginfo|-devel|-glib|-glib-devel|-team|-tui|-wifi|-wwan)?-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-[^ /]*\.x86_64\.rpm$'
+    DefaultPattern = '^.*/NetworkManager(-adsl|-bluetooth|-config-connectivity-fedora|-debuginfo|-devel|-glib|-glib-devel|-libnm|-libnm-devel|-team|-tui|-wifi|-wwan)?-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-[^ /]*\.x86_64\.rpm$'
     @property
     def pattern(self):
         if self._pattern is not None:
@@ -541,9 +541,15 @@ class CmdSubmit(CmdBase):
         if self.rpm is not None:
             for x in self.rpm:
                 for u in x[1].url():
-                    if re.match(r'^.*/NetworkManager-0.9.9.1-[1-9][0-9]*.git20140326.4dba720.el7[^/]*$', u):
-                        return 'rhel-7'
-        return 'master'
+                    if re.match(r'^.*/NetworkManager-0.9.9.1-[1-9][0-9]*\.git20140326\.4dba720\.el7\.x86_64\.rpm$', u):
+                        return 'rhel-7.0' # stable rhel-7.0 release
+                    if re.match(r'^.*/NetworkManager-0.9.11.0-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                        return 'master' # current development, pre 1.0
+                    if re.match(r'^.*/NetworkManager-0.9.10.[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                        return 'master' # 0.9.10
+                    if re.match(r'^.*/NetworkManager-0.9.9.9[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
+                        return 'master' # 0.9.10-rc
+        raise Exception("could not detect GIT_TARGETBRANCH. Try setting as environment variable")
 
     DefaultReplacements = {
             'WHITEBOARD'        : 'Test NetworkManager',
