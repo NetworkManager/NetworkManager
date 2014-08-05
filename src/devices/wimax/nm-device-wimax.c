@@ -442,6 +442,7 @@ complete_connection (NMDevice *device,
 	                           existing_connections,
 	                           nsp_name,
 	                           nsp_name,
+	                           NULL,
 	                           TRUE);
 	g_object_set (G_OBJECT (s_wimax), NM_SETTING_WIMAX_NETWORK_NAME, nsp_name, NULL);
 

@@ -907,6 +907,40 @@ get_new_connection_name (const GSList *existing,
 	return cname;
 }
 
+static char *
+get_new_connection_ifname (const GSList *existing,
+                           const char *prefix)
+{
+	int i;
+	char *name;
+	const GSList *iter;
+	gboolean found;
+
+	for (i = 0; i < 500; i++) {
+		name = g_strdup_printf ("%s%d", prefix, i);
+
+		if (nm_platform_link_exists (name))
+			goto next;
+
+		for (iter = existing, found = FALSE; iter; iter = g_slist_next (iter)) {
+			NMConnection *candidate = iter->data;
+
+			if (g_strcmp0 (nm_connection_get_interface_name (candidate), name) == 0) {
+				found = TRUE;
+				break;
+			}
+		}
+
+		if (!found)
+			return name;
+
+	next:
+		g_free (name);
+	}
+
+	return NULL;
+}
+
 const char *
 nm_utils_get_ip_config_method (NMConnection *connection,
                                GType         ip_setting_type)
@@ -954,18 +988,16 @@ void
 nm_utils_complete_generic (NMConnection *connection,
                            const char *ctype,
                            const GSList *existing,
-                           const char *preferred,
-                           const char *fallback_prefix,
+                           const char *preferred_id,
+                           const char *fallback_id_prefix,
+                           const char *ifname_prefix,
                            gboolean default_enable_ipv6)
 {
 	NMSettingConnection *s_con;
-	char *id, *uuid;
-	GHashTable *parameters = g_hash_table_new (g_str_hash, g_str_equal);
+	char *id, *uuid, *ifname;
+	GHashTable *parameters;
 
-	g_assert (fallback_prefix);
-
-	g_hash_table_insert (parameters, NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD,
-	                     default_enable_ipv6 ? NM_SETTING_IP6_CONFIG_METHOD_AUTO : NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	g_assert (fallback_id_prefix);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	if (!s_con) {
@@ -982,14 +1014,23 @@ nm_utils_complete_generic (NMConnection *connection,
 
 	/* Add a connection ID if absent */
 	if (!nm_setting_connection_get_id (s_con)) {
-		id = get_new_connection_name (existing, preferred, fallback_prefix);
+		id = get_new_connection_name (existing, preferred_id, fallback_id_prefix);
 		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_ID, id, NULL);
 		g_free (id);
 	}
 
-	/* Normalize */
-	nm_connection_normalize (connection, parameters, NULL, NULL);
+	/* Add an interface name, if requested */
+	if (ifname_prefix && !nm_setting_connection_get_interface_name (s_con)) {
+		ifname = get_new_connection_ifname (existing, ifname_prefix);
+		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, ifname, NULL);
+		g_free (ifname);
+	}
 
+	/* Normalize */
+	parameters = g_hash_table_new (g_str_hash, g_str_equal);
+	g_hash_table_insert (parameters, NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD,
+	                     default_enable_ipv6 ? NM_SETTING_IP6_CONFIG_METHOD_AUTO : NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	nm_connection_normalize (connection, parameters, NULL, NULL);
 	g_hash_table_destroy (parameters);
 }
 

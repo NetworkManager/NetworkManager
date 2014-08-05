@@ -102,8 +102,9 @@ const char *nm_utils_get_ip_config_method (NMConnection *connection,
 void nm_utils_complete_generic (NMConnection *connection,
                                 const char *ctype,
                                 const GSList *existing,
-                                const char *preferred,
-                                const char *fallback_prefix,
+                                const char *preferred_id,
+                                const char *fallback_id_prefix,
+                                const char *ifname_prefix,
                                 gboolean default_enable_ipv6);
 
 char *nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id);

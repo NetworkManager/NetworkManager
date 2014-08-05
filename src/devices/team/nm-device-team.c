@@ -139,52 +139,19 @@ complete_connection (NMDevice *device,
                      GError **error)
 {
 	NMSettingTeam *s_team;
-	NMSettingConnection *s_con;
-	guint32 i = 0;
-	char *name;
-	const GSList *iter;
-	gboolean found;
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_TEAM_SETTING_NAME,
 	                           existing_connections,
 	                           NULL,
 	                           _("Team connection"),
+	                           "team",
 	                           TRUE);
 
 	s_team = nm_connection_get_setting_team (connection);
 	if (!s_team) {
 		s_team = (NMSettingTeam *) nm_setting_team_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_team));
-	}
-	s_con = nm_connection_get_setting_connection (connection);
-	g_return_val_if_fail (s_con != NULL, FALSE);
-
-	/* Grab the first name that doesn't exist in either our connections
-	 * or a device on the system.
-	 */
-	while (i < 500 && !nm_setting_connection_get_interface_name (s_con)) {
-		name = g_strdup_printf ("team%u", i);
-		/* check interface names */
-		if (!nm_platform_link_exists (name)) {
-			/* check existing team connections */
-			for (iter = existing_connections, found = FALSE; iter; iter = g_slist_next (iter)) {
-				NMConnection *candidate = iter->data;
-
-				if (nm_connection_is_type (candidate, NM_SETTING_TEAM_SETTING_NAME)) {
-					if (g_strcmp0 (nm_connection_get_interface_name (candidate), name) == 0) {
-						found = TRUE;
-						break;
-					}
-				}
-			}
-
-			if (!found)
-				g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, name, NULL);
-		}
-
-		g_free (name);
-		i++;
 	}
 
 	return TRUE;
