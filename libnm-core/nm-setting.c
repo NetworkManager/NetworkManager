@@ -1634,16 +1634,7 @@ _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
 		return NM_SETTING_VERIFY_ERROR;
 	}
-	if (!interface_name) {
-		/* Normalize by setting NMSettingConnection:interface_name. */
-		g_set_error_literal (error,
-		                     error_quark,
-		                     e_missing_property,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
-	}
-	if (strcmp (con_name, interface_name) != 0) {
+	if (interface_name && strcmp (con_name, interface_name) != 0) {
 		/* con_name and interface_name are different. It can be normalized by setting interface_name
 		 * to con_name. */
 		g_set_error_literal (error,

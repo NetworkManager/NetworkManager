@@ -2685,34 +2685,24 @@ add_ip6_address_to_connection (NMIP6Address *ip6addr, NMConnection *connection)
 
 static char *
 unique_master_iface_ifname (GSList *list,
-                            const char *type,
-                            const char *ifname_property,
                             const char *try_name)
 {
 	NMConnection *connection;
-	NMSetting *setting;
 	char *new_name;
 	unsigned int num = 1;
 	GSList *iterator = list;
-	char *ifname_val = NULL;
+	const char *ifname = NULL;
 
 	new_name = g_strdup (try_name);
 	while (iterator) {
 		connection = NM_CONNECTION (iterator->data);
-		setting = nm_connection_get_setting_by_name (connection, type);
-		if (!setting) {
-			iterator = g_slist_next (iterator);
-			continue;
-		}
-
-		g_object_get (setting, ifname_property, &ifname_val, NULL);
-		if (g_strcmp0 (new_name, ifname_val) == 0) {
+		ifname = nm_connection_get_interface_name (connection);
+		if (g_strcmp0 (new_name, ifname) == 0) {
 			g_free (new_name);
 			new_name = g_strdup_printf ("%s%d", try_name, num++);
 			iterator = list;
 		} else
 			iterator = g_slist_next (iterator);
-		g_free (ifname_val);
 	}
 	return new_name;
 }
@@ -4144,7 +4134,6 @@ cleanup_bt:
 	} else if (!strcmp (con_type, NM_SETTING_VLAN_SETTING_NAME)) {
 		/* Build up the settings required for 'vlan' */
 		gboolean success = FALSE;
-		const char *ifname = NULL;
 		const char *parent = NULL;
 		char *parent_ask = NULL;
 		const char *vlan_id = NULL;
@@ -4211,9 +4200,6 @@ cleanup_bt:
 		if (ask)
 			do_questionnaire_vlan (&mtu, &flags, &ingress, &egress);
 
-		/* ifname is taken from connection's ifname */
-		ifname = nm_setting_connection_get_interface_name (s_con);
-
 		if (!check_and_convert_mtu (mtu, &mtu_int, error))
 			goto cleanup_vlan;
 		if (!check_and_convert_vlan_flags (flags, &flags_int, error))
@@ -4242,8 +4228,6 @@ cleanup_bt:
 		if (!addr_array)
 			g_object_set (s_vlan, NM_SETTING_VLAN_PARENT, parent, NULL);
 
-		if (ifname)
-			g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, ifname, NULL);
 		g_object_set (s_vlan, NM_SETTING_VLAN_ID, id, NULL);
 
 		if (flags)
@@ -4271,7 +4255,6 @@ cleanup_vlan:
 	} else if (!strcmp (con_type, NM_SETTING_BOND_SETTING_NAME)) {
 		/* Build up the settings required for 'bond' */
 		gboolean success = FALSE;
-		char *bond_ifname = NULL;
 		const char *ifname = NULL;
 		const char *bond_mode_c = NULL;
 		char *bond_mode = NULL;
@@ -4312,22 +4295,22 @@ cleanup_vlan:
 			                       &bond_downdelay, &bond_updelay,
 			                       &bond_arpinterval, &bond_arpiptarget);
 
-		/* Use connection's ifname as 'bond' ifname if exists, else generate one */
+		/* Generate ifname if connection doesn't have one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
-		if (!ifname)
-			bond_ifname = unique_master_iface_ifname (all_connections,
-			                                          NM_SETTING_BOND_SETTING_NAME,
-			                                          NM_SETTING_BOND_INTERFACE_NAME,
-			                                          "nm-bond");
-		else
-			bond_ifname = g_strdup (ifname);
+		if (!ifname) {
+			char *bond_ifname = unique_master_iface_ifname (all_connections, "nm-bond");
+
+			g_object_set (s_con,
+			              NM_SETTING_CONNECTION_INTERFACE_NAME, bond_ifname,
+			              NULL);
+			g_free (bond_ifname);
+		}
 
 		/* Add 'bond' setting */
 		s_bond = (NMSettingBond *) nm_setting_bond_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_bond));
 
 		/* Set bond options */
-		g_object_set (s_bond, NM_SETTING_BOND_INTERFACE_NAME, bond_ifname, NULL);
 		if (bond_mode) {
 			GError *err = NULL;
 			const char *bm;
@@ -4361,7 +4344,6 @@ cleanup_vlan:
 
 		success = TRUE;
 cleanup_bond:
-		g_free (bond_ifname);
 		g_free (bond_mode);
 		g_free (bond_primary);
 		g_free (bond_miimon);
@@ -4420,7 +4402,6 @@ cleanup_bond:
 	} else if (!strcmp (con_type, NM_SETTING_TEAM_SETTING_NAME)) {
 		/* Build up the settings required for 'team' */
 		gboolean success = FALSE;
-		char *team_ifname = NULL;
 		const char *ifname = NULL;
 		const char *config_c = NULL;
 		char *config = NULL;
@@ -4436,15 +4417,16 @@ cleanup_bond:
 		if (ask)
 			do_questionnaire_team (&config);
 
-		/* Use connection's ifname as 'team' ifname if exists, else generate one */
+		/* Generate ifname if conneciton doesn't have one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
-		if (!ifname)
-			team_ifname = unique_master_iface_ifname (all_connections,
-			                                          NM_SETTING_TEAM_SETTING_NAME,
-			                                          NM_SETTING_TEAM_INTERFACE_NAME,
-			                                          "nm-team");
-		else
-			team_ifname = g_strdup (ifname);
+		if (!ifname) {
+			char *team_ifname = unique_master_iface_ifname (all_connections, "nm-team");
+
+			g_object_set (s_con,
+			              NM_SETTING_CONNECTION_INTERFACE_NAME, team_ifname,
+			              NULL);
+			g_free (team_ifname);
+		}
 
 		/* Add 'team' setting */
 		s_team = (NMSettingTeam *) nm_setting_team_new ();
@@ -4456,12 +4438,10 @@ cleanup_bond:
 		}
 
 		/* Set team options */
-		g_object_set (s_team, NM_SETTING_TEAM_INTERFACE_NAME, team_ifname, NULL);
 		g_object_set (s_team, NM_SETTING_TEAM_CONFIG, json, NULL);
 
 		success = TRUE;
 cleanup_team:
-		g_free (team_ifname);
 		g_free (config);
 		g_free (json);
 		if (!success)
@@ -4543,7 +4523,6 @@ cleanup_team_slave:
 	} else if (!strcmp (con_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
 		/* Build up the settings required for 'bridge' */
 		gboolean success = FALSE;
-		char *bridge_ifname = NULL;
 		const char *ifname = NULL;
 		const char *stp_c = NULL;
 		char *stp = NULL;
@@ -4587,15 +4566,16 @@ cleanup_team_slave:
 			do_questionnaire_bridge (&stp, &priority, &fwd_delay, &hello_time,
 			                         &max_age, &ageing_time, &mac);
 
-		/* Use connection's ifname as 'bridge' ifname if exists, else generate one */
+		/* Generate ifname if conneciton doesn't have one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
-		if (!ifname)
-			bridge_ifname = unique_master_iface_ifname (all_connections,
-			                                            NM_SETTING_BRIDGE_SETTING_NAME,
-			                                            NM_SETTING_BRIDGE_INTERFACE_NAME,
-			                                            "nm-bridge");
-		else
-			bridge_ifname = g_strdup (ifname);
+		if (!ifname) {
+			char *bridge_ifname = unique_master_iface_ifname (all_connections, "nm-bridge");
+
+			g_object_set (s_con,
+			              NM_SETTING_CONNECTION_INTERFACE_NAME, bridge_ifname,
+			              NULL);
+			g_free (bridge_ifname);
+		}
 
 		if (stp) {
 			GError *tmp_err = NULL;
@@ -4636,7 +4616,6 @@ cleanup_team_slave:
 			goto cleanup_bridge;
 
 		/* Set bridge options */
-		g_object_set (s_bridge, NM_SETTING_BRIDGE_INTERFACE_NAME, bridge_ifname, NULL);
 		if (stp)
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_STP, stp_bool, NULL);
 		if (priority)
@@ -4654,7 +4633,6 @@ cleanup_team_slave:
 
 		success = TRUE;
 cleanup_bridge:
-		g_free (bridge_ifname);
 		g_free (stp);
 		g_free (priority);
 		g_free (fwd_delay);
@@ -7745,16 +7723,16 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 
 		/* Set a sensible bond/team/bridge interface name by default */
 		if (g_strcmp0 (con_type, NM_SETTING_BOND_SETTING_NAME) == 0)
-			g_object_set (NM_SETTING_BOND (base_setting),
-			              NM_SETTING_BOND_INTERFACE_NAME, "nm-bond",
+			g_object_set (s_con,
+			              NM_SETTING_CONNECTION_INTERFACE_NAME, "nm-bond",
 			              NULL);
 		if (g_strcmp0 (con_type, NM_SETTING_TEAM_SETTING_NAME) == 0)
-			g_object_set (NM_SETTING_TEAM (base_setting),
-			              NM_SETTING_TEAM_INTERFACE_NAME, "nm-team",
+			g_object_set (s_con,
+			              NM_SETTING_CONNECTION_INTERFACE_NAME, "nm-team",
 			              NULL);
 		if (g_strcmp0 (con_type, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
-			g_object_set (NM_SETTING_BRIDGE (base_setting),
-			              NM_SETTING_BRIDGE_INTERFACE_NAME, "nm-bridge",
+			g_object_set (s_con,
+			              NM_SETTING_CONNECTION_INTERFACE_NAME, "nm-bridge",
 			              NULL);
 
 		/* Set sensible initial VLAN values */

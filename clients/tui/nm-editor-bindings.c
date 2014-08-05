@@ -1543,6 +1543,7 @@ nm_editor_bind_wireless_security_wep_key (NMSettingWirelessSecurity *s_wsec,
 
 typedef struct {
 	NMSettingVlan *s_vlan;
+	NMSettingConnection *s_con;
 
 	char *last_ifname_parent;
 	int last_ifname_id;
@@ -1595,7 +1596,7 @@ vlan_settings_changed (GObject    *object,
 	if (binding->updating)
 		return;
 
-	ifname = nm_setting_vlan_get_interface_name (binding->s_vlan);
+	ifname = nm_setting_connection_get_interface_name (binding->s_con);
 	parent = nm_setting_vlan_get_parent (binding->s_vlan);
 	id = nm_setting_vlan_get_id (binding->s_vlan);
 
@@ -1653,20 +1654,22 @@ vlan_target_destroyed (gpointer  user_data,
  * two properties automatically.
  */
 void
-nm_editor_bind_vlan_name (NMSettingVlan *s_vlan)
+nm_editor_bind_vlan_name (NMSettingVlan *s_vlan,
+                          NMSettingConnection *s_con)
 {
 	NMEditorVlanWidgetBinding *binding;
 	const char *ifname;
 
 	binding = g_slice_new0 (NMEditorVlanWidgetBinding);
 	binding->s_vlan = s_vlan;
+	binding->s_con = s_con;
 
-	g_signal_connect (s_vlan, "notify::" NM_SETTING_VLAN_INTERFACE_NAME,
+	g_signal_connect (s_con, "notify::" NM_SETTING_CONNECTION_INTERFACE_NAME,
 	                  G_CALLBACK (vlan_settings_changed), binding);
 
 	g_object_weak_ref (G_OBJECT (s_vlan), vlan_target_destroyed, binding);
 
-	ifname = nm_setting_vlan_get_interface_name (s_vlan);
+	ifname = nm_setting_connection_get_interface_name (s_con);
 	if (!parse_interface_name (ifname, &binding->last_ifname_parent, &binding->last_ifname_id)) {
 		binding->last_ifname_parent = NULL;
 		binding->last_ifname_id = 0;

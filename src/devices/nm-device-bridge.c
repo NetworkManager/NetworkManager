@@ -135,7 +135,8 @@ complete_connection (NMDevice *device,
                      const GSList *existing_connections,
                      GError **error)
 {
-	NMSettingBridge *s_bridge, *tmp;
+	NMSettingBridge *s_bridge;
+	NMSettingConnection *s_con;
 	guint32 i = 0;
 	char *name;
 	const GSList *iter;
@@ -153,11 +154,13 @@ complete_connection (NMDevice *device,
 		s_bridge = (NMSettingBridge *) nm_setting_bridge_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_bridge));
 	}
+	s_con = nm_connection_get_setting_connection (connection);
+	g_return_val_if_fail (s_con != NULL, FALSE);
 
 	/* Grab the first name that doesn't exist in either our connections
 	 * or a device on the system.
 	 */
-	while (i < 500 && !nm_setting_bridge_get_interface_name (s_bridge)) {
+	while (i < 500 && !nm_setting_connection_get_interface_name (s_con)) {
 		name = g_strdup_printf ("br%u", i);
 		/* check interface names */
 		if (!nm_platform_link_exists (name)) {
@@ -165,9 +168,8 @@ complete_connection (NMDevice *device,
 			for (iter = existing_connections, found = FALSE; iter; iter = g_slist_next (iter)) {
 				NMConnection *candidate = iter->data;
 
-				tmp = nm_connection_get_setting_bridge (candidate);
-				if (tmp && nm_connection_is_type (candidate, NM_SETTING_BRIDGE_SETTING_NAME)) {
-					if (g_strcmp0 (nm_setting_bridge_get_interface_name (tmp), name) == 0) {
+				if (nm_connection_is_type (candidate, NM_SETTING_BRIDGE_SETTING_NAME)) {
+					if (g_strcmp0 (nm_connection_get_interface_name (candidate), name) == 0) {
 						found = TRUE;
 						break;
 					}
@@ -175,7 +177,7 @@ complete_connection (NMDevice *device,
 			}
 
 			if (!found)
-				g_object_set (G_OBJECT (s_bridge), NM_SETTING_BRIDGE_INTERFACE_NAME, name, NULL);
+				g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, name, NULL);
 		}
 
 		g_free (name);
@@ -293,14 +295,12 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
 	NMSettingBridge *s_bridge = nm_connection_get_setting_bridge (connection);
-	const char *ifname = nm_device_get_iface (device);
 	int ifindex = nm_device_get_ifindex (device);
 	const Option *option;
 
 	if (!s_bridge) {
 		s_bridge = (NMSettingBridge *) nm_setting_bridge_new ();
 		nm_connection_add_setting (connection, (NMSetting *) s_bridge);
-		g_object_set (s_bridge, NM_SETTING_BRIDGE_INTERFACE_NAME, ifname, NULL);
 	}
 
 	for (option = master_options; option->name; option++) {

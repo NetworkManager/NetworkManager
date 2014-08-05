@@ -3959,8 +3959,6 @@ make_bond_setting (shvarFile *ifcfg,
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "mandatory DEVICE keyword missing");
 		goto error;
 	}
-
-	g_object_set (s_bond, NM_SETTING_BOND_INTERFACE_NAME, value, NULL);
 	g_free (value);
 
 	value = svGetValue (ifcfg, "BONDING_OPTS", FALSE);
@@ -4081,8 +4079,6 @@ make_team_setting (shvarFile *ifcfg,
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "mandatory DEVICE keyword missing");
 		goto error;
 	}
-
-	g_object_set (s_team, NM_SETTING_TEAM_INTERFACE_NAME, value, NULL);
 	g_free (value);
 
 	value = read_team_config (ifcfg, "TEAM_CONFIG", &local_err);
@@ -4234,8 +4230,6 @@ make_bridge_setting (shvarFile *ifcfg,
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "mandatory DEVICE keyword missing");
 		goto error;
 	}
-
-	g_object_set (s_bridge, NM_SETTING_BRIDGE_INTERFACE_NAME, value, NULL);
 	g_free (value);
 
 	if (read_mac_address (ifcfg, "MACADDR", ETH_ALEN, &array, error)) {
@@ -4504,8 +4498,6 @@ make_vlan_setting (shvarFile *ifcfg,
 	parent = svGetValue (ifcfg, "PHYSDEV", FALSE);
 
 	if (iface_name) {
-		g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, iface_name, NULL);
-
 		p = strchr (iface_name, '.');
 		if (p) {
 			/* eth0.43; PHYSDEV is assumed from it if unknown */

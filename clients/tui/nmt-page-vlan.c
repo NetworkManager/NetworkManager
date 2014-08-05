@@ -72,7 +72,6 @@ nmt_page_vlan_constructed (GObject *object)
 {
 	NmtPageVlan *vlan = NMT_PAGE_VLAN (object);
 	NmtPageVlanPrivate *priv = NMT_PAGE_VLAN_GET_PRIVATE (vlan);
-	NmtDeviceEntry *deventry;
 	NmtPageGrid *grid;
 	NMSettingWired *s_wired;
 	NMSettingVlan *s_vlan;
@@ -95,14 +94,9 @@ nmt_page_vlan_constructed (GObject *object)
 	}
 	priv->s_wired = g_object_ref_sink (s_wired);
 
-	deventry = nmt_page_device_get_device_entry (NMT_PAGE_DEVICE (object));
-	g_object_bind_property (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME,
-	                        deventry, "interface-name",
-	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-
 	grid = NMT_PAGE_GRID (vlan);
 
-	nm_editor_bind_vlan_name (s_vlan);
+	nm_editor_bind_vlan_name (s_vlan, nm_connection_get_setting_connection (conn));
 
 	widget = parent = nmt_device_entry_new (_("Parent"), 40, G_TYPE_NONE);
 	nmt_device_entry_set_device_filter (NMT_DEVICE_ENTRY (widget),

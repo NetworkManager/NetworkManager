@@ -132,7 +132,6 @@ nmt_page_team_constructed (GObject *object)
 {
 	NmtPageTeam *team = NMT_PAGE_TEAM (object);
 	NmtPageTeamPrivate *priv = NMT_PAGE_TEAM_GET_PRIVATE (team);
-	NmtDeviceEntry *deventry;
 	NmtNewtGrid *grid;
 	NMSettingTeam *s_team;
 	NmtNewtWidget *widget;
@@ -145,11 +144,6 @@ nmt_page_team_constructed (GObject *object)
 		s_team = nm_connection_get_setting_team (conn);
 	}
 	priv->s_team = s_team;
-
-	deventry = nmt_page_device_get_device_entry (NMT_PAGE_DEVICE (object));
-	g_object_bind_property (s_team, NM_SETTING_TEAM_INTERFACE_NAME,
-	                        deventry, "interface-name",
-	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
 	widget = nmt_newt_grid_new ();
 	nmt_page_grid_append (NMT_PAGE_GRID (team), NULL, widget, NULL);

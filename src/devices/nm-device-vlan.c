@@ -290,7 +290,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (!s_vlan) {
 		s_vlan = (NMSettingVlan *) nm_setting_vlan_new ();
 		nm_connection_add_setting (connection, (NMSetting *) s_vlan);
-		g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, nm_device_get_iface (device), NULL);
 	}
 
 	if (!nm_platform_vlan_get_info (ifindex, &parent_ifindex, &vlan_id)) {

@@ -334,7 +334,6 @@ nmt_page_bond_constructed (GObject *object)
 {
 	NmtPageBond *bond = NMT_PAGE_BOND (object);
 	NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (bond);
-	NmtDeviceEntry *deventry;
 	NmtPageGrid *grid;
 	NMSettingBond *s_bond;
 	NmtNewtWidget *widget, *label;
@@ -347,11 +346,6 @@ nmt_page_bond_constructed (GObject *object)
 		s_bond = nm_connection_get_setting_bond (conn);
 	}
 	priv->s_bond = s_bond;
-
-	deventry = nmt_page_device_get_device_entry (NMT_PAGE_DEVICE (object));
-	g_object_bind_property (s_bond, NM_SETTING_BOND_INTERFACE_NAME,
-	                        deventry, "interface-name",
-	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
 	grid = NMT_PAGE_GRID (bond);
 

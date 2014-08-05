@@ -2743,9 +2743,9 @@ test_connection_normalize_virtual_iface_name (void)
 
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
 	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, NULL);
-	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_VLAN_ERROR, NM_SETTING_VLAN_ERROR_MISSING_PROPERTY);
+	nmtst_assert_connection_verifies_without_normalization (con);
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
-	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_NAME);
+	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, NULL);
 
 
 	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, NULL, NULL);

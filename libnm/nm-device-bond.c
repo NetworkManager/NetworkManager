@@ -146,7 +146,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	}
 
 	dev_iface_name = nm_device_get_iface (device);
-	bond_iface_name = nm_setting_bond_get_interface_name (s_bond);
+	bond_iface_name = nm_setting_connection_get_interface_name (s_con);
 	if (g_strcmp0 (dev_iface_name, bond_iface_name) != 0) {
 		g_set_error (error, NM_DEVICE_BOND_ERROR, NM_DEVICE_BOND_ERROR_INTERFACE_MISMATCH,
 		             "The interfaces of the device and the connection didn't match.");

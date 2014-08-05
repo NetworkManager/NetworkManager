@@ -89,7 +89,8 @@ void nm_editor_bind_wireless_security_wep_key         (NMSettingWirelessSecurity
                                                        const char    *key_selector_property,
                                                        GBindingFlags  flags);
 
-void nm_editor_bind_vlan_name                         (NMSettingVlan *s_vlan);
+void nm_editor_bind_vlan_name                         (NMSettingVlan       *s_vlan,
+                                                       NMSettingConnection *s_con);
 
 G_END_DECLS
 

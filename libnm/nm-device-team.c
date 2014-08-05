@@ -152,7 +152,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	}
 
 	dev_iface_name = nm_device_get_iface (device);
-	team_iface_name = nm_setting_team_get_interface_name (s_team);
+	team_iface_name = nm_setting_connection_get_interface_name (s_con);
 	if (g_strcmp0 (dev_iface_name, team_iface_name) != 0) {
 		g_set_error (error, NM_DEVICE_TEAM_ERROR, NM_DEVICE_TEAM_ERROR_INTERFACE_MISMATCH,
 		             "The interfaces of the device and the connection didn't match.");

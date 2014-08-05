@@ -127,7 +127,8 @@ complete_connection (NMDevice *device,
                      const GSList *existing_connections,
                      GError **error)
 {
-	NMSettingBond *s_bond, *tmp;
+	NMSettingBond *s_bond;
+	NMSettingConnection *s_con;
 	guint32 i = 0;
 	char *name;
 	const GSList *iter;
@@ -145,11 +146,13 @@ complete_connection (NMDevice *device,
 		s_bond = (NMSettingBond *) nm_setting_bond_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_bond));
 	}
+	s_con = nm_connection_get_setting_connection (connection);
+	g_return_val_if_fail (s_con != NULL, FALSE);
 
 	/* Grab the first name that doesn't exist in either our connections
 	 * or a device on the system.
 	 */
-	while (i < 500 && !nm_setting_bond_get_interface_name (s_bond)) {
+	while (i < 500 && !nm_setting_connection_get_interface_name (s_con)) {
 		name = g_strdup_printf ("bond%u", i);
 		/* check interface names */
 		if (!nm_platform_link_exists (name)) {
@@ -157,9 +160,8 @@ complete_connection (NMDevice *device,
 			for (iter = existing_connections, found = FALSE; iter; iter = g_slist_next (iter)) {
 				NMConnection *candidate = iter->data;
 
-				tmp = nm_connection_get_setting_bond (candidate);
-				if (tmp && nm_connection_is_type (candidate, NM_SETTING_BOND_SETTING_NAME)) {
-					if (g_strcmp0 (nm_setting_bond_get_interface_name (tmp), name) == 0) {
+				if (nm_connection_is_type (candidate, NM_SETTING_BOND_SETTING_NAME)) {
+					if (g_strcmp0 (nm_connection_get_interface_name (candidate), name) == 0) {
 						found = TRUE;
 						break;
 					}
@@ -167,7 +169,7 @@ complete_connection (NMDevice *device,
 			}
 
 			if (!found)
-				g_object_set (G_OBJECT (s_bond), NM_SETTING_BOND_INTERFACE_NAME, name, NULL);
+				g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, name, NULL);
 		}
 
 		g_free (name);
@@ -209,14 +211,12 @@ static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMSettingBond *s_bond = nm_connection_get_setting_bond (connection);
-	const char *ifname = nm_device_get_iface (device);
 	int ifindex = nm_device_get_ifindex (device);
 	const char **options;
 
 	if (!s_bond) {
 		s_bond = (NMSettingBond *) nm_setting_bond_new ();
 		nm_connection_add_setting (connection, (NMSetting *) s_bond);
-		g_object_set (s_bond, NM_SETTING_BOND_INTERFACE_NAME, ifname, NULL);
 	}
 
 	/* Read bond options from sysfs and update the Bond setting to match */
