@@ -358,8 +358,8 @@ connection_added (NMRemoteSettings *self,
 	AddConnectionInfo *addinfo;
 	const char *path;
 
-	if (!g_signal_handler_find (remote, G_SIGNAL_MATCH_FUNC, 0, 0, NULL,
-	                            G_CALLBACK (connection_visible_changed), NULL)) {
+	if (!g_signal_handler_find (remote, G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA, 0, 0, NULL,
+	                            G_CALLBACK (connection_visible_changed), self)) {
 		g_signal_connect (remote,
 		                  "notify::" NM_REMOTE_CONNECTION_VISIBLE,
 		                  G_CALLBACK (connection_visible_changed),
