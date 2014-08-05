@@ -249,7 +249,7 @@ main (int argc, char **argv)
 		g_error_free (error);
 		exit (1);
 	}
-	if (!nm_client_get_manager_running (nm_client)) {
+	if (!nm_client_get_nm_running (nm_client)) {
 		g_printerr ("%s\n", _("NetworkManager is not running."));
 		exit (1);
 	}

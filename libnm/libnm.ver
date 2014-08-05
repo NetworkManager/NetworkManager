@@ -48,7 +48,7 @@ global:
 	nm_client_get_device_by_path;
 	nm_client_get_devices;
 	nm_client_get_logging;
-	nm_client_get_manager_running;
+	nm_client_get_nm_running;
 	nm_client_get_permission_result;
 	nm_client_get_primary_connection;
 	nm_client_get_startup;

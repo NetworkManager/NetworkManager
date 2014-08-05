@@ -135,7 +135,7 @@ typedef struct {
 	DBusGProxy *proxy;
 	GHashTable *connections;
 	GHashTable *pending;  /* Connections we don't have settings for yet */
-	gboolean service_running;
+	gboolean nm_running;
 	guint32 init_left;
 
 	/* AddConnectionInfo objects that are waiting for the connection to become initialized */
@@ -153,7 +153,7 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_BUS,
-	PROP_SERVICE_RUNNING,
+	PROP_NM_RUNNING,
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
 
@@ -254,7 +254,7 @@ nm_remote_settings_get_connection_by_id (NMRemoteSettings *settings, const char 
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	if (priv->service_running) {
+	if (priv->nm_running) {
 		GHashTableIter iter;
 		NMConnection *candidate;
 
@@ -289,7 +289,7 @@ nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings, const cha
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	return priv->service_running ? g_hash_table_lookup (priv->connections, path) : NULL;
+	return priv->nm_running ? g_hash_table_lookup (priv->connections, path) : NULL;
 }
 
 /**
@@ -314,7 +314,7 @@ nm_remote_settings_get_connection_by_uuid (NMRemoteSettings *settings, const cha
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	if (priv->service_running) {
+	if (priv->nm_running) {
 		g_hash_table_iter_init (&iter, priv->connections);
 		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &candidate)) {
 			if (g_strcmp0 (uuid, nm_connection_get_uuid (NM_CONNECTION (candidate))) == 0)
@@ -532,7 +532,7 @@ fetch_connections_done (DBusGProxy *proxy,
 	                            G_TYPE_INVALID)) {
 		if (   !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_SERVICE_UNKNOWN)
 		    && !g_error_matches (error, DBUS_GERROR, DBUS_GERROR_NAME_HAS_NO_OWNER)
-		    && priv->service_running) {
+		    && priv->nm_running) {
 			g_warning ("%s: error fetching connections: (%d) %s.",
 			           __func__,
 			           error->code,
@@ -584,7 +584,7 @@ nm_remote_settings_list_connections (NMRemoteSettings *settings)
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	if (priv->service_running) {
+	if (priv->nm_running) {
 		g_hash_table_iter_init (&iter, priv->connections);
 		while (g_hash_table_iter_next (&iter, NULL, &value))
 			list = g_slist_prepend (list, NM_REMOTE_CONNECTION (value));
@@ -647,7 +647,7 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	if (!priv->service_running)
+	if (!priv->nm_running)
 		return FALSE;
 
 	info = g_malloc0 (sizeof (AddConnectionInfo));
@@ -700,7 +700,7 @@ nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	if (!priv->service_running)
+	if (!priv->nm_running)
 		return FALSE;
 
 	info = g_malloc0 (sizeof (AddConnectionInfo));
@@ -760,7 +760,7 @@ nm_remote_settings_load_connections (NMRemoteSettings *settings,
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	if (!priv->service_running) {
+	if (!priv->nm_running) {
 		g_set_error_literal (error, NM_REMOTE_SETTINGS_ERROR,
 		                     NM_REMOTE_SETTINGS_ERROR_SERVICE_UNAVAILABLE,
 		                     "NetworkManager is not running.");
@@ -807,7 +807,7 @@ nm_remote_settings_reload_connections (NMRemoteSettings *settings,
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	if (!priv->service_running) {
+	if (!priv->nm_running) {
 		g_set_error_literal (error, NM_REMOTE_SETTINGS_ERROR,
 		                     NM_REMOTE_SETTINGS_ERROR_SERVICE_UNAVAILABLE,
 		                     "NetworkManager is not running.");
@@ -894,7 +894,7 @@ nm_remote_settings_save_hostname (NMRemoteSettings *settings,
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	if (!priv->service_running)
+	if (!priv->nm_running)
 		return FALSE;
 
 	info = g_malloc0 (sizeof (SaveHostnameInfo));
@@ -966,7 +966,7 @@ name_owner_changed (DBusGProxy *proxy,
 
 	if (!strcmp (name, sname)) {
 		if (new_owner && strlen (new_owner) > 0) {
-			priv->service_running = TRUE;
+			priv->nm_running = TRUE;
 
 			priv->listcon_call = dbus_g_proxy_begin_call (priv->proxy, "ListConnections",
 			                                              fetch_connections_done, self, NULL,
@@ -977,7 +977,7 @@ name_owner_changed (DBusGProxy *proxy,
 			                         G_TYPE_STRING, NM_DBUS_INTERFACE_SETTINGS,
 			                         G_TYPE_INVALID);
 		} else {
-			priv->service_running = FALSE;
+			priv->nm_running = FALSE;
 
 			clear_one_hash (priv->pending);
 			clear_one_hash (priv->connections);
@@ -995,7 +995,7 @@ name_owner_changed (DBusGProxy *proxy,
 				priv->listcon_call = NULL;
 			}
 		}
-		g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_SERVICE_RUNNING);
+		g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_NM_RUNNING);
 	}
 }
 
@@ -1177,19 +1177,19 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		if (!dbus_g_proxy_call (priv->dbus_proxy, "NameHasOwner", error,
 		                        G_TYPE_STRING, NM_DBUS_SERVICE,
 		                        G_TYPE_INVALID,
-		                        G_TYPE_BOOLEAN, &priv->service_running,
+		                        G_TYPE_BOOLEAN, &priv->nm_running,
 		                        G_TYPE_INVALID)) {
-			priv->service_running = FALSE;
+			priv->nm_running = FALSE;
 			return FALSE;
 		}
 
 		/* If NM isn't running we'll grab properties from name_owner_changed()
 		 * when it starts.
 		 */
-		if (!priv->service_running)
+		if (!priv->nm_running)
 			return TRUE;
 	} else
-		priv->service_running = TRUE;
+		priv->nm_running = TRUE;
 
 	priv->listcon_call = dbus_g_proxy_begin_call (priv->proxy, "ListConnections",
 	                                              fetch_connections_done, NM_REMOTE_SETTINGS (initable), NULL,
@@ -1277,14 +1277,14 @@ init_async_got_manager_running (DBusGProxy *proxy, DBusGProxyCall *call,
 	GError *error = NULL;
 
 	if (!dbus_g_proxy_end_call (proxy, call, &error,
-	                            G_TYPE_BOOLEAN, &priv->service_running,
+	                            G_TYPE_BOOLEAN, &priv->nm_running,
 	                            G_TYPE_INVALID)) {
 		g_simple_async_result_take_error (init_data->result, error);
 		init_async_complete (init_data);
 		return;
 	}
 
-	if (!priv->service_running) {
+	if (!priv->nm_running) {
 		g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 		init_async_complete (init_data);
 		return;
@@ -1396,8 +1396,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_BUS:
 		g_value_set_boxed (value, priv->bus);
 		break;
-	case PROP_SERVICE_RUNNING:
-		g_value_set_boolean (value, priv->service_running);
+	case PROP_NM_RUNNING:
+		g_value_set_boolean (value, priv->nm_running);
 		break;
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
@@ -1440,13 +1440,13 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		                     G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMRemoteSettings:service-running:
+	 * NMRemoteSettings:nm-running:
 	 *
-	 * Whether the settings service is running.
+	 * Whether the NetworkManager settings service is running.
 	 */
 	g_object_class_install_property
-		(object_class, PROP_SERVICE_RUNNING,
-		 g_param_spec_boolean (NM_REMOTE_SETTINGS_SERVICE_RUNNING, "", "",
+		(object_class, PROP_NM_RUNNING,
+		 g_param_spec_boolean (NM_REMOTE_SETTINGS_NM_RUNNING, "", "",
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));

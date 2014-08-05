@@ -343,9 +343,9 @@ loop_quit (gpointer user_data)
 }
 
 static void
-settings_service_running_changed (GObject *client,
-                                  GParamSpec *pspec,
-                                  gpointer user_data)
+settings_nm_running_changed (GObject *client,
+                             GParamSpec *pspec,
+                             gpointer user_data)
 {
 	int *running_changed = user_data;
 
@@ -354,7 +354,7 @@ settings_service_running_changed (GObject *client,
 }
 
 static void
-test_service_running (void)
+test_nm_running (void)
 {
 	NMRemoteSettings *settings2;
 	guint quit_id;
@@ -365,7 +365,7 @@ test_service_running (void)
 	loop = g_main_loop_new (NULL, FALSE);
 
 	g_object_get (G_OBJECT (settings),
-	              NM_REMOTE_SETTINGS_SERVICE_RUNNING, &running,
+	              NM_REMOTE_SETTINGS_NM_RUNNING, &running,
 	              NULL);
 	g_assert (running == TRUE);
 
@@ -382,23 +382,23 @@ test_service_running (void)
 	 * settings hasn't gotten the news yet.
 	 */
 	g_object_get (G_OBJECT (settings2),
-	              NM_REMOTE_SETTINGS_SERVICE_RUNNING, &running,
+	              NM_REMOTE_SETTINGS_NM_RUNNING, &running,
 	              NULL);
 	g_assert (running == FALSE);
 	g_object_get (G_OBJECT (settings),
-	              NM_REMOTE_SETTINGS_SERVICE_RUNNING, &running,
+	              NM_REMOTE_SETTINGS_NM_RUNNING, &running,
 	              NULL);
 	g_assert (running == TRUE);
 
-	g_signal_connect (settings, "notify::" NM_REMOTE_SETTINGS_SERVICE_RUNNING,
-	                  G_CALLBACK (settings_service_running_changed), &running_changed);
+	g_signal_connect (settings, "notify::" NM_REMOTE_SETTINGS_NM_RUNNING,
+	                  G_CALLBACK (settings_nm_running_changed), &running_changed);
 	quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 	g_assert_cmpint (running_changed, ==, 1);
 	g_source_remove (quit_id);
 
 	g_object_get (G_OBJECT (settings2),
-	              NM_REMOTE_SETTINGS_SERVICE_RUNNING, &running,
+	              NM_REMOTE_SETTINGS_NM_RUNNING, &running,
 	              NULL);
 	g_assert (running == FALSE);
 
@@ -411,7 +411,7 @@ test_service_running (void)
 	g_source_remove (quit_id);
 
 	g_object_get (G_OBJECT (settings2),
-	              NM_REMOTE_SETTINGS_SERVICE_RUNNING, &running,
+	              NM_REMOTE_SETTINGS_NM_RUNNING, &running,
 	              NULL);
 	g_assert (running == TRUE);
 
@@ -450,7 +450,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/remote_settings/make_invisible", test_make_invisible);
 	g_test_add_func ("/remote_settings/make_visible", test_make_visible);
 	g_test_add_func ("/remote_settings/remove_connection", test_remove_connection);
-	g_test_add_func ("/remote_settings/service_running", test_service_running);
+	g_test_add_func ("/remote_settings/nm_running", test_nm_running);
 
 	ret = g_test_run ();
 

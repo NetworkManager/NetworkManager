@@ -48,7 +48,7 @@ G_BEGIN_DECLS
 #define NM_CLIENT_VERSION "version"
 #define NM_CLIENT_STATE "state"
 #define NM_CLIENT_STARTUP "startup"
-#define NM_CLIENT_MANAGER_RUNNING "manager-running"
+#define NM_CLIENT_NM_RUNNING "nm-running"
 #define NM_CLIENT_NETWORKING_ENABLED "networking-enabled"
 #define NM_CLIENT_WIRELESS_ENABLED "wireless-enabled"
 #define NM_CLIENT_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
@@ -222,7 +222,7 @@ gboolean  nm_client_wimax_hardware_get_enabled (NMClient *client);
 const char *nm_client_get_version        (NMClient *client);
 NMState   nm_client_get_state            (NMClient *client);
 gboolean  nm_client_get_startup          (NMClient *client);
-gboolean  nm_client_get_manager_running  (NMClient *client);
+gboolean  nm_client_get_nm_running       (NMClient *client);
 const GPtrArray *nm_client_get_active_connections (NMClient *client);
 
 NMClientPermissionResult nm_client_get_permission_result (NMClient *client,

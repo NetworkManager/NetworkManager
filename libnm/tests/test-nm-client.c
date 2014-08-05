@@ -808,9 +808,9 @@ test_devices_array (void)
 }
 
 static void
-manager_running_changed (GObject *client,
-                         GParamSpec *pspec,
-                         gpointer user_data)
+nm_running_changed (GObject *client,
+                    GParamSpec *pspec,
+                    gpointer user_data)
 {
 	int *running_changed = user_data;
 
@@ -819,7 +819,7 @@ manager_running_changed (GObject *client,
 }
 
 static void
-test_client_manager_running (void)
+test_client_nm_running (void)
 {
 	NMClient *client1, *client2;
 	guint quit_id;
@@ -828,7 +828,7 @@ test_client_manager_running (void)
 
 	client1 = test_client_new ();
 
-	g_assert (!nm_client_get_manager_running (client1));
+	g_assert (!nm_client_get_nm_running (client1));
 	g_assert_cmpstr (nm_client_get_version (client1), ==, NULL);
 
 	g_assert (!nm_client_networking_get_enabled (client1));
@@ -848,26 +848,26 @@ test_client_manager_running (void)
 	/* client2 should know that NM is running, but the previously-created
 	 * client1 hasn't gotten the news yet.
 	 */
-	g_assert (!nm_client_get_manager_running (client1));
-	g_assert (nm_client_get_manager_running (client2));
+	g_assert (!nm_client_get_nm_running (client1));
+	g_assert (nm_client_get_nm_running (client2));
 
-	g_signal_connect (client1, "notify::" NM_CLIENT_MANAGER_RUNNING,
-	                  G_CALLBACK (manager_running_changed), &running_changed);
+	g_signal_connect (client1, "notify::" NM_CLIENT_NM_RUNNING,
+	                  G_CALLBACK (nm_running_changed), &running_changed);
 	quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 	g_assert_cmpint (running_changed, ==, 1);
-	g_assert (nm_client_get_manager_running (client1));
+	g_assert (nm_client_get_nm_running (client1));
 	g_source_remove (quit_id);
 
 	/* And kill it */
 	g_clear_pointer (&sinfo, nm_test_service_cleanup);
 
-	g_assert (nm_client_get_manager_running (client1));
+	g_assert (nm_client_get_nm_running (client1));
 
 	quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 	g_assert_cmpint (running_changed, ==, 2);
-	g_assert (!nm_client_get_manager_running (client1));
+	g_assert (!nm_client_get_nm_running (client1));
 	g_source_remove (quit_id);
 
 	g_object_unref (client1);
@@ -891,7 +891,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/wifi-ap-added-removed", test_wifi_ap_added_removed);
 	g_test_add_func ("/libnm/wimax-nsp-added-removed", test_wimax_nsp_added_removed);
 	g_test_add_func ("/libnm/devices-array", test_devices_array);
-	g_test_add_func ("/libnm/client-manager-running", test_client_manager_running);
+	g_test_add_func ("/libnm/client-nm-running", test_client_nm_running);
 
 	return g_test_run ();
 }

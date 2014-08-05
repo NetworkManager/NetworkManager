@@ -63,7 +63,7 @@ GQuark nm_remote_settings_error_quark (void);
 
 
 #define NM_REMOTE_SETTINGS_BUS             "bus"
-#define NM_REMOTE_SETTINGS_SERVICE_RUNNING "service-running"
+#define NM_REMOTE_SETTINGS_NM_RUNNING      "nm-running"
 #define NM_REMOTE_SETTINGS_HOSTNAME        "hostname"
 #define NM_REMOTE_SETTINGS_CAN_MODIFY      "can-modify"
 

@@ -52,7 +52,7 @@ G_DEFINE_TYPE_WITH_CODE (NMClient, nm_client, NM_TYPE_OBJECT,
 typedef struct {
 	DBusGProxy *client_proxy;
 	DBusGProxy *bus_proxy;
-	gboolean manager_running;
+	gboolean nm_running;
 	char *version;
 	NMState state;
 	gboolean startup;
@@ -86,7 +86,7 @@ enum {
 	PROP_VERSION,
 	PROP_STATE,
 	PROP_STARTUP,
-	PROP_MANAGER_RUNNING,
+	PROP_NM_RUNNING,
 	PROP_NETWORKING_ENABLED,
 	PROP_WIRELESS_ENABLED,
 	PROP_WIRELESS_HARDWARE_ENABLED,
@@ -213,7 +213,7 @@ init_dbus (NMObject *object)
 	                             NULL);
 
 	if (_nm_object_is_connection_private (NM_OBJECT (object)))
-		priv->manager_running = TRUE;
+		priv->nm_running = TRUE;
 	else {
 		priv->bus_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
 		                                             DBUS_SERVICE_DBUS,
@@ -660,7 +660,7 @@ nm_client_activate_connection (NMClient *client,
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
 
-	if (priv->manager_running == FALSE) {
+	if (priv->nm_running == FALSE) {
 		info->idle_id = g_idle_add (activate_nm_not_running, info);
 		return;
 	}
@@ -747,7 +747,7 @@ nm_client_add_and_activate_connection (NMClient *client,
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
 
-	if (priv->manager_running) {
+	if (priv->nm_running) {
 		dbus_g_proxy_begin_call (priv->client_proxy, "AddAndActivateConnection",
 		                         add_activate_cb, info, NULL,
 		                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, hash,
@@ -791,7 +791,7 @@ nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
 	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (active));
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!priv->manager_running)
+	if (!priv->nm_running)
 		return;
 
 	path = nm_object_get_path (NM_OBJECT (active));
@@ -822,7 +822,7 @@ nm_client_get_active_connections (NMClient *client)
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!priv->manager_running)
+	if (!priv->nm_running)
 		return NULL;
 
 	return handle_ptr_array_return (priv->active_connections);
@@ -858,7 +858,7 @@ nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!NM_CLIENT_GET_PRIVATE (client)->manager_running)
+	if (!NM_CLIENT_GET_PRIVATE (client)->nm_running)
 		return;
 
 	g_value_init (&value, G_TYPE_BOOLEAN);
@@ -916,7 +916,7 @@ nm_client_wwan_set_enabled (NMClient *client, gboolean enabled)
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!NM_CLIENT_GET_PRIVATE (client)->manager_running)
+	if (!NM_CLIENT_GET_PRIVATE (client)->nm_running)
 		return;
 
 	g_value_init (&value, G_TYPE_BOOLEAN);
@@ -974,7 +974,7 @@ nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!NM_CLIENT_GET_PRIVATE (client)->manager_running)
+	if (!NM_CLIENT_GET_PRIVATE (client)->nm_running)
 		return;
 
 	g_value_init (&value, G_TYPE_BOOLEAN);
@@ -1019,7 +1019,7 @@ nm_client_get_version (NMClient *client)
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	return priv->manager_running ? priv->version : NULL;
+	return priv->nm_running ? priv->version : NULL;
 }
 
 /**
@@ -1087,7 +1087,7 @@ nm_client_networking_set_enabled (NMClient *client, gboolean enable)
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!NM_CLIENT_GET_PRIVATE (client)->manager_running)
+	if (!NM_CLIENT_GET_PRIVATE (client)->nm_running)
 		return;
 
 	if (!dbus_g_proxy_call (NM_CLIENT_GET_PRIVATE (client)->client_proxy, "Enable", &err,
@@ -1100,7 +1100,7 @@ nm_client_networking_set_enabled (NMClient *client, gboolean enable)
 }
 
 /**
- * nm_client_get_manager_running:
+ * nm_client_get_nm_running:
  * @client: a #NMClient
  *
  * Determines whether the daemon is running.
@@ -1108,11 +1108,11 @@ nm_client_networking_set_enabled (NMClient *client, gboolean enable)
  * Returns: %TRUE if the daemon is running
  **/
 gboolean
-nm_client_get_manager_running (NMClient *client)
+nm_client_get_nm_running (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	return NM_CLIENT_GET_PRIVATE (client)->manager_running;
+	return NM_CLIENT_GET_PRIVATE (client)->nm_running;
 }
 
 /**
@@ -1160,7 +1160,7 @@ nm_client_get_logging (NMClient *client, char **level, char **domains, GError **
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!priv->manager_running) {
+	if (!priv->nm_running) {
 		g_set_error_literal (error,
 		                     NM_CLIENT_ERROR,
 		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
@@ -1199,7 +1199,7 @@ nm_client_set_logging (NMClient *client, const char *level, const char *domains,
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!priv->manager_running) {
+	if (!priv->nm_running) {
 		g_set_error_literal (error,
 		                     NM_CLIENT_ERROR,
 		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
@@ -1323,7 +1323,7 @@ updated_properties (GObject *object, GAsyncResult *result, gpointer user_data)
 		g_error_free (error);
 	}
 
-	_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+	_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_NM_RUNNING);
 }
 
 static void
@@ -1347,14 +1347,14 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 	else if (old_good && !new_good)
 		new_running = FALSE;
 
-	if (new_running == priv->manager_running)
+	if (new_running == priv->nm_running)
 		return;
 
-	priv->manager_running = new_running;
-	if (!priv->manager_running) {
+	priv->nm_running = new_running;
+	if (!priv->nm_running) {
 		priv->state = NM_STATE_UNKNOWN;
 		priv->startup = FALSE;
-		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_NM_RUNNING);
 		_nm_object_suppress_property_updates (NM_OBJECT (client), TRUE);
 		poke_wireless_devices_with_rf_status (client);
 		free_devices (client, TRUE);
@@ -1752,12 +1752,12 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		                        "NameHasOwner", error,
 		                        G_TYPE_STRING, NM_DBUS_SERVICE,
 		                        G_TYPE_INVALID,
-		                        G_TYPE_BOOLEAN, &priv->manager_running,
+		                        G_TYPE_BOOLEAN, &priv->nm_running,
 		                        G_TYPE_INVALID))
 			return FALSE;
 	}
 
-	if (priv->manager_running && !get_permissions_sync (client, error))
+	if (priv->nm_running && !get_permissions_sync (client, error))
 		return FALSE;
 
 	return TRUE;
@@ -1828,22 +1828,22 @@ finish_init (NMClientInitData *init_data)
 }
 
 static void
-init_async_got_manager_running (DBusGProxy *proxy, DBusGProxyCall *call,
-                                gpointer user_data)
+init_async_got_nm_running (DBusGProxy *proxy, DBusGProxyCall *call,
+                           gpointer user_data)
 {
 	NMClientInitData *init_data = user_data;
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (init_data->client);
 	GError *error = NULL;
 
 	if (!dbus_g_proxy_end_call (proxy, call, &error,
-	                            G_TYPE_BOOLEAN, &priv->manager_running,
+	                            G_TYPE_BOOLEAN, &priv->nm_running,
 	                            G_TYPE_INVALID)) {
 		g_simple_async_result_take_error (init_data->result, error);
 		init_async_complete (init_data);
 		return;
 	}
 
-	if (!priv->manager_running) {
+	if (!priv->nm_running) {
 		init_async_complete (init_data);
 		return;
 	}
@@ -1877,7 +1877,7 @@ init_async (GAsyncInitable *initable, int io_priority,
 	else {
 		/* Check if NM is running */
 		dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
-		                         init_async_got_manager_running,
+		                         init_async_got_nm_running,
 		                         init_data, NULL,
 		                         G_TYPE_STRING, NM_DBUS_SERVICE,
 		                         G_TYPE_INVALID);
@@ -1994,8 +1994,8 @@ get_property (GObject *object,
 	case PROP_STARTUP:
 		g_value_set_boolean (value, nm_client_get_startup (self));
 		break;
-	case PROP_MANAGER_RUNNING:
-		g_value_set_boolean (value, priv->manager_running);
+	case PROP_NM_RUNNING:
+		g_value_set_boolean (value, priv->nm_running);
 		break;
 	case PROP_NETWORKING_ENABLED:
 		g_value_set_boolean (value, nm_client_networking_get_enabled (self));
@@ -2096,13 +2096,13 @@ nm_client_class_init (NMClientClass *client_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMClient:manager-running:
+	 * NMClient:nm-running:
 	 *
 	 * Whether the daemon is running.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_MANAGER_RUNNING,
-		 g_param_spec_boolean (NM_CLIENT_MANAGER_RUNNING, "", "",
+		(object_class, PROP_NM_RUNNING,
+		 g_param_spec_boolean (NM_CLIENT_NM_RUNNING, "", "",
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));

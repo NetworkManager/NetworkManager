@@ -62,7 +62,7 @@ client_properties_changed (GObject *object,
 	NMState state;
 	gboolean wait_startup = GPOINTER_TO_UINT (g_object_get_data (object, WAIT_STARTUP_TAG));
 
-	if (!nm_client_get_manager_running (client))
+	if (!nm_client_get_nm_running (client))
 		return;
 
 	if (wait_startup) {
@@ -203,7 +203,7 @@ main (int argc, char *argv[])
 
 	g_object_set_data (G_OBJECT (client), WAIT_STARTUP_TAG, GUINT_TO_POINTER (wait_startup));
 	state = nm_client_get_state (client);
-	if (!nm_client_get_manager_running (client)) {
+	if (!nm_client_get_nm_running (client)) {
 		if (exit_no_nm) {
 			g_object_unref (client);
 			return 1;

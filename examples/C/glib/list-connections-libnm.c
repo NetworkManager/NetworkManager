@@ -128,7 +128,7 @@ list_connections (gpointer data)
 	}
 
 	/* Find out whether setting service is running */
-	g_object_get (settings, NM_REMOTE_SETTINGS_SERVICE_RUNNING, &settings_running, NULL);
+	g_object_get (settings, NM_REMOTE_SETTINGS_NM_RUNNING, &settings_running, NULL);
 
 	if (!settings_running) {
 		g_message ("Error: Can't obtain connections: settings service is not running.");
