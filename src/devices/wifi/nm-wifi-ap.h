@@ -60,62 +60,62 @@ NMAccessPoint * nm_ap_new_from_properties (const char *supplicant_path,
 NMAccessPoint * nm_ap_new_fake_from_connection (NMConnection *connection);
 void            nm_ap_export_to_dbus    (NMAccessPoint *ap);
 
-const char *		nm_ap_get_dbus_path (NMAccessPoint *ap);
+const char *nm_ap_get_dbus_path (NMAccessPoint *ap);
 
-const char *        nm_ap_get_supplicant_path (NMAccessPoint *ap);
-void                nm_ap_set_supplicant_path (NMAccessPoint *ap,
-                                               const char *path);
+const char *nm_ap_get_supplicant_path (NMAccessPoint *ap);
+void        nm_ap_set_supplicant_path (NMAccessPoint *ap,
+                                       const char *path);
 
-const GByteArray *	nm_ap_get_ssid (const NMAccessPoint * ap);
-void				nm_ap_set_ssid (NMAccessPoint * ap, const GByteArray * ssid);
+const GByteArray *nm_ap_get_ssid (const NMAccessPoint * ap);
+void              nm_ap_set_ssid (NMAccessPoint * ap, const GByteArray * ssid);
 
-NM80211ApFlags         nm_ap_get_flags     (NMAccessPoint *ap);
-void                   nm_ap_set_flags     (NMAccessPoint *ap, NM80211ApFlags flags);
+NM80211ApFlags nm_ap_get_flags (NMAccessPoint *ap);
+void           nm_ap_set_flags (NMAccessPoint *ap, NM80211ApFlags flags);
 
 NM80211ApSecurityFlags nm_ap_get_wpa_flags (NMAccessPoint *ap);
 void                   nm_ap_set_wpa_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags);
 
-NM80211ApSecurityFlags nm_ap_get_rsn_flags	(NMAccessPoint *ap);
-void                   nm_ap_set_rsn_flags  (NMAccessPoint *ap, NM80211ApSecurityFlags flags);
+NM80211ApSecurityFlags nm_ap_get_rsn_flags (NMAccessPoint *ap);
+void                   nm_ap_set_rsn_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags);
 
-const struct ether_addr * nm_ap_get_address	(const NMAccessPoint *ap);
-void				nm_ap_set_address		(NMAccessPoint *ap, const struct ether_addr *addr);
+const struct ether_addr *nm_ap_get_address (const NMAccessPoint *ap);
+void                     nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr *addr);
 
-NM80211Mode			nm_ap_get_mode			(NMAccessPoint *ap);
-void				nm_ap_set_mode			(NMAccessPoint *ap, const NM80211Mode mode);
+NM80211Mode nm_ap_get_mode (NMAccessPoint *ap);
+void        nm_ap_set_mode (NMAccessPoint *ap, const NM80211Mode mode);
 
-gboolean            nm_ap_is_hotspot        (NMAccessPoint *ap);
+gboolean nm_ap_is_hotspot (NMAccessPoint *ap);
 
-gint8			nm_ap_get_strength		(NMAccessPoint *ap);
-void				nm_ap_set_strength		(NMAccessPoint *ap, gint8 strength);
+gint8 nm_ap_get_strength (NMAccessPoint *ap);
+void  nm_ap_set_strength (NMAccessPoint *ap, gint8 strength);
 
-guint32			nm_ap_get_freq			(NMAccessPoint *ap);
-void				nm_ap_set_freq			(NMAccessPoint *ap, guint32 freq);
+guint32 nm_ap_get_freq (NMAccessPoint *ap);
+void    nm_ap_set_freq (NMAccessPoint *ap, guint32 freq);
 
-guint32			nm_ap_get_max_bitrate			(NMAccessPoint *ap);
-void				nm_ap_set_max_bitrate		(NMAccessPoint *ap, guint32 bitrate);
+guint32 nm_ap_get_max_bitrate (NMAccessPoint *ap);
+void    nm_ap_set_max_bitrate (NMAccessPoint *ap, guint32 bitrate);
 
-gboolean			nm_ap_get_fake	(const NMAccessPoint *ap);
-void				nm_ap_set_fake	(NMAccessPoint *ap, gboolean fake);
+gboolean nm_ap_get_fake (const NMAccessPoint *ap);
+void     nm_ap_set_fake (NMAccessPoint *ap, gboolean fake);
 
-gboolean			nm_ap_get_broadcast		(NMAccessPoint *ap);
-void				nm_ap_set_broadcast		(NMAccessPoint *ap, gboolean broadcast);
+gboolean nm_ap_get_broadcast (NMAccessPoint *ap);
+void     nm_ap_set_broadcast (NMAccessPoint *ap, gboolean broadcast);
 
-gint32                  nm_ap_get_last_seen     (const NMAccessPoint *ap);
-void                    nm_ap_set_last_seen     (NMAccessPoint *ap, gint32 last_seen);
+gint32   nm_ap_get_last_seen (const NMAccessPoint *ap);
+void     nm_ap_set_last_seen (NMAccessPoint *ap, gint32 last_seen);
 
-gboolean			nm_ap_check_compatible (NMAccessPoint *self,
-                                            NMConnection *connection);
+gboolean nm_ap_check_compatible (NMAccessPoint *self,
+                                 NMConnection *connection);
 
-gboolean            nm_ap_complete_connection (NMAccessPoint *self,
-                                               NMConnection *connection,
-                                               gboolean lock_bssid,
-                                               GError **error);
+gboolean nm_ap_complete_connection (NMAccessPoint *self,
+                                    NMConnection *connection,
+                                    gboolean lock_bssid,
+                                    GError **error);
 
 NMAccessPoint *     nm_ap_match_in_list (NMAccessPoint *find_ap,
                                          GSList *ap_list,
                                          gboolean strict_match);
 
-void				nm_ap_dump (NMAccessPoint *ap, const char *prefix);
+void                nm_ap_dump (NMAccessPoint *ap, const char *prefix);
 
 #endif /* NM_ACCESS_POINT_H */
