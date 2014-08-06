@@ -34,6 +34,8 @@
 #include "nm-remote-settings.h"
 #include "common.h"
 
+#include "nm-test-utils.h"
+
 static NMTestServiceInfo *sinfo;
 static NMRemoteSettings *settings = NULL;
 DBusGConnection *bus = NULL;
@@ -47,8 +49,7 @@ add_cb (NMRemoteSettings *s,
         GError *error,
         gpointer user_data)
 {
-	if (error)
-		g_warning ("Add error: %s", error->message);
+	g_assert_no_error (error);
 
 	*((gboolean *) user_data) = TRUE;
 	remote = connection;
@@ -61,27 +62,11 @@ static void
 test_add_connection (void)
 {
 	NMConnection *connection;
-	NMSettingConnection *s_con;
-	NMSettingWired *s_wired;
-	char *uuid;
 	gboolean success;
 	time_t start, now;
 	gboolean done = FALSE;
 
-	connection = nm_connection_new ();
-
-	s_con = (NMSettingConnection *) nm_setting_connection_new ();
-	uuid = nm_utils_uuid_generate ();
-	g_object_set (G_OBJECT (s_con),
-	              NM_SETTING_CONNECTION_ID, TEST_CON_ID,
-	              NM_SETTING_CONNECTION_UUID, uuid,
-	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-	              NULL);
-	g_free (uuid);
-	nm_connection_add_setting (connection, NM_SETTING (s_con));
-
-	s_wired = (NMSettingWired *) nm_setting_wired_new ();
-	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+	connection = nmtst_create_minimal_connection (TEST_CON_ID, NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
 
 	success = nm_remote_settings_add_connection (settings,
 	                                             connection,
@@ -101,6 +86,7 @@ test_add_connection (void)
 	g_assert (nm_connection_compare (connection,
 	                                 NM_CONNECTION (remote),
 	                                 NM_SETTING_COMPARE_FLAG_EXACT) == TRUE);
+	g_object_unref (connection);
 }
 
 /*******************************************************************/
@@ -345,6 +331,61 @@ test_remove_connection (void)
 
 /*******************************************************************/
 
+#define TEST_ADD_REMOVE_ID "add-remove-test-connection"
+
+static void
+add_remove_cb (NMRemoteSettings *s,
+               NMRemoteConnection *connection,
+               GError *error,
+               gpointer user_data)
+{
+	g_assert_error (error, NM_REMOTE_SETTINGS_ERROR, NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED);
+	g_assert (connection == NULL);
+
+	*((gboolean *) user_data) = TRUE;
+}
+
+static void
+test_add_remove_connection (void)
+{
+	GVariant *ret;
+	GError *error = NULL;
+	NMConnection *connection;
+	gboolean success;
+	time_t start, now;
+	gboolean done = FALSE;
+
+	/* This will cause the test server to immediately delete the connection
+	 * after creating it.
+	 */
+	ret = g_dbus_proxy_call_sync (sinfo->proxy,
+	                              "AutoRemoveNextConnection",
+	                              NULL,
+	                              G_DBUS_CALL_FLAGS_NONE, -1,
+	                              NULL,
+	                              &error);
+	g_assert_no_error (error);
+	g_variant_unref (ret);
+
+	connection = nmtst_create_minimal_connection (TEST_ADD_REMOVE_ID, NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	success = nm_remote_settings_add_connection (settings,
+	                                             connection,
+	                                             add_remove_cb,
+	                                             &done);
+	g_assert (success == TRUE);
+
+	start = time (NULL);
+	do {
+		now = time (NULL);
+		g_main_context_iteration (NULL, FALSE);
+	} while ((done == FALSE) && (now - start < 5));
+	g_assert (done == TRUE);
+
+	g_object_unref (connection);
+}
+
+/*******************************************************************/
+
 static GMainLoop *loop;
 
 static gboolean
@@ -462,6 +503,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/remote_settings/make_invisible", test_make_invisible);
 	g_test_add_func ("/remote_settings/make_visible", test_make_visible);
 	g_test_add_func ("/remote_settings/remove_connection", test_remove_connection);
+	g_test_add_func ("/remote_settings/add_remove_connection", test_add_remove_connection);
 	g_test_add_func ("/remote_settings/nm_running", test_nm_running);
 
 	ret = g_test_run ();
