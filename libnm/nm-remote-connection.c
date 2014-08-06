@@ -221,7 +221,7 @@ nm_remote_connection_commit_changes (NMRemoteConnection *self,
 	if (!call)
 		return;
 
-	settings = nm_connection_to_hash (NM_CONNECTION (self), NM_SETTING_HASH_FLAG_ALL);
+	settings = nm_connection_to_dbus (NM_CONNECTION (self), NM_CONNECTION_SERIALIZE_ALL);
 	call->call = dbus_g_proxy_begin_call (priv->proxy, "Update",
 	                                      remote_call_dbus_cb, call, NULL,
 	                                      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, settings,
@@ -259,7 +259,7 @@ nm_remote_connection_commit_changes_unsaved (NMRemoteConnection *connection,
 	if (!call)
 		return;
 
-	settings = nm_connection_to_hash (NM_CONNECTION (connection), NM_SETTING_HASH_FLAG_ALL);
+	settings = nm_connection_to_dbus (NM_CONNECTION (connection), NM_CONNECTION_SERIALIZE_ALL);
 	call->call = dbus_g_proxy_begin_call (priv->proxy, "UpdateUnsaved",
 	                                      remote_call_dbus_cb, call, NULL,
 	                                      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, settings,

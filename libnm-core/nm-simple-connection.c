@@ -48,13 +48,13 @@ nm_simple_connection_new (void)
 }
 
 /**
- * nm_simple_connection_new_from_hash:
+ * nm_simple_connection_new_from_dbus:
  * @hash: (element-type utf8 GLib.HashTable): the #GHashTable describing
  * the connection
  * @error: on unsuccessful return, an error
  *
  * Creates a new #NMSimpleConnection from a hash table describing the
- * connection.  See nm_connection_to_hash() for a description of the expected
+ * connection.  See nm_connection_to_dbus() for a description of the expected
  * hash table.
  *
  * Returns: (transfer full): the new #NMSimpleConnection object, populated with
@@ -62,7 +62,7 @@ nm_simple_connection_new (void)
  * connection failed to validate
  **/
 NMConnection *
-nm_simple_connection_new_from_hash (GHashTable *hash, GError **error)
+nm_simple_connection_new_from_dbus (GHashTable *hash, GError **error)
 {
 	NMConnection *connection;
 

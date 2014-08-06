@@ -188,7 +188,7 @@ build_edit_connection (NMConnection *orig_connection)
 	if (!NM_IS_REMOTE_CONNECTION (orig_connection))
 		return edit_connection;
 
-	settings = nm_connection_to_hash (orig_connection, NM_SETTING_HASH_FLAG_NO_SECRETS);
+	settings = nm_connection_to_dbus (orig_connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
 	g_hash_table_iter_init (&iter, settings);
 	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, NULL)) {
 		nmt_sync_op_init (&op);

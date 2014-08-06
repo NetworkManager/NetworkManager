@@ -293,7 +293,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->proxy != NULL, NULL);
 
-	hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+	hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 
 	/* Mask off the private ONLY_SYSTEM flag if present */
 	flags &= ~NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM;
@@ -379,7 +379,7 @@ agent_save_delete_cb (DBusGProxy *proxy,
 static gpointer
 agent_new_save_delete (NMSecretAgent *self,
                        NMConnection *connection,
-                       NMSettingHashFlags hash_flags,
+                       NMConnectionSerializationFlags flags,
                        const char *method,
                        NMSecretAgentCallback callback,
                        gpointer callback_data)
@@ -389,7 +389,7 @@ agent_new_save_delete (NMSecretAgent *self,
 	Request *r;
 	const char *cpath = nm_connection_get_path (connection);
 
-	hash = nm_connection_to_hash (connection, hash_flags);
+	hash = nm_connection_to_dbus (connection, flags);
 
 	r = request_new (self, cpath, NULL, callback, callback_data);
 	r->call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,
@@ -419,7 +419,7 @@ nm_secret_agent_save_secrets (NMSecretAgent *self,
 	/* Caller should have ensured that only agent-owned secrets exist in 'connection' */
 	return agent_new_save_delete (self,
 	                              connection,
-	                              NM_SETTING_HASH_FLAG_ALL,
+	                              NM_CONNECTION_SERIALIZE_ALL,
 	                              "SaveSecrets",
 	                              callback,
 	                              callback_data);
@@ -437,7 +437,7 @@ nm_secret_agent_delete_secrets (NMSecretAgent *self,
 	/* No secrets sent; agents must be smart enough to track secrets using the UUID or something */
 	return agent_new_save_delete (self,
 	                              connection,
-	                              NM_SETTING_HASH_FLAG_NO_SECRETS,
+	                              NM_CONNECTION_SERIALIZE_NO_SECRETS,
 	                              "DeleteSecrets",
 	                              callback,
 	                              callback_data);

@@ -308,7 +308,7 @@ hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
 		GType type = nm_setting_lookup_type (setting_name);
 
 		if (type) {
-			NMSetting *setting = _nm_setting_new_from_hash (type, setting_hash);
+			NMSetting *setting = _nm_setting_new_from_dbus (type, setting_hash);
 
 			if (setting) {
 				_nm_connection_add_setting (connection, setting);
@@ -983,8 +983,8 @@ nm_connection_normalize (NMConnection *connection,
  * Update the specified setting's secrets, given a hash table of secrets
  * intended for that setting (deserialized from D-Bus for example).  Will also
  * extract the given setting's secrets hash if given a hash of hashes, as would
- * be returned from nm_connection_to_hash().  If @setting_name is %NULL, expects
- * a fully serialized #NMConnection as returned by nm_connection_to_hash() and
+ * be returned from nm_connection_to_dbus().  If @setting_name is %NULL, expects
+ * a fully serialized #NMConnection as returned by nm_connection_to_dbus() and
  * will update all secrets from all settings contained in @secrets.
  *
  * Returns: %TRUE if the secrets were successfully updated, %FALSE if the update
@@ -1228,15 +1228,15 @@ nm_connection_clear_secrets_with_flags (NMConnection *connection,
 }
 
 /**
- * nm_connection_to_hash:
+ * nm_connection_to_dbus:
  * @connection: the #NMConnection
- * @flags: hash flags, e.g. %NM_SETTING_HASH_FLAG_ALL
+ * @flags: serialization flags, e.g. %NM_CONNECTION_SERIALIZE_ALL
  *
  * Converts the #NMConnection into a #GHashTable describing the connection,
- * suitable for marshalling over D-Bus or serializing.  The hash table mapping
- * is string:#GHashTable with each element in the returned hash representing
- * a #NMSetting object.  The keys are setting object names, and the values
- * are #GHashTables mapping string:GValue, each of which represents the
+ * suitable for marshalling over D-Bus or otherwise serializing.  The hash table
+ * mapping is string:#GHashTable with each element in the returned hash
+ * representing a #NMSetting object.  The keys are setting object names, and the
+ * values are #GHashTables mapping string:GValue, each of which represents the
  * properties of the #NMSetting object.
  *
  * Returns: (transfer full) (element-type utf8 GLib.HashTable): a new
@@ -1245,7 +1245,7 @@ nm_connection_clear_secrets_with_flags (NMConnection *connection,
  * with g_hash_table_unref() when it is no longer needed.
  **/
 GHashTable *
-nm_connection_to_hash (NMConnection *connection, NMSettingHashFlags flags)
+nm_connection_to_dbus (NMConnection *connection, NMConnectionSerializationFlags flags)
 {
 	NMConnectionPrivate *priv;
 	GHashTableIter iter;
@@ -1264,7 +1264,7 @@ nm_connection_to_hash (NMConnection *connection, NMSettingHashFlags flags)
 	while (g_hash_table_iter_next (&iter, &key, &data)) {
 		NMSetting *setting = NM_SETTING (data);
 
-		setting_hash = _nm_setting_to_hash (setting, flags);
+		setting_hash = _nm_setting_to_dbus (setting, flags);
 		if (setting_hash)
 			g_hash_table_insert (ret, g_strdup (nm_setting_get_name (setting)), setting_hash);
 	}

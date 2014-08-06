@@ -86,7 +86,7 @@ typedef struct {
  * has returned
  * @secrets: (element-type utf8 GLib.HashTable): the #GHashTable containing
  * the requested secrets in the same format as an #NMConnection hash (as
- * created by nm_connection_to_hash() for example).  Each key in @secrets
+ * created by nm_connection_to_dbus() for example).  Each key in @secrets
  * should be the name of a #NMSetting object (like "802-11-wireless-security")
  * and each value should be a #GHashTable.  The sub-hashes map string:#GValue
  * where the string is the setting property name (like "psk") and the value
@@ -114,7 +114,7 @@ typedef struct {
  *                 NM_SETTING_WIRELESS_SECURITY_PSK, "my really cool PSK",
  *                 NULL);
  *   nm_connection_add_setting (secrets, NM_SETTING (s_wsec));
- *   secrets_hash = nm_connection_to_hash (secrets, NM_SETTING_HASH_FLAG_ALL);
+ *   secrets_hash = nm_connection_to_dbus (secrets, NM_CONNECTION_SERIALIZE_ALL);
  *
  *   (call the NMSecretAgentGetSecretsFunc with secrets_hash)
  *

@@ -1195,7 +1195,7 @@ nm_agent_manager_get_secrets (NMAgentManager *self,
 
 	/* NOTE: a few things in the Request handling depend on existing_secrets
 	 * being NULL if there aren't any system-owned secrets for this connection.
-	 * This in turn depends on nm_connection_to_hash() and nm_setting_to_hash()
+	 * This in turn depends on nm_connection_to_dbus() and nm_setting_to_hash()
 	 * both returning NULL if they didn't hash anything.
 	 */
 

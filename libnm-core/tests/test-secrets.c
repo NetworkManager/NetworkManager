@@ -595,7 +595,7 @@ test_update_secrets_whole_connection (void)
 	connection = wifi_connection_new ();
 
 	/* Build up the secrets hash */
-	secrets = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+	secrets = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 	wsec_hash = g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 	g_assert (wsec_hash);
 	g_hash_table_insert (wsec_hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
@@ -645,7 +645,7 @@ test_update_secrets_whole_connection_bad_setting (void)
 	connection = wifi_connection_new ();
 
 	/* Build up the secrets hash */
-	secrets = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+	secrets = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 	wsec_hash = g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 	g_assert (wsec_hash);
 	g_hash_table_insert (wsec_hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
@@ -678,7 +678,7 @@ test_update_secrets_whole_connection_empty_base_setting (void)
 	 */
 
 	connection = wifi_connection_new ();
-	secrets = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+	secrets = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 	g_assert_cmpint (g_hash_table_size (secrets), ==, 1);
 	g_assert (g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SETTING_NAME));
 

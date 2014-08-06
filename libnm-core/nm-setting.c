@@ -380,9 +380,9 @@ destroy_gvalue (gpointer data)
 }
 
 /**
- * _nm_setting_to_hash:
+ * _nm_setting_to_dbus:
  * @setting: the #NMSetting
- * @flags: hash flags, e.g. %NM_SETTING_HASH_FLAG_ALL
+ * @flags: hash flags, e.g. %NM_CONNECTION_SERIALIZE_ALL
  *
  * Converts the #NMSetting into a #GHashTable mapping each setting property
  * name to a GValue describing that property, suitable for marshalling over
@@ -392,7 +392,7 @@ destroy_gvalue (gpointer data)
  * describing the setting's properties
  **/
 GHashTable *
-_nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
+_nm_setting_to_dbus (NMSetting *setting, NMConnectionSerializationFlags flags)
 {
 	GHashTable *hash;
 	GParamSpec **property_specs;
@@ -414,11 +414,11 @@ _nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 		if (strcmp (g_param_spec_get_name (prop_spec), NM_SETTING_NAME) == 0)
 			continue;
 
-		if (   (flags & NM_SETTING_HASH_FLAG_NO_SECRETS)
+		if (   (flags & NM_CONNECTION_SERIALIZE_NO_SECRETS)
 		    && (prop_spec->flags & NM_SETTING_PARAM_SECRET))
 			continue;
 
-		if (   (flags & NM_SETTING_HASH_FLAG_ONLY_SECRETS)
+		if (   (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
 		    && !(prop_spec->flags & NM_SETTING_PARAM_SECRET))
 			continue;
 
@@ -444,7 +444,7 @@ _nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 }
 
 /**
- * _nm_setting_new_from_hash:
+ * _nm_setting_new_from_dbus:
  * @setting_type: the #NMSetting type which the hash contains properties for
  * @hash: (element-type utf8 GObject.Value): the #GHashTable containing a
  * string to GValue mapping of properties that apply to the setting
@@ -460,7 +460,7 @@ _nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
  * hash table, or %NULL on failure
  **/
 NMSetting *
-_nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
+_nm_setting_new_from_dbus (GType setting_type, GHashTable *hash)
 {
 	GHashTableIter iter;
 	NMSetting *setting;

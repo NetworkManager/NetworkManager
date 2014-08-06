@@ -232,22 +232,6 @@ GType nm_setting_get_type (void);
 GType nm_setting_lookup_type (const char *name);
 GType nm_setting_lookup_type_by_quark (GQuark error_quark);
 
-/**
- * NMSettingHashFlags:
- * @NM_SETTING_HASH_FLAG_ALL: hash all properties (including secrets)
- * @NM_SETTING_HASH_FLAG_NO_SECRETS: do not include secrets
- * @NM_SETTING_HASH_FLAG_ONLY_SECRETS: only hash secrets
- *
- * These flags determine which properties are added to the resulting hash
- * when calling nm_setting_to_hash().
- *
- **/
-typedef enum {
-	NM_SETTING_HASH_FLAG_ALL = 0x00000000,
-	NM_SETTING_HASH_FLAG_NO_SECRETS = 0x00000001,
-	NM_SETTING_HASH_FLAG_ONLY_SECRETS = 0x00000002,
-} NMSettingHashFlags;
-
 NMSetting *nm_setting_duplicate      (NMSetting *setting);
 
 const char *nm_setting_get_name      (NMSetting *setting);

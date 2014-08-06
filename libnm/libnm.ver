@@ -123,8 +123,9 @@ global:
 	nm_connection_remove_setting;
 	nm_connection_replace_settings;
 	nm_connection_replace_settings_from_connection;
+	nm_connection_serialization_flags_get_type;
 	nm_connection_set_path;
-	nm_connection_to_hash;
+	nm_connection_to_dbus;
 	nm_connection_update_secrets;
 	nm_connection_verify;
 	nm_connectivity_state_get_type;
@@ -591,7 +592,6 @@ global:
 	nm_setting_gsm_get_type;
 	nm_setting_gsm_get_username;
 	nm_setting_gsm_new;
-	nm_setting_hash_flags_get_type;
 	nm_setting_infiniband_error_get_type;
 	nm_setting_infiniband_error_quark;
 	nm_setting_infiniband_get_mac_address;
@@ -864,7 +864,7 @@ global:
 	nm_simple_connection_get_type;
 	nm_simple_connection_new;
 	nm_simple_connection_new_clone;
-	nm_simple_connection_new_from_hash;
+	nm_simple_connection_new_from_dbus;
 	nm_ssid_get_type;
 	nm_state_get_type;
 	nm_string_array_get_type;

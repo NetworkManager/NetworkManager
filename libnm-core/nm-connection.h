@@ -140,6 +140,24 @@ NMSetting    *nm_connection_get_setting   (NMConnection *connection,
 NMSetting    *nm_connection_get_setting_by_name (NMConnection *connection,
                                                  const char   *name);
 
+/**
+ * NMConnectionSerializationFlags:
+ * @NM_CONNECTION_SERIALIZE_ALL: serialize all properties (including secrets)
+ * @NM_CONNECTION_SERIALIZE_NO_SECRETS: do not include secrets
+ * @NM_CONNECTION_SERIALIZE_ONLY_SECRETS: only serialize secrets
+ *
+ * These flags determine which properties are serialized when calling when
+ * calling nm_connection_to_dbus().
+ **/
+typedef enum { /*< flags >*/
+	NM_CONNECTION_SERIALIZE_ALL = 0x00000000,
+	NM_CONNECTION_SERIALIZE_NO_SECRETS = 0x00000001,
+	NM_CONNECTION_SERIALIZE_ONLY_SECRETS = 0x00000002,
+} NMConnectionSerializationFlags;
+
+GHashTable   *nm_connection_to_dbus       (NMConnection *connection,
+                                           NMConnectionSerializationFlags flags);
+
 gboolean      nm_connection_replace_settings (NMConnection *connection,
                                               GHashTable *new_settings,
                                               GError **error);
@@ -191,9 +209,6 @@ gboolean      nm_connection_is_type (NMConnection *connection, const char *type)
 void          nm_connection_for_each_setting_value (NMConnection *connection,
                                                     NMSettingValueIterFn func,
                                                     gpointer user_data);
-
-GHashTable   *nm_connection_to_hash       (NMConnection *connection,
-                                           NMSettingHashFlags flags);
 
 void          nm_connection_dump          (NMConnection *connection);
 

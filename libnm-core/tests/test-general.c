@@ -673,115 +673,115 @@ make_test_wsec_setting (const char *detail)
 }
 
 static void
-test_setting_to_hash_all (void)
+test_setting_to_dbus_all (void)
 {
 	NMSettingWirelessSecurity *s_wsec;
 	GHashTable *hash;
 
-	s_wsec = make_test_wsec_setting ("setting-to-hash-all");
+	s_wsec = make_test_wsec_setting ("setting-to-dbus-all");
 
-	hash = _nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ALL);
+	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NM_CONNECTION_SERIALIZE_ALL);
 
 	/* Make sure all keys are there */
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
-	        "setting-to-hash-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	        "setting-to-dbus-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME),
-	        "setting-to-hash-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+	        "setting-to-dbus-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK),
-	        "setting-to-hash-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_PSK);
+	        "setting-to-dbus-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_PSK);
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0),
-	        "setting-to-hash-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	        "setting-to-dbus-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 
 	g_hash_table_destroy (hash);
 	g_object_unref (s_wsec);
 }
 
 static void
-test_setting_to_hash_no_secrets (void)
+test_setting_to_dbus_no_secrets (void)
 {
 	NMSettingWirelessSecurity *s_wsec;
 	GHashTable *hash;
 
-	s_wsec = make_test_wsec_setting ("setting-to-hash-no-secrets");
+	s_wsec = make_test_wsec_setting ("setting-to-dbus-no-secrets");
 
-	hash = _nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_NO_SECRETS);
+	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NM_CONNECTION_SERIALIZE_NO_SECRETS);
 
 	/* Make sure non-secret keys are there */
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
-	        "setting-to-hash-no-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	        "setting-to-dbus-no-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME),
-	        "setting-to-hash-no-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+	        "setting-to-dbus-no-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
 
 	/* Make sure secrets are not there */
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK) == NULL,
-	        "setting-to-hash-no-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_PSK);
+	        "setting-to-dbus-no-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_PSK);
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0) == NULL,
-	        "setting-to-hash-no-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	        "setting-to-dbus-no-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 
 	g_hash_table_destroy (hash);
 	g_object_unref (s_wsec);
 }
 
 static void
-test_setting_to_hash_only_secrets (void)
+test_setting_to_dbus_only_secrets (void)
 {
 	NMSettingWirelessSecurity *s_wsec;
 	GHashTable *hash;
 
-	s_wsec = make_test_wsec_setting ("setting-to-hash-only-secrets");
+	s_wsec = make_test_wsec_setting ("setting-to-dbus-only-secrets");
 
-	hash = _nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 
 	/* Make sure non-secret keys are there */
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT) == NULL,
-	        "setting-to-hash-only-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	        "setting-to-dbus-only-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME) == NULL,
-	        "setting-to-hash-only-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+	        "setting-to-dbus-only-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
 
 	/* Make sure secrets are not there */
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK),
-	        "setting-to-hash-only-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_PSK);
+	        "setting-to-dbus-only-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_PSK);
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0),
-	        "setting-to-hash-only-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	        "setting-to-dbus-only-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 
 	g_hash_table_destroy (hash);
 	g_object_unref (s_wsec);
 }
 
 static void
-test_connection_to_hash_setting_name (void)
+test_connection_to_dbus_setting_name (void)
 {
 	NMConnection *connection;
 	NMSettingWirelessSecurity *s_wsec;
 	GHashTable *hash;
 
 	connection = nm_simple_connection_new ();
-	s_wsec = make_test_wsec_setting ("connection-to-hash-setting-name");
+	s_wsec = make_test_wsec_setting ("connection-to-dbus-setting-name");
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
 
-	hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+	hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 
 	/* Make sure the keys of the first level hash are setting names, not
 	 * the GType name of the setting objects.
 	 */
 	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) != NULL,
-	        "connection-to-hash-setting-name", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	        "connection-to-dbus-setting-name", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 
 	g_hash_table_destroy (hash);
 	g_object_unref (connection);
 }
 
 static void
-test_setting_new_from_hash (void)
+test_setting_new_from_dbus (void)
 {
 	NMSettingWirelessSecurity *s_wsec;
 	GHashTable *hash;
 
-	s_wsec = make_test_wsec_setting ("setting-to-hash-all");
-	hash = _nm_setting_to_hash (NM_SETTING (s_wsec), NM_SETTING_HASH_FLAG_ALL);
+	s_wsec = make_test_wsec_setting ("setting-to-dbus-all");
+	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NM_CONNECTION_SERIALIZE_ALL);
 	g_object_unref (s_wsec);
 
-	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_hash (NM_TYPE_SETTING_WIRELESS_SECURITY, hash);
+	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, hash);
 	g_hash_table_destroy (hash);
 
 	g_assert (s_wsec);
@@ -992,7 +992,7 @@ test_connection_replace_settings_from_connection ()
 }
 
 static void
-test_connection_new_from_hash ()
+test_connection_new_from_dbus ()
 {
 	NMConnection *connection;
 	GHashTable *new_settings;
@@ -1006,7 +1006,7 @@ test_connection_new_from_hash ()
 	g_assert (new_settings);
 
 	/* Replace settings and test */
-	connection = nm_simple_connection_new_from_hash (new_settings, &error);
+	connection = nm_simple_connection_new_from_dbus (new_settings, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -3096,9 +3096,9 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_gsm_apn_bad_chars", test_setting_gsm_apn_bad_chars);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_underscore", test_setting_gsm_apn_underscore);
 	g_test_add_func ("/core/general/test_setting_gsm_without_number", test_setting_gsm_without_number);
-	g_test_add_func ("/core/general/test_setting_to_hash_all", test_setting_to_hash_all);
-	g_test_add_func ("/core/general/test_setting_to_hash_no_secrets", test_setting_to_hash_no_secrets);
-	g_test_add_func ("/core/general/test_setting_to_hash_only_secrets", test_setting_to_hash_only_secrets);
+	g_test_add_func ("/core/general/test_setting_to_dbus_all", test_setting_to_dbus_all);
+	g_test_add_func ("/core/general/test_setting_to_dbus_no_secrets", test_setting_to_dbus_no_secrets);
+	g_test_add_func ("/core/general/test_setting_to_dbus_only_secrets", test_setting_to_dbus_only_secrets);
 	g_test_add_func ("/core/general/test_setting_compare_id", test_setting_compare_id);
 #define ADD_FUNC(func, secret_flags, comp_flags, remove_secret) \
 	g_test_add_data_func_full ("/core/general/" G_STRINGIFY (func), \
@@ -3114,11 +3114,11 @@ int main (int argc, char **argv)
 	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
 	g_test_add_func ("/core/general/test_setting_old_uuid", test_setting_old_uuid);
 
-	g_test_add_func ("/core/general/test_connection_to_hash_setting_name", test_connection_to_hash_setting_name);
-	g_test_add_func ("/core/general/test_setting_new_from_hash", test_setting_new_from_hash);
+	g_test_add_func ("/core/general/test_connection_to_dbus_setting_name", test_connection_to_dbus_setting_name);
+	g_test_add_func ("/core/general/test_setting_new_from_dbus", test_setting_new_from_dbus);
 	g_test_add_func ("/core/general/test_connection_replace_settings", test_connection_replace_settings);
 	g_test_add_func ("/core/general/test_connection_replace_settings_from_connection", test_connection_replace_settings_from_connection);
-	g_test_add_func ("/core/general/test_connection_new_from_hash", test_connection_new_from_hash);
+	g_test_add_func ("/core/general/test_connection_new_from_dbus", test_connection_new_from_dbus);
 	g_test_add_func ("/core/general/test_connection_normalize_connection_interface_name", test_connection_normalize_connection_interface_name);
 	g_test_add_func ("/core/general/test_connection_normalize_virtual_iface_name", test_connection_normalize_virtual_iface_name);
 	g_test_add_func ("/core/general/test_connection_normalize_type", test_connection_normalize_type);

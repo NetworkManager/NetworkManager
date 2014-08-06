@@ -471,7 +471,7 @@ _dispatcher_call (DispatcherAction action,
 	}
 
 	if (connection) {
-		connection_hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_NO_SECRETS);
+		connection_hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
 
 		connection_props = value_hash_create ();
 		value_hash_add_object_path (connection_props,
