@@ -433,6 +433,50 @@ deactivate (NMDevice *device)
 	nm_modem_deactivate (NM_DEVICE_MODEM_GET_PRIVATE (device)->modem, device);
 }
 
+/***********************************************************/
+
+static gboolean
+deactivate_async_finish (NMDevice *self,
+                         GAsyncResult *res,
+                         GError **error)
+{
+	return !g_simple_async_result_propagate_error (G_SIMPLE_ASYNC_RESULT (res), error);
+}
+
+static void
+modem_deactivate_async_ready (NMModem *modem,
+                              GAsyncResult *res,
+                              GSimpleAsyncResult *simple)
+{
+	GError *error = NULL;
+
+	if (!nm_modem_deactivate_async_finish (modem, res, &error))
+		g_simple_async_result_take_error (simple, error);
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+static void
+deactivate_async (NMDevice *self,
+                  GCancellable *cancellable,
+                  GAsyncReadyCallback callback,
+                  gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+
+	simple = g_simple_async_result_new (G_OBJECT (self),
+	                                    callback,
+	                                    user_data,
+	                                    deactivate_async);
+	nm_modem_deactivate_async (NM_DEVICE_MODEM_GET_PRIVATE (self)->modem,
+	                           self,
+	                           cancellable,
+	                           (GAsyncReadyCallback) modem_deactivate_async_ready,
+	                           simple);
+}
+
+/***********************************************************/
+
 static NMActStageReturn
 act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
@@ -711,6 +755,8 @@ nm_device_modem_class_init (NMDeviceModemClass *mclass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->check_connection_available = check_connection_available;
 	device_class->complete_connection = complete_connection;
+	device_class->deactivate_async = deactivate_async;
+	device_class->deactivate_async_finish = deactivate_async_finish;
 	device_class->deactivate = deactivate;
 	device_class->act_stage1_prepare = act_stage1_prepare;
 	device_class->act_stage2_config = act_stage2_config;

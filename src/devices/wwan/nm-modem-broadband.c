@@ -928,6 +928,8 @@ disconnect (NMModem *self,
 		return;
 	}
 
+	nm_log_dbg (LOGD_MB, "(%s): notifying ModemManager about the modem disconnection",
+	            nm_modem_get_uid (NM_MODEM (ctx->self)));
 	mm_modem_simple_disconnect (
 		ctx->self->priv->simple_iface,
 		NULL, /* bearer path; if NULL given ALL get disconnected */
@@ -939,7 +941,7 @@ disconnect (NMModem *self,
 /*****************************************************************************/
 
 static void
-deactivate (NMModem *_self, NMDevice *device)
+deactivate_cleanup (NMModem *_self, NMDevice *device)
 {
 	NMModemBroadband *self = NM_MODEM_BROADBAND (_self);
 
@@ -953,7 +955,7 @@ deactivate (NMModem *_self, NMDevice *device)
 	self->priv->pin_tries = 0;
 
 	/* Chain up parent's */
-	NM_MODEM_CLASS (nm_modem_broadband_parent_class)->deactivate (_self, device);
+	NM_MODEM_CLASS (nm_modem_broadband_parent_class)->deactivate_cleanup (_self, device);
 }
 
 /*****************************************************************************/
@@ -1183,7 +1185,7 @@ nm_modem_broadband_class_init (NMModemBroadbandClass *klass)
 	modem_class->stage3_ip6_config_request = stage3_ip6_config_request;
 	modem_class->disconnect = disconnect;
 	modem_class->disconnect_finish = disconnect_finish;
-	modem_class->deactivate = deactivate;
+	modem_class->deactivate_cleanup = deactivate_cleanup;
 	modem_class->set_mm_enabled = set_mm_enabled;
 	modem_class->get_user_pass = get_user_pass;
 	modem_class->check_connection_compatible = check_connection_compatible;
