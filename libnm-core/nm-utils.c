@@ -2060,17 +2060,17 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 	g_return_val_if_fail (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX, g_strdup (""));
 
 	result = out = g_malloc (length * 3);
-	for (;;) {
+	while (length--) {
 		guint8 v = *in++;
 
 		*out++ = LOOKUP[v >> 4];
 		*out++ = LOOKUP[v & 0x0F];
-		if (--length == 0) {
-			*out = 0;
-			return result;
-		}
-		*out++ = ':';
+		if (length)
+			*out++ = ':';
 	}
+
+	*out = 0;
+	return result;
 }
 
 static int
