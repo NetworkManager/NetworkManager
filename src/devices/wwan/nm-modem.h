@@ -143,7 +143,14 @@ typedef struct {
 
 	void (*set_mm_enabled)                     (NMModem *self, gboolean enabled);
 
-	void (*disconnect)                         (NMModem *self, gboolean warn);
+	void     (*disconnect)                     (NMModem *self,
+	                                            gboolean warn,
+	                                            GCancellable *cancellable,
+	                                            GAsyncReadyCallback callback,
+	                                            gpointer user_data);
+	gboolean (*disconnect_finish)              (NMModem *self,
+	                                            GAsyncResult *res,
+	                                            GError **error);
 
 	void (*deactivate)                         (NMModem *self, NMDevice *device);
 
