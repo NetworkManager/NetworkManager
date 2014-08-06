@@ -924,7 +924,7 @@ nm_modem_device_state_changed (NMModem *self,
 			/* Don't bother warning on FAILED since the modem is already gone */
 			if (new_state == NM_DEVICE_STATE_FAILED)
 				warn = FALSE;
-			NM_MODEM_GET_CLASS (self)->disconnect (self, warn);
+			NM_MODEM_GET_CLASS (self)->disconnect (self, warn, NULL, NULL, NULL);
 		}
 		break;
 	default:
