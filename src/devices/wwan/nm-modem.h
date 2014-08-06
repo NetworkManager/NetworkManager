@@ -152,7 +152,7 @@ typedef struct {
 	                                            GAsyncResult *res,
 	                                            GError **error);
 
-	void (*deactivate)                         (NMModem *self, NMDevice *device);
+	void     (*deactivate_cleanup)             (NMModem *self, NMDevice *device);
 
 	gboolean (*owns_port)                      (NMModem *self, const char *iface);
 
@@ -224,6 +224,15 @@ gboolean nm_modem_get_secrets (NMModem *modem,
                                const char *hint);
 
 void nm_modem_deactivate (NMModem *modem, NMDevice *device);
+
+void     nm_modem_deactivate_async        (NMModem *self,
+                                           NMDevice *device,
+                                           GCancellable *cancellable,
+                                           GAsyncReadyCallback callback,
+                                           gpointer user_data);
+gboolean nm_modem_deactivate_async_finish (NMModem *self,
+                                           GAsyncResult *res,
+                                           GError **error);
 
 void nm_modem_device_state_changed (NMModem *modem,
                                     NMDeviceState new_state,
