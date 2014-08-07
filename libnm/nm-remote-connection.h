@@ -57,10 +57,7 @@ GQuark nm_remote_connection_error_quark (void);
 /* Properties */
 #define NM_REMOTE_CONNECTION_BUS             "bus"
 #define NM_REMOTE_CONNECTION_UNSAVED         "unsaved"
-
-/* Signals */
-#define NM_REMOTE_CONNECTION_UPDATED         "updated"
-#define NM_REMOTE_CONNECTION_REMOVED         "removed"
+#define NM_REMOTE_CONNECTION_VISIBLE         "visible"
 
 typedef struct {
 	NMConnection parent;
@@ -68,12 +65,6 @@ typedef struct {
 
 typedef struct {
 	NMConnectionClass parent_class;
-
-	/* Signals */
-	void (*updated) (NMRemoteConnection *connection,
-	                 GHashTable *new_settings);
-
-	void (*removed) (NMRemoteConnection *connection);
 
 	/*< private >*/
 	gpointer padding[8];
@@ -137,6 +128,8 @@ void nm_remote_connection_get_secrets (NMRemoteConnection *connection,
                                        gpointer user_data);
 
 gboolean nm_remote_connection_get_unsaved (NMRemoteConnection *connection);
+
+gboolean nm_remote_connection_get_visible (NMRemoteConnection *connection);
 
 G_END_DECLS
 

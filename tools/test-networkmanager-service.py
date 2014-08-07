@@ -747,6 +747,10 @@ class NetworkManager(ExportedObj):
                 return
         raise UnknownDeviceException("Device not found")
 
+    @dbus.service.method(IFACE_TEST, in_signature='', out_signature='')
+    def AutoRemoveNextConnection(self):
+        settings.auto_remove_next_connection()
+
 ###################################################################
 IFACE_CONNECTION = 'org.freedesktop.NetworkManager.Settings.Connection'
 
@@ -789,6 +793,7 @@ class Connection(dbus.service.Object):
 
     @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='', out_signature='')
     def Delete(self):
+        self.remove_from_connection()
         self.remove_func(self)
         self.Removed()
 
@@ -809,9 +814,13 @@ class Settings(dbus.service.Object):
         self.connections = {}
         self.bus = bus
         self.counter = 1
+        self.remove_next_connection = False
         self.props = {}
         self.props['Hostname'] = "foobar.baz"
         self.props['CanModify'] = True
+
+    def auto_remove_next_connection(self):
+        self.remove_next_connection = True;
 
     @dbus.service.method(dbus_interface=IFACE_SETTINGS, in_signature='', out_signature='ao')
     def ListConnections(self):
@@ -824,6 +833,11 @@ class Settings(dbus.service.Object):
         self.connections[path] = Connection(self.bus, path, settings, self.delete_connection)
         self.NewConnection(path)
         self.PropertiesChanged({ 'connections': dbus.Array(self.connections.keys(), 'o') })
+
+        if self.remove_next_connection:
+            self.remove_next_connection = False
+            self.connections[path].Delete()
+
         return path
 
     def delete_connection(self, connection):
@@ -870,8 +884,11 @@ def main():
     random.seed()
 
     bus = dbus.SessionBus()
+
+    global manager, settings
     manager = NetworkManager(bus, "/org/freedesktop/NetworkManager")
     settings = Settings(bus, "/org/freedesktop/NetworkManager/Settings")
+
     if not bus.request_name("org.freedesktop.NetworkManager"):
         sys.exit(1)
 

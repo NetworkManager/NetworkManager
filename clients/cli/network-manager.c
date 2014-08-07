@@ -335,7 +335,7 @@ show_nm_status (NmCli *nmc, const char *pretty_header_name, const char *print_fl
 
 	nmc->get_client (nmc); /* create NMClient */
 
-	nm_running = nm_client_get_manager_running (nmc->client);
+	nm_running = nm_client_get_nm_running (nmc->client);
 	if (nm_running) {
 		if (!nmc_versions_match (nmc))
 			return FALSE;
@@ -478,7 +478,7 @@ show_nm_permissions (NmCli *nmc)
 
 	nmc->get_client (nmc); /* create NMClient */
 
-	if (!nm_client_get_manager_running (nmc->client)) {
+	if (!nm_client_get_nm_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		return FALSE;

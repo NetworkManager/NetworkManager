@@ -84,6 +84,7 @@ enum {
 	PROP_0,
 	PROP_DBUS_CONNECTION,
 	PROP_DBUS_PATH,
+	PROP_NM_RUNNING,
 
 	LAST_PROP
 };
@@ -122,15 +123,15 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 {
 	NMObject *self = NM_OBJECT (user_data);
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
+	gboolean now_running;
 
-	if (g_strcmp0 (name, NM_DBUS_SERVICE) == 0) {
-		gboolean old_good = (old_owner && old_owner[0]);
-		gboolean new_good = (new_owner && new_owner[0]);
+	if (g_strcmp0 (name, NM_DBUS_SERVICE) != 0)
+		return;
 
-		if (!old_good && new_good)
-			priv->nm_running = TRUE;
-		else if (old_good && !new_good)
-			priv->nm_running = FALSE;
+	now_running = (new_owner && new_owner[0]);
+	if (now_running != priv->nm_running) {
+		priv->nm_running = now_running;
+		g_object_notify (G_OBJECT (self), NM_OBJECT_NM_RUNNING);
 	}
 }
 
@@ -232,8 +233,8 @@ init_async_got_properties (GObject *object, GAsyncResult *result, gpointer user_
 }
 
 static void
-init_async_got_manager_running (DBusGProxy *proxy, DBusGProxyCall *call,
-                                gpointer user_data)
+init_async_got_nm_running (DBusGProxy *proxy, DBusGProxyCall *call,
+                           gpointer user_data)
 {
 	GSimpleAsyncResult *simple = user_data;
 	NMObject *self;
@@ -289,7 +290,7 @@ init_async (GAsyncInitable *initable, int io_priority,
 	else {
 		/* Check if NM is running */
 		dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
-		                         init_async_got_manager_running,
+		                         init_async_got_nm_running,
 		                         simple, NULL,
 		                         G_TYPE_STRING, NM_DBUS_SERVICE,
 		                         G_TYPE_INVALID);
@@ -379,6 +380,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DBUS_PATH:
 		g_value_set_string (value, priv->path);
 		break;
+	case PROP_NM_RUNNING:
+		g_value_set_boolean (value, priv->nm_running);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -427,6 +431,18 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_CONSTRUCT_ONLY |
 		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMObject:manager-running: (skip)
+	 *
+	 * Internal use only.
+	 */
+	g_object_class_install_property
+		(object_class, PROP_NM_RUNNING,
+		 g_param_spec_boolean (NM_OBJECT_NM_RUNNING, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/* signals */
 
@@ -1430,4 +1446,10 @@ gboolean
 _nm_object_is_connection_private (NMObject *self)
 {
 	return _nm_dbus_is_connection_private (NM_OBJECT_GET_PRIVATE (self)->connection);
+}
+
+gboolean
+_nm_object_get_nm_running (NMObject *self)
+{
+	return NM_OBJECT_GET_PRIVATE (self)->nm_running;
 }

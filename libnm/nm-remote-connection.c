@@ -50,18 +50,10 @@ enum {
 	PROP_DBUS_CONNECTION,
 	PROP_DBUS_PATH,
 	PROP_UNSAVED,
+	PROP_VISIBLE,
 
 	LAST_PROP
 };
-
-enum {
-	UPDATED,
-	REMOVED,
-	VISIBLE,
-
-	LAST_SIGNAL
-};
-static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct RemoteCall RemoteCall;
 typedef void (*RemoteCallFetchResultCb) (RemoteCall *call, DBusGProxyCall *proxy_call, GError *error);
@@ -413,6 +405,30 @@ nm_remote_connection_get_unsaved (NMRemoteConnection *connection)
 	return NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->unsaved;
 }
 
+/**
+ * nm_remote_connection_get_visible:
+ * @connection: the #NMRemoteConnection
+ *
+ * Checks if the connection is visible to the current user.  If the
+ * connection is not visible then it is essentially useless; it will
+ * not contain any settings, and operations such as
+ * nm_remote_connection_save() and nm_remote_connection_delete() will
+ * always fail. (#NMRemoteSettings will not normally return
+ * non-visible connections to callers, but it is possible for a
+ * connection's visibility to change after you already have a
+ * reference to it.)
+ *
+ * Returns: %TRUE if the remote connection is visible to the current
+ * user, %FALSE if not.
+ **/
+gboolean
+nm_remote_connection_get_visible (NMRemoteConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
+
+	return NM_REMOTE_CONNECTION_GET_PRIVATE (connection)->visible;
+}
+
 /****************************************************************/
 
 static void
@@ -420,17 +436,13 @@ replace_settings (NMRemoteConnection *self, GHashTable *new_settings)
 {
 	GError *error = NULL;
 
-	if (nm_connection_replace_settings (NM_CONNECTION (self), new_settings, &error))
-		g_signal_emit (self, signals[UPDATED], 0, new_settings);
-	else {
+	if (!nm_connection_replace_settings (NM_CONNECTION (self), new_settings, &error)) {
 		g_warning ("%s: error updating connection %s settings: (%d) %s",
 		           __func__,
 		           nm_connection_get_path (NM_CONNECTION (self)),
 		           error ? error->code : -1,
 		           (error && error->message) ? error->message : "(unknown)");
 		g_clear_error (&error);
-
-		g_signal_emit (self, signals[REMOVED], 0);
 	}
 }
 
@@ -443,6 +455,7 @@ updated_get_settings_cb (DBusGProxy *proxy,
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 	GHashTable *new_settings;
 	GError *error = NULL;
+	gboolean visible;
 
 	dbus_g_proxy_end_call (proxy, call, &error,
 	                       DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &new_settings,
@@ -452,26 +465,22 @@ updated_get_settings_cb (DBusGProxy *proxy,
 
 		g_error_free (error);
 
-		/* Connection is no longer visible to this user.  Let the settings
-		 * service handle this via 'visible'.  The settings service will emit
-		 * the "removed" signal for us since it handles the lifetime of this
-		 * object.
-		 */
+		/* Connection is no longer visible to this user. */
 		hash = g_hash_table_new (g_str_hash, g_str_equal);
 		nm_connection_replace_settings (NM_CONNECTION (self), hash, NULL);
 		g_hash_table_destroy (hash);
 
-		priv->visible = FALSE;
-		g_signal_emit (self, signals[VISIBLE], 0, FALSE);
+		visible = FALSE;
 	} else {
 		replace_settings (self, new_settings);
 		g_hash_table_destroy (new_settings);
 
-		/* Settings service will handle announcing the connection to clients */
-		if (priv->visible == FALSE) {
-			priv->visible = TRUE;
-			g_signal_emit (self, signals[VISIBLE], 0, TRUE);
-		}
+		visible = TRUE;
+	}
+
+	if (visible != priv->visible) {
+		priv->visible = visible;
+		g_object_notify (G_OBJECT (self), NM_REMOTE_CONNECTION_VISIBLE);
 	}
 }
 
@@ -487,12 +496,6 @@ updated_cb (DBusGProxy *proxy, gpointer user_data)
 		                         updated_get_settings_cb, self, NULL,
 		                         G_TYPE_INVALID);
 	}
-}
-
-static void
-removed_cb (DBusGProxy *proxy, gpointer user_data)
-{
-	g_signal_emit (G_OBJECT (user_data), signals[REMOVED], 0);
 }
 
 static void
@@ -532,9 +535,6 @@ init_common (NMRemoteConnection *self)
 
 	dbus_g_proxy_add_signal (priv->proxy, "Updated", G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "Updated", G_CALLBACK (updated_cb), self, NULL);
-
-	dbus_g_proxy_add_signal (priv->proxy, "Removed", G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "Removed", G_CALLBACK (removed_cb), self, NULL);
 
 	g_signal_connect (priv->proxy, "destroy", G_CALLBACK (proxy_destroy_cb), self);
 
@@ -734,6 +734,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_UNSAVED:
 		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->unsaved);
 		break;
+	case PROP_VISIBLE:
+		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->visible);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -847,47 +850,23 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
 
-	/* Signals */
 	/**
-	 * NMRemoteConnection::updated:
-	 * @connection: a #NMConnection
+	 * NMRemoteConnection:visible:
 	 *
-	 * This signal is emitted when a connection changes, and it is
-	 * still visible to the user.
-	 */
-	signals[UPDATED] =
-		g_signal_new (NM_REMOTE_CONNECTION_UPDATED,
-		              G_TYPE_FROM_CLASS (remote_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMRemoteConnectionClass, updated),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
-
-	/**
-	 * NMRemoteConnection::removed:
-	 * @connection: a #NMConnection
-	 *
-	 * This signal is emitted when a connection is either deleted or becomes
-	 * invisible to the current user.
-	 */
-	signals[REMOVED] =
-		g_signal_new (NM_REMOTE_CONNECTION_REMOVED,
-		              G_TYPE_FROM_CLASS (remote_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMRemoteConnectionClass, removed),
-		              NULL, NULL,
-		              g_cclosure_marshal_VOID__VOID,
-		              G_TYPE_NONE, 0);
-
-	/* Private signal */
-	signals[VISIBLE] =
-		g_signal_new ("visible",
-		              G_TYPE_FROM_CLASS (remote_class),
-		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
-		              g_cclosure_marshal_VOID__BOOLEAN,
-		              G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+	 * %TRUE if the remote connection is visible to the current user, %FALSE if
+	 * not.  If the connection is not visible then it is essentially useless; it
+	 * will not contain any settings, and operations such as
+	 * nm_remote_connection_save() and nm_remote_connection_delete() will always
+	 * fail. (#NMRemoteSettings will not normally return non-visible connections
+	 * to callers, but it is possible for a connection's visibility to change
+	 * after you already have a reference to it.)
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_VISIBLE,
+		 g_param_spec_boolean (NM_REMOTE_CONNECTION_VISIBLE, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
 }
 
 static void

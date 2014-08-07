@@ -155,7 +155,7 @@ sort_by_timestamp (gconstpointer  a,
 static void nmt_edit_connection_list_rebuild (NmtEditConnectionList *list);
 
 static void
-rebuild_on_connection_updated (NMRemoteConnection *connection,
+rebuild_on_connection_changed (NMRemoteConnection *connection,
                                gpointer            list)
 {
 	nmt_edit_connection_list_rebuild (list);
@@ -171,7 +171,7 @@ free_connections (NmtEditConnectionList *list)
 	for (iter = priv->connections; iter; iter = iter->next) {
 		conn = iter->data;
 
-		g_signal_handlers_disconnect_by_func (conn, G_CALLBACK (rebuild_on_connection_updated), list);
+		g_signal_handlers_disconnect_by_func (conn, G_CALLBACK (rebuild_on_connection_changed), list);
 		g_object_unref (conn);
 	}
 	g_slist_free (priv->connections);
@@ -202,10 +202,8 @@ nmt_edit_connection_list_rebuild (NmtEditConnectionList *list)
 			continue;
 		}
 
-		g_signal_connect (conn, NM_REMOTE_CONNECTION_UPDATED,
-		                  G_CALLBACK (rebuild_on_connection_updated), list);
-		g_signal_connect (conn, NM_REMOTE_CONNECTION_REMOVED,
-		                  G_CALLBACK (rebuild_on_connection_updated), list);
+		g_signal_connect (conn, NM_CONNECTION_CHANGED,
+		                  G_CALLBACK (rebuild_on_connection_changed), list);
 		g_object_ref (iter->data);
 	}
 	priv->connections = g_slist_sort (priv->connections, sort_by_timestamp);
@@ -279,9 +277,9 @@ nmt_edit_connection_list_rebuild (NmtEditConnectionList *list)
 }
 
 static void
-rebuild_on_new_connection (NMRemoteSettings   *settings,
-                           NMRemoteConnection *connection,
-                           gpointer            list)
+rebuild_on_connections_changed (GObject    *object,
+                                GParamSpec *pspec,
+                                gpointer    list)
 {
 	nmt_edit_connection_list_rebuild (list);
 }
@@ -295,8 +293,8 @@ nmt_edit_connection_list_constructed (GObject *object)
 	if (priv->extra)
 		nmt_newt_button_box_add_widget_end (priv->buttons, priv->extra);
 
-	g_signal_connect (nm_settings, NM_REMOTE_SETTINGS_NEW_CONNECTION,
-	                  G_CALLBACK (rebuild_on_new_connection), list);
+	g_signal_connect (nm_settings, "notify::" NM_REMOTE_SETTINGS_CONNECTIONS,
+	                  G_CALLBACK (rebuild_on_connections_changed), list);
 
 	nmt_edit_connection_list_rebuild (list);
 

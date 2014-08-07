@@ -228,16 +228,9 @@ static NmcOutputField nmc_fields_con_active_details_groups[] = {
 #define CON_SHOW_DETAIL_GROUP_PROFILE "profile"
 #define CON_SHOW_DETAIL_GROUP_ACTIVE  "active"
 
-typedef struct {
-	NmCli *nmc;
-	int argc;
-	char **argv;
-} ArgsInfo;
-
 /* glib main loop variable - defined in nmcli.c */
 extern GMainLoop *loop;
 
-static ArgsInfo args_info;
 static guint progress_id = 0;  /* ID of event source for displaying progress */
 
 /* for readline TAB completion in editor */
@@ -1285,7 +1278,7 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 	nmc->should_wait = FALSE;
 	nmc->get_client (nmc);
 
-	if (!nm_client_get_manager_running (nmc->client)) {
+	if (!nm_client_get_nm_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto finish;
@@ -2009,7 +2002,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	/* create NMClient */
 	nmc->get_client (nmc);
 
-	if (!nm_client_get_manager_running (nmc->client)) {
+	if (!nm_client_get_nm_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto error;
@@ -2069,7 +2062,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 	/* create NMClient */
 	nmc->get_client (nmc);
 
-	if (!nm_client_get_manager_running (nmc->client)) {
+	if (!nm_client_get_nm_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto error;
@@ -8046,7 +8039,7 @@ do_connection_modify (NmCli *nmc,
 	/* create NMClient */
 	nmc->get_client (nmc);
 
-	if (!nm_client_get_manager_running (nmc->client)) {
+	if (!nm_client_get_nm_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto finish;
@@ -8254,7 +8247,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 	/* create NMClient */
 	nmc->get_client (nmc);
 
-	if (!nm_client_get_manager_running (nmc->client)) {
+	if (!nm_client_get_nm_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		goto finish;
@@ -8347,7 +8340,7 @@ do_connection_reload (NmCli *nmc, int argc, char **argv)
 	nmc->return_value = NMC_RESULT_SUCCESS;
 	nmc->should_wait = FALSE;
 
-	if (!nm_client_get_manager_running (nmc->client)) {
+	if (!nm_client_get_nm_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		return nmc->return_value;
@@ -8375,7 +8368,7 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 	nmc->return_value = NMC_RESULT_SUCCESS;
 	nmc->should_wait = FALSE;
 
-	if (!nm_client_get_manager_running (nmc->client)) {
+	if (!nm_client_get_nm_running (nmc->client)) {
 		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		return nmc->return_value;
@@ -8607,21 +8600,6 @@ opt_error:
 	return nmc->return_value;
 }
 
-/* callback called when connections are obtained from the settings service */
-static void
-get_connections_cb (NMRemoteSettings *settings, gpointer user_data)
-{
-	ArgsInfo *args = (ArgsInfo *) user_data;
-
-	/* Get the connection list */
-	args->nmc->system_connections = nm_remote_settings_list_connections (settings);
-
-	parse_cmd (args->nmc, args->argc, args->argv);
-
-	if (!args->nmc->should_wait)
-		quit ();
-}
-
 /* Entry point function for connections-related commands: 'nmcli connection' */
 NMCResultCode
 do_connections (NmCli *nmc, int argc, char **argv)
@@ -8651,10 +8629,6 @@ do_connections (NmCli *nmc, int argc, char **argv)
 
 		nmc->should_wait = TRUE;
 
-		args_info.nmc = nmc;
-		args_info.argc = argc;
-		args_info.argv = argv;
-
 		/* get system settings */
 		if (!(nmc->system_settings = nm_remote_settings_new (NULL, &error))) {
 			g_string_printf (nmc->return_text, _("Error: Could not get system settings: %s."), error->message);
@@ -8665,7 +8639,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		}
 
 		/* find out whether settings service is running */
-		g_object_get (nmc->system_settings, NM_REMOTE_SETTINGS_SERVICE_RUNNING, &nmc->system_settings_running, NULL);
+		g_object_get (nmc->system_settings, NM_REMOTE_SETTINGS_NM_RUNNING, &nmc->system_settings_running, NULL);
 
 		if (!nmc->system_settings_running) {
 			g_string_printf (nmc->return_text, _("Error: Can't obtain connections: settings service is not running."));
@@ -8674,13 +8648,13 @@ do_connections (NmCli *nmc, int argc, char **argv)
 			return nmc->return_value;
 		}
 
-		/* connect to signal "connections-read" - emitted when connections are fetched and ready */
-		g_signal_connect (nmc->system_settings, NM_REMOTE_SETTINGS_CONNECTIONS_READ,
-				  G_CALLBACK (get_connections_cb), &args_info);
+		/* Get the connection list */
+		nmc->system_connections = nm_remote_settings_list_connections (nmc->system_settings);
 
-		/* The rest will be done in get_connection_cb() callback.
-		 * We need to wait for signals that connections are read.
-		 */
+		parse_cmd (nmc, argc, argv);
+
+		if (!nmc->should_wait)
+			quit ();
 		return NMC_RESULT_SUCCESS;
 	}
 }

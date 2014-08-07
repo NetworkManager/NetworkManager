@@ -679,5 +679,49 @@ nmtst_ip6_config_clone (NMIP6Config *config)
 
 #endif
 
+#ifdef NM_CONNECTION_H
+
+inline static NMConnection *
+nmtst_create_minimal_connection (const char *id, const char *uuid, const char *type, NMSettingConnection **out_s_con)
+{
+	NMConnection *con;
+	NMSetting *s_base = NULL;
+	NMSettingConnection *s_con;
+
+	g_assert (id);
+
+	if (uuid)
+		g_assert (nm_utils_is_uuid (uuid));
+	else
+		uuid = nm_utils_uuid_generate ();
+
+	if (type) {
+		GType type_g = nm_connection_lookup_setting_type (type);
+
+		g_assert (type_g != G_TYPE_INVALID);
+
+		s_base = g_object_new (type_g, NULL);
+		g_assert (NM_IS_SETTING (s_base));
+	}
+
+	con = nm_connection_new ();
+	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, id,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, type,
+	              NULL);
+	nm_connection_add_setting (con, NM_SETTING (s_con));
+
+	if (s_base)
+		nm_connection_add_setting (con, s_base);
+
+	if (out_s_con)
+		*out_s_con = s_con;
+	return con;
+}
+
+#endif
 
 #endif /* __NM_TEST_UTILS_H__ */

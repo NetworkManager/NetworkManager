@@ -34,6 +34,8 @@
 #include "nm-remote-settings.h"
 #include "common.h"
 
+#include "nm-test-utils.h"
+
 static NMTestServiceInfo *sinfo;
 static NMRemoteSettings *settings = NULL;
 DBusGConnection *bus = NULL;
@@ -47,8 +49,7 @@ add_cb (NMRemoteSettings *s,
         GError *error,
         gpointer user_data)
 {
-	if (error)
-		g_warning ("Add error: %s", error->message);
+	g_assert_no_error (error);
 
 	*((gboolean *) user_data) = TRUE;
 	remote = connection;
@@ -61,27 +62,11 @@ static void
 test_add_connection (void)
 {
 	NMConnection *connection;
-	NMSettingConnection *s_con;
-	NMSettingWired *s_wired;
-	char *uuid;
 	gboolean success;
 	time_t start, now;
 	gboolean done = FALSE;
 
-	connection = nm_connection_new ();
-
-	s_con = (NMSettingConnection *) nm_setting_connection_new ();
-	uuid = nm_utils_uuid_generate ();
-	g_object_set (G_OBJECT (s_con),
-	              NM_SETTING_CONNECTION_ID, TEST_CON_ID,
-	              NM_SETTING_CONNECTION_UUID, uuid,
-	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-	              NULL);
-	g_free (uuid);
-	nm_connection_add_setting (connection, NM_SETTING (s_con));
-
-	s_wired = (NMSettingWired *) nm_setting_wired_new ();
-	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+	connection = nmtst_create_minimal_connection (TEST_CON_ID, NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
 
 	success = nm_remote_settings_add_connection (settings,
 	                                             connection,
@@ -101,6 +86,7 @@ test_add_connection (void)
 	g_assert (nm_connection_compare (connection,
 	                                 NM_CONNECTION (remote),
 	                                 NM_SETTING_COMPARE_FLAG_EXACT) == TRUE);
+	g_object_unref (connection);
 }
 
 /*******************************************************************/
@@ -119,9 +105,17 @@ set_visible_cb (DBusGProxy *proxy,
 }
 
 static void
-invis_removed_cb (NMRemoteConnection *connection, gboolean *done)
+visible_changed_cb (GObject *object, GParamSpec *pspec, gboolean *done)
 {
-	*done = TRUE;
+	if (!nm_remote_connection_get_visible (NM_REMOTE_CONNECTION (object)))
+		*done = TRUE;
+}
+
+static void
+connection_removed_cb (NMRemoteSettings *s, NMRemoteConnection *connection, gboolean *done)
+{
+	if (connection == remote)
+		*done = TRUE;
 }
 
 static void
@@ -140,13 +134,15 @@ test_make_invisible (void)
 	time_t start, now;
 	GSList *list, *iter;
 	DBusGProxy *proxy;
-	gboolean done = FALSE, has_settings = FALSE;
+	gboolean visible_changed = FALSE, connection_removed = FALSE;
+	gboolean has_settings = FALSE;
 	char *path;
 
 	g_assert (remote != NULL);
 
 	/* Listen for the remove event when the connection becomes invisible */
-	g_signal_connect (remote, "removed", G_CALLBACK (invis_removed_cb), &done);
+	g_signal_connect (remote, "notify::" NM_REMOTE_CONNECTION_VISIBLE, G_CALLBACK (visible_changed_cb), &visible_changed);
+	g_signal_connect (settings, "connection-removed", G_CALLBACK (connection_removed_cb), &connection_removed);
 
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (remote)));
 	proxy = dbus_g_proxy_new_for_name (bus,
@@ -164,11 +160,12 @@ test_make_invisible (void)
 	do {
 		now = time (NULL);
 		g_main_context_iteration (NULL, FALSE);
-	} while ((done == FALSE) && (now - start < 5));
-	g_assert (done == TRUE);
+	} while ((!visible_changed || !connection_removed) && (now - start < 5));
+	g_assert (visible_changed == TRUE);
+	g_assert (connection_removed == TRUE);
 
-	g_assert (remote);
-	g_signal_handlers_disconnect_by_func (remote, G_CALLBACK (invis_removed_cb), &done);
+	g_signal_handlers_disconnect_by_func (remote, G_CALLBACK (visible_changed_cb), &visible_changed);
+	g_signal_handlers_disconnect_by_func (settings, G_CALLBACK (connection_removed_cb), &connection_removed);
 
 	/* Ensure NMRemoteSettings no longer has the connection */
 	list = nm_remote_settings_list_connections (settings);
@@ -213,7 +210,7 @@ test_make_visible (void)
 	g_assert (remote != NULL);
 
 	/* Wait for the new-connection signal when the connection is visible again */
-	g_signal_connect (settings, NM_REMOTE_SETTINGS_NEW_CONNECTION,
+	g_signal_connect (settings, NM_REMOTE_SETTINGS_CONNECTION_ADDED,
 	                  G_CALLBACK (vis_new_connection_cb), &new);
 
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (remote)));
@@ -275,9 +272,10 @@ deleted_cb (DBusGProxy *proxy,
 }
 
 static void
-removed_cb (NMRemoteConnection *connection, gboolean *done)
+removed_cb (NMRemoteSettings *s, NMRemoteConnection *connection, gboolean *done)
 {
-	*done = TRUE;
+	if (connection == remote)
+		*done = TRUE;
 }
 
 static void
@@ -298,7 +296,7 @@ test_remove_connection (void)
 	g_assert (connection);
 	g_assert (remote == connection);
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (connection)));
-	g_signal_connect (connection, "removed", G_CALLBACK (removed_cb), &done);
+	g_signal_connect (settings, "connection-removed", G_CALLBACK (removed_cb), &done);
 
 	proxy = dbus_g_proxy_new_for_name (bus,
 	                                   NM_DBUS_SERVICE,
@@ -333,6 +331,61 @@ test_remove_connection (void)
 
 /*******************************************************************/
 
+#define TEST_ADD_REMOVE_ID "add-remove-test-connection"
+
+static void
+add_remove_cb (NMRemoteSettings *s,
+               NMRemoteConnection *connection,
+               GError *error,
+               gpointer user_data)
+{
+	g_assert_error (error, NM_REMOTE_SETTINGS_ERROR, NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED);
+	g_assert (connection == NULL);
+
+	*((gboolean *) user_data) = TRUE;
+}
+
+static void
+test_add_remove_connection (void)
+{
+	GVariant *ret;
+	GError *error = NULL;
+	NMConnection *connection;
+	gboolean success;
+	time_t start, now;
+	gboolean done = FALSE;
+
+	/* This will cause the test server to immediately delete the connection
+	 * after creating it.
+	 */
+	ret = g_dbus_proxy_call_sync (sinfo->proxy,
+	                              "AutoRemoveNextConnection",
+	                              NULL,
+	                              G_DBUS_CALL_FLAGS_NONE, -1,
+	                              NULL,
+	                              &error);
+	g_assert_no_error (error);
+	g_variant_unref (ret);
+
+	connection = nmtst_create_minimal_connection (TEST_ADD_REMOVE_ID, NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	success = nm_remote_settings_add_connection (settings,
+	                                             connection,
+	                                             add_remove_cb,
+	                                             &done);
+	g_assert (success == TRUE);
+
+	start = time (NULL);
+	do {
+		now = time (NULL);
+		g_main_context_iteration (NULL, FALSE);
+	} while ((done == FALSE) && (now - start < 5));
+	g_assert (done == TRUE);
+
+	g_object_unref (connection);
+}
+
+/*******************************************************************/
+
 static GMainLoop *loop;
 
 static gboolean
@@ -343,9 +396,9 @@ loop_quit (gpointer user_data)
 }
 
 static void
-settings_service_running_changed (GObject *client,
-                                  GParamSpec *pspec,
-                                  gpointer user_data)
+settings_nm_running_changed (GObject *client,
+                             GParamSpec *pspec,
+                             gpointer user_data)
 {
 	int *running_changed = user_data;
 
@@ -354,7 +407,7 @@ settings_service_running_changed (GObject *client,
 }
 
 static void
-test_service_running (void)
+test_nm_running (void)
 {
 	NMRemoteSettings *settings2;
 	guint quit_id;
@@ -365,7 +418,7 @@ test_service_running (void)
 	loop = g_main_loop_new (NULL, FALSE);
 
 	g_object_get (G_OBJECT (settings),
-	              NM_REMOTE_SETTINGS_SERVICE_RUNNING, &running,
+	              NM_REMOTE_SETTINGS_NM_RUNNING, &running,
 	              NULL);
 	g_assert (running == TRUE);
 
@@ -373,7 +426,7 @@ test_service_running (void)
 	nm_test_service_cleanup (sinfo);
 
 	settings2 = g_initable_new (NM_TYPE_REMOTE_SETTINGS, NULL, &error,
-	                            NM_REMOTE_SETTINGS_BUS, bus,
+	                            NM_OBJECT_DBUS_CONNECTION, bus,
 	                            NULL);
 	g_assert_no_error (error);
 	g_assert (settings != NULL);
@@ -382,23 +435,23 @@ test_service_running (void)
 	 * settings hasn't gotten the news yet.
 	 */
 	g_object_get (G_OBJECT (settings2),
-	              NM_REMOTE_SETTINGS_SERVICE_RUNNING, &running,
+	              NM_REMOTE_SETTINGS_NM_RUNNING, &running,
 	              NULL);
 	g_assert (running == FALSE);
 	g_object_get (G_OBJECT (settings),
-	              NM_REMOTE_SETTINGS_SERVICE_RUNNING, &running,
+	              NM_REMOTE_SETTINGS_NM_RUNNING, &running,
 	              NULL);
 	g_assert (running == TRUE);
 
-	g_signal_connect (settings, "notify::" NM_REMOTE_SETTINGS_SERVICE_RUNNING,
-	                  G_CALLBACK (settings_service_running_changed), &running_changed);
+	g_signal_connect (settings, "notify::" NM_REMOTE_SETTINGS_NM_RUNNING,
+	                  G_CALLBACK (settings_nm_running_changed), &running_changed);
 	quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 	g_assert_cmpint (running_changed, ==, 1);
 	g_source_remove (quit_id);
 
 	g_object_get (G_OBJECT (settings2),
-	              NM_REMOTE_SETTINGS_SERVICE_RUNNING, &running,
+	              NM_REMOTE_SETTINGS_NM_RUNNING, &running,
 	              NULL);
 	g_assert (running == FALSE);
 
@@ -411,7 +464,7 @@ test_service_running (void)
 	g_source_remove (quit_id);
 
 	g_object_get (G_OBJECT (settings2),
-	              NM_REMOTE_SETTINGS_SERVICE_RUNNING, &running,
+	              NM_REMOTE_SETTINGS_NM_RUNNING, &running,
 	              NULL);
 	g_assert (running == TRUE);
 
@@ -438,7 +491,7 @@ main (int argc, char **argv)
 	sinfo = nm_test_service_init ();
 
 	settings = g_initable_new (NM_TYPE_REMOTE_SETTINGS, NULL, &error,
-	                           NM_REMOTE_SETTINGS_BUS, bus,
+	                           NM_OBJECT_DBUS_CONNECTION, bus,
 	                           NULL);
 	g_assert_no_error (error);
 	g_assert (settings != NULL);
@@ -450,7 +503,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/remote_settings/make_invisible", test_make_invisible);
 	g_test_add_func ("/remote_settings/make_visible", test_make_visible);
 	g_test_add_func ("/remote_settings/remove_connection", test_remove_connection);
-	g_test_add_func ("/remote_settings/service_running", test_service_running);
+	g_test_add_func ("/remote_settings/add_remove_connection", test_add_remove_connection);
+	g_test_add_func ("/remote_settings/nm_running", test_nm_running);
 
 	ret = g_test_run ();
 

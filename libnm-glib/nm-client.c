@@ -1705,50 +1705,6 @@ nm_client_new_finish (GAsyncResult *result, GError **error)
 }
 
 /*
- * Validate D-Bus object path.
- * The function is copied and adjusted version of
- * g_variant_serialiser_is_object_path() from glib.
- * FIXME: The function can be replaced by g_variant_is_object_path()
- * when we start using GLib >= 2.24
- */
-static gboolean
-_nm_client_is_object_path (const char *string)
-{
-	gsize i;
-
-	if (!g_utf8_validate (string, -1, NULL))
-		return FALSE;
-
-	/* The path must begin with an ASCII '/' (integer 47) character */
-	if (string[0] != '/')
-		return FALSE;
-
-	for (i = 1; string[i]; i++) {
-		/* Each element must only contain the ASCII characters
-		 * "[A-Z][a-z][0-9]_"
-		 */
-		if (g_ascii_isalnum (string[i]) || string[i] == '_')
-			;
-		/* must consist of elements separated by slash characters. */
-		else if (string[i] == '/') {
-			/* No element may be the empty string. */
-			/* Multiple '/' characters cannot occur in sequence. */
-			if (string[i - 1] == '/')
-				return FALSE;
-		} else
-			return FALSE;
-	}
-
-	/* A trailing '/' character is not allowed unless the path is the
-	 * root path (a single '/' character).
-	 */
-	if (i > 1 && string[i - 1] == '/')
-		return FALSE;
-
-	return TRUE;
-}
-
-/*
  * constructor() shouldn't be overriden in most cases, rather constructed()
  * method is preferred and more useful.
  * But, this serves as a workaround for bindings (use) calling the constructor()
@@ -1785,8 +1741,8 @@ constructor (GType type,
 			if (dbus_path == NULL) {
 				g_value_set_static_string (construct_params[i].value, NM_DBUS_PATH);
 			} else {
-				if (!_nm_client_is_object_path (dbus_path)) {
-					g_warning ("Passsed D-Bus object path '%s' is invalid; using default '%s' instead",
+				if (!g_variant_is_object_path (dbus_path)) {
+					g_warning ("Passed D-Bus object path '%s' is invalid; using default '%s' instead",
 					           dbus_path, NM_DBUS_PATH);
 					g_value_set_static_string (construct_params[i].value, NM_DBUS_PATH);
 				}

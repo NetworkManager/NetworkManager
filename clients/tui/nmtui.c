@@ -141,15 +141,6 @@ nmtui_quit (void)
 }
 
 static void
-connections_read (NMRemoteSettings *settings,
-                  gpointer          user_data)
-{
-	gboolean *got_connections = user_data;
-
-	*got_connections = TRUE;
-}
-
-static void
 usage (void)
 {
 	const char *argv0 = g_get_prgname ();
@@ -217,7 +208,6 @@ GOptionEntry entries[] = {
 int
 main (int argc, char **argv)
 {
-	gboolean got_connections = FALSE;
 	GOptionContext *opts;
 	GError *error = NULL;
 	NmtuiStartupData startup_data;
@@ -249,7 +239,7 @@ main (int argc, char **argv)
 		g_error_free (error);
 		exit (1);
 	}
-	if (!nm_client_get_manager_running (nm_client)) {
+	if (!nm_client_get_nm_running (nm_client)) {
 		g_printerr ("%s\n", _("NetworkManager is not running."));
 		exit (1);
 	}
@@ -260,11 +250,6 @@ main (int argc, char **argv)
 		g_error_free (error);
 		exit (1);
 	}
-	g_signal_connect (nm_settings, NM_REMOTE_SETTINGS_CONNECTIONS_READ,
-	                  G_CALLBACK (connections_read), &got_connections);
-	/* coverity[loop_condition] */
-	while (!got_connections)
-		g_main_context_iteration (NULL, TRUE);
 
 	if (sleep_on_startup)
 		sleep (5);

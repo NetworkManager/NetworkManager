@@ -426,6 +426,7 @@ nmt_edit_connection (NMConnection *connection)
 typedef struct {
 	NmtSyncOp op;
 	gboolean got_callback, got_signal;
+	NMRemoteConnection *connection;
 } ConnectionDeleteData;
 
 static void
@@ -446,14 +447,17 @@ connection_deleted_callback (NMRemoteConnection *connection,
 }
 
 static void
-connection_removed_signal (NMRemoteConnection *connection,
+connection_removed_signal (NMRemoteSettings   *settings,
+                           NMRemoteConnection *connection,
                            gpointer            user_data)
 {
 	ConnectionDeleteData *data = user_data;
 
-	data->got_signal = TRUE;
-	if (data->got_callback && data->got_signal)
-		nmt_sync_op_complete_boolean (&data->op, TRUE, NULL);
+	if (connection == data->connection) {
+		data->got_signal = TRUE;
+		if (data->got_callback && data->got_signal)
+			nmt_sync_op_complete_boolean (&data->op, TRUE, NULL);
+	}
 }
 
 void
@@ -473,8 +477,8 @@ nmt_remove_connection (NMRemoteConnection *connection)
 	data.got_callback = data.got_signal = FALSE;
 	nmt_sync_op_init (&data.op);
 
-	g_object_ref (connection);
-	g_signal_connect (connection, NM_REMOTE_CONNECTION_REMOVED,
+	data.connection = connection;
+	g_signal_connect (nm_settings, NM_REMOTE_SETTINGS_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed_signal), &data);
 	nm_remote_connection_delete (connection, connection_deleted_callback, &data);
 
@@ -484,8 +488,7 @@ nmt_remove_connection (NMRemoteConnection *connection)
 		g_error_free (error);
 	}
 
-	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_removed_signal), &data);
-	g_object_unref (connection);
+	g_signal_handlers_disconnect_by_func (nm_settings, G_CALLBACK (connection_removed_signal), &data);
 }
 
 NmtNewtForm *
