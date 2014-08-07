@@ -33,6 +33,7 @@
 
 #include "nm-utils.h"
 #include "nm-glib-compat.h"
+#include "gsystem-local-alloc.h"
 
 
 struct __nmtst_internal
@@ -687,13 +688,14 @@ nmtst_create_minimal_connection (const char *id, const char *uuid, const char *t
 	NMConnection *con;
 	NMSetting *s_base = NULL;
 	NMSettingConnection *s_con;
+	gs_free char *uuid_free = NULL;
 
 	g_assert (id);
 
 	if (uuid)
 		g_assert (nm_utils_is_uuid (uuid));
 	else
-		uuid = nm_utils_uuid_generate ();
+		uuid = uuid_free = nm_utils_uuid_generate ();
 
 	if (type) {
 		GType type_g = nm_connection_lookup_setting_type (type);
