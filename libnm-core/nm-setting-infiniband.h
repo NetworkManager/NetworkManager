@@ -81,6 +81,8 @@ const char *      nm_setting_infiniband_get_transport_mode (NMSettingInfiniband 
 int               nm_setting_infiniband_get_p_key          (NMSettingInfiniband *setting);
 const char *      nm_setting_infiniband_get_parent         (NMSettingInfiniband *setting);
 
+const char *      nm_setting_infiniband_get_virtual_interface_name (NMSettingInfiniband *setting);
+
 G_END_DECLS
 
 #endif /* __NM_SETTING_INFINIBAND_H__ */

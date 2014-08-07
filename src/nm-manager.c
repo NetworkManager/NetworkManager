@@ -966,13 +966,13 @@ get_virtual_iface_name (NMManager *self,
 		*out_parent = NULL;
 
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
-		return g_strdup (nm_connection_get_virtual_iface_name (connection));
+		return g_strdup (nm_connection_get_interface_name (connection));
 
 	if (nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME))
-		return g_strdup (nm_connection_get_virtual_iface_name (connection));
+		return g_strdup (nm_connection_get_interface_name (connection));
 
 	if (nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
-		return g_strdup (nm_connection_get_virtual_iface_name (connection));
+		return g_strdup (nm_connection_get_interface_name (connection));
 
 	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		NMSettingVlan *s_vlan;
@@ -984,7 +984,7 @@ get_virtual_iface_name (NMManager *self,
 
 		parent = find_vlan_parent (self, connection);
 		if (parent) {
-			ifname = nm_connection_get_virtual_iface_name (connection);
+			ifname = nm_connection_get_interface_name (connection);
 
 			if (!nm_device_supports_vlans (parent)) {
 				nm_log_warn (LOGD_DEVICE, "(%s): No support for VLANs on interface %s of type %s",
@@ -1011,26 +1011,14 @@ get_virtual_iface_name (NMManager *self,
 	}
 
 	if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
-		const char *ifname;
-		char *name;
-
 		parent = find_infiniband_parent (self, connection);
 		if (parent) {
-			ifname = nm_connection_get_virtual_iface_name (connection);
-			if (ifname)
-				name = g_strdup (ifname);
-			else {
-				NMSettingInfiniband *s_infiniband;
-				int p_key;
+			NMSettingInfiniband *s_infiniband;
 
-				ifname = nm_device_get_iface (parent);
-				s_infiniband = nm_connection_get_setting_infiniband (connection);
-				p_key = nm_setting_infiniband_get_p_key (s_infiniband);
-				name = g_strdup_printf ("%s.%04x", ifname, p_key);
-			}
+			s_infiniband = nm_connection_get_setting_infiniband (connection);
 			if (out_parent)
 				*out_parent = parent;
-			return name;
+			return g_strdup (nm_setting_infiniband_get_virtual_interface_name (s_infiniband));
 		}
 	}
 

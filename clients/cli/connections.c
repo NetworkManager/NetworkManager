@@ -2726,7 +2726,7 @@ _strip_master_prefix (const char *master, const char *(**func)(NMConnection *))
 	if (g_str_has_prefix (master, "ifname/")) {
 		master = master + strlen ("ifname/");
 		if (func)
-			*func = nm_connection_get_virtual_iface_name;
+			*func = nm_connection_get_interface_name;
 	} else if (g_str_has_prefix (master, "uuid/")) {
 		master = master + strlen ("uuid/");
 		if (func)
@@ -2788,7 +2788,7 @@ verify_master_for_slave (GSList *connections,
 		} else {
 			id = nm_connection_get_id (connection);
 			uuid = nm_connection_get_uuid (connection);
-			ifname = nm_connection_get_virtual_iface_name (connection);
+			ifname = nm_connection_get_interface_name (connection);
 			if (   g_strcmp0 (master, uuid) == 0
 			    || g_strcmp0 (master, ifname) == 0) {
 				out_master = master;
@@ -5094,7 +5094,7 @@ gen_func_master_ifnames (const char *text, int state)
 		con_type = nm_setting_connection_get_connection_type (s_con);
 		if (g_strcmp0 (con_type, nmc_tab_completion.con_type) != 0)
 			continue;
-		ifname = nm_connection_get_virtual_iface_name (con);
+		ifname = nm_connection_get_interface_name (con);
 		g_ptr_array_add (ifnames, (gpointer) ifname);
 	}
 	g_ptr_array_add (ifnames, (gpointer) NULL);

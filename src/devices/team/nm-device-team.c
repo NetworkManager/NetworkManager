@@ -122,7 +122,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	/* Team connections must specify the virtual interface name */
-	iface = nm_connection_get_virtual_iface_name (connection);
+	iface = nm_connection_get_interface_name (connection);
 	if (!iface || strcmp (nm_device_get_iface (device), iface))
 		return FALSE;
 
@@ -716,7 +716,7 @@ nm_device_team_new_for_connection (NMConnection *connection, GError **error)
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
-	iface = nm_connection_get_virtual_iface_name (connection);
+	iface = nm_connection_get_interface_name (connection);
 	g_return_val_if_fail (iface != NULL, NULL);
 
 	if (   !nm_platform_team_add (iface)

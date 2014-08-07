@@ -242,28 +242,6 @@ nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
 	return type ? nm_connection_get_setting (connection, type) : NULL;
 }
 
-/* not exposed until we actually need it */
-static NMSetting *
-_get_type_setting (NMConnection *connection)
-{
-	NMSettingConnection *s_con;
-	const char *type;
-	NMSetting *base;
-
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	type = nm_setting_connection_get_connection_type (s_con);
-	g_assert (type);
-
-	base = nm_connection_get_setting_by_name (connection, type);
-	g_assert (base);
-
-	return base;
-}
-
 static gboolean
 validate_permissions_type (GHashTable *hash, GError **error)
 {
@@ -1433,30 +1411,6 @@ nm_connection_get_interface_name (NMConnection *connection)
 }
 
 /**
- * nm_connection_get_virtual_iface_name:
- * @connection: The #NMConnection
- *
- * Returns the name of the virtual kernel interface which the connection
- * needs to use if specified in the settings. This function abstracts all
- * connection types which require this functionality. For all other
- * connection types, this function will return %NULL.
- *
- * Returns: Name of the kernel interface or %NULL
- */
-const char *
-nm_connection_get_virtual_iface_name (NMConnection *connection)
-{
-	NMSetting *base;
-
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-
-	base = _get_type_setting (connection);
-	g_assert (base);
-
-	return nm_setting_get_virtual_iface_name (base);
-}
-
-/**
  * nm_connection_get_uuid:
  * @connection: the #NMConnection
  *
@@ -1533,16 +1487,13 @@ nm_connection_get_connection_type (NMConnection *connection)
 char *
 nm_connection_get_virtual_device_description (NMConnection *connection)
 {
-	const char *iface, *type, *display_type;
-	NMSettingConnection *s_con;
+	const char *type;
+	const char *iface = NULL, *display_type = NULL;
 
-	iface = nm_connection_get_virtual_iface_name (connection);
-	if (!iface)
-		return NULL;
+	iface = nm_connection_get_interface_name (connection);
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_return_val_if_fail (s_con != NULL, NULL);
-	type = nm_setting_connection_get_connection_type (s_con);
+	type = nm_connection_get_connection_type (connection);
+	g_return_val_if_fail (type != NULL, FALSE);
 
 	if (!strcmp (type, NM_SETTING_BOND_SETTING_NAME))
 		display_type = _("Bond");
@@ -1552,10 +1503,13 @@ nm_connection_get_virtual_device_description (NMConnection *connection)
 		display_type = _("Bridge");
 	else if (!strcmp (type, NM_SETTING_VLAN_SETTING_NAME))
 		display_type = _("VLAN");
-	else {
-		g_warning ("Unrecognized virtual device type '%s'", type);
-		display_type = type;
+	else if (!strcmp (type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+		display_type = _("InfiniBand");
+		iface = nm_setting_infiniband_get_virtual_interface_name (nm_connection_get_setting_infiniband (connection));
 	}
+
+	if (!iface || !display_type)
+		return NULL;
 
 	return g_strdup_printf ("%s (%s)", display_type, iface);
 }

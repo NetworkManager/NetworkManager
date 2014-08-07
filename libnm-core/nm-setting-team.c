@@ -132,14 +132,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	         all_settings, error);
 }
 
-static const char *
-get_virtual_iface_name (NMSetting *setting)
-{
-	NMSettingTeam *self = NM_SETTING_TEAM (setting);
-
-	return nm_setting_team_get_interface_name (self);
-}
-
 static void
 nm_setting_team_init (NMSettingTeam *setting)
 {
@@ -209,7 +201,6 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
-	parent_class->get_virtual_iface_name = get_virtual_iface_name;
 
 	/* Properties */
 	/**

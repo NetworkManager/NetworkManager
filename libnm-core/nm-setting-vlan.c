@@ -602,12 +602,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	         all_settings, error);
 }
 
-static const char *
-get_virtual_iface_name (NMSetting *setting)
-{
-	return nm_setting_vlan_get_interface_name (NM_SETTING_VLAN (setting));
-}
-
 static GSList *
 priority_stringlist_to_maplist (NMVlanPriorityMap map, GSList *strlist)
 {
@@ -733,7 +727,6 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
-	parent_class->get_virtual_iface_name = get_virtual_iface_name;
 
 	/* Properties */
 

@@ -300,14 +300,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	         all_settings, error);
 }
 
-static const char *
-get_virtual_iface_name (NMSetting *setting)
-{
-	NMSettingBridge *self = NM_SETTING_BRIDGE (setting);
-
-	return nm_setting_bridge_get_interface_name (self);
-}
-
 static void
 nm_setting_bridge_init (NMSettingBridge *setting)
 {
@@ -417,7 +409,6 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
-	parent_class->get_virtual_iface_name = get_virtual_iface_name;
 
 	/* Properties */
 	/**

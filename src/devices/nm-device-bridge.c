@@ -111,7 +111,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	/* Bridge connections must specify the virtual interface name */
-	iface = nm_connection_get_virtual_iface_name (connection);
+	iface = nm_connection_get_interface_name (connection);
 	if (!iface || strcmp (nm_device_get_iface (device), iface))
 		return FALSE;
 
@@ -461,7 +461,7 @@ nm_device_bridge_new_for_connection (NMConnection *connection)
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
-	iface = nm_connection_get_virtual_iface_name (connection);
+	iface = nm_connection_get_interface_name (connection);
 	g_return_val_if_fail (iface != NULL, NULL);
 
 	s_bridge = nm_connection_get_setting_bridge (connection);

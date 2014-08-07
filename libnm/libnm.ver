@@ -117,7 +117,6 @@ global:
 	nm_connection_get_type;
 	nm_connection_get_uuid;
 	nm_connection_get_virtual_device_description;
-	nm_connection_get_virtual_iface_name;
 	nm_connection_is_type;
 	nm_connection_need_secrets;
 	nm_connection_normalize;
@@ -579,7 +578,6 @@ global:
 	nm_setting_get_name;
 	nm_setting_get_secret_flags;
 	nm_setting_get_type;
-	nm_setting_get_virtual_iface_name;
 	nm_setting_gsm_error_get_type;
 	nm_setting_gsm_error_quark;
 	nm_setting_gsm_get_apn;
@@ -601,6 +599,7 @@ global:
 	nm_setting_infiniband_get_parent;
 	nm_setting_infiniband_get_transport_mode;
 	nm_setting_infiniband_get_type;
+	nm_setting_infiniband_get_virtual_interface_name;
 	nm_setting_infiniband_new;
 	nm_setting_ip4_config_add_address;
 	nm_setting_ip4_config_add_dns;

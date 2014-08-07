@@ -674,14 +674,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	         all_settings, error);
 }
 
-static const char *
-get_virtual_iface_name (NMSetting *setting)
-{
-	NMSettingBond *self = NM_SETTING_BOND (setting);
-
-	return nm_setting_bond_get_interface_name (self);
-}
-
 static void
 nm_setting_bond_init (NMSettingBond *setting)
 {
@@ -768,7 +760,6 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
-	parent_class->get_virtual_iface_name = get_virtual_iface_name;
 
 	/* Properties */
 	/**

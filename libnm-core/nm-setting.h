@@ -205,8 +205,6 @@ typedef struct {
 	                                  const GParamSpec *prop_spec,
 	                                  NMSettingCompareFlags flags);
 
-	const char *(*get_virtual_iface_name) (NMSetting *setting);
-
 	/*< private >*/
 	gpointer padding[8];
 } NMSettingClass;
@@ -288,8 +286,6 @@ gboolean    nm_setting_set_secret_flags (NMSetting *setting,
                                          const char *secret_name,
                                          NMSettingSecretFlags flags,
                                          GError **error);
-
-const char *nm_setting_get_virtual_iface_name (NMSetting *setting);
 
 G_END_DECLS
 
