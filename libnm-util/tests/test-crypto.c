@@ -92,18 +92,21 @@ out:
 #endif
 
 static void
-test_load_cert (const char *path, const char *desc)
+test_cert (gconstpointer test_data)
 {
+	char *path;
 	GByteArray *array;
 	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	GError *error = NULL;
 
+	path = g_build_filename (TEST_CERT_DIR, (const char *) test_data, NULL);
+
 	array = crypto_load_and_verify_certificate (path, &format, &error);
-	ASSERT (array != NULL, desc,
+	ASSERT (array != NULL, "cert",
 	        "couldn't read certificate file '%s': %d %s",
 	        path, error->code, error->message);
 
-	ASSERT (format == NM_CRYPTO_FILE_FORMAT_X509, desc,
+	ASSERT (format == NM_CRYPTO_FILE_FORMAT_X509, "cert",
 	        "%s: unexpected certificate format (expected %d, got %d)",
 	        path, NM_CRYPTO_FILE_FORMAT_X509, format);
 
@@ -330,55 +333,137 @@ test_encrypt_private_key (const char *path,
 	g_byte_array_free (array, TRUE);
 }
 
-int main (int argc, char **argv)
+static void
+test_key (gconstpointer test_data)
+{
+	char **parts, *path, *password, *decrypted_path;
+	int len;
+
+	parts = g_strsplit ((const char *) test_data, ", ", -1);
+	len = g_strv_length (parts);
+	ASSERT (len == 2 || len == 3, "test-crypto",
+	        "wrong number of arguments (<key file>, <password>, [<decrypted key file>])");
+
+	path = g_build_filename (TEST_CERT_DIR, parts[0], NULL);
+	password = parts[1];
+	decrypted_path = parts[2] ? g_build_filename (TEST_CERT_DIR, parts[2], NULL) : NULL;
+
+	test_is_pkcs12 (path, TRUE, "not-pkcs12");
+	test_load_private_key (path, password, decrypted_path, FALSE, "private-key");
+	test_load_private_key (path, "blahblahblah", NULL, TRUE, "private-key-bad-password");
+	test_load_private_key (path, NULL, NULL, TRUE, "private-key-no-password");
+	test_encrypt_private_key (path, password, "private-key-rencrypt");
+
+	g_free (path);
+	g_free (decrypted_path);
+	g_strfreev (parts);
+}
+
+static void
+test_pkcs12 (gconstpointer test_data)
+{
+	char **parts, *path, *password;
+
+	parts = g_strsplit ((const char *) test_data, ", ", -1);
+	ASSERT (g_strv_length (parts) == 2, "test-crypto",
+	        "wrong number of arguments (<file>, <password>)");
+
+	path = g_build_filename (TEST_CERT_DIR, parts[0], NULL);
+	password = parts[1];
+
+	test_is_pkcs12 (path, FALSE, "is-pkcs12");
+	test_load_pkcs12 (path, password, FALSE, "pkcs12-private-key");
+	test_load_pkcs12 (path, "blahblahblah", TRUE, "pkcs12-private-key-bad-password");
+	test_load_pkcs12_no_password (path, "pkcs12-private-key-no-password");
+
+	g_free (path);
+	g_strfreev (parts);
+}
+
+static void
+test_pkcs8 (gconstpointer test_data)
+{
+	char **parts, *path, *password;
+
+	parts = g_strsplit ((const char *) test_data, ", ", -1);
+	ASSERT (g_strv_length (parts) == 2, "test-crypto",
+	        "wrong number of arguments (<file>, <password>)");
+
+	path = g_build_filename (TEST_CERT_DIR, parts[0], NULL);
+	password = parts[1];
+
+	test_is_pkcs12 (path, TRUE, "not-pkcs12");
+	test_load_pkcs8 (path, password, FALSE, "pkcs8-private-key");
+	/* Until gnutls and NSS grow support for all the ciphers that openssl
+	 * can use with PKCS#8, we can't actually verify the password.  So we
+	 * expect a bad password to work for the time being.
+	 */
+	test_load_pkcs8 (path, "blahblahblah", FALSE, "pkcs8-private-key-bad-password");
+
+	g_free (path);
+	g_strfreev (parts);
+}
+
+NMTST_DEFINE ();
+
+int
+main (int argc, char **argv)
 {
 	GError *error = NULL;
-	char *progname;
+	int ret;
 
-	ASSERT (argc > 2, "test-crypto",
-	        "wrong number of arguments (expected at least an operation and an object)");
+	nmtst_init (&argc, &argv, TRUE);
 
 	if (!crypto_init (&error))
 		FAIL ("crypto-init", "failed to initialize crypto: %s", error->message);
 
-	if (!strcmp (argv[1], "--cert"))
-		test_load_cert (argv[2], "cert");
-	else if (!strcmp (argv[1], "--key")) {
-		const char *decrypted_path = (argc == 5) ? argv[4] : NULL;
+	g_test_add_data_func ("/libnm/crypto/cert/pem",
+	                      "test_ca_cert.pem",
+	                      test_cert);
+	g_test_add_data_func ("/libnm/crypto/cert/pem-2",
+	                      "test2_ca_cert.pem",
+	                      test_cert);
+	g_test_add_data_func ("/libnm/crypto/cert/der",
+	                      "test_ca_cert.der",
+	                      test_cert);
+	g_test_add_data_func ("/libnm/crypto/cert/pem-no-ending-newline",
+	                      "ca-no-ending-newline.pem",
+	                      test_cert);
+	g_test_add_data_func ("/libnm/crypto/cert/pem-combined",
+	                      "test_key_and_cert.pem",
+	                      test_cert);
+	g_test_add_data_func ("/libnm/crypto/cert/pem-combined-2",
+	                      "test2_key_and_cert.pem",
+	                      test_cert);
 
-		ASSERT (argc == 4 || argc == 5, "test-crypto",
-		        "wrong number of arguments (--key <key file> <password> [<decrypted key file>])");
+	g_test_add_data_func ("/libnm/crypto/key/padding-6",
+	                      "test_key_and_cert.pem, test, test-key-only-decrypted.der",
+	                      test_key);
+	g_test_add_data_func ("/libnm/crypto/key/key-only",
+	                      "test-key-only.pem, test, test-key-only-decrypted.der",
+	                      test_key);
+	g_test_add_data_func ("/libnm/crypto/key/padding-8",
+	                      "test2_key_and_cert.pem, 12345testing",
+	                      test_key);
+	g_test_add_data_func ("/libnm/crypto/key/aes",
+	                      "test-aes-key.pem, test-aes-password",
+	                      test_key);
 
-		test_is_pkcs12 (argv[2], TRUE, "not-pkcs12");
-		test_load_private_key (argv[2], argv[3], decrypted_path, FALSE, "private-key");
-		test_load_private_key (argv[2], "blahblahblah", NULL, TRUE, "private-key-bad-password");
-		test_load_private_key (argv[2], NULL, NULL, TRUE, "private-key-no-password");
-		test_encrypt_private_key (argv[2], argv[3], "private-key-rencrypt");
-	} else if (!strcmp (argv[1], "--p12")) {
-		test_is_pkcs12 (argv[2], FALSE, "is-pkcs12");
-		test_load_pkcs12 (argv[2], argv[3], FALSE, "pkcs12-private-key");
-		test_load_pkcs12 (argv[2], "blahblahblah", TRUE, "pkcs12-private-key-bad-password");
-		test_load_pkcs12_no_password (argv[2], "pkcs12-private-key-no-password");
-	} else if (!strcmp (argv[1], "--pkcs8")) {
-		ASSERT (argc == 4, "test-crypto",
-		        "wrong number of arguments (--pkcs8 <key file> <password>)");
+	g_test_add_data_func ("/libnm/crypto/PKCS#12/1",
+	                      "test-cert.p12, test",
+	                      test_pkcs12);
+	g_test_add_data_func ("/libnm/crypto/PKCS#12/2",
+	                      "test2-cert.p12, 12345testing",
+	                      test_pkcs12);
 
-		test_is_pkcs12 (argv[2], TRUE, "not-pkcs12");
-		test_load_pkcs8 (argv[2], argv[3], FALSE, "pkcs8-private-key");
-		/* Until gnutls and NSS grow support for all the ciphers that openssl
-		 * can use with PKCS#8, we can't actually verify the password.  So we
-		 * expect a bad password to work for the time being.
-		 */
-		test_load_pkcs8 (argv[2], "blahblahblah", FALSE, "pkcs8-private-key-bad-password");
-	} else {
-		ASSERT (argc > 2, "test-crypto", "unknown test type (not --cert, --key, or --p12)");
-	}
+	g_test_add_data_func ("/libnm/crypto/PKCS#8",
+	                      "pkcs8-enc-key.pem, 1234567890",
+	                      test_pkcs8);
+
+	ret = g_test_run ();
 
 	crypto_deinit ();
 
-	progname = g_path_get_basename (argv[0]);
-	fprintf (stdout, "%s: SUCCESS\n", progname);
-	g_free (progname);
-	return 0;
+	return ret;
 }
 

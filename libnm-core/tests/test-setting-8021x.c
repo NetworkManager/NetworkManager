@@ -404,40 +404,57 @@ test_clear_phase2_private_key (const char *path, const char *password)
 	g_object_unref (s_8021x);
 }
 
-int main (int argc, char **argv)
+static void
+do_8021x_test (gconstpointer test_data)
 {
-	GError *error = NULL;
-	char *base;
+	char **parts, *path, *password;
 
-	if (argc < 3)
-		FAIL ("init", "need at least two arguments: <path> <password>");
+	parts = g_strsplit ((const char *) test_data, ", ", -1);
+	g_assert_cmpint (g_strv_length (parts), ==, 2);
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	if (!nm_utils_init (&error))
-		FAIL ("nm-utils-init", "failed to initialize libnm: %s", error->message);
+	path = g_build_filename (TEST_CERT_DIR, parts[0], NULL);
+	password = parts[1];
 
 	/* Test phase1 and phase2 path scheme */
-	test_private_key_import (argv[1], argv[2], NM_SETTING_802_1X_CK_SCHEME_PATH);
-	test_phase2_private_key_import (argv[1], argv[2], NM_SETTING_802_1X_CK_SCHEME_PATH);
+	test_private_key_import (path, password, NM_SETTING_802_1X_CK_SCHEME_PATH);
+	test_phase2_private_key_import (path, password, NM_SETTING_802_1X_CK_SCHEME_PATH);
 
 	/* Test phase1 and phase2 blob scheme */
-	test_private_key_import (argv[1], argv[2], NM_SETTING_802_1X_CK_SCHEME_BLOB);
-	test_phase2_private_key_import (argv[1], argv[2], NM_SETTING_802_1X_CK_SCHEME_BLOB);
+	test_private_key_import (path, password, NM_SETTING_802_1X_CK_SCHEME_BLOB);
+	test_phase2_private_key_import (path, password, NM_SETTING_802_1X_CK_SCHEME_BLOB);
 
 	/* Test that using a wrong password does not change existing data */
-	test_wrong_password_keeps_data (argv[1], argv[2]);
-	test_wrong_phase2_password_keeps_data (argv[1], argv[2]);
+	test_wrong_password_keeps_data (path, password);
+	test_wrong_phase2_password_keeps_data (path, password);
 
 	/* Test clearing the private key */
-	test_clear_private_key (argv[1], argv[2]);
-	test_clear_phase2_private_key (argv[1], argv[2]);
+	test_clear_private_key (path, password);
+	test_clear_phase2_private_key (path, password);
 
-	base = g_path_get_basename (argv[0]);
-	fprintf (stdout, "%s: SUCCESS\n", base);
-	g_free (base);
-	return 0;
+	g_free (path);
+	g_strfreev (parts);
+}
+
+NMTST_DEFINE ();
+
+int
+main (int argc, char **argv)
+{
+	nmtst_init (&argc, &argv, TRUE);
+
+	g_test_add_data_func ("/libnm/setting-8021x/key-and-cert",
+	                      "test_key_and_cert.pem, test",
+	                      do_8021x_test);
+	g_test_add_data_func ("/libnm/setting-8021x/key-only",
+	                      "test-key-only.pem, test",
+	                      do_8021x_test);
+	g_test_add_data_func ("/libnm/setting-8021x/pkcs8-enc-key",
+	                      "pkcs8-enc-key.pem, 1234567890",
+	                      do_8021x_test);
+	g_test_add_data_func ("/libnm/setting-8021x/pkcs12",
+	                      "test-cert.p12, test",
+	                      do_8021x_test);
+
+	return g_test_run ();
 }
 
