@@ -23,6 +23,7 @@
 
 #include "nm-setting.h"
 #include "nm-connection.h"
+#include "nm-core-enum-types.h"
 #include "nm-glib-compat.h"
 
 #include "nm-core-internal.h"
@@ -48,8 +49,11 @@ void _nm_register_setting (const char *name,
                            const guint32 priority,
                            const GQuark error_quark);
 
-/* Ensure, that name is a compile time constant string. Put the function name in parenthesis to suppress expansion. */
-#define _nm_register_setting(name, type, priority, error_quark)    _nm_register_setting ((name ""), type, priority, error_quark)
+#define _nm_register_setting(name, priority) \
+	G_STMT_START { \
+		_nm_register_setting (NM_SETTING_ ## name ## _SETTING_NAME "", g_define_type_id, priority, NM_SETTING_ ## name ## _ERROR); \
+		g_type_ensure (NM_TYPE_SETTING_ ## name ## _ERROR); \
+	} G_STMT_END
 
 gboolean _nm_setting_is_base_type (NMSetting *setting);
 gboolean _nm_setting_type_is_base_type (GType type);

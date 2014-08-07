@@ -54,10 +54,7 @@ nm_setting_generic_error_quark (void)
 }
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingGeneric, nm_setting_generic, NM_TYPE_SETTING,
-                         _nm_register_setting (NM_SETTING_GENERIC_SETTING_NAME,
-                                               g_define_type_id,
-                                               1,
-                                               NM_SETTING_GENERIC_ERROR))
+                         _nm_register_setting (GENERIC, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_GENERIC)
 
 #define NM_SETTING_GENERIC_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_GENERIC, NMSettingGenericPrivate))

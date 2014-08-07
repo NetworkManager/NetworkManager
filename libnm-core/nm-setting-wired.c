@@ -59,10 +59,7 @@ nm_setting_wired_error_quark (void)
 
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING,
-                         _nm_register_setting (NM_SETTING_WIRED_SETTING_NAME,
-                                               g_define_type_id,
-                                               1,
-                                               NM_SETTING_WIRED_ERROR))
+                         _nm_register_setting (WIRED, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_WIRED)
 
 #define NM_SETTING_WIRED_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRED, NMSettingWiredPrivate))

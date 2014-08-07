@@ -59,10 +59,7 @@ nm_setting_bridge_error_quark (void)
 
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingBridge, nm_setting_bridge, NM_TYPE_SETTING,
-                         _nm_register_setting (NM_SETTING_BRIDGE_SETTING_NAME,
-                                               g_define_type_id,
-                                               1,
-                                               NM_SETTING_BRIDGE_ERROR))
+                         _nm_register_setting (BRIDGE, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BRIDGE)
 
 #define NM_SETTING_BRIDGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE, NMSettingBridgePrivate))

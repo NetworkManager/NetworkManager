@@ -63,10 +63,7 @@ nm_setting_vpn_error_quark (void)
 
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingVpn, nm_setting_vpn, NM_TYPE_SETTING,
-                         _nm_register_setting (NM_SETTING_VPN_SETTING_NAME,
-                                               g_define_type_id,
-                                               1,
-                                               NM_SETTING_VPN_ERROR))
+                         _nm_register_setting (VPN, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_VPN)
 
 #define NM_SETTING_VPN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VPN, NMSettingVpnPrivate))

@@ -56,10 +56,7 @@ nm_setting_infiniband_error_quark (void)
 }
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING,
-                         _nm_register_setting (NM_SETTING_INFINIBAND_SETTING_NAME,
-                                               g_define_type_id,
-                                               1,
-                                               NM_SETTING_INFINIBAND_ERROR))
+                         _nm_register_setting (INFINIBAND, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_INFINIBAND)
 
 #define NM_SETTING_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_INFINIBAND, NMSettingInfinibandPrivate))

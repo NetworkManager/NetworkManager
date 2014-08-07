@@ -58,10 +58,7 @@ nm_setting_connection_error_quark (void)
 
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING,
-                         _nm_register_setting (NM_SETTING_CONNECTION_SETTING_NAME,
-                                               g_define_type_id,
-                                               0,
-                                               NM_SETTING_CONNECTION_ERROR))
+                         _nm_register_setting (CONNECTION, 0))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_CONNECTION)
 
 #define NM_SETTING_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CONNECTION, NMSettingConnectionPrivate))
