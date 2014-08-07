@@ -39,6 +39,8 @@
 
 #include "nm-device-bridge-glue.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF(NMDeviceBridge);
 
 G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE)
 
@@ -292,6 +294,7 @@ commit_slave_options (NMDevice *device, NMSettingBridgePort *setting)
 static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
+	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
 	NMSettingBridge *s_bridge = nm_connection_get_setting_bridge (connection);
 	const char *ifname = nm_device_get_iface (device);
 	int ifindex = nm_device_get_ifindex (device);
@@ -315,23 +318,22 @@ update_connection (NMDevice *device, NMConnection *connection)
 				value /= 100;
 
 			g_object_set (s_bridge, option->name, value, NULL);
-		} else {
-			nm_log_warn (LOGD_BRIDGE, "(%s): failed to read bridge setting '%s'",
-			             nm_device_get_iface (device), option->sysname);
-		}
+		} else
+			_LOGW (LOGD_BRIDGE, "failed to read bridge setting '%s'", option->sysname);
 	}
 }
 
 static gboolean
-master_update_slave_connection (NMDevice *self,
+master_update_slave_connection (NMDevice *device,
                                 NMDevice *slave,
                                 NMConnection *connection,
                                 GError **error)
 {
+	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
 	NMSettingConnection *s_con;
 	NMSettingBridgePort *s_port;
 	int ifindex_slave = nm_device_get_ifindex (slave);
-	const char *iface = nm_device_get_iface (self);
+	const char *iface = nm_device_get_iface (device);
 	const Option *option;
 
 	g_return_val_if_fail (ifindex_slave > 0, FALSE);
@@ -355,10 +357,8 @@ master_update_slave_connection (NMDevice *self,
 				value /= 100;
 
 			g_object_set (s_port, option->name, value, NULL);
-		} else {
-			nm_log_warn (LOGD_BRIDGE, "(%s): failed to read bridge port setting '%s'",
-			             nm_device_get_iface (slave), option->sysname);
-		}
+		} else
+			_LOGW (LOGD_BRIDGE, "failed to read bridge port setting '%s'", option->sysname);
 	}
 
 	g_object_set (s_con,
@@ -391,19 +391,19 @@ enslave_slave (NMDevice *device,
                NMConnection *connection,
                gboolean configure)
 {
+	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
+
 	if (configure) {
 		if (!nm_platform_link_enslave (nm_device_get_ip_ifindex (device), nm_device_get_ip_ifindex (slave)))
 			return FALSE;
 
 		commit_slave_options (slave, nm_connection_get_setting_bridge_port (connection));
 
-		nm_log_info (LOGD_BRIDGE, "(%s): attached bridge port %s",
-		             nm_device_get_ip_iface (device),
-		             nm_device_get_ip_iface (slave));
+		_LOGI (LOGD_BRIDGE, "attached bridge port %s",
+		       nm_device_get_ip_iface (slave));
 	} else {
-		nm_log_info (LOGD_BRIDGE, "(%s): bridge port %s was attached",
-		             nm_device_get_ip_iface (device),
-		             nm_device_get_ip_iface (slave));
+		_LOGI (LOGD_BRIDGE, "bridge port %s was attached",
+		       nm_device_get_ip_iface (slave));
 	}
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_BRIDGE_SLAVES);
@@ -416,6 +416,7 @@ release_slave (NMDevice *device,
                NMDevice *slave,
                gboolean configure)
 {
+	NMDeviceBridge *self = NM_DEVICE_BRIDGE (device);
 	gboolean success = TRUE;
 
 	if (configure) {
@@ -423,18 +424,15 @@ release_slave (NMDevice *device,
 		                                    nm_device_get_ip_ifindex (slave));
 
 		if (success) {
-			nm_log_info (LOGD_BRIDGE, "(%s): detached bridge port %s",
-			             nm_device_get_ip_iface (device),
-			             nm_device_get_ip_iface (slave));
+			_LOGI (LOGD_BRIDGE, "detached bridge port %s",
+			       nm_device_get_ip_iface (slave));
 		} else {
-			nm_log_warn (LOGD_BRIDGE, "(%s): failed to detach bridge port %s",
-			             nm_device_get_ip_iface (device),
-			             nm_device_get_ip_iface (slave));
+			_LOGW (LOGD_BRIDGE, "failed to detach bridge port %s",
+			       nm_device_get_ip_iface (slave));
 		}
 	} else {
-		nm_log_info (LOGD_BRIDGE, "(%s): bridge port %s was detached",
-		             nm_device_get_ip_iface (device),
-		             nm_device_get_ip_iface (slave));
+		_LOGI (LOGD_BRIDGE, "bridge port %s was detached",
+		       nm_device_get_ip_iface (slave));
 	}
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_BRIDGE_SLAVES);
@@ -494,16 +492,6 @@ nm_device_bridge_new_for_connection (NMConnection *connection)
 }
 
 static void
-constructed (GObject *object)
-{
-	G_OBJECT_CLASS (nm_device_bridge_parent_class)->constructed (object);
-
-	nm_log_dbg (LOGD_HW | LOGD_BRIDGE, "(%s): kernel ifindex %d",
-	            nm_device_get_iface (NM_DEVICE (object)),
-	            nm_device_get_ifindex (NM_DEVICE (object)));
-}
-
-static void
 nm_device_bridge_init (NMDeviceBridge * self)
 {
 }
@@ -553,7 +541,6 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 	parent_class->connection_type = NM_SETTING_BRIDGE_SETTING_NAME;
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 

@@ -65,28 +65,6 @@ nm_infiniband_error_quark (void)
 	return quark;
 }
 
-static GObject*
-constructor (GType type,
-			 guint n_construct_params,
-			 GObjectConstructParam *construct_params)
-{
-	GObject *object;
-	NMDevice *self;
-
-	object = G_OBJECT_CLASS (nm_device_infiniband_parent_class)->constructor (type,
-	                                                                          n_construct_params,
-	                                                                          construct_params);
-	if (!object)
-		return NULL;
-
-	self = NM_DEVICE (object);
-
-	nm_log_dbg (LOGD_HW | LOGD_INFINIBAND, "(%s): kernel ifindex %d",
-	            nm_device_get_iface (self),
-	            nm_device_get_ifindex (self));
-	return object;
-}
-
 static void
 nm_device_infiniband_init (NMDeviceInfiniband * self)
 {
@@ -392,7 +370,6 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMDeviceInfinibandPrivate));
 
 	/* virtual methods */
-	object_class->constructor = constructor;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 

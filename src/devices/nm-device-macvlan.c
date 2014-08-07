@@ -31,6 +31,9 @@
 
 #include "nm-device-macvlan-glue.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF(NMDeviceMacvlan);
+
 G_DEFINE_TYPE (NMDeviceMacvlan, nm_device_macvlan, NM_TYPE_DEVICE_GENERIC)
 
 #define NM_DEVICE_MACVLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_MACVLAN, NMDeviceMacvlanPrivate))
@@ -55,13 +58,13 @@ enum {
 static void
 update_properties (NMDevice *device)
 {
+	NMDeviceMacvlan *self = NM_DEVICE_MACVLAN (device);
 	NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE (device);
 	GObject *object = G_OBJECT (device);
 	NMPlatformMacvlanProperties props;
 
 	if (!nm_platform_macvlan_get_properties (nm_device_get_ifindex (device), &props)) {
-		nm_log_warn (LOGD_HW, "(%s): could not read macvlan properties",
-		             nm_device_get_iface (device));
+		_LOGW (LOGD_HW, "could not read macvlan properties");
 		return;
 	}
 

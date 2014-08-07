@@ -73,6 +73,9 @@
 #include "nm-config.h"
 #include "nm-dns-manager.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF (NMDevice);
+
 static void impl_device_disconnect (NMDevice *self, DBusGMethodInvocation *context);
 static void impl_device_delete     (NMDevice *self, DBusGMethodInvocation *context);
 
@@ -81,19 +84,6 @@ static void impl_device_delete     (NMDevice *self, DBusGMethodInvocation *conte
 G_DEFINE_ABSTRACT_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
-
-
-#define _LOG(level, domain, ...) \
-    nm_log_obj ((level), (domain), (self), \
-                "(%s): " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                (self) ? str_if_set (nm_device_get_iface (self), "(null)") : "(none)" \
-                _NM_UTILS_MACRO_REST(__VA_ARGS__))
-
-#define _LOGD(domain, ...)      _LOG (LOGL_DEBUG, domain, __VA_ARGS__)
-#define _LOGI(domain, ...)      _LOG (LOGL_INFO,  domain, __VA_ARGS__)
-#define _LOGW(domain, ...)      _LOG (LOGL_WARN,  domain, __VA_ARGS__)
-#define _LOGE(domain, ...)      _LOG (LOGL_ERR,   domain, __VA_ARGS__)
-
 
 enum {
 	STATE_CHANGED,
@@ -509,7 +499,7 @@ nm_device_get_udi (NMDevice *self)
 const char *
 nm_device_get_iface (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DEVICE (self), 0);
 
 	return NM_DEVICE_GET_PRIVATE (self)->iface;
 }
@@ -7132,7 +7122,7 @@ constructor (GType type,
 	self = NM_DEVICE (object);
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	_LOGD (LOGD_DEVICE, "constructor(): %s", G_OBJECT_TYPE_NAME (self));
+	_LOGD (LOGD_DEVICE, "constructor(): %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), priv->ifindex);
 
 	if (!priv->iface) {
 		_LOGE (LOGD_DEVICE, "No device interface provided, ignoring");

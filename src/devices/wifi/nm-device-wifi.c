@@ -77,6 +77,8 @@ static void impl_device_request_scan (NMDeviceWifi *device,
 
 #include "nm-device-wifi-glue.h"
 
+#include "nm-device-logging.h"
+_LOG_DECLARE_SELF(NMDeviceWifi);
 
 /* All of these are in seconds */
 #define SCAN_INTERVAL_MIN 3
@@ -224,22 +226,15 @@ constructor (GType type,
 	self = NM_DEVICE_WIFI (object);
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	nm_log_dbg (LOGD_HW | LOGD_WIFI, "(%s): kernel ifindex %d",
-	            nm_device_get_iface (NM_DEVICE (self)),
-	            nm_device_get_ifindex (NM_DEVICE (self)));
-
 	if (!nm_platform_wifi_get_capabilities (nm_device_get_ifindex (NM_DEVICE (self)),
 	                                        &priv->capabilities)) {
-		nm_log_warn (LOGD_HW | LOGD_WIFI, "(%s): failed to initialize WiFi driver",
-		             nm_device_get_iface (NM_DEVICE (self)));
+		_LOGW (LOGD_HW | LOGD_WIFI, "failed to initialize WiFi driver");
 		g_object_unref (object);
 		return NULL;
 	}
 
-	if (priv->capabilities & NM_WIFI_DEVICE_CAP_AP) {
-		nm_log_info (LOGD_HW | LOGD_WIFI, "(%s): driver supports Access Point (AP) mode",
-		             nm_device_get_iface (NM_DEVICE (self)));
-	}
+	if (priv->capabilities & NM_WIFI_DEVICE_CAP_AP)
+		_LOGI (LOGD_HW | LOGD_WIFI, "driver supports Access Point (AP) mode");
 
 	/* Connect to the supplicant manager */
 	priv->sup_mgr = nm_supplicant_manager_get ();
@@ -261,8 +256,7 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	                                                   nm_device_get_iface (NM_DEVICE (self)),
 	                                                   TRUE);
 	if (priv->sup_iface == NULL) {
-		nm_log_err (LOGD_WIFI, "Couldn't initialize supplicant interface for %s.",
-		            nm_device_get_iface (NM_DEVICE (self)));
+		_LOGE (LOGD_WIFI, "Couldn't initialize supplicant interface");
 		return FALSE;
 	}
 
@@ -310,9 +304,8 @@ supplicant_interface_release (NMDeviceWifi *self)
 
 	/* Reset the scan interval to be pretty frequent when disconnected */
 	priv->scan_interval = SCAN_INTERVAL_MIN + SCAN_INTERVAL_STEP;
-	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): reset scanning interval to %d seconds",
-	            nm_device_get_iface (NM_DEVICE (self)),
-	            priv->scan_interval);
+	_LOGD (LOGD_WIFI_SCAN, "reset scanning interval to %d seconds",
+	       priv->scan_interval);
 
 	if (priv->scanlist_cull_id) {
 		g_source_remove (priv->scanlist_cull_id);
@@ -371,7 +364,6 @@ find_active_ap (NMDeviceWifi *self,
                 gboolean match_hidden)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	const char *iface = nm_device_get_iface (NM_DEVICE (self));
 	int ifindex = nm_device_get_ifindex (NM_DEVICE (self));
 	struct ether_addr bssid;
 	GByteArray *ssid;
@@ -384,21 +376,19 @@ find_active_ap (NMDeviceWifi *self,
 	guint32 devfreq;
 
 	nm_platform_wifi_get_bssid (ifindex, &bssid);
-	nm_log_dbg (LOGD_WIFI, "(%s): active BSSID: %02x:%02x:%02x:%02x:%02x:%02x",
-	            iface,
-	            bssid.ether_addr_octet[0], bssid.ether_addr_octet[1],
-	            bssid.ether_addr_octet[2], bssid.ether_addr_octet[3],
-	            bssid.ether_addr_octet[4], bssid.ether_addr_octet[5]);
+	_LOGD (LOGD_WIFI, "active BSSID: %02x:%02x:%02x:%02x:%02x:%02x",
+	       bssid.ether_addr_octet[0], bssid.ether_addr_octet[1],
+	       bssid.ether_addr_octet[2], bssid.ether_addr_octet[3],
+	       bssid.ether_addr_octet[4], bssid.ether_addr_octet[5]);
 
 	if (!nm_ethernet_address_is_valid (&bssid))
 		return NULL;
 
 	ssid = nm_platform_wifi_get_ssid (ifindex);
-	nm_log_dbg (LOGD_WIFI, "(%s): active SSID: %s%s%s",
-	            iface,
-	            ssid ? "'" : "",
-	            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-	            ssid ? "'" : "");
+	_LOGD (LOGD_WIFI, "active SSID: %s%s%s",
+	       ssid ? "'" : "",
+	       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
+	       ssid ? "'" : "");
 
 	devmode = nm_platform_wifi_get_mode (ifindex);
 	devfreq = nm_platform_wifi_get_frequency (ifindex);
@@ -408,7 +398,7 @@ find_active_ap (NMDeviceWifi *self,
 	 * and therefore it won't get matched the first time around.
 	 */
 	while (i++ < (match_hidden ? 2 : 1)) {
-		nm_log_dbg (LOGD_WIFI, "  Pass #%d %s", i, i > 1 ? "(ignoring SSID)" : "");
+		_LOGD (LOGD_WIFI, "  Pass #%d %s", i, i > 1 ? "(ignoring SSID)" : "");
 
 		/* Find this SSID + BSSID in the device's AP list */
 		for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
@@ -418,40 +408,40 @@ find_active_ap (NMDeviceWifi *self,
 			NM80211Mode apmode;
 			guint32 apfreq;
 
-			nm_log_dbg (LOGD_WIFI, "    AP: %s%s%s  %02x:%02x:%02x:%02x:%02x:%02x",
-			            ap_ssid ? "'" : "",
-			            ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
-			            ap_ssid ? "'" : "",
-			            ap_bssid->ether_addr_octet[0], ap_bssid->ether_addr_octet[1],
-			            ap_bssid->ether_addr_octet[2], ap_bssid->ether_addr_octet[3],
-			            ap_bssid->ether_addr_octet[4], ap_bssid->ether_addr_octet[5]);
+			_LOGD (LOGD_WIFI, "    AP: %s%s%s  %02x:%02x:%02x:%02x:%02x:%02x",
+			       ap_ssid ? "'" : "",
+			       ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
+			       ap_ssid ? "'" : "",
+			       ap_bssid->ether_addr_octet[0], ap_bssid->ether_addr_octet[1],
+			       ap_bssid->ether_addr_octet[2], ap_bssid->ether_addr_octet[3],
+			       ap_bssid->ether_addr_octet[4], ap_bssid->ether_addr_octet[5]);
 
 			if (ap == ignore_ap) {
-				nm_log_dbg (LOGD_WIFI, "      ignored");
+				_LOGD (LOGD_WIFI, "      ignored");
 				continue;
 			}
 
 			if (memcmp (bssid.ether_addr_octet, ap_bssid->ether_addr_octet, ETH_ALEN)) {
-				nm_log_dbg (LOGD_WIFI, "      BSSID mismatch");
+				_LOGD (LOGD_WIFI, "      BSSID mismatch");
 				continue;
 			}
 
 			if ((i == 0) && !nm_utils_same_ssid (ssid, ap_ssid, TRUE)) {
-				nm_log_dbg (LOGD_WIFI, "      SSID mismatch");
+				_LOGD (LOGD_WIFI, "      SSID mismatch");
 				continue;
 			}
 
 			apmode = nm_ap_get_mode (ap);
 			if (devmode != apmode) {
-				nm_log_dbg (LOGD_WIFI, "      mode mismatch (device %d, ap %d)",
-				            devmode, apmode);
+				_LOGD (LOGD_WIFI, "      mode mismatch (device %d, ap %d)",
+				       devmode, apmode);
 				continue;
 			}
 
 			apfreq = nm_ap_get_freq (ap);
 			if (devfreq != apfreq) {
-				nm_log_dbg (LOGD_WIFI, "      frequency mismatch (device %u, ap %u)",
-				            devfreq, apfreq);
+				_LOGD (LOGD_WIFI, "      frequency mismatch (device %u, ap %u)",
+				       devfreq, apfreq);
 
 				if (match_nofreq == NULL)
 					match_nofreq = ap;
@@ -464,7 +454,7 @@ find_active_ap (NMDeviceWifi *self,
 			}
 
 			// FIXME: handle security settings here too
-			nm_log_dbg (LOGD_WIFI, "      matched");
+			_LOGD (LOGD_WIFI, "      matched");
 			active_ap = ap;
 			goto done;
 		}
@@ -486,19 +476,19 @@ find_active_ap (NMDeviceWifi *self,
 		const struct ether_addr	*ap_bssid = nm_ap_get_address (match_nofreq);
 		const GByteArray *ap_ssid = nm_ap_get_ssid (match_nofreq);
 
-		nm_log_dbg (LOGD_WIFI, "    matched %s%s%s  %02x:%02x:%02x:%02x:%02x:%02x",
-		            ap_ssid ? "'" : "",
-		            ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
-		            ap_ssid ? "'" : "",
-		            ap_bssid->ether_addr_octet[0], ap_bssid->ether_addr_octet[1],
-		            ap_bssid->ether_addr_octet[2], ap_bssid->ether_addr_octet[3],
-		            ap_bssid->ether_addr_octet[4], ap_bssid->ether_addr_octet[5]);
+		_LOGD (LOGD_WIFI, "    matched %s%s%s  %02x:%02x:%02x:%02x:%02x:%02x",
+		       ap_ssid ? "'" : "",
+		       ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
+		       ap_ssid ? "'" : "",
+		       ap_bssid->ether_addr_octet[0], ap_bssid->ether_addr_octet[1],
+		       ap_bssid->ether_addr_octet[2], ap_bssid->ether_addr_octet[3],
+		       ap_bssid->ether_addr_octet[4], ap_bssid->ether_addr_octet[5]);
 
 		active_ap = match_nofreq;
 		goto done;
 	}
 
-	nm_log_dbg (LOGD_WIFI, "  No matching AP found.");
+	_LOGD (LOGD_WIFI, "  No matching AP found.");
 
 done:
 	if (ssid)
@@ -655,12 +645,11 @@ periodic_update (NMDeviceWifi *self, NMAccessPoint *ignore_ap)
 			old_ssid = nm_ap_get_ssid (priv->current_ap);
 		}
 
-		nm_log_info (LOGD_WIFI, "(%s): roamed from BSSID %s (%s) to %s (%s)",
-		             nm_device_get_iface (NM_DEVICE (self)),
-		             old_addr ? old_addr : "(none)",
-		             old_ssid ? nm_utils_escape_ssid (old_ssid->data, old_ssid->len) : "(none)",
-		             new_addr ? new_addr : "(none)",
-		             new_ssid ? nm_utils_escape_ssid (new_ssid->data, new_ssid->len) : "(none)");
+		_LOGI (LOGD_WIFI, "roamed from BSSID %s (%s) to %s (%s)",
+		       old_addr ? old_addr : "(none)",
+		       old_ssid ? nm_utils_escape_ssid (old_ssid->data, old_ssid->len) : "(none)",
+		       new_addr ? new_addr : "(none)",
+		       new_ssid ? nm_utils_escape_ssid (new_ssid->data, new_ssid->len) : "(none)");
 		g_free (old_addr);
 		g_free (new_addr);
 
@@ -735,15 +724,15 @@ remove_all_aps (NMDeviceWifi *self)
 }
 
 static void
-deactivate (NMDevice *dev)
+deactivate (NMDevice *device)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	int ifindex = nm_device_get_ifindex (dev);
+	int ifindex = nm_device_get_ifindex (device);
 	NMConnection *connection;
 	NM80211Mode old_mode = priv->mode;
 
-	connection = nm_device_get_connection (dev);
+	connection = nm_device_get_connection (device);
 	if (connection) {
 		/* Clear wireless secrets tries when deactivating */
 		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
@@ -769,7 +758,7 @@ deactivate (NMDevice *dev)
 	nm_platform_wifi_indicate_addressing_running (ifindex, FALSE);
 
 	/* Reset MAC address back to initial address */
-	nm_device_set_hw_addr (dev, priv->initial_hw_addr, "reset", LOGD_WIFI);
+	nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_WIFI);
 
 	/* Ensure we're in infrastructure mode after deactivation; some devices
 	 * (usually older ones) don't scan well in adhoc mode.
@@ -1166,29 +1155,26 @@ complete_connection (NMDevice *device,
 }
 
 static gboolean
-is_available (NMDevice *dev)
+is_available (NMDevice *device)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	guint32 state;
 
 	if (!priv->enabled) {
-		nm_log_dbg (LOGD_WIFI, "(%s): not available because not enabled",
-		            nm_device_get_iface (dev));
+		_LOGD (LOGD_WIFI, "not available because not enabled");
 		return FALSE;
 	}
 
 	if (!priv->sup_iface) {
-		nm_log_dbg (LOGD_WIFI, "(%s): not available because supplicant not running",
-		            nm_device_get_iface (dev));
+		_LOGD (LOGD_WIFI, "not available because supplicant not running");
 		return FALSE;
 	}
 
 	state = nm_supplicant_interface_get_state (priv->sup_iface);
 	if (   state < NM_SUPPLICANT_INTERFACE_STATE_READY
 	    || state > NM_SUPPLICANT_INTERFACE_STATE_COMPLETED) {
-		nm_log_dbg (LOGD_WIFI, "(%s): not available because supplicant interface not ready",
-		            nm_device_get_iface (dev));
+		_LOGD (LOGD_WIFI, "not available because supplicant interface not ready");
 		return FALSE;
 	}
 
@@ -1196,17 +1182,17 @@ is_available (NMDevice *dev)
 }
 
 static gboolean
-can_auto_connect (NMDevice *dev,
+can_auto_connect (NMDevice *device,
                   NMConnection *connection,
                   char **specific_object)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	GSList *ap_iter;
 	const char *method = NULL;
 	guint64 timestamp = 0;
 
-	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->can_auto_connect (dev, connection, specific_object))
+	if (!NM_DEVICE_CLASS (nm_device_wifi_parent_class)->can_auto_connect (device, connection, specific_object))
 		return FALSE;
 
 	/* Don't autoconnect to networks that have been tried at least once
@@ -1245,12 +1231,12 @@ ap_list_dump (NMDeviceWifi *self)
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
 
-	nm_log_dbg (LOGD_WIFI_SCAN, "Current AP list:");
+	_LOGD (LOGD_WIFI_SCAN, "Current AP list:");
 	for (elt = priv->ap_list; elt; elt = g_slist_next (elt), i++) {
 		NMAccessPoint * ap = NM_AP (elt->data);
 		nm_ap_dump (ap, "List AP: ");
 	}
-	nm_log_dbg (LOGD_WIFI_SCAN, "Current AP list: done");
+	_LOGD (LOGD_WIFI_SCAN, "Current AP list: done");
 }
 
 static gboolean
@@ -1533,8 +1519,7 @@ request_wireless_scan (gpointer user_data)
 	}
 
 	if (check_scanning_allowed (self)) {
-		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scanning requested",
-		            nm_device_get_iface (NM_DEVICE (self)));
+		_LOGD (LOGD_WIFI_SCAN, "scanning requested");
 
 		ssids = build_hidden_probe_list (self);
 
@@ -1545,15 +1530,12 @@ request_wireless_scan (gpointer user_data)
 
 				for (i = 0; i < ssids->len; i++) {
 					foo = nm_utils_ssid_to_utf8 (g_ptr_array_index (ssids, i));
-					nm_log_dbg (LOGD_WIFI_SCAN, "(%s): (%d) probe scanning SSID '%s'",
-					            nm_device_get_iface (NM_DEVICE (self)),
+					_LOGD (LOGD_WIFI_SCAN, "(%d) probe scanning SSID '%s'",
 					            i, foo ? foo : "<hidden>");
 					g_free (foo);
 				}
-			} else {
-				nm_log_dbg (LOGD_WIFI_SCAN, "(%s): no SSIDs to probe scan",
-				            nm_device_get_iface (NM_DEVICE (self)));
-			}
+			} else
+				_LOGD (LOGD_WIFI_SCAN, "no SSIDs to probe scan");
 		}
 
 		if (nm_supplicant_interface_request_scan (priv->sup_iface, ssids)) {
@@ -1567,10 +1549,8 @@ request_wireless_scan (gpointer user_data)
 			/* Elements owned by the connections, so we don't free them here */
 			g_ptr_array_free (ssids, TRUE);
 		}
-	} else {
-		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan requested but not allowed at this time",
-		            nm_device_get_iface (NM_DEVICE (self)));
-	}
+	} else
+		_LOGD (LOGD_WIFI_SCAN, "scan requested but not allowed at this time");
 
 	priv->pending_scan_id = 0;
 	schedule_scan (self, backoff);
@@ -1621,11 +1601,8 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 			priv->scan_interval = 5;
 		}
 
-		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scheduled scan in %d seconds (interval now %d seconds)",
-		            nm_device_get_iface (NM_DEVICE (self)),
-		            next_scan,
-		            priv->scan_interval);
-
+		_LOGD (LOGD_WIFI_SCAN, "scheduled scan in %d seconds (interval now %d seconds)",
+		       next_scan, priv->scan_interval);
 	}
 }
 
@@ -1648,9 +1625,7 @@ supplicant_iface_scan_done_cb (NMSupplicantInterface *iface,
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): scan %s",
-	            nm_device_get_iface (NM_DEVICE (self)),
-	            success ? "successful" : "failed");
+	_LOGD (LOGD_WIFI_SCAN, "scan %s", success ? "successful" : "failed");
 
 	schedule_scan (self, success);
 
@@ -1733,16 +1708,14 @@ merge_scanned_ap (NMDeviceWifi *self,
 		ssid = nm_ap_get_ssid (merge_ap);
 		if (ssid && (nm_utils_is_empty_ssid (ssid->data, ssid->len) == FALSE)) {
 			/* Yay, matched it, no longer treat as hidden */
-			nm_log_dbg (LOGD_WIFI_SCAN, "(%s): matched hidden AP " MAC_FMT " => '%s'",
-			            nm_device_get_iface (NM_DEVICE (self)),
+			_LOGD (LOGD_WIFI_SCAN, "matched hidden AP " MAC_FMT " => '%s'",
 			            MAC_ARG (bssid->ether_addr_octet),
 			            nm_utils_escape_ssid (ssid->data, ssid->len));
 			nm_ap_set_broadcast (merge_ap, FALSE);
 		} else {
 			/* Didn't have an entry for this AP in the database */
-			nm_log_dbg (LOGD_WIFI_SCAN, "(%s): failed to match hidden AP " MAC_FMT,
-			            nm_device_get_iface (NM_DEVICE (self)),
-			            MAC_ARG (bssid->ether_addr_octet));
+			_LOGD (LOGD_WIFI_SCAN, "failed to match hidden AP " MAC_FMT,
+			       MAC_ARG (bssid->ether_addr_octet));
 		}
 	}
 
@@ -1759,8 +1732,7 @@ merge_scanned_ap (NMDeviceWifi *self,
 	if (!found_ap)
 		found_ap = nm_ap_match_in_list (merge_ap, priv->ap_list, strict_match);
 	if (found_ap) {
-		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): merging AP '%s' " MAC_FMT " (%p) with existing (%p)",
-		            nm_device_get_iface (NM_DEVICE (self)),
+		_LOGD (LOGD_WIFI_SCAN, "merging AP '%s' " MAC_FMT " (%p) with existing (%p)",
 		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
 		            MAC_ARG (bssid->ether_addr_octet),
 		            merge_ap,
@@ -1782,11 +1754,10 @@ merge_scanned_ap (NMDeviceWifi *self,
 		nm_ap_set_fake (found_ap, FALSE);
 	} else {
 		/* New entry in the list */
-		nm_log_dbg (LOGD_WIFI_SCAN, "(%s): adding new AP '%s' " MAC_FMT " (%p)",
-		            nm_device_get_iface (NM_DEVICE (self)),
-		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-		            MAC_ARG (bssid->ether_addr_octet),
-		            merge_ap);
+		_LOGD (LOGD_WIFI_SCAN, "adding new AP '%s' " MAC_FMT " (%p)",
+		       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
+		       MAC_ARG (bssid->ether_addr_octet),
+		       merge_ap);
 
 		g_object_ref (merge_ap);
 		priv->ap_list = g_slist_prepend (priv->ap_list, merge_ap);
@@ -1808,8 +1779,7 @@ cull_scan_list (NMDeviceWifi *self)
 
 	priv->scanlist_cull_id = 0;
 
-	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): checking scan list for outdated APs",
-	            nm_device_get_iface (NM_DEVICE (self)));
+	_LOGD (LOGD_WIFI_SCAN, "checking scan list for outdated APs");
 
 	/* Walk the access point list and remove any access points older than
 	 * three times the inactive scan interval.
@@ -1848,23 +1818,22 @@ cull_scan_list (NMDeviceWifi *self)
 
 		bssid = nm_ap_get_address (outdated_ap);
 		ssid = nm_ap_get_ssid (outdated_ap);
-		nm_log_dbg (LOGD_WIFI_SCAN,
-		            "   removing %02x:%02x:%02x:%02x:%02x:%02x (%s%s%s)",
-		            bssid->ether_addr_octet[0], bssid->ether_addr_octet[1],
-		            bssid->ether_addr_octet[2], bssid->ether_addr_octet[3],
-		            bssid->ether_addr_octet[4], bssid->ether_addr_octet[5],
-		            ssid ? "'" : "",
-		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
-		            ssid ? "'" : "");
+		_LOGD (LOGD_WIFI_SCAN,
+		       "   removing %02x:%02x:%02x:%02x:%02x:%02x (%s%s%s)",
+		       bssid->ether_addr_octet[0], bssid->ether_addr_octet[1],
+		       bssid->ether_addr_octet[2], bssid->ether_addr_octet[3],
+		       bssid->ether_addr_octet[4], bssid->ether_addr_octet[5],
+		       ssid ? "'" : "",
+		       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
+		       ssid ? "'" : "");
 
 		remove_access_point (self, outdated_ap);
 		removed++;
 	}
 	g_slist_free (outdated_list);
 
-	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): removed %d APs (of %d)",
-	            nm_device_get_iface (NM_DEVICE (self)),
-	            removed, total);
+	_LOGD (LOGD_WIFI_SCAN, "removed %d APs (of %d)",
+	       removed, total);
 
 	ap_list_dump (self);
 
@@ -1912,10 +1881,8 @@ supplicant_iface_new_bss_cb (NMSupplicantInterface *iface,
 		/* Add the AP to the device's AP list */
 		merge_scanned_ap (self, ap);
 		g_object_unref (ap);
-	} else {
-		nm_log_warn (LOGD_WIFI_SCAN, "(%s): invalid AP properties received",
-		             nm_device_get_iface (NM_DEVICE (self)));
-	}
+	} else
+		_LOGW (LOGD_WIFI_SCAN, "invalid AP properties received");
 
 	/* Remove outdated access points */
 	schedule_scanlist_cull (self);
@@ -1997,19 +1964,20 @@ wifi_secrets_cb (NMActRequest *req,
                  GError *error,
                  gpointer user_data)
 {
-	NMDevice *dev = NM_DEVICE (user_data);
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 
-	g_return_if_fail (req == nm_device_get_act_request (dev));
-	g_return_if_fail (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH);
+	g_return_if_fail (req == nm_device_get_act_request (device));
+	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
 	g_return_if_fail (nm_act_request_get_connection (req) == connection);
 
 	if (error) {
-		nm_log_warn (LOGD_WIFI, "%s", error->message);
-		nm_device_state_changed (dev,
+		_LOGW (LOGD_WIFI, "%s", error->message);
+		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
 	} else
-		nm_device_activate_schedule_stage1_device_prepare (dev);
+		nm_device_activate_schedule_stage1_device_prepare (device);
 }
 
 /*
@@ -2021,11 +1989,11 @@ wifi_secrets_cb (NMActRequest *req,
 static gboolean
 link_timeout_cb (gpointer user_data)
 {
-	NMDevice *dev = NM_DEVICE (user_data);
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	nm_log_warn (LOGD_WIFI, "(%s): link timed out.", nm_device_get_iface (dev));
+	_LOGW (LOGD_WIFI, "link timed out.");
 
 	priv->link_timeout_id = 0;
 
@@ -2033,7 +2001,7 @@ link_timeout_cb (gpointer user_data)
 	 * to reassociate within the timeout period, so the connection must
 	 * fail.
 	 */
-	if (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
+	if (nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED)
 		return FALSE;
 
 	/* If the access point failed, and wasn't found by the supplicant when it
@@ -2044,7 +2012,7 @@ link_timeout_cb (gpointer user_data)
 	if (priv->ssid_found == FALSE && priv->current_ap)
 		set_current_ap (self, NULL, TRUE, TRUE);
 
-	nm_device_state_changed (dev,
+	nm_device_state_changed (device,
 	                         NM_DEVICE_STATE_FAILED,
 	                         priv->ssid_found ? NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT :
 	                                            NM_DEVICE_STATE_REASON_SSID_NOT_FOUND);
@@ -2159,9 +2127,8 @@ handle_8021x_or_psk_auth_fail (NMDeviceWifi *self,
 
 		nm_connection_clear_secrets (connection);
 
-		nm_log_info (LOGD_DEVICE | LOGD_WIFI,
-		             "Activation (%s/wireless): disconnected during association,"
-		             " asking for new key.", nm_device_get_iface (device));
+		_LOGI (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) disconnected during association, asking for new key");
 
 		cleanup_association_attempt (self, TRUE);
 		nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
@@ -2194,11 +2161,10 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 	if (new_state == old_state)
 		return;
 
-	nm_log_info (LOGD_DEVICE | LOGD_WIFI,
-	             "(%s): supplicant interface state: %s -> %s",
-	             nm_device_get_iface (device),
-	             nm_supplicant_interface_state_to_string (old_state),
-	             nm_supplicant_interface_state_to_string (new_state));
+	_LOGI (LOGD_DEVICE | LOGD_WIFI,
+	       "supplicant interface state: %s -> %s",
+	       nm_supplicant_interface_state_to_string (old_state),
+	       nm_supplicant_interface_state_to_string (new_state));
 
 	devstate = nm_device_get_state (device);
 	scanning = nm_supplicant_interface_get_scanning (iface);
@@ -2221,9 +2187,7 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			                         NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE);
 		}
 
-		nm_log_dbg (LOGD_WIFI_SCAN,
-		            "(%s): supplicant ready, requesting initial scan",
-		            nm_device_get_iface (device));
+		_LOGD (LOGD_WIFI_SCAN, "supplicant ready, requesting initial scan");
 
 		/* Request a scan to get latest results */
 		cancel_pending_scan (self);
@@ -2253,13 +2217,11 @@ supplicant_iface_state_cb (NMSupplicantInterface *iface,
 			ssid = nm_setting_wireless_get_ssid (s_wifi);
 			g_return_if_fail (ssid);
 
-			nm_log_info (LOGD_DEVICE | LOGD_WIFI,
-			             "Activation (%s/wireless) Stage 2 of 5 (Device Configure) "
-			             "successful.  %s '%s'.",
-			             nm_device_get_iface (device),
-			             priv->mode == NM_802_11_MODE_AP ? "Started Wi-Fi Hotspot" :
-			                 "Connected to wireless network",
-			             ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
+			_LOGI (LOGD_DEVICE | LOGD_WIFI,
+			       "Activation: (wifi) Stage 2 of 5 (Device Configure) successful.  %s '%s'.",
+			       priv->mode == NM_802_11_MODE_AP ? "Started Wi-Fi Hotspot" :
+			       "Connected to wireless network",
+			       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 			nm_device_activate_schedule_stage3_ip_config_start (device);
 		} else if (devstate == NM_DEVICE_STATE_ACTIVATED)
 			periodic_update (self, NULL);
@@ -2325,9 +2287,9 @@ supplicant_iface_connection_error_cb (NMSupplicantInterface *iface,
 	NMDevice *device = NM_DEVICE (self);
 
 	if (nm_device_is_activating (device)) {
-		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
-		             "Activation (%s/wireless): supplicant association failed: %s - %s",
-		             nm_device_get_iface (device), name, message);
+		_LOGW (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) supplicant association failed: %s - %s",
+		       name, message);
 
 		cleanup_association_attempt (self, TRUE);
 		nm_device_queue_state (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
@@ -2355,9 +2317,7 @@ supplicant_iface_notify_scanning_cb (NMSupplicantInterface *iface,
 	gboolean scanning;
 
 	scanning = nm_supplicant_interface_get_scanning (iface);
-	nm_log_dbg (LOGD_WIFI_SCAN, "(%s): now %s",
-	            nm_device_get_iface (NM_DEVICE (self)),
-	            scanning ? "scanning" : "idle");
+	_LOGD (LOGD_WIFI_SCAN, "now %s", scanning ? "scanning" : "idle");
 
 	g_object_notify (G_OBJECT (self), "scanning");
 
@@ -2405,7 +2365,7 @@ handle_auth_or_fail (NMDeviceWifi *self,
 		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else
-		nm_log_warn (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
+		_LOGW (LOGD_DEVICE, "Cleared secrets, but setting didn't need any secrets.");
 
 	return ret;
 }
@@ -2419,7 +2379,7 @@ handle_auth_or_fail (NMDeviceWifi *self,
 static gboolean
 supplicant_connection_timeout_cb (gpointer user_data)
 {
-	NMDevice *dev = NM_DEVICE (user_data);
+	NMDevice *device = NM_DEVICE (user_data);
 	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMActRequest *req;
@@ -2427,7 +2387,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 
 	cleanup_association_attempt (self, TRUE);
 
-	if (!nm_device_is_activating (dev))
+	if (!nm_device_is_activating (device))
 		return FALSE;
 
 	/* Timed out waiting for a successful connection to the AP; if the AP's
@@ -2436,7 +2396,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	 * information (passwords, pin codes, etc) are wrong.
 	 */
 
-	req = nm_device_get_act_request (dev);
+	req = nm_device_get_act_request (device);
 	g_assert (req);
 
 	connection = nm_act_request_get_connection (req);
@@ -2448,12 +2408,10 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		 * (if any), so supplicant timeouts here are almost certainly the wifi
 		 * driver being really stupid.
 		 */
-		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
-		             "Activation (%s/wireless): %s network creation took "
-		             "too long, failing activation.",
-		             nm_device_get_iface (dev),
-		             priv->mode == NM_802_11_MODE_ADHOC ? "Ad-Hoc" : "Hotspot");
-		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED,
+		_LOGW (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) %s network creation took too long, failing activation",
+		       priv->mode == NM_802_11_MODE_ADHOC ? "Ad-Hoc" : "Hotspot");
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
 		return FALSE;
 	}
@@ -2467,9 +2425,8 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		/* Connection failed; either driver problems, the encryption key is
 		 * wrong, or the passwords or certificates were wrong.
 		 */
-		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
-		             "Activation (%s/wireless): association took too long.",
-		             nm_device_get_iface (dev));
+		_LOGW (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) association took too long");
 
 		/* Ask for new secrets only if we've never activated this connection
 		 * before.  If we've connected before, don't bother the user with
@@ -2479,20 +2436,16 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		if (nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (connection), &timestamp))
 			new_secrets = !timestamp;
 
-		if (handle_auth_or_fail (self, req, new_secrets) == NM_ACT_STAGE_RETURN_POSTPONE) {
-			nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
-			             "Activation (%s/wireless): asking for new secrets",
-			             nm_device_get_iface (dev));
-		} else {
-			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED,
+		if (handle_auth_or_fail (self, req, new_secrets) == NM_ACT_STAGE_RETURN_POSTPONE)
+			_LOGW (LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) asking for new secrets");
+		else {
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED,
 			                         NM_DEVICE_STATE_REASON_NO_SECRETS);
 		}
 	} else {
-		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
-		             "Activation (%s/wireless): association took too long, "
-		             "failing activation.",
-		             nm_device_get_iface (dev));
-		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED,
+		_LOGW (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) association took too long, failing activation");
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED,
 		                         priv->ssid_found ? NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT :
 		                                            NM_DEVICE_STATE_REASON_SSID_NOT_FOUND);
 	}
@@ -2522,13 +2475,13 @@ build_supplicant_config (NMDeviceWifi *self,
 	/* Warn if AP mode may not be supported */
 	if (   g_strcmp0 (nm_setting_wireless_get_mode (s_wireless), NM_SETTING_WIRELESS_MODE_AP) == 0
 	    && nm_supplicant_interface_get_ap_support (priv->sup_iface) == AP_SUPPORT_UNKNOWN) {
-		nm_log_warn (LOGD_WIFI, "Supplicant may not support AP mode; connection may time out.");
+		_LOGW (LOGD_WIFI, "Supplicant may not support AP mode; connection may time out.");
 	}
 
 	if (!nm_supplicant_config_add_setting_wireless (config,
 	                                                s_wireless,
 	                                                fixed_freq)) {
-		nm_log_err (LOGD_WIFI, "Couldn't add 802-11-wireless setting to supplicant config.");
+		_LOGE (LOGD_WIFI, "Couldn't add 802-11-wireless setting to supplicant config.");
 		goto error;
 	}
 
@@ -2543,13 +2496,12 @@ build_supplicant_config (NMDeviceWifi *self,
 		                                                         s_wireless_sec,
 		                                                         s_8021x,
 		                                                         con_uuid)) {
-			nm_log_err (LOGD_WIFI, "Couldn't add 802-11-wireless-security setting to "
-			            "supplicant config.");
+			_LOGE (LOGD_WIFI, "Couldn't add 802-11-wireless-security setting to supplicant config.");
 			goto error;
 		}
 	} else {
 		if (!nm_supplicant_config_add_no_security (config)) {
-			nm_log_err (LOGD_WIFI, "Couldn't add unsecured option to supplicant config.");
+			_LOGE (LOGD_WIFI, "Couldn't add unsecured option to supplicant config.");
 			goto error;
 		}
 	}
@@ -2564,23 +2516,23 @@ error:
 /****************************************************************************/
 
 static void
-update_permanent_hw_address (NMDevice *dev)
+update_permanent_hw_address (NMDevice *device)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	struct ifreq req;
 	struct ethtool_perm_addr *epaddr = NULL;
-	int fd, ret;
+	int fd, ret, errsv;
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		nm_log_err (LOGD_HW, "could not open control socket.");
+		_LOGE (LOGD_HW, "could not open control socket.");
 		return;
 	}
 
 	/* Get permanent MAC address */
 	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
+	strncpy (req.ifr_name, nm_device_get_iface (device), IFNAMSIZ);
 
 	epaddr = g_malloc0 (sizeof (struct ethtool_perm_addr) + ETH_ALEN);
 	epaddr->cmd = ETHTOOL_GPERMADDR;
@@ -2589,16 +2541,17 @@ update_permanent_hw_address (NMDevice *dev)
 
 	errno = 0;
 	ret = ioctl (fd, SIOCETHTOOL, &req);
+	errsv = errno;
 	if ((ret < 0) || !nm_ethernet_address_is_valid ((struct ether_addr *) epaddr->data)) {
-		nm_log_dbg (LOGD_HW | LOGD_ETHER, "(%s): unable to read permanent MAC address (error %d)",
-		            nm_device_get_iface (dev), errno);
+		_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address (error %d)",
+		       errsv);
 		/* Fall back to current address */
-		memcpy (epaddr->data, nm_device_get_hw_address (dev, NULL), ETH_ALEN);
+		memcpy (epaddr->data, nm_device_get_hw_address (device, NULL), ETH_ALEN);
 	}
 
 	if (memcmp (&priv->perm_hw_addr, epaddr->data, ETH_ALEN)) {
 		memcpy (&priv->perm_hw_addr, epaddr->data, ETH_ALEN);
-		g_object_notify (G_OBJECT (dev), NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS);
+		g_object_notify (G_OBJECT (device), NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS);
 	}
 
 	g_free (epaddr);
@@ -2606,27 +2559,26 @@ update_permanent_hw_address (NMDevice *dev)
 }
 
 static void
-update_initial_hw_address (NMDevice *dev)
+update_initial_hw_address (NMDevice *device)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	char *mac_str;
+	char *mac_str = NULL;
 
 	/* This sets initial MAC address from current MAC address. It should only
 	 * be called from NMDevice constructor() to really get the initial address.
 	 */
-	memcpy (priv->initial_hw_addr, nm_device_get_hw_address (dev, NULL), ETH_ALEN);
+	memcpy (priv->initial_hw_addr, nm_device_get_hw_address (device, NULL), ETH_ALEN);
 
-	mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ARPHRD_ETHER);
-	nm_log_dbg (LOGD_DEVICE | LOGD_ETHER, "(%s): read initial MAC address %s",
-	            nm_device_get_iface (dev), mac_str);
+	_LOGD (LOGD_DEVICE | LOGD_ETHER, "read initial MAC address %s",
+	       (mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ARPHRD_ETHER)));
 	g_free (mac_str);
 }
 
 static NMActStageReturn
-act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMActStageReturn ret;
 	NMAccessPoint *ap = NULL;
@@ -2638,7 +2590,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	const char *mode;
 	const char *ap_path;
 
-	ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage1_prepare (dev, reason);
+	ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage1_prepare (device, reason);
 	if (ret != NM_ACT_STAGE_RETURN_SUCCESS)
 		return ret;
 
@@ -2669,7 +2621,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	 * 2.6.30 or so; until that's fixed, disable WPA-protected Ad-Hoc networks.
 	 */
 	if (is_adhoc_wpa (connection)) {
-		nm_log_warn (LOGD_WIFI, "Ad-Hoc WPA disabled due to kernel bugs");
+		_LOGW (LOGD_WIFI, "Ad-Hoc WPA disabled due to kernel bugs");
 		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
@@ -2677,7 +2629,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	/* Set spoof MAC to the interface */
 	cloned_mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
 	if (cloned_mac && (cloned_mac->len == ETH_ALEN))
-		nm_device_set_hw_addr (dev, (const guint8 *) cloned_mac->data, "set", LOGD_WIFI);
+		nm_device_set_hw_addr (device, (const guint8 *) cloned_mac->data, "set", LOGD_WIFI);
 
 	/* AP mode never uses a specific object or existing scanned AP */
 	if (priv->mode != NM_802_11_MODE_AP) {
@@ -2715,7 +2667,7 @@ act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 	if (nm_ap_get_mode (ap) == NM_802_11_MODE_INFRA)
 		nm_ap_set_broadcast (ap, FALSE);
 	else if (nm_ap_is_hotspot (ap))
-		nm_ap_set_address (ap, (const struct ether_addr *) nm_device_get_hw_address (dev, NULL));
+		nm_ap_set_address (ap, (const struct ether_addr *) nm_device_get_hw_address (device, NULL));
 
 	priv->ap_list = g_slist_prepend (priv->ap_list, ap);
 	nm_ap_export_to_dbus (ap);
@@ -2758,12 +2710,11 @@ ensure_hotspot_frequency (NMDeviceWifi *self,
 }
 
 static NMActStageReturn
-act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
-	const char *iface = nm_device_get_iface (dev);
 	NMSupplicantConfig *config = NULL;
 	NMActRequest *req;
 	NMAccessPoint *ap;
@@ -2775,7 +2726,7 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 
 	remove_supplicant_timeouts (self);
 
-	req = nm_device_get_act_request (dev);
+	req = nm_device_get_act_request (device);
 	g_assert (req);
 
 	ap = priv->current_ap;
@@ -2793,10 +2744,9 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	/* If we need secrets, get them */
 	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (setting_name) {
-		nm_log_info (LOGD_DEVICE | LOGD_WIFI,
-		             "Activation (%s/wireless): access point '%s' has security,"
-		             " but secrets are required.",
-		             iface, nm_connection_get_id (connection));
+		_LOGI (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) access point '%s' has security, but secrets are required.",
+		       nm_connection_get_id (connection));
 
 		ret = handle_auth_or_fail (self, req, FALSE);
 		if (ret == NM_ACT_STAGE_RETURN_FAILURE)
@@ -2806,15 +2756,13 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 
 	/* have secrets, or no secrets required */
 	if (nm_connection_get_setting_wireless_security (connection)) {
-		nm_log_info (LOGD_DEVICE | LOGD_WIFI,
-		             "Activation (%s/wireless): connection '%s' has security"
-		             ", and secrets exist.  No new secrets needed.",
-		             iface, nm_connection_get_id (connection));
+		_LOGI (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) connection '%s' has security, and secrets exist.  No new secrets needed.",
+		       nm_connection_get_id (connection));
 	} else {
-		nm_log_info (LOGD_DEVICE | LOGD_WIFI,
-		             "Activation (%s/wireless): connection '%s' requires no "
-		             "security.  No secrets needed.",
-		             iface, nm_connection_get_id (connection));
+		_LOGI (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) connection '%s' requires no security.  No secrets needed.",
+		       nm_connection_get_id (connection));
 	}
 
 	priv->ssid_found = FALSE;
@@ -2829,9 +2777,8 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	/* Build up the supplicant configuration */
 	config = build_supplicant_config (self, connection, nm_ap_get_freq (ap));
 	if (config == NULL) {
-		nm_log_err (LOGD_DEVICE | LOGD_WIFI,
-		             "Activation (%s/wireless): couldn't build wireless configuration.",
-		             iface);
+		_LOGE (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) couldn't build wireless configuration.");
 		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
 		goto out;
 	}
@@ -2843,9 +2790,8 @@ act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	                  self);
 
 	if (!nm_supplicant_interface_set_config (priv->sup_iface, config)) {
-		nm_log_err (LOGD_DEVICE | LOGD_WIFI,
-		            "Activation (%s/wireless): couldn't send wireless "
-		            "configuration to the supplicant.", iface);
+		_LOGE (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) couldn't send wireless configuration to the supplicant.");
 		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
 		goto out;
 	}
@@ -2983,17 +2929,14 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 	 */
 	if (!may_fail && is_static_wep (connection)) {
 		/* Activation failed, we must have bad encryption key */
-		nm_log_warn (LOGD_DEVICE | LOGD_WIFI,
-		             "Activation (%s/wireless): could not get IP configuration for "
-		             "connection '%s'.",
-		             nm_device_get_iface (NM_DEVICE (self)),
-		             nm_connection_get_id (connection));
+		_LOGW (LOGD_DEVICE | LOGD_WIFI,
+		       "Activation: (wifi) could not get IP configuration for connection '%s'.",
+		       nm_connection_get_id (connection));
 
 		ret = handle_auth_or_fail (self, NULL, TRUE);
 		if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
-			nm_log_info (LOGD_DEVICE | LOGD_WIFI,
-			             "Activation (%s/wireless): asking for new secrets",
-			             nm_device_get_iface (NM_DEVICE (self)));
+			_LOGI (LOGD_DEVICE | LOGD_WIFI,
+			       "Activation: (wifi) asking for new secrets");
 		} else {
 			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
 		}
@@ -3007,60 +2950,60 @@ handle_ip_config_timeout (NMDeviceWifi *self,
 
 
 static NMActStageReturn
-act_stage4_ip4_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage4_ip4_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
 	gboolean may_fail = FALSE, chain_up = FALSE;
 	NMActStageReturn ret;
 
-	connection = nm_device_get_connection (dev);
+	connection = nm_device_get_connection (device);
 	g_assert (connection);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	may_fail = nm_setting_ip4_config_get_may_fail (s_ip4);
 
-	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (dev), connection, may_fail, &chain_up, reason);
+	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, reason);
 	if (chain_up)
-		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip4_config_timeout (dev, reason);
+		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip4_config_timeout (device, reason);
 
 	return ret;
 }
 
 static NMActStageReturn
-act_stage4_ip6_config_timeout (NMDevice *dev, NMDeviceStateReason *reason)
+act_stage4_ip6_config_timeout (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
 	NMSettingIP6Config *s_ip6;
 	gboolean may_fail = FALSE, chain_up = FALSE;
 	NMActStageReturn ret;
 
-	connection = nm_device_get_connection (dev);
+	connection = nm_device_get_connection (device);
 	g_assert (connection);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	may_fail = nm_setting_ip6_config_get_may_fail (s_ip6);
 
-	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (dev), connection, may_fail, &chain_up, reason);
+	ret = handle_ip_config_timeout (NM_DEVICE_WIFI (device), connection, may_fail, &chain_up, reason);
 	if (chain_up)
-		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip6_config_timeout (dev, reason);
+		ret = NM_DEVICE_CLASS (nm_device_wifi_parent_class)->act_stage4_ip6_config_timeout (device, reason);
 
 	return ret;
 }
 
 static void
-activation_success_handler (NMDevice *dev)
+activation_success_handler (NMDevice *device)
 {
-	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	int ifindex = nm_device_get_ifindex (dev);
+	int ifindex = nm_device_get_ifindex (device);
 	NMAccessPoint *ap;
 	struct ether_addr bssid = { {0x0, 0x0, 0x0, 0x0, 0x0, 0x0} };
 	NMAccessPoint *tmp_ap = NULL;
 	NMActRequest *req;
 	NMConnection *connection;
 
-	req = nm_device_get_act_request (dev);
+	req = nm_device_get_act_request (device);
 	g_assert (req);
 
 	connection = nm_act_request_get_connection (req);
@@ -3129,18 +3072,18 @@ done:
 }
 
 static void
-activation_failure_handler (NMDevice *dev)
+activation_failure_handler (NMDevice *device)
 {
 	NMConnection *connection;
 
-	connection = nm_device_get_connection (dev);
+	connection = nm_device_get_connection (device);
 	g_assert (connection);
 
 	/* Clear wireless secrets tries on failure */
 	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
 
 	/* Clear any critical protocol notification in the wifi stack */
-	nm_platform_wifi_indicate_addressing_running (nm_device_get_ifindex (dev), FALSE);
+	nm_platform_wifi_indicate_addressing_running (nm_device_get_ifindex (device), FALSE);
 }
 
 static void
@@ -3224,15 +3167,12 @@ set_enabled (NMDevice *device, gboolean enabled)
 
 	priv->enabled = enabled;
 
-	nm_log_dbg (LOGD_WIFI, "(%s): device now %s",
-	            nm_device_get_iface (NM_DEVICE (device)),
-	            enabled ? "enabled" : "disabled");
+	_LOGD (LOGD_WIFI, "device now %s", enabled ? "enabled" : "disabled");
 
 	state = nm_device_get_state (NM_DEVICE (self));
 	if (state < NM_DEVICE_STATE_UNAVAILABLE) {
-		nm_log_dbg (LOGD_WIFI, "(%s): %s blocked by UNMANAGED state",
-		            enabled ? "enable" : "disable",
-		            nm_device_get_iface (NM_DEVICE (device)));
+		_LOGD (LOGD_WIFI, "(%s): device blocked by UNMANAGED state",
+		       enabled ? "enable" : "disable");
 		return;
 	}
 
@@ -3240,11 +3180,10 @@ set_enabled (NMDevice *device, gboolean enabled)
 		gboolean no_firmware = FALSE;
 
 		if (state != NM_DEVICE_STATE_UNAVAILABLE)
-			nm_log_warn (LOGD_CORE, "not in expected unavailable state!");
+			_LOGW (LOGD_CORE, "not in expected unavailable state!");
 
 		if (!nm_device_bring_up (NM_DEVICE (self), TRUE, &no_firmware)) {
-			nm_log_dbg (LOGD_WIFI, "(%s): enable blocked by failure to bring device up",
-			            nm_device_get_iface (NM_DEVICE (device)));
+			_LOGD (LOGD_WIFI, "enable blocked by failure to bring device up");
 
 			if (no_firmware)
 				nm_device_set_firmware_missing (NM_DEVICE (device), TRUE);
@@ -3260,8 +3199,7 @@ set_enabled (NMDevice *device, gboolean enabled)
 			supplicant_interface_release (self);
 		supplicant_interface_acquire (self);
 
-		nm_log_dbg (LOGD_WIFI, "(%s): enable waiting on supplicant state",
-		            nm_device_get_iface (NM_DEVICE (device)));
+		_LOGD (LOGD_WIFI, "enable waiting on supplicant state");
 	} else {
 		nm_device_state_changed (NM_DEVICE (self),
 		                         NM_DEVICE_STATE_UNAVAILABLE,
