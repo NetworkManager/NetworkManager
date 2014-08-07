@@ -24,7 +24,6 @@
 #include <glib-object.h>
 #include "nm-glib-compat.h"
 #include <netinet/in.h>
-#include <net/ethernet.h>
 #include <linux/if.h>
 #include <linux/if_addr.h>
 
@@ -422,7 +421,7 @@ typedef struct {
 	gboolean (*gre_get_properties) (NMPlatform *, int ifindex, NMPlatformGreProperties *props);
 
 	gboolean    (*wifi_get_capabilities) (NMPlatform *, int ifindex, NMDeviceWifiCapabilities *caps);
-	gboolean    (*wifi_get_bssid)        (NMPlatform *, int ifindex, struct ether_addr *bssid);
+	gboolean    (*wifi_get_bssid)        (NMPlatform *, int ifindex, guint8 *bssid);
 	GByteArray *(*wifi_get_ssid)         (NMPlatform *, int ifindex);
 	guint32     (*wifi_get_frequency)    (NMPlatform *, int ifindex);
 	int         (*wifi_get_quality)      (NMPlatform *, int ifindex);
@@ -562,7 +561,7 @@ gboolean nm_platform_vxlan_get_properties (int ifindex, NMPlatformVxlanPropertie
 gboolean nm_platform_gre_get_properties (int ifindex, NMPlatformGreProperties *props);
 
 gboolean    nm_platform_wifi_get_capabilities (int ifindex, NMDeviceWifiCapabilities *caps);
-gboolean    nm_platform_wifi_get_bssid        (int ifindex, struct ether_addr *bssid);
+gboolean    nm_platform_wifi_get_bssid        (int ifindex, guint8 *bssid);
 GByteArray *nm_platform_wifi_get_ssid         (int ifindex);
 guint32     nm_platform_wifi_get_frequency    (int ifindex);
 int         nm_platform_wifi_get_quality      (int ifindex);

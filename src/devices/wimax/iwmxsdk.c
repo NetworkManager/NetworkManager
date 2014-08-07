@@ -28,7 +28,6 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <linux/if.h>
 
 #include <glib.h>
 

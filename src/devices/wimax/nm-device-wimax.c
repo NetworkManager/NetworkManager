@@ -23,10 +23,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-#include <net/ethernet.h>
 #include <sys/socket.h>
-#include <linux/if.h>
-#include <netinet/ether.h>
 
 #include <WiMaxAPI.h>
 #include <WiMaxAPIEx.h>
@@ -335,7 +332,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	mac = nm_setting_wimax_get_mac_address (s_wimax);
-	if (mac && memcmp (mac->data, nm_device_get_hw_address (device, NULL), ETH_ALEN))
+	if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len, nm_device_get_hw_address (device), -1))
 		return FALSE;
 
 	return TRUE;
@@ -375,7 +372,7 @@ complete_connection (NMDevice *device,
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	NMSettingWimax *s_wimax;
 	const GByteArray *setting_mac;
-	const guint8 *hw_address;
+	const char *hw_address;
 	char *format;
 	const char *nsp_name = NULL;
 	NMWimaxNsp *nsp = NULL;
@@ -452,10 +449,10 @@ complete_connection (NMDevice *device,
 	g_object_set (G_OBJECT (s_wimax), NM_SETTING_WIMAX_NETWORK_NAME, nsp_name, NULL);
 
 	setting_mac = nm_setting_wimax_get_mac_address (s_wimax);
-	hw_address = nm_device_get_hw_address (device, NULL);
+	hw_address = nm_device_get_hw_address (device);
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-		if (memcmp (setting_mac->data, hw_address, ETH_ALEN)) {
+		if (!nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, hw_address, -1)) {
 			g_set_error (error,
 				         NM_SETTING_WIMAX_ERROR,
 				         NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
@@ -464,12 +461,10 @@ complete_connection (NMDevice *device,
 		}
 	} else {
 		GByteArray *mac;
-		const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
 
 		/* Lock the connection to this device by default */
-		if (memcmp (hw_address, null_mac, ETH_ALEN)) {
-			mac = g_byte_array_sized_new (ETH_ALEN);
-			g_byte_array_append (mac, hw_address, ETH_ALEN);
+		if (!nm_utils_hwaddr_matches (hw_address, -1, NULL, ETH_ALEN)) {
+			mac = nm_utils_hwaddr_atoba (hw_address, ETH_ALEN);
 			g_object_set (G_OBJECT (s_wimax), NM_SETTING_WIMAX_MAC_ADDRESS, mac, NULL);
 			g_byte_array_free (mac, TRUE);
 		}
@@ -1049,7 +1044,7 @@ set_link_status (NMDeviceWimax *self, WIMAX_API_LINK_STATUS_INFO_EX *link_status
 		conv_rssi = sdk_rssi_to_dbm (link_status->RSSI);
 		conv_cinr = sdk_cinr_to_db (link_status->CINR);
 		conv_tx_pow = sdk_tx_pow_to_dbm (link_status->txPWR);
-		new_bsid = nm_utils_hwaddr_ntoa_len (link_status->bsId, 6);
+		new_bsid = nm_utils_hwaddr_ntoa (link_status->bsId, 6);
 	}
 
 	if (priv->center_freq != center_freq) {

@@ -23,8 +23,6 @@
 #include <glib/gi18n.h>
 #include <gio/gio.h>
 #include <string.h>
-#include <net/ethernet.h>
-#include <netinet/ether.h>
 
 #include "nm-dbus-interface.h"
 #include "nm-setting-bluetooth.h"
@@ -316,9 +314,9 @@ connection_compatible (NMBluezDevice *self, NMConnection *connection)
 		return FALSE;
 	}
 	bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
-	if (!bdaddr || bdaddr->len != ETH_ALEN)
+	if (!bdaddr)
 		return FALSE;
-	if (memcmp (bdaddr->data, priv->bin_address, ETH_ALEN) != 0)
+	if (!nm_utils_hwaddr_matches (bdaddr->data, bdaddr->len, priv->bin_address, ETH_ALEN))
 		return FALSE;
 
 	bt_type = nm_setting_bluetooth_get_connection_type (s_bt);
@@ -619,7 +617,6 @@ _set_property_capabilities (NMBluezDevice *self, const char **uuids)
 static void
 _set_property_address (NMBluezDevice *self, const char *addr)
 {
-	struct ether_addr *tmp;
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
 	if (g_strcmp0 (priv->address, addr) == 0)
@@ -635,15 +632,13 @@ _set_property_address (NMBluezDevice *self, const char *addr)
 		return;
 	}
 
-	tmp = ether_aton (addr);
-	if (!tmp) {
+	if (!nm_utils_hwaddr_aton (addr, priv->bin_address, ETH_ALEN)) {
 		if (priv->address)
 			nm_log_warn (LOGD_BT, "bluez[%s] cannot reset address from '%s' to '%s' (invalid value)", priv->path, priv->address, addr);
 		else
 			nm_log_warn (LOGD_BT, "bluez[%s] cannot reset address from NULL to '%s' (invalid value)", priv->path, addr);
 		return;
 	}
-	memcpy (priv->bin_address, tmp->ether_addr_octet, ETH_ALEN);
 	priv->address = g_strdup (addr);
 	g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_ADDRESS);
 }

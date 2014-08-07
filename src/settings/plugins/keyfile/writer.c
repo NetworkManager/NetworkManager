@@ -40,7 +40,6 @@
 #include <nm-utils.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <netinet/ether.h>
 
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
@@ -421,7 +420,7 @@ mac_address_writer (GKeyFile *file,
 	if (!array || !array->len)
 		return;
 
-	mac = nm_utils_hwaddr_ntoa_len (array->data, array->len);
+	mac = nm_utils_hwaddr_ntoa (array->data, array->len);
 	nm_keyfile_plugin_kf_set_string (file, setting_name, key, mac);
 	g_free (mac);
 }

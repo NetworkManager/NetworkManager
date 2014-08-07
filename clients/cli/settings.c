@@ -19,7 +19,6 @@
 
 #include "config.h"
 
-#include <net/if_arp.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -830,7 +829,7 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		g_object_get_property (G_OBJECT (setting), property_name, &val); \
 		array = g_value_get_boxed (&val); \
 		if (array && array->len) \
-			hwaddr = nm_utils_hwaddr_ntoa_len (array->data, array->len); \
+			hwaddr = nm_utils_hwaddr_ntoa (array->data, array->len); \
 		g_value_unset (&val); \
 		return hwaddr; \
 	}
@@ -2080,7 +2079,7 @@ nmc_property_set_mac (NMSetting *setting, const char *prop, const char *val, GEr
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	array = nm_utils_hwaddr_atoba (val, ARPHRD_ETHER);
+	array = nm_utils_hwaddr_atoba (val, ETH_ALEN);
 	if (!array) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid Ethernet MAC"), val);
 		return FALSE;
@@ -2207,7 +2206,7 @@ done:
 		\
 		list = nmc_strsplit_set (val, " \t,", 0); \
 		for (iter = list; iter && *iter; iter++) { \
-			if (!nm_utils_hwaddr_aton (*iter, ARPHRD_ETHER, buf)) { \
+			if (!nm_utils_hwaddr_aton (*iter, buf, ETH_ALEN)) { \
 				g_set_error (error, 1, 0, _("'%s' is not a valid MAC"), *iter); \
 				g_strfreev (list); \
 				g_slist_free (macaddr_blacklist); \
@@ -2849,7 +2848,7 @@ nmc_property_ib_set_mac (NMSetting *setting, const char *prop, const char *val, 
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	array = nm_utils_hwaddr_atoba (val, ARPHRD_INFINIBAND);
+	array = nm_utils_hwaddr_atoba (val, INFINIBAND_ALEN);
 	if (!array) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid InfiniBand MAC"), val);
 		return FALSE;
@@ -3804,7 +3803,7 @@ _validate_and_remove_wired_mac_blacklist_item (NMSettingWired *setting,
 	gboolean ret;
 	guint8 buf[32];
 
-	if (!nm_utils_hwaddr_aton (mac, ARPHRD_ETHER, buf)) {
+	if (!nm_utils_hwaddr_aton (mac, buf, ETH_ALEN)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid MAC address"), mac);
                 return FALSE;
 	}
@@ -3972,7 +3971,7 @@ _validate_and_remove_wifi_mac_blacklist_item (NMSettingWireless *setting,
 	gboolean ret;
 	guint8 buf[32];
 
-	if (!nm_utils_hwaddr_aton (mac, ARPHRD_ETHER, buf)) {
+	if (!nm_utils_hwaddr_aton (mac, buf, ETH_ALEN)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid MAC address"), mac);
                 return FALSE;
 	}

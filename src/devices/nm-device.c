@@ -35,7 +35,6 @@
 #include <sys/wait.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <linux/if.h>
 #include <netlink/route/addr.h>
 
 #include "gsystem-local-alloc.h"
@@ -199,7 +198,7 @@ typedef struct {
 	RfKillType    rfkill_type;
 	gboolean      firmware_missing;
 	GHashTable *  available_connections;
-	guint8        hw_addr[NM_UTILS_HWADDR_LEN_MAX];
+	char *        hw_addr;
 	guint         hw_addr_len;
 	char *        physical_port_id;
 
@@ -6893,16 +6892,13 @@ nm_device_get_state (NMDevice *self)
 /***********************************************************/
 /* NMConfigDevice interface related stuff */
 
-const guint8 *
-nm_device_get_hw_address (NMDevice *self, guint *out_len)
+const char *
+nm_device_get_hw_address (NMDevice *self)
 {
 	NMDevicePrivate *priv;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
 	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (out_len)
-		*out_len = priv->hw_addr_len;
 
 	return priv->hw_addr_len ? priv->hw_addr : NULL;
 }
@@ -6921,19 +6917,16 @@ nm_device_update_hw_address (NMDevice *self)
 	hwaddr = nm_platform_link_get_address (ifindex, &hwaddrlen);
 	g_assert (hwaddrlen <= sizeof (priv->hw_addr));
 	if (hwaddrlen) {
-		if (hwaddrlen != priv->hw_addr_len || memcmp (priv->hw_addr, hwaddr, hwaddrlen)) {
-			gs_free char *tmp_str = NULL;
+		if (!nm_utils_hwaddr_matches (priv->hw_addr, -1, hwaddr, hwaddrlen)) {
+			priv->hw_addr = nm_utils_hwaddr_ntoa (hwaddr, hwaddrlen);
 
-			memcpy (priv->hw_addr, hwaddr, hwaddrlen);
-
-			_LOGD (LOGD_HW | LOGD_DEVICE, "hardware address now %s",
-			       (tmp_str = nm_utils_hwaddr_ntoa_len (hwaddr, hwaddrlen)));
+			_LOGD (LOGD_HW | LOGD_DEVICE, "hardware address now %s", priv->hw_addr);
 			g_object_notify (G_OBJECT (self), NM_DEVICE_HW_ADDRESS);
 		}
 	} else {
 		/* Invalid or no hardware address */
 		if (priv->hw_addr_len != 0) {
-			memset (priv->hw_addr, 0, sizeof (priv->hw_addr));
+			g_clear_pointer (&priv->hw_addr, g_free);
 			_LOGD (LOGD_HW | LOGD_DEVICE,
 			       "previous hardware address is no longer valid");
 			g_object_notify (G_OBJECT (self), NM_DEVICE_HW_ADDRESS);
@@ -6946,30 +6939,30 @@ gboolean
 nm_device_set_hw_addr (NMDevice *self, const guint8 *addr,
                        const char *detail, guint64 hw_log_domain)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	char *mac_str = NULL;
 	gboolean success = FALSE;
-	guint len;
-	const guint8 *cur_addr = nm_device_get_hw_address (self, &len);
+	const char *cur_addr = nm_device_get_hw_address (self);
 
 	g_return_val_if_fail (addr != NULL, FALSE);
 
 	/* Do nothing if current MAC is same */
-	if (cur_addr && !memcmp (cur_addr, addr, len)) {
+	if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, priv->hw_addr_len)) {
 		_LOGD (LOGD_DEVICE | hw_log_domain, "no MAC address change needed");
 		return TRUE;
 	}
 
-	mac_str = nm_utils_hwaddr_ntoa_len (addr, len);
+	mac_str = nm_utils_hwaddr_ntoa (addr, priv->hw_addr_len);
 
 	/* Can't change MAC address while device is up */
 	nm_device_take_down (self, FALSE);
 
-	success = nm_platform_link_set_address (nm_device_get_ip_ifindex (self), addr, len);
+	success = nm_platform_link_set_address (nm_device_get_ip_ifindex (self), addr, priv->hw_addr_len);
 	if (success) {
 		/* MAC address succesfully changed; update the current MAC to match */
 		nm_device_update_hw_address (self);
-		cur_addr = nm_device_get_hw_address (self, NULL);
-		if (memcmp (cur_addr, addr, len) == 0) {
+		cur_addr = nm_device_get_hw_address (self);
+		if (cur_addr && nm_utils_hwaddr_matches (cur_addr, -1, addr, priv->hw_addr_len)) {
 			_LOGI (LOGD_DEVICE | hw_log_domain, "%s MAC address to %s",
 			       detail, mac_str);
 		} else {
@@ -7023,17 +7016,13 @@ static gboolean
 spec_match_list (NMDevice *self, const GSList *specs)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	char *hwaddr_str;
 	gboolean matched = FALSE;
 
 	if (nm_match_spec_string (specs, "*"))
 		return TRUE;
 
-	if (priv->hw_addr_len) {
-		hwaddr_str = nm_utils_hwaddr_ntoa_len (priv->hw_addr, priv->hw_addr_len);
-		matched = nm_match_spec_hwaddr (specs, hwaddr_str);
-		g_free (hwaddr_str);
-	}
+	if (priv->hw_addr_len)
+		matched = nm_match_spec_hwaddr (specs, priv->hw_addr);
 
 	if (!matched)
 		matched = nm_match_spec_interface_name (specs, nm_device_get_iface (self));
@@ -7268,6 +7257,7 @@ finalize (GObject *object)
 
 	_LOGD (LOGD_DEVICE, "finalize(): %s", G_OBJECT_TYPE_NAME (self));
 
+	g_free (priv->hw_addr);
 	g_slist_free_full (priv->pending_actions, g_free);
 	g_clear_pointer (&priv->physical_port_id, g_free);
 	g_free (priv->udi);
@@ -7381,14 +7371,20 @@ set_property (GObject *object, guint prop_id,
 				count++;
 		}
 		if (count < ETH_ALEN || count > NM_UTILS_HWADDR_LEN_MAX) {
-			g_warn_if_fail (!hw_addr || *hw_addr == '\0');
+			if (hw_addr && *hw_addr) {
+				_LOGW (LOGD_DEVICE, "ignoring hardware address '%s' with unexpected length %d",
+				       hw_addr, count);
+			}
 			break;
 		}
 
 		priv->hw_addr_len = count;
-		if (!nm_utils_hwaddr_aton_len (hw_addr, priv->hw_addr, priv->hw_addr_len)) {
-			g_warning ("Could not parse hw-address '%s'", hw_addr);
-			memset (priv->hw_addr, 0, sizeof (priv->hw_addr));
+		g_free (priv->hw_addr);
+		if (nm_utils_hwaddr_valid (hw_addr, priv->hw_addr_len))
+			priv->hw_addr = g_strdup (hw_addr);
+		else {
+			_LOGW (LOGD_DEVICE, "could not parse hw-address '%s'", hw_addr);
+			priv->hw_addr = NULL;
 		}
 		break;
 	default:
@@ -7518,10 +7514,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_object (value, priv->master);
 		break;
 	case PROP_HW_ADDRESS:
-		if (priv->hw_addr_len)
-			g_value_take_string (value, nm_utils_hwaddr_ntoa_len (priv->hw_addr, priv->hw_addr_len));
-		else
-			g_value_set_string (value, NULL);
+		g_value_set_string (value, priv->hw_addr);
 		break;
 	case PROP_HAS_PENDING_ACTION:
 		g_value_set_boolean (value, nm_device_has_pending_action (self));

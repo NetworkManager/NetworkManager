@@ -29,8 +29,6 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <netinet/ether.h>
-#include <linux/if.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -247,7 +245,7 @@ make_connection_setting (const char *file,
 }
 
 static gboolean
-read_mac_address (shvarFile *ifcfg, const char *key, int type,
+read_mac_address (shvarFile *ifcfg, const char *key, gsize len,
                   GByteArray **array, GError **error)
 {
 	char *value = NULL;
@@ -264,7 +262,7 @@ read_mac_address (shvarFile *ifcfg, const char *key, int type,
 		return TRUE;
 	}
 
-	*array = nm_utils_hwaddr_atoba (value, type);
+	*array = nm_utils_hwaddr_atoba (value, len);
 	if (!*array) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "%s: the MAC address '%s' was invalid.", key, value);
@@ -359,7 +357,7 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 		goto done;
 	}
 
-	if (!read_mac_address (ifcfg, "HWADDR", ARPHRD_ETHER, &ifcfg_mac, error))
+	if (!read_mac_address (ifcfg, "HWADDR", ETH_ALEN, &ifcfg_mac, error))
 		goto done;
 	/* Ensure we got a MAC */
 	if (!ifcfg_mac) {
@@ -434,16 +432,15 @@ fill_ip4_setting_from_ibft (shvarFile *ifcfg,
 
 		/* HWADDR */
 		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_HWADDR_TAG, &skip))) {
-			struct ether_addr *ibft_mac;
+			guint8 *ibft_mac[ETH_ALEN];
 
-			ibft_mac = ether_aton (p);
-			if (!ibft_mac) {
+			if (!nm_utils_hwaddr_aton (p, ibft_mac, ETH_ALEN)) {
 				PARSE_WARNING ("malformed iscsiadm record: invalid hwaddress.");
 				skip = TRUE;
 				continue;
 			}
 
-			if (memcmp (ifcfg_mac->data, (guint8 *) ibft_mac->ether_addr_octet, ETH_ALEN)) {
+			if (!nm_utils_hwaddr_matches (ibft_mac, ETH_ALEN, ifcfg_mac->data, ifcfg_mac->len)) {
 				/* This record isn't for the current device, ignore it */
 				skip = TRUE;
 				continue;
@@ -3546,7 +3543,7 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 
-	if (read_mac_address (ifcfg, "HWADDR", ARPHRD_ETHER, &array, error)) {
+	if (read_mac_address (ifcfg, "HWADDR", ETH_ALEN, &array, error)) {
 		if (array) {
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS, array, NULL);
 			g_byte_array_free (array, TRUE);
@@ -3557,7 +3554,7 @@ make_wireless_setting (shvarFile *ifcfg,
 	}
 
 	array = NULL;
-	if (read_mac_address (ifcfg, "MACADDR", ARPHRD_ETHER, &array, error)) {
+	if (read_mac_address (ifcfg, "MACADDR", ETH_ALEN, &array, error)) {
 		if (array) {
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, array, NULL);
 			g_byte_array_free (array, TRUE);
@@ -3570,13 +3567,12 @@ make_wireless_setting (shvarFile *ifcfg,
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {
 		char **list = NULL, **iter;
-		struct ether_addr addr;
 
 		list = g_strsplit_set (value, " \t", 0);
 		for (iter = list; iter && *iter; iter++) {
 			if (**iter == '\0')
 				continue;
-			if (!ether_aton_r (*iter, &addr)) {
+			if (!nm_utils_hwaddr_valid (*iter, ETH_ALEN)) {
 				PARSE_WARNING ("invalid MAC in HWADDR_BLACKLIST '%s'", *iter);
 				continue;
 			}
@@ -3678,7 +3674,7 @@ make_wireless_setting (shvarFile *ifcfg,
 	if (value) {
 		GByteArray *bssid;
 
-		bssid = nm_utils_hwaddr_atoba (value, ARPHRD_ETHER);
+		bssid = nm_utils_hwaddr_atoba (value, ETH_ALEN);
 		if (!bssid) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Invalid BSSID '%s'", value);
@@ -3841,7 +3837,7 @@ make_wired_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	if (read_mac_address (ifcfg, "HWADDR", ARPHRD_ETHER, &mac, error)) {
+	if (read_mac_address (ifcfg, "HWADDR", ETH_ALEN, &mac, error)) {
 		if (mac) {
 			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
 			g_byte_array_free (mac, TRUE);
@@ -3933,7 +3929,7 @@ make_wired_setting (shvarFile *ifcfg,
 	g_free (value);
 
 	mac = NULL;
-	if (read_mac_address (ifcfg, "MACADDR", ARPHRD_ETHER, &mac, error)) {
+	if (read_mac_address (ifcfg, "MACADDR", ETH_ALEN, &mac, error)) {
 		if (mac) {
 			g_object_set (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, mac, NULL);
 			g_byte_array_free (mac, TRUE);
@@ -3946,13 +3942,12 @@ make_wired_setting (shvarFile *ifcfg,
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {
 		char **list = NULL, **iter;
-		struct ether_addr addr;
 
 		list = g_strsplit_set (value, " \t", 0);
 		for (iter = list; iter && *iter; iter++) {
 			if (**iter == '\0')
 				continue;
-			if (!ether_aton_r (*iter, &addr)) {
+			if (!nm_utils_hwaddr_valid (*iter, ETH_ALEN)) {
 				PARSE_WARNING ("invalid MAC in HWADDR_BLACKLIST '%s'", *iter);
 				continue;
 			}
@@ -4123,7 +4118,7 @@ make_infiniband_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	if (read_mac_address (ifcfg, "HWADDR", ARPHRD_INFINIBAND, &mac, error)) {
+	if (read_mac_address (ifcfg, "HWADDR", INFINIBAND_ALEN, &mac, error)) {
 		if (mac) {
 			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, mac, NULL);
 			g_byte_array_free (mac, TRUE);
@@ -4525,7 +4520,7 @@ make_bridge_setting (shvarFile *ifcfg,
 	g_object_set (s_bridge, NM_SETTING_BRIDGE_INTERFACE_NAME, value, NULL);
 	g_free (value);
 
-	if (read_mac_address (ifcfg, "MACADDR", ARPHRD_ETHER, &array, error)) {
+	if (read_mac_address (ifcfg, "MACADDR", ETH_ALEN, &array, error)) {
 		if (array) {
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_MAC_ADDRESS, array, NULL);
 			g_byte_array_free (array, TRUE);

@@ -24,7 +24,6 @@
 #include <glib/gi18n.h>
 
 #include <linux/if_infiniband.h>
-#include <netinet/ether.h>
 
 #include "nm-device-infiniband.h"
 #include "nm-logging.h"
@@ -209,10 +208,8 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 	if (s_infiniband) {
 		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-		/* We only compare the last 8 bytes */
-		if (mac && memcmp (mac->data + INFINIBAND_ALEN - 8,
-		                   nm_device_get_hw_address (device, NULL) + INFINIBAND_ALEN - 8,
-		                   8))
+		if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len,
+		                                     nm_device_get_hw_address (device), -1))
 			return FALSE;
 	}
 
@@ -228,7 +225,7 @@ complete_connection (NMDevice *device,
 {
 	NMSettingInfiniband *s_infiniband;
 	const GByteArray *setting_mac;
-	const guint8 *hw_address;
+	const char *hw_address;
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_INFINIBAND_SETTING_NAME,
@@ -244,10 +241,10 @@ complete_connection (NMDevice *device,
 	}
 
 	setting_mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-	hw_address = nm_device_get_hw_address (device, NULL);
+	hw_address = nm_device_get_hw_address (device);
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's MAC */
-		if (memcmp (setting_mac->data, hw_address, INFINIBAND_ALEN)) {
+		if (!nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, hw_address, INFINIBAND_ALEN)) {
 			g_set_error_literal (error,
 			                     NM_SETTING_INFINIBAND_ERROR,
 			                     NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
@@ -258,8 +255,7 @@ complete_connection (NMDevice *device,
 		GByteArray *mac;
 
 		/* Lock the connection to this device by default */
-		mac = g_byte_array_sized_new (INFINIBAND_ALEN);
-		g_byte_array_append (mac, hw_address, INFINIBAND_ALEN);
+		mac = nm_utils_hwaddr_atoba (hw_address, INFINIBAND_ALEN);
 		g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_MAC_ADDRESS, mac, NULL);
 		g_byte_array_free (mac, TRUE);
 	}
@@ -274,9 +270,7 @@ static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMSettingInfiniband *s_infiniband = nm_connection_get_setting_infiniband (connection);
-	guint maclen;
-	gconstpointer mac = nm_device_get_hw_address (device, &maclen);
-	static const guint8 null_mac[INFINIBAND_ALEN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	const char *mac = nm_device_get_hw_address (device);
 	GByteArray *array;
 	char *mode_path, *contents = NULL;
 	const char *transport_mode = "datagram";
@@ -286,9 +280,8 @@ update_connection (NMDevice *device, NMConnection *connection)
 		nm_connection_add_setting (connection, (NMSetting *) s_infiniband);
 	}
 
-	if (mac && (maclen == INFINIBAND_ALEN) && (memcmp (mac, null_mac, maclen) != 0)) {
-		array = g_byte_array_sized_new (maclen);
-		g_byte_array_append (array, (guint8 *) mac, maclen);
+	if (mac && !nm_utils_hwaddr_matches (mac, -1, NULL, INFINIBAND_ALEN)) {
+		array = nm_utils_hwaddr_atoba (mac, INFINIBAND_ALEN);
 		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, array, NULL);
 		g_byte_array_unref (array);
 	}
@@ -305,38 +298,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 		g_free (contents);
 	}
 	g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_TRANSPORT_MODE, transport_mode, NULL);
-}
-
-static gboolean
-spec_match_list (NMDevice *device, const GSList *specs)
-{
-	char *hwaddr_str, *spec_str;
-	const GSList *iter;
-
-	if (NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->spec_match_list (device, specs))
-		return TRUE;
-
-	hwaddr_str = nm_utils_hwaddr_ntoa (nm_device_get_hw_address (device, NULL),
-	                                   ARPHRD_INFINIBAND);
-
-	/* InfiniBand hardware address matches only need to match the last
-	 * 8 bytes. In string format, that means we skip the first 36
-	 * characters of hwaddr_str, and the first 40 of the spec (to skip
-	 * "mac:" too).
-	 */
-	for (iter = specs; iter; iter = g_slist_next (iter)) {
-		spec_str = iter->data;
-
-		if (   !g_ascii_strncasecmp (spec_str, "mac:", 4)
-		    && strlen (spec_str) > 40
-		    && !g_ascii_strcasecmp (spec_str + 40, hwaddr_str + 36)) {
-			g_free (hwaddr_str);
-			return TRUE;
-		}
-	}
-
-	g_free (hwaddr_str);
-	return FALSE;
 }
 
 static void
@@ -377,7 +338,6 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 	parent_class->update_connection = update_connection;
-	parent_class->spec_match_list = spec_match_list;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;

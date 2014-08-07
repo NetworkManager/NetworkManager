@@ -21,10 +21,10 @@
 #include "config.h"
 
 #include <string.h>
-#include <netinet/ether.h>
 
 #include "nm-test-device.h"
 #include "nm-device-private.h"
+#include "nm-utils.h"
 
 static GObjectClass *g_object_class;
 

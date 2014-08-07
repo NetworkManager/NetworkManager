@@ -23,7 +23,6 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 
-#include <netinet/ether.h>
 #include <stdlib.h>
 
 #include "gsystem-local-alloc.h"
@@ -118,13 +117,11 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 
 	mac_address = nm_setting_bridge_get_mac_address (s_bridge);
 	if (mac_address) {
-		guint hw_len;
-		const guint8 *hw_addr;
+		const char *hw_addr;
 
-		hw_addr = nm_device_get_hw_address (device, &hw_len);
+		hw_addr = nm_device_get_hw_address (device);
 		if (   !hw_addr
-		    || hw_len != mac_address->len
-		    || memcmp (mac_address->data, hw_addr, hw_len) != 0)
+		    || !nm_utils_hwaddr_matches (hw_addr, -1, mac_address->data, mac_address->len))
 			return FALSE;
 	}
 

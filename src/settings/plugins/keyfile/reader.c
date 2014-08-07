@@ -36,8 +36,6 @@
 #include <nm-setting-8021x.h>
 #include <nm-utils.h>
 #include <arpa/inet.h>
-#include <netinet/ether.h>
-#include <linux/if_infiniband.h>
 #include <string.h>
 
 #include "nm-dbus-glib-types.h"
@@ -557,7 +555,7 @@ mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, cons
 			/* If we found enough it's probably a string-format MAC address */
 			array = g_byte_array_sized_new (i+1);
 			g_byte_array_set_size (array, i+1);
-			if (!nm_utils_hwaddr_aton_len (tmp_string, array->data, array->len)) {
+			if (!nm_utils_hwaddr_aton (tmp_string, array->data, array->len)) {
 				g_byte_array_unref (array);
 				array = NULL;
 			}

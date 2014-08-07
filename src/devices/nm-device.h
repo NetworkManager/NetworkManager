@@ -235,7 +235,7 @@ NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 
 int			nm_device_get_priority (NMDevice *dev);
 
-const guint8 *  nm_device_get_hw_address (NMDevice *dev, guint *out_len);
+const char *    nm_device_get_hw_address   (NMDevice *dev);
 
 NMDhcp4Config * nm_device_get_dhcp4_config (NMDevice *dev);
 NMDhcp6Config * nm_device_get_dhcp6_config (NMDevice *dev);

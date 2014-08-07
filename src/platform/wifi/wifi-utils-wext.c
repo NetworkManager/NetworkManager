@@ -41,7 +41,6 @@
 #include <sys/types.h>
 #include <linux/types.h>
 #include <sys/socket.h>
-#include <linux/if.h>
 #include <linux/wireless.h>
 
 
@@ -230,7 +229,7 @@ wifi_wext_get_ssid (WifiData *data)
 }
 
 static gboolean
-wifi_wext_get_bssid (WifiData *data, struct ether_addr *out_bssid)
+wifi_wext_get_bssid (WifiData *data, guint8 *out_bssid)
 {
 	WifiDataWext *wext = (WifiDataWext *) data;
 	struct iwreq wrq;
@@ -243,7 +242,7 @@ wifi_wext_get_bssid (WifiData *data, struct ether_addr *out_bssid)
 		             wext->parent.iface, strerror (errno));
 		return FALSE;
 	}
-	memcpy (out_bssid->ether_addr_octet, &(wrq.u.ap_addr.sa_data), ETH_ALEN);
+	memcpy (out_bssid, &(wrq.u.ap_addr.sa_data), ETH_ALEN);
 	return TRUE;
 }
 

@@ -22,7 +22,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <netinet/ether.h>
 #include <string.h>
 
 #include <gmodule.h>
@@ -560,7 +559,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 	ids = g_strsplit (str, ";", -1);
 	for (i = 0; ids[i] != NULL; i++) {
 		/* Verify unmanaged specification and add it to the list */
-		if (!strncmp (ids[i], "mac:", 4) && nm_utils_hwaddr_valid (ids[i] + 4)) {
+		if (!strncmp (ids[i], "mac:", 4) && nm_utils_hwaddr_valid (ids[i] + 4, -1)) {
 			specs = g_slist_append (specs, ids[i]);
 		} else if (!strncmp (ids[i], "interface-name:", 15) && nm_utils_iface_valid_name (ids[i] + 15)) {
 			specs = g_slist_append (specs, ids[i]);

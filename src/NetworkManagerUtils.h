@@ -24,12 +24,11 @@
 
 #include <glib.h>
 #include <stdio.h>
-#include <net/ethernet.h>
 
 #include "nm-connection.h"
 #include "nm-platform.h"
 
-gboolean nm_ethernet_address_is_valid (const struct ether_addr *test_addr);
+gboolean nm_ethernet_address_is_valid (const guint8 *test_addr);
 
 in_addr_t nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen);
 void nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct in6_addr *src, guint8 plen);

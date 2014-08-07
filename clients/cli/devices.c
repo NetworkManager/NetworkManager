@@ -23,7 +23,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <netinet/ether.h>
 #include <readline/readline.h>
 
 #include <glib.h>
@@ -2054,7 +2053,7 @@ find_ap_on_device (NMDevice *device, GByteArray *bssid, const char *ssid)
 		} else if (bssid) {
 			/* Parameter is BSSID */
 			const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
-			char *bssid_up = nm_utils_hwaddr_ntoa (bssid->data, ARPHRD_ETHER);
+			char *bssid_up = nm_utils_hwaddr_ntoa (bssid->data, bssid->len);
 
 			/* Compare BSSIDs */
 			if (strcmp (bssid_up, candidate_bssid) == 0) {
@@ -2103,7 +2102,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	/* Get the first compulsory argument (SSID or BSSID) */
 	if (argc > 0) {
 		param_user = *argv;
-		bssid1_arr = nm_utils_hwaddr_atoba (param_user, ARPHRD_ETHER);
+		bssid1_arr = nm_utils_hwaddr_atoba (param_user, ETH_ALEN);
 
 		argc--;
 		argv++;
@@ -2111,7 +2110,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		if (nmc->ask) {
 			ssid_ask = nmc_readline (_("SSID or BSSID: "));
 			param_user = ssid_ask ? ssid_ask : "";
-			bssid1_arr = nm_utils_hwaddr_atoba (param_user, ARPHRD_ETHER);
+			bssid1_arr = nm_utils_hwaddr_atoba (param_user, ETH_ALEN);
 		}
 		if (!ssid_ask) {
 			g_string_printf (nmc->return_text, _("Error: SSID or BSSID are missing."));
@@ -2136,7 +2135,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 				goto error;
 			}
 			bssid = *argv;
-			bssid2_arr = nm_utils_hwaddr_atoba (bssid, ARPHRD_ETHER);
+			bssid2_arr = nm_utils_hwaddr_atoba (bssid, ETH_ALEN);
 			if (!bssid2_arr) {
 				g_string_printf (nmc->return_text, _("Error: bssid argument value '%s' is not a valid BSSID."),
 				                 bssid);

@@ -1266,7 +1266,7 @@ nm_platform_wifi_get_capabilities (int ifindex, NMDeviceWifiCapabilities *caps)
 }
 
 gboolean
-nm_platform_wifi_get_bssid (int ifindex, struct ether_addr *bssid)
+nm_platform_wifi_get_bssid (int ifindex, guint8 *bssid)
 {
 	reset_error ();
 

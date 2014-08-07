@@ -22,8 +22,6 @@
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 #include <string.h>
-#include <netinet/ether.h>
-#include <linux/if_infiniband.h>
 
 #include <nm-utils.h>
 
@@ -1910,7 +1908,7 @@ test_hwaddr_aton_ether_normal (void)
 	guint8 buf[100];
 	guint8 expected[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
 
-	g_assert (nm_utils_hwaddr_aton ("00:11:22:33:44:55", ARPHRD_ETHER, buf) != NULL);
+	g_assert (nm_utils_hwaddr_aton ("00:11:22:33:44:55", buf, ETH_ALEN) != NULL);
 	g_assert (memcmp (buf, expected, sizeof (expected)) == 0);
 }
 
@@ -1923,7 +1921,7 @@ test_hwaddr_aton_ib_normal (void)
 		0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89,
 		0x90 };
 
-	g_assert (nm_utils_hwaddr_aton (source, ARPHRD_INFINIBAND, buf) != NULL);
+	g_assert (nm_utils_hwaddr_aton (source, buf, INFINIBAND_ALEN) != NULL);
 	g_assert (memcmp (buf, expected, sizeof (expected)) == 0);
 }
 
@@ -1933,7 +1931,7 @@ test_hwaddr_aton_no_leading_zeros (void)
 	guint8 buf[100];
 	guint8 expected[ETH_ALEN] = { 0x00, 0x1A, 0x2B, 0x03, 0x44, 0x05 };
 
-	g_assert (nm_utils_hwaddr_aton ("0:1a:2B:3:44:5", ARPHRD_ETHER, buf) != NULL);
+	g_assert (nm_utils_hwaddr_aton ("0:1a:2B:3:44:5", buf, ETH_ALEN) != NULL);
 	g_assert (memcmp (buf, expected, sizeof (expected)) == 0);
 }
 
@@ -1942,7 +1940,70 @@ test_hwaddr_aton_malformed (void)
 {
 	guint8 buf[100];
 
-	g_assert (nm_utils_hwaddr_aton ("0:1a:2B:3:a@%%", ARPHRD_ETHER, buf) == NULL);
+	g_assert (nm_utils_hwaddr_aton ("0:1a:2B:3:a@%%", buf, ETH_ALEN) == NULL);
+}
+
+static void
+test_hwaddr_equal (void)
+{
+	const char *string = "00:1a:2b:03:44:05";
+	const char *upper_string = "00:1A:2B:03:44:05";
+	const char *bad_string = "0:1a:2b:3:44:5";
+	const guint8 binary[ETH_ALEN] = { 0x00, 0x1A, 0x2B, 0x03, 0x44, 0x05 };
+	const char *other_string = "1a:2b:03:44:05:00";
+	const guint8 other_binary[ETH_ALEN] = { 0x1A, 0x2B, 0x03, 0x44, 0x05, 0x00 };
+	const char *long_string = "00:1a:2b:03:44:05:06:07";
+	const guint8 long_binary[8] = { 0x00, 0x1A, 0x2B, 0x03, 0x44, 0x05, 0x06, 0x07 };
+	const char *null_string = "00:00:00:00:00:00";
+	const guint8 null_binary[ETH_ALEN] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+	g_assert (nm_utils_hwaddr_matches (string, -1, string, -1));
+	g_assert (nm_utils_hwaddr_matches (string, -1, upper_string, -1));
+	g_assert (nm_utils_hwaddr_matches (string, -1, bad_string, -1));
+	g_assert (nm_utils_hwaddr_matches (string, -1, binary, sizeof (binary)));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, other_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, other_binary, sizeof (other_binary)));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, long_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, long_binary, sizeof (long_binary)));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, null_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, null_binary, sizeof (null_binary)));
+	g_assert (!nm_utils_hwaddr_matches (string, -1, NULL, ETH_ALEN));
+
+	g_assert (nm_utils_hwaddr_matches (binary, sizeof (binary), string, -1));
+	g_assert (nm_utils_hwaddr_matches (binary, sizeof (binary), upper_string, -1));
+	g_assert (nm_utils_hwaddr_matches (binary, sizeof (binary), bad_string, -1));
+	g_assert (nm_utils_hwaddr_matches (binary, sizeof (binary), binary, sizeof (binary)));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), other_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), other_binary, sizeof (other_binary)));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), long_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), long_binary, sizeof (long_binary)));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), null_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), null_binary, sizeof (null_binary)));
+	g_assert (!nm_utils_hwaddr_matches (binary, sizeof (binary), NULL, ETH_ALEN));
+
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, upper_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, bad_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, binary, sizeof (binary)));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, other_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, other_binary, sizeof (other_binary)));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, long_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_string, -1, long_binary, sizeof (long_binary)));
+	g_assert (nm_utils_hwaddr_matches (null_string, -1, null_string, -1));
+	g_assert (nm_utils_hwaddr_matches (null_string, -1, null_binary, sizeof (null_binary)));
+	g_assert (nm_utils_hwaddr_matches (null_string, -1, NULL, ETH_ALEN));
+
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), upper_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), bad_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), binary, sizeof (binary)));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), other_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), other_binary, sizeof (other_binary)));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), long_string, -1));
+	g_assert (!nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), long_binary, sizeof (long_binary)));
+	g_assert (nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), null_string, -1));
+	g_assert (nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), null_binary, sizeof (null_binary)));
+	g_assert (nm_utils_hwaddr_matches (null_binary, sizeof (null_binary), NULL, ETH_ALEN));
 }
 
 static void
@@ -2658,6 +2719,8 @@ int main (int argc, char **argv)
 	test_hwaddr_aton_ib_normal ();
 	test_hwaddr_aton_no_leading_zeros ();
 	test_hwaddr_aton_malformed ();
+	test_hwaddr_equal ();
+
 	test_ip4_prefix_to_netmask ();
 	test_ip4_netmask_to_prefix ();
 

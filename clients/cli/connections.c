@@ -2472,12 +2472,14 @@ check_and_convert_mac (const char *mac,
                        GError **error)
 {
 	GByteArray *local_mac_array = NULL;
+
 	g_return_val_if_fail (mac_array == NULL || *mac_array == NULL, FALSE);
+	g_return_val_if_fail (type == ARPHRD_ETHER || type == ARPHRD_INFINIBAND, FALSE);
 
 	if (!mac)
 		return TRUE;
 
-	local_mac_array = nm_utils_hwaddr_atoba (mac, type);
+	local_mac_array = nm_utils_hwaddr_atoba (mac, nm_utils_hwaddr_len (type));
 	if (!local_mac_array) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("Error: '%s': '%s' is not a valid %s MAC address."),
@@ -4177,7 +4179,7 @@ cleanup_bt:
 			}
 		}
 
-		if (   !(addr_array = nm_utils_hwaddr_atoba (parent, ARPHRD_ETHER))
+		if (   !(addr_array = nm_utils_hwaddr_atoba (parent, ETH_ALEN))
 		    && !nm_utils_is_uuid (parent)
 		    && !nm_utils_iface_valid_name (parent)) {
 			g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,

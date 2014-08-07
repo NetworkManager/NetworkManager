@@ -22,8 +22,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <net/ethernet.h>
-#include <netinet/ether.h>
 
 #include <glib/gi18n.h>
 #include <gio/gio.h>
@@ -65,7 +63,7 @@ typedef struct {
 
 	NMBluezDevice *bt_device;
 
-	guint8 bdaddr[ETH_ALEN];
+	char *bdaddr;
 	char *name;
 	guint32 capabilities;
 
@@ -181,10 +179,9 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	array = nm_setting_bluetooth_get_bdaddr (s_bt);
-	if (!array || (array->len != ETH_ALEN))
+	if (!array)
 		return FALSE;
-
-	if (memcmp (priv->bdaddr, array->data, ETH_ALEN) != 0)
+	if (!nm_utils_hwaddr_matches (priv->bdaddr, -1, array->data, array->len))
 		return FALSE;
 
 	return TRUE;
@@ -326,7 +323,7 @@ complete_connection (NMDevice *device,
 	setting_bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
 	if (setting_bdaddr) {
 		/* Make sure the setting BT Address (if any) matches the device's */
-		if (memcmp (setting_bdaddr->data, priv->bdaddr, ETH_ALEN)) {
+		if (!nm_utils_hwaddr_matches (setting_bdaddr->data, setting_bdaddr->len, priv->bdaddr, -1)) {
 			g_set_error_literal (error,
 			                     NM_SETTING_BLUETOOTH_ERROR,
 			                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
@@ -335,12 +332,10 @@ complete_connection (NMDevice *device,
 		}
 	} else {
 		GByteArray *bdaddr;
-		const guint8 null_mac[ETH_ALEN] = { 0, 0, 0, 0, 0, 0 };
 
 		/* Lock the connection to this device by default */
-		if (memcmp (priv->bdaddr, null_mac, ETH_ALEN)) {
-			bdaddr = g_byte_array_sized_new (ETH_ALEN);
-			g_byte_array_append (bdaddr, priv->bdaddr, ETH_ALEN);
+		if (!nm_utils_hwaddr_matches (priv->bdaddr, -1, NULL, ETH_ALEN)) {
+			bdaddr = nm_utils_hwaddr_atoba (priv->bdaddr, ETH_ALEN);
 			g_object_set (G_OBJECT (s_bt), NM_SETTING_BLUETOOTH_BDADDR, bdaddr, NULL);
 			g_byte_array_free (bdaddr, TRUE);
 		}
@@ -1073,15 +1068,13 @@ static void
 constructed (GObject *object)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
-	const guint8 *my_hwaddr;
-	guint my_hwaddr_len = 0;
+	const char *my_hwaddr;
 
 	G_OBJECT_CLASS (nm_device_bt_parent_class)->constructed (object);
 
-	my_hwaddr = nm_device_get_hw_address (NM_DEVICE (object), &my_hwaddr_len);
+	my_hwaddr = nm_device_get_hw_address (NM_DEVICE (object));
 	g_assert (my_hwaddr);
-	g_assert_cmpint (my_hwaddr_len, ==, ETH_ALEN);
-	memcpy (priv->bdaddr, my_hwaddr, ETH_ALEN);
+	priv->bdaddr = g_strdup (my_hwaddr);
 
 	/* Watch for BT device property changes */
 	g_signal_connect (priv->bt_device, "notify::" NM_BLUEZ_DEVICE_CONNECTED,
@@ -1168,6 +1161,7 @@ finalize (GObject *object)
 
 	g_free (priv->rfcomm_iface);
 	g_free (priv->name);
+	g_free (priv->bdaddr);
 
 	G_OBJECT_CLASS (nm_device_bt_parent_class)->finalize (object);
 }

@@ -19,10 +19,7 @@
 #ifndef NMT_MAC_ENTRY_H
 #define NMT_MAC_ENTRY_H
 
-#include <linux/if_ether.h>
-#include <linux/if_infiniband.h>
-#include <linux/if_arp.h>
-
+#include "nm-utils.h"
 #include "nmt-newt.h"
 
 G_BEGIN_DECLS

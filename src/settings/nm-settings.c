@@ -1472,12 +1472,11 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	const GByteArray *setting_mac;
-	const guint8 *hwaddr;
-	guint hwaddr_len = 0;
+	const char *hwaddr;
 
 	g_return_val_if_fail (NM_IS_SETTINGS (self), FALSE);
 
-	hwaddr = nm_device_get_hw_address (device, &hwaddr_len);
+	hwaddr = nm_device_get_hw_address (device);
 
 	/* Find a wired connection locked to the given MAC address, if any */
 	g_hash_table_iter_init (&iter, priv->connections);
@@ -1506,10 +1505,9 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 		g_assert (s_wired != NULL);
 
 		setting_mac = nm_setting_wired_get_mac_address (s_wired);
-		if (setting_mac) {
+		if (setting_mac && hwaddr) {
 			/* A connection mac-locked to this device */
-			if (hwaddr_len == setting_mac->len &&
-				!memcmp (setting_mac->data, hwaddr, hwaddr_len))
+			if (nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, hwaddr, -1))
 				return TRUE;
 		} else {
 			/* A connection that applies to any wired device */
@@ -1591,9 +1589,8 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	NMSettingsConnection *added;
 	NMSetting *setting;
 	GError *error = NULL;
-	const guint8 *hw_address;
+	const char *hw_address;
 	char *defname, *uuid;
-	guint len = 0;
 	GByteArray *mac;
 
 	if (!NM_IS_DEVICE_ETHERNET (device))
@@ -1608,7 +1605,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	    || !nm_config_get_ethernet_can_auto_default (priv->config, device))
 		return;
 
-	hw_address = nm_device_get_hw_address (device, &len);
+	hw_address = nm_device_get_hw_address (device);
 	if (!hw_address)
 		return;
 
@@ -1634,8 +1631,7 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	setting = nm_setting_wired_new ();
 	nm_connection_add_setting (connection, setting);
 
-	mac = g_byte_array_sized_new (len);
-	g_byte_array_append (mac, hw_address, len);
+	mac = nm_utils_hwaddr_atoba (hw_address, ETH_ALEN);
 	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
 	g_byte_array_unref (mac);
 

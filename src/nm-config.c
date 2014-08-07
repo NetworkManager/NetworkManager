@@ -260,9 +260,7 @@ void
 nm_config_set_ethernet_no_auto_default (NMConfig *config, NMDevice *device)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
-	const guint8 *hwaddr;
-	guint hwaddr_len;
-	char *current, *hwaddr_str;
+	char *current;
 	GString *updated;
 	GError *error = NULL;
 
@@ -277,10 +275,7 @@ nm_config_set_ethernet_no_auto_default (NMConfig *config, NMDevice *device)
 			g_string_append_c (updated, '\n');
 	}
 
-	hwaddr = nm_device_get_hw_address (device, &hwaddr_len);
-	hwaddr_str = nm_utils_hwaddr_ntoa_len (hwaddr, hwaddr_len);
-	g_string_append (updated, hwaddr_str);
-	g_free (hwaddr_str);
+	g_string_append (updated, nm_device_get_hw_address (device));
 	g_string_append_c (updated, '\n');
 
 	if (!g_file_set_contents (priv->no_auto_default_file, updated->str, updated->len, &error)) {

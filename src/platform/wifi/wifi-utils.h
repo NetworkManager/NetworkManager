@@ -50,8 +50,8 @@ guint32 wifi_utils_find_freq (WifiData *data, const guint32 *freqs);
 /* Caller must free returned byte array */
 GByteArray *wifi_utils_get_ssid (WifiData *data);
 
-/* Caller must free returned byte array */
-gboolean wifi_utils_get_bssid (WifiData *data, struct ether_addr *out_bssid);
+/* out_bssid must be ETH_ALEN bytes */
+gboolean wifi_utils_get_bssid (WifiData *data, guint8 *out_bssid);
 
 /* Returns current bitrate in Kbps */
 guint32 wifi_utils_get_rate (WifiData *data);

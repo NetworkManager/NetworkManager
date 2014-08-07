@@ -51,7 +51,7 @@
  *
  */
 gboolean
-nm_ethernet_address_is_valid (const struct ether_addr *test_addr)
+nm_ethernet_address_is_valid (const guint8 *test_addr)
 {
 	guint8 invalid_addr1[ETH_ALEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 	guint8 invalid_addr2[ETH_ALEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -61,19 +61,19 @@ nm_ethernet_address_is_valid (const struct ether_addr *test_addr)
 	g_return_val_if_fail (test_addr != NULL, FALSE);
 
 	/* Compare the AP address the card has with invalid ethernet MAC addresses. */
-	if (!memcmp (test_addr->ether_addr_octet, &invalid_addr1, ETH_ALEN))
+	if (!memcmp (test_addr, invalid_addr1, ETH_ALEN))
 		return FALSE;
 
-	if (!memcmp (test_addr->ether_addr_octet, &invalid_addr2, ETH_ALEN))
+	if (!memcmp (test_addr, invalid_addr2, ETH_ALEN))
 		return FALSE;
 
-	if (!memcmp (test_addr->ether_addr_octet, &invalid_addr3, ETH_ALEN))
+	if (!memcmp (test_addr, invalid_addr3, ETH_ALEN))
 		return FALSE;
 
-	if (!memcmp (test_addr->ether_addr_octet, &invalid_addr4, ETH_ALEN))
+	if (!memcmp (test_addr, invalid_addr4, ETH_ALEN))
 		return FALSE;
 
-	if (test_addr->ether_addr_octet[0] & 1)			/* Multicast addresses */
+	if (test_addr[0] & 1)			/* Multicast addresses */
 		return FALSE;
 	
 	return TRUE;
@@ -585,18 +585,22 @@ nm_match_spec_string (const GSList *specs, const char *match)
 gboolean
 nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
 {
-	char *hwaddr_match;
-	gboolean matched;
+	const GSList *iter;
 
 	g_return_val_if_fail (hwaddr != NULL, FALSE);
 
-	if (nm_match_spec_string (specs, hwaddr))
-		return TRUE;
+	for (iter = specs; iter; iter = g_slist_next (iter)) {
+		const char *spec_str = iter->data;
 
-	hwaddr_match = g_strdup_printf ("mac:%s", hwaddr);
-	matched = nm_match_spec_string (specs, hwaddr_match);
-	g_free (hwaddr_match);
-	return matched;
+		if (   !g_ascii_strncasecmp (spec_str, "mac:", 4)
+		    && nm_utils_hwaddr_matches (spec_str + 4, -1, hwaddr, -1))
+			return TRUE;
+
+		if (nm_utils_hwaddr_matches (spec_str, -1, hwaddr, -1))
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 gboolean

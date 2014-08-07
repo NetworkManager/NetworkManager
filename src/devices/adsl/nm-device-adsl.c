@@ -44,6 +44,7 @@
 
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-setting-adsl.h"
+#include "nm-utils.h"
 
 #include "nm-device-adsl-glue.h"
 

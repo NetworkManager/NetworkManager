@@ -21,7 +21,6 @@
  */
 
 #include <string.h>
-#include <netinet/ether.h>
 #include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 

@@ -22,7 +22,6 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <string.h>
-#include <netinet/ether.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>

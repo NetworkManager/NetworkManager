@@ -20,8 +20,6 @@
 
 #include <config.h>
 #include <string.h>
-#include <linux/if_infiniband.h>
-#include <netinet/ether.h>
 
 #include "nm-glib-compat.h"
 
@@ -107,9 +105,8 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 {
 	NMSettingConnection *s_con;
 	NMSettingInfiniband *s_infiniband;
-	const char *ctype, *hwaddr_str;
+	const char *ctype, *hwaddr;
 	const GByteArray *mac;
-	guint8 *hwaddr, hwaddr_buf[INFINIBAND_ALEN];
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -128,18 +125,16 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 		return FALSE;
 	}
 
-	hwaddr_str = nm_device_infiniband_get_hw_address (NM_DEVICE_INFINIBAND (device));
-	if (hwaddr_str) {
-		hwaddr = nm_utils_hwaddr_aton (hwaddr_str, ARPHRD_INFINIBAND, hwaddr_buf);
-		if (!hwaddr) {
+	hwaddr = nm_device_infiniband_get_hw_address (NM_DEVICE_INFINIBAND (device));
+	if (hwaddr) {
+		if (!nm_utils_hwaddr_valid (hwaddr, INFINIBAND_ALEN)) {
 			g_set_error (error, NM_DEVICE_INFINIBAND_ERROR, NM_DEVICE_INFINIBAND_ERROR_INVALID_DEVICE_MAC,
 			             "Invalid device MAC address.");
 			return FALSE;
 		}
 		mac = nm_setting_infiniband_get_mac_address (s_infiniband);
 
-		/* We only match against the last 8 bytes */
-		if (mac && hwaddr && memcmp (mac->data + INFINIBAND_ALEN - 8, hwaddr + INFINIBAND_ALEN - 8, 8)) {
+		if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len, hwaddr, -1)) {
 			g_set_error (error, NM_DEVICE_INFINIBAND_ERROR, NM_DEVICE_INFINIBAND_ERROR_MAC_MISMATCH,
 			             "The MACs of the device and the connection didn't match.");
 			return FALSE;

@@ -164,7 +164,7 @@ nmt_mac_entry_set_property (GObject      *object,
 	case PROP_MAC_ADDRESS:
 		addr = g_value_get_boxed (value);
 		if (addr) {
-			addr_str = nm_utils_hwaddr_ntoa_len (addr->data, addr->len);
+			addr_str = nm_utils_hwaddr_ntoa (addr->data, addr->len);
 			nmt_newt_entry_set_text (NMT_NEWT_ENTRY (object), addr_str);
 			g_free (addr_str);
 		} else
@@ -190,7 +190,7 @@ nmt_mac_entry_get_property (GObject    *object,
 		g_value_set_int (value, priv->mac_length);
 		break;
 	case PROP_MAC_ADDRESS:
-		addr = nm_utils_hwaddr_atoba (nmt_newt_entry_get_text (NMT_NEWT_ENTRY (object)), ARPHRD_ETHER);
+		addr = nm_utils_hwaddr_atoba (nmt_newt_entry_get_text (NMT_NEWT_ENTRY (object)), ETH_ALEN);
 		g_value_take_boxed (value, addr);
 		break;
 	default:

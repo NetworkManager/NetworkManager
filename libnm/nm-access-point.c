@@ -21,7 +21,6 @@
 
 #include <config.h>
 #include <string.h>
-#include <netinet/ether.h>
 
 #include "nm-glib-compat.h"
 
@@ -236,11 +235,10 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	const char *ctype, *ap_bssid_str;
+	const char *ctype, *ap_bssid;
 	const GByteArray *setting_ssid;
 	const GByteArray *ap_ssid;
 	const GByteArray *setting_bssid;
-	struct ether_addr *ap_bssid;
 	const char *setting_mode;
 	NM80211Mode ap_mode;
 	const char *setting_band;
@@ -266,17 +264,12 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 		return FALSE;
 
 	/* BSSID checks */
-	ap_bssid_str = nm_access_point_get_bssid (ap);
-	g_warn_if_fail (ap_bssid_str);
+	ap_bssid = nm_access_point_get_bssid (ap);
+	g_warn_if_fail (ap_bssid);
 	setting_bssid = nm_setting_wireless_get_bssid (s_wifi);
-	if (setting_bssid && ap_bssid_str) {
-		g_assert (setting_bssid->len == ETH_ALEN);
-		ap_bssid = ether_aton (ap_bssid_str);
-		g_warn_if_fail (ap_bssid);
-		if (ap_bssid) {
-			if (memcmp (ap_bssid->ether_addr_octet, setting_bssid->data, ETH_ALEN) != 0)
-				return FALSE;
-		}
+	if (setting_bssid && ap_bssid) {
+		if (!nm_utils_hwaddr_matches (ap_bssid, -1, setting_bssid->data, setting_bssid->len))
+			return FALSE;
 	}
 
 	/* Mode */

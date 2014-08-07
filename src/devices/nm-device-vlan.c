@@ -24,8 +24,6 @@
 #include <glib/gi18n.h>
 
 #include <sys/socket.h>
-#include <linux/if.h>
-#include <netinet/ether.h>
 
 #include "nm-device-vlan.h"
 #include "nm-manager.h"
@@ -90,12 +88,12 @@ update_initial_hw_address (NMDevice *dev)
 {
 	NMDeviceVlan *self = NM_DEVICE_VLAN (dev);
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-	gs_free char *mac_str = NULL;
+	const char *mac_str;
 
-	memcpy (priv->initial_hw_addr, nm_device_get_hw_address (dev, NULL), ETH_ALEN);
+	mac_str = nm_device_get_hw_address (dev);
+	nm_utils_hwaddr_aton (mac_str, priv->initial_hw_addr, ETH_ALEN);
 
-	_LOGD (LOGD_DEVICE | LOGD_VLAN, "read initial MAC address %s",
-	       (mac_str = nm_utils_hwaddr_ntoa (priv->initial_hw_addr, ARPHRD_ETHER)));
+	_LOGD (LOGD_DEVICE | LOGD_VLAN, "read initial MAC address %s", mac_str);
 }
 
 static guint32
@@ -160,8 +158,7 @@ match_hwaddr (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hw
 {
 	  NMSettingWired *s_wired;
 	  const GByteArray *mac;
-	  const guint8 *device_mac;
-	  guint device_mac_len;
+	  const char *device_mac;
 
 	  s_wired = nm_connection_get_setting_wired (connection);
 	  if (!s_wired)
@@ -171,10 +168,9 @@ match_hwaddr (NMDevice *device, NMConnection *connection, gboolean fail_if_no_hw
 	  if (!mac)
 		  return !fail_if_no_hwaddr;
 
-	  device_mac = nm_device_get_hw_address (device, &device_mac_len);
+	  device_mac = nm_device_get_hw_address (device);
 
-	  return (   mac->len == device_mac_len
-	          && memcmp (mac->data, device_mac, device_mac_len) == 0);
+	  return nm_utils_hwaddr_matches (mac->data, mac->len, device_mac, -1);
 }
 
 static gboolean

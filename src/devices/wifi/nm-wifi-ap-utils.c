@@ -23,6 +23,7 @@
 #include <stdlib.h>
 
 #include "nm-wifi-ap-utils.h"
+#include "nm-utils.h"
 
 static gboolean
 verify_no_wep (NMSettingWirelessSecurity *s_wsec, const char *tag, GError **error)
@@ -465,7 +466,7 @@ verify_adhoc (NMSettingWirelessSecurity *s_wsec,
 
 gboolean
 nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
-                                 const guint8 ap_bssid[ETH_ALEN],
+                                 const guint8 *ap_bssid,
                                  NM80211Mode ap_mode,
                                  guint32 ap_flags,
                                  guint32 ap_wpa_flags,

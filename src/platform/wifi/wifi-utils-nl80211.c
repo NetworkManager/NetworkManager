@@ -442,7 +442,7 @@ wifi_nl80211_get_ssid (WifiData *data)
 }
 
 static gboolean
-wifi_nl80211_get_bssid (WifiData *data, struct ether_addr *out_bssid)
+wifi_nl80211_get_bssid (WifiData *data, guint8 *out_bssid)
 {
 	WifiDataNl80211 *nl80211 = (WifiDataNl80211 *) data;
 	struct nl80211_bss_info bss_info;

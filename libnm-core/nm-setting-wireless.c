@@ -22,7 +22,6 @@
 
 #include <string.h>
 #include <net/ethernet.h>
-#include <netinet/ether.h>
 #include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
@@ -507,12 +506,11 @@ nm_setting_wireless_add_mac_blacklist_item (NMSettingWireless *setting, const ch
 {
 	NMSettingWirelessPrivate *priv;
 	GSList *iter;
-	guint8 buf[32];
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), FALSE);
 	g_return_val_if_fail (mac != NULL, FALSE);
 
-	if (!nm_utils_hwaddr_aton (mac, ARPHRD_ETHER, buf))
+	if (!nm_utils_hwaddr_valid (mac, ETH_ALEN))
 		return FALSE;
 
 	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
@@ -566,12 +564,11 @@ nm_setting_wireless_remove_mac_blacklist_item_by_value (NMSettingWireless *setti
 {
 	NMSettingWirelessPrivate *priv;
 	GSList *iter;
-	guint8 buf[32];
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), FALSE);
 	g_return_val_if_fail (mac != NULL, FALSE);
 
-	if (!nm_utils_hwaddr_aton (mac, ARPHRD_ETHER, buf))
+	if (!nm_utils_hwaddr_valid (mac, ETH_ALEN))
 		return FALSE;
 
 	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
@@ -801,9 +798,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	for (iter = priv->mac_address_blacklist; iter; iter = iter->next) {
-		struct ether_addr addr;
-
-		if (!ether_aton_r (iter->data, &addr)) {
+		if (!nm_utils_hwaddr_valid (iter->data, ETH_ALEN)) {
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_ERROR,
 			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
@@ -815,9 +810,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	for (iter = priv->seen_bssids; iter; iter = iter->next) {
-		struct ether_addr addr;
-
-		if (!ether_aton_r (iter->data, &addr)) {
+		if (!nm_utils_hwaddr_valid (iter->data, ETH_ALEN)) {
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_ERROR,
 			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,

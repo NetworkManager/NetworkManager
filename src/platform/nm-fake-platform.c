@@ -688,7 +688,7 @@ wifi_get_capabilities (NMPlatform *platform, int ifindex, NMDeviceWifiCapabiliti
 }
 
 static gboolean
-wifi_get_bssid (NMPlatform *platform, int ifindex, struct ether_addr *bssid)
+wifi_get_bssid (NMPlatform *platform, int ifindex, guint8 *bssid)
 {
 	return FALSE;
 }

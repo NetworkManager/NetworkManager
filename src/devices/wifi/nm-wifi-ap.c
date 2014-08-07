@@ -21,7 +21,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <netinet/ether.h>
 
 #include "nm-wifi-ap.h"
 #include "nm-wifi-ap-utils.h"
@@ -45,7 +44,7 @@ typedef struct
 
 	/* Scanned or cached values */
 	GByteArray *	ssid;
-	struct ether_addr	address;
+	guint8			address[ETH_ALEN];
 	NM80211Mode		mode;
 	gint8			strength;
 	guint32			freq;		/* Frequency in MHz; ie 2412 (== 2.412 GHz) */
@@ -176,7 +175,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->freq);
 		break;
 	case PROP_HW_ADDRESS:
-		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->address, ARPHRD_ETHER));
+		g_value_take_string (value, nm_utils_hwaddr_ntoa (&priv->address, ETH_ALEN));
 		break;
 	case PROP_MODE:
 		g_value_set_uint (value, priv->mode);
@@ -408,13 +407,9 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 			nm_ap_set_ssid (ap, ssid);
 			g_byte_array_free (ssid, TRUE);
 		} else if (!strcmp (key, "BSSID")) {
-			struct ether_addr addr;
-
 			if (array->len != ETH_ALEN)
 				return;
-			memset (&addr, 0, sizeof (struct ether_addr));
-			memcpy (&addr, array->data, ETH_ALEN);
-			nm_ap_set_address (ap, &addr);
+			nm_ap_set_address (ap, (guint8 *) array->data);
 		} else if (!strcmp (key, "Rates")) {
 			guint32 maxrate = 0;
 			int i;
@@ -474,7 +469,7 @@ NMAccessPoint *
 nm_ap_new_from_properties (const char *supplicant_path, GHashTable *properties)
 {
 	NMAccessPoint *ap;
-	const struct ether_addr * addr;
+	const guint8 *addr;
 	const char bad_bssid1[ETH_ALEN] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	const char bad_bssid2[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
@@ -489,8 +484,8 @@ nm_ap_new_from_properties (const char *supplicant_path, GHashTable *properties)
 
 	/* ignore APs with invalid BSSIDs */
 	addr = nm_ap_get_address (ap);
-	if (   !(memcmp (addr->ether_addr_octet, bad_bssid1, ETH_ALEN))
-	    || !(memcmp (addr->ether_addr_octet, bad_bssid2, ETH_ALEN))) {
+	if (   !(memcmp (addr, bad_bssid1, ETH_ALEN))
+	    || !(memcmp (addr, bad_bssid2, ETH_ALEN))) {
 		g_object_unref (ap);
 		return NULL;
 	}
@@ -728,7 +723,7 @@ nm_ap_dump (NMAccessPoint *ap, const char *prefix)
 	            prefix,
 	            priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
 	            ap);
-	nm_log_dbg (LOGD_WIFI_SCAN, "    BSSID     " MAC_FMT, MAC_ARG (priv->address.ether_addr_octet));
+	nm_log_dbg (LOGD_WIFI_SCAN, "    BSSID     " MAC_FMT, MAC_ARG (priv->address));
 	nm_log_dbg (LOGD_WIFI_SCAN, "    mode      %d", priv->mode);
 	nm_log_dbg (LOGD_WIFI_SCAN, "    flags     0x%X", priv->flags);
 	nm_log_dbg (LOGD_WIFI_SCAN, "    wpa flags 0x%X", priv->wpa_flags);
@@ -888,14 +883,16 @@ nm_ap_set_rsn_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags)
  * Get/set functions for address
  *
  */
-const struct ether_addr * nm_ap_get_address (const NMAccessPoint *ap)
+const guint8 *
+nm_ap_get_address (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_AP (ap), NULL);
 
-	return &NM_AP_GET_PRIVATE (ap)->address;
+	return NM_AP_GET_PRIVATE (ap)->address;
 }
 
-void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
+void
+nm_ap_set_address (NMAccessPoint *ap, const guint8 *addr)
 {
 	NMAccessPointPrivate *priv;
 
@@ -904,8 +901,8 @@ void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
 
 	priv = NM_AP_GET_PRIVATE (ap);
 
-	if (memcmp (addr, &priv->address, sizeof (priv->address))) {
-		memcpy (&NM_AP_GET_PRIVATE (ap)->address, addr, sizeof (struct ether_addr));
+	if (!nm_utils_hwaddr_matches (addr, ETH_ALEN, priv->address, sizeof (priv->address))) {
+		memcpy (NM_AP_GET_PRIVATE (ap)->address, addr, sizeof (priv->address));
 		g_object_notify (G_OBJECT (ap), NM_AP_HW_ADDRESS);
 	}
 }
@@ -1127,7 +1124,7 @@ nm_ap_check_compatible (NMAccessPoint *self,
 		return FALSE;
 
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
-	if (bssid && memcmp (bssid->data, &priv->address, ETH_ALEN))
+	if (bssid && !nm_utils_hwaddr_matches (bssid->data, bssid->len, priv->address, ETH_ALEN))
 		return FALSE;
 
 	mode = nm_setting_wireless_get_mode (s_wireless);
@@ -1181,7 +1178,7 @@ nm_ap_complete_connection (NMAccessPoint *self,
 	g_return_val_if_fail (connection != NULL, FALSE);
 
 	return nm_ap_utils_complete_connection (priv->ssid,
-	                                        priv->address.ether_addr_octet,
+	                                        priv->address,
 	                                        priv->mode,
 	                                        priv->flags,
 	                                        priv->wpa_flags,
@@ -1224,10 +1221,10 @@ nm_ap_match_in_list (NMAccessPoint *find_ap,
 	for (iter = ap_list; iter; iter = g_slist_next (iter)) {
 		NMAccessPoint * list_ap = NM_AP (iter->data);
 		const GByteArray * list_ssid = nm_ap_get_ssid (list_ap);
-		const struct ether_addr * list_addr = nm_ap_get_address (list_ap);
+		const guint8 * list_addr = nm_ap_get_address (list_ap);
 
 		const GByteArray * find_ssid = nm_ap_get_ssid (find_ap);
-		const struct ether_addr * find_addr = nm_ap_get_address (find_ap);
+		const guint8 * find_addr = nm_ap_get_address (find_ap);
 
 		/* SSID match; if both APs are hiding their SSIDs,
 		 * let matching continue on BSSID and other properties
@@ -1240,11 +1237,8 @@ nm_ap_match_in_list (NMAccessPoint *find_ap,
 		/* BSSID match */
 		if (   (strict_match || nm_ethernet_address_is_valid (find_addr))
 		    && nm_ethernet_address_is_valid (list_addr)
-		    && memcmp (list_addr->ether_addr_octet, 
-		               find_addr->ether_addr_octet,
-		               ETH_ALEN) != 0) {
+		    && !nm_utils_hwaddr_matches (list_addr, ETH_ALEN, find_addr, ETH_ALEN))
 			continue;
-		}
 
 		/* mode match */
 		if (nm_ap_get_mode (list_ap) != nm_ap_get_mode (find_ap))
