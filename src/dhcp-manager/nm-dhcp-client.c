@@ -214,6 +214,8 @@ nm_dhcp_client_stop_pid (pid_t pid, const char *iface)
 {
 	char *name = iface ? g_strdup_printf ("dhcp-client-%s", iface) : NULL;
 
+	g_return_if_fail (pid > 25);
+
 	nm_utils_kill_child_sync (pid, SIGTERM, LOGD_DHCP, name ? name : "dhcp-client", NULL,
 	                          1000 / 2, 1000 / 20);
 	g_free (name);
@@ -232,9 +234,8 @@ stop (NMDhcpClient *self, gboolean release, const GByteArray *duid)
 		/* Clean up the watch handler since we're explicitly killing the daemon */
 		watch_cleanup (self);
 		nm_dhcp_client_stop_pid (priv->pid, priv->iface);
-		priv->pid = -1;
 	}
-
+	priv->pid = -1;
 	priv->info_only = FALSE;
 }
 
