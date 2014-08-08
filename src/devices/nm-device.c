@@ -6917,7 +6917,8 @@ nm_device_update_hw_address (NMDevice *self)
 	hwaddr = nm_platform_link_get_address (ifindex, &hwaddrlen);
 	g_assert (hwaddrlen <= sizeof (priv->hw_addr));
 	if (hwaddrlen) {
-		if (!nm_utils_hwaddr_matches (priv->hw_addr, -1, hwaddr, hwaddrlen)) {
+		if (!priv->hw_addr || !nm_utils_hwaddr_matches (priv->hw_addr, -1, hwaddr, hwaddrlen)) {
+			g_free (priv->hw_addr);
 			priv->hw_addr = nm_utils_hwaddr_ntoa (hwaddr, hwaddrlen);
 
 			_LOGD (LOGD_HW | LOGD_DEVICE, "hardware address now %s", priv->hw_addr);
