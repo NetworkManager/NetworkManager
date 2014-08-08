@@ -328,7 +328,8 @@ static gboolean
 dhclient_start (NMDHCPClient *client,
                 const char *mode_opt,
                 const GByteArray *duid,
-                gboolean release)
+                gboolean release,
+                pid_t *out_pid)
 {
 	NMDHCPDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE (client);
 	GPtrArray *argv = NULL;
@@ -467,13 +468,17 @@ dhclient_start (NMDHCPClient *client,
 	                   &dhclient_child_setup, NULL, &pid, &error)) {
 		g_assert (pid > 0);
 		nm_log_info (log_domain, "dhclient started with pid %d", pid);
-		nm_dhcp_client_watch_child (client, pid);
+		if (release == FALSE)
+			nm_dhcp_client_watch_child (client, pid);
 		priv->pid_file = pid_file;
 	} else {
 		nm_log_warn (log_domain, "dhclient failed to start: '%s'", error->message);
 		g_error_free (error);
 		g_free (pid_file);
 	}
+
+	if (out_pid)
+		*out_pid = pid;
 
 	g_ptr_array_free (argv, TRUE);
 	g_free (system_bus_address_env);
@@ -498,7 +503,7 @@ ip4_start (NMDHCPClient *client,
 		return FALSE;
 	}
 
-	return dhclient_start (client, NULL, NULL, FALSE);
+	return dhclient_start (client, NULL, NULL, FALSE, NULL);
 }
 
 static gboolean
@@ -520,7 +525,7 @@ ip6_start (NMDHCPClient *client,
 		return FALSE;
 	}
 
-	return dhclient_start (client, info_only ? "-S" : "-N", duid, FALSE);
+	return dhclient_start (client, info_only ? "-S" : "-N", duid, FALSE, NULL);
 }
 
 static void
@@ -542,10 +547,9 @@ stop (NMDHCPClient *client, gboolean release, const GByteArray *duid)
 	}
 
 	if (release) {
-		pid_t rpid;
+		pid_t rpid = -1;
 
-		rpid = dhclient_start (client, NULL, duid, TRUE);
-		if (rpid > 0) {
+		if (dhclient_start (client, NULL, duid, TRUE, &rpid)) {
 			/* Wait a few seconds for the release to happen */
 			nm_dhcp_client_stop_pid (rpid, nm_dhcp_client_get_iface (client));
 		}

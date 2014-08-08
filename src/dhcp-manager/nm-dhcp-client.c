@@ -204,9 +204,8 @@ stop (NMDHCPClient *self, gboolean release, const GByteArray *duid)
 		/* Clean up the watch handler since we're explicitly killing the daemon */
 		watch_cleanup (self);
 		nm_dhcp_client_stop_pid (priv->pid, priv->iface);
-		priv->pid = -1;
 	}
-
+	priv->pid = -1;
 	priv->info_only = FALSE;
 }
 
