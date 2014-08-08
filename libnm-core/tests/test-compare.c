@@ -1,5 +1,4 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
 /*
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,18 +15,20 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2011 Red Hat, Inc.
+ * Copyright 2007 - 2014 Red Hat, Inc.
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#include "nm-glib-compat.h"
-
-#include <string.h>
-#include <math.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <dbus/dbus-glib.h>
 
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
+
+#include "nm-test-utils.h"
+
+extern gint _gvalues_compare (const GValue *value1, const GValue *value2);
 
 static void
 compare_ints (void)
@@ -40,13 +41,13 @@ compare_ints (void)
 
 	g_value_set_int (&value1, 5);
 	g_value_set_int (&value2, 5);
-	g_print ("Comparing ints 5 and 5: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) == 0);
 
 	g_value_set_int (&value2, 10);
-	g_print ("Comparing ints 5 and 10: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) < 0);
 
 	g_value_set_int (&value2, 1);
-	g_print ("Comparing ints 5 and 1: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) > 0);
 }
 
 static void
@@ -62,10 +63,12 @@ compare_strings (void)
 
 	g_value_set_string (&value1, str1);
 	g_value_set_string (&value2, str1);
-	g_print ("Comparing identical strings: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) == 0);
 
 	g_value_set_string (&value2, str2);
-	g_print ("Comparing different strings: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) < 0);
+
+	g_assert (_gvalues_compare (&value2, &value1) > 0);
 }
 
 static void
@@ -83,16 +86,16 @@ compare_strv (void)
 
 	g_value_set_boxed (&value1, strv1);
 	g_value_set_boxed (&value2, strv1);
-	g_print ("Comparing identical strv's: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) == 0);
 
 	g_value_set_boxed (&value2, strv2);
-	g_print ("Comparing different strv's: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 
 	g_value_set_boxed (&value2, strv3);
-	g_print ("Comparing different len (smaller) strv's: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 
 	g_value_set_boxed (&value2, strv4);
-	g_print ("Comparing different len (longer) strv's: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 }
 
 static void
@@ -117,17 +120,16 @@ compare_garrays (void)
 
 	g_value_set_boxed (&value1, array1);
 	g_value_set_boxed (&value2, array2);
-
-	g_print ("Comparing identical arrays's: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) == 0);
 
 	g_array_remove_index (array2, 0);
 	g_value_set_boxed (&value2, array2);
-	g_print ("Comparing different length arrays's: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 
 	i = 7;
 	g_array_prepend_val (array2, i);
 	g_value_set_boxed (&value2, array2);
-	g_print ("Comparing different arrays's: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 }
 
 static void
@@ -152,15 +154,15 @@ compare_ptrarrays (void)
 	g_ptr_array_add (array2, "world");
 	g_value_set_boxed (&value2, array2);
 
-	g_print ("Comparing identical ptr arrays's: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) == 0);
 
 	g_ptr_array_add (array2, "boo");
 	g_value_set_boxed (&value2, array2);
-	g_print ("Comparing different len ptr arrays's: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 
 	g_ptr_array_add (array1, "booz");
 	g_value_set_boxed (&value1, array1);
-	g_print ("Comparing different ptr arrays's: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 }
 
 static void
@@ -179,21 +181,23 @@ compare_str_hash (void)
 
 	g_hash_table_insert (hash1, "key1", "hello");
 	g_hash_table_insert (hash1, "key2", "world");
+	g_hash_table_insert (hash1, "key3", "!");
 
-	g_hash_table_insert (hash2, "key1", "hello");
+	g_hash_table_insert (hash2, "key3", "!");
 	g_hash_table_insert (hash2, "key2", "world");
+	g_hash_table_insert (hash2, "key1", "hello");
 
 	g_value_set_boxed (&value1, hash1);
 	g_value_set_boxed (&value2, hash2);
-	g_print ("Comparing identical str hashes: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) == 0);
 
 	g_hash_table_remove (hash2, "key2");
 	g_value_set_boxed (&value2, hash2);
-	g_print ("Comparing different length str hashes: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 
 	g_hash_table_insert (hash2, "key2", "moon");
 	g_value_set_boxed (&value2, hash2);
-	g_print ("Comparing different str hashes: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 }
 
 static GValue *
@@ -209,13 +213,25 @@ str_to_gvalue (const char *str)
 }
 
 static GValue *
-int_to_gvalue (int i)
+uint_to_gvalue (guint i)
 {
 	GValue *value;
 
 	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_INT);
-	g_value_set_int (value, i);
+	g_value_init (value, G_TYPE_UINT);
+	g_value_set_uint (value, i);
+
+	return value;
+}
+
+static GValue *
+double_to_gvalue (double d)
+{
+	GValue *value;
+
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_DOUBLE);
+	g_value_set_double (value, d);
 
 	return value;
 }
@@ -235,22 +251,24 @@ compare_gvalue_hash (void)
 	hash2 = g_hash_table_new (g_str_hash, g_str_equal);
 
 	g_hash_table_insert (hash1, "key1", str_to_gvalue ("hello"));
-	g_hash_table_insert (hash1, "key2", int_to_gvalue (5));
+	g_hash_table_insert (hash1, "key2", uint_to_gvalue (5));
+	g_hash_table_insert (hash1, "key3", double_to_gvalue (123.456));
 
+	g_hash_table_insert (hash2, "key3", double_to_gvalue (123.456));
+	g_hash_table_insert (hash2, "key2", uint_to_gvalue (5));
 	g_hash_table_insert (hash2, "key1", str_to_gvalue ("hello"));
-	g_hash_table_insert (hash2, "key2", int_to_gvalue (5));
 
 	g_value_set_boxed (&value1, hash1);
 	g_value_set_boxed (&value2, hash2);
-	g_print ("Comparing identical gvalue hashes: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) == 0);
 
 	g_hash_table_remove (hash2, "key2");
 	g_value_set_boxed (&value2, hash2);
-	g_print ("Comparing different length str hashes: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 
 	g_hash_table_insert (hash2, "key2", str_to_gvalue ("moon"));
 	g_value_set_boxed (&value2, hash2);
-	g_print ("Comparing different str hashes: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 }
 
 static void
@@ -272,13 +290,14 @@ compare_ip6_addresses (void)
 	guint32 prefix2 = 64;
 	guint32 prefix3 = 0;
 
-	inet_pton (AF_INET6, "1:2:3:4:5:6:7:8", &addr1, sizeof (struct in6_addr));
-	inet_pton (AF_INET6, "ffff:2:3:4:5:6:7:8", &addr2, sizeof (struct in6_addr));
-	inet_pton (AF_INET6, "::", &addr3, sizeof (struct in6_addr));
+	inet_pton (AF_INET6, "1:2:3:4:5:6:7:8", &addr1);
+	inet_pton (AF_INET6, "ffff:2:3:4:5:6:7:8", &addr2);
+	inet_pton (AF_INET6, "::", &addr3);
 
 	/* address 1 */
-	ba1 = g_byte_array_new ();
 	array1 = g_value_array_new (2);
+
+	ba1 = g_byte_array_new ();
 	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
 	g_byte_array_append (ba1, (guint8 *) addr1.s6_addr, 16);
 	g_value_take_boxed (&element, ba1);
@@ -290,9 +309,17 @@ compare_ip6_addresses (void)
 	g_value_array_append (array1, &element);
 	g_value_unset (&element);
 
+	ba1 = g_byte_array_new ();
+	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_byte_array_append (ba1, (guint8 *) addr3.s6_addr, 16);
+	g_value_take_boxed (&element, ba1);
+	g_value_array_append (array1, &element);
+	g_value_unset (&element);
+
 	/* address 2 */
-	ba2 = g_byte_array_new ();
 	array2 = g_value_array_new (2);
+
+	ba2 = g_byte_array_new ();
 	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
 	g_byte_array_append (ba2, (guint8 *) addr2.s6_addr, 16);
 	g_value_take_boxed (&element, ba2);
@@ -304,9 +331,17 @@ compare_ip6_addresses (void)
 	g_value_array_append (array2, &element);
 	g_value_unset (&element);
 
+	ba2 = g_byte_array_new ();
+	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_byte_array_append (ba2, (guint8 *) addr3.s6_addr, 16);
+	g_value_take_boxed (&element, ba2);
+	g_value_array_append (array2, &element);
+	g_value_unset (&element);
+
 	/* address 3 */
-	ba3 = g_byte_array_new ();
 	array3 = g_value_array_new (2);
+
+	ba3 = g_byte_array_new ();
 	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
 	g_byte_array_append (ba3, (guint8 *) addr3.s6_addr, 16);
 	g_value_take_boxed (&element, ba3);
@@ -318,41 +353,44 @@ compare_ip6_addresses (void)
 	g_value_array_append (array3, &element);
 	g_value_unset (&element);
 
+	ba3 = g_byte_array_new ();
+	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_byte_array_append (ba3, (guint8 *) addr3.s6_addr, 16);
+	g_value_take_boxed (&element, ba3);
+	g_value_array_append (array3, &element);
+	g_value_unset (&element);
+
 	g_value_init (&value1, DBUS_TYPE_G_IP6_ADDRESS);
 	g_value_init (&value2, DBUS_TYPE_G_IP6_ADDRESS);
 
 	g_value_set_boxed (&value1, array1);
 	g_value_set_boxed (&value2, array1);
-	g_print ("Comparing identical IPv6 address structures: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) == 0);
 
 	g_value_set_boxed (&value1, array1);
 	g_value_set_boxed (&value2, array2);
-	g_print ("Comparing different IPv6 address structures: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 
 	g_value_set_boxed (&value1, array1);
 	g_value_set_boxed (&value2, array3);
-	g_print ("Comparing different IPv6 address structures: %d\n", _gvalues_compare (&value1, &value2));
+	g_assert (_gvalues_compare (&value1, &value2) != 0);
 }
+
+NMTST_DEFINE ();
 
 int
 main (int argc, char *argv[])
 {
-	DBusGConnection *bus;
+	nmtst_init (&argc, &argv, TRUE);
 
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
+	g_test_add_func ("/libnm/compare/ints", compare_ints);
+	g_test_add_func ("/libnm/compare/strings", compare_strings);
+	g_test_add_func ("/libnm/compare/strv", compare_strv);
+	g_test_add_func ("/libnm/compare/garrays", compare_garrays);
+	g_test_add_func ("/libnm/compare/ptrarrays", compare_ptrarrays);
+	g_test_add_func ("/libnm/compare/str_hash", compare_str_hash);
+	g_test_add_func ("/libnm/compare/gvalue_hash", compare_gvalue_hash);
+	g_test_add_func ("/libnm/compare/ip6_addresses", compare_ip6_addresses);
 
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
-
-	compare_ints ();
-	compare_strings ();
-	compare_strv ();
-	compare_garrays ();
-	compare_ptrarrays ();
-	compare_str_hash ();
-	compare_gvalue_hash ();
-	compare_ip6_addresses ();
-
-	return 0;
+	return g_test_run ();
 }

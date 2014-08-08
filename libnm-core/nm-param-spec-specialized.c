@@ -37,7 +37,7 @@ struct _NMParamSpecSpecialized {
 /***********************************************************/
 /* _gvalues_compare */
 
-static gint _gvalues_compare (const GValue *value1, const GValue *value2);
+gint _gvalues_compare (const GValue *value1, const GValue *value2);
 
 static gboolean
 type_is_fixed_size (GType type, gsize *tsize)
