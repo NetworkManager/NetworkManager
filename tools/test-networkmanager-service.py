@@ -793,9 +793,9 @@ class Connection(dbus.service.Object):
 
     @dbus.service.method(dbus_interface=IFACE_CONNECTION, in_signature='', out_signature='')
     def Delete(self):
-        self.remove_from_connection()
         self.remove_func(self)
         self.Removed()
+        self.remove_from_connection()
 
     @dbus.service.signal(IFACE_CONNECTION, signature='')
     def Removed(self):
