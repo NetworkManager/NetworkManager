@@ -394,8 +394,10 @@ nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
 
 		param_spec = g_object_class_find_property (class, prop_name);
 		if (!param_spec) {
-			/* Oh, we're so nice and only warn, maybe it should be a fatal error? */
-			g_warning ("Ignoring invalid property '%s'", prop_name);
+			/* Assume that any unrecognized property either can be ignored, or
+			 * else has a backward-compatibility equivalent.
+			 */
+			g_debug ("Ignoring unrecognized property '%s'", prop_name);
 			continue;
 		}
 
