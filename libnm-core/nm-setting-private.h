@@ -26,12 +26,6 @@
 
 #include "nm-core-internal.h"
 
-#define NM_SETTING_SECRET_FLAGS_ALL \
-	(NM_SETTING_SECRET_FLAG_NONE | \
-	 NM_SETTING_SECRET_FLAG_AGENT_OWNED | \
-	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
-	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
-
 /**
  * NMSettingVerifyResult:
  * @NM_SETTING_VERIFY_SUCCESS: the setting verifies successfully
