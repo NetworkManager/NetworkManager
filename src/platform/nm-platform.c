@@ -1448,6 +1448,27 @@ nm_platform_mesh_set_ssid (int ifindex, const guint8 *ssid, gsize len)
 	return klass->mesh_set_ssid (platform, ifindex, ssid, len);
 }
 
+#define TO_STRING_DEV_BUF_SIZE (5+15+1)
+static void
+_to_string_dev (int ifindex, char *buf, size_t size)
+{
+	g_assert (buf && size >= TO_STRING_DEV_BUF_SIZE);
+
+	if (ifindex) {
+		const char *name = ifindex > 0 ? nm_platform_link_get_name (ifindex) : NULL;
+
+		strcpy (buf, " dev ");
+		buf += 5;
+		size -= 5;
+
+		if (name)
+			g_strlcpy (buf, name, size);
+		else
+			g_snprintf (buf, size, "%d", ifindex);
+	} else
+		buf[0] = 0;
+}
+
 /******************************************************************/
 
 GArray *
@@ -2130,27 +2151,6 @@ source_to_string (NMPlatformSource source)
 		break;
 	}
 	return "unknown";
-}
-
-#define TO_STRING_DEV_BUF_SIZE (5+15+1)
-static void
-_to_string_dev (int ifindex, char *buf, size_t size)
-{
-	g_assert (buf && size >= TO_STRING_DEV_BUF_SIZE);
-
-	if (ifindex){
-		const char *name = ifindex > 0 ? nm_platform_link_get_name (ifindex) : NULL;
-
-		strcpy (buf, " dev ");
-		buf += 5;
-		size -= 5;
-
-		if (name)
-			g_strlcpy (buf, name, size);
-		else
-			g_snprintf (buf, size, "%d", ifindex);
-	} else
-		buf[0] = 0;
 }
 
 static const char *
