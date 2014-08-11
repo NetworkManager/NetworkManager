@@ -91,13 +91,13 @@ test_ip4_address (void)
 	g_array_unref (addresses);
 
 	/* Remove address */
-	g_assert (nm_platform_ip4_address_delete (ifindex, addr, IP4_PLEN));
+	g_assert (nm_platform_ip4_address_delete (ifindex, addr, IP4_PLEN, 0));
 	no_error ();
 	g_assert (!nm_platform_ip4_address_exists (ifindex, addr, IP4_PLEN));
 	accept_signal (address_removed);
 
 	/* Remove address again */
-	g_assert (nm_platform_ip4_address_delete (ifindex, addr, IP4_PLEN));
+	g_assert (nm_platform_ip4_address_delete (ifindex, addr, IP4_PLEN, 0));
 	no_error ();
 
 	free_signal (address_added);
@@ -196,7 +196,7 @@ test_ip4_address_external (void)
 	g_assert (nm_platform_ip4_address_exists (ifindex, addr, IP4_PLEN));
 	accept_signal (address_added);
 	/*run_command ("ip address delete %s/%d dev %s", IP4_ADDRESS, IP4_PLEN, DEVICE_NAME);
-	g_assert (nm_platform_ip4_address_delete (ifindex, addr, IP4_PLEN));
+	g_assert (nm_platform_ip4_address_delete (ifindex, addr, IP4_PLEN, 0));
 	no_error ();
 	g_assert (!nm_platform_ip4_address_exists (ifindex, addr, IP4_PLEN));
 	accept_signal (address_removed);*/

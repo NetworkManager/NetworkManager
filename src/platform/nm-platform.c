@@ -1567,9 +1567,10 @@ nm_platform_ip6_address_add (int ifindex,
 }
 
 gboolean
-nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen)
+nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen, in_addr_t peer_address)
 {
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
+	char str_peer[NM_UTILS_INET_ADDRSTRLEN];
 
 	reset_error ();
 
@@ -1577,10 +1578,14 @@ nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen)
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (klass->ip4_address_delete, FALSE);
 
-	debug ("address: deleting IPv4 address %s/%d, ifindex %d%s",
-	       nm_utils_inet4_ntop (address, NULL), plen, ifindex,
+	debug ("address: deleting IPv4 address %s/%d, %s%s%sifindex %d%s",
+	       nm_utils_inet4_ntop (address, NULL), plen,
+	       peer_address ? "peer " : "",
+	       peer_address ? nm_utils_inet4_ntop (peer_address, str_peer) : "",
+	       peer_address ? ", " : "",
+	       ifindex,
 	       _to_string_dev (ifindex, str_dev, sizeof (str_dev)));
-	return klass->ip4_address_delete (platform, ifindex, address, plen);
+	return klass->ip4_address_delete (platform, ifindex, address, plen, peer_address);
 }
 
 gboolean
@@ -1744,7 +1749,7 @@ nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresses)
 		address = &g_array_index (addresses, NMPlatformIP4Address, i);
 
 		if (!array_contains_ip4_address (known_addresses, address))
-			nm_platform_ip4_address_delete (ifindex, address->address, address->plen);
+			nm_platform_ip4_address_delete (ifindex, address->address, address->plen, address->peer_address);
 	}
 	g_array_free (addresses, TRUE);
 

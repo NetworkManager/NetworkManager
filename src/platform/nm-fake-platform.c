@@ -901,7 +901,7 @@ ip6_address_add (NMPlatform *platform, int ifindex,
 }
 
 static gboolean
-ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in_addr_t peer_address)
 {
 	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
 	int i;
@@ -909,7 +909,8 @@ ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
 	for (i = 0; i < priv->ip4_addresses->len; i++) {
 		NMPlatformIP4Address *address = &g_array_index (priv->ip4_addresses, NMPlatformIP4Address, i);
 
-		if (address->ifindex == ifindex && address->plen == plen && address->address == addr) {
+		if (address->ifindex == ifindex && address->plen == plen && address->address == addr &&
+		    (!peer_address || address->peer_address == peer_address)) {
 			NMPlatformIP4Address deleted_address;
 
 			memcpy (&deleted_address, address, sizeof (deleted_address));
