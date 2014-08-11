@@ -45,6 +45,15 @@
 #include "nm-posix-signals.h"
 
 /*
+ * Some toolchains (E.G. uClibc 0.9.33 and earlier) don't export
+ * CLOCK_BOOTTIME even though the kernel supports it, so provide a
+ * local definition
+ */
+#ifndef CLOCK_BOOTTIME
+#define CLOCK_BOOTTIME 7
+#endif
+
+/*
  * nm_ethernet_address_is_valid
  *
  * Compares an Ethernet address against known invalid addresses.
