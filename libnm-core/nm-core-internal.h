@@ -45,5 +45,12 @@ gboolean    _nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *s
                                                            NMIP4Address       *address,
                                                            const char         *label);
 
+/* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
+ * connection can be replaced by a already-defined connection. This flag only
+ * takes into account properties marked with the %NM_SETTING_PARAM_INFERRABLE
+ * flag.
+ */
+#define NM_SETTING_COMPARE_FLAG_INFERRABLE 0x80000000
+
 
 #endif

@@ -24,6 +24,8 @@
 #include "nm-setting.h"
 #include "nm-glib-compat.h"
 
+#include "nm-core-internal.h"
+
 #define NM_SETTING_SECRET_FLAGS_ALL \
 	(NM_SETTING_SECRET_FLAG_NONE | \
 	 NM_SETTING_SECRET_FLAG_AGENT_OWNED | \
@@ -72,13 +74,6 @@ gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
                                                NMSettingClearSecretsWithFlagsFn func,
                                                gpointer user_data);
 
-
-/* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
- * connection can be replaced by a already-defined connection. This flag only
- * takes into account properties marked with the %NM_SETTING_PARAM_INFERRABLE
- * flag.
- */
-#define NM_SETTING_COMPARE_FLAG_INFERRABLE 0x80000000
 
 /* The property of the #NMSetting should be considered during comparisons that
  * use the %NM_SETTING_COMPARE_FLAG_INFERRABLE flag. Properties that don't have
