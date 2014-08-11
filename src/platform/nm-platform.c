@@ -1449,24 +1449,27 @@ nm_platform_mesh_set_ssid (int ifindex, const guint8 *ssid, gsize len)
 }
 
 #define TO_STRING_DEV_BUF_SIZE (5+15+1)
-static void
+static const char *
 _to_string_dev (int ifindex, char *buf, size_t size)
 {
 	g_assert (buf && size >= TO_STRING_DEV_BUF_SIZE);
 
 	if (ifindex) {
 		const char *name = ifindex > 0 ? nm_platform_link_get_name (ifindex) : NULL;
+		char *buf2;
 
 		strcpy (buf, " dev ");
-		buf += 5;
+		buf2 = buf + 5;
 		size -= 5;
 
 		if (name)
-			g_strlcpy (buf, name, size);
+			g_strlcpy (buf2, name, size);
 		else
-			g_snprintf (buf, size, "%d", ifindex);
+			g_snprintf (buf2, size, "%d", ifindex);
 	} else
 		buf[0] = 0;
+
+	return buf;
 }
 
 /******************************************************************/
@@ -1566,26 +1569,34 @@ nm_platform_ip6_address_add (int ifindex,
 gboolean
 nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen)
 {
+	char str_dev[TO_STRING_DEV_BUF_SIZE];
+
 	reset_error ();
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (klass->ip4_address_delete, FALSE);
 
-	debug ("address: deleting IPv4 address %s/%d", nm_utils_inet4_ntop (address, NULL), plen);
+	debug ("address: deleting IPv4 address %s/%d, ifindex %d%s",
+	       nm_utils_inet4_ntop (address, NULL), plen, ifindex,
+	       _to_string_dev (ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip4_address_delete (platform, ifindex, address, plen);
 }
 
 gboolean
 nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen)
 {
+	char str_dev[TO_STRING_DEV_BUF_SIZE];
+
 	reset_error ();
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (plen > 0, FALSE);
 	g_return_val_if_fail (klass->ip6_address_delete, FALSE);
 
-	debug ("address: deleting IPv6 address %s/%d", nm_utils_inet6_ntop (&address, NULL), plen);
+	debug ("address: deleting IPv6 address %s/%d, ifindex %d%s",
+	       nm_utils_inet6_ntop (&address, NULL), plen, ifindex,
+	       _to_string_dev (ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip6_address_delete (platform, ifindex, address, plen);
 }
 
@@ -1900,24 +1911,32 @@ nm_platform_ip6_route_add (int ifindex, NMPlatformSource source,
 gboolean
 nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metric)
 {
+	char str_dev[TO_STRING_DEV_BUF_SIZE];
+
 	reset_error ();
 
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (klass->ip4_route_delete, FALSE);
 
-	debug ("route: deleting IPv4 route %s/%d, metric=%d", nm_utils_inet4_ntop (network, NULL), plen, metric);
+	debug ("route: deleting IPv4 route %s/%d, metric=%d, ifindex %d%s",
+	       nm_utils_inet4_ntop (network, NULL), plen, metric, ifindex,
+	       _to_string_dev (ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip4_route_delete (platform, ifindex, network, plen, metric);
 }
 
 gboolean
 nm_platform_ip6_route_delete (int ifindex, struct in6_addr network, int plen, int metric)
 {
+	char str_dev[TO_STRING_DEV_BUF_SIZE];
+
 	reset_error ();
 
 	g_return_val_if_fail (platform, FALSE);
 	g_return_val_if_fail (klass->ip6_route_delete, FALSE);
 
-	debug ("route: deleting IPv6 route %s/%d, metric=%d", nm_utils_inet6_ntop (&network, NULL), plen, metric);
+	debug ("route: deleting IPv6 route %s/%d, metric=%d, ifindex %d%s",
+	       nm_utils_inet6_ntop (&network, NULL), plen, metric, ifindex,
+	       _to_string_dev (ifindex, str_dev, sizeof (str_dev)));
 	return klass->ip6_route_delete (platform, ifindex, network, plen, metric);
 }
 
