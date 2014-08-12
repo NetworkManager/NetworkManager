@@ -119,8 +119,6 @@ global:
 	nm_connection_get_virtual_device_description;
 	nm_connection_get_virtual_iface_name;
 	nm_connection_is_type;
-	nm_connection_lookup_setting_type;
-	nm_connection_lookup_setting_type_by_quark;
 	nm_connection_need_secrets;
 	nm_connection_new;
 	nm_connection_new_from_hash;
@@ -678,6 +676,8 @@ global:
 	nm_setting_ip6_config_remove_dns_search_by_value;
 	nm_setting_ip6_config_remove_route;
 	nm_setting_ip6_config_remove_route_by_value;
+	nm_setting_lookup_type;
+	nm_setting_lookup_type_by_quark;
 	nm_setting_need_secrets;
 	nm_setting_new_from_hash;
 	nm_setting_olpc_mesh_error_get_type;

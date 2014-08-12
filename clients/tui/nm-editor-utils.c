@@ -329,7 +329,7 @@ nm_editor_utils_create_connection (GType             type,
 		master_s_con = nm_connection_get_setting_connection (master);
 		master_setting_type = nm_setting_connection_get_connection_type (master_s_con);
 		master_uuid = nm_setting_connection_get_uuid (master_s_con);
-		master_type = nm_connection_lookup_setting_type (master_setting_type);
+		master_type = nm_setting_lookup_type (master_setting_type);
 	}
 
 	types = nm_editor_utils_get_connection_type_list ();
@@ -401,7 +401,7 @@ nm_editor_utils_get_connection_type_data (NMConnection *conn)
 	g_return_val_if_fail (s_con != NULL, NULL);
 
 	conn_type = nm_setting_connection_get_connection_type (s_con);
-	conn_gtype = nm_connection_lookup_setting_type (conn_type);
+	conn_gtype = nm_setting_lookup_type (conn_type);
 	g_return_val_if_fail (conn_gtype != G_TYPE_INVALID, NULL);
 
 	types = nm_editor_utils_get_connection_type_list ();

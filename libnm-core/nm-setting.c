@@ -225,8 +225,16 @@ _nm_setting_is_base_type (NMSetting *setting)
 	return _nm_setting_type_is_base_type (G_OBJECT_TYPE (setting));
 }
 
+/**
+ * nm_setting_lookup_type:
+ * @name: a setting name
+ *
+ * Returns the #GType of the setting's class for a given setting name.
+ *
+ * Returns: the #GType of the setting's class
+ **/
 GType
-_nm_setting_lookup_setting_type (const char *name)
+nm_setting_lookup_type (const char *name)
 {
 	SettingInfo *info;
 
@@ -238,8 +246,17 @@ _nm_setting_lookup_setting_type (const char *name)
 	return info ? info->type : G_TYPE_INVALID;
 }
 
+/**
+ * nm_setting_lookup_type_by_quark:
+ * @error_quark: a setting error quark
+ *
+ * Returns the #GType of the setting's class for a given setting error quark.
+ * Useful for figuring out which setting a returned error is for.
+ *
+ * Returns: the #GType of the setting's class
+ **/
 GType
-_nm_setting_lookup_setting_type_by_quark (GQuark error_quark)
+nm_setting_lookup_type_by_quark (GQuark error_quark)
 {
 	SettingInfo *info;
 	GHashTableIter iter;

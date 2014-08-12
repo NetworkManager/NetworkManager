@@ -229,6 +229,9 @@ typedef void (*NMSettingValueIterFn) (NMSetting *setting,
 
 GType nm_setting_get_type (void);
 
+GType nm_setting_lookup_type (const char *name);
+GType nm_setting_lookup_type_by_quark (GQuark error_quark);
+
 /**
  * NMSettingHashFlags:
  * @NM_SETTING_HASH_FLAG_ALL: hash all properties (including secrets)

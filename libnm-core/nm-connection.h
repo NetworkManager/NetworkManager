@@ -209,10 +209,6 @@ GHashTable   *nm_connection_to_hash       (NMConnection *connection,
 
 void          nm_connection_dump          (NMConnection *connection);
 
-GType         nm_connection_lookup_setting_type (const char *name);
-
-GType         nm_connection_lookup_setting_type_by_quark (GQuark error_quark);
-
 /* Helpers */
 const char *  nm_connection_get_uuid            (NMConnection *connection);
 const char *  nm_connection_get_id              (NMConnection *connection);

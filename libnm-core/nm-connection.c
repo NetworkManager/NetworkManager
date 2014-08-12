@@ -124,35 +124,6 @@ static NMSettingVerifyResult _nm_connection_verify (NMConnection *connection, GE
 
 /*************************************************************/
 
-/**
- * nm_connection_lookup_setting_type:
- * @name: a setting name
- *
- * Returns the #GType of the setting's class for a given setting name.
- *
- * Returns: the #GType of the setting's class
- **/
-GType
-nm_connection_lookup_setting_type (const char *name)
-{
-	return _nm_setting_lookup_setting_type (name);
-}
-
-/**
- * nm_connection_lookup_setting_type_by_quark:
- * @error_quark: a setting error quark
- *
- * Returns the #GType of the setting's class for a given setting error quark.
- * Useful for figuring out which setting a returned error is for.
- *
- * Returns: the #GType of the setting's class
- **/
-GType
-nm_connection_lookup_setting_type_by_quark (GQuark error_quark)
-{
-	return _nm_setting_lookup_setting_type_by_quark (error_quark);
-}
-
 static void
 setting_changed_cb (NMSetting *setting,
                     GParamSpec *pspec,
@@ -259,7 +230,7 @@ nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (name != NULL, NULL);
 
-	type = nm_connection_lookup_setting_type (name);
+	type = nm_setting_lookup_type (name);
 
 	return type ? nm_connection_get_setting (connection, type) : NULL;
 }
@@ -327,7 +298,7 @@ hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
 
 	g_hash_table_iter_init (&iter, new);
 	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
-		GType type = nm_connection_lookup_setting_type (setting_name);
+		GType type = nm_setting_lookup_type (setting_name);
 
 		if (type) {
 			NMSetting *setting = nm_setting_new_from_hash (type, setting_hash);
@@ -964,7 +935,7 @@ nm_connection_update_secrets (NMConnection *connection,
 	 */
 	g_hash_table_iter_init (&iter, secrets);
 	while (g_hash_table_iter_next (&iter, (gpointer) &key, NULL)) {
-		if (_nm_setting_lookup_setting_type (key) != G_TYPE_INVALID) {
+		if (nm_setting_lookup_type (key) != G_TYPE_INVALID) {
 			/* @secrets looks like a hashed connection */
 			hashed_connection = TRUE;
 			break;

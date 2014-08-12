@@ -698,7 +698,7 @@ nmtst_create_minimal_connection (const char *id, const char *uuid, const char *t
 		uuid = uuid_free = nm_utils_uuid_generate ();
 
 	if (type) {
-		GType type_g = nm_connection_lookup_setting_type (type);
+		GType type_g = nm_setting_lookup_type (type);
 
 		g_assert (type_g != G_TYPE_INVALID);
 

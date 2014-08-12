@@ -1172,7 +1172,7 @@ read_setting (GKeyFile *file, const char *keyfile_path, const char *group)
 	if (alias)
 		group = alias;
 
-	type = nm_connection_lookup_setting_type (group);
+	type = nm_setting_lookup_type (group);
 	if (type) {
 		setting = g_object_new (type, NULL);
 		nm_setting_enumerate_values (setting, read_one_setting_value, &info);
@@ -1289,7 +1289,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 				NMSetting *base_setting;
 				GType base_setting_type;
 
-				base_setting_type = nm_connection_lookup_setting_type (ctype);
+				base_setting_type = nm_setting_lookup_type (ctype);
 				if (base_setting_type != G_TYPE_INVALID) {
 					base_setting = (NMSetting *) g_object_new (base_setting_type, NULL);
 					g_assert (base_setting);
@@ -1334,7 +1334,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	if (!nm_connection_verify (connection, &verify_error)) {
 		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 			         "invalid or missing connection property '%s/%s'",
-			         verify_error ? g_type_name (nm_connection_lookup_setting_type_by_quark (verify_error->domain)) : "(unknown)",
+			         verify_error ? g_type_name (nm_setting_lookup_type_by_quark (verify_error->domain)) : "(unknown)",
 			         (verify_error && verify_error->message) ? verify_error->message : "(unknown)");
 		g_clear_error (&verify_error);
 		g_object_unref (connection);

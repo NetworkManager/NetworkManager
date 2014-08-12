@@ -532,7 +532,7 @@ impl_vpn_plugin_need_secrets (NMVpnPlugin *plugin,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
 		             "The connection was invalid: '%s' / '%s' invalid: %d.",
-		             g_type_name (nm_connection_lookup_setting_type_by_quark (cnfh_err->domain)),
+		             g_type_name (nm_setting_lookup_type_by_quark (cnfh_err->domain)),
 		             cnfh_err->message, cnfh_err->code);
 		g_error_free (cnfh_err);
 		return FALSE;
