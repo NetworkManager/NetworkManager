@@ -16,6 +16,8 @@
 #
 # Copyright 2009 - 2014 Red Hat, Inc.
 
+from __future__ import print_function
+
 from gi.repository import NetworkManager, GObject
 import argparse, datetime, re, sys
 import xml.etree.ElementTree as ET
@@ -76,7 +78,7 @@ def init_constants(girxml):
 
 def get_prop_type(setting, pspec, propxml):
     prop_type = pspec.value_type.name
-    if type_name_map.has_key(prop_type):
+    if prop_type in type_name_map:
         prop_type = type_name_map[prop_type]
     if prop_type is None:
         prop_type = ''
@@ -88,7 +90,7 @@ def get_docs(setting, pspec, propxml):
         return None
 
     doc = doc_xml.text
-    if propxml.attrib.has_key('deprecated'):
+    if 'deprecated' in propxml.attrib:
         doc = doc + ' Deprecated: ' + propxml.attrib['deprecated']
 
     doc = re.sub(r'\n\s*', r' ', doc)
@@ -134,7 +136,7 @@ def escape(val):
     return str(val).replace('"', '&quot;')
 
 def usage():
-    print "Usage: %s --gir FILE --output FILE" % sys.argv[0]
+    print("Usage: %s --gir FILE --output FILE" % sys.argv[0])
     exit()
 
 parser = argparse.ArgumentParser()
