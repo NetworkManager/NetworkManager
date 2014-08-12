@@ -226,20 +226,22 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA) &&
-	    strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE) &&
-	    strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM)) {
+	if (   !priv->protocol
+	    || (   strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOA)
+	        && strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE)
+	        && strcmp (priv->protocol, NM_SETTING_ADSL_PROTOCOL_IPOATM))){
 		g_set_error (error,
 		             NM_SETTING_ADSL_ERROR,
 		             NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,
 		             _("'%s' is not a valid value for the property"),
-		             priv->protocol);
+		             priv->protocol ? priv->protocol : "(null)");
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_ADSL_SETTING_NAME, NM_SETTING_ADSL_PROTOCOL);
 		return FALSE;
 	}
 
-	if (strcmp (priv->encapsulation, NM_SETTING_ADSL_ENCAPSULATION_VCMUX) &&
-	    strcmp (priv->encapsulation, NM_SETTING_ADSL_ENCAPSULATION_LLC) ) {
+	if (   priv->encapsulation
+	    && (   strcmp (priv->encapsulation, NM_SETTING_ADSL_ENCAPSULATION_VCMUX)
+	        && strcmp (priv->encapsulation, NM_SETTING_ADSL_ENCAPSULATION_LLC) )) {
 		g_set_error (error,
 		             NM_SETTING_ADSL_ERROR,
 		             NM_SETTING_ADSL_ERROR_INVALID_PROPERTY,

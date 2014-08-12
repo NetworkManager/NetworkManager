@@ -992,7 +992,7 @@ create_pppd_cmd_line (NMPPPManager *self,
 
 			if (g_strcmp0 (encaps, NM_SETTING_ADSL_ENCAPSULATION_LLC) == 0)
 				nm_cmd_line_add_string (cmd, "llc-encaps");
-			else if (g_strcmp0 (encaps, NM_SETTING_ADSL_ENCAPSULATION_VCMUX) == 0)
+			else /*if (g_strcmp0 (encaps, NM_SETTING_ADSL_ENCAPSULATION_VCMUX) == 0)*/
 				nm_cmd_line_add_string (cmd, "vc-encaps");
 
 		} else if (!strcmp (protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE)) {
