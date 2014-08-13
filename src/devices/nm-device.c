@@ -3296,9 +3296,9 @@ nm_device_dhcp6_renew (NMDevice *self, gboolean release)
 /******************************************/
 
 static gboolean
-linklocal6_config_is_ready (const NMIP6Config *ip6_config)
+have_ip6_address (const NMIP6Config *ip6_config, gboolean linklocal)
 {
-	int i;
+	guint i;
 
 	if (!ip6_config)
 		return FALSE;
@@ -3306,7 +3306,7 @@ linklocal6_config_is_ready (const NMIP6Config *ip6_config)
 	for (i = 0; i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
 		const NMPlatformIP6Address *addr = nm_ip6_config_get_address (ip6_config, i);
 
-		if (IN6_IS_ADDR_LINKLOCAL (&addr->address) &&
+		if ((IN6_IS_ADDR_LINKLOCAL (&addr->address) == linklocal) &&
 		    !(addr->flags & IFA_F_TENTATIVE))
 			return TRUE;
 	}
@@ -3346,7 +3346,7 @@ linklocal6_complete (NMDevice *self)
 	const char *method;
 
 	g_assert (priv->linklocal6_timeout_id);
-	g_assert (linklocal6_config_is_ready (priv->ip6_config));
+	g_assert (have_ip6_address (priv->ip6_config, TRUE));
 
 	linklocal6_cleanup (self);
 
@@ -3377,7 +3377,7 @@ linklocal6_start (NMDevice *self)
 
 	linklocal6_cleanup (self);
 
-	if (linklocal6_config_is_ready (priv->ip6_config))
+	if (have_ip6_address (priv->ip6_config, TRUE))
 		return NM_ACT_STAGE_RETURN_SUCCESS;
 
 	connection = nm_device_get_connection (self);
@@ -3609,8 +3609,17 @@ rdisc_ra_timeout (NMRDisc *rdisc, NMDevice *self)
 	 */
 
 	_LOGD (LOGD_IP6, "timed out waiting for IPv6 router advertisement");
-	if (priv->ip6_state == IP_CONF)
-		nm_device_activate_schedule_ip6_config_timeout (self);
+	if (priv->ip6_state == IP_CONF) {
+		/* If RA is our only source of addressing information and we don't
+		 * ever receive one, then time out IPv6.  But if there is other
+		 * IPv6 configuration, like manual IPv6 addresses or external IPv6
+		 * config, consider that sufficient for IPv6 success.
+		 */
+		if (have_ip6_address (priv->ip6_config, FALSE))
+			nm_device_activate_schedule_ip6_config_result (self);
+		else
+			nm_device_activate_schedule_ip6_config_timeout (self);
+	}
 }
 
 static gboolean
@@ -5859,7 +5868,7 @@ update_ip_config (NMDevice *self, gboolean initial)
 
 		/* Check this before modifying ext_ip6_config */
 		linklocal6_just_completed = priv->linklocal6_timeout_id &&
-		                            linklocal6_config_is_ready (priv->ext_ip6_config);
+		                            have_ip6_address (priv->ext_ip6_config, TRUE);
 
 		if (priv->ac_ip6_config)
 			nm_ip6_config_subtract (priv->ext_ip6_config, priv->ac_ip6_config);
