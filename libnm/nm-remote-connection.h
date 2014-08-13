@@ -55,7 +55,7 @@ typedef enum {
 GQuark nm_remote_connection_error_quark (void);
 
 /* Properties */
-#define NM_REMOTE_CONNECTION_BUS             "bus"
+#define NM_REMOTE_CONNECTION_DBUS_CONNECTION "dbus-connection"
 #define NM_REMOTE_CONNECTION_UNSAVED         "unsaved"
 #define NM_REMOTE_CONNECTION_VISIBLE         "visible"
 

@@ -33,9 +33,6 @@
 #include "nm-glib-compat.h"
 #include "nm-dbus-helpers-private.h"
 
-#define NM_REMOTE_CONNECTION_DBUS_CONNECTION "dbus-connection"
-#define NM_REMOTE_CONNECTION_DBUS_PATH "dbus-path"
-
 static void nm_remote_connection_initable_iface_init (GInitableIface *iface);
 static void nm_remote_connection_async_initable_iface_init (GAsyncInitableIface *iface);
 
@@ -46,9 +43,7 @@ G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, NM_TYPE_CONNE
 
 enum {
 	PROP_0,
-	PROP_BUS,
 	PROP_DBUS_CONNECTION,
-	PROP_DBUS_PATH,
 	PROP_UNSAVED,
 	PROP_VISIBLE,
 
@@ -689,43 +684,6 @@ nm_remote_connection_init (NMRemoteConnection *self)
 {
 }
 
-static GObject *
-constructor (GType type, guint n_construct_properties,
-             GObjectConstructParam *construct_properties)
-{
-	static GParamSpec *nm_connection_path = NULL;
-	static GParamSpec *nm_remote_connection_dbus_path = NULL;
-	int i, path_index = -1, dbus_path_index = -1;
-
-	if (!nm_connection_path) {
-		nm_connection_path =
-			g_object_class_find_property (g_type_class_peek (NM_TYPE_CONNECTION),
-			                              NM_CONNECTION_PATH);
-		nm_remote_connection_dbus_path =
-			g_object_class_find_property (g_type_class_peek (NM_TYPE_REMOTE_CONNECTION),
-			                              NM_REMOTE_CONNECTION_DBUS_PATH);
-	}
-
-	/* Find the two properties */
-	for (i = 0; i < n_construct_properties; i++) {
-		if (construct_properties[i].pspec == nm_connection_path)
-			path_index = i;
-		else if (construct_properties[i].pspec == nm_remote_connection_dbus_path)
-			dbus_path_index = i;
-	}
-	g_assert (path_index != -1 && dbus_path_index != -1);
-
-	/* If NMRemoteConnection:dbus-path is set, and NMConnection:path
-	 * is not, then copy the value of the former to the latter.
-	 */
-	if (g_value_get_string (construct_properties[dbus_path_index].value) &&
-	    !g_value_get_string (construct_properties[path_index].value))
-		construct_properties[path_index].value = construct_properties[dbus_path_index].value;
-
-	return G_OBJECT_CLASS (nm_remote_connection_parent_class)->
-		constructor (type, n_construct_properties, construct_properties);
-}
-
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -750,21 +708,9 @@ set_property (GObject *object, guint prop_id,
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_BUS:
 	case PROP_DBUS_CONNECTION:
 		/* Construct only */
-		/* priv->bus is set from either of two properties so that it (a) remains
-		 * backwards compatible with the previous "bus" property, and that (b)
-		 * it can be created just like an NMObject using the "dbus-connection",
-		 * even though it's not a subclass of NMObject.  So don't overwrite the
-		 * a valid value that the other property set with NULL, if one of the
-		 * properties isn't specified at construction time.
-		 */
-		if (!priv->bus)
-			priv->bus = g_value_dup_boxed (value);
-		break;
-	case PROP_DBUS_PATH:
-		/* Don't need to do anything; see constructor(). */
+		priv->bus = g_value_dup_boxed (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -802,26 +748,16 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	g_type_class_add_private (object_class, sizeof (NMRemoteConnectionPrivate));
 
 	/* virtual methods */
-	object_class->constructor = constructor;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
 	/* Properties */
 	/**
-	 * NMRemoteConnection:bus:
+	 * NMRemoteConnection:dbus-connection:
 	 *
 	 * The #DBusGConnection that the #NMRemoteConnection is connected to.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_BUS,
-		 g_param_spec_boxed (NM_REMOTE_CONNECTION_BUS, "", "",
-		                     DBUS_TYPE_G_CONNECTION,
-		                     G_PARAM_WRITABLE |
-		                     G_PARAM_CONSTRUCT_ONLY |
-		                     G_PARAM_STATIC_STRINGS));
-
-	/* These are needed so _nm_object_create() can create NMRemoteConnections */
 	g_object_class_install_property
 		(object_class, PROP_DBUS_CONNECTION,
 		 g_param_spec_boxed (NM_REMOTE_CONNECTION_DBUS_CONNECTION, "", "",
@@ -829,13 +765,6 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		                     G_PARAM_WRITABLE |
 		                     G_PARAM_CONSTRUCT_ONLY |
 		                     G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_DBUS_PATH,
-		 g_param_spec_string (NM_REMOTE_CONNECTION_DBUS_PATH, "", "",
-		                      NULL,
-		                      G_PARAM_WRITABLE |
-		                      G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMRemoteConnection:unsaved:
