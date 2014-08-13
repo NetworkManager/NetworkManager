@@ -3707,6 +3707,10 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	if (priv->hw_addr_len)
 		nm_rdisc_set_lladdr (priv->rdisc, (const char *) priv->hw_addr, priv->hw_addr_len);
 
+	/* Apply any manual configuration before starting RA */
+	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+		_LOGW (LOGD_IP6, "failed to set WWAN IPv6 configuration");
+
 	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
