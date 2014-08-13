@@ -3627,6 +3627,10 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	}
 	nm_rdisc_set_iid (priv->rdisc, iid);
 
+	/* Apply any manual configuration before starting RA */
+	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+		_LOGW (LOGD_IP6, "failed to apply manual IPv6 configuration");
+
 	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
