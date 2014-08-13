@@ -710,6 +710,30 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 	}
 }
 
+static gboolean
+_normalize_infiniband_mtu (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingInfiniband *s_infini = nm_connection_get_setting_infiniband (self);
+
+	if (s_infini) {
+		const char *transport_mode = nm_setting_infiniband_get_transport_mode (s_infini);
+		guint32 max_mtu = 0;
+
+		if (transport_mode) {
+			if (!strcmp (transport_mode, "datagram"))
+				max_mtu = 2044;
+			else if (!strcmp (transport_mode, "connected"))
+				max_mtu = 65520;
+
+			if (max_mtu && nm_setting_infiniband_get_mtu (s_infini) > max_mtu) {
+				g_object_set (s_infini, NM_SETTING_INFINIBAND_MTU, max_mtu, NULL);
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
+
 /**
  * nm_connection_verify:
  * @connection: the #NMConnection to verify
@@ -924,6 +948,7 @@ nm_connection_normalize (NMConnection *connection,
 	was_modified |= _normalize_virtual_iface_name (connection);
 	was_modified |= _normalize_connection_slave_type (connection);
 	was_modified |= _normalize_ip_config (connection, parameters);
+	was_modified |= _normalize_infiniband_mtu (connection, parameters);
 
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);

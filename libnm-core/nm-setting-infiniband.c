@@ -194,6 +194,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingConnection *s_con;
 	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (setting);
+	guint32 normerr_max_mtu = 0;
 
 	if (priv->mac_address && priv->mac_address->len != INFINIBAND_ALEN) {
 		g_set_error_literal (error,
@@ -206,10 +207,10 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	if (!g_strcmp0 (priv->transport_mode, "datagram")) {
 		if (priv->mtu > 2044)
-			priv->mtu = 2044;
+			normerr_max_mtu = 2044;
 	} else if (!g_strcmp0 (priv->transport_mode, "connected")) {
 		if (priv->mtu > 65520)
-			priv->mtu = 65520;
+			normerr_max_mtu = 65520;
 	} else {
 		g_set_error_literal (error,
 		                     NM_SETTING_INFINIBAND_ERROR,
@@ -285,6 +286,18 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				}
 			}
 		}
+	}
+
+	/* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
+
+	if (normerr_max_mtu > 0) {
+		g_set_error (error,
+		             NM_SETTING_INFINIBAND_ERROR,
+		             NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY,
+		             _("mtu for transport mode '%s' can be at most %d but it is %d"),
+		             priv->transport_mode, normerr_max_mtu, priv->mtu);
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_INFINIBAND_SETTING_NAME, NM_SETTING_INFINIBAND_MTU);
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 
 	return TRUE;

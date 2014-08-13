@@ -3059,6 +3059,50 @@ test_connection_normalize_slave_type_2 (void)
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
 }
 
+static void
+test_connection_normalize_infiniband_mtu (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingInfiniband *s_infini;
+
+	con = nmtst_create_minimal_connection ("test_connection_normalize_infiniband_mtu", NULL,
+	                                       NM_SETTING_INFINIBAND_SETTING_NAME, NULL);
+
+	s_infini = nm_connection_get_setting_infiniband (con);
+	g_object_set (s_infini,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",
+	              NULL);
+	nmtst_assert_connection_verifies_and_normalizable (con);
+
+	g_object_set (s_infini,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
+	              NM_SETTING_INFINIBAND_MTU, (guint) 2044,
+	              NULL);
+	nmtst_assert_connection_verifies_without_normalization (con);
+	g_assert_cmpint (2044, ==, nm_setting_infiniband_get_mtu (s_infini));
+
+	g_object_set (s_infini,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
+	              NM_SETTING_INFINIBAND_MTU, (guint) 2045,
+	              NULL);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_INFINIBAND_ERROR, NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY);
+	g_assert_cmpint (2044, ==, nm_setting_infiniband_get_mtu (s_infini));
+
+	g_object_set (s_infini,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",
+	              NM_SETTING_INFINIBAND_MTU, (guint) 65520,
+	              NULL);
+	nmtst_assert_connection_verifies_without_normalization (con);
+	g_assert_cmpint (65520, ==, nm_setting_infiniband_get_mtu (s_infini));
+
+	g_object_set (s_infini,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",
+	              NM_SETTING_INFINIBAND_MTU, (guint) 65521,
+	              NULL);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_INFINIBAND_ERROR, NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY);
+	g_assert_cmpint (65520, ==, nm_setting_infiniband_get_mtu (s_infini));
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -3103,6 +3147,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_connection_normalize_type", test_connection_normalize_type);
 	g_test_add_func ("/core/general/test_connection_normalize_slave_type_1", test_connection_normalize_slave_type_1);
 	g_test_add_func ("/core/general/test_connection_normalize_slave_type_2", test_connection_normalize_slave_type_2);
+	g_test_add_func ("/core/general/test_connection_normalize_infiniband_mtu", test_connection_normalize_infiniband_mtu);
 
 	g_test_add_func ("/core/general/test_setting_connection_permissions_helpers", test_setting_connection_permissions_helpers);
 	g_test_add_func ("/core/general/test_setting_connection_permissions_property", test_setting_connection_permissions_property);
