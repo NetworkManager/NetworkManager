@@ -1413,6 +1413,22 @@ _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
 	NMSettingConnection *s_con;
 	const char *con_name;
 
+	if (!all_settings) {
+		/* nm_setting_verify() was called without passing on any other settings.
+		 * Perform a relaxed verification, the setting might be valid when checked
+		 * together with a NMSettingConnection as part of a NMConnection. */
+		if (interface_name && !nm_utils_iface_valid_name (interface_name)) {
+			/* Only if the interace name is invalid, there is an normalizable warning */
+			g_set_error_literal (error,
+			                     error_quark,
+			                     e_invalid_property,
+			                     _("property is invalid"));
+			g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
+			return NM_SETTING_VERIFY_NORMALIZABLE;
+		}
+		return NM_SETTING_VERIFY_SUCCESS;
+	}
+
 	s_con = NM_SETTING_CONNECTION (nm_setting_find_in_list (all_settings, NM_SETTING_CONNECTION_SETTING_NAME));
 	con_name = s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
 	if (!interface_name && !con_name) {
