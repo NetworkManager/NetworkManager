@@ -12346,8 +12346,7 @@ test_write_bridge_main (void)
 	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
-	g_assert (nm_connection_verify (connection, &error));
-	g_assert_no_error (error);
+	nmtst_assert_connection_verifies_after_normalization (connection, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
@@ -13131,9 +13130,7 @@ test_write_bond_main (void)
 	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "bond-main-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies_after_normalization (connection, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
@@ -14216,9 +14213,7 @@ test_write_team_master (void)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies_after_normalization (connection, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,

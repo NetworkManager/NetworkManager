@@ -1424,7 +1424,7 @@ _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
 			                     e_invalid_property,
 			                     _("property is invalid"));
 			g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-			return NM_SETTING_VERIFY_NORMALIZABLE;
+			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 		}
 		return NM_SETTING_VERIFY_SUCCESS;
 	}
@@ -1459,7 +1459,7 @@ _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
 		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
-		return NM_SETTING_VERIFY_NORMALIZABLE;
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 	if (!nm_utils_iface_valid_name (con_name)) {
 		/* NMSettingConnection:interface_name is invalid, we cannot normalize it. */
@@ -1477,19 +1477,17 @@ _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
 		                     e_missing_property,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-		return NM_SETTING_VERIFY_NORMALIZABLE;
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 	if (strcmp (con_name, interface_name) != 0) {
 		/* con_name and interface_name are different. It can be normalized by setting interface_name
 		 * to con_name. */
 		g_set_error_literal (error,
 		                     error_quark,
-		                     e_missing_property,
+		                     e_invalid_property,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-		/* we would like to make this a NORMALIZEABLE_ERROR, but that might
-		 * break older connections. */
-		return NM_SETTING_VERIFY_NORMALIZABLE;
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 
 	return NM_SETTING_VERIFY_SUCCESS;
