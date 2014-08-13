@@ -191,7 +191,7 @@ test_setting_vpn_update_secrets (void)
 	const char *val1 = "value1";
 	const char *val2 = "value2";
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	ASSERT (connection != NULL,
 	        "vpn-update-secrets",
 	        "error creating connection");
@@ -755,7 +755,7 @@ test_connection_to_hash_setting_name (void)
 	NMSettingWirelessSecurity *s_wsec;
 	GHashTable *hash;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	s_wsec = make_test_wsec_setting ("connection-to-hash-setting-name");
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
 
@@ -799,7 +799,7 @@ new_test_connection (void)
 	char *uuid;
 	guint64 timestamp = time (NULL);
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	setting = nm_setting_connection_new ();
 	uuid = nm_utils_uuid_generate ();
@@ -944,7 +944,7 @@ test_connection_replace_settings_from_connection ()
 	connection = new_test_connection ();
 	g_assert (connection);
 
-	replacement = nm_connection_new ();
+	replacement = nm_simple_connection_new ();
 	g_assert (replacement);
 
 	/* New connection setting */
@@ -1006,7 +1006,7 @@ test_connection_new_from_hash ()
 	g_assert (new_settings);
 
 	/* Replace settings and test */
-	connection = nm_connection_new_from_hash (new_settings, &error);
+	connection = nm_simple_connection_new_from_hash (new_settings, &error);
 	g_assert_no_error (error);
 	g_assert (connection);
 
@@ -1264,7 +1264,7 @@ test_connection_compare_same (void)
 	NMConnection *a, *b;
 
 	a = new_test_connection ();
-	b = nm_connection_duplicate (a);
+	b = nm_simple_connection_new_clone (a);
 	g_assert (nm_connection_compare (a, b, NM_SETTING_COMPARE_FLAG_EXACT));
 	g_object_unref (a);
 	g_object_unref (b);
@@ -1277,7 +1277,7 @@ test_connection_compare_key_only_in_a (void)
 	NMSettingConnection *s_con;
 
 	a = new_test_connection ();
-	b = nm_connection_duplicate (a);
+	b = nm_simple_connection_new_clone (a);
 	s_con = (NMSettingConnection *) nm_connection_get_setting (b, NM_TYPE_SETTING_CONNECTION);
 	g_assert (s_con);
 	g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, (guint64) 0, NULL);
@@ -1293,7 +1293,7 @@ test_connection_compare_setting_only_in_a (void)
 	NMConnection *a, *b;
 
 	a = new_test_connection ();
-	b = nm_connection_duplicate (a);
+	b = nm_simple_connection_new_clone (a);
 	nm_connection_remove_setting (b, NM_TYPE_SETTING_IP4_CONFIG);
 	g_assert (!nm_connection_compare (a, b, NM_SETTING_COMPARE_FLAG_EXACT));
 	g_object_unref (a);
@@ -1307,7 +1307,7 @@ test_connection_compare_key_only_in_b (void)
 	NMSettingConnection *s_con;
 
 	a = new_test_connection ();
-	b = nm_connection_duplicate (a);
+	b = nm_simple_connection_new_clone (a);
 	s_con = (NMSettingConnection *) nm_connection_get_setting (b, NM_TYPE_SETTING_CONNECTION);
 	g_assert (s_con);
 	g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, (guint64) 0, NULL);
@@ -1323,7 +1323,7 @@ test_connection_compare_setting_only_in_b (void)
 	NMConnection *a, *b;
 
 	a = new_test_connection ();
-	b = nm_connection_duplicate (a);
+	b = nm_simple_connection_new_clone (a);
 	nm_connection_remove_setting (a, NM_TYPE_SETTING_IP4_CONFIG);
 	g_assert (!nm_connection_compare (a, b, NM_SETTING_COMPARE_FLAG_EXACT));
 	g_object_unref (a);
@@ -1448,7 +1448,7 @@ test_connection_diff_same (void)
 	gboolean same;
 
 	a = new_test_connection ();
-	b = nm_connection_duplicate (a);
+	b = nm_simple_connection_new_clone (a);
 
 	same = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_EXACT, &out_diffs);
 	g_assert (same == TRUE);
@@ -1472,7 +1472,7 @@ test_connection_diff_different (void)
 	};
 
 	a = new_test_connection ();
-	b = nm_connection_duplicate (a);
+	b = nm_simple_connection_new_clone (a);
 	s_ip4 = nm_connection_get_setting_ip4_config (a);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
@@ -1512,7 +1512,7 @@ test_connection_diff_no_secrets (void)
 	              NULL);
 	nm_connection_add_setting (a, s_pppoe);
 
-	b = nm_connection_duplicate (a);
+	b = nm_simple_connection_new_clone (a);
 
 	/* Add a secret to B */
 	s_pppoe = NM_SETTING (nm_connection_get_setting_pppoe (b));
@@ -1557,7 +1557,7 @@ test_connection_diff_inferrable (void)
 	};
 
 	a = new_test_connection ();
-	b = nm_connection_duplicate (a);
+	b = nm_simple_connection_new_clone (a);
 
 	/* Change the UUID, wired MTU, and set ignore-auto-dns */
 	s_con = nm_connection_get_setting_connection (a);
@@ -1636,7 +1636,7 @@ test_connection_good_base_types (void)
 	const guint8 bdaddr[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
 
 	/* Try a basic wired connection */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	add_generic_settings (connection, NM_SETTING_WIRED_SETTING_NAME);
 	setting = nm_setting_wired_new ();
 	nm_connection_add_setting (connection, setting);
@@ -1647,7 +1647,7 @@ test_connection_good_base_types (void)
 	g_object_unref (connection);
 
 	/* Try a wired PPPoE connection */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	add_generic_settings (connection, NM_SETTING_PPPOE_SETTING_NAME);
 	setting = nm_setting_pppoe_new ();
 	g_object_set (setting, NM_SETTING_PPPOE_USERNAME, "bob smith", NULL);
@@ -1659,7 +1659,7 @@ test_connection_good_base_types (void)
 	g_object_unref (connection);
 
 	/* Wifi connection */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	add_generic_settings (connection, NM_SETTING_WIRELESS_SETTING_NAME);
 
 	setting = nm_setting_wireless_new ();
@@ -1678,7 +1678,7 @@ test_connection_good_base_types (void)
 	g_object_unref (connection);
 
 	/* Bluetooth connection */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	add_generic_settings (connection, NM_SETTING_BLUETOOTH_SETTING_NAME);
 
 	setting = nm_setting_bluetooth_new ();
@@ -1697,7 +1697,7 @@ test_connection_good_base_types (void)
 	g_object_unref (connection);
 
 	/* WiMAX connection */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	add_generic_settings (connection, NM_SETTING_WIMAX_SETTING_NAME);
 	setting = nm_setting_wimax_new ();
 	g_object_set (setting, NM_SETTING_WIMAX_NETWORK_NAME, "CLEAR", NULL);
@@ -1709,7 +1709,7 @@ test_connection_good_base_types (void)
 	g_object_unref (connection);
 
 	/* GSM connection */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	add_generic_settings (connection, NM_SETTING_GSM_SETTING_NAME);
 
 	setting = nm_setting_gsm_new ();
@@ -1720,7 +1720,7 @@ test_connection_good_base_types (void)
 	nm_connection_add_setting (connection, setting);
 
 	/* CDMA connection */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	add_generic_settings (connection, NM_SETTING_CDMA_SETTING_NAME);
 
 	setting = nm_setting_cdma_new ();
@@ -1749,7 +1749,7 @@ test_connection_bad_base_types (void)
 	 */
 
 	/* Connection setting */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	add_generic_settings (connection, NM_SETTING_CONNECTION_SETTING_NAME);
 	setting = nm_setting_wired_new ();
 	nm_connection_add_setting (connection, setting);
@@ -1761,7 +1761,7 @@ test_connection_bad_base_types (void)
 	g_clear_error (&error);
 
 	/* PPP setting */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	add_generic_settings (connection, NM_SETTING_PPP_SETTING_NAME);
 	setting = nm_setting_wired_new ();
 	nm_connection_add_setting (connection, setting);
@@ -1775,7 +1775,7 @@ test_connection_bad_base_types (void)
 	g_clear_error (&error);
 
 	/* Serial setting */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	add_generic_settings (connection, NM_SETTING_SERIAL_SETTING_NAME);
 	setting = nm_setting_wired_new ();
 	nm_connection_add_setting (connection, setting);
@@ -1789,7 +1789,7 @@ test_connection_bad_base_types (void)
 	g_clear_error (&error);
 
 	/* IP4 setting */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	add_generic_settings (connection, NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	setting = nm_setting_wired_new ();
 	nm_connection_add_setting (connection, setting);
@@ -1801,7 +1801,7 @@ test_connection_bad_base_types (void)
 	g_clear_error (&error);
 
 	/* IP6 setting */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	add_generic_settings (connection, NM_SETTING_IP6_CONFIG_SETTING_NAME);
 	setting = nm_setting_wired_new ();
 	nm_connection_add_setting (connection, setting);
@@ -2118,7 +2118,7 @@ test_setting_connection_changed_signal (void)
 	NMSettingConnection *s_con;
 	char *uuid;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
 	                  NM_CONNECTION_CHANGED,
 	                  (GCallback) test_connection_changed_cb,
@@ -2154,7 +2154,7 @@ test_setting_bond_changed_signal (void)
 	gboolean changed = FALSE;
 	NMSettingBond *s_bond;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
 	                  NM_CONNECTION_CHANGED,
 	                  (GCallback) test_connection_changed_cb,
@@ -2179,7 +2179,7 @@ test_setting_ip4_changed_signal (void)
 	NMIP4Address *addr;
 	NMIP4Route *route;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
 	                  NM_CONNECTION_CHANGED,
 	                  (GCallback) test_connection_changed_cb,
@@ -2250,7 +2250,7 @@ test_setting_ip6_changed_signal (void)
 	NMIP6Route *route;
 	const struct in6_addr t = { { { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 } } };
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
 	                  NM_CONNECTION_CHANGED,
 	                  (GCallback) test_connection_changed_cb,
@@ -2319,7 +2319,7 @@ test_setting_vlan_changed_signal (void)
 	gboolean changed = FALSE;
 	NMSettingVlan *s_vlan;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
 	                  NM_CONNECTION_CHANGED,
 	                  (GCallback) test_connection_changed_cb,
@@ -2354,7 +2354,7 @@ test_setting_vpn_changed_signal (void)
 	gboolean changed = FALSE;
 	NMSettingVpn *s_vpn;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
 	                  NM_CONNECTION_CHANGED,
 	                  (GCallback) test_connection_changed_cb,
@@ -2381,7 +2381,7 @@ test_setting_wired_changed_signal (void)
 	gboolean changed = FALSE;
 	NMSettingWired *s_wired;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
 	                  NM_CONNECTION_CHANGED,
 	                  (GCallback) test_connection_changed_cb,
@@ -2404,7 +2404,7 @@ test_setting_wireless_changed_signal (void)
 	gboolean changed = FALSE;
 	NMSettingWireless *s_wifi;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
 	                  NM_CONNECTION_CHANGED,
 	                  (GCallback) test_connection_changed_cb,
@@ -2425,7 +2425,7 @@ test_setting_wireless_security_changed_signal (void)
 	gboolean changed = FALSE;
 	NMSettingWirelessSecurity *s_wsec;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
 	                  NM_CONNECTION_CHANGED,
 	                  (GCallback) test_connection_changed_cb,
@@ -2480,7 +2480,7 @@ test_setting_802_1x_changed_signal (void)
 	gboolean changed = FALSE;
 	NMSetting8021x *s_8021x;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
 	                  NM_CONNECTION_CHANGED,
 	                  (GCallback) test_connection_changed_cb,
@@ -2573,7 +2573,7 @@ test_connection_verify_sets_interface_name (void)
 	              NM_SETTING_BOND_INTERFACE_NAME, "bond-x",
 	              NULL);
 
-	con = nm_connection_new ();
+	con = nm_simple_connection_new ();
 	nm_connection_add_setting (con, NM_SETTING (s_con));
 	nm_connection_add_setting (con, NM_SETTING (s_bond));
 
@@ -2604,7 +2604,7 @@ test_connection_normalize_virtual_iface_name (void)
 	const char *IFACE_VIRT = "iface-X";
 	gboolean modified = FALSE;
 
-	con = nm_connection_new ();
+	con = nm_simple_connection_new ();
 
 	setting = nm_setting_ip4_config_new ();
 	g_object_set (setting,

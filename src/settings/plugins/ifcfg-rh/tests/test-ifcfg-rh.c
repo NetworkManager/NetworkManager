@@ -6116,7 +6116,7 @@ test_write_wifi_hidden (void)
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -6740,7 +6740,7 @@ test_write_wired_static (void)
 	inet_pton (AF_INET6, "fade:0102:0103::face", &dns6_1);
 	inet_pton (AF_INET6, "cafe:ffff:eeee:dddd:cccc:bbbb:aaaa:feed", &dns6_2);
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -6933,7 +6933,7 @@ test_write_wired_dhcp (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -7162,7 +7162,7 @@ test_write_wired_static_ip6_only (void)
 	inet_pton (AF_INET6, "1003:1234:abcd::1", &ip6);
 	inet_pton (AF_INET6, "fade:0102:0103::face", &dns6);
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -7310,7 +7310,7 @@ test_write_wired_static_ip6_only_gw (gconstpointer user_data)
 	if (gateway6)
 		inet_ntop (AF_INET6, gateway6, s_gateway6, sizeof (s_gateway6));
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -7611,7 +7611,7 @@ test_write_wired_static_routes (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -7766,7 +7766,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -7924,7 +7924,7 @@ test_write_wired_8021x_tls (NMSetting8021xCKScheme scheme,
 	const char *pw;
 	char *tmp;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection != NULL);
 
 	/* Connection setting */
@@ -8142,7 +8142,7 @@ test_write_wired_aliases (void)
 	shvarFile *ifcfg;
 	int i, j;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	ASSERT (connection != NULL,
 	        "wired-aliases-write", "failed to allocate new connection");
 
@@ -8335,7 +8335,7 @@ test_write_gateway (void)
 	struct in_addr ip1, ip2, gw1, gw2;
 	const guint32 prefix = 24;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -8490,7 +8490,7 @@ test_write_wifi_open (void)
 	shvarFile *ifcfg;
 	char *tmp;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -8633,7 +8633,7 @@ test_write_wifi_open_hex_ssid (void)
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd };
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -8750,7 +8750,7 @@ test_write_wifi_wep (void)
 	const unsigned char ssid_data[] = "blahblah";
 	struct stat statbuf;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -8898,7 +8898,7 @@ test_write_wifi_wep_adhoc (void)
 	const guint32 dns1 = htonl (0x04020201);
 	const guint32 prefix = 24;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -9044,7 +9044,7 @@ test_write_wifi_wep_passphrase (void)
 	const unsigned char ssid_data[] = "blahblah";
 	struct stat statbuf;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -9185,7 +9185,7 @@ test_write_wifi_wep_40_ascii (void)
 	const unsigned char ssid_data[] = "blahblah40";
 	struct stat statbuf;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -9328,7 +9328,7 @@ test_write_wifi_wep_104_ascii (void)
 	const unsigned char ssid_data[] = "blahblah104";
 	struct stat statbuf;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -9471,7 +9471,7 @@ test_write_wifi_leap (void)
 	const unsigned char ssid_data[] = "blahblah";
 	struct stat statbuf;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -9610,7 +9610,7 @@ test_write_wifi_leap_secret_flags (NMSettingSecretFlags flags)
 	GByteArray *ssid;
 	const unsigned char ssid_data[] = "blahblah";
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -9753,7 +9753,7 @@ test_write_wifi_wpa_psk (const char *name,
 
 	g_return_if_fail (psk != NULL);
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -9904,7 +9904,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	const guint32 dns1 = htonl (0x04020201);
 	const guint32 prefix = 24;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -10049,7 +10049,7 @@ test_write_wifi_wpa_eap_tls (void)
 	GByteArray *ssid;
 	const char *ssid_data = "blahblah";
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -10215,7 +10215,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	GByteArray *ssid;
 	const char *ssid_data = "blahblah";
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -10399,7 +10399,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	GByteArray *ssid;
 	const char *ssid_data = "blahblah";
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -10558,7 +10558,7 @@ test_write_wifi_wpa_then_open (void)
 	 * config doesn't leave various WPA-related keys lying around in the ifcfg.
 	 */
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -10752,7 +10752,7 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	 * config works and doesn't cause infinite loop or other issues.
 	 */
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -10956,7 +10956,7 @@ test_write_wifi_dynamic_wep_leap (void)
 	shvarFile *ifcfg;
 	char *tmp;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -11501,7 +11501,7 @@ test_write_wired_qeth_dhcp (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -11628,7 +11628,7 @@ test_write_wired_ctc_dhcp (void)
 	shvarFile *ifcfg;
 	char *tmp;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -11761,7 +11761,7 @@ test_write_permissions (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -11877,7 +11877,7 @@ test_write_wifi_wep_agent_keys (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection != NULL);
 
 	/* Connection setting */
@@ -12011,7 +12011,7 @@ test_write_wired_pppoe (void)
 	GError *error = NULL;
 	char *testfile = NULL;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -12079,7 +12079,7 @@ test_write_vpn (void)
 	GError *error = NULL;
 	char *testfile = NULL;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -12144,7 +12144,7 @@ test_write_mobile_broadband (gboolean gsm)
 	GError *error = NULL;
 	char *testfile = NULL;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -12290,7 +12290,7 @@ test_write_bridge_main (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -12458,7 +12458,7 @@ test_write_bridge_component (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -12901,7 +12901,7 @@ test_write_ethernet_missing_ipv6 (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -13080,7 +13080,7 @@ test_write_bond_main (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -13253,7 +13253,7 @@ test_write_bond_slave (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -13444,7 +13444,7 @@ test_write_infiniband (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -13621,7 +13621,7 @@ test_write_bond_slave_ib (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -13793,7 +13793,7 @@ test_write_dcb_basic (void)
 	const guint traffic_classes[8] = { 3, 4, 7, 2, 1, 0, 5, 6 };
 	const gboolean pfcs[8] = { TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, TRUE, FALSE };
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
@@ -14066,7 +14066,7 @@ test_write_fcoe_mode (gconstpointer user_data)
 	gboolean success, ignore_error;
 	char *uuid, *testfile;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
@@ -14189,7 +14189,7 @@ test_write_team_master (void)
 	const char *escaped_expected_config = "\"{ \\\"device\\\": \\\"team0\\\", \\\"link_watch\\\": { \\\"name\\\": \\\"ethtool\\\" } }\"";
 	shvarFile *f;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -14309,7 +14309,7 @@ test_write_team_port (void)
 	const char *escaped_expected_config = "\"{ \\\"p4p1\\\": { \\\"prio\\\": -10, \\\"sticky\\\": true } }\"";
 	shvarFile *f;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();

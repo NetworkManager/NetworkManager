@@ -37,6 +37,7 @@ libnm_core_headers =				\
 	$(core)/nm-setting-wireless-security.h	\
 	$(core)/nm-setting-wireless.h		\
 	$(core)/nm-setting.h			\
+	$(core)/nm-simple-connection.h		\
 	$(core)/nm-utils.h			\
 	$(core)/nm-vpn-dbus-interface.h
 
@@ -78,6 +79,7 @@ libnm_core_sources =				\
 	$(core)/nm-setting-wireless-security.c	\
 	$(core)/nm-setting-wireless.c		\
 	$(core)/nm-setting.c			\
+	$(core)/nm-simple-connection.c		\
 	$(core)/nm-utils.c			\
 	$(core)/nm-value-transforms.c
 

@@ -997,7 +997,7 @@ send_agent_owned_secrets (NMSettings *self,
 	 * as agent-owned secrets are the only ones we send back to be saved.
 	 * Only send secrets to agents of the same UID that called update too.
 	 */
-	for_agent = nm_connection_duplicate (NM_CONNECTION (connection));
+	for_agent = nm_simple_connection_new_clone (NM_CONNECTION (connection));
 	nm_connection_clear_secrets_with_flags (for_agent,
 	                                        secrets_filter_cb,
 	                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
@@ -1223,14 +1223,14 @@ impl_settings_add_connection_helper (NMSettings *self,
 	NMConnection *connection;
 	GError *error = NULL;
 
-	connection = nm_connection_new_from_hash (settings, &error);
+	connection = nm_simple_connection_new_from_hash (settings, &error);
 	if (connection) {
 		nm_settings_add_connection_dbus (self,
-		                            connection,
-		                            save_to_disk,
-		                            context,
-		                            impl_settings_add_connection_add_cb,
-		                            NULL);
+		                                 connection,
+		                                 save_to_disk,
+		                                 context,
+		                                 impl_settings_add_connection_add_cb,
+		                                 NULL);
 		g_object_unref (connection);
 	} else {
 		g_assert (error);
@@ -1609,10 +1609,8 @@ nm_settings_device_added (NMSettings *self, NMDevice *device)
 	if (!hw_address)
 		return;
 
-	connection = nm_connection_new ();
-	g_assert (connection);
+	connection = nm_simple_connection_new ();
 	setting = nm_setting_connection_new ();
-	g_assert (setting);
 	nm_connection_add_setting (connection, setting);
 
 	defname = nm_settings_utils_get_default_wired_name (priv->connections);

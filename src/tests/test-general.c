@@ -238,7 +238,7 @@ _match_connection_new (void)
 	NMSettingIP6Config *s_ip6;
 	char *uuid;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
 	nm_connection_add_setting (connection, (NMSetting *) s_con);
@@ -277,7 +277,7 @@ test_connection_match_basic (void)
 	NMSettingIP4Config *s_ip4;
 
 	orig = _match_connection_new ();
-	copy = nm_connection_duplicate (orig);
+	copy = nm_simple_connection_new_clone (orig);
 	connections = g_slist_append (connections, copy);
 
 	matched = nm_utils_match_connection (connections, orig, TRUE, NULL, NULL);
@@ -305,7 +305,7 @@ test_connection_match_ip6_method (void)
 	NMSettingIP6Config *s_ip6;
 
 	orig = _match_connection_new ();
-	copy = nm_connection_duplicate (orig);
+	copy = nm_simple_connection_new_clone (orig);
 	connections = g_slist_append (connections, copy);
 
 	/* Check that if the generated connection is IPv6 method=link-local, and the
@@ -341,7 +341,7 @@ test_connection_match_ip6_method_ignore (void)
 	NMSettingIP6Config *s_ip6;
 
 	orig = _match_connection_new ();
-	copy = nm_connection_duplicate (orig);
+	copy = nm_simple_connection_new_clone (orig);
 	connections = g_slist_append (connections, copy);
 
 	/* Check that if the generated connection is IPv6 method=link-local, and the
@@ -375,7 +375,7 @@ test_connection_match_ip6_method_ignore_auto (void)
 	NMSettingIP6Config *s_ip6;
 
 	orig = _match_connection_new ();
-	copy = nm_connection_duplicate (orig);
+	copy = nm_simple_connection_new_clone (orig);
 	connections = g_slist_append (connections, copy);
 
 	/* Check that if the generated connection is IPv6 method=auto, and the
@@ -410,7 +410,7 @@ test_connection_match_ip4_method (void)
 	NMSettingIP4Config *s_ip4;
 
 	orig = _match_connection_new ();
-	copy = nm_connection_duplicate (orig);
+	copy = nm_simple_connection_new_clone (orig);
 	connections = g_slist_append (connections, copy);
 
 	/* Check that if the generated connection is IPv4 method=disabled, and the
@@ -450,7 +450,7 @@ test_connection_match_interface_name (void)
 	NMSettingConnection *s_con;
 
 	orig = _match_connection_new ();
-	copy = nm_connection_duplicate (orig);
+	copy = nm_simple_connection_new_clone (orig);
 	connections = g_slist_append (connections, copy);
 
 	/* Check that if the generated connection has an interface name and the
@@ -490,7 +490,7 @@ test_connection_match_wired (void)
 	g_ptr_array_add (subchan_arr, "0.0.8002");
 
 	orig = _match_connection_new ();
-	copy = nm_connection_duplicate (orig);
+	copy = nm_simple_connection_new_clone (orig);
 	connections = g_slist_append (connections, copy);
 
 	mac = nm_utils_hwaddr_atoba ("52:54:00:ab:db:23", ETH_ALEN);
@@ -531,7 +531,7 @@ test_connection_no_match_ip4_addr (void)
 	guint32 addr, gw;
 
 	orig = _match_connection_new ();
-	copy = nm_connection_duplicate (orig);
+	copy = nm_simple_connection_new_clone (orig);
 	connections = g_slist_append (connections, copy);
 
 	/* Check that if we have two differences, ipv6.method (exception we allow) and

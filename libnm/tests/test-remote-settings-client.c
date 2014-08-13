@@ -26,12 +26,8 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include <nm-dbus-interface.h>
-#include <nm-setting-connection.h>
-#include <nm-setting-wired.h>
-#include <nm-utils.h>
+#include <NetworkManager.h>
 
-#include "nm-remote-settings.h"
 #include "common.h"
 
 #include "nm-test-utils.h"

@@ -21,7 +21,7 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#include <nm-connection.h>
+#include <nm-simple-connection.h>
 #include <nm-setting-connection.h>
 #include "nm-settings-utils.h"
 
@@ -31,7 +31,7 @@ _new_connection (const char *id)
 	NMConnection *a;
 	NMSetting *setting;
 
-	a = nm_connection_new ();
+	a = nm_simple_connection_new ();
 	setting = nm_setting_connection_new ();
 	g_object_set (setting, NM_SETTING_CONNECTION_ID, id, NULL);
 	nm_connection_add_setting (a, setting);

@@ -60,11 +60,11 @@ typedef void (*NMSettingsConnectionDeleteFunc) (NMSettingsConnection *connection
                                                 gpointer user_data);
 
 struct _NMSettingsConnection {
-	NMConnection parent;
+	GObject parent;
 };
 
 struct _NMSettingsConnectionClass {
-	NMConnectionClass parent;
+	GObjectClass parent;
 
 	/* virtual methods */
 	void (*commit_changes) (NMSettingsConnection *connection,

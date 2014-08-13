@@ -345,7 +345,7 @@ nm_editor_utils_create_connection (GType             type,
 		return NULL;
 	}
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_con));

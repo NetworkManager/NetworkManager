@@ -66,7 +66,7 @@ print_connection (DBusGConnection *bus, const char *path)
 
 	/* Using the raw configuration, create an NMConnection object for it. This
 	 * step also verifies that the data we got from NetworkManager are valid. */
-	connection = nm_connection_new_from_hash (hash, &error);
+	connection = nm_simple_connection_new_from_hash (hash, &error);
 	if (!connection) {
 		g_warning ("Received invalid connection data: %s", error->message);
 		g_error_free (error);

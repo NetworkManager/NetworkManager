@@ -79,6 +79,7 @@
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-wireless.h>
 #include <nm-setting.h>
+#include <nm-simple-connection.h>
 #include <nm-types.h>
 #include <nm-utils.h>
 #include <nm-version.h>

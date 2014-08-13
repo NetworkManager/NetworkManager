@@ -66,7 +66,7 @@ make_tls_connection (const char *detail, NMSetting8021xCKScheme scheme)
 	gboolean success;
 	GError *error = NULL;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -232,7 +232,7 @@ make_tls_phase2_connection (const char *detail, NMSetting8021xCKScheme scheme)
 	gboolean success;
 	GError *error = NULL;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -401,7 +401,7 @@ wifi_connection_new (void)
 	char *uuid;
 	GByteArray *ssid;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */

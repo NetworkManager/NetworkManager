@@ -1259,7 +1259,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	if (!g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, error))
 		goto out;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	groups = g_key_file_get_groups (key_file, &length);
 	for (i = 0; i < length; i++) {

@@ -183,7 +183,7 @@ build_edit_connection (NMConnection *orig_connection)
 	const char *setting_name;
 	NmtSyncOp op;
 
-	edit_connection = nm_connection_duplicate (orig_connection);
+	edit_connection = nm_simple_connection_new_clone (orig_connection);
 
 	if (!NM_IS_REMOTE_CONNECTION (orig_connection))
 		return edit_connection;

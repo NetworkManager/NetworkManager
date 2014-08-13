@@ -1468,7 +1468,7 @@ _hash_with_username (NMConnection *connection, const char *username)
 	if (username == NULL || existing)
 		return nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
 
-	dup = nm_connection_duplicate (connection);
+	dup = nm_simple_connection_new_clone (connection);
 	g_assert (dup);
 	s_vpn = nm_connection_get_setting_vpn (dup);
 	g_assert (s_vpn);

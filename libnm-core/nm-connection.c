@@ -92,22 +92,18 @@ nm_connection_error_quark (void)
 }
 
 typedef struct {
+	NMConnection *self;
+
 	GHashTable *settings;
 
 	/* D-Bus path of the connection, if any */
 	char *path;
 } NMConnectionPrivate;
 
-#define NM_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONNECTION, NMConnectionPrivate))
+static NMConnectionPrivate *nm_connection_get_private (NMConnection *connection);
+#define NM_CONNECTION_GET_PRIVATE(o) (nm_connection_get_private ((NMConnection *)o))
 
-G_DEFINE_TYPE (NMConnection, nm_connection, G_TYPE_OBJECT)
-
-enum {
-	PROP_0,
-	PROP_PATH,
-
-	LAST_PROP
-};
+G_DEFINE_INTERFACE (NMConnection, nm_connection, G_TYPE_OBJECT)
 
 enum {
 	SECRETS_UPDATED,
@@ -1369,78 +1365,6 @@ nm_connection_get_virtual_iface_name (NMConnection *connection)
 }
 
 /**
- * nm_connection_new:
- *
- * Creates a new #NMConnection object with no #NMSetting objects.
- *
- * Returns: the new empty #NMConnection object
- **/
-NMConnection *
-nm_connection_new (void)
-{
-	return (NMConnection *) g_object_new (NM_TYPE_CONNECTION, NULL);
-}
-
-/**
- * nm_connection_new_from_hash:
- * @hash: (element-type utf8 GLib.HashTable): the #GHashTable describing
- * the connection
- * @error: on unsuccessful return, an error
- *
- * Creates a new #NMConnection from a hash table describing the connection.  See
- * nm_connection_to_hash() for a description of the expected hash table.
- *
- * Returns: the new #NMConnection object, populated with settings created
- * from the values in the hash table, or %NULL if the connection failed to
- * validate
- **/
-NMConnection *
-nm_connection_new_from_hash (GHashTable *hash, GError **error)
-{
-	NMConnection *connection;
-
-	g_return_val_if_fail (hash != NULL, NULL);
-
-	if (!validate_permissions_type (hash, error))
-		return NULL;
-
-	connection = nm_connection_new ();
-	if (!hash_to_connection (connection, hash, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
-	return connection;
-}
-
-/**
- * nm_connection_duplicate:
- * @connection: the #NMConnection to duplicate
- *
- * Duplicates a #NMConnection.
- *
- * Returns: (transfer full): a new #NMConnection containing the same settings and properties
- * as the source #NMConnection
- **/
-NMConnection *
-nm_connection_duplicate (NMConnection *connection)
-{
-	NMConnection *dup;
-	GHashTableIter iter;
-	NMSetting *setting;
-
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-
-	dup = nm_connection_new ();
-	nm_connection_set_path (dup, nm_connection_get_path (connection));
-
-	g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (connection)->settings);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting))
-		nm_connection_add_setting (dup, nm_setting_duplicate (setting));
-
-	return dup;
-}
-
-/**
  * nm_connection_get_uuid:
  * @connection: the #NMConnection
  *
@@ -1965,103 +1889,41 @@ nm_connection_get_setting_vlan (NMConnection *connection)
 /*************************************************************/
 
 static void
-nm_connection_init (NMConnection *connection)
+nm_connection_private_free (NMConnectionPrivate *priv)
 {
-	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
-
-	priv->settings = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
-}
-
-static void
-dispose (GObject *object)
-{
-	NMConnection *self = NM_CONNECTION (object);
-	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (self);
+	NMConnection *self = priv->self;
 	GHashTableIter iter;
 	NMSetting *setting;
 
 	g_hash_table_iter_init (&iter, priv->settings);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting)) {
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting))
 		g_signal_handlers_disconnect_by_func (setting, setting_changed_cb, self);
-		g_hash_table_iter_remove (&iter);
-	}
-
-	G_OBJECT_CLASS (nm_connection_parent_class)->dispose (object);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMConnection *connection = NM_CONNECTION (object);
-	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
-
 	g_hash_table_destroy (priv->settings);
-	g_free (priv->path);
 
-	G_OBJECT_CLASS (nm_connection_parent_class)->finalize (object);
+	g_slice_free (NMConnectionPrivate, priv);
 }
 
-static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
+static NMConnectionPrivate *
+nm_connection_get_private (NMConnection *connection)
 {
-	NMConnection *connection = NM_CONNECTION (object);
+	NMConnectionPrivate *priv;
 
-	switch (prop_id) {
-	case PROP_PATH:
-		nm_connection_set_path (connection, g_value_get_string (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
+	priv = g_object_get_data (G_OBJECT (connection), "NMConnectionPrivate");
+	if (!priv) {
+		priv = g_slice_new0 (NMConnectionPrivate);
+		g_object_set_data_full (G_OBJECT (connection), "NMConnectionPrivate",
+		                        priv, (GDestroyNotify) nm_connection_private_free);
+
+		priv->self = connection;
+		priv->settings = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 	}
+
+	return priv;
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+nm_connection_default_init (NMConnectionInterface *iface)
 {
-	NMConnection *connection = NM_CONNECTION (object);
-
-	switch (prop_id) {
-	case PROP_PATH:
-		g_value_set_string (value, nm_connection_get_path (connection));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-nm_connection_class_init (NMConnectionClass *klass)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-	g_type_class_add_private (klass, sizeof (NMConnectionPrivate));
-
-	/* virtual methods */
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
-
-	/* Properties */
-
-	/**
-	 * NMConnection:path:
-	 *
-	 * The connection's D-Bus path, used only by the calling process as a record
-	 * of the D-Bus path of the connection as provided by a settings service.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_CONNECTION_PATH, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      G_PARAM_STATIC_STRINGS));
-
 	/* Signals */
 
 	/**
@@ -2075,9 +1937,9 @@ nm_connection_class_init (NMConnectionClass *klass)
 	 */
 	signals[SECRETS_UPDATED] =
 		g_signal_new (NM_CONNECTION_SECRETS_UPDATED,
-		              G_OBJECT_CLASS_TYPE (object_class),
+		              NM_TYPE_CONNECTION,
 		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMConnectionClass, secrets_updated),
+		              G_STRUCT_OFFSET (NMConnectionInterface, secrets_updated),
 		              NULL, NULL,
 		              g_cclosure_marshal_VOID__STRING,
 		              G_TYPE_NONE, 1,
@@ -2092,9 +1954,9 @@ nm_connection_class_init (NMConnectionClass *klass)
 	 */
 	signals[SECRETS_CLEARED] =
 		g_signal_new (NM_CONNECTION_SECRETS_CLEARED,
-		              G_OBJECT_CLASS_TYPE (object_class),
+		              NM_TYPE_CONNECTION,
 		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMConnectionClass, secrets_cleared),
+		              G_STRUCT_OFFSET (NMConnectionInterface, secrets_cleared),
 		              NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
@@ -2109,9 +1971,9 @@ nm_connection_class_init (NMConnectionClass *klass)
 	 */
 	signals[CHANGED] =
 		g_signal_new (NM_CONNECTION_CHANGED,
-		              G_OBJECT_CLASS_TYPE (object_class),
+		              NM_TYPE_CONNECTION,
 		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NMConnectionClass, changed),
+		              G_STRUCT_OFFSET (NMConnectionInterface, changed),
 		              NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);

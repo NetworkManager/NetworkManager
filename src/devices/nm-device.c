@@ -1704,7 +1704,7 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 		return NULL;
 	}
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	s_con = nm_setting_connection_new ();
 	uuid = nm_utils_uuid_generate ();
 

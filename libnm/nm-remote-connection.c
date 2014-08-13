@@ -33,10 +33,12 @@
 #include "nm-glib-compat.h"
 #include "nm-dbus-helpers-private.h"
 
+static void nm_remote_connection_connection_iface_init (NMConnectionInterface *iface);
 static void nm_remote_connection_initable_iface_init (GInitableIface *iface);
 static void nm_remote_connection_async_initable_iface_init (GAsyncInitableIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, NM_TYPE_CONNECTION,
+G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION, nm_remote_connection_connection_iface_init);
                          G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_remote_connection_initable_iface_init);
                          G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_remote_connection_async_initable_iface_init);
                          )
@@ -44,6 +46,7 @@ G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, NM_TYPE_CONNE
 enum {
 	PROP_0,
 	PROP_DBUS_CONNECTION,
+	PROP_PATH,
 	PROP_UNSAVED,
 	PROP_VISIBLE,
 
@@ -689,6 +692,9 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
+	case PROP_PATH:
+		g_value_set_string (value, nm_connection_get_path (NM_CONNECTION (object)));
+		break;
 	case PROP_UNSAVED:
 		g_value_set_boolean (value, NM_REMOTE_CONNECTION_GET_PRIVATE (object)->unsaved);
 		break;
@@ -711,6 +717,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_DBUS_CONNECTION:
 		/* Construct only */
 		priv->bus = g_value_dup_boxed (value);
+		break;
+	case PROP_PATH:
+		/* Construct only */
+		nm_connection_set_path (NM_CONNECTION (object), g_value_get_string (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -767,6 +777,19 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		                     G_PARAM_STATIC_STRINGS));
 
 	/**
+	 * NMRemoteConnection:path:
+	 *
+	 * The D-Bus path of the connection that the #NMRemoteConnection represents.
+	 */
+	g_object_class_install_property
+		(object_class, PROP_PATH,
+		 g_param_spec_string (NM_REMOTE_CONNECTION_PATH, "", "",
+		                      NULL,
+		                      G_PARAM_WRITABLE |
+		                      G_PARAM_CONSTRUCT_ONLY |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/**
 	 * NMRemoteConnection:unsaved:
 	 *
 	 * %TRUE if the remote connection contains changes that have not been saved
@@ -796,6 +819,11 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 		                       FALSE,
 		                       G_PARAM_READABLE |
 		                       G_PARAM_STATIC_STRINGS));
+}
+
+static void
+nm_remote_connection_connection_iface_init (NMConnectionInterface *iface)
+{
 }
 
 static void

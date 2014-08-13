@@ -680,7 +680,7 @@ nmtst_ip6_config_clone (NMIP6Config *config)
 
 #endif
 
-#ifdef __NM_CONNECTION_H__
+#ifdef __NM_SIMPLE_CONNECTION_H__
 
 inline static NMConnection *
 nmtst_create_minimal_connection (const char *id, const char *uuid, const char *type, NMSettingConnection **out_s_con)
@@ -706,7 +706,7 @@ nmtst_create_minimal_connection (const char *id, const char *uuid, const char *t
 		g_assert (NM_IS_SETTING (s_base));
 	}
 
-	con = nm_connection_new ();
+	con = nm_simple_connection_new ();
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 
 	g_object_set (s_con,

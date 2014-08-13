@@ -81,7 +81,7 @@
  *    char *uuid;
  *    gboolean success;
  *
- *    connection = nm_connection_new ();
+ *    connection = nm_simple_connection_new ();
  *
  *    /&ast; Build up the 'connection' setting &ast;/
  *    s_con = (NMSettingConnection *) nm_setting_connection_new ();

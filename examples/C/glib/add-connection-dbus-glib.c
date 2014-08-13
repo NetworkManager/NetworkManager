@@ -46,7 +46,7 @@ add_connection (DBusGProxy *proxy, const char *con_name)
 	GError *error = NULL;
 
 	/* Create a new connection object */
-	connection = (NMConnection *) nm_connection_new ();
+	connection = (NMConnection *) nm_simple_connection_new ();
 
 	/* Build up the 'connection' Setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();

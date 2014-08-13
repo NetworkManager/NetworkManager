@@ -56,15 +56,16 @@ GQuark nm_remote_connection_error_quark (void);
 
 /* Properties */
 #define NM_REMOTE_CONNECTION_DBUS_CONNECTION "dbus-connection"
+#define NM_REMOTE_CONNECTION_PATH            "path"
 #define NM_REMOTE_CONNECTION_UNSAVED         "unsaved"
 #define NM_REMOTE_CONNECTION_VISIBLE         "visible"
 
 typedef struct {
-	NMConnection parent;
+	GObject parent;
 } NMRemoteConnection;
 
 typedef struct {
-	NMConnectionClass parent_class;
+	GObjectClass parent_class;
 
 	/*< private >*/
 	gpointer padding[8];

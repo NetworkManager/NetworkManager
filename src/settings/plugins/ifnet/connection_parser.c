@@ -1618,7 +1618,7 @@ ifnet_update_connection_from_config_block (const char *conn_name,
 	gchar *id, *uuid;
 	gboolean success = FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	setting = nm_connection_get_setting_connection (connection);
 	if (!setting) {
 		setting = NM_SETTING_CONNECTION (nm_setting_connection_new ());

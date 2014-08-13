@@ -126,7 +126,7 @@ test_wifi_open (void)
 	const unsigned char bssid_data[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
 	const char *bssid_str = "11:22:33:44:55:66";
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -227,7 +227,7 @@ test_wifi_wep_key (const char *detail,
 	const unsigned char bssid_data[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
 	const char *bssid_str = "11:22:33:44:55:66";
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -370,7 +370,7 @@ test_wifi_wpa_psk (const char *detail,
 	const unsigned char bssid_data[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
 	const char *bssid_str = "11:22:33:44:55:66";
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();

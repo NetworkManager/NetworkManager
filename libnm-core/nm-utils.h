@@ -32,6 +32,7 @@
 #include <linux/if_infiniband.h>
 
 #include "nm-connection.h"
+#include "nm-simple-connection.h"
 #include "nm-core-enum-types.h"
 
 G_BEGIN_DECLS

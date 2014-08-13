@@ -26,11 +26,7 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include "nm-dbus-interface.h"
-#include "nm-client.h"
-#include "nm-device-wifi.h"
-#include "nm-device-ethernet.h"
-#include "nm-device-wimax.h"
+#include <NetworkManager.h>
 #include "nm-glib-compat.h"
 
 #include "common.h"
