@@ -40,7 +40,8 @@ typedef struct {
 	guint send_rs_id;
 	GIOChannel *event_channel;
 	guint event_id;
-	guint timeout_id;
+	guint timeout_id;   /* prefix/dns/etc lifetime timeout */
+	guint ra_timeout_id;  /* first RA timeout */
 
 	int solicitations_left;
 } NMLNDPRDiscPrivate;
@@ -433,11 +434,32 @@ translate_preference (enum ndp_route_preference preference)
 	}
 }
 
+static void
+clear_rs_timeout (NMLNDPRDisc *rdisc)
+{
+	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+
+	if (priv->send_rs_id) {
+		g_source_remove (priv->send_rs_id);
+		priv->send_rs_id = 0;
+	}
+}
+
+static void
+clear_ra_timeout (NMLNDPRDisc *rdisc)
+{
+	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
+
+	if (priv->ra_timeout_id) {
+		g_source_remove (priv->ra_timeout_id);
+		priv->ra_timeout_id = 0;
+	}
+}
+
 static int
 receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 {
 	NMRDisc *rdisc = (NMRDisc *) user_data;
-	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 	NMRDiscConfigMap changed = 0;
 	struct ndp_msgra *msgra = ndp_msgra (msg);
 	NMRDiscGateway gateway;
@@ -458,10 +480,8 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	 */
 	debug ("(%s): received router advertisement at %u", rdisc->ifname, now);
 
-	if (priv->send_rs_id) {
-		g_source_remove (priv->send_rs_id);
-		priv->send_rs_id = 0;
-	}
+	clear_ra_timeout (NM_LNDP_RDISC (rdisc));
+	clear_rs_timeout (NM_LNDP_RDISC (rdisc));
 
 	/* DHCP level:
 	 *
@@ -606,21 +626,25 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	return 0;
 }
 
-static void
-process_events (NMRDisc *rdisc)
+static gboolean
+event_ready (GIOChannel *source, GIOCondition condition, NMRDisc *rdisc)
 {
 	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 
 	debug ("(%s): processing libndp events.", rdisc->ifname);
 	ndp_callall_eventfd_handler (priv->ndp);
+	return G_SOURCE_CONTINUE;
 }
 
 static gboolean
-event_ready (GIOChannel *source, GIOCondition condition, NMRDisc *rdisc)
+rdisc_ra_timeout_cb (gpointer user_data)
 {
-	process_events (rdisc);
+	NMLNDPRDisc *rdisc = NM_LNDP_RDISC (user_data);
+	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 
-	return TRUE;
+	priv->ra_timeout_id = 0;
+	g_signal_emit_by_name (rdisc, NM_RDISC_RA_TIMEOUT);
+	return G_SOURCE_REMOVE;
 }
 
 static void
@@ -628,14 +652,20 @@ start (NMRDisc *rdisc)
 {
 	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 	int fd = ndp_get_eventfd (priv->ndp);
+	guint ra_wait_secs;
 
 	priv->event_channel = g_io_channel_unix_new (fd);
 	priv->event_id = g_io_add_watch (priv->event_channel, G_IO_IN, (GIOFunc) event_ready, rdisc);
 
-	/* Flush any pending messages to avoid using obsolete information */
-	process_events (rdisc);
+	clear_ra_timeout (NM_LNDP_RDISC (rdisc));
+	ra_wait_secs = CLAMP (rdisc->rtr_solicitations * rdisc->rtr_solicitation_interval, 30, 120);
+	priv->ra_timeout_id = g_timeout_add_seconds (ra_wait_secs, rdisc_ra_timeout_cb, rdisc);
+	debug ("(%s): scheduling RA timeout in %d seconds", rdisc->ifname, ra_wait_secs);
 
-	ndp_msgrcv_handler_register (priv->ndp, &receive_ra, NDP_MSG_RA, rdisc->ifindex, rdisc);
+	/* Flush any pending messages to avoid using obsolete information */
+	event_ready (priv->event_channel, 0, rdisc);
+
+	ndp_msgrcv_handler_register (priv->ndp, receive_ra, NDP_MSG_RA, rdisc->ifindex, rdisc);
 	solicit (rdisc);
 }
 
@@ -647,21 +677,29 @@ nm_lndp_rdisc_init (NMLNDPRDisc *lndp_rdisc)
 }
 
 static void
-nm_lndp_rdisc_finalize (GObject *object)
+dispose (GObject *object)
 {
-	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (object);
+	NMLNDPRDisc *rdisc = NM_LNDP_RDISC (object);
+	NMLNDPRDiscPrivate *priv = NM_LNDP_RDISC_GET_PRIVATE (rdisc);
 
-	if (priv->send_rs_id)
-		g_source_remove (priv->send_rs_id);
-	if (priv->timeout_id)
+	clear_rs_timeout (rdisc);
+	clear_ra_timeout (rdisc);
+
+	if (priv->timeout_id) {
 		g_source_remove (priv->timeout_id);
-	if (priv->event_channel)
-		g_io_channel_unref (priv->event_channel);
-	if (priv->event_id)
-		g_source_remove (priv->event_id);
+		priv->timeout_id = 0;
+	}
 
-	if (priv->ndp)
+	if (priv->event_id) {
+		g_source_remove (priv->event_id);
+		priv->event_id = 0;
+	}
+	g_clear_pointer (&priv->event_channel, g_io_channel_unref);
+
+	if (priv->ndp) {
 		ndp_close (priv->ndp);
+		priv->ndp = NULL;
+	}
 }
 
 static void
@@ -672,6 +710,6 @@ nm_lndp_rdisc_class_init (NMLNDPRDiscClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMLNDPRDiscPrivate));
 
-	object_class->finalize = nm_lndp_rdisc_finalize;
+	object_class->dispose = dispose;
 	rdisc_class->start = start;
 }

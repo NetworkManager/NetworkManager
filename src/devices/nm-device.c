@@ -270,7 +270,8 @@ typedef struct {
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
 
 	NMRDisc *      rdisc;
-	gulong         rdisc_config_changed_sigid;
+	gulong         rdisc_changed_id;
+	gulong         rdisc_timeout_id;
 	NMSettingIP6ConfigPrivacy rdisc_use_tempaddr;
 	/* IP6 config from autoconf */
 	NMIP6Config *  ac_ip6_config;
@@ -3591,6 +3592,21 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 	nm_device_activate_schedule_ip6_config_result (self);
 }
 
+static void
+rdisc_ra_timeout (NMRDisc *rdisc, NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	/* We don't want to stop listening for router advertisements completely,
+	 * but instead let device activation continue activating.  If an RA
+	 * shows up later, we'll use it as long as the device is not disconnected.
+	 */
+
+	_LOGD (LOGD_IP6, "timed out waiting for IPv6 router advertisement");
+	if (priv->ip6_state == IP_CONF)
+		nm_device_activate_schedule_ip6_config_timeout (self);
+}
+
 static gboolean
 addrconf6_start_with_link_ready (NMDevice *self)
 {
@@ -3610,8 +3626,14 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
 
-	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
-	                                                     G_CALLBACK (rdisc_config_changed), self);
+	priv->rdisc_changed_id = g_signal_connect (priv->rdisc,
+	                                           NM_RDISC_CONFIG_CHANGED,
+	                                           G_CALLBACK (rdisc_config_changed),
+	                                           self);
+	priv->rdisc_timeout_id = g_signal_connect (priv->rdisc,
+	                                           NM_RDISC_RA_TIMEOUT,
+	                                           G_CALLBACK (rdisc_ra_timeout),
+	                                           self);
 	nm_rdisc_start (priv->rdisc);
 	return TRUE;
 }
@@ -3662,10 +3684,14 @@ addrconf6_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->rdisc_config_changed_sigid) {
-		g_signal_handler_disconnect (priv->rdisc,
-		                             priv->rdisc_config_changed_sigid);
-		priv->rdisc_config_changed_sigid = 0;
+	if (priv->rdisc_changed_id) {
+		g_signal_handler_disconnect (priv->rdisc, priv->rdisc_changed_id);
+		priv->rdisc_changed_id = 0;
+	}
+
+	if (priv->rdisc_timeout_id) {
+		g_signal_handler_disconnect (priv->rdisc, priv->rdisc_timeout_id);
+		priv->rdisc_timeout_id = 0;
 	}
 
 	nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
@@ -4646,6 +4672,12 @@ nm_device_activate_schedule_ip6_config_result (NMDevice *self)
 	guint level = (priv->ip6_state == IP_DONE) ? LOGL_DEBUG : LOGL_INFO;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
+
+	/* If IP had previously failed, move it back to IP_CONF since we
+	 * clearly now have configuration.
+	 */
+	if (priv->ip6_state == IP_FAIL)
+		priv->ip6_state = IP_CONF;
 
 	activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
 

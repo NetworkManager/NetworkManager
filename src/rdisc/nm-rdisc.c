@@ -32,6 +32,7 @@ G_DEFINE_TYPE (NMRDisc, nm_rdisc, G_TYPE_OBJECT)
 
 enum {
 	CONFIG_CHANGED,
+	RA_TIMEOUT,
 	LAST_SIGNAL
 };
 
@@ -184,4 +185,12 @@ nm_rdisc_class_init (NMRDiscClass *klass)
 			G_STRUCT_OFFSET (NMRDiscClass, config_changed),
 			NULL, NULL, NULL,
 			G_TYPE_NONE, 1, G_TYPE_INT);
+
+	signals[RA_TIMEOUT] = g_signal_new (
+			NM_RDISC_RA_TIMEOUT,
+			G_OBJECT_CLASS_TYPE (klass),
+			G_SIGNAL_RUN_FIRST,
+			G_STRUCT_OFFSET (NMRDiscClass, ra_timeout),
+			NULL, NULL, NULL,
+			G_TYPE_NONE, 0);
 }
