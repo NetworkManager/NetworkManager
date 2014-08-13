@@ -16,8 +16,8 @@
  * Copyright (C) 2010 Red Hat, Inc.
  */
 
-#ifndef NM_DNS_PLUGIN_H
-#define NM_DNS_PLUGIN_H
+#ifndef __NETWORKMANAGER_DNS_PLUGIN_H__
+#define __NETWORKMANAGER_DNS_PLUGIN_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -109,5 +109,5 @@ GPid nm_dns_plugin_child_spawn (NMDnsPlugin *self,
 
 gboolean nm_dns_plugin_child_kill (NMDnsPlugin *self);
 
-#endif /* NM_DNS_PLUGIN_H */
+#endif /* __NETWORKMANAGER_DNS_PLUGIN_H__ */
 

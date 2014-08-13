@@ -18,8 +18,8 @@
  * Copyright (C) 2011 Red Hat, Inc.
  */
 
-#ifndef NM_FIREWALL_MANAGER_H
-#define NM_FIREWALL_MANAGER_H
+#ifndef __NETWORKMANAGER_FIREWALL_MANAGER_H__
+#define __NETWORKMANAGER_FIREWALL_MANAGER_H__
 
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
@@ -70,4 +70,4 @@ gpointer nm_firewall_manager_remove_from_zone (NMFirewallManager *mgr,
 
 void nm_firewall_manager_cancel_call (NMFirewallManager *mgr, gpointer fw_call);
 
-#endif /* NM_FIREWALL_MANAGER_H */
+#endif /* __NETWORKMANAGER_FIREWALL_MANAGER_H__ */

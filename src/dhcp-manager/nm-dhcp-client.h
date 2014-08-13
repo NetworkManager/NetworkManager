@@ -16,8 +16,8 @@
  * Copyright (C) 2005 - 2010 Red Hat, Inc.
  */
 
-#ifndef NM_DHCP_CLIENT_H
-#define NM_DHCP_CLIENT_H
+#ifndef __NETWORKMANAGER_DHCP_CLIENT_H__
+#define __NETWORKMANAGER_DHCP_CLIENT_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -144,5 +144,5 @@ void nm_dhcp_client_set_state (NMDhcpClient *self,
                                GObject *ip_config,   /* NMIP4Config or NMIP6Config */
                                GHashTable *options); /* str:str hash */
 
-#endif /* NM_DHCP_CLIENT_H */
+#endif /* __NETWORKMANAGER_DHCP_CLIENT_H__ */
 

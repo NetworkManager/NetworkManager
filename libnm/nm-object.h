@@ -19,8 +19,8 @@
  * Copyright 2007 - 2012 Red Hat, Inc.
  */
 
-#ifndef NM_OBJECT_H
-#define NM_OBJECT_H
+#ifndef __NM_OBJECT_H__
+#define __NM_OBJECT_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -90,4 +90,4 @@ const char      *nm_object_get_path       (NMObject *object);
 
 G_END_DECLS
 
-#endif /* NM_OBJECT_H */
+#endif /* __NM_OBJECT_H__ */

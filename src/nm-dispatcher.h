@@ -19,8 +19,8 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
-#ifndef NM_DISPATCHER_H
-#define NM_DISPATCHER_H
+#ifndef __NETWORKMANAGER_DISPATCHER_H__
+#define __NETWORKMANAGER_DISPATCHER_H__
 
 #include <glib.h>
 #include <stdio.h>
@@ -76,4 +76,4 @@ void nm_dispatcher_call_cancel (guint call_id);
 
 void nm_dispatcher_init (void);
 
-#endif /* NM_DISPATCHER_H */
+#endif /* __NETWORKMANAGER_DISPATCHER_H__ */

@@ -20,8 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_SETTING_GSM_H
-#define NM_SETTING_GSM_H
+#ifndef __NM_SETTING_GSM_H__
+#define __NM_SETTING_GSM_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -100,4 +100,4 @@ NMSettingSecretFlags nm_setting_gsm_get_password_flags (NMSettingGsm *setting);
 
 G_END_DECLS
 
-#endif /* NM_SETTING_GSM_H */
+#endif /* __NM_SETTING_GSM_H__ */

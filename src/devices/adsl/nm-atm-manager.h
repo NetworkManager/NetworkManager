@@ -19,8 +19,8 @@
  * Copyright (C) 2007 - 2014 Red Hat, Inc.
  */
 
-#ifndef NM_ATM_MANAGER_H
-#define NM_ATM_MANAGER_H
+#ifndef __NETWORKMANAGER_ATM_MANAGER_H__
+#define __NETWORKMANAGER_ATM_MANAGER_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -38,5 +38,5 @@ typedef struct {
 	GObjectClass parent;
 } NMAtmManagerClass;
 
-#endif /* NM_ATM_MANAGER_H */
+#endif /* __NETWORKMANAGER_ATM_MANAGER_H__ */
 

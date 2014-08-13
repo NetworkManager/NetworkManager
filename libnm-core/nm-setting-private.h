@@ -18,8 +18,8 @@
  * Copyright 2011 Red Hat, Inc.
  */
 
-#ifndef NM_SETTING_PRIVATE_H
-#define NM_SETTING_PRIVATE_H
+#ifndef __NM_SETTING_PRIVATE_H__
+#define __NM_SETTING_PRIVATE_H__
 
 #include "nm-setting.h"
 #include "nm-glib-compat.h"

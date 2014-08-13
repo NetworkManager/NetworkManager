@@ -18,8 +18,8 @@
  * Copyright 2013, 2014 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_VXLAN_H
-#define NM_DEVICE_VXLAN_H
+#ifndef __NETWORKMANAGER_DEVICE_VXLAN_H__
+#define __NETWORKMANAGER_DEVICE_VXLAN_H__
 
 #include <glib-object.h>
 

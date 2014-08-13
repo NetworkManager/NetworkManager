@@ -19,8 +19,8 @@
  * Copyright 2008 Novell, Inc.
  */
 
-#ifndef NM_ACTIVE_CONNECTION_H
-#define NM_ACTIVE_CONNECTION_H
+#ifndef __NM_ACTIVE_CONNECTION_H__
+#define __NM_ACTIVE_CONNECTION_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -92,4 +92,4 @@ gboolean       nm_active_connection_get_vpn               (NMActiveConnection *c
 
 G_END_DECLS
 
-#endif /* NM_ACTIVE_CONNECTION_H */
+#endif /* __NM_ACTIVE_CONNECTION_H__ */

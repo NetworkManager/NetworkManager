@@ -19,8 +19,8 @@
  * Copyright (C) 2013 Thomas Bechtold <thomasbechtold@jpberlin.de>
  */
 
-#ifndef NM_CONFIG_H
-#define NM_CONFIG_H
+#ifndef __NETWORKMANAGER_CONFIG_H__
+#define __NETWORKMANAGER_CONFIG_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -74,5 +74,5 @@ NMConfig *nm_config_new (GError **error);
 
 G_END_DECLS
 
-#endif /* NM_CONFIG_H */
+#endif /* __NETWORKMANAGER_CONFIG_H__ */
 

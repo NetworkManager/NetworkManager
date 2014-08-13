@@ -20,8 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_SETTING_SERIAL_H
-#define NM_SETTING_SERIAL_H
+#ifndef __NM_SETTING_SERIAL_H__
+#define __NM_SETTING_SERIAL_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -87,4 +87,4 @@ guint64    nm_setting_serial_get_send_delay (NMSettingSerial *setting);
 
 G_END_DECLS
 
-#endif /* NM_SETTING_SERIAL_H */
+#endif /* __NM_SETTING_SERIAL_H__ */

@@ -18,8 +18,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_LOGGING_H
-#define NM_DEVICE_LOGGING_H
+#ifndef __NETWORKMANAGER_DEVICE_LOGGING_H__
+#define __NETWORKMANAGER_DEVICE_LOGGING_H__
 
 #include "nm-logging.h"
 #include "nm-device.h"
@@ -42,4 +42,4 @@ _nm_device_log_self_to_device (t *self) \
 #define _LOGW(domain, ...)      _LOG (LOGL_WARN,  domain, __VA_ARGS__)
 #define _LOGE(domain, ...)      _LOG (LOGL_ERR,   domain, __VA_ARGS__)
 
-#endif /* NM_DEVICE_LOGGING_H */
+#endif /* __NETWORKMANAGER_DEVICE_LOGGING_H__ */

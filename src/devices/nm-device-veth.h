@@ -18,8 +18,8 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_VETH_H
-#define NM_DEVICE_VETH_H
+#ifndef __NETWORKMANAGER_DEVICE_VETH_H__
+#define __NETWORKMANAGER_DEVICE_VETH_H__
 
 #include <glib-object.h>
 

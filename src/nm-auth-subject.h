@@ -18,8 +18,8 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
-#ifndef NM_AUTH_SUBJECT_H
-#define NM_AUTH_SUBJECT_H
+#ifndef __NETWORKMANAGER_AUTH_SUBJECT_H__
+#define __NETWORKMANAGER_AUTH_SUBJECT_H__
 
 #include <config.h>
 #include <glib.h>
@@ -69,4 +69,4 @@ gboolean nm_auth_subject_get_internal (NMAuthSubject *subject);
 PolkitSubject *nm_auth_subject_get_polkit_subject (NMAuthSubject *subject);
 #endif
 
-#endif /* NM_AUTH_SUBJECT_H */
+#endif /* __NETWORKMANAGER_AUTH_SUBJECT_H__ */

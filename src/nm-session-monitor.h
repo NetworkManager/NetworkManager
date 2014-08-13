@@ -18,8 +18,8 @@
  * Author: Dan Williams <dcbw@redhat.com>
  */
 
-#ifndef NM_SESSION_MONITOR_H
-#define NM_SESSION_MONITOR_H
+#ifndef __NETWORKMANAGER_SESSION_MONITOR_H__
+#define __NETWORKMANAGER_SESSION_MONITOR_H__
 
 #include <glib-object.h>
 
@@ -61,5 +61,5 @@ gboolean          nm_session_monitor_uid_active       (NMSessionMonitor *monitor
 
 G_END_DECLS
 
-#endif /* NM_SESSION_MONITOR_H */
+#endif /* __NETWORKMANAGER_SESSION_MONITOR_H__ */
 

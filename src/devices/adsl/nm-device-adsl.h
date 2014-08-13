@@ -19,8 +19,8 @@
  * Copyright (C) 2009 - 2011 Red Hat Inc.
  */
 
-#ifndef NM_DEVICE_ADSL_H
-#define NM_DEVICE_ADSL_H
+#ifndef __NETWORKMANAGER_DEVICE_ADSL_H__
+#define __NETWORKMANAGER_DEVICE_ADSL_H__
 
 #include <glib-object.h>
 

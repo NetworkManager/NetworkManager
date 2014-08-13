@@ -19,8 +19,8 @@
  * Copyright 2008 Novell, Inc.
  */
 
-#ifndef NM_VPN_PLUGIN_UI_INTERFACE_H
-#define NM_VPN_PLUGIN_UI_INTERFACE_H
+#ifndef __NM_VPN_PLUGIN_UI_INTERFACE_H__
+#define __NM_VPN_PLUGIN_UI_INTERFACE_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."

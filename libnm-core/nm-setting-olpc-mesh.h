@@ -20,8 +20,8 @@
  * Copyright 2009 One Laptop per Child
  */
 
-#ifndef NM_SETTING_OLPC_MESH_H
-#define NM_SETTING_OLPC_MESH_H
+#ifndef __NM_SETTING_OLPC_MESH_H__
+#define __NM_SETTING_OLPC_MESH_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -80,4 +80,4 @@ const GByteArray *nm_setting_olpc_mesh_get_dhcp_anycast_address (NMSettingOlpcMe
 
 G_END_DECLS
 
-#endif /* NM_SETTING_OLPC_MESH_H */
+#endif /* __NM_SETTING_OLPC_MESH_H__ */

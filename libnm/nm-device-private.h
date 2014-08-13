@@ -18,9 +18,9 @@
  * Copyright 2007 - 2012 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_PRIVATE_H
-#define NM_DEVICE_PRIVATE_H
+#ifndef __NM_DEVICE_PRIVATE_H__
+#define __NM_DEVICE_PRIVATE_H__
 
 void _nm_device_set_device_type (NMDevice *device, NMDeviceType dtype);
 
-#endif /* NM_DEVICE_PRIVATE_H */
+#endif /* __NM_DEVICE_PRIVATE_H__ */

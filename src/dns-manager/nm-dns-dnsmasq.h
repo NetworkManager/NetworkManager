@@ -16,8 +16,8 @@
  * Copyright (C) 2010 Red Hat, Inc.
  */
 
-#ifndef NM_DNS_DNSMASQ_H
-#define NM_DNS_DNSMASQ_H
+#ifndef __NETWORKMANAGER_DNS_DNSMASQ_H__
+#define __NETWORKMANAGER_DNS_DNSMASQ_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -43,5 +43,5 @@ GType nm_dns_dnsmasq_get_type (void);
 
 NMDnsPlugin *nm_dns_dnsmasq_new (void);
 
-#endif /* NM_DNS_DNSMASQ_H */
+#endif /* __NETWORKMANAGER_DNS_DNSMASQ_H__ */
 

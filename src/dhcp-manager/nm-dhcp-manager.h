@@ -19,8 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#ifndef NM_DHCP_MANAGER_H
-#define NM_DHCP_MANAGER_H
+#ifndef __NETWORKMANAGER_DHCP_MANAGER_H__
+#define __NETWORKMANAGER_DHCP_MANAGER_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -93,4 +93,4 @@ GSList *       nm_dhcp_manager_get_lease_ip_configs (NMDhcpManager *self,
 /* For testing only */
 extern const char* nm_dhcp_helper_path;
 
-#endif /* NM_DHCP_MANAGER_H */
+#endif /* __NETWORKMANAGER_DHCP_MANAGER_H__ */

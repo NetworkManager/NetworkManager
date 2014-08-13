@@ -19,8 +19,8 @@
  * Copyright 2008 - 2014 Red Hat, Inc.
  */
 
-#ifndef NM_IP6_CONFIG_H
-#define NM_IP6_CONFIG_H
+#ifndef __NM_IP6_CONFIG_H__
+#define __NM_IP6_CONFIG_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -71,4 +71,4 @@ const GPtrArray *      nm_ip6_config_get_searches        (NMIP6Config *config);
 
 G_END_DECLS
 
-#endif /* NM_IP6_CONFIG_H */
+#endif /* __NM_IP6_CONFIG_H__ */

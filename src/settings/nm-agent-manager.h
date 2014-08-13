@@ -18,8 +18,8 @@
  * Copyright (C) 2010 - 2011 Red Hat, Inc.
  */
 
-#ifndef NM_AGENT_MANAGER_H
-#define NM_AGENT_MANAGER_H
+#ifndef __NETWORKMANAGER_AGENT_MANAGER_H__
+#define __NETWORKMANAGER_AGENT_MANAGER_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -103,4 +103,4 @@ gboolean nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
                                                       NMAuthSubject *subject,
                                                       NMSecretAgentCapabilities capability);
 
-#endif /* NM_AGENT_MANAGER_H */
+#endif /* __NETWORKMANAGER_AGENT_MANAGER_H__ */

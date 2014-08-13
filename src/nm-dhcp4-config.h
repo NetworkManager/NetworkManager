@@ -18,8 +18,8 @@
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
-#ifndef NM_DHCP4_CONFIG_H
-#define NM_DHCP4_CONFIG_H
+#ifndef __NETWORKMANAGER_DHCP4_CONFIG_H__
+#define __NETWORKMANAGER_DHCP4_CONFIG_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -60,4 +60,4 @@ const char *nm_dhcp4_config_get_option (NMDhcp4Config *config, const char *optio
 
 GSList *nm_dhcp4_config_list_options (NMDhcp4Config *config);
 
-#endif /* NM_DHCP4_CONFIG_H */
+#endif /* __NETWORKMANAGER_DHCP4_CONFIG_H__ */

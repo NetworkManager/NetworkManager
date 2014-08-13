@@ -19,8 +19,8 @@
  * Copyright 2007 - 2012 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_ETHERNET_H
-#define NM_DEVICE_ETHERNET_H
+#ifndef __NM_DEVICE_ETHERNET_H__
+#define __NM_DEVICE_ETHERNET_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -81,4 +81,4 @@ gboolean     nm_device_ethernet_get_carrier (NMDeviceEthernet *device);
 
 G_END_DECLS
 
-#endif /* NM_DEVICE_ETHERNET_H */
+#endif /* __NM_DEVICE_ETHERNET_H__ */

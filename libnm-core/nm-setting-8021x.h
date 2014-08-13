@@ -20,8 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_SETTING_8021X_H
-#define NM_SETTING_8021X_H
+#ifndef __NM_SETTING_8021X_H__
+#define __NM_SETTING_8021X_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -292,4 +292,4 @@ NMSetting8021xCKFormat nm_setting_802_1x_get_phase2_private_key_format   (NMSett
 
 G_END_DECLS
 
-#endif /* NM_SETTING_8021X_H */
+#endif /* __NM_SETTING_8021X_H__ */

@@ -23,8 +23,8 @@
 
 #include "nm-types.h"
 
-#ifndef NM_RFKILL_MANAGER_H
-#define NM_RFKILL_MANAGER_H
+#ifndef __NETWORKMANAGER_RFKILL_MANAGER_H__
+#define __NETWORKMANAGER_RFKILL_MANAGER_H__
 
 typedef enum {
 	RFKILL_UNBLOCKED = 0,

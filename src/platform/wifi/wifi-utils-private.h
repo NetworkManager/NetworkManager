@@ -18,8 +18,8 @@
  * Copyright (C) 2011 Red Hat, Inc.
  */
 
-#ifndef WIFI_UTILS_PRIVATE_H
-#define WIFI_UTILS_PRIVATE_H
+#ifndef __WIFI_UTILS_PRIVATE_H__
+#define __WIFI_UTILS_PRIVATE_H__
 
 #include <glib.h>
 
@@ -74,4 +74,4 @@ struct WifiData {
 gpointer wifi_data_new (const char *iface, int ifindex, gsize len);
 void wifi_data_free (WifiData *data);
 
-#endif  /* WIFI_UTILS_PRIVATE_H */
+#endif  /* __WIFI_UTILS_PRIVATE_H__ */

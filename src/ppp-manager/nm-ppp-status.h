@@ -19,8 +19,8 @@
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
-#ifndef NM_PPP_STATUS_H
-#define NM_PPP_STATUS_H
+#ifndef __NETWORKMANAGER_PPP_STATUS_H__
+#define __NETWORKMANAGER_PPP_STATUS_H__
 
 typedef enum {
 	NM_PPP_STATUS_UNKNOWN,
@@ -40,4 +40,4 @@ typedef enum {
 	NM_PPP_STATUS_MASTER
 } NMPPPStatus;
 
-#endif /* NM_PPP_STATUS_H */
+#endif /* __NETWORKMANAGER_PPP_STATUS_H__ */

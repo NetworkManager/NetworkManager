@@ -19,8 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#ifndef NM_LOGGING_H
-#define NM_LOGGING_H
+#ifndef __NETWORKMANAGER_LOGGING_H__
+#define __NETWORKMANAGER_LOGGING_H__
 
 #ifdef __NM_TEST_UTILS_H__
 #error nm-test-utils.h must be included as last header
@@ -154,4 +154,4 @@ gboolean nm_logging_setup (const char  *level,
 void     nm_logging_syslog_openlog   (gboolean debug);
 void     nm_logging_syslog_closelog  (void);
 
-#endif /* NM_LOGGING_H */
+#endif /* __NETWORKMANAGER_LOGGING_H__ */

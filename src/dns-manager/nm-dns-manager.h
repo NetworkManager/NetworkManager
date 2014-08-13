@@ -21,8 +21,8 @@
  *   and others
  */
 
-#ifndef NM_DNS_MANAGER_H
-#define NM_DNS_MANAGER_H
+#ifndef __NETWORKMANAGER_DNS_MANAGER_H__
+#define __NETWORKMANAGER_DNS_MANAGER_H__
 
 #include <glib-object.h>
 #include <dbus/dbus.h>
@@ -114,4 +114,4 @@ NMDnsManagerResolvConfMode nm_dns_manager_get_resolv_conf_mode (NMDnsManager *mg
 
 G_END_DECLS
 
-#endif /* NM_DNS_MANAGER_H */
+#endif /* __NETWORKMANAGER_DNS_MANAGER_H__ */

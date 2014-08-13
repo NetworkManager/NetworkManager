@@ -18,8 +18,8 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
-#ifndef NM_WIMAX_TYPES_H
-#define NM_WIMAX_TYPES_H
+#ifndef __NETWORKMANAGER_WIMAX_TYPES_H__
+#define __NETWORKMANAGER_WIMAX_TYPES_H__
 
 typedef enum {
 	NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,

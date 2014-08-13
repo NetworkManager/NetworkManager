@@ -18,8 +18,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#ifndef NM_WWAN_FACTORY_H
-#define NM_WWAN_FACTORY_H
+#ifndef __NETWORKMANAGER_WWAN_FACTORY_H__
+#define __NETWORKMANAGER_WWAN_FACTORY_H__
 
 #include <glib-object.h>
 
@@ -34,4 +34,4 @@ typedef struct {
 	GObjectClass parent;
 } NMWwanFactoryClass;
 
-#endif /* NM_WWAN_FACTORY_H */
+#endif /* __NETWORKMANAGER_WWAN_FACTORY_H__ */

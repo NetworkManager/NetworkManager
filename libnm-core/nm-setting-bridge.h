@@ -19,8 +19,8 @@
  * Copyright 2011 - 2012 Red Hat, Inc.
  */
 
-#ifndef NM_SETTING_BRIDGE_H
-#define NM_SETTING_BRIDGE_H
+#ifndef __NM_SETTING_BRIDGE_H__
+#define __NM_SETTING_BRIDGE_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -97,4 +97,4 @@ guint32      nm_setting_bridge_get_ageing_time    (NMSettingBridge *setting);
 
 G_END_DECLS
 
-#endif /* NM_SETTING_BRIDGE_H */
+#endif /* __NM_SETTING_BRIDGE_H__ */

@@ -20,8 +20,8 @@
  * Copyright (C) 2009 Canonical Ltd.
  */
 
-#ifndef NM_MODEM_MANAGER_H
-#define NM_MODEM_MANAGER_H
+#ifndef __NETWORKMANAGER_MODEM_MANAGER_H__
+#define __NETWORKMANAGER_MODEM_MANAGER_H__
 
 #include <glib-object.h>
 #include "nm-modem.h"
@@ -46,4 +46,4 @@ typedef struct {
 
 GType nm_modem_manager_get_type (void);
 
-#endif /* NM_MODEM_MANAGER_H */
+#endif /* __NETWORKMANAGER_MODEM_MANAGER_H__ */

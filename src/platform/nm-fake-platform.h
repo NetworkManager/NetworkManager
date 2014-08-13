@@ -18,8 +18,8 @@
  * Copyright (C) 2012 Red Hat, Inc.
  */
 
-#ifndef NM_FAKE_PLATFORM_H
-#define NM_FAKE_PLATFORM_H
+#ifndef __NETWORKMANAGER_FAKE_PLATFORM_H__
+#define __NETWORKMANAGER_FAKE_PLATFORM_H__
 
 #include "nm-platform.h"
 
@@ -46,4 +46,4 @@ GType nm_fake_platform_get_type (void);
 
 void nm_fake_platform_setup (void);
 
-#endif /* NM_FAKE_PLATFORM_H */
+#endif /* __NETWORKMANAGER_FAKE_PLATFORM_H__ */

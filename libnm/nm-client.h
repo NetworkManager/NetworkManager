@@ -19,8 +19,8 @@
  * Copyright 2007 - 2012 Red Hat, Inc.
  */
 
-#ifndef NM_CLIENT_H
-#define NM_CLIENT_H
+#ifndef __NM_CLIENT_H__
+#define __NM_CLIENT_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -249,4 +249,4 @@ NMActiveConnection *nm_client_get_activating_connection (NMClient *client);
 
 G_END_DECLS
 
-#endif /* NM_CLIENT_H */
+#endif /* __NM_CLIENT_H__ */

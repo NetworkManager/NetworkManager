@@ -18,8 +18,8 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
-#ifndef NM_ACTIVE_CONNECTION_H
-#define NM_ACTIVE_CONNECTION_H
+#ifndef __NETWORKMANAGER_ACTIVE_CONNECTION_H__
+#define __NETWORKMANAGER_ACTIVE_CONNECTION_H__
 
 #include <glib-object.h>
 #include "nm-types.h"
@@ -141,4 +141,4 @@ void          nm_active_connection_set_assumed (NMActiveConnection *self,
 
 gboolean      nm_active_connection_get_assumed (NMActiveConnection *self);
 
-#endif /* NM_ACTIVE_CONNECTION_H */
+#endif /* __NETWORKMANAGER_ACTIVE_CONNECTION_H__ */

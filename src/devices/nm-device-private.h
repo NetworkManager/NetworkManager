@@ -19,8 +19,8 @@
  * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_PRIVATE_H
-#define NM_DEVICE_PRIVATE_H
+#ifndef __NETWORKMANAGER_DEVICE_PRIVATE_H__
+#define __NETWORKMANAGER_DEVICE_PRIVATE_H__
 
 #include "nm-device.h"
 

@@ -17,8 +17,8 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#ifndef NM_GVALUEARRAY_COMPAT_H
-#define NM_GVALUEARRAY_COMPAT_H
+#ifndef __NM_GVALUEARRAY_COMPAT_H__
+#define __NM_GVALUEARRAY_COMPAT_H__
 
 #include <glib.h>
 
@@ -105,4 +105,4 @@ __g_value_array_free (GValueArray *value_array)
     G_GNUC_END_IGNORE_DEPRECATIONS \
   })
 
-#endif  /* NM_GVALUEARRAY_COMPAT_H */
+#endif  /* __NM_GVALUEARRAY_COMPAT_H__ */

@@ -19,8 +19,8 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_POLICY_H
-#define NM_POLICY_H
+#ifndef __NETWORKMANAGER_POLICY_H__
+#define __NETWORKMANAGER_POLICY_H__
 
 #include "nm-types.h"
 
@@ -54,4 +54,4 @@ NMDevice *nm_policy_get_default_ip6_device (NMPolicy *policy);
 NMDevice *nm_policy_get_activating_ip4_device (NMPolicy *policy);
 NMDevice *nm_policy_get_activating_ip6_device (NMPolicy *policy);
 
-#endif /* NM_POLICY_H */
+#endif /* __NETWORKMANAGER_POLICY_H__ */

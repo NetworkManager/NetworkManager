@@ -19,8 +19,8 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_SUPPLICANT_MANAGER_H
-#define NM_SUPPLICANT_MANAGER_H
+#ifndef __NETWORKMANAGER_SUPPLICANT_MANAGER_H__
+#define __NETWORKMANAGER_SUPPLICANT_MANAGER_H__
 
 #include <glib-object.h>
 #include "nm-supplicant-types.h"
@@ -65,4 +65,4 @@ void nm_supplicant_manager_iface_release (NMSupplicantManager *mgr,
 
 gboolean nm_supplicant_manager_available (NMSupplicantManager *mgr);
 
-#endif /* NM_SUPPLICANT_MANAGER_H */
+#endif /* __NETWORKMANAGER_SUPPLICANT_MANAGER_H__ */

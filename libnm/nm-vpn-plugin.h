@@ -19,8 +19,8 @@
  * Copyright 2007 - 2013 Red Hat, Inc.
  */
 
-#ifndef NM_VPN_PLUGIN_H
-#define NM_VPN_PLUGIN_H
+#ifndef __NM_VPN_PLUGIN_H__
+#define __NM_VPN_PLUGIN_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -173,4 +173,4 @@ gboolean           nm_vpn_plugin_disconnect     (NMVpnPlugin *plugin,
 
 G_END_DECLS
 
-#endif /* NM_VPN_PLUGIN_H */
+#endif /* __NM_VPN_PLUGIN_H__ */

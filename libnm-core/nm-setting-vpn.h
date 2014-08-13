@@ -20,8 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_SETTING_VPN_H
-#define NM_SETTING_VPN_H
+#ifndef __NM_SETTING_VPN_H__
+#define __NM_SETTING_VPN_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -113,4 +113,4 @@ void              nm_setting_vpn_foreach_secret    (NMSettingVpn *setting,
 
 G_END_DECLS
 
-#endif /* NM_SETTING_VPN_H */
+#endif /* __NM_SETTING_VPN_H__ */

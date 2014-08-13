@@ -19,8 +19,8 @@
  * Copyright 2007 - 2011 Red Hat, Inc.
  */
 
-#ifndef NM_ACCESS_POINT_H
-#define NM_ACCESS_POINT_H
+#ifndef __NM_ACCESS_POINT_H__
+#define __NM_ACCESS_POINT_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -86,4 +86,4 @@ gboolean               nm_access_point_connection_valid   (NMAccessPoint *ap,
 
 G_END_DECLS
 
-#endif /* NM_ACCESS_POINT_H */
+#endif /* __NM_ACCESS_POINT_H__ */

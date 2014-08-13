@@ -18,8 +18,8 @@
  * Copyright 2012 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_VLAN_H
-#define NM_DEVICE_VLAN_H
+#ifndef __NM_DEVICE_VLAN_H__
+#define __NM_DEVICE_VLAN_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -80,4 +80,4 @@ guint        nm_device_vlan_get_vlan_id (NMDeviceVlan *device);
 
 G_END_DECLS
 
-#endif /* NM_DEVICE_VLAN_H */
+#endif /* __NM_DEVICE_VLAN_H__ */

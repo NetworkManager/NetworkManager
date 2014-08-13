@@ -18,8 +18,8 @@
  * Copyright (C) 2006 - 2008 Red Hat, Inc.
  */
 
-#ifndef NM_SUPPLICANT_TYPES_H
-#define NM_SUPPLICANT_TYPES_H
+#ifndef __NETWORKMANAGER_SUPPLICANT_TYPES_H__
+#define __NETWORKMANAGER_SUPPLICANT_TYPES_H__
 
 typedef struct _NMSupplicantManager NMSupplicantManager;
 typedef struct _NMSupplicantInterface NMSupplicantInterface;

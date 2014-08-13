@@ -20,8 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_PARAM_SPEC_SPECIALIZED_H
-#define NM_PARAM_SPEC_SPECIALIZED_H
+#ifndef __NM_PARAM_SPEC_SPECIALIZED_H__
+#define __NM_PARAM_SPEC_SPECIALIZED_H__
 
 #include <glib-object.h>
 
@@ -40,4 +40,4 @@ GParamSpec *_nm_param_spec_specialized (const char *name,
                                         GType specialized_type,
                                         GParamFlags flags);
 
-#endif /* NM_PARAM_SPEC_SPECIALIZED_H */
+#endif /* __NM_PARAM_SPEC_SPECIALIZED_H__ */

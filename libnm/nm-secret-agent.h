@@ -18,8 +18,8 @@
  * Copyright 2010 - 2011 Red Hat, Inc.
  */
 
-#ifndef NM_SECRET_AGENT_H
-#define NM_SECRET_AGENT_H
+#ifndef __NM_SECRET_AGENT_H__
+#define __NM_SECRET_AGENT_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -257,4 +257,4 @@ void nm_secret_agent_delete_secrets (NMSecretAgent *self,
 
 G_END_DECLS
 
-#endif /* NM_SECRET_AGENT_H */
+#endif /* __NM_SECRET_AGENT_H__ */

@@ -18,8 +18,8 @@
  * Copyright (C) 2009 - 2010 Red Hat, Inc.
  */
 
-#ifndef NM_PLATFORM_H
-#define NM_PLATFORM_H
+#ifndef __NETWORKMANAGER_PLATFORM_H__
+#define __NETWORKMANAGER_PLATFORM_H__
 
 #include <glib-object.h>
 #include "nm-glib-compat.h"
@@ -628,4 +628,4 @@ void nm_platform_addr_flags2str (int flags, char *buf, size_t size);
 
 int nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatformIPAddress *b);
 
-#endif /* NM_PLATFORM_H */
+#endif /* __NETWORKMANAGER_PLATFORM_H__ */

@@ -19,8 +19,8 @@
  * Copyright 2007 - 2014 Red Hat, Inc.
  */
 
-#ifndef NM_SETTING_IP6_CONFIG_H
-#define NM_SETTING_IP6_CONFIG_H
+#ifndef __NM_SETTING_IP6_CONFIG_H__
+#define __NM_SETTING_IP6_CONFIG_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -250,4 +250,4 @@ NMSettingIP6ConfigPrivacy nm_setting_ip6_config_get_ip6_privacy (NMSettingIP6Con
 
 G_END_DECLS
 
-#endif /* NM_SETTING_IP6_CONFIG_H */
+#endif /* __NM_SETTING_IP6_CONFIG_H__ */

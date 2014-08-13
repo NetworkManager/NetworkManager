@@ -18,8 +18,8 @@
  * Copyright (C) 2012 Red Hat, Inc.
  */
 
-#ifndef NM_POSIX_SIGNALS_H
-#define NM_POSIX_SIGNALS_H
+#ifndef __NETWORKMANAGER_POSIX_SIGNALS_H__
+#define __NETWORKMANAGER_POSIX_SIGNALS_H__
 
 #include <glib.h>
 #include <signal.h>
@@ -33,4 +33,4 @@ void nm_unblock_posix_signals (gpointer user_data);
 void nm_save_original_signal_mask (sigset_t sig_mask);
 const sigset_t *nm_get_original_signal_mask (void);
 
-#endif /* NM_POSIX_SIGNALS_H */
+#endif /* __NETWORKMANAGER_POSIX_SIGNALS_H__ */

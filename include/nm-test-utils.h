@@ -243,7 +243,7 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 
 	if (!__nmtst_internal.assert_logging) {
 		gboolean success = TRUE;
-#ifdef NM_LOGGING_H
+#ifdef __NETWORKMANAGER_LOGGING_H__
 		success = nm_logging_setup (log_level, log_domains, NULL, NULL);
 #endif
 		g_assert (success);
@@ -293,13 +293,13 @@ __nmtst_init (int *argc, char ***argv, gboolean assert_logging, const char *log_
 		g_once_init_leave (&atexit_registered, 1);
 	}
 
-#ifdef NETWORK_MANAGER_UTILS_H
+#ifdef __NETWORKMANAGER_UTILS_H__
 	/* ensure that monotonic timestamp is called (because it initially logs a line) */
 	nm_utils_get_monotonic_timestamp_s ();
 #endif
 }
 
-#ifdef NM_LOGGING_H
+#ifdef __NETWORKMANAGER_LOGGING_H__
 inline static void
 nmtst_init_with_logging (int *argc, char ***argv, const char *log_level, const char *log_domains)
 {
@@ -544,7 +544,7 @@ __nmtst_spawn_sync (const char *working_directory, char **standard_out, char **s
 
 /*******************************************************************************/
 
-#ifdef NM_PLATFORM_H
+#ifdef __NETWORKMANAGER_PLATFORM_H__
 
 inline static NMPlatformIP6Address *
 nmtst_platform_ip6_address (const char *address, const char *peer_address, guint plen)
@@ -649,7 +649,7 @@ nmtst_platform_ip6_routes_equal (const NMPlatformIP6Route *a, const NMPlatformIP
 #endif
 
 
-#ifdef NM_IP4_CONFIG_H
+#ifdef __NETWORKMANAGER_IP4_CONFIG_H__
 
 inline static NMIP4Config *
 nmtst_ip4_config_clone (NMIP4Config *config)
@@ -665,7 +665,7 @@ nmtst_ip4_config_clone (NMIP4Config *config)
 #endif
 
 
-#ifdef NM_IP6_CONFIG_H
+#ifdef __NETWORKMANAGER_IP6_CONFIG_H__
 
 inline static NMIP6Config *
 nmtst_ip6_config_clone (NMIP6Config *config)
@@ -680,7 +680,7 @@ nmtst_ip6_config_clone (NMIP6Config *config)
 
 #endif
 
-#ifdef NM_CONNECTION_H
+#ifdef __NM_CONNECTION_H__
 
 inline static NMConnection *
 nmtst_create_minimal_connection (const char *id, const char *uuid, const char *type, NMSettingConnection **out_s_con)

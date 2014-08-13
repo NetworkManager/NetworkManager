@@ -16,8 +16,8 @@
  * Copyright (C) 2005 - 2010 Red Hat, Inc.
  */
 
-#ifndef NM_DHCP_DHCLIENT_H
-#define NM_DHCP_DHCLIENT_H
+#ifndef __NETWORKMANAGER_DHCP_DHCLIENT_H__
+#define __NETWORKMANAGER_DHCP_DHCLIENT_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -47,5 +47,5 @@ GSList *nm_dhcp_dhclient_get_lease_ip_configs (const char *iface,
 
 const char *nm_dhcp_dhclient_get_path (const char *try_first);
 
-#endif /* NM_DHCP_DHCLIENT_H */
+#endif /* __NETWORKMANAGER_DHCP_DHCLIENT_H__ */
 

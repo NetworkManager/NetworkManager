@@ -23,8 +23,8 @@
  * used by some external code that does not link to libnm.
  */
 
-#ifndef NM_VPN_DBUS_INTERFACE_H
-#define NM_VPN_DBUS_INTERFACE_H
+#ifndef __NM_VPN_DBUS_INTERFACE_H__
+#define __NM_VPN_DBUS_INTERFACE_H__
 
 /*
  * dbus services details
@@ -299,4 +299,4 @@ typedef enum {
 /* boolean: prevent this VPN connection from ever getting the default route */
 #define NM_VPN_PLUGIN_IP6_CONFIG_NEVER_DEFAULT "never-default"
 
-#endif /* NM_VPN_DBUS_INTERFACE_H */
+#endif /* __NM_VPN_DBUS_INTERFACE_H__ */

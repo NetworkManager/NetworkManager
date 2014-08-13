@@ -18,8 +18,8 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
-#ifndef NM_FAKE_RDISC_H
-#define NM_FAKE_RDISC_H
+#ifndef __NETWORKMANAGER_FAKE_RDISC_H__
+#define __NETWORKMANAGER_FAKE_RDISC_H__
 
 #include "nm-rdisc.h"
 
@@ -46,4 +46,4 @@ GType nm_fake_rdisc_get_type (void);
 
 NMRDisc *nm_fake_rdisc_new (int ifindex, const char *ifname);
 
-#endif /* NM_FAKE_RDISC_H */
+#endif /* __NETWORKMANAGER_FAKE_RDISC_H__ */

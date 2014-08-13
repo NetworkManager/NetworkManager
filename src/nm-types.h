@@ -18,8 +18,8 @@
  * Copyright (C) 2012 Red Hat, Inc.
  */
 
-#ifndef NM_TYPES_H
-#define NM_TYPES_H
+#ifndef __NETWORKMANAGER_TYPES_H__
+#define __NETWORKMANAGER_TYPES_H__
 
 /* core */
 typedef struct _NMActiveConnection   NMActiveConnection;

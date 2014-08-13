@@ -18,8 +18,8 @@
  * Copyright (C) 2009 Red Hat, Inc.
  */
 
-#ifndef NM_BLUEZ_COMMON_H
-#define NM_BLUEZ_COMMON_H
+#ifndef __NETWORKMANAGER_BLUEZ_COMMON_H__
+#define __NETWORKMANAGER_BLUEZ_COMMON_H__
 
 #include <config.h>
 

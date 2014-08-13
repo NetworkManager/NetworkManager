@@ -20,8 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_SETTING_WIRELESS_SECURITY_H
-#define NM_SETTING_WIRELESS_SECURITY_H
+#ifndef __NM_SETTING_WIRELESS_SECURITY_H__
+#define __NM_SETTING_WIRELESS_SECURITY_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -173,4 +173,4 @@ NMWepKeyType nm_setting_wireless_security_get_wep_key_type (NMSettingWirelessSec
 
 G_END_DECLS
 
-#endif /* NM_SETTING_WIRELESS_SECURITY_H */
+#endif /* __NM_SETTING_WIRELESS_SECURITY_H__ */

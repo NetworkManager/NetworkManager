@@ -18,8 +18,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#ifndef NM_TEAM_FACTORY_H
-#define NM_TEAM_FACTORY_H
+#ifndef __NETWORKMANAGER_TEAM_FACTORY_H__
+#define __NETWORKMANAGER_TEAM_FACTORY_H__
 
 #include <glib-object.h>
 
@@ -34,4 +34,4 @@ typedef struct {
 	GObjectClass parent;
 } NMTeamFactoryClass;
 
-#endif /* NM_TEAM_FACTORY_H */
+#endif /* __NETWORKMANAGER_TEAM_FACTORY_H__ */

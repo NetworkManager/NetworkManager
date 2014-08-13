@@ -18,8 +18,8 @@
  * Copyright 2012 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_VLAN_H
-#define NM_DEVICE_VLAN_H
+#ifndef __NETWORKMANAGER_DEVICE_VLAN_H__
+#define __NETWORKMANAGER_DEVICE_VLAN_H__
 
 #include <glib-object.h>
 

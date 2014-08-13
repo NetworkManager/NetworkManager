@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef NM_DEVICE_TEAM_H
-#define NM_DEVICE_TEAM_H
+#ifndef __NETWORKMANAGER_DEVICE_TEAM_H__
+#define __NETWORKMANAGER_DEVICE_TEAM_H__
 
 #include <glib-object.h>
 

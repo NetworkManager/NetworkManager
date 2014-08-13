@@ -19,8 +19,8 @@
  * Copyright (C) 2007 - 2014 Red Hat, Inc.
  */
 
-#ifndef NM_BLUEZ_MANAGER_H
-#define NM_BLUEZ_MANAGER_H
+#ifndef __NETWORKMANAGER_BLUEZ_MANAGER_H__
+#define __NETWORKMANAGER_BLUEZ_MANAGER_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -40,5 +40,5 @@ typedef struct {
 	GObjectClass parent;
 } NMBluezManagerClass;
 
-#endif /* NM_BLUEZ_MANAGER_H */
+#endif /* __NETWORKMANAGER_BLUEZ_MANAGER_H__ */
 

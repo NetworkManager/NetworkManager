@@ -19,8 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#ifndef NM_ACCESS_POINT_H
-#define NM_ACCESS_POINT_H
+#ifndef __NETWORKMANAGER_ACCESS_POINT_H__
+#define __NETWORKMANAGER_ACCESS_POINT_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -118,4 +118,4 @@ NMAccessPoint *     nm_ap_match_in_list (NMAccessPoint *find_ap,
 
 void                nm_ap_dump (NMAccessPoint *ap, const char *prefix);
 
-#endif /* NM_ACCESS_POINT_H */
+#endif /* __NETWORKMANAGER_ACCESS_POINT_H__ */

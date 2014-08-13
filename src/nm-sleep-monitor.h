@@ -17,8 +17,8 @@
  * Author: Matthias Clasen <mclasen@redhat.com>
  */
 
-#ifndef NM_SLEEP_MONITOR_H
-#define NM_SLEEP_MONITOR_H
+#ifndef __NETWORKMANAGER_SLEEP_MONITOR_H__
+#define __NETWORKMANAGER_SLEEP_MONITOR_H__
 
 #include <glib-object.h>
 
@@ -43,5 +43,5 @@ NMSleepMonitor *nm_sleep_monitor_get          (void);
 
 G_END_DECLS
 
-#endif /* NM_SLEEP_MONITOR_H */
+#endif /* __NETWORKMANAGER_SLEEP_MONITOR_H__ */
 

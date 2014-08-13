@@ -18,8 +18,8 @@
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
-#ifndef NM_DNSMASQ_MANAGER_H
-#define NM_DNSMASQ_MANAGER_H
+#ifndef __NETWORKMANAGER_DNSMASQ_MANAGER_H__
+#define __NETWORKMANAGER_DNSMASQ_MANAGER_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -66,4 +66,4 @@ void     nm_dnsmasq_manager_stop  (NMDnsMasqManager *manager);
 
 GQuark nm_dnsmasq_manager_error_quark (void);
 
-#endif /* NM_DNSMASQ_MANAGER_H */
+#endif /* __NETWORKMANAGER_DNSMASQ_MANAGER_H__ */

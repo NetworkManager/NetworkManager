@@ -19,8 +19,8 @@
  * Copyright 2011 - 2013 Red Hat, Inc.
  */
 
-#ifndef NM_SETTING_BOND_H
-#define NM_SETTING_BOND_H
+#ifndef __NM_SETTING_BOND_H__
+#define __NM_SETTING_BOND_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -114,4 +114,4 @@ const char * nm_setting_bond_get_option_default (NMSettingBond *setting,
 
 G_END_DECLS
 
-#endif /* NM_SETTING_BOND_H */
+#endif /* __NM_SETTING_BOND_H__ */

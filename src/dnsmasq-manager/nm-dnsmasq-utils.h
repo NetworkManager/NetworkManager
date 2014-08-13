@@ -18,8 +18,8 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
-#ifndef NM_DNSMASQ_UTILS_H
-#define NM_DNSMASQ_UTILS_H
+#ifndef __NETWORKMANAGER_DNSMASQ_UTILS_H__
+#define __NETWORKMANAGER_DNSMASQ_UTILS_H__
 
 #include <glib.h>
 #include "nm-platform.h"
@@ -29,4 +29,4 @@ gboolean nm_dnsmasq_utils_get_range (const NMPlatformIP4Address *addr,
                                      char *out_last,
                                      char **out_error_desc);
 
-#endif /* NM_DNSMASQ_UTILS_H */
+#endif /* __NETWORKMANAGER_DNSMASQ_UTILS_H__ */

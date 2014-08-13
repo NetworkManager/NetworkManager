@@ -18,8 +18,8 @@
  * Copyright (C) 2009 - 2014 Red Hat, Inc.
  */
 
-#ifndef NM_BLUEZ_DEVICE_H
-#define NM_BLUEZ_DEVICE_H
+#ifndef __NETWORKMANAGER_BLUEZ_DEVICE_H__
+#define __NETWORKMANAGER_BLUEZ_DEVICE_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -94,5 +94,5 @@ nm_bluez_device_connect_finish (NMBluezDevice *self,
 void
 nm_bluez_device_disconnect (NMBluezDevice *self);
 
-#endif /* NM_BLUEZ_DEVICE_H */
+#endif /* __NETWORKMANAGER_BLUEZ_DEVICE_H__ */
 

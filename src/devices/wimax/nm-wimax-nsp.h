@@ -18,8 +18,8 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
-#ifndef NM_WIMAX_NSP_H
-#define NM_WIMAX_NSP_H
+#ifndef __NETWORKMANAGER_WIMAX_NSP_H__
+#define __NETWORKMANAGER_WIMAX_NSP_H__
 
 #include <glib-object.h>
 #include "nm-wimax-types.h"

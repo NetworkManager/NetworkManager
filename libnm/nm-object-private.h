@@ -18,8 +18,8 @@
  * Copyright 2008 - 2011 Red Hat, Inc.
  */
 
-#ifndef NM_OBJECT_PRIVATE_H
-#define NM_OBJECT_PRIVATE_H
+#ifndef __NM_OBJECT_PRIVATE_H__
+#define __NM_OBJECT_PRIVATE_H__
 
 #include <gio/gio.h>
 #include "nm-object.h"
@@ -90,4 +90,4 @@ void _nm_object_register_type_func (GType base_type, NMObjectTypeFunc type_func,
 #define NM_OBJECT_NM_RUNNING "nm-running-internal"
 gboolean _nm_object_get_nm_running (NMObject *self);
 
-#endif /* NM_OBJECT_PRIVATE_H */
+#endif /* __NM_OBJECT_PRIVATE_H__ */

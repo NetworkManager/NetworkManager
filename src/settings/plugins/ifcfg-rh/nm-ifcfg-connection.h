@@ -18,8 +18,8 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#ifndef NM_IFCFG_CONNECTION_H
-#define NM_IFCFG_CONNECTION_H
+#ifndef __NETWORKMANAGER_IFCFG_CONNECTION_H__
+#define __NETWORKMANAGER_IFCFG_CONNECTION_H__
 
 G_BEGIN_DECLS
 
@@ -65,4 +65,4 @@ gboolean nm_ifcfg_connection_update (NMIfcfgConnection *self,
 
 G_END_DECLS
 
-#endif /* NM_IFCFG_CONNECTION_H */
+#endif /* __NETWORKMANAGER_IFCFG_CONNECTION_H__ */

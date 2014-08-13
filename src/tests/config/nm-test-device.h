@@ -18,8 +18,8 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#ifndef NM_TEST_DEVICE_H
-#define NM_TEST_DEVICE_H
+#ifndef __NETWORKMANAGER_TEST_DEVICE_H__
+#define __NETWORKMANAGER_TEST_DEVICE_H__
 
 #include <nm-device.h>
 

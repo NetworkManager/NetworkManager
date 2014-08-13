@@ -19,8 +19,8 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
-#ifndef NM_DEVICE_WIMAX_H
-#define NM_DEVICE_WIMAX_H
+#ifndef __NETWORKMANAGER_DEVICE_WIMAX_H__
+#define __NETWORKMANAGER_DEVICE_WIMAX_H__
 
 #include "nm-device.h"
 #include "nm-wimax-nsp.h"

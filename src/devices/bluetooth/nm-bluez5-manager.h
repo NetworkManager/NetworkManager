@@ -19,8 +19,8 @@
  * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
-#ifndef NM_BLUEZ5_MANAGER_H
-#define NM_BLUEZ5_MANAGER_H
+#ifndef __NETWORKMANAGER_BLUEZ5_MANAGER_H__
+#define __NETWORKMANAGER_BLUEZ5_MANAGER_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -58,5 +58,5 @@ NMBluez5Manager *nm_bluez5_manager_new (NMConnectionProvider *provider);
 
 void nm_bluez5_manager_query_devices (NMBluez5Manager *manager);
 
-#endif /* NM_BLUEZ5_MANAGER_H */
+#endif /* __NETWORKMANAGER_BLUEZ5_MANAGER_H__ */
 

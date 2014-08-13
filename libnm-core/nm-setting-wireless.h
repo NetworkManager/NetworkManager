@@ -20,8 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_SETTING_WIRELESS_H
-#define NM_SETTING_WIRELESS_H
+#ifndef __NM_SETTING_WIRELESS_H__
+#define __NM_SETTING_WIRELESS_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -160,4 +160,4 @@ gboolean          nm_setting_wireless_ap_security_compatible (NMSettingWireless 
 
 G_END_DECLS
 
-#endif /* NM_SETTING_WIRELESS_H */
+#endif /* __NM_SETTING_WIRELESS_H__ */

@@ -18,8 +18,8 @@
  * Copyright 2008 Red Hat, Inc.
  */
 
-#ifndef NM_TYPES_H
-#define NM_TYPES_H
+#ifndef __NM_TYPES_H__
+#define __NM_TYPES_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -55,4 +55,4 @@ GType     nm_ip6_route_object_array_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS
 
-#endif /* NM_TYPES_H */
+#endif /* __NM_TYPES_H__ */

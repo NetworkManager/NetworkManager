@@ -19,8 +19,8 @@
  * Copyright 2011 Red Hat, Inc.
  */
 
-#ifndef NM_SETTING_INFINIBAND_H
-#define NM_SETTING_INFINIBAND_H
+#ifndef __NM_SETTING_INFINIBAND_H__
+#define __NM_SETTING_INFINIBAND_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -83,4 +83,4 @@ const char *      nm_setting_infiniband_get_parent         (NMSettingInfiniband 
 
 G_END_DECLS
 
-#endif /* NM_SETTING_INFINIBAND_H */
+#endif /* __NM_SETTING_INFINIBAND_H__ */

@@ -18,8 +18,8 @@
  * Copyright (C) 2010 - 2011 Red Hat, Inc.
  */
 
-#ifndef NM_SECRET_AGENT_H
-#define NM_SECRET_AGENT_H
+#ifndef __NETWORKMANAGER_SECRET_AGENT_H__
+#define __NETWORKMANAGER_SECRET_AGENT_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -103,4 +103,4 @@ gconstpointer nm_secret_agent_delete_secrets (NMSecretAgent *agent,
                                               NMSecretAgentCallback callback,
                                               gpointer callback_data);
 
-#endif /* NM_SECRET_AGENT_H */
+#endif /* __NETWORKMANAGER_SECRET_AGENT_H__ */

@@ -19,8 +19,8 @@
  * Copyright 2007 - 2012 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_WIFI_H
-#define NM_DEVICE_WIFI_H
+#ifndef __NM_DEVICE_WIFI_H__
+#define __NM_DEVICE_WIFI_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -109,4 +109,4 @@ void                     nm_device_wifi_request_scan_simple      (NMDeviceWifi *
 
 G_END_DECLS
 
-#endif /* NM_DEVICE_WIFI_H */
+#endif /* __NM_DEVICE_WIFI_H__ */

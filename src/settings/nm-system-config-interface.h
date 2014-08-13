@@ -19,8 +19,8 @@
  * Copyright (C) 2008 Novell, Inc.
  */
 
-#ifndef NM_SYSTEM_CONFIG_INTERFACE_H
-#define NM_SYSTEM_CONFIG_INTERFACE_H
+#ifndef __NETWORKMANAGER_SYSTEM_CONFIG_INTERFACE_H__
+#define __NETWORKMANAGER_SYSTEM_CONFIG_INTERFACE_H__
 
 #include <glib.h>
 #include <glib-object.h>

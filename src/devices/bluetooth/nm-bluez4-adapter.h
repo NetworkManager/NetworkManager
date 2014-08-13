@@ -18,8 +18,8 @@
  * Copyright (C) 2009 - 2012 Red Hat, Inc.
  */
 
-#ifndef NM_BLUEZ4_ADAPTER_H
-#define NM_BLUEZ4_ADAPTER_H
+#ifndef __NETWORKMANAGER_BLUEZ4_ADAPTER_H__
+#define __NETWORKMANAGER_BLUEZ4_ADAPTER_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -65,5 +65,5 @@ gboolean nm_bluez4_adapter_get_initialized (NMBluez4Adapter *self);
 
 GSList *nm_bluez4_adapter_get_devices (NMBluez4Adapter *self);
 
-#endif /* NM_BLUEZ4_ADAPTER_H */
+#endif /* __NETWORKMANAGER_BLUEZ4_ADAPTER_H__ */
 

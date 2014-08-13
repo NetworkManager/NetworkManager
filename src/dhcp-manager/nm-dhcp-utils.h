@@ -16,8 +16,8 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#ifndef NM_DHCP_UTILS_H
-#define NM_DHCP_UTILS_H
+#ifndef __NETWORKMANAGER_DHCP_UTILS_H__
+#define __NETWORKMANAGER_DHCP_UTILS_H__
 
 #include <stdlib.h>
 #include <glib.h>
@@ -35,5 +35,5 @@ NMIP6Config *nm_dhcp_utils_ip6_config_from_options (const char *iface,
 
 char *       nm_dhcp_utils_duid_to_string          (const GByteArray *duid);
 
-#endif /* NM_DHCP_UTILS_H */
+#endif /* __NETWORKMANAGER_DHCP_UTILS_H__ */
 

@@ -18,8 +18,8 @@
  * Copyright 2012 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_BRIDGE_H
-#define NM_DEVICE_BRIDGE_H
+#ifndef __NM_DEVICE_BRIDGE_H__
+#define __NM_DEVICE_BRIDGE_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -78,4 +78,4 @@ const GPtrArray *nm_device_bridge_get_slaves     (NMDeviceBridge *device);
 
 G_END_DECLS
 
-#endif /* NM_DEVICE_BRIDGE_H */
+#endif /* __NM_DEVICE_BRIDGE_H__ */

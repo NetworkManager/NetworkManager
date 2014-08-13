@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NM_DNS_UTILS_H
-#define NM_DNS_UTILS_H
+#ifndef __NETWORKMANAGER_DNS_UTILS_H__
+#define __NETWORKMANAGER_DNS_UTILS_H__
 
 #include "nm-ip4-config.h"
 

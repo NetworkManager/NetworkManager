@@ -18,8 +18,8 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_GRE_H
-#define NM_DEVICE_GRE_H
+#ifndef __NETWORKMANAGER_DEVICE_GRE_H__
+#define __NETWORKMANAGER_DEVICE_GRE_H__
 
 #include <glib-object.h>
 

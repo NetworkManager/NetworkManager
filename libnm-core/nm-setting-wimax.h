@@ -19,8 +19,8 @@
  * Copyright 2009 Novell, Inc.
  */
 
-#ifndef NM_SETTING_WIMAX_H
-#define NM_SETTING_WIMAX_H
+#ifndef __NM_SETTING_WIMAX_H__
+#define __NM_SETTING_WIMAX_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -77,4 +77,4 @@ const GByteArray *nm_setting_wimax_get_mac_address  (NMSettingWimax *setting);
 
 G_END_DECLS
 
-#endif /* NM_SETTING_WIMAX_H */
+#endif /* __NM_SETTING_WIMAX_H__ */

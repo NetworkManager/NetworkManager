@@ -17,8 +17,8 @@
  * Author: Dan Williams <dcbw@redhat.com>
  */
 
-#ifndef NM_SESSION_UTILS_H
-#define NM_SESSION_UTILS_H
+#ifndef __NETWORKMANAGER_SESSION_UTILS_H__
+#define __NETWORKMANAGER_SESSION_UTILS_H__
 
 #include <glib.h>
 #include <glib-object.h>

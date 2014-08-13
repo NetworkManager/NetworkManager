@@ -16,8 +16,8 @@
  * Copyright (C) 2005 - 2010 Red Hat, Inc.
  */
 
-#ifndef NM_DHCP_DHCPCD_H
-#define NM_DHCP_DHCPCD_H
+#ifndef __NETWORKMANAGER_DHCP_DHCPCD_H__
+#define __NETWORKMANAGER_DHCP_DHCPCD_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -43,5 +43,5 @@ GType nm_dhcp_dhcpcd_get_type (void);
 
 const char *nm_dhcp_dhcpcd_get_path (const char *try_first);
 
-#endif /* NM_DHCP_DHCPCD_H */
+#endif /* __NETWORKMANAGER_DHCP_DHCPCD_H__ */
 

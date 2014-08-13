@@ -18,8 +18,8 @@
  * Copyright (C) 2011 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_MODEM_H
-#define NM_DEVICE_MODEM_H
+#ifndef __NETWORKMANAGER_DEVICE_MODEM_H__
+#define __NETWORKMANAGER_DEVICE_MODEM_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -51,4 +51,4 @@ GType nm_device_modem_get_type (void);
 
 NMDevice *nm_device_modem_new (NMModem *modem);
 
-#endif /* NM_DEVICE_MODEM_H */
+#endif /* __NETWORKMANAGER_DEVICE_MODEM_H__ */

@@ -18,8 +18,8 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#ifndef NM_DISPATCHER_UTILS_H
-#define NM_DISPATCHER_UTILS_H
+#ifndef __NETWORKMANAGER_DISPATCHER_UTILS_H__
+#define __NETWORKMANAGER_DISPATCHER_UTILS_H__
 
 #include <glib.h>
 
@@ -37,5 +37,5 @@ nm_dispatcher_utils_construct_envp (const char *action,
                                     GHashTable *vpn_ip6_props,
                                     char **out_iface);
 
-#endif  /* NM_DISPATCHER_UTILS_H */
+#endif  /* __NETWORKMANAGER_DISPATCHER_UTILS_H__ */
 

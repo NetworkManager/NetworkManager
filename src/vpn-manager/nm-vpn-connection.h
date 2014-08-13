@@ -19,8 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#ifndef NM_VPN_CONNECTION_H
-#define NM_VPN_CONNECTION_H
+#ifndef __NETWORKMANAGER_VPN_CONNECTION_H__
+#define __NETWORKMANAGER_VPN_CONNECTION_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -90,4 +90,4 @@ int                  nm_vpn_connection_get_ip_ifindex  (NMVpnConnection *connect
 guint32              nm_vpn_connection_get_ip4_internal_gateway (NMVpnConnection *connection);
 struct in6_addr *    nm_vpn_connection_get_ip6_internal_gateway (NMVpnConnection *connection);
 
-#endif /* NM_VPN_CONNECTION_H */
+#endif /* __NETWORKMANAGER_VPN_CONNECTION_H__ */

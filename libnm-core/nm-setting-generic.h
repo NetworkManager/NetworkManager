@@ -19,8 +19,8 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#ifndef NM_SETTING_GENERIC_H
-#define NM_SETTING_GENERIC_H
+#ifndef __NM_SETTING_GENERIC_H__
+#define __NM_SETTING_GENERIC_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -72,4 +72,4 @@ NMSetting * nm_setting_generic_new              (void);
 
 G_END_DECLS
 
-#endif /* NM_SETTING_GENERIC_H */
+#endif /* __NM_SETTING_GENERIC_H__ */

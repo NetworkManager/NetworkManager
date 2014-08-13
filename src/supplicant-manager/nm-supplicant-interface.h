@@ -19,8 +19,8 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_SUPPLICANT_INTERFACE_H
-#define NM_SUPPLICANT_INTERFACE_H
+#ifndef __NETWORKMANAGER_SUPPLICANT_INTERFACE_H__
+#define __NETWORKMANAGER_SUPPLICANT_INTERFACE_H__
 
 #include <glib-object.h>
 #include <dbus/dbus.h>

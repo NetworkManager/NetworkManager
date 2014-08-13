@@ -18,8 +18,8 @@
  * Copyright (C) 2011 Red Hat, Inc.
  */
 
-#ifndef WIFI_UTILS_WEXT_H
-#define WIFI_UTILS_WEXT_H
+#ifndef __WIFI_UTILS_WEXT_H__
+#define __WIFI_UTILS_WEXT_H__
 
 #include "wifi-utils.h"
 
@@ -27,4 +27,4 @@ WifiData *wifi_wext_init (const char *iface, int ifindex, gboolean check_scan);
 
 gboolean wifi_wext_is_wifi (const char *iface);
 
-#endif  /* WIFI_UTILS_WEXT_H */
+#endif  /* __WIFI_UTILS_WEXT_H__ */

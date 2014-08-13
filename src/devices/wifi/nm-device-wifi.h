@@ -19,8 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#ifndef NM_DEVICE_WIFI_H
-#define NM_DEVICE_WIFI_H
+#ifndef __NETWORKMANAGER_DEVICE_WIFI_H__
+#define __NETWORKMANAGER_DEVICE_WIFI_H__
 
 #include <glib-object.h>
 #include <dbus/dbus.h>

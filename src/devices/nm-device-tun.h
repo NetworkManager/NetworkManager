@@ -18,8 +18,8 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_TUN_H
-#define NM_DEVICE_TUN_H
+#ifndef __NETWORKMANAGER_DEVICE_TUN_H__
+#define __NETWORKMANAGER_DEVICE_TUN_H__
 
 #include <glib-object.h>
 

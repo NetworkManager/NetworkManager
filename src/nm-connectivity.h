@@ -18,8 +18,8 @@
  * Copyright (C) 2011 Thomas Bechtold <thomasbechtold@jpberlin.de>
  */
 
-#ifndef NM_CONNECTIVITY_H
-#define NM_CONNECTIVITY_H
+#ifndef __NETWORKMANAGER_CONNECTIVITY_H__
+#define __NETWORKMANAGER_CONNECTIVITY_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -65,4 +65,4 @@ NMConnectivityState  nm_connectivity_check_finish (NMConnectivity       *self,
                                                    GAsyncResult         *result,
                                                    GError              **error);
 
-#endif /* NM_CONNECTIVITY_H */
+#endif /* __NETWORKMANAGER_CONNECTIVITY_H__ */

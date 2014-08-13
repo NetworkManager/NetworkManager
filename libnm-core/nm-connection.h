@@ -20,8 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_CONNECTION_H
-#define NM_CONNECTION_H
+#ifndef __NM_CONNECTION_H__
+#define __NM_CONNECTION_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -251,4 +251,4 @@ NMSettingVlan *            nm_connection_get_setting_vlan              (NMConnec
 
 G_END_DECLS
 
-#endif /* NM_CONNECTION_H */
+#endif /* __NM_CONNECTION_H__ */

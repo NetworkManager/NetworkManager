@@ -20,8 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_SETTING_CONNECTION_H
-#define NM_SETTING_CONNECTION_H
+#ifndef __NM_SETTING_CONNECTION_H__
+#define __NM_SETTING_CONNECTION_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -145,4 +145,4 @@ guint32     nm_setting_connection_get_gateway_ping_timeout (NMSettingConnection 
 
 G_END_DECLS
 
-#endif /* NM_SETTING_CONNECTION_H */
+#endif /* __NM_SETTING_CONNECTION_H__ */

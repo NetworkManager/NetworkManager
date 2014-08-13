@@ -18,8 +18,8 @@
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
-#ifndef NM_DHCP6_CONFIG_H
-#define NM_DHCP6_CONFIG_H
+#ifndef __NETWORKMANAGER_DHCP6_CONFIG_H__
+#define __NETWORKMANAGER_DHCP6_CONFIG_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -60,4 +60,4 @@ const char *nm_dhcp6_config_get_option (NMDhcp6Config *config, const char *optio
 
 GSList *nm_dhcp6_config_list_options (NMDhcp6Config *self);
 
-#endif /* NM_DHCP6_CONFIG_H */
+#endif /* __NETWORKMANAGER_DHCP6_CONFIG_H__ */

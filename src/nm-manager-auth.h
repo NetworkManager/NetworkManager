@@ -18,8 +18,8 @@
  * Copyright (C) 2010 Red Hat, Inc.
  */
 
-#ifndef NM_MANAGER_AUTH_H
-#define NM_MANAGER_AUTH_H
+#ifndef __NETWORKMANAGER_MANAGER_AUTH_H__
+#define __NETWORKMANAGER_MANAGER_AUTH_H__
 
 #include <glib.h>
 #include <dbus/dbus-glib.h>
@@ -102,5 +102,5 @@ void nm_auth_changed_func_register (GDestroyNotify callback, gpointer callback_d
 
 void nm_auth_changed_func_unregister (GDestroyNotify callback, gpointer callback_data);
 
-#endif /* NM_MANAGER_AUTH_H */
+#endif /* __NETWORKMANAGER_MANAGER_AUTH_H__ */
 

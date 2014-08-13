@@ -19,8 +19,8 @@
  * Copyright 2008 Novell, Inc.
  */
 
-#ifndef NM_DEVICE_MODEM_H
-#define NM_DEVICE_MODEM_H
+#ifndef __NM_DEVICE_MODEM_H__
+#define __NM_DEVICE_MODEM_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -75,4 +75,4 @@ NMDeviceModemCapabilities nm_device_modem_get_current_capabilities (NMDeviceMode
 
 G_END_DECLS
 
-#endif /* NM_DEVICE_MODEM_H */
+#endif /* __NM_DEVICE_MODEM_H__ */

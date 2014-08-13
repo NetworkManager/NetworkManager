@@ -18,8 +18,8 @@
  * Copyright 2012 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_BOND_H
-#define NM_DEVICE_BOND_H
+#ifndef __NETWORKMANAGER_DEVICE_BOND_H__
+#define __NETWORKMANAGER_DEVICE_BOND_H__
 
 #include <glib-object.h>
 

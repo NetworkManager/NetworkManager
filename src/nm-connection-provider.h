@@ -13,8 +13,8 @@
  * Copyright (C) 2012 Red Hat, Inc.
  */
 
-#ifndef NM_CONNECTION_PROVIDER_H
-#define NM_CONNECTION_PROVIDER_H
+#ifndef __NETWORKMANAGER_CONNECTION_PROVIDER_H__
+#define __NETWORKMANAGER_CONNECTION_PROVIDER_H__
 
 #include <glib-object.h>
 #include <nm-connection.h>
@@ -133,4 +133,4 @@ NMConnection *nm_connection_provider_add_connection (NMConnectionProvider *self,
 NMConnection *nm_connection_provider_get_connection_by_uuid (NMConnectionProvider *self,
                                                              const char *uuid);
 
-#endif /* NM_CONNECTION_PROVIDER_H */
+#endif /* __NETWORKMANAGER_CONNECTION_PROVIDER_H__ */

@@ -18,8 +18,8 @@
  * Copyright (C) 2012 Red Hat, Inc.
  */
 
-#ifndef NM_EXAMPLE_CONNECTION_H
-#define NM_EXAMPLE_CONNECTION_H
+#ifndef __NETWORKMANAGER_EXAMPLE_CONNECTION_H__
+#define __NETWORKMANAGER_EXAMPLE_CONNECTION_H__
 
 #include <nm-settings-connection.h>
 
@@ -52,4 +52,4 @@ const char *nm_example_connection_get_path (NMExampleConnection *self);
 
 G_END_DECLS
 
-#endif /* NM_EXAMPLE_CONNECTION_H */
+#endif /* __NETWORKMANAGER_EXAMPLE_CONNECTION_H__ */

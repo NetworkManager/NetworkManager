@@ -18,8 +18,8 @@
  * Copyright 2007 - 2008 Red Hat, Inc.
  */
 
-#ifndef NM_TYPES_PRIVATE_H
-#define NM_TYPES_PRIVATE_H
+#ifndef __NM_TYPES_PRIVATE_H__
+#define __NM_TYPES_PRIVATE_H__
 
 #include <dbus/dbus-glib.h>
 #include "nm-types.h"
@@ -34,4 +34,4 @@ gboolean _nm_object_array_demarshal (GValue *value,
                                      NMObjectCreatorFunc func);
 gboolean _nm_ip6_address_array_demarshal (GValue *value, GSList **dest);
 
-#endif /* NM_TYPES_PRIVATE_H */
+#endif /* __NM_TYPES_PRIVATE_H__ */

@@ -19,8 +19,8 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
-#ifndef NETWORK_MANAGER_UTILS_H
-#define NETWORK_MANAGER_UTILS_H
+#ifndef __NETWORKMANAGER_UTILS_H__
+#define __NETWORKMANAGER_UTILS_H__
 
 #include <glib.h>
 #include <stdio.h>
@@ -162,4 +162,4 @@ void nm_utils_ipv6_addr_set_interface_identfier (struct in6_addr *addr,
 void nm_utils_ipv6_interface_identfier_get_from_addr (NMUtilsIPv6IfaceId *iid,
                                                       const struct in6_addr *addr);
 
-#endif /* NETWORK_MANAGER_UTILS_H */
+#endif /* __NETWORKMANAGER_UTILS_H__ */

@@ -19,8 +19,8 @@
  * Copyright 2011 - 2014 Red Hat, Inc.
  */
 
-#ifndef NM_SETTING_VLAN_H
-#define NM_SETTING_VLAN_H
+#ifndef __NM_SETTING_VLAN_H__
+#define __NM_SETTING_VLAN_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -152,4 +152,4 @@ gboolean nm_setting_vlan_add_priority_str   (NMSettingVlan *setting,
 
 G_END_DECLS
 
-#endif /* NM_SETTING_VLAN_H */
+#endif /* __NM_SETTING_VLAN_H__ */

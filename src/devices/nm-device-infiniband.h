@@ -18,8 +18,8 @@
  * Copyright 2011 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_INFINIBAND_H
-#define NM_DEVICE_INFINIBAND_H
+#ifndef __NETWORKMANAGER_DEVICE_INFINIBAND_H__
+#define __NETWORKMANAGER_DEVICE_INFINIBAND_H__
 
 #include <glib-object.h>
 

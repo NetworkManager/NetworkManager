@@ -19,8 +19,8 @@
  * Copyright 2007 - 2010 Red Hat, Inc.
  */
 
-#ifndef NM_VPN_CONNECTION_H
-#define NM_VPN_CONNECTION_H
+#ifndef __NM_VPN_CONNECTION_H__
+#define __NM_VPN_CONNECTION_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -67,4 +67,4 @@ const char *          nm_vpn_connection_get_banner (NMVpnConnection *vpn);
 
 G_END_DECLS
 
-#endif /* NM_VPN_CONNECTION_H */
+#endif /* __NM_VPN_CONNECTION_H__ */

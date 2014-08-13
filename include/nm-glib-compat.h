@@ -17,8 +17,8 @@
  * Copyright 2008 - 2011 Red Hat, Inc.
  */
 
-#ifndef NM_GLIB_COMPAT_H
-#define NM_GLIB_COMPAT_H
+#ifndef __NM_GLIB_COMPAT_H__
+#define __NM_GLIB_COMPAT_H__
 
 
 #include <glib.h>
@@ -124,4 +124,4 @@ __nmtst_g_test_skip (const gchar *msg)
 }
 #define g_test_skip __nmtst_g_test_skip
 
-#endif  /* NM_GLIB_COMPAT_H */
+#endif  /* __NM_GLIB_COMPAT_H__ */

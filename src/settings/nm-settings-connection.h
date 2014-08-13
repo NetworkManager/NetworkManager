@@ -19,8 +19,8 @@
  * (C) Copyright 2008 - 2013 Red Hat, Inc.
  */
 
-#ifndef NM_SETTINGS_CONNECTION_H
-#define NM_SETTINGS_CONNECTION_H
+#ifndef __NETWORKMANAGER_SETTINGS_CONNECTION_H__
+#define __NETWORKMANAGER_SETTINGS_CONNECTION_H__
 
 #include <net/ethernet.h>
 
@@ -166,4 +166,4 @@ gboolean nm_settings_connection_get_nm_generated (NMSettingsConnection *connecti
 
 G_END_DECLS
 
-#endif /* NM_SETTINGS_CONNECTION_H */
+#endif /* __NETWORKMANAGER_SETTINGS_CONNECTION_H__ */

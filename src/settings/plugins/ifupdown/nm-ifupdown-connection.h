@@ -21,8 +21,8 @@
  * (C) Copyright 2008 Canonical Ltd.
  */
 
-#ifndef NM_IFUPDOWN_CONNECTION_H
-#define NM_IFUPDOWN_CONNECTION_H
+#ifndef __NETWORKMANAGER_IFUPDOWN_CONNECTION_H__
+#define __NETWORKMANAGER_IFUPDOWN_CONNECTION_H__
 
 #include <nm-settings-connection.h>
 #include "interface_parser.h"
@@ -52,4 +52,4 @@ NMIfupdownConnection *nm_ifupdown_connection_new (if_block *block);
 
 G_END_DECLS
 
-#endif /* NM_IFUPDOWN_CONNECTION_H */
+#endif /* __NETWORKMANAGER_IFUPDOWN_CONNECTION_H__ */

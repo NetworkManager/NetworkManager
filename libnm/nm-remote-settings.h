@@ -19,8 +19,8 @@
  * Copyright 2009 - 2011 Red Hat, Inc.
  */
 
-#ifndef NM_REMOTE_SETTINGS_H
-#define NM_REMOTE_SETTINGS_H
+#ifndef __NM_REMOTE_SETTINGS_H__
+#define __NM_REMOTE_SETTINGS_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -154,4 +154,4 @@ gboolean nm_remote_settings_save_hostname (NMRemoteSettings *settings,
 
 G_END_DECLS
 
-#endif /* NM_REMOTE_SETTINGS_H */
+#endif /* __NM_REMOTE_SETTINGS_H__ */

@@ -18,8 +18,8 @@
  * Copyright (C) 2008–2013 Red Hat, Inc.
  */
 
-#ifndef NM_IP6_CONFIG_H
-#define NM_IP6_CONFIG_H
+#ifndef __NETWORKMANAGER_IP6_CONFIG_H__
+#define __NETWORKMANAGER_IP6_CONFIG_H__
 
 #include <glib-object.h>
 
@@ -127,4 +127,4 @@ gboolean nm_ip6_config_equal (const NMIP6Config *a, const NMIP6Config *b);
 gboolean nm_ip6_config_capture_resolv_conf (GArray *nameservers,
                                             const char *rc_contents);
 
-#endif /* NM_IP6_CONFIG_H */
+#endif /* __NETWORKMANAGER_IP6_CONFIG_H__ */

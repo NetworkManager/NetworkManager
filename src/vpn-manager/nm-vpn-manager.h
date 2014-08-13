@@ -19,8 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#ifndef NM_VPN_MANAGER_H
-#define NM_VPN_MANAGER_H
+#ifndef __NETWORKMANAGER_VPN_MANAGER_H__
+#define __NETWORKMANAGER_VPN_MANAGER_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -67,4 +67,4 @@ gboolean nm_vpn_manager_deactivate_connection (NMVpnManager *manager,
                                                NMVpnConnection *connection,
                                                NMVpnConnectionStateReason reason);
 
-#endif /* NM_VPN_MANAGER_H */
+#endif /* __NETWORKMANAGER_VPN_MANAGER_H__ */

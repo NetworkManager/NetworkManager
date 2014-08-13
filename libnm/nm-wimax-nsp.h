@@ -19,8 +19,8 @@
  * Copyright 2009 Novell, Inc.
  */
 
-#ifndef NM_WIMAX_NSP_H
-#define NM_WIMAX_NSP_H
+#ifndef __NM_WIMAX_NSP_H__
+#define __NM_WIMAX_NSP_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -76,4 +76,4 @@ gboolean               nm_wimax_nsp_connection_valid   (NMWimaxNsp *nsp,
 
 G_END_DECLS
 
-#endif /* NM_WIMAX_NSP_H */
+#endif /* __NM_WIMAX_NSP_H__ */

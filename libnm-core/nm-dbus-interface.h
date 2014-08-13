@@ -23,8 +23,8 @@
  * used by some external code that does not link to libnm.
  */
 
-#ifndef NM_DBUS_INTERFACE_H
-#define NM_DBUS_INTERFACE_H
+#ifndef __NM_DBUS_INTERFACE_H__
+#define __NM_DBUS_INTERFACE_H__
 
 #include "nm-version.h"
 
@@ -607,4 +607,4 @@ typedef enum /*< flags >*/ {
 	NM_SECRET_AGENT_CAPABILITY_LAST = NM_SECRET_AGENT_CAPABILITY_VPN_HINTS
 } NMSecretAgentCapabilities;
 
-#endif /* NM_DBUS_INTERFACE_H */
+#endif /* __NM_DBUS_INTERFACE_H__ */

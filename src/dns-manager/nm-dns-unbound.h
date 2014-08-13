@@ -15,8 +15,8 @@
  *
  * Copyright (C) 2014 Red Hat, Inc.
  */
-#ifndef NM_DNS_UNBOUND_H
-#define NM_DNS_UNBOUND_H
+#ifndef __NETWORKMANAGER_DNS_UNBOUND_H__
+#define __NETWORKMANAGER_DNS_UNBOUND_H__
 
 #include <glib-object.h>
 
@@ -41,4 +41,4 @@ GType nm_dns_unbound_get_type (void);
 
 NMDnsPlugin *nm_dns_unbound_new (void);
 
-#endif /* NM_DNS_UNBOUND_H */
+#endif /* __NETWORKMANAGER_DNS_UNBOUND_H__ */

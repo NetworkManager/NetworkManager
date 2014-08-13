@@ -18,8 +18,8 @@
  * Copyright 2005 - 2013 Red Hat, Inc.
  */
 
-#ifndef NM_UTILS_H
-#define NM_UTILS_H
+#ifndef __NM_UTILS_H__
+#define __NM_UTILS_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -173,4 +173,4 @@ gboolean nm_utils_check_virtual_device_compatibility (GType virtual_type, GType 
 
 G_END_DECLS
 
-#endif /* NM_UTILS_H */
+#endif /* __NM_UTILS_H__ */

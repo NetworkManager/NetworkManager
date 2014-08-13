@@ -18,8 +18,8 @@
  * Copyright (C) 2006 - 2008 Red Hat, Inc.
  */
 
-#ifndef NM_SUPPLICANT_SETTINGS_VERIFY_H
-#define NM_SUPPLICANT_SETTINGS_VERIFY_H
+#ifndef __NETWORKMANAGER_SUPPLICANT_SETTINGS_VERIFY_H__
+#define __NETWORKMANAGER_SUPPLICANT_SETTINGS_VERIFY_H__
 
 typedef enum {
 	TYPE_INVALID = 0,
@@ -35,4 +35,4 @@ OptType nm_supplicant_settings_verify_setting (const char * key,
                                                const guint32 len);
 
 
-#endif /* NM_SUPPLICANT_SETTINGS_VERIFY_H */
+#endif /* __NETWORKMANAGER_SUPPLICANT_SETTINGS_VERIFY_H__ */

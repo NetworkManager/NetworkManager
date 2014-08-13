@@ -18,8 +18,8 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
-#ifndef NM_LNDP_RDISC_H
-#define NM_LNDP_RDISC_H
+#ifndef __NETWORKMANAGER_LNDP_RDISC_H__
+#define __NETWORKMANAGER_LNDP_RDISC_H__
 
 #include "nm-rdisc.h"
 
@@ -46,4 +46,4 @@ GType nm_lndp_rdisc_get_type (void);
 
 NMRDisc *nm_lndp_rdisc_new (int ifindex, const char *ifname);
 
-#endif /* NM_LNDP_RDISC_H */
+#endif /* __NETWORKMANAGER_LNDP_RDISC_H__ */

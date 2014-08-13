@@ -20,8 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_SETTING_WIRED_H
-#define NM_SETTING_WIRED_H
+#ifndef __NM_SETTING_WIRED_H__
+#define __NM_SETTING_WIRED_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -122,4 +122,4 @@ const char **     nm_setting_wired_get_valid_s390_options (NMSettingWired *setti
 
 G_END_DECLS
 
-#endif /* NM_SETTING_WIRED_H */
+#endif /* __NM_SETTING_WIRED_H__ */

@@ -20,8 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_SETTING_BLUETOOTH_H
-#define NM_SETTING_BLUETOOTH_H
+#ifndef __NM_SETTING_BLUETOOTH_H__
+#define __NM_SETTING_BLUETOOTH_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -98,4 +98,4 @@ const char *      nm_setting_bluetooth_get_connection_type (NMSettingBluetooth *
 
 G_END_DECLS
 
-#endif /* NM_SETTING_BLUETOOTH_H */
+#endif /* __NM_SETTING_BLUETOOTH_H__ */

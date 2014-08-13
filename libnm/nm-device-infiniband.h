@@ -18,8 +18,8 @@
  * Copyright 2011 - 2012 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_INFINIBAND_H
-#define NM_DEVICE_INFINIBAND_H
+#ifndef __NM_DEVICE_INFINIBAND_H__
+#define __NM_DEVICE_INFINIBAND_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -76,4 +76,4 @@ gboolean     nm_device_infiniband_get_carrier (NMDeviceInfiniband *device);
 
 G_END_DECLS
 
-#endif /* NM_DEVICE_INFINIBAND_H */
+#endif /* __NM_DEVICE_INFINIBAND_H__ */

@@ -20,8 +20,8 @@
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#ifndef NM_SETTING_PPPOE_H
-#define NM_SETTING_PPPOE_H
+#ifndef __NM_SETTING_PPPOE_H__
+#define __NM_SETTING_PPPOE_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -85,4 +85,4 @@ NMSettingSecretFlags nm_setting_pppoe_get_password_flags (NMSettingPppoe *settin
 
 G_END_DECLS
 
-#endif /* NM_SETTING_PPPOE_H */
+#endif /* __NM_SETTING_PPPOE_H__ */

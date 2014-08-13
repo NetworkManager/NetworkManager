@@ -18,8 +18,8 @@
  * Copyright (C) 2007 - 2014 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_FACTORY_H
-#define NM_DEVICE_FACTORY_H
+#ifndef __NETWORKMANAGER_DEVICE_FACTORY_H__
+#define __NETWORKMANAGER_DEVICE_FACTORY_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -153,5 +153,5 @@ NMDevice * nm_device_factory_create_virtual_device_for_connection (NMDeviceFacto
 gboolean   nm_device_factory_emit_component_added (NMDeviceFactory *factory,
                                                    GObject *component);
 
-#endif /* NM_DEVICE_FACTORY_H */
+#endif /* __NETWORKMANAGER_DEVICE_FACTORY_H__ */
 

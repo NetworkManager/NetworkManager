@@ -18,8 +18,8 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
-#ifndef NM_RDISC_H
-#define NM_RDISC_H
+#ifndef __NETWORKMANAGER_RDISC_H__
+#define __NETWORKMANAGER_RDISC_H__
 
 #include <glib-object.h>
 
@@ -138,4 +138,4 @@ GType nm_rdisc_get_type (void);
 void nm_rdisc_set_iid (NMRDisc *rdisc, const NMUtilsIPv6IfaceId iid);
 void nm_rdisc_start (NMRDisc *rdisc);
 
-#endif /* NM_RDISC_H */
+#endif /* __NETWORKMANAGER_RDISC_H__ */

@@ -18,8 +18,8 @@
  * Copyright (C) 2009 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_BT_H
-#define NM_DEVICE_BT_H
+#ifndef __NETWORKMANAGER_DEVICE_BT_H__
+#define __NETWORKMANAGER_DEVICE_BT_H__
 
 #include <nm-device.h>
 #include "nm-bluez-device.h"
@@ -71,4 +71,4 @@ gboolean nm_device_bt_modem_added (NMDeviceBt *device,
 
 G_END_DECLS
 
-#endif /* NM_DEVICE_BT_H */
+#endif /* __NETWORKMANAGER_DEVICE_BT_H__ */

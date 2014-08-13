@@ -19,8 +19,8 @@
  * Copyright 2008 Novell, Inc.
  */
 
-#ifndef NM_DHCP6_CONFIG_H
-#define NM_DHCP6_CONFIG_H
+#ifndef __NM_DHCP6_CONFIG_H__
+#define __NM_DHCP6_CONFIG_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -60,4 +60,4 @@ const char * nm_dhcp6_config_get_one_option (NMDhcp6Config *config, const char *
 
 G_END_DECLS
 
-#endif /* NM_DHCP6_CONFIG_H */
+#endif /* __NM_DHCP6_CONFIG_H__ */

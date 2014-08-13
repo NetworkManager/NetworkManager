@@ -18,8 +18,8 @@
  * Copyright 2012 Red Hat, Inc.
  */
 
-#ifndef NM_DEVICE_OLPC_MESH_H
-#define NM_DEVICE_OLPC_MESH_H
+#ifndef __NM_DEVICE_OLPC_MESH_H__
+#define __NM_DEVICE_OLPC_MESH_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -75,4 +75,4 @@ guint32       nm_device_olpc_mesh_get_active_channel (NMDeviceOlpcMesh *device);
 
 G_END_DECLS
 
-#endif /* NM_DEVICE_OLPC_MESH_H */
+#endif /* __NM_DEVICE_OLPC_MESH_H__ */

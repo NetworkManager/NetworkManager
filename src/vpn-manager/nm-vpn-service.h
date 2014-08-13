@@ -19,8 +19,8 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
-#ifndef NM_VPN_SERVICE_H
-#define NM_VPN_SERVICE_H
+#ifndef __NETWORKMANAGER_VPN_SERVICE_H__
+#define __NETWORKMANAGER_VPN_SERVICE_H__
 
 #include <glib.h>
 #include <glib-object.h>

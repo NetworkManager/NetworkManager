@@ -25,8 +25,8 @@
  * (C) Copyright 2009 One Laptop per Child
  */
 
-#ifndef NM_DEVICE_OLPC_MESH_H
-#define NM_DEVICE_OLPC_MESH_H
+#ifndef __NETWORKMANAGER_DEVICE_OLPC_MESH_H__
+#define __NETWORKMANAGER_DEVICE_OLPC_MESH_H__
 
 #include <glib-object.h>
 #include <dbus/dbus.h>

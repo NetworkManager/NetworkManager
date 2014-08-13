@@ -18,8 +18,8 @@
  * (C) Copyright 2007 Novell, Inc.
  */
 
-#ifndef NM_CALLBACK_STORE_H
-#define NM_CALLBACK_STORE_H
+#ifndef __NETWORKMANAGER_CALLBACK_STORE_H__
+#define __NETWORKMANAGER_CALLBACK_STORE_H__
 
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
@@ -38,4 +38,4 @@ void         nm_call_store_remove  (NMCallStore *store,
 void         nm_call_store_clear   (NMCallStore *store);
 void         nm_call_store_destroy (NMCallStore *store);
 
-#endif /* NM_CALLBACK_STORE_H */
+#endif /* __NETWORKMANAGER_CALLBACK_STORE_H__ */

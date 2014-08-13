@@ -19,8 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#ifndef WIFI_UTILS_H
-#define WIFI_UTILS_H
+#ifndef __WIFI_UTILS_H__
+#define __WIFI_UTILS_H__
 
 #include <net/ethernet.h>
 #include <glib.h>
@@ -73,4 +73,4 @@ gboolean wifi_utils_set_mesh_channel (WifiData *data, guint32 channel);
 
 gboolean wifi_utils_set_mesh_ssid (WifiData *data, const GByteArray *ssid);
 
-#endif  /* WIFI_UTILS_H */
+#endif  /* __WIFI_UTILS_H__ */

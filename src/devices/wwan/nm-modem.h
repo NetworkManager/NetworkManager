@@ -19,8 +19,8 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
-#ifndef NM_MODEM_H
-#define NM_MODEM_H
+#ifndef __NETWORKMANAGER_MODEM_H__
+#define __NETWORKMANAGER_MODEM_H__
 
 #include <dbus/dbus-glib.h>
 #include <glib-object.h>
@@ -261,4 +261,4 @@ void nm_modem_emit_ip6_config_result (NMModem *self,
 
 G_END_DECLS
 
-#endif /* NM_MODEM_H */
+#endif /* __NETWORKMANAGER_MODEM_H__ */

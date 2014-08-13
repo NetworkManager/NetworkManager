@@ -18,8 +18,8 @@
  * Copyright 2013 Red Hat, Inc.
  */
 
-#ifndef NM_DBUS_HELPERS_PRIVATE_H
-#define NM_DBUS_HELPERS_PRIVATE_H
+#ifndef __NM_DBUS_HELPERS_PRIVATE_H__
+#define __NM_DBUS_HELPERS_PRIVATE_H__
 
 #include <gio/gio.h>
 #include <dbus/dbus.h>
@@ -33,4 +33,4 @@ DBusGProxy *     _nm_dbus_new_proxy_for_connection (DBusGConnection *connection,
                                                     const char *path,
                                                     const char *interface);
 
-#endif /* NM_DBUS_HELPERS_PRIVATE_H */
+#endif /* __NM_DBUS_HELPERS_PRIVATE_H__ */

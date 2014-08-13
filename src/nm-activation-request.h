@@ -18,8 +18,8 @@
  * (C) Copyright 2005 - 2012 Red Hat, Inc.
  */
 
-#ifndef NM_ACTIVATION_REQUEST_H
-#define NM_ACTIVATION_REQUEST_H
+#ifndef __NETWORKMANAGER_ACTIVATION_REQUEST_H__
+#define __NETWORKMANAGER_ACTIVATION_REQUEST_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -78,5 +78,5 @@ guint32 nm_act_request_get_secrets (NMActRequest *req,
 
 void nm_act_request_cancel_secrets (NMActRequest *req, guint32 call_id);
 
-#endif /* NM_ACTIVATION_REQUEST_H */
+#endif /* __NETWORKMANAGER_ACTIVATION_REQUEST_H__ */
 

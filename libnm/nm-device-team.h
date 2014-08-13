@@ -18,8 +18,8 @@
  * Copyright 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
-#ifndef NM_DEVICE_TEAM_H
-#define NM_DEVICE_TEAM_H
+#ifndef __NM_DEVICE_TEAM_H__
+#define __NM_DEVICE_TEAM_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -76,4 +76,4 @@ const GPtrArray *nm_device_team_get_slaves     (NMDeviceTeam *device);
 
 G_END_DECLS
 
-#endif /* NM_DEVICE_TEAM_H */
+#endif /* __NM_DEVICE_TEAM_H__ */

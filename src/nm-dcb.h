@@ -18,8 +18,8 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
-#ifndef NM_DCB_H
-#define NM_DCB_H
+#ifndef __NETWORKMANAGER_DCB_H__
+#define __NETWORKMANAGER_DCB_H__
 
 #include <glib.h>
 #include "nm-setting-dcb.h"
@@ -97,4 +97,4 @@ gboolean _fcoe_cleanup (const char *iface,
                         gpointer user_data,
                         GError **error);
 
-#endif /* NM_DCB_H */
+#endif /* __NETWORKMANAGER_DCB_H__ */

@@ -19,8 +19,8 @@
  * Copyright (C) 2008 - 2010 Red Hat, Inc.
  */
 
-#ifndef NM_PPP_MANAGER_H
-#define NM_PPP_MANAGER_H
+#ifndef __NETWORKMANAGER_PPP_MANAGER_H__
+#define __NETWORKMANAGER_PPP_MANAGER_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -75,4 +75,4 @@ gboolean nm_ppp_manager_start (NMPPPManager *manager,
 
 GQuark nm_ppp_manager_error_quark (void);
 
-#endif /* NM_PPP_MANAGER_H */
+#endif /* __NETWORKMANAGER_PPP_MANAGER_H__ */

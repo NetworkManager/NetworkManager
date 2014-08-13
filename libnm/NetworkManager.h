@@ -18,8 +18,8 @@
  * Copyright 2014 Red Hat, Inc.
  */
 
-#ifndef NETWORKMANAGER_H
-#define NETWORKMANAGER_H
+#ifndef __NETWORKMANAGER_H__
+#define __NETWORKMANAGER_H__
 
 #define __NETWORKMANAGER_H_INSIDE__
 
@@ -88,4 +88,4 @@
 
 #undef __NETWORKMANAGER_H_INSIDE__
 
-#endif /* NETWORKMANAGER_H */
+#endif /* __NETWORKMANAGER_H__ */

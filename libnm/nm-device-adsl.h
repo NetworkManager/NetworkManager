@@ -18,8 +18,8 @@
  * Copyright 2011 Pantelis Koukousoulas <pktoss@gmail.com>
  */
 
-#ifndef NM_DEVICE_ADSL_H
-#define NM_DEVICE_ADSL_H
+#ifndef __NM_DEVICE_ADSL_H__
+#define __NM_DEVICE_ADSL_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -70,4 +70,4 @@ gboolean nm_device_adsl_get_carrier (NMDeviceAdsl *device);
 
 G_END_DECLS
 
-#endif /* NM_DEVICE_ADSL_H */
+#endif /* __NM_DEVICE_ADSL_H__ */

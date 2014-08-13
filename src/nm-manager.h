@@ -19,8 +19,8 @@
  * Copyright (C) 2007 - 2010 Red Hat, Inc.
  */
 
-#ifndef NM_MANAGER_H
-#define NM_MANAGER_H
+#ifndef __NETWORKMANAGER_MANAGER_H__
+#define __NETWORKMANAGER_MANAGER_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -134,4 +134,4 @@ gboolean nm_manager_deactivate_connection (NMManager *manager,
 
 NMState nm_manager_get_state (NMManager *manager);
 
-#endif /* NM_MANAGER_H */
+#endif /* __NETWORKMANAGER_MANAGER_H__ */

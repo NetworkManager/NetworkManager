@@ -16,8 +16,8 @@
  * Copyright (C) 2010 Red Hat, Inc.
  */
 
-#ifndef NM_DHCP_DHCLIENT_UTILS_H
-#define NM_DHCP_DHCLIENT_UTILS_H
+#ifndef __NETWORKMANAGER_DHCP_DHCLIENT_UTILS_H__
+#define __NETWORKMANAGER_DHCP_DHCLIENT_UTILS_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -48,5 +48,5 @@ GSList *nm_dhcp_dhclient_read_lease_ip_configs (const char *iface,
                                                 gboolean ipv6,
                                                 GDateTime *now);
 
-#endif /* NM_DHCP_DHCLIENT_UTILS_H */
+#endif /* __NETWORKMANAGER_DHCP_DHCLIENT_UTILS_H__ */
 

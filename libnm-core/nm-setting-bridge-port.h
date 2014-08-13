@@ -19,8 +19,8 @@
  * Copyright 2012 Red Hat, Inc.
  */
 
-#ifndef NM_SETTING_BRIDGE_PORT_H
-#define NM_SETTING_BRIDGE_PORT_H
+#ifndef __NM_SETTING_BRIDGE_PORT_H__
+#define __NM_SETTING_BRIDGE_PORT_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -82,4 +82,4 @@ gboolean    nm_setting_bridge_port_get_hairpin_mode (NMSettingBridgePort *settin
 
 G_END_DECLS
 
-#endif /* NM_SETTING_BRIDGE_PORT_H */
+#endif /* __NM_SETTING_BRIDGE_PORT_H__ */

@@ -19,8 +19,8 @@
  * Copyright (C) 2008 - 2011 Red Hat, Inc.
  */
 
-#ifndef NM_SETTINGS_ERROR_H
-#define NM_SETTINGS_ERROR_H
+#ifndef __NETWORKMANAGER_SETTINGS_ERROR_H__
+#define __NETWORKMANAGER_SETTINGS_ERROR_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -50,4 +50,4 @@ GQuark nm_settings_error_quark (void);
 #define NM_TYPE_SETTINGS_ERROR (nm_settings_error_get_type ())
 GType  nm_settings_error_get_type (void);
 
-#endif /* NM_SETTINGS_ERROR_H */
+#endif /* __NETWORKMANAGER_SETTINGS_ERROR_H__ */

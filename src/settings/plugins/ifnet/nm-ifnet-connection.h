@@ -19,8 +19,8 @@
  * Copyright (C) 1999-2010 Gentoo Foundation, Inc.
  */
 
-#ifndef NM_IFNET_CONNECTION_H
-#define NM_IFNET_CONNECTION_H
+#ifndef __NETWORKMANAGER_IFNET_CONNECTION_H__
+#define __NETWORKMANAGER_IFNET_CONNECTION_H__
 
 #include <nm-settings-connection.h>
 #include "net_parser.h"

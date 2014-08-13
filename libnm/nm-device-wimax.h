@@ -19,8 +19,8 @@
  * Copyright 2009 Novell, Inc.
  */
 
-#ifndef NM_DEVICE_WIMAX_H
-#define NM_DEVICE_WIMAX_H
+#ifndef __NM_DEVICE_WIMAX_H__
+#define __NM_DEVICE_WIMAX_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -98,4 +98,4 @@ const char *     nm_device_wimax_get_bsid        (NMDeviceWimax *self);
 
 G_END_DECLS
 
-#endif /* NM_DEVICE_WIMAX_H */
+#endif /* __NM_DEVICE_WIMAX_H__ */

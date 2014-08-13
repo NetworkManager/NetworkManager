@@ -17,8 +17,8 @@
  * Copyright 2008 Red Hat, Inc.
  */
 
-#ifndef DBUS_GLIB_TYPES_H
-#define DBUS_GLIB_TYPES_H
+#ifndef __NM_DBUS_GLIB_TYPES_H__
+#define __NM_DBUS_GLIB_TYPES_H__
 
 #include <dbus/dbus-glib.h>
 
@@ -37,4 +37,4 @@
 #define DBUS_TYPE_G_IP6_ROUTE               (dbus_g_type_get_struct ("GValueArray", DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, G_TYPE_INVALID))
 #define DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE      (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_IP6_ROUTE))
 
-#endif /* DBUS_GLIB_TYPES_H */
+#endif /* __NM_DBUS_GLIB_TYPES_H__ */

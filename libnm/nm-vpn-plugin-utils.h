@@ -18,8 +18,8 @@
  * Copyright 2011 Red Hat, Inc.
  */
 
-#ifndef NM_VPN_PLUGIN_UTILS_H
-#define NM_VPN_PLUGIN_UTILS_H
+#ifndef __NM_VPN_PLUGIN_UTILS_H__
+#define __NM_VPN_PLUGIN_UTILS_H__
 
 #if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
 #error "Only <NetworkManager.h> can be included directly."
@@ -40,4 +40,4 @@ gboolean nm_vpn_plugin_utils_get_secret_flags (GHashTable *data,
 
 G_END_DECLS
 
-#endif /* NM_VPN_PLUGIN_UTILS_H */
+#endif /* __NM_VPN_PLUGIN_UTILS_H__ */

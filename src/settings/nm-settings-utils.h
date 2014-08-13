@@ -16,8 +16,8 @@
  * (C) Copyright 2011 Red Hat, Inc.
  */
 
-#ifndef NM_SETTINGS_UTILS_H
-#define NM_SETTINGS_UTILS_H
+#ifndef __NETWORKMANAGER_SETTINGS_UTILS_H__
+#define __NETWORKMANAGER_SETTINGS_UTILS_H__
 
 #include <glib.h>
 

@@ -18,8 +18,8 @@
  * Copyright 2008 Red Hat, Inc.
  */
 
-#ifndef NM_OBJECT_CACHE_H
-#define NM_OBJECT_CACHE_H
+#ifndef __NM_OBJECT_CACHE_H__
+#define __NM_OBJECT_CACHE_H__
 
 #include <glib.h>
 #include <glib-object.h>
@@ -34,4 +34,4 @@ void _nm_object_cache_clear (void);
 
 G_END_DECLS
 
-#endif /* NM_OBJECT_CACHE_H */
+#endif /* __NM_OBJECT_CACHE_H__ */

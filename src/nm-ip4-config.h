@@ -18,8 +18,8 @@
  * Copyright (C) 2008–2013 Red Hat, Inc.
  */
 
-#ifndef NM_IP4_CONFIG_H
-#define NM_IP4_CONFIG_H
+#ifndef __NETWORKMANAGER_IP4_CONFIG_H__
+#define __NETWORKMANAGER_IP4_CONFIG_H__
 
 #include <glib-object.h>
 
@@ -146,4 +146,4 @@ gboolean nm_ip4_config_equal (const NMIP4Config *a, const NMIP4Config *b);
 gboolean nm_ip4_config_capture_resolv_conf (GArray *nameservers,
                                             const char *rc_contents);
 
-#endif /* NM_IP4_CONFIG_H */
+#endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */

@@ -18,8 +18,8 @@
  * (C) Copyright 2011 Red Hat, Inc.
  */
 
-#ifndef NM_WIFI_AP_UTILS_H
-#define NM_WIFI_AP_UTILS_H
+#ifndef __NETWORKMANAGER_WIFI_AP_UTILS_H__
+#define __NETWORKMANAGER_WIFI_AP_UTILS_H__
 
 
 #include <nm-dbus-interface.h>
