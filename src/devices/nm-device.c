@@ -3054,6 +3054,12 @@ ip6_config_merge_and_apply (NMDevice *self,
 	nm_ip6_config_addresses_sort (composite,
 	    priv->rdisc ? priv->rdisc_use_tempaddr : NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
+	/* Allow setting MTU etc */
+	if (commit) {
+		if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
+			NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self, composite);
+	}
+
 	success = nm_device_set_ip6_config (self, composite, commit, out_reason);
 	g_object_unref (composite);
 	return success;
@@ -4625,10 +4631,6 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 
 	/* Device should be up before we can do anything with it */
 	g_warn_if_fail (nm_platform_link_is_up (nm_device_get_ip_ifindex (self)));
-
-	/* Allow setting MTU etc */
-	if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
-		NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self);
 
 	if (ip6_config_merge_and_apply (self, TRUE, &reason)) {
 		/* If IPv6 wasn't the first IP to complete, and DHCP was used,
