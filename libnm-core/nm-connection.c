@@ -2094,7 +2094,8 @@ nm_connection_class_init (NMConnectionClass *klass)
 		g_signal_new (NM_CONNECTION_SECRETS_CLEARED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
+		              G_STRUCT_OFFSET (NMConnectionClass, secrets_cleared),
+		              NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
 
@@ -2110,7 +2111,8 @@ nm_connection_class_init (NMConnectionClass *klass)
 		g_signal_new (NM_CONNECTION_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
-		              0, NULL, NULL,
+		              G_STRUCT_OFFSET (NMConnectionClass, changed),
+		              NULL, NULL,
 		              g_cclosure_marshal_VOID__VOID,
 		              G_TYPE_NONE, 0);
 }

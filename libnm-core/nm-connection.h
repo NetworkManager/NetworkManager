@@ -126,7 +126,10 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Signals */
-	void (*secrets_updated) (NMConnection *connection, const char * setting);
+	void (*secrets_updated) (NMConnection *connection,
+	                         const char   *setting);
+	void (*secrets_cleared) (NMConnection *connection);
+	void (*changed)         (NMConnection *connection);
 
 	/*< private >*/
 	gpointer padding[8];
