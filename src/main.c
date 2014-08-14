@@ -56,6 +56,7 @@
 #include "nm-session-monitor.h"
 #include "nm-dispatcher.h"
 #include "nm-settings.h"
+#include "nm-auth-manager.h"
 
 #if !defined(NM_DIST_VERSION)
 # define NM_DIST_VERSION VERSION
@@ -591,6 +592,8 @@ main (int argc, char *argv[])
 
 	/* Set up platform interaction layer */
 	nm_linux_platform_setup ();
+
+	nm_auth_manager_setup (nm_config_get_auth_polkit (config));
 
 	/* Initialize our DBus service & connection */
 	dbus_mgr = nm_dbus_manager_get ();

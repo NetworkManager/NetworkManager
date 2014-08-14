@@ -139,7 +139,6 @@ BuildRequires: automake autoconf intltool libtool
 BuildRequires: ppp = %{ppp_version}
 BuildRequires: ppp-devel = %{ppp_version}
 BuildRequires: nss-devel >= 3.11.7
-BuildRequires: polkit-devel
 BuildRequires: dhclient
 BuildRequires: readline-devel
 %if %{regen_docs}

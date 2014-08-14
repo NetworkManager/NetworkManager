@@ -1029,7 +1029,7 @@ _new_auth_subject (DBusGMethodInvocation *context, GError **error)
 {
 	NMAuthSubject *subject;
 
-	subject = nm_auth_subject_new_from_context (context);
+	subject = nm_auth_subject_new_unix_process_from_context (context);
 	if (!subject) {
 		g_set_error_literal (error,
 		                     NM_SETTINGS_ERROR,
@@ -1057,10 +1057,10 @@ auth_start (NMSettingsConnection *self,
 	g_return_if_fail (NM_IS_AUTH_SUBJECT (subject));
 
 	/* Ensure the caller can view this connection */
-	if (!nm_auth_uid_in_acl (NM_CONNECTION (self),
-	                         priv->session_monitor,
-	                         nm_auth_subject_get_uid (subject),
-	                         &error_desc)) {
+	if (!nm_auth_is_subject_in_acl (NM_CONNECTION (self),
+	                                priv->session_monitor,
+	                                subject,
+	                                &error_desc)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             error_desc);
@@ -1414,10 +1414,10 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
 	 * that's sending the update request.  You can't make a connection
 	 * invisible to yourself.
 	 */
-	if (!nm_auth_uid_in_acl (tmp ? tmp : NM_CONNECTION (self),
-	                         priv->session_monitor,
-	                         nm_auth_subject_get_uid (subject),
-	                         &error_desc)) {
+	if (!nm_auth_is_subject_in_acl (tmp ? tmp : NM_CONNECTION (self),
+	                                priv->session_monitor,
+	                                subject,
+	                                &error_desc)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             error_desc);

@@ -230,6 +230,8 @@ nm_sources = \
 	nm-ip6-config.h \
 	nm-logging.c \
 	nm-logging.h \
+	nm-auth-manager.c \
+	nm-auth-manager.h \
 	nm-auth-subject.c \
 	nm-auth-subject.h \
 	nm-auth-utils.c \
@@ -328,7 +330,6 @@ AM_CPPFLAGS += \
 	$(LIBNL_CFLAGS) \
 	$(LIBNDP_CFLAGS) \
 	$(LIBSOUP_CFLAGS) \
-	$(POLKIT_CFLAGS) \
 	$(SYSTEMD_LOGIN_CFLAGS) \
 	\
 	-DBINDIR=\"$(bindir)\" \
@@ -365,7 +366,6 @@ libNetworkManager_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
-	$(POLKIT_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
 	$(LIBNDP_LIBS) \
 	$(LIBDL) \

@@ -27,10 +27,6 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 
-#if WITH_POLKIT
-#include <polkit/polkit.h>
-#endif
-
 #include "nm-types.h"
 
 #define NM_TYPE_AUTH_SUBJECT            (nm_auth_subject_get_type ())
@@ -40,33 +36,52 @@
 #define NM_IS_AUTH_SUBJECT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_AUTH_SUBJECT))
 #define NM_AUTH_SUBJECT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_AUTH_SUBJECT, NMAuthSubjectClass))
 
+typedef enum {
+	NM_AUTH_SUBJECT_TYPE_INVALID      = 0,
+	NM_AUTH_SUBJECT_TYPE_INTERNAL     = 1,
+	NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS = 2,
+} NMAuthSubjectType;
+
+#define NM_AUTH_SUBJECT_SUBJECT_TYPE               "subject-type"
+#define NM_AUTH_SUBJECT_UNIX_PROCESS_DBUS_SENDER   "unix-process-dbus-sender"
+#define NM_AUTH_SUBJECT_UNIX_PROCESS_PID           "unix-process-pid"
+#define NM_AUTH_SUBJECT_UNIX_PROCESS_UID           "unix-process-uid"
+
 struct _NMAuthSubject {
 	GObject parent;
 };
 
 typedef struct {
 	GObjectClass parent;
-
 } NMAuthSubjectClass;
 
 GType nm_auth_subject_get_type (void);
 
-NMAuthSubject *nm_auth_subject_new_from_context (DBusGMethodInvocation *context);
-
-NMAuthSubject *nm_auth_subject_new_from_message (DBusConnection *connection, DBusMessage *message);
-
 NMAuthSubject *nm_auth_subject_new_internal (void);
 
-gulong nm_auth_subject_get_uid (NMAuthSubject *subject);
+NMAuthSubject *nm_auth_subject_new_unix_process_from_context (DBusGMethodInvocation *context);
 
-gulong nm_auth_subject_get_pid (NMAuthSubject *subject);
+NMAuthSubject *nm_auth_subject_new_unix_process_from_message (DBusConnection *connection, DBusMessage *message);
 
-const char *nm_auth_subject_get_dbus_sender (NMAuthSubject *subject);
 
-gboolean nm_auth_subject_get_internal (NMAuthSubject *subject);
+NMAuthSubjectType nm_auth_subject_get_subject_type (NMAuthSubject *subject);
 
-#if WITH_POLKIT
-PolkitSubject *nm_auth_subject_get_polkit_subject (NMAuthSubject *subject);
-#endif
+
+gboolean nm_auth_subject_is_internal (NMAuthSubject *subject);
+
+
+gboolean nm_auth_subject_is_unix_process (NMAuthSubject *subject);
+
+gulong nm_auth_subject_get_unix_process_pid (NMAuthSubject *subject);
+
+const char *nm_auth_subject_get_unix_process_dbus_sender (NMAuthSubject *subject);
+
+
+gulong nm_auth_subject_get_unix_process_uid (NMAuthSubject *subject);
+
+
+const char *nm_auth_subject_to_string (NMAuthSubject *self, char *buf, gsize buf_len);
+
+GVariant *  nm_auth_subject_unix_process_to_polkit_gvariant (NMAuthSubject *self);
 
 #endif /* __NETWORKMANAGER_AUTH_SUBJECT_H__ */

@@ -46,6 +46,7 @@ typedef struct {
 
 	char **plugins;
 	gboolean monitor_connection_files;
+	gboolean auth_polkit;
 	char *dhcp_client;
 	char *dns_mode;
 
@@ -140,6 +141,14 @@ nm_config_get_monitor_connection_files (NMConfig *config)
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	return NM_CONFIG_GET_PRIVATE (config)->monitor_connection_files;
+}
+
+gboolean
+nm_config_get_auth_polkit (NMConfig *config)
+{
+	g_return_val_if_fail (NM_IS_CONFIG (config), NM_CONFIG_DEFAULT_AUTH_POLKIT);
+
+	return NM_CONFIG_GET_PRIVATE (config)->auth_polkit;
 }
 
 const char *
@@ -580,6 +589,16 @@ nm_config_new (GError **error)
 		g_free (value);
 	}
 
+	value = g_key_file_get_value (priv->keyfile, "main", "auth-polkit", NULL);
+	priv->auth_polkit = NM_CONFIG_DEFAULT_AUTH_POLKIT;
+	if (value) {
+		if (!_parse_bool_str (value, &priv->auth_polkit)) {
+			nm_log_warn (LOGD_CORE, "Unrecognized value for main.auth-polkit: %s. Assuming '%s'", value,
+			             NM_CONFIG_DEFAULT_AUTH_POLKIT ? "true" : "false");
+		}
+		g_free (value);
+	}
+
 	priv->dhcp_client = g_key_file_get_value (priv->keyfile, "main", "dhcp", NULL);
 	priv->dns_mode = g_key_file_get_value (priv->keyfile, "main", "dns", NULL);
 
@@ -609,6 +628,8 @@ static void
 nm_config_init (NMConfig *config)
 {
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (config);
+
+	priv->auth_polkit = NM_CONFIG_DEFAULT_AUTH_POLKIT;
 
 	priv->keyfile = g_key_file_new ();
 	g_key_file_set_list_separator (priv->keyfile, ',');
