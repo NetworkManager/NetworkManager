@@ -495,7 +495,7 @@ get_unmanaged_specs (NMSystemConfigInterface *config)
 		char **udis;
 		int i;
 
-		udis = g_strsplit (str, ";", -1);
+		udis = g_strsplit_set (str, ";,", -1);
 		g_free (str);
 
 		for (i = 0; udis[i] != NULL; i++) {
