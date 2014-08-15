@@ -49,7 +49,7 @@
 #include "nm-dhcp-manager.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
-#include "nm-manager-auth.h"
+#include "nm-auth-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-device-factory.h"

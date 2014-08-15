@@ -44,7 +44,7 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
-#include "nm-manager-auth.h"
+#include "nm-auth-utils.h"
 #include "nm-posix-signals.h"
 #include "nm-dbus-glib-types.h"
 

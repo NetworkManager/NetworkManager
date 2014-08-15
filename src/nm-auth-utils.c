@@ -27,7 +27,7 @@
 #endif
 
 #include "nm-setting-connection.h"
-#include "nm-manager-auth.h"
+#include "nm-auth-utils.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-auth-subject.h"

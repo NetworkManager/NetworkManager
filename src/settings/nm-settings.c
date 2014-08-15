@@ -62,7 +62,7 @@
 #include "nm-system-config-interface.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
-#include "nm-manager-auth.h"
+#include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "nm-session-monitor.h"
 #include "plugins/keyfile/plugin.h"

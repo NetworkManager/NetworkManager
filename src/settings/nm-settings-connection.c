@@ -36,7 +36,7 @@
 #include "nm-settings-error.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-logging.h"
-#include "nm-manager-auth.h"
+#include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "nm-agent-manager.h"
 #include "NetworkManagerUtils.h"

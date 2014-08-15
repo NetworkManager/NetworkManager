@@ -230,10 +230,10 @@ nm_sources = \
 	nm-ip6-config.h \
 	nm-logging.c \
 	nm-logging.h \
-	nm-manager-auth.c \
-	nm-manager-auth.h \
 	nm-auth-subject.c \
 	nm-auth-subject.h \
+	nm-auth-utils.c \
+	nm-auth-utils.h \
 	nm-manager.c \
 	nm-manager.h \
 	nm-policy.c \
