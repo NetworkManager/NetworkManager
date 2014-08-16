@@ -140,8 +140,6 @@ NMConnection *nm_connection_new_from_hash (GHashTable *hash, GError **error);
 
 NMConnection *nm_connection_duplicate     (NMConnection *connection);
 
-NMSetting    *nm_connection_create_setting (const char *name);
-
 void          nm_connection_add_setting   (NMConnection *connection,
                                            NMSetting    *setting);
 

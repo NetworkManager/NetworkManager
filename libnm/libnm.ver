@@ -76,7 +76,6 @@ global:
 	nm_connection_clear_secrets;
 	nm_connection_clear_secrets_with_flags;
 	nm_connection_compare;
-	nm_connection_create_setting;
 	nm_connection_diff;
 	nm_connection_dump;
 	nm_connection_duplicate;

@@ -1166,12 +1166,17 @@ read_setting (GKeyFile *file, const char *keyfile_path, const char *group)
 	NMSetting *setting;
 	ReadInfo info = { file, keyfile_path };
 	const char *alias;
+	GType type;
 
 	alias = nm_keyfile_plugin_get_setting_name_for_alias (group);
-	setting = nm_connection_create_setting (alias ? alias : group);
-	if (setting)
+	if (alias)
+		group = alias;
+
+	type = nm_connection_lookup_setting_type (group);
+	if (type) {
+		setting = g_object_new (type, NULL);
 		nm_setting_enumerate_values (setting, read_one_setting_value, &info);
-	else
+	} else
 		nm_log_warn (LOGD_SETTINGS, "Invalid setting name '%s'", group);
 
 	return setting;

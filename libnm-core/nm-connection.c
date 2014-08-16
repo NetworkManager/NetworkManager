@@ -153,29 +153,6 @@ nm_connection_lookup_setting_type_by_quark (GQuark error_quark)
 	return _nm_setting_lookup_setting_type_by_quark (error_quark);
 }
 
-/**
- * nm_connection_create_setting:
- * @name: a setting name
- *
- * Create a new #NMSetting object of the desired type, given a setting name.
- *
- * Returns: (transfer full): the new setting object, or %NULL if the setting name was unknown
- **/
-NMSetting *
-nm_connection_create_setting (const char *name)
-{
-	GType type;
-	NMSetting *setting = NULL;
-
-	g_return_val_if_fail (name != NULL, NULL);
-
-	type = nm_connection_lookup_setting_type (name);
-	if (type)
-		setting = (NMSetting *) g_object_new (type, NULL);
-
-	return setting;
-}
-
 static void
 setting_changed_cb (NMSetting *setting,
                     GParamSpec *pspec,
