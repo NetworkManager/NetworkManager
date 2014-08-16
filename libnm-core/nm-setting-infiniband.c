@@ -20,7 +20,6 @@
  */
 
 #include <stdlib.h>
-#include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
 #include "nm-setting-infiniband.h"
@@ -419,7 +418,7 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_INFINIBAND_MAC_ADDRESS,
-	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_hwaddr_to_dbus,
 	                                      _nm_utils_hwaddr_from_dbus);
 

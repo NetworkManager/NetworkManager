@@ -482,14 +482,6 @@ nmt_secret_agent_get_secrets (NMSecretAgent                 *agent,
 	request_secrets_from_ui (request);
 }
 
-static void
-gvalue_destroy_notify (gpointer data)
-{
-	GValue *value = data;
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
-
 /**
  * nmt_secret_agent_response:
  * @self: the #NmtSecretAgent
@@ -511,8 +503,7 @@ nmt_secret_agent_response (NmtSecretAgent *self,
 {
 	NmtSecretAgentPrivate *priv;
 	NmtSecretAgentRequest *request;
-	GHashTable *hash = NULL, *setting_hash;
-	GValue *value;
+	GVariant *dict = NULL;
 	GError *error = NULL;
 	int i;
 
@@ -523,32 +514,41 @@ nmt_secret_agent_response (NmtSecretAgent *self,
 	g_return_if_fail (request != NULL);
 
 	if (secrets) {
-		hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_hash_table_unref);
+		GVariantBuilder conn_builder, *setting_builder;
+		GHashTable *settings;
+		GHashTableIter iter;
+		const char *name;
+
+		settings = g_hash_table_new (g_str_hash, g_str_equal);
 		for (i = 0; i < secrets->len; i++) {
 			NmtSecretAgentSecretReal *secret = secrets->pdata[i];
 
-			setting_hash = g_hash_table_lookup (hash, nm_setting_get_name (secret->setting));
-			if (!setting_hash) {
-				setting_hash = g_hash_table_new_full (g_str_hash, g_str_equal,
-				                                      g_free, gvalue_destroy_notify);
-				g_hash_table_insert (hash, (char *)nm_setting_get_name (secret->setting),
-				                     setting_hash);
+			setting_builder = g_hash_table_lookup (settings, nm_setting_get_name (secret->setting));
+			if (!setting_builder) {
+				setting_builder = g_variant_builder_new (NM_VARIANT_TYPE_SETTING);
+				g_hash_table_insert (settings, (char *) nm_setting_get_name (secret->setting),
+				                     setting_builder);
 			}
 
-			value = g_slice_new0 (GValue);
-			g_value_init (value, G_TYPE_STRING);
-			g_value_set_string (value, secret->base.value);
-
-			g_hash_table_insert (setting_hash, g_strdup (secret->property), value);
+			g_variant_builder_add (setting_builder, "{sv}",
+			                       secret->property,
+			                       g_variant_new_string (secret->base.value));
 		}
+
+		g_variant_builder_init (&conn_builder, NM_VARIANT_TYPE_CONNECTION);
+		g_hash_table_iter_init (&iter, settings);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &setting_builder))
+			g_variant_builder_add (&conn_builder, "{sa{sv}}", name, setting_builder);
+		dict = g_variant_builder_end (&conn_builder);
+		g_hash_table_destroy (settings);
 	} else {
 		error = g_error_new (NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_USER_CANCELED,
 		                     "User cancelled");
 	}
 
-	request->callback (NM_SECRET_AGENT (self), request->connection, hash, error, request->callback_data);
+	request->callback (NM_SECRET_AGENT (self), request->connection, dict, error, request->callback_data);
 
-	g_clear_pointer (&hash, g_hash_table_unref);
+	g_clear_pointer (&dict, g_variant_unref);
 	g_clear_error (&error);
 	g_hash_table_remove (priv->requests, request_id);
 }

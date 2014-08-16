@@ -28,6 +28,7 @@
 #include "nm-enum-types.h"
 #include "nm-dbus-helpers.h"
 #include "nm-simple-connection.h"
+#include "nm-utils-private.h"
 
 static void impl_secret_agent_get_secrets (NMSecretAgent *self,
                                            GHashTable *connection_hash,
@@ -324,6 +325,7 @@ verify_request (NMSecretAgent *self,
                 GError **error)
 {
 	NMConnection *connection = NULL;
+	GVariant *connection_dict;
 	GError *local = NULL;
 
 	if (!verify_sender (self, context, error))
@@ -344,7 +346,9 @@ verify_request (NMSecretAgent *self,
 
 	/* Make sure the given connection is valid */
 	g_assert (out_connection);
-	connection = nm_simple_connection_new_from_dbus (connection_hash, &local);
+	connection_dict = _nm_utils_connection_hash_to_dict (connection_hash);
+	connection = nm_simple_connection_new_from_dbus (connection_dict, &local);
+	g_variant_unref (connection_dict);
 	if (connection) {
 		nm_connection_set_path (connection, connection_path);
 		*out_connection = connection;
@@ -364,7 +368,7 @@ verify_request (NMSecretAgent *self,
 static void
 get_secrets_cb (NMSecretAgent *self,
                 NMConnection *connection,
-                GHashTable *secrets,
+                GVariant *secrets,
                 GError *error,
                 gpointer user_data)
 {
@@ -372,8 +376,13 @@ get_secrets_cb (NMSecretAgent *self,
 
 	if (error)
 		dbus_g_method_return_error (info->context, error);
-	else
-		dbus_g_method_return (info->context, secrets);
+	else {
+		GHashTable *secrets_hash;
+
+		secrets_hash = _nm_utils_connection_dict_to_hash (secrets);
+		dbus_g_method_return (info->context, secrets_hash);
+		g_hash_table_unref (secrets_hash);
+	}
 
 	/* Remove the request from internal tracking */
 	get_secrets_info_finalize (self, info);

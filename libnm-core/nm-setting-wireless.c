@@ -22,13 +22,11 @@
 
 #include <string.h>
 #include <net/ethernet.h>
-#include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
 #include "nm-setting-wireless.h"
 #include "nm-dbus-interface.h"
 #include "nm-utils.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 
@@ -820,17 +818,15 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	return TRUE;
 }
 
-static gboolean
+static GVariant *
 nm_setting_wireless_get_security (NMSetting    *setting,
                                   NMConnection *connection,
-                                  const char   *property_name,
-                                  GValue       *value)
+                                  const char   *property_name)
 {
-	if (nm_connection_get_setting_wireless_security (connection)) {
-		g_value_set_string (value, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
-		return TRUE;
-	} else
-		return FALSE;
+	if (nm_connection_get_setting_wireless_security (connection))
+		return g_variant_new_string (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	else
+		return NULL;
 }
 
 static void
@@ -998,7 +994,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRELESS_SSID,
-	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_bytes_to_dbus,
 	                                      _nm_utils_bytes_from_dbus);
 
@@ -1063,7 +1059,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRELESS_BSSID,
-	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_hwaddr_to_dbus,
 	                                      _nm_utils_hwaddr_from_dbus);
 
@@ -1114,7 +1110,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRELESS_MAC_ADDRESS,
-	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_hwaddr_to_dbus,
 	                                      _nm_utils_hwaddr_from_dbus);
 
@@ -1131,7 +1127,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
-	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_hwaddr_to_dbus,
 	                                      _nm_utils_hwaddr_from_dbus);
 
@@ -1200,6 +1196,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/* Compatibility for deprecated property */
-	_nm_setting_class_add_dbus_only_property (parent_class, "security", G_TYPE_STRING,
+	_nm_setting_class_add_dbus_only_property (parent_class, "security",
+	                                          G_VARIANT_TYPE_STRING,
 	                                          nm_setting_wireless_get_security, NULL);
 }

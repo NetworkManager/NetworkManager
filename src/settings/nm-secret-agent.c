@@ -35,6 +35,7 @@
 #include "nm-logging.h"
 #include "nm-auth-subject.h"
 #include "nm-simple-connection.h"
+#include "nm-utils-private.h"
 
 G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
 
@@ -283,6 +284,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
                              gpointer callback_data)
 {
 	NMSecretAgentPrivate *priv;
+	GVariant *dict;
 	GHashTable *hash;
 	Request *r;
 
@@ -293,7 +295,9 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 	g_return_val_if_fail (priv->proxy != NULL, NULL);
 
-	hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	hash = _nm_utils_connection_dict_to_hash (dict);
+	g_variant_unref (dict);
 
 	/* Mask off the private ONLY_SYSTEM flag if present */
 	flags &= ~NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM;
@@ -385,11 +389,14 @@ agent_new_save_delete (NMSecretAgent *self,
                        gpointer callback_data)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+	GVariant *dict;
 	GHashTable *hash;
 	Request *r;
 	const char *cpath = nm_connection_get_path (connection);
 
-	hash = nm_connection_to_dbus (connection, flags);
+	dict = nm_connection_to_dbus (connection, flags);
+	hash = _nm_utils_connection_dict_to_hash (dict);
+	g_variant_unref (dict);
 
 	r = request_new (self, cpath, NULL, callback, callback_data);
 	r->call = dbus_g_proxy_begin_call_with_timeout (priv->proxy,

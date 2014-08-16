@@ -22,13 +22,11 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
 #include "nm-setting-vpn.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-setting-private.h"
 
 /**
@@ -448,20 +446,20 @@ update_secret_string (NMSetting *setting,
 }
 
 static NMSettingUpdateSecretResult
-update_secret_hash (NMSetting *setting,
-                    GHashTable *secrets,
+update_secret_dict (NMSetting *setting,
+                    GVariant *secrets,
                     GError **error)
 {
 	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
-	GHashTableIter iter;
+	GVariantIter iter;
 	const char *name, *value;
 	NMSettingUpdateSecretResult result = NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
 
 	g_return_val_if_fail (secrets != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
 
 	/* Make sure the items are valid */
-	g_hash_table_iter_init (&iter, secrets);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &value)) {
+	g_variant_iter_init (&iter, secrets);
+	while (g_variant_iter_next (&iter, "{&s&s}", &name, &value)) {
 		if (!name || !strlen (name)) {
 			g_set_error_literal (error, NM_SETTING_ERROR,
 			                     NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
@@ -478,8 +476,8 @@ update_secret_hash (NMSetting *setting,
 	}
 
 	/* Now add the items to the settings' secrets list */
-	g_hash_table_iter_init (&iter, secrets);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &value)) {
+	g_variant_iter_init (&iter, secrets);
+	while (g_variant_iter_next (&iter, "{&s&s}", &name, &value)) {
 		if (value == NULL) {
 			g_warn_if_fail (value != NULL);
 			continue;
@@ -500,26 +498,26 @@ update_secret_hash (NMSetting *setting,
 }
 
 static int
-update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
+update_one_secret (NMSetting *setting, const char *key, GVariant *value, GError **error)
 {
 	NMSettingUpdateSecretResult success = NM_SETTING_UPDATE_SECRET_ERROR;
 
 	g_return_val_if_fail (key != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
 	g_return_val_if_fail (value != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
 
-	if (G_VALUE_HOLDS_STRING (value)) {
+	if (g_variant_is_of_type (value, G_VARIANT_TYPE_STRING)) {
 		/* Passing the string properties individually isn't correct, and won't
 		 * produce the correct result, but for some reason that's how it used
 		 * to be done.  So even though it's not correct, keep the code around
 		 * for compatibility's sake.
 		 */
-		success = update_secret_string (setting, key, g_value_get_string (value), error);
-	} else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_MAP_OF_STRING)) {
+		success = update_secret_string (setting, key, g_variant_get_string (value, NULL), error);
+	} else if (g_variant_is_of_type (value, G_VARIANT_TYPE ("a{ss}"))) {
 		if (strcmp (key, NM_SETTING_VPN_SECRETS) != 0) {
 			g_set_error (error, NM_SETTING_ERROR, NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
 			             "Property %s not a secret property", key);
 		} else
-			success = update_secret_hash (setting, g_value_get_boxed (value), error);
+			success = update_secret_dict (setting, value, error);
 	} else
 		g_set_error_literal (error, NM_SETTING_ERROR, NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH, key);
 
@@ -837,7 +835,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_VPN_DATA,
-	                                      DBUS_TYPE_G_MAP_OF_STRING,
+	                                      G_VARIANT_TYPE ("a{ss}"),
 	                                      _nm_utils_strdict_to_dbus,
 	                                      _nm_utils_strdict_from_dbus);
 
@@ -857,7 +855,7 @@ nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 		                     NM_SETTING_PARAM_SECRET |
 		                     G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_VPN_SECRETS,
-	                                      DBUS_TYPE_G_MAP_OF_STRING,
+	                                      G_VARIANT_TYPE ("a{ss}"),
 	                                      _nm_utils_strdict_to_dbus,
 	                                      _nm_utils_strdict_from_dbus);
 }

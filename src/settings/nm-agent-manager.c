@@ -40,6 +40,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-session-monitor.h"
 #include "nm-simple-connection.h"
+#include "nm-utils-private.h"
 
 G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, G_TYPE_OBJECT)
 
@@ -910,8 +911,13 @@ get_agent_request_secrets (ConnectionRequest *req, gboolean include_system_secre
 	tmp = nm_simple_connection_new_clone (req->connection);
 	nm_connection_clear_secrets (tmp);
 	if (include_system_secrets) {
-		if (req->existing_secrets)
-			(void) nm_connection_update_secrets (tmp, req->setting_name, req->existing_secrets, NULL);
+		if (req->existing_secrets) {
+			GVariant *secrets_dict;
+
+			secrets_dict = _nm_utils_connection_hash_to_dict (req->existing_secrets);
+			(void) nm_connection_update_secrets (tmp, req->setting_name, secrets_dict, NULL);
+			g_variant_unref (secrets_dict);
+		}
 	} else {
 		/* Update secret flags in the temporary connection to indicate that
 		 * the system secrets we're not sending to the agent aren't required,
@@ -1085,6 +1091,7 @@ get_start (gpointer user_data)
 		NMConnection *tmp;
 		GError *error = NULL;
 		gboolean new_secrets = (req->flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW);
+		GVariant *secrets_dict;
 
 		/* The connection already had secrets; check if any more are required.
 		 * If no more are required, we're done.  If secrets are still needed,
@@ -1094,7 +1101,8 @@ get_start (gpointer user_data)
 		tmp = nm_simple_connection_new_clone (req->connection);
 		g_assert (tmp);
 
-		if (!nm_connection_update_secrets (tmp, req->setting_name, req->existing_secrets, &error)) {
+		secrets_dict = _nm_utils_connection_hash_to_dict (req->existing_secrets);
+		if (!nm_connection_update_secrets (tmp, req->setting_name, secrets_dict, &error)) {
 			req_complete_error (parent, error);
 			g_clear_error (&error);
 		} else {
@@ -1114,6 +1122,7 @@ get_start (gpointer user_data)
 				request_next_agent (parent);
 			}
 		}
+		g_variant_unref (secrets_dict);
 		g_object_unref (tmp);
 	} else {
 		/* Couldn't get secrets from system settings, so now we ask the

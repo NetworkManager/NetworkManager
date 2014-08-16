@@ -625,9 +625,9 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 
 	/* Ignore incoming deprecated properties */
 	_nm_setting_class_add_dbus_only_property (parent_class, "allowed-bands",
-	                                          G_TYPE_UINT,
+	                                          G_VARIANT_TYPE_UINT32,
 	                                          NULL, NULL);
 	_nm_setting_class_add_dbus_only_property (parent_class, "network-type",
-	                                          G_TYPE_INT,
+	                                          G_VARIANT_TYPE_INT32,
 	                                          NULL, NULL);
 }

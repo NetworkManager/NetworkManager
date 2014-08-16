@@ -30,24 +30,8 @@
 #include "nm-dispatcher-utils.h"
 #include "nm-dispatcher-api.h"
 #include "nm-utils.h"
-#include "nm-dbus-glib-types.h"
 
 /*******************************************/
-
-static GVariant *
-connection_hash_to_dict (GHashTable *hash)
-{
-	GValue val = { 0, };
-	GVariant *dict;
-
-	g_value_init (&val, DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT);
-	g_value_set_boxed (&val, hash);
-	dict = dbus_g_value_build_g_variant (&val);
-	g_value_unset (&val);
-
-	g_variant_ref_sink (dict);
-	return dict;
-}
 
 static gboolean
 parse_main (GKeyFile *kf,
@@ -62,7 +46,6 @@ parse_main (GKeyFile *kf,
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	GVariantBuilder props;
-	GHashTable *con_hash;
 
 	*out_expected_iface = g_key_file_get_string (kf, "main", "expected-iface", error);
 	if (*out_expected_iface == NULL)
@@ -93,10 +76,8 @@ parse_main (GKeyFile *kf,
 	g_free (id);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	con_hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	*out_con_dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 	g_object_unref (connection);
-	*out_con_dict = connection_hash_to_dict (con_hash);
-	g_hash_table_unref (con_hash);
 
 	g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
 	g_variant_builder_add (&props, "{sv}",

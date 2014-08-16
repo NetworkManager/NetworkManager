@@ -50,8 +50,7 @@ nm_simple_connection_new (void)
 
 /**
  * nm_simple_connection_new_from_dbus:
- * @hash: (element-type utf8 GLib.HashTable): the #GHashTable describing
- * the connection
+ * @dict: a #GVariant of type %NM_VARIANT_TYPE_CONNECTION describing the connection
  * @error: on unsuccessful return, an error
  *
  * Creates a new #NMSimpleConnection from a hash table describing the
@@ -63,14 +62,15 @@ nm_simple_connection_new (void)
  * connection failed to validate
  **/
 NMConnection *
-nm_simple_connection_new_from_dbus (GHashTable *hash, GError **error)
+nm_simple_connection_new_from_dbus (GVariant *dict, GError **error)
 {
 	NMConnection *connection;
 
-	g_return_val_if_fail (hash != NULL, NULL);
+	g_return_val_if_fail (dict != NULL, NULL);
+	g_return_val_if_fail (g_variant_is_of_type (dict, NM_VARIANT_TYPE_CONNECTION), NULL);
 
 	connection = nm_simple_connection_new ();
-	if (   !nm_connection_replace_settings (connection, hash, error)
+	if (   !nm_connection_replace_settings (connection, dict, error)
 	    || !nm_connection_verify (connection, error))
 		g_clear_object (&connection);
 	return connection;

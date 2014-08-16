@@ -66,7 +66,7 @@ typedef enum NMSettingUpdateSecretResult {
 } NMSettingUpdateSecretResult;
 
 NMSettingUpdateSecretResult _nm_setting_update_secrets (NMSetting *setting,
-                                                        GHashTable *secrets,
+                                                        GVariant *secrets,
                                                         GError **error);
 gboolean _nm_setting_clear_secrets (NMSetting *setting);
 gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
@@ -104,10 +104,9 @@ NMSetting * _nm_setting_find_in_list_required (GSList *all_settings,
 NMSettingVerifyResult _nm_setting_verify_required_virtual_interface_name (GSList *all_settings,
                                                                           GError **error);
 
-gboolean _nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
-                                                            NMConnection *connection,
-                                                            const char *property,
-                                                            GValue *value);
+GVariant *_nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
+                                                             NMConnection *connection,
+                                                             const char *property);
 
 NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
                                           GSList    *all_settings,
@@ -117,47 +116,46 @@ NMSetting *_nm_setting_find_in_list_base_type (GSList *all_settings);
 gboolean _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_type);
 const char * _nm_setting_slave_type_detect_from_settings (GSList *all_settings, NMSetting **out_s_port);
 
-GHashTable *_nm_setting_to_dbus       (NMSetting *setting,
+GVariant   *_nm_setting_to_dbus       (NMSetting *setting,
                                        NMConnection *connection,
                                        NMConnectionSerializationFlags flags);
 
 NMSetting  *_nm_setting_new_from_dbus (GType setting_type,
-                                       GHashTable *setting_hash,
-                                       GHashTable *connection_hash,
+                                       GVariant *setting_dict,
+                                       GVariant *connection_dict,
                                        GError **error);
 
-typedef gboolean (*NMSettingPropertyGetFunc)    (NMSetting     *setting,
-                                                 NMConnection  *connection,
-                                                 const char    *property,
-                                                 GValue        *value);
-typedef void     (*NMSettingPropertySetFunc)    (NMSetting     *setting,
-                                                 GHashTable    *connection_hash,
-                                                 const char    *property,
-                                                 const GValue  *value);
-typedef void     (*NMSettingPropertyNotSetFunc) (NMSetting     *setting,
-                                                 GHashTable    *connection_hash,
-                                                 const char    *property);
+typedef GVariant * (*NMSettingPropertyGetFunc)    (NMSetting     *setting,
+                                                   NMConnection  *connection,
+                                                   const char    *property);
+typedef void       (*NMSettingPropertySetFunc)    (NMSetting     *setting,
+                                                   GVariant      *connection_dict,
+                                                   const char    *property,
+                                                   GVariant      *value);
+typedef void       (*NMSettingPropertyNotSetFunc) (NMSetting     *setting,
+                                                   GVariant      *connection_dict,
+                                                   const char    *property);
 
 void _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
                                                const char *property_name,
-                                               GType dbus_type,
+                                               const GVariantType *dbus_type,
                                                NMSettingPropertyGetFunc get_func,
                                                NMSettingPropertySetFunc set_func);
 
 void _nm_setting_class_override_property (NMSettingClass *setting_class,
                                           const char *property_name,
-                                          GType dbus_type,
+                                          const GVariantType *dbus_type,
                                           NMSettingPropertyGetFunc get_func,
                                           NMSettingPropertySetFunc set_func,
                                           NMSettingPropertyNotSetFunc not_set_func);
 
-typedef void (*NMSettingPropertyTransformFunc) (const GValue *from,
-                                                GValue       *to);
+typedef GVariant * (*NMSettingPropertyTransformToFunc) (const GValue *from);
+typedef void (*NMSettingPropertyTransformFromFunc) (GVariant *from, GValue *to);
 
 void _nm_setting_class_transform_property (NMSettingClass *setting_class,
                                            const char *property_name,
-                                           GType dbus_type,
-                                           NMSettingPropertyTransformFunc to_dbus,
-                                           NMSettingPropertyTransformFunc from_dbus);
+                                           const GVariantType *dbus_type,
+                                           NMSettingPropertyTransformToFunc to_dbus,
+                                           NMSettingPropertyTransformFromFunc from_dbus);
 
 #endif  /* NM_SETTING_PRIVATE_H */

@@ -234,8 +234,6 @@ nm_utils_init (GError **error)
 
 		if (!crypto_init (error))
 			return FALSE;
-
-		_nm_value_transforms_register ();
 	}
 	return TRUE;
 }
@@ -566,18 +564,80 @@ _nm_utils_hash_values_to_slist (GHashTable *hash)
 	return list;
 }
 
-void
-_nm_utils_strdict_to_dbus (const GValue *prop_value,
-                           GValue *dbus_value)
+/**
+ * _nm_utils_connection_hash_to_dict:
+ * @hash: a hashed #NMConnection
+ *
+ * Returns: a (floating) #GVariant equivalent to @hash.
+ */
+GVariant *
+_nm_utils_connection_hash_to_dict (GHashTable *hash)
 {
-	g_value_set_boxed (dbus_value, g_value_get_boxed (prop_value));
+	GValue val = { 0, };
+	GVariant *variant;
+
+	if (!hash)
+		return NULL;
+
+	g_value_init (&val, DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT);
+	g_value_set_boxed (&val, hash);
+	variant = dbus_g_value_build_g_variant (&val);
+	g_value_unset (&val);
+
+	return variant;
+}
+
+/**
+ * _nm_utils_connection_dict_to_hash:
+ * @dict: a #GVariant-serialized #NMConnection
+ *
+ * Returns: a #GHashTable equivalent to @dict.
+ */
+GHashTable *
+_nm_utils_connection_dict_to_hash (GVariant *dict)
+{
+	GValue val = { 0, };
+
+	if (!dict)
+		return NULL;
+
+	dbus_g_value_parse_g_variant (dict, &val);
+	return g_value_get_boxed (&val);
+}
+
+GVariant *
+_nm_utils_strdict_to_dbus (const GValue *prop_value)
+{
+	GHashTable *hash;
+	GHashTableIter iter;
+	gpointer key, value;
+	GVariantBuilder builder;
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
+	hash = g_value_get_boxed (prop_value);
+	if (hash) {
+		g_hash_table_iter_init (&iter, hash);
+		while (g_hash_table_iter_next (&iter, &key, &value))
+			g_variant_builder_add (&builder, "{ss}", key, value);
+	}
+
+	return g_variant_builder_end (&builder);
 }
 
 void
-_nm_utils_strdict_from_dbus (const GValue *dbus_value,
+_nm_utils_strdict_from_dbus (GVariant *dbus_value,
                              GValue *prop_value)
 {
-	g_value_set_boxed (prop_value, g_value_get_boxed (dbus_value));
+	GVariantIter iter;
+	const char *key, *value;
+	GHashTable *hash;
+
+	hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	g_variant_iter_init (&iter, dbus_value);
+	while (g_variant_iter_next (&iter, "{&s&s}", &key, &value))
+		g_hash_table_insert (hash, g_strdup (key), g_strdup (value));
+
+	g_value_take_boxed (prop_value, hash);
 }
 
 GHashTable *
@@ -652,32 +712,37 @@ _nm_utils_copy_object_array (const GPtrArray *array)
 	return _nm_utils_copy_array (array, g_object_ref, g_object_unref);
 }
 
-void
-_nm_utils_bytes_to_dbus (const GValue *prop_value,
-                         GValue *dbus_value)
+GVariant *
+_nm_utils_bytes_to_dbus (const GValue *prop_value)
 {
 	GBytes *bytes = g_value_get_boxed (prop_value);
-	GByteArray *ba = NULL;
 
 	if (bytes) {
-		ba = g_byte_array_new ();
-		g_byte_array_append (ba,
-		                     g_bytes_get_data (bytes, NULL),
-		                     g_bytes_get_size (bytes));
+		return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+		                                  g_bytes_get_data (bytes, NULL),
+		                                  g_bytes_get_size (bytes),
+		                                  1);
+	} else {
+		return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+		                                  NULL, 0,
+		                                  1);
 	}
-
-	g_value_take_boxed (dbus_value, ba);
 }
 
 void
-_nm_utils_bytes_from_dbus (const GValue *dbus_value,
+_nm_utils_bytes_from_dbus (GVariant *dbus_value,
                            GValue *prop_value)
 {
-	GByteArray *ba = g_value_dup_boxed (dbus_value);
-	GBytes *bytes = NULL;
+	GBytes *bytes;
 
-	if (ba)
-		bytes = g_byte_array_free_to_bytes (ba);
+	if (g_variant_n_children (dbus_value)) {
+		gconstpointer data;
+		gsize length;
+
+		data = g_variant_get_fixed_array (dbus_value, &length, 1);
+		bytes = g_bytes_new (data, length);
+	} else
+		bytes = NULL;
 	g_value_take_boxed (prop_value, bytes);
 }
 
@@ -1076,191 +1141,6 @@ nm_utils_wpa_psk_valid (const char *psk)
 	}
 
 	return TRUE;
-}
-
-void
-_nm_utils_ip4_dns_to_dbus (const GValue *prop_value,
-                           GValue *dbus_value)
-{
-	char **dns;
-	int i;
-	GArray *array;
-
-	dns = g_value_get_boxed (prop_value);
-	array = g_array_new (FALSE, FALSE, sizeof (guint32));
-
-	if (dns) {
-		for (i = 0; dns[i]; i++) {
-			guint32 ip = 0;
-
-			inet_pton (AF_INET, dns[i], &ip);
-			g_array_append_val (array, ip);
-		}
-	}
-
-	g_value_take_boxed (dbus_value, array);
-}
-
-void
-_nm_utils_ip4_dns_from_dbus (const GValue *dbus_value,
-                             GValue *prop_value)
-{
-	GArray *array;
-	GPtrArray *dns;
-	int i;
-
-	array = g_value_get_boxed (dbus_value);
-	dns = g_ptr_array_new ();
-
-	if (array) {
-		for (i = 0; i < array->len; i++) {
-			guint32 ip = g_array_index (array, guint32, i);
-			const char *str;
-
-			str = nm_utils_inet4_ntop (ip, NULL);
-			g_ptr_array_add (dns, g_strdup (str));
-		}
-	}
-
-	g_ptr_array_add (dns, NULL);
-	g_value_take_boxed (prop_value, g_ptr_array_free (dns, FALSE));
-}
-
-void
-_nm_utils_ip4_addresses_to_dbus (const GValue *prop_value,
-                                 GValue *dbus_value)
-{
-	GPtrArray *addresses, *dbus_addresses;
-	int i;
-
-	addresses = g_value_get_boxed (prop_value);
-	dbus_addresses = g_ptr_array_new ();
-
-	if (addresses) {
-		for (i = 0; i < addresses->len; i++) {
-			NMIP4Address *addr = addresses->pdata[i];
-			GArray *array;
-			guint32 tmp;
-
-			array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
-
-			tmp = nm_ip4_address_get_address (addr);
-			g_array_append_val (array, tmp);
-
-			tmp = nm_ip4_address_get_prefix (addr);
-			g_array_append_val (array, tmp);
-
-			tmp = nm_ip4_address_get_gateway (addr);
-			g_array_append_val (array, tmp);
-
-			g_ptr_array_add (dbus_addresses, array);
-		}
-	}
-
-	g_value_take_boxed (dbus_value, dbus_addresses);
-}
-
-void
-_nm_utils_ip4_addresses_from_dbus (const GValue *dbus_value,
-                                   GValue *prop_value)
-{
-	GPtrArray *dbus_addresses;
-	GPtrArray *addresses;
-	int i;
-
-	dbus_addresses = g_value_get_boxed (dbus_value);
-	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_address_unref);
-
-	if (dbus_addresses) {
-		for (i = 0; i < dbus_addresses->len; i++) {
-			GArray *array = dbus_addresses->pdata[i];
-			NMIP4Address *addr;
-
-			if (array->len < 3) {
-				g_warning ("Ignoring invalid IP4 address");
-				continue;
-			}
-
-			addr = nm_ip4_address_new ();
-			nm_ip4_address_set_address (addr, g_array_index (array, guint32, 0));
-			nm_ip4_address_set_prefix (addr, g_array_index (array, guint32, 1));
-			nm_ip4_address_set_gateway (addr, g_array_index (array, guint32, 2));
-
-			g_ptr_array_add (addresses, addr);
-		}
-	}
-
-	g_value_take_boxed (prop_value, addresses);
-}
-
-void
-_nm_utils_ip4_routes_to_dbus (const GValue *prop_value,
-                              GValue *dbus_value)
-{
-	GPtrArray *routes, *dbus_routes;
-	int i;
-
-	routes = g_value_get_boxed (prop_value);
-	dbus_routes = g_ptr_array_new ();
-
-	if (routes) {
-		for (i = 0; i < routes->len; i++) {
-			NMIP4Route *route = routes->pdata[i];
-			GArray *array;
-			guint32 tmp;
-
-			array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 4);
-
-			tmp = nm_ip4_route_get_dest (route);
-			g_array_append_val (array, tmp);
-
-			tmp = nm_ip4_route_get_prefix (route);
-			g_array_append_val (array, tmp);
-
-			tmp = nm_ip4_route_get_next_hop (route);
-			g_array_append_val (array, tmp);
-
-			tmp = nm_ip4_route_get_metric (route);
-			g_array_append_val (array, tmp);
-
-			g_ptr_array_add (dbus_routes, array);
-		}
-	}
-
-	g_value_take_boxed (dbus_value, dbus_routes);
-}
-
-void
-_nm_utils_ip4_routes_from_dbus (const GValue *dbus_value,
-                                GValue *prop_value)
-{
-	GPtrArray *dbus_routes, *routes;
-	int i;
-
-	dbus_routes = g_value_get_boxed (dbus_value);
-	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_route_unref);
-
-	if (dbus_routes) {
-		for (i = 0; i < dbus_routes->len; i++) {
-			GArray *array = dbus_routes->pdata[i];
-			NMIP4Route *route;
-
-			if (array->len < 4) {
-				g_warning ("Ignoring invalid IP4 route");
-				continue;
-			}
-
-			route = nm_ip4_route_new ();
-			nm_ip4_route_set_dest (route, g_array_index (array, guint32, 0));
-			nm_ip4_route_set_prefix (route, g_array_index (array, guint32, 1));
-			nm_ip4_route_set_next_hop (route, g_array_index (array, guint32, 2));
-			nm_ip4_route_set_metric (route, g_array_index (array, guint32, 3));
-
-			g_ptr_array_add (routes, route);
-		}
-	}
-
-	g_value_take_boxed (prop_value, routes);
 }
 
 /**
@@ -1726,289 +1606,6 @@ nm_utils_ip4_get_default_prefix (guint32 ip)
 		return 16;  /* Class B - 255.255.0.0 */
 
 	return 24;  /* Class C - 255.255.255.0 */
-}
-
-void
-_nm_utils_ip6_dns_to_dbus (const GValue *prop_value,
-                           GValue *dbus_value)
-{
-	char **dns;
-	GPtrArray *dbus_dns;
-	int i;
-
-	dns = g_value_get_boxed (prop_value);
-	dbus_dns = g_ptr_array_new ();
-
-	if (dns) {
-		for (i = 0; dns[i]; i++) {
-			GByteArray *bytearray;
-
-			bytearray = g_byte_array_new ();
-			g_byte_array_set_size (bytearray, 16);
-			inet_pton (AF_INET6, dns[i], bytearray->data);
-			g_ptr_array_add (dbus_dns, bytearray);
-		}
-	}
-
-	g_value_take_boxed (dbus_value, dbus_dns);
-}
-
-void
-_nm_utils_ip6_dns_from_dbus (const GValue *dbus_value,
-                             GValue *prop_value)
-{
-	GPtrArray *dbus_dns, *dns;
-	int i;
-
-	dbus_dns = g_value_get_boxed (dbus_value);
-	dns = g_ptr_array_new ();
-
-	if (dbus_dns) {
-		for (i = 0; i < dbus_dns->len; i++) {
-			GByteArray *bytearray = dbus_dns->pdata[i];
-			const char *str;
-
-			if (bytearray->len != 16) {
-				g_warning ("%s: ignoring invalid IP6 address of length %d",
-				           __func__, bytearray->len);
-				continue;
-			}
-
-			str = nm_utils_inet6_ntop ((struct in6_addr *) bytearray->data, NULL);
-			g_ptr_array_add (dns, g_strdup (str));
-		}
-	}
-
-	g_ptr_array_add (dns, NULL);
-	g_value_take_boxed (prop_value, g_ptr_array_free (dns, FALSE));
-}
-
-void
-_nm_utils_ip6_addresses_to_dbus (const GValue *prop_value,
-                                 GValue *dbus_value)
-{
-	GPtrArray *addresses, *dbus_addresses;
-	int i;
-
-	addresses = g_value_get_boxed (prop_value);
-	dbus_addresses = g_ptr_array_new ();
-
-	if (addresses) {
-		for (i = 0; i < addresses->len; i++) {
-			NMIP6Address *addr = addresses->pdata[i];
-			GValueArray *array;
-			GValue element = G_VALUE_INIT;
-			GByteArray *ba;
-
-			array = g_value_array_new (3);
-
-			/* IP address */
-			g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-			ba = g_byte_array_new ();
-			g_byte_array_append (ba, (guint8 *) nm_ip6_address_get_address (addr), 16);
-			g_value_take_boxed (&element, ba);
-			g_value_array_append (array, &element);
-			g_value_unset (&element);
-
-			/* Prefix */
-			g_value_init (&element, G_TYPE_UINT);
-			g_value_set_uint (&element, nm_ip6_address_get_prefix (addr));
-			g_value_array_append (array, &element);
-			g_value_unset (&element);
-
-			/* Gateway */
-			g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-			ba = g_byte_array_new ();
-			g_byte_array_append (ba, (guint8 *) nm_ip6_address_get_gateway (addr), 16);
-			g_value_take_boxed (&element, ba);
-			g_value_array_append (array, &element);
-			g_value_unset (&element);
-
-			g_ptr_array_add (dbus_addresses, array);
-		}
-	}
-
-	g_value_take_boxed (dbus_value, dbus_addresses);
-}
-
-void
-_nm_utils_ip6_addresses_from_dbus (const GValue *dbus_value,
-                                   GValue *prop_value)
-{
-	GPtrArray *addresses, *dbus_addresses;
-	int i;
-
-	dbus_addresses = g_value_get_boxed (dbus_value);
-	addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip6_address_unref);
-
-	if (dbus_addresses) {
-		for (i = 0; i < dbus_addresses->len; i++) {
-			GValueArray *elements = dbus_addresses->pdata[i];
-			GValue *tmp;
-			GByteArray *ba_addr;
-			GByteArray *ba_gw = NULL;
-			NMIP6Address *addr;
-			guint32 prefix;
-
-			if (elements->n_values < 2 || elements->n_values > 3) {
-				g_warning ("%s: ignoring invalid IP6 address structure", __func__);
-				continue;
-			}
-
-			/* Third element (gateway) is optional */
-			if (   !_nm_utils_gvalue_array_validate (elements, 2, DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT)
-			    && !_nm_utils_gvalue_array_validate (elements, 3, DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, DBUS_TYPE_G_UCHAR_ARRAY)) {
-				g_warning ("%s: ignoring invalid IP6 address structure", __func__);
-				continue;
-			}
-
-			tmp = g_value_array_get_nth (elements, 0);
-			ba_addr = g_value_get_boxed (tmp);
-			if (ba_addr->len != 16) {
-				g_warning ("%s: ignoring invalid IP6 address of length %d",
-				           __func__, ba_addr->len);
-				continue;
-			}
-
-			tmp = g_value_array_get_nth (elements, 1);
-			prefix = g_value_get_uint (tmp);
-			if (prefix > 128) {
-				g_warning ("%s: ignoring invalid IP6 prefix %d",
-				           __func__, prefix);
-				continue;
-			}
-
-			if (elements->n_values == 3) {
-				tmp = g_value_array_get_nth (elements, 2);
-				ba_gw = g_value_get_boxed (tmp);
-				if (ba_gw->len != 16) {
-					g_warning ("%s: ignoring invalid IP6 gateway address of length %d",
-					           __func__, ba_gw->len);
-					continue;
-				}
-			}
-
-			addr = nm_ip6_address_new ();
-			nm_ip6_address_set_prefix (addr, prefix);
-			nm_ip6_address_set_address (addr, (const struct in6_addr *) ba_addr->data);
-			if (ba_gw)
-				nm_ip6_address_set_gateway (addr, (const struct in6_addr *) ba_gw->data);
-
-			g_ptr_array_add (addresses, addr);
-		}
-	}
-
-	g_value_take_boxed (prop_value, addresses);
-}
-
-void
-_nm_utils_ip6_routes_to_dbus (const GValue *prop_value,
-                              GValue *dbus_value)
-{
-	GPtrArray *routes, *dbus_routes;
-	int i;
-
-	routes = g_value_get_boxed (prop_value);
-	dbus_routes = g_ptr_array_new ();
-
-	if (routes) {
-		for (i = 0; i < routes->len; i++) {
-			NMIP6Route *route = routes->pdata[i];
-			GValueArray *array;
-			const struct in6_addr *addr;
-			GByteArray *ba;
-			GValue element = G_VALUE_INIT;
-
-			array = g_value_array_new (4);
-
-			g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-			addr = nm_ip6_route_get_dest (route);
-			ba = g_byte_array_new ();
-			g_byte_array_append (ba, (guchar *)addr, sizeof (*addr));
-			g_value_take_boxed (&element, ba);
-			g_value_array_append (array, &element);
-			g_value_unset (&element);
-
-			g_value_init (&element, G_TYPE_UINT);
-			g_value_set_uint (&element, nm_ip6_route_get_prefix (route));
-			g_value_array_append (array, &element);
-			g_value_unset (&element);
-
-			g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-			addr = nm_ip6_route_get_next_hop (route);
-			ba = g_byte_array_new ();
-			g_byte_array_append (ba, (guchar *)addr, sizeof (*addr));
-			g_value_take_boxed (&element, ba);
-			g_value_array_append (array, &element);
-			g_value_unset (&element);
-
-			g_value_init (&element, G_TYPE_UINT);
-			g_value_set_uint (&element, nm_ip6_route_get_metric (route));
-			g_value_array_append (array, &element);
-			g_value_unset (&element);
-
-			g_ptr_array_add (dbus_routes, array);
-		}
-	}
-
-	g_value_take_boxed (dbus_value, dbus_routes);
-}
-
-void
-_nm_utils_ip6_routes_from_dbus (const GValue *dbus_value,
-                                GValue *prop_value)
-{
-	GPtrArray *routes, *dbus_routes;
-	int i;
-
-	dbus_routes = g_value_get_boxed (dbus_value);
-	routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip6_route_unref);
-
-	if (dbus_routes) {
-		for (i = 0; i < dbus_routes->len; i++) {
-			GValueArray *route_values = dbus_routes->pdata[i];
-			GByteArray *dest, *next_hop;
-			guint prefix, metric;
-			NMIP6Route *route;
-
-			if (!_nm_utils_gvalue_array_validate (route_values, 4,
-			                                      DBUS_TYPE_G_UCHAR_ARRAY,
-			                                      G_TYPE_UINT,
-			                                      DBUS_TYPE_G_UCHAR_ARRAY,
-			                                      G_TYPE_UINT)) {
-				g_warning ("Ignoring invalid IP6 route");
-				continue;
-			}
-
-			dest = g_value_get_boxed (g_value_array_get_nth (route_values, 0));
-			if (dest->len != 16) {
-				g_warning ("%s: ignoring invalid IP6 dest address of length %d",
-				           __func__, dest->len);
-				continue;
-			}
-
-			prefix = g_value_get_uint (g_value_array_get_nth (route_values, 1));
-
-			next_hop = g_value_get_boxed (g_value_array_get_nth (route_values, 2));
-			if (next_hop->len != 16) {
-				g_warning ("%s: ignoring invalid IP6 next_hop address of length %d",
-				           __func__, next_hop->len);
-				continue;
-			}
-
-			metric = g_value_get_uint (g_value_array_get_nth (route_values, 3));
-
-			route = nm_ip6_route_new ();
-			nm_ip6_route_set_dest (route, (struct in6_addr *)dest->data);
-			nm_ip6_route_set_prefix (route, prefix);
-			nm_ip6_route_set_next_hop (route, (struct in6_addr *)next_hop->data);
-			nm_ip6_route_set_metric (route, metric);
-
-			g_ptr_array_add (routes, route);
-		}
-	}
-
-	g_value_take_boxed (prop_value, routes);
 }
 
 /**
@@ -3395,25 +2992,33 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 	return !memcmp (hwaddr1, hwaddr2, hwaddr1_len);
 }
 
-void
-_nm_utils_hwaddr_to_dbus (const GValue *prop_value,
-                          GValue *dbus_value)
+GVariant *
+_nm_utils_hwaddr_to_dbus (const GValue *prop_value)
 {
 	const char *str = g_value_get_string (prop_value);
-	GByteArray *array;
+	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+	int len;
 
-	array = str ? nm_utils_hwaddr_atoba (str, hwaddr_binary_len (str)) : NULL;
-	g_value_take_boxed (dbus_value, array);
+	if (str) {
+		len = hwaddr_binary_len (str);
+		g_return_val_if_fail (len <= NM_UTILS_HWADDR_LEN_MAX, NULL);
+		if (!nm_utils_hwaddr_aton (str, buf, len))
+			len = 0;
+	} else
+		len = 0;
+
+	return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, buf, len, 1);
 }
 
 void
-_nm_utils_hwaddr_from_dbus (const GValue *dbus_value,
+_nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
                             GValue *prop_value)
 {
-	GByteArray *array = g_value_get_boxed (dbus_value);
+	gsize length = 0;
+	const guint8 *array = g_variant_get_fixed_array (dbus_value, &length, 1);
 	char *str;
 
-	str = array ? nm_utils_hwaddr_ntoa (array->data, array->len) : NULL;
+	str = length ? nm_utils_hwaddr_ntoa (array, length) : NULL;
 	g_value_take_string (prop_value, str);
 }
 

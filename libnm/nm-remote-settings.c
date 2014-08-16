@@ -467,6 +467,7 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 {
 	NMRemoteSettingsPrivate *priv;
 	AddConnectionInfo *info;
+	GVariant *new_settings_dict;
 	GHashTable *new_settings;
 
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
@@ -483,7 +484,8 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 	info->callback = callback;
 	info->callback_data = user_data;
 
-	new_settings = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	new_settings_dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	new_settings = _nm_utils_connection_dict_to_hash (new_settings_dict);
 	dbus_g_proxy_begin_call (priv->proxy, "AddConnection",
 	                         add_connection_done,
 	                         info,
@@ -491,6 +493,7 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, new_settings,
 	                         G_TYPE_INVALID);
 	g_hash_table_destroy (new_settings);
+	g_variant_unref (new_settings_dict);
 
 	priv->add_list = g_slist_append (priv->add_list, info);
 
@@ -520,6 +523,7 @@ nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
 {
 	NMRemoteSettingsPrivate *priv;
 	AddConnectionInfo *info;
+	GVariant *new_settings_dict;
 	GHashTable *new_settings;
 
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
@@ -536,7 +540,8 @@ nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
 	info->callback = callback;
 	info->callback_data = user_data;
 
-	new_settings = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	new_settings_dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	new_settings = _nm_utils_connection_dict_to_hash (new_settings_dict);
 	dbus_g_proxy_begin_call (priv->proxy, "AddConnectionUnsaved",
 	                         add_connection_done,
 	                         info,
@@ -544,6 +549,7 @@ nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
 	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, new_settings,
 	                         G_TYPE_INVALID);
 	g_hash_table_destroy (new_settings);
+	g_variant_unref (new_settings_dict);
 
 	priv->add_list = g_slist_append (priv->add_list, info);
 

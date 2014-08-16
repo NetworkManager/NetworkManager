@@ -141,6 +141,25 @@ NMSetting    *nm_connection_get_setting_by_name (NMConnection *connection,
                                                  const char   *name);
 
 /**
+ * NM_VARIANT_TYPE_CONNECTION:
+ *
+ * #GVariantType for a dictionary mapping from setting names to
+ * %NM_VARIANT_TYPE_SETTING variants. This is used to represent an
+ * #NMConnection, and is the type taken by nm_simple_connection_new_from_dbus()
+ * and returned from nm_connection_to_dbus().
+ */
+#define NM_VARIANT_TYPE_CONNECTION (G_VARIANT_TYPE ("a{sa{sv}}"))
+
+/**
+ * NM_VARIANT_TYPE_SETTING:
+ *
+ * #GVariantType for a dictionary mapping from property names to values. This is
+ * an alias for %G_VARIANT_TYPE_VARDICT, and is the type of each element of
+ * an %NM_VARIANT_TYPE_CONNECTION dictionary.
+ */
+#define NM_VARIANT_TYPE_SETTING G_VARIANT_TYPE_VARDICT
+
+/**
  * NMConnectionSerializationFlags:
  * @NM_CONNECTION_SERIALIZE_ALL: serialize all properties (including secrets)
  * @NM_CONNECTION_SERIALIZE_NO_SECRETS: do not include secrets
@@ -155,11 +174,11 @@ typedef enum { /*< flags >*/
 	NM_CONNECTION_SERIALIZE_ONLY_SECRETS = 0x00000002,
 } NMConnectionSerializationFlags;
 
-GHashTable   *nm_connection_to_dbus       (NMConnection *connection,
+GVariant     *nm_connection_to_dbus       (NMConnection *connection,
                                            NMConnectionSerializationFlags flags);
 
 gboolean      nm_connection_replace_settings (NMConnection *connection,
-                                              GHashTable *new_settings,
+                                              GVariant *new_settings,
                                               GError **error);
 
 void          nm_connection_replace_settings_from_connection (NMConnection *connection,
@@ -193,7 +212,7 @@ void          nm_connection_clear_secrets_with_flags (NMConnection *connection,
 
 gboolean      nm_connection_update_secrets (NMConnection *connection,
                                             const char *setting_name,
-                                            GHashTable *secrets,
+                                            GVariant *secrets,
                                             GError **error);
 
 void          nm_connection_set_path      (NMConnection *connection,

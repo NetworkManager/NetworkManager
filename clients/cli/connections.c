@@ -5343,19 +5343,19 @@ gen_cmd_print0 (const char *text, int state)
 	char *ret = NULL;
 
 	if (!state) {
-		GHashTable *settings;
-		GHashTableIter iter;
+		GVariant *settings;
+		GVariantIter iter;
 		const char *setting_name;
 		int i = 0;
 
 		settings = nm_connection_to_dbus (nmc_tab_completion.connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
-		words = g_new (char *, g_hash_table_size (settings) + 2);
-		g_hash_table_iter_init (&iter, settings);
-		while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, NULL))
+		words = g_new (char *, g_variant_n_children (settings) + 2);
+		g_variant_iter_init (&iter, settings);
+		while (g_variant_iter_next (&iter, "{&s@a{sv}}", &setting_name, NULL))
 			words [i++] = g_strdup (setting_name);
 		words[i++] = g_strdup ("all");
 		words[i] = NULL;
-		g_hash_table_unref (settings);
+		g_variant_unref (settings);
 	}
 
 	if (words) {

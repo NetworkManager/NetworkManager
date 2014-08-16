@@ -61,8 +61,8 @@ test_secret_agent_get_secrets (NMSecretAgent                 *agent,
                                gpointer                       callback_data)
 {
 	NMSettingWirelessSecurity *s_wsec;
-	GHashTable *hash = NULL, *setting_hash;
-	GValue value = G_VALUE_INIT;
+	GVariant *secrets = NULL;
+	GVariantBuilder secrets_builder, setting_builder;
 	char *secret = NULL;
 	GError *error = NULL;
 
@@ -92,20 +92,21 @@ test_secret_agent_get_secrets (NMSecretAgent                 *agent,
 		goto done;
 	}
 
-	hash = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                              NULL, (GDestroyNotify) g_hash_table_unref);
-	setting_hash = g_hash_table_new (g_str_hash, g_str_equal);
-	g_hash_table_insert (hash, (char *) setting_name, setting_hash);
+	g_variant_builder_init (&setting_builder, NM_VARIANT_TYPE_SETTING);
+	g_variant_builder_add (&setting_builder, "{sv}",
+	                       NM_SETTING_WIRELESS_SECURITY_PSK,
+	                       g_variant_new_string (secret));
 
-	g_value_init (&value, G_TYPE_STRING);
-	g_value_set_string (&value, secret);
-
-	g_hash_table_insert (setting_hash, NM_SETTING_WIRELESS_SECURITY_PSK, &value);
+	g_variant_builder_init (&secrets_builder, NM_VARIANT_TYPE_CONNECTION);
+	g_variant_builder_add (&secrets_builder, "{sa{sv}}",
+	                       setting_name,
+	                       &setting_builder);
+	secrets = g_variant_ref_sink (g_variant_builder_end (&secrets_builder));
 
 done:
-	callback (agent, connection, hash, error, callback_data);
+	callback (agent, connection, secrets, error, callback_data);
 	g_clear_error (&error);
-	g_clear_pointer (&hash, g_hash_table_unref);
+	g_clear_pointer (&secrets, g_variant_unref);
 	g_free (secret);
 }
 

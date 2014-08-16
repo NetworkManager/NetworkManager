@@ -89,9 +89,8 @@ typedef NMRemoteConnectionResultFunc NMRemoteConnectionDeleteFunc;
 /**
  * NMRemoteConnectionGetSecretsFunc:
  * @connection: the connection for which secrets were requested
- * @secrets: (element-type utf8 GLib.HashTable): on success, a hash table of
- *  hash tables, with each inner hash mapping a setting property to a #GValue
- *  containing that property's value
+ * @secrets: on success, a #GVariant of type %NM_VARIANT_TYPE_CONNECTION
+ *  containing secrets.
  * @error: on failure, a descriptive error
  * @user_data: user data passed to nm_remote_connection_get_secrets()
  *
@@ -99,7 +98,7 @@ typedef NMRemoteConnectionResultFunc NMRemoteConnectionDeleteFunc;
  * secrets via nm_remote_connection_get_secrets().
  */
 typedef void (*NMRemoteConnectionGetSecretsFunc) (NMRemoteConnection *connection,
-                                                  GHashTable *secrets,
+                                                  GVariant *secrets,
                                                   GError *error,
                                                   gpointer user_data);
 

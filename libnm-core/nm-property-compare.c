@@ -26,479 +26,68 @@
 #include <string.h>
 #include <math.h>
 #include <netinet/in.h>
-#include <dbus/dbus-glib.h>
-
-#include "nm-dbus-glib-types.h"
-
-static gboolean
-type_is_fixed_size (GType type, gsize *tsize)
-{
-	switch (type) {
-	case G_TYPE_CHAR:
-		if (tsize) *tsize = sizeof (char);
-		return TRUE;
-	case G_TYPE_UCHAR:
-		if (tsize) *tsize = sizeof (guchar);
-		return TRUE;
-	case G_TYPE_BOOLEAN:
-		if (tsize) *tsize = sizeof (gboolean);
-		return TRUE;
-	case G_TYPE_LONG:
-		if (tsize) *tsize = sizeof (glong);
-		return TRUE;
-	case G_TYPE_ULONG:
-		if (tsize) *tsize = sizeof (gulong);
-		return TRUE;
-	case G_TYPE_INT:
-		if (tsize) *tsize = sizeof (gint);
-		return TRUE;
-	case G_TYPE_UINT:
-		if (tsize) *tsize = sizeof (guint);
-		return TRUE;
-	case G_TYPE_INT64:
-		if (tsize) *tsize = sizeof (gint64);
-		return TRUE;
-	case G_TYPE_UINT64:
-		if (tsize) *tsize = sizeof (guint64);
-		return TRUE;
-	case G_TYPE_FLOAT:
-		if (tsize) *tsize = sizeof (gfloat);
-		return TRUE;
-	case G_TYPE_DOUBLE:
-		if (tsize) *tsize = sizeof (gdouble);
-		return TRUE;
-	default:
-		return FALSE;
-	}
-}
-
-#define FLOAT_FACTOR 0.00000001
+#include <gio/gio.h>
 
 static gint
-nm_property_compare_fixed (const GValue *value1, const GValue *value2)
+_nm_property_compare_collection (GVariant *value1, GVariant *value2)
 {
-	int ret = 0;
+	GVariant *child1, *child2;
+	int i, len1, len2;
+	int ret;
 
-	switch (G_VALUE_TYPE (value1)) {
-	case G_TYPE_CHAR: {
-		gchar val1 = g_value_get_schar (value1);
-		gchar val2 = g_value_get_schar (value2);
-		if (val1 != val2)
-			ret = val1 < val2 ? -1 : val1 > val2;
-		break;
-	}
-	case G_TYPE_UCHAR: {
-		guchar val1 = g_value_get_uchar (value1);
-		guchar val2 = g_value_get_uchar (value2);
-		if (val1 != val2)
-			ret = val1 < val2 ? -1 : val1 > val2;
-		break;
-	}
-	case G_TYPE_BOOLEAN: {
-		gboolean val1 = g_value_get_boolean (value1);
-		gboolean val2 = g_value_get_boolean (value2);
-		if (val1 != val2)
-			ret = val1 < val2 ? -1 : val1 > val2;
-		break;
-	}
-	case G_TYPE_LONG: {
-		glong val1 = g_value_get_long (value1);
-		glong val2 = g_value_get_long (value2);
-		if (val1 != val2)
-			ret = val1 < val2 ? -1 : val1 > val2;
-		break;
-	}
-	case G_TYPE_ULONG: {
-		gulong val1 = g_value_get_ulong (value1);
-		gulong val2 = g_value_get_ulong (value2);
-		if (val1 != val2)
-			ret = val1 < val2 ? -1 : val1 > val2;
-		break;
-	}
-	case G_TYPE_INT: {
-		gint val1 = g_value_get_int (value1);
-		gint val2 = g_value_get_int (value2);
-		if (val1 != val2)
-			ret = val1 < val2 ? -1 : val1 > val2;
-		break;
-	}
-	case G_TYPE_UINT: {
-		guint val1 = g_value_get_uint (value1);
-		guint val2 = g_value_get_uint (value2);
-		if (val1 != val2)
-			ret = val1 < val2 ? -1 : val1 > val2;
-		break;
-	}
-	case G_TYPE_INT64: {
-		gint64 val1 = g_value_get_int64 (value1);
-		gint64 val2 = g_value_get_int64 (value2);
-		if (val1 != val2)
-			ret = val1 < val2 ? -1 : val1 > val2;
-		break;
-	}
-	case G_TYPE_UINT64: {
-		guint64 val1 = g_value_get_uint64 (value1);
-		guint64 val2 = g_value_get_uint64 (value2);
-		if (val1 != val2)
-			ret = val1 < val2 ? -1 : val1 > val2;
-		break;
-	}
-	case G_TYPE_FLOAT: {
-		gfloat val1 = g_value_get_float (value1);
-		gfloat val2 = g_value_get_float (value2);
-		/* Can't use == or != here due to inexactness of FP */
-		if (fabsf (val1 - val2) > FLOAT_FACTOR)
-			ret = val1 < val2 ? -1 : val1 > val2;
-		break;
-	}
-	case G_TYPE_DOUBLE: {
-		gdouble val1 = g_value_get_double (value1);
-		gdouble val2 = g_value_get_double (value2);
-		if (fabs (val1 - val2) > FLOAT_FACTOR)
-			ret = val1 < val2 ? -1 : val1 > val2;
-		break;
-	}
-	default:
-		g_warning ("Unhandled fixed size type '%s'", G_VALUE_TYPE_NAME (value1));
-	}
-
-	return ret;
-}
-
-static gint
-nm_property_compare_string (const GValue *value1, const GValue *value2)
-{
-	const char *str1 = g_value_get_string (value1);
-	const char *str2 = g_value_get_string (value2);
-
-	if (str1 == str2)
-		return 0;
-
-	if (!str1)
-		return 1;
-	if (!str2)
-		return -1;
-
-	return strcmp (str1, str2);
-}
-
-static gint
-nm_property_compare_strv (const GValue *value1, const GValue *value2)
-{
-	char **strv1;
-	char **strv2;
-	gint ret;
-	guint i = 0;
-
-	strv1 = (char **) g_value_get_boxed (value1);
-	strv2 = (char **) g_value_get_boxed (value2);
-
-	while (strv1[i] && strv2[i]) {
-		ret = strcmp (strv1[i], strv2[i]);
-		if (ret)
-			return ret;
-		i++;
-	}
-
-	if (strv1[i] == NULL && strv2[i] == NULL)
-		return 0;
-
-	if (strv1[i])
-		return 1;
-
-	return -1;
-}
-
-static void
-_gvalue_destroy (gpointer data)
-{
-	GValue *value = (GValue *) data;
-
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
-
-static GValue *
-_gvalue_dup (const GValue *value)
-{
-	GValue *dup;
-
-	dup = g_slice_new0 (GValue);
-	g_value_init (dup, G_VALUE_TYPE (value));
-	g_value_copy (value, dup);
-
-	return dup;
-}
-
-static void
-iterate_collection (const GValue *value, gpointer user_data)
-{
-	GSList **list = (GSList **) user_data;
-
-	*list = g_slist_prepend (*list, _gvalue_dup (value));
-}
-
-static gint
-nm_property_compare_collection (const GValue *value1, const GValue *value2)
-{
-	gint ret;
-	guint len1;
-	guint len2;
-	GType value_type = dbus_g_type_get_collection_specialization (G_VALUE_TYPE (value1));
-	gsize element_size = 0;
-
-	if (type_is_fixed_size (value_type, &element_size)) {
-		gpointer data1 = NULL;
-		gpointer data2 = NULL;
-
-		dbus_g_type_collection_get_fixed ((GValue *) value1, &data1, &len1);
-		dbus_g_type_collection_get_fixed ((GValue *) value2, &data2, &len2);
-
-		if (len1 != len2)
-			ret = len1 < len2 ? -1 : len1 > len2;
-		else
-			ret = memcmp (data1, data2, len1 * element_size);
-	} else {
-		GSList *list1 = NULL;
-		GSList *list2 = NULL;
-
-		dbus_g_type_collection_value_iterate (value1, iterate_collection, &list1);
-		len1 = g_slist_length (list1);
-		dbus_g_type_collection_value_iterate (value2, iterate_collection, &list2);
-		len2 = g_slist_length (list2);
-
-		if (len1 != len2)
-			ret = len1 < len2 ? -1 : len1 > len2;
-		else {
-			GSList *iter1;
-			GSList *iter2;
-
-			for (iter1 = list1, iter2 = list2, ret = 0;
-			     ret == 0 && iter1 && iter2;
-			     iter1 = iter1->next, iter2 = iter2->next)
-				ret = nm_property_compare ((GValue *) iter1->data, (GValue *) iter2->data);
-		}
-
-		g_slist_free_full (list1, _gvalue_destroy);
-		g_slist_free_full (list2, _gvalue_destroy);
-	}
-
-	return ret;
-}
-
-static void
-iterate_map (const GValue *key_val,
-             const GValue *value_val,
-             gpointer user_data)
-{
-	GHashTable **hash = (GHashTable **) user_data;
-
-	g_hash_table_insert (*hash, g_value_dup_string (key_val), _gvalue_dup (value_val));
-}
-
-typedef struct {
-	GHashTable *hash2;
-	gint ret;
-} CompareMapInfo;
-
-static void
-compare_one_map_item (gpointer key, gpointer val, gpointer user_data)
-{
-	CompareMapInfo *info = (CompareMapInfo *) user_data;
-	GValue *value2;
-
-	if (info->ret)
-		return;
-
-	value2 = (GValue *) g_hash_table_lookup (info->hash2, key);
-	if (value2)
-		info->ret = nm_property_compare ((GValue *) val, value2);
-	else
-		info->ret = 1;
-}
-
-static gint
-nm_property_compare_map (const GValue *value1, const GValue *value2)
-{
-	GHashTable *hash1 = NULL;
-	GHashTable *hash2 = NULL;
-	guint len1;
-	guint len2;
-	gint ret = 0;
-
-	if (dbus_g_type_get_map_key_specialization (G_VALUE_TYPE (value1)) != G_TYPE_STRING) {
-		g_warning ("Can not compare maps with '%s' for keys",
-		           g_type_name (dbus_g_type_get_map_key_specialization (G_VALUE_TYPE (value1))));
-		return 0;
-	}
-
-	hash1 = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, _gvalue_destroy);
-	dbus_g_type_map_value_iterate (value1, iterate_map, &hash1);
-	len1 = g_hash_table_size (hash1);
-
-	hash2 = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, _gvalue_destroy);
-	dbus_g_type_map_value_iterate (value2, iterate_map, &hash2);
-	len2 = g_hash_table_size (hash2);
+	len1 = g_variant_n_children (value1);
+	len2 = g_variant_n_children (value2);
 
 	if (len1 != len2)
-		ret = len1 < len2 ? -1 : len1 > len2;
-	else {
-		CompareMapInfo info;
+		return len1 < len2 ? -1 : len1 > len2;
 
-		info.ret = 0;
-		info.hash2 = hash2;
-		g_hash_table_foreach (hash1, compare_one_map_item, &info);
-		ret = info.ret;
+	for (i = 0; i < len1; i++) {
+		child1 = g_variant_get_child_value (value1, i);
+		child2 = g_variant_get_child_value (value2, i);
+
+		ret = nm_property_compare (child1, child2);
+		g_variant_unref (child1);
+		g_variant_unref (child2);
+
+		if (ret)
+			return ret;
 	}
 
-	g_hash_table_destroy (hash1);
-	g_hash_table_destroy (hash2);
-
-	return ret;
+	return 0;
 }
 
 static gint
-_gvalue_ip6_address_compare (const GValue *value1, const GValue *value2)
+_nm_property_compare_strdict (GVariant *value1, GVariant *value2)
 {
-	GValueArray *values1, *values2;
-	GValue *tmp_val;
-	GByteArray *addr1, *addr2;
-	guint32 prefix1, prefix2;
-	GByteArray *gw1, *gw2;
-	gint ret = 0;
-	int i;
+	GVariantIter iter;
+	int len1, len2;
+	const char *key, *val1, *val2;
+	int ret;
 
-	/* IP6 addresses are GValueArrays (see nm-dbus-glib-types.h) */
-	values1 = g_value_get_boxed (value1);
-	values2 = g_value_get_boxed (value2);
+	len1 = g_variant_n_children (value1);
+	len2 = g_variant_n_children (value2);
 
-	/* Since they are NM IPv6 address structures, we expect both
-	 * to contain two elements as specified in nm-dbus-glib-types.h.
-	 */
-	g_return_val_if_fail (values1->n_values == 3, 0);
-	g_return_val_if_fail (values2->n_values == 3, 0);
+	if (len1 != len2)
+		return len1 < len2 ? -1 : len1 > len2;
 
-	/* First struct IPv6 address */
-	tmp_val = g_value_array_get_nth (values1, 0);
-	addr1 = g_value_get_boxed (tmp_val);
-	/* First struct IPv6 prefix */
-	tmp_val = g_value_array_get_nth (values1, 1);
-	prefix1 = g_value_get_uint (tmp_val);
-	/* First struct IPv6 gateway */
-	tmp_val = g_value_array_get_nth (values1, 2);
-	gw1 = g_value_get_boxed (tmp_val);
+	g_variant_iter_init (&iter, value1);
+	while (g_variant_iter_next (&iter, "{&s&s}", &key, &val1)) {
+		if (!g_variant_lookup (value2, key, "&s", &val2))
+			return -1;
 
-	/* Second struct IPv6 address */
-	tmp_val = g_value_array_get_nth (values2, 0);
-	addr2 = g_value_get_boxed (tmp_val);
-	/* Second struct IPv6 prefix */
-	tmp_val = g_value_array_get_nth (values2, 1);
-	prefix2 = g_value_get_uint (tmp_val);
-	/* Second struct IPv6 gateway */
-	tmp_val = g_value_array_get_nth (values2, 2);
-	gw2 = g_value_get_boxed (tmp_val);
-
-	/* Compare IPv6 addresses */
-	if (prefix1 != prefix2)
-		return prefix1 < prefix2 ? -1 : prefix1 > prefix2;
-
-	if (!IN6_ARE_ADDR_EQUAL ((struct in6_addr *)addr1->data, (struct in6_addr *)addr2->data)) {
-		for (i = 0; ret == 0 && i < addr1->len; i++)
-			ret = addr1->data[i] < addr2->data[i] ? -1 : addr1->data[i] > addr2->data[i];
+		ret = strcmp (val1, val2);
+		if (ret)
+			return ret;
 	}
 
-	if (!IN6_ARE_ADDR_EQUAL ((struct in6_addr *) gw1->data, (struct in6_addr *) gw2->data)) {
-		for (i = 0; ret == 0 && i < gw1->len; i++)
-			ret = gw1->data[i] < gw2->data[i] ? -1 : gw1->data[i] > gw2->data[i];
-	}
-
-	return ret;
-}
-
-static gint
-_gvalue_ip6_route_compare (const GValue *value1, const GValue *value2)
-{
-	GValueArray *values1, *values2;
-	GValue *tmp_val;
-	GByteArray *dest1, *dest2;
-	GByteArray *next_hop1, *next_hop2;
-	guint32 prefix1, prefix2;
-	guint32 metric1, metric2;
-	gint ret = 0;
-	int i;
-
-	/* IP6 routes are GValueArrays (see nm-dbus-glib-types.h) */
-	values1 = g_value_get_boxed (value1);
-	values2 = g_value_get_boxed (value2);
-
-	/* Since they are NM IPv6 route structures, we expect both
-	 * to contain 4 elements as specified in nm-dbus-glib-types.h.
-	 */
-	g_return_val_if_fail (values1->n_values == 4, 0);
-	g_return_val_if_fail (values2->n_values == 4, 0);
-
-	/* First struct IPv6 route */
-	tmp_val = g_value_array_get_nth (values1, 0);
-	dest1 = g_value_get_boxed (tmp_val);
-	tmp_val = g_value_array_get_nth (values1, 1);
-	prefix1 = g_value_get_uint (tmp_val);
-	tmp_val = g_value_array_get_nth (values1, 2);
-	next_hop1 = g_value_get_boxed (tmp_val);
-	tmp_val = g_value_array_get_nth (values1, 3);
-	metric1 = g_value_get_uint (tmp_val);
-
-	/* Second struct IPv6 route */
-	tmp_val = g_value_array_get_nth (values2, 0);
-	dest2 = g_value_get_boxed (tmp_val);
-	tmp_val = g_value_array_get_nth (values2, 1);
-	prefix2 = g_value_get_uint (tmp_val);
-	tmp_val = g_value_array_get_nth (values2, 2);
-	next_hop2 = g_value_get_boxed (tmp_val);
-	tmp_val = g_value_array_get_nth (values2, 3);
-	metric2 = g_value_get_uint (tmp_val);
-
-	/* Compare the routes */
-	if (prefix1 != prefix2)
-		return prefix1 < prefix2 ? -1 : prefix1 > prefix2;
-
-	if (!IN6_ARE_ADDR_EQUAL ((struct in6_addr *)dest1->data, (struct in6_addr *)dest2->data)) {
-		for (i = 0; ret == 0 && i < dest1->len; i++)
-			ret = dest1->data[i] < dest2->data[i] ? -1 : dest1->data[i] > dest2->data[i];
-	}
-
-	if (!IN6_ARE_ADDR_EQUAL ((struct in6_addr *)next_hop1->data, (struct in6_addr *)next_hop2->data)) {
-		for (i = 0; ret == 0 && i < next_hop1->len; i++)
-			ret = next_hop1->data[i] < next_hop2->data[i] ? -1 : next_hop1->data[i] > next_hop2->data[i];
-	}
-
-	if (metric1 != metric2)
-		ret = metric1 < metric2 ? -1 : metric1 > metric2;
-
-	return ret;
-}
-
-static gint
-nm_property_compare_struct (const GValue *value1, const GValue *value2)
-{
-	/* value1 and value2 must contain the same type since
-	 * nm_property_compare() enforced that already.
-	 */
-
-	if (G_VALUE_HOLDS (value1, DBUS_TYPE_G_IP6_ADDRESS)) {
-		return _gvalue_ip6_address_compare (value1, value2);
-	} else if (G_VALUE_HOLDS (value1, DBUS_TYPE_G_IP6_ROUTE)) {
-		return _gvalue_ip6_route_compare (value1, value2);
-	} else {
-		g_warning ("Don't know how to compare structures");
-		return (value1 == value2);
-	}
+	return 0;
 }
 
 int
-nm_property_compare (const GValue *value1, const GValue *value2)
+nm_property_compare (GVariant *value1, GVariant *value2)
 {
-	GType type1;
-	GType type2;
+	const GVariantType *type1;
+	const GVariantType *type2;
 	gint ret;
 
 	if (value1 == value2)
@@ -508,42 +97,22 @@ nm_property_compare (const GValue *value1, const GValue *value2)
 	if (!value2)
 		return -1;
 
-	type1 = G_VALUE_TYPE (value1);
-	type2 = G_VALUE_TYPE (value2);
+	type1 = g_variant_get_type (value1);
+	type2 = g_variant_get_type (value2);
 
-	if (type1 != type2)
+	if (!g_variant_type_equal (type1, type2))
 		return type1 < type2 ? -1 : type1 > type2;
 
-	if (type_is_fixed_size (type1, NULL))
-		ret = nm_property_compare_fixed (value1, value2);
-	else if (type1 == G_TYPE_STRING)
-		ret = nm_property_compare_string (value1, value2);
-	else if (G_VALUE_HOLDS_BOXED (value1)) {
-		gpointer p1 = g_value_get_boxed (value1);
-		gpointer p2 = g_value_get_boxed (value2);
-
-		if (p1 == p2)
-			ret = 0; /* Exactly the same values */
-		else if (!p1)
-			ret = 1; /* The comparision functions below don't handle NULLs */
-		else if (!p2)
-			ret = -1; /* The comparision functions below don't handle NULLs */
-		else if (type1 == G_TYPE_STRV)
-			ret = nm_property_compare_strv (value1, value2);
-		else if (dbus_g_type_is_collection (type1))
-			ret = nm_property_compare_collection (value1, value2);
-		else if (dbus_g_type_is_map (type1))
-			ret = nm_property_compare_map (value1, value2);
-		else if (dbus_g_type_is_struct (type1))
-			ret = nm_property_compare_struct (value1, value2);
-		else if (type1 == G_TYPE_VALUE)
-			ret = nm_property_compare ((GValue *) g_value_get_boxed (value1), (GValue *) g_value_get_boxed (value2));
-		else {
-			g_warning ("Don't know how to compare boxed types '%s'", g_type_name (type1));
-			ret = value1 == value2;
-		}
-	} else {
-		g_warning ("Don't know how to compare types '%s'", g_type_name (type1));
+	if (g_variant_type_is_basic (type1))
+		ret = g_variant_compare (value1, value2);
+	else if (g_variant_is_of_type (value1, G_VARIANT_TYPE ("a{ss}")))
+		ret = _nm_property_compare_strdict (value1, value2);
+	else if (g_variant_type_is_array (type1))
+		ret = _nm_property_compare_collection (value1, value2);
+	else if (g_variant_type_is_tuple (type1))
+		ret = _nm_property_compare_collection (value1, value2);
+	else {
+		g_warning ("Don't know how to compare variant type '%s'", (const char *) type1);
 		ret = value1 == value2;
 	}
 

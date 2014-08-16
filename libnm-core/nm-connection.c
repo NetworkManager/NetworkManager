@@ -22,11 +22,9 @@
 
 #include <glib-object.h>
 #include <glib/gi18n.h>
-#include <dbus/dbus-glib.h>
 #include <string.h>
 #include "nm-connection.h"
-#include "nm-utils-internal.h"
-#include "nm-dbus-glib-types.h"
+#include "nm-utils.h"
 #include "nm-setting-private.h"
 
 #include "nm-setting-8021x.h"
@@ -243,35 +241,40 @@ nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
 }
 
 static gboolean
-validate_permissions_type (GHashTable *hash, GError **error)
+validate_permissions_type (GVariant *variant, GError **error)
 {
-	GHashTable *s_con;
-	GValue *permissions;
+	GVariant *s_con;
+	GVariant *permissions;
+	gboolean valid = TRUE;
 
 	/* Ensure the connection::permissions item (if present) is the correct
 	 * type, otherwise the g_object_set() will throw a warning and ignore the
 	 * error, leaving us with no permissions.
 	 */
-	s_con = g_hash_table_lookup (hash, NM_SETTING_CONNECTION_SETTING_NAME);
-	if (s_con) {
-		permissions = g_hash_table_lookup (s_con, NM_SETTING_CONNECTION_PERMISSIONS);
-		if (permissions) {
-			if (!G_VALUE_HOLDS (permissions, G_TYPE_STRV)) {
-				g_set_error_literal (error,
-				                     NM_SETTING_ERROR,
-				                     NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
-				                     "Wrong permissions property type; should be an array of strings.");
-				return FALSE;
-			}
+	s_con = g_variant_lookup_value (variant, NM_SETTING_CONNECTION_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	if (!s_con)
+		return TRUE;
+
+	permissions = g_variant_lookup_value (s_con, NM_SETTING_CONNECTION_PERMISSIONS, NULL);
+	if (permissions) {
+		if (!g_variant_is_of_type (permissions, G_VARIANT_TYPE_STRING_ARRAY)) {
+			g_set_error_literal (error,
+			                     NM_SETTING_ERROR,
+			                     NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
+			                     "Wrong permissions property type; should be a list of strings.");
+			valid = FALSE;
 		}
+		g_variant_unref (permissions);
 	}
-	return TRUE;
+
+	g_variant_unref (s_con);
+	return valid;
 }
 
 /**
  * nm_connection_replace_settings:
  * @connection: a #NMConnection
- * @new_settings: (element-type utf8 GLib.HashTable): a #GHashTable of settings
+ * @new_settings: a #GVariant of type %NM_VARIANT_TYPE_CONNECTION, with the new settings
  * @error: location to store error, or %NULL
  *
  * Replaces @connection's settings with @new_settings (which must be
@@ -283,18 +286,18 @@ validate_permissions_type (GHashTable *hash, GError **error)
  **/
 gboolean
 nm_connection_replace_settings (NMConnection *connection,
-                                GHashTable *new_settings,
+                                GVariant *new_settings,
                                 GError **error)
 {
 	NMConnectionPrivate *priv;
-	GHashTableIter iter;
+	GVariantIter iter;
 	const char *setting_name;
-	GHashTable *setting_hash;
+	GVariant *setting_dict;
 	GSList *settings = NULL, *s;
 	gboolean changed;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-	g_return_val_if_fail (new_settings != NULL, FALSE);
+	g_return_val_if_fail (g_variant_is_of_type (new_settings, NM_VARIANT_TYPE_CONNECTION), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
@@ -302,8 +305,8 @@ nm_connection_replace_settings (NMConnection *connection,
 	if (!validate_permissions_type (new_settings, error))
 		return FALSE;
 
-	g_hash_table_iter_init (&iter, new_settings);
-	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
+	g_variant_iter_init (&iter, new_settings);
+	while (g_variant_iter_next (&iter, "{&s@a{sv}}", &setting_name, &setting_dict)) {
 		NMSetting *setting;
 		GType type;
 
@@ -313,15 +316,19 @@ nm_connection_replace_settings (NMConnection *connection,
 			             NM_CONNECTION_ERROR,
 			             NM_CONNECTION_ERROR_INVALID_SETTING,
 			             "unknown setting name '%s'", setting_name);
+			g_variant_unref (setting_dict);
 			g_slist_free_full (settings, g_object_unref);
 			return FALSE;
 		}
 
-		setting = _nm_setting_new_from_dbus (type, setting_hash, new_settings, error);
+		setting = _nm_setting_new_from_dbus (type, setting_dict, new_settings, error);
+		g_variant_unref (setting_dict);
+
 		if (!setting) {
 			g_slist_free_full (settings, g_object_unref);
 			return FALSE;
 		}
+
 		settings = g_slist_prepend (settings, setting);
 	}
 
@@ -928,16 +935,16 @@ nm_connection_normalize (NMConnection *connection,
  * nm_connection_update_secrets:
  * @connection: the #NMConnection
  * @setting_name: the setting object name to which the secrets apply
- * @secrets: (element-type utf8 GObject.Value): a #GHashTable mapping
- * string:#GValue of setting property names and secrets of the given @setting_name
+ * @secrets: a #GVariant of secrets, of type %NM_VARIANT_TYPE_CONNECTION
+ *   or %NM_VARIANT_TYPE_SETTING
  * @error: location to store error, or %NULL
  *
- * Update the specified setting's secrets, given a hash table of secrets
+ * Update the specified setting's secrets, given a dictionary of secrets
  * intended for that setting (deserialized from D-Bus for example).  Will also
- * extract the given setting's secrets hash if given a hash of hashes, as would
- * be returned from nm_connection_to_dbus().  If @setting_name is %NULL, expects
- * a fully serialized #NMConnection as returned by nm_connection_to_dbus() and
- * will update all secrets from all settings contained in @secrets.
+ * extract the given setting's secrets hash if given a connection dictionary.
+ * If @setting_name is %NULL, expects a fully serialized #NMConnection as
+ * returned by nm_connection_to_dbus() and will update all secrets from all
+ * settings contained in @secrets.
  *
  * Returns: %TRUE if the secrets were successfully updated, %FALSE if the update
  * failed (tried to update secrets for a setting that doesn't exist, etc)
@@ -945,38 +952,28 @@ nm_connection_normalize (NMConnection *connection,
 gboolean
 nm_connection_update_secrets (NMConnection *connection,
                               const char *setting_name,
-                              GHashTable *secrets,
+                              GVariant *secrets,
                               GError **error)
 {
 	NMSetting *setting;
 	gboolean success = TRUE, updated = FALSE;
-	GHashTable *setting_hash = NULL;
-	GHashTableIter iter;
+	GVariant *setting_dict = NULL;
+	GVariantIter iter;
 	const char *key;
-	gboolean hashed_connection = FALSE;
+	gboolean full_connection;
 	int success_detail;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-	g_return_val_if_fail (secrets != NULL, FALSE);
+	g_return_val_if_fail (   g_variant_is_of_type (secrets, NM_VARIANT_TYPE_SETTING)
+	                      || g_variant_is_of_type (secrets, NM_VARIANT_TYPE_CONNECTION), FALSE);
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
 	/* Empty @secrets means success */
-	if (g_hash_table_size (secrets) == 0)
+	if (g_variant_n_children (secrets) == 0)
 		return TRUE;
 
-	/* For backwards compatibility, this function accepts either a hashed
-	 * connection (GHashTable of GHashTables of GValues) or a single hashed
-	 * setting (GHashTable of GValues).
-	 */
-	g_hash_table_iter_init (&iter, secrets);
-	while (g_hash_table_iter_next (&iter, (gpointer) &key, NULL)) {
-		if (nm_setting_lookup_type (key) != G_TYPE_INVALID) {
-			/* @secrets looks like a hashed connection */
-			hashed_connection = TRUE;
-			break;
-		}
-	}
+	full_connection = g_variant_is_of_type (secrets, NM_VARIANT_TYPE_CONNECTION);
 
 	if (setting_name) {
 		/* Update just one setting's secrets */
@@ -989,10 +986,10 @@ nm_connection_update_secrets (NMConnection *connection,
 			return FALSE;
 		}
 
-		if (hashed_connection) {
-			setting_hash = g_hash_table_lookup (secrets, setting_name);
-			if (!setting_hash) {
-				/* The hashed connection that didn't contain any secrets for
+		if (full_connection) {
+			setting_dict = g_variant_lookup_value (secrets, setting_name, NM_VARIANT_TYPE_SETTING);
+			if (!setting_dict) {
+				/* The connection dictionary didn't contain any secrets for
 				 * @setting_name; just return success.
 				 */
 				return TRUE;
@@ -1001,16 +998,18 @@ nm_connection_update_secrets (NMConnection *connection,
 
 		g_signal_handlers_block_by_func (setting, (GCallback) setting_changed_cb, connection);
 		success_detail = _nm_setting_update_secrets (setting,
-		                                             setting_hash ? setting_hash : secrets,
+		                                             setting_dict ? setting_dict : secrets,
 		                                             error);
 		g_signal_handlers_unblock_by_func (setting, (GCallback) setting_changed_cb, connection);
+
+		g_clear_pointer (&setting_dict, g_variant_unref);
 
 		if (success_detail == NM_SETTING_UPDATE_SECRET_ERROR)
 			return FALSE;
 		if (success_detail == NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED)
 			updated = TRUE;
 	} else {
-		if (!hashed_connection) {
+		if (!full_connection) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
 			                     NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
@@ -1019,8 +1018,8 @@ nm_connection_update_secrets (NMConnection *connection,
 		}
 
 		/* check first, whether all the settings exist... */
-		g_hash_table_iter_init (&iter, secrets);
-		while (g_hash_table_iter_next (&iter, (gpointer) &key, NULL)) {
+		g_variant_iter_init (&iter, secrets);
+		while (g_variant_iter_next (&iter, "{&s@a{sv}}", &key, NULL)) {
 			setting = nm_connection_get_setting_by_name (connection, key);
 			if (!setting) {
 				g_set_error_literal (error,
@@ -1031,15 +1030,17 @@ nm_connection_update_secrets (NMConnection *connection,
 			}
 		}
 
-		/* Update each setting with any secrets from the hashed connection */
-		g_hash_table_iter_init (&iter, secrets);
-		while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &setting_hash)) {
+		/* Update each setting with any secrets from the connection dictionary */
+		g_variant_iter_init (&iter, secrets);
+		while (g_variant_iter_next (&iter, "{&s@a{sv}}", &key, &setting_dict)) {
 			/* Update the secrets for this setting */
 			setting = nm_connection_get_setting_by_name (connection, key);
 
 			g_signal_handlers_block_by_func (setting, (GCallback) setting_changed_cb, connection);
-			success_detail = _nm_setting_update_secrets (setting, setting_hash, error);
+			success_detail = _nm_setting_update_secrets (setting, setting_dict, error);
 			g_signal_handlers_unblock_by_func (setting, (GCallback) setting_changed_cb, connection);
+
+			g_variant_unref (setting_dict);
 
 			if (success_detail == NM_SETTING_UPDATE_SECRET_ERROR) {
 				success = FALSE;
@@ -1184,46 +1185,43 @@ nm_connection_clear_secrets_with_flags (NMConnection *connection,
  * @connection: the #NMConnection
  * @flags: serialization flags, e.g. %NM_CONNECTION_SERIALIZE_ALL
  *
- * Converts the #NMConnection into a #GHashTable describing the connection,
- * suitable for marshalling over D-Bus or otherwise serializing.  The hash table
- * mapping is string:#GHashTable with each element in the returned hash
- * representing a #NMSetting object.  The keys are setting object names, and the
- * values are #GHashTables mapping string:GValue, each of which represents the
- * properties of the #NMSetting object.
+ * Converts the #NMConnection into a #GVariant of type
+ * %NM_VARIANT_TYPE_CONNECTION describing the connection, suitable for
+ * marshalling over D-Bus or otherwise serializing.
  *
- * Returns: (transfer full) (element-type utf8 GLib.HashTable): a new
- * #GHashTable describing the connection, its settings, and each setting's
- * properties.  The caller owns the hash table and must unref the hash table
- * with g_hash_table_unref() when it is no longer needed.
+ * Returns: (transfer none): a new floating #GVariant describing the connection,
+ * its settings, and each setting's properties.
  **/
-GHashTable *
-nm_connection_to_dbus (NMConnection *connection, NMConnectionSerializationFlags flags)
+GVariant *
+nm_connection_to_dbus (NMConnection *connection,
+                       NMConnectionSerializationFlags flags)
 {
 	NMConnectionPrivate *priv;
+	GVariantBuilder builder;
 	GHashTableIter iter;
 	gpointer key, data;
-	GHashTable *ret, *setting_hash;
+	GVariant *setting_dict, *ret;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-
-	ret = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                             g_free, (GDestroyNotify) g_hash_table_destroy);
-
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
+
+	g_variant_builder_init (&builder, NM_VARIANT_TYPE_CONNECTION);
 
 	/* Add each setting's hash to the main hash */
 	g_hash_table_iter_init (&iter, priv->settings);
 	while (g_hash_table_iter_next (&iter, &key, &data)) {
 		NMSetting *setting = NM_SETTING (data);
 
-		setting_hash = _nm_setting_to_dbus (setting, connection, flags);
-		if (setting_hash)
-			g_hash_table_insert (ret, g_strdup (nm_setting_get_name (setting)), setting_hash);
+		setting_dict = _nm_setting_to_dbus (setting, connection, flags);
+		if (setting_dict)
+			g_variant_builder_add (&builder, "{s@a{sv}}", nm_setting_get_name (setting), setting_dict);
 	}
 
+	ret = g_variant_builder_end (&builder);
+
 	/* Don't send empty hashes */
-	if (g_hash_table_size (ret) < 1) {
-		g_hash_table_destroy (ret);
+	if (g_variant_n_children (ret) == 0) {
+		g_variant_unref (ret);
 		ret = NULL;
 	}
 

@@ -23,8 +23,8 @@
 #ifndef __NM_PROPERTY_COMPARE_H__
 #define __NM_PROPERTY_COMPARE_H__
 
-#include <glib-object.h>
+#include <glib.h>
 
-int nm_property_compare (const GValue *value1, const GValue *value2);
+int nm_property_compare (GVariant *value1, GVariant *value2);
 
 #endif /* __NM_PROPERTY_COMPARE_H__ */

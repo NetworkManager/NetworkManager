@@ -32,47 +32,38 @@ gboolean    _nm_utils_string_slist_validate (GSList *list,
 gboolean    _nm_utils_gvalue_array_validate (GValueArray *elements,
                                              guint n_expected, ...);
 
-void        _nm_value_transforms_register (void);
+/* D-Bus transform funcs */
 
-void        _nm_utils_hwaddr_to_dbus   (const GValue *prop_value,
-                                        GValue *dbus_value);
-void        _nm_utils_hwaddr_from_dbus (const GValue *dbus_value,
+GVariant *  _nm_utils_hwaddr_to_dbus   (const GValue *prop_value);
+void        _nm_utils_hwaddr_from_dbus (GVariant *dbus_value,
                                         GValue *prop_value);
 
-void        _nm_utils_strdict_to_dbus   (const GValue *prop_value,
-                                         GValue *dbus_value);
-void        _nm_utils_strdict_from_dbus (const GValue *dbus_value,
+GVariant *  _nm_utils_strdict_to_dbus   (const GValue *prop_value);
+void        _nm_utils_strdict_from_dbus (GVariant *dbus_value,
                                          GValue *prop_value);
 
-void        _nm_utils_bytes_to_dbus     (const GValue *prop_value,
-                                         GValue *dbus_value);
-void        _nm_utils_bytes_from_dbus   (const GValue *dbus_value,
+GVariant *  _nm_utils_bytes_to_dbus     (const GValue *prop_value);
+void        _nm_utils_bytes_from_dbus   (GVariant *dbus_value,
                                          GValue *prop_value);
 
-void        _nm_utils_ip4_dns_to_dbus         (const GValue *prop_value,
-                                               GValue *dbus_value);
-void        _nm_utils_ip4_dns_from_dbus       (const GValue *dbus_value,
+GVariant *  _nm_utils_ip4_dns_to_dbus         (const GValue *prop_value);
+void        _nm_utils_ip4_dns_from_dbus       (GVariant *dbus_value,
                                                GValue *prop_value);
-void        _nm_utils_ip4_addresses_to_dbus   (const GValue *prop_value,
-                                               GValue *dbus_value);
-void        _nm_utils_ip4_addresses_from_dbus (const GValue *dbus_value,
+GVariant *  _nm_utils_ip4_addresses_to_dbus   (const GValue *prop_value);
+void        _nm_utils_ip4_addresses_from_dbus (GVariant *dbus_value,
                                                GValue *prop_value);
-void        _nm_utils_ip4_routes_to_dbus      (const GValue *prop_value,
-                                               GValue *dbus_value);
-void        _nm_utils_ip4_routes_from_dbus    (const GValue *dbus_value,
+GVariant *  _nm_utils_ip4_routes_to_dbus      (const GValue *prop_value);
+void        _nm_utils_ip4_routes_from_dbus    (GVariant *dbus_value,
                                                GValue *prop_value);
 
-void        _nm_utils_ip6_dns_to_dbus         (const GValue *prop_value,
-                                               GValue *dbus_value);
-void        _nm_utils_ip6_dns_from_dbus       (const GValue *dbus_value,
+GVariant *  _nm_utils_ip6_dns_to_dbus         (const GValue *prop_value);
+void        _nm_utils_ip6_dns_from_dbus       (GVariant *dbus_value,
                                                GValue *prop_value);
-void        _nm_utils_ip6_addresses_to_dbus   (const GValue *prop_value,
-                                               GValue *dbus_value);
-void        _nm_utils_ip6_addresses_from_dbus (const GValue *dbus_value,
+GVariant *  _nm_utils_ip6_addresses_to_dbus   (const GValue *prop_value);
+void        _nm_utils_ip6_addresses_from_dbus (GVariant *dbus_value,
                                                GValue *prop_value);
-void        _nm_utils_ip6_routes_to_dbus      (const GValue *prop_value,
-                                               GValue *dbus_value);
-void        _nm_utils_ip6_routes_from_dbus    (const GValue *dbus_value,
+GVariant *  _nm_utils_ip6_routes_to_dbus      (const GValue *prop_value);
+void        _nm_utils_ip6_routes_from_dbus    (GVariant *dbus_value,
                                                GValue *prop_value);
 
 GSList *    _nm_utils_strv_to_slist (char **strv);

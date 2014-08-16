@@ -28,6 +28,7 @@
 #include "nm-dispatcher-api.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "nm-utils-private.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
 #include "nm-device.h"
@@ -471,7 +472,11 @@ _dispatcher_call (DispatcherAction action,
 	}
 
 	if (connection) {
-		connection_hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
+		GVariant *connection_dict;
+
+		connection_dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
+		connection_hash = _nm_utils_connection_dict_to_hash (connection_dict);
+		g_variant_unref (connection_dict);
 
 		connection_props = value_hash_create ();
 		value_hash_add_object_path (connection_props,

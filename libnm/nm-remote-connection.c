@@ -32,6 +32,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-dbus-helpers.h"
+#include "nm-utils-private.h"
 
 static void nm_remote_connection_connection_iface_init (NMConnectionInterface *iface);
 static void nm_remote_connection_initable_iface_init (GInitableIface *iface);
@@ -211,6 +212,7 @@ nm_remote_connection_commit_changes (NMRemoteConnection *self,
 {
 	NMRemoteConnectionPrivate *priv;
 	RemoteCall *call;
+	GVariant *settings_dict;
 	GHashTable *settings;
 
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (self));
@@ -221,7 +223,10 @@ nm_remote_connection_commit_changes (NMRemoteConnection *self,
 	if (!call)
 		return;
 
-	settings = nm_connection_to_dbus (NM_CONNECTION (self), NM_CONNECTION_SERIALIZE_ALL);
+	settings_dict = nm_connection_to_dbus (NM_CONNECTION (self), NM_CONNECTION_SERIALIZE_ALL);
+	settings = _nm_utils_connection_dict_to_hash (settings_dict);
+	g_variant_unref (settings_dict);
+
 	call->call = dbus_g_proxy_begin_call (priv->proxy, "Update",
 	                                      remote_call_dbus_cb, call, NULL,
 	                                      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, settings,
@@ -248,7 +253,8 @@ nm_remote_connection_commit_changes_unsaved (NMRemoteConnection *connection,
                                              gpointer user_data)
 {
 	NMRemoteConnectionPrivate *priv;
-	GHashTable *settings = NULL;
+	GVariant *settings_dict;
+	GHashTable *settings;
 	RemoteCall *call;
 
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
@@ -259,7 +265,9 @@ nm_remote_connection_commit_changes_unsaved (NMRemoteConnection *connection,
 	if (!call)
 		return;
 
-	settings = nm_connection_to_dbus (NM_CONNECTION (connection), NM_CONNECTION_SERIALIZE_ALL);
+	settings_dict = nm_connection_to_dbus (NM_CONNECTION (connection), NM_CONNECTION_SERIALIZE_ALL);
+	settings = _nm_utils_connection_dict_to_hash (settings_dict);
+	g_variant_unref (settings_dict);
 	call->call = dbus_g_proxy_begin_call (priv->proxy, "UpdateUnsaved",
 	                                      remote_call_dbus_cb, call, NULL,
 	                                      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, settings,
@@ -342,8 +350,19 @@ get_secrets_cb (RemoteCall *call, DBusGProxyCall *proxy_call, GError *error)
 		                       G_TYPE_INVALID);
 		error = local_error;
 	}
-	if (func)
-		(*func) (call->self, error ? NULL : secrets, error, call->user_data);
+	if (func) {
+		GVariant *secrets_dict;
+
+		if (secrets)
+			secrets_dict = _nm_utils_connection_hash_to_dict (secrets);
+		else
+			secrets_dict = NULL;
+
+		(*func) (call->self, error ? NULL : secrets_dict, error, call->user_data);
+
+		if (secrets_dict)
+			g_variant_unref (secrets_dict);
+	}
 	g_clear_error (&local_error);
 	if (secrets)
 		g_hash_table_destroy (secrets);
@@ -431,8 +450,10 @@ static void
 replace_settings (NMRemoteConnection *self, GHashTable *new_settings)
 {
 	GError *error = NULL;
+	GVariant *new_settings_dict;
 
-	if (!nm_connection_replace_settings (NM_CONNECTION (self), new_settings, &error)) {
+	new_settings_dict = _nm_utils_connection_hash_to_dict (new_settings);
+	if (!nm_connection_replace_settings (NM_CONNECTION (self), new_settings_dict, &error)) {
 		g_warning ("%s: error updating connection %s settings: (%d) %s",
 		           __func__,
 		           nm_connection_get_path (NM_CONNECTION (self)),
@@ -440,6 +461,7 @@ replace_settings (NMRemoteConnection *self, GHashTable *new_settings)
 		           (error && error->message) ? error->message : "(unknown)");
 		g_clear_error (&error);
 	}
+	g_variant_unref (new_settings_dict);
 }
 
 static void

@@ -29,6 +29,8 @@
 #include "nm-enum-types.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-utils-private.h"
+#include "nm-connection.h"
 
 static gboolean impl_vpn_plugin_connect    (NMVpnPlugin *plugin,
                                             GHashTable *connection,
@@ -439,6 +441,7 @@ _connect_generic (NMVpnPlugin *plugin,
 {
 	NMVpnPluginPrivate *priv = NM_VPN_PLUGIN_GET_PRIVATE (plugin);
 	NMVpnPluginClass *vpn_class = NM_VPN_PLUGIN_GET_CLASS (plugin);
+	GVariant *properties_dict;
 	NMConnection *connection;
 	gboolean success = FALSE;
 	GError *local = NULL;
@@ -451,7 +454,9 @@ _connect_generic (NMVpnPlugin *plugin,
 		return FALSE;
 	}
 
-	connection = nm_simple_connection_new_from_dbus (properties, &local);
+	properties_dict = _nm_utils_connection_hash_to_dict (properties);
+	connection = nm_simple_connection_new_from_dbus (properties_dict, &local);
+	g_variant_unref (properties_dict);
 	if (!connection) {
 		g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
 		             "Invalid connection: (%d) %s",
@@ -516,6 +521,7 @@ impl_vpn_plugin_need_secrets (NMVpnPlugin *plugin,
                               GError **err)
 {
 	gboolean ret = FALSE;
+	GVariant *properties_dict;
 	NMConnection *connection;
 	char *sn = NULL;
 	GError *ns_err = NULL;
@@ -525,7 +531,9 @@ impl_vpn_plugin_need_secrets (NMVpnPlugin *plugin,
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN (plugin), FALSE);
 	g_return_val_if_fail (properties != NULL, FALSE);
 
-	connection = nm_simple_connection_new_from_dbus (properties, &cnfh_err);
+	properties_dict = _nm_utils_connection_hash_to_dict (properties);
+	connection = nm_simple_connection_new_from_dbus (properties_dict, &cnfh_err);
+	g_variant_unref (properties_dict);
 	if (!connection) {
 		g_set_error (err,
 		             NM_VPN_PLUGIN_ERROR,
@@ -569,6 +577,7 @@ impl_vpn_plugin_new_secrets (NMVpnPlugin *plugin,
                              GError **error)
 {
 	NMVpnPluginPrivate *priv = NM_VPN_PLUGIN_GET_PRIVATE (plugin);
+	GVariant *properties_dict;
 	NMConnection *connection;
 	GError *local = NULL;
 	gboolean success;
@@ -580,7 +589,9 @@ impl_vpn_plugin_new_secrets (NMVpnPlugin *plugin,
 		return FALSE;
 	}
 
-	connection = nm_simple_connection_new_from_dbus (properties, &local);
+	properties_dict = _nm_utils_connection_hash_to_dict (properties);
+	connection = nm_simple_connection_new_from_dbus (properties_dict, &local);
+	g_variant_unref (properties_dict);
 	if (!connection) {
 		g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
 		             "Invalid connection: (%d) %s",

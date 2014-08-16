@@ -21,13 +21,11 @@
  */
 
 #include <string.h>
-#include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
 #include "nm-setting-olpc-mesh.h"
 #include "nm-dbus-interface.h"
 #include "nm-utils.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 
@@ -239,7 +237,7 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_OLPC_MESH_SSID,
-	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_bytes_to_dbus,
 	                                      _nm_utils_bytes_from_dbus);
 
@@ -271,7 +269,7 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
-	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_hwaddr_to_dbus,
 	                                      _nm_utils_hwaddr_from_dbus);
 }

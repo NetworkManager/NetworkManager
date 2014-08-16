@@ -34,6 +34,7 @@
 #include "nm-object-cache.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
+#include "nm-utils-private.h"
 
 void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
@@ -717,8 +718,13 @@ nm_client_add_and_activate_connection (NMClient *client,
 	info->user_data = user_data;
 	info->client = client;
 
-	if (partial)
-		hash = nm_connection_to_dbus (partial, NM_CONNECTION_SERIALIZE_ALL);
+	if (partial) {
+		GVariant *dict;
+
+		dict = nm_connection_to_dbus (partial, NM_CONNECTION_SERIALIZE_ALL);
+		hash = _nm_utils_connection_dict_to_hash (dict);
+		g_variant_unref (dict);
+	}
 	if (!hash)
 		hash = g_hash_table_new (g_str_hash, g_str_equal);
 

@@ -949,35 +949,34 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 }
 
 static const char *
-find_virtual_interface_name (GHashTable *connection_hash)
+find_virtual_interface_name (GVariant *connection_dict)
 {
-	GHashTable *setting_hash;
-	GValue *value;
+	GVariant *setting_dict;
+	const char *interface_name;
 
-	setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_BOND_SETTING_NAME);
-	if (!setting_hash)
-		setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_BRIDGE_SETTING_NAME);
-	if (!setting_hash)
-		setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_TEAM_SETTING_NAME);
-	if (!setting_hash)
-		setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_VLAN_SETTING_NAME);
+	setting_dict = g_variant_lookup_value (connection_dict, NM_SETTING_BOND_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	if (!setting_dict)
+		setting_dict = g_variant_lookup_value (connection_dict, NM_SETTING_BRIDGE_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	if (!setting_dict)
+		setting_dict = g_variant_lookup_value (connection_dict, NM_SETTING_TEAM_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	if (!setting_dict)
+		setting_dict = g_variant_lookup_value (connection_dict, NM_SETTING_VLAN_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
 
-	if (!setting_hash)
+	if (!setting_dict)
 		return NULL;
 
 	/* All of the deprecated virtual interface name properties were named "interface-name". */
-	value = g_hash_table_lookup (setting_hash, "interface-name");
-	if (!value || !G_VALUE_HOLDS_STRING (value))
+	if (!g_variant_lookup (setting_dict, "interface-name", "&s", &interface_name))
 		return NULL;
 
-	return g_value_get_string (value);
+	return interface_name;
 }
 
 static void
 nm_setting_connection_set_interface_name (NMSetting *setting,
-                                          GHashTable *connection_hash,
+                                          GVariant *connection_dict,
                                           const char *property,
-                                          const GValue *value)
+                                          GVariant *value)
 {
 	const char *interface_name;
 
@@ -985,9 +984,9 @@ nm_setting_connection_set_interface_name (NMSetting *setting,
 	 * we need to make verification fail, even if that virtual name would be
 	 * overridden by a valid connection.interface-name.
 	 */
-	interface_name = find_virtual_interface_name (connection_hash);
+	interface_name = find_virtual_interface_name (connection_dict);
 	if (!interface_name || nm_utils_iface_valid_name (interface_name))
-		interface_name = g_value_get_string (value);
+		interface_name = g_variant_get_string (value, NULL);
 
 	g_object_set (G_OBJECT (setting),
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, interface_name,
@@ -996,12 +995,12 @@ nm_setting_connection_set_interface_name (NMSetting *setting,
 
 static void
 nm_setting_connection_no_interface_name (NMSetting *setting,
-                                         GHashTable *connection_hash,
+                                         GVariant *connection_dict,
                                          const char *property)
 {
 	const char *virtual_interface_name;
 
-	virtual_interface_name = find_virtual_interface_name (connection_hash);
+	virtual_interface_name = find_virtual_interface_name (connection_dict);
 	g_object_set (G_OBJECT (setting),
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, virtual_interface_name,
 	              NULL);
@@ -1271,7 +1270,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_override_property (parent_class, NM_SETTING_CONNECTION_INTERFACE_NAME,
-	                                     G_TYPE_STRING,
+	                                     G_VARIANT_TYPE_STRING,
 	                                     NULL,
 	                                     nm_setting_connection_set_interface_name,
 	                                     nm_setting_connection_no_interface_name);
