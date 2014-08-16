@@ -185,7 +185,7 @@ pan_connection_check_create (NMBluezDevice *self)
 
 	/* create a new connection */
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Setting: Connection */
 	uuid = nm_utils_uuid_generate ();

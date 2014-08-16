@@ -225,7 +225,7 @@ create_basic (const char *ssid,
 	NMSettingWireless *s_wifi = NULL;
 	GByteArray *tmp;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
@@ -265,7 +265,7 @@ test_lock_bssid (void)
 	gboolean success;
 	GError *error = NULL;
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_NONE,
 	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
@@ -293,7 +293,7 @@ test_open_ap_empty_connection (void)
 	 * SSID and Infra modes of the given AP details.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_NONE,
 	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
@@ -322,7 +322,7 @@ test_open_ap_leap_connection_1 (gconstpointer add_wifi)
 	 * the AP to have the Privacy bit set.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	if (add_wifi)
 		fill_wifi_empty (src);
 	fill_wsec (src, src_wsec);
@@ -353,7 +353,7 @@ test_open_ap_leap_connection_2 (void)
 	 * WEP or LEAP) is rejected when completion is attempted with an open AP.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	fill_wifi_empty (src);
 	fill_wsec (src, src_wsec);
 
@@ -387,7 +387,7 @@ test_open_ap_wep_connection (gconstpointer add_wifi)
 	 * attempted with an open AP.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	if (add_wifi)
 		fill_wifi_empty (src);
 	fill_wsec (src, src_wsec);
@@ -428,7 +428,7 @@ test_ap_wpa_psk_connection_base (const char *key_mgmt,
 	gboolean success;
 	GError *error = NULL;
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	if (add_wifi)
 		fill_wifi_empty (src);
 	fill_wsec (src, both_wsec);
@@ -534,7 +534,7 @@ test_ap_wpa_eap_connection_base (const char *key_mgmt,
 	gboolean success;
 	GError *error = NULL;
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	if (add_wifi)
 		fill_wifi_empty (src);
 	fill_wsec (src, src_wsec);
@@ -743,7 +743,7 @@ test_priv_ap_empty_connection (void)
 	 * connection when completed with an AP with the Privacy bit set.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
 	                               NM_802_11_AP_SEC_NONE, NM_802_11_AP_SEC_NONE,
@@ -785,7 +785,7 @@ test_priv_ap_leap_connection_1 (gconstpointer add_wifi)
 	 * with an AP with the Privacy bit set.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	if (add_wifi)
 		fill_wifi_empty (src);
 	fill_wsec (src, src_wsec);
@@ -824,7 +824,7 @@ test_priv_ap_leap_connection_2 (void)
 	 * with an AP with the Privacy bit set.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	fill_wifi_empty (src);
 	fill_wsec (src, src_wsec);
 	success = complete_connection ("blahblah", bssid,
@@ -867,7 +867,7 @@ test_priv_ap_dynamic_wep_1 (void)
 	 * Dynamic WEP connection when completed with an AP with the Privacy bit set.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	fill_wifi_empty (src);
 	fill_wsec (src, src_wsec);
 	fill_8021x (src, both_8021x);
@@ -914,7 +914,7 @@ test_priv_ap_dynamic_wep_2 (void)
 	 * WEP connection when completed with an AP with the Privacy bit set.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	fill_wifi_empty (src);
 	fill_wsec (src, src_wsec);
 	fill_8021x (src, both_8021x);
@@ -955,7 +955,7 @@ test_priv_ap_dynamic_wep_3 (void)
 	 * setting is rejected, as 802.1x is incompatible with 'shared' auth.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	fill_wifi_empty (src);
 	fill_wsec (src, src_wsec);
 	fill_8021x (src, src_8021x);
@@ -1066,7 +1066,7 @@ test_wpa_ap_empty_connection (gconstpointer data)
 	 * or RSN flags.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	success = complete_connection (ssid, bssid,
 	                               NM_802_11_MODE_INFRA, NM_802_11_AP_FLAGS_PRIVACY,
 	                               wpa_flags_for_idx (idx),
@@ -1103,7 +1103,7 @@ test_wpa_ap_leap_connection_1 (gconstpointer data)
 	 * rejected since WPA APs (usually) do not support LEAP.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	fill_wifi_empty (src);
 	fill_wsec (src, src_wsec);
 	success = complete_connection (ssid, bssid,
@@ -1137,7 +1137,7 @@ test_wpa_ap_leap_connection_2 (gconstpointer data)
 	 * rejected since WPA APs (usually) do not support LEAP.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	fill_wifi_empty (src);
 	fill_wsec (src, src_wsec);
 	success = complete_connection ("blahblah", bssid,
@@ -1170,7 +1170,7 @@ test_wpa_ap_dynamic_wep_connection (gconstpointer data)
 	 * rejected since WPA APs (usually) do not support Dynamic WEP.
 	 */
 
-	src = nm_connection_new ();
+	src = nm_simple_connection_new ();
 	fill_wifi_empty (src);
 	fill_wsec (src, src_wsec);
 	success = complete_connection ("blahblah", bssid,
@@ -1197,7 +1197,7 @@ test_wpa_ap_wpa_psk_connection_1 (gconstpointer data)
 	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
 	    { NULL } };
 
-	expected = nm_connection_new ();
+	expected = nm_simple_connection_new ();
 	fill_wsec (expected, exp_wsec);
 	test_ap_wpa_psk_connection_base (NULL, NULL,
 	                                 NM_802_11_AP_FLAGS_PRIVACY,
@@ -1217,7 +1217,7 @@ test_wpa_ap_wpa_psk_connection_2 (gconstpointer data)
 	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
 	    { NULL } };
 
-	expected = nm_connection_new ();
+	expected = nm_simple_connection_new ();
 	fill_wsec (expected, exp_wsec);
 	test_ap_wpa_psk_connection_base (NULL, NULL,
 	                                 NM_802_11_AP_FLAGS_PRIVACY,
@@ -1237,7 +1237,7 @@ test_wpa_ap_wpa_psk_connection_3 (gconstpointer data)
 	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
 	    { NULL } };
 
-	expected = nm_connection_new ();
+	expected = nm_simple_connection_new ();
 	fill_wsec (expected, exp_wsec);
 	test_ap_wpa_psk_connection_base (NULL, "open",
 	                                 NM_802_11_AP_FLAGS_PRIVACY,
@@ -1268,7 +1268,7 @@ test_wpa_ap_wpa_psk_connection_5 (gconstpointer data)
 	    { NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0 },
 	    { NULL } };
 
-	expected = nm_connection_new ();
+	expected = nm_simple_connection_new ();
 	fill_wsec (expected, exp_wsec);
 	test_ap_wpa_psk_connection_base ("wpa-psk", "open",
 	                                 NM_802_11_AP_FLAGS_PRIVACY,

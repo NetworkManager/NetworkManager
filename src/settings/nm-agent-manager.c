@@ -39,6 +39,7 @@
 #include "nm-auth-subject.h"
 #include "nm-dbus-manager.h"
 #include "nm-session-monitor.h"
+#include "nm-simple-connection.h"
 
 G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, G_TYPE_OBJECT)
 
@@ -907,7 +908,7 @@ get_agent_request_secrets (ConnectionRequest *req, gboolean include_system_secre
 	Request *parent = (Request *) req;
 	NMConnection *tmp;
 
-	tmp = nm_connection_duplicate (req->connection);
+	tmp = nm_simple_connection_new_clone (req->connection);
 	nm_connection_clear_secrets (tmp);
 	if (include_system_secrets) {
 		if (req->existing_secrets)
@@ -1091,7 +1092,7 @@ get_start (gpointer user_data)
 		 * ask a secret agent for more.  This allows admins to provide generic
 		 * secrets but allow additional user-specific ones as well.
 		 */
-		tmp = nm_connection_duplicate (req->connection);
+		tmp = nm_simple_connection_new_clone (req->connection);
 		g_assert (tmp);
 
 		if (!nm_connection_update_secrets (tmp, req->setting_name, req->existing_secrets, &error)) {

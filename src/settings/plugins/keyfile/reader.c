@@ -1166,12 +1166,17 @@ read_setting (GKeyFile *file, const char *keyfile_path, const char *group)
 	NMSetting *setting;
 	ReadInfo info = { file, keyfile_path };
 	const char *alias;
+	GType type;
 
 	alias = nm_keyfile_plugin_get_setting_name_for_alias (group);
-	setting = nm_connection_create_setting (alias ? alias : group);
-	if (setting)
+	if (alias)
+		group = alias;
+
+	type = nm_setting_lookup_type (group);
+	if (type) {
+		setting = g_object_new (type, NULL);
 		nm_setting_enumerate_values (setting, read_one_setting_value, &info);
-	else
+	} else
 		nm_log_warn (LOGD_SETTINGS, "Invalid setting name '%s'", group);
 
 	return setting;
@@ -1254,7 +1259,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	if (!g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, error))
 		goto out;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	groups = g_key_file_get_groups (key_file, &length);
 	for (i = 0; i < length; i++) {
@@ -1284,7 +1289,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 				NMSetting *base_setting;
 				GType base_setting_type;
 
-				base_setting_type = nm_connection_lookup_setting_type (ctype);
+				base_setting_type = nm_setting_lookup_type (ctype);
 				if (base_setting_type != G_TYPE_INVALID) {
 					base_setting = (NMSetting *) g_object_new (base_setting_type, NULL);
 					g_assert (base_setting);
@@ -1329,7 +1334,7 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	if (!nm_connection_verify (connection, &verify_error)) {
 		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 			         "invalid or missing connection property '%s/%s'",
-			         verify_error ? g_type_name (nm_connection_lookup_setting_type_by_quark (verify_error->domain)) : "(unknown)",
+			         verify_error ? g_type_name (nm_setting_lookup_type_by_quark (verify_error->domain)) : "(unknown)",
 			         (verify_error && verify_error->message) ? verify_error->message : "(unknown)");
 		g_clear_error (&verify_error);
 		g_object_unref (connection);

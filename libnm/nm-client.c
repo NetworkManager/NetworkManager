@@ -1660,7 +1660,7 @@ constructor (GType type,
 	const char *dbus_path;
 
 	for (i = 0; i < n_construct_params; i++) {
-		if (strcmp (construct_params[i].pspec->name, NM_OBJECT_DBUS_PATH) == 0) {
+		if (strcmp (construct_params[i].pspec->name, NM_OBJECT_PATH) == 0) {
 			dbus_path = g_value_get_string (construct_params[i].value);
 			if (dbus_path == NULL) {
 				g_value_set_static_string (construct_params[i].value, NM_DBUS_PATH);

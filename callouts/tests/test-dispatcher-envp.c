@@ -156,7 +156,7 @@ parse_main (GKeyFile *kf,
 	if (id == NULL)
 		return FALSE;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
 	g_assert (s_con);

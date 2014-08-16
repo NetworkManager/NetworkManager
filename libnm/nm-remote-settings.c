@@ -81,7 +81,7 @@
  *    char *uuid;
  *    gboolean success;
  *
- *    connection = nm_connection_new ();
+ *    connection = nm_simple_connection_new ();
  *
  *    /&ast; Build up the 'connection' setting &ast;/
  *    s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -887,7 +887,7 @@ constructor (GType type,
 
 	/* Fill in the right D-Bus path if none was specified */
 	for (i = 0; i < n_construct_params; i++) {
-		if (strcmp (construct_params[i].pspec->name, NM_OBJECT_DBUS_PATH) == 0) {
+		if (strcmp (construct_params[i].pspec->name, NM_OBJECT_PATH) == 0) {
 			dbus_path = g_value_get_string (construct_params[i].value);
 			if (dbus_path == NULL) {
 				g_value_set_static_string (construct_params[i].value, NM_DBUS_PATH_SETTINGS);

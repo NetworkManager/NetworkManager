@@ -3756,7 +3756,7 @@ wireless_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (error != NULL, NULL);
 	g_return_val_if_fail (*error == NULL, NULL);
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Wireless */
 	wireless_setting = make_wireless_setting (ifcfg, error);
@@ -3997,7 +3997,7 @@ wired_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_WIRED_SETTING_NAME, NULL, NULL);
 	if (!con_setting) {
@@ -4163,7 +4163,7 @@ infiniband_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_INFINIBAND_SETTING_NAME, NULL, NULL);
 	if (!con_setting) {
@@ -4280,7 +4280,7 @@ bond_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BOND_SETTING_NAME, NULL, _("Bond"));
 	if (!con_setting) {
@@ -4391,7 +4391,7 @@ team_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_TEAM_SETTING_NAME, NULL, _("Team"));
 	if (!con_setting) {
@@ -4586,7 +4586,7 @@ bridge_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_BRIDGE_SETTING_NAME, NULL, _("Bridge"));
 	if (!con_setting) {
@@ -4885,7 +4885,7 @@ vlan_connection_from_ifcfg (const char *file,
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_VLAN_SETTING_NAME, NULL, "Vlan");
 	if (!con_setting) {
@@ -4939,7 +4939,7 @@ create_unhandled_connection (const char *filename, shvarFile *ifcfg,
 
 	g_assert (out_spec != NULL);
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Get NAME, UUID, etc. We need to set a connection type (generic) and add
 	 * an empty type-specific setting as well, to make sure it passes

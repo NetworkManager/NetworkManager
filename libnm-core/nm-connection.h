@@ -60,20 +60,15 @@
 
 G_BEGIN_DECLS
 
-#define NM_TYPE_CONNECTION            (nm_connection_get_type ())
-#define NM_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONNECTION, NMConnection))
-#define NM_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_CONNECTION, NMConnectionClass))
-#define NM_IS_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_CONNECTION))
-#define NM_IS_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_CONNECTION))
-#define NM_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CONNECTION, NMConnectionClass))
+#define NM_TYPE_CONNECTION                (nm_connection_get_type ())
+#define NM_CONNECTION(obj)                (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONNECTION, NMConnection))
+#define NM_IS_CONNECTION(obj)             (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_CONNECTION))
+#define NM_CONNECTION_GET_INTERFACE(obj)  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_CONNECTION, NMConnectionClass))
 
 /* Signals */
 #define NM_CONNECTION_SECRETS_UPDATED "secrets-updated"
 #define NM_CONNECTION_SECRETS_CLEARED "secrets-cleared"
 #define NM_CONNECTION_CHANGED         "changed"
-
-/* Properties */
-#define NM_CONNECTION_PATH "path"
 
 /**
  * NMConnectionError:
@@ -115,32 +110,23 @@ GQuark nm_connection_error_quark (void);
 /**
  * NMConnection:
  *
- * The NMConnection struct contains only private data.
- * It should only be accessed through the functions described below.
+ * NMConnection is the interface implemented by #NMRemoteConnection on the
+ * client side, and #NMSettingsConnection on the daemon side.
  */
-typedef struct {
-	GObject parent;
-} NMConnection;
+typedef struct _NMConnection NMConnection;
 
 typedef struct {
-	GObjectClass parent;
+	GTypeInterface parent;
 
 	/* Signals */
-	void (*secrets_updated) (NMConnection *connection, const char * setting);
+	void (*secrets_updated) (NMConnection *connection,
+	                         const char   *setting);
+	void (*secrets_cleared) (NMConnection *connection);
+	void (*changed)         (NMConnection *connection);
 
-	/*< private >*/
-	gpointer padding[8];
-} NMConnectionClass;
+} NMConnectionInterface;
 
 GType nm_connection_get_type (void);
-
-NMConnection *nm_connection_new           (void);
-
-NMConnection *nm_connection_new_from_hash (GHashTable *hash, GError **error);
-
-NMConnection *nm_connection_duplicate     (NMConnection *connection);
-
-NMSetting    *nm_connection_create_setting (const char *name);
 
 void          nm_connection_add_setting   (NMConnection *connection,
                                            NMSetting    *setting);
@@ -210,10 +196,6 @@ GHashTable   *nm_connection_to_hash       (NMConnection *connection,
                                            NMSettingHashFlags flags);
 
 void          nm_connection_dump          (NMConnection *connection);
-
-GType         nm_connection_lookup_setting_type (const char *name);
-
-GType         nm_connection_lookup_setting_type_by_quark (GQuark error_quark);
 
 /* Helpers */
 const char *  nm_connection_get_uuid            (NMConnection *connection);

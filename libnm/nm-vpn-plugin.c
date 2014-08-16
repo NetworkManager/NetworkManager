@@ -28,7 +28,6 @@
 #include "nm-vpn-plugin.h"
 #include "nm-vpn-enum-types.h"
 #include "nm-utils.h"
-#include "nm-connection.h"
 #include "nm-dbus-glib-types.h"
 
 static gboolean impl_vpn_plugin_connect    (NMVpnPlugin *plugin,
@@ -452,7 +451,7 @@ _connect_generic (NMVpnPlugin *plugin,
 		return FALSE;
 	}
 
-	connection = nm_connection_new_from_hash (properties, &local);
+	connection = nm_simple_connection_new_from_hash (properties, &local);
 	if (!connection) {
 		g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
 		             "Invalid connection: (%d) %s",
@@ -526,13 +525,13 @@ impl_vpn_plugin_need_secrets (NMVpnPlugin *plugin,
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN (plugin), FALSE);
 	g_return_val_if_fail (properties != NULL, FALSE);
 
-	connection = nm_connection_new_from_hash (properties, &cnfh_err);
+	connection = nm_simple_connection_new_from_hash (properties, &cnfh_err);
 	if (!connection) {
 		g_set_error (err,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
 		             "The connection was invalid: '%s' / '%s' invalid: %d.",
-		             g_type_name (nm_connection_lookup_setting_type_by_quark (cnfh_err->domain)),
+		             g_type_name (nm_setting_lookup_type_by_quark (cnfh_err->domain)),
 		             cnfh_err->message, cnfh_err->code);
 		g_error_free (cnfh_err);
 		return FALSE;
@@ -581,7 +580,7 @@ impl_vpn_plugin_new_secrets (NMVpnPlugin *plugin,
 		return FALSE;
 	}
 
-	connection = nm_connection_new_from_hash (properties, &local);
+	connection = nm_simple_connection_new_from_hash (properties, &local);
 	if (!connection) {
 		g_set_error (error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
 		             "Invalid connection: (%d) %s",

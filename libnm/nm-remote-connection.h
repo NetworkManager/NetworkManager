@@ -26,10 +26,8 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <glib-object.h>
-#include <dbus/dbus-glib.h>
-
 #include <nm-connection.h>
+#include <nm-object.h>
 
 G_BEGIN_DECLS
 
@@ -55,16 +53,17 @@ typedef enum {
 GQuark nm_remote_connection_error_quark (void);
 
 /* Properties */
-#define NM_REMOTE_CONNECTION_BUS             "bus"
+#define NM_REMOTE_CONNECTION_DBUS_CONNECTION "dbus-connection"
+#define NM_REMOTE_CONNECTION_PATH            "path"
 #define NM_REMOTE_CONNECTION_UNSAVED         "unsaved"
 #define NM_REMOTE_CONNECTION_VISIBLE         "visible"
 
 typedef struct {
-	NMConnection parent;
+	NMObject parent;
 } NMRemoteConnection;
 
 typedef struct {
-	NMConnectionClass parent_class;
+	NMObjectClass parent_class;
 
 	/*< private >*/
 	gpointer padding[8];

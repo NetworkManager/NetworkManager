@@ -76,10 +76,8 @@ global:
 	nm_connection_clear_secrets;
 	nm_connection_clear_secrets_with_flags;
 	nm_connection_compare;
-	nm_connection_create_setting;
 	nm_connection_diff;
 	nm_connection_dump;
-	nm_connection_duplicate;
 	nm_connection_error_get_type;
 	nm_connection_error_quark;
 	nm_connection_for_each_setting_value;
@@ -120,11 +118,7 @@ global:
 	nm_connection_get_virtual_device_description;
 	nm_connection_get_virtual_iface_name;
 	nm_connection_is_type;
-	nm_connection_lookup_setting_type;
-	nm_connection_lookup_setting_type_by_quark;
 	nm_connection_need_secrets;
-	nm_connection_new;
-	nm_connection_new_from_hash;
 	nm_connection_normalize;
 	nm_connection_remove_setting;
 	nm_connection_replace_settings;
@@ -344,7 +338,7 @@ global:
 	nm_object_array_get_type;
 	nm_object_error_get_type;
 	nm_object_error_quark;
-	nm_object_get_connection;
+	nm_object_get_dbus_connection;
 	nm_object_get_path;
 	nm_object_get_type;
 	nm_remote_connection_commit_changes;
@@ -679,6 +673,8 @@ global:
 	nm_setting_ip6_config_remove_dns_search_by_value;
 	nm_setting_ip6_config_remove_route;
 	nm_setting_ip6_config_remove_route_by_value;
+	nm_setting_lookup_type;
+	nm_setting_lookup_type_by_quark;
 	nm_setting_need_secrets;
 	nm_setting_new_from_hash;
 	nm_setting_olpc_mesh_error_get_type;
@@ -868,6 +864,10 @@ global:
 	nm_setting_wireless_security_remove_proto;
 	nm_setting_wireless_security_remove_proto_by_value;
 	nm_setting_wireless_security_set_wep_key;
+	nm_simple_connection_get_type;
+	nm_simple_connection_new;
+	nm_simple_connection_new_clone;
+	nm_simple_connection_new_from_hash;
 	nm_ssid_get_type;
 	nm_state_get_type;
 	nm_string_array_get_type;

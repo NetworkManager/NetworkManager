@@ -62,7 +62,7 @@ add_connection (NMRemoteSettings *settings, GMainLoop *loop, const char *con_nam
 	gboolean success;
 
 	/* Create a new connection object */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Build up the 'connection' Setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();

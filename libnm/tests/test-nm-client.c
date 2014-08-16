@@ -26,11 +26,7 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include "nm-dbus-interface.h"
-#include "nm-client.h"
-#include "nm-device-wifi.h"
-#include "nm-device-ethernet.h"
-#include "nm-device-wimax.h"
+#include <NetworkManager.h>
 #include "nm-glib-compat.h"
 
 #include "common.h"
@@ -52,7 +48,7 @@ test_client_new (void)
 
 	client = g_object_new (NM_TYPE_CLIENT,
 	                       NM_OBJECT_DBUS_CONNECTION, bus,
-	                       NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
+	                       NM_OBJECT_PATH, NM_DBUS_PATH,
 	                       NULL);
 	g_assert (client != NULL);
 

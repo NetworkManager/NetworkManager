@@ -561,7 +561,7 @@ test_write_wired_connection (void)
 	const char *route6_4_nh = "::";
 	guint64 timestamp = 0x12345678L;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 
@@ -799,7 +799,7 @@ test_write_ip6_wired_connection (void)
 	const char *address = "abcd::beef";
 	const char *gw = "dcba::beef";
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 
@@ -1177,7 +1177,7 @@ test_write_wireless_connection (void)
 	uid_t owner_uid;
 	guint64 timestamp = 0x12344433L;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 
@@ -1314,7 +1314,7 @@ test_write_string_ssid (void)
 	uid_t owner_uid;
 	GKeyFile *keyfile;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 
@@ -1438,7 +1438,7 @@ test_write_intlist_ssid (void)
 	gint *intlist;
 	gsize len = 0, i;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -1594,7 +1594,7 @@ test_write_intlike_ssid (void)
 	GKeyFile *keyfile;
 	char *tmp;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -1682,7 +1682,7 @@ test_write_intlike_ssid_2 (void)
 	GKeyFile *keyfile;
 	char *tmp;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -1929,7 +1929,7 @@ test_write_bt_dun_connection (void)
 	uid_t owner_uid;
 	guint64 timestamp = 0x12344433L;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 
@@ -2175,7 +2175,7 @@ test_write_gsm_connection (void)
 	uid_t owner_uid;
 	guint64 timestamp = 0x12344433L;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 
@@ -2508,7 +2508,7 @@ create_wired_tls_connection (NMSetting8021xCKScheme scheme)
 	gboolean success;
 	GError *error = NULL;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection != NULL);
 
 	/* Connection setting */
@@ -2819,7 +2819,7 @@ test_write_infiniband_connection (void)
 	pid_t owner_grp;
 	uid_t owner_uid;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -2947,7 +2947,7 @@ test_write_bridge_main (void)
 	pid_t owner_grp;
 	uid_t owner_uid;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -3079,7 +3079,7 @@ test_write_bridge_component (void)
 	pid_t owner_grp;
 	uid_t owner_uid;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -3190,7 +3190,7 @@ test_write_new_wired_group_name (void)
 	char *s;
 	gint mtu;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	g_assert (connection);
 
 	/* Connection setting */
@@ -3306,7 +3306,7 @@ test_write_new_wireless_group_names (void)
 	GKeyFile *kf;
 	char *s;
 
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Connection setting */
 

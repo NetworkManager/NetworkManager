@@ -3395,7 +3395,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	 * specific data being in the connection till then (especially in
 	 * validate_activation_request()).
 	 */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 	if (settings && g_hash_table_size (settings))
 		nm_connection_replace_settings (connection, settings, NULL);
 

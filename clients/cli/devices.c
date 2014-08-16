@@ -2256,7 +2256,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	/* If there are some connection data from user, create a connection and
 	 * fill them into proper settings. */
 	if (con_name || private || bssid2_arr || password)
-		connection = nm_connection_new ();
+		connection = nm_simple_connection_new ();
 
 	if (con_name || private) {
 		s_con =  (NMSettingConnection *) nm_setting_connection_new ();
@@ -2291,7 +2291,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 
 		if (password) {
 			if (!connection)
-				connection = nm_connection_new ();
+				connection = nm_simple_connection_new ();
 			s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
 			nm_connection_add_setting (connection, NM_SETTING (s_wsec));
 

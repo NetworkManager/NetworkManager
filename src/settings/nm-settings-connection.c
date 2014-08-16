@@ -68,7 +68,11 @@ static void impl_settings_connection_get_secrets (NMSettingsConnection *connecti
 
 #include "nm-settings-connection-glue.h"
 
-G_DEFINE_TYPE (NMSettingsConnection, nm_settings_connection, NM_TYPE_CONNECTION)
+static void nm_settings_connection_connection_interface_init (NMConnectionInterface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (NMSettingsConnection, nm_settings_connection, G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION, nm_settings_connection_connection_interface_init)
+                         )
 
 #define NM_SETTINGS_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                                NM_TYPE_SETTINGS_CONNECTION, \
@@ -355,7 +359,7 @@ update_system_secrets_cache (NMSettingsConnection *self)
 
 	if (priv->system_secrets)
 		g_object_unref (priv->system_secrets);
-	priv->system_secrets = nm_connection_duplicate (NM_CONNECTION (self));
+	priv->system_secrets = nm_simple_connection_new_clone (NM_CONNECTION (self));
 
 	/* Clear out non-system-owned and not-saved secrets */
 	nm_connection_clear_secrets_with_flags (priv->system_secrets,
@@ -371,7 +375,7 @@ update_agent_secrets_cache (NMSettingsConnection *self, NMConnection *new)
 
 	if (priv->agent_secrets)
 		g_object_unref (priv->agent_secrets);
-	priv->agent_secrets = nm_connection_duplicate (new ? new : NM_CONNECTION (self));
+	priv->agent_secrets = nm_simple_connection_new_clone (new ? new : NM_CONNECTION (self));
 
 	/* Clear out non-system-owned secrets */
 	nm_connection_clear_secrets_with_flags (priv->agent_secrets,
@@ -634,7 +638,7 @@ do_delete (NMSettingsConnection *connection,
 	set_visible (connection, FALSE);
 
 	/* Tell agents to remove secrets for this connection */
-	for_agents = nm_connection_duplicate (NM_CONNECTION (connection));
+	for_agents = nm_simple_connection_new_clone (NM_CONNECTION (connection));
 	nm_connection_clear_secrets (for_agents);
 	nm_agent_manager_delete_secrets (priv->agent_mgr, for_agents);
 	g_object_unref (for_agents);
@@ -1137,7 +1141,7 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		guint64 timestamp = 0;
 		GSList *bssid_list;
 
-		dupl_con = nm_connection_duplicate (NM_CONNECTION (self));
+		dupl_con = nm_simple_connection_new_clone (NM_CONNECTION (self));
 		g_assert (dupl_con);
 
 		/* Timestamp is not updated in connection's 'timestamp' property,
@@ -1242,7 +1246,7 @@ con_update_cb (NMSettingsConnection *self,
 		 * as agent-owned secrets are the only ones we send back be saved.
 		 * Only send secrets to agents of the same UID that called update too.
 		 */
-		for_agent = nm_connection_duplicate (NM_CONNECTION (self));
+		for_agent = nm_simple_connection_new_clone (NM_CONNECTION (self));
 		nm_connection_clear_secrets_with_flags (for_agent,
 		                                        secrets_filter_cb,
 		                                        GUINT_TO_POINTER (NM_SETTING_SECRET_FLAG_AGENT_OWNED));
@@ -1341,7 +1345,7 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
 
 	/* Check if the settings are valid first */
 	if (new_settings) {
-		tmp = nm_connection_new_from_hash (new_settings, &error);
+		tmp = nm_simple_connection_new_from_hash (new_settings, &error);
 		if (!tmp) {
 			g_assert (error);
 			goto error;
@@ -2174,3 +2178,9 @@ nm_settings_connection_class_init (NMSettingsConnectionClass *class)
 	                                        G_TYPE_FROM_CLASS (class),
 	                                        &dbus_glib_nm_settings_connection_object_info);
 }
+
+static void
+nm_settings_connection_connection_interface_init (NMConnectionInterface *iface)
+{
+}
+

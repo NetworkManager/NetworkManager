@@ -481,7 +481,7 @@ test17_read_static_ipv4 (const char *path)
 
 	init_ifparser_with_file (path, file);
 	block = ifparser_getfirst ();
-	connection = nm_connection_new();
+	connection = nm_simple_connection_new();
 	ifupdown_update_connection_from_if_block(connection, block, &error);
 
 	ASSERT (connection != NULL,
@@ -659,7 +659,7 @@ test18_read_static_ipv6 (const char *path)
 
 	init_ifparser_with_file (path, file);
 	block = ifparser_getfirst ();
-	connection = nm_connection_new();
+	connection = nm_simple_connection_new();
 	ifupdown_update_connection_from_if_block(connection, block, &error);
 
 	ASSERT (connection != NULL,
@@ -853,7 +853,7 @@ test19_read_static_ipv4_plen (const char *path)
 
 	init_ifparser_with_file (path, file);
 	block = ifparser_getfirst ();
-	connection = nm_connection_new();
+	connection = nm_simple_connection_new();
 	ifupdown_update_connection_from_if_block(connection, block, &error);
 
 	ASSERT (connection != NULL,

@@ -33,22 +33,20 @@
 #include "nm-glib-compat.h"
 #include "nm-dbus-helpers-private.h"
 
-#define NM_REMOTE_CONNECTION_DBUS_CONNECTION "dbus-connection"
-#define NM_REMOTE_CONNECTION_DBUS_PATH "dbus-path"
-
+static void nm_remote_connection_connection_iface_init (NMConnectionInterface *iface);
 static void nm_remote_connection_initable_iface_init (GInitableIface *iface);
 static void nm_remote_connection_async_initable_iface_init (GAsyncInitableIface *iface);
+static GInitableIface *nm_remote_connection_parent_initable_iface;
+static GAsyncInitableIface *nm_remote_connection_parent_async_initable_iface;
 
-G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, NM_TYPE_CONNECTION,
+G_DEFINE_TYPE_WITH_CODE (NMRemoteConnection, nm_remote_connection, NM_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (NM_TYPE_CONNECTION, nm_remote_connection_connection_iface_init);
                          G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_remote_connection_initable_iface_init);
                          G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_remote_connection_async_initable_iface_init);
                          )
 
 enum {
 	PROP_0,
-	PROP_BUS,
-	PROP_DBUS_CONNECTION,
-	PROP_DBUS_PATH,
 	PROP_UNSAVED,
 	PROP_VISIBLE,
 
@@ -68,9 +66,7 @@ struct RemoteCall {
 };
 
 typedef struct {
-	DBusGConnection *bus;
 	DBusGProxy *proxy;
-	DBusGProxy *props_proxy;
 	gboolean proxy_is_destroyed;
 	GSList *calls;
 
@@ -498,63 +494,33 @@ updated_cb (DBusGProxy *proxy, gpointer user_data)
 	}
 }
 
-static void
-properties_changed_cb (DBusGProxy *proxy,
-                       GHashTable *properties,
-                       gpointer user_data)
-{
-	NMRemoteConnection *self = NM_REMOTE_CONNECTION (user_data);
-	GHashTableIter iter;
-	const char *key;
-	GValue *value;
-
-	g_hash_table_iter_init (&iter, properties);
-	while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &value)) {
-		if (!strcmp (key, "Unsaved")) {
-			NM_REMOTE_CONNECTION_GET_PRIVATE (self)->unsaved = g_value_get_boolean (value);
-			g_object_notify (G_OBJECT (self), NM_REMOTE_CONNECTION_UNSAVED);
-		}
-	}
-}
-
 /****************************************************************/
 
 static void
-init_common (NMRemoteConnection *self)
+init_dbus (NMObject *object)
 {
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
+	const NMPropertiesInfo property_info[] = {
+		{ NM_REMOTE_CONNECTION_UNSAVED, &priv->unsaved },
+		{ NULL },
+	};
 
-	g_assert (priv->bus);
-	g_assert (nm_connection_get_path (NM_CONNECTION (self)));
+	NM_OBJECT_CLASS (nm_remote_connection_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
-	                                                 nm_connection_get_path (NM_CONNECTION (self)),
+	priv->proxy = _nm_dbus_new_proxy_for_connection (nm_object_get_dbus_connection (object),
+	                                                 nm_connection_get_path (NM_CONNECTION (object)),
 	                                                 NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
 	g_assert (priv->proxy);
 	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 
+	_nm_object_register_properties (object,
+	                                priv->proxy,
+	                                property_info);
+
 	dbus_g_proxy_add_signal (priv->proxy, "Updated", G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "Updated", G_CALLBACK (updated_cb), self, NULL);
+	dbus_g_proxy_connect_signal (priv->proxy, "Updated", G_CALLBACK (updated_cb), object, NULL);
 
-	g_signal_connect (priv->proxy, "destroy", G_CALLBACK (proxy_destroy_cb), self);
-
-	/* Monitor properties */
-	dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
-	                                   G_TYPE_NONE,
-	                                   DBUS_TYPE_G_MAP_OF_VARIANT,
-	                                   G_TYPE_INVALID);
-	dbus_g_proxy_add_signal (priv->proxy, "PropertiesChanged",
-	                         DBUS_TYPE_G_MAP_OF_VARIANT,
-	                         G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "PropertiesChanged",
-	                             G_CALLBACK (properties_changed_cb),
-	                             self,
-	                             NULL);
-
-	priv->props_proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
-	                                                       nm_connection_get_path (NM_CONNECTION (self)),
-	                                                       DBUS_INTERFACE_PROPERTIES);
-	g_assert (priv->props_proxy);
+	g_signal_connect (priv->proxy, "destroy", G_CALLBACK (proxy_destroy_cb), object);
 }
 
 static gboolean
@@ -564,7 +530,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (initable);
 	GHashTable *hash;
 
-	init_common (self);
+	if (!nm_remote_connection_parent_initable_iface->init (initable, cancellable, error))
+		return FALSE;
 
 	if (!dbus_g_proxy_call (priv->proxy, "GetSettings", error,
 	                        G_TYPE_INVALID,
@@ -573,17 +540,6 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		return FALSE;
 	priv->visible = TRUE;
 	replace_settings (self, hash);
-	g_hash_table_destroy (hash);
-
-	/* Get properties */
-	hash = NULL;
-	if (!dbus_g_proxy_call (priv->props_proxy, "GetAll", error,
-	                        G_TYPE_STRING, NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
-	                        G_TYPE_INVALID,
-	                        DBUS_TYPE_G_MAP_OF_VARIANT, &hash,
-	                        G_TYPE_INVALID))
-		return FALSE;
-	properties_changed_cb (priv->props_proxy, hash, self);
 	g_hash_table_destroy (hash);
 
 	return TRUE;
@@ -608,23 +564,6 @@ init_async_complete (NMRemoteConnectionInitData *init_data, GError *error)
 }
 
 static void
-init_async_got_properties (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
-{
-	NMRemoteConnectionInitData *init_data = user_data;
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (init_data->connection);
-	GHashTable *props;
-	GError *error = NULL;
-
-	if (dbus_g_proxy_end_call (proxy, call, &error,
-	                           DBUS_TYPE_G_MAP_OF_VARIANT, &props,
-	                           G_TYPE_INVALID)) {
-		properties_changed_cb (priv->props_proxy, props, init_data->connection);
-		g_hash_table_destroy (props);
-	}
-	init_async_complete (init_data, error);
-}
-
-static void
 init_get_settings_cb (DBusGProxy *proxy,
                       DBusGProxyCall *call,
                       gpointer user_data)
@@ -646,10 +585,23 @@ init_get_settings_cb (DBusGProxy *proxy,
 	replace_settings (init_data->connection, settings);
 	g_hash_table_destroy (settings);
 
-	/* Grab properties */
-	dbus_g_proxy_begin_call (priv->props_proxy, "GetAll",
-	                         init_async_got_properties, init_data, NULL,
-	                         G_TYPE_STRING, NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
+	init_async_complete (init_data, NULL);
+}
+
+static void
+init_async_parent_inited (GObject *source, GAsyncResult *result, gpointer user_data)
+{
+	NMRemoteConnectionInitData *init_data = user_data;
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (init_data->connection);
+	GError *error = NULL;
+
+	if (!nm_remote_connection_parent_async_initable_iface->init_finish (G_ASYNC_INITABLE (source), result, &error)) {
+		init_async_complete (init_data, error);
+		return;
+	}
+
+	dbus_g_proxy_begin_call (priv->proxy, "GetSettings",
+	                         init_get_settings_cb, init_data, NULL,
 	                         G_TYPE_INVALID);
 }
 
@@ -659,18 +611,14 @@ init_async (GAsyncInitable *initable, int io_priority,
             gpointer user_data)
 {
 	NMRemoteConnectionInitData *init_data;
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (initable);
 
 	init_data = g_slice_new0 (NMRemoteConnectionInitData);
 	init_data->connection = NM_REMOTE_CONNECTION (initable);
 	init_data->result = g_simple_async_result_new (G_OBJECT (initable), callback,
 	                                               user_data, init_async);
 
-	init_common (init_data->connection);
-
-	dbus_g_proxy_begin_call (priv->proxy, "GetSettings",
-	                         init_get_settings_cb, init_data, NULL,
-	                         G_TYPE_INVALID);
+	nm_remote_connection_parent_async_initable_iface->
+		init_async (initable, io_priority, cancellable, init_async_parent_inited, init_data);
 }
 
 static gboolean
@@ -687,43 +635,6 @@ init_finish (GAsyncInitable *initable, GAsyncResult *result, GError **error)
 static void
 nm_remote_connection_init (NMRemoteConnection *self)
 {
-}
-
-static GObject *
-constructor (GType type, guint n_construct_properties,
-             GObjectConstructParam *construct_properties)
-{
-	static GParamSpec *nm_connection_path = NULL;
-	static GParamSpec *nm_remote_connection_dbus_path = NULL;
-	int i, path_index = -1, dbus_path_index = -1;
-
-	if (!nm_connection_path) {
-		nm_connection_path =
-			g_object_class_find_property (g_type_class_peek (NM_TYPE_CONNECTION),
-			                              NM_CONNECTION_PATH);
-		nm_remote_connection_dbus_path =
-			g_object_class_find_property (g_type_class_peek (NM_TYPE_REMOTE_CONNECTION),
-			                              NM_REMOTE_CONNECTION_DBUS_PATH);
-	}
-
-	/* Find the two properties */
-	for (i = 0; i < n_construct_properties; i++) {
-		if (construct_properties[i].pspec == nm_connection_path)
-			path_index = i;
-		else if (construct_properties[i].pspec == nm_remote_connection_dbus_path)
-			dbus_path_index = i;
-	}
-	g_assert (path_index != -1 && dbus_path_index != -1);
-
-	/* If NMRemoteConnection:dbus-path is set, and NMConnection:path
-	 * is not, then copy the value of the former to the latter.
-	 */
-	if (g_value_get_string (construct_properties[dbus_path_index].value) &&
-	    !g_value_get_string (construct_properties[path_index].value))
-		construct_properties[path_index].value = construct_properties[dbus_path_index].value;
-
-	return G_OBJECT_CLASS (nm_remote_connection_parent_class)->
-		constructor (type, n_construct_properties, construct_properties);
 }
 
 static void
@@ -744,32 +655,10 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
+constructed (GObject *object)
 {
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_BUS:
-	case PROP_DBUS_CONNECTION:
-		/* Construct only */
-		/* priv->bus is set from either of two properties so that it (a) remains
-		 * backwards compatible with the previous "bus" property, and that (b)
-		 * it can be created just like an NMObject using the "dbus-connection",
-		 * even though it's not a subclass of NMObject.  So don't overwrite the
-		 * a valid value that the other property set with NULL, if one of the
-		 * properties isn't specified at construction time.
-		 */
-		if (!priv->bus)
-			priv->bus = g_value_dup_boxed (value);
-		break;
-	case PROP_DBUS_PATH:
-		/* Don't need to do anything; see constructor(). */
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	nm_connection_set_path (NM_CONNECTION (object),
+	                        nm_object_get_path (NM_OBJECT (object)));
 }
 
 static void
@@ -784,12 +673,6 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_func (priv->proxy, proxy_destroy_cb, object);
 		g_clear_object (&priv->proxy);
 	}
-	g_clear_object (&priv->props_proxy);
-
-	if (priv->bus) {
-		dbus_g_connection_unref (priv->bus);
-		priv->bus = NULL;
-	}
 
 	G_OBJECT_CLASS (nm_remote_connection_parent_class)->dispose (object);
 }
@@ -798,45 +681,18 @@ static void
 nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (remote_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (remote_class);
 
 	g_type_class_add_private (object_class, sizeof (NMRemoteConnectionPrivate));
 
 	/* virtual methods */
-	object_class->constructor = constructor;
+	object_class->constructed = constructed;
 	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
+	nm_object_class->init_dbus = init_dbus;
+
 	/* Properties */
-	/**
-	 * NMRemoteConnection:bus:
-	 *
-	 * The #DBusGConnection that the #NMRemoteConnection is connected to.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_BUS,
-		 g_param_spec_boxed (NM_REMOTE_CONNECTION_BUS, "", "",
-		                     DBUS_TYPE_G_CONNECTION,
-		                     G_PARAM_WRITABLE |
-		                     G_PARAM_CONSTRUCT_ONLY |
-		                     G_PARAM_STATIC_STRINGS));
-
-	/* These are needed so _nm_object_create() can create NMRemoteConnections */
-	g_object_class_install_property
-		(object_class, PROP_DBUS_CONNECTION,
-		 g_param_spec_boxed (NM_REMOTE_CONNECTION_DBUS_CONNECTION, "", "",
-		                     DBUS_TYPE_G_CONNECTION,
-		                     G_PARAM_WRITABLE |
-		                     G_PARAM_CONSTRUCT_ONLY |
-		                     G_PARAM_STATIC_STRINGS));
-	g_object_class_install_property
-		(object_class, PROP_DBUS_PATH,
-		 g_param_spec_string (NM_REMOTE_CONNECTION_DBUS_PATH, "", "",
-		                      NULL,
-		                      G_PARAM_WRITABLE |
-		                      G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-
 	/**
 	 * NMRemoteConnection:unsaved:
 	 *
@@ -870,14 +726,23 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 }
 
 static void
+nm_remote_connection_connection_iface_init (NMConnectionInterface *iface)
+{
+}
+
+static void
 nm_remote_connection_initable_iface_init (GInitableIface *iface)
 {
+	nm_remote_connection_parent_initable_iface = g_type_interface_peek_parent (iface);
+
 	iface->init = init_sync;
 }
 
 static void
 nm_remote_connection_async_initable_iface_init (GAsyncInitableIface *iface)
 {
+	nm_remote_connection_parent_async_initable_iface = g_type_interface_peek_parent (iface);
+
 	iface->init_async = init_async;
 	iface->init_finish = init_finish;
 }

@@ -83,7 +83,7 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_DBUS_CONNECTION,
-	PROP_DBUS_PATH,
+	PROP_PATH,
 	PROP_NM_RUNNING,
 
 	LAST_PROP
@@ -357,7 +357,7 @@ set_property (GObject *object, guint prop_id,
 		/* Construct only */
 		priv->connection = g_value_dup_boxed (value);
 		break;
-	case PROP_DBUS_PATH:
+	case PROP_PATH:
 		/* Construct only */
 		priv->path = g_value_dup_string (value);
 		break;
@@ -377,7 +377,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DBUS_CONNECTION:
 		g_value_set_boxed (value, priv->connection);
 		break;
-	case PROP_DBUS_PATH:
+	case PROP_PATH:
 		g_value_set_string (value, priv->path);
 		break;
 	case PROP_NM_RUNNING:
@@ -422,11 +422,11 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	/**
 	 * NMObject:path:
 	 *
-	 * The DBus object path.
+	 * The D-Bus object path.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_DBUS_PATH,
-		 g_param_spec_string (NM_OBJECT_DBUS_PATH, "", "",
+		(object_class, PROP_PATH,
+		 g_param_spec_string (NM_OBJECT_PATH, "", "",
 		                      NULL,
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_CONSTRUCT_ONLY |
@@ -481,7 +481,7 @@ nm_object_async_initable_iface_init (GAsyncInitableIface *iface)
 }
 
 /**
- * nm_object_get_connection:
+ * nm_object_get_dbus_connection:
  * @object: a #NMObject
  *
  * Gets the #NMObject's DBusGConnection.
@@ -489,7 +489,7 @@ nm_object_async_initable_iface_init (GAsyncInitableIface *iface)
  * Returns: (transfer none): the connection
  **/
 DBusGConnection *
-nm_object_get_connection (NMObject *object)
+nm_object_get_dbus_connection (NMObject *object)
 {
 	g_return_val_if_fail (NM_IS_OBJECT (object), NULL);
 
@@ -596,7 +596,7 @@ _nm_object_create (GType type, DBusGConnection *connection, const char *path)
 
 	object = g_object_new (type,
 	                       NM_OBJECT_DBUS_CONNECTION, connection,
-	                       NM_OBJECT_DBUS_PATH, path,
+	                       NM_OBJECT_PATH, path,
 	                       NULL);
 	if (NM_IS_OBJECT (object))
 		_nm_object_cache_add (NM_OBJECT (object));
@@ -625,17 +625,6 @@ create_async_complete (GObject *object, NMObjectTypeAsyncData *async_data)
 	g_slice_free (NMObjectTypeAsyncData, async_data);
 }
 
-static const char *
-nm_object_or_connection_get_path (gpointer instance)
-{
-	if (NM_IS_OBJECT (instance))
-		return nm_object_get_path (instance);
-	else if (NM_IS_CONNECTION (instance))
-		return nm_connection_get_path (instance);
-
-	g_assert_not_reached ();
-}
-
 static void
 async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 {
@@ -644,7 +633,7 @@ async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error)) {
 		dbgmsg ("Could not create object for %s: %s",
-		        nm_object_or_connection_get_path (object),
+		        nm_object_get_path (NM_OBJECT (object)),
 		        error->message);
 		g_error_free (error);
 		object = NULL;
@@ -678,7 +667,7 @@ async_got_type (GType type, gpointer user_data)
 
 	object = g_object_new (type,
 	                       NM_OBJECT_DBUS_CONNECTION, async_data->connection,
-	                       NM_OBJECT_DBUS_PATH, async_data->path,
+	                       NM_OBJECT_PATH, async_data->path,
 	                       NULL);
 	if (NM_IS_OBJECT (object))
 		_nm_object_cache_add (NM_OBJECT (object));

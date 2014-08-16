@@ -199,7 +199,7 @@ update_connection_settings_commit_cb (NMSettingsConnection *orig, GError *error,
 	if (error) {
 		nm_log_warn (LOGD_SETTINGS, "%s: '%s' / '%s' invalid: %d",
 		             __func__,
-		             error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
+		             error ? g_type_name (nm_setting_lookup_type_by_quark (error->domain)) : "(none)",
 		             (error && error->message) ? error->message : "(none)",
 		             error ? error->code : -1);
 		g_clear_error (&error);

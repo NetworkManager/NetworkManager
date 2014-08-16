@@ -1539,7 +1539,7 @@ nmc_setting_new_for_name (const char *name)
 	NMSetting *setting = NULL;
 
 	if (name) {
-		stype = nm_connection_lookup_setting_type (name);
+		stype = nm_setting_lookup_type (name);
 		if (stype != G_TYPE_INVALID) {
 			setting = g_object_new (stype, NULL);
 			g_warn_if_fail (NM_IS_SETTING (setting));
@@ -7225,7 +7225,7 @@ setting_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
 
 	while (iter->sname) {
-		if (nm_connection_lookup_setting_type (iter->sname) == G_OBJECT_TYPE (setting))
+		if (nm_setting_lookup_type (iter->sname) == G_OBJECT_TYPE (setting))
 			return iter->func (setting, nmc, one_prop);
 		iter++;
 	}

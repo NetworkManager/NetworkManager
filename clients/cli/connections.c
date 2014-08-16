@@ -5252,7 +5252,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 	}
 
 	/* Create a new connection object */
-	connection = nm_connection_new ();
+	connection = nm_simple_connection_new ();
 
 	/* Build up the 'connection' setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
@@ -7889,7 +7889,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		/* Duplicate the connection and use that so that we need not
 		 * differentiate existing vs. new later
 		 */
-		connection = nm_connection_duplicate (found_con);
+		connection = nm_simple_connection_new_clone (found_con);
 
 		s_con = nm_connection_get_setting_connection (connection);
 		g_assert (s_con);
@@ -7926,7 +7926,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		g_free (tmp_str);
 
 		/* Create a new connection object */
-		connection = nm_connection_new ();
+		connection = nm_simple_connection_new ();
 
 		/* Build up the 'connection' setting */
 		s_con = (NMSettingConnection *) nm_setting_connection_new ();
