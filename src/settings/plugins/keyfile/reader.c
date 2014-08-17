@@ -1163,7 +1163,7 @@ read_one_setting_value (NMSetting *setting,
 static NMSetting *
 read_setting (GKeyFile *file, const char *keyfile_path, const char *group)
 {
-	NMSetting *setting;
+	NMSetting *setting = NULL;
 	ReadInfo info = { file, keyfile_path };
 	const char *alias;
 	GType type;
