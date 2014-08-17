@@ -70,6 +70,46 @@ G_DEFINE_TYPE (NMConfig, nm_config, G_TYPE_OBJECT)
 
 /************************************************************************/
 
+static gboolean
+_parse_bool_str (const char *str, gboolean *out_value)
+{
+	gboolean value;
+	gsize len;
+	char *s = NULL;
+
+	g_return_val_if_fail (str, FALSE);
+
+	while (g_ascii_isspace (*str))
+		str++;
+
+	if (!*str)
+		return FALSE;
+
+	len = strlen (str);
+
+	if (g_ascii_isspace (str[len-1])) {
+		str = s = g_strdup (str);
+		g_strchomp (s);
+	}
+
+	if (!g_ascii_strcasecmp (str, "true") || !g_ascii_strcasecmp (str, "yes") || !g_ascii_strcasecmp (str, "on") || !g_ascii_strcasecmp (str, "1"))
+		value = TRUE;
+	else if (!g_ascii_strcasecmp (str, "false") || !g_ascii_strcasecmp (str, "no") || !g_ascii_strcasecmp (str, "off") || !g_ascii_strcasecmp (str, "0"))
+		value = FALSE;
+	else {
+		g_free (s);
+		return FALSE;
+	}
+
+	if (out_value)
+		*out_value = value;
+
+	g_free (s);
+	return TRUE;
+}
+
+/************************************************************************/
+
 const char *
 nm_config_get_path (NMConfig *config)
 {
@@ -533,18 +573,12 @@ nm_config_new (GError **error)
 	priv->plugins = g_key_file_get_string_list (priv->keyfile, "main", "plugins", NULL, NULL);
 
 	value = g_key_file_get_value (priv->keyfile, "main", "monitor-connection-files", NULL);
+	priv->monitor_connection_files = FALSE;
 	if (value) {
-		if (!strcmp (value, "true") || !strcmp (value, "yes") || !strcmp (value, "on"))
-			priv->monitor_connection_files = TRUE;
-		else if (!strcmp (value, "false") || !strcmp (value, "no") || !strcmp (value, "off"))
-			priv->monitor_connection_files = FALSE;
-		else {
+		if (!_parse_bool_str (value, &priv->monitor_connection_files))
 			nm_log_warn (LOGD_CORE, "Unrecognized value for main.monitor-connection-files: %s. Assuming 'false'", value);
-			priv->monitor_connection_files = FALSE;
-		}
 		g_free (value);
-	} else
-		priv->monitor_connection_files = FALSE;
+	}
 
 	priv->dhcp_client = g_key_file_get_value (priv->keyfile, "main", "dhcp", NULL);
 	priv->dns_mode = g_key_file_get_value (priv->keyfile, "main", "dns", NULL);
