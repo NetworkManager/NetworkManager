@@ -1837,11 +1837,29 @@ test_setting_compare_id (void)
 	g_assert (success);
 }
 
-static void
-test_setting_compare_secrets (NMSettingSecretFlags secret_flags,
-                              NMSettingCompareFlags comp_flags,
-                              gboolean remove_secret)
+typedef struct {
+	NMSettingSecretFlags secret_flags;
+	NMSettingCompareFlags comp_flags;
+	gboolean remove_secret;
+} TestDataCompareSecrets;
+
+static TestDataCompareSecrets *
+test_data_compare_secrets_new (NMSettingSecretFlags secret_flags,
+                               NMSettingCompareFlags comp_flags,
+                               gboolean remove_secret)
 {
+	TestDataCompareSecrets *data = g_new0 (TestDataCompareSecrets, 1);
+
+	data->secret_flags = secret_flags;
+	data->comp_flags = comp_flags;
+	data->remove_secret = remove_secret;
+	return data;
+}
+
+static void
+test_setting_compare_secrets (gconstpointer test_data)
+{
+	const TestDataCompareSecrets *data = test_data;
 	NMSetting *old, *new;
 	gboolean success;
 
@@ -1854,26 +1872,25 @@ test_setting_compare_secrets (NMSettingSecretFlags secret_flags,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
 	              NM_SETTING_WIRELESS_SECURITY_PSK, "really cool psk",
 	              NULL);
-	nm_setting_set_secret_flags (old, NM_SETTING_WIRELESS_SECURITY_PSK, secret_flags, NULL);
+	nm_setting_set_secret_flags (old, NM_SETTING_WIRELESS_SECURITY_PSK, data->secret_flags, NULL);
 
 	/* Clear the PSK from the duplicated setting */
 	new = nm_setting_duplicate (old);
-	if (remove_secret) {
+	if (data->remove_secret) {
 		g_object_set (new, NM_SETTING_WIRELESS_SECURITY_PSK, NULL, NULL);
 
 		success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
 		g_assert (success == FALSE);
 	}
 
-	success = nm_setting_compare (old, new, comp_flags);
+	success = nm_setting_compare (old, new, data->comp_flags);
 	g_assert (success);
 }
 
 static void
-test_setting_compare_vpn_secrets (NMSettingSecretFlags secret_flags,
-                                  NMSettingCompareFlags comp_flags,
-                                  gboolean remove_secret)
+test_setting_compare_vpn_secrets (gconstpointer test_data)
 {
+	const TestDataCompareSecrets *data = test_data;
 	NMSetting *old, *new;
 	gboolean success;
 
@@ -1886,11 +1903,11 @@ test_setting_compare_vpn_secrets (NMSettingSecretFlags secret_flags,
 	nm_setting_vpn_add_secret (NM_SETTING_VPN (old), "asdfasdfasdf", "really adfasdfasdfasdf");
 	nm_setting_vpn_add_secret (NM_SETTING_VPN (old), "0123456778", "abcdefghijklmnpqrstuvqxyz");
 	nm_setting_vpn_add_secret (NM_SETTING_VPN (old), "borkbork", "yet another really secret password");
-	nm_setting_set_secret_flags (old, "borkbork", secret_flags, NULL);
+	nm_setting_set_secret_flags (old, "borkbork", data->secret_flags, NULL);
 
 	/* Clear "borkbork" from the duplicated setting */
 	new = nm_setting_duplicate (old);
-	if (remove_secret) {
+	if (data->remove_secret) {
 		nm_setting_vpn_remove_secret (NM_SETTING_VPN (new), "borkbork");
 
 		/* First make sure they are different */
@@ -1898,7 +1915,7 @@ test_setting_compare_vpn_secrets (NMSettingSecretFlags secret_flags,
 		g_assert (success == FALSE);
 	}
 
-	success = nm_setting_compare (old, new, comp_flags);
+	success = nm_setting_compare (old, new, data->comp_flags);
 	g_assert (success);
 }
 
@@ -3046,86 +3063,85 @@ NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
-	char *base;
-
 	nmtst_init (&argc, &argv, TRUE);
 
 	/* The tests */
-	test_setting_vpn_items ();
-	test_setting_vpn_update_secrets ();
-	test_setting_vpn_modify_during_foreach ();
-	test_setting_ip4_config_labels ();
-	test_setting_ip6_config_old_address_array ();
-	test_setting_gsm_apn_spaces ();
-	test_setting_gsm_apn_bad_chars ();
-	test_setting_gsm_apn_underscore ();
-	test_setting_gsm_without_number ();
-	test_setting_to_hash_all ();
-	test_setting_to_hash_no_secrets ();
-	test_setting_to_hash_only_secrets ();
-	test_setting_compare_id ();
-	test_setting_compare_secrets (NM_SETTING_SECRET_FLAG_AGENT_OWNED, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS, TRUE);
-	test_setting_compare_secrets (NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
-	test_setting_compare_secrets (NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
-	test_setting_compare_secrets (NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
-	test_setting_compare_vpn_secrets (NM_SETTING_SECRET_FLAG_AGENT_OWNED, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS, TRUE);
-	test_setting_compare_vpn_secrets (NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
-	test_setting_compare_vpn_secrets (NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
-	test_setting_compare_vpn_secrets (NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
-	test_setting_old_uuid ();
+	g_test_add_func ("/core/general/test_setting_vpn_items", test_setting_vpn_items);
+	g_test_add_func ("/core/general/test_setting_vpn_update_secrets", test_setting_vpn_update_secrets);
+	g_test_add_func ("/core/general/test_setting_vpn_modify_during_foreach", test_setting_vpn_modify_during_foreach);
+	g_test_add_func ("/core/general/test_setting_ip4_config_labels", test_setting_ip4_config_labels);
+	g_test_add_func ("/core/general/test_setting_ip6_config_old_address_array", test_setting_ip6_config_old_address_array);
+	g_test_add_func ("/core/general/test_setting_gsm_apn_spaces", test_setting_gsm_apn_spaces);
+	g_test_add_func ("/core/general/test_setting_gsm_apn_bad_chars", test_setting_gsm_apn_bad_chars);
+	g_test_add_func ("/core/general/test_setting_gsm_apn_underscore", test_setting_gsm_apn_underscore);
+	g_test_add_func ("/core/general/test_setting_gsm_without_number", test_setting_gsm_without_number);
+	g_test_add_func ("/core/general/test_setting_to_hash_all", test_setting_to_hash_all);
+	g_test_add_func ("/core/general/test_setting_to_hash_no_secrets", test_setting_to_hash_no_secrets);
+	g_test_add_func ("/core/general/test_setting_to_hash_only_secrets", test_setting_to_hash_only_secrets);
+	g_test_add_func ("/core/general/test_setting_compare_id", test_setting_compare_id);
+#define ADD_FUNC(func, secret_flags, comp_flags, remove_secret) \
+	g_test_add_data_func_full ("/core/general/" G_STRINGIFY (func), \
+	                           test_data_compare_secrets_new (secret_flags, comp_flags, remove_secret), \
+	                           func, g_free)
+	ADD_FUNC (test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_AGENT_OWNED, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS, TRUE);
+	ADD_FUNC (test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
+	ADD_FUNC (test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
+	ADD_FUNC (test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
+	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_AGENT_OWNED, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS, TRUE);
+	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
+	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
+	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
+	g_test_add_func ("/core/general/test_setting_old_uuid", test_setting_old_uuid);
 
-	test_connection_to_hash_setting_name ();
-	test_setting_new_from_hash ();
-	test_connection_replace_settings ();
-	test_connection_replace_settings_from_connection ();
-	test_connection_new_from_hash ();
-	test_connection_verify_sets_interface_name ();
-	test_connection_normalize_virtual_iface_name ();
-	test_connection_normalize_type ();
-	test_connection_normalize_slave_type_1 ();
-	test_connection_normalize_slave_type_2 ();
+	g_test_add_func ("/core/general/test_connection_to_hash_setting_name", test_connection_to_hash_setting_name);
+	g_test_add_func ("/core/general/test_setting_new_from_hash", test_setting_new_from_hash);
+	g_test_add_func ("/core/general/test_connection_replace_settings", test_connection_replace_settings);
+	g_test_add_func ("/core/general/test_connection_replace_settings_from_connection", test_connection_replace_settings_from_connection);
+	g_test_add_func ("/core/general/test_connection_new_from_hash", test_connection_new_from_hash);
+	g_test_add_func ("/core/general/test_connection_verify_sets_interface_name", test_connection_verify_sets_interface_name);
+	g_test_add_func ("/core/general/test_connection_normalize_virtual_iface_name", test_connection_normalize_virtual_iface_name);
+	g_test_add_func ("/core/general/test_connection_normalize_type", test_connection_normalize_type);
+	g_test_add_func ("/core/general/test_connection_normalize_slave_type_1", test_connection_normalize_slave_type_1);
+	g_test_add_func ("/core/general/test_connection_normalize_slave_type_2", test_connection_normalize_slave_type_2);
 
-	test_setting_connection_permissions_helpers ();
-	test_setting_connection_permissions_property ();
+	g_test_add_func ("/core/general/test_setting_connection_permissions_helpers", test_setting_connection_permissions_helpers);
+	g_test_add_func ("/core/general/test_setting_connection_permissions_property", test_setting_connection_permissions_property);
 
-	test_connection_compare_same ();
-	test_connection_compare_key_only_in_a ();
-	test_connection_compare_setting_only_in_a ();
-	test_connection_compare_key_only_in_b ();
-	test_connection_compare_setting_only_in_b ();
+	g_test_add_func ("/core/general/test_connection_compare_same", test_connection_compare_same);
+	g_test_add_func ("/core/general/test_connection_compare_key_only_in_a", test_connection_compare_key_only_in_a);
+	g_test_add_func ("/core/general/test_connection_compare_setting_only_in_a", test_connection_compare_setting_only_in_a);
+	g_test_add_func ("/core/general/test_connection_compare_key_only_in_b", test_connection_compare_key_only_in_b);
+	g_test_add_func ("/core/general/test_connection_compare_setting_only_in_b", test_connection_compare_setting_only_in_b);
 
-	test_connection_diff_a_only ();
-	test_connection_diff_same ();
-	test_connection_diff_different ();
-	test_connection_diff_no_secrets ();
-	test_connection_diff_inferrable ();
-	test_connection_good_base_types ();
-	test_connection_bad_base_types ();
+	g_test_add_func ("/core/general/test_connection_diff_a_only", test_connection_diff_a_only);
+	g_test_add_func ("/core/general/test_connection_diff_same", test_connection_diff_same);
+	g_test_add_func ("/core/general/test_connection_diff_different", test_connection_diff_different);
+	g_test_add_func ("/core/general/test_connection_diff_no_secrets", test_connection_diff_no_secrets);
+	g_test_add_func ("/core/general/test_connection_diff_inferrable", test_connection_diff_inferrable);
+	g_test_add_func ("/core/general/test_connection_good_base_types", test_connection_good_base_types);
+	g_test_add_func ("/core/general/test_connection_bad_base_types", test_connection_bad_base_types);
 
-	test_hwaddr_aton_ether_normal ();
-	test_hwaddr_aton_ib_normal ();
-	test_hwaddr_aton_no_leading_zeros ();
-	test_hwaddr_aton_malformed ();
-	test_hwaddr_equal ();
+	g_test_add_func ("/core/general/test_hwaddr_aton_ether_normal", test_hwaddr_aton_ether_normal);
+	g_test_add_func ("/core/general/test_hwaddr_aton_ib_normal", test_hwaddr_aton_ib_normal);
+	g_test_add_func ("/core/general/test_hwaddr_aton_no_leading_zeros", test_hwaddr_aton_no_leading_zeros);
+	g_test_add_func ("/core/general/test_hwaddr_aton_malformed", test_hwaddr_aton_malformed);
+	g_test_add_func ("/core/general/test_hwaddr_equal", test_hwaddr_equal);
 
-	test_ip4_prefix_to_netmask ();
-	test_ip4_netmask_to_prefix ();
+	g_test_add_func ("/core/general/test_ip4_prefix_to_netmask", test_ip4_prefix_to_netmask);
+	g_test_add_func ("/core/general/test_ip4_netmask_to_prefix", test_ip4_netmask_to_prefix);
 
-	test_connection_changed_signal ();
-	test_setting_connection_changed_signal ();
-	test_setting_bond_changed_signal ();
-	test_setting_ip4_changed_signal ();
-	test_setting_ip6_changed_signal ();
-	test_setting_vlan_changed_signal ();
-	test_setting_vpn_changed_signal ();
-	test_setting_wired_changed_signal ();
-	test_setting_wireless_changed_signal ();
-	test_setting_wireless_security_changed_signal ();
-	test_setting_802_1x_changed_signal ();
+	g_test_add_func ("/core/general/test_connection_changed_signal", test_connection_changed_signal);
+	g_test_add_func ("/core/general/test_setting_connection_changed_signal", test_setting_connection_changed_signal);
+	g_test_add_func ("/core/general/test_setting_bond_changed_signal", test_setting_bond_changed_signal);
+	g_test_add_func ("/core/general/test_setting_ip4_changed_signal", test_setting_ip4_changed_signal);
+	g_test_add_func ("/core/general/test_setting_ip6_changed_signal", test_setting_ip6_changed_signal);
+	g_test_add_func ("/core/general/test_setting_vlan_changed_signal", test_setting_vlan_changed_signal);
+	g_test_add_func ("/core/general/test_setting_vpn_changed_signal", test_setting_vpn_changed_signal);
+	g_test_add_func ("/core/general/test_setting_wired_changed_signal", test_setting_wired_changed_signal);
+	g_test_add_func ("/core/general/test_setting_wireless_changed_signal", test_setting_wireless_changed_signal);
+	g_test_add_func ("/core/general/test_setting_wireless_security_changed_signal", test_setting_wireless_security_changed_signal);
+	g_test_add_func ("/core/general/test_setting_802_1x_changed_signal", test_setting_802_1x_changed_signal);
 
-	base = g_path_get_basename (argv[0]);
-	fprintf (stdout, "%s: SUCCESS\n", base);
-	g_free (base);
-	return 0;
+	return g_test_run ();
 }
 
