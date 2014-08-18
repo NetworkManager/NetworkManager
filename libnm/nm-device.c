@@ -49,17 +49,14 @@
 #include "nm-utils.h"
 #include "nm-dbus-helpers-private.h"
 
-static GType _nm_device_type_for_path (DBusGConnection *connection,
-                                       const char *path);
-static void _nm_device_type_for_path_async (DBusGConnection *connection,
-                                            const char *path,
-                                            NMObjectTypeCallbackFunc callback,
-                                            gpointer user_data);
+static GType _nm_device_decide_type (GValue *value);
 gboolean connection_compatible (NMDevice *device, NMConnection *connection, GError **error);
 
 G_DEFINE_TYPE_WITH_CODE (NMDevice, nm_device, NM_TYPE_OBJECT,
-                         _nm_object_register_type_func (g_define_type_id, _nm_device_type_for_path,
-                                                        _nm_device_type_for_path_async);
+                         _nm_object_register_type_func (g_define_type_id,
+                                                        _nm_device_decide_type,
+                                                        NM_DBUS_INTERFACE_DEVICE,
+                                                        "DeviceType");
                          )
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
@@ -865,90 +862,9 @@ _nm_device_set_device_type (NMDevice *device, NMDeviceType dtype)
 }
 
 static GType
-_nm_device_type_for_path (DBusGConnection *connection,
-                          const char *path)
+_nm_device_decide_type (GValue *value)
 {
-	DBusGProxy *proxy;
-	GError *err = NULL;
-	GValue value = G_VALUE_INIT;
-	NMDeviceType nm_dtype;
-
-	proxy = _nm_dbus_new_proxy_for_connection (connection, path, DBUS_INTERFACE_PROPERTIES);
-	if (!proxy) {
-		g_warning ("%s: couldn't create D-Bus object proxy.", __func__);
-		return G_TYPE_INVALID;
-	}
-
-	if (!dbus_g_proxy_call (proxy,
-	                        "Get", &err,
-	                        G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
-	                        G_TYPE_STRING, "DeviceType",
-	                        G_TYPE_INVALID,
-	                        G_TYPE_VALUE, &value, G_TYPE_INVALID)) {
-		g_warning ("Error in get_property: %s\n", err->message);
-		g_error_free (err);
-		g_object_unref (proxy);
-		return G_TYPE_INVALID;
-	}
-	g_object_unref (proxy);
-
-	nm_dtype = g_value_get_uint (&value);
-	return _nm_device_gtype_from_dtype (nm_dtype);
-}
-
-typedef struct {
-	DBusGConnection *connection;
-	NMObjectTypeCallbackFunc callback;
-	gpointer user_data;
-} NMDeviceAsyncData;
-
-static void
-async_got_type (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
-{
-	NMDeviceAsyncData *async_data = user_data;
-	GValue value = G_VALUE_INIT;
-	const char *path = dbus_g_proxy_get_path (proxy);
-	GError *error = NULL;
-	GType type;
-
-	if (dbus_g_proxy_end_call (proxy, call, &error,
-	                           G_TYPE_VALUE, &value,
-	                           G_TYPE_INVALID)) {
-		NMDeviceType dtype;
-
-		dtype = g_value_get_uint (&value);
-		type = _nm_device_gtype_from_dtype (dtype);
-	} else {
-		g_warning ("%s: could not read properties for %s: %s", __func__, path, error->message);
-		g_error_free (error);
-		type = G_TYPE_INVALID;
-	}
-
-	async_data->callback (type, async_data->user_data);
-	g_object_unref (proxy);
-	g_slice_free (NMDeviceAsyncData, async_data);
-}
-
-static void
-_nm_device_type_for_path_async (DBusGConnection *connection,
-                                const char *path,
-                                NMObjectTypeCallbackFunc callback,
-                                gpointer user_data)
-{
-	NMDeviceAsyncData *async_data;
-	DBusGProxy *proxy;
-
-	async_data = g_slice_new (NMDeviceAsyncData);
-	async_data->connection = connection;
-	async_data->callback = callback;
-	async_data->user_data = user_data;
-
-	proxy = _nm_dbus_new_proxy_for_connection (connection, path, DBUS_INTERFACE_PROPERTIES);
-	dbus_g_proxy_begin_call (proxy, "Get",
-	                         async_got_type, async_data, NULL,
-	                         G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
-	                         G_TYPE_STRING, "DeviceType",
-	                         G_TYPE_INVALID);
+	return _nm_device_gtype_from_dtype (g_value_get_uint (value));
 }
 
 /**

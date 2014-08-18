@@ -39,7 +39,13 @@ static gboolean debug = FALSE;
 static void nm_object_initable_iface_init (GInitableIface *iface);
 static void nm_object_async_initable_iface_init (GAsyncInitableIface *iface);
 
-static GHashTable *type_funcs, *type_async_funcs;
+typedef struct {
+	NMObjectDecideTypeFunc type_func;
+	char *interface;
+	char *property;
+} NMObjectTypeFuncData;
+
+static GHashTable *type_funcs;
 
 typedef struct {
 	GSList *interfaces;
@@ -49,7 +55,6 @@ typedef struct {
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMObject, nm_object, G_TYPE_OBJECT,
                                   type_funcs = g_hash_table_new (NULL, NULL);
-                                  type_async_funcs = g_hash_table_new (NULL, NULL);
                                   g_type_add_class_private (g_define_type_id, sizeof (NMObjectClassPrivate));
                                   G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_object_initable_iface_init);
                                   G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_object_async_initable_iface_init);
@@ -586,27 +591,63 @@ _nm_object_queue_notify (NMObject *object, const char *property)
 }
 
 void
-_nm_object_register_type_func (GType base_type, NMObjectTypeFunc type_func,
-                               NMObjectTypeAsyncFunc type_async_func)
+_nm_object_register_type_func (GType base_type,
+                               NMObjectDecideTypeFunc type_func,
+                               const char *interface,
+                               const char *property)
 {
+	NMObjectTypeFuncData *type_data;
+
+	g_return_if_fail (type_func != NULL);
+	g_return_if_fail (interface != NULL);
+	g_return_if_fail (property != NULL);
+
+	type_data = g_slice_new (NMObjectTypeFuncData);
+	type_data->type_func = type_func;
+	type_data->interface = g_strdup (interface);
+	type_data->property = g_strdup (property);
+
 	g_hash_table_insert (type_funcs,
 	                     GSIZE_TO_POINTER (base_type),
-	                     type_func);
-	g_hash_table_insert (type_async_funcs,
-	                     GSIZE_TO_POINTER (base_type),
-	                     type_async_func);
+	                     type_data);
 }
 
 static GObject *
 _nm_object_create (GType type, DBusGConnection *connection, const char *path)
 {
-	NMObjectTypeFunc type_func;
+	NMObjectTypeFuncData *type_data;
 	GObject *object;
 	GError *error = NULL;
 
-	type_func = g_hash_table_lookup (type_funcs, GSIZE_TO_POINTER (type));
-	if (type_func)
-		type = type_func (connection, path);
+	type_data = g_hash_table_lookup (type_funcs, GSIZE_TO_POINTER (type));
+	if (type_data) {
+		DBusGProxy *proxy;
+		GValue value = G_VALUE_INIT;
+
+		proxy = _nm_dbus_new_proxy_for_connection (connection, path, DBUS_INTERFACE_PROPERTIES);
+		if (!proxy) {
+			g_warning ("Could not create proxy for %s.", path);
+			return G_TYPE_INVALID;
+		}
+
+		if (!dbus_g_proxy_call (proxy,
+		                        "Get", &error,
+		                        G_TYPE_STRING, type_data->interface,
+		                        G_TYPE_STRING, type_data->property,
+		                        G_TYPE_INVALID,
+		                        G_TYPE_VALUE, &value,
+		                        G_TYPE_INVALID)) {
+			g_warning ("Could not fetch property '%s' of interface '%s' on %s: %s\n",
+			           type_data->property, type_data->interface, path, error->message);
+			g_error_free (error);
+			g_object_unref (proxy);
+			return G_TYPE_INVALID;
+		}
+		g_object_unref (proxy);
+
+		type = type_data->type_func (&value);
+		g_value_unset (&value);
+	}
 
 	if (type == G_TYPE_INVALID) {
 		dbgmsg ("Could not create object for %s: unknown object type", path);
@@ -638,6 +679,7 @@ typedef struct {
 	char *path;
 	NMObjectCreateCallbackFunc callback;
 	gpointer user_data;
+	NMObjectTypeFuncData *type_data;
 } NMObjectTypeAsyncData;
 
 static void
@@ -650,7 +692,7 @@ create_async_complete (GObject *object, NMObjectTypeAsyncData *async_data)
 }
 
 static void
-async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
+create_async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NMObjectTypeAsyncData *async_data = user_data;
 	GError *error = NULL;
@@ -681,9 +723,8 @@ async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static void
-async_got_type (GType type, gpointer user_data)
+create_async_got_type (NMObjectTypeAsyncData *async_data, GType type)
 {
-	NMObjectTypeAsyncData *async_data = user_data;
 	GObject *object;
 
 	if (type == G_TYPE_INVALID) {
@@ -696,15 +737,39 @@ async_got_type (GType type, gpointer user_data)
 	                       NM_OBJECT_PATH, async_data->path,
 	                       NULL);
 	g_async_initable_init_async (G_ASYNC_INITABLE (object), G_PRIORITY_DEFAULT,
-	                             NULL, async_inited, async_data);
+	                             NULL, create_async_inited, async_data);
+}
+
+static void
+create_async_got_property (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+{
+	NMObjectTypeAsyncData *async_data = user_data;
+	NMObjectTypeFuncData *type_data = async_data->type_data;
+	GValue value = G_VALUE_INIT;
+	GError *error = NULL;
+	GType type;
+
+	if (dbus_g_proxy_end_call (proxy, call, &error,
+	                           G_TYPE_VALUE, &value,
+	                           G_TYPE_INVALID)) {
+		type = type_data->type_func (&value);
+		g_value_unset (&value);
+	} else {
+		const char *path = dbus_g_proxy_get_path (proxy);
+
+		g_warning ("Could not fetch property '%s' of interface '%s' on %s: %s\n",
+		           type_data->property, type_data->interface, path, error->message);
+		g_clear_error (&error);
+		type = G_TYPE_INVALID;
+	}
+
+	create_async_got_type (async_data, type);
 }
 
 static void
 _nm_object_create_async (GType type, DBusGConnection *connection, const char *path,
                          NMObjectCreateCallbackFunc callback, gpointer user_data)
 {
-	NMObjectTypeAsyncFunc type_async_func;
-	NMObjectTypeFunc type_func;
 	NMObjectTypeAsyncData *async_data;
 
 	async_data = g_slice_new (NMObjectTypeAsyncData);
@@ -712,17 +777,20 @@ _nm_object_create_async (GType type, DBusGConnection *connection, const char *pa
 	async_data->callback = callback;
 	async_data->user_data = user_data;
 
-	type_async_func = g_hash_table_lookup (type_async_funcs, GSIZE_TO_POINTER (type));
-	if (type_async_func) {
-		type_async_func (connection, path, async_got_type, async_data);
+	async_data->type_data = g_hash_table_lookup (type_funcs, GSIZE_TO_POINTER (type));
+	if (async_data->type_data) {
+		DBusGProxy *proxy;
+
+		proxy = _nm_dbus_new_proxy_for_connection (connection, path, DBUS_INTERFACE_PROPERTIES);
+		dbus_g_proxy_begin_call (proxy, "Get",
+		                         create_async_got_property, async_data, NULL,
+		                         G_TYPE_STRING, async_data->type_data->interface,
+		                         G_TYPE_STRING, async_data->type_data->property,
+		                         G_TYPE_INVALID);
 		return;
 	}
 
-	type_func = g_hash_table_lookup (type_funcs, GSIZE_TO_POINTER (type));
-	if (type_func)
-		type = type_func (connection, path);
-
-	async_got_type (type, async_data);
+	create_async_got_type (async_data, type);
 }
 
 /* Stolen from dbus-glib */
