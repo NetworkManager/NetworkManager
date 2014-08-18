@@ -1561,9 +1561,12 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	            nm_connection_get_id (connection));
 
 	added = nm_settings_add_connection (priv->settings, connection, FALSE, &error);
-	if (added)
-		nm_settings_connection_set_flags (NM_SETTINGS_CONNECTION (added), NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED, TRUE);
-	else {
+	if (added) {
+		nm_settings_connection_set_flags (NM_SETTINGS_CONNECTION (added),
+		                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED |
+		                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED,
+		                                  TRUE);
+	} else {
 		nm_log_warn (LOGD_SETTINGS, "(%s) Couldn't save generated connection '%s': %s",
 		             nm_device_get_iface (device),
 		             nm_connection_get_id (connection),

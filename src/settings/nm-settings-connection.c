@@ -405,7 +405,8 @@ set_unsaved (NMSettingsConnection *self, gboolean now_unsaved)
 			flags |= NM_SETTINGS_CONNECTION_FLAGS_UNSAVED;
 		else {
 			flags &= ~(NM_SETTINGS_CONNECTION_FLAGS_UNSAVED |
-			           NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED);
+			           NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED |
+			           NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED);
 		}
 		nm_settings_connection_set_flags_all (self, flags);
 	}
@@ -457,7 +458,9 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	g_signal_handlers_block_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
 
 	nm_connection_replace_settings_from_connection (NM_CONNECTION (self), new_connection);
-	nm_settings_connection_set_flags (self, NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED, FALSE);
+	nm_settings_connection_set_flags (self,
+	                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED | NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED,
+	                                  FALSE);
 
 	/* Cache the just-updated system secrets in case something calls
 	 * nm_connection_clear_secrets() and clears them.
@@ -2010,6 +2013,21 @@ gboolean
 nm_settings_connection_get_nm_generated (NMSettingsConnection *connection)
 {
 	return NM_FLAGS_HAS (nm_settings_connection_get_flags (connection), NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED);
+}
+
+/**
+ * nm_settings_connection_get_nm_generated_assumed:
+ * @connection: an #NMSettingsConnection
+ *
+ * Gets the "nm-generated-assumed" flag on @connection.
+ *
+ * The connection is a generated connection especially
+ * generated for connection assumption.
+ */
+gboolean
+nm_settings_connection_get_nm_generated_assumed (NMSettingsConnection *connection)
+{
+	return NM_FLAGS_HAS (nm_settings_connection_get_flags (connection), NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED);
 }
 
 /**************************************************************/
