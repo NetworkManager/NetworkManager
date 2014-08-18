@@ -1670,7 +1670,7 @@ error:
 }
 
 static void
-show_acces_point_info (NMDevice *device, NmCli *nmc)
+show_access_point_info (NMDevice *device, NmCli *nmc)
 {
 	NMAccessPoint *active_ap = NULL;
 	const char *active_bssid = NULL;
@@ -1831,7 +1831,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				print_data (nmc);  /* Print all data */
 				g_free (info);
 			} else {
-				show_acces_point_info (device, nmc);
+				show_access_point_info (device, nmc);
 			}
 		} else {
 			g_string_printf (nmc->return_text, _("Error: Device '%s' is not a Wi-Fi device."), ifname);
@@ -1902,7 +1902,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				if (NM_IS_DEVICE_WIFI (dev)) {
 					if (empty_line)
 						printf ("\n"); /* Empty line between devices' APs */
-					show_acces_point_info (dev, nmc);
+					show_access_point_info (dev, nmc);
 					empty_line = TRUE;
 				}
 			}
