@@ -1839,6 +1839,8 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 			goto error;
 		}
 	} else {
+		gboolean empty_line = FALSE;
+
 		/* List APs for all devices */
 		if (bssid_user) {
 			/* Specific AP requested - list only that */
@@ -1850,6 +1852,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 
 				/* Main header name */
 				nmc->print_fields.header_name = (char *) construct_header_name (base_hdr, nm_device_get_iface (dev));
+				nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, NULL);
 
 				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 				g_ptr_array_add (nmc->output_data, arr);
@@ -1875,8 +1878,11 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 					}
 					g_free (bssid_up);
 				}
+				if (empty_line)
+					printf ("\n"); /* Empty line between devices' APs */
 				print_data (nmc);  /* Print all data */
 				nmc_empty_output_fields (nmc);
+				empty_line = TRUE;
 			}
 			if (!ap) {
 				g_string_printf (nmc->return_text, _("Error: Access point with bssid '%s' not found."),
@@ -1891,8 +1897,14 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				/* Main header name */
 				nmc->print_fields.header_name = (char *) construct_header_name (base_hdr,
 				                                                                nm_device_get_iface (dev));
-				if (NM_IS_DEVICE_WIFI (dev))
+				nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, NULL);
+
+				if (NM_IS_DEVICE_WIFI (dev)) {
+					if (empty_line)
+						printf ("\n"); /* Empty line between devices' APs */
 					show_acces_point_info (dev, nmc);
+					empty_line = TRUE;
+				}
 			}
 		}
 	}
@@ -2572,6 +2584,8 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 			goto error;
 		}
 	} else {
+		gboolean empty_line = FALSE;
+
 		/* List NSPs for all devices */
 		if (nsp_user) {
 			/* Specific NSP requested - list only that */
@@ -2584,6 +2598,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 
 				/* Main header name */
 				nmc->print_fields.header_name = (char *) construct_header_name (base_hdr, nm_device_get_iface (dev));
+				nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, NULL);
 
 				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
 				g_ptr_array_add (nmc->output_data, arr);
@@ -2601,8 +2616,11 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 					}
 					g_free (nsp_up);
 				}
+				if (empty_line)
+					printf ("\n"); /* Empty line between devices' NSPs */
 				print_data (nmc);  /* Print all data */
 				nmc_empty_output_fields (nmc);
+				empty_line = TRUE;
 			}
 			if (!nsp) {
 				g_string_printf (nmc->return_text, _("Error: Access point with nsp '%s' not found."), nsp_user);
@@ -2616,9 +2634,14 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 				/* Main header name */
 				nmc->print_fields.header_name = (char *) construct_header_name (base_hdr,
 				                                                                nm_device_get_iface (dev));
+				nmc->print_fields.indices = parse_output_fields (fields_str, tmpl, FALSE, NULL, NULL);
 
-				if (NM_IS_DEVICE_WIMAX (dev))
+				if (NM_IS_DEVICE_WIMAX (dev)) {
+					if (empty_line)
+						printf ("\n"); /* Empty line between devices' NSPs */
 					show_nsp_info (dev, nmc);
+					empty_line = TRUE;
+				}
 			}
 		}
 	}
