@@ -266,12 +266,12 @@ get_property (GObject *object,
 }
 
 static void
-nm_device_infiniband_class_init (NMDeviceInfinibandClass *eth_class)
+nm_device_infiniband_class_init (NMDeviceInfinibandClass *ib_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (eth_class);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (eth_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (ib_class);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (ib_class);
 
-	g_type_class_add_private (eth_class, sizeof (NMDeviceInfinibandPrivate));
+	g_type_class_add_private (ib_class, sizeof (NMDeviceInfinibandPrivate));
 
 	/* virtual methods */
 	object_class->constructed = constructed;

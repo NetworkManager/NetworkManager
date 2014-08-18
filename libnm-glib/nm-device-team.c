@@ -297,12 +297,12 @@ get_property (GObject *object,
 }
 
 static void
-nm_device_team_class_init (NMDeviceTeamClass *eth_class)
+nm_device_team_class_init (NMDeviceTeamClass *team_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (eth_class);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (eth_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (team_class);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (team_class);
 
-	g_type_class_add_private (eth_class, sizeof (NMDeviceTeamPrivate));
+	g_type_class_add_private (team_class, sizeof (NMDeviceTeamPrivate));
 
 	/* virtual methods */
 	object_class->constructed = constructed;

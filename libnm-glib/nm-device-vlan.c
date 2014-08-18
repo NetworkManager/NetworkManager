@@ -297,12 +297,12 @@ get_property (GObject *object,
 }
 
 static void
-nm_device_vlan_class_init (NMDeviceVlanClass *eth_class)
+nm_device_vlan_class_init (NMDeviceVlanClass *vlan_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (eth_class);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (eth_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (vlan_class);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (vlan_class);
 
-	g_type_class_add_private (eth_class, sizeof (NMDeviceVlanPrivate));
+	g_type_class_add_private (vlan_class, sizeof (NMDeviceVlanPrivate));
 
 	/* virtual methods */
 	object_class->constructed = constructed;

@@ -248,13 +248,13 @@ get_property (GObject *object,
 }
 
 static void
-nm_device_bond_class_init (NMDeviceBondClass *eth_class)
+nm_device_bond_class_init (NMDeviceBondClass *bond_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (eth_class);
-	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (eth_class);
-	NMDeviceClass *device_class = NM_DEVICE_CLASS (eth_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (bond_class);
+	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (bond_class);
+	NMDeviceClass *device_class = NM_DEVICE_CLASS (bond_class);
 
-	g_type_class_add_private (eth_class, sizeof (NMDeviceBondPrivate));
+	g_type_class_add_private (bond_class, sizeof (NMDeviceBondPrivate));
 
 	/* virtual methods */
 	object_class->dispose = dispose;
