@@ -554,6 +554,13 @@ _nm_object_create (GType type, DBusGConnection *connection, const char *path)
 	object = g_object_new (type,
 	                       NM_OBJECT_PATH, path,
 	                       NULL);
+	/* Cache the object before initializing it (and in particular, loading its
+	 * property values); this is necessary to make circular references work (eg,
+	 * when creating an NMActiveConnection, it will create an NMDevice which
+	 * will in turn try to create the parent NMActiveConnection). Since we don't
+	 * support multi-threaded use, we know that we will have inited the object
+	 * before any external code sees it.
+	 */
 	_nm_object_cache_add (NM_OBJECT (object));
 	if (!g_initable_init (G_INITABLE (object), NULL, &error)) {
 		dbgmsg ("Could not create object for %s: %s", path, error->message);
@@ -586,7 +593,21 @@ async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 	NMObjectTypeAsyncData *async_data = user_data;
 	GError *error = NULL;
 
-	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error)) {
+	if (g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error)) {
+		NMObject *cached;
+
+		/* Unlike in the sync case, in the async case we can't cache the object
+		 * until it is completely initialized. But that means someone else might
+		 * have been creating it at the same time, and they might have finished
+		 * before us.
+		 */
+		cached = _nm_object_cache_get (nm_object_get_path (NM_OBJECT (object)));
+		if (cached) {
+			g_object_unref (object);
+			object = G_OBJECT (cached);
+		} else
+			_nm_object_cache_add (NM_OBJECT (object));
+	} else {
 		dbgmsg ("Could not create object for %s: %s",
 		        nm_object_get_path (NM_OBJECT (object)),
 		        error->message);
@@ -603,17 +624,6 @@ async_got_type (GType type, gpointer user_data)
 	NMObjectTypeAsyncData *async_data = user_data;
 	GObject *object;
 
-	/* Ensure we don't have the object already; we may get multiple type
-	 * requests for the same object if there are multiple properties on
-	 * other objects that refer to the object at this path.  One of those
-	 * other requests may have already completed.
-	 */
-	object = (GObject *) _nm_object_cache_get (async_data->path);
-	if (object) {
-		create_async_complete (object, async_data);
-		return;
-	}
-
 	if (type == G_TYPE_INVALID) {
 		/* Don't know how to create this object */
 		create_async_complete (NULL, async_data);
@@ -623,7 +633,6 @@ async_got_type (GType type, gpointer user_data)
 	object = g_object_new (type,
 	                       NM_OBJECT_PATH, async_data->path,
 	                       NULL);
-	_nm_object_cache_add (NM_OBJECT (object));
 	g_async_initable_init_async (G_ASYNC_INITABLE (object), G_PRIORITY_DEFAULT,
 	                             NULL, async_inited, async_data);
 }
