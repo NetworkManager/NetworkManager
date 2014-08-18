@@ -1162,10 +1162,9 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		 */
 		bssid_list = nm_settings_connection_get_seen_bssids (self);
 		s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (dupl_con));
-		if (bssid_list && s_wifi) {
+		if (bssid_list && s_wifi)
 			g_object_set (s_wifi, NM_SETTING_WIRELESS_SEEN_BSSIDS, bssid_list, NULL);
-			g_slist_free_full (bssid_list, g_free);
-		}
+		g_slist_free_full (bssid_list, g_free);
 
 		/* 802-11-wireless.security property is deprecated. But we set it here so that
 		 * we don't disturb old clients that might expect it being properly set for
