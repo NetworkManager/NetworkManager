@@ -36,8 +36,6 @@ G_DEFINE_TYPE (NMWimaxNsp, nm_wimax_nsp, NM_TYPE_OBJECT)
 #define NM_WIMAX_NSP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_WIMAX_NSP, NMWimaxNspPrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	char *name;
 	guint32 signal_quality;
 	NMWimaxNspNetworkType network_type;
@@ -183,16 +181,6 @@ nm_wimax_nsp_init (NMWimaxNsp *nsp)
 }
 
 static void
-dispose (GObject *object)
-{
-	NMWimaxNspPrivate *priv = NM_WIMAX_NSP_GET_PRIVATE (object);
-
-	g_clear_object (&priv->proxy);
-
-	G_OBJECT_CLASS (nm_wimax_nsp_parent_class)->dispose (object);
-}
-
-static void
 finalize (GObject *object)
 {
 	NMWimaxNspPrivate *priv = NM_WIMAX_NSP_GET_PRIVATE (object);
@@ -239,9 +227,8 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_wimax_nsp_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_WIMAX_NSP);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_WIMAX_NSP,
 	                                property_info);
 }
 
@@ -253,9 +240,10 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 
 	g_type_class_add_private (nsp_class, sizeof (NMWimaxNspPrivate));
 
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_WIMAX_NSP);
+
 	/* virtual methods */
 	object_class->get_property = get_property;
-	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
 	nm_object_class->init_dbus = init_dbus;

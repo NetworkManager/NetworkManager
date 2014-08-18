@@ -41,9 +41,16 @@ static void nm_object_async_initable_iface_init (GAsyncInitableIface *iface);
 
 static GHashTable *type_funcs, *type_async_funcs;
 
+typedef struct {
+	GSList *interfaces;
+} NMObjectClassPrivate;
+
+#define NM_OBJECT_CLASS_GET_PRIVATE(k) (G_TYPE_CLASS_GET_PRIVATE ((k), NM_TYPE_OBJECT, NMObjectClassPrivate))
+
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (NMObject, nm_object, G_TYPE_OBJECT,
                                   type_funcs = g_hash_table_new (NULL, NULL);
                                   type_async_funcs = g_hash_table_new (NULL, NULL);
+                                  g_type_add_class_private (g_define_type_id, sizeof (NMObjectClassPrivate));
                                   G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_object_initable_iface_init);
                                   G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, nm_object_async_initable_iface_init);
                                   )
@@ -65,8 +72,8 @@ typedef struct {
 	gboolean nm_running;
 
 	char *path;
+	GHashTable *proxies;
 	DBusGProxy *properties_proxy;
-	GSList *property_interfaces;
 	GSList *property_tables;
 	NMObject *parent;
 	gboolean suppress_property_updates;
@@ -136,6 +143,9 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 static void
 nm_object_init (NMObject *object)
 {
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+
+	priv->proxies = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 }
 
 static gboolean
@@ -158,8 +168,18 @@ static void
 init_dbus (NMObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	NMObjectClassPrivate *cpriv = NM_OBJECT_CLASS_GET_PRIVATE (NM_OBJECT_GET_CLASS (object));
+	GSList *iter;
 
-	priv->properties_proxy = _nm_object_new_proxy (object, NULL, DBUS_INTERFACE_PROPERTIES);
+	for (iter = cpriv->interfaces; iter; iter = iter->next) {
+		const char *interface = iter->data;
+		DBusGProxy *proxy;
+
+		proxy = _nm_dbus_new_proxy_for_connection (priv->connection, priv->path, interface);
+		g_hash_table_insert (priv->proxies, (char *) interface, proxy);
+	}
+
+	priv->properties_proxy = _nm_dbus_new_proxy_for_connection (priv->connection, priv->path, DBUS_INTERFACE_PROPERTIES);
 
 	if (_nm_dbus_is_connection_private (priv->connection))
 		priv->nm_running = TRUE;
@@ -314,9 +334,7 @@ dispose (GObject *object)
 	g_slist_free_full (priv->notify_props, g_free);
 	priv->notify_props = NULL;
 
-	g_slist_free_full (priv->property_interfaces, g_free);
-	priv->property_interfaces = NULL;
-
+	g_clear_pointer (&priv->proxies, g_hash_table_unref);
 	g_clear_object (&priv->properties_proxy);
 	g_clear_object (&priv->bus_proxy);
 
@@ -454,6 +472,28 @@ nm_object_async_initable_iface_init (GAsyncInitableIface *iface)
 }
 
 /**
+ * _nm_object_class_add_interface:
+ * @object_class: an #NMObjectClass
+ * @interface: a D-Bus interface name
+ *
+ * Registers that @object_class implements @interface. A proxy for that
+ * interface will automatically be created at construction time, and can
+ * be retrieved with _nm_object_get_proxy().
+ */
+void
+_nm_object_class_add_interface (NMObjectClass *object_class,
+                                const char    *interface)
+{
+	NMObjectClassPrivate *cpriv;
+
+	g_return_if_fail (NM_IS_OBJECT_CLASS (object_class));
+
+	cpriv = NM_OBJECT_CLASS_GET_PRIVATE (object_class);
+
+	cpriv->interfaces = g_slist_prepend (cpriv->interfaces, g_strdup (interface));
+}
+
+/**
  * nm_object_get_path:
  * @object: a #NMObject
  *
@@ -468,6 +508,28 @@ nm_object_get_path (NMObject *object)
 	g_return_val_if_fail (NM_IS_OBJECT (object), NULL);
 
 	return NM_OBJECT_GET_PRIVATE (object)->path;
+}
+
+/**
+ * _nm_object_get_proxy:
+ * @object: an #NMObject
+ * @interface: a D-Bus interface implemented by @object
+ *
+ * Gets the D-Bus proxy for @interface on @object.
+ *
+ * Returns: (transfer none): a D-Bus proxy
+ */
+DBusGProxy *
+_nm_object_get_proxy (NMObject   *object,
+                      const char *interface)
+{
+	DBusGProxy *proxy;
+
+	g_return_val_if_fail (NM_IS_OBJECT (object), NULL);
+
+	proxy = g_hash_table_lookup (NM_OBJECT_GET_PRIVATE (object)->proxies, interface);
+	g_return_val_if_fail (proxy != NULL, NULL);
+	return proxy;
 }
 
 static gboolean
@@ -1147,17 +1209,18 @@ done:
 
 void
 _nm_object_register_properties (NMObject *object,
-                                DBusGProxy *proxy,
+                                const char *interface,
                                 const NMPropertiesInfo *info)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	DBusGProxy *proxy;
 	static gsize dval = 0;
 	const char *debugstr;
 	NMPropertiesInfo *tmp;
 	GHashTable *instance;
 
 	g_return_if_fail (NM_IS_OBJECT (object));
-	g_return_if_fail (proxy != NULL);
+	g_return_if_fail (interface != NULL);
 	g_return_if_fail (info != NULL);
 
 	if (g_once_init_enter (&dval)) {
@@ -1167,8 +1230,8 @@ _nm_object_register_properties (NMObject *object,
 		g_once_init_leave (&dval, 1);
 	}
 
-	priv->property_interfaces = g_slist_prepend (priv->property_interfaces,
-	                                             g_strdup (dbus_g_proxy_get_interface (proxy)));
+	proxy = _nm_object_get_proxy (object, interface);
+	g_return_if_fail (proxy != NULL);
 
 	dbus_g_proxy_add_signal (proxy, "PropertiesChanged", DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (proxy,
@@ -1202,14 +1265,17 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 	GHashTable *props = NULL;
-	GSList *p;
+	GHashTableIter iter;
+	const char *interface;
+	DBusGProxy *proxy;
 
-	if (!priv->property_interfaces || !priv->nm_running)
+	if (!g_hash_table_size (priv->proxies) || !priv->nm_running)
 		return TRUE;
 
-	for (p = priv->property_interfaces; p; p = p->next) {
+	g_hash_table_iter_init (&iter, priv->proxies);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &interface, (gpointer *) &proxy)) {
 		if (!dbus_g_proxy_call (priv->properties_proxy, "GetAll", error,
-		                        G_TYPE_STRING, p->data,
+		                        G_TYPE_STRING, interface,
 		                        G_TYPE_INVALID,
 		                        DBUS_TYPE_G_MAP_OF_VARIANT, &props,
 		                        G_TYPE_INVALID))
@@ -1352,12 +1418,14 @@ _nm_object_reload_properties_async (NMObject *object, GAsyncReadyCallback callba
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 	GSimpleAsyncResult *simple;
-	GSList *p;
+	GHashTableIter iter;
+	const char *interface;
+	DBusGProxy *proxy;
 
 	simple = g_simple_async_result_new (G_OBJECT (object), callback,
 	                                    user_data, _nm_object_reload_properties_async);
 
-	if (!priv->property_interfaces) {
+	if (!g_hash_table_size (priv->proxies)) {
 		g_simple_async_result_complete_in_idle (simple);
 		g_object_unref (simple);
 		return;
@@ -1372,11 +1440,12 @@ _nm_object_reload_properties_async (NMObject *object, GAsyncReadyCallback callba
 	if (priv->reload_results->next)
 		return;
 
-	for (p = priv->property_interfaces; p; p = p->next) {
+	g_hash_table_iter_init (&iter, priv->proxies);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &interface, (gpointer *) &proxy)) {
 		priv->reload_remaining++;
 		dbus_g_proxy_begin_call (priv->properties_proxy, "GetAll",
 		                         reload_got_properties, object, NULL,
-		                         G_TYPE_STRING, p->data,
+		                         G_TYPE_STRING, interface,
 		                         G_TYPE_INVALID);
 	}
 }
@@ -1394,14 +1463,6 @@ _nm_object_reload_properties_finish (NMObject *object, GAsyncResult *result, GEr
 		return FALSE;
 
 	return g_simple_async_result_get_op_res_gboolean (simple);
-}
-
-DBusGProxy *
-_nm_object_new_proxy (NMObject *self, const char *path, const char *interface)
-{
-	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
-
-	return _nm_dbus_new_proxy_for_connection (priv->connection, path ? path : priv->path, interface);
 }
 
 gboolean

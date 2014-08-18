@@ -222,9 +222,9 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_device_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE);
+	priv->proxy = _nm_object_get_proxy (object, NM_DBUS_INTERFACE_DEVICE);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_DEVICE,
 	                                property_info);
 
 	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
@@ -367,7 +367,6 @@ dispose (GObject *object)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
 
-	g_clear_object (&priv->proxy);
 	g_clear_object (&priv->ip4_config);
 	g_clear_object (&priv->dhcp4_config);
 	g_clear_object (&priv->ip6_config);
@@ -520,6 +519,8 @@ nm_device_class_init (NMDeviceClass *device_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (device_class);
 
 	g_type_class_add_private (device_class, sizeof (NMDevicePrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE);
 
 	/* virtual methods */
 	object_class->constructed = constructed;

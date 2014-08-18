@@ -37,8 +37,6 @@ G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
 #define NM_DEVICE_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_TEAM, NMDeviceTeamPrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	char *hw_address;
 	gboolean carrier;
 	GPtrArray *slaves;
@@ -191,9 +189,8 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_device_team_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_TEAM);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_DEVICE_TEAM,
 	                                property_info);
 }
 
@@ -201,8 +198,6 @@ static void
 dispose (GObject *object)
 {
 	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (object);
-
-	g_clear_object (&priv->proxy);
 
 	g_clear_pointer (&priv->slaves, g_ptr_array_unref);
 
@@ -251,6 +246,8 @@ nm_device_team_class_init (NMDeviceTeamClass *team_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (team_class);
 
 	g_type_class_add_private (team_class, sizeof (NMDeviceTeamPrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_TEAM);
 
 	/* virtual methods */
 	object_class->dispose = dispose;

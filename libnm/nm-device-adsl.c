@@ -32,11 +32,8 @@ G_DEFINE_TYPE (NMDeviceAdsl, nm_device_adsl, NM_TYPE_DEVICE)
 #define NM_DEVICE_ADSL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_ADSL, NMDeviceAdslPrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	gboolean carrier;
 
-	gboolean disposed;
 } NMDeviceAdslPrivate;
 
 enum {
@@ -130,33 +127,9 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_device_adsl_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_ADSL);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_DEVICE_ADSL,
 	                                property_info);
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE (object);
-
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_device_adsl_parent_class)->dispose (object);
-		return;
-	}
-
-	priv->disposed = TRUE;
-
-	g_object_unref (priv->proxy);
-
-	G_OBJECT_CLASS (nm_device_adsl_parent_class)->dispose (object);
-}
-
-static void
-finalize (GObject *object)
-{
-	G_OBJECT_CLASS (nm_device_adsl_parent_class)->finalize (object);
 }
 
 static void
@@ -186,9 +159,9 @@ nm_device_adsl_class_init (NMDeviceAdslClass *adsl_class)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceAdslPrivate));
 
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_ADSL);
+
 	/* virtual methods */
-	object_class->dispose = dispose;
-	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 
 	nm_object_class->init_dbus = init_dbus;

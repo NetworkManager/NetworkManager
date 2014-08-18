@@ -503,12 +503,12 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_remote_connection_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
+	priv->proxy = _nm_object_get_proxy (object, NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
 	g_assert (priv->proxy);
 	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
 	                                property_info);
 
 	dbus_g_proxy_add_signal (priv->proxy, "Updated", G_TYPE_INVALID);
@@ -665,7 +665,7 @@ dispose (GObject *object)
 
 	if (priv->proxy) {
 		g_signal_handlers_disconnect_by_func (priv->proxy, proxy_destroy_cb, object);
-		g_clear_object (&priv->proxy);
+		priv->proxy = NULL;
 	}
 
 	G_OBJECT_CLASS (nm_remote_connection_parent_class)->dispose (object);
@@ -678,6 +678,8 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (remote_class);
 
 	g_type_class_add_private (object_class, sizeof (NMRemoteConnectionPrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
 
 	/* virtual methods */
 	object_class->constructed = constructed;

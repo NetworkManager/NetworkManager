@@ -31,8 +31,6 @@ G_DEFINE_TYPE (NMDhcp6Config, nm_dhcp6_config, NM_TYPE_OBJECT)
 #define NM_DHCP6_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP6_CONFIG, NMDhcp6ConfigPrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	GHashTable *options;
 } NMDhcp6ConfigPrivate;
 
@@ -84,9 +82,8 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_dhcp6_config_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DHCP6_CONFIG);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_DHCP6_CONFIG,
 	                                property_info);
 }
 
@@ -97,8 +94,6 @@ finalize (GObject *object)
 
 	if (priv->options)
 		g_hash_table_destroy (priv->options);
-
-	g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_dhcp6_config_parent_class)->finalize (object);
 }
@@ -128,6 +123,8 @@ nm_dhcp6_config_class_init (NMDhcp6ConfigClass *config_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (config_class);
 
 	g_type_class_add_private (config_class, sizeof (NMDhcp6ConfigPrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DHCP6_CONFIG);
 
 	/* virtual methods */
 	object_class->get_property = get_property;

@@ -48,8 +48,6 @@ G_DEFINE_TYPE_WITH_CODE (NMActiveConnection, nm_active_connection, NM_TYPE_OBJEC
 #define NM_ACTIVE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	char *connection;
 	char *id;
 	char *uuid;
@@ -461,8 +459,6 @@ dispose (GObject *object)
 	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->dhcp6_config);
 
-	g_clear_object (&priv->proxy);
-
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
 }
 
@@ -567,9 +563,8 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_active_connection_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_ACTIVE_CONNECTION);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
 	                                property_info);
 }
 
@@ -581,6 +576,8 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (ap_class);
 
 	g_type_class_add_private (ap_class, sizeof (NMActiveConnectionPrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_ACTIVE_CONNECTION);
 
 	/* virtual methods */
 	object_class->get_property = get_property;

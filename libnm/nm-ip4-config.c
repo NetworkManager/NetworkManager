@@ -33,8 +33,6 @@ G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_OBJECT)
 #define NM_IP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IP4_CONFIG, NMIP4ConfigPrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	char *gateway;
 	GSList *addresses;
 	GSList *routes;
@@ -143,9 +141,8 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_ip4_config_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_IP4_CONFIG);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_IP4_CONFIG,
 	                                property_info);
 }
 
@@ -163,8 +160,6 @@ finalize (GObject *object)
 	g_strfreev (priv->domains);
 	g_strfreev (priv->searches);
 	g_strfreev (priv->wins);
-
-	g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_ip4_config_parent_class)->finalize (object);
 }
@@ -217,6 +212,8 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (config_class);
 
 	g_type_class_add_private (config_class, sizeof (NMIP4ConfigPrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_IP4_CONFIG);
 
 	/* virtual methods */
 	object_class->get_property = get_property;

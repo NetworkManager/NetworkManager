@@ -195,9 +195,9 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_client_parent_class)->init_dbus (object);
 
-	priv->client_proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE);
+	priv->client_proxy = _nm_object_get_proxy (object, NM_DBUS_INTERFACE);
 	_nm_object_register_properties (object,
-	                                priv->client_proxy,
+	                                NM_DBUS_INTERFACE,
 	                                property_info);
 
 	/* Permissions */
@@ -1822,8 +1822,6 @@ dispose (GObject *object)
 		priv->perm_call = NULL;
 	}
 
-	g_clear_object (&priv->client_proxy);
-
 	free_devices (client, TRUE);
 	free_active_connections (client, TRUE);
 	g_clear_object (&priv->primary_connection);
@@ -1961,6 +1959,8 @@ nm_client_class_init (NMClientClass *client_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (client_class);
 
 	g_type_class_add_private (client_class, sizeof (NMClientPrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE);
 
 	/* virtual methods */
 	object_class->constructor = constructor;

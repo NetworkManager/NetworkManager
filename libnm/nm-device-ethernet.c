@@ -38,8 +38,6 @@ G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 #define NM_DEVICE_ETHERNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetPrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	char *hw_address;
 	char *perm_hw_address;
 	guint32 speed;
@@ -226,20 +224,9 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_device_ethernet_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_WIRED);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_DEVICE_WIRED,
 	                                property_info);
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
-
-	g_clear_object (&priv->proxy);
-
-	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
 }
 
 static void
@@ -289,8 +276,9 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *eth_class)
 
 	g_type_class_add_private (eth_class, sizeof (NMDeviceEthernetPrivate));
 
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_WIRED);
+
 	/* virtual methods */
-	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 

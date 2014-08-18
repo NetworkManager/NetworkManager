@@ -36,12 +36,8 @@ typedef struct {
 	const char *signal_prefix;
 } NMPropertiesInfo;
 
-DBusGProxy *_nm_object_new_proxy (NMObject *self,
-                                  const char *path,
-                                  const char *interface);
-
 void _nm_object_register_properties (NMObject *object,
-                                     DBusGProxy *proxy,
+                                     const char *interface,
                                      const NMPropertiesInfo *info);
 
 gboolean _nm_object_reload_properties (NMObject *object, GError **error);
@@ -78,5 +74,10 @@ void _nm_object_register_type_func (GType base_type, NMObjectTypeFunc type_func,
 
 #define NM_OBJECT_NM_RUNNING "nm-running-internal"
 gboolean _nm_object_get_nm_running (NMObject *self);
+
+void _nm_object_class_add_interface (NMObjectClass *object_class,
+                                     const char    *interface);
+DBusGProxy *_nm_object_get_proxy (NMObject   *object,
+                                  const char *interface);
 
 #endif /* __NM_OBJECT_PRIVATE_H__ */
