@@ -23,7 +23,7 @@
 #include <gio/gio.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include "nm-dbus-helpers-private.h"
+#include "nm-dbus-helpers.h"
 #include "nm-dbus-interface.h"
 
 static dbus_int32_t priv_slot = -1;

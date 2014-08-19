@@ -59,7 +59,7 @@ libnminclude_HEADERS =			\
 	nm-wimax-nsp.h
 
 libnm_la_private_headers =		\
-	nm-dbus-helpers-private.h	\
+	nm-dbus-helpers.h		\
 	nm-device-private.h		\
 	nm-object-cache.h		\
 	nm-object-private.h		\

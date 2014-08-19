@@ -47,7 +47,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-utils.h"
-#include "nm-dbus-helpers-private.h"
+#include "nm-dbus-helpers.h"
 
 static GType _nm_device_decide_type (GValue *value);
 gboolean connection_compatible (NMDevice *device, NMConnection *connection, GError **error);

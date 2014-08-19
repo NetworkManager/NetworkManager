@@ -26,7 +26,7 @@
 #include "nm-dbus-interface.h"
 #include "nm-secret-agent.h"
 #include "nm-enum-types.h"
-#include "nm-dbus-helpers-private.h"
+#include "nm-dbus-helpers.h"
 #include "nm-simple-connection.h"
 
 static void impl_secret_agent_get_secrets (NMSecretAgent *self,

@@ -31,7 +31,7 @@
 #include "nm-object-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
-#include "nm-dbus-helpers-private.h"
+#include "nm-dbus-helpers.h"
 
 static void nm_remote_connection_connection_iface_init (NMConnectionInterface *iface);
 static void nm_remote_connection_initable_iface_init (GInitableIface *iface);

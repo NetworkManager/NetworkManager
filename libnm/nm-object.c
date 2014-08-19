@@ -31,7 +31,7 @@
 #include "nm-object-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
-#include "nm-dbus-helpers-private.h"
+#include "nm-dbus-helpers.h"
 
 static gboolean debug = FALSE;
 #define dbgmsg(f,...) if (G_UNLIKELY (debug)) { g_message (f, ## __VA_ARGS__ ); }

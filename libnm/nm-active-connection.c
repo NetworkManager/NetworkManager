@@ -30,7 +30,7 @@
 #include "nm-connection.h"
 #include "nm-vpn-connection.h"
 #include "nm-glib-compat.h"
-#include "nm-dbus-helpers-private.h"
+#include "nm-dbus-helpers.h"
 
 static GType _nm_active_connection_decide_type (GValue *value);
 
