@@ -7,7 +7,6 @@ AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""nm-pppd-plugin"\" \
 	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
-	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS)
 
 pppd_plugindir = $(PPPD_PLUGIN_DIR)
@@ -21,7 +20,6 @@ nm_pppd_plugin_la_SOURCES = \
 nm_pppd_plugin_la_LDFLAGS = -module -avoid-version
 
 nm_pppd_plugin_la_LIBADD = \
-	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	-ldl
 
