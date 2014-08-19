@@ -457,15 +457,25 @@ else
 fi
 AM_CONDITIONAL(WITH_TEAMDCTL, test "${enable_teamdctl}" = "yes")
 
-AC_ARG_ENABLE(polkit, AS_HELP_STRING([--enable-polkit], [set default value for auth-polkit configuration option]),
+# we usually compile with polkit support. --enable-polkit=yes|no only sets the
+# default configuration for main.auth-polkit. User can always enable/disable polkit
+# autorization via config. Only when specifying --enable-polkit=disabled, we do
+# not compile support. In this case, the user cannot enable polkit authorization via
+# configuration.
+AC_ARG_ENABLE(polkit, AS_HELP_STRING([--enable-polkit=yes|no|disabled], [set default value for auth-polkit configuration option. This value can be overwritten by NM configuration. 'disabled' compiles NM without any support]),
                      [enable_polkit=${enableval}], [enable_polkit=yes])
-if (test "${enable_polkit}" != "no"); then
+if (test "${enable_polkit}" != "no" -a "${enable_polkit}" != "disabled"); then
 	enable_polkit=yes
 	AC_DEFINE(NM_CONFIG_DEFAULT_AUTH_POLKIT, TRUE, [The default value of the auth-polkit configuration option])
 	NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT='true'
 else
 	AC_DEFINE(NM_CONFIG_DEFAULT_AUTH_POLKIT, FALSE, [The default value of the auth-polkit configuration option])
 	NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT='false'
+fi
+if (test "${enable_polkit}" != "disabled"); then
+	AC_DEFINE(WITH_POLKIT, 1, [whether to compile polkit support])
+else
+	AC_DEFINE(WITH_POLKIT, 0, [whether to compile polkit support])
 fi
 AC_SUBST(NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT)
 
@@ -961,10 +971,14 @@ echo
 echo "Platform:"
 echo "  session tracking: $with_session_tracking"
 echo "  suspend/resume: $with_suspend_resume"
-if test "${enable_modify_system}" = "yes"; then
-	echo "  policykit: yes (permissive modify.system) (default=${enable_polkit})"
+if test "${enable_polkit}" = "yes"; then
+	if test "${enable_modify_system}" = "yes"; then
+		echo "  policykit: yes (permissive modify.system) (default=${enable_polkit})"
+	else
+		echo "  policykit: yes (restrictive modify.system) (default=${enable_polkit})"
+	fi
 else
-	echo "  policykit: yes (restrictive modify.system) (default=${enable_polkit})"
+	echo  "  policykit: no"
 fi
 echo "  selinux: $have_selinux"
 echo

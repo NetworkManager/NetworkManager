@@ -62,6 +62,8 @@ NMAuthManager *nm_auth_manager_get (void);
 
 gboolean nm_auth_manager_get_polkit_enabled (NMAuthManager *self);
 
+#if WITH_POLKIT
+
 void nm_auth_manager_polkit_authority_check_authorization (NMAuthManager *self,
                                                            NMAuthSubject *subject,
                                                            const char *action_id,
@@ -75,6 +77,7 @@ gboolean nm_auth_manager_polkit_authority_check_authorization_finish (NMAuthMana
                                                                       gboolean *out_is_challenge,
                                                                       GError **error);
 
+#endif
 
 G_END_DECLS
 

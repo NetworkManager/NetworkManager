@@ -298,6 +298,7 @@ auth_call_cancel (gpointer user_data)
 	}
 }
 
+#if WITH_POLKIT
 static void
 pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
@@ -345,6 +346,7 @@ pk_call_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	auth_call_complete (call);
 }
+#endif
 
 void
 nm_auth_chain_add_call (NMAuthChain *self,
@@ -369,6 +371,7 @@ nm_auth_chain_add_call (NMAuthChain *self,
 		call->call_idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
 	} else {
 		/* Non-root always gets authenticated when using polkit */
+#if WITH_POLKIT
 		call->cancellable = g_cancellable_new ();
 		nm_auth_manager_polkit_authority_check_authorization (auth_manager,
 		                                                      self->subject,
@@ -377,6 +380,14 @@ nm_auth_chain_add_call (NMAuthChain *self,
 		                                                      call->cancellable,
 		                                                      pk_call_cb,
 		                                                      call);
+#else
+		if (!call->chain->error) {
+			call->chain->error = g_error_new_literal (DBUS_GERROR,
+			                                          DBUS_GERROR_FAILED,
+			                                          "Polkit support is disabled at compile time");
+		}
+		call->call_idle_id = g_idle_add ((GSourceFunc) auth_call_complete, call);
+#endif
 	}
 }
 

@@ -66,10 +66,12 @@ static guint signals[LAST_SIGNAL] = {0};
 
 typedef struct {
 	gboolean polkit_enabled;
+#if WITH_POLKIT
 	guint call_id_counter;
 	GCancellable *new_proxy_cancellable;
 	GSList *queued_calls;
 	GDBusProxy *proxy;
+#endif
 } NMAuthManagerPrivate;
 
 static NMAuthManager *_instance = NULL;
@@ -99,6 +101,8 @@ nm_auth_manager_get_polkit_enabled (NMAuthManager *self)
 }
 
 /*****************************************************************************/
+
+#if WITH_POLKIT
 
 typedef enum {
 	POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE                   = 0,
@@ -477,6 +481,8 @@ _dbus_new_proxy_cb (GObject *source_object,
 	_emit_changed_signal (self);
 }
 
+#endif
+
 /*****************************************************************************/
 
 NMAuthManager *
@@ -548,6 +554,7 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_auth_manager_parent_class)->constructed (object);
 
+#if WITH_POLKIT
 	_LOGD ("create auth-manager: polkit %s", priv->polkit_enabled ? "enabled" : "disabled");
 
 	if (priv->polkit_enabled) {
@@ -567,6 +574,12 @@ constructed (GObject *object)
 		                          _dbus_new_proxy_cb,
 		                          p_self);
 	}
+#else
+	if (priv->polkit_enabled)
+		_LOGW ("create auth-manager: polkit disabled at compile time. All authentication requests will fail");
+	else
+		_LOGD ("create auth-manager: polkit disabled at compile time");
+#endif
 }
 
 
@@ -574,10 +587,13 @@ static void
 dispose (GObject *object)
 {
 	NMAuthManager* self = NM_AUTH_MANAGER (object);
+#if WITH_POLKIT
 	NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE (self);
+#endif
 
 	_LOGD ("dispose");
 
+#if WITH_POLKIT
 	/* since we take a reference for each queued call, we don't expect to have any queued calls in dispose() */
 	g_assert (!priv->queued_calls);
 
@@ -591,6 +607,7 @@ dispose (GObject *object)
 		g_signal_handlers_disconnect_by_func (priv->proxy, _dbus_on_g_signal_cb, self);
 		g_clear_object (&priv->proxy);
 	}
+#endif
 
 	G_OBJECT_CLASS (nm_auth_manager_parent_class)->dispose (object);
 }
