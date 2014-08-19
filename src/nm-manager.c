@@ -1078,6 +1078,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	GSList *iter;
 	char *iface = NULL;
 	NMDevice *device = NULL, *parent = NULL;
+	gboolean nm_owned = FALSE;
 
 	iface = get_virtual_iface_name (self, connection, &parent);
 	if (!iface) {
@@ -1100,6 +1101,8 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	 * create it before this function can do the rest of the setup.
 	 */
 	priv->ignore_link_added_cb++;
+
+	nm_owned = !nm_platform_link_exists (iface);
 
 	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
 		device = nm_device_bond_new_for_connection (connection);
@@ -1127,8 +1130,14 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 	}
 
 	if (device) {
-		nm_device_set_nm_owned (device);
-		add_device (self, device, FALSE);
+		if (nm_owned)
+			nm_device_set_nm_owned (device);
+
+		/* If it was created by NM there's no connection to assume, but if it
+		 * previously existed there might be one.
+		 */
+		add_device (self, device, !nm_owned);
+
 		g_object_unref (device);
 	}
 
