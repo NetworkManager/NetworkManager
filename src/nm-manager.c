@@ -1908,7 +1908,7 @@ factory_device_added_cb (NMDeviceFactory *factory,
                          NMDevice *device,
                          gpointer user_data)
 {
-	add_device (NM_MANAGER (user_data), device, FALSE);
+	add_device (NM_MANAGER (user_data), device, TRUE);
 }
 
 static gboolean
