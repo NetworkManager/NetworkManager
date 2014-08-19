@@ -167,6 +167,7 @@ detect_build_type 'NetworkManager-openswan-[0-9]*' NetworkManager-openswan.spec
 detect_build_type 'NetworkManager-vpnc-[0-9]*' NetworkManager-vpnc.spec
 detect_build_type 'wireless_tools.[0-9]*' wireless-tools.spec
 detect_build_type 'umip-[0-9]*' mipv6-daemon.spec
+detect_build_type 'initscripts-[0-9]*' initscripts.spec
 
 [[ -n "$BUILD_TYPE" ]] || die "Could not detect dist-git type"
 
@@ -230,6 +231,8 @@ pushd "$DIRNAME"
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-vpnc"
     elif [[ "$BUILD_TYPE" == "mipv6-daemon" ]]; then
         git remote add origin "git://git.umip.org/umip.git";
+    elif [[ "$BUILD_TYPE" == "initscripts" ]]; then
+        git remote add origin "https://git.fedorahosted.org/git/initscripts.git";
     fi
     LOCAL_MIRROR_URL="$(LANG=C git remote -v | sed -n 's/^origin\t*\([^\t].*\) (fetch)/\1/p')"
     LOCAL_MIRROR="$(get_local_mirror "$LOCAL_MIRROR_URL")"
