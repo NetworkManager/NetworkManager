@@ -2133,8 +2133,9 @@ nm_utils_hwaddr_valid (const char *asc, gssize length)
  *
  *   3. If @hwaddr1 and @hwaddr2 are InfiniBand hardware addresses (that is, if
  *      they are %INFINIBAND_ALEN bytes long in binary form) then only the last
- *      8 bytes are compared, since those are the only bytes that matter for
- *      InfiniBand hardware address matching.
+ *      8 bytes are compared, since those are the only bytes that actually
+ *      identify the hardware. (The other 12 bytes will change depending on the
+ *      configuration of the InfiniBand fabric that the device is connected to.)
  *
  * If a passed-in ASCII hardware address cannot be parsed, or would parse to an
  * address larger than %NM_UTILS_HWADDR_LEN_MAX, then it will silently fail to
