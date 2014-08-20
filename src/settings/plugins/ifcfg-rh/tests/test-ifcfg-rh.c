@@ -14465,10 +14465,10 @@ static void
 test_svUnescape ()
 {
 	int len, repeat, i, k;
-	GRand *rand = g_rand_new ();
+	GRand *r = g_rand_new ();
 	guint32 seed = g_random_int ();
 
-	g_rand_set_seed (rand, seed);
+	g_rand_set_seed (r, seed);
 
 	test_svUnescape_assert ("");
 	test_svUnescape_assert ("'");
@@ -14489,16 +14489,16 @@ test_svUnescape ()
 
 			/* fill the entire string with random. */
 			for (i = 0; i < len; i++)
-				s[i] = g_rand_int (rand);
+				s[i] = g_rand_int (r);
 
 			/* randomly place escape characters into the string */
-			k = g_rand_int (rand) % (len);
+			k = g_rand_int (r) % (len);
 			while (k-- > 0)
-				s[g_rand_int (rand) % len] = '\\';
+				s[g_rand_int (r) % len] = '\\';
 
 			if (len > 1) {
 				/* quote the string. */
-				k = g_rand_int (rand) % (10);
+				k = g_rand_int (r) % (10);
 				if (k < 4) {
 					char quote = k < 2 ? '"' : '\'';
 
@@ -14514,7 +14514,7 @@ test_svUnescape ()
 		g_free (s);
 	}
 
-	g_rand_free (rand);
+	g_rand_free (r);
 }
 
 

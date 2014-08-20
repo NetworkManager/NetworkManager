@@ -1830,9 +1830,9 @@ test_ip4_netmask_to_prefix (void)
 {
 	int i, j;
 
-	GRand *rand = g_rand_new ();
+	GRand *r = g_rand_new ();
 
-	g_rand_set_seed (rand, 1);
+	g_rand_set_seed (r, 1);
 
 	for (i = 2; i<=32; i++) {
 		guint32 netmask = nm_utils_ip4_prefix_to_netmask (i);
@@ -1841,11 +1841,11 @@ test_ip4_netmask_to_prefix (void)
 		g_assert_cmpint (i, ==, nm_utils_ip4_netmask_to_prefix (netmask));
 
 		for (j = 0; j < 2*i; j++) {
-			guint32 r = g_rand_int (rand);
+			guint32 n = g_rand_int (r);
 			guint32 netmask_holey;
 			guint32 prefix_holey;
 
-			netmask_holey = (netmask & r) | netmask_lowest_bit;
+			netmask_holey = (netmask & n) | netmask_lowest_bit;
 
 			if (netmask_holey == netmask)
 				continue;
@@ -1858,7 +1858,7 @@ test_ip4_netmask_to_prefix (void)
 		}
 	}
 
-	g_rand_free (rand);
+	g_rand_free (r);
 }
 
 #define ASSERT_CHANGED(statement) \
