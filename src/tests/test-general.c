@@ -179,51 +179,51 @@ ip6_address_clear_host_address_reference (struct in6_addr *dst, struct in6_addr 
 }
 
 static void
-_randomize_in6_addr (struct in6_addr *addr, GRand *rand)
+_randomize_in6_addr (struct in6_addr *addr, GRand *r)
 {
 	int i;
 
 	for (i=0; i < 4; i++)
-		((guint32 *)addr)[i] = g_rand_int (rand);
+		((guint32 *)addr)[i] = g_rand_int (r);
 }
 
 static void
 test_nm_utils_ip6_address_clear_host_address (void)
 {
-	GRand *rand = g_rand_new ();
+	GRand *r = g_rand_new ();
 	int plen, i;
 
-	g_rand_set_seed (rand, 0);
+	g_rand_set_seed (r, 0);
 
 	for (plen = 0; plen <= 128; plen++) {
 		for (i =0; i<50; i++) {
 			struct in6_addr addr_src, addr_ref;
 			struct in6_addr addr1, addr2;
 
-			_randomize_in6_addr (&addr_src, rand);
-			_randomize_in6_addr (&addr_ref, rand);
-			_randomize_in6_addr (&addr1, rand);
-			_randomize_in6_addr (&addr2, rand);
+			_randomize_in6_addr (&addr_src, r);
+			_randomize_in6_addr (&addr_ref, r);
+			_randomize_in6_addr (&addr1, r);
+			_randomize_in6_addr (&addr2, r);
 
 			addr1 = addr_src;
 			ip6_address_clear_host_address_reference (&addr_ref, &addr1, plen);
 
-			_randomize_in6_addr (&addr1, rand);
-			_randomize_in6_addr (&addr2, rand);
+			_randomize_in6_addr (&addr1, r);
+			_randomize_in6_addr (&addr2, r);
 			addr1 = addr_src;
 			nm_utils_ip6_address_clear_host_address (&addr2, &addr1, plen);
 			g_assert_cmpint (memcmp (&addr1, &addr_src, sizeof (struct in6_addr)), ==, 0);
 			g_assert_cmpint (memcmp (&addr2, &addr_ref, sizeof (struct in6_addr)), ==, 0);
 
 			/* test for self assignment/inplace update. */
-			_randomize_in6_addr (&addr1, rand);
+			_randomize_in6_addr (&addr1, r);
 			addr1 = addr_src;
 			nm_utils_ip6_address_clear_host_address (&addr1, &addr1, plen);
 			g_assert_cmpint (memcmp (&addr1, &addr_ref, sizeof (struct in6_addr)), ==, 0);
 		}
 	}
 
-	g_rand_free (rand);
+	g_rand_free (r);
 }
 
 /*******************************************/
