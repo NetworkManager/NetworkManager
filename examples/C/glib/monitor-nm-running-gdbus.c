@@ -1,5 +1,4 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* vim: set ft=c ts=4 sts=4 sw=4 noexpandtab smartindent: */
 /*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2012 Red Hat, Inc.
+ * Copyright 2012 Red Hat, Inc.
  */
 
 /*
@@ -26,7 +25,7 @@
  * See also http://developer.gnome.org/gio/stable/gio-Watching-Bus-Names.html
  *
  * Standalone compilation:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 gio-2.0` monitor-nm-running-GDBus.c -o monitor-nm-running-GDBus
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 gio-2.0` monitor-nm-running-gdbus.c -o monitor-nm-running-gdbus
  */
 
 #include <gio/gio.h>

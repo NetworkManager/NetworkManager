@@ -14,14 +14,14 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 Red Hat, Inc.
+ * Copyright 2011 Red Hat, Inc.
  */
 
 /*
- * The example shows how to add a new connection using libnm.
- * Contrast this example with add-connection-dbus-glib.c, which is a bit lower
- * level and talks directly to NM using dbus-glib.  This example is simpler
- * because libnm handles much of the low-level stuff for you.
+ * The example shows how to add a new connection using libnm.  Contrast this
+ * example with add-connection-gdbus.c, which is a bit lower level and talks
+ * directly to NM using GDBus.  This example is simpler because libnm handles
+ * much of the low-level stuff for you.
  *
  * Compile with:
  *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` add-connection-libnm.c -o add-connection-libnm
@@ -98,7 +98,8 @@ add_connection (NMRemoteSettings *settings, GMainLoop *loop, const char *con_nam
 }
 
 
-int main (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
 	NMRemoteSettings *settings;
 	GMainLoop *loop;
