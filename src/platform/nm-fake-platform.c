@@ -162,12 +162,12 @@ link_get_all (NMPlatform *platform)
 }
 
 static gboolean
-_nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *link)
+_nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *l)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
 
 	if (device)
-		*link = device->link;
+		*l = device->link;
 	return !!device;
 }
 
