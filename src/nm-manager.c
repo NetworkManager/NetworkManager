@@ -1974,6 +1974,7 @@ read_device_factory_paths ()
 	paths = g_array_new (FALSE, FALSE, sizeof (struct read_device_factory_paths_data));
 
 	while ((item = g_dir_read_name (dir))) {
+		int errsv;
 		struct read_device_factory_paths_data data;
 
 		if (!g_str_has_prefix (item, PLUGIN_PREFIX))
@@ -1983,21 +1984,25 @@ read_device_factory_paths ()
 
 		data.path = g_build_filename (NMPLUGINDIR, item, NULL);
 
-		if (stat (data.path, &data.st) != 0)
-			goto continue_with_error;
+		if (stat (data.path, &data.st) != 0) {
+			errsv = errno;
+			nm_log_warn (LOGD_HW, "device plugin: skip invalid file %s (error during stat: %s)", data.path, strerror (errsv));
+			goto NEXT;
+		}
 		if (!S_ISREG (data.st.st_mode))
-			goto continue_silently;
-		if (data.st.st_uid != 0)
-			goto continue_with_error;
-		if (data.st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID))
-			goto continue_with_error;
+			goto NEXT;
+		if (data.st.st_uid != 0) {
+			nm_log_warn (LOGD_HW, "device plugin: skip invalid file %s (file must be owned by root)", data.path);
+			goto NEXT;
+		}
+		if (data.st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
+			nm_log_warn (LOGD_HW, "device plugin: skip invalid file %s (invalid file permissions)", data.path);
+			goto NEXT;
+		}
 
 		g_array_append_val (paths, data);
 		continue;
-
-continue_with_error:
-		nm_log_dbg (LOGD_HW, "device plugin: skip invalid file %s", data.path);
-continue_silently:
+NEXT:
 		g_free (data.path);
 	}
 	g_dir_close (dir);
