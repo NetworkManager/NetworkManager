@@ -100,8 +100,19 @@ nm_simple_connection_new_clone (NMConnection *connection)
 }
 
 static void
+dispose (GObject *object)
+{
+	nm_connection_clear_secrets (NM_CONNECTION (object));
+
+	G_OBJECT_CLASS (nm_simple_connection_parent_class)->dispose (object);
+}
+
+static void
 nm_simple_connection_class_init (NMSimpleConnectionClass *simple_class)
 {
+	GObjectClass *object_class = G_OBJECT_CLASS (simple_class);
+
+	object_class->dispose = dispose;
 }
 
 static void

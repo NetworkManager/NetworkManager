@@ -93,8 +93,6 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct {
-	gboolean disposed;
-
 	NMAgentManager *agent_mgr;
 	NMSessionMonitor *session_monitor;
 	guint session_changed_id;
@@ -2049,40 +2047,35 @@ dispose (GObject *object)
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	GSList *iter;
 
-	if (priv->disposed)
-		goto out;
-	priv->disposed = TRUE;
-
 	if (priv->updated_idle_id) {
 		g_source_remove (priv->updated_idle_id);
 		priv->updated_idle_id = 0;
 	}
 
-	if (priv->system_secrets)
-		g_object_unref (priv->system_secrets);
-	if (priv->agent_secrets)
-		g_object_unref (priv->agent_secrets);
+	nm_connection_clear_secrets (NM_CONNECTION (self));
+	g_clear_object (&priv->system_secrets);
+	g_clear_object (&priv->agent_secrets);
 
 	/* Cancel PolicyKit requests */
-	for (iter = priv->pending_auths; iter; iter = g_slist_next (iter))
-		nm_auth_chain_unref ((NMAuthChain *) iter->data);
-	g_slist_free (priv->pending_auths);
+	g_slist_free_full (priv->pending_auths, (GDestroyNotify) nm_auth_chain_unref);
 	priv->pending_auths = NULL;
 
 	/* Cancel in-progress secrets requests */
 	for (iter = priv->reqs; iter; iter = g_slist_next (iter))
 		nm_agent_manager_cancel_secrets (priv->agent_mgr, GPOINTER_TO_UINT (iter->data));
 	g_slist_free (priv->reqs);
+	priv->reqs = NULL;
 
-	g_hash_table_destroy (priv->seen_bssids);
+	g_clear_pointer (&priv->seen_bssids, (GDestroyNotify) g_hash_table_destroy);
 
 	set_visible (self, FALSE);
 
-	if (priv->session_changed_id)
+	if (priv->session_changed_id) {
 		g_signal_handler_disconnect (priv->session_monitor, priv->session_changed_id);
-	g_object_unref (priv->agent_mgr);
+		priv->session_changed_id = 0;
+	}
+	g_clear_object (&priv->agent_mgr);
 
-out:
 	G_OBJECT_CLASS (nm_settings_connection_parent_class)->dispose (object);
 }
 

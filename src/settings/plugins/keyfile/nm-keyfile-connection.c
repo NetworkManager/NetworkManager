@@ -166,11 +166,7 @@ nm_keyfile_connection_init (NMKeyfileConnection *connection)
 static void
 finalize (GObject *object)
 {
-	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (object);
-
-	nm_connection_clear_secrets (NM_CONNECTION (object));
-
-	g_free (priv->path);
+	g_free (NM_KEYFILE_CONNECTION_GET_PRIVATE (object)->path);
 
 	G_OBJECT_CLASS (nm_keyfile_connection_parent_class)->finalize (object);
 }
@@ -184,7 +180,7 @@ nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_c
 	g_type_class_add_private (keyfile_connection_class, sizeof (NMKeyfileConnectionPrivate));
 
 	/* Virtual methods */
-	object_class->finalize     = finalize;
+	object_class->finalize = finalize;
 	settings_class->commit_changes = commit_changes;
 	settings_class->delete = do_delete;
 }

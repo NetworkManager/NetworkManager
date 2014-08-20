@@ -343,17 +343,6 @@ nm_ifcfg_connection_init (NMIfcfgConnection *connection)
 }
 
 static void
-finalize (GObject *object)
-{
-	nm_connection_clear_secrets (NM_CONNECTION (object));
-
-	path_watch_stop (NM_IFCFG_CONNECTION (object));
-	g_free (NM_IFCFG_CONNECTION_GET_PRIVATE (object)->path);
-
-	G_OBJECT_CLASS (nm_ifcfg_connection_parent_class)->finalize (object);
-}
-
-static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
@@ -392,6 +381,22 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
+dispose (GObject *object)
+{
+	path_watch_stop (NM_IFCFG_CONNECTION (object));
+
+	G_OBJECT_CLASS (nm_ifcfg_connection_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	g_free (NM_IFCFG_CONNECTION_GET_PRIVATE (object)->path);
+
+	G_OBJECT_CLASS (nm_ifcfg_connection_parent_class)->finalize (object);
+}
+
+static void
 nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ifcfg_connection_class);
@@ -402,6 +407,7 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	/* Virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	object_class->dispose      = dispose;
 	object_class->finalize     = finalize;
 	settings_class->delete = do_delete;
 	settings_class->commit_changes = commit_changes;

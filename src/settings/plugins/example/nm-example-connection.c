@@ -165,12 +165,7 @@ nm_example_connection_init (NMExampleConnection *connection)
 static void
 finalize (GObject *object)
 {
-	NMExampleConnectionPrivate *priv = NM_EXAMPLE_CONNECTION_GET_PRIVATE (object);
-
-	/* Zero out any secrets so we don't leave them in memory */
-	nm_connection_clear_secrets (NM_CONNECTION (object));
-
-	g_free (priv->path);
+	g_free (NM_EXAMPLE_CONNECTION_GET_PRIVATE (object)->path);
 
 	G_OBJECT_CLASS (nm_example_connection_parent_class)->finalize (object);
 }
