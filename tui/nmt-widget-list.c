@@ -243,7 +243,8 @@ ensure_widgets (NmtWidgetList *list)
 		                                                G_BINDING_SYNC_CREATE);
 		g_object_add_weak_pointer (G_OBJECT (priv->add_sensitivity),
 		                           (gpointer *)&priv->add_sensitivity);
-	}
+	} else
+		nmt_newt_component_set_sensitive (NMT_NEWT_COMPONENT (priv->add_button), TRUE);
 }
 
 static void
