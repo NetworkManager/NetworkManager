@@ -337,8 +337,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.source = NM_PLATFORM_SOURCE_USER;
-		if (label)
-			g_strlcpy (address.label, label, sizeof (address.label));
+		g_strlcpy (address.label, label, sizeof (address.label));
 
 		nm_ip4_config_add_address (config, &address);
 	}
@@ -425,10 +424,7 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 		if (same_prefix (address->address, gateway, address->plen))
 			nm_ip4_address_set_gateway (s_addr, gateway);
 
-		if (*address->label)
-			_nm_setting_ip4_config_add_address_with_label (s_ip4, s_addr, address->label);
-		else
-			nm_setting_ip4_config_add_address (s_ip4, s_addr);
+		_nm_setting_ip4_config_add_address_with_label (s_ip4, s_addr, address->label);
 		nm_ip4_address_unref (s_addr);
 	}
 

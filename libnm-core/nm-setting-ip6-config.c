@@ -25,6 +25,7 @@
 
 #include "nm-setting-ip6-config.h"
 #include "nm-utils.h"
+#include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-setting-private.h"
@@ -902,7 +903,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DNS_SEARCH:
 		g_slist_free_full (priv->dns_search, g_free);
-		priv->dns_search = g_value_dup_boxed (value);
+		priv->dns_search = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_ADDRESSES:
 		g_slist_free_full (priv->addresses, g_free);
@@ -951,7 +952,7 @@ get_property (GObject *object, guint prop_id,
 		nm_utils_ip6_dns_to_gvalue (priv->dns, value);
 		break;
 	case PROP_DNS_SEARCH:
-		g_value_set_boxed (value, priv->dns_search);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->dns_search));
 		break;
 	case PROP_ADDRESSES:
 		nm_utils_ip6_addresses_to_gvalue (priv->addresses, value);
@@ -1063,7 +1064,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
 		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_DNS_SEARCH, "", "",
-		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
 

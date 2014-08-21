@@ -37,80 +37,6 @@ _nm_utils_convert_op_to_string (const GValue *src_value, GValue *dest_value)
 }
 
 static void
-_nm_utils_convert_strv_to_slist (const GValue *src_value, GValue *dest_value)
-{
-	char **str;
-	GSList *list = NULL;
-	guint i = 0;
-
-	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), G_TYPE_STRV));
-
-	str = (char **) g_value_get_boxed (src_value);
-
-	while (str && str[i])
-		list = g_slist_prepend (list, g_strdup (str[i++]));
-
-	g_value_take_boxed (dest_value, g_slist_reverse (list));
-}
-
-static void
-_nm_utils_convert_slist_to_strv (const GValue *src_value, GValue *dest_value)
-{
-	GSList *slist;
-	char **strv;
-	int len, i = 0;
-
-	slist = g_value_get_boxed (src_value);
-	len = g_slist_length (slist);
-
-	strv = g_new (char *, len + 1);
-	for (i = 0; slist; slist = slist->next, i++)
-		strv[i] = g_strdup (slist->data);
-	strv[i] = NULL;
-
-	g_value_take_boxed (dest_value, strv);
-}
-
-static void
-_nm_utils_convert_strv_to_ptrarray (const GValue *src_value, GValue *dest_value)
-{
-	char **str;
-	GPtrArray *array = NULL;
-	guint i = 0;
-
-	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), G_TYPE_STRV));
-
-	str = (char **) g_value_get_boxed (src_value);
-
-	array = g_ptr_array_sized_new (3);
-	while (str && str[i])
-		g_ptr_array_add (array, g_strdup (str[i++]));
-
-	g_value_take_boxed (dest_value, array);
-}
-
-static void
-_nm_utils_convert_string_list_to_string (const GValue *src_value, GValue *dest_value)
-{
-	GSList *strings;
-	GString *printable;
-	GSList *iter;
-
-	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_LIST_OF_STRING));
-
-	strings = (GSList *) g_value_get_boxed (src_value);
-
-	printable = g_string_new (NULL);
-	for (iter = strings; iter; iter = iter->next) {
-		if (iter != strings)
-			g_string_append_c (printable, ',');
-		g_string_append (printable, iter->data ? iter->data : "(null)");
-	}
-
-	g_value_take_string (dest_value, g_string_free (printable, FALSE));
-}
-
-static void
 _string_array_to_string (const GPtrArray *strings, GValue *dest_value)
 {
 	GString *printable;
@@ -124,17 +50,6 @@ _string_array_to_string (const GPtrArray *strings, GValue *dest_value)
 	}
 
 	g_value_take_string (dest_value, g_string_free (printable, FALSE));
-}
-
-static void
-_nm_utils_convert_string_array_to_string (const GValue *src_value, GValue *dest_value)
-{
-	const GPtrArray *strings;
-
-	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_ARRAY_OF_STRING));
-
-	strings = (const GPtrArray *) g_value_get_boxed (src_value);
-	_string_array_to_string (strings, dest_value);
 }
 
 static void
@@ -543,21 +458,6 @@ _nm_value_transforms_register (void)
 		g_value_register_transform_func (DBUS_TYPE_G_OBJECT_PATH,
 		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_op_to_string);
-		g_value_register_transform_func (G_TYPE_STRV,
-		                                 DBUS_TYPE_G_LIST_OF_STRING,
-		                                 _nm_utils_convert_strv_to_slist);
-		g_value_register_transform_func (DBUS_TYPE_G_LIST_OF_STRING,
-		                                 G_TYPE_STRV,
-		                                 _nm_utils_convert_slist_to_strv);
-		g_value_register_transform_func (G_TYPE_STRV,
-		                                 DBUS_TYPE_G_ARRAY_OF_STRING,
-		                                 _nm_utils_convert_strv_to_ptrarray);
-		g_value_register_transform_func (DBUS_TYPE_G_LIST_OF_STRING,
-		                                 G_TYPE_STRING,
-		                                 _nm_utils_convert_string_list_to_string);
-		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_STRING,
-		                                 G_TYPE_STRING,
-		                                 _nm_utils_convert_string_array_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
 		                                 G_TYPE_STRING,
 		                                 _nm_utils_convert_op_array_to_string);

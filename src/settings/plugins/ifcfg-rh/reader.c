@@ -2915,8 +2915,7 @@ read_8021x_list_value (shvarFile *ifcfg,
                        const char *prop_name)
 {
 	char *value;
-	char **strv, **iter;
-	GSList *gslist = NULL;
+	char **strv;
 
 	g_return_if_fail (ifcfg != NULL);
 	g_return_if_fail (ifcfg_var_name != NULL);
@@ -2927,16 +2926,8 @@ read_8021x_list_value (shvarFile *ifcfg,
 		return;
 
 	strv = g_strsplit_set (value, " \t", 0);
-	for (iter = strv; iter && *iter; iter++) {
-		if (*iter[0] == '\0')
-			continue;
-		gslist = g_slist_prepend (gslist, *iter);
-	}
-	if (gslist) {
-		gslist = g_slist_reverse (gslist);
-		g_object_set (setting, prop_name, gslist, NULL);
-		g_slist_free (gslist);
-	}
+	if (strv && strv[0])
+		g_object_set (setting, prop_name, strv, NULL);
 	g_strfreev (strv);
 	g_free (value);
 }
@@ -3251,7 +3242,6 @@ make_wireless_setting (shvarFile *ifcfg,
 {
 	NMSettingWireless *s_wireless;
 	GByteArray *array = NULL;
-	GSList *macaddr_blacklist = NULL;
 	char *value = NULL;
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
@@ -3272,25 +3262,12 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {
-		char **list = NULL, **iter;
+		char **list;
 
 		list = g_strsplit_set (value, " \t", 0);
-		for (iter = list; iter && *iter; iter++) {
-			if (**iter == '\0')
-				continue;
-			if (!nm_utils_hwaddr_valid (*iter, ETH_ALEN)) {
-				PARSE_WARNING ("invalid MAC in HWADDR_BLACKLIST '%s'", *iter);
-				continue;
-			}
-			macaddr_blacklist = g_slist_prepend (macaddr_blacklist, *iter);
-		}
-		if (macaddr_blacklist) {
-			macaddr_blacklist = g_slist_reverse (macaddr_blacklist);
-			g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, macaddr_blacklist, NULL);
-			g_slist_free (macaddr_blacklist);
-		}
-		g_free (value);
+		g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, list, NULL);
 		g_strfreev (list);
+		g_free (value);
 	}
 
 	value = svGetValue (ifcfg, "ESSID", TRUE);
@@ -3558,17 +3535,8 @@ make_wired_setting (shvarFile *ifcfg,
 			if (num_chans < 2 || num_chans > 3) {
 				PARSE_WARNING ("invalid SUBCHANNELS '%s' (%d channels, 2 or 3 expected)",
 				               value, g_strv_length (chans));
-			} else {
-				GPtrArray *array = g_ptr_array_sized_new (num_chans);
-
-				g_ptr_array_add (array, chans[0]);
-				g_ptr_array_add (array, chans[1]);
-				if (num_chans == 3)
-					g_ptr_array_add (array, chans[2]);
-
-				g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, array, NULL);
-				g_ptr_array_free (array, TRUE);
-			}
+			} else
+				g_object_set (s_wired, NM_SETTING_WIRED_S390_SUBCHANNELS, chans, NULL);
 			g_strfreev (chans);
 		}
 		g_free (value);

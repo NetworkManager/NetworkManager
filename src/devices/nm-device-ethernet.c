@@ -409,7 +409,7 @@ static gboolean
 match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_mac)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-	const GPtrArray *subchans;
+	const char * const *subchans;
 	int i;
 
 	*try_mac = TRUE;
@@ -423,8 +423,8 @@ match_subchans (NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_m
 		return FALSE;
 
 	/* Make sure each subchannel in the connection is a subchannel of this device */
-	for (i = 0; i < subchans->len; i++) {
-		const char *candidate = g_ptr_array_index (subchans, i);
+	for (i = 0; subchans[i]; i++) {
+		const char *candidate = subchans[i];
 
 		if (   (priv->subchan1 && !strcmp (priv->subchan1, candidate))
 		    || (priv->subchan2 && !strcmp (priv->subchan2, candidate))

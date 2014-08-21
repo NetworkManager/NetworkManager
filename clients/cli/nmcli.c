@@ -388,6 +388,26 @@ setup_signals (void)
 	return TRUE;
 }
 
+static void
+nmc_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
+{
+	char **strings;
+
+	strings = g_value_get_boxed (src_value);
+	if (strings)
+		g_value_take_string (dest_value, g_strjoinv (",", strings));
+	else
+		g_value_set_string (dest_value, "");
+}
+
+static void
+nmc_value_transforms_register (void)
+{
+	g_value_register_transform_func (G_TYPE_STRV,
+	                                 G_TYPE_STRING,
+	                                 nmc_convert_strv_to_string);
+}
+
 static NMClient *
 nmc_get_client (NmCli *nmc)
 {
@@ -495,6 +515,8 @@ main (int argc, char *argv[])
 	 * See https://bugzilla.redhat.com/show_bug.cgi?id=1109946
 	 */
 	rl_set_keyboard_input_timeout (10000);
+
+	nmc_value_transforms_register ();
 
 	nmc_init (&nm_cli);
 	g_idle_add (start, &args_info);

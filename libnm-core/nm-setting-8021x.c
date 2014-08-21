@@ -2819,7 +2819,7 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_EAP:
 		g_slist_free_full (priv->eap, g_free);
-		priv->eap = g_value_dup_boxed (value);
+		priv->eap = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_IDENTITY:
 		g_free (priv->identity);
@@ -2855,7 +2855,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ALTSUBJECT_MATCHES:
 		g_slist_free_full (priv->altsubject_matches, g_free);
-		priv->altsubject_matches = g_value_dup_boxed (value);
+		priv->altsubject_matches = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_CLIENT_CERT:
 		if (priv->client_cert) {
@@ -2911,7 +2911,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_ALTSUBJECT_MATCHES:
 		g_slist_free_full (priv->phase2_altsubject_matches, g_free);
-		priv->phase2_altsubject_matches = g_value_dup_boxed (value);
+		priv->phase2_altsubject_matches = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		if (priv->phase2_client_cert) {
@@ -3003,7 +3003,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_EAP:
-		g_value_set_boxed (value, priv->eap);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->eap));
 		break;
 	case PROP_IDENTITY:
 		g_value_set_string (value, priv->identity);
@@ -3024,7 +3024,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->subject_match);
 		break;
 	case PROP_ALTSUBJECT_MATCHES:
-		g_value_set_boxed (value, priv->altsubject_matches);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->altsubject_matches));
 		break;
 	case PROP_CLIENT_CERT:
 		g_value_set_boxed (value, priv->client_cert);
@@ -3054,7 +3054,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->phase2_subject_match);
 		break;
 	case PROP_PHASE2_ALTSUBJECT_MATCHES:
-		g_value_set_boxed (value, priv->phase2_altsubject_matches);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->phase2_altsubject_matches));
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		g_value_set_boxed (value, priv->phase2_client_cert);
@@ -3135,7 +3135,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_EAP,
 		 g_param_spec_boxed (NM_SETTING_802_1X_EAP, "", "",
-		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
 
@@ -3241,7 +3241,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_ALTSUBJECT_MATCHES,
 		 g_param_spec_boxed (NM_SETTING_802_1X_ALTSUBJECT_MATCHES, "", "",
-		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
 
@@ -3417,7 +3417,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_ALTSUBJECT_MATCHES,
 		 g_param_spec_boxed (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES, "", "",
-		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
 

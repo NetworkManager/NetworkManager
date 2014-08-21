@@ -1028,7 +1028,7 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	char *tmp;
 	const char *nettype, *portname, *ctcprot, *s390_key, *s390_val;
 	guint32 mtu, num_opts, i;
-	const GPtrArray *s390_subchannels;
+	const char *const *s390_subchannels;
 	GString *str;
 	const GSList *macaddr_blacklist;
 
@@ -1073,16 +1073,14 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	svSetValue (ifcfg, "SUBCHANNELS", NULL, FALSE);
 	s390_subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
 	if (s390_subchannels) {
+		int len = g_strv_length ((char **)s390_subchannels);
+
 		tmp = NULL;
-	    if (s390_subchannels->len == 2) {
-			tmp = g_strdup_printf ("%s,%s",
-				                   (const char *) g_ptr_array_index (s390_subchannels, 0),
-				                   (const char *) g_ptr_array_index (s390_subchannels, 1));
-	    } else if (s390_subchannels->len == 3) {
-			tmp = g_strdup_printf ("%s,%s,%s",
-				                   (const char *) g_ptr_array_index (s390_subchannels, 0),
-				                   (const char *) g_ptr_array_index (s390_subchannels, 1),
-				                   (const char *) g_ptr_array_index (s390_subchannels, 2));
+	    if (len == 2) {
+		    tmp = g_strdup_printf ("%s,%s", s390_subchannels[0], s390_subchannels[1]);
+	    } else if (len == 3) {
+		    tmp = g_strdup_printf ("%s,%s,%s", s390_subchannels[0], s390_subchannels[1],
+		                           s390_subchannels[2]);
 		}
 		svSetValue (ifcfg, "SUBCHANNELS", tmp, FALSE);
 		g_free (tmp);
@@ -1128,11 +1126,11 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	return TRUE;
 }
 
-static GString *
+static char *
 vlan_priority_maplist_to_stringlist (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
 {
-	GSList *strlist = NULL, *iter;
-	GString *value = NULL;
+	char **strlist;
+	char *value;
 
 	if (map == NM_VLAN_INGRESS_MAP)
 		g_object_get (G_OBJECT (s_vlan), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, &strlist, NULL);
@@ -1141,11 +1139,11 @@ vlan_priority_maplist_to_stringlist (NMSettingVlan *s_vlan, NMVlanPriorityMap ma
 	else
 		return NULL;
 
-	value = g_string_new ("");
-	for (iter = strlist; iter; iter = g_slist_next (iter))
-		g_string_append_printf (value, "%s%s", value->len ? "," : "", (const char *) iter->data);
-
-	g_slist_free_full (strlist, g_free);
+	if (strlist[0])
+		value = g_strjoinv (",", strlist);
+	else
+		value = NULL;
+	g_strfreev (strlist);
 
 	return value;
 }
@@ -1158,7 +1156,6 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	NMSettingWired *s_wired;
 	char *tmp;
 	guint32 vlan_flags = 0;
-	GString *text = NULL;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	if (!s_con) {
@@ -1197,15 +1194,13 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	} else if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
 		svSetValue (ifcfg, "VLAN_FLAGS", "LOOSE_BINDING", FALSE);
 
-	text = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_INGRESS_MAP);
-	svSetValue (ifcfg, "VLAN_INGRESS_PRIORITY_MAP", text ? text->str : NULL, FALSE);
-	if (text)
-		g_string_free (text, TRUE);
+	tmp = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_INGRESS_MAP);
+	svSetValue (ifcfg, "VLAN_INGRESS_PRIORITY_MAP", tmp, FALSE);
+	g_free (tmp);
 
-	text = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_EGRESS_MAP);
-	svSetValue (ifcfg, "VLAN_EGRESS_PRIORITY_MAP", text ? text->str : NULL, FALSE);
-	if (text)
-		g_string_free (text, TRUE);
+	tmp = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_EGRESS_MAP);
+	svSetValue (ifcfg, "VLAN_EGRESS_PRIORITY_MAP", tmp, FALSE);
+	g_free (tmp);
 
 	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
@@ -1887,8 +1882,13 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		NMIP4Address *addr;
 		guint32 ip;
 
-		if (i > 0 && _nm_setting_ip4_config_get_address_label (s_ip4, i))
-			continue;
+		if (i > 0) {
+			const char *label;
+
+			label = _nm_setting_ip4_config_get_address_label (s_ip4, i);
+			if (*label)
+				continue;
+		}
 
 		if (n == 0) {
 			/* Instead of index 0 use un-numbered variables.
@@ -2163,8 +2163,6 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 		shvarFile *ifcfg;
 
 		label = _nm_setting_ip4_config_get_address_label (s_ip4, i);
-		if (!label)
-			continue;
 		if (   strncmp (label, base_name, base_name_len) != 0
 		    || label[base_name_len] != ':')
 			continue;

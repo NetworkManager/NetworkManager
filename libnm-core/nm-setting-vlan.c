@@ -21,12 +21,10 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
 #include "nm-setting-vlan.h"
 #include "nm-utils.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
 
@@ -574,14 +572,15 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 }
 
 static GSList *
-priority_stringlist_to_maplist (NMVlanPriorityMap map, GSList *strlist)
+priority_strv_to_maplist (NMVlanPriorityMap map, char **strv)
 {
-	GSList *list = NULL, *iter;
+	GSList *list = NULL;
+	int i;
 
-	for (iter = strlist; iter; iter = g_slist_next (iter)) {
+	for (i = 0; strv[i]; i++) {
 		PriorityMap *item;
 
-		item = priority_map_new_from_str (map, (const char *) iter->data);
+		item = priority_map_new_from_str (map, strv[i]);
 		if (item)
 			list = g_slist_prepend (list, item);
 	}
@@ -609,12 +608,12 @@ set_property (GObject *object, guint prop_id,
 	case PROP_INGRESS_PRIORITY_MAP:
 		g_slist_free_full (priv->ingress_priority_map, g_free);
 		priv->ingress_priority_map =
-			priority_stringlist_to_maplist (NM_VLAN_INGRESS_MAP, g_value_get_boxed (value));
+			priority_strv_to_maplist (NM_VLAN_INGRESS_MAP, g_value_get_boxed (value));
 		break;
 	case PROP_EGRESS_PRIORITY_MAP:
 		g_slist_free_full (priv->egress_priority_map, g_free);
 		priv->egress_priority_map =
-			priority_stringlist_to_maplist (NM_VLAN_EGRESS_MAP, g_value_get_boxed (value));
+			priority_strv_to_maplist (NM_VLAN_EGRESS_MAP, g_value_get_boxed (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -622,17 +621,22 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static GSList *
-priority_maplist_to_stringlist (GSList *list)
+static char **
+priority_maplist_to_strv (GSList *list)
 {
-	GSList *strlist = NULL, *iter;
+	GSList *iter;
+	GPtrArray *strv;
+
+	strv = g_ptr_array_new ();
 
 	for (iter = list; iter; iter = g_slist_next (iter)) {
 		PriorityMap *item = iter->data;
 
-		strlist = g_slist_prepend (strlist, g_strdup_printf ("%d:%d", item->from, item->to));
+		g_ptr_array_add (strv, g_strdup_printf ("%d:%d", item->from, item->to));
 	}
-	return g_slist_reverse (strlist);
+	g_ptr_array_add (strv, NULL);
+
+	return (char **) g_ptr_array_free (strv, FALSE);
 }
 
 static void
@@ -653,10 +657,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->flags);
 		break;
 	case PROP_INGRESS_PRIORITY_MAP:
-		g_value_take_boxed (value, priority_maplist_to_stringlist (priv->ingress_priority_map));
+		g_value_take_boxed (value, priority_maplist_to_strv (priv->ingress_priority_map));
 		break;
 	case PROP_EGRESS_PRIORITY_MAP:
-		g_value_take_boxed (value, priority_maplist_to_stringlist (priv->egress_priority_map));
+		g_value_take_boxed (value, priority_maplist_to_strv (priv->egress_priority_map));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -753,7 +757,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_INGRESS_PRIORITY_MAP,
 		 g_param_spec_boxed (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, "", "",
-		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
@@ -768,7 +772,7 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_EGRESS_PRIORITY_MAP,
 		 g_param_spec_boxed (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, "", "",
-		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));

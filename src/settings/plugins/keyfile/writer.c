@@ -894,22 +894,11 @@ write_setting_value (NMSetting *setting,
 			nm_keyfile_plugin_kf_set_integer_list (info->keyfile, setting_name, key, tmp_array, array->len);
 			g_free (tmp_array);
 		}
-	} else if (type == DBUS_TYPE_G_LIST_OF_STRING) {
-		GSList *list;
-		GSList *iter;
+	} else if (type == G_TYPE_STRV) {
+		char **array;
 
-		list = (GSList *) g_value_get_boxed (value);
-		if (list) {
-			char **array;
-			int i = 0;
-
-			array = g_new (char *, g_slist_length (list));
-			for (iter = list; iter; iter = iter->next)
-				array[i++] = iter->data;
-
-			nm_keyfile_plugin_kf_set_string_list (info->keyfile, setting_name, key, (const gchar **const) array, i);
-			g_free (array);
-		}
+		array = (char **) g_value_get_boxed (value);
+		nm_keyfile_plugin_kf_set_string_list (info->keyfile, setting_name, key, (const gchar **const) array, g_strv_length (array));
 	} else if (type == DBUS_TYPE_G_MAP_OF_STRING) {
 		write_hash_of_string (info->keyfile, setting, key, value);
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {

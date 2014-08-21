@@ -312,7 +312,7 @@ test_setting_ip4_config_labels (void)
 	NMIP4Address *addr;
 	const char *label;
 	GPtrArray *addrs;
-	GSList *labels;
+	char **labels;
 	GError *error = NULL;
 
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -331,7 +331,7 @@ test_setting_ip4_config_labels (void)
 	g_assert_no_error (error);
 
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
-	g_assert_cmpstr (label, ==, NULL);
+	g_assert_cmpstr (label, ==, "");
 
 	/* addr 2 */
 	addr = nm_ip4_address_new ();
@@ -351,13 +351,13 @@ test_setting_ip4_config_labels (void)
 	nm_ip4_address_set_address (addr, 0x03030303);
 	nm_ip4_address_set_prefix (addr, 24);
 
-	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, NULL);
+	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "");
 	nm_ip4_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 2);
-	g_assert_cmpstr (label, ==, NULL);
+	g_assert_cmpstr (label, ==, "");
 
 	/* Remove addr 1 and re-verify remaining addresses */
 	nm_setting_ip4_config_remove_address (s_ip4, 0);
@@ -372,7 +372,7 @@ test_setting_ip4_config_labels (void)
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, NULL);
+	g_assert_cmpstr (label, ==, "");
 
 
 	/* Test explicit property assignment */
@@ -396,18 +396,18 @@ test_setting_ip4_config_labels (void)
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
-	g_assert_cmpstr (label, ==, NULL);
+	g_assert_cmpstr (label, ==, "");
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, NULL);
+	g_assert_cmpstr (label, ==, "");
 
 	/* Setting labels now will leave addresses untouched */
 	g_object_set (G_OBJECT (s_ip4),
 	              "address-labels", labels,
 	              NULL);
-	g_boxed_free (DBUS_TYPE_G_LIST_OF_STRING, labels);
+	g_strfreev (labels);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
@@ -420,37 +420,39 @@ test_setting_ip4_config_labels (void)
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, NULL);
+	g_assert_cmpstr (label, ==, "");
 
 	/* Setting labels to a value that's too short or too long will result in
 	 * the setting not verifying.
 	 */
-	labels = g_slist_append (NULL, "eth0:2");
+	labels = g_strsplit ("eth0:2", ",", -1);
 	g_object_set (G_OBJECT (s_ip4),
 	              "address-labels", labels,
 	              NULL);
+	g_strfreev (labels);
 
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_error (error, NM_SETTING_IP4_CONFIG_ERROR, NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY);
 	g_assert (g_str_has_prefix (error->message, "ipv4.address-labels:"));
 	g_clear_error (&error);
 
-	labels = g_slist_append (labels, "eth0:3");
+	labels = g_strsplit ("eth0:2,eth0:3", ",", -1);
 	g_object_set (G_OBJECT (s_ip4),
 	              "address-labels", labels,
 	              NULL);
+	g_strfreev (labels);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	labels = g_slist_append (labels, "eth0:4");
+	labels = g_strsplit ("eth0:2,eth0:3,eth0:4", ",", -1);
 	g_object_set (G_OBJECT (s_ip4),
 	              "address-labels", labels,
 	              NULL);
+	g_strfreev (labels);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_error (error, NM_SETTING_IP4_CONFIG_ERROR, NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY);
 	g_assert (g_str_has_prefix (error->message, "ipv4.address-labels:"));
 	g_clear_error (&error);
-
 
 	g_object_unref (s_ip4);
 }
@@ -1226,7 +1228,7 @@ test_setting_connection_permissions_helpers (void)
 	NMSettingConnection *s_con;
 	gboolean success;
 	char buf[9] = { 0x61, 0x62, 0x63, 0xff, 0xfe, 0xfd, 0x23, 0x01, 0x00 };
-	GSList *list = NULL;
+	char **perms;
 	const char *expected_perm = "user:" TEST_UNAME ":";
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
@@ -1295,14 +1297,14 @@ test_setting_connection_permissions_helpers (void)
 	check_permission (s_con, 0, TEST_UNAME, "setting-connection-permissions-helpers");
 
 	/* Check the actual GObject property just to be paranoid */
-	g_object_get (G_OBJECT (s_con), NM_SETTING_CONNECTION_PERMISSIONS, &list, NULL);
-	ASSERT (list != NULL,
-	        "setting-connection-permissions-helpers", "unexpected failure getting permissions list");
-	ASSERT (g_slist_length (list) == 1,
-	        "setting-connection-permissions-helpers", "unexpected failure getting number of permissions in list");
-	ASSERT (strcmp (list->data, expected_perm) == 0,
+	g_object_get (G_OBJECT (s_con), NM_SETTING_CONNECTION_PERMISSIONS, &perms, NULL);
+	ASSERT (perms != NULL,
+	        "setting-connection-permissions-helpers", "unexpected failure getting permissions");
+	ASSERT (g_strv_length (perms) == 1,
+	        "setting-connection-permissions-helpers", "unexpected failure getting number of permissions");
+	ASSERT (strcmp (perms[0], expected_perm) == 0,
 	        "setting-connection-permissions-helpers", "unexpected permission property data");
-	g_slist_free_full (list, g_free);
+	g_strfreev (perms);
 
 	/* Now remove that permission and ensure we have 0 permissions */
 	nm_setting_connection_remove_permission (s_con, 0);
@@ -1320,7 +1322,7 @@ add_permission_property (NMSettingConnection *s_con,
                          const char *detail)
 {
 	GString *str;
-	GSList *list = NULL;
+	char *perms[2];
 
 	str = g_string_sized_new (50);
 	if (ptype)
@@ -1339,11 +1341,11 @@ add_permission_property (NMSettingConnection *s_con,
 	if (detail)
 		g_string_append (str, detail);
 
-	list = g_slist_append (list, str->str);
-	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_PERMISSIONS, list, NULL);
+	perms[0] = str->str;
+	perms[1] = NULL;
+	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_PERMISSIONS, perms, NULL);
 
 	g_string_free (str, TRUE);
-	g_slist_free (list);
 }
 
 static void

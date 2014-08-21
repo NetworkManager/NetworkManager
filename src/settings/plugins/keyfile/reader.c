@@ -1134,20 +1134,12 @@ read_one_setting_value (NMSetting *setting,
 		g_object_set (setting, key, array, NULL);
 		g_byte_array_free (array, TRUE);
 		g_free (tmp);
- 	} else if (type == DBUS_TYPE_G_LIST_OF_STRING) {
+	} else if (type == G_TYPE_STRV) {
 		gchar **sa;
 		gsize length;
-		int i;
-		GSList *list = NULL;
 
 		sa = nm_keyfile_plugin_kf_get_string_list (info->keyfile, setting_name, key, &length, NULL);
-		for (i = 0; i < length; i++)
-			list = g_slist_prepend (list, sa[i]);
-
-		list = g_slist_reverse (list);
-		g_object_set (setting, key, list, NULL);
-
-		g_slist_free (list);
+		g_object_set (setting, key, sa, NULL);
 		g_strfreev (sa);
 	} else if (type == DBUS_TYPE_G_MAP_OF_STRING) {
 		read_hash_of_string (info->keyfile, setting, key);

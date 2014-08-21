@@ -103,7 +103,7 @@ void              nm_setting_wired_clear_mac_blacklist_items   (NMSettingWired *
 
 guint32           nm_setting_wired_get_mtu              (NMSettingWired *setting);
 
-const GPtrArray * nm_setting_wired_get_s390_subchannels (NMSettingWired *setting);
+const char * const *nm_setting_wired_get_s390_subchannels (NMSettingWired *setting);
 const char *      nm_setting_wired_get_s390_nettype     (NMSettingWired *setting);
 
 guint32           nm_setting_wired_get_num_s390_options (NMSettingWired *setting);

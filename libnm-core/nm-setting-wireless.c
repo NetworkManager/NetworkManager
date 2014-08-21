@@ -898,14 +898,14 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
 		g_slist_free_full (priv->mac_address_blacklist, g_free);
-		priv->mac_address_blacklist = g_value_dup_boxed (value);
+		priv->mac_address_blacklist = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);
 		break;
 	case PROP_SEEN_BSSIDS:
 		g_slist_free_full (priv->seen_bssids, g_free);
-		priv->seen_bssids = g_value_dup_boxed (value);
+		priv->seen_bssids = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_HIDDEN:
 		priv->hidden = g_value_get_boolean (value);
@@ -921,6 +921,7 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	NMSettingWireless *setting = NM_SETTING_WIRELESS (object);
+	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_SSID:
@@ -951,13 +952,13 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_wireless_get_cloned_mac_address (setting));
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
-		g_value_set_boxed (value, nm_setting_wireless_get_mac_address_blacklist (setting));
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->mac_address_blacklist));
 		break;
 	case PROP_MTU:
 		g_value_set_uint (value, nm_setting_wireless_get_mtu (setting));
 		break;
 	case PROP_SEEN_BSSIDS:
-		g_value_set_boxed (value, NM_SETTING_WIRELESS_GET_PRIVATE (setting)->seen_bssids);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->seen_bssids));
 		break;
 	case PROP_HIDDEN:
 		g_value_set_boolean (value, nm_setting_wireless_get_hidden (setting));
@@ -1138,7 +1139,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS_BLACKLIST,
 		 g_param_spec_boxed (NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, "", "",
-		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_FUZZY_IGNORE |
 		                     G_PARAM_STATIC_STRINGS));
@@ -1156,7 +1157,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	g_object_class_install_property
 		(object_class, PROP_SEEN_BSSIDS,
 		 g_param_spec_boxed (NM_SETTING_WIRELESS_SEEN_BSSIDS, "", "",
-		                     DBUS_TYPE_G_LIST_OF_STRING,
+		                     G_TYPE_STRV,
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_FUZZY_IGNORE |
 		                     G_PARAM_STATIC_STRINGS));

@@ -1138,7 +1138,7 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		NMSettingConnection *s_con;
 		NMSettingWireless *s_wifi;
 		guint64 timestamp = 0;
-		GSList *bssid_list;
+		char **bssids;
 
 		dupl_con = nm_simple_connection_new_clone (NM_CONNECTION (self));
 		g_assert (dupl_con);
@@ -1159,11 +1159,11 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		 * from the same reason as timestamp. Thus we put it here to GetSettings()
 		 * return settings too.
 		 */
-		bssid_list = nm_settings_connection_get_seen_bssids (self);
+		bssids = nm_settings_connection_get_seen_bssids (self);
 		s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (dupl_con));
-		if (bssid_list && s_wifi)
-			g_object_set (s_wifi, NM_SETTING_WIRELESS_SEEN_BSSIDS, bssid_list, NULL);
-		g_slist_free (bssid_list);
+		if (bssids && bssids[0] && s_wifi)
+			g_object_set (s_wifi, NM_SETTING_WIRELESS_SEEN_BSSIDS, bssids, NULL);
+		g_free (bssids);
 
 		/* Secrets should *never* be returned by the GetSettings method, they
 		 * get returned by the GetSecrets method which can be better
@@ -1712,12 +1712,25 @@ nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection
  * Returns: (transfer container) list of seen BSSIDs (in the standard hex-digits-and-colons notation).
  * The caller is responsible for freeing the list, but not the content.
  **/
-GSList *
+char **
 nm_settings_connection_get_seen_bssids (NMSettingsConnection *connection)
 {
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	GHashTableIter iter;
+	char **bssids, *bssid;
+	int i;
+
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), NULL);
 
-	return _nm_utils_hash_values_to_slist (NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->seen_bssids);
+	bssids = g_new (char *, g_hash_table_size (priv->seen_bssids) + 1);
+
+	i = 0;
+	g_hash_table_iter_init (&iter, priv->seen_bssids);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &bssid))
+		bssids[i++] = bssid;
+	bssids[i] = NULL;
+
+	return bssids;
 }
 
 /**

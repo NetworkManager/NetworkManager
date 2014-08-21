@@ -2554,7 +2554,7 @@ test_read_wired_aliases_good (void)
 	const char *expected_id = "System aliasem0";
 	int expected_num_addresses = 4, expected_prefix = 24;
 	const char *expected_address[4] = { "192.168.1.5", "192.168.1.6", "192.168.1.9", "192.168.1.99" };
-	const char *expected_label[4] = { NULL, "aliasem0:1", "aliasem0:2", "aliasem0:99" };
+	const char *expected_label[4] = { "", "aliasem0:1", "aliasem0:2", "aliasem0:99" };
 	const char *expected_gateway[4] = { "192.168.1.1", "192.168.1.1", "192.168.1.1", "192.168.1.1" };
 	int i, j;
 
@@ -2699,7 +2699,7 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 	const char *tmp;
 	int expected_num_addresses = 1, expected_prefix = 24;
 	const char *expected_address = "192.168.1.5";
-	const char *expected_label = NULL;
+	const char *expected_label = "";
 	const char *expected_gateway = "192.168.1.1";
 	NMIP4Address *ip4_addr;
 	struct in_addr addr;
@@ -5850,7 +5850,7 @@ test_read_wired_qeth_static (void)
 	const char *expected_channel0 = "0.0.0600";
 	const char *expected_channel1 = "0.0.0601";
 	const char *expected_channel2 = "0.0.0602";
-	const GPtrArray *subchannels;
+	const char * const *subchannels;
 
 	connection = connection_from_file (TEST_IFCFG_WIRED_QETH_STATIC,
 	                                   NULL,
@@ -5914,24 +5914,19 @@ test_read_wired_qeth_static (void)
 	        TEST_IFCFG_WIRED_QETH_STATIC,
 	        NM_SETTING_WIRED_SETTING_NAME,
 	        NM_SETTING_WIRED_S390_SUBCHANNELS);
-	ASSERT (subchannels->len == 3,
+	ASSERT (subchannels[0] && subchannels[1] && subchannels[2] && !subchannels[3],
 	        "wired-qeth-static-verify-wired", "failed to verify %s: invalid %s / %s key (not 3 elements)",
 	        TEST_IFCFG_WIRED_QETH_STATIC,
 	        NM_SETTING_WIRED_SETTING_NAME,
 	        NM_SETTING_WIRED_S390_SUBCHANNELS);
 
-	tmp = (const char *) g_ptr_array_index (subchannels, 0);
-	ASSERT (strcmp (tmp, expected_channel0) == 0,
+	ASSERT (strcmp (subchannels[0], expected_channel0) == 0,
 	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected subchannel #0",
 	        TEST_IFCFG_WIRED_QETH_STATIC);
-
-	tmp = (const char *) g_ptr_array_index (subchannels, 1);
-	ASSERT (strcmp (tmp, expected_channel1) == 0,
+	ASSERT (strcmp (subchannels[1], expected_channel1) == 0,
 	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected subchannel #1",
 	        TEST_IFCFG_WIRED_QETH_STATIC);
-
-	tmp = (const char *) g_ptr_array_index (subchannels, 2);
-	ASSERT (strcmp (tmp, expected_channel2) == 0,
+	ASSERT (strcmp (subchannels[2], expected_channel2) == 0,
 	        "wired-qeth-static-verify-wired", "failed to verify %s: unexpected subchannel #2",
 	        TEST_IFCFG_WIRED_QETH_STATIC);
 
@@ -6022,7 +6017,7 @@ test_read_wired_ctc_static (void)
 	const char *expected_id = "System test-wired-ctc-static";
 	const char *expected_channel0 = "0.0.1b00";
 	const char *expected_channel1 = "0.0.1b01";
-	const GPtrArray *subchannels;
+	const char * const *subchannels;
 	gboolean success;
 
 	connection = connection_from_file (TEST_IFCFG_WIRED_CTC_STATIC,
@@ -6056,10 +6051,10 @@ test_read_wired_ctc_static (void)
 	/* Subchannels */
 	subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
 	g_assert (subchannels != NULL);
-	g_assert_cmpint (subchannels->len, ==, 2);
+	g_assert (subchannels[0] && subchannels[1] && !subchannels[2]);
 
-	g_assert_cmpstr (g_ptr_array_index (subchannels, 0), ==, expected_channel0);
-	g_assert_cmpstr (g_ptr_array_index (subchannels, 1), ==, expected_channel1);
+	g_assert_cmpstr (subchannels[0], ==, expected_channel0);
+	g_assert_cmpstr (subchannels[1], ==, expected_channel1);
 
 	/* Nettype */
 	g_assert_cmpstr (nm_setting_wired_get_s390_nettype (s_wired), ==, "ctc");
@@ -7736,7 +7731,7 @@ test_write_wired_aliases (void)
 	char *uuid;
 	int num_addresses = 4;
 	guint32 ip[] = { 0x01010101, 0x01010102, 0x01010103, 0x01010104 };
-	const char *label[] = { NULL, "alias0:2", NULL, "alias0:3" };
+	const char *label[] = { "", "alias0:2", "", "alias0:3" };
 	const guint32 gw = htonl (0x01010101);
 	const guint32 prefix = 24;
 	NMIP4Address *addr;
@@ -10329,7 +10324,7 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	char *route6file = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
-	GSList *perm_list = NULL;
+	char **perms;
 	const unsigned char ssid_data[] = "SomeSSID";
 
 	/* Test that writing out a WPA config then changing that to a WEP
@@ -10345,16 +10340,16 @@ test_write_wifi_wpa_then_wep_with_perms (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
-	perm_list = g_slist_append (perm_list, "user:superman:");
+	perms = g_strsplit ("user:superman:", ",", -1);
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "random wifi connection 2",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
-	              NM_SETTING_CONNECTION_PERMISSIONS, perm_list,
+	              NM_SETTING_CONNECTION_PERMISSIONS, perms,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
 	              NULL);
 	g_free (uuid);
-	g_slist_free (perm_list);
+	g_strfreev (perms);
 	ASSERT (nm_setting_connection_get_num_permissions (s_con) == 1,
                 "test_write_wifi_wpa_then_wep_with_perms", "unexpected failure adding valid user permisson");
 
@@ -10679,7 +10674,7 @@ test_write_wired_qeth_dhcp (void)
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
 	char *uuid;
-	GPtrArray *subchans;
+	char **subchans;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -10708,15 +10703,12 @@ test_write_wired_qeth_dhcp (void)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	subchans = g_ptr_array_sized_new (3);
-	g_ptr_array_add (subchans, "0.0.600");
-	g_ptr_array_add (subchans, "0.0.601");
-	g_ptr_array_add (subchans, "0.0.602");
+	subchans = g_strsplit ("0.0.600,0.0.601,0.0.602", ",", -1);
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_S390_SUBCHANNELS, subchans,
 	              NM_SETTING_WIRED_S390_NETTYPE, "qeth",
 	              NULL);
-	g_ptr_array_free (subchans, TRUE);
+	g_strfreev (subchans);
 
 	nm_setting_wired_add_s390_option (s_wired, "portname", "FOOBAR");
 	nm_setting_wired_add_s390_option (s_wired, "portno", "1");
@@ -10803,7 +10795,7 @@ test_write_wired_ctc_dhcp (void)
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
 	char *uuid;
-	GPtrArray *subchans;
+	char **subchans;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -10836,14 +10828,12 @@ test_write_wired_ctc_dhcp (void)
 	g_assert (s_wired);
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	subchans = g_ptr_array_sized_new (2);
-	g_ptr_array_add (subchans, "0.0.600");
-	g_ptr_array_add (subchans, "0.0.601");
+	subchans = g_strsplit ("0.0.600,0.0.601", ",", -1);
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_S390_SUBCHANNELS, subchans,
 	              NM_SETTING_WIRED_S390_NETTYPE, "ctc",
 	              NULL);
-	g_ptr_array_free (subchans, TRUE);
+	g_strfreev (subchans);
 	nm_setting_wired_add_s390_option (s_wired, "ctcprot", "0");
 
 	/* IP4 setting */

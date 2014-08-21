@@ -138,7 +138,7 @@ void nm_settings_connection_update_timestamp (NMSettingsConnection *connection,
 
 void nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection);
 
-GSList *nm_settings_connection_get_seen_bssids (NMSettingsConnection *connection);
+char **nm_settings_connection_get_seen_bssids (NMSettingsConnection *connection);
 
 gboolean nm_settings_connection_has_seen_bssid (NMSettingsConnection *connection,
                                                 const char *bssid);

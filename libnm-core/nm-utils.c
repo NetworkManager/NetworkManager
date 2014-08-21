@@ -564,6 +564,37 @@ _nm_utils_hash_values_to_slist (GHashTable *hash)
 	return list;
 }
 
+GSList *
+_nm_utils_strv_to_slist (char **strv)
+{
+	int i;
+	GSList *list = NULL;
+
+	g_return_val_if_fail (strv != NULL, NULL);
+
+	for (i = 0; strv[i]; i++)
+		list = g_slist_prepend (list, g_strdup (strv[i]));
+
+	return g_slist_reverse (list);
+}
+
+char **
+_nm_utils_slist_to_strv (GSList *slist)
+{
+	GSList *iter;
+	char **strv;
+	int len, i = 0;
+
+	len = g_slist_length (slist);
+	strv = g_new (char *, len + 1);
+
+	for (i = 0, iter = slist; iter; iter = iter->next, i++)
+		strv[i] = g_strdup (iter->data);
+	strv[i] = NULL;
+
+	return strv;
+}
+
 static gboolean
 device_supports_ap_ciphers (guint32 dev_caps,
                             guint32 ap_flags,
