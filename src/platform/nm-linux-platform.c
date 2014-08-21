@@ -2155,7 +2155,7 @@ link_get_all (NMPlatform *platform)
 }
 
 static gboolean
-_nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *link)
+_nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *l)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	auto_nl_object struct rtnl_link *rtnllink = NULL;
@@ -2163,7 +2163,7 @@ _nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *link)
 	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
 	if (rtnllink) {
 		if (link_is_announceable (platform, rtnllink)) {
-			if (init_link (platform, link, rtnllink))
+			if (init_link (platform, l, rtnllink))
 				return TRUE;
 		}
 	}
@@ -2188,7 +2188,7 @@ static gboolean
 link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *address, size_t address_len)
 {
 	int r;
-	struct nl_object *link;
+	struct nl_object *l;
 
 	if (type == NM_LINK_TYPE_BOND) {
 		/* When the kernel loads the bond module, either via explicit modprobe
@@ -2206,15 +2206,15 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *a
 	debug ("link: add link '%s' of type '%s' (%d)",
 	       name, type_to_string (type), (int) type);
 
-	link = build_rtnl_link (0, name, type);
+	l = build_rtnl_link (0, name, type);
 
 	g_assert ( (address != NULL) ^ (address_len == 0) );
 	if (address) {
 		auto_nl_addr struct nl_addr *nladdr = _nm_nl_addr_build (AF_LLC, address, address_len);
 
-		rtnl_link_set_addr ((struct rtnl_link *) link, nladdr);
+		rtnl_link_set_addr ((struct rtnl_link *) l, nladdr);
 	}
-	return add_object (platform, link);
+	return add_object (platform, l);
 }
 
 static struct rtnl_link *
