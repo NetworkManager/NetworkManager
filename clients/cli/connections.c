@@ -8548,6 +8548,7 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 				usage_connection_edit ();
 				goto usage_exit;
 			}
+			nmc->should_wait = TRUE;
 			editor_thread_data.nmc = nmc;
 			editor_thread_data.argc = argc - 1;
 			editor_thread_data.argv = argv + 1;
@@ -8593,20 +8594,15 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 			usage ();
 			g_string_printf (nmc->return_text, _("Error: '%s' is not valid 'connection' command."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-			nmc->should_wait = FALSE;
 		}
 	}
 
-	return nmc->return_value;
-
 usage_exit:
-	nmc->should_wait = FALSE;
 	return nmc->return_value;
 
 opt_error:
 	g_string_printf (nmc->return_text, _("Error: %s."), error->message);
 	nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-	nmc->should_wait = FALSE;
 	g_error_free (error);
 	return nmc->return_value;
 }
@@ -8638,8 +8634,6 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		/* Get NMClient object early */
 		nmc->get_client (nmc);
 
-		nmc->should_wait = TRUE;
-
 		/* get system settings */
 		if (!(nmc->system_settings = nm_remote_settings_new (NULL, &error))) {
 			g_string_printf (nmc->return_text, _("Error: Could not get system settings: %s."), error->message);
@@ -8662,10 +8656,6 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		/* Get the connection list */
 		nmc->system_connections = nm_remote_settings_list_connections (nmc->system_settings);
 
-		parse_cmd (nmc, argc, argv);
-
-		if (!nmc->should_wait)
-			quit ();
-		return NMC_RESULT_SUCCESS;
+		return parse_cmd (nmc, argc, argv);
 	}
 }
