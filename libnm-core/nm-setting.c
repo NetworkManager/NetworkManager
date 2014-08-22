@@ -231,14 +231,15 @@ _nm_setting_is_base_type (NMSetting *setting)
  *
  * Returns the #GType of the setting's class for a given setting name.
  *
- * Returns: the #GType of the setting's class
+ * Returns: the #GType of the setting's class, or %G_TYPE_INVALID if
+ *   @name is not recognized.
  **/
 GType
 nm_setting_lookup_type (const char *name)
 {
 	SettingInfo *info;
 
-	g_return_val_if_fail (name != NULL, G_TYPE_NONE);
+	g_return_val_if_fail (name != NULL, G_TYPE_INVALID);
 
 	_ensure_registered ();
 
@@ -253,7 +254,8 @@ nm_setting_lookup_type (const char *name)
  * Returns the #GType of the setting's class for a given setting error quark.
  * Useful for figuring out which setting a returned error is for.
  *
- * Returns: the #GType of the setting's class
+ * Returns: the #GType of the setting's class, or %G_TYPE_INVALID if
+ *   @error_quark is not recognized
  **/
 GType
 nm_setting_lookup_type_by_quark (GQuark error_quark)
