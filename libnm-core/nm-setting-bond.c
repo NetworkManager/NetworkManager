@@ -111,6 +111,8 @@ static const BondDefault defaults[] = {
 	{ NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY, "0",          TYPE_BOTH, 0, 2,
 	  { "layer2", "layer3+4", "layer2+3", NULL } },
 	{ NM_SETTING_BOND_OPTION_RESEND_IGMP,      "1",          TYPE_INT, 0, 255 },
+	{ NM_SETTING_BOND_OPTION_LACP_RATE,        "0",          TYPE_BOTH, 0, 1,
+	  { "slow", "fast", NULL } },
 };
 
 /**
@@ -462,6 +464,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	                              NULL };
 	int miimon = 0, arp_interval = 0;
 	const char *arp_ip_target = NULL;
+	const char *lacp_rate;
 	const char *primary;
 
 	g_hash_table_iter_init (&iter, priv->options);
@@ -641,6 +644,19 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
+	}
+
+	lacp_rate = g_hash_table_lookup (priv->options, NM_SETTING_BOND_OPTION_LACP_RATE);
+	if (   lacp_rate
+	    && (g_strcmp0 (value, "802.3ad") != 0 && g_strcmp0 (value, "4") != 0)
+	    && (strcmp (lacp_rate, "slow") != 0 && strcmp (lacp_rate, "0") != 0)) {
+		g_set_error (error,
+		             NM_SETTING_BOND_ERROR,
+		             NM_SETTING_BOND_ERROR_INVALID_OPTION,
+		             _("'%s' option is only valid with mode '%s'"),
+		             NM_SETTING_BOND_OPTION_LACP_RATE, "802.3ad");
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+		return FALSE;
 	}
 
 	return _nm_setting_verify_required_virtual_interface_name (all_settings, error);
