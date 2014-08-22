@@ -475,20 +475,33 @@ usage_connection_load (void)
 	           "state.\n\n"));
 }
 
+static gboolean
+usage_connection_second_level (const char *cmd)
+{
+	gboolean ret = TRUE;
 
-/* The real commands that do something - i.e. not 'help', etc. */
-static const char *real_con_commands[] = {
-	"show",
-	"up",
-	"down",
-	"add",
-	"modify",
-	"edit",
-	"delete",
-	"reload",
-	"load",
-	NULL
-};
+	if (matches (cmd, "show") == 0)
+		usage_connection_show ();
+	else if (matches (cmd, "up") == 0)
+		usage_connection_up ();
+	else if (matches (cmd, "down") == 0)
+		usage_connection_down ();
+	else if (matches (cmd, "add") == 0)
+		usage_connection_add ();
+	else if (matches (cmd, "modify") == 0)
+		usage_connection_modify ();
+	else if (matches (cmd, "edit") == 0)
+		usage_connection_edit ();
+	else if (matches (cmd, "delete") == 0)
+		usage_connection_delete ();
+	else if (matches (cmd, "reload") == 0)
+		usage_connection_reload ();
+	else if (matches (cmd, "load") == 0)
+		usage_connection_load ();
+	else
+		ret = FALSE;
+	return ret;
+}
 
 /* quit main loop */
 static void
@@ -8491,29 +8504,61 @@ nmcli_con_tab_completion (const char *text, int start, int end)
 	return match_array;
 }
 
-static NMCResultCode
-parse_cmd (NmCli *nmc, int argc, char **argv)
+/* Entry point function for connections-related commands: 'nmcli connection' */
+NMCResultCode
+do_connections (NmCli *nmc, int argc, char **argv)
 {
 	GError *error = NULL;
 
+	/* Set completion function for 'nmcli con' */
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_con_tab_completion;
 
+	/* Exit early on help */
+	if (nmc_arg_is_help (*argv)) {
+		usage ();
+		return nmc->return_value;
+	}
+	if (argc != 0 && nmc_arg_is_help (*(argv+1))) {
+		if (usage_connection_second_level (*argv))
+			return nmc->return_value;
+	}
+
+	/* Compare NM and nmcli versions */
+	if (!nmc_versions_match (nmc))
+		return nmc->return_value;
+
+	/* Get NMClient object early */
+	nmc->get_client (nmc);
+
+	/* Get NMRemoteSettings object */
+	if (!(nmc->system_settings = nm_remote_settings_new (NULL, &error))) {
+		g_string_printf (nmc->return_text, _("Error: Could not get system settings: %s."), error->message);
+		g_error_free (error);
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		nmc->should_wait = FALSE;
+		return nmc->return_value;
+	}
+
+	/* Find out whether settings service is running */
+	g_object_get (nmc->system_settings, NM_REMOTE_SETTINGS_NM_RUNNING, &nmc->system_settings_running, NULL);
+	if (!nmc->system_settings_running) {
+		g_string_printf (nmc->return_text, _("Error: Can't obtain connections: settings service is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		nmc->should_wait = FALSE;
+		return nmc->return_value;
+	}
+
+	/* Get the connection list */
+	nmc->system_connections = nm_remote_settings_list_connections (nmc->system_settings);
+
+	/* Now parse the command line and perform the required operation */
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 			goto opt_error;
 		nmc->return_value = do_connections_show (nmc, FALSE, argc, argv);
 	} else {
-		if (nmc_arg_is_help (*argv)) {
-			usage ();
-			goto usage_exit;
-		}
-		else if (matches (*argv, "show") == 0) {
+		if (matches (*argv, "show") == 0) {
 			gboolean active = FALSE;
-
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_connection_show ();
-				goto usage_exit;
-			}
 
 			next_arg (&argc, &argv);
 			if (nmc_arg_is_option (*argv, "active")) {
@@ -8521,83 +8566,41 @@ parse_cmd (NmCli *nmc, int argc, char **argv)
 				next_arg (&argc, &argv);
 			}
 			nmc->return_value = do_connections_show (nmc, active, argc, argv);
-		}
-		else if (matches(*argv, "up") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_connection_up ();
-				goto usage_exit;
-			}
+		} else if (matches(*argv, "up") == 0) {
 			nmc->return_value = do_connection_up (nmc, argc-1, argv+1);
-		}
-		else if (matches(*argv, "down") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_connection_down ();
-				goto usage_exit;
-			}
+		} else if (matches(*argv, "down") == 0) {
 			nmc->return_value = do_connection_down (nmc, argc-1, argv+1);
-		}
-		else if (matches(*argv, "add") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_connection_add ();
-				goto usage_exit;
-			}
+		} else if (matches(*argv, "add") == 0) {
 			nmc->return_value = do_connection_add (nmc, argc-1, argv+1);
-		}
-		else if (matches(*argv, "edit") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_connection_edit ();
-				goto usage_exit;
-			}
+		} else if (matches(*argv, "edit") == 0) {
 			nmc->should_wait = TRUE;
 			editor_thread_data.nmc = nmc;
 			editor_thread_data.argc = argc - 1;
 			editor_thread_data.argv = argv + 1;
 			editor_thread = g_thread_new ("editor-thread", connection_editor_thread_func, &editor_thread_data);
 			g_thread_unref (editor_thread);
-		}
-		else if (matches(*argv, "delete") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_connection_delete ();
-				goto usage_exit;
-			}
+		} else if (matches(*argv, "delete") == 0) {
 			nmc->return_value = do_connection_delete (nmc, argc-1, argv+1);
-		}
-		else if (matches(*argv, "reload") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_connection_reload ();
-				goto usage_exit;
-			}
+		} else if (matches(*argv, "reload") == 0) {
 			nmc->return_value = do_connection_reload (nmc, argc-1, argv+1);
-		}
-		else if (matches(*argv, "load") == 0) {
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_connection_load ();
-				goto usage_exit;
-			}
+		} else if (matches(*argv, "load") == 0) {
 			nmc->return_value = do_connection_load (nmc, argc-1, argv+1);
-		}
-		else if (matches (*argv, "modify") == 0) {
+		} else if (matches (*argv, "modify") == 0) {
 			gboolean temporary = FALSE;
 
-			if (nmc_arg_is_help (*(argv+1))) {
-				usage_connection_modify ();
-				goto usage_exit;
-			}
 			next_arg (&argc, &argv);
 			if (nmc_arg_is_option (*argv, "temporary")) {
 				temporary = TRUE;
 				next_arg (&argc, &argv);
 			}
 			nmc->return_value = do_connection_modify (nmc, temporary, argc, argv);
-		}
-		else {
+		} else {
 			usage ();
 			g_string_printf (nmc->return_text, _("Error: '%s' is not valid 'connection' command."), *argv);
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		}
 	}
 
-usage_exit:
 	return nmc->return_value;
 
 opt_error:
@@ -8605,57 +8608,4 @@ opt_error:
 	nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 	g_error_free (error);
 	return nmc->return_value;
-}
-
-/* Entry point function for connections-related commands: 'nmcli connection' */
-NMCResultCode
-do_connections (NmCli *nmc, int argc, char **argv)
-{
-	int i = 0;
-	gboolean real_cmd = FALSE;
-	GError *error = NULL;
-
-	if (argc == 0)
-		real_cmd = TRUE;
-	else {
-		while (real_con_commands[i] && matches (*argv, real_con_commands[i]) != 0)
-			i++;
-		if (real_con_commands[i] != NULL)
-			real_cmd = TRUE;
-	}
-
-	if (!real_cmd) {
-		/* no real execution command - no need to get connections */
-		return parse_cmd (nmc, argc, argv);
-	} else {
-		if (!nmc_versions_match (nmc))
-			return nmc->return_value;
-
-		/* Get NMClient object early */
-		nmc->get_client (nmc);
-
-		/* get system settings */
-		if (!(nmc->system_settings = nm_remote_settings_new (NULL, &error))) {
-			g_string_printf (nmc->return_text, _("Error: Could not get system settings: %s."), error->message);
-			g_error_free (error);
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			nmc->should_wait = FALSE;
-			return nmc->return_value;
-		}
-
-		/* find out whether settings service is running */
-		g_object_get (nmc->system_settings, NM_REMOTE_SETTINGS_NM_RUNNING, &nmc->system_settings_running, NULL);
-
-		if (!nmc->system_settings_running) {
-			g_string_printf (nmc->return_text, _("Error: Can't obtain connections: settings service is not running."));
-			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-			nmc->should_wait = FALSE;
-			return nmc->return_value;
-		}
-
-		/* Get the connection list */
-		nmc->system_connections = nm_remote_settings_list_connections (nmc->system_settings);
-
-		return parse_cmd (nmc, argc, argv);
-	}
 }
