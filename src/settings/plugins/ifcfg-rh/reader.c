@@ -48,7 +48,7 @@
 #include <nm-setting-bridge-port.h>
 #include <nm-setting-dcb.h>
 #include <nm-setting-generic.h>
-#include <nm-utils-private.h>
+#include "nm-core-internal.h"
 #include <nm-utils.h>
 
 #include "nm-platform.h"
@@ -1574,7 +1574,7 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 			ok = read_full_ip4_address (parsed, network_file, -1, addr, &err);
 			svCloseFile (parsed);
 			if (ok) {
-				if (!NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, device)))
+				if (!_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, device))
 					PARSE_WARNING ("duplicate IP4 address in alias file %s", item);
 			} else {
 				PARSE_WARNING ("error reading IP4 address from alias file '%s': %s",
@@ -3802,11 +3802,6 @@ wireless_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
-
 	return connection;
 }
 
@@ -4020,11 +4015,6 @@ wired_connection_from_ifcfg (const char *file,
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
-
 	return connection;
 }
 
@@ -4183,11 +4173,6 @@ infiniband_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, infiniband_setting);
 
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
-
 	return connection;
 }
 
@@ -4308,11 +4293,6 @@ bond_connection_from_ifcfg (const char *file,
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
-
 	return connection;
 }
 
@@ -4418,11 +4398,6 @@ team_connection_from_ifcfg (const char *file,
 
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
-
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
 
 	return connection;
 }
@@ -4603,11 +4578,6 @@ bridge_connection_from_ifcfg (const char *file,
 		return NULL;
 	}
 	nm_connection_add_setting (connection, bridge_setting);	
-
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
 
 	return connection;
 }
@@ -4921,10 +4891,6 @@ vlan_connection_from_ifcfg (const char *file,
 
 	if (s_8021x)
 		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
-	if (!nm_connection_verify (connection, error)) {
-		g_object_unref (connection);
-		return NULL;
-	}
 
 	return connection;
 }

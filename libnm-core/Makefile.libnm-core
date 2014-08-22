@@ -43,6 +43,7 @@ libnm_core_headers =				\
 
 libnm_core_private_headers =			\
 	$(core)/crypto.h			\
+	$(core)/nm-core-internal.h	\
 	$(core)/nm-param-spec-specialized.h	\
 	$(core)/nm-setting-private.h		\
 	$(core)/nm-utils-private.h

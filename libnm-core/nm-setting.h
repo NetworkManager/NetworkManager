@@ -108,7 +108,7 @@ typedef enum {
 	NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002,
 	NM_SETTING_SECRET_FLAG_NOT_REQUIRED = 0x00000004
 
-	/* NOTE: if adding flags, update nm-setting-private.h as well */
+	/* NOTE: if adding flags, update nm-core-internal.h as well */
 } NMSettingSecretFlags;
 
 /**

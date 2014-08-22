@@ -288,6 +288,88 @@ _nm_setting_compare_priority (gconstpointer a, gconstpointer b)
 
 /*************************************************************/
 
+gboolean
+_nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_type)
+{
+	const char *port_type = NULL;
+	gboolean found = TRUE;
+
+	if (!slave_type)
+		found = FALSE;
+	else if (!strcmp (slave_type, NM_SETTING_BOND_SETTING_NAME))
+		;
+	else if (!strcmp (slave_type, NM_SETTING_BRIDGE_SETTING_NAME))
+		port_type = NM_SETTING_BRIDGE_PORT_SETTING_NAME;
+	else if (!strcmp (slave_type, NM_SETTING_TEAM_SETTING_NAME))
+		port_type = NM_SETTING_TEAM_PORT_SETTING_NAME;
+	else
+		found = FALSE;
+
+	if (out_port_type)
+		*out_port_type = port_type;
+	return found;
+}
+
+
+NMSetting *
+_nm_setting_find_in_list_base_type (GSList *all_settings)
+{
+	GSList *iter;
+	NMSetting *setting = NULL;
+
+	for (iter = all_settings; iter; iter = iter->next) {
+		NMSetting *s_iter = NM_SETTING (iter->data);
+
+		if (!_nm_setting_is_base_type (s_iter))
+			continue;
+
+		if (setting) {
+			/* FIXME: currently, if there is more than one matching base type,
+			 * we cannot detect the base setting.
+			 * See: https://bugzilla.gnome.org/show_bug.cgi?id=696936#c8 */
+			return NULL;
+		}
+		setting = s_iter;
+	}
+	return setting;
+}
+
+const char *
+_nm_setting_slave_type_detect_from_settings (GSList *all_settings, NMSetting **out_s_port)
+{
+	GSList *iter;
+	const char *slave_type = NULL;
+	NMSetting *s_port = NULL;
+
+	for (iter = all_settings; iter; iter = iter->next) {
+		NMSetting *s_iter = NM_SETTING (iter->data);
+		const char *name = nm_setting_get_name (s_iter);
+		const char *i_slave_type = NULL;
+
+		if (!strcmp (name, NM_SETTING_BRIDGE_PORT_SETTING_NAME))
+			i_slave_type = NM_SETTING_BRIDGE_SETTING_NAME;
+		else if (!strcmp (name, NM_SETTING_TEAM_PORT_SETTING_NAME))
+			i_slave_type = NM_SETTING_TEAM_SETTING_NAME;
+		else
+			continue;
+
+		if (slave_type) {
+			/* there are more then one matching port types, cannot detect the slave type. */
+			slave_type = NULL;
+			s_port = NULL;
+			break;
+		}
+		slave_type = i_slave_type;
+		s_port = s_iter;
+	}
+
+	if (out_s_port)
+		*out_s_port = s_port;
+	return slave_type;
+}
+
+/*************************************************************/
+
 static void
 destroy_gvalue (gpointer data)
 {
@@ -1288,6 +1370,34 @@ nm_setting_get_virtual_iface_name (NMSetting *setting)
 	return NULL;
 }
 
+NMSetting *
+_nm_setting_find_in_list_required (GSList *all_settings,
+                                   const char *setting_name,
+                                   GError **error,
+                                   const char *error_prefix_setting_name,
+                                   const char *error_prefix_property_name)
+{
+	NMSetting *setting;
+
+	g_return_val_if_fail (!error || !*error, NULL);
+	g_return_val_if_fail (all_settings, NULL);
+	g_return_val_if_fail (setting_name, NULL);
+	g_return_val_if_fail (!error_prefix_setting_name == !error_prefix_property_name, NULL);
+
+	setting = nm_setting_find_in_list (all_settings, setting_name);
+	if (!setting) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             !strcmp (setting_name, NM_SETTING_CONNECTION_SETTING_NAME)
+		                 ? NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND
+		                 : NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
+		             _("Missing '%s' setting"),
+		             setting_name);
+		if (error_prefix_setting_name)
+			g_prefix_error (error, "%s.%s: ", error_prefix_setting_name, error_prefix_property_name);
+	}
+	return setting;
+}
 
 NMSettingVerifyResult
 _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
@@ -1302,6 +1412,22 @@ _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
 {
 	NMSettingConnection *s_con;
 	const char *con_name;
+
+	if (!all_settings) {
+		/* nm_setting_verify() was called without passing on any other settings.
+		 * Perform a relaxed verification, the setting might be valid when checked
+		 * together with a NMSettingConnection as part of a NMConnection. */
+		if (interface_name && !nm_utils_iface_valid_name (interface_name)) {
+			/* Only if the interace name is invalid, there is an normalizable warning */
+			g_set_error_literal (error,
+			                     error_quark,
+			                     e_invalid_property,
+			                     _("property is invalid"));
+			g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
+			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+		}
+		return NM_SETTING_VERIFY_SUCCESS;
+	}
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_find_in_list (all_settings, NM_SETTING_CONNECTION_SETTING_NAME));
 	con_name = s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
@@ -1333,7 +1459,7 @@ _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
 		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
-		return NM_SETTING_VERIFY_NORMALIZABLE;
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 	if (!nm_utils_iface_valid_name (con_name)) {
 		/* NMSettingConnection:interface_name is invalid, we cannot normalize it. */
@@ -1351,19 +1477,17 @@ _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
 		                     e_missing_property,
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-		return NM_SETTING_VERIFY_NORMALIZABLE;
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 	if (strcmp (con_name, interface_name) != 0) {
 		/* con_name and interface_name are different. It can be normalized by setting interface_name
 		 * to con_name. */
 		g_set_error_literal (error,
 		                     error_quark,
-		                     e_missing_property,
+		                     e_invalid_property,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-		/* we would like to make this a NORMALIZEABLE_ERROR, but that might
-		 * break older connections. */
-		return NM_SETTING_VERIFY_NORMALIZABLE;
+		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 	}
 
 	return NM_SETTING_VERIFY_SUCCESS;

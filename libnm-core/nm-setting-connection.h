@@ -52,6 +52,8 @@ G_BEGIN_DECLS
  *   #NMSettingConnection:type property was not present in the #NMConnection
  * @NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED: ip configuration is not
  *   allowed to be present.
+ * @NM_SETTING_CONNECTION_ERROR_SLAVE_SETTING_NOT_FOUND: the mandatory #NMSetting
+ *   object for the slave is missing. The slave type depends on #NMSettingConnection:slave-type
  *
  * Describes errors that may result from operations involving a
  * #NMSettingConnection.
@@ -64,6 +66,7 @@ typedef enum
 	NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,       /*< nick=MissingProperty >*/
 	NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND, /*< nick=TypeSettingNotFound >*/
 	NM_SETTING_CONNECTION_ERROR_IP_CONFIG_NOT_ALLOWED,  /*< nick=IpConfigNotAllowed >*/
+	NM_SETTING_CONNECTION_ERROR_SLAVE_SETTING_NOT_FOUND, /*< nick=SlaveSettingNotFound >*/
 } NMSettingConnectionError;
 
 #define NM_SETTING_CONNECTION_ERROR nm_setting_connection_error_quark ()

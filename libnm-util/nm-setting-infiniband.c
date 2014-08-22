@@ -206,6 +206,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
+	/* FIXME: verify() should not modify the setting, but return NORMALIZABLE success. */
 	if (!g_strcmp0 (priv->transport_mode, "datagram")) {
 		if (priv->mtu > 2044)
 			priv->mtu = 2044;

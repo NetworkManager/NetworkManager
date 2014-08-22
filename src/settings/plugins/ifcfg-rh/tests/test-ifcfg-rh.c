@@ -44,7 +44,7 @@
 #include <nm-setting-serial.h>
 #include <nm-setting-vlan.h>
 #include <nm-setting-dcb.h>
-#include <nm-utils-private.h>
+#include "nm-core-internal.h"
 
 #include "NetworkManagerUtils.h"
 
@@ -2986,7 +2986,7 @@ test_read_wired_aliases_good (void)
 		        TEST_IFCFG_ALIASES_GOOD,
 		        i);
 
-		ASSERT (g_strcmp0 (NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i)), expected_label[j]) == 0,
+		ASSERT (g_strcmp0 (_nm_setting_ip4_config_get_address_label (s_ip4, i), expected_label[j]) == 0,
 		        "aliases-good-verify-ip4", "failed to verify %s: unexpected IP4 address label #%d",
 		        TEST_IFCFG_ALIASES_GOOD,
 		        i);
@@ -3113,7 +3113,7 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 			"aliases-bad-verify-ip4", "failed to verify %s: unexpected IP4 address gateway",
 			base);
 
-	ASSERT (g_strcmp0 (NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0)), expected_label) == 0,
+	ASSERT (g_strcmp0 (_nm_setting_ip4_config_get_address_label (s_ip4, 0), expected_label) == 0,
 			"aliases-bad-verify-ip4", "failed to verify %s: unexpected IP4 address label",
 			base);
 
@@ -8185,7 +8185,7 @@ test_write_wired_aliases (void)
 		nm_ip4_address_set_address (addr, ip[i]);
 		nm_ip4_address_set_prefix (addr, prefix);
 		nm_ip4_address_set_gateway (addr, gw);
-		NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, label[i]));
+		_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, label[i]);
 		nm_ip4_address_unref (addr);
 	}
 
@@ -8293,7 +8293,7 @@ test_write_wired_aliases (void)
 		        testfile,
 		        i);
 
-		ASSERT (g_strcmp0 (NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, i)), label[j]) == 0,
+		ASSERT (g_strcmp0 (_nm_setting_ip4_config_get_address_label (s_ip4, i), label[j]) == 0,
 		        "wired-aliases-write-verify-ip4", "failed to verify %s: unexpected IP4 address label #%d",
 		        testfile,
 		        i);
@@ -12346,8 +12346,7 @@ test_write_bridge_main (void)
 	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
-	g_assert (nm_connection_verify (connection, &error));
-	g_assert_no_error (error);
+	nmtst_assert_connection_verifies_after_normalization (connection, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
@@ -13131,9 +13130,7 @@ test_write_bond_main (void)
 	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "bond-main-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
+	nmtst_assert_connection_verifies_after_normalization (connection, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
@@ -14216,9 +14213,7 @@ test_write_team_master (void)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	success = nm_connection_verify (connection, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nmtst_assert_connection_verifies_after_normalization (connection, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
@@ -14409,8 +14404,11 @@ test_read_team_port_empty_config (void)
 	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, "team0");
 
-	/* Empty TEAM_PORT_CONFIG means no team-port setting */
-	g_assert (nm_connection_get_setting_team_port (connection) == NULL);
+	/* Normalization adds a team-port setting */
+	g_assert (nm_connection_get_setting_team_port (connection));
+
+	/* empty/missing config */
+	g_assert (!nm_setting_team_port_get_config (nm_connection_get_setting_team_port (connection)));
 
 	g_object_unref (connection);
 }

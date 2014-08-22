@@ -566,7 +566,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		/* If parent is NULL, the parent must be specified via
 		 * NMSettingWired:mac-address.
 		 */
-		if (!s_wired || !nm_setting_wired_get_mac_address (s_wired)) {
+		if (   all_settings
+		    && (!s_wired || !nm_setting_wired_get_mac_address (s_wired))) {
 			g_set_error (error,
 			             NM_SETTING_VLAN_ERROR,
 			             NM_SETTING_VLAN_ERROR_MISSING_PROPERTY,

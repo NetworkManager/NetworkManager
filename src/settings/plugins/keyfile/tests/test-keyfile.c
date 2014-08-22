@@ -114,6 +114,22 @@ check_ip6_route (NMSettingIP6Config *config, int idx, const char *destination_st
 	g_assert (nm_ip6_route_get_metric (route) == metric);
 }
 
+static NMConnection *
+keyfile_read_connection_from_file (const char *filename)
+{
+	GError *error = NULL;
+	NMConnection *connection;
+
+	g_assert (filename);
+
+	connection = nm_keyfile_plugin_connection_from_file (filename, &error);
+	g_assert_no_error (error);
+
+	nmtst_assert_connection_verifies_without_normalization (connection);
+
+	return connection;
+}
+
 static void
 test_read_valid_wired_connection (void)
 {
@@ -1376,8 +1392,7 @@ test_write_string_ssid (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-			"connection-write", "written and re-read connection weren't the same");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -1501,8 +1516,7 @@ test_write_intlist_ssid (void)
 	g_assert_no_error (error);
 	g_assert (reread);
 
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -1653,8 +1667,7 @@ test_write_intlike_ssid (void)
 	g_assert_no_error (error);
 	g_assert (reread);
 
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -1741,8 +1754,7 @@ test_write_intlike_ssid_2 (void)
 	g_assert_no_error (error);
 	g_assert (reread);
 
-	success = nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT);
-	g_assert (success);
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -1996,8 +2008,7 @@ test_write_bt_dun_connection (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-			"connection-write", "written and re-read connection weren't the same");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -2230,8 +2241,7 @@ test_write_gsm_connection (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, NULL);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-			"connection-write", "written and re-read connection weren't the same");
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	g_clear_error (&error);
 	unlink (testfile);
@@ -3224,7 +3234,7 @@ test_write_new_wired_group_name (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
 	g_assert_no_error (error);
 	g_assert (reread);
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	/* Look at the keyfile itself to ensure we wrote out the new group names and type */
 	kf = g_key_file_new ();
@@ -3354,7 +3364,7 @@ test_write_new_wireless_group_names (void)
 	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
 	g_assert_no_error (error);
 	g_assert (reread);
-	g_assert (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT));
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
 
 	/* Look at the keyfile itself to ensure we wrote out the new group names and type */
 	kf = g_key_file_new ();
@@ -3428,73 +3438,155 @@ test_read_missing_id_uuid (void)
 	g_object_unref (connection);
 }
 
+static void
+test_read_minimal ()
+{
+	NMConnection *connection = NULL;
+	gs_unref_object NMConnection *con_archetype = NULL;
+	NMSettingConnection *s_con;
+
+	con_archetype = nmtst_create_minimal_connection ("Test_minimal_x",
+	                                                 "a15bd68f-c32b-40b8-8d27-49e472a85919",
+	                                                 NM_SETTING_WIRED_SETTING_NAME,
+	                                                 &s_con);
+	nmtst_connection_normalize (con_archetype);
+
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_1");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connection),
+	              NULL);
+	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
+	g_clear_object (&connection);
+
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_2");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connection),
+	              NULL);
+	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
+	g_clear_object (&connection);
+}
+
+static void
+test_read_minimal_slave ()
+{
+	NMConnection *connection = NULL;
+	gs_unref_object NMConnection *con_archetype = NULL;
+	NMSettingConnection *s_con;
+
+	con_archetype = nmtst_create_minimal_connection ("Test_minimal_slave_x",
+	                                                 "a56b4ca5-7075-43d4-82c7-5d0cb15f7654",
+	                                                 NM_SETTING_WIRED_SETTING_NAME,
+	                                                 &s_con);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_MASTER, "br0",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, "bridge",
+	              NULL);
+	nmtst_connection_normalize (con_archetype);
+
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_slave_1");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connection),
+	              NULL);
+	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
+	g_clear_object (&connection);
+
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_slave_2");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connection),
+	              NULL);
+	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
+	g_clear_object (&connection);
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_slave_3");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connection),
+	              NULL);
+	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
+	g_clear_object (&connection);
+
+	connection = keyfile_read_connection_from_file (TEST_KEYFILES_DIR"/Test_minimal_slave_4");
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_connection_get_id (connection),
+	              NM_SETTING_CONNECTION_UUID, nm_connection_get_uuid (connection),
+	              NULL);
+	nmtst_assert_connection_equals (con_archetype, FALSE, connection, FALSE);
+	g_clear_object (&connection);
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
-	char *base;
-
 	nmtst_init_assert_logging (&argc, &argv);
 
 	/* The tests */
-	test_read_valid_wired_connection ();
-	test_write_wired_connection ();
+	g_test_add_func ("/keyfile/test_read_valid_wired_connection ", test_read_valid_wired_connection);
+	g_test_add_func ("/keyfile/test_write_wired_connection ", test_write_wired_connection);
 
-	test_read_ip6_wired_connection ();
-	test_write_ip6_wired_connection ();
+	g_test_add_func ("/keyfile/test_read_ip6_wired_connection ", test_read_ip6_wired_connection);
+	g_test_add_func ("/keyfile/test_write_ip6_wired_connection ", test_write_ip6_wired_connection);
 
-	test_read_wired_mac_case ();
-	test_read_mac_old_format ();
-	test_read_mac_ib_old_format ();
+	g_test_add_func ("/keyfile/test_read_wired_mac_case ", test_read_wired_mac_case);
+	g_test_add_func ("/keyfile/test_read_mac_old_format ", test_read_mac_old_format);
+	g_test_add_func ("/keyfile/test_read_mac_ib_old_format ", test_read_mac_ib_old_format);
 
-	test_read_valid_wireless_connection ();
-	test_write_wireless_connection ();
+	g_test_add_func ("/keyfile/test_read_valid_wireless_connection ", test_read_valid_wireless_connection);
+	g_test_add_func ("/keyfile/test_write_wireless_connection ", test_write_wireless_connection);
 
-	test_read_string_ssid ();
-	test_write_string_ssid ();
+	g_test_add_func ("/keyfile/test_read_string_ssid ", test_read_string_ssid);
+	g_test_add_func ("/keyfile/test_write_string_ssid ", test_write_string_ssid);
 
-	test_read_intlist_ssid ();
-	test_write_intlist_ssid ();
+	g_test_add_func ("/keyfile/test_read_intlist_ssid ", test_read_intlist_ssid);
+	g_test_add_func ("/keyfile/test_write_intlist_ssid ", test_write_intlist_ssid);
 
-	test_read_intlike_ssid ();
-	test_write_intlike_ssid ();
+	g_test_add_func ("/keyfile/test_read_intlike_ssid ", test_read_intlike_ssid);
+	g_test_add_func ("/keyfile/test_write_intlike_ssid ", test_write_intlike_ssid);
 
-	test_read_intlike_ssid_2 ();
-	test_write_intlike_ssid_2 ();
+	g_test_add_func ("/keyfile/test_read_intlike_ssid_2 ", test_read_intlike_ssid_2);
+	g_test_add_func ("/keyfile/test_write_intlike_ssid_2 ", test_write_intlike_ssid_2);
 
-	test_read_bt_dun_connection ();
-	test_write_bt_dun_connection ();
+	g_test_add_func ("/keyfile/test_read_bt_dun_connection ", test_read_bt_dun_connection);
+	g_test_add_func ("/keyfile/test_write_bt_dun_connection ", test_write_bt_dun_connection);
 
-	test_read_gsm_connection ();
-	test_write_gsm_connection ();
+	g_test_add_func ("/keyfile/test_read_gsm_connection ", test_read_gsm_connection);
+	g_test_add_func ("/keyfile/test_write_gsm_connection ", test_write_gsm_connection);
 
-	test_read_wired_8021x_tls_blob_connection ();
-	test_read_wired_8021x_tls_bad_path_connection ();
+	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_blob_connection ", test_read_wired_8021x_tls_blob_connection);
+	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_bad_path_connection ", test_read_wired_8021x_tls_bad_path_connection);
 
-	test_read_wired_8021x_tls_old_connection ();
-	test_read_wired_8021x_tls_new_connection ();
-	test_write_wired_8021x_tls_connection_path ();
-	test_write_wired_8021x_tls_connection_blob ();
+	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_old_connection ", test_read_wired_8021x_tls_old_connection);
+	g_test_add_func ("/keyfile/test_read_wired_8021x_tls_new_connection ", test_read_wired_8021x_tls_new_connection);
+	g_test_add_func ("/keyfile/test_write_wired_8021x_tls_connection_path ", test_write_wired_8021x_tls_connection_path);
+	g_test_add_func ("/keyfile/test_write_wired_8021x_tls_connection_blob ", test_write_wired_8021x_tls_connection_blob);
 
-	test_read_infiniband_connection ();
-	test_write_infiniband_connection ();
+	g_test_add_func ("/keyfile/test_read_infiniband_connection ", test_read_infiniband_connection);
+	g_test_add_func ("/keyfile/test_write_infiniband_connection ", test_write_infiniband_connection);
 
-	test_read_bridge_main ();
-	test_write_bridge_main ();
-	test_read_bridge_component ();
-	test_write_bridge_component ();
+	g_test_add_func ("/keyfile/test_read_bridge_main ", test_read_bridge_main);
+	g_test_add_func ("/keyfile/test_write_bridge_main ", test_write_bridge_main);
+	g_test_add_func ("/keyfile/test_read_bridge_component ", test_read_bridge_component);
+	g_test_add_func ("/keyfile/test_write_bridge_component ", test_write_bridge_component);
 
-	test_read_new_wired_group_name ();
-	test_write_new_wired_group_name ();
-	test_read_new_wireless_group_names ();
-	test_write_new_wireless_group_names ();
+	g_test_add_func ("/keyfile/test_read_new_wired_group_name ", test_read_new_wired_group_name);
+	g_test_add_func ("/keyfile/test_write_new_wired_group_name ", test_write_new_wired_group_name);
+	g_test_add_func ("/keyfile/test_read_new_wireless_group_names ", test_read_new_wireless_group_names);
+	g_test_add_func ("/keyfile/test_write_new_wireless_group_names ", test_write_new_wireless_group_names);
 
-	test_read_missing_vlan_setting ();
-	test_read_missing_id_uuid ();
+	g_test_add_func ("/keyfile/test_read_missing_vlan_setting ", test_read_missing_vlan_setting);
+	g_test_add_func ("/keyfile/test_read_missing_id_uuid ", test_read_missing_id_uuid);
 
-	base = g_path_get_basename (argv[0]);
-	fprintf (stdout, "%s: SUCCESS\n", base);
-	g_free (base);
-	return 0;
+	g_test_add_func ("/keyfile/test_read_minimal", test_read_minimal);
+	g_test_add_func ("/keyfile/test_read_minimal_slave", test_read_minimal_slave);
+
+	return g_test_run ();
 }
 

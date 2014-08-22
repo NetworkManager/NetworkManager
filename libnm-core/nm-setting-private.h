@@ -24,11 +24,7 @@
 #include "nm-setting.h"
 #include "nm-glib-compat.h"
 
-#define NM_SETTING_SECRET_FLAGS_ALL \
-	(NM_SETTING_SECRET_FLAG_NONE | \
-	 NM_SETTING_SECRET_FLAG_AGENT_OWNED | \
-	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
-	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+#include "nm-core-internal.h"
 
 /**
  * NMSettingVerifyResult:
@@ -73,13 +69,6 @@ gboolean _nm_setting_clear_secrets_with_flags (NMSetting *setting,
                                                gpointer user_data);
 
 
-/* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
- * connection can be replaced by a already-defined connection. This flag only
- * takes into account properties marked with the %NM_SETTING_PARAM_INFERRABLE
- * flag.
- */
-#define NM_SETTING_COMPARE_FLAG_INFERRABLE 0x80000000
-
 /* The property of the #NMSetting should be considered during comparisons that
  * use the %NM_SETTING_COMPARE_FLAG_INFERRABLE flag. Properties that don't have
  * this flag, are ignored when doing an infrerrable comparison.  This flag should
@@ -101,10 +90,11 @@ static void __attribute__((constructor)) register_setting (void) \
 
 NMSetting *nm_setting_find_in_list (GSList *settings_list, const char *setting_name);
 
-/* Private NMSettingIP4Config methods */
-#include "nm-setting-ip4-config.h"
-const char *nm_setting_ip4_config_get_address_label      (NMSettingIP4Config *setting, guint32 i);
-gboolean    nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting, NMIP4Address *address, const char *label);
+NMSetting * _nm_setting_find_in_list_required (GSList *all_settings,
+                                               const char *setting_name,
+                                               GError **error,
+                                               const char *error_prefix_setting_name,
+                                               const char *error_prefix_property_name);
 
 NMSettingVerifyResult _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
                                                                         gboolean allow_missing,
@@ -119,5 +109,9 @@ NMSettingVerifyResult _nm_setting_verify_deprecated_virtual_iface_name (const ch
 NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
                                           GSList    *all_settings,
                                           GError    **error);
+
+NMSetting *_nm_setting_find_in_list_base_type (GSList *all_settings);
+gboolean _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_type);
+const char * _nm_setting_slave_type_detect_from_settings (GSList *all_settings, NMSetting **out_s_port);
 
 #endif  /* NM_SETTING_PRIVATE_H */

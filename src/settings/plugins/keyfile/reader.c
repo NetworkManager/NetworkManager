@@ -1200,30 +1200,6 @@ read_vpn_secrets (GKeyFile *file, NMSettingVpn *s_vpn)
 	g_strfreev (keys);
 }
 
-static void
-ensure_slave_setting (NMConnection *connection)
-{
-	NMSettingConnection *s_con = nm_connection_get_setting_connection (connection);
-	const char *slave_type;
-	GType slave_gtype = G_TYPE_INVALID;
-	NMSetting *setting;
-
-	slave_type = nm_setting_connection_get_slave_type (s_con);
-	if (!slave_type)
-		return;
-
-	if (g_strcmp0 (slave_type, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
-		slave_gtype = NM_TYPE_SETTING_BRIDGE_PORT;
-	else if (g_strcmp0 (slave_type, NM_SETTING_TEAM_SETTING_NAME) == 0)
-		slave_gtype = NM_TYPE_SETTING_TEAM_PORT;
-
-	if (slave_gtype != G_TYPE_INVALID && !nm_connection_get_setting (connection, slave_gtype)) {
-		setting = (NMSetting *) g_object_new (slave_gtype, NULL);
-		g_assert (setting);
-		nm_connection_add_setting (connection, setting);
-	}
-}
-
 NMConnection *
 nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 {
@@ -1237,7 +1213,6 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	gsize length;
 	int i;
 	gboolean vpn_secrets = FALSE;
-	const char *ctype;
 	GError *verify_error = NULL;
 
 	if (stat (filename, &statbuf) != 0 || !S_ISREG (statbuf.st_mode)) {
@@ -1274,49 +1249,28 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 			nm_connection_add_setting (connection, setting);
 	}
 
-	/* Make sure that we have the base device type and slave type settings
-	 * even if the keyfile didn't include it, which can happen when the
-	 * setting in question is all default values (like ethernet where
-	 * the MAC address isn't given, or VLAN when the VLAN ID is zero, or
-	 * bridge port with all default settings).
-	 */
 	s_con = nm_connection_get_setting_connection (connection);
-	if (s_con) {
-		ctype = nm_setting_connection_get_connection_type (s_con);
-		if (ctype) {
-			setting = nm_connection_get_setting_by_name (connection, ctype);
-			if (!setting) {
-				NMSetting *base_setting;
-				GType base_setting_type;
+	if (!s_con) {
+		s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+		nm_connection_add_setting (connection, NM_SETTING (s_con));
+	}
 
-				base_setting_type = nm_setting_lookup_type (ctype);
-				if (base_setting_type != G_TYPE_INVALID) {
-					base_setting = (NMSetting *) g_object_new (base_setting_type, NULL);
-					g_assert (base_setting);
-					nm_connection_add_setting (connection, base_setting);
-				}
-			}
-		}
+	/* Make sure that we have 'id' even if not explictly specified in the keyfile */
+	if (!nm_setting_connection_get_id (s_con)) {
+		char *base_name;
 
-		/* Make sure that we have 'id' even if not explictly specified in the keyfile */
-		if (!nm_setting_connection_get_id (s_con)) {
-			char *base_name;
+		base_name = g_path_get_basename (filename);
+		g_object_set (s_con, NM_SETTING_CONNECTION_ID, base_name, NULL);
+		g_free (base_name);
+	}
 
-			base_name = g_path_get_basename (filename);
-			g_object_set (s_con, NM_SETTING_CONNECTION_ID, base_name, NULL);
-			g_free (base_name);
-		}
+	/* Make sure that we have 'uuid' even if not explictly specified in the keyfile */
+	if (!nm_setting_connection_get_uuid (s_con)) {
+		char *hashed_uuid;
 
-		/* Make sure that we have 'uuid' even if not explictly specified in the keyfile */
-		if (!nm_setting_connection_get_uuid (s_con)) {
-			char *hashed_uuid;
-
-			hashed_uuid = nm_utils_uuid_generate_from_string (filename);
-			g_object_set (s_con, NM_SETTING_CONNECTION_UUID, hashed_uuid, NULL);
-			g_free (hashed_uuid);
-		}
-
-		ensure_slave_setting (connection);
+		hashed_uuid = nm_utils_uuid_generate_from_string (filename);
+		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, hashed_uuid, NULL);
+		g_free (hashed_uuid);
 	}
 
 	/* Handle vpn secrets after the 'vpn' setting was read */
@@ -1330,8 +1284,8 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 
 	g_strfreev (groups);
 
-	/* Verify the connection */
-	if (!nm_connection_verify (connection, &verify_error)) {
+	/* Normalize and verify the connection */
+	if (!nm_connection_normalize (connection, NULL, NULL, &verify_error)) {
 		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
 			         "invalid or missing connection property '%s/%s'",
 			         verify_error ? g_type_name (nm_setting_lookup_type_by_quark (verify_error->domain)) : "(unknown)",

@@ -25,7 +25,7 @@
 #include <dbus/dbus-glib.h>
 #include <string.h>
 #include "nm-connection.h"
-#include "nm-utils.h"
+#include "nm-utils-internal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-private.h"
 
@@ -128,12 +128,23 @@ setting_changed_cb (NMSetting *setting,
 	g_signal_emit (self, signals[CHANGED], 0);
 }
 
+static gboolean
+_setting_release (gpointer key, gpointer value, gpointer user_data)
+{
+	g_signal_handlers_disconnect_by_func (user_data, setting_changed_cb, value);
+	return TRUE;
+}
+
 static void
 _nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 {
-	g_hash_table_insert (NM_CONNECTION_GET_PRIVATE (connection)->settings,
-	                     (gpointer) G_OBJECT_TYPE_NAME (setting),
-	                     setting);
+	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
+	const char *name = G_OBJECT_TYPE_NAME (setting);
+	NMSetting *s_old;
+
+	if ((s_old = g_hash_table_lookup (priv->settings, (gpointer) name)))
+		g_signal_handlers_disconnect_by_func (s_old, setting_changed_cb, connection);
+	g_hash_table_insert (priv->settings, (gpointer) name, setting);
 	/* Listen for property changes so we can emit the 'changed' signal */
 	g_signal_connect (setting, "notify", (GCallback) setting_changed_cb, connection);
 }
@@ -290,7 +301,7 @@ hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
 	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
 
 	if ((changed = g_hash_table_size (priv->settings) > 0))
-		g_hash_table_remove_all (priv->settings);
+		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
 
 	g_hash_table_iter_init (&iter, new);
 	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
@@ -376,7 +387,7 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 	if ((changed = g_hash_table_size (priv->settings) > 0))
-		g_hash_table_remove_all (priv->settings);
+		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
 
 	if (g_hash_table_size (NM_CONNECTION_GET_PRIVATE (new_connection)->settings)) {
 		g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (new_connection)->settings);
@@ -570,6 +581,81 @@ _normalize_virtual_iface_name (NMConnection *self)
 }
 
 static gboolean
+_normalize_connection_type (NMConnection *self)
+{
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
+	NMSetting *s_base = NULL;
+	const char *type;
+	GSList *all_settings;
+
+	type = nm_setting_connection_get_connection_type (s_con);
+
+	if (type) {
+		s_base = nm_connection_get_setting_by_name (self, type);
+
+		if (!s_base) {
+			GType base_type = nm_setting_lookup_type (type);
+
+			g_return_val_if_fail (base_type, FALSE);
+			nm_connection_add_setting (self, g_object_new (base_type, NULL));
+			return TRUE;
+		}
+	} else {
+		all_settings = _nm_utils_hash_values_to_slist (NM_CONNECTION_GET_PRIVATE (self)->settings);
+
+		s_base =  _nm_setting_find_in_list_base_type (all_settings);
+		g_return_val_if_fail (s_base, FALSE);
+
+		type = nm_setting_get_name (s_base);
+		g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, type, NULL);
+		g_slist_free (all_settings);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+static gboolean
+_normalize_connection_slave_type (NMConnection *self)
+{
+	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
+	const char *slave_type, *port_type;
+	GSList *all_settings;
+
+	if (!s_con)
+		return FALSE;
+	if (!nm_setting_connection_get_master (s_con))
+		return FALSE;
+
+	slave_type = nm_setting_connection_get_slave_type (s_con);
+	if (slave_type) {
+		if (   _nm_setting_slave_type_is_valid (slave_type, &port_type)
+		    && port_type) {
+			NMSetting *s_port;
+
+			s_port = nm_connection_get_setting_by_name (self, port_type);
+			if (!s_port) {
+				GType p_type = nm_setting_lookup_type (port_type);
+
+				g_return_val_if_fail (p_type, FALSE);
+				nm_connection_add_setting (self, g_object_new (p_type, NULL));
+				return TRUE;
+			}
+		}
+	} else {
+		all_settings = _nm_utils_hash_values_to_slist (NM_CONNECTION_GET_PRIVATE (self)->settings);
+
+		if ((slave_type = _nm_setting_slave_type_detect_from_settings (all_settings, NULL))) {
+			g_object_set (s_con, NM_SETTING_CONNECTION_SLAVE_TYPE, slave_type, NULL);
+			g_slist_free (all_settings);
+			return TRUE;
+		}
+		g_slist_free (all_settings);
+	}
+	return FALSE;
+}
+
+static gboolean
 _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 {
 	NMSettingConnection *s_con = nm_connection_get_setting_connection (self);
@@ -624,6 +710,30 @@ _normalize_ip_config (NMConnection *self, GHashTable *parameters)
 	}
 }
 
+static gboolean
+_normalize_infiniband_mtu (NMConnection *self, GHashTable *parameters)
+{
+	NMSettingInfiniband *s_infini = nm_connection_get_setting_infiniband (self);
+
+	if (s_infini) {
+		const char *transport_mode = nm_setting_infiniband_get_transport_mode (s_infini);
+		guint32 max_mtu = 0;
+
+		if (transport_mode) {
+			if (!strcmp (transport_mode, "datagram"))
+				max_mtu = 2044;
+			else if (!strcmp (transport_mode, "connected"))
+				max_mtu = 65520;
+
+			if (max_mtu && nm_setting_infiniband_get_mtu (s_infini) > max_mtu) {
+				g_object_set (s_infini, NM_SETTING_INFINIBAND_MTU, max_mtu, NULL);
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
+
 /**
  * nm_connection_verify:
  * @connection: the #NMConnection to verify
@@ -666,21 +776,11 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 	gpointer value;
 	GSList *all_settings = NULL, *setting_i;
 	NMSettingVerifyResult success = NM_SETTING_VERIFY_ERROR;
-	NMSetting *base;
-	const char *ctype;
 	GError *normalizable_error = NULL;
 	NMSettingVerifyResult normalizable_error_type = NM_SETTING_VERIFY_SUCCESS;
 
-	if (error)
-		g_return_val_if_fail (*error == NULL, NM_SETTING_VERIFY_ERROR);
-
-	if (!NM_IS_CONNECTION (connection)) {
-		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_UNKNOWN,
-		                     "invalid connection; failed verification");
-		g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_SETTING_VERIFY_ERROR);
-	}
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_SETTING_VERIFY_ERROR);
+	g_return_val_if_fail (!error || !*error, NM_SETTING_VERIFY_ERROR);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
@@ -698,10 +798,7 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 	g_hash_table_iter_init (&iter, priv->settings);
 	while (g_hash_table_iter_next (&iter, NULL, &value)) {
 		/* Order NMSettingConnection so that it will be verified first.
-		 * The reason is, that NMSettingConnection:verify() modifies the connection
-		 * by setting NMSettingConnection:interface_name. So we want to call that
-		 * verify() first, because the order can affect the outcome.
-		 * Another reason is, that errors in this setting might be more fundamental
+		 * The reason is, that errors in this setting might be more fundamental
 		 * and should be checked and reported with higher priority.
 		 * Another reason is, that some settings look especially at the
 		 * NMSettingConnection, so they find it first in the all_settings list. */
@@ -746,36 +843,6 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 		g_clear_error (&verify_error);
 	}
 	g_slist_free (all_settings);
-
-	/* Now make sure the given 'type' setting can actually be the base setting
-	 * of the connection.  Can't have type=ppp for example.
-	 */
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (!ctype) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
-		                     "connection type missing");
-		goto EXIT;
-	}
-
-	base = nm_connection_get_setting_by_name (connection, ctype);
-	if (!base) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
-		                     "base setting GType not found");
-		goto EXIT;
-	}
-
-	if (!_nm_setting_is_base_type (base)) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
-		             "connection type '%s' is not a base type",
-		             ctype);
-		goto EXIT;
-	}
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
@@ -856,7 +923,16 @@ nm_connection_normalize (NMConnection *connection,
 	    success == NM_SETTING_VERIFY_SUCCESS) {
 		if (normalizable_error)
 			g_propagate_error (error, normalizable_error);
-		goto EXIT;
+		if (modified)
+			*modified = FALSE;
+		if (success == NM_SETTING_VERIFY_ERROR && error && !*error) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_UNKNOWN,
+			                     _("Unexpected failure to verify the connection"));
+			g_return_val_if_reached (FALSE);
+		}
+		return success == NM_SETTING_VERIFY_SUCCESS;
 	}
 	g_assert (success == NM_SETTING_VERIFY_NORMALIZABLE || success == NM_SETTING_VERIFY_NORMALIZABLE_ERROR);
 	g_clear_error (&normalizable_error);
@@ -865,23 +941,35 @@ nm_connection_normalize (NMConnection *connection,
 	 * We only do this, after verifying that the connection contains no un-normalizable
 	 * errors, because in that case we rather fail without touching the settings. */
 
+	was_modified |= _normalize_connection_type (connection);
 	was_modified |= _normalize_virtual_iface_name (connection);
+	was_modified |= _normalize_connection_slave_type (connection);
 	was_modified |= _normalize_ip_config (connection, parameters);
+	was_modified |= _normalize_infiniband_mtu (connection, parameters);
 
 	/* Verify anew. */
 	success = _nm_connection_verify (connection, error);
 
-	/* we would expect, that after normalization, the connection can be verified. */
-	g_return_val_if_fail (success == NM_SETTING_VERIFY_SUCCESS, success);
-
-	/* we would expect, that the connection was modified during normalization. */
-	g_return_val_if_fail (was_modified, success);
-
-EXIT:
 	if (modified)
 		*modified = was_modified;
 
-	return success == NM_SETTING_VERIFY_SUCCESS;
+	if (success != NM_SETTING_VERIFY_SUCCESS) {
+		/* we would expect, that after normalization, the connection can be verified.
+		 * Also treat NM_SETTING_VERIFY_NORMALIZABLE as failure, because there is something
+		 * odd going on. */
+		if (error && !*error) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_UNKNOWN,
+			                     _("Unexpected failure to normalize the connection"));
+		}
+		g_return_val_if_reached (FALSE);
+	}
+
+	/* we would expect, that the connection was modified during normalization. */
+	g_return_val_if_fail (was_modified, TRUE);
+
+	return TRUE;
 }
 
 /**
@@ -1892,12 +1980,8 @@ static void
 nm_connection_private_free (NMConnectionPrivate *priv)
 {
 	NMConnection *self = priv->self;
-	GHashTableIter iter;
-	NMSetting *setting;
 
-	g_hash_table_iter_init (&iter, priv->settings);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting))
-		g_signal_handlers_disconnect_by_func (setting, setting_changed_cb, self);
+	g_hash_table_foreach_remove (priv->settings, _setting_release, self);
 	g_hash_table_destroy (priv->settings);
 
 	g_slice_free (NMConnectionPrivate, priv);

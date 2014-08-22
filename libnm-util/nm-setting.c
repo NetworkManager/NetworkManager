@@ -1340,7 +1340,7 @@ _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
 		 * to con_name. */
 		g_set_error_literal (error,
 		                     error_quark,
-		                     e_missing_property,
+		                     e_invalid_property,
 		                     _("property is invalid"));
 		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
 		/* we would like to make this a NORMALIZEABLE_ERROR, but that might

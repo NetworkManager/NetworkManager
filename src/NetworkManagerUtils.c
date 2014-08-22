@@ -33,7 +33,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "nm-setting-private.h"
+#include "nm-core-internal.h"
 #include "nm-logging.h"
 #include "nm-device.h"
 #include "nm-setting-connection.h"

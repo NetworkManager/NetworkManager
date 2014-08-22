@@ -39,7 +39,7 @@
 #include "nm-setting-vlan.h"
 #include "nm-setting-bond.h"
 #include "nm-utils.h"
-#include "nm-utils-private.h"
+#include "nm-core-internal.h"
 #include "nm-dbus-glib-types.h"
 
 #include "nm-test-utils.h"
@@ -330,7 +330,7 @@ test_setting_ip4_config_labels (void)
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
 	g_assert_cmpstr (label, ==, NULL);
 
 	/* addr 2 */
@@ -338,12 +338,12 @@ test_setting_ip4_config_labels (void)
 	nm_ip4_address_set_address (addr, 0x02020202);
 	nm_ip4_address_set_prefix (addr, 24);
 
-	NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "eth0:1"));
+	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "eth0:1");
 	nm_ip4_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 1));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
 	g_assert_cmpstr (label, ==, "eth0:1");
 
 	/* addr 3 */
@@ -351,12 +351,12 @@ test_setting_ip4_config_labels (void)
 	nm_ip4_address_set_address (addr, 0x03030303);
 	nm_ip4_address_set_prefix (addr, 24);
 
-	NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_add_address_with_label (s_ip4, addr, NULL));
+	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, NULL);
 	nm_ip4_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 2));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 2);
 	g_assert_cmpstr (label, ==, NULL);
 
 	/* Remove addr 1 and re-verify remaining addresses */
@@ -366,12 +366,12 @@ test_setting_ip4_config_labels (void)
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
 	g_assert_cmpstr (label, ==, "eth0:1");
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 1));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
 	g_assert_cmpstr (label, ==, NULL);
 
 
@@ -395,12 +395,12 @@ test_setting_ip4_config_labels (void)
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
 	g_assert_cmpstr (label, ==, NULL);
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 1));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
 	g_assert_cmpstr (label, ==, NULL);
 
 	/* Setting labels now will leave addresses untouched */
@@ -414,12 +414,12 @@ test_setting_ip4_config_labels (void)
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 0));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
 	g_assert_cmpstr (label, ==, "eth0:1");
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
-	label = NM_UTILS_PRIVATE_CALL (nm_setting_ip4_config_get_address_label (s_ip4, 1));
+	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
 	g_assert_cmpstr (label, ==, NULL);
 
 	/* Setting labels to a value that's too short or too long will result in
@@ -1837,11 +1837,29 @@ test_setting_compare_id (void)
 	g_assert (success);
 }
 
-static void
-test_setting_compare_secrets (NMSettingSecretFlags secret_flags,
-                              NMSettingCompareFlags comp_flags,
-                              gboolean remove_secret)
+typedef struct {
+	NMSettingSecretFlags secret_flags;
+	NMSettingCompareFlags comp_flags;
+	gboolean remove_secret;
+} TestDataCompareSecrets;
+
+static TestDataCompareSecrets *
+test_data_compare_secrets_new (NMSettingSecretFlags secret_flags,
+                               NMSettingCompareFlags comp_flags,
+                               gboolean remove_secret)
 {
+	TestDataCompareSecrets *data = g_new0 (TestDataCompareSecrets, 1);
+
+	data->secret_flags = secret_flags;
+	data->comp_flags = comp_flags;
+	data->remove_secret = remove_secret;
+	return data;
+}
+
+static void
+test_setting_compare_secrets (gconstpointer test_data)
+{
+	const TestDataCompareSecrets *data = test_data;
 	NMSetting *old, *new;
 	gboolean success;
 
@@ -1854,26 +1872,25 @@ test_setting_compare_secrets (NMSettingSecretFlags secret_flags,
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
 	              NM_SETTING_WIRELESS_SECURITY_PSK, "really cool psk",
 	              NULL);
-	nm_setting_set_secret_flags (old, NM_SETTING_WIRELESS_SECURITY_PSK, secret_flags, NULL);
+	nm_setting_set_secret_flags (old, NM_SETTING_WIRELESS_SECURITY_PSK, data->secret_flags, NULL);
 
 	/* Clear the PSK from the duplicated setting */
 	new = nm_setting_duplicate (old);
-	if (remove_secret) {
+	if (data->remove_secret) {
 		g_object_set (new, NM_SETTING_WIRELESS_SECURITY_PSK, NULL, NULL);
 
 		success = nm_setting_compare (old, new, NM_SETTING_COMPARE_FLAG_EXACT);
 		g_assert (success == FALSE);
 	}
 
-	success = nm_setting_compare (old, new, comp_flags);
+	success = nm_setting_compare (old, new, data->comp_flags);
 	g_assert (success);
 }
 
 static void
-test_setting_compare_vpn_secrets (NMSettingSecretFlags secret_flags,
-                                  NMSettingCompareFlags comp_flags,
-                                  gboolean remove_secret)
+test_setting_compare_vpn_secrets (gconstpointer test_data)
 {
+	const TestDataCompareSecrets *data = test_data;
 	NMSetting *old, *new;
 	gboolean success;
 
@@ -1886,11 +1903,11 @@ test_setting_compare_vpn_secrets (NMSettingSecretFlags secret_flags,
 	nm_setting_vpn_add_secret (NM_SETTING_VPN (old), "asdfasdfasdf", "really adfasdfasdfasdf");
 	nm_setting_vpn_add_secret (NM_SETTING_VPN (old), "0123456778", "abcdefghijklmnpqrstuvqxyz");
 	nm_setting_vpn_add_secret (NM_SETTING_VPN (old), "borkbork", "yet another really secret password");
-	nm_setting_set_secret_flags (old, "borkbork", secret_flags, NULL);
+	nm_setting_set_secret_flags (old, "borkbork", data->secret_flags, NULL);
 
 	/* Clear "borkbork" from the duplicated setting */
 	new = nm_setting_duplicate (old);
-	if (remove_secret) {
+	if (data->remove_secret) {
 		nm_setting_vpn_remove_secret (NM_SETTING_VPN (new), "borkbork");
 
 		/* First make sure they are different */
@@ -1898,7 +1915,7 @@ test_setting_compare_vpn_secrets (NMSettingSecretFlags secret_flags,
 		g_assert (success == FALSE);
 	}
 
-	success = nm_setting_compare (old, new, comp_flags);
+	success = nm_setting_compare (old, new, data->comp_flags);
 	g_assert (success);
 }
 
@@ -2545,43 +2562,27 @@ test_setting_old_uuid (void)
 	g_assert (success == TRUE);
 }
 
-/*
- * nm_connection_verify() modifies the connection by setting
- * the interface-name property to the virtual_iface_name of
- * the type specific settings.
- *
- * It would be preferable of verify() not to touch the connection,
- * but as it is now, stick with it and test it.
- **/
 static void
-test_connection_verify_sets_interface_name (void)
+test_connection_normalize_connection_interface_name (void)
 {
 	NMConnection *con;
 	NMSettingConnection *s_con;
 	NMSettingBond *s_bond;
-	GError *error = NULL;
-	gboolean success;
 
-	s_con = (NMSettingConnection *) nm_setting_connection_new ();
-	g_object_set (G_OBJECT (s_con),
-	              NM_SETTING_CONNECTION_ID, "test1",
-	              NM_SETTING_CONNECTION_UUID, "22001632-bbb4-4616-b277-363dce3dfb5b",
-	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BOND_SETTING_NAME,
-	              NULL);
-	s_bond = (NMSettingBond *) nm_setting_bond_new ();
+	con = nmtst_create_minimal_connection ("test1",
+	                                       "22001632-bbb4-4616-b277-363dce3dfb5b",
+	                                       NM_SETTING_BOND_SETTING_NAME,
+	                                       &s_con);
+
+	s_bond = nm_connection_get_setting_bond (con);
 	g_object_set (G_OBJECT (s_bond),
 	              NM_SETTING_BOND_INTERFACE_NAME, "bond-x",
 	              NULL);
 
-	con = nm_simple_connection_new ();
-	nm_connection_add_setting (con, NM_SETTING (s_con));
-	nm_connection_add_setting (con, NM_SETTING (s_bond));
-
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, NULL);
 
 	/* for backward compatiblity, normalizes the interface name */
-	success = nm_connection_verify (con, &error);
-	g_assert (success && !error);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, "bond-x");
 
@@ -2594,151 +2595,575 @@ test_connection_verify_sets_interface_name (void)
 static void
 test_connection_normalize_virtual_iface_name (void)
 {
-	NMConnection *con;
+	gs_unref_object NMConnection *con = NULL;
 	NMSettingConnection *s_con;
 	NMSettingVlan *s_vlan;
-	NMSetting *setting;
-	GError *error = NULL;
-	gboolean success;
 	const char *IFACE_NAME = "iface";
 	const char *IFACE_VIRT = "iface-X";
-	gboolean modified = FALSE;
 
-	con = nm_simple_connection_new ();
+	con = nmtst_create_minimal_connection ("test1",
+	                                       "22001632-bbb4-4616-b277-363dce3dfb5b",
+	                                       NM_SETTING_VLAN_SETTING_NAME,
+	                                       &s_con);
 
-	setting = nm_setting_ip4_config_new ();
-	g_object_set (setting,
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-	              NULL);
-	nm_connection_add_setting (con, setting);
+	nm_connection_add_setting (con,
+	    g_object_new (NM_TYPE_SETTING_IP4_CONFIG,
+	                  NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	                  NULL));
 
-	setting = nm_setting_ip6_config_new ();
-	g_object_set (setting,
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
-	              NULL);
-	nm_connection_add_setting (con, setting);
+	nm_connection_add_setting (con,
+	    g_object_new (NM_TYPE_SETTING_IP6_CONFIG,
+	                  NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	                  NULL));
 
-	s_con = (NMSettingConnection *) nm_setting_connection_new ();
-	g_object_set (G_OBJECT (s_con),
-	              NM_SETTING_CONNECTION_ID, "test1",
-	              NM_SETTING_CONNECTION_UUID, "22001632-bbb4-4616-b277-363dce3dfb5b",
-	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_VLAN_SETTING_NAME,
-	              NM_SETTING_CONNECTION_INTERFACE_NAME, IFACE_NAME,
-	              NULL);
-	s_vlan = (NMSettingVlan *) nm_setting_vlan_new ();
+	s_vlan = nm_connection_get_setting_vlan (con);
+
 	g_object_set (G_OBJECT (s_vlan),
-	              NM_SETTING_VLAN_INTERFACE_NAME, IFACE_VIRT,
 	              NM_SETTING_VLAN_PARENT, "eth0",
 	              NULL);
 
-	nm_connection_add_setting (con, NM_SETTING (s_con));
-	nm_connection_add_setting (con, NM_SETTING (s_vlan));
+	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, IFACE_NAME, NULL);
+	g_object_set (G_OBJECT (s_vlan), NM_SETTING_VLAN_INTERFACE_NAME, IFACE_VIRT, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
 	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_VIRT);
-
-	/* for backward compatiblity, normalizes the interface name */
-	success = nm_connection_verify (con, &error);
-	g_assert (success && !error);
-
-	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
-	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_VIRT);
-
-	success = nm_connection_normalize (con, NULL, &modified, &error);
-	g_assert (success && !error);
-	g_assert (modified);
-
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_VLAN_ERROR, NM_SETTING_VLAN_ERROR_INVALID_PROPERTY);
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
 	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_NAME);
 
-	success = nm_connection_verify (con, &error);
-	g_assert (success && !error);
 
-	g_object_unref (con);
+	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, IFACE_NAME, NULL);
+	g_object_set (G_OBJECT (s_vlan), NM_SETTING_VLAN_INTERFACE_NAME, NULL, NULL);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
+	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, NULL);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_VLAN_ERROR, NM_SETTING_VLAN_ERROR_MISSING_PROPERTY);
+	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
+	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_NAME);
+
+
+	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, NULL, NULL);
+	g_object_set (G_OBJECT (s_vlan), NM_SETTING_VLAN_INTERFACE_NAME, IFACE_NAME, NULL);
+
+	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, NULL);
+	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_NAME);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
+	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_NAME);
+}
+
+static void
+_test_connection_normalize_type_normalizable_setting (const char *type,
+                                                      void (*prepare_normalizable_fcn) (NMConnection *con))
+{
+	NMSettingConnection *s_con;
+	NMSetting *s_base;
+	GType base_type;
+	gs_unref_object NMConnection *con = NULL;
+	gs_free char *id = g_strdup_printf ("%s[%s]", G_STRFUNC, type);
+
+	base_type = nm_setting_lookup_type (type);
+	g_assert (base_type != G_TYPE_INVALID);
+	g_assert (_nm_setting_type_is_base_type (base_type));
+
+	con = nmtst_create_minimal_connection (id, NULL, NULL, &s_con);
+
+	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+
+	g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, type, NULL);
+
+	if (prepare_normalizable_fcn)
+		prepare_normalizable_fcn (con);
+
+	g_assert (!nm_connection_get_setting_by_name (con, type));
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND);
+
+	s_base = nm_connection_get_setting_by_name (con, type);
+	g_assert (s_base);
+	g_assert (G_OBJECT_TYPE (s_base) == base_type);
+}
+
+static void
+_test_connection_normalize_type_unnormalizable_setting (const char *type)
+{
+	NMSettingConnection *s_con;
+	GType base_type;
+	gs_unref_object NMConnection *con = NULL;
+	gs_free char *id = g_strdup_printf ("%s[%s]", G_STRFUNC, type);
+
+	base_type = nm_setting_lookup_type (type);
+	g_assert (base_type != G_TYPE_INVALID);
+	g_assert (_nm_setting_type_is_base_type (base_type));
+
+	con = nmtst_create_minimal_connection (id, NULL, NULL, &s_con);
+
+	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+
+	g_object_set (s_con, NM_SETTING_CONNECTION_TYPE, type, NULL);
+
+	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND);
+}
+
+static void
+_test_connection_normalize_type_normalizable_type (const char *type,
+                                                   NMSetting *(*add_setting_fcn) (NMConnection *con))
+{
+	NMSettingConnection *s_con;
+	NMSetting *s_base;
+	GType base_type;
+	gs_unref_object NMConnection *con = NULL;
+	gs_free char *id = g_strdup_printf ("%s[%s]", G_STRFUNC, type);
+
+	base_type = nm_setting_lookup_type (type);
+	g_assert (base_type != G_TYPE_INVALID);
+	g_assert (_nm_setting_type_is_base_type (base_type));
+
+	con = nmtst_create_minimal_connection (id, NULL, NULL, &s_con);
+
+	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+
+	if (add_setting_fcn)
+		s_base = add_setting_fcn (con);
+	else {
+		s_base = NM_SETTING (g_object_new (base_type, NULL));
+		nm_connection_add_setting (con, s_base);
+	}
+
+	g_assert (!nm_connection_get_connection_type (con));
+	g_assert (nm_connection_get_setting_by_name (con, type) == s_base);
+
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+
+	g_assert_cmpstr (nm_connection_get_connection_type (con), ==, type);
+	g_assert (nm_connection_get_setting_by_name (con, type) == s_base);
+}
+
+static NMSetting *
+_add_setting_fcn_adsl (NMConnection *con)
+{
+	NMSetting *setting;
+
+	setting = g_object_new (NM_TYPE_SETTING_ADSL,
+	                        NM_SETTING_ADSL_USERNAME, "test-user",
+	                        NM_SETTING_ADSL_PROTOCOL, NM_SETTING_ADSL_PROTOCOL_PPPOA,
+	                        NM_SETTING_ADSL_ENCAPSULATION, NM_SETTING_ADSL_ENCAPSULATION_VCMUX,
+	                        NULL);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_bluetooth (NMConnection *con)
+{
+	NMSetting *setting;
+	GByteArray *bdaddr = nm_utils_hwaddr_atoba ("11:22:33:44:55:66", ETH_ALEN);
+
+	setting = g_object_new (NM_TYPE_SETTING_BLUETOOTH,
+	                        NM_SETTING_BLUETOOTH_BDADDR, bdaddr,
+	                        NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
+	                        NULL);
+	g_byte_array_free (bdaddr, TRUE);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_bond (NMConnection *con)
+{
+	NMSetting *setting;
+	NMSettingConnection *s_con;
+
+	setting = g_object_new (NM_TYPE_SETTING_BOND, NULL);
+
+	nm_connection_add_setting (con, setting);
+
+	s_con = nm_connection_get_setting_connection (con);
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "test-bond",
+	              NULL);
+
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_bridge (NMConnection *con)
+{
+	NMSetting *setting;
+	NMSettingConnection *s_con;
+
+	setting = g_object_new (NM_TYPE_SETTING_BRIDGE, NULL);
+
+	nm_connection_add_setting (con, setting);
+
+	s_con = nm_connection_get_setting_connection (con);
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "test-bridge",
+	              NULL);
+
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_cdma (NMConnection *con)
+{
+	NMSetting *setting;
+
+	setting = g_object_new (NM_TYPE_SETTING_CDMA,
+	                        NM_SETTING_CDMA_NUMBER, "test-number",
+	                        NULL);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_infiniband (NMConnection *con)
+{
+	NMSetting *setting;
+
+	setting = g_object_new (NM_TYPE_SETTING_INFINIBAND,
+	                        NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",
+	                        NULL);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_olpc_mesh (NMConnection *con)
+{
+	NMSetting *setting;
+	const char *ssid_data = "ssid-test";
+	GByteArray *ssid = g_byte_array_new ();
+
+	g_byte_array_append (ssid, (const guint8 *) ssid_data, strlen (ssid_data));
+	setting = g_object_new (NM_TYPE_SETTING_OLPC_MESH,
+	                        NM_SETTING_OLPC_MESH_SSID, ssid,
+	                        NM_SETTING_OLPC_MESH_CHANNEL, 1,
+	                        NULL);
+	g_byte_array_free (ssid, TRUE);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_team (NMConnection *con)
+{
+	NMSetting *setting;
+	NMSettingConnection *s_con;
+
+	setting = g_object_new (NM_TYPE_SETTING_TEAM, NULL);
+
+	nm_connection_add_setting (con, setting);
+
+	s_con = nm_connection_get_setting_connection (con);
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "test-team",
+	              NULL);
+
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_vlan (NMConnection *con)
+{
+	NMSetting *setting;
+
+	setting = g_object_new (NM_TYPE_SETTING_VLAN,
+	                        NM_SETTING_VLAN_PARENT, "test-parent",
+	                        NULL);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_vpn (NMConnection *con)
+{
+	NMSetting *setting;
+
+	setting = g_object_new (NM_TYPE_SETTING_VPN,
+	                        NM_SETTING_VPN_SERVICE_TYPE, "test-vpn-service-type",
+	                        NULL);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_wimax (NMConnection *con)
+{
+	NMSetting *setting;
+
+	setting = g_object_new (NM_TYPE_SETTING_WIMAX,
+	                        NM_SETTING_WIMAX_NETWORK_NAME, "test-network",
+	                        NULL);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static NMSetting *
+_add_setting_fcn_wireless (NMConnection *con)
+{
+	NMSetting *setting;
+	const char *ssid_data = "ssid-test";
+	GByteArray *ssid = g_byte_array_new ();
+
+	g_byte_array_append (ssid, (const guint8 *) ssid_data, strlen (ssid_data));
+	setting = g_object_new (NM_TYPE_SETTING_WIRELESS,
+	                        NM_SETTING_WIRELESS_SSID, ssid,
+	                        NULL);
+	g_byte_array_free (ssid, TRUE);
+
+	nm_connection_add_setting (con, setting);
+	return setting;
+}
+
+static void
+_prepare_normalizable_fcn_vlan (NMConnection *con)
+{
+	GByteArray *mac_addr = nm_utils_hwaddr_atoba ("11:22:33:44:55:66", ETH_ALEN);
+
+	nm_connection_add_setting (con, g_object_new (NM_TYPE_SETTING_WIRED,
+	                                              NM_SETTING_WIRED_MAC_ADDRESS, mac_addr,
+	                                              NULL));
+	g_byte_array_free (mac_addr, TRUE);
+}
+
+static void
+test_connection_normalize_type (void)
+{
+	guint i;
+	struct {
+		const char *type;
+		gboolean normalizable;
+		NMSetting *(*add_setting_fcn) (NMConnection *con);
+		void (*prepare_normalizable_fcn) (NMConnection *con);
+	} types[] = {
+		{ NM_SETTING_GENERIC_SETTING_NAME, TRUE },
+		{ NM_SETTING_GSM_SETTING_NAME, TRUE },
+		{ NM_SETTING_WIRED_SETTING_NAME, TRUE },
+		{ NM_SETTING_VLAN_SETTING_NAME, TRUE, _add_setting_fcn_vlan, _prepare_normalizable_fcn_vlan },
+
+		{ NM_SETTING_ADSL_SETTING_NAME, FALSE, _add_setting_fcn_adsl },
+		{ NM_SETTING_BLUETOOTH_SETTING_NAME, FALSE, _add_setting_fcn_bluetooth },
+		{ NM_SETTING_BOND_SETTING_NAME, FALSE, _add_setting_fcn_bond },
+		{ NM_SETTING_BRIDGE_SETTING_NAME, FALSE, _add_setting_fcn_bridge },
+		{ NM_SETTING_CDMA_SETTING_NAME, FALSE, _add_setting_fcn_cdma },
+		{ NM_SETTING_INFINIBAND_SETTING_NAME, FALSE, _add_setting_fcn_infiniband },
+		{ NM_SETTING_OLPC_MESH_SETTING_NAME, FALSE, _add_setting_fcn_olpc_mesh },
+		{ NM_SETTING_TEAM_SETTING_NAME, FALSE, _add_setting_fcn_team },
+		{ NM_SETTING_VLAN_SETTING_NAME, FALSE, _add_setting_fcn_vlan },
+		{ NM_SETTING_VPN_SETTING_NAME, FALSE, _add_setting_fcn_vpn },
+		{ NM_SETTING_WIMAX_SETTING_NAME, FALSE, _add_setting_fcn_wimax },
+		{ NM_SETTING_WIRELESS_SETTING_NAME, FALSE, _add_setting_fcn_wireless },
+		{ 0 },
+	};
+
+	for (i = 0; types[i].type; i++) {
+		const char *type = types[i].type;
+
+		if (types[i].normalizable)
+			_test_connection_normalize_type_normalizable_setting (type, types[i].prepare_normalizable_fcn);
+		else
+			_test_connection_normalize_type_unnormalizable_setting (type);
+		_test_connection_normalize_type_normalizable_type (type, types[i].add_setting_fcn);
+	}
+}
+
+static void
+test_connection_normalize_slave_type_1 (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingConnection *s_con;
+
+	con = nmtst_create_minimal_connection ("test_connection_normalize_slave_type_1",
+	                                       "cc4cd5df-45dc-483e-b291-6b76c2338ecb",
+	                                       NM_SETTING_WIRED_SETTING_NAME, &s_con);
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_MASTER, "master0",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, "invalid-type",
+	              NULL);
+
+	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (!nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, "bridge",
+	              NULL);
+
+	g_assert (!nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_SLAVE_SETTING_NOT_FOUND);
+	g_assert (nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
+}
+
+static void
+test_connection_normalize_slave_type_2 (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingConnection *s_con;
+
+	con = nmtst_create_minimal_connection ("test_connection_normalize_slave_type_2",
+	                                       "40bea008-ca72-439a-946b-e65f827656f9",
+	                                       NM_SETTING_WIRED_SETTING_NAME, &s_con);
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_MASTER, "master0",
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, "invalid-type",
+	              NULL);
+
+	nmtst_assert_connection_unnormalizable (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (!nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_SLAVE_TYPE, NULL,
+	              NULL);
+	nm_connection_add_setting (con, nm_setting_bridge_port_new ());
+
+	g_assert (nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NULL);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+	g_assert (nm_connection_get_setting_by_name (con, NM_SETTING_BRIDGE_PORT_SETTING_NAME));
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
+}
+
+static void
+test_connection_normalize_infiniband_mtu (void)
+{
+	gs_unref_object NMConnection *con = NULL;
+	NMSettingInfiniband *s_infini;
+
+	con = nmtst_create_minimal_connection ("test_connection_normalize_infiniband_mtu", NULL,
+	                                       NM_SETTING_INFINIBAND_SETTING_NAME, NULL);
+
+	s_infini = nm_connection_get_setting_infiniband (con);
+	g_object_set (s_infini,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",
+	              NULL);
+	nmtst_assert_connection_verifies_and_normalizable (con);
+
+	g_object_set (s_infini,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
+	              NM_SETTING_INFINIBAND_MTU, (guint) 2044,
+	              NULL);
+	nmtst_assert_connection_verifies_without_normalization (con);
+	g_assert_cmpint (2044, ==, nm_setting_infiniband_get_mtu (s_infini));
+
+	g_object_set (s_infini,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
+	              NM_SETTING_INFINIBAND_MTU, (guint) 2045,
+	              NULL);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_INFINIBAND_ERROR, NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY);
+	g_assert_cmpint (2044, ==, nm_setting_infiniband_get_mtu (s_infini));
+
+	g_object_set (s_infini,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",
+	              NM_SETTING_INFINIBAND_MTU, (guint) 65520,
+	              NULL);
+	nmtst_assert_connection_verifies_without_normalization (con);
+	g_assert_cmpint (65520, ==, nm_setting_infiniband_get_mtu (s_infini));
+
+	g_object_set (s_infini,
+	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected",
+	              NM_SETTING_INFINIBAND_MTU, (guint) 65521,
+	              NULL);
+	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_INFINIBAND_ERROR, NM_SETTING_INFINIBAND_ERROR_INVALID_PROPERTY);
+	g_assert_cmpint (65520, ==, nm_setting_infiniband_get_mtu (s_infini));
 }
 
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
 {
-	char *base;
-
 	nmtst_init (&argc, &argv, TRUE);
 
 	/* The tests */
-	test_setting_vpn_items ();
-	test_setting_vpn_update_secrets ();
-	test_setting_vpn_modify_during_foreach ();
-	test_setting_ip4_config_labels ();
-	test_setting_ip6_config_old_address_array ();
-	test_setting_gsm_apn_spaces ();
-	test_setting_gsm_apn_bad_chars ();
-	test_setting_gsm_apn_underscore ();
-	test_setting_gsm_without_number ();
-	test_setting_to_hash_all ();
-	test_setting_to_hash_no_secrets ();
-	test_setting_to_hash_only_secrets ();
-	test_setting_compare_id ();
-	test_setting_compare_secrets (NM_SETTING_SECRET_FLAG_AGENT_OWNED, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS, TRUE);
-	test_setting_compare_secrets (NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
-	test_setting_compare_secrets (NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
-	test_setting_compare_secrets (NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
-	test_setting_compare_vpn_secrets (NM_SETTING_SECRET_FLAG_AGENT_OWNED, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS, TRUE);
-	test_setting_compare_vpn_secrets (NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
-	test_setting_compare_vpn_secrets (NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
-	test_setting_compare_vpn_secrets (NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
-	test_setting_old_uuid ();
+	g_test_add_func ("/core/general/test_setting_vpn_items", test_setting_vpn_items);
+	g_test_add_func ("/core/general/test_setting_vpn_update_secrets", test_setting_vpn_update_secrets);
+	g_test_add_func ("/core/general/test_setting_vpn_modify_during_foreach", test_setting_vpn_modify_during_foreach);
+	g_test_add_func ("/core/general/test_setting_ip4_config_labels", test_setting_ip4_config_labels);
+	g_test_add_func ("/core/general/test_setting_ip6_config_old_address_array", test_setting_ip6_config_old_address_array);
+	g_test_add_func ("/core/general/test_setting_gsm_apn_spaces", test_setting_gsm_apn_spaces);
+	g_test_add_func ("/core/general/test_setting_gsm_apn_bad_chars", test_setting_gsm_apn_bad_chars);
+	g_test_add_func ("/core/general/test_setting_gsm_apn_underscore", test_setting_gsm_apn_underscore);
+	g_test_add_func ("/core/general/test_setting_gsm_without_number", test_setting_gsm_without_number);
+	g_test_add_func ("/core/general/test_setting_to_hash_all", test_setting_to_hash_all);
+	g_test_add_func ("/core/general/test_setting_to_hash_no_secrets", test_setting_to_hash_no_secrets);
+	g_test_add_func ("/core/general/test_setting_to_hash_only_secrets", test_setting_to_hash_only_secrets);
+	g_test_add_func ("/core/general/test_setting_compare_id", test_setting_compare_id);
+#define ADD_FUNC(func, secret_flags, comp_flags, remove_secret) \
+	g_test_add_data_func_full ("/core/general/" G_STRINGIFY (func), \
+	                           test_data_compare_secrets_new (secret_flags, comp_flags, remove_secret), \
+	                           func, g_free)
+	ADD_FUNC (test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_AGENT_OWNED, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS, TRUE);
+	ADD_FUNC (test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
+	ADD_FUNC (test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
+	ADD_FUNC (test_setting_compare_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
+	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_AGENT_OWNED, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS, TRUE);
+	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NOT_SAVED, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS, TRUE);
+	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS, TRUE);
+	ADD_FUNC (test_setting_compare_vpn_secrets, NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_COMPARE_FLAG_EXACT, FALSE);
+	g_test_add_func ("/core/general/test_setting_old_uuid", test_setting_old_uuid);
 
-	test_connection_to_hash_setting_name ();
-	test_setting_new_from_hash ();
-	test_connection_replace_settings ();
-	test_connection_replace_settings_from_connection ();
-	test_connection_new_from_hash ();
-	test_connection_verify_sets_interface_name ();
-	test_connection_normalize_virtual_iface_name ();
+	g_test_add_func ("/core/general/test_connection_to_hash_setting_name", test_connection_to_hash_setting_name);
+	g_test_add_func ("/core/general/test_setting_new_from_hash", test_setting_new_from_hash);
+	g_test_add_func ("/core/general/test_connection_replace_settings", test_connection_replace_settings);
+	g_test_add_func ("/core/general/test_connection_replace_settings_from_connection", test_connection_replace_settings_from_connection);
+	g_test_add_func ("/core/general/test_connection_new_from_hash", test_connection_new_from_hash);
+	g_test_add_func ("/core/general/test_connection_normalize_connection_interface_name", test_connection_normalize_connection_interface_name);
+	g_test_add_func ("/core/general/test_connection_normalize_virtual_iface_name", test_connection_normalize_virtual_iface_name);
+	g_test_add_func ("/core/general/test_connection_normalize_type", test_connection_normalize_type);
+	g_test_add_func ("/core/general/test_connection_normalize_slave_type_1", test_connection_normalize_slave_type_1);
+	g_test_add_func ("/core/general/test_connection_normalize_slave_type_2", test_connection_normalize_slave_type_2);
+	g_test_add_func ("/core/general/test_connection_normalize_infiniband_mtu", test_connection_normalize_infiniband_mtu);
 
-	test_setting_connection_permissions_helpers ();
-	test_setting_connection_permissions_property ();
+	g_test_add_func ("/core/general/test_setting_connection_permissions_helpers", test_setting_connection_permissions_helpers);
+	g_test_add_func ("/core/general/test_setting_connection_permissions_property", test_setting_connection_permissions_property);
 
-	test_connection_compare_same ();
-	test_connection_compare_key_only_in_a ();
-	test_connection_compare_setting_only_in_a ();
-	test_connection_compare_key_only_in_b ();
-	test_connection_compare_setting_only_in_b ();
+	g_test_add_func ("/core/general/test_connection_compare_same", test_connection_compare_same);
+	g_test_add_func ("/core/general/test_connection_compare_key_only_in_a", test_connection_compare_key_only_in_a);
+	g_test_add_func ("/core/general/test_connection_compare_setting_only_in_a", test_connection_compare_setting_only_in_a);
+	g_test_add_func ("/core/general/test_connection_compare_key_only_in_b", test_connection_compare_key_only_in_b);
+	g_test_add_func ("/core/general/test_connection_compare_setting_only_in_b", test_connection_compare_setting_only_in_b);
 
-	test_connection_diff_a_only ();
-	test_connection_diff_same ();
-	test_connection_diff_different ();
-	test_connection_diff_no_secrets ();
-	test_connection_diff_inferrable ();
-	test_connection_good_base_types ();
-	test_connection_bad_base_types ();
+	g_test_add_func ("/core/general/test_connection_diff_a_only", test_connection_diff_a_only);
+	g_test_add_func ("/core/general/test_connection_diff_same", test_connection_diff_same);
+	g_test_add_func ("/core/general/test_connection_diff_different", test_connection_diff_different);
+	g_test_add_func ("/core/general/test_connection_diff_no_secrets", test_connection_diff_no_secrets);
+	g_test_add_func ("/core/general/test_connection_diff_inferrable", test_connection_diff_inferrable);
+	g_test_add_func ("/core/general/test_connection_good_base_types", test_connection_good_base_types);
+	g_test_add_func ("/core/general/test_connection_bad_base_types", test_connection_bad_base_types);
 
-	test_hwaddr_aton_ether_normal ();
-	test_hwaddr_aton_ib_normal ();
-	test_hwaddr_aton_no_leading_zeros ();
-	test_hwaddr_aton_malformed ();
-	test_hwaddr_equal ();
+	g_test_add_func ("/core/general/test_hwaddr_aton_ether_normal", test_hwaddr_aton_ether_normal);
+	g_test_add_func ("/core/general/test_hwaddr_aton_ib_normal", test_hwaddr_aton_ib_normal);
+	g_test_add_func ("/core/general/test_hwaddr_aton_no_leading_zeros", test_hwaddr_aton_no_leading_zeros);
+	g_test_add_func ("/core/general/test_hwaddr_aton_malformed", test_hwaddr_aton_malformed);
+	g_test_add_func ("/core/general/test_hwaddr_equal", test_hwaddr_equal);
 
-	test_ip4_prefix_to_netmask ();
-	test_ip4_netmask_to_prefix ();
+	g_test_add_func ("/core/general/test_ip4_prefix_to_netmask", test_ip4_prefix_to_netmask);
+	g_test_add_func ("/core/general/test_ip4_netmask_to_prefix", test_ip4_netmask_to_prefix);
 
-	test_connection_changed_signal ();
-	test_setting_connection_changed_signal ();
-	test_setting_bond_changed_signal ();
-	test_setting_ip4_changed_signal ();
-	test_setting_ip6_changed_signal ();
-	test_setting_vlan_changed_signal ();
-	test_setting_vpn_changed_signal ();
-	test_setting_wired_changed_signal ();
-	test_setting_wireless_changed_signal ();
-	test_setting_wireless_security_changed_signal ();
-	test_setting_802_1x_changed_signal ();
+	g_test_add_func ("/core/general/test_connection_changed_signal", test_connection_changed_signal);
+	g_test_add_func ("/core/general/test_setting_connection_changed_signal", test_setting_connection_changed_signal);
+	g_test_add_func ("/core/general/test_setting_bond_changed_signal", test_setting_bond_changed_signal);
+	g_test_add_func ("/core/general/test_setting_ip4_changed_signal", test_setting_ip4_changed_signal);
+	g_test_add_func ("/core/general/test_setting_ip6_changed_signal", test_setting_ip6_changed_signal);
+	g_test_add_func ("/core/general/test_setting_vlan_changed_signal", test_setting_vlan_changed_signal);
+	g_test_add_func ("/core/general/test_setting_vpn_changed_signal", test_setting_vpn_changed_signal);
+	g_test_add_func ("/core/general/test_setting_wired_changed_signal", test_setting_wired_changed_signal);
+	g_test_add_func ("/core/general/test_setting_wireless_changed_signal", test_setting_wireless_changed_signal);
+	g_test_add_func ("/core/general/test_setting_wireless_security_changed_signal", test_setting_wireless_security_changed_signal);
+	g_test_add_func ("/core/general/test_setting_802_1x_changed_signal", test_setting_802_1x_changed_signal);
 
-	base = g_path_get_basename (argv[0]);
-	fprintf (stdout, "%s: SUCCESS\n", base);
-	g_free (base);
-	return 0;
+	return g_test_run ();
 }
 

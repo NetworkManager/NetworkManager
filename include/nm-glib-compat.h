@@ -124,4 +124,29 @@ __nmtst_g_test_skip (const gchar *msg)
 }
 #define g_test_skip __nmtst_g_test_skip
 
+
+/* g_test_add_data_func_full() is only available since glib 2.34. Add a compatibility wrapper. */
+inline static void
+__g_test_add_data_func_full (const char     *testpath,
+                             gpointer        test_data,
+                             GTestDataFunc   test_func,
+                             GDestroyNotify  data_free_func)
+{
+#if GLIB_CHECK_VERSION (2, 34, 0)
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+	g_test_add_data_func_full (testpath, test_data, test_func, data_free_func);
+	G_GNUC_END_IGNORE_DEPRECATIONS
+#else
+	g_return_if_fail (testpath != NULL);
+	g_return_if_fail (testpath[0] == '/');
+	g_return_if_fail (test_func != NULL);
+
+	g_test_add_vtable (testpath, 0, test_data, NULL,
+	                   (GTestFixtureFunc) test_func,
+	                   (GTestFixtureFunc) data_free_func);
+#endif
+}
+#define g_test_add_data_func_full __g_test_add_data_func_full
+
+
 #endif  /* __NM_GLIB_COMPAT_H__ */

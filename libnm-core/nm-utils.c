@@ -536,6 +536,34 @@ done:
 	return valid;
 }
 
+/**
+ * _nm_utils_hash_values_to_slist:
+ * @hash: a #GHashTable
+ *
+ * Utility function to iterate over a hash table and return
+ * it's values as a #GSList.
+ *
+ * Returns: (element-type gpointer) (transfer container): a newly allocated #GSList
+ * containing the values of the hash table. The caller must free the
+ * returned list with g_slist_free(). The hash values are not owned
+ * by the returned list.
+ **/
+GSList *
+_nm_utils_hash_values_to_slist (GHashTable *hash)
+{
+	GSList *list = NULL;
+	GHashTableIter iter;
+	void *value;
+
+	g_return_val_if_fail (hash, NULL);
+
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter, NULL, &value))
+		 list = g_slist_prepend (list, value);
+
+	return list;
+}
+
 static gboolean
 device_supports_ap_ciphers (guint32 dev_caps,
                             guint32 ap_flags,
@@ -2479,23 +2507,4 @@ nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_typ
 	}
 }
 
-/***********************************************************/
 
-static const NMUtilsPrivateData data = {
-	.nm_setting_ip4_config_get_address_label = nm_setting_ip4_config_get_address_label,
-	.nm_setting_ip4_config_add_address_with_label = nm_setting_ip4_config_add_address_with_label,
-};
-
-/**
- * nm_utils_get_private:
- *
- * Entry point for NetworkManager-internal API.  You should not use this
- * function for any reason.
- *
- * Returns: Who knows? It's a mystery.
- */
-const NMUtilsPrivateData *
-nm_utils_get_private (void)
-{
-	return &data;
-}
