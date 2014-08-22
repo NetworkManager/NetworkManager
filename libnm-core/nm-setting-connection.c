@@ -856,7 +856,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 			normerr_base_setting = nm_setting_verify (s_base, all_settings2, NULL);
 
-			(void) g_slist_delete_link (all_settings2, all_settings2);
+			g_slist_free_1 (all_settings2);
 			g_object_unref (s_base);
 
 			if (!normerr_base_setting) {
