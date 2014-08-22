@@ -20,6 +20,7 @@
  */
 
 #include "nm-simple-connection.h"
+#include "nm-setting-private.h"
 
 static void nm_simple_connection_interface_init (NMConnectionInterface *iface);
 
@@ -65,15 +66,38 @@ NMConnection *
 nm_simple_connection_new_from_dbus (GHashTable *hash, GError **error)
 {
 	NMConnection *connection;
+	GHashTableIter iter;
+	const char *setting_name;
+	GHashTable *setting_hash;
 
 	g_return_val_if_fail (hash != NULL, NULL);
 
 	connection = nm_simple_connection_new ();
-	if (!nm_connection_replace_settings (connection, hash, error)) {
-		g_object_unref (connection);
-		return NULL;
+
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
+		NMSetting *setting;
+		GType type;
+
+		type = nm_setting_lookup_type (setting_name);
+		if (type == G_TYPE_INVALID) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_SETTING,
+			             "unknown setting name '%s'", setting_name);
+			goto failed;
+		}
+
+		setting = _nm_setting_new_from_dbus (type, setting_hash);
+		nm_connection_add_setting (connection, setting);
 	}
-	return connection;
+
+	if (nm_connection_verify (connection, error))
+		return connection;
+
+failed:
+	g_object_unref (connection);
+	return NULL;
 }
 
 /**

@@ -992,6 +992,58 @@ test_connection_replace_settings_from_connection ()
 }
 
 static void
+test_connection_replace_settings_bad (void)
+{
+	NMConnection *connection, *clone, *new_connection;
+	GHashTable *new_settings;
+	GError *error = NULL;
+	gboolean success;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+
+	connection = new_test_connection ();
+	clone = nm_simple_connection_new_clone (connection);
+	g_assert (nm_connection_compare (connection, clone, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	new_connection = new_test_connection ();
+	g_assert (nm_connection_verify (new_connection, NULL));
+	s_con = nm_connection_get_setting_connection (new_connection);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_UUID, NULL,
+	              NM_SETTING_CONNECTION_ID, "bad-connection",
+	              NULL);
+	g_assert (!nm_connection_verify (new_connection, NULL));
+	s_wired = nm_connection_get_setting_wired (new_connection);
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_MTU, 12,
+	              NULL);
+
+	/* nm_connection_replace_settings_from_connection() should fail */
+	success = nm_connection_replace_settings_from_connection (connection, new_connection, &error);
+	g_assert (error != NULL);
+	g_assert (!success);
+	g_clear_error (&error);
+
+	g_assert (nm_connection_compare (connection, clone, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	/* nm_connection_replace_settings() should fail */
+	new_settings = nm_connection_to_dbus (new_connection, NM_CONNECTION_SERIALIZE_ALL);
+	g_assert (new_settings != NULL);
+
+	success = nm_connection_replace_settings (connection, new_settings, &error);
+	g_assert (error != NULL);
+	g_assert (!success);
+	g_clear_error (&error);
+
+	g_assert (nm_connection_compare (connection, clone, NM_SETTING_COMPARE_FLAG_EXACT));
+
+	g_hash_table_unref (new_settings);
+	g_object_unref (connection);
+	g_object_unref (clone);
+	g_object_unref (new_connection);
+}
+
+static void
 test_connection_new_from_dbus ()
 {
 	NMConnection *connection;
@@ -3118,6 +3170,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_new_from_dbus", test_setting_new_from_dbus);
 	g_test_add_func ("/core/general/test_connection_replace_settings", test_connection_replace_settings);
 	g_test_add_func ("/core/general/test_connection_replace_settings_from_connection", test_connection_replace_settings_from_connection);
+	g_test_add_func ("/core/general/test_connection_replace_settings_bad", test_connection_replace_settings_bad);
 	g_test_add_func ("/core/general/test_connection_new_from_dbus", test_connection_new_from_dbus);
 	g_test_add_func ("/core/general/test_connection_normalize_connection_interface_name", test_connection_normalize_connection_interface_name);
 	g_test_add_func ("/core/general/test_connection_normalize_virtual_iface_name", test_connection_normalize_virtual_iface_name);

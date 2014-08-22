@@ -166,6 +166,8 @@ gboolean      nm_connection_replace_settings_from_connection (NMConnection *conn
                                                               NMConnection *new_connection,
                                                               GError **error);
 
+void          nm_connection_clear_settings (NMConnection *connection);
+
 gboolean      nm_connection_compare       (NMConnection *a,
                                            NMConnection *b,
                                            NMSettingCompareFlags flags);

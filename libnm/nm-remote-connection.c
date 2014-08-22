@@ -457,14 +457,10 @@ updated_get_settings_cb (DBusGProxy *proxy,
 	                       DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &new_settings,
 	                       G_TYPE_INVALID);
 	if (error) {
-		GHashTable *hash;
-
 		g_error_free (error);
 
 		/* Connection is no longer visible to this user. */
-		hash = g_hash_table_new (g_str_hash, g_str_equal);
-		nm_connection_replace_settings (NM_CONNECTION (self), hash, NULL);
-		g_hash_table_destroy (hash);
+		nm_connection_clear_settings (NM_CONNECTION (self));
 
 		visible = FALSE;
 	} else {

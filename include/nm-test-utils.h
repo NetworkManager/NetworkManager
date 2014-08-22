@@ -936,11 +936,8 @@ nmtst_assert_connection_unnormalizable (NMConnection *con,
 	GError *error = NULL;
 	gboolean success;
 	gboolean was_modified = FALSE;
-	gs_unref_object NMConnection *clone = NULL;
 
 	g_assert (NM_IS_CONNECTION (con));
-
-	clone = nm_simple_connection_new_clone (con);
 
 	success = nm_connection_verify (con, &error);
 	nmtst_assert_error (error, expect_error_domain, expect_error_code, NULL);
@@ -952,8 +949,6 @@ nmtst_assert_connection_unnormalizable (NMConnection *con,
 	g_assert (!success);
 	g_assert (!was_modified);
 	g_clear_error (&error);
-
-	nmtst_assert_connection_equals (con, FALSE, clone, FALSE);
 }
 
 #endif

@@ -291,38 +291,6 @@ validate_permissions_type (GHashTable *hash, GError **error)
 	return TRUE;
 }
 
-static gboolean
-hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
-{
-	GHashTableIter iter;
-	const char *setting_name;
-	GHashTable *setting_hash;
-	gboolean changed, valid;
-	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
-
-	if ((changed = g_hash_table_size (priv->settings) > 0))
-		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
-
-	g_hash_table_iter_init (&iter, new);
-	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
-		GType type = nm_setting_lookup_type (setting_name);
-
-		if (type) {
-			NMSetting *setting = _nm_setting_new_from_dbus (type, setting_hash);
-
-			if (setting) {
-				_nm_connection_add_setting (connection, setting);
-				changed = TRUE;
-			}
-		}
-	}
-
-	valid = nm_connection_verify (connection, error);
-	if (changed)
-		g_signal_emit (connection, signals[CHANGED], 0);
-	return valid;
-}
-
 /**
  * nm_connection_replace_settings:
  * @connection: a #NMConnection
@@ -330,23 +298,32 @@ hash_to_connection (NMConnection *connection, GHashTable *new, GError **error)
  * @error: location to store error, or %NULL
  *
  * Returns: %TRUE if the settings were valid and added to the connection, %FALSE
- * if they were not
+ *   if they were not (in which case @connection will be unchanged).
  **/
 gboolean
 nm_connection_replace_settings (NMConnection *connection,
                                 GHashTable *new_settings,
                                 GError **error)
 {
-	gboolean valid = FALSE;
+	NMConnection *new;
+	gboolean valid;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (new_settings != NULL, FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	if (validate_permissions_type (new_settings, error))
-		valid = hash_to_connection (connection, new_settings, error);
-	return valid;
+	if (!validate_permissions_type (new_settings, error))
+		return FALSE;
+
+	new = nm_simple_connection_new_from_dbus (new_settings, error);
+	if (!new)
+		return FALSE;
+
+	valid = nm_connection_replace_settings_from_connection (connection, new, error);
+	g_object_unref (new);
+
+	g_return_val_if_fail (valid == TRUE, FALSE);
+	return TRUE;
 }
 
 /**
@@ -359,22 +336,24 @@ nm_connection_replace_settings (NMConnection *connection,
  * with the copied settings.
  *
  * Returns: %TRUE if the settings were valid and added to the connection, %FALSE
- * if they were not
+ *   if they were not (in which case @connection will be unchanged).
  **/
 gboolean
 nm_connection_replace_settings_from_connection (NMConnection *connection,
                                                 NMConnection *new_connection,
                                                 GError **error)
 {
-	NMConnectionPrivate *priv;
+	NMConnectionPrivate *priv, *new_priv;
 	GHashTableIter iter;
 	NMSetting *setting;
-	gboolean changed, valid;
+	gboolean changed;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
-	if (error)
-		g_return_val_if_fail (*error == NULL, FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nm_connection_verify (new_connection, error))
+		return FALSE;
 
 	/* When 'connection' and 'new_connection' are the same object simply return
 	 * in order not to destroy 'connection' */
@@ -386,20 +365,45 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 	 */
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
+	new_priv = NM_CONNECTION_GET_PRIVATE (new_connection);
+
 	if ((changed = g_hash_table_size (priv->settings) > 0))
 		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
 
-	if (g_hash_table_size (NM_CONNECTION_GET_PRIVATE (new_connection)->settings)) {
-		g_hash_table_iter_init (&iter, NM_CONNECTION_GET_PRIVATE (new_connection)->settings);
+	if (g_hash_table_size (new_priv->settings)) {
+		g_hash_table_iter_init (&iter, new_priv->settings);
 		while (g_hash_table_iter_next (&iter, NULL, (gpointer) &setting))
 			_nm_connection_add_setting (connection, nm_setting_duplicate (setting));
 		changed = TRUE;
 	}
 
-	valid =  nm_connection_verify (connection, error);
+	/* Since new_connection verified before, this shouldn't ever fail */
+	g_return_val_if_fail (nm_connection_verify (connection, error), FALSE);
+
 	if (changed)
 		g_signal_emit (connection, signals[CHANGED], 0);
-	return valid;
+	return TRUE;
+}
+
+/**
+ * nm_connection_clear_settings:
+ * @connection: a #NMConnection
+ *
+ * Deletes all of @connection's settings.
+ **/
+void
+nm_connection_clear_settings (NMConnection *connection)
+{
+	NMConnectionPrivate *priv;
+
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+
+	if (g_hash_table_size (priv->settings) > 0) {
+		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
+		g_signal_emit (connection, signals[CHANGED], 0);
+	}
 }
 
 /**
