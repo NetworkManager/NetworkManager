@@ -207,7 +207,7 @@ eap_tls_reader (const char *eap_method,
 
 	/* Private key password */
 	privkey_password = wpa_get_value (ssid,
-					  phase2 ? "private_key_passwd2" :
+					  phase2 ? "private_key2_passwd" :
 					  "private_key_passwd");
 
 	if (!privkey_password) {
@@ -1932,7 +1932,7 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		goto out;
 
 	if (phase2)
-		wpa_set_data (conn_name, "private_key_passwd2", password);
+		wpa_set_data (conn_name, "private_key2_passwd", password);
 	else
 		wpa_set_data (conn_name, "private_key_passwd", password);
 

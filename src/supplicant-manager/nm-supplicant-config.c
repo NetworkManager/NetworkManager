@@ -1020,7 +1020,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			 * isn't decrypted at all.
 			 */
 			value = nm_setting_802_1x_get_phase2_private_key_password (setting);
-			if (!add_string_val (self, value, "private_key_passwd2", FALSE, TRUE))
+			if (!add_string_val (self, value, "private_key2_passwd", FALSE, TRUE))
 				return FALSE;
 		}
 
