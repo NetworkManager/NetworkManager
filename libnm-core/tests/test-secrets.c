@@ -678,7 +678,7 @@ test_update_secrets_whole_connection_empty_base_setting (void)
 
 	connection = wifi_connection_new ();
 	secrets = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
-	g_assert_cmpint (g_hash_table_size (secrets), ==, 1);
+	g_assert_cmpint (g_hash_table_size (secrets), ==, 3);
 	g_assert (g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SETTING_NAME));
 
 	success = nm_connection_update_secrets (connection,

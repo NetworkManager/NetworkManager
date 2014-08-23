@@ -744,12 +744,6 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 			destroy_gvalue (value);
 	}
 
-	/* Don't return empty hashes, except for base types */
-	if (g_hash_table_size (hash) < 1 && !_nm_setting_is_base_type (setting)) {
-		g_hash_table_destroy (hash);
-		hash = NULL;
-	}
-
 	return hash;
 }
 
