@@ -702,7 +702,8 @@ auto_register_cb (gpointer user_data)
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
 	priv->auto_register_id = 0;
-	if (priv->auto_register && !priv->suppress_auto && (priv->reg_call == NULL))
+	if (priv->auto_register && !priv->suppress_auto &&
+	   (priv->reg_call == NULL && !priv->registered))
 		nm_secret_agent_register (self);
 	return FALSE;
 }
