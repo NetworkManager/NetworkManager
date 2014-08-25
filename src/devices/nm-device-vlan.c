@@ -226,8 +226,8 @@ complete_connection (NMDevice *device,
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_VLAN_SETTING_NAME,
 	                           existing_connections,
-	                           _("VLAN connection %d"),
 	                           NULL,
+	                           _("VLAN connection"),
 	                           TRUE);
 
 	s_vlan = nm_connection_get_setting_vlan (connection);

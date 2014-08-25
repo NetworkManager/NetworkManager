@@ -136,8 +136,8 @@ complete_connection (NMDevice *device,
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_BOND_SETTING_NAME,
 	                           existing_connections,
-	                           _("Bond connection %d"),
 	                           NULL,
+	                           _("Bond connection"),
 	                           TRUE);
 
 	s_bond = nm_connection_get_setting_bond (connection);

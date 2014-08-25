@@ -3435,8 +3435,8 @@ impl_manager_add_and_activate_connection (NMManager *self,
 		nm_utils_complete_generic (connection,
 		                           NM_SETTING_VPN_SETTING_NAME,
 		                           all_connections,
-		                           _("VPN connection %d"),
 		                           NULL,
+		                           _("VPN connection"),
 		                           FALSE); /* No IPv6 by default for now */
 	} else {
 		/* Let each device subclass complete the connection */

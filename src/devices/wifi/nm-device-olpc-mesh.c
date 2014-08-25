@@ -162,8 +162,8 @@ complete_connection (NMDevice *device,
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_OLPC_MESH_SETTING_NAME,
 	                           existing_connections,
-	                           _("Mesh %d"),
 	                           NULL,
+	                           _("Mesh"),
 	                           FALSE); /* No IPv6 by default */
 
 	return TRUE;

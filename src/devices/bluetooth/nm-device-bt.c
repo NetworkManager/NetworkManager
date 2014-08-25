@@ -222,7 +222,7 @@ complete_connection (NMDevice *device,
 	NMSettingCdma *s_cdma;
 	NMSettingSerial *s_serial;
 	NMSettingPpp *s_ppp;
-	const char *format = NULL, *preferred = NULL;
+	const char *fallback_prefix = NULL, *preferred = NULL;
 
 	s_gsm = nm_connection_get_setting_gsm (connection);
 	s_cdma = nm_connection_get_setting_cdma (connection);
@@ -271,7 +271,7 @@ complete_connection (NMDevice *device,
 		              NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
 		              NULL);
 
-		format = _("PAN connection %d");
+		fallback_prefix = _("PAN connection");
 	} else if (is_dun) {
 		/* Make sure the device supports PAN */
 		if (!(priv->capabilities & NM_BT_CAPABILITY_DUN)) {
@@ -296,15 +296,15 @@ complete_connection (NMDevice *device,
 		              NULL);
 
 		if (s_gsm) {
-			format = _("GSM connection %d");
+			fallback_prefix = _("GSM connection");
 			if (!nm_setting_gsm_get_number (s_gsm))
 				g_object_set (G_OBJECT (s_gsm), NM_SETTING_GSM_NUMBER, "*99#", NULL);
 		} else if (s_cdma) {
-			format = _("CDMA connection %d");
+			fallback_prefix = _("CDMA connection");
 			if (!nm_setting_cdma_get_number (s_cdma))
 				g_object_set (G_OBJECT (s_cdma), NM_SETTING_GSM_NUMBER, "#777", NULL);
 		} else
-			format = _("DUN connection %d");
+			fallback_prefix = _("DUN connection");
 	} else {
 		g_set_error_literal (error,
 		                     NM_SETTING_BLUETOOTH_ERROR,
@@ -316,8 +316,8 @@ complete_connection (NMDevice *device,
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_BLUETOOTH_SETTING_NAME,
 	                           existing_connections,
-	                           format,
 	                           preferred,
+	                           fallback_prefix,
 	                           is_dun ? FALSE : TRUE); /* No IPv6 yet for DUN */
 
 	setting_bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);

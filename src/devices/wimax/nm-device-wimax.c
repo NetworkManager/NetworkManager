@@ -373,7 +373,6 @@ complete_connection (NMDevice *device,
 	NMSettingWimax *s_wimax;
 	const GByteArray *setting_mac;
 	const char *hw_address;
-	char *format;
 	const char *nsp_name = NULL;
 	NMWimaxNsp *nsp = NULL;
 	GSList *iter;
@@ -438,14 +437,12 @@ complete_connection (NMDevice *device,
 	}
 
 	g_assert (nsp_name);
-	format = g_strdup_printf ("%s %%d", nsp_name);
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_WIMAX_SETTING_NAME,
 	                           existing_connections,
-	                           format,
+	                           nsp_name,
 	                           nsp_name,
 	                           TRUE);
-	g_free (format);
 	g_object_set (G_OBJECT (s_wimax), NM_SETTING_WIMAX_NETWORK_NAME, nsp_name, NULL);
 
 	setting_mac = nm_setting_wimax_get_mac_address (s_wimax);

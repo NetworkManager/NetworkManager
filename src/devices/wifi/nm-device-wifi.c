@@ -981,7 +981,7 @@ complete_connection (NMDevice *device,
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
 	const GByteArray *setting_mac;
-	char *format, *str_ssid = NULL;
+	char *str_ssid = NULL;
 	NMAccessPoint *ap = NULL;
 	const GByteArray *ssid = NULL;
 	GSList *iter;
@@ -1103,16 +1103,14 @@ complete_connection (NMDevice *device,
 
 	g_assert (ssid);
 	str_ssid = nm_utils_ssid_to_utf8 (ssid);
-	format = g_strdup_printf ("%s %%d", str_ssid);
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_WIRELESS_SETTING_NAME,
 	                           existing_connections,
-	                           format,
+	                           str_ssid,
 	                           str_ssid,
 	                           TRUE);
 	g_free (str_ssid);
-	g_free (format);
 
 	if (hidden)
 		g_object_set (s_wifi, NM_SETTING_WIRELESS_HIDDEN, TRUE, NULL);

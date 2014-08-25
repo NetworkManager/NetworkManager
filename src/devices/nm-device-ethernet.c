@@ -1446,8 +1446,8 @@ complete_connection (NMDevice *device,
 	nm_utils_complete_generic (connection,
 	                           s_pppoe ? NM_SETTING_PPPOE_SETTING_NAME : NM_SETTING_WIRED_SETTING_NAME,
 	                           existing_connections,
-	                           s_pppoe ? _("PPPoE connection %d") : _("Wired connection %d"),
 	                           NULL,
+	                           s_pppoe ? _("PPPoE connection") : _("Wired connection"),
 	                           s_pppoe ? FALSE : TRUE); /* No IPv6 by default yet for PPPoE */
 
 	s_wired = nm_connection_get_setting_wired (connection);

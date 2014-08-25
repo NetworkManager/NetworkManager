@@ -123,8 +123,8 @@ complete_connection (NMDevice *device,
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_ADSL_SETTING_NAME,
 	                           existing_connections,
-	                           _("ADSL connection %d"),
 	                           NULL,
+	                           _("ADSL connection"),
 	                           FALSE); /* No IPv6 yet by default */
 
 

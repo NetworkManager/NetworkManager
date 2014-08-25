@@ -19,7 +19,10 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
+#include "config.h"
+
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -846,14 +849,16 @@ value_hash_add_object_property (GHashTable *hash,
 
 static char *
 get_new_connection_name (const GSList *existing,
-                         const char *format,
-                         const char *preferred)
+                         const char *preferred,
+                         const char *fallback_prefix)
 {
 	GSList *names = NULL;
 	const GSList *iter;
 	char *cname = NULL;
 	int i = 0;
 	gboolean preferred_found = FALSE;
+
+	g_assert (fallback_prefix);
 
 	for (iter = existing; iter; iter = g_slist_next (iter)) {
 		NMConnection *candidate = NM_CONNECTION (iter->data);
@@ -880,7 +885,12 @@ get_new_connection_name (const GSList *existing,
 		char *temp;
 		gboolean found = FALSE;
 
-		temp = g_strdup_printf (format, i);
+		/* Translators: the first %s is a prefix for the connection id, such
+		 * as "Wired Connection" or "VPN Connection". The %d is a number
+		 * that is combined with the first argument to create a unique
+		 * connection id. */
+		temp = g_strdup_printf (C_("connection id fallback", "%s %d"),
+		                        fallback_prefix, i);
 		for (iter = names; iter; iter = g_slist_next (iter)) {
 			if (!strcmp (iter->data, temp)) {
 				found = TRUE;
@@ -944,13 +954,15 @@ void
 nm_utils_complete_generic (NMConnection *connection,
                            const char *ctype,
                            const GSList *existing,
-                           const char *format,
                            const char *preferred,
+                           const char *fallback_prefix,
                            gboolean default_enable_ipv6)
 {
 	NMSettingConnection *s_con;
 	char *id, *uuid;
 	GHashTable *parameters = g_hash_table_new (g_str_hash, g_str_equal);
+
+	g_assert (fallback_prefix);
 
 	g_hash_table_insert (parameters, NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD,
 	                     default_enable_ipv6 ? NM_SETTING_IP6_CONFIG_METHOD_AUTO : NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
@@ -970,7 +982,7 @@ nm_utils_complete_generic (NMConnection *connection,
 
 	/* Add a connection ID if absent */
 	if (!nm_setting_connection_get_id (s_con)) {
-		id = get_new_connection_name (existing, format, preferred);
+		id = get_new_connection_name (existing, preferred, fallback_prefix);
 		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_ID, id, NULL);
 		g_free (id);
 	}

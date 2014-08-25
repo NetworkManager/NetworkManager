@@ -147,8 +147,8 @@ complete_connection (NMDevice *device,
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_TEAM_SETTING_NAME,
 	                           existing_connections,
-	                           _("Team connection %d"),
 	                           NULL,
+	                           _("Team connection"),
 	                           TRUE);
 
 	s_team = nm_connection_get_setting_team (connection);

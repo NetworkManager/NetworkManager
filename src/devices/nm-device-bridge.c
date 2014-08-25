@@ -144,8 +144,8 @@ complete_connection (NMDevice *device,
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_BRIDGE_SETTING_NAME,
 	                           existing_connections,
-	                           _("Bridge connection %d"),
 	                           NULL,
+	                           _("Bridge connection"),
 	                           TRUE);
 
 	s_bridge = nm_connection_get_setting_bridge (connection);

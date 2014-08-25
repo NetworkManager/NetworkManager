@@ -102,6 +102,7 @@ libnm/nm-object.c
 libnm/nm-remote-connection.c
 libnm/nm-vpn-plugin.c
 policy/org.freedesktop.NetworkManager.policy.in.in
+src/NetworkManagerUtils.c
 src/main.c
 src/dhcp-manager/nm-dhcp-dhclient.c
 src/dhcp-manager/nm-dhcp-dhclient-utils.c
