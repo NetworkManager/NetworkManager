@@ -43,13 +43,21 @@
 #include "nm-gvaluearray-compat.h"
 
 
-#if !GLIB_CHECK_VERSION(2,34,0)
 static inline void
-g_type_ensure (GType type)
+__g_type_ensure (GType type)
 {
-  if (G_UNLIKELY (type == (GType)-1))
-    g_error ("can't happen");
+#if !GLIB_CHECK_VERSION(2,34,0)
+	if (G_UNLIKELY (type == (GType)-1))
+		g_error ("can't happen");
+#else
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS;
+	g_type_ensure (type);
+	G_GNUC_END_IGNORE_DEPRECATIONS;
+#endif
 }
+#define g_type_ensure __g_type_ensure
+
+#if !GLIB_CHECK_VERSION(2,34,0)
 
 #define g_clear_pointer(pp, destroy)	  \
 	G_STMT_START { \
@@ -81,13 +89,6 @@ g_type_ensure (GType type)
  * accidentally use new API that we shouldn't. But we don't want warnings for
  * the APIs that we emulate above.
  */
-
-#define g_type_ensure(t) \
-	G_STMT_START { \
-		G_GNUC_BEGIN_IGNORE_DEPRECATIONS \
-		g_type_ensure (t); \
-		G_GNUC_END_IGNORE_DEPRECATIONS \
-	} G_STMT_END
 
 #define g_test_expect_message(domain, level, format...) \
 	G_STMT_START { \
