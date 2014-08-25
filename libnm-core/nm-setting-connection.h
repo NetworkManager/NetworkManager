@@ -72,11 +72,16 @@ typedef enum
 #define NM_SETTING_CONNECTION_ERROR nm_setting_connection_error_quark ()
 GQuark nm_setting_connection_error_quark (void);
 
+#define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN -999
+#define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX 999
+#define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT 0
+
 #define NM_SETTING_CONNECTION_ID             "id"
 #define NM_SETTING_CONNECTION_UUID           "uuid"
 #define NM_SETTING_CONNECTION_INTERFACE_NAME "interface-name"
 #define NM_SETTING_CONNECTION_TYPE           "type"
 #define NM_SETTING_CONNECTION_AUTOCONNECT    "autoconnect"
+#define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY "autoconnect-priority"
 #define NM_SETTING_CONNECTION_TIMESTAMP      "timestamp"
 #define NM_SETTING_CONNECTION_READ_ONLY      "read-only"
 #define NM_SETTING_CONNECTION_PERMISSIONS    "permissions"
@@ -111,6 +116,7 @@ const char *nm_setting_connection_get_uuid             (NMSettingConnection *set
 const char *nm_setting_connection_get_interface_name   (NMSettingConnection *setting);
 const char *nm_setting_connection_get_connection_type  (NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_autoconnect      (NMSettingConnection *setting);
+gint        nm_setting_connection_get_autoconnect_priority (NMSettingConnection *setting);
 guint64     nm_setting_connection_get_timestamp        (NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_read_only        (NMSettingConnection *setting);
 
