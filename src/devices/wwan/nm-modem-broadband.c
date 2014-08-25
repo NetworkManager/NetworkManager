@@ -435,8 +435,8 @@ complete_connection (NMModem *_self,
 		nm_utils_complete_generic (connection,
 		                           NM_SETTING_GSM_SETTING_NAME,
 		                           existing_connections,
-		                           _("GSM connection %d"),
 		                           NULL,
+		                           _("GSM connection"),
 		                           FALSE); /* No IPv6 yet by default */
 
 		return TRUE;
@@ -457,8 +457,8 @@ complete_connection (NMModem *_self,
 		nm_utils_complete_generic (connection,
 		                           NM_SETTING_CDMA_SETTING_NAME,
 		                           existing_connections,
-		                           _("CDMA connection %d"),
 		                           NULL,
+		                           _("CDMA connection"),
 		                           FALSE); /* No IPv6 yet by default */
 
 		return TRUE;
