@@ -31,7 +31,6 @@
 #include "nm-object-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
-#include "nm-types.h"
 #include "nm-dbus-helpers-private.h"
 
 static gboolean debug = FALSE;

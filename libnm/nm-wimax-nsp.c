@@ -29,7 +29,6 @@
 
 #include "nm-wimax-nsp.h"
 #include "nm-dbus-interface.h"
-#include "nm-types-private.h"
 #include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMWimaxNsp, nm_wimax_nsp, NM_TYPE_OBJECT)

@@ -54,7 +54,6 @@ libnminclude_HEADERS =			\
 	nm-remote-connection.h		\
 	nm-remote-settings.h		\
 	nm-secret-agent.h		\
-	nm-types.h			\
 	nm-vpn-connection.h		\
 	nm-wimax-nsp.h
 
@@ -63,8 +62,7 @@ libnm_la_private_headers =		\
 	nm-device-private.h		\
 	nm-object-cache.h		\
 	nm-object-private.h		\
-	nm-remote-connection-private.h	\
-	nm-types-private.h
+	nm-remote-connection-private.h
 
 libnm_la_csources =			\
 	nm-access-point.c		\
@@ -95,7 +93,6 @@ libnm_la_csources =			\
 	nm-remote-connection.c		\
 	nm-remote-settings.c		\
 	nm-secret-agent.c		\
-	nm-types.c			\
 	nm-vpn-connection.c		\
 	nm-wimax-nsp.c
 

@@ -24,10 +24,10 @@
 #include <nm-setting-ip6-config.h>
 #include "nm-ip6-config.h"
 #include "nm-dbus-interface.h"
-#include "nm-types-private.h"
 #include "nm-object-private.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-core-internal.h"
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_OBJECT)
 
@@ -269,10 +269,14 @@ get_property (GObject *object,
 		g_value_set_string (value, nm_ip6_config_get_gateway (self));
 		break;
 	case PROP_ADDRESSES:
-		nm_utils_ip6_addresses_to_gvalue (priv->addresses, value);
+		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->addresses,
+		                                                          (NMUtilsCopyFunc) nm_ip6_address_dup,
+		                                                          (GDestroyNotify) nm_ip6_address_unref));
 		break;
 	case PROP_ROUTES:
-		nm_utils_ip6_routes_to_gvalue (priv->routes, value);
+		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->routes,
+		                                                          (NMUtilsCopyFunc) nm_ip6_route_dup,
+		                                                          (GDestroyNotify) nm_ip6_route_unref));
 		break;
 	case PROP_NAMESERVERS:
 		g_value_set_boxed (value, (char **) nm_ip6_config_get_nameservers (self));
@@ -330,28 +334,24 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	/**
 	 * NMIP6Config:addresses:
 	 *
-	 * The #GPtrArray containing the IPv6 addresses;  use
-	 * nm_utils_ip6_addresses_from_gvalue() to return a #GSList of
-	 * #NMSettingIP6Address objects that is more usable than the raw data.
+	 * The #GPtrArray containing the IPv6 addresses (#NMIP6Address).
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ADDRESSES,
 	     g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES, "", "",
-	                         NM_TYPE_IP6_ADDRESS_OBJECT_ARRAY,
+	                         G_TYPE_PTR_ARRAY,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP6Config:routes:
 	 *
-	 * The #GPtrArray containing the IPv6 routes;  use
-	 * nm_utils_ip6_routes_from_gvalue() to return a #GSList of
-	 * #NMSettingIP6Address objects that is more usable than the raw data.
+	 * The #GPtrArray containing the IPv6 routes (#NMIP6Route).
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ROUTES,
 	     g_param_spec_boxed (NM_IP6_CONFIG_ROUTES, "", "",
-	                         NM_TYPE_IP6_ROUTE_OBJECT_ARRAY,
+	                         G_TYPE_PTR_ARRAY,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS));
 

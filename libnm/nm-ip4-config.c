@@ -24,9 +24,9 @@
 #include <nm-setting-ip4-config.h>
 #include "nm-ip4-config.h"
 #include "nm-dbus-interface.h"
-#include "nm-types-private.h"
 #include "nm-object-private.h"
 #include "nm-utils.h"
+#include "nm-core-internal.h"
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_OBJECT)
 
@@ -183,10 +183,14 @@ get_property (GObject *object,
 		g_value_set_string (value, nm_ip4_config_get_gateway (self));
 		break;
 	case PROP_ADDRESSES:
-		nm_utils_ip4_addresses_to_gvalue (priv->addresses, value);
+		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->addresses,
+		                                                          (NMUtilsCopyFunc) nm_ip4_address_dup,
+		                                                          (GDestroyNotify) nm_ip4_address_unref));
 		break;
 	case PROP_ROUTES:
-		nm_utils_ip4_routes_to_gvalue (priv->routes, value);
+		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->routes,
+		                                                          (NMUtilsCopyFunc) nm_ip4_route_dup,
+		                                                          (GDestroyNotify) nm_ip4_route_unref));
 		break;
 	case PROP_NAMESERVERS:
 		g_value_set_boxed (value, (char **) nm_ip4_config_get_nameservers (self));
@@ -237,24 +241,26 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	/**
 	 * NMIP4Config:addresses:
 	 *
-	 * The #GPtrArray containing #NMIP4Address<!-- -->es of the configuration.
+	 * A #GPtrArray containing the addresses (#NMIP4Address) of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ADDRESSES,
-	     g_param_spec_pointer (NM_IP4_CONFIG_ADDRESSES, "", "",
-	                           G_PARAM_READABLE |
-	                           G_PARAM_STATIC_STRINGS));
+	     g_param_spec_boxed (NM_IP4_CONFIG_ADDRESSES, "", "",
+	                         G_TYPE_PTR_ARRAY,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP4Config:routes:
 	 *
-	 * The #GPtrArray containing #NMSettingIP4Routes of the configuration.
+	 * A #GPtrArray containing the routes (#NMIP4Route) of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ROUTES,
-	     g_param_spec_pointer (NM_IP4_CONFIG_ROUTES, "", "",
-	                           G_PARAM_READABLE |
-	                           G_PARAM_STATIC_STRINGS));
+	     g_param_spec_boxed (NM_IP4_CONFIG_ROUTES, "", "",
+	                         G_TYPE_PTR_ARRAY,
+	                         G_PARAM_READABLE |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP4Config:nameservers:

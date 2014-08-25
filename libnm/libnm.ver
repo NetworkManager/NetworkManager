@@ -306,7 +306,6 @@ global:
 	nm_ip6_address_get_prefix;
 	nm_ip6_address_get_type;
 	nm_ip6_address_new;
-	nm_ip6_address_object_array_get_type;
 	nm_ip6_address_ref;
 	nm_ip6_address_set_address;
 	nm_ip6_address_set_gateway;
@@ -327,7 +326,6 @@ global:
 	nm_ip6_route_get_prefix;
 	nm_ip6_route_get_type;
 	nm_ip6_route_new;
-	nm_ip6_route_object_array_get_type;
 	nm_ip6_route_ref;
 	nm_ip6_route_set_dest;
 	nm_ip6_route_set_metric;
