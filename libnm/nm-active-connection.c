@@ -284,7 +284,7 @@ nm_active_connection_get_devices (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	return handle_ptr_array_return (NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->devices);
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->devices;
 }
 
 /**

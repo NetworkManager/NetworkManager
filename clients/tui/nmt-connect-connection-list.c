@@ -272,7 +272,7 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 	int i;
 
 	aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (nmtdev->device));
-	if (!aps)
+	if (!aps->len)
 		return;
 
 	seen_ssids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
@@ -450,7 +450,7 @@ connection_find_ac (NMConnection    *conn,
 	int i;
 
 	path = nm_connection_get_path (conn);
-	for (i = 0; acs && i < acs->len; i++) {
+	for (i = 0; i < acs->len; i++) {
 		ac = acs->pdata[i];
 		ac_path = nm_active_connection_get_connection (ac);
 
@@ -484,11 +484,11 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 	connections = nm_remote_settings_list_connections (nm_settings);
 
 	nmt_devices = NULL;
-	if (devices) {
-		names = nm_device_disambiguate_names ((NMDevice **) devices->pdata, devices->len);
-		nmt_devices = append_nmt_devices_for_devices (nmt_devices, devices, names, connections);
-		g_strfreev (names);
-	}
+
+	names = nm_device_disambiguate_names ((NMDevice **) devices->pdata, devices->len);
+	nmt_devices = append_nmt_devices_for_devices (nmt_devices, devices, names, connections);
+	g_strfreev (names);
+
 	nmt_devices = append_nmt_devices_for_virtual_devices (nmt_devices, connections);
 	nmt_devices = append_nmt_devices_for_vpns (nmt_devices, connections);
 

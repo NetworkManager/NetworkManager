@@ -118,7 +118,7 @@ nm_device_team_get_slaves (NMDeviceTeam *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_TEAM (device), FALSE);
 
-	return handle_ptr_array_return (NM_DEVICE_TEAM_GET_PRIVATE (device)->slaves);
+	return NM_DEVICE_TEAM_GET_PRIVATE (device)->slaves;
 }
 
 static const char *

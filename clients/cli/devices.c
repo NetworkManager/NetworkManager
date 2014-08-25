@@ -420,11 +420,6 @@ get_devices_sorted (NMClient *client)
 	NMDevice **sorted;
 
 	devs = nm_client_get_devices (client);
-	if (!devs) {
-		sorted = g_new (NMDevice *, 1);
-		sorted[0] = NULL;
-		return sorted;
-	}
 
 	sorted = g_new (NMDevice *, devs->len + 1);
 	memcpy (sorted, devs->pdata, devs->len * sizeof (NMDevice *));
@@ -680,7 +675,7 @@ get_active_connection_id (NMDevice *device)
 	ac_uuid = nm_active_connection_get_uuid (ac);
 
 	avail_cons = nm_device_get_available_connections (device);
-	for (i = 0; avail_cons && (i < avail_cons->len); i++) {
+	for (i = 0; i < avail_cons->len; i++) {
 		NMRemoteConnection *candidate = g_ptr_array_index (avail_cons, i);
 		const char *test_uuid = nm_connection_get_uuid (NM_CONNECTION (candidate));
 
@@ -886,8 +881,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				info->active_bssid = active_bssid;
 				info->device = nm_device_get_iface (device);
 				aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
-				if (aps && aps->len)
-					g_ptr_array_foreach ((GPtrArray *) aps, fill_output_access_point, (gpointer) info);
+				g_ptr_array_foreach ((GPtrArray *) aps, fill_output_access_point, (gpointer) info);
 				g_free (info);
 				print_data (nmc);  /* Print all data */
 				was_output = TRUE;
@@ -974,7 +968,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				g_ptr_array_add (nmc->output_data, arr);
 
 				nsps = nm_device_wimax_get_nsps (NM_DEVICE_WIMAX (device));
-				for (g = 0; nsps && g < nsps->len; g++) {
+				for (g = 0; g < nsps->len; g++) {
 					NMWimaxNsp *nsp = g_ptr_array_index (nsps, g);
 
 					fill_output_wimax_nsp (nsp, nmc, device, idx++, NMC_OF_FLAG_SECTION_PREFIX);
@@ -1016,7 +1010,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 
 				bond_slaves_str = g_string_new (NULL);
 				slaves = nm_device_bond_get_slaves (NM_DEVICE_BOND (device));
-				for (idx = 0; slaves && idx < slaves->len; idx++) {
+				for (idx = 0; idx < slaves->len; idx++) {
 					NMDevice *slave = g_ptr_array_index (slaves, idx);
 					const char *iface = nm_device_get_iface (slave);
 
@@ -1087,11 +1081,11 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			/* available-connections */
 			avail_cons = nm_device_get_available_connections (device);
 			ac_paths_str = g_string_new (NULL);
-			if (avail_cons && avail_cons->len) {
+			if (avail_cons->len) {
 				ac_arr = g_new (char *, avail_cons->len + 1);
 				ac_arr[avail_cons->len] = NULL;
 			}
-			for (i = 0; avail_cons && (i < avail_cons->len); i++) {
+			for (i = 0; i < avail_cons->len; i++) {
 				NMRemoteConnection *avail_con = g_ptr_array_index (avail_cons, i);
 				const char *ac_path = nm_connection_get_path (NM_CONNECTION (avail_con));
 				const char *ac_id = nm_connection_get_id (NM_CONNECTION (avail_con));
@@ -1335,7 +1329,7 @@ connect_device_cb (NMClient *client, NMActiveConnection *active, GError *error, 
 	} else {
 		g_assert (active);
 		devices = nm_active_connection_get_devices (active);
-		if (!devices || devices->len == 0) {
+		if (devices->len == 0) {
 			g_string_printf (nmc->return_text, _("Error: Device activation failed: device was disconnected"));
 			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 			quit ();
@@ -1699,8 +1693,7 @@ show_access_point_info (NMDevice *device, NmCli *nmc)
 	info->active_bssid = active_bssid;
 	info->device = nm_device_get_iface (device);
 	aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
-	if (aps && aps->len)
-		g_ptr_array_foreach ((GPtrArray *) aps, fill_output_access_point, (gpointer) info);
+	g_ptr_array_foreach ((GPtrArray *) aps, fill_output_access_point, (gpointer) info);
 
 	print_data (nmc);  /* Print all data */
 	nmc_empty_output_fields (nmc);
@@ -1804,7 +1797,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 			if (bssid_user) {
 				/* Specific AP requested - list only that */
 				aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
-				for (j = 0; aps && (j < aps->len); j++) {
+				for (j = 0; j < aps->len; j++) {
 					char *bssid_up;
 					NMAccessPoint *candidate_ap = g_ptr_array_index (aps, j);
 					const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
@@ -1863,7 +1856,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 				g_ptr_array_add (nmc->output_data, arr);
 
 				aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (dev));
-				for (j = 0; aps && (j < aps->len); j++) {
+				for (j = 0; j < aps->len; j++) {
 					char *bssid_up;
 					NMAccessPoint *candidate_ap = g_ptr_array_index (aps, j);
 					const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
@@ -2010,7 +2003,7 @@ find_wifi_device_by_iface (const GPtrArray *devices, const char *iface, int *idx
 	NMDevice *device = NULL;
 	int i;
 
-	for (i = *idx; devices && (i < devices->len); i++) {
+	for (i = *idx; i < devices->len; i++) {
 		NMDevice *candidate = g_ptr_array_index (devices, i);
 		const char *dev_iface = nm_device_get_iface (candidate);
 
@@ -2049,7 +2042,7 @@ find_ap_on_device (NMDevice *device, GByteArray *bssid, const char *ssid)
 	g_return_val_if_fail ((bssid && !ssid) || (!bssid && ssid), NULL);
 
 	aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
-	for (i = 0; aps && (i < aps->len); i++) {
+	for (i = 0; i < aps->len; i++) {
 		NMAccessPoint *candidate_ap = g_ptr_array_index (aps, i);
 
 		if (ssid) {
@@ -2457,7 +2450,7 @@ show_nsp_info (NMDevice *device, NmCli *nmc)
 	g_ptr_array_add (nmc->output_data, arr);
 
 	nsps = nm_device_wimax_get_nsps (NM_DEVICE_WIMAX (device));
-	for (i = 0; nsps && i < nsps->len; i++) {
+	for (i = 0; i < nsps->len; i++) {
 		NMWimaxNsp *nsp = g_ptr_array_index (nsps, i);
 
 		fill_output_wimax_nsp (nsp, nmc, device, idx++, 0);
@@ -2539,7 +2532,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 	devices = nm_client_get_devices (nmc->client);
 	if (ifname) {
 		/* Device specified - list only NSPs of this interface */
-		for (i = 0; devices && (i < devices->len); i++) {
+		for (i = 0; i < devices->len; i++) {
 			NMDevice *candidate = g_ptr_array_index (devices, i);
 			const char *dev_iface = nm_device_get_iface (candidate);
 
@@ -2562,7 +2555,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 			if (nsp_user) {
 				/* Specific NSP requested - list only that */
 				nsps = nm_device_wimax_get_nsps (NM_DEVICE_WIMAX (device));
-				for (j = 0, nsp = NULL; nsps && (j < nsps->len); j++) {
+				for (j = 0, nsp = NULL; j < nsps->len; j++) {
 					NMWimaxNsp *candidate_nsp = g_ptr_array_index (nsps, j);
 					const char *candidate_name = nm_wimax_nsp_get_name (candidate_nsp);
 					char *nsp_up;
@@ -2596,7 +2589,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 		/* List NSPs for all devices */
 		if (nsp_user) {
 			/* Specific NSP requested - list only that */
-			for (i = 0; devices && (i < devices->len); i++) {
+			for (i = 0; i < devices->len; i++) {
 				NMDevice *dev = g_ptr_array_index (devices, i);
 				int idx = 1;
 
@@ -2611,7 +2604,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 				g_ptr_array_add (nmc->output_data, arr);
 
 				nsps = nm_device_wimax_get_nsps (NM_DEVICE_WIMAX (dev));
-				for (j = 0, nsp = NULL; nsps && (j < nsps->len); j++) {
+				for (j = 0, nsp = NULL; j < nsps->len; j++) {
 					NMWimaxNsp *candidate_nsp = g_ptr_array_index (nsps, j);
 					const char *candidate_name = nm_wimax_nsp_get_name (candidate_nsp);
 					char *nsp_up;
@@ -2635,7 +2628,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 				goto error;
 			}
 		} else {
-			for (i = 0; devices && (i < devices->len); i++) {
+			for (i = 0; i < devices->len; i++) {
 				NMDevice *dev = g_ptr_array_index (devices, i);
 
 				/* Main header name */
@@ -2704,7 +2697,7 @@ gen_func_ifnames (const char *text, int state)
 
 	nm_cli.get_client (&nm_cli);
 	devices = nm_client_get_devices (nm_cli.client);
-	if (!devices || devices->len < 1)
+	if (devices->len == 0)
 		return NULL;
 
 	ifnames = g_new (const char *, devices->len + 1);

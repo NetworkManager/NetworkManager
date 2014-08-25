@@ -380,7 +380,7 @@ nm_client_get_devices (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	return handle_ptr_array_return (NM_CLIENT_GET_PRIVATE (client)->devices);
+	return NM_CLIENT_GET_PRIVATE (client)->devices;
 }
 
 /**
@@ -522,7 +522,7 @@ recheck_pending_activations (NMClient *self, const char *failed_path, GError *er
 			ainfo = info;
 		}
 
-		for (i = 0; active_connections && i < active_connections->len; i++) {
+		for (i = 0; i < active_connections->len; i++) {
 			NMActiveConnection *active = g_ptr_array_index (active_connections, i);
 			const char *active_path = nm_object_get_path (NM_OBJECT (active));
 
@@ -803,7 +803,7 @@ nm_client_get_active_connections (NMClient *client)
 	if (!nm_client_get_nm_running (client))
 		return NULL;
 
-	return handle_ptr_array_return (priv->active_connections);
+	return priv->active_connections;
 }
 
 /**

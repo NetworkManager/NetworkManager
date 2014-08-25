@@ -247,7 +247,7 @@ nm_device_wifi_get_access_points (NMDeviceWifi *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	return handle_ptr_array_return (NM_DEVICE_WIFI_GET_PRIVATE (device)->aps);
+	return NM_DEVICE_WIFI_GET_PRIVATE (device)->aps;
 }
 
 /**

@@ -118,7 +118,7 @@ nm_device_bond_get_slaves (NMDeviceBond *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BOND (device), FALSE);
 
-	return handle_ptr_array_return (NM_DEVICE_BOND_GET_PRIVATE (device)->slaves);
+	return NM_DEVICE_BOND_GET_PRIVATE (device)->slaves;
 }
 
 static gboolean

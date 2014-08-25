@@ -118,7 +118,7 @@ nm_device_bridge_get_slaves (NMDeviceBridge *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BRIDGE (device), FALSE);
 
-	return handle_ptr_array_return (NM_DEVICE_BRIDGE_GET_PRIVATE (device)->slaves);
+	return NM_DEVICE_BRIDGE_GET_PRIVATE (device)->slaves;
 }
 
 static gboolean

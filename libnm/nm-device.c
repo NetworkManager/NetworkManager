@@ -1364,7 +1364,7 @@ nm_device_get_available_connections (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return handle_ptr_array_return (NM_DEVICE_GET_PRIVATE (device)->available_connections);
+	return NM_DEVICE_GET_PRIVATE (device)->available_connections;
 }
 
 static char *

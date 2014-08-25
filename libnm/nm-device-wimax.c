@@ -161,7 +161,7 @@ nm_device_wimax_get_nsps (NMDeviceWimax *wimax)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIMAX (wimax), NULL);
 
-	return handle_ptr_array_return (NM_DEVICE_WIMAX_GET_PRIVATE (wimax)->nsps);
+	return NM_DEVICE_WIMAX_GET_PRIVATE (wimax)->nsps;
 }
 
 /**

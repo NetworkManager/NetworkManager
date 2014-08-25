@@ -182,7 +182,7 @@ show_wifi_device_info (NMDevice *device)
 	aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
 
 	/* Print AP details */
-	for (i = 0; aps && (i < aps->len); i++) {
+	for (i = 0; i < aps->len; i++) {
 		NMAccessPoint *ap = g_ptr_array_index (aps, i);
 		show_access_point_info (ap);
 	}
@@ -212,7 +212,7 @@ int main (int argc, char *argv[])
 	devices = nm_client_get_devices (client);
 
 	/* Go through the array and process Wi-Fi devices */
-	for (i = 0; devices && (i < devices->len); i++) {
+	for (i = 0; i < devices->len; i++) {
 		NMDevice *device = g_ptr_array_index (devices, i);
 		if (NM_IS_DEVICE_WIFI (device))
 			show_wifi_device_info (device);
