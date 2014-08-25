@@ -749,7 +749,8 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		/* Remove any previous data */
 		nmc_empty_output_fields (nmc);
 
-		state = nm_device_get_state_reason (device, &reason);
+		state = nm_device_get_state (device);
+		reason = nm_device_get_state_reason (device);
 
 		/* section GENERAL */
 		if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[0].name)) {
@@ -1921,7 +1922,7 @@ monitor_device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data
 	NMDeviceState state;
 	NMDeviceStateReason reason;
 
-	state = nm_device_get_state_reason (device, &reason);
+	state = nm_device_get_state (device);
 
 	if (state == NM_DEVICE_STATE_ACTIVATED) {
 		NMActiveConnection *active = nm_device_get_active_connection (device);
@@ -1932,6 +1933,7 @@ monitor_device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data
 		        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
 		quit ();
 	} else if (state == NM_DEVICE_STATE_FAILED) {
+		reason = nm_device_get_state_reason (device);
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: (%d) %s."),
 		                 reason, nmc_device_reason_to_string (reason));
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
