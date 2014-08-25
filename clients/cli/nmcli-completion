@@ -423,6 +423,12 @@ _nmcli_compl_ARGS()
                     return 0
                 fi
                 ;;
+            lacp-rate)
+                if [[ "${#words[@]}" -eq 2 ]]; then
+                    _nmcli_list "slow fast"
+                    return 0
+                fi
+                ;;
             bt-type)
                 if [[ "${#words[@]}" -eq 2 ]]; then
                     _nmcli_list "panu dun-gsm dun-cdma"
@@ -931,7 +937,7 @@ _nmcli()
                                     OPTIONS_MANDATORY=(dev)
                                     ;;
                                 bond)
-                                    OPTIONS_TYPED=(mode miimon downdelay updelay arp-interval arp-ip-target primary)
+                                    OPTIONS_TYPED=(mode miimon downdelay updelay arp-interval arp-ip-target primary lacp-rate)
                                     ;;
                                 bond-|bond-s|bond-sl|bond-sla|bond-slav|bond-slave)
                                     OPTIONS_TYPED=(master)
