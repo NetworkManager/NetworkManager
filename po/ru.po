@@ -6238,7 +6238,7 @@ msgstr "(нет дополнительных маршрутов)"
 #, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] "Один дополнительный маршрут"
+msgstr[0] "%d дополнительный маршрут"
 msgstr[1] "%d дополнительных маршрута"
 msgstr[2] "%d дополнительных маршрутов"
 
