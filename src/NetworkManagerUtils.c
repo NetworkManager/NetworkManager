@@ -1634,6 +1634,31 @@ nm_utils_match_connection (GSList *connections,
 	return best_match;
 }
 
+int
+nm_utils_cmp_connection_by_autoconnect_priority (NMConnection **a, NMConnection **b)
+{
+	NMSettingConnection *a_s_con, *b_s_con;
+	gboolean a_ac, b_ac;
+	gint a_ap, b_ap;
+
+	a_s_con = nm_connection_get_setting_connection (*a);
+	b_s_con = nm_connection_get_setting_connection (*b);
+
+	a_ac = !!nm_setting_connection_get_autoconnect (a_s_con);
+	b_ac = !!nm_setting_connection_get_autoconnect (b_s_con);
+	if (a_ac != b_ac)
+		return ((int) b_ac) - ((int) a_ac);
+	if (!a_ac)
+		return 0;
+
+	a_ap = nm_setting_connection_get_autoconnect_priority (a_s_con);
+	b_ap = nm_setting_connection_get_autoconnect_priority (b_s_con);
+	if (a_ap != b_ap)
+		return (a_ap > b_ap) ? -1 : 1;
+
+	return 0;
+}
+
 /* nm_utils_ascii_str_to_int64:
  *
  * A wrapper for g_ascii_strtoll, that checks whether the whole string

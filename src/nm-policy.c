@@ -1015,6 +1015,10 @@ auto_activate_device (gpointer user_data)
 	connections = _nm_utils_copy_slist_to_array (connection_list, NULL, NULL);
 	g_slist_free (connection_list);
 
+	/* sort is stable (which is important at this point) so that connections
+	 * with same priority are still sorted by last-connected-timestamp. */
+	g_ptr_array_sort (connections, (GCompareFunc) nm_utils_cmp_connection_by_autoconnect_priority);
+
 	/* Find the first connection that should be auto-activated */
 	best_connection = NULL;
 	for (i = 0; i < connections->len; i++) {
