@@ -20,7 +20,6 @@
 
 #include <config.h>
 #include <string.h>
-#include <dbus/dbus-glib-lowlevel.h>
 #include <gio/gio.h>
 
 #if WITH_POLKIT

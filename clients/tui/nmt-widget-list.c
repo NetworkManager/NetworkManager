@@ -37,7 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <dbus/dbus-glib.h>
 #include <glib/gi18n-lib.h>
 
 #include "nmt-widget-list.h"

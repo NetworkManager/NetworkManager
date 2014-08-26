@@ -29,7 +29,6 @@
 #define __NETWORKMANAGER_DEVICE_OLPC_MESH_H__
 
 #include <glib-object.h>
-#include <dbus/dbus.h>
 
 #include "nm-device.h"
 

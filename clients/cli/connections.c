@@ -21,8 +21,6 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

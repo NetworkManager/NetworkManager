@@ -32,8 +32,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <dbus/dbus-glib.h>
-
 #include "nm-editor-bindings.h"
 #include "nm-gvaluearray-compat.h"
 

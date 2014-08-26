@@ -25,7 +25,6 @@
 #define __NETWORKMANAGER_DNS_MANAGER_H__
 
 #include <glib-object.h>
-#include <dbus/dbus.h>
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 

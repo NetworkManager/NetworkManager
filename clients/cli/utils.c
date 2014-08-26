@@ -31,7 +31,6 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <dbus/dbus-glib-bindings.h>
 
 #include "utils.h"
 

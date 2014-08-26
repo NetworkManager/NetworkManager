@@ -23,7 +23,6 @@
 #define __NETWORKMANAGER_DEVICE_WIFI_H__
 
 #include <glib-object.h>
-#include <dbus/dbus.h>
 
 #include "nm-device.h"
 #include "nm-wifi-ap.h"

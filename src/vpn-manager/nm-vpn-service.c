@@ -22,7 +22,6 @@
 #include <config.h>
 #include <glib.h>
 #include <string.h>
-#include <dbus/dbus.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>

@@ -23,7 +23,6 @@
 #define __NETWORKMANAGER_SUPPLICANT_INTERFACE_H__
 
 #include <glib-object.h>
-#include <dbus/dbus.h>
 #include "nm-supplicant-types.h"
 
 /*

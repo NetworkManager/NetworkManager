@@ -28,7 +28,6 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include <dbus/dbus-glib.h>
 #include "nm-active-connection.h"
 #include "nm-vpn-dbus-interface.h"
 

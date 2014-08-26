@@ -24,7 +24,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <dbus/dbus-glib.h>
 #include <nm-setting.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-ip6-config.h>

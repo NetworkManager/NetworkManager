@@ -28,7 +28,6 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include <dbus/dbus-glib.h>
 #include "nm-object.h"
 #include "nm-dbus-interface.h"
 #include "nm-ip4-config.h"

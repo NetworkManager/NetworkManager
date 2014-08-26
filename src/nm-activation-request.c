@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <dbus/dbus-glib.h>
 
 #include "gsystem-local-alloc.h"
 

@@ -23,8 +23,6 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include <dbus/dbus-glib.h>
-#include <dbus/dbus-glib-lowlevel.h>
 
 #include <nm-connection.h>
 #include "nm-types.h"
