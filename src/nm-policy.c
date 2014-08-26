@@ -42,6 +42,7 @@
 #include "nm-firewall-manager.h"
 #include "nm-dispatcher.h"
 #include "nm-utils.h"
+#include "nm-core-internal.h"
 #include "nm-glib-compat.h"
 #include "nm-manager.h"
 #include "nm-settings.h"
@@ -990,7 +991,9 @@ auto_activate_device (gpointer user_data)
 	NMPolicyPrivate *priv;
 	NMConnection *best_connection;
 	char *specific_object = NULL;
-	GSList *connections, *iter;
+	GPtrArray *connections;
+	GSList *connection_list;
+	guint i;
 
 	g_assert (data);
 	policy = data->policy;
@@ -1005,12 +1008,17 @@ auto_activate_device (gpointer user_data)
 	if (nm_device_get_act_request (data->device))
 		goto out;
 
-	connections = nm_manager_get_activatable_connections (priv->manager);
+	connection_list = nm_manager_get_activatable_connections (priv->manager);
+	if (!connection_list)
+		goto out;
+
+	connections = _nm_utils_copy_slist_to_array (connection_list, NULL, NULL);
+	g_slist_free (connection_list);
 
 	/* Find the first connection that should be auto-activated */
 	best_connection = NULL;
-	for (iter = connections; iter; iter = g_slist_next (iter)) {
-		NMSettingsConnection *candidate = NM_SETTINGS_CONNECTION (iter->data);
+	for (i = 0; i < connections->len; i++) {
+		NMSettingsConnection *candidate = NM_SETTINGS_CONNECTION (connections->pdata[i]);
 
 		if (!nm_settings_connection_can_autoconnect (candidate))
 			continue;
@@ -1019,7 +1027,7 @@ auto_activate_device (gpointer user_data)
 			break;
 		}
 	}
-	g_slist_free (connections);
+	g_ptr_array_free (connections, TRUE);
 
 	if (best_connection) {
 		GError *error = NULL;
