@@ -2155,7 +2155,7 @@ nmc_property_set_uint (NMSetting *setting, const char *prop, const char *val, GE
 	if (!validate_uint (setting, prop, (guint) val_int, error))
 		return FALSE;
 
-	g_object_set (setting, prop, val_int, NULL);
+	g_object_set (setting, prop, (guint) val_int, NULL);
 	return TRUE;
 }
 
