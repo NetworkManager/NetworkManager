@@ -61,15 +61,16 @@ static NmcOutputField nmc_fields_con_show[] = {
 	{"TIMESTAMP",       N_("TIMESTAMP"),      12},  /* 3 */
 	{"TIMESTAMP-REAL",  N_("TIMESTAMP-REAL"), 34},  /* 4 */
 	{"AUTOCONNECT",     N_("AUTOCONNECT"),    13},  /* 5 */
-	{"READONLY",        N_("READONLY"),       10},  /* 6 */
-	{"DBUS-PATH",       N_("DBUS-PATH"),      42},  /* 7 */
-	{"ACTIVE",          N_("ACTIVE"),         10},  /* 8 */
-	{"DEVICE",          N_("DEVICE"),         10},  /* 9 */
-	{"STATE",           N_("STATE"),          12},  /* 10 */
-	{"ACTIVE-PATH",     N_("ACTIVE-PATH"),    51},  /* 11 */
+	{"AUTOCONNECT-PRIORITY", N_("AUTOCONNECT-PRIORITY"), 10},  /* 6 */
+	{"READONLY",        N_("READONLY"),       10},  /* 7 */
+	{"DBUS-PATH",       N_("DBUS-PATH"),      42},  /* 8 */
+	{"ACTIVE",          N_("ACTIVE"),         10},  /* 9 */
+	{"DEVICE",          N_("DEVICE"),         10},  /* 10 */
+	{"STATE",           N_("STATE"),          12},  /* 11 */
+	{"ACTIVE-PATH",     N_("ACTIVE-PATH"),    51},  /* 12 */
 	{NULL,              NULL,                  0}
 };
-#define NMC_FIELDS_CON_SHOW_ALL     "NAME,UUID,TYPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,READONLY,DBUS-PATH,"\
+#define NMC_FIELDS_CON_SHOW_ALL     "NAME,UUID,TYPE,TIMESTAMP,TIMESTAMP-REAL,AUTOCONNECT,AUTOCONNECT-PRIORITY,READONLY,DBUS-PATH,"\
                                     "ACTIVE,DEVICE,STATE,ACTIVE-PATH"
 #define NMC_FIELDS_CON_SHOW_COMMON  "NAME,UUID,TYPE,DEVICE"
 
@@ -745,6 +746,7 @@ fill_output_connection (gpointer data, gpointer user_data, gboolean active_only)
 	time_t timestamp_real;
 	char *timestamp_str;
 	char *timestamp_real_str = "";
+	char *prio_str;
 	NmcOutputField *arr;
 	NMActiveConnection *ac = NULL;
 	const char *ac_path = NULL;
@@ -772,6 +774,7 @@ fill_output_connection (gpointer data, gpointer user_data, gboolean active_only)
 		timestamp_real_str = g_malloc0 (64);
 		strftime (timestamp_real_str, 64, "%c", localtime (&timestamp_real));
 	}
+	prio_str = g_strdup_printf ("%u", nm_setting_connection_get_autoconnect_priority (s_con));
 
 	arr = nmc_dup_fields_array (nmc_fields_con_show,
 	                            sizeof (nmc_fields_con_show),
@@ -782,12 +785,13 @@ fill_output_connection (gpointer data, gpointer user_data, gboolean active_only)
 	set_val_str  (arr, 3, timestamp_str);
 	set_val_str  (arr, 4, timestamp ? timestamp_real_str : g_strdup (_("never")));
 	set_val_strc (arr, 5, nm_setting_connection_get_autoconnect (s_con) ? _("yes") : _("no"));
-	set_val_strc (arr, 6, nm_setting_connection_get_read_only (s_con) ? _("yes") : _("no"));
-	set_val_strc (arr, 7, nm_connection_get_path (connection));
-	set_val_strc (arr, 8, ac ? _("yes") : _("no"));
-	set_val_str  (arr, 9, ac_dev);
-	set_val_strc (arr, 10, ac_state);
-	set_val_strc (arr, 11, ac_path);
+	set_val_str  (arr, 6, prio_str);
+	set_val_strc (arr, 7, nm_setting_connection_get_read_only (s_con) ? _("yes") : _("no"));
+	set_val_strc (arr, 8, nm_connection_get_path (connection));
+	set_val_strc (arr, 9, ac ? _("yes") : _("no"));
+	set_val_str  (arr, 10, ac_dev);
+	set_val_strc (arr, 11, ac_state);
+	set_val_strc (arr, 12, ac_path);
 
 	g_ptr_array_add (nmc->output_data, arr);
 }

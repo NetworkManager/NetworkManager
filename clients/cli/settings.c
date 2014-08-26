@@ -43,14 +43,15 @@ NmcOutputField nmc_fields_setting_connection[] = {
 	SETTING_FIELD (NM_SETTING_CONNECTION_INTERFACE_NAME, 20),        /* 3 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_TYPE, 17),                  /* 4 */
 	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT, 13),           /* 5 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_TIMESTAMP, 10),             /* 6 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_READ_ONLY, 10),             /* 7 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_PERMISSIONS, 30),           /* 8 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_ZONE, 10),                  /* 9 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_MASTER, 20),                /* 10 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_SLAVE_TYPE, 20),            /* 11 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES, 40),           /* 12 */
-	SETTING_FIELD (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, 30),  /* 13 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY, 10),  /* 6 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_TIMESTAMP, 10),             /* 7 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_READ_ONLY, 10),             /* 8 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_PERMISSIONS, 30),           /* 9 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_ZONE, 10),                  /* 10 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_MASTER, 20),                /* 11 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_SLAVE_TYPE, 20),            /* 12 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_SECONDARIES, 40),           /* 13 */
+	SETTING_FIELD (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT, 30),  /* 14 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_CONNECTION_ALL     "name"","\
@@ -59,6 +60,7 @@ NmcOutputField nmc_fields_setting_connection[] = {
                                               NM_SETTING_CONNECTION_INTERFACE_NAME","\
                                               NM_SETTING_CONNECTION_TYPE","\
                                               NM_SETTING_CONNECTION_AUTOCONNECT","\
+                                              NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY","\
                                               NM_SETTING_CONNECTION_TIMESTAMP","\
                                               NM_SETTING_CONNECTION_READ_ONLY","\
                                               NM_SETTING_CONNECTION_PERMISSIONS","\
@@ -1004,6 +1006,7 @@ DEFINE_GETTER (nmc_property_connection_get_uuid, NM_SETTING_CONNECTION_UUID)
 DEFINE_GETTER (nmc_property_connection_get_interface_name, NM_SETTING_CONNECTION_INTERFACE_NAME)
 DEFINE_GETTER (nmc_property_connection_get_type, NM_SETTING_CONNECTION_TYPE)
 DEFINE_GETTER (nmc_property_connection_get_autoconnect, NM_SETTING_CONNECTION_AUTOCONNECT)
+DEFINE_GETTER (nmc_property_connection_get_autoconnect_priority, NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY)
 DEFINE_GETTER (nmc_property_connection_get_timestamp, NM_SETTING_CONNECTION_TIMESTAMP)
 DEFINE_GETTER (nmc_property_connection_get_read_only, NM_SETTING_CONNECTION_READ_ONLY)
 
@@ -5135,6 +5138,13 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
+	nmc_add_prop_funcs (GLUE (CONNECTION, AUTOCONNECT_PRIORITY),
+	                    nmc_property_connection_get_autoconnect_priority,
+	                    nmc_property_set_int,
+	                    NULL,
+	                    NULL,
+	                    NULL,
+	                    NULL);
 	nmc_add_prop_funcs (GLUE (CONNECTION, TIMESTAMP),
 	                    nmc_property_connection_get_timestamp,
 	                    NULL, /* read-only */
@@ -6502,14 +6512,15 @@ setting_connection_details (NMSetting *setting, NmCli *nmc, const char *one_prop
 	set_val_str (arr, 3, nmc_property_connection_get_interface_name (setting));
 	set_val_str (arr, 4, nmc_property_connection_get_type (setting));
 	set_val_str (arr, 5, nmc_property_connection_get_autoconnect (setting));
-	set_val_str (arr, 6, nmc_property_connection_get_timestamp (setting));
-	set_val_str (arr, 7, nmc_property_connection_get_read_only (setting));
-	set_val_str (arr, 8, nmc_property_connection_get_permissions (setting));
-	set_val_str (arr, 9, nmc_property_connection_get_zone (setting));
-	set_val_str (arr, 10, nmc_property_connection_get_master (setting));
-	set_val_str (arr, 11, nmc_property_connection_get_slave_type (setting));
-	set_val_str (arr, 12, nmc_property_connection_get_secondaries (setting));
-	set_val_str (arr, 13, nmc_property_connection_get_gateway_ping_timeout (setting));
+	set_val_str (arr, 6, nmc_property_connection_get_autoconnect_priority (setting));
+	set_val_str (arr, 7, nmc_property_connection_get_timestamp (setting));
+	set_val_str (arr, 8, nmc_property_connection_get_read_only (setting));
+	set_val_str (arr, 9, nmc_property_connection_get_permissions (setting));
+	set_val_str (arr, 10, nmc_property_connection_get_zone (setting));
+	set_val_str (arr, 11, nmc_property_connection_get_master (setting));
+	set_val_str (arr, 12, nmc_property_connection_get_slave_type (setting));
+	set_val_str (arr, 13, nmc_property_connection_get_secondaries (setting));
+	set_val_str (arr, 14, nmc_property_connection_get_gateway_ping_timeout (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
