@@ -552,7 +552,7 @@ _nm_utils_copy_slist_to_array (const GSList *list,
 
 	array = g_ptr_array_new_with_free_func (unref_func);
 	for (iter = list; iter; iter = iter->next)
-		g_ptr_array_add (array, copy_func (iter->data));
+		g_ptr_array_add (array, copy_func ? copy_func (iter->data) : iter->data);
 	return array;
 }
 
