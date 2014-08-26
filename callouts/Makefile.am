@@ -69,8 +69,10 @@ libtest_dispatcher_envp_la_LIBADD = \
 	$(DBUS_LIBS)
 
 
-udevrulesdir = $(UDEV_BASE_DIR)/rules.d
+if WITH_UDEV_DIR
+udevrulesdir = $(UDEV_DIR)/rules.d
 udevrules_DATA = 77-nm-olpc-mesh.rules
+endif
 
 dbusactivationdir = $(datadir)/dbus-1/system-services
 dbusactivation_in_files = org.freedesktop.nm_dispatcher.service.in

@@ -284,14 +284,18 @@ if (test "${enable_qt}" = "yes"); then
 fi
 AM_CONDITIONAL(WITH_QT, test "${enable_qt}" = "yes")
 
-
-AC_ARG_WITH(udev-dir, AS_HELP_STRING([--with-udev-dir=DIR], [where the udev base directory is]))
-if test -n "$with_udev_dir" ; then
-	UDEV_BASE_DIR="$with_udev_dir"
-else
-	UDEV_BASE_DIR="/lib/udev"
+AC_ARG_WITH(udev-dir, AS_HELP_STRING([--with-udev-dir=DIR], [Absolute path of the udev base directory. Set to 'no' not to install the udev rules]), [], [with_udev_dir="yes"])
+if (test "$with_udev_dir" != 'no'); then
+	if (test "$with_udev_dir" != 'yes' && echo -n "$with_udev_dir" | grep -v -q '^/'); then
+		AC_MSG_ERROR([--with-udev-dir must be an absolute path or 'yes' or 'no'. Instead it is '$with_udev_dir'])
+	fi
+	if (test "$with_udev_dir" = 'yes'); then
+		with_udev_dir="/lib/udev"
+	fi
+	UDEV_DIR="$with_udev_dir"
+	AC_SUBST(UDEV_DIR)
 fi
-AC_SUBST(UDEV_BASE_DIR)
+AM_CONDITIONAL(WITH_UDEV_DIR, test "$with_udev_dir" != 'no')
 
 # systemd unit support
 AC_ARG_WITH([systemdsystemunitdir], AS_HELP_STRING([--with-systemdsystemunitdir=DIR],
