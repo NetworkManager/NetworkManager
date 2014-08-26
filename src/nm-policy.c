@@ -1005,20 +1005,22 @@ auto_activate_device (gpointer user_data)
 	if (nm_device_get_act_request (data->device))
 		goto out;
 
-	iter = connections = nm_manager_get_activatable_connections (priv->manager);
+	connections = nm_manager_get_activatable_connections (priv->manager);
 
-	/* Remove connections that shouldn't be auto-activated */
-	while (iter) {
+	/* Find the first connection that should be auto-activated */
+	best_connection = NULL;
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMSettingsConnection *candidate = NM_SETTINGS_CONNECTION (iter->data);
 
-		/* Grab next item before we possibly delete the current item */
-		iter = g_slist_next (iter);
-
 		if (!nm_settings_connection_can_autoconnect (candidate))
-			connections = g_slist_remove (connections, candidate);
+			continue;
+		if (nm_device_can_auto_connect (data->device, (NMConnection *) candidate, &specific_object)) {
+			best_connection = (NMConnection *) candidate;
+			break;
+		}
 	}
+	g_slist_free (connections);
 
-	best_connection = nm_device_get_best_auto_connection (data->device, connections, &specific_object);
 	if (best_connection) {
 		GError *error = NULL;
 		NMAuthSubject *subject;
@@ -1040,8 +1042,6 @@ auto_activate_device (gpointer user_data)
 		}
 		g_object_unref (subject);
 	}
-
-	g_slist_free (connections);
 
  out:
 	activate_data_free (data);

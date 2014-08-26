@@ -269,10 +269,6 @@ gboolean nm_device_master_update_slave_connection (NMDevice *master,
                                                    NMConnection *connection,
                                                    GError **error);
 
-NMConnection * nm_device_get_best_auto_connection (NMDevice *dev,
-                                                   GSList *connections,
-                                                   char **specific_object);
-
 gboolean nm_device_can_auto_connect (NMDevice *self,
                                      NMConnection *connection,
                                      char **specific_object);
