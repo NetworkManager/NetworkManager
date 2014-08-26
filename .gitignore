@@ -30,8 +30,6 @@ cscope.*out
 valgrind-*.log
 *-glue.h
 
-/libgsystem/
-
 /ABOUT-NLS
 /COPYING
 /INSTALL
@@ -158,25 +156,17 @@ valgrind-*.log
 /examples/C/qt/list-connections
 /examples/C/qt/change-ipv4-addresses
 
-/callouts/nm-dhcp-client.action
 /callouts/nm-avahi-autoipd.action
 /callouts/nm-dispatcher
 /callouts/org.freedesktop.nm_dispatcher.service
-/callouts/nm-modem-probe
-/dispatcher-daemon/NetworkManagerDispatcher
-/initscript/*/NetworkManagerDispatcher
-/initscript/*/networkmanager-dispatcher
 /initscript/Slackware/rc.networkmanager
-/initscript/*/rc.networkmanager-dispatcher
 /initscript/*/[Nn]etwork[Mm]anager
 
 /callouts/tests/test-dispatcher-envp
 /libnm-glib/libnm-glib-test
 /src/NetworkManager
-/src/nm-crash-logger
 /src/supplicant-manager/tests/test-supplicant-config
 /src/dhcp-manager/nm-dhcp-helper
-/system-settings/src
 /libnm-core/nm-version.h
 /libnm-core/tests/test-crypto
 /libnm-core/tests/test-settings-defaults
@@ -205,14 +195,12 @@ valgrind-*.log
 /src/tests/test-general-with-expect
 /src/tests/test-ip4-config
 /src/tests/test-ip6-config
-/src/tests/test-wifi-ap-utils
 /src/tests/test-resolvconf-capture
 /src/tests/config/test-config
 /src/devices/wifi/tests/test-wifi-ap-utils
 /src/dnsmasq-manager/tests/test-dnsmasq-utils
 /src/dhcp-manager/tests/test-dhcp-dhclient
 /src/dhcp-manager/tests/test-dhcp-options
-/src/dhcp-manager/tests/test-dnsmasq-utils
 
 /src/settings/plugins/keyfile/tests/test-keyfile
 /src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
