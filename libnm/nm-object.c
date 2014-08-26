@@ -806,7 +806,7 @@ object_property_complete (ObjectCreatedData *odata)
 		int i;
 
 		/* Build up new array */
-		new = g_ptr_array_sized_new (odata->length);
+		new = g_ptr_array_new_full (odata->length, g_object_unref);
 		for (i = 0; i < odata->length; i++)
 			add_to_object_array_unique (new, odata->objects[i]);
 
@@ -843,8 +843,8 @@ object_property_complete (ObjectCreatedData *odata)
 			}
 
 			different = removed->len || added->len;
-			g_ptr_array_free (added, TRUE);
-			g_ptr_array_free (removed, TRUE);
+			g_ptr_array_unref (added);
+			g_ptr_array_unref (removed);
 		} else {
 			/* No added/removed signals to send, just replace the property with
 			 * the new values.
@@ -857,7 +857,7 @@ object_property_complete (ObjectCreatedData *odata)
 		 * any objects in the 'removed' array.
 		 */
 		if (old)
-			g_boxed_free (NM_TYPE_OBJECT_ARRAY, old);
+			g_ptr_array_unref (old);
 	} else {
 		GObject **obj_p = pi->field;
 

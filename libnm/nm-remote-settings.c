@@ -30,7 +30,7 @@
 #include "nm-dbus-helpers-private.h"
 #include "nm-glib-compat.h"
 #include "nm-object-private.h"
-#include "nm-types.h"
+#include "nm-core-internal.h"
 
 /**
  * SECTION:nm-remote-settings
@@ -333,12 +333,10 @@ connection_removed (NMRemoteSettings *self,
 	int i;
 
 	/* Check if the connection was actually removed or if it just turned invisible. */
-	if (priv->all_connections) {
-		for (i = 0; i < priv->all_connections->len; i++) {
-			if (remote == priv->all_connections->pdata[i]) {
-				still_exists = TRUE;
-				break;
-			}
+	for (i = 0; i < priv->all_connections->len; i++) {
+		if (remote == priv->all_connections->pdata[i]) {
+			still_exists = TRUE;
+			break;
 		}
 	}
 
@@ -743,19 +741,15 @@ nm_running_changed (GObject *object,
 	g_object_freeze_notify (object);
 
 	if (!_nm_object_get_nm_running (NM_OBJECT (self))) {
-		if (priv->all_connections) {
-			GPtrArray *connections;
-			int i;
+		GPtrArray *connections;
+		int i;
 
-			connections = priv->all_connections;
-			priv->all_connections = NULL;
-
-			for (i = 0; i < connections->len; i++) {
-				g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connections->pdata[i]);
-				g_object_unref (connections->pdata[i]);
-			}
-			g_ptr_array_unref (connections);
-		}
+		/* Clear connections */
+		connections = priv->all_connections;
+		priv->all_connections = g_ptr_array_new ();
+		for (i = 0; i < connections->len; i++)
+			g_signal_emit (self, signals[CONNECTION_REMOVED], 0, connections->pdata[i]);
+		g_ptr_array_unref (connections);
 
 		/* Clear properties */
 		if (priv->hostname) {
@@ -912,19 +906,17 @@ dispose (GObject *object)
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (object);
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	int i;
 
 	while (g_slist_length (priv->add_list))
 		add_connection_info_dispose (self, (AddConnectionInfo *) priv->add_list->data);
 
 	if (priv->all_connections) {
-		int i;
-
-		for (i = 0; i < priv->all_connections->len; i++) {
+		for (i = 0; i < priv->all_connections->len; i++)
 			cleanup_connection (self, priv->all_connections->pdata[i]);
-			g_object_unref (priv->all_connections->pdata[i]);
-		}
 		g_clear_pointer (&priv->all_connections, g_ptr_array_unref);
 	}
+
 	g_clear_pointer (&priv->visible_connections, g_ptr_array_unref);
 	g_clear_pointer (&priv->hostname, g_free);
 	g_clear_object (&priv->proxy);
@@ -943,7 +935,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, _nm_object_get_nm_running (NM_OBJECT (object)));
 		break;
 	case PROP_CONNECTIONS:
-		g_value_set_boxed (value, priv->visible_connections);
+		g_value_take_boxed (value, _nm_utils_copy_object_array (priv->visible_connections));
 		break;
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
@@ -998,12 +990,12 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 	 * contain the object paths of connections that the user does not have
 	 * permission to read the details of.)
 	 *
-	 * Type: GPtrArray
+	 * Element-type: NMRemoteConnection
 	 */
 	g_object_class_install_property
 		(object_class, PROP_CONNECTIONS,
 		 g_param_spec_boxed (NM_REMOTE_SETTINGS_CONNECTIONS, "", "",
-		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 

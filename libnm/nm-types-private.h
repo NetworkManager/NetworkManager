@@ -26,10 +26,6 @@
 #include "nm-object-private.h"
 
 gboolean _nm_uint_array_demarshal (GValue *value, GArray **dest);
-gboolean _nm_object_array_demarshal (GValue *value,
-                                     GPtrArray **dest,
-                                     DBusGConnection *connection,
-                                     NMObjectCreatorFunc func);
 gboolean _nm_ip6_address_array_demarshal (GValue *value, GSList **dest);
 
 #endif /* __NM_TYPES_PRIVATE_H__ */

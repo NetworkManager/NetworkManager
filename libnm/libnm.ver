@@ -337,7 +337,6 @@ global:
 	nm_ip6_route_set_next_hop;
 	nm_ip6_route_set_prefix;
 	nm_ip6_route_unref;
-	nm_object_array_get_type;
 	nm_object_error_get_type;
 	nm_object_error_quark;
 	nm_object_get_dbus_connection;

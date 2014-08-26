@@ -43,7 +43,7 @@
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
 #include "nm-remote-connection.h"
-#include "nm-types.h"
+#include "nm-core-internal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-utils.h"
@@ -375,14 +375,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->client);
 	g_clear_object (&priv->active_connection);
 
-	if (priv->available_connections) {
-		int i;
-
-		for (i = 0; i < priv->available_connections->len; i++)
-			g_object_unref (priv->available_connections->pdata[i]);
-		g_ptr_array_free (priv->available_connections, TRUE);
-		priv->available_connections = NULL;
-	}
+	g_clear_pointer (&priv->available_connections, g_ptr_array_unref);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
@@ -474,7 +467,7 @@ get_property (GObject *object,
 		g_value_set_object (value, nm_device_get_active_connection (device));
 		break;
 	case PROP_AVAILABLE_CONNECTIONS:
-		g_value_set_boxed (value, nm_device_get_available_connections (device));
+		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_device_get_available_connections (device)));
 		break;
 	case PROP_PRODUCT:
 		g_value_set_string (value, nm_device_get_product (device));
@@ -766,12 +759,14 @@ nm_device_class_init (NMDeviceClass *device_class)
 	/**
 	 * NMDevice:available-connections:
 	 *
-	 * The available connections (#NMRemoteConnection) of the device
+	 * The available connections of the device
+	 *
+	 * Element-type: NMRemoteConnection
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AVAILABLE_CONNECTIONS,
 		 g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS, "", "",
-		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 

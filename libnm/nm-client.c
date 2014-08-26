@@ -27,7 +27,7 @@
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "nm-device-private.h"
-#include "nm-types-private.h"
+#include "nm-core-internal.h"
 #include "nm-object-private.h"
 #include "nm-active-connection.h"
 #include "nm-vpn-connection.h"
@@ -152,7 +152,7 @@ poke_wireless_devices_with_rf_status (NMClient *client)
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	int i;
 
-	for (i = 0; priv->devices && (i < priv->devices->len); i++) {
+	for (i = 0; i < priv->devices->len; i++) {
 		NMDevice *device = g_ptr_array_index (priv->devices, i);
 
 		if (NM_IS_DEVICE_WIFI (device))
@@ -1243,7 +1243,7 @@ nm_client_get_activating_connection (NMClient *client)
 /****************************************************************/
 
 static void
-free_devices (NMClient *client, gboolean emit_signals)
+free_devices (NMClient *client, gboolean in_dispose)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	GPtrArray *devices;
@@ -1254,18 +1254,23 @@ free_devices (NMClient *client, gboolean emit_signals)
 		return;
 
 	devices = priv->devices;
-	priv->devices = NULL;
-	for (i = 0; i < devices->len; i++) {
-		device = devices->pdata[i];
-		if (emit_signals)
+
+	if (in_dispose)
+		priv->devices = NULL;
+	else {
+		priv->devices = g_ptr_array_new ();
+
+		for (i = 0; i < devices->len; i++) {
+			device = devices->pdata[i];
 			g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
-		g_object_unref (device);
+		}
 	}
-	g_ptr_array_free (devices, TRUE);
+
+	g_ptr_array_unref (devices);
 }
 
 static void
-free_active_connections (NMClient *client, gboolean emit_signals)
+free_active_connections (NMClient *client, gboolean in_dispose)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	GPtrArray *active_connections;
@@ -1277,16 +1282,18 @@ free_active_connections (NMClient *client, gboolean emit_signals)
 
 	active_connections = priv->active_connections;
 	priv->active_connections = NULL;
+
 	for (i = 0; i < active_connections->len; i++) {
 		active_connection = active_connections->pdata[i];
 		/* Break circular refs */
 		g_object_run_dispose (G_OBJECT (active_connection));
-		g_object_unref (active_connection);
 	}
-	g_ptr_array_free (active_connections, TRUE);
+	g_ptr_array_unref (active_connections);
 
-	if (emit_signals)
+	if (!in_dispose) {
+		priv->active_connections = g_ptr_array_new ();
 		g_object_notify (G_OBJECT (client), NM_CLIENT_ACTIVE_CONNECTIONS);
+	}
 }
 
 static void
@@ -1317,8 +1324,8 @@ nm_running_changed_cb (GObject *object,
 		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_NM_RUNNING);
 		_nm_object_suppress_property_updates (NM_OBJECT (client), TRUE);
 		poke_wireless_devices_with_rf_status (client);
-		free_devices (client, TRUE);
-		free_active_connections (client, TRUE);
+		free_devices (client, FALSE);
+		free_active_connections (client, FALSE);
 		update_permissions (client, NULL);
 		priv->wireless_enabled = FALSE;
 		priv->wireless_hw_enabled = FALSE;
@@ -1817,8 +1824,8 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->client_proxy);
 
-	free_devices (client, FALSE);
-	free_active_connections (client, FALSE);
+	free_devices (client, TRUE);
+	free_active_connections (client, TRUE);
 	g_clear_object (&priv->primary_connection);
 	g_clear_object (&priv->activating_connection);
 
@@ -1927,7 +1934,7 @@ get_property (GObject *object,
 		g_value_set_boolean (value, priv->wimax_hw_enabled);
 		break;
 	case PROP_ACTIVE_CONNECTIONS:
-		g_value_set_boxed (value, nm_client_get_active_connections (self));
+		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_client_get_active_connections (self)));
 		break;
 	case PROP_CONNECTIVITY:
 		g_value_set_uint (value, priv->connectivity);
@@ -1939,7 +1946,7 @@ get_property (GObject *object,
 		g_value_set_object (value, priv->activating_connection);
 		break;
 	case PROP_DEVICES:
-		g_value_set_boxed (value, nm_client_get_devices (self));
+		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_client_get_devices (self)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2103,12 +2110,13 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:active-connections:
 	 *
 	 * The active connections.
-	 * Type: GLib.PtrArray
+	 *
+	 * Element-type: NMActiveConnection
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTIONS,
 		 g_param_spec_boxed (NM_CLIENT_ACTIVE_CONNECTIONS, "", "",
-		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
@@ -2154,11 +2162,13 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:devices:
 	 *
 	 * List of known network devices.
+	 *
+	 * Element-type: NMDevice
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEVICES,
 		 g_param_spec_boxed (NM_CLIENT_DEVICES, "", "",
-		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 

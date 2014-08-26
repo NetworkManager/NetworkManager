@@ -32,7 +32,7 @@
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-types-private.h"
+#include "nm-core-internal.h"
 #include "nm-device-private.h"
 
 G_DEFINE_TYPE (NMDeviceWimax, nm_device_wimax, NM_TYPE_DEVICE)
@@ -200,7 +200,7 @@ nm_device_wimax_get_nsp_by_path (NMDeviceWimax *wimax,
 }
 
 static void
-clean_up_nsps (NMDeviceWimax *self, gboolean notify)
+clean_up_nsps (NMDeviceWimax *self)
 {
 	NMDeviceWimaxPrivate *priv;
 
@@ -213,18 +213,7 @@ clean_up_nsps (NMDeviceWimax *self, gboolean notify)
 		priv->active_nsp = NULL;
 	}
 
-	if (priv->nsps) {
-		while (priv->nsps->len) {
-			NMWimaxNsp *nsp = NM_WIMAX_NSP (g_ptr_array_index (priv->nsps, 0));
-
-			if (notify)
-				g_signal_emit (self, signals[NSP_REMOVED], 0, nsp);
-			g_ptr_array_remove (priv->nsps, nsp);
-			g_object_unref (nsp);
-		}
-		g_ptr_array_free (priv->nsps, TRUE);
-		priv->nsps = NULL;
-	}
+	g_clear_pointer (&priv->nsps, g_ptr_array_unref);
 }
 
 /**
@@ -416,7 +405,7 @@ get_property (GObject *object,
 		g_value_set_string (value, nm_device_wimax_get_bsid (self));
 		break;
 	case PROP_NSPS:
-		g_value_set_boxed (value, nm_device_wimax_get_nsps (self));
+		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_device_wimax_get_nsps (self)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -539,7 +528,8 @@ dispose (GObject *object)
 		priv->bsid = NULL;
 	}
 
-	clean_up_nsps (NM_DEVICE_WIMAX (object), FALSE);
+	if (priv->nsps)
+		clean_up_nsps (NM_DEVICE_WIMAX (object));
 	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_device_wimax_parent_class)->dispose (object);
@@ -666,11 +656,13 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	 * NMDeviceWimax:nsps:
 	 *
 	 * List of all WiMAX Network Service Providers the device can see.
+	 *
+	 * Element-type: NMWimaxNsp
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NSPS,
 		 g_param_spec_boxed (NM_DEVICE_WIMAX_NSPS, "", "",
-		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 

@@ -626,6 +626,26 @@ _nm_utils_copy_array_to_slist (const GPtrArray *array,
 	return g_slist_reverse (slist);
 }
 
+GPtrArray *
+_nm_utils_copy_array (const GPtrArray *array,
+                      NMUtilsCopyFunc copy_func,
+                      GDestroyNotify free_func)
+{
+	GPtrArray *copy;
+	int i;
+
+	copy = g_ptr_array_new_full (array->len, free_func);
+	for (i = 0; i < array->len; i++)
+		g_ptr_array_add (copy, copy_func (array->pdata[i]));
+	return copy;
+}
+
+GPtrArray *
+_nm_utils_copy_object_array (const GPtrArray *array)
+{
+	return _nm_utils_copy_array (array, g_object_ref, g_object_unref);
+}
+
 void
 _nm_utils_bytes_to_dbus (const GValue *prop_value,
                          GValue *dbus_value)

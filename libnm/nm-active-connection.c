@@ -24,7 +24,7 @@
 #include "nm-dbus-interface.h"
 #include "nm-active-connection.h"
 #include "nm-object-private.h"
-#include "nm-types-private.h"
+#include "nm-core-internal.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "nm-connection.h"
@@ -454,11 +454,7 @@ dispose (GObject *object)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
 
-	if (priv->devices) {
-		g_ptr_array_set_free_func (priv->devices, g_object_unref);
-		g_ptr_array_free (priv->devices, TRUE);
-		priv->devices = NULL;
-	}
+	g_clear_pointer (&priv->devices, g_ptr_array_unref);
 
 	g_clear_object (&priv->ip4_config);
 	g_clear_object (&priv->dhcp4_config);
@@ -510,7 +506,7 @@ get_property (GObject *object,
 		g_value_set_boxed (value, nm_active_connection_get_specific_object (self));
 		break;
 	case PROP_DEVICES:
-		g_value_set_boxed (value, nm_active_connection_get_devices (self));
+		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_active_connection_get_devices (self)));
 		break;
 	case PROP_STATE:
 		g_value_set_uint (value, nm_active_connection_get_state (self));
@@ -656,14 +652,16 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMActiveConnection:device:
+	 * NMActiveConnection:devices:
 	 *
-	 * The devices (#NMDevice) of the active connection.
+	 * The devices of the active connection.
+	 *
+	 * Element-type: NMDevice
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEVICES,
 		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DEVICES, "", "",
-		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
