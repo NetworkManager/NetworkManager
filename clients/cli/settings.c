@@ -2160,6 +2160,26 @@ nmc_property_set_uint (NMSetting *setting, const char *prop, const char *val, GE
 }
 
 static gboolean
+nmc_property_set_int (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	long int val_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_int (val, TRUE, G_MININT, G_MAXINT, &val_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), val);
+		return FALSE;
+	}
+
+	/* Validate the number according to the property spec */
+	if (!validate_int (setting, prop, (gint) val_int, error))
+		return FALSE;
+
+	g_object_set (setting, prop, (gint) val_int, NULL);
+	return TRUE;
+}
+
+static gboolean
 nmc_property_set_bool (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	gboolean val_bool;
