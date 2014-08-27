@@ -70,8 +70,6 @@ typedef struct {
 
 GType        nm_device_bridge_get_type (void);
 
-GObject *    nm_device_bridge_new (DBusGConnection *connection, const char *path);
-
 const char      *nm_device_bridge_get_hw_address (NMDeviceBridge *device);
 gboolean         nm_device_bridge_get_carrier    (NMDeviceBridge *device);
 const GPtrArray *nm_device_bridge_get_slaves     (NMDeviceBridge *device);
