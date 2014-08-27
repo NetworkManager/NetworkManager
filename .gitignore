@@ -134,6 +134,8 @@ valgrind-*.log
 
 /introspection/all.xml
 
+/libgsystem/
+
 /libnm-core/nm-version.h
 /libnm-core/tests/test-crypto
 /libnm-core/tests/test-settings-defaults
