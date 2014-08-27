@@ -1058,6 +1058,7 @@ typedef struct {
 	GPtrArray *dns_search; /* array of domain name strings */
 	GPtrArray *addresses;  /* array of NMIPAddress */
 	GPtrArray *routes;     /* array of NMIPRoute */
+	gint64 route_metric;
 	char *gateway;
 	gboolean ignore_auto_routes;
 	gboolean ignore_auto_dns;
@@ -1075,6 +1076,7 @@ enum {
 	PROP_ADDRESSES,
 	PROP_GATEWAY,
 	PROP_ROUTES,
+	PROP_ROUTE_METRIC,
 	PROP_IGNORE_AUTO_ROUTES,
 	PROP_IGNORE_AUTO_DNS,
 	PROP_DHCP_HOSTNAME,
@@ -1672,6 +1674,25 @@ nm_setting_ip_config_clear_routes (NMSettingIPConfig *setting)
 }
 
 /**
+ * nm_setting_ip_config_get_route_metric:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:route-metric
+ * property.
+ *
+ * Returns: the route metric that is used for routes that don't explicitly
+ * specify a metric. See #NMSettingIPConfig:route-metric for more details.
+ **/
+gint64
+nm_setting_ip_config_get_route_metric (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), -1);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->route_metric;
+}
+
+
+/**
  * nm_setting_ip_config_get_ignore_auto_routes:
  * @setting: the #NMSettingIPConfig
  *
@@ -1984,6 +2005,9 @@ set_property (GObject *object, guint prop_id,
 		                                     (NMUtilsCopyFunc) nm_ip_route_dup,
 		                                     (GDestroyNotify) nm_ip_route_unref);
 		break;
+	case PROP_ROUTE_METRIC:
+		priv->route_metric = g_value_get_int64 (value);
+		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		priv->ignore_auto_routes = g_value_get_boolean (value);
 		break;
@@ -2038,6 +2062,9 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, _nm_utils_copy_array (priv->routes,
 		                                                 (NMUtilsCopyFunc) nm_ip_route_dup,
 		                                                 (GDestroyNotify) nm_ip_route_unref));
+		break;
+	case PROP_ROUTE_METRIC:
+		g_value_set_int64 (value, priv->route_metric);
 		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		g_value_set_boolean (value, nm_setting_ip_config_get_ignore_auto_routes (setting));
@@ -2172,6 +2199,28 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
 		                     G_PARAM_READWRITE |
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:route-metric:
+	 *
+	 * The default metric for routes that don't explicitly specify a metric.
+	 * The default value -1 means that the metric is choosen automatically
+	 * based on the device type.
+	 * The metric applies to dynamic routes, manual (static) routes that
+	 * don't have an explicit metric setting, address prefix routes, and
+	 * the default route.
+	 * Note that for IPv6, the kernel accepts accepts zero (0) but coerces
+	 * it to 1024 (user default). Hence, setting this value to zero effectively
+	 * mean setting it to 1024.
+	 * For IPv4, zero is a regular value for the metric.
+	 **/
+	g_object_class_install_property
+	    (object_class, PROP_ROUTE_METRIC,
+	     g_param_spec_int64 (NM_SETTING_IP_CONFIG_ROUTE_METRIC, "", "",
+	                         -1, G_MAXUINT32, -1,
+	                         G_PARAM_READWRITE |
+	                         G_PARAM_CONSTRUCT |
+	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIPConfig:ignore-auto-routes:
