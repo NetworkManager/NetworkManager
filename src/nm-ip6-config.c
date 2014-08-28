@@ -1743,11 +1743,17 @@ get_property (GObject *object, guint prop_id,
 			int i;
 
 			for (i = 0; i < nroutes; i++) {
+				GValueArray *array;
 				const NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
-
-				GValueArray *array = g_value_array_new (4);
 				GByteArray *ba;
 				GValue element = G_VALUE_INIT;
+
+				/* legacy versions of nm_ip6_route_set_prefix() in libnm-util assert that the
+				 * plen is positive. Skip the default routes not to break older clients. */
+				if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
+					continue;
+
+				array = g_value_array_new (4);
 
 				g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
 				ba = g_byte_array_new ();

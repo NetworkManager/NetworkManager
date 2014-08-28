@@ -1844,8 +1844,14 @@ get_property (GObject *object, guint prop_id,
 
 			for (i = 0; i < nroutes; i++) {
 				const NMPlatformIP4Route *route = nm_ip4_config_get_route (config, i);
-				GArray *array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 4);
+				GArray *array;
 
+				/* legacy versions of nm_ip4_route_set_prefix() in libnm-util assert that the
+				 * plen is positive. Skip the default routes not to break older clients. */
+				if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
+					continue;
+
+				array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 4);
 				g_array_append_val (array, route->network);
 				g_array_append_val (array, route->plen);
 				g_array_append_val (array, route->gateway);

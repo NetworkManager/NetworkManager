@@ -32,6 +32,7 @@
 #include "nm-activation-request.h"
 #include "nm-logging.h"
 #include "nm-device.h"
+#include "nm-default-route-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
@@ -102,17 +103,12 @@ get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	const GSList *iter;
 	NMDevice *best = NULL;
-	int best_prio = G_MAXINT;
+	guint32 best_prio = G_MAXUINT32;
 
 	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
-		NMDeviceType devtype = nm_device_get_device_type (dev);
 		NMDeviceState state = nm_device_get_state (dev);
-		NMActRequest *req;
-		NMConnection *connection;
-		NMSettingIPConfig *s_ip4;
-		int prio;
-		const char *method = NULL;
+		guint32 prio;
 
 		if (   state <= NM_DEVICE_STATE_DISCONNECTED
 		    || state >= NM_DEVICE_STATE_DEACTIVATING)
@@ -121,40 +117,19 @@ get_best_ip4_device (NMPolicy *self, gboolean fully_activated)
 		if (fully_activated && state < NM_DEVICE_STATE_SECONDARIES)
 			continue;
 
-		req = nm_device_get_act_request (dev);
-		g_assert (req);
-		connection = nm_act_request_get_connection (req);
-		g_assert (connection);
-
-		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		/* If IPv4 is disabled or link-local-only, it can't be the default */
-		if (   !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
-		    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
-			continue;
-
-		/* 'never-default' devices can't ever be the default */
-		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		g_assert (s_ip4);
-		if (nm_setting_ip_config_get_never_default (s_ip4))
+		if (!nm_default_route_manager_ip4_connection_has_default_route (nm_default_route_manager_get (),
+		                                                                nm_device_get_connection (dev)))
 			continue;
 
 		if (fully_activated) {
-			NMIP4Config *ip4_config;
+			gint64 effective_metric = nm_default_route_manager_ip4_get_effective_metric (nm_default_route_manager_get (), dev);
 
-			ip4_config = nm_device_get_ip4_config (dev);
-			if (!ip4_config)
+			if (effective_metric == -1)
 				continue;
+			prio = (guint32) effective_metric;
+		} else
+			prio = nm_device_get_ip6_route_metric (dev);
 
-			/* Make sure the device has a gateway */
-			if (!nm_ip4_config_get_gateway (ip4_config) && (devtype != NM_DEVICE_TYPE_MODEM))
-				continue;
-
-			/* 'never-default' devices can't ever be the default */
-			if (nm_ip4_config_get_never_default (ip4_config))
-				continue;
-		}
-
-		prio = nm_device_get_priority (dev);
 		if (   prio < best_prio
 		    || (priv->default_device4 == dev && prio == best_prio)
 		    || !best) {
@@ -186,17 +161,12 @@ get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 	NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE (self);
 	const GSList *iter;
 	NMDevice *best = NULL;
-	int best_prio = G_MAXINT;
+	guint32 best_prio = G_MAXUINT32;
 
 	for (iter = nm_manager_get_devices (priv->manager); iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
-		NMDeviceType devtype = nm_device_get_device_type (dev);
 		NMDeviceState state = nm_device_get_state (dev);
-		NMActRequest *req;
-		NMConnection *connection;
-		NMSettingIPConfig *s_ip6;
-		int prio;
-		const char *method = NULL;
+		guint32 prio;
 
 		if (   state <= NM_DEVICE_STATE_DISCONNECTED
 		    || state >= NM_DEVICE_STATE_DEACTIVATING)
@@ -205,36 +175,20 @@ get_best_ip6_device (NMPolicy *self, gboolean fully_activated)
 		if (fully_activated && state < NM_DEVICE_STATE_SECONDARIES)
 			continue;
 
-		req = nm_device_get_act_request (dev);
-		g_assert (req);
-		connection = nm_act_request_get_connection (req);
-		g_assert (connection);
-
-		method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-		if (   !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)
-		    || !strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
-			continue;
-
-		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		g_assert (s_ip6);
-		if (nm_setting_ip_config_get_never_default (s_ip6))
+		if (!nm_default_route_manager_ip6_connection_has_default_route (nm_default_route_manager_get (),
+		                                                                nm_device_get_connection (dev)))
 			continue;
 
 		if (fully_activated) {
-			NMIP6Config *ip6_config;
+			gint64 effective_metric = nm_default_route_manager_ip6_get_effective_metric (nm_default_route_manager_get (), dev);
 
-			ip6_config = nm_device_get_ip6_config (dev);
-			if (!ip6_config)
+			if (effective_metric == -1)
 				continue;
+			prio = (guint32) effective_metric;
+		} else
+			prio = nm_device_get_ip6_route_metric (dev);
+		prio = nm_utils_ip6_route_metric_normalize (prio);
 
-			if (!nm_ip6_config_get_gateway (ip6_config) && (devtype != NM_DEVICE_TYPE_MODEM))
-				continue;
-
-			if (nm_ip6_config_get_never_default (ip6_config))
-				continue;
-		}
-
-		prio = nm_device_get_priority (dev);
 		if (   prio < best_prio
 		    || (priv->default_device6 == dev && prio == best_prio)
 		    || !best) {
@@ -668,6 +622,7 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 	if (vpn) {
 		in_addr_t int_gw = nm_vpn_connection_get_ip4_internal_gateway (vpn);
 		int mss = nm_ip4_config_get_mss (ip4_config);
+		guint32 route_metric = nm_vpn_connection_get_ip4_route_metric (vpn);
 
 		/* If no VPN interface, use the parent interface */
 		if (ip_ifindex <= 0)
@@ -675,39 +630,22 @@ update_ip4_routing (NMPolicy *policy, gboolean force_update)
 
 		if (!nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
 		                                0, 0, int_gw,
-		                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
+		                                route_metric, mss)) {
 			if (int_gw) {
 				(void) nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
 				                                  int_gw, 32, 0,
-				                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss);
+				                                  route_metric, mss);
 				if (!nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
 				                                0, 0, int_gw,
-				                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss))
+				                                route_metric, mss))
 					nm_log_err (LOGD_IP4 | LOGD_VPN, "Failed to set IPv4 default route via VPN.");
 			} else
 				nm_log_err (LOGD_IP4 | LOGD_VPN, "Failed to set IPv4 default route via VPN.");
 		}
 
 		default_device = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
-	} else {
-		int mss = nm_ip4_config_get_mss (ip4_config);
-
-		g_assert (ip_iface);
-		if (!nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_USER,
-		                                0, 0, gw_addr,
-		                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
-			(void) nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_USER,
-			                                  gw_addr, 32, 0,
-			                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss);
-			if (!nm_platform_ip4_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_USER,
-			                                0, 0, gw_addr,
-			                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
-				nm_log_err (LOGD_IP4, "Failed to set default route.");
-			}
-		}
-
+	} else
 		default_device = best;
-	}
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default);
 
@@ -875,6 +813,7 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 	if (vpn) {
 		const struct in6_addr *int_gw = nm_vpn_connection_get_ip6_internal_gateway (vpn);
 		int mss = nm_ip6_config_get_mss (ip6_config);
+		guint32 route_metric = nm_vpn_connection_get_ip6_route_metric (vpn);
 
 		if (!int_gw)
 			int_gw = &in6addr_any;
@@ -885,37 +824,22 @@ update_ip6_routing (NMPolicy *policy, gboolean force_update)
 
 		if (!nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
 		                                in6addr_any, 0, *int_gw,
-		                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
+		                                route_metric, mss)) {
 			if (!IN6_IS_ADDR_UNSPECIFIED (int_gw)) {
 				(void) nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
 				                                  *int_gw, 128, in6addr_any,
-				                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss);
+				                                  route_metric, mss);
 				if (!nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_VPN,
 				                                in6addr_any, 0, *int_gw,
-				                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss))
+				                                route_metric, mss))
 					nm_log_err (LOGD_IP6 | LOGD_VPN, "Failed to set IPv6 default route via VPN.");
 			} else
 				nm_log_err (LOGD_IP6 | LOGD_VPN, "Failed to set IPv6 default route via VPN.");
 		}
 
 		default_device6 = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (vpn));
-	} else {
-		int mss = nm_ip6_config_get_mss (ip6_config);
-
-		if (!nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_USER,
-		                                in6addr_any, 0, *gw_addr,
-		                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss)) {
-			(void) nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_USER,
-			                                  *gw_addr, 128, in6addr_any,
-			                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss);
-			if (!nm_platform_ip6_route_add (ip_ifindex, NM_IP_CONFIG_SOURCE_USER,
-			                                in6addr_any, 0, *gw_addr,
-			                                NM_PLATFORM_ROUTE_METRIC_DEFAULT, mss))
-				nm_log_err (LOGD_IP6, "Failed to set default route.");
-		}
-
+	} else
 		default_device6 = best;
-	}
 
 	update_default_ac (policy, best_ac, nm_active_connection_set_default6);
 
