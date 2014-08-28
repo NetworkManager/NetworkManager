@@ -24,9 +24,10 @@
 
 #include <glib.h>
 #include <stdio.h>
+#include <arpa/inet.h>
 
 #include "nm-connection.h"
-#include "nm-platform.h"
+#include "nm-types.h"
 
 gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 

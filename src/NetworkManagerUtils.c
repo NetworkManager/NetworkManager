@@ -36,6 +36,7 @@
 #include <linux/if_infiniband.h>
 
 #include "NetworkManagerUtils.h"
+#include "nm-platform.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "nm-logging.h"

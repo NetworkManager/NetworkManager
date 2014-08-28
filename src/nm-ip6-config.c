@@ -26,6 +26,7 @@
 
 #include "nm-glib-compat.h"
 #include "nm-utils.h"
+#include "nm-platform.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-ip6-config-glue.h"
