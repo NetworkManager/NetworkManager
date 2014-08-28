@@ -681,6 +681,18 @@ nm_device_get_priority (NMDevice *self)
 	}
 }
 
+guint32
+nm_device_get_ip4_route_metric (NMDevice *self)
+{
+	return nm_device_get_priority (self);
+}
+
+guint32
+nm_device_get_ip6_route_metric (NMDevice *self)
+{
+	return nm_device_get_priority (self);
+}
+
 const char *
 nm_device_get_type_desc (NMDevice *self)
 {
@@ -2394,7 +2406,7 @@ aipd_get_ip4_config (NMDevice *self, guint32 lla)
 	route.network = htonl (0xE0000000L);
 	route.plen = 4;
 	route.source = NM_IP_CONFIG_SOURCE_IP4LL;
-	route.metric = nm_device_get_priority (self);
+	route.metric = nm_device_get_ip4_route_metric (self);
 	nm_ip4_config_add_route (config, &route);
 
 	return config;
@@ -2662,7 +2674,7 @@ ip4_config_merge_and_apply (NMDevice *self,
 	    && !nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection))) {
 		nm_ip4_config_merge_setting (composite,
 		                             nm_connection_get_setting_ip4_config (connection),
-		                             nm_device_get_priority (self));
+		                             nm_device_get_ip4_route_metric (self));
 	}
 
 	/* Allow setting MTU etc */
@@ -2803,7 +2815,7 @@ dhcp4_start (NMDevice *self,
 	                                                nm_device_get_ip_ifindex (self),
 	                                                tmp,
 	                                                nm_connection_get_uuid (connection),
-	                                                nm_device_get_priority (self),
+	                                                nm_device_get_ip4_route_metric (self),
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip4),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip4),
 	                                                nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4)),
@@ -3163,7 +3175,7 @@ ip6_config_merge_and_apply (NMDevice *self,
 	    && !nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection))) {
 		nm_ip6_config_merge_setting (composite,
 		                             nm_connection_get_setting_ip6_config (connection),
-		                             nm_device_get_priority (self));
+		                             nm_device_get_ip6_route_metric (self));
 	}
 
 	nm_ip6_config_addresses_sort (composite,
@@ -3356,7 +3368,7 @@ dhcp6_start (NMDevice *self,
 	                                                nm_device_get_ip_ifindex (self),
 	                                                tmp,
 	                                                nm_connection_get_uuid (connection),
-	                                                nm_device_get_priority (self),
+	                                                nm_device_get_ip6_route_metric (self),
 	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip6),
 	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip6),
 	                                                priv->dhcp_timeout,
@@ -3700,7 +3712,7 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 				route.plen = discovered_route->plen;
 				route.gateway = discovered_route->gateway;
 				route.source = NM_IP_CONFIG_SOURCE_RDISC;
-				route.metric = nm_device_get_priority (self);
+				route.metric = nm_device_get_ip6_route_metric (self);
 
 				nm_ip6_config_add_route (priv->ac_ip6_config, &route);
 			}

@@ -228,6 +228,8 @@ const char *	nm_device_get_type_desc (NMDevice *dev);
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 
 int			nm_device_get_priority (NMDevice *dev);
+guint32     nm_device_get_ip4_route_metric (NMDevice *dev);
+guint32     nm_device_get_ip6_route_metric (NMDevice *dev);
 
 const char *    nm_device_get_hw_address   (NMDevice *dev);
 
