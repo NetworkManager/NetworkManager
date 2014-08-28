@@ -722,6 +722,12 @@ write_setting_value (NMSetting *setting,
 		numstr = g_strdup_printf ("%" G_GUINT64_FORMAT, g_value_get_uint64 (value));
 		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
 		g_free (numstr);
+	} else if (type == G_TYPE_INT64) {
+		char *numstr;
+
+		numstr = g_strdup_printf ("%" G_GINT64_FORMAT, g_value_get_int64 (value));
+		nm_keyfile_plugin_kf_set_value (info->keyfile, setting_name, key, numstr);
+		g_free (numstr);
 	} else if (type == G_TYPE_BOOLEAN) {
 		nm_keyfile_plugin_kf_set_boolean (info->keyfile, setting_name, key, g_value_get_boolean (value));
 	} else if (type == G_TYPE_CHAR) {
