@@ -3711,7 +3711,7 @@ clear_host_address (int family, const void *network, int plen, void *dst)
 static struct nl_object *
 build_rtnl_route (int family, int ifindex, NMIPConfigSource source,
                   gconstpointer network, int plen, gconstpointer gateway,
-                  int metric, int mss)
+                  guint32 metric, guint32 mss)
 {
 	guint32 network_clean[4];
 	struct rtnl_route *rtnlroute;
@@ -3752,7 +3752,7 @@ build_rtnl_route (int family, int ifindex, NMIPConfigSource source,
 static gboolean
 ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                in_addr_t network, int plen, in_addr_t gateway,
-               int metric, int mss)
+               guint32 metric, guint32 mss)
 {
 	return add_object (platform, build_rtnl_route (AF_INET, ifindex, source, &network, plen, &gateway, metric, mss));
 }
@@ -3760,13 +3760,13 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
 static gboolean
 ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                struct in6_addr network, int plen, struct in6_addr gateway,
-               int metric, int mss)
+               guint32 metric, guint32 mss)
 {
 	return add_object (platform, build_rtnl_route (AF_INET6, ifindex, source, &network, plen, &gateway, metric, mss));
 }
 
 static struct rtnl_route *
-route_search_cache (struct nl_cache *cache, int family, int ifindex, const void *network, int plen, int metric)
+route_search_cache (struct nl_cache *cache, int family, int ifindex, const void *network, int plen, guint32 metric)
 {
 	guint32 network_clean[4], dst_clean[4];
 	struct nl_object *object;
@@ -3815,7 +3815,7 @@ refresh_route (NMPlatform *platform, int family, int ifindex, const void *networ
 }
 
 static gboolean
-ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, int metric)
+ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
 {
 	in_addr_t gateway = 0;
 	struct rtnl_route *cached_object;
@@ -3875,7 +3875,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 }
 
 static gboolean
-ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, int metric)
+ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
 	struct in6_addr gateway = IN6ADDR_ANY_INIT;
 
@@ -3884,7 +3884,7 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 }
 
 static gboolean
-ip_route_exists (NMPlatform *platform, int family, int ifindex, gpointer network, int plen, int metric)
+ip_route_exists (NMPlatform *platform, int family, int ifindex, gpointer network, int plen, guint32 metric)
 {
 	auto_nl_object struct nl_object *object = build_rtnl_route (family, ifindex,
 	                                                            NM_IP_CONFIG_SOURCE_UNKNOWN,
@@ -3898,13 +3898,13 @@ ip_route_exists (NMPlatform *platform, int family, int ifindex, gpointer network
 }
 
 static gboolean
-ip4_route_exists (NMPlatform *platform, int ifindex, in_addr_t network, int plen, int metric)
+ip4_route_exists (NMPlatform *platform, int ifindex, in_addr_t network, int plen, guint32 metric)
 {
 	return ip_route_exists (platform, AF_INET, ifindex, &network, plen, metric);
 }
 
 static gboolean
-ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, int metric)
+ip6_route_exists (NMPlatform *platform, int ifindex, struct in6_addr network, int plen, guint32 metric)
 {
 	return ip_route_exists (platform, AF_INET6, ifindex, &network, plen, metric);
 }

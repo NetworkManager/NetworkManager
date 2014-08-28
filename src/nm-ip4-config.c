@@ -302,7 +302,7 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex)
 }
 
 void
-nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, int default_route_metric)
+nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, guint32 default_route_metric)
 {
 	guint naddresses, nroutes, nnameservers, nsearches;
 	int i;

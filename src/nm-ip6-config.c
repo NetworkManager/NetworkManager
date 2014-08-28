@@ -407,7 +407,7 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 }
 
 void
-nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, int default_route_metric)
+nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, guint32 default_route_metric)
 {
 	guint naddresses, nroutes, nnameservers, nsearches;
 	const char *gateway_str;

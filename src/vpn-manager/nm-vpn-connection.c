@@ -1104,7 +1104,7 @@ nm_vpn_connection_config_get (DBusGProxy *proxy,
 	g_clear_object (&priv->ip6_config);
 }
 
-static guint
+static guint32
 vpn_routing_metric (NMVpnConnection *connection)
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);

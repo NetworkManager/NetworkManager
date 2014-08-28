@@ -34,7 +34,7 @@
 
 static gboolean
 ip4_process_dhcpcd_rfc3442_routes (const char *str,
-                                   guint priority,
+                                   guint32 priority,
                                    NMIP4Config *ip4_config,
                                    guint32 *gwaddr)
 {
@@ -161,7 +161,7 @@ error:
 
 static gboolean
 ip4_process_dhclient_rfc3442_routes (const char *str,
-                                     guint priority,
+                                     guint32 priority,
                                      NMIP4Config *ip4_config,
                                      guint32 *gwaddr)
 {
@@ -209,7 +209,7 @@ out:
 
 static gboolean
 ip4_process_classless_routes (GHashTable *options,
-                              guint priority,
+                              guint32 priority,
                               NMIP4Config *ip4_config,
                               guint32 *gwaddr)
 {
@@ -272,7 +272,7 @@ ip4_process_classless_routes (GHashTable *options,
 }
 
 static void
-process_classful_routes (GHashTable *options, guint priority, NMIP4Config *ip4_config)
+process_classful_routes (GHashTable *options, guint32 priority, NMIP4Config *ip4_config)
 {
 	const char *str;
 	char **searches, **s;
@@ -374,7 +374,7 @@ ip4_add_domain_search (gpointer data, gpointer user_data)
 NMIP4Config *
 nm_dhcp_utils_ip4_config_from_options (const char *iface,
                                        GHashTable *options,
-                                       guint priority)
+                                       guint32 priority)
 {
 	NMIP4Config *ip4_config = NULL;
 	guint32 tmp_addr;
@@ -591,7 +591,7 @@ ip6_add_domain_search (gpointer data, gpointer user_data)
 NMIP6Config *
 nm_dhcp_utils_ip6_config_from_options (const char *iface,
                                        GHashTable *options,
-                                       guint priority,
+                                       guint32 priority,
                                        gboolean info_only)
 {
 	NMIP6Config *ip6_config = NULL;
