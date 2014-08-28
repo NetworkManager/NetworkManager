@@ -1196,6 +1196,41 @@ nm_ip6_config_get_route (const NMIP6Config *config, guint i)
 	return &g_array_index (priv->routes, NMPlatformIP6Route, i);
 }
 
+const NMPlatformIP6Route *
+nm_ip6_config_get_direct_route_for_host (const NMIP6Config *config, const struct in6_addr *host)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+	int i;
+	struct in6_addr network2, host2;
+	NMPlatformIP6Route *best_route = NULL;
+
+	g_return_val_if_fail (host && !IN6_IS_ADDR_UNSPECIFIED (host), NULL);
+
+	for (i = 0; i < priv->routes->len; i++ ) {
+		NMPlatformIP6Route *item = &g_array_index (priv->routes, NMPlatformIP6Route, i);
+
+		if (!IN6_IS_ADDR_UNSPECIFIED (&item->gateway))
+			continue;
+
+		if (best_route && best_route->plen > item->plen)
+			continue;
+
+		nm_utils_ip6_address_clear_host_address (&host2, host, item->plen);
+		nm_utils_ip6_address_clear_host_address (&network2, &item->network, item->plen);
+
+		if (!IN6_ARE_ADDR_EQUAL (&network2, &host2))
+			continue;
+
+		if (best_route &&
+		    nm_utils_ip6_route_metric_normalize (best_route->metric) <= nm_utils_ip6_route_metric_normalize (item->metric))
+			continue;
+
+		best_route = item;
+	}
+
+	return best_route;
+}
+
 /******************************************************************/
 
 void
