@@ -640,7 +640,7 @@ nm_device_get_device_type (NMDevice *self)
 int
 nm_device_get_priority (NMDevice *self)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (self), 100);
+	g_return_val_if_fail (NM_IS_DEVICE (self), 1000);
 
 	/* Device 'priority' is used for two things:
 	 *
@@ -653,30 +653,31 @@ nm_device_get_priority (NMDevice *self)
 	 */
 
 	switch (nm_device_get_device_type (self)) {
+	/* 10 is reserved for VPN (NM_VPN_ROUTE_METRIC_DEFAULT) */
 	case NM_DEVICE_TYPE_ETHERNET:
-		return 1;
-	case NM_DEVICE_TYPE_INFINIBAND:
-		return 2;
-	case NM_DEVICE_TYPE_ADSL:
-		return 3;
-	case NM_DEVICE_TYPE_WIMAX:
-		return 4;
-	case NM_DEVICE_TYPE_BOND:
-		return 5;
-	case NM_DEVICE_TYPE_TEAM:
-		return 6;
-	case NM_DEVICE_TYPE_VLAN:
-		return 7;
-	case NM_DEVICE_TYPE_MODEM:
-		return 8;
-	case NM_DEVICE_TYPE_BT:
-		return 9;
-	case NM_DEVICE_TYPE_WIFI:
-		return 10;
-	case NM_DEVICE_TYPE_OLPC_MESH:
-		return 11;
-	default:
 		return 20;
+	case NM_DEVICE_TYPE_INFINIBAND:
+		return 30;
+	case NM_DEVICE_TYPE_ADSL:
+		return 40;
+	case NM_DEVICE_TYPE_WIMAX:
+		return 50;
+	case NM_DEVICE_TYPE_BOND:
+		return 60;
+	case NM_DEVICE_TYPE_TEAM:
+		return 70;
+	case NM_DEVICE_TYPE_VLAN:
+		return 80;
+	case NM_DEVICE_TYPE_MODEM:
+		return 90;
+	case NM_DEVICE_TYPE_BT:
+		return 100;
+	case NM_DEVICE_TYPE_WIFI:
+		return 110;
+	case NM_DEVICE_TYPE_OLPC_MESH:
+		return 120;
+	default:
+		return 200;
 	}
 }
 

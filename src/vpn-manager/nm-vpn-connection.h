@@ -46,6 +46,9 @@
 #define NM_VPN_CONNECTION_INTERNAL_RETRY_AFTER_FAILURE "internal-retry-after-failure"
 
 
+#define NM_VPN_ROUTE_METRIC_DEFAULT     10
+
+
 struct _NMVpnConnection {
 	NMActiveConnection parent;
 };
