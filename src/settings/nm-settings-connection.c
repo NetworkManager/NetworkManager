@@ -2044,6 +2044,13 @@ dispose (GObject *object)
 		priv->updated_idle_id = 0;
 	}
 
+	/* Disconnect handlers.
+	 * changed_cb() has to be disconnected *before* nm_connection_clear_secrets(),
+	 * because nm_connection_clear_secrets() emits NM_CONNECTION_CHANGED signal.
+	 */
+	g_signal_handlers_disconnect_by_func (self, G_CALLBACK (secrets_cleared_cb), NULL);
+	g_signal_handlers_disconnect_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
+
 	nm_connection_clear_secrets (NM_CONNECTION (self));
 	g_clear_object (&priv->system_secrets);
 	g_clear_object (&priv->agent_secrets);
