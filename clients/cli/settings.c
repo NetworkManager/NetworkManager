@@ -1949,6 +1949,27 @@ validate_int (NMSetting *setting, const char* prop, gint val, GError **error)
 	return success;
 }
 
+static gboolean
+validate_int64 (NMSetting *setting, const char* prop, gint64 val, GError **error)
+{
+	GParamSpec *pspec;
+	GValue value = G_VALUE_INIT;
+	gboolean success = TRUE;
+
+	g_value_init (&value, G_TYPE_INT64);
+	g_value_set_int64 (&value, val);
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), prop);
+	g_assert (G_IS_PARAM_SPEC (pspec));
+	if (g_param_value_validate (pspec, &value)) {
+		GParamSpecInt64 *pspec_int = (GParamSpecInt64 *) pspec;
+		g_set_error (error, 1, 0, _("'%"G_GINT64_FORMAT"' is not valid; use <%"G_GINT64_FORMAT"-%"G_GINT64_FORMAT">"),
+		             val, pspec_int->minimum, pspec_int->maximum);
+		success = FALSE;
+	}
+	g_value_unset (&value);
+	return success;
+}
+
 /* Validate 'val' number against to uint property spec */
 static gboolean
 validate_uint (NMSetting *setting, const char* prop, guint val, GError **error)
@@ -2173,6 +2194,26 @@ nmc_property_set_int (NMSetting *setting, const char *prop, const char *val, GEr
 		return FALSE;
 
 	g_object_set (setting, prop, (gint) val_int, NULL);
+	return TRUE;
+}
+
+static gboolean
+nmc_property_set_int64 (NMSetting *setting, const char *prop, const char *val, GError **error)
+{
+	long val_int;
+
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	if (!nmc_string_to_int (val, FALSE, 0, 0, &val_int)) {
+		g_set_error (error, 1, 0, _("'%s' is not a valid number (or out of range)"), val);
+		return FALSE;
+	}
+
+	/* Validate the number according to the property spec */
+	if (!validate_int64 (setting, prop, (gint64) val_int, error))
+		return FALSE;
+
+	g_object_set (setting, prop, (gint64) val_int, NULL);
 	return TRUE;
 }
 
