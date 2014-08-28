@@ -684,13 +684,33 @@ nm_device_get_priority (NMDevice *self)
 guint32
 nm_device_get_ip4_route_metric (NMDevice *self)
 {
-	return nm_device_get_priority (self);
+	NMConnection *connection;
+	gint64 route_metric = -1;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), G_MAXUINT32);
+
+	connection = nm_device_get_connection (self);
+
+	if (connection)
+		route_metric = nm_setting_ip_config_get_route_metric (nm_connection_get_setting_ip4_config (connection));
+
+	return route_metric >= 0 ? route_metric : nm_device_get_priority (self);
 }
 
 guint32
 nm_device_get_ip6_route_metric (NMDevice *self)
 {
-	return nm_device_get_priority (self);
+	NMConnection *connection;
+	gint64 route_metric = -1;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), G_MAXUINT32);
+
+	connection = nm_device_get_connection (self);
+
+	if (connection)
+		route_metric = nm_setting_ip_config_get_route_metric (nm_connection_get_setting_ip6_config (connection));
+
+	return route_metric >= 0 ? route_metric : nm_device_get_priority (self);
 }
 
 const char *

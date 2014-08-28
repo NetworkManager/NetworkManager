@@ -1113,29 +1113,41 @@ nm_vpn_connection_config_get (DBusGProxy *proxy,
 guint32
 nm_vpn_connection_get_ip4_route_metric (NMVpnConnection *connection)
 {
+	NMDevice *parent_dev;
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	if (priv->ip_ifindex)
-		return NM_PLATFORM_ROUTE_METRIC_DEFAULT;
-	else {
-		NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (connection));
+	if (priv->connection) {
+		gint64 route_metric = nm_setting_ip_config_get_route_metric (nm_connection_get_setting_ip4_config (priv->connection));
 
-		return nm_device_get_ip4_route_metric (parent_dev);
+		if (route_metric >= 0)
+			return route_metric;
 	}
+
+	if (   priv->ip_ifindex
+	    || !(parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (connection))))
+		return NM_VPN_ROUTE_METRIC_DEFAULT;
+
+	return nm_device_get_ip4_route_metric (parent_dev);
 }
 
 guint32
 nm_vpn_connection_get_ip6_route_metric (NMVpnConnection *connection)
 {
+	NMDevice *parent_dev;
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	if (priv->ip_ifindex)
-		return NM_PLATFORM_ROUTE_METRIC_DEFAULT;
-	else {
-		NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (connection));
+	if (priv->connection) {
+		gint64 route_metric = nm_setting_ip_config_get_route_metric (nm_connection_get_setting_ip6_config (priv->connection));
 
-		return nm_device_get_ip6_route_metric (parent_dev);
+		if (route_metric >= 0)
+			return route_metric;
 	}
+
+	if (   priv->ip_ifindex
+	    || !(parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (connection))))
+		return NM_VPN_ROUTE_METRIC_DEFAULT;
+
+	return nm_device_get_ip6_route_metric (parent_dev);
 }
 
 static void
