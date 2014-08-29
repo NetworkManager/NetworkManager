@@ -36,6 +36,7 @@
 #define NM_RDISC_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_RDISC, NMRDiscClass))
 
 #define NM_RDISC_CONFIG_CHANGED "config-changed"
+#define NM_RDISC_RA_TIMEOUT     "ra-timeout"
 
 typedef enum {
 	NM_RDISC_DHCP_LEVEL_UNKNOWN,
@@ -131,6 +132,7 @@ typedef struct {
 
 	void (*start) (NMRDisc *rdisc);
 	void (*config_changed) (NMRDisc *rdisc, NMRDiscConfigMap changed);
+	void (*ra_timeout) (NMRDisc *rdisc);
 } NMRDiscClass;
 
 GType nm_rdisc_get_type (void);

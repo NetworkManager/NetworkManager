@@ -270,7 +270,8 @@ typedef struct {
 	NMIP6Config *  ext_ip6_config; /* Stuff added outside NM */
 
 	NMRDisc *      rdisc;
-	gulong         rdisc_config_changed_sigid;
+	gulong         rdisc_changed_id;
+	gulong         rdisc_timeout_id;
 	NMSettingIP6ConfigPrivacy rdisc_use_tempaddr;
 	/* IP6 config from autoconf */
 	NMIP6Config *  ac_ip6_config;
@@ -3053,6 +3054,12 @@ ip6_config_merge_and_apply (NMDevice *self,
 	nm_ip6_config_addresses_sort (composite,
 	    priv->rdisc ? priv->rdisc_use_tempaddr : NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
+	/* Allow setting MTU etc */
+	if (commit) {
+		if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
+			NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self, composite);
+	}
+
 	success = nm_device_set_ip6_config (self, composite, commit, out_reason);
 	g_object_unref (composite);
 	return success;
@@ -3289,9 +3296,9 @@ nm_device_dhcp6_renew (NMDevice *self, gboolean release)
 /******************************************/
 
 static gboolean
-linklocal6_config_is_ready (const NMIP6Config *ip6_config)
+have_ip6_address (const NMIP6Config *ip6_config, gboolean linklocal)
 {
-	int i;
+	guint i;
 
 	if (!ip6_config)
 		return FALSE;
@@ -3299,7 +3306,7 @@ linklocal6_config_is_ready (const NMIP6Config *ip6_config)
 	for (i = 0; i < nm_ip6_config_get_num_addresses (ip6_config); i++) {
 		const NMPlatformIP6Address *addr = nm_ip6_config_get_address (ip6_config, i);
 
-		if (IN6_IS_ADDR_LINKLOCAL (&addr->address) &&
+		if ((IN6_IS_ADDR_LINKLOCAL (&addr->address) == linklocal) &&
 		    !(addr->flags & IFA_F_TENTATIVE))
 			return TRUE;
 	}
@@ -3339,7 +3346,7 @@ linklocal6_complete (NMDevice *self)
 	const char *method;
 
 	g_assert (priv->linklocal6_timeout_id);
-	g_assert (linklocal6_config_is_ready (priv->ip6_config));
+	g_assert (have_ip6_address (priv->ip6_config, TRUE));
 
 	linklocal6_cleanup (self);
 
@@ -3370,7 +3377,7 @@ linklocal6_start (NMDevice *self)
 
 	linklocal6_cleanup (self);
 
-	if (linklocal6_config_is_ready (priv->ip6_config))
+	if (have_ip6_address (priv->ip6_config, TRUE))
 		return NM_ACT_STAGE_RETURN_SUCCESS;
 
 	connection = nm_device_get_connection (self);
@@ -3591,6 +3598,30 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 	nm_device_activate_schedule_ip6_config_result (self);
 }
 
+static void
+rdisc_ra_timeout (NMRDisc *rdisc, NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	/* We don't want to stop listening for router advertisements completely,
+	 * but instead let device activation continue activating.  If an RA
+	 * shows up later, we'll use it as long as the device is not disconnected.
+	 */
+
+	_LOGD (LOGD_IP6, "timed out waiting for IPv6 router advertisement");
+	if (priv->ip6_state == IP_CONF) {
+		/* If RA is our only source of addressing information and we don't
+		 * ever receive one, then time out IPv6.  But if there is other
+		 * IPv6 configuration, like manual IPv6 addresses or external IPv6
+		 * config, consider that sufficient for IPv6 success.
+		 */
+		if (have_ip6_address (priv->ip6_config, FALSE))
+			nm_device_activate_schedule_ip6_config_result (self);
+		else
+			nm_device_activate_schedule_ip6_config_timeout (self);
+	}
+}
+
 static gboolean
 addrconf6_start_with_link_ready (NMDevice *self)
 {
@@ -3605,13 +3636,23 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	}
 	nm_rdisc_set_iid (priv->rdisc, iid);
 
+	/* Apply any manual configuration before starting RA */
+	if (!ip6_config_merge_and_apply (self, TRUE, NULL))
+		_LOGW (LOGD_IP6, "failed to apply manual IPv6 configuration");
+
 	nm_device_ipv6_sysctl_set (self, "accept_ra", "1");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_defrtr", "0");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_pinfo", "0");
 	nm_device_ipv6_sysctl_set (self, "accept_ra_rtr_pref", "0");
 
-	priv->rdisc_config_changed_sigid = g_signal_connect (priv->rdisc, NM_RDISC_CONFIG_CHANGED,
-	                                                     G_CALLBACK (rdisc_config_changed), self);
+	priv->rdisc_changed_id = g_signal_connect (priv->rdisc,
+	                                           NM_RDISC_CONFIG_CHANGED,
+	                                           G_CALLBACK (rdisc_config_changed),
+	                                           self);
+	priv->rdisc_timeout_id = g_signal_connect (priv->rdisc,
+	                                           NM_RDISC_RA_TIMEOUT,
+	                                           G_CALLBACK (rdisc_ra_timeout),
+	                                           self);
 	nm_rdisc_start (priv->rdisc);
 	return TRUE;
 }
@@ -3662,10 +3703,14 @@ addrconf6_cleanup (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->rdisc_config_changed_sigid) {
-		g_signal_handler_disconnect (priv->rdisc,
-		                             priv->rdisc_config_changed_sigid);
-		priv->rdisc_config_changed_sigid = 0;
+	if (priv->rdisc_changed_id) {
+		g_signal_handler_disconnect (priv->rdisc, priv->rdisc_changed_id);
+		priv->rdisc_changed_id = 0;
+	}
+
+	if (priv->rdisc_timeout_id) {
+		g_signal_handler_disconnect (priv->rdisc, priv->rdisc_timeout_id);
+		priv->rdisc_timeout_id = 0;
 	}
 
 	nm_device_remove_pending_action (self, PENDING_ACTION_AUTOCONF6, FALSE);
@@ -4600,10 +4645,6 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	/* Device should be up before we can do anything with it */
 	g_warn_if_fail (nm_platform_link_is_up (nm_device_get_ip_ifindex (self)));
 
-	/* Allow setting MTU etc */
-	if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
-		NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit (self);
-
 	if (ip6_config_merge_and_apply (self, TRUE, &reason)) {
 		/* If IPv6 wasn't the first IP to complete, and DHCP was used,
 		 * then ensure dispatcher scripts get the DHCP lease information.
@@ -4646,6 +4687,12 @@ nm_device_activate_schedule_ip6_config_result (NMDevice *self)
 	guint level = (priv->ip6_state == IP_DONE) ? LOGL_DEBUG : LOGL_INFO;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
+
+	/* If IP had previously failed, move it back to IP_CONF since we
+	 * clearly now have configuration.
+	 */
+	if (priv->ip6_state == IP_FAIL)
+		priv->ip6_state = IP_CONF;
 
 	activation_source_schedule (self, nm_device_activate_ip6_config_commit, AF_INET6);
 
@@ -5821,7 +5868,7 @@ update_ip_config (NMDevice *self, gboolean initial)
 
 		/* Check this before modifying ext_ip6_config */
 		linklocal6_just_completed = priv->linklocal6_timeout_id &&
-		                            linklocal6_config_is_ready (priv->ext_ip6_config);
+		                            have_ip6_address (priv->ext_ip6_config, TRUE);
 
 		if (priv->ac_ip6_config)
 			nm_ip6_config_subtract (priv->ext_ip6_config, priv->ac_ip6_config);
