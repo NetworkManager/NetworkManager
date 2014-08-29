@@ -216,6 +216,8 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_
 #undef __NMPlatformIPAddress_COMMON
 
 
+/* Adding an IPv6 route with metric 0, kernel translates to IP6_RT_PRIO_USER (1024).
+ * Thus, the value is not choosen arbitraily, but matches kernel IPv6 default. */
 #define NM_PLATFORM_ROUTE_METRIC_DEFAULT 1024
 
 #define __NMPlatformIPRoute_COMMON \
