@@ -773,6 +773,8 @@ install_pregen_manpages=no
 if test "$enable_gtk_doc" != "yes" \
 	-a -f man/NetworkManager.conf.5 \
 	-a -f man/nm-settings.5 \
+	-a -f man/nm-settings-keyfile.5 \
+	-a -f man/nm-settings-ifcfg-rh.5 \
 	-a -f man/nmcli-examples.5 \
 	-a -f man/NetworkManager.8; then
 	install_pregen_manpages=yes
@@ -783,14 +785,35 @@ AM_CONDITIONAL(INSTALL_PREGEN_MANPAGES, test "x${install_pregen_manpages}" = "xy
 if test -n "$INTROSPECTION_MAKEFILE" -a "$enable_gtk_doc" = "yes"; then
     # If g-i is installed we know we have python, but we might not have pygobject
     if python -c 'from gi.repository import GObject' >& /dev/null; then
-        AC_DEFINE(BUILD_SETTING_DOCS, [1], [Define if you we can build nm-setting-docs.xml])
-	build_setting_docs=yes
+        have_pyobject=yes
+    fi
+
+    # gtk-doc depends on perl, but we can check for it anyway
+    AC_PATH_PROG(PERL, perl, no)
+    # check for needed perl modules (use YAML; YAML::XS is better, but may not be so widespread)
+    required_perl_modules="YAML"
+    for module in $required_perl_modules; do
+      AC_MSG_CHECKING([checking for perl module '$module'])
+      if ${PERL} -e 'use '$module 2>/dev/null ; then
+          AC_MSG_RESULT([Ok])
+          have_perl_modules=yes
+      else
+          AC_MSG_RESULT([Failed])
+          AC_MSG_ERROR([You must have Perl modules to build settings plugin docs: $required_perl_modules.])
+      fi
+    done
+
+    if test "$have_pyobject" = "yes" -a "$have_perl_modules" = "yes"; then
+        AC_DEFINE(BUILD_SETTING_DOCS, [1], [Define if you we can build nm-setting-docs.xml, nm-keyfile-docs.xml and nm-ifcfg-rh-docs.xml])
+        build_setting_docs=yes
     fi
 fi
 
 # check for pre-built setting docs
 if test "$build_setting_docs" != "yes" \
 	-a -f man/nm-settings.xml \
+	-a -f man/nm-settings-keyfile.xml \
+	-a -f man/nm-settings-ifcfg-rh.xml \
 	-a -f docs/api/settings-spec.xml \
 	-a -f cli/src/settings-docs.c; then
     AC_DEFINE(HAVE_SETTING_DOCS, [1], [Define if you have pre-built settings docs])

@@ -188,7 +188,7 @@ endif
 
 if BUILD_SETTING_DOCS
 
-noinst_DATA = nm-setting-docs.xml
+noinst_DATA = nm-setting-docs.xml nm-keyfile-docs.xml nm-ifcfg-rh-docs.xml
 
 nm-setting-docs.xml: generate-setting-docs.py NetworkManager-1.0.gir NetworkManager-1.0.typelib libnm-util.la
 	export GI_TYPELIB_PATH=$(abs_builddir)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
@@ -197,11 +197,16 @@ nm-setting-docs.xml: generate-setting-docs.py NetworkManager-1.0.gir NetworkMana
 		--gir $(builddir)/NetworkManager-1.0.gir \
 		--output $@
 
+nm-keyfile-docs.xml: generate-plugin-docs.pl $(libnm_util_la_csources)
+	$(srcdir)/generate-plugin-docs.pl keyfile $@
+nm-ifcfg-rh-docs.xml: generate-plugin-docs.pl $(libnm_util_la_csources)
+	$(srcdir)/generate-plugin-docs.pl ifcfg-rh $@
+
 endif
 
-DISTCLEANFILES += nm-setting-docs.xml
+DISTCLEANFILES += nm-setting-docs.xml nm-keyfile-docs.xml nm-ifcfg-rh-docs.xml
 
-EXTRA_DIST += generate-setting-docs.py
+EXTRA_DIST += generate-setting-docs.py generate-plugin-docs.pl
 
 if ENABLE_TESTS
 
