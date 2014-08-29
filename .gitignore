@@ -165,6 +165,7 @@ valgrind-*.log
 
 /libnm/tests/test-nm-client
 /libnm/tests/test-remote-settings-client
+/libnm/tests/test-secret-agent
 
 /m4/codeset.m4
 /m4/gettext.m4
