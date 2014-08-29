@@ -473,12 +473,14 @@ update_system_hostname (NMPolicy *policy, NMDevice *best4, NMDevice *best6)
 		const NMPlatformIP4Address *addr4;
 
 		addr4 = nm_ip4_config_get_address (ip4_config, 0);
+		g_clear_object (&priv->lookup_addr);
 		priv->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr4->address,
 		                                                   G_SOCKET_FAMILY_IPV4);
 	} else if (ip6_config && nm_ip6_config_get_num_addresses (ip6_config) > 0) {
 		const NMPlatformIP6Address *addr6;
 
 		addr6 = nm_ip6_config_get_address (ip6_config, 0);
+		g_clear_object (&priv->lookup_addr);
 		priv->lookup_addr = g_inet_address_new_from_bytes ((guint8 *) &addr6->address,
 		                                                   G_SOCKET_FAMILY_IPV6);
 	} else {
@@ -2015,9 +2017,10 @@ dns_config_changed (NMDnsManager *dns_manager, gpointer user_data)
 
 	/* Re-start the hostname lookup thread if we don't have hostname yet. */
 	if (priv->lookup_addr) {
-		char *str = g_inet_address_to_string (priv->lookup_addr);
+		char *str = NULL;
 
-		nm_log_dbg (LOGD_DNS, "restarting reverse-lookup thread for address %s", str);
+		nm_log_dbg (LOGD_DNS, "restarting reverse-lookup thread for address %s",
+		            (str = g_inet_address_to_string (priv->lookup_addr)));
 		g_free (str);
 
 		priv->lookup_cancellable = g_cancellable_new ();
