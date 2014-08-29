@@ -1,4 +1,4 @@
-SUBDIRS=keyfile example
+SUBDIRS=keyfile example ibft
 
 @GNOME_CODE_COVERAGE_RULES@
 

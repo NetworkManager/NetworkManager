@@ -15,27 +15,15 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright 2014 Red Hat, Inc.
  */
 
-#ifndef __READER_H__
-#define __READER_H__
+#ifndef __ERRORS_H__
+#define __ERRORS_H__
 
-#include <glib.h>
-#include <nm-connection.h>
+#define IBFT_PLUGIN_ERROR (ibft_plugin_error_quark ())
+GQuark ibft_plugin_error_quark (void);
 
-#include "shvar.h"
 
-NMConnection *connection_from_file (const char *filename,
-                                    const char *network_file,  /* for unit tests only */
-                                    const char *test_type,     /* for unit tests only */
-                                    char **out_unhandled,
-                                    char **out_keyfile,
-                                    char **out_routefile,
-                                    char **out_route6file,
-                                    GError **error,
-                                    gboolean *out_ignore_error);
+#endif  /* __ERRORS_H__ */
 
-char *uuid_from_file (const char *filename);
-
-#endif  /* __READER_H__ */

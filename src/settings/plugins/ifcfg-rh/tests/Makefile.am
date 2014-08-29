@@ -50,15 +50,5 @@ test_ifcfg_rh_utils_LDADD = \
 
 TESTS = test-ifcfg-rh-utils test-ifcfg-rh
 
-EXTRA_DIST = \
-	iscsiadm-test-dhcp \
-	iscsiadm-test-static \
-	iscsiadm-test-bad-ipaddr \
-	iscsiadm-test-bad-gateway \
-	iscsiadm-test-bad-dns1 \
-	iscsiadm-test-bad-dns2 \
-	iscsiadm-test-bad-entry \
-	iscsiadm-test-bad-record
-
 endif
 

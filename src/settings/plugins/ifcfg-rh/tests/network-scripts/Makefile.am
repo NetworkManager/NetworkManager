@@ -61,8 +61,7 @@ EXTRA_DIST = \
 	ifcfg-test-wifi-hidden \
 	test_ca_cert.pem \
 	test1_key_and_cert.pem \
-	ifcfg-test-ibft-dhcp \
-	ifcfg-test-ibft-static \
+	ifcfg-test-ibft \
 	ifcfg-test-static-routes-legacy \
 	route-test-static-routes-legacy \
 	ifcfg-test-wired-static-routes \
