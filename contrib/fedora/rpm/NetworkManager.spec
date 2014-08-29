@@ -134,6 +134,7 @@ BuildRequires: /usr/bin/autopoint
 BuildRequires: pkgconfig
 BuildRequires: libnl3-devel >= %{libnl3_version}
 BuildRequires: perl(XML::Parser)
+BuildRequires: perl(YAML)
 BuildRequires: automake autoconf intltool libtool
 BuildRequires: ppp = %{ppp_version}
 BuildRequires: ppp-devel = %{ppp_version}
