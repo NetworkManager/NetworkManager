@@ -23,6 +23,7 @@
 #include <glib.h>
 #include <stdlib.h>
 #include <string.h>
+#include "gsystem-local-alloc.h"
 #include "utils.h"
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
@@ -87,27 +88,25 @@ check_suffix (const char *base, const char *tag)
 gboolean
 nm_keyfile_plugin_utils_should_ignore_file (const char *filename)
 {
-	char *base;
-	gboolean ignore = FALSE;
+	gs_free char *base = NULL;
 
 	g_return_val_if_fail (filename != NULL, TRUE);
 
 	base = g_path_get_basename (filename);
 	g_return_val_if_fail (base != NULL, TRUE);
 
-	/* Ignore files with certain patterns */
+	/* Ignore hidden and backup files */
 	/* should_ignore_file() must mirror escape_filename() */
-	if (   (check_prefix (base, ".") && check_suffix (base, SWP_TAG))   /* vim temporary files: .filename.swp */
-	    || (check_prefix (base, ".") && check_suffix (base, SWPX_TAG))  /* vim temporary files: .filename.swpx */
-	    || check_suffix (base, PEM_TAG)                                 /* 802.1x certificates and keys */
-	    || check_suffix (base, DER_TAG)                                 /* 802.1x certificates and keys */
-	    || check_mkstemp_suffix (base)                                  /* temporary files created by mkstemp() */
-	    || check_prefix (base, ".#")                                    /* Emacs locking file (link) */
-	    || base[strlen (base) - 1] == '~')
-		ignore = TRUE;
+	if (check_prefix (base, ".") || check_suffix (base, "~"))
+		return TRUE;
+	/* Ignore temporary files */
+	if (check_mkstemp_suffix (base))
+		return TRUE;
+	/* Ignore 802.1x certificates and keys */
+	if (check_suffix (base, PEM_TAG) || check_suffix (base, DER_TAG))
+		return TRUE;
 
-	g_free (base);
-	return ignore;
+	return FALSE;
 }
 
 char *
