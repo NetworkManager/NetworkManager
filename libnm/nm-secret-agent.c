@@ -66,6 +66,7 @@ typedef struct {
 
 	DBusGConnection *bus;
 	gboolean private_bus;
+	gboolean session_bus;
 	DBusGProxy *dbus_proxy;
 	DBusGProxy *manager_proxy;
 	DBusGProxyCall *reg_call;
@@ -233,9 +234,7 @@ verify_sender (NMSecretAgent *self,
 	if (priv->private_bus)
 		return TRUE;
 
-	/* Verify the sender's UID is 0, and that the sender is the same as
-	 * NetworkManager's bus name owner.
-	 */
+	/* Verify that the sender is the same as NetworkManager's bus name owner. */
 
 	nm_owner = get_nm_owner (self);
 	if (!nm_owner) {
@@ -270,6 +269,14 @@ verify_sender (NMSecretAgent *self,
 		                     NM_SECRET_AGENT_ERROR,
 		                     NM_SECRET_AGENT_ERROR_NOT_AUTHORIZED,
 		                     "Request sender does not match NetworkManager bus name owner.");
+		goto out;
+	}
+
+	/* If we're connected to the session bus, then this must be a test program,
+	 * so skip the UID check.
+	 */
+	if (priv->session_bus) {
+		allowed = TRUE;
 		goto out;
 	}
 
@@ -846,6 +853,7 @@ static void
 nm_secret_agent_init (NMSecretAgent *self)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
+	DBusGConnection *session_bus;
 	GError *error = NULL;
 
 	priv->bus = _nm_dbus_new_connection (&error);
@@ -855,6 +863,12 @@ nm_secret_agent_init (NMSecretAgent *self)
 		return;
 	}
 	priv->private_bus = _nm_dbus_is_connection_private (priv->bus);
+
+	session_bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
+	if (priv->bus == session_bus)
+		priv->session_bus = TRUE;
+	if (session_bus)
+		dbus_g_connection_unref (session_bus);
 
 	if (priv->private_bus == FALSE) {
 		priv->dbus_proxy = dbus_g_proxy_new_for_name (priv->bus,
