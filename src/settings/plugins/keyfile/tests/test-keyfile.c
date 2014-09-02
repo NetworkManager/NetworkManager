@@ -3612,7 +3612,7 @@ test_nm_keyfile_plugin_utils_escape_filename (void)
 	_escape_filename (".mkstemp.A23456", TRUE);
 	_escape_filename (".#emacs-locking", TRUE);
 	_escape_filename ("file-with-tilde~", TRUE);
-	_escape_filename (".file-with-dot", FALSE);
+	_escape_filename (".file-with-dot", TRUE);
 }
 
 /*****************************************************************************/
