@@ -735,6 +735,7 @@ bluez_connect_cb (GObject *object,
 		nm_device_state_changed (NM_DEVICE (self),
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_BT_FAILED);
+		g_object_unref (self);
 		return;
 	}
 
@@ -750,6 +751,7 @@ bluez_connect_cb (GObject *object,
 	/* Stage 3 gets scheduled when Bluez says we're connected */
 	priv->have_iface = TRUE;
 	check_connect_continue (self);
+	g_object_unref (self);
 }
 
 static void
@@ -830,7 +832,7 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	/* Connect to the BT device */
 	nm_bluez_device_connect_async (priv->bt_device,
 	                               priv->bt_type & (NM_BT_CAPABILITY_DUN | NM_BT_CAPABILITY_NAP),
-	                               bluez_connect_cb, device);
+	                               bluez_connect_cb, g_object_ref (device));
 
 	if (priv->timeout_id)
 		g_source_remove (priv->timeout_id);
