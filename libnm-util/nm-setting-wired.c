@@ -214,7 +214,7 @@ nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting)
  * nm_setting_wired_get_mac_address_blacklist:
  * @setting: the #NMSettingWired
  *
- * Returns: (element-type GLib.ByteArray): the #NMSettingWired:mac-address-blacklist
+ * Returns: (element-type utf8): the #NMSettingWired:mac-address-blacklist
  * property of the setting
  **/
 const GSList *

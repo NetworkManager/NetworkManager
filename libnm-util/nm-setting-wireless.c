@@ -450,7 +450,7 @@ nm_setting_wireless_get_cloned_mac_address (NMSettingWireless *setting)
  * nm_setting_wireless_get_mac_address_blacklist:
  * @setting: the #NMSettingWireless
  *
- * Returns: (element-type GLib.ByteArray): the
+ * Returns: (element-type utf8): the
  * #NMSettingWireless:mac-address-blacklist property of the setting
  **/
 const GSList *
