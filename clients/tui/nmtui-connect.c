@@ -142,7 +142,6 @@ activate_connection (NMConnection *connection,
 	nmt_newt_form_set_content (form, label);
 
 	agent = nmt_secret_agent_new ();
-	nm_secret_agent_register (agent);
 	g_signal_connect (agent, "request-secrets", G_CALLBACK (secrets_requested), NULL);
 
 	specific_object_path = specific_object ? nm_object_get_path (specific_object) : NULL;
@@ -203,11 +202,7 @@ activate_connection (NMConnection *connection,
 		nmt_newt_form_quit (form);
 	g_object_unref (form);
 
-	/* If the activation failed very quickly, then agent won't be registered yet,
-	 * and nm_secret_agent_unregister() would complain if we called it...
-	 */
-	if (nm_secret_agent_get_registered (agent))
-		nm_secret_agent_unregister (agent);
+	nm_secret_agent_unregister (agent, NULL, NULL);
 	g_object_unref (agent);
 }
 
