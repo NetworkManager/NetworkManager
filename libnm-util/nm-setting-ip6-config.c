@@ -179,7 +179,7 @@ nm_setting_ip6_config_get_dns (NMSettingIP6Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->dns), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->dns), NULL);
 
 	return (const struct in6_addr *) g_slist_nth_data (priv->dns, i);
 }
@@ -317,7 +317,7 @@ nm_setting_ip6_config_get_dns_search (NMSettingIP6Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->dns_search), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->dns_search), NULL);
 
 	return (const char *) g_slist_nth_data (priv->dns_search, i);
 }
@@ -456,7 +456,7 @@ nm_setting_ip6_config_get_address (NMSettingIP6Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->addresses), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->addresses), NULL);
 
 	return (NMIP6Address *) g_slist_nth_data (priv->addresses, i);
 }
@@ -598,7 +598,7 @@ nm_setting_ip6_config_get_route (NMSettingIP6Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->routes), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->routes), NULL);
 
 	return (NMIP6Route *) g_slist_nth_data (priv->routes, i);
 }

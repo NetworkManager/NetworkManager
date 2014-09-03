@@ -2130,7 +2130,7 @@ test_setting_ip4_changed_signal (void)
 	ASSERT_CHANGED (nm_setting_ip4_config_add_dns (s_ip4, 0x1122));
 	ASSERT_CHANGED (nm_setting_ip4_config_remove_dns (s_ip4, 0));
 
-	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*i <= priv->dns->len*");
+	g_test_expect_message ("libnm-util", G_LOG_LEVEL_CRITICAL, "*i < priv->dns->len*");
 	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_dns (s_ip4, 1));
 	g_test_assert_expected_messages ();
 

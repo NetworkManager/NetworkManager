@@ -165,7 +165,7 @@ nm_setting_ip4_config_get_dns (NMSettingIP4Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), 0);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= priv->dns->len, 0);
+	g_return_val_if_fail (i < priv->dns->len, 0);
 
 	return g_array_index (priv->dns, guint32, i);
 }
@@ -214,7 +214,7 @@ nm_setting_ip4_config_remove_dns (NMSettingIP4Config *setting, guint32 i)
 	g_return_if_fail (NM_IS_SETTING_IP4_CONFIG (setting));
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_if_fail (i <= priv->dns->len);
+	g_return_if_fail (i < priv->dns->len);
 
 	g_array_remove_index (priv->dns, i);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_DNS);
@@ -298,7 +298,7 @@ nm_setting_ip4_config_get_dns_search (NMSettingIP4Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->dns_search), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->dns_search), NULL);
 
 	return (const char *) g_slist_nth_data (priv->dns_search, i);
 }
@@ -437,7 +437,7 @@ nm_setting_ip4_config_get_address (NMSettingIP4Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->addresses), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->addresses), NULL);
 
 	return (NMIP4Address *) g_slist_nth_data (priv->addresses, i);
 }
@@ -450,7 +450,7 @@ nm_setting_ip4_config_get_address_label (NMSettingIP4Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->address_labels), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->address_labels), NULL);
 
 	return (const char *) g_slist_nth_data (priv->address_labels, i);
 }
@@ -610,7 +610,7 @@ nm_setting_ip4_config_get_route (NMSettingIP4Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->routes), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->routes), NULL);
 
 	return (NMIP4Route *) g_slist_nth_data (priv->routes, i);
 }
