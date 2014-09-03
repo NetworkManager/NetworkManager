@@ -43,6 +43,7 @@ valgrind-*.log
 
 /callouts/nm-avahi-autoipd.action
 /callouts/nm-dispatcher
+/callouts/nmdbus-dispatcher.*
 /callouts/org.freedesktop.nm_dispatcher.service
 /callouts/tests/test-dispatcher-envp
 

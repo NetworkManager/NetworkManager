@@ -25,16 +25,16 @@
 
 char **
 nm_dispatcher_utils_construct_envp (const char *action,
-                                    GHashTable *connection_hash,
-                                    GHashTable *connection_props,
-                                    GHashTable *device_props,
-                                    GHashTable *device_ip4_props,
-                                    GHashTable *device_ip6_props,
-                                    GHashTable *device_dhcp4_props,
-                                    GHashTable *device_dhcp6_props,
+                                    GVariant *connection_dict,
+                                    GVariant *connection_props,
+                                    GVariant *device_props,
+                                    GVariant *device_ip4_props,
+                                    GVariant *device_ip6_props,
+                                    GVariant *device_dhcp4_props,
+                                    GVariant *device_dhcp6_props,
                                     const char *vpn_ip_iface,
-                                    GHashTable *vpn_ip4_props,
-                                    GHashTable *vpn_ip6_props,
+                                    GVariant *vpn_ip4_props,
+                                    GVariant *vpn_ip6_props,
                                     char **out_iface);
 
 #endif  /* __NETWORKMANAGER_DISPATCHER_UTILS_H__ */

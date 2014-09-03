@@ -32,17 +32,18 @@
 
 #include <glib.h>
 #include <glib-unix.h>
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib-lowlevel.h>
-#include <dbus/dbus-glib.h>
 
 
 #include "nm-dispatcher-api.h"
 #include "nm-dispatcher-utils.h"
 #include "nm-glib-compat.h"
 
+#include "nmdbus-dispatcher.h"
+
 static GMainLoop *loop = NULL;
 static gboolean debug = FALSE;
+static gboolean persist = FALSE;
+static guint quit_id;
 
 typedef struct Request Request;
 
@@ -50,10 +51,10 @@ typedef struct {
 	GObject parent;
 
 	/* Private data */
+	NMDBusDispatcher *dbus_dispatcher;
+
 	Request *current_request;
 	GQueue *pending_requests;
-	guint quit_id;
-	gboolean persist;
 } Handler;
 
 typedef struct {
@@ -68,28 +69,30 @@ GType handler_get_type (void);
 
 G_DEFINE_TYPE(Handler, handler, G_TYPE_OBJECT)
 
-static void
-impl_dispatch (Handler *h,
-               const char *action,
-               GHashTable *connection_hash,
-               GHashTable *connection_props,
-               GHashTable *device_props,
-               GHashTable *device_ip4_props,
-               GHashTable *device_ip6_props,
-               GHashTable *device_dhcp4_props,
-               GHashTable *device_dhcp6_props,
+static gboolean
+handle_action (NMDBusDispatcher *dbus_dispatcher,
+               GDBusMethodInvocation *context,
+               const char *str_action,
+               GVariant *connection_dict,
+               GVariant *connection_props,
+               GVariant *device_props,
+               GVariant *device_ip4_props,
+               GVariant *device_ip6_props,
+               GVariant *device_dhcp4_props,
+               GVariant *device_dhcp6_props,
                const char *vpn_ip_iface,
-               GHashTable *vpn_ip4_props,
-               GHashTable *vpn_ip6_props,
+               GVariant *vpn_ip4_props,
+               GVariant *vpn_ip6_props,
                gboolean request_debug,
-               DBusGMethodInvocation *context);
-
-#include "nm-dispatcher-glue.h"
-
+               gpointer user_data);
 
 static void
 handler_init (Handler *h)
 {
+	h->pending_requests = g_queue_new ();
+	h->dbus_dispatcher = nmdbus_dispatcher_skeleton_new ();
+	g_signal_connect (h->dbus_dispatcher, "handle-action",
+	                  G_CALLBACK (handle_action), h);
 }
 
 static void
@@ -111,7 +114,7 @@ typedef struct {
 struct Request {
 	Handler *handler;
 
-	DBusGMethodInvocation *context;
+	GDBusMethodInvocation *context;
 	char *action;
 	char *iface;
 	char **envp;
@@ -152,20 +155,20 @@ quit_timeout_cb (gpointer user_data)
 }
 
 static void
-quit_timeout_cancel (Handler *h)
+quit_timeout_cancel (void)
 {
-	if (h->quit_id) {
-		g_source_remove (h->quit_id);
-		h->quit_id = 0;
+	if (quit_id) {
+		g_source_remove (quit_id);
+		quit_id = 0;
 	}
 }
 
 static void
-quit_timeout_reschedule (Handler *h)
+quit_timeout_reschedule (void)
 {
-	quit_timeout_cancel (h);
-	if (!h->persist)
-		h->quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
+	quit_timeout_cancel ();
+	if (!persist)
+		quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
 }
 
 static void
@@ -191,7 +194,7 @@ next_request (Handler *h)
 	}
 
 	h->current_request = NULL;
-	quit_timeout_reschedule (h);
+	quit_timeout_reschedule ();
 }
 
 static gboolean
@@ -199,8 +202,8 @@ next_script (gpointer user_data)
 {
 	Request *request = user_data;
 	Handler *h = request->handler;
-	GPtrArray *results;
-	GValueArray *item;
+	GVariantBuilder results;
+	GVariant *ret;
 	guint i;
 
 	request->idx++;
@@ -210,36 +213,18 @@ next_script (gpointer user_data)
 	}
 
 	/* All done */
-	results = g_ptr_array_new_full (request->scripts->len, (GDestroyNotify) g_value_array_free);
+	g_variant_builder_init (&results, G_VARIANT_TYPE ("a(sus)"));
 	for (i = 0; i < request->scripts->len; i++) {
 		ScriptInfo *script = g_ptr_array_index (request->scripts, i);
-		GValue elt = G_VALUE_INIT;
 
-		item = g_value_array_new (3);
-
-		/* Script path */
-		g_value_init (&elt, G_TYPE_STRING);
-		g_value_set_string (&elt, script->script);
-		g_value_array_append (item, &elt);
-		g_value_unset (&elt);
-
-		/* Result */
-		g_value_init (&elt, G_TYPE_UINT);
-		g_value_set_uint (&elt, script->result);
-		g_value_array_append (item, &elt);
-		g_value_unset (&elt);
-
-		/* Error */
-		g_value_init (&elt, G_TYPE_STRING);
-		g_value_set_string (&elt, script->error ? script->error : "");
-		g_value_array_append (item, &elt);
-		g_value_unset (&elt);
-
-		g_ptr_array_add (results, item);
+		g_variant_builder_add (&results, "(sus)",
+		                       script->script,
+		                       script->result,
+		                       script->error ? script->error : "");
 	}
 
-	dbus_g_method_return (request->context, results);
-	g_ptr_array_unref (results);
+	ret = g_variant_new ("(a(sus))", &results);
+	g_dbus_method_invocation_return_value (request->context, ret);
 
 	if (request->debug) {
 		if (request->iface)
@@ -470,22 +455,24 @@ find_scripts (const char *str_action)
 	return sorted;
 }
 
-static void
-impl_dispatch (Handler *h,
+static gboolean
+handle_action (NMDBusDispatcher *dbus_dispatcher,
+               GDBusMethodInvocation *context,
                const char *str_action,
-               GHashTable *connection_hash,
-               GHashTable *connection_props,
-               GHashTable *device_props,
-               GHashTable *device_ip4_props,
-               GHashTable *device_ip6_props,
-               GHashTable *device_dhcp4_props,
-               GHashTable *device_dhcp6_props,
+               GVariant *connection_dict,
+               GVariant *connection_props,
+               GVariant *device_props,
+               GVariant *device_ip4_props,
+               GVariant *device_ip6_props,
+               GVariant *device_dhcp4_props,
+               GVariant *device_dhcp6_props,
                const char *vpn_ip_iface,
-               GHashTable *vpn_ip4_props,
-               GHashTable *vpn_ip6_props,
+               GVariant *vpn_ip4_props,
+               GVariant *vpn_ip6_props,
                gboolean request_debug,
-               DBusGMethodInvocation *context)
+               gpointer user_data)
 {
+	Handler *h = user_data;
 	GSList *sorted_scripts = NULL;
 	GSList *iter;
 	Request *request;
@@ -495,11 +482,14 @@ impl_dispatch (Handler *h,
 	sorted_scripts = find_scripts (str_action);
 
 	if (!sorted_scripts) {
-		dbus_g_method_return (context, g_ptr_array_new ());
-		return;
+		GVariant *results;
+
+		results = g_variant_new_array (G_VARIANT_TYPE ("sus"), NULL, 0);
+		g_dbus_method_invocation_return_value (context, g_variant_new ("(@a(sus))", results));
+		return TRUE;
 	}
 
-	quit_timeout_cancel (h);
+	quit_timeout_cancel ();
 
 	request = g_malloc0 (sizeof (*request));
 	request->handler = h;
@@ -508,7 +498,7 @@ impl_dispatch (Handler *h,
 	request->action = g_strdup (str_action);
 
 	request->envp = nm_dispatcher_utils_construct_envp (str_action,
-	                                                    connection_hash,
+	                                                    connection_dict,
 	                                                    connection_props,
 	                                                    device_props,
 	                                                    device_ip4_props,
@@ -543,76 +533,35 @@ impl_dispatch (Handler *h,
 		g_queue_push_tail (h->pending_requests, request);
 	else
 		start_request (request);
+
+	return TRUE;
+}
+
+static gboolean ever_acquired_name = FALSE;
+
+static void
+on_name_acquired (GDBusConnection *connection,
+                  const char      *name,
+                  gpointer         user_data)
+{
+	ever_acquired_name = TRUE;
 }
 
 static void
-destroy_cb (DBusGProxy *proxy, gpointer user_data)
+on_name_lost (GDBusConnection *connection,
+              const char      *name,
+              gpointer         user_data)
 {
-	g_warning ("Disconnected from the system bus, exiting.");
-	g_main_loop_quit (loop);
-}
-
-static DBusGConnection *
-dbus_init (void)
-{
-	GError *error = NULL;
-	DBusGConnection *bus;
-	DBusConnection *connection;
-	DBusGProxy *proxy;
-	int result;
-
-	dbus_connection_set_change_sigpipe (TRUE);
-
-	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
-	if (!bus) {
-		g_warning ("Could not get the system bus.  Make sure "
-		           "the message bus daemon is running!  Message: %s",
-		           error->message);
-		g_error_free (error);
-		return NULL;
+	if (!connection) {
+		g_warning ("Could not get the system bus.  Make sure the message bus daemon is running!");
+		exit (1);
+	} else if (!ever_acquired_name) {
+		g_warning ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service.");
+		exit (1);
+	} else {
+		g_message ("Lost the " NM_DISPATCHER_DBUS_SERVICE " name. Exiting");
+		exit (0);
 	}
-
-	/* Clean up nicely if we get kicked off the bus */
-	connection = dbus_g_connection_get_connection (bus);
-	dbus_connection_set_exit_on_disconnect (connection, FALSE);
-
-	proxy = dbus_g_proxy_new_for_name (bus,
-	                                   "org.freedesktop.DBus",
-	                                   "/org/freedesktop/DBus",
-	                                   "org.freedesktop.DBus");
-	if (!proxy) {
-		g_warning ("Could not create the DBus proxy!");
-		goto error;
-	}
-
-	g_signal_connect (proxy, "destroy", G_CALLBACK (destroy_cb), NULL);
-
-	if (!dbus_g_proxy_call (proxy, "RequestName", &error,
-	                        G_TYPE_STRING, NM_DISPATCHER_DBUS_SERVICE,
-	                        G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
-	                        G_TYPE_INVALID,
-	                        G_TYPE_UINT, &result,
-	                        G_TYPE_INVALID)) {
-		g_warning ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service.\n"
-		           "  Message: '%s'", error->message);
-		g_error_free (error);
-		goto error;
-	}
-
-	if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-		g_warning ("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service "
-		           "as it is already taken.  Result: %d",
-		           result);
-		goto error;
-	}
-
-	return bus;
-
-error:
-	if (proxy)
-		g_object_unref (proxy);
-	dbus_g_connection_unref (bus);
-	return NULL;
 }
 
 static void
@@ -681,8 +630,7 @@ main (int argc, char **argv)
 {
 	GOptionContext *opt_ctx;
 	GError *error = NULL;
-	gboolean persist = FALSE;
-	DBusGConnection *bus;
+	GDBusConnection *bus;
 	Handler *handler;
 
 	GOptionEntry entries[] = {
@@ -715,30 +663,40 @@ main (int argc, char **argv)
 
 	loop = g_main_loop_new (NULL, FALSE);
 
-	bus = dbus_init ();
-	if (!bus)
+	bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
+	if (!bus) {
+		g_warning ("Could not get the system bus (%s).  Make sure the message bus daemon is running!",
+		           error->message);
+		g_error_free (error);
 		return 1;
+	}
 
 	handler = g_object_new (HANDLER_TYPE, NULL);
-	if (!handler)
+	g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (handler->dbus_dispatcher),
+	                                  bus,
+	                                  NM_DISPATCHER_DBUS_PATH,
+	                                  &error);
+	if (error) {
+		g_warning ("Could not export Dispatcher D-Bus interface: %s", error->message);
+		g_error_free (error);
 		return 1;
-	handler->persist = persist;
-	handler->pending_requests = g_queue_new ();
+	}
 
-	dbus_g_object_type_install_info (HANDLER_TYPE, &dbus_glib_nm_dispatcher_object_info);
-	dbus_g_connection_register_g_object (bus,
-	                                     NM_DISPATCHER_DBUS_PATH,
-	                                     G_OBJECT (handler));
+	g_bus_own_name_on_connection (bus,
+	                              NM_DISPATCHER_DBUS_SERVICE,
+	                              G_BUS_NAME_OWNER_FLAGS_NONE,
+	                              on_name_acquired,
+	                              on_name_lost,
+	                              NULL, NULL);
+	g_object_unref (bus);
 
 	if (!persist)
-		handler->quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
+		quit_id = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
 
 	g_main_loop_run (loop);
 
 	g_queue_free (handler->pending_requests);
 	g_object_unref (handler);
-
-	dbus_g_connection_unref (bus);
 
 	if (!debug)
 		logging_shutdown ();

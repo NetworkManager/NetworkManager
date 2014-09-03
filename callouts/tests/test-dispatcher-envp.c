@@ -28,107 +28,31 @@
 #include "nm-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-dispatcher-utils.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-dispatcher-api.h"
 #include "nm-utils.h"
+#include "nm-dbus-glib-types.h"
 
 /*******************************************/
 
-static void
-value_destroy (gpointer data)
+static GVariant *
+connection_hash_to_dict (GHashTable *hash)
 {
-	GValue *value = (GValue *) data;
+	GValue val = { 0, };
+	GVariant *dict;
 
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
+	g_value_init (&val, DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT);
+	g_value_set_boxed (&val, hash);
+	dict = dbus_g_value_build_g_variant (&val);
+	g_value_unset (&val);
 
-static GHashTable *
-value_hash_create (void)
-{
-	return g_hash_table_new_full (g_str_hash, g_str_equal, g_free, value_destroy);
-}
-
-static void
-value_hash_add (GHashTable *hash,
-				const char *key,
-				GValue *value)
-{
-	g_hash_table_insert (hash, g_strdup (key), value);
-}
-
-static void
-value_hash_add_string (GHashTable *hash,
-					   const char *key,
-					   const char *str)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_STRING);
-	g_value_set_string (value, str);
-
-	value_hash_add (hash, key, value);
-}
-
-static void
-value_hash_add_object_path (GHashTable *hash,
-							const char *key,
-							const char *op)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
-	g_value_set_boxed (value, op);
-
-	value_hash_add (hash, key, value);
-}
-
-static void
-value_hash_add_uint (GHashTable *hash,
-					 const char *key,
-					 guint32 val)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_UINT);
-	g_value_set_uint (value, val);
-
-	value_hash_add (hash, key, value);
-}
-
-static void
-value_hash_add_strv (GHashTable *hash,
-                     const char *key,
-                     char **strv)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_STRV);
-	g_value_take_boxed (value, strv);
-	value_hash_add (hash, key, value);
-}
-
-static void
-value_hash_add_uint_array (GHashTable *hash,
-					       const char *key,
-					       GArray *array)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, DBUS_TYPE_G_UINT_ARRAY);
-	g_value_take_boxed (value, array);
-	value_hash_add (hash, key, value);
+	g_variant_ref_sink (dict);
+	return dict;
 }
 
 static gboolean
 parse_main (GKeyFile *kf,
-            GHashTable **out_con_hash,
-            GHashTable **out_con_props,
+            GVariant **out_con_dict,
+            GVariant **out_con_props,
             char **out_expected_iface,
             char **out_action,
             char **out_vpn_ip_iface,
@@ -137,6 +61,8 @@ parse_main (GKeyFile *kf,
 	char *uuid, *id;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
+	GVariantBuilder props;
+	GHashTable *con_hash;
 
 	*out_expected_iface = g_key_file_get_string (kf, "main", "expected-iface", error);
 	if (*out_expected_iface == NULL)
@@ -167,57 +93,74 @@ parse_main (GKeyFile *kf,
 	g_free (id);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	*out_con_hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	con_hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 	g_object_unref (connection);
+	*out_con_dict = connection_hash_to_dict (con_hash);
+	g_hash_table_unref (con_hash);
 
-	*out_con_props = value_hash_create ();
-	value_hash_add_object_path (*out_con_props, "connection-path", "/org/freedesktop/NetworkManager/Connections/5");
+	g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
+	g_variant_builder_add (&props, "{sv}",
+	                       "connection-path",
+	                       g_variant_new_object_path ("/org/freedesktop/NetworkManager/Connections/5"));
+	*out_con_props = g_variant_builder_end (&props);
 
 	return TRUE;
 }
 
 static gboolean
-parse_device (GKeyFile *kf, GHashTable **out_device_props, GError **error)
+parse_device (GKeyFile *kf, GVariant **out_device_props, GError **error)
 {
+	GVariantBuilder props;
 	char *tmp;
 	gint i;
 
-	*out_device_props = value_hash_create ();
+	g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
 
 	i = g_key_file_get_integer (kf, "device", "state", error);
 	if (i == 0)
 		return FALSE;
-	value_hash_add_uint (*out_device_props, NMD_DEVICE_PROPS_STATE, (guint) i);
+	g_variant_builder_add (&props, "{sv}",
+	                       NMD_DEVICE_PROPS_STATE,
+	                       g_variant_new_uint32 (i));
 
 	i = g_key_file_get_integer (kf, "device", "type", error);
 	if (i == 0)
 		return FALSE;
-	value_hash_add_uint (*out_device_props, NMD_DEVICE_PROPS_TYPE, (guint) i);
+	g_variant_builder_add (&props, "{sv}",
+	                       NMD_DEVICE_PROPS_TYPE,
+	                       g_variant_new_uint32 (i));
 
 	tmp = g_key_file_get_string (kf, "device", "interface", error);
 	if (tmp == NULL)
 		return FALSE;
-	value_hash_add_string (*out_device_props, NMD_DEVICE_PROPS_INTERFACE, tmp);
+	g_variant_builder_add (&props, "{sv}",
+	                       NMD_DEVICE_PROPS_INTERFACE,
+	                       g_variant_new_string (tmp));
 	g_free (tmp);
 
 	tmp = g_key_file_get_string (kf, "device", "ip-interface", error);
 	if (tmp == NULL)
 		return FALSE;
-	value_hash_add_string (*out_device_props, NMD_DEVICE_PROPS_IP_INTERFACE, tmp);
+	g_variant_builder_add (&props, "{sv}",
+	                       NMD_DEVICE_PROPS_IP_INTERFACE,
+	                       g_variant_new_string (tmp));
 	g_free (tmp);
 
 	tmp = g_key_file_get_string (kf, "device", "path", error);
 	if (tmp == NULL)
 		return FALSE;
-	value_hash_add_object_path (*out_device_props, NMD_DEVICE_PROPS_PATH, tmp);
+	g_variant_builder_add (&props, "{sv}",
+	                       NMD_DEVICE_PROPS_PATH,
+	                       g_variant_new_object_path (tmp));
 	g_free (tmp);
 
+	*out_device_props = g_variant_builder_end (&props);
 	return TRUE;
 }
 
 static gboolean
 add_uint_array (GKeyFile *kf,
-                GHashTable *props,
+                GVariantBuilder *props,
                 const char *section,
                 const char *key,
                 GError **error)
@@ -244,21 +187,25 @@ add_uint_array (GKeyFile *kf,
 				g_array_append_val (items, addr);
 			}
 		}
-		value_hash_add_uint_array (props, key, items);
+		g_variant_builder_add (props, "{sv}", key,
+		                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+		                                                  items->data, items->len,
+		                                                  sizeof (guint32)));
+		g_array_unref (items);
 	}
 	g_strfreev (split);
 	return TRUE;
 }
 
 static gboolean
-parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **error)
+parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **error)
 {
+	GVariantBuilder props;
 	char *tmp;
 	char **split, **iter;
-	GSList *list;
-	GValue *val;
+	GPtrArray *addresses, *routes;
 
-	*out_props = value_hash_create ();
+	g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
 
 	/* search domains */
 	/* Use char** for domains. (DBUS_TYPE_G_ARRAY_OF_STRING of NMIP4Config
@@ -273,14 +220,15 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 	if (g_strv_length (split) > 0) {
 		for (iter = split; iter && *iter; iter++)
 			g_strstrip (*iter);
-		value_hash_add_strv (*out_props, "domains", split);
+		g_variant_builder_add (&props, "{sv}", "domains", g_variant_new_strv ((gpointer) split, -1));
+		g_strfreev (split);
 	}
 
 	/* nameservers */
-	if (!add_uint_array (kf, *out_props, "ip4", "nameservers", error))
+	if (!add_uint_array (kf, &props, "ip4", "nameservers", error))
 		return FALSE;
 	/* wins-servers */
-	if (!add_uint_array (kf, *out_props, "ip4", "wins-servers", error))
+	if (!add_uint_array (kf, &props, "ip4", "wins-servers", error))
 		return FALSE;
 
 	/* Addresses */
@@ -291,7 +239,7 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 	g_free (tmp);
 
 	if (g_strv_length (split) > 0) {
-		list = NULL;
+		addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_address_unref);
 		for (iter = split; iter && *iter; iter++) {
 			NMIP4Address *addr;
 			guint32 a;
@@ -317,13 +265,12 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 			g_assert_cmpint (inet_pton (AF_INET, p, &a), ==, 1);
 			nm_ip4_address_set_gateway (addr, a);
 
-			list = g_slist_append (list, addr);
+			g_ptr_array_add (addresses, addr);
 		}
 
-		val = g_slice_new0 (GValue);
-		g_value_init (val, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT);
-		nm_utils_ip4_addresses_to_gvalue (list, val);
-		value_hash_add (*out_props, "addresses", val);
+		g_variant_builder_add (&props, "{sv}", "addresses",
+		                       nm_utils_ip4_addresses_to_variant (addresses));
+		g_ptr_array_unref (addresses);
 	}
 	g_strfreev (split);
 
@@ -335,7 +282,7 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 		g_free (tmp);
 
 		if (g_strv_length (split) > 0) {
-			list = NULL;
+			routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_route_unref);
 			for (iter = split; iter && *iter; iter++) {
 				NMIP4Route *route;
 				guint32 a;
@@ -366,56 +313,58 @@ parse_ip4 (GKeyFile *kf, GHashTable **out_props, const char *section, GError **e
 				p++;
 				nm_ip4_route_set_metric (route, (guint) atoi (p));
 
-				list = g_slist_append (list, route);
+				g_ptr_array_add (routes, route);
 			}
 
-			val = g_slice_new0 (GValue);
-			g_value_init (val, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT);
-			nm_utils_ip4_routes_to_gvalue (list, val);
-			value_hash_add (*out_props, "routes", val);
+			g_variant_builder_add (&props, "{sv}", "routes",
+			                       nm_utils_ip4_routes_to_variant (routes));
+			g_ptr_array_unref (routes);
 		}
 		g_strfreev (split);
 	}
 
+	*out_props = g_variant_builder_end (&props);
 	return TRUE;
 }
 
 static gboolean
 parse_dhcp (GKeyFile *kf,
             const char *group_name,
-            GHashTable **out_props,
+            GVariant **out_props,
             GError **error)
 {
 	char **keys, **iter, *val;
+	GVariantBuilder props;
 
 	keys = g_key_file_get_keys (kf, group_name, NULL, error);
 	if (!keys)
 		return FALSE;
 
-	*out_props = value_hash_create ();
+	g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
 	for (iter = keys; iter && *iter; iter++) {
 		val = g_key_file_get_string (kf, group_name, *iter, error);
 		if (!val)
 			return FALSE;
-		value_hash_add_string (*out_props, *iter, val);
+		g_variant_builder_add (&props, "{sv}", *iter, g_variant_new_string (val));
 		g_free (val);
 	}
 
+	*out_props = g_variant_builder_end (&props);
 	return TRUE;
 }
 
 static gboolean
 get_dispatcher_file (const char *file,
-                     GHashTable **out_con_hash,
-                     GHashTable **out_con_props,
-                     GHashTable **out_device_props,
-                     GHashTable **out_device_ip4_props,
-                     GHashTable **out_device_ip6_props,
-                     GHashTable **out_device_dhcp4_props,
-                     GHashTable **out_device_dhcp6_props,
+                     GVariant **out_con_dict,
+                     GVariant **out_con_props,
+                     GVariant **out_device_props,
+                     GVariant **out_device_ip4_props,
+                     GVariant **out_device_ip6_props,
+                     GVariant **out_device_dhcp4_props,
+                     GVariant **out_device_dhcp6_props,
                      char **out_vpn_ip_iface,
-                     GHashTable **out_vpn_ip4_props,
-                     GHashTable **out_vpn_ip6_props,
+                     GVariant **out_vpn_ip4_props,
+                     GVariant **out_vpn_ip6_props,
                      char **out_expected_iface,
                      char **out_action,
                      GHashTable **out_env,
@@ -430,7 +379,7 @@ get_dispatcher_file (const char *file,
 		return FALSE;
 
 	if (!parse_main (kf,
-	                 out_con_hash,
+	                 out_con_dict,
 	                 out_con_props,
 	                 out_expected_iface,
 	                 out_action,
@@ -482,16 +431,16 @@ out:
 static void
 test_generic (const char *path, const char *file, const char *override_vpn_ip_iface)
 {
-	GHashTable *con_hash = NULL;
-	GHashTable *con_props = NULL;
-	GHashTable *device_props = NULL;
-	GHashTable *device_ip4_props = NULL;
-	GHashTable *device_ip6_props = NULL;
-	GHashTable *device_dhcp4_props = NULL;
-	GHashTable *device_dhcp6_props = NULL;
+	GVariant *con_dict = NULL;
+	GVariant *con_props = NULL;
+	GVariant *device_props = NULL;
+	GVariant *device_ip4_props = NULL;
+	GVariant *device_ip6_props = NULL;
+	GVariant *device_dhcp4_props = NULL;
+	GVariant *device_dhcp6_props = NULL;
 	char *vpn_ip_iface = NULL;
-	GHashTable *vpn_ip4_props = NULL;
-	GHashTable *vpn_ip6_props = NULL;
+	GVariant *vpn_ip4_props = NULL;
+	GVariant *vpn_ip6_props = NULL;
 	char *expected_iface = NULL;
 	char *action = NULL;
 	char *out_iface = NULL;
@@ -504,7 +453,7 @@ test_generic (const char *path, const char *file, const char *override_vpn_ip_if
 	/* Read in the test file */
 	p = g_strdup_printf ("%s/%s", path, file);
 	success = get_dispatcher_file (p,
-	                               &con_hash,
+	                               &con_dict,
 	                               &con_props,
 	                               &device_props,
 	                               &device_ip4_props,
@@ -524,7 +473,7 @@ test_generic (const char *path, const char *file, const char *override_vpn_ip_if
 
 	/* Get the environment from the dispatcher code */
 	denv = nm_dispatcher_utils_construct_envp (action,
-	                                           con_hash,
+	                                           con_dict,
 	                                           con_props,
 	                                           device_props,
 	                                           device_ip4_props,
@@ -581,21 +530,21 @@ test_generic (const char *path, const char *file, const char *override_vpn_ip_if
 	g_free (vpn_ip_iface);
 	g_free (expected_iface);
 	g_free (action);
-	g_hash_table_destroy (con_hash);
-	g_hash_table_destroy (con_props);
-	g_hash_table_destroy (device_props);
+	g_variant_unref (con_dict);
+	g_variant_unref (con_props);
+	g_variant_unref (device_props);
 	if (device_ip4_props)
-		g_hash_table_destroy (device_ip4_props);
+		g_variant_unref (device_ip4_props);
 	if (device_ip6_props)
-		g_hash_table_destroy (device_ip6_props);
+		g_variant_unref (device_ip6_props);
 	if (device_dhcp4_props)
-		g_hash_table_destroy (device_dhcp4_props);
+		g_variant_unref (device_dhcp4_props);
 	if (device_dhcp6_props)
-		g_hash_table_destroy (device_dhcp6_props);
+		g_variant_unref (device_dhcp6_props);
 	if (vpn_ip4_props)
-		g_hash_table_destroy (vpn_ip4_props);
+		g_variant_unref (vpn_ip4_props);
 	if (vpn_ip6_props)
-		g_hash_table_destroy (vpn_ip6_props);
+		g_variant_unref (vpn_ip6_props);
 	g_hash_table_destroy (expected_env);
 }
 
