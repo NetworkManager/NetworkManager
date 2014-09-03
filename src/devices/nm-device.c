@@ -4510,7 +4510,7 @@ start_sharing (NMDevice *self, NMIP4Config *config)
 static void
 send_arps (NMDevice *self, const char *mode_arg)
 {
-	const char *argv[] = { "/sbin/arping", mode_arg, "-q", "-I", nm_device_get_ip_iface (self), "-c", "1", NULL, NULL };
+	const char *argv[] = { NULL, mode_arg, "-q", "-I", nm_device_get_ip_iface (self), "-c", "1", NULL, NULL };
 	int ip_arg = G_N_ELEMENTS (argv) - 2;
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
@@ -4526,6 +4526,14 @@ send_arps (NMDevice *self, const char *mode_arg)
 	if (!s_ip4)
 		return;
 	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
+	if (num == 0)
+		return;
+
+	argv[0] = nm_utils_find_helper ("arping", NULL, NULL);
+	if (!argv[0]) {
+		_LOGW (LOGD_DEVICE | LOGD_IP4, "arping could not be found; no ARPs will be sent");
+		return;
+	}
 
 	for (i = 0; i < num; i++) {
 		gs_free char *tmp_str = NULL;
