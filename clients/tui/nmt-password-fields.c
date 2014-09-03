@@ -156,6 +156,10 @@ nmt_password_fields_constructed (GObject *object)
 	} else
 		g_clear_object (&priv->show_password);
 
+	g_object_bind_property (priv->entry, "text",
+	                        object, "password",
+	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+
 	G_OBJECT_CLASS (nmt_password_fields_parent_class)->constructed (object);
 }
 
