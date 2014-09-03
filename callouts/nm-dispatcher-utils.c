@@ -91,8 +91,8 @@ add_domains (GSList *items,
 static GSList *
 construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 {
-	GSList *addresses = NULL, *routes = NULL, *iter;
-	GArray *dns = NULL, *wins = NULL;
+	GSList *addresses, *routes, *iter;
+	GArray *dns, *wins;
 	guint32 num, i;
 	GString *tmp;
 	GValue *val;
@@ -107,46 +107,47 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 
 	/* IP addresses */
 	val = g_hash_table_lookup (ip4_config, "addresses");
-	if (val)
+	if (val) {
 		addresses = nm_utils_ip4_addresses_from_gvalue (val);
 
-	for (iter = addresses, num = 0; iter; iter = g_slist_next (iter)) {
-		NMIP4Address *addr = (NMIP4Address *) iter->data;
-		guint32 ip_prefix = nm_ip4_address_get_prefix (addr);
-		char *addrtmp;
+		for (iter = addresses, num = 0; iter; iter = g_slist_next (iter)) {
+			NMIP4Address *addr = (NMIP4Address *) iter->data;
+			guint32 ip_prefix = nm_ip4_address_get_prefix (addr);
+			char *addrtmp;
 
-		nm_utils_inet4_ntop (nm_ip4_address_get_address (addr), str_addr);
-		nm_utils_inet4_ntop (nm_ip4_address_get_gateway (addr), str_gw);
+			nm_utils_inet4_ntop (nm_ip4_address_get_address (addr), str_addr);
+			nm_utils_inet4_ntop (nm_ip4_address_get_gateway (addr), str_gw);
 
-		addrtmp = g_strdup_printf ("%sIP4_ADDRESS_%d=%s/%d %s", prefix, num++, str_addr, ip_prefix, str_gw);
-		items = g_slist_prepend (items, addrtmp);
-	}
-	if (num)
-		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ADDRESSES=%d", prefix, num));
-	if (addresses)
+			addrtmp = g_strdup_printf ("%sIP4_ADDRESS_%d=%s/%d %s", prefix, num++, str_addr, ip_prefix, str_gw);
+			items = g_slist_prepend (items, addrtmp);
+		}
+		if (num)
+			items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ADDRESSES=%d", prefix, num));
 		g_slist_free_full (addresses, (GDestroyNotify) nm_ip4_address_unref);
+	}
 
 	/* DNS servers */
 	val = g_hash_table_lookup (ip4_config, "nameservers");
-	if (val && G_VALUE_HOLDS (val, DBUS_TYPE_G_UINT_ARRAY))
+	if (val && G_VALUE_HOLDS (val, DBUS_TYPE_G_UINT_ARRAY)) {
 		dns = (GArray *) g_value_get_boxed (val);
 
-	if (dns && (dns->len > 0)) {
-		gboolean first = TRUE;
+		if (dns && (dns->len > 0)) {
+			gboolean first = TRUE;
 
-		tmp = g_string_new (NULL);
-		g_string_append_printf (tmp, "%sIP4_NAMESERVERS=", prefix);
-		for (i = 0; i < dns->len; i++) {
-			guint32 addr;
+			tmp = g_string_new (NULL);
+			g_string_append_printf (tmp, "%sIP4_NAMESERVERS=", prefix);
+			for (i = 0; i < dns->len; i++) {
+				guint32 addr;
 
-			addr = g_array_index (dns, guint32, i);
-			if (!first)
-				g_string_append_c (tmp, ' ');
-			g_string_append (tmp, nm_utils_inet4_ntop (addr, NULL));
-			first = FALSE;
+				addr = g_array_index (dns, guint32, i);
+				if (!first)
+					g_string_append_c (tmp, ' ');
+				g_string_append (tmp, nm_utils_inet4_ntop (addr, NULL));
+				first = FALSE;
+			}
+			items = g_slist_prepend (items, tmp->str);
+			g_string_free (tmp, FALSE);
 		}
-		items = g_slist_prepend (items, tmp->str);
-		g_string_free (tmp, FALSE);
 	}
 
 	/* Search domains */
@@ -154,47 +155,49 @@ construct_ip4_items (GSList *items, GHashTable *ip4_config, const char *prefix)
 
 	/* WINS servers */
 	val = g_hash_table_lookup (ip4_config, "wins-servers");
-	if (val && G_VALUE_HOLDS (val, DBUS_TYPE_G_UINT_ARRAY))
+	if (val && G_VALUE_HOLDS (val, DBUS_TYPE_G_UINT_ARRAY)) {
 		wins = (GArray *) g_value_get_boxed (val);
 
-	if (wins && wins->len) {
-		gboolean first = TRUE;
+		if (wins && wins->len) {
+			gboolean first = TRUE;
 
-		tmp = g_string_new (NULL);
-		g_string_append_printf (tmp, "%sIP4_WINS_SERVERS=", prefix);
-		for (i = 0; i < wins->len; i++) {
-			guint32 addr;
+			tmp = g_string_new (NULL);
+			g_string_append_printf (tmp, "%sIP4_WINS_SERVERS=", prefix);
+			for (i = 0; i < wins->len; i++) {
+				guint32 addr;
 
-			addr = g_array_index (wins, guint32, i);
-			if (!first)
-				g_string_append_c (tmp, ' ');
-			g_string_append (tmp, nm_utils_inet4_ntop (addr, NULL));
-			first = FALSE;
+				addr = g_array_index (wins, guint32, i);
+				if (!first)
+					g_string_append_c (tmp, ' ');
+				g_string_append (tmp, nm_utils_inet4_ntop (addr, NULL));
+				first = FALSE;
+			}
+			items = g_slist_prepend (items, tmp->str);
+			g_string_free (tmp, FALSE);
 		}
-		items = g_slist_prepend (items, tmp->str);
-		g_string_free (tmp, FALSE);
 	}
 
 	/* Static routes */
 	val = g_hash_table_lookup (ip4_config, "routes");
-	if (val)
+	if (val) {
 		routes = nm_utils_ip4_routes_from_gvalue (val);
 
-	for (iter = routes, num = 0; iter; iter = g_slist_next (iter)) {
-		NMIP4Route *route = (NMIP4Route *) iter->data;
-		guint32 ip_prefix = nm_ip4_route_get_prefix (route);
-		guint32 metric = nm_ip4_route_get_metric (route);
-		char *routetmp;
+		for (iter = routes, num = 0; iter; iter = g_slist_next (iter)) {
+			NMIP4Route *route = (NMIP4Route *) iter->data;
+			guint32 ip_prefix = nm_ip4_route_get_prefix (route);
+			guint32 metric = nm_ip4_route_get_metric (route);
+			char *routetmp;
 
-		nm_utils_inet4_ntop (nm_ip4_route_get_dest (route), str_addr);
-		nm_utils_inet4_ntop (nm_ip4_route_get_next_hop (route), str_gw);
+			nm_utils_inet4_ntop (nm_ip4_route_get_dest (route), str_addr);
+			nm_utils_inet4_ntop (nm_ip4_route_get_next_hop (route), str_gw);
 
-		routetmp = g_strdup_printf ("%sIP4_ROUTE_%d=%s/%d %s %d", prefix, num++, str_addr, ip_prefix, str_gw, metric);
-		items = g_slist_prepend (items, routetmp);
-	}
-	items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ROUTES=%d", prefix, num));
-	if (routes)
+			routetmp = g_strdup_printf ("%sIP4_ROUTE_%d=%s/%d %s %d", prefix, num++, str_addr, ip_prefix, str_gw, metric);
+			items = g_slist_prepend (items, routetmp);
+		}
+		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ROUTES=%d", prefix, num));
 		g_slist_free_full (routes, (GDestroyNotify) nm_ip4_route_unref);
+	} else
+		items = g_slist_prepend (items, g_strdup_printf ("%sIP4_NUM_ROUTES=0", prefix));
 
 	return items;
 }
@@ -223,7 +226,7 @@ construct_device_dhcp4_items (GSList *items, GHashTable *dhcp4_config)
 static GSList *
 construct_ip6_items (GSList *items, GHashTable *ip6_config, const char *prefix)
 {
-	GSList *addresses = NULL, *routes = NULL, *dns = NULL, *iter;
+	GSList *addresses, *routes, *dns, *iter;
 	guint32 num;
 	GString *tmp;
 	GValue *val;
@@ -238,47 +241,48 @@ construct_ip6_items (GSList *items, GHashTable *ip6_config, const char *prefix)
 
 	/* IP addresses */
 	val = g_hash_table_lookup (ip6_config, "addresses");
-	if (val)
+	if (val) {
 		addresses = nm_utils_ip6_addresses_from_gvalue (val);
 
-	for (iter = addresses, num = 0; iter; iter = g_slist_next (iter)) {
-		NMIP6Address *addr = (NMIP6Address *) iter->data;
-		guint32 ip_prefix = nm_ip6_address_get_prefix (addr);
-		char *addrtmp;
+		for (iter = addresses, num = 0; iter; iter = g_slist_next (iter)) {
+			NMIP6Address *addr = (NMIP6Address *) iter->data;
+			guint32 ip_prefix = nm_ip6_address_get_prefix (addr);
+			char *addrtmp;
 
-		nm_utils_inet6_ntop (nm_ip6_address_get_address (addr), str_addr);
-		nm_utils_inet6_ntop (nm_ip6_address_get_gateway (addr), str_gw);
+			nm_utils_inet6_ntop (nm_ip6_address_get_address (addr), str_addr);
+			nm_utils_inet6_ntop (nm_ip6_address_get_gateway (addr), str_gw);
 
-		addrtmp = g_strdup_printf ("%sIP6_ADDRESS_%d=%s/%d %s", prefix, num++, str_addr, ip_prefix, str_gw);
-		items = g_slist_prepend (items, addrtmp);
-	}
-	if (num)
-		items = g_slist_prepend (items, g_strdup_printf ("%sIP6_NUM_ADDRESSES=%d", prefix, num));
-	if (addresses)
+			addrtmp = g_strdup_printf ("%sIP6_ADDRESS_%d=%s/%d %s", prefix, num++, str_addr, ip_prefix, str_gw);
+			items = g_slist_prepend (items, addrtmp);
+		}
+		if (num)
+			items = g_slist_prepend (items, g_strdup_printf ("%sIP6_NUM_ADDRESSES=%d", prefix, num));
 		g_slist_free_full (addresses, (GDestroyNotify) nm_ip6_address_unref);
+	}
 
 	/* DNS servers */
 	val = g_hash_table_lookup (ip6_config, "nameservers");
-	if (val)
+	if (val) {
 		dns = nm_utils_ip6_dns_from_gvalue (val);
 
-	if (g_slist_length (dns)) {
-		gboolean first = TRUE;
+		if (g_slist_length (dns)) {
+			gboolean first = TRUE;
 
-		tmp = g_string_new (NULL);
-		g_string_append_printf (tmp, "%sIP6_NAMESERVERS=", prefix);
+			tmp = g_string_new (NULL);
+			g_string_append_printf (tmp, "%sIP6_NAMESERVERS=", prefix);
 
-		for (iter = dns; iter; iter = g_slist_next (iter)) {
-			const struct in6_addr *addr = iter->data;
+			for (iter = dns; iter; iter = g_slist_next (iter)) {
+				const struct in6_addr *addr = iter->data;
 
-			if (!first)
-				g_string_append_c (tmp, ' ');
-			g_string_append (tmp, nm_utils_inet6_ntop (addr, NULL));
-			first = FALSE;
+				if (!first)
+					g_string_append_c (tmp, ' ');
+				g_string_append (tmp, nm_utils_inet6_ntop (addr, NULL));
+				first = FALSE;
+			}
+
+			items = g_slist_prepend (items, tmp->str);
+			g_string_free (tmp, FALSE);
 		}
-
-		items = g_slist_prepend (items, tmp->str);
-		g_string_free (tmp, FALSE);
 	}
 
 	/* Search domains */
@@ -286,25 +290,25 @@ construct_ip6_items (GSList *items, GHashTable *ip6_config, const char *prefix)
 
 	/* Static routes */
 	val = g_hash_table_lookup (ip6_config, "routes");
-	if (val)
+	if (val) {
 		routes = nm_utils_ip6_routes_from_gvalue (val);
 
-	for (iter = routes, num = 0; iter; iter = g_slist_next (iter)) {
-		NMIP6Route *route = (NMIP6Route *) iter->data;
-		guint32 ip_prefix = nm_ip6_route_get_prefix (route);
-		guint32 metric = nm_ip6_route_get_metric (route);
-		char *routetmp;
+		for (iter = routes, num = 0; iter; iter = g_slist_next (iter)) {
+			NMIP6Route *route = (NMIP6Route *) iter->data;
+			guint32 ip_prefix = nm_ip6_route_get_prefix (route);
+			guint32 metric = nm_ip6_route_get_metric (route);
+			char *routetmp;
 
-		nm_utils_inet6_ntop (nm_ip6_route_get_dest (route), str_addr);
-		nm_utils_inet6_ntop (nm_ip6_route_get_next_hop (route), str_gw);
+			nm_utils_inet6_ntop (nm_ip6_route_get_dest (route), str_addr);
+			nm_utils_inet6_ntop (nm_ip6_route_get_next_hop (route), str_gw);
 
-		routetmp = g_strdup_printf ("%sIP6_ROUTE_%d=%s/%d %s %d", prefix, num++, str_addr, ip_prefix, str_gw, metric);
-		items = g_slist_prepend (items, routetmp);
-	}
-	if (num)
-		items = g_slist_prepend (items, g_strdup_printf ("%sIP6_NUM_ROUTES=%d", prefix, num));
-	if (routes)
+			routetmp = g_strdup_printf ("%sIP6_ROUTE_%d=%s/%d %s %d", prefix, num++, str_addr, ip_prefix, str_gw, metric);
+			items = g_slist_prepend (items, routetmp);
+		}
+		if (num)
+			items = g_slist_prepend (items, g_strdup_printf ("%sIP6_NUM_ROUTES=%d", prefix, num));
 		g_slist_free_full (routes, (GDestroyNotify) nm_ip6_route_unref);
+	}
 
 	return items;
 }
