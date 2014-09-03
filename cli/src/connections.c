@@ -3788,10 +3788,8 @@ cleanup_wired:
 		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_TRANSPORT_MODE, mode ? mode : "datagram", NULL);
 		if (mtu)
 			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MTU, mtu_int, NULL);
-		if (array) {
+		if (array)
 			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, array, NULL);
-			g_byte_array_free (array, TRUE);
-		}
 		if (p_key)
 			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_P_KEY, p_key_int, NULL);
 		if (parent)
@@ -3805,6 +3803,8 @@ cleanup_ib:
 		g_free (mode);
 		g_free (parent);
 		g_free (p_key);
+		if (array)
+			g_byte_array_free (array, TRUE);
 		if (!success)
 			return FALSE;
 
@@ -3920,15 +3920,15 @@ cleanup_wifi:
 		nm_connection_add_setting (connection, NM_SETTING (s_wimax));
 		g_object_set (s_wimax, NM_SETTING_WIMAX_NETWORK_NAME, nsp_name, NULL);
 
-		if (mac_array) {
+		if (mac_array)
 			g_object_set (s_wimax, NM_SETTING_WIMAX_MAC_ADDRESS, mac_array, NULL);
-			g_byte_array_free (mac_array, TRUE);
-		}
 
 		success = TRUE;
 cleanup_wimax:
 		g_free (nsp_name_ask);
 		g_free (mac);
+		if (mac_array)
+			g_byte_array_free (mac_array, TRUE);
 		if (!success)
 			return FALSE;
 
@@ -4116,10 +4116,8 @@ cleanup_mobile:
 		s_bt = (NMSettingBluetooth *) nm_setting_bluetooth_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_bt));
 
-		if (array) {
+		if (array)
 			g_object_set (s_bt, NM_SETTING_BLUETOOTH_BDADDR, array, NULL);
-			g_byte_array_free (array, TRUE);
-		}
 
 		/* 'dun' type requires adding 'gsm' or 'cdma' setting */
 		if (   !strcmp (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN)
@@ -4151,6 +4149,8 @@ cleanup_mobile:
 cleanup_bt:
 		g_free (addr_ask);
 		g_free (bt_type);
+		if (array)
+			g_byte_array_free (array, TRUE);
 		if (!success)
 			return FALSE;
 
@@ -4885,21 +4885,21 @@ cleanup_vpn:
 		ssid_arr = g_byte_array_sized_new (strlen (ssid));
 		g_byte_array_append (ssid_arr, (const guint8 *) ssid, strlen (ssid));
 		g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_SSID, ssid_arr, NULL);
+		g_byte_array_free (ssid_arr, TRUE);
 		if (channel)
 			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_CHANNEL, chan, NULL);
 		else
 			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_CHANNEL, 1, NULL);
-		if (array) {
+		if (array)
 			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, array, NULL);
-			g_byte_array_free (array, TRUE);
-		}
-		g_byte_array_free (ssid_arr, TRUE);
 
 		success = TRUE;
 cleanup_olpc:
 		g_free (ssid_ask);
 		g_free (channel);
 		g_free (dhcp_anycast);
+		if (array)
+			g_byte_array_free (array, TRUE);
 		if (!success)
 			return FALSE;
 
