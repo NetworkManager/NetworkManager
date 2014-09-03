@@ -171,7 +171,19 @@ got_secrets (NMRemoteConnection *connection,
              GError             *error,
              gpointer            op)
 {
-	nmt_sync_op_complete_pointer (op, secrets, error);
+	GHashTable *copy = NULL, *setting;
+	GHashTableIter iter;
+	const char *name;
+
+	if (secrets) {
+		/* 'secrets' is owned by the caller so we must copy it */
+		copy = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify) g_hash_table_destroy);
+		g_hash_table_iter_init (&iter, secrets);
+		while (g_hash_table_iter_next (&iter, (gpointer) &name, (gpointer) &setting))
+			g_hash_table_insert (copy, g_strdup (name), nm_utils_gvalue_hash_dup (setting));
+	}
+
+	nmt_sync_op_complete_pointer (op, copy, error);
 }
 
 static NMConnection *
@@ -196,8 +208,10 @@ build_edit_connection (NMConnection *orig_connection)
 		                                  setting_name, got_secrets, &op);
 		/* FIXME: error handling */
 		secrets = nmt_sync_op_wait_pointer (&op, NULL);
-		if (secrets)
+		if (secrets) {
 			(void) nm_connection_update_secrets (edit_connection, setting_name, secrets, NULL);
+			g_hash_table_unref (secrets);
+		}
 	}
 	g_hash_table_unref (settings);
 
