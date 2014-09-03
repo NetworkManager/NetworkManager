@@ -306,21 +306,30 @@ daemon_watch_cb (GPid pid, gint status, gpointer user_data)
 	NMDhcpClient *self = NM_DHCP_CLIENT (user_data);
 	NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE (self);
 	NMDhcpState new_state;
+	guint64 log_domain;
+	guint ip_ver;
 
-	if (priv->ipv6) {
-		nm_log_info (LOGD_DHCP6, "(%s): DHCPv6 client pid %d exited with status %d",
-		             priv->iface, pid,
-		             WIFEXITED (status) ? WEXITSTATUS (status) : -1);
-	} else {
-		nm_log_info (LOGD_DHCP4, "(%s): DHCPv4 client pid %d exited with status %d",
-		             priv->iface, pid,
-		             WIFEXITED (status) ? WEXITSTATUS (status) : -1);
-	}
+	log_domain = priv->ipv6 ? LOGD_DHCP6 : LOGD_DHCP4;
+	ip_ver = priv->ipv6 ? 6 : 4;
 
-	if (!WIFEXITED (status)) {
-		new_state = NM_DHCP_STATE_FAIL;
+	if (WIFEXITED (status))
+		nm_log_info (log_domain, "(%s): DHCPv%d client pid %d exited with status %d",
+		             priv->iface, ip_ver, pid, WEXITSTATUS (status));
+	else if (WIFSIGNALED (status))
+		nm_log_info (log_domain, "(%s): DHCPv%d client pid %d killed by signal %d",
+		             priv->iface, ip_ver, pid, WTERMSIG (status));
+	else if (WIFSTOPPED(status))
+		nm_log_info (log_domain, "(%s): DHCPv%d client pid %d stopped by signal %d",
+		             priv->iface, ip_ver, pid, WSTOPSIG (status));
+	else if (WIFCONTINUED (status))
+		nm_log_info (log_domain, "(%s): DHCPv%d client pid %d resumed (by SIGCONT)",
+		             priv->iface, ip_ver, pid);
+	else
 		nm_log_warn (LOGD_DHCP, "DHCP client died abnormally");
-	} else
+
+	if (!WIFEXITED (status))
+		new_state = NM_DHCP_STATE_FAIL;
+	else
 		new_state = NM_DHCP_STATE_DONE;
 
 	priv->pid = -1;
