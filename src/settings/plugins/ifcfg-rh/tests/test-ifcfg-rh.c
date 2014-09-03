@@ -12229,7 +12229,7 @@ test_read_ibft_ignored (void)
 	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-ibft",
 	                                   NULL, TYPE_ETHERNET,
 	                                   NULL, NULL, NULL, NULL, &error, NULL);
-	g_assert_no_error (error);
+	g_assert_error (error, IFCFG_PLUGIN_ERROR, 0);
 	g_assert (connection == NULL);
 }
 
