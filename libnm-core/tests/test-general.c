@@ -2668,42 +2668,18 @@ test_setting_old_uuid (void)
 	g_assert (success == TRUE);
 }
 
-static void
-test_connection_normalize_connection_interface_name (void)
-{
-	NMConnection *con;
-	NMSettingConnection *s_con;
-	NMSettingBond *s_bond;
-
-	con = nmtst_create_minimal_connection ("test1",
-	                                       "22001632-bbb4-4616-b277-363dce3dfb5b",
-	                                       NM_SETTING_BOND_SETTING_NAME,
-	                                       &s_con);
-
-	s_bond = nm_connection_get_setting_bond (con);
-	g_object_set (G_OBJECT (s_bond),
-	              NM_SETTING_BOND_INTERFACE_NAME, "bond-x",
-	              NULL);
-
-	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, NULL);
-
-	/* for backward compatiblity, normalizes the interface name */
-	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
-
-	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, "bond-x");
-
-	g_object_unref (con);
-}
-
 /*
  * Test normalization of interface-name
  **/
 static void
 test_connection_normalize_virtual_iface_name (void)
 {
-	gs_unref_object NMConnection *con = NULL;
+	NMConnection *con = NULL;
 	NMSettingConnection *s_con;
 	NMSettingVlan *s_vlan;
+	GHashTable *connection_hash, *setting_hash;
+	GValue *value;
+	GError *error = NULL;
 	const char *IFACE_NAME = "iface";
 	const char *IFACE_VIRT = "iface-X";
 
@@ -2729,33 +2705,55 @@ test_connection_normalize_virtual_iface_name (void)
 	              NULL);
 
 	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, IFACE_NAME, NULL);
-	g_object_set (G_OBJECT (s_vlan), NM_SETTING_VLAN_INTERFACE_NAME, IFACE_VIRT, NULL);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
-	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_VIRT);
-	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_VLAN_ERROR, NM_SETTING_VLAN_ERROR_INVALID_PROPERTY);
+
+	connection_hash = nm_connection_to_dbus (con, NM_CONNECTION_SERIALIZE_ALL);
+	g_object_unref (con);
+
+	/* Serialized form should include vlan.interface-name as well. */
+	setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_VLAN_SETTING_NAME);
+	g_assert (setting_hash != NULL);
+	value = g_hash_table_lookup (setting_hash, "interface-name");
+	g_assert (value != NULL);
+	g_assert (G_VALUE_HOLDS_STRING (value));
+	g_assert_cmpstr (g_value_get_string (value), ==, IFACE_NAME);
+
+	/* If vlan.interface-name is invalid, deserialization should fail, with the
+	 * correct error.
+	 */
+	g_value_set_string (value, ":::this-is-not-a-valid-interface-name:::");
+	con = nm_simple_connection_new_from_dbus (connection_hash, &error);
+	g_assert_error (error, NM_SETTING_VLAN_ERROR, NM_SETTING_VLAN_ERROR_INVALID_PROPERTY);
+	g_clear_error (&error);
+
+	/* If vlan.interface-name is valid, but doesn't match, it will be ignored. */
+	g_value_set_string (value, IFACE_VIRT);
+
+	con = nm_simple_connection_new_from_dbus (connection_hash, &error);
+	g_assert_no_error (error);
+
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
-	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_NAME);
+	s_con = nm_connection_get_setting_connection (con);
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, IFACE_NAME);
+	g_object_unref (con);
 
+	/* But removing connection.interface-name should result in vlan.connection-name
+	 * being "promoted".
+	 */
+	setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_CONNECTION_SETTING_NAME);
+	g_assert (setting_hash != NULL);
+	g_hash_table_remove (setting_hash, NM_SETTING_CONNECTION_INTERFACE_NAME);
 
-	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, IFACE_NAME, NULL);
-	g_object_set (G_OBJECT (s_vlan), NM_SETTING_VLAN_INTERFACE_NAME, NULL, NULL);
+	con = nm_simple_connection_new_from_dbus (connection_hash, &error);
+	g_assert_no_error (error);
 
-	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
-	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, NULL);
-	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_VLAN_ERROR, NM_SETTING_VLAN_ERROR_MISSING_PROPERTY);
-	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
-	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_NAME);
+	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_VIRT);
+	s_con = nm_connection_get_setting_connection (con);
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, IFACE_VIRT);
+	g_object_unref (con);
 
-
-	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, NULL, NULL);
-	g_object_set (G_OBJECT (s_vlan), NM_SETTING_VLAN_INTERFACE_NAME, IFACE_NAME, NULL);
-
-	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, NULL);
-	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_NAME);
-	nmtst_assert_connection_verifies_after_normalization (con, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
-	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
-	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, IFACE_NAME);
+	g_hash_table_unref (connection_hash);
 }
 
 static void
@@ -3227,7 +3225,6 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_connection_replace_settings_from_connection", test_connection_replace_settings_from_connection);
 	g_test_add_func ("/core/general/test_connection_replace_settings_bad", test_connection_replace_settings_bad);
 	g_test_add_func ("/core/general/test_connection_new_from_dbus", test_connection_new_from_dbus);
-	g_test_add_func ("/core/general/test_connection_normalize_connection_interface_name", test_connection_normalize_connection_interface_name);
 	g_test_add_func ("/core/general/test_connection_normalize_virtual_iface_name", test_connection_normalize_virtual_iface_name);
 	g_test_add_func ("/core/general/test_connection_normalize_type", test_connection_normalize_type);
 	g_test_add_func ("/core/general/test_connection_normalize_slave_type_1", test_connection_normalize_slave_type_1);

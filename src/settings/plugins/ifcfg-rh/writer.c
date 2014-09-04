@@ -1206,7 +1206,7 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 
 	svSetValue (ifcfg, "VLAN", "yes", FALSE);
 	svSetValue (ifcfg, "TYPE", TYPE_VLAN, FALSE);
-	svSetValue (ifcfg, "DEVICE", nm_setting_vlan_get_interface_name (s_vlan), FALSE);
+	svSetValue (ifcfg, "DEVICE", nm_setting_connection_get_interface_name (s_con), FALSE);
 	svSetValue (ifcfg, "PHYSDEV", nm_setting_vlan_get_parent (s_vlan), FALSE);
 	svSetValue (ifcfg, "MASTER", nm_setting_connection_get_master (s_con), FALSE);
 
@@ -1289,7 +1289,7 @@ write_bonding_setting (NMConnection *connection, shvarFile *ifcfg, GError **erro
 		return FALSE;
 	}
 
-	iface = nm_setting_bond_get_interface_name (s_bond);
+	iface = nm_connection_get_interface_name (connection);
 	if (!iface) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Missing interface name");
 		return FALSE;
@@ -1340,7 +1340,7 @@ write_team_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		return FALSE;
 	}
 
-	iface = nm_setting_team_get_interface_name (s_team);
+	iface = nm_connection_get_interface_name (connection);
 	if (!iface) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Missing interface name");
 		return FALSE;
@@ -1388,7 +1388,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 		return FALSE;
 	}
 
-	iface = nm_setting_bridge_get_interface_name (s_bridge);
+	iface = nm_connection_get_interface_name (connection);
 	if (!iface) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "Missing interface name");
 		return FALSE;

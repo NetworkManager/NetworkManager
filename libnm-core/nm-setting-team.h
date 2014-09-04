@@ -54,7 +54,6 @@ typedef enum {
 #define NM_SETTING_TEAM_ERROR nm_setting_team_error_quark ()
 GQuark nm_setting_team_error_quark (void);
 
-#define NM_SETTING_TEAM_INTERFACE_NAME "interface-name"
 #define NM_SETTING_TEAM_CONFIG "config"
 
 typedef struct {
@@ -72,7 +71,6 @@ GType nm_setting_team_get_type (void);
 
 NMSetting *  nm_setting_team_new                (void);
 
-const char * nm_setting_team_get_interface_name (NMSettingTeam *setting);
 const char * nm_setting_team_get_config (NMSettingTeam *setting);
 
 G_END_DECLS

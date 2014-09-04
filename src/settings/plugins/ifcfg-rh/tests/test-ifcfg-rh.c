@@ -11470,11 +11470,12 @@ test_read_bridge_main (void)
 	g_assert (nm_connection_verify (connection, &error));
 	g_assert_no_error (error);
 
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "br0");
+
 	/* ===== Bridging SETTING ===== */
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	g_assert (s_bridge);
-	g_assert_cmpstr (nm_setting_bridge_get_interface_name (s_bridge), ==, "br0");
 	g_assert_cmpuint (nm_setting_bridge_get_forward_delay (s_bridge), ==, 0);
 	g_assert (nm_setting_bridge_get_stp (s_bridge));
 	g_assert_cmpuint (nm_setting_bridge_get_priority (s_bridge), ==, 32744);
@@ -11532,6 +11533,7 @@ test_write_bridge_main (void)
 	              NM_SETTING_CONNECTION_ID, "Test Write Bridge Main",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "br0",
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BRIDGE_SETTING_NAME,
 	              NULL);
 	g_free (uuid);
@@ -11544,7 +11546,6 @@ test_write_bridge_main (void)
 	mac_array = g_byte_array_sized_new (sizeof (bridge_mac));
 	g_byte_array_append (mac_array, bridge_mac, sizeof (bridge_mac));
 	g_object_set (s_bridge,
-	              NM_SETTING_BRIDGE_INTERFACE_NAME, "br0",
 	              NM_SETTING_BRIDGE_MAC_ADDRESS, mac_array,
 	              NULL);
 	g_byte_array_free (mac_array, TRUE);
@@ -11575,7 +11576,7 @@ test_write_bridge_main (void)
 	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
-	nmtst_assert_connection_verifies_after_normalization (connection, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+	nmtst_assert_connection_verifies_without_normalization (connection);
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
@@ -11797,11 +11798,12 @@ test_read_bridge_missing_stp (void)
 	g_assert (nm_connection_verify (connection, &error));
 	g_assert_no_error (error);
 
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "br0");
+
 	/* ===== Bridging SETTING ===== */
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	g_assert (s_bridge);
-	g_assert_cmpstr (nm_setting_bridge_get_interface_name (s_bridge), ==, "br0");
 	g_assert (nm_setting_bridge_get_stp (s_bridge) == FALSE);
 
 	g_free (unmanaged);
@@ -11843,10 +11845,11 @@ test_read_vlan_interface (void)
 	g_free (routefile);
 	g_free (route6file);
 
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan43");
+
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
 
-	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, "vlan43");
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth9");
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 43);
 	g_assert_cmpint (nm_setting_vlan_get_flags (s_vlan), ==,
@@ -11912,10 +11915,11 @@ test_read_vlan_only_vlan_id (void)
 	g_free (routefile);
 	g_free (route6file);
 
+	g_assert (nm_connection_get_interface_name (connection) == NULL);
+
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
 
-	g_assert (nm_setting_vlan_get_interface_name (s_vlan) == NULL);
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth9");
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 43);
 
@@ -11953,10 +11957,11 @@ test_read_vlan_only_device (void)
 	g_free (routefile);
 	g_free (route6file);
 
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "eth0.9");
+
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
 
-	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, "eth0.9");
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth0");
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 9);
 
@@ -11977,10 +11982,11 @@ test_read_vlan_physdev (void)
 	g_assert (connection);
 	g_assert (nm_connection_verify (connection, &error));
 
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "vlan0.3");
+
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_assert (s_vlan);
 
-	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, "vlan0.3");
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, "eth0");
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 3);
 
@@ -12262,6 +12268,10 @@ test_read_bond_main (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "bond-main-read", "failed to verify %s: %s", TEST_IFCFG_BOND_MAIN, error->message);
 
+	ASSERT (g_strcmp0 (nm_connection_get_interface_name (connection), "bond0") == 0,
+	        "bond-main", "failed to verify %s: DEVICE=%s does not match bond0",
+	        TEST_IFCFG_BOND_MAIN, nm_connection_get_interface_name (connection));
+
 	/* ===== Bonding SETTING ===== */
 
 	s_bond = nm_connection_get_setting_bond (connection);
@@ -12269,10 +12279,6 @@ test_read_bond_main (void)
 	        "bond-main", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_BOND_MAIN,
 	        NM_SETTING_BOND_SETTING_NAME);
-
-	ASSERT (g_strcmp0 (nm_setting_bond_get_interface_name (s_bond), "bond0") == 0,
-	        "bond-main", "failed to verify %s: DEVICE=%s does not match bond0",
-	        TEST_IFCFG_BOND_MAIN, nm_setting_bond_get_interface_name (s_bond));
 
 	ASSERT (g_strcmp0 (nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MIIMON), "100") == 0,
 	        "bond-main", "failed to verify %s: miimon=%s does not match 100",
@@ -12320,6 +12326,7 @@ test_write_bond_main (void)
 	              NM_SETTING_CONNECTION_ID, "Test Write Bond Main",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "bond0",
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BOND_SETTING_NAME,
 	              NULL);
 	g_free (uuid);
@@ -12331,10 +12338,6 @@ test_write_bond_main (void)
 	/* bond setting */
 	s_bond = (NMSettingBond *) nm_setting_bond_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_bond));
-
-	g_object_set (s_bond,
-	              NM_SETTING_BOND_INTERFACE_NAME, "bond0",
-	              NULL);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -12360,7 +12363,7 @@ test_write_bond_main (void)
 	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 	              NULL);
 
-	nmtst_assert_connection_verifies_after_normalization (connection, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+	nmtst_assert_connection_verifies_without_normalization (connection);
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
@@ -13383,13 +13386,14 @@ test_read_team_master (void)
 	g_assert_no_error (error);
 	g_assert (success);
 
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, "team0");
+
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_TEAM_SETTING_NAME);
 
 	s_team = nm_connection_get_setting_team (connection);
 	g_assert (s_team);
-	g_assert_cmpstr (nm_setting_team_get_interface_name (s_team), ==, "team0");
 	g_assert_cmpstr (nm_setting_team_get_config (s_team), ==, expected_config);
 
 	g_object_unref (connection);
@@ -13402,6 +13406,8 @@ test_write_team_master (void)
 	NMSettingConnection *s_con;
 	NMSettingTeam *s_team;
 	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSettingIP6Config *s_ip6;
 	char *uuid, *testfile = NULL, *val;
 	gboolean success;
 	GError *error = NULL;
@@ -13419,6 +13425,7 @@ test_write_team_master (void)
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_ID, "Test Write Team Master",
 	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "team0",
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_TEAM_SETTING_NAME,
 	              NULL);
 	g_free (uuid);
@@ -13428,7 +13435,6 @@ test_write_team_master (void)
 	nm_connection_add_setting (connection, NM_SETTING (s_team));
 
 	g_object_set (s_team,
-	              NM_SETTING_TEAM_INTERFACE_NAME, "team0",
 	              NM_SETTING_TEAM_CONFIG, expected_config,
 	              NULL);
 
@@ -13436,7 +13442,25 @@ test_write_team_master (void)
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	nmtst_assert_connection_verifies_after_normalization (connection, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY);
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	g_assert (s_ip4);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	/* IP6 setting */
+	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	g_assert (s_ip6);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+
+	g_object_set (s_ip6,
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	nmtst_assert_connection_verifies_without_normalization (connection);
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,

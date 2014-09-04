@@ -56,10 +56,7 @@ nm_setting_bridge_port_error_quark (void)
 }
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingBridgePort, nm_setting_bridge_port, NM_TYPE_SETTING,
-                         _nm_register_setting (NM_SETTING_BRIDGE_PORT_SETTING_NAME,
-                                               g_define_type_id,
-                                               3,
-                                               NM_SETTING_BRIDGE_PORT_ERROR))
+                         _nm_register_setting (BRIDGE_PORT, 3))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_BRIDGE_PORT)
 
 #define NM_SETTING_BRIDGE_PORT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_BRIDGE_PORT, NMSettingBridgePortPrivate))

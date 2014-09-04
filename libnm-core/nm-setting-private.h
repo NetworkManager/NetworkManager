@@ -23,6 +23,7 @@
 
 #include "nm-setting.h"
 #include "nm-connection.h"
+#include "nm-core-enum-types.h"
 #include "nm-glib-compat.h"
 
 #include "nm-core-internal.h"
@@ -48,8 +49,11 @@ void _nm_register_setting (const char *name,
                            const guint32 priority,
                            const GQuark error_quark);
 
-/* Ensure, that name is a compile time constant string. Put the function name in parenthesis to suppress expansion. */
-#define _nm_register_setting(name, type, priority, error_quark)    _nm_register_setting ((name ""), type, priority, error_quark)
+#define _nm_register_setting(name, priority) \
+	G_STMT_START { \
+		_nm_register_setting (NM_SETTING_ ## name ## _SETTING_NAME "", g_define_type_id, priority, NM_SETTING_ ## name ## _ERROR); \
+		g_type_ensure (NM_TYPE_SETTING_ ## name ## _ERROR); \
+	} G_STMT_END
 
 gboolean _nm_setting_is_base_type (NMSetting *setting);
 gboolean _nm_setting_type_is_base_type (GType type);
@@ -97,15 +101,18 @@ NMSetting * _nm_setting_find_in_list_required (GSList *all_settings,
                                                const char *error_prefix_setting_name,
                                                const char *error_prefix_property_name);
 
-NMSettingVerifyResult _nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
-                                                                        gboolean allow_missing,
-                                                                        const char *setting_name,
-                                                                        const char *setting_property,
-                                                                        GQuark error_quark,
-                                                                        gint e_invalid_property,
-                                                                        gint e_missing_property,
-                                                                        GSList *all_settings,
-                                                                        GError **error);
+NMSettingVerifyResult _nm_setting_verify_required_virtual_interface_name (GSList *all_settings,
+                                                                          GError **error);
+
+gboolean _nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
+                                                            NMConnection *connection,
+                                                            const char *property,
+                                                            GValue *value);
+gboolean _nm_setting_set_deprecated_virtual_interface_name (NMSetting *setting,
+                                                            GHashTable *connection_hash,
+                                                            const char *property,
+                                                            const GValue *value,
+                                                            GError **error);
 
 NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
                                           GSList    *all_settings,
@@ -133,11 +140,22 @@ typedef gboolean (*NMSettingPropertySetFunc)    (NMSetting     *setting,
                                                  const char    *property,
                                                  const GValue  *value,
                                                  GError       **error);
+typedef gboolean (*NMSettingPropertyNotSetFunc) (NMSetting     *setting,
+                                                 GHashTable    *connection_hash,
+                                                 const char    *property,
+                                                 GError       **error);
 
 void _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
                                                const char *property_name,
                                                GType dbus_type,
                                                NMSettingPropertyGetFunc get_func,
                                                NMSettingPropertySetFunc set_func);
+
+void _nm_setting_class_override_property (NMSettingClass *setting_class,
+                                          const char *property_name,
+                                          GType dbus_type,
+                                          NMSettingPropertyGetFunc get_func,
+                                          NMSettingPropertySetFunc set_func,
+                                          NMSettingPropertyNotSetFunc not_set_func);
 
 #endif  /* NM_SETTING_PRIVATE_H */

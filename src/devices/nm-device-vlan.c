@@ -205,7 +205,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	 * since both the parent interface and the VLAN ID matched by the time we
 	 * get here.
 	 */
-	iface = nm_connection_get_virtual_iface_name (connection);
+	iface = nm_connection_get_interface_name (connection);
 	if (iface) {
 		if (g_strcmp0 (nm_device_get_ip_iface (device), iface) != 0)
 			return FALSE;
@@ -228,6 +228,7 @@ complete_connection (NMDevice *device,
 	                           existing_connections,
 	                           NULL,
 	                           _("VLAN connection"),
+	                           NULL,
 	                           TRUE);
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
@@ -290,7 +291,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (!s_vlan) {
 		s_vlan = (NMSettingVlan *) nm_setting_vlan_new ();
 		nm_connection_add_setting (connection, (NMSetting *) s_vlan);
-		g_object_set (s_vlan, NM_SETTING_VLAN_INTERFACE_NAME, nm_device_get_iface (device), NULL);
 	}
 
 	if (!nm_platform_vlan_get_info (ifindex, &parent_ifindex, &vlan_id)) {
@@ -470,7 +470,7 @@ nm_device_vlan_new_for_connection (NMConnection *connection, NMDevice *parent)
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	g_return_val_if_fail (s_vlan != NULL, NULL);
 
-	iface = g_strdup (nm_connection_get_virtual_iface_name (connection));
+	iface = g_strdup (nm_connection_get_interface_name (connection));
 	if (!iface) {
 		iface = nm_utils_new_vlan_name (nm_device_get_ip_iface (parent),
 		                                nm_setting_vlan_get_id (s_vlan));

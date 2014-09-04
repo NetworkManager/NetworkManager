@@ -122,7 +122,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	/* Team connections must specify the virtual interface name */
-	iface = nm_connection_get_virtual_iface_name (connection);
+	iface = nm_connection_get_interface_name (connection);
 	if (!iface || strcmp (nm_device_get_iface (device), iface))
 		return FALSE;
 
@@ -138,51 +138,20 @@ complete_connection (NMDevice *device,
                      const GSList *existing_connections,
                      GError **error)
 {
-	NMSettingTeam *s_team, *tmp;
-	guint32 i = 0;
-	char *name;
-	const GSList *iter;
-	gboolean found;
+	NMSettingTeam *s_team;
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_TEAM_SETTING_NAME,
 	                           existing_connections,
 	                           NULL,
 	                           _("Team connection"),
+	                           "team",
 	                           TRUE);
 
 	s_team = nm_connection_get_setting_team (connection);
 	if (!s_team) {
 		s_team = (NMSettingTeam *) nm_setting_team_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_team));
-	}
-
-	/* Grab the first name that doesn't exist in either our connections
-	 * or a device on the system.
-	 */
-	while (i < 500 && !nm_setting_team_get_interface_name (s_team)) {
-		name = g_strdup_printf ("team%u", i);
-		/* check interface names */
-		if (!nm_platform_link_exists (name)) {
-			/* check existing team connections */
-			for (iter = existing_connections, found = FALSE; iter; iter = g_slist_next (iter)) {
-				NMConnection *candidate = iter->data;
-
-				tmp = nm_connection_get_setting_team (candidate);
-				if (tmp && nm_connection_is_type (candidate, NM_SETTING_TEAM_SETTING_NAME)) {
-					if (g_strcmp0 (nm_setting_team_get_interface_name (tmp), name) == 0) {
-						found = TRUE;
-						break;
-					}
-				}
-			}
-
-			if (!found)
-				g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_INTERFACE_NAME, name, NULL);
-		}
-
-		g_free (name);
-		i++;
 	}
 
 	return TRUE;
@@ -219,8 +188,6 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (!s_team) {
 		s_team = (NMSettingTeam *) nm_setting_team_new ();
 		nm_connection_add_setting (connection, (NMSetting *) s_team);
-		g_object_set (G_OBJECT (s_team),
-		              NM_SETTING_TEAM_INTERFACE_NAME, nm_device_get_iface (device), NULL);
 	}
 	g_object_set (G_OBJECT (s_team), NM_SETTING_TEAM_CONFIG, NULL, NULL);
 
@@ -716,7 +683,7 @@ nm_device_team_new_for_connection (NMConnection *connection, GError **error)
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
-	iface = nm_connection_get_virtual_iface_name (connection);
+	iface = nm_connection_get_interface_name (connection);
 	g_return_val_if_fail (iface != NULL, NULL);
 
 	if (   !nm_platform_team_add (iface)

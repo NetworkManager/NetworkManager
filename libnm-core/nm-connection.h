@@ -202,8 +202,6 @@ void          nm_connection_set_path      (NMConnection *connection,
 
 const char *  nm_connection_get_path      (NMConnection *connection);
 
-const char *  nm_connection_get_virtual_iface_name (NMConnection *connection);
-
 const char *  nm_connection_get_interface_name (NMConnection *connection);
 
 gboolean      nm_connection_is_type (NMConnection *connection, const char *type);
@@ -219,6 +217,7 @@ const char *  nm_connection_get_uuid            (NMConnection *connection);
 const char *  nm_connection_get_id              (NMConnection *connection);
 const char *  nm_connection_get_connection_type (NMConnection *connection);
 
+gboolean      nm_connection_is_virtual          (NMConnection *connection);
 char *        nm_connection_get_virtual_device_description (NMConnection *connection);
 
 NMSetting8021x *           nm_connection_get_setting_802_1x            (NMConnection *connection);

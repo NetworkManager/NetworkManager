@@ -57,16 +57,12 @@ nm_setting_vlan_error_quark (void)
 }
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingVlan, nm_setting_vlan, NM_TYPE_SETTING,
-                         _nm_register_setting (NM_SETTING_VLAN_SETTING_NAME,
-                                               g_define_type_id,
-                                               1,
-                                               NM_SETTING_VLAN_ERROR))
+                         _nm_register_setting (VLAN, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_VLAN)
 
 #define NM_SETTING_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_VLAN, NMSettingVlanPrivate))
 
 typedef struct {
-	char *interface_name;
 	char *parent;
 	guint32 id;
 	guint32 flags;
@@ -76,7 +72,6 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_INTERFACE_NAME,
 	PROP_PARENT,
 	PROP_ID,
 	PROP_FLAGS,
@@ -104,19 +99,6 @@ NMSetting *
 nm_setting_vlan_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_VLAN, NULL);
-}
-
-/**
- * nm_setting_vlan_get_interface_name:
- * @setting: the #NMSettingVlan
- *
- * Returns: the #NMSettingVlan:interface_name property of the setting
- **/
-const char *
-nm_setting_vlan_get_interface_name (NMSettingVlan *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_VLAN (setting), NULL);
-	return NM_SETTING_VLAN_GET_PRIVATE (setting)->interface_name;
 }
 
 /**
@@ -589,23 +571,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	/* If interface_name is specified, it must be a valid interface name. We
-	 * don't check that it matches parent and/or id, because we allow
-	 * renaming vlans to arbitrary names.
-	 */
-	return _nm_setting_verify_deprecated_virtual_iface_name (
-	         priv->interface_name, TRUE,
-	         NM_SETTING_VLAN_SETTING_NAME, NM_SETTING_VLAN_INTERFACE_NAME,
-	         NM_SETTING_VLAN_ERROR,
-	         NM_SETTING_VLAN_ERROR_INVALID_PROPERTY,
-	         NM_SETTING_VLAN_ERROR_MISSING_PROPERTY,
-	         all_settings, error);
-}
-
-static const char *
-get_virtual_iface_name (NMSetting *setting)
-{
-	return nm_setting_vlan_get_interface_name (NM_SETTING_VLAN (setting));
+	return TRUE;
 }
 
 static GSList *
@@ -631,10 +597,6 @@ set_property (GObject *object, guint prop_id,
 	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
 
 	switch (prop_id) {
-	case PROP_INTERFACE_NAME:
-		g_free (priv->interface_name);
-		priv->interface_name = g_value_dup_string (value);
-		break;
 	case PROP_PARENT:
 		g_free (priv->parent);
 		priv->parent = g_value_dup_string (value);
@@ -682,9 +644,6 @@ get_property (GObject *object, guint prop_id,
 	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
 
 	switch (prop_id) {
-	case PROP_INTERFACE_NAME:
-		g_value_set_string (value, priv->interface_name);
-		break;
 	case PROP_PARENT:
 		g_value_set_string (value, priv->parent);
 		break;
@@ -712,7 +671,6 @@ finalize (GObject *object)
 	NMSettingVlan *setting = NM_SETTING_VLAN (object);
 	NMSettingVlanPrivate *priv = NM_SETTING_VLAN_GET_PRIVATE (setting);
 
-	g_free (priv->interface_name);
 	g_free (priv->parent);
 	g_slist_free_full (priv->ingress_priority_map, g_free);
 	g_slist_free_full (priv->egress_priority_map, g_free);
@@ -733,27 +691,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
-	parent_class->get_virtual_iface_name = get_virtual_iface_name;
 
 	/* Properties */
-
-	/**
-	 * NMSettingVlan:interface-name:
-	 *
-	 * If given, specifies the kernel name of the VLAN interface. If not given,
-	 * a default name will be constructed from the interface described by the
-	 * parent interface and the #NMSettingVlan:id property, eg "eth2.1". The
-	 * parent interface may be given by the #NMSettingVlan:parent property or by
-	 * the #NMSettingWired:mac-address property of an #NMSettingWired setting.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_INTERFACE_NAME,
-		 g_param_spec_string (NM_SETTING_VLAN_INTERFACE_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingVlan:parent:
@@ -834,4 +773,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                             G_PARAM_READWRITE |
 		                             NM_SETTING_PARAM_INFERRABLE |
 		                             G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name", G_TYPE_STRING,
+	                                          _nm_setting_get_deprecated_virtual_interface_name,
+	                                          _nm_setting_set_deprecated_virtual_interface_name);
 }

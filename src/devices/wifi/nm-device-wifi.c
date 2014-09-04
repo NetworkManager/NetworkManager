@@ -1109,6 +1109,7 @@ complete_connection (NMDevice *device,
 	                           existing_connections,
 	                           str_ssid,
 	                           str_ssid,
+	                           NULL,
 	                           TRUE);
 	g_free (str_ssid);
 

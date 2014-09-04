@@ -111,7 +111,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	/* Bond connections must specify the virtual interface name */
-	iface = nm_connection_get_virtual_iface_name (connection);
+	iface = nm_connection_get_interface_name (connection);
 	if (!iface || strcmp (nm_device_get_iface (device), iface))
 		return FALSE;
 
@@ -127,51 +127,20 @@ complete_connection (NMDevice *device,
                      const GSList *existing_connections,
                      GError **error)
 {
-	NMSettingBond *s_bond, *tmp;
-	guint32 i = 0;
-	char *name;
-	const GSList *iter;
-	gboolean found;
+	NMSettingBond *s_bond;
 
 	nm_utils_complete_generic (connection,
 	                           NM_SETTING_BOND_SETTING_NAME,
 	                           existing_connections,
 	                           NULL,
 	                           _("Bond connection"),
+	                           "bond",
 	                           TRUE);
 
 	s_bond = nm_connection_get_setting_bond (connection);
 	if (!s_bond) {
 		s_bond = (NMSettingBond *) nm_setting_bond_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_bond));
-	}
-
-	/* Grab the first name that doesn't exist in either our connections
-	 * or a device on the system.
-	 */
-	while (i < 500 && !nm_setting_bond_get_interface_name (s_bond)) {
-		name = g_strdup_printf ("bond%u", i);
-		/* check interface names */
-		if (!nm_platform_link_exists (name)) {
-			/* check existing bond connections */
-			for (iter = existing_connections, found = FALSE; iter; iter = g_slist_next (iter)) {
-				NMConnection *candidate = iter->data;
-
-				tmp = nm_connection_get_setting_bond (candidate);
-				if (tmp && nm_connection_is_type (candidate, NM_SETTING_BOND_SETTING_NAME)) {
-					if (g_strcmp0 (nm_setting_bond_get_interface_name (tmp), name) == 0) {
-						found = TRUE;
-						break;
-					}
-				}
-			}
-
-			if (!found)
-				g_object_set (G_OBJECT (s_bond), NM_SETTING_BOND_INTERFACE_NAME, name, NULL);
-		}
-
-		g_free (name);
-		i++;
 	}
 
 	return TRUE;
@@ -209,14 +178,12 @@ static void
 update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMSettingBond *s_bond = nm_connection_get_setting_bond (connection);
-	const char *ifname = nm_device_get_iface (device);
 	int ifindex = nm_device_get_ifindex (device);
 	const char **options;
 
 	if (!s_bond) {
 		s_bond = (NMSettingBond *) nm_setting_bond_new ();
 		nm_connection_add_setting (connection, (NMSetting *) s_bond);
-		g_object_set (s_bond, NM_SETTING_BOND_INTERFACE_NAME, ifname, NULL);
 	}
 
 	/* Read bond options from sysfs and update the Bond setting to match */
@@ -508,7 +475,7 @@ nm_device_bond_new_for_connection (NMConnection *connection)
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
-	iface = nm_connection_get_virtual_iface_name (connection);
+	iface = nm_connection_get_interface_name (connection);
 	g_return_val_if_fail (iface != NULL, NULL);
 
 	if (   !nm_platform_bond_add (iface)

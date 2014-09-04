@@ -150,7 +150,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	}
 
 	dev_iface_name = nm_device_get_iface (device);
-	vlan_iface_name = nm_setting_vlan_get_interface_name (s_vlan);
+	vlan_iface_name = nm_setting_connection_get_interface_name (s_con);
 	if (vlan_iface_name && g_strcmp0 (dev_iface_name, vlan_iface_name) != 0) {
 		g_set_error (error, NM_DEVICE_VLAN_ERROR, NM_DEVICE_VLAN_ERROR_INTERFACE_MISMATCH,
 		             "The interfaces of the device and the connection didn't match.");

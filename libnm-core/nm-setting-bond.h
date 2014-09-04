@@ -57,7 +57,6 @@ typedef enum {
 #define NM_SETTING_BOND_ERROR nm_setting_bond_error_quark ()
 GQuark nm_setting_bond_error_quark (void);
 
-#define NM_SETTING_BOND_INTERFACE_NAME "interface-name"
 #define NM_SETTING_BOND_OPTIONS "options"
 
 /* Valid options for the 'options' property */
@@ -90,7 +89,6 @@ typedef struct {
 GType nm_setting_bond_get_type (void);
 
 NMSetting *  nm_setting_bond_new                (void);
-const char * nm_setting_bond_get_interface_name (NMSettingBond *setting);
 guint32      nm_setting_bond_get_num_options    (NMSettingBond *setting);
 gboolean     nm_setting_bond_get_option         (NMSettingBond *setting,
                                                  guint32 idx,

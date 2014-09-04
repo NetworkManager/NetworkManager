@@ -252,7 +252,6 @@ test_read_ibft_vlan (void)
 	g_assert (s_vlan);
 	g_assert_cmpint (nm_setting_vlan_get_id (s_vlan), ==, 123);
 	g_assert_cmpstr (nm_setting_vlan_get_parent (s_vlan), ==, NULL);
-	g_assert_cmpstr (nm_setting_vlan_get_interface_name (s_vlan), ==, NULL);
 
 	/* ===== IPv4 SETTING ===== */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);

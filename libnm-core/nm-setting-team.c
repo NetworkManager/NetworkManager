@@ -57,22 +57,17 @@ nm_setting_team_error_quark (void)
 
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingTeam, nm_setting_team, NM_TYPE_SETTING,
-                         _nm_register_setting (NM_SETTING_TEAM_SETTING_NAME,
-                                               g_define_type_id,
-                                               1,
-                                               NM_SETTING_TEAM_ERROR))
+                         _nm_register_setting (TEAM, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_TEAM)
 
 #define NM_SETTING_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_TEAM, NMSettingTeamPrivate))
 
 typedef struct {
-	char *interface_name;
 	char *config;
 } NMSettingTeamPrivate;
 
 enum {
 	PROP_0,
-	PROP_INTERFACE_NAME,
 	PROP_CONFIG,
 	LAST_PROP
 };
@@ -88,20 +83,6 @@ NMSetting *
 nm_setting_team_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_TEAM, NULL);
-}
-
-/**
- * nm_setting_team_get_interface_name:
- * @setting: the #NMSettingTeam
- *
- * Returns: the #NMSettingTeam:interface-name property of the setting
- **/
-const char *
-nm_setting_team_get_interface_name (NMSettingTeam *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING_TEAM (setting), NULL);
-
-	return NM_SETTING_TEAM_GET_PRIVATE (setting)->interface_name;
 }
 
 /**
@@ -121,23 +102,7 @@ nm_setting_team_get_config (NMSettingTeam *setting)
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (setting);
-
-	return _nm_setting_verify_deprecated_virtual_iface_name (
-	         priv->interface_name, FALSE,
-	         NM_SETTING_TEAM_SETTING_NAME, NM_SETTING_TEAM_INTERFACE_NAME,
-	         NM_SETTING_TEAM_ERROR,
-	         NM_SETTING_TEAM_ERROR_INVALID_PROPERTY,
-	         NM_SETTING_TEAM_ERROR_MISSING_PROPERTY,
-	         all_settings, error);
-}
-
-static const char *
-get_virtual_iface_name (NMSetting *setting)
-{
-	NMSettingTeam *self = NM_SETTING_TEAM (setting);
-
-	return nm_setting_team_get_interface_name (self);
+	return _nm_setting_verify_required_virtual_interface_name (all_settings, error);
 }
 
 static void
@@ -150,7 +115,6 @@ finalize (GObject *object)
 {
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (object);
 
-	g_free (priv->interface_name);
 	g_free (priv->config);
 
 	G_OBJECT_CLASS (nm_setting_team_parent_class)->finalize (object);
@@ -163,10 +127,6 @@ set_property (GObject *object, guint prop_id,
 	NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_INTERFACE_NAME:
-		g_free (priv->interface_name);
-		priv->interface_name = g_value_dup_string (value);
-		break;
 	case PROP_CONFIG:
 		g_free (priv->config);
 		priv->config = g_value_dup_string (value);
@@ -184,9 +144,6 @@ get_property (GObject *object, guint prop_id,
 	NMSettingTeam *setting = NM_SETTING_TEAM (object);
 
 	switch (prop_id) {
-	case PROP_INTERFACE_NAME:
-		g_value_set_string (value, nm_setting_team_get_interface_name (setting));
-		break;
 	case PROP_CONFIG:
 		g_value_set_string (value, nm_setting_team_get_config (setting));
 		break;
@@ -209,22 +166,8 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
-	parent_class->get_virtual_iface_name = get_virtual_iface_name;
 
 	/* Properties */
-	/**
-	 * NMSettingTeam:interface-name:
-	 *
-	 * The name of the virtual in-kernel team network interface
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_INTERFACE_NAME,
-		 g_param_spec_string (NM_SETTING_TEAM_INTERFACE_NAME, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      NM_SETTING_PARAM_INFERRABLE |
-		                      G_PARAM_STATIC_STRINGS));
-
 	/**
 	 * NMSettingTeam:config:
 	 *
@@ -240,4 +183,8 @@ nm_setting_team_class_init (NMSettingTeamClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
+
+	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name", G_TYPE_STRING,
+	                                          _nm_setting_get_deprecated_virtual_interface_name,
+	                                          _nm_setting_set_deprecated_virtual_interface_name);
 }

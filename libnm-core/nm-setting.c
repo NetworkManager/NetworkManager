@@ -273,6 +273,19 @@ nm_setting_lookup_type_by_quark (GQuark error_quark)
 	return G_TYPE_INVALID;
 }
 
+static GQuark
+_nm_setting_lookup_error_quark (const char *name)
+{
+	SettingInfo *info;
+
+	g_return_val_if_fail (name != NULL, 0);
+
+	_ensure_registered ();
+
+	info = g_hash_table_lookup (registered_settings, name);
+	return info ? info->error_quark : 0;
+}
+
 gint
 _nm_setting_compare_priority (gconstpointer a, gconstpointer b)
 {
@@ -378,6 +391,7 @@ typedef struct {
 	GType dbus_type;
 	NMSettingPropertyGetFunc get_func;
 	NMSettingPropertySetFunc set_func;
+	NMSettingPropertyNotSetFunc not_set_func;
 } NMSettingProperty;
 
 static GQuark setting_property_overrides_quark;
@@ -404,9 +418,11 @@ find_property (GArray *properties, const char *name)
 static void
 add_property_override (NMSettingClass *setting_class,
                        const char *property_name,
+                       GParamSpec *param_spec,
                        GType dbus_type,
                        NMSettingPropertyGetFunc get_func,
-                       NMSettingPropertySetFunc set_func)
+                       NMSettingPropertySetFunc set_func,
+                       NMSettingPropertyNotSetFunc not_set_func)
 {
 	GType setting_type = G_TYPE_FROM_CLASS (setting_class);
 	GArray *overrides;
@@ -416,9 +432,11 @@ add_property_override (NMSettingClass *setting_class,
 
 	memset (&override, 0, sizeof (override));
 	override.name = property_name;
+	override.param_spec = param_spec;
 	override.dbus_type = dbus_type;
 	override.get_func = get_func;
 	override.set_func = set_func;
+	override.not_set_func = not_set_func;
 
 	overrides = g_type_get_qdata (setting_type, setting_property_overrides_quark);
 	if (!overrides) {
@@ -468,8 +486,56 @@ _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
 	g_return_if_fail (!g_object_class_find_property (G_OBJECT_CLASS (setting_class), property_name));
 
 	add_property_override (setting_class,
-	                       property_name, dbus_type,
-	                       get_func, set_func);
+	                       property_name, NULL, dbus_type,
+	                       get_func, set_func, NULL);
+}
+
+/**
+ * _nm_setting_class_override_property:
+ * @setting_class: the setting class
+ * @property_name: the name of the property to override
+ * @dbus_type: the type of the property (in its D-Bus representation)
+ * @get_func: (allow-none): function to call to get the value of the property
+ * @set_func: (allow-none): function to call to set the value of the property
+ * @not_set_func: (allow-none): function to call to indicate the property was not set
+ *
+ * Overrides the D-Bus representation of the #GObject property named
+ * @property_name on @setting_class.
+ *
+ * When serializing a setting to D-Bus, if @get_func is non-%NULL, then it will
+ * be called to get the property's value. If it returns %TRUE, the value will be
+ * added to the hash, and if %FALSE, it will not. (If @get_func is %NULL, the
+ * property will be read normally with g_object_get_property(), and added to the
+ * hash if it is not the default value.)
+ *
+ * When deserializing a D-Bus representation into a setting, if @property_name
+ * is present, then @set_func will be called to set (and/or verify) it. If it
+ * returns %TRUE, the value is considered to have been successfully set; if it
+ * returns %FALSE then the deserializing operation as a whole will fail with the
+ * returned #GError. (If @set_func is %NULL then the property will be set normally
+ * with g_object_set_property().)
+ *
+ * If @not_set_func is non-%NULL, then it will be called when deserializing a
+ * representation that does NOT contain @property_name. This can be used, eg, if
+ * a new property needs to be initialized from some older deprecated property
+ * when it is not present.
+ */
+void
+_nm_setting_class_override_property (NMSettingClass *setting_class,
+                                     const char *property_name,
+                                     GType dbus_type,
+                                     NMSettingPropertyGetFunc get_func,
+                                     NMSettingPropertySetFunc set_func,
+                                     NMSettingPropertyNotSetFunc not_set_func)
+{
+	GParamSpec *param_spec;
+
+	param_spec = g_object_class_find_property (G_OBJECT_CLASS (setting_class), property_name);
+	g_return_if_fail (param_spec != NULL);
+
+	add_property_override (setting_class,
+	                       property_name, param_spec, dbus_type,
+	                       get_func, set_func, not_set_func);
 }
 
 static GArray *
@@ -691,10 +757,7 @@ _nm_setting_new_from_dbus (GType setting_type,
 		const NMSettingProperty *property = &properties[i];
 		GValue *value = g_hash_table_lookup (setting_hash, property->name);
 
-		if (!value)
-			continue;
-
-		if (property->set_func) {
+		if (value && property->set_func) {
 			if (!property->set_func (setting,
 			                         connection_hash,
 			                         property->name,
@@ -704,7 +767,16 @@ _nm_setting_new_from_dbus (GType setting_type,
 				setting = NULL;
 				break;
 			}
-		} else if (property->param_spec) {
+		} else if (!value && property->not_set_func) {
+			if (!property->not_set_func (setting,
+			                             connection_hash,
+			                             property->name,
+			                             error)) {
+				g_object_unref (setting);
+				setting = NULL;
+				break;
+			}
+		} else if (value && property->param_spec) {
 			if (!(property->param_spec->flags & G_PARAM_WRITABLE))
 				continue;
 
@@ -1534,27 +1606,6 @@ nm_setting_to_string (NMSetting *setting)
 	return g_string_free (string, FALSE);
 }
 
-/**
- * nm_setting_get_virtual_iface_name:
- * @setting: the #NMSetting
- *
- * Returns the name of the virtual kernel interface which the connection
- * needs to use if specified in the settings.
- *
- * Returns: Name of the virtual interface or %NULL if the setting does not
- * support this feature
- **/
-const char *
-nm_setting_get_virtual_iface_name (NMSetting *setting)
-{
-	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
-
-	if (NM_SETTING_GET_CLASS (setting)->get_virtual_iface_name)
-		return NM_SETTING_GET_CLASS (setting)->get_virtual_iface_name (setting);
-
-	return NULL;
-}
-
 NMSetting *
 _nm_setting_find_in_list_required (GSList *all_settings,
                                    const char *setting_name,
@@ -1585,97 +1636,83 @@ _nm_setting_find_in_list_required (GSList *all_settings,
 }
 
 NMSettingVerifyResult
-_nm_setting_verify_deprecated_virtual_iface_name (const char *interface_name,
-                                                  gboolean allow_missing,
-                                                  const char *setting_name,
-                                                  const char *setting_property,
-                                                  GQuark error_quark,
-                                                  gint e_invalid_property,
-                                                  gint e_missing_property,
-                                                  GSList *all_settings,
-                                                  GError **error)
+_nm_setting_verify_required_virtual_interface_name (GSList *all_settings,
+                                                    GError **error)
 {
 	NMSettingConnection *s_con;
-	const char *con_name;
-
-	if (!all_settings) {
-		/* nm_setting_verify() was called without passing on any other settings.
-		 * Perform a relaxed verification, the setting might be valid when checked
-		 * together with a NMSettingConnection as part of a NMConnection. */
-		if (interface_name && !nm_utils_iface_valid_name (interface_name)) {
-			/* Only if the interace name is invalid, there is an normalizable warning */
-			g_set_error_literal (error,
-			                     error_quark,
-			                     e_invalid_property,
-			                     _("property is invalid"));
-			g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-			return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
-		}
-		return NM_SETTING_VERIFY_SUCCESS;
-	}
+	const char *interface_name;
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_find_in_list (all_settings, NM_SETTING_CONNECTION_SETTING_NAME));
-	con_name = s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
-	if (!interface_name && !con_name) {
-		if (allow_missing)
-			return NM_SETTING_VERIFY_SUCCESS;
-
-		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
-		return NM_SETTING_VERIFY_ERROR;
-	}
-	if (!con_name && !nm_utils_iface_valid_name (interface_name)) {
-		/* the interface_name is invalid, we cannot normalize it. Only do this if !con_name,
-		 * because if con_name is set, it can overwrite interface_name. */
-		g_set_error_literal (error,
-		                     error_quark,
-		                     e_invalid_property,
-		                     _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-		return NM_SETTING_VERIFY_ERROR;
-	}
-	if (!con_name) {
-		/* NMSettingConnection has interface not set, it should be normalized to interface_name */
-		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
-		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
-	}
-	if (!nm_utils_iface_valid_name (con_name)) {
-		/* NMSettingConnection:interface_name is invalid, we cannot normalize it. */
-		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
-		return NM_SETTING_VERIFY_ERROR;
-	}
+	interface_name = s_con ? nm_setting_connection_get_interface_name (s_con) : NULL;
 	if (!interface_name) {
-		/* Normalize by setting NMSettingConnection:interface_name. */
 		g_set_error_literal (error,
-		                     error_quark,
-		                     e_missing_property,
+		                     NM_SETTING_CONNECTION_ERROR,
+		                     NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
 		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
-	}
-	if (strcmp (con_name, interface_name) != 0) {
-		/* con_name and interface_name are different. It can be normalized by setting interface_name
-		 * to con_name. */
-		g_set_error_literal (error,
-		                     error_quark,
-		                     e_invalid_property,
-		                     _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", setting_name, setting_property);
-		return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+		return NM_SETTING_VERIFY_ERROR;
 	}
 
 	return NM_SETTING_VERIFY_SUCCESS;
+}
+
+gboolean
+_nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
+                                                   NMConnection *connection,
+                                                   const char *property,
+                                                   GValue *value)
+{
+	NMSettingConnection *s_con;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_return_val_if_fail (s_con != NULL, FALSE);
+
+	if (nm_setting_connection_get_interface_name (s_con)) {
+		g_value_set_string (value, nm_setting_connection_get_interface_name (s_con));
+		return TRUE;
+	} else
+		return FALSE;
+}
+
+gboolean
+_nm_setting_set_deprecated_virtual_interface_name (NMSetting *setting,
+                                                   GHashTable *connection_hash,
+                                                   const char *property,
+                                                   const GValue *value,
+                                                   GError **error)
+{
+	const char *interface_name;
+	GQuark error_domain;
+	char *error_enum_name;
+	GEnumClass *enum_class;
+	GEnumValue *enum_val;
+	int error_code = 0;
+
+	/* If the virtual setting type hash contains an interface name, it must be
+	 * valid (even if it's going to be ignored in favor of
+	 * NMSettingConnection:interface-name). Other than that, we don't have to
+	 * check anything here; NMSettingConnection:interface-name will do the rest.
+	 */
+	interface_name = g_value_get_string (value);
+	if (!interface_name || nm_utils_iface_valid_name (interface_name))
+		return TRUE;
+
+	/* For compatibility reasons, we have to use the right error domain... */
+	error_domain = _nm_setting_lookup_error_quark (nm_setting_get_name (setting));
+	error_enum_name = g_strdup_printf ("%sError", G_OBJECT_TYPE_NAME (setting));
+	enum_class = g_type_class_ref (g_type_from_name (error_enum_name));
+	g_free (error_enum_name);
+	if (enum_class) {
+		enum_val = g_enum_get_value_by_nick (enum_class, "InvalidProperty");
+		if (enum_val)
+			error_code = enum_val->value;
+		g_type_class_unref (enum_class);
+	}
+
+	g_set_error_literal (error, error_domain, error_code,
+	                     _("invalid value in compatibility property"));
+	g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property);
+	return FALSE;
 }
 
 /*****************************************************************************/

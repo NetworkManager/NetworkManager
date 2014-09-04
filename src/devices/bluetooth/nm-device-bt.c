@@ -318,6 +318,7 @@ complete_connection (NMDevice *device,
 	                           existing_connections,
 	                           preferred,
 	                           fallback_prefix,
+	                           NULL,
 	                           is_dun ? FALSE : TRUE); /* No IPv6 yet for DUN */
 
 	setting_bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);

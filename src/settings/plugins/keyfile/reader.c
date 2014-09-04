@@ -629,7 +629,7 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 				nm_setting_vpn_add_data_item (NM_SETTING_VPN (setting), *iter, value);
 		}
 		if (NM_IS_SETTING_BOND (setting)) {
-			if (strcmp (*iter, NM_SETTING_BOND_INTERFACE_NAME))
+			if (strcmp (*iter, "interface-name"))
 				nm_setting_bond_add_option (NM_SETTING_BOND (setting), *iter, value);
 		}
 		g_free (value);
@@ -1270,6 +1270,23 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 		hashed_uuid = nm_utils_uuid_generate_from_string (filename);
 		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, hashed_uuid, NULL);
 		g_free (hashed_uuid);
+	}
+
+	/* Make sure that we have 'interface-name' even if it was specified in the
+	 * "wrong" (ie, deprecated) group.
+	 */
+	if (   !nm_setting_connection_get_interface_name (s_con)
+	    && nm_setting_connection_get_connection_type (s_con)) {
+		char *interface_name;
+
+		interface_name = g_key_file_get_string (key_file,
+		                                        nm_setting_connection_get_connection_type (s_con),
+		                                        "interface-name",
+		                                        NULL);
+		if (interface_name) {
+			g_object_set (s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, interface_name, NULL);
+			g_free (interface_name);
+		}
 	}
 
 	/* Handle vpn secrets after the 'vpn' setting was read */

@@ -92,11 +92,12 @@ nm_device_infiniband_new_partition (NMConnection *connection,
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_DEVICE_INFINIBAND (parent), NULL);
 
-	iface = nm_connection_get_virtual_iface_name (connection);
+	s_infiniband = nm_connection_get_setting_infiniband (connection);
+
+	iface = nm_setting_infiniband_get_virtual_interface_name (s_infiniband);
 	g_return_val_if_fail (iface != NULL, NULL);
 
 	parent_ifindex = nm_device_get_ifindex (parent);
-	s_infiniband = nm_connection_get_setting_infiniband (connection);
 	p_key = nm_setting_infiniband_get_p_key (s_infiniband);
 
 	if (   !nm_platform_infiniband_partition_add (parent_ifindex, p_key)
@@ -232,6 +233,7 @@ complete_connection (NMDevice *device,
 	                           existing_connections,
 	                           NULL,
 	                           _("InfiniBand connection"),
+	                           NULL,
 	                           TRUE);
 
 	s_infiniband = nm_connection_get_setting_infiniband (connection);

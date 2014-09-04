@@ -55,10 +55,7 @@ nm_setting_pppoe_error_quark (void)
 
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingPppoe, nm_setting_pppoe, NM_TYPE_SETTING,
-                         _nm_register_setting (NM_SETTING_PPPOE_SETTING_NAME,
-                                               g_define_type_id,
-                                               3,
-                                               NM_SETTING_PPPOE_ERROR))
+                         _nm_register_setting (PPPOE, 3))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_PPPOE)
 
 #define NM_SETTING_PPPOE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PPPOE, NMSettingPppoePrivate))

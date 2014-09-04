@@ -527,28 +527,24 @@ NmcOutputField nmc_fields_setting_infiniband[] = {
 /* Available fields for NM_SETTING_BOND_SETTING_NAME */
 NmcOutputField nmc_fields_setting_bond[] = {
 	SETTING_FIELD ("name",  8),                                        /* 0 */
-	SETTING_FIELD (NM_SETTING_BOND_INTERFACE_NAME, 15),                /* 1 */
-	SETTING_FIELD (NM_SETTING_BOND_OPTIONS, 30),                       /* 2 */
+	SETTING_FIELD (NM_SETTING_BOND_OPTIONS, 30),                       /* 1 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_BOND_ALL     "name"","\
-                                        NM_SETTING_BOND_INTERFACE_NAME","\
                                         NM_SETTING_BOND_OPTIONS
 #define NMC_FIELDS_SETTING_BOND_COMMON  NMC_FIELDS_SETTING_BOND_ALL
 
 /* Available fields for NM_SETTING_VLAN_SETTING_NAME */
 NmcOutputField nmc_fields_setting_vlan[] = {
 	SETTING_FIELD ("name",  6),                                        /* 0 */
-	SETTING_FIELD (NM_SETTING_VLAN_INTERFACE_NAME, 15),                /* 1 */
-	SETTING_FIELD (NM_SETTING_VLAN_PARENT, 8),                         /* 2 */
-	SETTING_FIELD (NM_SETTING_VLAN_ID, 6),                             /* 3 */
-	SETTING_FIELD (NM_SETTING_VLAN_FLAGS, 45),                         /* 4 */
-	SETTING_FIELD (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, 22),          /* 5 */
-	SETTING_FIELD (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, 22),           /* 6 */
+	SETTING_FIELD (NM_SETTING_VLAN_PARENT, 8),                         /* 1 */
+	SETTING_FIELD (NM_SETTING_VLAN_ID, 6),                             /* 2 */
+	SETTING_FIELD (NM_SETTING_VLAN_FLAGS, 45),                         /* 3 */
+	SETTING_FIELD (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, 22),          /* 4 */
+	SETTING_FIELD (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP, 22),           /* 5 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_VLAN_ALL     "name"","\
-                                        NM_SETTING_VLAN_INTERFACE_NAME","\
                                         NM_SETTING_VLAN_PARENT","\
                                         NM_SETTING_VLAN_ID","\
                                         NM_SETTING_VLAN_FLAGS","\
@@ -559,18 +555,16 @@ NmcOutputField nmc_fields_setting_vlan[] = {
 /* Available fields for NM_SETTING_BRIDGE_SETTING_NAME */
 NmcOutputField nmc_fields_setting_bridge[] = {
 	SETTING_FIELD ("name",  8),                                        /* 0 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_INTERFACE_NAME, 15),              /* 1 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_MAC_ADDRESS, 19),                 /* 2 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_STP, 5),                          /* 3 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_PRIORITY, 6),                     /* 4 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_FORWARD_DELAY, 6),                /* 5 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_HELLO_TIME, 6),                   /* 6 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_MAX_AGE, 6),                      /* 7 */
-	SETTING_FIELD (NM_SETTING_BRIDGE_AGEING_TIME, 6),                  /* 8 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_MAC_ADDRESS, 19),                 /* 1 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_STP, 5),                          /* 2 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_PRIORITY, 6),                     /* 3 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_FORWARD_DELAY, 6),                /* 4 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_HELLO_TIME, 6),                   /* 5 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_MAX_AGE, 6),                      /* 6 */
+	SETTING_FIELD (NM_SETTING_BRIDGE_AGEING_TIME, 6),                  /* 7 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_BRIDGE_ALL    "name"","\
-                                         NM_SETTING_BRIDGE_INTERFACE_NAME","\
                                          NM_SETTING_BRIDGE_MAC_ADDRESS","\
                                          NM_SETTING_BRIDGE_STP","\
                                          NM_SETTING_BRIDGE_PRIORITY","\
@@ -597,12 +591,10 @@ NmcOutputField nmc_fields_setting_bridge_port[] = {
 /* Available fields for NM_SETTING_TEAM_SETTING_NAME */
 NmcOutputField nmc_fields_setting_team[] = {
 	SETTING_FIELD ("name",  8),                                        /* 0 */
-	SETTING_FIELD (NM_SETTING_TEAM_INTERFACE_NAME, 15),                /* 1 */
-	SETTING_FIELD (NM_SETTING_TEAM_CONFIG, 30),                        /* 2 */
+	SETTING_FIELD (NM_SETTING_TEAM_CONFIG, 30),                        /* 1 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_TEAM_ALL     "name"","\
-                                        NM_SETTING_TEAM_INTERFACE_NAME","\
                                         NM_SETTING_TEAM_CONFIG
 #define NMC_FIELDS_SETTING_TEAM_COMMON  NMC_FIELDS_SETTING_TEAM_ALL
 
@@ -977,9 +969,6 @@ DEFINE_GETTER (nmc_property_adsl_get_vci, NM_SETTING_ADSL_VCI)
 DEFINE_HWADDR_GETTER (nmc_property_bluetooth_get_bdaddr, NM_SETTING_BLUETOOTH_BDADDR)
 DEFINE_GETTER (nmc_property_bluetooth_get_type, NM_SETTING_BLUETOOTH_TYPE)
 
-/* --- NM_SETTING_BOND_SETTING_NAME property get functions --- */
-DEFINE_GETTER (nmc_property_bond_get_interface_name, NM_SETTING_BOND_INTERFACE_NAME)
-
 static char *
 nmc_property_bond_get_options (NMSetting *setting)
 {
@@ -1000,7 +989,6 @@ nmc_property_bond_get_options (NMSetting *setting)
 }
 
 /* --- NM_SETTING_BRIDGE_SETTING_NAME property get functions --- */
-DEFINE_GETTER (nmc_property_bridge_get_interface_name, NM_SETTING_BRIDGE_INTERFACE_NAME)
 DEFINE_HWADDR_GETTER (nmc_property_bridge_get_mac_address, NM_SETTING_BRIDGE_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_bridge_get_stp, NM_SETTING_BRIDGE_STP)
 DEFINE_GETTER (nmc_property_bridge_get_priority, NM_SETTING_BRIDGE_PRIORITY)
@@ -1015,7 +1003,6 @@ DEFINE_GETTER (nmc_property_bridge_port_get_path_cost, NM_SETTING_BRIDGE_PORT_PA
 DEFINE_GETTER (nmc_property_bridge_port_get_hairpin_mode, NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE)
 
 /* --- NM_SETTING_TEAM_SETTING_NAME property get functions --- */
-DEFINE_GETTER (nmc_property_team_get_interface_name, NM_SETTING_TEAM_INTERFACE_NAME)
 DEFINE_GETTER (nmc_property_team_get_config, NM_SETTING_TEAM_CONFIG)
 
 /* --- NM_SETTING_TEAM_PORT_SETTING_NAME property get functions --- */
@@ -1310,7 +1297,6 @@ DEFINE_GETTER (nmc_property_serial_get_stopbits, NM_SETTING_SERIAL_STOPBITS)
 DEFINE_GETTER (nmc_property_serial_get_send_delay, NM_SETTING_SERIAL_SEND_DELAY)
 
 /* --- NM_SETTING_VLAN_SETTING_NAME property get functions --- */
-DEFINE_GETTER (nmc_property_vlan_get_interface_name, NM_SETTING_VLAN_INTERFACE_NAME)
 DEFINE_GETTER (nmc_property_vlan_get_parent, NM_SETTING_VLAN_PARENT)
 DEFINE_GETTER (nmc_property_vlan_get_id, NM_SETTING_VLAN_ID)
 
@@ -4829,13 +4815,6 @@ nmc_properties_init (void)
 	                    NULL);
 
 	/* Add editable properties for NM_SETTING_BOND_SETTING_NAME */
-	nmc_add_prop_funcs (GLUE (BOND, INTERFACE_NAME),
-	                    nmc_property_bond_get_interface_name,
-	                    nmc_property_set_ifname,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
 	nmc_add_prop_funcs (GLUE (BOND, OPTIONS),
 	                    nmc_property_bond_get_options,
 	                    nmc_property_bond_set_options,
@@ -4845,13 +4824,6 @@ nmc_properties_init (void)
 	                    NULL);
 
 	/* Add editable properties for NM_SETTING_BRIDGE_SETTING_NAME */
-	nmc_add_prop_funcs (GLUE (BRIDGE, INTERFACE_NAME),
-	                    nmc_property_bridge_get_interface_name,
-	                    nmc_property_set_ifname,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
 	nmc_add_prop_funcs (GLUE (BRIDGE, MAC_ADDRESS),
 	                    nmc_property_bridge_get_mac_address,
 	                    nmc_property_set_mac,
@@ -5641,13 +5613,6 @@ nmc_properties_init (void)
 	                    NULL);
 
 	/* Add editable properties for NM_SETTING_TEAM_SETTING_NAME */
-	nmc_add_prop_funcs (GLUE (TEAM, INTERFACE_NAME),
-	                    nmc_property_team_get_interface_name,
-	                    nmc_property_set_ifname,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
 	nmc_add_prop_funcs (GLUE (TEAM, CONFIG),
 	                    nmc_property_team_get_config,
 	                    nmc_property_team_set_config,
@@ -5666,13 +5631,6 @@ nmc_properties_init (void)
 	                    NULL);
 
 	/* Add editable properties for NM_SETTING_VLAN_SETTING_NAME */
-	nmc_add_prop_funcs (GLUE (VLAN, INTERFACE_NAME),
-	                    nmc_property_vlan_get_interface_name,
-	                    nmc_property_set_ifname,
-	                    NULL,
-	                    NULL,
-	                    NULL,
-	                    NULL);
 	nmc_add_prop_funcs (GLUE (VLAN, PARENT),
 	                    nmc_property_vlan_get_parent,
 	                    nmc_property_set_string,
@@ -6957,8 +6915,7 @@ setting_bond_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_bond_get_interface_name (setting));
-	set_val_str (arr, 2, nmc_property_bond_get_options (setting));
+	set_val_str (arr, 1, nmc_property_bond_get_options (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -6984,12 +6941,11 @@ setting_vlan_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_vlan_get_interface_name (setting));
-	set_val_str (arr, 2, nmc_property_vlan_get_parent (setting));
-	set_val_str (arr, 3, nmc_property_vlan_get_id (setting));
-	set_val_str (arr, 4, nmc_property_vlan_get_flags (setting));
-	set_val_str (arr, 5, nmc_property_vlan_get_ingress_priority_map (setting));
-	set_val_str (arr, 6, nmc_property_vlan_get_egress_priority_map (setting));
+	set_val_str (arr, 1, nmc_property_vlan_get_parent (setting));
+	set_val_str (arr, 2, nmc_property_vlan_get_id (setting));
+	set_val_str (arr, 3, nmc_property_vlan_get_flags (setting));
+	set_val_str (arr, 4, nmc_property_vlan_get_ingress_priority_map (setting));
+	set_val_str (arr, 5, nmc_property_vlan_get_egress_priority_map (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7047,14 +7003,13 @@ setting_bridge_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_bridge_get_interface_name (setting));
-	set_val_str (arr, 2, nmc_property_bridge_get_mac_address (setting));
-	set_val_str (arr, 3, nmc_property_bridge_get_stp (setting));
-	set_val_str (arr, 4, nmc_property_bridge_get_priority (setting));
-	set_val_str (arr, 5, nmc_property_bridge_get_forward_delay (setting));
-	set_val_str (arr, 6, nmc_property_bridge_get_hello_time (setting));
-	set_val_str (arr, 7, nmc_property_bridge_get_max_age (setting));
-	set_val_str (arr, 8, nmc_property_bridge_get_ageing_time (setting));
+	set_val_str (arr, 1, nmc_property_bridge_get_mac_address (setting));
+	set_val_str (arr, 2, nmc_property_bridge_get_stp (setting));
+	set_val_str (arr, 3, nmc_property_bridge_get_priority (setting));
+	set_val_str (arr, 4, nmc_property_bridge_get_forward_delay (setting));
+	set_val_str (arr, 5, nmc_property_bridge_get_hello_time (setting));
+	set_val_str (arr, 6, nmc_property_bridge_get_max_age (setting));
+	set_val_str (arr, 7, nmc_property_bridge_get_ageing_time (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */
@@ -7108,8 +7063,7 @@ setting_team_details (NMSetting *setting, NmCli *nmc, const char *one_prop)
 
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
 	set_val_str (arr, 0, g_strdup (nm_setting_get_name (setting)));
-	set_val_str (arr, 1, nmc_property_team_get_interface_name (setting));
-	set_val_str (arr, 2, nmc_property_team_get_config (setting));
+	set_val_str (arr, 1, nmc_property_team_get_config (setting));
 	g_ptr_array_add (nmc->output_data, arr);
 
 	print_data (nmc);  /* Print all data */

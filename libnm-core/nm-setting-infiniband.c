@@ -56,10 +56,7 @@ nm_setting_infiniband_error_quark (void)
 }
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING,
-                         _nm_register_setting (NM_SETTING_INFINIBAND_SETTING_NAME,
-                                               g_define_type_id,
-                                               1,
-                                               NM_SETTING_INFINIBAND_ERROR))
+                         _nm_register_setting (INFINIBAND, 1))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_INFINIBAND)
 
 #define NM_SETTING_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_INFINIBAND, NMSettingInfinibandPrivate))
@@ -175,8 +172,18 @@ nm_setting_infiniband_get_parent (NMSettingInfiniband *setting)
 	return NM_SETTING_INFINIBAND_GET_PRIVATE (setting)->parent;
 }
 
-static const char *
-get_virtual_iface_name (NMSetting *setting)
+/**
+ * nm_setting_infiniband_get_virtual_interface_name:
+ * @setting: the #NMSettingInfiniband
+ *
+ * Returns the interface name created by combining #NMSettingInfiniband:parent
+ * and #NMSettingInfiniband:p-key. (If either property is unset, this will
+ * return %NULL.)
+ *
+ * Returns: the interface name, or %NULL
+ **/
+const char *
+nm_setting_infiniband_get_virtual_interface_name (NMSettingInfiniband *setting)
 {
 	NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE (setting);
 
@@ -397,8 +404,7 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	parent_class->verify                 = verify;
-	parent_class->get_virtual_iface_name = get_virtual_iface_name;
+	parent_class->verify       = verify;
 
 	/* Properties */
 	/**

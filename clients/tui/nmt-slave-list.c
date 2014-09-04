@@ -122,7 +122,7 @@ nmt_slave_list_connection_filter (NmtEditConnectionList *list,
 	if (!master)
 		return FALSE;
 
-	master_ifname = nm_connection_get_virtual_iface_name (priv->master);
+	master_ifname = nm_connection_get_interface_name (priv->master);
 	if (g_strcmp0 (master, master_ifname) != 0 && g_strcmp0 (master, priv->master_uuid) != 0)
 		return FALSE;
 

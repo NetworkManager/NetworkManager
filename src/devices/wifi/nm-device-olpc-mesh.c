@@ -164,6 +164,7 @@ complete_connection (NMDevice *device,
 	                           existing_connections,
 	                           NULL,
 	                           _("Mesh"),
+	                           NULL,
 	                           FALSE); /* No IPv6 by default */
 
 	return TRUE;

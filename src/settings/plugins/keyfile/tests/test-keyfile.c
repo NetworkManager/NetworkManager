@@ -2921,6 +2921,7 @@ test_read_bridge_main (void)
 	g_assert (s_con);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, expected_id);
 	g_assert_cmpstr (nm_setting_connection_get_uuid (s_con), ==, expected_uuid);
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "br0");
 
 	/* IPv4 setting */
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
@@ -2930,7 +2931,6 @@ test_read_bridge_main (void)
 	/* Bridge setting */
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	g_assert (s_bridge);
-	g_assert_cmpstr (nm_setting_bridge_get_interface_name (s_bridge), ==, "br0");
 	g_assert_cmpuint (nm_setting_bridge_get_forward_delay (s_bridge), ==, 0);
 	g_assert_cmpuint (nm_setting_bridge_get_stp (s_bridge), ==, TRUE);
 	g_assert_cmpuint (nm_setting_bridge_get_priority (s_bridge), ==, 32744);
@@ -2979,10 +2979,6 @@ test_write_bridge_main (void)
 	s_bridge = (NMSettingBridge *) nm_setting_bridge_new ();
 	g_assert (s_bridge);
 	nm_connection_add_setting (connection, NM_SETTING (s_bridge));
-
-	g_object_set (s_bridge,
-	              NM_SETTING_BRIDGE_INTERFACE_NAME, "br0",
-	              NULL);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();

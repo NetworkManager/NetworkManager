@@ -62,7 +62,6 @@ static void
 nmt_page_bridge_constructed (GObject *object)
 {
 	NmtPageBridge *bridge = NMT_PAGE_BRIDGE (object);
-	NmtDeviceEntry *deventry;
 	NmtPageGrid *grid;
 	NMSettingBridge *s_bridge;
 	NmtNewtWidget *widget, *label, *stp;
@@ -74,11 +73,6 @@ nmt_page_bridge_constructed (GObject *object)
 		nm_connection_add_setting (conn, nm_setting_bridge_new ());
 		s_bridge = nm_connection_get_setting_bridge (conn);
 	}
-
-	deventry = nmt_page_device_get_device_entry (NMT_PAGE_DEVICE (object));
-	g_object_bind_property (s_bridge, NM_SETTING_BRIDGE_INTERFACE_NAME,
-	                        deventry, "interface-name",
-	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
 	grid = NMT_PAGE_GRID (bridge);
 

@@ -55,7 +55,6 @@ typedef enum {
 #define NM_SETTING_BRIDGE_ERROR nm_setting_bridge_error_quark ()
 GQuark nm_setting_bridge_error_quark (void);
 
-#define NM_SETTING_BRIDGE_INTERFACE_NAME "interface-name"
 #define NM_SETTING_BRIDGE_MAC_ADDRESS    "mac-address"
 #define NM_SETTING_BRIDGE_STP            "stp"
 #define NM_SETTING_BRIDGE_PRIORITY       "priority"
@@ -78,8 +77,6 @@ typedef struct {
 GType nm_setting_bridge_get_type (void);
 
 NMSetting *  nm_setting_bridge_new                (void);
-
-const char * nm_setting_bridge_get_interface_name (NMSettingBridge *setting);
 
 const GByteArray *nm_setting_bridge_get_mac_address (NMSettingBridge *setting);
 

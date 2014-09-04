@@ -58,10 +58,7 @@ nm_setting_connection_error_quark (void)
 
 
 G_DEFINE_TYPE_WITH_CODE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING,
-                         _nm_register_setting (NM_SETTING_CONNECTION_SETTING_NAME,
-                                               g_define_type_id,
-                                               0,
-                                               NM_SETTING_CONNECTION_ERROR))
+                         _nm_register_setting (CONNECTION, 0))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_CONNECTION)
 
 #define NM_SETTING_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CONNECTION, NMSettingConnectionPrivate))
@@ -953,6 +950,52 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 }
 
 static gboolean
+nm_setting_connection_no_interface_name (NMSetting *setting,
+                                         GHashTable *connection_hash,
+                                         const char *property,
+                                         GError **error)
+{
+	GHashTable *setting_hash;
+	const char *interface_name;
+	GValue *value;
+
+	/* Check if there's a deprecated virtual interface-name property to steal */
+	setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_BOND_SETTING_NAME);
+	if (!setting_hash)
+		setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_BRIDGE_SETTING_NAME);
+	if (!setting_hash)
+		setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_TEAM_SETTING_NAME);
+	if (!setting_hash)
+		setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_VLAN_SETTING_NAME);
+
+	if (!setting_hash)
+		return TRUE;
+
+	/* All of the deprecated virtual interface name properties were named "interface-name". */
+	value = g_hash_table_lookup (setting_hash, "interface-name");
+	if (!value)
+		return TRUE;
+
+	interface_name = g_value_get_string (value);
+	if (!interface_name)
+		return TRUE;
+
+	if (!nm_utils_iface_valid_name (interface_name)) {
+		g_set_error_literal (error,
+		                     NM_SETTING_CONNECTION_ERROR,
+		                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is invalid"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+		return FALSE;
+	}
+
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, interface_name,
+	              NULL);
+	return TRUE;
+}
+
+static gboolean
 compare_property (NMSetting *setting,
                   NMSetting *other,
                   const GParamSpec *prop_spec,
@@ -1207,6 +1250,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      G_PARAM_READWRITE |
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_override_property (parent_class, NM_SETTING_CONNECTION_INTERFACE_NAME,
+	                                     G_TYPE_STRING,
+	                                     NULL, NULL,
+	                                     nm_setting_connection_no_interface_name);
 
 	/**
 	 * NMSettingConnection:type:
