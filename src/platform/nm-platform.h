@@ -388,6 +388,9 @@ typedef struct {
 	gboolean (*link_is_connected) (NMPlatform *, int ifindex);
 	gboolean (*link_uses_arp) (NMPlatform *, int ifindex);
 
+	gboolean (*link_get_user_ipv6ll_enabled) (NMPlatform *, int ifindex);
+	gboolean (*link_set_user_ipv6ll_enabled) (NMPlatform *, int ifindex, gboolean enabled);
+
 	gconstpointer (*link_get_address) (NMPlatform *, int ifindex, size_t *length);
 	gboolean (*link_set_address) (NMPlatform *, int ifindex, gconstpointer address, size_t length);
 	guint32 (*link_get_mtu) (NMPlatform *, int ifindex);
@@ -463,6 +466,7 @@ typedef struct {
 	gboolean (*ip6_route_exists) (NMPlatform *, int ifindex, struct in6_addr network, int plen, int metric);
 
 	gboolean (*check_support_kernel_extended_ifa_flags) (NMPlatform *);
+	gboolean (*check_support_user_ipv6ll) (NMPlatform *);
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -527,6 +531,9 @@ gboolean nm_platform_link_set_noarp (int ifindex);
 gboolean nm_platform_link_is_up (int ifindex);
 gboolean nm_platform_link_is_connected (int ifindex);
 gboolean nm_platform_link_uses_arp (int ifindex);
+
+gboolean nm_platform_link_get_user_ipv6ll_enabled (int ifindex);
+gboolean nm_platform_link_set_user_ipv6ll_enabled (int ifindex, gboolean enabled);
 
 gconstpointer nm_platform_link_get_address (int ifindex, size_t *length);
 gboolean nm_platform_link_set_address (int ifindex, const void *address, size_t length);
@@ -623,6 +630,7 @@ int nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6R
 
 gboolean nm_platform_check_support_libnl_extended_ifa_flags (void);
 gboolean nm_platform_check_support_kernel_extended_ifa_flags (void);
+gboolean nm_platform_check_support_user_ipv6ll (void);
 
 void nm_platform_addr_flags2str (int flags, char *buf, size_t size);
 
