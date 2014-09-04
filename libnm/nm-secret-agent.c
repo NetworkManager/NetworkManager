@@ -330,7 +330,7 @@ verify_request (NMSecretAgent *self,
 
 	/* Make sure the given connection is valid */
 	g_assert (out_connection);
-	connection = nm_simple_connection_new_from_hash (connection_hash, &local);
+	connection = nm_simple_connection_new_from_dbus (connection_hash, &local);
 	if (connection) {
 		nm_connection_set_path (connection, connection_path);
 		*out_connection = connection;

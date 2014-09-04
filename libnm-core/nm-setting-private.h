@@ -22,6 +22,7 @@
 #define __NM_SETTING_PRIVATE_H__
 
 #include "nm-setting.h"
+#include "nm-connection.h"
 #include "nm-glib-compat.h"
 
 #include "nm-core-internal.h"
@@ -113,5 +114,30 @@ NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
 NMSetting *_nm_setting_find_in_list_base_type (GSList *all_settings);
 gboolean _nm_setting_slave_type_is_valid (const char *slave_type, const char **out_port_type);
 const char * _nm_setting_slave_type_detect_from_settings (GSList *all_settings, NMSetting **out_s_port);
+
+GHashTable *_nm_setting_to_dbus       (NMSetting *setting,
+                                       NMConnection *connection,
+                                       NMConnectionSerializationFlags flags);
+
+NMSetting  *_nm_setting_new_from_dbus (GType setting_type,
+                                       GHashTable *setting_hash,
+                                       GHashTable *connection_hash,
+                                       GError **error);
+
+typedef gboolean (*NMSettingPropertyGetFunc)    (NMSetting     *setting,
+                                                 NMConnection  *connection,
+                                                 const char    *property,
+                                                 GValue        *value);
+typedef gboolean (*NMSettingPropertySetFunc)    (NMSetting     *setting,
+                                                 GHashTable    *connection_hash,
+                                                 const char    *property,
+                                                 const GValue  *value,
+                                                 GError       **error);
+
+void _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
+                                               const char *property_name,
+                                               GType dbus_type,
+                                               NMSettingPropertyGetFunc get_func,
+                                               NMSettingPropertySetFunc set_func);
 
 #endif  /* NM_SETTING_PRIVATE_H */

@@ -51,7 +51,7 @@ GType nm_simple_connection_get_type (void);
 
 NMConnection *nm_simple_connection_new           (void);
 
-NMConnection *nm_simple_connection_new_from_hash (GHashTable    *hash,
+NMConnection *nm_simple_connection_new_from_dbus (GHashTable    *hash,
                                                   GError       **error);
 
 NMConnection *nm_simple_connection_new_clone     (NMConnection  *connection);

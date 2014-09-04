@@ -75,6 +75,7 @@ global:
 	nm_connection_add_setting;
 	nm_connection_clear_secrets;
 	nm_connection_clear_secrets_with_flags;
+	nm_connection_clear_settings;
 	nm_connection_compare;
 	nm_connection_diff;
 	nm_connection_dump;
@@ -123,8 +124,9 @@ global:
 	nm_connection_remove_setting;
 	nm_connection_replace_settings;
 	nm_connection_replace_settings_from_connection;
+	nm_connection_serialization_flags_get_type;
 	nm_connection_set_path;
-	nm_connection_to_hash;
+	nm_connection_to_dbus;
 	nm_connection_update_secrets;
 	nm_connection_verify;
 	nm_connectivity_state_get_type;
@@ -591,7 +593,6 @@ global:
 	nm_setting_gsm_get_type;
 	nm_setting_gsm_get_username;
 	nm_setting_gsm_new;
-	nm_setting_hash_flags_get_type;
 	nm_setting_infiniband_error_get_type;
 	nm_setting_infiniband_error_quark;
 	nm_setting_infiniband_get_mac_address;
@@ -676,7 +677,6 @@ global:
 	nm_setting_lookup_type;
 	nm_setting_lookup_type_by_quark;
 	nm_setting_need_secrets;
-	nm_setting_new_from_hash;
 	nm_setting_olpc_mesh_error_get_type;
 	nm_setting_olpc_mesh_error_quark;
 	nm_setting_olpc_mesh_get_channel;
@@ -736,9 +736,7 @@ global:
 	nm_setting_team_port_get_config;
 	nm_setting_team_port_get_type;
 	nm_setting_team_port_new;
-	nm_setting_to_hash;
 	nm_setting_to_string;
-	nm_setting_update_secrets;
 	nm_setting_verify;
 	nm_setting_vlan_add_priority;
 	nm_setting_vlan_add_priority_str;
@@ -867,7 +865,7 @@ global:
 	nm_simple_connection_get_type;
 	nm_simple_connection_new;
 	nm_simple_connection_new_clone;
-	nm_simple_connection_new_from_hash;
+	nm_simple_connection_new_from_dbus;
 	nm_ssid_get_type;
 	nm_state_get_type;
 	nm_string_array_get_type;

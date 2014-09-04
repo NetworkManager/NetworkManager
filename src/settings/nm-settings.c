@@ -1224,7 +1224,7 @@ impl_settings_add_connection_helper (NMSettings *self,
 	NMConnection *connection;
 	GError *error = NULL;
 
-	connection = nm_simple_connection_new_from_hash (settings, &error);
+	connection = nm_simple_connection_new_from_dbus (settings, &error);
 	if (connection) {
 		nm_settings_add_connection_dbus (self,
 		                                 connection,

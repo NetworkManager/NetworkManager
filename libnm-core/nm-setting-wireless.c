@@ -81,7 +81,6 @@ typedef struct {
 	GSList *mac_address_blacklist;
 	guint32 mtu;
 	GSList *seen_bssids;
-	char *security;
 	gboolean hidden;
 } NMSettingWirelessPrivate;
 
@@ -99,7 +98,6 @@ enum {
 	PROP_MAC_ADDRESS_BLACKLIST,
 	PROP_MTU,
 	PROP_SEEN_BSSIDS,
-	PROP_SEC,
 	PROP_HIDDEN,
 
 	LAST_PROP
@@ -824,6 +822,19 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	return TRUE;
 }
 
+static gboolean
+nm_setting_wireless_get_security (NMSetting    *setting,
+                                  NMConnection *connection,
+                                  const char   *property_name,
+                                  GValue       *value)
+{
+	if (nm_connection_get_setting_wireless_security (connection)) {
+		g_value_set_string (value, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+		return TRUE;
+	} else
+		return FALSE;
+}
+
 static void
 nm_setting_wireless_init (NMSettingWireless *setting)
 {
@@ -836,7 +847,6 @@ finalize (GObject *object)
 
 	g_free (priv->mode);
 	g_free (priv->band);
-	g_free (priv->security);
 
 	if (priv->ssid)
 		g_byte_array_free (priv->ssid, TRUE);
@@ -907,10 +917,6 @@ set_property (GObject *object, guint prop_id,
 		g_slist_free_full (priv->seen_bssids, g_free);
 		priv->seen_bssids = g_value_dup_boxed (value);
 		break;
-	case PROP_SEC:
-		g_free (priv->security);
-		priv->security = g_value_dup_string (value);
-		break;
 	case PROP_HIDDEN:
 		priv->hidden = g_value_get_boolean (value);
 		break;
@@ -962,9 +968,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SEEN_BSSIDS:
 		g_value_set_boxed (value, NM_SETTING_WIRELESS_GET_PRIVATE (setting)->seen_bssids);
-		break;
-	case PROP_SEC:
-		g_value_set_string (value, NM_SETTING_WIRELESS_GET_PRIVATE (setting)->security);
 		break;
 	case PROP_HIDDEN:
 		g_value_set_boolean (value, nm_setting_wireless_get_hidden (setting));
@@ -1172,22 +1175,6 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                    G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMSettingWireless:security:
-	 *
-	 * (Unused)
-	 *
-	 * Deprecated: 0.9.10: No longer used. Security restrictions are recognized
-	 * by the presence of a #NMSettingWirelessSecurity setting in the
-	 * connection.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_SEC,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SEC, "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
-
-	/**
 	 * NMSettingWireless:hidden:
 	 *
 	 * If %TRUE, indicates this network is a non-broadcasting network that hides
@@ -1202,4 +1189,8 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		                       FALSE,
 		                       G_PARAM_READWRITE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	/* Compatibility for deprecated property */
+	_nm_setting_class_add_dbus_only_property (parent_class, "security", G_TYPE_STRING,
+	                                          nm_setting_wireless_get_security, NULL);
 }

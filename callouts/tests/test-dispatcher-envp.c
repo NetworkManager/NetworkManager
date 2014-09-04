@@ -167,7 +167,7 @@ parse_main (GKeyFile *kf,
 	g_free (id);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
-	*out_con_hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+	*out_con_hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 	g_object_unref (connection);
 
 	*out_con_props = value_hash_create ();

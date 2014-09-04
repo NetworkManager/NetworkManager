@@ -5438,7 +5438,7 @@ gen_cmd_print0 (const char *text, int state)
 		const char *setting_name;
 		int i = 0;
 
-		settings = nm_connection_to_hash (nmc_tab_completion.connection, NM_SETTING_HASH_FLAG_NO_SECRETS);
+		settings = nm_connection_to_dbus (nmc_tab_completion.connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
 		words = g_new (char *, g_hash_table_size (settings) + 2);
 		g_hash_table_iter_init (&iter, settings);
 		while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, NULL))

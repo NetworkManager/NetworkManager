@@ -485,7 +485,7 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 	info->callback = callback;
 	info->callback_data = user_data;
 
-	new_settings = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+	new_settings = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 	dbus_g_proxy_begin_call (priv->proxy, "AddConnection",
 	                         add_connection_done,
 	                         info,
@@ -538,7 +538,7 @@ nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
 	info->callback = callback;
 	info->callback_data = user_data;
 
-	new_settings = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+	new_settings = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 	dbus_g_proxy_begin_call (priv->proxy, "AddConnectionUnsaved",
 	                         add_connection_done,
 	                         info,

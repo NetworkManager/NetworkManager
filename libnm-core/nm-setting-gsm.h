@@ -69,10 +69,6 @@ GQuark nm_setting_gsm_error_quark (void);
 #define NM_SETTING_GSM_PIN_FLAGS      "pin-flags"
 #define NM_SETTING_GSM_HOME_ONLY      "home-only"
 
-/* Deprecated */
-#define NM_SETTING_GSM_ALLOWED_BANDS  "allowed-bands"
-#define NM_SETTING_GSM_NETWORK_TYPE   "network-type"
-
 typedef struct {
 	NMSetting parent;
 } NMSettingGsm;

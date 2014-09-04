@@ -1466,14 +1466,14 @@ _hash_with_username (NMConnection *connection, const char *username)
 	g_assert (s_vpn);
 	existing = nm_setting_vpn_get_user_name (s_vpn);
 	if (username == NULL || existing)
-		return nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+		return nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 
 	dup = nm_simple_connection_new_clone (connection);
 	g_assert (dup);
 	s_vpn = nm_connection_get_setting_vpn (dup);
 	g_assert (s_vpn);
 	g_object_set (s_vpn, NM_SETTING_VPN_USER_NAME, username, NULL);
-	hash = nm_connection_to_hash (dup, NM_SETTING_HASH_FLAG_ALL);
+	hash = nm_connection_to_dbus (dup, NM_CONNECTION_SERIALIZE_ALL);
 	g_object_unref (dup);
 	return hash;
 }

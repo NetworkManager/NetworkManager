@@ -304,11 +304,6 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
-	if (!property_specs) {
-		g_warning ("%s: couldn't find property specs for object of type '%s'",
-		           __func__, g_type_name (G_OBJECT_TYPE (setting)));
-		return NULL;
-	}
 
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal,
 	                              (GDestroyNotify) g_free, destroy_gvalue);
@@ -402,13 +397,8 @@ nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
 		}
 
 		g_value_init (dst_value, G_VALUE_TYPE (src_value));
-		if (g_value_transform (src_value, dst_value))
-			params[n_params++].name = prop_name;
-		else {
-			g_warning ("Ignoring property '%s' with invalid type (%s)",
-			           prop_name, G_VALUE_TYPE_NAME (src_value));
-			g_value_unset (dst_value);
-		}
+		g_value_copy (src_value, dst_value);
+		params[n_params++].name = prop_name;
 	}
 
 	setting = (NMSetting *) g_object_newv (setting_type, n_params, params);
@@ -974,7 +964,6 @@ static int
 update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
 {
 	GParamSpec *prop_spec;
-	GValue transformed_value = G_VALUE_INIT;
 
 	prop_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
 	if (!prop_spec) {
@@ -1004,11 +993,6 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 			g_free (v);
 		}
 		g_object_set_property (G_OBJECT (setting), prop_spec->name, value);
-		return NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
-	}
-	if (g_value_transform (value, &transformed_value)) {
-		g_object_set_property (G_OBJECT (setting), prop_spec->name, &transformed_value);
-		g_value_unset (&transformed_value);
 		return NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
 	}
 	g_set_error (error,
@@ -1210,8 +1194,6 @@ nm_setting_to_string (NMSetting *setting)
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
-	if (!property_specs)
-		return NULL;
 
 	string = g_string_new (nm_setting_get_name (setting));
 	g_string_append_c (string, '\n');

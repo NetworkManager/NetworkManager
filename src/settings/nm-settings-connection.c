@@ -478,7 +478,7 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 		 * in the replacement connection data if it was eg reread from disk.
 		 */
 		if (priv->agent_secrets) {
-			hash = nm_connection_to_hash (priv->agent_secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+			hash = nm_connection_to_dbus (priv->agent_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 			if (hash) {
 				(void) nm_connection_update_secrets (NM_CONNECTION (self), NULL, hash, NULL);
 				g_hash_table_destroy (hash);
@@ -811,7 +811,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 
 	/* Update the connection with our existing secrets from backing storage */
 	nm_connection_clear_secrets (NM_CONNECTION (self));
-	hash = nm_connection_to_hash (priv->system_secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+	hash = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 	if (!hash || nm_connection_update_secrets (NM_CONNECTION (self), setting_name, hash, &local)) {
 		/* Update the connection with the agent's secrets; by this point if any
 		 * system-owned secrets exist in 'secrets' the agent that provided them
@@ -915,7 +915,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 		return 0;
 	}
 
-	existing_secrets = nm_connection_to_hash (priv->system_secrets, NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+	existing_secrets = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 	call_id = nm_agent_manager_get_secrets (priv->agent_mgr,
 	                                        NM_CONNECTION (self),
 	                                        subject,
@@ -1165,23 +1165,11 @@ get_settings_auth_cb (NMSettingsConnection *self,
 			g_object_set (s_wifi, NM_SETTING_WIRELESS_SEEN_BSSIDS, bssid_list, NULL);
 		g_slist_free (bssid_list);
 
-		/* 802-11-wireless.security property is deprecated. But we set it here so that
-		 * we don't disturb old clients that might expect it being properly set for
-		 * secured Wi-Fi connections.
-		 */
-		if (nm_connection_get_setting_wireless_security (NM_CONNECTION (dupl_con))) {
-			s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (dupl_con));
-			g_assert (s_wifi);
-			g_object_set (s_wifi,
-			              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-			              NULL);
-		}
-
 		/* Secrets should *never* be returned by the GetSettings method, they
 		 * get returned by the GetSecrets method which can be better
 		 * protected against leakage of secrets to unprivileged callers.
 		 */
-		settings = nm_connection_to_hash (NM_CONNECTION (dupl_con), NM_SETTING_HASH_FLAG_NO_SECRETS);
+		settings = nm_connection_to_dbus (NM_CONNECTION (dupl_con), NM_CONNECTION_SERIALIZE_NO_SECRETS);
 		g_assert (settings);
 		dbus_g_method_return (context, settings);
 		g_hash_table_destroy (settings);
@@ -1343,7 +1331,7 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
 
 	/* Check if the settings are valid first */
 	if (new_settings) {
-		tmp = nm_simple_connection_new_from_hash (new_settings, &error);
+		tmp = nm_simple_connection_new_from_dbus (new_settings, &error);
 		if (!tmp) {
 			g_assert (error);
 			goto error;
@@ -1510,7 +1498,7 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 		 * secrets from backing storage and those returned from the agent
 		 * by the time we get here.
 		 */
-		hash = nm_connection_to_hash (NM_CONNECTION (self), NM_SETTING_HASH_FLAG_ONLY_SECRETS);
+		hash = nm_connection_to_dbus (NM_CONNECTION (self), NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 		if (!hash)
 			hash = g_hash_table_new (NULL, NULL);
 		dbus_g_method_return (context, hash);

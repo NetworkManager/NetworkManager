@@ -20,6 +20,7 @@
  */
 
 #include "nm-simple-connection.h"
+#include "nm-setting-private.h"
 
 static void nm_simple_connection_interface_init (NMConnectionInterface *iface);
 
@@ -48,13 +49,13 @@ nm_simple_connection_new (void)
 }
 
 /**
- * nm_simple_connection_new_from_hash:
+ * nm_simple_connection_new_from_dbus:
  * @hash: (element-type utf8 GLib.HashTable): the #GHashTable describing
  * the connection
  * @error: on unsuccessful return, an error
  *
  * Creates a new #NMSimpleConnection from a hash table describing the
- * connection.  See nm_connection_to_hash() for a description of the expected
+ * connection.  See nm_connection_to_dbus() for a description of the expected
  * hash table.
  *
  * Returns: (transfer full): the new #NMSimpleConnection object, populated with
@@ -62,18 +63,43 @@ nm_simple_connection_new (void)
  * connection failed to validate
  **/
 NMConnection *
-nm_simple_connection_new_from_hash (GHashTable *hash, GError **error)
+nm_simple_connection_new_from_dbus (GHashTable *hash, GError **error)
 {
 	NMConnection *connection;
+	GHashTableIter iter;
+	const char *setting_name;
+	GHashTable *setting_hash;
 
 	g_return_val_if_fail (hash != NULL, NULL);
 
 	connection = nm_simple_connection_new ();
-	if (!nm_connection_replace_settings (connection, hash, error)) {
-		g_object_unref (connection);
-		return NULL;
+
+	g_hash_table_iter_init (&iter, hash);
+	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
+		NMSetting *setting;
+		GType type;
+
+		type = nm_setting_lookup_type (setting_name);
+		if (type == G_TYPE_INVALID) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_SETTING,
+			             "unknown setting name '%s'", setting_name);
+			goto failed;
+		}
+
+		setting = _nm_setting_new_from_dbus (type, setting_hash, hash, error);
+		if (!setting)
+			goto failed;
+		nm_connection_add_setting (connection, setting);
 	}
-	return connection;
+
+	if (nm_connection_verify (connection, error))
+		return connection;
+
+failed:
+	g_object_unref (connection);
+	return NULL;
 }
 
 /**

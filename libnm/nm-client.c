@@ -718,7 +718,7 @@ nm_client_add_and_activate_connection (NMClient *client,
 	info->client = client;
 
 	if (partial)
-		hash = nm_connection_to_hash (partial, NM_SETTING_HASH_FLAG_ALL);
+		hash = nm_connection_to_dbus (partial, NM_CONNECTION_SERIALIZE_ALL);
 	if (!hash)
 		hash = g_hash_table_new (g_str_hash, g_str_equal);
 

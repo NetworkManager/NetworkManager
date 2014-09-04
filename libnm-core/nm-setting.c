@@ -231,14 +231,15 @@ _nm_setting_is_base_type (NMSetting *setting)
  *
  * Returns the #GType of the setting's class for a given setting name.
  *
- * Returns: the #GType of the setting's class
+ * Returns: the #GType of the setting's class, or %G_TYPE_INVALID if
+ *   @name is not recognized.
  **/
 GType
 nm_setting_lookup_type (const char *name)
 {
 	SettingInfo *info;
 
-	g_return_val_if_fail (name != NULL, G_TYPE_NONE);
+	g_return_val_if_fail (name != NULL, G_TYPE_INVALID);
 
 	_ensure_registered ();
 
@@ -253,7 +254,8 @@ nm_setting_lookup_type (const char *name)
  * Returns the #GType of the setting's class for a given setting error quark.
  * Useful for figuring out which setting a returned error is for.
  *
- * Returns: the #GType of the setting's class
+ * Returns: the #GType of the setting's class, or %G_TYPE_INVALID if
+ *   @error_quark is not recognized
  **/
 GType
 nm_setting_lookup_type_by_quark (GQuark error_quark)
@@ -370,19 +372,194 @@ _nm_setting_slave_type_detect_from_settings (GSList *all_settings, NMSetting **o
 
 /*************************************************************/
 
+typedef struct {
+	const char *name;
+	GParamSpec *param_spec;
+	GType dbus_type;
+	NMSettingPropertyGetFunc get_func;
+	NMSettingPropertySetFunc set_func;
+} NMSettingProperty;
+
+static GQuark setting_property_overrides_quark;
+static GQuark setting_properties_quark;
+
+static NMSettingProperty *
+find_property (GArray *properties, const char *name)
+{
+	NMSettingProperty *property;
+	int i;
+
+	if (!properties)
+		return NULL;
+
+	for (i = 0; i < properties->len; i++) {
+		property = &g_array_index (properties, NMSettingProperty, i);
+		if (strcmp (name, property->name) == 0)
+			return property;
+	}
+
+	return NULL;
+}
+
+static void
+add_property_override (NMSettingClass *setting_class,
+                       const char *property_name,
+                       GType dbus_type,
+                       NMSettingPropertyGetFunc get_func,
+                       NMSettingPropertySetFunc set_func)
+{
+	GType setting_type = G_TYPE_FROM_CLASS (setting_class);
+	GArray *overrides;
+	NMSettingProperty override;
+
+	g_return_if_fail (g_type_get_qdata (setting_type, setting_properties_quark) == NULL);
+
+	memset (&override, 0, sizeof (override));
+	override.name = property_name;
+	override.dbus_type = dbus_type;
+	override.get_func = get_func;
+	override.set_func = set_func;
+
+	overrides = g_type_get_qdata (setting_type, setting_property_overrides_quark);
+	if (!overrides) {
+		overrides = g_array_new (FALSE, FALSE, sizeof (NMSettingProperty));
+		g_type_set_qdata (setting_type, setting_property_overrides_quark, overrides);
+	}
+	g_return_if_fail (find_property (overrides, property_name) == NULL);
+
+	g_array_append_val (overrides, override);
+}
+
+/**
+ * _nm_setting_class_add_dbus_only_property:
+ * @setting_class: the setting class
+ * @property_name: the name of the property to override
+ * @dbus_type: the type of the property
+ * @get_func: (allow-none): function to call to get the value of the property
+ * @set_func: (allow-none): function to call to set the value of the property
+ *
+ * Registers a property named @property_name, which will be used in the D-Bus
+ * serialization of objects of @setting_class, but which does not correspond to
+ * a #GObject property.
+ *
+ * When serializing a setting to D-Bus, @get_func will be called to get the
+ * property's value. If it returns %TRUE, the value will be added to the hash,
+ * and if %FALSE, it will not. (If @get_func is %NULL, the property will always
+ * be omitted in the serialization.)
+ *
+ * When deserializing a D-Bus representation into a setting, if @property_name
+ * is present, then @set_func will be called to set (and/or verify) it. If it
+ * returns %TRUE, the value is considered to have been successfully set; if it
+ * returns %FALSE then the deserializing operation as a whole will fail with the
+ * returned #GError. (If @set_func is %NULL then the property will be ignored
+ * when deserializing.)
+ */
+void
+_nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
+                                          const char *property_name,
+                                          GType dbus_type,
+                                          NMSettingPropertyGetFunc get_func,
+                                          NMSettingPropertySetFunc set_func)
+{
+	g_return_if_fail (NM_IS_SETTING_CLASS (setting_class));
+	g_return_if_fail (property_name != NULL);
+
+	/* Must not match any GObject property. */
+	g_return_if_fail (!g_object_class_find_property (G_OBJECT_CLASS (setting_class), property_name));
+
+	add_property_override (setting_class,
+	                       property_name, dbus_type,
+	                       get_func, set_func);
+}
+
+static GArray *
+nm_setting_class_ensure_properties (NMSettingClass *setting_class)
+{
+	GType type = G_TYPE_FROM_CLASS (setting_class), otype;
+	NMSettingProperty property, *override;
+	GArray *overrides, *type_overrides, *properties;
+	GParamSpec **property_specs;
+	guint n_property_specs, i;
+
+	properties = g_type_get_qdata (type, setting_properties_quark);
+	if (properties)
+		return properties;
+
+	/* Build overrides array from @setting_class and its superclasses */
+	overrides = g_array_new (FALSE, FALSE, sizeof (NMSettingProperty));
+	for (otype = type; otype != G_TYPE_OBJECT; otype = g_type_parent (otype)) {
+		type_overrides = g_type_get_qdata (otype, setting_property_overrides_quark);
+		if (type_overrides)
+			g_array_append_vals (overrides, (NMSettingProperty *)type_overrides->data, type_overrides->len);
+	}
+
+	/* Build the properties array from the GParamSpecs, obeying overrides */
+	properties = g_array_new (FALSE, FALSE, sizeof (NMSettingProperty));
+
+	property_specs = g_object_class_list_properties (G_OBJECT_CLASS (setting_class),
+	                                                 &n_property_specs);
+	for (i = 0; i < n_property_specs; i++) {
+		override = find_property (overrides, property_specs[i]->name);
+		if (override)
+			property = *override;
+		else {
+			memset (&property, 0, sizeof (property));
+			property.name = property_specs[i]->name;
+			property.param_spec = property_specs[i];
+		}
+		g_array_append_val (properties, property);
+	}
+	g_free (property_specs);
+
+	/* Add any remaining overrides not corresponding to GObject properties */
+	for (i = 0; i < overrides->len; i++) {
+		override = &g_array_index (overrides, NMSettingProperty, i);
+		if (!g_object_class_find_property (G_OBJECT_CLASS (setting_class), override->name))
+			g_array_append_val (properties, *override);
+	}
+	g_array_unref (overrides);
+
+	g_type_set_qdata (type, setting_properties_quark, properties);
+	return properties;
+}
+
+static const NMSettingProperty *
+nm_setting_class_get_properties (NMSettingClass *setting_class, guint *n_properties)
+{
+	GArray *properties;
+
+	properties = nm_setting_class_ensure_properties (setting_class);
+
+	*n_properties = properties->len;
+	return (NMSettingProperty *) properties->data;
+}
+
+static const NMSettingProperty *
+nm_setting_class_find_property (NMSettingClass *setting_class, const char *property_name)
+{
+	GArray *properties;
+
+	properties = nm_setting_class_ensure_properties (setting_class);
+	return find_property (properties, property_name);
+}
+
+/*************************************************************/
+
 static void
 destroy_gvalue (gpointer data)
 {
 	GValue *value = (GValue *) data;
 
-	g_value_unset (value);
+	if (G_IS_VALUE (value))
+		g_value_unset (value);
 	g_slice_free (GValue, value);
 }
 
 /**
- * nm_setting_to_hash:
+ * _nm_setting_to_dbus:
  * @setting: the #NMSetting
- * @flags: hash flags, e.g. %NM_SETTING_HASH_FLAG_ALL
+ * @connection: the #NMConnection containing @setting
+ * @flags: hash flags, e.g. %NM_CONNECTION_SERIALIZE_ALL
  *
  * Converts the #NMSetting into a #GHashTable mapping each setting property
  * name to a GValue describing that property, suitable for marshalling over
@@ -392,52 +569,59 @@ destroy_gvalue (gpointer data)
  * describing the setting's properties
  **/
 GHashTable *
-nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
+_nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionSerializationFlags flags)
 {
 	GHashTable *hash;
-	GParamSpec **property_specs;
-	guint n_property_specs;
-	guint i;
+	const NMSettingProperty *properties;
+	guint n_properties, i;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
-	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
-	if (!property_specs) {
-		g_warning ("%s: couldn't find property specs for object of type '%s'",
-		           __func__, g_type_name (G_OBJECT_TYPE (setting)));
-		return NULL;
-	}
+	properties = nm_setting_class_get_properties (NM_SETTING_GET_CLASS (setting), &n_properties);
 
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal,
 	                              (GDestroyNotify) g_free, destroy_gvalue);
 
-	for (i = 0; i < n_property_specs; i++) {
-		GParamSpec *prop_spec = property_specs[i];
+	for (i = 0; i < n_properties; i++) {
+		const NMSettingProperty *property = &properties[i];
+		GParamSpec *prop_spec = property->param_spec;
 		GValue *value;
+		gboolean set;
 
-		/* 'name' doesn't get serialized */
-		if (strcmp (g_param_spec_get_name (prop_spec), NM_SETTING_NAME) == 0)
+		if (!prop_spec && !property->get_func) {
+			/* Override property with no get_func, so we skip it. */
+			continue;
+		}
+
+		if (prop_spec && !(prop_spec->flags & G_PARAM_WRITABLE))
 			continue;
 
-		if (   (flags & NM_SETTING_HASH_FLAG_NO_SECRETS)
-		    && (prop_spec->flags & NM_SETTING_PARAM_SECRET))
+		if (   (flags & NM_CONNECTION_SERIALIZE_NO_SECRETS)
+		    && (prop_spec && (prop_spec->flags & NM_SETTING_PARAM_SECRET)))
 			continue;
 
-		if (   (flags & NM_SETTING_HASH_FLAG_ONLY_SECRETS)
-		    && !(prop_spec->flags & NM_SETTING_PARAM_SECRET))
+		if (   (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+		    && !(prop_spec && (prop_spec->flags & NM_SETTING_PARAM_SECRET)))
 			continue;
 
 		value = g_slice_new0 (GValue);
-		g_value_init (value, prop_spec->value_type);
-		g_object_get_property (G_OBJECT (setting), prop_spec->name, value);
+		if (property->get_func) {
+			g_value_init (value, property->dbus_type);
+			set = property->get_func (setting, connection, property->name, value);
+		} else if (prop_spec) {
+			g_value_init (value, prop_spec->value_type);
+			g_object_get_property (G_OBJECT (setting), prop_spec->name, value);
 
-		/* Don't serialize values with default values */
-		if (!g_param_value_defaults (prop_spec, value))
-			g_hash_table_insert (hash, g_strdup (prop_spec->name), value);
+			/* Don't serialize values with default values */
+			set = !g_param_value_defaults (prop_spec, value);
+		} else
+			g_assert_not_reached ();
+
+		if (set)
+			g_hash_table_insert (hash, g_strdup (property->name), value);
 		else
 			destroy_gvalue (value);
 	}
-	g_free (property_specs);
 
 	/* Don't return empty hashes, except for base types */
 	if (g_hash_table_size (hash) < 1 && !_nm_setting_is_base_type (setting)) {
@@ -449,10 +633,13 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
 }
 
 /**
- * nm_setting_new_from_hash:
+ * _nm_setting_new_from_dbus:
  * @setting_type: the #NMSetting type which the hash contains properties for
- * @hash: (element-type utf8 GObject.Value): the #GHashTable containing a
- * string to GValue mapping of properties that apply to the setting
+ * @setting_hash: (element-type utf8 GObject.Value): the #GHashTable containing a
+ *   string to #GValue mapping of properties that apply to the setting
+ * @connection_hash: (element-type utf8 GObject.Value): the #GHashTable containing a
+ *   string to #GHashTable mapping of properties for the whole connection
+ * @error: location to store error, or %NULL
  *
  * Creates a new #NMSetting object and populates that object with the properties
  * contained in the hash table, using each hash key as the property to set,
@@ -465,58 +652,66 @@ nm_setting_to_hash (NMSetting *setting, NMSettingHashFlags flags)
  * hash table, or %NULL on failure
  **/
 NMSetting *
-nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
+_nm_setting_new_from_dbus (GType setting_type,
+                           GHashTable *setting_hash,
+                           GHashTable *connection_hash,
+                           GError **error)
 {
-	GHashTableIter iter;
 	NMSetting *setting;
+	NMSettingClass *class;
+	GHashTableIter iter;
 	const char *prop_name;
-	GValue *src_value;
-	GObjectClass *class;
-	guint n_params = 0;
-	GParameter *params;
-	int i;
+	const NMSettingProperty *properties;
+	guint n_properties;
+	guint i;
 
 	g_return_val_if_fail (G_TYPE_IS_INSTANTIATABLE (setting_type), NULL);
-	g_return_val_if_fail (hash != NULL, NULL);
+	g_return_val_if_fail (setting_hash != NULL, NULL);
 
 	/* g_type_class_ref() ensures the setting class is created if it hasn't
 	 * already been used.
 	 */
 	class = g_type_class_ref (setting_type);
-	params = g_new0 (GParameter, g_hash_table_size (hash));
 
-	g_hash_table_iter_init (&iter, hash);
-	while (g_hash_table_iter_next (&iter, (gpointer) &prop_name, (gpointer) &src_value)) {
-		GValue *dst_value = &params[n_params].value;
-		GParamSpec *param_spec;
-
-		param_spec = g_object_class_find_property (class, prop_name);
-		if (!param_spec) {
+	/* Check for invalid properties first. */
+	g_hash_table_iter_init (&iter, setting_hash);
+	while (g_hash_table_iter_next (&iter, (gpointer) &prop_name, NULL)) {
+		if (!nm_setting_class_find_property (class, prop_name)) {
 			/* Oh, we're so nice and only warn, maybe it should be a fatal error? */
 			g_warning ("Ignoring invalid property '%s'", prop_name);
 			continue;
 		}
+	}
 
-		/* 'name' doesn't get deserialized */
-		if (strcmp (g_param_spec_get_name (param_spec), NM_SETTING_NAME) == 0)
+	/* Now build the setting object from the legitimate properties */
+	setting = (NMSetting *) g_object_new (setting_type, NULL);
+
+	properties = nm_setting_class_get_properties (class, &n_properties);
+	for (i = 0; i < n_properties; i++) {
+		const NMSettingProperty *property = &properties[i];
+		GValue *value = g_hash_table_lookup (setting_hash, property->name);
+
+		if (!value)
 			continue;
 
-		g_value_init (dst_value, G_VALUE_TYPE (src_value));
-		if (g_value_transform (src_value, dst_value))
-			params[n_params++].name = prop_name;
-		else {
-			g_warning ("Ignoring property '%s' with invalid type (%s)",
-			           prop_name, G_VALUE_TYPE_NAME (src_value));
-			g_value_unset (dst_value);
+		if (property->set_func) {
+			if (!property->set_func (setting,
+			                         connection_hash,
+			                         property->name,
+			                         value,
+			                         error)) {
+				g_object_unref (setting);
+				setting = NULL;
+				break;
+			}
+		} else if (property->param_spec) {
+			if (!(property->param_spec->flags & G_PARAM_WRITABLE))
+				continue;
+
+			g_object_set_property (G_OBJECT (setting), property->param_spec->name, value);
 		}
 	}
 
-	setting = (NMSetting *) g_object_newv (setting_type, n_params, params);
-
-	for (i = 0; i < n_params; i++)
-		g_value_unset (&params[i].value);
-
-	g_free (params);
 	g_type_class_unref (class);
 
 	return setting;
@@ -1073,11 +1268,11 @@ nm_setting_need_secrets (NMSetting *setting)
 static int
 update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
 {
+	const NMSettingProperty *property;
 	GParamSpec *prop_spec;
-	GValue transformed_value = G_VALUE_INIT;
 
-	prop_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
-	if (!prop_spec) {
+	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), key);
+	if (!property) {
 		g_set_error (error,
 		             NM_SETTING_ERROR,
 		             NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
@@ -1086,7 +1281,8 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 	}
 
 	/* Silently ignore non-secrets */
-	if (!(prop_spec->flags & NM_SETTING_PARAM_SECRET))
+	prop_spec = property->param_spec;
+	if (!prop_spec || !(prop_spec->flags & NM_SETTING_PARAM_SECRET))
 		return NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
 
 	if (g_value_type_compatible (G_VALUE_TYPE (value), G_PARAM_SPEC_VALUE_TYPE (prop_spec))) {
@@ -1106,11 +1302,6 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 		g_object_set_property (G_OBJECT (setting), prop_spec->name, value);
 		return NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
 	}
-	if (g_value_transform (value, &transformed_value)) {
-		g_object_set_property (G_OBJECT (setting), prop_spec->name, &transformed_value);
-		g_value_unset (&transformed_value);
-		return NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
-	}
 	g_set_error (error,
 	             NM_SETTING_ERROR,
 	             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
@@ -1119,7 +1310,7 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
 }
 
 /**
- * nm_setting_update_secrets:
+ * _nm_setting_update_secrets:
  * @setting: the #NMSetting
  * @secrets: (element-type utf8 GObject.Value): a #GHashTable mapping
  * string to #GValue of setting property names and secrets
@@ -1128,15 +1319,9 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **
  * Update the setting's secrets, given a hash table of secrets intended for that
  * setting (deserialized from D-Bus for example).
  *
- * Returns: %TRUE if the secrets were successfully updated, %FALSE on failure to
+ * Returns: an #NMSettingUpdateSecretResult
  * update one or more of the secrets.
  **/
-gboolean
-nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **error)
-{
-	return _nm_setting_update_secrets (setting, secrets, error) != NM_SETTING_UPDATE_SECRET_ERROR;
-}
-
 NMSettingUpdateSecretResult
 _nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **error)
 {
@@ -1174,10 +1359,11 @@ _nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **er
 static gboolean
 is_secret_prop (NMSetting *setting, const char *secret_name, GError **error)
 {
+	const NMSettingProperty *property;
 	GParamSpec *pspec;
 
-	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), secret_name);
-	if (!pspec) {
+	property = nm_setting_class_find_property (NM_SETTING_GET_CLASS (setting), secret_name);
+	if (!property) {
 		g_set_error (error,
 		             NM_SETTING_ERROR,
 		             NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
@@ -1185,7 +1371,8 @@ is_secret_prop (NMSetting *setting, const char *secret_name, GError **error)
 		return FALSE;
 	}
 
-	if (!(pspec->flags & NM_SETTING_PARAM_SECRET)) {
+	pspec = property->param_spec;
+	if (!pspec || !(pspec->flags & NM_SETTING_PARAM_SECRET)) {
 		g_set_error (error,
 		             NM_SETTING_ERROR,
 		             NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
@@ -1310,8 +1497,6 @@ nm_setting_to_string (NMSetting *setting)
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
-	if (!property_specs)
-		return NULL;
 
 	string = g_string_new (nm_setting_get_name (setting));
 	g_string_append_c (string, '\n');
@@ -1528,6 +1713,11 @@ static void
 nm_setting_class_init (NMSettingClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
+
+	if (!setting_property_overrides_quark)
+		setting_property_overrides_quark = g_quark_from_static_string ("nm-setting-property-overrides");
+	if (!setting_properties_quark)
+		setting_properties_quark = g_quark_from_static_string ("nm-setting-properties");
 
 	g_type_class_add_private (setting_class, sizeof (NMSettingPrivate));
 

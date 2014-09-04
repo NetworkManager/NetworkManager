@@ -70,7 +70,7 @@ add_connection (DBusGProxy *proxy, const char *con_name)
 	              NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	hash = nm_connection_to_hash (connection, NM_SETTING_HASH_FLAG_ALL);
+	hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 
 	/* Call AddConnection with the hash as argument */
 	if (!dbus_g_proxy_call (proxy, "AddConnection", &error,
