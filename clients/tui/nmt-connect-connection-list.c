@@ -213,7 +213,7 @@ static char *
 hash_ap (NMAccessPoint *ap)
 {
 	unsigned char input[66];
-	const GByteArray *ssid;
+	GBytes *ssid;
 	NM80211Mode mode;
 	guint32 flags;
 	guint32 wpa_flags;
@@ -223,7 +223,7 @@ hash_ap (NMAccessPoint *ap)
 
 	ssid = nm_access_point_get_ssid (ap);
 	if (ssid)
-		memcpy (input, ssid->data, ssid->len);
+		memcpy (input, g_bytes_get_data (ssid, NULL), g_bytes_get_size (ssid));
 
 	mode = nm_access_point_get_mode (ap);
 	if (mode == NM_802_11_MODE_INFRA)
@@ -266,13 +266,13 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 	NMAccessPoint *ap;
 	const GPtrArray *aps;
 	GHashTable *seen_ssids;
-	const GByteArray *ssid;
+	GBytes *ssid;
 	char *ap_hash;
 	GSList *iter;
 	int i;
 
 	aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (nmtdev->device));
-	if (!aps)
+	if (!aps->len)
 		return;
 
 	seen_ssids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
@@ -294,7 +294,8 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 		nmtconn->device = nmtdev->device;
 		nmtconn->ap = g_object_ref (ap);
 		ssid = nm_access_point_get_ssid (ap);
-		nmtconn->ssid = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
+		nmtconn->ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+		                                       g_bytes_get_size (ssid));
 
 		for (iter = connections; iter; iter = iter->next) {
 			conn = iter->data;
@@ -449,7 +450,7 @@ connection_find_ac (NMConnection    *conn,
 	int i;
 
 	path = nm_connection_get_path (conn);
-	for (i = 0; acs && i < acs->len; i++) {
+	for (i = 0; i < acs->len; i++) {
 		ac = acs->pdata[i];
 		ac_path = nm_active_connection_get_connection (ac);
 
@@ -483,11 +484,11 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 	connections = nm_remote_settings_list_connections (nm_settings);
 
 	nmt_devices = NULL;
-	if (devices) {
-		names = nm_device_disambiguate_names ((NMDevice **) devices->pdata, devices->len);
-		nmt_devices = append_nmt_devices_for_devices (nmt_devices, devices, names, connections);
-		g_strfreev (names);
-	}
+
+	names = nm_device_disambiguate_names ((NMDevice **) devices->pdata, devices->len);
+	nmt_devices = append_nmt_devices_for_devices (nmt_devices, devices, names, connections);
+	g_strfreev (names);
+
 	nmt_devices = append_nmt_devices_for_virtual_devices (nmt_devices, connections);
 	nmt_devices = append_nmt_devices_for_vpns (nmt_devices, connections);
 

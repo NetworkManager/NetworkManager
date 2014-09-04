@@ -34,7 +34,7 @@
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-types-private.h"
+#include "nm-core-internal.h"
 
 G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 
@@ -247,7 +247,7 @@ nm_device_wifi_get_access_points (NMDeviceWifi *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	return handle_ptr_array_return (NM_DEVICE_WIFI_GET_PRIVATE (device)->aps);
+	return NM_DEVICE_WIFI_GET_PRIVATE (device)->aps;
 }
 
 /**
@@ -348,9 +348,11 @@ nm_device_wifi_request_scan_simple (NMDeviceWifi *device,
 }
 
 static void
-clean_up_aps (NMDeviceWifi *self, gboolean notify)
+clean_up_aps (NMDeviceWifi *self, gboolean in_dispose)
 {
 	NMDeviceWifiPrivate *priv;
+	GPtrArray *aps;
+	int i;
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
 
@@ -361,18 +363,21 @@ clean_up_aps (NMDeviceWifi *self, gboolean notify)
 		priv->active_ap = NULL;
 	}
 
-	if (priv->aps) {
-		while (priv->aps->len) {
-			NMAccessPoint *ap = NM_ACCESS_POINT (g_ptr_array_index (priv->aps, 0));
+	aps = priv->aps;
 
-			if (notify)
-				g_signal_emit (self, signals[ACCESS_POINT_REMOVED], 0, ap);
-			g_ptr_array_remove (priv->aps, ap);
-			g_object_unref (ap);
-		}
-		g_ptr_array_free (priv->aps, TRUE);
+	if (in_dispose)
 		priv->aps = NULL;
+	else {
+		priv->aps = g_ptr_array_new ();
+
+		for (i = 0; i < aps->len; i++) {
+			NMAccessPoint *ap = NM_ACCESS_POINT (g_ptr_array_index (aps, i));
+
+			g_signal_emit (self, signals[ACCESS_POINT_REMOVED], 0, ap);
+		}
 	}
+
+	g_ptr_array_unref (aps);
 }
 
 /**
@@ -389,7 +394,7 @@ _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device,
 	g_return_if_fail (NM_IS_DEVICE_WIFI (device));
 
 	if (!enabled)
-		clean_up_aps (device, TRUE);
+		clean_up_aps (device, FALSE);
 }
 
 #define WPA_CAPS (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | \
@@ -538,7 +543,7 @@ get_property (GObject *object,
 		g_value_set_uint (value, nm_device_wifi_get_capabilities (self));
 		break;
 	case PROP_ACCESS_POINTS:
-		g_value_set_boxed (value, nm_device_wifi_get_access_points (self));
+		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_device_wifi_get_access_points (self)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -631,7 +636,8 @@ dispose (GObject *object)
 		priv->scan_call = NULL;
 	}
 
-	clean_up_aps (NM_DEVICE_WIFI (object), FALSE);
+	if (priv->aps)
+		clean_up_aps (NM_DEVICE_WIFI (object), TRUE);
 	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
@@ -748,11 +754,13 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	 * NMDeviceWifi:access-points:
 	 *
 	 * List of all Wi-Fi access points the device can see.
+	 *
+	 * Element-type: NMAccessPoint
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACCESS_POINTS,
 		 g_param_spec_boxed (NM_DEVICE_WIFI_ACCESS_POINTS, "", "",
-		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 

@@ -156,7 +156,7 @@ test_device_added (void)
 	client = test_client_new ();
 
 	devices = nm_client_get_devices (client);
-	g_assert (devices == NULL);
+	g_assert (devices->len == 0);
 
 	/* Tell the test service to add a new device */
 	add_device ("AddWiredDevice", "eth0", NULL);
@@ -293,7 +293,7 @@ wifi_ap_remove_notify_cb (NMDeviceWifi *w,
 	const GPtrArray *aps;
 
 	aps = nm_device_wifi_get_access_points (w);
-	g_assert (aps == NULL);
+	g_assert (aps->len == 0);
 
 	info->notified = TRUE;
 	wifi_check_quit (info);
@@ -516,7 +516,7 @@ wimax_nsp_remove_notify_cb (NMDeviceWimax *w,
 	const GPtrArray *nsps;
 
 	nsps = nm_device_wimax_get_nsps (w);
-	g_assert (nsps == NULL);
+	g_assert (nsps->len == 0);
 
 	info->notified = TRUE;
 	wimax_check_quit (info);

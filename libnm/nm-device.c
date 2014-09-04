@@ -43,7 +43,7 @@
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
 #include "nm-remote-connection.h"
-#include "nm-types.h"
+#include "nm-core-internal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-utils.h"
@@ -61,8 +61,6 @@ G_DEFINE_TYPE_WITH_CODE (NMDevice, nm_device, NM_TYPE_OBJECT,
                          _nm_object_register_type_func (g_define_type_id, _nm_device_type_for_path,
                                                         _nm_device_type_for_path_async);
                          )
-
-#define DBUS_G_TYPE_UINT_STRUCT (dbus_g_type_get_struct ("GValueArray", G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID))
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
@@ -164,19 +162,20 @@ nm_device_init (NMDevice *device)
 	priv->reason = NM_DEVICE_STATE_REASON_NONE;
 }
 
+#define DBUS_G_TYPE_UINT_STRUCT (dbus_g_type_get_struct ("GValueArray", G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID))
+
 static gboolean
 demarshal_state_reason (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
+	guint32 *reason_field = field;
 
 	if (!G_VALUE_HOLDS (value, DBUS_G_TYPE_UINT_STRUCT))
 		return FALSE;
 
 	dbus_g_type_struct_get (value,
-	                        0, &priv->state,
-	                        1, &priv->reason,
+	                        1, reason_field,
 	                        G_MAXUINT);
-
+	
 	_nm_object_queue_notify (object, NM_DEVICE_STATE_REASON);
 	return TRUE;
 }
@@ -208,7 +207,7 @@ init_dbus (NMObject *object)
 		{ NM_DEVICE_IP6_CONFIG,        &priv->ip6_config, NULL, NM_TYPE_IP6_CONFIG },
 		{ NM_DEVICE_DHCP6_CONFIG,      &priv->dhcp6_config, NULL, NM_TYPE_DHCP6_CONFIG },
 		{ NM_DEVICE_STATE,             &priv->state },
-		{ NM_DEVICE_STATE_REASON,      &priv->state, demarshal_state_reason },
+		{ NM_DEVICE_STATE_REASON,      &priv->reason, demarshal_state_reason },
 		{ NM_DEVICE_ACTIVE_CONNECTION, &priv->active_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_DEVICE_AVAILABLE_CONNECTIONS, &priv->available_connections, NULL, NM_TYPE_REMOTE_CONNECTION },
 		{ NM_DEVICE_PHYSICAL_PORT_ID,  &priv->physical_port_id },
@@ -376,14 +375,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->client);
 	g_clear_object (&priv->active_connection);
 
-	if (priv->available_connections) {
-		int i;
-
-		for (i = 0; i < priv->available_connections->len; i++)
-			g_object_unref (priv->available_connections->pdata[i]);
-		g_ptr_array_free (priv->available_connections, TRUE);
-		priv->available_connections = NULL;
-	}
+	g_clear_pointer (&priv->available_connections, g_ptr_array_unref);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
@@ -418,7 +410,6 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMDevice *device = NM_DEVICE (object);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
 	switch (prop_id) {
 	case PROP_DEVICE_TYPE:
@@ -470,18 +461,13 @@ get_property (GObject *object,
 		g_value_set_uint (value, nm_device_get_state (device));
 		break;
 	case PROP_STATE_REASON:
-		g_value_set_boxed (value,
-		                   dbus_g_type_specialized_construct (DBUS_G_TYPE_UINT_STRUCT));
-		dbus_g_type_struct_set (value,
-		                        0, priv->state,
-		                        1, priv->reason,
-		                        G_MAXUINT);
+		g_value_set_uint (value, nm_device_get_state_reason (device));
 		break;
 	case PROP_ACTIVE_CONNECTION:
 		g_value_set_object (value, nm_device_get_active_connection (device));
 		break;
 	case PROP_AVAILABLE_CONNECTIONS:
-		g_value_set_boxed (value, nm_device_get_available_connections (device));
+		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_device_get_available_connections (device)));
 		break;
 	case PROP_PRODUCT:
 		g_value_set_string (value, nm_device_get_product (device));
@@ -749,14 +735,14 @@ nm_device_class_init (NMDeviceClass *device_class)
 	/**
 	 * NMDevice:state-reason:
 	 *
-	 * The state and reason of the device.
+	 * The reason for the device state.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_STATE_REASON,
-		 g_param_spec_boxed (NM_DEVICE_STATE_REASON, "", "",
-		                     DBUS_G_TYPE_UINT_STRUCT,
-		                     G_PARAM_READABLE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_uint (NM_DEVICE_STATE_REASON, "", "",
+		                    0, G_MAXUINT32, 0,
+		                    G_PARAM_READABLE |
+		                    G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:active-connection:
@@ -773,12 +759,14 @@ nm_device_class_init (NMDeviceClass *device_class)
 	/**
 	 * NMDevice:available-connections:
 	 *
-	 * The available connections (#NMRemoteConnection) of the device
+	 * The available connections of the device
+	 *
+	 * Element-type: NMRemoteConnection
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AVAILABLE_CONNECTIONS,
 		 g_param_spec_boxed (NM_DEVICE_AVAILABLE_CONNECTIONS, "", "",
-		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
@@ -1330,21 +1318,17 @@ nm_device_get_state (NMDevice *device)
 /**
  * nm_device_get_state_reason:
  * @device: a #NMDevice
- * @reason: (out) (allow-none): location to store reason (#NMDeviceStateReason), or %NULL
  *
- * Gets the current #NMDevice state (return value) and the reason for entering
- * the state (@reason argument).
+ * Gets the reason for entering the current #NMDevice state.
  *
- * Returns: the current device state
+ * Returns: the reason for entering the current device state
  **/
-NMDeviceState
-nm_device_get_state_reason (NMDevice *device, NMDeviceStateReason *reason)
+NMDeviceStateReason
+nm_device_get_state_reason (NMDevice *device)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (device), NM_DEVICE_STATE_UNKNOWN);
+	g_return_val_if_fail (NM_IS_DEVICE (device), NM_DEVICE_STATE_REASON_UNKNOWN);
 
-	if (reason)
-		*reason = NM_DEVICE_GET_PRIVATE (device)->reason;
-	return NM_DEVICE_GET_PRIVATE (device)->state;
+	return NM_DEVICE_GET_PRIVATE (device)->reason;
 }
 
 /**
@@ -1380,7 +1364,7 @@ nm_device_get_available_connections (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return handle_ptr_array_return (NM_DEVICE_GET_PRIVATE (device)->available_connections);
+	return NM_DEVICE_GET_PRIVATE (device)->available_connections;
 }
 
 static char *

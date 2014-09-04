@@ -137,7 +137,6 @@
   <chapter>
     <title>Utility API Reference</title>
     <xi:include href="xml/nm-utils.xml"/>
-    <xi:include href="xml/nm-types.xml"/>
   </chapter>
 
   <chapter>

@@ -32,7 +32,6 @@
 
 #include "nm-access-point.h"
 #include "nm-dbus-interface.h"
-#include "nm-types-private.h"
 #include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMAccessPoint, nm_access_point, NM_TYPE_OBJECT)
@@ -45,7 +44,7 @@ typedef struct {
 	NM80211ApFlags flags;
 	NM80211ApSecurityFlags wpa_flags;
 	NM80211ApSecurityFlags rsn_flags;
-	GByteArray *ssid;
+	GBytes *ssid;
 	guint32 frequency;
 	char *bssid;
 	NM80211Mode mode;
@@ -124,10 +123,9 @@ nm_access_point_get_rsn_flags (NMAccessPoint *ap)
  *
  * Gets the SSID of the access point.
  *
- * Returns: the #GByteArray containing the SSID. This is the internal copy used by the
- * access point, and must not be modified.
+ * Returns: the #GBytes containing the SSID.
  **/
-const GByteArray *
+GBytes *
 nm_access_point_get_ssid (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
@@ -237,9 +235,7 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 	NMSettingWirelessSecurity *s_wsec;
 	const char *ctype, *ap_bssid;
 	GBytes *setting_ssid;
-	const guint8 *setting_ssid_data;
-	gsize setting_ssid_len;
-	const GByteArray *ap_ssid;
+	GBytes *ap_ssid;
 	const char *setting_bssid;
 	const char *setting_mode;
 	NM80211Mode ap_mode;
@@ -262,10 +258,7 @@ nm_access_point_connection_valid (NMAccessPoint *ap, NMConnection *connection)
 	setting_ssid = nm_setting_wireless_get_ssid (s_wifi);
 	if (!setting_ssid || !ap_ssid)
 		return FALSE;
-	setting_ssid_data = g_bytes_get_data (setting_ssid, &setting_ssid_len);
-	if (setting_ssid_len != ap_ssid->len)
-		return FALSE;
-	if (memcmp (setting_ssid_data, ap_ssid->data, ap_ssid->len) != 0)
+	if (!g_bytes_equal (ap_ssid, setting_ssid))
 		return FALSE;
 
 	/* BSSID checks */
@@ -384,7 +377,7 @@ finalize (GObject *object)
 	NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE (object);
 
 	if (priv->ssid)
-		g_byte_array_free (priv->ssid, TRUE);
+		g_bytes_unref (priv->ssid);
 
 	g_free (priv->bssid);
 
@@ -436,16 +429,6 @@ get_property (GObject *object,
 	}
 }
 
-static gboolean
-demarshal_ssid (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
-{
-	if (!_nm_ssid_demarshal (value, (GByteArray **) field))
-		return FALSE;
-
-	_nm_object_queue_notify (object, NM_ACCESS_POINT_SSID);
-	return TRUE;
-}
-
 static void
 init_dbus (NMObject *object)
 {
@@ -454,7 +437,7 @@ init_dbus (NMObject *object)
 		{ NM_ACCESS_POINT_FLAGS,       &priv->flags },
 		{ NM_ACCESS_POINT_WPA_FLAGS,   &priv->wpa_flags },
 		{ NM_ACCESS_POINT_RSN_FLAGS,   &priv->rsn_flags },
-		{ NM_ACCESS_POINT_SSID,        &priv->ssid, demarshal_ssid },
+		{ NM_ACCESS_POINT_SSID,        &priv->ssid },
 		{ NM_ACCESS_POINT_FREQUENCY,   &priv->frequency },
 		/* The D-Bus property is HwAddress, but the GObject property is "bssid" */
 		{ NM_ACCESS_POINT_HW_ADDRESS,  &priv->bssid },
@@ -536,7 +519,7 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	g_object_class_install_property
 		(object_class, PROP_SSID,
 		 g_param_spec_boxed (NM_ACCESS_POINT_SSID, "", "",
-		                     NM_TYPE_SSID,
+		                     G_TYPE_BYTES,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 

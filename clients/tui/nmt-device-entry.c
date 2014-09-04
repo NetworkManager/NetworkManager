@@ -187,9 +187,6 @@ find_device_by_interface_name (NmtDeviceEntry *deventry,
 	int i;
 
 	devices = nm_client_get_devices (nm_client);
-	if (!devices)
-		return NULL;
-
 	for (i = 0; i < devices->len && !device; i++) {
 		NMDevice *candidate = devices->pdata[i];
 
@@ -218,9 +215,6 @@ find_device_by_mac_address (NmtDeviceEntry *deventry,
 	int i;
 
 	devices = nm_client_get_devices (nm_client);
-	if (!devices)
-		return NULL;
-
 	for (i = 0; i < devices->len && !device; i++) {
 		NMDevice *candidate = devices->pdata[i];
 		char *hwaddr;

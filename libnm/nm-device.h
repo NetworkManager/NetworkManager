@@ -132,7 +132,7 @@ NMDhcp4Config *      nm_device_get_dhcp4_config     (NMDevice *device);
 NMIP6Config *        nm_device_get_ip6_config       (NMDevice *device);
 NMDhcp6Config *      nm_device_get_dhcp6_config     (NMDevice *device);
 NMDeviceState        nm_device_get_state            (NMDevice *device);
-NMDeviceState        nm_device_get_state_reason     (NMDevice *device, NMDeviceStateReason *reason);
+NMDeviceStateReason  nm_device_get_state_reason     (NMDevice *device);
 NMActiveConnection * nm_device_get_active_connection(NMDevice *device);
 const GPtrArray *    nm_device_get_available_connections(NMDevice *device);
 const char *         nm_device_get_physical_port_id (NMDevice *device);

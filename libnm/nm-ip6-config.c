@@ -24,9 +24,10 @@
 #include <nm-setting-ip6-config.h>
 #include "nm-ip6-config.h"
 #include "nm-dbus-interface.h"
-#include "nm-types-private.h"
 #include "nm-object-private.h"
 #include "nm-utils.h"
+#include "nm-dbus-glib-types.h"
+#include "nm-core-internal.h"
 
 G_DEFINE_TYPE (NMIP6Config, nm_ip6_config, NM_TYPE_OBJECT)
 
@@ -38,9 +39,9 @@ typedef struct {
 	char *gateway;
 	GSList *addresses;
 	GSList *routes;
-	GSList *nameservers;
-	GPtrArray *domains;
-	GPtrArray *searches;
+	char **nameservers;
+	char **domains;
+	char **searches;
 } NMIP6ConfigPrivate;
 
 enum {
@@ -72,32 +73,30 @@ demarshal_ip6_address_array (NMObject *object, GParamSpec *pspec, GValue *value,
 static gboolean
 demarshal_ip6_nameserver_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
 {
-	if (!_nm_ip6_address_array_demarshal (value, (GSList **) field))
+	GPtrArray *ip_array;
+	char ***obj_field;
+	int i;
+
+	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR))
 		return FALSE;
 
-	if (pspec && !strcmp (pspec->name, NM_IP6_CONFIG_NAMESERVERS))
-		_nm_object_queue_notify (object, NM_IP6_CONFIG_NAMESERVERS);
+	ip_array = g_value_get_boxed (value);
 
-	return TRUE;
-}
+	obj_field = field;
+	if (*obj_field)
+		g_strfreev (*obj_field);
 
-static gboolean
-demarshal_domains (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
-{
-	if (!_nm_string_array_demarshal (value, (GPtrArray **) field))
-		return FALSE;
+	*obj_field = g_new (char *, ip_array ? ip_array->len + 1 : 1);
+	for (i = 0; ip_array && i < ip_array->len; i++) {
+		GByteArray *ip = g_ptr_array_index (ip_array, i);
+		const char *str;
 
-	_nm_object_queue_notify (object, NM_IP6_CONFIG_DOMAINS);
-	return TRUE;
-}
+		str = nm_utils_inet6_ntop ((struct in6_addr *) ip->data, NULL);
+		(*obj_field)[i] = g_strdup (str);
+	}
+	(*obj_field)[i] = NULL;
 
-static gboolean
-demarshal_searches (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
-{
-	if (!_nm_string_array_demarshal (value, (GPtrArray **) field))
-		return FALSE;
-
-	_nm_object_queue_notify (object, NM_IP6_CONFIG_SEARCHES);
+	_nm_object_queue_notify (object, pspec->name);
 	return TRUE;
 }
 
@@ -124,8 +123,8 @@ init_dbus (NMObject *object)
 		{ NM_IP6_CONFIG_ADDRESSES,    &priv->addresses, demarshal_ip6_address_array },
 		{ NM_IP6_CONFIG_ROUTES,       &priv->routes, demarshal_ip6_routes_array },
 		{ NM_IP6_CONFIG_NAMESERVERS,  &priv->nameservers, demarshal_ip6_nameserver_array },
-		{ NM_IP6_CONFIG_DOMAINS,      &priv->domains, demarshal_domains },
-		{ NM_IP6_CONFIG_SEARCHES,     &priv->searches, demarshal_searches },
+		{ NM_IP6_CONFIG_DOMAINS,      &priv->domains, },
+		{ NM_IP6_CONFIG_SEARCHES,     &priv->searches, },
 		{ NULL },
 	};
 
@@ -172,66 +171,19 @@ nm_ip6_config_get_addresses (NMIP6Config *config)
 }
 
 /**
- * nm_ip6_config_get_num_nameservers:
- * @config: a #NMIP6Config
- *
- * Gets the number of the domain name servers in the configuration.
- *
- * Returns: the number of domain name servers
- **/
-guint32
-nm_ip6_config_get_num_nameservers (NMIP6Config *config)
-{
-	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), 0);
-
-	return g_slist_length (NM_IP6_CONFIG_GET_PRIVATE (config)->nameservers);
-}
-
-/**
- * nm_ip6_config_get_nameserver:
- * @config: a #NMIP6Config
- * @idx: index of the nameserver to return
- *
- * Gets the domain name server at index @idx in the configuration.
- *
- * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
- *          the IPv6 address of domain name server at index @iidx
- **/
-const struct in6_addr *
-nm_ip6_config_get_nameserver (NMIP6Config *config, guint32 idx)
-{
-	NMIP6ConfigPrivate *priv;
-	GSList *item;
-	guint32 i = 0;
-
-	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
-
-	priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-
-	for (item = priv->nameservers; item && i < idx; i++)
-		item = item->next;
-
-	g_return_val_if_fail (item, NULL);
-	return item ? (const struct in6_addr *) item->data : NULL;
-}
-
-/* FIXME: like in libnm_util, in6_addr is not introspectable, so skipping here */
-/**
- * nm_ip6_config_get_nameservers: (skip)
+ * nm_ip6_config_get_nameservers:
  * @config: a #NMIP6Config
  *
  * Gets the domain name servers (DNS).
  *
- * Returns: a #GSList containing elements of type 'struct in6_addr' which
- * contain the addresses of nameservers of the configuration.  This is the
- * internal copy used by the configuration and must not be modified.
+ * Returns: the array of nameserver IP addresses
  **/
-const GSList *
+const char * const *
 nm_ip6_config_get_nameservers (NMIP6Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	return NM_IP6_CONFIG_GET_PRIVATE (config)->nameservers;
+	return (const char * const *) NM_IP6_CONFIG_GET_PRIVATE (config)->nameservers;
 }
 
 /**
@@ -240,32 +192,30 @@ nm_ip6_config_get_nameservers (NMIP6Config *config)
  *
  * Gets the domain names.
  *
- * Returns: (element-type utf8): the #GPtrArray containing domains as strings.
- * This is the internal copy used by the configuration, and must not be modified.
+ * Returns: the array of domains. (This is never %NULL, though it may be 0-length).
  **/
-const GPtrArray *
+const char * const *
 nm_ip6_config_get_domains (NMIP6Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	return handle_ptr_array_return (NM_IP6_CONFIG_GET_PRIVATE (config)->domains);
+	return (const char * const *) NM_IP6_CONFIG_GET_PRIVATE (config)->domains;
 }
 
 /**
  * nm_ip6_config_get_searches:
  * @config: a #NMIP6Config
  *
- * Gets the dns searches.
+ * Gets the DNS search strings.
  *
- * Returns: (element-type utf8): the #GPtrArray containing dns searches as strings.
- * This is the internal copy used by the configuration, and must not be modified.
+ * Returns: the array of DNS search strings. (This is never %NULL, though it may be 0-length).
  **/
-const GPtrArray *
+const char * const *
 nm_ip6_config_get_searches (NMIP6Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP6_CONFIG (config), NULL);
 
-	return handle_ptr_array_return (NM_IP6_CONFIG_GET_PRIVATE (config)->searches);
+	return (const char * const *) NM_IP6_CONFIG_GET_PRIVATE (config)->searches;
 }
 
 /**
@@ -295,17 +245,10 @@ finalize (GObject *object)
 
 	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip6_address_unref);
 	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
-	g_slist_free_full (priv->nameservers, g_free);
 
-	if (priv->domains) {
-		g_ptr_array_set_free_func (priv->domains, g_free);
-		g_ptr_array_free (priv->domains, TRUE);
-	}
-
-	if (priv->searches) {
-		g_ptr_array_set_free_func (priv->searches, g_free);
-		g_ptr_array_free (priv->searches, TRUE);
-	}
+	g_strfreev (priv->nameservers);
+	g_strfreev (priv->domains);
+	g_strfreev (priv->searches);
 
 	g_object_unref (priv->proxy);
 
@@ -326,19 +269,23 @@ get_property (GObject *object,
 		g_value_set_string (value, nm_ip6_config_get_gateway (self));
 		break;
 	case PROP_ADDRESSES:
-		nm_utils_ip6_addresses_to_gvalue (priv->addresses, value);
+		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->addresses,
+		                                                          (NMUtilsCopyFunc) nm_ip6_address_dup,
+		                                                          (GDestroyNotify) nm_ip6_address_unref));
 		break;
 	case PROP_ROUTES:
-		nm_utils_ip6_routes_to_gvalue (priv->routes, value);
+		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->routes,
+		                                                          (NMUtilsCopyFunc) nm_ip6_route_dup,
+		                                                          (GDestroyNotify) nm_ip6_route_unref));
 		break;
 	case PROP_NAMESERVERS:
-		g_value_set_boxed (value, nm_ip6_config_get_nameservers (self));
+		g_value_set_boxed (value, (char **) nm_ip6_config_get_nameservers (self));
 		break;
 	case PROP_DOMAINS:
-		g_value_set_boxed (value, nm_ip6_config_get_domains (self));
+		g_value_set_boxed (value, (char **) nm_ip6_config_get_domains (self));
 		break;
 	case PROP_SEARCHES:
-		g_value_set_boxed (value, nm_ip6_config_get_searches (self));
+		g_value_set_boxed (value, (char **) nm_ip6_config_get_searches (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -349,6 +296,11 @@ get_property (GObject *object,
 static void
 nm_ip6_config_init (NMIP6Config *config)
 {
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
+
+	priv->nameservers = g_new0 (char *, 1);
+	priv->domains = g_new0 (char *, 1);
+	priv->searches = g_new0 (char *, 1);
 }
 
 static void
@@ -382,28 +334,24 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	/**
 	 * NMIP6Config:addresses:
 	 *
-	 * The #GPtrArray containing the IPv6 addresses;  use
-	 * nm_utils_ip6_addresses_from_gvalue() to return a #GSList of
-	 * #NMSettingIP6Address objects that is more usable than the raw data.
+	 * The #GPtrArray containing the IPv6 addresses (#NMIP6Address).
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ADDRESSES,
 	     g_param_spec_boxed (NM_IP6_CONFIG_ADDRESSES, "", "",
-	                         NM_TYPE_IP6_ADDRESS_OBJECT_ARRAY,
+	                         G_TYPE_PTR_ARRAY,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMIP6Config:routes:
 	 *
-	 * The #GPtrArray containing the IPv6 routes;  use
-	 * nm_utils_ip6_routes_from_gvalue() to return a #GSList of
-	 * #NMSettingIP6Address objects that is more usable than the raw data.
+	 * The #GPtrArray containing the IPv6 routes (#NMIP6Route).
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ROUTES,
 	     g_param_spec_boxed (NM_IP6_CONFIG_ROUTES, "", "",
-	                         NM_TYPE_IP6_ROUTE_OBJECT_ARRAY,
+	                         G_TYPE_PTR_ARRAY,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS));
 
@@ -416,7 +364,7 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	g_object_class_install_property
 	    (object_class, PROP_NAMESERVERS,
 	     g_param_spec_boxed (NM_IP6_CONFIG_NAMESERVERS, "", "",
-	                         NM_TYPE_IP6_ADDRESS_ARRAY,
+	                         G_TYPE_STRV,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS));
 
@@ -428,7 +376,7 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	g_object_class_install_property
 	    (object_class, PROP_DOMAINS,
 	     g_param_spec_boxed (NM_IP6_CONFIG_DOMAINS, "", "",
-	                         NM_TYPE_STRING_ARRAY,
+	                         G_TYPE_STRV,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS));
 
@@ -440,7 +388,7 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	g_object_class_install_property
 	    (object_class, PROP_SEARCHES,
 	     g_param_spec_boxed (NM_IP6_CONFIG_SEARCHES, "", "",
-	                         NM_TYPE_STRING_ARRAY,
+	                         G_TYPE_STRV,
 	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS));
 

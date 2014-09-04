@@ -73,4 +73,9 @@ GPtrArray *_nm_utils_copy_slist_to_array (const GSList *list,
 GSList    *_nm_utils_copy_array_to_slist (const GPtrArray *array,
                                           NMUtilsCopyFunc copy_func);
 
+GPtrArray *_nm_utils_copy_array (const GPtrArray *array,
+                                 NMUtilsCopyFunc copy_func,
+                                 GDestroyNotify free_func);
+GPtrArray *_nm_utils_copy_object_array (const GPtrArray *array);
+
 #endif

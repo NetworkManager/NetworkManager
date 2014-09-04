@@ -299,7 +299,6 @@ global:
 	nm_ip4_route_set_next_hop;
 	nm_ip4_route_set_prefix;
 	nm_ip4_route_unref;
-	nm_ip6_address_array_get_type;
 	nm_ip6_address_compare;
 	nm_ip6_address_dup;
 	nm_ip6_address_get_address;
@@ -307,7 +306,6 @@ global:
 	nm_ip6_address_get_prefix;
 	nm_ip6_address_get_type;
 	nm_ip6_address_new;
-	nm_ip6_address_object_array_get_type;
 	nm_ip6_address_ref;
 	nm_ip6_address_set_address;
 	nm_ip6_address_set_gateway;
@@ -316,9 +314,7 @@ global:
 	nm_ip6_config_get_addresses;
 	nm_ip6_config_get_domains;
 	nm_ip6_config_get_gateway;
-	nm_ip6_config_get_nameserver;
 	nm_ip6_config_get_nameservers;
-	nm_ip6_config_get_num_nameservers;
 	nm_ip6_config_get_routes;
 	nm_ip6_config_get_searches;
 	nm_ip6_config_get_type;
@@ -330,14 +326,12 @@ global:
 	nm_ip6_route_get_prefix;
 	nm_ip6_route_get_type;
 	nm_ip6_route_new;
-	nm_ip6_route_object_array_get_type;
 	nm_ip6_route_ref;
 	nm_ip6_route_set_dest;
 	nm_ip6_route_set_metric;
 	nm_ip6_route_set_next_hop;
 	nm_ip6_route_set_prefix;
 	nm_ip6_route_unref;
-	nm_object_array_get_type;
 	nm_object_error_get_type;
 	nm_object_error_quark;
 	nm_object_get_dbus_connection;
@@ -862,10 +856,7 @@ global:
 	nm_simple_connection_new;
 	nm_simple_connection_new_clone;
 	nm_simple_connection_new_from_dbus;
-	nm_ssid_get_type;
 	nm_state_get_type;
-	nm_string_array_get_type;
-	nm_uint_array_get_type;
 	nm_utils_ap_mode_security_valid;
 	nm_utils_bin2hexstr;
 	nm_utils_check_virtual_device_compatibility;

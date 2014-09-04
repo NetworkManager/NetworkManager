@@ -30,7 +30,7 @@
 #include "nm-device-bond.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
-#include "nm-types.h"
+#include "nm-core-internal.h"
 
 G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE)
 
@@ -118,7 +118,7 @@ nm_device_bond_get_slaves (NMDeviceBond *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_BOND (device), FALSE);
 
-	return handle_ptr_array_return (NM_DEVICE_BOND_GET_PRIVATE (device)->slaves);
+	return NM_DEVICE_BOND_GET_PRIVATE (device)->slaves;
 }
 
 static gboolean
@@ -204,11 +204,7 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->proxy);
 
-	if (priv->slaves) {
-		g_ptr_array_set_free_func (priv->slaves, g_object_unref);
-		g_ptr_array_free (priv->slaves, TRUE);
-		priv->slaves = NULL;
-	}
+	g_clear_pointer (&priv->slaves, g_ptr_array_unref);
 
 	G_OBJECT_CLASS (nm_device_bond_parent_class)->dispose (object);
 }
@@ -239,7 +235,7 @@ get_property (GObject *object,
 		g_value_set_boolean (value, nm_device_bond_get_carrier (device));
 		break;
 	case PROP_SLAVES:
-		g_value_set_boxed (value, nm_device_bond_get_slaves (device));
+		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_device_bond_get_slaves (device)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -296,12 +292,14 @@ nm_device_bond_class_init (NMDeviceBondClass *bond_class)
 	/**
 	 * NMDeviceBond:slaves:
 	 *
-	 * The devices (#NMDevice) slaved to the bond device.
+	 * The devices slaved to the bond device.
+	 *
+	 * Element-type: NMDevice
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SLAVES,
 		 g_param_spec_boxed (NM_DEVICE_BOND_SLAVES, "", "",
-		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_TYPE_PTR_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 }

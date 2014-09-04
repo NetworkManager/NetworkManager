@@ -70,15 +70,6 @@ void _nm_object_set_property (NMObject *object,
                               const char *prop_name,
                               GValue *value);
 
-static inline const GPtrArray *
-handle_ptr_array_return (GPtrArray *array)
-{
-	/* zero-length is special-case; return NULL */
-	if (!array || !array->len)
-		return NULL;
-	return array;
-}
-
 /* object demarshalling support */
 typedef GType (*NMObjectTypeFunc) (DBusGConnection *, const char *);
 typedef void (*NMObjectTypeCallbackFunc) (GType, gpointer);

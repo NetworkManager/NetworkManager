@@ -585,7 +585,7 @@ get_ac_device_string (NMActiveConnection *active)
 	/* Get devices of the active connection */
 	dev_str = g_string_new (NULL);
 	devices = nm_active_connection_get_devices (active);
-	for (i = 0; devices && (i < devices->len); i++) {
+	for (i = 0; i < devices->len; i++) {
 		NMDevice *device = g_ptr_array_index (devices, i);
 		const char *dev_iface = nm_device_get_iface (device);
 
@@ -609,7 +609,7 @@ get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection)
 
 	/* Is the connection active? */
 	con_path = nm_connection_get_path (connection);
-	for (i = 0; active_cons && i < active_cons->len; i++) {
+	for (i = 0; i < active_cons->len; i++) {
 		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
 
 		if (!g_strcmp0 (nm_active_connection_get_connection (candidate), con_path)) {
@@ -719,7 +719,7 @@ find_active_connection (const GPtrArray *active_cons,
 	NMConnection *con;
 	NMActiveConnection *found = NULL;
 
-	for (i = start; active_cons && (i < active_cons->len); i++) {
+	for (i = start; i < active_cons->len; i++) {
 		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
 
 		path = nm_active_connection_get_connection (candidate);
@@ -840,7 +840,7 @@ fill_output_active_connection (NMActiveConnection *active,
 	/* Get devices of the active connection */
 	dev_str = g_string_new (NULL);
 	devices = nm_active_connection_get_devices (active);
-	for (i = 0; devices && (i < devices->len); i++) {
+	for (i = 0; i < devices->len; i++) {
 		NMDevice *device = g_ptr_array_index (devices, i);
 		const char *dev_iface = nm_device_get_iface (device);
 
@@ -1445,12 +1445,12 @@ get_default_active_connection (NmCli *nmc, NMDevice **device)
 	g_return_val_if_fail (*device == NULL, NULL);
 
 	connections = nm_client_get_active_connections (nmc->client);
-	for (i = 0; connections && (i < connections->len); i++) {
+	for (i = 0; i < connections->len; i++) {
 		NMActiveConnection *candidate = g_ptr_array_index (connections, i);
 		const GPtrArray *devices;
 
 		devices = nm_active_connection_get_devices (candidate);
-		if (!devices || !devices->len)
+		if (!devices->len)
 			continue;
 
 		if (nm_active_connection_get_default (candidate)) {
@@ -1536,7 +1536,7 @@ find_device_for_connection (NmCli *nmc,
 		NMDevice *found_device = NULL;
 		const GPtrArray *devices = nm_client_get_devices (nmc->client);
 
-		for (i = 0; devices && (i < devices->len) && !found_device; i++) {
+		for (i = 0; i < devices->len && !found_device; i++) {
 			NMDevice *dev = g_ptr_array_index (devices, i);
 
 			if (iface) {
@@ -1556,7 +1556,7 @@ find_device_for_connection (NmCli *nmc,
 				const GPtrArray *aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (dev));
 				found_device = NULL;  /* Mark as not found; set to the device again later, only if AP matches */
 
-				for (j = 0; aps && (j < aps->len); j++) {
+				for (j = 0; j < aps->len; j++) {
 					NMAccessPoint *candidate_ap = g_ptr_array_index (aps, j);
 					const char *candidate_bssid = nm_access_point_get_bssid (candidate_ap);
 
@@ -1577,7 +1577,7 @@ find_device_for_connection (NmCli *nmc,
 				const GPtrArray *nsps = nm_device_wimax_get_nsps (NM_DEVICE_WIMAX (dev));
 				found_device = NULL;  /* Mark as not found; set to the device again later, only if NSP matches */
 
-				for (j = 0; nsps && (j < nsps->len); j++) {
+				for (j = 0; j < nsps->len; j++) {
 					NMWimaxNsp *candidate_nsp = g_ptr_array_index (nsps, j);
 					const char *candidate_name = nm_wimax_nsp_get_name (candidate_nsp);
 
@@ -1699,7 +1699,7 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpoin
 		NMDevice *device;
 
 		devices = nm_active_connection_get_devices (active);
-		device = devices && devices->len ? g_ptr_array_index (devices, 0) : NULL;
+		device = devices->len ? g_ptr_array_index (devices, 0) : NULL;
 		if (   device
 		    && (   NM_IS_DEVICE_BOND (device)
 		        || NM_IS_DEVICE_TEAM (device)
@@ -1820,7 +1820,7 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 		if (!device) {
 			/* device could be NULL for virtual devices. Fill it here. */
 			ac_devs = nm_active_connection_get_devices (active);
-			info->device = device = ac_devs && ac_devs->len > 0 ? g_ptr_array_index (ac_devs, 0) : NULL;
+			info->device = device = ac_devs->len > 0 ? g_ptr_array_index (ac_devs, 0) : NULL;
 		}
 
 		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
@@ -5487,7 +5487,7 @@ gen_compat_devices (const char *text, int state)
 	char *ret;
 
 	devices = nm_client_get_devices (nmc_tab_completion.nmc->client);
-	if (!devices || devices->len < 1)
+	if (devices->len == 0)
 		return NULL;
 
 	compatible_devices = g_new (const char *, devices->len + 1);
@@ -6402,7 +6402,7 @@ activate_connection_editor_cb (NMClient *client,
 	if (!error) {
 		if (!device) {
 			ac_devs = nm_active_connection_get_devices (active);
-			device = ac_devs && ac_devs->len > 0 ? g_ptr_array_index (ac_devs, 0) : NULL;
+			device = ac_devs->len > 0 ? g_ptr_array_index (ac_devs, 0) : NULL;
 		}
 		if (device) {
 			monitor_ac_info = g_malloc0 (sizeof (AddConnectionInfo));
@@ -7608,7 +7608,7 @@ get_ethernet_device_name (NmCli *nmc)
 
 	nmc->get_client (nmc);
 	devices = nm_client_get_devices (nmc->client);
-	for (i = 0; devices && (i < devices->len); i++) {
+	for (i = 0; i < devices->len; i++) {
 		NMDevice *dev = g_ptr_array_index (devices, i);
 		if (NM_IS_DEVICE_ETHERNET (dev))
 			return nm_device_get_iface (dev);
