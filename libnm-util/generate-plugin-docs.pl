@@ -54,14 +54,14 @@ my @source_files;
 my @data;
 my $fo;
 
-(scalar @ARGV == 2) or die "Usage: $0 <plugin> <output-xml-file>\n";
+(scalar @ARGV == 3) or die "Usage: $0 <plugin> <srcdir> <output-xml-file>\n";
 ($ARGV[0] eq "keyfile" || $ARGV[0] eq "ifcfg-rh") or die "Allowed <plugin> values: keyfile, ifcfg-rh\n";
-my ($plugin, $output) = @ARGV;
+my ($plugin, $srcdir, $output) = @ARGV;
 my $start_tag = "---$plugin---\\s*\$";
 my $end_tag   = '---end---';
 
 # get source files to scan for documentation comments (nm-setting-<something>.c)
-my $file = 'Makefile.am';
+my $file = "$srcdir/Makefile.am";
 open my $fh, '<', $file or die "Can't open $file: $!";
 while (my $line = <$fh>) {
   chomp $line;
@@ -78,7 +78,7 @@ write_header();
 
 # write generated documenation for each setting
 foreach my $c_file (@source_files) {
-  my $path = "$c_file";
+  my $path = "$srcdir/$c_file";
   my $setting_name = get_setting_name($path);
   write_item("<setting name=\"$setting_name\">");
   scan_doc_comments($path, $start_tag, $end_tag);

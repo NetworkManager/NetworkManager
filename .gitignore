@@ -149,8 +149,10 @@ valgrind-*.log
 /libnm-glib/tests/test-nm-client
 /libnm-glib/tests/test-remote-settings-client
 
-/libnm-util/nm-version.h
+/libnm-util/nm-ifcfg-rh-docs.xml
+/libnm-util/nm-keyfile-docs.xml
 /libnm-util/nm-setting-docs.xml
+/libnm-util/nm-version.h
 /libnm-util/test-crypto
 /libnm-util/tests/test-crypto
 /libnm-util/tests/test-settings-defaults
@@ -200,6 +202,8 @@ valgrind-*.log
 
 /man/*.[185]
 /man/nm-settings.xml
+/man/nm-settings-ifcfg-rh.xml
+/man/nm-settings-keyfile.xml
 
 /po/*.gmo
 /po/.intltool-merge-cache

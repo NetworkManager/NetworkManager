@@ -198,9 +198,9 @@ nm-setting-docs.xml: generate-setting-docs.py NetworkManager-1.0.gir NetworkMana
 		--output $@
 
 nm-keyfile-docs.xml: generate-plugin-docs.pl $(libnm_util_la_csources)
-	$(srcdir)/generate-plugin-docs.pl keyfile $@
+	$(srcdir)/generate-plugin-docs.pl keyfile $(srcdir) $@
 nm-ifcfg-rh-docs.xml: generate-plugin-docs.pl $(libnm_util_la_csources)
-	$(srcdir)/generate-plugin-docs.pl ifcfg-rh $@
+	$(srcdir)/generate-plugin-docs.pl ifcfg-rh $(srcdir) $@
 
 endif
 
