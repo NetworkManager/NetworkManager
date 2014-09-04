@@ -266,6 +266,7 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 	NMAccessPoint *ap;
 	const GPtrArray *aps;
 	GHashTable *seen_ssids;
+	const GByteArray *ssid;
 	char *ap_hash;
 	GSList *iter;
 	int i;
@@ -292,7 +293,8 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 		nmtconn = g_slice_new0 (NmtConnectConnection);
 		nmtconn->device = nmtdev->device;
 		nmtconn->ap = g_object_ref (ap);
-		nmtconn->ssid = nm_utils_ssid_to_utf8 (nm_access_point_get_ssid (ap));
+		ssid = nm_access_point_get_ssid (ap);
+		nmtconn->ssid = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
 
 		for (iter = connections; iter; iter = iter->next) {
 			conn = iter->data;

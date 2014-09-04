@@ -528,7 +528,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 
 	/* Convert to strings */
 	if (ssid) {
-		ssid_str = nm_utils_ssid_to_utf8 (ssid);
+		ssid_str = nm_utils_ssid_to_utf8 (ssid->data, ssid->len);
 		ssid_hex_str = ssid_to_hex ((const char *) ssid->data, ssid->len);
 	}
 	channel_str = g_strdup_printf ("%u", nm_utils_wifi_freq_to_channel (freq));
@@ -2052,7 +2052,8 @@ find_ap_on_device (NMDevice *device, GByteArray *bssid, const char *ssid)
 
 			candidate_ssid = nm_access_point_get_ssid (candidate_ap);
 			if (candidate_ssid) {
-				char *ssid_tmp = nm_utils_ssid_to_utf8 (candidate_ssid);
+				char *ssid_tmp = nm_utils_ssid_to_utf8 (candidate_ssid->data,
+				                                        candidate_ssid->len);
 
 				/* Compare SSIDs */
 				if (strcmp (ssid, ssid_tmp) == 0) {

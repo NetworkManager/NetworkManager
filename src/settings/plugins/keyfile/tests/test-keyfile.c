@@ -139,19 +139,13 @@ test_read_valid_wired_connection (void)
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
 	GError *error = NULL;
-	const GByteArray *array;
+	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
 	const char *tmp;
 	const char *expected_id = "Test Wired Connection";
 	const char *expected_uuid = "4e80a56d-c99f-4aad-a6dd-b449bc398c57";
 	const guint64 expected_timestamp = 6654332;
 	guint64 timestamp;
-	const char *expected_dns1 = "4.2.2.1";
-	const char *expected_dns2 = "4.2.2.2";
-	guint32 addr;
-	struct in6_addr addr6;
-	const char *expected6_dns1 = "1111:dddd::aaaa";
-	const char *expected6_dns2 = "1::cafe";
 	const char *expected6_dnssearch1 = "super-domain.com";
 	const char *expected6_dnssearch2 = "redhat.com";
 	const char *expected6_dnssearch3 = "gnu.org";
@@ -250,18 +244,13 @@ test_read_valid_wired_connection (void)
 	        NM_SETTING_WIRED_SETTING_NAME);
 
 	/* MAC address */
-	array = nm_setting_wired_get_mac_address (s_wired);
-	ASSERT (array != NULL,
+	mac = nm_setting_wired_get_mac_address (s_wired);
+	ASSERT (mac != NULL,
 	        "connection-verify-wired", "failed to verify %s: missing %s / %s key",
 	        TEST_WIRED_FILE,
 	        NM_SETTING_WIRED_SETTING_NAME,
 	        NM_SETTING_WIRED_MAC_ADDRESS);
-	ASSERT (array->len == ETH_ALEN,
-	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_WIRED_FILE,
-	        NM_SETTING_WIRED_SETTING_NAME,
-	        NM_SETTING_WIRED_MAC_ADDRESS);
-	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
+	ASSERT (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)),
 	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_WIRED_FILE,
 	        NM_SETTING_WIRED_SETTING_NAME,
@@ -296,23 +285,13 @@ test_read_valid_wired_connection (void)
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET, expected_dns1, &addr) > 0,
-	        "connection-verify-wired", "failed to verify %s: couldn't convert DNS IP address #1",
-	        TEST_WIRED_FILE,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr,
+	ASSERT (strcmp (nm_setting_ip4_config_get_dns (s_ip4, 0), "4.2.2.1") == 0,
 	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_WIRED_FILE,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET, expected_dns2, &addr) > 0,
-	        "connection-verify-wired", "failed to verify %s: couldn't convert DNS IP address #2",
-	        TEST_WIRED_FILE,
-	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP4_CONFIG_DNS);
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr,
+	ASSERT (strcmp (nm_setting_ip4_config_get_dns (s_ip4, 1), "4.2.2.2") == 0,
 	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_WIRED_FILE,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -365,23 +344,13 @@ test_read_valid_wired_connection (void)
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET6, expected6_dns1, &addr6) > 0,
-	        "connection-verify-wired", "failed to verify %s: couldn't convert DNS IP6 address #1",
-	        TEST_WIRED_FILE,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_DNS);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 0), &addr6),
+	ASSERT (strcmp (nm_setting_ip6_config_get_dns (s_ip6, 0), "1111:dddd::aaaa") == 0,
 	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value #1",
 	        TEST_WIRED_FILE,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP6_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET6, expected6_dns2, &addr6) > 0,
-	        "connection-verify-wired", "failed to verify %s: couldn't convert DNS IP address #2",
-	        TEST_WIRED_FILE,
-	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
-	        NM_SETTING_IP6_CONFIG_DNS);
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 1), &addr6),
+	ASSERT (strcmp (nm_setting_ip6_config_get_dns (s_ip6, 1), "1::cafe") == 0,
 	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value #2",
 	        TEST_WIRED_FILE,
 	        NM_SETTING_IP6_CONFIG_SETTING_NAME,
@@ -539,16 +508,13 @@ test_write_wired_connection (void)
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
 	char *uuid;
-	GByteArray *mac;
-	unsigned char tmpmac[] = { 0x99, 0x88, 0x77, 0x66, 0x55, 0x44 };
+	const char *mac = "99:88:77:66:55:44";
 	gboolean success;
 	NMConnection *reread;
 	char *testfile = NULL;
 	GError *error = NULL;
 	pid_t owner_grp;
 	uid_t owner_uid;
-	guint32 addr;
-	struct in6_addr addr6;
 	const char *dns1 = "4.2.2.1";
 	const char *dns2 = "4.2.2.2";
 	const char *address1 = "192.168.0.5";
@@ -599,13 +565,10 @@ test_write_wired_connection (void)
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	mac = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
 	              NM_SETTING_WIRED_MTU, 900,
 	              NULL);
-	g_byte_array_free (mac, TRUE);
 
 	/* IP4 setting */
 
@@ -627,10 +590,8 @@ test_write_wired_connection (void)
 	add_one_ip4_route (s_ip4, route4, route4_nh, 6, 4);
 
 	/* DNS servers */
-	inet_pton (AF_INET, dns1, &addr);
-	nm_setting_ip4_config_add_dns (s_ip4, addr);
-	inet_pton (AF_INET, dns2, &addr);
-	nm_setting_ip4_config_add_dns (s_ip4, addr);
+	nm_setting_ip4_config_add_dns (s_ip4, dns1);
+	nm_setting_ip4_config_add_dns (s_ip4, dns2);
 
 	/* IP6 setting */
 
@@ -652,10 +613,8 @@ test_write_wired_connection (void)
 	add_one_ip6_route (s_ip6, route6_4, route6_4_nh, 62, 0);
 
 	/* DNS servers */
-	inet_pton (AF_INET6, dns6_1, &addr6);
-	nm_setting_ip6_config_add_dns (s_ip6, &addr6);
-	inet_pton (AF_INET6, dns6_2, &addr6);
-	nm_setting_ip6_config_add_dns (s_ip6, &addr6);
+	nm_setting_ip6_config_add_dns (s_ip6, dns6_1);
+	nm_setting_ip6_config_add_dns (s_ip6, dns6_2);
 
 	/* DNS searches */
 	nm_setting_ip6_config_add_dns_search (s_ip6, "wallaceandgromit.com");
@@ -810,7 +769,6 @@ test_write_ip6_wired_connection (void)
 	GError *error = NULL;
 	pid_t owner_grp;
 	uid_t owner_uid;
-	struct in6_addr addr6;
 	const char *dns = "1::cafe";
 	const char *address = "abcd::beef";
 	const char *gw = "dcba::beef";
@@ -858,8 +816,7 @@ test_write_ip6_wired_connection (void)
 	add_one_ip6_address (s_ip6, address, 64, gw);
 
 	/* DNS servers */
-	inet_pton (AF_INET6, dns, &addr6);
-	nm_setting_ip6_config_add_dns (s_ip6, &addr6);
+	nm_setting_ip6_config_add_dns (s_ip6, dns);
 
 	/* DNS searches */
 	nm_setting_ip6_config_add_dns_search (s_ip6, "wallaceandgromit.com");
@@ -899,7 +856,7 @@ test_read_wired_mac_case (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	GError *error = NULL;
-	const GByteArray *array;
+	const char *mac;
 	char expected_mac_address[ETH_ALEN] = { 0x00, 0x11, 0xaa, 0xbb, 0xcc, 0x55 };
 	const char *tmp;
 	const char *expected_id = "Test Wired Connection MAC Case";
@@ -962,18 +919,13 @@ test_read_wired_mac_case (void)
 	        NM_SETTING_WIRED_SETTING_NAME);
 
 	/* MAC address */
-	array = nm_setting_wired_get_mac_address (s_wired);
-	ASSERT (array != NULL,
+	mac = nm_setting_wired_get_mac_address (s_wired);
+	ASSERT (mac != NULL,
 	        "connection-verify-wired", "failed to verify %s: missing %s / %s key",
 	        TEST_WIRED_MAC_CASE_FILE,
 	        NM_SETTING_WIRED_SETTING_NAME,
 	        NM_SETTING_WIRED_MAC_ADDRESS);
-	ASSERT (array->len == ETH_ALEN,
-	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_WIRED_MAC_CASE_FILE,
-	        NM_SETTING_WIRED_SETTING_NAME,
-	        NM_SETTING_WIRED_MAC_ADDRESS);
-	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
+	ASSERT (nm_utils_hwaddr_matches (mac, -1, expected_mac_address, sizeof (expected_mac_address)),
 	        "connection-verify-wired", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_WIRED_MAC_CASE_FILE,
 	        NM_SETTING_WIRED_SETTING_NAME,
@@ -991,7 +943,7 @@ test_read_mac_old_format (void)
 	NMSettingWired *s_wired;
 	GError *error = NULL;
 	gboolean success;
-	const GByteArray *array;
+	const char *mac;
 	char expected_mac[ETH_ALEN] = { 0x00, 0x11, 0xaa, 0xbb, 0xcc, 0x55 };
 	char expected_cloned_mac[ETH_ALEN] = { 0x00, 0x16, 0xaa, 0xbb, 0xcc, 0xfe };
 
@@ -1007,16 +959,14 @@ test_read_mac_old_format (void)
 	g_assert (s_wired);
 
 	/* MAC address */
-	array = nm_setting_wired_get_mac_address (s_wired);
-	g_assert (array);
-	g_assert_cmpint (array->len, ==, ETH_ALEN);
-	g_assert (memcmp (array->data, expected_mac, ETH_ALEN) == 0);
+	mac = nm_setting_wired_get_mac_address (s_wired);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac, ETH_ALEN));
 
 	/* Cloned MAC address */
-	array = nm_setting_wired_get_cloned_mac_address (s_wired);
-	g_assert (array);
-	g_assert_cmpint (array->len, ==, ETH_ALEN);
-	g_assert (memcmp (array->data, expected_cloned_mac, ETH_ALEN) == 0);
+	mac = nm_setting_wired_get_cloned_mac_address (s_wired);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_cloned_mac, ETH_ALEN));
 
 	g_object_unref (connection);
 }
@@ -1030,7 +980,7 @@ test_read_mac_ib_old_format (void)
 	NMSettingInfiniband *s_ib;
 	GError *error = NULL;
 	gboolean success;
-	const GByteArray *array;
+	const char *mac;
 	guint8 expected_mac[INFINIBAND_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
 		0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89,
 		0x90 };
@@ -1047,10 +997,9 @@ test_read_mac_ib_old_format (void)
 	g_assert (s_ib);
 
 	/* MAC address */
-	array = nm_setting_infiniband_get_mac_address (s_ib);
-	g_assert (array);
-	g_assert_cmpint (array->len, ==, INFINIBAND_ALEN);
-	g_assert_cmpint (memcmp (array->data, expected_mac, sizeof (expected_mac)), ==, 0);
+	mac = nm_setting_infiniband_get_mac_address (s_ib);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac, sizeof (expected_mac)));
 
 	g_object_unref (connection);
 }
@@ -1063,8 +1012,8 @@ test_read_valid_wireless_connection (void)
 	NMSettingWireless *s_wireless;
 	NMSettingIP4Config *s_ip4;
 	GError *error = NULL;
-	const GByteArray *array;
-	char expected_bssid[ETH_ALEN] = { 0x00, 0x1a, 0x33, 0x44, 0x99, 0x82 };
+	const char *bssid;
+	const guint8 expected_bssid[ETH_ALEN] = { 0x00, 0x1a, 0x33, 0x44, 0x99, 0x82 };
 	const char *tmp;
 	const char *expected_id = "Test Wireless Connection";
 	const char *expected_uuid = "2f962388-e5f3-45af-a62c-ac220b8f7baa";
@@ -1136,18 +1085,13 @@ test_read_valid_wireless_connection (void)
 	        NM_SETTING_WIRED_SETTING_NAME);
 
 	/* BSSID */
-	array = nm_setting_wireless_get_bssid (s_wireless);
-	ASSERT (array != NULL,
+	bssid = nm_setting_wireless_get_bssid (s_wireless);
+	ASSERT (bssid != NULL,
 	        "connection-verify-wireless", "failed to verify %s: missing %s / %s key",
 	        TEST_WIRELESS_FILE,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_BSSID);
-	ASSERT (array->len == ETH_ALEN,
-	        "connection-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_WIRELESS_FILE,
-	        NM_SETTING_WIRELESS_SETTING_NAME,
-	        NM_SETTING_WIRELESS_BSSID);
-	ASSERT (memcmp (array->data, &expected_bssid[0], sizeof (expected_bssid)) == 0,
+	ASSERT (nm_utils_hwaddr_matches (bssid, -1, expected_bssid, sizeof (expected_bssid)),
 	        "connection-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_WIRELESS_FILE,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
@@ -1181,9 +1125,8 @@ test_write_wireless_connection (void)
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
 	char *uuid;
-	GByteArray *bssid;
-	unsigned char tmpbssid[] = { 0xaa, 0xb9, 0xa1, 0x74, 0x55, 0x44 };
-	GByteArray *ssid;
+	const char *bssid = "aa:b9:a1:74:55:44";
+	GBytes *ssid;
 	unsigned char tmpssid[] = { 0x31, 0x33, 0x33, 0x37 };
 	gboolean success;
 	NMConnection *reread;
@@ -1215,11 +1158,7 @@ test_write_wireless_connection (void)
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_wireless));
 
-	bssid = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (bssid, &tmpbssid[0], sizeof (tmpbssid));
-
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 
 	g_object_set (s_wireless,
 	              NM_SETTING_WIRELESS_BSSID, bssid,
@@ -1227,8 +1166,7 @@ test_write_wireless_connection (void)
 	              NM_SETTING_WIRED_MTU, 1000,
 	              NULL);
 
-	g_byte_array_free (bssid, TRUE);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* IP4 setting */
 
@@ -1282,7 +1220,9 @@ test_read_string_ssid (void)
 	NMConnection *connection;
 	NMSettingWireless *s_wireless;
 	GError *error = NULL;
-	const GByteArray *array;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *expected_ssid = "blah blah ssid 1234";
 
 	connection = nm_keyfile_plugin_connection_from_file (TEST_STRING_SSID_FILE, NULL);
@@ -1301,14 +1241,15 @@ test_read_string_ssid (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME);
 
 	/* SSID */
-	array = nm_setting_wireless_get_ssid (s_wireless);
-	ASSERT (array != NULL,
+	ssid = nm_setting_wireless_get_ssid (s_wireless);
+	ASSERT (ssid != NULL,
 	        "connection-verify-wireless", "failed to verify %s: missing %s / %s key",
 	        TEST_STRING_SSID_FILE,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_SSID);
-	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
-	g_assert (memcmp (array->data, expected_ssid, array->len) == 0);
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
+	g_assert (memcmp (ssid_data, expected_ssid, ssid_len) == 0);
 
 	g_object_unref (connection);
 }
@@ -1321,7 +1262,7 @@ test_write_string_ssid (void)
 	NMSettingWireless *s_wireless;
 	NMSettingIP4Config *s_ip4;
 	char *uuid, *testfile = NULL, *tmp;
-	GByteArray *ssid;
+	GBytes *ssid;
 	unsigned char tmpssid[] = { 65, 49, 50, 51, 32, 46, 92, 46, 36, 37, 126, 93 };
 	gboolean success;
 	NMConnection *reread;
@@ -1350,10 +1291,9 @@ test_write_string_ssid (void)
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_wireless));
 
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 	g_object_set (s_wireless, NM_SETTING_WIRELESS_SSID, ssid, NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* IP4 setting */
 
@@ -1411,7 +1351,9 @@ test_read_intlist_ssid (void)
 	NMSettingWireless *s_wifi;
 	GError *error = NULL;
 	gboolean success;
-	const GByteArray *array;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *expected_ssid = "blah1234";
 
 	connection = nm_keyfile_plugin_connection_from_file (TEST_INTLIST_SSID_FILE, &error);
@@ -1426,10 +1368,11 @@ test_read_intlist_ssid (void)
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
-	array = nm_setting_wireless_get_ssid (s_wifi);
-	g_assert (array != NULL);
-	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
-	g_assert_cmpint (memcmp (array->data, expected_ssid, strlen (expected_ssid)), ==, 0);
+	ssid = nm_setting_wireless_get_ssid (s_wifi);
+	g_assert (ssid != NULL);
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
+	g_assert_cmpint (memcmp (ssid_data, expected_ssid, strlen (expected_ssid)), ==, 0);
 
 	g_object_unref (connection);
 }
@@ -1442,7 +1385,7 @@ test_write_intlist_ssid (void)
 	NMSettingWireless *s_wifi;
 	NMSettingIP4Config *s_ip4;
 	char *uuid, *testfile = NULL;
-	GByteArray *ssid;
+	GBytes *ssid;
 	unsigned char tmpssid[] = { 65, 49, 50, 51, 0, 50, 50 };
 	gboolean success;
 	NMConnection *reread;
@@ -1475,10 +1418,9 @@ test_write_intlist_ssid (void)
 	g_assert (s_wifi);
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 	g_object_set (s_wifi, NM_SETTING_WIRELESS_SSID, ssid, NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* IP4 setting */
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
@@ -1535,7 +1477,9 @@ test_read_intlike_ssid (void)
 	NMSettingWireless *s_wifi;
 	GError *error = NULL;
 	gboolean success;
-	const GByteArray *array;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *expected_ssid = "101";
 
 	connection = nm_keyfile_plugin_connection_from_file (TEST_INTLIKE_SSID_FILE, &error);
@@ -1550,10 +1494,11 @@ test_read_intlike_ssid (void)
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
-	array = nm_setting_wireless_get_ssid (s_wifi);
-	g_assert (array != NULL);
-	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
-	g_assert_cmpint (memcmp (array->data, expected_ssid, strlen (expected_ssid)), ==, 0);
+	ssid = nm_setting_wireless_get_ssid (s_wifi);
+	g_assert (ssid != NULL);
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
+	g_assert_cmpint (memcmp (ssid_data, expected_ssid, strlen (expected_ssid)), ==, 0);
 
 	g_object_unref (connection);
 }
@@ -1567,7 +1512,9 @@ test_read_intlike_ssid_2 (void)
 	NMSettingWireless *s_wifi;
 	GError *error = NULL;
 	gboolean success;
-	const GByteArray *array;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *expected_ssid = "11;12;13;";
 
 	connection = nm_keyfile_plugin_connection_from_file (TEST_INTLIKE_SSID_2_FILE, &error);
@@ -1582,10 +1529,11 @@ test_read_intlike_ssid_2 (void)
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
-	array = nm_setting_wireless_get_ssid (s_wifi);
-	g_assert (array != NULL);
-	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
-	g_assert_cmpint (memcmp (array->data, expected_ssid, strlen (expected_ssid)), ==, 0);
+	ssid = nm_setting_wireless_get_ssid (s_wifi);
+	g_assert (ssid != NULL);
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
+	g_assert_cmpint (memcmp (ssid_data, expected_ssid, strlen (expected_ssid)), ==, 0);
 
 	g_object_unref (connection);
 }
@@ -1598,7 +1546,7 @@ test_write_intlike_ssid (void)
 	NMSettingWireless *s_wifi;
 	NMSettingIP4Config *s_ip4;
 	char *uuid, *testfile = NULL;
-	GByteArray *ssid;
+	GBytes *ssid;
 	unsigned char tmpssid[] = { 49, 48, 49 };
 	gboolean success;
 	NMConnection *reread;
@@ -1630,10 +1578,9 @@ test_write_intlike_ssid (void)
 	g_assert (s_wifi);
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 	g_object_set (s_wifi, NM_SETTING_WIRELESS_SSID, ssid, NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* IP4 setting */
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
@@ -1685,7 +1632,7 @@ test_write_intlike_ssid_2 (void)
 	NMSettingWireless *s_wifi;
 	NMSettingIP4Config *s_ip4;
 	char *uuid, *testfile = NULL;
-	GByteArray *ssid;
+	GBytes *ssid;
 	unsigned char tmpssid[] = { 49, 49, 59, 49, 50, 59, 49, 51, 59};
 	gboolean success;
 	NMConnection *reread;
@@ -1717,10 +1664,9 @@ test_write_intlike_ssid_2 (void)
 	g_assert (s_wifi);
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 	g_object_set (s_wifi, NM_SETTING_WIRELESS_SSID, ssid, NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* IP4 setting */
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
@@ -1775,8 +1721,8 @@ test_read_bt_dun_connection (void)
 	NMSettingSerial *s_serial;
 	NMSettingGsm *s_gsm;
 	GError *error = NULL;
-	const GByteArray *array;
-	char expected_bdaddr[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
+	const char *bdaddr;
+	const guint8 expected_bdaddr[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
 	const char *tmp;
 	const char *expected_id = "AT&T Data Connect BT";
 	const char *expected_uuid = "089130ab-ce28-46e4-ad77-d44869b03d19";
@@ -1834,18 +1780,13 @@ test_read_bt_dun_connection (void)
 	        NM_SETTING_WIRED_SETTING_NAME);
 
 	/* BDADDR */
-	array = nm_setting_bluetooth_get_bdaddr (s_bluetooth);
-	ASSERT (array != NULL,
+	bdaddr = nm_setting_bluetooth_get_bdaddr (s_bluetooth);
+	ASSERT (bdaddr != NULL,
 	        "connection-verify-bt", "failed to verify %s: missing %s / %s key",
 	        TEST_BT_DUN_FILE,
 	        NM_SETTING_BLUETOOTH_SETTING_NAME,
 	        NM_SETTING_BLUETOOTH_BDADDR);
-	ASSERT (array->len == ETH_ALEN,
-	        "connection-verify-bt", "failed to verify %s: unexpected %s / %s key value length",
-	        TEST_BT_DUN_FILE,
-	        NM_SETTING_BLUETOOTH_SETTING_NAME,
-	        NM_SETTING_BLUETOOTH_BDADDR);
-	ASSERT (memcmp (array->data, &expected_bdaddr[0], sizeof (expected_bdaddr)) == 0,
+	ASSERT (nm_utils_hwaddr_matches (bdaddr, -1, expected_bdaddr, sizeof (expected_bdaddr)),
 	        "connection-verify-bt", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_BT_DUN_FILE,
 	        NM_SETTING_BLUETOOTH_SETTING_NAME,
@@ -1931,8 +1872,7 @@ test_write_bt_dun_connection (void)
 	NMSettingIP4Config *s_ip4;
 	NMSettingGsm *s_gsm;
 	char *uuid;
-	GByteArray *bdaddr;
-	unsigned char tmpbdaddr[] = { 0xaa, 0xb9, 0xa1, 0x74, 0x55, 0x44 };
+	const char *bdaddr = "aa:b9:a1:74:55:44";
 	gboolean success;
 	NMConnection *reread;
 	char *testfile = NULL;
@@ -1963,15 +1903,10 @@ test_write_bt_dun_connection (void)
 	s_bt = NM_SETTING_BLUETOOTH (nm_setting_bluetooth_new ());
 	nm_connection_add_setting (connection, NM_SETTING (s_bt));
 
-	bdaddr = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (bdaddr, &tmpbdaddr[0], sizeof (tmpbdaddr));
-
 	g_object_set (s_bt,
 	              NM_SETTING_BLUETOOTH_BDADDR, bdaddr,
 	              NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_DUN,
 	              NULL);
-
-	g_byte_array_free (bdaddr, TRUE);
 
 	/* IP4 setting */
 
@@ -2262,7 +2197,7 @@ test_read_wired_8021x_tls_blob_connection (void)
 	GError *error = NULL;
 	const char *tmp;
 	gboolean success;
-	const GByteArray *array;
+	GBytes *blob;
 
 	connection = nm_keyfile_plugin_connection_from_file (TEST_WIRED_TLS_BLOB_FILE, &error);
 	if (connection == NULL) {
@@ -2306,9 +2241,9 @@ test_read_wired_8021x_tls_blob_connection (void)
 	g_assert (tmp == NULL);
 
 	/* Validate the path */
-	array = nm_setting_802_1x_get_ca_cert_blob (s_8021x);
-	g_assert (array != NULL);
-	g_assert_cmpint (array->len, ==, 568);
+	blob = nm_setting_802_1x_get_ca_cert_blob (s_8021x);
+	g_assert (blob != NULL);
+	g_assert_cmpint (g_bytes_get_size (blob), ==, 568);
 
 	tmp = nm_setting_802_1x_get_client_cert_path (s_8021x);
 	g_assert_cmpstr (tmp, ==, "/home/dcbw/Desktop/certinfra/client.pem");
@@ -2776,7 +2711,7 @@ test_read_infiniband_connection (void)
 	NMSettingConnection *s_con;
 	NMSettingInfiniband *s_ib;
 	GError *error = NULL;
-	const GByteArray *array;
+	const char *mac;
 	guint8 expected_mac[INFINIBAND_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
 		0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89,
 		0x90 };
@@ -2801,10 +2736,9 @@ test_read_infiniband_connection (void)
 	s_ib = nm_connection_get_setting_infiniband (connection);
 	g_assert (s_ib);
 
-	array = nm_setting_infiniband_get_mac_address (s_ib);
-	g_assert (array);
-	g_assert_cmpint (array->len, ==, INFINIBAND_ALEN);
-	g_assert_cmpint (memcmp (array->data, expected_mac, sizeof (expected_mac)), ==, 0);
+	mac = nm_setting_infiniband_get_mac_address (s_ib);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac, sizeof (expected_mac)));
 
 	g_object_unref (connection);
 }
@@ -2818,10 +2752,7 @@ test_write_infiniband_connection (void)
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
 	char *uuid;
-	GByteArray *mac;
-	guint8 tmpmac[] = { 0x99, 0x88, 0x77, 0x66, 0x55, 0x44, 0xab, 0xbc,
-		0xcd, 0xde, 0xef, 0xf0, 0x0a, 0x1b, 0x2c, 0x3d, 0x4e, 0x5f, 0x6f, 0xba
-	};
+	const char *mac = "99:88:77:66:55:44:ab:bc:cd:de:ef:f0:0a:1b:2c:3d:4e:5f:6f:ba";
 	gboolean success;
 	NMConnection *reread;
 	char *testfile = NULL;
@@ -2852,14 +2783,11 @@ test_write_infiniband_connection (void)
 	g_assert (s_ib);
 	nm_connection_add_setting (connection, NM_SETTING (s_ib));
 
-	mac = g_byte_array_sized_new (sizeof (tmpmac));
-	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
 	g_object_set (s_ib,
 	              NM_SETTING_INFINIBAND_MAC_ADDRESS, mac,
 	              NM_SETTING_INFINIBAND_MTU, 900,
 	              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
 	              NULL);
-	g_byte_array_free (mac, TRUE);
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -3028,7 +2956,7 @@ test_read_bridge_component (void)
 	NMSettingConnection *s_con;
 	NMSettingBridgePort *s_port;
 	NMSettingWired *s_wired;
-	const GByteArray *array;
+	const char *mac;
 	guint8 expected_mac[ETH_ALEN] = { 0x00, 0x22, 0x15, 0x59, 0x62, 0x97 };
 	GError *error = NULL;
 	const char *expected_id = "Test Bridge Component";
@@ -3053,10 +2981,9 @@ test_read_bridge_component (void)
 	/* Wired setting */
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
-	array = nm_setting_wired_get_mac_address (s_wired);
-	g_assert (array);
-	g_assert_cmpint (array->len, ==, ETH_ALEN);
-	g_assert_cmpint (memcmp (array->data, expected_mac, sizeof (expected_mac)), ==, 0);
+	mac = nm_setting_wired_get_mac_address (s_wired);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac, sizeof (expected_mac)));
 
 	/* BridgePort setting */
 	s_port = nm_connection_get_setting_bridge_port (connection);
@@ -3076,8 +3003,7 @@ test_write_bridge_component (void)
 	NMSettingBridgePort *s_port;
 	NMSettingWired *s_wired;
 	char *uuid;
-	GByteArray *mac;
-	guint8 tmpmac[] = { 0x99, 0x88, 0x77, 0x66, 0x55, 0x44 };
+	const char *mac = "99:88:77:66:55:44";
 	gboolean success;
 	NMConnection *reread;
 	char *testfile = NULL;
@@ -3109,13 +3035,10 @@ test_write_bridge_component (void)
 	g_assert (s_wired);
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
 
-	mac = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
 	g_object_set (s_wired,
 	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
 	              NM_SETTING_WIRED_MTU, 1300,
 	              NULL);
-	g_byte_array_free (mac, TRUE);
 
 	/* BridgePort setting */
 	s_port = (NMSettingBridgePort *) nm_setting_bridge_port_new ();
@@ -3154,7 +3077,7 @@ test_read_new_wired_group_name (void)
 {
 	NMConnection *connection;
 	NMSettingWired *s_wired;
-	const GByteArray *array;
+	const char *mac;
 	guint8 expected_mac[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
 	GError *error = NULL;
 	gboolean success;
@@ -3171,10 +3094,9 @@ test_read_new_wired_group_name (void)
 	g_assert (s_wired);
 	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 1400);
 
-	array = nm_setting_wired_get_mac_address (s_wired);
-	g_assert (array);
-	g_assert_cmpint (array->len, ==, ETH_ALEN);
-	g_assert_cmpint (memcmp (array->data, expected_mac, sizeof (expected_mac)), ==, 0);
+	mac = nm_setting_wired_get_mac_address (s_wired);
+	g_assert (mac);
+	g_assert (nm_utils_hwaddr_matches (mac, -1, expected_mac, sizeof (expected_mac)));
 
 	g_object_unref (connection);
 }
@@ -3260,7 +3182,9 @@ test_read_new_wireless_group_names (void)
 	NMConnection *connection;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
-	const GByteArray *array;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
 	const char *expected_ssid = "foobar";
 	GError *error = NULL;
 	gboolean success;
@@ -3276,10 +3200,11 @@ test_read_new_wireless_group_names (void)
 	s_wifi = nm_connection_get_setting_wireless (connection);
 	g_assert (s_wifi);
 
-	array = nm_setting_wireless_get_ssid (s_wifi);
-	g_assert (array);
-	g_assert_cmpint (array->len, ==, strlen (expected_ssid));
-	g_assert_cmpint (memcmp (array->data, expected_ssid, array->len), ==, 0);
+	ssid = nm_setting_wireless_get_ssid (s_wifi);
+	g_assert (ssid);
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	g_assert_cmpint (ssid_len, ==, strlen (expected_ssid));
+	g_assert_cmpint (memcmp (ssid_data, expected_ssid, ssid_len), ==, 0);
 
 	g_assert_cmpstr (nm_setting_wireless_get_mode (s_wifi), ==, NM_SETTING_WIRELESS_MODE_INFRA);
 
@@ -3300,7 +3225,7 @@ test_write_new_wireless_group_names (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	char *uuid;
-	GByteArray *ssid;
+	GBytes *ssid;
 	unsigned char tmpssid[] = { 0x31, 0x33, 0x33, 0x37 };
 	const char *expected_psk = "asdfasdfasdfa12315";
 	gboolean success;
@@ -3331,13 +3256,12 @@ test_write_new_wireless_group_names (void)
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
 	              NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	/* WiFi security setting */
 	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();

@@ -185,7 +185,6 @@ bind_device_to_connection (SCPluginIfupdown *self,
                            GUdevDevice *device,
                            NMIfupdownConnection *exported)
 {
-	GByteArray *mac_address;
 	NMSettingWired *s_wired;
 	NMSettingWireless *s_wifi;
 	const char *iface, *address;
@@ -202,8 +201,7 @@ bind_device_to_connection (SCPluginIfupdown *self,
 		return;
 	}
 
-	mac_address = nm_utils_hwaddr_atoba (address, ETH_ALEN);
-	if (!mac_address) {
+	if (!nm_utils_hwaddr_valid (address, ETH_ALEN)) {
 		nm_log_warn (LOGD_SETTINGS, "failed to parse MAC address '%s' for %s",
 		             address, iface);
 		return;
@@ -213,12 +211,11 @@ bind_device_to_connection (SCPluginIfupdown *self,
 	s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (exported));
 	if (s_wired) {
 		nm_log_info (LOGD_SETTINGS, "locking wired connection setting");
-		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac_address, NULL);
+		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, address, NULL);
 	} else if (s_wifi) {
 		nm_log_info (LOGD_SETTINGS, "locking wireless connection setting");
-		g_object_set (s_wifi, NM_SETTING_WIRELESS_MAC_ADDRESS, mac_address, NULL);
+		g_object_set (s_wifi, NM_SETTING_WIRELESS_MAC_ADDRESS, address, NULL);
 	}
-	g_byte_array_free (mac_address, TRUE);
 
 	nm_settings_connection_commit_changes (NM_SETTINGS_CONNECTION (exported), NULL, NULL);
 }    

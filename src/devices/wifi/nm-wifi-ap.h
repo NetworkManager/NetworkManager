@@ -67,7 +67,7 @@ void        nm_ap_set_supplicant_path (NMAccessPoint *ap,
                                        const char *path);
 
 const GByteArray *nm_ap_get_ssid (const NMAccessPoint * ap);
-void              nm_ap_set_ssid (NMAccessPoint * ap, const GByteArray * ssid);
+void              nm_ap_set_ssid (NMAccessPoint * ap, const guint8 * ssid, gsize len);
 
 NM80211ApFlags nm_ap_get_flags (NMAccessPoint *ap);
 void           nm_ap_set_flags (NMAccessPoint *ap, NM80211ApFlags flags);
@@ -78,8 +78,8 @@ void                   nm_ap_set_wpa_flags (NMAccessPoint *ap, NM80211ApSecurity
 NM80211ApSecurityFlags nm_ap_get_rsn_flags (NMAccessPoint *ap);
 void                   nm_ap_set_rsn_flags (NMAccessPoint *ap, NM80211ApSecurityFlags flags);
 
-const guint8 *nm_ap_get_address (const NMAccessPoint *ap);
-void          nm_ap_set_address (NMAccessPoint *ap, const guint8 *addr);
+const char *nm_ap_get_address (const NMAccessPoint *ap);
+void        nm_ap_set_address (NMAccessPoint *ap, const char *addr);
 
 NM80211Mode nm_ap_get_mode (NMAccessPoint *ap);
 void        nm_ap_set_mode (NMAccessPoint *ap, const NM80211Mode mode);

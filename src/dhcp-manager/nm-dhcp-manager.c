@@ -377,7 +377,7 @@ client_start (NMDhcpManager *self,
               gboolean ipv6,
               const char *dhcp_client_id,
               guint32 timeout,
-              GByteArray *dhcp_anycast_addr,
+              const char *dhcp_anycast_addr,
               const char *hostname,
               gboolean info_only,
               NMSettingIP6ConfigPrivacy privacy)
@@ -452,7 +452,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
                            const char *dhcp_hostname,
                            const char *dhcp_client_id,
                            guint32 timeout,
-                           GByteArray *dhcp_anycast_addr)
+                           const char *dhcp_anycast_addr)
 {
 	const char *hostname = NULL;
 
@@ -475,7 +475,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
                            guint priority,
                            const char *dhcp_hostname,
                            guint32 timeout,
-                           GByteArray *dhcp_anycast_addr,
+                           const char *dhcp_anycast_addr,
                            gboolean info_only,
                            NMSettingIP6ConfigPrivacy privacy)
 {

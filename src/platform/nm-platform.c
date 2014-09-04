@@ -1377,14 +1377,14 @@ nm_platform_mesh_set_channel (int ifindex, guint32 channel)
 }
 
 gboolean
-nm_platform_mesh_set_ssid (int ifindex, const GByteArray *ssid)
+nm_platform_mesh_set_ssid (int ifindex, const guint8 *ssid, gsize len)
 {
 	reset_error ();
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (ssid != NULL, FALSE);
 
-	return klass->mesh_set_ssid (platform, ifindex, ssid);
+	return klass->mesh_set_ssid (platform, ifindex, ssid, len);
 }
 
 /******************************************************************/

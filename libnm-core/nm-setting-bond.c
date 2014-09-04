@@ -28,7 +28,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-bond.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
@@ -671,25 +670,15 @@ finalize (GObject *object)
 }
 
 static void
-copy_hash (gpointer key, gpointer value, gpointer user_data)
-{
-	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), g_strdup (value));
-}
-
-static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMSettingBondPrivate *priv = NM_SETTING_BOND_GET_PRIVATE (object);
-	GHashTable *new_hash;
 
 	switch (prop_id) {
 	case PROP_OPTIONS:
-		/* Must make a deep copy of the hash table here... */
-		g_hash_table_remove_all (priv->options);
-		new_hash = g_value_get_boxed (value);
-		if (new_hash)
-			g_hash_table_foreach (new_hash, copy_hash, priv->options);
+		g_hash_table_unref (priv->options);
+		priv->options = _nm_utils_copy_strdict (g_value_get_boxed (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -705,7 +694,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_OPTIONS:
-		g_value_set_boxed (value, priv->options);
+		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->options));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -734,14 +723,20 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 	 * Dictionary of key/value pairs of bonding options.  Both keys and values
 	 * must be strings. Option names must contain only alphanumeric characters
 	 * (ie, [a-zA-Z0-9]).
+	 *
+	 * Type: GHashTable(utf8,utf8)
 	 **/
 	 g_object_class_install_property
 		 (object_class, PROP_OPTIONS,
-		 _nm_param_spec_specialized (NM_SETTING_BOND_OPTIONS, "", "",
-		                             DBUS_TYPE_G_MAP_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_BOND_OPTIONS, "", "",
+		                     G_TYPE_HASH_TABLE,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
+	 _nm_setting_class_transform_property (parent_class, NM_SETTING_BOND_OPTIONS,
+	                                       DBUS_TYPE_G_MAP_OF_STRING,
+	                                       _nm_utils_strdict_to_dbus,
+	                                       _nm_utils_strdict_from_dbus);
 
 	 _nm_setting_class_add_dbus_only_property (parent_class, "interface-name", G_TYPE_STRING,
 	                                           _nm_setting_get_deprecated_virtual_interface_name,

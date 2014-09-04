@@ -399,7 +399,7 @@ wifi_connection_new (void)
 	NMSettingWirelessSecurity *s_wsec;
 	unsigned char tmpssid[] = { 0x31, 0x33, 0x33, 0x37 };
 	char *uuid;
-	GByteArray *ssid;
+	GBytes *ssid;
 
 	connection = nm_simple_connection_new ();
 	g_assert (connection);
@@ -422,12 +422,11 @@ wifi_connection_new (void)
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
 	g_assert (s_wifi);
 
-	ssid = g_byte_array_sized_new (sizeof (tmpssid));
-	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+	ssid = g_bytes_new (tmpssid, sizeof (tmpssid));
 	g_object_set (s_wifi,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
 	/* Wifi security */

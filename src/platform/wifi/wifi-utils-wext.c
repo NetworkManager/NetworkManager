@@ -420,18 +420,15 @@ wifi_wext_set_mesh_channel (WifiData *data, guint32 channel)
 }
 
 static gboolean
-wifi_wext_set_mesh_ssid (WifiData *data, const GByteArray *ssid)
+wifi_wext_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 {
 	WifiDataWext *wext = (WifiDataWext *) data;
 	struct iwreq wrq;
-	guint32 len = 0;
 	char buf[IW_ESSID_MAX_SIZE + 1];
 
 	memset (buf, 0, sizeof (buf));
-	if (ssid) {
-		len = ssid->len;
-		memcpy (buf, ssid->data, MIN (sizeof (buf) - 1, len));
-	}
+	memcpy (buf, ssid, MIN (sizeof (buf) - 1, len));
+
 	wrq.u.essid.pointer = (caddr_t) buf;
 	wrq.u.essid.length = len;
 	wrq.u.essid.flags = (len > 0) ? 1 : 0; /* 1=enable SSID, 0=disable/any */
@@ -444,7 +441,7 @@ wifi_wext_set_mesh_ssid (WifiData *data, const GByteArray *ssid)
 		nm_log_err (LOGD_HW | LOGD_WIFI | LOGD_OLPC,
 		            "(%s): error setting SSID to '%s': %s",
 		            wext->parent.iface,
-		            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(null)",
+		            ssid ? nm_utils_escape_ssid (ssid, len) : "(null)",
 		            strerror (errno));
 	}
 

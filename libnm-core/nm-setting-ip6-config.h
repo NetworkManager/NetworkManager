@@ -214,10 +214,10 @@ NMSetting *            nm_setting_ip6_config_new                    (void);
 const char *           nm_setting_ip6_config_get_method             (NMSettingIP6Config *setting);
 
 guint32                nm_setting_ip6_config_get_num_dns            (NMSettingIP6Config *setting);
-const struct in6_addr *nm_setting_ip6_config_get_dns                (NMSettingIP6Config *setting, guint32 i);
-gboolean               nm_setting_ip6_config_add_dns                (NMSettingIP6Config *setting, const struct in6_addr *dns);
+const char *           nm_setting_ip6_config_get_dns                (NMSettingIP6Config *setting, guint32 i);
+gboolean               nm_setting_ip6_config_add_dns                (NMSettingIP6Config *setting, const char *dns);
 void                   nm_setting_ip6_config_remove_dns             (NMSettingIP6Config *setting, guint32 i);
-gboolean               nm_setting_ip6_config_remove_dns_by_value    (NMSettingIP6Config *setting, const struct in6_addr *dns);
+gboolean               nm_setting_ip6_config_remove_dns_by_value    (NMSettingIP6Config *setting, const char *dns);
 void                   nm_setting_ip6_config_clear_dns              (NMSettingIP6Config *setting);
 
 guint32                nm_setting_ip6_config_get_num_dns_searches       (NMSettingIP6Config *setting);

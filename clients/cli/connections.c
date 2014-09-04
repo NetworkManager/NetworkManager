@@ -2456,33 +2456,22 @@ is_setting_mandatory (NMConnection *connection, NMSetting *setting)
 /*----------------------------------------------------------------------------*/
 
 static gboolean
-check_and_convert_mac (const char *mac,
-                       GByteArray **mac_array,
-                       int type,
-                       const char *keyword,
-                       GError **error)
+check_mac (const char *mac,
+           int type,
+           const char *keyword,
+           GError **error)
 {
-	GByteArray *local_mac_array = NULL;
-
-	g_return_val_if_fail (mac_array == NULL || *mac_array == NULL, FALSE);
 	g_return_val_if_fail (type == ARPHRD_ETHER || type == ARPHRD_INFINIBAND, FALSE);
 
 	if (!mac)
 		return TRUE;
 
-	local_mac_array = nm_utils_hwaddr_atoba (mac, nm_utils_hwaddr_len (type));
-	if (!local_mac_array) {
+	if (!nm_utils_hwaddr_valid (mac, type)) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("Error: '%s': '%s' is not a valid %s MAC address."),
 		             keyword, mac, type == ARPHRD_INFINIBAND ? _("InfiniBand") : _("Ethernet"));
 		return FALSE;
 	}
-
-	if (mac_array)
-		*mac_array = local_mac_array;
-	else
-		if (local_mac_array)
-			g_byte_array_free (local_mac_array, TRUE);
 
 	return TRUE;
 }
@@ -2879,7 +2868,7 @@ do_questionnaire_ethernet (gboolean ethernet, char **mtu, char **mac, char **clo
 	if (!*mac) {
 		do {
 			*mac = nmc_readline (_("MAC [none]: "));
-			once_more = !check_and_convert_mac (*mac, NULL, ARPHRD_ETHER, "mac", &error);
+			once_more = !check_mac (*mac, ARPHRD_ETHER, "mac", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
 				g_clear_error (&error);
@@ -2890,7 +2879,7 @@ do_questionnaire_ethernet (gboolean ethernet, char **mtu, char **mac, char **clo
 	if (!*cloned_mac) {
 		do {
 			*cloned_mac = nmc_readline (_("Cloned MAC [none]: "));
-			once_more = !check_and_convert_mac (*cloned_mac, NULL, ARPHRD_ETHER, "cloned-mac", &error);
+			once_more = !check_mac (*cloned_mac, ARPHRD_ETHER, "cloned-mac", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
 				g_clear_error (&error);
@@ -2927,7 +2916,7 @@ do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent,
 	if (!*mac) {
 		do {
 			*mac = nmc_readline (_("MAC [none]: "));
-			once_more = !check_and_convert_mac (*mac, NULL, ARPHRD_INFINIBAND, "mac", &error);
+			once_more = !check_mac (*mac, ARPHRD_INFINIBAND, "mac", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
 				g_clear_error (&error);
@@ -2997,7 +2986,7 @@ do_questionnaire_wimax (char **mac)
 	if (!*mac) {
 		do {
 			*mac = nmc_readline (_("MAC [none]: "));
-			once_more = !check_and_convert_mac (*mac, NULL, ARPHRD_ETHER, "mac", &error);
+			once_more = !check_mac (*mac, ARPHRD_ETHER, "mac", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
 				g_clear_error (&error);
@@ -3036,7 +3025,7 @@ do_questionnaire_pppoe (char **password, char **service, char **mtu, char **mac)
 	if (!*mac) {
 		do {
 			*mac = nmc_readline (_("MAC [none]: "));
-			once_more = !check_and_convert_mac (*mac, NULL, ARPHRD_ETHER, "mac", &error);
+			once_more = !check_mac (*mac, ARPHRD_ETHER, "mac", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
 				g_clear_error (&error);
@@ -3391,7 +3380,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 	if (!*mac) {
 		do {
 			*mac = nmc_get_user_input (_("MAC [none]: "));
-			once_more = !check_and_convert_mac (*mac, NULL, ARPHRD_ETHER, "mac", &error);
+			once_more = !check_mac (*mac, ARPHRD_ETHER, "mac", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
 				g_clear_error (&error);
@@ -3490,7 +3479,7 @@ do_questionnaire_olpc (char **channel, char **dhcp_anycast)
 	if (!*dhcp_anycast) {
 		do {
 			*dhcp_anycast = nmc_readline (_("DHCP anycast MAC address [none]: "));
-			once_more = !check_and_convert_mac (*dhcp_anycast, NULL, ARPHRD_ETHER, "dhcp-anycast", &error);
+			once_more = !check_mac (*dhcp_anycast, ARPHRD_ETHER, "dhcp-anycast", &error);
 			if (once_more) {
 				printf ("%s\n", error->message);
 				g_clear_error (&error);
@@ -3635,8 +3624,6 @@ complete_connection_by_type (NMConnection *connection,
 		char *mac = NULL;
 		const char *cloned_mac_c = NULL;
 		char *cloned_mac = NULL;
-		GByteArray *array = NULL;
-		GByteArray *cloned_array = NULL;
 		nmc_arg_t exp_args[] = { {"mtu",        TRUE, &mtu_c,        FALSE},
 		                         {"mac",        TRUE, &mac_c,        FALSE},
 		                         {"cloned-mac", TRUE, &cloned_mac_c, FALSE},
@@ -3654,9 +3641,9 @@ complete_connection_by_type (NMConnection *connection,
 
 		if (!check_and_convert_mtu (mtu, &mtu_int, error))
 			goto cleanup_wired;
-		if (!check_and_convert_mac (mac, &array, ARPHRD_ETHER, "mac", error))
+		if (!check_mac (mac, ARPHRD_ETHER, "mac", error))
 			goto cleanup_wired;
-		if (!check_and_convert_mac (cloned_mac, &cloned_array, ARPHRD_ETHER, "cloned-mac", error))
+		if (!check_mac (cloned_mac, ARPHRD_ETHER, "cloned-mac", error))
 			goto cleanup_wired;
 
 		/* Add ethernet setting */
@@ -3665,20 +3652,16 @@ complete_connection_by_type (NMConnection *connection,
 
 		if (mtu)
 			g_object_set (s_wired, NM_SETTING_WIRED_MTU, mtu_int, NULL);
-		if (array)
-			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, array, NULL);
-		if (cloned_array)
-			g_object_set (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, cloned_array, NULL);
+		if (mac)
+			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
+		if (cloned_mac)
+			g_object_set (s_wired, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, cloned_mac, NULL);
 
 		success = TRUE;
 cleanup_wired:
 		g_free (mtu);
 		g_free (mac);
 		g_free (cloned_mac);
-		if (array)
-			g_byte_array_free (array, TRUE);
-		if (cloned_array)
-			g_byte_array_free (cloned_array, TRUE);
 		if (!success)
 			return FALSE;
 
@@ -3690,7 +3673,6 @@ cleanup_wired:
 		guint32 mtu_int = 0;
 		const char *mac_c = NULL;
 		char *mac = NULL;
-		GByteArray *array = NULL;
 		const char *mode_c = NULL;
 		char *mode = NULL;
 		const char *parent_c = NULL;
@@ -3719,7 +3701,7 @@ cleanup_wired:
 
 		if (!check_and_convert_mtu (mtu, &mtu_int, error))
 			goto cleanup_ib;
-		if (!check_and_convert_mac (mac, &array, ARPHRD_INFINIBAND, "mac", error))
+		if (!check_mac (mac, ARPHRD_INFINIBAND, "mac", error))
 			goto cleanup_ib;
 		if (!check_infiniband_mode (&mode, error))
 			goto cleanup_ib;
@@ -3741,10 +3723,8 @@ cleanup_wired:
 		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_TRANSPORT_MODE, mode ? mode : "datagram", NULL);
 		if (mtu)
 			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MTU, mtu_int, NULL);
-		if (array) {
-			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, array, NULL);
-			g_byte_array_free (array, TRUE);
-		}
+		if (mac)
+			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, mac, NULL);
 		if (p_key)
 			g_object_set (s_infiniband, NM_SETTING_INFINIBAND_P_KEY, p_key_int, NULL);
 		if (parent)
@@ -3772,10 +3752,8 @@ cleanup_ib:
 		guint32 mtu_int = 0;
 		const char *mac_c = NULL;
 		char *mac = NULL;
-		GByteArray *mac_array = NULL;
 		const char *cloned_mac_c = NULL;
 		char *cloned_mac = NULL;
-		GByteArray *cloned_mac_array = NULL;
 		nmc_arg_t exp_args[] = { {"ssid",       TRUE, &ssid,         !ask},
 		                         {"mtu",        TRUE, &mtu_c,        FALSE},
 		                         {"mac",        TRUE, &mac_c,        FALSE},
@@ -3802,9 +3780,9 @@ cleanup_ib:
 
 		if (!check_and_convert_mtu (mtu, &mtu_int, error))
 			goto cleanup_wifi;
-		if (!check_and_convert_mac (mac, &mac_array, ARPHRD_ETHER, "mac", error))
+		if (!check_mac (mac, ARPHRD_ETHER, "mac", error))
 			goto cleanup_wifi;
-		if (!check_and_convert_mac (cloned_mac, &cloned_mac_array, ARPHRD_ETHER, "cloned-mac", error))
+		if (!check_mac (cloned_mac, ARPHRD_ETHER, "cloned-mac", error))
 			goto cleanup_wifi;
 
 		/* Add wifi setting */
@@ -3817,10 +3795,10 @@ cleanup_ib:
 
 		if (mtu)
 			g_object_set (s_wifi, NM_SETTING_WIRELESS_MTU, mtu_int, NULL);
-		if (mac_array)
-			g_object_set (s_wifi, NM_SETTING_WIRELESS_MAC_ADDRESS, mac_array, NULL);
-		if (cloned_mac_array)
-			g_object_set (s_wifi, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, cloned_mac_array, NULL);
+		if (mac)
+			g_object_set (s_wifi, NM_SETTING_WIRELESS_MAC_ADDRESS, mac, NULL);
+		if (cloned_mac)
+			g_object_set (s_wifi, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, cloned_mac, NULL);
 
 		success = TRUE;
 cleanup_wifi:
@@ -3830,10 +3808,6 @@ cleanup_wifi:
 		g_free (cloned_mac);
 		if (ssid_arr)
 			g_byte_array_free (ssid_arr, TRUE);
-		if (mac_array)
-			g_byte_array_free (mac_array, TRUE);
-		if (cloned_mac_array)
-			g_byte_array_free (cloned_mac_array, TRUE);
 		if (!success)
 			return FALSE;
 
@@ -3844,7 +3818,6 @@ cleanup_wifi:
 		char *nsp_name_ask = NULL;
 		const char *mac_c = NULL;
 		char *mac = NULL;
-		GByteArray *mac_array = NULL;
 		nmc_arg_t exp_args[] = { {"nsp", TRUE, &nsp_name, !ask},
 		                         {"mac", TRUE, &mac_c,    FALSE},
 		                         {NULL} };
@@ -3865,7 +3838,7 @@ cleanup_wifi:
 		if (ask)
 			do_questionnaire_wimax (&mac);
 
-		if (!check_and_convert_mac (mac, &mac_array, ARPHRD_ETHER, "mac", error))
+		if (!check_mac (mac, ARPHRD_ETHER, "mac", error))
 			goto cleanup_wimax;
 
 		/* Add 'wimax' setting */
@@ -3873,10 +3846,8 @@ cleanup_wifi:
 		nm_connection_add_setting (connection, NM_SETTING (s_wimax));
 		g_object_set (s_wimax, NM_SETTING_WIMAX_NETWORK_NAME, nsp_name, NULL);
 
-		if (mac_array) {
-			g_object_set (s_wimax, NM_SETTING_WIMAX_MAC_ADDRESS, mac_array, NULL);
-			g_byte_array_free (mac_array, TRUE);
-		}
+		if (mac)
+			g_object_set (s_wimax, NM_SETTING_WIMAX_MAC_ADDRESS, mac, NULL);
 
 		success = TRUE;
 cleanup_wimax:
@@ -3899,7 +3870,6 @@ cleanup_wimax:
 		guint32 mtu_int = 0;
 		const char *mac_c = NULL;
 		char *mac = NULL;
-		GByteArray *mac_array = NULL;
 		nmc_arg_t exp_args[] = { {"username", TRUE, &username,   !ask},
 		                         {"password", TRUE, &password_c, FALSE},
 		                         {"service",  TRUE, &service_c,  FALSE},
@@ -3928,7 +3898,7 @@ cleanup_wimax:
 
 		if (!check_and_convert_mtu (mtu, &mtu_int, error))
 			goto cleanup_pppoe;
-		if (!check_and_convert_mac (mac, &mac_array, ARPHRD_ETHER, "mac", error))
+		if (!check_mac (mac, ARPHRD_ETHER, "mac", error))
 			goto cleanup_pppoe;
 
 		/* Add 'pppoe' setting */
@@ -3943,8 +3913,8 @@ cleanup_wimax:
 		nm_connection_add_setting (connection, NM_SETTING (s_wired));
 		if (mtu)
 			g_object_set (s_wired, NM_SETTING_WIRED_MTU, mtu_int, NULL);
-		if (mac_array)
-			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac_array, NULL);
+		if (mac)
+			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
 
 		success = TRUE;
 cleanup_pppoe:
@@ -3953,8 +3923,6 @@ cleanup_pppoe:
 		g_free (service);
 		g_free (mtu);
 		g_free (mac);
-		if (mac_array)
-			g_byte_array_free (mac_array, TRUE);
 		if (!success)
 			return FALSE;
 
@@ -4038,7 +4006,6 @@ cleanup_mobile:
 		char *addr_ask = NULL;
 		const char *bt_type_c = NULL;
 		char *bt_type = NULL;
-		GByteArray *array = NULL;
 		nmc_arg_t exp_args[] = { {"addr",    TRUE, &addr,      !ask},
 		                         {"bt-type", TRUE, &bt_type_c, FALSE},
 		                         {NULL} };
@@ -4053,7 +4020,7 @@ cleanup_mobile:
 			                     _("Error: 'addr' is required."));
 			return FALSE;
 		}
-		if (!check_and_convert_mac (addr, &array, ARPHRD_ETHER, "addr", error))
+		if (!check_mac (addr, ARPHRD_ETHER, "addr", error))
 			goto cleanup_bt;
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
@@ -4069,10 +4036,8 @@ cleanup_mobile:
 		s_bt = (NMSettingBluetooth *) nm_setting_bluetooth_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_bt));
 
-		if (array) {
-			g_object_set (s_bt, NM_SETTING_BLUETOOTH_BDADDR, array, NULL);
-			g_byte_array_free (array, TRUE);
-		}
+		if (addr)
+			g_object_set (s_bt, NM_SETTING_BLUETOOTH_BDADDR, addr, NULL);
 
 		/* 'dun' type requires adding 'gsm' or 'cdma' setting */
 		if (   !strcmp (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN)
@@ -4517,7 +4482,6 @@ cleanup_team_slave:
 		              max_age_int, ageing_time_int;
 		const char *mac_c = NULL;
 		char *mac = NULL;
-		GByteArray *mac_array = NULL;
 		nmc_arg_t exp_args[] = { {"stp",           TRUE, &stp_c,         FALSE},
 		                         {"priority",      TRUE, &priority_c,    FALSE},
 		                         {"forward-delay", TRUE, &fwd_delay_c,   FALSE},
@@ -4588,7 +4552,7 @@ cleanup_team_slave:
 			if (!bridge_prop_string_to_uint (ageing_time, "ageing-time", NM_TYPE_SETTING_BRIDGE,
 			                                 NM_SETTING_BRIDGE_AGEING_TIME, &ageing_time_int, error))
 				goto cleanup_bridge;
-		if (!check_and_convert_mac (mac, &mac_array, ARPHRD_ETHER, "mac", error))
+		if (!check_mac (mac, ARPHRD_ETHER, "mac", error))
 			goto cleanup_bridge;
 
 		/* Set bridge options */
@@ -4604,8 +4568,8 @@ cleanup_team_slave:
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_MAX_AGE, max_age_int, NULL);
 		if (ageing_time)
 			g_object_set (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME, ageing_time_int, NULL);
-		if (mac_array)
-			g_object_set (s_bridge, NM_SETTING_BRIDGE_MAC_ADDRESS, mac_array, NULL);
+		if (mac)
+			g_object_set (s_bridge, NM_SETTING_BRIDGE_MAC_ADDRESS, mac, NULL);
 
 		success = TRUE;
 cleanup_bridge:
@@ -4616,8 +4580,6 @@ cleanup_bridge:
 		g_free (max_age);
 		g_free (ageing_time);
 		g_free (mac);
-		if (mac_array)
-			g_byte_array_free (mac_array, TRUE);
 		if (!success)
 			return FALSE;
 
@@ -4785,7 +4747,6 @@ cleanup_vpn:
 		unsigned long chan;
 		const char *dhcp_anycast_c = NULL;
 		char *dhcp_anycast = NULL;
-		GByteArray *array = NULL;
 		nmc_arg_t exp_args[] = { {"ssid",         TRUE, &ssid,           !ask},
 		                         {"channel",      TRUE, &channel_c,      FALSE},
 		                         {"dhcp-anycast", TRUE, &dhcp_anycast_c, FALSE},
@@ -4816,7 +4777,7 @@ cleanup_vpn:
 				goto cleanup_olpc;
 			}
 		}
-		if (!check_and_convert_mac (dhcp_anycast, &array, ARPHRD_ETHER, "dhcp-anycast", error))
+		if (!check_mac (dhcp_anycast, ARPHRD_ETHER, "dhcp-anycast", error))
 			goto cleanup_olpc;
 
 		/* Add OLPC mesh setting */
@@ -4830,10 +4791,8 @@ cleanup_vpn:
 			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_CHANNEL, chan, NULL);
 		else
 			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_CHANNEL, 1, NULL);
-		if (array) {
-			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, array, NULL);
-			g_byte_array_free (array, TRUE);
-		}
+		if (dhcp_anycast)
+			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, dhcp_anycast, NULL);
 		g_byte_array_free (ssid_arr, TRUE);
 
 		success = TRUE;

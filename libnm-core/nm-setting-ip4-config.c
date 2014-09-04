@@ -25,13 +25,12 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-ip4-config.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-setting-private.h"
 #include "nm-core-internal.h"
-
+#include "nm-utils-private.h"
 
 /**
  * SECTION:nm-setting-ip4-config
@@ -69,7 +68,7 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_IP4_CONFIG)
 
 typedef struct {
 	char *method;
-	GArray *dns;        /* array of guint32; elements in network byte order */
+	GSList *dns;        /* list of IP address strings */
 	GSList *dns_search; /* list of strings */
 	GSList *addresses;  /* array of NMIP4Address */
 	GSList *address_labels; /* list of strings */
@@ -140,7 +139,7 @@ nm_setting_ip4_config_get_num_dns (NMSettingIP4Config *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), 0);
 
-	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dns->len;
+	return g_slist_length (NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dns);
 }
 
 /**
@@ -148,26 +147,36 @@ nm_setting_ip4_config_get_num_dns (NMSettingIP4Config *setting)
  * @setting: the #NMSettingIP4Config
  * @i: index number of the DNS server to return
  *
- * Returns: the IPv4 address (network byte order) of the DNS server at index
- * @i
+ * Returns: the IPv4 address of the DNS server at index @i
  **/
-guint32
+const char *
 nm_setting_ip4_config_get_dns (NMSettingIP4Config *setting, guint32 i)
 {
 	NMSettingIP4ConfigPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), 0);
+	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= priv->dns->len, 0);
+	g_return_val_if_fail (i < g_slist_length (priv->dns), NULL);
 
-	return g_array_index (priv->dns, guint32, i);
+	return (const char *) g_slist_nth_data (priv->dns, i);
+}
+
+static const char *
+canonicalize_ip (const char *ip)
+{
+	in_addr_t addr;
+	int ret;
+
+	ret = inet_pton (AF_INET, ip, &addr);
+	g_return_val_if_fail (ret == 1, NULL);
+	return nm_utils_inet4_ntop (addr, NULL);
 }
 
 /**
  * nm_setting_ip4_config_add_dns:
  * @setting: the #NMSettingIP4Config
- * @dns: the IPv4 address (network byte order) of the DNS server to add
+ * @dns: the IPv4 address of the DNS server to add
  *
  * Adds a new DNS server to the setting.
  *
@@ -175,20 +184,27 @@ nm_setting_ip4_config_get_dns (NMSettingIP4Config *setting, guint32 i)
  * known
  **/
 gboolean
-nm_setting_ip4_config_add_dns (NMSettingIP4Config *setting, guint32 dns)
+nm_setting_ip4_config_add_dns (NMSettingIP4Config *setting, const char *dns)
 {
 	NMSettingIP4ConfigPrivate *priv;
-	int i;
+	const char *dns_canonical;
+	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), FALSE);
+	g_return_val_if_fail (dns != NULL, FALSE);
+	g_return_val_if_fail (dns[0] != '\0', FALSE);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	for (i = 0; i < priv->dns->len; i++) {
-		if (dns == g_array_index (priv->dns, guint32, i))
+
+	dns_canonical = canonicalize_ip (dns);
+	g_return_val_if_fail (dns_canonical != NULL, FALSE);
+
+	for (iter = priv->dns; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (dns_canonical, (char *) iter->data))
 			return FALSE;
 	}
 
-	g_array_append_val (priv->dns, dns);
+	priv->dns = g_slist_append (priv->dns, g_strdup (dns_canonical));
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_DNS);
 	return TRUE;
 }
@@ -204,13 +220,16 @@ void
 nm_setting_ip4_config_remove_dns (NMSettingIP4Config *setting, guint32 i)
 {
 	NMSettingIP4ConfigPrivate *priv;
+	GSList *elt;
 
 	g_return_if_fail (NM_IS_SETTING_IP4_CONFIG (setting));
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_if_fail (i <= priv->dns->len);
+	elt = g_slist_nth (priv->dns, i);
+	g_return_if_fail (elt != NULL);
 
-	g_array_remove_index (priv->dns, i);
+	g_free (elt->data);
+	priv->dns = g_slist_delete_link (priv->dns, elt);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_DNS);
 }
 
@@ -222,20 +241,26 @@ nm_setting_ip4_config_remove_dns (NMSettingIP4Config *setting, guint32 i)
  * Removes the DNS server @dns.
  *
  * Returns: %TRUE if the DNS server was found and removed; %FALSE if it was not.
- * domain was already known
  **/
 gboolean
-nm_setting_ip4_config_remove_dns_by_value (NMSettingIP4Config *setting, guint32 dns)
+nm_setting_ip4_config_remove_dns_by_value (NMSettingIP4Config *setting, const char *dns)
 {
 	NMSettingIP4ConfigPrivate *priv;
-	int i;
+	const char *dns_canonical;
+	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), FALSE);
+	g_return_val_if_fail (dns != NULL, FALSE);
+	g_return_val_if_fail (dns[0] != '\0', FALSE);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	for (i = 0; i < priv->dns->len; i++) {
-		if (dns == g_array_index (priv->dns, guint32, i)) {
-			g_array_remove_index (priv->dns, i);
+
+	dns_canonical = canonicalize_ip (dns);
+	g_return_val_if_fail (dns_canonical != NULL, FALSE);
+
+	for (iter = priv->dns; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (dns_canonical, (char *) iter->data)) {
+			priv->dns = g_slist_delete_link (priv->dns, iter);
 			g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_DNS);
 			return TRUE;
 		}
@@ -252,12 +277,10 @@ nm_setting_ip4_config_remove_dns_by_value (NMSettingIP4Config *setting, guint32 
 void
 nm_setting_ip4_config_clear_dns (NMSettingIP4Config *setting)
 {
-	NMSettingIP4ConfigPrivate *priv;
-
 	g_return_if_fail (NM_IS_SETTING_IP4_CONFIG (setting));
 
-	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_array_remove_range (priv->dns, 0, priv->dns->len);
+	g_slist_free_full (NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dns, g_free);
+	NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dns = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_DNS);
 }
 
@@ -290,7 +313,7 @@ nm_setting_ip4_config_get_dns_search (NMSettingIP4Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->dns_search), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->dns_search), NULL);
 
 	return (const char *) g_slist_nth_data (priv->dns_search, i);
 }
@@ -427,7 +450,7 @@ nm_setting_ip4_config_get_address (NMSettingIP4Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->addresses), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->addresses), NULL);
 
 	return (NMIP4Address *) g_slist_nth_data (priv->addresses, i);
 }
@@ -440,7 +463,7 @@ _nm_setting_ip4_config_get_address_label (NMSettingIP4Config *setting, guint32 i
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->address_labels), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->address_labels), NULL);
 
 	return (const char *) g_slist_nth_data (priv->address_labels, i);
 }
@@ -460,7 +483,7 @@ gboolean
 nm_setting_ip4_config_add_address (NMSettingIP4Config *setting,
                                    NMIP4Address *address)
 {
-	return _nm_setting_ip4_config_add_address_with_label (setting, address, NULL);
+	return _nm_setting_ip4_config_add_address_with_label (setting, address, "");
 }
 
 gboolean
@@ -474,6 +497,7 @@ _nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting,
 
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), FALSE);
 	g_return_val_if_fail (address != NULL, FALSE);
+	g_return_val_if_fail (label != NULL, FALSE);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
 	for (iter = priv->addresses; iter; iter = g_slist_next (iter)) {
@@ -511,8 +535,7 @@ nm_setting_ip4_config_remove_address (NMSettingIP4Config *setting, guint32 i)
 
 	nm_ip4_address_unref ((NMIP4Address *) addr->data);
 	priv->addresses = g_slist_delete_link (priv->addresses, addr);
-	if (label->data)
-		g_free (label->data);
+	g_free (label->data);
 	priv->address_labels = g_slist_delete_link (priv->address_labels, label);
 
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP4_CONFIG_ADDRESSES);
@@ -598,7 +621,7 @@ nm_setting_ip4_config_get_route (NMSettingIP4Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->routes), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->routes), NULL);
 
 	return (NMIP4Route *) g_slist_nth_data (priv->routes, i);
 }
@@ -841,6 +864,9 @@ verify_label (const char *label)
 	const char *p;
 	char *iface;
 
+	if (!*label)
+		return TRUE;
+
 	p = strchr (label, ':');
 	if (!p)
 		return FALSE;
@@ -888,7 +914,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	} else if (   !strcmp (priv->method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)
 	           || !strcmp (priv->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)
 	           || !strcmp (priv->method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
-		if (priv->dns && priv->dns->len) {
+		if (priv->dns) {
 			g_set_error (error,
 			             NM_SETTING_IP4_CONFIG_ERROR,
 			             NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
@@ -898,7 +924,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			return FALSE;
 		}
 
-		if (g_slist_length (priv->dns_search)) {
+		if (priv->dns_search) {
 			g_set_error (error,
 			             NM_SETTING_IP4_CONFIG_ERROR,
 			             NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
@@ -910,7 +936,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		/* Shared allows IP addresses; link-local and disabled do not */
 		if (strcmp (priv->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0) {
-			if (g_slist_length (priv->addresses)) {
+			if (priv->addresses) {
 				g_set_error (error,
 				             NM_SETTING_IP4_CONFIG_ERROR,
 				             NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
@@ -977,7 +1003,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			return FALSE;
 		}
 
-		if (label && !verify_label (label)) {
+		if (!verify_label (label)) {
 			g_set_error (error,
 			             NM_SETTING_IP4_CONFIG_ERROR,
 			             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
@@ -1025,6 +1051,22 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
+	/* Validate DNS */
+	for (iter = priv->dns, i = 0; iter; iter = g_slist_next (iter), i++) {
+		const char *dns = (const char *) iter->data;
+		in_addr_t addr;
+
+		if (inet_pton (AF_INET, dns, &addr) != 1) {
+			g_set_error (error,
+			             NM_SETTING_IP4_CONFIG_ERROR,
+			             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+			             _("%d. DNS server address is invalid"),
+			             i+1);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP4_CONFIG_DNS);
+			return FALSE;
+		}
+	}
+
 	return TRUE;
 }
 
@@ -1032,10 +1074,6 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static void
 nm_setting_ip4_config_init (NMSettingIP4Config *setting)
 {
-	NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting);
-
-
-	priv->dns = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
 }
 
 static void
@@ -1048,8 +1086,7 @@ finalize (GObject *object)
 	g_free (priv->dhcp_hostname);
 	g_free (priv->dhcp_client_id);
 
-	g_array_free (priv->dns, TRUE);
-
+	g_slist_free_full (priv->dns, g_free);
 	g_slist_free_full (priv->dns_search, g_free);
 	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
 	g_slist_free_full (priv->address_labels, g_free);
@@ -1072,40 +1109,33 @@ set_property (GObject *object, guint prop_id,
 		priv->method = g_value_dup_string (value);
 		break;
 	case PROP_DNS:
-		g_array_free (priv->dns, TRUE);
-		priv->dns = g_value_dup_boxed (value);
-		if (!priv->dns)
-			priv->dns = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+		g_slist_free_full (priv->dns, g_free);
+		priv->dns = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_DNS_SEARCH:
 		g_slist_free_full (priv->dns_search, g_free);
-		priv->dns_search = g_value_dup_boxed (value);
+		priv->dns_search = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_ADDRESSES:
 		g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
-		priv->addresses = nm_utils_ip4_addresses_from_gvalue (value);
+		priv->addresses = _nm_utils_copy_array_to_slist (g_value_get_boxed (value),
+		                                                 (NMUtilsCopyFunc) nm_ip4_address_dup);
 
 		if (g_slist_length (priv->addresses) != g_slist_length (priv->address_labels)) {
 			g_slist_free_full (priv->address_labels, g_free);
 			priv->address_labels = NULL;
 			for (iter = priv->addresses; iter; iter = iter->next)
-				priv->address_labels = g_slist_prepend (priv->address_labels, NULL);
+				priv->address_labels = g_slist_prepend (priv->address_labels, g_strdup (""));
 		}
 		break;
 	case PROP_ADDRESS_LABELS:
 		g_slist_free_full (priv->address_labels, g_free);
-		priv->address_labels = g_value_dup_boxed (value);
-		/* NULLs get converted to "" when this is sent over D-Bus. */
-		for (iter = priv->address_labels; iter; iter = iter->next) {
-			if (!g_strcmp0 (iter->data, "")) {
-				g_free (iter->data);
-				iter->data = NULL;
-			}
-		}
+		priv->address_labels = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_ROUTES:
 		g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
-		priv->routes = nm_utils_ip4_routes_from_gvalue (value);
+		priv->routes = _nm_utils_copy_array_to_slist (g_value_get_boxed (value),
+		                                              (NMUtilsCopyFunc) nm_ip4_route_dup);
 		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		priv->ignore_auto_routes = g_value_get_boolean (value);
@@ -1148,19 +1178,19 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_ip4_config_get_method (setting));
 		break;
 	case PROP_DNS:
-		g_value_set_boxed (value, priv->dns);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->dns));
 		break;
 	case PROP_DNS_SEARCH:
-		g_value_set_boxed (value, priv->dns_search);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->dns_search));
 		break;
 	case PROP_ADDRESSES:
-		nm_utils_ip4_addresses_to_gvalue (priv->addresses, value);
+		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->addresses, (NMUtilsCopyFunc) nm_ip4_address_dup, (GDestroyNotify) nm_ip4_address_unref));
 		break;
 	case PROP_ADDRESS_LABELS:
-		g_value_set_boxed (value, priv->address_labels);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->address_labels));
 		break;
 	case PROP_ROUTES:
-		nm_utils_ip4_routes_to_gvalue (priv->routes, value);
+		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->routes, (NMUtilsCopyFunc) nm_ip4_route_dup, (GDestroyNotify) nm_ip4_route_unref));
 		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		g_value_set_boolean (value, nm_setting_ip4_config_get_ignore_auto_routes (setting));
@@ -1201,7 +1231,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
+	parent_class->verify = verify;
 
 	/* Properties */
 	/**
@@ -1231,7 +1261,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	/**
 	 * NMSettingIP4Config:dns:
 	 *
-	 * List of DNS servers (network byte order).  For the "auto" method, these
+	 * Array of IPv4 addresses of DNS servers.  For the 'auto' method, these
 	 * DNS servers are appended to those (if any) returned by automatic
 	 * configuration.  DNS servers cannot be used with the "shared",
 	 * "link-local", or "disabled" methods as there is no upstream network.  In
@@ -1240,10 +1270,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS,
-		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS, "", "",
-		                             DBUS_TYPE_G_UINT_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP4_CONFIG_DNS, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP4_CONFIG_DNS,
+	                                      DBUS_TYPE_G_UINT_ARRAY,
+	                                      _nm_utils_ip4_dns_to_dbus,
+	                                      _nm_utils_ip4_dns_from_dbus);
 
 	/**
 	 * NMSettingIP4Config:dns-search:
@@ -1256,30 +1290,33 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
-		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS_SEARCH, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP4_CONFIG_DNS_SEARCH, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP4Config:addresses:
 	 *
-	 * Array of IPv4 address structures.  Each IPv4 address structure is
-	 * composed of 3 32-bit values; the first being the IPv4 address (network
-	 * byte order), the second the prefix (1 - 32), and last the IPv4 gateway
-	 * (network byte order). The gateway may be left as 0 if no gateway exists
-	 * for that subnet.  For the "auto" method, given IP addresses are appended
+	 * Array of IPv4 addresses.  The gateway may be left as 0 if no gateway exists
+	 * for that subnet.  For the 'auto' method, given IP addresses are appended
 	 * to those returned by automatic configuration.  Addresses cannot be used
 	 * with the "shared", "link-local", or "disabled" methods as addressing is
 	 * either automatic or disabled with these methods.
+	 *
+	 * Element-Type: NMIP4Address
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
-		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ADDRESSES, "", "",
-		                             DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP4_CONFIG_ADDRESSES, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP4_CONFIG_ADDRESSES,
+	                                      DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
+	                                      _nm_utils_ip4_addresses_to_dbus,
+	                                      _nm_utils_ip4_addresses_from_dbus);
 
 	/**
 	 * NMSettingIP4Config:address-labels:
@@ -1288,31 +1325,33 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESS_LABELS,
-		 _nm_param_spec_specialized ("address-labels", "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed ("address-labels", "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP4Config:routes:
 	 *
-	 * Array of IPv4 route structures.  Each IPv4 route structure is composed of
-	 * 4 32-bit values; the first being the destination IPv4 network or address
-	 * (network byte order), the second the destination network or address
-	 * prefix (1 - 32), the third being the next-hop (network byte order) if
-	 * any, and the fourth being the route metric. For the "auto" method, given
-	 * IP routes are appended to those returned by automatic configuration.
-	 * Routes cannot be used with the "shared", "link-local", or "disabled"
-	 * methods because there is no upstream network.
+	 * Array of IPv4 routes. For the 'auto' method, given IP routes are appended
+	 * to those returned by automatic configuration. Routes cannot be used with
+	 * the 'shared', 'link-local', or 'disabled' methods because there is no
+	 * upstream network.
+	 *
+	 * Element-Type: NMIP4Route
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
-		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ROUTES, "", "",
-		                             DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP4_CONFIG_ROUTES, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP4_CONFIG_ROUTES,
+	                                      DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
+	                                      _nm_utils_ip4_routes_to_dbus,
+	                                      _nm_utils_ip4_routes_from_dbus);
 
 	/**
 	 * NMSettingIP4Config:ignore-auto-routes:

@@ -754,7 +754,7 @@ mesh_set_channel (NMPlatform *platform, int ifindex, guint32 channel)
 }
 
 static gboolean
-mesh_set_ssid (NMPlatform *platform, int ifindex, const GByteArray *ssid)
+mesh_set_ssid (NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 {
 	return FALSE;
 }

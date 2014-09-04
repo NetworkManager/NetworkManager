@@ -78,7 +78,7 @@ GType nm_setting_bridge_get_type (void);
 
 NMSetting *  nm_setting_bridge_new                (void);
 
-const GByteArray *nm_setting_bridge_get_mac_address (NMSettingBridge *setting);
+const char * nm_setting_bridge_get_mac_address    (NMSettingBridge *setting);
 
 gboolean     nm_setting_bridge_get_stp            (NMSettingBridge *setting);
 

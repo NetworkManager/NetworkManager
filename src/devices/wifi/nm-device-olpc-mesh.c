@@ -150,12 +150,9 @@ complete_connection (NMDevice *device,
 	}
 
 	if (!nm_setting_olpc_mesh_get_dhcp_anycast_address (s_mesh)) {
-		const guint8 anycast[ETH_ALEN] = { 0xC0, 0x27, 0xC0, 0x27, 0xC0, 0x27 };
+		const char *anycast = "c0:27:c0:27:c0:27";
 
-		tmp = g_byte_array_sized_new (ETH_ALEN);
-		g_byte_array_append (tmp, anycast, sizeof (anycast));
-		g_object_set (G_OBJECT (s_mesh), NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, tmp, NULL);
-		g_byte_array_free (tmp, TRUE);
+		g_object_set (G_OBJECT (s_mesh), NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, anycast, NULL);
 
 	}
 
@@ -225,8 +222,8 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	NMConnection *connection;
 	NMSettingOlpcMesh *s_mesh;
 	guint32 channel;
-	const GByteArray *anycast_addr_array;
-	guint8 *anycast_addr = NULL;
+	GBytes *ssid;
+	const char *anycast_addr;
 
 	connection = nm_device_get_connection (device);
 	g_assert (connection);
@@ -237,14 +234,15 @@ act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	channel = nm_setting_olpc_mesh_get_channel (s_mesh);
 	if (channel != 0)
 		_mesh_set_channel (self, channel);
+
+	ssid = nm_setting_olpc_mesh_get_ssid (s_mesh);
 	nm_platform_mesh_set_ssid (nm_device_get_ifindex (device),
-	                           nm_setting_olpc_mesh_get_ssid (s_mesh));
+	                           g_bytes_get_data (ssid, NULL),
+	                           g_bytes_get_size (ssid));
 
-	anycast_addr_array = nm_setting_olpc_mesh_get_dhcp_anycast_address (s_mesh);
-	if (anycast_addr_array)
-		anycast_addr = anycast_addr_array->data;
-
+	anycast_addr = nm_setting_olpc_mesh_get_dhcp_anycast_address (s_mesh);
 	nm_device_set_dhcp_anycast_address (device, anycast_addr);
+
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 

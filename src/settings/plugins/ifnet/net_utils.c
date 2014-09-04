@@ -682,7 +682,6 @@ set_ip4_dns_servers (NMSettingIP4Config *s_ip4, const char *conn_name)
 	gchar **server_list, *stripped;
 	guint length, i;
 	guint32 tmp_ip4_addr;
-	guint32 new_dns;
 
 	dns_servers = ifnet_get_data (conn_name, "dns_servers");
 	if (!dns_servers)
@@ -705,8 +704,7 @@ set_ip4_dns_servers (NMSettingIP4Config *s_ip4, const char *conn_name)
 				nm_log_warn (LOGD_SETTINGS, "ignored dns: %s\n", server_list[i]);
 			continue;
 		}
-		new_dns = tmp_ip4_addr;
-		if (new_dns && !nm_setting_ip4_config_add_dns (s_ip4, new_dns))
+		if (!nm_setting_ip4_config_add_dns (s_ip4, server_list[i]))
 			nm_log_warn (LOGD_SETTINGS, "warning: duplicate DNS server %s", server_list[i]);
 	}
 	g_strfreev (server_list);
@@ -742,8 +740,7 @@ set_ip6_dns_servers (NMSettingIP6Config *s_ip6, const char *conn_name)
 				nm_log_warn (LOGD_SETTINGS, "ignored dns: %s\n", server_list[i]);
 			continue;
 		}
-		if (!IN6_IS_ADDR_UNSPECIFIED (&tmp_ip6_addr)
-		    && !nm_setting_ip6_config_add_dns (s_ip6, &tmp_ip6_addr))
+		if (!nm_setting_ip6_config_add_dns (s_ip6, server_list[i]))
 			nm_log_warn (LOGD_SETTINGS, "warning: duplicate DNS server %s", server_list[i]);
 	}
 	g_strfreev (server_list);

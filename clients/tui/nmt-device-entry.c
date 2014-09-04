@@ -57,7 +57,7 @@ typedef struct {
 	int arptype;
 
 	char *interface_name;
-	GByteArray *mac_address;
+	char *mac_address;
 
 	char *label;
 	NmtNewtEntry *entry;
@@ -259,8 +259,8 @@ update_entry (NmtDeviceEntry *deventry)
 	}
 
 	if (priv->mac_address) {
-		mac = nm_utils_hwaddr_ntoa (priv->mac_address->data, priv->mac_address->len);
-		mac_device = find_device_by_mac_address (deventry, mac);
+		mac = g_strdup (priv->mac_address);
+		mac_device = find_device_by_mac_address (deventry, priv->mac_address);
 	} else {
 		mac = NULL;
 		mac_device = NULL;
@@ -312,25 +312,21 @@ nmt_device_entry_set_interface_name (NmtDeviceEntry *deventry,
 
 static gboolean
 nmt_device_entry_set_mac_address (NmtDeviceEntry *deventry,
-                                  GByteArray     *mac_address)
+                                  const char     *mac_address)
 {
 	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (deventry);
 	gboolean changed;
 
-	if (mac_address)
-		g_return_val_if_fail (mac_address->len == nm_utils_hwaddr_len (priv->arptype), FALSE);
-
 	if (mac_address && !priv->mac_address) {
-		priv->mac_address = g_boxed_copy (DBUS_TYPE_G_UCHAR_ARRAY, mac_address);
+		priv->mac_address = g_strdup (mac_address);
 		changed = TRUE;
 	} else if (!mac_address && priv->mac_address) {
-		g_clear_pointer (&priv->mac_address, g_byte_array_unref);
+		g_clear_pointer (&priv->mac_address, g_free);
 		changed = TRUE;
 	} else if (   mac_address && priv->mac_address
-	           && !nm_utils_hwaddr_matches (mac_address->data, mac_address->len,
-	                                        priv->mac_address->data, priv->mac_address->len)) {
-		g_byte_array_unref (priv->mac_address);
-		priv->mac_address = g_boxed_copy (DBUS_TYPE_G_UCHAR_ARRAY, mac_address);
+	           && !nm_utils_hwaddr_matches (mac_address, -1, priv->mac_address, -1)) {
+		g_free (priv->mac_address);
+		priv->mac_address = g_strdup (mac_address);
 		changed = TRUE;
 	} else
 		changed = FALSE;
@@ -356,21 +352,11 @@ entry_text_changed (GObject    *object,
 	if (!device_entry_parse (deventry, text, &ifname, &mac))
 		return;
 
-	if (ifname) {
-		nmt_device_entry_set_interface_name (deventry, ifname);
-		g_free (ifname);
-	} else
-		nmt_device_entry_set_interface_name (deventry, NULL);
+	nmt_device_entry_set_interface_name (deventry, ifname);
+	g_free (ifname);
 
-	if (mac) {
-		GByteArray *mac_address;
-
-		mac_address = nm_utils_hwaddr_atoba (mac, nm_utils_hwaddr_len (priv->arptype));
-		nmt_device_entry_set_mac_address (deventry, mac_address);
-		g_byte_array_unref (mac_address);
-		g_free (mac);
-	} else
-		nmt_device_entry_set_mac_address (deventry, NULL);
+	nmt_device_entry_set_mac_address (deventry, mac);
+	g_free (mac);
 }
 
 static void
@@ -410,8 +396,7 @@ nmt_device_entry_finalize (GObject *object)
 	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (object);
 
 	g_free (priv->interface_name);
-	if (priv->mac_address)
-		g_byte_array_unref (priv->mac_address);
+	g_free (priv->mac_address);
 
 	G_OBJECT_CLASS (nmt_device_entry_parent_class)->finalize (object);
 }
@@ -461,7 +446,7 @@ nmt_device_entry_set_property (GObject      *object,
 	NmtDeviceEntry *deventry = NMT_DEVICE_ENTRY (object);
 	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (deventry);
 	const char *interface_name;
-	GByteArray *mac_address;
+	const char *mac_address;
 
 	switch (prop_id) {
 	case PROP_LABEL:
@@ -480,7 +465,7 @@ nmt_device_entry_set_property (GObject      *object,
 			update_entry (deventry);
 		break;
 	case PROP_MAC_ADDRESS:
-		mac_address = g_value_get_boxed (value);
+		mac_address = g_value_get_string (value);
 		if (nmt_device_entry_set_mac_address (deventry, mac_address))
 			update_entry (deventry);
 		break;
@@ -512,7 +497,7 @@ nmt_device_entry_get_property (GObject    *object,
 		g_value_set_string (value, priv->interface_name);
 		break;
 	case PROP_MAC_ADDRESS:
-		g_value_set_boxed (value, priv->mac_address);
+		g_value_set_string (value, priv->mac_address);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -587,8 +572,8 @@ nmt_device_entry_class_init (NmtDeviceEntryClass *deventry_class)
 	 */
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_boxed ("mac-address", "", "",
-		                     DBUS_TYPE_G_UCHAR_ARRAY,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string ("mac-address", "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
 }

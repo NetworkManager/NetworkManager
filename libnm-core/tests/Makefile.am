@@ -13,6 +13,7 @@ AM_CPPFLAGS = \
 	-DTEST_CERT_DIR=\"$(certsdir)\"
 
 noinst_PROGRAMS =		\
+	test-compare		\
 	test-crypto		\
 	test-general		\
 	test-secrets		\

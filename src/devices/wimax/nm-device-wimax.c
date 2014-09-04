@@ -315,7 +315,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	NMSettingConnection *s_con;
 	NMSettingWimax *s_wimax;
 	const char *connection_type;
-	const GByteArray *mac;
+	const char *mac;
 
 	if (!NM_DEVICE_CLASS (nm_device_wimax_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
@@ -332,7 +332,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	mac = nm_setting_wimax_get_mac_address (s_wimax);
-	if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len, nm_device_get_hw_address (device), -1))
+	if (mac && !nm_utils_hwaddr_matches (mac, -1, nm_device_get_hw_address (device), -1))
 		return FALSE;
 
 	return TRUE;
@@ -371,7 +371,7 @@ complete_connection (NMDevice *device,
 	NMDeviceWimax *self = NM_DEVICE_WIMAX (device);
 	NMDeviceWimaxPrivate *priv = NM_DEVICE_WIMAX_GET_PRIVATE (self);
 	NMSettingWimax *s_wimax;
-	const GByteArray *setting_mac;
+	const char *setting_mac;
 	const char *hw_address;
 	const char *nsp_name = NULL;
 	NMWimaxNsp *nsp = NULL;
@@ -450,7 +450,7 @@ complete_connection (NMDevice *device,
 	hw_address = nm_device_get_hw_address (device);
 	if (setting_mac) {
 		/* Make sure the setting MAC (if any) matches the device's permanent MAC */
-		if (!nm_utils_hwaddr_matches (setting_mac->data, setting_mac->len, hw_address, -1)) {
+		if (!nm_utils_hwaddr_matches (setting_mac, -1, hw_address, -1)) {
 			g_set_error (error,
 				         NM_SETTING_WIMAX_ERROR,
 				         NM_SETTING_WIMAX_ERROR_INVALID_PROPERTY,
@@ -458,14 +458,9 @@ complete_connection (NMDevice *device,
 			return FALSE;
 		}
 	} else {
-		GByteArray *mac;
-
 		/* Lock the connection to this device by default */
-		if (!nm_utils_hwaddr_matches (hw_address, -1, NULL, ETH_ALEN)) {
-			mac = nm_utils_hwaddr_atoba (hw_address, ETH_ALEN);
-			g_object_set (G_OBJECT (s_wimax), NM_SETTING_WIMAX_MAC_ADDRESS, mac, NULL);
-			g_byte_array_free (mac, TRUE);
-		}
+		if (!nm_utils_hwaddr_matches (hw_address, -1, NULL, ETH_ALEN))
+			g_object_set (G_OBJECT (s_wimax), NM_SETTING_WIMAX_MAC_ADDRESS, hw_address, NULL);
 	}
 
 	return TRUE;

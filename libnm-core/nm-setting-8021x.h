@@ -182,7 +182,7 @@ const char *      nm_setting_802_1x_get_ca_path                      (NMSetting8
 const char *      nm_setting_802_1x_get_phase2_ca_path               (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_ca_cert_scheme          (NMSetting8021x *setting);
-const GByteArray *     nm_setting_802_1x_get_ca_cert_blob            (NMSetting8021x *setting);
+GBytes *               nm_setting_802_1x_get_ca_cert_blob            (NMSetting8021x *setting);
 const char *           nm_setting_802_1x_get_ca_cert_path            (NMSetting8021x *setting);
 gboolean               nm_setting_802_1x_set_ca_cert                 (NMSetting8021x *setting,
                                                                       const char *cert_path,
@@ -204,7 +204,7 @@ gboolean          nm_setting_802_1x_remove_altsubject_match_by_value (NMSetting8
 void              nm_setting_802_1x_clear_altsubject_matches         (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_client_cert_scheme      (NMSetting8021x *setting);
-const GByteArray *     nm_setting_802_1x_get_client_cert_blob        (NMSetting8021x *setting);
+GBytes *               nm_setting_802_1x_get_client_cert_blob        (NMSetting8021x *setting);
 const char *           nm_setting_802_1x_get_client_cert_path        (NMSetting8021x *setting);
 gboolean               nm_setting_802_1x_set_client_cert             (NMSetting8021x *setting,
                                                                       const char *cert_path,
@@ -223,7 +223,7 @@ const char *      nm_setting_802_1x_get_phase2_auth                  (NMSetting8
 const char *      nm_setting_802_1x_get_phase2_autheap               (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_phase2_ca_cert_scheme   (NMSetting8021x *setting);
-const GByteArray *     nm_setting_802_1x_get_phase2_ca_cert_blob     (NMSetting8021x *setting);
+GBytes *               nm_setting_802_1x_get_phase2_ca_cert_blob     (NMSetting8021x *setting);
 const char *           nm_setting_802_1x_get_phase2_ca_cert_path     (NMSetting8021x *setting);
 gboolean               nm_setting_802_1x_set_phase2_ca_cert          (NMSetting8021x *setting,
                                                                       const char *cert_path,
@@ -245,7 +245,7 @@ gboolean          nm_setting_802_1x_remove_phase2_altsubject_match_by_value (NMS
 void              nm_setting_802_1x_clear_phase2_altsubject_matches         (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_phase2_client_cert_scheme   (NMSetting8021x *setting);
-const GByteArray *     nm_setting_802_1x_get_phase2_client_cert_blob     (NMSetting8021x *setting);
+GBytes *               nm_setting_802_1x_get_phase2_client_cert_blob     (NMSetting8021x *setting);
 const char *           nm_setting_802_1x_get_phase2_client_cert_path     (NMSetting8021x *setting);
 gboolean               nm_setting_802_1x_set_phase2_client_cert          (NMSetting8021x *setting,
                                                                           const char *cert_path,
@@ -255,14 +255,14 @@ gboolean               nm_setting_802_1x_set_phase2_client_cert          (NMSett
 
 const char *      nm_setting_802_1x_get_password                     (NMSetting8021x *setting);
 NMSettingSecretFlags nm_setting_802_1x_get_password_flags            (NMSetting8021x *setting);
-const GByteArray *   nm_setting_802_1x_get_password_raw              (NMSetting8021x *setting);
+GBytes *             nm_setting_802_1x_get_password_raw              (NMSetting8021x *setting);
 NMSettingSecretFlags nm_setting_802_1x_get_password_raw_flags        (NMSetting8021x *setting);
 
 const char *      nm_setting_802_1x_get_pin                          (NMSetting8021x *setting);
 NMSettingSecretFlags nm_setting_802_1x_get_pin_flags                 (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_private_key_scheme          (NMSetting8021x *setting);
-const GByteArray *     nm_setting_802_1x_get_private_key_blob            (NMSetting8021x *setting);
+GBytes *               nm_setting_802_1x_get_private_key_blob            (NMSetting8021x *setting);
 const char *           nm_setting_802_1x_get_private_key_path            (NMSetting8021x *setting);
 gboolean               nm_setting_802_1x_set_private_key                 (NMSetting8021x *setting,
                                                                           const char *key_path,
@@ -276,7 +276,7 @@ NMSettingSecretFlags   nm_setting_802_1x_get_private_key_password_flags  (NMSett
 NMSetting8021xCKFormat nm_setting_802_1x_get_private_key_format          (NMSetting8021x *setting);
 
 NMSetting8021xCKScheme nm_setting_802_1x_get_phase2_private_key_scheme   (NMSetting8021x *setting);
-const GByteArray *     nm_setting_802_1x_get_phase2_private_key_blob     (NMSetting8021x *setting);
+GBytes *               nm_setting_802_1x_get_phase2_private_key_blob     (NMSetting8021x *setting);
 const char *           nm_setting_802_1x_get_phase2_private_key_path     (NMSetting8021x *setting);
 gboolean               nm_setting_802_1x_set_phase2_private_key          (NMSetting8021x *setting,
                                                                           const char *key_path,

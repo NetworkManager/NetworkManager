@@ -16,16 +16,12 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2007 - 2011 Red Hat, Inc.
+ * Copyright 2007 - 2014 Red Hat, Inc.
  * Copyright 2007 - 2008 Novell, Inc.
  */
 
-#include "nm-param-spec-specialized.h"
+#include "nm-property-compare.h"
 #include "nm-glib-compat.h"
-
-struct _NMParamSpecSpecialized {
-	GParamSpec parent;
-};
 
 #include <string.h>
 #include <math.h>
@@ -33,11 +29,6 @@ struct _NMParamSpecSpecialized {
 #include <dbus/dbus-glib.h>
 
 #include "nm-dbus-glib-types.h"
-
-/***********************************************************/
-/* _gvalues_compare */
-
-static gint _gvalues_compare (const GValue *value1, const GValue *value2);
 
 static gboolean
 type_is_fixed_size (GType type, gsize *tsize)
@@ -84,7 +75,7 @@ type_is_fixed_size (GType type, gsize *tsize)
 #define FLOAT_FACTOR 0.00000001
 
 static gint
-_gvalues_compare_fixed (const GValue *value1, const GValue *value2)
+nm_property_compare_fixed (const GValue *value1, const GValue *value2)
 {
 	int ret = 0;
 
@@ -175,7 +166,7 @@ _gvalues_compare_fixed (const GValue *value1, const GValue *value2)
 }
 
 static gint
-_gvalues_compare_string (const GValue *value1, const GValue *value2)
+nm_property_compare_string (const GValue *value1, const GValue *value2)
 {
 	const char *str1 = g_value_get_string (value1);
 	const char *str2 = g_value_get_string (value2);
@@ -192,7 +183,7 @@ _gvalues_compare_string (const GValue *value1, const GValue *value2)
 }
 
 static gint
-_gvalues_compare_strv (const GValue *value1, const GValue *value2)
+nm_property_compare_strv (const GValue *value1, const GValue *value2)
 {
 	char **strv1;
 	char **strv2;
@@ -248,7 +239,7 @@ iterate_collection (const GValue *value, gpointer user_data)
 }
 
 static gint
-_gvalues_compare_collection (const GValue *value1, const GValue *value2)
+nm_property_compare_collection (const GValue *value1, const GValue *value2)
 {
 	gint ret;
 	guint len1;
@@ -285,7 +276,7 @@ _gvalues_compare_collection (const GValue *value1, const GValue *value2)
 			for (iter1 = list1, iter2 = list2, ret = 0;
 			     ret == 0 && iter1 && iter2;
 			     iter1 = iter1->next, iter2 = iter2->next)
-				ret = _gvalues_compare ((GValue *) iter1->data, (GValue *) iter2->data);
+				ret = nm_property_compare ((GValue *) iter1->data, (GValue *) iter2->data);
 		}
 
 		g_slist_free_full (list1, _gvalue_destroy);
@@ -321,13 +312,13 @@ compare_one_map_item (gpointer key, gpointer val, gpointer user_data)
 
 	value2 = (GValue *) g_hash_table_lookup (info->hash2, key);
 	if (value2)
-		info->ret = _gvalues_compare ((GValue *) val, value2);
+		info->ret = nm_property_compare ((GValue *) val, value2);
 	else
 		info->ret = 1;
 }
 
 static gint
-_gvalues_compare_map (const GValue *value1, const GValue *value2)
+nm_property_compare_map (const GValue *value1, const GValue *value2)
 {
 	GHashTable *hash1 = NULL;
 	GHashTable *hash2 = NULL;
@@ -487,10 +478,10 @@ _gvalue_ip6_route_compare (const GValue *value1, const GValue *value2)
 }
 
 static gint
-_gvalues_compare_struct (const GValue *value1, const GValue *value2)
+nm_property_compare_struct (const GValue *value1, const GValue *value2)
 {
 	/* value1 and value2 must contain the same type since
-	 * _gvalues_compare() enforced that already.
+	 * nm_property_compare() enforced that already.
 	 */
 
 	if (G_VALUE_HOLDS (value1, DBUS_TYPE_G_IP6_ADDRESS)) {
@@ -503,8 +494,8 @@ _gvalues_compare_struct (const GValue *value1, const GValue *value2)
 	}
 }
 
-gint
-_gvalues_compare (const GValue *value1, const GValue *value2)
+int
+nm_property_compare (const GValue *value1, const GValue *value2)
 {
 	GType type1;
 	GType type2;
@@ -524,9 +515,9 @@ _gvalues_compare (const GValue *value1, const GValue *value2)
 		return type1 < type2 ? -1 : type1 > type2;
 
 	if (type_is_fixed_size (type1, NULL))
-		ret = _gvalues_compare_fixed (value1, value2);
+		ret = nm_property_compare_fixed (value1, value2);
 	else if (type1 == G_TYPE_STRING)
-		ret = _gvalues_compare_string (value1, value2);
+		ret = nm_property_compare_string (value1, value2);
 	else if (G_VALUE_HOLDS_BOXED (value1)) {
 		gpointer p1 = g_value_get_boxed (value1);
 		gpointer p2 = g_value_get_boxed (value2);
@@ -538,15 +529,15 @@ _gvalues_compare (const GValue *value1, const GValue *value2)
 		else if (!p2)
 			ret = -1; /* The comparision functions below don't handle NULLs */
 		else if (type1 == G_TYPE_STRV)
-			ret = _gvalues_compare_strv (value1, value2);
+			ret = nm_property_compare_strv (value1, value2);
 		else if (dbus_g_type_is_collection (type1))
-			ret = _gvalues_compare_collection (value1, value2);
+			ret = nm_property_compare_collection (value1, value2);
 		else if (dbus_g_type_is_map (type1))
-			ret = _gvalues_compare_map (value1, value2);
+			ret = nm_property_compare_map (value1, value2);
 		else if (dbus_g_type_is_struct (type1))
-			ret = _gvalues_compare_struct (value1, value2);
+			ret = nm_property_compare_struct (value1, value2);
 		else if (type1 == G_TYPE_VALUE)
-			ret = _gvalues_compare ((GValue *) g_value_get_boxed (value1), (GValue *) g_value_get_boxed (value2));
+			ret = nm_property_compare ((GValue *) g_value_get_boxed (value1), (GValue *) g_value_get_boxed (value2));
 		else {
 			g_warning ("Don't know how to compare boxed types '%s'", g_type_name (type1));
 			ret = value1 == value2;
@@ -558,415 +549,3 @@ _gvalues_compare (const GValue *value1, const GValue *value2)
 
 	return ret;
 }
-
-/***********************************************************/
-
-static void
-param_specialized_init (GParamSpec *pspec)
-{
-}
-
-static void
-param_specialized_set_default (GParamSpec *pspec, GValue *value)
-{
-	value->data[0].v_pointer = NULL;
-}
-
-static gboolean
-param_specialized_validate (GParamSpec *pspec, GValue *value)
-{
-	NMParamSpecSpecialized *sspec = NM_PARAM_SPEC_SPECIALIZED (pspec);
-	GType value_type = G_VALUE_TYPE (value);
-	gboolean changed = FALSE;
-
-	if (!g_value_type_compatible (value_type, G_PARAM_SPEC_VALUE_TYPE (sspec))) {
-		g_value_reset (value);
-		changed = TRUE;
-	}
-
-	return changed;
-}
-
-static gint
-param_specialized_values_cmp (GParamSpec *pspec,
-                              const GValue *value1,
-                              const GValue *value2)
-{
-	return _gvalues_compare (value1, value2);
-}
-
-GType
-_nm_param_spec_specialized_get_type (void)
-{
-	static GType type;
-
-	if (G_UNLIKELY (type) == 0) {
-		static const GParamSpecTypeInfo pspec_info = {
-			sizeof (NMParamSpecSpecialized),
-			0,
-			param_specialized_init,
-			G_TYPE_OBJECT, /* value_type */
-			NULL,          /* finalize */
-			param_specialized_set_default,
-			param_specialized_validate,
-			param_specialized_values_cmp,
-		};
-		type = g_param_type_register_static ("NMParamSpecSpecialized", &pspec_info);
-	}
-
-	return type;
-}
-
-GParamSpec *
-_nm_param_spec_specialized (const char *name,
-                            const char *nick,
-                            const char *blurb,
-                            GType specialized_type,
-                            GParamFlags flags)
-{
-	NMParamSpecSpecialized *pspec;
-
-	g_return_val_if_fail (g_type_is_a (specialized_type, G_TYPE_BOXED), NULL);
-
-	pspec = g_param_spec_internal (NM_TYPE_PARAM_SPEC_SPECIALIZED,
-	                               name, nick, blurb, flags);
-
-	G_PARAM_SPEC (pspec)->value_type = specialized_type;
-
-	return G_PARAM_SPEC (pspec);
-}
-
-/***********************************************************/
-/* Tests */
-
-#if 0
-
-static void
-compare_ints (void)
-{
-	GValue value1 = G_VALUE_INIT;
-	GValue value2 = G_VALUE_INIT;
-
-	g_value_init (&value1, G_TYPE_INT);
-	g_value_init (&value2, G_TYPE_INT);
-
-	g_value_set_int (&value1, 5);
-	g_value_set_int (&value2, 5);
-	g_print ("Comparing ints 5 and 5: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_value_set_int (&value2, 10);
-	g_print ("Comparing ints 5 and 10: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_value_set_int (&value2, 1);
-	g_print ("Comparing ints 5 and 1: %d\n", _gvalues_compare (&value1, &value2));
-}
-
-static void
-compare_strings (void)
-{
-	GValue value1 = G_VALUE_INIT;
-	GValue value2 = G_VALUE_INIT;
-	const char *str1 = "hello";
-	const char *str2 = "world";
-
-	g_value_init (&value1, G_TYPE_STRING);
-	g_value_init (&value2, G_TYPE_STRING);
-
-	g_value_set_string (&value1, str1);
-	g_value_set_string (&value2, str1);
-	g_print ("Comparing identical strings: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_value_set_string (&value2, str2);
-	g_print ("Comparing different strings: %d\n", _gvalues_compare (&value1, &value2));
-}
-
-static void
-compare_strv (void)
-{
-	GValue value1 = G_VALUE_INIT;
-	GValue value2 = G_VALUE_INIT;
-	char *strv1[] = { "foo", "bar", "baz", NULL };
-	char *strv2[] = { "foo", "bar", "bar", NULL };
-	char *strv3[] = { "foo", "bar", NULL };
-	char *strv4[] = { "foo", "bar", "baz", "bam", NULL };
-
-	g_value_init (&value1, G_TYPE_STRV);
-	g_value_init (&value2, G_TYPE_STRV);
-
-	g_value_set_boxed (&value1, strv1);
-	g_value_set_boxed (&value2, strv1);
-	g_print ("Comparing identical strv's: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_value_set_boxed (&value2, strv2);
-	g_print ("Comparing different strv's: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_value_set_boxed (&value2, strv3);
-	g_print ("Comparing different len (smaller) strv's: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_value_set_boxed (&value2, strv4);
-	g_print ("Comparing different len (longer) strv's: %d\n", _gvalues_compare (&value1, &value2));
-}
-
-static void
-compare_garrays (void)
-{
-	GArray *array1;
-	GArray *array2;
-	GValue value1 = G_VALUE_INIT;
-	GValue value2 = G_VALUE_INIT;
-	int i;
-
-	g_value_init (&value1, DBUS_TYPE_G_UINT_ARRAY);
-	array1 = g_array_new (FALSE, FALSE, sizeof (guint32));
-
-	g_value_init (&value2, DBUS_TYPE_G_UINT_ARRAY);
-	array2 = g_array_new (FALSE, FALSE, sizeof (guint32));
-
-	for (i = 0; i < 5; i++) {
-		g_array_append_val (array1, i);
-		g_array_append_val (array2, i);
-	}
-
-	g_value_set_boxed (&value1, array1);
-	g_value_set_boxed (&value2, array2);
-
-	g_print ("Comparing identical arrays's: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_array_remove_index (array2, 0);
-	g_value_set_boxed (&value2, array2);
-	g_print ("Comparing different length arrays's: %d\n", _gvalues_compare (&value1, &value2));
-
-	i = 7;
-	g_array_prepend_val (array2, i);
-	g_value_set_boxed (&value2, array2);
-	g_print ("Comparing different arrays's: %d\n", _gvalues_compare (&value1, &value2));
-}
-
-static void
-compare_ptrarrays (void)
-{
-	GPtrArray *array1;
-	GPtrArray *array2;
-	GValue value1 = G_VALUE_INIT;
-	GValue value2 = G_VALUE_INIT;
-
-	g_value_init (&value1, dbus_g_type_get_collection ("GPtrArray", G_TYPE_STRING));
-	array1 = g_ptr_array_new ();
-
-	g_value_init (&value2, dbus_g_type_get_collection ("GPtrArray", G_TYPE_STRING));
-	array2 = g_ptr_array_new ();
-
-	g_ptr_array_add (array1, "hello");
-	g_ptr_array_add (array1, "world");
-	g_value_set_boxed (&value1, array1);
-
-	g_ptr_array_add (array2, "hello");
-	g_ptr_array_add (array2, "world");
-	g_value_set_boxed (&value2, array2);
-
-	g_print ("Comparing identical ptr arrays's: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_ptr_array_add (array2, "boo");
-	g_value_set_boxed (&value2, array2);
-	g_print ("Comparing different len ptr arrays's: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_ptr_array_add (array1, "booz");
-	g_value_set_boxed (&value1, array1);
-	g_print ("Comparing different ptr arrays's: %d\n", _gvalues_compare (&value1, &value2));
-}
-
-static void
-compare_str_hash (void)
-{
-	GHashTable *hash1;
-	GHashTable *hash2;
-	GValue value1 = G_VALUE_INIT;
-	GValue value2 = G_VALUE_INIT;
-
-	g_value_init (&value1, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_STRING));
-	g_value_init (&value2, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_STRING));
-
-	hash1 = g_hash_table_new (g_str_hash, g_str_equal);
-	hash2 = g_hash_table_new (g_str_hash, g_str_equal);
-
-	g_hash_table_insert (hash1, "key1", "hello");
-	g_hash_table_insert (hash1, "key2", "world");
-
-	g_hash_table_insert (hash2, "key1", "hello");
-	g_hash_table_insert (hash2, "key2", "world");
-
-	g_value_set_boxed (&value1, hash1);
-	g_value_set_boxed (&value2, hash2);
-	g_print ("Comparing identical str hashes: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_hash_table_remove (hash2, "key2");
-	g_value_set_boxed (&value2, hash2);
-	g_print ("Comparing different length str hashes: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_hash_table_insert (hash2, "key2", "moon");
-	g_value_set_boxed (&value2, hash2);
-	g_print ("Comparing different str hashes: %d\n", _gvalues_compare (&value1, &value2));
-}
-
-static GValue *
-str_to_gvalue (const char *str)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_STRING);
-	g_value_set_string (value, str);
-
-	return value;
-}
-
-static GValue *
-int_to_gvalue (int i)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_INT);
-	g_value_set_int (value, i);
-
-	return value;
-}
-
-static void
-compare_gvalue_hash (void)
-{
-	GHashTable *hash1;
-	GHashTable *hash2;
-	GValue value1 = G_VALUE_INIT;
-	GValue value2 = G_VALUE_INIT;
-
-	g_value_init (&value1, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
-	g_value_init (&value2, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
-
-	hash1 = g_hash_table_new (g_str_hash, g_str_equal);
-	hash2 = g_hash_table_new (g_str_hash, g_str_equal);
-
-	g_hash_table_insert (hash1, "key1", str_to_gvalue ("hello"));
-	g_hash_table_insert (hash1, "key2", int_to_gvalue (5));
-
-	g_hash_table_insert (hash2, "key1", str_to_gvalue ("hello"));
-	g_hash_table_insert (hash2, "key2", int_to_gvalue (5));
-
-	g_value_set_boxed (&value1, hash1);
-	g_value_set_boxed (&value2, hash2);
-	g_print ("Comparing identical gvalue hashes: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_hash_table_remove (hash2, "key2");
-	g_value_set_boxed (&value2, hash2);
-	g_print ("Comparing different length str hashes: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_hash_table_insert (hash2, "key2", str_to_gvalue ("moon"));
-	g_value_set_boxed (&value2, hash2);
-	g_print ("Comparing different str hashes: %d\n", _gvalues_compare (&value1, &value2));
-}
-
-static void
-compare_ip6_addresses (void)
-{
-	GValueArray *array1;
-	GValueArray *array2;
-	GValueArray *array3;
-	GByteArray *ba1;
-	GByteArray *ba2;
-	GByteArray *ba3;
-	GValue element = G_VALUE_INIT;
-	GValue value1 = G_VALUE_INIT;
-	GValue value2 = G_VALUE_INIT;
-	struct in6_addr addr1;
-	struct in6_addr addr2;
-	struct in6_addr addr3;
-	guint32 prefix1 = 64;
-	guint32 prefix2 = 64;
-	guint32 prefix3 = 0;
-
-	inet_pton (AF_INET6, "1:2:3:4:5:6:7:8", &addr1, sizeof (struct in6_addr));
-	inet_pton (AF_INET6, "ffff:2:3:4:5:6:7:8", &addr2, sizeof (struct in6_addr));
-	inet_pton (AF_INET6, "::", &addr3, sizeof (struct in6_addr));
-
-	/* address 1 */
-	ba1 = g_byte_array_new ();
-	array1 = g_value_array_new (2);
-	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-	g_byte_array_append (ba1, (guint8 *) addr1.s6_addr, 16);
-	g_value_take_boxed (&element, ba1);
-	g_value_array_append (array1, &element);
-	g_value_unset (&element);
-
-	g_value_init (&element, G_TYPE_UINT);
-	g_value_set_uint (&element, prefix1);
-	g_value_array_append (array1, &element);
-	g_value_unset (&element);
-
-	/* address 2 */
-	ba2 = g_byte_array_new ();
-	array2 = g_value_array_new (2);
-	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-	g_byte_array_append (ba2, (guint8 *) addr2.s6_addr, 16);
-	g_value_take_boxed (&element, ba2);
-	g_value_array_append (array2, &element);
-	g_value_unset (&element);
-
-	g_value_init (&element, G_TYPE_UINT);
-	g_value_set_uint (&element, prefix2);
-	g_value_array_append (array2, &element);
-	g_value_unset (&element);
-
-	/* address 3 */
-	ba3 = g_byte_array_new ();
-	array3 = g_value_array_new (2);
-	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-	g_byte_array_append (ba3, (guint8 *) addr3.s6_addr, 16);
-	g_value_take_boxed (&element, ba3);
-	g_value_array_append (array3, &element);
-	g_value_unset (&element);
-
-	g_value_init (&element, G_TYPE_UINT);
-	g_value_set_uint (&element, prefix3);
-	g_value_array_append (array3, &element);
-	g_value_unset (&element);
-
-	g_value_init (&value1, DBUS_TYPE_G_IP6_ADDRESS);
-	g_value_init (&value2, DBUS_TYPE_G_IP6_ADDRESS);
-
-	g_value_set_boxed (&value1, array1);
-	g_value_set_boxed (&value2, array1);
-	g_print ("Comparing identical IPv6 address structures: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_value_set_boxed (&value1, array1);
-	g_value_set_boxed (&value2, array2);
-	g_print ("Comparing different IPv6 address structures: %d\n", _gvalues_compare (&value1, &value2));
-
-	g_value_set_boxed (&value1, array1);
-	g_value_set_boxed (&value2, array3);
-	g_print ("Comparing different IPv6 address structures: %d\n", _gvalues_compare (&value1, &value2));
-}
-
-int
-main (int argc, char *argv[])
-{
-	DBusGConnection *bus;
-
-#if !GLIB_CHECK_VERSION (2, 35, 0)
-	g_type_init ();
-#endif
-
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
-
-	compare_ints ();
-	compare_strings ();
-	compare_strv ();
-	compare_garrays ();
-	compare_ptrarrays ();
-	compare_str_hash ();
-	compare_gvalue_hash ();
-	compare_ip6_addresses ();
-
-	return 0;
-}
-
-#endif

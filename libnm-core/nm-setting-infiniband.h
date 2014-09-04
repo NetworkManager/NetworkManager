@@ -75,7 +75,7 @@ typedef struct {
 GType nm_setting_infiniband_get_type (void);
 
 NMSetting *       nm_setting_infiniband_new                (void);
-const GByteArray *nm_setting_infiniband_get_mac_address    (NMSettingInfiniband *setting);
+const char *      nm_setting_infiniband_get_mac_address    (NMSettingInfiniband *setting);
 guint32           nm_setting_infiniband_get_mtu            (NMSettingInfiniband *setting);
 const char *      nm_setting_infiniband_get_transport_mode (NMSettingInfiniband *setting);
 int               nm_setting_infiniband_get_p_key          (NMSettingInfiniband *setting);

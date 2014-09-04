@@ -26,8 +26,8 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-vpn.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
+#include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-private.h"
 
@@ -715,19 +715,10 @@ finalize (GObject *object)
 }
 
 static void
-copy_hash (gpointer key, gpointer value, gpointer user_data)
-{
-	g_return_if_fail (value != NULL);
-	g_return_if_fail (strlen (value));
-	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), g_strdup (value));
-}
-
-static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (object);
-	GHashTable *new_hash;
 
 	switch (prop_id) {
 	case PROP_SERVICE_TYPE:
@@ -739,18 +730,12 @@ set_property (GObject *object, guint prop_id,
 		priv->user_name = g_value_dup_string (value);
 		break;
 	case PROP_DATA:
-		/* Must make a deep copy of the hash table here... */
-		g_hash_table_remove_all (priv->data);
-		new_hash = g_value_get_boxed (value);
-		if (new_hash)
-			g_hash_table_foreach (new_hash, copy_hash, priv->data);
+		g_hash_table_unref (priv->data);
+		priv->data = _nm_utils_copy_strdict (g_value_get_boxed (value));
 		break;
 	case PROP_SECRETS:
-		/* Must make a deep copy of the hash table here... */
-		g_hash_table_remove_all (priv->secrets);
-		new_hash = g_value_get_boxed (value);
-		if (new_hash)
-			g_hash_table_foreach (new_hash, copy_hash, priv->secrets);
+		g_hash_table_unref (priv->secrets);
+		priv->secrets = _nm_utils_copy_strdict (g_value_get_boxed (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -773,10 +758,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_vpn_get_user_name (setting));
 		break;
 	case PROP_DATA:
-		g_value_set_boxed (value, priv->data);
+		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->data));
 		break;
 	case PROP_SECRETS:
-		g_value_set_boxed (value, priv->secrets);
+		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->secrets));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -842,25 +827,37 @@ nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 	 *
 	 * Dictionary of key/value pairs of VPN plugin specific data.  Both keys and
 	 * values must be strings.
+	 *
+	 * Type: GHashTable(utf8,utf8)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DATA,
-		 _nm_param_spec_specialized (NM_SETTING_VPN_DATA, "", "",
-		                             DBUS_TYPE_G_MAP_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_VPN_DATA, "", "",
+		                     G_TYPE_HASH_TABLE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_VPN_DATA,
+	                                      DBUS_TYPE_G_MAP_OF_STRING,
+	                                      _nm_utils_strdict_to_dbus,
+	                                      _nm_utils_strdict_from_dbus);
 
 	/**
 	 * NMSettingVpn:secrets:
 	 *
 	 * Dictionary of key/value pairs of VPN plugin specific secrets like
 	 * passwords or private keys.  Both keys and values must be strings.
+	 *
+	 * Type: GHashTable(utf8,utf8)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SECRETS,
-		 _nm_param_spec_specialized (NM_SETTING_VPN_SECRETS, "", "",
-		                             DBUS_TYPE_G_MAP_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_SECRET |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_VPN_SECRETS, "", "",
+		                     G_TYPE_HASH_TABLE,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_SECRET |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_VPN_SECRETS,
+	                                      DBUS_TYPE_G_MAP_OF_STRING,
+	                                      _nm_utils_strdict_to_dbus,
+	                                      _nm_utils_strdict_from_dbus);
 }

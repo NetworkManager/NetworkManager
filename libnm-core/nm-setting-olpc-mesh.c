@@ -26,7 +26,6 @@
 
 #include "nm-setting-olpc-mesh.h"
 #include "nm-dbus-interface.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-utils-private.h"
@@ -51,9 +50,9 @@ NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_OLPC_MESH)
 #define NM_SETTING_OLPC_MESH_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_OLPC_MESH, NMSettingOlpcMeshPrivate))
 
 typedef struct {
-	GByteArray *ssid;
+	GBytes *ssid;
 	guint32 channel;
-	GByteArray *dhcp_anycast_addr;
+	char *dhcp_anycast_addr;
 } NMSettingOlpcMeshPrivate;
 
 enum {
@@ -82,7 +81,7 @@ nm_setting_olpc_mesh_init (NMSettingOlpcMesh *setting)
 {
 }
 
-const GByteArray *
+GBytes *
 nm_setting_olpc_mesh_get_ssid (NMSettingOlpcMesh *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_OLPC_MESH (setting), NULL);
@@ -98,7 +97,7 @@ nm_setting_olpc_mesh_get_channel (NMSettingOlpcMesh *setting)
 	return NM_SETTING_OLPC_MESH_GET_PRIVATE (setting)->channel;
 }
 
-const GByteArray *
+const char *
 nm_setting_olpc_mesh_get_dhcp_anycast_address (NMSettingOlpcMesh *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_OLPC_MESH (setting), NULL);
@@ -110,6 +109,7 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingOlpcMeshPrivate *priv = NM_SETTING_OLPC_MESH_GET_PRIVATE (setting);
+	gsize length;
 
 	if (!priv->ssid) {
 		g_set_error_literal (error,
@@ -120,7 +120,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (!priv->ssid->len || priv->ssid->len > 32) {
+	length = g_bytes_get_size (priv->ssid);
+	if (length == 0 || length > 32) {
 		g_set_error_literal (error,
 		                     NM_SETTING_OLPC_MESH_ERROR,
 		                     NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY,
@@ -139,7 +140,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->dhcp_anycast_addr && priv->dhcp_anycast_addr->len != ETH_ALEN) {
+	if (priv->dhcp_anycast_addr && !nm_utils_hwaddr_valid (priv->dhcp_anycast_addr, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_OLPC_MESH_ERROR,
 		                     NM_SETTING_OLPC_MESH_ERROR_INVALID_PROPERTY,
@@ -157,9 +158,8 @@ finalize (GObject *object)
 	NMSettingOlpcMeshPrivate *priv = NM_SETTING_OLPC_MESH_GET_PRIVATE (object);
 
 	if (priv->ssid)
-		g_byte_array_free (priv->ssid, TRUE);
-	if (priv->dhcp_anycast_addr)
-		g_byte_array_free (priv->dhcp_anycast_addr, TRUE);
+		g_bytes_unref (priv->ssid);
+	g_free (priv->dhcp_anycast_addr);
 
 	G_OBJECT_CLASS (nm_setting_olpc_mesh_parent_class)->finalize (object);
 }
@@ -173,16 +173,15 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_SSID:
 		if (priv->ssid)
-			g_byte_array_free (priv->ssid, TRUE);
+			g_bytes_unref (priv->ssid);
 		priv->ssid = g_value_dup_boxed (value);
 		break;
 	case PROP_CHANNEL:
 		priv->channel = g_value_get_uint (value);
 		break;
 	case PROP_DHCP_ANYCAST_ADDRESS:
-		if (priv->dhcp_anycast_addr)
-			g_byte_array_free (priv->dhcp_anycast_addr, TRUE);
-		priv->dhcp_anycast_addr = g_value_dup_boxed (value);
+		g_free (priv->dhcp_anycast_addr);
+		priv->dhcp_anycast_addr = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -204,7 +203,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, nm_setting_olpc_mesh_get_channel (setting));
 		break;
 	case PROP_DHCP_ANYCAST_ADDRESS:
-		g_value_set_boxed (value, nm_setting_olpc_mesh_get_dhcp_anycast_address (setting));
+		g_value_set_string (value, nm_setting_olpc_mesh_get_dhcp_anycast_address (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -234,11 +233,15 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SSID,
-		 _nm_param_spec_specialized (NM_SETTING_OLPC_MESH_SSID, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_OLPC_MESH_SSID, "", "",
+		                     G_TYPE_BYTES,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_OLPC_MESH_SSID,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_bytes_to_dbus,
+	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSettingOlpcMesh:channel:
@@ -263,8 +266,12 @@ nm_setting_olpc_mesh_class_init (NMSettingOlpcMeshClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP_ANYCAST_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_hwaddr_to_dbus,
+	                                      _nm_utils_hwaddr_from_dbus);
 }

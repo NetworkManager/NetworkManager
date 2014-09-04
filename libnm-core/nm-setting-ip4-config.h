@@ -184,10 +184,10 @@ NMSetting *   nm_setting_ip4_config_new                    (void);
 const char *  nm_setting_ip4_config_get_method             (NMSettingIP4Config *setting);
 
 guint32       nm_setting_ip4_config_get_num_dns            (NMSettingIP4Config *setting);
-guint32       nm_setting_ip4_config_get_dns                (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_add_dns                (NMSettingIP4Config *setting, guint32 dns);
+const char *  nm_setting_ip4_config_get_dns                (NMSettingIP4Config *setting, guint32 i);
+gboolean      nm_setting_ip4_config_add_dns                (NMSettingIP4Config *setting, const char *dns);
 void          nm_setting_ip4_config_remove_dns             (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_remove_dns_by_value    (NMSettingIP4Config *setting, guint32 dns);
+gboolean      nm_setting_ip4_config_remove_dns_by_value    (NMSettingIP4Config *setting, const char *dns);
 void          nm_setting_ip4_config_clear_dns              (NMSettingIP4Config *setting);
 
 guint32       nm_setting_ip4_config_get_num_dns_searches       (NMSettingIP4Config *setting);

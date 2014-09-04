@@ -26,7 +26,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-wired.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
@@ -69,11 +68,11 @@ typedef struct {
 	guint32 speed;
 	char *duplex;
 	gboolean auto_negotiate;
-	GByteArray *device_mac_address;
-	GByteArray *cloned_mac_address;
+	char *device_mac_address;
+	char *cloned_mac_address;
 	GSList *mac_address_blacklist;
 	guint32 mtu;
-	GPtrArray *s390_subchannels;
+	char **s390_subchannels;
 	char *s390_nettype;
 	GHashTable *s390_options;
 } NMSettingWiredPrivate;
@@ -180,7 +179,7 @@ nm_setting_wired_get_auto_negotiate (NMSettingWired *setting)
  *
  * Returns: the #NMSettingWired:mac-address property of the setting
  **/
-const GByteArray *
+const char *
 nm_setting_wired_get_mac_address (NMSettingWired *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
@@ -194,7 +193,7 @@ nm_setting_wired_get_mac_address (NMSettingWired *setting)
  *
  * Returns: the #NMSettingWired:cloned-mac-address property of the setting
  **/
-const GByteArray *
+const char *
 nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
@@ -206,7 +205,7 @@ nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting)
  * nm_setting_wired_get_mac_address_blacklist:
  * @setting: the #NMSettingWired
  *
- * Returns: (element-type GLib.ByteArray): the #NMSettingWired:mac-address-blacklist
+ * Returns: (element-type utf8): the #NMSettingWired:mac-address-blacklist
  * property of the setting
  **/
 const GSList *
@@ -381,15 +380,15 @@ nm_setting_wired_get_mtu (NMSettingWired *setting)
  * connection is applicable to.  The connection should only be used in
  * conjunction with that device.
  *
- * Returns: (element-type utf8): #GPtrArray of strings, each specifying one
- * subchannel the s390 device uses to communicate to the host.
+ * Returns: (transfer none) (element-type utf8): array of strings, each specifying
+ *   one subchannel the s390 device uses to communicate to the host.
  **/
-const GPtrArray *
+const char * const *
 nm_setting_wired_get_s390_subchannels (NMSettingWired *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
 
-	return NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_subchannels;
+	return (const char * const *) NM_SETTING_WIRED_GET_PRIVATE (setting)->s390_subchannels;
 }
 
 /**
@@ -607,7 +606,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->device_mac_address && priv->device_mac_address->len != ETH_ALEN) {
+	if (priv->device_mac_address && !nm_utils_hwaddr_valid (priv->device_mac_address, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_WIRED_ERROR,
 		                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
@@ -629,14 +628,17 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (   priv->s390_subchannels
-	    && !(priv->s390_subchannels->len == 3 || priv->s390_subchannels->len == 2)) {
-		g_set_error_literal (error,
-		                     NM_SETTING_WIRED_ERROR,
-		                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
-		                     _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_S390_SUBCHANNELS);
-		return FALSE;
+	if (priv->s390_subchannels) {
+		int len = g_strv_length (priv->s390_subchannels);
+
+		if (len != 2 && len != 3) {
+			g_set_error_literal (error,
+			                     NM_SETTING_WIRED_ERROR,
+			                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+			                     _("property is invalid"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_S390_SUBCHANNELS);
+			return FALSE;
+		}
 	}
 
 	if (priv->s390_nettype && !_nm_utils_string_in_list (priv->s390_nettype, valid_nettype)) {
@@ -663,7 +665,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (priv->cloned_mac_address && priv->cloned_mac_address->len != ETH_ALEN) {
+	if (priv->cloned_mac_address && !nm_utils_hwaddr_valid (priv->cloned_mac_address, ETH_ALEN)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_WIRED_ERROR,
 		                     NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
@@ -694,26 +696,14 @@ finalize (GObject *object)
 
 	g_hash_table_destroy (priv->s390_options);
 
-	if (priv->device_mac_address)
-		g_byte_array_free (priv->device_mac_address, TRUE);
-
-	if (priv->cloned_mac_address)
-		g_byte_array_free (priv->cloned_mac_address, TRUE);
-
+	g_free (priv->device_mac_address);
+	g_free (priv->cloned_mac_address);
 	g_slist_free_full (priv->mac_address_blacklist, g_free);
 
-	if (priv->s390_subchannels) {
-		g_ptr_array_set_free_func (priv->s390_subchannels, g_free);
-		g_ptr_array_free (priv->s390_subchannels, TRUE);
-	}
+	if (priv->s390_subchannels)
+		g_strfreev (priv->s390_subchannels);
 
 	G_OBJECT_CLASS (nm_setting_wired_parent_class)->finalize (object);
-}
-
-static void
-copy_hash (gpointer key, gpointer value, gpointer user_data)
-{
-	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), g_strdup (value));
 }
 
 static void
@@ -721,7 +711,6 @@ set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (object);
-	GHashTable *new_hash;
 
 	switch (prop_id) {
 	case PROP_PORT:
@@ -739,27 +728,23 @@ set_property (GObject *object, guint prop_id,
 		priv->auto_negotiate = g_value_get_boolean (value);
 		break;
 	case PROP_MAC_ADDRESS:
-		if (priv->device_mac_address)
-			g_byte_array_free (priv->device_mac_address, TRUE);
-		priv->device_mac_address = g_value_dup_boxed (value);
+		g_free (priv->device_mac_address);
+		priv->device_mac_address = g_value_dup_string (value);
 		break;
 	case PROP_CLONED_MAC_ADDRESS:
-		if (priv->cloned_mac_address)
-			g_byte_array_free (priv->cloned_mac_address, TRUE);
-		priv->cloned_mac_address = g_value_dup_boxed (value);
+		g_free (priv->cloned_mac_address);
+		priv->cloned_mac_address = g_value_dup_string (value);
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
 		g_slist_free_full (priv->mac_address_blacklist, g_free);
-		priv->mac_address_blacklist = g_value_dup_boxed (value);
+		priv->mac_address_blacklist = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_MTU:
 		priv->mtu = g_value_get_uint (value);
 		break;
 	case PROP_S390_SUBCHANNELS:
-		if (priv->s390_subchannels) {
-			g_ptr_array_set_free_func (priv->s390_subchannels, g_free);
-			g_ptr_array_free (priv->s390_subchannels, TRUE);
-		}
+		if (priv->s390_subchannels)
+			g_strfreev (priv->s390_subchannels);
 		priv->s390_subchannels = g_value_dup_boxed (value);
 		break;
 	case PROP_S390_NETTYPE:
@@ -767,11 +752,8 @@ set_property (GObject *object, guint prop_id,
 		priv->s390_nettype = g_value_dup_string (value);
 		break;
 	case PROP_S390_OPTIONS:
-		/* Must make a deep copy of the hash table here... */
-		g_hash_table_remove_all (priv->s390_options);
-		new_hash = g_value_get_boxed (value);
-		if (new_hash)
-			g_hash_table_foreach (new_hash, copy_hash, priv->s390_options);
+		g_hash_table_unref (priv->s390_options);
+		priv->s390_options = _nm_utils_copy_strdict (g_value_get_boxed (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -800,25 +782,25 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, nm_setting_wired_get_auto_negotiate (setting));
 		break;
 	case PROP_MAC_ADDRESS:
-		g_value_set_boxed (value, nm_setting_wired_get_mac_address (setting));
+		g_value_set_string (value, nm_setting_wired_get_mac_address (setting));
 		break;
 	case PROP_CLONED_MAC_ADDRESS:
-		g_value_set_boxed (value, nm_setting_wired_get_cloned_mac_address (setting));
+		g_value_set_string (value, nm_setting_wired_get_cloned_mac_address (setting));
 		break;
 	case PROP_MAC_ADDRESS_BLACKLIST:
-		g_value_set_boxed (value, nm_setting_wired_get_mac_address_blacklist (setting));
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->mac_address_blacklist));
 		break;
 	case PROP_MTU:
 		g_value_set_uint (value, nm_setting_wired_get_mtu (setting));
 		break;
 	case PROP_S390_SUBCHANNELS:
-		g_value_set_boxed (value, nm_setting_wired_get_s390_subchannels (setting));
+		g_value_set_boxed (value, priv->s390_subchannels);
 		break;
 	case PROP_S390_NETTYPE:
 		g_value_set_string (value, nm_setting_wired_get_s390_nettype (setting));
 		break;
 	case PROP_S390_OPTIONS:
-		g_value_set_boxed (value, priv->s390_options);
+		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->s390_options));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -907,11 +889,15 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_string (NM_SETTING_WIRED_MAC_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRED_MAC_ADDRESS,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_hwaddr_to_dbus,
+	                                      _nm_utils_hwaddr_from_dbus);
 
 	/**
 	 * NMSettingWired:cloned-mac-address:
@@ -921,12 +907,16 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CLONED_MAC_ADDRESS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
-    
+		 g_param_spec_string (NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_hwaddr_to_dbus,
+	                                      _nm_utils_hwaddr_from_dbus);
+
 	/**
 	 * NMSettingWired:mac-address-blacklist:
 	 *
@@ -937,11 +927,11 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS_BLACKLIST,
-		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_FUZZY_IGNORE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_FUZZY_IGNORE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWired:mtu:
@@ -971,11 +961,11 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_S390_SUBCHANNELS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRED_S390_SUBCHANNELS, "", "",
-		                             DBUS_TYPE_G_ARRAY_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRED_S390_SUBCHANNELS, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingWired:s390-nettype:
@@ -998,12 +988,18 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 	 * and values must be strings.  Allowed keys include "portno", "layer2",
 	 * "portname", "protocol", among others.  Key names must contain only
 	 * alphanumeric characters (ie, [a-zA-Z0-9]).
+	 *
+	 * Type: GHashTable(utf8,utf8)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_S390_OPTIONS,
-		 _nm_param_spec_specialized (NM_SETTING_WIRED_S390_OPTIONS, "", "",
-		                             DBUS_TYPE_G_MAP_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_WIRED_S390_OPTIONS, "", "",
+		                     G_TYPE_HASH_TABLE,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRED_S390_OPTIONS,
+	                                      DBUS_TYPE_G_MAP_OF_STRING,
+	                                      _nm_utils_strdict_to_dbus,
+	                                      _nm_utils_strdict_from_dbus);
 }

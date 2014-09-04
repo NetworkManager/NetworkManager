@@ -24,8 +24,8 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-ip6-config.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
+#include "nm-utils-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-setting-private.h"
@@ -161,18 +161,28 @@ nm_setting_ip6_config_get_num_dns (NMSettingIP6Config *setting)
  *
  * Returns: (transfer none): the IPv6 address of the DNS server at index @i
  **/
-const struct in6_addr *
+const char *
 nm_setting_ip6_config_get_dns (NMSettingIP6Config *setting, guint32 i)
 {
 	NMSettingIP6ConfigPrivate *priv;
 
-
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->dns), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->dns), NULL);
 
-	return (const struct in6_addr *) g_slist_nth_data (priv->dns, i);
+	return (const char *) g_slist_nth_data (priv->dns, i);
+}
+
+static const char *
+canonicalize_ip (const char *ip)
+{
+	struct in6_addr addr;
+	int ret;
+
+	ret = inet_pton (AF_INET6, ip, &addr);
+	g_return_val_if_fail (ret == 1, NULL);
+	return nm_utils_inet6_ntop (&addr, NULL);
 }
 
 /**
@@ -186,25 +196,28 @@ nm_setting_ip6_config_get_dns (NMSettingIP6Config *setting, guint32 i)
  * known
  **/
 gboolean
-nm_setting_ip6_config_add_dns (NMSettingIP6Config *setting, const struct in6_addr *addr)
+nm_setting_ip6_config_add_dns (NMSettingIP6Config *setting, const char *dns)
 {
 	NMSettingIP6ConfigPrivate *priv;
-	struct in6_addr *copy;
+	const char *dns_canonical;
 	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
+	g_return_val_if_fail (dns != NULL, FALSE);
+	g_return_val_if_fail (dns[0] != '\0', FALSE);
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
+
+	dns_canonical = canonicalize_ip (dns);
+	g_return_val_if_fail (dns_canonical != NULL, FALSE);
+
 	for (iter = priv->dns; iter; iter = g_slist_next (iter)) {
-		if (!memcmp (addr, (struct in6_addr *) iter->data, sizeof (struct in6_addr)))
+		if (!strcmp (dns_canonical, (char *) iter->data))
 			return FALSE;
 	}
 
-	copy = g_malloc0 (sizeof (struct in6_addr));
-	memcpy (copy, addr, sizeof (struct in6_addr));
-	priv->dns = g_slist_append (priv->dns, copy);
+	priv->dns = g_slist_append (priv->dns, g_strdup (dns_canonical));
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS);
-
 	return TRUE;
 }
 
@@ -243,16 +256,23 @@ nm_setting_ip6_config_remove_dns (NMSettingIP6Config *setting, guint32 i)
  **/
 gboolean
 nm_setting_ip6_config_remove_dns_by_value (NMSettingIP6Config *setting,
-                                           const struct in6_addr *addr)
+                                           const char *dns)
 {
 	NMSettingIP6ConfigPrivate *priv;
+	const char *dns_canonical;
 	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
+	g_return_val_if_fail (dns != NULL, FALSE);
+	g_return_val_if_fail (dns[0] != '\0', FALSE);
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
+
+	dns_canonical = canonicalize_ip (dns);
+	g_return_val_if_fail (dns_canonical != NULL, FALSE);
+
 	for (iter = priv->dns; iter; iter = g_slist_next (iter)) {
-		if (!memcmp (addr, (struct in6_addr *) iter->data, sizeof (struct in6_addr))) {
+		if (!strcmp (dns_canonical, (char *) iter->data)) {
 			priv->dns = g_slist_delete_link (priv->dns, iter);
 			g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_DNS);
 			return TRUE;
@@ -306,7 +326,7 @@ nm_setting_ip6_config_get_dns_search (NMSettingIP6Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->dns_search), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->dns_search), NULL);
 
 	return (const char *) g_slist_nth_data (priv->dns_search, i);
 }
@@ -443,7 +463,7 @@ nm_setting_ip6_config_get_address (NMSettingIP6Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->addresses), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->addresses), NULL);
 
 	return (NMIP6Address *) g_slist_nth_data (priv->addresses, i);
 }
@@ -583,7 +603,7 @@ nm_setting_ip6_config_get_route (NMSettingIP6Config *setting, guint32 i)
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), NULL);
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
-	g_return_val_if_fail (i <= g_slist_length (priv->routes), NULL);
+	g_return_val_if_fail (i < g_slist_length (priv->routes), NULL);
 
 	return (NMIP6Route *) g_slist_nth_data (priv->routes, i);
 }
@@ -787,6 +807,8 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
+	GSList *iter;
+	int i;
 
 	if (!priv->method) {
 		g_set_error_literal (error,
@@ -810,7 +832,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	} else if (   !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)
 	           || !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)
 	           || !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
-		if (g_slist_length (priv->dns)) {
+		if (priv->dns) {
 			g_set_error (error,
 			             NM_SETTING_IP6_CONFIG_ERROR,
 			             NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
@@ -821,7 +843,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			return FALSE;
 		}
 
-		if (g_slist_length (priv->dns_search)) {
+		if (priv->dns_search) {
 			g_set_error (error,
 			             NM_SETTING_IP6_CONFIG_ERROR,
 			             NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
@@ -831,7 +853,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			return FALSE;
 		}
 
-		if (g_slist_length (priv->addresses)) {
+		if (priv->addresses) {
 			g_set_error (error,
 			             NM_SETTING_IP6_CONFIG_ERROR,
 			             NM_SETTING_IP6_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
@@ -859,6 +881,21 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		                     _("property is missing"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME);
 		return FALSE;
+	}
+
+	for (iter = priv->dns, i = 0; iter; iter = g_slist_next (iter), i++) {
+		const char *dns = (const char *) iter->data;
+		struct in6_addr addr;
+
+		if (inet_pton (AF_INET6, dns, &addr) != 1) {
+			g_set_error (error,
+			             NM_SETTING_IP6_CONFIG_ERROR,
+			             NM_SETTING_IP6_CONFIG_ERROR_INVALID_PROPERTY,
+			             _("%d. DNS server address is invalid"),
+			             i+1);
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DNS);
+			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -899,19 +936,21 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DNS:
 		g_slist_free_full (priv->dns, g_free);
-		priv->dns = nm_utils_ip6_dns_from_gvalue (value);
+		priv->dns = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_DNS_SEARCH:
 		g_slist_free_full (priv->dns_search, g_free);
-		priv->dns_search = g_value_dup_boxed (value);
+		priv->dns_search = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_ADDRESSES:
-		g_slist_free_full (priv->addresses, g_free);
-		priv->addresses = nm_utils_ip6_addresses_from_gvalue (value);
+		g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_address_unref);
+		priv->addresses = _nm_utils_copy_array_to_slist (g_value_get_boxed (value),
+		                                                 (NMUtilsCopyFunc) nm_ip6_address_dup);
 		break;
 	case PROP_ROUTES:
-		g_slist_free_full (priv->routes, g_free);
-		priv->routes = nm_utils_ip6_routes_from_gvalue (value);
+		g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
+		priv->routes = _nm_utils_copy_array_to_slist (g_value_get_boxed (value),
+		                                              (NMUtilsCopyFunc) nm_ip6_route_dup);
 		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		priv->ignore_auto_routes = g_value_get_boolean (value);
@@ -949,16 +988,16 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->method);
 		break;
 	case PROP_DNS:
-		nm_utils_ip6_dns_to_gvalue (priv->dns, value);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->dns));
 		break;
 	case PROP_DNS_SEARCH:
-		g_value_set_boxed (value, priv->dns_search);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->dns_search));
 		break;
 	case PROP_ADDRESSES:
-		nm_utils_ip6_addresses_to_gvalue (priv->addresses, value);
+		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->addresses, (NMUtilsCopyFunc) nm_ip6_address_dup, (GDestroyNotify) nm_ip6_address_unref));
 		break;
 	case PROP_ROUTES:
-		nm_utils_ip6_routes_to_gvalue (priv->routes, value);
+		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->routes, (NMUtilsCopyFunc) nm_ip6_route_dup, (GDestroyNotify) nm_ip6_route_unref));
 		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		g_value_set_boolean (value, priv->ignore_auto_routes);
@@ -996,7 +1035,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-	parent_class->verify       = verify;
+	parent_class->verify = verify;
 
 	/* Properties */
 	/**
@@ -1037,20 +1076,23 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	/**
 	 * NMSettingIP6Config:dns:
 	 *
-	 * Array of DNS servers, where each member of the array is a byte array
-	 * containing the IPv6 address of the DNS server (in network byte order).
-	 * For the "auto" method, these DNS servers are appended to those (if any)
-	 * returned by automatic configuration.  DNS servers cannot be used with the
-	 * "shared" or "link-local" methods as there is no usptream network. In all
-	 * other methods, these DNS servers are used as the only DNS servers for
-	 * this connection.
+	 * Array of IPv6 addresses of DNS servers.  For the "auto" method, these DNS
+	 * servers are appended to those (if any) returned by automatic
+	 * configuration.  DNS servers cannot be used with the "shared" or
+	 * "link-local" methods as there is no usptream network.  In all other
+	 * methods, these DNS servers are used as the only DNS servers for this
+	 * connection.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS,
-		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_DNS, "", "",
-		                             DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_DNS, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP6_CONFIG_DNS,
+	                                      DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
+	                                      _nm_utils_ip6_dns_to_dbus,
+	                                      _nm_utils_ip6_dns_from_dbus);
 
 	/**
 	 * NMSettingIP6Config:dns-search:
@@ -1063,52 +1105,53 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
-		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_DNS_SEARCH, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_DNS_SEARCH, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingIP6Config:addresses:
 	 *
-	 * Array of IPv6 address structures.  Each IPv6 address structure is
-	 * composed of 3 members, the first being a byte array containing the IPv6
-	 * address (network byte order), the second a 32-bit integer containing the
-	 * IPv6 address prefix, and the third a byte array containing the IPv6
-	 * address (network byte order) of the gateway associated with this address,
-	 * if any.  If no gateway is given, the third element should be given as all
-	 * zeros.  For the "auto" method, given IP addresses are appended to those
-	 * returned by automatic configuration.  Addresses cannot be used with the
-	 * "shared" or "link-local" methods as the interface is automatically
-	 * assigned an address with these methods.
+	 * Array of IPv6 addresses.  For the 'auto' method, given IP addresses are
+	 * appended to those returned by automatic configuration.  Addresses cannot
+	 * be used with the 'shared' or 'link-local' methods as the interface is
+	 * automatically assigned an address with these methods.
+	 *
+	 * Element-Type: NMIP6Address
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
-		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ADDRESSES, "", "",
-		                             DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_ADDRESSES, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP6_CONFIG_ADDRESSES,
+	                                      DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
+	                                      _nm_utils_ip6_addresses_to_dbus,
+	                                      _nm_utils_ip6_addresses_from_dbus);
 
 	/**
 	 * NMSettingIP6Config:routes:
 	 *
-	 * Array of IPv6 route structures.  Each IPv6 route structure is composed of
-	 * 4 members; the first being the destination IPv6 network or address
-	 * (network byte order) as a byte array, the second the destination network
-	 * or address IPv6 prefix, the third being the next-hop IPv6 address
-	 * (network byte order) if any, and the fourth being the route metric. For
-	 * the "auto" method, given IP routes are appended to those returned by
-	 * automatic configuration.  Routes cannot be used with the "shared" or
-	 * "link-local" methods because there is no upstream network.
+	 * Array of IPv6 routes. For the 'auto' method, given IP routes are appended
+	 * to those returned by automatic configuration. Routes cannot be used with
+	 * the 'shared' or 'link-local' methods because there is no upstream network.
+	 *
+	 * Element-Type: NMIP6Route
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
-		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ROUTES, "", "",
-		                             DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_INFERRABLE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_IP6_CONFIG_ROUTES, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP6_CONFIG_ROUTES,
+	                                      DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
+	                                      _nm_utils_ip6_routes_to_dbus,
+	                                      _nm_utils_ip6_routes_from_dbus);
 
 	/**
 	 * NMSettingIP6Config:ignore-auto-routes:

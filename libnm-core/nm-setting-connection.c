@@ -24,8 +24,7 @@
 #include <glib/gi18n.h>
 
 #include "nm-utils.h"
-#include "nm-dbus-glib-types.h"
-#include "nm-param-spec-specialized.h"
+#include "nm-utils-private.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
 
@@ -1034,14 +1033,15 @@ finalize (GObject *object)
 }
 
 static GSList *
-perm_stringlist_to_permlist (GSList *strlist)
+perm_strv_to_permlist (char **strv)
 {
-	GSList *list = NULL, *iter;
+	GSList *list = NULL;
+	int i;
 
-	for (iter = strlist; iter; iter = g_slist_next (iter)) {
+	for (i = 0; strv[i]; i++) {
 		Permission *p;
 
-		p = permission_new_from_str ((const char *) iter->data);
+		p = permission_new_from_str (strv[i]);
 		if (p)
 			list = g_slist_append (list, p);
 	}
@@ -1074,7 +1074,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PERMISSIONS:
 		g_slist_free_full (priv->permissions, (GDestroyNotify) permission_free);
-		priv->permissions = perm_stringlist_to_permlist (g_value_get_boxed (value));
+		priv->permissions = perm_strv_to_permlist (g_value_get_boxed (value));
 		break;
 	case PROP_AUTOCONNECT:
 		priv->autoconnect = g_value_get_boolean (value);
@@ -1099,7 +1099,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_SECONDARIES:
 		g_slist_free_full (priv->secondaries, g_free);
-		priv->secondaries = g_value_dup_boxed (value);
+		priv->secondaries = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_GATEWAY_PING_TIMEOUT:
 		priv->gateway_ping_timeout = g_value_get_uint (value);
@@ -1110,14 +1110,18 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
-static GSList *
-perm_permlist_to_stringlist (GSList *permlist)
+static char **
+perm_permlist_to_strv (GSList *permlist)
 {
-	GSList *list = NULL, *iter;
+	GPtrArray *strings;
+	GSList *iter;
 
+	strings = g_ptr_array_new ();
 	for (iter = permlist; iter; iter = g_slist_next (iter))
-		list = g_slist_append (list, permission_to_string ((Permission *) iter->data));
-	return list;
+		g_ptr_array_add (strings, permission_to_string ((Permission *) iter->data));
+	g_ptr_array_add (strings, NULL);
+
+	return (char **) g_ptr_array_free (strings, FALSE);
 }
 
 static void
@@ -1141,7 +1145,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_connection_get_connection_type (setting));
 		break;
 	case PROP_PERMISSIONS:
-		g_value_take_boxed (value, perm_permlist_to_stringlist (priv->permissions));
+		g_value_take_boxed (value, perm_permlist_to_strv (priv->permissions));
 		break;
 	case PROP_AUTOCONNECT:
 		g_value_set_boolean (value, nm_setting_connection_get_autoconnect (setting));
@@ -1162,7 +1166,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_connection_get_slave_type (setting));
 		break;
 	case PROP_SECONDARIES:
-		g_value_set_boxed (value, priv->secondaries);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->secondaries));
 		break;
 	case PROP_GATEWAY_PING_TIMEOUT:
 		g_value_set_uint (value, priv->gateway_ping_timeout);
@@ -1289,10 +1293,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 */
 	g_object_class_install_property
 		(object_class, PROP_PERMISSIONS,
-		 _nm_param_spec_specialized (NM_SETTING_CONNECTION_PERMISSIONS, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_CONNECTION_PERMISSIONS, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:autoconnect:
@@ -1403,11 +1407,11 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SECONDARIES,
-		 _nm_param_spec_specialized (NM_SETTING_CONNECTION_SECONDARIES, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_FUZZY_IGNORE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_CONNECTION_SECONDARIES, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_FUZZY_IGNORE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:gateway-ping-timeout:

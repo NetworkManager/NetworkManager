@@ -123,8 +123,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	NMSettingVlan *s_vlan;
 	NMSettingWired *s_wired;
 	const char *ctype, *dev_iface_name, *vlan_iface_name;
-	const GByteArray *mac_address;
-	char *mac_address_str;
+	const char *setting_hwaddr;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -159,16 +158,15 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	if (s_wired)
-		mac_address = nm_setting_wired_get_mac_address (s_wired);
+		setting_hwaddr = nm_setting_wired_get_mac_address (s_wired);
 	else
-		mac_address = NULL;
-	if (mac_address) {
-		mac_address_str = nm_utils_hwaddr_ntoa (mac_address->data, mac_address->len);
-		if (!g_strcmp0 (mac_address_str, NM_DEVICE_VLAN_GET_PRIVATE (device)->hw_address)) {
+		setting_hwaddr = NULL;
+	if (setting_hwaddr) {
+		if (!nm_utils_hwaddr_matches (setting_hwaddr, -1,
+		                            NM_DEVICE_VLAN_GET_PRIVATE (device)->hw_address, -1)) {
 			g_set_error (error, NM_DEVICE_VLAN_ERROR, NM_DEVICE_VLAN_ERROR_MAC_MISMATCH,
 			             "The hardware address of the device and the connection didn't match.");
 		}
-		g_free (mac_address_str);
 	}
 
 	return NM_DEVICE_CLASS (nm_device_vlan_parent_class)->connection_compatible (device, connection, error);

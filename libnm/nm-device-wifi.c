@@ -418,8 +418,7 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	const char *ctype;
-	const GByteArray *mac;
-	const char *hw_addr;
+	const char *hwaddr, *setting_hwaddr;
 	NMDeviceWifiCapabilities wifi_caps;
 	const char *key_mgmt;
 
@@ -441,15 +440,15 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	}
 
 	/* Check MAC address */
-	hw_addr = nm_device_wifi_get_permanent_hw_address (NM_DEVICE_WIFI (device));
-	if (hw_addr) {
-		if (!nm_utils_hwaddr_valid (hw_addr, ETH_ALEN)) {
+	hwaddr = nm_device_wifi_get_permanent_hw_address (NM_DEVICE_WIFI (device));
+	if (hwaddr) {
+		if (!nm_utils_hwaddr_valid (hwaddr, ETH_ALEN)) {
 			g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_INVALID_DEVICE_MAC,
 			             "Invalid device MAC address.");
 			return FALSE;
 		}
-		mac = nm_setting_wireless_get_mac_address (s_wifi);
-		if (mac && !nm_utils_hwaddr_matches (mac->data, mac->len, hw_addr, -1)) {
+		setting_hwaddr = nm_setting_wireless_get_mac_address (s_wifi);
+		if (setting_hwaddr && !nm_utils_hwaddr_matches (setting_hwaddr, -1, hwaddr, -1)) {
 			g_set_error (error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_MAC_MISMATCH,
 			             "The MACs of the device and the connection didn't match.");
 			return FALSE;

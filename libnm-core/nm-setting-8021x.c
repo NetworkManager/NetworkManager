@@ -25,7 +25,6 @@
 #include <glib/gi18n.h>
 
 #include "nm-setting-8021x.h"
-#include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "crypto.h"
@@ -95,31 +94,31 @@ typedef struct {
 	char *identity;
 	char *anonymous_identity;
 	char *pac_file;
-	GByteArray *ca_cert;
+	GBytes *ca_cert;
 	char *ca_path;
 	char *subject_match;
 	GSList *altsubject_matches;
-	GByteArray *client_cert;
+	GBytes *client_cert;
 	char *phase1_peapver;
 	char *phase1_peaplabel;
 	char *phase1_fast_provisioning;
 	char *phase2_auth;
 	char *phase2_autheap;
-	GByteArray *phase2_ca_cert;
+	GBytes *phase2_ca_cert;
 	char *phase2_ca_path;
 	char *phase2_subject_match;
 	GSList *phase2_altsubject_matches;
-	GByteArray *phase2_client_cert;
+	GBytes *phase2_client_cert;
 	char *password;
 	NMSettingSecretFlags password_flags;
-	GByteArray *password_raw;
+	GBytes *password_raw;
 	NMSettingSecretFlags password_raw_flags;
 	char *pin;
 	NMSettingSecretFlags pin_flags;
-	GByteArray *private_key;
+	GBytes *private_key;
 	char *private_key_password;
 	NMSettingSecretFlags private_key_password_flags;
-	GByteArray *phase2_private_key;
+	GBytes *phase2_private_key;
 	char *phase2_private_key_password;
 	NMSettingSecretFlags phase2_private_key_password_flags;
 	gboolean system_ca_certs;
@@ -417,13 +416,20 @@ nm_setting_802_1x_get_system_ca_certs (NMSetting8021x *setting)
 }
 
 static NMSetting8021xCKScheme
-get_cert_scheme (GByteArray *array)
+get_cert_scheme (GBytes *bytes)
 {
-	if (!array || !array->len)
+	gconstpointer data;
+	gsize length;
+
+	if (!bytes)
 		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
 
-	if (   (array->len > strlen (SCHEME_PATH))
-	    && !memcmp (array->data, SCHEME_PATH, strlen (SCHEME_PATH)))
+	data = g_bytes_get_data (bytes, &length);
+	if (!length)
+		return NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
+
+	if (   (length > strlen (SCHEME_PATH))
+	    && !memcmp (data, SCHEME_PATH, strlen (SCHEME_PATH)))
 		return NM_SETTING_802_1X_CK_SCHEME_PATH;
 
 	return NM_SETTING_802_1X_CK_SCHEME_BLOB;
@@ -460,7 +466,7 @@ nm_setting_802_1x_get_ca_cert_scheme (NMSetting8021x *setting)
  *
  * Returns: the CA certificate data
  **/
-const GByteArray *
+GBytes *
 nm_setting_802_1x_get_ca_cert_blob (NMSetting8021x *setting)
 {
 	NMSetting8021xCKScheme scheme;
@@ -490,16 +496,18 @@ const char *
 nm_setting_802_1x_get_ca_cert_path (NMSetting8021x *setting)
 {
 	NMSetting8021xCKScheme scheme;
+	gconstpointer data;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
 
 	scheme = nm_setting_802_1x_get_ca_cert_scheme (setting);
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
-	return (const char *) (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert->data + strlen (SCHEME_PATH));
+	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert, NULL);
+	return (const char *)data + strlen (SCHEME_PATH);
 }
 
-static GByteArray *
+static GBytes *
 path_to_scheme_value (const char *path)
 {
 	GByteArray *array;
@@ -508,11 +516,11 @@ path_to_scheme_value (const char *path)
 
 	/* Add the path scheme tag to the front, then the fielname */
 	array = g_byte_array_sized_new (strlen (path) + strlen (SCHEME_PATH) + 1);
-	g_assert (array);
 	g_byte_array_append (array, (const guint8 *) SCHEME_PATH, strlen (SCHEME_PATH));
 	g_byte_array_append (array, (const guint8 *) path, strlen (path));
 	g_byte_array_append (array, (const guint8 *) "\0", 1);
-	return array;
+
+	return g_byte_array_free_to_bytes (array);
 }
 
 /**
@@ -559,11 +567,7 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *setting,
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
-	/* Clear out any previous ca_cert blob */
-	if (priv->ca_cert) {
-		g_byte_array_free (priv->ca_cert, TRUE);
-		priv->ca_cert = NULL;
-	}
+	g_clear_pointer (&priv->ca_cert, g_bytes_unref);
 
 	if (!cert_path) {
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CA_CERT);
@@ -577,9 +581,10 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *setting,
 			if (out_format)
 				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
 
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-				priv->ca_cert = g_byte_array_ref (data);
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+				priv->ca_cert = g_byte_array_free_to_bytes (data);
+				data = NULL;
+			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 				priv->ca_cert = path_to_scheme_value (cert_path);
 			else
 				g_assert_not_reached ();
@@ -590,7 +595,8 @@ nm_setting_802_1x_set_ca_cert (NMSetting8021x *setting,
 			             _("CA certificate must be in X.509 format"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_CA_CERT);
 		}
-		g_byte_array_unref (data);
+		if (data)
+			g_byte_array_unref (data);
 	}
 
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CA_CERT);
@@ -789,7 +795,7 @@ nm_setting_802_1x_get_client_cert_scheme (NMSetting8021x *setting)
  *
  * Returns: the client certificate data
  **/
-const GByteArray *
+GBytes *
 nm_setting_802_1x_get_client_cert_blob (NMSetting8021x *setting)
 {
 	NMSetting8021xCKScheme scheme;
@@ -816,13 +822,15 @@ const char *
 nm_setting_802_1x_get_client_cert_path (NMSetting8021x *setting)
 {
 	NMSetting8021xCKScheme scheme;
+	gconstpointer data;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
 
 	scheme = nm_setting_802_1x_get_client_cert_scheme (setting);
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
-	return (const char *) (NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert->data + strlen (SCHEME_PATH));
+	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert, NULL);
+	return (const char *)data + strlen (SCHEME_PATH);
 }
 
 /**
@@ -873,11 +881,7 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *setting,
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
-	/* Clear out any previous ca_cert blob */
-	if (priv->client_cert) {
-		g_byte_array_free (priv->client_cert, TRUE);
-		priv->client_cert = NULL;
-	}
+	g_clear_pointer (&priv->client_cert, g_bytes_unref);
 
 	if (!cert_path) {
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CLIENT_CERT);
@@ -909,14 +913,16 @@ nm_setting_802_1x_set_client_cert (NMSetting8021x *setting,
 		}
 
 		if (valid) {
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-				priv->client_cert = g_byte_array_ref (data);
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+				priv->client_cert = g_byte_array_free_to_bytes (data);
+				data = NULL;
+			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 				priv->client_cert = path_to_scheme_value (cert_path);
 			else
 				g_assert_not_reached ();
 		}
-		g_byte_array_unref (data);
+		if (data)
+			g_byte_array_unref (data);
 	}
 
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CLIENT_CERT);
@@ -1055,7 +1061,7 @@ nm_setting_802_1x_get_phase2_ca_cert_scheme (NMSetting8021x *setting)
  *
  * Returns: the "phase 2" CA certificate data
  **/
-const GByteArray *
+GBytes *
 nm_setting_802_1x_get_phase2_ca_cert_blob (NMSetting8021x *setting)
 {
 	NMSetting8021xCKScheme scheme;
@@ -1085,13 +1091,15 @@ const char *
 nm_setting_802_1x_get_phase2_ca_cert_path (NMSetting8021x *setting)
 {
 	NMSetting8021xCKScheme scheme;
+	gconstpointer data;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
 
 	scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (setting);
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
-	return (const char *) (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert->data + strlen (SCHEME_PATH));
+	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert, NULL);
+	return (const char *)data + strlen (SCHEME_PATH);
 }
 
 /**
@@ -1138,11 +1146,7 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
-	/* Clear out any previous ca_cert blob */
-	if (priv->phase2_ca_cert) {
-		g_byte_array_free (priv->phase2_ca_cert, TRUE);
-		priv->phase2_ca_cert = NULL;
-	}
+	g_clear_pointer (&priv->phase2_ca_cert, g_bytes_unref);
 
 	if (!cert_path) {
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CA_CERT);
@@ -1156,9 +1160,10 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
 			if (out_format)
 				*out_format = NM_SETTING_802_1X_CK_FORMAT_X509;
 
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-				priv->phase2_ca_cert = g_byte_array_ref (data);
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+				priv->phase2_ca_cert = g_byte_array_free_to_bytes (data);
+				data = NULL;
+			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 				priv->phase2_ca_cert = path_to_scheme_value (cert_path);
 			else
 				g_assert_not_reached ();
@@ -1169,7 +1174,8 @@ nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *setting,
 			                     _("invalid certificate format"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_CA_CERT);
 		}
-		g_byte_array_unref (data);
+		if (data)
+			g_byte_array_unref (data);
 	}
 
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CA_CERT);
@@ -1372,7 +1378,7 @@ nm_setting_802_1x_get_phase2_client_cert_scheme (NMSetting8021x *setting)
  *
  * Returns: the "phase 2" client certificate data
  **/
-const GByteArray *
+GBytes *
 nm_setting_802_1x_get_phase2_client_cert_blob (NMSetting8021x *setting)
 {
 	NMSetting8021xCKScheme scheme;
@@ -1399,13 +1405,15 @@ const char *
 nm_setting_802_1x_get_phase2_client_cert_path (NMSetting8021x *setting)
 {
 	NMSetting8021xCKScheme scheme;
+	gconstpointer data;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
 
 	scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (setting);
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
-	return (const char *) (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert->data + strlen (SCHEME_PATH));
+	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert, NULL);
+	return (const char *)data + strlen (SCHEME_PATH);
 }
 
 /**
@@ -1456,11 +1464,7 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *setting,
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
-	/* Clear out any previous ca_cert blob */
-	if (priv->phase2_client_cert) {
-		g_byte_array_free (priv->phase2_client_cert, TRUE);
-		priv->phase2_client_cert = NULL;
-	}
+	g_clear_pointer (&priv->phase2_client_cert, g_bytes_unref);
 
 	if (!cert_path) {
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
@@ -1493,14 +1497,16 @@ nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *setting,
 		}
 
 		if (valid) {
-			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-				priv->phase2_client_cert = g_byte_array_ref (data);
-			else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
+			if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+				priv->phase2_client_cert = g_byte_array_free_to_bytes (data);
+				data = NULL;
+			} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 				priv->phase2_client_cert = path_to_scheme_value (cert_path);
 			else
 				g_assert_not_reached ();
 		}
-		g_byte_array_unref (data);
+		if (data)
+			g_byte_array_unref (data);
 	}
 
 	g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
@@ -1544,7 +1550,7 @@ nm_setting_802_1x_get_password_flags (NMSetting8021x *setting)
  * UTF-8-encoded array of bytes, as specified by the
  * #NMSetting8021x:password-raw property
  **/
-const GByteArray *
+GBytes *
 nm_setting_802_1x_get_password_raw (NMSetting8021x *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
@@ -1631,7 +1637,7 @@ nm_setting_802_1x_get_private_key_scheme (NMSetting8021x *setting)
  *
  * Returns: the private key data
  **/
-const GByteArray *
+GBytes *
 nm_setting_802_1x_get_private_key_blob (NMSetting8021x *setting)
 {
 	NMSetting8021xCKScheme scheme;
@@ -1658,17 +1664,28 @@ const char *
 nm_setting_802_1x_get_private_key_path (NMSetting8021x *setting)
 {
 	NMSetting8021xCKScheme scheme;
+	gconstpointer data;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
 
 	scheme = nm_setting_802_1x_get_private_key_scheme (setting);
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
-	return (const char *) (NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key->data + strlen (SCHEME_PATH));
+	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key, NULL);
+	return (const char *)data + strlen (SCHEME_PATH);
 }
 
-static GByteArray *
-file_to_byte_array (const char *filename)
+static void
+free_secure_bytes (gpointer data)
+{
+	GByteArray *array = data;
+
+	memset (array->data, 0, array->len);
+	g_byte_array_unref (array);
+}
+
+static GBytes *
+file_to_secure_bytes (const char *filename)
 {
 	char *contents;
 	GByteArray *array = NULL;
@@ -1680,7 +1697,7 @@ file_to_byte_array (const char *filename)
 		g_assert (array->len == length);
 		g_free (contents);
 	}
-	return array;
+	return g_bytes_new_with_free_func (array->data, array->len, free_secure_bytes, array);
 }
 
 /**
@@ -1767,9 +1784,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 
 	/* Clear out any previous private key data */
 	if (priv->private_key) {
-		/* Try not to leave the private key around in memory */
-		memset (priv->private_key->data, 0, priv->private_key->len);
-		g_byte_array_free (priv->private_key, TRUE);
+		g_bytes_unref (priv->private_key);
 		priv->private_key = NULL;
 		key_cleared = TRUE;
 	}
@@ -1791,7 +1806,7 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 	priv->private_key_password = g_strdup (password);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		/* Shouldn't fail this since we just verified the private key above */
-		priv->private_key = file_to_byte_array (key_path);
+		priv->private_key = file_to_secure_bytes (key_path);
 		g_assert (priv->private_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		priv->private_key = path_to_scheme_value (key_path);
@@ -1804,10 +1819,8 @@ nm_setting_802_1x_set_private_key (NMSetting8021x *setting,
 	g_assert (format != NM_CRYPTO_FILE_FORMAT_UNKNOWN);
 	if (format == NM_CRYPTO_FILE_FORMAT_PKCS12) {
 		if (priv->client_cert)
-			g_byte_array_free (priv->client_cert, TRUE);
-
-		priv->client_cert = g_byte_array_sized_new (priv->private_key->len);
-		g_byte_array_append (priv->client_cert, priv->private_key->data, priv->private_key->len);
+			g_bytes_unref (priv->client_cert);
+		priv->client_cert = g_bytes_ref (priv->private_key);
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_CLIENT_CERT);
 	}
 
@@ -1873,7 +1886,8 @@ nm_setting_802_1x_get_private_key_format (NMSetting8021x *setting)
 
 	switch (nm_setting_802_1x_get_private_key_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (crypto_is_pkcs12_data (priv->private_key))
+		if (crypto_is_pkcs12_data (g_bytes_get_data (priv->private_key, NULL),
+		                           g_bytes_get_size (priv->private_key)))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
 		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
@@ -1958,7 +1972,7 @@ nm_setting_802_1x_get_phase2_private_key_scheme (NMSetting8021x *setting)
  *
  * Returns: the "phase 2" private key data
  **/
-const GByteArray *
+GBytes *
 nm_setting_802_1x_get_phase2_private_key_blob (NMSetting8021x *setting)
 {
 	NMSetting8021xCKScheme scheme;
@@ -1985,13 +1999,15 @@ const char *
 nm_setting_802_1x_get_phase2_private_key_path (NMSetting8021x *setting)
 {
 	NMSetting8021xCKScheme scheme;
+	gconstpointer data;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
 
 	scheme = nm_setting_802_1x_get_phase2_private_key_scheme (setting);
 	g_return_val_if_fail (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH, NULL);
 
-	return (const char *) (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key->data + strlen (SCHEME_PATH));
+	data = g_bytes_get_data (NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key, NULL);
+	return (const char *)data + strlen (SCHEME_PATH);
 }
 
 /**
@@ -2078,9 +2094,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 
 	/* Clear out any previous private key data */
 	if (priv->phase2_private_key) {
-		/* Try not to leave the private key around in memory */
-		memset (priv->phase2_private_key->data, 0, priv->phase2_private_key->len);
-		g_byte_array_free (priv->phase2_private_key, TRUE);
+		g_bytes_unref (priv->phase2_private_key);
 		priv->phase2_private_key = NULL;
 		key_cleared = TRUE;
 	}
@@ -2102,7 +2116,7 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 	priv->phase2_private_key_password = g_strdup (password);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
 		/* Shouldn't fail this since we just verified the private key above */
-		priv->phase2_private_key = file_to_byte_array (key_path);
+		priv->phase2_private_key = file_to_secure_bytes (key_path);
 		g_assert (priv->phase2_private_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		priv->phase2_private_key = path_to_scheme_value (key_path);
@@ -2115,10 +2129,9 @@ nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *setting,
 	g_assert (format != NM_CRYPTO_FILE_FORMAT_UNKNOWN);
 	if (format == NM_CRYPTO_FILE_FORMAT_PKCS12) {
 		if (priv->phase2_client_cert)
-			g_byte_array_free (priv->phase2_client_cert, TRUE);
+			g_bytes_unref (priv->phase2_client_cert);
 
-		priv->phase2_client_cert = g_byte_array_sized_new (priv->phase2_private_key->len);
-		g_byte_array_append (priv->phase2_client_cert, priv->phase2_private_key->data, priv->phase2_private_key->len);
+		priv->phase2_client_cert = g_bytes_ref (priv->phase2_private_key);
 		g_object_notify (G_OBJECT (setting), NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 	}
 
@@ -2153,7 +2166,8 @@ nm_setting_802_1x_get_phase2_private_key_format (NMSetting8021x *setting)
 
 	switch (nm_setting_802_1x_get_phase2_private_key_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		if (crypto_is_pkcs12_data (priv->phase2_private_key))
+		if (crypto_is_pkcs12_data (g_bytes_get_data (priv->phase2_private_key, NULL),
+		                           g_bytes_get_size (priv->phase2_private_key)))
 			return NM_SETTING_802_1X_CK_FORMAT_PKCS12;
 		return NM_SETTING_802_1X_CK_FORMAT_RAW_KEY;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
@@ -2181,7 +2195,7 @@ need_secrets_password (NMSetting8021x *self,
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 
 	if (   (!priv->password || !strlen (priv->password))
-	    && (!priv->password_raw || !priv->password_raw->len)) {
+	    && (!priv->password_raw || !g_bytes_get_size (priv->password_raw))) {
 		g_ptr_array_add (secrets, NM_SETTING_802_1X_PASSWORD);
 		g_ptr_array_add (secrets, NM_SETTING_802_1X_PASSWORD_RAW);
 	}
@@ -2199,7 +2213,7 @@ need_secrets_sim (NMSetting8021x *self,
 }
 
 static gboolean
-need_private_key_password (const GByteArray *blob,
+need_private_key_password (GBytes *blob,
                            const char *path,
                            const char *password)
 {
@@ -2210,7 +2224,9 @@ need_private_key_password (const GByteArray *blob,
 		if (path)
 			format = crypto_verify_private_key (path, password, NULL);
 		else if (blob)
-			format = crypto_verify_private_key_data (blob, password, NULL);
+			format = crypto_verify_private_key_data (g_bytes_get_data (blob, NULL),
+			                                         g_bytes_get_size (blob),
+			                                         password, NULL);
 		else
 			g_warning ("%s: unknown private key password scheme", __func__);
 	}
@@ -2225,7 +2241,7 @@ need_secrets_tls (NMSetting8021x *self,
 {
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 	NMSetting8021xCKScheme scheme;
-	const GByteArray *blob = NULL;
+	GBytes *blob = NULL;
 	const char *path = NULL;
 
 	if (phase2) {
@@ -2272,7 +2288,7 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 			                     _("property is missing"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 			return FALSE;
-		} else if (!priv->phase2_client_cert->len) {
+		} else if (!g_bytes_get_size (priv->phase2_client_cert)) {
 			g_set_error_literal (error,
 			                     NM_SETTING_802_1X_ERROR,
 			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -2289,7 +2305,7 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 			                     _("property is missing"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
 			return FALSE;
-		} else if (!priv->phase2_private_key->len) {
+		} else if (!g_bytes_get_size (priv->phase2_private_key)) {
 			g_set_error_literal (error,
 			                     NM_SETTING_802_1X_ERROR,
 			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -2299,20 +2315,9 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 		}
 
 		/* If the private key is PKCS#12, check that it matches the client cert */
-		if (crypto_is_pkcs12_data (priv->phase2_private_key)) {
-			if (priv->phase2_private_key->len != priv->phase2_client_cert->len) {
-				g_set_error (error,
-				             NM_SETTING_802_1X_ERROR,
-				             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-				             _("has to match '%s' property for PKCS#12"),
-				             NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
-				return FALSE;
-			}
-
-			if (memcmp (priv->phase2_private_key->data,
-			            priv->phase2_client_cert->data,
-			            priv->phase2_private_key->len)) {
+		if (crypto_is_pkcs12_data (g_bytes_get_data (priv->phase2_private_key, NULL),
+		                           g_bytes_get_size (priv->phase2_private_key))) {
+			if (!g_bytes_equal (priv->phase2_private_key, priv->phase2_client_cert)) {
 				g_set_error (error,
 				             NM_SETTING_802_1X_ERROR,
 				             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -2330,7 +2335,7 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 			                     _("property is missing"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_CLIENT_CERT);
 			return FALSE;
-		} else if (!priv->client_cert->len) {
+		} else if (!g_bytes_get_size (priv->client_cert)) {
 			g_set_error_literal (error,
 			                     NM_SETTING_802_1X_ERROR,
 			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -2347,7 +2352,7 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 			                     _("property is missing"));
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_PRIVATE_KEY);
 			return FALSE;
-		} else if (!priv->private_key->len) {
+		} else if (!g_bytes_get_size (priv->private_key)) {
 			g_set_error_literal (error,
 			                     NM_SETTING_802_1X_ERROR,
 			                     NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -2357,20 +2362,9 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 		}
 
 		/* If the private key is PKCS#12, check that it matches the client cert */
-		if (crypto_is_pkcs12_data (priv->private_key)) {
-			if (priv->private_key->len != priv->client_cert->len) {
-				g_set_error (error,
-				             NM_SETTING_802_1X_ERROR,
-				             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
-				             _("has to match '%s' property for PKCS#12"),
-				             NM_SETTING_802_1X_PRIVATE_KEY);
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, NM_SETTING_802_1X_CLIENT_CERT);
-				return FALSE;
-			}
-
-			if (memcmp (priv->private_key->data,
-			            priv->client_cert->data,
-			            priv->private_key->len)) {
+		if (crypto_is_pkcs12_data (g_bytes_get_data (priv->private_key, NULL),
+		                           g_bytes_get_size (priv->private_key))) {
+			if (!g_bytes_equal (priv->private_key, priv->client_cert)) {
 				g_set_error (error,
 				             NM_SETTING_802_1X_ERROR,
 				             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -2590,21 +2584,25 @@ need_secrets (NMSetting *setting)
 }
 
 static gboolean
-verify_cert (GByteArray *array, const char *prop_name, GError **error)
+verify_cert (GBytes *bytes, const char *prop_name, GError **error)
 {
-	if (!array)
+	gconstpointer data;
+	gsize length;
+
+	if (!bytes)
 		return TRUE;
 
-	switch (get_cert_scheme (array)) {
+	switch (get_cert_scheme (bytes)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
 		return TRUE;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		/* For path-based schemes, verify that the path is zero-terminated */
-		if (array->data[array->len - 1] == '\0') {
+		data = g_bytes_get_data (bytes, &length);
+		if (((const guchar *)data)[length - 1] == '\0') {
 			/* And ensure it's UTF-8 valid too so we can pass it through
 			 * D-Bus and stuff like that.
 			 */
-			if (g_utf8_validate ((const char *) (array->data + strlen (SCHEME_PATH)), -1, NULL))
+			if (g_utf8_validate ((const char *)data + strlen (SCHEME_PATH), -1, NULL))
 				return TRUE;
 		}
 		break;
@@ -2766,7 +2764,7 @@ finalize (GObject *object)
 	g_free (priv->phase2_subject_match);
 	g_free (priv->password);
 	if (priv->password_raw)
-		g_byte_array_free (priv->password_raw, TRUE);
+		g_bytes_unref (priv->password_raw);
 	g_free (priv->pin);
 
 	g_slist_free_full (priv->eap, g_free);
@@ -2774,39 +2772,37 @@ finalize (GObject *object)
 	g_slist_free_full (priv->phase2_altsubject_matches, g_free);
 
 	if (priv->ca_cert)
-		g_byte_array_free (priv->ca_cert, TRUE);
+		g_bytes_unref (priv->ca_cert);
 	if (priv->client_cert)
-		g_byte_array_free (priv->client_cert, TRUE);
+		g_bytes_unref (priv->client_cert);
 	if (priv->private_key)
-		g_byte_array_free (priv->private_key, TRUE);
+		g_bytes_unref (priv->private_key);
 	g_free (priv->private_key_password);
 	if (priv->phase2_ca_cert)
-		g_byte_array_free (priv->phase2_ca_cert, TRUE);
+		g_bytes_unref (priv->phase2_ca_cert);
 	if (priv->phase2_client_cert)
-		g_byte_array_free (priv->phase2_client_cert, TRUE);
+		g_bytes_unref (priv->phase2_client_cert);
 	if (priv->phase2_private_key)
-		g_byte_array_free (priv->phase2_private_key, TRUE);
+		g_bytes_unref (priv->phase2_private_key);
 	g_free (priv->phase2_private_key_password);
 
 	G_OBJECT_CLASS (nm_setting_802_1x_parent_class)->finalize (object);
 }
 
-static GByteArray *
+static GBytes *
 set_cert_prop_helper (const GValue *value, const char *prop_name, GError **error)
 {
 	gboolean valid;
-	GByteArray *data = NULL;
+	GBytes *bytes = NULL;
 
-	data = g_value_dup_boxed (value);
+	bytes = g_value_dup_boxed (value);
 	/* Verify the new data */
-	if (data) {
-		valid = verify_cert (data, prop_name, error);
-		if (!valid) {
-			g_byte_array_free (data, TRUE);
-			data = NULL;
-		}
+	if (bytes) {
+		valid = verify_cert (bytes, prop_name, error);
+		if (!valid)
+			g_clear_pointer (&bytes, g_bytes_unref);
 	}
-	return data;
+	return bytes;
 }
 
 static void
@@ -2820,7 +2816,7 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_EAP:
 		g_slist_free_full (priv->eap, g_free);
-		priv->eap = g_value_dup_boxed (value);
+		priv->eap = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_IDENTITY:
 		g_free (priv->identity);
@@ -2835,10 +2831,8 @@ set_property (GObject *object, guint prop_id,
 		priv->pac_file = g_value_dup_string (value);
 		break;
 	case PROP_CA_CERT:
-		if (priv->ca_cert) {
-			g_byte_array_free (priv->ca_cert, TRUE);
-			priv->ca_cert = NULL;
-		}
+		if (priv->ca_cert)
+			g_bytes_unref (priv->ca_cert);
 		priv->ca_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_CA_CERT, &error);
 		if (error) {
 			g_warning ("Error setting certificate (invalid data): (%d) %s",
@@ -2856,13 +2850,11 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ALTSUBJECT_MATCHES:
 		g_slist_free_full (priv->altsubject_matches, g_free);
-		priv->altsubject_matches = g_value_dup_boxed (value);
+		priv->altsubject_matches = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_CLIENT_CERT:
-		if (priv->client_cert) {
-			g_byte_array_free (priv->client_cert, TRUE);
-			priv->client_cert = NULL;
-		}
+		if (priv->client_cert)
+			g_bytes_unref (priv->client_cert);
 		priv->client_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_CLIENT_CERT, &error);
 		if (error) {
 			g_warning ("Error setting certificate (invalid data): (%d) %s",
@@ -2891,10 +2883,8 @@ set_property (GObject *object, guint prop_id,
 		priv->phase2_autheap = g_value_dup_string (value);
 		break;
 	case PROP_PHASE2_CA_CERT:
-		if (priv->phase2_ca_cert) {
-			g_byte_array_free (priv->phase2_ca_cert, TRUE);
-			priv->phase2_ca_cert = NULL;
-		}
+		if (priv->phase2_ca_cert)
+			g_bytes_unref (priv->phase2_ca_cert);
 		priv->phase2_ca_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_PHASE2_CA_CERT, &error);
 		if (error) {
 			g_warning ("Error setting certificate (invalid data): (%d) %s",
@@ -2912,13 +2902,11 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_ALTSUBJECT_MATCHES:
 		g_slist_free_full (priv->phase2_altsubject_matches, g_free);
-		priv->phase2_altsubject_matches = g_value_dup_boxed (value);
+		priv->phase2_altsubject_matches = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
-		if (priv->phase2_client_cert) {
-			g_byte_array_free (priv->phase2_client_cert, TRUE);
-			priv->phase2_client_cert = NULL;
-		}
+		if (priv->phase2_client_cert)
+			g_bytes_unref (priv->phase2_client_cert);
 		priv->phase2_client_cert = set_cert_prop_helper (value, NM_SETTING_802_1X_PHASE2_CLIENT_CERT, &error);
 		if (error) {
 			g_warning ("Error setting certificate (invalid data): (%d) %s",
@@ -2935,17 +2923,15 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PASSWORD_RAW:
 		if (priv->password_raw)
-			g_byte_array_free (priv->password_raw, TRUE);
+			g_bytes_unref (priv->password_raw);
 		priv->password_raw = g_value_dup_boxed (value);
 		break;
 	case PROP_PASSWORD_RAW_FLAGS:
 		priv->password_raw_flags = g_value_get_uint (value);
 		break;
 	case PROP_PRIVATE_KEY:
-		if (priv->private_key) {
-			g_byte_array_free (priv->private_key, TRUE);
-			priv->private_key = NULL;
-		}
+		if (priv->private_key)
+			g_bytes_unref (priv->private_key);
 		priv->private_key = set_cert_prop_helper (value, NM_SETTING_802_1X_PRIVATE_KEY, &error);
 		if (error) {
 			g_warning ("Error setting private key (invalid data): (%d) %s",
@@ -2961,10 +2947,8 @@ set_property (GObject *object, guint prop_id,
 		priv->private_key_password_flags = g_value_get_uint (value);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY:
-		if (priv->phase2_private_key) {
-			g_byte_array_free (priv->phase2_private_key, TRUE);
-			priv->phase2_private_key = NULL;
-		}
+		if (priv->phase2_private_key)
+			g_bytes_unref (priv->phase2_private_key);
 		priv->phase2_private_key = set_cert_prop_helper (value, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, &error);
 		if (error) {
 			g_warning ("Error setting private key (invalid data): (%d) %s",
@@ -3004,7 +2988,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_EAP:
-		g_value_set_boxed (value, priv->eap);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->eap));
 		break;
 	case PROP_IDENTITY:
 		g_value_set_string (value, priv->identity);
@@ -3025,7 +3009,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->subject_match);
 		break;
 	case PROP_ALTSUBJECT_MATCHES:
-		g_value_set_boxed (value, priv->altsubject_matches);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->altsubject_matches));
 		break;
 	case PROP_CLIENT_CERT:
 		g_value_set_boxed (value, priv->client_cert);
@@ -3055,7 +3039,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->phase2_subject_match);
 		break;
 	case PROP_PHASE2_ALTSUBJECT_MATCHES:
-		g_value_set_boxed (value, priv->phase2_altsubject_matches);
+		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->phase2_altsubject_matches));
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		g_value_set_boxed (value, priv->phase2_client_cert);
@@ -3135,10 +3119,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_EAP,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_EAP, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_EAP, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:identity:
@@ -3199,10 +3183,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CA_CERT,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_CA_CERT, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_CA_CERT, "", "",
+		                     G_TYPE_BYTES,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_CA_CERT,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_bytes_to_dbus,
+	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:ca-path:
@@ -3241,10 +3229,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ALTSUBJECT_MATCHES,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_ALTSUBJECT_MATCHES, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_ALTSUBJECT_MATCHES, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:client-cert:
@@ -3264,10 +3252,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CLIENT_CERT,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_CLIENT_CERT, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_CLIENT_CERT, "", "",
+		                     G_TYPE_BYTES,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_CLIENT_CERT,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_bytes_to_dbus,
+	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:phase1-peapver:
@@ -3373,10 +3365,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_CA_CERT,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_CA_CERT, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_PHASE2_CA_CERT, "", "",
+		                     G_TYPE_BYTES,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PHASE2_CA_CERT,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_bytes_to_dbus,
+	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:phase2-ca-path:
@@ -3417,10 +3413,10 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_ALTSUBJECT_MATCHES,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES, "", "",
-		                             DBUS_TYPE_G_LIST_OF_STRING,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-client-cert:
@@ -3443,10 +3439,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_CLIENT_CERT,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_CLIENT_CERT, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_PHASE2_CLIENT_CERT, "", "",
+		                     G_TYPE_BYTES,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_bytes_to_dbus,
+	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:password:
@@ -3487,11 +3487,15 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD_RAW,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PASSWORD_RAW, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             NM_SETTING_PARAM_SECRET |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_PASSWORD_RAW, "", "",
+		                     G_TYPE_BYTES,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_SECRET |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PASSWORD_RAW,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_bytes_to_dbus,
+	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:password-raw-flags:
@@ -3539,10 +3543,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIVATE_KEY,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PRIVATE_KEY, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_PRIVATE_KEY, "", "",
+		                     G_TYPE_BYTES,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PRIVATE_KEY,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_bytes_to_dbus,
+	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:private-key-password:
@@ -3604,10 +3612,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_PRIVATE_KEY,
-		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, "", "",
-		                             DBUS_TYPE_G_UCHAR_ARRAY,
-		                             G_PARAM_READWRITE |
-		                             G_PARAM_STATIC_STRINGS));
+		 g_param_spec_boxed (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY, "", "",
+		                     G_TYPE_BYTES,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      _nm_utils_bytes_to_dbus,
+	                                      _nm_utils_bytes_from_dbus);
 
 	/**
 	 * NMSetting8021x:phase2-private-key-password:

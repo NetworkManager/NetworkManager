@@ -256,12 +256,11 @@ validate_permissions_type (GHashTable *hash, GError **error)
 	if (s_con) {
 		permissions = g_hash_table_lookup (s_con, NM_SETTING_CONNECTION_PERMISSIONS);
 		if (permissions) {
-			if (   !G_VALUE_HOLDS (permissions, G_TYPE_STRV)
-			    && !G_VALUE_HOLDS (permissions, DBUS_TYPE_G_LIST_OF_STRING)) {
+			if (!G_VALUE_HOLDS (permissions, G_TYPE_STRV)) {
 				g_set_error_literal (error,
 				                     NM_SETTING_ERROR,
 				                     NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
-				                     "Wrong permissions property type; should be a list of strings.");
+				                     "Wrong permissions property type; should be an array of strings.");
 				return FALSE;
 			}
 		}

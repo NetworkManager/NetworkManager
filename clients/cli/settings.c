@@ -663,19 +663,22 @@ wep_key_type_to_string (NMWepKeyType type)
 }
 
 static char *
-byte_array_to_string (const GByteArray *array)
+bytes_to_string (GBytes *bytes)
 {
+	const guint8 *data;
+	gsize len;
 	GString *cert = NULL;
 	int i;
 
-	if (array && array->len > 0)
-		cert = g_string_new (NULL);
+	if (!bytes)
+		return NULL;
+	data = g_bytes_get_data (bytes, &len);
 
-	for (i = 0; array && i < array->len; i++) {
-		g_string_append_printf (cert, "%02X", array->data[i]);
-	}
+	cert = g_string_new (NULL);
+	for (i = 0; i < len; i++)
+		g_string_append_printf (cert, "%02X", data[i]);
 
-	return cert ? g_string_free (cert, FALSE) : NULL;
+	return g_string_free (cert, FALSE);
 }
 
 static char *
@@ -789,9 +792,6 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		GValue val = G_VALUE_INIT; \
 		g_value_init (&val, G_TYPE_STRING); \
 		g_object_get_property (G_OBJECT (setting), property_name, &val); \
-		/* Getters return allocated values, and returning the string \
-		 * the GValue copied from the object without unsetting the \
-		 * GValue fulfills that requirement. */ \
 		s = g_value_dup_string (&val); \
 		g_value_unset (&val); \
 		return s; \
@@ -808,22 +808,6 @@ vpn_data_item (const char *key, const char *value, gpointer user_data)
 		v = g_value_get_uint (&val); \
 		g_value_unset (&val); \
 		return secret_flags_to_string (v); \
-	}
-
-#define DEFINE_HWADDR_GETTER(func_name, property_name) \
-	static char * \
-	func_name (NMSetting *setting) \
-	{ \
-		GValue val = G_VALUE_INIT; \
-		GArray *array; \
-		char *hwaddr = NULL; \
-		g_value_init (&val, DBUS_TYPE_G_UCHAR_ARRAY); \
-		g_object_get_property (G_OBJECT (setting), property_name, &val); \
-		array = g_value_get_boxed (&val); \
-		if (array && array->len) \
-			hwaddr = nm_utils_hwaddr_ntoa (array->data, array->len); \
-		g_value_unset (&val); \
-		return hwaddr; \
 	}
 
 /* --- NM_SETTING_802_1X_SETTING_NAME property get functions --- */
@@ -862,7 +846,7 @@ nmc_property_802_1X_get_ca_cert (NMSetting *setting)
 
 	scheme = nm_setting_802_1x_get_ca_cert_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		ca_cert_str = byte_array_to_string (nm_setting_802_1x_get_ca_cert_blob (s_8021X));
+		ca_cert_str = bytes_to_string (nm_setting_802_1x_get_ca_cert_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		ca_cert_str = g_strdup (nm_setting_802_1x_get_ca_cert_path (s_8021X));
 
@@ -878,7 +862,7 @@ nmc_property_802_1X_get_client_cert (NMSetting *setting)
 
 	scheme = nm_setting_802_1x_get_client_cert_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		client_cert_str = byte_array_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
+		client_cert_str = bytes_to_string (nm_setting_802_1x_get_client_cert_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		client_cert_str = g_strdup (nm_setting_802_1x_get_client_cert_path (s_8021X));
 
@@ -894,7 +878,7 @@ nmc_property_802_1X_get_phase2_ca_cert (NMSetting *setting)
 
 	scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_ca_cert_str = byte_array_to_string (nm_setting_802_1x_get_phase2_ca_cert_blob (s_8021X));
+		phase2_ca_cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_ca_cert_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		phase2_ca_cert_str = g_strdup (nm_setting_802_1x_get_phase2_ca_cert_path (s_8021X));
 
@@ -910,7 +894,7 @@ nmc_property_802_1X_get_phase2_client_cert (NMSetting *setting)
 
 	scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_client_cert_str = byte_array_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
+		phase2_client_cert_str = bytes_to_string (nm_setting_802_1x_get_phase2_client_cert_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		phase2_client_cert_str = g_strdup (nm_setting_802_1x_get_phase2_client_cert_path (s_8021X));
 
@@ -921,7 +905,7 @@ static char *
 nmc_property_802_1X_get_password_raw (NMSetting *setting)
 {
 	NMSetting8021x *s_8021X = NM_SETTING_802_1X (setting);
-	return byte_array_to_string (nm_setting_802_1x_get_password_raw (s_8021X));
+	return bytes_to_string (nm_setting_802_1x_get_password_raw (s_8021X));
 }
 
 static char *
@@ -933,7 +917,7 @@ nmc_property_802_1X_get_private_key (NMSetting *setting)
 
 	scheme = nm_setting_802_1x_get_private_key_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		private_key_str = byte_array_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
+		private_key_str = bytes_to_string (nm_setting_802_1x_get_private_key_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		private_key_str = g_strdup (nm_setting_802_1x_get_private_key_path (s_8021X));
 
@@ -949,7 +933,7 @@ nmc_property_802_1X_get_phase2_private_key (NMSetting *setting)
 
 	scheme = nm_setting_802_1x_get_phase2_private_key_scheme (s_8021X);
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-		phase2_private_key_str = byte_array_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
+		phase2_private_key_str = bytes_to_string (nm_setting_802_1x_get_phase2_private_key_blob (s_8021X));
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
 		phase2_private_key_str = g_strdup (nm_setting_802_1x_get_phase2_private_key_path (s_8021X));
 
@@ -966,7 +950,7 @@ DEFINE_GETTER (nmc_property_adsl_get_vpi, NM_SETTING_ADSL_VPI)
 DEFINE_GETTER (nmc_property_adsl_get_vci, NM_SETTING_ADSL_VCI)
 
 /* --- NM_SETTING_BLUETOOTH_SETTING_NAME property get functions --- */
-DEFINE_HWADDR_GETTER (nmc_property_bluetooth_get_bdaddr, NM_SETTING_BLUETOOTH_BDADDR)
+DEFINE_GETTER (nmc_property_bluetooth_get_bdaddr, NM_SETTING_BLUETOOTH_BDADDR)
 DEFINE_GETTER (nmc_property_bluetooth_get_type, NM_SETTING_BLUETOOTH_TYPE)
 
 static char *
@@ -989,7 +973,7 @@ nmc_property_bond_get_options (NMSetting *setting)
 }
 
 /* --- NM_SETTING_BRIDGE_SETTING_NAME property get functions --- */
-DEFINE_HWADDR_GETTER (nmc_property_bridge_get_mac_address, NM_SETTING_BRIDGE_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_bridge_get_mac_address, NM_SETTING_BRIDGE_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_bridge_get_stp, NM_SETTING_BRIDGE_STP)
 DEFINE_GETTER (nmc_property_bridge_get_priority, NM_SETTING_BRIDGE_PRIORITY)
 DEFINE_GETTER (nmc_property_bridge_get_forward_delay, NM_SETTING_BRIDGE_FORWARD_DELAY)
@@ -1181,7 +1165,7 @@ DEFINE_SECRET_FLAGS_GETTER (nmc_property_gsm_get_pin_flags, NM_SETTING_GSM_PIN_F
 DEFINE_GETTER (nmc_property_gsm_get_home_only, NM_SETTING_GSM_HOME_ONLY)
 
 /* --- NM_SETTING_INFINIBAND_SETTING_NAME property get functions --- */
-DEFINE_HWADDR_GETTER (nmc_property_ib_get_mac_address, NM_SETTING_INFINIBAND_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_ib_get_mac_address, NM_SETTING_INFINIBAND_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_ib_get_transport_mode, NM_SETTING_INFINIBAND_TRANSPORT_MODE)
 
 static char *
@@ -1216,8 +1200,82 @@ DEFINE_GETTER (nmc_property_ib_get_parent, NM_SETTING_INFINIBAND_PARENT)
 DEFINE_GETTER (nmc_property_ipv4_get_method, NM_SETTING_IP4_CONFIG_METHOD)
 DEFINE_GETTER (nmc_property_ipv4_get_dns, NM_SETTING_IP4_CONFIG_DNS)
 DEFINE_GETTER (nmc_property_ipv4_get_dns_search, NM_SETTING_IP4_CONFIG_DNS_SEARCH)
-DEFINE_GETTER (nmc_property_ipv4_get_addresses, NM_SETTING_IP4_CONFIG_ADDRESSES)
-DEFINE_GETTER (nmc_property_ipv4_get_routes, NM_SETTING_IP4_CONFIG_ROUTES)
+
+static char *
+nmc_property_ipv4_get_addresses (NMSetting *setting)
+{
+	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (setting);
+	GString *printable;
+	guint32 num_addresses, i;
+	NMIP4Address *addr;
+	char buf[INET_ADDRSTRLEN];
+
+	printable = g_string_new (NULL);
+
+	num_addresses = nm_setting_ip4_config_get_num_addresses (s_ip4);
+	for (i = 0; i < num_addresses; i++) {
+		addr = nm_setting_ip4_config_get_address (s_ip4, i);
+
+		if (printable->len > 0)
+			g_string_append (printable, "; ");
+
+		g_string_append (printable, "{ ");
+
+		nm_utils_inet4_ntop (nm_ip4_address_get_address (addr), buf);
+		g_string_append_printf (printable, "ip = %s", buf);
+
+		g_string_append_printf (printable, "/%u", nm_ip4_address_get_prefix (addr));
+
+		if (nm_ip4_address_get_gateway (addr)) {
+			nm_utils_inet4_ntop (nm_ip4_address_get_gateway (addr), buf);
+			g_string_append_printf (printable, ", gw = %s", buf);
+		}
+
+		g_string_append (printable, " }");
+	}
+
+	return g_string_free (printable, FALSE);
+}
+
+static char *
+nmc_property_ipv4_get_routes (NMSetting *setting)
+{
+	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (setting);
+	GString *printable;
+	guint32 num_routes, i;
+	NMIP4Route *route;
+	char buf[INET_ADDRSTRLEN];
+
+	printable = g_string_new (NULL);
+
+	num_routes = nm_setting_ip4_config_get_num_routes (s_ip4);
+	for (i = 0; i < num_routes; i++) {
+		route = nm_setting_ip4_config_get_route (s_ip4, i);
+
+		if (printable->len > 0)
+			g_string_append (printable, "; ");
+
+		g_string_append (printable, "{ ");
+
+		nm_utils_inet4_ntop (nm_ip4_route_get_dest (route), buf);
+		g_string_append_printf (printable, "ip = %s", buf);
+
+		g_string_append_printf (printable, "/%u", nm_ip4_route_get_prefix (route));
+
+		if (nm_ip4_route_get_next_hop (route)) {
+			nm_utils_inet4_ntop (nm_ip4_route_get_next_hop (route), buf);
+			g_string_append_printf (printable, ", nh = %s", buf);
+		}
+
+		if (nm_ip4_route_get_metric (route))
+			g_string_append_printf (printable, ", mt = %u", nm_ip4_route_get_metric (route));
+
+		g_string_append (printable, " }");
+	}
+
+	return g_string_free (printable, FALSE);
+}
+
 DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_routes, NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES)
 DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_dns, NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS)
 DEFINE_GETTER (nmc_property_ipv4_get_dhcp_client_id, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID)
@@ -1230,8 +1288,82 @@ DEFINE_GETTER (nmc_property_ipv4_get_may_fail, NM_SETTING_IP4_CONFIG_MAY_FAIL)
 DEFINE_GETTER (nmc_property_ipv6_get_method, NM_SETTING_IP6_CONFIG_METHOD)
 DEFINE_GETTER (nmc_property_ipv6_get_dns, NM_SETTING_IP6_CONFIG_DNS)
 DEFINE_GETTER (nmc_property_ipv6_get_dns_search, NM_SETTING_IP6_CONFIG_DNS_SEARCH)
-DEFINE_GETTER (nmc_property_ipv6_get_addresses, NM_SETTING_IP6_CONFIG_ADDRESSES)
-DEFINE_GETTER (nmc_property_ipv6_get_routes, NM_SETTING_IP6_CONFIG_ROUTES)
+
+static char *
+nmc_property_ipv6_get_addresses (NMSetting *setting)
+{
+	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
+	GString *printable;
+	guint32 num_addresses, i;
+	NMIP6Address *addr;
+	char buf[INET6_ADDRSTRLEN];
+
+	printable = g_string_new (NULL);
+
+	num_addresses = nm_setting_ip6_config_get_num_addresses (s_ip6);
+	for (i = 0; i < num_addresses; i++) {
+		addr = nm_setting_ip6_config_get_address (s_ip6, i);
+
+		if (printable->len > 0)
+			g_string_append (printable, "; ");
+
+		g_string_append (printable, "{ ");
+
+		nm_utils_inet6_ntop (nm_ip6_address_get_address (addr), buf);
+		g_string_append_printf (printable, "ip = %s", buf);
+
+		g_string_append_printf (printable, "/%u", nm_ip6_address_get_prefix (addr));
+
+		if (nm_ip6_address_get_gateway (addr)) {
+			nm_utils_inet6_ntop (nm_ip6_address_get_gateway (addr), buf);
+			g_string_append_printf (printable, ", gw = %s", buf);
+		}
+
+		g_string_append (printable, " }");
+	}
+
+	return g_string_free (printable, FALSE);
+}
+
+static char *
+nmc_property_ipv6_get_routes (NMSetting *setting)
+{
+	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
+	GString *printable;
+	guint32 num_routes, i;
+	NMIP6Route *route;
+	char buf[INET6_ADDRSTRLEN];
+
+	printable = g_string_new (NULL);
+
+	num_routes = nm_setting_ip6_config_get_num_routes (s_ip6);
+	for (i = 0; i < num_routes; i++) {
+		route = nm_setting_ip6_config_get_route (s_ip6, i);
+
+		if (printable->len > 0)
+			g_string_append (printable, "; ");
+
+		g_string_append (printable, "{ ");
+
+		nm_utils_inet6_ntop (nm_ip6_route_get_dest (route), buf);
+		g_string_append_printf (printable, "ip = %s", buf);
+
+		g_string_append_printf (printable, "/%u", nm_ip6_route_get_prefix (route));
+
+		if (nm_ip6_route_get_next_hop (route)) {
+			nm_utils_inet6_ntop (nm_ip6_route_get_next_hop (route), buf);
+			g_string_append_printf (printable, ", nh = %s", buf);
+		}
+
+		if (nm_ip6_route_get_metric (route))
+			g_string_append_printf (printable, ", mt = %u", nm_ip6_route_get_metric (route));
+
+		g_string_append (printable, " }");
+	}
+
+	return g_string_free (printable, FALSE);
+}
+
 DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_routes, NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES)
 DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_dns, NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS)
 DEFINE_GETTER (nmc_property_ipv6_get_never_default, NM_SETTING_IP6_CONFIG_NEVER_DEFAULT)
@@ -1247,18 +1379,20 @@ nmc_property_ipv6_get_ip6_privacy (NMSetting *setting)
 
 /* --- NM_SETTING_OLPC_MESH_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_olpc_get_channel, NM_SETTING_OLPC_MESH_CHANNEL)
-DEFINE_HWADDR_GETTER (nmc_property_olpc_get_anycast_address, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS)
+DEFINE_GETTER (nmc_property_olpc_get_anycast_address, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS)
 
 static char *
 nmc_property_olpc_get_ssid (NMSetting *setting)
 {
 	NMSettingOlpcMesh *s_olpc_mesh = NM_SETTING_OLPC_MESH (setting);
-	const GByteArray *ssid;
+	GBytes *ssid;
 	char *ssid_str = NULL;
 
 	ssid = nm_setting_olpc_mesh_get_ssid (s_olpc_mesh);
-	if (ssid)
-		ssid_str = nm_utils_ssid_to_utf8 (ssid);
+	if (ssid) {
+		ssid_str = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+		                                  g_bytes_get_size (ssid));
+	}
 
 	return ssid_str;
 }
@@ -1352,15 +1486,15 @@ nmc_property_vpn_get_secrets (NMSetting *setting)
 
 /* --- NM_SETTING_WIMAX_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_wimax_get_network_name, NM_SETTING_WIMAX_NETWORK_NAME)
-DEFINE_HWADDR_GETTER (nmc_property_wimax_get_mac_address, NM_SETTING_WIMAX_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wimax_get_mac_address, NM_SETTING_WIMAX_MAC_ADDRESS)
 
 /* --- NM_SETTING_WIRED_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_wired_get_port, NM_SETTING_WIRED_PORT)
 DEFINE_GETTER (nmc_property_wired_get_speed, NM_SETTING_WIRED_SPEED)
 DEFINE_GETTER (nmc_property_wired_get_duplex, NM_SETTING_WIRED_DUPLEX)
 DEFINE_GETTER (nmc_property_wired_get_auto_negotiate, NM_SETTING_WIRED_AUTO_NEGOTIATE)
-DEFINE_HWADDR_GETTER (nmc_property_wired_get_mac_address, NM_SETTING_WIRED_MAC_ADDRESS)
-DEFINE_HWADDR_GETTER (nmc_property_wired_get_cloned_mac_address, NM_SETTING_WIRED_CLONED_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wired_get_mac_address, NM_SETTING_WIRED_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wired_get_cloned_mac_address, NM_SETTING_WIRED_CLONED_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_wired_get_mac_address_blacklist, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST)
 DEFINE_GETTER (nmc_property_wired_get_s390_subchannels, NM_SETTING_WIRED_S390_SUBCHANNELS)
 DEFINE_GETTER (nmc_property_wired_get_s390_nettype, NM_SETTING_WIRED_S390_NETTYPE)
@@ -1383,11 +1517,11 @@ nmc_property_wired_get_mtu (NMSetting *setting)
 DEFINE_GETTER (nmc_property_wireless_get_mode, NM_SETTING_WIRELESS_MODE)
 DEFINE_GETTER (nmc_property_wireless_get_band, NM_SETTING_WIRELESS_BAND)
 DEFINE_GETTER (nmc_property_wireless_get_channel, NM_SETTING_WIRELESS_CHANNEL)
-DEFINE_HWADDR_GETTER (nmc_property_wireless_get_bssid, NM_SETTING_WIRELESS_BSSID)
+DEFINE_GETTER (nmc_property_wireless_get_bssid, NM_SETTING_WIRELESS_BSSID)
 DEFINE_GETTER (nmc_property_wireless_get_rate, NM_SETTING_WIRELESS_RATE)
 DEFINE_GETTER (nmc_property_wireless_get_tx_power, NM_SETTING_WIRELESS_TX_POWER)
-DEFINE_HWADDR_GETTER (nmc_property_wireless_get_mac_address, NM_SETTING_WIRELESS_MAC_ADDRESS)
-DEFINE_HWADDR_GETTER (nmc_property_wireless_get_cloned_mac_address, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wireless_get_mac_address, NM_SETTING_WIRELESS_MAC_ADDRESS)
+DEFINE_GETTER (nmc_property_wireless_get_cloned_mac_address, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS)
 DEFINE_GETTER (nmc_property_wireless_get_mac_address_blacklist, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST)
 DEFINE_GETTER (nmc_property_wireless_get_seen_bssids, NM_SETTING_WIRELESS_SEEN_BSSIDS)
 DEFINE_GETTER (nmc_property_wireless_get_hidden, NM_SETTING_WIRELESS_HIDDEN)
@@ -1396,12 +1530,14 @@ static char *
 nmc_property_wireless_get_ssid (NMSetting *setting)
 {
 	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
-	const GByteArray *ssid;
+	GBytes *ssid;
 	char *ssid_str = NULL;
 
 	ssid = nm_setting_wireless_get_ssid (s_wireless);
-	if (ssid)
-		ssid_str = nm_utils_ssid_to_utf8 (ssid);
+	if (ssid) {
+		ssid_str = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+		                                  g_bytes_get_size (ssid));
+	}
 
 	return ssid_str;
 }
@@ -2061,18 +2197,14 @@ nmc_property_set_ssid (NMSetting *setting, const char *prop, const char *val, GE
 static gboolean
 nmc_property_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	GByteArray *array;
-
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	array = nm_utils_hwaddr_atoba (val, ETH_ALEN);
-	if (!array) {
+	if (!nm_utils_hwaddr_valid (val, ETH_ALEN)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid Ethernet MAC"), val);
 		return FALSE;
 	}
 
-	g_object_set (setting, prop, array, NULL);
-	g_byte_array_free (array, TRUE);
+	g_object_set (setting, prop, val, NULL);
 	return TRUE;
 }
 
@@ -2830,18 +2962,14 @@ nmc_property_bond_allowed_options (NMSetting *setting, const char *prop)
 static gboolean
 nmc_property_ib_set_mac (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	GByteArray *array;
-
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	array = nm_utils_hwaddr_atoba (val, INFINIBAND_ALEN);
-	if (!array) {
+	if (!nm_utils_hwaddr_valid (val, INFINIBAND_ALEN)) {
 		g_set_error (error, 1, 0, _("'%s' is not a valid InfiniBand MAC"), val);
 		return FALSE;
 	}
 
-	g_object_set (setting, prop, array, NULL);
-	g_byte_array_free (array, TRUE);
+	g_object_set (setting, prop, val, NULL);
 	return TRUE;
 }
 
@@ -2909,19 +3037,20 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_ipv4_allowed_method, ipv4_valid_methods)
 static gboolean
 nmc_property_ipv4_set_dns (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	char **strv = NULL, **iter;
+	char **strv = NULL, **iter, *addr;
 	guint32 ip4_addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	strv = nmc_strsplit_set (val, " \t,", 0);
 	for (iter = strv; iter && *iter; iter++) {
-		if (inet_pton (AF_INET, g_strstrip (*iter), &ip4_addr) < 1) {
-			g_set_error (error, 1, 0, _("invalid IPv4 address '%s'"), *iter);
+		addr = g_strstrip (*iter);
+		if (inet_pton (AF_INET, addr, &ip4_addr) < 1) {
+			g_set_error (error, 1, 0, _("invalid IPv4 address '%s'"), addr);
 			g_strfreev (strv);
 			return FALSE;
 		}
-		nm_setting_ip4_config_add_dns (NM_SETTING_IP4_CONFIG (setting), ip4_addr);
+		nm_setting_ip4_config_add_dns (NM_SETTING_IP4_CONFIG (setting), addr);
 	}
 	g_strfreev (strv);
 	return TRUE;
@@ -2940,7 +3069,7 @@ _validate_and_remove_ipv4_dns (NMSettingIP4Config *setting,
 		return FALSE;
 	}
 
-	ret = nm_setting_ip4_config_remove_dns_by_value (setting, ip4_addr);
+	ret = nm_setting_ip4_config_remove_dns_by_value (setting, dns);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain DNS server '%s'"), dns);
 	return ret;
@@ -3254,19 +3383,20 @@ DEFINE_ALLOWED_VAL_FUNC (nmc_property_ipv6_allowed_method, ipv6_valid_methods)
 static gboolean
 nmc_property_ipv6_set_dns (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	char **strv = NULL, **iter;
+	char **strv = NULL, **iter, *addr;
 	struct in6_addr ip6_addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	strv = nmc_strsplit_set (val, " \t,", 0);
 	for (iter = strv; iter && *iter; iter++) {
-		if (inet_pton (AF_INET6, g_strstrip (*iter), &ip6_addr) < 1) {
-			g_set_error (error, 1, 0, _("invalid IPv6 address '%s'"), *iter);
+		addr = g_strstrip (*iter);
+		if (inet_pton (AF_INET6, addr, &ip6_addr) < 1) {
+			g_set_error (error, 1, 0, _("invalid IPv6 address '%s'"), addr);
 			g_strfreev (strv);
 			return FALSE;
 		}
-		nm_setting_ip6_config_add_dns (NM_SETTING_IP6_CONFIG (setting), &ip6_addr);
+		nm_setting_ip6_config_add_dns (NM_SETTING_IP6_CONFIG (setting), addr);
 	}
 	g_strfreev (strv);
 	return TRUE;
@@ -3285,7 +3415,7 @@ _validate_and_remove_ipv6_dns (NMSettingIP6Config *setting,
 		return FALSE;
 	}
 
-	ret = nm_setting_ip6_config_remove_dns_by_value (setting, &ip6_addr);
+	ret = nm_setting_ip6_config_remove_dns_by_value (setting, dns);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain DNS server '%s'"), dns);
 	return ret;

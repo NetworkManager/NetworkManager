@@ -42,12 +42,12 @@ gboolean nm_utils_init (GError **error);
 void     nm_utils_deinit (void);
 
 /* SSID helpers */
-gboolean    nm_utils_is_empty_ssid (const guint8 *ssid, int len);
-const char *nm_utils_escape_ssid   (const guint8 *ssid, guint32 len);
-gboolean    nm_utils_same_ssid     (const GByteArray *ssid1,
-                                    const GByteArray *ssid2,
+gboolean    nm_utils_is_empty_ssid (const guint8 *ssid, gsize len);
+const char *nm_utils_escape_ssid   (const guint8 *ssid, gsize len);
+gboolean    nm_utils_same_ssid     (const guint8 *ssid1, gsize len1,
+                                    const guint8 *ssid2, gsize len2,
                                     gboolean ignore_trailing_null);
-char *      nm_utils_ssid_to_utf8  (const GByteArray *ssid);
+char *      nm_utils_ssid_to_utf8  (const guint8 *ssid, gsize len);
 
 GHashTable *nm_utils_gvalue_hash_dup  (GHashTable *hash);
 
@@ -117,11 +117,13 @@ void nm_utils_ip6_dns_to_gvalue (GSList *list, GValue *value);
 char *nm_utils_uuid_generate (void);
 char *nm_utils_uuid_generate_from_string (const char *s);
 
-GByteArray *nm_utils_rsa_key_encrypt (const GByteArray *data,
+GByteArray *nm_utils_rsa_key_encrypt (const guint8 *data,
+                                      gsize len,
                                       const char *in_password,
                                       char **out_password,
                                       GError **error);
-GByteArray *nm_utils_rsa_key_encrypt_aes (const GByteArray *data,
+GByteArray *nm_utils_rsa_key_encrypt_aes (const guint8 *data,
+                                          gsize len,
                                           const char *in_password,
                                           char **out_password,
                                           GError **error);

@@ -312,7 +312,7 @@ test_setting_ip4_config_labels (void)
 	NMIP4Address *addr;
 	const char *label;
 	GPtrArray *addrs;
-	GSList *labels;
+	char **labels;
 	GError *error = NULL;
 
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -331,7 +331,7 @@ test_setting_ip4_config_labels (void)
 	g_assert_no_error (error);
 
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
-	g_assert_cmpstr (label, ==, NULL);
+	g_assert_cmpstr (label, ==, "");
 
 	/* addr 2 */
 	addr = nm_ip4_address_new ();
@@ -351,13 +351,13 @@ test_setting_ip4_config_labels (void)
 	nm_ip4_address_set_address (addr, 0x03030303);
 	nm_ip4_address_set_prefix (addr, 24);
 
-	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, NULL);
+	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "");
 	nm_ip4_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 2);
-	g_assert_cmpstr (label, ==, NULL);
+	g_assert_cmpstr (label, ==, "");
 
 	/* Remove addr 1 and re-verify remaining addresses */
 	nm_setting_ip4_config_remove_address (s_ip4, 0);
@@ -372,7 +372,7 @@ test_setting_ip4_config_labels (void)
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, NULL);
+	g_assert_cmpstr (label, ==, "");
 
 
 	/* Test explicit property assignment */
@@ -388,7 +388,7 @@ test_setting_ip4_config_labels (void)
 	g_object_set (G_OBJECT (s_ip4),
 	              NM_SETTING_IP4_CONFIG_ADDRESSES, addrs,
 	              NULL);
-	g_boxed_free (DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT, addrs);
+	g_ptr_array_unref (addrs);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
@@ -396,18 +396,18 @@ test_setting_ip4_config_labels (void)
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
-	g_assert_cmpstr (label, ==, NULL);
+	g_assert_cmpstr (label, ==, "");
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, NULL);
+	g_assert_cmpstr (label, ==, "");
 
 	/* Setting labels now will leave addresses untouched */
 	g_object_set (G_OBJECT (s_ip4),
 	              "address-labels", labels,
 	              NULL);
-	g_boxed_free (DBUS_TYPE_G_LIST_OF_STRING, labels);
+	g_strfreev (labels);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
@@ -420,132 +420,41 @@ test_setting_ip4_config_labels (void)
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, NULL);
+	g_assert_cmpstr (label, ==, "");
 
 	/* Setting labels to a value that's too short or too long will result in
 	 * the setting not verifying.
 	 */
-	labels = g_slist_append (NULL, "eth0:2");
+	labels = g_strsplit ("eth0:2", ",", -1);
 	g_object_set (G_OBJECT (s_ip4),
 	              "address-labels", labels,
 	              NULL);
+	g_strfreev (labels);
 
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_error (error, NM_SETTING_IP4_CONFIG_ERROR, NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY);
 	g_assert (g_str_has_prefix (error->message, "ipv4.address-labels:"));
 	g_clear_error (&error);
 
-	labels = g_slist_append (labels, "eth0:3");
+	labels = g_strsplit ("eth0:2,eth0:3", ",", -1);
 	g_object_set (G_OBJECT (s_ip4),
 	              "address-labels", labels,
 	              NULL);
+	g_strfreev (labels);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	labels = g_slist_append (labels, "eth0:4");
+	labels = g_strsplit ("eth0:2,eth0:3,eth0:4", ",", -1);
 	g_object_set (G_OBJECT (s_ip4),
 	              "address-labels", labels,
 	              NULL);
+	g_strfreev (labels);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_error (error, NM_SETTING_IP4_CONFIG_ERROR, NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY);
 	g_assert (g_str_has_prefix (error->message, "ipv4.address-labels:"));
 	g_clear_error (&error);
 
-
 	g_object_unref (s_ip4);
-}
-
-#define OLD_DBUS_TYPE_G_IP6_ADDRESS (dbus_g_type_get_struct ("GValueArray", DBUS_TYPE_G_UCHAR_ARRAY, G_TYPE_UINT, G_TYPE_INVALID))
-#define OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS (dbus_g_type_get_collection ("GPtrArray", OLD_DBUS_TYPE_G_IP6_ADDRESS))
-
-/* Test that setting the IPv6 setting's 'addresses' property using the old
- * IPv6 address format still works, i.e. that the GValue transformation function
- * from old->new is working correctly.
- */
-static void
-test_setting_ip6_config_old_address_array (void)
-{
-	NMSettingIP6Config *s_ip6;
-	GPtrArray *addresses, *read_addresses;
-	GValueArray *array, *read_array;
-	GValue element = G_VALUE_INIT, written_value = G_VALUE_INIT, read_value = G_VALUE_INIT;
-	GByteArray *ba;
-	const guint8 addr[16] = { 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11,
-	                          0x11, 0x22, 0x33, 0x44, 0x66, 0x77, 0x88, 0x99 };
-	const guint8 gw[16] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-	guint32 prefix = 56;
-	GValue *read_addr, *read_prefix, *read_gw;
-
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
-	ASSERT (s_ip6 != NULL,
-	        "ip6-old-addr", "error creating IP6 setting");
-
-	g_value_init (&written_value, OLD_DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS);
-
-	addresses = g_ptr_array_new ();
-	array = g_value_array_new (3);
-
-	/* IP address */
-	g_value_init (&element, DBUS_TYPE_G_UCHAR_ARRAY);
-	ba = g_byte_array_new ();
-	g_byte_array_append (ba, &addr[0], sizeof (addr));
-	g_value_take_boxed (&element, ba);
-	g_value_array_append (array, &element);
-	g_value_unset (&element);
-
-	/* Prefix */
-	g_value_init (&element, G_TYPE_UINT);
-	g_value_set_uint (&element, prefix);
-	g_value_array_append (array, &element);
-	g_value_unset (&element);
-
-	g_ptr_array_add (addresses, array);
-	g_value_set_boxed (&written_value, addresses);
-
-	/* Set the address array on the object */
-	g_object_set_property (G_OBJECT (s_ip6), NM_SETTING_IP6_CONFIG_ADDRESSES, &written_value);
-
-	/* Get it back so we can compare it */
-	g_value_init (&read_value, DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS);
-	g_object_get_property (G_OBJECT (s_ip6), NM_SETTING_IP6_CONFIG_ADDRESSES, &read_value);
-
-	ASSERT (G_VALUE_HOLDS (&read_value, DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS),
-	        "ip6-old-addr", "wrong addresses property value type '%s'",
-	        G_VALUE_TYPE_NAME (&read_value));
-
-	read_addresses = (GPtrArray *) g_value_get_boxed (&read_value);
-	ASSERT (read_addresses != NULL,
-	        "ip6-old-addr", "missing addresses on readback");
-	ASSERT (read_addresses->len == 1,
-	        "ip6-old-addr", "expected one address on readback");
-
-	read_array = (GValueArray *) g_ptr_array_index (read_addresses, 0);
-
-	read_addr = g_value_array_get_nth (read_array, 0);
-	ba = g_value_get_boxed (read_addr);
-	ASSERT (ba->len == sizeof (addr),
-	        "ip6-old-addr", "unexpected address item length %d", ba->len);
-	ASSERT (memcmp (ba->data, &addr[0], sizeof (addr)) == 0,
-	        "ip6-old-addr", "unexpected failure comparing addresses");
-
-	read_prefix = g_value_array_get_nth (read_array, 1);
-	ASSERT (g_value_get_uint (read_prefix) == prefix,
-	        "ip6-old-addr", "unexpected failure comparing prefix");
-
-	/* Ensure the gateway is all zeros, which is how the 2-item to 3-item
-	 * conversion happens.
-	 */
-	read_gw = g_value_array_get_nth (read_array, 2);
-	ba = g_value_get_boxed (read_gw);
-	ASSERT (ba->len == sizeof (gw),
-	        "ip6-old-addr", "unexpected gateway item length %d", ba->len);
-	ASSERT (memcmp (ba->data, &gw[0], sizeof (gw)) == 0,
-	        "ip6-old-addr", "unexpected failure comparing gateways");
-
-	g_value_unset (&written_value);
-	g_value_unset (&read_value);
-	g_object_unref (s_ip6);
 }
 
 static void
@@ -749,6 +658,42 @@ test_setting_to_dbus_only_secrets (void)
 }
 
 static void
+test_setting_to_dbus_transform (void)
+{
+	NMSetting *s_wired;
+	GHashTable *hash;
+	GValue *val;
+	const char *test_mac_address = "11:22:33:44:55:66";
+	GByteArray *dbus_mac_address;
+	GByteArray *cmp_mac_address;
+
+	s_wired = nm_setting_wired_new ();
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_MAC_ADDRESS, test_mac_address,
+	              NULL);
+
+	g_assert_cmpstr (nm_setting_wired_get_mac_address (NM_SETTING_WIRED (s_wired)), ==, test_mac_address);
+
+	hash = _nm_setting_to_dbus (s_wired, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	g_assert (hash != NULL);
+
+	val = g_hash_table_lookup (hash, NM_SETTING_WIRED_MAC_ADDRESS);
+	g_assert (val != NULL);
+	g_assert (G_VALUE_HOLDS (val, DBUS_TYPE_G_UCHAR_ARRAY));
+
+	dbus_mac_address = g_value_get_boxed (val);
+
+	cmp_mac_address = nm_utils_hwaddr_atoba (test_mac_address, ETH_ALEN);
+
+	g_assert_cmpint (dbus_mac_address->len, ==, cmp_mac_address->len);
+	g_assert (memcmp (dbus_mac_address->data, cmp_mac_address->data, ETH_ALEN) == 0);
+
+	g_byte_array_unref (cmp_mac_address);
+	g_hash_table_unref (hash);
+	g_object_unref (s_wired);
+}
+
+static void
 test_connection_to_dbus_setting_name (void)
 {
 	NMConnection *connection;
@@ -776,7 +721,7 @@ test_connection_to_dbus_deprecated_props (void)
 {
 	NMConnection *connection;
 	NMSetting *s_wireless;
-	GByteArray *ssid;
+	GBytes *ssid;
 	NMSettingWirelessSecurity *s_wsec;
 	GHashTable *hash, *wireless_hash;
 	GValue *sec_val;
@@ -787,12 +732,11 @@ test_connection_to_dbus_deprecated_props (void)
 	                                              NULL);
 
 	s_wireless = nm_setting_wireless_new ();
-	ssid = g_byte_array_new ();
-	g_byte_array_append (ssid, (const guint8 *) "1234567", 7);
+	ssid = g_bytes_new ("1234567", 7);
 	g_object_set (s_wireless,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NULL);
-	g_byte_array_unref (ssid);
+	g_bytes_unref (ssid);
 	nm_connection_add_setting (connection, s_wireless);
 
 	/* Hash should not have an 802-11-wireless.security property */
@@ -843,6 +787,32 @@ test_setting_new_from_dbus (void)
 	g_assert_cmpstr (nm_setting_wireless_security_get_leap_username (s_wsec), ==, "foobarbaz");
 	g_assert_cmpstr (nm_setting_wireless_security_get_psk (s_wsec), ==, "random psk");
 	g_object_unref (s_wsec);
+}
+
+static void
+test_setting_new_from_dbus_transform (void)
+{
+	NMSetting *s_wired;
+	GHashTable *hash;
+	GValue val = { 0, };
+	const char *test_mac_address = "11:22:33:44:55:66";
+	GByteArray *dbus_mac_address;
+	GError *error = NULL;
+
+	hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_value_unset);
+
+	dbus_mac_address = nm_utils_hwaddr_atoba (test_mac_address, ETH_ALEN);
+	g_value_init (&val, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_value_take_boxed (&val, dbus_mac_address);
+	g_hash_table_insert (hash, NM_SETTING_WIRED_MAC_ADDRESS, &val);
+
+	s_wired = _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRED, hash, NULL, &error);
+	g_assert_no_error (error);
+
+	g_assert_cmpstr (nm_setting_wired_get_mac_address (NM_SETTING_WIRED (s_wired)), ==, test_mac_address);
+
+	g_hash_table_unref (hash);
+	g_object_unref (s_wired);
 }
 
 static NMConnection *
@@ -991,7 +961,7 @@ test_connection_replace_settings_from_connection ()
 	gboolean success;
 	NMSettingConnection *s_con;
 	NMSetting *setting;
-	GByteArray *ssid;
+	GBytes *ssid;
 	char *uuid = NULL;
 	const char *expected_id = "Awesome connection";
 
@@ -1017,13 +987,12 @@ test_connection_replace_settings_from_connection ()
 	setting = nm_setting_wireless_new ();
 	g_assert (setting);
 
-	ssid = g_byte_array_new ();
-	g_byte_array_append (ssid, (const guint8 *) "1234567", 7);
+	ssid = g_bytes_new ("1234567", 7);
 	g_object_set (setting,
 	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
 	              NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 	nm_connection_add_setting (replacement, setting);
 
 	/* Replace settings and test */
@@ -1164,7 +1133,7 @@ test_setting_connection_permissions_helpers (void)
 	NMSettingConnection *s_con;
 	gboolean success;
 	char buf[9] = { 0x61, 0x62, 0x63, 0xff, 0xfe, 0xfd, 0x23, 0x01, 0x00 };
-	GSList *list = NULL;
+	char **perms;
 	const char *expected_perm = "user:" TEST_UNAME ":";
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
@@ -1233,14 +1202,14 @@ test_setting_connection_permissions_helpers (void)
 	check_permission (s_con, 0, TEST_UNAME, "setting-connection-permissions-helpers");
 
 	/* Check the actual GObject property just to be paranoid */
-	g_object_get (G_OBJECT (s_con), NM_SETTING_CONNECTION_PERMISSIONS, &list, NULL);
-	ASSERT (list != NULL,
-	        "setting-connection-permissions-helpers", "unexpected failure getting permissions list");
-	ASSERT (g_slist_length (list) == 1,
-	        "setting-connection-permissions-helpers", "unexpected failure getting number of permissions in list");
-	ASSERT (strcmp (list->data, expected_perm) == 0,
+	g_object_get (G_OBJECT (s_con), NM_SETTING_CONNECTION_PERMISSIONS, &perms, NULL);
+	ASSERT (perms != NULL,
+	        "setting-connection-permissions-helpers", "unexpected failure getting permissions");
+	ASSERT (g_strv_length (perms) == 1,
+	        "setting-connection-permissions-helpers", "unexpected failure getting number of permissions");
+	ASSERT (strcmp (perms[0], expected_perm) == 0,
 	        "setting-connection-permissions-helpers", "unexpected permission property data");
-	g_slist_free_full (list, g_free);
+	g_strfreev (perms);
 
 	/* Now remove that permission and ensure we have 0 permissions */
 	nm_setting_connection_remove_permission (s_con, 0);
@@ -1258,7 +1227,7 @@ add_permission_property (NMSettingConnection *s_con,
                          const char *detail)
 {
 	GString *str;
-	GSList *list = NULL;
+	char *perms[2];
 
 	str = g_string_sized_new (50);
 	if (ptype)
@@ -1277,11 +1246,11 @@ add_permission_property (NMSettingConnection *s_con,
 	if (detail)
 		g_string_append (str, detail);
 
-	list = g_slist_append (list, str->str);
-	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_PERMISSIONS, list, NULL);
+	perms[0] = str->str;
+	perms[1] = NULL;
+	g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_PERMISSIONS, perms, NULL);
 
 	g_string_free (str, TRUE);
-	g_slist_free (list);
 }
 
 static void
@@ -1738,8 +1707,8 @@ test_connection_good_base_types (void)
 	NMSetting *setting;
 	gboolean success;
 	GError *error = NULL;
-	GByteArray *array;
-	const guint8 bdaddr[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
+	GBytes *ssid;
+	const char *bdaddr = "11:22:33:44:55:66";
 
 	/* Try a basic wired connection */
 	connection = nm_simple_connection_new ();
@@ -1769,13 +1738,12 @@ test_connection_good_base_types (void)
 	add_generic_settings (connection, NM_SETTING_WIRELESS_SETTING_NAME);
 
 	setting = nm_setting_wireless_new ();
-	array = g_byte_array_new ();
-	g_byte_array_append (array, (const guint8 *) "1234567", 7);
+	ssid = g_bytes_new ("1234567", 7);
 	g_object_set (setting,
-	              NM_SETTING_WIRELESS_SSID, array,
+	              NM_SETTING_WIRELESS_SSID, ssid,
 	              NM_SETTING_WIRELESS_MODE, "infrastructure",
 	              NULL);
-	g_byte_array_free (array, TRUE);
+	g_bytes_unref (ssid);
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
@@ -1788,13 +1756,10 @@ test_connection_good_base_types (void)
 	add_generic_settings (connection, NM_SETTING_BLUETOOTH_SETTING_NAME);
 
 	setting = nm_setting_bluetooth_new ();
-	array = g_byte_array_new ();
-	g_byte_array_append (array, bdaddr, sizeof (bdaddr));
 	g_object_set (setting,
-	              NM_SETTING_BLUETOOTH_BDADDR, array,
+	              NM_SETTING_BLUETOOTH_BDADDR, bdaddr,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
 	              NULL);
-	g_byte_array_free (array, TRUE);
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
@@ -2311,14 +2276,14 @@ test_setting_ip4_changed_signal (void)
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	ASSERT_CHANGED (nm_setting_ip4_config_add_dns (s_ip4, 0x1122));
+	ASSERT_CHANGED (nm_setting_ip4_config_add_dns (s_ip4, "11.22.0.0"));
 	ASSERT_CHANGED (nm_setting_ip4_config_remove_dns (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i <= priv->dns->len*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
 	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_dns (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip4_config_add_dns (s_ip4, 0x3344);
+	nm_setting_ip4_config_add_dns (s_ip4, "33.44.0.0");
 	ASSERT_CHANGED (nm_setting_ip4_config_clear_dns (s_ip4));
 
 	ASSERT_CHANGED (nm_setting_ip4_config_add_dns_search (s_ip4, "foobar.com"));
@@ -2382,14 +2347,14 @@ test_setting_ip6_changed_signal (void)
 	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
-	ASSERT_CHANGED (nm_setting_ip6_config_add_dns (s_ip6, &t));
+	ASSERT_CHANGED (nm_setting_ip6_config_add_dns (s_ip6, "1:2:3::4:5:6"));
 	ASSERT_CHANGED (nm_setting_ip6_config_remove_dns (s_ip6, 0));
 
 	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
 	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_dns (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip6_config_add_dns (s_ip6, &t);
+	nm_setting_ip6_config_add_dns (s_ip6, "1:2:3::4:5:6");
 	ASSERT_CHANGED (nm_setting_ip6_config_clear_dns (s_ip6));
 
 	ASSERT_CHANGED (nm_setting_ip6_config_add_dns_search (s_ip6, "foobar.com"));
@@ -2861,13 +2826,11 @@ static NMSetting *
 _add_setting_fcn_bluetooth (NMConnection *con)
 {
 	NMSetting *setting;
-	GByteArray *bdaddr = nm_utils_hwaddr_atoba ("11:22:33:44:55:66", ETH_ALEN);
 
 	setting = g_object_new (NM_TYPE_SETTING_BLUETOOTH,
-	                        NM_SETTING_BLUETOOTH_BDADDR, bdaddr,
+	                        NM_SETTING_BLUETOOTH_BDADDR, "11:22:33:44:55:66",
 	                        NM_SETTING_BLUETOOTH_TYPE, NM_SETTING_BLUETOOTH_TYPE_PANU,
 	                        NULL);
-	g_byte_array_free (bdaddr, TRUE);
 
 	nm_connection_add_setting (con, setting);
 	return setting;
@@ -2942,14 +2905,14 @@ _add_setting_fcn_olpc_mesh (NMConnection *con)
 {
 	NMSetting *setting;
 	const char *ssid_data = "ssid-test";
-	GByteArray *ssid = g_byte_array_new ();
+	GBytes *ssid;
 
-	g_byte_array_append (ssid, (const guint8 *) ssid_data, strlen (ssid_data));
+	ssid = g_bytes_new (ssid_data, strlen (ssid_data));
 	setting = g_object_new (NM_TYPE_SETTING_OLPC_MESH,
 	                        NM_SETTING_OLPC_MESH_SSID, ssid,
 	                        NM_SETTING_OLPC_MESH_CHANNEL, 1,
 	                        NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	nm_connection_add_setting (con, setting);
 	return setting;
@@ -3018,13 +2981,13 @@ _add_setting_fcn_wireless (NMConnection *con)
 {
 	NMSetting *setting;
 	const char *ssid_data = "ssid-test";
-	GByteArray *ssid = g_byte_array_new ();
+	GBytes *ssid;
 
-	g_byte_array_append (ssid, (const guint8 *) ssid_data, strlen (ssid_data));
+	ssid = g_bytes_new (ssid_data, strlen (ssid_data));
 	setting = g_object_new (NM_TYPE_SETTING_WIRELESS,
 	                        NM_SETTING_WIRELESS_SSID, ssid,
 	                        NULL);
-	g_byte_array_free (ssid, TRUE);
+	g_bytes_unref (ssid);
 
 	nm_connection_add_setting (con, setting);
 	return setting;
@@ -3033,12 +2996,9 @@ _add_setting_fcn_wireless (NMConnection *con)
 static void
 _prepare_normalizable_fcn_vlan (NMConnection *con)
 {
-	GByteArray *mac_addr = nm_utils_hwaddr_atoba ("11:22:33:44:55:66", ETH_ALEN);
-
 	nm_connection_add_setting (con, g_object_new (NM_TYPE_SETTING_WIRED,
-	                                              NM_SETTING_WIRED_MAC_ADDRESS, mac_addr,
+	                                              NM_SETTING_WIRED_MAC_ADDRESS, "11:22:33:44:55:66",
 	                                              NULL));
-	g_byte_array_free (mac_addr, TRUE);
 }
 
 static void
@@ -3195,7 +3155,6 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_vpn_update_secrets", test_setting_vpn_update_secrets);
 	g_test_add_func ("/core/general/test_setting_vpn_modify_during_foreach", test_setting_vpn_modify_during_foreach);
 	g_test_add_func ("/core/general/test_setting_ip4_config_labels", test_setting_ip4_config_labels);
-	g_test_add_func ("/core/general/test_setting_ip6_config_old_address_array", test_setting_ip6_config_old_address_array);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_spaces", test_setting_gsm_apn_spaces);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_bad_chars", test_setting_gsm_apn_bad_chars);
 	g_test_add_func ("/core/general/test_setting_gsm_apn_underscore", test_setting_gsm_apn_underscore);
@@ -3203,6 +3162,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_to_dbus_all", test_setting_to_dbus_all);
 	g_test_add_func ("/core/general/test_setting_to_dbus_no_secrets", test_setting_to_dbus_no_secrets);
 	g_test_add_func ("/core/general/test_setting_to_dbus_only_secrets", test_setting_to_dbus_only_secrets);
+	g_test_add_func ("/core/general/test_setting_to_dbus_transform", test_setting_to_dbus_transform);
 	g_test_add_func ("/core/general/test_setting_compare_id", test_setting_compare_id);
 #define ADD_FUNC(func, secret_flags, comp_flags, remove_secret) \
 	g_test_add_data_func_full ("/core/general/" G_STRINGIFY (func), \
@@ -3221,6 +3181,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_connection_to_dbus_setting_name", test_connection_to_dbus_setting_name);
 	g_test_add_func ("/core/general/test_connection_to_dbus_deprecated_props", test_connection_to_dbus_deprecated_props);
 	g_test_add_func ("/core/general/test_setting_new_from_dbus", test_setting_new_from_dbus);
+	g_test_add_func ("/core/general/test_setting_new_from_dbus_transform", test_setting_new_from_dbus_transform);
 	g_test_add_func ("/core/general/test_connection_replace_settings", test_connection_replace_settings);
 	g_test_add_func ("/core/general/test_connection_replace_settings_from_connection", test_connection_replace_settings_from_connection);
 	g_test_add_func ("/core/general/test_connection_replace_settings_bad", test_connection_replace_settings_bad);

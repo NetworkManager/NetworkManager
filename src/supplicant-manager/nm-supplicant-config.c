@@ -165,7 +165,7 @@ nm_supplicant_config_add_option (NMSupplicantConfig *self,
 static gboolean
 nm_supplicant_config_add_blob (NMSupplicantConfig *self,
                                const char *key,
-                               const GByteArray *value,
+                               GBytes *value,
                                const char *blobid)
 {
 	NMSupplicantConfigPrivate *priv;
@@ -173,16 +173,20 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 	ConfigOption *opt;
 	OptType type;
 	GByteArray *blob;
+	const guint8 *data;
+	gsize data_len;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (key != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
-	g_return_val_if_fail (value->len > 0, FALSE);
 	g_return_val_if_fail (blobid != NULL, FALSE);
+
+	data = g_bytes_get_data (value, &data_len);
+	g_return_val_if_fail (data_len > 0, FALSE);
 
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
-	type = nm_supplicant_settings_verify_setting (key, (const char *) value->data, value->len);
+	type = nm_supplicant_settings_verify_setting (key, (const char *) data, data_len);
 	if (type == TYPE_INVALID) {
 		nm_log_warn (LOGD_SUPPLICANT, "Key '%s' and/or it's contained value is invalid.", key);
 		return FALSE;
@@ -194,8 +198,8 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 		return FALSE;
 	}
 
-	blob = g_byte_array_sized_new (value->len);
-	g_byte_array_append (blob, value->data, value->len);
+	blob = g_byte_array_sized_new (data_len);
+	g_byte_array_append (blob, data, data_len);
 
 	opt = g_slice_new0 (ConfigOption);
 	opt->value = g_strdup_printf ("blob://%s", blobid);
@@ -327,9 +331,6 @@ nm_supplicant_config_get_blobs (NMSupplicantConfig * self)
 	return NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->blobs;
 }
 
-#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
-#define MAC_ARG(x) ((guint8*)(x))[0],((guint8*)(x))[1],((guint8*)(x))[2],((guint8*)(x))[3],((guint8*)(x))[4],((guint8*)(x))[5]
-
 #define TWO_GHZ_FREQS  "2412,2417,2422,2427,2432,2437,2442,2447,2452,2457,2462,2467,2472,2484"
 #define FIVE_GHZ_FREQS "4915,4920,4925,4935,4940,4945,4960,4980,5035,5040,5045,5055,5060,5080," \
                          "5170,5180,5190,5200,5210,5220,5230,5240,5260,5280,5300,5320,5500," \
@@ -345,7 +346,8 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	NMSupplicantConfigPrivate *priv;
 	gboolean is_adhoc, is_ap;
 	const char *mode, *band;
-	const GByteArray *id;
+	GBytes *ssid;
+	const char *bssid;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
@@ -360,8 +362,11 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	else
 		priv->ap_scan = 1;
 
-	id = nm_setting_wireless_get_ssid (setting);
-	if (!nm_supplicant_config_add_option (self, "ssid", (char *) id->data, id->len, FALSE)) {
+	ssid = nm_setting_wireless_get_ssid (setting);
+	if (!nm_supplicant_config_add_option (self, "ssid",
+	                                      (char *) g_bytes_get_data (ssid, NULL),
+	                                      g_bytes_get_size (ssid),
+	                                      FALSE)) {
 		nm_log_warn (LOGD_SUPPLICANT, "Error adding SSID to supplicant config.");
 		return FALSE;
 	}
@@ -400,19 +405,14 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 			return FALSE;
 	}
 
-	id = nm_setting_wireless_get_bssid (setting);
-	if (id && id->len) {
-		char *str_bssid;
-
-		str_bssid = g_strdup_printf (MAC_FMT, MAC_ARG (id->data));
+	bssid = nm_setting_wireless_get_bssid (setting);
+	if (bssid) {
 		if (!nm_supplicant_config_add_option (self, "bssid",
-		                                      str_bssid, strlen (str_bssid),
+		                                      bssid, strlen (bssid),
 		                                      FALSE)) {
-			g_free (str_bssid);
 			nm_log_warn (LOGD_SUPPLICANT, "Error adding BSSID to supplicant config.");
 			return FALSE;
 		}
-		g_free (str_bssid);
 	}
 
 	band = nm_setting_wireless_get_band (setting);
@@ -495,7 +495,7 @@ get_blob_id (const char *name, const char *seed_uid)
 }
 
 #define ADD_BLOB_VAL(field, name, con_uid) \
-	if (field && field->len) { \
+	if (field && g_bytes_get_size (field)) { \
 		char *uid = get_blob_id (name, con_uid); \
 		success = nm_supplicant_config_add_blob (self, name, field, uid); \
 		g_free (uid); \
@@ -731,7 +731,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	const char *peapver, *value, *path;
 	gboolean success, added;
 	GString *phase1, *phase2;
-	const GByteArray *array;
+	GBytes *bytes;
 	gboolean fast = FALSE;
 	guint32 i, num_eap;
 	gboolean fast_provisoning_allowed = FALSE;
@@ -747,12 +747,12 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		if (!add_string_val (self, value, "password", FALSE, TRUE))
 			return FALSE;
 	} else {
-		array = nm_setting_802_1x_get_password_raw (setting);
-		if (array) {
+		bytes = nm_setting_802_1x_get_password_raw (setting);
+		if (bytes) {
 			success = nm_supplicant_config_add_option (self,
 			                                           "password",
-			                                           (const char *)array->data,
-			                                           array->len,
+			                                           (const char *) g_bytes_get_data (bytes, NULL),
+			                                           g_bytes_get_size (bytes),
 			                                           TRUE);
 			if (!success) {
 				nm_log_warn (LOGD_SUPPLICANT, "Error adding password-raw to supplicant config.");
@@ -893,8 +893,8 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	/* CA certificate */
 	switch (nm_setting_802_1x_get_ca_cert_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		array = nm_setting_802_1x_get_ca_cert_blob (setting);
-		ADD_BLOB_VAL (array, "ca_cert", con_uuid);
+		bytes = nm_setting_802_1x_get_ca_cert_blob (setting);
+		ADD_BLOB_VAL (bytes, "ca_cert", con_uuid);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_ca_cert_path (setting);
@@ -908,8 +908,8 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	/* Phase 2 CA certificate */
 	switch (nm_setting_802_1x_get_phase2_ca_cert_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		array = nm_setting_802_1x_get_phase2_ca_cert_blob (setting);
-		ADD_BLOB_VAL (array, "ca_cert2", con_uuid);
+		bytes = nm_setting_802_1x_get_phase2_ca_cert_blob (setting);
+		ADD_BLOB_VAL (bytes, "ca_cert2", con_uuid);
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
 		path = nm_setting_802_1x_get_phase2_ca_cert_path (setting);
@@ -936,8 +936,8 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	added = FALSE;
 	switch (nm_setting_802_1x_get_private_key_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		array = nm_setting_802_1x_get_private_key_blob (setting);
-		ADD_BLOB_VAL (array, "private_key", con_uuid);
+		bytes = nm_setting_802_1x_get_private_key_blob (setting);
+		ADD_BLOB_VAL (bytes, "private_key", con_uuid);
 		added = TRUE;
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
@@ -974,8 +974,8 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			 */
 			switch (nm_setting_802_1x_get_client_cert_scheme (setting)) {
 			case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-				array = nm_setting_802_1x_get_client_cert_blob (setting);
-				ADD_BLOB_VAL (array, "client_cert", con_uuid);
+				bytes = nm_setting_802_1x_get_client_cert_blob (setting);
+				ADD_BLOB_VAL (bytes, "client_cert", con_uuid);
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PATH:
 				path = nm_setting_802_1x_get_client_cert_path (setting);
@@ -992,8 +992,8 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	added = FALSE;
 	switch (nm_setting_802_1x_get_phase2_private_key_scheme (setting)) {
 	case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-		array = nm_setting_802_1x_get_phase2_private_key_blob (setting);
-		ADD_BLOB_VAL (array, "private_key2", con_uuid);
+		bytes = nm_setting_802_1x_get_phase2_private_key_blob (setting);
+		ADD_BLOB_VAL (bytes, "private_key2", con_uuid);
 		added = TRUE;
 		break;
 	case NM_SETTING_802_1X_CK_SCHEME_PATH:
@@ -1030,8 +1030,8 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			 */
 			switch (nm_setting_802_1x_get_phase2_client_cert_scheme (setting)) {
 			case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-				array = nm_setting_802_1x_get_phase2_client_cert_blob (setting);
-				ADD_BLOB_VAL (array, "client_cert2", con_uuid);
+				bytes = nm_setting_802_1x_get_phase2_client_cert_blob (setting);
+				ADD_BLOB_VAL (bytes, "client_cert2", con_uuid);
 				break;
 			case NM_SETTING_802_1X_CK_SCHEME_PATH:
 				path = nm_setting_802_1x_get_phase2_client_cert_path (setting);

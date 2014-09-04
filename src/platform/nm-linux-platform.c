@@ -3276,14 +3276,14 @@ mesh_set_channel (NMPlatform *platform, int ifindex, guint32 channel)
 }
 
 static gboolean
-mesh_set_ssid (NMPlatform *platform, int ifindex, const GByteArray *ssid)
+mesh_set_ssid (NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 {
 	WifiData *wifi_data = wifi_get_wifi_data (platform, ifindex);
 
 	if (!wifi_data)
 		return FALSE;
 
-	return wifi_utils_set_mesh_ssid (wifi_data, ssid);
+	return wifi_utils_set_mesh_ssid (wifi_data, ssid, len);
 }
 
 static gboolean

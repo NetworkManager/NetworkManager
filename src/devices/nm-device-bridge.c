@@ -101,7 +101,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
 	const char *iface;
 	NMSettingBridge *s_bridge;
-	const GByteArray *mac_address;
+	const char *mac_address;
 
 	if (!NM_DEVICE_CLASS (nm_device_bridge_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
@@ -120,8 +120,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		const char *hw_addr;
 
 		hw_addr = nm_device_get_hw_address (device);
-		if (   !hw_addr
-		    || !nm_utils_hwaddr_matches (hw_addr, -1, mac_address->data, mac_address->len))
+		if (!hw_addr || !nm_utils_hwaddr_matches (hw_addr, -1, mac_address, -1))
 			return FALSE;
 	}
 
@@ -424,7 +423,8 @@ nm_device_bridge_new_for_connection (NMConnection *connection)
 {
 	const char *iface;
 	NMSettingBridge *s_bridge;
-	const GByteArray *mac_address;
+	const char *mac_address_str;
+	guint8 mac_address[NM_UTILS_HWADDR_LEN_MAX];
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
@@ -434,11 +434,15 @@ nm_device_bridge_new_for_connection (NMConnection *connection)
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	g_return_val_if_fail (s_bridge, NULL);
 
-	mac_address = nm_setting_bridge_get_mac_address (s_bridge);
+	mac_address_str = nm_setting_bridge_get_mac_address (s_bridge);
+	if (mac_address_str) {
+		if (!nm_utils_hwaddr_aton (mac_address_str, mac_address, ETH_ALEN))
+			mac_address_str = NULL;
+	}
 
 	if (   !nm_platform_bridge_add (iface,
-	                                mac_address ? mac_address->data : NULL,
-	                                mac_address ? mac_address->len : 0)
+	                                mac_address_str ? mac_address : NULL,
+	                                mac_address_str ? ETH_ALEN : 0)
 	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
 		nm_log_warn (LOGD_DEVICE | LOGD_BRIDGE, "(%s): failed to create bridge master interface for '%s': %s",
 		             iface, nm_connection_get_id (connection),

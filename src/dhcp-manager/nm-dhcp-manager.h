@@ -71,7 +71,7 @@ NMDhcpClient * nm_dhcp_manager_start_ip4     (NMDhcpManager *manager,
                                               const char *dhcp_hostname,
                                               const char *dhcp_client_id,
                                               guint32 timeout,
-                                              GByteArray *dhcp_anycast_addr);
+                                              const char *dhcp_anycast_addr);
 
 NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
                                               const char *iface,
@@ -81,7 +81,7 @@ NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
                                               guint priority,
                                               const char *dhcp_hostname,
                                               guint32 timeout,
-                                              GByteArray *dhcp_anycast_addr,
+                                              const char *dhcp_anycast_addr,
                                               gboolean info_only,
                                               NMSettingIP6ConfigPrivacy privacy);
 

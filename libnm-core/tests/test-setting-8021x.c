@@ -32,7 +32,7 @@
 static void
 compare_blob_data (const char *test,
                    const char *key_path,
-                   const GByteArray *key)
+                   GBytes *key)
 {
 	char *contents = NULL;
 	gsize len = 0;
@@ -45,11 +45,11 @@ compare_blob_data (const char *test,
 
 	ASSERT (len > 0, test, "blob key file invalid (size 0)");
 
-	ASSERT (len == key->len,
+	ASSERT (len == g_bytes_get_size (key),
 	        test, "blob key file (%d) and setting key data (%d) lengths don't match",
-	        len, key->len);
+	        len, g_bytes_get_size (key));
 
-	ASSERT (memcmp (contents, key->data, len) == 0,
+	ASSERT (memcmp (contents, g_bytes_get_data (key, NULL), len) == 0,
 	        test, "blob key file and blob key data don't match");
 
 	g_free (contents);
@@ -58,9 +58,9 @@ compare_blob_data (const char *test,
 #define SCHEME_PATH "file://"
 
 static void
-check_scheme_path (GByteArray *value, const char *path)
+check_scheme_path (GBytes *value, const char *path)
 {
-	guint8 *p = value->data;
+	const guint8 *p = g_bytes_get_data (value, NULL);
 
 	g_assert (memcmp (p, SCHEME_PATH, strlen (SCHEME_PATH)) == 0);
 	p += strlen (SCHEME_PATH);
@@ -79,7 +79,7 @@ test_private_key_import (const char *path,
 	NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 	NMSetting8021xCKFormat tmp_fmt;
 	GError *error = NULL;
-	GByteArray *tmp_key = NULL, *client_cert = NULL;
+	GBytes *tmp_key = NULL, *client_cert = NULL;
 	const char *pw;
 
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
@@ -108,14 +108,14 @@ test_private_key_import (const char *path,
 	        "private-key-import", "failed to compare private key password");
 
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		tmp_key = (GByteArray *) nm_setting_802_1x_get_private_key_blob (s_8021x);
+		tmp_key = nm_setting_802_1x_get_private_key_blob (s_8021x);
 		ASSERT (tmp_key != NULL, "private-key-import", "missing private key blob");
 		compare_blob_data ("private-key-import", path, tmp_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
 		g_object_get (s_8021x, NM_SETTING_802_1X_PRIVATE_KEY, &tmp_key, NULL);
 		ASSERT (tmp_key != NULL, "private-key-import", "missing private key value");
 		check_scheme_path (tmp_key, path);
-		g_byte_array_free (tmp_key, TRUE);
+		g_bytes_unref (tmp_key);
 	} else
 		g_assert_not_reached ();
 
@@ -128,13 +128,11 @@ test_private_key_import (const char *path,
 		ASSERT (client_cert != NULL, "private-key-import", "missing client certificate value");
 
 		/* make sure they are the same */
-		ASSERT (tmp_key->len == client_cert->len,
-		        "private-key-import", "unexpected different private key and client cert lengths");
-		ASSERT (memcmp (tmp_key->data, client_cert->data, tmp_key->len) == 0,
+		ASSERT (g_bytes_equal (tmp_key, client_cert),
 		        "private-key-import", "unexpected different private key and client cert data");
 
-		g_byte_array_free (tmp_key, TRUE);
-		g_byte_array_free (client_cert, TRUE);
+		g_bytes_unref (tmp_key);
+		g_bytes_unref (client_cert);
 	}
 
 	g_object_unref (s_8021x);
@@ -150,7 +148,7 @@ test_phase2_private_key_import (const char *path,
 	NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
 	NMSetting8021xCKFormat tmp_fmt;
 	GError *error = NULL;
-	GByteArray *tmp_key = NULL, *client_cert = NULL;
+	GBytes *tmp_key = NULL, *client_cert = NULL;
 	const char *pw;
 
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
@@ -179,7 +177,7 @@ test_phase2_private_key_import (const char *path,
 	        "phase2-private-key-import", "failed to compare private key password");
 
 	if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-		tmp_key = (GByteArray *) nm_setting_802_1x_get_phase2_private_key_blob (s_8021x);
+		tmp_key = nm_setting_802_1x_get_phase2_private_key_blob (s_8021x);
 		ASSERT (tmp_key != NULL, "phase2-private-key-import", "missing private key blob");
 		compare_blob_data ("phase2-private-key-import", path, tmp_key);
 	} else if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
@@ -198,13 +196,11 @@ test_phase2_private_key_import (const char *path,
 		ASSERT (client_cert != NULL, "private-key-import", "missing client certificate value");
 
 		/* make sure they are the same */
-		ASSERT (tmp_key->len == client_cert->len,
-		        "private-key-import", "unexpected different private key and client cert lengths");
-		ASSERT (memcmp (tmp_key->data, client_cert->data, tmp_key->len) == 0,
+		ASSERT (g_bytes_equal (tmp_key, client_cert),
 		        "private-key-import", "unexpected different private key and client cert data");
 
-		g_byte_array_free (tmp_key, TRUE);
-		g_byte_array_free (client_cert, TRUE);
+		g_bytes_unref (tmp_key);
+		g_bytes_unref (client_cert);
 	}
 
 	g_object_unref (s_8021x);

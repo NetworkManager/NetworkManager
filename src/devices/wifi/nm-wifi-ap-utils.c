@@ -466,7 +466,7 @@ verify_adhoc (NMSettingWirelessSecurity *s_wsec,
 
 gboolean
 nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
-                                 const guint8 *ap_bssid,
+                                 const char *bssid,
                                  NM80211Mode ap_mode,
                                  guint32 ap_flags,
                                  guint32 ap_wpa_flags,
@@ -478,7 +478,7 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSetting8021x *s_8021x;
-	const GByteArray *ssid;
+	GBytes *ssid, *ap_ssid_bytes;
 	const char *mode, *key_mgmt, *auth_alg, *leap_username;
 	gboolean adhoc = FALSE;
 
@@ -488,26 +488,22 @@ nm_ap_utils_complete_connection (const GByteArray *ap_ssid,
 	s_8021x = nm_connection_get_setting_802_1x (connection);
 
 	/* Fill in missing SSID */
+	ap_ssid_bytes = g_bytes_new (ap_ssid->data, ap_ssid->len);
 	ssid = nm_setting_wireless_get_ssid (s_wifi);
 	if (!ssid)
-		g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_SSID, ap_ssid, NULL);
-	else if (   ssid->len != ap_ssid->len
-	         || memcmp (ssid->data, ap_ssid->data, ssid->len)) {
+		g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_SSID, ap_ssid_bytes, NULL);
+	else if (!g_bytes_equal (ssid, ap_ssid_bytes)) {
 		g_set_error_literal (error,
 		                     NM_SETTING_WIRELESS_ERROR,
 		                     NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
 		                     "Setting SSID did not match AP SSID");
+		g_bytes_unref (ap_ssid_bytes);
 		return FALSE;
 	}
+	g_bytes_unref (ap_ssid_bytes);
 
-	if (lock_bssid && !nm_setting_wireless_get_bssid (s_wifi)) {
-		GByteArray *bssid;
-
-		bssid = g_byte_array_sized_new (ETH_ALEN);
-		g_byte_array_append (bssid, ap_bssid, ETH_ALEN);
+	if (lock_bssid && !nm_setting_wireless_get_bssid (s_wifi))
 		g_object_set (G_OBJECT (s_wifi), NM_SETTING_WIRELESS_BSSID, bssid, NULL);
-		g_byte_array_free (bssid, TRUE);
-	}
 
 	/* And mode */
 	mode = nm_setting_wireless_get_mode (s_wifi);

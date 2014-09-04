@@ -467,8 +467,6 @@ test17_read_static_ipv4 (const char *path)
 	const char* tmp;
 	const char *expected_address = "10.0.0.3";
 	const char *expected_id = "Ifupdown (eth0)";
-	const char *expected_dns1 = "10.0.0.1";
-	const char *expected_dns2 = "10.0.0.2";
 	const char *expected_search1 = "example.com";
 	const char *expected_search2 = "foo.example.com";
 	guint32 expected_prefix = 8;
@@ -569,25 +567,13 @@ test17_read_static_ipv4 (const char *path)
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
 			NM_SETTING_IP4_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET, expected_dns1, &addr) > 0,
-			TEST17_NAME, "failed to verify %s: couldn't convert DNS IP address #1",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS);
-
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr,
+	ASSERT (!strcmp (nm_setting_ip4_config_get_dns (s_ip4, 0), "10.0.0.1"),
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value #1",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
 			NM_SETTING_IP4_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET, expected_dns2, &addr) > 0,
-			TEST17_NAME, "failed to verify %s: couldn't convert DNS IP address #2",
-			file,
-			NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			NM_SETTING_IP4_CONFIG_DNS);
-
-	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr,
+	ASSERT (!strcmp (nm_setting_ip4_config_get_dns (s_ip4, 1), "10.0.0.2"),
 			TEST17_NAME, "failed to verify %s: unexpected %s / %s key value #2",
 			file,
 			NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -646,8 +632,6 @@ test18_read_static_ipv6 (const char *path)
 	const char* tmp;
 	const char *expected_address = "fc00::1";
 	const char *expected_id = "Ifupdown (myip6tunnel)";
-	const char *expected_dns1 = "fc00::2";
-	const char *expected_dns2 = "fc00::3";
 	const char *expected_search1 = "example.com";
 	const char *expected_search2 = "foo.example.com";
 	guint32 expected_prefix = 64;
@@ -768,26 +752,14 @@ test18_read_static_ipv6 (const char *path)
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
 			NM_SETTING_IP6_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET6, expected_dns1, &addr) > 0,
-			TEST18_NAME,
-			"failed to verify %s: couldn't convert DNS IP address #1",
-			file);
-
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 0),
-								&addr),
+	ASSERT (!strcmp (nm_setting_ip6_config_get_dns (s_ip6, 0), "fc00::2"),
 			TEST18_NAME,
 			"failed to verify %s: unexpected %s / %s #1",
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,
 			NM_SETTING_IP6_CONFIG_DNS);
 
-	ASSERT (inet_pton (AF_INET6, expected_dns2, &addr) > 0,
-			TEST18_NAME,
-			"failed to verify %s: couldn't convert DNS IP address #2",
-			file);
-
-	ASSERT (IN6_ARE_ADDR_EQUAL (nm_setting_ip6_config_get_dns (s_ip6, 1),
-								&addr),
+	ASSERT (!strcmp (nm_setting_ip6_config_get_dns (s_ip6, 1), "fc00::3"),
 			TEST18_NAME, "failed to verify %s: unexpected %s / %s #2",
 			file,
 			NM_SETTING_IP6_CONFIG_SETTING_NAME,

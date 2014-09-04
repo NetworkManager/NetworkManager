@@ -207,11 +207,11 @@ wifi_utils_set_mesh_channel (WifiData *data, guint32 channel)
 }
 
 gboolean
-wifi_utils_set_mesh_ssid (WifiData *data, const GByteArray *ssid)
+wifi_utils_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len)
 {
 	g_return_val_if_fail (data != NULL, FALSE);
 	g_return_val_if_fail (data->set_mesh_ssid != NULL, FALSE);
-	return data->set_mesh_ssid (data, ssid);
+	return data->set_mesh_ssid (data, ssid, len);
 }
 
 gboolean

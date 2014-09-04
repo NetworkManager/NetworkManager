@@ -51,13 +51,6 @@
 
 
 static void
-svSetValue_free (shvarFile *s, const char *key, char *value, gboolean verbatim)
-{
-	svSetValue (s, key, value, verbatim);
-	g_free (value);
-}
-
-static void
 save_secret_flags (shvarFile *ifcfg,
                    const char *key,
                    NMSettingSecretFlags flags)
@@ -204,7 +197,7 @@ typedef struct ObjectType {
 	const char *setting_key;
 	NMSetting8021xCKScheme (*scheme_func)(NMSetting8021x *setting);
 	const char *           (*path_func)  (NMSetting8021x *setting);
-	const GByteArray *     (*blob_func)  (NMSetting8021x *setting);
+	GBytes *               (*blob_func)  (NMSetting8021x *setting);
 	const char *ifcfg_key;
 	const char *suffix;
 } ObjectType;
@@ -289,7 +282,7 @@ write_object (NMSetting8021x *s_8021x,
 {
 	NMSetting8021xCKScheme scheme;
 	const char *path = NULL;
-	const GByteArray *blob = NULL;
+	GBytes *blob = NULL;
 
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
 	g_return_val_if_fail (objtype != NULL, FALSE);
@@ -354,7 +347,10 @@ write_object (NMSetting8021x *s_8021x,
 		 * can use paths from now on instead of pushing around the certificate
 		 * data itself.
 		 */
-		success = write_secret_file (new_file, (const char *) blob->data, blob->len, &write_error);
+		success = write_secret_file (new_file,
+		                             (const char *) g_bytes_get_data (blob, NULL),
+		                             g_bytes_get_size (blob),
+		                             &write_error);
 		if (success) {
 			svSetValue (ifcfg, objtype->ifcfg_key, new_file, FALSE);
 			g_free (new_file);
@@ -807,8 +803,11 @@ write_wireless_setting (NMConnection *connection,
 {
 	NMSettingWireless *s_wireless;
 	char *tmp, *tmp2;
-	const GByteArray *ssid, *device_mac, *cloned_mac, *bssid;
-	const char *mode;
+	GBytes *ssid;
+	const guint8 *ssid_data;
+	gsize ssid_len;
+	const char *mode, *bssid;
+	const char *device_mac, *cloned_mac;
 	char buf[33];
 	guint32 mtu, chan, i;
 	gboolean adhoc = FALSE, hex_ssid = FALSE;
@@ -821,19 +820,11 @@ write_wireless_setting (NMConnection *connection,
 		return FALSE;
 	}
 
-	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	device_mac = nm_setting_wireless_get_mac_address (s_wireless);
-	if (device_mac) {
-		svSetValue_free (ifcfg, "HWADDR",
-		                 nm_utils_hwaddr_ntoa (device_mac->data, device_mac->len), FALSE);
-	}
+	svSetValue (ifcfg, "HWADDR", device_mac, FALSE);
 
-	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
 	cloned_mac = nm_setting_wireless_get_cloned_mac_address (s_wireless);
-	if (cloned_mac) {
-		svSetValue_free (ifcfg, "MACADDR",
-		                 nm_utils_hwaddr_ntoa (cloned_mac->data, cloned_mac->len), FALSE);
-	}
+	svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
 
 	svSetValue (ifcfg, "HWADDR_BLACKLIST", NULL, FALSE);
 	macaddr_blacklist = nm_setting_wireless_get_mac_address_blacklist (s_wireless);
@@ -866,7 +857,8 @@ write_wireless_setting (NMConnection *connection,
 		             "Missing SSID in '%s' setting", NM_SETTING_WIRELESS_SETTING_NAME);
 		return FALSE;
 	}
-	if (!ssid->len || ssid->len > 32) {
+	ssid_data = g_bytes_get_data (ssid, &ssid_len);
+	if (!ssid_len || ssid_len > 32) {
 		g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 		             "Invalid SSID in '%s' setting", NM_SETTING_WIRELESS_SETTING_NAME);
 		return FALSE;
@@ -875,8 +867,8 @@ write_wireless_setting (NMConnection *connection,
 	/* If the SSID contains any non-printable characters, we need to use the
 	 * hex notation of the SSID instead.
 	 */
-	for (i = 0; i < ssid->len; i++) {
-		if (!g_ascii_isprint (ssid->data[i])) {
+	for (i = 0; i < ssid_len; i++) {
+		if (!g_ascii_isprint (ssid_data[i])) {
 			hex_ssid = TRUE;
 			break;
 		}
@@ -886,16 +878,16 @@ write_wireless_setting (NMConnection *connection,
 		GString *str;
 
 		/* Hex SSIDs don't get quoted */
-		str = g_string_sized_new (ssid->len * 2 + 3);
+		str = g_string_sized_new (ssid_len * 2 + 3);
 		g_string_append (str, "0x");
-		for (i = 0; i < ssid->len; i++)
-			g_string_append_printf (str, "%02X", ssid->data[i]);
+		for (i = 0; i < ssid_len; i++)
+			g_string_append_printf (str, "%02X", ssid_data[i]);
 		svSetValue (ifcfg, "ESSID", str->str, TRUE);
 		g_string_free (str, TRUE);
 	} else {
 		/* Printable SSIDs always get quoted */
 		memset (buf, 0, sizeof (buf));
-		memcpy (buf, ssid->data, ssid->len);
+		memcpy (buf, ssid_data, ssid_len);
 		tmp = svEscape (buf);
 
 		/* svEscape will usually quote the string, but just for consistency,
@@ -931,12 +923,8 @@ write_wireless_setting (NMConnection *connection,
 		g_free (tmp);
 	}
 
-	svSetValue (ifcfg, "BSSID", NULL, FALSE);
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
-	if (bssid) {
-		svSetValue_free (ifcfg, "BSSID",
-		                 nm_utils_hwaddr_ntoa (bssid->data, bssid->len), FALSE);
-	}
+	svSetValue (ifcfg, "BSSID", bssid, FALSE);
 
 	/* Ensure DEFAULTKEY and SECURITYMODE are cleared unless there's security;
 	 * otherwise there's no way to detect WEP vs. open when WEP keys aren't
@@ -993,9 +981,8 @@ static gboolean
 write_infiniband_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingInfiniband *s_infiniband;
-	const GByteArray *mac;
 	char *tmp;
-	const char *transport_mode, *parent;
+	const char *mac, *transport_mode, *parent;
 	guint32 mtu;
 	int p_key;
 
@@ -1006,13 +993,8 @@ write_infiniband_setting (NMConnection *connection, shvarFile *ifcfg, GError **e
 		return FALSE;
 	}
 
-	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	mac = nm_setting_infiniband_get_mac_address (s_infiniband);
-	if (mac) {
-		tmp = nm_utils_hwaddr_ntoa (mac->data, mac->len);
-		svSetValue (ifcfg, "HWADDR", tmp, FALSE);
-		g_free (tmp);
-	}
+	svSetValue (ifcfg, "HWADDR", mac, FALSE);
 
 	svSetValue (ifcfg, "MTU", NULL, FALSE);
 	mtu = nm_setting_infiniband_get_mtu (s_infiniband);
@@ -1048,11 +1030,11 @@ static gboolean
 write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
 	NMSettingWired *s_wired;
-	const GByteArray *device_mac, *cloned_mac;
+	const char *device_mac, *cloned_mac;
 	char *tmp;
 	const char *nettype, *portname, *ctcprot, *s390_key, *s390_val;
 	guint32 mtu, num_opts, i;
-	const GPtrArray *s390_subchannels;
+	const char *const *s390_subchannels;
 	GString *str;
 	const GSList *macaddr_blacklist;
 
@@ -1063,19 +1045,11 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		return FALSE;
 	}
 
-	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	device_mac = nm_setting_wired_get_mac_address (s_wired);
-	if (device_mac) {
-		svSetValue_free (ifcfg, "HWADDR",
-		                 nm_utils_hwaddr_ntoa (device_mac->data, device_mac->len), FALSE);
-	}
+	svSetValue (ifcfg, "HWADDR", device_mac, FALSE);
 
-	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
 	cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-	if (cloned_mac) {
-		svSetValue_free (ifcfg, "MACADDR",
-		                 nm_utils_hwaddr_ntoa (cloned_mac->data, cloned_mac->len), FALSE);
-	}
+	svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
 
 	svSetValue (ifcfg, "HWADDR_BLACKLIST", NULL, FALSE);
 	macaddr_blacklist = nm_setting_wired_get_mac_address_blacklist (s_wired);
@@ -1105,16 +1079,14 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	svSetValue (ifcfg, "SUBCHANNELS", NULL, FALSE);
 	s390_subchannels = nm_setting_wired_get_s390_subchannels (s_wired);
 	if (s390_subchannels) {
+		int len = g_strv_length ((char **)s390_subchannels);
+
 		tmp = NULL;
-	    if (s390_subchannels->len == 2) {
-			tmp = g_strdup_printf ("%s,%s",
-				                   (const char *) g_ptr_array_index (s390_subchannels, 0),
-				                   (const char *) g_ptr_array_index (s390_subchannels, 1));
-	    } else if (s390_subchannels->len == 3) {
-			tmp = g_strdup_printf ("%s,%s,%s",
-				                   (const char *) g_ptr_array_index (s390_subchannels, 0),
-				                   (const char *) g_ptr_array_index (s390_subchannels, 1),
-				                   (const char *) g_ptr_array_index (s390_subchannels, 2));
+	    if (len == 2) {
+		    tmp = g_strdup_printf ("%s,%s", s390_subchannels[0], s390_subchannels[1]);
+	    } else if (len == 3) {
+		    tmp = g_strdup_printf ("%s,%s,%s", s390_subchannels[0], s390_subchannels[1],
+		                           s390_subchannels[2]);
 		}
 		svSetValue (ifcfg, "SUBCHANNELS", tmp, FALSE);
 		g_free (tmp);
@@ -1160,11 +1132,11 @@ write_wired_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	return TRUE;
 }
 
-static GString *
+static char *
 vlan_priority_maplist_to_stringlist (NMSettingVlan *s_vlan, NMVlanPriorityMap map)
 {
-	GSList *strlist = NULL, *iter;
-	GString *value = NULL;
+	char **strlist;
+	char *value;
 
 	if (map == NM_VLAN_INGRESS_MAP)
 		g_object_get (G_OBJECT (s_vlan), NM_SETTING_VLAN_INGRESS_PRIORITY_MAP, &strlist, NULL);
@@ -1173,11 +1145,11 @@ vlan_priority_maplist_to_stringlist (NMSettingVlan *s_vlan, NMVlanPriorityMap ma
 	else
 		return NULL;
 
-	value = g_string_new ("");
-	for (iter = strlist; iter; iter = g_slist_next (iter))
-		g_string_append_printf (value, "%s%s", value->len ? "," : "", (const char *) iter->data);
-
-	g_slist_free_full (strlist, g_free);
+	if (strlist[0])
+		value = g_strjoinv (",", strlist);
+	else
+		value = NULL;
+	g_strfreev (strlist);
 
 	return value;
 }
@@ -1190,7 +1162,6 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	NMSettingWired *s_wired;
 	char *tmp;
 	guint32 vlan_flags = 0;
-	GString *text = NULL;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	if (!s_con) {
@@ -1229,15 +1200,13 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	} else if (vlan_flags & NM_VLAN_FLAG_LOOSE_BINDING)
 		svSetValue (ifcfg, "VLAN_FLAGS", "LOOSE_BINDING", FALSE);
 
-	text = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_INGRESS_MAP);
-	svSetValue (ifcfg, "VLAN_INGRESS_PRIORITY_MAP", text ? text->str : NULL, FALSE);
-	if (text)
-		g_string_free (text, TRUE);
+	tmp = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_INGRESS_MAP);
+	svSetValue (ifcfg, "VLAN_INGRESS_PRIORITY_MAP", tmp, FALSE);
+	g_free (tmp);
 
-	text = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_EGRESS_MAP);
-	svSetValue (ifcfg, "VLAN_EGRESS_PRIORITY_MAP", text ? text->str : NULL, FALSE);
-	if (text)
-		g_string_free (text, TRUE);
+	tmp = vlan_priority_maplist_to_stringlist (s_vlan, NM_VLAN_EGRESS_MAP);
+	svSetValue (ifcfg, "VLAN_EGRESS_PRIORITY_MAP", tmp, FALSE);
+	g_free (tmp);
 
 	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
@@ -1245,24 +1214,18 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	if (s_wired) {
-		const GByteArray *device_mac, *cloned_mac;
+		const char *device_mac, *cloned_mac;
 		guint32 mtu;
 
 		*wired = TRUE;
 
 		device_mac = nm_setting_wired_get_mac_address (s_wired);
-		if (device_mac) {
-			tmp = nm_utils_hwaddr_ntoa (device_mac->data, device_mac->len);
-			svSetValue (ifcfg, "HWADDR", tmp, FALSE);
-			g_free (tmp);
-		}
+		if (device_mac)
+			svSetValue (ifcfg, "HWADDR", device_mac, FALSE);
 
 		cloned_mac = nm_setting_wired_get_cloned_mac_address (s_wired);
-		if (cloned_mac) {
-			tmp = nm_utils_hwaddr_ntoa (cloned_mac->data, device_mac->len);
-			svSetValue (ifcfg, "MACADDR", tmp, FALSE);
-			g_free (tmp);
-		}
+		if (cloned_mac)
+			svSetValue (ifcfg, "MACADDR", cloned_mac, FALSE);
 
 		mtu = nm_setting_wired_get_mtu (s_wired);
 		if (mtu) {
@@ -1378,7 +1341,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 	const char *iface;
 	guint32 i;
 	GString *opts;
-	const GByteArray *mac;
+	const char *mac;
 	char *s;
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
@@ -1398,11 +1361,9 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, GError **error
 	svSetValue (ifcfg, "BRIDGING_OPTS", NULL, FALSE);
 	svSetValue (ifcfg, "STP", "no", FALSE);
 	svSetValue (ifcfg, "DELAY", NULL, FALSE);
-	svSetValue (ifcfg, "MACADDR", NULL, FALSE);
 
 	mac = nm_setting_bridge_get_mac_address (s_bridge);
-	if (mac)
-		svSetValue_free (ifcfg, "MACADDR", nm_utils_hwaddr_ntoa (mac->data, mac->len), FALSE);
+	svSetValue (ifcfg, "MACADDR", mac, FALSE);
 
 	/* Bridge options */
 	opts = g_string_sized_new (32);
@@ -1927,8 +1888,13 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		NMIP4Address *addr;
 		guint32 ip;
 
-		if (i > 0 && _nm_setting_ip4_config_get_address_label (s_ip4, i))
-			continue;
+		if (i > 0) {
+			const char *label;
+
+			label = _nm_setting_ip4_config_get_address_label (s_ip4, i);
+			if (*label)
+				continue;
+		}
 
 		if (n == 0) {
 			/* Instead of index 0 use un-numbered variables.
@@ -1995,19 +1961,15 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 
 	num = nm_setting_ip4_config_get_num_dns (s_ip4);
 	for (i = 0; i < 254; i++) {
-		char buf[INET_ADDRSTRLEN + 1];
-		guint32 ip;
+		const char *dns;
 
 		addr_key = g_strdup_printf ("DNS%d", i + 1);
 
 		if (i >= num)
 			svSetValue (ifcfg, addr_key, NULL, FALSE);
 		else {
-			ip = nm_setting_ip4_config_get_dns (s_ip4, i);
-
-			memset (buf, 0, sizeof (buf));
-			inet_ntop (AF_INET, (const void *) &ip, &buf[0], sizeof (buf));
-			svSetValue (ifcfg, addr_key, &buf[0], FALSE);
+			dns = nm_setting_ip4_config_get_dns (s_ip4, i);
+			svSetValue (ifcfg, addr_key, dns, FALSE);
 		}
 		g_free (addr_key);
 	}
@@ -2203,8 +2165,6 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 		shvarFile *ifcfg;
 
 		label = _nm_setting_ip4_config_get_address_label (s_ip4, i);
-		if (!label)
-			continue;
 		if (   strncmp (label, base_name, base_name_len) != 0
 		    || label[base_name_len] != ':')
 			continue;
@@ -2320,6 +2280,7 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	char ipv6_defaultgw[INET6_ADDRSTRLEN];
 	NMIP6Address *addr;
 	const struct in6_addr *ip;
+	const char *dns;
 	GString *ip_str1, *ip_str2, *ip_ptr;
 	char *route6_path;
 
@@ -2414,11 +2375,8 @@ write_ip6_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		if (i >= num)
 			svSetValue (ifcfg, addr_key, NULL, FALSE);
 		else {
-			ip = nm_setting_ip6_config_get_dns (s_ip6, i);
-
-			memset (buf, 0, sizeof (buf));
-			inet_ntop (AF_INET6, (const void *) ip, buf, sizeof (buf));
-			svSetValue (ifcfg, addr_key, buf, FALSE);
+			dns = nm_setting_ip6_config_get_dns (s_ip6, i);
+			svSetValue (ifcfg, addr_key, dns, FALSE);
 		}
 		g_free (addr_key);
 	}

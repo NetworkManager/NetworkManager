@@ -1138,7 +1138,7 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		NMSettingConnection *s_con;
 		NMSettingWireless *s_wifi;
 		guint64 timestamp = 0;
-		GSList *bssid_list;
+		char **bssids;
 
 		dupl_con = nm_simple_connection_new_clone (NM_CONNECTION (self));
 		g_assert (dupl_con);
@@ -1159,11 +1159,11 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		 * from the same reason as timestamp. Thus we put it here to GetSettings()
 		 * return settings too.
 		 */
-		bssid_list = nm_settings_connection_get_seen_bssids (self);
+		bssids = nm_settings_connection_get_seen_bssids (self);
 		s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (dupl_con));
-		if (bssid_list && s_wifi)
-			g_object_set (s_wifi, NM_SETTING_WIRELESS_SEEN_BSSIDS, bssid_list, NULL);
-		g_slist_free (bssid_list);
+		if (bssids && bssids[0] && s_wifi)
+			g_object_set (s_wifi, NM_SETTING_WIRELESS_SEEN_BSSIDS, bssids, NULL);
+		g_free (bssids);
 
 		/* Secrets should *never* be returned by the GetSettings method, they
 		 * get returned by the GetSecrets method which can be better
@@ -1703,31 +1703,6 @@ nm_settings_connection_read_and_fill_timestamp (NMSettingsConnection *connection
 	g_key_file_free (timestamps_file);
 }
 
-static guint
-mac_hash (gconstpointer v)
-{
-	const guint8 *p = v;
-	guint32 i, h = 5381;
-
-	for (i = 0; i < ETH_ALEN; i++)
-		h = (h << 5) + h + p[i];
-	return h;
-}
-
-static gboolean
-mac_equal (gconstpointer a, gconstpointer b)
-{
-	return memcmp (a, b, ETH_ALEN) == 0;
-}
-
-static guint8 *
-mac_dup (const guint8 *old)
-{
-	g_return_val_if_fail (old != NULL, NULL);
-
-	return g_memdup (old, ETH_ALEN);
-}
-
 /**
  * nm_settings_connection_get_seen_bssids:
  * @connection: the #NMSettingsConnection
@@ -1737,12 +1712,25 @@ mac_dup (const guint8 *old)
  * Returns: (transfer container) list of seen BSSIDs (in the standard hex-digits-and-colons notation).
  * The caller is responsible for freeing the list, but not the content.
  **/
-GSList *
+char **
 nm_settings_connection_get_seen_bssids (NMSettingsConnection *connection)
 {
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
+	GHashTableIter iter;
+	char **bssids, *bssid;
+	int i;
+
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), NULL);
 
-	return _nm_utils_hash_values_to_slist (NM_SETTINGS_CONNECTION_GET_PRIVATE (connection)->seen_bssids);
+	bssids = g_new (char *, g_hash_table_size (priv->seen_bssids) + 1);
+
+	i = 0;
+	g_hash_table_iter_init (&iter, priv->seen_bssids);
+	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &bssid))
+		bssids[i++] = bssid;
+	bssids[i] = NULL;
+
+	return bssids;
 }
 
 /**
@@ -1754,7 +1742,7 @@ nm_settings_connection_get_seen_bssids (NMSettingsConnection *connection)
  **/
 gboolean
 nm_settings_connection_has_seen_bssid (NMSettingsConnection *connection,
-                                       const guint8 *bssid)
+                                       const char *bssid)
 {
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (bssid != NULL, FALSE);
@@ -1772,7 +1760,7 @@ nm_settings_connection_has_seen_bssid (NMSettingsConnection *connection,
  **/
 void
 nm_settings_connection_add_seen_bssid (NMSettingsConnection *connection,
-                                       const guint8 *seen_bssid)
+                                       const char *seen_bssid)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (connection);
 	const char *connection_uuid;
@@ -1790,8 +1778,8 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *connection,
 		return;  /* Already in the list */
 
 	/* Add the new BSSID; let the hash take ownership of the allocated BSSID string */
-	bssid_str = nm_utils_hwaddr_ntoa (seen_bssid, ETH_ALEN);
-	g_hash_table_insert (priv->seen_bssids, mac_dup (seen_bssid), bssid_str);
+	bssid_str = g_strdup (seen_bssid);
+	g_hash_table_insert (priv->seen_bssids, bssid_str, bssid_str);
 
 	/* Build up a list of all the BSSIDs in string form */
 	n = 0;
@@ -1829,19 +1817,6 @@ nm_settings_connection_add_seen_bssid (NMSettingsConnection *connection,
 	}
 }
 
-static void
-add_seen_bssid_string (NMSettingsConnection *self, const char *bssid)
-{
-	guint8 mac[ETH_ALEN];
-
-	g_return_if_fail (bssid != NULL);
-	if (nm_utils_hwaddr_aton (bssid, mac, ETH_ALEN)) {
-		g_hash_table_insert (NM_SETTINGS_CONNECTION_GET_PRIVATE (self)->seen_bssids,
-		                     mac_dup (mac),
-		                     g_strdup (bssid));
-	}
-}
-
 /**
  * nm_settings_connection_read_and_fill_seen_bssids:
  * @connection: the #NMSettingsConnection
@@ -1872,8 +1847,8 @@ nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *connecti
 	if (tmp_strv) {
 		g_hash_table_remove_all (priv->seen_bssids);
 		for (i = 0; i < len; i++)
-			add_seen_bssid_string (connection, tmp_strv[i]);
-		g_strfreev (tmp_strv);
+			g_hash_table_insert (priv->seen_bssids, tmp_strv[i], tmp_strv[i]);
+		g_free (tmp_strv);
 	} else {
 		/* If this connection didn't have an entry in the seen-bssids database,
 		 * maybe this is the first time we've read it in, so populate the
@@ -1883,8 +1858,11 @@ nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *connecti
 		s_wifi = nm_connection_get_setting_wireless (NM_CONNECTION (connection));
 		if (s_wifi) {
 			len = nm_setting_wireless_get_num_seen_bssids (s_wifi);
-			for (i = 0; i < len; i++)
-				add_seen_bssid_string (connection, nm_setting_wireless_get_seen_bssid (s_wifi, i));
+			for (i = 0; i < len; i++) {
+				char *bssid_dup = g_strdup (nm_setting_wireless_get_seen_bssid (s_wifi, i));
+
+				g_hash_table_insert (priv->seen_bssids, bssid_dup, bssid_dup);
+			}
 		}
 	}
 }
@@ -2011,7 +1989,7 @@ nm_settings_connection_init (NMSettingsConnection *self)
 
 	priv->agent_mgr = nm_agent_manager_get ();
 
-	priv->seen_bssids = g_hash_table_new_full (mac_hash, mac_equal, g_free, g_free);
+	priv->seen_bssids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
 	priv->autoconnect_retries = AUTOCONNECT_RETRIES_DEFAULT;
 	priv->autoconnect_blocked_reason = NM_DEVICE_STATE_REASON_NONE;

@@ -482,12 +482,8 @@ test_connection_match_wired (void)
 	NMConnection *orig, *copy, *matched;
 	GSList *connections = NULL;
 	NMSettingWired *s_wired;
-	GPtrArray *subchan_arr = g_ptr_array_sized_new (3);
+	char *subchan_arr[] = { "0.0.8000", "0.0.8001", "0.0.8002", NULL };
 	GByteArray *mac;
-
-	g_ptr_array_add (subchan_arr, "0.0.8000");
-	g_ptr_array_add (subchan_arr, "0.0.8001");
-	g_ptr_array_add (subchan_arr, "0.0.8002");
 
 	orig = _match_connection_new ();
 	copy = nm_simple_connection_new_clone (orig);
@@ -515,7 +511,6 @@ test_connection_match_wired (void)
 	g_assert (matched == copy);
 
 	g_slist_free (connections);
-	g_ptr_array_free (subchan_arr, TRUE);
 	g_object_unref (orig);
 	g_object_unref (copy);
 }

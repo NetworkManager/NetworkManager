@@ -86,8 +86,8 @@ const char *      nm_setting_wired_get_port             (NMSettingWired *setting
 guint32           nm_setting_wired_get_speed            (NMSettingWired *setting);
 const char *      nm_setting_wired_get_duplex           (NMSettingWired *setting);
 gboolean          nm_setting_wired_get_auto_negotiate   (NMSettingWired *setting);
-const GByteArray *nm_setting_wired_get_mac_address      (NMSettingWired *setting);
-const GByteArray *nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting);
+const char *      nm_setting_wired_get_mac_address      (NMSettingWired *setting);
+const char *      nm_setting_wired_get_cloned_mac_address (NMSettingWired *setting);
 
 const GSList     *nm_setting_wired_get_mac_address_blacklist   (NMSettingWired *setting);
 guint32           nm_setting_wired_get_num_mac_blacklist_items (NMSettingWired *setting);
@@ -103,7 +103,7 @@ void              nm_setting_wired_clear_mac_blacklist_items   (NMSettingWired *
 
 guint32           nm_setting_wired_get_mtu              (NMSettingWired *setting);
 
-const GPtrArray * nm_setting_wired_get_s390_subchannels (NMSettingWired *setting);
+const char * const *nm_setting_wired_get_s390_subchannels (NMSettingWired *setting);
 const char *      nm_setting_wired_get_s390_nettype     (NMSettingWired *setting);
 
 guint32           nm_setting_wired_get_num_s390_options (NMSettingWired *setting);

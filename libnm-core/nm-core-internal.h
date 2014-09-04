@@ -63,5 +63,14 @@ gboolean    _nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *s
 
 GSList *    _nm_utils_hash_values_to_slist (GHashTable *hash);
 
+GHashTable *_nm_utils_copy_strdict (GHashTable *strdict);
+
+typedef gpointer (*NMUtilsCopyFunc) (gpointer);
+
+GPtrArray *_nm_utils_copy_slist_to_array (const GSList *list,
+                                          NMUtilsCopyFunc copy_func,
+                                          GDestroyNotify unref_func);
+GSList    *_nm_utils_copy_array_to_slist (const GPtrArray *array,
+                                          NMUtilsCopyFunc copy_func);
 
 #endif

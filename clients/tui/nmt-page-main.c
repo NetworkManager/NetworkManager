@@ -96,9 +96,9 @@ permissions_transform_to_allusers (GBinding     *binding,
                                    GValue       *target_value,
                                    gpointer      user_data)
 {
-	GSList *perms = g_value_get_boxed (source_value);
+	char **perms = g_value_get_boxed (source_value);
 
-	g_value_set_boolean (target_value, perms == NULL);
+	g_value_set_boolean (target_value, g_strv_length (perms) == 0);
 	return TRUE;
 }
 
@@ -109,12 +109,13 @@ permissions_transform_from_allusers (GBinding     *binding,
                                      gpointer      user_data)
 {
 	gboolean allusers = g_value_get_boolean (source_value);
-	GSList *perms = NULL;
+	char **perms = NULL;
 
 	if (allusers) {
-		char *perm = g_strdup_printf ("user:%s:", g_get_user_name ());
+		perms = g_new (char *, 2);
 
-		perms = g_slist_prepend (perms, perm);
+		perms[0] = g_strdup_printf ("user:%s:", g_get_user_name ());
+		perms[1] = NULL;
 	}
 	g_value_take_boxed (target_value, perms);
 	return TRUE;

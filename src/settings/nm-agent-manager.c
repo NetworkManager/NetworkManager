@@ -887,8 +887,7 @@ set_secrets_not_required (NMConnection *connection, GHashTable *hash)
 				 * "secrets" property is actually a hash table of secrets.
 				 */
 				if (   strcmp (setting_name, NM_SETTING_VPN_SETTING_NAME) == 0
-				    && strcmp (key_name, NM_SETTING_VPN_SECRETS) == 0
-				    && G_VALUE_HOLDS (val, DBUS_TYPE_G_MAP_OF_STRING)) {
+				    && strcmp (key_name, NM_SETTING_VPN_SECRETS) == 0) {
 					GHashTableIter vpn_secret_iter;
 					const char *secret_name;
 

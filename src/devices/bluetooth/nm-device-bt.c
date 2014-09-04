@@ -158,7 +158,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMSettingConnection *s_con;
 	NMSettingBluetooth *s_bt;
-	const GByteArray *array;
+	const char *bdaddr;
 	guint32 bt_type;
 
 	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->check_connection_compatible (device, connection))
@@ -178,10 +178,10 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (!(bt_type & priv->capabilities))
 		return FALSE;
 
-	array = nm_setting_bluetooth_get_bdaddr (s_bt);
-	if (!array)
+	bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
+	if (!bdaddr)
 		return FALSE;
-	if (!nm_utils_hwaddr_matches (priv->bdaddr, -1, array->data, array->len))
+	if (!nm_utils_hwaddr_matches (priv->bdaddr, -1, bdaddr, -1))
 		return FALSE;
 
 	return TRUE;
@@ -215,7 +215,7 @@ complete_connection (NMDevice *device,
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMSettingBluetooth *s_bt;
-	const GByteArray *setting_bdaddr;
+	const char *setting_bdaddr;
 	const char *ctype;
 	gboolean is_dun = FALSE, is_pan = FALSE;
 	NMSettingGsm *s_gsm;
@@ -324,7 +324,7 @@ complete_connection (NMDevice *device,
 	setting_bdaddr = nm_setting_bluetooth_get_bdaddr (s_bt);
 	if (setting_bdaddr) {
 		/* Make sure the setting BT Address (if any) matches the device's */
-		if (!nm_utils_hwaddr_matches (setting_bdaddr->data, setting_bdaddr->len, priv->bdaddr, -1)) {
+		if (!nm_utils_hwaddr_matches (setting_bdaddr, -1, priv->bdaddr, -1)) {
 			g_set_error_literal (error,
 			                     NM_SETTING_BLUETOOTH_ERROR,
 			                     NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
@@ -332,14 +332,9 @@ complete_connection (NMDevice *device,
 			return FALSE;
 		}
 	} else {
-		GByteArray *bdaddr;
-
 		/* Lock the connection to this device by default */
-		if (!nm_utils_hwaddr_matches (priv->bdaddr, -1, NULL, ETH_ALEN)) {
-			bdaddr = nm_utils_hwaddr_atoba (priv->bdaddr, ETH_ALEN);
-			g_object_set (G_OBJECT (s_bt), NM_SETTING_BLUETOOTH_BDADDR, bdaddr, NULL);
-			g_byte_array_free (bdaddr, TRUE);
-		}
+		if (!nm_utils_hwaddr_matches (priv->bdaddr, -1, NULL, ETH_ALEN))
+			g_object_set (G_OBJECT (s_bt), NM_SETTING_BLUETOOTH_BDADDR, priv->bdaddr, NULL);
 	}
 
 	return TRUE;

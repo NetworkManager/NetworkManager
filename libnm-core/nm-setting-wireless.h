@@ -116,15 +116,15 @@ GType nm_setting_wireless_get_type (void);
 
 NMSetting *nm_setting_wireless_new (void);
 
-const GByteArray *nm_setting_wireless_get_ssid               (NMSettingWireless *setting);
+GBytes           *nm_setting_wireless_get_ssid               (NMSettingWireless *setting);
 const char       *nm_setting_wireless_get_mode               (NMSettingWireless *setting);
 const char       *nm_setting_wireless_get_band               (NMSettingWireless *setting);
 guint32           nm_setting_wireless_get_channel            (NMSettingWireless *setting);
-const GByteArray *nm_setting_wireless_get_bssid              (NMSettingWireless *setting);
+const char       *nm_setting_wireless_get_bssid              (NMSettingWireless *setting);
 guint32           nm_setting_wireless_get_rate               (NMSettingWireless *setting);
 guint32           nm_setting_wireless_get_tx_power           (NMSettingWireless *setting);
-const GByteArray *nm_setting_wireless_get_mac_address        (NMSettingWireless *setting);
-const GByteArray *nm_setting_wireless_get_cloned_mac_address (NMSettingWireless *setting);
+const char       *nm_setting_wireless_get_mac_address        (NMSettingWireless *setting);
+const char       *nm_setting_wireless_get_cloned_mac_address (NMSettingWireless *setting);
 
 const GSList     *nm_setting_wireless_get_mac_address_blacklist   (NMSettingWireless *setting);
 guint32           nm_setting_wireless_get_num_mac_blacklist_items (NMSettingWireless *setting);

@@ -71,6 +71,6 @@ guint32 wifi_utils_get_mesh_channel (WifiData *data);
 
 gboolean wifi_utils_set_mesh_channel (WifiData *data, guint32 channel);
 
-gboolean wifi_utils_set_mesh_ssid (WifiData *data, const GByteArray *ssid);
+gboolean wifi_utils_set_mesh_ssid (WifiData *data, const guint8 *ssid, gsize len);
 
 #endif  /* __WIFI_UTILS_H__ */
