@@ -18,184 +18,37 @@
  * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
-/* for environ */
-#define _GNU_SOURCE
+#include <config.h>
 
-#include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 
-#include <config.h>
-
-#include <dbus/dbus.h>
+#include <gio/gio.h>
 
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
 
-/**
- * _dbus_dict_open_write:
- * @iter: A valid dbus message iterator
- * @iter_dict: on return, a dict iterator to pass to further dict functions
- *
- * Start a dict in a dbus message.  Should be paired with a call to
- * _dbus_dict_close_write().
- *
- * Returns: %TRUE on success, %FALSE on failure
- */
-static dbus_bool_t
-_dbus_dict_open_write (DBusMessageIter *iter, DBusMessageIter *iter_dict)
-{
-	if (!iter || !iter_dict)
-		return FALSE;
-
-	return dbus_message_iter_open_container (iter,
-	                                         DBUS_TYPE_ARRAY,
-	                                         DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
-	                                         DBUS_TYPE_STRING_AS_STRING
-	                                         DBUS_TYPE_VARIANT_AS_STRING
-	                                         DBUS_DICT_ENTRY_END_CHAR_AS_STRING,
-	                                         iter_dict);
-}
-
-/**
- * _dbus_dict_close_write:
- * @iter: valid dbus message iterator, same as passed to _dbus_dict_open_write()
- * @iter_dict: a dbus dict iterator returned from _dbus_dict_open_write()
- *
- * End a dict element in a dbus message.  Should be paired with a call to
- * _dbus_dict_open_write().
- *
- * Returns: %TRUE on success, %FALSE on failure
- */
-static dbus_bool_t
-_dbus_dict_close_write (DBusMessageIter *iter, DBusMessageIter *iter_dict)
-{
-	if (!iter || !iter_dict)
-		return FALSE;
-
-	return dbus_message_iter_close_container (iter, iter_dict);
-}
-
-static dbus_bool_t
-_dbus_add_dict_entry_start (DBusMessageIter *iter_dict,
-                            DBusMessageIter *iter_dict_entry,
-                            const char *key,
-                            const int value_type)
-{
-	if (!dbus_message_iter_open_container (iter_dict, DBUS_TYPE_DICT_ENTRY, NULL, iter_dict_entry))
-		return FALSE;
-
-	if (!dbus_message_iter_append_basic (iter_dict_entry, DBUS_TYPE_STRING, &key))
-		return FALSE;
-
-	return TRUE;
-}
-
-
-static dbus_bool_t
-_dbus_add_dict_entry_end (DBusMessageIter *iter_dict,
-                          DBusMessageIter *iter_dict_entry,
-                          DBusMessageIter *iter_dict_val)
-{
-	if (!dbus_message_iter_close_container (iter_dict_entry, iter_dict_val))
-		return FALSE;
-	if (!dbus_message_iter_close_container (iter_dict, iter_dict_entry))
-		return FALSE;
-
-	return TRUE;
-}
-
-static dbus_bool_t
-_dbus_add_dict_entry_byte_array (DBusMessageIter *iter_dict,
-                                 const char *key,
-                                 const char *value,
-                                 const dbus_uint32_t value_len)
-{
-	DBusMessageIter iter_dict_entry, iter_dict_val, iter_array;
-	dbus_uint32_t i;
-
-	if (!_dbus_add_dict_entry_start (iter_dict, &iter_dict_entry, key, DBUS_TYPE_ARRAY))
-		return FALSE;
-
-	if (!dbus_message_iter_open_container (&iter_dict_entry,
-	                                       DBUS_TYPE_VARIANT,
-	                                       DBUS_TYPE_ARRAY_AS_STRING
-	                                       DBUS_TYPE_BYTE_AS_STRING,
-	                                       &iter_dict_val))
-		return FALSE;
-
-	if (!dbus_message_iter_open_container (&iter_dict_val,
-	                                       DBUS_TYPE_ARRAY,
-	                                       DBUS_TYPE_BYTE_AS_STRING,
-	                                       &iter_array))
-		return FALSE;
-
-	for (i = 0; i < value_len; i++) {
-		if (!dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_BYTE, &(value[i])))
-			return FALSE;
-	}
-
-	if (!dbus_message_iter_close_container (&iter_dict_val, &iter_array))
-		return FALSE;
-
-	if (!_dbus_add_dict_entry_end (iter_dict, &iter_dict_entry, &iter_dict_val))
-		return FALSE;
-
-	return TRUE;
-}
-
-/**
- * _dbus_dict_append_byte_array:
- * @iter_dict: A valid %DBusMessageIter returned from _dbus_dict_open_write()
- * @key: The key of the dict item
- * @value: The byte array
- * @value_len: The length of the byte array, in bytes
- *
- * Add a byte array entry to the dict.
- *
- * Returns: %TRUE on success, %FALSE on failure
- *
- */
-static dbus_bool_t
-_dbus_dict_append_byte_array (DBusMessageIter *iter_dict,
-                              const char *key,
-                              const char *value,
-                              const dbus_uint32_t value_len)
-{
-	if (!key)
-		return FALSE;
-	if (!value && (value_len != 0))
-		return FALSE;
-	return _dbus_add_dict_entry_byte_array (iter_dict, key, value, value_len);
-}
-
-
 static const char * ignore[] = {"PATH", "SHLVL", "_", "PWD", "dhc_dbus", NULL};
 
-static dbus_bool_t
-build_message (DBusMessage * message)
+static GVariant *
+build_signal_parameters (void)
 {
 	char **item;
-	dbus_bool_t success = FALSE;
-	DBusMessageIter iter, iter_dict;
+	GVariantBuilder builder;
 
-	dbus_message_iter_init_append (message, &iter);
-	if (!_dbus_dict_open_write (&iter, &iter_dict))
-		goto out;
+	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 
 	/* List environment and format for dbus dict */
 	for (item = environ; *item; item++) {
 		char *name, *val, **p;
 
 		/* Split on the = */
-		name = strdup (*item);
+		name = g_strdup (*item);
 		val = strchr (name, '=');
-		if (!val)
+		if (!val || val == name)
 			goto next;
 		*val++ = '\0';
-		if (!strlen (val))
-			val = NULL;
 
 		/* Ignore non-DCHP-related environment variables */
 		for (p = (char **) ignore; *p; p++) {
@@ -206,72 +59,82 @@ build_message (DBusMessage * message)
 		/* Value passed as a byte array rather than a string, because there are
 		 * no character encoding guarantees with DHCP, and D-Bus requires
 		 * strings to be UTF-8.
+		 *
+		 * Note that we can't use g_variant_new_bytestring() here, because that
+		 * includes the trailing '\0'. (??!?)
 		 */
-		if (!_dbus_dict_append_byte_array (&iter_dict,
-		                                      name,
-		                                      val ? val : "\0",
-		                                      val ? strlen (val) : 1)) {
-			fprintf (stderr, "Error: failed to add item '%s' to signal\n", name);
-		}
+		g_variant_builder_add (&builder, "{sv}",
+		                       name,
+		                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+		                                                  val, strlen (val), 1));
 
 	next:
-		free (name);
+		g_free (name);
 	}
 
-	if (!_dbus_dict_close_write (&iter, &iter_dict))
-		goto out;
-
-	success = TRUE;
-
-out:
-	return success;
+	return g_variant_new ("(a{sv})", &builder);
 }
 
 #if !HAVE_DBUS_GLIB_100
-static DBusConnection *
+/* It doesn't matter that nm-dhcp-helper doesn't use dbus-glib itself; the
+ * workaround code is for if the daemon is built with old dbus-glib.
+ */
+
+static gboolean ever_acquired = FALSE;
+
+static void
+on_name_acquired (GDBusConnection *connection,
+                  const gchar     *name,
+                  gpointer         user_data)
+{
+	GMainLoop *loop = user_data;
+
+	ever_acquired = TRUE;
+	g_main_loop_quit (loop);
+}
+
+static void
+on_name_lost (GDBusConnection *connection,
+              const gchar     *name,
+              gpointer         user_data)
+{
+	if (ever_acquired) {
+		g_print ("Lost D-Bus name: exiting\n");
+		exit (0);
+	} else {
+		g_printerr ("Error: Could not acquire the NM DHCP client service.\n");
+		exit (1);
+	}
+}
+
+static GDBusConnection *
 shared_connection_init (void)
 {
-	DBusConnection * connection;
-	DBusError error;
-	int ret;
+	GDBusConnection *connection;
+	GError *error = NULL;
+	GMainLoop *loop;
 
-	dbus_connection_set_change_sigpipe (TRUE);
-
-	dbus_error_init (&error);
-	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
-	if (dbus_error_is_set (&error)) {
-		fprintf (stderr, "Error: could not get the system bus.  Make sure "
-		            "the message bus daemon is running!  Message: (%s) %s\n",
-		            error.name,
-		            error.message);
-		goto error;
+	connection = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
+	if (!connection) {
+		g_dbus_error_strip_remote_error (error);
+		g_printerr ("Error: could not get the system bus.  Make sure "
+		            "the message bus daemon is running!  Message: %s\n",
+		            error->message);
+		g_error_free (&error);
+		return NULL;
 	}
 
-	dbus_error_init (&error);
-	ret = dbus_bus_request_name (connection, "org.freedesktop.nm_dhcp_client", 0, &error);
-	if (dbus_error_is_set (&error)) {
-		fprintf (stderr, "Error: Could not acquire the NM DHCP client service. "
-		            "Message: (%s) %s\n",
-		            error.name,
-		            error.message);
-		goto error;
-	}
-
-	if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-		fprintf (stderr, "Error: Could not acquire the NM DHCP client service "
-		         "as it is already taken.  Return: %d\n",
-		         ret);
-		goto error;
-	}
+	loop = g_main_loop_new (NULL, FALSE);
+	g_bus_own_name_on_connection (connection,
+	                              "org.freedesktop.nm_dhcp_client",
+	                              0,
+	                              on_name_acquired,
+	                              on_name_lost,
+	                              loop, NULL);
+	g_main_loop_run (loop);
+	g_main_loop_unref (loop);
 
 	return connection;
-
-error:
-	if (dbus_error_is_set (&error))
-		dbus_error_free (&error);
-	if (connection)
-		dbus_connection_unref (connection);
-	return NULL;
 }
 #endif
 
@@ -284,7 +147,7 @@ fatal_error (void)
 	if (pid_str)
 		pid = strtol (pid_str, NULL, 10);
 	if (pid) {
-		fprintf (stderr, "Fatal error occured, killing dhclient instance with pid %d.\n", pid);
+		g_printerr ("Fatal error occured, killing dhclient instance with pid %d.\n", pid);
 		kill (pid, SIGTERM);
 	}
 
@@ -294,52 +157,46 @@ fatal_error (void)
 int
 main (int argc, char *argv[])
 {
-	DBusConnection *connection;
-	DBusMessage *message;
-	dbus_bool_t result;
-	DBusError error;
+	GDBusConnection *connection;
+	GError *error = NULL;
 
-	dbus_connection_set_change_sigpipe (TRUE);
-
-	dbus_error_init (&error);
-	connection = dbus_connection_open_private ("unix:path=" NMRUNDIR "/private-dhcp", &error);
+	connection = g_dbus_connection_new_for_address_sync ("unix:path=" NMRUNDIR "/private-dhcp",
+	                                                     G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
+	                                                     NULL, NULL, &error);
 	if (!connection) {
 #if !HAVE_DBUS_GLIB_100
 		connection = shared_connection_init ();
 #endif
 		if (!connection) {
-			fprintf (stderr, "Error: could not connect to NetworkManager DBus socket: (%s) %s\n",
-				     error.name, error.message);
-			dbus_error_free (&error);
+			g_dbus_error_strip_remote_error (error);
+			g_printerr ("Error: could not connect to NetworkManager D-Bus socket: %s\n",
+			            error->message);
+			g_error_free (error);
 			fatal_error ();
 		}
 	}
-	dbus_connection_set_exit_on_disconnect (connection, FALSE);
 
-	message = dbus_message_new_signal ("/", NM_DHCP_CLIENT_DBUS_IFACE, "Event");
-	if (message == NULL) {
-		fprintf (stderr, "Error: Not enough memory to send DHCP Event signal.\n");
+	if (!g_dbus_connection_emit_signal (connection,
+	                                    NULL,
+	                                    "/",
+	                                    NM_DHCP_CLIENT_DBUS_IFACE,
+	                                    "Event",
+	                                    build_signal_parameters (),
+	                                    &error)) {
+		g_dbus_error_strip_remote_error (error);
+		g_printerr ("Error: Could not send DHCP Event signal: %s\n", error->message);
+		g_error_free (error);
 		fatal_error ();
 	}
 
-	/* Dump environment variables into the message */
-	result = build_message (message);
-	if (result == FALSE) {
-		fprintf (stderr, "Error: Not enough memory to send DHCP Event signal.\n");
+	if (!g_dbus_connection_flush_sync (connection, NULL, &error)) {
+		g_dbus_error_strip_remote_error (error);
+		g_printerr ("Error: Could not flush D-Bus connection: %s\n", error->message);
+		g_error_free (error);
 		fatal_error ();
 	}
 
-	/* queue the message */
-	result = dbus_connection_send (connection, message, NULL);
-	if (!result) {
-		fprintf (stderr, "Error: Could not send send DHCP Event signal.\n");
-		fatal_error ();
-	}
-	dbus_message_unref (message);
-
-	/* Send out the message */
-	dbus_connection_flush (connection);
-
+	g_object_unref (connection);
 	return 0;
 }
 

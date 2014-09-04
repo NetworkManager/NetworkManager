@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,12 +14,13 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2011 Red Hat, Inc.
+ * Copyright 2011 Red Hat, Inc.
  */
 
 /*
- * The example shows how to list connections from System Settings service using libnm
- * (that wraps direct D-Bus calls).
+ * The example shows how to list connections from the System Settings service
+ * using libnm.  Contrast this example with list-connections-gdbus.c, which is a
+ * bit lower level and talks directly to NM using GDBus.
  *
  * Compile with:
  *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` list-connections-libnm.c -o list-connections-libnm

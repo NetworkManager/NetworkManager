@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,19 +14,18 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 Red Hat, Inc.
+ * Copyright 2010 Red Hat, Inc.
  */
 
 /*
- * The example shows how to get info about APs visible by Wi-Fi devices 
- * using libnm (that wraps direct D-Bus calls).
+ * The example shows how to get info about APs visible by Wi-Fi devices using
+ * libnm.
  *
  * Compile with:
  *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` get-ap-info-libnm.c -o get-ap-info-libnm
  */
 
 #include <glib.h>
-#include <dbus/dbus-glib.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -188,7 +188,8 @@ show_wifi_device_info (NMDevice *device)
 	}
 }
 
-int main (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
 	NMClient *client;
 	const GPtrArray *devices;

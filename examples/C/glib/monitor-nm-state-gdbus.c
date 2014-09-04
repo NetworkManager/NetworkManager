@@ -1,5 +1,4 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* vim: set ft=c ts=4 sts=4 sw=4 noexpandtab smartindent: */
 /*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2012 Red Hat, Inc.
+ * Copyright 2012 Red Hat, Inc.
  */
 
 /*
@@ -23,11 +22,11 @@
  * "org.freedesktop.NetworkManager" object.
  * It uses GDBus and the libnm headers.
 
- * You don't need to have NetworkManager devel package installed. You can just
+ * You don't need to have the NetworkManager devel packages installed. You can just
  * grab nm-dbus-interface.h and put it in the path.
  *
  * Standalone compilation:
- *   gcc -Wall `pkg-config --libs --cflags glib-2.0 gio-2.0` `pkg-config --cflags libnm` monitor-nm-state-GDBus.c -o monitor-nm-state-GDBus
+ *   gcc -Wall `pkg-config --libs --cflags glib-2.0 gio-2.0` `pkg-config --cflags libnm` monitor-nm-state-gdbus.c -o monitor-nm-state-gdbus
  */
 
 #include <gio/gio.h>
@@ -112,6 +111,7 @@ main (int argc, char *argv[])
 
 	if (proxy == NULL)
 	{
+		g_dbus_error_strip_remote_error (error);
 		g_printerr ("Error creating D-Bus proxy: %s\n", error->message);
 		g_error_free (error);
 		return -1;
