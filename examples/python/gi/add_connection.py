@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- Mode: Python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+# vim: ft=python ts=4 sts=4 sw=4 et ai
+
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +17,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2014 Red Hat, Inc.
+# Copyright 2014 Red Hat, Inc.
 #
 
 #
@@ -37,7 +39,7 @@ def print_values(setting, key, value, flags, data):
 
 # create an Ethernet connection and return it
 def create_profile(name):
-    profile = NM.Connection.new()
+    profile = NM.SimpleConnection.new()
     s_con = NM.SettingConnection.new()
     s_con.set_property(NM.SETTING_CONNECTION_ID, name)
     s_con.set_property(NM.SETTING_CONNECTION_UUID, str(uuid.uuid4()))
@@ -84,7 +86,7 @@ if __name__ == "__main__":
     main_loop = GLib.MainLoop()
 
     # create RemoteSettings object
-    settings = NM.RemoteSettings.new(None);
+    settings = NM.RemoteSettings.new(None)
 
     # create a connection profile for NM
     con = create_profile(profile_name)

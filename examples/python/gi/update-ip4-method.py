@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- Mode: Python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+# vim: ft=python ts=4 sts=4 sw=4 et ai
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2014 Red Hat, Inc.
+# Copyright 2014 Red Hat, Inc.
 #
 
 #
@@ -40,8 +41,27 @@ def commit_cb(connection, error, data):
         print(error)
     main_loop.quit()
 
-def connections_read_cb(settings, data):
-    uuid, method, args = data
+if __name__ == "__main__":
+    # parse and validate arguments
+    if len(sys.argv) < 3:
+        print "Usage: %s <uuid> <auto|static> [address prefix gateway]" % sys.argv[0]
+        sys.exit(1)
+
+    method = sys.argv[2]
+    if method == "static" or method == "manual" and len(sys.argv) < 5:
+        print "Usage: %s %s static address prefix [gateway]" % (sys.argv[0], sys.argv[1])
+        sys.exit(1)
+
+    uuid = sys.argv[1]
+
+    # Convert method to NM method
+    if method == "static":
+        method = "manual"
+
+    main_loop = GLib.MainLoop()
+
+    # create RemoteSettings object
+    settings = NM.RemoteSettings.new(None)
 
     all_connections = settings.list_connections()
     for c in all_connections:
@@ -70,27 +90,6 @@ def connections_read_cb(settings, data):
 
         c.commit_changes(commit_cb, None)
 
-if __name__ == "__main__":
-    # parse and validate arguments
-    if len(sys.argv) < 3:
-        print "Usage: %s <uuid> <auto|static> [address prefix gateway]" % sys.argv[0]
-        sys.exit(1)
-
-    method = sys.argv[2]
-    if method == "static" and len(sys.argv) < 5:
-        print "Usage: %s %s static address prefix [gateway]" % (sys.argv[0], sys.argv[1])
-        sys.exit(1)
-
-    # Convert method to NM method
-    if method == "static":
-        method = "manual"
-
-    main_loop = GLib.MainLoop()
-
-    # create RemoteSettings object and attach to the "connections-read" signal
-    # to wait for connections to be loaded asynchronously
-    settings = NM.RemoteSettings.new(None)
-    settings.connect('connections-read', connections_read_cb, (sys.argv[1], method, sys.argv))
-
+    # run main loop
     main_loop.run()
 

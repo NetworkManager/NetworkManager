@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2013 Red Hat, Inc.
+# Copyright 2013 - 2014 Red Hat, Inc.
 #
 
 import sys
@@ -43,7 +43,14 @@ def connection_saved(connection, error, data):
     print ("Connection '%s' saved.") % (connection.get_id())
     main_loop.quit()
 
-def connections_read(settings, data):
+if __name__ == "__main__":
+    if len(sys.argv) != 2 and len(sys.argv) != 3:
+        sys.exit('Usage: %s <connection name or UUID> [new zone]' % sys.argv[0])
+
+    main_loop = GLib.MainLoop()
+    settings = NM.RemoteSettings.new(None)
+    connections = settings.list_connections()
+
     con_name = sys.argv[1]
     if len(sys.argv) == 3:
         new_zone = sys.argv[2]
@@ -51,7 +58,6 @@ def connections_read(settings, data):
         new_zone = None
 
     found = False
-    connections = settings.list_connections()
     for c in connections:
         if c.get_id() == con_name or c.get_uuid() == con_name:
             found = True
@@ -71,17 +77,3 @@ def connections_read(settings, data):
     if not found:
         print ("Error: connection '%s' not found.") % (con_name)
         main_loop.quit()
-
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2 and len(sys.argv) != 3:
-        sys.exit('Usage: %s <connection name or UUID> [new zone]' % sys.argv[0])
-
-    main_loop = GLib.MainLoop()
-    settings = NM.RemoteSettings.new(None);
-
-    # Connections are read asynchronously, so we have to wait for the
-    # 'settings' object to tell us that all connections have been read.
-    settings.connect("connections-read", connections_read, None)
-    main_loop.run()
-

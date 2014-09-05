@@ -17,7 +17,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright (C) 2014 Red Hat, Inc.
+# Copyright 2014 Red Hat, Inc.
 #
 
 import sys, socket, struct
@@ -102,21 +102,11 @@ def show_dns(self, family):
         print("None")
         return
 
+    print ("Nameservers: %s") % (ip_cfg.get_nameservers())
+    print ("Domains: %s") % (ip_cfg.get_domains())
+    print ("Searches: %s") % (ip_cfg.get_searches())
     if (family == socket.AF_INET):
-        print ("Domains: %s") % (ip_cfg.get_domains())
-        print ("Searches: %s") % (ip_cfg.get_searches())
-        print("Nameservers:")
-        nameservers = ip_cfg.get_nameservers()
-        for dns in nameservers:
-            print socket.inet_ntop(family, struct.pack("=I", dns))
-    else:
-        print ("Domains: %s") % (ip_cfg.get_domains())
-        print ("Searches: %s") % (ip_cfg.get_searches())
-        print("Nameservers:")
-        num = ip_cfg.get_num_nameservers()
-        for i in range(0,num):
-           dns = ip_cfg.get_nameserver(i)
-           print socket.inet_ntop(family, dns)
+        print ("WINS: %s") % (ip_cfg.get_wins_servers())
 
 
 if __name__ == "__main__":
