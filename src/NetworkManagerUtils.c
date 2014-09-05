@@ -15,8 +15,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2014 Red Hat, Inc.
- * Copyright (C) 2005 - 2008 Novell, Inc.
+ * Copyright 2004 - 2014 Red Hat, Inc.
+ * Copyright 2005 - 2008 Novell, Inc.
  */
 
 #include "config.h"
@@ -57,13 +57,16 @@
 #endif
 
 /*
- * nm_ethernet_address_is_valid
+ * nm_ethernet_address_is_valid:
+ * @addr: pointer to a binary or ASCII Ethernet address
+ * @len: length of @addr, or -1 if @addr is ASCII
  *
  * Compares an Ethernet address against known invalid addresses.
- *
+
+ * Returns: %TRUE if @addr is a valid Ethernet address, %FALSE if it is not.
  */
 gboolean
-nm_ethernet_address_is_valid (gconstpointer addr, gsize len)
+nm_ethernet_address_is_valid (gconstpointer addr, gssize len)
 {
 	guint8 invalid_addr1[ETH_ALEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 	guint8 invalid_addr2[ETH_ALEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};

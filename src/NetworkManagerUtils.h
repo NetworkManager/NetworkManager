@@ -15,8 +15,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2004 - 2014 Red Hat, Inc.
- * Copyright (C) 2005 - 2008 Novell, Inc.
+ * Copyright 2004 - 2014 Red Hat, Inc.
+ * Copyright 2005 - 2008 Novell, Inc.
  */
 
 #ifndef __NETWORKMANAGER_UTILS_H__
@@ -28,7 +28,7 @@
 #include "nm-connection.h"
 #include "nm-platform.h"
 
-gboolean nm_ethernet_address_is_valid (gconstpointer addr, gsize len);
+gboolean nm_ethernet_address_is_valid (gconstpointer addr, gssize len);
 
 in_addr_t nm_utils_ip4_address_clear_host_address (in_addr_t addr, guint8 plen);
 void nm_utils_ip6_address_clear_host_address (struct in6_addr *dst, const struct in6_addr *src, guint8 plen);
