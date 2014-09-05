@@ -1000,4 +1000,92 @@ nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const cha
     nmtst_assert_hwaddr_equals (hwaddr1, hwaddr1_len, expected, G_STRLOC)
 #endif
 
+#ifdef __NM_CONNECTION_H__
+
+typedef enum {
+	NMTST_VARIANT_EDITOR_CONNECTION,
+	NMTST_VARIANT_EDITOR_SETTING,
+	NMTST_VARIANT_EDITOR_PROPERTY
+} NmtstVariantEditorPhase;
+
+#define NMTST_VARIANT_EDITOR(__connection_variant, __code) \
+	G_STMT_START { \
+		GVariantIter __connection_iter, *__setting_iter; \
+		GVariantBuilder __connection_builder, __setting_builder; \
+		const char *__cur_setting_name, *__cur_property_name; \
+		GVariant *__property_val; \
+		NmtstVariantEditorPhase __phase; \
+                                                                        \
+		g_variant_builder_init (&__connection_builder, NM_VARIANT_TYPE_CONNECTION); \
+		g_variant_iter_init (&__connection_iter, __connection_variant); \
+		 \
+		__phase = NMTST_VARIANT_EDITOR_CONNECTION; \
+		__code; \
+		while (g_variant_iter_next (&__connection_iter, "{&sa{sv}}", &__cur_setting_name, &__setting_iter)) { \
+			g_variant_builder_init (&__setting_builder, NM_VARIANT_TYPE_SETTING); \
+			__phase = NMTST_VARIANT_EDITOR_SETTING; \
+			__code; \
+			 \
+			while (g_variant_iter_next (__setting_iter, "{&sv}", &__cur_property_name, &__property_val)) { \
+				__phase = NMTST_VARIANT_EDITOR_PROPERTY; \
+				__code; \
+				 \
+				if (__cur_property_name) { \
+					g_variant_builder_add (&__setting_builder, "{sv}", \
+					                       __cur_property_name, \
+					                       __property_val); \
+				} else \
+					g_variant_unref (__property_val); \
+			} \
+			 \
+			if (__cur_setting_name) \
+				g_variant_builder_add (&__connection_builder, "{sa{sv}}", __cur_setting_name, &__setting_builder); \
+			g_variant_iter_free (__setting_iter); \
+		} \
+		 \
+		g_variant_unref (__connection_variant); \
+		 \
+		__connection_variant = g_variant_builder_end (&__connection_builder); \
+	} G_STMT_END;
+#endif
+
+#define NMTST_VARIANT_ADD_SETTING(__setting_name, __setting_variant) \
+	G_STMT_START { \
+		if (__phase == NMTST_VARIANT_EDITOR_CONNECTION) \
+			g_variant_builder_add (&__connection_builder, "{s@a{sv}}", __setting_name, __setting_variant); \
+	} G_STMT_END
+
+#define NMTST_VARIANT_DROP_SETTING(__setting_name) \
+	G_STMT_START { \
+		if (__phase == NMTST_VARIANT_EDITOR_SETTING) { \
+			if (!strcmp (__cur_setting_name, __setting_name)) \
+				__cur_setting_name = NULL; \
+		} \
+	} G_STMT_END
+
+#define NMTST_VARIANT_ADD_PROPERTY(__setting_name, __property_name, __format_string, __value) \
+	G_STMT_START { \
+		if (__phase == NMTST_VARIANT_EDITOR_SETTING) { \
+			if (!strcmp (__cur_setting_name, __setting_name)) { \
+				g_variant_builder_add (&__setting_builder, "{sv}", __property_name, \
+				                       g_variant_new (__format_string, __value)); \
+			} \
+		} \
+	} G_STMT_END
+
+#define NMTST_VARIANT_DROP_PROPERTY(__setting_name, __property_name) \
+	G_STMT_START { \
+		if (__phase == NMTST_VARIANT_EDITOR_PROPERTY) { \
+			if (   !strcmp (__cur_setting_name, __setting_name) \
+			    && !strcmp (__cur_property_name, __property_name)) \
+				__cur_property_name = NULL; \
+		} \
+	} G_STMT_END
+
+#define NMTST_VARIANT_CHANGE_PROPERTY(__setting_name, __property_name, __format_string, __value) \
+	G_STMT_START { \
+		NMTST_VARIANT_DROP_PROPERTY (__setting_name, __property_name); \
+		NMTST_VARIANT_ADD_PROPERTY (__setting_name, __property_name, __format_string, __value); \
+	} G_STMT_END
+
 #endif /* __NM_TEST_UTILS_H__ */
