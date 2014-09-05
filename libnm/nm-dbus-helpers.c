@@ -28,17 +28,16 @@
 
 static dbus_int32_t priv_slot = -1;
 
-static gboolean
+static void
 _ensure_dbus_data_slot (void)
 {
 	static gsize init_value = 0;
-	gboolean success = TRUE;
 
 	if (g_once_init_enter (&init_value)) {
-		success = dbus_connection_allocate_data_slot (&priv_slot);
+		dbus_connection_allocate_data_slot (&priv_slot);
+		g_assert (priv_slot != -1);
 		g_once_init_leave (&init_value, 1);
 	}
-	return success;
 }
 
 DBusGConnection *
@@ -46,10 +45,7 @@ _nm_dbus_new_connection (GError **error)
 {
 	DBusGConnection *connection = NULL;
 
-	if (!_ensure_dbus_data_slot ()) {
-		g_set_error (error, DBUS_GERROR, DBUS_GERROR_FAILED, "failed to allocated data slot");
-		return NULL;
-	}
+	_ensure_dbus_data_slot ();
 
 #if HAVE_DBUS_GLIB_100
 	/* If running as root try the private bus first */
@@ -77,7 +73,7 @@ _nm_dbus_new_connection (GError **error)
 gboolean
 _nm_dbus_is_connection_private (DBusGConnection *connection)
 {
-	if (!_ensure_dbus_data_slot ())
+	if (priv_slot == -1)
 		return FALSE;
 	return !!dbus_connection_get_data (dbus_g_connection_get_connection (connection), priv_slot);
 }
