@@ -91,6 +91,23 @@ nm_device_factory_get_type (void)
 	return device_factory_type;
 }
 
+NMDeviceType
+nm_device_factory_get_device_type (NMDeviceFactory *factory)
+{
+	g_return_val_if_fail (factory != NULL, NM_DEVICE_TYPE_UNKNOWN);
+
+	return NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_device_type (factory);
+}
+
+void
+nm_device_factory_start (NMDeviceFactory *factory)
+{
+	g_return_if_fail (factory != NULL);
+
+	if (NM_DEVICE_FACTORY_GET_INTERFACE (factory)->start)
+		NM_DEVICE_FACTORY_GET_INTERFACE (factory)->start (factory);
+}
+
 NMDevice *
 nm_device_factory_new_link (NMDeviceFactory *factory,
                             NMPlatformLink *plink,

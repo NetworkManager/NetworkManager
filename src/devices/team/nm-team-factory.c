@@ -35,12 +35,13 @@ static void device_factory_interface_init (NMDeviceFactory *factory_iface);
 G_DEFINE_TYPE_EXTENDED (NMTeamFactory, nm_team_factory, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init))
 
-#define NM_TEAM_FACTORY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_TEAM_FACTORY, NMTeamFactoryPrivate))
+/************************************************************************/
 
-typedef struct {
-	char dummy;
-} NMTeamFactoryPrivate;
-
+G_MODULE_EXPORT NMDeviceFactory *
+nm_device_factory_create (GError **error)
+{
+	return (NMDeviceFactory *) g_object_new (NM_TYPE_TEAM_FACTORY, NULL);
+}
 
 /************************************************************************/
 
@@ -62,20 +63,10 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	return NULL;
 }
 
-/************************************************************************/
-
-#define PLUGIN_TYPE NM_DEVICE_TYPE_TEAM
-
-G_MODULE_EXPORT NMDeviceFactory *
-nm_device_factory_create (GError **error)
+static NMDeviceType
+get_device_type (NMDeviceFactory *factory)
 {
-	return (NMDeviceFactory *) g_object_new (NM_TYPE_TEAM_FACTORY, NULL);
-}
-
-G_MODULE_EXPORT NMDeviceType
-nm_device_factory_get_device_type (void)
-{
-	return PLUGIN_TYPE;
+	return NM_DEVICE_TYPE_TEAM;
 }
 
 /************************************************************************/
@@ -90,21 +81,10 @@ device_factory_interface_init (NMDeviceFactory *factory_iface)
 {
 	factory_iface->new_link = new_link;
 	factory_iface->create_virtual_device_for_connection = create_virtual_device_for_connection;
-}
-
-static void
-dispose (GObject *object)
-{
-	/* Chain up to the parent class */
-	G_OBJECT_CLASS (nm_team_factory_parent_class)->dispose (object);
+	factory_iface->get_device_type = get_device_type;
 }
 
 static void
 nm_team_factory_class_init (NMTeamFactoryClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-	g_type_class_add_private (object_class, sizeof (NMTeamFactoryPrivate));
-
-	object_class->dispose = dispose;
 }

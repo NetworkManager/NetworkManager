@@ -43,18 +43,10 @@ typedef struct {
 
 /************************************************************************/
 
-#define PLUGIN_TYPE NM_DEVICE_TYPE_MODEM
-
 G_MODULE_EXPORT NMDeviceFactory *
 nm_device_factory_create (GError **error)
 {
 	return (NMDeviceFactory *) g_object_new (NM_TYPE_WWAN_FACTORY, NULL);
-}
-
-G_MODULE_EXPORT NMDeviceType
-nm_device_factory_get_device_type (void)
-{
-	return PLUGIN_TYPE;
 }
 
 /************************************************************************/
@@ -93,9 +85,17 @@ modem_added_cb (NMModemManager *manager,
 	g_object_unref (device);
 }
 
-static void
-nm_wwan_factory_init (NMWwanFactory *self)
+
+static NMDeviceType
+get_device_type (NMDeviceFactory *factory)
 {
+	return NM_DEVICE_TYPE_MODEM;
+}
+
+static void
+start (NMDeviceFactory *factory)
+{
+	NMWwanFactory *self = NM_WWAN_FACTORY (factory);
 	NMWwanFactoryPrivate *priv = NM_WWAN_FACTORY_GET_PRIVATE (self);
 
 	priv->mm = g_object_new (NM_TYPE_MODEM_MANAGER, NULL);
@@ -107,8 +107,15 @@ nm_wwan_factory_init (NMWwanFactory *self)
 }
 
 static void
+nm_wwan_factory_init (NMWwanFactory *self)
+{
+}
+
+static void
 device_factory_interface_init (NMDeviceFactory *factory_iface)
 {
+	factory_iface->get_device_type = get_device_type;
+	factory_iface->start = start;
 }
 
 static void

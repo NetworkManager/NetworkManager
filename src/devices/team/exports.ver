@@ -1,7 +1,6 @@
 {
 global:
 	nm_device_factory_create;
-	nm_device_factory_get_device_type;
 local:
 	*;
 };

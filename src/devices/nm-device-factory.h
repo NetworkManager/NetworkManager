@@ -42,7 +42,7 @@ typedef struct _NMDeviceFactory NMDeviceFactory;
  * Creates a #GObject that implements the #NMDeviceFactory interface. This
  * function must not emit any signals or perform any actions that would cause
  * devices or components to be created immediately.  Instead these should be
- * deferred to an idle handler.
+ * deferred to the "start" interface method.
  *
  * Returns: the #GObject implementing #NMDeviceFactory or %NULL
  */
@@ -50,16 +50,6 @@ NMDeviceFactory *nm_device_factory_create (GError **error);
 
 /* Should match nm_device_factory_create() */
 typedef NMDeviceFactory * (*NMDeviceFactoryCreateFunc) (GError **error);
-
-/**
- * nm_device_factory_get_device_type:
- *
- * Returns: the #NMDeviceType that this plugin creates
- */
-NMDeviceType nm_device_factory_get_device_type (void);
-
-/* Should match nm_device_factory_get_device_type() */
-typedef NMDeviceType (*NMDeviceFactoryDeviceTypeFunc) (void);
 
 /********************************************************************/
 
@@ -74,6 +64,25 @@ typedef NMDeviceType (*NMDeviceFactoryDeviceTypeFunc) (void);
 
 struct _NMDeviceFactory {
 	GTypeInterface g_iface;
+
+	/**
+	 * get_device_type:
+	 * @factory: the #NMDeviceFactory
+	 *
+	 * This function MUST be implemented.
+	 *
+	 * Returns: the #NMDeviceType that this plugin creates
+	 */
+	NMDeviceType (*get_device_type) (NMDeviceFactory *factory);
+
+	/**
+	 * start:
+	 * @factory: the #NMDeviceFactory
+	 *
+	 * Start the factory and discover any existing devices that the factory
+	 * can manage.
+	 */
+	void (*start)                   (NMDeviceFactory *factory);
 
 	/**
 	 * new_link:
@@ -140,6 +149,10 @@ struct _NMDeviceFactory {
 };
 
 GType      nm_device_factory_get_type    (void);
+
+NMDeviceType nm_device_factory_get_device_type (NMDeviceFactory *factory);
+
+void       nm_device_factory_start       (NMDeviceFactory *factory);
 
 NMDevice * nm_device_factory_new_link    (NMDeviceFactory *factory,
                                           NMPlatformLink *plink,
