@@ -4,37 +4,36 @@ EXTRA_DIST = \
 	errors.xml \
 	vpn-errors.xml \
 	nm-access-point.xml \
-	nm-device-bt.xml \
-	nm-device-wifi.xml \
-	nm-device-olpc-mesh.xml \
-	nm-device-ethernet.xml \
+	nm-active-connection.xml \
+	nm-agent-manager.xml \
 	nm-device-adsl.xml \
-	nm-device-modem.xml \
-	nm-device-wimax.xml \
-	nm-device-infiniband.xml \
 	nm-device-bond.xml \
-	nm-device-team.xml \
 	nm-device-bridge.xml \
-	nm-device-vlan.xml \
+	nm-device-bt.xml \
+	nm-device-ethernet.xml \
 	nm-device-generic.xml \
-	nm-device-veth.xml \
-	nm-device-tun.xml \
-	nm-device-macvlan.xml \
-	nm-device-vxlan.xml \
 	nm-device-gre.xml \
+	nm-device-infiniband.xml \
+	nm-device-macvlan.xml \
+	nm-device-modem.xml \
+	nm-device-olpc-mesh.xml \
+	nm-device-team.xml \
+	nm-device-tun.xml \
+	nm-device-veth.xml \
+	nm-device-vlan.xml \
+	nm-device-vxlan.xml \
+	nm-device-wifi.xml \
+	nm-device-wimax.xml \
 	nm-device.xml \
+	nm-dhcp4-config.xml \
+	nm-dhcp6-config.xml \
 	nm-ip4-config.xml \
 	nm-ip6-config.xml \
 	nm-manager.xml \
-	nm-settings.xml \
-	nm-settings-connection.xml \
-	nm-vpn-plugin.xml \
-	nm-vpn-connection.xml \
 	nm-ppp-manager.xml \
-	nm-active-connection.xml \
-	nm-dhcp4-config.xml \
-	nm-dhcp6-config.xml \
-	nm-agent-manager.xml \
-	nm-wimax-nsp.xml \
-	nm-secret-agent.xml
-
+	nm-secret-agent.xml \
+	nm-settings-connection.xml \
+	nm-settings.xml \
+	nm-vpn-connection.xml \
+	nm-vpn-plugin.xml \
+	nm-wimax-nsp.xml
