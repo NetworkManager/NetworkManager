@@ -41,7 +41,6 @@ G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE_GENERIC)
 typedef struct {
 	NMPlatformTunProperties props;
 	const char *mode;
-	guint delay_tun_get_properties_id;
 } NMDeviceTunPrivate;
 
 enum {
@@ -95,17 +94,24 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 	reload_tun_properties (NM_DEVICE_TUN (device));
 }
 
-static gboolean
-delay_tun_get_properties_cb (gpointer user_data)
+static void
+setup (NMDevice *device, NMPlatformLink *plink)
 {
-	NMDeviceTun *self = user_data;
+	NMDeviceTun *self = NM_DEVICE_TUN (device);
 	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
 
-	priv->delay_tun_get_properties_id = 0;
+	NM_DEVICE_CLASS (nm_device_tun_parent_class)->setup (device, plink);
 
-	reload_tun_properties (self);
+	priv->mode = NULL;
+	if (plink->type == NM_LINK_TYPE_TUN)
+		priv->mode = "tun";
+	else if (plink->type == NM_LINK_TYPE_TAP)
+		priv->mode = "tap";
+	else
+		g_assert_not_reached ();
+	g_object_notify (G_OBJECT (device), NM_DEVICE_TUN_MODE);
 
-	return G_SOURCE_REMOVE;
+	reload_tun_properties (NM_DEVICE_TUN (device));
 }
 
 /**************************************************************/
@@ -113,37 +119,6 @@ delay_tun_get_properties_cb (gpointer user_data)
 static void
 nm_device_tun_init (NMDeviceTun *self)
 {
-}
-
-static void
-constructed (GObject *object)
-{
-	NMDeviceTun *self = NM_DEVICE_TUN (object);
-	gboolean properties_read;
-	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
-
-	properties_read = nm_platform_tun_get_properties (NM_PLATFORM_GET, nm_device_get_ifindex (NM_DEVICE (self)), &priv->props);
-
-	G_OBJECT_CLASS (nm_device_tun_parent_class)->constructed (object);
-
-	if (!properties_read) {
-		/* Error reading the tun properties. Maybe this was due to a race. Try again a bit later. */
-		_LOGD (LOGD_HW, "could not read tun properties (retry)");
-		priv->delay_tun_get_properties_id = g_timeout_add_seconds (1, delay_tun_get_properties_cb, self);
-	}
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (object);
-
-	if (priv->delay_tun_get_properties_id) {
-		g_source_remove (priv->delay_tun_get_properties_id);
-		priv->delay_tun_get_properties_id = 0;
-	}
-
-	G_OBJECT_CLASS (nm_device_tun_parent_class)->dispose (object);
 }
 
 static void
@@ -213,12 +188,11 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMDeviceTunPrivate));
 
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
-	object_class->dispose = dispose;
 
 	device_class->link_changed = link_changed;
+	device_class->setup = setup;
 
 	/* properties */
 	g_object_class_install_property
@@ -268,29 +242,21 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 #define NM_TUN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_TUN_FACTORY, NMTunFactory))
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
+create_device (NMDeviceFactory *factory,
+               const char *iface,
+               NMPlatformLink *plink,
+               NMConnection *connection,
+               gboolean *out_ignore)
 {
-	const char *mode = NULL;
-
-	if (plink->type == NM_LINK_TYPE_TUN)
-		mode = "tun";
-	else if (plink->type == NM_LINK_TYPE_TAP)
-		mode = "tap";
-	else {
-		g_warn_if_reached ();
-		mode = "unknown";
-	}
-
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_TUN,
-	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "Tun",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
-	                                  NM_DEVICE_TUN_MODE, mode,
 	                                  NULL);
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (TUN, Tun, tun,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_TUN, NM_LINK_TYPE_TAP),
-	factory_iface->new_link = new_link;
+	factory_iface->create_device = create_device;
 	)
 

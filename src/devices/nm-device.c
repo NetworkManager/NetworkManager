@@ -96,7 +96,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
-	PROP_PLATFORM_DEVICE,
 	PROP_UDI,
 	PROP_IFACE,
 	PROP_IP_IFACE,
@@ -379,6 +378,9 @@ static void _set_state_full (NMDevice *self,
                              gboolean quitting);
 
 static void nm_device_update_hw_address (NMDevice *self);
+
+static gboolean queued_ip4_config_change (gpointer user_data);
+static gboolean queued_ip6_config_change (gpointer user_data);
 
 /***********************************************************/
 
@@ -1548,6 +1550,95 @@ link_changed (NMDevice *self, NMPlatformLink *info)
 		nm_device_set_carrier (self, info->connected);
 }
 
+/**
+ * nm_device_realize():
+ * @self: the #NMDevice
+ * @plink: an existing platform link or %NULL
+ * @error: location to store error, or %NULL
+ *
+ * Initializes and sets up the device using existing backing resources.
+ *
+ * Returns: %TRUE on success, %FALSE on error
+ */
+gboolean
+nm_device_realize (NMDevice *self, NMPlatformLink *plink, GError **error)
+{
+	/* Try to realize the device from existing resources */
+	if (NM_DEVICE_GET_CLASS (self)->realize) {
+		if (!NM_DEVICE_GET_CLASS (self)->realize (self, plink, error))
+			return FALSE;
+	}
+
+	NM_DEVICE_GET_CLASS (self)->setup (self, plink);
+
+	return TRUE;
+}
+
+/**
+ * nm_device_create_and_realize():
+ * @self: the #NMDevice
+ * @connection: the #NMConnection being activated
+ * @parent: the parent #NMDevice if any
+ * @error: location to store error, or %NULL
+ *
+ * Creates any backing resources needed to realize the device to proceed
+ * with activating @connection.
+ *
+ * Returns: %TRUE on success, %FALSE on error
+ */
+gboolean
+nm_device_create_and_realize (NMDevice *self,
+                              NMConnection *connection,
+                              NMDevice *parent,
+                              GError **error)
+{
+	NMPlatformLink plink = { .type = NM_LINK_TYPE_UNKNOWN };
+
+	/* Create any resources the device needs */
+	if (NM_DEVICE_GET_CLASS (self)->create_and_realize) {
+		if (!NM_DEVICE_GET_CLASS (self)->create_and_realize (self, connection, parent, &plink, error))
+			return FALSE;
+	}
+
+	NM_DEVICE_GET_CLASS (self)->setup (self, (plink.type != NM_LINK_TYPE_UNKNOWN) ? &plink : NULL);
+
+	g_return_val_if_fail (nm_device_check_connection_compatible (self, connection), TRUE);
+	return TRUE;
+}
+
+static void
+update_device_from_platform_link (NMDevice *self, NMPlatformLink *plink)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	const char *udi;
+
+	g_return_if_fail (plink != NULL);
+
+	udi = nm_platform_link_get_udi (NM_PLATFORM_GET, plink->ifindex);
+	if (udi && !g_strcmp0 (udi, priv->udi)) {
+		g_free (priv->udi);
+		priv->udi = g_strdup (udi);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_UDI);
+	}
+
+	if (!g_strcmp0 (plink->name, priv->iface)) {
+		g_free (priv->iface);
+		priv->iface = g_strdup (plink->name);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_IFACE);
+	}
+
+	priv->ifindex = plink->ifindex;
+	g_object_notify (G_OBJECT (self), NM_DEVICE_IFINDEX);
+
+	priv->up = NM_FLAGS_HAS (plink->flags, IFF_UP);
+	if (plink->driver && g_strcmp0 (plink->driver, priv->driver) != 0) {
+		g_free (priv->driver);
+		priv->driver = g_strdup (plink->driver);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_DRIVER);
+	}
+	priv->platform_link_initialized = plink->initialized;
+}
+
 static void
 config_changed_update_ignore_carrier (NMConfig *config,
                                       NMConfigData *config_data,
@@ -1569,6 +1660,120 @@ check_carrier (NMDevice *self)
 
 	if (!nm_device_has_capability (self, NM_DEVICE_CAP_NONSTANDARD_CARRIER))
 		nm_device_set_carrier (self, nm_platform_link_is_connected (NM_PLATFORM_GET, ifindex));
+}
+
+static void
+setup (NMDevice *self, NMPlatformLink *plink)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	static guint32 id = 0;
+
+	/* The device should not be realized */
+	g_return_if_fail (priv->ip_ifindex <= 0);
+	g_return_if_fail (priv->ip_iface == NULL);
+
+	g_object_freeze_notify (G_OBJECT (self));
+
+	if (plink) {
+		g_return_if_fail (priv->iface == NULL || strcmp (plink->name, priv->iface) == 0);
+		update_device_from_platform_link (self, plink);
+	}
+
+	if (priv->ifindex > 0) {
+		_LOGD (LOGD_DEVICE, "setup(): %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), priv->ifindex);
+
+		priv->physical_port_id = nm_platform_link_get_physical_port_id (NM_PLATFORM_GET, priv->ifindex);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_PHYSICAL_PORT_ID);
+
+		priv->dev_id = nm_platform_link_get_dev_id (NM_PLATFORM_GET, priv->ifindex);
+
+		if (nm_platform_link_is_software (NM_PLATFORM_GET, priv->ifindex))
+			priv->capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
+
+		priv->mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ifindex);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_MTU);
+
+		nm_platform_link_get_driver_info (NM_PLATFORM_GET,
+		                                  priv->ifindex,
+		                                  NULL,
+		                                  &priv->driver_version,
+		                                  &priv->firmware_version);
+		if (priv->driver_version)
+			g_object_notify (G_OBJECT (self), NM_DEVICE_DRIVER_VERSION);
+		if (priv->firmware_version)
+			g_object_notify (G_OBJECT (self), NM_DEVICE_FIRMWARE_VERSION);
+
+		if (nm_platform_check_support_user_ipv6ll (NM_PLATFORM_GET))
+			priv->nm_ipv6ll = nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, priv->ifindex);
+	}
+
+	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
+		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
+
+	if (!priv->udi) {
+		/* Use a placeholder UDI until we get a real one */
+		priv->udi = g_strdup_printf ("/virtual/device/placeholder/%d", id++);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_UDI);
+	}
+
+	/* trigger initial ip config change to initialize ip-config */
+	priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
+	priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
+
+	nm_device_update_hw_address (self);
+
+	if (priv->hw_addr_len) {
+		priv->initial_hw_addr = g_strdup (priv->hw_addr);
+		_LOGD (LOGD_DEVICE | LOGD_HW, "read initial MAC address %s", priv->initial_hw_addr);
+
+		if (priv->ifindex > 0) {
+			guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+			size_t len = 0;
+
+			if (nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len)) {
+				g_warn_if_fail (len == priv->hw_addr_len);
+				priv->perm_hw_addr = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
+				_LOGD (LOGD_DEVICE | LOGD_HW, "read permanent MAC address %s",
+				       priv->perm_hw_addr);
+			} else {
+				/* Fall back to current address */
+				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address");
+				priv->perm_hw_addr = g_strdup (priv->hw_addr);
+			}
+		}
+	}
+
+	/* Note: initial hardware address must be read before calling get_ignore_carrier() */
+	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
+		NMConfig *config = nm_config_get ();
+
+		priv->ignore_carrier = nm_config_data_get_ignore_carrier (nm_config_get_data (config), self);
+		g_signal_connect (G_OBJECT (config),
+		                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
+		                  G_CALLBACK (config_changed_update_ignore_carrier),
+		                  self);
+
+		check_carrier (self);
+		_LOGD (LOGD_HW,
+		       "carrier is %s%s",
+		       priv->carrier ? "ON" : "OFF",
+		       priv->ignore_carrier ? " (but ignored)" : "");
+	} else {
+		/* Fake online link when carrier detection is not available. */
+		priv->carrier = TRUE;
+	}
+
+	g_object_notify (G_OBJECT (self), NM_DEVICE_CAPABILITIES);
+
+	/* Enslave ourselves */
+	if (priv->ifindex > 0) {
+		int master = nm_platform_link_get_master (NM_PLATFORM_GET, priv->ifindex);
+
+		if (master > 0)
+			device_set_master (self, master);
+	}
+
+	g_object_thaw_notify (G_OBJECT (self));
 }
 
 /**
@@ -8857,54 +9062,12 @@ nm_device_init (NMDevice *self)
 	priv->v6_commit_first_time = TRUE;
 }
 
-static GObject*
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
+static void
+constructed (GObject *object)
 {
-	GObject *object;
-	NMDevice *self;
-	NMDevicePrivate *priv;
+	NMDevice *self = NM_DEVICE (object);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMPlatform *platform;
-	static guint32 id = 0;
-
-	object = G_OBJECT_CLASS (nm_device_parent_class)->constructor (type,
-	                         n_construct_params,
-	                         construct_params);
-	if (!object)
-		return NULL;
-
-	self = NM_DEVICE (object);
-	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	_LOGD (LOGD_DEVICE, "constructor(): %s, kernel ifindex %d", G_OBJECT_TYPE_NAME (self), priv->ifindex);
-
-	if (!priv->iface) {
-		_LOGE (LOGD_DEVICE, "No device interface provided, ignoring");
-		goto error;
-	}
-
-	if (!priv->udi) {
-		/* Use a placeholder UDI until we get a real one */
-		priv->udi = g_strdup_printf ("/virtual/device/placeholder/%d", id++);
-	}
-
-	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
-		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
-
-	if (priv->ifindex > 0) {
-		priv->physical_port_id = nm_platform_link_get_physical_port_id (NM_PLATFORM_GET, priv->ifindex);
-		priv->dev_id = nm_platform_link_get_dev_id (NM_PLATFORM_GET, priv->ifindex);
-		if (nm_platform_link_is_software (NM_PLATFORM_GET, priv->ifindex))
-			priv->capabilities |= NM_DEVICE_CAP_IS_SOFTWARE;
-		priv->mtu = nm_platform_link_get_mtu (NM_PLATFORM_GET, priv->ifindex);
-
-		nm_platform_link_get_driver_info (NM_PLATFORM_GET,
-		                                  priv->ifindex,
-		                                  NULL,
-		                                  &priv->driver_version,
-		                                  &priv->firmware_version);
-	}
 
 	if (NM_DEVICE_GET_CLASS (self)->get_generic_capabilities)
 		priv->capabilities |= NM_DEVICE_GET_CLASS (self)->get_generic_capabilities (self);
@@ -8916,79 +9079,6 @@ constructor (GType type,
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (device_ipx_changed), self);
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (device_ipx_changed), self);
 	g_signal_connect (platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (link_changed_cb), self);
-
-	/* trigger initial ip config change to initialize ip-config */
-	priv->queued_ip4_config_id = g_idle_add (queued_ip4_config_change, self);
-	priv->queued_ip6_config_id = g_idle_add (queued_ip6_config_change, self);
-
-	if (nm_platform_check_support_user_ipv6ll (NM_PLATFORM_GET)) {
-		int ip_ifindex = nm_device_get_ip_ifindex (self);
-
-		if (ip_ifindex > 0)
-			priv->nm_ipv6ll = nm_platform_link_get_user_ipv6ll_enabled (NM_PLATFORM_GET, ip_ifindex);
-	}
-
-	return object;
-
-error:
-	g_object_unref (self);
-	return NULL;
-}
-
-static void
-constructed (GObject *object)
-{
-	NMDevice *self = NM_DEVICE (object);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	int master;
-
-	nm_device_update_hw_address (self);
-
-	if (priv->hw_addr_len) {
-		priv->initial_hw_addr = g_strdup (priv->hw_addr);
-		_LOGD (LOGD_DEVICE | LOGD_HW, "read initial MAC address %s", priv->initial_hw_addr);
-
-		if (priv->ifindex > 0) {
-			guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
-			size_t len = 0;
-
-			if (nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len)) {
-				g_warn_if_fail (len == priv->hw_addr_len);
-				priv->perm_hw_addr = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
-				_LOGD (LOGD_DEVICE | LOGD_HW, "read permanent MAC address %s",
-				       priv->perm_hw_addr);
-			} else {
-				/* Fall back to current address */
-				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address");
-				priv->perm_hw_addr = g_strdup (priv->hw_addr);
-			}
-		}
-	}
-
-	/* Note: initial hardware address must be read before calling get_ignore_carrier() */
-	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-		NMConfig *config = nm_config_get ();
-
-		priv->ignore_carrier = nm_config_data_get_ignore_carrier (nm_config_get_data (config), self);
-		g_signal_connect (G_OBJECT (config),
-		                  NM_CONFIG_SIGNAL_CONFIG_CHANGED,
-		                  G_CALLBACK (config_changed_update_ignore_carrier),
-		                  self);
-
-		check_carrier (self);
-		_LOGD (LOGD_HW,
-		       "carrier is %s%s",
-		       priv->carrier ? "ON" : "OFF",
-		       priv->ignore_carrier ? " (but ignored)" : "");
-	} else {
-		/* Fake online link when carrier detection is not available. */
-		priv->carrier = TRUE;
-	}
-
-	/* Enslave ourselves */
-	master = nm_platform_link_get_master (NM_PLATFORM_GET, priv->ifindex);
-	if (master)
-		device_set_master (self, master);
 
 	priv->con_provider = nm_connection_provider_get ();
 	g_assert (priv->con_provider);
@@ -9117,25 +9207,10 @@ set_property (GObject *object, guint prop_id,
 {
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMPlatformLink *platform_device;
 	const char *hw_addr, *p;
 	guint count;
 
 	switch (prop_id) {
-	case PROP_PLATFORM_DEVICE:
-		platform_device = g_value_get_pointer (value);
-		if (platform_device) {
-			g_free (priv->udi);
-			priv->udi = g_strdup (nm_platform_link_get_udi (NM_PLATFORM_GET, platform_device->ifindex));
-			g_free (priv->iface);
-			priv->iface = g_strdup (platform_device->name);
-			priv->ifindex = platform_device->ifindex;
-			priv->up = NM_FLAGS_HAS (platform_device->flags, IFF_UP);
-			g_free (priv->driver);
-			priv->driver = g_strdup (platform_device->driver);
-			priv->platform_link_initialized = platform_device->initialized;
-		}
-		break;
 	case PROP_UDI:
 		if (g_value_get_string (value)) {
 			g_free (priv->udi);
@@ -9365,7 +9440,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->finalize = finalize;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->constructor = constructor;
 	object_class->constructed = constructed;
 
 	klass->link_changed = link_changed;
@@ -9385,6 +9459,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->check_connection_compatible = check_connection_compatible;
 	klass->check_connection_available = check_connection_available;
 	klass->can_unmanaged_external_down = can_unmanaged_external_down;
+	klass->setup = setup;
 	klass->is_up = is_up;
 	klass->bring_up = bring_up;
 	klass->take_down = take_down;
@@ -9392,12 +9467,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->get_ip_iface_identifier = get_ip_iface_identifier;
 
 	/* Properties */
-	g_object_class_install_property
-		(object_class, PROP_PLATFORM_DEVICE,
-		 g_param_spec_pointer (NM_DEVICE_PLATFORM_DEVICE, "", "",
-		                       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
-		                       G_PARAM_STATIC_STRINGS));
-
 	g_object_class_install_property
 		(object_class, PROP_UDI,
 		 g_param_spec_string (NM_DEVICE_UDI, "", "",

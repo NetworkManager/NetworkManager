@@ -265,10 +265,14 @@ nm_device_gre_class_init (NMDeviceGreClass *klass)
 #define NM_GRE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_GRE_FACTORY, NMGreFactory))
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
+create_device (NMDeviceFactory *factory,
+               const char *iface,
+               NMPlatformLink *plink,
+               NMConnection *connection,
+               gboolean *out_ignore)
 {
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_GRE,
-	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "Gre",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
 	                                  NULL);
@@ -276,6 +280,6 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore,
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (GRE, Gre, gre,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_GRE, NM_LINK_TYPE_GRETAP),
-	factory_iface->new_link = new_link;
+	factory_iface->create_device = create_device;
 	)
 

@@ -445,6 +445,14 @@ periodic_update_cb (gpointer user_data)
 	return TRUE;
 }
 
+static void
+setup (NMDevice *device, NMPlatformLink *plink)
+{
+	NM_DEVICE_CLASS (nm_device_wifi_parent_class)->setup (device, plink);
+
+	g_object_notify (G_OBJECT (device), NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS);
+}
+
 static gboolean
 bring_up (NMDevice *device, gboolean *no_firmware)
 {
@@ -2844,12 +2852,10 @@ set_enabled (NMDevice *device, gboolean enabled)
 /********************************************************************/
 
 NMDevice *
-nm_device_wifi_new (NMPlatformLink *platform_device)
+nm_device_wifi_new (const char *iface)
 {
-	g_return_val_if_fail (platform_device != NULL, NULL);
-
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_WIFI,
-	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
+	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "802.11 WiFi",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_WIFI,
 	                                  NM_DEVICE_RFKILL_TYPE, RFKILL_TYPE_WLAN,
@@ -2958,6 +2964,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
+	parent_class->setup = setup;
 	parent_class->bring_up = bring_up;
 	parent_class->can_auto_connect = can_auto_connect;
 	parent_class->is_available = is_available;

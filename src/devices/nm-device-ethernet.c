@@ -299,6 +299,14 @@ nm_device_ethernet_init (NMDeviceEthernet *self)
 	priv->s390_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 }
 
+static void
+setup (NMDevice *device, NMPlatformLink *plink)
+{
+	NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->setup (device, plink);
+
+	g_object_notify (G_OBJECT (device), NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS);
+}
+
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *device)
 {
@@ -1674,6 +1682,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	object_class->set_property = set_property;
 
 	parent_class->get_generic_capabilities = get_generic_capabilities;
+	parent_class->setup = setup;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
 	parent_class->new_default_connection = new_default_connection;
@@ -1715,10 +1724,14 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 #define NM_ETHERNET_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ETHERNET_FACTORY, NMEthernetFactory))
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
+create_device (NMDeviceFactory *factory,
+               const char *iface,
+               NMPlatformLink *plink,
+               NMConnection *connection,
+               gboolean *out_ignore)
 {
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ETHERNET,
-	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "Ethernet",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
 	                                  NULL);
@@ -1727,6 +1740,6 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore,
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (ETHERNET, Ethernet, ethernet,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_ETHERNET)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_PPPOE_SETTING_NAME),
-	factory_iface->new_link = new_link;
+	factory_iface->create_device = create_device;
 	)
 

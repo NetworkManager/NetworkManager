@@ -34,20 +34,12 @@ G_BEGIN_DECLS
 
 #define NM_DEVICE_TEAM_SLAVES "slaves"
 
-typedef struct {
-	NMDevice parent;
-} NMDeviceTeam;
-
-typedef struct {
-	NMDeviceClass parent;
-
-} NMDeviceTeamClass;
-
+typedef NMDevice NMDeviceTeam;
+typedef NMDeviceClass NMDeviceTeamClass;
 
 GType nm_device_team_get_type (void);
 
-NMDevice *nm_device_team_new (NMPlatformLink *platform_device);
-NMDevice *nm_device_team_new_for_connection (NMConnection *connection, GError **error);
+NMDevice *nm_device_team_new (const char *iface);
 
 G_END_DECLS
 

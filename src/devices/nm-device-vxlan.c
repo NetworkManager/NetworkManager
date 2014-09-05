@@ -131,19 +131,22 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 	update_properties (device);
 }
 
+static void
+setup (NMDevice *device, NMPlatformLink *plink)
+{
+	g_assert (plink->type == NM_LINK_TYPE_VXLAN);
+
+	NM_DEVICE_CLASS (nm_device_vxlan_parent_class)->setup (device, plink);
+
+	update_properties (device);
+}
+
+
 /**************************************************************/
 
 static void
 nm_device_vxlan_init (NMDeviceVxlan *self)
 {
-}
-
-static void
-constructed (GObject *object)
-{
-	update_properties (NM_DEVICE (object));
-
-	G_OBJECT_CLASS (nm_device_vxlan_parent_class)->constructed (object);
 }
 
 static void
@@ -223,10 +226,10 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMDeviceVxlanPrivate));
 
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 
 	device_class->link_changed = link_changed;
+	device_class->setup = setup;
 
 	/* properties */
 	g_object_class_install_property
@@ -351,10 +354,14 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 #define NM_VXLAN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VXLAN_FACTORY, NMVxlanFactory))
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
+create_device (NMDeviceFactory *factory,
+               const char *iface,
+               NMPlatformLink *plink,
+               NMConnection *connection,
+               gboolean *out_ignore)
 {
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_VXLAN,
-	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "Vxlan",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
 	                                  NULL);
@@ -362,6 +369,6 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore,
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (VXLAN, Vxlan, vxlan,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_VXLAN),
-	factory_iface->new_link = new_link;
+	factory_iface->create_device = create_device;
 	)
 

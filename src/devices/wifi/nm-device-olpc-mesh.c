@@ -419,12 +419,10 @@ state_changed (NMDevice *device,
 /*******************************************************************/
 
 NMDevice *
-nm_device_olpc_mesh_new (NMPlatformLink *platform_device)
+nm_device_olpc_mesh_new (const char *iface)
 {
-	g_return_val_if_fail (platform_device != NULL, NULL);
-
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_OLPC_MESH,
-	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
+	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_TYPE_DESC, "802.11 OLPC Mesh",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_OLPC_MESH,
 	                                  NULL);

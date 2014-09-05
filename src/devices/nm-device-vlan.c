@@ -51,8 +51,6 @@ G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 #define NM_DEVICE_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_VLAN, NMDeviceVlanPrivate))
 
 typedef struct {
-	gboolean invalid;
-
 	NMDevice *parent;
 	guint parent_state_id;
 	int vlan_id;
@@ -62,8 +60,6 @@ enum {
 	PROP_0,
 	PROP_PARENT,
 	PROP_VLAN_ID,
-
-	PROP_INT_PARENT_DEVICE,
 
 	LAST_PROP
 };
@@ -87,7 +83,7 @@ parent_state_changed (NMDevice *parent,
 }
 
 static void
-nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent, gboolean construct)
+nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent)
 {
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
@@ -109,16 +105,10 @@ nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent, gboolean constr
 		                                          device);
 
 		/* Set parent-dependent unmanaged flag */
-		if (construct) {
-			nm_device_set_initial_unmanaged_flag (device,
-			                                      NM_UNMANAGED_PARENT,
-			                                      !nm_device_get_managed (parent));
-		} else {
-			nm_device_set_unmanaged (device,
-			                         NM_UNMANAGED_PARENT,
-			                         !nm_device_get_managed (parent),
-			                         NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED);
-		}
+		nm_device_set_unmanaged (device,
+		                         NM_UNMANAGED_PARENT,
+		                         !nm_device_get_managed (parent),
+		                         NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED);
 	}
 
 	/* Recheck availability now that the parent has changed */
@@ -127,6 +117,112 @@ nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent, gboolean constr
 	                                   NM_DEVICE_STATE_REASON_PARENT_CHANGED);
 	g_object_notify (G_OBJECT (device), NM_DEVICE_VLAN_PARENT);
 }
+
+static void
+setup (NMDevice *device, NMPlatformLink *plink)
+{
+	NMDeviceVlan *self = NM_DEVICE_VLAN (device);
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
+
+	NM_DEVICE_CLASS (nm_device_vlan_parent_class)->setup (device, plink);
+
+	_LOGI (LOGD_HW | LOGD_VLAN, "VLAN ID %d with parent %s",
+	       priv->vlan_id, nm_device_get_iface (priv->parent));
+}
+
+static gboolean
+realize (NMDevice *device,
+         NMPlatformLink *plink,
+         GError **error)
+{
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
+	int parent_ifindex = -1, vlan_id = -1;
+	NMDevice *parent;
+
+	g_return_val_if_fail (plink, FALSE);
+
+	g_assert (plink->type == NM_LINK_TYPE_VLAN);
+
+	if (!nm_platform_vlan_get_info (NM_PLATFORM_GET, plink->ifindex, &parent_ifindex, &vlan_id)) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "(%s): failed to read VLAN properties", plink->name);
+		return FALSE;
+	}
+
+	if (vlan_id < 0) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "(%s): VLAN ID invalid", plink->name);
+		return FALSE;
+	}
+
+	parent = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
+	if (!parent) {
+		nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", plink->name);
+		return FALSE;
+	}
+
+	g_warn_if_fail (priv->parent == NULL);
+	nm_device_vlan_set_parent (NM_DEVICE_VLAN (device), parent);
+	priv->vlan_id = vlan_id;
+
+	return TRUE;
+}
+
+static gboolean
+create_and_realize (NMDevice *device,
+                    NMConnection *connection,
+                    NMDevice *parent,
+                    NMPlatformLink *out_plink,
+                    GError **error)
+{
+	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (device);
+	const char *iface = nm_device_get_iface (device);
+	NMSettingVlan *s_vlan;
+	int parent_ifindex, vlan_id;
+	NMPlatformError plerr;
+
+	g_assert (nm_device_get_ifindex (device) <= 0);
+	g_assert (out_plink);
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	if (!nm_device_supports_vlans (parent)) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+		             "no support for VLANs on interface %s of type %s",
+		             nm_device_get_iface (parent),
+		             nm_device_get_type_desc (parent));
+		return FALSE;
+	}
+
+	parent_ifindex = nm_device_get_ifindex (parent);
+	g_warn_if_fail (parent_ifindex > 0);
+
+	vlan_id = nm_setting_vlan_get_id (s_vlan);
+
+	plerr = nm_platform_vlan_add (NM_PLATFORM_GET,
+	                              iface,
+	                              parent_ifindex,
+	                              vlan_id,
+	                              nm_setting_vlan_get_flags (s_vlan),
+	                              out_plink);
+	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+		             "Failed to create VLAN interface '%s' for '%s': %s",
+		             iface,
+		             nm_connection_get_id (connection),
+		             nm_platform_error_to_string (plerr));
+		return FALSE;
+	}
+
+	g_warn_if_fail (priv->parent == NULL);
+	nm_device_vlan_set_parent (NM_DEVICE_VLAN (device), parent);
+	priv->vlan_id = vlan_id;
+
+	return TRUE;
+}
+
+/******************************************************************/
 
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
@@ -183,7 +279,7 @@ component_added (NMDevice *device, GObject *component)
 	if (nm_device_get_ifindex (added_device) != parent_ifindex)
 		return FALSE;
 
-	nm_device_vlan_set_parent (self, added_device, FALSE);
+	nm_device_vlan_set_parent (self, added_device);
 
 	/* Don't claim parent exclusively */
 	return FALSE;
@@ -357,7 +453,7 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 	parent = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
 	g_assert (parent);
-	nm_device_vlan_set_parent (NM_DEVICE_VLAN (device), parent, FALSE);
+	nm_device_vlan_set_parent (NM_DEVICE_VLAN (device), parent);
 
 	/* Update parent in the connection; default to parent's interface name */
 	new_parent = nm_device_get_iface (parent);
@@ -459,54 +555,6 @@ nm_device_vlan_init (NMDeviceVlan * self)
 }
 
 static void
-constructed (GObject *object)
-{
-	NMDeviceVlan *self = NM_DEVICE_VLAN (object);
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-	int ifindex = nm_device_get_ifindex (NM_DEVICE (self));
-	int parent_ifindex = -1, itype;
-	int vlan_id;
-
-	if (G_OBJECT_CLASS (nm_device_vlan_parent_class)->constructed)
-		G_OBJECT_CLASS (nm_device_vlan_parent_class)->constructed (object);
-
-	itype = nm_platform_link_get_type (NM_PLATFORM_GET, ifindex);
-	if (itype != NM_LINK_TYPE_VLAN) {
-		_LOGE (LOGD_VLAN, "failed to get VLAN interface type.");
-		priv->invalid = TRUE;
-		return;
-	}
-
-	if (!nm_platform_vlan_get_info (NM_PLATFORM_GET, ifindex, &parent_ifindex, &vlan_id)) {
-		_LOGW (LOGD_VLAN, "failed to get VLAN interface info.");
-		priv->invalid = TRUE;
-		return;
-	}
-
-	if (parent_ifindex < 0 || vlan_id < 0) {
-		_LOGW (LOGD_VLAN, "VLAN parent ifindex (%d) or VLAN ID (%d) invalid.",
-		       parent_ifindex, priv->vlan_id);
-		priv->invalid = TRUE;
-		return;
-	}
-
-	if (priv->parent && parent_ifindex != nm_device_get_ip_ifindex (priv->parent)) {
-		_LOGW (LOGD_VLAN, "VLAN parent %s (%d) and parent ifindex %d don't match.",
-		       nm_device_get_iface (priv->parent),
-		       nm_device_get_ifindex (priv->parent),
-		       parent_ifindex);
-		priv->invalid = TRUE;
-		return;
-	}
-
-	priv->vlan_id = vlan_id;
-	_LOGI (LOGD_HW | LOGD_VLAN, "VLAN ID %d with parent %s (%d)",
-	       priv->vlan_id,
-	       priv->parent ? nm_device_get_iface (priv->parent) : "unknown",
-	       parent_ifindex);
-}
-
-static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
@@ -515,9 +563,6 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_PARENT:
 		nm_utils_g_value_set_object_path (value, priv->parent);
-		break;
-	case PROP_INT_PARENT_DEVICE:
-		g_value_set_object (value, priv->parent);
 		break;
 	case PROP_VLAN_ID:
 		g_value_set_uint (value, priv->vlan_id);
@@ -532,25 +577,13 @@ static void
 set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_INT_PARENT_DEVICE:
-		nm_device_vlan_set_parent (NM_DEVICE_VLAN (object), g_value_get_object (value), TRUE);
-		break;
-	case PROP_VLAN_ID:
-		priv->vlan_id = g_value_get_uint (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 }
 
 static void
 dispose (GObject *object)
 {
-	nm_device_vlan_set_parent (NM_DEVICE_VLAN (object), NULL, FALSE);
+	nm_device_vlan_set_parent (NM_DEVICE_VLAN (object), NULL);
 
 	G_OBJECT_CLASS (nm_device_vlan_parent_class)->dispose (object);
 }
@@ -566,11 +599,13 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMDeviceVlanPrivate));
 
 	/* virtual methods */
-	object_class->constructed = constructed;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
+	parent_class->create_and_realize = create_and_realize;
+	parent_class->realize = realize;
+	parent_class->setup = setup;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->bring_up = bring_up;
 	parent_class->act_stage1_prepare = act_stage1_prepare;
@@ -594,16 +629,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 		(object_class, PROP_VLAN_ID,
 		 g_param_spec_uint (NM_DEVICE_VLAN_ID, "", "",
 		                    0, 4095, 0,
-		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
-
-	/* Internal properties */
-	g_object_class_install_property
-	    (object_class, PROP_INT_PARENT_DEVICE,
-	     g_param_spec_object (NM_DEVICE_VLAN_INT_PARENT_DEVICE, "", "",
-	                          NM_TYPE_DEVICE,
-	                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
-	                          G_PARAM_STATIC_STRINGS));
+		                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
 	nm_exported_object_class_add_interface (NM_EXPORTED_OBJECT_CLASS (klass),
 	                                        &dbus_glib_nm_device_vlan_object_info);
@@ -615,93 +641,18 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 #define NM_VLAN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VLAN_FACTORY, NMVlanFactory))
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
+create_device (NMDeviceFactory *factory,
+               const char *iface,
+               NMPlatformLink *plink,
+               NMConnection *connection,
+               gboolean *out_ignore)
 {
-	int parent_ifindex = -1;
-	NMDevice *parent, *device;
-
-	/* Find the parent device */
-	if (!nm_platform_vlan_get_info (NM_PLATFORM_GET, plink->ifindex, &parent_ifindex, NULL)) {
-		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
-		                     "VLAN parent ifindex unknown");
-		return NULL;
-	}
-	parent = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
-
-	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_VLAN,
-	                                    NM_DEVICE_PLATFORM_DEVICE, plink,
-	                                    NM_DEVICE_VLAN_INT_PARENT_DEVICE, parent,
-	                                    NM_DEVICE_DRIVER, "8021q",
-	                                    NM_DEVICE_TYPE_DESC, "VLAN",
-	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_VLAN,
-	                                    NULL);
-	if (NM_DEVICE_VLAN_GET_PRIVATE (device)->invalid) {
-		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
-		                     "VLAN initialization failed");
-		g_object_unref (device);
-		device = NULL;
-	}
-
-	return device;
-}
-
-static NMDevice *
-create_virtual_device_for_connection (NMDeviceFactory *factory,
-                                      NMConnection *connection,
-                                      NMDevice *parent,
-                                      GError **error)
-{
-	NMDevice *device;
-	NMSettingVlan *s_vlan;
-	gs_free char *iface = NULL;
-	NMPlatformError plerr;
-
-	if (!NM_IS_DEVICE (parent)) {
-		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
-		                     "VLAN interfaces must have parents");
-		return NULL;
-	}
-
-	s_vlan = nm_connection_get_setting_vlan (connection);
-	g_assert (s_vlan);
-
-	iface = g_strdup (nm_connection_get_interface_name (connection));
-	if (!iface) {
-		iface = nm_utils_new_vlan_name (nm_device_get_ip_iface (parent),
-		                                nm_setting_vlan_get_id (s_vlan));
-	}
-
-	plerr = nm_platform_vlan_add (NM_PLATFORM_GET,
-	                              iface,
-	                              nm_device_get_ifindex (parent),
-	                              nm_setting_vlan_get_id (s_vlan),
-	                              nm_setting_vlan_get_flags (s_vlan),
-	                              NULL);
-	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
-		             "Failed to create VLAN interface '%s' for '%s': %s",
-		             iface,
-		             nm_connection_get_id (connection),
-		             nm_platform_error_to_string (plerr));
-		return NULL;
-	}
-
-	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_VLAN,
-	                                    NM_DEVICE_IFACE, iface,
-	                                    NM_DEVICE_VLAN_INT_PARENT_DEVICE, parent,
-	                                    NM_DEVICE_DRIVER, "8021q",
-	                                    NM_DEVICE_TYPE_DESC, "VLAN",
-	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_VLAN,
-	                                    NULL);
-	if (NM_DEVICE_VLAN_GET_PRIVATE (device)->invalid) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
-		             "Failed to create VLAN interface '%s' for '%s': initialization failed",
-		             iface, nm_connection_get_id (connection));
-		g_object_unref (device);
-		device = NULL;
-	}
-
-	return device;
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_VLAN,
+	                                  NM_DEVICE_IFACE, iface,
+	                                  NM_DEVICE_DRIVER, "8021q",
+	                                  NM_DEVICE_TYPE_DESC, "VLAN",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_VLAN,
+	                                  NULL);
 }
 
 static const char *
@@ -758,8 +709,7 @@ get_virtual_iface_name (NMDeviceFactory *factory,
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (VLAN, Vlan, vlan,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_VLAN)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_VLAN_SETTING_NAME),
-	factory_iface->new_link = new_link;
-	factory_iface->create_virtual_device_for_connection = create_virtual_device_for_connection;
+	factory_iface->create_device = create_device;
 	factory_iface->get_connection_parent = get_connection_parent;
 	factory_iface->get_virtual_iface_name = get_virtual_iface_name;
 	)

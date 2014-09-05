@@ -28,8 +28,6 @@
 
 /* This file should only be used by subclasses of NMDevice */
 
-#define NM_DEVICE_PLATFORM_DEVICE "platform-device"
-
 enum NMActStageReturn {
 	NM_ACT_STAGE_RETURN_FAILURE = 0,
 	NM_ACT_STAGE_RETURN_SUCCESS,     /* Activation stage done */

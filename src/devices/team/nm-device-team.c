@@ -669,38 +669,34 @@ release_slave (NMDevice *device,
 	return success;
 }
 
-/******************************************************************/
-
-NMDevice *
-nm_device_team_new (NMPlatformLink *platform_device)
+static gboolean
+create_and_realize (NMDevice *device,
+                    NMConnection *connection,
+                    NMDevice *parent,
+                    NMPlatformLink *out_plink,
+                    GError **error)
 {
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_TEAM,
-	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
-	                                  NM_DEVICE_DRIVER, "team",
-	                                  NM_DEVICE_TYPE_DESC, "Team",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_TEAM,
-	                                  NM_DEVICE_IS_MASTER, TRUE,
-	                                  NULL);
-}
-
-NMDevice *
-nm_device_team_new_for_connection (NMConnection *connection, GError **error)
-{
-	const char *iface = nm_connection_get_interface_name (connection);
+	const char *iface = nm_device_get_iface (device);
 	NMPlatformError plerr;
 
-	g_assert (iface);
-
-	plerr = nm_platform_team_add (NM_PLATFORM_GET, iface, NULL);
+	plerr = nm_platform_team_add (NM_PLATFORM_GET, iface, out_plink);
 	if (plerr != NM_PLATFORM_ERROR_SUCCESS && plerr != NM_PLATFORM_ERROR_EXISTS) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
 		             "Failed to create team master interface '%s' for '%s': %s",
 		             iface,
 		             nm_connection_get_id (connection),
 		             nm_platform_error_to_string (plerr));
-		return NULL;
+		return FALSE;
 	}
 
+	return TRUE;
+}
+
+/******************************************************************/
+
+NMDevice *
+nm_device_team_new (const char *iface)
+{
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_TEAM,
 	                                  NM_DEVICE_IFACE, iface,
 	                                  NM_DEVICE_DRIVER, "team",
@@ -798,6 +794,7 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
+	parent_class->create_and_realize = create_and_realize;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->is_available = is_available;
 	parent_class->check_connection_compatible = check_connection_compatible;

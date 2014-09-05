@@ -45,7 +45,7 @@ typedef struct {
 
 GType nm_device_generic_get_type (void);
 
-NMDevice *nm_device_generic_new (NMPlatformLink *platform_device);
+NMDevice *nm_device_generic_new (NMPlatformLink *plink);
 
 G_END_DECLS
 

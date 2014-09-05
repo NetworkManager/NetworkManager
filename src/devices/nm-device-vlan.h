@@ -42,9 +42,6 @@ typedef enum {
 #define NM_DEVICE_VLAN_PARENT     "parent"
 #define NM_DEVICE_VLAN_ID         "vlan-id"
 
-/* Internal non-exported properties */
-#define NM_DEVICE_VLAN_INT_PARENT_DEVICE     "int-parent-device"
-
 typedef NMDevice NMDeviceVlan;
 typedef NMDeviceClass NMDeviceVlanClass;
 

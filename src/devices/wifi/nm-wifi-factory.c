@@ -59,13 +59,19 @@ nm_device_factory_create (GError **error)
 /**************************************************************************/
 
 static NMDevice *
-new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore, GError **error)
+create_device (NMDeviceFactory *factory,
+               const char *iface,
+               NMPlatformLink *plink,
+               NMConnection *connection,
+               gboolean *out_ignore)
 {
+	g_return_val_if_fail (plink != NULL, NULL);
+
 	if (plink->type == NM_LINK_TYPE_WIFI)
-		return nm_device_wifi_new (plink);
+		return nm_device_wifi_new (iface);
 	else if (plink->type == NM_LINK_TYPE_OLPC_MESH)
-		return nm_device_olpc_mesh_new (plink);
-	g_assert_not_reached ();
+		return nm_device_olpc_mesh_new (iface);
+	g_return_val_if_reached (NULL);
 }
 
 NM_DEVICE_FACTORY_DECLARE_TYPES (
@@ -76,7 +82,7 @@ NM_DEVICE_FACTORY_DECLARE_TYPES (
 static void
 device_factory_interface_init (NMDeviceFactory *factory_iface)
 {
-	factory_iface->new_link = new_link;
+	factory_iface->create_device = create_device;
 	factory_iface->get_supported_types = get_supported_types;
 }
 

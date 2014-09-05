@@ -79,86 +79,64 @@ nm_device_factory_start (NMDeviceFactory *factory)
 }
 
 NMDevice *
-nm_device_factory_new_link (NMDeviceFactory *factory,
-                            NMPlatformLink *plink,
-                            gboolean *out_ignore,
-                            GError **error)
+nm_device_factory_create_device (NMDeviceFactory *factory,
+                                 const char *iface,
+                                 NMPlatformLink *plink,
+                                 NMConnection *connection,
+                                 gboolean *out_ignore,
+                                 GError **error)
 {
 	NMDeviceFactory *interface;
 	const NMLinkType *link_types = NULL;
 	const char **setting_types = NULL;
 	int i;
 
-	g_return_val_if_fail (factory != NULL, NULL);
-	g_return_val_if_fail (plink != NULL, NULL);
+	g_return_val_if_fail (factory, NULL);
+	g_return_val_if_fail (iface && *iface, NULL);
+	g_return_val_if_fail (plink || connection, NULL);
+	g_return_val_if_fail (!plink || !connection, NULL);
 
-	/* Ensure the factory can create interfaces for this connection */
 	nm_device_factory_get_supported_types (factory, &link_types, &setting_types);
-	for (i = 0; link_types[i] > NM_LINK_TYPE_UNKNOWN; i++) {
-		if (plink->type == link_types[i])
-			break;
-	}
 
-	if (link_types[i] == NM_LINK_TYPE_UNKNOWN) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
-		             "Device factory %s does not support link type %s (%d)",
-		             G_OBJECT_TYPE_NAME (factory),
-		             plink->kind, plink->type);
-		return NULL;
+	if (plink) {
+		g_return_val_if_fail (strcmp (iface, plink->name) == 0, NULL);
+
+		for (i = 0; link_types[i] > NM_LINK_TYPE_UNKNOWN; i++) {
+			if (plink->type == link_types[i])
+				break;
+		}
+
+		if (link_types[i] == NM_LINK_TYPE_UNKNOWN) {
+			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+			             "Device factory %s does not support link type %s (%d)",
+			             G_OBJECT_TYPE_NAME (factory),
+			             plink->kind, plink->type);
+			return NULL;
+		}
+	} else if (connection) {
+		for (i = 0; setting_types && setting_types[i]; i++) {
+			if (nm_connection_is_type (connection, setting_types[i]))
+				break;
+		}
+
+		if (!setting_types[i]) {
+			g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			             "Device factory %s does not support connection type %s",
+			             G_OBJECT_TYPE_NAME (factory),
+			             nm_connection_get_connection_type (connection));
+			return NULL;
+		}
 	}
 
 	interface = NM_DEVICE_FACTORY_GET_INTERFACE (factory);
-	if (!interface->new_link) {
+	if (!interface->create_device) {
 		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		             "Device factory %s cannot manage new devices",
 		             G_OBJECT_TYPE_NAME (factory));
 		return NULL;
 	}
 
-	return interface->new_link (factory, plink, out_ignore, error);
-}
-
-NMDevice *
-nm_device_factory_create_virtual_device_for_connection (NMDeviceFactory *factory,
-                                                        NMConnection *connection,
-                                                        NMDevice *parent,
-                                                        GError **error)
-{
-	NMDeviceFactory *interface;
-	const char **setting_types = NULL;
-	gboolean found = FALSE;
-	int i;
-
-	g_return_val_if_fail (factory, NULL);
-	g_return_val_if_fail (connection, NULL);
-	g_return_val_if_fail (!error || !*error, NULL);
-
-	/* Ensure the factory can create interfaces for this connection */
-	nm_device_factory_get_supported_types (factory, NULL, &setting_types);
-	for (i = 0; setting_types && setting_types[i]; i++) {
-		if (nm_connection_is_type (connection, setting_types[i])) {
-			found = TRUE;
-			break;
-		}
-	}
-
-	if (!found) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-		             "Device factory %s does not support connection type %s",
-		             G_OBJECT_TYPE_NAME (factory),
-		             nm_connection_get_connection_type (connection));
-		return NULL;
-	}
-
-	interface = NM_DEVICE_FACTORY_GET_INTERFACE (factory);
-	if (!interface->create_virtual_device_for_connection) {
-		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
-		             "Device factory %s cannot create virtual devices",
-		             G_OBJECT_TYPE_NAME (factory));
-		return NULL;
-	}
-
-	return interface->create_virtual_device_for_connection (factory, connection, parent, error);
+	return interface->create_device (factory, iface, plink, connection, out_ignore);
 }
 
 const char *

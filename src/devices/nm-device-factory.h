@@ -84,51 +84,7 @@ struct _NMDeviceFactory {
 	 * Start the factory and discover any existing devices that the factory
 	 * can manage.
 	 */
-	void (*start)                   (NMDeviceFactory *factory);
-
-	/**
-	 * new_link:
-	 * @factory: the #NMDeviceFactory
-	 * @plink: the new link
-	 * @out_ignore: on return, %TRUE if the link should be ignored
-	 * @error: error if the link could be claimed but an error occurred
-	 *
-	 * The NetworkManager core was notified of a new link which the plugin
-	 * may want to claim and create a #NMDevice subclass for.  If the link
-	 * represents a device which the factory does not support, or the link
-	 * is supported but the device could not be created, %NULL should be
-	 * returned and @error should be set.
-	 *
-	 * If the plugin cannot create a #NMDevice for the link and wants the
-	 * core to ignore it, set @out_ignore to %TRUE and return no error.
-	 *
-	 * @plink is guaranteed to be one of the types the factory returns in
-	 * get_supported_types().
-	 *
-	 * Returns: the #NMDevice if the link was claimed and created, %NULL if not
-	 */
-	NMDevice * (*new_link)        (NMDeviceFactory *factory,
-	                               NMPlatformLink *plink,
-	                               gboolean *out_ignore,
-	                               GError **error);
-
-	/**
-	 * create_virtual_device_for_connection:
-	 * @factory: the #NMDeviceFactory
-	 * @connection: the #NMConnection
-	 * @error: a @GError in case of failure
-	 *
-	 * Virtual device types (such as team, bond, bridge) may need to be created.
-	 * This function tries to create a device based on the given @connection.
-	 *
-	 * Returns: the newly created #NMDevice. If the factory does not support the
-	 * connection type, it should return %NULL and leave @error unset. On error
-	 * it should set @error and return %NULL.
-	 */
-	NMDevice * (*create_virtual_device_for_connection) (NMDeviceFactory *factory,
-	                                                    NMConnection *connection,
-	                                                    NMDevice *parent,
-	                                                    GError **error);
+	void (*start)                 (NMDeviceFactory *factory);
 
 	/**
 	 * get_connection_parent:
@@ -158,6 +114,30 @@ struct _NMDeviceFactory {
 	char * (*get_virtual_iface_name) (NMDeviceFactory *factory,
 	                                  NMConnection *connection,
 	                                  const char *parent_iface);
+
+	/**
+	 * create_device:
+	 * @factory: the #NMDeviceFactory
+	 * @iface: the interface name of the device
+	 * @plink: the #NMPlatformLink if backed by a kernel device
+	 * @connection: the #NMConnection if not backed by a kernel device
+	 * @out_ignore: on return, %TRUE if the link should be ignored
+	 *
+	 * The plugin should create a new unrealized device using the details given
+	 * by @iface and @plink or @connection.  If both @iface and @plink are given,
+	 * they are guaranteed to match.  If both @iface and @connection are given,
+	 * @iface is guaranteed to be the interface name that @connection specifies.
+	 *
+	 * If the plugin cannot create a #NMDevice for the link and wants the
+	 * core to ignore it, set @out_ignore to %TRUE and return %NULL.
+	 *
+	 * Returns: the new unrealized #NMDevice, or %NULL
+	 */
+	NMDevice * (*create_device)   (NMDeviceFactory *factory,
+	                               const char *iface,
+	                               NMPlatformLink *plink,
+	                               NMConnection *connection,
+	                               gboolean *out_ignore);
 
 	/* Signals */
 
@@ -201,15 +181,12 @@ char *     nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
 
 void       nm_device_factory_start       (NMDeviceFactory *factory);
 
-NMDevice * nm_device_factory_new_link    (NMDeviceFactory *factory,
-                                          NMPlatformLink *plink,
-                                          gboolean *out_ignore,
-                                          GError **error);
-
-NMDevice * nm_device_factory_create_virtual_device_for_connection (NMDeviceFactory *factory,
-                                                                   NMConnection *connection,
-                                                                   NMDevice *parent,
-                                                                   GError **error);
+NMDevice * nm_device_factory_create_device (NMDeviceFactory *factory,
+                                            const char *iface,
+                                            NMPlatformLink *plink,
+                                            NMConnection *connection,
+                                            gboolean *out_ignore,
+                                            GError **error);
 
 /* For use by implementations */
 gboolean   nm_device_factory_emit_component_added (NMDeviceFactory *factory,

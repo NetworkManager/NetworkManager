@@ -65,7 +65,7 @@ struct _NMDeviceOlpcMeshClass
 
 GType nm_device_olpc_mesh_get_type (void);
 
-NMDevice *nm_device_olpc_mesh_new (NMPlatformLink *platform_device);
+NMDevice *nm_device_olpc_mesh_new (const char *iface);
 
 G_END_DECLS
 
