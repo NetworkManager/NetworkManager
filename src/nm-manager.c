@@ -1963,10 +1963,46 @@ NEXT:
 	return result;
 }
 
+static gboolean
+_register_device_factory (NMManager *self,
+                          NMDeviceFactory *factory,
+                          const char *path,
+                          GError **error)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDeviceType ftype;
+	GSList *iter;
+
+	/* Make sure we don't double-register factories */
+	ftype = nm_device_factory_get_device_type (factory);
+	for (iter = priv->factories; iter; iter = iter->next) {
+		if (ftype == nm_device_factory_get_device_type (iter->data)) {
+			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INTERNAL,
+			             "multiple plugins for same type (using '%s' instead of '%s')",
+			             (char *) g_object_get_data (G_OBJECT (iter->data), PLUGIN_PATH_TAG),
+			             path);
+			return FALSE;
+		}
+	}
+
+	priv->factories = g_slist_append (priv->factories, factory);
+
+	g_signal_connect (factory,
+	                  NM_DEVICE_FACTORY_DEVICE_ADDED,
+	                  G_CALLBACK (factory_device_added_cb),
+	                  self);
+	g_signal_connect (factory,
+	                  NM_DEVICE_FACTORY_COMPONENT_ADDED,
+	                  G_CALLBACK (factory_component_added_cb),
+	                  self);
+	g_object_set_data_full (G_OBJECT (factory), PLUGIN_PATH_TAG,
+	                        g_strdup (path), g_free);
+	return TRUE;
+}
+
 static void
 load_device_factories (NMManager *self)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	char **path;
 	char **paths;
 
@@ -1979,9 +2015,6 @@ load_device_factories (NMManager *self)
 		GModule *plugin;
 		NMDeviceFactory *factory;
 		NMDeviceFactoryCreateFunc create_func;
-		NMDeviceType plugin_type;
-		const char *found = NULL;
-		GSList *iter;
 		const char *item;
 
 		item = strrchr (*path, '/');
@@ -2010,40 +2043,17 @@ load_device_factories (NMManager *self)
 		}
 		g_clear_error (&error);
 
-		/* Make sure we don't double-register plugins */
-		plugin_type = nm_device_factory_get_device_type (factory);
-		for (iter = priv->factories; iter; iter = iter->next) {
-			if (plugin_type == nm_device_factory_get_device_type (iter->data)) {
-				found = g_object_get_data (G_OBJECT (iter->data), PLUGIN_PATH_TAG);
-				break;
-			}
-		}
-		if (found) {
-			nm_log_warn (LOGD_HW, "Found multiple device plugins for same type: use '%s' instead of '%s'",
-			             found, g_module_name (plugin));
+		if (_register_device_factory (self, factory, g_module_name (plugin), &error)) {
+			nm_log_info (LOGD_HW, "Loaded device plugin: %s", g_module_name (plugin));
+			g_module_make_resident (plugin);
+		} else {
+			nm_log_warn (LOGD_HW, "Loading device plugin failed: %s", error->message);
+			g_object_unref (factory);
 			g_module_close (plugin);
-			continue;
+			g_clear_error (&error);
 		}
-
-		g_module_make_resident (plugin);
-		priv->factories = g_slist_prepend (priv->factories, factory);
-
-		g_signal_connect (factory,
-		                  NM_DEVICE_FACTORY_DEVICE_ADDED,
-		                  G_CALLBACK (factory_device_added_cb),
-		                  self);
-		g_signal_connect (factory,
-		                  NM_DEVICE_FACTORY_COMPONENT_ADDED,
-		                  G_CALLBACK (factory_component_added_cb),
-		                  self);
-		g_object_set_data_full (G_OBJECT (factory), PLUGIN_PATH_TAG,
-		                        g_strdup (g_module_name (plugin)), g_free);
-
-		nm_log_info (LOGD_HW, "Loaded device plugin: %s", g_module_name (plugin));
-	};
+	}
 	g_strfreev (paths);
-
-	priv->factories = g_slist_reverse (priv->factories);
 }
 
 static void
