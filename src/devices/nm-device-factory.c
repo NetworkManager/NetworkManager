@@ -27,6 +27,21 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
+static GSList *internal_types = NULL;
+
+void
+_nm_device_factory_internal_register_type (GType factory_type)
+{
+	g_return_if_fail (g_slist_find (internal_types, GUINT_TO_POINTER (factory_type)) == NULL);
+	internal_types = g_slist_prepend (internal_types, GUINT_TO_POINTER (factory_type));
+}
+
+const GSList *
+nm_device_factory_get_internal_factory_types (void)
+{
+	return internal_types;
+}
+
 gboolean
 nm_device_factory_emit_component_added (NMDeviceFactory *factory, GObject *component)
 {

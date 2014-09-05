@@ -168,5 +168,60 @@ NMDevice * nm_device_factory_create_virtual_device_for_connection (NMDeviceFacto
 gboolean   nm_device_factory_emit_component_added (NMDeviceFactory *factory,
                                                    GObject *component);
 
-#endif /* __NETWORKMANAGER_DEVICE_FACTORY_H__ */
+/**************************************************************************
+ * INTERNAL DEVICE FACTORY FUNCTIONS - devices provided by plugins should
+ * not use these functions.
+ **************************************************************************/
 
+#define DEFINE_DEVICE_FACTORY_INTERNAL(upper, mixed, lower, dfi_code) \
+	DEFINE_DEVICE_FACTORY_INTERNAL_WITH_DEVTYPE(upper, mixed, lower, upper, dfi_code)
+
+#define DEFINE_DEVICE_FACTORY_INTERNAL_WITH_DEVTYPE(upper, mixed, lower, devtype, dfi_code) \
+	typedef GObject NM##mixed##Factory; \
+	typedef GObjectClass NM##mixed##FactoryClass; \
+ \
+	static GType nm_##lower##_factory_get_type (void); \
+	static void device_factory_interface_init (NMDeviceFactory *factory_iface); \
+ \
+	G_DEFINE_TYPE_EXTENDED (NM##mixed##Factory, nm_##lower##_factory, G_TYPE_OBJECT, 0, \
+	                        G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_FACTORY, device_factory_interface_init) \
+	                        _nm_device_factory_internal_register_type (g_define_type_id);) \
+ \
+	/* Use a module constructor to register the factory's GType at load \
+	 * time, which then calls _nm_device_factory_internal_register_type() \
+	 * to register the factory's GType with the Manager. \
+	 */ \
+	static void __attribute__((constructor)) \
+	register_device_factory_internal_##lower (void) \
+	{ \
+		g_type_init (); \
+		g_type_ensure (NM_TYPE_##upper##_FACTORY); \
+	} \
+ \
+	static NMDeviceType \
+	get_device_type (NMDeviceFactory *factory) \
+	{ \
+		return NM_DEVICE_TYPE_##devtype; \
+	} \
+ \
+	static void \
+	device_factory_interface_init (NMDeviceFactory *factory_iface) \
+	{ \
+		factory_iface->get_device_type = get_device_type; \
+		dfi_code \
+	} \
+ \
+	static void \
+	nm_##lower##_factory_init (NM##mixed##Factory *self) \
+	{ \
+	} \
+ \
+	static void \
+	nm_##lower##_factory_class_init (NM##mixed##FactoryClass *lower##_class) \
+	{ \
+	}
+
+void _nm_device_factory_internal_register_type (GType factory_type);
+const GSList *nm_device_factory_get_internal_factory_types (void);
+
+#endif /* __NETWORKMANAGER_DEVICE_FACTORY_H__ */

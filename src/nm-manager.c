@@ -1968,6 +1968,7 @@ NEXT:
 static gboolean
 _register_device_factory (NMManager *self,
                           NMDeviceFactory *factory,
+                          gboolean duplicate_check,
                           const char *path,
                           GError **error)
 {
@@ -1975,15 +1976,17 @@ _register_device_factory (NMManager *self,
 	NMDeviceType ftype;
 	GSList *iter;
 
-	/* Make sure we don't double-register factories */
-	ftype = nm_device_factory_get_device_type (factory);
-	for (iter = priv->factories; iter; iter = iter->next) {
-		if (ftype == nm_device_factory_get_device_type (iter->data)) {
-			g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INTERNAL,
-			             "multiple plugins for same type (using '%s' instead of '%s')",
-			             (char *) g_object_get_data (G_OBJECT (iter->data), PLUGIN_PATH_TAG),
-			             path);
-			return FALSE;
+	if (duplicate_check) {
+		/* Make sure we don't double-register factories */
+		ftype = nm_device_factory_get_device_type (factory);
+		for (iter = priv->factories; iter; iter = iter->next) {
+			if (ftype == nm_device_factory_get_device_type (iter->data)) {
+				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INTERNAL,
+				             "multiple plugins for same type (using '%s' instead of '%s')",
+				             (char *) g_object_get_data (G_OBJECT (iter->data), PLUGIN_PATH_TAG),
+				             path);
+				return FALSE;
+			}
 		}
 	}
 
@@ -2005,17 +2008,32 @@ _register_device_factory (NMManager *self,
 static void
 load_device_factories (NMManager *self)
 {
-	char **path;
-	char **paths;
+	NMDeviceFactory *factory;
+	const GSList *iter;
+	GError *error = NULL;
+	char **path, **paths;
+
+	/* Register internal factories first */
+	for (iter = nm_device_factory_get_internal_factory_types (); iter; iter = iter->next) {
+		GType ftype = GPOINTER_TO_UINT (iter->data);
+
+		factory = (NMDeviceFactory *) g_object_new (ftype, NULL);
+		g_assert (factory);
+		if (_register_device_factory (self, factory, FALSE, "internal", &error)) {
+			nm_log_dbg (LOGD_HW, "Loaded device plugin: %s", g_type_name (ftype));
+		} else {
+			nm_log_warn (LOGD_HW, "Loading device plugin failed: %s", error->message);
+			g_object_unref (factory);
+			g_clear_error (&error);
+		}
+	}
 
 	paths = read_device_factory_paths ();
 	if (!paths)
 		return;
 
 	for (path = paths; *path; path++) {
-		GError *error = NULL;
 		GModule *plugin;
-		NMDeviceFactory *factory;
 		NMDeviceFactoryCreateFunc create_func;
 		const char *item;
 
@@ -2045,7 +2063,7 @@ load_device_factories (NMManager *self)
 		}
 		g_clear_error (&error);
 
-		if (_register_device_factory (self, factory, g_module_name (plugin), &error)) {
+		if (_register_device_factory (self, factory, TRUE, g_module_name (plugin), &error)) {
 			nm_log_info (LOGD_HW, "Loaded device plugin: %s", g_module_name (plugin));
 			g_module_make_resident (plugin);
 		} else {
@@ -2057,6 +2075,8 @@ load_device_factories (NMManager *self)
 	}
 	g_strfreev (paths);
 }
+
+/*******************************************************************/
 
 static void
 platform_link_added (NMManager *self,
