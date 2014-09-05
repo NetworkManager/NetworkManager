@@ -81,7 +81,6 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_DBUS_CONNECTION,
 	PROP_PATH,
 	PROP_NM_RUNNING,
 
@@ -162,7 +161,7 @@ init_dbus (NMObject *object)
 
 	priv->properties_proxy = _nm_object_new_proxy (object, NULL, "org.freedesktop.DBus.Properties");
 
-	if (_nm_object_is_connection_private (object))
+	if (_nm_dbus_is_connection_private (priv->connection))
 		priv->nm_running = TRUE;
 	else {
 		priv->bus_proxy = dbus_g_proxy_new_for_name (priv->connection,
@@ -187,11 +186,9 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	NMObject *self = NM_OBJECT (initable);
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 
-	if (!priv->connection) {
-		priv->connection = _nm_dbus_new_connection (error);
-		if (!priv->connection)
-			return FALSE;
-	}
+	priv->connection = _nm_dbus_new_connection (error);
+	if (!priv->connection)
+		return FALSE;
 	if (!init_common (self, error))
 		return FALSE;
 
@@ -268,14 +265,12 @@ init_async (GAsyncInitable *initable, int io_priority,
 
 	simple = g_simple_async_result_new (G_OBJECT (initable), callback, user_data, init_async);
 
+	priv->connection = _nm_dbus_new_connection (&error);
 	if (!priv->connection) {
-		priv->connection = _nm_dbus_new_connection (&error);
-		if (!priv->connection) {
-			g_simple_async_result_take_error (simple, error);
-			g_simple_async_result_complete_in_idle (simple);
-			g_object_unref (simple);
-			return;
-		}
+		g_simple_async_result_take_error (simple, error);
+		g_simple_async_result_complete_in_idle (simple);
+		g_object_unref (simple);
+		return;
 	}
 	if (!init_common (self, &error)) {
 		g_simple_async_result_take_error (simple, error);
@@ -284,16 +279,15 @@ init_async (GAsyncInitable *initable, int io_priority,
 		return;
 	}
 
-	if (_nm_object_is_connection_private (self))
-		_nm_object_reload_properties_async (self, init_async_got_properties, simple);
-	else {
+	if (priv->bus_proxy) {
 		/* Check if NM is running */
 		dbus_g_proxy_begin_call (priv->bus_proxy, "NameHasOwner",
 		                         init_async_got_nm_running,
 		                         simple, NULL,
 		                         G_TYPE_STRING, NM_DBUS_SERVICE,
 		                         G_TYPE_INVALID);
-	}
+	} else
+		_nm_object_reload_properties_async (self, init_async_got_properties, simple);
 }
 
 static gboolean
@@ -352,10 +346,6 @@ set_property (GObject *object, guint prop_id,
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_DBUS_CONNECTION:
-		/* Construct only */
-		priv->connection = g_value_dup_boxed (value);
-		break;
 	case PROP_PATH:
 		/* Construct only */
 		priv->path = g_value_dup_string (value);
@@ -373,9 +363,6 @@ get_property (GObject *object, guint prop_id,
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_DBUS_CONNECTION:
-		g_value_set_boxed (value, priv->connection);
-		break;
 	case PROP_PATH:
 		g_value_set_string (value, priv->path);
 		break;
@@ -404,19 +391,6 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	nm_object_class->init_dbus = init_dbus;
 
 	/* Properties */
-
-	/**
-	 * NMObject:connection:
-	 *
-	 * The #DBusGConnection of the object.
-	 **/
-	g_object_class_install_property
-		(object_class, PROP_DBUS_CONNECTION,
-		 g_param_spec_boxed (NM_OBJECT_DBUS_CONNECTION, "", "",
-		                     DBUS_TYPE_G_CONNECTION,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_CONSTRUCT_ONLY |
-		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMObject:path:
@@ -477,22 +451,6 @@ nm_object_async_initable_iface_init (GAsyncInitableIface *iface)
 {
 	iface->init_async = init_async;
 	iface->init_finish = init_finish;
-}
-
-/**
- * nm_object_get_dbus_connection:
- * @object: a #NMObject
- *
- * Gets the #NMObject's DBusGConnection.
- *
- * Returns: (transfer none): the connection
- **/
-DBusGConnection *
-nm_object_get_dbus_connection (NMObject *object)
-{
-	g_return_val_if_fail (NM_IS_OBJECT (object), NULL);
-
-	return NM_OBJECT_GET_PRIVATE (object)->connection;
 }
 
 /**
@@ -594,7 +552,6 @@ _nm_object_create (GType type, DBusGConnection *connection, const char *path)
 	}
 
 	object = g_object_new (type,
-	                       NM_OBJECT_DBUS_CONNECTION, connection,
 	                       NM_OBJECT_PATH, path,
 	                       NULL);
 	if (NM_IS_OBJECT (object))
@@ -609,7 +566,6 @@ _nm_object_create (GType type, DBusGConnection *connection, const char *path)
 
 typedef void (*NMObjectCreateCallbackFunc) (GObject *, const char *, gpointer);
 typedef struct {
-	DBusGConnection *connection;
 	char *path;
 	NMObjectCreateCallbackFunc callback;
 	gpointer user_data;
@@ -665,7 +621,6 @@ async_got_type (GType type, gpointer user_data)
 	}
 
 	object = g_object_new (type,
-	                       NM_OBJECT_DBUS_CONNECTION, async_data->connection,
 	                       NM_OBJECT_PATH, async_data->path,
 	                       NULL);
 	if (NM_IS_OBJECT (object))
@@ -683,7 +638,6 @@ _nm_object_create_async (GType type, DBusGConnection *connection, const char *pa
 	NMObjectTypeAsyncData *async_data;
 
 	async_data = g_slice_new (NMObjectTypeAsyncData);
-	async_data->connection = connection;
 	async_data->path = g_strdup (path);
 	async_data->callback = callback;
 	async_data->user_data = user_data;
@@ -1440,12 +1394,6 @@ _nm_object_new_proxy (NMObject *self, const char *path, const char *interface)
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 
 	return _nm_dbus_new_proxy_for_connection (priv->connection, path ? path : priv->path, interface);
-}
-
-gboolean
-_nm_object_is_connection_private (NMObject *self)
-{
-	return _nm_dbus_is_connection_private (NM_OBJECT_GET_PRIVATE (self)->connection);
 }
 
 gboolean

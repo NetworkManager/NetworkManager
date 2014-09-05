@@ -36,32 +36,6 @@ static NMTestServiceInfo *sinfo;
 
 /*******************************************************************/
 
-static NMClient *
-test_client_new (void)
-{
-	NMClient *client;
-	DBusGConnection *bus;
-	GError *error = NULL;
-
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
-	g_assert_no_error (error);
-
-	client = g_object_new (NM_TYPE_CLIENT,
-	                       NM_OBJECT_DBUS_CONNECTION, bus,
-	                       NM_OBJECT_PATH, NM_DBUS_PATH,
-	                       NULL);
-	g_assert (client != NULL);
-
-	dbus_g_connection_unref (bus);
-
-	g_initable_init (G_INITABLE (client), NULL, &error);
-	g_assert_no_error (error);
-
-	return client;
-}
-
-/*******************************************************************/
-
 static gboolean
 loop_quit (gpointer user_data)
 {
@@ -151,9 +125,11 @@ test_device_added (void)
 	const GPtrArray *devices;
 	NMDevice *device;
 	DeviceAddedInfo info = { loop, FALSE, FALSE, 0, 0 };
+	GError *error = NULL;
 
 	sinfo = nm_test_service_init ();
-	client = test_client_new ();
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
 
 	devices = nm_client_get_devices (client);
 	g_assert (devices->len == 0);
@@ -310,7 +286,8 @@ test_wifi_ap_added_removed (void)
 	char *expected_path = NULL;
 
 	sinfo = nm_test_service_init ();
-	client = test_client_new ();
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
 
 	/*************************************/
 	/* Add the wifi device */
@@ -533,7 +510,8 @@ test_wimax_nsp_added_removed (void)
 	char *expected_path = NULL;
 
 	sinfo = nm_test_service_init ();
-	client = test_client_new ();
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
 
 	/*************************************/
 	/* Add the wimax device */
@@ -717,7 +695,8 @@ test_devices_array (void)
 	GVariant *ret;
 
 	sinfo = nm_test_service_init ();
-	client = test_client_new ();
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
 
 	/*************************************/
 	/* Add some devices */
@@ -822,7 +801,8 @@ test_client_nm_running (void)
 	int running_changed = 0;
 	GError *error = NULL;
 
-	client1 = test_client_new ();
+	client1 = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
 
 	g_assert (!nm_client_get_nm_running (client1));
 	g_assert_cmpstr (nm_client_get_version (client1), ==, NULL);
@@ -839,7 +819,8 @@ test_client_nm_running (void)
 
 	/* Now start the test service. */
 	sinfo = nm_test_service_init ();
-	client2 = test_client_new ();
+	client2 = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
 
 	/* client2 should know that NM is running, but the previously-created
 	 * client1 hasn't gotten the news yet.
@@ -875,6 +856,8 @@ test_client_nm_running (void)
 int
 main (int argc, char **argv)
 {
+	g_setenv ("LIBNM_USE_SESSION_BUS", "1", TRUE);
+
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif

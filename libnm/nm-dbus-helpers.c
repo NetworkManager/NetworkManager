@@ -27,15 +27,20 @@
 #include "nm-dbus-interface.h"
 
 static dbus_int32_t priv_slot = -1;
+static DBusBusType nm_bus = DBUS_BUS_SYSTEM;
 
 static void
-_ensure_dbus_data_slot (void)
+_ensure_nm_dbus_helpers_inited (void)
 {
 	static gsize init_value = 0;
 
 	if (g_once_init_enter (&init_value)) {
 		dbus_connection_allocate_data_slot (&priv_slot);
 		g_assert (priv_slot != -1);
+
+		if (g_getenv ("LIBNM_USE_SESSION_BUS"))
+			nm_bus = DBUS_BUS_SESSION;
+
 		g_once_init_leave (&init_value, 1);
 	}
 }
@@ -45,11 +50,11 @@ _nm_dbus_new_connection (GError **error)
 {
 	DBusGConnection *connection = NULL;
 
-	_ensure_dbus_data_slot ();
+	_ensure_nm_dbus_helpers_inited ();
 
 #if HAVE_DBUS_GLIB_100
 	/* If running as root try the private bus first */
-	if (0 == geteuid ()) {
+	if (0 == geteuid () && nm_bus == DBUS_BUS_SYSTEM) {
 		connection = dbus_g_connection_open ("unix:path=" NMRUNDIR "/private", error);
 		if (connection) {
 			DBusConnection *dbus_connection = dbus_g_connection_get_connection (connection);
@@ -65,7 +70,7 @@ _nm_dbus_new_connection (GError **error)
 #endif
 
 	if (connection == NULL)
-		connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, error);
+		connection = dbus_g_bus_get (nm_bus, error);
 
 	return connection;
 }

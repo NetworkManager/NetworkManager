@@ -503,9 +503,7 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_remote_connection_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_dbus_new_proxy_for_connection (nm_object_get_dbus_connection (object),
-	                                                 nm_connection_get_path (NM_CONNECTION (object)),
-	                                                 NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
+	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
 	g_assert (priv->proxy);
 	dbus_g_proxy_set_default_timeout (priv->proxy, G_MAXINT);
 
