@@ -2652,8 +2652,6 @@ test_connection_normalize_virtual_iface_name (void)
 	NMSettingConnection *s_con;
 	NMSettingVlan *s_vlan;
 	GVariant *connection_dict, *setting_dict, *var;
-	GHashTable *connection_hash, *setting_hash;
-	GValue *value;
 	GError *error = NULL;
 	const char *IFACE_NAME = "iface";
 	const char *IFACE_VIRT = "iface-X";
@@ -2698,21 +2696,24 @@ test_connection_normalize_virtual_iface_name (void)
 	g_variant_unref (var);
 
 	/* If vlan.interface-name is invalid, deserialization will fail. */
-	connection_hash = _nm_utils_connection_dict_to_hash (connection_dict);
-	setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_VLAN_SETTING_NAME);
-	value = g_hash_table_lookup (setting_hash, "interface-name");
-	g_value_set_string (value, ":::this-is-not-a-valid-interface-name:::");
-	g_variant_unref (connection_dict);
-	connection_dict = _nm_utils_connection_hash_to_dict (connection_hash);
+	NMTST_VARIANT_EDITOR (connection_dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_VLAN_SETTING_NAME,
+	                                                     "interface-name",
+	                                                     "s",
+	                                                     ":::this-is-not-a-valid-interface-name:::");
+	                      );
 
 	con = nm_simple_connection_new_from_dbus (connection_dict, &error);
 	g_assert_error (error, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_clear_error (&error);
 
 	/* If vlan.interface-name is valid, but doesn't match, it will be ignored. */
-	g_value_set_string (value, IFACE_VIRT);
-	g_variant_unref (connection_dict);
-	connection_dict = _nm_utils_connection_hash_to_dict (connection_hash);
+	NMTST_VARIANT_EDITOR (connection_dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_VLAN_SETTING_NAME,
+	                                                     "interface-name",
+	                                                     "s",
+	                                                     IFACE_VIRT);
+	                      );
 
 	con = nm_simple_connection_new_from_dbus (connection_dict, &error);
 	g_assert_no_error (error);
@@ -2725,11 +2726,10 @@ test_connection_normalize_virtual_iface_name (void)
 	/* But removing connection.interface-name should result in vlan.connection-name
 	 * being "promoted".
 	 */
-	setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_CONNECTION_SETTING_NAME);
-	g_assert (setting_hash != NULL);
-	g_hash_table_remove (setting_hash, NM_SETTING_CONNECTION_INTERFACE_NAME);
-	g_variant_unref (connection_dict);
-	connection_dict = _nm_utils_connection_hash_to_dict (connection_hash);
+	NMTST_VARIANT_EDITOR (connection_dict,
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_CONNECTION_SETTING_NAME,
+	                                                   NM_SETTING_CONNECTION_INTERFACE_NAME);
+	                      );
 
 	con = nm_simple_connection_new_from_dbus (connection_dict, &error);
 	g_assert_no_error (error);
@@ -2740,7 +2740,6 @@ test_connection_normalize_virtual_iface_name (void)
 	g_object_unref (con);
 
 	g_variant_unref (connection_dict);
-	g_hash_table_unref (connection_hash);
 }
 
 static void

@@ -34,7 +34,6 @@
 #include "nm-setting-pppoe.h"
 #include "nm-setting-vpn.h"
 #include "nm-utils.h"
-#include "nm-utils-private.h"
 
 #include "nm-test-utils.h"
 
@@ -441,16 +440,6 @@ wifi_connection_new (void)
 	return connection;
 }
 
-static GValue *
-string_to_gvalue (const char *str)
-{
-	GValue *val = g_slice_new0 (GValue);
-
-	g_value_init (val, G_TYPE_STRING);
-	g_value_set_string (val, str);
-	return val;
-}
-
 static GVariant *
 build_wep_secrets (const char *wepkey)
 {
@@ -578,7 +567,6 @@ test_update_secrets_whole_connection (void)
 	NMConnection *connection;
 	NMSettingWirelessSecurity *s_wsec;
 	GVariant *secrets;
-	GHashTable *secrets_hash, *wsec_hash;
 	GError *error = NULL;
 	gboolean success;
 	const char *wepkey = "11111111111111111111111111";
@@ -591,12 +579,12 @@ test_update_secrets_whole_connection (void)
 
 	/* Build up the secrets dictionary */
 	secrets = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-	secrets_hash = _nm_utils_connection_dict_to_hash (secrets);
-	wsec_hash = g_hash_table_lookup (secrets_hash, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
-	g_assert (wsec_hash);
-	g_hash_table_insert (wsec_hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
-	g_variant_unref (secrets);
-	secrets = _nm_utils_connection_hash_to_dict (secrets_hash);
+	NMTST_VARIANT_EDITOR (secrets,
+	                      NMTST_VARIANT_ADD_PROPERTY (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	                                                  NM_SETTING_WIRELESS_SECURITY_WEP_KEY0,
+	                                                  "s",
+	                                                  wepkey);
+	                      );
 
 	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
 	g_assert_no_error (error);
