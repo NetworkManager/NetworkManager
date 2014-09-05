@@ -142,7 +142,7 @@ init_dbus (NMObject *object)
  *
  * Gets the IP6 gateway.
  *
- * Returns: the IPv6 gateway of the configuration.
+ * Returns: (transfer none): the IPv6 gateway of the configuration.
  **/
 const char *
 nm_ip6_config_get_gateway (NMIP6Config *config)
@@ -158,7 +158,7 @@ nm_ip6_config_get_gateway (NMIP6Config *config)
  *
  * Gets the IP6 addresses (containing the address, prefix, and gateway).
  *
- * Returns: (element-type NMIP6Address): the #GSList containing
+ * Returns: (element-type NMIP6Address) (transfer none): the #GSList containing
  * #NMIP6Address<!-- -->es. This is the internal copy used by the configuration
  * and must not be modified.
  **/
@@ -176,7 +176,7 @@ nm_ip6_config_get_addresses (NMIP6Config *config)
  *
  * Gets the domain name servers (DNS).
  *
- * Returns: the array of nameserver IP addresses
+ * Returns: (transfer none): the array of nameserver IP addresses
  **/
 const char * const *
 nm_ip6_config_get_nameservers (NMIP6Config *config)
@@ -192,7 +192,8 @@ nm_ip6_config_get_nameservers (NMIP6Config *config)
  *
  * Gets the domain names.
  *
- * Returns: the array of domains. (This is never %NULL, though it may be 0-length).
+ * Returns: (transfer none): the array of domains.
+ * (This is never %NULL, though it may be 0-length).
  **/
 const char * const *
 nm_ip6_config_get_domains (NMIP6Config *config)
@@ -208,7 +209,8 @@ nm_ip6_config_get_domains (NMIP6Config *config)
  *
  * Gets the DNS search strings.
  *
- * Returns: the array of DNS search strings. (This is never %NULL, though it may be 0-length).
+ * Returns: (transfer none): the array of DNS search strings.
+ * (This is never %NULL, though it may be 0-length).
  **/
 const char * const *
 nm_ip6_config_get_searches (NMIP6Config *config)
@@ -224,7 +226,7 @@ nm_ip6_config_get_searches (NMIP6Config *config)
  *
  * Gets the routes.
  *
- * Returns: (element-type NMIP6Route): the #GSList containing
+ * Returns: (element-type NMIP6Route): (transfer none): the #GSList containing
  * #NMIP6Routes. This is the internal copy used by the configuration,
  * and must not be modified.
  **/

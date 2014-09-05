@@ -317,7 +317,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
  *
  * Gets the IP4 gateway address.
  *
- * Returns: the IP4 address of the gateway.
+ * Returns: (transfer none): the IP4 address of the gateway.
  **/
 const char *
 nm_ip4_config_get_gateway (NMIP4Config *config)
@@ -333,7 +333,7 @@ nm_ip4_config_get_gateway (NMIP4Config *config)
  *
  * Gets the IP4 addresses (containing the address, prefix, and gateway).
  *
- * Returns: (element-type NMIP4Address): the #GSList containing #NMIP4Address<!-- -->es.
+ * Returns: (element-type NMIP4Address) (transfer none): the #GSList containing #NMIP4Address<!-- -->es.
  * This is the internal copy used by the configuration and must not be modified.
  **/
 const GSList *
@@ -350,7 +350,7 @@ nm_ip4_config_get_addresses (NMIP4Config *config)
  *
  * Gets the domain name servers (DNS).
  *
- * Returns: the array of nameserver IP addresses
+ * Returns: (transfer none): the array of nameserver IP addresses
  **/
 const char * const *
 nm_ip4_config_get_nameservers (NMIP4Config *config)
@@ -366,7 +366,8 @@ nm_ip4_config_get_nameservers (NMIP4Config *config)
  *
  * Gets the domain names.
  *
- * Returns: the array of domains. (This is never %NULL, though it may be 0-length).
+ * Returns: (transfer none): the array of domains.
+ * (This is never %NULL, though it may be 0-length).
  **/
 const char * const *
 nm_ip4_config_get_domains (NMIP4Config *config)
@@ -382,7 +383,8 @@ nm_ip4_config_get_domains (NMIP4Config *config)
  *
  * Gets the DNS searches.
  *
- * Returns: the array of DNS search strings. (This is never %NULL, though it may be 0-length).
+ * Returns: (transfer none): the array of DNS search strings.
+ * (This is never %NULL, though it may be 0-length).
  **/
 const char * const *
 nm_ip4_config_get_searches (NMIP4Config *config)
@@ -398,7 +400,7 @@ nm_ip4_config_get_searches (NMIP4Config *config)
  *
  * Gets the Windows Internet Name Service servers (WINS).
  *
- * Returns: (element-type guint32): the #GArray containing #guint32s.
+ * Returns: (element-type guint32) (transfer none): the #GArray containing #guint32s.
  * This is the internal copy used by the configuration and must not be
  * modified.
  **/
@@ -416,7 +418,7 @@ nm_ip4_config_get_wins_servers (NMIP4Config *config)
  *
  * Gets the routes.
  *
- * Returns: (element-type NMIP4Route): the #GSList containing
+ * Returns: (element-type NMIP4Route) (transfer none): the #GSList containing
  * #NMIP4Routes. This is the internal copy used by the configuration,
  * and must not be modified.
  **/
