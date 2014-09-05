@@ -59,6 +59,7 @@
 #define NM_DEVICE_HW_ADDRESS       "hw-address"
 #define NM_DEVICE_METERED          "metered"
 #define NM_DEVICE_LLDP_NEIGHBORS  "lldp-neighbors"
+#define NM_DEVICE_REAL             "real"
 
 #define NM_DEVICE_TYPE_DESC        "type-desc"      /* Internal only */
 #define NM_DEVICE_RFKILL_TYPE      "rfkill-type"    /* Internal only */
@@ -326,6 +327,7 @@ const char *	nm_device_get_udi		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);
 int             nm_device_get_ifindex	(NMDevice *dev);
 gboolean        nm_device_is_software   (NMDevice *dev);
+gboolean        nm_device_is_real       (NMDevice *dev);
 const char *	nm_device_get_ip_iface	(NMDevice *dev);
 int             nm_device_get_ip_ifindex(NMDevice *dev);
 const char *	nm_device_get_driver	(NMDevice *dev);
