@@ -120,7 +120,7 @@ shared_connection_init (void)
 		g_printerr ("Error: could not get the system bus.  Make sure "
 		            "the message bus daemon is running!  Message: %s\n",
 		            error->message);
-		g_error_free (&error);
+		g_error_free (error);
 		return NULL;
 	}
 
