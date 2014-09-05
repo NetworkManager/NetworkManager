@@ -497,24 +497,6 @@ nm_manager_get_device_by_path (NMManager *manager, const char *path)
 }
 
 NMDevice *
-nm_manager_get_device_by_master (NMManager *manager, const char *master, const char *driver)
-{
-	GSList *iter;
-
-	g_return_val_if_fail (master != NULL, NULL);
-
-	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-		NMDevice *device = NM_DEVICE (iter->data);
-
-		if (!strcmp (nm_device_get_iface (device), master) &&
-		    (!driver || !strcmp (nm_device_get_driver (device), driver)))
-			return device;
-	}
-
-	return NULL;
-}
-
-NMDevice *
 nm_manager_get_device_by_ifindex (NMManager *manager, int ifindex)
 {
 	GSList *iter;
@@ -1864,20 +1846,7 @@ find_device_by_ip_iface (NMManager *self, const gchar *iface)
 	return NULL;
 }
 
-static NMDevice *
-find_device_by_ifindex (NMManager *self, guint32 ifindex)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = NM_DEVICE (iter->data);
-
-		if (ifindex == nm_device_get_ifindex (candidate))
-			return candidate;
-	}
-	return NULL;
-}
+/*******************************************************************/
 
 static void
 factory_device_added_cb (NMDeviceFactory *factory,
@@ -2105,7 +2074,7 @@ platform_link_added (NMManager *self,
 	if (priv->ignore_link_added_cb > 0)
 		return;
 
-	if (find_device_by_ifindex (self, ifindex))
+	if (nm_manager_get_device_by_ifindex (self, ifindex))
 		return;
 
 	/* Try registered device factories */
@@ -2154,7 +2123,7 @@ platform_link_added (NMManager *self,
 		case NM_LINK_TYPE_VLAN:
 			/* Have to find the parent device */
 			if (nm_platform_vlan_get_info (ifindex, &parent_ifindex, NULL)) {
-				parent = find_device_by_ifindex (self, parent_ifindex);
+				parent = nm_manager_get_device_by_ifindex (self, parent_ifindex);
 				if (parent)
 					device = nm_device_vlan_new (plink, parent);
 				else {
@@ -2228,7 +2197,7 @@ platform_link_cb (NMPlatform *platform,
 		NMManager *self = NM_MANAGER (user_data);
 		NMDevice *device;
 
-		device = find_device_by_ifindex (self, ifindex);
+		device = nm_manager_get_device_by_ifindex (self, ifindex);
 		if (device)
 			remove_device (self, device, FALSE);
 		break;

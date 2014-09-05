@@ -92,45 +92,38 @@ typedef struct {
 GType nm_manager_get_type (void);
 
 /* nm_manager_new() should only be used by main.c */
-NMManager *nm_manager_new (NMSettings *settings,
-                           const char *state_file,
-                           gboolean initial_net_enabled,
-                           gboolean initial_wifi_enabled,
-                           gboolean initial_wwan_enabled,
-                           gboolean initial_wimax_enabled,
-                           GError **error);
+NMManager *   nm_manager_new                           (NMSettings *settings,
+                                                        const char *state_file,
+                                                        gboolean initial_net_enabled,
+                                                        gboolean initial_wifi_enabled,
+                                                        gboolean initial_wwan_enabled,
+                                                        gboolean initial_wimax_enabled,
+                                                        GError **error);
 
-NMManager *nm_manager_get (void);
+NMManager *   nm_manager_get                           (void);
 
-void nm_manager_start (NMManager *manager);
-
-const GSList *nm_manager_get_active_connections (NMManager *manager);
-GSList *nm_manager_get_activatable_connections (NMManager *manager);
+void          nm_manager_start                         (NMManager *manager);
+NMState       nm_manager_get_state                     (NMManager *manager);
+const GSList *nm_manager_get_active_connections        (NMManager *manager);
+GSList *      nm_manager_get_activatable_connections   (NMManager *manager);
 
 /* Device handling */
 
-const GSList *nm_manager_get_devices (NMManager *manager);
+const GSList *      nm_manager_get_devices             (NMManager *manager);
 
-NMDevice *nm_manager_get_device_by_master (NMManager *manager,
-                                           const char *master,
-                                           const char *driver);
-NMDevice *nm_manager_get_device_by_ifindex (NMManager *manager,
-                                            int ifindex);
+NMDevice *          nm_manager_get_device_by_ifindex   (NMManager *manager,
+                                                        int ifindex);
 
-NMActiveConnection *nm_manager_activate_connection (NMManager *manager,
-                                                    NMConnection *connection,
-                                                    const char *specific_object,
-                                                    NMDevice *device,
-                                                    NMAuthSubject *subject,
-                                                    GError **error);
+NMActiveConnection *nm_manager_activate_connection     (NMManager *manager,
+                                                        NMConnection *connection,
+                                                        const char *specific_object,
+                                                        NMDevice *device,
+                                                        NMAuthSubject *subject,
+                                                        GError **error);
 
-gboolean nm_manager_deactivate_connection (NMManager *manager,
-                                           const char *connection_path,
-                                           NMDeviceStateReason reason,
-                                           GError **error);
-
-/* State handling */
-
-NMState nm_manager_get_state (NMManager *manager);
+gboolean            nm_manager_deactivate_connection   (NMManager *manager,
+                                                        const char *connection_path,
+                                                        NMDeviceStateReason reason,
+                                                        GError **error);
 
 #endif /* __NETWORKMANAGER_MANAGER_H__ */
