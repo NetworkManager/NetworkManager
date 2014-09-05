@@ -783,7 +783,7 @@ _nm_setting_dcb_uint_array_to_dbus (const GValue *prop_value,
 {
 	GArray *src = g_value_get_boxed (prop_value);
 
-	take_uint_array (dbus_value, (guint *) src->data, src->len);
+	set_uint_array (dbus_value, (guint *) src->data, src->len);
 }
 
 static void
@@ -792,7 +792,7 @@ _nm_setting_dcb_uint_array_from_dbus (const GValue *dbus_value,
 {
 	GArray *src = g_value_get_boxed (dbus_value);
 
-	set_uint_array (prop_value, (guint *) src->data, src->len);
+	take_uint_array (prop_value, (guint *) src->data, src->len);
 }
 
 static void
