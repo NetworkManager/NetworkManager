@@ -39,7 +39,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
-#include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
 #include "nm-device-bridge.h"
 #include "nm-device-vlan.h"
@@ -1057,8 +1056,6 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		device = nm_device_bridge_new_for_connection (connection);
 	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		device = nm_device_vlan_new_for_connection (connection, parent);
-	} else if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
-		device = nm_device_infiniband_new_partition (connection, parent);
 	} else {
 		for (iter = priv->factories; iter; iter = iter->next) {
 			device = nm_device_factory_create_virtual_device_for_connection (NM_DEVICE_FACTORY (iter->data),
@@ -2126,9 +2123,6 @@ platform_link_added (NMManager *self,
 		NMDevice *parent;
 
 		switch (plink->type) {
-		case NM_LINK_TYPE_INFINIBAND:
-			device = nm_device_infiniband_new (plink);
-			break;
 		case NM_LINK_TYPE_BOND:
 			device = nm_device_bond_new (plink);
 			break;
