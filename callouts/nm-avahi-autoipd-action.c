@@ -15,87 +15,48 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright 2008, 2014 Red Hat, Inc.
  */
 
-#include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib-lowlevel.h>
-#include <dbus/dbus-glib.h>
+#include <gio/gio.h>
 
 #define NM_AVAHI_AUTOIPD_DBUS_SERVICE   "org.freedesktop.nm_avahi_autoipd"
 #define NM_AVAHI_AUTOIPD_DBUS_INTERFACE "org.freedesktop.nm_avahi_autoipd"
 
-static DBusConnection *
-dbus_init (void)
+static void
+on_name_acquired (GDBusConnection *connection,
+                  const gchar     *name,
+                  gpointer         loop)
 {
-	DBusConnection * connection;
-	DBusError error;
-	int ret;
+	g_main_loop_quit (loop);
+}
 
-	dbus_connection_set_change_sigpipe (TRUE);
-
-	dbus_error_init (&error);
-	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
-	if (dbus_error_is_set (&error)) {
-		fprintf (stderr, "Error: could not get the system bus.  Make sure "
-		            "the message bus daemon is running!  Message: (%s) %s\n",
-		            error.name,
-		            error.message);
-		goto error;
-	}
-
-	dbus_connection_set_exit_on_disconnect (connection, FALSE);
-
-	dbus_error_init (&error);
-	ret = dbus_bus_request_name (connection,
-	                             NM_AVAHI_AUTOIPD_DBUS_SERVICE,
-	                             DBUS_NAME_FLAG_DO_NOT_QUEUE,
-	                             &error);
-	if (dbus_error_is_set (&error)) {
-		fprintf (stderr, "Error: Could not acquire the NM DHCP client service. "
-		            "Message: (%s) %s\n",
-		            error.name,
-		            error.message);
-		goto error;
-	}
-
-	if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-		fprintf (stderr, "Error: Could not acquire the NM DHCP client service "
-		         "as it is already taken.  Return: %d\n",
-		         ret);
-		goto error;
-	}
-
-	return connection;
-
-error:
-	if (dbus_error_is_set (&error))
-		dbus_error_free (&error);
-	if (connection)
-		dbus_connection_unref (connection);
-	return NULL;
+static void
+on_name_lost (GDBusConnection *connection,
+              const gchar     *name,
+              gpointer         user_data)
+{
+	g_printerr ("Error: Could not acquire the NM autoipd service.");
+	exit (1);
 }
 
 int
 main (int argc, char *argv[])
 {
-	DBusConnection *connection;
-	DBusMessage *message;
-	dbus_bool_t result;
+	GDBusConnection *connection;
 	char *event, *iface, *address;
+	GMainLoop *loop;
+	GError *error = NULL;
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif
 
 	if (argc != 4) {
-		fprintf (stderr, "Error: expected 3 arguments (event, interface, address).\n");
+		g_printerr ("Error: expected 3 arguments (event, interface, address).\n");
 		exit (1);
 	}
 
@@ -104,41 +65,60 @@ main (int argc, char *argv[])
 	address = argv[3] ? argv[3] : "";
 
 	if (!event || !iface || !strlen (event) || !strlen (iface)) {
-		fprintf (stderr, "Error: unexpected arguments received from avahi-autoipd.\n");
+		g_printerr ("Error: unexpected arguments received from avahi-autoipd.\n");
 		exit (1);
 	}
 
 	/* Get a connection to the system bus */
-	connection = dbus_init ();
-	if (connection == NULL)
-		exit (1);
+	connection = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &error);
+	if (error) {
+		char *remote_error = g_dbus_error_get_remote_error (error);
 
-	message = dbus_message_new_signal ("/", NM_AVAHI_AUTOIPD_DBUS_INTERFACE, "Event");
-	if (message == NULL) {
-		fprintf (stderr, "Error: not enough memory to send autoip Event signal.\n");
-		exit (1);
+		g_dbus_error_strip_remote_error (error);
+		g_printerr ("Error: could not get the system bus.  Make sure "
+		            "the message bus daemon is running!  Message: (%s) %s\n",
+		            remote_error, error->message);
+		g_free (remote_error);
+		g_error_free (error);
+		return 1;
 	}
 
-	if (!dbus_message_append_args (message,
-	                               DBUS_TYPE_STRING, &event,
-	                               DBUS_TYPE_STRING, &iface,
-	                               DBUS_TYPE_STRING, &address,
-	                               DBUS_TYPE_INVALID)) {
-		fprintf (stderr, "Error: failed to construct autoip Event signal.\n");
-		exit (1);
+	/* Acquire the bus name */
+	loop = g_main_loop_new (NULL, FALSE);
+	g_bus_own_name_on_connection (connection,
+	                              NM_AVAHI_AUTOIPD_DBUS_SERVICE,
+	                              0,
+	                              on_name_acquired,
+	                              on_name_lost,
+	                              loop, NULL);
+	g_main_loop_run (loop);
+	g_main_loop_unref (loop);
+
+	/* Send the signal */
+	if (!g_dbus_connection_emit_signal (connection,
+	                                    NULL,
+	                                    "/",
+	                                    NM_AVAHI_AUTOIPD_DBUS_INTERFACE,
+	                                    "Event",
+	                                    g_variant_new ("(sss)",
+	                                                   event,
+	                                                   iface,
+	                                                   address),
+	                                    &error)) {
+		g_dbus_error_strip_remote_error (error);
+		g_printerr ("Error: Could not send autoipd Event signal: %s\n", error->message);
+		g_error_free (error);
+		return 1;
 	}
 
-	/* queue the message */
-	result = dbus_connection_send (connection, message, NULL);
-	if (!result) {
-		fprintf (stderr, "Error: could not send send autoip Event signal.\n");
-		exit (1);
+	if (!g_dbus_connection_flush_sync (connection, NULL, &error)) {
+		g_dbus_error_strip_remote_error (error);
+		g_printerr ("Error: Could not flush D-Bus connection: %s\n", error->message);
+		g_error_free (error);
+		return 1;
 	}
-	dbus_message_unref (message);
 
-	/* Send out the message */
-	dbus_connection_flush (connection);
-
+	g_object_unref (connection);
 	return 0;
 }
 
