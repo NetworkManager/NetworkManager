@@ -101,6 +101,13 @@ void nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value);
 GSList *nm_utils_ip4_routes_from_gvalue (const GValue *value);
 void nm_utils_ip4_routes_to_gvalue (GSList *list, GValue *value);
 
+GVariant  *nm_utils_ip4_dns_to_variant (char **dns);
+char     **nm_utils_ip4_dns_from_variant (GVariant *value);
+GVariant  *nm_utils_ip4_addresses_to_variant (GPtrArray *addresses);
+GPtrArray *nm_utils_ip4_addresses_from_variant (GVariant *value);
+GVariant  *nm_utils_ip4_routes_to_variant (GPtrArray *routes);
+GPtrArray *nm_utils_ip4_routes_from_variant (GVariant *value);
+
 guint32 nm_utils_ip4_netmask_to_prefix (guint32 netmask);
 guint32 nm_utils_ip4_prefix_to_netmask (guint32 prefix);
 guint32 nm_utils_ip4_get_default_prefix (guint32 ip);
@@ -113,6 +120,13 @@ void nm_utils_ip6_routes_to_gvalue (GSList *list, GValue *value);
 
 GSList *nm_utils_ip6_dns_from_gvalue (const GValue *value);
 void nm_utils_ip6_dns_to_gvalue (GSList *list, GValue *value);
+
+GVariant  *nm_utils_ip6_dns_to_variant (char **dns);
+char     **nm_utils_ip6_dns_from_variant (GVariant *value);
+GVariant  *nm_utils_ip6_addresses_to_variant (GPtrArray *addresses);
+GPtrArray *nm_utils_ip6_addresses_from_variant (GVariant *value);
+GVariant  *nm_utils_ip6_routes_to_variant (GPtrArray *routes);
+GPtrArray *nm_utils_ip6_routes_from_variant (GVariant *value);
 
 char *nm_utils_uuid_generate (void);
 char *nm_utils_uuid_generate_from_string (const char *s);
