@@ -14,10 +14,7 @@
 %define wireless_tools_version 1:28-0pre9
 %define libnl3_version 3.2.7
 
-%define ppp_version 2.4.5
-%if (0%{?fedora} && 0%{?fedora} > 20)
-%define ppp_version 2.4.6
-%endif
+%define ppp_version %(pppd --help 2>&1 |awk 'BEGIN {v="bad"} /pppd version/ {v=$NF} END {print v}')
 
 %define snapshot %{nil}
 %define git_sha __COMMIT__
@@ -136,8 +133,7 @@ BuildRequires: libnl3-devel >= %{libnl3_version}
 BuildRequires: perl(XML::Parser)
 BuildRequires: perl(YAML)
 BuildRequires: automake autoconf intltool libtool
-BuildRequires: ppp = %{ppp_version}
-BuildRequires: ppp-devel = %{ppp_version}
+BuildRequires: ppp-devel >= 2.4.5
 BuildRequires: nss-devel >= 3.11.7
 BuildRequires: dhclient
 BuildRequires: readline-devel
