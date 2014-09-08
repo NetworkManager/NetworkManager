@@ -752,7 +752,7 @@ nm_setting_dcb_init (NMSettingDcb *setting)
 G_STATIC_ASSERT (sizeof (guint) == sizeof (gboolean));
 
 static inline void
-set_uint_array (const GValue *v, uint *a, size_t len)
+set_array_from_gvalue (const GValue *v, uint *a, size_t len)
 {
 	GArray *src = g_value_get_boxed (v);
 	const guint total_len = len * sizeof (a[0]);
@@ -764,18 +764,18 @@ set_uint_array (const GValue *v, uint *a, size_t len)
 		memcpy (a, src->data, total_len);
 	}
 }
-#define SET_UINT_ARRAY(v, a)  set_uint_array (v, a, G_N_ELEMENTS (a))
+#define SET_ARRAY_FROM_GVALUE(v, a)  set_array_from_gvalue (v, a, G_N_ELEMENTS (a))
 
 static inline void
-take_uint_array (GValue *v, uint *a, size_t len)
+set_gvalue_from_array (GValue *v, uint *a, size_t len)
 {
-	GArray *dst = g_array_sized_new (FALSE, TRUE, sizeof (guint), len);
+	GArray *src = g_array_sized_new (FALSE, TRUE, sizeof (guint), len);
 
-	g_array_append_vals (dst, a, len);
-	g_value_take_boxed (v, dst);
+	g_array_append_vals (src, a, len);
+	g_value_take_boxed (v, src);
 }
 
-#define TAKE_UINT_ARRAY(v, a) take_uint_array (v, a, G_N_ELEMENTS (a))
+#define SET_GVALUE_FROM_ARRAY(v, a) set_gvalue_from_array (v, a, G_N_ELEMENTS (a))
 
 static void
 _nm_setting_dcb_uint_array_to_dbus (const GValue *prop_value,
@@ -783,7 +783,7 @@ _nm_setting_dcb_uint_array_to_dbus (const GValue *prop_value,
 {
 	GArray *src = g_value_get_boxed (prop_value);
 
-	take_uint_array (dbus_value, (guint *) src->data, src->len);
+	set_gvalue_from_array (dbus_value, (guint *) src->data, src->len);
 }
 
 static void
@@ -792,7 +792,8 @@ _nm_setting_dcb_uint_array_from_dbus (const GValue *dbus_value,
 {
 	GArray *src = g_value_get_boxed (dbus_value);
 
-	set_uint_array (prop_value, (guint *) src->data, src->len);
+	set_gvalue_from_array (prop_value, (guint *) src->data, src->len);
+
 }
 
 static void
@@ -827,25 +828,25 @@ set_property (GObject *object, guint prop_id,
 		priv->pfc_flags = g_value_get_uint (value);
 		break;
 	case PROP_PFC:
-		SET_UINT_ARRAY (value, priv->pfc);
+		SET_ARRAY_FROM_GVALUE (value, priv->pfc);
 		break;
 	case PROP_PRIORITY_GROUP_FLAGS:
 		priv->priority_group_flags = g_value_get_uint (value);
 		break;
 	case PROP_PRIORITY_GROUP_ID:
-		SET_UINT_ARRAY (value, priv->priority_group_id);
+		SET_ARRAY_FROM_GVALUE (value, priv->priority_group_id);
 		break;
 	case PROP_PRIORITY_GROUP_BANDWIDTH:
-		SET_UINT_ARRAY (value, priv->priority_group_bandwidth);
+		SET_ARRAY_FROM_GVALUE (value, priv->priority_group_bandwidth);
 		break;
 	case PROP_PRIORITY_BANDWIDTH:
-		SET_UINT_ARRAY (value, priv->priority_bandwidth);
+		SET_ARRAY_FROM_GVALUE (value, priv->priority_bandwidth);
 		break;
 	case PROP_PRIORITY_STRICT:
-		SET_UINT_ARRAY (value, priv->priority_strict);
+		SET_ARRAY_FROM_GVALUE (value, priv->priority_strict);
 		break;
 	case PROP_PRIORITY_TRAFFIC_CLASS:
-		SET_UINT_ARRAY (value, priv->priority_traffic_class);
+		SET_ARRAY_FROM_GVALUE (value, priv->priority_traffic_class);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -886,25 +887,25 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->pfc_flags);
 		break;
 	case PROP_PFC:
-		TAKE_UINT_ARRAY (value, priv->pfc);
+		SET_GVALUE_FROM_ARRAY (value, priv->pfc);
 		break;
 	case PROP_PRIORITY_GROUP_FLAGS:
 		g_value_set_uint (value, priv->priority_group_flags);
 		break;
 	case PROP_PRIORITY_GROUP_ID:
-		TAKE_UINT_ARRAY (value, priv->priority_group_id);
+		SET_GVALUE_FROM_ARRAY (value, priv->priority_group_id);
 		break;
 	case PROP_PRIORITY_GROUP_BANDWIDTH:
-		TAKE_UINT_ARRAY (value, priv->priority_group_bandwidth);
+		SET_GVALUE_FROM_ARRAY (value, priv->priority_group_bandwidth);
 		break;
 	case PROP_PRIORITY_BANDWIDTH:
-		TAKE_UINT_ARRAY (value, priv->priority_bandwidth);
+		SET_GVALUE_FROM_ARRAY (value, priv->priority_bandwidth);
 		break;
 	case PROP_PRIORITY_STRICT:
-		TAKE_UINT_ARRAY (value, priv->priority_strict);
+		SET_GVALUE_FROM_ARRAY (value, priv->priority_strict);
 		break;
 	case PROP_PRIORITY_TRAFFIC_CLASS:
-		TAKE_UINT_ARRAY (value, priv->priority_traffic_class);
+		SET_GVALUE_FROM_ARRAY (value, priv->priority_traffic_class);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
