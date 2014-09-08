@@ -42,20 +42,10 @@ typedef enum {
 
 #define NM_DEVICE_BOND_SLAVES "slaves"
 
-typedef struct {
-	NMDevice parent;
-} NMDeviceBond;
-
-typedef struct {
-	NMDeviceClass parent;
-
-} NMDeviceBondClass;
-
+typedef NMDevice NMDeviceBond;
+typedef NMDeviceClass NMDeviceBondClass;
 
 GType nm_device_bond_get_type (void);
-
-NMDevice *nm_device_bond_new (NMPlatformLink *platform_device);
-NMDevice *nm_device_bond_new_for_connection (NMConnection *connection);
 
 G_END_DECLS
 

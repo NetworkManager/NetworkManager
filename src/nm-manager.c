@@ -39,7 +39,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
-#include "nm-device-bond.h"
 #include "nm-device-vlan.h"
 #include "nm-device-generic.h"
 #include "nm-device-tun.h"
@@ -1049,9 +1048,7 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 	nm_owned = !nm_platform_link_exists (iface);
 
-	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
-		device = nm_device_bond_new_for_connection (connection);
-	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
+	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
 		device = nm_device_vlan_new_for_connection (connection, parent);
 	} else {
 		for (iter = priv->factories; iter; iter = iter->next) {
@@ -2120,9 +2117,6 @@ platform_link_added (NMManager *self,
 		NMDevice *parent;
 
 		switch (plink->type) {
-		case NM_LINK_TYPE_BOND:
-			device = nm_device_bond_new (plink);
-			break;
 		case NM_LINK_TYPE_VLAN:
 			/* Have to find the parent device */
 			if (nm_platform_vlan_get_info (ifindex, &parent_ifindex, NULL)) {
