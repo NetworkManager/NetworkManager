@@ -28,6 +28,7 @@
 #include "nm-logging.h"
 #include "nm-manager.h"
 #include "nm-platform.h"
+#include "nm-device-factory.h"
 
 #include "nm-device-macvlan-glue.h"
 
@@ -90,18 +91,6 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 }
 
 /**************************************************************/
-
-NMDevice *
-nm_device_macvlan_new (NMPlatformLink *platform_device)
-{
-	g_return_val_if_fail (platform_device != NULL, NULL);
-
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_MACVLAN,
-	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
-	                                  NM_DEVICE_TYPE_DESC, "Macvlan",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
-	                                  NULL);
-}
 
 static void
 nm_device_macvlan_init (NMDeviceMacvlan *self)
@@ -179,3 +168,26 @@ nm_device_macvlan_class_init (NMDeviceMacvlanClass *klass)
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_macvlan_object_info);
 }
+
+/*************************************************************/
+
+#define NM_TYPE_MACVLAN_FACTORY (nm_macvlan_factory_get_type ())
+#define NM_MACVLAN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MACVLAN_FACTORY, NMMacvlanFactory))
+
+static NMDevice *
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+{
+	if (plink->type == NM_LINK_TYPE_MACVLAN || plink->type == NM_LINK_TYPE_MACVTAP) {
+		return (NMDevice *) g_object_new (NM_TYPE_DEVICE_MACVLAN,
+		                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+		                                  NM_DEVICE_TYPE_DESC, "Macvlan",
+		                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
+		                                  NULL);
+	}
+	return NULL;
+}
+
+DEFINE_DEVICE_FACTORY_INTERNAL_WITH_DEVTYPE(MACVLAN, Macvlan, macvlan, ETHERNET, \
+	factory_iface->new_link = new_link; \
+	)
+

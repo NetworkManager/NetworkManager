@@ -67,6 +67,7 @@ nm_device_sources = \
 	devices/nm-device-bridge.c \
 	devices/nm-device-ethernet.c \
 	devices/nm-device-infiniband.c \
+	devices/nm-device-macvlan.c \
 	devices/nm-device-veth.c \
 	devices/nm-device-vlan.c \
 	$(NULL)
@@ -95,7 +96,6 @@ nm_sources = \
 	devices/nm-device-generic.h \
 	devices/nm-device-gre.c \
 	devices/nm-device-logging.h \
-	devices/nm-device-macvlan.c \
 	devices/nm-device-private.h \
 	devices/nm-device-tun.c \
 	devices/nm-device-vxlan.c \
