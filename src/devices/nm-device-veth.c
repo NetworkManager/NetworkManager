@@ -33,6 +33,7 @@
 #include "nm-manager.h"
 #include "nm-platform.h"
 #include "nm-dbus-manager.h"
+#include "nm-device-factory.h"
 
 #include "nm-device-veth-glue.h"
 
@@ -98,18 +99,6 @@ get_peer (NMDeviceVeth *self)
 
 /**************************************************************/
 
-NMDevice *
-nm_device_veth_new (NMPlatformLink *platform_device)
-{
-	g_return_val_if_fail (platform_device != NULL, NULL);
-
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_VETH,
-	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
-	                                  NM_DEVICE_TYPE_DESC, "Veth",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
-	                                  NULL);
-}
-
 static void
 nm_device_veth_init (NMDeviceVeth *self)
 {
@@ -170,3 +159,26 @@ nm_device_veth_class_init (NMDeviceVethClass *klass)
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_veth_object_info);
 }
+
+/*************************************************************/
+
+#define NM_TYPE_VETH_FACTORY (nm_veth_factory_get_type ())
+#define NM_VETH_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VETH_FACTORY, NMVethFactory))
+
+static NMDevice *
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+{
+	if (plink->type == NM_LINK_TYPE_VETH) {
+		return (NMDevice *) g_object_new (NM_TYPE_DEVICE_VETH,
+		                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+		                                  NM_DEVICE_TYPE_DESC, "Veth",
+		                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
+		                                  NULL);
+	}
+	return NULL;
+}
+
+DEFINE_DEVICE_FACTORY_INTERNAL_WITH_DEVTYPE(VETH, Veth, veth, ETHERNET, \
+	factory_iface->new_link = new_link; \
+	)
+

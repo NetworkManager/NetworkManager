@@ -45,7 +45,6 @@
 #include "nm-device-bridge.h"
 #include "nm-device-vlan.h"
 #include "nm-device-generic.h"
-#include "nm-device-veth.h"
 #include "nm-device-tun.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-vxlan.h"
@@ -2156,9 +2155,6 @@ platform_link_added (NMManager *self,
 				}
 			} else
 				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", plink->name);
-			break;
-		case NM_LINK_TYPE_VETH:
-			device = nm_device_veth_new (plink);
 			break;
 		case NM_LINK_TYPE_TUN:
 		case NM_LINK_TYPE_TAP:
