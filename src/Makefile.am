@@ -70,6 +70,7 @@ nm_device_sources = \
 	devices/nm-device-macvlan.c \
 	devices/nm-device-veth.c \
 	devices/nm-device-vlan.c \
+	devices/nm-device-vxlan.c \
 	$(NULL)
 
 nm_device_headers = \
@@ -98,7 +99,6 @@ nm_sources = \
 	devices/nm-device-logging.h \
 	devices/nm-device-private.h \
 	devices/nm-device-tun.c \
-	devices/nm-device-vxlan.c \
 	\
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
