@@ -55,6 +55,9 @@
 #include "nm-platform.h"
 #include "nm-dcb.h"
 #include "nm-settings-connection.h"
+#include "nm-config.h"
+#include "nm-device-ethernet-utils.h"
+#include "nm-connection-provider.h"
 
 #include "nm-device-ethernet-glue.h"
 
@@ -1473,6 +1476,51 @@ complete_connection (NMDevice *device,
 	return TRUE;
 }
 
+static NMConnection *
+new_default_connection (NMDevice *self)
+{
+	NMConnection *connection;
+	const GSList *connections;
+	NMSetting *setting;
+	const char *hw_address;
+	char *defname, *uuid;
+	GByteArray *mac;
+
+	if (!nm_config_get_ethernet_can_auto_default (nm_config_get (), self))
+		return NULL;
+
+	hw_address = nm_device_get_hw_address (self);
+	if (!hw_address)
+		return NULL;
+
+	connection = nm_simple_connection_new ();
+	setting = nm_setting_connection_new ();
+	nm_connection_add_setting (connection, setting);
+
+	connections = nm_connection_provider_get_connections (nm_connection_provider_get ());
+	defname = nm_device_ethernet_utils_get_default_wired_name (connections);
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (setting,
+	              NM_SETTING_CONNECTION_ID, defname,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL),
+	              NULL);
+	g_free (uuid);
+	g_free (defname);
+
+	/* Lock the connection to the device */
+	setting = nm_setting_wired_new ();
+	nm_connection_add_setting (connection, setting);
+
+	mac = nm_utils_hwaddr_atoba (hw_address, ETH_ALEN);
+	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
+	g_byte_array_unref (mac);
+
+	return connection;
+}
+
 static gboolean
 spec_match_list (NMDevice *device, const GSList *specs)
 {
@@ -1679,6 +1727,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->update_initial_hw_address = update_initial_hw_address;
 	parent_class->check_connection_compatible = check_connection_compatible;
 	parent_class->complete_connection = complete_connection;
+	parent_class->new_default_connection = new_default_connection;
 
 	parent_class->act_stage1_prepare = act_stage1_prepare;
 	parent_class->act_stage2_config = act_stage2_config;

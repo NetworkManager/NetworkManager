@@ -1215,6 +1215,14 @@ nm_device_owns_iface (NMDevice *self, const char *iface)
 	return FALSE;
 }
 
+NMConnection *
+nm_device_new_default_connection (NMDevice *self)
+{
+	if (NM_DEVICE_GET_CLASS (self)->new_default_connection)
+		return NM_DEVICE_GET_CLASS (self)->new_default_connection (self);
+	return NULL;
+}
+
 static void
 slave_state_changed (NMDevice *slave,
                      NMDeviceState slave_new_state,

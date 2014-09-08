@@ -30,7 +30,6 @@ SUBDIRS += \
 	dnsmasq-manager/tests \
 	platform \
 	rdisc \
-	settings/tests \
 	supplicant-manager/tests \
 	tests
 endif
@@ -71,6 +70,8 @@ nm_sources = \
 	devices/nm-device-bridge.h \
 	devices/nm-device-ethernet.c \
 	devices/nm-device-ethernet.h \
+	devices/nm-device-ethernet-utils.c \
+	devices/nm-device-ethernet-utils.h \
 	devices/nm-device-factory.c \
 	devices/nm-device-factory.h \
 	devices/nm-device-generic.c \
@@ -157,8 +158,6 @@ nm_sources = \
 	settings/nm-settings-connection.h \
 	settings/nm-settings-error.c \
 	settings/nm-settings-error.h \
-	settings/nm-settings-utils.c \
-	settings/nm-settings-utils.h \
 	settings/nm-settings.c \
 	settings/nm-settings.h \
 	settings/nm-system-config-interface.c \

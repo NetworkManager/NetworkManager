@@ -23,7 +23,7 @@
 
 #include <nm-simple-connection.h>
 #include <nm-setting-connection.h>
-#include "nm-settings-utils.h"
+#include "nm-device-ethernet-utils.h"
 
 static NMConnection *
 _new_connection (const char *id)
@@ -43,15 +43,10 @@ _new_connection (const char *id)
 static void
 test_defname_no_connections (void)
 {
-	GHashTable *hash;
 	char *name;
 
-	hash = g_hash_table_new (g_direct_hash, g_direct_equal);
-
-	name = nm_settings_utils_get_default_wired_name (hash);
+	name = nm_device_ethernet_utils_get_default_wired_name (NULL);
 	g_assert_cmpstr (name, ==, "Wired connection 1");
-
-	g_hash_table_destroy (hash);
 }
 
 /*******************************************/
@@ -59,19 +54,17 @@ test_defname_no_connections (void)
 static void
 test_defname_no_conflict (void)
 {
-	GHashTable *hash;
+	GSList *list = NULL;
 	char *name;
 
-	hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_object_unref);
+	list = g_slist_append (list, _new_connection ("asdfasdfasdfadf"));
+	list = g_slist_append (list, _new_connection ("work wifi"));
+	list = g_slist_append (list, _new_connection ("random gsm connection"));
 
-	g_hash_table_insert (hash, "a", _new_connection ("asdfasdfasdfadf"));
-	g_hash_table_insert (hash, "b", _new_connection ("work wifi"));
-	g_hash_table_insert (hash, "c", _new_connection ("random gsm connection"));
-
-	name = nm_settings_utils_get_default_wired_name (hash);
+	name = nm_device_ethernet_utils_get_default_wired_name (list);
 	g_assert_cmpstr (name, ==, "Wired connection 1");
 
-	g_hash_table_destroy (hash);
+	g_slist_free_full (list, g_object_unref);
 }
 
 /*******************************************/
@@ -79,19 +72,17 @@ test_defname_no_conflict (void)
 static void
 test_defname_conflict (void)
 {
-	GHashTable *hash;
+	GSList *list = NULL;
 	char *name;
 
-	hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_object_unref);
+	list = g_slist_append (list, _new_connection ("asdfasdfasdfadf"));
+	list = g_slist_append (list, _new_connection ("Wired connection 1"));
+	list = g_slist_append (list, _new_connection ("random gsm connection"));
 
-	g_hash_table_insert (hash, "a", _new_connection ("asdfasdfasdfadf"));
-	g_hash_table_insert (hash, "b", _new_connection ("Wired connection 1"));
-	g_hash_table_insert (hash, "c", _new_connection ("random gsm connection"));
-
-	name = nm_settings_utils_get_default_wired_name (hash);
+	name = nm_device_ethernet_utils_get_default_wired_name (list);
 	g_assert_cmpstr (name, ==, "Wired connection 2");
 
-	g_hash_table_destroy (hash);
+	g_slist_free_full (list, g_object_unref);
 }
 
 /*******************************************/
@@ -99,23 +90,21 @@ test_defname_conflict (void)
 static void
 test_defname_multiple_conflicts (void)
 {
-	GHashTable *hash;
+	GSList *list = NULL;
 	char *name;
 
-	hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_object_unref);
+	list = g_slist_append (list, _new_connection ("random gsm connection"));
+	list = g_slist_append (list, _new_connection ("home wifi"));
+	list = g_slist_append (list, _new_connection ("Wired connection 1"));
+	list = g_slist_append (list, _new_connection ("Wired connection 2"));
+	list = g_slist_append (list, _new_connection ("Wired connection 3"));
+	list = g_slist_append (list, _new_connection ("work wifi"));
+	list = g_slist_append (list, _new_connection ("a vpn"));
 
-	g_hash_table_insert (hash, "a", _new_connection ("random gsm connection"));
-	g_hash_table_insert (hash, "b", _new_connection ("home wifi"));
-	g_hash_table_insert (hash, "c", _new_connection ("Wired connection 1"));
-	g_hash_table_insert (hash, "d", _new_connection ("Wired connection 2"));
-	g_hash_table_insert (hash, "e", _new_connection ("Wired connection 3"));
-	g_hash_table_insert (hash, "f", _new_connection ("work wifi"));
-	g_hash_table_insert (hash, "g", _new_connection ("a vpn"));
-
-	name = nm_settings_utils_get_default_wired_name (hash);
+	name = nm_device_ethernet_utils_get_default_wired_name (list);
 	g_assert_cmpstr (name, ==, "Wired connection 4");
 
-	g_hash_table_destroy (hash);
+	g_slist_free_full (list, g_object_unref);
 }
 
 /*******************************************/

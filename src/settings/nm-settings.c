@@ -67,7 +67,6 @@
 #include "nm-session-monitor.h"
 #include "plugins/keyfile/plugin.h"
 #include "nm-agent-manager.h"
-#include "nm-settings-utils.h"
 #include "nm-connection-provider.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
@@ -1585,54 +1584,21 @@ default_wired_clear_tag (NMSettings *self,
 void
 nm_settings_device_added (NMSettings *self, NMDevice *device)
 {
-	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMConnection *connection;
 	NMSettingsConnection *added;
-	NMSetting *setting;
 	GError *error = NULL;
-	const char *hw_address;
-	char *defname, *uuid;
-	GByteArray *mac;
-
-	if (!NM_IS_DEVICE_ETHERNET (device))
-		return;
 
 	/* If the device isn't managed or it already has a default wired connection,
 	 * ignore it.
 	 */
 	if (   !nm_device_get_managed (device)
 	    || g_object_get_data (G_OBJECT (device), DEFAULT_WIRED_CONNECTION_TAG)
-	    || have_connection_for_device (self, device)
-	    || !nm_config_get_ethernet_can_auto_default (priv->config, device))
+	    || have_connection_for_device (self, device))
 		return;
 
-	hw_address = nm_device_get_hw_address (device);
-	if (!hw_address)
+	connection = nm_device_new_default_connection (device);
+	if (!connection)
 		return;
-
-	connection = nm_simple_connection_new ();
-	setting = nm_setting_connection_new ();
-	nm_connection_add_setting (connection, setting);
-
-	defname = nm_settings_utils_get_default_wired_name (priv->connections);
-	uuid = nm_utils_uuid_generate ();
-	g_object_set (setting,
-	              NM_SETTING_CONNECTION_ID, defname,
-	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
-	              NM_SETTING_CONNECTION_UUID, uuid,
-	              NM_SETTING_CONNECTION_TIMESTAMP, (guint64) time (NULL),
-	              NULL);
-	g_free (uuid);
-	g_free (defname);
-
-	/* Lock the connection to the device */
-	setting = nm_setting_wired_new ();
-	nm_connection_add_setting (connection, setting);
-
-	mac = nm_utils_hwaddr_atoba (hw_address, ETH_ALEN);
-	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
-	g_byte_array_unref (mac);
 
 	/* Add the connection */
 	added = nm_settings_add_connection (self, connection, FALSE, &error);
