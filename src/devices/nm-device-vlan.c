@@ -408,16 +408,7 @@ parent_state_changed (NMDevice *parent,
 	if (reason == NM_DEVICE_STATE_REASON_CARRIER)
 		return;
 
-	if (new_state < NM_DEVICE_STATE_DISCONNECTED) {
-		/* If the parent becomes unavailable or unmanaged so does the VLAN */
-		nm_device_state_changed (NM_DEVICE (self), new_state, reason);
-	} else if (   new_state == NM_DEVICE_STATE_DISCONNECTED
-	           && old_state < NM_DEVICE_STATE_DISCONNECTED) {
-		/* Mark VLAN interface as available/disconnected when the parent
-		 * becomes available as a result of becoming initialized.
-		 */
-		nm_device_state_changed (NM_DEVICE (self), new_state, reason);
-	}
+	nm_device_set_unmanaged (NM_DEVICE (self), NM_UNMANAGED_PARENT, !nm_device_get_managed (parent), reason);
 }
 
 /******************************************************************/
@@ -639,6 +630,10 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 		device = NULL;
 	}
 
+	/* Set initial parent-dependent unmanaged flag */
+	if (device)
+		nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_PARENT, !nm_device_get_managed (parent));
+
 	return device;
 }
 
@@ -689,6 +684,10 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 		g_object_unref (device);
 		device = NULL;
 	}
+
+	/* Set initial parent-dependent unmanaged flag */
+	if (device)
+		nm_device_set_initial_unmanaged_flag (device, NM_UNMANAGED_PARENT, !nm_device_get_managed (parent));
 
 	return device;
 }
