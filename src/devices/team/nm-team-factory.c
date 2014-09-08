@@ -56,6 +56,7 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 static NMDevice *
 create_virtual_device_for_connection (NMDeviceFactory *factory,
                                       NMConnection *connection,
+                                      NMDevice *parent,
                                       GError **error)
 {
 	if (nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME))

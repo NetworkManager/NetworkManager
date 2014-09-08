@@ -124,6 +124,7 @@ nm_device_factory_new_link (NMDeviceFactory *factory,
 NMDevice *
 nm_device_factory_create_virtual_device_for_connection (NMDeviceFactory *factory,
                                                         NMConnection *connection,
+                                                        NMDevice *parent,
                                                         GError **error)
 {
 	NMDeviceFactory *interface;
@@ -134,7 +135,7 @@ nm_device_factory_create_virtual_device_for_connection (NMDeviceFactory *factory
 
 	interface = NM_DEVICE_FACTORY_GET_INTERFACE (factory);
 	if (interface->create_virtual_device_for_connection)
-		return interface->create_virtual_device_for_connection (factory, connection, error);
+		return interface->create_virtual_device_for_connection (factory, connection, parent, error);
 	return NULL;
 }
 

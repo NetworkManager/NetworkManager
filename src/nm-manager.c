@@ -1063,8 +1063,10 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 		device = nm_device_infiniband_new_partition (connection, parent);
 	} else {
 		for (iter = priv->factories; iter; iter = iter->next) {
-			device = nm_device_factory_create_virtual_device_for_connection (NM_DEVICE_FACTORY (iter->data), connection, &error);
-
+			device = nm_device_factory_create_virtual_device_for_connection (NM_DEVICE_FACTORY (iter->data),
+			                                                                 connection,
+			                                                                 parent,
+			                                                                 &error);
 			if (device || error) {
 				if (device)
 					g_assert_no_error (error);

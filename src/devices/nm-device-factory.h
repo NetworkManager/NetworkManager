@@ -118,6 +118,7 @@ struct _NMDeviceFactory {
 	 */
 	NMDevice * (*create_virtual_device_for_connection) (NMDeviceFactory *factory,
 	                                                    NMConnection *connection,
+	                                                    NMDevice *parent,
 	                                                    GError **error);
 
 
@@ -160,6 +161,7 @@ NMDevice * nm_device_factory_new_link    (NMDeviceFactory *factory,
 
 NMDevice * nm_device_factory_create_virtual_device_for_connection (NMDeviceFactory *factory,
                                                                    NMConnection *connection,
+                                                                   NMDevice *parent,
                                                                    GError **error);
 
 /* For use by implementations */
