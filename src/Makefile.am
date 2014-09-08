@@ -63,6 +63,7 @@ NetworkManager_LDADD = libNetworkManager.la
 noinst_LTLIBRARIES = libNetworkManager.la
 
 nm_device_sources = \
+	devices/nm-device-bridge.c \
 	devices/nm-device-ethernet.c \
 	devices/nm-device-infiniband.c \
 	devices/nm-device-veth.c \
@@ -85,7 +86,6 @@ nm_sources = \
 	devices/nm-device.c \
 	devices/nm-device.h \
 	devices/nm-device-bond.c \
-	devices/nm-device-bridge.c \
 	devices/nm-device-ethernet-utils.c \
 	devices/nm-device-ethernet-utils.h \
 	devices/nm-device-factory.c \
