@@ -43,22 +43,10 @@ typedef enum {
 #define NM_DEVICE_VLAN_PARENT     "parent"
 #define NM_DEVICE_VLAN_ID         "vlan-id"
 
-typedef struct {
-	NMDevice parent;
-} NMDeviceVlan;
-
-typedef struct {
-	NMDeviceClass parent;
-
-} NMDeviceVlanClass;
-
+typedef NMDevice NMDeviceVlan;
+typedef NMDeviceClass NMDeviceVlanClass;
 
 GType nm_device_vlan_get_type (void);
-
-NMDevice *nm_device_vlan_new (NMPlatformLink *platform_link,
-                              NMDevice       *parent);
-NMDevice *nm_device_vlan_new_for_connection (NMConnection *connection,
-                                             NMDevice     *parent);
 
 G_END_DECLS
 

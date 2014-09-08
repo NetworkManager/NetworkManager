@@ -39,7 +39,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
-#include "nm-device-vlan.h"
 #include "nm-device-generic.h"
 #include "nm-device-tun.h"
 #include "nm-device-macvlan.h"
@@ -1048,24 +1047,20 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 	nm_owned = !nm_platform_link_exists (iface);
 
-	if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
-		device = nm_device_vlan_new_for_connection (connection, parent);
-	} else {
-		for (iter = priv->factories; iter; iter = iter->next) {
-			device = nm_device_factory_create_virtual_device_for_connection (NM_DEVICE_FACTORY (iter->data),
-			                                                                 connection,
-			                                                                 parent,
-			                                                                 &error);
-			if (device || error) {
-				if (device)
-					g_assert_no_error (error);
-				else {
-					nm_log_err (LOGD_DEVICE, "(%s) failed to create virtual device: %s",
-					            nm_connection_get_id (connection), error ? error->message : "(unknown error)");
-					g_clear_error (&error);
-				}
-				break;
+	for (iter = priv->factories; iter; iter = iter->next) {
+		device = nm_device_factory_create_virtual_device_for_connection (NM_DEVICE_FACTORY (iter->data),
+		                                                                 connection,
+		                                                                 parent,
+		                                                                 &error);
+		if (device || error) {
+			if (device)
+				g_assert_no_error (error);
+			else {
+				nm_log_err (LOGD_DEVICE, "(%s) failed to create virtual device: %s",
+				            nm_connection_get_id (connection), error ? error->message : "(unknown error)");
+				g_clear_error (&error);
 			}
+			break;
 		}
 	}
 
@@ -2113,27 +2108,7 @@ platform_link_added (NMManager *self,
 		return;
 
 	if (device == NULL) {
-		int parent_ifindex = -1;
-		NMDevice *parent;
-
 		switch (plink->type) {
-		case NM_LINK_TYPE_VLAN:
-			/* Have to find the parent device */
-			if (nm_platform_vlan_get_info (ifindex, &parent_ifindex, NULL)) {
-				parent = nm_manager_get_device_by_ifindex (self, parent_ifindex);
-				if (parent)
-					device = nm_device_vlan_new (plink, parent);
-				else {
-					/* If udev signaled the VLAN interface before it signaled
-					 * the VLAN's parent at startup we may not know about the
-					 * parent device yet.  But we'll find it on the second pass
-					 * from nm_manager_start().
-					 */
-					nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", plink->name);
-				}
-			} else
-				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", plink->name);
-			break;
 		case NM_LINK_TYPE_TUN:
 		case NM_LINK_TYPE_TAP:
 			device = nm_device_tun_new (plink);
