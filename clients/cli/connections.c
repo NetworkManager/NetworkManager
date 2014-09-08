@@ -2466,7 +2466,7 @@ check_mac (const char *mac,
 	if (!mac)
 		return TRUE;
 
-	if (!nm_utils_hwaddr_valid (mac, type)) {
+	if (!nm_utils_hwaddr_valid (mac, nm_utils_hwaddr_len (type))) {
 		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 		             _("Error: '%s': '%s' is not a valid %s MAC address."),
 		             keyword, mac, type == ARPHRD_INFINIBAND ? _("InfiniBand") : _("Ethernet"));
