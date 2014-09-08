@@ -559,6 +559,7 @@ _nm_object_create (GType type, DBusGConnection *connection, const char *path)
 	if (!g_initable_init (G_INITABLE (object), NULL, &error)) {
 		dbgmsg ("Could not create object for %s: %s", path, error->message);
 		g_error_free (error);
+		g_clear_object (&object);
 	}
 
 	return object;
@@ -591,7 +592,7 @@ async_inited (GObject *object, GAsyncResult *result, gpointer user_data)
 		        nm_object_get_path (NM_OBJECT (object)),
 		        error->message);
 		g_error_free (error);
-		object = NULL;
+		g_clear_object (&object);
 	}
 
 	create_async_complete (object, async_data);
