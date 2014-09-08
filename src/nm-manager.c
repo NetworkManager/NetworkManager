@@ -40,7 +40,6 @@
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
 #include "nm-device-generic.h"
-#include "nm-device-tun.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-vpn.h"
@@ -2106,10 +2105,6 @@ platform_link_added (NMManager *self,
 
 	if (device == NULL) {
 		switch (plink->type) {
-		case NM_LINK_TYPE_TUN:
-		case NM_LINK_TYPE_TAP:
-			device = nm_device_tun_new (plink);
-			break;
 
 		case NM_LINK_TYPE_WWAN_ETHERNET:
 			/* WWAN pseudo-ethernet interfaces are handled automatically by
