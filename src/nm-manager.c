@@ -41,7 +41,6 @@
 #include "nm-device.h"
 #include "nm-device-generic.h"
 #include "nm-device-tun.h"
-#include "nm-device-gre.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-vpn.h"
@@ -2110,10 +2109,6 @@ platform_link_added (NMManager *self,
 		case NM_LINK_TYPE_TUN:
 		case NM_LINK_TYPE_TAP:
 			device = nm_device_tun_new (plink);
-			break;
-		case NM_LINK_TYPE_GRE:
-		case NM_LINK_TYPE_GRETAP:
-			device = nm_device_gre_new (plink);
 			break;
 
 		case NM_LINK_TYPE_WWAN_ETHERNET:
