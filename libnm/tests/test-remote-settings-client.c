@@ -421,11 +421,9 @@ test_nm_running (void)
 	/* Now kill the test service. */
 	nm_test_service_cleanup (sinfo);
 
-	settings2 = g_initable_new (NM_TYPE_REMOTE_SETTINGS, NULL, &error,
-	                            NM_OBJECT_DBUS_CONNECTION, bus,
-	                            NULL);
+	settings2 = nm_remote_settings_new (NULL, &error);
 	g_assert_no_error (error);
-	g_assert (settings != NULL);
+	g_assert (settings2 != NULL);
 
 	/* settings2 should know that NM is running, but the previously-created
 	 * settings hasn't gotten the news yet.
@@ -475,6 +473,8 @@ main (int argc, char **argv)
 	int ret;
 	GError *error = NULL;
 
+	g_setenv ("LIBNM_USE_SESSION_BUS", "1", TRUE);
+
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif
@@ -486,9 +486,7 @@ main (int argc, char **argv)
 
 	sinfo = nm_test_service_init ();
 
-	settings = g_initable_new (NM_TYPE_REMOTE_SETTINGS, NULL, &error,
-	                           NM_OBJECT_DBUS_CONNECTION, bus,
-	                           NULL);
+	settings = nm_remote_settings_new (NULL, &error);
 	g_assert_no_error (error);
 	g_assert (settings != NULL);
 
