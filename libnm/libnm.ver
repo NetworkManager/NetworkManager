@@ -370,8 +370,12 @@ global:
 	nm_secret_agent_get_secrets_flags_get_type;
 	nm_secret_agent_get_type;
 	nm_secret_agent_register;
+	nm_secret_agent_register_async;
+	nm_secret_agent_register_finish;
 	nm_secret_agent_save_secrets;
 	nm_secret_agent_unregister;
+	nm_secret_agent_unregister_async;
+	nm_secret_agent_unregister_finish;
 	nm_setting_802_1x_add_altsubject_match;
 	nm_setting_802_1x_add_eap_method;
 	nm_setting_802_1x_add_phase2_altsubject_match;

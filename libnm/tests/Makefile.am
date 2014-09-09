@@ -19,7 +19,7 @@ LDADD = \
 
 noinst_PROGRAMS = $(TESTS)
 
-TESTS = test-nm-client test-remote-settings-client
+TESTS = test-nm-client test-remote-settings-client test-secret-agent
 
 test_nm_client_SOURCES = \
 	common.c \
@@ -30,6 +30,11 @@ test_remote_settings_client_SOURCES = \
 	common.c \
 	common.h \
 	test-remote-settings-client.c
+
+test_secret_agent_SOURCES = \
+	common.c \
+	common.h \
+	test-secret-agent.c
 
 TESTS_ENVIRONMENT = $(srcdir)/libnm-test-launch.sh
 

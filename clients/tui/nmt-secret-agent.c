@@ -639,8 +639,7 @@ nmt_secret_agent_class_init (NmtSecretAgentClass *klass)
 NMSecretAgent *
 nmt_secret_agent_new (void)
 {
-	return g_object_new (NMT_TYPE_SECRET_AGENT,
-	                     NM_SECRET_AGENT_IDENTIFIER, "nmtui",
-	                     NM_SECRET_AGENT_AUTO_REGISTER, FALSE,
-	                     NULL);
+	return g_initable_new (NMT_TYPE_SECRET_AGENT, NULL, NULL,
+	                       NM_SECRET_AGENT_IDENTIFIER, "nmtui",
+	                       NULL);
 }

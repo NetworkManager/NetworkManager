@@ -25,6 +25,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
+#include <gio/gio.h>
 #include <nm-connection.h>
 
 G_BEGIN_DECLS
@@ -70,8 +71,6 @@ typedef enum {
 #define NM_SECRET_AGENT_AUTO_REGISTER       "auto-register"
 #define NM_SECRET_AGENT_REGISTERED          "registered"
 #define NM_SECRET_AGENT_CAPABILITIES        "capabilities"
-
-#define NM_SECRET_AGENT_REGISTRATION_RESULT "registration-result"
 
 typedef struct {
 	GObject parent;
@@ -170,9 +169,6 @@ typedef void (*NMSecretAgentDeleteSecretsFunc) (NMSecretAgent *agent,
 typedef struct {
 	GObjectClass parent;
 
-	/* Signals */
-	void (*registration_result) (NMSecretAgent *agent, GError *error);
-
 	/* Virtual methods for subclasses */
 
 	/* Called when the subclass should retrieve and return secrets.  Subclass
@@ -231,9 +227,27 @@ typedef struct {
 
 GType nm_secret_agent_get_type (void);
 
-gboolean nm_secret_agent_register (NMSecretAgent *self);
+gboolean nm_secret_agent_register        (NMSecretAgent *self,
+                                          GCancellable *cancellable,
+                                          GError **error);
+void     nm_secret_agent_register_async  (NMSecretAgent *self,
+                                          GCancellable *cancellable,
+                                          GAsyncReadyCallback callback,
+                                          gpointer user_data);
+gboolean nm_secret_agent_register_finish (NMSecretAgent *self,
+                                          GAsyncResult *result,
+                                          GError **error);
 
-gboolean nm_secret_agent_unregister (NMSecretAgent *self);
+gboolean nm_secret_agent_unregister        (NMSecretAgent *self,
+                                            GCancellable *cancellable,
+                                            GError **error);
+void     nm_secret_agent_unregister_async  (NMSecretAgent *self,
+                                            GCancellable *cancellable,
+                                            GAsyncReadyCallback callback,
+                                            gpointer user_data);
+gboolean nm_secret_agent_unregister_finish (NMSecretAgent *self,
+                                            GAsyncResult *result,
+                                            GError **error);
 
 gboolean nm_secret_agent_get_registered (NMSecretAgent *self);
 
