@@ -3746,7 +3746,7 @@ cleanup_ib:
 		gboolean success = FALSE;
 		char *ssid_ask = NULL;
 		const char *ssid = NULL;
-		GByteArray *ssid_arr = NULL;
+		GBytes *ssid_bytes;
 		const char *mtu_c = NULL;
 		char *mtu = NULL;
 		guint32 mtu_int = 0;
@@ -3789,9 +3789,8 @@ cleanup_ib:
 		s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
-		ssid_arr = g_byte_array_sized_new (strlen (ssid));
-		g_byte_array_append (ssid_arr, (const guint8 *) ssid, strlen (ssid));
-		g_object_set (s_wifi, NM_SETTING_WIRELESS_SSID, ssid_arr, NULL);
+		ssid_bytes = g_bytes_new (ssid, strlen (ssid));
+		g_object_set (s_wifi, NM_SETTING_WIRELESS_SSID, ssid_bytes, NULL);
 
 		if (mtu)
 			g_object_set (s_wifi, NM_SETTING_WIRELESS_MTU, mtu_int, NULL);
@@ -3799,6 +3798,7 @@ cleanup_ib:
 			g_object_set (s_wifi, NM_SETTING_WIRELESS_MAC_ADDRESS, mac, NULL);
 		if (cloned_mac)
 			g_object_set (s_wifi, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, cloned_mac, NULL);
+		g_bytes_unref (ssid_bytes);
 
 		success = TRUE;
 cleanup_wifi:
@@ -3806,8 +3806,6 @@ cleanup_wifi:
 		g_free (mtu);
 		g_free (mac);
 		g_free (cloned_mac);
-		if (ssid_arr)
-			g_byte_array_free (ssid_arr, TRUE);
 		if (!success)
 			return FALSE;
 
@@ -4741,7 +4739,7 @@ cleanup_vpn:
 		gboolean success = FALSE;
 		char *ssid_ask = NULL;
 		const char *ssid = NULL;
-		GByteArray *ssid_arr;
+		GBytes *ssid_bytes;
 		const char *channel_c = NULL;
 		char *channel = NULL;
 		unsigned long chan;
@@ -4784,16 +4782,15 @@ cleanup_vpn:
 		s_olpc_mesh = (NMSettingOlpcMesh *) nm_setting_olpc_mesh_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_olpc_mesh));
 
-		ssid_arr = g_byte_array_sized_new (strlen (ssid));
-		g_byte_array_append (ssid_arr, (const guint8 *) ssid, strlen (ssid));
-		g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_SSID, ssid_arr, NULL);
+		ssid_bytes = g_bytes_new (ssid, strlen (ssid));
+		g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_SSID, ssid_bytes, NULL);
 		if (channel)
 			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_CHANNEL, chan, NULL);
 		else
 			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_CHANNEL, 1, NULL);
 		if (dhcp_anycast)
 			g_object_set (s_olpc_mesh, NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS, dhcp_anycast, NULL);
-		g_byte_array_free (ssid_arr, TRUE);
+		g_bytes_unref (ssid_bytes);
 
 		success = TRUE;
 cleanup_olpc:
