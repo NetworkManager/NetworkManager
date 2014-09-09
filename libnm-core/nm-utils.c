@@ -681,9 +681,7 @@ _nm_utils_strv_to_slist (char **strv)
 	int i;
 	GSList *list = NULL;
 
-	g_return_val_if_fail (strv != NULL, NULL);
-
-	for (i = 0; strv[i]; i++)
+	for (i = 0; strv && strv[i]; i++)
 		list = g_slist_prepend (list, g_strdup (strv[i]));
 
 	return g_slist_reverse (list);
@@ -695,6 +693,9 @@ _nm_utils_slist_to_strv (GSList *slist)
 	GSList *iter;
 	char **strv;
 	int len, i = 0;
+
+	if (slist == NULL)
+		return NULL;
 
 	len = g_slist_length (slist);
 	strv = g_new (char *, len + 1);
