@@ -141,7 +141,8 @@ ip4_start (NMDhcpClient *client,
 	nm_log_dbg (LOGD_DHCP4, "running: %s", cmd_str);
 	g_free (cmd_str);
 
-	if (g_spawn_async (NULL, (char **) argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
+	if (g_spawn_async (NULL, (char **) argv->pdata, NULL,
+	                   G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
 	                   &dhcpcd_child_setup, NULL, &pid, &error)) {
 		g_assert (pid > 0);
 		nm_log_info (LOGD_DHCP4, "dhcpcd started with pid %d", pid);
