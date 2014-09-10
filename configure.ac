@@ -890,7 +890,6 @@ libnm-core/nm-version.h
 libnm-core/Makefile
 libnm-core/tests/Makefile
 libnm/libnm.pc
-libnm/libnm-vpn.pc
 libnm/Makefile
 libnm/tests/Makefile
 libnm-util/libnm-util.pc

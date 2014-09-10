@@ -26,7 +26,7 @@
 
 #include "nm-glib-compat.h"
 #include "nm-vpn-plugin.h"
-#include "nm-vpn-enum-types.h"
+#include "nm-enum-types.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 

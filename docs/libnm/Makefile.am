@@ -67,7 +67,6 @@ GTKDOC_CFLAGS =				\
 
 GTKDOC_LIBS =  \
 	$(top_builddir)/libnm/libnm.la \
-	$(top_builddir)/libnm/libnm-vpn.la \
 	$(GLIB_LIBS)
 
 

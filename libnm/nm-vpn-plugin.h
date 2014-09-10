@@ -142,7 +142,6 @@ typedef struct {
 
 GType  nm_vpn_plugin_get_type       (void);
 GQuark nm_vpn_plugin_error_quark    (void);
-GType  nm_vpn_plugin_error_get_type (void);
 
 DBusGConnection   *nm_vpn_plugin_get_connection (NMVpnPlugin *plugin);
 NMVpnServiceState  nm_vpn_plugin_get_state      (NMVpnPlugin *plugin);

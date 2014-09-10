@@ -10,19 +10,17 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/libnm \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DNETWORKMANAGER_COMPILATION \
-	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE
+	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	$(GUDEV_CFLAGS) \
+	-DNMRUNDIR=\"$(nmrundir)\"
 
 include $(top_srcdir)/libnm-core/Makefile.libnm-core
 
 # libnm
 
 lib_LTLIBRARIES = libnm.la
-
-libnm_la_CFLAGS = \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	$(GUDEV_CFLAGS) \
-	-DNMRUNDIR=\"$(nmrundir)\"
 
 libnmincludedir = $(includedir)/libnm
 
@@ -55,6 +53,9 @@ libnminclude_HEADERS =			\
 	nm-remote-settings.h		\
 	nm-secret-agent.h		\
 	nm-vpn-connection.h		\
+	nm-vpn-plugin.h			\
+	nm-vpn-plugin-ui-interface.h	\
+	nm-vpn-plugin-utils.h		\
 	nm-wimax-nsp.h
 
 libnm_la_private_headers =		\
@@ -94,6 +95,9 @@ libnm_la_csources =			\
 	nm-remote-settings.c		\
 	nm-secret-agent.c		\
 	nm-vpn-connection.c		\
+	nm-vpn-plugin.c			\
+	nm-vpn-plugin-ui-interface.c	\
+	nm-vpn-plugin-utils.c		\
 	nm-wimax-nsp.c
 
 libnm_la_SOURCES =			\
@@ -102,6 +106,9 @@ libnm_la_SOURCES =			\
 
 nm-secret-agent-glue.h: $(top_srcdir)/introspection/nm-secret-agent.xml
 	$(AM_V_GEN) dbus-binding-tool --prefix=nm_secret_agent --mode=glib-server --output=$@ $<
+
+nm-vpn-plugin-glue.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
+	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=$@ $<
 
 GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
 nm_enum_types_sources = $(libnminclude_HEADERS)
@@ -124,45 +131,16 @@ SYMBOL_VIS_FILE=$(srcdir)/libnm.ver
 libnm_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
 	-version-info "0:0:0"
 
-
-# libnm-vpn
-
-lib_LTLIBRARIES += libnm-vpn.la
-
-libnmvpndir = $(includedir)/libnm
-
-libnmvpn_HEADERS =			\
-	nm-vpn-plugin.h			\
-	nm-vpn-plugin-ui-interface.h	\
-	nm-vpn-plugin-utils.h		\
-	nm-vpn-enum-types.h
-
-libnm_vpn_la_SOURCES = \
-	nm-vpn-plugin.c \
-	nm-vpn-plugin-ui-interface.c \
-	nm-vpn-plugin-utils.c \
-	nm-vpn-enum-types.c
-
-nm-vpn-plugin-glue.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=$@ $<
-
-GLIB_GENERATED += nm-vpn-enum-types.h nm-vpn-enum-types.c
-nm_vpn_enum_types_sources = $(libnmvpn_HEADERS)
-libnm_vpn_la_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
-libnm_vpn_la_LIBADD = $(GLIB_LIBS) $(DBUS_LIBS)
-libnm_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-vpn.ver \
-	-version-info "0:0:0"
-
 ###
 
 BUILT_SOURCES += $(GLIB_GENERATED)
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libnm.pc libnm-vpn.pc
+pkgconfig_DATA = libnm.pc
 
-DISTCLEANFILES = libnm.pc libnm-vpn.pc
+DISTCLEANFILES = libnm.pc
 
-EXTRA_DIST = libnm.pc.in libnm-vpn.pc.in libnm.ver libnm-vpn.ver
+EXTRA_DIST = libnm.pc.in libnm.ver
 
 CLEANFILES = $(BUILT_SOURCES)
 
