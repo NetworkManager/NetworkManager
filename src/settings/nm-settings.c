@@ -1224,7 +1224,7 @@ impl_settings_add_connection_helper (NMSettings *self,
 	GVariant *dict;
 	GError *error = NULL;
 
-	dict = _nm_utils_connection_hash_to_dict (settings);
+	dict = nm_utils_connection_hash_to_dict (settings);
 	connection = nm_simple_connection_new_from_dbus (dict, &error);
 	g_variant_unref (dict);
 	if (connection) {

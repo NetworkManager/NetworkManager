@@ -52,7 +52,6 @@
 #include "nm-manager-auth.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "nm-utils-private.h"
 #include "nm-device-factory.h"
 #include "nm-enum-types.h"
 #include "nm-sleep-monitor.h"
@@ -3298,7 +3297,7 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	 */
 	connection = nm_simple_connection_new ();
 	if (settings && g_hash_table_size (settings)) {
-		GVariant *settings_dict = _nm_utils_connection_hash_to_dict (settings);
+		GVariant *settings_dict = nm_utils_connection_hash_to_dict (settings);
 
 		nm_connection_replace_settings (connection, settings_dict, NULL);
 		g_variant_unref (settings_dict);

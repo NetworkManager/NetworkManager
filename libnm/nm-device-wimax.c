@@ -31,7 +31,6 @@
 #include "nm-device-wimax.h"
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-core-internal.h"
 #include "nm-device-private.h"
 

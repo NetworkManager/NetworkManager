@@ -49,8 +49,6 @@ gboolean    nm_utils_same_ssid     (const guint8 *ssid1, gsize len1,
                                     gboolean ignore_trailing_null);
 char *      nm_utils_ssid_to_utf8  (const guint8 *ssid, gsize len);
 
-GHashTable *nm_utils_gvalue_hash_dup  (GHashTable *hash);
-
 /**
  * NMUtilsSecurityType:
  * @NMU_SEC_INVALID: unknown or invalid security, placeholder and not used
@@ -95,12 +93,6 @@ gboolean nm_utils_ap_mode_security_valid (NMUtilsSecurityType type,
 gboolean nm_utils_wep_key_valid (const char *key, NMWepKeyType wep_type);
 gboolean nm_utils_wpa_psk_valid (const char *psk);
 
-GSList *nm_utils_ip4_addresses_from_gvalue (const GValue *value);
-void nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value);
-
-GSList *nm_utils_ip4_routes_from_gvalue (const GValue *value);
-void nm_utils_ip4_routes_to_gvalue (GSList *list, GValue *value);
-
 GVariant  *nm_utils_ip4_dns_to_variant (char **dns);
 char     **nm_utils_ip4_dns_from_variant (GVariant *value);
 GVariant  *nm_utils_ip4_addresses_to_variant (GPtrArray *addresses);
@@ -111,15 +103,6 @@ GPtrArray *nm_utils_ip4_routes_from_variant (GVariant *value);
 guint32 nm_utils_ip4_netmask_to_prefix (guint32 netmask);
 guint32 nm_utils_ip4_prefix_to_netmask (guint32 prefix);
 guint32 nm_utils_ip4_get_default_prefix (guint32 ip);
-
-GSList *nm_utils_ip6_addresses_from_gvalue (const GValue *value);
-void nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value);
-
-GSList *nm_utils_ip6_routes_from_gvalue (const GValue *value);
-void nm_utils_ip6_routes_to_gvalue (GSList *list, GValue *value);
-
-GSList *nm_utils_ip6_dns_from_gvalue (const GValue *value);
-void nm_utils_ip6_dns_to_gvalue (GSList *list, GValue *value);
 
 GVariant  *nm_utils_ip6_dns_to_variant (char **dns);
 char     **nm_utils_ip6_dns_from_variant (GVariant *value);

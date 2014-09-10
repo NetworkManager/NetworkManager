@@ -23,7 +23,6 @@
 #include <nm-dbus-interface.h>
 #include <nm-connection.h>
 
-#include "nm-dbus-glib-types.h"
 #include "nm-remote-settings.h"
 #include "nm-remote-connection-private.h"
 #include "nm-object-private.h"
@@ -31,6 +30,8 @@
 #include "nm-glib-compat.h"
 #include "nm-object-private.h"
 #include "nm-core-internal.h"
+
+#include "nmdbus-settings.h"
 
 /**
  * SECTION:nm-remote-settings
@@ -124,7 +125,7 @@ G_DEFINE_TYPE (NMRemoteSettings, nm_remote_settings, NM_TYPE_OBJECT)
 #define NM_REMOTE_SETTINGS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_REMOTE_SETTINGS, NMRemoteSettingsPrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
+	NMDBusSettings *proxy;
 	GPtrArray *all_connections;
 	GPtrArray *visible_connections;
 
@@ -424,19 +425,19 @@ nm_remote_settings_list_connections (NMRemoteSettings *settings)
 }
 
 static void
-add_connection_done (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+add_connection_done (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
 	AddConnectionInfo *info = user_data;
 	GError *error = NULL;
-	char *path = NULL;
 
-	if (dbus_g_proxy_end_call (proxy, call, &error, DBUS_TYPE_G_OBJECT_PATH, &path, G_TYPE_INVALID)) {
-		info->path = path;
+	if (nmdbus_settings_call_add_connection_finish (NMDBUS_SETTINGS (proxy),
+	                                                &info->path,
+	                                                result, &error)) {
 		/* Wait until this connection is fully initialized before calling the callback */
-	} else
+	} else {
 		add_connection_info_complete (info->self, info, NULL, error);
-
-	g_clear_error (&error);
+		g_clear_error (&error);
+	}
 }
 
 /**
@@ -467,8 +468,7 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 {
 	NMRemoteSettingsPrivate *priv;
 	AddConnectionInfo *info;
-	GVariant *new_settings_dict;
-	GHashTable *new_settings;
+	GVariant *new_settings;
 
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
@@ -484,16 +484,11 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 	info->callback = callback;
 	info->callback_data = user_data;
 
-	new_settings_dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-	new_settings = _nm_utils_connection_dict_to_hash (new_settings_dict);
-	dbus_g_proxy_begin_call (priv->proxy, "AddConnection",
-	                         add_connection_done,
-	                         info,
-	                         NULL,
-	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, new_settings,
-	                         G_TYPE_INVALID);
-	g_hash_table_destroy (new_settings);
-	g_variant_unref (new_settings_dict);
+	new_settings = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	nmdbus_settings_call_add_connection (priv->proxy,
+	                                     new_settings,
+	                                     NULL,
+	                                     add_connection_done, info);
 
 	priv->add_list = g_slist_append (priv->add_list, info);
 
@@ -523,8 +518,7 @@ nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
 {
 	NMRemoteSettingsPrivate *priv;
 	AddConnectionInfo *info;
-	GVariant *new_settings_dict;
-	GHashTable *new_settings;
+	GVariant *new_settings;
 
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
@@ -540,16 +534,11 @@ nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
 	info->callback = callback;
 	info->callback_data = user_data;
 
-	new_settings_dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-	new_settings = _nm_utils_connection_dict_to_hash (new_settings_dict);
-	dbus_g_proxy_begin_call (priv->proxy, "AddConnectionUnsaved",
-	                         add_connection_done,
-	                         info,
-	                         NULL,
-	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, new_settings,
-	                         G_TYPE_INVALID);
-	g_hash_table_destroy (new_settings);
-	g_variant_unref (new_settings_dict);
+	new_settings = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	nmdbus_settings_call_add_connection_unsaved (priv->proxy,
+	                                             new_settings,
+	                                             NULL,
+	                                             add_connection_done, info);
 
 	priv->add_list = g_slist_append (priv->add_list, info);
 
@@ -586,8 +575,7 @@ nm_remote_settings_load_connections (NMRemoteSettings *settings,
                                      GError **error)
 {
 	NMRemoteSettingsPrivate *priv;
-	char **my_failures = NULL;
-	gboolean ret;
+	gboolean success;
 
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
 	g_return_val_if_fail (filenames != NULL, FALSE);
@@ -601,22 +589,14 @@ nm_remote_settings_load_connections (NMRemoteSettings *settings,
 		return FALSE;
 	}
 
-	if (!dbus_g_proxy_call (priv->proxy, "LoadConnections", error,
-	                        G_TYPE_STRV, filenames,
-	                        G_TYPE_INVALID,
-	                        G_TYPE_BOOLEAN, &ret,
-	                        G_TYPE_STRV, &my_failures,
-	                        G_TYPE_INVALID))
-		ret = FALSE;
+	if (!nmdbus_settings_call_load_connections_sync (priv->proxy,
+	                                                 (const char * const *) filenames,
+	                                                 &success,
+	                                                 failures,
+	                                                 NULL, error))
+		success = FALSE;
 
-	if (failures) {
-		if (my_failures && !*my_failures)
-			g_clear_pointer (&my_failures, g_free);
-		*failures = my_failures;
-	} else
-		g_strfreev (my_failures);
-
-	return ret;
+	return success;
 }
 
 /**
@@ -648,11 +628,10 @@ nm_remote_settings_reload_connections (NMRemoteSettings *settings,
 		return FALSE;
 	}
 
-	if (!dbus_g_proxy_call (priv->proxy, "ReloadConnections", error,
-	                        G_TYPE_INVALID,
-	                        G_TYPE_BOOLEAN, &success,
-	                        G_TYPE_INVALID))
-		return FALSE;
+	if (!nmdbus_settings_call_reload_connections_sync (priv->proxy, &success,
+	                                                   NULL, error))
+		success = FALSE;
+
 	return success;
 }
 
@@ -663,14 +642,14 @@ typedef struct {
 } SaveHostnameInfo;
 
 static void
-save_hostname_cb (DBusGProxy *proxy,
-                  DBusGProxyCall *call,
+save_hostname_cb (GObject *proxy,
+                  GAsyncResult *result,
                   gpointer user_data)
 {
 	SaveHostnameInfo *info = user_data;
 	GError *error = NULL;
 
-	dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID);
+	nmdbus_settings_call_save_hostname_finish (NMDBUS_SETTINGS (proxy), result, &error);
 	if (info->callback != NULL)
 		info->callback (info->settings, error, info->callback_data);
 	g_clear_error (&error);
@@ -713,12 +692,10 @@ nm_remote_settings_save_hostname (NMRemoteSettings *settings,
 	info->callback = callback;
 	info->callback_data = user_data;
 
-	dbus_g_proxy_begin_call (priv->proxy, "SaveHostname",
-	                         save_hostname_cb,
-	                         info,
-	                         g_free,
-	                         G_TYPE_STRING, hostname ? hostname : "",
-	                         G_TYPE_INVALID);
+	nmdbus_settings_call_save_hostname (priv->proxy,
+	                                    hostname ? hostname : "",
+	                                    NULL,
+	                                    save_hostname_cb, info);
 	return TRUE;
 }
 
@@ -866,7 +843,7 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_remote_settings_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_get_proxy (object, NM_DBUS_INTERFACE_SETTINGS);
+	priv->proxy = NMDBUS_SETTINGS (_nm_object_get_proxy (object, NM_DBUS_INTERFACE_SETTINGS));
 	_nm_object_register_properties (object,
 	                                NM_DBUS_INTERFACE_SETTINGS,
 	                                property_info);
@@ -961,6 +938,7 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 	g_type_class_add_private (class, sizeof (NMRemoteSettingsPrivate));
 
 	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_SETTINGS);
+	_nm_dbus_register_proxy_type (NM_DBUS_INTERFACE_SETTINGS, NMDBUS_TYPE_SETTINGS_PROXY);
 
 	/* Virtual methods */
 	object_class->constructor = constructor;

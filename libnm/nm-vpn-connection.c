@@ -25,6 +25,9 @@
 #include "nm-utils.h"
 #include "nm-object-private.h"
 #include "nm-active-connection.h"
+#include "nm-dbus-helpers.h"
+
+#include "nmdbus-vpn-connection.h"
 
 G_DEFINE_TYPE (NMVpnConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
 
@@ -93,9 +96,9 @@ nm_vpn_connection_get_vpn_state (NMVpnConnection *vpn)
 }
 
 static void
-vpn_state_changed_proxy (DBusGProxy *proxy,
-                         NMVpnConnectionState vpn_state,
-                         NMVpnConnectionStateReason reason,
+vpn_state_changed_proxy (NMDBusVpnConnection *proxy,
+                         guint vpn_state,
+                         guint reason,
                          gpointer user_data)
 {
 	NMVpnConnection *connection = NM_VPN_CONNECTION (user_data);
@@ -127,7 +130,7 @@ init_dbus (NMObject *object)
 		{ NM_VPN_CONNECTION_VPN_STATE, &priv->vpn_state },
 		{ NULL },
 	};
-	DBusGProxy *proxy;
+	GDBusProxy *proxy;
 
 	NM_OBJECT_CLASS (nm_vpn_connection_parent_class)->init_dbus (object);
 
@@ -136,16 +139,8 @@ init_dbus (NMObject *object)
 	                                property_info);
 
 	proxy = _nm_object_get_proxy (object, NM_DBUS_INTERFACE_VPN_CONNECTION);
-	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
-	                                   G_TYPE_NONE,
-	                                   G_TYPE_UINT, G_TYPE_UINT,
-	                                   G_TYPE_INVALID);
-	dbus_g_proxy_add_signal (proxy, "VpnStateChanged", G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (proxy,
-	                             "VpnStateChanged",
-	                             G_CALLBACK (vpn_state_changed_proxy),
-	                             object,
-	                             NULL);
+	g_signal_connect (proxy, "vpn-state-changed",
+	                  G_CALLBACK (vpn_state_changed_proxy), object);
 }
 
 static void
@@ -188,6 +183,8 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 	g_type_class_add_private (connection_class, sizeof (NMVpnConnectionPrivate));
 
 	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_VPN_CONNECTION);
+	_nm_dbus_register_proxy_type (NM_DBUS_INTERFACE_VPN_CONNECTION,
+	                              NMDBUS_TYPE_VPN_CONNECTION_PROXY);
 
 	/* virtual methods */
 	object_class->get_property = get_property;

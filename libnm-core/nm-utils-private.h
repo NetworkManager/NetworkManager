@@ -29,9 +29,6 @@ gboolean    _nm_utils_string_in_list   (const char *str,
 gboolean    _nm_utils_string_slist_validate (GSList *list,
                                              const char **valid_values);
 
-gboolean    _nm_utils_gvalue_array_validate (GValueArray *elements,
-                                             guint n_expected, ...);
-
 /* D-Bus transform funcs */
 
 GVariant *  _nm_utils_hwaddr_to_dbus   (const GValue *prop_value);

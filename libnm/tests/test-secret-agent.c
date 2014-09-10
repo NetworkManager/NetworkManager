@@ -387,6 +387,7 @@ connection_activated_none_cb (NMClient *c,
 	TestSecretAgentData *sadata = user_data;
 
 	g_assert (error != NULL);
+	g_dbus_error_strip_remote_error (error);
 	g_assert_cmpstr (error->message, ==, "No secret agent available");
 
 	g_main_loop_quit (sadata->loop);
@@ -431,6 +432,7 @@ connection_activated_no_secrets_cb (NMClient *c,
 	TestSecretAgentData *sadata = user_data;
 
 	g_assert (error != NULL);
+	g_dbus_error_strip_remote_error (error);
 	g_assert_cmpstr (error->message, ==, "No secrets provided");
 
 	g_main_loop_quit (sadata->loop);
@@ -465,6 +467,7 @@ connection_activated_cancel_cb (NMClient *c,
 	TestSecretAgentData *sadata = user_data;
 
 	g_assert (error != NULL);
+	g_dbus_error_strip_remote_error (error);
 	g_assert_cmpstr (error->message, ==, "User canceled");
 
 	g_main_loop_quit (sadata->loop);
@@ -519,6 +522,7 @@ connection_activated_good_cb (NMClient *c,
 	 * other tests won't get to).
 	 */
 	g_assert (error != NULL);
+	g_dbus_error_strip_remote_error (error);
 	g_assert_cmpstr (error->message, ==, "Not yet implemented");
 
 	g_main_loop_quit (sadata->loop);

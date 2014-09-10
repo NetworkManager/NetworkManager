@@ -2,6 +2,8 @@
 
 <node name="/org/freedesktop/NetworkManager" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager">
+    <annotation name="org.gtk.GDBus.C.Name" value="Manager"/>
+
     <method name="GetDevices">
       <tp:docstring>
         Get the list of network devices.

@@ -21,59 +21,100 @@
 #include <string.h>
 #include <config.h>
 #include <gio/gio.h>
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib-lowlevel.h>
 #include "nm-dbus-helpers.h"
 #include "nm-dbus-interface.h"
 
-static dbus_int32_t priv_slot = -1;
-static DBusBusType nm_bus = DBUS_BUS_SYSTEM;
+#define NM_DBUS_PRIVATE_CONNECTION_TAG "libnm-private-connection"
+static GBusType nm_bus = G_BUS_TYPE_SYSTEM;
 
-static void
-_ensure_nm_dbus_helpers_inited (void)
+GBusType
+_nm_dbus_bus_type (void)
 {
 	static gsize init_value = 0;
 
 	if (g_once_init_enter (&init_value)) {
-		dbus_connection_allocate_data_slot (&priv_slot);
-		g_assert (priv_slot != -1);
-
 		if (g_getenv ("LIBNM_USE_SESSION_BUS"))
-			nm_bus = DBUS_BUS_SESSION;
+			nm_bus = G_BUS_TYPE_SESSION;
 
 		g_once_init_leave (&init_value, 1);
 	}
+
+	return nm_bus;
 }
 
-DBusGConnection *
-_nm_dbus_new_connection (GCancellable *cancellable,
-                         GError **error)
+GDBusConnection *
+_nm_dbus_new_connection (GCancellable *cancellable, GError **error)
 {
-	DBusGConnection *connection = NULL;
+	GDBusConnection *connection = NULL;
 
-	_ensure_nm_dbus_helpers_inited ();
-
-#if HAVE_DBUS_GLIB_100
 	/* If running as root try the private bus first */
-	if (0 == geteuid () && nm_bus == DBUS_BUS_SYSTEM) {
-		connection = dbus_g_connection_open ("unix:path=" NMRUNDIR "/private", error);
-		if (connection) {
-			DBusConnection *dbus_connection = dbus_g_connection_get_connection (connection);
+	if (0 == geteuid ()) {
+		GError *local = NULL;
 
+		connection = g_dbus_connection_new_for_address_sync ("unix:path=" NMRUNDIR "/private",
+		                                                     G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
+		                                                     NULL, cancellable, &local);
+		if (connection) {
 			/* Mark this connection as private */
-			dbus_connection_set_data (dbus_connection, priv_slot, GUINT_TO_POINTER (TRUE), NULL);
-			dbus_connection_set_exit_on_disconnect (dbus_connection, FALSE);
+			g_object_set_data (G_OBJECT (connection),
+			                   NM_DBUS_PRIVATE_CONNECTION_TAG,
+			                   GUINT_TO_POINTER (TRUE));
 			return connection;
 		}
-		/* Fall back to a bus if for some reason private socket isn't available */
-		g_clear_error (error);
+
+		if (g_error_matches (local, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+			g_propagate_error (error, local);
+			return NULL;
+		}
+		g_error_free (local);
 	}
-#endif
 
-	if (connection == NULL)
-		connection = dbus_g_bus_get (nm_bus, error);
+	return g_bus_get_sync (_nm_dbus_bus_type (), cancellable, error);
+}
 
-	return connection;
+static void
+new_connection_async_got_system (GObject *source, GAsyncResult *result, gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GDBusConnection *connection;
+	GError *error = NULL;
+
+	connection = g_bus_get_finish (result, &error);
+	if (connection)
+		g_simple_async_result_set_op_res_gpointer (simple, connection, g_object_unref);
+	else
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+static void
+new_connection_async_got_private (GObject *source, GAsyncResult *result, gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GDBusConnection *connection;
+	GError *error = NULL;
+
+	connection = g_dbus_connection_new_for_address_finish (result, &error);
+	if (connection) {
+		g_simple_async_result_set_op_res_gpointer (simple, connection, g_object_unref);
+		g_simple_async_result_complete (simple);
+		g_object_unref (simple);
+		return;
+	}
+
+	if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+		g_simple_async_result_take_error (simple, error);
+		g_simple_async_result_complete (simple);
+		g_object_unref (simple);
+		return;
+	}
+
+	g_clear_error (&error);
+	g_bus_get (_nm_dbus_bus_type (),
+	           g_object_get_data (G_OBJECT (simple), "cancellable"),
+	           new_connection_async_got_system, simple);
 }
 
 void
@@ -82,22 +123,26 @@ _nm_dbus_new_connection_async (GCancellable *cancellable,
                                gpointer user_data)
 {
 	GSimpleAsyncResult *simple;
-	DBusGConnection *connection;
-	GError *error = NULL;
 
-	simple = g_simple_async_result_new (NULL, callback, user_data,
-	                                    _nm_dbus_new_connection_async);
-	connection = _nm_dbus_new_connection (cancellable, &error);
-	if (connection)
-		g_simple_async_result_set_op_res_gpointer (simple, connection, (GDestroyNotify) dbus_g_connection_unref);
-	else
-		g_simple_async_result_take_error (simple, error);
+	simple = g_simple_async_result_new (NULL, callback, user_data, _nm_dbus_new_connection_async);
 
-	g_simple_async_result_complete_in_idle (simple);
-	g_object_unref (simple);
+	/* If running as root try the private bus first */
+	if (0 == geteuid ()) {
+		g_object_set_data_full (G_OBJECT (simple), "cancellable",
+		                        g_object_ref (cancellable), g_object_unref);
+		g_dbus_connection_new_for_address ("unix:path=" NMRUNDIR "/private",
+		                                   G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
+		                                   NULL,
+		                                   cancellable,
+		                                   new_connection_async_got_private, simple);
+	} else {
+		g_bus_get (_nm_dbus_bus_type (),
+		           cancellable,
+		           new_connection_async_got_system, simple);
+	}
 }
 
-DBusGConnection *
+GDBusConnection *
 _nm_dbus_new_connection_finish (GAsyncResult *result,
                                 GError **error)
 {
@@ -106,68 +151,195 @@ _nm_dbus_new_connection_finish (GAsyncResult *result,
 	if (g_simple_async_result_propagate_error (simple, error))
 		return NULL;
 
-	return dbus_g_connection_ref (g_simple_async_result_get_op_res_gpointer (simple));
+	return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
 }
 
 gboolean
-_nm_dbus_is_connection_private (DBusGConnection *connection)
+_nm_dbus_is_connection_private (GDBusConnection *connection)
 {
-	if (priv_slot == -1)
-		return FALSE;
-	return !!dbus_connection_get_data (dbus_g_connection_get_connection (connection), priv_slot);
+	return !!g_object_get_data (G_OBJECT (connection), NM_DBUS_PRIVATE_CONNECTION_TAG);
 }
 
-DBusGProxy *
-_nm_dbus_new_proxy_for_connection (DBusGConnection *connection,
+static GHashTable *proxy_types;
+
+#undef _nm_dbus_register_proxy_type
+void
+_nm_dbus_register_proxy_type (const char *interface,
+                              GType       proxy_type)
+{
+	if (!proxy_types)
+		proxy_types = g_hash_table_new (g_str_hash, g_str_equal);
+
+	g_assert (g_hash_table_lookup (proxy_types, interface) == NULL);
+	g_hash_table_insert (proxy_types, (char *) interface, GSIZE_TO_POINTER (proxy_type));
+}
+
+/* We don't (currently) use GDBus's property-handling code */
+#define NM_DBUS_PROXY_FLAGS (G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES | \
+                             G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START)
+
+GDBusProxy *
+_nm_dbus_new_proxy_for_connection (GDBusConnection *connection,
                                    const char *path,
                                    const char *interface,
                                    GCancellable *cancellable,
                                    GError **error)
 {
-	/* Private connections can't use dbus_g_proxy_new_for_name() or
-	 * dbus_g_proxy_new_for_name_owner() because peer-to-peer connections don't
-	 * have either a bus daemon or name owners, both of which those functions
-	 * require.
-	 */
-	if (_nm_dbus_is_connection_private (connection))
-		return dbus_g_proxy_new_for_peer (connection, path, interface);
+	GType proxy_type;
+	const char *name;
 
-	return dbus_g_proxy_new_for_name (connection, NM_DBUS_SERVICE, path, interface);
+	proxy_type = GPOINTER_TO_SIZE (g_hash_table_lookup (proxy_types, interface));
+	if (!proxy_type)
+		proxy_type = G_TYPE_DBUS_PROXY;
+
+	if (_nm_dbus_is_connection_private (connection))
+		name = NULL;
+	else
+		name = NM_DBUS_SERVICE;
+
+	return g_initable_new (proxy_type, cancellable, error,
+	                       "g-connection", connection,
+	                       "g-flags", NM_DBUS_PROXY_FLAGS,
+	                       "g-name", name,
+	                       "g-object-path", path,
+	                       "g-interface-name", interface,
+	                       NULL);
 }
 
 void
-_nm_dbus_new_proxy_for_connection_async (DBusGConnection *connection,
+_nm_dbus_new_proxy_for_connection_async (GDBusConnection *connection,
                                          const char *path,
                                          const char *interface,
                                          GCancellable *cancellable,
                                          GAsyncReadyCallback callback,
                                          gpointer user_data)
 {
-	GSimpleAsyncResult *simple;
-	DBusGProxy *proxy;
-	GError *error = NULL;
+	GType proxy_type;
+	const char *name;
 
-	simple = g_simple_async_result_new (NULL, callback, user_data,
-	                                    _nm_dbus_new_proxy_for_connection_async);
-	proxy = _nm_dbus_new_proxy_for_connection (connection, path, interface,
-	                                           cancellable, &error);
-	if (proxy)
-		g_simple_async_result_set_op_res_gpointer (simple, proxy, g_object_unref);
+	proxy_type = GPOINTER_TO_SIZE (g_hash_table_lookup (proxy_types, interface));
+	if (!proxy_type)
+		proxy_type = G_TYPE_DBUS_PROXY;
+
+	if (_nm_dbus_is_connection_private (connection))
+		name = NULL;
 	else
-		g_simple_async_result_take_error (simple, error);
+		name = NM_DBUS_SERVICE;
 
-	g_simple_async_result_complete_in_idle (simple);
-	g_object_unref (simple);
+	g_async_initable_new_async (proxy_type, G_PRIORITY_DEFAULT,
+	                            cancellable, callback, user_data,
+	                            "g-connection", connection,
+	                            "g-flags", NM_DBUS_PROXY_FLAGS,
+	                            "g-name", name,
+	                            "g-object-path", path,
+	                            "g-interface-name", interface,
+	                            NULL);
 }
 
-DBusGProxy *
+GDBusProxy *
 _nm_dbus_new_proxy_for_connection_finish (GAsyncResult *result,
                                           GError **error)
 {
-	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+	GObject *source, *proxy;
 
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NULL;
+	source = g_async_result_get_source_object (result);
+	proxy = g_async_initable_new_finish (G_ASYNC_INITABLE (source), result, error);
+	g_object_unref (source);
 
-	return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+	return G_DBUS_PROXY (proxy);
+}
+
+void
+_nm_dbus_register_error_domain (GQuark domain,
+                                const char *interface,
+                                GType enum_type)
+{
+	GEnumClass *enum_class;
+	GEnumValue *e;
+	char *error_name;
+	int i;
+
+	enum_class = g_type_class_ref (enum_type);
+	for (i = 0; i < enum_class->n_values; i++) {
+		e = &enum_class->values[i];
+		error_name = g_strdup_printf ("%s.%s", interface, e->value_nick);
+		g_dbus_error_register_error (domain, e->value, error_name);
+		g_free (error_name);
+	}
+
+	g_type_class_unref (enum_class);
+}
+
+/* Binds the properties on a generated server-side GDBus object to the
+ * corresponding properties on the public object.
+ */
+void
+_nm_dbus_bind_properties (gpointer object, gpointer skeleton)
+{
+	GParamSpec **properties;
+	guint n_properties;
+	int i;
+
+	properties = g_object_class_list_properties (G_OBJECT_GET_CLASS (skeleton), &n_properties);
+	for (i = 0; i < n_properties; i++) {
+		if (g_str_has_prefix (properties[i]->name, "g-"))
+			continue;
+
+		g_object_bind_property (object, properties[i]->name,
+		                        skeleton, properties[i]->name,
+		                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+	}
+}
+
+static char *
+signal_name_from_method_name (const char *method_name)
+{
+	GString *signal_name;
+	const char *p;
+
+	signal_name = g_string_new ("handle");
+	for (p = method_name; *p; p++) {
+		if (g_ascii_isupper (*p))
+			g_string_append_c (signal_name, '-');
+		g_string_append_c (signal_name, g_ascii_tolower (*p));
+	}
+
+	return g_string_free (signal_name, FALSE);
+}
+
+static void
+_nm_dbus_method_meta_marshal (GClosure *closure, GValue *return_value,
+                              guint n_param_values, const GValue *param_values,
+                              gpointer invocation_hint, gpointer marshal_data)
+{
+	closure->marshal (closure, return_value, n_param_values,
+	                  param_values, invocation_hint,
+	                  ((GCClosure *)closure)->callback);
+
+	g_value_set_boolean (return_value, TRUE);
+}
+
+/* Takes (method_name, handler_func) pairs and connects the handlers to the
+ * signals on skeleton, with object as the user_data, but swapped so it comes
+ * first in the argument list, and handling the return value automatically.
+ */
+void
+_nm_dbus_bind_methods (gpointer object, gpointer skeleton, ...)
+{
+	va_list ap;
+	const char *method_name;
+	char *signal_name;
+	GCallback handler;
+	GClosure *closure;
+
+	va_start (ap, skeleton);
+	while (   (method_name = va_arg (ap, const char *))
+	       && (handler = va_arg (ap, GCallback))) {
+		signal_name = signal_name_from_method_name (method_name);
+		closure = g_cclosure_new_swap (handler, object, NULL);
+		g_closure_set_meta_marshal (closure, NULL, _nm_dbus_method_meta_marshal);
+		g_signal_connect_closure (skeleton, signal_name, closure, FALSE);
+		g_free (signal_name);
+	}
+	va_end (ap);
 }

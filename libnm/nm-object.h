@@ -26,9 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <glib.h>
-#include <glib-object.h>
-#include <dbus/dbus-glib.h>
+#include <gio/gio.h>
 
 #include <nm-version.h>
 

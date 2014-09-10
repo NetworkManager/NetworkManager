@@ -29,7 +29,6 @@
 #include <nm-setting-vpn.h>
 #include <nm-setting-wireless.h>
 #include <nm-utils.h>
-#include "nm-core-internal.h"
 
 #include "nm-settings-connection.h"
 #include "nm-session-monitor.h"
@@ -818,7 +817,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 		 * will have been authenticated, so those secrets can replace the existing
 		 * system secrets.
 		 */
-		secrets_dict = _nm_utils_connection_hash_to_dict (secrets);
+		secrets_dict = nm_utils_connection_hash_to_dict (secrets);
 		if (nm_connection_update_secrets (NM_CONNECTION (self), setting_name, secrets_dict, &local)) {
 			/* Now that all secrets are updated, copy and cache new secrets, 
 			 * then save them to backing storage.
@@ -919,7 +918,7 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	}
 
 	existing_secrets = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
-	existing_secrets_hash = _nm_utils_connection_dict_to_hash (existing_secrets);
+	existing_secrets_hash = nm_utils_connection_dict_to_hash (existing_secrets);
 	call_id = nm_agent_manager_get_secrets (priv->agent_mgr,
 	                                        NM_CONNECTION (self),
 	                                        subject,
@@ -1178,7 +1177,7 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		 */
 		settings = nm_connection_to_dbus (NM_CONNECTION (dupl_con), NM_CONNECTION_SERIALIZE_NO_SECRETS);
 		g_assert (settings);
-		settings_hash = _nm_utils_connection_dict_to_hash (settings);
+		settings_hash = nm_utils_connection_dict_to_hash (settings);
 		dbus_g_method_return (context, settings_hash);
 		g_hash_table_destroy (settings_hash);
 		g_variant_unref (settings);
@@ -1340,7 +1339,7 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
 
 	/* Check if the settings are valid first */
 	if (new_settings) {
-		GVariant *new_settings_dict = _nm_utils_connection_hash_to_dict (new_settings);
+		GVariant *new_settings_dict = nm_utils_connection_hash_to_dict (new_settings);
 
 		tmp = nm_simple_connection_new_from_dbus (new_settings_dict, &error);
 		g_variant_unref (new_settings_dict);
@@ -1513,7 +1512,7 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 		 */
 		dict = nm_connection_to_dbus (NM_CONNECTION (self), NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 		if (dict)
-			hash = _nm_utils_connection_dict_to_hash (dict);
+			hash = nm_utils_connection_dict_to_hash (dict);
 		else
 			hash = g_hash_table_new (NULL, NULL);
 		dbus_g_method_return (context, hash);

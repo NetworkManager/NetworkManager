@@ -26,7 +26,6 @@
 #include "nm-vpn-plugin-utils.h"
 #include "nm-vpn-plugin.h"
 #include "nm-core-internal.h"
-#include "nm-dbus-glib-types.h"
 
 #define DATA_KEY_TAG "DATA_KEY="
 #define DATA_VAL_TAG "DATA_VAL="

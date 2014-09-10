@@ -35,7 +35,7 @@
 #include "nm-logging.h"
 #include "nm-auth-subject.h"
 #include "nm-simple-connection.h"
-#include "nm-utils-private.h"
+#include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMSecretAgent, nm_secret_agent, G_TYPE_OBJECT)
 
@@ -296,7 +296,7 @@ nm_secret_agent_get_secrets (NMSecretAgent *self,
 	g_return_val_if_fail (priv->proxy != NULL, NULL);
 
 	dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-	hash = _nm_utils_connection_dict_to_hash (dict);
+	hash = nm_utils_connection_dict_to_hash (dict);
 	g_variant_unref (dict);
 
 	/* Mask off the private ONLY_SYSTEM flag if present */
@@ -395,7 +395,7 @@ agent_new_save_delete (NMSecretAgent *self,
 	const char *cpath = nm_connection_get_path (connection);
 
 	dict = nm_connection_to_dbus (connection, flags);
-	hash = _nm_utils_connection_dict_to_hash (dict);
+	hash = nm_utils_connection_dict_to_hash (dict);
 	g_variant_unref (dict);
 
 	r = request_new (self, cpath, NULL, callback, callback_data);

@@ -78,9 +78,4 @@ GPtrArray *_nm_utils_copy_array (const GPtrArray *array,
                                  GDestroyNotify free_func);
 GPtrArray *_nm_utils_copy_object_array (const GPtrArray *array);
 
-/* compat */
-
-GVariant   *_nm_utils_connection_hash_to_dict (GHashTable *hash);
-GHashTable *_nm_utils_connection_dict_to_hash (GVariant *dict);
-
 #endif

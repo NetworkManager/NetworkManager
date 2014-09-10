@@ -4,6 +4,7 @@ SUBDIRS = . tests
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
+	-I$(top_builddir)/introspection \
 	-I$(top_srcdir)/libnm-core \
 	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/libnm \
@@ -12,7 +13,6 @@ AM_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	-DNMRUNDIR=\"$(nmrundir)\"
 
@@ -104,25 +104,15 @@ libnm_la_SOURCES =			\
 	$(libnm_la_csources)		\
 	$(libnm_la_private_headers)
 
-nm-secret-agent-glue.h: $(top_srcdir)/introspection/nm-secret-agent.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_secret_agent --mode=glib-server --output=$@ $<
-
-nm-vpn-plugin-glue.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=$@ $<
-
 GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
 nm_enum_types_sources = $(libnminclude_HEADERS)
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
-BUILT_SOURCES = \
-	nm-vpn-plugin-glue.h \
-	nm-secret-agent-glue.h
-
 libnm_la_LIBADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
+	$(top_builddir)/introspection/libnmdbus.la \
 	$(GLIB_LIBS) \
-	$(DBUS_LIBS) \
 	$(UUID_LIBS) \
 	$(GUDEV_LIBS)
 
@@ -133,7 +123,7 @@ libnm_la_LDFLAGS = -Wl,--version-script=$(SYMBOL_VIS_FILE) \
 
 ###
 
-BUILT_SOURCES += $(GLIB_GENERATED)
+BUILT_SOURCES = $(GLIB_GENERATED)
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm.pc
@@ -160,8 +150,8 @@ introspection_sources =				\
 	$(libnm_la_csources)
 
 NM-1.0.gir: libnm.la
-NM_1_0_gir_INCLUDES = Gio-2.0 DBusGLib-1.0
-NM_1_0_gir_PACKAGES = gio-2.0 dbus-glib-1 gudev-1.0
+NM_1_0_gir_INCLUDES = Gio-2.0
+NM_1_0_gir_PACKAGES = gio-2.0 gudev-1.0
 NM_1_0_gir_EXPORT_PACKAGES = libnm
 NM_1_0_gir_CFLAGS = $(AM_CPPFLAGS)
 NM_1_0_gir_LIBS = libnm.la

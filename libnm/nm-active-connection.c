@@ -32,7 +32,7 @@
 #include "nm-glib-compat.h"
 #include "nm-dbus-helpers.h"
 
-static GType _nm_active_connection_decide_type (GValue *value);
+static GType _nm_active_connection_decide_type (GVariant *value);
 
 G_DEFINE_TYPE_WITH_CODE (NMActiveConnection, nm_active_connection, NM_TYPE_OBJECT,
                          _nm_object_register_type_func (g_define_type_id,
@@ -83,10 +83,10 @@ enum {
 };
 
 static GType
-_nm_active_connection_decide_type (GValue *value)
+_nm_active_connection_decide_type (GVariant *value)
 {
 	/* @value is the value of the o.fd.NM.ActiveConnection property "VPN" */
-	if (g_value_get_boolean (value))
+	if (g_variant_get_boolean (value))
 		return NM_TYPE_VPN_CONNECTION;
 	else
 		return NM_TYPE_ACTIVE_CONNECTION;

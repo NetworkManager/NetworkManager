@@ -22,36 +22,61 @@
 #define __NM_DBUS_HELPERS_PRIVATE_H__
 
 #include <gio/gio.h>
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib-lowlevel.h>
 
-DBusGConnection *_nm_dbus_new_connection        (GCancellable *cancellable,
+/* Copied from dbus/dbus-shared.h */
+#define DBUS_SERVICE_DBUS      "org.freedesktop.DBus"
+#define DBUS_PATH_DBUS  "/org/freedesktop/DBus"
+#define DBUS_PATH_LOCAL "/org/freedesktop/DBus/Local"
+
+#define DBUS_INTERFACE_DBUS           "org.freedesktop.DBus"
+#define DBUS_INTERFACE_INTROSPECTABLE "org.freedesktop.DBus.Introspectable"
+#define DBUS_INTERFACE_PROPERTIES     "org.freedesktop.DBus.Properties"
+#define DBUS_INTERFACE_PEER           "org.freedesktop.DBus.Peer"
+
+
+GBusType _nm_dbus_bus_type (void);
+
+GDBusConnection *_nm_dbus_new_connection        (GCancellable *cancellable,
                                                  GError **error);
 
 void             _nm_dbus_new_connection_async  (GCancellable *cancellable,
                                                  GAsyncReadyCallback callback,
                                                  gpointer user_data);
-DBusGConnection *_nm_dbus_new_connection_finish (GAsyncResult *result,
+GDBusConnection *_nm_dbus_new_connection_finish (GAsyncResult *result,
                                                  GError **error);
 
-gboolean         _nm_dbus_is_connection_private (DBusGConnection *connection);
+gboolean         _nm_dbus_is_connection_private (GDBusConnection *connection);
 
 void        _nm_dbus_register_proxy_type             (const char *interface,
                                                       GType proxy_type);
+/* Guarantee that @interface is a static string */
+#define _nm_dbus_register_proxy_type(interface, proxy_type) \
+	_nm_dbus_register_proxy_type (interface "", proxy_type) \
 
-DBusGProxy *_nm_dbus_new_proxy_for_connection        (DBusGConnection *connection,
+GDBusProxy *_nm_dbus_new_proxy_for_connection        (GDBusConnection *connection,
                                                       const char *path,
                                                       const char *interface,
                                                       GCancellable *cancellable,
                                                       GError **error);
 
-void        _nm_dbus_new_proxy_for_connection_async  (DBusGConnection *connection,
+void        _nm_dbus_new_proxy_for_connection_async  (GDBusConnection *connection,
                                                       const char *path,
                                                       const char *interface,
                                                       GCancellable *cancellable,
                                                       GAsyncReadyCallback callback,
                                                       gpointer user_data);
-DBusGProxy *_nm_dbus_new_proxy_for_connection_finish (GAsyncResult *result,
+GDBusProxy *_nm_dbus_new_proxy_for_connection_finish (GAsyncResult *result,
                                                       GError **error);
+
+void _nm_dbus_register_error_domain (GQuark domain,
+                                     const char *interface,
+                                     GType enum_type);
+
+void _nm_dbus_bind_properties (gpointer object,
+                               gpointer skeleton);
+
+void _nm_dbus_bind_methods (gpointer object,
+                            gpointer skeleton,
+                            ...) G_GNUC_NULL_TERMINATED;
 
 #endif /* __NM_DBUS_HELPERS_PRIVATE_H__ */

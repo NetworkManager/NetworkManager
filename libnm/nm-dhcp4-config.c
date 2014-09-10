@@ -50,21 +50,19 @@ nm_dhcp4_config_init (NMDhcp4Config *config)
 }
 
 static gboolean
-demarshal_dhcp4_options (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+demarshal_dhcp4_options (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
 {
 	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
-	GHashTable *new_options;
-	GHashTableIter iter;
+	GVariantIter iter;
 	const char *key;
-	GValue *opt;
+	GVariant *opt;
 
 	g_hash_table_remove_all (priv->options);
 
-	new_options = g_value_get_boxed (value);
-	if (new_options) {
-		g_hash_table_iter_init (&iter, new_options);
-		while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &opt))
-			g_hash_table_insert (priv->options, g_strdup (key), g_value_dup_string (opt));
+	g_variant_iter_init (&iter, value);
+	while (g_variant_iter_next (&iter, "{&sv}", &key, &opt)) {
+		g_hash_table_insert (priv->options, g_strdup (key), g_variant_dup_string (opt, NULL));
+		g_variant_unref (opt);
 	}
 
 	_nm_object_queue_notify (object, NM_DHCP4_CONFIG_OPTIONS);

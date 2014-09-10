@@ -3,11 +3,11 @@ include $(GLIB_MAKEFILE)
 SUBDIRS = \
 	. \
 	include \
+	introspection \
 	libnm-core \
 	libnm \
 	libnm-util \
 	libnm-glib \
-	introspection \
 	src \
 	callouts \
 	clients \

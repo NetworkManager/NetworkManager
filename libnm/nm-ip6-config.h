@@ -60,8 +60,8 @@ typedef struct {
 GType nm_ip6_config_get_type (void);
 
 const char *           nm_ip6_config_get_gateway         (NMIP6Config *config);
-const GSList *         nm_ip6_config_get_addresses       (NMIP6Config *config);
-const GSList *         nm_ip6_config_get_routes          (NMIP6Config *config);
+GPtrArray *            nm_ip6_config_get_addresses       (NMIP6Config *config);
+GPtrArray *            nm_ip6_config_get_routes          (NMIP6Config *config);
 const char * const *   nm_ip6_config_get_nameservers     (NMIP6Config *config);
 const char * const *   nm_ip6_config_get_domains         (NMIP6Config *config);
 const char * const *   nm_ip6_config_get_searches        (NMIP6Config *config);

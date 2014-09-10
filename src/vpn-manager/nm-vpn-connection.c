@@ -40,7 +40,6 @@
 #include "nm-platform.h"
 #include "nm-logging.h"
 #include "nm-utils.h"
-#include "nm-utils-private.h"
 #include "nm-active-connection.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
@@ -1469,7 +1468,7 @@ _hash_with_username (NMConnection *connection, const char *username)
 	existing = nm_setting_vpn_get_user_name (s_vpn);
 	if (username == NULL || existing) {
 		dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-		hash = _nm_utils_connection_dict_to_hash (dict);
+		hash = nm_utils_connection_dict_to_hash (dict);
 		g_variant_unref (dict);
 		return hash;
 	}
@@ -1482,7 +1481,7 @@ _hash_with_username (NMConnection *connection, const char *username)
 	dict = nm_connection_to_dbus (dup, NM_CONNECTION_SERIALIZE_ALL);
 	g_object_unref (dup);
 
-	hash = _nm_utils_connection_dict_to_hash (dict);
+	hash = nm_utils_connection_dict_to_hash (dict);
 	g_variant_unref (dict);
 	return hash;
 }

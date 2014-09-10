@@ -50,21 +50,19 @@ nm_dhcp6_config_init (NMDhcp6Config *config)
 }
 
 static gboolean
-demarshal_dhcp6_options (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+demarshal_dhcp6_options (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
 {
 	NMDhcp6ConfigPrivate *priv = NM_DHCP6_CONFIG_GET_PRIVATE (object);
-	GHashTable *new_options;
-	GHashTableIter iter;
+	GVariantIter iter;
 	const char *key;
-	GValue *opt;
+	GVariant *opt;
 
 	g_hash_table_remove_all (priv->options);
 
-	new_options = g_value_get_boxed (value);
-	if (new_options) {
-		g_hash_table_iter_init (&iter, new_options);
-		while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &opt))
-			g_hash_table_insert (priv->options, g_strdup (key), g_value_dup_string (opt));
+	g_variant_iter_init (&iter, value);
+	while (g_variant_iter_next (&iter, "{&sv}", &key, &opt)) {
+		g_hash_table_insert (priv->options, g_strdup (key), g_variant_dup_string (opt, NULL));
+		g_variant_unref (opt);
 	}
 
 	_nm_object_queue_notify (object, NM_DHCP6_CONFIG_OPTIONS);

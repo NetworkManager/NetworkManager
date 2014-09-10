@@ -7,8 +7,7 @@ AM_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
+	$(GLIB_CFLAGS)
 
 noinst_LTLIBRARIES = libnm-core.la
 
@@ -30,7 +29,6 @@ GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
 libnm_core_la_LIBADD =			\
 	$(GLIB_LIBS)			\
-	$(DBUS_LIBS)			\
 	$(UUID_LIBS)
 
 if WITH_GNUTLS

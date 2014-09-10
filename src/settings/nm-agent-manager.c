@@ -40,7 +40,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-session-monitor.h"
 #include "nm-simple-connection.h"
-#include "nm-utils-private.h"
+#include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMAgentManager, nm_agent_manager, G_TYPE_OBJECT)
 
@@ -914,7 +914,7 @@ get_agent_request_secrets (ConnectionRequest *req, gboolean include_system_secre
 		if (req->existing_secrets) {
 			GVariant *secrets_dict;
 
-			secrets_dict = _nm_utils_connection_hash_to_dict (req->existing_secrets);
+			secrets_dict = nm_utils_connection_hash_to_dict (req->existing_secrets);
 			(void) nm_connection_update_secrets (tmp, req->setting_name, secrets_dict, NULL);
 			g_variant_unref (secrets_dict);
 		}
@@ -1101,7 +1101,7 @@ get_start (gpointer user_data)
 		tmp = nm_simple_connection_new_clone (req->connection);
 		g_assert (tmp);
 
-		secrets_dict = _nm_utils_connection_hash_to_dict (req->existing_secrets);
+		secrets_dict = nm_utils_connection_hash_to_dict (req->existing_secrets);
 		if (!nm_connection_update_secrets (tmp, req->setting_name, secrets_dict, &error)) {
 			req_complete_error (parent, error);
 			g_clear_error (&error);

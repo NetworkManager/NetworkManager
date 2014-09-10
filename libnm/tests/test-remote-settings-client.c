@@ -18,9 +18,6 @@
  *
  */
 
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib.h>
-#include <dbus/dbus-glib-lowlevel.h>
 #include <glib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -34,7 +31,7 @@
 
 static NMTestServiceInfo *sinfo;
 static NMRemoteSettings *settings = NULL;
-DBusGConnection *bus = NULL;
+GDBusConnection *bus = NULL;
 NMRemoteConnection *remote = NULL;
 
 /*******************************************************************/
@@ -88,16 +85,16 @@ test_add_connection (void)
 /*******************************************************************/
 
 static void
-set_visible_cb (DBusGProxy *proxy,
-                DBusGProxyCall *call,
+set_visible_cb (GObject *proxy,
+                GAsyncResult *result,
                 gpointer user_data)
 {
 	GError *error = NULL;
-	gboolean success;
+	GVariant *ret;
 
-	success = dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID);
+	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
 	g_assert_no_error (error);
-	g_assert (success == TRUE);
+	g_variant_unref (ret);
 }
 
 static void
@@ -129,7 +126,7 @@ test_make_invisible (void)
 {
 	time_t start, now;
 	GSList *list, *iter;
-	DBusGProxy *proxy;
+	GDBusProxy *proxy;
 	gboolean visible_changed = FALSE, connection_removed = FALSE;
 	gboolean has_settings = FALSE;
 	char *path;
@@ -141,15 +138,23 @@ test_make_invisible (void)
 	g_signal_connect (settings, "connection-removed", G_CALLBACK (connection_removed_cb), &connection_removed);
 
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (remote)));
-	proxy = dbus_g_proxy_new_for_name (bus,
-	                                   NM_DBUS_SERVICE,
-	                                   path,
-	                                   NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
+	proxy = g_dbus_proxy_new_sync (bus,
+	                               G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+	                               NULL,
+	                               NM_DBUS_SERVICE,
+	                               path,
+	                               NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
+	                               NULL,
+	                               NULL);
 	g_assert (proxy != NULL);
 
 	/* Bypass the NMRemoteSettings object so we can test it independently */
-	dbus_g_proxy_begin_call (proxy, "SetVisible", set_visible_cb, NULL, NULL,
-	                         G_TYPE_BOOLEAN, FALSE, G_TYPE_INVALID);
+	g_dbus_proxy_call (proxy,
+	                   "SetVisible",
+	                   g_variant_new ("(b)", FALSE),
+	                   G_DBUS_CALL_FLAGS_NONE, -1,
+	                   NULL,
+	                   set_visible_cb, NULL);
 
 	/* Wait for the connection to be removed */
 	start = time (NULL);
@@ -198,7 +203,7 @@ test_make_visible (void)
 {
 	time_t start, now;
 	GSList *list, *iter;
-	DBusGProxy *proxy;
+	GDBusProxy *proxy;
 	gboolean found = FALSE;
 	char *path;
 	NMRemoteConnection *new = NULL;
@@ -210,16 +215,23 @@ test_make_visible (void)
 	                  G_CALLBACK (vis_new_connection_cb), &new);
 
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (remote)));
-	proxy = dbus_g_proxy_new_for_name (bus,
-	                                   NM_DBUS_SERVICE,
-	                                   path,
-	                                   NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
+	proxy = g_dbus_proxy_new_sync (bus,
+	                               G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+	                               NULL,
+	                               NM_DBUS_SERVICE,
+	                               path,
+	                               NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
+	                               NULL,
+	                               NULL);
 	g_assert (proxy != NULL);
 
 	/* Bypass the NMRemoteSettings object so we can test it independently */
-	dbus_g_proxy_begin_call (proxy, "SetVisible", set_visible_cb, NULL, NULL,
-	                         G_TYPE_BOOLEAN, TRUE, G_TYPE_INVALID);
-
+	g_dbus_proxy_call (proxy,
+	                   "SetVisible",
+	                   g_variant_new ("(b)", TRUE),
+	                   G_DBUS_CALL_FLAGS_NONE, -1,
+	                   NULL,
+	                   set_visible_cb, NULL);
 
 	/* Wait for the settings service to announce the connection again */
 	start = time (NULL);
@@ -255,16 +267,16 @@ test_make_visible (void)
 /*******************************************************************/
 
 static void
-deleted_cb (DBusGProxy *proxy,
-            DBusGProxyCall *call,
+deleted_cb (GObject *proxy,
+            GAsyncResult *result,
             gpointer user_data)
 {
 	GError *error = NULL;
-	gboolean success;
+	GVariant *ret;
 
-	success = dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID);
+	ret = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
 	g_assert_no_error (error);
-	g_assert (success == TRUE);
+	g_variant_unref (ret);
 }
 
 static void
@@ -280,7 +292,7 @@ test_remove_connection (void)
 	NMRemoteConnection *connection;
 	time_t start, now;
 	GSList *list, *iter;
-	DBusGProxy *proxy;
+	GDBusProxy *proxy;
 	gboolean done = FALSE;
 	char *path;
 
@@ -294,14 +306,23 @@ test_remove_connection (void)
 	path = g_strdup (nm_connection_get_path (NM_CONNECTION (connection)));
 	g_signal_connect (settings, "connection-removed", G_CALLBACK (removed_cb), &done);
 
-	proxy = dbus_g_proxy_new_for_name (bus,
-	                                   NM_DBUS_SERVICE,
-	                                   path,
-	                                   NM_DBUS_INTERFACE_SETTINGS_CONNECTION);
+	proxy = g_dbus_proxy_new_sync (bus,
+	                               G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,
+	                               NULL,
+	                               NM_DBUS_SERVICE,
+	                               path,
+	                               NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
+	                               NULL,
+	                               NULL);
 	g_assert (proxy != NULL);
 
 	/* Bypass the NMRemoteSettings object so we can test it independently */
-	dbus_g_proxy_begin_call (proxy, "Delete", deleted_cb, NULL, NULL, G_TYPE_INVALID);
+	g_dbus_proxy_call (proxy,
+	                   "Delete",
+	                   NULL,
+	                   G_DBUS_CALL_FLAGS_NONE, -1,
+	                   NULL,
+	                   deleted_cb, NULL);
 
 	start = time (NULL);
 	do {
@@ -481,7 +502,7 @@ main (int argc, char **argv)
 	
 	g_test_init (&argc, &argv, NULL);
 
-	bus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+	bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
 	g_assert_no_error (error);
 
 	sinfo = nm_test_service_init ();
@@ -504,7 +525,7 @@ main (int argc, char **argv)
 
 	nm_test_service_cleanup (sinfo);
 	g_object_unref (settings);
-	dbus_g_connection_unref (bus);
+	g_object_unref (bus);
 
 	return ret;
 }

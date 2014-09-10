@@ -5,7 +5,6 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm \
 	-I${top_builddir}/libnm \
-	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DNMLOCALEDIR=\"$(datadir)/locale\"
@@ -19,5 +18,4 @@ nm_online_CPPFLAGS = \
 
 nm_online_LDADD = \
 	$(top_builddir)/libnm/libnm.la \
-	$(DBUS_LIBS) \
 	$(GLIB_LIBS)

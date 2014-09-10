@@ -34,8 +34,8 @@ G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_OBJECT)
 
 typedef struct {
 	char *gateway;
-	GSList *addresses;
-	GSList *routes;
+	GPtrArray *addresses;
+	GPtrArray *routes;
 	char **nameservers;
 	char **domains;
 	char **searches;
@@ -60,6 +60,8 @@ nm_ip4_config_init (NMIP4Config *config)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
+	priv->addresses = g_ptr_array_new ();
+	priv->routes = g_ptr_array_new ();
 	priv->nameservers = g_new0 (char *, 1);
 	priv->domains = g_new0 (char *, 1);
 	priv->searches = g_new0 (char *, 1);
@@ -67,58 +69,39 @@ nm_ip4_config_init (NMIP4Config *config)
 }
 
 static gboolean
-demarshal_ip4_address_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+demarshal_ip4_address_array (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
-	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
-	priv->addresses = NULL;
-
-	priv->addresses = nm_utils_ip4_addresses_from_gvalue (value);
+	g_ptr_array_unref (priv->addresses);
+	priv->addresses = nm_utils_ip4_addresses_from_variant (value);
 	_nm_object_queue_notify (object, NM_IP4_CONFIG_ADDRESSES);
 
 	return TRUE;
 }
 
 static gboolean
-demarshal_ip4_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+demarshal_ip4_array (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
 {
-	GArray *ip_array;
 	char ***obj_field;
-	int i;
-
-	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_UINT_ARRAY))
-		return FALSE;
-
-	ip_array = g_value_get_boxed (value);
 
 	obj_field = field;
 	if (*obj_field)
 		g_strfreev (*obj_field);
 
-	*obj_field = g_new (char *, ip_array->len + 1);
-	for (i = 0; i < ip_array->len; i++) {
-		guint32 ip = g_array_index (ip_array, guint32, i);
-		const char *str;
-
-		str = nm_utils_inet4_ntop (ip, NULL);
-		(*obj_field)[i] = g_strdup (str);
-	}
-	(*obj_field)[i] = NULL;
+	*obj_field = nm_utils_ip4_dns_from_variant (value);
 
 	_nm_object_queue_notify (object, pspec->name);
 	return TRUE;
 }
 
 static gboolean
-demarshal_ip4_routes_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+demarshal_ip4_routes_array (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
-	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
-	priv->routes = NULL;
-
-	priv->routes = nm_utils_ip4_routes_from_gvalue (value);
+	g_ptr_array_unref (priv->routes);
+	priv->routes = nm_utils_ip4_routes_from_variant (value);
 	_nm_object_queue_notify (object, NM_IP4_CONFIG_ROUTES);
 
 	return TRUE;
@@ -153,8 +136,8 @@ finalize (GObject *object)
 
 	g_free (priv->gateway);
 
-	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
-	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
+	g_ptr_array_unref (priv->addresses);
+	g_ptr_array_unref (priv->routes);
 
 	g_strfreev (priv->nameservers);
 	g_strfreev (priv->domains);
@@ -171,21 +154,20 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMIP4Config *self = NM_IP4_CONFIG (object);
-	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
 	switch (prop_id) {
 	case PROP_GATEWAY:
 		g_value_set_string (value, nm_ip4_config_get_gateway (self));
 		break;
 	case PROP_ADDRESSES:
-		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->addresses,
-		                                                          (NMUtilsCopyFunc) nm_ip4_address_dup,
-		                                                          (GDestroyNotify) nm_ip4_address_unref));
+		g_value_take_boxed (value, _nm_utils_copy_array (nm_ip4_config_get_addresses (self),
+		                                                 (NMUtilsCopyFunc) nm_ip4_address_dup,
+		                                                 (GDestroyNotify) nm_ip4_address_unref));
 		break;
 	case PROP_ROUTES:
-		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->routes,
-		                                                          (NMUtilsCopyFunc) nm_ip4_route_dup,
-		                                                          (GDestroyNotify) nm_ip4_route_unref));
+		g_value_take_boxed (value, _nm_utils_copy_array (nm_ip4_config_get_routes (self),
+		                                                 (NMUtilsCopyFunc) nm_ip4_route_dup,
+		                                                 (GDestroyNotify) nm_ip4_route_unref));
 		break;
 	case PROP_NAMESERVERS:
 		g_value_set_boxed (value, (char **) nm_ip4_config_get_nameservers (self));
@@ -330,10 +312,11 @@ nm_ip4_config_get_gateway (NMIP4Config *config)
  *
  * Gets the IP4 addresses (containing the address, prefix, and gateway).
  *
- * Returns: (element-type NMIP4Address) (transfer none): the #GSList containing #NMIP4Address<!-- -->es.
- * This is the internal copy used by the configuration and must not be modified.
+ * Returns: (element-type NMIP4Address) (transfer none): the #GPtrArray
+ * containing #NMIP4Address<!-- -->es.  This is the internal copy used by the
+ * configuration and must not be modified.
  **/
-const GSList *
+GPtrArray *
 nm_ip4_config_get_addresses (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
@@ -415,11 +398,11 @@ nm_ip4_config_get_wins_servers (NMIP4Config *config)
  *
  * Gets the routes.
  *
- * Returns: (element-type NMIP4Route) (transfer none): the #GSList containing
- * #NMIP4Routes. This is the internal copy used by the configuration,
- * and must not be modified.
+ * Returns: (element-type NMIP4Route) (transfer none): the #GPtrArray containing
+ * #NMIP4Routes. This is the internal copy used by the configuration, and must
+ * not be modified.
  **/
-const GSList *
+GPtrArray *
 nm_ip4_config_get_routes (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
