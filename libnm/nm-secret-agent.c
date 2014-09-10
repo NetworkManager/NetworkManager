@@ -897,13 +897,13 @@ nm_secret_agent_unregister_async (NMSecretAgent *self,
 	GSimpleAsyncResult *simple;
 	GError *error = NULL;
 
-	g_return_val_if_fail (NM_IS_SECRET_AGENT (self), FALSE);
+	g_return_if_fail (NM_IS_SECRET_AGENT (self));
 
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
-	g_return_val_if_fail (priv->registered == TRUE, FALSE);
-	g_return_val_if_fail (priv->bus != NULL, FALSE);
-	g_return_val_if_fail (priv->manager_proxy != NULL, FALSE);
+	g_return_if_fail (priv->registered == TRUE);
+	g_return_if_fail (priv->bus != NULL);
+	g_return_if_fail (priv->manager_proxy != NULL);
 
 	simple = g_simple_async_result_new (G_OBJECT (self), callback, user_data,
 	                                    nm_secret_agent_unregister_async);
