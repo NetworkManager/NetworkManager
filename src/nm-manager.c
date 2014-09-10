@@ -39,7 +39,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
-#include "nm-device-ethernet.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-bond.h"
 #include "nm-device-bridge.h"
@@ -2127,9 +2126,6 @@ platform_link_added (NMManager *self,
 		NMDevice *parent;
 
 		switch (plink->type) {
-		case NM_LINK_TYPE_ETHERNET:
-			device = nm_device_ethernet_new (plink);
-			break;
 		case NM_LINK_TYPE_INFINIBAND:
 			device = nm_device_infiniband_new (plink);
 			break;

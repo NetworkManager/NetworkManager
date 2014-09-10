@@ -45,20 +45,10 @@ typedef enum
 #define NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS "perm-hw-address"
 #define NM_DEVICE_ETHERNET_SPEED "speed"
 
-typedef struct {
-	NMDevice parent;
-} NMDeviceEthernet;
-
-typedef struct {
-	NMDeviceClass parent;
-
-} NMDeviceEthernetClass;
-
+typedef NMDevice NMDeviceEthernet;
+typedef NMDeviceClass NMDeviceEthernetClass;
 
 GType nm_device_ethernet_get_type (void);
-
-
-NMDevice *nm_device_ethernet_new (NMPlatformLink *platform_device);
 
 G_END_DECLS
 

@@ -58,6 +58,7 @@
 #include "nm-config.h"
 #include "nm-device-ethernet-utils.h"
 #include "nm-connection-provider.h"
+#include "nm-device-factory.h"
 
 #include "nm-device-ethernet-glue.h"
 
@@ -320,18 +321,6 @@ nm_device_ethernet_init (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	priv->s390_options = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-}
-
-NMDevice *
-nm_device_ethernet_new (NMPlatformLink *platform_device)
-{
-	g_return_val_if_fail (platform_device != NULL, NULL);
-
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ETHERNET,
-	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
-	                                  NM_DEVICE_TYPE_DESC, "Ethernet",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
-	                                  NULL);
 }
 
 static void
@@ -1761,3 +1750,26 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	dbus_g_error_domain_register (NM_ETHERNET_ERROR, NULL, NM_TYPE_ETHERNET_ERROR);
 }
+
+/*************************************************************/
+
+#define NM_TYPE_ETHERNET_FACTORY (nm_ethernet_factory_get_type ())
+#define NM_ETHERNET_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ETHERNET_FACTORY, NMEthernetFactory))
+
+static NMDevice *
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+{
+	if (plink->type == NM_LINK_TYPE_ETHERNET) {
+		return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ETHERNET,
+		                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+		                                  NM_DEVICE_TYPE_DESC, "Ethernet",
+		                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
+		                                  NULL);
+	}
+	return NULL;
+}
+
+DEFINE_DEVICE_FACTORY_INTERNAL(ETHERNET, Ethernet, ethernet, \
+	factory_iface->new_link = new_link; \
+	)
+
