@@ -756,9 +756,9 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		return FALSE;
 
 	proxy = dbus_g_proxy_new_for_name (connection,
-	                                   "org.freedesktop.DBus",
-	                                   "/org/freedesktop/DBus",
-	                                   "org.freedesktop.DBus");
+	                                   DBUS_SERVICE_DBUS,
+	                                   DBUS_PATH_DBUS,
+	                                   DBUS_INTERFACE_DBUS);
 
 	if (!dbus_g_proxy_call (proxy, "RequestName", error,
 	                        G_TYPE_STRING, priv->dbus_service_name,

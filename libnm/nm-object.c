@@ -159,7 +159,7 @@ init_dbus (NMObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
-	priv->properties_proxy = _nm_object_new_proxy (object, NULL, "org.freedesktop.DBus.Properties");
+	priv->properties_proxy = _nm_object_new_proxy (object, NULL, DBUS_INTERFACE_PROPERTIES);
 
 	if (_nm_dbus_is_connection_private (priv->connection))
 		priv->nm_running = TRUE;
