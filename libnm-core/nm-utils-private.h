@@ -15,7 +15,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * Copyright 2005 - 2008 Red Hat, Inc.
+ * Copyright 2005 - 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_UTILS_PRIVATE_H__
@@ -77,5 +77,9 @@ void        _nm_utils_ip6_routes_from_dbus    (const GValue *dbus_value,
 
 GSList *    _nm_utils_strv_to_slist (char **strv);
 char **     _nm_utils_slist_to_strv (GSList *slist);
+
+char **     _nm_utils_strsplit_set (const char *str,
+                                    const char *delimiters,
+                                    int max_tokens);
 
 #endif
