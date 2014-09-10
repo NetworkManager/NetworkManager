@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 - 2013 Red Hat, Inc.
+ * Copyright 2008 - 2014 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -49,6 +49,7 @@
 #include <nm-setting-dcb.h>
 #include <nm-setting-generic.h>
 #include "nm-core-internal.h"
+#include "nm-utils-private.h"
 #include <nm-utils.h>
 
 #include "nm-platform.h"
@@ -3238,6 +3239,28 @@ make_wireless_security_setting (shvarFile *ifcfg,
 	return NULL; /* unencrypted */
 }
 
+static char **
+transform_hwddr_blacklist (const char *blacklist)
+{
+	char **strv, **iter;
+	int shift = 0;
+
+	strv = _nm_utils_strsplit_set (blacklist, " \t", 0);
+	for (iter = strv; iter && *iter; iter++) {
+		if (shift) {
+			*(iter-shift) = *iter;
+			*iter = NULL;
+		}
+		if (!nm_utils_hwaddr_valid (*(iter-shift), ETH_ALEN)) {
+			PARSE_WARNING ("invalid MAC in HWADDR_BLACKLIST '%s'", *(iter-shift));
+			g_free (*(iter-shift));
+			*(iter-shift) = NULL;
+			shift++;
+		}
+	}
+	return strv;
+}
+
 static NMSetting *
 make_wireless_setting (shvarFile *ifcfg,
                        GError **error)
@@ -3264,11 +3287,11 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {
-		char **list;
+		char **strv;
 
-		list = g_strsplit_set (value, " \t", 0);
-		g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, list, NULL);
-		g_strfreev (list);
+		strv = transform_hwddr_blacklist (value);
+		g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, strv, NULL);
+		g_strfreev (strv);
 		g_free (value);
 	}
 
@@ -3489,7 +3512,6 @@ make_wired_setting (shvarFile *ifcfg,
 	NMSettingWired *s_wired;
 	char *value = NULL;
 	int mtu;
-	GSList *macaddr_blacklist = NULL;
 	char *nettype;
 
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
@@ -3594,25 +3616,12 @@ make_wired_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "HWADDR_BLACKLIST", FALSE);
 	if (value) {
-		char **list = NULL, **iter;
+		char **strv;
 
-		list = g_strsplit_set (value, " \t", 0);
-		for (iter = list; iter && *iter; iter++) {
-			if (**iter == '\0')
-				continue;
-			if (!nm_utils_hwaddr_valid (*iter, ETH_ALEN)) {
-				PARSE_WARNING ("invalid MAC in HWADDR_BLACKLIST '%s'", *iter);
-				continue;
-			}
-			macaddr_blacklist = g_slist_prepend (macaddr_blacklist, *iter);
-		}
-		if (macaddr_blacklist) {
-			macaddr_blacklist = g_slist_reverse (macaddr_blacklist);
-			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, macaddr_blacklist, NULL);
-			g_slist_free (macaddr_blacklist);
-		}
+		strv = transform_hwddr_blacklist (value);
+		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, strv, NULL);
+		g_strfreev (strv);
 		g_free (value);
-		g_strfreev (list);
 	}
 
 	value = svGetValue (ifcfg, "KEY_MGMT", FALSE);

@@ -1,5 +1,6 @@
 EXTRA_DIST = \
 	ifcfg-test-minimal \
+	ifcfg-test-misc-variables \
 	ifcfg-test-variables-corner-cases-1 \
 	ifcfg-test-nm-controlled \
 	ifcfg-test-nm-controlled-unrecognized \

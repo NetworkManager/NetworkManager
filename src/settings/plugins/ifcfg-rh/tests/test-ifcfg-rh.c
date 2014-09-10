@@ -238,6 +238,53 @@ test_read_basic (void)
 }
 
 static void
+test_read_miscellaneous_variables (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	GError *error = NULL;
+	char *expected_mac_blacklist[2] = { "00:16:41:11:22:88", "00:16:41:11:22:99" };
+	int mac_blacklist_num, i;
+	guint64 expected_timestamp = 0;
+	gboolean success;
+
+	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-misc-variables",
+	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* ===== CONNECTION SETTING ===== */
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, expected_timestamp);
+	g_assert (nm_setting_connection_get_autoconnect (s_con));
+
+	/* ===== WIRED SETTING ===== */
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 0);
+
+	/* MAC blacklist */
+	mac_blacklist_num = nm_setting_wired_get_num_mac_blacklist_items (s_wired);
+	g_assert_cmpint (mac_blacklist_num, ==, 2);
+	for (i = 0; i < mac_blacklist_num; i++)
+		g_assert (nm_utils_hwaddr_matches (nm_setting_wired_get_mac_blacklist_item (s_wired, i), -1, expected_mac_blacklist[i], -1));
+
+	/* ===== IPv4 SETTING ===== */
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip4_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
+	g_assert (nm_setting_ip4_config_get_never_default (s_ip4) == FALSE);
+
+	g_object_unref (connection);
+}
+
+static void
 test_read_variables_corner_cases (void)
 {
 	NMConnection *connection;
@@ -13631,6 +13678,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "unmanaged-unrecognized", test_read_unmanaged_unrecognized);
 	g_test_add_func (TPATH "unrecognized", test_read_unrecognized);
 	g_test_add_func (TPATH "basic", test_read_basic);
+	g_test_add_func (TPATH "miscellaneous-variables", test_read_miscellaneous_variables);
 	g_test_add_func (TPATH "variables-corner-cases", test_read_variables_corner_cases);
 	g_test_add_data_func (TPATH "no-prefix/8", GUINT_TO_POINTER (8), test_read_wired_static_no_prefix);
 	g_test_add_data_func (TPATH "no-prefix/16", GUINT_TO_POINTER (16), test_read_wired_static_no_prefix);
