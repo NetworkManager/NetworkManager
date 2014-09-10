@@ -843,6 +843,7 @@ class Settings(dbus.service.Object):
         self.props = {}
         self.props['Hostname'] = "foobar.baz"
         self.props['CanModify'] = True
+        self.props['Connections'] = dbus.Array([], 'o')
 
     def auto_remove_next_connection(self):
         self.remove_next_connection = True;
@@ -859,8 +860,9 @@ class Settings(dbus.service.Object):
         path = "/org/freedesktop/NetworkManager/Settings/Connection/{0}".format(self.counter)
         self.counter = self.counter + 1
         self.connections[path] = Connection(self.bus, path, settings, self.delete_connection)
+        self.props['Connections'] = dbus.Array(self.connections.keys(), 'o')
         self.NewConnection(path)
-        self.PropertiesChanged({ 'connections': dbus.Array(self.connections.keys(), 'o') })
+        self.PropertiesChanged({ 'connections': self.props['Connections'] })
 
         if self.remove_next_connection:
             self.remove_next_connection = False
@@ -870,7 +872,8 @@ class Settings(dbus.service.Object):
 
     def delete_connection(self, connection):
         del self.connections[connection.path]
-        self.PropertiesChanged({ 'connections': dbus.Array(self.connections.keys(), 'o') })
+        self.props['Connections'] = dbus.Array(self.connections.keys(), 'o')
+        self.PropertiesChanged({ 'connections': self.props['Connections'] })
 
     @dbus.service.method(dbus_interface=dbus.PROPERTIES_IFACE, in_signature='s', out_signature='a{sv}')
     def GetAll(self, iface):
