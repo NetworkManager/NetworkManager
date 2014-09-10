@@ -1101,22 +1101,19 @@ nm_secret_agent_init (NMSecretAgent *self)
 {
 }
 
-static gboolean
-init_common (NMSecretAgent *self, GError **error)
+static void
+init_common (NMSecretAgent *self)
 {
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 	DBusGConnection *session_bus;
-
-	priv->bus = _nm_dbus_new_connection (error);
-	if (!priv->bus)
-		return FALSE;
-	priv->private_bus = _nm_dbus_is_connection_private (priv->bus);
 
 	session_bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
 	if (priv->bus == session_bus)
 		priv->session_bus = TRUE;
 	if (session_bus)
 		dbus_g_connection_unref (session_bus);
+
+	priv->private_bus = _nm_dbus_is_connection_private (priv->bus);
 
 	if (priv->private_bus == FALSE) {
 		priv->dbus_proxy = dbus_g_proxy_new_for_name (priv->bus,
@@ -1139,17 +1136,6 @@ init_common (NMSecretAgent *self, GError **error)
 
 		get_nm_owner (self);
 	}
-
-	priv->manager_proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
-	                                                         NM_DBUS_PATH_AGENT_MANAGER,
-	                                                         NM_DBUS_INTERFACE_AGENT_MANAGER);
-	if (!priv->manager_proxy) {
-		g_set_error_literal (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_INTERNAL_ERROR,
-		                     "Couldn't create NM agent manager proxy.");
-		return FALSE;
-	}
-
-	return TRUE;
 }
 
 static gboolean
@@ -1158,8 +1144,18 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	NMSecretAgent *self = NM_SECRET_AGENT (initable);
 	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
-	if (!init_common (self, error))
+	priv->bus = _nm_dbus_new_connection (cancellable, error);
+	if (!priv->bus)
 		return FALSE;
+
+	priv->manager_proxy = _nm_dbus_new_proxy_for_connection (priv->bus,
+	                                                         NM_DBUS_PATH_AGENT_MANAGER,
+	                                                         NM_DBUS_INTERFACE_AGENT_MANAGER,
+	                                                         cancellable, error);
+	if (!priv->manager_proxy)
+		return FALSE;
+
+	init_common (self);
 
 	if (priv->auto_register)
 		return nm_secret_agent_register (self, cancellable, error);
@@ -1167,20 +1163,78 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		return TRUE;
 }
 
+typedef struct {
+	NMSecretAgent *self;
+	GCancellable *cancellable;
+	GSimpleAsyncResult *simple;
+} NMSecretAgentInitData;
+
 static void
-init_async_registered (GObject *initable, GAsyncResult *result, gpointer user_data)
+init_async_complete (NMSecretAgentInitData *init_data, GError *error)
 {
-	NMSecretAgent *self = NM_SECRET_AGENT (initable);
-	GSimpleAsyncResult *simple = user_data;
+	if (!error)
+		g_simple_async_result_set_op_res_gboolean (init_data->simple, TRUE);
+	else
+		g_simple_async_result_take_error (init_data->simple, error);
+
+	g_simple_async_result_complete_in_idle (init_data->simple);
+
+	g_object_unref (init_data->simple);
+	g_clear_object (&init_data->cancellable);
+	g_slice_free (NMSecretAgentInitData, init_data);
+}
+
+static void
+init_async_registered (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NMSecretAgent *self = NM_SECRET_AGENT (object);
+	NMSecretAgentInitData *init_data = user_data;
 	GError *error = NULL;
 
-	if (nm_secret_agent_register_finish (self, result, &error))
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
-		g_simple_async_result_take_error (simple, error);
+	nm_secret_agent_register_finish (self, result, &error);
+	init_async_complete (init_data, error);
+}
 
-	g_simple_async_result_complete_in_idle (simple);
-	g_object_unref (simple);
+static void
+init_async_got_proxy (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NMSecretAgentInitData *init_data = user_data;
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (init_data->self);
+	GError *error = NULL;
+
+	priv->manager_proxy = _nm_dbus_new_proxy_for_connection_finish (result, &error);
+	if (!priv->manager_proxy) {
+		init_async_complete (init_data, error);
+		return;
+	}
+
+	init_common (init_data->self);
+
+	if (priv->auto_register) {
+		nm_secret_agent_register_async (init_data->self, init_data->cancellable,
+		                                init_async_registered, init_data);
+	} else
+		init_async_complete (init_data, NULL);
+}
+
+static void
+init_async_got_bus (GObject *initable, GAsyncResult *result, gpointer user_data)
+{
+	NMSecretAgentInitData *init_data = user_data;
+	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (init_data->self);
+	GError *error = NULL;
+
+	priv->bus = _nm_dbus_new_connection_finish (result, &error);
+	if (!priv->bus) {
+		init_async_complete (init_data, error);
+		return;
+	}
+
+	_nm_dbus_new_proxy_for_connection_async (priv->bus,
+	                                         NM_DBUS_PATH_AGENT_MANAGER,
+	                                         NM_DBUS_INTERFACE_AGENT_MANAGER,
+	                                         init_data->cancellable,
+	                                         init_async_got_proxy, init_data);
 }
 
 static void
@@ -1189,26 +1243,16 @@ init_async (GAsyncInitable *initable, int io_priority,
             gpointer user_data)
 {
 	NMSecretAgent *self = NM_SECRET_AGENT (initable);
-	NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE (self);
-	GSimpleAsyncResult *simple;
-	GError *error = NULL;
+	NMSecretAgentInitData *init_data;
 
-	simple = g_simple_async_result_new (G_OBJECT (initable), callback, user_data, init_async);
+	init_data = g_slice_new (NMSecretAgentInitData);
+	init_data->self = self;
+	init_data->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 
-	if (!init_common (self, &error)) {
-		g_simple_async_result_take_error (simple, error);
-		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
-		return;
-	}
+	init_data->simple = g_simple_async_result_new (G_OBJECT (initable), callback,
+	                                               user_data, init_async);
 
-	if (priv->auto_register)
-		nm_secret_agent_register_async (self, cancellable, init_async_registered, simple);
-	else {
-		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
-	}
+	_nm_dbus_new_connection_async (cancellable, init_async_got_bus, init_data);
 }
 
 static gboolean

@@ -25,12 +25,33 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
-DBusGConnection *_nm_dbus_new_connection (GError **error);
+DBusGConnection *_nm_dbus_new_connection        (GCancellable *cancellable,
+                                                 GError **error);
+
+void             _nm_dbus_new_connection_async  (GCancellable *cancellable,
+                                                 GAsyncReadyCallback callback,
+                                                 gpointer user_data);
+DBusGConnection *_nm_dbus_new_connection_finish (GAsyncResult *result,
+                                                 GError **error);
 
 gboolean         _nm_dbus_is_connection_private (DBusGConnection *connection);
 
-DBusGProxy *     _nm_dbus_new_proxy_for_connection (DBusGConnection *connection,
-                                                    const char *path,
-                                                    const char *interface);
+void        _nm_dbus_register_proxy_type             (const char *interface,
+                                                      GType proxy_type);
+
+DBusGProxy *_nm_dbus_new_proxy_for_connection        (DBusGConnection *connection,
+                                                      const char *path,
+                                                      const char *interface,
+                                                      GCancellable *cancellable,
+                                                      GError **error);
+
+void        _nm_dbus_new_proxy_for_connection_async  (DBusGConnection *connection,
+                                                      const char *path,
+                                                      const char *interface,
+                                                      GCancellable *cancellable,
+                                                      GAsyncReadyCallback callback,
+                                                      gpointer user_data);
+DBusGProxy *_nm_dbus_new_proxy_for_connection_finish (GAsyncResult *result,
+                                                      GError **error);
 
 #endif /* __NM_DBUS_HELPERS_PRIVATE_H__ */

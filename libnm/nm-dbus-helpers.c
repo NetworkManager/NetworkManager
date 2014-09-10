@@ -46,7 +46,8 @@ _ensure_nm_dbus_helpers_inited (void)
 }
 
 DBusGConnection *
-_nm_dbus_new_connection (GError **error)
+_nm_dbus_new_connection (GCancellable *cancellable,
+                         GError **error)
 {
 	DBusGConnection *connection = NULL;
 
@@ -75,6 +76,39 @@ _nm_dbus_new_connection (GError **error)
 	return connection;
 }
 
+void
+_nm_dbus_new_connection_async (GCancellable *cancellable,
+                               GAsyncReadyCallback callback,
+                               gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+	DBusGConnection *connection;
+	GError *error = NULL;
+
+	simple = g_simple_async_result_new (NULL, callback, user_data,
+	                                    _nm_dbus_new_connection_async);
+	connection = _nm_dbus_new_connection (cancellable, &error);
+	if (connection)
+		g_simple_async_result_set_op_res_gpointer (simple, connection, (GDestroyNotify) dbus_g_connection_unref);
+	else
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete_in_idle (simple);
+	g_object_unref (simple);
+}
+
+DBusGConnection *
+_nm_dbus_new_connection_finish (GAsyncResult *result,
+                                GError **error)
+{
+	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+
+	return dbus_g_connection_ref (g_simple_async_result_get_op_res_gpointer (simple));
+}
+
 gboolean
 _nm_dbus_is_connection_private (DBusGConnection *connection)
 {
@@ -86,7 +120,9 @@ _nm_dbus_is_connection_private (DBusGConnection *connection)
 DBusGProxy *
 _nm_dbus_new_proxy_for_connection (DBusGConnection *connection,
                                    const char *path,
-                                   const char *interface)
+                                   const char *interface,
+                                   GCancellable *cancellable,
+                                   GError **error)
 {
 	/* Private connections can't use dbus_g_proxy_new_for_name() or
 	 * dbus_g_proxy_new_for_name_owner() because peer-to-peer connections don't
@@ -97,4 +133,41 @@ _nm_dbus_new_proxy_for_connection (DBusGConnection *connection,
 		return dbus_g_proxy_new_for_peer (connection, path, interface);
 
 	return dbus_g_proxy_new_for_name (connection, NM_DBUS_SERVICE, path, interface);
+}
+
+void
+_nm_dbus_new_proxy_for_connection_async (DBusGConnection *connection,
+                                         const char *path,
+                                         const char *interface,
+                                         GCancellable *cancellable,
+                                         GAsyncReadyCallback callback,
+                                         gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+	DBusGProxy *proxy;
+	GError *error = NULL;
+
+	simple = g_simple_async_result_new (NULL, callback, user_data,
+	                                    _nm_dbus_new_proxy_for_connection_async);
+	proxy = _nm_dbus_new_proxy_for_connection (connection, path, interface,
+	                                           cancellable, &error);
+	if (proxy)
+		g_simple_async_result_set_op_res_gpointer (simple, proxy, g_object_unref);
+	else
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete_in_idle (simple);
+	g_object_unref (simple);
+}
+
+DBusGProxy *
+_nm_dbus_new_proxy_for_connection_finish (GAsyncResult *result,
+                                          GError **error)
+{
+	GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+
+	return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
 }
