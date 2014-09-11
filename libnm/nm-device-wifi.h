@@ -100,6 +100,10 @@ NMAccessPoint *          nm_device_wifi_get_access_point_by_path (NMDeviceWifi *
 
 const GPtrArray *        nm_device_wifi_get_access_points        (NMDeviceWifi *device);
 
+gboolean                 nm_device_wifi_request_scan             (NMDeviceWifi *device,
+                                                                  GCancellable *cancellable,
+                                                                  GError **error);
+
 void                     nm_device_wifi_request_scan_async       (NMDeviceWifi *device,
                                                                   GCancellable *cancellable,
                                                                   GAsyncReadyCallback callback,

@@ -83,6 +83,44 @@ nm_remote_connection_error_quark (void)
 
 /****************************************************************/
 
+/**
+ * nm_remote_connection_commit_changes:
+ * @connection: the #NMRemoteConnection
+ * @save_to_disk: whether to persist the changes to disk
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Send any local changes to the settings and properties of @connection to
+ * NetworkManager. If @save_to_disk is %TRUE, the updated connection will be saved to
+ * disk; if %FALSE, then only the in-memory representation will be changed.
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
+ **/
+gboolean
+nm_remote_connection_commit_changes (NMRemoteConnection *connection,
+                                     gboolean save_to_disk,
+                                     GCancellable *cancellable,
+                                     GError **error)
+{
+	NMRemoteConnectionPrivate *priv;
+	GVariant *settings;
+
+	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
+
+	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
+
+	settings = nm_connection_to_dbus (NM_CONNECTION (connection), NM_CONNECTION_SERIALIZE_ALL);
+	if (save_to_disk) {
+		return nmdbus_settings_connection_call_update_sync (priv->proxy,
+		                                                    settings,
+		                                                    cancellable, error);
+	} else {
+		return nmdbus_settings_connection_call_update_unsaved_sync (priv->proxy,
+		                                                            settings,
+		                                                            cancellable, error);
+	}
+}
+
 static void
 update_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
@@ -174,6 +212,31 @@ nm_remote_connection_commit_changes_finish (NMRemoteConnection *connection,
 		return g_simple_async_result_get_op_res_gboolean (simple);
 }
 
+/**
+ * nm_remote_connection_save:
+ * @connection: the #NMRemoteConnection
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Saves the connection to disk if the connection has changes that have not yet
+ * been written to disk, or if the connection has never been saved.
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
+ **/
+gboolean
+nm_remote_connection_save (NMRemoteConnection *connection,
+                           GCancellable *cancellable,
+                           GError **error)
+{
+	NMRemoteConnectionPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
+
+	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
+
+	return nmdbus_settings_connection_call_save_sync (priv->proxy, cancellable, error);
+}
+
 static void
 save_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
@@ -243,6 +306,30 @@ nm_remote_connection_save_finish (NMRemoteConnection *connection,
 		return g_simple_async_result_get_op_res_gboolean (simple);
 }
 
+/**
+ * nm_remote_connection_delete:
+ * @connection: the #NMRemoteConnection
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Deletes the connection.
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
+ **/
+gboolean
+nm_remote_connection_delete (NMRemoteConnection *connection,
+                             GCancellable *cancellable,
+                             GError **error)
+{
+	NMRemoteConnectionPrivate *priv;
+
+	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
+
+	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
+
+	return nmdbus_settings_connection_call_delete_sync (priv->proxy, cancellable, error);
+}
+
 static void
 delete_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
@@ -309,6 +396,41 @@ nm_remote_connection_delete_finish (NMRemoteConnection *connection,
 		return FALSE;
 	else
 		return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
+/**
+ * nm_remote_connection_get_secrets:
+ * @connection: the #NMRemoteConnection
+ * @setting_name: the #NMSetting object name to get secrets for
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Request the connection's secrets. Note that this is a blocking D-Bus call,
+ * not a simple property accessor.
+ *
+ * Returns: a #GVariant of type %NM_VARIANT_TYPE_CONNECTION containing
+ * @connection's secrets, or %NULL on error.
+ **/
+GVariant *
+nm_remote_connection_get_secrets (NMRemoteConnection *connection,
+                                  const char *setting_name,
+                                  GCancellable *cancellable,
+                                  GError **error)
+{
+	NMRemoteConnectionPrivate *priv;
+	GVariant *secrets;
+
+	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), NULL);
+
+	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
+
+	if (nmdbus_settings_connection_call_get_secrets_sync (priv->proxy,
+	                                                      setting_name,
+	                                                      &secrets,
+	                                                      cancellable, error))
+		return secrets;
+	else
+		return NULL;
 }
 
 static void

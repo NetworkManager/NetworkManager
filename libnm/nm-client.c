@@ -874,6 +874,91 @@ nm_client_deactivate_connection (NMClient *client,
 	                                                       cancellable, error);
 }
 
+static void
+deactivated_cb (GObject *object,
+                GAsyncResult *result,
+                gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	if (nmdbus_manager_call_deactivate_connection_finish (NMDBUS_MANAGER (object),
+	                                                      result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else
+		g_simple_async_result_take_error (simple, error);
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+/**
+ * nm_client_deactivate_connection_async:
+ * @client: a #NMClient
+ * @active: the #NMActiveConnection to deactivate
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the deactivation has completed
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Asynchronously deactivates an active #NMActiveConnection.
+ **/
+void
+nm_client_deactivate_connection_async (NMClient *client,
+                                       NMActiveConnection *active,
+                                       GCancellable *cancellable,
+                                       GAsyncReadyCallback callback,
+                                       gpointer user_data)
+{
+	NMClientPrivate *priv;
+	const char *path;
+	GSimpleAsyncResult *simple;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (active));
+
+	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
+	                                    nm_client_deactivate_connection_async);
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	if (!nm_client_get_nm_running (client)) {
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+		g_simple_async_result_complete_in_idle (simple);
+		g_object_unref (simple);
+		return;
+	}
+
+	path = nm_object_get_path (NM_OBJECT (active));
+	nmdbus_manager_call_deactivate_connection (priv->manager_proxy,
+	                                           path,
+	                                           cancellable,
+	                                           deactivated_cb, simple);
+}
+
+/**
+ * nm_client_deactivate_connection_finish:
+ * @client: a #NMClient
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_client_deactivate_connection_async().
+ *
+ * Returns: success or failure
+ **/
+gboolean
+nm_client_deactivate_connection_finish (NMClient *client,
+                                        GAsyncResult *result,
+                                        GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_deactivate_connection_async), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
 /**
  * nm_client_get_active_connections:
  * @client: a #NMClient

@@ -145,6 +145,9 @@ const char *         nm_device_get_description       (NMDevice  *device);
 char **              nm_device_disambiguate_names    (NMDevice **devices,
                                                       int        num_devices);
 
+gboolean             nm_device_disconnect           (NMDevice *device,
+                                                     GCancellable *cancellable,
+                                                     GError **error);
 void                 nm_device_disconnect_async     (NMDevice *device,
                                                      GCancellable *cancellable,
                                                      GAsyncReadyCallback callback,
@@ -153,6 +156,9 @@ gboolean             nm_device_disconnect_finish    (NMDevice *device,
                                                      GAsyncResult *result,
                                                      GError **error);
 
+gboolean             nm_device_delete               (NMDevice *device,
+                                                     GCancellable *cancellable,
+                                                     GError **error);
 void                 nm_device_delete_async         (NMDevice *device,
                                                      GCancellable *cancellable,
                                                      GAsyncReadyCallback callback,

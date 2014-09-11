@@ -1892,6 +1892,29 @@ nm_device_is_software (NMDevice *device)
 	return !!(NM_DEVICE_GET_PRIVATE (device)->capabilities & NM_DEVICE_CAP_IS_SOFTWARE);
 }
 
+/**
+ * nm_device_disconnect:
+ * @device: a #NMDevice
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Disconnects the device if currently connected, and prevents the device from
+ * automatically connecting to networks until the next manual network connection
+ * request.
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
+ **/
+gboolean
+nm_device_disconnect (NMDevice *device,
+                      GCancellable *cancellable,
+                      GError **error)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	return nmdbus_device_call_disconnect_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                                           cancellable, error);
+}
+
 static void
 device_disconnect_cb (GObject *proxy,
                       GAsyncResult *result,
@@ -1963,6 +1986,28 @@ nm_device_disconnect_finish (NMDevice *device,
 		return FALSE;
 	else
 		return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
+/**
+ * nm_device_delete:
+ * @device: a #NMDevice
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Deletes the software device. Hardware devices can't be deleted.
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error
+ * will be set.
+ **/
+gboolean
+nm_device_delete (NMDevice *device,
+                  GCancellable *cancellable,
+                  GError **error)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	return nmdbus_device_call_delete_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                                       cancellable, error);
 }
 
 static void

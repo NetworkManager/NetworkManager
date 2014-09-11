@@ -123,16 +123,36 @@ NMRemoteConnection *nm_remote_settings_add_connection_finish (NMRemoteSettings *
                                                               GAsyncResult *result,
                                                               GError **error);
 
-gboolean nm_remote_settings_load_connections (NMRemoteSettings *settings,
-                                              char **filenames,
-                                              char ***failures,
-                                              GCancellable *cancellable,
-                                              GError **error);
+gboolean nm_remote_settings_load_connections        (NMRemoteSettings *settings,
+                                                     char **filenames,
+                                                     char ***failures,
+                                                     GCancellable *cancellable,
+                                                     GError **error);
+void     nm_remote_settings_load_connections_async  (NMRemoteSettings *settings,
+                                                     char **filenames,
+                                                     GCancellable *cancellable,
+                                                     GAsyncReadyCallback callback,
+                                                     gpointer user_data);
+gboolean nm_remote_settings_load_connections_finish (NMRemoteSettings *settings,
+                                                     char ***failures,
+                                                     GAsyncResult *result,
+                                                     GError **error);
 
-gboolean nm_remote_settings_reload_connections (NMRemoteSettings *settings,
-                                                GCancellable *cancellable,
-                                                GError **error);
+gboolean nm_remote_settings_reload_connections        (NMRemoteSettings *settings,
+                                                       GCancellable *cancellable,
+                                                       GError **error);
+void     nm_remote_settings_reload_connections_async  (NMRemoteSettings *settings,
+                                                       GCancellable *cancellable,
+                                                       GAsyncReadyCallback callback,
+                                                       gpointer user_data);
+gboolean nm_remote_settings_reload_connections_finish (NMRemoteSettings *settings,
+                                                       GAsyncResult *result,
+                                                       GError **error);
 
+gboolean nm_remote_settings_save_hostname        (NMRemoteSettings *settings,
+                                                  const char *hostname,
+                                                  GCancellable *cancellable,
+                                                  GError **error);
 void     nm_remote_settings_save_hostname_async  (NMRemoteSettings *settings,
                                                   const char *hostname,
                                                   GCancellable *cancellable,

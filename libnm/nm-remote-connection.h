@@ -71,6 +71,10 @@ typedef struct {
 
 GType nm_remote_connection_get_type (void);
 
+gboolean nm_remote_connection_commit_changes        (NMRemoteConnection *connection,
+                                                     gboolean save_to_disk,
+                                                     GCancellable *cancellable,
+                                                     GError **error);
 void     nm_remote_connection_commit_changes_async  (NMRemoteConnection *connection,
                                                      gboolean save_to_disk,
                                                      GCancellable *cancellable,
@@ -80,6 +84,9 @@ gboolean nm_remote_connection_commit_changes_finish (NMRemoteConnection *connect
                                                      GAsyncResult *result,
                                                      GError **error);
 
+gboolean nm_remote_connection_save        (NMRemoteConnection *connection,
+                                           GCancellable *cancellable,
+                                           GError **error);
 void     nm_remote_connection_save_async  (NMRemoteConnection *connection,
                                            GCancellable *cancellable,
                                            GAsyncReadyCallback callback,
@@ -88,6 +95,9 @@ gboolean nm_remote_connection_save_finish (NMRemoteConnection *connection,
                                            GAsyncResult *result,
                                            GError **error);
 
+gboolean nm_remote_connection_delete        (NMRemoteConnection *connection,
+                                             GCancellable *cancellable,
+                                             GError **error);
 void     nm_remote_connection_delete_async  (NMRemoteConnection *connection,
                                              GCancellable *cancellable,
                                              GAsyncReadyCallback callback,
@@ -96,6 +106,10 @@ gboolean nm_remote_connection_delete_finish (NMRemoteConnection *connection,
                                              GAsyncResult *result,
                                              GError **error);
 
+GVariant *nm_remote_connection_get_secrets        (NMRemoteConnection *connection,
+                                                   const char *setting_name,
+                                                   GCancellable *cancellable,
+                                                   GError **error);
 void      nm_remote_connection_get_secrets_async  (NMRemoteConnection *connection,
                                                    const char *setting_name,
                                                    GCancellable *cancellable,

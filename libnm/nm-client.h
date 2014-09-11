@@ -198,10 +198,18 @@ NMActiveConnection *nm_client_add_and_activate_connection_finish (NMClient *clie
                                                                   GAsyncResult *result,
                                                                   GError **error);
 
-gboolean nm_client_deactivate_connection (NMClient *client,
-                                          NMActiveConnection *active,
-                                          GCancellable *cancellable,
-                                          GError **error);
+gboolean nm_client_deactivate_connection        (NMClient *client,
+                                                 NMActiveConnection *active,
+                                                 GCancellable *cancellable,
+                                                 GError **error);
+void     nm_client_deactivate_connection_async  (NMClient *client,
+                                                 NMActiveConnection *active,
+                                                 GCancellable *cancellable,
+                                                 GAsyncReadyCallback callback,
+                                                 gpointer user_data);
+gboolean nm_client_deactivate_connection_finish (NMClient *client,
+                                                 GAsyncResult *result,
+                                                 GError **error);
 
 gboolean  nm_client_networking_get_enabled (NMClient *client);
 void      nm_client_networking_set_enabled (NMClient *client, gboolean enabled);

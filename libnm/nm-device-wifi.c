@@ -285,6 +285,32 @@ nm_device_wifi_get_access_point_by_path (NMDeviceWifi *device,
 	return ap;
 }
 
+/**
+ * nm_device_wifi_request_scan:
+ * @device: a #NMDeviceWifi
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Request NM to scan for access points on @device. Note that the function
+ * returns immediately after requesting the scan, and it may take some time
+ * after that for the scan to complete.
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be
+ * set.
+ **/
+gboolean
+nm_device_wifi_request_scan (NMDeviceWifi *device,
+                             GCancellable *cancellable,
+                             GError **error)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
+
+	return nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
+	                                                  g_variant_new_array (G_VARIANT_TYPE_VARDICT,
+	                                                                       NULL, 0),
+	                                                  cancellable, error);
+}
+
 static void
 request_scan_cb (GObject *source,
                  GAsyncResult *result,
