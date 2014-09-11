@@ -54,18 +54,6 @@ enum {
 	LAST_PROP
 };
 
-typedef struct RemoteCall RemoteCall;
-typedef void (*RemoteCallFetchResultCb) (RemoteCall *call, GAsyncResult *result);
-
-
-struct RemoteCall {
-	NMRemoteConnection *self;
-	RemoteCallFetchResultCb fetch_result_cb;
-	GFunc callback;
-	gpointer user_data;
-	gpointer call_data;
-};
-
 typedef struct {
 	NMDBusSettingsConnection *proxy;
 
@@ -96,240 +84,308 @@ nm_remote_connection_error_quark (void)
 /****************************************************************/
 
 static void
-remote_call_dbus_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
+update_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
-	RemoteCall *call = user_data;
-
-	call->fetch_result_cb (call, result);
-
-	g_object_unref (call->self);
-	g_free (call);
-}
-
-static RemoteCall *
-remote_call_new (NMRemoteConnection *self,
-                 RemoteCallFetchResultCb fetch_result_cb,
-                 GFunc callback,
-                 gpointer user_data)
-{
-	RemoteCall *call;
-
-	g_assert (fetch_result_cb);
-
-	call = g_malloc0 (sizeof (RemoteCall));
-	call->self = g_object_ref (self);
-	call->fetch_result_cb = fetch_result_cb;
-	call->user_data = user_data;
-	call->callback = callback;
-
-	return call;
-}
-
-/****************************************************************/
-
-static void
-update_result_cb (RemoteCall *call, GAsyncResult *result)
-{
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (call->self);
-	NMRemoteConnectionResultFunc func = (NMRemoteConnectionResultFunc) call->callback;
-	gboolean save_to_disk = GPOINTER_TO_INT (call->call_data);
+	GSimpleAsyncResult *simple = user_data;
+	gboolean (*finish_func) (NMDBusSettingsConnection *, GAsyncResult *, GError **);
 	GError *error = NULL;
 
-	if (save_to_disk)
-		nmdbus_settings_connection_call_update_finish (priv->proxy, result, &error);
+	finish_func = g_object_get_data (G_OBJECT (simple), "finish_func");
+	if (finish_func (NMDBUS_SETTINGS_CONNECTION (proxy), result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
 	else
-		nmdbus_settings_connection_call_update_unsaved_finish (priv->proxy, result, &error);
-	if (func)
-		(*func) (call->self, error, call->user_data);
-	g_clear_error (&error);
+		g_simple_async_result_take_error (simple, error);
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
 }
 
 /**
- * nm_remote_connection_commit_changes:
+ * nm_remote_connection_commit_changes_async:
  * @connection: the #NMRemoteConnection
- * @save_to_disk: whether to persist the changes to disk
- * @callback: (scope async) (allow-none): a function to be called when the
- * commit completes
- * @user_data: (closure): caller-specific data to be passed to @callback
+ * @save_to_disk: whether to save the changes to persistent storage
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the commit operation completes
+ * @user_data: caller-specific data passed to @callback
  *
- * Send any local changes to the settings and properties of this connection to
- * NetworkManager.
- *
- * If @save_to_disk is %TRUE, the changes will immediately be saved to disk.
- * If %FALSE, then only the in-memory version is changed. (It can be saved to
- * disk later with nm_remote_connection_save().)
+ * Asynchronously sends any local changes to the settings and properties of
+ * @connection to NetworkManager. If @save is %TRUE, the updated connection will
+ * be saved to disk; if %FALSE, then only the in-memory representation will be
+ * changed.
  **/
 void
-nm_remote_connection_commit_changes (NMRemoteConnection *self,
-                                     gboolean save_to_disk,
-                                     NMRemoteConnectionResultFunc callback,
-                                     gpointer user_data)
+nm_remote_connection_commit_changes_async (NMRemoteConnection *connection,
+                                           gboolean save_to_disk,
+                                           GCancellable *cancellable,
+                                           GAsyncReadyCallback callback,
+                                           gpointer user_data)
 {
 	NMRemoteConnectionPrivate *priv;
-	RemoteCall *call;
+	GSimpleAsyncResult *simple;
 	GVariant *settings;
-
-	g_return_if_fail (NM_IS_REMOTE_CONNECTION (self));
-
-	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
-
-	call = remote_call_new (self, update_result_cb, (GFunc) callback, user_data);
-	if (!call)
-		return;
-	call->call_data = GINT_TO_POINTER (save_to_disk);
-
-	settings = nm_connection_to_dbus (NM_CONNECTION (self), NM_CONNECTION_SERIALIZE_ALL);
-
-	if (save_to_disk) {
-		nmdbus_settings_connection_call_update (priv->proxy,
-		                                        settings,
-		                                        NULL,
-		                                        remote_call_dbus_cb, call);
-	} else {
-		nmdbus_settings_connection_call_update_unsaved (priv->proxy,
-		                                                settings,
-		                                                NULL,
-		                                                remote_call_dbus_cb, call);
-	}
-}
-
-static void
-save_result_cb (RemoteCall *call, GAsyncResult *result)
-{
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (call->self);
-	NMRemoteConnectionResultFunc func = (NMRemoteConnectionResultFunc) call->callback;
-	GError *error = NULL;
-
-	nmdbus_settings_connection_call_save_finish (priv->proxy, result, &error);
-	if (func)
-		(*func) (call->self, error, call->user_data);
-	g_clear_error (&error);
-}
-
-/**
- * nm_remote_connection_save:
- * @connection: the #NMRemoteConnection
- * @callback: (scope async) (allow-none): a function to be called when the
- * save completes
- * @user_data: (closure): caller-specific data to be passed to @callback
- *
- * Saves the connection to disk if the connection has changes that have not yet
- * been written to disk, or if the connection has never been saved.
- **/
-void
-nm_remote_connection_save (NMRemoteConnection *connection,
-                           NMRemoteConnectionResultFunc callback,
-                           gpointer user_data)
-{
-	NMRemoteConnectionPrivate *priv;
-	RemoteCall *call;
 
 	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
 
-	call = remote_call_new (connection, save_result_cb, (GFunc) callback, user_data);
-	if (!call)
-		return;
+	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
+	                                    nm_remote_connection_commit_changes_async);
 
-	nmdbus_settings_connection_call_save (priv->proxy,
-	                                      NULL,
-	                                      remote_call_dbus_cb, call);
-}
-
-static void
-delete_result_cb (RemoteCall *call, GAsyncResult *result)
-{
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (call->self);
-	NMRemoteConnectionResultFunc func = (NMRemoteConnectionResultFunc) call->callback;
-	GError *error = NULL;
-
-	nmdbus_settings_connection_call_delete_finish (priv->proxy, result, &error);
-	if (func)
-		(*func) (call->self, error, call->user_data);
-	g_clear_error (&error);
+	settings = nm_connection_to_dbus (NM_CONNECTION (connection), NM_CONNECTION_SERIALIZE_ALL);
+	if (save_to_disk) {
+		g_object_set_data (G_OBJECT (simple), "finish_func",
+		                   nmdbus_settings_connection_call_update_finish);
+		nmdbus_settings_connection_call_update (priv->proxy,
+		                                        settings,
+		                                        cancellable,
+		                                        update_cb, simple);
+	} else {
+		g_object_set_data (G_OBJECT (simple), "finish_func",
+		                   nmdbus_settings_connection_call_update_unsaved_finish);
+		nmdbus_settings_connection_call_update_unsaved (priv->proxy,
+		                                                settings,
+		                                                cancellable,
+		                                                update_cb, simple);
+	}
 }
 
 /**
- * nm_remote_connection_delete:
+ * nm_remote_connection_commit_changes_finish:
  * @connection: the #NMRemoteConnection
- * @callback: (scope async) (allow-none): a function to be called when the delete completes
- * @user_data: (closure): caller-specific data to be passed to @callback
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
  *
- * Delete the connection.
+ * Gets the result of a call to nm_remote_connection_commit_changes_async().
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
  **/
-void
-nm_remote_connection_delete (NMRemoteConnection *self,
-                             NMRemoteConnectionResultFunc callback,
-                             gpointer user_data)
+gboolean
+nm_remote_connection_commit_changes_finish (NMRemoteConnection *connection,
+                                            GAsyncResult *result,
+                                            GError **error)
 {
-	NMRemoteConnectionPrivate *priv;
-	RemoteCall *call;
+	GSimpleAsyncResult *simple;
 
-	g_return_if_fail (NM_IS_REMOTE_CONNECTION (self));
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (connection), nm_remote_connection_commit_changes_async), FALSE);
 
-	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
-
-	call = remote_call_new (self, delete_result_cb, (GFunc) callback, user_data);
-	if (!call)
-		return;
-
-	nmdbus_settings_connection_call_delete (priv->proxy,
-	                                        NULL,
-	                                        remote_call_dbus_cb, call);
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return g_simple_async_result_get_op_res_gboolean (simple);
 }
 
 static void
-get_secrets_cb (RemoteCall *call, GAsyncResult *result)
+save_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (call->self);
-	NMRemoteConnectionGetSecretsFunc func = (NMRemoteConnectionGetSecretsFunc) call->callback;
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	if (nmdbus_settings_connection_call_save_finish (NMDBUS_SETTINGS_CONNECTION (proxy),
+	                                                 result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else
+		g_simple_async_result_take_error (simple, error);
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+/**
+ * nm_remote_connection_save_async:
+ * @connection: the #NMRemoteConnection
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the save operation completes
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Saves the connection to disk if the connection has changes that have not yet
+ * been written to disk, or if the connection has never been saved.
+ **/
+void
+nm_remote_connection_save_async (NMRemoteConnection *connection,
+                                 GCancellable *cancellable,
+                                 GAsyncReadyCallback callback,
+                                 gpointer user_data)
+{
+	NMRemoteConnectionPrivate *priv;
+	GSimpleAsyncResult *simple;
+
+	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
+
+	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
+
+	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
+	                                    nm_remote_connection_save_async);
+	nmdbus_settings_connection_call_save (priv->proxy, cancellable, save_cb, simple);
+}
+
+/**
+ * nm_remote_connection_save_finish:
+ * @connection: the #NMRemoteConnection
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_remote_connection_save_async().
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
+ **/
+gboolean
+nm_remote_connection_save_finish (NMRemoteConnection *connection,
+                                  GAsyncResult *result,
+                                  GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (connection), nm_remote_connection_save_async), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
+static void
+delete_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	if (nmdbus_settings_connection_call_delete_finish (NMDBUS_SETTINGS_CONNECTION (proxy),
+	                                                   result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else
+		g_simple_async_result_take_error (simple, error);
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+/**
+ * nm_remote_connection_delete_async:
+ * @connection: the #NMRemoteConnection
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the delete operation completes
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Asynchronously deletes the connection.
+ **/
+void
+nm_remote_connection_delete_async (NMRemoteConnection *connection,
+                                   GCancellable *cancellable,
+                                   GAsyncReadyCallback callback,
+                                   gpointer user_data)
+{
+	NMRemoteConnectionPrivate *priv;
+	GSimpleAsyncResult *simple;
+
+	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
+
+	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
+
+	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
+	                                    nm_remote_connection_delete_async);
+	nmdbus_settings_connection_call_delete (priv->proxy, cancellable, delete_cb, simple);
+}
+
+/**
+ * nm_remote_connection_delete_finish:
+ * @connection: the #NMRemoteConnection
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_remote_connection_delete_async().
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
+ **/
+gboolean
+nm_remote_connection_delete_finish (NMRemoteConnection *connection,
+                                    GAsyncResult *result,
+                                    GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (connection), nm_remote_connection_delete_async), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
+static void
+get_secrets_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
 	GVariant *secrets = NULL;
 	GError *error = NULL;
 
-	if (!nmdbus_settings_connection_call_get_secrets_finish (priv->proxy, &secrets,
-	                                                         result, &error))
-		secrets = NULL;
-	if (func)
-		(*func) (call->self, error ? NULL : secrets, error, call->user_data);
-	g_clear_error (&error);
-	if (secrets)
-		g_variant_unref (secrets);
+	if (nmdbus_settings_connection_call_get_secrets_finish (NMDBUS_SETTINGS_CONNECTION (proxy),
+	                                                        &secrets, result, &error))
+		g_simple_async_result_set_op_res_gpointer (simple, secrets, (GDestroyNotify) g_variant_unref);
+	else
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
 }
 
-
 /**
- * nm_remote_connection_get_secrets:
+ * nm_remote_connection_get_secrets_async:
  * @connection: the #NMRemoteConnection
  * @setting_name: the #NMSetting object name to get secrets for
- * @callback: (scope async): a function to be called when the update completes;
- * must not be %NULL
- * @user_data: (closure): caller-specific data to be passed to @callback
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the secret request completes
+ * @user_data: caller-specific data passed to @callback
  *
- * Request the connection's secrets.
+ * Asynchronously requests the connection's secrets.
  **/
 void
-nm_remote_connection_get_secrets (NMRemoteConnection *self,
-                                  const char *setting_name,
-                                  NMRemoteConnectionGetSecretsFunc callback,
-                                  gpointer user_data)
+nm_remote_connection_get_secrets_async (NMRemoteConnection *connection,
+                                        const char *setting_name,
+                                        GCancellable *cancellable,
+                                        GAsyncReadyCallback callback,
+                                        gpointer user_data)
 {
 	NMRemoteConnectionPrivate *priv;
-	RemoteCall *call;
+	GSimpleAsyncResult *simple;
 
-	g_return_if_fail (NM_IS_REMOTE_CONNECTION (self));
-	g_return_if_fail (callback != NULL);
+	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
 
-	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
+	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
 
-	call = remote_call_new (self, get_secrets_cb, (GFunc) callback, user_data);
-	if (!call)
-		return;
+	simple = g_simple_async_result_new (G_OBJECT (connection), callback, user_data,
+	                                    nm_remote_connection_get_secrets_async);
 
 	nmdbus_settings_connection_call_get_secrets (priv->proxy,
 	                                             setting_name,
-	                                             NULL,
-	                                             remote_call_dbus_cb, call);
+	                                             cancellable,
+	                                             get_secrets_cb, simple);
+}
+
+/**
+ * nm_remote_connection_get_secrets_finish:
+ * @connection: the #NMRemoteConnection
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_remote_connection_get_secrets_async().
+ *
+ * Returns: (transfer full): a #GVariant of type %NM_VARIANT_TYPE_CONNECTION
+ *   containing @connection's secrets, or %NULL on error.
+ **/
+GVariant *
+nm_remote_connection_get_secrets_finish (NMRemoteConnection *connection,
+                                         GAsyncResult *result,
+                                         GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (connection), nm_remote_connection_get_secrets_async), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+	else
+		return g_variant_ref (g_simple_async_result_get_op_res_gpointer (simple));
 }
 
 /**

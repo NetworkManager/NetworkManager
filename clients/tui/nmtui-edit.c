@@ -430,13 +430,14 @@ typedef struct {
 } ConnectionDeleteData;
 
 static void
-connection_deleted_callback (NMRemoteConnection *connection,
-                             GError             *error,
-                             gpointer            user_data)
+connection_deleted_callback (GObject      *connection,
+                             GAsyncResult *result,
+                             gpointer      user_data)
 {
 	ConnectionDeleteData *data = user_data;
+	GError *error = NULL;
 
-	if (error) {
+	if (!nm_remote_connection_delete_finish (data->connection, result, NULL)) {
 		nmt_newt_message_dialog (_("Unable to delete connection: %s"),
 		                         error->message);
 	} else
@@ -444,6 +445,7 @@ connection_deleted_callback (NMRemoteConnection *connection,
 
 	if (error || (data->got_callback && data->got_signal))
 		nmt_sync_op_complete_boolean (&data->op, error == NULL, error);
+	g_clear_error (&error);
 }
 
 static void
@@ -480,7 +482,7 @@ nmt_remove_connection (NMRemoteConnection *connection)
 	data.connection = connection;
 	g_signal_connect (nm_settings, NM_REMOTE_SETTINGS_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed_signal), &data);
-	nm_remote_connection_delete (connection, connection_deleted_callback, &data);
+	nm_remote_connection_delete_async (connection, NULL, connection_deleted_callback, &data);
 
 	if (!nmt_sync_op_wait_boolean (&data.op, &error)) {
 		nmt_newt_message_dialog (_("Could not delete connection: %s"),

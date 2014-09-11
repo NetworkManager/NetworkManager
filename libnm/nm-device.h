@@ -145,15 +145,21 @@ const char *         nm_device_get_description       (NMDevice  *device);
 char **              nm_device_disambiguate_names    (NMDevice **devices,
                                                       int        num_devices);
 
-typedef void (*NMDeviceCallbackFn) (NMDevice *device, GError *error, gpointer user_data);
-
-void                 nm_device_disconnect           (NMDevice *device,
-                                                     NMDeviceCallbackFn callback,
+void                 nm_device_disconnect_async     (NMDevice *device,
+                                                     GCancellable *cancellable,
+                                                     GAsyncReadyCallback callback,
                                                      gpointer user_data);
+gboolean             nm_device_disconnect_finish    (NMDevice *device,
+                                                     GAsyncResult *result,
+                                                     GError **error);
 
-void                 nm_device_delete               (NMDevice *device,
-                                                     NMDeviceCallbackFn callback,
+void                 nm_device_delete_async         (NMDevice *device,
+                                                     GCancellable *cancellable,
+                                                     GAsyncReadyCallback callback,
                                                      gpointer user_data);
+gboolean             nm_device_delete_finish        (NMDevice *device,
+                                                     GAsyncResult *result,
+                                                     GError **error);
 
 GSList *             nm_device_filter_connections   (NMDevice *device,
                                                      const GSList *connections);

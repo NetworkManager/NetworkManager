@@ -1287,6 +1287,7 @@ connected_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 		printf (_("Device '%s' successfully activated with '%s'.\n"),
 		        nm_device_get_iface (device),
 		        nm_active_connection_get_uuid (active));
+		g_object_unref (active);
 		quit ();
 	}
 }
@@ -1323,20 +1324,23 @@ typedef struct {
 } AddAndActivateInfo;
 
 static void
-add_and_activate_cb (NMClient *client,
-                     NMActiveConnection *active,
-                     const char *connection_path,
-                     GError *error,
+add_and_activate_cb (GObject *client,
+                     GAsyncResult *result,
                      gpointer user_data)
 {
 	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
 	NmCli *nmc = info->nmc;
 	NMDevice *device = info->device;
 	NMActiveConnectionState state;
+	NMActiveConnection *active;
+	GError *error = NULL;
 
-        if (error) {
-		g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: (%d) %s"),
-		                 error->code, error->message);
+	active = nm_client_add_and_activate_connection_finish (NM_CLIENT (client), result, &error);
+
+	if (error) {
+		g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: %s"),
+		                 error->message);
+		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
 	} else {
@@ -1356,6 +1360,7 @@ add_and_activate_cb (NMClient *client,
 				printf (_("Connection with UUID '%s' created and activated on device '%s'\n"),
 				        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
 			}
+			g_object_unref (active);
 			quit ();
 		} else {
 			g_signal_connect (device, "notify::state", G_CALLBACK (monitor_device_state_cb), nmc);
@@ -1363,6 +1368,7 @@ add_and_activate_cb (NMClient *client,
 
 			if (nmc->print_output == NMC_PRINT_PRETTY)
 				progress_id = g_timeout_add (120, progress_cb, device);
+			g_object_unref (active);
 		}
 	}
 
@@ -1384,22 +1390,27 @@ create_connect_connection_for_device (AddAndActivateInfo *info)
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, nm_device_get_iface (info->device),
 	              NULL);
 
-	nm_client_add_and_activate_connection (info->nmc->client,
-	                                       connection,
-	                                       info->device,
-	                                       NULL,
-	                                       add_and_activate_cb,
-	                                       info);
+	nm_client_add_and_activate_connection_async (info->nmc->client,
+	                                             connection,
+	                                             info->device,
+	                                             NULL,
+	                                             NULL,
+	                                             add_and_activate_cb,
+	                                             info);
 }
 
 static void
-connect_device_cb (NMClient *client, NMActiveConnection *active, GError *error, gpointer user_data)
+connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 {
 	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
 	NmCli *nmc = info->nmc;
+	NMActiveConnection *active;
+	GError *error = NULL;
 	const GPtrArray *devices;
 	NMDevice *device;
 	NMDeviceState state;
+
+	active = nm_client_activate_connection_finish (NM_CLIENT (client), result, &error);
 
 	if (error) {
 		char *dbus_err;
@@ -1414,7 +1425,8 @@ connect_device_cb (NMClient *client, NMActiveConnection *active, GError *error, 
 		g_free (dbus_err);
 
 		g_string_printf (nmc->return_text, _("Error: Device activation failed: %s"),
-		                 error->message ? error->message : _("(unknown)"));
+		                 error->message);
+		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
 	} else {
@@ -1513,12 +1525,13 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 	info->nmc = nmc;
 	info->device = device;
 
-	nm_client_activate_connection (nmc->client,
-	                               NULL,  /* let NM find a connection automatically */
-	                               device,
-	                               NULL,
-	                               connect_device_cb,
-	                               info);
+	nm_client_activate_connection_async (nmc->client,
+	                                     NULL,  /* let NM find a connection automatically */
+	                                     device,
+	                                     NULL,
+	                                     NULL,
+	                                     connect_device_cb,
+	                                     info);
 
 	/* Start progress indication */
 	if (nmc->print_output == NMC_PRINT_PRETTY)
@@ -1545,16 +1558,19 @@ disconnect_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-disconnect_device_cb (NMDevice *device, GError *error, gpointer user_data)
+disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
+	NMDevice *device = NM_DEVICE (object);
 	NmCli *nmc = (NmCli *) user_data;
 	NMDeviceState state;
+	GError *error = NULL;
 
-	if (error) {
+	if (!nm_device_disconnect_finish (device, result, &error)) {
 		g_string_printf (nmc->return_text, _("Error: Device '%s' (%s) disconnecting failed: %s"),
 		                 nm_device_get_iface (device),
 		                 nm_object_get_path (NM_OBJECT (device)),
-		                 error->message ? error->message : _("(unknown)"));
+		                 error->message);
+		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_DEV_DISCONNECT;
 		quit ();
 	} else {
@@ -1637,7 +1653,7 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 	 */
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
-	nm_device_disconnect (device, disconnect_device_cb, nmc);
+	nm_device_disconnect_async (device, NULL, disconnect_device_cb, nmc);
 
 	/* Start progress indication */
 	if (nmc->print_output == NMC_PRINT_PRETTY)
@@ -1648,15 +1664,18 @@ error:
 }
 
 static void
-delete_device_cb (NMDevice *device, GError *error, gpointer user_data)
+delete_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
+	NMDevice *device = NM_DEVICE (object);
 	NmCli *nmc = (NmCli *) user_data;
+	GError *error = NULL;
 
-	if (error) {
+	if (!nm_device_delete_finish (device, result, &error)) {
 		g_string_printf (nmc->return_text, _("Error: Device '%s' (%s) deletion failed: %s"),
 		                 nm_device_get_iface (device),
 		                 nm_object_get_path (NM_OBJECT (device)),
-		                 error->message ? error->message : _("(unknown)"));
+		                 error->message);
+		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 	}
 	quit ();
@@ -1727,7 +1746,7 @@ do_device_delete (NmCli *nmc, int argc, char **argv)
 	 */
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
-	nm_device_delete (device, delete_device_cb, nmc);
+	nm_device_delete_async (device, NULL, delete_device_cb, nmc);
 
 	/* Start progress indication */
 	if (nmc->print_output == NMC_PRINT_PRETTY)
@@ -2308,12 +2327,13 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 	info->nmc = nmc;
 	info->device = device;
 
-	nm_client_add_and_activate_connection (nmc->client,
-	                                       connection,
-	                                       device,
-	                                       nm_object_get_path (NM_OBJECT (ap)),
-	                                       add_and_activate_cb,
-	                                       info);
+	nm_client_add_and_activate_connection_async (nmc->client,
+	                                             connection,
+	                                             device,
+	                                             nm_object_get_path (NM_OBJECT (ap)),
+	                                             NULL,
+	                                             add_and_activate_cb,
+	                                             info);
 
 error:
 	if (bssid1_arr)
@@ -2327,14 +2347,16 @@ error:
 }
 
 static void
-request_rescan_cb (NMDeviceWifi *device, GError *error, gpointer user_data)
+request_rescan_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NmCli *nmc = (NmCli *) user_data;
+	GError *error = NULL;
 
+	nm_device_wifi_request_scan_finish (NM_DEVICE_WIFI (object), result, &error);
 	if (error) {
-		g_string_printf (nmc->return_text, _("Error: %s."),
-		                 error->message ? error->message : _("unknown"));
+		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		g_error_free (error);
 	}
 	quit ();
 }
@@ -2375,7 +2397,8 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nm_device_wifi_request_scan_simple (NM_DEVICE_WIFI (device), request_rescan_cb, nmc);
+	nm_device_wifi_request_scan_async (NM_DEVICE_WIFI (device), NULL,
+	                                   request_rescan_cb, nmc);
 
 	return nmc->return_value;
 error:

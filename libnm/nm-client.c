@@ -473,24 +473,12 @@ nm_client_get_device_by_iface (NMClient *client, const char *iface)
 
 typedef struct {
 	NMClient *client;
-	NMClientActivateFn act_fn;
-	NMClientAddActivateFn add_act_fn;
+	GSimpleAsyncResult *simple;
+	GCancellable *cancellable;
+	gulong cancelled_id;
 	char *active_path;
 	char *new_connection_path;
-	guint idle_id;
-	gpointer user_data;
 } ActivateInfo;
-
-static void
-activate_info_free (ActivateInfo *info)
-{
-	if (info->idle_id)
-		g_source_remove (info->idle_id);
-	g_free (info->active_path);
-	g_free (info->new_connection_path);
-	memset (info, 0, sizeof (*info));
-	g_slice_free (ActivateInfo, info);
-}
 
 static void
 activate_info_complete (ActivateInfo *info,
@@ -499,18 +487,23 @@ activate_info_complete (ActivateInfo *info,
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (info->client);
 
-	if (info->act_fn)
-		info->act_fn (info->client, error ? NULL : active, error, info->user_data);
-	else if (info->add_act_fn) {
-		info->add_act_fn (info->client,
-		                  error ? NULL : active,
-		                  error ? NULL : info->new_connection_path,
-		                  error,
-		                  info->user_data);
-	} else if (error)
-		g_warning ("Device activation failed: (%d) %s", error->code, error->message);
+	if (active)
+		g_simple_async_result_set_op_res_gpointer (info->simple, g_object_ref (active), g_object_unref);
+	else
+		g_simple_async_result_set_from_error (info->simple, error);
+	g_simple_async_result_complete (info->simple);
 
 	priv->pending_activations = g_slist_remove (priv->pending_activations, info);
+
+	g_free (info->active_path);
+	g_free (info->new_connection_path);
+	g_object_unref (info->simple);
+	if (info->cancellable) {
+		if (info->cancelled_id)
+			g_signal_handler_disconnect (info->cancellable, info->cancelled_id);
+		g_object_unref (info->cancellable);
+	}
+	g_slice_free (ActivateInfo, info);
 }
 
 static void
@@ -552,7 +545,6 @@ recheck_pending_activations (NMClient *self, const char *failed_path, GError *er
 			if (g_strcmp0 (info->active_path, active_path) == 0) {
 				/* Call the pending activation's callback and it all up */
 				activate_info_complete (info, active, NULL);
-				activate_info_free (info);
 				break;
 			}
 		}
@@ -564,8 +556,21 @@ recheck_pending_activations (NMClient *self, const char *failed_path, GError *er
 		 * callback gets called.
 		 */
 		activate_info_complete (ainfo, NULL, error);
-		activate_info_free (ainfo);
 	}
+}
+
+static void
+activation_cancelled (GCancellable *cancellable,
+                      gpointer user_data)
+{
+	ActivateInfo *info = user_data;
+	GError *error = NULL;
+
+	if (!g_cancellable_set_error_if_cancelled (cancellable, &error))
+		return;
+
+	activate_info_complete (info, NULL, error);
+	g_clear_error (&error);
 }
 
 static void
@@ -579,33 +584,20 @@ activate_cb (GObject *object,
 	if (nmdbus_manager_call_activate_connection_finish (NMDBUS_MANAGER (object),
 	                                                    &info->active_path,
 	                                                    result, &error)) {
+		if (info->cancellable) {
+			info->cancelled_id = g_signal_connect (info->cancellable, "cancelled",
+			                                       G_CALLBACK (activation_cancelled), info);
+		}
+
 		recheck_pending_activations (info->client, NULL, NULL);
 	} else {
 		activate_info_complete (info, NULL, error);
-		activate_info_free (info);
 		g_clear_error (&error);
 	}
 }
 
-static gboolean
-activate_nm_not_running (gpointer user_data)
-{
-	ActivateInfo *info = user_data;
-	GError *error;
-
-	info->idle_id = 0;
-
-	error = g_error_new_literal (NM_CLIENT_ERROR,
-	                             NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-	                             "NetworkManager is not running");
-	activate_info_complete (info, NULL, error);
-	activate_info_free (info);
-	g_clear_error (&error);
-	return FALSE;
-}
-
 /**
- * nm_client_activate_connection:
+ * nm_client_activate_connection_async:
  * @client: a #NMClient
  * @connection: (allow-none): an #NMConnection
  * @device: (allow-none): the #NMDevice
@@ -616,27 +608,34 @@ activate_nm_not_running (gpointer user_data)
  *   path of a #NMAccessPoint or #NMWimaxNsp owned by @device, which you can
  *   get using nm_object_get_path(), and which will be used to complete the
  *   details of the newly added connection.
- * @callback: (scope async) (allow-none): the function to call when the call is done
- * @user_data: (closure): user data to pass to the callback function
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the activation has started
+ * @user_data: caller-specific data passed to @callback
  *
- * Starts a connection to a particular network using the configuration settings
- * from @connection and the network device @device.  Certain connection types
- * also take a "specific object" which is the object path of a connection-
- * specific object, like an #NMAccessPoint for Wi-Fi connections, or an
- * #NMWimaxNsp for WiMAX connections, to which you wish to connect.  If the
- * specific object is not given, NetworkManager can, in some cases, automatically
- * determine which network to connect to given the settings in @connection.
+ * Asynchronously starts a connection to a particular network using the
+ * configuration settings from @connection and the network device @device.
+ * Certain connection types also take a "specific object" which is the object
+ * path of a connection- specific object, like an #NMAccessPoint for Wi-Fi
+ * connections, or an #NMWimaxNsp for WiMAX connections, to which you wish to
+ * connect.  If the specific object is not given, NetworkManager can, in some
+ * cases, automatically determine which network to connect to given the settings
+ * in @connection.
  *
  * If @connection is not given for a device-based activation, NetworkManager
  * picks the best available connection for the device and activates it.
+ *
+ * Note that the callback is invoked when NetworkManager has started activating
+ * the new connection, not when it finishes. You can used the returned
+ * #NMActiveConnection object to track the activation to its completion.
  **/
 void
-nm_client_activate_connection (NMClient *client,
-                               NMConnection *connection,
-                               NMDevice *device,
-                               const char *specific_object,
-                               NMClientActivateFn callback,
-                               gpointer user_data)
+nm_client_activate_connection_async (NMClient *client,
+                                     NMConnection *connection,
+                                     NMDevice *device,
+                                     const char *specific_object,
+                                     GCancellable *cancellable,
+                                     GAsyncReadyCallback callback,
+                                     gpointer user_data)
 {
 	NMClientPrivate *priv;
 	ActivateInfo *info;
@@ -647,25 +646,56 @@ nm_client_activate_connection (NMClient *client,
 	if (connection)
 		g_return_if_fail (NM_IS_CONNECTION (connection));
 
+	if (!nm_client_get_nm_running (client)) {
+		g_simple_async_report_error_in_idle (G_OBJECT (client), callback, user_data,
+		                                     NM_CLIENT_ERROR,
+		                                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+		                                     "NetworkManager is not running");
+		return;
+	}
+
 	info = g_slice_new0 (ActivateInfo);
-	info->act_fn = callback;
-	info->user_data = user_data;
 	info->client = client;
+	info->simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
+	                                          nm_client_activate_connection_async);
+	info->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
-
-	if (!nm_client_get_nm_running (client)) {
-		info->idle_id = g_idle_add (activate_nm_not_running, info);
-		return;
-	}
 
 	nmdbus_manager_call_activate_connection (priv->manager_proxy,
 	                                         connection ? nm_connection_get_path (connection) : "/",
 	                                         device ? nm_object_get_path (NM_OBJECT (device)) : "/",
 	                                         specific_object ? specific_object : "/",
-	                                         NULL,
+	                                         cancellable,
 	                                         activate_cb, info);
+}
+
+/**
+ * nm_client_activate_connection_finish:
+ * @client: an #NMClient
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_client_activate_connection_async().
+ *
+ * Returns: (transfer full): the new #NMActiveConnection on success, %NULL on
+ *   failure, in which case @error will be set.
+ **/
+NMActiveConnection *
+nm_client_activate_connection_finish (NMClient *client,
+                                      GAsyncResult *result,
+                                      GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_activate_connection_async), NULL);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+	else
+		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
 }
 
 static void
@@ -677,19 +707,23 @@ add_activate_cb (GObject *object,
 	GError *error = NULL;
 
 	if (nmdbus_manager_call_add_and_activate_connection_finish (NMDBUS_MANAGER (object),
-	                                                            &info->new_connection_path,
+	                                                            NULL,
 	                                                            &info->active_path,
 	                                                            result, &error)) {
+		if (info->cancellable) {
+			info->cancelled_id = g_signal_connect (info->cancellable, "cancelled",
+			                                       G_CALLBACK (activation_cancelled), info);
+		}
+
 		recheck_pending_activations (info->client, NULL, NULL);
 	} else {
 		activate_info_complete (info, NULL, error);
-		activate_info_free (info);
 		g_clear_error (&error);
 	}
 }
 
 /**
- * nm_client_add_and_activate_connection:
+ * nm_client_add_and_activate_connection_async:
  * @client: a #NMClient
  * @partial: (allow-none): an #NMConnection to add; the connection may be
  *   partially filled (or even %NULL) and will be completed by NetworkManager
@@ -702,51 +736,96 @@ add_activate_cb (GObject *object,
  *   path of a #NMAccessPoint or #NMWimaxNsp owned by @device, which you can
  *   get using nm_object_get_path(), and which will be used to complete the
  *   details of the newly added connection.
- * @callback: (scope async) (allow-none): the function to call when the call is done
- * @user_data: (closure): user data to pass to the callback function
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the activation has started
+ * @user_data: caller-specific data passed to @callback
  *
  * Adds a new connection using the given details (if any) as a template,
- * automatically filling in missing settings with the capabilities of the
- * given device and specific object.  The new connection is then activated.
- * Cannot be used for VPN connections at this time.
+ * automatically filling in missing settings with the capabilities of the given
+ * device and specific object.  The new connection is then asynchronously
+ * activated as with nm_client_activate_connection_async(). Cannot be used for
+ * VPN connections at this time.
+ *
+ * Note that the callback is invoked when NetworkManager has started activating
+ * the new connection, not when it finishes. You can used the returned
+ * #NMActiveConnection object to track the activation to its completion.
  **/
 void
-nm_client_add_and_activate_connection (NMClient *client,
-                                       NMConnection *partial,
-                                       NMDevice *device,
-                                       const char *specific_object,
-                                       NMClientAddActivateFn callback,
-                                       gpointer user_data)
+nm_client_add_and_activate_connection_async (NMClient *client,
+                                             NMConnection *partial,
+                                             NMDevice *device,
+                                             const char *specific_object,
+                                             GCancellable *cancellable,
+                                             GAsyncReadyCallback callback,
+                                             gpointer user_data)
 {
 	NMClientPrivate *priv;
-	ActivateInfo *info;
 	GVariant *dict = NULL;
+	ActivateInfo *info;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_DEVICE (device));
+	if (partial)
+		g_return_if_fail (NM_IS_CONNECTION (partial));
+
+	if (!nm_client_get_nm_running (client)) {
+		g_simple_async_report_error_in_idle (G_OBJECT (client), callback, user_data,
+		                                     NM_CLIENT_ERROR,
+		                                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+		                                     "NetworkManager is not running");
+		return;
+	}
 
 	info = g_slice_new0 (ActivateInfo);
-	info->add_act_fn = callback;
-	info->user_data = user_data;
 	info->client = client;
+	info->simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
+	                                          nm_client_add_and_activate_connection_async);
+	info->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
 
 	if (partial)
 		dict = nm_connection_to_dbus (partial, NM_CONNECTION_SERIALIZE_ALL);
 	if (!dict)
 		dict = g_variant_new_array (G_VARIANT_TYPE ("{sa{sv}}"), NULL, 0);
 
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	priv->pending_activations = g_slist_prepend (priv->pending_activations, info);
+	nmdbus_manager_call_add_and_activate_connection (priv->manager_proxy,
+	                                                 dict,
+	                                                 nm_object_get_path (NM_OBJECT (device)),
+	                                                 specific_object ? specific_object : "/",
+	                                                 cancellable,
+	                                                 add_activate_cb, info);
+}
 
-	if (nm_client_get_nm_running (client)) {
-		nmdbus_manager_call_add_and_activate_connection (priv->manager_proxy,
-		                                                 dict,
-		                                                 nm_object_get_path (NM_OBJECT (device)),
-		                                                 specific_object ? specific_object : "/",
-		                                                 NULL,
-		                                                 add_activate_cb, info);
-	} else
-		info->idle_id = g_idle_add (activate_nm_not_running, info);
+/**
+ * nm_client_add_and_activate_connection_finish:
+ * @client: an #NMClient
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_client_add_and_activate_connection_async().
+ *
+ * You can call nm_active_connection_get_connection() on the returned
+ * #NMActiveConnection to find the path of the created #NMConnection.
+ *
+ * Returns: (transfer full): the new #NMActiveConnection on success, %NULL on
+ *   failure, in which case @error will be set.
+ **/
+NMActiveConnection *
+nm_client_add_and_activate_connection_finish (NMClient *client,
+                                              GAsyncResult *result,
+                                              GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_add_and_activate_connection_async), NULL);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+	else
+		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
 }
 
 static void
@@ -766,30 +845,33 @@ object_creation_failed_cb (GObject *object, GError *error, char *failed_path)
  * nm_client_deactivate_connection:
  * @client: a #NMClient
  * @active: the #NMActiveConnection to deactivate
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
  *
  * Deactivates an active #NMActiveConnection.
+ *
+ * Returns: success or failure
  **/
-void
-nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
+gboolean
+nm_client_deactivate_connection (NMClient *client,
+                                 NMActiveConnection *active,
+                                 GCancellable *cancellable,
+                                 GError **error)
 {
 	NMClientPrivate *priv;
 	const char *path;
-	GError *error = NULL;
 
-	g_return_if_fail (NM_IS_CLIENT (client));
-	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (active));
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	if (!nm_client_get_nm_running (client))
-		return;
+		return TRUE;
 
 	path = nm_object_get_path (NM_OBJECT (active));
-	if (!nmdbus_manager_call_deactivate_connection_sync (priv->manager_proxy,
-	                                                     path,
-	                                                     NULL, &error)) {
-		g_warning ("Could not deactivate connection '%s': %s", path, error->message);
-		g_error_free (error);
-	}
+	return nmdbus_manager_call_deactivate_connection_sync (priv->manager_proxy,
+	                                                       path,
+	                                                       cancellable, error);
 }
 
 /**
@@ -1765,8 +1847,10 @@ dispose (GObject *object)
 	g_clear_object (&priv->primary_connection);
 	g_clear_object (&priv->activating_connection);
 
-	g_slist_free_full (priv->pending_activations, (GDestroyNotify) activate_info_free);
-	priv->pending_activations = NULL;
+	/* Each activation should hold a ref on @client, so if we're being disposed,
+	 * there shouldn't be any pending.
+	 */
+	g_warn_if_fail (priv->pending_activations == NULL);
 
 	g_hash_table_destroy (priv->permissions);
 	priv->permissions = NULL;

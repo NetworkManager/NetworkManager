@@ -1678,11 +1678,13 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpoin
 			nmc_terminal_erase_line ();
 		printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
 		        nm_object_get_path (NM_OBJECT (active)));
+		g_object_unref (active);
 		quit ();
 	} else if (   state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
 	           || state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		g_object_unref (active);
 		quit ();
 	} else if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
 		/* activating master connection does not automatically activate any slaves, so their
@@ -1726,6 +1728,7 @@ vpn_connection_state_cb (NMVpnConnection *vpn,
 			nmc_terminal_erase_line ();
 		printf (_("VPN connection successfully activated (D-Bus active path: %s)\n"),
 		        nm_object_get_path (NM_OBJECT (vpn)));
+		g_object_unref (vpn);
 		quit ();
 		break;
 
@@ -1734,6 +1737,7 @@ vpn_connection_state_cb (NMVpnConnection *vpn,
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s."),
 		                 vpn_connection_state_reason_to_string (reason));
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		g_object_unref (vpn);
 		quit ();
 		break;
 
@@ -1796,16 +1800,21 @@ typedef struct {
 } ActivateConnectionInfo;
 
 static void
-activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *error, gpointer user_data)
+activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 {
 	ActivateConnectionInfo *info = (ActivateConnectionInfo *) user_data;
 	NmCli *nmc = info->nmc;
 	NMDevice *device = info->device;
+	NMActiveConnection *active;
 	NMActiveConnectionState state;
 	const GPtrArray *ac_devs;
+	GError *error = NULL;
+
+	active = nm_client_activate_connection_finish (NM_CLIENT (client), result, &error);
 
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed: %s"), error->message);
+		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 		quit ();
 	} else {
@@ -1824,6 +1833,7 @@ activate_connection_cb (NMClient *client, NMActiveConnection *active, GError *er
 				printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
 				        nm_object_get_path (NM_OBJECT (active)));
 			}
+			g_object_unref (active);
 			quit ();
 		} else {
 			if (NM_IS_VPN_CONNECTION (active)) {
@@ -1860,7 +1870,7 @@ nmc_activate_connection (NmCli *nmc,
                          const char *ifname,
                          const char *ap,
                          const char *nsp,
-                         NMClientActivateFn callback,
+                         GAsyncReadyCallback callback,
                          GError **error)
 {
 	ActivateConnectionInfo *info;
@@ -1899,12 +1909,13 @@ nmc_activate_connection (NmCli *nmc,
 	info->nmc = nmc;
 	info->device = device;
 
-	nm_client_activate_connection (nmc->client,
-	                               connection,
-	                               device,
-	                               spec_object,
-	                               callback,
-	                               info);
+	nm_client_activate_connection_async (nmc->client,
+	                                     connection,
+	                                     device,
+	                                     spec_object,
+	                                     NULL,
+	                                     callback,
+	                                     info);
 	return TRUE;
 }
 
@@ -2061,7 +2072,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 
 		active = find_active_connection (active_cons, nmc->system_connections, selector, *arg_ptr, &idx);
 		if (active) {
-			nm_client_deactivate_connection (nmc->client, active);
+			nm_client_deactivate_connection (nmc->client, active, NULL, NULL);
 		} else {
 			g_string_printf (nmc->return_text, _("Error: '%s' is not an active connection."), *arg_ptr);
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
@@ -4865,23 +4876,28 @@ typedef struct {
 } AddConnectionInfo;
 
 static void
-add_connection_cb (NMRemoteSettings *settings,
-                   NMRemoteConnection *connection,
-                   GError *error,
+add_connection_cb (GObject *settings,
+                   GAsyncResult *result,
                    gpointer user_data)
 {
 	AddConnectionInfo *info = (AddConnectionInfo *) user_data;
 	NmCli *nmc = info->nmc;
+	NMRemoteConnection *connection;
+	GError *error = NULL;
 
+	connection = nm_remote_settings_add_connection_finish (NM_REMOTE_SETTINGS (settings),
+	                                                       result, &error);
 	if (error) {
 		g_string_printf (nmc->return_text,
-		                 _("Error: Failed to add '%s' connection: (%d) %s"),
-		                 info->con_name, error->code, error->message);
+		                 _("Error: Failed to add '%s' connection: %s"),
+		                 info->con_name, error->message);
+		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 	} else {
 		printf (_("Connection '%s' (%s) successfully added.\n"),
 		        nm_connection_get_id (NM_CONNECTION (connection)),
 		        nm_connection_get_uuid (NM_CONNECTION (connection)));
+		g_object_unref (connection);
 	}
 
 	g_free (info->con_name);
@@ -4889,23 +4905,25 @@ add_connection_cb (NMRemoteSettings *settings,
 	quit ();
 }
 
-static gboolean
+static void
 add_new_connection (gboolean persistent,
                     NMRemoteSettings *settings,
                     NMConnection *connection,
-                    NMRemoteSettingsAddConnectionFunc callback,
+                    GAsyncReadyCallback callback,
                     gpointer user_data)
 {
-	return nm_remote_settings_add_connection (settings, connection, persistent, callback, user_data);
+	nm_remote_settings_add_connection_async (settings, connection, persistent,
+	                                         NULL, callback, user_data);
 }
 
 static void
 update_connection (gboolean persistent,
                    NMRemoteConnection *connection,
-                   NMRemoteConnectionResultFunc callback,
+                   GAsyncReadyCallback callback,
                    gpointer user_data)
 {
-	nm_remote_connection_commit_changes (connection, persistent, callback, user_data);
+	nm_remote_connection_commit_changes_async (connection, persistent,
+	                                           NULL, callback, user_data);
 }
 
 static char *
@@ -6298,20 +6316,32 @@ set_info_and_signal_editor_thread (GError *error, MonitorACInfo *monitor_ac_info
 }
 
 static void
-add_connection_editor_cb (NMRemoteSettings *settings,
-                          NMRemoteConnection *connection,
-                          GError *error,
+add_connection_editor_cb (GObject *settings,
+                          GAsyncResult *result,
                           gpointer user_data)
 {
+	NMRemoteConnection *connection;
+	GError *error = NULL;
+
+	connection = nm_remote_settings_add_connection_finish (NM_REMOTE_SETTINGS (settings),
+	                                                       result, &error);
 	set_info_and_signal_editor_thread (error, NULL);
+
+	g_clear_object (&connection);
+	g_clear_error (&error);
 }
 
 static void
-update_connection_editor_cb (NMRemoteConnection *connection,
-                             GError *error,
+update_connection_editor_cb (GObject *connection,
+                             GAsyncResult *result,
                              gpointer user_data)
 {
+	GError *error = NULL;
+
+	nm_remote_connection_commit_changes_finish (NM_REMOTE_CONNECTION (connection),
+	                                            result, &error);
 	set_info_and_signal_editor_thread (error, NULL);
+	g_clear_error (&error);
 }
 
 static gboolean
@@ -6355,15 +6385,18 @@ finish:
 }
 
 static void
-activate_connection_editor_cb (NMClient *client,
-                               NMActiveConnection *active,
-                               GError *error,
+activate_connection_editor_cb (GObject *client,
+                               GAsyncResult *result,
                                gpointer user_data)
 {
 	ActivateConnectionInfo *info = (ActivateConnectionInfo *) user_data;
 	NMDevice *device = info->device;
 	const GPtrArray *ac_devs;
 	MonitorACInfo *monitor_ac_info = NULL;
+	NMActiveConnection *active;
+	GError *error = NULL;
+
+	active = nm_client_activate_connection_finish (NM_CLIENT (client), result, &error);
 
 	if (!error) {
 		if (!device) {
@@ -6373,11 +6406,13 @@ activate_connection_editor_cb (NMClient *client,
 		if (device) {
 			monitor_ac_info = g_malloc0 (sizeof (AddConnectionInfo));
 			monitor_ac_info->device = g_object_ref (device);
-			monitor_ac_info->ac = active ? g_object_ref (active) : NULL;
+			monitor_ac_info->ac = active;
 			monitor_ac_info->monitor_id = g_timeout_add (120, progress_activation_editor_cb, monitor_ac_info);
-		}
+		} else
+			g_object_unref (active);
 	}
 	set_info_and_signal_editor_thread (error, monitor_ac_info);
+	g_clear_error (&error);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7888,17 +7923,20 @@ error:
 
 
 static void
-modify_connection_cb (NMRemoteConnection *connection,
-                      GError *error,
+modify_connection_cb (GObject *connection,
+                      GAsyncResult *result,
                       gpointer user_data)
 {
 	NmCli *nmc = (NmCli *) user_data;
+	GError *error = NULL;
 
-        if (error) {
+	if (!nm_remote_connection_commit_changes_finish (NM_REMOTE_CONNECTION (connection),
+	                                                 result, &error)) {
 		g_string_printf (nmc->return_text,
-		                 _("Error: Failed to modify connection '%s': (%d) %s"),
+		                 _("Error: Failed to modify connection '%s': %s"),
 		                 nm_connection_get_id (NM_CONNECTION (connection)),
-		                 error->code, error->message);
+		                 error->message);
+		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 	} else {
 		if (nmc->print_output == NMC_PRINT_PRETTY)
@@ -8100,12 +8138,14 @@ typedef struct {
 } DeleteStateInfo;
 
 static void
-delete_cb (NMRemoteConnection *con, GError *err, gpointer user_data)
+delete_cb (GObject *con, GAsyncResult *result, gpointer user_data)
 {
 	DeleteStateInfo *info = (DeleteStateInfo *) user_data;
+	GError *error = NULL;
 
-	if (err) {
-		g_string_printf (info->nmc->return_text, _("Error: Connection deletion failed: %s"), err->message);
+	if (!nm_remote_connection_delete_finish (NM_REMOTE_CONNECTION (con), result, &error)) {
+		g_string_printf (info->nmc->return_text, _("Error: Connection deletion failed: %s"), error->message);
+		g_error_free (error);
 		info->nmc->return_value = NMC_RESULT_ERROR_CON_DEL;
 	}
 
@@ -8189,7 +8229,8 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 		del_info->counter++;
 
 		/* Delete the connection */
-		nm_remote_connection_delete (NM_REMOTE_CONNECTION (connection), delete_cb, del_info);
+		nm_remote_connection_delete_async (NM_REMOTE_CONNECTION (connection),
+		                                   NULL, delete_cb, del_info);
 
 		/* Take next argument (if there's no other connection of the same name) */
 		if (!pos)
@@ -8225,7 +8266,7 @@ do_connection_reload (NmCli *nmc, int argc, char **argv)
 		return nmc->return_value;
 	}
 
-	if (!nm_remote_settings_reload_connections (nmc->system_settings, &error)) {
+	if (!nm_remote_settings_reload_connections (nmc->system_settings, NULL, &error)) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
 		if (error->code == NM_REMOTE_SETTINGS_ERROR_SERVICE_UNAVAILABLE)
 			nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
@@ -8264,7 +8305,7 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 		filenames[i] = argv[i];
 	filenames[i] = NULL;
 
-	nm_remote_settings_load_connections (nmc->system_settings, filenames, &failures, &error);
+	nm_remote_settings_load_connections (nmc->system_settings, filenames, &failures, NULL, &error);
 	g_free (filenames);
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);

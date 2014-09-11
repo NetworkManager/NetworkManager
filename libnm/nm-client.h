@@ -176,32 +176,32 @@ const GPtrArray *nm_client_get_devices    (NMClient *client);
 NMDevice *nm_client_get_device_by_path    (NMClient *client, const char *object_path);
 NMDevice *nm_client_get_device_by_iface   (NMClient *client, const char *iface);
 
-typedef void (*NMClientActivateFn) (NMClient *client,
-                                    NMActiveConnection *active_connection,
-                                    GError *error,
-                                    gpointer user_data);
+void                nm_client_activate_connection_async  (NMClient *client,
+                                                          NMConnection *connection,
+                                                          NMDevice *device,
+                                                          const char *specific_object,
+                                                          GCancellable *cancellable,
+                                                          GAsyncReadyCallback callback,
+                                                          gpointer user_data);
+NMActiveConnection *nm_client_activate_connection_finish (NMClient *client,
+                                                          GAsyncResult *result,
+                                                          GError **error);
 
-void nm_client_activate_connection (NMClient *client,
-                                    NMConnection *connection,
-                                    NMDevice *device,
-                                    const char *specific_object,
-                                    NMClientActivateFn callback,
-                                    gpointer user_data);
+void                nm_client_add_and_activate_connection_async  (NMClient *client,
+                                                                  NMConnection *partial,
+                                                                  NMDevice *device,
+                                                                  const char *specific_object,
+                                                                  GCancellable *cancellable,
+                                                                  GAsyncReadyCallback callback,
+                                                                  gpointer user_data);
+NMActiveConnection *nm_client_add_and_activate_connection_finish (NMClient *client,
+                                                                  GAsyncResult *result,
+                                                                  GError **error);
 
-typedef void (*NMClientAddActivateFn) (NMClient *client,
-                                       NMActiveConnection *connection,
-                                       const char *new_connection_path,
-                                       GError *error,
-                                       gpointer user_data);
-
-void nm_client_add_and_activate_connection (NMClient *client,
-                                            NMConnection *partial,
-                                            NMDevice *device,
-                                            const char *specific_object,
-                                            NMClientAddActivateFn callback,
-                                            gpointer user_data);
-
-void nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active);
+gboolean nm_client_deactivate_connection (NMClient *client,
+                                          NMActiveConnection *active,
+                                          GCancellable *cancellable,
+                                          GError **error);
 
 gboolean  nm_client_networking_get_enabled (NMClient *client);
 void      nm_client_networking_set_enabled (NMClient *client, gboolean enabled);

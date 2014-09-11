@@ -550,14 +550,17 @@ show_general_logging (NmCli *nmc)
 }
 
 static void
-save_hostname_cb (NMRemoteSettings *settings, GError *error, gpointer user_data)
+save_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NmCli *nmc = (NmCli *) user_data;
+	GError *error = NULL;
 
+	nm_remote_settings_save_hostname_finish (NM_REMOTE_SETTINGS (object), result, &error);
 	if (error) {
 		g_string_printf (nmc->return_text, _("Error: failed to set hostname: (%d) %s"),
 		                 error->code, error->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+		g_error_free (error);
 	}
 	quit ();
 }
@@ -627,7 +630,7 @@ do_general (NmCli *nmc, int argc, char **argv)
 					printf ("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
 
 				nmc->should_wait = TRUE;
-				nm_remote_settings_save_hostname (rem_settings, hostname, save_hostname_cb, nmc);
+				nm_remote_settings_save_hostname_async (rem_settings, hostname, NULL, save_hostname_cb, nmc);
 			}
 		}
 		else if (matches (*argv, "permissions") == 0) {

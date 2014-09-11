@@ -31,27 +31,33 @@
 #include <NetworkManager.h>
 
 static void
-added_cb (NMRemoteSettings *settings,
-          NMRemoteConnection *remote,
-          GError *error,
+added_cb (GObject *settings,
+          GAsyncResult *result,
           gpointer user_data)
 {
 	GMainLoop *loop = user_data;
+	NMRemoteConnection *remote;
+	GError *error;
 
 	/* NM responded to our request; either handle the resulting error or
 	 * print out the object path of the connection we just added.
 	 */
+	remote = nm_remote_settings_add_connection_finish (NM_REMOTE_SETTINGS (settings),
+	                                                   result, &error);
 
-	if (error)
+	if (error) {
 		g_print ("Error adding connection: %s", error->message);
-	else
+		g_error_free (error);
+	} else {
 		g_print ("Added: %s\n", nm_connection_get_path (NM_CONNECTION (remote)));
+		g_object_unref (remote);
+	}
 
 	/* Tell the mainloop we're done and we can quit now */
 	g_main_loop_quit (loop);
 }
 
-static gboolean
+static void
 add_connection (NMRemoteSettings *settings, GMainLoop *loop, const char *con_name)
 {
 	NMConnection *connection;
@@ -59,7 +65,6 @@ add_connection (NMRemoteSettings *settings, GMainLoop *loop, const char *con_nam
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
 	char *uuid;
-	gboolean success;
 
 	/* Create a new connection object */
 	connection = nm_simple_connection_new ();
@@ -89,12 +94,8 @@ add_connection (NMRemoteSettings *settings, GMainLoop *loop, const char *con_nam
 	/* Ask the settings service to add the new connection; we'll quit the
 	 * mainloop and exit when the callback is called.
 	 */
-	success = nm_remote_settings_add_connection (settings, connection, TRUE, added_cb, loop);
-	if (!success)
-		g_print ("Error adding connection\n");
-
+	nm_remote_settings_add_connection_async (settings, connection, TRUE, NULL, added_cb, loop);
 	g_object_unref (connection);
-	return success;
 }
 
 
@@ -121,11 +122,9 @@ main (int argc, char *argv[])
 	}
 
 	/* Ask the settings service to add the new connection */
-	if (add_connection (settings, loop, "__Test connection__")) {
-		/* Wait for the connection to be added */
-		g_main_loop_run (loop);
-	} else
-		g_print ("Error adding connection to NetworkManager\n");
+	add_connection (settings, loop, "__Test connection__");
+	/* Wait for the connection to be added */
+	g_main_loop_run (loop);
 
 	/* Clean up */
 	g_object_unref (settings);
