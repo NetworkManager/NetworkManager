@@ -41,7 +41,7 @@ typedef struct {
 
 GType nm_dhcp_dhcpcd_get_type (void);
 
-const char *nm_dhcp_dhcpcd_get_path (const char *try_first);
+const char *nm_dhcp_dhcpcd_get_path (void);
 
 #endif /* __NETWORKMANAGER_DHCP_DHCPCD_H__ */
 

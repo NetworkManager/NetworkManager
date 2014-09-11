@@ -285,23 +285,16 @@ dis_connection_cb (NMDBusManager *mgr,
 static GType
 get_client_type (const char *client, GError **error)
 {
-	const char *dhclient_path = NULL;
-	const char *dhcpcd_path = NULL;
+	gboolean use_dhclient, use_dhcpcd;
 
-	/* If a client was disabled at build-time, its *_PATH define will be
-	 * an empty string.
-	 */
-	/* coverity[array_null] */
-	if (DHCLIENT_PATH && strlen (DHCLIENT_PATH))
-		dhclient_path = nm_dhcp_dhclient_get_path (DHCLIENT_PATH);
-	/* coverity[array_null] */
-	if (DHCPCD_PATH && strlen (DHCPCD_PATH))
-		dhcpcd_path = nm_dhcp_dhcpcd_get_path (DHCPCD_PATH);
+	/* If a client was disabled at build-time, these will return FALSE */
+	use_dhclient = !!nm_dhcp_dhclient_get_path ();
+	use_dhcpcd = !!nm_dhcp_dhcpcd_get_path ();
 
 	if (!client) {
-		if (dhclient_path)
+		if (use_dhclient)
 			return NM_TYPE_DHCP_DHCLIENT;
-		else if (dhcpcd_path)
+		else if (use_dhcpcd)
 			return NM_TYPE_DHCP_DHCPCD;
 		else {
 			g_set_error_literal (error,
@@ -312,20 +305,20 @@ get_client_type (const char *client, GError **error)
 	}
 
 	if (!strcmp (client, "dhclient")) {
-		if (!dhclient_path) {
+		if (!use_dhclient) {
 			g_set_error_literal (error,
 			                     NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
-			                     _("'dhclient' could be found."));
+			                     _("'dhclient' could not be found or was disabled."));
 			return G_TYPE_INVALID;
 		}
 		return NM_TYPE_DHCP_DHCLIENT;
 	}
 
 	if (!strcmp (client, "dhcpcd")) {
-		if (!dhcpcd_path) {
+		if (!use_dhcpcd) {
 			g_set_error_literal (error,
 			                     NM_DHCP_MANAGER_ERROR, NM_DHCP_MANAGER_ERROR_BAD_CLIENT,
-			                     _("'dhcpcd' could be found."));
+			                     _("'dhcpcd' could not be found or was disabled."));
 			return G_TYPE_INVALID;
 		}
 		return NM_TYPE_DHCP_DHCPCD;

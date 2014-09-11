@@ -751,36 +751,6 @@ nm_cmd_line_add_int (NMCmdLine *cmd, int i)
 
 /*******************************************/
 
-static const char *pppd_binary_paths[] = {
-	PPPD_PATH,
-	"/usr/local/sbin/pppd",
-	"/usr/sbin/pppd",
-	"/sbin/pppd",
-	NULL
-};
-
-static const char *pppoe_binary_paths[] = {
-	PPPOE_PATH,
-	"/usr/local/sbin/pppoe",
-	"/usr/sbin/pppoe",
-	"/sbin/pppoe",
-	NULL
-};
-
-static inline const char *
-nm_find_binary (const char *paths[])
-{
-	const char **binary = paths;
-
-	while (*binary != NULL) {
-		if (**binary && g_file_test (*binary, G_FILE_TEST_EXISTS))
-			break;
-		binary++;
-	}
-
-	return *binary;
-}
-
 static void
 ppp_exit_code (guint pppd_exit_status, GPid pid)
 {
@@ -900,27 +870,21 @@ create_pppd_cmd_line (NMPPPManager *self,
                       GError **err)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
-	const char *pppd_binary, *pppoe_binary = NULL;
+	const char *pppd_binary = NULL, *pppoe_binary = NULL;
 	NMCmdLine *cmd;
 	gboolean ppp_debug;
 
 	g_return_val_if_fail (setting != NULL, NULL);
 
-	pppd_binary = nm_find_binary (pppd_binary_paths);
-	if (!pppd_binary) {
-		g_set_error (err, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR,
-		             "Could not find pppd binary.");
+	pppd_binary = nm_utils_find_helper ("pppd", NULL, err);
+	if (!pppd_binary)
 		return NULL;
-	}
 
 	if (   pppoe
 	    || (adsl && strcmp (nm_setting_adsl_get_protocol (adsl), NM_SETTING_ADSL_PROTOCOL_PPPOE))) {
-		pppoe_binary = nm_find_binary (pppoe_binary_paths);
-		if (!pppoe_binary) {
-			g_set_error (err, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR,
-			             "Could not find pppoe binary.");
+		pppoe_binary = nm_utils_find_helper ("pppoe", NULL, err);
+		if (!pppoe_binary)
 			return NULL;
-		}
 	}
 
 	/* Create pppd command line */

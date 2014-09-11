@@ -589,6 +589,56 @@ out:
 #undef LOG_NAME_FMT
 #undef LOG_NAME_ARGS
 
+/**
+ * nm_utils_find_helper:
+ * @progname: the helper program name, like "iptables"
+ * @try_first: a custom path to try first before searching
+ * @error: on failure, a "not found" error using @error_domain and @error_code
+ *
+ * Searches for the @progname in common system paths.
+ *
+ * Returns: the full path to the helper, if found, or %NULL if not found.
+ */
+const char *
+nm_utils_find_helper (const char *progname,
+                      const char *try_first,
+                      GError **error)
+{
+	static const char *paths[] = {
+		PREFIX "/sbin/",
+		PREFIX "/bin/",
+		"/sbin/",
+		"/usr/sbin/",
+		"/usr/local/sbin/",
+		"/usr/bin/",
+		"/usr/local/bin/",
+	};
+	guint i;
+	GString *tmp;
+	const char *ret;
+
+	if (error)
+		g_return_val_if_fail (*error == NULL, NULL);
+
+	if (try_first && try_first[0] && g_file_test (try_first, G_FILE_TEST_EXISTS))
+		return g_intern_string (try_first);
+
+	tmp = g_string_sized_new (50);
+	for (i = 0; i < G_N_ELEMENTS (paths); i++) {
+		g_string_append_printf (tmp, "%s%s", paths[i], progname);
+		if (g_file_test (tmp->str, G_FILE_TEST_EXISTS)) {
+			ret = g_intern_string (tmp->str);
+			g_string_free (tmp, TRUE);
+			return ret;
+		}
+		g_string_set_size (tmp, 0);
+	}
+	g_string_free (tmp, TRUE);
+
+	g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "Could not find %s binary", progname);
+	return NULL;
+}
+
 /******************************************************************************************/
 
 gboolean

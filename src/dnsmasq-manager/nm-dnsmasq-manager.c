@@ -169,27 +169,6 @@ nm_cmd_line_add_string (NMCmdLine *cmd, const char *str)
 
 /*******************************************/
 
-static inline const char *
-nm_find_dnsmasq (void)
-{
-	static const char *dnsmasq_binary_paths[] = {
-		DNSMASQ_PATH,
-		"/usr/local/sbin/dnsmasq",
-		"/usr/sbin/dnsmasq",
-		"/sbin/dnsmasq",
-		NULL
-	};
-	const char **dnsmasq_binary = dnsmasq_binary_paths;
-
-	while (*dnsmasq_binary != NULL) {
-		if (**dnsmasq_binary && g_file_test (*dnsmasq_binary, G_FILE_TEST_EXISTS))
-			break;
-		dnsmasq_binary++;
-	}
-
-	return *dnsmasq_binary;
-}
-
 static void
 dm_exit_code (guint dm_exit_status)
 {
@@ -250,7 +229,6 @@ create_dm_cmd_line (const char *iface,
                     const char *pidfile,
                     GError **error)
 {
-	const char *dm_binary;
 	NMCmdLine *cmd;
 	GString *s;
 	const NMPlatformIP4Address *tmp;
@@ -258,16 +236,11 @@ create_dm_cmd_line (const char *iface,
 	char last[INET_ADDRSTRLEN];
 	char localaddr[INET_ADDRSTRLEN];
 	char *error_desc = NULL;
+	const char *dm_binary;
 
-	dm_binary = nm_find_dnsmasq ();
-	if (!dm_binary) {
-		g_set_error_literal (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND,
-		                     "Could not find dnsmasq binary.");
+	dm_binary = nm_utils_find_helper ("dnsmasq", DNSMASQ_PATH, error);
+	if (!dm_binary)
 		return NULL;
-	}
-
-	/* Find the IP4 address to use */
-	tmp = nm_ip4_config_get_address (ip4_config, 0);
 
 	/* Create dnsmasq command line */
 	cmd = nm_cmd_line_new ();
@@ -298,6 +271,9 @@ create_dm_cmd_line (const char *iface,
 	 */
 	nm_cmd_line_add_string (cmd, "--strict-order");
 
+	/* Find the IP4 address to use */
+	tmp = nm_ip4_config_get_address (ip4_config, 0);
+
 	s = g_string_new ("--listen-address=");
 	nm_utils_inet4_ntop (tmp->address, localaddr);
 	g_string_append (s, localaddr);
@@ -311,7 +287,8 @@ create_dm_cmd_line (const char *iface,
 		                     error_desc);
 		nm_log_warn (LOGD_SHARING, "Failed to find DHCP address ranges: %s", error_desc);
 		g_free (error_desc);
-		goto error;
+		nm_cmd_line_destroy (cmd);
+		return NULL;
 	}
 
 	s = g_string_new ("--dhcp-range=");
@@ -332,10 +309,6 @@ create_dm_cmd_line (const char *iface,
 	g_string_free (s, TRUE);
 
 	return cmd;
-
-error:
-	nm_cmd_line_destroy (cmd);
-	return NULL;
 }
 
 static void

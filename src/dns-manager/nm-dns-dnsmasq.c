@@ -35,6 +35,7 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-dns-utils.h"
+#include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
 
@@ -49,26 +50,6 @@ typedef struct {
 } NMDnsDnsmasqPrivate;
 
 /*******************************************/
-
-static inline const char *
-find_dnsmasq (void)
-{
-	static const char *paths[] = {
-		DNSMASQ_PATH,
-		"/usr/local/sbin/dnsmasq",
-		"/usr/sbin/dnsmasq",
-		"/sbin/dnsmasq",
-		NULL
-	};
-	const char **binary = paths;
-
-	while (*binary != NULL) {
-		if (**binary && g_file_test (*binary, G_FILE_TEST_EXISTS))
-			return *binary;
-		binary++;
-	}
-	return NULL;
-}
 
 static gboolean
 add_ip4_config (GString *str, NMIP4Config *ip4, gboolean split)
@@ -225,6 +206,7 @@ update (NMDnsPlugin *plugin,
         const char *hostname)
 {
 	NMDnsDnsmasq *self = NM_DNS_DNSMASQ (plugin);
+	const char *dm_binary;
 	GString *conf;
 	GSList *iter;
 	const char *argv[15];
@@ -239,6 +221,12 @@ update (NMDnsPlugin *plugin,
 	 * servers instead of to dnsmasq.
 	 */
 	nm_dns_plugin_child_kill (plugin);
+
+	dm_binary = nm_utils_find_helper ("dnsmasq", DNSMASQ_PATH, NULL);
+	if (!dm_binary) {
+		nm_log_warn (LOGD_DNS, "Could not find dnsmasq binary");
+		return FALSE;
+	}
 
 	/* Build up the new dnsmasq config file */
 	conf = g_string_sized_new (150);
@@ -281,7 +269,7 @@ update (NMDnsPlugin *plugin,
 	nm_log_dbg (LOGD_DNS, "dnsmasq local caching DNS configuration:");
 	nm_log_dbg (LOGD_DNS, "%s", conf->str);
 
-	argv[idx++] = find_dnsmasq ();
+	argv[idx++] = dm_binary;
 	argv[idx++] = "--no-resolv";  /* Use only commandline */
 	argv[idx++] = "--keep-in-foreground";
 	argv[idx++] = "--no-hosts"; /* don't use /etc/hosts to resolve */

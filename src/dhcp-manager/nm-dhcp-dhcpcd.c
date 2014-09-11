@@ -37,38 +37,24 @@
 #include "nm-utils.h"
 #include "nm-logging.h"
 #include "nm-posix-signals.h"
+#include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMDhcpDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_CLIENT)
 
 #define NM_DHCP_DHCPCD_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcdPrivate))
 
 typedef struct {
-	const char *path;
 	char *pid_file;
 } NMDhcpDhcpcdPrivate;
 
 const char *
-nm_dhcp_dhcpcd_get_path (const char *try_first)
+nm_dhcp_dhcpcd_get_path (void)
 {
-	static const char *dhcpcd_paths[] = {
-		"/sbin/dhcpcd",
-		"/usr/sbin/dhcpcd",
-		"/usr/pkg/sbin/dhcpcd",
-		"/usr/local/sbin/dhcpcd",
-		NULL
-	};
-	const char **path = dhcpcd_paths;
+	const char *path = NULL;
 
-	if (strlen (try_first) && g_file_test (try_first, G_FILE_TEST_EXISTS))
-		return try_first;
-
-	while (*path != NULL) {
-		if (g_file_test (*path, G_FILE_TEST_EXISTS))
-			break;
-		path++;
-	}
-
-	return *path;
+	if (WITH_DHCPCD)
+		path = nm_utils_find_helper ("dhcpcd", DHCPCD_PATH, NULL);
+	return path;
 }
 
 static void
@@ -96,7 +82,7 @@ ip4_start (NMDhcpClient *client,
 	pid_t pid = -1;
 	GError *error = NULL;
 	char *pid_contents = NULL, *binary_name, *cmd_str;
-	const char *iface;
+	const char *iface, *dhcpcd_path = NULL;
 
 	g_return_val_if_fail (priv->pid_file == NULL, FALSE);
 
@@ -107,18 +93,19 @@ ip4_start (NMDhcpClient *client,
 	 */
 	priv->pid_file = g_strdup_printf (RUNDIR "/dhcpcd-%s.pid", iface);
 
-	if (!g_file_test (priv->path, G_FILE_TEST_EXISTS)) {
-		nm_log_warn (LOGD_DHCP4, "%s does not exist.", priv->path);
+	dhcpcd_path = nm_dhcp_dhcpcd_get_path ();
+	if (!dhcpcd_path) {
+		nm_log_warn (LOGD_DHCP4, "dhcpcd could not be found");
 		return FALSE;
 	}
 
 	/* Kill any existing dhcpcd from the pidfile */
-	binary_name = g_path_get_basename (priv->path);
+	binary_name = g_path_get_basename (dhcpcd_path);
 	nm_dhcp_client_stop_existing (priv->pid_file, binary_name);
 	g_free (binary_name);
 
 	argv = g_ptr_array_new ();
-	g_ptr_array_add (argv, (gpointer) priv->path);
+	g_ptr_array_add (argv, (gpointer) dhcpcd_path);
 
 	g_ptr_array_add (argv, (gpointer) "-B");	/* Don't background on lease (disable fork()) */
 
@@ -202,9 +189,6 @@ stop (NMDhcpClient *client, gboolean release, const GByteArray *duid)
 static void
 nm_dhcp_dhcpcd_init (NMDhcpDhcpcd *self)
 {
-	NMDhcpDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE (self);
-
-	priv->path = nm_dhcp_dhcpcd_get_path (DHCPCD_PATH);
 }
 
 static void

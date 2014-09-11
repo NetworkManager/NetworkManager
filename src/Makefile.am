@@ -40,6 +40,7 @@ AM_CPPFLAGS =				\
 	-I$(top_srcdir)/libnm-core	\
 	-I$(top_builddir)/libnm-core	\
 	-I$(top_srcdir)/callouts	\
+	-DPREFIX=\"$(prefix)\"          \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	-DNETWORKMANAGER_COMPILATION	\
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE
