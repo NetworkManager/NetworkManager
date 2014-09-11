@@ -209,6 +209,8 @@ typedef struct {
 	gboolean        (* component_added) (NMDevice *self, GObject *component);
 
 	gboolean        (* owns_iface) (NMDevice *self, const char *iface);
+
+	NMConnection *  (* new_default_connection) (NMDevice *self);
 } NMDeviceClass;
 
 
@@ -361,6 +363,8 @@ gboolean   nm_device_connection_is_available (NMDevice *device,
 gboolean nm_device_notify_component_added (NMDevice *device, GObject *component);
 
 gboolean nm_device_owns_iface (NMDevice *device, const char *iface);
+
+NMConnection *nm_device_new_default_connection (NMDevice *self);
 
 G_END_DECLS
 

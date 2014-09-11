@@ -51,18 +51,10 @@ G_BEGIN_DECLS
 #define NM_DEVICE_VXLAN_L2MISS       "l2miss"
 #define NM_DEVICE_VXLAN_L3MISS       "l3miss"
 
-typedef struct {
-	NMDeviceGeneric parent;
-} NMDeviceVxlan;
-
-typedef struct {
-	NMDeviceGenericClass parent;
-
-} NMDeviceVxlanClass;
+typedef NMDeviceGeneric NMDeviceVxlan;
+typedef NMDeviceGenericClass NMDeviceVxlanClass;
 
 GType nm_device_vxlan_get_type (void);
-
-NMDevice *nm_device_vxlan_new (NMPlatformLink *platform_device);
 
 G_END_DECLS
 

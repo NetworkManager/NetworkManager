@@ -27,6 +27,21 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
+static GSList *internal_types = NULL;
+
+void
+_nm_device_factory_internal_register_type (GType factory_type)
+{
+	g_return_if_fail (g_slist_find (internal_types, GUINT_TO_POINTER (factory_type)) == NULL);
+	internal_types = g_slist_prepend (internal_types, GUINT_TO_POINTER (factory_type));
+}
+
+const GSList *
+nm_device_factory_get_internal_factory_types (void)
+{
+	return internal_types;
+}
+
 gboolean
 nm_device_factory_emit_component_added (NMDeviceFactory *factory, GObject *component)
 {
@@ -91,6 +106,23 @@ nm_device_factory_get_type (void)
 	return device_factory_type;
 }
 
+NMDeviceType
+nm_device_factory_get_device_type (NMDeviceFactory *factory)
+{
+	g_return_val_if_fail (factory != NULL, NM_DEVICE_TYPE_UNKNOWN);
+
+	return NM_DEVICE_FACTORY_GET_INTERFACE (factory)->get_device_type (factory);
+}
+
+void
+nm_device_factory_start (NMDeviceFactory *factory)
+{
+	g_return_if_fail (factory != NULL);
+
+	if (NM_DEVICE_FACTORY_GET_INTERFACE (factory)->start)
+		NM_DEVICE_FACTORY_GET_INTERFACE (factory)->start (factory);
+}
+
 NMDevice *
 nm_device_factory_new_link (NMDeviceFactory *factory,
                             NMPlatformLink *plink,
@@ -107,6 +139,7 @@ nm_device_factory_new_link (NMDeviceFactory *factory,
 NMDevice *
 nm_device_factory_create_virtual_device_for_connection (NMDeviceFactory *factory,
                                                         NMConnection *connection,
+                                                        NMDevice *parent,
                                                         GError **error)
 {
 	NMDeviceFactory *interface;
@@ -117,7 +150,7 @@ nm_device_factory_create_virtual_device_for_connection (NMDeviceFactory *factory
 
 	interface = NM_DEVICE_FACTORY_GET_INTERFACE (factory);
 	if (interface->create_virtual_device_for_connection)
-		return interface->create_virtual_device_for_connection (factory, connection, error);
+		return interface->create_virtual_device_for_connection (factory, connection, parent, error);
 	return NULL;
 }
 

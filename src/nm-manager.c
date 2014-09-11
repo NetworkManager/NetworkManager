@@ -39,17 +39,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device.h"
-#include "nm-device-ethernet.h"
-#include "nm-device-infiniband.h"
-#include "nm-device-bond.h"
-#include "nm-device-bridge.h"
-#include "nm-device-vlan.h"
 #include "nm-device-generic.h"
-#include "nm-device-veth.h"
-#include "nm-device-tun.h"
-#include "nm-device-macvlan.h"
-#include "nm-device-vxlan.h"
-#include "nm-device-gre.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-vpn.h"
@@ -493,24 +483,6 @@ nm_manager_get_device_by_path (NMManager *manager, const char *path)
 		if (!strcmp (nm_device_get_path (NM_DEVICE (iter->data)), path))
 			return NM_DEVICE (iter->data);
 	}
-	return NULL;
-}
-
-NMDevice *
-nm_manager_get_device_by_master (NMManager *manager, const char *master, const char *driver)
-{
-	GSList *iter;
-
-	g_return_val_if_fail (master != NULL, NULL);
-
-	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-		NMDevice *device = NM_DEVICE (iter->data);
-
-		if (!strcmp (nm_device_get_iface (device), master) &&
-		    (!driver || !strcmp (nm_device_get_driver (device), driver)))
-			return device;
-	}
-
 	return NULL;
 }
 
@@ -1071,28 +1043,20 @@ system_create_virtual_device (NMManager *self, NMConnection *connection)
 
 	nm_owned = !nm_platform_link_exists (iface);
 
-	if (nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME)) {
-		device = nm_device_bond_new_for_connection (connection);
-	} else if (nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME)) {
-		device = nm_device_bridge_new_for_connection (connection);
-	} else if (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
-		device = nm_device_vlan_new_for_connection (connection, parent);
-	} else if (nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
-		device = nm_device_infiniband_new_partition (connection, parent);
-	} else {
-		for (iter = priv->factories; iter; iter = iter->next) {
-			device = nm_device_factory_create_virtual_device_for_connection (NM_DEVICE_FACTORY (iter->data), connection, &error);
-
-			if (device || error) {
-				if (device)
-					g_assert_no_error (error);
-				else {
-					nm_log_err (LOGD_DEVICE, "(%s) failed to create virtual device: %s",
-					            nm_connection_get_id (connection), error ? error->message : "(unknown error)");
-					g_clear_error (&error);
-				}
-				break;
+	for (iter = priv->factories; iter; iter = iter->next) {
+		device = nm_device_factory_create_virtual_device_for_connection (NM_DEVICE_FACTORY (iter->data),
+		                                                                 connection,
+		                                                                 parent,
+		                                                                 &error);
+		if (device || error) {
+			if (device)
+				g_assert_no_error (error);
+			else {
+				nm_log_err (LOGD_DEVICE, "(%s) failed to create virtual device: %s",
+				            nm_connection_get_id (connection), error ? error->message : "(unknown error)");
+				g_clear_error (&error);
 			}
+			break;
 		}
 	}
 
@@ -1864,20 +1828,7 @@ find_device_by_ip_iface (NMManager *self, const gchar *iface)
 	return NULL;
 }
 
-static NMDevice *
-find_device_by_ifindex (NMManager *self, guint32 ifindex)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *candidate = NM_DEVICE (iter->data);
-
-		if (ifindex == nm_device_get_ifindex (candidate))
-			return candidate;
-	}
-	return NULL;
-}
+/*******************************************************************/
 
 static void
 factory_device_added_cb (NMDeviceFactory *factory,
@@ -1904,7 +1855,6 @@ factory_component_added_cb (NMDeviceFactory *factory,
 
 #define PLUGIN_PREFIX "libnm-device-plugin-"
 #define PLUGIN_PATH_TAG "NMManager-plugin-path"
-#define PLUGIN_TYPEFUNC_TAG "typefunc"
 
 struct read_device_factory_paths_data {
 	char *path;
@@ -1995,26 +1945,76 @@ NEXT:
 	return result;
 }
 
+static gboolean
+_register_device_factory (NMManager *self,
+                          NMDeviceFactory *factory,
+                          gboolean duplicate_check,
+                          const char *path,
+                          GError **error)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDeviceType ftype;
+	GSList *iter;
+
+	if (duplicate_check) {
+		/* Make sure we don't double-register factories */
+		ftype = nm_device_factory_get_device_type (factory);
+		for (iter = priv->factories; iter; iter = iter->next) {
+			if (ftype == nm_device_factory_get_device_type (iter->data)) {
+				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INTERNAL,
+				             "multiple plugins for same type (using '%s' instead of '%s')",
+				             (char *) g_object_get_data (G_OBJECT (iter->data), PLUGIN_PATH_TAG),
+				             path);
+				return FALSE;
+			}
+		}
+	}
+
+	priv->factories = g_slist_append (priv->factories, factory);
+
+	g_signal_connect (factory,
+	                  NM_DEVICE_FACTORY_DEVICE_ADDED,
+	                  G_CALLBACK (factory_device_added_cb),
+	                  self);
+	g_signal_connect (factory,
+	                  NM_DEVICE_FACTORY_COMPONENT_ADDED,
+	                  G_CALLBACK (factory_component_added_cb),
+	                  self);
+	g_object_set_data_full (G_OBJECT (factory), PLUGIN_PATH_TAG,
+	                        g_strdup (path), g_free);
+	return TRUE;
+}
+
 static void
 load_device_factories (NMManager *self)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	char **path;
-	char **paths;
+	NMDeviceFactory *factory;
+	const GSList *iter;
+	GError *error = NULL;
+	char **path, **paths;
+
+	/* Register internal factories first */
+	for (iter = nm_device_factory_get_internal_factory_types (); iter; iter = iter->next) {
+		GType ftype = GPOINTER_TO_UINT (iter->data);
+
+		factory = (NMDeviceFactory *) g_object_new (ftype, NULL);
+		g_assert (factory);
+		if (_register_device_factory (self, factory, FALSE, "internal", &error)) {
+			nm_log_dbg (LOGD_HW, "Loaded device plugin: %s", g_type_name (ftype));
+		} else {
+			nm_log_warn (LOGD_HW, "Loading device plugin failed: %s", error->message);
+			g_object_unref (factory);
+			g_clear_error (&error);
+		}
+	}
 
 	paths = read_device_factory_paths ();
 	if (!paths)
 		return;
 
 	for (path = paths; *path; path++) {
-		GError *error = NULL;
 		GModule *plugin;
-		NMDeviceFactory *factory;
 		NMDeviceFactoryCreateFunc create_func;
-		NMDeviceFactoryDeviceTypeFunc type_func;
-		NMDeviceType dev_type;
-		const char *found = NULL;
-		GSList *iter;
 		const char *item;
 
 		item = strrchr (*path, '/');
@@ -2024,30 +2024,6 @@ load_device_factories (NMManager *self)
 
 		if (!plugin) {
 			nm_log_warn (LOGD_HW, "(%s): failed to load plugin: %s", item, g_module_error ());
-			continue;
-		}
-
-		if (!g_module_symbol (plugin, "nm_device_factory_get_device_type", (gpointer) &type_func)) {
-			nm_log_warn (LOGD_HW, "(%s): failed to find device factory type: %s", item, g_module_error ());
-			g_module_close (plugin);
-			continue;
-		}
-
-		/* Make sure we don't double-load plugins */
-		dev_type = type_func ();
-		for (iter = priv->factories; iter; iter = iter->next) {
-			NMDeviceFactoryDeviceTypeFunc loaded_type_func;
-
-			loaded_type_func = g_object_get_data (G_OBJECT (iter->data), PLUGIN_TYPEFUNC_TAG);
-			if (dev_type == loaded_type_func ()) {
-				found = g_object_get_data (G_OBJECT (iter->data), PLUGIN_PATH_TAG);
-				break;
-			}
-		}
-		if (found) {
-			nm_log_warn (LOGD_HW, "Found multiple device plugins for same type: use '%s' instead of '%s'",
-			             found, g_module_name (plugin));
-			g_module_close (plugin);
 			continue;
 		}
 
@@ -2067,27 +2043,20 @@ load_device_factories (NMManager *self)
 		}
 		g_clear_error (&error);
 
-		g_module_make_resident (plugin);
-		priv->factories = g_slist_prepend (priv->factories, factory);
-
-		g_signal_connect (factory,
-		                  NM_DEVICE_FACTORY_DEVICE_ADDED,
-		                  G_CALLBACK (factory_device_added_cb),
-		                  self);
-		g_signal_connect (factory,
-		                  NM_DEVICE_FACTORY_COMPONENT_ADDED,
-		                  G_CALLBACK (factory_component_added_cb),
-		                  self);
-		g_object_set_data_full (G_OBJECT (factory), PLUGIN_PATH_TAG,
-		                        g_strdup (g_module_name (plugin)), g_free);
-		g_object_set_data (G_OBJECT (factory), PLUGIN_TYPEFUNC_TAG, type_func);
-
-		nm_log_info (LOGD_HW, "Loaded device plugin: %s", g_module_name (plugin));
-	};
+		if (_register_device_factory (self, factory, TRUE, g_module_name (plugin), &error)) {
+			nm_log_info (LOGD_HW, "Loaded device plugin: %s", g_module_name (plugin));
+			g_module_make_resident (plugin);
+		} else {
+			nm_log_warn (LOGD_HW, "Loading device plugin failed: %s", error->message);
+			g_object_unref (factory);
+			g_module_close (plugin);
+			g_clear_error (&error);
+		}
+	}
 	g_strfreev (paths);
-
-	priv->factories = g_slist_reverse (priv->factories);
 }
+
+/*******************************************************************/
 
 static void
 platform_link_added (NMManager *self,
@@ -2105,7 +2074,7 @@ platform_link_added (NMManager *self,
 	if (priv->ignore_link_added_cb > 0)
 		return;
 
-	if (find_device_by_ifindex (self, ifindex))
+	if (nm_manager_get_device_by_ifindex (self, ifindex))
 		return;
 
 	/* Try registered device factories */
@@ -2135,57 +2104,7 @@ platform_link_added (NMManager *self,
 		return;
 
 	if (device == NULL) {
-		int parent_ifindex = -1;
-		NMDevice *parent;
-
 		switch (plink->type) {
-		case NM_LINK_TYPE_ETHERNET:
-			device = nm_device_ethernet_new (plink);
-			break;
-		case NM_LINK_TYPE_INFINIBAND:
-			device = nm_device_infiniband_new (plink);
-			break;
-		case NM_LINK_TYPE_BOND:
-			device = nm_device_bond_new (plink);
-			break;
-		case NM_LINK_TYPE_BRIDGE:
-			device = nm_device_bridge_new (plink);
-			break;
-		case NM_LINK_TYPE_VLAN:
-			/* Have to find the parent device */
-			if (nm_platform_vlan_get_info (ifindex, &parent_ifindex, NULL)) {
-				parent = find_device_by_ifindex (self, parent_ifindex);
-				if (parent)
-					device = nm_device_vlan_new (plink, parent);
-				else {
-					/* If udev signaled the VLAN interface before it signaled
-					 * the VLAN's parent at startup we may not know about the
-					 * parent device yet.  But we'll find it on the second pass
-					 * from nm_manager_start().
-					 */
-					nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", plink->name);
-				}
-			} else
-				nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", plink->name);
-			break;
-		case NM_LINK_TYPE_VETH:
-			device = nm_device_veth_new (plink);
-			break;
-		case NM_LINK_TYPE_TUN:
-		case NM_LINK_TYPE_TAP:
-			device = nm_device_tun_new (plink);
-			break;
-		case NM_LINK_TYPE_MACVLAN:
-		case NM_LINK_TYPE_MACVTAP:
-			device = nm_device_macvlan_new (plink);
-			break;
-		case NM_LINK_TYPE_VXLAN:
-			device = nm_device_vxlan_new (plink);
-			break;
-		case NM_LINK_TYPE_GRE:
-		case NM_LINK_TYPE_GRETAP:
-			device = nm_device_gre_new (plink);
-			break;
 
 		case NM_LINK_TYPE_WWAN_ETHERNET:
 			/* WWAN pseudo-ethernet interfaces are handled automatically by
@@ -2228,7 +2147,7 @@ platform_link_cb (NMPlatform *platform,
 		NMManager *self = NM_MANAGER (user_data);
 		NMDevice *device;
 
-		device = find_device_by_ifindex (self, ifindex);
+		device = nm_manager_get_device_by_ifindex (self, ifindex);
 		if (device)
 			remove_device (self, device, FALSE);
 		break;
@@ -4175,6 +4094,7 @@ void
 nm_manager_start (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
 	guint i;
 
 	/* Set initial radio enabled/disabled state */
@@ -4204,6 +4124,10 @@ nm_manager_start (NMManager *self)
 
 	system_unmanaged_devices_changed_cb (priv->settings, NULL, self);
 	system_hostname_changed_cb (priv->settings, NULL, self);
+
+	/* Start device factories */
+	for (iter = priv->factories; iter; iter = iter->next)
+		nm_device_factory_start (iter->data);
 
 	nm_platform_query_devices ();
 

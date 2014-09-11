@@ -45,18 +45,10 @@ G_BEGIN_DECLS
 #define NM_DEVICE_GRE_TOS                "tos"
 #define NM_DEVICE_GRE_PATH_MTU_DISCOVERY "path-mtu-discovery"
 
-typedef struct {
-	NMDeviceGeneric parent;
-} NMDeviceGre;
-
-typedef struct {
-	NMDeviceGenericClass parent;
-
-} NMDeviceGreClass;
+typedef NMDeviceGeneric NMDeviceGre;
+typedef NMDeviceGenericClass NMDeviceGreClass;
 
 GType nm_device_gre_get_type (void);
-
-NMDevice *nm_device_gre_new (NMPlatformLink *platform_device);
 
 G_END_DECLS
 

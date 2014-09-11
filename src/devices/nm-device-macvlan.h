@@ -38,18 +38,10 @@ G_BEGIN_DECLS
 #define NM_DEVICE_MACVLAN_MODE       "mode"
 #define NM_DEVICE_MACVLAN_NO_PROMISC "no-promisc"
 
-typedef struct {
-	NMDeviceGeneric parent;
-} NMDeviceMacvlan;
-
-typedef struct {
-	NMDeviceGenericClass parent;
-
-} NMDeviceMacvlanClass;
+typedef NMDeviceGeneric NMDeviceMacvlan;
+typedef NMDeviceGenericClass NMDeviceMacvlanClass;
 
 GType nm_device_macvlan_get_type (void);
-
-NMDevice *nm_device_macvlan_new (NMPlatformLink *platform_device);
 
 G_END_DECLS
 

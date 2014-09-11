@@ -28,6 +28,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-logging.h"
 #include "nm-platform.h"
+#include "nm-device-factory.h"
 
 #include "nm-device-tun-glue.h"
 
@@ -109,27 +110,6 @@ delay_tun_get_properties_cb (gpointer user_data)
 }
 
 /**************************************************************/
-
-NMDevice *
-nm_device_tun_new (NMPlatformLink *platform_device)
-{
-	const char *mode = NULL;
-
-	g_return_val_if_fail (platform_device != NULL, NULL);
-
-	if (platform_device->type == NM_LINK_TYPE_TUN)
-		mode = "tun";
-	else if (platform_device->type == NM_LINK_TYPE_TAP)
-		mode = "tap";
-	g_return_val_if_fail (mode != NULL, NULL);
-
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_TUN,
-	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
-	                                  NM_DEVICE_TYPE_DESC, "Tun",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
-	                                  NM_DEVICE_TUN_MODE, mode,
-	                                  NULL);
-}
 
 static void
 nm_device_tun_init (NMDeviceTun *self)
@@ -282,3 +262,34 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_tun_object_info);
 }
+
+
+/*************************************************************/
+
+#define NM_TYPE_TUN_FACTORY (nm_tun_factory_get_type ())
+#define NM_TUN_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_TUN_FACTORY, NMTunFactory))
+
+static NMDevice *
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+{
+	const char *mode = NULL;
+
+	if (plink->type == NM_LINK_TYPE_TUN)
+		mode = "tun";
+	else if (plink->type == NM_LINK_TYPE_TAP)
+		mode = "tap";
+	else
+		return NULL;
+
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_TUN,
+	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+	                                  NM_DEVICE_TYPE_DESC, "Tun",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
+	                                  NM_DEVICE_TUN_MODE, mode,
+	                                  NULL);
+}
+
+DEFINE_DEVICE_FACTORY_INTERNAL_WITH_DEVTYPE(TUN, Tun, tun, GENERIC, \
+	factory_iface->new_link = new_link; \
+	)
+

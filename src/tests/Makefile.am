@@ -6,6 +6,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/libnm-core \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/dhcp-manager \
+	-I$(top_srcdir)/src/devices \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
@@ -20,7 +21,8 @@ noinst_PROGRAMS = \
 	test-ip4-config \
 	test-ip6-config \
 	test-dcb \
-	test-resolvconf-capture
+	test-resolvconf-capture \
+	test-wired-defname
 
 ####### ip4 config test #######
 
@@ -70,11 +72,42 @@ test_general_with_expect_SOURCES = \
 test_general_with_expect_LDADD = \
 	$(top_builddir)/src/libNetworkManager.la
 
+####### wired defname test #######
+
+test_wired_defname_SOURCES = \
+	test-wired-defname.c
+
+test_wired_defname_LDADD = \
+	$(top_builddir)/src/libNetworkManager.la
+
 ####### secret agent interface test #######
 
 EXTRA_DIST = test-secret-agent.py
 
 ###########################################
 
-TESTS = test-ip4-config test-ip6-config test-dcb test-resolvconf-capture test-general test-general-with-expect
+TESTS = \
+	test-ip4-config \
+	test-ip6-config \
+	test-dcb \
+	test-resolvconf-capture \
+	test-general \
+	test-general-with-expect \
+	test-wired-defname
+
+
+if ENABLE_TESTS
+
+check-local:
+	@for t in bond bridge ethernet gre infiniband macvlan tun veth vlan vxlan; do \
+		# Ensure the device subclass factory registration constructors exist \
+		# which could inadvertently break if src/Makefile.am gets changed \
+		if ! LC_ALL=C nm $(top_builddir)/src/NetworkManager | LC_ALL=C grep -q "register_device_factory_internal_$$t" ; then \
+			echo "Testing device factory symbols... FAILED" ; \
+			exit 1 ; \
+		fi \
+	done
+	@echo -n "Testing device factory symbols... PASSED"
+
+endif
 

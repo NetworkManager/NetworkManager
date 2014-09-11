@@ -28,6 +28,7 @@
 #include "nm-logging.h"
 #include "nm-manager.h"
 #include "nm-platform.h"
+#include "nm-device-factory.h"
 
 #include "nm-device-gre-glue.h"
 
@@ -109,18 +110,6 @@ link_changed (NMDevice *device, NMPlatformLink *info)
 }
 
 /**************************************************************/
-
-NMDevice *
-nm_device_gre_new (NMPlatformLink *platform_device)
-{
-	g_return_val_if_fail (platform_device != NULL, NULL);
-
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_GRE,
-	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
-	                                  NM_DEVICE_TYPE_DESC, "Gre",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
-	                                  NULL);
-}
 
 static void
 nm_device_gre_init (NMDeviceGre *self)
@@ -269,3 +258,26 @@ nm_device_gre_class_init (NMDeviceGreClass *klass)
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_gre_object_info);
 }
+
+/*************************************************************/
+
+#define NM_TYPE_GRE_FACTORY (nm_gre_factory_get_type ())
+#define NM_GRE_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_GRE_FACTORY, NMGreFactory))
+
+static NMDevice *
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+{
+	if (plink->type == NM_LINK_TYPE_GRE || plink->type == NM_LINK_TYPE_GRETAP) {
+		return (NMDevice *) g_object_new (NM_TYPE_DEVICE_GRE,
+		                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+		                                  NM_DEVICE_TYPE_DESC, "Gre",
+		                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_GENERIC,
+		                                  NULL);
+	}
+	return NULL;
+}
+
+DEFINE_DEVICE_FACTORY_INTERNAL_WITH_DEVTYPE(GRE, Gre, gre, ETHERNET, \
+	factory_iface->new_link = new_link; \
+	)
+

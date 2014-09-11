@@ -16,11 +16,11 @@
  * (C) Copyright 2011 Red Hat, Inc.
  */
 
-#ifndef __NETWORKMANAGER_SETTINGS_UTILS_H__
-#define __NETWORKMANAGER_SETTINGS_UTILS_H__
+#ifndef __NETWORKMANAGER_DEVICE_ETHERNET_UTILS_H__
+#define __NETWORKMANAGER_DEVICE_ETHERNET_UTILS_H__
 
 #include <glib.h>
 
-char *nm_settings_utils_get_default_wired_name (GHashTable *connections);
+char *nm_device_ethernet_utils_get_default_wired_name (const GSList *connections);
 
-#endif  /* NM_SETTINGS_UTILS_H */
+#endif  /* NETWORKMANAGER_DEVICE_ETHERNET_UTILS_H */

@@ -36,6 +36,7 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
+#include "nm-device-factory.h"
 
 #include "nm-device-bond-glue.h"
 
@@ -454,47 +455,6 @@ release_slave (NMDevice *device,
 
 /******************************************************************/
 
-NMDevice *
-nm_device_bond_new (NMPlatformLink *platform_device)
-{
-	g_return_val_if_fail (platform_device != NULL, NULL);
-
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BOND,
-	                                  NM_DEVICE_PLATFORM_DEVICE, platform_device,
-	                                  NM_DEVICE_DRIVER, "bonding",
-	                                  NM_DEVICE_TYPE_DESC, "Bond",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BOND,
-	                                  NM_DEVICE_IS_MASTER, TRUE,
-	                                  NULL);
-}
-
-NMDevice *
-nm_device_bond_new_for_connection (NMConnection *connection)
-{
-	const char *iface;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-
-	iface = nm_connection_get_interface_name (connection);
-	g_return_val_if_fail (iface != NULL, NULL);
-
-	if (   !nm_platform_bond_add (iface)
-	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
-		nm_log_warn (LOGD_DEVICE | LOGD_BOND, "(%s): failed to create bonding master interface for '%s': %s",
-		             iface, nm_connection_get_id (connection),
-		             nm_platform_get_error_msg ());
-		return NULL;
-	}
-
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BOND,
-	                                  NM_DEVICE_IFACE, iface,
-	                                  NM_DEVICE_DRIVER, "bonding",
-	                                  NM_DEVICE_TYPE_DESC, "Bond",
-	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BOND,
-	                                  NM_DEVICE_IS_MASTER, TRUE,
-	                                  NULL);
-}
-
 static void
 nm_device_bond_init (NMDeviceBond * self)
 {
@@ -575,3 +535,60 @@ nm_device_bond_class_init (NMDeviceBondClass *klass)
 
 	dbus_g_error_domain_register (NM_BOND_ERROR, NULL, NM_TYPE_BOND_ERROR);
 }
+
+/*************************************************************/
+
+#define NM_TYPE_BOND_FACTORY (nm_bond_factory_get_type ())
+#define NM_BOND_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_BOND_FACTORY, NMBondFactory))
+
+static NMDevice *
+new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
+{
+	if (plink->type == NM_LINK_TYPE_BOND) {
+		return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BOND,
+		                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+		                                  NM_DEVICE_DRIVER, "bonding",
+		                                  NM_DEVICE_TYPE_DESC, "Bond",
+		                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BOND,
+		                                  NM_DEVICE_IS_MASTER, TRUE,
+		                                  NULL);
+	}
+	return NULL;
+}
+
+static NMDevice *
+create_virtual_device_for_connection (NMDeviceFactory *factory,
+                                      NMConnection *connection,
+                                      NMDevice *parent,
+                                      GError **error)
+{
+	const char *iface;
+
+	if (!nm_connection_is_type (connection, NM_SETTING_BOND_SETTING_NAME))
+		return NULL;
+
+	iface = nm_connection_get_interface_name (connection);
+	g_return_val_if_fail (iface != NULL, NULL);
+
+	if (   !nm_platform_bond_add (iface)
+		&& nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
+		nm_log_warn (LOGD_DEVICE | LOGD_BOND, "(%s): failed to create bonding master interface for '%s': %s",
+			         iface, nm_connection_get_id (connection),
+			         nm_platform_get_error_msg ());
+		return NULL;
+	}
+
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BOND,
+		                              NM_DEVICE_IFACE, iface,
+		                              NM_DEVICE_DRIVER, "bonding",
+		                              NM_DEVICE_TYPE_DESC, "Bond",
+		                              NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BOND,
+		                              NM_DEVICE_IS_MASTER, TRUE,
+		                              NULL);
+}
+
+DEFINE_DEVICE_FACTORY_INTERNAL(BOND, Bond, bond,
+	factory_iface->new_link = new_link;
+	factory_iface->create_virtual_device_for_connection = create_virtual_device_for_connection;
+	)
+

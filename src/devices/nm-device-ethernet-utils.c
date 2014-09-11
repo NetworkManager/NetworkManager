@@ -21,26 +21,14 @@
 #include <glib/gi18n.h>
 
 #include <nm-connection.h>
-#include "nm-settings-utils.h"
+#include "nm-device-ethernet-utils.h"
 
 char *
-nm_settings_utils_get_default_wired_name (GHashTable *connections)
+nm_device_ethernet_utils_get_default_wired_name (const GSList *connections)
 {
-	GHashTableIter iter;
-	NMConnection *connection = NULL;
-	GSList *names = NULL, *niter;
+	const GSList *iter;
 	char *cname = NULL;
 	int i = 0;
-
-	/* Build up a list of all existing connection names for dupe checking */
-	g_hash_table_iter_init (&iter, connections);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &connection)) {
-		const char *id;
-
-		id = nm_connection_get_id (connection);
-		g_assert (id);
-		names = g_slist_append (names, (gpointer) id);
-	}
 
 	/* Find the next available unique connection name */
 	while (!cname && (i++ < 10000)) {
@@ -48,8 +36,8 @@ nm_settings_utils_get_default_wired_name (GHashTable *connections)
 		gboolean found = FALSE;
 
 		temp = g_strdup_printf (_("Wired connection %d"), i);
-		for (niter = names; niter; niter = g_slist_next (niter)) {
-			if (g_strcmp0 (niter->data, temp) == 0) {
+		for (iter = connections; iter; iter = iter->next) {
+			if (g_strcmp0 (nm_connection_get_id (NM_CONNECTION (iter->data)), temp) == 0) {
 				found = TRUE;
 				g_free (temp);
 				break;
@@ -59,7 +47,6 @@ nm_settings_utils_get_default_wired_name (GHashTable *connections)
 		if (found == FALSE)
 			cname = temp;
 	}
-	g_slist_free (names);
 
 	return cname;
 }

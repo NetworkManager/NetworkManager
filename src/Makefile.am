@@ -30,7 +30,6 @@ SUBDIRS += \
 	dnsmasq-manager/tests \
 	platform \
 	rdisc \
-	settings/tests \
 	supplicant-manager/tests \
 	tests
 endif
@@ -56,41 +55,50 @@ AM_CPPFLAGS += $(foreach d,$(sort $(dir $(libNetworkManager_la_SOURCES))),-I$(to
 sbin_PROGRAMS = NetworkManager
 
 NetworkManager_SOURCES = \
+	$(nm_device_sources) $(nm_device_headers) \
 	main.c
 
 NetworkManager_LDADD = libNetworkManager.la
 
 noinst_LTLIBRARIES = libNetworkManager.la
 
+nm_device_sources = \
+	devices/nm-device-bond.c \
+	devices/nm-device-bridge.c \
+	devices/nm-device-ethernet.c \
+	devices/nm-device-gre.c \
+	devices/nm-device-infiniband.c \
+	devices/nm-device-macvlan.c \
+	devices/nm-device-tun.c \
+	devices/nm-device-veth.c \
+	devices/nm-device-vlan.c \
+	devices/nm-device-vxlan.c \
+	$(NULL)
+
+nm_device_headers = \
+	devices/nm-device-bond.h \
+	devices/nm-device-bridge.h \
+	devices/nm-device-ethernet.h \
+	devices/nm-device-gre.h \
+	devices/nm-device-infiniband.h \
+	devices/nm-device-macvlan.h \
+	devices/nm-device-tun.h \
+	devices/nm-device-veth.h \
+	devices/nm-device-vlan.h \
+	devices/nm-device-vxlan.h
+
 nm_sources = \
+	$(nm_device_headers) \
 	devices/nm-device.c \
 	devices/nm-device.h \
-	devices/nm-device-bond.c \
-	devices/nm-device-bond.h \
-	devices/nm-device-bridge.c \
-	devices/nm-device-bridge.h \
-	devices/nm-device-ethernet.c \
-	devices/nm-device-ethernet.h \
+	devices/nm-device-ethernet-utils.c \
+	devices/nm-device-ethernet-utils.h \
 	devices/nm-device-factory.c \
 	devices/nm-device-factory.h \
 	devices/nm-device-generic.c \
 	devices/nm-device-generic.h \
-	devices/nm-device-gre.c \
-	devices/nm-device-gre.h \
-	devices/nm-device-infiniband.c \
-	devices/nm-device-infiniband.h \
 	devices/nm-device-logging.h \
-	devices/nm-device-macvlan.c \
-	devices/nm-device-macvlan.h \
 	devices/nm-device-private.h \
-	devices/nm-device-tun.c \
-	devices/nm-device-tun.h \
-	devices/nm-device-veth.c \
-	devices/nm-device-veth.h \
-	devices/nm-device-vlan.c \
-	devices/nm-device-vlan.h \
-	devices/nm-device-vxlan.c \
-	devices/nm-device-vxlan.h \
 	\
 	dhcp-manager/nm-dhcp-client.c \
 	dhcp-manager/nm-dhcp-client.h \
@@ -157,8 +165,6 @@ nm_sources = \
 	settings/nm-settings-connection.h \
 	settings/nm-settings-error.c \
 	settings/nm-settings-error.h \
-	settings/nm-settings-utils.c \
-	settings/nm-settings-utils.h \
 	settings/nm-settings.c \
 	settings/nm-settings.h \
 	settings/nm-system-config-interface.c \
