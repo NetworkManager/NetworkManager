@@ -66,6 +66,9 @@ static void impl_settings_connection_get_secrets (NMSettingsConnection *connecti
                                                   const gchar *setting_name,
                                                   DBusGMethodInvocation *context);
 
+static void impl_settings_connection_clear_secrets (NMSettingsConnection *connection,
+                                                    DBusGMethodInvocation *context);
+
 #include "nm-settings-connection-glue.h"
 
 static void nm_settings_connection_connection_interface_init (NMConnectionInterface *iface);
@@ -1577,11 +1580,11 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 }
 
 static void
-dbus_secrets_auth_cb (NMSettingsConnection *self, 
-                      DBusGMethodInvocation *context,
-                      NMAuthSubject *subject,
-                      GError *error,
-                      gpointer user_data)
+dbus_get_secrets_auth_cb (NMSettingsConnection *self, 
+                          DBusGMethodInvocation *context,
+                          NMAuthSubject *subject,
+                          GError *error,
+                          gpointer user_data)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	char *setting_name = user_data;
@@ -1625,8 +1628,69 @@ impl_settings_connection_get_secrets (NMSettingsConnection *self,
 		            context,
 		            subject,
 		            get_modify_permission_basic (self),
-		            dbus_secrets_auth_cb,
+		            dbus_get_secrets_auth_cb,
 		            g_strdup (setting_name));
+		g_object_unref (subject);
+	} else {
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	}
+}
+
+static void
+clear_secrets_cb (NMSettingsConnection *self,
+                  GError *error,
+                  gpointer user_data)
+{
+	DBusGMethodInvocation *context = (DBusGMethodInvocation *) user_data;
+
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else
+		dbus_g_method_return (context);
+}
+
+static void
+dbus_clear_secrets_auth_cb (NMSettingsConnection *self, 
+                            DBusGMethodInvocation *context,
+                            NMAuthSubject *subject,
+                            GError *error,
+                            gpointer user_data)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else {
+		/* Clear secrets in connection and caches */
+		nm_connection_clear_secrets (NM_CONNECTION (self));
+		if (priv->system_secrets)
+			nm_connection_clear_secrets (priv->system_secrets);
+		if (priv->agent_secrets)
+			nm_connection_clear_secrets (priv->agent_secrets);
+
+		/* Tell agents to remove secrets for this connection */
+		nm_agent_manager_delete_secrets (priv->agent_mgr, NM_CONNECTION (self));
+
+		nm_settings_connection_commit_changes (self, clear_secrets_cb, context);
+	}
+}
+
+static void
+impl_settings_connection_clear_secrets (NMSettingsConnection *self,
+                                        DBusGMethodInvocation *context)
+{
+	NMAuthSubject *subject;
+	GError *error = NULL;
+
+	subject = _new_auth_subject (context, &error);
+	if (subject) {
+		auth_start (self,
+		            context,
+		            subject,
+		            get_modify_permission_basic (self),
+		            dbus_clear_secrets_auth_cb,
+		            NULL);
 		g_object_unref (subject);
 	} else {
 		dbus_g_method_return_error (context, error);
