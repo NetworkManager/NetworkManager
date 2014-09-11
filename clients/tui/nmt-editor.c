@@ -133,7 +133,7 @@ save_connection_and_exit (NmtNewtButton *button,
 
 	nmt_sync_op_init (&op);
 	if (NM_IS_REMOTE_CONNECTION (priv->orig_connection)) {
-		nm_remote_connection_commit_changes (NM_REMOTE_CONNECTION (priv->orig_connection),
+		nm_remote_connection_commit_changes (NM_REMOTE_CONNECTION (priv->orig_connection), TRUE,
 		                                     connection_updated, &op);
 		if (!nmt_sync_op_wait_boolean (&op, &error)) {
 			nmt_newt_message_dialog (_("Unable to save connection: %s"),
@@ -147,7 +147,7 @@ save_connection_and_exit (NmtNewtButton *button,
 		 */
 		nm_connection_clear_secrets (priv->orig_connection);
 	} else {
-		nm_remote_settings_add_connection (nm_settings, priv->orig_connection,
+		nm_remote_settings_add_connection (nm_settings, priv->orig_connection, TRUE,
 		                                   connection_added, &op);
 		if (!nmt_sync_op_wait_boolean (&op, &error)) {
 			nmt_newt_message_dialog (_("Unable to add new connection: %s"),

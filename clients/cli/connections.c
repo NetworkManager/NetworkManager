@@ -4896,10 +4896,7 @@ add_new_connection (gboolean persistent,
                     NMRemoteSettingsAddConnectionFunc callback,
                     gpointer user_data)
 {
-	if (persistent)
-		return nm_remote_settings_add_connection (settings, connection, callback, user_data);
-	else
-		return nm_remote_settings_add_connection_unsaved (settings, connection, callback, user_data);
+	return nm_remote_settings_add_connection (settings, connection, persistent, callback, user_data);
 }
 
 static void
@@ -4908,10 +4905,7 @@ update_connection (gboolean persistent,
                    NMRemoteConnectionResultFunc callback,
                    gpointer user_data)
 {
-	if (persistent)
-		nm_remote_connection_commit_changes (connection, callback, user_data);
-	else
-		nm_remote_connection_commit_changes_unsaved (connection, callback, user_data);
+	nm_remote_connection_commit_changes (connection, persistent, callback, user_data);
 }
 
 static char *

@@ -105,12 +105,9 @@ typedef void (*NMRemoteConnectionGetSecretsFunc) (NMRemoteConnection *connection
 GType nm_remote_connection_get_type (void);
 
 void nm_remote_connection_commit_changes (NMRemoteConnection *connection,
+                                          gboolean save_to_disk,
                                           NMRemoteConnectionResultFunc callback,
                                           gpointer user_data);
-
-void nm_remote_connection_commit_changes_unsaved (NMRemoteConnection *connection,
-                                                  NMRemoteConnectionResultFunc callback,
-                                                  gpointer user_data);
 
 void nm_remote_connection_save (NMRemoteConnection *connection,
                                 NMRemoteConnectionResultFunc callback,

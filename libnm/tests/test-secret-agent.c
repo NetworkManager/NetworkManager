@@ -316,6 +316,7 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 
 	success = nm_remote_settings_add_connection (sadata->settings,
 	                                             connection,
+	                                             TRUE,
 	                                             connection_added_cb,
 	                                             sadata);
 	g_assert (success == TRUE);

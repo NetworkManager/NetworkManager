@@ -181,6 +181,7 @@ typedef struct {
 	NMRemoteSettingsAddConnectionFunc callback;
 	gpointer callback_data;
 	char *path;
+	gboolean saved;
 } AddConnectionInfo;
 
 static AddConnectionInfo *
@@ -430,14 +431,24 @@ add_connection_done (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	AddConnectionInfo *info = user_data;
 	GError *error = NULL;
 
-	if (nmdbus_settings_call_add_connection_finish (NMDBUS_SETTINGS (proxy),
-	                                                &info->path,
-	                                                result, &error)) {
-		/* Wait until this connection is fully initialized before calling the callback */
+	if (info->saved) {
+		nmdbus_settings_call_add_connection_finish (NMDBUS_SETTINGS (proxy),
+		                                            &info->path,
+		                                            result, &error);
 	} else {
+		nmdbus_settings_call_add_connection_unsaved_finish (NMDBUS_SETTINGS (proxy),
+		                                                    &info->path,
+		                                                    result, &error);
+	}
+
+	if (error) {
 		add_connection_info_complete (info->self, info, NULL, error);
 		g_clear_error (&error);
 	}
+
+	/* On success, we still have to wait until the connection is fully
+	 * initialized before calling the callback.
+	 */
 }
 
 /**
@@ -445,14 +456,20 @@ add_connection_done (GObject *proxy, GAsyncResult *result, gpointer user_data)
  * @settings: the %NMRemoteSettings
  * @connection: the connection to add. Note that this object's settings will be
  *   added, not the object itself
+ * @save_to_disk: whether to immediately save the connection to disk
  * @callback: (scope async): callback to be called when the add operation completes
  * @user_data: (closure): caller-specific data passed to @callback
  *
  * Requests that the remote settings service add the given settings to a new
- * connection.  The connection is immediately written to disk.  @connection is
- * untouched by this function and only serves as a template of the settings to
- * add.  The #NMRemoteConnection object that represents what NetworkManager
- * actually added is returned to @callback when the addition operation is complete.
+ * connection.  If @save_to_disk is %TRUE, the connection is immediately written
+ * to disk; otherwise it is initially only stored in memory, but may be saved
+ * later by calling the connection's nm_remote_connection_commit_changes()
+ * method.
+ *
+ * @connection is untouched by this function and only serves as a template of
+ * the settings to add.  The #NMRemoteConnection object that represents what
+ * NetworkManager actually added is returned to @callback when the addition
+ * operation is complete.
  *
  * Note that the #NMRemoteConnection returned in @callback may not contain
  * identical settings to @connection as NetworkManager may perform automatic
@@ -463,6 +480,7 @@ add_connection_done (GObject *proxy, GAsyncResult *result, gpointer user_data)
 gboolean
 nm_remote_settings_add_connection (NMRemoteSettings *settings,
                                    NMConnection *connection,
+                                   gboolean save_to_disk,
                                    NMRemoteSettingsAddConnectionFunc callback,
                                    gpointer user_data)
 {
@@ -483,67 +501,27 @@ nm_remote_settings_add_connection (NMRemoteSettings *settings,
 	info->self = settings;
 	info->callback = callback;
 	info->callback_data = user_data;
+	info->saved = save_to_disk;
 
 	new_settings = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-	nmdbus_settings_call_add_connection (priv->proxy,
-	                                     new_settings,
-	                                     NULL,
-	                                     add_connection_done, info);
+
+	if (save_to_disk) {
+		nmdbus_settings_call_add_connection (priv->proxy,
+		                                     new_settings,
+		                                     NULL,
+		                                     add_connection_done, info);
+	} else {
+		nmdbus_settings_call_add_connection_unsaved (priv->proxy,
+		                                             new_settings,
+		                                             NULL,
+		                                             add_connection_done, info);
+	}
 
 	priv->add_list = g_slist_append (priv->add_list, info);
 
 	return TRUE;
 }
 
-/**
- * nm_remote_settings_add_connection_unsaved:
- * @settings: the %NMRemoteSettings
- * @connection: the connection to add. Note that this object's settings will be
- *   added, not the object itself
- * @callback: (scope async): callback to be called when the add operation completes
- * @user_data: (closure): caller-specific data passed to @callback
- *
- * Requests that the remote settings service add the given settings to a new
- * connection.  The connection is not written to disk, which may be done at
- * a later time by calling the connection's nm_remote_connection_commit_changes()
- * method.
- *
- * Returns: %TRUE if the request was successful, %FALSE if it failed
- **/
-gboolean
-nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
-                                           NMConnection *connection,
-                                           NMRemoteSettingsAddConnectionFunc callback,
-                                           gpointer user_data)
-{
-	NMRemoteSettingsPrivate *priv;
-	AddConnectionInfo *info;
-	GVariant *new_settings;
-
-	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-	g_return_val_if_fail (callback != NULL, FALSE);
-
-	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	if (!_nm_object_get_nm_running (NM_OBJECT (settings)))
-		return FALSE;
-
-	info = g_malloc0 (sizeof (AddConnectionInfo));
-	info->self = settings;
-	info->callback = callback;
-	info->callback_data = user_data;
-
-	new_settings = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-	nmdbus_settings_call_add_connection_unsaved (priv->proxy,
-	                                             new_settings,
-	                                             NULL,
-	                                             add_connection_done, info);
-
-	priv->add_list = g_slist_append (priv->add_list, info);
-
-	return TRUE;
-}
 
 /**
  * nm_remote_settings_load_connections:

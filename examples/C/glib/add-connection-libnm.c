@@ -89,7 +89,7 @@ add_connection (NMRemoteSettings *settings, GMainLoop *loop, const char *con_nam
 	/* Ask the settings service to add the new connection; we'll quit the
 	 * mainloop and exit when the callback is called.
 	 */
-	success = nm_remote_settings_add_connection (settings, connection, added_cb, loop);
+	success = nm_remote_settings_add_connection (settings, connection, TRUE, added_cb, loop);
 	if (!success)
 		g_print ("Error adding connection\n");
 

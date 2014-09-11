@@ -63,6 +63,7 @@ test_add_connection (void)
 
 	success = nm_remote_settings_add_connection (settings,
 	                                             connection,
+	                                             TRUE,
 	                                             add_cb,
 	                                             &done);
 	g_assert (success == TRUE);
@@ -387,6 +388,7 @@ test_add_remove_connection (void)
 	connection = nmtst_create_minimal_connection (TEST_ADD_REMOVE_ID, NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
 	success = nm_remote_settings_add_connection (settings,
 	                                             connection,
+	                                             TRUE,
 	                                             add_remove_cb,
 	                                             &done);
 	g_assert (success == TRUE);

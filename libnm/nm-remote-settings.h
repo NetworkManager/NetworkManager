@@ -131,13 +131,9 @@ NMRemoteConnection *nm_remote_settings_get_connection_by_uuid (NMRemoteSettings 
 
 gboolean nm_remote_settings_add_connection (NMRemoteSettings *settings,
                                             NMConnection *connection,
+                                            gboolean save_to_disk,
                                             NMRemoteSettingsAddConnectionFunc callback,
                                             gpointer user_data);
-
-gboolean nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
-                                                    NMConnection *connection,
-                                                    NMRemoteSettingsAddConnectionFunc callback,
-                                                    gpointer user_data);
 
 gboolean nm_remote_settings_load_connections (NMRemoteSettings *settings,
                                               char **filenames,

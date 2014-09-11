@@ -63,6 +63,7 @@ struct RemoteCall {
 	RemoteCallFetchResultCb fetch_result_cb;
 	GFunc callback;
 	gpointer user_data;
+	gpointer call_data;
 };
 
 typedef struct {
@@ -131,9 +132,13 @@ update_result_cb (RemoteCall *call, GAsyncResult *result)
 {
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (call->self);
 	NMRemoteConnectionResultFunc func = (NMRemoteConnectionResultFunc) call->callback;
+	gboolean save_to_disk = GPOINTER_TO_INT (call->call_data);
 	GError *error = NULL;
 
-	nmdbus_settings_connection_call_update_finish (priv->proxy, result, &error);
+	if (save_to_disk)
+		nmdbus_settings_connection_call_update_finish (priv->proxy, result, &error);
+	else
+		nmdbus_settings_connection_call_update_unsaved_finish (priv->proxy, result, &error);
 	if (func)
 		(*func) (call->self, error, call->user_data);
 	g_clear_error (&error);
@@ -142,15 +147,21 @@ update_result_cb (RemoteCall *call, GAsyncResult *result)
 /**
  * nm_remote_connection_commit_changes:
  * @connection: the #NMRemoteConnection
+ * @save_to_disk: whether to persist the changes to disk
  * @callback: (scope async) (allow-none): a function to be called when the
  * commit completes
  * @user_data: (closure): caller-specific data to be passed to @callback
  *
  * Send any local changes to the settings and properties of this connection to
- * NetworkManager, which will immediately save them to disk.
+ * NetworkManager.
+ *
+ * If @save_to_disk is %TRUE, the changes will immediately be saved to disk.
+ * If %FALSE, then only the in-memory version is changed. (It can be saved to
+ * disk later with nm_remote_connection_save().)
  **/
 void
 nm_remote_connection_commit_changes (NMRemoteConnection *self,
+                                     gboolean save_to_disk,
                                      NMRemoteConnectionResultFunc callback,
                                      gpointer user_data)
 {
@@ -165,61 +176,21 @@ nm_remote_connection_commit_changes (NMRemoteConnection *self,
 	call = remote_call_new (self, update_result_cb, (GFunc) callback, user_data);
 	if (!call)
 		return;
+	call->call_data = GINT_TO_POINTER (save_to_disk);
 
 	settings = nm_connection_to_dbus (NM_CONNECTION (self), NM_CONNECTION_SERIALIZE_ALL);
-	nmdbus_settings_connection_call_update (priv->proxy,
-	                                        settings,
-	                                        NULL,
-	                                        remote_call_dbus_cb, call);
-}
 
-static void
-update_unsaved_result_cb (RemoteCall *call, GAsyncResult *result)
-{
-	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (call->self);
-	NMRemoteConnectionResultFunc func = (NMRemoteConnectionResultFunc) call->callback;
-	GError *error = NULL;
-
-	nmdbus_settings_connection_call_update_unsaved_finish (priv->proxy, result, &error);
-	if (func)
-		(*func) (call->self, error, call->user_data);
-	g_clear_error (&error);
-}
-
-/**
- * nm_remote_connection_commit_changes_unsaved:
- * @connection: the #NMRemoteConnection
- * @callback: (scope async) (allow-none): a function to be called when the
- * commit completes
- * @user_data: (closure): caller-specific data to be passed to @callback
- *
- * Send any local changes to the settings and properties of this connection to
- * NetworkManager.  The changes are not saved to disk until either
- * nm_remote_connection_save() or nm_remote_connection_commit_changes() is
- * called.
- **/
-void
-nm_remote_connection_commit_changes_unsaved (NMRemoteConnection *connection,
-                                             NMRemoteConnectionResultFunc callback,
-                                             gpointer user_data)
-{
-	NMRemoteConnectionPrivate *priv;
-	GVariant *settings;
-	RemoteCall *call;
-
-	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
-
-	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
-
-	call = remote_call_new (connection, update_unsaved_result_cb, (GFunc) callback, user_data);
-	if (!call)
-		return;
-
-	settings = nm_connection_to_dbus (NM_CONNECTION (connection), NM_CONNECTION_SERIALIZE_ALL);
-	nmdbus_settings_connection_call_update_unsaved (priv->proxy,
-	                                                settings,
-	                                                NULL,
-	                                                remote_call_dbus_cb, call);
+	if (save_to_disk) {
+		nmdbus_settings_connection_call_update (priv->proxy,
+		                                        settings,
+		                                        NULL,
+		                                        remote_call_dbus_cb, call);
+	} else {
+		nmdbus_settings_connection_call_update_unsaved (priv->proxy,
+		                                                settings,
+		                                                NULL,
+		                                                remote_call_dbus_cb, call);
+	}
 }
 
 static void
