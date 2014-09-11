@@ -248,7 +248,7 @@ usage (void)
 {
 	g_printerr (_("Usage: nmcli connection { COMMAND | help }\n\n"
 	              "COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
-	              "  show [--active] [[id | uuid | path | apath] <ID>] ...\n\n"
+	              "  show [--active] [[--show-secrets] [id | uuid | path | apath] <ID>] ...\n\n"
 #if WITH_WIMAX
 	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n\n"
 #else
@@ -276,13 +276,13 @@ usage_connection_show (void)
 	              "profiles are listed. When --active option is specified, only the active\n"
 	              "profiles are shown.\n"
 	              "\n"
-	              "ARGUMENTS := [--active] [id | uuid | path | apath] <ID> ...\n"
+	              "ARGUMENTS := [--active] [--show-secrets] [id | uuid | path | apath] <ID> ...\n"
 	              "\n"
 	              "Show details for specified connections. By default, both static configuration\n"
 	              "and active connection data are displayed. It is possible to filter the output\n"
 	              "using global '--fields' option. Refer to the manual page for more information.\n"
 	              "When --active option is specified, only the active profiles are taken into\n"
-	              "account.\n"));
+	              "account. --show-secrets option will reveal associated secrets as well.\n"));
 }
 
 static void
@@ -613,6 +613,21 @@ get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection)
 		}
 	}
 	return ac;
+}
+
+static void
+update_secrets_in_connection (NMRemoteConnection *con)
+{
+	GVariant *secrets;
+	int i;
+
+	for (i = 0; nmc_fields_settings_names[i].name; i++) {
+		secrets = nm_remote_connection_get_secrets (con, nmc_fields_settings_names[i].name, NULL, NULL);
+		if (secrets) {
+			(void) nm_connection_update_secrets (NM_CONNECTION (con), NULL, secrets, NULL);
+			g_variant_unref (secrets);
+		}
+	}
 }
 
 static gboolean
@@ -1312,7 +1327,8 @@ split_required_fields_for_con_show (const char *input,
 }
 
 static NMCResultCode
-do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
+do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
+                     int argc, char **argv)
 {
 	GError *err = NULL;
 	char *profile_flds = NULL, *active_flds = NULL;
@@ -1427,6 +1443,8 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 			if (without_fields || profile_flds) {
 				if (con) {
 					nmc->required_fields = profile_flds;
+					if (show_secrets)
+						update_secrets_in_connection (NM_REMOTE_CONNECTION (con));
 					res = nmc_connection_profile_details (con, nmc);
 					nmc->required_fields = NULL;
 					if (!res)
@@ -8524,17 +8542,26 @@ do_connections (NmCli *nmc, int argc, char **argv)
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
 			goto opt_error;
-		nmc->return_value = do_connections_show (nmc, FALSE, argc, argv);
+		nmc->return_value = do_connections_show (nmc, FALSE, FALSE, argc, argv);
 	} else {
 		if (matches (*argv, "show") == 0) {
 			gboolean active = FALSE;
+			gboolean show_secrets = FALSE;
+			int i;
 
 			next_arg (&argc, &argv);
-			if (nmc_arg_is_option (*argv, "active")) {
-				active = TRUE;
-				next_arg (&argc, &argv);
+			/* check connection show options [--active] [--show-secrets] */
+			for (i = 0; i < 2; i++) {
+				if (!active && nmc_arg_is_option (*argv, "active")) {
+					active = TRUE;
+					next_arg (&argc, &argv);
+				}
+				if (!show_secrets && nmc_arg_is_option (*argv, "show-secrets")) {
+					show_secrets = TRUE;
+					next_arg (&argc, &argv);
+				}
 			}
-			nmc->return_value = do_connections_show (nmc, active, argc, argv);
+			nmc->return_value = do_connections_show (nmc, active, show_secrets, argc, argv);
 		} else if (matches(*argv, "up") == 0) {
 			nmc->return_value = do_connection_up (nmc, argc-1, argv+1);
 		} else if (matches(*argv, "down") == 0) {
