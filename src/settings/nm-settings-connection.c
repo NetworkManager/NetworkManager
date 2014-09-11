@@ -15,8 +15,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2008 Novell, Inc.
- * (C) Copyright 2008 - 2013 Red Hat, Inc.
+ * Copyright 2008 Novell, Inc.
+ * Copyright 2008 - 2014 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -1209,6 +1209,54 @@ typedef struct {
 } UpdateInfo;
 
 static void
+has_some_secrets_cb (NMSetting *setting,
+                     const char *key,
+                     const GValue *value,
+                     GParamFlags flags,
+                     gpointer user_data)
+{
+	GParamSpec *pspec;
+
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (setting)), key);
+	if (pspec) {
+		if (   (flags & NM_SETTING_PARAM_SECRET)
+		    && !g_param_value_defaults (pspec, (GValue *)value))
+			*((gboolean *) user_data) = TRUE;
+	}
+}
+
+static gboolean
+any_secrets_present (NMConnection *connection)
+{
+	gboolean has_secrets = FALSE;
+
+	nm_connection_for_each_setting_value (connection, has_some_secrets_cb, &has_secrets);
+	return has_secrets;
+}
+
+static void
+cached_secrets_to_connection (NMSettingsConnection *self, NMConnection *connection)
+{
+	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
+	GVariant *secrets_dict;
+
+	if (priv->agent_secrets) {
+		secrets_dict = nm_connection_to_dbus (priv->agent_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+		if (secrets_dict) {
+			(void) nm_connection_update_secrets (connection, NULL, secrets_dict, NULL);
+			g_variant_unref (secrets_dict);
+		}
+	}
+	if (priv->system_secrets) {
+		secrets_dict = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+		if (secrets_dict) {
+			(void) nm_connection_update_secrets (connection, NULL, secrets_dict, NULL);
+			g_variant_unref (secrets_dict);
+		}
+	}
+}
+
+static void
 update_complete (NMSettingsConnection *self,
                  UpdateInfo *info,
                  GError *error)
@@ -1264,11 +1312,19 @@ update_auth_cb (NMSettingsConnection *self,
 		return;
 	}
 
-	/* Cache the new secrets from the agent, as stuff like inotify-triggered
-	 * changes to connection's backing config files will blow them away if
-	 * they're in the main connection.
-	 */
-	update_agent_secrets_cache (self, info->new_settings);
+	if (!any_secrets_present (info->new_settings)) {
+		/* If the new connection has no secrets, we do not want to remove all
+		 * secrets, rather we keep all the existing ones. Do that by merging
+		 * them in to the new connection.
+		 */
+		cached_secrets_to_connection (self, info->new_settings);
+	} else {
+		/* Cache the new secrets from the agent, as stuff like inotify-triggered
+		 * changes to connection's backing config files will blow them away if
+		 * they're in the main connection.
+		 */
+		update_agent_secrets_cache (self, info->new_settings);
+	}
 
 	if (info->save_to_disk) {
 		nm_settings_connection_replace_and_commit (self,
