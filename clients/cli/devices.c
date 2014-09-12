@@ -1292,14 +1292,127 @@ connected_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-connect_device_cb (NMClient *client, NMActiveConnection *active, GError *error, gpointer user_data)
+monitor_device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 {
 	NmCli *nmc = (NmCli *) user_data;
+	NMDeviceState state;
+	NMDeviceStateReason reason;
+
+	state = nm_device_get_state (device);
+
+	if (state == NM_DEVICE_STATE_ACTIVATED) {
+		NMActiveConnection *active = nm_device_get_active_connection (device);
+
+		if (nmc->print_output == NMC_PRINT_PRETTY)
+			nmc_terminal_erase_line ();
+		printf (_("Connection with UUID '%s' created and activated on device '%s'\n"),
+		        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
+		quit ();
+	} else if (state == NM_DEVICE_STATE_FAILED) {
+		reason = nm_device_get_state_reason (device);
+		g_string_printf (nmc->return_text, _("Error: Connection activation failed: (%d) %s."),
+		                 reason, nmc_device_reason_to_string (reason));
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		quit ();
+	}
+}
+
+typedef struct {
+	NmCli *nmc;
+	NMDevice *device;
+} AddAndActivateInfo;
+
+static void
+add_and_activate_cb (NMClient *client,
+                     NMActiveConnection *active,
+                     const char *connection_path,
+                     GError *error,
+                     gpointer user_data)
+{
+	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
+	NmCli *nmc = info->nmc;
+	NMDevice *device = info->device;
+	NMActiveConnectionState state;
+
+        if (error) {
+		g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: (%d) %s"),
+		                 error->code, error->message);
+		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+		quit ();
+	} else {
+		state = nm_active_connection_get_state (active);
+
+		if (state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
+			g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: Unknown error"));
+			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
+			quit ();
+		}
+
+		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+			/* User doesn't want to wait or already activated */
+			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+				if (nmc->print_output == NMC_PRINT_PRETTY)
+					nmc_terminal_erase_line ();
+				printf (_("Connection with UUID '%s' created and activated on device '%s'\n"),
+				        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
+			}
+			quit ();
+		} else {
+			g_signal_connect (device, "notify::state", G_CALLBACK (monitor_device_state_cb), nmc);
+			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);  /* Exit if timeout expires */
+
+			if (nmc->print_output == NMC_PRINT_PRETTY)
+				progress_id = g_timeout_add (120, progress_cb, device);
+		}
+	}
+
+	g_free (info);
+}
+
+static void
+create_connect_connection_for_device (AddAndActivateInfo *info)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+
+	/* Create new connection and tie it to the device */
+	connection = nm_simple_connection_new ();
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, nm_device_get_iface (info->device),
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, nm_device_get_iface (info->device),
+	              NULL);
+
+	nm_client_add_and_activate_connection (info->nmc->client,
+	                                       connection,
+	                                       info->device,
+	                                       NULL,
+	                                       add_and_activate_cb,
+	                                       info);
+}
+
+static void
+connect_device_cb (NMClient *client, NMActiveConnection *active, GError *error, gpointer user_data)
+{
+	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
+	NmCli *nmc = info->nmc;
 	const GPtrArray *devices;
 	NMDevice *device;
 	NMDeviceState state;
 
 	if (error) {
+		char *dbus_err;
+
+		/* If no connection existed for the device, create one and activate it */
+		dbus_err = g_dbus_error_get_remote_error (error);
+		if (g_strcmp0 (dbus_err, "org.freedesktop.NetworkManager.UnknownConnection") == 0) {
+			create_connect_connection_for_device (info);
+			g_free (dbus_err);
+			return;
+		}
+		g_free (dbus_err);
+
 		g_string_printf (nmc->return_text, _("Error: Device activation failed: %s"),
 		                 error->message ? error->message : _("(unknown)"));
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
@@ -1311,6 +1424,7 @@ connect_device_cb (NMClient *client, NMActiveConnection *active, GError *error, 
 			g_string_printf (nmc->return_text, _("Error: Device activation failed: device was disconnected"));
 			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 			quit ();
+			g_free (info);
 			return;
 		}
 
@@ -1330,6 +1444,7 @@ connect_device_cb (NMClient *client, NMActiveConnection *active, GError *error, 
 			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);
 		}
 	}
+	g_free (info);
 }
 
 static NMCResultCode
@@ -1340,6 +1455,7 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 	const char *ifname = NULL;
 	char *ifname_ask = NULL;
 	int i;
+	AddAndActivateInfo *info;
 
 	/* Set default timeout for connect operation. */
 	if (nmc->timeout == -1)
@@ -1392,12 +1508,17 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 	 */
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait = TRUE;
+
+	info = g_malloc0 (sizeof (AddAndActivateInfo));
+	info->nmc = nmc;
+	info->device = device;
+
 	nm_client_activate_connection (nmc->client,
 	                               NULL,  /* let NM find a connection automatically */
 	                               device,
 	                               NULL,
 	                               connect_device_cb,
-	                               nmc);
+	                               info);
 
 	/* Start progress indication */
 	if (nmc->print_output == NMC_PRINT_PRETTY)
@@ -1847,84 +1968,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 error:
 	g_free (devices);
 	return nmc->return_value;
-}
-
-static void
-monitor_device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
-{
-	NmCli *nmc = (NmCli *) user_data;
-	NMDeviceState state;
-	NMDeviceStateReason reason;
-
-	state = nm_device_get_state (device);
-
-	if (state == NM_DEVICE_STATE_ACTIVATED) {
-		NMActiveConnection *active = nm_device_get_active_connection (device);
-
-		if (nmc->print_output == NMC_PRINT_PRETTY)
-			nmc_terminal_erase_line ();
-		printf (_("Connection with UUID '%s' created and activated on device '%s'\n"),
-		        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
-		quit ();
-	} else if (state == NM_DEVICE_STATE_FAILED) {
-		reason = nm_device_get_state_reason (device);
-		g_string_printf (nmc->return_text, _("Error: Connection activation failed: (%d) %s."),
-		                 reason, nmc_device_reason_to_string (reason));
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		quit ();
-	}
-}
-
-typedef struct {
-	NmCli *nmc;
-	NMDevice *device;
-} AddAndActivateInfo;
-
-static void
-add_and_activate_cb (NMClient *client,
-                     NMActiveConnection *active,
-                     const char *connection_path,
-                     GError *error,
-                     gpointer user_data)
-{
-	AddAndActivateInfo *info = (AddAndActivateInfo *) user_data;
-	NmCli *nmc = info->nmc;
-	NMDevice *device = info->device;
-	NMActiveConnectionState state;
-
-        if (error) {
-		g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: (%d) %s"),
-		                 error->code, error->message);
-		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-		quit ();
-	} else {
-		state = nm_active_connection_get_state (active);
-
-		if (state == NM_ACTIVE_CONNECTION_STATE_UNKNOWN) {
-			g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: Unknown error"));
-			nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
-			quit ();
-		}
-
-		if (nmc->nowait_flag || state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-			/* User doesn't want to wait or already activated */
-			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-				if (nmc->print_output == NMC_PRINT_PRETTY)
-					nmc_terminal_erase_line ();
-				printf (_("Connection with UUID '%s' created and activated on device '%s'\n"),
-				        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
-			}
-			quit ();
-		} else {
-			g_signal_connect (device, "notify::state", G_CALLBACK (monitor_device_state_cb), nmc);
-			g_timeout_add_seconds (nmc->timeout, timeout_cb, nmc);  /* Exit if timeout expires */
-
-			if (nmc->print_output == NMC_PRINT_PRETTY)
-				progress_id = g_timeout_add (120, progress_cb, device);
-		}
-	}
-
-	g_free (info);
 }
 
 /*
