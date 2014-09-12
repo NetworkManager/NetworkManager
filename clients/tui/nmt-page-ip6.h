@@ -44,8 +44,6 @@ GType nmt_page_ip6_get_type (void);
 
 NmtNewtWidget *nmt_page_ip6_new          (NMConnection *conn);
 
-gboolean       nmt_page_ip6_is_non_empty (NmtPageIP6   *ip6);
-
 G_END_DECLS
 
 #endif /* NMT_PAGE_IP6_H */

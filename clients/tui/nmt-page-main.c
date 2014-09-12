@@ -122,12 +122,15 @@ permissions_transform_from_allusers (GBinding     *binding,
 }
 
 static NmtNewtWidget *
-build_section_for_page (NmtEditorPage *page,
-                        gboolean       open)
+add_section_for_page (NmtPageGrid *grid, NmtNewtWidget *widget)
 {
+	NmtEditorPage *page;
 	NmtNewtWidget *section, *header, *toggle;
 
-	g_return_val_if_fail (nmt_newt_widget_get_parent (NMT_NEWT_WIDGET (page)) == NULL, NULL);
+	g_return_if_fail (NMT_IS_EDITOR_PAGE (widget));
+	g_return_val_if_fail (nmt_newt_widget_get_parent (widget) == NULL, NULL);
+
+	page = NMT_EDITOR_PAGE (widget);
 
 	section = nmt_newt_section_new (TRUE);
 
@@ -144,15 +147,16 @@ build_section_for_page (NmtEditorPage *page,
 	                             NMT_PAGE_GRID_ROW_EXTRA_ALIGN_RIGHT);
 	nmt_newt_section_set_header (NMT_NEWT_SECTION (section), header);
 
-	nmt_newt_section_set_body (NMT_NEWT_SECTION (section), NMT_NEWT_WIDGET (page));
+	nmt_newt_section_set_body (NMT_NEWT_SECTION (section), widget);
 
 	g_object_bind_property (toggle, "active",
 	                        section, "open",
 	                        G_BINDING_SYNC_CREATE);
 
-	if (open || !nmt_newt_widget_get_valid (section))
+	if (nmt_editor_page_show_by_default (page) || !nmt_newt_widget_get_valid (section))
 		nmt_newt_toggle_button_set_active (NMT_NEWT_TOGGLE_BUTTON (toggle), TRUE);
 
+	nmt_page_grid_append (grid, NULL, section, NULL);
 	return section;
 }
 
@@ -164,7 +168,7 @@ nmt_page_main_constructed (GObject *object)
 	NmtPageGrid *grid;
 	NMConnection *conn;
 	NMSettingConnection *s_con;
-	NmtNewtWidget *widget, *section, *page, *separator;
+	NmtNewtWidget *widget, *section, *separator;
 	NmtDeviceEntry *deventry;
 	GType hardware_type;
 	const char *slave_type;
@@ -195,57 +199,38 @@ nmt_page_main_constructed (GObject *object)
 	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	if (nm_connection_is_type (conn, NM_SETTING_BOND_SETTING_NAME))
-		page = nmt_page_bond_new (conn, deventry);
+		add_section_for_page (grid, nmt_page_bond_new (conn, deventry));
 	else if (nm_connection_is_type (conn, NM_SETTING_BRIDGE_SETTING_NAME))
-		page = nmt_page_bridge_new (conn, deventry);
+		add_section_for_page (grid, nmt_page_bridge_new (conn, deventry));
 	else if (nm_connection_is_type (conn, NM_SETTING_INFINIBAND_SETTING_NAME))
-		page = nmt_page_infiniband_new (conn, deventry);
+		add_section_for_page (grid, nmt_page_infiniband_new (conn, deventry));
 	else if (nm_connection_is_type (conn, NM_SETTING_TEAM_SETTING_NAME))
-		page = nmt_page_team_new (conn, deventry);
+		add_section_for_page (grid, nmt_page_team_new (conn, deventry));
 	else if (nm_connection_is_type (conn, NM_SETTING_VLAN_SETTING_NAME))
-		page = nmt_page_vlan_new (conn, deventry);
+		add_section_for_page (grid, nmt_page_vlan_new (conn, deventry));
 	else if (nm_connection_is_type (conn, NM_SETTING_WIRED_SETTING_NAME))
-		page = nmt_page_ethernet_new (conn, deventry);
+		add_section_for_page (grid, nmt_page_ethernet_new (conn, deventry));
 	else if (nm_connection_is_type (conn, NM_SETTING_WIRELESS_SETTING_NAME))
-		page = nmt_page_wifi_new (conn, deventry);
-	else
-		page = NULL;
-
-	if (page) {
-		gboolean show_by_default = nmt_page_device_get_show_by_default (NMT_PAGE_DEVICE (page));
-
-		section = build_section_for_page (NMT_EDITOR_PAGE (page), show_by_default);
-		nmt_page_grid_append (grid, NULL, section, NULL);
-	}
+		add_section_for_page (grid, nmt_page_wifi_new (conn, deventry));
 
 	nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 
 	slave_type = nm_setting_connection_get_slave_type (s_con);
 	if (slave_type) {
-		if (!strcmp (slave_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
-			page = nmt_page_bridge_port_new (conn);
-			section = build_section_for_page (NMT_EDITOR_PAGE (page), TRUE);
-			nmt_page_grid_append (grid, NULL, section, NULL);
-		} else if (!strcmp (slave_type, NM_SETTING_TEAM_SETTING_NAME)) {
-			page = nmt_page_team_port_new (conn);
-			section = build_section_for_page (NMT_EDITOR_PAGE (page), TRUE);
-			nmt_page_grid_append (grid, NULL, section, NULL);
-		}
+		if (!strcmp (slave_type, NM_SETTING_BRIDGE_SETTING_NAME))
+			add_section_for_page (grid, nmt_page_bridge_port_new (conn));
+		else if (!strcmp (slave_type, NM_SETTING_TEAM_SETTING_NAME))
+			add_section_for_page (grid, nmt_page_team_port_new (conn));
 	} else {
-		page = nmt_page_ip4_new (conn);
-		section = build_section_for_page (NMT_EDITOR_PAGE (page),
-		                                  nmt_page_ip4_is_non_empty (NMT_PAGE_IP4 (page)));
-		nmt_page_grid_append (grid, NULL, section, NULL);
+		section = add_section_for_page (grid, nmt_page_ip4_new (conn));
 
 		/* Add a separator between ip4 and ip6 that's only visible if ip4 is open */
 		separator = nmt_newt_separator_new ();
 		g_object_bind_property (section, "open", separator, "visible", G_BINDING_SYNC_CREATE);
 		nmt_page_grid_append (grid, NULL, separator, NULL);
 
-		page = nmt_page_ip6_new (conn);
-		section = build_section_for_page (NMT_EDITOR_PAGE (page),
-		                                  nmt_page_ip6_is_non_empty (NMT_PAGE_IP6 (page)));
-		nmt_page_grid_append (grid, NULL, section, NULL);
+		add_section_for_page (grid, nmt_page_ip6_new (conn));
+
 		nmt_page_grid_append (grid, NULL, nmt_newt_separator_new (), NULL);
 	}
 

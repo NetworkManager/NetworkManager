@@ -55,13 +55,13 @@ nmt_page_ip4_new (NMConnection *conn)
 	                     NULL);
 }
 
-gboolean
-nmt_page_ip4_is_non_empty (NmtPageIP4 *ip4)
+static gboolean
+nmt_page_ip4_show_by_default (NmtEditorPage *page)
 {
 	NMConnection *conn;
 	NMSettingIP4Config *s_ip4;
 
-	conn = nmt_editor_page_get_connection (NMT_EDITOR_PAGE (ip4));
+	conn = nmt_editor_page_get_connection (page);
 	s_ip4 = nm_connection_get_setting_ip4_config (conn);
 	if (   !g_strcmp0 (nm_setting_ip4_config_get_method (s_ip4), NM_SETTING_IP4_CONFIG_METHOD_MANUAL)
 	    || nm_setting_ip4_config_get_num_addresses (s_ip4))
@@ -198,6 +198,9 @@ static void
 nmt_page_ip4_class_init (NmtPageIP4Class *ip4_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ip4_class);
+	NmtEditorPageClass *page_class = NMT_EDITOR_PAGE_CLASS (ip4_class);
 
 	object_class->constructed = nmt_page_ip4_constructed;
+
+	page_class->show_by_default = nmt_page_ip4_show_by_default;
 }

@@ -55,13 +55,13 @@ nmt_page_ip6_new (NMConnection *conn)
 	                     NULL);
 }
 
-gboolean
-nmt_page_ip6_is_non_empty (NmtPageIP6 *ip6)
+static gboolean
+nmt_page_ip6_show_by_default (NmtEditorPage *page)
 {
 	NMConnection *conn;
 	NMSettingIP6Config *s_ip6;
 
-	conn = nmt_editor_page_get_connection (NMT_EDITOR_PAGE (ip6));
+	conn = nmt_editor_page_get_connection (page);
 	s_ip6 = nm_connection_get_setting_ip6_config (conn);
 	if (   !g_strcmp0 (nm_setting_ip6_config_get_method (s_ip6), NM_SETTING_IP6_CONFIG_METHOD_MANUAL)
 	       || nm_setting_ip6_config_get_num_addresses (s_ip6))
@@ -196,6 +196,9 @@ static void
 nmt_page_ip6_class_init (NmtPageIP6Class *ip6_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ip6_class);
+	NmtEditorPageClass *page_class = NMT_EDITOR_PAGE_CLASS (ip6_class);
 
 	object_class->constructed = nmt_page_ip6_constructed;
+
+	page_class->show_by_default = nmt_page_ip6_show_by_default;
 }
