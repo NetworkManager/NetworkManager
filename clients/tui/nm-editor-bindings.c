@@ -230,9 +230,11 @@ ip4_addresses_check_and_copy (GBinding     *binding,
 
 	strings = g_value_get_boxed (source_value);
 
-	for (i = 0; strings[i]; i++) {
-		if (!ip_string_parse (strings[i], AF_INET, &addr, NULL))
-			return FALSE;
+	if (strings) {
+		for (i = 0; strings[i]; i++) {
+			if (!ip_string_parse (strings[i], AF_INET, &addr, NULL))
+				return FALSE;
+		}
 	}
 
 	g_value_set_boxed (target_value, strings);
@@ -690,9 +692,11 @@ ip6_addresses_check_and_copy (GBinding     *binding,
 
 	strings = g_value_get_boxed (source_value);
 
-	for (i = 0; strings[i]; i++) {
-		if (!ip_string_parse (strings[i], AF_INET6, &addr, NULL))
-			return FALSE;
+	if (strings) {
+		for (i = 0; strings[i]; i++) {
+			if (!ip_string_parse (strings[i], AF_INET6, &addr, NULL))
+				return FALSE;
+		}
 	}
 
 	g_value_set_boxed (target_value, strings);
