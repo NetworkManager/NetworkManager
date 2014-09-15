@@ -618,6 +618,9 @@ _nm_utils_copy_array_to_slist (const GPtrArray *array,
 	gpointer item;
 	int i;
 
+	if (!array)
+		return NULL;
+
 	for (i = 0; i < array->len; i++) {
 		item = array->pdata[i];
 		slist = g_slist_prepend (slist, copy_func (item));
@@ -633,6 +636,9 @@ _nm_utils_copy_array (const GPtrArray *array,
 {
 	GPtrArray *copy;
 	int i;
+
+	if (!array)
+		return g_ptr_array_new_with_free_func (free_func);
 
 	copy = g_ptr_array_new_full (array->len, free_func);
 	for (i = 0; i < array->len; i++)
@@ -681,8 +687,10 @@ _nm_utils_strv_to_slist (char **strv)
 	int i;
 	GSList *list = NULL;
 
-	for (i = 0; strv && strv[i]; i++)
-		list = g_slist_prepend (list, g_strdup (strv[i]));
+	if (strv) {
+		for (i = 0; strv[i]; i++)
+			list = g_slist_prepend (list, g_strdup (strv[i]));
+	}
 
 	return g_slist_reverse (list);
 }
@@ -693,9 +701,6 @@ _nm_utils_slist_to_strv (GSList *slist)
 	GSList *iter;
 	char **strv;
 	int len, i = 0;
-
-	if (slist == NULL)
-		return NULL;
 
 	len = g_slist_length (slist);
 	strv = g_new (char *, len + 1);
