@@ -3649,7 +3649,9 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 		}
 	}
 
-	if (changed & NM_RDISC_CONFIG_HOP_LIMIT) {
+	/* hop_limit == 0 is a special value "unspecified", so do not touch
+	 * in this case */
+	if (changed & NM_RDISC_CONFIG_HOP_LIMIT && rdisc->hop_limit > 0) {
 		char val[16];
 
 		g_snprintf (val, sizeof (val), "%d", rdisc->hop_limit);
