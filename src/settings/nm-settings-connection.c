@@ -463,37 +463,34 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	 */
 	g_signal_handlers_block_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
 
-	if (nm_connection_replace_settings_from_connection (NM_CONNECTION (self),
-	                                                    new_connection,
-	                                                    error)) {
-		priv->nm_generated = FALSE;
+	nm_connection_replace_settings_from_connection (NM_CONNECTION (self), new_connection);
+	priv->nm_generated = FALSE;
 
-		/* Cache the just-updated system secrets in case something calls
-		 * nm_connection_clear_secrets() and clears them.
-		 */
-		update_system_secrets_cache (self);
-		success = TRUE;
+	/* Cache the just-updated system secrets in case something calls
+	 * nm_connection_clear_secrets() and clears them.
+	 */
+	update_system_secrets_cache (self);
+	success = TRUE;
 
-		/* Add agent and always-ask secrets back; they won't necessarily be
-		 * in the replacement connection data if it was eg reread from disk.
-		 */
-		if (priv->agent_secrets) {
-			hash = nm_connection_to_dbus (priv->agent_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
-			if (hash) {
-				(void) nm_connection_update_secrets (NM_CONNECTION (self), NULL, hash, NULL);
-				g_hash_table_destroy (hash);
-			}
+	/* Add agent and always-ask secrets back; they won't necessarily be
+	 * in the replacement connection data if it was eg reread from disk.
+	 */
+	if (priv->agent_secrets) {
+		hash = nm_connection_to_dbus (priv->agent_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+		if (hash) {
+			(void) nm_connection_update_secrets (NM_CONNECTION (self), NULL, hash, NULL);
+			g_hash_table_destroy (hash);
 		}
-
-		nm_settings_connection_recheck_visibility (self);
-
-		/* Manually emit changed signal since we disconnected the handler, but
-		 * only update Unsaved if the caller wanted us to.
-		 */
-		changed_cb (self, GUINT_TO_POINTER (update_unsaved));
-
-		g_signal_emit (self, signals[UPDATED_BY_USER], 0);
 	}
+
+	nm_settings_connection_recheck_visibility (self);
+
+	/* Manually emit changed signal since we disconnected the handler, but
+	 * only update Unsaved if the caller wanted us to.
+	 */
+	changed_cb (self, GUINT_TO_POINTER (update_unsaved));
+
+	g_signal_emit (self, signals[UPDATED_BY_USER], 0);
 
 	g_signal_handlers_unblock_by_func (self, G_CALLBACK (changed_cb), GUINT_TO_POINTER (TRUE));
 

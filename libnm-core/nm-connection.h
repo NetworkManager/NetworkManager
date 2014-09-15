@@ -162,9 +162,8 @@ gboolean      nm_connection_replace_settings (NMConnection *connection,
                                               GHashTable *new_settings,
                                               GError **error);
 
-gboolean      nm_connection_replace_settings_from_connection (NMConnection *connection,
-                                                              NMConnection *new_connection,
-                                                              GError **error);
+void          nm_connection_replace_settings_from_connection (NMConnection *connection,
+                                                              NMConnection *new_connection);
 
 void          nm_connection_clear_settings (NMConnection *connection);
 
