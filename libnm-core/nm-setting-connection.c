@@ -948,17 +948,12 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	return TRUE;
 }
 
-static gboolean
-nm_setting_connection_no_interface_name (NMSetting *setting,
-                                         GHashTable *connection_hash,
-                                         const char *property,
-                                         GError **error)
+static const char *
+find_virtual_interface_name (GHashTable *connection_hash)
 {
 	GHashTable *setting_hash;
-	const char *interface_name;
 	GValue *value;
 
-	/* Check if there's a deprecated virtual interface-name property to steal */
 	setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_BOND_SETTING_NAME);
 	if (!setting_hash)
 		setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_BRIDGE_SETTING_NAME);
@@ -968,30 +963,48 @@ nm_setting_connection_no_interface_name (NMSetting *setting,
 		setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_VLAN_SETTING_NAME);
 
 	if (!setting_hash)
-		return TRUE;
+		return NULL;
 
 	/* All of the deprecated virtual interface name properties were named "interface-name". */
 	value = g_hash_table_lookup (setting_hash, "interface-name");
-	if (!value)
-		return TRUE;
+	if (!value || !G_VALUE_HOLDS_STRING (value))
+		return NULL;
 
-	interface_name = g_value_get_string (value);
-	if (!interface_name)
-		return TRUE;
+	return g_value_get_string (value);
+}
 
-	if (!nm_utils_iface_valid_name (interface_name)) {
-		g_set_error_literal (error,
-		                     NM_SETTING_CONNECTION_ERROR,
-		                     NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("property is invalid"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
-		return FALSE;
-	}
+static void
+nm_setting_connection_set_interface_name (NMSetting *setting,
+                                          GHashTable *connection_hash,
+                                          const char *property,
+                                          const GValue *value)
+{
+	const char *interface_name;
+
+	/* For compatibility reasons, if there is an invalid virtual interface name,
+	 * we need to make verification fail, even if that virtual name would be
+	 * overridden by a valid connection.interface-name.
+	 */
+	interface_name = find_virtual_interface_name (connection_hash);
+	if (!interface_name || nm_utils_iface_valid_name (interface_name))
+		interface_name = g_value_get_string (value);
 
 	g_object_set (G_OBJECT (setting),
 	              NM_SETTING_CONNECTION_INTERFACE_NAME, interface_name,
 	              NULL);
-	return TRUE;
+}
+
+static void
+nm_setting_connection_no_interface_name (NMSetting *setting,
+                                         GHashTable *connection_hash,
+                                         const char *property)
+{
+	const char *virtual_interface_name;
+
+	virtual_interface_name = find_virtual_interface_name (connection_hash);
+	g_object_set (G_OBJECT (setting),
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, virtual_interface_name,
+	              NULL);
 }
 
 static gboolean
@@ -1256,7 +1269,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                      G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_override_property (parent_class, NM_SETTING_CONNECTION_INTERFACE_NAME,
 	                                     G_TYPE_STRING,
-	                                     NULL, NULL,
+	                                     NULL,
+	                                     nm_setting_connection_set_interface_name,
 	                                     nm_setting_connection_no_interface_name);
 
 	/**

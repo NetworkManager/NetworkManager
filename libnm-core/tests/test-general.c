@@ -2689,7 +2689,7 @@ test_connection_normalize_virtual_iface_name (void)
 	 */
 	g_value_set_string (value, ":::this-is-not-a-valid-interface-name:::");
 	con = nm_simple_connection_new_from_dbus (connection_hash, &error);
-	g_assert_error (error, NM_SETTING_VLAN_ERROR, NM_SETTING_VLAN_ERROR_INVALID_PROPERTY);
+	g_assert_error (error, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_clear_error (&error);
 
 	/* If vlan.interface-name is valid, but doesn't match, it will be ignored. */

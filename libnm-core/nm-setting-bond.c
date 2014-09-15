@@ -740,5 +740,5 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 
 	 _nm_setting_class_add_dbus_only_property (parent_class, "interface-name", G_TYPE_STRING,
 	                                           _nm_setting_get_deprecated_virtual_interface_name,
-	                                           _nm_setting_set_deprecated_virtual_interface_name);
+	                                           NULL);
 }
