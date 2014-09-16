@@ -1881,11 +1881,13 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	for (i = n = 0; i < num; i++) {
 		NMIPAddress *addr;
 
-		if (i > 0) {
-			const char *label;
+		addr = nm_setting_ip4_config_get_address (s_ip4, i);
 
-			label = _nm_setting_ip4_config_get_address_label (s_ip4, i);
-			if (*label)
+		if (i > 0) {
+			GVariant *label;
+
+			label = nm_ip_address_get_attribute (addr, "label");
+			if (label)
 				continue;
 		}
 
@@ -1905,8 +1907,6 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			netmask_key = g_strdup_printf ("NETMASK%d", n);
 			gw_key = g_strdup_printf ("GATEWAY%d", n);
 		}
-
-		addr = nm_setting_ip4_config_get_address (s_ip4, i);
 
 		svSetValue (ifcfg, addr_key, nm_ip_address_get_address (addr), FALSE);
 
@@ -2136,12 +2136,18 @@ write_ip4_aliases (NMConnection *connection, char *base_ifcfg_path)
 
 	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
 	for (i = 0; i < num; i++) {
+		GVariant *label_var;
 		const char *label, *p;
 		char *path, *tmp;
 		NMIPAddress *addr;
 		shvarFile *ifcfg;
 
-		label = _nm_setting_ip4_config_get_address_label (s_ip4, i);
+		addr = nm_setting_ip4_config_get_address (s_ip4, i);
+
+		label_var = nm_ip_address_get_attribute (addr, "label");
+		if (!label_var)
+			continue;
+		label = g_variant_get_string (label_var, NULL);
 		if (   strncmp (label, base_name, base_name_len) != 0
 		    || label[base_name_len] != ':')
 			continue;

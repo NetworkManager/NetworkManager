@@ -89,6 +89,8 @@ struct NMIPAddress {
 
 	char *address, *gateway;
 	int prefix, family;
+
+	GHashTable *attributes;
 };
 
 /**
@@ -202,6 +204,8 @@ nm_ip_address_unref (NMIPAddress *address)
 	if (address->refcount == 0) {
 		g_free (address->address);
 		g_free (address->gateway);
+		if (address->attributes)
+			g_hash_table_unref (address->attributes);
 		g_slice_free (NMIPAddress, address);
 	}
 }
@@ -211,7 +215,8 @@ nm_ip_address_unref (NMIPAddress *address)
  * @address: the #NMIPAddress
  * @other: the #NMIPAddress to compare @address to.
  *
- * Determines if two #NMIPAddress objects contain the same values.
+ * Determines if two #NMIPAddress objects contain the same address, prefix, and
+ * gateway (attributes are not compared).
  *
  * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
  **/
@@ -251,6 +256,16 @@ nm_ip_address_dup (NMIPAddress *address)
 	copy = nm_ip_address_new (address->family,
 	                          address->address, address->prefix, address->gateway,
 	                          NULL);
+	if (address->attributes) {
+		GHashTableIter iter;
+		const char *key;
+		GVariant *value;
+
+		g_hash_table_iter_init (&iter, address->attributes);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value))
+			nm_ip_address_set_attribute (copy, key, value);
+	}
+
 	return copy;
 }
 
@@ -427,6 +442,82 @@ nm_ip_address_set_gateway (NMIPAddress *address,
 	address->gateway = canonicalize_ip (address->family, gateway, TRUE);
 }
 
+/**
+ * nm_ip_address_get_attribute_names:
+ * @address: the #NMIPAddress
+ *
+ * Gets an array of attribute names defined on @address.
+ *
+ * Returns: (transfer full): a %NULL-terminated array of attribute names,
+ **/
+char **
+nm_ip_address_get_attribute_names (NMIPAddress *address)
+{
+	GHashTableIter iter;
+	const char *key;
+	GPtrArray *names;
+
+	g_return_val_if_fail (address != NULL, NULL);
+
+	names = g_ptr_array_new ();
+
+	if (address->attributes) {
+		g_hash_table_iter_init (&iter, address->attributes);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL))
+			g_ptr_array_add (names, g_strdup (key));
+	}
+	g_ptr_array_add (names, NULL);
+
+	return (char **) g_ptr_array_free (names, FALSE);
+}
+
+/**
+ * nm_ip_address_get_attribute:
+ * @address: the #NMIPAddress
+ * @name: the name of an address attribute
+ *
+ * Gets the value of the attribute with name @name on @address
+ *
+ * Returns: (transfer none): the value of the attribute with name @name on
+ *   @address, or %NULL if @address has no such attribute.
+ **/
+GVariant *
+nm_ip_address_get_attribute (NMIPAddress *address, const char *name)
+{
+	g_return_val_if_fail (address != NULL, NULL);
+	g_return_val_if_fail (name != NULL && *name != '\0', NULL);
+
+	if (address->attributes)
+		return g_hash_table_lookup (address->attributes, name);
+	else
+		return NULL;
+}
+
+/**
+ * nm_ip_address_set_attribute:
+ * @address: the #NMIPAddress
+ * @name: the name of an address attribute
+ * @value: (transfer none) (allow-none): the value
+ *
+ * Sets or clears the named attribute on @address to the given value.
+ **/
+void
+nm_ip_address_set_attribute (NMIPAddress *address, const char *name, GVariant *value)
+{
+	g_return_if_fail (address != NULL);
+	g_return_if_fail (name != NULL && *name != '\0');
+
+	if (!address->attributes) {
+		address->attributes = g_hash_table_new_full (g_str_hash, g_str_equal,
+		                                             g_free, (GDestroyNotify) g_variant_unref);
+	}
+
+	if (value)
+		g_hash_table_insert (address->attributes, g_strdup (name), g_variant_ref_sink (value));
+	else
+		g_hash_table_remove (address->attributes, name);
+}
+
 
 G_DEFINE_BOXED_TYPE (NMIPRoute, nm_ip_route, nm_ip_route_dup, nm_ip_route_unref)
 
@@ -438,6 +529,8 @@ struct NMIPRoute {
 	guint prefix;
 	char *next_hop;
 	guint32 metric;
+
+	GHashTable *attributes;
 };
 
 /**
@@ -559,6 +652,8 @@ nm_ip_route_unref (NMIPRoute *route)
 	if (route->refcount == 0) {
 		g_free (route->dest);
 		g_free (route->next_hop);
+		if (route->attributes)
+			g_hash_table_unref (route->attributes);
 		g_slice_free (NMIPRoute, route);
 	}
 }
@@ -568,7 +663,8 @@ nm_ip_route_unref (NMIPRoute *route)
  * @route: the #NMIPRoute
  * @other: the #NMIPRoute to compare @route to.
  *
- * Determines if two #NMIPRoute objects contain the same values.
+ * Determines if two #NMIPRoute objects contain the same destination, prefix,
+ * next hop, and metric. (Attributes are not compared.)
  *
  * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
  **/
@@ -609,6 +705,16 @@ nm_ip_route_dup (NMIPRoute *route)
 	                        route->dest, route->prefix,
 	                        route->next_hop, route->metric,
 	                        NULL);
+	if (route->attributes) {
+		GHashTableIter iter;
+		const char *key;
+		GVariant *value;
+
+		g_hash_table_iter_init (&iter, route->attributes);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value))
+			nm_ip_route_set_attribute (copy, key, value);
+	}
+
 	return copy;
 }
 
@@ -871,4 +977,80 @@ nm_ip_route_set_metric (NMIPRoute *route,
 	g_return_if_fail (route != NULL);
 
 	route->metric = metric;
+}
+
+/**
+ * nm_ip_route_get_attribute_names:
+ * @route: the #NMIPRoute
+ *
+ * Gets an array of attribute names defined on @route.
+ *
+ * Returns: (transfer full): a %NULL-terminated array of attribute names
+ **/
+char **
+nm_ip_route_get_attribute_names (NMIPRoute *route)
+{
+	GHashTableIter iter;
+	const char *key;
+	GPtrArray *names;
+
+	g_return_val_if_fail (route != NULL, NULL);
+
+	names = g_ptr_array_new ();
+
+	if (route->attributes) {
+		g_hash_table_iter_init (&iter, route->attributes);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL))
+			g_ptr_array_add (names, g_strdup (key));
+	}
+	g_ptr_array_add (names, NULL);
+
+	return (char **) g_ptr_array_free (names, FALSE);
+}
+
+/**
+ * nm_ip_route_get_attribute:
+ * @route: the #NMIPRoute
+ * @name: the name of an route attribute
+ *
+ * Gets the value of the attribute with name @name on @route
+ *
+ * Returns: (transfer none): the value of the attribute with name @name on
+ *   @route, or %NULL if @route has no such attribute.
+ **/
+GVariant *
+nm_ip_route_get_attribute (NMIPRoute *route, const char *name)
+{
+	g_return_val_if_fail (route != NULL, NULL);
+	g_return_val_if_fail (name != NULL && *name != '\0', NULL);
+
+	if (route->attributes)
+		return g_hash_table_lookup (route->attributes, name);
+	else
+		return NULL;
+}
+
+/**
+ * nm_ip_route_set_attribute:
+ * @route: the #NMIPRoute
+ * @name: the name of a route attribute
+ * @value: (transfer none) (allow-none): the value
+ *
+ * Sets the named attribute on @route to the given value.
+ **/
+void
+nm_ip_route_set_attribute (NMIPRoute *route, const char *name, GVariant *value)
+{
+	g_return_if_fail (route != NULL);
+	g_return_if_fail (name != NULL && *name != '\0');
+
+	if (!route->attributes) {
+		route->attributes = g_hash_table_new_full (g_str_hash, g_str_equal,
+		                                           g_free, (GDestroyNotify) g_variant_unref);
+	}
+
+	if (value)
+		g_hash_table_insert (route->attributes, g_strdup (name), g_variant_ref_sink (value));
+	else
+		g_hash_table_remove (route->attributes, name);
 }

@@ -67,6 +67,14 @@ const char  *nm_ip_address_get_gateway         (NMIPAddress *address);
 void         nm_ip_address_set_gateway         (NMIPAddress *address,
                                                 const char *gateway);
 
+char       **nm_ip_address_get_attribute_names (NMIPAddress *address);
+GVariant    *nm_ip_address_get_attribute       (NMIPAddress *address,
+                                                const char  *name);
+void         nm_ip_address_set_attribute       (NMIPAddress *address,
+                                                const char  *name,
+                                                GVariant    *value);
+
+
 typedef struct NMIPRoute NMIPRoute;
 
 GType        nm_ip_route_get_type            (void);
@@ -111,6 +119,13 @@ void         nm_ip_route_set_next_hop_binary (NMIPRoute  *route,
 guint32      nm_ip_route_get_metric          (NMIPRoute  *route);
 void         nm_ip_route_set_metric          (NMIPRoute  *route,
                                               guint32 metric);
+
+char       **nm_ip_route_get_attribute_names (NMIPRoute   *route);
+GVariant    *nm_ip_route_get_attribute       (NMIPRoute   *route,
+                                              const char  *name);
+void         nm_ip_route_set_attribute       (NMIPRoute   *route,
+                                              const char  *name,
+                                              GVariant    *value);
 
 G_END_DECLS
 

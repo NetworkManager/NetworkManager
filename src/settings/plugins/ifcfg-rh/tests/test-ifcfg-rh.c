@@ -2376,7 +2376,7 @@ test_read_wired_aliases_good (void)
 	const char *expected_id = "System aliasem0";
 	int expected_num_addresses = 4;
 	const char *expected_address[4] = { "192.168.1.5", "192.168.1.6", "192.168.1.9", "192.168.1.99" };
-	const char *expected_label[4] = { "", "aliasem0:1", "aliasem0:2", "aliasem0:99" };
+	const char *expected_label[4] = { NULL, "aliasem0:1", "aliasem0:2", "aliasem0:99" };
 	const char *expected_gateway[4] = { "192.168.1.1", "192.168.1.1", "192.168.1.1", "192.168.1.1" };
 	int i, j;
 
@@ -2442,6 +2442,7 @@ test_read_wired_aliases_good (void)
 	for (i = 0; i < expected_num_addresses; i++) {
 		NMIPAddress *ip4_addr;
 		const char *addr;
+		GVariant *label;
 
 		ip4_addr = nm_setting_ip4_config_get_address (s_ip4, i);
 		g_assert (ip4_addr != NULL);
@@ -2457,7 +2458,11 @@ test_read_wired_aliases_good (void)
 
 		g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
 		g_assert_cmpstr (nm_ip_address_get_gateway (ip4_addr), ==, expected_gateway[j]);
-		g_assert_cmpstr (_nm_setting_ip4_config_get_address_label (s_ip4, i), ==, expected_label[j]);
+		label = nm_ip_address_get_attribute (ip4_addr, "label");
+		if (expected_label[j])
+			g_assert_cmpstr (g_variant_get_string (label, NULL), ==, expected_label[j]);
+		else
+			g_assert (label == NULL);
 
 		expected_address[j] = NULL;
 		expected_gateway[j] = NULL;
@@ -2557,7 +2562,7 @@ test_read_wired_aliases_bad (const char *base, const char *expected_id)
 	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.1.5");
 	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
 	g_assert_cmpstr (nm_ip_address_get_gateway (ip4_addr), ==, "192.168.1.1");
-	g_assert_cmpstr (_nm_setting_ip4_config_get_address_label (s_ip4, 0), ==, "");
+	g_assert (nm_ip_address_get_attribute (ip4_addr, "label") == NULL);
 
 	g_free (keyfile);
 	g_free (routefile);
@@ -7557,7 +7562,7 @@ test_write_wired_aliases (void)
 	char *uuid;
 	int num_addresses = 4;
 	const char *ip[] = { "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" };
-	const char *label[] = { "", "alias0:2", "", "alias0:3" };
+	const char *label[] = { NULL, "alias0:2", NULL, "alias0:3" };
 	NMIPAddress *addr;
 	gboolean success;
 	GError *error = NULL;
@@ -7611,7 +7616,9 @@ test_write_wired_aliases (void)
 	for (i = 0; i < num_addresses; i++) {
 		addr = nm_ip_address_new (AF_INET, ip[i], 24, "1.1.1.1", &error);
 		g_assert_no_error (error);
-		_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, label[i]);
+		if (label[i])
+			nm_ip_address_set_attribute (addr, "label", g_variant_new_string (label[i]));
+		nm_setting_ip4_config_add_address (s_ip4, addr);
 		nm_ip_address_unref (addr);
 	}
 
@@ -7703,7 +7710,10 @@ test_write_wired_aliases (void)
 
 		g_assert_cmpint (nm_ip_address_get_prefix (addr), ==, 24);
 		g_assert_cmpstr (nm_ip_address_get_gateway (addr), ==, "1.1.1.1");
-		g_assert_cmpstr (_nm_setting_ip4_config_get_address_label (s_ip4, i), ==, label[j]);
+		if (label[j])
+			g_assert_cmpstr (g_variant_get_string (nm_ip_address_get_attribute (addr, "label"), NULL), ==, label[j]);
+		else
+			g_assert (nm_ip_address_get_attribute (addr, "label") == NULL);
 
 		ip[j] = NULL;
 	}

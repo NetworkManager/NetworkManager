@@ -325,9 +325,11 @@ test_setting_ip4_config_labels (void)
 {
 	NMSettingIP4Config *s_ip4;
 	NMIPAddress *addr;
-	const char *label;
+	GVariant *label;
 	GPtrArray *addrs;
 	char **labels;
+	NMConnection *conn;
+	GVariant *dict, *setting_dict, *value;
 	GError *error = NULL;
 
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -344,32 +346,38 @@ test_setting_ip4_config_labels (void)
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
-	g_assert_cmpstr (label, ==, "");
+	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
 
 	/* addr 2 */
 	addr = nm_ip_address_new (AF_INET, "2.2.2.2", 24, NULL, &error);
 	g_assert_no_error (error);
+	nm_ip_address_set_attribute (addr, "label", g_variant_new_string ("eth0:1"));
 
-	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "eth0:1");
+	nm_setting_ip4_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, "eth0:1");
+	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label != NULL);
+	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	/* addr 3 */
 	addr = nm_ip_address_new (AF_INET, "3.3.3.3", 24, NULL, &error);
 	g_assert_no_error (error);
+	nm_ip_address_set_attribute (addr, "label", NULL);
 
-	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "");
+	nm_setting_ip4_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 2);
-	g_assert_cmpstr (label, ==, "");
+	addr = nm_setting_ip4_config_get_address (s_ip4, 2);
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
 
 	/* Remove addr 1 and re-verify remaining addresses */
 	nm_setting_ip4_config_remove_address (s_ip4, 0);
@@ -378,25 +386,61 @@ test_setting_ip4_config_labels (void)
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
-	g_assert_cmpstr (label, ==, "eth0:1");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label != NULL);
+	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, "");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
 
+	/* The labels should appear in the D-Bus serialization */
+	conn = nmtst_create_minimal_connection ("label test", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	nm_connection_add_setting (conn, NM_SETTING (s_ip4));
+	dict = nm_connection_to_dbus (conn, NM_CONNECTION_SERIALIZE_ALL);
+	g_object_unref (conn);
+
+	setting_dict = g_variant_lookup_value (dict, NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (setting_dict != NULL);
+	value = g_variant_lookup_value (setting_dict, "address-labels", G_VARIANT_TYPE_STRING_ARRAY);
+	g_assert (value != NULL);
+
+	g_variant_get (value, "^as", &labels);
+	g_assert_cmpint (g_strv_length (labels), ==, 2);
+	g_assert_cmpstr (labels[0], ==, "eth0:1");
+	g_assert_cmpstr (labels[1], ==, "");
+
+	g_variant_unref (setting_dict);
+	g_variant_unref (value);
+	g_strfreev (labels);
+
+	/* And should be deserialized */
+	conn = nm_simple_connection_new_from_dbus (dict, &error);
+	g_assert_no_error (error);
+	g_variant_unref (dict);
+
+	s_ip4 = nm_connection_get_setting_ip4_config (conn);
+
+	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label != NULL);
+	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
+
+	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
 
 	/* Test explicit property assignment */
 	g_object_get (G_OBJECT (s_ip4),
 	              NM_SETTING_IP4_CONFIG_ADDRESSES, &addrs,
-	              "address-labels", &labels,
 	              NULL);
 
 	nm_setting_ip4_config_clear_addresses (s_ip4);
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 0);
 
-	/* Setting addrs but not labels will result in empty labels */
 	g_object_set (G_OBJECT (s_ip4),
 	              NM_SETTING_IP4_CONFIG_ADDRESSES, addrs,
 	              NULL);
@@ -407,66 +451,16 @@ test_setting_ip4_config_labels (void)
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
-	g_assert_cmpstr (label, ==, "");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label != NULL);
+	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, "");
+	label = nm_ip_address_get_attribute (addr, "label");
+	g_assert (label == NULL);
 
-	/* Setting labels now will leave addresses untouched */
-	g_object_set (G_OBJECT (s_ip4),
-	              "address-labels", labels,
-	              NULL);
-	g_strfreev (labels);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_no_error (error);
-	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
-
-	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
-	g_assert_cmpstr (label, ==, "eth0:1");
-
-	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
-	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
-	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
-	g_assert_cmpstr (label, ==, "");
-
-	/* Setting labels to a value that's too short or too long will result in
-	 * the setting not verifying.
-	 */
-	labels = g_strsplit ("eth0:2", ",", -1);
-	g_object_set (G_OBJECT (s_ip4),
-	              "address-labels", labels,
-	              NULL);
-	g_strfreev (labels);
-
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
-	g_assert (g_str_has_prefix (error->message, "ipv4.address-labels:"));
-	g_clear_error (&error);
-
-	labels = g_strsplit ("eth0:2,eth0:3", ",", -1);
-	g_object_set (G_OBJECT (s_ip4),
-	              "address-labels", labels,
-	              NULL);
-	g_strfreev (labels);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_no_error (error);
-
-	labels = g_strsplit ("eth0:2,eth0:3,eth0:4", ",", -1);
-	g_object_set (G_OBJECT (s_ip4),
-	              "address-labels", labels,
-	              NULL);
-	g_strfreev (labels);
-	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
-	g_assert (g_str_has_prefix (error->message, "ipv4.address-labels:"));
-	g_clear_error (&error);
-
-	g_object_unref (s_ip4);
+	g_object_unref (conn);
 }
 
 static void
@@ -1640,7 +1634,6 @@ test_connection_diff_a_only (void)
 			{ NM_SETTING_IP4_CONFIG_DNS,                NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_DNS_SEARCH,         NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_ADDRESSES,          NM_SETTING_DIFF_RESULT_IN_A },
-			{ "address-labels",                         NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_ROUTES,             NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS,    NM_SETTING_DIFF_RESULT_IN_A },

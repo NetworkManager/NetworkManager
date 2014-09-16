@@ -286,6 +286,8 @@ global:
 	nm_ip_address_equal;
 	nm_ip_address_get_address;
 	nm_ip_address_get_address_binary;
+	nm_ip_address_get_attribute;
+	nm_ip_address_get_attribute_names;
 	nm_ip_address_get_family;
 	nm_ip_address_get_gateway;
 	nm_ip_address_get_prefix;
@@ -295,10 +297,13 @@ global:
 	nm_ip_address_ref;
 	nm_ip_address_set_address;
 	nm_ip_address_set_address_binary;
+	nm_ip_address_set_attribute;
 	nm_ip_address_set_gateway;
 	nm_ip_address_set_prefix;
 	nm_ip_address_unref;
 	nm_ip_route_equal;
+	nm_ip_route_get_attribute;
+	nm_ip_route_get_attribute_names;
 	nm_ip_route_get_dest;
 	nm_ip_route_get_dest_binary;
 	nm_ip_route_get_family;
@@ -310,6 +315,7 @@ global:
 	nm_ip_route_new;
 	nm_ip_route_new_binary;
 	nm_ip_route_ref;
+	nm_ip_route_set_attribute;
 	nm_ip_route_set_dest;
 	nm_ip_route_set_dest_binary;
 	nm_ip_route_set_metric;

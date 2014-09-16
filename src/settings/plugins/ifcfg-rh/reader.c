@@ -1235,7 +1235,8 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 			ok = read_full_ip4_address (parsed, network_file, -1, base_addr, &addr, &err);
 			svCloseFile (parsed);
 			if (ok) {
-				if (!_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, device))
+				nm_ip_address_set_attribute (addr, "label", g_variant_new_string (device));
+				if (!nm_setting_ip4_config_add_address (s_ip4, addr))
 					PARSE_WARNING ("duplicate IP4 address in alias file %s", item);
 			} else {
 				PARSE_WARNING ("error reading IP4 address from alias file '%s': %s",
