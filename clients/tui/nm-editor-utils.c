@@ -176,6 +176,7 @@ nm_editor_utils_get_connection_type_list (void)
 	item->id_format = _("Mobile broadband connection %d");
 	item->no_autoconnect = TRUE;
 	g_ptr_array_add (array, item);
+#endif
 
 	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
 	item->data.name = _("DSL");
@@ -185,7 +186,6 @@ nm_editor_utils_get_connection_type_list (void)
 	item->id_format = _("DSL connection %d");
 	item->no_autoconnect = TRUE;
 	g_ptr_array_add (array, item);
-#endif
 
 	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
 	item->data.name = _("Bond");

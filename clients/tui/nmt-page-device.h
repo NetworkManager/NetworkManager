@@ -44,7 +44,6 @@ typedef struct {
 GType nmt_page_device_get_type (void);
 
 NmtDeviceEntry *nmt_page_device_get_device_entry    (NmtPageDevice *page);
-gboolean        nmt_page_device_get_show_by_default (NmtPageDevice *page);
 
 G_END_DECLS
 

@@ -44,8 +44,6 @@ GType nmt_page_ip4_get_type (void);
 
 NmtNewtWidget *nmt_page_ip4_new          (NMConnection *conn);
 
-gboolean       nmt_page_ip4_is_non_empty (NmtPageIP4   *ip4);
-
 G_END_DECLS
 
 #endif /* NMT_PAGE_IP4_H */

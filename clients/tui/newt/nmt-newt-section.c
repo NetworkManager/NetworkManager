@@ -30,8 +30,9 @@
  * in the section's header to the section's #NmtNewtSection:open
  * property.)
  *
- * In addition to the header and body, the #NmtNewtSection also draws
- * a border along the left side, indicating the extent of the section.
+ * In addition to the header and body, the #NmtNewtSection also
+ * optionally draws a border along the left side, indicating the
+ * extent of the section.
  */
 
 #include "config.h"
@@ -54,6 +55,7 @@ typedef struct {
 	NmtNewtWidget *body;
 	int bheight_req, bwidth_req;
 
+	gboolean show_border;
 	NmtNewtWidget *border_grid;
 	NmtNewtWidget *border_open_label;
 	NmtNewtWidget *border_closed_label;
@@ -68,6 +70,7 @@ static char *closed_glyph, *open_glyph, *line_glyph, *end_glyph;
 enum {
 	PROP_0,
 
+	PROP_SHOW_BORDER,
 	PROP_OPEN,
 
 	LAST_PROP
@@ -75,15 +78,17 @@ enum {
 
 /**
  * nmt_newt_section_new:
+ * @show_border: whether to show the border on the side of the section
  *
  * Creates a new #NmtNewtSection
  *
  * Returns: a new #NmtNewtSection
  */
 NmtNewtWidget *
-nmt_newt_section_new (void)
+nmt_newt_section_new (gboolean show_border)
 {
 	return g_object_new (NMT_TYPE_NEWT_SECTION,
+	                     "show-border", show_border,
 	                     NULL);
 }
 
@@ -92,6 +97,8 @@ nmt_newt_section_init (NmtNewtSection *section)
 {
 	NmtNewtSectionPrivate *priv = NMT_NEWT_SECTION_GET_PRIVATE (section);
 	NmtNewtContainerClass *parent_class = NMT_NEWT_CONTAINER_CLASS (nmt_newt_section_parent_class);
+
+	priv->show_border = TRUE;
 
 	priv->border_grid = nmt_newt_grid_new ();
 	parent_class->add (NMT_NEWT_CONTAINER (section), priv->border_grid);
@@ -224,10 +231,12 @@ nmt_newt_section_get_components (NmtNewtWidget *widget)
 
 	cos = g_ptr_array_new ();
 
-	child_cos = nmt_newt_widget_get_components (priv->border_grid);
-	for (i = 0; child_cos[i]; i++)
-		g_ptr_array_add (cos, child_cos[i]);
-	g_free (child_cos);
+	if (priv->show_border) {
+		child_cos = nmt_newt_widget_get_components (priv->border_grid);
+		for (i = 0; child_cos[i]; i++)
+			g_ptr_array_add (cos, child_cos[i]);
+		g_free (child_cos);
+	}
 
 	child_cos = nmt_newt_widget_get_components (priv->header);
 	for (i = 0; child_cos[i]; i++)
@@ -255,12 +264,16 @@ nmt_newt_section_size_request (NmtNewtWidget *widget,
 
 	g_return_if_fail (priv->header != NULL && priv->body != NULL);
 
-	nmt_newt_widget_size_request (priv->border_grid, &border_width, &border_height);
+	if (priv->show_border)
+		nmt_newt_widget_size_request (priv->border_grid, &border_width, &border_height);
 	nmt_newt_widget_size_request (priv->header, &priv->hwidth_req, &priv->hheight_req);
 	nmt_newt_widget_size_request (priv->body, &priv->bwidth_req, &priv->bheight_req);
 
 	*width = MAX (priv->hwidth_req, priv->bwidth_req) + 2;
-	*height = priv->open ? priv->hheight_req + priv->bheight_req + 1 : priv->hheight_req;
+	if (priv->open)
+		*height = priv->hheight_req + priv->bheight_req + (priv->show_border ? 1 : 0);
+	else
+		*height = priv->hheight_req;
 }
 
 static void
@@ -308,10 +321,13 @@ nmt_newt_section_size_allocate (NmtNewtWidget *widget,
 {
 	NmtNewtSectionPrivate *priv = NMT_NEWT_SECTION_GET_PRIVATE (widget);
 
-	adjust_border_for_allocation (priv, height);
+	if (priv->show_border) {
+		adjust_border_for_allocation (priv, height);
+		nmt_newt_widget_size_allocate (priv->border_grid, x, y, 1, height);
+		nmt_newt_widget_size_allocate (priv->header, x + 2, y, width, priv->hheight_req);
+	} else
+		nmt_newt_widget_size_allocate (priv->header, x, y, width, priv->hheight_req);
 
-	nmt_newt_widget_size_allocate (priv->border_grid, x, y, 1, height);
-	nmt_newt_widget_size_allocate (priv->header, x + 2, y, width, priv->hheight_req);
 	if (priv->open) {
 		nmt_newt_widget_size_allocate (priv->body, x + 2, y + priv->hheight_req,
 		                               width, height - priv->hheight_req);
@@ -327,6 +343,10 @@ nmt_newt_section_set_property (GObject      *object,
 	NmtNewtSectionPrivate *priv = NMT_NEWT_SECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
+	case PROP_SHOW_BORDER:
+		priv->show_border = g_value_get_boolean (value);
+		nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (object));
+		break;
 	case PROP_OPEN:
 		priv->open = g_value_get_boolean (value);
 		nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (object));
@@ -346,6 +366,9 @@ nmt_newt_section_get_property (GObject    *object,
 	NmtNewtSectionPrivate *priv = NMT_NEWT_SECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
+	case PROP_SHOW_BORDER:
+		g_value_set_boolean (value, priv->show_border);
+		break;
 	case PROP_OPEN:
 		g_value_set_boolean (value, priv->open);
 		break;
@@ -376,6 +399,18 @@ nmt_newt_section_class_init (NmtNewtSectionClass *section_class)
 	container_class->remove = nmt_newt_section_remove;
 
 	/* properties */
+
+	/**
+	 * NmtNewtSection:show-border:
+	 *
+	 * %TRUE if the section should show a border along the left side.
+	 */
+	g_object_class_install_property
+		(object_class, PROP_SHOW_BORDER,
+		 g_param_spec_boolean ("show-border", "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NmtNewtSection:open:

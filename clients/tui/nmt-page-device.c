@@ -73,8 +73,8 @@ nmt_page_device_get_device_entry (NmtPageDevice *page)
 	return priv->device_entry;
 }
 
-gboolean
-nmt_page_device_get_show_by_default (NmtPageDevice *page)
+static gboolean
+nmt_page_device_show_by_default (NmtEditorPage *page)
 {
 	NmtPageDevicePrivate *priv = NMT_PAGE_DEVICE_GET_PRIVATE (page);
 
@@ -127,6 +127,7 @@ static void
 nmt_page_device_class_init (NmtPageDeviceClass *page_device_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (page_device_class);
+	NmtEditorPageClass *page_class = NMT_EDITOR_PAGE_CLASS (page_device_class);
 
 	g_type_class_add_private (page_device_class, sizeof (NmtPageDevicePrivate));
 
@@ -134,6 +135,8 @@ nmt_page_device_class_init (NmtPageDeviceClass *page_device_class)
 	object_class->set_property = nmt_page_device_set_property;
 	object_class->get_property = nmt_page_device_get_property;
 	object_class->finalize     = nmt_page_device_finalize;
+
+	page_class->show_by_default = nmt_page_device_show_by_default;
 
 	/* properties */
 	g_object_class_install_property

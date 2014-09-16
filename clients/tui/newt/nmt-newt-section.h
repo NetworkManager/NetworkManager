@@ -42,7 +42,7 @@ typedef struct {
 
 GType nmt_newt_section_get_type (void);
 
-NmtNewtWidget *nmt_newt_section_new (void);
+NmtNewtWidget *nmt_newt_section_new        (gboolean        show_border);
 
 void           nmt_newt_section_set_header (NmtNewtSection *section,
                                             NmtNewtWidget  *header);

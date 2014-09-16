@@ -146,6 +146,26 @@ nmt_editor_page_get_title (NmtEditorPage *page)
 	return priv->title;
 }
 
+static gboolean
+nmt_editor_page_real_show_by_default (NmtEditorPage *page)
+{
+	return TRUE;
+}
+
+/**
+ * nmt_editor_page_show_by_default:
+ * @page: the #NmtEditorPage
+ *
+ * Checks if @page should be shown expanded by default
+ *
+ * Returns: %TRUE or %FALSE
+ */
+gboolean
+nmt_editor_page_show_by_default (NmtEditorPage *page)
+{
+	return NMT_EDITOR_PAGE_GET_CLASS (page)->show_by_default (page);
+}
+
 static void
 nmt_editor_page_set_property (GObject      *object,
                               guint         prop_id,
@@ -199,6 +219,8 @@ nmt_editor_page_class_init (NmtEditorPageClass *page_class)
 	object_class->set_property = nmt_editor_page_set_property;
 	object_class->get_property = nmt_editor_page_get_property;
 	object_class->finalize     = nmt_editor_page_finalize;
+
+	page_class->show_by_default = nmt_editor_page_real_show_by_default;
 
 	/* properties */
 

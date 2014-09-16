@@ -40,6 +40,7 @@ typedef struct {
 typedef struct {
 	NmtPageGridClass parent;
 
+	gboolean (*show_by_default) (NmtEditorPage *);
 } NmtEditorPageClass;
 
 GType nmt_editor_page_get_type (void);
@@ -51,6 +52,8 @@ void           nmt_editor_page_set_header_widget (NmtEditorPage *page,
 NmtNewtWidget *nmt_editor_page_get_header_widget (NmtEditorPage *page);
 
 const char    *nmt_editor_page_get_title         (NmtEditorPage *page);
+
+gboolean       nmt_editor_page_show_by_default   (NmtEditorPage *page);
 
 G_END_DECLS
 
