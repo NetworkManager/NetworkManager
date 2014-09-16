@@ -19,11 +19,13 @@ clients/tui/nmt-mtu-entry.c
 clients/tui/nmt-page-bond.c
 clients/tui/nmt-page-bridge-port.c
 clients/tui/nmt-page-bridge.c
+clients/tui/nmt-page-dsl.c
 clients/tui/nmt-page-ethernet.c
 clients/tui/nmt-page-infiniband.c
 clients/tui/nmt-page-ip4.c
 clients/tui/nmt-page-ip6.c
 clients/tui/nmt-page-main.c
+clients/tui/nmt-page-ppp.c
 clients/tui/nmt-page-team-port.c
 clients/tui/nmt-page-team.c
 clients/tui/nmt-page-vlan.c
