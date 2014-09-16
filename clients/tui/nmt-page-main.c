@@ -129,7 +129,7 @@ add_section_for_page (NmtPageGrid *grid, NmtNewtWidget *widget)
 	NmtEditorPage *page;
 	NmtNewtWidget *section, *header, *toggle;
 
-	g_return_if_fail (NMT_IS_EDITOR_PAGE (widget));
+	g_return_val_if_fail (NMT_IS_EDITOR_PAGE (widget), NULL);
 	g_return_val_if_fail (nmt_newt_widget_get_parent (widget) == NULL, NULL);
 
 	page = NMT_EDITOR_PAGE (widget);
