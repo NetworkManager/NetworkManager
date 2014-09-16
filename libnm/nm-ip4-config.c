@@ -161,13 +161,13 @@ get_property (GObject *object,
 		break;
 	case PROP_ADDRESSES:
 		g_value_take_boxed (value, _nm_utils_copy_array (nm_ip4_config_get_addresses (self),
-		                                                 (NMUtilsCopyFunc) nm_ip4_address_dup,
-		                                                 (GDestroyNotify) nm_ip4_address_unref));
+		                                                 (NMUtilsCopyFunc) nm_ip_address_dup,
+		                                                 (GDestroyNotify) nm_ip_address_unref));
 		break;
 	case PROP_ROUTES:
 		g_value_take_boxed (value, _nm_utils_copy_array (nm_ip4_config_get_routes (self),
-		                                                 (NMUtilsCopyFunc) nm_ip4_route_dup,
-		                                                 (GDestroyNotify) nm_ip4_route_unref));
+		                                                 (NMUtilsCopyFunc) nm_ip_route_dup,
+		                                                 (GDestroyNotify) nm_ip_route_unref));
 		break;
 	case PROP_NAMESERVERS:
 		g_value_set_boxed (value, (char **) nm_ip4_config_get_nameservers (self));
@@ -220,7 +220,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	/**
 	 * NMIP4Config:addresses:
 	 *
-	 * A #GPtrArray containing the addresses (#NMIP4Address) of the configuration.
+	 * A #GPtrArray containing the addresses (#NMIPAddress) of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ADDRESSES,
@@ -232,7 +232,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	/**
 	 * NMIP4Config:routes:
 	 *
-	 * A #GPtrArray containing the routes (#NMIP4Route) of the configuration.
+	 * A #GPtrArray containing the routes (#NMIPRoute) of the configuration.
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ROUTES,
@@ -312,8 +312,8 @@ nm_ip4_config_get_gateway (NMIP4Config *config)
  *
  * Gets the IP4 addresses (containing the address, prefix, and gateway).
  *
- * Returns: (element-type NMIP4Address) (transfer none): the #GPtrArray
- * containing #NMIP4Address<!-- -->es.  This is the internal copy used by the
+ * Returns: (element-type NMIPAddress) (transfer none): the #GPtrArray
+ * containing #NMIPAddress<!-- -->es.  This is the internal copy used by the
  * configuration and must not be modified.
  **/
 GPtrArray *
@@ -398,8 +398,8 @@ nm_ip4_config_get_wins_servers (NMIP4Config *config)
  *
  * Gets the routes.
  *
- * Returns: (element-type NMIP4Route) (transfer none): the #GPtrArray containing
- * #NMIP4Routes. This is the internal copy used by the configuration, and must
+ * Returns: (element-type NMIPRoute) (transfer none): the #GPtrArray containing
+ * #NMIPRoutes. This is the internal copy used by the configuration, and must
  * not be modified.
  **/
 GPtrArray *

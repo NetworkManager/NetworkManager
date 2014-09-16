@@ -28,6 +28,7 @@
 #endif
 
 #include "nm-setting.h"
+#include "nm-setting-ip-config.h"
 
 G_BEGIN_DECLS
 
@@ -97,57 +98,6 @@ G_BEGIN_DECLS
  */
 #define NM_SETTING_IP4_CONFIG_METHOD_DISABLED   "disabled"
 
-typedef struct NMIP4Address NMIP4Address;
-
-GType nm_ip4_address_get_type (void);
-
-NMIP4Address * nm_ip4_address_new         (void);
-NMIP4Address * nm_ip4_address_dup         (NMIP4Address *source);
-void           nm_ip4_address_ref         (NMIP4Address *address);
-void           nm_ip4_address_unref       (NMIP4Address *address);
-/* Return TRUE if addresses are identical */
-gboolean       nm_ip4_address_compare     (NMIP4Address *address, NMIP4Address *other);
-
-guint32        nm_ip4_address_get_address (NMIP4Address *address);
-void           nm_ip4_address_set_address (NMIP4Address *address,
-                                           guint32 addr);  /* network byte order */
-
-guint32        nm_ip4_address_get_prefix  (NMIP4Address *address);
-void           nm_ip4_address_set_prefix  (NMIP4Address *address,
-                                           guint32 prefix);
-
-guint32        nm_ip4_address_get_gateway (NMIP4Address *address);
-void           nm_ip4_address_set_gateway (NMIP4Address *address,
-                                           guint32 gateway);  /* network byte order */
-
-typedef struct NMIP4Route NMIP4Route;
-
-GType nm_ip4_route_get_type (void);
-
-NMIP4Route * nm_ip4_route_new          (void);
-NMIP4Route * nm_ip4_route_dup          (NMIP4Route *source);
-void         nm_ip4_route_ref          (NMIP4Route *route);
-void         nm_ip4_route_unref        (NMIP4Route *route);
-/* Return TRUE if routes are identical */
-gboolean     nm_ip4_route_compare      (NMIP4Route *route, NMIP4Route *other);
-
-guint32      nm_ip4_route_get_dest     (NMIP4Route *route);
-void         nm_ip4_route_set_dest     (NMIP4Route *route,
-                                        guint32 dest);  /* network byte order */
-
-guint32      nm_ip4_route_get_prefix   (NMIP4Route *route);
-void         nm_ip4_route_set_prefix   (NMIP4Route *route,
-                                        guint32 prefix);
-
-guint32      nm_ip4_route_get_next_hop (NMIP4Route *route);
-void         nm_ip4_route_set_next_hop (NMIP4Route *route,
-                                        guint32 next_hop);  /* network byte order */
-
-guint32      nm_ip4_route_get_metric   (NMIP4Route *route);
-void         nm_ip4_route_set_metric   (NMIP4Route *route,
-                                        guint32 metric);
-
-
 struct _NMSettingIP4Config {
 	NMSetting parent;
 };
@@ -179,17 +129,17 @@ gboolean      nm_setting_ip4_config_remove_dns_search_by_value (NMSettingIP4Conf
 void          nm_setting_ip4_config_clear_dns_searches         (NMSettingIP4Config *setting);
 
 guint32       nm_setting_ip4_config_get_num_addresses       (NMSettingIP4Config *setting);
-NMIP4Address *nm_setting_ip4_config_get_address             (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_add_address             (NMSettingIP4Config *setting, NMIP4Address *address);
+NMIPAddress * nm_setting_ip4_config_get_address             (NMSettingIP4Config *setting, guint32 i);
+gboolean      nm_setting_ip4_config_add_address             (NMSettingIP4Config *setting, NMIPAddress *address);
 void          nm_setting_ip4_config_remove_address          (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_remove_address_by_value (NMSettingIP4Config *setting, NMIP4Address *address);
+gboolean      nm_setting_ip4_config_remove_address_by_value (NMSettingIP4Config *setting, NMIPAddress *address);
 void          nm_setting_ip4_config_clear_addresses         (NMSettingIP4Config *setting);
 
 guint32       nm_setting_ip4_config_get_num_routes         (NMSettingIP4Config *setting);
-NMIP4Route *  nm_setting_ip4_config_get_route              (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_add_route              (NMSettingIP4Config *setting, NMIP4Route *route);
+NMIPRoute *   nm_setting_ip4_config_get_route              (NMSettingIP4Config *setting, guint32 i);
+gboolean      nm_setting_ip4_config_add_route              (NMSettingIP4Config *setting, NMIPRoute *route);
 void          nm_setting_ip4_config_remove_route           (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_remove_route_by_value  (NMSettingIP4Config *setting, NMIP4Route *route);
+gboolean      nm_setting_ip4_config_remove_route_by_value  (NMSettingIP4Config *setting, NMIPRoute *route);
 void          nm_setting_ip4_config_clear_routes           (NMSettingIP4Config *setting);
 
 gboolean      nm_setting_ip4_config_get_ignore_auto_routes (NMSettingIP4Config *setting);

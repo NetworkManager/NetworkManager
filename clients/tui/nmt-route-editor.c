@@ -109,12 +109,12 @@ nmt_route_editor_constructed (GObject *object)
 	if (NM_IS_SETTING_IP4_CONFIG (priv->edit_setting)) {
 		routes = nmt_route_table_new (AF_INET);
 		g_object_bind_property (priv->edit_setting, NM_SETTING_IP4_CONFIG_ROUTES,
-		                        routes, "ip4-routes",
+		                        routes, "routes",
 		                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 	} else {
 		routes = nmt_route_table_new (AF_INET6);
 		g_object_bind_property (priv->edit_setting, NM_SETTING_IP6_CONFIG_ROUTES,
-		                        routes, "ip6-routes",
+		                        routes, "routes",
 		                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 	}
 

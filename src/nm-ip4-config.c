@@ -317,9 +317,11 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 	else if (nm_setting_ip4_config_get_ignore_auto_routes (setting))
 		nm_ip4_config_set_never_default (config, FALSE);
 	for (i = 0; i < naddresses; i++) {
-		guint32 gateway = nm_ip4_address_get_gateway (nm_setting_ip4_config_get_address (setting, i));
+		const char *gateway_str = nm_ip_address_get_gateway (nm_setting_ip4_config_get_address (setting, i));
+		guint32 gateway;
 
-		if (gateway) {
+		if (gateway_str) {
+			inet_pton (AF_INET, gateway_str, &gateway);
 			nm_ip4_config_set_gateway (config, gateway);
 			break;
 		}
@@ -327,13 +329,13 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
-		NMIP4Address *s_addr = nm_setting_ip4_config_get_address (setting, i);
+		NMIPAddress *s_addr = nm_setting_ip4_config_get_address (setting, i);
 		const char *label = _nm_setting_ip4_config_get_address_label (setting, i);
 		NMPlatformIP4Address address;
 
 		memset (&address, 0, sizeof (address));
-		address.address = nm_ip4_address_get_address (s_addr);
-		address.plen = nm_ip4_address_get_prefix (s_addr);
+		nm_ip_address_get_address_binary (s_addr, &address.address);
+		address.plen = nm_ip_address_get_prefix (s_addr);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.source = NM_IP_CONFIG_SOURCE_USER;
@@ -346,14 +348,14 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 	if (nm_setting_ip4_config_get_ignore_auto_routes (setting))
 		nm_ip4_config_reset_routes (config);
 	for (i = 0; i < nroutes; i++) {
-		NMIP4Route *s_route = nm_setting_ip4_config_get_route (setting, i);
+		NMIPRoute *s_route = nm_setting_ip4_config_get_route (setting, i);
 		NMPlatformIP4Route route;
 
 		memset (&route, 0, sizeof (route));
-		route.network = nm_ip4_route_get_dest (s_route);
-		route.plen = nm_ip4_route_get_prefix (s_route);
-		route.gateway = nm_ip4_route_get_next_hop (s_route);
-		route.metric = nm_ip4_route_get_metric (s_route);
+		nm_ip_route_get_dest_binary (s_route, &route.network);
+		route.plen = nm_ip_route_get_prefix (s_route);
+		nm_ip_route_get_next_hop_binary (s_route, &route.gateway);
+		route.metric = nm_ip_route_get_metric (s_route);
 		if (!route.metric)
 			route.metric = default_route_metric;
 		route.source = NM_IP_CONFIG_SOURCE_USER;
@@ -406,7 +408,7 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
 		const NMPlatformIP4Address *address = nm_ip4_config_get_address (config, i);
-		NMIP4Address *s_addr;
+		NMIPAddress *s_addr;
 
 		/* Detect dynamic address */
 		if (address->lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
@@ -418,18 +420,15 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 		if (!method)
 			method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 
-		s_addr = nm_ip4_address_new ();
-
-		nm_ip4_address_set_address (s_addr, address->address);
-		nm_ip4_address_set_prefix (s_addr, address->plen);
+		s_addr = nm_ip_address_new_binary (AF_INET, &address->address, address->plen, NULL, NULL);
 		/* For backwards compatibility, attach the gateway to an address if it's
 		 * in the same subnet.
 		 */
 		if (same_prefix (address->address, gateway, address->plen))
-			nm_ip4_address_set_gateway (s_addr, gateway);
+			nm_ip_address_set_gateway (s_addr, nm_utils_inet4_ntop (gateway, NULL));
 
 		_nm_setting_ip4_config_add_address_with_label (s_ip4, s_addr, address->label);
-		nm_ip4_address_unref (s_addr);
+		nm_ip_address_unref (s_addr);
 	}
 
 	/* Use 'disabled' if the method wasn't previously set */
@@ -440,7 +439,7 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
 		const NMPlatformIP4Route *route = nm_ip4_config_get_route (config, i);
-		NMIP4Route *s_route;
+		NMIPRoute *s_route;
 
 		/* Ignore default route. */
 		if (!route->plen)
@@ -450,14 +449,12 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 		if (route->source != NM_IP_CONFIG_SOURCE_USER)
 			continue;
 
-		s_route = nm_ip4_route_new ();
-		nm_ip4_route_set_dest (s_route, route->network);
-		nm_ip4_route_set_prefix (s_route, route->plen);
-		nm_ip4_route_set_next_hop (s_route, route->gateway);
-		nm_ip4_route_set_metric (s_route, route->metric);
-
+		s_route = nm_ip_route_new_binary (AF_INET,
+		                                  &route->network, route->plen,
+		                                  &route->gateway, route->metric,
+		                                  NULL);
 		nm_setting_ip4_config_add_route (s_ip4, s_route);
-		nm_ip4_route_unref (s_route);
+		nm_ip_route_unref (s_route);
 	}
 
 	/* DNS */

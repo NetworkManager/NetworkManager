@@ -1233,13 +1233,13 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 		routes = nm_utils_ip4_routes_from_gvalue (val);
 		for (iter = routes; iter; iter = iter->next) {
-			NMIP4Route *item = iter->data;
+			NMIPRoute *item = iter->data;
 			NMPlatformIP4Route route;
 
 			memset (&route, 0, sizeof (route));
-			route.network = nm_ip4_route_get_dest (item);
-			route.plen = nm_ip4_route_get_prefix (item);
-			route.gateway = nm_ip4_route_get_next_hop (item);
+			nm_ip_route_get_dest_binary (item, &route.network);
+			route.plen = nm_ip_route_get_prefix (item);
+			nm_ip_route_get_next_hop_binary (item, &route.gateway);
 			route.source = NM_IP_CONFIG_SOURCE_VPN;
 			route.metric = vpn_routing_metric (connection);
 
@@ -1255,7 +1255,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 			nm_ip4_config_add_route (config, &route);
 		}
 
-		g_slist_free_full (routes, (GDestroyNotify) nm_ip4_route_unref);
+		g_slist_free_full (routes, (GDestroyNotify) nm_ip_route_unref);
 	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_NEVER_DEFAULT);
@@ -1380,13 +1380,13 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 
 		routes = nm_utils_ip6_routes_from_gvalue (val);
 		for (iter = routes; iter; iter = iter->next) {
-			NMIP6Route *item = iter->data;
+			NMIPRoute *item = iter->data;
 			NMPlatformIP6Route route;
 
 			memset (&route, 0, sizeof (route));
-			route.network = *nm_ip6_route_get_dest (item);
-			route.plen = nm_ip6_route_get_prefix (item);
-			route.gateway = *nm_ip6_route_get_next_hop (item);
+			nm_ip_route_get_dest_binary (item, &route.network);
+			route.plen = nm_ip_route_get_prefix (item);
+			nm_ip_route_get_next_hop_binary (item, &route.gateway);
 			route.source = NM_IP_CONFIG_SOURCE_VPN;
 			route.metric = vpn_routing_metric (connection);
 
@@ -1402,7 +1402,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 			nm_ip6_config_add_route (config, &route);
 		}
 
-		g_slist_free_full (routes, (GDestroyNotify) nm_ip6_route_unref);
+		g_slist_free_full (routes, (GDestroyNotify) nm_ip_route_unref);
 	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP6_CONFIG_NEVER_DEFAULT);

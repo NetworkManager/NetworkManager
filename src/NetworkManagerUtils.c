@@ -2391,19 +2391,25 @@ nm_utils_ip4_routes_from_gvalue (const GValue *value)
 	routes = (GPtrArray *) g_value_get_boxed (value);
 	for (i = 0; routes && (i < routes->len); i++) {
 		GArray *array = (GArray *) g_ptr_array_index (routes, i);
-		NMIP4Route *route;
+		guint32 *array_val = (guint32 *) array->data;
+		NMIPRoute *route;
+		GError *error = NULL;
 
 		if (array->len < 4) {
 			g_warning ("Ignoring invalid IP4 route");
 			continue;
 		}
 
-		route = nm_ip4_route_new ();
-		nm_ip4_route_set_dest (route, g_array_index (array, guint32, 0));
-		nm_ip4_route_set_prefix (route, g_array_index (array, guint32, 1));
-		nm_ip4_route_set_next_hop (route, g_array_index (array, guint32, 2));
-		nm_ip4_route_set_metric (route, g_array_index (array, guint32, 3));
-		list = g_slist_prepend (list, route);
+		route = nm_ip_route_new_binary (AF_INET,
+		                                &array_val[0], array_val[1],
+		                                &array_val[2], array_val[3],
+		                                &error);
+		if (route)
+			list = g_slist_prepend (list, route);
+		else {
+			g_warning ("Ignoring invalid IP4 route: %s", error->message);
+			g_clear_error (&error);
+		}
 	}
 
 	return g_slist_reverse (list);
@@ -2445,7 +2451,8 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 		GValueArray *route_values = (GValueArray *) g_ptr_array_index (routes, i);
 		GByteArray *dest, *next_hop;
 		guint prefix, metric;
-		NMIP6Route *route;
+		NMIPRoute *route;
+		GError *error = NULL;
 
 		if (!_nm_utils_gvalue_array_validate (route_values, 4,
 		                                      DBUS_TYPE_G_UCHAR_ARRAY,
@@ -2474,12 +2481,16 @@ nm_utils_ip6_routes_from_gvalue (const GValue *value)
 
 		metric = g_value_get_uint (g_value_array_get_nth (route_values, 3));
 
-		route = nm_ip6_route_new ();
-		nm_ip6_route_set_dest (route, (struct in6_addr *)dest->data);
-		nm_ip6_route_set_prefix (route, prefix);
-		nm_ip6_route_set_next_hop (route, (struct in6_addr *)next_hop->data);
-		nm_ip6_route_set_metric (route, metric);
-		list = g_slist_prepend (list, route);
+		route = nm_ip_route_new_binary (AF_INET6,
+		                                dest->data, prefix,
+		                                next_hop->data, metric,
+		                                &error);
+		if (route)
+			list = g_slist_prepend (list, route);
+		else {
+			g_warning ("Ignoring invalid IP6 route: %s", error->message);
+			g_clear_error (&error);
+		}
 	}
 
 	return g_slist_reverse (list);

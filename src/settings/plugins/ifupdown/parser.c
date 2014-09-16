@@ -447,8 +447,8 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 	if (!is_static) {
 		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 	} else {
-		guint32 tmp_addr, tmp_mask, tmp_gw;
-		NMIP4Address *addr;
+		guint32 tmp_mask;
+		NMIPAddress *addr;
 		const char *address_v;
 		const char *netmask_v;
 		const char *gateway_v;
@@ -460,10 +460,9 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 
 		/* Address */
 		address_v = ifparser_getkey (block, "address");
-		if (!address_v || !inet_pton (AF_INET, address_v, &tmp_addr)) {
+		if (!address_v) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Missing IPv4 address '%s'",
-			             address_v ? address_v : "(none)");
+			             "Missing IPv4 address");
 			goto error;
 		}
 
@@ -472,11 +471,6 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		if (netmask_v) {
 			if (strlen (netmask_v) < 7) {
 				netmask_int = atoi (netmask_v);
-				if (netmask_int > 32) {
-					g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-								"Invalid IPv4 netmask '%s'", netmask_v);
-					goto error;
-				}
 			} else if (!inet_pton (AF_INET, netmask_v, &tmp_mask)) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 						   "Invalid IPv4 netmask '%s'", netmask_v);
@@ -490,17 +484,11 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		gateway_v = ifparser_getkey (block, "gateway");
 		if (!gateway_v)
 			gateway_v = address_v;  /* dcbw: whaaa?? */
-		if (!inet_pton (AF_INET, gateway_v, &tmp_gw)) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-					   "Invalid IPv4 gateway '%s'", gateway_v);
-			goto error;
-		}
 
 		/* Add the new address to the setting */
-		addr = nm_ip4_address_new ();
-		nm_ip4_address_set_address (addr, tmp_addr);
-		nm_ip4_address_set_prefix (addr, netmask_int);
-		nm_ip4_address_set_gateway (addr, tmp_gw);
+		addr = nm_ip_address_new (AF_INET, address_v, netmask_int, gateway_v, error);
+		if (!addr)
+			goto error;
 
 		if (nm_setting_ip4_config_add_address (s_ip4, addr)) {
 			nm_log_info (LOGD_SETTINGS, "addresses count: %d",
@@ -508,7 +496,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		} else {
 			nm_log_info (LOGD_SETTINGS, "ignoring duplicate IP4 address");
 		}
-		nm_ip4_address_unref (addr);
+		nm_ip_address_unref (addr);
 
 		nameserver_v = ifparser_getkey (block, "dns-nameserver");
 		ifupdown_ip4_add_dns (s_ip4, nameserver_v);
@@ -582,8 +570,7 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 	if (!is_static) {
 		g_object_set(s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 	} else {
-		struct in6_addr tmp_addr, tmp_gw;
-		NMIP6Address *addr;
+		NMIPAddress *addr;
 		const char *address_v;
 		const char *prefix_v;
 		const char *gateway_v;
@@ -595,10 +582,9 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 
 		/* Address */
 		address_v = ifparser_getkey(block, "address");
-		if (!address_v || !inet_pton (AF_INET6, address_v, &tmp_addr)) {
+		if (!address_v) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-			             "Missing IPv6 address '%s'",
-			             address_v ? address_v : "(none)");
+			             "Missing IPv6 address");
 			goto error;
 		}
 
@@ -611,17 +597,11 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 		gateway_v = ifparser_getkey (block, "gateway");
 		if (!gateway_v)
 			gateway_v = address_v;  /* dcbw: whaaa?? */
-		if (!inet_pton (AF_INET6, gateway_v, &tmp_gw)) {
-			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-					   "Invalid IPv6 gateway '%s'", gateway_v);
-			goto error;
-		}
 
 		/* Add the new address to the setting */
-		addr = nm_ip6_address_new ();
-		nm_ip6_address_set_address (addr, &tmp_addr);
-		nm_ip6_address_set_prefix (addr, prefix_int);
-		nm_ip6_address_set_gateway (addr, &tmp_gw);
+		addr = nm_ip_address_new (AF_INET6, address_v, prefix_int, gateway_v, error);
+		if (!addr)
+			goto error;
 
 		if (nm_setting_ip6_config_add_address (s_ip6, addr)) {
 			nm_log_info (LOGD_SETTINGS, "addresses count: %d",
@@ -629,7 +609,7 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 		} else {
 			nm_log_info (LOGD_SETTINGS, "ignoring duplicate IP6 address");
 		}
-		nm_ip6_address_unref (addr);
+		nm_ip_address_unref (addr);
 
 		nameserver_v = ifparser_getkey(block, "dns-nameserver");
 		ifupdown_ip6_add_dns (s_ip6, nameserver_v);

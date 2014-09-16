@@ -218,32 +218,29 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 	g_free (tmp);
 
 	if (g_strv_length (split) > 0) {
-		addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_address_unref);
+		addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
 		for (iter = split; iter && *iter; iter++) {
-			NMIP4Address *addr;
-			guint32 a;
-			char *p;
+			NMIPAddress *addr;
+			char *ip, *prefix, *gw;
 
 			if (strlen (g_strstrip (*iter)) == 0)
 				continue;
 
-			addr = nm_ip4_address_new ();
+			ip = *iter;
 
-			p = strchr (*iter, '/');
-			g_assert (p);
-			*p++ = '\0';
+			prefix = strchr (ip, '/');
+			g_assert (prefix);
+			*prefix++ = '\0';
 
-			g_assert_cmpint (inet_pton (AF_INET, *iter, &a), ==, 1);
-			nm_ip4_address_set_address (addr, a);
-			nm_ip4_address_set_prefix (addr, (guint) atoi (p));
+			gw = strchr (prefix, ' ');
+			g_assert (gw);
+			gw++;
 
-			p = strchr (p, ' ');
-			g_assert (p);
-			p++;
-
-			g_assert_cmpint (inet_pton (AF_INET, p, &a), ==, 1);
-			nm_ip4_address_set_gateway (addr, a);
-
+			addr = nm_ip_address_new (AF_INET, ip, (guint) atoi (prefix), gw, error);
+			if (!addr) {
+				g_ptr_array_unref (addresses);
+				return FALSE;
+			}
 			g_ptr_array_add (addresses, addr);
 		}
 
@@ -261,37 +258,36 @@ parse_ip4 (GKeyFile *kf, GVariant **out_props, const char *section, GError **err
 		g_free (tmp);
 
 		if (g_strv_length (split) > 0) {
-			routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_route_unref);
+			routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
 			for (iter = split; iter && *iter; iter++) {
-				NMIP4Route *route;
-				guint32 a;
-				char *p;
+				NMIPRoute *route;
+				char *dest, *prefix, *next_hop, *metric;
 
 				if (strlen (g_strstrip (*iter)) == 0)
 					continue;
 
-				route = nm_ip4_route_new ();
+				dest = *iter;
 
-				p = strchr (*iter, '/');
-				g_assert (p);
-				*p++ = '\0';
+				prefix = strchr (dest, '/');
+				g_assert (prefix);
+				*prefix++ = '\0';
 
-				g_assert_cmpint (inet_pton (AF_INET, *iter, &a), ==, 1);
-				nm_ip4_route_set_dest (route, a);
-				nm_ip4_route_set_prefix (route, (guint) atoi (p));
+				next_hop = strchr (prefix, ' ');
+				g_assert (next_hop);
+				next_hop++;
 
-				p = strchr (p, ' ');
-				g_assert (p);
-				p++;
+				metric = strchr (next_hop, ' ');
+				g_assert (metric);
+				metric++;
 
-				g_assert_cmpint (inet_pton (AF_INET, p, &a), ==, 1);
-				nm_ip4_route_set_next_hop (route, a);
-
-				p = strchr (p, ' ');
-				g_assert (p);
-				p++;
-				nm_ip4_route_set_metric (route, (guint) atoi (p));
-
+				route = nm_ip_route_new (AF_INET,
+				                         dest, (guint) atoi (prefix),
+				                         next_hop, (guint) atoi (metric),
+				                         error);
+				if (!route) {
+					g_ptr_array_unref (routes);
+					return FALSE;
+				}
 				g_ptr_array_add (routes, route);
 			}
 

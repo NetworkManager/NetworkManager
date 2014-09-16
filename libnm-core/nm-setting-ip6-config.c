@@ -37,9 +37,6 @@
  * properties related to IPv6 addressing, routing, and Domain Name Service
  **/
 
-G_DEFINE_BOXED_TYPE (NMIP6Address, nm_ip6_address, nm_ip6_address_dup, nm_ip6_address_unref)
-G_DEFINE_BOXED_TYPE (NMIP6Route, nm_ip6_route, nm_ip6_route_dup, nm_ip6_route_unref)
-
 G_DEFINE_TYPE_WITH_CODE (NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING,
                          _nm_register_setting (IP6_CONFIG, 4))
 NM_SETTING_REGISTER_TYPE (NM_TYPE_SETTING_IP6_CONFIG)
@@ -51,8 +48,8 @@ typedef struct {
 	char *dhcp_hostname;
 	GSList *dns;        /* array of struct in6_addr */
 	GSList *dns_search; /* list of strings */
-	GSList *addresses;  /* array of NMIP6Address */
-	GSList *routes;     /* array of NMIP6Route */
+	GSList *addresses;  /* array of NMIPAddress */
+	GSList *routes;     /* array of NMIPRoute */
 	gboolean ignore_auto_routes;
 	gboolean ignore_auto_dns;
 	gboolean never_default;
@@ -437,7 +434,7 @@ nm_setting_ip6_config_get_num_addresses (NMSettingIP6Config *setting)
  *
  * Returns: the address at index @i
  **/
-NMIP6Address *
+NMIPAddress *
 nm_setting_ip6_config_get_address (NMSettingIP6Config *setting, guint32 i)
 {
 	NMSettingIP6ConfigPrivate *priv;
@@ -447,7 +444,7 @@ nm_setting_ip6_config_get_address (NMSettingIP6Config *setting, guint32 i)
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
 	g_return_val_if_fail (i < g_slist_length (priv->addresses), NULL);
 
-	return (NMIP6Address *) g_slist_nth_data (priv->addresses, i);
+	return (NMIPAddress *) g_slist_nth_data (priv->addresses, i);
 }
 
 /**
@@ -463,10 +460,10 @@ nm_setting_ip6_config_get_address (NMSettingIP6Config *setting, guint32 i)
  **/
 gboolean
 nm_setting_ip6_config_add_address (NMSettingIP6Config *setting,
-                                   NMIP6Address *address)
+                                   NMIPAddress *address)
 {
 	NMSettingIP6ConfigPrivate *priv;
-	NMIP6Address *copy;
+	NMIPAddress *copy;
 	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
@@ -474,11 +471,11 @@ nm_setting_ip6_config_add_address (NMSettingIP6Config *setting,
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
 	for (iter = priv->addresses; iter; iter = g_slist_next (iter)) {
-		if (nm_ip6_address_compare ((NMIP6Address *) iter->data, address))
+		if (nm_ip_address_equal ((NMIPAddress *) iter->data, address))
 			return FALSE;
 	}
 
-	copy = nm_ip6_address_dup (address);
+	copy = nm_ip_address_dup (address);
 	priv->addresses = g_slist_append (priv->addresses, copy);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
 	return TRUE;
@@ -503,7 +500,7 @@ nm_setting_ip6_config_remove_address (NMSettingIP6Config *setting, guint32 i)
 	elt = g_slist_nth (priv->addresses, i);
 	g_return_if_fail (elt != NULL);
 
-	nm_ip6_address_unref ((NMIP6Address *) elt->data);
+	nm_ip_address_unref ((NMIPAddress *) elt->data);
 	priv->addresses = g_slist_delete_link (priv->addresses, elt);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
 }
@@ -519,7 +516,7 @@ nm_setting_ip6_config_remove_address (NMSettingIP6Config *setting, guint32 i)
  **/
 gboolean
 nm_setting_ip6_config_remove_address_by_value (NMSettingIP6Config *setting,
-                                               NMIP6Address *address)
+                                               NMIPAddress *address)
 {
 	NMSettingIP6ConfigPrivate *priv;
 	GSList *iter;
@@ -529,7 +526,7 @@ nm_setting_ip6_config_remove_address_by_value (NMSettingIP6Config *setting,
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
 	for (iter = priv->addresses; iter; iter = g_slist_next (iter)) {
-		if (nm_ip6_address_compare ((NMIP6Address *) iter->data, address)) {
+		if (nm_ip_address_equal ((NMIPAddress *) iter->data, address)) {
 			priv->addresses = g_slist_delete_link (priv->addresses, iter);
 			g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
 			return TRUE;
@@ -551,7 +548,7 @@ nm_setting_ip6_config_clear_addresses (NMSettingIP6Config *setting)
 
 	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
 
-	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip6_address_unref);
+	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip_address_unref);
 	priv->addresses = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ADDRESSES);
 }
@@ -577,7 +574,7 @@ nm_setting_ip6_config_get_num_routes (NMSettingIP6Config *setting)
  *
  * Returns: the route at index @i
  **/
-NMIP6Route *
+NMIPRoute *
 nm_setting_ip6_config_get_route (NMSettingIP6Config *setting, guint32 i)
 {
 	NMSettingIP6ConfigPrivate *priv;
@@ -587,7 +584,7 @@ nm_setting_ip6_config_get_route (NMSettingIP6Config *setting, guint32 i)
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
 	g_return_val_if_fail (i < g_slist_length (priv->routes), NULL);
 
-	return (NMIP6Route *) g_slist_nth_data (priv->routes, i);
+	return (NMIPRoute *) g_slist_nth_data (priv->routes, i);
 }
 
 /**
@@ -602,10 +599,10 @@ nm_setting_ip6_config_get_route (NMSettingIP6Config *setting, guint32 i)
  **/
 gboolean
 nm_setting_ip6_config_add_route (NMSettingIP6Config *setting,
-                                 NMIP6Route *route)
+                                 NMIPRoute *route)
 {
 	NMSettingIP6ConfigPrivate *priv;
-	NMIP6Route *copy;
+	NMIPRoute *copy;
 	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_SETTING_IP6_CONFIG (setting), FALSE);
@@ -613,11 +610,11 @@ nm_setting_ip6_config_add_route (NMSettingIP6Config *setting,
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
 	for (iter = priv->routes; iter; iter = g_slist_next (iter)) {
-		if (nm_ip6_route_compare ((NMIP6Route *) iter->data, route))
+		if (nm_ip_route_equal ((NMIPRoute *) iter->data, route))
 			return FALSE;
 	}
 
-	copy = nm_ip6_route_dup (route);
+	copy = nm_ip_route_dup (route);
 	priv->routes = g_slist_append (priv->routes, copy);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
 	return TRUE;
@@ -642,7 +639,7 @@ nm_setting_ip6_config_remove_route (NMSettingIP6Config *setting, guint32 i)
 	elt = g_slist_nth (priv->routes, i);
 	g_return_if_fail (elt != NULL);
 
-	nm_ip6_route_unref ((NMIP6Route *) elt->data);
+	nm_ip_route_unref ((NMIPRoute *) elt->data);
 	priv->routes = g_slist_delete_link (priv->routes, elt);
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
 }
@@ -658,7 +655,7 @@ nm_setting_ip6_config_remove_route (NMSettingIP6Config *setting, guint32 i)
  **/
 gboolean
 nm_setting_ip6_config_remove_route_by_value (NMSettingIP6Config *setting,
-                                             NMIP6Route *route)
+                                             NMIPRoute *route)
 {
 	NMSettingIP6ConfigPrivate *priv;
 	GSList *iter;
@@ -668,8 +665,8 @@ nm_setting_ip6_config_remove_route_by_value (NMSettingIP6Config *setting,
 
 	priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE (setting);
 	for (iter = priv->routes; iter; iter = g_slist_next (iter)) {
-		if (nm_ip6_route_compare ((NMIP6Route *) iter->data, route)) {
-			nm_ip6_route_unref ((NMIP6Route *) iter->data);
+		if (nm_ip_route_equal ((NMIPRoute *) iter->data, route)) {
+			nm_ip_route_unref ((NMIPRoute *) iter->data);
 			priv->routes = g_slist_delete_link (priv->routes, iter);
 			g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
 			return TRUE;
@@ -691,7 +688,7 @@ nm_setting_ip6_config_clear_routes (NMSettingIP6Config *setting)
 
 	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
 
-	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
+	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip_route_unref);
 	priv->routes = NULL;
 	g_object_notify (G_OBJECT (setting), NM_SETTING_IP6_CONFIG_ROUTES);
 }
@@ -899,8 +896,8 @@ finalize (GObject *object)
 
 	g_slist_free_full (priv->dns, g_free);
 	g_slist_free_full (priv->dns_search, g_free);
-	g_slist_free_full (priv->addresses, g_free);
-	g_slist_free_full (priv->routes, g_free);
+	g_slist_free_full (priv->addresses, (GDestroyNotify) nm_ip_address_unref);
+	g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip_route_unref);
 
 	G_OBJECT_CLASS (nm_setting_ip6_config_parent_class)->finalize (object);
 }
@@ -964,14 +961,14 @@ set_property (GObject *object, guint prop_id,
 		priv->dns_search = _nm_utils_strv_to_slist (g_value_get_boxed (value));
 		break;
 	case PROP_ADDRESSES:
-		g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_address_unref);
+		g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip_address_unref);
 		priv->addresses = _nm_utils_copy_array_to_slist (g_value_get_boxed (value),
-		                                                 (NMUtilsCopyFunc) nm_ip6_address_dup);
+		                                                 (NMUtilsCopyFunc) nm_ip_address_dup);
 		break;
 	case PROP_ROUTES:
-		g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip6_route_unref);
+		g_slist_free_full (priv->routes, (GDestroyNotify) nm_ip_route_unref);
 		priv->routes = _nm_utils_copy_array_to_slist (g_value_get_boxed (value),
-		                                              (NMUtilsCopyFunc) nm_ip6_route_dup);
+		                                              (NMUtilsCopyFunc) nm_ip_route_dup);
 		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		priv->ignore_auto_routes = g_value_get_boolean (value);
@@ -1015,10 +1012,10 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, _nm_utils_slist_to_strv (priv->dns_search));
 		break;
 	case PROP_ADDRESSES:
-		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->addresses, (NMUtilsCopyFunc) nm_ip6_address_dup, (GDestroyNotify) nm_ip6_address_unref));
+		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->addresses, (NMUtilsCopyFunc) nm_ip_address_dup, (GDestroyNotify) nm_ip_address_unref));
 		break;
 	case PROP_ROUTES:
-		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->routes, (NMUtilsCopyFunc) nm_ip6_route_dup, (GDestroyNotify) nm_ip6_route_unref));
+		g_value_take_boxed (value, _nm_utils_copy_slist_to_array (priv->routes, (NMUtilsCopyFunc) nm_ip_route_dup, (GDestroyNotify) nm_ip_route_unref));
 		break;
 	case PROP_IGNORE_AUTO_ROUTES:
 		g_value_set_boolean (value, priv->ignore_auto_routes);
@@ -1139,7 +1136,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * be used with the 'shared' or 'link-local' methods as the interface is
 	 * automatically assigned an address with these methods.
 	 *
-	 * Element-Type: NMIP6Address
+	 * Element-Type: NMIPAddress
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
@@ -1160,7 +1157,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 	 * to those returned by automatic configuration. Routes cannot be used with
 	 * the 'shared' or 'link-local' methods because there is no upstream network.
 	 *
-	 * Element-Type: NMIP6Route
+	 * Element-Type: NMIPRoute
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
@@ -1258,473 +1255,4 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
-}
-
-/********************************************************************/
-
-struct NMIP6Address {
-	guint32 refcount;
-	struct in6_addr address;
-	guint32 prefix;
-	struct in6_addr gateway;
-};
-
-/**
- * nm_ip6_address_new:
- *
- * Creates and returns a new #NMIP6Address object.
- *
- * Returns: (transfer full): the new empty #NMIP6Address object
- **/
-NMIP6Address *
-nm_ip6_address_new (void)
-{
-	NMIP6Address *address;
-
-	address = g_malloc0 (sizeof (NMIP6Address));
-	address->refcount = 1;
-	return address;
-}
-
-/**
- * nm_ip6_address_dup:
- * @source: the #NMIP6Address object to copy
- *
- * Copies a given #NMIP6Address object and returns the copy.
- *
- * Returns: (transfer full): the copy of the given #NMIP6Address copy
- **/
-NMIP6Address *
-nm_ip6_address_dup (NMIP6Address *source)
-{
-	NMIP6Address *address;
-
-	g_return_val_if_fail (source != NULL, NULL);
-	g_return_val_if_fail (source->refcount > 0, NULL);
-
-	address = nm_ip6_address_new ();
-	address->prefix = source->prefix;
-	memcpy (&address->address, &source->address, sizeof (struct in6_addr));
-	memcpy (&address->gateway, &source->gateway, sizeof (struct in6_addr));
-
-	return address;
-}
-
-/**
- * nm_ip6_address_ref:
- * @address: the #NMIP6Address
- *
- * Increases the reference count of the object.
- **/
-void
-nm_ip6_address_ref (NMIP6Address *address)
-{
-	g_return_if_fail (address != NULL);
-	g_return_if_fail (address->refcount > 0);
-
-	address->refcount++;
-}
-
-/**
- * nm_ip6_address_unref:
- * @address: the #NMIP6Address
- *
- * Decreases the reference count of the object.  If the reference count
- * reaches zero, the object will be destroyed.
- **/
-void
-nm_ip6_address_unref (NMIP6Address *address)
-{
-	g_return_if_fail (address != NULL);
-	g_return_if_fail (address->refcount > 0);
-
-	address->refcount--;
-	if (address->refcount == 0) {
-		memset (address, 0, sizeof (NMIP6Address));
-		g_free (address);
-	}
-}
-
-/**
- * nm_ip6_address_compare:
- * @address: the #NMIP6Address
- * @other: the #NMIP6Address to compare @address to.
- *
- * Determines if two #NMIP6Address objects contain the same values.
- *
- * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
- **/
-gboolean
-nm_ip6_address_compare (NMIP6Address *address, NMIP6Address *other)
-{
-	g_return_val_if_fail (address != NULL, FALSE);
-	g_return_val_if_fail (address->refcount > 0, FALSE);
-
-	g_return_val_if_fail (other != NULL, FALSE);
-	g_return_val_if_fail (other->refcount > 0, FALSE);
-
-	if (   memcmp (&address->address, &other->address, sizeof (struct in6_addr))
-	    || address->prefix != other->prefix
-	    || memcmp (&address->gateway, &other->gateway, sizeof (struct in6_addr)))
-		return FALSE;
-	return TRUE;
-}
-
-/**
- * nm_ip6_address_get_address:
- * @address: the #NMIP6Address
- *
- * Gets the IPv6 address property of this address object.
- *
- * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
- *          the IPv6 address
- **/
-const struct in6_addr *
-nm_ip6_address_get_address (NMIP6Address *address)
-{
-	g_return_val_if_fail (address != NULL, NULL);
-	g_return_val_if_fail (address->refcount > 0, NULL);
-
-	return &address->address;
-}
-
-/**
- * nm_ip6_address_set_address:
- * @address: the #NMIP6Address
- * @addr: the IPv6 address
- *
- * Sets the IPv6 address property of this object.
- **/
-void
-nm_ip6_address_set_address (NMIP6Address *address, const struct in6_addr *addr)
-{
-	g_return_if_fail (address != NULL);
-	g_return_if_fail (address->refcount > 0);
-	g_return_if_fail (addr != NULL);
-
-	memcpy (&address->address, addr, sizeof (struct in6_addr));
-}
-
-/**
- * nm_ip6_address_get_prefix:
- * @address: the #NMIP6Address
- *
- * Gets the IPv6 address prefix property of this address object.
- *
- * Returns: the IPv6 address prefix
- **/
-guint32
-nm_ip6_address_get_prefix (NMIP6Address *address)
-{
-	g_return_val_if_fail (address != NULL, 0);
-	g_return_val_if_fail (address->refcount > 0, 0);
-
-	return address->prefix;
-}
-
-/**
- * nm_ip6_address_set_prefix:
- * @address: the #NMIP6Address
- * @prefix: the address prefix, a number between 0 and 128 inclusive
- *
- * Sets the IPv6 address prefix.
- **/
-void
-nm_ip6_address_set_prefix (NMIP6Address *address, guint32 prefix)
-{
-	g_return_if_fail (address != NULL);
-	g_return_if_fail (address->refcount > 0);
-	g_return_if_fail (prefix <= 128);
-	g_return_if_fail (prefix > 0);
-
-	address->prefix = prefix;
-}
-
-/**
- * nm_ip6_address_get_gateway:
- * @address: the #NMIP6Address
- *
- * Gets the IPv6 default gateway property of this address object.
- *
- * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
- *          the IPv6 gateway address
- **/
-const struct in6_addr *
-nm_ip6_address_get_gateway (NMIP6Address *address)
-{
-	g_return_val_if_fail (address != NULL, NULL);
-	g_return_val_if_fail (address->refcount > 0, NULL);
-
-	return &address->gateway;
-}
-
-/**
- * nm_ip6_address_set_gateway:
- * @address: the #NMIP6Address
- * @gateway: the IPv6 default gateway
- *
- * Sets the IPv6 default gateway property of this address object.
- **/
-void
-nm_ip6_address_set_gateway (NMIP6Address *address, const struct in6_addr *gateway)
-{
-	g_return_if_fail (address != NULL);
-	g_return_if_fail (address->refcount > 0);
-	g_return_if_fail (gateway != NULL);
-
-	memcpy (&address->gateway, gateway, sizeof (struct in6_addr));
-}
-
-/********************************************************************/
-
-struct NMIP6Route {
-	guint32 refcount;
-
-	struct in6_addr dest;
-	guint32 prefix;
-	struct in6_addr next_hop;
-	guint32 metric;    /* lower metric == more preferred */
-};
-
-/**
- * nm_ip6_route_new:
- *
- * Creates and returns a new #NMIP6Route object.
- *
- * Returns: (transfer full): the new empty #NMIP6Route object
- **/
-NMIP6Route *
-nm_ip6_route_new (void)
-{
-	NMIP6Route *route;
-
-	route = g_malloc0 (sizeof (NMIP6Route));
-	route->refcount = 1;
-	return route;
-}
-
-/**
- * nm_ip6_route_dup:
- * @source: the #NMIP6Route object to copy
- *
- * Copies a given #NMIP6Route object and returns the copy.
- *
- * Returns: (transfer full): the copy of the given #NMIP6Route copy
- **/
-NMIP6Route *
-nm_ip6_route_dup (NMIP6Route *source)
-{
-	NMIP6Route *route;
-
-	g_return_val_if_fail (source != NULL, NULL);
-	g_return_val_if_fail (source->refcount > 0, NULL);
-
-	route = nm_ip6_route_new ();
-	route->prefix = source->prefix;
-	route->metric = source->metric;
-	memcpy (&route->dest, &source->dest, sizeof (struct in6_addr));
-	memcpy (&route->next_hop, &source->next_hop, sizeof (struct in6_addr));
-
-	return route;
-}
-
-/**
- * nm_ip6_route_ref:
- * @route: the #NMIP6Route
- *
- * Increases the reference count of the object.
- **/
-void
-nm_ip6_route_ref (NMIP6Route *route)
-{
-	g_return_if_fail (route != NULL);
-	g_return_if_fail (route->refcount > 0);
-
-	route->refcount++;
-}
-
-/**
- * nm_ip6_route_unref:
- * @route: the #NMIP6Route
- *
- * Decreases the reference count of the object.  If the reference count
- * reaches zero, the object will be destroyed.
- **/
-void
-nm_ip6_route_unref (NMIP6Route *route)
-{
-	g_return_if_fail (route != NULL);
-	g_return_if_fail (route->refcount > 0);
-
-	route->refcount--;
-	if (route->refcount == 0) {
-		memset (route, 0, sizeof (NMIP6Route));
-		g_free (route);
-	}
-}
-
-/**
- * nm_ip6_route_compare:
- * @route: the #NMIP6Route
- * @other: the #NMIP6Route to compare @route to.
- *
- * Determines if two #NMIP6Route objects contain the same values.
- *
- * Returns: %TRUE if the objects contain the same values, %FALSE if they do not.
- **/
-gboolean
-nm_ip6_route_compare (NMIP6Route *route, NMIP6Route *other)
-{
-	g_return_val_if_fail (route != NULL, FALSE);
-	g_return_val_if_fail (route->refcount > 0, FALSE);
-
-	g_return_val_if_fail (other != NULL, FALSE);
-	g_return_val_if_fail (other->refcount > 0, FALSE);
-
-	if (   memcmp (&route->dest, &other->dest, sizeof (struct in6_addr))
-	    || route->prefix != other->prefix
-	    || memcmp (&route->next_hop, &other->next_hop, sizeof (struct in6_addr))
-	    || route->metric != other->metric)
-		return FALSE;
-	return TRUE;
-}
-
-/**
- * nm_ip6_route_get_dest:
- * @route: the #NMIP6Route
- *
- * Gets the IPv6 destination address property of this route object.
- *
- * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
- *          the IPv6 address of destination
- **/
-const struct in6_addr *
-nm_ip6_route_get_dest (NMIP6Route *route)
-{
-	g_return_val_if_fail (route != NULL, NULL);
-	g_return_val_if_fail (route->refcount > 0, NULL);
-
-	return &route->dest;
-}
-
-/**
- * nm_ip6_route_set_dest:
- * @route: the #NMIP6Route
- * @dest: the destination address
- *
- * Sets the IPv6 destination address property of this route object.
- **/
-void
-nm_ip6_route_set_dest (NMIP6Route *route, const struct in6_addr *dest)
-{
-	g_return_if_fail (route != NULL);
-	g_return_if_fail (route->refcount > 0);
-	g_return_if_fail (dest != NULL);
-
-	memcpy (&route->dest, dest, sizeof (struct in6_addr));
-}
-
-/**
- * nm_ip6_route_get_prefix:
- * @route: the #NMIP6Route
- *
- * Gets the IPv6 prefix (ie "32" or "64" etc) of this route.
- *
- * Returns: the IPv6 prefix
- **/
-guint32
-nm_ip6_route_get_prefix (NMIP6Route *route)
-{
-	g_return_val_if_fail (route != NULL, 0);
-	g_return_val_if_fail (route->refcount > 0, 0);
-
-	return route->prefix;
-}
-
-/**
- * nm_ip6_route_set_prefix:
- * @route: the #NMIP6Route
- * @prefix: the prefix, a number between 1 and 128 inclusive
- *
- * Sets the IPv6 prefix of this route.
- **/
-void
-nm_ip6_route_set_prefix (NMIP6Route *route, guint32 prefix)
-{
-	g_return_if_fail (route != NULL);
-	g_return_if_fail (route->refcount > 0);
-	g_return_if_fail (prefix <= 128);
-	g_return_if_fail (prefix > 0);
-
-	route->prefix = prefix;
-}
-
-/**
- * nm_ip6_route_get_next_hop:
- * @route: the #NMIP6Route
- *
- * Gets the IPv6 address of the next hop of this route.
- *
- * Returns: (array fixed-size=16) (element-type guint8) (transfer none):
- *          the IPv6 address of next hop
- **/
-const struct in6_addr *
-nm_ip6_route_get_next_hop (NMIP6Route *route)
-{
-	g_return_val_if_fail (route != NULL, NULL);
-	g_return_val_if_fail (route->refcount > 0, NULL);
-
-	return &route->next_hop;
-}
-
-/**
- * nm_ip6_route_set_next_hop:
- * @route: the #NMIP6Route
- * @next_hop: the IPv6 address of the next hop
- *
- * Sets the IPv6 address of the next hop of this route.
- **/
-void
-nm_ip6_route_set_next_hop (NMIP6Route *route, const struct in6_addr *next_hop)
-{
-	g_return_if_fail (route != NULL);
-	g_return_if_fail (route->refcount > 0);
-	g_return_if_fail (next_hop != NULL);
-
-	memcpy (&route->next_hop, next_hop, sizeof (struct in6_addr));
-}
-
-/**
- * nm_ip6_route_get_metric:
- * @route: the #NMIP6Route
- *
- * Gets the route metric property of this route object; lower values indicate
- * "better" or more preferred routes.
- *
- * Returns: the route metric
- **/
-guint32
-nm_ip6_route_get_metric (NMIP6Route *route)
-{
-	g_return_val_if_fail (route != NULL, 0);
-	g_return_val_if_fail (route->refcount > 0, 0);
-
-	return route->metric;
-}
-
-/**
- * nm_ip6_route_set_metric:
- * @route: the #NMIP6Route
- * @metric: the route metric
- *
- * Sets the route metric property of this route object; lower values indicate
- * "better" or more preferred routes.
- **/
-void
-nm_ip6_route_set_metric (NMIP6Route *route, guint32 metric)
-{
-	g_return_if_fail (route != NULL);
-	g_return_if_fail (route->refcount > 0);
-
-	route->metric = metric;
 }

@@ -77,7 +77,7 @@
 const char *_nm_setting_ip4_config_get_address_label      (NMSettingIP4Config *setting,
                                                            guint32             i);
 gboolean    _nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *setting,
-                                                           NMIP4Address       *address,
+                                                           NMIPAddress        *address,
                                                            const char         *label);
 
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated

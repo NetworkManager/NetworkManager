@@ -2887,7 +2887,7 @@ check_and_convert_vlan_prio_maps (const char *prio_map,
 }
 
 static gboolean
-add_ip4_address_to_connection (NMIP4Address *ip4addr, NMConnection *connection)
+add_ip4_address_to_connection (NMIPAddress *ip4addr, NMConnection *connection)
 {
 	NMSettingIP4Config *s_ip4;
 	gboolean ret;
@@ -2904,13 +2904,13 @@ add_ip4_address_to_connection (NMIP4Address *ip4addr, NMConnection *connection)
 		              NULL);
 	}
 	ret = nm_setting_ip4_config_add_address (s_ip4, ip4addr);
-	nm_ip4_address_unref (ip4addr);
+	nm_ip_address_unref (ip4addr);
 
 	return ret;
 }
 
 static gboolean
-add_ip6_address_to_connection (NMIP6Address *ip6addr, NMConnection *connection)
+add_ip6_address_to_connection (NMIPAddress *ip6addr, NMConnection *connection)
 {
 	NMSettingIP6Config *s_ip6;
 	gboolean ret;
@@ -2927,7 +2927,7 @@ add_ip6_address_to_connection (NMIP6Address *ip6addr, NMConnection *connection)
 		              NULL);
 	}
 	ret = nm_setting_ip6_config_add_address (s_ip6, ip6addr);
-	nm_ip6_address_unref (ip6addr);
+	nm_ip_address_unref (ip6addr);
 
 	return ret;
 }
@@ -3841,9 +3841,9 @@ ask_for_ip_addresses (NMConnection *connection, int family)
 	char *str, *ip, *gw, *rest;
 	const char *prompt;
 	gboolean added;
-	gpointer ipaddr;
+	NMIPAddress *ipaddr;
 
-	if (family == 4)
+	if (family == AF_INET)
 		prompt =_("IPv4 address (IP[/plen] [gateway]) [none]: ");
 	else
 		prompt =_("IPv6 address (IP[/plen] [gateway]) [none]: ");
@@ -3853,16 +3853,13 @@ ask_for_ip_addresses (NMConnection *connection, int family)
 		str = nmc_readline ("%s", prompt);
 		split_address (str, &ip, &gw, &rest);
 		if (ip) {
-			if (family == 4)
-				ipaddr = nmc_parse_and_build_ip4_address (ip, gw, &error);
-			else
-				ipaddr = nmc_parse_and_build_ip6_address (ip, gw, &error);
+			ipaddr = nmc_parse_and_build_address (family, ip, gw, &error);
 			if (ipaddr) {
-				if (family == 4)
-					added = add_ip4_address_to_connection ((NMIP4Address *) ipaddr, connection);
+				if (family == AF_INET)
+					added = add_ip4_address_to_connection (ipaddr, connection);
 				else
-					added = add_ip6_address_to_connection ((NMIP6Address *) ipaddr, connection);
-				gw = gw ? gw : (family == 4) ? "0.0.0.0" : "::";
+					added = add_ip6_address_to_connection (ipaddr, connection);
+				gw = gw ? gw : (family == AF_INET) ? "0.0.0.0" : "::";
 				if (added)
 					g_print (_("  Address successfully added: %s %s\n"), ip, gw);
 				else
@@ -3896,8 +3893,8 @@ do_questionnaire_ip (NMConnection *connection)
 
 	g_print (_("Press <Enter> to finish adding addresses.\n"));
 
-	ask_for_ip_addresses (connection, 4);
-	ask_for_ip_addresses (connection, 6);
+	ask_for_ip_addresses (connection, AF_INET);
+	ask_for_ip_addresses (connection, AF_INET6);
 
 	g_free (answer);
 	return;
@@ -5151,8 +5148,7 @@ cleanup_olpc:
 	    && strcmp (con_type, "team-slave") != 0
 	    && strcmp (con_type, "bridge-slave") != 0) {
 
-		NMIP4Address *ip4addr = NULL;
-		NMIP6Address *ip6addr = NULL;
+		NMIPAddress *ip4addr = NULL, *ip6addr = NULL;
 		const char *ip4 = NULL, *gw4 = NULL, *ip6 = NULL, *gw6 = NULL;
 		nmc_arg_t exp_args[] = { {"ip4", TRUE, &ip4, FALSE}, {"gw4", TRUE, &gw4, FALSE},
 		                         {"ip6", TRUE, &ip6, FALSE}, {"gw6", TRUE, &gw6, FALSE},
@@ -5172,7 +5168,7 @@ cleanup_olpc:
 
 			/* coverity[dead_error_begin] */
 			if (ip4) {
-				ip4addr = nmc_parse_and_build_ip4_address (ip4, gw4, error);
+				ip4addr = nmc_parse_and_build_address (AF_INET, ip4, gw4, error);
 				if (!ip4addr) {
 					g_prefix_error (error, _("Error: "));
 					return FALSE;
@@ -5182,7 +5178,7 @@ cleanup_olpc:
 
 			/* coverity[dead_error_begin] */
 			if (ip6) {
-				ip6addr = nmc_parse_and_build_ip6_address (ip6, gw6, error);
+				ip6addr = nmc_parse_and_build_address (AF_INET6, ip6, gw6, error);
 				if (!ip6addr) {
 					g_prefix_error (error, _("Error: "));
 					return FALSE;

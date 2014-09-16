@@ -38,69 +38,51 @@
 #define TEST_WIRELESS_FILE TEST_KEYFILES_DIR"/Test_Wireless_Connection"
 
 static void
-check_ip4_address (NMSettingIP4Config *config, int idx, const char *address_str, int plen, const char *gateway_str)
+check_ip4_address (NMSettingIP4Config *config, int idx, const char *address, int plen, const char *gateway)
 {
-	NMIP4Address *ip4 = nm_setting_ip4_config_get_address (config, idx);
-	guint32 address, gateway;
-
-	g_assert (inet_pton (AF_INET, address_str, &address) == 1);
-	g_assert (inet_pton (AF_INET, gateway_str, &gateway) == 1);
+	NMIPAddress *ip4 = nm_setting_ip4_config_get_address (config, idx);
 
 	g_assert (ip4);
-	g_assert (nm_ip4_address_get_address (ip4) == address);
-	g_assert (nm_ip4_address_get_prefix (ip4) == plen);
-	g_assert (nm_ip4_address_get_gateway (ip4) == gateway);
+	g_assert_cmpstr (nm_ip_address_get_address (ip4), ==, address);
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4), ==, plen);
+	g_assert_cmpstr (nm_ip_address_get_gateway (ip4), ==, gateway);
 }
 
 static void
-check_ip6_address (NMSettingIP6Config *config, int idx, const char *address_str, int plen, const char *gateway_str)
+check_ip6_address (NMSettingIP6Config *config, int idx, const char *address, int plen, const char *gateway)
 {
-	NMIP6Address *ip6 = nm_setting_ip6_config_get_address (config, idx);
-	struct in6_addr address;
-	struct in6_addr gateway;
-
-	g_assert (inet_pton (AF_INET6, address_str, &address) == 1);
-	g_assert (inet_pton (AF_INET6, gateway_str, &gateway) == 1);
+	NMIPAddress *ip6 = nm_setting_ip6_config_get_address (config, idx);
 
 	g_assert (ip6);
-	g_assert (!memcmp (nm_ip6_address_get_address (ip6), &address, sizeof(address)));
-	g_assert (nm_ip6_address_get_prefix (ip6) == plen);
-	g_assert (!memcmp (nm_ip6_address_get_gateway (ip6), &gateway, sizeof(gateway)));
+	g_assert_cmpstr (nm_ip_address_get_address (ip6), ==, address);
+	g_assert_cmpint (nm_ip_address_get_prefix (ip6), ==, plen);
+	g_assert_cmpstr (nm_ip_address_get_gateway (ip6), ==, gateway);
 }
 
 static void
-check_ip4_route (NMSettingIP4Config *config, int idx, const char *destination_str, int plen,
-		const char *nexthop_str, int metric)
+check_ip4_route (NMSettingIP4Config *config, int idx, const char *destination, int plen,
+                 const char *next_hop, int metric)
 {
-	NMIP4Route *route = nm_setting_ip4_config_get_route (config, idx);
-	guint32 destination, nexthop;
-
-	g_assert (inet_pton (AF_INET, destination_str, &destination) == 1);
-	g_assert (inet_pton (AF_INET, nexthop_str, &nexthop) == 1);
+	NMIPRoute *route = nm_setting_ip4_config_get_route (config, idx);
 
 	g_assert (route);
-	g_assert (nm_ip4_route_get_dest (route) == destination);
-	g_assert (nm_ip4_route_get_prefix (route) == plen);
-	g_assert (nm_ip4_route_get_next_hop (route) == nexthop);
-	g_assert (nm_ip4_route_get_metric (route) == metric);
+	g_assert_cmpstr (nm_ip_route_get_dest (route), ==, destination);
+	g_assert_cmpint (nm_ip_route_get_prefix (route), ==, plen);
+	g_assert_cmpstr (nm_ip_route_get_next_hop (route), ==, next_hop);
+	g_assert_cmpint (nm_ip_route_get_metric (route), ==, metric);
 }
 
 static void
-check_ip6_route (NMSettingIP6Config *config, int idx, const char *destination_str, int plen,
-		const char *next_hop_str, int metric)
+check_ip6_route (NMSettingIP6Config *config, int idx, const char *destination, int plen,
+                 const char *next_hop, int metric)
 {
-	NMIP6Route *route = nm_setting_ip6_config_get_route (config, idx);
-	struct in6_addr destination;
-	struct in6_addr next_hop;
-
-	g_assert (inet_pton (AF_INET6, destination_str, &destination) == 1);
-	g_assert (inet_pton (AF_INET6, next_hop_str, &next_hop) == 1);
+	NMIPRoute *route = nm_setting_ip6_config_get_route (config, idx);
 
 	g_assert (route);
-	g_assert (!memcmp (nm_ip6_route_get_dest (route), &destination, sizeof(destination)));
-	g_assert (nm_ip6_route_get_prefix (route) == plen);
-	g_assert (!memcmp (nm_ip6_route_get_next_hop (route), &next_hop, sizeof(next_hop)));
-	g_assert (nm_ip6_route_get_metric (route) == metric);
+	g_assert_cmpstr (nm_ip_route_get_dest (route), ==, destination);
+	g_assert_cmpint (nm_ip_route_get_prefix (route), ==, plen);
+	g_assert_cmpstr (nm_ip_route_get_next_hop (route), ==, next_hop);
+	g_assert_cmpint (nm_ip_route_get_metric (route), ==, metric);
 }
 
 static NMConnection *
@@ -291,24 +273,24 @@ test_read_valid_wired_connection (void)
 	check_ip4_address (s_ip4, 0, "2.3.4.5", 24, "2.3.4.6");
 	check_ip4_address (s_ip4, 1, "192.168.0.5", 24, "192.168.0.1");
 	check_ip4_address (s_ip4, 2, "1.2.3.4", 16, "1.2.1.1");
-	check_ip4_address (s_ip4, 3, "3.4.5.6", 16, "0.0.0.0");
+	check_ip4_address (s_ip4, 3, "3.4.5.6", 16, NULL);
 	check_ip4_address (s_ip4, 4, "4.5.6.7", 24, "1.2.3.4");
-	check_ip4_address (s_ip4, 5, "5.6.7.8", 24, "0.0.0.0");
+	check_ip4_address (s_ip4, 5, "5.6.7.8", 24, NULL);
 
 	/* IPv4 routes */
 	g_assert (nm_setting_ip4_config_get_num_routes (s_ip4) == 12);
-	check_ip4_route (s_ip4, 0, "5.6.7.8", 32, "0.0.0.0", 0);
+	check_ip4_route (s_ip4, 0, "5.6.7.8", 32, NULL, 0);
 	check_ip4_route (s_ip4, 1, "1.2.3.0", 24, "2.3.4.8", 99);
-	check_ip4_route (s_ip4, 2, "1.1.1.2", 12, "0.0.0.0", 0);
-	check_ip4_route (s_ip4, 3, "1.1.1.3", 13, "0.0.0.0", 0);
+	check_ip4_route (s_ip4, 2, "1.1.1.2", 12, NULL, 0);
+	check_ip4_route (s_ip4, 3, "1.1.1.3", 13, NULL, 0);
 	check_ip4_route (s_ip4, 4, "1.1.1.4", 14, "2.2.2.4", 0);
 	check_ip4_route (s_ip4, 5, "1.1.1.5", 15, "2.2.2.5", 0);
 	check_ip4_route (s_ip4, 6, "1.1.1.6", 16, "2.2.2.6", 0);
-	check_ip4_route (s_ip4, 7, "1.1.1.7", 17, "0.0.0.0", 0);
-	check_ip4_route (s_ip4, 8, "1.1.1.8", 18, "0.0.0.0", 0);
-	check_ip4_route (s_ip4, 9, "1.1.1.9", 19, "0.0.0.0", 0);
-	check_ip4_route (s_ip4, 10, "1.1.1.10", 20, "0.0.0.0", 0);
-	check_ip4_route (s_ip4, 11, "1.1.1.11", 21, "0.0.0.0", 21);
+	check_ip4_route (s_ip4, 7, "1.1.1.7", 17, NULL, 0);
+	check_ip4_route (s_ip4, 8, "1.1.1.8", 18, NULL, 0);
+	check_ip4_route (s_ip4, 9, "1.1.1.9", 19, NULL, 0);
+	check_ip4_route (s_ip4, 10, "1.1.1.10", 20, NULL, 0);
+	check_ip4_route (s_ip4, 11, "1.1.1.11", 21, NULL, 21);
 
 	/* ===== IPv6 SETTING ===== */
 
@@ -371,25 +353,25 @@ test_read_valid_wired_connection (void)
 	/* IPv6 addresses */
 	g_assert (nm_setting_ip6_config_get_num_addresses (s_ip6) == 10);
 	check_ip6_address (s_ip6, 0, "2:3:4:5:6:7:8:9", 64, "2:3:4:5:1:2:3:4");
-	check_ip6_address (s_ip6, 1, "abcd:1234:ffff::cdde", 64, "::");
-	check_ip6_address (s_ip6, 2, "1:2:3:4:5:6:7:8", 96, "::");
-	check_ip6_address (s_ip6, 3, "3:4:5:6:7:8:9:0", 128, "::");
-	check_ip6_address (s_ip6, 4, "3:4:5:6:7:8:9:14", 64, "::");
-	check_ip6_address (s_ip6, 5, "3:4:5:6:7:8:9:15", 64, "::");
-	check_ip6_address (s_ip6, 6, "3:4:5:6:7:8:9:16", 66, "::");
-	check_ip6_address (s_ip6, 7, "3:4:5:6:7:8:9:17", 67, "::");
-	check_ip6_address (s_ip6, 8, "3:4:5:6:7:8:9:18", 68, "::");
-	check_ip6_address (s_ip6, 9, "3:4:5:6:7:8:9:19", 69, "1::09");
+	check_ip6_address (s_ip6, 1, "abcd:1234:ffff::cdde", 64, NULL);
+	check_ip6_address (s_ip6, 2, "1:2:3:4:5:6:7:8", 96, NULL);
+	check_ip6_address (s_ip6, 3, "3:4:5:6:7:8:9:0", 128, NULL);
+	check_ip6_address (s_ip6, 4, "3:4:5:6:7:8:9:14", 64, NULL);
+	check_ip6_address (s_ip6, 5, "3:4:5:6:7:8:9:15", 64, NULL);
+	check_ip6_address (s_ip6, 6, "3:4:5:6:7:8:9:16", 66, NULL);
+	check_ip6_address (s_ip6, 7, "3:4:5:6:7:8:9:17", 67, NULL);
+	check_ip6_address (s_ip6, 8, "3:4:5:6:7:8:9:18", 68, NULL);
+	check_ip6_address (s_ip6, 9, "3:4:5:6:7:8:9:19", 69, "1::9");
 
 	/* Route #1 */
 	g_assert (nm_setting_ip6_config_get_num_routes (s_ip6) == 7);
 	check_ip6_route (s_ip6, 0, "d:e:f:0:1:2:3:4", 64, "f:e:d:c:1:2:3:4", 0);
 	check_ip6_route (s_ip6, 1, "a:b:c:d::", 64, "f:e:d:c:1:2:3:4", 99);
-	check_ip6_route (s_ip6, 2, "8:7:6:5:4:3:2:1", 128, "::", 0);
-	check_ip6_route (s_ip6, 3, "6:7:8:9:0:1:2:3", 126, "::", 1);
-	check_ip6_route (s_ip6, 4, "7:8:9:0:1:2:3:4", 125, "::", 5);
-	check_ip6_route (s_ip6, 5, "8:9:0:1:2:3:4:5", 124, "::", 6);
-	check_ip6_route (s_ip6, 6, "8:9:0:1:2:3:4:6", 123, "::", 0);
+	check_ip6_route (s_ip6, 2, "8:7:6:5:4:3:2:1", 128, NULL, 0);
+	check_ip6_route (s_ip6, 3, "6:7:8:9:0:1:2:3", 126, NULL, 1);
+	check_ip6_route (s_ip6, 4, "7:8:9:0:1:2:3:4", 125, NULL, 5);
+	check_ip6_route (s_ip6, 5, "8:9:0:1:2:3:4:5", 124, NULL, 6);
+	check_ip6_route (s_ip6, 6, "8:9:0:1:2:3:4:6", 123, NULL, 0);
 	g_object_unref (connection);
 }
 
@@ -399,20 +381,13 @@ add_one_ip4_address (NMSettingIP4Config *s_ip4,
                      const char *gw,
                      guint32 prefix)
 {
-	guint32 tmp;
-	NMIP4Address *ip4_addr;
+	NMIPAddress *ip4_addr;
+	GError *error = NULL;
 
-	ip4_addr = nm_ip4_address_new ();
-	nm_ip4_address_set_prefix (ip4_addr, prefix);
-
-	inet_pton (AF_INET, addr, &tmp);
-	nm_ip4_address_set_address (ip4_addr, tmp);
-
-	inet_pton (AF_INET, gw, &tmp);
-	nm_ip4_address_set_gateway (ip4_addr, tmp);
-
+	ip4_addr = nm_ip_address_new (AF_INET, addr, prefix, gw, &error);
+	g_assert_no_error (error);
 	nm_setting_ip4_config_add_address (s_ip4, ip4_addr);
-	nm_ip4_address_unref (ip4_addr);
+	nm_ip_address_unref (ip4_addr);
 }
 
 static void
@@ -422,21 +397,13 @@ add_one_ip4_route (NMSettingIP4Config *s_ip4,
                    guint32 prefix,
                    guint32 metric)
 {
-	guint32 addr;
-	NMIP4Route *route;
+	NMIPRoute *route;
+	GError *error = NULL;
 
-	route = nm_ip4_route_new ();
-	nm_ip4_route_set_prefix (route, prefix);
-	nm_ip4_route_set_metric (route, metric);
-
-	inet_pton (AF_INET, dest, &addr);
-	nm_ip4_route_set_dest (route, addr);
-
-	inet_pton (AF_INET, nh, &addr);
-	nm_ip4_route_set_next_hop (route, addr);
-
+	route = nm_ip_route_new (AF_INET, dest, prefix, nh, metric, &error);
+	g_assert_no_error (error);
 	nm_setting_ip4_config_add_route (s_ip4, route);
-	nm_ip4_route_unref (route);
+	nm_ip_route_unref (route);
 }
 
 static void
@@ -445,22 +412,13 @@ add_one_ip6_address (NMSettingIP6Config *s_ip6,
                      guint32 prefix,
                      const char *gw)
 {
-	struct in6_addr tmp;
-	NMIP6Address *ip6_addr;
+	NMIPAddress *ip6_addr;
+	GError *error = NULL;
 
-	ip6_addr = nm_ip6_address_new ();
-	nm_ip6_address_set_prefix (ip6_addr, prefix);
-
-	inet_pton (AF_INET6, addr, &tmp);
-	nm_ip6_address_set_address (ip6_addr, &tmp);
-
-	if (gw) {
-		inet_pton (AF_INET6, gw, &tmp);
-		nm_ip6_address_set_gateway (ip6_addr, &tmp);
-	}
-
+	ip6_addr = nm_ip_address_new (AF_INET6, addr, prefix, gw, &error);
+	g_assert_no_error (error);
 	nm_setting_ip6_config_add_address (s_ip6, ip6_addr);
-	nm_ip6_address_unref (ip6_addr);
+	nm_ip_address_unref (ip6_addr);
 }
 
 static void
@@ -470,21 +428,13 @@ add_one_ip6_route (NMSettingIP6Config *s_ip6,
                    guint32 prefix,
                    guint32 metric)
 {
-	struct in6_addr addr;
-	NMIP6Route *route;
+	NMIPRoute *route;
+	GError *error = NULL;
 
-	route = nm_ip6_route_new ();
-	nm_ip6_route_set_prefix (route, prefix);
-	nm_ip6_route_set_metric (route, metric);
-
-	inet_pton (AF_INET6, dest, &addr);
-	nm_ip6_route_set_dest (route, &addr);
-
-	inet_pton (AF_INET6, nh, &addr);
-	nm_ip6_route_set_next_hop (route, &addr);
-
+	route = nm_ip_route_new (AF_INET6, dest, prefix, nh, metric, &error);
+	g_assert_no_error (error);
 	nm_setting_ip6_config_add_route (s_ip6, route);
-	nm_ip6_route_unref (route);
+	nm_ip_route_unref (route);
 }
 
 
@@ -515,9 +465,9 @@ test_write_wired_connection (void)
 	const char *route2 = "1.1.1.1";
 	const char *route2_nh = "1.2.1.1";
 	const char *route3 = "2.2.2.2";
-	const char *route3_nh = "0.0.0.0";
+	const char *route3_nh = NULL;
 	const char *route4 = "3.3.3.3";
-	const char *route4_nh = "0.0.0.0";
+	const char *route4_nh = NULL;
 	const char *dns6_1 = "1::cafe";
 	const char *dns6_2 = "2::cafe";
 	const char *address6_1 = "abcd::beef";

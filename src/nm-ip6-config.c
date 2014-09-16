@@ -421,22 +421,24 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, i
 	else if (nm_setting_ip6_config_get_ignore_auto_routes (setting))
 		nm_ip6_config_set_never_default (config, FALSE);
 	for (i = 0; i < naddresses; i++) {
-		const struct in6_addr *gateway = nm_ip6_address_get_gateway (nm_setting_ip6_config_get_address (setting, i));
+		const char *gateway_str = nm_ip_address_get_gateway (nm_setting_ip6_config_get_address (setting, i));
+		struct in6_addr gateway;
 
-		if (gateway && !IN6_IS_ADDR_UNSPECIFIED (gateway)) {
-			nm_ip6_config_set_gateway (config, gateway);
+		if (gateway_str) {
+			inet_pton (AF_INET6, gateway_str, &gateway);
+			nm_ip6_config_set_gateway (config, &gateway);
 			break;
 		}
 	}
 
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
-		NMIP6Address *s_addr = nm_setting_ip6_config_get_address (setting, i);
+		NMIPAddress *s_addr = nm_setting_ip6_config_get_address (setting, i);
 		NMPlatformIP6Address address;
 
 		memset (&address, 0, sizeof (address));
-		address.address = *nm_ip6_address_get_address (s_addr);
-		address.plen = nm_ip6_address_get_prefix (s_addr);
+		nm_ip_address_get_address_binary (s_addr, &address.address);
+		address.plen = nm_ip_address_get_prefix (s_addr);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.source = NM_IP_CONFIG_SOURCE_USER;
@@ -448,14 +450,14 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, i
 	if (nm_setting_ip6_config_get_ignore_auto_routes (setting))
 		nm_ip6_config_reset_routes (config);
 	for (i = 0; i < nroutes; i++) {
-		NMIP6Route *s_route = nm_setting_ip6_config_get_route (setting, i);
+		NMIPRoute *s_route = nm_setting_ip6_config_get_route (setting, i);
 		NMPlatformIP6Route route;
 
 		memset (&route, 0, sizeof (route));
-		route.network = *nm_ip6_route_get_dest (s_route);
-		route.plen = nm_ip6_route_get_prefix (s_route);
-		route.gateway = *nm_ip6_route_get_next_hop (s_route);
-		route.metric = nm_ip6_route_get_metric (s_route);
+		nm_ip_route_get_dest_binary (s_route, &route.network);
+		route.plen = nm_ip_route_get_prefix (s_route);
+		nm_ip_route_get_next_hop_binary (s_route, &route.gateway);
+		route.metric = nm_ip_route_get_metric (s_route);
 		if (!route.metric)
 			route.metric = default_route_metric;
 		route.source = NM_IP_CONFIG_SOURCE_USER;
@@ -508,7 +510,7 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
 		const NMPlatformIP6Address *address = nm_ip6_config_get_address (config, i);
-		NMIP6Address *s_addr;
+		NMIPAddress *s_addr;
 
 		/* Ignore link-local address. */
 		if (IN6_IS_ADDR_LINKLOCAL (&address->address)) {
@@ -527,15 +529,9 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 		if (!method || strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0)
 			method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 
-		s_addr = nm_ip6_address_new ();
-
-		nm_ip6_address_set_address (s_addr, &address->address);
-		nm_ip6_address_set_prefix (s_addr, address->plen);
-		if (gateway)
-			nm_ip6_address_set_gateway (s_addr, gateway);
-
+		s_addr = nm_ip_address_new_binary (AF_INET6, &address->address, address->plen, gateway, NULL);
 		nm_setting_ip6_config_add_address (s_ip6, s_addr);
-		nm_ip6_address_unref (s_addr);
+		nm_ip_address_unref (s_addr);
 	}
 
 	/* Use 'ignore' if the method wasn't previously set */
@@ -546,7 +542,7 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
 		const NMPlatformIP6Route *route = nm_ip6_config_get_route (config, i);
-		NMIP6Route *s_route;
+		NMIPRoute *s_route;
 
 		/* Ignore link-local route. */
 		if (IN6_IS_ADDR_LINKLOCAL (&route->network))
@@ -560,14 +556,12 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 		if (route->source != NM_IP_CONFIG_SOURCE_USER)
 			continue;
 
-		s_route = nm_ip6_route_new ();
-		nm_ip6_route_set_dest (s_route, &route->network);
-		nm_ip6_route_set_prefix (s_route, route->plen);
-		nm_ip6_route_set_next_hop (s_route, &route->gateway);
-		nm_ip6_route_set_metric (s_route, route->metric);
-
+		s_route = nm_ip_route_new_binary (AF_INET6,
+		                                  &route->network, route->plen,
+		                                  &route->gateway, route->metric,
+		                                  NULL);
 		nm_setting_ip6_config_add_route (s_ip6, s_route);
-		nm_ip6_route_unref (s_route);
+		nm_ip_route_unref (s_route);
 	}
 
 	/* DNS */

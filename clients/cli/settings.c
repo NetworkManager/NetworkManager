@@ -1209,8 +1209,7 @@ nmc_property_ipv4_get_addresses (NMSetting *setting)
 	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (setting);
 	GString *printable;
 	guint32 num_addresses, i;
-	NMIP4Address *addr;
-	char buf[INET_ADDRSTRLEN];
+	NMIPAddress *addr;
 
 	printable = g_string_new (NULL);
 
@@ -1223,14 +1222,13 @@ nmc_property_ipv4_get_addresses (NMSetting *setting)
 
 		g_string_append (printable, "{ ");
 
-		nm_utils_inet4_ntop (nm_ip4_address_get_address (addr), buf);
-		g_string_append_printf (printable, "ip = %s", buf);
+		g_string_append_printf (printable, "ip = %s/%u",
+		                        nm_ip_address_get_address (addr),
+		                        nm_ip_address_get_prefix (addr));
 
-		g_string_append_printf (printable, "/%u", nm_ip4_address_get_prefix (addr));
-
-		if (nm_ip4_address_get_gateway (addr)) {
-			nm_utils_inet4_ntop (nm_ip4_address_get_gateway (addr), buf);
-			g_string_append_printf (printable, ", gw = %s", buf);
+		if (nm_ip_address_get_gateway (addr)) {
+			g_string_append_printf (printable, ", gw = %s",
+			                        nm_ip_address_get_gateway (addr));
 		}
 
 		g_string_append (printable, " }");
@@ -1245,8 +1243,7 @@ nmc_property_ipv4_get_routes (NMSetting *setting)
 	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (setting);
 	GString *printable;
 	guint32 num_routes, i;
-	NMIP4Route *route;
-	char buf[INET_ADDRSTRLEN];
+	NMIPRoute *route;
 
 	printable = g_string_new (NULL);
 
@@ -1259,18 +1256,17 @@ nmc_property_ipv4_get_routes (NMSetting *setting)
 
 		g_string_append (printable, "{ ");
 
-		nm_utils_inet4_ntop (nm_ip4_route_get_dest (route), buf);
-		g_string_append_printf (printable, "ip = %s", buf);
+		g_string_append_printf (printable, "ip = %s/%u",
+		                        nm_ip_route_get_dest (route),
+		                        nm_ip_route_get_prefix (route));
 
-		g_string_append_printf (printable, "/%u", nm_ip4_route_get_prefix (route));
-
-		if (nm_ip4_route_get_next_hop (route)) {
-			nm_utils_inet4_ntop (nm_ip4_route_get_next_hop (route), buf);
-			g_string_append_printf (printable, ", nh = %s", buf);
+		if (nm_ip_route_get_next_hop (route)) {
+			g_string_append_printf (printable, ", nh = %s",
+			                        nm_ip_route_get_next_hop (route));
 		}
 
-		if (nm_ip4_route_get_metric (route))
-			g_string_append_printf (printable, ", mt = %u", nm_ip4_route_get_metric (route));
+		if (nm_ip_route_get_metric (route))
+			g_string_append_printf (printable, ", mt = %u", nm_ip_route_get_metric (route));
 
 		g_string_append (printable, " }");
 	}
@@ -1297,8 +1293,7 @@ nmc_property_ipv6_get_addresses (NMSetting *setting)
 	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
 	GString *printable;
 	guint32 num_addresses, i;
-	NMIP6Address *addr;
-	char buf[INET6_ADDRSTRLEN];
+	NMIPAddress *addr;
 
 	printable = g_string_new (NULL);
 
@@ -1311,14 +1306,13 @@ nmc_property_ipv6_get_addresses (NMSetting *setting)
 
 		g_string_append (printable, "{ ");
 
-		nm_utils_inet6_ntop (nm_ip6_address_get_address (addr), buf);
-		g_string_append_printf (printable, "ip = %s", buf);
+		g_string_append_printf (printable, "ip = %s/%u",
+		                        nm_ip_address_get_address (addr),
+		                        nm_ip_address_get_prefix (addr));
 
-		g_string_append_printf (printable, "/%u", nm_ip6_address_get_prefix (addr));
-
-		if (nm_ip6_address_get_gateway (addr)) {
-			nm_utils_inet6_ntop (nm_ip6_address_get_gateway (addr), buf);
-			g_string_append_printf (printable, ", gw = %s", buf);
+		if (nm_ip_address_get_gateway (addr)) {
+			g_string_append_printf (printable, ", gw = %s",
+			                        nm_ip_address_get_gateway (addr));
 		}
 
 		g_string_append (printable, " }");
@@ -1333,8 +1327,7 @@ nmc_property_ipv6_get_routes (NMSetting *setting)
 	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
 	GString *printable;
 	guint32 num_routes, i;
-	NMIP6Route *route;
-	char buf[INET6_ADDRSTRLEN];
+	NMIPRoute *route;
 
 	printable = g_string_new (NULL);
 
@@ -1347,18 +1340,17 @@ nmc_property_ipv6_get_routes (NMSetting *setting)
 
 		g_string_append (printable, "{ ");
 
-		nm_utils_inet6_ntop (nm_ip6_route_get_dest (route), buf);
-		g_string_append_printf (printable, "ip = %s", buf);
+		g_string_append_printf (printable, "ip = %s/%u",
+		                        nm_ip_route_get_dest (route),
+		                        nm_ip_route_get_prefix (route));
 
-		g_string_append_printf (printable, "/%u", nm_ip6_route_get_prefix (route));
-
-		if (nm_ip6_route_get_next_hop (route)) {
-			nm_utils_inet6_ntop (nm_ip6_route_get_next_hop (route), buf);
-			g_string_append_printf (printable, ", nh = %s", buf);
+		if (nm_ip_route_get_next_hop (route)) {
+			g_string_append_printf (printable, ", nh = %s",
+			                        nm_ip_route_get_next_hop (route));
 		}
 
-		if (nm_ip6_route_get_metric (route))
-			g_string_append_printf (printable, ", mt = %u", nm_ip6_route_get_metric (route));
+		if (nm_ip_route_get_metric (route))
+			g_string_append_printf (printable, ", mt = %u", nm_ip_route_get_metric (route));
 
 		g_string_append (printable, " }");
 	}
@@ -3074,6 +3066,51 @@ nmc_property_ib_set_p_key (NMSetting *setting, const char *prop, const char *val
 	return TRUE;
 }
 
+/* --- IP4 / IP6 shared functions --- */
+static NMIPAddress *
+_parse_ip_address (int family, const char *address, GError **error)
+{
+	char *value = g_strdup (address);
+	char **addrv;
+	NMIPAddress *ipaddr;
+
+	addrv = nmc_strsplit_set (g_strstrip (value), " \t", 0);
+	if (addrv[0] == NULL || g_strv_length (addrv) > 2) {
+		g_set_error (error, 1, 0, _("'%s' is not valid (use ip[/prefix] [gateway])"),
+		             address);
+		g_free (value);
+		g_strfreev (addrv);
+		return NULL;
+	}
+	ipaddr = nmc_parse_and_build_address (family, addrv[0], addrv[1], error);
+	g_free (value);
+	g_strfreev (addrv);
+	return ipaddr;
+}
+
+static NMIPRoute *
+_parse_ip_route (int family, const char *route, GError **error)
+{
+	char *value = g_strdup (route);
+	char **routev;
+	guint len;
+	NMIPRoute *iproute = NULL;
+
+	routev = nmc_strsplit_set (g_strstrip (value), " \t", 0);
+	len = g_strv_length (routev);
+	if (len < 1 || len > 3) {
+		g_set_error (error, 1, 0, _("'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric])"),
+		             route);
+		goto finish;
+	}
+	iproute = nmc_parse_and_build_route (family, routev[0], routev[1], len >= 2 ? routev[2] : NULL, error);
+
+finish:
+	g_free (value);
+	g_strfreev (routev);
+	return iproute;
+}
+
 /* --- NM_SETTING_IP4_CONFIG_SETTING_NAME property setter functions --- */
 /* 'method' */
 static const char *ipv4_valid_methods[] = {
@@ -3194,32 +3231,17 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_dns_search,
                                _validate_and_remove_ipv4_dns_search)
 
 /* 'addresses' */
-static NMIP4Address *
+static NMIPAddress *
 _parse_ipv4_address (const char *address, GError **error)
 {
-	char *value = g_strdup (address);
-	char **addrv;
-	NMIP4Address *ip4addr;
-
-	addrv = nmc_strsplit_set (g_strstrip (value), " \t", 0);
-	if (addrv[0] == NULL || g_strv_length (addrv) > 2) {
-		g_set_error (error, 1, 0, _("'%s' is not valid (use ip[/prefix] [gateway])"),
-		             address);
-		g_free (value);
-		g_strfreev (addrv);
-		return NULL;
-	}
-	ip4addr = nmc_parse_and_build_ip4_address (addrv[0], addrv[1], error);
-	g_free (value);
-	g_strfreev (addrv);
-	return ip4addr;
+	return _parse_ip_address (AF_INET, address, error);
 }
 
 static gboolean
 nmc_property_ipv4_set_addresses (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	char **strv = NULL, **iter;
-	NMIP4Address *ip4addr;
+	NMIPAddress *ip4addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
@@ -3231,7 +3253,7 @@ nmc_property_ipv4_set_addresses (NMSetting *setting, const char *prop, const cha
 			return FALSE;
 		}
 		nm_setting_ip4_config_add_address (NM_SETTING_IP4_CONFIG (setting), ip4addr);
-		nm_ip4_address_unref (ip4addr);
+		nm_ip_address_unref (ip4addr);
 	}
 	g_strfreev (strv);
 	return TRUE;
@@ -3242,7 +3264,7 @@ _validate_and_remove_ipv4_address (NMSettingIP4Config *setting,
                                    const char *address,
                                    GError **error)
 {
-	NMIP4Address *ip4addr;
+	NMIPAddress *ip4addr;
 	gboolean ret;
 
 	ip4addr = _parse_ipv4_address (address, error);
@@ -3253,7 +3275,7 @@ _validate_and_remove_ipv4_address (NMSettingIP4Config *setting,
 	if (!ret)
 		g_set_error (error, 1, 0,
 		             _("the property doesn't contain IP address '%s'"), address);
-	nm_ip4_address_unref (ip4addr);
+	nm_ip_address_unref (ip4addr);
 	return ret;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_addresses,
@@ -3307,34 +3329,17 @@ nmc_property_out2in_addresses (const char *out_format)
 }
 
 /* 'routes' */
-static NMIP4Route *
+static NMIPRoute *
 _parse_ipv4_route (const char *route, GError **error)
 {
-	char *value = g_strdup (route);
-	char **routev;
-	guint len;
-	NMIP4Route *ip4route = NULL;
-
-	routev = nmc_strsplit_set (g_strstrip (value), " \t", 0);
-	len = g_strv_length (routev);
-	if (len < 1 || len > 3) {
-		g_set_error (error, 1, 0, _("'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric])"),
-		             route);
-		goto finish;
-	}
-	ip4route = nmc_parse_and_build_ip4_route (routev[0], routev[1], len >= 2 ? routev[2] : NULL, error);
-
-finish:
-	g_free (value);
-	g_strfreev (routev);
-	return ip4route;
+	return _parse_ip_route (AF_INET, route, error);
 }
 
 static gboolean
 nmc_property_ipv4_set_routes (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	char **strv = NULL, **iter;
-	NMIP4Route *ip4route;
+	NMIPRoute *ip4route;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
@@ -3346,7 +3351,7 @@ nmc_property_ipv4_set_routes (NMSetting *setting, const char *prop, const char *
 			return FALSE;
 		}
 		nm_setting_ip4_config_add_route (NM_SETTING_IP4_CONFIG (setting), ip4route);
-		nm_ip4_route_unref (ip4route);
+		nm_ip_route_unref (ip4route);
 	}
 	g_strfreev (strv);
 	return TRUE;
@@ -3357,7 +3362,7 @@ _validate_and_remove_ipv4_route (NMSettingIP4Config *setting,
                                  const char *route,
                                  GError **error)
 {
-	NMIP4Route *ip4route;
+	NMIPRoute *ip4route;
 	gboolean ret;
 
 	ip4route = _parse_ipv4_route (route, error);
@@ -3367,7 +3372,7 @@ _validate_and_remove_ipv4_route (NMSettingIP4Config *setting,
 	ret = nm_setting_ip4_config_remove_route_by_value (setting, ip4route);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain route '%s'"), route);
-	nm_ip4_route_unref (ip4route);
+	nm_ip_route_unref (ip4route);
 	return ret;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_routes,
@@ -3546,32 +3551,17 @@ DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_dns_search,
                                _validate_and_remove_ipv6_dns_search)
 
 /* 'addresses' */
-static NMIP6Address *
+static NMIPAddress *
 _parse_ipv6_address (const char *address, GError **error)
 {
-	char *value = g_strstrip (g_strdup (address));
-	char **addrv;
-	NMIP6Address *ip6addr;
-
-	addrv = nmc_strsplit_set (g_strstrip (value), " \t", 0);
-	if (addrv[0] == NULL || g_strv_length (addrv) > 2) {
-		g_set_error (error, 1, 0, _("'%s' is not valid (use ip[/prefix] [gateway])"),
-		             address);
-		g_free (value);
-		g_strfreev (addrv);
-		return NULL;
-	}
-	ip6addr = nmc_parse_and_build_ip6_address (addrv[0], addrv[1], error);
-	g_free (value);
-	g_strfreev (addrv);
-	return ip6addr;
+	return _parse_ip_address (AF_INET6, address, error);
 }
 
 static gboolean
 nmc_property_ipv6_set_addresses (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	char **strv = NULL, **iter;
-	NMIP6Address *ip6addr;
+	NMIPAddress *ip6addr;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
@@ -3583,7 +3573,7 @@ nmc_property_ipv6_set_addresses (NMSetting *setting, const char *prop, const cha
 			return FALSE;
 		}
 		nm_setting_ip6_config_add_address (NM_SETTING_IP6_CONFIG (setting), ip6addr);
-		nm_ip6_address_unref (ip6addr);
+		nm_ip_address_unref (ip6addr);
 	}
 	g_strfreev (strv);
 	return TRUE;
@@ -3594,7 +3584,7 @@ _validate_and_remove_ipv6_address (NMSettingIP6Config *setting,
                                    const char *address,
                                    GError **error)
 {
-	NMIP6Address *ip6addr;
+	NMIPAddress *ip6addr;
 	gboolean ret;
 
 	ip6addr = _parse_ipv6_address (address, error);
@@ -3604,7 +3594,7 @@ _validate_and_remove_ipv6_address (NMSettingIP6Config *setting,
 	ret = nm_setting_ip6_config_remove_address_by_value (setting, ip6addr);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain IP address '%s'"), address);
-	nm_ip6_address_unref (ip6addr);
+	nm_ip_address_unref (ip6addr);
 	return ret;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_addresses,
@@ -3623,34 +3613,17 @@ nmc_property_ipv6_describe_addresses (NMSetting *setting, const char *prop)
 }
 
 /* 'routes' */
-static NMIP6Route *
+static NMIPRoute *
 _parse_ipv6_route (const char *route, GError **error)
 {
-	char *value = g_strdup (route);
-	char **routev;
-	guint len;
-	NMIP6Route *ip6route = NULL;
-
-	routev = nmc_strsplit_set (g_strstrip (value), " \t", 0);
-	len = g_strv_length (routev);
-	if (len < 1 || len > 3) {
-		g_set_error (error, 1, 0, _("'%s' is not valid (the format is: ip[/prefix] [next-hop] [metric])"),
-		             route);
-		goto finish;
-	}
-	ip6route = nmc_parse_and_build_ip6_route (routev[0], routev[1], len >= 2 ? routev[2] : NULL, error);
-
-finish:
-	g_free (value);
-	g_strfreev (routev);
-	return ip6route;
+	return _parse_ip_route (AF_INET6, route, error);
 }
 
 static gboolean
 nmc_property_ipv6_set_routes (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	char **strv = NULL, **iter;
-	NMIP6Route *ip6route;
+	NMIPRoute *ip6route;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
@@ -3662,7 +3635,7 @@ nmc_property_ipv6_set_routes (NMSetting *setting, const char *prop, const char *
 			return FALSE;
 		}
 		nm_setting_ip6_config_add_route (NM_SETTING_IP6_CONFIG (setting), ip6route);
-		nm_ip6_route_unref (ip6route);
+		nm_ip_route_unref (ip6route);
 	}
 	g_strfreev (strv);
 	return TRUE;
@@ -3673,7 +3646,7 @@ _validate_and_remove_ipv6_route (NMSettingIP6Config *setting,
                                  const char *route,
                                  GError **error)
 {
-	NMIP6Route *ip6route;
+	NMIPRoute *ip6route;
 	gboolean ret;
 
 	ip6route = _parse_ipv6_route (route, error);
@@ -3683,7 +3656,7 @@ _validate_and_remove_ipv6_route (NMSettingIP6Config *setting,
 	ret = nm_setting_ip6_config_remove_route_by_value (setting, ip6route);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain route '%s'"), route);
-	nm_ip6_route_unref (ip6route);
+	nm_ip_route_unref (ip6route);
 	return ret;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_routes,

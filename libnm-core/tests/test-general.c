@@ -324,7 +324,7 @@ static void
 test_setting_ip4_config_labels (void)
 {
 	NMSettingIP4Config *s_ip4;
-	NMIP4Address *addr;
+	NMIPAddress *addr;
 	const char *label;
 	GPtrArray *addrs;
 	char **labels;
@@ -336,12 +336,11 @@ test_setting_ip4_config_labels (void)
 	              NULL);
 
 	/* addr 1 */
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, 0x01010101);
-	nm_ip4_address_set_prefix (addr, 24);
+	addr = nm_ip_address_new (AF_INET, "1.1.1.1", 24, NULL, &error);
+	g_assert_no_error (error);
 
 	nm_setting_ip4_config_add_address (s_ip4, addr);
-	nm_ip4_address_unref (addr);
+	nm_ip_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
@@ -349,12 +348,11 @@ test_setting_ip4_config_labels (void)
 	g_assert_cmpstr (label, ==, "");
 
 	/* addr 2 */
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, 0x02020202);
-	nm_ip4_address_set_prefix (addr, 24);
+	addr = nm_ip_address_new (AF_INET, "2.2.2.2", 24, NULL, &error);
+	g_assert_no_error (error);
 
 	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "eth0:1");
-	nm_ip4_address_unref (addr);
+	nm_ip_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
@@ -362,12 +360,11 @@ test_setting_ip4_config_labels (void)
 	g_assert_cmpstr (label, ==, "eth0:1");
 
 	/* addr 3 */
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, 0x03030303);
-	nm_ip4_address_set_prefix (addr, 24);
+	addr = nm_ip_address_new (AF_INET, "3.3.3.3", 24, NULL, &error);
+	g_assert_no_error (error);
 
 	_nm_setting_ip4_config_add_address_with_label (s_ip4, addr, "");
-	nm_ip4_address_unref (addr);
+	nm_ip_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
@@ -380,12 +377,12 @@ test_setting_ip4_config_labels (void)
 	g_assert_no_error (error);
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
 	g_assert_cmpstr (label, ==, "eth0:1");
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
-	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
 	g_assert_cmpstr (label, ==, "");
 
@@ -409,12 +406,12 @@ test_setting_ip4_config_labels (void)
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
 	g_assert_cmpstr (label, ==, "");
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
-	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
 	g_assert_cmpstr (label, ==, "");
 
@@ -428,12 +425,12 @@ test_setting_ip4_config_labels (void)
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x02020202);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 0);
 	g_assert_cmpstr (label, ==, "eth0:1");
 
 	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
-	g_assert_cmpint (nm_ip4_address_get_address (addr), ==, 0x03030303);
+	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
 	label = _nm_setting_ip4_config_get_address_label (s_ip4, 1);
 	g_assert_cmpstr (label, ==, "");
 
@@ -2457,8 +2454,9 @@ test_setting_ip4_changed_signal (void)
 	NMConnection *connection;
 	gboolean changed = FALSE;
 	NMSettingIP4Config *s_ip4;
-	NMIP4Address *addr;
-	NMIP4Route *route;
+	NMIPAddress *addr;
+	NMIPRoute *route;
+	GError *error = NULL;
 
 	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
@@ -2489,22 +2487,20 @@ test_setting_ip4_changed_signal (void)
 	ASSERT_CHANGED (nm_setting_ip4_config_add_dns_search (s_ip4, "foobar.com"));
 	ASSERT_CHANGED (nm_setting_ip4_config_clear_dns_searches (s_ip4));
 
-	addr = nm_ip4_address_new ();
-	nm_ip4_address_set_address (addr, 0x2233);
-	nm_ip4_address_set_prefix (addr, 24);
+	addr = nm_ip_address_new (AF_INET, "22.33.0.0", 24, NULL, &error);
+	g_assert_no_error (error);
 	ASSERT_CHANGED (nm_setting_ip4_config_add_address (s_ip4, addr));
 	ASSERT_CHANGED (nm_setting_ip4_config_remove_address (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*addr != NULL && label != NULL*");
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*addr != NULL*");
 	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_address (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
 	nm_setting_ip4_config_add_address (s_ip4, addr);
 	ASSERT_CHANGED (nm_setting_ip4_config_clear_addresses (s_ip4));
 
-	route = nm_ip4_route_new ();
-	nm_ip4_route_set_dest (route, 0x2233);
-	nm_ip4_route_set_prefix (route, 24);
+	route = nm_ip_route_new (AF_INET, "22.33.0.0", 24, NULL, 0, &error);
+	g_assert_no_error (error);
 
 	ASSERT_CHANGED (nm_setting_ip4_config_add_route (s_ip4, route));
 	ASSERT_CHANGED (nm_setting_ip4_config_remove_route (s_ip4, 0));
@@ -2516,8 +2512,8 @@ test_setting_ip4_changed_signal (void)
 	nm_setting_ip4_config_add_route (s_ip4, route);
 	ASSERT_CHANGED (nm_setting_ip4_config_clear_routes (s_ip4));
 
-	nm_ip4_address_unref (addr);
-	nm_ip4_route_unref (route);
+	nm_ip_address_unref (addr);
+	nm_ip_route_unref (route);
 	g_object_unref (connection);
 }
 
@@ -2527,9 +2523,9 @@ test_setting_ip6_changed_signal (void)
 	NMConnection *connection;
 	gboolean changed = FALSE;
 	NMSettingIP6Config *s_ip6;
-	NMIP6Address *addr;
-	NMIP6Route *route;
-	const struct in6_addr t = { { { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 } } };
+	NMIPAddress *addr;
+	NMIPRoute *route;
+	GError *error = NULL;
 
 	connection = nm_simple_connection_new ();
 	g_signal_connect (connection,
@@ -2560,9 +2556,8 @@ test_setting_ip6_changed_signal (void)
 	nm_setting_ip6_config_add_dns_search (s_ip6, "foobar.com");
 	ASSERT_CHANGED (nm_setting_ip6_config_clear_dns_searches (s_ip6));
 
-	addr = nm_ip6_address_new ();
-	nm_ip6_address_set_address (addr, &t);
-	nm_ip6_address_set_prefix (addr, 64);
+	addr = nm_ip_address_new (AF_INET6, "1:2:3::4:5:6", 64, NULL, &error);
+	g_assert_no_error (error);
 
 	ASSERT_CHANGED (nm_setting_ip6_config_add_address (s_ip6, addr));
 	ASSERT_CHANGED (nm_setting_ip6_config_remove_address (s_ip6, 0));
@@ -2574,9 +2569,8 @@ test_setting_ip6_changed_signal (void)
 	nm_setting_ip6_config_add_address (s_ip6, addr);
 	ASSERT_CHANGED (nm_setting_ip6_config_clear_addresses (s_ip6));
 
-	route = nm_ip6_route_new ();
-	nm_ip6_route_set_dest (route, &t);
-	nm_ip6_route_set_prefix (route, 128);
+	route = nm_ip_route_new (AF_INET6, "1:2:3::4:5:6", 128, NULL, 0, &error);
+	g_assert_no_error (error);
 
 	ASSERT_CHANGED (nm_setting_ip6_config_add_route (s_ip6, route));
 	ASSERT_CHANGED (nm_setting_ip6_config_remove_route (s_ip6, 0));
@@ -2588,8 +2582,8 @@ test_setting_ip6_changed_signal (void)
 	nm_setting_ip6_config_add_route (s_ip6, route);
 	ASSERT_CHANGED (nm_setting_ip6_config_clear_routes (s_ip6));
 
-	nm_ip6_address_unref (addr);
-	nm_ip6_route_unref (route);
+	nm_ip_address_unref (addr);
+	nm_ip_route_unref (route);
 	g_object_unref (connection);
 }
 

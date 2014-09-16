@@ -108,36 +108,37 @@ get_one_int (const char *str, guint32 max_val, const char *key_name, guint32 *ou
 }
 
 static gpointer
-build_ip4_address_or_route (const char *key_name, const char *address_str, guint32 plen, const char *gateway_str, const char *metric_str, gboolean route)
+build_address_or_route (const char *key_name, const char *address_str, guint32 plen, const char *gateway_str, const char *metric_str, int family, gboolean route)
 {
 	gpointer result;
-	guint32 addr;
-	guint32 address = 0;
-	guint32 gateway = 0;
 	guint32 metric = 0;
-	int err;
+	GError *error = NULL;
 
 	g_return_val_if_fail (address_str, NULL);
 
-	/* Address */
-	err = inet_pton (AF_INET, address_str, &addr);
-	if (err <= 0) {
-		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid IPv4 address '%s'", __func__, address_str);
-		return NULL;
-	}
-	address = addr;
-
 	/* Gateway */
 	if (gateway_str && gateway_str[0]) {
-		err = inet_pton (AF_INET, gateway_str, &addr);
-		if (err <= 0) {
-			nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid IPv4 gateway '%s'", __func__, gateway_str);
-			return NULL;
+		if (!nm_utils_ipaddr_valid (family, gateway_str)) {
+			/* Try workaround for routes written by broken keyfile writer.
+			 * Due to bug bgo#719851, an older version of writer would have
+			 * written "a:b:c:d::/plen,metric" if the gateway was ::, instead
+			 * of "a:b:c:d::/plen,,metric" or "a:b:c:d::/plen,::,metric"
+			 * Try workaround by interpreting gateway_str as metric to accept such
+			 * invalid routes. This broken syntax should not be not officially
+			 * supported.
+			 **/
+			if (   family == AF_INET6
+			    && route
+			    && !metric_str
+			    && get_one_int (gateway_str, G_MAXUINT32, NULL, &metric))
+				gateway_str = NULL;
+			else {
+				nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid gateway '%s'", __func__, gateway_str);
+				return NULL;
+			}
 		}
-		gateway = addr;
-	}
-	else
-		gateway = 0;
+	} else
+		gateway_str = NULL;
 
 	/* parse metric, default to 0 */
 	if (metric_str) {
@@ -145,93 +146,19 @@ build_ip4_address_or_route (const char *key_name, const char *address_str, guint
 			return NULL;
 	}
 
-	if (route) {
-		result = nm_ip4_route_new ();
-		nm_ip4_route_set_dest (result, address);
-		nm_ip4_route_set_prefix (result, plen);
-		nm_ip4_route_set_next_hop (result, gateway);
-		nm_ip4_route_set_metric (result, metric);
-	} else {
-		result = nm_ip4_address_new ();
-		nm_ip4_address_set_address (result, address);
-		nm_ip4_address_set_prefix (result, plen);
-		nm_ip4_address_set_gateway (result, gateway);
+	if (route)
+		result = nm_ip_route_new (family, address_str, plen, gateway_str, metric, &error);
+	else
+		result = nm_ip_address_new (family, address_str, plen, gateway_str, &error);
+	if (!result) {
+		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid %s %s: %s", __func__,
+		             family == AF_INET ? "IPv4" : "IPv6",
+		             route ? "route" : "address",
+		             error->message);
+		g_error_free (error);
 	}
 
 	return result;
-}
-
-static gpointer
-build_ip6_address_or_route (const char *key_name, const char *address_str, guint32 plen, const char *gateway_str, const char *metric_str, gboolean route)
-{
-	gpointer result;
-	struct in6_addr addr;
-	guint32 metric = 0;
-	int err;
-
-	g_return_val_if_fail (address_str, NULL);
-
-	if (route)
-		result = nm_ip6_route_new ();
-	else
-		result = nm_ip6_address_new ();
-
-	/* add address and prefix length */
-	err = inet_pton (AF_INET6, address_str, &addr);
-	if (err <= 0) {
-		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid IPv6 address '%s'", __func__, address_str);
-		goto error_out;
-	}
-	if (route) {
-		nm_ip6_route_set_dest (result, &addr);
-		nm_ip6_route_set_prefix (result, plen);
-	} else {
-		nm_ip6_address_set_address (result, &addr);
-		nm_ip6_address_set_prefix (result, plen);
-	}
-
-	/* add gateway */
-	if (gateway_str && gateway_str[0]) {
-		err = inet_pton (AF_INET6, gateway_str, &addr);
-		if (err <= 0) {
-			/* Try workaround for routes written by broken keyfile writer.
-			 * Due to bug bgo#719851, an older version of writer would have
-			 * written "a:b:c:d::/plen,metric" if the gateway was ::, instead
-			 * of "a:b:c:d::/plen,,metric" or "a:b:c:d::/plen,::,metric"
-			 * Try workaround by interepeting gateway_str as metric to accept such
-			 * invalid routes. This broken syntax should not be not officially
-			 * supported.
-			 **/
-			if (route && !metric_str && get_one_int (gateway_str, G_MAXUINT32, NULL, &metric))
-				addr = in6addr_any;
-			else {
-				nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid IPv6 gateway '%s'", __func__, gateway_str);
-				goto error_out;
-			}
-		}
-	} else
-		addr = in6addr_any;
-
-	if (route) {
-		nm_ip6_route_set_next_hop (result, &addr);
-
-		/* parse metric, default to 0 */
-		if (metric_str) {
-			if (!get_one_int (metric_str, G_MAXUINT32, key_name, &metric))
-				goto error_out;
-		}
-		nm_ip6_route_set_metric (result, metric);
-	} else
-		nm_ip6_address_set_gateway (result, &addr);
-
-	return result;
-
-error_out:
-	if (route)
-		nm_ip6_route_unref (result);
-	else
-		nm_ip4_route_unref (result);
-	return NULL;
 }
 
 /* On success, returns pointer to the zero-terminated field (original @current).
@@ -390,8 +317,8 @@ read_one_ip_address_or_route (GKeyFile *file,
 	}
 
 	/* build the appropriate data structure for NetworkManager settings */
-	result = (ipv6 ? build_ip6_address_or_route : build_ip4_address_or_route) (
-	    key_name, address_str, plen, gateway_str, metric_str, route);
+	result = build_address_or_route (key_name, address_str, plen, gateway_str, metric_str,
+	                                 ipv6 ? AF_INET6 : AF_INET, route);
 
 	g_free (value);
 	return result;
@@ -413,17 +340,10 @@ ip_address_or_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfi
 	GDestroyNotify free_func;
 	int i;
 
-	if (ipv6) {
-		if (routes)
-			free_func = (GDestroyNotify) nm_ip6_route_unref;
-		else
-			free_func = (GDestroyNotify) nm_ip6_address_unref;
-	} else {
-		if (routes)
-			free_func = (GDestroyNotify) nm_ip4_route_unref;
-		else
-			free_func = (GDestroyNotify) nm_ip4_address_unref;
-	}
+	if (routes)
+		free_func = (GDestroyNotify) nm_ip_route_unref;
+	else
+		free_func = (GDestroyNotify) nm_ip_address_unref;
 	list = g_ptr_array_new_with_free_func (free_func);
 
 	for (i = -1; i < 1000; i++) {

@@ -174,6 +174,8 @@ gboolean nm_utils_is_uuid (const char *str);
 const char *nm_utils_inet4_ntop (in_addr_t inaddr, char *dst);
 const char *nm_utils_inet6_ntop (const struct in6_addr *in6addr, char *dst);
 
+gboolean nm_utils_ipaddr_valid (int family, const char *ip);
+
 gboolean nm_utils_check_virtual_device_compatibility (GType virtual_type, GType other_type);
 
 G_END_DECLS

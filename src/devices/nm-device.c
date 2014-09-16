@@ -2873,11 +2873,11 @@ reserve_shared_ip (NMDevice *self, NMSettingIP4Config *s_ip4, NMPlatformIP4Addre
 
 	if (s_ip4 && nm_setting_ip4_config_get_num_addresses (s_ip4)) {
 		/* Use the first user-supplied address */
-		NMIP4Address *user = nm_setting_ip4_config_get_address (s_ip4, 0);
+		NMIPAddress *user = nm_setting_ip4_config_get_address (s_ip4, 0);
 
 		g_assert (user);
-		address->address = nm_ip4_address_get_address (user);
-		address->plen = nm_ip4_address_get_prefix (user);
+		nm_ip_address_get_address_binary (user, &address->address);
+		address->plen = nm_ip_address_get_prefix (user);
 	} else {
 		/* Find an unused address in the 10.42.x.x range */
 		guint32 start = (guint32) ntohl (0x0a2a0001); /* 10.42.0.1 */
@@ -4650,8 +4650,7 @@ send_arps (NMDevice *self, const char *mode_arg)
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
 	int i, num;
-	NMIP4Address *addr;
-	guint32 ipaddr;
+	NMIPAddress *addr;
 	GError *error = NULL;
 
 	connection = nm_device_get_connection (self);
@@ -4673,8 +4672,7 @@ send_arps (NMDevice *self, const char *mode_arg)
 	for (i = 0; i < num; i++) {
 		gs_free char *tmp_str = NULL;
 		addr = nm_setting_ip4_config_get_address (s_ip4, i);
-		ipaddr = nm_ip4_address_get_address (addr);
-		argv[ip_arg] = (char *) nm_utils_inet4_ntop (ipaddr, NULL);
+		argv[ip_arg] = nm_ip_address_get_address (addr);
 
 		_LOGD (LOGD_DEVICE | LOGD_IP4,
 		       "arping: run %s", (tmp_str = g_strjoinv (" ", (char **) argv)));

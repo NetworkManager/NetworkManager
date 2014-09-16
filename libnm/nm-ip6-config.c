@@ -135,8 +135,8 @@ nm_ip6_config_get_gateway (NMIP6Config *config)
  *
  * Gets the IP6 addresses (containing the address, prefix, and gateway).
  *
- * Returns: (element-type NMIP6Address) (transfer none): the #GPtrArray
- * containing #NMIP6Address<!-- -->es. This is the internal copy used by the
+ * Returns: (element-type NMIPAddress) (transfer none): the #GPtrArray
+ * containing #NMIPAddress<!-- -->es. This is the internal copy used by the
  * configuration and must not be modified.
  **/
 GPtrArray *
@@ -203,8 +203,8 @@ nm_ip6_config_get_searches (NMIP6Config *config)
  *
  * Gets the routes.
  *
- * Returns: (element-type NMIP6Route) (transfer none): the #GPtrArray containing
- * #NMIP6Routes. This is the internal copy used by the configuration, and must
+ * Returns: (element-type NMIPRoute) (transfer none): the #GPtrArray containing
+ * #NMIPRoutes. This is the internal copy used by the configuration, and must
  * not be modified.
  **/
 GPtrArray *
@@ -246,13 +246,13 @@ get_property (GObject *object,
 		break;
 	case PROP_ADDRESSES:
 		g_value_take_boxed (value, _nm_utils_copy_array (nm_ip6_config_get_addresses (self),
-		                                                 (NMUtilsCopyFunc) nm_ip6_address_dup,
-		                                                 (GDestroyNotify) nm_ip6_address_unref));
+		                                                 (NMUtilsCopyFunc) nm_ip_address_dup,
+		                                                 (GDestroyNotify) nm_ip_address_unref));
 		break;
 	case PROP_ROUTES:
 		g_value_take_boxed (value, _nm_utils_copy_array (nm_ip6_config_get_routes (self),
-		                                                 (NMUtilsCopyFunc) nm_ip6_route_dup,
-		                                                 (GDestroyNotify) nm_ip6_route_unref));
+		                                                 (NMUtilsCopyFunc) nm_ip_route_dup,
+		                                                 (GDestroyNotify) nm_ip_route_unref));
 		break;
 	case PROP_NAMESERVERS:
 		g_value_set_boxed (value, (char **) nm_ip6_config_get_nameservers (self));
@@ -314,7 +314,7 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	/**
 	 * NMIP6Config:addresses:
 	 *
-	 * The #GPtrArray containing the IPv6 addresses (#NMIP6Address).
+	 * The #GPtrArray containing the IPv6 addresses (#NMIPAddress).
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ADDRESSES,
@@ -326,7 +326,7 @@ nm_ip6_config_class_init (NMIP6ConfigClass *config_class)
 	/**
 	 * NMIP6Config:routes:
 	 *
-	 * The #GPtrArray containing the IPv6 routes (#NMIP6Route).
+	 * The #GPtrArray containing the IPv6 routes (#NMIPRoute).
 	 **/
 	g_object_class_install_property
 	    (object_class, PROP_ROUTES,

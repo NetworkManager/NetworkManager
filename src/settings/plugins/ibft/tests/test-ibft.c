@@ -120,7 +120,7 @@ test_read_ibft_static (void)
 	GError *error = NULL;
 	const char *mac_address;
 	const char *expected_mac_address = "00:33:21:98:b9:f0";
-	NMIP4Address *ip4_addr;
+	NMIPAddress *ip4_addr;
 	GPtrArray *block;
 
 	block = read_block (TEST_IBFT_DIR "/iscsiadm-test-static", expected_mac_address);
@@ -160,9 +160,9 @@ test_read_ibft_static (void)
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 1);
 	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	g_assert (ip4_addr);
-	nmtst_assert_ip4_address_equals (nm_ip4_address_get_address (ip4_addr), "192.168.32.72");
-	g_assert_cmpint (nm_ip4_address_get_prefix (ip4_addr), ==, 22);
-	nmtst_assert_ip4_address_equals (nm_ip4_address_get_gateway (ip4_addr), "192.168.35.254");
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.32.72");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 22);
+	g_assert_cmpstr (nm_ip_address_get_gateway (ip4_addr), ==, "192.168.35.254");
 
 	g_object_unref (connection);
 	g_ptr_array_unref (block);
@@ -220,7 +220,7 @@ test_read_ibft_vlan (void)
 	NMSettingIP4Config *s_ip4;
 	const char *mac_address;
 	const char *expected_mac_address = "00:33:21:98:b9:f0";
-	NMIP4Address *ip4_addr;
+	NMIPAddress *ip4_addr;
 	GError *error = NULL;
 	GPtrArray *block;
 
@@ -257,9 +257,9 @@ test_read_ibft_vlan (void)
 	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 1);
 	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
 	g_assert (ip4_addr);
-	nmtst_assert_ip4_address_equals (nm_ip4_address_get_address (ip4_addr), "192.168.6.200");
-	g_assert_cmpint (nm_ip4_address_get_prefix (ip4_addr), ==, 24);
-	nmtst_assert_ip4_address_equals (nm_ip4_address_get_gateway (ip4_addr), "0.0.0.0");
+	g_assert_cmpstr (nm_ip_address_get_address (ip4_addr), ==, "192.168.6.200");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip4_addr), ==, 24);
+	g_assert_cmpstr (nm_ip_address_get_gateway (ip4_addr), ==, NULL);
 
 	g_object_unref (connection);
 	g_ptr_array_ref (block);
