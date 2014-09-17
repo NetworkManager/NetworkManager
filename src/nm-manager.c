@@ -1995,7 +1995,7 @@ load_device_factories (NMManager *self)
 
 	/* Register internal factories first */
 	for (iter = nm_device_factory_get_internal_factory_types (); iter; iter = iter->next) {
-		GType ftype = GPOINTER_TO_UINT (iter->data);
+		GType ftype = (GType) GPOINTER_TO_SIZE (iter->data);
 
 		factory = (NMDeviceFactory *) g_object_new (ftype, NULL);
 		g_assert (factory);
