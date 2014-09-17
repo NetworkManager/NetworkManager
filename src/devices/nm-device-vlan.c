@@ -40,6 +40,7 @@
 #include "nm-device-factory.h"
 #include "nm-manager.h"
 #include "nm-core-internal.h"
+#include "gsystem-local-alloc.h"
 
 #include "nm-device-vlan-glue.h"
 
@@ -660,25 +661,13 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 	int parent_ifindex = -1;
 	NMDevice *parent, *device;
 
-	if (plink->type != NM_LINK_TYPE_VLAN)
-		return NULL;
-
-	/* Have to find the parent device */
+	/* Find the parent device */
 	if (!nm_platform_vlan_get_info (NM_PLATFORM_GET, plink->ifindex, &parent_ifindex, NULL)) {
-		nm_log_err (LOGD_HW, "(%s): failed to get VLAN parent ifindex", plink->name);
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+		                     "VLAN parent ifindex unknown");
 		return NULL;
 	}
-
 	parent = nm_manager_get_device_by_ifindex (nm_manager_get (), parent_ifindex);
-	if (!parent) {
-		/* If udev signaled the VLAN interface before it signaled
-		 * the VLAN's parent at startup we may not know about the
-		 * parent device yet.  But we'll find it on the second pass
-		 * from nm_manager_start().
-		 */
-		nm_log_dbg (LOGD_HW, "(%s): VLAN parent interface unknown", plink->name);
-		return NULL;
-	}
 
 	device = (NMDevice *) g_object_new (NM_TYPE_DEVICE_VLAN,
 	                                    NM_DEVICE_PLATFORM_DEVICE, plink,
@@ -688,6 +677,8 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_VLAN,
 	                                    NULL);
 	if (NM_DEVICE_VLAN_GET_PRIVATE (device)->invalid) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+		                     "VLAN initialization failed");
 		g_object_unref (device);
 		device = NULL;
 	}
@@ -703,15 +694,16 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 {
 	NMDevice *device;
 	NMSettingVlan *s_vlan;
-	char *iface;
+	gs_free char *iface = NULL;
 
-	if (!nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME))
+	if (!NM_IS_DEVICE (parent)) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+		                     "VLAN interfaces must have parents");
 		return NULL;
-
-	g_return_val_if_fail (NM_IS_DEVICE (parent), NULL);
+	}
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
-	g_return_val_if_fail (s_vlan != NULL, NULL);
+	g_assert (s_vlan);
 
 	iface = g_strdup (nm_connection_get_interface_name (connection));
 	if (!iface) {
@@ -725,9 +717,11 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	                              nm_setting_vlan_get_id (s_vlan),
 	                              nm_setting_vlan_get_flags (s_vlan))
 	    && nm_platform_get_error (NM_PLATFORM_GET) != NM_PLATFORM_ERROR_EXISTS) {
-		nm_log_warn (LOGD_DEVICE | LOGD_VLAN, "(%s) failed to add VLAN interface for '%s'",
-		             iface, nm_connection_get_id (connection));
-		g_free (iface);
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+		             "Failed to create VLAN interface '%s' for '%s': %s",
+		             iface,
+		             nm_connection_get_id (connection),
+		             nm_platform_get_error_msg (NM_PLATFORM_GET));
 		return NULL;
 	}
 
@@ -738,8 +732,10 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	                                    NM_DEVICE_TYPE_DESC, "VLAN",
 	                                    NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_VLAN,
 	                                    NULL);
-	g_free (iface);
 	if (NM_DEVICE_VLAN_GET_PRIVATE (device)->invalid) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+		             "Failed to create VLAN interface '%s' for '%s': initialization failed",
+		             iface, nm_connection_get_id (connection));
 		g_object_unref (device);
 		device = NULL;
 	}
@@ -747,8 +743,10 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	return device;
 }
 
-DEFINE_DEVICE_FACTORY_INTERNAL(VLAN, Vlan, vlan, \
-	factory_iface->new_link = new_link; \
+NM_DEVICE_FACTORY_DEFINE_INTERNAL (VLAN, Vlan, vlan,
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_VLAN)
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_VLAN_SETTING_NAME),
+	factory_iface->new_link = new_link;
 	factory_iface->create_virtual_device_for_connection = create_virtual_device_for_connection;
 	)
 

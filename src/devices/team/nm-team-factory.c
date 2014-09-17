@@ -50,9 +50,7 @@ nm_device_factory_create (GError **error)
 static NMDevice *
 new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 {
-	if (plink->type == NM_LINK_TYPE_TEAM)
-		 return nm_device_team_new (plink);
-	return NULL;
+	return nm_device_team_new (plink);
 }
 
 static NMDevice *
@@ -61,16 +59,13 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
                                       NMDevice *parent,
                                       GError **error)
 {
-	if (nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME))
-		return nm_device_team_new_for_connection (connection, error);
-	return NULL;
+	return nm_device_team_new_for_connection (connection, error);
 }
 
-static NMDeviceType
-get_device_type (NMDeviceFactory *factory)
-{
-	return NM_DEVICE_TYPE_TEAM;
-}
+NM_DEVICE_FACTORY_DECLARE_TYPES (
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_TEAM)
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_TEAM_SETTING_NAME)
+)
 
 /************************************************************************/
 
@@ -84,7 +79,7 @@ device_factory_interface_init (NMDeviceFactory *factory_iface)
 {
 	factory_iface->new_link = new_link;
 	factory_iface->create_virtual_device_for_connection = create_virtual_device_for_connection;
-	factory_iface->get_device_type = get_device_type;
+	factory_iface->get_supported_types = get_supported_types;
 }
 
 static void

@@ -29,6 +29,7 @@
 #include "nm-logging.h"
 #include "nm-bluez-manager.h"
 #include "nm-device-factory.h"
+#include "nm-setting-bluetooth.h"
 #include "nm-bluez4-manager.h"
 #include "nm-bluez5-manager.h"
 #include "nm-bluez-device.h"
@@ -367,11 +368,9 @@ start (NMDeviceFactory *factory)
 	check_bluez_and_try_setup (NM_BLUEZ_MANAGER (factory));
 }
 
-static NMDeviceType
-get_device_type (NMDeviceFactory *factory)
-{
-	return NM_DEVICE_TYPE_BT;
-}
+NM_DEVICE_FACTORY_DECLARE_TYPES (
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_BLUETOOTH_SETTING_NAME)
+)
 
 /*********************************************************************/
 
@@ -407,7 +406,7 @@ nm_bluez_manager_init (NMBluezManager *self)
 static void
 device_factory_interface_init (NMDeviceFactory *factory_iface)
 {
-	factory_iface->get_device_type = get_device_type;
+	factory_iface->get_supported_types = get_supported_types;
 	factory_iface->start = start;
 }
 

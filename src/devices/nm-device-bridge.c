@@ -479,16 +479,13 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 static NMDevice *
 new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 {
-	if (plink->type == NM_LINK_TYPE_BRIDGE) {
-		return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BRIDGE,
-		                                  NM_DEVICE_PLATFORM_DEVICE, plink,
-		                                  NM_DEVICE_DRIVER, "bridge",
-		                                  NM_DEVICE_TYPE_DESC, "Bridge",
-		                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BRIDGE,
-		                                  NM_DEVICE_IS_MASTER, TRUE,
-		                                  NULL);
-	}
-	return NULL;
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BRIDGE,
+	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+	                                  NM_DEVICE_DRIVER, "bridge",
+	                                  NM_DEVICE_TYPE_DESC, "Bridge",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_BRIDGE,
+	                                  NM_DEVICE_IS_MASTER, TRUE,
+	                                  NULL);
 }
 
 static NMDevice *
@@ -497,21 +494,15 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
                                       NMDevice *parent,
                                       GError **error)
 {
-	const char *iface;
+	const char *iface = nm_connection_get_interface_name (connection);
 	NMSettingBridge *s_bridge;
 	const char *mac_address_str;
 	guint8 mac_address[NM_UTILS_HWADDR_LEN_MAX];
 
-	if (!nm_connection_is_type (connection, NM_SETTING_BRIDGE_SETTING_NAME))
-		return NULL;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-
-	iface = nm_connection_get_interface_name (connection);
-	g_return_val_if_fail (iface != NULL, NULL);
+	g_assert (iface);
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
-	g_return_val_if_fail (s_bridge, NULL);
+	g_assert (s_bridge);
 
 	mac_address_str = nm_setting_bridge_get_mac_address (s_bridge);
 	if (mac_address_str) {
@@ -524,8 +515,10 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	                                mac_address_str ? mac_address : NULL,
 	                                mac_address_str ? ETH_ALEN : 0)
 	    && nm_platform_get_error (NM_PLATFORM_GET) != NM_PLATFORM_ERROR_EXISTS) {
-		nm_log_warn (LOGD_DEVICE | LOGD_BRIDGE, "(%s): failed to create bridge master interface for '%s': %s",
-		             iface, nm_connection_get_id (connection),
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,
+		             "Failed to create bridge interface '%s' for '%s': %s",
+		             iface,
+		             nm_connection_get_id (connection),
 		             nm_platform_get_error_msg (NM_PLATFORM_GET));
 		return NULL;
 	}
@@ -539,7 +532,9 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	                                  NULL);
 }
 
-DEFINE_DEVICE_FACTORY_INTERNAL(BRIDGE, Bridge, bridge,
+NM_DEVICE_FACTORY_DEFINE_INTERNAL (BRIDGE, Bridge, bridge,
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_BRIDGE)
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_BRIDGE_SETTING_NAME),
 	factory_iface->new_link = new_link;
 	factory_iface->create_virtual_device_for_connection = create_virtual_device_for_connection;
 	)

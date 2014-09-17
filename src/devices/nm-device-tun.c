@@ -278,8 +278,10 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 		mode = "tun";
 	else if (plink->type == NM_LINK_TYPE_TAP)
 		mode = "tap";
-	else
-		return NULL;
+	else {
+		g_warn_if_reached ();
+		mode = "unknown";
+	}
 
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_TUN,
 	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
@@ -289,7 +291,8 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 	                                  NULL);
 }
 
-DEFINE_DEVICE_FACTORY_INTERNAL_WITH_DEVTYPE(TUN, Tun, tun, GENERIC, \
-	factory_iface->new_link = new_link; \
+NM_DEVICE_FACTORY_DEFINE_INTERNAL (TUN, Tun, tun,
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_TUN, NM_LINK_TYPE_TAP),
+	factory_iface->new_link = new_link;
 	)
 

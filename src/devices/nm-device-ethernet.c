@@ -1757,17 +1757,16 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 static NMDevice *
 new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 {
-	if (plink->type == NM_LINK_TYPE_ETHERNET) {
-		return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ETHERNET,
-		                                  NM_DEVICE_PLATFORM_DEVICE, plink,
-		                                  NM_DEVICE_TYPE_DESC, "Ethernet",
-		                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
-		                                  NULL);
-	}
-	return NULL;
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ETHERNET,
+	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+	                                  NM_DEVICE_TYPE_DESC, "Ethernet",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
+	                                  NULL);
 }
 
-DEFINE_DEVICE_FACTORY_INTERNAL(ETHERNET, Ethernet, ethernet, \
-	factory_iface->new_link = new_link; \
+NM_DEVICE_FACTORY_DEFINE_INTERNAL (ETHERNET, Ethernet, ethernet,
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_ETHERNET)
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_PPPOE_SETTING_NAME),
+	factory_iface->new_link = new_link;
 	)
 

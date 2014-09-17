@@ -179,17 +179,15 @@ nm_device_veth_class_init (NMDeviceVethClass *klass)
 static NMDevice *
 new_link (NMDeviceFactory *factory, NMPlatformLink *plink, GError **error)
 {
-	if (plink->type == NM_LINK_TYPE_VETH) {
-		return (NMDevice *) g_object_new (NM_TYPE_DEVICE_VETH,
-		                                  NM_DEVICE_PLATFORM_DEVICE, plink,
-		                                  NM_DEVICE_TYPE_DESC, "Veth",
-		                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
-		                                  NULL);
-	}
-	return NULL;
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_VETH,
+	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
+	                                  NM_DEVICE_TYPE_DESC, "Veth",
+	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
+	                                  NULL);
 }
 
-DEFINE_DEVICE_FACTORY_INTERNAL_WITH_DEVTYPE(VETH, Veth, veth, ETHERNET, \
-	factory_iface->new_link = new_link; \
+NM_DEVICE_FACTORY_DEFINE_INTERNAL (VETH, Veth, veth,
+	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES (NM_LINK_TYPE_VETH),
+	factory_iface->new_link = new_link;
 	)
 
