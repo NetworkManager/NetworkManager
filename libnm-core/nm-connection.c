@@ -332,7 +332,7 @@ nm_connection_replace_settings (NMConnection *connection,
 		changed = (settings != NULL);
 
 	for (s = settings; s; s = s->next)
-		nm_connection_add_setting (connection, s->data);
+		_nm_connection_add_setting (connection, s->data);
 
 	if (changed)
 		g_signal_emit (connection, signals[CHANGED], 0);
