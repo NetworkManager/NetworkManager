@@ -121,14 +121,20 @@ nm_access_point_get_rsn_flags (NMAccessPoint *ap)
  *
  * Gets the SSID of the access point.
  *
- * Returns: the #GBytes containing the SSID.
+ * Returns: the #GBytes containing the SSID, or %NULL if the SSID is unknown.
  **/
 GBytes *
 nm_access_point_get_ssid (NMAccessPoint *ap)
 {
+	NMAccessPointPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
 
-	return NM_ACCESS_POINT_GET_PRIVATE (ap)->ssid;
+	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
+	if (!priv->ssid || g_bytes_get_size (priv->ssid) == 0)
+		return NULL;
+
+	return priv->ssid;
 }
 
 /**
@@ -502,7 +508,7 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	/**
 	 * NMAccessPoint:ssid:
 	 *
-	 * The SSID of the access point.
+	 * The SSID of the access point, or %NULL if it is not known.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_SSID,
