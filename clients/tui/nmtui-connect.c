@@ -20,11 +20,8 @@
  * SECTION:nmtui-connect
  * @short_description: nm-applet-like functionality
  *
- * nmtui-connect implements activating #NMConnections, including
- * presenting a password dialog if necessary.
- *
- * It's supposed to also implement deactivating them, but it doesn't.
- * FIXME.
+ * nmtui-connect implements activating and deactivating #NMConnections,
+ * including presenting a password dialog if necessary.
  */
 
 #include "config.h"
