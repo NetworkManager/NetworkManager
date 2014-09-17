@@ -108,11 +108,6 @@ gboolean _nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
                                                             NMConnection *connection,
                                                             const char *property,
                                                             GValue *value);
-gboolean _nm_setting_set_deprecated_virtual_interface_name (NMSetting *setting,
-                                                            GHashTable *connection_hash,
-                                                            const char *property,
-                                                            const GValue *value,
-                                                            GError **error);
 
 NMSettingVerifyResult _nm_setting_verify (NMSetting *setting,
                                           GSList    *all_settings,
@@ -135,15 +130,13 @@ typedef gboolean (*NMSettingPropertyGetFunc)    (NMSetting     *setting,
                                                  NMConnection  *connection,
                                                  const char    *property,
                                                  GValue        *value);
-typedef gboolean (*NMSettingPropertySetFunc)    (NMSetting     *setting,
+typedef void     (*NMSettingPropertySetFunc)    (NMSetting     *setting,
                                                  GHashTable    *connection_hash,
                                                  const char    *property,
-                                                 const GValue  *value,
-                                                 GError       **error);
-typedef gboolean (*NMSettingPropertyNotSetFunc) (NMSetting     *setting,
+                                                 const GValue  *value);
+typedef void     (*NMSettingPropertyNotSetFunc) (NMSetting     *setting,
                                                  GHashTable    *connection_hash,
-                                                 const char    *property,
-                                                 GError       **error);
+                                                 const char    *property);
 
 void _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
                                                const char *property_name,

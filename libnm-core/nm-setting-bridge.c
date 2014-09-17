@@ -480,5 +480,5 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 
 	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name", G_TYPE_STRING,
 	                                          _nm_setting_get_deprecated_virtual_interface_name,
-	                                          _nm_setting_set_deprecated_virtual_interface_name);
+	                                          NULL);
 }

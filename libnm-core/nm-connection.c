@@ -274,32 +274,68 @@ validate_permissions_type (GHashTable *hash, GError **error)
  * @new_settings: (element-type utf8 GLib.HashTable): a #GHashTable of settings
  * @error: location to store error, or %NULL
  *
- * Returns: %TRUE if the settings were valid and added to the connection, %FALSE
- *   if they were not (in which case @connection will be unchanged).
+ * Replaces @connection's settings with @new_settings (which must be
+ * syntactically valid, and describe a known type of connection, but does not
+ * need to result in a connection that passes nm_connection_verify()).
+ *
+ * Returns: %TRUE if connection was updated, %FALSE if @new_settings could not
+ *   be deserialized (in which case @connection will be unchanged).
  **/
 gboolean
 nm_connection_replace_settings (NMConnection *connection,
                                 GHashTable *new_settings,
                                 GError **error)
 {
-	NMConnection *new;
-	gboolean valid;
+	NMConnectionPrivate *priv;
+	GHashTableIter iter;
+	const char *setting_name;
+	GHashTable *setting_hash;
+	GSList *settings = NULL, *s;
+	gboolean changed;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (new_settings != NULL, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+
 	if (!validate_permissions_type (new_settings, error))
 		return FALSE;
 
-	new = nm_simple_connection_new_from_dbus (new_settings, error);
-	if (!new)
-		return FALSE;
+	g_hash_table_iter_init (&iter, new_settings);
+	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, (gpointer) &setting_hash)) {
+		NMSetting *setting;
+		GType type;
 
-	valid = nm_connection_replace_settings_from_connection (connection, new, error);
-	g_object_unref (new);
+		type = nm_setting_lookup_type (setting_name);
+		if (type == G_TYPE_INVALID) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_SETTING,
+			             "unknown setting name '%s'", setting_name);
+			g_slist_free_full (settings, g_object_unref);
+			return FALSE;
+		}
 
-	g_return_val_if_fail (valid == TRUE, FALSE);
+		setting = _nm_setting_new_from_dbus (type, setting_hash, new_settings, error);
+		if (!setting) {
+			g_slist_free_full (settings, g_object_unref);
+			return FALSE;
+		}
+		settings = g_slist_prepend (settings, setting);
+	}
+
+	if (g_hash_table_size (priv->settings) > 0) {
+		g_hash_table_foreach_remove (priv->settings, _setting_release, connection);
+		changed = TRUE;
+	} else
+		changed = (settings != NULL);
+
+	for (s = settings; s; s = s->next)
+		nm_connection_add_setting (connection, s->data);
+
+	if (changed)
+		g_signal_emit (connection, signals[CHANGED], 0);
 	return TRUE;
 }
 
@@ -307,35 +343,27 @@ nm_connection_replace_settings (NMConnection *connection,
  * nm_connection_replace_settings_from_connection:
  * @connection: a #NMConnection
  * @new_connection: a #NMConnection to replace the settings of @connection with
- * @error: location to store error, or %NULL
  *
- * Deep-copies the settings of @new_conenction and replaces the settings of @connection
+ * Deep-copies the settings of @new_connection and replaces the settings of @connection
  * with the copied settings.
- *
- * Returns: %TRUE if the settings were valid and added to the connection, %FALSE
- *   if they were not (in which case @connection will be unchanged).
  **/
-gboolean
+void
 nm_connection_replace_settings_from_connection (NMConnection *connection,
-                                                NMConnection *new_connection,
-                                                GError **error)
+                                                NMConnection *new_connection)
 {
 	NMConnectionPrivate *priv, *new_priv;
 	GHashTableIter iter;
 	NMSetting *setting;
 	gboolean changed;
 
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (new_connection), FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!nm_connection_verify (new_connection, error))
-		return FALSE;
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (NM_IS_CONNECTION (new_connection));
 
 	/* When 'connection' and 'new_connection' are the same object simply return
-	 * in order not to destroy 'connection' */
+	 * in order not to destroy 'connection'.
+	 */
 	if (connection == new_connection)
-		return TRUE;
+		return;
 
 	/* No need to validate permissions like nm_connection_replace_settings()
 	 * since we're dealing with an NMConnection which has already done that.
@@ -354,12 +382,8 @@ nm_connection_replace_settings_from_connection (NMConnection *connection,
 		changed = TRUE;
 	}
 
-	/* Since new_connection verified before, this shouldn't ever fail */
-	g_return_val_if_fail (nm_connection_verify (connection, error), FALSE);
-
 	if (changed)
 		g_signal_emit (connection, signals[CHANGED], 0);
-	return TRUE;
 }
 
 /**

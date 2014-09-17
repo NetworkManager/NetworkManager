@@ -128,13 +128,8 @@ save_connection_and_exit (NmtNewtButton *button,
 	NmtSyncOp op;
 	GError *error = NULL;
 
-	if (!nm_connection_replace_settings_from_connection (priv->orig_connection,
-	                                                     priv->edit_connection,
-	                                                     &error)) {
-		nmt_newt_message_dialog (_("Error saving connection: %s"), error->message);
-		g_error_free (error);
-		return;
-	}
+	nm_connection_replace_settings_from_connection (priv->orig_connection,
+	                                                priv->edit_connection);
 
 	nmt_sync_op_init (&op);
 	if (NM_IS_REMOTE_CONNECTION (priv->orig_connection)) {

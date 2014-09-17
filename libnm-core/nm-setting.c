@@ -274,19 +274,6 @@ nm_setting_lookup_type_by_quark (GQuark error_quark)
 	return G_TYPE_INVALID;
 }
 
-static GQuark
-_nm_setting_lookup_error_quark (const char *name)
-{
-	SettingInfo *info;
-
-	g_return_val_if_fail (name != NULL, 0);
-
-	_ensure_registered ();
-
-	info = g_hash_table_lookup (registered_settings, name);
-	return info ? info->error_quark : 0;
-}
-
 gint
 _nm_setting_compare_priority (gconstpointer a, gconstpointer b)
 {
@@ -764,7 +751,7 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
  * property names and value types.
  *
  * Returns: a new #NMSetting object populated with the properties from the
- * hash table, or %NULL on failure
+ * hash table, or %NULL if @setting_hash could not be deserialized.
  **/
 NMSetting *
 _nm_setting_new_from_dbus (GType setting_type,
@@ -807,24 +794,14 @@ _nm_setting_new_from_dbus (GType setting_type,
 		GValue *value = g_hash_table_lookup (setting_hash, property->name);
 
 		if (value && property->set_func) {
-			if (!property->set_func (setting,
-			                         connection_hash,
-			                         property->name,
-			                         value,
-			                         error)) {
-				g_object_unref (setting);
-				setting = NULL;
-				break;
-			}
+			property->set_func (setting,
+			                    connection_hash,
+			                    property->name,
+			                    value);
 		} else if (!value && property->not_set_func) {
-			if (!property->not_set_func (setting,
-			                             connection_hash,
-			                             property->name,
-			                             error)) {
-				g_object_unref (setting);
-				setting = NULL;
-				break;
-			}
+			property->not_set_func (setting,
+			                        connection_hash,
+			                        property->name);
 		} else if (value && property->param_spec) {
 			if (!(property->param_spec->flags & G_PARAM_WRITABLE))
 				continue;
@@ -1746,47 +1723,6 @@ _nm_setting_get_deprecated_virtual_interface_name (NMSetting *setting,
 		return TRUE;
 	} else
 		return FALSE;
-}
-
-gboolean
-_nm_setting_set_deprecated_virtual_interface_name (NMSetting *setting,
-                                                   GHashTable *connection_hash,
-                                                   const char *property,
-                                                   const GValue *value,
-                                                   GError **error)
-{
-	const char *interface_name;
-	GQuark error_domain;
-	char *error_enum_name;
-	GEnumClass *enum_class;
-	GEnumValue *enum_val;
-	int error_code = 0;
-
-	/* If the virtual setting type hash contains an interface name, it must be
-	 * valid (even if it's going to be ignored in favor of
-	 * NMSettingConnection:interface-name). Other than that, we don't have to
-	 * check anything here; NMSettingConnection:interface-name will do the rest.
-	 */
-	interface_name = g_value_get_string (value);
-	if (!interface_name || nm_utils_iface_valid_name (interface_name))
-		return TRUE;
-
-	/* For compatibility reasons, we have to use the right error domain... */
-	error_domain = _nm_setting_lookup_error_quark (nm_setting_get_name (setting));
-	error_enum_name = g_strdup_printf ("%sError", G_OBJECT_TYPE_NAME (setting));
-	enum_class = g_type_class_ref (g_type_from_name (error_enum_name));
-	g_free (error_enum_name);
-	if (enum_class) {
-		enum_val = g_enum_get_value_by_nick (enum_class, "InvalidProperty");
-		if (enum_val)
-			error_code = enum_val->value;
-		g_type_class_unref (enum_class);
-	}
-
-	g_set_error_literal (error, error_domain, error_code,
-	                     _("invalid value in compatibility property"));
-	g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), property);
-	return FALSE;
 }
 
 /*****************************************************************************/

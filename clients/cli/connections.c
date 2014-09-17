@@ -7377,8 +7377,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				} else {
 					/* Save/update already saved (existing) connection */
 					nm_connection_replace_settings_from_connection (NM_CONNECTION (rem_con),
-					                                                connection,
-					                                                NULL);
+					                                                connection);
 					update_connection (persistent, rem_con, update_connection_editor_cb, NULL);
 				}
 
@@ -7417,8 +7416,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 						/* Update settings in the local connection */
 						nm_connection_replace_settings_from_connection (connection,
-						                                                NM_CONNECTION (con_tmp),
-						                                                NULL);
+						                                                NM_CONNECTION (con_tmp));
 
 						/* Also update setting for menu context and TAB-completion */
 						menu_ctx.curr_setting = s_name ? nm_connection_get_setting_by_name (connection, s_name) : NULL;

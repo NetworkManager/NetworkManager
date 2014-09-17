@@ -957,8 +957,6 @@ static void
 test_connection_replace_settings_from_connection ()
 {
 	NMConnection *connection, *replacement;
-	GError *error = NULL;
-	gboolean success;
 	NMSettingConnection *s_con;
 	NMSetting *setting;
 	GBytes *ssid;
@@ -996,9 +994,7 @@ test_connection_replace_settings_from_connection ()
 	nm_connection_add_setting (replacement, setting);
 
 	/* Replace settings and test */
-	success = nm_connection_replace_settings_from_connection (connection, replacement, &error);
-	g_assert_no_error (error);
-	g_assert (success);
+	nm_connection_replace_settings_from_connection (connection, replacement);
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_assert (s_con);
@@ -1017,16 +1013,11 @@ test_connection_replace_settings_from_connection ()
 static void
 test_connection_replace_settings_bad (void)
 {
-	NMConnection *connection, *clone, *new_connection;
-	GHashTable *new_settings;
+	NMConnection *connection, *new_connection;
+	GHashTable *new_settings, *setting_hash;
 	GError *error = NULL;
 	gboolean success;
 	NMSettingConnection *s_con;
-	NMSettingWired *s_wired;
-
-	connection = new_test_connection ();
-	clone = nm_simple_connection_new_clone (connection);
-	g_assert (nm_connection_compare (connection, clone, NM_SETTING_COMPARE_FLAG_EXACT));
 
 	new_connection = new_test_connection ();
 	g_assert (nm_connection_verify (new_connection, NULL));
@@ -1036,33 +1027,40 @@ test_connection_replace_settings_bad (void)
 	              NM_SETTING_CONNECTION_ID, "bad-connection",
 	              NULL);
 	g_assert (!nm_connection_verify (new_connection, NULL));
-	s_wired = nm_connection_get_setting_wired (new_connection);
-	g_object_set (s_wired,
-	              NM_SETTING_WIRED_MTU, 12,
-	              NULL);
 
-	/* nm_connection_replace_settings_from_connection() should fail */
-	success = nm_connection_replace_settings_from_connection (connection, new_connection, &error);
-	g_assert (error != NULL);
-	g_assert (!success);
-	g_clear_error (&error);
+	/* nm_connection_replace_settings_from_connection() should succeed */
+	connection = new_test_connection ();
+	nm_connection_replace_settings_from_connection (connection, new_connection);
+	g_assert_cmpstr (nm_connection_get_id (connection), ==, "bad-connection");
+	g_assert (!nm_connection_verify (connection, NULL));
+	g_object_unref (connection);
 
-	g_assert (nm_connection_compare (connection, clone, NM_SETTING_COMPARE_FLAG_EXACT));
-
-	/* nm_connection_replace_settings() should fail */
+	/* nm_connection_replace_settings() should succeed */
 	new_settings = nm_connection_to_dbus (new_connection, NM_CONNECTION_SERIALIZE_ALL);
 	g_assert (new_settings != NULL);
 
+	connection = new_test_connection ();
 	success = nm_connection_replace_settings (connection, new_settings, &error);
-	g_assert (error != NULL);
-	g_assert (!success);
-	g_clear_error (&error);
+	g_assert_no_error (error);
+	g_assert (success);
 
-	g_assert (nm_connection_compare (connection, clone, NM_SETTING_COMPARE_FLAG_EXACT));
+	g_assert_cmpstr (nm_connection_get_id (connection), ==, "bad-connection");
+	g_assert (!nm_connection_verify (connection, NULL));
+	g_object_unref (connection);
+
+	/* But given an invalid hash, it should fail */
+	setting_hash = g_hash_table_new (g_str_hash, g_str_equal);
+	g_hash_table_insert (new_settings, g_strdup ("ip-over-avian-carrier"), setting_hash);
+
+	connection = new_test_connection ();
+	success = nm_connection_replace_settings (connection, new_settings, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING);
+	g_assert (!success);
+
+	g_assert (nm_connection_verify (connection, NULL));
+	g_object_unref (connection);
 
 	g_hash_table_unref (new_settings);
-	g_object_unref (connection);
-	g_object_unref (clone);
 	g_object_unref (new_connection);
 }
 
@@ -2684,12 +2682,10 @@ test_connection_normalize_virtual_iface_name (void)
 	g_assert (G_VALUE_HOLDS_STRING (value));
 	g_assert_cmpstr (g_value_get_string (value), ==, IFACE_NAME);
 
-	/* If vlan.interface-name is invalid, deserialization should fail, with the
-	 * correct error.
-	 */
+	/* If vlan.interface-name is invalid, deserialization will fail. */
 	g_value_set_string (value, ":::this-is-not-a-valid-interface-name:::");
 	con = nm_simple_connection_new_from_dbus (connection_hash, &error);
-	g_assert_error (error, NM_SETTING_VLAN_ERROR, NM_SETTING_VLAN_ERROR_INVALID_PROPERTY);
+	g_assert_error (error, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_clear_error (&error);
 
 	/* If vlan.interface-name is valid, but doesn't match, it will be ignored. */
