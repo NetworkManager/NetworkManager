@@ -25,6 +25,7 @@
 #include <gmodule.h>
 
 #include "nm-atm-manager.h"
+#include "nm-setting-adsl.h"
 #include "nm-device-adsl.h"
 #include "nm-device-factory.h"
 #include "nm-logging.h"
@@ -203,11 +204,9 @@ handle_uevent (GUdevClient *client,
 		adsl_remove (self, device);
 }
 
-static NMDeviceType
-get_device_type (NMDeviceFactory *factory)
-{
-	return NM_DEVICE_TYPE_ADSL;
-}
+NM_DEVICE_FACTORY_DECLARE_TYPES (
+	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_ADSL_SETTING_NAME)
+)
 
 /*********************************************************************/
 
@@ -224,7 +223,7 @@ nm_atm_manager_init (NMAtmManager *self)
 static void
 device_factory_interface_init (NMDeviceFactory *factory_iface)
 {
-	factory_iface->get_device_type = get_device_type;
+	factory_iface->get_supported_types = get_supported_types;
 	factory_iface->start = start;
 }
 

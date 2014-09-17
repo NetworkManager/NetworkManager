@@ -66,14 +66,19 @@ struct _NMDeviceFactory {
 	GTypeInterface g_iface;
 
 	/**
-	 * get_device_type:
+	 * get_supported_types:
 	 * @factory: the #NMDeviceFactory
+	 * @out_link_types: on return, a %NM_LINK_TYPE_NONE terminated
+	 *  list of #NMLinkType that the plugin supports
+	 * @out_setting_types: on return, a %NULL terminated list of
+	 *  base-type #NMSetting names that the plugin can create devices for
 	 *
-	 * This function MUST be implemented.
-	 *
-	 * Returns: the #NMDeviceType that this plugin creates
+	 * Returns the #NMLinkType and #NMSetting names that this plugin
+	 * supports.  This function MUST be implemented.
 	 */
-	NMDeviceType (*get_device_type) (NMDeviceFactory *factory);
+	void (*get_supported_types) (NMDeviceFactory *factory,
+	                             const NMLinkType **out_link_types,
+	                             const char ***out_setting_types);
 
 	/**
 	 * start:
@@ -87,15 +92,17 @@ struct _NMDeviceFactory {
 	/**
 	 * new_link:
 	 * @factory: the #NMDeviceFactory
-	 * @link: the new link
+	 * @plink: the new link
 	 * @error: error if the link could be claimed but an error occurred
 	 *
 	 * The NetworkManager core was notified of a new link which the plugin
 	 * may want to claim and create a #NMDevice subclass for.  If the link
-	 * represents a device the factory is capable of claiming, but the device
-	 * could not be created, %NULL should be returned and @error should be set.
-	 * %NULL should always be returned and @error should never be set if the
-	 * factory cannot create devices for the type which @link represents.
+	 * represents a device which the factory does not support, or the link
+	 * is supported but the device could not be created, %NULL should be
+	 * returned and @error should be set.
+	 *
+	 * @plink is guaranteed to be one of the types the factory returns in
+	 * get_supported_types().
 	 *
 	 * Returns: the #NMDevice if the link was claimed and created, %NULL if not
 	 */
@@ -151,7 +158,9 @@ struct _NMDeviceFactory {
 
 GType      nm_device_factory_get_type    (void);
 
-NMDeviceType nm_device_factory_get_device_type (NMDeviceFactory *factory);
+void       nm_device_factory_get_supported_types (NMDeviceFactory *factory,
+                                                  const NMLinkType **out_link_types,
+                                                  const char ***out_setting_types);
 
 void       nm_device_factory_start       (NMDeviceFactory *factory);
 
@@ -168,15 +177,33 @@ NMDevice * nm_device_factory_create_virtual_device_for_connection (NMDeviceFacto
 gboolean   nm_device_factory_emit_component_added (NMDeviceFactory *factory,
                                                    GObject *component);
 
+#define NM_DEVICE_FACTORY_DECLARE_LINK_TYPES(...) \
+	{ static const NMLinkType _df_links[] = { __VA_ARGS__, NM_LINK_TYPE_NONE }; *out_link_types = _df_links; }
+#define NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES(...) \
+	{ static const char *_df_settings[] = { __VA_ARGS__, NULL }; *out_setting_types = _df_settings; }
+
+extern const NMLinkType _nm_device_factory_no_default_links[];
+extern const char *_nm_device_factory_no_default_settings[];
+
+#define NM_DEVICE_FACTORY_DECLARE_TYPES(...) \
+	static void \
+	get_supported_types (NMDeviceFactory *factory, \
+	                     const NMLinkType **out_link_types, \
+	                     const char ***out_setting_types) \
+	{ \
+		*out_link_types = _nm_device_factory_no_default_links; \
+		*out_setting_types = _nm_device_factory_no_default_settings; \
+ \
+		{ __VA_ARGS__; } \
+	} \
+ \
+
 /**************************************************************************
  * INTERNAL DEVICE FACTORY FUNCTIONS - devices provided by plugins should
  * not use these functions.
  **************************************************************************/
 
-#define DEFINE_DEVICE_FACTORY_INTERNAL(upper, mixed, lower, dfi_code) \
-	DEFINE_DEVICE_FACTORY_INTERNAL_WITH_DEVTYPE(upper, mixed, lower, upper, dfi_code)
-
-#define DEFINE_DEVICE_FACTORY_INTERNAL_WITH_DEVTYPE(upper, mixed, lower, devtype, dfi_code) \
+#define NM_DEVICE_FACTORY_DEFINE_INTERNAL(upper, mixed, lower, st_code, dfi_code) \
 	typedef GObject NM##mixed##Factory; \
 	typedef GObjectClass NM##mixed##FactoryClass; \
  \
@@ -198,16 +225,12 @@ gboolean   nm_device_factory_emit_component_added (NMDeviceFactory *factory,
 		g_type_ensure (NM_TYPE_##upper##_FACTORY); \
 	} \
  \
-	static NMDeviceType \
-	get_device_type (NMDeviceFactory *factory) \
-	{ \
-		return NM_DEVICE_TYPE_##devtype; \
-	} \
+	NM_DEVICE_FACTORY_DECLARE_TYPES(st_code) \
  \
 	static void \
 	device_factory_interface_init (NMDeviceFactory *factory_iface) \
 	{ \
-		factory_iface->get_device_type = get_device_type; \
+		factory_iface->get_supported_types = get_supported_types; \
 		dfi_code \
 	} \
  \
@@ -222,6 +245,22 @@ gboolean   nm_device_factory_emit_component_added (NMDeviceFactory *factory,
 	}
 
 void _nm_device_factory_internal_register_type (GType factory_type);
-const GSList *nm_device_factory_get_internal_factory_types (void);
+
+/**************************************************************************
+ * PRIVATE FACTORY FUNCTIONS - for factory consumers (eg, NMManager).
+ **************************************************************************/
+
+typedef void (*NMDeviceFactoryManagerFactoryFunc)    (NMDeviceFactory *factory,
+                                                      gpointer user_data);
+
+void              nm_device_factory_manager_load_factories (NMDeviceFactoryManagerFactoryFunc callback,
+                                                            gpointer user_data);
+
+NMDeviceFactory * nm_device_factory_manager_find_factory_for_link_type  (NMLinkType link_type);
+
+NMDeviceFactory * nm_device_factory_manager_find_factory_for_connection (NMConnection *connection);
+
+void              nm_device_factory_manager_for_each_factory (NMDeviceFactoryManagerFactoryFunc callback,
+                                                              gpointer user_data);
 
 #endif /* __NETWORKMANAGER_DEVICE_FACTORY_H__ */
