@@ -1051,6 +1051,9 @@ perm_strv_to_permlist (char **strv)
 	GSList *list = NULL;
 	int i;
 
+	if (!strv)
+		return NULL;
+
 	for (i = 0; strv[i]; i++) {
 		Permission *p;
 
