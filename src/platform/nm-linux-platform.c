@@ -2304,9 +2304,10 @@ _nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *l)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	auto_nl_object struct rtnl_link *rtnllink = NULL;
+	NMPlatformLink tmp = { 0 };
 
 	rtnllink = rtnl_link_get (priv->link_cache, ifindex);
-	return (rtnllink && init_link (platform, l, rtnllink));
+	return (rtnllink && init_link (platform, l ? l : &tmp, rtnllink));
 }
 
 static struct nl_object *
@@ -2324,7 +2325,25 @@ build_rtnl_link (int ifindex, const char *name, NMLinkType type)
 }
 
 static gboolean
-link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *address, size_t address_len)
+link_get_by_name (NMPlatform *platform, const char *name, NMPlatformLink *out_link)
+{
+	int ifindex;
+
+	if (out_link) {
+		ifindex = nm_platform_link_get_ifindex (platform, name);
+		g_return_val_if_fail (ifindex > 0, FALSE);
+		return _nm_platform_link_get (platform, ifindex, out_link);
+	}
+	return TRUE;
+}
+
+static gboolean
+link_add (NMPlatform *platform,
+          const char *name,
+          NMLinkType type,
+          const void *address,
+          size_t address_len,
+          NMPlatformLink *out_link)
 {
 	struct nl_object *l;
 
@@ -2351,7 +2370,11 @@ link_add (NMPlatform *platform, const char *name, NMLinkType type, const void *a
 
 		rtnl_link_set_addr ((struct rtnl_link *) l, nladdr);
 	}
-	return add_object (platform, l);
+
+	if (!add_object (platform, l))
+		return FALSE;
+
+	return link_get_by_name (platform, name, out_link);
 }
 
 static struct rtnl_link *
@@ -2842,7 +2865,12 @@ link_get_dev_id (NMPlatform *platform, int ifindex)
 }
 
 static int
-vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint32 vlan_flags)
+vlan_add (NMPlatform *platform,
+          const char *name,
+          int parent,
+          int vlan_id,
+          guint32 vlan_flags,
+          NMPlatformLink *out_link)
 {
 	struct nl_object *object = build_rtnl_link (0, name, NM_LINK_TYPE_VLAN);
 	struct rtnl_link *rtnllink = (struct rtnl_link *) object;
@@ -2863,7 +2891,10 @@ vlan_add (NMPlatform *platform, const char *name, int parent, int vlan_id, guint
 	debug ("link: add vlan '%s', parent %d, vlan id %d, flags %X (native: %X)",
 	       name, parent, vlan_id, (unsigned int) vlan_flags, kernel_flags);
 
-	return add_object (platform, object);
+	if (!add_object (platform, object))
+		return FALSE;
+
+	return link_get_by_name (platform, name, out_link);
 }
 
 static gboolean
@@ -3024,7 +3055,7 @@ slave_get_option (NMPlatform *platform, int slave, const char *option)
 }
 
 static gboolean
-infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
+infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatformLink *out_link)
 {
 	const char *parent_name;
 	char *path, *id;
@@ -3044,6 +3075,8 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key)
 		auto_nl_object struct rtnl_link *rtnllink = _nm_rtnl_link_alloc (0, ifname);
 
 		success = refresh_object (platform, (struct nl_object *) rtnllink, FALSE, NM_PLATFORM_REASON_INTERNAL);
+		if (success)
+			success = link_get_by_name (platform, ifname, out_link);
 	}
 
 	return success;

@@ -90,13 +90,13 @@ software_add (NMLinkType link_type, const char *name)
 {
 	switch (link_type) {
 	case NM_LINK_TYPE_DUMMY:
-		return nm_platform_dummy_add (NM_PLATFORM_GET, name);
+		return nm_platform_dummy_add (NM_PLATFORM_GET, name, NULL);
 	case NM_LINK_TYPE_BRIDGE:
-		return nm_platform_bridge_add (NM_PLATFORM_GET, name, NULL, 0);
+		return nm_platform_bridge_add (NM_PLATFORM_GET, name, NULL, 0, NULL);
 	case NM_LINK_TYPE_BOND:
 		{
 			gboolean bond0_exists = nm_platform_link_exists (NM_PLATFORM_GET, "bond0");
-			gboolean result = nm_platform_bond_add (NM_PLATFORM_GET, name);
+			gboolean result = nm_platform_bond_add (NM_PLATFORM_GET, name, NULL);
 			NMPlatformError error = nm_platform_get_error (NM_PLATFORM_GET);
 
 			/* Check that bond0 is *not* automatically created. */
@@ -107,14 +107,14 @@ software_add (NMLinkType link_type, const char *name)
 			return result;
 		}
 	case NM_LINK_TYPE_TEAM:
-		return nm_platform_team_add (NM_PLATFORM_GET, name);
+		return nm_platform_team_add (NM_PLATFORM_GET, name, NULL);
 	case NM_LINK_TYPE_VLAN: {
 		SignalData *parent_added;
 		SignalData *parent_changed;
 
 		/* Don't call link_callback for the bridge interface */
 		parent_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, PARENT_NAME);
-		if (nm_platform_bridge_add (NM_PLATFORM_GET, PARENT_NAME, NULL, 0))
+		if (nm_platform_bridge_add (NM_PLATFORM_GET, PARENT_NAME, NULL, 0, NULL))
 			accept_signal (parent_added);
 		free_signal (parent_added);
 
@@ -126,7 +126,7 @@ software_add (NMLinkType link_type, const char *name)
 			accept_signal (parent_changed);
 			free_signal (parent_changed);
 
-			return nm_platform_vlan_add (NM_PLATFORM_GET, name, parent_ifindex, VLAN_ID, 0);
+			return nm_platform_vlan_add (NM_PLATFORM_GET, name, parent_ifindex, VLAN_ID, 0, NULL);
 		}
 	}
 	default:
@@ -403,12 +403,12 @@ test_internal (void)
 	error (NM_PLATFORM_ERROR_NOT_FOUND);
 
 	/* Add device */
-	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME));
+	g_assert (nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL));
 	no_error ();
 	accept_signal (link_added);
 
 	/* Try to add again */
-	g_assert (!nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME));
+	g_assert (!nm_platform_dummy_add (NM_PLATFORM_GET, DEVICE_NAME, NULL));
 	error (NM_PLATFORM_ERROR_EXISTS);
 
 	/* Check device index, name and type */
