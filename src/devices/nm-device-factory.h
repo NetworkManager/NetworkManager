@@ -128,6 +128,34 @@ struct _NMDeviceFactory {
 	                                                    NMDevice *parent,
 	                                                    GError **error);
 
+	/**
+	 * get_connection_parent:
+	 * @factory: the #NMDeviceFactory
+	 * @connection: the #NMConnection to return the parent name for, if supported
+	 *
+	 * Given a connection, returns the a parent interface name, parent connection
+	 * UUID, or parent device hardware address for @connection.
+	 *
+	 * Returns: the parent interface name, parent connection UUID, parent
+	 *   device hardware address, or %NULL
+	 */
+	const char * (*get_connection_parent) (NMDeviceFactory *factory,
+	                                       NMConnection *connection);
+
+	/**
+	 * get_virtual_iface_name:
+	 * @factory: the #NMDeviceFactory
+	 * @connection: the #NMConnection to return the virtual interface name for
+	 * @parent_iface: parent interface name
+	 *
+	 * Given a connection, returns the interface name that a device activating
+	 * that connection would have.
+	 *
+	 * Returns: the interface name, or %NULL
+	 */
+	char * (*get_virtual_iface_name) (NMDeviceFactory *factory,
+	                                  NMConnection *connection,
+	                                  const char *parent_iface);
 
 	/* Signals */
 
@@ -161,6 +189,13 @@ GType      nm_device_factory_get_type    (void);
 void       nm_device_factory_get_supported_types (NMDeviceFactory *factory,
                                                   const NMLinkType **out_link_types,
                                                   const char ***out_setting_types);
+
+const char *nm_device_factory_get_connection_parent (NMDeviceFactory *factory,
+                                                     NMConnection *connection);
+
+char *     nm_device_factory_get_virtual_iface_name (NMDeviceFactory *factory,
+                                                     NMConnection *connection,
+                                                     const char *parent_iface);
 
 void       nm_device_factory_start       (NMDeviceFactory *factory);
 

@@ -743,10 +743,63 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	return device;
 }
 
+static const char *
+get_connection_parent (NMDeviceFactory *factory, NMConnection *connection)
+{
+	NMSettingVlan *s_vlan;
+	NMSettingWired *s_wired;
+	const char *parent = NULL;
+
+	g_return_val_if_fail (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME), NULL);
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	parent = nm_setting_vlan_get_parent (s_vlan);
+	if (parent)
+		return parent;
+
+	/* Try the hardware address from the VLAN connection's hardware setting */
+	s_wired = nm_connection_get_setting_wired (connection);
+	if (s_wired)
+		return nm_setting_wired_get_mac_address (s_wired);
+
+	return NULL;
+}
+
+static char *
+get_virtual_iface_name (NMDeviceFactory *factory,
+                        NMConnection *connection,
+                        const char *parent_iface)
+{
+	const char *ifname;
+	NMSettingVlan *s_vlan;
+
+	g_return_val_if_fail (nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME), NULL);
+
+	s_vlan = nm_connection_get_setting_vlan (connection);
+	g_assert (s_vlan);
+
+	if (!parent_iface)
+		return NULL;
+
+	ifname = nm_connection_get_interface_name (connection);
+	if (ifname)
+		return g_strdup (ifname);
+
+	/* If the connection doesn't specify the interface name for the VLAN
+	 * device, we create one for it using the VLAN ID and the parent
+	 * interface's name.
+	 */
+	return nm_utils_new_vlan_name (parent_iface, nm_setting_vlan_get_id (s_vlan));
+}
+
 NM_DEVICE_FACTORY_DEFINE_INTERNAL (VLAN, Vlan, vlan,
 	NM_DEVICE_FACTORY_DECLARE_LINK_TYPES    (NM_LINK_TYPE_VLAN)
 	NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES (NM_SETTING_VLAN_SETTING_NAME),
 	factory_iface->new_link = new_link;
 	factory_iface->create_virtual_device_for_connection = create_virtual_device_for_connection;
+	factory_iface->get_connection_parent = get_connection_parent;
+	factory_iface->get_virtual_iface_name = get_virtual_iface_name;
 	)
 
