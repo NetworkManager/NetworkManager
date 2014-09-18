@@ -172,9 +172,65 @@ void      nm_client_new_async  (GCancellable         *cancellable,
 NMClient *nm_client_new_finish (GAsyncResult         *result,
                                 GError              **error);
 
+const char *nm_client_get_version    (NMClient *client);
+NMState     nm_client_get_state      (NMClient *client);
+gboolean    nm_client_get_startup    (NMClient *client);
+gboolean    nm_client_get_nm_running (NMClient *client);
+
+gboolean nm_client_networking_get_enabled (NMClient *client);
+gboolean nm_client_networking_set_enabled (NMClient *client,
+                                           gboolean enabled,
+                                           GError **error);
+
+gboolean nm_client_wireless_get_enabled (NMClient *client);
+void     nm_client_wireless_set_enabled (NMClient *client, gboolean enabled);
+gboolean nm_client_wireless_hardware_get_enabled (NMClient *client);
+
+gboolean nm_client_wwan_get_enabled (NMClient *client);
+void     nm_client_wwan_set_enabled (NMClient *client, gboolean enabled);
+gboolean nm_client_wwan_hardware_get_enabled (NMClient *client);
+
+gboolean nm_client_wimax_get_enabled (NMClient *client);
+void     nm_client_wimax_set_enabled (NMClient *client, gboolean enabled);
+gboolean nm_client_wimax_hardware_get_enabled (NMClient *client);
+
+gboolean nm_client_get_logging (NMClient *client,
+                                char **level,
+                                char **domains,
+                                GError **error);
+gboolean nm_client_set_logging (NMClient *client,
+                                const char *level,
+                                const char *domains,
+                                GError **error);
+
+NMClientPermissionResult nm_client_get_permission_result (NMClient *client,
+                                                          NMClientPermission permission);
+
+NMConnectivityState nm_client_get_connectivity          (NMClient *client);
+
+NMConnectivityState nm_client_check_connectivity        (NMClient *client,
+                                                         GCancellable *cancellable,
+                                                         GError **error);
+void                nm_client_check_connectivity_async  (NMClient *client,
+                                                         GCancellable *cancellable,
+                                                         GAsyncReadyCallback callback,
+                                                         gpointer user_data);
+NMConnectivityState nm_client_check_connectivity_finish (NMClient *client,
+                                                         GAsyncResult *result,
+                                                         GError **error);
+
+/* Devices */
+
 const GPtrArray *nm_client_get_devices    (NMClient *client);
 NMDevice *nm_client_get_device_by_path    (NMClient *client, const char *object_path);
 NMDevice *nm_client_get_device_by_iface   (NMClient *client, const char *iface);
+
+/* Active Connections */
+
+const GPtrArray *nm_client_get_active_connections (NMClient *client);
+
+NMActiveConnection *nm_client_get_primary_connection (NMClient *client);
+NMActiveConnection *nm_client_get_activating_connection (NMClient *client);
 
 void                nm_client_activate_connection_async  (NMClient *client,
                                                           NMConnection *connection,
@@ -210,51 +266,6 @@ void     nm_client_deactivate_connection_async  (NMClient *client,
 gboolean nm_client_deactivate_connection_finish (NMClient *client,
                                                  GAsyncResult *result,
                                                  GError **error);
-
-gboolean  nm_client_networking_get_enabled (NMClient *client);
-gboolean  nm_client_networking_set_enabled (NMClient *client,
-                                            gboolean enabled,
-                                            GError **error);
-
-gboolean  nm_client_wireless_get_enabled (NMClient *client);
-void      nm_client_wireless_set_enabled (NMClient *client, gboolean enabled);
-gboolean  nm_client_wireless_hardware_get_enabled (NMClient *client);
-
-gboolean  nm_client_wwan_get_enabled (NMClient *client);
-void      nm_client_wwan_set_enabled (NMClient *client, gboolean enabled);
-gboolean  nm_client_wwan_hardware_get_enabled (NMClient *client);
-
-gboolean  nm_client_wimax_get_enabled (NMClient *client);
-void      nm_client_wimax_set_enabled (NMClient *client, gboolean enabled);
-gboolean  nm_client_wimax_hardware_get_enabled (NMClient *client);
-
-const char *nm_client_get_version        (NMClient *client);
-NMState   nm_client_get_state            (NMClient *client);
-gboolean  nm_client_get_startup          (NMClient *client);
-gboolean  nm_client_get_nm_running       (NMClient *client);
-const GPtrArray *nm_client_get_active_connections (NMClient *client);
-
-NMClientPermissionResult nm_client_get_permission_result (NMClient *client,
-                                                          NMClientPermission permission);
-
-gboolean nm_client_get_logging (NMClient *client, char **level, char **domains, GError **error);
-gboolean nm_client_set_logging (NMClient *client, const char *level, const char *domains, GError **error);
-
-NMConnectivityState nm_client_get_connectivity          (NMClient *client);
-
-NMConnectivityState nm_client_check_connectivity        (NMClient *client,
-                                                         GCancellable *cancellable,
-                                                         GError **error);
-void                nm_client_check_connectivity_async  (NMClient *client,
-                                                         GCancellable *cancellable,
-                                                         GAsyncReadyCallback callback,
-                                                         gpointer user_data);
-NMConnectivityState nm_client_check_connectivity_finish (NMClient *client,
-                                                         GAsyncResult *result,
-                                                         GError **error);
-
-NMActiveConnection *nm_client_get_primary_connection (NMClient *client);
-NMActiveConnection *nm_client_get_activating_connection (NMClient *client);
 
 G_END_DECLS
 

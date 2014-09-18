@@ -383,6 +383,517 @@ client_recheck_permissions (NMDBusManager *proxy, gpointer user_data)
 }
 
 /**
+ * nm_client_get_version:
+ * @client: a #NMClient
+ *
+ * Gets NetworkManager version.
+ *
+ * Returns: string with the version
+ **/
+const char *
+nm_client_get_version (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	if (!nm_client_get_nm_running (client))
+		return NULL;
+
+	return NM_CLIENT_GET_PRIVATE (client)->version;
+}
+
+/**
+ * nm_client_get_state:
+ * @client: a #NMClient
+ *
+ * Gets the current daemon state.
+ *
+ * Returns: the current %NMState
+ **/
+NMState
+nm_client_get_state (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
+
+	return NM_CLIENT_GET_PRIVATE (client)->state;
+}
+
+/**
+ * nm_client_get_startup:
+ * @client: a #NMClient
+ *
+ * Tests whether the daemon is still in the process of activating
+ * connections at startup.
+ *
+ * Returns: whether the daemon is still starting up
+ **/
+gboolean
+nm_client_get_startup (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
+
+	return NM_CLIENT_GET_PRIVATE (client)->startup;
+}
+
+/**
+ * nm_client_get_nm_running:
+ * @client: a #NMClient
+ *
+ * Determines whether the daemon is running.
+ *
+ * Returns: %TRUE if the daemon is running
+ **/
+gboolean
+nm_client_get_nm_running (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return _nm_object_get_nm_running (NM_OBJECT (client));
+}
+
+/**
+ * nm_client_networking_get_enabled:
+ * @client: a #NMClient
+ *
+ * Whether networking is enabled or disabled.
+ *
+ * Returns: %TRUE if networking is enabled, %FALSE if networking is disabled
+ **/
+gboolean
+nm_client_networking_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->networking_enabled;
+}
+
+/**
+ * nm_client_networking_set_enabled:
+ * @client: a #NMClient
+ * @enabled: %TRUE to set networking enabled, %FALSE to set networking disabled
+ * @error: (allow-none): return location for a #GError, or %NULL
+ *
+ * Enables or disables networking.  When networking is disabled, all controlled
+ * interfaces are disconnected and deactivated.  When networking is enabled,
+ * all controlled interfaces are available for activation.
+ *
+ * Returns: %TRUE on success, %FALSE otherwise
+ **/
+gboolean
+nm_client_networking_set_enabled (NMClient *client, gboolean enable, GError **error)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	if (!nm_client_get_nm_running (client)) {
+		g_set_error_literal (error,
+		                     NM_CLIENT_ERROR,
+		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+		                     "NetworkManager is not running");
+		return FALSE;
+	}
+
+	return nmdbus_manager_call_enable_sync (NM_CLIENT_GET_PRIVATE (client)->manager_proxy,
+	                                        enable,
+	                                        NULL, error);
+}
+
+/**
+ * nm_client_wireless_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determines whether the wireless is enabled.
+ *
+ * Returns: %TRUE if wireless is enabled
+ **/
+gboolean
+nm_client_wireless_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->wireless_enabled;
+}
+
+/**
+ * nm_client_wireless_set_enabled:
+ * @client: a #NMClient
+ * @enabled: %TRUE to enable wireless
+ *
+ * Enables or disables wireless devices.
+ **/
+void
+nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
+{
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	if (!nm_client_get_nm_running (client))
+		return;
+
+	_nm_object_set_property (NM_OBJECT (client),
+	                         NM_DBUS_INTERFACE,
+	                         "WirelessEnabled",
+	                         "b", enabled);
+}
+
+/**
+ * nm_client_wireless_hardware_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determines whether the wireless hardware is enabled.
+ *
+ * Returns: %TRUE if the wireless hardware is enabled
+ **/
+gboolean
+nm_client_wireless_hardware_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->wireless_hw_enabled;
+}
+
+/**
+ * nm_client_wwan_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determines whether WWAN is enabled.
+ *
+ * Returns: %TRUE if WWAN is enabled
+ **/
+gboolean
+nm_client_wwan_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->wwan_enabled;
+}
+
+/**
+ * nm_client_wwan_set_enabled:
+ * @client: a #NMClient
+ * @enabled: %TRUE to enable WWAN
+ *
+ * Enables or disables WWAN devices.
+ **/
+void
+nm_client_wwan_set_enabled (NMClient *client, gboolean enabled)
+{
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	if (!nm_client_get_nm_running (client))
+		return;
+
+	_nm_object_set_property (NM_OBJECT (client),
+	                         NM_DBUS_INTERFACE,
+	                         "WwanEnabled",
+	                         "b", enabled);
+}
+
+/**
+ * nm_client_wwan_hardware_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determines whether the WWAN hardware is enabled.
+ *
+ * Returns: %TRUE if the WWAN hardware is enabled
+ **/
+gboolean
+nm_client_wwan_hardware_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->wwan_hw_enabled;
+}
+
+/**
+ * nm_client_wimax_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determines whether WiMAX is enabled.
+ *
+ * Returns: %TRUE if WiMAX is enabled
+ **/
+gboolean
+nm_client_wimax_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->wimax_enabled;
+}
+
+/**
+ * nm_client_wimax_set_enabled:
+ * @client: a #NMClient
+ * @enabled: %TRUE to enable WiMAX
+ *
+ * Enables or disables WiMAX devices.
+ **/
+void
+nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
+{
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	if (!nm_client_get_nm_running (client))
+		return;
+
+	_nm_object_set_property (NM_OBJECT (client),
+	                         NM_DBUS_INTERFACE,
+	                         "WimaxEnabled",
+	                         "b", enabled);
+}
+
+/**
+ * nm_client_wimax_hardware_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determines whether the WiMAX hardware is enabled.
+ *
+ * Returns: %TRUE if the WiMAX hardware is enabled
+ **/
+gboolean
+nm_client_wimax_hardware_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->wimax_hw_enabled;
+}
+
+/**
+ * nm_client_get_logging:
+ * @client: a #NMClient
+ * @level: (allow-none): return location for logging level string
+ * @domains: (allow-none): return location for log domains string. The string is
+ *   a list of domains separated by ","
+ * @error: (allow-none): return location for a #GError, or %NULL
+ *
+ * Gets NetworkManager current logging level and domains.
+ *
+ * Returns: %TRUE on success, %FALSE otherwise
+ **/
+gboolean
+nm_client_get_logging (NMClient *client, char **level, char **domains, GError **error)
+{
+	NMClientPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
+	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	if (!nm_client_get_nm_running (client)) {
+		g_set_error_literal (error,
+		                     NM_CLIENT_ERROR,
+		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+		                     "NetworkManager is not running");
+		return FALSE;
+	}
+
+	if (!level && !domains)
+		return TRUE;
+
+	return nmdbus_manager_call_get_logging_sync (priv->manager_proxy,
+	                                             level, domains,
+	                                             NULL, error);
+}
+
+/**
+ * nm_client_set_logging:
+ * @client: a #NMClient
+ * @level: (allow-none): logging level to set (%NULL or an empty string for no change)
+ * @domains: (allow-none): logging domains to set. The string should be a list of log
+ *   domains separated by ",". (%NULL or an empty string for no change)
+ * @error: (allow-none): return location for a #GError, or %NULL
+ *
+ * Sets NetworkManager logging level and/or domains.
+ *
+ * Returns: %TRUE on success, %FALSE otherwise
+ **/
+gboolean
+nm_client_set_logging (NMClient *client, const char *level, const char *domains, GError **error)
+{
+	NMClientPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	if (!nm_client_get_nm_running (client)) {
+		g_set_error_literal (error,
+		                     NM_CLIENT_ERROR,
+		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+		                     "NetworkManager is not running");
+		return FALSE;
+	}
+
+	if (!level && !domains)
+		return TRUE;
+
+	if (!level)
+		level = "";
+	if (!domains)
+		domains = "";
+
+	return nmdbus_manager_call_set_logging_sync (priv->manager_proxy,
+	                                             level, domains,
+	                                             NULL, error);
+}
+
+/**
+ * nm_client_get_permission_result:
+ * @client: a #NMClient
+ * @permission: the permission for which to return the result, one of #NMClientPermission
+ *
+ * Requests the result of a specific permission, which indicates whether the
+ * client can or cannot perform the action the permission represents
+ *
+ * Returns: the permission's result, one of #NMClientPermissionResult
+ **/
+NMClientPermissionResult
+nm_client_get_permission_result (NMClient *client, NMClientPermission permission)
+{
+	gpointer result;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CLIENT_PERMISSION_RESULT_UNKNOWN);
+
+	result = g_hash_table_lookup (NM_CLIENT_GET_PRIVATE (client)->permissions,
+	                              GUINT_TO_POINTER (permission));
+	return GPOINTER_TO_UINT (result);
+}
+
+/**
+ * nm_client_get_connectivity:
+ * @client: an #NMClient
+ *
+ * Gets the current network connectivity state. Contrast
+ * nm_client_check_connectivity() and
+ * nm_client_check_connectivity_async(), which re-check the
+ * connectivity state first before returning any information.
+ *
+ * Returns: the current connectivity state
+ */
+NMConnectivityState
+nm_client_get_connectivity (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
+
+	return NM_CLIENT_GET_PRIVATE (client)->connectivity;
+}
+
+/**
+ * nm_client_check_connectivity:
+ * @client: an #NMClient
+ * @cancellable: a #GCancellable
+ * @error: return location for a #GError
+ *
+ * Updates the network connectivity state and returns the (new)
+ * current state. Contrast nm_client_get_connectivity(), which returns
+ * the most recent known state without re-checking.
+ *
+ * This is a blocking call; use nm_client_check_connectivity_async()
+ * if you do not want to block.
+ *
+ * Returns: the (new) current connectivity state
+ */
+NMConnectivityState
+nm_client_check_connectivity (NMClient *client,
+                              GCancellable *cancellable,
+                              GError **error)
+{
+	NMClientPrivate *priv;
+	guint32 connectivity;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	if (nmdbus_manager_call_check_connectivity_sync (priv->manager_proxy,
+	                                                 &connectivity,
+	                                                 cancellable, error))
+		return connectivity;
+	else
+		return NM_CONNECTIVITY_UNKNOWN;
+}
+
+static void
+check_connectivity_cb (GObject *object,
+                       GAsyncResult *result,
+                       gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	guint32 connectivity;
+	GError *error = NULL;
+
+	if (nmdbus_manager_call_check_connectivity_finish (NMDBUS_MANAGER (object),
+	                                                   &connectivity,
+	                                                   result, &error))
+		g_simple_async_result_set_op_res_gssize (simple, connectivity);
+	else
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+/**
+ * nm_client_check_connectivity_async:
+ * @client: an #NMClient
+ * @cancellable: a #GCancellable
+ * @callback: callback to call with the result
+ * @user_data: data for @callback.
+ *
+ * Asynchronously updates the network connectivity state and invokes
+ * @callback when complete. Contrast nm_client_get_connectivity(),
+ * which (immediately) returns the most recent known state without
+ * re-checking, and nm_client_check_connectivity(), which blocks.
+ */
+void
+nm_client_check_connectivity_async (NMClient *client,
+                                    GCancellable *cancellable,
+                                    GAsyncReadyCallback callback,
+                                    gpointer user_data)
+{
+	NMClientPrivate *priv;
+	GSimpleAsyncResult *simple;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
+	                                    nm_client_check_connectivity_async);
+	nmdbus_manager_call_check_connectivity (priv->manager_proxy,
+	                                        cancellable,
+	                                        check_connectivity_cb, simple);
+}
+
+/**
+ * nm_client_check_connectivity_finish:
+ * @client: an #NMClient
+ * @result: the #GAsyncResult
+ * @error: return location for a #GError
+ *
+ * Retrieves the result of an nm_client_check_connectivity_async()
+ * call.
+ *
+ * Returns: the (new) current connectivity state
+ */
+NMConnectivityState
+nm_client_check_connectivity_finish (NMClient *client,
+                                     GAsyncResult *result,
+                                     GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_check_connectivity_async), NM_CONNECTIVITY_UNKNOWN);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NM_CONNECTIVITY_UNKNOWN;
+	return (NMConnectivityState) g_simple_async_result_get_op_res_gssize (simple);
+}
+
+/****************************************************************/
+/* Devices                                                      */
+/****************************************************************/
+
+/**
  * nm_client_get_devices:
  * @client: a #NMClient
  *
@@ -469,6 +980,80 @@ nm_client_get_device_by_iface (NMClient *client, const char *iface)
 	}
 
 	return device;
+}
+
+/****************************************************************/
+/* Active Connections                                           */
+/****************************************************************/
+
+/**
+ * nm_client_get_active_connections:
+ * @client: a #NMClient
+ *
+ * Gets the active connections.
+ *
+ * Returns: (transfer none) (element-type NMActiveConnection): a #GPtrArray
+ *  containing all the active #NMActiveConnections.
+ * The returned array is owned by the client and should not be modified.
+ **/
+const GPtrArray *
+nm_client_get_active_connections (NMClient *client)
+{
+	NMClientPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	if (!nm_client_get_nm_running (client))
+		return NULL;
+
+	return priv->active_connections;
+}
+
+/**
+ * nm_client_get_primary_connection:
+ * @client: an #NMClient
+ *
+ * Gets the #NMActiveConnection corresponding to the primary active
+ * network device.
+ *
+ * In particular, when there is no VPN active, or the VPN does not
+ * have the default route, this returns the active connection that has
+ * the default route. If there is a VPN active with the default route,
+ * then this function returns the active connection that contains the
+ * route to the VPN endpoint.
+ *
+ * If there is no default route, or the default route is over a
+ * non-NetworkManager-recognized device, this will return %NULL.
+ *
+ * Returns: (transfer none): the appropriate #NMActiveConnection, if
+ * any
+ */
+NMActiveConnection *
+nm_client_get_primary_connection (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	return NM_CLIENT_GET_PRIVATE (client)->primary_connection;
+}
+
+/**
+ * nm_client_get_activating_connection:
+ * @client: an #NMClient
+ *
+ * Gets the #NMActiveConnection corresponding to a
+ * currently-activating connection that is expected to become the new
+ * #NMClient:primary-connection upon successful activation.
+ *
+ * Returns: (transfer none): the appropriate #NMActiveConnection, if
+ * any.
+ */
+NMActiveConnection *
+nm_client_get_activating_connection (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	return NM_CLIENT_GET_PRIVATE (client)->activating_connection;
 }
 
 typedef struct {
@@ -961,452 +1546,6 @@ nm_client_deactivate_connection_finish (NMClient *client,
 		return g_simple_async_result_get_op_res_gboolean (simple);
 }
 
-/**
- * nm_client_get_active_connections:
- * @client: a #NMClient
- *
- * Gets the active connections.
- *
- * Returns: (transfer none) (element-type NMActiveConnection): a #GPtrArray
- *  containing all the active #NMActiveConnections.
- * The returned array is owned by the client and should not be modified.
- **/
-const GPtrArray *
-nm_client_get_active_connections (NMClient *client)
-{
-	NMClientPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!nm_client_get_nm_running (client))
-		return NULL;
-
-	return priv->active_connections;
-}
-
-/**
- * nm_client_wireless_get_enabled:
- * @client: a #NMClient
- *
- * Determines whether the wireless is enabled.
- *
- * Returns: %TRUE if wireless is enabled
- **/
-gboolean
-nm_client_wireless_get_enabled (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-
-	return NM_CLIENT_GET_PRIVATE (client)->wireless_enabled;
-}
-
-/**
- * nm_client_wireless_set_enabled:
- * @client: a #NMClient
- * @enabled: %TRUE to enable wireless
- *
- * Enables or disables wireless devices.
- **/
-void
-nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
-{
-	g_return_if_fail (NM_IS_CLIENT (client));
-
-	if (!nm_client_get_nm_running (client))
-		return;
-
-	_nm_object_set_property (NM_OBJECT (client),
-	                         NM_DBUS_INTERFACE,
-	                         "WirelessEnabled",
-	                         "b", enabled);
-}
-
-/**
- * nm_client_wireless_hardware_get_enabled:
- * @client: a #NMClient
- *
- * Determines whether the wireless hardware is enabled.
- *
- * Returns: %TRUE if the wireless hardware is enabled
- **/
-gboolean
-nm_client_wireless_hardware_get_enabled (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-
-	return NM_CLIENT_GET_PRIVATE (client)->wireless_hw_enabled;
-}
-
-/**
- * nm_client_wwan_get_enabled:
- * @client: a #NMClient
- *
- * Determines whether WWAN is enabled.
- *
- * Returns: %TRUE if WWAN is enabled
- **/
-gboolean
-nm_client_wwan_get_enabled (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-
-	return NM_CLIENT_GET_PRIVATE (client)->wwan_enabled;
-}
-
-/**
- * nm_client_wwan_set_enabled:
- * @client: a #NMClient
- * @enabled: %TRUE to enable WWAN
- *
- * Enables or disables WWAN devices.
- **/
-void
-nm_client_wwan_set_enabled (NMClient *client, gboolean enabled)
-{
-	g_return_if_fail (NM_IS_CLIENT (client));
-
-	if (!nm_client_get_nm_running (client))
-		return;
-
-	_nm_object_set_property (NM_OBJECT (client),
-	                         NM_DBUS_INTERFACE,
-	                         "WwanEnabled",
-	                         "b", enabled);
-}
-
-/**
- * nm_client_wwan_hardware_get_enabled:
- * @client: a #NMClient
- *
- * Determines whether the WWAN hardware is enabled.
- *
- * Returns: %TRUE if the WWAN hardware is enabled
- **/
-gboolean
-nm_client_wwan_hardware_get_enabled (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-
-	return NM_CLIENT_GET_PRIVATE (client)->wwan_hw_enabled;
-}
-
-/**
- * nm_client_wimax_get_enabled:
- * @client: a #NMClient
- *
- * Determines whether WiMAX is enabled.
- *
- * Returns: %TRUE if WiMAX is enabled
- **/
-gboolean
-nm_client_wimax_get_enabled (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-
-	return NM_CLIENT_GET_PRIVATE (client)->wimax_enabled;
-}
-
-/**
- * nm_client_wimax_set_enabled:
- * @client: a #NMClient
- * @enabled: %TRUE to enable WiMAX
- *
- * Enables or disables WiMAX devices.
- **/
-void
-nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
-{
-	g_return_if_fail (NM_IS_CLIENT (client));
-
-	if (!nm_client_get_nm_running (client))
-		return;
-
-	_nm_object_set_property (NM_OBJECT (client),
-	                         NM_DBUS_INTERFACE,
-	                         "WimaxEnabled",
-	                         "b", enabled);
-}
-
-/**
- * nm_client_wimax_hardware_get_enabled:
- * @client: a #NMClient
- *
- * Determines whether the WiMAX hardware is enabled.
- *
- * Returns: %TRUE if the WiMAX hardware is enabled
- **/
-gboolean
-nm_client_wimax_hardware_get_enabled (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-
-	return NM_CLIENT_GET_PRIVATE (client)->wimax_hw_enabled;
-}
-
-/**
- * nm_client_get_version:
- * @client: a #NMClient
- *
- * Gets NetworkManager version.
- *
- * Returns: string with the version
- **/
-const char *
-nm_client_get_version (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-
-	if (!nm_client_get_nm_running (client))
-		return NULL;
-
-	return NM_CLIENT_GET_PRIVATE (client)->version;
-}
-
-/**
- * nm_client_get_state:
- * @client: a #NMClient
- *
- * Gets the current daemon state.
- *
- * Returns: the current %NMState
- **/
-NMState
-nm_client_get_state (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
-
-	return NM_CLIENT_GET_PRIVATE (client)->state;
-}
-
-/**
- * nm_client_get_startup:
- * @client: a #NMClient
- *
- * Tests whether the daemon is still in the process of activating
- * connections at startup.
- *
- * Returns: whether the daemon is still starting up
- **/
-gboolean
-nm_client_get_startup (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
-
-	return NM_CLIENT_GET_PRIVATE (client)->startup;
-}
-
-/**
- * nm_client_networking_get_enabled:
- * @client: a #NMClient
- *
- * Whether networking is enabled or disabled.
- *
- * Returns: %TRUE if networking is enabled, %FALSE if networking is disabled
- **/
-gboolean
-nm_client_networking_get_enabled (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-
-	return NM_CLIENT_GET_PRIVATE (client)->networking_enabled;
-}
-
-/**
- * nm_client_networking_set_enabled:
- * @client: a #NMClient
- * @enabled: %TRUE to set networking enabled, %FALSE to set networking disabled
- * @error: (allow-none): return location for a #GError, or %NULL
- *
- * Enables or disables networking.  When networking is disabled, all controlled
- * interfaces are disconnected and deactivated.  When networking is enabled,
- * all controlled interfaces are available for activation.
- *
- * Returns: %TRUE on success, %FALSE otherwise
- **/
-gboolean
-nm_client_networking_set_enabled (NMClient *client, gboolean enable, GError **error)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-
-	if (!nm_client_get_nm_running (client)) {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                     "NetworkManager is not running");
-		return FALSE;
-	}
-
-	return nmdbus_manager_call_enable_sync (NM_CLIENT_GET_PRIVATE (client)->manager_proxy,
-	                                        enable,
-	                                        NULL, error);
-}
-
-/**
- * nm_client_get_nm_running:
- * @client: a #NMClient
- *
- * Determines whether the daemon is running.
- *
- * Returns: %TRUE if the daemon is running
- **/
-gboolean
-nm_client_get_nm_running (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-
-	return _nm_object_get_nm_running (NM_OBJECT (client));
-}
-
-/**
- * nm_client_get_permission_result:
- * @client: a #NMClient
- * @permission: the permission for which to return the result, one of #NMClientPermission
- *
- * Requests the result of a specific permission, which indicates whether the
- * client can or cannot perform the action the permission represents
- *
- * Returns: the permission's result, one of #NMClientPermissionResult
- **/
-NMClientPermissionResult
-nm_client_get_permission_result (NMClient *client, NMClientPermission permission)
-{
-	gpointer result;
-
-	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CLIENT_PERMISSION_RESULT_UNKNOWN);
-
-	result = g_hash_table_lookup (NM_CLIENT_GET_PRIVATE (client)->permissions,
-	                              GUINT_TO_POINTER (permission));
-	return GPOINTER_TO_UINT (result);
-}
-
-/**
- * nm_client_get_logging:
- * @client: a #NMClient
- * @level: (allow-none): return location for logging level string
- * @domains: (allow-none): return location for log domains string. The string is
- *   a list of domains separated by ","
- * @error: (allow-none): return location for a #GError, or %NULL
- *
- * Gets NetworkManager current logging level and domains.
- *
- * Returns: %TRUE on success, %FALSE otherwise
- **/
-gboolean
-nm_client_get_logging (NMClient *client, char **level, char **domains, GError **error)
-{
-	NMClientPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
-	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!nm_client_get_nm_running (client)) {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                     "NetworkManager is not running");
-		return FALSE;
-	}
-
-	if (!level && !domains)
-		return TRUE;
-
-	return nmdbus_manager_call_get_logging_sync (priv->manager_proxy,
-	                                             level, domains,
-	                                             NULL, error);
-}
-
-/**
- * nm_client_set_logging:
- * @client: a #NMClient
- * @level: (allow-none): logging level to set (%NULL or an empty string for no change)
- * @domains: (allow-none): logging domains to set. The string should be a list of log
- *   domains separated by ",". (%NULL or an empty string for no change)
- * @error: (allow-none): return location for a #GError, or %NULL
- *
- * Sets NetworkManager logging level and/or domains.
- *
- * Returns: %TRUE on success, %FALSE otherwise
- **/
-gboolean
-nm_client_set_logging (NMClient *client, const char *level, const char *domains, GError **error)
-{
-	NMClientPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!nm_client_get_nm_running (client)) {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                     "NetworkManager is not running");
-		return FALSE;
-	}
-
-	if (!level && !domains)
-		return TRUE;
-
-	if (!level)
-		level = "";
-	if (!domains)
-		domains = "";
-
-	return nmdbus_manager_call_set_logging_sync (priv->manager_proxy,
-	                                             level, domains,
-	                                             NULL, error);
-}
-
-/**
- * nm_client_get_primary_connection:
- * @client: an #NMClient
- *
- * Gets the #NMActiveConnection corresponding to the primary active
- * network device.
- *
- * In particular, when there is no VPN active, or the VPN does not
- * have the default route, this returns the active connection that has
- * the default route. If there is a VPN active with the default route,
- * then this function returns the active connection that contains the
- * route to the VPN endpoint.
- *
- * If there is no default route, or the default route is over a
- * non-NetworkManager-recognized device, this will return %NULL.
- *
- * Returns: (transfer none): the appropriate #NMActiveConnection, if
- * any
- */
-NMActiveConnection *
-nm_client_get_primary_connection (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-
-	return NM_CLIENT_GET_PRIVATE (client)->primary_connection;
-}
-
-/**
- * nm_client_get_activating_connection:
- * @client: an #NMClient
- *
- * Gets the #NMActiveConnection corresponding to a
- * currently-activating connection that is expected to become the new
- * #NMClient:primary-connection upon successful activation.
- *
- * Returns: (transfer none): the appropriate #NMActiveConnection, if
- * any.
- */
-NMActiveConnection *
-nm_client_get_activating_connection (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-
-	return NM_CLIENT_GET_PRIVATE (client)->activating_connection;
-}
-
 /****************************************************************/
 
 static void
@@ -1512,137 +1651,6 @@ nm_running_changed_cb (GObject *object,
 		_nm_object_reload_properties_async (NM_OBJECT (client), updated_properties, client);
 		client_recheck_permissions (priv->manager_proxy, client);
 	}
-}
-
-/**
- * nm_client_get_connectivity:
- * @client: an #NMClient
- *
- * Gets the current network connectivity state. Contrast
- * nm_client_check_connectivity() and
- * nm_client_check_connectivity_async(), which re-check the
- * connectivity state first before returning any information.
- *
- * Returns: the current connectivity state
- */
-NMConnectivityState
-nm_client_get_connectivity (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), NM_STATE_UNKNOWN);
-
-	return NM_CLIENT_GET_PRIVATE (client)->connectivity;
-}
-
-/**
- * nm_client_check_connectivity:
- * @client: an #NMClient
- * @cancellable: a #GCancellable
- * @error: return location for a #GError
- *
- * Updates the network connectivity state and returns the (new)
- * current state. Contrast nm_client_get_connectivity(), which returns
- * the most recent known state without re-checking.
- *
- * This is a blocking call; use nm_client_check_connectivity_async()
- * if you do not want to block.
- *
- * Returns: the (new) current connectivity state
- */
-NMConnectivityState
-nm_client_check_connectivity (NMClient *client,
-                              GCancellable *cancellable,
-                              GError **error)
-{
-	NMClientPrivate *priv;
-	guint32 connectivity;
-
-	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
-	priv = NM_CLIENT_GET_PRIVATE (client);
-
-	if (nmdbus_manager_call_check_connectivity_sync (priv->manager_proxy,
-	                                                 &connectivity,
-	                                                 cancellable, error))
-		return connectivity;
-	else
-		return NM_CONNECTIVITY_UNKNOWN;
-}
-
-static void
-check_connectivity_cb (GObject *object,
-                       GAsyncResult *result,
-                       gpointer user_data)
-{
-	GSimpleAsyncResult *simple = user_data;
-	guint32 connectivity;
-	GError *error = NULL;
-
-	if (nmdbus_manager_call_check_connectivity_finish (NMDBUS_MANAGER (object),
-	                                                   &connectivity,
-	                                                   result, &error))
-		g_simple_async_result_set_op_res_gssize (simple, connectivity);
-	else
-		g_simple_async_result_take_error (simple, error);
-
-	g_simple_async_result_complete (simple);
-	g_object_unref (simple);
-}
-
-/**
- * nm_client_check_connectivity_async:
- * @client: an #NMClient
- * @cancellable: a #GCancellable
- * @callback: callback to call with the result
- * @user_data: data for @callback.
- *
- * Asynchronously updates the network connectivity state and invokes
- * @callback when complete. Contrast nm_client_get_connectivity(),
- * which (immediately) returns the most recent known state without
- * re-checking, and nm_client_check_connectivity(), which blocks.
- */
-void
-nm_client_check_connectivity_async (NMClient *client,
-                                    GCancellable *cancellable,
-                                    GAsyncReadyCallback callback,
-                                    gpointer user_data)
-{
-	NMClientPrivate *priv;
-	GSimpleAsyncResult *simple;
-
-	g_return_if_fail (NM_IS_CLIENT (client));
-	priv = NM_CLIENT_GET_PRIVATE (client);
-
-	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
-	                                    nm_client_check_connectivity_async);
-	nmdbus_manager_call_check_connectivity (priv->manager_proxy,
-	                                        cancellable,
-	                                        check_connectivity_cb, simple);
-}
-
-/**
- * nm_client_check_connectivity_finish:
- * @client: an #NMClient
- * @result: the #GAsyncResult
- * @error: return location for a #GError
- *
- * Retrieves the result of an nm_client_check_connectivity_async()
- * call.
- *
- * Returns: the (new) current connectivity state
- */
-NMConnectivityState
-nm_client_check_connectivity_finish (NMClient *client,
-                                     GAsyncResult *result,
-                                     GError **error)
-{
-	GSimpleAsyncResult *simple;
-
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_check_connectivity_async), NM_CONNECTIVITY_UNKNOWN);
-
-	simple = G_SIMPLE_ASYNC_RESULT (result);
-
-	if (g_simple_async_result_propagate_error (simple, error))
-		return NM_CONNECTIVITY_UNKNOWN;
-	return (NMConnectivityState) g_simple_async_result_get_op_res_gssize (simple);
 }
 
 /****************************************************************/
