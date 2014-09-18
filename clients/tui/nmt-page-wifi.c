@@ -326,6 +326,9 @@ nmt_page_wifi_constructed (GObject *object)
 
 	widget = nmt_newt_entry_new (40, NMT_NEWT_ENTRY_NONEMPTY);
 	nmt_page_grid_append (NMT_PAGE_GRID (subgrid), _("Username"), widget, NULL);
+	g_object_bind_property (s_wsec, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME,
+	                        widget, "text",
+	                        G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 
 	widget = nmt_password_fields_new (40, NMT_PASSWORD_FIELDS_SHOW_PASSWORD);
 	g_object_bind_property (s_wsec, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD,
