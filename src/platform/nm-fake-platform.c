@@ -168,6 +168,28 @@ _nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *l)
 }
 
 static gboolean
+_nm_platform_link_get_by_address (NMPlatform *platform,
+                                  gconstpointer address,
+                                  size_t length,
+                                  NMPlatformLink *l)
+{
+	NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE (platform);
+	guint i;
+
+	for (i = 0; i < priv->links->len; i++) {
+		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
+
+		if (   device->address
+		    && g_bytes_get_size (device->address) == length
+		    && memcmp (g_bytes_get_data (device->address, NULL), address, length) == 0) {
+			*l = device->link;
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+static gboolean
 link_add (NMPlatform *platform,
           const char *name,
           NMLinkType type,
@@ -1370,6 +1392,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->sysctl_get = sysctl_get;
 
 	platform_class->link_get = _nm_platform_link_get;
+	platform_class->link_get_by_address = _nm_platform_link_get_by_address;
 	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;

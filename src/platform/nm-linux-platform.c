@@ -2318,6 +2318,30 @@ _nm_platform_link_get (NMPlatform *platform, int ifindex, NMPlatformLink *l)
 	return (rtnllink && init_link (platform, l ? l : &tmp, rtnllink));
 }
 
+static gboolean
+_nm_platform_link_get_by_address (NMPlatform *platform,
+                                  gconstpointer address,
+                                  size_t length,
+                                  NMPlatformLink *l)
+{
+	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
+	struct nl_object *object;
+
+	for (object = nl_cache_get_first (priv->link_cache); object; object = nl_cache_get_next (object)) {
+		struct rtnl_link *rtnl_link = (struct rtnl_link *) object;
+		struct nl_addr *nladdr;
+		gconstpointer hwaddr;
+
+		nladdr = rtnl_link_get_addr (rtnl_link);
+		if (nladdr && (nl_addr_get_len (nladdr) == length)) {
+			hwaddr = nl_addr_get_binary_addr (nladdr);
+			if (hwaddr && memcmp (hwaddr, address, length) == 0)
+				return init_link (platform, l, rtnl_link);
+		}
+	}
+	return FALSE;
+}
+
 static struct nl_object *
 build_rtnl_link (int ifindex, const char *name, NMLinkType type)
 {
@@ -4705,6 +4729,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->sysctl_get = sysctl_get;
 
 	platform_class->link_get = _nm_platform_link_get;
+	platform_class->link_get_by_address = _nm_platform_link_get_by_address;
 	platform_class->link_get_all = link_get_all;
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;
