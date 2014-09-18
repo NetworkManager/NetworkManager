@@ -46,11 +46,33 @@ nm_dispatcher_SOURCES = \
 
 nm_dispatcher_LDADD = \
 	$(top_builddir)/libnm/libnm.la \
-	$(DBUS_LIBS) \
+	libnmdbus-dispatcher.la \
 	$(GLIB_LIBS)
 
-nm-dispatcher-glue.h: nm-dispatcher.xml
-	$(AM_V_GEN) dbus-binding-tool --prefix=nm_dispatcher --mode=glib-server --output=$@ $<
+# We have to build the gdbus generated code separately, without
+# -DGLIB_VERSION_MAX_ALLOWED, due to a bug in GLib 2.38
+
+noinst_LTLIBRARIES += libnmdbus-dispatcher.la
+
+libnmdbus_dispatcher_la_SOURCES = \
+	nmdbus-dispatcher.c \
+	nmdbus-dispatcher.h
+
+libnmdbus_dispatcher_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(AM_CPPFLAGS))
+
+nmdbus-dispatcher.h: nm-dispatcher.xml
+	$(AM_V_GEN) gdbus-codegen \
+		--generate-c-code $(basename $@) \
+		--c-namespace NMDBus \
+		--interface-prefix org.freedesktop \
+		$<
+
+nmdbus-dispatcher.c: nmdbus-dispatcher.h
+	@true
+
+BUILT_SOURCES = \
+	nmdbus-dispatcher.c \
+	nmdbus-dispatcher.h
 
 ###########################################
 # dispatcher envp
@@ -65,8 +87,7 @@ libtest_dispatcher_envp_la_CPPFLAGS = \
 
 libtest_dispatcher_envp_la_LIBADD = \
 	$(top_builddir)/libnm/libnm.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS)
+	$(GLIB_LIBS)
 
 
 if WITH_UDEV_DIR
@@ -92,8 +113,6 @@ install-data-hook:
 	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)
 	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/pre-down.d
 	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/pre-up.d
-
-BUILT_SOURCES = nm-dispatcher-glue.h
 
 CLEANFILES = $(BUILT_SOURCES) $(dbusactivation_DATA)
 

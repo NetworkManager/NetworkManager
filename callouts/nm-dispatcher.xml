@@ -2,14 +2,12 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.nm_dispatcher">
+    <annotation name="org.gtk.GDBus.C.Name" value="Dispatcher"/>
 
     <method name="Action">
       <tp:docstring>
         INTERNAL; not public API.  Perform an action.
       </tp:docstring>
-
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_dispatch"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
 
       <arg name="action" type="s" direction="in">
         <tp:docstring>
