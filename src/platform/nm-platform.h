@@ -374,6 +374,7 @@ typedef struct {
 	char * (*sysctl_get) (NMPlatform *, const char *path);
 
 	gboolean (*link_get) (NMPlatform *platform, int ifindex, NMPlatformLink *link);
+	gboolean (*link_get_by_address) (NMPlatform *platform, gconstpointer address, size_t length, NMPlatformLink *link);
 	GArray *(*link_get_all) (NMPlatform *);
 	gboolean (*link_add) (NMPlatform *,
 	                      const char *name,
@@ -531,6 +532,7 @@ gboolean nm_platform_sysctl_set_ip6_hop_limit_safe (NMPlatform *self, const char
 
 gboolean nm_platform_link_get (NMPlatform *self, int ifindex, NMPlatformLink *link);
 GArray *nm_platform_link_get_all (NMPlatform *self);
+gboolean nm_platform_link_get_by_address (NMPlatform *self, gconstpointer address, size_t length, NMPlatformLink *link);
 gboolean nm_platform_dummy_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
 gboolean nm_platform_bridge_add (NMPlatform *self, const char *name, const void *address, size_t address_len, NMPlatformLink *out_link);
 gboolean nm_platform_bond_add (NMPlatform *self, const char *name, NMPlatformLink *out_link);
