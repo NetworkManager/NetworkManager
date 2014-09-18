@@ -38,11 +38,9 @@ IGNORE_HFILES= \
 	nm-object-private.h \
 	nm-param-spec-dbus.h \
 	nm-remote-connection-private.h \
-	nm-secret-agent-glue.h \
 	nm-setting-private.h \
 	nm-types-private.h \
-	nm-utils-private.h \
-	nm-vpn-plugin-glue.h
+	nm-utils-private.h
 
 # Images to copy into HTML directory.
 HTML_IMAGES = libnm.png
@@ -62,12 +60,10 @@ GTKDOC_CFLAGS =				\
 	-I$(top_srcdir)/libnm		\
 	-I$(top_builddir)/libnm		\
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
-	$(GLIB_CFLAGS)			\
-	$(DBUS_CFLAGS)
+	$(GLIB_CFLAGS)
 
 GTKDOC_LIBS =  \
 	$(top_builddir)/libnm/libnm.la \
-	$(top_builddir)/libnm/libnm-vpn.la \
 	$(GLIB_LIBS)
 
 

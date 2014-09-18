@@ -9,13 +9,11 @@ AM_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	-DTEST_NM_SERVICE=\"$(abs_top_srcdir)/tools/test-networkmanager-service.py\" \
-	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS)
+	$(GLIB_CFLAGS)
 
 LDADD = \
 	$(top_builddir)/libnm/libnm.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS)
+	$(GLIB_LIBS)
 
 noinst_PROGRAMS = $(TESTS)
 

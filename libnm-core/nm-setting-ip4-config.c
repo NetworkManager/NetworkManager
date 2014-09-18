@@ -21,12 +21,10 @@
  */
 
 #include <string.h>
-#include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
 #include "nm-setting-ip4-config.h"
 #include "nm-utils.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-setting-private.h"
 #include "nm-core-internal.h"
@@ -1095,6 +1093,45 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_setting_ip4_config_parent_class)->finalize (object);
 }
 
+static GVariant *
+ip4_dns_to_dbus (const GValue *prop_value)
+{
+	return nm_utils_ip4_dns_to_variant (g_value_get_boxed (prop_value));
+}
+
+static void
+ip4_dns_from_dbus (GVariant *dbus_value,
+                   GValue *prop_value)
+{
+	g_value_take_boxed (prop_value, nm_utils_ip4_dns_from_variant (dbus_value));
+}
+
+static GVariant *
+ip4_addresses_to_dbus (const GValue *prop_value)
+{
+	return nm_utils_ip4_addresses_to_variant (g_value_get_boxed (prop_value));
+}
+
+static void
+ip4_addresses_from_dbus (GVariant *dbus_value,
+                         GValue *prop_value)
+{
+	g_value_take_boxed (prop_value, nm_utils_ip4_addresses_from_variant (dbus_value));
+}
+
+static GVariant *
+ip4_routes_to_dbus (const GValue *prop_value)
+{
+	return nm_utils_ip4_routes_to_variant (g_value_get_boxed (prop_value));
+}
+
+static void
+ip4_routes_from_dbus (GVariant *dbus_value,
+                      GValue *prop_value)
+{
+	g_value_take_boxed (prop_value, nm_utils_ip4_routes_from_variant (dbus_value));
+}
+
 static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
@@ -1275,9 +1312,9 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP4_CONFIG_DNS,
-	                                      DBUS_TYPE_G_UINT_ARRAY,
-	                                      _nm_utils_ip4_dns_to_dbus,
-	                                      _nm_utils_ip4_dns_from_dbus);
+	                                      G_VARIANT_TYPE ("au"),
+	                                      ip4_dns_to_dbus,
+	                                      ip4_dns_from_dbus);
 
 	/**
 	 * NMSettingIP4Config:dns-search:
@@ -1314,9 +1351,9 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP4_CONFIG_ADDRESSES,
-	                                      DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-	                                      _nm_utils_ip4_addresses_to_dbus,
-	                                      _nm_utils_ip4_addresses_from_dbus);
+	                                      G_VARIANT_TYPE ("aau"),
+	                                      ip4_addresses_to_dbus,
+	                                      ip4_addresses_from_dbus);
 
 	/**
 	 * NMSettingIP4Config:address-labels:
@@ -1349,9 +1386,9 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP4_CONFIG_ROUTES,
-	                                      DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
-	                                      _nm_utils_ip4_routes_to_dbus,
-	                                      _nm_utils_ip4_routes_from_dbus);
+	                                      G_VARIANT_TYPE ("aau"),
+	                                      ip4_routes_to_dbus,
+	                                      ip4_routes_from_dbus);
 
 	/**
 	 * NMSettingIP4Config:ignore-auto-routes:

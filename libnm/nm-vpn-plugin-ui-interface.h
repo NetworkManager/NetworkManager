@@ -38,8 +38,10 @@ typedef struct _NMVpnPluginUiWidgetInterface NMVpnPluginUiWidgetInterface;
 /* Plugin's factory function that returns a GObject that implements
  * NMVpnPluginUiInterface.
  */
+#ifndef __GI_SCANNER__
 typedef NMVpnPluginUiInterface * (*NMVpnPluginUiFactory) (GError **error);
 NMVpnPluginUiInterface *nm_vpn_plugin_ui_factory (GError **error);
+#endif
 
 
 /**************************************************/

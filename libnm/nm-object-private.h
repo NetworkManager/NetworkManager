@@ -24,9 +24,9 @@
 #include <gio/gio.h>
 #include "nm-object.h"
 
-typedef gboolean (*PropertyMarshalFunc) (NMObject *, GParamSpec *, GValue *, gpointer);
+typedef gboolean (*PropertyMarshalFunc) (NMObject *, GParamSpec *, GVariant *, gpointer);
 
-typedef GObject * (*NMObjectCreatorFunc) (DBusGConnection *, const char *);
+typedef GObject * (*NMObjectCreatorFunc) (GDBusConnection *, const char *);
 
 typedef struct {
 	const char *name;
@@ -36,12 +36,8 @@ typedef struct {
 	const char *signal_prefix;
 } NMPropertiesInfo;
 
-DBusGProxy *_nm_object_new_proxy (NMObject *self,
-                                  const char *path,
-                                  const char *interface);
-
 void _nm_object_register_properties (NMObject *object,
-                                     DBusGProxy *proxy,
+                                     const char *interface,
                                      const NMPropertiesInfo *info);
 
 gboolean _nm_object_reload_properties (NMObject *object, GError **error);
@@ -66,17 +62,23 @@ void _nm_object_reload_property (NMObject *object,
 void _nm_object_set_property (NMObject *object,
                               const char *interface,
                               const char *prop_name,
-                              GValue *value);
+                              const char *format_string,
+                              ...);
 
 /* object demarshalling support */
-typedef GType (*NMObjectTypeFunc) (DBusGConnection *, const char *);
-typedef void (*NMObjectTypeCallbackFunc) (GType, gpointer);
-typedef void (*NMObjectTypeAsyncFunc) (DBusGConnection *, const char *, NMObjectTypeCallbackFunc, gpointer);
+typedef GType (*NMObjectDecideTypeFunc) (GVariant *);
 
-void _nm_object_register_type_func (GType base_type, NMObjectTypeFunc type_func,
-                                    NMObjectTypeAsyncFunc type_async_func);
+void _nm_object_register_type_func (GType base_type,
+                                    NMObjectDecideTypeFunc type_func,
+                                    const char *interface,
+                                    const char *property);
 
 #define NM_OBJECT_NM_RUNNING "nm-running-internal"
 gboolean _nm_object_get_nm_running (NMObject *self);
+
+void _nm_object_class_add_interface (NMObjectClass *object_class,
+                                     const char    *interface);
+GDBusProxy *_nm_object_get_proxy (NMObject   *object,
+                                  const char *interface);
 
 #endif /* __NM_OBJECT_PRIVATE_H__ */

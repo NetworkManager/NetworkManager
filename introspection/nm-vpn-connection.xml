@@ -2,6 +2,8 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.VPN.Connection">
+    <annotation name="org.gtk.GDBus.C.Name" value="VpnConnection"/>
+
     <tp:docstring>
       Represents an active connection to a Virtual Private Network.
     </tp:docstring>

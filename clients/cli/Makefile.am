@@ -9,7 +9,6 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm \
 	-I${top_builddir}/libnm \
-	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmcli"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
@@ -32,7 +31,6 @@ nmcli_SOURCES = \
 	utils.h
 
 nmcli_LDADD = \
-	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS) \
 	$(top_builddir)/libnm/libnm.la

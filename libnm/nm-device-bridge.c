@@ -37,8 +37,6 @@ G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE)
 #define NM_DEVICE_BRIDGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BRIDGE, NMDeviceBridgePrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	char *hw_address;
 	gboolean carrier;
 	GPtrArray *slaves;
@@ -191,9 +189,8 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_device_bridge_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_BRIDGE);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_DEVICE_BRIDGE,
 	                                property_info);
 }
 
@@ -201,8 +198,6 @@ static void
 dispose (GObject *object)
 {
 	NMDeviceBridgePrivate *priv = NM_DEVICE_BRIDGE_GET_PRIVATE (object);
-
-	g_clear_object (&priv->proxy);
 
 	g_clear_pointer (&priv->slaves, g_ptr_array_unref);
 
@@ -251,6 +246,8 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *bridge_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (bridge_class);
 
 	g_type_class_add_private (bridge_class, sizeof (NMDeviceBridgePrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_BRIDGE);
 
 	/* virtual methods */
 	object_class->dispose = dispose;

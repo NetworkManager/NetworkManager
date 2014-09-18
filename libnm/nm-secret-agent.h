@@ -83,13 +83,12 @@ typedef struct {
  * note that this object will be unrefed after the callback has returned, use
  * g_object_ref()/g_object_unref() if you want to use this object after the callback
  * has returned
- * @secrets: (element-type utf8 GLib.HashTable): the #GHashTable containing
- * the requested secrets in the same format as an #NMConnection hash (as
- * created by nm_connection_to_dbus() for example).  Each key in @secrets
+ * @secrets: the #GVariant of type %NM_VARIANT_TYPE_CONNECTION containing the requested
+ * secrets (as created by nm_connection_to_dbus() for example).  Each key in @secrets
  * should be the name of a #NMSetting object (like "802-11-wireless-security")
- * and each value should be a #GHashTable.  The sub-hashes map string:#GValue
- * where the string is the setting property name (like "psk") and the value
- * is the secret
+ * and each value should be an %NM_VARIANT_TYPE_SETTING variant.  The sub-dicts
+ * map string:value, where the string is the setting property name (like "psk")
+ * and the value is the secret
  * @error: if the secrets request failed, give a descriptive error here
  * @user_data: caller-specific data to be passed to the function
  *
@@ -98,14 +97,14 @@ typedef struct {
  * return them, or to return an error, this function should be called with
  * those secrets or the error.
  *
- * To easily create the hash table to return the Wi-Fi PSK, you could do
+ * To easily create the dictionary to return the Wi-Fi PSK, you could do
  * something like this:
  * <example>
- *  <title>Creating a secrets hash</title>
+ *  <title>Creating a secrets dictionary</title>
  *  <programlisting>
  *   NMConnection *secrets;
  *   NMSettingWirelessSecurity *s_wsec;
- *   GHashTable *secrets_hash;
+ *   GVariant *secrets_dict;
  *
  *   secrets = nm_connection_new ();
  *   s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
@@ -113,18 +112,18 @@ typedef struct {
  *                 NM_SETTING_WIRELESS_SECURITY_PSK, "my really cool PSK",
  *                 NULL);
  *   nm_connection_add_setting (secrets, NM_SETTING (s_wsec));
- *   secrets_hash = nm_connection_to_dbus (secrets, NM_CONNECTION_SERIALIZE_ALL);
+ *   secrets_dict = nm_connection_to_dbus (secrets, NM_CONNECTION_SERIALIZE_ALL);
  *
- *   (call the NMSecretAgentGetSecretsFunc with secrets_hash)
+ *   (call the NMSecretAgentGetSecretsFunc with secrets_dict)
  *
  *   g_object_unref (secrets);
- *   g_hash_table_unref (secrets_hash);
+ *   g_variant_unref (secrets_dict);
  *  </programlisting>
  * </example>
  */
 typedef void (*NMSecretAgentGetSecretsFunc) (NMSecretAgent *agent,
                                              NMConnection *connection,
-                                             GHashTable *secrets,
+                                             GVariant *secrets,
                                              GError *error,
                                              gpointer user_data);
 

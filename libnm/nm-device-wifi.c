@@ -33,8 +33,10 @@
 #include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-core-internal.h"
+#include "nm-dbus-helpers.h"
+
+#include "nmdbus-device-wifi.h"
 
 G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 
@@ -45,12 +47,13 @@ static void state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user
 
 typedef struct {
 	NMDeviceWifi *device;
+	GCancellable *cancellable;
 	NMDeviceWifiRequestScanFn callback;
 	gpointer user_data;
 } RequestScanInfo;
 
 typedef struct {
-	DBusGProxy *proxy;
+	NMDBusDeviceWifi *proxy;
 
 	char *hw_address;
 	char *perm_hw_address;
@@ -60,7 +63,6 @@ typedef struct {
 	NMDeviceWifiCapabilities wireless_caps;
 	GPtrArray *aps;
 
-	DBusGProxyCall *scan_call;
 	RequestScanInfo *scan_info;
 } NMDeviceWifiPrivate;
 
@@ -286,24 +288,27 @@ nm_device_wifi_get_access_point_by_path (NMDeviceWifi *device,
 }
 
 static void
-request_scan_cb (DBusGProxy *proxy,
-                 DBusGProxyCall *call,
+request_scan_cb (GObject *source,
+                 GAsyncResult *result,
                  gpointer user_data)
 {
 	RequestScanInfo *info = user_data;
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (info->device);
-	GError *error = NULL;
 
-	dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID);
+	if (info->callback) {
+		NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (info->device);
+		GError *error = NULL;
 
-	if (info->callback)
+		nmdbus_device_wifi_call_request_scan_finish (NMDBUS_DEVICE_WIFI (source),
+		                                             result, &error);
+
 		info->callback (info->device, error, info->user_data);
 
-	g_clear_error (&error);
-	g_slice_free (RequestScanInfo, info);
+		g_clear_error (&error);
+		priv->scan_info = NULL;
+	}
 
-	priv->scan_call = NULL;
-	priv->scan_info = NULL;
+	g_clear_object (&info->cancellable);
+	g_slice_free (RequestScanInfo, info);
 }
 
 /**
@@ -322,29 +327,25 @@ nm_device_wifi_request_scan_simple (NMDeviceWifi *device,
                                     gpointer user_data)
 {
 	RequestScanInfo *info;
-	GHashTable *options;
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI (device));
 
 	/* If a scan is in progress, just return */
-	if (priv->scan_call)
+	if (priv->scan_info)
 		return;
-
-	options = g_hash_table_new (g_str_hash, g_str_equal);
 
 	info = g_slice_new0 (RequestScanInfo);
 	info->device = device;
+	info->cancellable = g_cancellable_new ();
 	info->callback = callback;
 	info->user_data = user_data;
 
 	priv->scan_info = info;
-	priv->scan_call = dbus_g_proxy_begin_call (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy, "RequestScan",
-	                                           request_scan_cb, info, NULL,
-	                                           DBUS_TYPE_G_MAP_OF_VARIANT, options,
-	                                           G_TYPE_INVALID);
-
-	g_hash_table_unref (options);
+	nmdbus_device_wifi_call_request_scan (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
+	                                      g_variant_new_array (G_VARIANT_TYPE_VARDICT, NULL, 0),
+	                                      info->cancellable,
+	                                      request_scan_cb, info);
 }
 
 static void
@@ -594,9 +595,9 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_device_wifi_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_WIRELESS);
+	priv->proxy = NMDBUS_DEVICE_WIFI (_nm_object_get_proxy (object, NM_DBUS_INTERFACE_DEVICE_WIRELESS));
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_DEVICE_WIRELESS,
 	                                property_info);
 }
 
@@ -621,24 +622,26 @@ dispose (GObject *object)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
 	GError *error = NULL;
 
-	if (priv->scan_call) {
-		g_set_error_literal (&error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_UNKNOWN,
-		                     "Wi-Fi device was destroyed");
-		if (priv->scan_info) {
-			if (priv->scan_info->callback)
-				priv->scan_info->callback (NULL, error, priv->scan_info->user_data);
-			g_slice_free (RequestScanInfo, priv->scan_info);
-			priv->scan_info = NULL;
-		}
-		g_clear_error (&error);
+	if (priv->scan_info) {
+		RequestScanInfo *scan_info;
 
-		dbus_g_proxy_cancel_call (priv->proxy, priv->scan_call);
-		priv->scan_call = NULL;
+		scan_info = priv->scan_info;
+		priv->scan_info = NULL;
+
+		if (scan_info->callback) {
+			g_set_error_literal (&error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_UNKNOWN,
+			                     "Wi-Fi device was destroyed");
+			scan_info->callback (NULL, error, scan_info->user_data);
+			scan_info->callback = NULL;
+			g_clear_error (&error);
+		}
+
+		g_cancellable_cancel (scan_info->cancellable);
+		/* request_scan_cb() will free scan_info */
 	}
 
 	if (priv->aps)
 		clean_up_aps (NM_DEVICE_WIFI (object), TRUE);
-	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
 }
@@ -662,6 +665,10 @@ nm_device_wifi_class_init (NMDeviceWifiClass *wifi_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (wifi_class);
 
 	g_type_class_add_private (wifi_class, sizeof (NMDeviceWifiPrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_WIRELESS);
+	_nm_dbus_register_proxy_type (NM_DBUS_INTERFACE_DEVICE_WIRELESS,
+	                              NMDBUS_TYPE_DEVICE_WIFI_PROXY);
 
 	/* virtual methods */
 	object_class->get_property = get_property;

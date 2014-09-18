@@ -1457,6 +1457,7 @@ _hash_with_username (NMConnection *connection, const char *username)
 	NMConnection *dup;
 	NMSettingVpn *s_vpn;
 	GHashTable *hash;
+	GVariant *dict;
 	const char *existing;
 
 	/* Shortcut if we weren't given a username or if there already was one in
@@ -1465,16 +1466,23 @@ _hash_with_username (NMConnection *connection, const char *username)
 	s_vpn = nm_connection_get_setting_vpn (connection);
 	g_assert (s_vpn);
 	existing = nm_setting_vpn_get_user_name (s_vpn);
-	if (username == NULL || existing)
-		return nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	if (username == NULL || existing) {
+		dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+		hash = nm_utils_connection_dict_to_hash (dict);
+		g_variant_unref (dict);
+		return hash;
+	}
 
 	dup = nm_simple_connection_new_clone (connection);
 	g_assert (dup);
 	s_vpn = nm_connection_get_setting_vpn (dup);
 	g_assert (s_vpn);
 	g_object_set (s_vpn, NM_SETTING_VPN_USER_NAME, username, NULL);
-	hash = nm_connection_to_dbus (dup, NM_CONNECTION_SERIALIZE_ALL);
+	dict = nm_connection_to_dbus (dup, NM_CONNECTION_SERIALIZE_ALL);
 	g_object_unref (dup);
+
+	hash = nm_utils_connection_dict_to_hash (dict);
+	g_variant_unref (dict);
 	return hash;
 }
 

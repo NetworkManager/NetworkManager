@@ -406,7 +406,7 @@ nm_dispatcher_utils_construct_envp (const char *action,
 	}
 
 	/* UUID and ID */
-	con_setting = g_variant_lookup_value (connection_dict, NM_SETTING_CONNECTION_SETTING_NAME, G_VARIANT_TYPE ("a{sv}"));
+	con_setting = g_variant_lookup_value (connection_dict, NM_SETTING_CONNECTION_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
 	if (!con_setting) {
 		g_warning ("Failed to read connection setting");
 		return NULL;

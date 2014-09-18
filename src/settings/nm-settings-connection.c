@@ -29,7 +29,6 @@
 #include <nm-setting-vpn.h>
 #include <nm-setting-wireless.h>
 #include <nm-utils.h>
-#include "nm-core-internal.h"
 
 #include "nm-settings-connection.h"
 #include "nm-session-monitor.h"
@@ -440,7 +439,6 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
                                          GError **error)
 {
 	NMSettingsConnectionPrivate *priv;
-	GHashTable *hash = NULL;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION (self), FALSE);
@@ -476,10 +474,12 @@ nm_settings_connection_replace_settings (NMSettingsConnection *self,
 	 * in the replacement connection data if it was eg reread from disk.
 	 */
 	if (priv->agent_secrets) {
-		hash = nm_connection_to_dbus (priv->agent_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
-		if (hash) {
-			(void) nm_connection_update_secrets (NM_CONNECTION (self), NULL, hash, NULL);
-			g_hash_table_destroy (hash);
+		GVariant *dict;
+
+		dict = nm_connection_to_dbus (priv->agent_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+		if (dict) {
+			(void) nm_connection_update_secrets (NM_CONNECTION (self), NULL, dict, NULL);
+			g_variant_unref (dict);
 		}
 	}
 
@@ -725,7 +725,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 	NMSettingsConnectionSecretsFunc callback = other_data2;
 	gpointer callback_data = other_data3;
 	GError *local = NULL;
-	GHashTable *hash;
+	GVariant *dict;
 	gboolean agent_had_system = FALSE;
 
 	if (error) {
@@ -808,14 +808,17 @@ agent_secrets_done_cb (NMAgentManager *manager,
 
 	/* Update the connection with our existing secrets from backing storage */
 	nm_connection_clear_secrets (NM_CONNECTION (self));
-	hash = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
-	if (!hash || nm_connection_update_secrets (NM_CONNECTION (self), setting_name, hash, &local)) {
+	dict = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+	if (!dict || nm_connection_update_secrets (NM_CONNECTION (self), setting_name, dict, &local)) {
+		GVariant *secrets_dict;
+
 		/* Update the connection with the agent's secrets; by this point if any
 		 * system-owned secrets exist in 'secrets' the agent that provided them
 		 * will have been authenticated, so those secrets can replace the existing
 		 * system secrets.
 		 */
-		if (nm_connection_update_secrets (NM_CONNECTION (self), setting_name, secrets, &local)) {
+		secrets_dict = nm_utils_connection_hash_to_dict (secrets);
+		if (nm_connection_update_secrets (NM_CONNECTION (self), setting_name, secrets_dict, &local)) {
 			/* Now that all secrets are updated, copy and cache new secrets, 
 			 * then save them to backing storage.
 			 */
@@ -848,6 +851,7 @@ agent_secrets_done_cb (NMAgentManager *manager,
 			            local ? local->code : -1,
 			            (local && local->message) ? local->message : "(unknown)");
 		}
+		g_variant_unref (secrets_dict);
 	} else {
 		nm_log_dbg (LOGD_SETTINGS, "(%s/%s:%u) failed to update with existing secrets: (%d) %s",
 		            nm_connection_get_uuid (NM_CONNECTION (self)),
@@ -859,8 +863,8 @@ agent_secrets_done_cb (NMAgentManager *manager,
 
 	callback (self, call_id, agent_username, setting_name, local, callback_data);
 	g_clear_error (&local);
-	if (hash)
-		g_hash_table_destroy (hash);
+	if (dict)
+		g_variant_unref (dict);
 }
 
 /**
@@ -890,7 +894,8 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
                                     GError **error)
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
-	GHashTable *existing_secrets;
+	GVariant *existing_secrets;
+	GHashTable *existing_secrets_hash;
 	guint32 call_id = 0;
 	char *joined_hints = NULL;
 
@@ -913,10 +918,11 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	}
 
 	existing_secrets = nm_connection_to_dbus (priv->system_secrets, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+	existing_secrets_hash = nm_utils_connection_dict_to_hash (existing_secrets);
 	call_id = nm_agent_manager_get_secrets (priv->agent_mgr,
 	                                        NM_CONNECTION (self),
 	                                        subject,
-	                                        existing_secrets,
+	                                        existing_secrets_hash,
 	                                        setting_name,
 	                                        flags,
 	                                        hints,
@@ -924,8 +930,10 @@ nm_settings_connection_get_secrets (NMSettingsConnection *self,
 	                                        self,
 	                                        callback,
 	                                        callback_data);
+	if (existing_secrets_hash)
+		g_hash_table_unref (existing_secrets_hash);
 	if (existing_secrets)
-		g_hash_table_unref (existing_secrets);
+		g_variant_unref (existing_secrets);
 
 	if (nm_logging_enabled (LOGL_DEBUG, LOGD_SETTINGS)) {
 		if (hints)
@@ -1130,7 +1138,8 @@ get_settings_auth_cb (NMSettingsConnection *self,
 	if (error)
 		dbus_g_method_return_error (context, error);
 	else {
-		GHashTable *settings;
+		GVariant *settings;
+		GHashTable *settings_hash;
 		NMConnection *dupl_con;
 		NMSettingConnection *s_con;
 		NMSettingWireless *s_wifi;
@@ -1168,8 +1177,10 @@ get_settings_auth_cb (NMSettingsConnection *self,
 		 */
 		settings = nm_connection_to_dbus (NM_CONNECTION (dupl_con), NM_CONNECTION_SERIALIZE_NO_SECRETS);
 		g_assert (settings);
-		dbus_g_method_return (context, settings);
-		g_hash_table_destroy (settings);
+		settings_hash = nm_utils_connection_dict_to_hash (settings);
+		dbus_g_method_return (context, settings_hash);
+		g_hash_table_destroy (settings_hash);
+		g_variant_unref (settings);
 		g_object_unref (dupl_con);
 	}
 }
@@ -1328,7 +1339,10 @@ impl_settings_connection_update_helper (NMSettingsConnection *self,
 
 	/* Check if the settings are valid first */
 	if (new_settings) {
-		tmp = nm_simple_connection_new_from_dbus (new_settings, &error);
+		GVariant *new_settings_dict = nm_utils_connection_hash_to_dict (new_settings);
+
+		tmp = nm_simple_connection_new_from_dbus (new_settings_dict, &error);
+		g_variant_unref (new_settings_dict);
 		if (!tmp) {
 			g_assert (error);
 			goto error;
@@ -1483,6 +1497,7 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 {
 	NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE (self);
 	DBusGMethodInvocation *context = user_data;
+	GVariant *dict;
 	GHashTable *hash;
 
 	priv->reqs = g_slist_remove (priv->reqs, GUINT_TO_POINTER (call_id));
@@ -1495,11 +1510,15 @@ dbus_get_agent_secrets_cb (NMSettingsConnection *self,
 		 * secrets from backing storage and those returned from the agent
 		 * by the time we get here.
 		 */
-		hash = nm_connection_to_dbus (NM_CONNECTION (self), NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
-		if (!hash)
+		dict = nm_connection_to_dbus (NM_CONNECTION (self), NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+		if (dict)
+			hash = nm_utils_connection_dict_to_hash (dict);
+		else
 			hash = g_hash_table_new (NULL, NULL);
 		dbus_g_method_return (context, hash);
 		g_hash_table_destroy (hash);
+		if (dict)
+			g_variant_unref (dict);
 	}
 }
 

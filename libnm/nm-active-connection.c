@@ -30,26 +30,20 @@
 #include "nm-connection.h"
 #include "nm-vpn-connection.h"
 #include "nm-glib-compat.h"
-#include "nm-dbus-helpers-private.h"
+#include "nm-dbus-helpers.h"
 
-static GType _nm_active_connection_type_for_path (DBusGConnection *connection,
-                                                  const char *path);
-static void  _nm_active_connection_type_for_path_async (DBusGConnection *connection,
-                                                        const char *path,
-                                                        NMObjectTypeCallbackFunc callback,
-                                                        gpointer user_data);
+static GType _nm_active_connection_decide_type (GVariant *value);
 
 G_DEFINE_TYPE_WITH_CODE (NMActiveConnection, nm_active_connection, NM_TYPE_OBJECT,
                          _nm_object_register_type_func (g_define_type_id,
-                                                        _nm_active_connection_type_for_path,
-                                                        _nm_active_connection_type_for_path_async);
+                                                        _nm_active_connection_decide_type,
+                                                        NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
+                                                        "Vpn");
                          )
 
 #define NM_ACTIVE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	char *connection;
 	char *id;
 	char *uuid;
@@ -89,97 +83,13 @@ enum {
 };
 
 static GType
-_nm_active_connection_type_for_path (DBusGConnection *connection,
-                                     const char *path)
+_nm_active_connection_decide_type (GVariant *value)
 {
-	DBusGProxy *proxy;
-	GError *error = NULL;
-	GValue value = G_VALUE_INIT;
-	GType type;
-
-	proxy = _nm_dbus_new_proxy_for_connection (connection, path, "org.freedesktop.DBus.Properties");
-	if (!proxy) {
-		g_warning ("%s: couldn't create D-Bus object proxy.", __func__);
-		return G_TYPE_INVALID;
-	}
-
-	/* Have to create an NMVpnConnection if it's a VPN connection, otherwise
-	 * a plain NMActiveConnection.
-	 */
-	if (dbus_g_proxy_call (proxy,
-	                       "Get", &error,
-	                       G_TYPE_STRING, NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-	                       G_TYPE_STRING, "Vpn",
-	                       G_TYPE_INVALID,
-	                       G_TYPE_VALUE, &value, G_TYPE_INVALID)) {
-		if (g_value_get_boolean (&value))
-			type = NM_TYPE_VPN_CONNECTION;
-		else
-			type = NM_TYPE_ACTIVE_CONNECTION;
-	} else {
-		g_warning ("Error in getting active connection 'Vpn' property: (%d) %s",
-		           error->code, error->message);
-		g_error_free (error);
-		type = G_TYPE_INVALID;
-	}
-
-	g_object_unref (proxy);
-	return type;
-}
-
-typedef struct {
-	DBusGConnection *connection;
-	NMObjectTypeCallbackFunc callback;
-	gpointer user_data;
-} NMActiveConnectionAsyncData;
-
-static void
-async_got_type (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
-{
-	NMActiveConnectionAsyncData *async_data = user_data;
-	GValue value = G_VALUE_INIT;
-	const char *path = dbus_g_proxy_get_path (proxy);
-	GError *error = NULL;
-	GType type;
-
-	if (dbus_g_proxy_end_call (proxy, call, &error,
-	                           G_TYPE_VALUE, &value,
-	                           G_TYPE_INVALID)) {
-		if (g_value_get_boolean (&value))
-			type = NM_TYPE_VPN_CONNECTION;
-		else
-			type = NM_TYPE_ACTIVE_CONNECTION;
-	} else {
-		g_warning ("%s: could not read properties for %s: %s", __func__, path, error->message);
-		type = G_TYPE_INVALID;
-	}
-
-	async_data->callback (type, async_data->user_data);
-
-	g_object_unref (proxy);
-	g_slice_free (NMActiveConnectionAsyncData, async_data);
-}
-
-static void
-_nm_active_connection_type_for_path_async (DBusGConnection *connection,
-                                           const char *path,
-                                           NMObjectTypeCallbackFunc callback,
-                                           gpointer user_data)
-{
-	NMActiveConnectionAsyncData *async_data;
-	DBusGProxy *proxy;
-
-	async_data = g_slice_new (NMActiveConnectionAsyncData);
-	async_data->connection = connection;
-	async_data->callback = callback;
-	async_data->user_data = user_data;
-
-	proxy = _nm_dbus_new_proxy_for_connection (connection, path, "org.freedesktop.DBus.Properties");
-	dbus_g_proxy_begin_call (proxy, "Get",
-	                         async_got_type, async_data, NULL,
-	                         G_TYPE_STRING, NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-	                         G_TYPE_STRING, "Vpn",
-	                         G_TYPE_INVALID);
+	/* @value is the value of the o.fd.NM.ActiveConnection property "VPN" */
+	if (g_variant_get_boolean (value))
+		return NM_TYPE_VPN_CONNECTION;
+	else
+		return NM_TYPE_ACTIVE_CONNECTION;
 }
 
 /**
@@ -461,8 +371,6 @@ dispose (GObject *object)
 	g_clear_object (&priv->ip6_config);
 	g_clear_object (&priv->dhcp6_config);
 
-	g_clear_object (&priv->proxy);
-
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->dispose (object);
 }
 
@@ -567,9 +475,8 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_active_connection_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_ACTIVE_CONNECTION);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
 	                                property_info);
 }
 
@@ -581,6 +488,8 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (ap_class);
 
 	g_type_class_add_private (ap_class, sizeof (NMActiveConnectionPrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_ACTIVE_CONNECTION);
 
 	/* virtual methods */
 	object_class->get_property = get_property;

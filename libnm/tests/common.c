@@ -32,9 +32,9 @@ name_exists (GDBusConnection *c, const char *name)
 	gboolean exists = FALSE;
 
 	reply = g_dbus_connection_call_sync (c,
-	                                     DBUS_SERVICE_DBUS,
-	                                     DBUS_PATH_DBUS,
-	                                     DBUS_INTERFACE_DBUS,
+	                                     "org.freedesktop.DBus",
+	                                     "/org/freedesktop/DBus",
+	                                     "org.freedesktop.DBus",
 	                                     "GetNameOwner",
 	                                     g_variant_new ("(s)", name),
 	                                     NULL,

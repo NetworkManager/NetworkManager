@@ -777,7 +777,8 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
-	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name", G_TYPE_STRING,
+	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
+	                                          G_VARIANT_TYPE_STRING,
 	                                          _nm_setting_get_deprecated_virtual_interface_name,
 	                                          NULL);
 }

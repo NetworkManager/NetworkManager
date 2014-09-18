@@ -31,8 +31,6 @@ G_DEFINE_TYPE (NMDhcp4Config, nm_dhcp4_config, NM_TYPE_OBJECT)
 #define NM_DHCP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DHCP4_CONFIG, NMDhcp4ConfigPrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	GHashTable *options;
 } NMDhcp4ConfigPrivate;
 
@@ -52,21 +50,19 @@ nm_dhcp4_config_init (NMDhcp4Config *config)
 }
 
 static gboolean
-demarshal_dhcp4_options (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+demarshal_dhcp4_options (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
 {
 	NMDhcp4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (object);
-	GHashTable *new_options;
-	GHashTableIter iter;
+	GVariantIter iter;
 	const char *key;
-	GValue *opt;
+	GVariant *opt;
 
 	g_hash_table_remove_all (priv->options);
 
-	new_options = g_value_get_boxed (value);
-	if (new_options) {
-		g_hash_table_iter_init (&iter, new_options);
-		while (g_hash_table_iter_next (&iter, (gpointer) &key, (gpointer) &opt))
-			g_hash_table_insert (priv->options, g_strdup (key), g_value_dup_string (opt));
+	g_variant_iter_init (&iter, value);
+	while (g_variant_iter_next (&iter, "{&sv}", &key, &opt)) {
+		g_hash_table_insert (priv->options, g_strdup (key), g_variant_dup_string (opt, NULL));
+		g_variant_unref (opt);
 	}
 
 	_nm_object_queue_notify (object, NM_DHCP4_CONFIG_OPTIONS);
@@ -84,9 +80,8 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_dhcp4_config_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DHCP4_CONFIG);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_DHCP4_CONFIG,
 	                                property_info);
 }
 
@@ -97,8 +92,6 @@ finalize (GObject *object)
 
 	if (priv->options)
 		g_hash_table_destroy (priv->options);
-
-	g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_dhcp4_config_parent_class)->finalize (object);
 }
@@ -128,6 +121,8 @@ nm_dhcp4_config_class_init (NMDhcp4ConfigClass *config_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (config_class);
 
 	g_type_class_add_private (config_class, sizeof (NMDhcp4ConfigPrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DHCP4_CONFIG);
 
 	/* virtual methods */
 	object_class->get_property = get_property;

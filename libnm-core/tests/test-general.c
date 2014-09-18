@@ -20,7 +20,6 @@
  */
 
 #include <glib.h>
-#include <dbus/dbus-glib.h>
 #include <string.h>
 
 #include <nm-utils.h>
@@ -40,7 +39,6 @@
 #include "nm-setting-bond.h"
 #include "nm-utils.h"
 #include "nm-core-internal.h"
-#include "nm-dbus-glib-types.h"
 
 #include "nm-test-utils.h"
 
@@ -181,8 +179,8 @@ test_setting_vpn_update_secrets (void)
 {
 	NMConnection *connection;
 	NMSettingVpn *s_vpn;
-	GHashTable *settings, *vpn, *secrets;
-	GValue val = G_VALUE_INIT;
+	GVariantBuilder settings_builder, vpn_builder, secrets_builder;
+	GVariant *settings;
 	gboolean success;
 	GError *error = NULL;
 	const char *tmp;
@@ -202,18 +200,20 @@ test_setting_vpn_update_secrets (void)
 	        "error creating vpn setting");
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 
-	settings = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_hash_table_destroy);
-	vpn = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_value_unset);
-	g_hash_table_insert (settings, NM_SETTING_VPN_SETTING_NAME, vpn);
+	g_variant_builder_init (&settings_builder, NM_VARIANT_TYPE_CONNECTION);
+	g_variant_builder_init (&vpn_builder, NM_VARIANT_TYPE_SETTING);
+	g_variant_builder_init (&secrets_builder, G_VARIANT_TYPE ("a{ss}"));
 
-	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
-	g_value_init (&val, DBUS_TYPE_G_MAP_OF_STRING);
-	g_value_take_boxed (&val, secrets);
-	g_hash_table_insert (vpn, NM_SETTING_VPN_SECRETS, &val);
+	g_variant_builder_add (&secrets_builder, "{ss}", key1, val1);
+	g_variant_builder_add (&secrets_builder, "{ss}", key2, val2);
 
-	/* Add some secrets */
-	g_hash_table_insert (secrets, (char *) key1, (char *) val1);
-	g_hash_table_insert (secrets, (char *) key2, (char *) val2);
+	g_variant_builder_add (&vpn_builder, "{sv}",
+	                       NM_SETTING_VPN_SECRETS,
+	                       g_variant_builder_end (&secrets_builder));
+	g_variant_builder_add (&settings_builder, "{sa{sv}}",
+	                       NM_SETTING_VPN_SETTING_NAME,
+	                       &vpn_builder);
+	settings = g_variant_builder_end (&settings_builder);
 
 	success = nm_connection_update_secrets (connection, NM_SETTING_VPN_SETTING_NAME, settings, &error);
 	ASSERT (success == TRUE,
@@ -232,7 +232,7 @@ test_setting_vpn_update_secrets (void)
 	ASSERT (strcmp (tmp, val2) == 0,
 	        "vpn-update-secrets", "unexpected key #2 value");
 
-	g_hash_table_destroy (settings);
+	g_variant_unref (settings);
 	g_object_unref (connection);
 }
 
@@ -581,27 +581,42 @@ make_test_wsec_setting (const char *detail)
 	return s_wsec;
 }
 
+#define ASSERT_CONTAINS(vardict, key, test_name, msg) \
+	{ \
+		GVariant *value; \
+		value = g_variant_lookup_value (vardict, key, NULL); \
+		ASSERT (value != NULL, test_name, msg); \
+		g_variant_unref (value); \
+	}
+
+#define ASSERT_NOT_CONTAINS(vardict, key, test_name, msg) \
+	{ \
+		GVariant *value; \
+		value = g_variant_lookup_value (vardict, key, NULL); \
+		ASSERT (value == NULL, test_name, msg); \
+	}
+
 static void
 test_setting_to_dbus_all (void)
 {
 	NMSettingWirelessSecurity *s_wsec;
-	GHashTable *hash;
+	GVariant *dict;
 
 	s_wsec = make_test_wsec_setting ("setting-to-dbus-all");
 
-	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL);
+	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL);
 
 	/* Make sure all keys are there */
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
+	ASSERT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
 	        "setting-to-dbus-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME),
+	ASSERT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME,
 	        "setting-to-dbus-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK),
+	ASSERT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_PSK,
 	        "setting-to-dbus-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_PSK);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0),
+	ASSERT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0,
 	        "setting-to-dbus-all", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 
-	g_hash_table_destroy (hash);
+	g_variant_unref (dict);
 	g_object_unref (s_wsec);
 }
 
@@ -609,25 +624,25 @@ static void
 test_setting_to_dbus_no_secrets (void)
 {
 	NMSettingWirelessSecurity *s_wsec;
-	GHashTable *hash;
+	GVariant *dict;
 
 	s_wsec = make_test_wsec_setting ("setting-to-dbus-no-secrets");
 
-	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_NO_SECRETS);
+	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_NO_SECRETS);
 
 	/* Make sure non-secret keys are there */
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT),
-	        "setting-to-dbus-no-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME),
-	        "setting-to-dbus-no-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+	ASSERT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
+	                 "setting-to-dbus-no-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	ASSERT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME,
+	                 "setting-to-dbus-no-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
 
 	/* Make sure secrets are not there */
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK) == NULL,
-	        "setting-to-dbus-no-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_PSK);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0) == NULL,
-	        "setting-to-dbus-no-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	ASSERT_NOT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_PSK,
+	                     "setting-to-dbus-no-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_PSK);
+	ASSERT_NOT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0,
+	                     "setting-to-dbus-no-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 
-	g_hash_table_destroy (hash);
+	g_variant_unref (dict);
 	g_object_unref (s_wsec);
 }
 
@@ -635,25 +650,25 @@ static void
 test_setting_to_dbus_only_secrets (void)
 {
 	NMSettingWirelessSecurity *s_wsec;
-	GHashTable *hash;
+	GVariant *dict;
 
 	s_wsec = make_test_wsec_setting ("setting-to-dbus-only-secrets");
 
-	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
 
-	/* Make sure non-secret keys are there */
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT) == NULL,
-	        "setting-to-dbus-only-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME) == NULL,
-	        "setting-to-dbus-only-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+	/* Make sure non-secret keys are not there */
+	ASSERT_NOT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
+	                     "setting-to-dbus-only-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	ASSERT_NOT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME,
+	                     "setting-to-dbus-only-secrets", "unexpectedly present " NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
 
-	/* Make sure secrets are not there */
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_PSK),
-	        "setting-to-dbus-only-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_PSK);
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0),
-	        "setting-to-dbus-only-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
+	/* Make sure secrets are there */
+	ASSERT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_PSK,
+	                 "setting-to-dbus-only-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_PSK);
+	ASSERT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0,
+	                 "setting-to-dbus-only-secrets", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 
-	g_hash_table_destroy (hash);
+	g_variant_unref (dict);
 	g_object_unref (s_wsec);
 }
 
@@ -661,11 +676,11 @@ static void
 test_setting_to_dbus_transform (void)
 {
 	NMSetting *s_wired;
-	GHashTable *hash;
-	GValue *val;
+	GVariant *dict, *val;
 	const char *test_mac_address = "11:22:33:44:55:66";
-	GByteArray *dbus_mac_address;
-	GByteArray *cmp_mac_address;
+	const guint8 *dbus_mac_address;
+	guint8 cmp_mac_address[ETH_ALEN];
+	gsize len;
 
 	s_wired = nm_setting_wired_new ();
 	g_object_set (s_wired,
@@ -674,22 +689,20 @@ test_setting_to_dbus_transform (void)
 
 	g_assert_cmpstr (nm_setting_wired_get_mac_address (NM_SETTING_WIRED (s_wired)), ==, test_mac_address);
 
-	hash = _nm_setting_to_dbus (s_wired, NULL, NM_CONNECTION_SERIALIZE_ALL);
-	g_assert (hash != NULL);
+	dict = _nm_setting_to_dbus (s_wired, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	g_assert (dict != NULL);
 
-	val = g_hash_table_lookup (hash, NM_SETTING_WIRED_MAC_ADDRESS);
+	val = g_variant_lookup_value (dict, NM_SETTING_WIRED_MAC_ADDRESS, G_VARIANT_TYPE_BYTESTRING);
 	g_assert (val != NULL);
-	g_assert (G_VALUE_HOLDS (val, DBUS_TYPE_G_UCHAR_ARRAY));
 
-	dbus_mac_address = g_value_get_boxed (val);
+	dbus_mac_address = g_variant_get_fixed_array (val, &len, 1);
+	g_assert_cmpint (len, ==, ETH_ALEN);
 
-	cmp_mac_address = nm_utils_hwaddr_atoba (test_mac_address, ETH_ALEN);
+	nm_utils_hwaddr_aton (test_mac_address, cmp_mac_address, ETH_ALEN);
+	g_assert (memcmp (dbus_mac_address, cmp_mac_address, ETH_ALEN) == 0);
 
-	g_assert_cmpint (dbus_mac_address->len, ==, cmp_mac_address->len);
-	g_assert (memcmp (dbus_mac_address->data, cmp_mac_address->data, ETH_ALEN) == 0);
-
-	g_byte_array_unref (cmp_mac_address);
-	g_hash_table_unref (hash);
+	g_variant_unref (val);
+	g_variant_unref (dict);
 	g_object_unref (s_wired);
 }
 
@@ -698,21 +711,21 @@ test_connection_to_dbus_setting_name (void)
 {
 	NMConnection *connection;
 	NMSettingWirelessSecurity *s_wsec;
-	GHashTable *hash;
+	GVariant *dict;
 
 	connection = nm_simple_connection_new ();
 	s_wsec = make_test_wsec_setting ("connection-to-dbus-setting-name");
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
 
-	hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
 
-	/* Make sure the keys of the first level hash are setting names, not
+	/* Make sure the keys of the first level dict are setting names, not
 	 * the GType name of the setting objects.
 	 */
-	ASSERT (g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) != NULL,
-	        "connection-to-dbus-setting-name", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	ASSERT_CONTAINS (dict, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	                 "connection-to-dbus-setting-name", "unexpectedly missing " NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 
-	g_hash_table_destroy (hash);
+	g_variant_unref (dict);
 	g_object_unref (connection);
 }
 
@@ -723,8 +736,7 @@ test_connection_to_dbus_deprecated_props (void)
 	NMSetting *s_wireless;
 	GBytes *ssid;
 	NMSettingWirelessSecurity *s_wsec;
-	GHashTable *hash, *wireless_hash;
-	GValue *sec_val;
+	GVariant *dict, *wireless_dict, *sec_val;
 
 	connection = nmtst_create_minimal_connection ("test-connection-to-dbus-deprecated-props",
 	                                              NULL,
@@ -739,33 +751,36 @@ test_connection_to_dbus_deprecated_props (void)
 	g_bytes_unref (ssid);
 	nm_connection_add_setting (connection, s_wireless);
 
-	/* Hash should not have an 802-11-wireless.security property */
-	hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-	g_assert (hash != NULL);
+	/* Serialization should not have an 802-11-wireless.security property */
+	dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	g_assert (dict != NULL);
 
-	wireless_hash = g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SETTING_NAME);
-	g_assert (wireless_hash != NULL);
+	wireless_dict = g_variant_lookup_value (dict, NM_SETTING_WIRELESS_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (wireless_dict != NULL);
 
-	sec_val = g_hash_table_lookup (wireless_hash, "security");
+	sec_val = g_variant_lookup_value (wireless_dict, "security", NULL);
 	g_assert (sec_val == NULL);
 
-	g_hash_table_destroy (hash);
+	g_variant_unref (wireless_dict);
+	g_variant_unref (dict);
 
 	/* Now add an NMSettingWirelessSecurity and try again */
 	s_wsec = make_test_wsec_setting ("test-connection-to-dbus-deprecated-props");
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
 
-	hash = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-	g_assert (hash != NULL);
+	dict = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
+	g_assert (dict != NULL);
 
-	wireless_hash = g_hash_table_lookup (hash, NM_SETTING_WIRELESS_SETTING_NAME);
-	g_assert (wireless_hash != NULL);
+	wireless_dict = g_variant_lookup_value (dict, NM_SETTING_WIRELESS_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (wireless_dict != NULL);
 
-	sec_val = g_hash_table_lookup (wireless_hash, "security");
-	g_assert (G_VALUE_HOLDS_STRING (sec_val));
-	g_assert_cmpstr (g_value_get_string (sec_val), ==, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	sec_val = g_variant_lookup_value (wireless_dict, "security", NULL);
+	g_assert (g_variant_is_of_type (sec_val, G_VARIANT_TYPE_STRING));
+	g_assert_cmpstr (g_variant_get_string (sec_val, NULL), ==, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 
-	g_hash_table_destroy (hash);
+	g_variant_unref (sec_val);
+	g_variant_unref (wireless_dict);
+	g_variant_unref (dict);
 	g_object_unref (connection);
 }
 
@@ -773,14 +788,14 @@ static void
 test_setting_new_from_dbus (void)
 {
 	NMSettingWirelessSecurity *s_wsec;
-	GHashTable *hash;
+	GVariant *dict;
 
-	s_wsec = make_test_wsec_setting ("setting-to-dbus-all");
-	hash = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL);
+	s_wsec = make_test_wsec_setting ("setting-new-from-dbus");
+	dict = _nm_setting_to_dbus (NM_SETTING (s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL);
 	g_object_unref (s_wsec);
 
-	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, hash, NULL, NULL);
-	g_hash_table_destroy (hash);
+	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, dict, NULL, NULL);
+	g_variant_unref (dict);
 
 	g_assert (s_wsec);
 	g_assert_cmpstr (nm_setting_wireless_security_get_key_mgmt (s_wsec), ==, "wpa-psk");
@@ -793,25 +808,27 @@ static void
 test_setting_new_from_dbus_transform (void)
 {
 	NMSetting *s_wired;
-	GHashTable *hash;
-	GValue val = { 0, };
+	GVariant *dict;
+	GVariantBuilder builder;
 	const char *test_mac_address = "11:22:33:44:55:66";
-	GByteArray *dbus_mac_address;
+	guint8 dbus_mac_address[ETH_ALEN];
 	GError *error = NULL;
 
-	hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_value_unset);
+	nm_utils_hwaddr_aton (test_mac_address, dbus_mac_address, ETH_ALEN);
 
-	dbus_mac_address = nm_utils_hwaddr_atoba (test_mac_address, ETH_ALEN);
-	g_value_init (&val, DBUS_TYPE_G_UCHAR_ARRAY);
-	g_value_take_boxed (&val, dbus_mac_address);
-	g_hash_table_insert (hash, NM_SETTING_WIRED_MAC_ADDRESS, &val);
+	g_variant_builder_init (&builder, NM_VARIANT_TYPE_SETTING);
+	g_variant_builder_add (&builder, "{sv}",
+	                       NM_SETTING_WIRED_MAC_ADDRESS,
+	                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+	                                                  dbus_mac_address, ETH_ALEN, 1));
+	dict = g_variant_builder_end (&builder);
 
-	s_wired = _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRED, hash, NULL, &error);
+	s_wired = _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRED, dict, NULL, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpstr (nm_setting_wired_get_mac_address (NM_SETTING_WIRED (s_wired)), ==, test_mac_address);
 
-	g_hash_table_unref (hash);
+	g_variant_unref (dict);
 	g_object_unref (s_wired);
 }
 
@@ -852,73 +869,61 @@ new_test_connection (void)
 	return connection;
 }
 
-static GValue *
-string_to_gvalue (const char *str)
-{
-	GValue *val;
-
-	val = g_slice_new0 (GValue);
-	g_value_init (val, G_TYPE_STRING);
-	g_value_set_string (val, str);
-	return val;
-}
-
-static void
-destroy_gvalue (gpointer data)
-{
-	g_value_unset ((GValue *) data);
-	g_slice_free (GValue, data);
-}
-
-static GHashTable *
-new_connection_hash (char **out_uuid,
+static GVariant *
+new_connection_dict (char **out_uuid,
                      const char **out_expected_id,
                      const char **out_expected_ip6_method)
 {
-	GHashTable *hash;
-	GHashTable *setting;
+	GVariantBuilder conn_builder, setting_builder;
 
-	hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify) g_hash_table_destroy);
+	g_variant_builder_init (&conn_builder, NM_VARIANT_TYPE_CONNECTION);
 
 	*out_uuid = nm_utils_uuid_generate ();
 	*out_expected_id = "My happy connection";
 	*out_expected_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
 
 	/* Connection setting */
-	setting = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
-	g_hash_table_insert (setting,
-	                     g_strdup (NM_SETTING_NAME),
-	                     string_to_gvalue (NM_SETTING_CONNECTION_SETTING_NAME));
-	g_hash_table_insert (setting,
-	                     g_strdup (NM_SETTING_CONNECTION_ID),
-	                     string_to_gvalue (*out_expected_id));
-	g_hash_table_insert (setting,
-	                     g_strdup (NM_SETTING_CONNECTION_UUID),
-	                     string_to_gvalue (*out_uuid));
-	g_hash_table_insert (setting,
-	                     g_strdup (NM_SETTING_CONNECTION_TYPE),
-	                     string_to_gvalue (NM_SETTING_WIRED_SETTING_NAME));
-	g_hash_table_insert (hash, g_strdup (NM_SETTING_CONNECTION_SETTING_NAME), setting);
+	g_variant_builder_init (&setting_builder, NM_VARIANT_TYPE_SETTING);
+	g_variant_builder_add (&setting_builder, "{sv}",
+	                       NM_SETTING_NAME,
+	                       g_variant_new_string (NM_SETTING_CONNECTION_SETTING_NAME));
+	g_variant_builder_add (&setting_builder, "{sv}",
+	                       NM_SETTING_CONNECTION_ID,
+	                       g_variant_new_string (*out_expected_id));
+	g_variant_builder_add (&setting_builder, "{sv}",
+	                       NM_SETTING_CONNECTION_UUID,
+	                       g_variant_new_string (*out_uuid));
+	g_variant_builder_add (&setting_builder, "{sv}",
+	                       NM_SETTING_CONNECTION_TYPE,
+	                       g_variant_new_string (NM_SETTING_WIRED_SETTING_NAME));
+
+	g_variant_builder_add (&conn_builder, "{sa{sv}}",
+	                       NM_SETTING_CONNECTION_SETTING_NAME,
+	                       &setting_builder);
 
 	/* Wired setting */
-	setting = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
-	g_hash_table_insert (hash, g_strdup (NM_SETTING_WIRED_SETTING_NAME), setting);
+	g_variant_builder_init (&setting_builder, NM_VARIANT_TYPE_SETTING);
+	g_variant_builder_add (&conn_builder, "{sa{sv}}",
+	                       NM_SETTING_WIRED_SETTING_NAME,
+	                       &setting_builder);
 
 	/* IP6 */
-	setting = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
-	g_hash_table_insert (setting,
-	                     g_strdup (NM_SETTING_IP6_CONFIG_METHOD),
-	                     string_to_gvalue (*out_expected_ip6_method));
-	g_hash_table_insert (hash, g_strdup (NM_SETTING_IP6_CONFIG_SETTING_NAME), setting);
+	g_variant_builder_init (&setting_builder, NM_VARIANT_TYPE_SETTING);
+	g_variant_builder_add (&setting_builder, "{sv}",
+	                       NM_SETTING_IP6_CONFIG_METHOD,
+	                       g_variant_new_string (*out_expected_ip6_method));
+	g_variant_builder_add (&conn_builder, "{sa{sv}}",
+	                       NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                       &setting_builder);
 
-	return hash;
+	return g_variant_builder_end (&conn_builder);
 }
 
 static void
 test_connection_replace_settings ()
 {
 	NMConnection *connection;
-	GHashTable *new_settings;
+	GVariant *new_settings;
 	GError *error = NULL;
 	gboolean success;
 	NMSettingConnection *s_con;
@@ -928,7 +933,7 @@ test_connection_replace_settings ()
 
 	connection = new_test_connection ();
 
-	new_settings = new_connection_hash (&uuid, &expected_id, &expected_method);
+	new_settings = new_connection_dict (&uuid, &expected_id, &expected_method);
 	g_assert (new_settings);
 
 	/* Replace settings and test */
@@ -949,7 +954,7 @@ test_connection_replace_settings ()
 	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, expected_method);
 
 	g_free (uuid);
-	g_hash_table_destroy (new_settings);
+	g_variant_unref (new_settings);
 	g_object_unref (connection);
 }
 
@@ -1014,7 +1019,8 @@ static void
 test_connection_replace_settings_bad (void)
 {
 	NMConnection *connection, *new_connection;
-	GHashTable *new_settings, *setting_hash;
+	GVariant *new_settings;
+	GVariantBuilder builder, setting_builder;
 	GError *error = NULL;
 	gboolean success;
 	NMSettingConnection *s_con;
@@ -1047,10 +1053,15 @@ test_connection_replace_settings_bad (void)
 	g_assert_cmpstr (nm_connection_get_id (connection), ==, "bad-connection");
 	g_assert (!nm_connection_verify (connection, NULL));
 	g_object_unref (connection);
+	g_variant_unref (new_settings);
 
-	/* But given an invalid hash, it should fail */
-	setting_hash = g_hash_table_new (g_str_hash, g_str_equal);
-	g_hash_table_insert (new_settings, g_strdup ("ip-over-avian-carrier"), setting_hash);
+	/* But given an invalid dict, it should fail */
+	g_variant_builder_init (&builder, NM_VARIANT_TYPE_CONNECTION);
+	g_variant_builder_init (&setting_builder, NM_VARIANT_TYPE_SETTING);
+	g_variant_builder_add (&builder, "{sa{sv}}",
+	                       "ip-over-avian-carrier",
+	                       &setting_builder);
+	new_settings = g_variant_builder_end (&builder);
 
 	connection = new_test_connection ();
 	success = nm_connection_replace_settings (connection, new_settings, &error);
@@ -1060,7 +1071,7 @@ test_connection_replace_settings_bad (void)
 	g_assert (nm_connection_verify (connection, NULL));
 	g_object_unref (connection);
 
-	g_hash_table_unref (new_settings);
+	g_variant_unref (new_settings);
 	g_object_unref (new_connection);
 }
 
@@ -1068,14 +1079,14 @@ static void
 test_connection_new_from_dbus ()
 {
 	NMConnection *connection;
-	GHashTable *new_settings;
+	GVariant *new_settings;
 	GError *error = NULL;
 	NMSettingConnection *s_con;
 	NMSettingIP6Config *s_ip6;
 	char *uuid = NULL;
 	const char *expected_id = NULL, *expected_method = NULL;
 
-	new_settings = new_connection_hash (&uuid, &expected_id, &expected_method);
+	new_settings = new_connection_dict (&uuid, &expected_id, &expected_method);
 	g_assert (new_settings);
 
 	/* Replace settings and test */
@@ -1096,7 +1107,7 @@ test_connection_new_from_dbus ()
 	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, expected_method);
 
 	g_free (uuid);
-	g_hash_table_destroy (new_settings);
+	g_variant_unref (new_settings);
 	g_object_unref (connection);
 }
 
@@ -2633,15 +2644,14 @@ test_setting_old_uuid (void)
 
 /*
  * Test normalization of interface-name
- **/
+ */
 static void
 test_connection_normalize_virtual_iface_name (void)
 {
 	NMConnection *con = NULL;
 	NMSettingConnection *s_con;
 	NMSettingVlan *s_vlan;
-	GHashTable *connection_hash, *setting_hash;
-	GValue *value;
+	GVariant *connection_dict, *setting_dict, *var;
 	GError *error = NULL;
 	const char *IFACE_NAME = "iface";
 	const char *IFACE_VIRT = "iface-X";
@@ -2671,27 +2681,41 @@ test_connection_normalize_virtual_iface_name (void)
 
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
 
-	connection_hash = nm_connection_to_dbus (con, NM_CONNECTION_SERIALIZE_ALL);
+	connection_dict = nm_connection_to_dbus (con, NM_CONNECTION_SERIALIZE_ALL);
 	g_object_unref (con);
 
 	/* Serialized form should include vlan.interface-name as well. */
-	setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_VLAN_SETTING_NAME);
-	g_assert (setting_hash != NULL);
-	value = g_hash_table_lookup (setting_hash, "interface-name");
-	g_assert (value != NULL);
-	g_assert (G_VALUE_HOLDS_STRING (value));
-	g_assert_cmpstr (g_value_get_string (value), ==, IFACE_NAME);
+	setting_dict = g_variant_lookup_value (connection_dict, NM_SETTING_VLAN_SETTING_NAME, NM_VARIANT_TYPE_SETTING);
+	g_assert (setting_dict != NULL);
+	var = g_variant_lookup_value (setting_dict, "interface-name", NULL);
+	g_assert (var != NULL);
+	g_assert (g_variant_is_of_type (var, G_VARIANT_TYPE_STRING));
+	g_assert_cmpstr (g_variant_get_string (var, NULL), ==, IFACE_NAME);
+
+	g_variant_unref (setting_dict);
+	g_variant_unref (var);
 
 	/* If vlan.interface-name is invalid, deserialization will fail. */
-	g_value_set_string (value, ":::this-is-not-a-valid-interface-name:::");
-	con = nm_simple_connection_new_from_dbus (connection_hash, &error);
+	NMTST_VARIANT_EDITOR (connection_dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_VLAN_SETTING_NAME,
+	                                                     "interface-name",
+	                                                     "s",
+	                                                     ":::this-is-not-a-valid-interface-name:::");
+	                      );
+
+	con = nm_simple_connection_new_from_dbus (connection_dict, &error);
 	g_assert_error (error, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
 	g_clear_error (&error);
 
 	/* If vlan.interface-name is valid, but doesn't match, it will be ignored. */
-	g_value_set_string (value, IFACE_VIRT);
+	NMTST_VARIANT_EDITOR (connection_dict,
+	                      NMTST_VARIANT_CHANGE_PROPERTY (NM_SETTING_VLAN_SETTING_NAME,
+	                                                     "interface-name",
+	                                                     "s",
+	                                                     IFACE_VIRT);
+	                      );
 
-	con = nm_simple_connection_new_from_dbus (connection_hash, &error);
+	con = nm_simple_connection_new_from_dbus (connection_dict, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_NAME);
@@ -2702,11 +2726,12 @@ test_connection_normalize_virtual_iface_name (void)
 	/* But removing connection.interface-name should result in vlan.connection-name
 	 * being "promoted".
 	 */
-	setting_hash = g_hash_table_lookup (connection_hash, NM_SETTING_CONNECTION_SETTING_NAME);
-	g_assert (setting_hash != NULL);
-	g_hash_table_remove (setting_hash, NM_SETTING_CONNECTION_INTERFACE_NAME);
+	NMTST_VARIANT_EDITOR (connection_dict,
+	                      NMTST_VARIANT_DROP_PROPERTY (NM_SETTING_CONNECTION_SETTING_NAME,
+	                                                   NM_SETTING_CONNECTION_INTERFACE_NAME);
+	                      );
 
-	con = nm_simple_connection_new_from_dbus (connection_hash, &error);
+	con = nm_simple_connection_new_from_dbus (connection_dict, &error);
 	g_assert_no_error (error);
 
 	g_assert_cmpstr (nm_connection_get_interface_name (con), ==, IFACE_VIRT);
@@ -2714,7 +2739,7 @@ test_connection_normalize_virtual_iface_name (void)
 	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, IFACE_VIRT);
 	g_object_unref (con);
 
-	g_hash_table_unref (connection_hash);
+	g_variant_unref (connection_dict);
 }
 
 static void

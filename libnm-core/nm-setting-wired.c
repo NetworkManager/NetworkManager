@@ -22,13 +22,11 @@
 
 #include <string.h>
 #include <net/ethernet.h>
-#include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
 #include "nm-setting-wired.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-setting-private.h"
 
 /**
@@ -895,7 +893,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRED_MAC_ADDRESS,
-	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_hwaddr_to_dbus,
 	                                      _nm_utils_hwaddr_from_dbus);
 
@@ -913,7 +911,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
-	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_hwaddr_to_dbus,
 	                                      _nm_utils_hwaddr_from_dbus);
 
@@ -999,7 +997,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_WIRED_S390_OPTIONS,
-	                                      DBUS_TYPE_G_MAP_OF_STRING,
+	                                      G_VARIANT_TYPE ("a{ss}"),
 	                                      _nm_utils_strdict_to_dbus,
 	                                      _nm_utils_strdict_from_dbus);
 }

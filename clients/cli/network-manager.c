@@ -677,7 +677,7 @@ do_general (NmCli *nmc, int argc, char **argv)
 				nmc->get_client (nmc); /* create NMClient */
 				nm_client_set_logging (nmc->client, level, domains, &error);
 				if (error) {
-					if (g_error_matches (error, DBUS_GERROR, DBUS_GERROR_ACCESS_DENIED))
+					if (g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_AUTH_FAILED))
 						g_string_printf (nmc->return_text, _("Error: access denied to set logging; %s"), error->message);
 					else
 						g_string_printf (nmc->return_text, _("Error: %s"), error->message);

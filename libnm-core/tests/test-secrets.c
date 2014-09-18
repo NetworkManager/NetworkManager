@@ -22,8 +22,6 @@
 #include <glib.h>
 #include <string.h>
 
-#include <nm-utils.h>
-
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-8021x.h"
@@ -35,6 +33,7 @@
 #include "nm-setting-ppp.h"
 #include "nm-setting-pppoe.h"
 #include "nm-setting-vpn.h"
+#include "nm-utils.h"
 
 #include "nm-test-utils.h"
 
@@ -441,34 +440,20 @@ wifi_connection_new (void)
 	return connection;
 }
 
-static void
-value_destroy (gpointer data)
+static GVariant *
+build_wep_secrets (const char *wepkey)
 {
-	GValue *value = (GValue *) data;
+	GVariantBuilder builder;
 
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+	g_variant_builder_add (&builder, "{sv}",
+	                       NM_SETTING_WIRELESS_SECURITY_WEP_KEY0,
+	                       g_variant_new_string (wepkey));
+	g_variant_builder_add (&builder, "{sv}",
+	                       NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
+	                       g_variant_new_uint32 (NM_WEP_KEY_TYPE_KEY));
 
-static GValue *
-string_to_gvalue (const char *str)
-{
-	GValue *val = g_slice_new0 (GValue);
-
-	g_value_init (val, G_TYPE_STRING);
-	g_value_set_string (val, str);
-	return val;
-}
-
-static GValue *
-uint_to_gvalue (guint32 i)
-{
-	GValue *val;
-
-	val = g_slice_new0 (GValue);
-	g_value_init (val, G_TYPE_UINT);
-	g_value_set_uint (val, i);
-	return val;
+	return g_variant_builder_end (&builder);
 }
 
 static void
@@ -476,7 +461,7 @@ test_update_secrets_wifi_single_setting (void)
 {
 	NMConnection *connection;
 	NMSettingWirelessSecurity *s_wsec;
-	GHashTable *secrets;
+	GVariant *secrets;
 	GError *error = NULL;
 	gboolean success;
 	const char *wepkey = "11111111111111111111111111";
@@ -486,17 +471,15 @@ test_update_secrets_wifi_single_setting (void)
 
 	connection = wifi_connection_new ();
 
-	/* Build up the secrets hash */
-	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, value_destroy);
-	g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
-	g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, uint_to_gvalue (NM_WEP_KEY_TYPE_KEY));
-
+	secrets = build_wep_secrets (wepkey);
 	success = nm_connection_update_secrets (connection,
 	                                        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	                                        secrets,
 	                                        &error);
 	g_assert_no_error (error);
 	g_assert (success);
+
+	g_variant_unref (secrets);
 
 	/* Make sure the secret is now in the connection */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -512,7 +495,8 @@ test_update_secrets_wifi_full_hash (void)
 {
 	NMConnection *connection;
 	NMSettingWirelessSecurity *s_wsec;
-	GHashTable *secrets, *all;
+	GVariantBuilder builder;
+	GVariant *all;
 	GError *error = NULL;
 	gboolean success;
 	const char *wepkey = "11111111111111111111111111";
@@ -524,12 +508,11 @@ test_update_secrets_wifi_full_hash (void)
 
 	connection = wifi_connection_new ();
 
-	/* Build up the secrets hash */
-	all = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_hash_table_destroy);
-	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, value_destroy);
-	g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
-	g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, uint_to_gvalue (NM_WEP_KEY_TYPE_KEY));
-	g_hash_table_insert (all, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, secrets);
+	g_variant_builder_init (&builder, NM_VARIANT_TYPE_CONNECTION);
+	g_variant_builder_add (&builder, "{s@a{sv}}",
+	                       NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	                       build_wep_secrets (wepkey));
+	all = g_variant_builder_end (&builder);
 
 	success = nm_connection_update_secrets (connection,
 	                                        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
@@ -537,6 +520,8 @@ test_update_secrets_wifi_full_hash (void)
 	                                        &error);
 	g_assert_no_error (error);
 	g_assert (success);
+
+	g_variant_unref (all);
 
 	/* Make sure the secret is now in the connection */
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
@@ -551,7 +536,7 @@ static void
 test_update_secrets_wifi_bad_setting_name (void)
 {
 	NMConnection *connection;
-	GHashTable *secrets;
+	GVariant *secrets;
 	GError *error = NULL;
 	gboolean success;
 	const char *wepkey = "11111111111111111111111111";
@@ -562,10 +547,7 @@ test_update_secrets_wifi_bad_setting_name (void)
 
 	connection = wifi_connection_new ();
 
-	/* Build up the secrets hash */
-	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, value_destroy);
-	g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
-	g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, uint_to_gvalue (NM_WEP_KEY_TYPE_KEY));
+	secrets = build_wep_secrets (wepkey);
 
 	success = nm_connection_update_secrets (connection,
 	                                        "asdfasdfasdfasf",
@@ -573,6 +555,8 @@ test_update_secrets_wifi_bad_setting_name (void)
 	                                        &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (success == FALSE);
+
+	g_variant_unref (secrets);
 
 	g_object_unref (connection);
 }
@@ -582,7 +566,7 @@ test_update_secrets_whole_connection (void)
 {
 	NMConnection *connection;
 	NMSettingWirelessSecurity *s_wsec;
-	GHashTable *secrets, *wsec_hash;
+	GVariant *secrets;
 	GError *error = NULL;
 	gboolean success;
 	const char *wepkey = "11111111111111111111111111";
@@ -593,15 +577,20 @@ test_update_secrets_whole_connection (void)
 
 	connection = wifi_connection_new ();
 
-	/* Build up the secrets hash */
+	/* Build up the secrets dictionary */
 	secrets = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-	wsec_hash = g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
-	g_assert (wsec_hash);
-	g_hash_table_insert (wsec_hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
+	NMTST_VARIANT_EDITOR (secrets,
+	                      NMTST_VARIANT_ADD_PROPERTY (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	                                                  NM_SETTING_WIRELESS_SECURITY_WEP_KEY0,
+	                                                  "s",
+	                                                  wepkey);
+	                      );
 
 	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
 	g_assert_no_error (error);
 	g_assert (success == TRUE);
+
+	g_variant_unref (secrets);
 
 	s_wsec = nm_connection_get_setting_wireless_security (connection);
 	g_assert (s_wsec);
@@ -614,17 +603,18 @@ static void
 test_update_secrets_whole_connection_empty_hash (void)
 {
 	NMConnection *connection;
-	GHashTable *secrets;
+	GVariant *secrets;
 	GError *error = NULL;
 	gboolean success;
 
 	/* Test that updating secrets with an empty hash returns success */
 
 	connection = wifi_connection_new ();
-	secrets = g_hash_table_new (g_str_hash, g_str_equal);
+	secrets = g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0);
 	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
 	g_assert_no_error (error);
 	g_assert (success == TRUE);
+	g_variant_unref (secrets);
 	g_object_unref (connection);
 }
 
@@ -632,7 +622,11 @@ static void
 test_update_secrets_whole_connection_bad_setting (void)
 {
 	NMConnection *connection;
-	GHashTable *secrets, *wsec_hash;
+	NMSettingWirelessSecurity *s_wsec;
+	GVariant *secrets, *copy, *setting_hash;
+	const char *setting_name;
+	GVariantBuilder conn_builder;
+	GVariantIter conn_iter;
 	GError *error = NULL;
 	gboolean success;
 	const char *wepkey = "11111111111111111111111111";
@@ -642,25 +636,36 @@ test_update_secrets_whole_connection_bad_setting (void)
 	 */
 
 	connection = wifi_connection_new ();
+	s_wsec = nm_connection_get_setting_wireless_security (connection);
+	g_assert (s_wsec != NULL);
+	g_object_set (G_OBJECT (s_wsec),
+	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, wepkey,
+	              NULL);
 
 	/* Build up the secrets hash */
 	secrets = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ALL);
-	wsec_hash = g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
-	g_assert (wsec_hash);
-	g_hash_table_insert (wsec_hash, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
 
-	/* Steal the wsec setting hash so it's not deallocated, and stuff it back
-	 * in with a different name so we ensure libnm is returning the right
-	 * error when it finds an entry in the connection hash that doesn't match
-	 * any setting in the connection.
+	/* Copy the dict, renaming the wireless-security setting in the process
+	 * (so we ensure libnm is returning the right error when it finds an entry
+	 * in the connection hash that doesn't match any setting in the connection).
 	 */
-	g_hash_table_steal (secrets, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
-	g_hash_table_insert (secrets, "asdfasdfasdfasdf", wsec_hash);
+	g_variant_builder_init (&conn_builder, NM_VARIANT_TYPE_CONNECTION);
+	g_variant_iter_init (&conn_iter, secrets);
+	while (g_variant_iter_next (&conn_iter, "{&s@a{sv}}", &setting_name, &setting_hash)) {
+		if (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0)
+			setting_name = "asdfasdfasdfasdf";
 
-	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
+		g_variant_builder_add (&conn_builder, "{s@a{sv}}", setting_name, setting_hash);
+		g_variant_unref (setting_hash);
+	}
+	copy = g_variant_builder_end (&conn_builder);
+	g_variant_unref (secrets);
+
+	success = nm_connection_update_secrets (connection, NULL, copy, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (success == FALSE);
 
+	g_variant_unref (copy);
 	g_object_unref (connection);
 }
 
@@ -668,7 +673,7 @@ static void
 test_update_secrets_whole_connection_empty_base_setting (void)
 {
 	NMConnection *connection;
-	GHashTable *secrets;
+	GVariant *secrets, *setting;
 	GError *error = NULL;
 	gboolean success;
 
@@ -678,8 +683,11 @@ test_update_secrets_whole_connection_empty_base_setting (void)
 
 	connection = wifi_connection_new ();
 	secrets = nm_connection_to_dbus (connection, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
-	g_assert_cmpint (g_hash_table_size (secrets), ==, 3);
-	g_assert (g_hash_table_lookup (secrets, NM_SETTING_WIRELESS_SETTING_NAME));
+	g_assert_cmpint (g_variant_n_children (secrets), ==, 3);
+
+	setting = g_variant_lookup_value (secrets, NM_SETTING_WIRELESS_SETTING_NAME, NULL);
+	g_assert (setting != NULL);
+	g_variant_unref (setting);
 
 	success = nm_connection_update_secrets (connection,
 	                                        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
@@ -688,7 +696,7 @@ test_update_secrets_whole_connection_empty_base_setting (void)
 	g_assert_no_error (error);
 	g_assert (success);
 
-	g_hash_table_destroy (secrets);
+	g_variant_unref (secrets);
 	g_object_unref (connection);
 }
 
@@ -696,7 +704,7 @@ static void
 test_update_secrets_null_setting_name_with_setting_hash (void)
 {
 	NMConnection *connection;
-	GHashTable *secrets;
+	GVariant *secrets;
 	GError *error = NULL;
 	gboolean success;
 	const char *wepkey = "11111111111111111111111111";
@@ -705,15 +713,13 @@ test_update_secrets_null_setting_name_with_setting_hash (void)
 
 	connection = wifi_connection_new ();
 
-	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, value_destroy);
-	g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, string_to_gvalue (wepkey));
-	g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, uint_to_gvalue (NM_WEP_KEY_TYPE_KEY));
+	secrets = build_wep_secrets (wepkey);
 
 	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
 	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
 	g_assert (!success);
 
-	g_hash_table_destroy (secrets);
+	g_variant_unref (secrets);
 	g_object_unref (connection);
 }
 

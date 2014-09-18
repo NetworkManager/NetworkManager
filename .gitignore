@@ -133,6 +133,8 @@ valgrind-*.log
 /initscript/*/[Nn]etwork[Mm]anager
 
 /introspection/all.xml
+/introspection/nmdbus-*.c
+/introspection/nmdbus-*.h
 
 /libgsystem/
 

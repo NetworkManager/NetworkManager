@@ -9,7 +9,6 @@ AM_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
 	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
 	-DTEST_CERT_DIR=\"$(certsdir)\"
 
 noinst_PROGRAMS =		\
@@ -23,8 +22,7 @@ noinst_PROGRAMS =		\
 
 LDADD = \
 	$(top_builddir)/libnm-core/libnm-core.la \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS)
+	$(GLIB_LIBS)
 
 TESTS = $(noinst_PROGRAMS)
 

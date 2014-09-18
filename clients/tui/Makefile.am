@@ -12,7 +12,6 @@ AM_CPPFLAGS= \
 	-I$(srcdir)/newt \
 	$(GLIB_CFLAGS) \
 	$(NEWT_CFLAGS) \
-	$(DBUS_CFLAGS) \
 	$(GUDEV_CFLAGS) \
 	-DG_LOG_DOMAIN=\""nmtui"\" \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
@@ -121,7 +120,6 @@ nmtui_LDADD = \
 	$(top_builddir)/libnm/libnm.la \
 	$(builddir)/newt/libnmt-newt.a \
 	$(GUDEV_LIBS) \
-	$(DBUS_LIBS) \
 	$(NEWT_LIBS) \
 	$(GLIB_LIBS) \
 	$(NULL)

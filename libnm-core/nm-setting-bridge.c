@@ -22,7 +22,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
 #include "nm-setting-bridge.h"
@@ -388,7 +387,7 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_BRIDGE_MAC_ADDRESS,
-	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_hwaddr_to_dbus,
 	                                      _nm_utils_hwaddr_from_dbus);
 
@@ -478,7 +477,8 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *setting_class)
 		                    NM_SETTING_PARAM_INFERRABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
-	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name", G_TYPE_STRING,
+	_nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
+	                                          G_VARIANT_TYPE_STRING,
 	                                          _nm_setting_get_deprecated_virtual_interface_name,
 	                                          NULL);
 }

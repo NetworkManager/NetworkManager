@@ -46,6 +46,7 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-manager-auth.h"
 #include "nm-posix-signals.h"
+#include "nm-dbus-glib-types.h"
 
 /*
  * Some toolchains (E.G. uClibc 0.9.33 and earlier) don't export
@@ -1840,3 +1841,147 @@ nm_utils_ipv6_interface_identfier_get_from_addr (NMUtilsIPv6IfaceId *iid,
 	memcpy (iid, addr->s6_addr + 8, 8);
 }
 
+/**
+ * nm_utils_connection_hash_to_dict:
+ * @hash: a hashed #NMConnection
+ *
+ * Returns: a (floating) #GVariant equivalent to @hash.
+ */
+GVariant *
+nm_utils_connection_hash_to_dict (GHashTable *hash)
+{
+	GValue val = { 0, };
+	GVariant *variant;
+
+	if (!hash)
+		return NULL;
+
+	g_value_init (&val, DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT);
+	g_value_set_boxed (&val, hash);
+	variant = dbus_g_value_build_g_variant (&val);
+	g_value_unset (&val);
+
+	return variant;
+}
+
+/**
+ * nm_utils_connection_dict_to_hash:
+ * @dict: a #GVariant-serialized #NMConnection
+ *
+ * Returns: a #GHashTable equivalent to @dict.
+ */
+GHashTable *
+nm_utils_connection_dict_to_hash (GVariant *dict)
+{
+	GValue val = { 0, };
+
+	if (!dict)
+		return NULL;
+
+	dbus_g_value_parse_g_variant (dict, &val);
+	return g_value_get_boxed (&val);
+}
+
+GSList *
+nm_utils_ip4_routes_from_gvalue (const GValue *value)
+{
+	GPtrArray *routes;
+	int i;
+	GSList *list = NULL;
+
+	routes = (GPtrArray *) g_value_get_boxed (value);
+	for (i = 0; routes && (i < routes->len); i++) {
+		GArray *array = (GArray *) g_ptr_array_index (routes, i);
+		NMIP4Route *route;
+
+		if (array->len < 4) {
+			g_warning ("Ignoring invalid IP4 route");
+			continue;
+		}
+
+		route = nm_ip4_route_new ();
+		nm_ip4_route_set_dest (route, g_array_index (array, guint32, 0));
+		nm_ip4_route_set_prefix (route, g_array_index (array, guint32, 1));
+		nm_ip4_route_set_next_hop (route, g_array_index (array, guint32, 2));
+		nm_ip4_route_set_metric (route, g_array_index (array, guint32, 3));
+		list = g_slist_prepend (list, route);
+	}
+
+	return g_slist_reverse (list);
+}
+
+static gboolean
+_nm_utils_gvalue_array_validate (GValueArray *elements, guint n_expected, ...)
+{
+	va_list args;
+	GValue *tmp;
+	int i;
+	gboolean valid = FALSE;
+
+	if (n_expected != elements->n_values)
+		return FALSE;
+
+	va_start (args, n_expected);
+	for (i = 0; i < n_expected; i++) {
+		tmp = g_value_array_get_nth (elements, i);
+		if (G_VALUE_TYPE (tmp) != va_arg (args, GType))
+			goto done;
+	}
+	valid = TRUE;
+
+done:
+	va_end (args);
+	return valid;
+}
+
+GSList *
+nm_utils_ip6_routes_from_gvalue (const GValue *value)
+{
+	GPtrArray *routes;
+	int i;
+	GSList *list = NULL;
+
+	routes = (GPtrArray *) g_value_get_boxed (value);
+	for (i = 0; routes && (i < routes->len); i++) {
+		GValueArray *route_values = (GValueArray *) g_ptr_array_index (routes, i);
+		GByteArray *dest, *next_hop;
+		guint prefix, metric;
+		NMIP6Route *route;
+
+		if (!_nm_utils_gvalue_array_validate (route_values, 4,
+		                                      DBUS_TYPE_G_UCHAR_ARRAY,
+		                                      G_TYPE_UINT,
+		                                      DBUS_TYPE_G_UCHAR_ARRAY,
+		                                      G_TYPE_UINT)) {
+			g_warning ("Ignoring invalid IP6 route");
+			continue;
+		}
+
+		dest = g_value_get_boxed (g_value_array_get_nth (route_values, 0));
+		if (dest->len != 16) {
+			g_warning ("%s: ignoring invalid IP6 dest address of length %d",
+			           __func__, dest->len);
+			continue;
+		}
+
+		prefix = g_value_get_uint (g_value_array_get_nth (route_values, 1));
+
+		next_hop = g_value_get_boxed (g_value_array_get_nth (route_values, 2));
+		if (next_hop->len != 16) {
+			g_warning ("%s: ignoring invalid IP6 next_hop address of length %d",
+			           __func__, next_hop->len);
+			continue;
+		}
+
+		metric = g_value_get_uint (g_value_array_get_nth (route_values, 3));
+
+		route = nm_ip6_route_new ();
+		nm_ip6_route_set_dest (route, (struct in6_addr *)dest->data);
+		nm_ip6_route_set_prefix (route, prefix);
+		nm_ip6_route_set_next_hop (route, (struct in6_addr *)next_hop->data);
+		nm_ip6_route_set_metric (route, metric);
+		list = g_slist_prepend (list, route);
+	}
+
+	return g_slist_reverse (list);
+}

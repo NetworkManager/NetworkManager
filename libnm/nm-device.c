@@ -44,28 +44,26 @@
 #include "nm-object-cache.h"
 #include "nm-remote-connection.h"
 #include "nm-core-internal.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-utils.h"
-#include "nm-dbus-helpers-private.h"
+#include "nm-dbus-helpers.h"
 
-static GType _nm_device_type_for_path (DBusGConnection *connection,
-                                       const char *path);
-static void _nm_device_type_for_path_async (DBusGConnection *connection,
-                                            const char *path,
-                                            NMObjectTypeCallbackFunc callback,
-                                            gpointer user_data);
+#include "nmdbus-device.h"
+
+static GType _nm_device_decide_type (GVariant *value);
 gboolean connection_compatible (NMDevice *device, NMConnection *connection, GError **error);
 
 G_DEFINE_TYPE_WITH_CODE (NMDevice, nm_device, NM_TYPE_OBJECT,
-                         _nm_object_register_type_func (g_define_type_id, _nm_device_type_for_path,
-                                                        _nm_device_type_for_path_async);
+                         _nm_object_register_type_func (g_define_type_id,
+                                                        _nm_device_decide_type,
+                                                        NM_DBUS_INTERFACE_DEVICE,
+                                                        "DeviceType");
                          )
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
+	NMDBusDevice *proxy;
 
 	char *iface;
 	char *ip_iface;
@@ -162,29 +160,21 @@ nm_device_init (NMDevice *device)
 	priv->reason = NM_DEVICE_STATE_REASON_NONE;
 }
 
-#define DBUS_G_TYPE_UINT_STRUCT (dbus_g_type_get_struct ("GValueArray", G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID))
-
 static gboolean
-demarshal_state_reason (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+demarshal_state_reason (NMObject *object, GParamSpec *pspec, GVariant *value, gpointer field)
 {
 	guint32 *reason_field = field;
 
-	if (!G_VALUE_HOLDS (value, DBUS_G_TYPE_UINT_STRUCT))
-		return FALSE;
-
-	dbus_g_type_struct_get (value,
-	                        1, reason_field,
-	                        G_MAXUINT);
-	
+	g_variant_get (value, "(uu)", NULL, reason_field);
 	_nm_object_queue_notify (object, NM_DEVICE_STATE_REASON);
 	return TRUE;
 }
 
 static void
-device_state_changed (DBusGProxy *proxy,
-                      NMDeviceState new_state,
-                      NMDeviceState old_state,
-                      NMDeviceStateReason reason,
+device_state_changed (NMDBusDevice *proxy,
+                      guint new_state,
+                      guint old_state,
+                      guint reason,
                       gpointer user_data);
 
 static void
@@ -222,26 +212,13 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_device_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE);
+	priv->proxy = NMDBUS_DEVICE (_nm_object_get_proxy (object, NM_DBUS_INTERFACE_DEVICE));
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_DEVICE,
 	                                property_info);
 
-	dbus_g_object_register_marshaller (g_cclosure_marshal_generic,
-	                                   G_TYPE_NONE,
-	                                   G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
-	                                   G_TYPE_INVALID);
-
-	dbus_g_proxy_add_signal (priv->proxy,
-	                         "StateChanged",
-	                         G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
-	                         G_TYPE_INVALID);
-
-	dbus_g_proxy_connect_signal (priv->proxy, "StateChanged",
-	                             G_CALLBACK (device_state_changed),
-	                             NM_DEVICE (object),
-	                             NULL);
-
+	g_signal_connect (priv->proxy, "state-changed",
+	                  G_CALLBACK (device_state_changed), object);
 }
 
 typedef struct {
@@ -284,33 +261,33 @@ device_state_change_reloaded (GObject *object,
 }
 
 static void
-device_state_changed (DBusGProxy *proxy,
-                      NMDeviceState new_state,
-                      NMDeviceState old_state,
-                      NMDeviceStateReason reason,
+device_state_changed (NMDBusDevice *proxy,
+                      guint new_state,
+                      guint old_state,
+                      guint reason,
                       gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	StateChangeData *data;
 
-	if (old_state != new_state) {
-		StateChangeData *data;
+	if (old_state == new_state)
+		return;
 
-		/* Our object-valued properties (eg, ip4_config) will still
-		 * have their old values at this point, because NMObject is
-		 * in the process of asynchronously reading the new values.
-		 * Wait for that to finish before emitting the signal.
-		 */
-		priv->last_seen_state = new_state;
+	/* Our object-valued properties (eg, ip4_config) will still
+	 * have their old values at this point, because NMObject is
+	 * in the process of asynchronously reading the new values.
+	 * Wait for that to finish before emitting the signal.
+	 */
+	priv->last_seen_state = new_state;
 
-		data = g_slice_new (StateChangeData);
-		data->old_state = old_state;
-		data->new_state = new_state;
-		data->reason = reason;
-		_nm_object_reload_properties_async (NM_OBJECT (user_data),
-		                                    device_state_change_reloaded,
-		                                    data);
-	}
+	data = g_slice_new (StateChangeData);
+	data->old_state = old_state;
+	data->new_state = new_state;
+	data->reason = reason;
+	_nm_object_reload_properties_async (NM_OBJECT (user_data),
+	                                    device_state_change_reloaded,
+	                                    data);
 }
 
 static GType
@@ -367,7 +344,6 @@ dispose (GObject *object)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
 
-	g_clear_object (&priv->proxy);
 	g_clear_object (&priv->ip4_config);
 	g_clear_object (&priv->dhcp4_config);
 	g_clear_object (&priv->ip6_config);
@@ -520,6 +496,9 @@ nm_device_class_init (NMDeviceClass *device_class)
 	NMObjectClass *nm_object_class = NM_OBJECT_CLASS (device_class);
 
 	g_type_class_add_private (device_class, sizeof (NMDevicePrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE);
+	_nm_dbus_register_proxy_type (NM_DBUS_INTERFACE_DEVICE, NMDBUS_TYPE_DEVICE_PROXY);
 
 	/* virtual methods */
 	object_class->constructed = constructed;
@@ -864,90 +843,9 @@ _nm_device_set_device_type (NMDevice *device, NMDeviceType dtype)
 }
 
 static GType
-_nm_device_type_for_path (DBusGConnection *connection,
-                          const char *path)
+_nm_device_decide_type (GVariant *value)
 {
-	DBusGProxy *proxy;
-	GError *err = NULL;
-	GValue value = G_VALUE_INIT;
-	NMDeviceType nm_dtype;
-
-	proxy = _nm_dbus_new_proxy_for_connection (connection, path, "org.freedesktop.DBus.Properties");
-	if (!proxy) {
-		g_warning ("%s: couldn't create D-Bus object proxy.", __func__);
-		return G_TYPE_INVALID;
-	}
-
-	if (!dbus_g_proxy_call (proxy,
-	                        "Get", &err,
-	                        G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
-	                        G_TYPE_STRING, "DeviceType",
-	                        G_TYPE_INVALID,
-	                        G_TYPE_VALUE, &value, G_TYPE_INVALID)) {
-		g_warning ("Error in get_property: %s\n", err->message);
-		g_error_free (err);
-		g_object_unref (proxy);
-		return G_TYPE_INVALID;
-	}
-	g_object_unref (proxy);
-
-	nm_dtype = g_value_get_uint (&value);
-	return _nm_device_gtype_from_dtype (nm_dtype);
-}
-
-typedef struct {
-	DBusGConnection *connection;
-	NMObjectTypeCallbackFunc callback;
-	gpointer user_data;
-} NMDeviceAsyncData;
-
-static void
-async_got_type (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
-{
-	NMDeviceAsyncData *async_data = user_data;
-	GValue value = G_VALUE_INIT;
-	const char *path = dbus_g_proxy_get_path (proxy);
-	GError *error = NULL;
-	GType type;
-
-	if (dbus_g_proxy_end_call (proxy, call, &error,
-	                           G_TYPE_VALUE, &value,
-	                           G_TYPE_INVALID)) {
-		NMDeviceType dtype;
-
-		dtype = g_value_get_uint (&value);
-		type = _nm_device_gtype_from_dtype (dtype);
-	} else {
-		g_warning ("%s: could not read properties for %s: %s", __func__, path, error->message);
-		g_error_free (error);
-		type = G_TYPE_INVALID;
-	}
-
-	async_data->callback (type, async_data->user_data);
-	g_object_unref (proxy);
-	g_slice_free (NMDeviceAsyncData, async_data);
-}
-
-static void
-_nm_device_type_for_path_async (DBusGConnection *connection,
-                                const char *path,
-                                NMObjectTypeCallbackFunc callback,
-                                gpointer user_data)
-{
-	NMDeviceAsyncData *async_data;
-	DBusGProxy *proxy;
-
-	async_data = g_slice_new (NMDeviceAsyncData);
-	async_data->connection = connection;
-	async_data->callback = callback;
-	async_data->user_data = user_data;
-
-	proxy = _nm_dbus_new_proxy_for_connection (connection, path, "org.freedesktop.DBus.Properties");
-	dbus_g_proxy_begin_call (proxy, "Get",
-	                         async_got_type, async_data, NULL,
-	                         G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
-	                         G_TYPE_STRING, "DeviceType",
-	                         G_TYPE_INVALID);
+	return _nm_device_gtype_from_dtype (g_variant_get_uint32 (value));
 }
 
 /**
@@ -1183,20 +1081,14 @@ nm_device_get_autoconnect (NMDevice *device)
 void
 nm_device_set_autoconnect (NMDevice *device, gboolean autoconnect)
 {
-	GValue value = G_VALUE_INIT;
-
 	g_return_if_fail (NM_IS_DEVICE (device));
-
-	g_value_init (&value, G_TYPE_BOOLEAN);
-	g_value_set_boolean (&value, autoconnect);
-
 
 	NM_DEVICE_GET_PRIVATE (device)->autoconnect = autoconnect;
 
 	_nm_object_set_property (NM_OBJECT (device),
 	                         NM_DBUS_INTERFACE_DEVICE,
 	                         "Autoconnect",
-	                         &value);
+	                         "b", autoconnect);
 }
 
 /**
@@ -2004,28 +1896,24 @@ typedef struct {
 	NMDevice *device;
 	NMDeviceCallbackFn fn;
 	gpointer user_data;
-	const char *method;
 } DeviceCallbackInfo;
 
 static void
-device_operation_cb (DBusGProxy *proxy,
-                     DBusGProxyCall *call,
-                     gpointer user_data)
+device_disconnect_cb (GObject *proxy,
+                      GAsyncResult *result,
+                      gpointer user_data)
 {
 	DeviceCallbackInfo *info = user_data;
 	GError *error = NULL;
 
-	dbus_g_proxy_end_call (proxy, call, &error,
-	                       G_TYPE_INVALID);
+	nmdbus_device_call_disconnect_finish (NMDBUS_DEVICE (proxy), result, &error);
 	if (info->fn)
 		info->fn (info->device, error, info->user_data);
 	else if (error) {
-		g_warning ("%s: device %s %s failed: (%d) %s",
+		g_warning ("%s: device %s disconnect failed: %s",
 		           __func__,
 		           nm_object_get_path (NM_OBJECT (info->device)),
-		           info->method,
-		           error ? error->code : -1,
-		           error && error->message ? error->message : "(unknown)");
+		           error->message);
 	}
 	g_clear_error (&error);
 
@@ -2056,12 +1944,34 @@ nm_device_disconnect (NMDevice *device,
 	info = g_slice_new (DeviceCallbackInfo);
 	info->fn = callback;
 	info->user_data = user_data;
-	info->method = "Disconnect";
 	info->device = g_object_ref (device);
 
-	dbus_g_proxy_begin_call (NM_DEVICE_GET_PRIVATE (device)->proxy, "Disconnect",
-	                         device_operation_cb, info, NULL,
-	                         G_TYPE_INVALID);
+	nmdbus_device_call_disconnect (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                               NULL,
+	                               device_disconnect_cb, info);
+}
+
+static void
+device_delete_cb (GObject *proxy,
+                  GAsyncResult *result,
+                  gpointer user_data)
+{
+	DeviceCallbackInfo *info = user_data;
+	GError *error = NULL;
+
+	nmdbus_device_call_delete_finish (NMDBUS_DEVICE (proxy), result, &error);
+	if (info->fn)
+		info->fn (info->device, error, info->user_data);
+	else if (error) {
+		g_warning ("%s: device %s delete failed: %s",
+		           __func__,
+		           nm_object_get_path (NM_OBJECT (info->device)),
+		           error->message);
+	}
+	g_clear_error (&error);
+
+	g_object_unref (info->device);
+	g_slice_free (DeviceCallbackInfo, info);
 }
 
 /**
@@ -2085,12 +1995,11 @@ nm_device_delete (NMDevice *device,
 	info = g_slice_new (DeviceCallbackInfo);
 	info->fn = callback;
 	info->user_data = user_data;
-	info->method = "Delete";
 	info->device = g_object_ref (device);
 
-	dbus_g_proxy_begin_call (NM_DEVICE_GET_PRIVATE (device)->proxy, "Delete",
-	                         device_operation_cb, info, NULL,
-	                         G_TYPE_INVALID);
+	nmdbus_device_call_delete (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                           NULL,
+	                           device_delete_cb, info);
 }
 
 /**

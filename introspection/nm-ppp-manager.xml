@@ -2,6 +2,8 @@
 
 <node name="/">
   <interface name="org.freedesktop.NetworkManager.PPP">
+    <annotation name="org.gtk.GDBus.C.Name" value="PPP_Manager"/>
+
     <method name="NeedSecrets">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_ppp_manager_need_secrets"/>
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>

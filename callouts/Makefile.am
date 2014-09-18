@@ -49,8 +49,7 @@ nm_dispatcher_LDADD = \
 	libnmdbus-dispatcher.la \
 	$(GLIB_LIBS)
 
-# We have to build the gdbus generated code separately, without
-# -DGLIB_VERSION_MAX_ALLOWED, due to a bug in GLib 2.38
+# See note about gdbus-codegen in introspection/Makefile.am
 
 noinst_LTLIBRARIES += libnmdbus-dispatcher.la
 

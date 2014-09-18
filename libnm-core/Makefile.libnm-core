@@ -81,6 +81,5 @@ libnm_core_sources =				\
 	$(core)/nm-setting-wireless.c		\
 	$(core)/nm-setting.c			\
 	$(core)/nm-simple-connection.c		\
-	$(core)/nm-utils.c			\
-	$(core)/nm-value-transforms.c
+	$(core)/nm-utils.c
 

@@ -24,7 +24,6 @@
 #include <net/ethernet.h>
 #include <glib/gi18n.h>
 
-#include "nm-dbus-glib-types.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-cdma.h"
 #include "nm-setting-gsm.h"
@@ -276,7 +275,7 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
 		                      NM_SETTING_PARAM_INFERRABLE |
 		                      G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_BLUETOOTH_BDADDR,
-	                                      DBUS_TYPE_G_UCHAR_ARRAY,
+	                                      G_VARIANT_TYPE_BYTESTRING,
 	                                      _nm_utils_hwaddr_to_dbus,
 	                                      _nm_utils_hwaddr_from_dbus);
 

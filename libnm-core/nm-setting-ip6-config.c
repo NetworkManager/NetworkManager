@@ -20,13 +20,11 @@
  */
 
 #include <string.h>
-#include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
 #include "nm-setting-ip6-config.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 #include "nm-setting-private.h"
 
@@ -923,6 +921,45 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_setting_ip6_config_parent_class)->finalize (object);
 }
 
+static GVariant *
+ip6_dns_to_dbus (const GValue *prop_value)
+{
+	return nm_utils_ip6_dns_to_variant (g_value_get_boxed (prop_value));
+}
+
+static void
+ip6_dns_from_dbus (GVariant *dbus_value,
+                   GValue *prop_value)
+{
+	g_value_take_boxed (prop_value, nm_utils_ip6_dns_from_variant (dbus_value));
+}
+
+static GVariant *
+ip6_addresses_to_dbus (const GValue *prop_value)
+{
+	return nm_utils_ip6_addresses_to_variant (g_value_get_boxed (prop_value));
+}
+
+static void
+ip6_addresses_from_dbus (GVariant *dbus_value,
+                         GValue *prop_value)
+{
+	g_value_take_boxed (prop_value, nm_utils_ip6_addresses_from_variant (dbus_value));
+}
+
+static GVariant *
+ip6_routes_to_dbus (const GValue *prop_value)
+{
+	return nm_utils_ip6_routes_to_variant (g_value_get_boxed (prop_value));
+}
+
+static void
+ip6_routes_from_dbus (GVariant *dbus_value,
+                      GValue *prop_value)
+{
+	g_value_take_boxed (prop_value, nm_utils_ip6_routes_from_variant (dbus_value));
+}
+
 static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
@@ -1090,9 +1127,9 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		                     G_PARAM_READWRITE |
 		                     G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP6_CONFIG_DNS,
-	                                      DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
-	                                      _nm_utils_ip6_dns_to_dbus,
-	                                      _nm_utils_ip6_dns_from_dbus);
+	                                      G_VARIANT_TYPE ("aay"),
+	                                      ip6_dns_to_dbus,
+	                                      ip6_dns_from_dbus);
 
 	/**
 	 * NMSettingIP6Config:dns-search:
@@ -1128,9 +1165,9 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP6_CONFIG_ADDRESSES,
-	                                      DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
-	                                      _nm_utils_ip6_addresses_to_dbus,
-	                                      _nm_utils_ip6_addresses_from_dbus);
+	                                      G_VARIANT_TYPE ("a(ayuay)"),
+	                                      ip6_addresses_to_dbus,
+	                                      ip6_addresses_from_dbus);
 
 	/**
 	 * NMSettingIP6Config:routes:
@@ -1149,9 +1186,9 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 	_nm_setting_class_transform_property (parent_class, NM_SETTING_IP6_CONFIG_ROUTES,
-	                                      DBUS_TYPE_G_ARRAY_OF_IP6_ROUTE,
-	                                      _nm_utils_ip6_routes_to_dbus,
-	                                      _nm_utils_ip6_routes_from_dbus);
+	                                      G_VARIANT_TYPE ("a(ayuayu)"),
+	                                      ip6_routes_to_dbus,
+	                                      ip6_routes_from_dbus);
 
 	/**
 	 * NMSettingIP6Config:ignore-auto-routes:

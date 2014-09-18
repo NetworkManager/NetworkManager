@@ -162,31 +162,21 @@ save_connection_and_exit (NmtNewtButton *button,
 
 static void
 got_secrets (NMRemoteConnection *connection,
-             GHashTable         *secrets,
+             GVariant           *secrets,
              GError             *error,
              gpointer            op)
 {
-	GHashTable *copy = NULL, *setting;
-	GHashTableIter iter;
-	const char *name;
-
-	if (secrets) {
-		/* 'secrets' is owned by the caller so we must copy it */
-		copy = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify) g_hash_table_destroy);
-		g_hash_table_iter_init (&iter, secrets);
-		while (g_hash_table_iter_next (&iter, (gpointer) &name, (gpointer) &setting))
-			g_hash_table_insert (copy, g_strdup (name), nm_utils_gvalue_hash_dup (setting));
-	}
-
-	nmt_sync_op_complete_pointer (op, copy, error);
+	if (secrets)
+		g_variant_ref (secrets);
+	nmt_sync_op_complete_pointer (op, secrets, error);
 }
 
 static NMConnection *
 build_edit_connection (NMConnection *orig_connection)
 {
 	NMConnection *edit_connection;
-	GHashTable *settings, *secrets;
-	GHashTableIter iter;
+	GVariant *settings, *secrets;
+	GVariantIter iter;
 	const char *setting_name;
 	NmtSyncOp op;
 
@@ -196,8 +186,8 @@ build_edit_connection (NMConnection *orig_connection)
 		return edit_connection;
 
 	settings = nm_connection_to_dbus (orig_connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
-	g_hash_table_iter_init (&iter, settings);
-	while (g_hash_table_iter_next (&iter, (gpointer) &setting_name, NULL)) {
+	g_variant_iter_init (&iter, settings);
+	while (g_variant_iter_next (&iter, "{&s@a{sv}}", &setting_name, NULL)) {
 		nmt_sync_op_init (&op);
 		nm_remote_connection_get_secrets (NM_REMOTE_CONNECTION (orig_connection),
 		                                  setting_name, got_secrets, &op);
@@ -205,10 +195,10 @@ build_edit_connection (NMConnection *orig_connection)
 		secrets = nmt_sync_op_wait_pointer (&op, NULL);
 		if (secrets) {
 			(void) nm_connection_update_secrets (edit_connection, setting_name, secrets, NULL);
-			g_hash_table_unref (secrets);
+			g_variant_unref (secrets);
 		}
 	}
-	g_hash_table_unref (settings);
+	g_variant_unref (settings);
 
 	return edit_connection;
 }

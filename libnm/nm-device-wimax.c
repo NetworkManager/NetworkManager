@@ -31,7 +31,6 @@
 #include "nm-device-wimax.h"
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-core-internal.h"
 #include "nm-device-private.h"
 
@@ -43,8 +42,6 @@ void _nm_device_wimax_set_wireless_enabled (NMDeviceWimax *wimax, gboolean enabl
 static void state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data);
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	char *hw_address;
 	NMWimaxNsp *active_nsp;
 	GPtrArray *nsps;
@@ -495,9 +492,8 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_device_wimax_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_WIMAX);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_DEVICE_WIMAX,
 	                                property_info);
 }
 
@@ -530,7 +526,6 @@ dispose (GObject *object)
 
 	if (priv->nsps)
 		clean_up_nsps (NM_DEVICE_WIMAX (object));
-	g_clear_object (&priv->proxy);
 
 	G_OBJECT_CLASS (nm_device_wimax_parent_class)->dispose (object);
 }
@@ -543,6 +538,8 @@ nm_device_wimax_class_init (NMDeviceWimaxClass *wimax_class)
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (wimax_class);
 
 	g_type_class_add_private (wimax_class, sizeof (NMDeviceWimaxPrivate));
+
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_WIMAX);
 
 	/* virtual methods */
 	object_class->get_property = get_property;

@@ -179,7 +179,7 @@ typedef struct {
 
 	int         (*update_one_secret) (NMSetting  *setting,
 	                                  const char *key,
-	                                  GValue     *value,
+	                                  GVariant   *value,
 	                                  GError    **error);
 
 	gboolean    (*get_secret_flags)  (NMSetting  *setting,

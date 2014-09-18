@@ -24,13 +24,11 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <dbus/dbus-glib.h>
 #include <glib/gi18n.h>
 
 #include "nm-setting-bond.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
-#include "nm-dbus-glib-types.h"
 #include "nm-setting-private.h"
 
 /**
@@ -734,11 +732,12 @@ nm_setting_bond_class_init (NMSettingBondClass *setting_class)
 		                     NM_SETTING_PARAM_INFERRABLE |
 		                     G_PARAM_STATIC_STRINGS));
 	 _nm_setting_class_transform_property (parent_class, NM_SETTING_BOND_OPTIONS,
-	                                       DBUS_TYPE_G_MAP_OF_STRING,
+	                                       G_VARIANT_TYPE ("a{ss}"),
 	                                       _nm_utils_strdict_to_dbus,
 	                                       _nm_utils_strdict_from_dbus);
 
-	 _nm_setting_class_add_dbus_only_property (parent_class, "interface-name", G_TYPE_STRING,
+	 _nm_setting_class_add_dbus_only_property (parent_class, "interface-name",
+	                                           G_VARIANT_TYPE_STRING,
 	                                           _nm_setting_get_deprecated_virtual_interface_name,
 	                                           NULL);
 }

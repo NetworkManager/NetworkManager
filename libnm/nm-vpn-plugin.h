@@ -26,9 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <glib.h>
-#include <glib-object.h>
-#include <dbus/dbus-glib.h>
+#include <gio/gio.h>
 #include <nm-vpn-dbus-interface.h>
 #include <nm-connection.h>
 
@@ -98,7 +96,7 @@ typedef struct {
 	                        NMVpnServiceState state);
 
 	void (*ip4_config)     (NMVpnPlugin *plugin,
-	                        GHashTable  *ip4_config);
+	                        GVariant  *ip4_config);
 
 	void (*login_banner)   (NMVpnPlugin *plugin,
 	                        const char *banner);
@@ -109,10 +107,10 @@ typedef struct {
 	void (*quit)           (NMVpnPlugin *plugin);
 
 	void (*config)         (NMVpnPlugin *plugin,
-	                        GHashTable  *config);
+	                        GVariant  *config);
 
 	void (*ip6_config)     (NMVpnPlugin *plugin,
-	                        GHashTable  *config);
+	                        GVariant  *config);
 
 	/* virtual methods */
 	gboolean (*connect)      (NMVpnPlugin   *plugin,
@@ -133,7 +131,7 @@ typedef struct {
 
 	gboolean (*connect_interactive) (NMVpnPlugin *plugin,
 	                                 NMConnection *connection,
-	                                 GHashTable *details,
+	                                 GVariant *details,
 	                                 GError **error);
 
 	/*< private >*/
@@ -142,9 +140,8 @@ typedef struct {
 
 GType  nm_vpn_plugin_get_type       (void);
 GQuark nm_vpn_plugin_error_quark    (void);
-GType  nm_vpn_plugin_error_get_type (void);
 
-DBusGConnection   *nm_vpn_plugin_get_connection (NMVpnPlugin *plugin);
+GDBusConnection   *nm_vpn_plugin_get_connection (NMVpnPlugin *plugin);
 NMVpnServiceState  nm_vpn_plugin_get_state      (NMVpnPlugin *plugin);
 void               nm_vpn_plugin_set_state      (NMVpnPlugin *plugin,
                                                  NMVpnServiceState state);
@@ -160,13 +157,13 @@ void               nm_vpn_plugin_failure        (NMVpnPlugin *plugin,
                                                  NMVpnPluginFailure reason);
 
 void               nm_vpn_plugin_set_config     (NMVpnPlugin *plugin,
-                                                 GHashTable *config);
+                                                 GVariant *config);
 
 void               nm_vpn_plugin_set_ip4_config (NMVpnPlugin *plugin,
-                                                 GHashTable *ip4_config);
+                                                 GVariant *ip4_config);
 
 void               nm_vpn_plugin_set_ip6_config (NMVpnPlugin *plugin,
-                                                 GHashTable *ip6_config);
+                                                 GVariant *ip6_config);
 
 gboolean           nm_vpn_plugin_disconnect     (NMVpnPlugin *plugin,
                                                  GError **err);

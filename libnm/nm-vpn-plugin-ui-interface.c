@@ -98,6 +98,11 @@ nm_vpn_plugin_ui_interface_get_type (void)
 }
 
 
+/**
+ * nm_vpn_plugin_ui_interface_ui_factory:
+ *
+ * Returns: (transfer full):
+ */
 NMVpnPluginUiWidgetInterface *
 nm_vpn_plugin_ui_interface_ui_factory (NMVpnPluginUiInterface *iface,
                                        NMConnection *connection,
@@ -116,6 +121,11 @@ nm_vpn_plugin_ui_interface_get_capabilities (NMVpnPluginUiInterface *iface)
 	return NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->get_capabilities (iface);
 }
 
+/**
+ * nm_vpn_plugin_ui_interface_import:
+ *
+ * Returns: (transfer full):
+ */
 NMConnection *
 nm_vpn_plugin_ui_interface_import (NMVpnPluginUiInterface *iface,
                                    const char *path,
@@ -207,6 +217,11 @@ nm_vpn_plugin_ui_widget_interface_get_type (void)
 	return vpn_plugin_ui_widget_interface_type;
 }
 
+/**
+ * nm_vpn_plugin_ui_widget_interface_get_widget:
+ *
+ * Returns: (transfer none):
+ */
 GObject *
 nm_vpn_plugin_ui_widget_interface_get_widget (NMVpnPluginUiWidgetInterface *iface)
 {

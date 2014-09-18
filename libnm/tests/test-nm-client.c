@@ -18,9 +18,6 @@
  *
  */
 
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib.h>
-#include <dbus/dbus-glib-lowlevel.h>
 #include <glib.h>
 #include <string.h>
 #include <sys/types.h>

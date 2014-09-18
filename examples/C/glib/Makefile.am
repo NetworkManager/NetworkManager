@@ -4,7 +4,6 @@ AM_CPPFLAGS = \
 	-I${top_builddir}/libnm-core \
 	-I${top_srcdir}/libnm \
 	-I${top_builddir}/libnm \
-	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS)
 
 noinst_PROGRAMS = \
@@ -25,7 +24,6 @@ add_connection_gdbus_LDADD = \
 add_connection_libnm_SOURCES = add-connection-libnm.c
 add_connection_libnm_LDADD = \
 	$(top_builddir)/libnm/libnm.la \
-	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 
 get_active_connections_gdbus_SOURCES = get-active-connections-gdbus.c
@@ -35,7 +33,6 @@ get_active_connections_gdbus_LDADD = \
 get_ap_info_libnm_SOURCES = get-ap-info-libnm.c
 get_ap_info_libnm_LDADD = \
 	$(top_builddir)/libnm/libnm.la \
-	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 
 list_connections_gdbus_SOURCES = list-connections-gdbus.c
@@ -45,7 +42,6 @@ list_connections_gdbus_LDADD = \
 list_connections_libnm_SOURCES = list-connections-libnm.c
 list_connections_libnm_LDADD = \
 	$(top_builddir)/libnm/libnm.la \
-	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 
 monitor_nm_running_gdbus_SOURCES = monitor-nm-running-gdbus.c

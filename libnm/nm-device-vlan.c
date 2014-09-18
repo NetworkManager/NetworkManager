@@ -36,8 +36,6 @@ G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 #define NM_DEVICE_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_VLAN, NMDeviceVlanPrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	char *hw_address;
 	gboolean carrier;
 	guint vlan_id;
@@ -205,20 +203,9 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_device_vlan_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_VLAN);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_DEVICE_VLAN,
 	                                property_info);
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (object);
-
-	g_clear_object (&priv->proxy);
-
-	G_OBJECT_CLASS (nm_device_vlan_parent_class)->dispose (object);
 }
 
 static void
@@ -264,8 +251,9 @@ nm_device_vlan_class_init (NMDeviceVlanClass *vlan_class)
 
 	g_type_class_add_private (vlan_class, sizeof (NMDeviceVlanPrivate));
 
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_VLAN);
+
 	/* virtual methods */
-	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 

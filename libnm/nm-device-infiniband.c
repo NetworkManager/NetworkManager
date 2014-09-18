@@ -36,8 +36,6 @@ G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
 #define NM_DEVICE_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_INFINIBAND, NMDeviceInfinibandPrivate))
 
 typedef struct {
-	DBusGProxy *proxy;
-
 	char *hw_address;
 	gboolean carrier;
 } NMDeviceInfinibandPrivate;
@@ -175,20 +173,9 @@ init_dbus (NMObject *object)
 
 	NM_OBJECT_CLASS (nm_device_infiniband_parent_class)->init_dbus (object);
 
-	priv->proxy = _nm_object_new_proxy (object, NULL, NM_DBUS_INTERFACE_DEVICE_INFINIBAND);
 	_nm_object_register_properties (object,
-	                                priv->proxy,
+	                                NM_DBUS_INTERFACE_DEVICE_INFINIBAND,
 	                                property_info);
-}
-
-static void
-dispose (GObject *object)
-{
-	NMDeviceInfinibandPrivate *priv = NM_DEVICE_INFINIBAND_GET_PRIVATE (object);
-
-	g_clear_object (&priv->proxy);
-
-	G_OBJECT_CLASS (nm_device_infiniband_parent_class)->dispose (object);
 }
 
 static void
@@ -231,8 +218,9 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *ib_class)
 
 	g_type_class_add_private (ib_class, sizeof (NMDeviceInfinibandPrivate));
 
+	_nm_object_class_add_interface (nm_object_class, NM_DBUS_INTERFACE_DEVICE_INFINIBAND);
+
 	/* virtual methods */
-	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
 

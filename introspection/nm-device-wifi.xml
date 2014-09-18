@@ -2,6 +2,8 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.Device.Wireless">
+    <annotation name="org.gtk.GDBus.C.Name" value="DeviceWifi"/>
+
     <method name="GetAccessPoints">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_get_access_points"/>
       <arg name="access_points" type="ao" direction="out">
