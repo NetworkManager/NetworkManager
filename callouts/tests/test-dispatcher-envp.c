@@ -429,7 +429,7 @@ out:
 /*******************************************/
 
 static void
-test_generic (const char *path, const char *file, const char *override_vpn_ip_iface)
+test_generic (const char *file, const char *override_vpn_ip_iface)
 {
 	GVariant *con_dict = NULL;
 	GVariant *con_props = NULL;
@@ -451,7 +451,7 @@ test_generic (const char *path, const char *file, const char *override_vpn_ip_if
 	char **denv, **iter;
 
 	/* Read in the test file */
-	p = g_strdup_printf ("%s/%s", path, file);
+	p = g_build_filename (SRCDIR, file, NULL);
 	success = get_dispatcher_file (p,
 	                               &con_dict,
 	                               &con_props,
@@ -551,36 +551,36 @@ test_generic (const char *path, const char *file, const char *override_vpn_ip_if
 /*******************************************/
 
 static void
-test_old_up (const char *path)
+test_old_up (void)
 {
-	test_generic (path, "dispatcher-old-up", NULL);
+	test_generic ("dispatcher-old-up", NULL);
 }
 
 static void
-test_old_down (const char *path)
+test_old_down (void)
 {
-	test_generic (path, "dispatcher-old-down", NULL);
+	test_generic ("dispatcher-old-down", NULL);
 }
 
 static void
-test_old_vpn_up (const char *path)
+test_old_vpn_up (void)
 {
-	test_generic (path, "dispatcher-old-vpn-up", NULL);
+	test_generic ("dispatcher-old-vpn-up", NULL);
 }
 
 static void
-test_old_vpn_down (const char *path)
+test_old_vpn_down (void)
 {
-	test_generic (path, "dispatcher-old-vpn-down", NULL);
+	test_generic ("dispatcher-old-vpn-down", NULL);
 }
 
 static void
-test_up_empty_vpn_iface (const char *path)
+test_up_empty_vpn_iface (void)
 {
 	/* Test that an empty VPN iface variable, like is passed through D-Bus
 	 * from NM, is ignored by the dispatcher environment construction code.
 	 */
-	test_generic (path, "dispatcher-old-up", "");
+	test_generic ("dispatcher-old-up", "");
 }
 
 /*******************************************/
@@ -588,20 +588,18 @@ test_up_empty_vpn_iface (const char *path)
 int
 main (int argc, char **argv)
 {
-	g_assert (argc > 1);
-
 	g_test_init (&argc, &argv, NULL);
 
 #if !GLIB_CHECK_VERSION (2, 35, 0)
 	g_type_init ();
 #endif
 
-	g_test_add_data_func ("/dispatcher/old_up", argv[1], (GTestDataFunc) test_old_up);
-	g_test_add_data_func ("/dispatcher/old_down", argv[1], (GTestDataFunc) test_old_down);
-	g_test_add_data_func ("/dispatcher/old_vpn_up", argv[1], (GTestDataFunc) test_old_vpn_up);
-	g_test_add_data_func ("/dispatcher/old_vpn_down", argv[1], (GTestDataFunc) test_old_vpn_down);
+	g_test_add_func ("/dispatcher/old_up", test_old_up);
+	g_test_add_func ("/dispatcher/old_down", test_old_down);
+	g_test_add_func ("/dispatcher/old_vpn_up", test_old_vpn_up);
+	g_test_add_func ("/dispatcher/old_vpn_down", test_old_vpn_down);
 
-	g_test_add_data_func ("/dispatcher/up_empty_vpn_iface", argv[1], (GTestDataFunc) test_up_empty_vpn_iface);
+	g_test_add_func ("/dispatcher/up_empty_vpn_iface", test_up_empty_vpn_iface);
 
 	return g_test_run ();
 }

@@ -7,6 +7,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/callouts \
 	-DNETWORKMANAGER_COMPILATION \
 	-DNM_VERSION_MAX_ALLOWED=NM_VERSION_NEXT_STABLE \
+	-DSRCDIR=\"$(abs_srcdir)\" \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
@@ -26,8 +27,7 @@ test_dispatcher_envp_LDADD = \
 
 ###########################################
 
-check-local: test-dispatcher-envp
-	$(abs_builddir)/test-dispatcher-envp $(abs_srcdir)
+TESTS = test-dispatcher-envp
 
 EXTRA_DIST= \
 	dispatcher-old-down \
