@@ -19,7 +19,6 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <glib.h>
@@ -1841,9 +1840,9 @@ wireless_band_channel_changed_cb (GObject *object, GParamSpec *pspec, gpointer u
 
 	mode = nm_setting_wireless_get_mode (NM_SETTING_WIRELESS (object));
 	if (!mode || !*mode || strcmp (mode, NM_SETTING_WIRELESS_MODE_INFRA) == 0) {
-		printf (_("Warning: %s.%s set to '%s', but it might be ignored in infrastructure mode\n"),
-		        nm_setting_get_name (NM_SETTING (s_wireless)), g_param_spec_get_name (pspec),
-		        value);
+		g_print (_("Warning: %s.%s set to '%s', but it might be ignored in infrastructure mode\n"),
+		         nm_setting_get_name (NM_SETTING (s_wireless)), g_param_spec_get_name (pspec),
+		         value);
 	}
 }
 
@@ -2504,7 +2503,7 @@ nmc_property_connection_set_secondaries (NMSetting *setting, const char *prop, c
 			con = nmc_find_connection (nm_cli.system_connections,
 			                           "uuid", *iter, NULL);
 			if (!con)
-				printf (_("Warning: %s is not an UUID of any existing connection profile\n"), *iter);
+				g_print (_("Warning: %s is not an UUID of any existing connection profile\n"), *iter);
 			else {
 				/* Currenly NM only supports VPN connections as secondaries */
 				if (!nm_connection_is_type (con, NM_SETTING_VPN_SETTING_NAME)) {
@@ -3804,8 +3803,8 @@ nmc_property_vlan_remove_priority_map (NMSetting *setting,
 		if (!prio_map)
 			return FALSE;
 		if (prio_map[1])
-			printf (_("Warning: only one mapping at a time is supported; taking the first one (%s)\n"),
-			        prio_map[0]);
+			g_print (_("Warning: only one mapping at a time is supported; taking the first one (%s)\n"),
+			         prio_map[0]);
 		ret = nm_setting_vlan_remove_priority_str_by_value (NM_SETTING_VLAN (setting),
 		                                                    map,
 		                                                    prio_map[0]);
@@ -4276,9 +4275,9 @@ nmc_property_wifi_set_wep_key (NMSetting *setting, const char *prop, const char 
 	}
 	prev_idx = nm_setting_wireless_security_get_wep_tx_keyidx (NM_SETTING_WIRELESS_SECURITY (setting));
 	idx = prop[strlen (prop) - 1] - '0';
-	printf (_("WEP key is guessed to be of '%s'\n"), wep_key_type_to_string (guessed_type));
+	g_print (_("WEP key is guessed to be of '%s'\n"), wep_key_type_to_string (guessed_type));
 	if (idx != prev_idx)
-		printf (_("WEP key index set to '%d'\n"), idx);
+		g_print (_("WEP key index set to '%d'\n"), idx);
 
 	g_object_set (setting, prop, val, NULL);
 	g_object_set (setting, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, guessed_type, NULL);
@@ -4317,17 +4316,17 @@ nmc_property_wifi_set_wep_key_type (NMSetting *setting, const char *prop, const 
 	key2 = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), 2);
 	key3 = nm_setting_wireless_security_get_wep_key (NM_SETTING_WIRELESS_SECURITY (setting), 3);
 	if (key0 && !nm_utils_wep_key_valid (key0, type))
-		printf (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
-			NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, wep_key_type_to_string (type));
+		g_print (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
+		         NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, wep_key_type_to_string (type));
 	if (key1 && !nm_utils_wep_key_valid (key1, type))
-		printf (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
-			NM_SETTING_WIRELESS_SECURITY_WEP_KEY1, wep_key_type_to_string (type));
+		g_print (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
+		         NM_SETTING_WIRELESS_SECURITY_WEP_KEY1, wep_key_type_to_string (type));
 	if (key2 && !nm_utils_wep_key_valid (key2, type))
-		printf (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
-			NM_SETTING_WIRELESS_SECURITY_WEP_KEY2, wep_key_type_to_string (type));
+		g_print (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
+		         NM_SETTING_WIRELESS_SECURITY_WEP_KEY2, wep_key_type_to_string (type));
 	if (key3 && !nm_utils_wep_key_valid (key3, type))
-		printf (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
-			NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, wep_key_type_to_string (type));
+		g_print (_("Warning: '%s' is not compatible with '%s' type, please change or delete the key.\n"),
+		         NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, wep_key_type_to_string (type));
 
 	g_object_set (setting, prop, type, NULL);
 	return TRUE;
@@ -4487,7 +4486,7 @@ dcb_check_feature_enabled (NMSettingDcb *s_dcb, const char *flags_prop)
 
 	g_object_get (s_dcb, flags_prop, &flags, NULL);
 	if (!(flags & NM_SETTING_DCB_FLAG_ENABLE))
-		printf (_("Warning: changes will have no effect until '%s' includes 1 (enabled)\n\n"), flags_prop);
+		g_print (_("Warning: changes will have no effect until '%s' includes 1 (enabled)\n\n"), flags_prop);
 }
 
 static gboolean

@@ -245,232 +245,222 @@ static char *gen_connection_types (const char *text, int state);
 static void
 usage (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli connection { COMMAND | help }\n\n"
-	           "COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
-	           "  show [--active] [[id | uuid | path | apath] <ID>] ...\n\n"
+	g_printerr (_("Usage: nmcli connection { COMMAND | help }\n\n"
+	              "COMMAND := { show | up | down | add | modify | edit | delete | reload | load }\n\n"
+	              "  show [--active] [[id | uuid | path | apath] <ID>] ...\n\n"
 #if WITH_WIMAX
-	           "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n\n"
+	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n\n"
 #else
-	           "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>]\n\n"
+	              "  up [[id | uuid | path] <ID>] [ifname <ifname>] [ap <BSSID>]\n\n"
 #endif
-	           "  down [id | uuid | path | apath] <ID>\n\n"
-	           "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
-	           "  modify [--temporary] [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n\n"
-	           "  edit [id | uuid | path] <ID>\n"
-	           "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
-	           "  delete [id | uuid | path] <ID>\n\n"
-	           "  reload\n\n"
-	           "  load <filename> [ <filename>... ]\n\n"));
+	              "  down [id | uuid | path | apath] <ID>\n\n"
+	              "  add COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
+	              "  modify [--temporary] [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n\n"
+	              "  edit [id | uuid | path] <ID>\n"
+	              "  edit [type <new_con_type>] [con-name <new_con_name>]\n\n"
+	              "  delete [id | uuid | path] <ID>\n\n"
+	              "  reload\n\n"
+	              "  load <filename> [ <filename>... ]\n\n"));
 }
 
 static void
 usage_connection_show (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli connection show { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [--active]\n"
-	           "\n"
-	           "List in-memory and on-disk connection profiles, some of which may also be\n"
-	           "active if a device is using that connection profile. Without a parameter, all\n"
-	           "profiles are listed. When --active option is specified, only the active\n"
-	           "profiles are shown.\n"
-	           "\n"
-	           "ARGUMENTS := [--active] [id | uuid | path | apath] <ID> ...\n"
-	           "\n"
-	           "Show details for specified connections. By default, both static configuration\n"
-	           "and active connection data are displayed. It is possible to filter the output\n"
-	           "using global '--fields' option. Refer to the manual page for more information.\n"
-	           "When --active option is specified, only the active profiles are taken into\n"
-	           "account.\n"));
+	g_printerr (_("Usage: nmcli connection show { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [--active]\n"
+	              "\n"
+	              "List in-memory and on-disk connection profiles, some of which may also be\n"
+	              "active if a device is using that connection profile. Without a parameter, all\n"
+	              "profiles are listed. When --active option is specified, only the active\n"
+	              "profiles are shown.\n"
+	              "\n"
+	              "ARGUMENTS := [--active] [id | uuid | path | apath] <ID> ...\n"
+	              "\n"
+	              "Show details for specified connections. By default, both static configuration\n"
+	              "and active connection data are displayed. It is possible to filter the output\n"
+	              "using global '--fields' option. Refer to the manual page for more information.\n"
+	              "When --active option is specified, only the active profiles are taken into\n"
+	              "account.\n"));
 }
 
 static void
 usage_connection_up (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli connection up { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [id | uuid | path] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n"
-	           "\n"
-	           "Activate a connection on a device. The profile to activate is identified by its\n"
-	           "name, UUID or D-Bus path.\n"
-	           "\n"
-	           "ARGUMENTS := ifname <ifname> [ap <BSSID>] [nsp <name>]\n"
-	           "\n"
-	           "Activate a device with a connection. The connection profile is selected\n"
-	           "automatically by NetworkManager.\n"
-	           "\n"
-	           "ifname - specifies the device to active the connection on\n"
-	           "ap     - specifies AP to connect to (only valid for Wi-Fi)\n"
-	           "nsp    - specifies NSP to connect to (only valid for WiMAX)\n\n"));
+	g_printerr (_("Usage: nmcli connection up { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [id | uuid | path] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]\n"
+	              "\n"
+	              "Activate a connection on a device. The profile to activate is identified by its\n"
+	              "name, UUID or D-Bus path.\n"
+	              "\n"
+	              "ARGUMENTS := ifname <ifname> [ap <BSSID>] [nsp <name>]\n"
+	              "\n"
+	              "Activate a device with a connection. The connection profile is selected\n"
+	              "automatically by NetworkManager.\n"
+	              "\n"
+	              "ifname - specifies the device to active the connection on\n"
+	              "ap     - specifies AP to connect to (only valid for Wi-Fi)\n"
+	              "nsp    - specifies NSP to connect to (only valid for WiMAX)\n\n"));
 }
 
 static void
 usage_connection_down (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli connection down { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [id | uuid | path | apath] <ID>\n"
-	           "\n"
-	           "Deactivate a connection from a device (without preventing the device from\n"
-	           "further auto-activation). The profile to deactivate is identified by its name,\n"
-	           "UUID or D-Bus path.\n\n"));
+	g_printerr (_("Usage: nmcli connection down { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [id | uuid | path | apath] <ID>\n"
+	              "\n"
+	              "Deactivate a connection from a device (without preventing the device from\n"
+	              "further auto-activation). The profile to deactivate is identified by its name,\n"
+	              "UUID or D-Bus path.\n\n"));
 }
 
 static void
 usage_connection_add (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli connection add { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
-	           "  COMMON_OPTIONS:\n"
-	           "                  type <type>\n"
-	           "                  ifname <interface name> | \"*\"\n"
-	           "                  [con-name <connection name>]\n"
-	           "                  [autoconnect yes|no]\n\n"
-	           "                  [save yes|no]\n\n"
-	           "  TYPE_SPECIFIC_OPTIONS:\n"
-	           "    ethernet:     [mac <MAC address>]\n"
-	           "                  [cloned-mac <cloned MAC address>]\n"
-	           "                  [mtu <MTU>]\n\n"
-	           "    wifi:         ssid <SSID>\n"
-	           "                  [mac <MAC address>]\n"
-	           "                  [cloned-mac <cloned MAC address>]\n"
-	           "                  [mtu <MTU>]\n\n"
-	           "    wimax:        [mac <MAC address>]\n"
-	           "                  [nsp <NSP>]\n\n"
-	           "    pppoe:        username <PPPoE username>\n"
-	           "                  [password <PPPoE password>]\n"
-	           "                  [service <PPPoE service name>]\n"
-	           "                  [mtu <MTU>]\n"
-	           "                  [mac <MAC address>]\n\n"
-	           "    gsm:          apn <APN>\n"
-	           "                  [user <username>]\n"
-	           "                  [password <password>]\n\n"
-	           "    cdma:         [user <username>]\n"
-	           "                  [password <password>]\n\n"
-	           "    infiniband:   [mac <MAC address>]\n"
-	           "                  [mtu <MTU>]\n"
-	           "                  [transport-mode datagram | connected]\n"
-	           "                  [parent <ifname>]\n"
-	           "                  [p-key <IPoIB P_Key>]\n\n"
-	           "    bluetooth:    [addr <bluetooth address>]\n"
-	           "                  [bt-type panu|dun-gsm|dun-cdma]\n\n"
-	           "    vlan:         dev <parent device (connection  UUID, ifname, or MAC)>\n"
-	           "                  id <VLAN ID>\n"
-	           "                  [flags <VLAN flags>]\n"
-	           "                  [ingress <ingress priority mapping>]\n"
-	           "                  [egress <egress priority mapping>]\n"
-	           "                  [mtu <MTU>]\n\n"
-	           "    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) | broadcast (3) |\n"
-	           "                        802.3ad    (4) | balance-tlb   (5) | balance-alb (6)]\n"
-	           "                  [primary <ifname>]\n"
-	           "                  [miimon <num>]\n"
-	           "                  [downdelay <num>]\n"
-	           "                  [updelay <num>]\n"
-	           "                  [arp-interval <num>]\n"
-	           "                  [arp-ip-target <num>]\n\n"
-	           "    bond-slave:   master <master (ifname, or connection UUID or name)>\n\n"
-	           "    team:         [config <file>|<raw JSON data>]\n\n"
-	           "    team-slave:   master <master (ifname, or connection UUID or name)>\n"
-	           "                  [config <file>|<raw JSON data>]\n\n"
-	           "    bridge:       [stp yes|no]\n"
-	           "                  [priority <num>]\n"
-	           "                  [forward-delay <2-30>]\n"
-	           "                  [hello-time <1-10>]\n"
-	           "                  [max-age <6-40>]\n"
-	           "                  [ageing-time <0-1000000>]\n"
-	           "                  [mac <MAC address>]\n\n"
-	           "    bridge-slave: master <master (ifname, or connection UUID or name)>\n"
-	           "                  [priority <0-63>]\n"
-	           "                  [path-cost <1-65535>]\n"
-	           "                  [hairpin yes|no]\n\n"
-	           "    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|ssh|l2tp|iodine|...\n"
-	           "                  [user <username>]\n\n"
-	           "    olpc-mesh:    ssid <SSID>\n"
-	           "                  [channel <1-13>]\n"
-	           "                  [dhcp-anycast <MAC address>]\n\n"
-	           "  IP_OPTIONS:\n"
-	           "                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
-	           "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n\n"));
+	g_printerr (_("Usage: nmcli connection add { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := COMMON_OPTIONS TYPE_SPECIFIC_OPTIONS IP_OPTIONS\n\n"
+	              "  COMMON_OPTIONS:\n"
+	              "                  type <type>\n"
+	              "                  ifname <interface name> | \"*\"\n"
+	              "                  [con-name <connection name>]\n"
+	              "                  [autoconnect yes|no]\n\n"
+	              "                  [save yes|no]\n\n"
+	              "  TYPE_SPECIFIC_OPTIONS:\n"
+	              "    ethernet:     [mac <MAC address>]\n"
+	              "                  [cloned-mac <cloned MAC address>]\n"
+	              "                  [mtu <MTU>]\n\n"
+	              "    wifi:         ssid <SSID>\n"
+	              "                  [mac <MAC address>]\n"
+	              "                  [cloned-mac <cloned MAC address>]\n"
+	              "                  [mtu <MTU>]\n\n"
+	              "    wimax:        [mac <MAC address>]\n"
+	              "                  [nsp <NSP>]\n\n"
+	              "    pppoe:        username <PPPoE username>\n"
+	              "                  [password <PPPoE password>]\n"
+	              "                  [service <PPPoE service name>]\n"
+	              "                  [mtu <MTU>]\n"
+	              "                  [mac <MAC address>]\n\n"
+	              "    gsm:          apn <APN>\n"
+	              "                  [user <username>]\n"
+	              "                  [password <password>]\n\n"
+	              "    cdma:         [user <username>]\n"
+	              "                  [password <password>]\n\n"
+	              "    infiniband:   [mac <MAC address>]\n"
+	              "                  [mtu <MTU>]\n"
+	              "                  [transport-mode datagram | connected]\n"
+	              "                  [parent <ifname>]\n"
+	              "                  [p-key <IPoIB P_Key>]\n\n"
+	              "    bluetooth:    [addr <bluetooth address>]\n"
+	              "                  [bt-type panu|dun-gsm|dun-cdma]\n\n"
+	              "    vlan:         dev <parent device (connection  UUID, ifname, or MAC)>\n"
+	              "                  id <VLAN ID>\n"
+	              "                  [flags <VLAN flags>]\n"
+	              "                  [ingress <ingress priority mapping>]\n"
+	              "                  [egress <egress priority mapping>]\n"
+	              "                  [mtu <MTU>]\n\n"
+	              "    bond:         [mode balance-rr (0) | active-backup (1) | balance-xor (2) | broadcast (3) |\n"
+	              "                        802.3ad    (4) | balance-tlb   (5) | balance-alb (6)]\n"
+	              "                  [primary <ifname>]\n"
+	              "                  [miimon <num>]\n"
+	              "                  [downdelay <num>]\n"
+	              "                  [updelay <num>]\n"
+	              "                  [arp-interval <num>]\n"
+	              "                  [arp-ip-target <num>]\n\n"
+	              "    bond-slave:   master <master (ifname, or connection UUID or name)>\n\n"
+	              "    team:         [config <file>|<raw JSON data>]\n\n"
+	              "    team-slave:   master <master (ifname, or connection UUID or name)>\n"
+	              "                  [config <file>|<raw JSON data>]\n\n"
+	              "    bridge:       [stp yes|no]\n"
+	              "                  [priority <num>]\n"
+	              "                  [forward-delay <2-30>]\n"
+	              "                  [hello-time <1-10>]\n"
+	              "                  [max-age <6-40>]\n"
+	              "                  [ageing-time <0-1000000>]\n"
+	              "                  [mac <MAC address>]\n\n"
+	              "    bridge-slave: master <master (ifname, or connection UUID or name)>\n"
+	              "                  [priority <0-63>]\n"
+	              "                  [path-cost <1-65535>]\n"
+	              "                  [hairpin yes|no]\n\n"
+	              "    vpn:          vpn-type vpnc|openvpn|pptp|openconnect|openswan|libreswan|ssh|l2tp|iodine|...\n"
+	              "                  [user <username>]\n\n"
+	              "    olpc-mesh:    ssid <SSID>\n"
+	              "                  [channel <1-13>]\n"
+	              "                  [dhcp-anycast <MAC address>]\n\n"
+	              "  IP_OPTIONS:\n"
+	              "                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
+	              "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n\n"));
 }
 
 static void
 usage_connection_modify (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli connection modify { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n"
-	           "\n"
-	           "Modify one or more properties of the connection profile.\n"
-	           "The profile is identified by its name, UUID or D-Bus path. For multi-valued\n"
-	           "properties you can use optional '+' or '-' prefix to the property name.\n"
-	           "The '+' sign allows appending items instead of overwriting the whole value.\n"
-	           "The '-' sign allows removing selected items instead of the whole value.\n"
-	           "\n"
-	           "Examples:\n"
-	           "nmcli con mod home-wifi wifi.ssid rakosnicek\n"
-	           "nmcli con mod em1-1 ipv4.method manual ipv4.addr \"192.168.1.2/24, 10.10.1.5/8\"\n"
-	           "nmcli con mod em1-1 +ipv4.dns 8.8.4.4\n"
-	           "nmcli con mod em1-1 -ipv4.dns 1\n"
-	           "nmcli con mod em1-1 -ipv6.addr \"abbe::cafe/56\"\n"
-	           "nmcli con mod bond0 +bond.options mii=500\n"
-	           "nmcli con mod bond0 -bond.options downdelay\n\n"));
+	g_printerr (_("Usage: nmcli connection modify { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [id | uuid | path] <ID> ([+|-]<setting>.<property> <value>)+\n"
+	              "\n"
+	              "Modify one or more properties of the connection profile.\n"
+	              "The profile is identified by its name, UUID or D-Bus path. For multi-valued\n"
+	              "properties you can use optional '+' or '-' prefix to the property name.\n"
+	              "The '+' sign allows appending items instead of overwriting the whole value.\n"
+	              "The '-' sign allows removing selected items instead of the whole value.\n"
+	              "\n"
+	              "Examples:\n"
+	              "nmcli con mod home-wifi wifi.ssid rakosnicek\n"
+	              "nmcli con mod em1-1 ipv4.method manual ipv4.addr \"192.168.1.2/24, 10.10.1.5/8\"\n"
+	              "nmcli con mod em1-1 +ipv4.dns 8.8.4.4\n"
+	              "nmcli con mod em1-1 -ipv4.dns 1\n"
+	              "nmcli con mod em1-1 -ipv6.addr \"abbe::cafe/56\"\n"
+	              "nmcli con mod bond0 +bond.options mii=500\n"
+	              "nmcli con mod bond0 -bond.options downdelay\n\n"));
 }
 
 static void
 usage_connection_edit (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli connection edit { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [id | uuid | path] <ID>\n"
-	           "\n"
-	           "Edit an existing connection profile in an interactive editor.\n"
-	           "The profile is identified by its name, UUID or D-Bus path\n"
-	           "\n"
-	           "ARGUMENTS := [type <new connection type>] [con-name <new connection name>]\n"
-	           "\n"
-	           "Add a new connection profile in an interactive editor.\n\n"));
+	g_printerr (_("Usage: nmcli connection edit { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [id | uuid | path] <ID>\n"
+	              "\n"
+	              "Edit an existing connection profile in an interactive editor.\n"
+	              "The profile is identified by its name, UUID or D-Bus path\n"
+	              "\n"
+	              "ARGUMENTS := [type <new connection type>] [con-name <new connection name>]\n"
+	              "\n"
+	              "Add a new connection profile in an interactive editor.\n\n"));
 }
 
 static void
 usage_connection_delete (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli connection delete { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [id | uuid | path] <ID>\n"
-	           "\n"
-	           "Delete a connection profile.\n"
-	           "The profile is identified by its name, UUID or D-Bus path.\n\n"));
+	g_printerr (_("Usage: nmcli connection delete { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [id | uuid | path] <ID>\n"
+	              "\n"
+	              "Delete a connection profile.\n"
+	              "The profile is identified by its name, UUID or D-Bus path.\n\n"));
 }
 
 static void
 usage_connection_reload (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli connection reload { help }\n"
-	           "\n"
-	           "Reload all connection files from disk.\n\n"));
+	g_printerr (_("Usage: nmcli connection reload { help }\n"
+	              "\n"
+	              "Reload all connection files from disk.\n\n"));
 }
 
 static void
 usage_connection_load (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli connection load { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := <filename> [<filename>...]\n"
-	           "\n"
-	           "Load/reload one or more connection files from disk. Use this after manually\n"
-	           "editing a connection file to ensure that NetworkManager is aware of its latest\n"
-	           "state.\n\n"));
+	g_printerr (_("Usage: nmcli connection load { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := <filename> [<filename>...]\n"
+	              "\n"
+	              "Load/reload one or more connection files from disk. Use this after manually\n"
+	              "editing a connection file to ensure that NetworkManager is aware of its latest\n"
+	              "state.\n\n"));
 }
 
 static gboolean
@@ -682,7 +672,7 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 		const char *prop_name = (const char *) g_ptr_array_index (prop_array, i);
 
 		if (nmc->print_output != NMC_PRINT_TERSE && !nmc->multiline_output && was_output)
-			printf ("\n"); /* Empty line */
+			g_print ("\n"); /* Empty line */
 
 		was_output = FALSE;
 
@@ -1033,7 +1023,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 		char *group_fld = (char *) g_ptr_array_index (group_fields, i);
 
 		if (nmc->print_output != NMC_PRINT_TERSE && !nmc->multiline_output && was_output)
-			printf ("\n"); /* Empty line */
+			g_print ("\n"); /* Empty line */
 
 		was_output = FALSE;
 
@@ -1376,7 +1366,7 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 
 				/* Show an empty line between connections */
 				if (new_line)
-					printf ("\n");
+					g_print ("\n");
 
 				/* Show profile configuration */
 				if (without_fields || profile_flds) {
@@ -1648,15 +1638,15 @@ device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 	if (ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 		if (nmc->print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
-		printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
-		        nm_object_get_path (NM_OBJECT (active)));
+		g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
+		         nm_object_get_path (NM_OBJECT (active)));
 		quit ();
 	} else if (   ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING
 	           && state == NM_DEVICE_STATE_IP_CONFIG) {
 		if (nmc->print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
-		printf (_("Connection successfully activated (master waiting for slaves) (D-Bus active path: %s)\n"),
-		        nm_object_get_path (NM_OBJECT (active)));
+		g_print (_("Connection successfully activated (master waiting for slaves) (D-Bus active path: %s)\n"),
+		         nm_object_get_path (NM_OBJECT (active)));
 		quit ();
 	} else if (ac_state != NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
 		g_string_printf (nmc->return_text, _("Error: Connection activation failed."));
@@ -1676,8 +1666,8 @@ active_connection_state_cb (NMActiveConnection *active, GParamSpec *pspec, gpoin
 	if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 		if (nmc->print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
-		printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
-		        nm_object_get_path (NM_OBJECT (active)));
+		g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
+		         nm_object_get_path (NM_OBJECT (active)));
 		g_object_unref (active);
 		quit ();
 	} else if (   state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
@@ -1726,8 +1716,8 @@ vpn_connection_state_cb (NMVpnConnection *vpn,
 	case NM_VPN_CONNECTION_STATE_ACTIVATED:
 		if (nmc->print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
-		printf (_("VPN connection successfully activated (D-Bus active path: %s)\n"),
-		        nm_object_get_path (NM_OBJECT (vpn)));
+		g_print (_("VPN connection successfully activated (D-Bus active path: %s)\n"),
+		         nm_object_get_path (NM_OBJECT (vpn)));
 		g_object_unref (vpn);
 		quit ();
 		break;
@@ -1830,8 +1820,8 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 				if (nmc->print_output == NMC_PRINT_PRETTY)
 					nmc_terminal_erase_line ();
-				printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
-				        nm_object_get_path (NM_OBJECT (active)));
+				g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
+				         nm_object_get_path (NM_OBJECT (active)));
 			}
 			g_object_unref (active);
 			quit ();
@@ -1993,8 +1983,8 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 			nsp = *argv;
 		}
 #endif
-		 else {
-			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
+		else {
+			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
 		argc--;
@@ -2816,9 +2806,9 @@ want_provide_opt_args (const char *type, int num)
 	gboolean ret = TRUE;
 
 	/* Ask for optional arguments. */
-	printf (ngettext ("There is %d optional argument for '%s' connection type.\n",
-	                  "There are %d optional arguments for '%s' connection type.\n", num),
-	        num, type);
+	g_print (ngettext ("There is %d optional argument for '%s' connection type.\n",
+	                   "There are %d optional arguments for '%s' connection type.\n", num),
+	         num, type);
 	answer = nmc_readline (ngettext ("Do you want to provide it? %s",
 	                                 "Do you want to provide them? %s", num),
 	                       prompt_yes_no (TRUE, NULL));
@@ -2845,7 +2835,7 @@ do_questionnaire_ethernet (gboolean ethernet, char **mtu, char **mac, char **clo
 			*mtu = nmc_readline (_("MTU [auto]: "));
 			once_more = !check_and_convert_mtu (*mtu, NULL, &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*mtu);
 			}
@@ -2856,7 +2846,7 @@ do_questionnaire_ethernet (gboolean ethernet, char **mtu, char **mac, char **clo
 			*mac = nmc_readline (_("MAC [none]: "));
 			once_more = !check_mac (*mac, ARPHRD_ETHER, "mac", &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*mac);
 			}
@@ -2867,7 +2857,7 @@ do_questionnaire_ethernet (gboolean ethernet, char **mtu, char **mac, char **clo
 			*cloned_mac = nmc_readline (_("Cloned MAC [none]: "));
 			once_more = !check_mac (*cloned_mac, ARPHRD_ETHER, "cloned-mac", &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*cloned_mac);
 			}
@@ -2893,7 +2883,7 @@ do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent,
 			*mtu = nmc_readline (_("MTU [auto]: "));
 			once_more = !check_and_convert_mtu (*mtu, NULL, &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*mtu);
 			}
@@ -2904,7 +2894,7 @@ do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent,
 			*mac = nmc_readline (_("MAC [none]: "));
 			once_more = !check_mac (*mac, ARPHRD_INFINIBAND, "mac", &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*mac);
 			}
@@ -2917,7 +2907,7 @@ do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent,
 				*mode = g_strdup ("datagram");
 			once_more = !check_infiniband_mode (mode, &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*mode);
 			}
@@ -2928,7 +2918,7 @@ do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent,
 			*parent = nmc_readline (_("Parent interface [none]: "));
 			once_more = !check_infiniband_parent (*parent, &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*parent);
 			}
@@ -2939,14 +2929,14 @@ do_questionnaire_infiniband (char **mtu, char **mac, char **mode, char **parent,
 			*p_key = nmc_readline (_("P_KEY [none]: "));
 			once_more = !check_infiniband_p_key (*p_key, NULL, &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*p_key);
 			}
 			/* If parent is specified, so has to be P_KEY */
 			if (!once_more && *parent && !*p_key) {
 				once_more = TRUE;
-				printf (_("Error: 'p-key' is mandatory when 'parent' is specified.\n"));
+				g_print (_("Error: 'p-key' is mandatory when 'parent' is specified.\n"));
 			}
 		} while (once_more);
 	}
@@ -2974,7 +2964,7 @@ do_questionnaire_wimax (char **mac)
 			*mac = nmc_readline (_("MAC [none]: "));
 			once_more = !check_mac (*mac, ARPHRD_ETHER, "mac", &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*mac);
 			}
@@ -3002,7 +2992,7 @@ do_questionnaire_pppoe (char **password, char **service, char **mtu, char **mac)
 			*mtu = nmc_readline (_("MTU [auto]: "));
 			once_more = !check_and_convert_mtu (*mtu, NULL, &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*mtu);
 			}
@@ -3013,7 +3003,7 @@ do_questionnaire_pppoe (char **password, char **service, char **mtu, char **mac)
 			*mac = nmc_readline (_("MAC [none]: "));
 			once_more = !check_mac (*mac, ARPHRD_ETHER, "mac", &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*mac);
 			}
@@ -3057,7 +3047,7 @@ do_questionnaire_bluetooth (char **bt_type)
 			tmp = nmc_string_is_valid (*bt_type, types, NULL);
 			once_more = !tmp;
 			if (once_more) {
-				printf (_("Error: 'bt-type': '%s' is not a valid bluetooth type.\n"), *bt_type);
+				g_print (_("Error: 'bt-type': '%s' is not a valid bluetooth type.\n"), *bt_type);
 				g_free (*bt_type);
 			}
 		} while (once_more);
@@ -3081,7 +3071,7 @@ do_questionnaire_vlan (char **mtu, char **flags, char **ingress, char **egress)
 			*mtu = nmc_readline (_("MTU [auto]: "));
 			once_more = !check_and_convert_mtu (*mtu, NULL, &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*mtu);
 			}
@@ -3092,7 +3082,7 @@ do_questionnaire_vlan (char **mtu, char **flags, char **ingress, char **egress)
 			*flags = nmc_readline (_("VLAN flags (<0-7>) [none]: "));
 			once_more = !check_and_convert_vlan_flags (*flags, NULL, &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*flags);
 			}
@@ -3103,7 +3093,7 @@ do_questionnaire_vlan (char **mtu, char **flags, char **ingress, char **egress)
 			*ingress = nmc_readline (_("Ingress priority maps [none]: "));
 			once_more = !check_and_convert_vlan_prio_maps (*ingress, NM_VLAN_INGRESS_MAP, NULL, &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*ingress);
 			}
@@ -3114,7 +3104,7 @@ do_questionnaire_vlan (char **mtu, char **flags, char **ingress, char **egress)
 			*egress = nmc_readline (_("Egress priority maps [none]: "));
 			once_more = !check_and_convert_vlan_prio_maps (*egress, NM_VLAN_EGRESS_MAP, NULL, &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*egress);
 			}
@@ -3151,7 +3141,7 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 			if (mode_tmp) {
 				*mode = g_strdup (mode_tmp);
 			} else {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 			}
 		} while (!mode_tmp);
@@ -3162,8 +3152,8 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 			*primary = nmc_readline (_("Bonding primary interface [none]: "));
 			once_more = *primary && !nm_utils_iface_valid_name (*primary);
 			if (once_more) {
-				printf (_("Error: 'primary': '%s' is not a valid interface name.\n"),
-				        *primary);
+				g_print (_("Error: 'primary': '%s' is not a valid interface name.\n"),
+				         *primary);
 				g_free (*primary);
 			}
 		} while (once_more);
@@ -3176,8 +3166,8 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 		g_strstrip (monitor_mode);
 		once_more = matches (monitor_mode, WORD_MIIMON) != 0 && matches (monitor_mode, WORD_ARP) != 0;
 		if (once_more) {
-			printf (_("Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"),
-			        monitor_mode, WORD_MIIMON, WORD_ARP);
+			g_print (_("Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"),
+			         monitor_mode, WORD_MIIMON, WORD_ARP);
 			g_free (monitor_mode);
 		}
 	} while (once_more);
@@ -3188,8 +3178,8 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 				*miimon = nmc_readline (_("Bonding miimon [100]: "));
 				once_more = *miimon && !nmc_string_to_uint (*miimon, TRUE, 0, G_MAXUINT32, &tmp);
 				if (once_more) {
-					printf (_("Error: 'miimon': '%s' is not a valid number <0-%u>.\n"),
-					        *miimon, G_MAXUINT32);
+					g_print (_("Error: 'miimon': '%s' is not a valid number <0-%u>.\n"),
+					         *miimon, G_MAXUINT32);
 					g_free (*miimon);
 				}
 			} while (once_more);
@@ -3199,8 +3189,8 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 				*downdelay = nmc_readline (_("Bonding downdelay [0]: "));
 				once_more = *downdelay && !nmc_string_to_uint (*downdelay, TRUE, 0, G_MAXUINT32, &tmp);
 				if (once_more) {
-					printf (_("Error: 'downdelay': '%s' is not a valid number <0-%u>.\n"),
-					        *downdelay, G_MAXUINT32);
+					g_print (_("Error: 'downdelay': '%s' is not a valid number <0-%u>.\n"),
+					         *downdelay, G_MAXUINT32);
 					g_free (*downdelay);
 				}
 			} while (once_more);
@@ -3210,8 +3200,8 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 				*updelay = nmc_readline (_("Bonding updelay [0]: "));
 				once_more = *updelay && !nmc_string_to_uint (*updelay, TRUE, 0, G_MAXUINT32, &tmp);
 				if (once_more) {
-					printf (_("Error: 'updelay': '%s' is not a valid number <0-%u>.\n"),
-					        *updelay, G_MAXUINT32);
+					g_print (_("Error: 'updelay': '%s' is not a valid number <0-%u>.\n"),
+					         *updelay, G_MAXUINT32);
 					g_free (*updelay);
 				}
 			} while (once_more);
@@ -3222,8 +3212,8 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 				*arpinterval = nmc_readline (_("Bonding arp-interval [0]: "));
 				once_more = *arpinterval && !nmc_string_to_uint (*arpinterval, TRUE, 0, G_MAXUINT32, &tmp);
 				if (once_more) {
-					printf (_("Error: 'arp-interval': '%s' is not a valid number <0-%u>.\n"),
-					        *arpinterval, G_MAXUINT32);
+					g_print (_("Error: 'arp-interval': '%s' is not a valid number <0-%u>.\n"),
+					         *arpinterval, G_MAXUINT32);
 					g_free (*arpinterval);
 				}
 			} while (once_more);
@@ -3253,7 +3243,7 @@ do_questionnaire_team_common (const char *type_name, char **config)
 			*config = nmc_readline (_("Team JSON configuration [none]: "));
 			once_more = !nmc_team_check_config (*config, &json, &error);
 			if (once_more) {
-				printf ("Error: %s\n", error->message);
+				g_print ("Error: %s\n", error->message);
 				g_clear_error (&error);
 				g_free (*config);
 			}
@@ -3296,7 +3286,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 			normalize_yes_no (stp);
 			once_more = !nmc_string_to_bool (*stp, &stp_bool, &error);
 			if (once_more) {
-				printf (_("Error: 'stp': %s.\n"), error->message);
+				g_print (_("Error: 'stp': %s.\n"), error->message);
 				g_clear_error (&error);
 				g_free (*stp);
 			}
@@ -3308,8 +3298,8 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 			*priority = *priority ? *priority : g_strdup ("32768");
 			once_more = !nmc_string_to_uint (*priority, TRUE, 0, G_MAXUINT16, &tmp);
 			if (once_more) {
-				printf (_("Error: 'priority': '%s' is not a valid number <0-%d>.\n"),
-				        *priority, G_MAXUINT16);
+				g_print (_("Error: 'priority': '%s' is not a valid number <0-%d>.\n"),
+				         *priority, G_MAXUINT16);
 				g_free (*priority);
 			}
 		} while (once_more);
@@ -3320,8 +3310,8 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 			*fwd_delay = *fwd_delay ? *fwd_delay : g_strdup ("15");
 			once_more = !nmc_string_to_uint (*fwd_delay, TRUE, 2, 30, &tmp);
 			if (once_more) {
-				printf (_("Error: 'forward-delay': '%s' is not a valid number <2-30>.\n"),
-				        *fwd_delay);
+				g_print (_("Error: 'forward-delay': '%s' is not a valid number <2-30>.\n"),
+				         *fwd_delay);
 				g_free (*fwd_delay);
 			}
 		} while (once_more);
@@ -3333,8 +3323,8 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 			*hello_time = *hello_time ? *hello_time : g_strdup ("2");
 			once_more = !nmc_string_to_uint (*hello_time, TRUE, 1, 10, &tmp);
 			if (once_more) {
-				printf (_("Error: 'hello-time': '%s' is not a valid number <1-10>.\n"),
-				        *hello_time);
+				g_print (_("Error: 'hello-time': '%s' is not a valid number <1-10>.\n"),
+				         *hello_time);
 				g_free (*hello_time);
 			}
 		} while (once_more);
@@ -3345,8 +3335,8 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 			*max_age = *max_age ? *max_age : g_strdup ("20");
 			once_more = !nmc_string_to_uint (*max_age, TRUE, 6, 40, &tmp);
 			if (once_more) {
-				printf (_("Error: 'max-age': '%s' is not a valid number <6-40>.\n"),
-				        *max_age);
+				g_print (_("Error: 'max-age': '%s' is not a valid number <6-40>.\n"),
+				         *max_age);
 				g_free (*max_age);
 			}
 		} while (once_more);
@@ -3357,8 +3347,8 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 			*ageing_time = *ageing_time ? *ageing_time : g_strdup ("300");
 			once_more = !nmc_string_to_uint (*ageing_time, TRUE, 0, 1000000, &tmp);
 			if (once_more) {
-				printf (_("Error: 'ageing-time': '%s' is not a valid number <0-1000000>.\n"),
-				        *ageing_time);
+				g_print (_("Error: 'ageing-time': '%s' is not a valid number <0-1000000>.\n"),
+				         *ageing_time);
 				g_free (*ageing_time);
 			}
 		} while (once_more);
@@ -3368,7 +3358,7 @@ do_questionnaire_bridge (char **stp, char **priority, char **fwd_delay, char **h
 			*mac = nmc_get_user_input (_("MAC [none]: "));
 			once_more = !check_mac (*mac, ARPHRD_ETHER, "mac", &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*mac);
 			}
@@ -3394,7 +3384,7 @@ do_questionnaire_bridge_slave (char **priority, char **path_cost, char **hairpin
 			once_more = !bridge_prop_string_to_uint (*priority, "priority", NM_TYPE_SETTING_BRIDGE_PORT,
 			                                         NM_SETTING_BRIDGE_PORT_PRIORITY, &tmp, &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*priority);
 			}
@@ -3407,7 +3397,7 @@ do_questionnaire_bridge_slave (char **priority, char **path_cost, char **hairpin
 			once_more = !bridge_prop_string_to_uint (*path_cost, "path-cost", NM_TYPE_SETTING_BRIDGE_PORT,
 			                                         NM_SETTING_BRIDGE_PORT_PATH_COST, &tmp, &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*path_cost);
 			}
@@ -3421,7 +3411,7 @@ do_questionnaire_bridge_slave (char **priority, char **path_cost, char **hairpin
 			normalize_yes_no (hairpin);
 			once_more = !nmc_string_to_bool (*hairpin, &hairpin_bool, &error);
 			if (once_more) {
-				printf (_("Error: 'hairpin': %s.\n"), error->message);
+				g_print (_("Error: 'hairpin': %s.\n"), error->message);
 				g_clear_error (&error);
 				g_free (*hairpin);
 			}
@@ -3456,8 +3446,8 @@ do_questionnaire_olpc (char **channel, char **dhcp_anycast)
 			*channel = nmc_readline (_("OLPC Mesh channel [1]: "));
 			once_more = *channel && !nmc_string_to_uint (*channel, TRUE, 1, 13, &tmp);
 			if (once_more) {
-				printf (_("Error: 'channel': '%s' is not a valid number <1-13>.\n"),
-				        *channel);
+				g_print (_("Error: 'channel': '%s' is not a valid number <1-13>.\n"),
+				         *channel);
 				g_free (*channel);
 			}
 		} while (once_more);
@@ -3467,7 +3457,7 @@ do_questionnaire_olpc (char **channel, char **dhcp_anycast)
 			*dhcp_anycast = nmc_readline (_("DHCP anycast MAC address [none]: "));
 			once_more = !check_mac (*dhcp_anycast, ARPHRD_ETHER, "dhcp-anycast", &error);
 			if (once_more) {
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 				g_free (*dhcp_anycast);
 			}
@@ -3529,14 +3519,14 @@ ask_for_ip_addresses (NMConnection *connection, int family)
 					added = add_ip6_address_to_connection ((NMIP6Address *) ipaddr, connection);
 				gw = gw ? gw : (family == 4) ? "0.0.0.0" : "::";
 				if (added)
-					printf (_("  Address successfully added: %s %s\n"), ip, gw);
+					g_print (_("  Address successfully added: %s %s\n"), ip, gw);
 				else
-					printf (_("  Warning: address already present: %s %s\n"), ip, gw);
+					g_print (_("  Warning: address already present: %s %s\n"), ip, gw);
 				if (rest)
-					printf (_("  Warning: ignoring garbage at the end: '%s'\n"), rest);
+					g_print (_("  Warning: ignoring garbage at the end: '%s'\n"), rest);
 			} else {
 				g_prefix_error (&error, _("Error: "));
-				printf ("%s\n", error->message);
+				g_print ("%s\n", error->message);
 				g_clear_error (&error);
 			}
 		} else
@@ -3559,7 +3549,7 @@ do_questionnaire_ip (NMConnection *connection)
 		return;
 	}
 
-	printf (_("Press <Enter> to finish adding addresses.\n"));
+	g_print (_("Press <Enter> to finish adding addresses.\n"));
 
 	ask_for_ip_addresses (connection, 4);
 	ask_for_ip_addresses (connection, 6);
@@ -4305,11 +4295,11 @@ cleanup_bond:
 		/* Verify master argument */
 		checked_master = verify_master_for_slave (all_connections, master, NM_SETTING_BOND_SETTING_NAME);
 		if (!checked_master)
-			printf (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
+			g_print (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
 
 		if (type)
-			printf (_("Warning: 'type' is currently ignored. "
-			          "We only support ethernet slaves for now.\n"));
+			g_print (_("Warning: 'type' is currently ignored. "
+			           "We only support ethernet slaves for now.\n"));
 
 		/* Change properties in 'connection' setting */
 		g_object_set (s_con,
@@ -4403,7 +4393,7 @@ cleanup_team:
 		/* Verify master argument */
 		checked_master = verify_master_for_slave (all_connections, master, NM_SETTING_TEAM_SETTING_NAME);
 		if (!checked_master)
-			printf (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
+			g_print (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
 
 		/* Also ask for all optional arguments if '--ask' is specified. */
 		config = g_strdup (config_c);
@@ -4411,8 +4401,8 @@ cleanup_team:
 			do_questionnaire_team_slave (&config);
 
 		if (type)
-			printf (_("Warning: 'type' is currently ignored. "
-			          "We only support ethernet slaves for now.\n"));
+			g_print (_("Warning: 'type' is currently ignored. "
+			           "We only support ethernet slaves for now.\n"));
 
 		/* Add 'team-port' setting */
 		s_team_port = (NMSettingTeamPort *) nm_setting_team_port_new ();
@@ -4605,11 +4595,11 @@ cleanup_bridge:
 		/* Verify master argument */
 		checked_master = verify_master_for_slave (all_connections, master, NM_SETTING_BRIDGE_SETTING_NAME);
 		if (!checked_master)
-			printf (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
+			g_print (_("Warning: master='%s' doesn't refer to any existing profile.\n"), master);
 
 		if (type)
-			printf (_("Warning: 'type' is currently ignored. "
-			          "We only support ethernet slaves for now.\n"));
+			g_print (_("Warning: 'type' is currently ignored. "
+			           "We only support ethernet slaves for now.\n"));
 
 		/* Add 'bridge-port' setting */
 		/* Must be done *before* bridge_prop_string_to_uint() so that the type is known */
@@ -4695,7 +4685,7 @@ cleanup_bridge_slave:
 			vpn_type = g_strstrip (vpn_type_ask);
 
 		if (!(st = nmc_string_is_valid (vpn_type, nmc_known_vpns, NULL))) {
-			printf (_("Warning: 'vpn-type': %s not known.\n"), vpn_type);
+			g_print (_("Warning: 'vpn-type': %s not known.\n"), vpn_type);
 			st = vpn_type;
 		}
 		service_type = g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, st);
@@ -4894,9 +4884,9 @@ add_connection_cb (GObject *settings,
 		g_error_free (error);
 		nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
 	} else {
-		printf (_("Connection '%s' (%s) successfully added.\n"),
-		        nm_connection_get_id (NM_CONNECTION (connection)),
-		        nm_connection_get_uuid (NM_CONNECTION (connection)));
+		g_print (_("Connection '%s' (%s) successfully added.\n"),
+		         nm_connection_get_id (NM_CONNECTION (connection)),
+		         nm_connection_get_uuid (NM_CONNECTION (connection)));
 		g_object_unref (connection);
 	}
 
@@ -5100,7 +5090,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 
 	if (!type && nmc->ask) {
 		char *types_tmp = get_valid_options_string (nmc_valid_connection_types);
-		printf ("Valid types: [%s]\n", types_tmp);
+		g_print ("Valid types: [%s]\n", types_tmp);
 		type = type_ask = nmc_readline (PROMPT_CON_TYPE);
 		g_free (types_tmp);
 	}
@@ -5865,7 +5855,7 @@ load_history_cmds (const char *uuid)
 	kf = g_key_file_new ();
 	if (!g_key_file_load_from_file (kf, filename, G_KEY_FILE_KEEP_COMMENTS, &err)) {
 		if (err->code == G_KEY_FILE_ERROR_PARSE)
-			printf ("Warning: %s parse error: %s\n", filename, err->message);
+			g_print ("Warning: %s parse error: %s\n", filename, err->message);
 		g_key_file_free (kf);
 		g_free (filename);
 		return;
@@ -5901,7 +5891,7 @@ save_history_cmds (const char *uuid)
 		if (!g_key_file_load_from_file (kf, filename, G_KEY_FILE_KEEP_COMMENTS, &err)) {
 			if (   err->code != G_FILE_ERROR_NOENT
 			    && err->code != G_KEY_FILE_ERROR_NOT_FOUND) {
-				printf ("Warning: %s parse error: %s\n", filename, err->message);
+				g_print ("Warning: %s parse error: %s\n", filename, err->message);
 				g_key_file_free (kf);
 				g_free (filename);
 				g_clear_error (&err);
@@ -5948,8 +5938,8 @@ editor_show_connection (NMConnection *connection, NmCli *nmc)
 static void
 editor_show_setting (NMSetting *setting, NmCli *nmc)
 {
-	printf (_("['%s' setting values]\n"),
-	        nm_setting_get_name (setting));
+	g_print (_("['%s' setting values]\n"),
+	         nm_setting_get_name (setting));
 
 	nmc->print_output = NMC_PRINT_NORMAL;
 	nmc->multiline_output = TRUE;
@@ -6026,24 +6016,24 @@ parse_editor_main_cmd (const char *cmd, char **cmd_arg)
 static void
 editor_main_usage (void)
 {
-	printf ("------------------------------------------------------------------------------\n");
+	g_print ("------------------------------------------------------------------------------\n");
 	/* TRANSLATORS: do not translate command names and keywords before ::
 	 *              However, you should translate terms enclosed in <>.
 	 */
-	printf (_("---[ Main menu ]---\n"
-	          "goto     [<setting> | <prop>]        :: go to a setting or property\n"
-	          "remove   <setting>[.<prop>] | <prop> :: remove setting or reset property value\n"
-	          "set      [<setting>.<prop> <value>]  :: set property value\n"
-	          "describe [<setting>.<prop>]          :: describe property\n"
-	          "print    [all | <setting>[.<prop>]]  :: print the connection\n"
-	          "verify   [all]                       :: verify the connection\n"
-	          "save     [persistent|temporary]      :: save the connection\n"
-	          "activate [<ifname>] [/<ap>|<nsp>]    :: activate the connection\n"
-	          "back                                 :: go one level up (back)\n"
-	          "help/?   [<command>]                 :: print this help\n"
-	          "nmcli    <conf-option> <value>       :: nmcli configuration\n"
-	          "quit                                 :: exit nmcli\n"));
-	printf ("------------------------------------------------------------------------------\n");
+	g_print (_("---[ Main menu ]---\n"
+	           "goto     [<setting> | <prop>]        :: go to a setting or property\n"
+	           "remove   <setting>[.<prop>] | <prop> :: remove setting or reset property value\n"
+	           "set      [<setting>.<prop> <value>]  :: set property value\n"
+	           "describe [<setting>.<prop>]          :: describe property\n"
+	           "print    [all | <setting>[.<prop>]]  :: print the connection\n"
+	           "verify   [all]                       :: verify the connection\n"
+	           "save     [persistent|temporary]      :: save the connection\n"
+	           "activate [<ifname>] [/<ap>|<nsp>]    :: activate the connection\n"
+	           "back                                 :: go one level up (back)\n"
+	           "help/?   [<command>]                 :: print this help\n"
+	           "nmcli    <conf-option> <value>       :: nmcli configuration\n"
+	           "quit                                 :: exit nmcli\n"));
+	g_print ("------------------------------------------------------------------------------\n");
 }
 
 static void
@@ -6057,92 +6047,92 @@ editor_main_help (const char *command)
 
 		switch (cmd) {
 		case NMC_EDITOR_MAIN_CMD_GOTO:
-			printf (_("goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n\n"
-			          "This command enters into a setting or property for editing it.\n\n"
-			          "Examples: nmcli> goto connection\n"
-			          "          nmcli connection> goto secondaries\n"
-			          "          nmcli> goto ipv4.addresses\n"));
+			g_print (_("goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n\n"
+			           "This command enters into a setting or property for editing it.\n\n"
+			           "Examples: nmcli> goto connection\n"
+			           "          nmcli connection> goto secondaries\n"
+			           "          nmcli> goto ipv4.addresses\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_REMOVE:
-			printf (_("remove <setting>[.<prop>]  :: remove setting or reset property value\n\n"
-			          "This command removes an entire setting from the connection, or if a property\n"
-			          "is given, resets that property to the default value.\n\n"
-			          "Examples: nmcli> remove wifi-sec\n"
-			          "          nmcli> remove eth.mtu\n"));
+			g_print (_("remove <setting>[.<prop>]  :: remove setting or reset property value\n\n"
+			           "This command removes an entire setting from the connection, or if a property\n"
+			           "is given, resets that property to the default value.\n\n"
+			           "Examples: nmcli> remove wifi-sec\n"
+			           "          nmcli> remove eth.mtu\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_SET:
-			printf (_("set [<setting>.<prop> <value>]  :: set property value\n\n"
-			          "This command sets property value.\n\n"
-			          "Example: nmcli> set con.id My connection\n"));
+			g_print (_("set [<setting>.<prop> <value>]  :: set property value\n\n"
+			           "This command sets property value.\n\n"
+			           "Example: nmcli> set con.id My connection\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_DESCRIBE:
-			printf (_("describe [<setting>.<prop>]  :: describe property\n\n"
-			          "Shows property description. You can consult nm-settings(5) "
-			          "manual page to see all NM settings and properties.\n"));
+			g_print (_("describe [<setting>.<prop>]  :: describe property\n\n"
+			           "Shows property description. You can consult nm-settings(5) "
+			           "manual page to see all NM settings and properties.\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_PRINT:
-			printf (_("print [all]  :: print setting or connection values\n\n"
-			          "Shows current property or the whole connection.\n\n"
-			          "Example: nmcli ipv4> print all\n"));
+			g_print (_("print [all]  :: print setting or connection values\n\n"
+			           "Shows current property or the whole connection.\n\n"
+			           "Example: nmcli ipv4> print all\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_VERIFY:
-			printf (_("verify [all]  :: verify setting or connection validity\n\n"
-			          "Verifies whether the setting or connection is valid and can "
-			          "be saved later. It indicates invalid values on error.\n\n"
-			          "Examples: nmcli> verify\n"
-			          "          nmcli bond> verify\n"));
+			g_print (_("verify [all]  :: verify setting or connection validity\n\n"
+			           "Verifies whether the setting or connection is valid and can "
+			           "be saved later. It indicates invalid values on error.\n\n"
+			           "Examples: nmcli> verify\n"
+			           "          nmcli bond> verify\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_SAVE:
-			printf (_("save [persistent|temporary]  :: save the connection\n\n"
-			          "Sends the connection profile to NetworkManager that either will save it\n"
-			          "persistently, or will only keep it in memory. 'save' without an argument\n"
-			          "means 'save persistent'.\n"
-			          "Note that once you save the profile persistently those settings are saved\n"
-			          "across reboot or restart. Subsequent changes can also be temporary or\n"
-			          "persistent, but any temporary changes will not persist across reboot or\n"
-			          "restart. If you want to fully remove the persistent connection, the connection\n"
-			          "profile must be deleted.\n"));
+			g_print (_("save [persistent|temporary]  :: save the connection\n\n"
+			           "Sends the connection profile to NetworkManager that either will save it\n"
+			           "persistently, or will only keep it in memory. 'save' without an argument\n"
+			           "means 'save persistent'.\n"
+			           "Note that once you save the profile persistently those settings are saved\n"
+			           "across reboot or restart. Subsequent changes can also be temporary or\n"
+			           "persistent, but any temporary changes will not persist across reboot or\n"
+			           "restart. If you want to fully remove the persistent connection, the connection\n"
+			           "profile must be deleted.\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_ACTIVATE:
-			printf (_("activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n\n"
-			          "Activates the connection.\n\n"
-			          "Available options:\n"
-			          "<ifname>    - device the connection will be activated on\n"
-			          "/<ap>|<nsp> - AP (Wi-Fi) or NSP (WiMAX) (prepend with / when <ifname> is not specified)\n"));
+			g_print (_("activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n\n"
+			           "Activates the connection.\n\n"
+			           "Available options:\n"
+			           "<ifname>    - device the connection will be activated on\n"
+			           "/<ap>|<nsp> - AP (Wi-Fi) or NSP (WiMAX) (prepend with / when <ifname> is not specified)\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_BACK:
-			printf (_("back  :: go to upper menu level\n\n"));
+			g_print (_("back  :: go to upper menu level\n\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_HELP:
-			printf (_("help/? [<command>]  :: help for the nmcli commands\n\n"));
+			g_print (_("help/? [<command>]  :: help for the nmcli commands\n\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_NMCLI:
-			printf (_("nmcli [<conf-option> <value>]  :: nmcli configuration\n\n"
-			          "Configures nmcli. The following options are available:\n"
-			          "status-line yes | no        [default: no]\n"
-			          "save-confirmation yes | no  [default: yes]\n"
-			          "prompt-color <0-8>          [default: 0]\n"
-			          "  0 = normal\n"
-			          "  1 = \33[30mblack\33[0m\n"
-			          "  2 = \33[31mred\33[0m\n"
-			          "  3 = \33[32mgreen\33[0m\n"
-			          "  4 = \33[33myellow\33[0m\n"
-			          "  5 = \33[34mblue\33[0m\n"
-			          "  6 = \33[35mmagenta\33[0m\n"
-			          "  7 = \33[36mcyan\33[0m\n"
-			          "  8 = \33[37mwhite\33[0m\n"
-			          "\n"
-			          "Examples: nmcli> nmcli status-line yes\n"
-			          "          nmcli> nmcli save-confirmation no\n"
-			          "          nmcli> nmcli prompt-color 3\n"));
+			g_print (_("nmcli [<conf-option> <value>]  :: nmcli configuration\n\n"
+			           "Configures nmcli. The following options are available:\n"
+			           "status-line yes | no        [default: no]\n"
+			           "save-confirmation yes | no  [default: yes]\n"
+			           "prompt-color <0-8>          [default: 0]\n"
+			           "  0 = normal\n"
+			           "  1 = \33[30mblack\33[0m\n"
+			           "  2 = \33[31mred\33[0m\n"
+			           "  3 = \33[32mgreen\33[0m\n"
+			           "  4 = \33[33myellow\33[0m\n"
+			           "  5 = \33[34mblue\33[0m\n"
+			           "  6 = \33[35mmagenta\33[0m\n"
+			           "  7 = \33[36mcyan\33[0m\n"
+			           "  8 = \33[37mwhite\33[0m\n"
+			           "\n"
+			           "Examples: nmcli> nmcli status-line yes\n"
+			           "          nmcli> nmcli save-confirmation no\n"
+			           "          nmcli> nmcli prompt-color 3\n"));
 			break;
 		case NMC_EDITOR_MAIN_CMD_QUIT:
-			printf (_("quit  :: exit nmcli\n\n"
-			          "This command exits nmcli. When the connection being edited "
-			          "is not saved, the user is asked to confirm the action.\n"));
+			g_print (_("quit  :: exit nmcli\n\n"
+			           "This command exits nmcli. When the connection being edited "
+			           "is not saved, the user is asked to confirm the action.\n"));
 			break;
 		default:
-			printf (_("Unknown command: '%s'\n"), command);
+			g_print (_("Unknown command: '%s'\n"), command);
 			break;
 		}
 	}
@@ -6204,21 +6194,21 @@ parse_editor_sub_cmd (const char *cmd, char **cmd_arg)
 static void
 editor_sub_help (void)
 {
-	printf ("------------------------------------------------------------------------------\n");
+	g_print ("------------------------------------------------------------------------------\n");
 	/* TRANSLATORS: do not translate command names and keywords before ::
 	 *              However, you should translate terms enclosed in <>.
 	 */
-	printf (_("---[ Property menu ]---\n"
-	          "set      [<value>]               :: set new value\n"
-	          "add      [<value>]               :: add new option to the property\n"
-	          "change                           :: change current value\n"
-	          "remove   [<index> | <option>]    :: delete the value\n"
-	          "describe                         :: describe property\n"
-	          "print    [setting | connection]  :: print property (setting/connection) value(s)\n"
-	          "back                             :: go to upper level\n"
-	          "help/?   [<command>]             :: print this help or command description\n"
-	          "quit                             :: exit nmcli\n"));
-	printf ("------------------------------------------------------------------------------\n");
+	g_print (_("---[ Property menu ]---\n"
+	           "set      [<value>]               :: set new value\n"
+	           "add      [<value>]               :: add new option to the property\n"
+	           "change                           :: change current value\n"
+	           "remove   [<index> | <option>]    :: delete the value\n"
+	           "describe                         :: describe property\n"
+	           "print    [setting | connection]  :: print property (setting/connection) value(s)\n"
+	           "back                             :: go to upper level\n"
+	           "help/?   [<command>]             :: print this help or command description\n"
+	           "quit                             :: exit nmcli\n"));
+	g_print ("------------------------------------------------------------------------------\n");
 }
 
 static void
@@ -6233,53 +6223,53 @@ editor_sub_usage (const char *command)
 
 		switch (cmdsub) {
 		case NMC_EDITOR_SUB_CMD_SET:
-			printf (_("set [<value>]  :: set new value\n\n"
-			          "This command sets provided <value> to this property\n"));
+			g_print (_("set [<value>]  :: set new value\n\n"
+			           "This command sets provided <value> to this property\n"));
 			break;
 		case NMC_EDITOR_SUB_CMD_ADD:
-			printf (_("add [<value>]  :: append new value to the property\n\n"
-			          "This command adds provided <value> to this property, if "
-			          "the property is of a container type. For single-valued "
-			          "properties the property value is replaced (same as 'set').\n"));
+			g_print (_("add [<value>]  :: append new value to the property\n\n"
+			           "This command adds provided <value> to this property, if "
+			           "the property is of a container type. For single-valued "
+			           "properties the property value is replaced (same as 'set').\n"));
 			break;
 		case NMC_EDITOR_SUB_CMD_CHANGE:
-			printf (_("change  :: change current value\n\n"
-			          "Displays current value and allows editing it.\n"));
+			g_print (_("change  :: change current value\n\n"
+			           "Displays current value and allows editing it.\n"));
 			break;
 		case NMC_EDITOR_SUB_CMD_REMOVE:
-			printf (_("remove [<value>|<index>|<option name>]  :: delete the value\n\n"
-			          "Removes the property value. For single-valued properties, this sets the\n"
-			          "property back to its default value. For container-type properties, this removes\n"
-			          "all the values of that property, or you can specify an argument to remove just\n"
-			          "a single item or option. The argument is either a value or index of the item to\n"
-			          "remove, or an option name (for properties with named options).\n\n"
-			          "Examples: nmcli ipv4.dns> remove 8.8.8.8\n"
-			          "          nmcli ipv4.dns> remove 2\n"
-			          "          nmcli bond.options> remove downdelay\n\n"));
+			g_print (_("remove [<value>|<index>|<option name>]  :: delete the value\n\n"
+			           "Removes the property value. For single-valued properties, this sets the\n"
+			           "property back to its default value. For container-type properties, this removes\n"
+			           "all the values of that property, or you can specify an argument to remove just\n"
+			           "a single item or option. The argument is either a value or index of the item to\n"
+			           "remove, or an option name (for properties with named options).\n\n"
+			           "Examples: nmcli ipv4.dns> remove 8.8.8.8\n"
+			           "          nmcli ipv4.dns> remove 2\n"
+			           "          nmcli bond.options> remove downdelay\n\n"));
 			break;
 		case NMC_EDITOR_SUB_CMD_DESCRIBE:
-			printf (_("describe  :: describe property\n\n"
-			          "Shows property description. You can consult nm-settings(5) "
-			          "manual page to see all NM settings and properties.\n"));
+			g_print (_("describe  :: describe property\n\n"
+			           "Shows property description. You can consult nm-settings(5) "
+			           "manual page to see all NM settings and properties.\n"));
 			break;
 		case NMC_EDITOR_SUB_CMD_PRINT:
-			printf (_("print [property|setting|connection]  :: print property (setting, connection) value(s)\n\n"
-			          "Shows property value. Providing an argument you can also display "
-			          "values for the whole setting or connection.\n"));
+			g_print (_("print [property|setting|connection]  :: print property (setting, connection) value(s)\n\n"
+			           "Shows property value. Providing an argument you can also display "
+			           "values for the whole setting or connection.\n"));
 			break;
 		case NMC_EDITOR_SUB_CMD_BACK:
-			printf (_("back  :: go to upper menu level\n\n"));
+			g_print (_("back  :: go to upper menu level\n\n"));
 			break;
 		case NMC_EDITOR_SUB_CMD_HELP:
-			printf (_("help/? [<command>]  :: help for nmcli commands\n\n"));
+			g_print (_("help/? [<command>]  :: help for nmcli commands\n\n"));
 			break;
 		case NMC_EDITOR_SUB_CMD_QUIT:
-			printf (_("quit  :: exit nmcli\n\n"
-			          "This command exits nmcli. When the connection being edited "
-			          "is not saved, the user is asked to confirm the action.\n"));
+			g_print (_("quit  :: exit nmcli\n\n"
+			           "This command exits nmcli. When the connection being edited "
+			           "is not saved, the user is asked to confirm the action.\n"));
 			break;
 		default:
-			printf (_("Unknown command: '%s'\n"), command);
+			g_print (_("Unknown command: '%s'\n"), command);
 			break;
 		}
 	}
@@ -6364,13 +6354,13 @@ progress_activation_editor_cb (gpointer user_data)
 	if (   ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
 	    || dev_state == NM_DEVICE_STATE_ACTIVATED) {
 		nmc_terminal_erase_line ();
-		printf (_("Connection successfully activated (D-Bus active path: %s)\n"),
-		        nm_object_get_path (NM_OBJECT (ac)));
+		g_print (_("Connection successfully activated (D-Bus active path: %s)\n"),
+		         nm_object_get_path (NM_OBJECT (ac)));
 		goto finish; /* we are done */
 	} else if (   ac_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
 	           || dev_state == NM_DEVICE_STATE_FAILED) {
 		nmc_terminal_erase_line ();
-		printf (_("Error: Connection activation failed.\n"));
+		g_print (_("Error: Connection activation failed.\n"));
 		goto finish; /* we are done */
 	}
 
@@ -6423,7 +6413,7 @@ print_property_description (NMSetting *setting, const char *prop_name)
 	char *desc;
 
 	desc = nmc_setting_get_property_desc (setting, prop_name);
-	printf ("\n=== [%s] ===\n%s\n", prop_name, desc);
+	g_print ("\n=== [%s] ===\n%s\n", prop_name, desc);
 	g_free (desc);
 }
 
@@ -6435,7 +6425,7 @@ print_setting_description (NMSetting *setting)
 	int i;
 
 	all_props = nmc_setting_get_valid_properties (setting);
-	printf (("<<< %s >>>\n"), nm_setting_get_name (setting));
+	g_print (("<<< %s >>>\n"), nm_setting_get_name (setting));
 	for (i = 0; all_props && all_props[i]; i++)
 		print_property_description (setting, all_props[i]);
 	g_strfreev (all_props);
@@ -6453,8 +6443,8 @@ connection_remove_setting (NMConnection *connection, NMSetting *setting)
 		nm_connection_remove_setting (connection, G_OBJECT_TYPE (setting));
 		return TRUE;
 	}
-	printf (_("Error: setting '%s' is mandatory and cannot be removed.\n"),
-	        nm_setting_get_name (setting));
+	g_print (_("Error: setting '%s' is mandatory and cannot be removed.\n"),
+	         nm_setting_get_name (setting));
 	return FALSE;
 }
 
@@ -6471,10 +6461,10 @@ editor_show_status_line (NMConnection *connection, gboolean dirty, gboolean temp
 	con_uuid = nm_connection_get_uuid (connection);
 
 	/* TRANSLATORS: status line in nmcli connection editor */
-	printf (_("[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"),
-	        con_type, con_id, con_uuid,
-	        dirty ? _("yes") : _("no"),
-	        temp ? _("yes") : _("no"));
+	g_print (_("[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"),
+	         con_type, con_id, con_uuid,
+	         dirty ? _("yes") : _("no"),
+	         temp ? _("yes") : _("no"));
 }
 
 static gboolean
@@ -6551,8 +6541,8 @@ property_edit_submenu (NmCli *nmc,
 		/* Get the remote connection again, it may have disapeared */
 		removed = refresh_remote_connection (rem_con_weak, rem_con);
 		if (removed)
-			printf (_("The connection profile has been removed from another client. "
-			          "You may type 'save' in the main menu to restore it.\n"));
+			g_print (_("The connection profile has been removed from another client. "
+			           "You may type 'save' in the main menu to restore it.\n"));
 
 		/* Connection is dirty? (not saved or differs from the saved) */
 		dirty = is_connection_dirty (connection, *rem_con);
@@ -6588,7 +6578,7 @@ property_edit_submenu (NmCli *nmc,
 			set_result = nmc_setting_set_property (curr_setting, prop_name, prop_val_user, &tmp_err);
 			g_free (prop_val_user);
 			if (!set_result) {
-				printf (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
+				g_print (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
 				g_clear_error (&tmp_err);
 				if (cmdsub == NMC_EDITOR_SUB_CMD_SET)
 					nmc_property_set_gvalue (curr_setting, prop_name, &prop_g_value);
@@ -6606,7 +6596,7 @@ property_edit_submenu (NmCli *nmc,
 			nmc_property_set_default_value (curr_setting, prop_name);
 
 			if (!nmc_setting_set_property (curr_setting, prop_name, prop_val_user, &tmp_err)) {
-				printf (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
+				g_print (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
 				g_clear_error (&tmp_err);
 				nmc_property_set_gvalue (curr_setting, prop_name, &prop_g_value);
 			}
@@ -6627,14 +6617,14 @@ property_edit_submenu (NmCli *nmc,
 				                                         option ? g_strstrip (option) : NULL,
 				                                         (guint32) val_int,
 				                                         &tmp_err)) {
-					printf (_("Error: %s\n"), tmp_err->message);
+					g_print (_("Error: %s\n"), tmp_err->message);
 					g_clear_error (&tmp_err);
 				}
 				g_free (option);
 			} else {
 				if (!nmc_setting_reset_property (curr_setting, prop_name, &tmp_err)) {
-					printf (_("Error: failed to remove value of '%s': %s\n"), prop_name,
-					        tmp_err->message);
+					g_print (_("Error: failed to remove value of '%s': %s\n"), prop_name,
+					         tmp_err->message);
 					g_clear_error (&tmp_err);
 				}
 			}
@@ -6654,10 +6644,10 @@ property_edit_submenu (NmCli *nmc,
 				         || matches (cmd_property_arg, "all") == 0)
 					editor_show_connection (connection, nmc);
 				else
-					printf (_("Unknown command argument: '%s'\n"), cmd_property_arg);
+					g_print (_("Unknown command argument: '%s'\n"), cmd_property_arg);
 			} else {
 				char *prop_val =  nmc_setting_get_property (curr_setting, prop_name, NULL);
-				printf ("%s: %s\n", prop_name, prop_val);
+				g_print ("%s: %s\n", prop_name, prop_val);
 				g_free (prop_val);
 			}
 			break;
@@ -6684,7 +6674,7 @@ property_edit_submenu (NmCli *nmc,
 
 		case NMC_EDITOR_SUB_CMD_UNKNOWN:
 		default:
-			printf (_("Unknown command: '%s'\n"), cmd_property_user);
+			g_print (_("Unknown command: '%s'\n"), cmd_property_user);
 			break;
 		}
 		g_free (cmd_property_user);
@@ -6780,7 +6770,7 @@ ask_check_setting (const char *arg,
 	GError *err = NULL;
 
 	if (!arg) {
-		printf (_("Available settings: %s\n"), valid_settings_str);
+		g_print (_("Available settings: %s\n"), valid_settings_str);
 		setting_name_user = nmc_readline (EDITOR_PROMPT_SETTING);
 	} else
 		setting_name_user = g_strdup (arg);
@@ -6789,7 +6779,7 @@ ask_check_setting (const char *arg,
 		g_strstrip (setting_name_user);
 
 	if (!(setting_name = check_valid_name (setting_name_user, valid_settings_arr, &err))) {
-		printf (_("Error: invalid setting name; %s\n"), err->message);
+		g_print (_("Error: invalid setting name; %s\n"), err->message);
 		g_clear_error (&err);
 	}
 	g_free (setting_name_user);
@@ -6806,7 +6796,7 @@ ask_check_property (const char *arg,
 	GError *tmp_err = NULL;
 
 	if (!arg) {
-		printf (_("Available properties: %s\n"), valid_props_str);
+		g_print (_("Available properties: %s\n"), valid_props_str);
 		prop_name_user = nmc_readline (EDITOR_PROMPT_PROPERTY);
 		if (prop_name_user)
 			g_strstrip (prop_name_user);
@@ -6814,7 +6804,7 @@ ask_check_property (const char *arg,
 		prop_name_user = g_strdup (arg);
 
 	if (!(prop_name = nmc_string_is_valid (prop_name_user, valid_props, &tmp_err))) {
-		printf (_("Error: property %s\n"), tmp_err->message);
+		g_print (_("Error: property %s\n"), tmp_err->message);
 		g_clear_error (&tmp_err);
 	}
 	g_free (prop_name_user);
@@ -6930,7 +6920,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 	valid_settings_arr = get_valid_settings_array (connection_type);
 	valid_settings_str = get_valid_options_string (valid_settings_arr);
-	printf (_("You may edit the following settings: %s\n"), valid_settings_str);
+	g_print (_("You may edit the following settings: %s\n"), valid_settings_str);
 
 	menu_ctx.level = 0;
 	menu_ctx.main_prompt = nmc_colorize (nmc->editor_prompt_color, BASE_PROMPT);
@@ -6957,8 +6947,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 		/* Get the remote connection again, it may have disapeared */
 		removed = refresh_remote_connection (&weak, &rem_con);
 		if (removed)
-			printf (_("The connection profile has been removed from another client. "
-			          "You may type 'save' to restore it.\n"));
+			g_print (_("The connection profile has been removed from another client. "
+			           "You may type 'save' to restore it.\n"));
 
 		if (!cmd_user || *cmd_user == '\0')
 			continue;
@@ -6986,18 +6976,18 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 					avals = nmc_setting_get_property_allowed_values (menu_ctx.curr_setting, prop_name);
 					if (avals)
-						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
+						g_print (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
 
 					prop_val_user = nmc_readline (_("Enter '%s' value: "), prop_name);
 
 					/* Set property value */
 					if (!nmc_setting_set_property (menu_ctx.curr_setting, prop_name, prop_val_user, &tmp_err)) {
-						printf (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
+						g_print (_("Error: failed to set '%s' property: %s\n"), prop_name, tmp_err->message);
 						g_clear_error (&tmp_err);
 					}
 				} else {
-					printf (_("Error: no setting selected; valid are [%s]\n"), valid_settings_str);
-					printf (_("use 'goto <setting>' first, or 'set <setting>.<property>'\n"));
+					g_print (_("Error: no setting selected; valid are [%s]\n"), valid_settings_str);
+					g_print (_("use 'goto <setting>' first, or 'set <setting>.<property>'\n"));
 				}
 			} else {
 				NMSetting *ss = NULL;
@@ -7011,8 +7001,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					if (!ss) {
 						ss = create_setting_by_name (cmd_arg_s, valid_settings_arr);
 						if (!ss) {
-							printf (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
-							        cmd_arg_s, valid_settings_str);
+							g_print (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
+							         cmd_arg_s, valid_settings_str);
 							break;
 						}
 						created_ss = TRUE;
@@ -7021,14 +7011,14 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					if (menu_ctx.curr_setting)
 						ss = menu_ctx.curr_setting;
 					else {
-						printf (_("Error: missing setting for '%s' property\n"), cmd_arg_p);
+						g_print (_("Error: missing setting for '%s' property\n"), cmd_arg_p);
 						break;
 					}
 				}
 
 				prop_name = is_property_valid (ss, cmd_arg_p, &tmp_err);
 				if (!prop_name) {
-					printf (_("Error: invalid property: %s\n"), tmp_err->message);
+					g_print (_("Error: invalid property: %s\n"), tmp_err->message);
 					g_clear_error (&tmp_err);
 					if (created_ss)
 						g_object_unref (ss);
@@ -7041,15 +7031,15 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				if (!cmd_arg_v) {
 					const char *avals = nmc_setting_get_property_allowed_values (ss, prop_name);
 					if (avals)
-						printf (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
+						g_print (_("Allowed values for '%s' property: %s\n"), prop_name, avals);
 
 					cmd_arg_v = nmc_readline (_("Enter '%s' value: "), prop_name);
 				}
 
 				/* Set property value */
 				if (!nmc_setting_set_property (ss, prop_name, cmd_arg_v, &tmp_err)) {
-					printf (_("Error: failed to set '%s' property: %s\n"),
-					        prop_name, tmp_err->message);
+					g_print (_("Error: failed to set '%s' property: %s\n"),
+					         prop_name, tmp_err->message);
 					g_clear_error (&tmp_err);
 				}
 
@@ -7075,7 +7065,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				if (!setting) {
 					setting = nmc_setting_new_for_name (setting_name);
 					if (!setting) {
-						printf (_("Error: unknown setting '%s'\n"), setting_name);
+						g_print (_("Error: unknown setting '%s'\n"), setting_name);
 						break;
 					}
 					nmc_setting_custom_init (setting);
@@ -7088,7 +7078,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				menu_switch_to_level1 (&menu_ctx, setting, setting_name, nmc->editor_prompt_color);
 
 				if (!cmd_arg_s) {
-					printf (_("You may edit the following properties: %s\n"), menu_ctx.valid_props_str);
+					g_print (_("You may edit the following properties: %s\n"), menu_ctx.valid_props_str);
 					break;
 				}
 			}
@@ -7127,12 +7117,12 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 					/* Delete property value */
 					if (!nmc_setting_reset_property (menu_ctx.curr_setting, prop_name, &tmp_err)) {
-						printf (_("Error: failed to remove value of '%s': %s\n"), prop_name,
-						        tmp_err->message);
+						g_print (_("Error: failed to remove value of '%s': %s\n"), prop_name,
+						         tmp_err->message);
 						g_clear_error (&tmp_err);
 					}
 				} else
-					printf (_("Error: no argument given; valid are [%s]\n"), valid_settings_str);
+					g_print (_("Error: no argument given; valid are [%s]\n"), valid_settings_str);
 			} else {
 				NMSetting *ss = NULL;
 				gboolean descr_all;
@@ -7145,10 +7135,10 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					ss = is_setting_valid (connection, valid_settings_arr, user_s);
 					if (!ss) {
 						if (check_valid_name (user_s, valid_settings_arr, NULL))
-							printf (_("Setting '%s' is not present in the connection.\n"), user_s);
+							g_print (_("Setting '%s' is not present in the connection.\n"), user_s);
 						else
-							printf (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
-							        user_s, valid_settings_str);
+							g_print (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
+							         user_s, valid_settings_str);
 						break;
 					}
 				} else
@@ -7168,8 +7158,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					if (prop_name) {
 						/* Delete property value */
 						if (!nmc_setting_reset_property (ss, prop_name, &tmp_err)) {
-							printf (_("Error: failed to remove value of '%s': %s\n"), prop_name,
-							        tmp_err->message);
+							g_print (_("Error: failed to remove value of '%s': %s\n"), prop_name,
+							         tmp_err->message);
 							g_clear_error (&tmp_err);
 						}
 					} else {
@@ -7186,8 +7176,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 								nmc_tab_completion.setting = NULL;  /* for TAB completion */
 							}
 						} else
-							printf (_("Error: %s properties, nor it is a setting name.\n"),
-							        tmp_err->message);
+							g_print (_("Error: %s properties, nor it is a setting name.\n"),
+							         tmp_err->message);
 						g_clear_error (&tmp_err);
 					}
 					g_free (prop_name);
@@ -7210,8 +7200,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					/* Show property description */
 					print_property_description (menu_ctx.curr_setting, prop_name);
 				} else {
-					printf (_("Error: no setting selected; valid are [%s]\n"), valid_settings_str);
-					printf (_("use 'goto <setting>' first, or 'describe <setting>.<property>'\n"));
+					g_print (_("Error: no setting selected; valid are [%s]\n"), valid_settings_str);
+					g_print (_("use 'goto <setting>' first, or 'describe <setting>.<property>'\n"));
 				}
 			} else {
 				NMSetting *ss = NULL;
@@ -7227,8 +7217,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					if (!ss) {
 						ss = create_setting_by_name (user_s, valid_settings_arr);
 						if (!ss) {
-							printf (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
-							        user_s, valid_settings_str);
+							g_print (_("Error: invalid setting argument '%s'; valid are [%s]\n"),
+							         user_s, valid_settings_str);
 							break;
 						}
 						unref_ss = TRUE;
@@ -7252,9 +7242,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						if (s_tmp)
 							print_setting_description (s_tmp);
 						else
-							printf (_("Error: invalid property: %s, "
-							          "neither a valid setting name.\n"),
-							        tmp_err->message);
+							g_print (_("Error: invalid property: %s, "
+							           "neither a valid setting name.\n"),
+							         tmp_err->message);
 						g_clear_error (&tmp_err);
 					}
 					g_free (prop_name);
@@ -7281,12 +7271,12 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						const char *s_name;
 						s_name = check_valid_name (user_s, valid_settings_arr, NULL);
 						if (!s_name) {
-							printf (_("Error: unknown setting: '%s'\n"), user_s);
+							g_print (_("Error: unknown setting: '%s'\n"), user_s);
 							break;
 						}
 						ss = nm_connection_get_setting_by_name (connection, s_name);
 						if (!ss) {
-							printf (_("Error: '%s' setting not present in the connection\n"), s_name);
+							g_print (_("Error: '%s' setting not present in the connection\n"), s_name);
 							break;
 						}
 					} else
@@ -7301,7 +7291,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						if (prop_name) {
 							/* Print one property */
 							char *prop_val = nmc_setting_get_property (ss, prop_name, NULL);
-							printf ("%s.%s: %s\n", nm_setting_get_name (ss),prop_name , prop_val);
+							g_print ("%s.%s: %s\n", nm_setting_get_name (ss),prop_name , prop_val);
 							g_free (prop_val);
 						} else {
 							/* If the string is not a property, try it as a setting */
@@ -7311,9 +7301,9 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 								/* Print the whole setting */
 								editor_show_setting (s_tmp, nmc);
 							} else
-								printf (_("Error: invalid property: %s%s\n"),
-								        err->message,
-								        cmd_arg_s ? "" : _(", neither a valid setting name"));
+								g_print (_("Error: invalid property: %s%s\n"),
+								         err->message,
+								         cmd_arg_s ? "" : _(", neither a valid setting name"));
 							g_clear_error (&err);
 						}
 						g_free (prop_name);
@@ -7333,15 +7323,15 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			    && (!cmd_arg || strcmp (cmd_arg, "all") != 0)) {
 				GError *tmp_err = NULL;
 				(void) nm_setting_verify (menu_ctx.curr_setting, NULL, &tmp_err);
-				printf (_("Verify setting '%s': %s\n"),
-				        nm_setting_get_name (menu_ctx.curr_setting),
-				        tmp_err ? tmp_err->message : "OK");
+				g_print (_("Verify setting '%s': %s\n"),
+				         nm_setting_get_name (menu_ctx.curr_setting),
+				         tmp_err ? tmp_err->message : "OK");
 				g_clear_error (&tmp_err);
 			} else {
 				GError *tmp_err = NULL;
 				(void) nm_connection_verify (connection, &tmp_err);
-				printf (_("Verify connection: %s\n"),
-				        tmp_err ? tmp_err->message : "OK");
+				g_print (_("Verify connection: %s\n"),
+				         tmp_err ? tmp_err->message : "OK");
 				g_clear_error (&tmp_err);
 			}
 			break;
@@ -7358,7 +7348,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					else if (matches (cmd_arg, "persistent") == 0)
 						persistent = TRUE;
 					else {
-						printf (_("Error: invalid argument '%s'\n"), cmd_arg);
+						g_print (_("Error: invalid argument '%s'\n"), cmd_arg);
 						break;
 					}
 				}
@@ -7391,18 +7381,18 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_cond_wait (&nmc_editor_cond, &nmc_editor_mutex);
 
 				if (nmc_editor_error) {
-					printf (_("Error: Failed to save '%s' (%s) connection: (%d) %s\n"),
-					        nm_connection_get_id (connection),
-					        nm_connection_get_uuid (connection),
-					        nmc_editor_error->code, nmc_editor_error->message);
+					g_print (_("Error: Failed to save '%s' (%s) connection: (%d) %s\n"),
+					         nm_connection_get_id (connection),
+					         nm_connection_get_uuid (connection),
+					         nmc_editor_error->code, nmc_editor_error->message);
 
 					g_error_free (nmc_editor_error);
 				} else {
-					printf (!rem_con ?
-					        _("Connection '%s' (%s) successfully saved.\n") :
-					        _("Connection '%s' (%s) successfully updated.\n"),
-					        nm_connection_get_id (connection),
-					        nm_connection_get_uuid (connection));
+					g_print (!rem_con ?
+					         _("Connection '%s' (%s) successfully saved.\n") :
+					         _("Connection '%s' (%s) successfully updated.\n"),
+					         nm_connection_get_id (connection),
+					         nm_connection_get_uuid (connection));
 
 					con_tmp = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
 					                                                     nm_connection_get_uuid (connection));
@@ -7433,8 +7423,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				nmc_editor_error = NULL;
 				g_mutex_unlock (&nmc_editor_mutex);
 			} else
-				printf (_("Error: connection verification failed: %s\n"),
-				        err1 ? err1->message : _("(unknown error)"));
+				g_print (_("Error: connection verification failed: %s\n"),
+				         err1 ? err1->message : _("(unknown error)"));
 
 			g_clear_error (&err1);
 			break;
@@ -7455,11 +7445,11 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				ap_nsp = ap_nsp && ap_nsp[0] == '/' ? ap_nsp + 1 : ap_nsp;
 
 			if (is_connection_dirty (connection, rem_con)) {
-				printf (_("Error: connection is not saved. Type 'save' first.\n"));
+				g_print (_("Error: connection is not saved. Type 'save' first.\n"));
 				break;
 			}
 			if (!nm_connection_verify (NM_CONNECTION (rem_con), &tmp_err)) {
-				printf (_("Error: connection is not valid: %s\n"), tmp_err->message);
+				g_print (_("Error: connection is not valid: %s\n"), tmp_err->message);
 				g_clear_error (&tmp_err);
 				break;
 			}
@@ -7469,7 +7459,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 			nmc->print_output = NMC_PRINT_PRETTY;
 			if (!nmc_activate_connection (nmc, NM_CONNECTION (rem_con), ifname, ap_nsp, ap_nsp,
 			                              activate_connection_editor_cb, &tmp_err)) {
-				printf (_("Error: Cannot activate connection: %s.\n"), tmp_err->message);
+				g_print (_("Error: Cannot activate connection: %s.\n"), tmp_err->message);
 				g_clear_error (&tmp_err);
 				break;
 			}
@@ -7479,13 +7469,13 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				g_cond_wait (&nmc_editor_cond, &nmc_editor_mutex);
 
 			if (nmc_editor_error) {
-				printf (_("Error: Failed to activate '%s' (%s) connection: (%d) %s\n"),
-				        nm_connection_get_id (connection),
-				        nm_connection_get_uuid (connection),
-				        nmc_editor_error->code, nmc_editor_error->message);
+				g_print (_("Error: Failed to activate '%s' (%s) connection: (%d) %s\n"),
+				         nm_connection_get_id (connection),
+				         nm_connection_get_uuid (connection),
+				         nmc_editor_error->code, nmc_editor_error->message);
 				g_error_free (nmc_editor_error);
 			} else {
-				printf (_("Monitoring connection activation (press any key to continue)\n"));
+				g_print (_("Monitoring connection activation (press any key to continue)\n"));
 				nmc_get_user_input ("");
 			}
 
@@ -7523,7 +7513,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				GError *tmp_err = NULL;
 				gboolean bb;
 				if (!nmc_string_to_bool (cmd_arg_v ? g_strstrip (cmd_arg_v) : "", &bb, &tmp_err)) {
-					printf (_("Error: status-line: %s\n"), tmp_err->message);
+					g_print (_("Error: status-line: %s\n"), tmp_err->message);
 					g_clear_error (&tmp_err);
 				} else
 					nmc->editor_status_line = bb;
@@ -7531,7 +7521,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				GError *tmp_err = NULL;
 				gboolean bb;
 				if (!nmc_string_to_bool (cmd_arg_v ? g_strstrip (cmd_arg_v) : "", &bb, &tmp_err)) {
-					printf (_("Error: save-confirmation: %s\n"), tmp_err->message);
+					g_print (_("Error: save-confirmation: %s\n"), tmp_err->message);
 					g_clear_error (&tmp_err);
 				} else
 					nmc->editor_save_confirmation = bb;
@@ -7539,8 +7529,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				unsigned long color;
 				if (!nmc_string_to_uint (cmd_arg_v ? g_strstrip (cmd_arg_v) : "X",
 				                         TRUE, 0, 8, &color))
-					printf (_("Error: bad color number: '%s'; use <0-8>\n"),
-					        cmd_arg_v ? cmd_arg_v : "");
+					g_print (_("Error: bad color number: '%s'; use <0-8>\n"),
+					         cmd_arg_v ? cmd_arg_v : "");
 				else {
 					nmc->editor_prompt_color = color;
 					g_free (menu_ctx.main_prompt);
@@ -7551,16 +7541,16 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 						                                     nm_setting_get_name (menu_ctx.curr_setting));
 				}
 			} else if (!cmd_arg_p) {
-				printf (_("Current nmcli configuration:\n"));
-				printf ("status-line: %s\n"
-				        "save-confirmation: %s\n"
-				        "prompt-color: %d\n",
-				        nmc->editor_status_line ? "yes" : "no",
-				        nmc->editor_save_confirmation ? "yes" : "no",
-				        nmc->editor_prompt_color);
+				g_print (_("Current nmcli configuration:\n"));
+				g_print ("status-line: %s\n"
+				         "save-confirmation: %s\n"
+				         "prompt-color: %d\n",
+				         nmc->editor_status_line ? "yes" : "no",
+				         nmc->editor_save_confirmation ? "yes" : "no",
+				         nmc->editor_prompt_color);
 			} else
-				printf (_("Invalid configuration option '%s'; allowed [%s]\n"),
-				        cmd_arg_v ? cmd_arg_v : "", "status-line, save-confirmation, prompt-color");
+				g_print (_("Invalid configuration option '%s'; allowed [%s]\n"),
+				         cmd_arg_v ? cmd_arg_v : "", "status-line, save-confirmation, prompt-color");
 
 			break;
 
@@ -7574,7 +7564,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 
 		case NMC_EDITOR_MAIN_CMD_UNKNOWN:
 		default:
-			printf (_("Unknown command: '%s'\n"), cmd_user);
+			g_print (_("Unknown command: '%s'\n"), cmd_user);
 			break;
 		}
 
@@ -7828,11 +7818,11 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		connection_type = nm_setting_connection_get_connection_type (s_con);
 
 		if (type)
-			printf (_("Warning: editing existing connection '%s'; 'type' argument is ignored\n"),
-			        nm_connection_get_id (connection));
+			g_print (_("Warning: editing existing connection '%s'; 'type' argument is ignored\n"),
+			         nm_connection_get_id (connection));
 		if (con_name)
-			printf (_("Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"),
-			        nm_connection_get_id (connection));
+			g_print (_("Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"),
+			         nm_connection_get_id (connection));
 
 		/* Load previously saved history commands for the connection */
 		load_history_cmds (nm_connection_get_uuid (connection));
@@ -7845,9 +7835,9 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 
 		while (!connection_type) {
 			if (!type)
-				printf (_("Valid connection types: %s\n"), tmp_str);
+				g_print (_("Valid connection types: %s\n"), tmp_str);
 			else
-				printf (_("Error: invalid connection type; %s\n"), err1->message);
+				g_print (_("Error: invalid connection type; %s\n"), err1->message);
 			g_clear_error (&err1);
 
 			type_ask = nmc_readline (EDITOR_PROMPT_CON_TYPE);
@@ -7885,18 +7875,18 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 	/* nmcli runs the editor */
 	nmc->in_editor = TRUE;
 
-	printf ("\n");
-	printf (_("===| nmcli interactive connection editor |==="));
-	printf ("\n\n");
+	g_print ("\n");
+	g_print (_("===| nmcli interactive connection editor |==="));
+	g_print ("\n\n");
 	if (con)
-		printf (_("Editing existing '%s' connection: '%s'"), connection_type, con);
+		g_print (_("Editing existing '%s' connection: '%s'"), connection_type, con);
 	else
-		printf (_("Adding a new '%s' connection"), connection_type);
-	printf ("\n\n");
-	printf (_("Type 'help' or '?' for available commands."));
-	printf ("\n");
-	printf (_("Type 'describe [<setting>.<prop>]' for detailed property description."));
-	printf ("\n\n");
+		g_print (_("Adding a new '%s' connection"), connection_type);
+	g_print ("\n\n");
+	g_print (_("Type 'help' or '?' for available commands."));
+	g_print ("\n");
+	g_print (_("Type 'describe [<setting>.<prop>]' for detailed property description."));
+	g_print ("\n\n");
 
 	/* Set global variables for use in TAB completion */
 	nmc_tab_completion.nmc = nmc;
@@ -7940,9 +7930,9 @@ modify_connection_cb (GObject *connection,
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 	} else {
 		if (nmc->print_output == NMC_PRINT_PRETTY)
-			printf (_("Connection '%s' (%s) successfully modified.\n"),
-		                nm_connection_get_id (NM_CONNECTION (connection)),
-		                nm_connection_get_uuid (NM_CONNECTION (connection)));
+			g_print (_("Connection '%s' (%s) successfully modified.\n"),
+			         nm_connection_get_id (NM_CONNECTION (connection)),
+			         nm_connection_get_uuid (NM_CONNECTION (connection)));
 	}
 	quit ();
 }
@@ -8207,7 +8197,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 		connection = nmc_find_connection (nmc->system_connections, selector, *arg_ptr, &pos);
 		if (!connection) {
 			if (nmc->print_output != NMC_PRINT_TERSE)
-				printf (_("Error: unknown connection: %s\n"), *arg_ptr);
+				g_print (_("Error: unknown connection: %s\n"), *arg_ptr);
 
 			if (!invalid_cons)
 				invalid_cons = g_string_new (NULL);
@@ -8315,7 +8305,7 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 
 	if (failures) {
 		for (i = 0; failures[i]; i++)
-			fprintf (stderr, _("Could not load file '%s'\n"), failures[i]);
+			g_printerr (_("Could not load file '%s'\n"), failures[i]);
 		g_strfreev (failures);
 	}
 

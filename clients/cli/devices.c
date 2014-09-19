@@ -253,142 +253,134 @@ static guint progress_id = 0;  /* ID of event source for displaying progress */
 static void
 usage (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli device { COMMAND | help }\n\n"
+	g_printerr (_("Usage: nmcli device { COMMAND | help }\n\n"
 #if WITH_WIMAX
-	           "COMMAND := { status | show | connect | disconnect | delete | wifi | wimax }\n\n"
+	              "COMMAND := { status | show | connect | disconnect | delete | wifi | wimax }\n\n"
 #else
-	           "COMMAND := { status | show | connect | disconnect | delete | wifi }\n\n"
+	              "COMMAND := { status | show | connect | disconnect | delete | wifi }\n\n"
 #endif
-	           "  status\n\n"
-	           "  show [<ifname>]\n\n"
-	           "  connect <ifname>\n\n"
-	           "  disconnect <ifname>\n\n"
-	           "  delete <ifname>\n\n"
-	           "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
-	           "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
-	           "                         [bssid <BSSID>] [name <name>] [private yes|no]\n\n"
-	           "  wifi rescan [[ifname] <ifname>]\n\n"
+	              "  status\n\n"
+	              "  show [<ifname>]\n\n"
+	              "  connect <ifname>\n\n"
+	              "  disconnect <ifname>\n\n"
+	              "  delete <ifname>\n\n"
+	              "  wifi [list [ifname <ifname>] [bssid <BSSID>]]\n\n"
+	              "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
+	              "                         [bssid <BSSID>] [name <name>] [private yes|no]\n\n"
+	              "  wifi rescan [[ifname] <ifname>]\n\n"
 #if WITH_WIMAX
-	           "  wimax [list [ifname <ifname>] [nsp <name>]]\n\n"
+	              "  wimax [list [ifname <ifname>] [nsp <name>]]\n\n"
 #endif
-	         ));
+	              ));
 }
 
 static void
 usage_device_status (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli device status { help }\n"
-	           "\n"
-	           "Show status for all devices.\n"
-	           "By default, the following columns are shown:\n"
-	           " DEVICE     - interface name\n"
-	           " TYPE       - device type\n"
-	           " STATE      - device state\n"
-	           " CONNECTION - connection activated on device (if any)\n"
-	           "Displayed columns can be changed using '--fields' global option. 'status' is\n"
-	           "the default command, which means 'nmcli device' calls 'nmcli device status'.\n\n"));
+	g_printerr (_("Usage: nmcli device status { help }\n"
+	              "\n"
+	              "Show status for all devices.\n"
+	              "By default, the following columns are shown:\n"
+	              " DEVICE     - interface name\n"
+	              " TYPE       - device type\n"
+	              " STATE      - device state\n"
+	              " CONNECTION - connection activated on device (if any)\n"
+	              "Displayed columns can be changed using '--fields' global option. 'status' is\n"
+	              "the default command, which means 'nmcli device' calls 'nmcli device status'.\n\n"));
 }
 
 static void
 usage_device_show (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli device show { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [<ifname>]\n"
-	           "\n"
-	           "Show details of device(s).\n"
-	           "The command lists details for all devices, or for a given device.\n\n"));
+	g_printerr (_("Usage: nmcli device show { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [<ifname>]\n"
+	              "\n"
+	              "Show details of device(s).\n"
+	              "The command lists details for all devices, or for a given device.\n\n"));
 }
 
 static void
 usage_device_connect (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli device connect { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := <ifname>\n"
-	           "\n"
-	           "Connect the device.\n"
-	           "NetworkManager will try to find a suitable connection that will be activated.\n"
-	           "It will also consider connections that are not set to auto-connect.\n\n"));
+	g_printerr (_("Usage: nmcli device connect { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := <ifname>\n"
+	              "\n"
+	              "Connect the device.\n"
+	              "NetworkManager will try to find a suitable connection that will be activated.\n"
+	              "It will also consider connections that are not set to auto-connect.\n\n"));
 }
 
 static void
 usage_device_disconnect (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli device disconnect { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := <ifname>\n"
-	           "\n"
-	           "Disconnect the device.\n"
-	           "The command disconnects the device and prevents it from auto-activating\n"
-	           "further connections without user/manual intervention.\n\n"));
+	g_printerr (_("Usage: nmcli device disconnect { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := <ifname>\n"
+	              "\n"
+	              "Disconnect the device.\n"
+	              "The command disconnects the device and prevents it from auto-activating\n"
+	              "further connections without user/manual intervention.\n\n"));
 }
 
 static void
 usage_device_delete (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli device delete { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := <ifname>\n"
-	           "\n"
-	           "Deletes the software device.\n"
-	           "The command removes the interface. It only works for software devices\n"
-	           "(like bonds, bridges, etc.). Hardware devices cannot be deleted by the\n"
-	           "command.\n\n"));
+	g_printerr (_("Usage: nmcli device delete { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := <ifname>\n"
+	              "\n"
+	              "Deletes the software device.\n"
+	              "The command removes the interface. It only works for software devices\n"
+	              "(like bonds, bridges, etc.). Hardware devices cannot be deleted by the\n"
+	              "command.\n\n"));
 }
 
 static void
 usage_device_wifi (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli device wifi { ARGUMENTS | help }\n"
-	           "\n"
-	           "Perform operation on Wi-Fi devices.\n"
-	           "\n"
-	           "ARGUMENTS := [list [ifname <ifname>] [bssid <BSSID>]]\n"
-	           "\n"
-	           "List available Wi-Fi access points. The 'ifname' and 'bssid' options can be\n"
-	           "used to list APs for a particular interface, or with a specific BSSID.\n"
-	           "\n"
-	           "ARGUMENTS := connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
-	           "                    [bssid <BSSID>] [name <name>] [private yes|no]\n"
-	           "\n"
-	           "Connect to a Wi-Fi network specified by SSID or BSSID. The command creates\n"
-	           "a new connection and then activates it on a device. This is a command-line\n"
-	           "counterpart of clicking an SSID in a GUI client. The command always creates\n"
-	           "a new connection and thus it is mainly useful for connecting to new Wi-Fi\n"
-	           "networks. If a connection for the network already exists, it is better to\n"
-	           "bring up the existing profile as follows: nmcli con up id <name>. Note that\n"
-	           "only open, WEP and WPA-PSK networks are supported at the moment. It is also\n"
-	           "assumed that IP configuration is obtained via DHCP.\n"
-	           "\n"
-	           "ARGUMENTS := rescan [[ifname] <ifname>]\n"
-	           "\n"
-	           "Request that NetworkManager immediately re-scan for available access points.\n"
-	           "NetworkManager scans Wi-Fi networks periodically, but in some cases it might\n"
-	           "be useful to start scanning manually. Note that this command does not show\n"
-	           "the APs, use 'nmcli device wifi list' for that.\n\n"));
+	g_printerr (_("Usage: nmcli device wifi { ARGUMENTS | help }\n"
+	              "\n"
+	              "Perform operation on Wi-Fi devices.\n"
+	              "\n"
+	              "ARGUMENTS := [list [ifname <ifname>] [bssid <BSSID>]]\n"
+	              "\n"
+	              "List available Wi-Fi access points. The 'ifname' and 'bssid' options can be\n"
+	              "used to list APs for a particular interface, or with a specific BSSID.\n"
+	              "\n"
+	              "ARGUMENTS := connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname <ifname>]\n"
+	              "                    [bssid <BSSID>] [name <name>] [private yes|no]\n"
+	              "\n"
+	              "Connect to a Wi-Fi network specified by SSID or BSSID. The command creates\n"
+	              "a new connection and then activates it on a device. This is a command-line\n"
+	              "counterpart of clicking an SSID in a GUI client. The command always creates\n"
+	              "a new connection and thus it is mainly useful for connecting to new Wi-Fi\n"
+	              "networks. If a connection for the network already exists, it is better to\n"
+	              "bring up the existing profile as follows: nmcli con up id <name>. Note that\n"
+	              "only open, WEP and WPA-PSK networks are supported at the moment. It is also\n"
+	              "assumed that IP configuration is obtained via DHCP.\n"
+	              "\n"
+	              "ARGUMENTS := rescan [[ifname] <ifname>]\n"
+	              "\n"
+	              "Request that NetworkManager immediately re-scan for available access points.\n"
+	              "NetworkManager scans Wi-Fi networks periodically, but in some cases it might\n"
+	              "be useful to start scanning manually. Note that this command does not show\n"
+	              "the APs, use 'nmcli device wifi list' for that.\n\n"));
 }
 
 #if WITH_WIMAX
 static void
 usage_device_wimax (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli device wimax { ARGUMENTS | help }\n"
-	           "\n"
-	           "Perform operation on WiMAX devices.\n"
-	           "\n"
-	           "ARGUMENTS := [list [ifname <ifname>] [nsp <name>]]\n"
-	           "\n"
-	           "List available WiMAX NSPs. The 'ifname' and 'nsp' options can be used to\n"
-	           "list networks for a particular interface, or with a specific NSP.\n\n"));
+	g_printerr (_("Usage: nmcli device wimax { ARGUMENTS | help }\n"
+	              "\n"
+	              "Perform operation on WiMAX devices.\n"
+	              "\n"
+	              "ARGUMENTS := [list [ifname <ifname>] [nsp <name>]]\n"
+	              "\n"
+	              "List available WiMAX NSPs. The 'ifname' and 'nsp' options can be used to\n"
+	              "list networks for a particular interface, or with a specific NSP.\n\n"));
 }
 #endif
 
@@ -831,7 +823,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 		char *section_fld = (char *) g_ptr_array_index (fields_in_section, k);
 
 		if (nmc->print_output != NMC_PRINT_TERSE && !nmc->multiline_output && was_output)
-			printf ("\n"); /* Print empty line between groups in tabular mode */
+			g_print ("\n"); /* Print empty line between groups in tabular mode */
 
 		was_output = FALSE;
 
@@ -1244,7 +1236,7 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 	size_t tmpl_len;
 
 	while (argc > 0) {
-		fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
+		g_printerr (_("Unknown parameter: %s\n"), *argv);
 		argc--;
 		argv++;
 	}
@@ -1329,7 +1321,7 @@ do_devices_show (NmCli *nmc, int argc, char **argv)
 			if (!ret)
 				break;
 			if (devices[i + 1])
-				printf ("\n"); /* Empty line */
+				g_print ("\n"); /* Empty line */
 		}
 	}
 
@@ -1371,9 +1363,9 @@ connected_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 
 	if (state == NM_DEVICE_STATE_ACTIVATED) {
 		nmc_terminal_erase_line ();
-		printf (_("Device '%s' successfully activated with '%s'.\n"),
-		        nm_device_get_iface (device),
-		        nm_active_connection_get_uuid (active));
+		g_print (_("Device '%s' successfully activated with '%s'.\n"),
+		         nm_device_get_iface (device),
+		         nm_active_connection_get_uuid (active));
 		g_object_unref (active);
 		quit ();
 	}
@@ -1393,8 +1385,8 @@ monitor_device_state_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data
 
 		if (nmc->print_output == NMC_PRINT_PRETTY)
 			nmc_terminal_erase_line ();
-		printf (_("Connection with UUID '%s' created and activated on device '%s'\n"),
-		        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
+		g_print (_("Connection with UUID '%s' created and activated on device '%s'\n"),
+		         nm_active_connection_get_uuid (active), nm_device_get_iface (device));
 		quit ();
 	} else if (state == NM_DEVICE_STATE_FAILED) {
 		reason = nm_device_get_state_reason (device);
@@ -1444,8 +1436,8 @@ add_and_activate_cb (GObject *client,
 			if (state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 				if (nmc->print_output == NMC_PRINT_PRETTY)
 					nmc_terminal_erase_line ();
-				printf (_("Connection with UUID '%s' created and activated on device '%s'\n"),
-				        nm_active_connection_get_uuid (active), nm_device_get_iface (device));
+				g_print (_("Connection with UUID '%s' created and activated on device '%s'\n"),
+				         nm_active_connection_get_uuid (active), nm_device_get_iface (device));
 			}
 			g_object_unref (active);
 			quit ();
@@ -1534,7 +1526,7 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 			/* Don't want to wait or device already activated */
 			if (state == NM_DEVICE_STATE_ACTIVATED && nmc->print_output == NMC_PRINT_PRETTY) {
 				nmc_terminal_erase_line ();
-				printf (_("Device '%s' has been connected.\n"), nm_device_get_iface (device));
+				g_print (_("Device '%s' has been connected.\n"), nm_device_get_iface (device));
 			}
 			quit ();
 		} else {
@@ -1668,7 +1660,7 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 			if (state == NM_DEVICE_STATE_DISCONNECTED) {
 				if (nmc->print_output == NMC_PRINT_PRETTY)
 					nmc_terminal_erase_line ();
-				printf (_("Device '%s' has been disconnected.\n"), nm_device_get_iface (device));
+				g_print (_("Device '%s' has been disconnected.\n"), nm_device_get_iface (device));
 			}
 			quit ();
 		} else {
@@ -1911,7 +1903,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 			}
 			bssid_user = *argv;
 		} else {
-			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
+			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
 		argc--;
@@ -2041,7 +2033,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 					g_free (bssid_up);
 				}
 				if (empty_line)
-					printf ("\n"); /* Empty line between devices' APs */
+					g_print ("\n"); /* Empty line between devices' APs */
 				print_data (nmc);  /* Print all data */
 				nmc_empty_output_fields (nmc);
 				empty_line = TRUE;
@@ -2063,7 +2055,7 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 
 				if (NM_IS_DEVICE_WIFI (dev)) {
 					if (empty_line)
-						printf ("\n"); /* Empty line between devices' APs */
+						g_print ("\n"); /* Empty line between devices' APs */
 					show_access_point_info (dev, nmc);
 					empty_line = TRUE;
 				}
@@ -2285,7 +2277,7 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 				goto error;
 			}
 		} else {
-			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
+			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
 		argc--;
@@ -2571,7 +2563,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 			}
 			nsp_user = *argv;
 		} else {
-			fprintf (stderr, _("Unknown parameter: %s\n"), *argv);
+			g_printerr (_("Unknown parameter: %s\n"), *argv);
 		}
 
 		argc--;
@@ -2684,7 +2676,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 					g_free (nsp_up);
 				}
 				if (empty_line)
-					printf ("\n"); /* Empty line between devices' NSPs */
+					g_print ("\n"); /* Empty line between devices' NSPs */
 				print_data (nmc);  /* Print all data */
 				nmc_empty_output_fields (nmc);
 				empty_line = TRUE;
@@ -2705,7 +2697,7 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 
 				if (NM_IS_DEVICE_WIMAX (dev)) {
 					if (empty_line)
-						printf ("\n"); /* Empty line between devices' NSPs */
+						g_print ("\n"); /* Empty line between devices' NSPs */
 					show_nsp_info (dev, nmc);
 					empty_line = TRUE;
 				}

@@ -78,29 +78,28 @@ nmcli_error_quark (void)
 static void
 usage (const char *prog_name)
 {
-	fprintf (stderr,
-	         _("Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
-	         "\n"
-	         "OPTIONS\n"
-	         "  -t[erse]                                   terse output\n"
-	         "  -p[retty]                                  pretty output\n"
-	         "  -m[ode] tabular|multiline                  output mode\n"
-	         "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
-	         "  -e[scape] yes|no                           escape columns separators in values\n"
-	         "  -n[ocheck]                                 don't check nmcli and NetworkManager versions\n"
-	         "  -a[sk]                                     ask for missing parameters\n"
-	         "  -w[ait] <seconds>                          set timeout waiting for finishing operations\n"
-	         "  -v[ersion]                                 show program version\n"
-	         "  -h[elp]                                    print this help\n"
-	         "\n"
-	         "OBJECT\n"
-	         "  g[eneral]       NetworkManager's general status and operations\n"
-	         "  n[etworking]    overall networking control\n"
-	         "  r[adio]         NetworkManager radio switches\n"
-	         "  c[onnection]    NetworkManager's connections\n"
-	         "  d[evice]        devices managed by NetworkManager\n"
-	         "\n"),
-	          prog_name);
+	g_printerr (_("Usage: %s [OPTIONS] OBJECT { COMMAND | help }\n"
+	              "\n"
+	              "OPTIONS\n"
+	              "  -t[erse]                                   terse output\n"
+	              "  -p[retty]                                  pretty output\n"
+	              "  -m[ode] tabular|multiline                  output mode\n"
+	              "  -f[ields] <field1,field2,...>|all|common   specify fields to output\n"
+	              "  -e[scape] yes|no                           escape columns separators in values\n"
+	              "  -n[ocheck]                                 don't check nmcli and NetworkManager versions\n"
+	              "  -a[sk]                                     ask for missing parameters\n"
+	              "  -w[ait] <seconds>                          set timeout waiting for finishing operations\n"
+	              "  -v[ersion]                                 show program version\n"
+	              "  -h[elp]                                    print this help\n"
+	              "\n"
+	              "OBJECT\n"
+	              "  g[eneral]       NetworkManager's general status and operations\n"
+	              "  n[etworking]    overall networking control\n"
+	              "  r[adio]         NetworkManager radio switches\n"
+	              "  c[onnection]    NetworkManager's connections\n"
+	              "  d[evice]        devices managed by NetworkManager\n"
+	              "\n"),
+	            prog_name);
 }
 
 static NMCResultCode 
@@ -248,7 +247,7 @@ parse_command_line (NmCli *nmc, int argc, char **argv)
 			}
 			nmc->timeout = (int) timeout;
 		} else if (matches (opt, "-version") == 0) {
-			printf (_("nmcli tool, version %s\n"), NMCLI_VERSION);
+			g_print (_("nmcli tool, version %s\n"), NMCLI_VERSION);
 			return NMC_RESULT_SUCCESS;
 		} else if (matches (opt, "-help") == 0) {
 			usage (base);
@@ -334,8 +333,8 @@ signal_handling_thread (void *arg) {
 			} else {
 				/* We can quit nmcli */
 				nmc_cleanup_readline ();
-				printf (_("\nError: nmcli terminated by signal %s (%d)\n"),
-				        strsignal (signo), signo);
+				g_print (_("\nError: nmcli terminated by signal %s (%d)\n"),
+				         strsignal (signo), signo);
 				exit (1);
 			}
 			break;
@@ -343,8 +342,8 @@ signal_handling_thread (void *arg) {
 		case SIGTERM:
 			nmc_cleanup_readline ();
 			if (!nmcli_sigquit_internal)
-				printf (_("\nError: nmcli terminated by signal %s (%d)\n"),
-				        strsignal (signo), signo);
+				g_print (_("\nError: nmcli terminated by signal %s (%d)\n"),
+				         strsignal (signo), signo);
 			exit (1);
 			break;
 		default:
@@ -374,14 +373,14 @@ setup_signals (void)
 	/* Block all signals of interest. */
 	status = pthread_sigmask (SIG_BLOCK, &signal_set, NULL);
 	if (status != 0) {
-		fprintf (stderr, _("Failed to set signal mask: %d\n"), status);
+		g_printerr (_("Failed to set signal mask: %d\n"), status);
 		return FALSE;
 	}
 
 	/* Create the signal handling thread. */
 	status = pthread_create (&signal_thread_id, NULL, signal_handling_thread, NULL);
 	if (status != 0) {
-		fprintf (stderr, _("Failed to create signal handling thread: %d\n"), status);
+		g_printerr (_("Failed to create signal handling thread: %d\n"), status);
 		return FALSE;
 	}
 
@@ -588,7 +587,7 @@ main (int argc, char *argv[])
 
 	/* Print result descripting text */
 	if (nm_cli.return_value != NMC_RESULT_SUCCESS) {
-		fprintf (stderr, "%s\n", nm_cli.return_text->str);
+		g_printerr ("%s\n", nm_cli.return_text->str);
 	}
 
 	g_main_loop_unref (loop);

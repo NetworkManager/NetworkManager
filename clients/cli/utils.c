@@ -248,6 +248,9 @@ nmc_ip6_address_as_string (const struct in6_addr *ip, GError **error)
 void
 nmc_terminal_erase_line (void)
 {
+	/* We intentionally use printf(), not g_print() here, to ensure that
+	 * GLib doesn't mistakenly try to convert the string.
+	 */
 	printf ("\33[2K\r");
 	fflush (stdout);
 }
@@ -264,7 +267,7 @@ nmc_terminal_show_progress (const char *str)
 	const char slashes[4] = {'|', '/', '-', '\\'};
 
 	nmc_terminal_erase_line ();
-	printf ("%c %s", slashes[idx++], str ? str : "");
+	g_print ("%c %s", slashes[idx++], str ? str : "");
 	fflush (stdout);
 	if (idx == 4)
 		idx = 0;
@@ -432,7 +435,7 @@ nmc_get_user_input (const char *ask_str)
 	size_t line_ln = 0;
 	ssize_t num;
 
-	fprintf (stdout, "%s", ask_str);
+	g_print ("%s", ask_str);
 	num = getline (&line, &line_ln, stdin);
 
 	/* Remove newline from the string */
@@ -895,9 +898,9 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 			line = g_strnfill (ML_HEADER_WIDTH, '=');
 			width1 = strlen (fields.header_name);
 			width2 = nmc_string_screen_width (fields.header_name, NULL);
-			printf ("%s\n", line);
-			printf ("%*s\n", (table_width + width2)/2 + width1 - width2, fields.header_name);
-			printf ("%s\n", line);
+			g_print ("%s\n", line);
+			g_print ("%*s\n", (table_width + width2)/2 + width1 - width2, fields.header_name);
+			g_print ("%s\n", line);
 			g_free (line);
 		}
 
@@ -927,8 +930,8 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 						                       j);
 						width1 = strlen (tmp);
 						width2 = nmc_string_screen_width (tmp, NULL);
-						printf ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp,
-						                    *p ? *p : not_set_str);
+						g_print ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp,
+						         *p ? *p : not_set_str);
 						g_free (tmp);
 					}
 				} else {
@@ -942,14 +945,14 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 					                       _(field_values[idx].name_l10n));
 					width1 = strlen (tmp);
 					width2 = nmc_string_screen_width (tmp, NULL);
-					printf ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp,
-					                    val ? val : not_set_str);
+					g_print ("%-*s%s\n", terse ? 0 : ML_VALUE_INDENT+width1-width2, tmp,
+					         val ? val : not_set_str);
 					g_free (tmp);
 				}
 			}
 			if (pretty) {
 				line = g_strnfill (ML_HEADER_WIDTH, '-');
-				printf ("%s\n", line);
+				g_print ("%s\n", line);
 				g_free (line);
 			}
 		}
@@ -997,9 +1000,9 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 		line = g_strnfill (table_width, '=');
 		width1 = strlen (fields.header_name);
 		width2 = nmc_string_screen_width (fields.header_name, NULL);
-		printf ("%s\n", line);
-		printf ("%*s\n", (table_width + width2)/2 + width1 - width2, fields.header_name);
-		printf ("%s\n", line);
+		g_print ("%s\n", line);
+		g_print ("%*s\n", (table_width + width2)/2 + width1 - width2, fields.header_name);
+		g_print ("%s\n", line);
 		g_free (line);
 	}
 
@@ -1011,14 +1014,14 @@ print_required_fields (NmCli *nmc, const NmcOutputField field_values[])
 			g_string_prepend (str, indent_str);
 			g_free (indent_str);
 		}
-		printf ("%s\n", str->str);
+		g_print ("%s\n", str->str);
 	}
 
 	/* Print horizontal separator */
 	if (!main_header_only && field_names && pretty) {
 		if (str->len > 0) {
 			line = g_strnfill (table_width, '-');
-			printf ("%s\n", line);
+			g_print ("%s\n", line);
 			g_free (line);
 		}
 	}
@@ -1107,9 +1110,8 @@ nmc_versions_match (NmCli *nmc)
 			if (dot) {
 				dot = strchr (dot + 1, '.');
 				if (dot && !strncmp (nm_ver, VERSION, dot-nm_ver)) {
-					fprintf(stderr,
-					        _("Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --nocheck to suppress the warning.\n"),
-					        VERSION, nm_ver);
+					g_printerr (_("Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Use --nocheck to suppress the warning.\n"),
+					            VERSION, nm_ver);
 					match = TRUE;
 				}
 			}
