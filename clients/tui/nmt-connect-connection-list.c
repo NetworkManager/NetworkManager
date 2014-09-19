@@ -294,8 +294,9 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 		nmtconn->device = nmtdev->device;
 		nmtconn->ap = g_object_ref (ap);
 		ssid = nm_access_point_get_ssid (ap);
-		nmtconn->ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
-		                                       g_bytes_get_size (ssid));
+		if (ssid)
+			nmtconn->ssid = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+			                                       g_bytes_get_size (ssid));
 
 		for (iter = connections; iter; iter = iter->next) {
 			conn = iter->data;
@@ -308,7 +309,7 @@ add_connections_for_aps (NmtConnectDevice *nmtdev,
 		}
 
 		if (!iter)
-			nmtconn->name = nmtconn->ssid;
+			nmtconn->name = nmtconn->ssid ? nmtconn->ssid : "<unknown>";
 
 		nmtdev->conns = g_slist_prepend (nmtdev->conns, nmtconn);
 	}
