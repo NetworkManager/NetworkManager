@@ -1284,13 +1284,6 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 	char *profile_flds = NULL, *active_flds = NULL;
 
 	nmc->should_wait = FALSE;
-	nmc->get_client (nmc);
-
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto finish;
-	}
 
 	if (argc == 0) {
 		char *fields_str;
@@ -1997,15 +1990,6 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 		argv++;
 	}
 
-	/* create NMClient */
-	nmc->get_client (nmc);
-
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto error;
-	}
-
 	/* Use nowait_flag instead of should_wait because exiting has to be postponed till
 	 * active_connection_state_cb() is called. That gives NM time to check our permissions
 	 * and we can follow activation progress.
@@ -2055,15 +2039,6 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 			goto error;
 		}
-	}
-
-	/* create NMClient */
-	nmc->get_client (nmc);
-
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto error;
 	}
 
 	/* Get active connections */
@@ -7459,7 +7434,6 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				g_clear_error (&tmp_err);
 				break;
 			}
-			nmc->get_client (nmc);
 
 			nmc->nowait_flag = FALSE;
 			nmc->should_wait = TRUE;
@@ -7601,7 +7575,6 @@ get_ethernet_device_name (NmCli *nmc)
 	const GPtrArray *devices;
 	int i;
 
-	nmc->get_client (nmc);
 	devices = nm_client_get_devices (nmc->client);
 	for (i = 0; i < devices->len; i++) {
 		NMDevice *dev = g_ptr_array_index (devices, i);
@@ -7966,15 +7939,6 @@ do_connection_modify (NmCli *nmc,
 
 	nmc->should_wait = FALSE;
 
-	/* create NMClient */
-	nmc->get_client (nmc);
-
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto finish;
-	}
-
 	if (argc == 0) {
 		g_string_printf (nmc->return_text, _("Error: No arguments provided."));
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -8173,15 +8137,6 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 
 	nmc->return_value = NMC_RESULT_SUCCESS;
 	nmc->should_wait = FALSE;
-
-	/* create NMClient */
-	nmc->get_client (nmc);
-
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto finish;
-	}
 
 	if (argc == 0) {
 		if (nmc->ask) {
@@ -8438,7 +8393,6 @@ do_connections (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
 		return nmc->return_value;
 	}
-
 	/* Compare NM and nmcli versions */
 	if (!nmc_versions_match (nmc))
 		return nmc->return_value;
