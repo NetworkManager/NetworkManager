@@ -501,11 +501,6 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	     *bitrate_str, *strength_str, *wpa_flags_str, *rsn_flags_str;
 	GString *security_str;
 	char *ap_name;
-	const char *sig_level_0 = "____";
-	const char *sig_level_1 = "▂___";
-	const char *sig_level_2 = "▂▄__";
-	const char *sig_level_3 = "▂▄▆_";
-	const char *sig_level_4 = "▂▄▆█";
 	const char *sig_bars;
 
 	if (info->active_bssid) {
@@ -540,11 +535,7 @@ fill_output_access_point (gpointer data, gpointer user_data)
 	strength_str = g_strdup_printf ("%u", strength);
 	wpa_flags_str = ap_wpa_rsn_flags_to_string (wpa_flags);
 	rsn_flags_str = ap_wpa_rsn_flags_to_string (rsn_flags);
-	sig_bars = strength > 80 ? sig_level_4 :
-	           strength > 55 ? sig_level_3 :
-	           strength > 30 ? sig_level_2 :
-	           strength > 5  ? sig_level_1 :
-	                           sig_level_0;
+	sig_bars = nm_utils_wifi_strength_bars (strength);
 
 	security_str = g_string_new (NULL);
 

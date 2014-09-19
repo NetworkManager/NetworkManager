@@ -2101,6 +2101,66 @@ nm_utils_wifi_is_channel_valid (guint32 channel, const char *band)
 }
 
 /**
+ * nm_utils_wifi_strength_bars:
+ * @strength: the access point strength, from 0 to 100
+ *
+ * Converts @strength into a 4-character-wide graphical representation of
+ * strength suitable for printing to stdout. If the current locale and terminal
+ * support it, this will use unicode graphics characters to represent
+ * "bars". Otherwise it will use 0 to 4 asterisks.
+ *
+ * Returns: the graphical representation of the access point strength
+ */
+const char *
+nm_utils_wifi_strength_bars (guint8 strength)
+{
+	static const char *strength_full, *strength_high, *strength_med, *strength_low, *strength_none;
+
+	if (G_UNLIKELY (strength_full == NULL)) {
+		gboolean can_show_graphics = TRUE;
+		char *locale_str;
+
+		if (!g_get_charset (NULL)) {
+			/* Non-UTF-8 locale */
+			locale_str = g_locale_from_utf8 ("\342\226\202\342\226\204\342\226\206\342\226\210", -1, NULL, NULL, NULL);
+			if (locale_str)
+				g_free (locale_str);
+			else
+				can_show_graphics = FALSE;
+		}
+
+		/* The linux console font doesn't have these characters */
+		if (g_strcmp0 (g_getenv ("TERM"), "linux") == 0)
+			can_show_graphics = FALSE;
+
+		if (can_show_graphics) {
+			strength_full = /* ▂▄▆█ */ "\342\226\202\342\226\204\342\226\206\342\226\210";
+			strength_high = /* ▂▄▆_ */ "\342\226\202\342\226\204\342\226\206_";
+			strength_med  = /* ▂▄__ */ "\342\226\202\342\226\204__";
+			strength_low  = /* ▂___ */ "\342\226\202___";
+			strength_none = /* ____ */ "____";
+		} else {
+			strength_full = "****";
+			strength_high = "*** ";
+			strength_med  = "**  ";
+			strength_low  = "*   ";
+			strength_none = "    ";
+		}
+	}
+
+	if (strength > 80)
+		return strength_full;
+	else if (strength > 55)
+		return strength_high;
+	else if (strength > 30)
+		return strength_med;
+	else if (strength > 5)
+		return strength_low;
+	else
+		return strength_none;
+}
+
+/**
  * nm_utils_hwaddr_len:
  * @type: the type of address; either %ARPHRD_ETHER or %ARPHRD_INFINIBAND
  *
