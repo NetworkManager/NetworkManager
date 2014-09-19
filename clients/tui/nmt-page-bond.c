@@ -252,10 +252,14 @@ mode_widget_changed (GObject    *object,
 	} else
 		nmt_newt_component_set_sensitive (NMT_NEWT_COMPONENT (priv->monitoring), TRUE);
 
-	if (!strcmp (mode, "active-backup"))
+	if (!strcmp (mode, "active-backup")) {
 		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->primary), TRUE);
-	else
+		nm_setting_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_PRIMARY,
+		                            nmt_newt_entry_get_text (priv->primary));
+	} else {
 		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->primary), FALSE);
+		nm_setting_bond_remove_option (priv->s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
+	}
 }
 
 static void
