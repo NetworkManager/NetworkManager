@@ -548,7 +548,6 @@ nmt_secret_agent_response (NmtSecretAgent *self,
 
 	request->callback (NM_SECRET_AGENT (self), request->connection, dict, error, request->callback_data);
 
-	g_clear_pointer (&dict, g_variant_unref);
 	g_clear_error (&error);
 	g_hash_table_remove (priv->requests, request_id);
 }
