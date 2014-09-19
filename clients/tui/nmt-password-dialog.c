@@ -95,8 +95,7 @@ nmt_password_dialog_init (NmtPasswordDialog *dialog)
 
 static void
 maybe_save_input_and_exit (NmtNewtWidget *widget,
-                           gpointer       dialog,
-                           newtComponent  co)
+                           gpointer       dialog)
 {
 	NmtPasswordDialogPrivate *priv = NMT_PASSWORD_DIALOG_GET_PRIVATE (dialog);
 	int i;
