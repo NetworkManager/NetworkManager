@@ -418,7 +418,6 @@ get_property (GObject *object, guint prop_id,
 	GSList *list, *iter;
 
 	switch (prop_id) {
-		break;
 	case PROP_SLAVES:
 		slaves = g_ptr_array_new ();
 		list = nm_device_master_get_slaves (NM_DEVICE (object));
