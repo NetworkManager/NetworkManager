@@ -8429,12 +8429,19 @@ do_connections (NmCli *nmc, int argc, char **argv)
 			return nmc->return_value;
 	}
 
+	/* Get NMClient object early */
+	nmc->get_client (nmc);
+
+	/* Check whether NetworkManager is runnung */
+	if (!nm_client_get_nm_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		return nmc->return_value;
+	}
+
 	/* Compare NM and nmcli versions */
 	if (!nmc_versions_match (nmc))
 		return nmc->return_value;
-
-	/* Get NMClient object early */
-	nmc->get_client (nmc);
 
 	/* Get NMRemoteSettings object */
 	if (!(nmc->system_settings = nm_remote_settings_new (NULL, &error))) {
