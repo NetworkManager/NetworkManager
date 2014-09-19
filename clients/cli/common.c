@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2012 - 2014 Red Hat, Inc.
+ * Copyright 2012 - 2014 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -79,7 +79,7 @@ print_ip4_config (NMIP4Config *cfg4,
                   const char *group_prefix,
                   const char *one_field)
 {
-	GSList *list, *iter;
+	GPtrArray *ptr_array;
 	char **addr_arr = NULL;
 	char **route_arr = NULL;
 	char **dns_arr = NULL;
@@ -100,42 +100,45 @@ print_ip4_config (NMIP4Config *cfg4,
 	g_ptr_array_add (nmc->output_data, arr);
 
 	/* addresses */
-	list = (GSList *) nm_ip4_config_get_addresses (cfg4);
-	addr_arr = g_new (char *, g_slist_length (list) + 1);
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		NMIP4Address *addr = (NMIP4Address *) iter->data;
-		guint32 prefix;
-		char *ip_str, *gw_str;
+	ptr_array = nm_ip4_config_get_addresses (cfg4);
+	if (ptr_array) {
+		addr_arr = g_new (char *, ptr_array->len + 1);
+		for (i = 0; i < ptr_array->len; i++) {
+			NMIP4Address *addr = (NMIP4Address *) g_ptr_array_index (ptr_array, i);
+			guint32 prefix;
+			char *ip_str, *gw_str;
 
-		ip_str = nmc_ip4_address_as_string (nm_ip4_address_get_address (addr), NULL);
-		prefix = nm_ip4_address_get_prefix (addr);
-		gw_str = nmc_ip4_address_as_string (nm_ip4_address_get_gateway (addr), NULL);
+			ip_str = nmc_ip4_address_as_string (nm_ip4_address_get_address (addr), NULL);
+			prefix = nm_ip4_address_get_prefix (addr);
+			gw_str = nmc_ip4_address_as_string (nm_ip4_address_get_gateway (addr), NULL);
 
-		addr_arr[i++] = g_strdup_printf ("ip = %s/%u, gw = %s", ip_str, prefix, gw_str);
-		g_free (ip_str);
-		g_free (gw_str);
+			addr_arr[i] = g_strdup_printf ("ip = %s/%u, gw = %s", ip_str, prefix, gw_str);
+			g_free (ip_str);
+			g_free (gw_str);
+		}
+		addr_arr[i] = NULL;
 	}
-	addr_arr[i] = NULL;
 
 	/* routes */
-	list = (GSList *) nm_ip4_config_get_routes (cfg4);
-	route_arr = g_new (char *, g_slist_length (list) + 1);
-	i = 0;
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		NMIP4Route *route = (NMIP4Route *) iter->data;
-		guint32 prefix, metric;
-		char *dest_str, *nexthop_str;
+	ptr_array = nm_ip4_config_get_routes (cfg4);
+	if (ptr_array) {
+		route_arr = g_new (char *, ptr_array->len + 1);
+		for (i = 0; i < ptr_array->len; i++) {
+			NMIP4Route *route = (NMIP4Route *) g_ptr_array_index (ptr_array, i);
+			guint32 prefix, metric;
+			char *dest_str, *nexthop_str;
 
-		dest_str = nmc_ip4_address_as_string (nm_ip4_route_get_dest (route), NULL);
-		nexthop_str = nmc_ip4_address_as_string (nm_ip4_route_get_next_hop (route), NULL);
-		prefix = nm_ip4_route_get_prefix (route);
-		metric = nm_ip4_route_get_metric (route);
+			dest_str = nmc_ip4_address_as_string (nm_ip4_route_get_dest (route), NULL);
+			nexthop_str = nmc_ip4_address_as_string (nm_ip4_route_get_next_hop (route), NULL);
+			prefix = nm_ip4_route_get_prefix (route);
+			metric = nm_ip4_route_get_metric (route);
 
-		route_arr[i++] = g_strdup_printf ("dst = %s/%u, nh = %s, mt = %u", dest_str, prefix, nexthop_str, metric);
-		g_free (dest_str);
-		g_free (nexthop_str);
+			route_arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s, mt = %u", dest_str, prefix, nexthop_str, metric);
+			g_free (dest_str);
+			g_free (nexthop_str);
+		}
+		route_arr[i] = NULL;
 	}
-	route_arr[i] = NULL;
 
 	/* DNS */
 	dns_arr = g_strdupv ((char **) nm_ip4_config_get_nameservers (cfg4));
@@ -169,7 +172,7 @@ print_ip6_config (NMIP6Config *cfg6,
                   const char *group_prefix,
                   const char *one_field)
 {
-	GSList *list, *iter;
+	GPtrArray *ptr_array;
 	char **addr_arr = NULL;
 	char **route_arr = NULL;
 	char **dns_arr = NULL;
@@ -189,42 +192,45 @@ print_ip6_config (NMIP6Config *cfg6,
 	g_ptr_array_add (nmc->output_data, arr);
 
 	/* addresses */
-	list = (GSList *) nm_ip6_config_get_addresses (cfg6);
-	addr_arr = g_new (char *, g_slist_length (list) + 1);
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		NMIP6Address *addr = (NMIP6Address *) iter->data;
-		guint32 prefix;
-		char *ip_str, *gw_str;
+	ptr_array = nm_ip6_config_get_addresses (cfg6);
+	if (ptr_array) {
+		addr_arr = g_new (char *, ptr_array->len + 1);
+		for (i = 0; i < ptr_array->len; i++) {
+			NMIP6Address *addr = (NMIP6Address *) g_ptr_array_index (ptr_array, i);
+			guint32 prefix;
+			char *ip_str, *gw_str;
 
-		ip_str = nmc_ip6_address_as_string (nm_ip6_address_get_address (addr), NULL);
-		prefix = nm_ip6_address_get_prefix (addr);
-		gw_str = nmc_ip6_address_as_string (nm_ip6_address_get_gateway (addr), NULL);
+			ip_str = nmc_ip6_address_as_string (nm_ip6_address_get_address (addr), NULL);
+			prefix = nm_ip6_address_get_prefix (addr);
+			gw_str = nmc_ip6_address_as_string (nm_ip6_address_get_gateway (addr), NULL);
 
-		addr_arr[i++] = g_strdup_printf ("ip = %s/%u, gw = %s", ip_str, prefix, gw_str);
-		g_free (ip_str);
-		g_free (gw_str);
+			addr_arr[i] = g_strdup_printf ("ip = %s/%u, gw = %s", ip_str, prefix, gw_str);
+			g_free (ip_str);
+			g_free (gw_str);
+		}
+		addr_arr[i] = NULL;
 	}
-	addr_arr[i] = NULL;
 
 	/* routes */
-	list = (GSList *) nm_ip6_config_get_routes (cfg6);
-	route_arr = g_new (char *, g_slist_length (list) + 1);
-	i = 0;
-	for (iter = list; iter; iter = g_slist_next (iter)) {
-		NMIP6Route *route = (NMIP6Route *) iter->data;
-		guint32 prefix, metric;
-		char *dest_str, *nexthop_str;
+	ptr_array = nm_ip6_config_get_routes (cfg6);
+	if (ptr_array) {
+		route_arr = g_new (char *, ptr_array->len + 1);
+		for (i = 0; i < ptr_array->len; i++) {
+			NMIP6Route *route = (NMIP6Route *) g_ptr_array_index (ptr_array, i);
+			guint32 prefix, metric;
+			char *dest_str, *nexthop_str;
 
-		dest_str = nmc_ip6_address_as_string (nm_ip6_route_get_dest (route), NULL);
-		nexthop_str = nmc_ip6_address_as_string (nm_ip6_route_get_next_hop (route), NULL);
-		prefix = nm_ip6_route_get_prefix (route);
-		metric = nm_ip6_route_get_metric (route);
+			dest_str = nmc_ip6_address_as_string (nm_ip6_route_get_dest (route), NULL);
+			nexthop_str = nmc_ip6_address_as_string (nm_ip6_route_get_next_hop (route), NULL);
+			prefix = nm_ip6_route_get_prefix (route);
+			metric = nm_ip6_route_get_metric (route);
 
-		route_arr[i++] = g_strdup_printf ("dst = %s/%u, nh = %s, mt = %u", dest_str, prefix, nexthop_str, metric);
-		g_free (dest_str);
-		g_free (nexthop_str);
+			route_arr[i] = g_strdup_printf ("dst = %s/%u, nh = %s, mt = %u", dest_str, prefix, nexthop_str, metric);
+			g_free (dest_str);
+			g_free (nexthop_str);
+		}
+		route_arr[i] = NULL;
 	}
-	route_arr[i] = NULL;
 
 	/* DNS */
 	dns_arr = g_strdupv ((char **) nm_ip6_config_get_nameservers (cfg6));
