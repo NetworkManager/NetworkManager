@@ -128,8 +128,10 @@ _nm_dbus_new_connection_async (GCancellable *cancellable,
 
 	/* If running as root try the private bus first */
 	if (0 == geteuid ()) {
-		g_object_set_data_full (G_OBJECT (simple), "cancellable",
-		                        g_object_ref (cancellable), g_object_unref);
+		if (cancellable) {
+			g_object_set_data_full (G_OBJECT (simple), "cancellable",
+						g_object_ref (cancellable), g_object_unref);
+		}
 		g_dbus_connection_new_for_address ("unix:path=" NMRUNDIR "/private",
 		                                   G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
 		                                   NULL,
