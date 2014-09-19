@@ -24,7 +24,6 @@
 #include "nm-dbus-helpers.h"
 #include "nm-dbus-interface.h"
 
-#define NM_DBUS_PRIVATE_CONNECTION_TAG "libnm-private-connection"
 static GBusType nm_bus = G_BUS_TYPE_SYSTEM;
 
 GBusType
@@ -54,13 +53,8 @@ _nm_dbus_new_connection (GCancellable *cancellable, GError **error)
 		connection = g_dbus_connection_new_for_address_sync ("unix:path=" NMRUNDIR "/private",
 		                                                     G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
 		                                                     NULL, cancellable, &local);
-		if (connection) {
-			/* Mark this connection as private */
-			g_object_set_data (G_OBJECT (connection),
-			                   NM_DBUS_PRIVATE_CONNECTION_TAG,
-			                   GUINT_TO_POINTER (TRUE));
+		if (connection)
 			return connection;
-		}
 
 		if (g_error_matches (local, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
 			g_propagate_error (error, local);
@@ -98,11 +92,6 @@ new_connection_async_got_private (GObject *source, GAsyncResult *result, gpointe
 
 	connection = g_dbus_connection_new_for_address_finish (result, &error);
 	if (connection) {
-		/* Mark this connection as private */
-		g_object_set_data (G_OBJECT (connection),
-		                   NM_DBUS_PRIVATE_CONNECTION_TAG,
-		                   GUINT_TO_POINTER (TRUE));
-
 		g_simple_async_result_set_op_res_gpointer (simple, connection, g_object_unref);
 		g_simple_async_result_complete (simple);
 		g_object_unref (simple);
@@ -164,7 +153,7 @@ _nm_dbus_new_connection_finish (GAsyncResult *result,
 gboolean
 _nm_dbus_is_connection_private (GDBusConnection *connection)
 {
-	return !!g_object_get_data (G_OBJECT (connection), NM_DBUS_PRIVATE_CONNECTION_TAG);
+	return g_dbus_connection_get_unique_name (connection) == NULL;
 }
 
 static GHashTable *proxy_types;
