@@ -98,6 +98,11 @@ new_connection_async_got_private (GObject *source, GAsyncResult *result, gpointe
 
 	connection = g_dbus_connection_new_for_address_finish (result, &error);
 	if (connection) {
+		/* Mark this connection as private */
+		g_object_set_data (G_OBJECT (connection),
+		                   NM_DBUS_PRIVATE_CONNECTION_TAG,
+		                   GUINT_TO_POINTER (TRUE));
+
 		g_simple_async_result_set_op_res_gpointer (simple, connection, g_object_unref);
 		g_simple_async_result_complete (simple);
 		g_object_unref (simple);
