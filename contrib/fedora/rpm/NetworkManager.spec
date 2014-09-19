@@ -619,7 +619,6 @@ fi
 %files libnm
 %defattr(-,root,root,0755)
 %{_libdir}/libnm.so.*
-%{_libdir}/libnm-vpn.so.*
 %{_libdir}/girepository-1.0/NM-1.0.typelib
 
 %files libnm-devel
@@ -627,9 +626,7 @@ fi
 %dir %{_includedir}/libnm
 %{_includedir}/libnm/*.h
 %{_libdir}/pkgconfig/libnm.pc
-%{_libdir}/pkgconfig/libnm-vpn.pc
 %{_libdir}/libnm.so
-%{_libdir}/libnm-vpn.so
 %{_datadir}/gir-1.0/NM-1.0.gir
 %dir %{_datadir}/gtk-doc/html/libnm
 %{_datadir}/gtk-doc/html/libnm/*
