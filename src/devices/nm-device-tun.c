@@ -156,10 +156,10 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_OWNER:
-		g_value_set_uint (value, priv->props.owner);
+		g_value_set_int64 (value, priv->props.owner);
 		break;
 	case PROP_GROUP:
-		g_value_set_uint (value, priv->props.group);
+		g_value_set_int64 (value, priv->props.group);
 		break;
 	case PROP_MODE:
 		g_value_set_string (value, priv->mode);
