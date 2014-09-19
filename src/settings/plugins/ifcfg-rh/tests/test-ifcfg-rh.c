@@ -245,13 +245,16 @@ test_read_miscellaneous_variables (void)
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
 	GError *error = NULL;
-	char *expected_mac_blacklist[2] = { "00:16:41:11:22:88", "00:16:41:11:22:99" };
+	char *expected_mac_blacklist[3] = { "00:16:41:11:22:88", "00:16:41:11:22:99", "6a:5d:5a:fa:dd:f0" };
 	int mac_blacklist_num, i;
 	guint64 expected_timestamp = 0;
 	gboolean success;
 
+	g_test_expect_message ("NetworkManager", G_LOG_LEVEL_WARNING,
+	                       "*invalid MAC in HWADDR_BLACKLIST 'XX:aa:invalid'*");
 	connection = connection_from_file (TEST_IFCFG_DIR"/network-scripts/ifcfg-test-misc-variables",
 	                                   NULL, TYPE_ETHERNET, NULL, NULL, NULL, NULL, &error, NULL);
+	g_test_assert_expected_messages ();
 	g_assert_no_error (error);
 	g_assert (connection);
 	success = nm_connection_verify (connection, &error);
@@ -271,7 +274,7 @@ test_read_miscellaneous_variables (void)
 
 	/* MAC blacklist */
 	mac_blacklist_num = nm_setting_wired_get_num_mac_blacklist_items (s_wired);
-	g_assert_cmpint (mac_blacklist_num, ==, 2);
+	g_assert_cmpint (mac_blacklist_num, ==, 3);
 	for (i = 0; i < mac_blacklist_num; i++)
 		g_assert (nm_utils_hwaddr_matches (nm_setting_wired_get_mac_blacklist_item (s_wired, i), -1, expected_mac_blacklist[i], -1));
 

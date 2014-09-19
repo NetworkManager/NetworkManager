@@ -3240,7 +3240,7 @@ make_wireless_security_setting (shvarFile *ifcfg,
 }
 
 static char **
-transform_hwddr_blacklist (const char *blacklist)
+transform_hwaddr_blacklist (const char *blacklist)
 {
 	char **strv, **iter;
 	int shift = 0;
@@ -3248,13 +3248,13 @@ transform_hwddr_blacklist (const char *blacklist)
 	strv = _nm_utils_strsplit_set (blacklist, " \t", 0);
 	for (iter = strv; iter && *iter; iter++) {
 		if (shift) {
-			*(iter-shift) = *iter;
+			*(iter - shift) = *iter;
 			*iter = NULL;
 		}
-		if (!nm_utils_hwaddr_valid (*(iter-shift), ETH_ALEN)) {
-			PARSE_WARNING ("invalid MAC in HWADDR_BLACKLIST '%s'", *(iter-shift));
-			g_free (*(iter-shift));
-			*(iter-shift) = NULL;
+		if (!nm_utils_hwaddr_valid (*(iter - shift), ETH_ALEN)) {
+			PARSE_WARNING ("invalid MAC in HWADDR_BLACKLIST '%s'", *(iter - shift));
+			g_free (*(iter - shift));
+			*(iter - shift) = NULL;
 			shift++;
 		}
 	}
@@ -3289,7 +3289,7 @@ make_wireless_setting (shvarFile *ifcfg,
 	if (value) {
 		char **strv;
 
-		strv = transform_hwddr_blacklist (value);
+		strv = transform_hwaddr_blacklist (value);
 		g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST, strv, NULL);
 		g_strfreev (strv);
 		g_free (value);
@@ -3618,7 +3618,7 @@ make_wired_setting (shvarFile *ifcfg,
 	if (value) {
 		char **strv;
 
-		strv = transform_hwddr_blacklist (value);
+		strv = transform_hwaddr_blacklist (value);
 		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST, strv, NULL);
 		g_strfreev (strv);
 		g_free (value);
