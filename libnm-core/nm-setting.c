@@ -700,7 +700,7 @@ get_property_for_dbus (NMSetting *setting,
 static void
 set_property_from_dbus (const NMSettingProperty *property, GVariant *src_value, GValue *dst_value)
 {
-	g_return_val_if_fail (property->param_spec != NULL, NULL);
+	g_return_if_fail (property->param_spec != NULL);
 
 	if (property->from_dbus)
 		property->from_dbus (src_value, dst_value);
