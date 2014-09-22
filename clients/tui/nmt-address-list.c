@@ -172,7 +172,7 @@ nmt_address_list_add_clicked (NmtWidgetList *list)
 	NmtAddressListPrivate *priv = NMT_ADDRESS_LIST_GET_PRIVATE (list);
 	int len;
 
-	len = g_strv_length (priv->strings);
+	len = priv->strings ? g_strv_length (priv->strings) : 0;
 	priv->strings = g_renew (char *, priv->strings, len + 2);
 	priv->strings[len] = g_strdup ("");
 	priv->strings[len + 1] = NULL;
