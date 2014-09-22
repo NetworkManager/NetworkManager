@@ -1020,13 +1020,17 @@ typedef enum {
 		g_variant_iter_init (&__connection_iter, __connection_variant); \
 		 \
 		__phase = NMTST_VARIANT_EDITOR_CONNECTION; \
+		__cur_setting_name = NULL; \
+		__cur_property_name = NULL; \
 		__code; \
 		while (g_variant_iter_next (&__connection_iter, "{&sa{sv}}", &__cur_setting_name, &__setting_iter)) { \
 			g_variant_builder_init (&__setting_builder, NM_VARIANT_TYPE_SETTING); \
 			__phase = NMTST_VARIANT_EDITOR_SETTING; \
+			__cur_property_name = NULL; \
 			__code; \
 			 \
-			while (g_variant_iter_next (__setting_iter, "{&sv}", &__cur_property_name, &__property_val)) { \
+			while (   __cur_setting_name \
+			       && g_variant_iter_next (__setting_iter, "{&sv}", &__cur_property_name, &__property_val)) { \
 				__phase = NMTST_VARIANT_EDITOR_PROPERTY; \
 				__code; \
 				 \
