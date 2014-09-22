@@ -1227,6 +1227,4 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_bt_object_info);
-
-	dbus_g_error_domain_register (NM_BT_ERROR, NULL, NM_TYPE_BT_ERROR);
 }

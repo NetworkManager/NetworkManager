@@ -86,15 +86,6 @@ typedef enum {
 	NM_MODEM_IP_TYPE_IPV4V6 = 0x4
 } NMModemIPType;
 
-typedef enum {
-	NM_MODEM_ERROR_CONNECTION_NOT_GSM,      /*< nick=ConnectionNotGsm >*/
-	NM_MODEM_ERROR_CONNECTION_NOT_CDMA,     /*< nick=ConnectionNotCdma >*/
-	NM_MODEM_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
-	NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
-	NM_MODEM_ERROR_INITIALIZATION_FAILED,   /*< nick=InitializationFailed >*/
-	NM_MODEM_ERROR_IP_CONFIG_INVALID,       /*< nick=IpConfigInvalid >*/
-} NMModemError;
-
 typedef enum {  /*< underscore_name=nm_modem_state >*/
 	NM_MODEM_STATE_UNKNOWN       = 0,
 	NM_MODEM_STATE_FAILED        = 1,
@@ -110,9 +101,6 @@ typedef enum {  /*< underscore_name=nm_modem_state >*/
 	NM_MODEM_STATE_CONNECTING    = 11,
 	NM_MODEM_STATE_CONNECTED     = 12,
 } NMModemState;
-
-#define NM_MODEM_ERROR (nm_modem_error_quark ())
-GQuark nm_modem_error_quark (void);
 
 
 typedef struct {

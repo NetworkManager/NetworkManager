@@ -51,8 +51,6 @@ G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_TEAM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_TEAM, NMDeviceTeamPrivate))
 
-#define NM_DEVICE_TEAM_ERROR (nm_device_team_error_quark ())
-
 static gboolean teamd_start (NMDevice *device, NMSettingTeam *s_team);
 
 typedef struct {
@@ -69,17 +67,6 @@ enum {
 
 	LAST_PROP
 };
-
-/******************************************************************/
-
-static GQuark
-nm_device_team_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-team-error");
-	return quark;
-}
 
 /******************************************************************/
 
@@ -224,8 +211,8 @@ master_update_slave_connection (NMDevice *self,
 	tdc = teamdctl_alloc ();
 	if (!tdc) {
 		g_set_error (error,
-		             NM_DEVICE_TEAM_ERROR,
-		             NM_DEVICE_TEAM_ERROR_TEAMCTL_FAILURE,
+		             NM_DEVICE_ERROR,
+		             NM_DEVICE_ERROR_FAILED,
 		             "update slave connection for slave '%s' failed to connect to teamd for master %s (out of memory?)",
 		             iface_slave, iface);
 		g_return_val_if_reached (FALSE);
@@ -235,8 +222,8 @@ master_update_slave_connection (NMDevice *self,
 	if (err) {
 		teamdctl_free (tdc);
 		g_set_error (error,
-		             NM_DEVICE_TEAM_ERROR,
-		             NM_DEVICE_TEAM_ERROR_TEAMCTL_FAILURE,
+		             NM_DEVICE_ERROR,
+		             NM_DEVICE_ERROR_FAILED,
 		             "update slave connection for slave '%s' failed to connect to teamd for master %s (err=%d)",
 		             iface_slave, iface, err);
 		return FALSE;
@@ -247,8 +234,8 @@ master_update_slave_connection (NMDevice *self,
 	teamdctl_free (tdc);
 	if (err) {
 		g_set_error (error,
-		             NM_DEVICE_TEAM_ERROR,
-		             NM_DEVICE_TEAM_ERROR_TEAMCTL_FAILURE,
+		             NM_DEVICE_ERROR,
+		             NM_DEVICE_ERROR_FAILED,
 		             "update slave connection for slave '%s' failed to get configuration from teamd master %s (err=%d)",
 		             iface_slave, iface, err);
 		g_free (port_config);
@@ -678,8 +665,8 @@ nm_device_team_new_for_connection (NMConnection *connection, GError **error)
 	if (   !nm_platform_team_add (iface)
 	    && nm_platform_get_error () != NM_PLATFORM_ERROR_EXISTS) {
 		g_set_error (error,
-		             NM_DEVICE_TEAM_ERROR,
-		             NM_DEVICE_TEAM_ERROR_PLATFORM_FAILURE,
+		             NM_DEVICE_ERROR,
+		             NM_DEVICE_ERROR_CREATION_FAILED,
 		             "failed to create team master interface '%s' for connection '%s': %s",
 		             iface, nm_connection_get_id (connection),
 		             nm_platform_get_error_msg ());
@@ -781,6 +768,4 @@ nm_device_team_class_init (NMDeviceTeamClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_team_object_info);
-
-	dbus_g_error_domain_register (NM_DEVICE_TEAM_ERROR, NULL, NM_TYPE_TEAM_ERROR);
 }

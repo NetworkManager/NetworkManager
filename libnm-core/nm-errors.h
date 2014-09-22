@@ -98,12 +98,18 @@ GQuark nm_crypto_error_quark (void);
 /**
  * NMDeviceError:
  * @NM_DEVICE_ERROR_FAILED: unknown or unclassified error
+ * @NM_DEVICE_ERROR_CREATION_FAILED: NetworkManager failed to create the device
  * @NM_DEVICE_ERROR_INVALID_CONNECTION: the specified connection is not valid
  * @NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION: the specified connection is not
  *   compatible with this device.
  * @NM_DEVICE_ERROR_NOT_ACTIVE: the device does not have an active connection
  * @NM_DEVICE_ERROR_NOT_SOFTWARE: the requested operation is only valid on
  *   software devices.
+ * @NM_DEVICE_ERROR_NOT_ALLOWED: the requested operation is not allowed at
+ *   this time.
+ * @NM_DEVICE_ERROR_SPECIFIC_OBJECT_NOT_FOUND: the "specific object" in the
+ *   activation request (eg, the #NMAccessPoint or #NMWimaxNsp) was not
+ *   found.
  *
  * Device-related errors.
  *
@@ -113,10 +119,13 @@ GQuark nm_crypto_error_quark (void);
  */
 typedef enum {
 	NM_DEVICE_ERROR_FAILED = 0,                /*< nick=Failed >*/
+	NM_DEVICE_ERROR_CREATION_FAILED,           /*< nick=CreationFailed >*/
 	NM_DEVICE_ERROR_INVALID_CONNECTION,        /*< nick=InvalidConnection >*/
 	NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,   /*< nick=IncompatibleConnection >*/
 	NM_DEVICE_ERROR_NOT_ACTIVE,                /*< nick=NotActive >*/
 	NM_DEVICE_ERROR_NOT_SOFTWARE,              /*< nick=NotSoftware >*/
+	NM_DEVICE_ERROR_NOT_ALLOWED,               /*< nick=NotAllowed >*/
+	NM_DEVICE_ERROR_SPECIFIC_OBJECT_NOT_FOUND, /*< nick=SpecificObjectNotFound >*/
 } NMDeviceError;
 
 #define NM_DEVICE_ERROR nm_device_error_quark ()

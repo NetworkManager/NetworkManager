@@ -44,8 +44,6 @@ G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_INFINIBAND, NMDeviceInfinibandPrivate))
 
-#define NM_INFINIBAND_ERROR (nm_infiniband_error_quark ())
-
 typedef struct {
 	int dummy;
 } NMDeviceInfinibandPrivate;
@@ -55,15 +53,6 @@ enum {
 
 	LAST_PROP
 };
-
-static GQuark
-nm_infiniband_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-infiniband-error");
-	return quark;
-}
 
 static void
 nm_device_infiniband_init (NMDeviceInfiniband * self)
@@ -296,8 +285,6 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_infiniband_object_info);
-
-	dbus_g_error_domain_register (NM_INFINIBAND_ERROR, NULL, NM_TYPE_INFINIBAND_ERROR);
 }
 
 /*************************************************************/

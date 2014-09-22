@@ -45,19 +45,6 @@ enum {
 	LAST_PROP
 };
 
-#define NM_DEVICE_GENERIC_ERROR (nm_device_generic_error_quark ())
-
-static GQuark
-nm_device_generic_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-device-generic-error");
-	return quark;
-}
-
-/**************************************************************/
-
 static guint32
 get_generic_capabilities (NMDevice *dev)
 {
@@ -211,6 +198,4 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_generic_object_info);
-
-	dbus_g_error_domain_register (NM_DEVICE_GENERIC_ERROR, NULL, NM_TYPE_DEVICE_GENERIC_ERROR);
 }

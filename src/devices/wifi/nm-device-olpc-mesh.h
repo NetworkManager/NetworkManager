@@ -41,13 +41,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_OLPC_MESH_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_OLPC_MESH))
 #define NM_DEVICE_OLPC_MESH_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_OLPC_MESH, NMDeviceOlpcMeshClass))
 
-typedef enum
-{
-	NM_OLPC_MESH_ERROR_CONNECTION_NOT_MESH = 0, /*< nick=ConnectionNotMesh >*/
-	NM_OLPC_MESH_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
-	NM_OLPC_MESH_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
-} NMOlpcMeshError;
-
 #define NM_DEVICE_OLPC_MESH_COMPANION      "companion"
 #define NM_DEVICE_OLPC_MESH_BITRATE        "bitrate"
 #define NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL "active-channel"

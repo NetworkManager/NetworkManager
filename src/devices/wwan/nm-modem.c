@@ -100,17 +100,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 
 /*****************************************************************************/
-
-GQuark
-nm_modem_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-modem-error");
-	return quark;
-}
-
-/*****************************************************************************/
 /* State/enabled/connected */
 
 static const char *state_table[] = {
@@ -271,8 +260,8 @@ nm_modem_get_connection_ip_type (NMModem *self,
 	if (ip4 && !ip6) {
 		if (!(priv->ip_types & NM_MODEM_IP_TYPE_IPV4)) {
 			g_set_error_literal (error,
-			                     NM_MODEM_ERROR,
-			                     NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
+			                     NM_DEVICE_ERROR,
+			                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 			                     "Connection requested IPv4 but IPv4 is "
 			                     "unsuported by the modem.");
 			return NM_MODEM_IP_TYPE_UNKNOWN;
@@ -283,8 +272,8 @@ nm_modem_get_connection_ip_type (NMModem *self,
 	if (ip6 && !ip4) {
 		if (!(priv->ip_types & NM_MODEM_IP_TYPE_IPV6)) {
 			g_set_error_literal (error,
-			                     NM_MODEM_ERROR,
-			                     NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
+			                     NM_DEVICE_ERROR,
+			                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 			                     "Connection requested IPv6 but IPv6 is "
 			                     "unsuported by the modem.");
 			return NM_MODEM_IP_TYPE_UNKNOWN;
@@ -306,8 +295,8 @@ nm_modem_get_connection_ip_type (NMModem *self,
 			return NM_MODEM_IP_TYPE_IPV6;
 
 		g_set_error_literal (error,
-		                     NM_MODEM_ERROR,
-		                     NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
+		                     NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 		                     "Connection requested both IPv4 and IPv6 "
 		                     "but dual-stack addressing is unsupported "
 		                     "by the modem.");
@@ -315,8 +304,8 @@ nm_modem_get_connection_ip_type (NMModem *self,
 	}
 
 	g_set_error_literal (error,
-	                     NM_MODEM_ERROR,
-	                     NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
+	                     NM_DEVICE_ERROR,
+	                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 	                     "Connection specified no IP configuration!");
 	return NM_MODEM_IP_TYPE_UNKNOWN;
 }
@@ -1400,8 +1389,4 @@ nm_modem_class_init (NMModemClass *klass)
 		              G_STRUCT_OFFSET (NMModemClass, state_changed),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, NM_TYPE_MODEM_STATE, NM_TYPE_MODEM_STATE);
-
-	dbus_g_error_domain_register (NM_MODEM_ERROR,
-	                              NM_DBUS_INTERFACE_DEVICE_MODEM,
-	                              NM_TYPE_MODEM_ERROR);
 }

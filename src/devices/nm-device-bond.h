@@ -34,12 +34,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_BOND_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_BOND))
 #define NM_DEVICE_BOND_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_BOND, NMDeviceBondClass))
 
-typedef enum {
-	NM_BOND_ERROR_CONNECTION_NOT_BOND = 0, /*< nick=ConnectionNotBond >*/
-	NM_BOND_ERROR_CONNECTION_INVALID,      /*< nick=ConnectionInvalid >*/
-	NM_BOND_ERROR_CONNECTION_INCOMPATIBLE, /*< nick=ConnectionIncompatible >*/
-} NMBondError;
-
 #define NM_DEVICE_BOND_SLAVES "slaves"
 
 typedef NMDevice NMDeviceBond;

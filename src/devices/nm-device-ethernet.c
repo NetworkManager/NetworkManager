@@ -73,8 +73,6 @@ G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 
 #define PPPOE_RECONNECT_DELAY 7
 
-#define NM_ETHERNET_ERROR (nm_ethernet_error_quark ())
-
 static NMSetting *device_get_setting (NMDevice *device, GType setting_type);
 
 typedef struct Supplicant {
@@ -141,15 +139,6 @@ enum {
 	LAST_PROP
 };
 
-
-static GQuark
-nm_ethernet_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-ethernet-error");
-	return quark;
-}
 
 static char *
 get_link_basename (const char *parent_path, const char *name, GError **error)
@@ -1744,8 +1733,6 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_ethernet_object_info);
-
-	dbus_g_error_domain_register (NM_ETHERNET_ERROR, NULL, NM_TYPE_ETHERNET_ERROR);
 }
 
 /*************************************************************/

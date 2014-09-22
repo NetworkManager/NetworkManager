@@ -224,8 +224,8 @@ connect_ready (MMModemSimple *simple_iface,
 		nm_log_warn (LOGD_MB, "(%s) failed to connect modem: invalid bearer IP configuration",
 		             nm_modem_get_uid (NM_MODEM (self)));
 
-		error = g_error_new_literal (NM_MODEM_ERROR,
-		                             NM_MODEM_ERROR_CONNECTION_INVALID,
+		error = g_error_new_literal (NM_DEVICE_ERROR,
+		                             NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                             "invalid bearer IP configuration");
 		g_signal_emit_by_name (self, NM_MODEM_PREPARE_RESULT, FALSE, error);
 		g_error_free (error);
@@ -512,8 +512,8 @@ complete_connection (NMModem *_self,
 	}
 
 	g_set_error (error,
-	             NM_MODEM_ERROR,
-	             NM_MODEM_ERROR_CONNECTION_INCOMPATIBLE,
+	             NM_DEVICE_ERROR,
+	             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
 	             "Device is not a mobile broadband modem");
 	return FALSE;
 }
@@ -675,8 +675,8 @@ static_stage3_ip4_done (NMModemBroadband *self)
 	/* Fully fail if invalid IP address retrieved */
 	address_string = mm_bearer_ip_config_get_address (self->priv->ipv4_config);
 	if (!ip4_string_to_num (address_string, &address_network)) {
-		error = g_error_new (NM_MODEM_ERROR,
-		                     NM_MODEM_ERROR_CONNECTION_INVALID,
+		error = g_error_new (NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                     "(%s) retrieving IP4 configuration failed: invalid address given '%s'",
 		                     nm_modem_get_uid (NM_MODEM (self)),
 		                     address_string);
@@ -756,8 +756,8 @@ stage3_ip6_done (NMModemBroadband *self)
 	if (!address_string) {
 		/* DHCP/SLAAC is allowed to skip addresses; other methods require it */
 		if (ip_method != NM_MODEM_IP_METHOD_AUTO) {
-			error = g_error_new (NM_MODEM_ERROR,
-				                 NM_MODEM_ERROR_CONNECTION_INVALID,
+			error = g_error_new (NM_DEVICE_ERROR,
+				                 NM_DEVICE_ERROR_INVALID_CONNECTION,
 				                 "(%s) retrieving IPv6 configuration failed: no address given",
 				                 nm_modem_get_uid (NM_MODEM (self)));
 		}
@@ -766,8 +766,8 @@ stage3_ip6_done (NMModemBroadband *self)
 
 	/* Fail if invalid IP address retrieved */
 	if (!inet_pton (AF_INET6, address_string, (void *) &(address.address))) {
-		error = g_error_new (NM_MODEM_ERROR,
-		                     NM_MODEM_ERROR_CONNECTION_INVALID,
+		error = g_error_new (NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                     "(%s) retrieving IPv6 configuration failed: invalid address given '%s'",
 		                     nm_modem_get_uid (NM_MODEM (self)),
 		                     address_string);
@@ -787,8 +787,8 @@ stage3_ip6_done (NMModemBroadband *self)
 	address_string = mm_bearer_ip_config_get_gateway (self->priv->ipv6_config);
 	if (address_string) {
 		if (!inet_pton (AF_INET6, address_string, (void *) &(address.address))) {
-			error = g_error_new (NM_MODEM_ERROR,
-				                 NM_MODEM_ERROR_CONNECTION_INVALID,
+			error = g_error_new (NM_DEVICE_ERROR,
+				                 NM_DEVICE_ERROR_INVALID_CONNECTION,
 				                 "(%s) retrieving IPv6 configuration failed: invalid gateway given '%s'",
 				                 nm_modem_get_uid (NM_MODEM (self)),
 				                 address_string);
@@ -798,8 +798,8 @@ stage3_ip6_done (NMModemBroadband *self)
 		nm_ip6_config_set_gateway (config, &address.address);
 	} else if (ip_method == NM_MODEM_IP_METHOD_STATIC) {
 		/* Gateway required for the 'static' method */
-		error = g_error_new (NM_MODEM_ERROR,
-		                     NM_MODEM_ERROR_CONNECTION_INVALID,
+		error = g_error_new (NM_DEVICE_ERROR,
+		                     NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                     "(%s) retrieving IPv6 configuration failed: missing gateway",
 		                     nm_modem_get_uid (NM_MODEM (self)));
 		goto out;

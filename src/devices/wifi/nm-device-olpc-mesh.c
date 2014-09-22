@@ -81,19 +81,6 @@ struct _NMDeviceOlpcMeshPrivate {
 
 /*******************************************************************/
 
-static GQuark
-nm_olpc_mesh_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-mesh-error");
-	return quark;
-}
-
-#define NM_OLPC_MESH_ERROR (nm_olpc_mesh_error_quark ())
-
-/*******************************************************************/
-
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
@@ -566,7 +553,5 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_olpc_mesh_object_info);
-
-	dbus_g_error_domain_register (NM_OLPC_MESH_ERROR, NULL, NM_TYPE_OLPC_MESH_ERROR);
 }
 

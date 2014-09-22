@@ -50,8 +50,6 @@ G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_VLAN, NMDeviceVlanPrivate))
 
-#define NM_VLAN_ERROR (nm_vlan_error_quark ())
-
 typedef struct {
 	char *initial_hw_addr;
 
@@ -71,17 +69,6 @@ enum {
 
 	LAST_PROP
 };
-
-/******************************************************************/
-
-static GQuark
-nm_vlan_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-vlan-error");
-	return quark;
-}
 
 /******************************************************************/
 
@@ -232,7 +219,7 @@ complete_connection (NMDevice *device,
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
 	if (!s_vlan) {
-		g_set_error_literal (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                     "A 'vlan' setting is required.");
 		return FALSE;
 	}
@@ -242,7 +229,7 @@ complete_connection (NMDevice *device,
 	 */
 	if (   !nm_setting_vlan_get_parent (s_vlan)
 	    && !match_hwaddr (device, connection, TRUE)) {
-		g_set_error_literal (error, NM_VLAN_ERROR, NM_VLAN_ERROR_CONNECTION_INVALID,
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
 		                     "The 'vlan' setting had no interface name, parent, or hardware address.");
 		return FALSE;
 	}
@@ -591,8 +578,6 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
 	                                        &dbus_glib_nm_device_vlan_object_info);
-
-	dbus_g_error_domain_register (NM_VLAN_ERROR, NULL, NM_TYPE_VLAN_ERROR);
 }
 
 /*************************************************************/

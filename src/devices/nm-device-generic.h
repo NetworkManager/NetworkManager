@@ -34,13 +34,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_GENERIC_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_GENERIC))
 #define NM_DEVICE_GENERIC_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_GENERIC, NMDeviceGenericClass))
 
-typedef enum
-{
-	NM_DEVICE_GENERIC_ERROR_CONNECTION_NOT_GENERIC = 0, /*< nick=ConnectionNotGeneric >*/
-	NM_DEVICE_GENERIC_ERROR_CONNECTION_INVALID,         /*< nick=ConnectionInvalid >*/
-	NM_DEVICE_GENERIC_ERROR_CONNECTION_INCOMPATIBLE,    /*< nick=ConnectionIncompatible >*/
-} NMDeviceGenericError;
-
 #define NM_DEVICE_GENERIC_TYPE_DESCRIPTION "type-description"
 
 typedef struct {
