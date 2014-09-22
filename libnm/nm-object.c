@@ -637,7 +637,7 @@ _nm_object_create (GType type, GDBusConnection *connection, const char *path)
 		if (!proxy) {
 			g_warning ("Could not create proxy for %s: %s.", path, error->message);
 			g_error_free (error);
-			return G_TYPE_INVALID;
+			return NULL;
 		}
 
 		ret = g_dbus_proxy_call_sync (proxy,
@@ -652,7 +652,7 @@ _nm_object_create (GType type, GDBusConnection *connection, const char *path)
 			g_warning ("Could not fetch property '%s' of interface '%s' on %s: %s\n",
 			           type_data->property, type_data->interface, path, error->message);
 			g_error_free (error);
-			return G_TYPE_INVALID;
+			return NULL;
 		}
 
 		g_variant_get (ret, "(v)", &value);
