@@ -716,7 +716,7 @@ test_update_secrets_null_setting_name_with_setting_hash (void)
 	secrets = build_wep_secrets (wepkey);
 
 	success = nm_connection_update_secrets (connection, NULL, secrets, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_SETTING_NOT_FOUND);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_SETTING);
 	g_assert (!success);
 
 	g_variant_unref (secrets);

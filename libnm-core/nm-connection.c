@@ -1012,8 +1012,8 @@ nm_connection_update_secrets (NMConnection *connection,
 		if (!full_connection) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
-			                     key);
+			                     NM_CONNECTION_ERROR_INVALID_SETTING,
+			                     _("Update secrets expects a full connection, instead only a setting is provided."));
 			return FALSE;
 		}
 
