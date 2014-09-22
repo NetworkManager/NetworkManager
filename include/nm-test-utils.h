@@ -1047,7 +1047,6 @@ typedef enum {
 		 \
 		__connection_variant = g_variant_builder_end (&__connection_builder); \
 	} G_STMT_END;
-#endif
 
 #define NMTST_VARIANT_ADD_SETTING(__setting_name, __setting_variant) \
 	G_STMT_START { \
@@ -1087,5 +1086,7 @@ typedef enum {
 		NMTST_VARIANT_DROP_PROPERTY (__setting_name, __property_name); \
 		NMTST_VARIANT_ADD_PROPERTY (__setting_name, __property_name, __format_string, __value); \
 	} G_STMT_END
+
+#endif /* __NM_CONNECTION_H__ */
 
 #endif /* __NM_TEST_UTILS_H__ */
