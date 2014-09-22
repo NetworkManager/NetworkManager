@@ -65,6 +65,15 @@ split_patch() {
     perl -e "$PERL_PROG" "$1" "$2"
 }
 
+spec_parse_patch_p() {
+    local SPEC="$1"
+    local NUM="$2"
+
+    local P="$(sed -n "s/^%\<patch$NUM\>.* -p\([0-9]\+\) .*$/\1/p" "$SPEC")"
+
+    echo "${P:-1}"
+}
+
 get_patch_origin() {
     local PATCH="$1"
 
@@ -365,7 +374,8 @@ EOF
         for j in "${!PATCH_LIST[@]}"; do
             i=$((${#PATCH_LIST[@]} - $j - 1))
             echo "revert Patch${LAST_PATCH_N[$i]} \"${LAST_PATCH[$i]}\"..."
-            patch -f --no-backup-if-mismatch -R -p1 < "../${LAST_PATCH[$i]}" || (
+            PNUM="$(spec_parse_patch_p "../$SPEC" "${LAST_PATCH_N[$i]}")"
+            patch -f --no-backup-if-mismatch -R "-p$PNUM" < "../${LAST_PATCH[$i]}" || (
                 # error applying patch. Maybe we have a multi line patch...
 
                 split_patch "../${LAST_PATCH[$i]}" ".makerepo-split."
@@ -374,7 +384,7 @@ EOF
                 git clean -fdx
                 for p in "../${LAST_PATCH[$i]}".makerepo-split.*; do
                     echo ">>> try split part $p for ${LAST_PATCH[$i]}"
-                    patch --no-backup-if-mismatch -R -p1 < "$p" || die "error reverting Patch${LAST_PATCH_N[$i]} ${LAST_PATCH[$i]}"
+                    patch --no-backup-if-mismatch -R "-p$PNUM" < "$p" || die "error reverting Patch${LAST_PATCH_N[$i]} ${LAST_PATCH[$i]}"
                 done
             )
             git add --all .
