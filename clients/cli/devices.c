@@ -1180,17 +1180,6 @@ do_devices_status (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nmc->get_client (nmc);
-
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto error;
-	}
-
-	if (!nmc_versions_match (nmc))
-		goto error;
-
 	/* Add headers */
 	nmc->print_fields.header_name = _("Status of devices");
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
@@ -1227,17 +1216,6 @@ do_devices_show (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
-
-	nmc->get_client (nmc);
-
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto error;
-	}
-
-	if (!nmc_versions_match (nmc))
-		goto error;
 
 	devices = get_devices_sorted (nmc->client);
 
@@ -1392,16 +1370,6 @@ do_device_connect (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nmc->get_client (nmc);
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto error;
-	}
-
-	if (!nmc_versions_match (nmc))
-		goto error;
-
 	devices = get_devices_sorted (nmc->client);
 	for (i = 0; devices[i]; i++) {
 		NMDevice *candidate = devices[i];
@@ -1526,16 +1494,6 @@ do_device_disconnect (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nmc->get_client (nmc);
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto error;
-	}
-
-	if (!nmc_versions_match (nmc))
-		goto error;
-
 	devices = get_devices_sorted (nmc->client);
 	for (i = 0; devices[i]; i++) {
 		NMDevice *candidate = devices[i];
@@ -1619,16 +1577,6 @@ do_device_delete (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
-
-	nmc->get_client (nmc);
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto error;
-	}
-
-	if (!nmc_versions_match (nmc))
-		goto error;
 
 	devices = get_devices_sorted (nmc->client);
 	for (i = 0; devices[i]; i++) {
@@ -1760,17 +1708,6 @@ do_device_wifi_list (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
-
-	nmc->get_client (nmc);
-
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto error;
-	}
-
-	if (!nmc_versions_match (nmc))
-		goto error;
 
 	devices = get_devices_sorted (nmc->client);
 	if (ifname) {
@@ -2219,17 +2156,6 @@ do_device_wifi_connect_network (NmCli *nmc, int argc, char **argv)
 		goto error;
 	}
 
-	nmc->get_client (nmc);
-
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto error;
-	}
-
-	if (!nmc_versions_match (nmc))
-		goto error;
-
 	devices = nm_client_get_devices (nmc->client);
 
 	/* Find a device to activate the connection on */
@@ -2393,7 +2319,6 @@ do_device_wifi_rescan (NmCli *nmc, int argc, char **argv)
 	}
 
 	/* Find Wi-Fi device to scan on. When no ifname is provided, the first Wi-Fi is used. */
-	nmc->get_client (nmc);
 	devices = nm_client_get_devices (nmc->client);
 	devices_idx = 0;
 	device = find_wifi_device_by_iface (devices, ifname, &devices_idx);
@@ -2517,17 +2442,6 @@ do_device_wimax_list (NmCli *nmc, int argc, char **argv)
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto error;
 	}
-
-	nmc->get_client (nmc);
-
-	if (!nm_client_get_nm_running (nmc->client)) {
-		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
-		goto error;
-	}
-
-	if (!nmc_versions_match (nmc))
-		goto error;
 
 	devices = nm_client_get_devices (nmc->client);
 	if (ifname) {
@@ -2744,6 +2658,19 @@ do_devices (NmCli *nmc, int argc, char **argv)
 	GError *error = NULL;
 
 	rl_attempted_completion_function = (rl_completion_func_t *) nmcli_device_tab_completion;
+
+	/* Get NMClient object early */
+	nmc->get_client (nmc);
+
+	/* Check whether NetworkManager is runnung */
+	if (!nm_client_get_nm_running (nmc->client)) {
+		g_string_printf (nmc->return_text, _("Error: NetworkManager is not running."));
+		nmc->return_value = NMC_RESULT_ERROR_NM_NOT_RUNNING;
+		return nmc->return_value;
+	}
+	/* Compare NM and nmcli versions */
+	if (!nmc_versions_match (nmc))
+		return nmc->return_value;
 
 	if (argc == 0) {
 		if (!nmc_terse_option_check (nmc->print_output, nmc->required_fields, &error))
