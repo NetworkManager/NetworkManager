@@ -161,7 +161,7 @@ bond_options_changed (GObject    *object,
 		val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
 		ips = g_strsplit (val, ",", -1);
 		g_object_set (G_OBJECT (priv->arp_ip_target),
-		              "string", ips,
+		              "strings", ips,
 		              NULL);
 		g_strfreev (ips);
 
