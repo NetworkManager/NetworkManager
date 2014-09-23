@@ -2737,6 +2737,7 @@ dhcp4_state_changed (NMDHCPClient *client,
 	case DHC_TIMEOUT: /* timed out contacting DHCP server */
 		dhcp4_fail (device, TRUE);
 		break;
+	case DHC_EXPIRE: /* lease expired, address must be removed */
 	case DHC_END: /* dhclient exited normally */
 	case DHC_FAIL: /* all attempts to contact server timed out, sleeping */
 	case DHC_ABEND: /* dhclient exited abnormally */
@@ -3200,6 +3201,7 @@ dhcp6_state_changed (NMDHCPClient *client,
 		if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_OTHERCONF)
 			break;
 		/* Otherwise, fall through */
+	case DHC_EXPIRE6: /* lease expired, address must be removed */
 	case DHC_FAIL: /* all attempts to contact server timed out, sleeping */
 	case DHC_ABEND: /* dhclient exited abnormally */
 		/* dhclient quit and can't get/renew a lease; so kill the connection */
