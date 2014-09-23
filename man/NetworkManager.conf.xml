@@ -106,7 +106,7 @@ Copyright (C) 2010 - 2013 Red Hat, Inc.
 	    is always appended to the end of this list (if it doesn't
 	    already appear earlier in the list), so if there is no
 	    distro-specific plugin for your system then you can leave
-	    this key unset and NetworkManager will default to using
+	    this key unset and NetworkManager will fall back to using
 	    <literal>keyfile</literal>.
 	  </para>
 	</listitem>
