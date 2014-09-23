@@ -70,11 +70,35 @@ edit_connection_list_filter (NmtEditConnectionList *list,
                              gpointer               user_data)
 {
 	NMSettingConnection *s_con;
+	const char *master, *slave_type;
+	const char *uuid, *ifname;
+	GSList *conns, *iter;
+	gboolean found_master = FALSE;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_return_val_if_fail (s_con != NULL, FALSE);
 
-	return (nm_setting_connection_get_slave_type (s_con) == NULL);
+	master = nm_setting_connection_get_master (s_con);
+	if (!master)
+		return TRUE;
+	slave_type = nm_setting_connection_get_slave_type (s_con);
+	if (   g_strcmp0 (slave_type, NM_SETTING_BOND_SETTING_NAME) != 0
+	    && g_strcmp0 (slave_type, NM_SETTING_TEAM_SETTING_NAME) != 0
+	    && g_strcmp0 (slave_type, NM_SETTING_BRIDGE_SETTING_NAME) != 0)
+		return TRUE;
+
+	conns = nm_remote_settings_list_connections (nm_settings);
+	for (iter = conns; iter; iter = iter->next) {
+		uuid = nm_connection_get_uuid (iter->data);
+		ifname = nm_connection_get_interface_name (iter->data);
+		if (!g_strcmp0 (master, uuid) || !g_strcmp0 (master, ifname)) {
+			found_master = TRUE;
+			break;
+		}
+	}
+	g_slist_free (conns);
+
+	return !found_master;
 }
 
 static NmtNewtForm *
