@@ -11331,7 +11331,7 @@ test_write_mobile_broadband (gboolean gsm)
 	g_object_set (s_serial,
 	              NM_SETTING_SERIAL_BAUD, 115200,
 	              NM_SETTING_SERIAL_BITS, 8,
-	              NM_SETTING_SERIAL_PARITY, 'n',
+	              NM_SETTING_SERIAL_PARITY, NM_SETTING_SERIAL_PARITY_NONE,
 	              NM_SETTING_SERIAL_STOPBITS, 1,
 	              NULL);
 

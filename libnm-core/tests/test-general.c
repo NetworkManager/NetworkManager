@@ -710,7 +710,7 @@ test_setting_to_dbus_transform (void)
 static void
 test_setting_to_dbus_enum (void)
 {
-	NMSetting *s_ip6, *s_wsec;
+	NMSetting *s_ip6, *s_wsec, *s_serial;
 	GVariant *dict, *val;
 
 	/* enum */
@@ -754,6 +754,23 @@ test_setting_to_dbus_enum (void)
 
 	g_variant_unref (dict);
 	g_object_unref (s_wsec);
+
+	/* another transformed enum */
+	s_serial = nm_setting_serial_new ();
+	g_object_set (s_serial,
+	              NM_SETTING_SERIAL_PARITY, NM_SETTING_SERIAL_PARITY_ODD,
+	              NULL);
+
+	dict = _nm_setting_to_dbus (s_serial, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	g_assert (dict != NULL);
+
+	val = g_variant_lookup_value (dict, NM_SETTING_SERIAL_PARITY, G_VARIANT_TYPE_BYTE);
+	g_assert (val != NULL);
+	g_assert_cmpint (g_variant_get_byte (val), ==, 'o');
+	g_variant_unref (val);
+
+	g_variant_unref (dict);
+	g_object_unref (s_serial);
 }
 
 static void
@@ -887,6 +904,7 @@ test_setting_new_from_dbus_enum (void)
 {
 	NMSettingIP6Config *s_ip6;
 	NMSettingWirelessSecurity *s_wsec;
+	NMSettingSerial *s_serial;
 	GVariant *dict;
 	GVariantBuilder builder;
 	GError *error = NULL;
@@ -926,6 +944,21 @@ test_setting_new_from_dbus_enum (void)
 
 	g_variant_unref (dict);
 	g_object_unref (s_wsec);
+
+	/* another transformed enum */
+	g_variant_builder_init (&builder, NM_VARIANT_TYPE_SETTING);
+	g_variant_builder_add (&builder, "{sv}",
+	                       NM_SETTING_SERIAL_PARITY,
+	                       g_variant_new_byte ('E'));
+	dict = g_variant_builder_end (&builder);
+
+	s_serial = (NMSettingSerial *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_SERIAL, dict, NULL, &error);
+	g_assert_no_error (error);
+
+	g_assert_cmpint (nm_setting_serial_get_parity (s_serial), ==, NM_SETTING_SERIAL_PARITY_EVEN);
+
+	g_variant_unref (dict);
+	g_object_unref (s_serial);
 }
 
 static NMConnection *

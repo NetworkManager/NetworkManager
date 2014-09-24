@@ -59,6 +59,20 @@ typedef enum {
 #define NM_SETTING_SERIAL_ERROR nm_setting_serial_error_quark ()
 GQuark nm_setting_serial_error_quark (void);
 
+/**
+ * NMSettingSerialParity:
+ * @NM_SETTING_SERIAL_PARITY_NONE: No parity bits (default)
+ * @NM_SETTING_SERIAL_PARITY_EVEN: Even parity
+ * @NM_SETTING_SERIAL_PARITY_ODD: Odd parity
+ *
+ * The parity setting of a serial port.
+ */
+typedef enum {
+	NM_SETTING_SERIAL_PARITY_NONE = 0,
+	NM_SETTING_SERIAL_PARITY_EVEN,
+	NM_SETTING_SERIAL_PARITY_ODD
+} NMSettingSerialParity;
+
 #define NM_SETTING_SERIAL_BAUD "baud"
 #define NM_SETTING_SERIAL_BITS "bits"
 #define NM_SETTING_SERIAL_PARITY "parity"
@@ -78,12 +92,12 @@ typedef struct {
 
 GType nm_setting_serial_get_type (void);
 
-NMSetting *nm_setting_serial_new            (void);
-guint      nm_setting_serial_get_baud       (NMSettingSerial *setting);
-guint      nm_setting_serial_get_bits       (NMSettingSerial *setting);
-char       nm_setting_serial_get_parity     (NMSettingSerial *setting);
-guint      nm_setting_serial_get_stopbits   (NMSettingSerial *setting);
-guint64    nm_setting_serial_get_send_delay (NMSettingSerial *setting);
+NMSetting             *nm_setting_serial_new            (void);
+guint                  nm_setting_serial_get_baud       (NMSettingSerial *setting);
+guint                  nm_setting_serial_get_bits       (NMSettingSerial *setting);
+NMSettingSerialParity  nm_setting_serial_get_parity     (NMSettingSerial *setting);
+guint                  nm_setting_serial_get_stopbits   (NMSettingSerial *setting);
+guint64                nm_setting_serial_get_send_delay (NMSettingSerial *setting);
 
 G_END_DECLS
 

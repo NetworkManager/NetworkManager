@@ -893,6 +893,56 @@ cert_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char 
 		g_bytes_unref (bytes);
 }
 
+static void
+parity_parser (NMSetting *setting, const char *key, GKeyFile *keyfile, const char *keyfile_path)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	NMSettingSerialParity parity;
+	int int_val;
+	char *str_val;
+
+	/* Keyfile traditionally stored this as the ASCII value for 'E', 'o', or 'n'.
+	 * We now accept either that or the (case-insensitive) character itself (but
+	 * still always write it the old way, for backward compatibility).
+	 */
+	int_val = nm_keyfile_plugin_kf_get_integer (keyfile, setting_name, key, NULL);
+	if (!int_val) {
+		str_val = nm_keyfile_plugin_kf_get_string (keyfile, setting_name, key, NULL);
+		if (str_val) {
+			if (str_val[0] && !str_val[1])
+				int_val = str_val[0];
+			else {
+				/* This will hit the warning below */
+				int_val = 'X';
+			}
+		}
+	}
+
+	if (!int_val)
+		return;
+
+	switch (int_val) {
+	case 'E':
+	case 'e':
+		parity = NM_SETTING_SERIAL_PARITY_EVEN;
+		break;
+	case 'O':
+	case 'o':
+		parity = NM_SETTING_SERIAL_PARITY_ODD;
+		break;
+	case 'N':
+	case 'n':
+		parity = NM_SETTING_SERIAL_PARITY_NONE;
+		break;
+	default:
+		nm_log_warn (LOGD_SETTINGS, "%s: ignoring invalid value for %s / %s",
+		             __func__, setting_name, key);
+		return;
+	}
+
+	g_object_set (setting, key, parity, NULL);
+}
+
 typedef struct {
 	const char *setting_name;
 	const char *key;
@@ -1003,6 +1053,10 @@ static KeyParser key_parsers[] = {
 	  NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
 	  TRUE,
 	  cert_parser },
+	{ NM_SETTING_SERIAL_SETTING_NAME,
+	  NM_SETTING_SERIAL_PARITY,
+	  TRUE,
+	  parity_parser },
 	{ NULL, NULL, FALSE }
 };
 

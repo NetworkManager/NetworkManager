@@ -127,7 +127,7 @@ nm_setting_serial_get_bits (NMSettingSerial *setting)
  *
  * Returns: the #NMSettingSerial:parity property of the setting
  **/
-char
+NMSettingSerialParity
 nm_setting_serial_get_parity (NMSettingSerial *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING_SERIAL (setting), 0);
@@ -174,6 +174,37 @@ nm_setting_serial_init (NMSettingSerial *setting)
 {
 }
 
+static GVariant *
+parity_to_dbus (const GValue *from)
+{
+	switch (g_value_get_enum (from)) {
+	case NM_SETTING_SERIAL_PARITY_EVEN:
+		return g_variant_new_byte ('E');
+	case NM_SETTING_SERIAL_PARITY_ODD:
+		return g_variant_new_byte ('o');
+	case NM_SETTING_SERIAL_PARITY_NONE:
+	default:
+		return g_variant_new_byte ('n');
+	}
+}
+
+static void
+parity_from_dbus (GVariant *from, GValue *to)
+{
+	switch (g_variant_get_byte (from)) {
+	case 'E':
+		g_value_set_enum (to, NM_SETTING_SERIAL_PARITY_EVEN);
+		break;
+	case 'o':
+		g_value_set_enum (to, NM_SETTING_SERIAL_PARITY_ODD);
+		break;
+	case 'n':
+	default:
+		g_value_set_enum (to, NM_SETTING_SERIAL_PARITY_NONE);
+		break;
+	}
+}
+
 static void
 set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
@@ -188,7 +219,7 @@ set_property (GObject *object, guint prop_id,
 		priv->bits = g_value_get_uint (value);
 		break;
 	case PROP_PARITY:
-		priv->parity = g_value_get_schar (value);
+		priv->parity = g_value_get_enum (value);
 		break;
 	case PROP_STOPBITS:
 		priv->stopbits = g_value_get_uint (value);
@@ -216,7 +247,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, nm_setting_serial_get_bits (setting));
 		break;
 	case PROP_PARITY:
-		g_value_set_schar (value, nm_setting_serial_get_parity (setting));
+		g_value_set_enum (value, nm_setting_serial_get_parity (setting));
 		break;
 	case PROP_STOPBITS:
 		g_value_set_uint (value, nm_setting_serial_get_stopbits (setting));
@@ -276,16 +307,21 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 	/**
 	 * NMSettingSerial:parity:
 	 *
-	 * Parity setting of the serial port.  Either 'E' for even parity, 'o' for
-	 * odd parity, or 'n' for no parity.
+	 * Parity setting of the serial port.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PARITY,
-		 g_param_spec_char (NM_SETTING_SERIAL_PARITY, "", "",
-		                    'E', 'o', 'n',
+		 g_param_spec_enum (NM_SETTING_SERIAL_PARITY, "", "",
+		                    NM_TYPE_SETTING_SERIAL_PARITY,
+		                    NM_SETTING_SERIAL_PARITY_NONE,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_CONSTRUCT |
 		                    G_PARAM_STATIC_STRINGS));
+	_nm_setting_class_transform_property (parent_class,
+	                                      NM_SETTING_SERIAL_PARITY,
+	                                      G_VARIANT_TYPE_BYTE,
+	                                      parity_to_dbus,
+	                                      parity_from_dbus);
 
 	/**
 	 * NMSettingSerial:stopbits:
