@@ -728,6 +728,34 @@ setup (NMDevice *device, NMPlatformLink *plink)
 }
 
 static void
+unrealize (NMDevice *device, gboolean remove_resources)
+{
+	NMDeviceIPTunnel *self = NM_DEVICE_IP_TUNNEL (device);
+	NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE (self);
+	GParamSpec **properties;
+	guint n_properties, i;
+
+	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->unrealize (device, remove_resources);
+
+	g_clear_object (&priv->parent);
+	priv->parent_ifindex = 0;
+	g_clear_pointer (&priv->local, g_free);
+	g_clear_pointer (&priv->remote, g_free);
+	priv->ttl = 0;
+	priv->tos = 0;
+	priv->path_mtu_discovery = FALSE;
+	g_clear_pointer (&priv->input_key, g_free);
+	g_clear_pointer (&priv->output_key, g_free);
+	priv->encap_limit = 0;
+	priv->flow_label = 0;
+
+	properties = g_object_class_list_properties (G_OBJECT_GET_CLASS (self), &n_properties);
+	for (i = 0; i < n_properties; i++)
+		 g_object_notify_by_pspec (G_OBJECT (self), properties[i]);
+	g_free (properties);
+}
+
+static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
@@ -809,6 +837,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	device_class->create_and_realize = create_and_realize;
 	device_class->realize = realize;
 	device_class->setup = setup;
+	device_class->unrealize = unrealize;
 
 	device_class->connection_type = NM_SETTING_IP_TUNNEL_SETTING_NAME;
 

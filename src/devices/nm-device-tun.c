@@ -24,9 +24,9 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "nm-default.h"
 #include "nm-device-tun.h"
 #include "nm-device-private.h"
-#include "nm-default.h"
 #include "nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-setting-tun.h"
@@ -265,6 +265,24 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	return TRUE;
 }
 
+static void
+unrealize (NMDevice *device, gboolean remove_resources)
+{
+	NMDeviceTun *self = NM_DEVICE_TUN (device);
+	NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE (self);
+	GParamSpec **properties;
+	guint n_properties, i;
+
+	NM_DEVICE_CLASS (nm_device_tun_parent_class)->unrealize (device, remove_resources);
+
+	memset (&priv->props, 0, sizeof (NMPlatformTunProperties));
+
+	properties = g_object_class_list_properties (G_OBJECT_GET_CLASS (self), &n_properties);
+	for (i = 0; i < n_properties; i++)
+		g_object_notify_by_pspec (G_OBJECT (self), properties[i]);
+	g_free (properties);
+}
+
 /**************************************************************/
 
 static void
@@ -349,6 +367,7 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
 	device_class->realize = realize;
+	device_class->unrealize = unrealize;
 	device_class->update_connection = update_connection;
 
 	/* properties */

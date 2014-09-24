@@ -1949,10 +1949,20 @@ _platform_link_cb_idle (PlatformLinkCbData *data)
 			platform_link_added (self, data->ifindex, &pllink);
 		} else {
 			NMDevice *device;
+			GError *error = NULL;
 
 			device = nm_manager_get_device_by_ifindex (self, data->ifindex);
-			if (device)
+			if (device) {
+				if (nm_device_is_software (device)) {
+					if (!nm_device_unrealize (device, FALSE, &error)) {
+						nm_log_warn (LOGD_DEVICE, "(%s): failed to unrealize: %s",
+						                          nm_device_get_iface (device),
+						                          error->message);
+						g_clear_error (&error);
+					}
+				}
 				remove_device (self, device, FALSE, TRUE);
+			}
 		}
 		g_object_remove_weak_pointer (G_OBJECT (self), (gpointer *) &data->self);
 	}

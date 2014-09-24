@@ -183,6 +183,17 @@ typedef struct {
 	 */
 	void        (*setup) (NMDevice *self, NMPlatformLink *plink);
 
+	/**
+	 * unrealize():
+	 * @self: the #NMDevice
+	 * @remove_resources: if %TRUE remove backing resources
+	 * @error: location to store error, or %NULL
+	 *
+	 * Clears any properties that depend on backing resources (kernel devices,
+	 * etc) and removes those resources if @remove_resources is %TRUE.
+	 */
+	void            (*unrealize)  (NMDevice *self, gboolean remove_resources);
+
 	/* Hardware state (IFF_UP) */
 	gboolean        (*can_unmanaged_external_down)  (NMDevice *self);
 	gboolean        (*is_up)                        (NMDevice *self);
@@ -465,6 +476,9 @@ gboolean nm_device_realize            (NMDevice *device,
 gboolean nm_device_create_and_realize (NMDevice *self,
                                        NMConnection *connection,
                                        NMDevice *parent,
+                                       GError **error);
+gboolean nm_device_unrealize          (NMDevice *device,
+                                       gboolean remove_resources,
                                        GError **error);
 
 gboolean nm_device_get_autoconnect (NMDevice *device);

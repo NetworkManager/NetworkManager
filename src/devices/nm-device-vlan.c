@@ -256,6 +256,16 @@ create_and_realize (NMDevice *device,
 	return TRUE;
 }
 
+static void
+unrealize (NMDevice *device, gboolean remove_resources)
+{
+	NM_DEVICE_CLASS (nm_device_vlan_parent_class)->unrealize (device, remove_resources);
+
+	NM_DEVICE_VLAN_GET_PRIVATE (device)->vlan_id = 0;
+	g_object_notify (G_OBJECT (device), NM_DEVICE_VLAN_ID);
+	nm_device_vlan_set_parent (NM_DEVICE_VLAN (device), NULL);
+}
+
 /******************************************************************/
 
 static NMDeviceCapabilities
@@ -663,6 +673,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	parent_class->create_and_realize = create_and_realize;
 	parent_class->realize = realize;
 	parent_class->setup = setup;
+	parent_class->unrealize = unrealize;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->bring_up = bring_up;
 	parent_class->act_stage1_prepare = act_stage1_prepare;
