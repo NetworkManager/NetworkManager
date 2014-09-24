@@ -87,7 +87,7 @@ rebuild_header (NmtEditorSection *section)
 
 	nmt_editor_grid_append (priv->header,
 	                        priv->title,
-	                        priv->header_widget ? priv->header_widget : nmt_newt_separator_new (),
+	                        priv->header_widget,
 	                        priv->toggle);
 	nmt_editor_grid_set_row_flags (priv->header,
 	                               priv->toggle,

@@ -101,20 +101,17 @@ nmt_editor_grid_finalize (GObject *object)
  * nmt_editor_grid_append:
  * @grid: the #NmtEditorGrid
  * @label: (allow-none): the label text for @widget, or %NULL
- * @widget: the (main) widget
+ * @widget: (allow-none): the (main) widget
  * @extra: (allow-none): optional extra widget
  *
  * Adds a row to @grid.
  *
- * If @label is non-%NULL, this will add a three-column row,
- * containing a right-aligned #NmtNewtLabel in the first column,
- * @widget in the second column, and @extra (if non-%NULL) in
- * the third column.
+ * If @label and @widget are both non-%NULL, this will add a three-column row,
+ * containing a right-aligned #NmtNewtLabel in the first column, @widget in the
+ * second column, and @extra (if non-%NULL) in the third column.
  *
- * If @label is %NULL, then this will add a row with a single
- * grid-spanning column, containing @widget.
- *
- * FIXME: That's sort of weird.
+ * If either @label or @widget is %NULL, then the other column will expand into
+ * it.
  *
  * See also nmt_editor_grid_set_row_flags().
  */
@@ -129,7 +126,14 @@ nmt_editor_grid_append (NmtEditorGrid   *grid,
 	NmtNewtContainer *container = NMT_NEWT_CONTAINER (grid);
 	NmtEditorGridRow row;
 
+	g_return_if_fail (label != NULL || widget != NULL);
+
 	memset (&row, 0, sizeof (row));
+
+	if (label && !widget) {
+		widget = nmt_newt_label_new (label);
+		label = NULL;
+	}
 
 	if (label) {
 		row.label = nmt_newt_label_new (label);
@@ -408,27 +412,28 @@ nmt_editor_grid_size_allocate (NmtNewtWidget *widget,
 			                               y + row,
 			                               col1_width,
 			                               priv->row_heights[i]);
-			if (rows[i].extra) {
-				int wwidth, wheight, ex;
-
-				if (rows[i].flags & NMT_EDITOR_GRID_ROW_EXTRA_ALIGN_RIGHT)
-					ex = x + col0_width + col1_width + 2;
-				else {
-					nmt_newt_widget_size_request (rows[i].widget, &wwidth, &wheight);
-					ex = x + col0_width + wwidth + 2;
-				}
-
-				nmt_newt_widget_size_allocate (rows[i].extra,
-				                               ex,
-				                               y + row,
-				                               col2_width,
-				                               priv->row_heights[i]);
-			}
 		} else {
 			nmt_newt_widget_size_allocate (rows[i].widget,
 			                               x,
 			                               y + row,
-			                               col0_width + col1_width + col2_width + 2,
+			                               col0_width + col1_width + 1,
+			                               priv->row_heights[i]);
+		}
+
+		if (rows[i].extra) {
+			int wwidth, wheight, ex;
+
+			if (rows[i].flags & NMT_EDITOR_GRID_ROW_EXTRA_ALIGN_RIGHT)
+				ex = x + col0_width + col1_width + 2;
+			else {
+				nmt_newt_widget_size_request (rows[i].widget, &wwidth, &wheight);
+				ex = x + col0_width + wwidth + 2;
+			}
+
+			nmt_newt_widget_size_allocate (rows[i].extra,
+			                               ex,
+			                               y + row,
+			                               col2_width,
 			                               priv->row_heights[i]);
 		}
 
