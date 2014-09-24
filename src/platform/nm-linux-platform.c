@@ -3567,9 +3567,9 @@ ip6_address_add (NMPlatform *platform,
 }
 
 static gboolean
-ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen)
+ip4_address_delete (NMPlatform *platform, int ifindex, in_addr_t addr, int plen, in_addr_t peer_address)
 {
-	return delete_object (platform, build_rtnl_addr (AF_INET, ifindex, &addr, NULL, plen, 0, 0, 0, NULL), TRUE);
+	return delete_object (platform, build_rtnl_addr (AF_INET, ifindex, &addr, peer_address ? &peer_address : NULL, plen, 0, 0, 0, NULL), TRUE);
 }
 
 static gboolean

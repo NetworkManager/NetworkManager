@@ -447,7 +447,7 @@ typedef struct {
 	gboolean (*ip6_address_add) (NMPlatform *, int ifindex,
 	                             struct in6_addr address, struct in6_addr peer_address, int plen,
 	                             guint32 lifetime, guint32 preferred_lft, guint flags);
-	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, int plen);
+	gboolean (*ip4_address_delete) (NMPlatform *, int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
 	gboolean (*ip6_address_delete) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
 	gboolean (*ip4_address_exists) (NMPlatform *, int ifindex, in_addr_t address, int plen);
 	gboolean (*ip6_address_exists) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
@@ -591,7 +591,7 @@ gboolean nm_platform_ip4_address_add (int ifindex,
 gboolean nm_platform_ip6_address_add (int ifindex,
                                       struct in6_addr address, struct in6_addr peer_address, int plen,
                                       guint32 lifetime, guint32 preferred_lft, guint flags);
-gboolean nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen);
+gboolean nm_platform_ip4_address_delete (int ifindex, in_addr_t address, int plen, in_addr_t peer_address);
 gboolean nm_platform_ip6_address_delete (int ifindex, struct in6_addr address, int plen);
 gboolean nm_platform_ip4_address_exists (int ifindex, in_addr_t address, int plen);
 gboolean nm_platform_ip6_address_exists (int ifindex, struct in6_addr address, int plen);

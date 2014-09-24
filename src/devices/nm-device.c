@@ -743,14 +743,19 @@ nm_device_get_physical_port_id (NMDevice *self)
 /***********************************************************/
 
 static gboolean
-nm_device_uses_generated_connection (NMDevice *self)
+nm_device_uses_generated_assumed_connection (NMDevice *self)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
 
-	connection = nm_device_get_connection (self);
-	if (!connection)
-		return FALSE;
-	return nm_settings_connection_get_nm_generated (NM_SETTINGS_CONNECTION (connection));
+	if (   priv->act_request
+	    && nm_active_connection_get_assumed (NM_ACTIVE_CONNECTION (priv->act_request))) {
+		connection = nm_act_request_get_connection (priv->act_request);
+		if (   connection
+		    && nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection)))
+			return TRUE;
+	}
+	return FALSE;
 }
 
 static SlaveInfo *
@@ -1390,7 +1395,7 @@ nm_device_master_release_slaves (NMDevice *self)
 	NMDeviceStateReason reason;
 
 	/* Don't release the slaves if this connection doesn't belong to NM. */
-	if (nm_device_uses_generated_connection (self))
+	if (nm_device_uses_generated_assumed_connection (self))
 		return;
 
 	reason = priv->state_reason;
@@ -1993,8 +1998,10 @@ nm_device_emit_recheck_assume (gpointer self)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
 	priv->recheck_assume_id = 0;
-	if (!nm_device_get_act_request (self) && (priv->ip4_config || priv->ip6_config))
+	if (!nm_device_get_act_request (self) && (priv->ip4_config || priv->ip6_config)) {
+		_LOGD (LOGD_DEVICE, "emit RECHECK_ASSUME signal");
 		g_signal_emit (self, signals[RECHECK_ASSUME], 0);
+	}
 	return G_SOURCE_REMOVE;
 }
 
@@ -2283,7 +2290,7 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 
 		if (slave_state == NM_DEVICE_STATE_IP_CONFIG)
 			nm_device_enslave_slave (self, info->slave, nm_device_get_connection (info->slave));
-		else if (   nm_device_uses_generated_connection (self)
+		else if (   nm_device_uses_generated_assumed_connection (self)
 		         && slave_state <= NM_DEVICE_STATE_DISCONNECTED)
 			nm_device_queue_recheck_assume (info->slave);
 	}
@@ -5236,7 +5243,7 @@ nm_device_set_ip4_config (NMDevice *self,
 		if (old_config != priv->ip4_config && old_config)
 			g_object_unref (old_config);
 
-		if (nm_device_uses_generated_connection (self)) {
+		if (nm_device_uses_generated_assumed_connection (self)) {
 			NMConnection *connection = nm_device_get_connection (self);
 			NMSetting *s_ip4;
 
@@ -5355,7 +5362,7 @@ nm_device_set_ip6_config (NMDevice *self,
 		if (old_config != priv->ip6_config && old_config)
 			g_object_unref (old_config);
 
-		if (nm_device_uses_generated_connection (self)) {
+		if (nm_device_uses_generated_assumed_connection (self)) {
 			NMConnection *connection = nm_device_get_connection (self);
 			NMSetting *s_ip6;
 

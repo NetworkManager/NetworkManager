@@ -118,7 +118,7 @@ static void impl_manager_check_connectivity (NMManager *manager,
 
 #include "nm-manager-glue.h"
 
-static void add_device (NMManager *self, NMDevice *device, gboolean generate_con);
+static void add_device (NMManager *self, NMDevice *device, gboolean try_assume);
 static void remove_device (NMManager *self, NMDevice *device, gboolean quitting);
 
 static NMActiveConnection *_new_active_connection (NMManager *self,
@@ -281,11 +281,28 @@ active_connection_remove (NMManager *self, NMActiveConnection *active)
 	/* FIXME: switch to a GList for faster removal */
 	found = g_slist_find (priv->active_connections, active);
 	if (found) {
+		NMConnection *connection;
+
 		priv->active_connections = g_slist_remove (priv->active_connections, active);
 		g_signal_emit (self, signals[ACTIVE_CONNECTION_REMOVED], 0, active);
 		g_signal_handlers_disconnect_by_func (active, active_connection_state_changed, self);
 		g_signal_handlers_disconnect_by_func (active, active_connection_default_changed, self);
+
+		if (   nm_active_connection_get_assumed (active)
+		    && (connection = nm_active_connection_get_connection (active))
+		    && nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection)))
+			g_object_ref (connection);
+		else
+			connection = NULL;
+
 		g_object_unref (active);
+
+		if (connection) {
+			nm_log_dbg (LOGD_DEVICE, "Assumed connection disconnected. Deleting generated connection '%s' (%s)",
+			            nm_connection_get_id (connection), nm_connection_get_uuid (connection));
+			nm_settings_connection_delete (NM_SETTINGS_CONNECTION (connection), NULL, NULL);
+			g_object_unref (connection);
+		}
 	}
 
 	return found && notify;
@@ -1488,12 +1505,13 @@ match_connection_filter (NMConnection *connection, gpointer user_data)
  * get_existing_connection:
  * @manager: #NMManager instance
  * @device: #NMDevice instance
+ * @out_generated: (allow-none): return TRUE, if the connection was generated.
  *
  * Returns: a #NMSettingsConnection to be assumed by the device, or %NULL if
  *   the device does not support assuming existing connections.
  */
 static NMConnection *
-get_existing_connection (NMManager *manager, NMDevice *device)
+get_existing_connection (NMManager *manager, NMDevice *device, gboolean *out_generated)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	gs_free_slist GSList *connections = nm_manager_get_activatable_connections (manager);
@@ -1502,6 +1520,9 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	GError *error = NULL;
 	NMDevice *master = NULL;
 	int ifindex = nm_device_get_ifindex (device);
+
+	if (out_generated)
+		*out_generated = FALSE;
 
 	nm_device_capture_initial_config (device);
 
@@ -1561,9 +1582,14 @@ get_existing_connection (NMManager *manager, NMDevice *device)
 	            nm_connection_get_id (connection));
 
 	added = nm_settings_add_connection (priv->settings, connection, FALSE, &error);
-	if (added)
-		nm_settings_connection_set_nm_generated (added);
-	else {
+	if (added) {
+		nm_settings_connection_set_flags (NM_SETTINGS_CONNECTION (added),
+		                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED |
+		                                  NM_SETTINGS_CONNECTION_FLAGS_NM_GENERATED_ASSUMED,
+		                                  TRUE);
+		if (out_generated)
+			*out_generated = TRUE;
+	} else {
 		nm_log_warn (LOGD_SETTINGS, "(%s) Couldn't save generated connection '%s': %s",
 		             nm_device_get_iface (device),
 		             nm_connection_get_id (connection),
@@ -1620,42 +1646,62 @@ assume_connection (NMManager *self, NMDevice *device, NMConnection *connection)
 	return TRUE;
 }
 
-static void
+static gboolean
 recheck_assume_connection (NMDevice *device, gpointer user_data)
 {
-	NMManager *self = user_data;
+	NMManager *self = NM_MANAGER (user_data);
 	NMConnection *connection;
-	gboolean was_unmanaged = FALSE;
+	gboolean was_unmanaged = FALSE, success, generated;
+	NMDeviceState state;
 
 	if (manager_sleeping (self))
-		return;
+		return FALSE;
 	if (nm_device_get_unmanaged_flag (device, NM_UNMANAGED_USER))
-		return;
+		return FALSE;
 
-	connection = get_existing_connection (self, device);
+	connection = get_existing_connection (self, device, &generated);
 	if (!connection) {
 		nm_log_dbg (LOGD_DEVICE, "(%s): can't assume; no connection",
 		            nm_device_get_iface (device));
-		return;
+		return FALSE;
 	}
 
-	if (nm_device_get_state (device) == NM_DEVICE_STATE_UNMANAGED) {
+	state = nm_device_get_state (device);
+
+	if (state > NM_DEVICE_STATE_DISCONNECTED)
+		return FALSE;
+
+	if (state == NM_DEVICE_STATE_UNMANAGED) {
 		was_unmanaged = TRUE;
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_UNAVAILABLE,
 		                         NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 	}
 
-	if (!assume_connection (self, device, connection)) {
+	success = assume_connection (self, device, connection);
+	if (!success) {
 		if (was_unmanaged) {
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_UNAVAILABLE,
 			                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-			nm_device_state_changed (device,
-			                         NM_DEVICE_STATE_UNMANAGED,
-			                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+
+			/* Return default-unmanaged devices to their original state */
+			if (nm_device_get_unmanaged_flag (device, NM_UNMANAGED_DEFAULT)) {
+				nm_device_state_changed (device,
+				                         NM_DEVICE_STATE_UNMANAGED,
+				                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+			}
+		}
+
+		if (generated) {
+			nm_log_dbg (LOGD_DEVICE, "(%s): connection assumption failed. Deleting generated connection",
+			            nm_device_get_iface (device));
+
+			nm_settings_connection_delete (NM_SETTINGS_CONNECTION (connection), NULL, NULL);
 		}
 	}
+
+	return success;
 }
 
 static void
@@ -1686,22 +1732,22 @@ device_ip_iface_changed (NMDevice *device,
  * add_device:
  * @self: the #NMManager
  * @device: the #NMDevice to add
- * @generate_con: %TRUE if existing connection (if any) should be assumed
+ * @try_assume: %TRUE if existing connection (if any) should be assumed
  *
  * If successful, this function will increase the references count of @device.
  * Callers should decrease the reference count.
  */
 static void
-add_device (NMManager *self, NMDevice *device, gboolean generate_con)
+add_device (NMManager *self, NMDevice *device, gboolean try_assume)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *iface, *driver, *type_desc;
 	const GSList *unmanaged_specs;
 	gboolean user_unmanaged, sleeping;
-	NMConnection *connection = NULL;
 	gboolean enabled = FALSE;
 	RfKillType rtype;
 	GSList *iter, *remove = NULL;
+	gboolean connection_assumed = FALSE;
 
 	/* No duplicates */
 	if (nm_manager_get_device_by_udi (self, nm_device_get_udi (device)))
@@ -1778,19 +1824,16 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 
 	nm_device_dbus_export (device);
 
-	/* Don't generate a connection e.g. for devices NM just created, or
-	 * for the loopback, or when we're sleeping. */
-	if (generate_con && !user_unmanaged && !sleeping)
-		connection = get_existing_connection (self, device);
+	if (try_assume) {
+		connection_assumed = recheck_assume_connection (device, self);
+		g_signal_connect (device, NM_DEVICE_RECHECK_ASSUME,
+		                  G_CALLBACK (recheck_assume_connection), self);
+	}
 
-	/* Start the device if it's supposed to be managed. Note that this will
-	 * manage default-unmanaged devices if they have a generated connection.
-	 */
-	if (nm_device_get_managed (device) || connection) {
+	if (!connection_assumed && nm_device_get_managed (device)) {
 		nm_device_state_changed (device,
 		                         NM_DEVICE_STATE_UNAVAILABLE,
-		                         connection ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED :
-		                                      NM_DEVICE_STATE_REASON_NOW_MANAGED);
+		                         NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	}
 
 	nm_settings_device_added (priv->settings, device);
@@ -1801,16 +1844,6 @@ add_device (NMManager *self, NMDevice *device, gboolean generate_con)
 	 * need to create new virtual interfaces now.
 	 */
 	system_create_virtual_devices (self);
-
-	/* If the device has a connection it can assume, do that now. If it's a
-	 * device that we might ever want to assume a connection on, then set that up.
-	 */
-	if (connection)
-		assume_connection (self, device, connection);
-	if (generate_con) {
-		g_signal_connect (device, NM_DEVICE_RECHECK_ASSUME,
-		                  G_CALLBACK (recheck_assume_connection), self);
-	}
 }
 
 static NMDevice *

@@ -597,7 +597,7 @@ do_ip6_address_add (char **argv)
 		return FALSE;
 }
 
-#define ADDR_CMD_FULL(v, cmdname, print) \
+#define ADDR_CMD_FULL(v, cmdname, print, ...) \
 	static gboolean \
 	do_##v##_address_##cmdname (char **argv) \
 	{ \
@@ -605,7 +605,7 @@ do_ip6_address_add (char **argv)
 		v##_t address; \
 		int plen; \
 		if (ifindex && parse_##v##_address (*argv++, &address, &plen)) { \
-			gboolean value = nm_platform_##v##_address_##cmdname (ifindex, address, plen); \
+			gboolean value = nm_platform_##v##_address_##cmdname (ifindex, address, plen, ##__VA_ARGS__); \
 			if (print) { \
 				print_boolean (value); \
 				return TRUE; \
@@ -614,7 +614,7 @@ do_ip6_address_add (char **argv)
 		} else \
 			return FALSE; \
 	}
-#define ADDR_CMD(cmdname) ADDR_CMD_FULL (ip4, cmdname, FALSE) ADDR_CMD_FULL (ip6, cmdname, FALSE)
+#define ADDR_CMD(cmdname) ADDR_CMD_FULL (ip4, cmdname, FALSE, 0) ADDR_CMD_FULL (ip6, cmdname, FALSE)
 #define ADDR_CMD_PRINT(cmdname) ADDR_CMD_FULL (ip4, cmdname, TRUE) ADDR_CMD_FULL (ip6, cmdname, TRUE)
 
 ADDR_CMD (delete)
