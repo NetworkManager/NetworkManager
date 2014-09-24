@@ -1590,6 +1590,9 @@ have_connection_for_device (NMSettings *self, NMDevice *device)
 		NMConnection *connection = NM_CONNECTION (data);
 		const char *ctype, *iface;
 
+		if (!nm_device_check_connection_compatible (device, connection))
+			continue;
+
 		s_con = nm_connection_get_setting_connection (connection);
 
 		iface = nm_setting_connection_get_interface_name (s_con);
