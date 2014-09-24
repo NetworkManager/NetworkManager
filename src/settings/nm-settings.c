@@ -326,17 +326,17 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 	NMConnection *b = NM_CONNECTION (pb);
 	NMSettingConnection *con_b;
 	guint64 ts_a = 0, ts_b = 0;
+	gboolean can_ac_a, can_ac_b;
 
 	con_a = nm_connection_get_setting_connection (a);
 	g_assert (con_a);
 	con_b = nm_connection_get_setting_connection (b);
 	g_assert (con_b);
 
-	if (nm_setting_connection_get_autoconnect (con_a) != nm_setting_connection_get_autoconnect (con_b)) {
-		if (nm_setting_connection_get_autoconnect (con_a))
-			return -1;
-		return 1;
-	}
+	can_ac_a = !!nm_setting_connection_get_autoconnect (con_a);
+	can_ac_b = !!nm_setting_connection_get_autoconnect (con_b);
+	if (can_ac_a != can_ac_b)
+		return can_ac_a ? -1 : 1;
 
 	nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (pa), &ts_a);
 	nm_settings_connection_get_timestamp (NM_SETTINGS_CONNECTION (pb), &ts_b);
