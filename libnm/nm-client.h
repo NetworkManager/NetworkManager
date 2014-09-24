@@ -30,7 +30,6 @@
 #include <glib-object.h>
 #include <gio/gio.h>
 #include <nm-dbus-interface.h>
-#include "nm-object.h"
 #include "nm-device.h"
 #include "nm-active-connection.h"
 #include "nm-vpn-connection.h"
@@ -144,11 +143,11 @@ typedef enum {
 GQuark nm_client_error_quark (void);
 
 typedef struct {
-	NMObject parent;
+	GObject parent;
 } NMClient;
 
 typedef struct {
-	NMObjectClass parent;
+	GObjectClass parent;
 
 	/* Signals */
 	void (*device_added) (NMClient *client, NMDevice *device);

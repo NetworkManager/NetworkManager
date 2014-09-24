@@ -61,6 +61,7 @@ libnminclude_HEADERS =			\
 libnm_la_private_headers =		\
 	nm-dbus-helpers.h		\
 	nm-device-private.h		\
+	nm-manager.h			\
 	nm-object-cache.h		\
 	nm-object-private.h		\
 	nm-remote-connection-private.h
@@ -89,6 +90,7 @@ libnm_la_csources =			\
 	nm-enum-types.c			\
 	nm-ip4-config.c			\
 	nm-ip6-config.c			\
+	nm-manager.c			\
 	nm-object-cache.c		\
 	nm-object.c			\
 	nm-remote-connection.c		\
