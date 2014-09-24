@@ -598,17 +598,17 @@ master_state_cb (NMActiveConnection *master,
                  gpointer user_data)
 {
 	NMActiveConnection *self = NM_ACTIVE_CONNECTION (user_data);
-	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (self);
 	NMActiveConnectionState master_state = nm_active_connection_get_state (master);
+	NMDevice *master_device = nm_active_connection_get_device (master);
 
 	check_master_ready (self);
 
 	_LOGD ("master ActiveConnection [%p] state now '%s' (%d)",
 	       master, state_to_string (master_state), master_state);
 
-	if (   master_state >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING
-	    && !priv->master_ready) {
-		/* Master failed without ever creating its device */
+	if (   master_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATING
+	    && (!master_device || !nm_device_is_real (master_device))) {
+		/* Master failed without ever creating or realizing its device */
 		if (NM_ACTIVE_CONNECTION_GET_CLASS (self)->master_failed)
 			NM_ACTIVE_CONNECTION_GET_CLASS (self)->master_failed (self);
 	}

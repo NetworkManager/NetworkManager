@@ -174,14 +174,28 @@ typedef struct {
 	                                       GError **error);
 
 	/**
-	 * setup():
+	 * setup_start():
 	 * @self: the #NMDevice
 	 * @plink: the #NMPlatformLink if backed by a kernel netdevice
 	 *
 	 * Update the device from backing resource properties (like hardware
-	 * addresses, carrier states, driver/firmware info, etc).
+	 * addresses, carrier states, driver/firmware info, etc).  This function
+	 * should only change properties for this device, and should not perform
+	 * any tasks that affect other interfaces (like master/slave or parent/child
+	 * stuff).
 	 */
-	void        (*setup) (NMDevice *self, NMPlatformLink *plink);
+	void        (*setup_start) (NMDevice *self, NMPlatformLink *plink);
+
+	/**
+	 * setup_finish():
+	 * @self: the #NMDevice
+	 * @plink: the #NMPlatformLink if backed by a kernel netdevice
+	 *
+	 * Update the device's master/slave or parent/child relationships from
+	 * backing resource properties.  After this function finishes, the device
+	 * is ready for network connectivity.
+	 */
+	void        (*setup_finish) (NMDevice *self, NMPlatformLink *plink);
 
 	/**
 	 * unrealize():
@@ -466,7 +480,6 @@ void nm_device_set_unmanaged_initial (NMDevice *device,
                                       gboolean unmanaged);
 
 gboolean nm_device_get_is_nm_owned (NMDevice *device);
-void     nm_device_set_nm_owned    (NMDevice *device);
 
 gboolean nm_device_has_capability (NMDevice *self, NMDeviceCapabilities caps);
 
@@ -477,6 +490,8 @@ gboolean nm_device_create_and_realize (NMDevice *self,
                                        NMConnection *connection,
                                        NMDevice *parent,
                                        GError **error);
+void     nm_device_setup_finish       (NMDevice *self,
+                                       NMPlatformLink *plink);
 gboolean nm_device_unrealize          (NMDevice *device,
                                        gboolean remove_resources,
                                        GError **error);

@@ -149,7 +149,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (!s_infiniband)
 		return FALSE;
 
-	if (s_infiniband) {
+	if (nm_device_is_real (device)) {
 		const char *mac;
 
 		mac = nm_setting_infiniband_get_mac_address (s_infiniband);

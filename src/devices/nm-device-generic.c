@@ -61,13 +61,13 @@ get_type_description (NMDevice *device)
 }
 
 static void
-setup (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, NMPlatformLink *plink)
 {
 	NMDeviceGeneric *self = NM_DEVICE_GENERIC (device);
 	NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE (self);
 	int ifindex;
 
-	NM_DEVICE_CLASS (nm_device_generic_parent_class)->setup (device, plink);
+	NM_DEVICE_CLASS (nm_device_generic_parent_class)->setup_start (device, plink);
 
 	g_clear_pointer (&priv->type_description, g_free);
 	ifindex = nm_device_get_ip_ifindex (NM_DEVICE (self));
@@ -203,7 +203,7 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 
-	parent_class->setup = setup;
+	parent_class->setup_start = setup_start;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->get_type_description = get_type_description;
 	parent_class->check_connection_compatible = check_connection_compatible;

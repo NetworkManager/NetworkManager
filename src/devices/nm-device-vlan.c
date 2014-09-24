@@ -148,12 +148,12 @@ nm_device_vlan_set_parent (NMDeviceVlan *self, NMDevice *parent)
 }
 
 static void
-setup (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, NMPlatformLink *plink)
 {
 	NMDeviceVlan *self = NM_DEVICE_VLAN (device);
 	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
 
-	NM_DEVICE_CLASS (nm_device_vlan_parent_class)->setup (device, plink);
+	NM_DEVICE_CLASS (nm_device_vlan_parent_class)->setup_start (device, plink);
 
 	_LOGI (LOGD_HW | LOGD_VLAN, "VLAN ID %d with parent %s",
 	       priv->vlan_id, nm_device_get_iface (priv->parent));
@@ -311,6 +311,9 @@ notify_new_device_added (NMDevice *device, NMDevice *new_device)
 	if (priv->parent)
 		return;
 
+	if (!nm_device_is_real (device))
+		return;
+
 	plnk = nm_platform_link_get_lnk_vlan (NM_PLATFORM_GET, nm_device_get_ifindex (device), &plink);
 	if (!plnk) {
 		_LOGW (LOGD_VLAN, "failed to get VLAN interface info while checking added component.");
@@ -397,18 +400,21 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (!s_vlan)
 		return FALSE;
 
-	if (nm_setting_vlan_get_id (s_vlan) != priv->vlan_id)
-		return FALSE;
+	/* Before the device is realized some properties will not be set */
+	if (nm_device_is_real (device)) {
+		if (nm_setting_vlan_get_id (s_vlan) != priv->vlan_id)
+			return FALSE;
 
-	/* Check parent interface; could be an interface name or a UUID */
-	parent = nm_setting_vlan_get_parent (s_vlan);
-	if (parent) {
-		if (!match_parent (NM_DEVICE_VLAN (device), parent))
-			return FALSE;
-	} else {
-		/* Parent could be a MAC address in an NMSettingWired */
-		if (!match_hwaddr (device, connection, TRUE))
-			return FALSE;
+		/* Check parent interface; could be an interface name or a UUID */
+		parent = nm_setting_vlan_get_parent (s_vlan);
+		if (parent) {
+			if (!match_parent (NM_DEVICE_VLAN (device), parent))
+				return FALSE;
+		} else {
+			/* Parent could be a MAC address in an NMSettingWired */
+			if (!match_hwaddr (device, connection, TRUE))
+				return FALSE;
+		}
 	}
 
 	/* Ensure the interface name matches.  If not specified we assume a match
@@ -672,7 +678,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 
 	parent_class->create_and_realize = create_and_realize;
 	parent_class->realize = realize;
-	parent_class->setup = setup;
+	parent_class->setup_start = setup_start;
 	parent_class->unrealize = unrealize;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->bring_up = bring_up;

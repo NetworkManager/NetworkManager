@@ -97,7 +97,7 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 		return FALSE;
 
 	mac_address = nm_setting_bridge_get_mac_address (s_bridge);
-	if (mac_address) {
+	if (mac_address && nm_device_is_real (device)) {
 		const char *hw_addr;
 
 		hw_addr = nm_device_get_hw_address (device);

@@ -226,6 +226,13 @@ realize (NMDevice *device, NMPlatformLink *plink, GError **error)
 	return TRUE;
 }
 
+static void
+setup_start (NMDevice *device, NMPlatformLink *plink)
+{
+	NM_DEVICE_CLASS (nm_device_tun_parent_class)->setup_start (device, plink);
+	reload_tun_properties (device);
+}
+
 static gboolean
 check_connection_compatible (NMDevice *device, NMConnection *connection)
 {
@@ -235,8 +242,6 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	NMSettingTun *s_tun;
 	gint64 user, group;
 
-	reload_tun_properties (self);
-
 	if (!NM_DEVICE_CLASS (nm_device_tun_parent_class)->check_connection_compatible (device, connection))
 		return FALSE;
 
@@ -244,23 +249,25 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (!s_tun)
 		return FALSE;
 
-	mode = tun_mode_from_string (priv->mode);
-	if (mode != nm_setting_tun_get_mode (s_tun))
-		return FALSE;
+	if (nm_device_is_real (device)) {
+		mode = tun_mode_from_string (priv->mode);
+		if (mode != nm_setting_tun_get_mode (s_tun))
+			return FALSE;
 
-	user = _nm_utils_ascii_str_to_int64 (nm_setting_tun_get_owner (s_tun), 10, 0, G_MAXINT32, -1);
-	group = _nm_utils_ascii_str_to_int64 (nm_setting_tun_get_group (s_tun), 10, 0, G_MAXINT32, -1);
+		user = _nm_utils_ascii_str_to_int64 (nm_setting_tun_get_owner (s_tun), 10, 0, G_MAXINT32, -1);
+		group = _nm_utils_ascii_str_to_int64 (nm_setting_tun_get_group (s_tun), 10, 0, G_MAXINT32, -1);
 
-	if (user != priv->props.owner)
-		return FALSE;
-	if (group != priv->props.group)
-		return FALSE;
-	if (nm_setting_tun_get_pi (s_tun) == priv->props.no_pi)
-		return FALSE;
-	if (nm_setting_tun_get_vnet_hdr (s_tun) != priv->props.vnet_hdr)
-		return FALSE;
-	if (nm_setting_tun_get_multi_queue (s_tun) != priv->props.multi_queue)
-		return FALSE;
+		if (user != priv->props.owner)
+			return FALSE;
+		if (group != priv->props.group)
+			return FALSE;
+		if (nm_setting_tun_get_pi (s_tun) == priv->props.no_pi)
+			return FALSE;
+		if (nm_setting_tun_get_vnet_hdr (s_tun) != priv->props.vnet_hdr)
+			return FALSE;
+		if (nm_setting_tun_get_multi_queue (s_tun) != priv->props.multi_queue)
+			return FALSE;
+	}
 
 	return TRUE;
 }
@@ -367,6 +374,7 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
 	device_class->realize = realize;
+	device_class->setup_start = setup_start;
 	device_class->unrealize = unrealize;
 	device_class->update_connection = update_connection;
 

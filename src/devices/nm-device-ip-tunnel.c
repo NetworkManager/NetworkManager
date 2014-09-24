@@ -503,41 +503,43 @@ check_connection_compatible (NMDevice *device, NMConnection *connection)
 	if (!s_ip_tunnel)
 		return FALSE;
 
-	/* Check parent interface; could be an interface name or a UUID */
-	parent = nm_setting_ip_tunnel_get_parent (s_ip_tunnel);
-	if (parent) {
-		if (!match_parent (priv->parent, parent))
-			return FALSE;
-	}
-
 	if (nm_setting_ip_tunnel_get_mode (s_ip_tunnel) != priv->mode)
 		return FALSE;
 
-	if (!address_equal_pp (priv->addr_family,
-	                       nm_setting_ip_tunnel_get_local (s_ip_tunnel),
-	                       priv->local))
-		return FALSE;
+	if (nm_device_is_real (device)) {
+		/* Check parent interface; could be an interface name or a UUID */
+		parent = nm_setting_ip_tunnel_get_parent (s_ip_tunnel);
+		if (parent) {
+			if (!match_parent (priv->parent, parent))
+				return FALSE;
+		}
 
-	if (!address_equal_pp (priv->addr_family,
-	                       nm_setting_ip_tunnel_get_remote (s_ip_tunnel),
-	                       priv->remote))
-		return FALSE;
-
-	if (nm_setting_ip_tunnel_get_ttl (s_ip_tunnel) != priv->ttl)
-		return FALSE;
-
-	if (nm_setting_ip_tunnel_get_tos (s_ip_tunnel) != priv->tos)
-		return FALSE;
-
-	if (priv->addr_family == AF_INET) {
-		if (nm_setting_ip_tunnel_get_path_mtu_discovery (s_ip_tunnel) != priv->path_mtu_discovery)
-			return FALSE;
-	} else {
-		if (nm_setting_ip_tunnel_get_encapsulation_limit (s_ip_tunnel) != priv->encap_limit)
+		if (!address_equal_pp (priv->addr_family,
+		                       nm_setting_ip_tunnel_get_local (s_ip_tunnel),
+		                       priv->local))
 			return FALSE;
 
-		if (nm_setting_ip_tunnel_get_flow_label (s_ip_tunnel) != priv->flow_label)
+		if (!address_equal_pp (priv->addr_family,
+		                       nm_setting_ip_tunnel_get_remote (s_ip_tunnel),
+		                       priv->remote))
 			return FALSE;
+
+		if (nm_setting_ip_tunnel_get_ttl (s_ip_tunnel) != priv->ttl)
+			return FALSE;
+
+		if (nm_setting_ip_tunnel_get_tos (s_ip_tunnel) != priv->tos)
+			return FALSE;
+
+		if (priv->addr_family == AF_INET) {
+			if (nm_setting_ip_tunnel_get_path_mtu_discovery (s_ip_tunnel) != priv->path_mtu_discovery)
+				return FALSE;
+		} else {
+			if (nm_setting_ip_tunnel_get_encapsulation_limit (s_ip_tunnel) != priv->encap_limit)
+				return FALSE;
+
+			if (nm_setting_ip_tunnel_get_flow_label (s_ip_tunnel) != priv->flow_label)
+				return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -751,9 +753,9 @@ create_and_realize (NMDevice *device,
 }
 
 static void
-setup (NMDevice *device, NMPlatformLink *plink)
+setup_start (NMDevice *device, NMPlatformLink *plink)
 {
-	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->setup (device, plink);
+	NM_DEVICE_CLASS (nm_device_ip_tunnel_parent_class)->setup_start (device, plink);
 
 	update_properties (device);
 }
@@ -847,7 +849,7 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	device_class->check_connection_compatible = check_connection_compatible;
 	device_class->create_and_realize = create_and_realize;
 	device_class->realize = realize;
-	device_class->setup = setup;
+	device_class->setup_start = setup_start;
 	device_class->unrealize = unrealize;
 
 	device_class->connection_type = NM_SETTING_IP_TUNNEL_SETTING_NAME;
