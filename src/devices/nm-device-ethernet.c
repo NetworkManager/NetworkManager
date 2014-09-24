@@ -1473,7 +1473,6 @@ new_default_connection (NMDevice *self)
 	NMSetting *setting;
 	const char *hw_address;
 	char *defname, *uuid;
-	GByteArray *mac;
 
 	if (!nm_config_get_ethernet_can_auto_default (nm_config_get (), self))
 		return NULL;
@@ -1501,11 +1500,8 @@ new_default_connection (NMDevice *self)
 
 	/* Lock the connection to the device */
 	setting = nm_setting_wired_new ();
+	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, hw_address, NULL);
 	nm_connection_add_setting (connection, setting);
-
-	mac = nm_utils_hwaddr_atoba (hw_address, ETH_ALEN);
-	g_object_set (setting, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
-	g_byte_array_unref (mac);
 
 	return connection;
 }
