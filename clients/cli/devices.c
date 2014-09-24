@@ -196,6 +196,15 @@ static NmcOutputField nmc_fields_dev_show_vlan_prop[] = {
 #define NMC_FIELDS_DEV_SHOW_VLAN_PROP_ALL     "NAME,ID"
 #define NMC_FIELDS_DEV_SHOW_VLAN_PROP_COMMON  "NAME,ID"
 
+/* Available fields for 'device show' - BLUETOOTH part */
+static NmcOutputField nmc_fields_dev_show_bluetooth[] = {
+	{"NAME",           N_("NAME"),         0},  /* 0 */
+	{"CAPABILITIES",   N_("CAPABILITIES"), 0},  /* 1 */
+	{NULL,             NULL,               0}
+};
+#define NMC_FIELDS_DEV_SHOW_BLUETOOTH_ALL     "NAME,CAPABILITIES"
+#define NMC_FIELDS_DEV_SHOW_BLUETOOTH_COMMON  "NAME,CAPABILITIES"
+
 /* defined in common.c */
 extern NmcOutputField nmc_fields_ip4_config[];
 extern NmcOutputField nmc_fields_ip6_config[];
@@ -219,17 +228,18 @@ static NmcOutputField nmc_fields_dev_show_sections[] = {
 	{"TEAM",              N_("TEAM"),              0, nmc_fields_dev_show_master_prop + 1 },  /* 12 */
 	{"BRIDGE",            N_("BRIDGE"),            0, nmc_fields_dev_show_master_prop + 1 },  /* 13 */
 	{"VLAN",              N_("VLAN"),              0, nmc_fields_dev_show_vlan_prop  + 1  },  /* 14 */
-	{"CONNECTIONS",       N_("CONNECTIONS"),       0, nmc_fields_dev_show_connections + 1 },  /* 15 */
+	{"BLUETOOTH",         N_("BLUETOOTH"),         0, nmc_fields_dev_show_bluetooth + 1   },  /* 15 */
+	{"CONNECTIONS",       N_("CONNECTIONS"),       0, nmc_fields_dev_show_connections + 1 },  /* 16 */
 	{NULL,                NULL,                    0, NULL                                }
 };
 #if WITH_WIMAX
 #define NMC_FIELDS_DEV_SHOW_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,TEAM,BRIDGE,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,"\
-                                             "WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,IP4,DHCP4,IP6,DHCP6"
+                                             "WIRED-PROPERTIES,WIMAX-PROPERTIES,NSP,BLUETOOTH,IP4,DHCP4,IP6,DHCP6"
 #define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,GENERAL.MTU,GENERAL.STATE,"\
                                              "GENERAL.CONNECTION,GENERAL.CON-PATH,WIRED-PROPERTIES,IP4,IP6"
 #else
 #define NMC_FIELDS_DEV_SHOW_SECTIONS_ALL     "GENERAL,CAPABILITIES,BOND,TEAM,BRIDGE,VLAN,CONNECTIONS,WIFI-PROPERTIES,AP,"\
-                                             "WIRED-PROPERTIES,IP4,DHCP4,IP6,DHCP6"
+                                             "WIRED-PROPERTIES,BLUETOOTH,IP4,DHCP4,IP6,DHCP6"
 #define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,GENERAL.MTU,GENERAL.STATE,"\
                                              "GENERAL.CONNECTION,GENERAL.CON-PATH,WIRED-PROPERTIES,IP4,IP6"
 #endif
@@ -646,6 +656,32 @@ fill_output_wimax_nsp (NMWimaxNsp *nsp, NmCli *nmc, NMDevice *dev, int idx, guin
 	g_ptr_array_add (nmc->output_data, arr);
 }
 #endif
+
+static char *
+bluetooth_caps_to_string (NMBluetoothCapabilities caps)
+{
+	char *caps_str[8]; /* Enough space for caps and terminating NULL */
+	char *ret_str;
+	int i = 0;
+
+	if (caps & NM_BT_CAPABILITY_DUN)
+		caps_str[i++] = g_strdup ("DUN");
+	if (caps & NM_BT_CAPABILITY_NAP)
+		caps_str[i++] = g_strdup ("NAP");
+
+	if (i == 0)
+		caps_str[i++] = g_strdup (_("(none)"));
+
+	caps_str[i] = NULL;
+
+	ret_str = g_strjoinv (" ", caps_str);
+
+	i = 0;
+	while (caps_str[i])
+		g_free (caps_str[i++]);
+
+	return ret_str;
+}
 
 static const char *
 construct_header_name (const char *base, const char *spec)
@@ -1096,8 +1132,27 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			}
 		}
 
+		if (NM_IS_DEVICE_BT (device)) {
+			if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[15].name)) {
+				tmpl = nmc_fields_dev_show_bluetooth;
+				tmpl_len = sizeof (nmc_fields_dev_show_bluetooth);
+				nmc->print_fields.indices = parse_output_fields (section_fld ? section_fld : NMC_FIELDS_DEV_SHOW_BLUETOOTH_ALL,
+				                                                 tmpl, FALSE, NULL, NULL);
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_FIELD_NAMES);
+				g_ptr_array_add (nmc->output_data, arr);
+
+				arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
+				set_val_strc (arr, 0, nmc_fields_dev_show_sections[15].name);  /* "BLUETOOTH" */
+				set_val_str (arr, 1, bluetooth_caps_to_string (nm_device_bt_get_capabilities (NM_DEVICE_BT (device))));
+				g_ptr_array_add (nmc->output_data, arr);
+
+				print_data (nmc);  /* Print all data */
+				was_output = TRUE;
+			}
+		}
+
 		/* section CONNECTIONS */
-		if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[15].name)) {
+		if (!strcasecmp (nmc_fields_dev_show_sections[section_idx].name, nmc_fields_dev_show_sections[16].name)) {
 			const GPtrArray *avail_cons;
 			GString *ac_paths_str;
 			char **ac_arr = NULL;
@@ -1135,7 +1190,7 @@ show_device_info (NMDevice *device, NmCli *nmc)
 				g_string_append_c (ac_paths_str, '}');
 
 			arr = nmc_dup_fields_array (tmpl, tmpl_len, NMC_OF_FLAG_SECTION_PREFIX);
-			set_val_strc (arr, 0, nmc_fields_dev_show_sections[15].name);  /* "CONNECTIONS" */
+			set_val_strc (arr, 0, nmc_fields_dev_show_sections[16].name);  /* "CONNECTIONS" */
 			set_val_str  (arr, 1, ac_paths_str->str);
 			set_val_arr  (arr, 2, (ac_arr));
 			g_ptr_array_add (nmc->output_data, arr);
