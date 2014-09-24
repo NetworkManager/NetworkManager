@@ -365,11 +365,11 @@ device_master_changed (GObject *object,
 		return;
 	if (!nm_device_get_master (device))
 		return;
+	if (!nm_active_connection_get_master (self))
+		return;
 	g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_master_changed), self);
 
 	master = nm_active_connection_get_master (self);
-	g_assert (master);
-
 	master_state = nm_active_connection_get_state (master);
 	if (master_state >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
 		/* Master failed before attaching the slave */

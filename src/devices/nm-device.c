@@ -2950,8 +2950,6 @@ act_stage3_ip4_config_start (NMDevice *self,
 	g_assert (connection);
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (priv->master)
-		g_assert_cmpstr (method, ==, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
 
 	if (   strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) != 0
 	    && priv->is_master
@@ -3956,8 +3954,6 @@ act_stage3_ip6_config_start (NMDevice *self,
 	g_assert (connection);
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	if (priv->master)
-		g_assert_cmpstr (method, ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
 
 	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) != 0
 	    && priv->is_master
