@@ -871,9 +871,8 @@ nmtst_assert_connection_verifies_without_normalization (NMConnection *con)
 	success = nm_connection_normalize (con, NULL, &was_modified, &error);
 	g_assert_no_error (error);
 	g_assert (success);
-	g_assert (!was_modified);
-
 	nmtst_assert_connection_equals (con, FALSE, clone, FALSE);
+	g_assert (!was_modified);
 }
 
 inline static void
