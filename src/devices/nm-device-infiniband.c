@@ -44,12 +44,15 @@ G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_INFINIBAND_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_INFINIBAND, NMDeviceInfinibandPrivate))
 
+#define NM_DEVICE_INFINIBAND_IS_PARTITION "is-partition"
+
 typedef struct {
-	int dummy;
+	gboolean is_partition;
 } NMDeviceInfinibandPrivate;
 
 enum {
 	PROP_0,
+	PROP_IS_PARTITION,
 
 	LAST_PROP
 };
@@ -62,7 +65,12 @@ nm_device_infiniband_init (NMDeviceInfiniband * self)
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
 {
-	return NM_DEVICE_CAP_CARRIER_DETECT;
+	guint32 caps = NM_DEVICE_CAP_CARRIER_DETECT;
+
+	if (NM_DEVICE_INFINIBAND_GET_PRIVATE (dev)->is_partition)
+		caps |= NM_DEVICE_CAP_IS_SOFTWARE;
+
+	return caps;
 }
 
 static NMActStageReturn
@@ -243,6 +251,9 @@ get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
+	case PROP_IS_PARTITION:
+		g_value_set_boolean (value, NM_DEVICE_INFINIBAND_GET_PRIVATE (object)->is_partition);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -254,6 +265,9 @@ set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
 	switch (prop_id) {
+	case PROP_IS_PARTITION:
+		NM_DEVICE_INFINIBAND_GET_PRIVATE (object)->is_partition = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -281,6 +295,12 @@ nm_device_infiniband_class_init (NMDeviceInfinibandClass *klass)
 	parent_class->ip4_config_pre_commit = ip4_config_pre_commit;
 
 	/* properties */
+	g_object_class_install_property
+		(object_class, PROP_IS_PARTITION,
+		 g_param_spec_boolean (NM_DEVICE_INFINIBAND_IS_PARTITION, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+		                       G_PARAM_STATIC_STRINGS));
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (klass),
@@ -299,6 +319,7 @@ new_link (NMDeviceFactory *factory, NMPlatformLink *plink, gboolean *out_ignore,
 	                                  NM_DEVICE_PLATFORM_DEVICE, plink,
 	                                  NM_DEVICE_TYPE_DESC, "InfiniBand",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_INFINIBAND,
+	                                  NM_DEVICE_INFINIBAND_IS_PARTITION, (plink->parent > 0),
 	                                  NULL);
 }
 
@@ -342,6 +363,7 @@ create_virtual_device_for_connection (NMDeviceFactory *factory,
 	                                  NM_DEVICE_DRIVER, nm_device_get_driver (parent),
 	                                  NM_DEVICE_TYPE_DESC, "InfiniBand",
 	                                  NM_DEVICE_DEVICE_TYPE, NM_DEVICE_TYPE_INFINIBAND,
+	                                  NM_DEVICE_INFINIBAND_IS_PARTITION, TRUE,
 	                                  NULL);
 }
 
