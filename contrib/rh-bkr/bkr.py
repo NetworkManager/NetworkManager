@@ -45,7 +45,13 @@ def sub_dict(diction, keys, default=None):
 def nitrate_get_script_name_for_case(case):
     name = case.get('script_name', None)
     if name is None:
-        name = case['script'].split('=')[-1]
+        name = case['script']
+        if name is None:
+            if '__script_name_hack' not in case:
+                print("WARNING: test case has no script name. It cannot be used: %s" % (str(case)))
+                case['__script_name_hack'] = ''
+            return ""
+        name = name.split('=')[-1]
         case['script_name'] = name
     return name
 
