@@ -323,7 +323,7 @@ nm_remote_connection_delete (NMRemoteConnection *connection,
 {
 	NMRemoteConnectionPrivate *priv;
 
-	g_return_if_fail (NM_IS_REMOTE_CONNECTION (connection));
+	g_return_val_if_fail (NM_IS_REMOTE_CONNECTION (connection), FALSE);
 
 	priv = NM_REMOTE_CONNECTION_GET_PRIVATE (connection);
 

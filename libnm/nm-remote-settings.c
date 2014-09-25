@@ -508,8 +508,8 @@ nm_remote_settings_add_connection_async (NMRemoteSettings *settings,
 	GVariant *new_settings;
 	GError *error = NULL;
 
-	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_if_fail (NM_IS_REMOTE_SETTINGS (settings));
+	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
@@ -663,8 +663,8 @@ nm_remote_settings_load_connections_async (NMRemoteSettings *settings,
 	GSimpleAsyncResult *simple;
 	GError *error = NULL;
 
-	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
-	g_return_val_if_fail (filenames != NULL, FALSE);
+	g_return_if_fail (NM_IS_REMOTE_SETTINGS (settings));
+	g_return_if_fail (filenames != NULL);
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
@@ -790,7 +790,7 @@ nm_remote_settings_reload_connections_async (NMRemoteSettings *settings,
 	GSimpleAsyncResult *simple;
 	GError *error = NULL;
 
-	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
+	g_return_if_fail (NM_IS_REMOTE_SETTINGS (settings));
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
@@ -906,7 +906,7 @@ nm_remote_settings_save_hostname_async (NMRemoteSettings *settings,
 	GSimpleAsyncResult *simple;
 	GError *error = NULL;
 
-	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
+	g_return_if_fail (NM_IS_REMOTE_SETTINGS (settings));
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
