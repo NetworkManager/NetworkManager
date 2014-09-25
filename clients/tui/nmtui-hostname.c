@@ -86,11 +86,15 @@ nmtui_hostname_run_dialog (void)
 }
 
 static void
-hostname_set (NMRemoteSettings *settings,
-              GError           *error,
-              gpointer          op)
+hostname_set (GObject      *object,
+              GAsyncResult *result,
+              gpointer      op)
 {
+	GError *error = NULL;
+
+	nm_remote_settings_save_hostname_finish (NM_REMOTE_SETTINGS (object), result, &error);
 	nmt_sync_op_complete_boolean (op, error == NULL, error);
+	g_clear_error (&error);
 }
 
 NmtNewtForm *
@@ -108,7 +112,7 @@ nmtui_hostname (int argc, char **argv)
 
 	if (hostname) {
 		nmt_sync_op_init (&op);
-		nm_remote_settings_save_hostname (nm_settings, hostname, hostname_set, &op);
+		nm_remote_settings_save_hostname_async (nm_settings, hostname, NULL, hostname_set, &op);
 		if (nmt_sync_op_wait_boolean (&op, &error)) {
 			/* Translators: this indicates the result. ie, "I have set the hostname to ..." */
 			nmt_newt_message_dialog (_("Set hostname to '%s'"), hostname);

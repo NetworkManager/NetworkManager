@@ -95,28 +95,35 @@ activate_ac_state_changed (GObject    *object,
 }
 
 static void
-activate_callback (NMClient           *client,
-                   NMActiveConnection *ac,
-                   GError             *error,
-                   gpointer            user_data)
+activate_callback (GObject      *client,
+                   GAsyncResult *result,
+                   gpointer      user_data)
 {
 	NmtSyncOp *op = user_data;
+	NMActiveConnection *ac;
+	GError *error = NULL;
 
+	ac = nm_client_activate_connection_finish (NM_CLIENT (client), result, &error);
 	if (error)
 		nmt_sync_op_complete_pointer (op, NULL, error);
 	else
-		nmt_sync_op_complete_pointer (op, g_object_ref (ac), NULL);
+		nmt_sync_op_complete_pointer (op, ac, NULL);
 }
 
 static void
-add_and_activate_callback (NMClient           *client,
-                           NMActiveConnection *ac,
-                           const char         *new_connection_path,
-                           GError             *error,
-                           gpointer            user_data)
+add_and_activate_callback (GObject      *client,
+                           GAsyncResult *result,
+                           gpointer      user_data)
 {
-	/* We don't care about @new_connection_path, so... */
-	activate_callback (client, ac, error, user_data);
+	NmtSyncOp *op = user_data;
+	NMActiveConnection *ac;
+	GError *error = NULL;
+
+	ac = nm_client_add_and_activate_connection_finish (NM_CLIENT (client), result, &error);
+	if (error)
+		nmt_sync_op_complete_pointer (op, NULL, error);
+	else
+		nmt_sync_op_complete_pointer (op, ac, NULL);
 }
 
 static void
@@ -151,13 +158,13 @@ activate_connection (NMConnection *connection,
 
 	nmt_sync_op_init (&op);
 	if (connection) {
-		nm_client_activate_connection (nm_client,
-		                               connection, device, specific_object_path,
-		                               activate_callback, &op);
+		nm_client_activate_connection_async (nm_client,
+		                                     connection, device, specific_object_path,
+		                                     NULL, activate_callback, &op);
 	} else {
-		nm_client_add_and_activate_connection (nm_client,
-		                                       NULL, device, specific_object_path,
-		                                       add_and_activate_callback, &op);
+		nm_client_add_and_activate_connection_async (nm_client,
+		                                             NULL, device, specific_object_path,
+		                                             NULL, add_and_activate_callback, &op);
 	}
 
 	nmt_newt_form_show (form);
@@ -221,7 +228,7 @@ listbox_activated (NmtNewtListbox *listbox,
 		return;
 
 	if (ac)
-		nm_client_deactivate_connection (nm_client, ac);
+		nm_client_deactivate_connection (nm_client, ac, NULL, NULL);
 	else
 		activate_connection (connection, device, specific_object);
 }

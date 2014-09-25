@@ -100,12 +100,17 @@ NMAccessPoint *          nm_device_wifi_get_access_point_by_path (NMDeviceWifi *
 
 const GPtrArray *        nm_device_wifi_get_access_points        (NMDeviceWifi *device);
 
-typedef void             (*NMDeviceWifiRequestScanFn)            (NMDeviceWifi *device,
-                                                                  GError *error,
+gboolean                 nm_device_wifi_request_scan             (NMDeviceWifi *device,
+                                                                  GCancellable *cancellable,
+                                                                  GError **error);
+
+void                     nm_device_wifi_request_scan_async       (NMDeviceWifi *device,
+                                                                  GCancellable *cancellable,
+                                                                  GAsyncReadyCallback callback,
                                                                   gpointer user_data);
-void                     nm_device_wifi_request_scan_simple      (NMDeviceWifi *device,
-                                                                  NMDeviceWifiRequestScanFn callback,
-                                                                  gpointer user_data);
+gboolean                 nm_device_wifi_request_scan_finish      (NMDeviceWifi *device,
+                                                                  GAsyncResult *result,
+                                                                  GError **error);
 
 G_END_DECLS
 

@@ -69,61 +69,55 @@ typedef struct {
 	gpointer padding[8];
 } NMRemoteConnectionClass;
 
-/**
- * NMRemoteConnectionResultFunc:
- * @connection: the connection for which an operation was performed
- * @error: on failure, a descriptive error
- * @user_data: user data passed to function which began the operation
- *
- * Called when NetworkManager has finished an asynchronous operation on a
- * connection, like commit changes, deleting, saving, etc.
- */
-typedef void (*NMRemoteConnectionResultFunc) (NMRemoteConnection *connection,
-                                              GError *error,
-                                              gpointer user_data);
-
-/* Backwards compatibility */
-typedef NMRemoteConnectionResultFunc NMRemoteConnectionCommitFunc;
-typedef NMRemoteConnectionResultFunc NMRemoteConnectionDeleteFunc;
-
-/**
- * NMRemoteConnectionGetSecretsFunc:
- * @connection: the connection for which secrets were requested
- * @secrets: on success, a #GVariant of type %NM_VARIANT_TYPE_CONNECTION
- *  containing secrets.
- * @error: on failure, a descriptive error
- * @user_data: user data passed to nm_remote_connection_get_secrets()
- *
- * Called when NetworkManager returns secrets in response to a request for
- * secrets via nm_remote_connection_get_secrets().
- */
-typedef void (*NMRemoteConnectionGetSecretsFunc) (NMRemoteConnection *connection,
-                                                  GVariant *secrets,
-                                                  GError *error,
-                                                  gpointer user_data);
-
 GType nm_remote_connection_get_type (void);
 
-void nm_remote_connection_commit_changes (NMRemoteConnection *connection,
-                                          NMRemoteConnectionResultFunc callback,
-                                          gpointer user_data);
+gboolean nm_remote_connection_commit_changes        (NMRemoteConnection *connection,
+                                                     gboolean save_to_disk,
+                                                     GCancellable *cancellable,
+                                                     GError **error);
+void     nm_remote_connection_commit_changes_async  (NMRemoteConnection *connection,
+                                                     gboolean save_to_disk,
+                                                     GCancellable *cancellable,
+                                                     GAsyncReadyCallback callback,
+                                                     gpointer user_data);
+gboolean nm_remote_connection_commit_changes_finish (NMRemoteConnection *connection,
+                                                     GAsyncResult *result,
+                                                     GError **error);
 
-void nm_remote_connection_commit_changes_unsaved (NMRemoteConnection *connection,
-                                                  NMRemoteConnectionResultFunc callback,
-                                                  gpointer user_data);
+gboolean nm_remote_connection_save        (NMRemoteConnection *connection,
+                                           GCancellable *cancellable,
+                                           GError **error);
+void     nm_remote_connection_save_async  (NMRemoteConnection *connection,
+                                           GCancellable *cancellable,
+                                           GAsyncReadyCallback callback,
+                                           gpointer user_data);
+gboolean nm_remote_connection_save_finish (NMRemoteConnection *connection,
+                                           GAsyncResult *result,
+                                           GError **error);
 
-void nm_remote_connection_save (NMRemoteConnection *connection,
-                                NMRemoteConnectionResultFunc callback,
-                                gpointer user_data);
+gboolean nm_remote_connection_delete        (NMRemoteConnection *connection,
+                                             GCancellable *cancellable,
+                                             GError **error);
+void     nm_remote_connection_delete_async  (NMRemoteConnection *connection,
+                                             GCancellable *cancellable,
+                                             GAsyncReadyCallback callback,
+                                             gpointer user_data);
+gboolean nm_remote_connection_delete_finish (NMRemoteConnection *connection,
+                                             GAsyncResult *result,
+                                             GError **error);
 
-void nm_remote_connection_delete (NMRemoteConnection *connection,
-                                  NMRemoteConnectionResultFunc callback,
-                                  gpointer user_data);
-
-void nm_remote_connection_get_secrets (NMRemoteConnection *connection,
-                                       const char *setting_name,
-                                       NMRemoteConnectionGetSecretsFunc callback,
-                                       gpointer user_data);
+GVariant *nm_remote_connection_get_secrets        (NMRemoteConnection *connection,
+                                                   const char *setting_name,
+                                                   GCancellable *cancellable,
+                                                   GError **error);
+void      nm_remote_connection_get_secrets_async  (NMRemoteConnection *connection,
+                                                   const char *setting_name,
+                                                   GCancellable *cancellable,
+                                                   GAsyncReadyCallback callback,
+                                                   gpointer user_data);
+GVariant *nm_remote_connection_get_secrets_finish (NMRemoteConnection *connection,
+                                                   GAsyncResult *result,
+                                                   GError **error);
 
 gboolean nm_remote_connection_get_unsaved (NMRemoteConnection *connection);
 

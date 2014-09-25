@@ -219,12 +219,15 @@ device_added_cb (NMClient *c,
 }
 
 static void
-connection_added_cb (NMRemoteSettings *s,
-                     NMRemoteConnection *connection,
-                     GError *error,
+connection_added_cb (GObject *s,
+                     GAsyncResult *result,
                      gpointer user_data)
 {
 	TestSecretAgentData *sadata = user_data;
+	NMRemoteConnection *connection;
+	GError *error = NULL;
+
+	connection = nm_remote_settings_add_connection_finish (sadata->settings, result, &error);
 
 	g_assert_no_error (error);
 	g_assert_cmpstr (nm_connection_get_id (NM_CONNECTION (connection)), ==, sadata->con_id);
@@ -258,7 +261,6 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 	NMSettingWireless *s_wireless;
 	GBytes *ssid;
 	NMSetting *s_wsec;
-	gboolean success;
 	GError *error = NULL;
 	GVariant *ret;
 	gulong handler;
@@ -314,11 +316,12 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 	                       NULL);
 	nm_connection_add_setting (connection, s_wsec);
 
-	success = nm_remote_settings_add_connection (sadata->settings,
-	                                             connection,
-	                                             connection_added_cb,
-	                                             sadata);
-	g_assert (success == TRUE);
+	nm_remote_settings_add_connection_async (sadata->settings,
+	                                         connection,
+	                                         TRUE,
+	                                         NULL,
+	                                         connection_added_cb,
+	                                         sadata);
 	g_object_unref (connection);
 
 	g_main_loop_run (sadata->loop);
@@ -353,6 +356,7 @@ test_cleanup (TestSecretAgentData *sadata, gconstpointer test_data)
 		g_object_unref (sadata->agent);
 	}
 
+	g_object_unref (sadata->connection);
 	g_object_unref (sadata->client);
 	g_object_unref (sadata->settings);
 
@@ -379,12 +383,15 @@ test_cleanup (TestSecretAgentData *sadata, gconstpointer test_data)
 /*******************************************************************/
 
 static void
-connection_activated_none_cb (NMClient *c,
-                              NMActiveConnection *ac,
-                              GError *error,
+connection_activated_none_cb (GObject *c,
+                              GAsyncResult *result,
                               gpointer user_data)
 {
 	TestSecretAgentData *sadata = user_data;
+	NMActiveConnection *ac;
+	GError *error = NULL;
+
+	ac = nm_client_activate_connection_finish (sadata->client, result, &error);
 
 	g_assert (error != NULL);
 	g_dbus_error_strip_remote_error (error);
@@ -396,12 +403,13 @@ connection_activated_none_cb (NMClient *c,
 static void
 test_secret_agent_none (TestSecretAgentData *sadata, gconstpointer test_data)
 {
-	nm_client_activate_connection (sadata->client,
-	                               sadata->connection,
-	                               sadata->device,
-	                               NULL,
-	                               connection_activated_none_cb,
-	                               sadata);
+	nm_client_activate_connection_async (sadata->client,
+	                                     sadata->connection,
+	                                     sadata->device,
+	                                     NULL,
+	                                     NULL,
+	                                     connection_activated_none_cb,
+	                                     sadata);
 	g_main_loop_run (sadata->loop);
 }
 
@@ -424,12 +432,15 @@ secrets_requested_no_secrets_cb (TestSecretAgent *agent,
 }
 
 static void
-connection_activated_no_secrets_cb (NMClient *c,
-                                    NMActiveConnection *ac,
-                                    GError *error,
+connection_activated_no_secrets_cb (GObject *c,
+                                    GAsyncResult *result,
                                     gpointer user_data)
 {
 	TestSecretAgentData *sadata = user_data;
+	NMActiveConnection *ac;
+	GError *error = NULL;
+
+	ac = nm_client_activate_connection_finish (sadata->client, result, &error);
 
 	g_assert (error != NULL);
 	g_dbus_error_strip_remote_error (error);
@@ -445,12 +456,13 @@ test_secret_agent_no_secrets (TestSecretAgentData *sadata, gconstpointer test_da
 	                  G_CALLBACK (secrets_requested_no_secrets_cb),
 	                  sadata);
 
-	nm_client_activate_connection (sadata->client,
-	                               sadata->connection,
-	                               sadata->device,
-	                               NULL,
-	                               connection_activated_no_secrets_cb,
-	                               sadata);
+	nm_client_activate_connection_async (sadata->client,
+	                                     sadata->connection,
+	                                     sadata->device,
+	                                     NULL,
+	                                     NULL,
+	                                     connection_activated_no_secrets_cb,
+	                                     sadata);
 	g_main_loop_run (sadata->loop);
 
 	g_assert_cmpint (sadata->secrets_requested, ==, 1);
@@ -459,12 +471,15 @@ test_secret_agent_no_secrets (TestSecretAgentData *sadata, gconstpointer test_da
 /*******************************************************************/
 
 static void
-connection_activated_cancel_cb (NMClient *c,
-                                NMActiveConnection *ac,
-                                GError *error,
+connection_activated_cancel_cb (GObject *c,
+                                GAsyncResult *result,
                                 gpointer user_data)
 {
 	TestSecretAgentData *sadata = user_data;
+	NMActiveConnection *ac;
+	GError *error = NULL;
+
+	ac = nm_client_activate_connection_finish (sadata->client, result, &error);
 
 	g_assert (error != NULL);
 	g_dbus_error_strip_remote_error (error);
@@ -496,12 +511,13 @@ test_secret_agent_cancel (TestSecretAgentData *sadata, gconstpointer test_data)
 	                  G_CALLBACK (secrets_requested_cancel_cb),
 	                  sadata);
 
-	nm_client_activate_connection (sadata->client,
-	                               sadata->connection,
-	                               sadata->device,
-	                               NULL,
-	                               connection_activated_cancel_cb,
-	                               sadata);
+	nm_client_activate_connection_async (sadata->client,
+	                                     sadata->connection,
+	                                     sadata->device,
+	                                     NULL,
+	                                     NULL,
+	                                     connection_activated_cancel_cb,
+	                                     sadata);
 	g_main_loop_run (sadata->loop);
 
 	g_assert_cmpint (sadata->secrets_requested, ==, 1);
@@ -510,12 +526,15 @@ test_secret_agent_cancel (TestSecretAgentData *sadata, gconstpointer test_data)
 /*******************************************************************/
 
 static void
-connection_activated_good_cb (NMClient *c,
-                              NMActiveConnection *ac,
-                              GError *error,
+connection_activated_good_cb (GObject *c,
+                              GAsyncResult *result,
                               gpointer user_data)
 {
 	TestSecretAgentData *sadata = user_data;
+	NMActiveConnection *ac;
+	GError *error = NULL;
+
+	ac = nm_client_activate_connection_finish (sadata->client, result, &error);
 
 	/* test-networkmanager-service.py doesn't implement activation, but
 	 * we should at least get as far as the error telling us that (which the
@@ -551,12 +570,13 @@ test_secret_agent_good (TestSecretAgentData *sadata, gconstpointer test_data)
 	                  G_CALLBACK (secrets_requested_good_cb),
 	                  sadata);
 
-	nm_client_activate_connection (sadata->client,
-	                               sadata->connection,
-	                               sadata->device,
-	                               NULL,
-	                               connection_activated_good_cb,
-	                               sadata);
+	nm_client_activate_connection_async (sadata->client,
+	                                     sadata->connection,
+	                                     sadata->device,
+	                                     NULL,
+	                                     NULL,
+	                                     connection_activated_good_cb,
+	                                     sadata);
 	g_main_loop_run (sadata->loop);
 
 	g_assert_cmpint (sadata->secrets_requested, ==, 1);

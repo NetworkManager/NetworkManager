@@ -74,22 +74,6 @@ GQuark nm_remote_settings_error_quark (void);
 typedef struct _NMRemoteSettings NMRemoteSettings;
 typedef struct _NMRemoteSettingsClass NMRemoteSettingsClass;
 
-
-typedef void (*NMRemoteSettingsAddConnectionFunc) (NMRemoteSettings *settings,
-                                                   NMRemoteConnection *connection,
-                                                   GError *error,
-                                                   gpointer user_data);
-
-typedef void (*NMRemoteSettingsLoadConnectionsFunc) (NMRemoteSettings *settings,
-                                                     char **failures,
-                                                     GError *error,
-                                                     gpointer user_data);
-
-typedef void (*NMRemoteSettingsSaveHostnameFunc) (NMRemoteSettings *settings,
-                                                  GError *error,
-                                                  gpointer user_data);
-
-
 struct _NMRemoteSettings {
 	NMObject parent;
 };
@@ -129,28 +113,54 @@ NMRemoteConnection * nm_remote_settings_get_connection_by_path (NMRemoteSettings
 NMRemoteConnection *nm_remote_settings_get_connection_by_uuid (NMRemoteSettings *settings,
                                                                const char *uuid);
 
-gboolean nm_remote_settings_add_connection (NMRemoteSettings *settings,
-                                            NMConnection *connection,
-                                            NMRemoteSettingsAddConnectionFunc callback,
-                                            gpointer user_data);
+void                nm_remote_settings_add_connection_async  (NMRemoteSettings *settings,
+                                                              NMConnection *connection,
+                                                              gboolean save_to_disk,
+                                                              GCancellable *cancellable,
+                                                              GAsyncReadyCallback callback,
+                                                              gpointer user_data);
+NMRemoteConnection *nm_remote_settings_add_connection_finish (NMRemoteSettings *settings,
+                                                              GAsyncResult *result,
+                                                              GError **error);
 
-gboolean nm_remote_settings_add_connection_unsaved (NMRemoteSettings *settings,
-                                                    NMConnection *connection,
-                                                    NMRemoteSettingsAddConnectionFunc callback,
-                                                    gpointer user_data);
+gboolean nm_remote_settings_load_connections        (NMRemoteSettings *settings,
+                                                     char **filenames,
+                                                     char ***failures,
+                                                     GCancellable *cancellable,
+                                                     GError **error);
+void     nm_remote_settings_load_connections_async  (NMRemoteSettings *settings,
+                                                     char **filenames,
+                                                     GCancellable *cancellable,
+                                                     GAsyncReadyCallback callback,
+                                                     gpointer user_data);
+gboolean nm_remote_settings_load_connections_finish (NMRemoteSettings *settings,
+                                                     char ***failures,
+                                                     GAsyncResult *result,
+                                                     GError **error);
 
-gboolean nm_remote_settings_load_connections (NMRemoteSettings *settings,
-                                              char **filenames,
-                                              char ***failures,
-                                              GError **error);
+gboolean nm_remote_settings_reload_connections        (NMRemoteSettings *settings,
+                                                       GCancellable *cancellable,
+                                                       GError **error);
+void     nm_remote_settings_reload_connections_async  (NMRemoteSettings *settings,
+                                                       GCancellable *cancellable,
+                                                       GAsyncReadyCallback callback,
+                                                       gpointer user_data);
+gboolean nm_remote_settings_reload_connections_finish (NMRemoteSettings *settings,
+                                                       GAsyncResult *result,
+                                                       GError **error);
 
-gboolean nm_remote_settings_reload_connections (NMRemoteSettings *settings,
-                                                GError **error);
-
-gboolean nm_remote_settings_save_hostname (NMRemoteSettings *settings,
-                                           const char *hostname,
-                                           NMRemoteSettingsSaveHostnameFunc callback,
-                                           gpointer user_data);
+gboolean nm_remote_settings_save_hostname        (NMRemoteSettings *settings,
+                                                  const char *hostname,
+                                                  GCancellable *cancellable,
+                                                  GError **error);
+void     nm_remote_settings_save_hostname_async  (NMRemoteSettings *settings,
+                                                  const char *hostname,
+                                                  GCancellable *cancellable,
+                                                  GAsyncReadyCallback callback,
+                                                  gpointer user_data);
+gboolean nm_remote_settings_save_hostname_finish (NMRemoteSettings *settings,
+                                                  GAsyncResult *result,
+                                                  GError **error);
 
 G_END_DECLS
 

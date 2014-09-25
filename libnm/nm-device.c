@@ -1892,63 +1892,122 @@ nm_device_is_software (NMDevice *device)
 	return !!(NM_DEVICE_GET_PRIVATE (device)->capabilities & NM_DEVICE_CAP_IS_SOFTWARE);
 }
 
-typedef struct {
-	NMDevice *device;
-	NMDeviceCallbackFn fn;
-	gpointer user_data;
-} DeviceCallbackInfo;
+/**
+ * nm_device_disconnect:
+ * @device: a #NMDevice
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Disconnects the device if currently connected, and prevents the device from
+ * automatically connecting to networks until the next manual network connection
+ * request.
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be set.
+ **/
+gboolean
+nm_device_disconnect (NMDevice *device,
+                      GCancellable *cancellable,
+                      GError **error)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	return nmdbus_device_call_disconnect_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                                           cancellable, error);
+}
 
 static void
 device_disconnect_cb (GObject *proxy,
                       GAsyncResult *result,
                       gpointer user_data)
 {
-	DeviceCallbackInfo *info = user_data;
+	GSimpleAsyncResult *simple = user_data;
 	GError *error = NULL;
 
-	nmdbus_device_call_disconnect_finish (NMDBUS_DEVICE (proxy), result, &error);
-	if (info->fn)
-		info->fn (info->device, error, info->user_data);
-	else if (error) {
-		g_warning ("%s: device %s disconnect failed: %s",
-		           __func__,
-		           nm_object_get_path (NM_OBJECT (info->device)),
-		           error->message);
-	}
-	g_clear_error (&error);
+	if (nmdbus_device_call_disconnect_finish (NMDBUS_DEVICE (proxy), result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else
+		g_simple_async_result_take_error (simple, error);
 
-	g_object_unref (info->device);
-	g_slice_free (DeviceCallbackInfo, info);
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
 }
 
 /**
- * nm_device_disconnect:
+ * nm_device_disconnect_async:
  * @device: a #NMDevice
- * @callback: (scope async) (allow-none): callback to be called when disconnect
- * operation completes
- * @user_data: (closure): caller-specific data passed to @callback
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the disconnect operation completes
+ * @user_data: caller-specific data passed to @callback
  *
- * Disconnects the device if currently connected, and prevents the device from
- * automatically connecting to networks until the next manual network connection
- * request.
+ * Asynchronously begins disconnecting the device if currently connected, and
+ * prevents the device from automatically connecting to networks until the next
+ * manual network connection request.
  **/
 void
-nm_device_disconnect (NMDevice *device,
-                      NMDeviceCallbackFn callback,
-                      gpointer user_data)
+nm_device_disconnect_async (NMDevice *device,
+                            GCancellable *cancellable,
+                            GAsyncReadyCallback callback,
+                            gpointer user_data)
 {
-	DeviceCallbackInfo *info;
+	GSimpleAsyncResult *simple;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 
-	info = g_slice_new (DeviceCallbackInfo);
-	info->fn = callback;
-	info->user_data = user_data;
-	info->device = g_object_ref (device);
+	simple = g_simple_async_result_new (G_OBJECT (device), callback, user_data,
+	                                    nm_device_disconnect_async);
 
 	nmdbus_device_call_disconnect (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                               NULL,
-	                               device_disconnect_cb, info);
+	                               cancellable,
+	                               device_disconnect_cb, simple);
+}
+
+/**
+ * nm_device_disconnect_finish:
+ * @device: a #NMDevice
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_device_disconnect_async().
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error
+ * will be set.
+ **/
+gboolean
+nm_device_disconnect_finish (NMDevice *device,
+                             GAsyncResult *result,
+                             GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (device), nm_device_disconnect_async), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
+/**
+ * nm_device_delete:
+ * @device: a #NMDevice
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Deletes the software device. Hardware devices can't be deleted.
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error
+ * will be set.
+ **/
+gboolean
+nm_device_delete (NMDevice *device,
+                  GCancellable *cancellable,
+                  GError **error)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	return nmdbus_device_call_delete_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                                       cancellable, error);
 }
 
 static void
@@ -1956,50 +2015,71 @@ device_delete_cb (GObject *proxy,
                   GAsyncResult *result,
                   gpointer user_data)
 {
-	DeviceCallbackInfo *info = user_data;
+	GSimpleAsyncResult *simple = user_data;
 	GError *error = NULL;
 
-	nmdbus_device_call_delete_finish (NMDBUS_DEVICE (proxy), result, &error);
-	if (info->fn)
-		info->fn (info->device, error, info->user_data);
-	else if (error) {
-		g_warning ("%s: device %s delete failed: %s",
-		           __func__,
-		           nm_object_get_path (NM_OBJECT (info->device)),
-		           error->message);
-	}
-	g_clear_error (&error);
+	if (nmdbus_device_call_delete_finish (NMDBUS_DEVICE (proxy), result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else
+		g_simple_async_result_take_error (simple, error);
 
-	g_object_unref (info->device);
-	g_slice_free (DeviceCallbackInfo, info);
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
 }
 
 /**
- * nm_device_delete:
+ * nm_device_delete_async:
  * @device: a #NMDevice
- * @callback: (scope async) (allow-none): callback to be called when delete
- * operation completes
- * @user_data: (closure): caller-specific data passed to @callback
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when delete operation completes
+ * @user_data: caller-specific data passed to @callback
  *
- * Deletes the software device. Hardware devices can't be deleted.
+ * Asynchronously begins deleteing the software device. Hardware devices can't
+ * be deleted.
  **/
 void
-nm_device_delete (NMDevice *device,
-                  NMDeviceCallbackFn callback,
-                  gpointer user_data)
+nm_device_delete_async (NMDevice *device,
+                        GCancellable *cancellable,
+                        GAsyncReadyCallback callback,
+                        gpointer user_data)
 {
-	DeviceCallbackInfo *info;
+	GSimpleAsyncResult *simple;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 
-	info = g_slice_new (DeviceCallbackInfo);
-	info->fn = callback;
-	info->user_data = user_data;
-	info->device = g_object_ref (device);
+	simple = g_simple_async_result_new (G_OBJECT (device), callback, user_data,
+	                                    nm_device_delete_async);
 
 	nmdbus_device_call_delete (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                           NULL,
-	                           device_delete_cb, info);
+	                           cancellable,
+	                           device_delete_cb, simple);
+}
+
+/**
+ * nm_device_delete_finish:
+ * @device: a #NMDevice
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_device_delete_async().
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error
+ * will be set.
+ **/
+gboolean
+nm_device_delete_finish (NMDevice *device,
+                         GAsyncResult *result,
+                         GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (device), nm_device_delete_async), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return g_simple_async_result_get_op_res_gboolean (simple);
 }
 
 /**

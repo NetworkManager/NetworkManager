@@ -37,16 +37,24 @@ NMRemoteConnection *remote = NULL;
 /*******************************************************************/
 
 static void
-add_cb (NMRemoteSettings *s,
-        NMRemoteConnection *connection,
-        GError *error,
+add_cb (GObject *s,
+        GAsyncResult *result,
         gpointer user_data)
 {
+	gboolean *done = user_data;
+	GError *error = NULL;
+
+	remote = nm_remote_settings_add_connection_finish (settings, result, &error);
 	g_assert_no_error (error);
 
-	*((gboolean *) user_data) = TRUE;
-	remote = connection;
-	g_object_add_weak_pointer (G_OBJECT (connection), (void **) &remote);
+	*done = TRUE;
+	g_object_add_weak_pointer (G_OBJECT (remote), (void **) &remote);
+
+	/* nm_remote_settings_add_connection_finish() adds a ref to @remote, but we
+	 * want the weak pointer to be cleared as soon as @settings drops its own ref.
+	 * So drop ours.
+	 */
+	g_object_unref (remote);
 }
 
 #define TEST_CON_ID "blahblahblah"
@@ -55,17 +63,17 @@ static void
 test_add_connection (void)
 {
 	NMConnection *connection;
-	gboolean success;
 	time_t start, now;
 	gboolean done = FALSE;
 
 	connection = nmtst_create_minimal_connection (TEST_CON_ID, NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
 
-	success = nm_remote_settings_add_connection (settings,
-	                                             connection,
-	                                             add_cb,
-	                                             &done);
-	g_assert (success == TRUE);
+	nm_remote_settings_add_connection_async (settings,
+	                                         connection,
+	                                         TRUE,
+	                                         NULL,
+	                                         add_cb,
+	                                         &done);
 
 	start = time (NULL);
 	do {
@@ -351,15 +359,19 @@ test_remove_connection (void)
 #define TEST_ADD_REMOVE_ID "add-remove-test-connection"
 
 static void
-add_remove_cb (NMRemoteSettings *s,
-               NMRemoteConnection *connection,
-               GError *error,
+add_remove_cb (GObject *s,
+               GAsyncResult *result,
                gpointer user_data)
 {
+	NMRemoteConnection *connection;
+	gboolean *done = user_data;
+	GError *error = NULL;
+
+	connection = nm_remote_settings_add_connection_finish (settings, result, &error);
 	g_assert_error (error, NM_REMOTE_SETTINGS_ERROR, NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED);
 	g_assert (connection == NULL);
 
-	*((gboolean *) user_data) = TRUE;
+	*done = TRUE;
 }
 
 static void
@@ -368,7 +380,6 @@ test_add_remove_connection (void)
 	GVariant *ret;
 	GError *error = NULL;
 	NMConnection *connection;
-	gboolean success;
 	time_t start, now;
 	gboolean done = FALSE;
 
@@ -385,11 +396,12 @@ test_add_remove_connection (void)
 	g_variant_unref (ret);
 
 	connection = nmtst_create_minimal_connection (TEST_ADD_REMOVE_ID, NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
-	success = nm_remote_settings_add_connection (settings,
-	                                             connection,
-	                                             add_remove_cb,
-	                                             &done);
-	g_assert (success == TRUE);
+	nm_remote_settings_add_connection_async (settings,
+	                                         connection,
+	                                         TRUE,
+	                                         NULL,
+	                                         add_remove_cb,
+	                                         &done);
 
 	start = time (NULL);
 	do {

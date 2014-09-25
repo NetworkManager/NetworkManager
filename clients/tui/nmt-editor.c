@@ -103,20 +103,30 @@ nmt_editor_init (NmtEditor *entry)
 }
 
 static void
-connection_updated (NMRemoteConnection *connection,
-                    GError             *error,
-                    gpointer            op)
+connection_updated (GObject      *connection,
+                    GAsyncResult *result,
+                    gpointer      op)
 {
+	GError *error = NULL;
+
+	nm_remote_connection_commit_changes_finish (NM_REMOTE_CONNECTION (connection), result, &error);
 	nmt_sync_op_complete_boolean (op, error == NULL, error);
+	g_clear_error (&error);
 }
 
 static void
-connection_added (NMRemoteSettings   *settings,
-                  NMRemoteConnection *connection,
-                  GError             *error,
-                  gpointer            op)
+connection_added (GObject      *settings,
+                  GAsyncResult *result,
+                  gpointer      op)
 {
+	NMRemoteConnection *connection;
+	GError *error = NULL;
+
+	connection = nm_remote_settings_add_connection_finish (NM_REMOTE_SETTINGS (settings),
+	                                                       result, &error);
 	nmt_sync_op_complete_boolean (op, error == NULL, error);
+	g_clear_object (&connection);
+	g_clear_error (&error);
 }
 
 static void
@@ -133,8 +143,8 @@ save_connection_and_exit (NmtNewtButton *button,
 
 	nmt_sync_op_init (&op);
 	if (NM_IS_REMOTE_CONNECTION (priv->orig_connection)) {
-		nm_remote_connection_commit_changes (NM_REMOTE_CONNECTION (priv->orig_connection),
-		                                     connection_updated, &op);
+		nm_remote_connection_commit_changes_async (NM_REMOTE_CONNECTION (priv->orig_connection),
+		                                           TRUE, NULL, connection_updated, &op);
 		if (!nmt_sync_op_wait_boolean (&op, &error)) {
 			nmt_newt_message_dialog (_("Unable to save connection: %s"),
 			                         error->message);
@@ -147,8 +157,8 @@ save_connection_and_exit (NmtNewtButton *button,
 		 */
 		nm_connection_clear_secrets (priv->orig_connection);
 	} else {
-		nm_remote_settings_add_connection (nm_settings, priv->orig_connection,
-		                                   connection_added, &op);
+		nm_remote_settings_add_connection_async (nm_settings, priv->orig_connection, TRUE,
+		                                         NULL, connection_added, &op);
 		if (!nmt_sync_op_wait_boolean (&op, &error)) {
 			nmt_newt_message_dialog (_("Unable to add new connection: %s"),
 			                         error->message);
@@ -161,14 +171,19 @@ save_connection_and_exit (NmtNewtButton *button,
 }
 
 static void
-got_secrets (NMRemoteConnection *connection,
-             GVariant           *secrets,
-             GError             *error,
-             gpointer            op)
+got_secrets (GObject      *object,
+             GAsyncResult *result,
+             gpointer      op)
 {
+	GVariant *secrets;
+	GError *error = NULL;
+
+	secrets = nm_remote_connection_get_secrets_finish (NM_REMOTE_CONNECTION (object),
+	                                                   result, &error);
 	if (secrets)
 		g_variant_ref (secrets);
 	nmt_sync_op_complete_pointer (op, secrets, error);
+	g_clear_error (&error);
 }
 
 static NMConnection *
@@ -189,8 +204,8 @@ build_edit_connection (NMConnection *orig_connection)
 	g_variant_iter_init (&iter, settings);
 	while (g_variant_iter_next (&iter, "{&s@a{sv}}", &setting_name, NULL)) {
 		nmt_sync_op_init (&op);
-		nm_remote_connection_get_secrets (NM_REMOTE_CONNECTION (orig_connection),
-		                                  setting_name, got_secrets, &op);
+		nm_remote_connection_get_secrets_async (NM_REMOTE_CONNECTION (orig_connection),
+		                                        setting_name, NULL, got_secrets, &op);
 		/* FIXME: error handling */
 		secrets = nmt_sync_op_wait_pointer (&op, NULL);
 		if (secrets) {

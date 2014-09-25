@@ -47,9 +47,7 @@ static void state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user
 
 typedef struct {
 	NMDeviceWifi *device;
-	GCancellable *cancellable;
-	NMDeviceWifiRequestScanFn callback;
-	gpointer user_data;
+	GSimpleAsyncResult *simple;
 } RequestScanInfo;
 
 typedef struct {
@@ -287,65 +285,123 @@ nm_device_wifi_get_access_point_by_path (NMDeviceWifi *device,
 	return ap;
 }
 
+/**
+ * nm_device_wifi_request_scan:
+ * @device: a #NMDeviceWifi
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: location for a #GError, or %NULL
+ *
+ * Request NM to scan for access points on @device. Note that the function
+ * returns immediately after requesting the scan, and it may take some time
+ * after that for the scan to complete.
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be
+ * set.
+ **/
+gboolean
+nm_device_wifi_request_scan (NMDeviceWifi *device,
+                             GCancellable *cancellable,
+                             GError **error)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
+
+	return nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
+	                                                  g_variant_new_array (G_VARIANT_TYPE_VARDICT,
+	                                                                       NULL, 0),
+	                                                  cancellable, error);
+}
+
 static void
 request_scan_cb (GObject *source,
                  GAsyncResult *result,
                  gpointer user_data)
 {
 	RequestScanInfo *info = user_data;
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (info->device);
+	GError *error = NULL;
 
-	if (info->callback) {
-		NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (info->device);
-		GError *error = NULL;
+	priv->scan_info = NULL;
 
-		nmdbus_device_wifi_call_request_scan_finish (NMDBUS_DEVICE_WIFI (source),
-		                                             result, &error);
+	if (nmdbus_device_wifi_call_request_scan_finish (NMDBUS_DEVICE_WIFI (source),
+	                                                 result, &error))
+		g_simple_async_result_set_op_res_gboolean (info->simple, TRUE);
+	else
+		g_simple_async_result_take_error (info->simple, error);
 
-		info->callback (info->device, error, info->user_data);
-
-		g_clear_error (&error);
-		priv->scan_info = NULL;
-	}
-
-	g_clear_object (&info->cancellable);
+	g_simple_async_result_complete (info->simple);
+	g_object_unref (info->simple);
 	g_slice_free (RequestScanInfo, info);
 }
 
 /**
- * nm_device_wifi_request_scan_simple:
+ * nm_device_wifi_request_scan_async:
  * @device: a #NMDeviceWifi
- * @callback: (scope async) (allow-none): the function to call when the call is done
- * @user_data: (closure): user data to pass to the callback function
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: callback to be called when the scan has been requested
+ * @user_data: caller-specific data passed to @callback
  *
- * Request NM to scan for access points on the #NMDeviceWifi. This function only
- * instructs NM to perform scanning. Use nm_device_wifi_get_access_points()
- * to get available access points.
+ * Request NM to scan for access points on @device. Note that @callback will be
+ * called immediately after requesting the scan, and it may take some time after
+ * that for the scan to complete.
  **/
 void
-nm_device_wifi_request_scan_simple (NMDeviceWifi *device,
-                                    NMDeviceWifiRequestScanFn callback,
-                                    gpointer user_data)
+nm_device_wifi_request_scan_async (NMDeviceWifi *device,
+                                   GCancellable *cancellable,
+                                   GAsyncReadyCallback callback,
+                                   gpointer user_data)
 {
-	RequestScanInfo *info;
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+	RequestScanInfo *info;
+	GSimpleAsyncResult *simple;
 
 	g_return_if_fail (NM_IS_DEVICE_WIFI (device));
 
+	simple = g_simple_async_result_new (G_OBJECT (device), callback, user_data,
+	                                    nm_device_wifi_request_scan_async);
+
 	/* If a scan is in progress, just return */
-	if (priv->scan_info)
+	if (priv->scan_info) {
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+		g_simple_async_result_complete_in_idle (simple);
+		g_object_unref (simple);
 		return;
+	}
 
 	info = g_slice_new0 (RequestScanInfo);
 	info->device = device;
-	info->cancellable = g_cancellable_new ();
-	info->callback = callback;
-	info->user_data = user_data;
+	info->simple = simple;
 
 	priv->scan_info = info;
 	nmdbus_device_wifi_call_request_scan (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
 	                                      g_variant_new_array (G_VARIANT_TYPE_VARDICT, NULL, 0),
-	                                      info->cancellable,
-	                                      request_scan_cb, info);
+	                                      cancellable, request_scan_cb, info);
+}
+
+/**
+ * nm_device_wifi_request_scan_finish:
+ * @device: a #NMDeviceWifi
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_device_wifi_request_scan_async().
+ *
+ * Returns: %TRUE on success, %FALSE on error, in which case @error will be
+ * set.
+ **/
+gboolean
+nm_device_wifi_request_scan_finish (NMDeviceWifi *device,
+                                    GAsyncResult *result,
+                                    GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (device), nm_device_wifi_request_scan_async), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return g_simple_async_result_get_op_res_gboolean (simple);
 }
 
 static void
@@ -620,25 +676,6 @@ static void
 dispose (GObject *object)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
-	GError *error = NULL;
-
-	if (priv->scan_info) {
-		RequestScanInfo *scan_info;
-
-		scan_info = priv->scan_info;
-		priv->scan_info = NULL;
-
-		if (scan_info->callback) {
-			g_set_error_literal (&error, NM_DEVICE_WIFI_ERROR, NM_DEVICE_WIFI_ERROR_UNKNOWN,
-			                     "Wi-Fi device was destroyed");
-			scan_info->callback (NULL, error, scan_info->user_data);
-			scan_info->callback = NULL;
-			g_clear_error (&error);
-		}
-
-		g_cancellable_cancel (scan_info->cancellable);
-		/* request_scan_cb() will free scan_info */
-	}
 
 	if (priv->aps)
 		clean_up_aps (NM_DEVICE_WIFI (object), TRUE);
