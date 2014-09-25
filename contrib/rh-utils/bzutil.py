@@ -170,10 +170,8 @@ class ConfigStore:
             v = self.values.get(key, None)
             if v is None:
                 if default is None:
-                    if self.filename:
-                        raise Exception('config: Missing configuration value \'%s\': set it in the config file \'%s\' or set the environment variable \'%s\'' % (key, self.filename, ekey))
-                    else:
-                        raise Exception('config: Missing configuration value \'%s\': set it in the config file or set the environment variable \'%s\'' % (key, ekey))
+                    f = self.filename if self.filename else ConfigStore.DEFAULT_FILE
+                    raise Exception('config: Missing configuration value \'%s\': set it in the config file \'%s\' or set the environment variable \'%s\'' % (key, f, ekey))
         self.v[key] = v
         return v if v is not None else default
 config = ConfigStore()
