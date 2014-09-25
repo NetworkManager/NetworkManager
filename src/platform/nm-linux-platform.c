@@ -3059,6 +3059,13 @@ macvlan_get_properties (NMPlatform *platform, int ifindex, NMPlatformMacvlanProp
 #undef IFLA_VXLAN_MAX
 #define IFLA_VXLAN_MAX IFLA_VXLAN_LOCAL6
 
+/* older kernel header might not contain 'struct ifla_vxlan_port_range'.
+ * Redefine it. */
+struct nm_ifla_vxlan_port_range {
+	guint16 low;
+	guint16 high;
+};
+
 static const struct nla_policy vxlan_info_policy[IFLA_VXLAN_MAX + 1] = {
 	[IFLA_VXLAN_ID]         = { .type = NLA_U32 },
 	[IFLA_VXLAN_GROUP]      = { .type = NLA_U32 },
@@ -3074,7 +3081,7 @@ static const struct nla_policy vxlan_info_policy[IFLA_VXLAN_MAX + 1] = {
 	[IFLA_VXLAN_AGEING]     = { .type = NLA_U32 },
 	[IFLA_VXLAN_LIMIT]      = { .type = NLA_U32 },
 	[IFLA_VXLAN_PORT_RANGE] = { .type = NLA_UNSPEC,
-	                            .minlen  = sizeof (struct ifla_vxlan_port_range) },
+	                            .minlen  = sizeof (struct nm_ifla_vxlan_port_range) },
 	[IFLA_VXLAN_PROXY]      = { .type = NLA_U8 },
 	[IFLA_VXLAN_RSC]        = { .type = NLA_U8 },
 	[IFLA_VXLAN_L2MISS]     = { .type = NLA_U8 },
@@ -3087,7 +3094,7 @@ vxlan_info_data_parser (struct nlattr *info_data, gpointer parser_data)
 {
 	NMPlatformVxlanProperties *props = parser_data;
 	struct nlattr *tb[IFLA_VXLAN_MAX + 1];
-	struct ifla_vxlan_port_range *range;
+	struct nm_ifla_vxlan_port_range *range;
 	int err;
 
 	err = nla_parse_nested (tb, IFLA_VXLAN_MAX, info_data,
@@ -3097,8 +3104,10 @@ vxlan_info_data_parser (struct nlattr *info_data, gpointer parser_data)
 
 	memset (props, 0, sizeof (*props));
 
-	props->parent_ifindex = tb[IFLA_VXLAN_LINK] ? nla_get_u32 (tb[IFLA_VXLAN_LINK]) : 0;
-	props->id = nla_get_u32 (tb[IFLA_VXLAN_ID]);
+	if (tb[IFLA_VXLAN_LINK])
+		props->parent_ifindex = nla_get_u32 (tb[IFLA_VXLAN_LINK]);
+	if (tb[IFLA_VXLAN_ID])
+		props->id = nla_get_u32 (tb[IFLA_VXLAN_ID]);
 	if (tb[IFLA_VXLAN_GROUP])
 		props->group = nla_get_u32 (tb[IFLA_VXLAN_GROUP]);
 	if (tb[IFLA_VXLAN_LOCAL])
@@ -3108,21 +3117,34 @@ vxlan_info_data_parser (struct nlattr *info_data, gpointer parser_data)
 	if (tb[IFLA_VXLAN_LOCAL6])
 		memcpy (&props->local6, nla_data (tb[IFLA_VXLAN_LOCAL6]), sizeof (props->local6));
 
-	props->ageing = nla_get_u32 (tb[IFLA_VXLAN_AGEING]);
-	props->limit = nla_get_u32 (tb[IFLA_VXLAN_LIMIT]);
-	props->tos = nla_get_u8 (tb[IFLA_VXLAN_TOS]);
-	props->ttl = nla_get_u8 (tb[IFLA_VXLAN_TTL]);
+	if (tb[IFLA_VXLAN_AGEING])
+		props->ageing = nla_get_u32 (tb[IFLA_VXLAN_AGEING]);
+	if (tb[IFLA_VXLAN_LIMIT])
+		props->limit = nla_get_u32 (tb[IFLA_VXLAN_LIMIT]);
+	if (tb[IFLA_VXLAN_TOS])
+		props->tos = nla_get_u8 (tb[IFLA_VXLAN_TOS]);
+	if (tb[IFLA_VXLAN_TTL])
+		props->ttl = nla_get_u8 (tb[IFLA_VXLAN_TTL]);
 
-	props->dst_port = nla_get_u16 (tb[IFLA_VXLAN_PORT]);
-	range = nla_data (tb[IFLA_VXLAN_PORT_RANGE]);
-	props->src_port_min = range->low;
-	props->src_port_max = range->high;
+	if (tb[IFLA_VXLAN_PORT])
+		props->dst_port = nla_get_u16 (tb[IFLA_VXLAN_PORT]);
 
-	props->learning = !!nla_get_u8 (tb[IFLA_VXLAN_LEARNING]);
-	props->proxy = !!nla_get_u8 (tb[IFLA_VXLAN_PROXY]);
-	props->rsc = !!nla_get_u8 (tb[IFLA_VXLAN_RSC]);
-	props->l2miss = !!nla_get_u8 (tb[IFLA_VXLAN_L2MISS]);
-	props->l3miss = !!nla_get_u8 (tb[IFLA_VXLAN_L3MISS]);
+	if (tb[IFLA_VXLAN_PORT_RANGE]) {
+		range = nla_data (tb[IFLA_VXLAN_PORT_RANGE]);
+		props->src_port_min = range->low;
+		props->src_port_max = range->high;
+	}
+
+	if (tb[IFLA_VXLAN_LEARNING])
+		props->learning = !!nla_get_u8 (tb[IFLA_VXLAN_LEARNING]);
+	if (tb[IFLA_VXLAN_PROXY])
+		props->proxy = !!nla_get_u8 (tb[IFLA_VXLAN_PROXY]);
+	if (tb[IFLA_VXLAN_RSC])
+		props->rsc = !!nla_get_u8 (tb[IFLA_VXLAN_RSC]);
+	if (tb[IFLA_VXLAN_L2MISS])
+		props->l2miss = !!nla_get_u8 (tb[IFLA_VXLAN_L2MISS]);
+	if (tb[IFLA_VXLAN_L3MISS])
+		props->l3miss = !!nla_get_u8 (tb[IFLA_VXLAN_L3MISS]);
 
 	return 0;
 }
