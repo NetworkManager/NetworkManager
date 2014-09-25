@@ -4376,7 +4376,6 @@ parse_prio_map_list (NMSettingVlan *s_vlan,
 static NMSetting *
 make_vlan_setting (shvarFile *ifcfg,
                    const char *file,
-                   char **out_master,
                    GError **error)
 {
 	NMSettingVlan *s_vlan = NULL;
@@ -4429,7 +4428,7 @@ make_vlan_setting (shvarFile *ifcfg,
 			}
 			p++;
 		} else {
-			/* format like vlan43; PHYSDEV or MASTER must be set */
+			/* format like vlan43; PHYSDEV must be set */
 			if (g_str_has_prefix (iface_name, "vlan"))
 				p = iface_name + 4;
 		}
@@ -4479,8 +4478,6 @@ make_vlan_setting (shvarFile *ifcfg,
 	parse_prio_map_list (s_vlan, ifcfg, "VLAN_INGRESS_PRIORITY_MAP", NM_VLAN_INGRESS_MAP);
 	parse_prio_map_list (s_vlan, ifcfg, "VLAN_EGRESS_PRIORITY_MAP", NM_VLAN_EGRESS_MAP);
 
-	if (out_master)
-		*out_master = svGetValue (ifcfg, "MASTER", FALSE);
 	return (NMSetting *) s_vlan;
 
 error:
@@ -4500,7 +4497,6 @@ vlan_connection_from_ifcfg (const char *file,
 	NMSetting *wired_setting = NULL;
 	NMSetting *vlan_setting = NULL;
 	NMSetting8021x *s_8021x = NULL;
-	char *master = NULL;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -4514,23 +4510,16 @@ vlan_connection_from_ifcfg (const char *file,
 		g_object_unref (connection);
 		return NULL;
 	}
+	check_if_bond_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
+	check_if_team_slave (ifcfg, NM_SETTING_CONNECTION (con_setting));
 	nm_connection_add_setting (connection, con_setting);
 
-	vlan_setting = make_vlan_setting (ifcfg, file, &master, error);
+	vlan_setting = make_vlan_setting (ifcfg, file, error);
 	if (!vlan_setting) {
 		g_object_unref (connection);
 		return NULL;
 	}
 	nm_connection_add_setting (connection, vlan_setting);
-
-	/* Handle master interface or connection */
-	if (master) {
-		g_object_set (con_setting, NM_SETTING_CONNECTION_MASTER, master, NULL);
-		g_object_set (con_setting,
-		              NM_SETTING_CONNECTION_SLAVE_TYPE, NM_SETTING_VLAN_SETTING_NAME,
-		              NULL);
-		g_free (master);
-	}
 
 	wired_setting = make_wired_setting (ifcfg, file, &s_8021x, error);
 	if (!wired_setting) {

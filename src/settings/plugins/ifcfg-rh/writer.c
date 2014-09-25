@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2009 - 2013 Red Hat, Inc.
+ * Copyright 2009 - 2014 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -1179,7 +1179,6 @@ write_vlan_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wired,
 	svSetValue (ifcfg, "TYPE", TYPE_VLAN, FALSE);
 	svSetValue (ifcfg, "DEVICE", nm_setting_connection_get_interface_name (s_con), FALSE);
 	svSetValue (ifcfg, "PHYSDEV", nm_setting_vlan_get_parent (s_vlan), FALSE);
-	svSetValue (ifcfg, "MASTER", nm_setting_connection_get_master (s_con), FALSE);
 
 	tmp = g_strdup_printf ("%d", nm_setting_vlan_get_id (s_vlan));
 	svSetValue (ifcfg, "VLAN_ID", tmp, FALSE);
