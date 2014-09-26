@@ -93,6 +93,14 @@
             </arg>
         </method>
 
+        <method name="ClearSecrets">
+          <tp:docstring>
+            Clear the secrets belonging to this network connection profile.
+          </tp:docstring>
+          <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_connection_clear_secrets"/>
+          <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+        </method>
+
         <method name="Save">
             <tp:docstring>
                 Saves a "dirty" connection (that had previously been
