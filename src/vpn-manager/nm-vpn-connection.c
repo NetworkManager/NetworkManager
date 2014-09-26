@@ -623,6 +623,7 @@ plugin_failed (DBusGProxy *proxy,
 		break;
 	default:
 		priv->failure_reason = NM_VPN_CONNECTION_STATE_REASON_UNKNOWN;
+		break;
 	}
 }
 
