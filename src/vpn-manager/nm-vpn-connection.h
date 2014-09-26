@@ -42,7 +42,8 @@
 
 /* Signals */
 /* not exported: includes old reason code */
-#define NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED "internal-state-changed"
+#define NM_VPN_CONNECTION_INTERNAL_STATE_CHANGED       "internal-state-changed"
+#define NM_VPN_CONNECTION_INTERNAL_RETRY_AFTER_FAILURE "internal-retry-after-failure"
 
 
 typedef struct {
@@ -62,6 +63,8 @@ typedef struct {
 	                                NMVpnConnectionState new_state,
 	                                NMVpnConnectionState old_state,
 	                                NMVpnConnectionStateReason reason);
+
+	void (*internal_failed_retry)  (NMVpnConnection *connection);
 } NMVpnConnectionClass;
 
 GType nm_vpn_connection_get_type (void);

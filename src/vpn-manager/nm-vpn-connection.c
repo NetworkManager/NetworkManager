@@ -111,6 +111,7 @@ typedef struct {
 enum {
 	VPN_STATE_CHANGED,
 	INTERNAL_STATE_CHANGED,
+	INTERNAL_RETRY_AFTER_FAILURE,
 
 	LAST_SIGNAL
 };
@@ -442,6 +443,13 @@ _service_and_connection_can_persist (NMVpnConnection *self)
 	       NM_VPN_CONNECTION_GET_PRIVATE (self)->service_can_persist;
 }
 
+static gboolean
+_connection_only_can_persist (NMVpnConnection *self)
+{
+	return NM_VPN_CONNECTION_GET_PRIVATE (self)->connection_can_persist &&
+	       !NM_VPN_CONNECTION_GET_PRIVATE (self)->service_can_persist;
+}
+
 static void
 device_state_changed (NMActiveConnection *active,
                       NMDevice *device,
@@ -736,12 +744,22 @@ plugin_state_changed (DBusGProxy *proxy,
 		nm_connection_clear_secrets (priv->connection);
 
 		if ((priv->vpn_state >= STATE_WAITING) && (priv->vpn_state <= STATE_ACTIVATED)) {
+			VpnState old_state = priv->vpn_state;
+
 			nm_log_info (LOGD_VPN, "VPN plugin state change reason: %s (%d)",
 			             vpn_reason_to_string (priv->failure_reason), priv->failure_reason);
 			_set_vpn_state (connection, STATE_FAILED, priv->failure_reason, FALSE);
 
 			/* Reset the failure reason */
 			priv->failure_reason = NM_VPN_CONNECTION_STATE_REASON_UNKNOWN;
+
+			/* If the connection failed, the service cannot persist, but the
+			 * connection can persist, ask listeners to re-activate the connection.
+			 */
+			if (   old_state == STATE_ACTIVATED
+			    && priv->vpn_state == STATE_FAILED
+			    && _connection_only_can_persist (connection))
+				g_signal_emit (connection, signals[INTERNAL_RETRY_AFTER_FAILURE], 0);
 		}
 	} else if (new_service_state == NM_VPN_SERVICE_STATE_STARTING &&
 	           old_service_state == NM_VPN_SERVICE_STATE_STARTED) {
@@ -2147,6 +2165,13 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+
+	signals[INTERNAL_RETRY_AFTER_FAILURE] =
+		g_signal_new (NM_VPN_CONNECTION_INTERNAL_RETRY_AFTER_FAILURE,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL, NULL,
+		              G_TYPE_NONE, 0);
 
 	nm_dbus_manager_register_exported_type (nm_dbus_manager_get (),
 	                                        G_TYPE_FROM_CLASS (object_class),
