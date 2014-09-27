@@ -61,8 +61,6 @@ typedef struct {
 	GSList *nmt_devices;
 } NmtConnectConnectionListPrivate;
 
-static const char *strength_full, *strength_high, *strength_med, *strength_low, *strength_none;
-
 /**
  * nmt_connect_connection_list_new:
  *
@@ -527,16 +525,7 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 			if (nmtconn->ap) {
 				guint8 strength = nm_access_point_get_strength (nmtconn->ap);
 
-				if (strength > 80)
-					strength_col = strength_full;
-				else if (strength > 55)
-					strength_col = strength_high;
-				else if (strength > 30)
-					strength_col = strength_med;
-				else if (strength > 5)
-					strength_col = strength_low;
-				else
-					strength_col = strength_none;
+				strength_col = nm_utils_wifi_strength_bars (strength);
 			} else
 				strength_col = NULL;
 
@@ -608,30 +597,12 @@ static void
 nmt_connect_connection_list_class_init (NmtConnectConnectionListClass *list_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (list_class);
-	char *tmp;
 
 	g_type_class_add_private (list_class, sizeof (NmtConnectConnectionListPrivate));
 
 	/* virtual methods */
 	object_class->constructed  = nmt_connect_connection_list_constructed;
 	object_class->finalize     = nmt_connect_connection_list_finalize;
-
-	/* globals */
-	tmp = nmt_newt_locale_from_utf8 ("\342\226\202\342\226\204\342\226\206\342\226\210");
-	if (*tmp) {
-		strength_full = /* ▂▄▆█ */ "\342\226\202\342\226\204\342\226\206\342\226\210";
-		strength_high = /* ▂▄▆_ */ "\342\226\202\342\226\204\342\226\206_";
-		strength_med  = /* ▂▄__ */ "\342\226\202\342\226\204__";
-		strength_low  = /* ▂___ */ "\342\226\202___";
-		strength_none = /* ____ */ "____";
-	} else {
-		strength_full = "****";
-		strength_high = "*** ";
-		strength_med  = "**  ";
-		strength_low  = "*   ";
-		strength_none = "    ";
-	}
-	g_free (tmp);
 }
 
 /**

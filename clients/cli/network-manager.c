@@ -19,7 +19,6 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -89,161 +88,147 @@ extern GMainLoop *loop;
 static void
 usage_general (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli general { COMMAND | help }\n\n"
-	           "COMMAND := { status | hostname | permissions | logging }\n\n"
-	           "  status\n\n"
-	           "  hostname [<hostname>]\n\n"
-	           "  permissions\n\n"
-	           "  logging [level <log level>] [domains <log domains>]\n\n"));
+	g_printerr (_("Usage: nmcli general { COMMAND | help }\n\n"
+	              "COMMAND := { status | hostname | permissions | logging }\n\n"
+	              "  status\n\n"
+	              "  hostname [<hostname>]\n\n"
+	              "  permissions\n\n"
+	              "  logging [level <log level>] [domains <log domains>]\n\n"));
 }
 
 static void
 usage_general_status (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli general status { help }\n"
-	           "\n"
-	           "Show overall status of NetworkManager.\n"
-	           "'status' is the default action, which means 'nmcli gen' calls 'nmcli gen status'\n\n"));
+	g_printerr (_("Usage: nmcli general status { help }\n"
+	              "\n"
+	              "Show overall status of NetworkManager.\n"
+	              "'status' is the default action, which means 'nmcli gen' calls 'nmcli gen status'\n\n"));
 }
 
 static void
 usage_general_hostname (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli general hostname { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [<hostname>]\n"
-	           "\n"
-	           "Get or change persistent system hostname.\n"
-	           "With no arguments, this prints currently configured hostname. When you pass\n"
-	           "a hostname, NetworkManager will set it as the new persistent system hostname.\n\n"));
+	g_printerr (_("Usage: nmcli general hostname { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [<hostname>]\n"
+	              "\n"
+	              "Get or change persistent system hostname.\n"
+	              "With no arguments, this prints currently configured hostname. When you pass\n"
+	              "a hostname, NetworkManager will set it as the new persistent system hostname.\n\n"));
 }
 
 static void
 usage_general_permissions (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli general permissions { help }\n"
-	           "\n"
-	           "Show caller permissions for authenticated operations.\n\n"));
+	g_printerr (_("Usage: nmcli general permissions { help }\n"
+	              "\n"
+	              "Show caller permissions for authenticated operations.\n\n"));
 }
 
 static void
 usage_general_logging (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli general logging { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [level <log level>] [domains <log domains>]\n"
-	           "\n"
-	           "Get or change NetworkManager logging level and domains.\n"
-	           "Without any argument current logging level and domains are shown. In order to\n"
-	           "change logging state, provide level and/or domain. Please refer to the man page\n"
-	           "for the list of possible logging domains.\n\n"));
+	g_printerr (_("Usage: nmcli general logging { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [level <log level>] [domains <log domains>]\n"
+	              "\n"
+	              "Get or change NetworkManager logging level and domains.\n"
+	              "Without any argument current logging level and domains are shown. In order to\n"
+	              "change logging state, provide level and/or domain. Please refer to the man page\n"
+	              "for the list of possible logging domains.\n\n"));
 }
 
 static void
 usage_networking (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli networking { COMMAND | help }\n\n"
-	           "COMMAND := { [ on | off | connectivity ] }\n\n"
-	           "  on\n\n"
-	           "  off\n\n"
-	           "  connectivity [check]\n\n"));
+	g_printerr (_("Usage: nmcli networking { COMMAND | help }\n\n"
+	              "COMMAND := { [ on | off | connectivity ] }\n\n"
+	              "  on\n\n"
+	              "  off\n\n"
+	              "  connectivity [check]\n\n"));
 }
 
 static void
 usage_networking_on (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli networking on { help }\n"
-	           "\n"
-	           "Switch networking on.\n\n"));
+	g_printerr (_("Usage: nmcli networking on { help }\n"
+	              "\n"
+	              "Switch networking on.\n\n"));
 }
 
 static void
 usage_networking_off (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli networking off { help }\n"
-	           "\n"
-	           "Switch networking off.\n\n"));
+	g_printerr (_("Usage: nmcli networking off { help }\n"
+	              "\n"
+	              "Switch networking off.\n\n"));
 }
 
 static void
 usage_networking_connectivity (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli networking connectivity { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [check]\n"
-	           "\n"
-	           "Get network connectivity state.\n"
-	           "The optional 'check' argument makes NetworkManager re-check the connectivity.\n\n"));
+	g_printerr (_("Usage: nmcli networking connectivity { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [check]\n"
+	              "\n"
+	              "Get network connectivity state.\n"
+	              "The optional 'check' argument makes NetworkManager re-check the connectivity.\n\n"));
 
 }
 
 static void
 usage_radio (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli radio { COMMAND | help }\n\n"
+	g_printerr (_("Usage: nmcli radio { COMMAND | help }\n\n"
 #if WITH_WIMAX
-	           "COMMAND := { all | wifi | wwan | wimax }\n\n"
-	           "  all | wifi | wwan | wimax [ on | off ]\n\n"
+	              "COMMAND := { all | wifi | wwan | wimax }\n\n"
+	              "  all | wifi | wwan | wimax [ on | off ]\n\n"
 #else
-	           "COMMAND := { all | wifi | wwan }\n\n"
-	           "  all | wifi | wwan [ on | off ]\n\n"
+	              "COMMAND := { all | wifi | wwan }\n\n"
+	              "  all | wifi | wwan [ on | off ]\n\n"
 #endif
-	         ));
+	              ));
 }
 
 static void
 usage_radio_all (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli radio all { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [on | off]\n"
-	           "\n"
-	           "Get status of all radio switches, or turn them on/off.\n\n"));
+	g_printerr (_("Usage: nmcli radio all { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [on | off]\n"
+	              "\n"
+	              "Get status of all radio switches, or turn them on/off.\n\n"));
 }
 
 static void
 usage_radio_wifi (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli radio wifi { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [on | off]\n"
-	           "\n"
-	           "Get status of Wi-Fi radio switch, or turn it on/off.\n\n"));
+	g_printerr (_("Usage: nmcli radio wifi { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [on | off]\n"
+	              "\n"
+	              "Get status of Wi-Fi radio switch, or turn it on/off.\n\n"));
 }
 
 static void
 usage_radio_wwan (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli radio wwan { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [on | off]\n"
-	           "\n"
-	           "Get status of mobile broadband radio switch, or turn it on/off.\n\n"));
+	g_printerr (_("Usage: nmcli radio wwan { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [on | off]\n"
+	              "\n"
+	              "Get status of mobile broadband radio switch, or turn it on/off.\n\n"));
 }
 
 #if WITH_WIMAX
 static void
 usage_radio_wimax (void)
 {
-	fprintf (stderr,
-	         _("Usage: nmcli radio wimax { ARGUMENTS | help }\n"
-	           "\n"
-	           "ARGUMENTS := [on | off]\n"
-	           "\n"
-	           "Get status of WiMAX radio switch, or turn it on/off.\n\n"));
+	g_printerr (_("Usage: nmcli radio wimax { ARGUMENTS | help }\n"
+	              "\n"
+	              "ARGUMENTS := [on | off]\n"
+	              "\n"
+	              "Get status of WiMAX radio switch, or turn it on/off.\n\n"));
 }
 #endif
 
@@ -620,14 +605,14 @@ do_general (NmCli *nmc, int argc, char **argv)
 
 				g_object_get (rem_settings, NM_REMOTE_SETTINGS_HOSTNAME, &hostname, NULL);
 				if (hostname)
-					printf ("%s\n", hostname);
+					g_print ("%s\n", hostname);
 				g_free (hostname);
 			} else {
 				/* hostname provided -> set it */
 				const char *hostname = *argv;
 
 				if (next_arg (&argc, &argv) == 0)
-					printf ("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
+					g_print ("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
 
 				nmc->should_wait = TRUE;
 				nm_remote_settings_save_hostname_async (rem_settings, hostname, NULL, save_hostname_cb, nmc);
