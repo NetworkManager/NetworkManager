@@ -428,6 +428,13 @@ else
 	AC_DEFINE(HAVE_KERNEL_INET6_ADDR_GEN_MODE, 0, [Define if the kernel has IN6_ADDR_GEN_MODE_*])
 fi
 
+# IPv6 tokenized identifiers support in libnl
+AC_CHECK_LIB([nl-route-3], [rtnl_link_inet6_get_token],
+	ac_have_ipv6_token="1",
+	ac_have_ipv6_token="0")
+AC_DEFINE_UNQUOTED(HAVE_LIBNL_INET6_TOKEN,
+	$ac_have_ipv6_token, [Define if libnl has rtnl_link_inet6_get_token()])
+
 # uuid library
 PKG_CHECK_MODULES(UUID, uuid)
 AC_SUBST(UUID_CFLAGS)
