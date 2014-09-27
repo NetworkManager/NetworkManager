@@ -113,4 +113,7 @@ typedef struct _NMSecretAgent        NMSecretAgent;
 typedef struct _NMSettings           NMSettings;
 typedef struct _NMSettingsConnection NMSettingsConnection;
 
+/* utils */
+typedef struct _NMUtilsIPv6IfaceId   NMUtilsIPv6IfaceId;
+
 #endif  /* NM_TYPES_H */

@@ -192,12 +192,12 @@ gboolean nm_utils_is_specific_hostname (const char *name);
  * and should not normally be treated as a %guint64, but this is done for
  * convenience of validity checking and initialization.
  */
-typedef struct {
+struct _NMUtilsIPv6IfaceId {
 	union {
 		guint64 id;
 		guint8  id_u8[8];
 	};
-} NMUtilsIPv6IfaceId;
+};
 
 #define NM_UTILS_IPV6_IFACE_ID_INIT { .id = 0 }
 
