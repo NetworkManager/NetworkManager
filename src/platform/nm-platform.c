@@ -780,6 +780,31 @@ nm_platform_link_uses_arp (int ifindex)
 }
 
 /**
+ * nm_platform_link_get_ipv6_token:
+ * @ifindex: Interface index
+ * @iid: Tokenized interface identifier
+ *
+ * Returns IPv6 tokenized interface identifier. If the platform or OS doesn't
+ * support IPv6 tokenized interface identifiers, or the token is not set
+ * this call will fail and return %FALSE.
+ *
+ * Returns: %TRUE a tokenized identifier was available
+ */
+gboolean
+nm_platform_link_get_ipv6_token (int ifindex, NMUtilsIPv6IfaceId *iid)
+{
+	reset_error ();
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (iid, FALSE);
+
+	if (klass->link_get_ipv6_token)
+		return klass->link_get_ipv6_token (platform, ifindex, iid);
+	return FALSE;
+}
+
+
+/**
  * nm_platform_link_get_user_ip6vll_enabled:
  * @ifindex: Interface index
  *
