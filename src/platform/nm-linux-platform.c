@@ -44,9 +44,9 @@
 #include <netlink/route/route.h>
 #include <gudev/gudev.h>
 
-#if HAVE_LIBNL_INET6_ADDR_GEN_MODE
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE || HAVE_LIBNL_INET6_TOKEN
 #include <netlink/route/link/inet6.h>
-#if HAVE_KERNEL_INET6_ADDR_GEN_MODE
+#if HAVE_LIBNL_INET6_ADDR_GEN_MODE && HAVE_KERNEL_INET6_ADDR_GEN_MODE
 #include <linux/if_link.h>
 #else
 #define IN6_ADDR_GEN_MODE_EUI64 0
@@ -1904,6 +1904,37 @@ nm_nl_object_diff (ObjectType type, struct nl_object *_a, struct nl_object *_b)
 		/* libnl thinks objects are different*/
 		return TRUE;
 	}
+
+#if HAVE_LIBNL_INET6_TOKEN
+	/* libnl ignores PROTINFO changes in object without AF assigned */
+	if (type == OBJECT_TYPE_LINK) {
+		struct rtnl_addr *a = (struct rtnl_addr *) _a;
+		struct rtnl_addr *b = (struct rtnl_addr *) _b;
+		auto_nl_addr struct nl_addr *token_a = NULL;
+		auto_nl_addr struct nl_addr *token_b = NULL;
+
+		if (rtnl_link_inet6_get_token ((struct rtnl_link *) a, &token_a) != 0)
+			token_a = NULL;
+		if (rtnl_link_inet6_get_token ((struct rtnl_link *) b, &token_b) != 0)
+			token_b = NULL;
+
+		if (token_a && token_b) {
+			if (nl_addr_get_family (token_a) == AF_INET6 &&
+			    nl_addr_get_family (token_b) == AF_INET6 &&
+			    nl_addr_get_len (token_a) == sizeof (struct in6_addr) &&
+			    nl_addr_get_len (token_b) == sizeof (struct in6_addr) &&
+			    memcmp (nl_addr_get_binary_addr (token_a),
+			            nl_addr_get_binary_addr (token_b),
+			            sizeof (struct in6_addr))) {
+				/* Token changed */
+				return TRUE;
+			}
+		} else if (token_a != token_b) {
+			/* Token added or removed (?). */
+			return TRUE;
+		}
+	}
+#endif
 
 	if (type == OBJECT_TYPE_IP4_ADDRESS || type == OBJECT_TYPE_IP6_ADDRESS) {
 		struct rtnl_addr *a = (struct rtnl_addr *) _a;
