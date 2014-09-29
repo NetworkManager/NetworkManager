@@ -631,7 +631,7 @@ update_secrets_in_connection (NMRemoteConnection *con)
 }
 
 static gboolean
-nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
+nmc_connection_profile_details (NMConnection *connection, NmCli *nmc, gboolean secrets)
 {
 	GError *error = NULL;
 	GArray *print_settings_array;
@@ -683,7 +683,7 @@ nmc_connection_profile_details (NMConnection *connection, NmCli *nmc)
 
 		setting = nm_connection_get_setting_by_name (connection, nmc_fields_settings_names[section_idx].name);
 		if (setting) {
-			setting_details (setting, nmc, prop_name);
+			setting_details (setting, nmc, prop_name, secrets);
 			was_output = TRUE;
 			continue;
 		}
@@ -1445,7 +1445,7 @@ do_connections_show (NmCli *nmc, gboolean active_only, gboolean show_secrets,
 					nmc->required_fields = profile_flds;
 					if (show_secrets)
 						update_secrets_in_connection (NM_REMOTE_CONNECTION (con));
-					res = nmc_connection_profile_details (con, nmc);
+					res = nmc_connection_profile_details (con, nmc, show_secrets);
 					nmc->required_fields = NULL;
 					if (!res)
 						goto finish;
@@ -6023,7 +6023,7 @@ editor_show_connection (NMConnection *connection, NmCli *nmc)
 	/* Remove any previous data */
 	nmc_empty_output_fields (nmc);
 
-	nmc_connection_profile_details (connection, nmc);
+	nmc_connection_profile_details (connection, nmc, FALSE);
 }
 
 static void
@@ -6039,7 +6039,7 @@ editor_show_setting (NMSetting *setting, NmCli *nmc)
 	/* Remove any previous data */
 	nmc_empty_output_fields (nmc);
 
-	setting_details (setting, nmc, NULL);
+	setting_details (setting, nmc, NULL, FALSE);
 }
 
 typedef enum {
