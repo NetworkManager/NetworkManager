@@ -5380,7 +5380,7 @@ gen_nmcli_cmds_submenu (const char *text, int state)
 static char *
 gen_cmd_nmcli (const char *text, int state)
 {
-	const char *words[] = { "status-line", "save-confirmation", "prompt-color", NULL };
+	const char *words[] = { "status-line", "save-confirmation", "show-secrets", "prompt-color", NULL };
 	return nmc_rl_gen_func_basic (text, state, words);
 }
 
@@ -5611,6 +5611,8 @@ get_gen_func_cmd_nmcli (const char *str)
 	if (matches (str, "status-line") == 0)
 		return gen_func_bool_values;
 	if (matches (str, "save-confirmation") == 0)
+		return gen_func_bool_values;
+	if (matches (str, "show-secrets") == 0)
 		return gen_func_bool_values;
 	if (matches (str, "prompt-color") == 0)
 		return gen_cmd_nmcli_prompt_color;
@@ -6023,7 +6025,7 @@ editor_show_connection (NMConnection *connection, NmCli *nmc)
 	/* Remove any previous data */
 	nmc_empty_output_fields (nmc);
 
-	nmc_connection_profile_details (connection, nmc, FALSE);
+	nmc_connection_profile_details (connection, nmc, nmc->editor_show_secrets);
 }
 
 static void
@@ -6039,7 +6041,7 @@ editor_show_setting (NMSetting *setting, NmCli *nmc)
 	/* Remove any previous data */
 	nmc_empty_output_fields (nmc);
 
-	setting_details (setting, nmc, NULL, FALSE);
+	setting_details (setting, nmc, NULL, nmc->editor_show_secrets);
 }
 
 typedef enum {
@@ -6204,6 +6206,7 @@ editor_main_help (const char *command)
 			           "Configures nmcli. The following options are available:\n"
 			           "status-line yes | no        [default: no]\n"
 			           "save-confirmation yes | no  [default: yes]\n"
+			           "show-secrets yes | no       [default: no]\n"
 			           "prompt-color <0-8>          [default: 0]\n"
 			           "  0 = normal\n"
 			           "  1 = \33[30mblack\33[0m\n"
@@ -7026,6 +7029,12 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	g_weak_ref_init (&weak, con_tmp);
 	rem_con = g_weak_ref_get (&weak);
 
+	/* Merge secrets into the connection */
+	if (rem_con) {
+		update_secrets_in_connection (rem_con);
+		nm_connection_replace_settings_from_connection (connection, NM_CONNECTION (rem_con));
+	}
+
 	while (cmd_loop) {
 		/* Connection is dirty? (not saved or differs from the saved) */
 		dirty = is_connection_dirty (connection, rem_con);
@@ -7633,6 +7642,14 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					g_clear_error (&tmp_err);
 				} else
 					nmc->editor_save_confirmation = bb;
+			} else if (cmd_arg_p && matches (cmd_arg_p, "show-secrets") == 0) {
+				GError *tmp_err = NULL;
+				gboolean bb;
+				if (!nmc_string_to_bool (cmd_arg_v ? g_strstrip (cmd_arg_v) : "", &bb, &tmp_err)) {
+					g_print (_("Error: show-secrets: %s\n"), tmp_err->message);
+					g_clear_error (&tmp_err);
+				} else
+					nmc->editor_show_secrets = bb;
 			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color") == 0) {
 				unsigned long color;
 				if (!nmc_string_to_uint (cmd_arg_v ? g_strstrip (cmd_arg_v) : "X",
@@ -7652,13 +7669,15 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				g_print (_("Current nmcli configuration:\n"));
 				g_print ("status-line: %s\n"
 				         "save-confirmation: %s\n"
+				         "show-secrets: %s\n"
 				         "prompt-color: %d\n",
 				         nmc->editor_status_line ? "yes" : "no",
 				         nmc->editor_save_confirmation ? "yes" : "no",
+				         nmc->editor_show_secrets ? "yes" : "no",
 				         nmc->editor_prompt_color);
 			} else
 				g_print (_("Invalid configuration option '%s'; allowed [%s]\n"),
-				         cmd_arg_v ? cmd_arg_v : "", "status-line, save-confirmation, prompt-color");
+				         cmd_arg_v ? cmd_arg_v : "", "status-line, save-confirmation, show-secrets, prompt-color");
 
 			break;
 
