@@ -476,6 +476,7 @@ class CmdSubmit(CmdBase):
         self.parser.add_argument('--tests', '-c', action='append', help='Append argument to $TESTS')
         self.parser.add_argument('--job', '-j', help='beaker xml job file')
         self.parser.add_argument('--verbose', '-v', action='count', help='print more information')
+        self.parser.add_argument('--reservesys', '-R', action='store_true', help='add task /distribution/reservesys')
 
     def _prepare_rpms(self):
         if self.options.rpm is None:
@@ -541,7 +542,7 @@ class CmdSubmit(CmdBase):
         for (k,v) in self.subs.iteritems():
             self._print_substitution(k, v)
 
-    def _process_line_get_GIT_TARGETBRANCH(self, key, replacement, index=None, none=None):
+    def __process_line_get_GIT_TARGETBRANCH_detect(self, key_name):
         # we default to 'master', unless there is an RPM that looks like it's from
         # rhel-7.0.
         if self.rpm is not None:
@@ -555,18 +556,33 @@ class CmdSubmit(CmdBase):
                         return 'master' # 0.9.10
                     if re.match(r'^.*/NetworkManager-0.9.9.9[0-9]+-[0-9]+\.[a-f0-9]+\.el7.x86_64.rpm$', u):
                         return 'master' # 0.9.10-rc
-        raise Exception("could not detect GIT_TARGETBRANCH. Try setting as environment variable")
+        raise Exception("could not detect %s. Try setting as environment variable" % (key_name))
+
+    def _process_line_get_GIT_TARGETBRANCH(self, key, replacement, index=None, none=None):
+        return self.__process_line_get_GIT_TARGETBRANCH_detect("GIT_TARGETBRANCH")
+
+    def _process_line_get_DISTRO_NAME(self, key, replacement, index=None, none=None):
+        target_branch = self.__process_line_get_GIT_TARGETBRANCH_detect("DISTRO_NAME")
+        if target_branch == 'rhel-7.0':
+            return 'RHEL-7.0-20140507.0'
+        return 'RHEL-7.1-20140925.n.0'
+
+    def _process_line_get_RESERVESYS(self, key, replacement, index=None, none=None):
+        if not self.options.reservesys:
+            return ""
+        return '<task name="/distribution/reservesys" role="STANDALONE"/>'
 
     DefaultReplacements = {
             'WHITEBOARD'        : 'Test NetworkManager',
             'DISTRO_FAMILY'     : 'RedHatEnterpriseLinux7',
             'DISTRO_VARIANT'    : 'Workstation',
-            'DISTRO_NAME'       : 'RHEL-7.0-20140507.0',
+            'DISTRO_NAME'       : _process_line_get_DISTRO_NAME,
             'DISTRO_METHOD'     : 'nfs',
             'DISTRO_ARCH'       : 'x86_64',
             'TEST_URL'          : 'http://download.eng.brq.redhat.com/scratch/vbenes/NetworkManager-rhel-7.tar.gz',
             'GIT_TARGETBRANCH'  : _process_line_get_GIT_TARGETBRANCH,
             'UUID'              : str(uuid.uuid4()),
+            'RESERVESYS'        : _process_line_get_RESERVESYS,
         }
     def _process_line_get(self, key, replacement, index=None, none=None):
         if key in replacement:
