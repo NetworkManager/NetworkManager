@@ -24,6 +24,7 @@
 #include <nm-connection.h>
 
 #include "nm-remote-settings.h"
+#include "nm-client.h"
 #include "nm-remote-connection-private.h"
 #include "nm-object-private.h"
 #include "nm-dbus-helpers.h"
@@ -32,99 +33,6 @@
 #include "nm-core-internal.h"
 
 #include "nmdbus-settings.h"
-
-/**
- * SECTION:nm-remote-settings
- * @Short_description: A helper for NetworkManager's settings API
- * @Title: NMRemoteSettings
- * @See_also:#NMRemoteConnection, #NMClient
- *
- * The #NMRemoteSettings object represents NetworkManager's "settings" service,
- * which stores network configuration and allows authenticated clients to
- * add, delete, and modify that configuration.  The data required to connect
- * to a specific network is called a "connection" and encapsulated by the
- * #NMConnection object.  Once a connection is known to NetworkManager, having
- * either been added by a user or read from on-disk storage, the
- * #NMRemoteSettings object creates a #NMRemoteConnection object which
- * represents this stored connection.  Use the #NMRemoteConnection object to
- * perform any operations like modification or deletion.
- *
- * To add a new network connection to the NetworkManager settings service, first
- * build up a template #NMConnection object.  Since this connection is not yet
- * added to NetworkManager, it is known only to your program and is not yet
- * an #NMRemoteConnection.  Then ask #NMRemoteSettings to add your connection.
- * When the connection is added successfully, the supplied callback is called
- * and returns to your program the new #NMRemoteConnection which represents
- * the stored object known to NetworkManager.
- *
- * |[<!-- language="C" -->
- * static void
- * added_cb (GObject *object,
- *           GAsyncResult *result,
- *           gpointer user_data)
- * {
- *    NMRemoteConnection *remote;
- *    GError *error = NULL;
- *
- *    remote = nm_remote_settings_add_connection_finish (NM_REMOTE_SETTINGS (object),
- *                                                       result, &error);
- *    if (error) {
- *        g_print ("Error adding connection: %s", error->message);
- *        g_clear_error (&error);
- *    } else {
- *        g_print ("Added: %s\n", nm_connection_get_path (NM_CONNECTION (remote)));
- *        /&ast; Use 'remote' with nm_remote_connection_commit_changes() to save
- *         * changes and nm_remote_connection_delete() to delete the connection &ast;/
- *    }
- * }
- *
- * static gboolean
- * add_wired_connection (const char *human_name)
- * {
- *    NMConnection *connection;
- *    NMSettingConnection *s_con;
- *    NMSettingWired *s_wired;
- *    char *uuid;
- *    gboolean success;
- *
- *    connection = nm_simple_connection_new ();
- *
- *    /&ast; Build up the 'connection' setting &ast;/
- *    s_con = (NMSettingConnection *) nm_setting_connection_new ();
- *    uuid = nm_utils_uuid_generate ();
- *    g_object_set (G_OBJECT (s_con),
- *                  NM_SETTING_CONNECTION_UUID, uuid,
- *                  NM_SETTING_CONNECTION_ID, human_name,
- *                  NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
- *                  NULL);
- *    g_free (uuid);
- *    nm_connection_add_setting (connection, NM_SETTING (s_con));
- *
- *    /&ast; Add the required 'wired' setting as this is a wired connection &ast;/
- *    nm_connection_add_setting (connection, nm_setting_wired_new ());
- *
- *    /&ast; Add an 'ipv4' setting using AUTO configuration (eg DHCP) &ast;/
- *    s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
- *    g_object_set (G_OBJECT (s_ip4),
- *                  NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
- *                  NULL);
- *    nm_connection_add_setting (connection, NM_SETTING (s_ip4));
- *
- *    /&ast; Ask NetworkManager to store the connection &ast;/
- *    success = nm_remote_settings_add_connection_async (settings, connection,
- *                                                       NULL, added_cb, NULL);
- *
- *    /&ast; Release the template connection; the actual stored connection will
- *     * be returned in added_cb() &ast;/
- *    g_object_unref (connection);
- *
- *    /&ast; Let glib event loop run and added_cb() will be called when NetworkManager
- *     * is done adding the new connection. &ast;/
- *
- *    return success;
- * }
- * ]|
- */
 
 G_DEFINE_TYPE (NMRemoteSettings, nm_remote_settings, NM_TYPE_OBJECT)
 
@@ -144,7 +52,6 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_NM_RUNNING,
 	PROP_CONNECTIONS,
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
@@ -160,25 +67,6 @@ enum {
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
-
-/**********************************************************************/
-
-/**
- * nm_remote_settings_error_quark:
- *
- * Registers an error quark for #NMRemoteSettings if necessary.
- *
- * Returns: the error quark used for #NMRemoteSettings errors.
- **/
-GQuark
-nm_remote_settings_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-remote-settings-error-quark");
-	return quark;
-}
 
 /**********************************************************************/
 
@@ -255,16 +143,6 @@ get_connection_by_string (NMRemoteSettings *settings,
 	return NULL;
 }
 
-/**
- * nm_remote_settings_get_connection_by_id:
- * @settings: the %NMRemoteSettings
- * @id: the id of the remote connection
- *
- * Returns the first matching %NMRemoteConnection matching a given @id.
- *
- * Returns: (transfer none): the remote connection object on success, or %NULL if no
- *  matching object was found.
- **/
 NMRemoteConnection *
 nm_remote_settings_get_connection_by_id (NMRemoteSettings *settings, const char *id)
 {
@@ -274,16 +152,6 @@ nm_remote_settings_get_connection_by_id (NMRemoteSettings *settings, const char 
 	return get_connection_by_string (settings, id, nm_connection_get_id);
 }
 
-/**
- * nm_remote_settings_get_connection_by_path:
- * @settings: the %NMRemoteSettings
- * @path: the D-Bus object path of the remote connection
- *
- * Returns the %NMRemoteConnection representing the connection at @path.
- *
- * Returns: (transfer none): the remote connection object on success, or %NULL if the object was
- *  not known
- **/
 NMRemoteConnection *
 nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings, const char *path)
 {
@@ -293,16 +161,6 @@ nm_remote_settings_get_connection_by_path (NMRemoteSettings *settings, const cha
 	return get_connection_by_string (settings, path, nm_connection_get_path);
 }
 
-/**
- * nm_remote_settings_get_connection_by_uuid:
- * @settings: the %NMRemoteSettings
- * @uuid: the UUID of the remote connection
- *
- * Returns the %NMRemoteConnection identified by @uuid.
- *
- * Returns: (transfer none): the remote connection object on success, or %NULL if the object was
- *  not known
- **/
 NMRemoteConnection *
 nm_remote_settings_get_connection_by_uuid (NMRemoteSettings *settings, const char *uuid)
 {
@@ -393,25 +251,14 @@ object_creation_failed (NMObject *object, GError *error, char *failed_path)
 
 	addinfo = add_connection_info_find (self, failed_path);
 	if (addinfo) {
-		add_error = g_error_new_literal (NM_REMOTE_SETTINGS_ERROR,
-		                                 NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED,
+		add_error = g_error_new_literal (NM_CLIENT_ERROR,
+		                                 NM_CLIENT_ERROR_CONNECTION_REMOVED,
 		                                 "Connection removed before it was initialized");
 		add_connection_info_complete (self, addinfo, NULL, add_error);
 		g_error_free (add_error);
 	}
 }
 
-/**
- * nm_remote_settings_list_connections:
- * @settings: the %NMRemoteSettings
- *
- * Returns: (transfer container) (element-type NMRemoteConnection): a
- * list containing all connections provided by the remote settings service.
- * Each element of the returned list is a %NMRemoteConnection instance, which is
- * owned by the %NMRemoteSettings object and should not be freed by the caller.
- * The returned list is, however, owned by the caller and should be freed
- * using g_slist_free() when no longer required.
- **/
 GSList *
 nm_remote_settings_list_connections (NMRemoteSettings *settings)
 {
@@ -430,18 +277,6 @@ nm_remote_settings_list_connections (NMRemoteSettings *settings)
 	}
 
 	return list;
-}
-
-static gboolean
-settings_service_is_running (NMRemoteSettings *settings, GError **error)
-{
-	if (!_nm_object_get_nm_running (NM_OBJECT (settings))) {
-		g_set_error_literal (error, NM_REMOTE_SETTINGS_ERROR,
-		                     NM_REMOTE_SETTINGS_ERROR_SERVICE_UNAVAILABLE,
-		                     "NetworkManager is not running.");
-		return FALSE;
-	} else
-		return TRUE;
 }
 
 static void
@@ -470,31 +305,6 @@ add_connection_done (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	 */
 }
 
-/**
- * nm_remote_settings_add_connection_async:
- * @settings: the %NMRemoteSettings
- * @connection: the connection to add. Note that this object's settings will be
- *   added, not the object itself
- * @save_to_disk: whether to immediately save the connection to disk
- * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the add operation completes
- * @user_data: (closure): caller-specific data passed to @callback
- *
- * Requests that the remote settings service add the given settings to a new
- * connection.  If @save_to_disk is %TRUE, the connection is immediately written
- * to disk; otherwise it is initially only stored in memory, but may be saved
- * later by calling the connection's nm_remote_connection_commit_changes()
- * method.
- *
- * @connection is untouched by this function and only serves as a template of
- * the settings to add.  The #NMRemoteConnection object that represents what
- * NetworkManager actually added is returned to @callback when the addition
- * operation is complete.
- *
- * Note that the #NMRemoteConnection returned in @callback may not contain
- * identical settings to @connection as NetworkManager may perform automatic
- * completion and/or normalization of connection properties.
- **/
 void
 nm_remote_settings_add_connection_async (NMRemoteSettings *settings,
                                          NMConnection *connection,
@@ -506,17 +316,11 @@ nm_remote_settings_add_connection_async (NMRemoteSettings *settings,
 	NMRemoteSettingsPrivate *priv;
 	AddConnectionInfo *info;
 	GVariant *new_settings;
-	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_REMOTE_SETTINGS (settings));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	if (!settings_service_is_running (settings, &error)) {
-		g_simple_async_report_take_gerror_in_idle (G_OBJECT (settings), callback, user_data, error);
-		return;
-	}
 
 	info = g_slice_new0 (AddConnectionInfo);
 	info->self = settings;
@@ -541,17 +345,6 @@ nm_remote_settings_add_connection_async (NMRemoteSettings *settings,
 	priv->add_list = g_slist_append (priv->add_list, info);
 }
 
-/**
- * nm_remote_settings_add_connection_finish:
- * @settings: an #NMRemoteSettings
- * @result: the result passed to the #GAsyncReadyCallback
- * @error: location for a #GError, or %NULL
- *
- * Gets the result of a call to nm_remote_settings_add_connection_async().
- *
- * Returns: (transfer full): the new #NMRemoteConnection on success, %NULL on
- *   failure, in which case @error will be set.
- **/
 NMRemoteConnection *
 nm_remote_settings_add_connection_finish (NMRemoteSettings *settings,
                                           GAsyncResult *result,
@@ -568,30 +361,6 @@ nm_remote_settings_add_connection_finish (NMRemoteSettings *settings,
 		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
 }
 
-/**
- * nm_remote_settings_load_connections:
- * @settings: the %NMRemoteSettings
- * @filenames: %NULL-terminated array of filenames to load
- * @failures: (out) (transfer full): on return, a %NULL-terminated array of
- *   filenames that failed to load
- * @cancellable: a #GCancellable, or %NULL
- * @error: return location for #GError
- *
- * Requests that the remote settings service load or reload the given files,
- * adding or updating the connections described within.
- *
- * The changes to the indicated files will not yet be reflected in
- * @settings's connections array when the function returns.
- *
- * If all of the indicated files were successfully loaded, the
- * function will return %TRUE, and @failures will be set to %NULL. If
- * NetworkManager tried to load the files, but some (or all) failed,
- * then @failures will be set to a %NULL-terminated array of the
- * filenames that failed to load.
- *
- * Returns: %TRUE if NetworkManager at least tried to load @filenames,
- * %FALSE if an error occurred (eg, permission denied).
- **/
 gboolean
 nm_remote_settings_load_connections (NMRemoteSettings *settings,
                                      char **filenames,
@@ -606,9 +375,6 @@ nm_remote_settings_load_connections (NMRemoteSettings *settings,
 	g_return_val_if_fail (filenames != NULL, FALSE);
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	if (!settings_service_is_running (settings, error))
-		return FALSE;
 
 	if (!nmdbus_settings_call_load_connections_sync (priv->proxy,
 	                                                 (const char * const *) filenames,
@@ -639,19 +405,6 @@ load_connections_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	g_object_unref (simple);
 }
 
-/**
- * nm_remote_settings_load_connections_async:
- * @settings: the %NMRemoteSettings
- * @filenames: %NULL-terminated array of filenames to load
- * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the operation completes
- * @user_data: (closure): caller-specific data passed to @callback
- *
- * Requests that the remote settings service asynchronously load or reload the
- * given files, adding or updating the connections described within.
- *
- * See nm_remote_settings_load_connections() for more details.
- **/
 void
 nm_remote_settings_load_connections_async (NMRemoteSettings *settings,
                                            char **filenames,
@@ -661,7 +414,6 @@ nm_remote_settings_load_connections_async (NMRemoteSettings *settings,
 {
 	NMRemoteSettingsPrivate *priv;
 	GSimpleAsyncResult *simple;
-	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_REMOTE_SETTINGS (settings));
 	g_return_if_fail (filenames != NULL);
@@ -671,33 +423,11 @@ nm_remote_settings_load_connections_async (NMRemoteSettings *settings,
 	simple = g_simple_async_result_new (G_OBJECT (settings), callback, user_data,
 	                                    nm_remote_settings_load_connections_async);
 
-	if (!settings_service_is_running (settings, &error)) {
-		g_simple_async_result_take_error (simple, error);
-		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
-		return;
-	}
-
 	nmdbus_settings_call_load_connections (priv->proxy,
 	                                       (const char * const *) filenames,
 	                                       cancellable, load_connections_cb, simple);
 }
 
-/**
- * nm_remote_settings_load_connections_finish:
- * @settings: the %NMRemoteSettings
- * @failures: (out) (transfer full): on return, a %NULL-terminated array of
- *   filenames that failed to load
- * @result: the result passed to the #GAsyncReadyCallback
- * @error: location for a #GError, or %NULL
- *
- * Gets the result of an nm_remote_settings_load_connections_async() call.
-
- * See nm_remote_settings_load_connections() for more details.
- *
- * Returns: %TRUE if NetworkManager at least tried to load @filenames,
- * %FALSE if an error occurred (eg, permission denied).
- **/
 gboolean
 nm_remote_settings_load_connections_finish (NMRemoteSettings *settings,
                                             char ***failures,
@@ -717,18 +447,6 @@ nm_remote_settings_load_connections_finish (NMRemoteSettings *settings,
 	}
 }
 
-/**
- * nm_remote_settings_reload_connections:
- * @settings: the #NMRemoteSettings
- * @cancellable: a #GCancellable, or %NULL
- * @error: return location for #GError
- *
- * Requests that the remote settings service reload all connection
- * files from disk, adding, updating, and removing connections until
- * the in-memory state matches the on-disk state.
- *
- * Return value: %TRUE on success, %FALSE on failure
- **/
 gboolean
 nm_remote_settings_reload_connections (NMRemoteSettings *settings,
                                        GCancellable *cancellable,
@@ -740,9 +458,6 @@ nm_remote_settings_reload_connections (NMRemoteSettings *settings,
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	if (!settings_service_is_running (settings, error))
-		return FALSE;
 
 	if (!nmdbus_settings_call_reload_connections_sync (priv->proxy, &success,
 	                                                   cancellable, error))
@@ -769,17 +484,6 @@ reload_connections_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	g_object_unref (simple);
 }
 
-/**
- * nm_remote_settings_reload_connections_async:
- * @settings: the #NMRemoteSettings
- * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the reload operation completes
- * @user_data: (closure): caller-specific data passed to @callback
- *
- * Requests that the remote settings service begin reloading all connection
- * files from disk, adding, updating, and removing connections until the
- * in-memory state matches the on-disk state.
- **/
 void
 nm_remote_settings_reload_connections_async (NMRemoteSettings *settings,
                                              GCancellable *cancellable,
@@ -788,7 +492,6 @@ nm_remote_settings_reload_connections_async (NMRemoteSettings *settings,
 {
 	NMRemoteSettingsPrivate *priv;
 	GSimpleAsyncResult *simple;
-	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_REMOTE_SETTINGS (settings));
 
@@ -797,27 +500,10 @@ nm_remote_settings_reload_connections_async (NMRemoteSettings *settings,
 	simple = g_simple_async_result_new (G_OBJECT (settings), callback, user_data,
 	                                    nm_remote_settings_reload_connections_async);
 
-	if (!settings_service_is_running (settings, &error)) {
-		g_simple_async_result_take_error (simple, error);
-		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
-		return;
-	}
-
 	nmdbus_settings_call_reload_connections (priv->proxy, cancellable,
 	                                         reload_connections_cb, simple);
 }
 
-/**
- * nm_remote_settings_reload_connections_finish:
- * @settings: the #NMRemoteSettings
- * @result: the result passed to the #GAsyncReadyCallback
- * @error: return location for #GError
- *
- * Gets the result of an nm_remote_settings_reload_connections_async() call.
- *
- * Return value: %TRUE on success, %FALSE on failure
- **/
 gboolean
 nm_remote_settings_reload_connections_finish (NMRemoteSettings *settings,
                                               GAsyncResult *result,
@@ -834,19 +520,6 @@ nm_remote_settings_reload_connections_finish (NMRemoteSettings *settings,
 		return g_simple_async_result_get_op_res_gboolean (simple);
 }
 
-/**
- * nm_remote_settings_save_hostname:
- * @settings: the %NMRemoteSettings
- * @hostname: (allow-none): the new persistent hostname to set, or %NULL to
- *   clear any existing persistent hostname
- * @cancellable: a #GCancellable, or %NULL
- * @error: return location for #GError
- *
- * Requests that the machine's persistent hostname be set to the specified value
- * or cleared.
- *
- * Returns: %TRUE if the request was successful, %FALSE if it failed
- **/
 gboolean
 nm_remote_settings_save_hostname (NMRemoteSettings *settings,
                                   const char *hostname,
@@ -858,9 +531,6 @@ nm_remote_settings_save_hostname (NMRemoteSettings *settings,
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
-
-	if (!settings_service_is_running (settings, error))
-		return FALSE;
 
 	return nmdbus_settings_call_save_hostname_sync (priv->proxy,
 	                                                hostname ? hostname : "",
@@ -883,18 +553,6 @@ save_hostname_cb (GObject *proxy,
 	g_object_unref (simple);
 }
 
-/**
- * nm_remote_settings_save_hostname_async:
- * @settings: the %NMRemoteSettings
- * @hostname: (allow-none): the new persistent hostname to set, or %NULL to
- *   clear any existing persistent hostname
- * @cancellable: a #GCancellable, or %NULL
- * @callback: (scope async): callback to be called when the operation completes
- * @user_data: (closure): caller-specific data passed to @callback
- *
- * Requests that the machine's persistent hostname be set to the specified value
- * or cleared.
- **/
 void
 nm_remote_settings_save_hostname_async (NMRemoteSettings *settings,
                                         const char *hostname,
@@ -904,7 +562,6 @@ nm_remote_settings_save_hostname_async (NMRemoteSettings *settings,
 {
 	NMRemoteSettingsPrivate *priv;
 	GSimpleAsyncResult *simple;
-	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_REMOTE_SETTINGS (settings));
 
@@ -913,28 +570,11 @@ nm_remote_settings_save_hostname_async (NMRemoteSettings *settings,
 	simple = g_simple_async_result_new (G_OBJECT (settings), callback, user_data,
 	                                    nm_remote_settings_save_hostname_async);
 
-	if (!settings_service_is_running (settings, &error)) {
-		g_simple_async_result_take_error (simple, error);
-		g_simple_async_result_complete_in_idle (simple);
-		g_object_unref (simple);
-		return;
-	}
-
 	nmdbus_settings_call_save_hostname (priv->proxy,
 	                                    hostname ? hostname : "",
 	                                    cancellable, save_hostname_cb, simple);
 }
 
-/**
- * nm_remote_settings_save_hostname_finish:
- * @settings: the %NMRemoteSettings
- * @result: the result passed to the #GAsyncReadyCallback
- * @error: return location for #GError
- *
- * Gets the result of an nm_remote_settings_save_hostname_async() call.
- *
- * Returns: %TRUE if the request was successful, %FALSE if it failed
- **/
 gboolean
 nm_remote_settings_save_hostname_finish (NMRemoteSettings *settings,
                                          GAsyncResult *result,
@@ -954,15 +594,12 @@ nm_remote_settings_save_hostname_finish (NMRemoteSettings *settings,
 static void
 updated_properties (GObject *object, GAsyncResult *result, gpointer user_data)
 {
-	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
 	GError *error = NULL;
 
 	if (!_nm_object_reload_properties_finish (NM_OBJECT (object), result, &error)) {
 		g_warning ("%s: error reading NMRemoteSettings properties: %s", __func__, error->message);
 		g_error_free (error);
 	}
-
-	g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_NM_RUNNING);
 }
 
 static void
@@ -999,7 +636,6 @@ nm_running_changed (GObject *object,
 		}
 
 		_nm_object_suppress_property_updates (NM_OBJECT (self), TRUE);
-		g_object_notify (G_OBJECT (self), NM_REMOTE_SETTINGS_NM_RUNNING);
 	} else {
 		_nm_object_suppress_property_updates (NM_OBJECT (self), FALSE);
 		_nm_object_reload_properties_async (NM_OBJECT (self), updated_properties, self);
@@ -1009,70 +645,6 @@ nm_running_changed (GObject *object,
 }
 
 /****************************************************************/
-
-/**
- * nm_remote_settings_new:
- * @cancellable: a #GCancellable, or %NULL
- * @error: location for a #GError, or %NULL
- *
- * Creates a new object representing the remote settings service.
- *
- * Note that this will do blocking D-Bus calls to initialize the
- * settings object. You can use nm_remote_settings_new_async() if you
- * want to avoid that.
- *
- * Returns: the new remote settings object on success, or %NULL on failure
- **/
-NMRemoteSettings *
-nm_remote_settings_new (GCancellable  *cancellable,
-                        GError       **error)
-{
-	return g_initable_new (NM_TYPE_REMOTE_SETTINGS, cancellable, error,
-	                       NULL);
-}
-
-/**
- * nm_remote_settings_new_async:
- * @cancellable: a #GCancellable, or %NULL
- * @callback: callback to call when the settings object is created
- * @user_data: data for @callback
- *
- * Creates a new object representing the remote settings service and
- * begins asynchronously initializing it. @callback will be called
- * when it is done; use nm_remote_settings_new_finish() to get the
- * result.
- **/
-void
-nm_remote_settings_new_async (GCancellable *cancellable,
-                              GAsyncReadyCallback callback,
-                              gpointer user_data)
-{
-	g_async_initable_new_async (NM_TYPE_REMOTE_SETTINGS, G_PRIORITY_DEFAULT, cancellable,
-	                            callback, user_data,
-	                            NULL);
-}
-
-/**
- * nm_remote_settings_new_finish:
- * @result: a #GAsyncResult
- * @error: location for a #GError, or %NULL
- *
- * Gets the result of an nm_remote_settings_new_async() call.
- *
- * Returns: a new #NMRemoteSettings object, or %NULL on error
- **/
-NMRemoteSettings *
-nm_remote_settings_new_finish (GAsyncResult *result, GError **error)
-{
-	GObject *source;
-	NMRemoteSettings *settings;
-
-	source = g_async_result_get_source_object (result);
-	settings = (NMRemoteSettings *) g_async_initable_new_finish (G_ASYNC_INITABLE (source), result, error);
-	g_object_unref (source);
-
-	return settings;
-}
 
 static void
 nm_remote_settings_init (NMRemoteSettings *self)
@@ -1160,9 +732,6 @@ get_property (GObject *object, guint prop_id,
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_NM_RUNNING:
-		g_value_set_boolean (value, _nm_object_get_nm_running (NM_OBJECT (object)));
-		break;
 	case PROP_CONNECTIONS:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (priv->visible_connections));
 		break;
@@ -1202,28 +771,6 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 
 	/* Properties */
 
-	/**
-	 * NMRemoteSettings:nm-running:
-	 *
-	 * Whether the NetworkManager settings service is running.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_NM_RUNNING,
-		 g_param_spec_boolean (NM_REMOTE_SETTINGS_NM_RUNNING, "", "",
-		                       FALSE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-
-	/**
-	 * NMRemoteSettings:connections:
-	 *
-	 * The list of configured connections that are available to the user. (Note
-	 * that this differs from the underlying D-Bus property, which may also
-	 * contain the object paths of connections that the user does not have
-	 * permission to read the details of.)
-	 *
-	 * Element-type: NMRemoteConnection
-	 */
 	g_object_class_install_property
 		(object_class, PROP_CONNECTIONS,
 		 g_param_spec_boxed (NM_REMOTE_SETTINGS_CONNECTIONS, "", "",
@@ -1231,12 +778,6 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
-	/**
-	 * NMRemoteSettings:hostname:
-	 *
-	 * The machine hostname stored in persistent configuration. This can be
-	 * modified by calling nm_remote_settings_save_hostname().
-	 */
 	g_object_class_install_property
 		(object_class, PROP_HOSTNAME,
 		 g_param_spec_string (NM_REMOTE_SETTINGS_HOSTNAME, "", "",
@@ -1244,11 +785,6 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
-	/**
-	 * NMRemoteSettings:can-modify:
-	 *
-	 * If %TRUE, adding and modifying connections is supported.
-	 */
 	g_object_class_install_property
 		(object_class, PROP_CAN_MODIFY,
 		 g_param_spec_boolean (NM_REMOTE_SETTINGS_CAN_MODIFY, "", "",
@@ -1257,13 +793,6 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		                       G_PARAM_STATIC_STRINGS));
 
 	/* Signals */
-	/**
-	 * NMRemoteSettings::connection-added:
-	 * @settings: the settings object that received the signal
-	 * @connection: the new connection
-	 *
-	 * Notifies that a #NMConnection has been added.
-	 **/
 	signals[CONNECTION_ADDED] =
 		g_signal_new (NM_REMOTE_SETTINGS_CONNECTION_ADDED,
 		              G_OBJECT_CLASS_TYPE (object_class),
@@ -1273,13 +802,6 @@ nm_remote_settings_class_init (NMRemoteSettingsClass *class)
 		              G_TYPE_NONE, 1,
 		              NM_TYPE_REMOTE_CONNECTION);
 
-	/**
-	 * NMRemoteSettings::connection-removed:
-	 * @settings: the settings object that received the signal
-	 * @connection: the removed connection
-	 *
-	 * Notifies that a #NMConnection has been removed.
-	 **/
 	signals[CONNECTION_REMOVED] =
 		g_signal_new (NM_REMOTE_SETTINGS_CONNECTION_REMOVED,
 		              G_OBJECT_CLASS_TYPE (object_class),

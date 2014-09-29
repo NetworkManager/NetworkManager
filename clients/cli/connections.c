@@ -4894,7 +4894,7 @@ typedef struct {
 } AddConnectionInfo;
 
 static void
-add_connection_cb (GObject *settings,
+add_connection_cb (GObject *client,
                    GAsyncResult *result,
                    gpointer user_data)
 {
@@ -4903,8 +4903,7 @@ add_connection_cb (GObject *settings,
 	NMRemoteConnection *connection;
 	GError *error = NULL;
 
-	connection = nm_remote_settings_add_connection_finish (NM_REMOTE_SETTINGS (settings),
-	                                                       result, &error);
+	connection = nm_client_add_connection_finish (NM_CLIENT (client), result, &error);
 	if (error) {
 		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text,
@@ -4926,13 +4925,13 @@ add_connection_cb (GObject *settings,
 
 static void
 add_new_connection (gboolean persistent,
-                    NMRemoteSettings *settings,
+                    NMClient *client,
                     NMConnection *connection,
                     GAsyncReadyCallback callback,
                     gpointer user_data)
 {
-	nm_remote_settings_add_connection_async (settings, connection, persistent,
-	                                         NULL, callback, user_data);
+	nm_client_add_connection_async (client, connection, persistent,
+	                                NULL, callback, user_data);
 }
 
 static void
@@ -5236,7 +5235,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 
 	/* Tell the settings service to add the new connection */
 	add_new_connection (save_bool,
-	                    nmc->system_settings,
+	                    nmc->client,
 	                    connection,
 	                    add_connection_cb,
 	                    info);
@@ -6335,15 +6334,14 @@ set_info_and_signal_editor_thread (GError *error, MonitorACInfo *monitor_ac_info
 }
 
 static void
-add_connection_editor_cb (GObject *settings,
+add_connection_editor_cb (GObject *client,
                           GAsyncResult *result,
                           gpointer user_data)
 {
 	NMRemoteConnection *connection;
 	GError *error = NULL;
 
-	connection = nm_remote_settings_add_connection_finish (NM_REMOTE_SETTINGS (settings),
-	                                                       result, &error);
+	connection = nm_client_add_connection_finish (NM_CLIENT (client), result, &error);
 	set_info_and_signal_editor_thread (error, NULL);
 
 	g_clear_object (&connection);
@@ -6958,8 +6956,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 	menu_ctx.valid_props_str = NULL;
 
 	/* Get remote connection */
-	con_tmp = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
-	                                                     nm_connection_get_uuid (connection));
+	con_tmp = nm_client_get_connection_by_uuid (nmc->client,
+	                                            nm_connection_get_uuid (connection));
 	g_weak_ref_init (&weak, con_tmp);
 	rem_con = g_weak_ref_get (&weak);
 
@@ -7393,7 +7391,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					info->nmc = nmc;
 					info->con_name = g_strdup (nm_connection_get_id (connection));
 					add_new_connection (persistent,
-					                    nmc->system_settings,
+					                    nmc->client,
 					                    connection,
 					                    add_connection_editor_cb,
 					                    info);
@@ -7423,8 +7421,8 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 					         nm_connection_get_id (connection),
 					         nm_connection_get_uuid (connection));
 
-					con_tmp = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
-					                                                     nm_connection_get_uuid (connection));
+					con_tmp = nm_client_get_connection_by_uuid (nmc->client,
+					                                            nm_connection_get_uuid (connection));
 					g_weak_ref_set (&weak, con_tmp);
 					refresh_remote_connection (&weak, &rem_con);
 
@@ -8022,8 +8020,8 @@ do_connection_modify (NmCli *nmc,
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
 		goto finish;
 	}
-	rc = nm_remote_settings_get_connection_by_uuid (nmc->system_settings,
-	                                                nm_connection_get_uuid (connection));
+	rc = nm_client_get_connection_by_uuid (nmc->client,
+	                                       nm_connection_get_uuid (connection));
 	if (!rc) {
 		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
@@ -8289,7 +8287,7 @@ do_connection_reload (NmCli *nmc, int argc, char **argv)
 		return nmc->return_value;
 	}
 
-	if (!nm_remote_settings_reload_connections (nmc->system_settings, NULL, &error)) {
+	if (!nm_client_reload_connections (nmc->client, NULL, &error)) {
 		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text, _("Error: failed to reload connections: %s."),
 		                 error->message);
@@ -8327,7 +8325,7 @@ do_connection_load (NmCli *nmc, int argc, char **argv)
 		filenames[i] = argv[i];
 	filenames[i] = NULL;
 
-	nm_remote_settings_load_connections (nmc->system_settings, filenames, &failures, NULL, &error);
+	nm_client_load_connections (nmc->client, filenames, &failures, NULL, &error);
 	g_free (filenames);
 	if (error) {
 		g_dbus_error_strip_remote_error (error);
@@ -8456,28 +8454,8 @@ do_connections (NmCli *nmc, int argc, char **argv)
 	if (!nmc_versions_match (nmc))
 		return nmc->return_value;
 
-	/* Get NMRemoteSettings object */
-	if (!(nmc->system_settings = nm_remote_settings_new (NULL, &error))) {
-		g_dbus_error_strip_remote_error (error);
-		g_string_printf (nmc->return_text, _("Error: could not get remote settings: %s."),
-		                 error->message);
-		g_error_free (error);
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		nmc->should_wait = FALSE;
-		return nmc->return_value;
-	}
-
-	/* Find out whether settings service is running */
-	g_object_get (nmc->system_settings, NM_REMOTE_SETTINGS_NM_RUNNING, &nmc->system_settings_running, NULL);
-	if (!nmc->system_settings_running) {
-		g_string_printf (nmc->return_text, _("Error: Can't obtain connections: settings service is not running."));
-		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		nmc->should_wait = FALSE;
-		return nmc->return_value;
-	}
-
 	/* Get the connection list */
-	nmc->connections = nm_remote_settings_list_connections (nmc->system_settings);
+	nmc->connections = nm_client_list_connections (nmc->client);
 
 	/* Now parse the command line and perform the required operation */
 	if (argc == 0) {

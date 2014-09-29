@@ -480,7 +480,7 @@ nmt_connect_connection_list_rebuild (NmtConnectConnectionList *list)
 
 	devices = nm_client_get_devices (nm_client);
 	acs = nm_client_get_active_connections (nm_client);
-	connections = nm_remote_settings_list_connections (nm_settings);
+	connections = nm_client_list_connections (nm_client);
 
 	nmt_devices = NULL;
 
@@ -636,9 +636,9 @@ nmt_connect_connection_list_get_connection (NmtConnectConnectionList  *list,
 	g_return_val_if_fail (identifier, FALSE);
 
 	if (nm_utils_is_uuid (identifier))
-		conn = NM_CONNECTION (nm_remote_settings_get_connection_by_uuid (nm_settings, identifier));
+		conn = NM_CONNECTION (nm_client_get_connection_by_uuid (nm_client, identifier));
 	if (!conn)
-		conn = NM_CONNECTION (nm_remote_settings_get_connection_by_id (nm_settings, identifier));
+		conn = NM_CONNECTION (nm_client_get_connection_by_id (nm_client, identifier));
 
 	for (diter = priv->nmt_devices; diter; diter = diter->next) {
 		nmtdev = diter->data;

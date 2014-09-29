@@ -191,7 +191,7 @@ nmt_edit_connection_list_rebuild (NmtEditConnectionList *list)
 	selected_conn = nmt_newt_listbox_get_active_key (priv->listbox);
 
 	free_connections (list);
-	priv->connections = nm_remote_settings_list_connections (nm_settings);
+	priv->connections = nm_client_list_connections (nm_client);
 	for (iter = priv->connections; iter; iter = next) {
 		conn = iter->data;
 		next = iter->next;
@@ -293,7 +293,7 @@ nmt_edit_connection_list_constructed (GObject *object)
 	if (priv->extra)
 		nmt_newt_button_box_add_widget_end (priv->buttons, priv->extra);
 
-	g_signal_connect (nm_settings, "notify::" NM_REMOTE_SETTINGS_CONNECTIONS,
+	g_signal_connect (nm_client, "notify::" NM_CLIENT_CONNECTIONS,
 	                  G_CALLBACK (rebuild_on_connections_changed), list);
 
 	nmt_edit_connection_list_rebuild (list);

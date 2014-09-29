@@ -22,10 +22,6 @@
 #ifndef __NM_REMOTE_SETTINGS_H__
 #define __NM_REMOTE_SETTINGS_H__
 
-#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
-#error "Only <NetworkManager.h> can be included directly."
-#endif
-
 #include <gio/gio.h>
 #include <nm-object.h>
 #include <nm-connection.h>
@@ -40,30 +36,6 @@ G_BEGIN_DECLS
 #define NM_IS_REMOTE_SETTINGS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_REMOTE_SETTINGS))
 #define NM_REMOTE_SETTINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_REMOTE_SETTINGS, NMRemoteSettingsClass))
 
-/**
- * NMRemoteSettingsError:
- * @NM_REMOTE_SETTINGS_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED: the #NMRemoteConnection object
- *   was removed before it was completely initialized
- * @NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE: the #NMRemoteConnection object
- *   is not visible or otherwise unreadable
- * @NM_REMOTE_SETTINGS_ERROR_SERVICE_UNAVAILABLE: NetworkManager is not running.
- *
- * Describes errors that may result from operations involving a #NMRemoteSettings.
- *
- **/
-typedef enum {
-	NM_REMOTE_SETTINGS_ERROR_UNKNOWN = 0,            /*< nick=UnknownError >*/
-	NM_REMOTE_SETTINGS_ERROR_CONNECTION_REMOVED,     /*< nick=ConnectionRemoved >*/
-	NM_REMOTE_SETTINGS_ERROR_CONNECTION_UNAVAILABLE, /*< nick=ConnectionUnavailable >*/
-	NM_REMOTE_SETTINGS_ERROR_SERVICE_UNAVAILABLE,    /*< nick=ServiceUnavailable >*/
-} NMRemoteSettingsError;
-
-#define NM_REMOTE_SETTINGS_ERROR nm_remote_settings_error_quark ()
-GQuark nm_remote_settings_error_quark (void);
-
-
-#define NM_REMOTE_SETTINGS_NM_RUNNING      "nm-running"
 #define NM_REMOTE_SETTINGS_CONNECTIONS     "connections"
 #define NM_REMOTE_SETTINGS_HOSTNAME        "hostname"
 #define NM_REMOTE_SETTINGS_CAN_MODIFY      "can-modify"
@@ -92,15 +64,6 @@ struct _NMRemoteSettingsClass {
 };
 
 GType nm_remote_settings_get_type (void);
-
-NMRemoteSettings *nm_remote_settings_new (GCancellable  *cancellable,
-                                          GError       **error);
-
-void              nm_remote_settings_new_async  (GCancellable         *cancellable,
-                                                 GAsyncReadyCallback   callback,
-                                                 gpointer              user_data);
-NMRemoteSettings *nm_remote_settings_new_finish (GAsyncResult         *result,
-                                                 GError              **error);
 
 GSList *nm_remote_settings_list_connections (NMRemoteSettings *settings);
 

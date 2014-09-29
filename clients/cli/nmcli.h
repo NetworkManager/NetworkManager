@@ -110,8 +110,6 @@ typedef struct _NmCli {
 
 	int timeout;                                      /* Operation timeout */
 
-	NMRemoteSettings *system_settings;                /* System settings */
-	gboolean system_settings_running;                 /* Is system settings service running? */
 	GSList *connections;                              /* List of connections */
 
 	gboolean should_wait;                             /* Indication that nmcli should not end yet */

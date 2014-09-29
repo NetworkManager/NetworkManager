@@ -44,7 +44,6 @@
 #include "nmtui-hostname.h"
 
 NMClient *nm_client;
-NMRemoteSettings *nm_settings;
 static GMainLoop *loop;
 
 typedef NmtNewtForm * (*NmtuiSubprogram) (int argc, char **argv);
@@ -244,13 +243,6 @@ main (int argc, char **argv)
 		exit (1);
 	}
 
-	nm_settings = nm_remote_settings_new (NULL, &error);
-	if (!nm_settings) {
-		g_printerr (_("Could not contact NetworkManager: %s.\n"), error->message);
-		g_error_free (error);
-		exit (1);
-	}
-
 	if (sleep_on_startup)
 		sleep (5);
 
@@ -296,7 +288,6 @@ main (int argc, char **argv)
 		nmt_newt_finished ();
 
 	g_object_unref (nm_client);
-	g_object_unref (nm_settings);
 
 	return 0;
 }

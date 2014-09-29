@@ -24,6 +24,7 @@
 
 #include "nm-client.h"
 #include "nm-manager.h"
+#include "nm-remote-settings.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "nm-device-private.h"
@@ -50,6 +51,7 @@ G_DEFINE_TYPE_WITH_CODE (NMClient, nm_client, G_TYPE_OBJECT,
 
 typedef struct {
 	NMManager *manager;
+	NMRemoteSettings *settings;
 } NMClientPrivate;
 
 enum {
@@ -70,6 +72,9 @@ enum {
 	PROP_PRIMARY_CONNECTION,
 	PROP_ACTIVATING_CONNECTION,
 	PROP_DEVICES,
+	PROP_CONNECTIONS,
+	PROP_HOSTNAME,
+	PROP_CAN_MODIFY,
 
 	LAST_PROP
 };
@@ -78,6 +83,8 @@ enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
 	PERMISSION_CHANGED,
+	CONNECTION_ADDED,
+	CONNECTION_REMOVED,
 
 	LAST_SIGNAL
 };
@@ -579,6 +586,112 @@ nm_client_check_connectivity_finish (NMClient *client,
 	return (NMConnectivityState) g_simple_async_result_get_op_res_gssize (simple);
 }
 
+
+/**
+ * nm_client_save_hostname:
+ * @client: the %NMClient
+ * @hostname: (allow-none): the new persistent hostname to set, or %NULL to
+ *   clear any existing persistent hostname
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: return location for #GError
+ *
+ * Requests that the machine's persistent hostname be set to the specified value
+ * or cleared.
+ *
+ * Returns: %TRUE if the request was successful, %FALSE if it failed
+ **/
+gboolean
+nm_client_save_hostname (NMClient *client,
+                         const char *hostname,
+                         GCancellable *cancellable,
+                         GError **error)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return nm_remote_settings_save_hostname (NM_CLIENT_GET_PRIVATE (client)->settings,
+	                                         hostname, cancellable, error);
+}
+
+static void
+save_hostname_cb (GObject *object,
+                  GAsyncResult *result,
+                  gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	if (nm_remote_settings_save_hostname_finish (NM_REMOTE_SETTINGS (object), result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+/**
+ * nm_client_save_hostname_async:
+ * @client: the %NMClient
+ * @hostname: (allow-none): the new persistent hostname to set, or %NULL to
+ *   clear any existing persistent hostname
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: (scope async): callback to be called when the operation completes
+ * @user_data: (closure): caller-specific data passed to @callback
+ *
+ * Requests that the machine's persistent hostname be set to the specified value
+ * or cleared.
+ **/
+void
+nm_client_save_hostname_async (NMClient *client,
+                               const char *hostname,
+                               GCancellable *cancellable,
+                               GAsyncReadyCallback callback,
+                               gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	if (!_nm_client_check_nm_running (client, &error)) {
+		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
+		return;
+	}
+
+	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
+	                                    nm_client_save_hostname_async);
+	nm_remote_settings_save_hostname_async (NM_CLIENT_GET_PRIVATE (client)->settings,
+	                                        hostname,
+	                                        cancellable, save_hostname_cb, simple);
+}
+
+/**
+ * nm_client_save_hostname_finish:
+ * @client: the %NMClient
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: return location for #GError
+ *
+ * Gets the result of an nm_client_save_hostname_async() call.
+ *
+ * Returns: %TRUE if the request was successful, %FALSE if it failed
+ **/
+gboolean
+nm_client_save_hostname_finish (NMClient *client,
+                                GAsyncResult *result,
+                                GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
 /****************************************************************/
 /* Devices                                                      */
 /****************************************************************/
@@ -1034,6 +1147,419 @@ nm_client_deactivate_connection_finish (NMClient *client,
 }
 
 /****************************************************************/
+/* Connections                                                  */
+/****************************************************************/
+
+/**
+ * nm_client_list_connections:
+ * @client: the %NMClient
+ *
+ * Returns: (transfer container) (element-type NMRemoteConnection): a
+ * list containing all connections provided by the remote settings service.
+ * Each element of the returned list is a %NMRemoteConnection instance, which is
+ * owned by the %NMClient object and should not be freed by the caller.
+ * The returned list is, however, owned by the caller and should be freed
+ * using g_slist_free() when no longer required.
+ **/
+GSList *
+nm_client_list_connections (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	return nm_remote_settings_list_connections (NM_CLIENT_GET_PRIVATE (client)->settings);
+}
+
+/**
+ * nm_client_get_connection_by_id:
+ * @client: the %NMClient
+ * @id: the id of the remote connection
+ *
+ * Returns the first matching %NMRemoteConnection matching a given @id.
+ *
+ * Returns: (transfer none): the remote connection object on success, or %NULL if no
+ *  matching object was found.
+ **/
+NMRemoteConnection *
+nm_client_get_connection_by_id (NMClient *client, const char *id)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (id != NULL, NULL);
+
+	return nm_remote_settings_get_connection_by_id (NM_CLIENT_GET_PRIVATE (client)->settings, id);
+}
+
+/**
+ * nm_client_get_connection_by_path:
+ * @client: the %NMClient
+ * @path: the D-Bus object path of the remote connection
+ *
+ * Returns the %NMRemoteConnection representing the connection at @path.
+ *
+ * Returns: (transfer none): the remote connection object on success, or %NULL if the object was
+ *  not known
+ **/
+NMRemoteConnection *
+nm_client_get_connection_by_path (NMClient *client, const char *path)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (path != NULL, NULL);
+
+	return nm_remote_settings_get_connection_by_path (NM_CLIENT_GET_PRIVATE (client)->settings, path);
+}
+
+/**
+ * nm_client_get_connection_by_uuid:
+ * @client: the %NMClient
+ * @uuid: the UUID of the remote connection
+ *
+ * Returns the %NMRemoteConnection identified by @uuid.
+ *
+ * Returns: (transfer none): the remote connection object on success, or %NULL if the object was
+ *  not known
+ **/
+NMRemoteConnection *
+nm_client_get_connection_by_uuid (NMClient *client, const char *uuid)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (uuid != NULL, NULL);
+
+	return nm_remote_settings_get_connection_by_uuid (NM_CLIENT_GET_PRIVATE (client)->settings, uuid);
+}
+
+static void
+add_connection_cb (GObject *object,
+                   GAsyncResult *result,
+                   gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	NMRemoteConnection *conn;
+	GError *error = NULL;
+
+	conn = nm_remote_settings_add_connection_finish (NM_REMOTE_SETTINGS (object), result, &error);
+	if (conn)
+		g_simple_async_result_set_op_res_gpointer (simple, conn, g_object_unref);
+	else
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+/**
+ * nm_client_add_connection_async:
+ * @client: the %NMClient
+ * @connection: the connection to add. Note that this object's settings will be
+ *   added, not the object itself
+ * @save_to_disk: whether to immediately save the connection to disk
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: (scope async): callback to be called when the add operation completes
+ * @user_data: (closure): caller-specific data passed to @callback
+ *
+ * Requests that the remote settings service add the given settings to a new
+ * connection.  If @save_to_disk is %TRUE, the connection is immediately written
+ * to disk; otherwise it is initially only stored in memory, but may be saved
+ * later by calling the connection's nm_remote_connection_commit_changes()
+ * method.
+ *
+ * @connection is untouched by this function and only serves as a template of
+ * the settings to add.  The #NMRemoteConnection object that represents what
+ * NetworkManager actually added is returned to @callback when the addition
+ * operation is complete.
+ *
+ * Note that the #NMRemoteConnection returned in @callback may not contain
+ * identical settings to @connection as NetworkManager may perform automatic
+ * completion and/or normalization of connection properties.
+ **/
+void
+nm_client_add_connection_async (NMClient *client,
+                                NMConnection *connection,
+                                gboolean save_to_disk,
+                                GCancellable *cancellable,
+                                GAsyncReadyCallback callback,
+                                gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	if (!_nm_client_check_nm_running (client, &error)) {
+		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
+		return;
+	}
+
+	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
+	                                    nm_client_deactivate_connection_async);
+	nm_remote_settings_add_connection_async (NM_CLIENT_GET_PRIVATE (client)->settings,
+	                                         connection, save_to_disk,
+	                                         cancellable, add_connection_cb, simple);
+}
+
+/**
+ * nm_client_add_connection_finish:
+ * @client: an #NMClient
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of a call to nm_client_add_connection_async().
+ *
+ * Returns: (transfer full): the new #NMRemoteConnection on success, %NULL on
+ *   failure, in which case @error will be set.
+ **/
+NMRemoteConnection *
+nm_client_add_connection_finish (NMClient *client,
+                                 GAsyncResult *result,
+                                 GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return NULL;
+	else
+		return g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
+}
+
+/**
+ * nm_client_load_connections:
+ * @client: the %NMClient
+ * @filenames: %NULL-terminated array of filenames to load
+ * @failures: (out) (transfer full): on return, a %NULL-terminated array of
+ *   filenames that failed to load
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: return location for #GError
+ *
+ * Requests that the remote settings service load or reload the given files,
+ * adding or updating the connections described within.
+ *
+ * The changes to the indicated files will not yet be reflected in
+ * @client's connections array when the function returns.
+ *
+ * If all of the indicated files were successfully loaded, the
+ * function will return %TRUE, and @failures will be set to %NULL. If
+ * NetworkManager tried to load the files, but some (or all) failed,
+ * then @failures will be set to a %NULL-terminated array of the
+ * filenames that failed to load.
+ *
+ * Returns: %TRUE if NetworkManager at least tried to load @filenames,
+ * %FALSE if an error occurred (eg, permission denied).
+ **/
+gboolean
+nm_client_load_connections (NMClient *client,
+                            char **filenames,
+                            char ***failures,
+                            GCancellable *cancellable,
+                            GError **error)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (filenames != NULL, FALSE);
+
+	if (!_nm_client_check_nm_running (client, error))
+		return FALSE;
+
+	return nm_remote_settings_load_connections (NM_CLIENT_GET_PRIVATE (client)->settings,
+	                                            filenames, failures,
+	                                            cancellable, error);
+}
+
+static void
+load_connections_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+	char **failures = NULL;
+
+	if (nm_remote_settings_load_connections_finish (NM_REMOTE_SETTINGS (object),
+	                                                &failures, result, &error))
+		g_simple_async_result_set_op_res_gpointer (simple, failures, (GDestroyNotify) g_strfreev);
+	else
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+/**
+ * nm_client_load_connections_async:
+ * @client: the %NMClient
+ * @filenames: %NULL-terminated array of filenames to load
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: (scope async): callback to be called when the operation completes
+ * @user_data: (closure): caller-specific data passed to @callback
+ *
+ * Requests that the remote settings service asynchronously load or reload the
+ * given files, adding or updating the connections described within.
+ *
+ * See nm_client_load_connections() for more details.
+ **/
+void
+nm_client_load_connections_async (NMClient *client,
+                                  char **filenames,
+                                  GCancellable *cancellable,
+                                  GAsyncReadyCallback callback,
+                                  gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (filenames != NULL);
+
+	if (!_nm_client_check_nm_running (client, &error)) {
+		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
+		return;
+	}
+
+	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
+	                                    nm_client_load_connections_async);
+	nm_remote_settings_load_connections_async (NM_CLIENT_GET_PRIVATE (client)->settings,
+	                                           filenames,
+	                                           cancellable, load_connections_cb, simple);
+}
+
+/**
+ * nm_client_load_connections_finish:
+ * @client: the %NMClient
+ * @failures: (out) (transfer full): on return, a %NULL-terminated array of
+ *   filenames that failed to load
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: location for a #GError, or %NULL
+ *
+ * Gets the result of an nm_client_load_connections_async() call.
+
+ * See nm_client_load_connections() for more details.
+ *
+ * Returns: %TRUE if NetworkManager at least tried to load @filenames,
+ * %FALSE if an error occurred (eg, permission denied).
+ **/
+gboolean
+nm_client_load_connections_finish (NMClient *client,
+                                   char ***failures,
+                                   GAsyncResult *result,
+                                   GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else {
+		if (failures)
+			*failures = g_strdupv (g_simple_async_result_get_op_res_gpointer (simple));
+		return TRUE;
+	}
+}
+
+/**
+ * nm_client_reload_connections:
+ * @client: the #NMClient
+ * @cancellable: a #GCancellable, or %NULL
+ * @error: return location for #GError
+ *
+ * Requests that the remote settings service reload all connection
+ * files from disk, adding, updating, and removing connections until
+ * the in-memory state matches the on-disk state.
+ *
+ * Return value: %TRUE on success, %FALSE on failure
+ **/
+gboolean
+nm_client_reload_connections (NMClient *client,
+                              GCancellable *cancellable,
+                              GError **error)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	if (!_nm_client_check_nm_running (client, error))
+		return FALSE;
+
+	return nm_remote_settings_reload_connections (NM_CLIENT_GET_PRIVATE (client)->settings,
+	                                              cancellable, error);
+}
+
+static void
+reload_connections_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	GSimpleAsyncResult *simple = user_data;
+	GError *error = NULL;
+
+	if (nm_remote_settings_reload_connections_finish (NM_REMOTE_SETTINGS (object),
+	                                                  result, &error))
+		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+	else
+		g_simple_async_result_take_error (simple, error);
+
+	g_simple_async_result_complete (simple);
+	g_object_unref (simple);
+}
+
+/**
+ * nm_client_reload_connections_async:
+ * @client: the #NMClient
+ * @cancellable: a #GCancellable, or %NULL
+ * @callback: (scope async): callback to be called when the reload operation completes
+ * @user_data: (closure): caller-specific data passed to @callback
+ *
+ * Requests that the remote settings service begin reloading all connection
+ * files from disk, adding, updating, and removing connections until the
+ * in-memory state matches the on-disk state.
+ **/
+void
+nm_client_reload_connections_async (NMClient *client,
+                                    GCancellable *cancellable,
+                                    GAsyncReadyCallback callback,
+                                    gpointer user_data)
+{
+	GSimpleAsyncResult *simple;
+	GError *error = NULL;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	if (!_nm_client_check_nm_running (client, &error)) {
+		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
+		return;
+	}
+
+	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
+	                                    nm_client_reload_connections_async);
+	nm_remote_settings_reload_connections_async (NM_CLIENT_GET_PRIVATE (client)->settings,
+	                                             cancellable, reload_connections_cb, simple);
+}
+
+/**
+ * nm_client_reload_connections_finish:
+ * @client: the #NMClient
+ * @result: the result passed to the #GAsyncReadyCallback
+ * @error: return location for #GError
+ *
+ * Gets the result of an nm_client_reload_connections_async() call.
+ *
+ * Return value: %TRUE on success, %FALSE on failure
+ **/
+gboolean
+nm_client_reload_connections_finish (NMClient *client,
+                                     GAsyncResult *result,
+                                     GError **error)
+{
+	GSimpleAsyncResult *simple;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
+
+	simple = G_SIMPLE_ASYNC_RESULT (result);
+	if (g_simple_async_result_propagate_error (simple, error))
+		return FALSE;
+	else
+		return g_simple_async_result_get_op_res_gboolean (simple);
+}
+
+/****************************************************************/
 
 /**
  * nm_client_new:
@@ -1045,10 +1571,6 @@ nm_client_deactivate_connection_finish (NMClient *client,
  * Note that this will do blocking D-Bus calls to initialize the
  * client. You can use nm_client_new_async() if you want to avoid
  * that.
- *
- * NOTE: #NMClient provides information about devices and a mechanism to
- * control them.  To access and modify network configuration data, use the
- * #NMRemoteSettings object.
  *
  * Returns: a new #NMClient or NULL on an error
  **/
@@ -1084,10 +1606,6 @@ client_inited (GObject *source, GAsyncResult *result, gpointer user_data)
  * @callback will be called when it is done; use
  * nm_client_new_finish() to get the result. Note that on an error,
  * the callback can be invoked with two first parameters as NULL.
- *
- * NOTE: #NMClient provides information about devices and a mechanism to
- * control them.  To access and modify network configuration data, use the
- * #NMRemoteSettings object.
  **/
 void
 nm_client_new_async (GCancellable *cancellable,
@@ -1137,9 +1655,9 @@ nm_client_new_finish (GAsyncResult *result, GError **error)
 }
 
 static void
-manager_notify (GObject *object,
-                GParamSpec *pspec,
-                gpointer client)
+subobject_notify (GObject *object,
+                  GParamSpec *pspec,
+                  gpointer client)
 {
 	if (!g_str_has_suffix (pspec->name, "-internal"))
 		g_object_notify (client, pspec->name);
@@ -1170,6 +1688,21 @@ manager_permission_changed (NMManager *manager,
 }
 
 static void
+settings_connection_added (NMRemoteSettings *manager,
+                           NMRemoteConnection *connection,
+                           gpointer client)
+{
+	g_signal_emit (client, signals[CONNECTION_ADDED], 0, connection);
+}
+static void
+settings_connection_removed (NMRemoteSettings *manager,
+                             NMRemoteConnection *connection,
+                             gpointer client)
+{
+	g_signal_emit (client, signals[CONNECTION_REMOVED], 0, connection);
+}
+
+static void
 constructed (GObject *object)
 {
 	NMClient *client = NM_CLIENT (object);
@@ -1178,15 +1711,24 @@ constructed (GObject *object)
 	priv->manager = g_object_new (NM_TYPE_MANAGER,
 	                              NM_OBJECT_PATH, NM_DBUS_PATH,
 	                              NULL);
-
 	g_signal_connect (priv->manager, "notify",
-	                  G_CALLBACK (manager_notify), client);
+	                  G_CALLBACK (subobject_notify), client);
 	g_signal_connect (priv->manager, "device-added",
 	                  G_CALLBACK (manager_device_added), client);
 	g_signal_connect (priv->manager, "device-removed",
 	                  G_CALLBACK (manager_device_removed), client);
 	g_signal_connect (priv->manager, "permission-changed",
 	                  G_CALLBACK (manager_permission_changed), client);
+
+	priv->settings = g_object_new (NM_TYPE_REMOTE_SETTINGS,
+	                               NM_OBJECT_PATH, NM_DBUS_PATH_SETTINGS,
+	                               NULL);
+	g_signal_connect (priv->settings, "notify",
+	                  G_CALLBACK (subobject_notify), client);
+	g_signal_connect (priv->settings, "connection-added",
+	                  G_CALLBACK (settings_connection_added), client);
+	g_signal_connect (priv->settings, "connection-removed",
+	                  G_CALLBACK (settings_connection_removed), client);
 
 	G_OBJECT_CLASS (nm_client_parent_class)->constructed (object);
 }
@@ -1199,6 +1741,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 
 	if (!g_initable_init (G_INITABLE (priv->manager), cancellable, error))
 		return FALSE;
+	if (!g_initable_init (G_INITABLE (priv->settings), cancellable, error))
+		return FALSE;
 
 	return TRUE;
 }
@@ -1207,6 +1751,8 @@ typedef struct {
 	NMClient *client;
 	GCancellable *cancellable;
 	GSimpleAsyncResult *result;
+	gboolean manager_inited;
+	gboolean settings_inited;
 } NMClientInitData;
 
 static void
@@ -1224,12 +1770,26 @@ init_async_inited_manager (GObject *object, GAsyncResult *result, gpointer user_
 	NMClientInitData *init_data = user_data;
 	GError *error = NULL;
 
-	if (g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error))
-		g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
-	else
+	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error))
 		g_simple_async_result_take_error (init_data->result, error);
 
-	init_async_complete (init_data);
+	init_data->manager_inited = TRUE;
+	if (init_data->settings_inited)
+		init_async_complete (init_data);
+}
+
+static void
+init_async_inited_settings (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NMClientInitData *init_data = user_data;
+	GError *error = NULL;
+
+	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (object), result, &error))
+		g_simple_async_result_take_error (init_data->result, error);
+
+	init_data->settings_inited = TRUE;
+	if (init_data->manager_inited)
+		init_async_complete (init_data);
 }
 
 static void
@@ -1248,6 +1808,9 @@ init_async_parent_inited (GObject *source, GAsyncResult *result, gpointer user_d
 	g_async_initable_init_async (G_ASYNC_INITABLE (priv->manager),
 	                             G_PRIORITY_DEFAULT, init_data->cancellable,
 	                             init_async_inited_manager, init_data);
+	g_async_initable_init_async (G_ASYNC_INITABLE (priv->settings),
+	                             G_PRIORITY_DEFAULT, init_data->cancellable,
+	                             init_async_inited_settings, init_data);
 }
 
 static void
@@ -1292,6 +1855,7 @@ dispose (GObject *object)
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
 	g_clear_object (&priv->manager);
+	g_clear_object (&priv->settings);
 
 	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
 }
@@ -1336,6 +1900,12 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ACTIVATING_CONNECTION:
 	case PROP_DEVICES:
 		g_object_get_property (G_OBJECT (NM_CLIENT_GET_PRIVATE (object)->manager),
+		                       pspec->name, value);
+		break;
+	case PROP_CONNECTIONS:
+	case PROP_HOSTNAME:
+	case PROP_CAN_MODIFY:
+		g_object_get_property (G_OBJECT (NM_CLIENT_GET_PRIVATE (object)->settings),
 		                       pspec->name, value);
 		break;
 	default:
@@ -1559,6 +2129,48 @@ nm_client_class_init (NMClientClass *client_class)
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
 
+	/**
+	 * NMClient:connections:
+	 *
+	 * The list of configured connections that are available to the user. (Note
+	 * that this differs from the underlying D-Bus property, which may also
+	 * contain the object paths of connections that the user does not have
+	 * permission to read the details of.)
+	 *
+	 * Element-type: NMRemoteConnection
+	 */
+	g_object_class_install_property
+		(object_class, PROP_CONNECTIONS,
+		 g_param_spec_boxed (NM_CLIENT_CONNECTIONS, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMClient:hostname:
+	 *
+	 * The machine hostname stored in persistent configuration. This can be
+	 * modified by calling nm_client_save_hostname().
+	 */
+	g_object_class_install_property
+		(object_class, PROP_HOSTNAME,
+		 g_param_spec_string (NM_CLIENT_HOSTNAME, "", "",
+		                      NULL,
+		                      G_PARAM_READABLE |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMClient:can-modify:
+	 *
+	 * If %TRUE, adding and modifying connections is supported.
+	 */
+	g_object_class_install_property
+		(object_class, PROP_CAN_MODIFY,
+		 g_param_spec_boolean (NM_CLIENT_CAN_MODIFY, "", "",
+		                       FALSE,
+		                       G_PARAM_READABLE |
+		                       G_PARAM_STATIC_STRINGS));
+
 	/* signals */
 
 	/**
@@ -1569,7 +2181,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 * Notifies that a #NMDevice is added.
 	 **/
 	signals[DEVICE_ADDED] =
-		g_signal_new ("device-added",
+		g_signal_new (NM_CLIENT_DEVICE_ADDED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMClientClass, device_added),
@@ -1585,7 +2197,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 * Notifies that a #NMDevice is removed.
 	 **/
 	signals[DEVICE_REMOVED] =
-		g_signal_new ("device-removed",
+		g_signal_new (NM_CLIENT_DEVICE_REMOVED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMClientClass, device_removed),
@@ -1602,11 +2214,42 @@ nm_client_class_init (NMClientClass *client_class)
 	 * Notifies that a permission has changed
 	 **/
 	signals[PERMISSION_CHANGED] =
-		g_signal_new ("permission-changed",
+		g_signal_new (NM_CLIENT_PERMISSION_CHANGED,
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+	/**
+	 * NMClient::connection-added:
+	 * @client: the settings object that received the signal
+	 * @connection: the new connection
+	 *
+	 * Notifies that a #NMConnection has been added.
+	 **/
+	signals[CONNECTION_ADDED] =
+		g_signal_new (NM_CLIENT_CONNECTION_ADDED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMClientClass, connection_added),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              NM_TYPE_REMOTE_CONNECTION);
+
+	/**
+	 * NMClient::connection-removed:
+	 * @client: the settings object that received the signal
+	 * @connection: the removed connection
+	 *
+	 * Notifies that a #NMConnection has been removed.
+	 **/
+	signals[CONNECTION_REMOVED] =
+		g_signal_new (NM_CLIENT_CONNECTION_REMOVED,
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMClientClass, connection_removed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              NM_TYPE_REMOTE_CONNECTION);
 }
 
 static void

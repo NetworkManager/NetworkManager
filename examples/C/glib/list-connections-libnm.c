@@ -18,9 +18,9 @@
  */
 
 /*
- * The example shows how to list connections from the System Settings service
- * using libnm.  Contrast this example with list-connections-gdbus.c, which is a
- * bit lower level and talks directly to NM using GDBus.
+ * The example shows how to list connections.  Contrast this example with
+ * list-connections-gdbus.c, which is a bit lower level and talks directly to NM
+ * using GDBus.
  *
  * Compile with:
  *   gcc -Wall `pkg-config --libs --cflags glib-2.0 libnm` list-connections-libnm.c -o list-connections-libnm
@@ -65,8 +65,7 @@ show_connection (gpointer data, gpointer user_data)
 int
 main (int argc, char *argv[])
 {
-	NMRemoteSettings *settings;
-	gboolean settings_running;
+	NMClient *client;
 	GError *error = NULL;
 	GSList *connections;
 
@@ -75,30 +74,26 @@ main (int argc, char *argv[])
 	g_type_init ();
 #endif
 
-	/* Get system settings */
-	if (!(settings = nm_remote_settings_new (NULL, &error))) {
-		g_message ("Error: Could not get system settings: %s.", error->message);
+	if (!(client = nm_client_new (NULL, &error))) {
+		g_message ("Error: Could not connect to NetworkManager: %s.", error->message);
 		g_error_free (error);
 		return EXIT_FAILURE;
 	}
 
-	/* Find out whether setting service is running */
-	g_object_get (settings, NM_REMOTE_SETTINGS_NM_RUNNING, &settings_running, NULL);
-
-	if (!settings_running) {
-		g_message ("Error: Can't obtain connections: settings service is not running.");
+	if (!nm_client_get_nm_running (client)) {
+		g_message ("Error: Can't obtain connections: NetworkManager is not running.");
 		return EXIT_FAILURE;
 	}
 
 	/* Now the connections can be listed. */
-	connections = nm_remote_settings_list_connections (settings);
+	connections = nm_client_list_connections (client);
 
 	printf ("Connections:\n===================\n");
 
 	g_slist_foreach (connections, show_connection, NULL);
 
 	g_slist_free (connections);
-	g_object_unref (settings);
+	g_object_unref (client);
 
 	return EXIT_SUCCESS;
 }

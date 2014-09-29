@@ -50,7 +50,6 @@ libnminclude_HEADERS =			\
 	nm-ip6-config.h			\
 	nm-object.h			\
 	nm-remote-connection.h		\
-	nm-remote-settings.h		\
 	nm-secret-agent.h		\
 	nm-vpn-connection.h		\
 	nm-vpn-plugin.h			\
@@ -64,7 +63,8 @@ libnm_la_private_headers =		\
 	nm-manager.h			\
 	nm-object-cache.h		\
 	nm-object-private.h		\
-	nm-remote-connection-private.h
+	nm-remote-connection-private.h	\
+	nm-remote-settings.h
 
 libnm_la_csources =			\
 	nm-access-point.c		\

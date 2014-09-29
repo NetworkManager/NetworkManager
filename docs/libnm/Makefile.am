@@ -34,10 +34,12 @@ IGNORE_HFILES= \
 	nm-dbus-helpers-private.h \
 	nm-core-internal.h \
 	nm-device-private.h \
+	nm-manager.h \
 	nm-object-cache.h \
 	nm-object-private.h \
 	nm-param-spec-dbus.h \
 	nm-remote-connection-private.h \
+	nm-remote-settings.h \
 	nm-setting-private.h \
 	nm-types-private.h \
 	nm-utils-private.h
