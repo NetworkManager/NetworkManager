@@ -49,7 +49,8 @@
 #include "nm-dhcp-manager.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
-#include "nm-manager-auth.h"
+#include "nm-auth-utils.h"
+#include "nm-auth-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-device-factory.h"
@@ -1452,7 +1453,7 @@ device_auth_request_cb (NMDevice *device,
 	NMAuthChain *chain;
 
 	/* Validate the caller */
-	subject = nm_auth_subject_new_from_context (context);
+	subject = nm_auth_subject_new_unix_process_from_context (context);
 	if (!subject) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -1461,10 +1462,10 @@ device_auth_request_cb (NMDevice *device,
 	}
 
 	/* Ensure the subject has permissions for this connection */
-	if (connection && !nm_auth_uid_in_acl (connection,
-	                                       nm_session_monitor_get (),
-	                                       nm_auth_subject_get_uid (subject),
-	                                       &error_desc)) {
+	if (connection && !nm_auth_is_subject_in_acl (connection,
+	                                              nm_session_monitor_get (),
+	                                              subject,
+	                                              &error_desc)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
@@ -2662,10 +2663,10 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		existing_connection = nm_device_get_connection (device);
 		subject = nm_active_connection_get_subject (active);
 		if (existing_connection &&
-		    !nm_auth_uid_in_acl (existing_connection,
-			                     nm_session_monitor_get (),
-			                     nm_auth_subject_get_uid (subject),
-			                     &error_desc)) {
+		    !nm_auth_is_subject_in_acl (existing_connection,
+			                            nm_session_monitor_get (),
+			                            subject,
+			                            &error_desc)) {
 			g_set_error (error,
 					     NM_MANAGER_ERROR,
 					     NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -2954,10 +2955,10 @@ nm_manager_activate_connection (NMManager *self,
 	g_return_val_if_fail (*error == NULL, NULL);
 
 	/* Ensure the subject has permissions for this connection */
-	if (!nm_auth_uid_in_acl (connection,
-	                         nm_session_monitor_get (),
-	                         nm_auth_subject_get_uid (subject),
-	                         &error_desc)) {
+	if (!nm_auth_is_subject_in_acl (connection,
+	                                nm_session_monitor_get (),
+	                                subject,
+	                                &error_desc)) {
 		g_set_error_literal (error,
 		                     NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -2998,7 +2999,7 @@ validate_activation_request (NMManager *self,
 	g_assert (out_vpn);
 
 	/* Validate the caller */
-	subject = nm_auth_subject_new_from_context (context);
+	subject = nm_auth_subject_new_unix_process_from_context (context);
 	if (!subject) {
 		g_set_error_literal (error,
 		                     NM_MANAGER_ERROR,
@@ -3008,10 +3009,10 @@ validate_activation_request (NMManager *self,
 	}
 
 	/* Ensure the subject has permissions for this connection */
-	if (!nm_auth_uid_in_acl (connection,
-	                         nm_session_monitor_get (),
-	                         nm_auth_subject_get_uid (subject),
-	                         &error_desc)) {
+	if (!nm_auth_is_subject_in_acl (connection,
+	                                nm_session_monitor_get (),
+	                                subject,
+	                                &error_desc)) {
 		g_set_error_literal (error,
 		                     NM_MANAGER_ERROR,
 		                     NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -3528,7 +3529,7 @@ impl_manager_deactivate_connection (NMManager *self,
 	}
 
 	/* Validate the caller */
-	subject = nm_auth_subject_new_from_context (context);
+	subject = nm_auth_subject_new_unix_process_from_context (context);
 	if (!subject) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -3537,10 +3538,10 @@ impl_manager_deactivate_connection (NMManager *self,
 	}
 
 	/* Ensure the subject has permissions for this connection */
-	if (!nm_auth_uid_in_acl (connection,
-	                         nm_session_monitor_get (),
-	                         nm_auth_subject_get_uid (subject),
-	                         &error_desc)) {
+	if (!nm_auth_is_subject_in_acl (connection,
+	                                nm_session_monitor_get (),
+	                                subject,
+	                                &error_desc)) {
 		error = g_error_new_literal (NM_MANAGER_ERROR,
 		                             NM_MANAGER_ERROR_PERMISSION_DENIED,
 		                             error_desc);
@@ -4434,7 +4435,7 @@ prop_filter (DBusConnection *connection,
 		goto out;
 	}
 
-	subject = nm_auth_subject_new_from_message (connection, message);
+	subject = nm_auth_subject_new_unix_process_from_message (connection, message);
 	if (!subject) {
 		reply = dbus_message_new_error (message, NM_PERM_DENIED_ERROR,
 		                                "Could not determine request UID.");
@@ -4469,7 +4470,7 @@ out:
 }
 
 static void
-authority_changed_cb (gpointer user_data)
+authority_changed_cb (NMAuthManager *auth_manager, gpointer user_data)
 {
 	/* Let clients know they should re-check their authorization */
 	g_signal_emit (NM_MANAGER (user_data), signals[CHECK_PERMISSIONS], 0);
@@ -4834,7 +4835,11 @@ nm_manager_init (NMManager *manager)
 	                  G_CALLBACK (resuming_cb), manager);
 
 	/* Listen for authorization changes */
-	nm_auth_changed_func_register (authority_changed_cb, manager);
+	g_signal_connect (nm_auth_manager_get (),
+	                  NM_AUTH_MANAGER_SIGNAL_CHANGED,
+	                  G_CALLBACK (authority_changed_cb),
+	                  manager);
+
 
 	/* Monitor the firmware directory */
 	if (strlen (KERNEL_FIRMWARE_DIR)) {
@@ -4986,7 +4991,9 @@ dispose (GObject *object)
 	g_slist_free_full (priv->auth_chains, (GDestroyNotify) nm_auth_chain_unref);
 	priv->auth_chains = NULL;
 
-	nm_auth_changed_func_unregister (authority_changed_cb, manager);
+	g_signal_handlers_disconnect_by_func (nm_auth_manager_get (),
+	                                      G_CALLBACK (authority_changed_cb),
+	                                      manager);
 
 	/* Remove all devices */
 	while (priv->devices)

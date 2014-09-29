@@ -66,7 +66,7 @@
 #include "nm-settings-connection.h"
 #include "nm-connection-provider.h"
 #include "nm-posix-signals.h"
-#include "nm-manager-auth.h"
+#include "nm-auth-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-dispatcher.h"
 #include "nm-config.h"

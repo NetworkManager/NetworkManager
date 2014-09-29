@@ -38,7 +38,7 @@
 #include "nm-platform.h"
 #include "nm-dns-manager.h"
 #include "nm-vpn-manager.h"
-#include "nm-manager-auth.h"
+#include "nm-auth-utils.h"
 #include "nm-firewall-manager.h"
 #include "nm-dispatcher.h"
 #include "nm-utils.h"

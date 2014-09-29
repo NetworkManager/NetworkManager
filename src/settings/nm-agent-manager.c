@@ -30,13 +30,13 @@
 #include "nm-logging.h"
 #include "nm-agent-manager.h"
 #include "nm-secret-agent.h"
-#include "nm-manager-auth.h"
+#include "nm-auth-utils.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-manager-auth.h"
+#include "nm-auth-utils.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-connection.h"
 #include "nm-enum-types.h"
-#include "nm-auth-subject.h"
+#include "nm-auth-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-session-monitor.h"
 #include "nm-simple-connection.h"
@@ -290,14 +290,14 @@ impl_agent_manager_register_with_capabilities (NMAgentManager *self,
 	NMSecretAgent *agent;
 	NMAuthChain *chain;
 
-	subject = nm_auth_subject_new_from_context (context);
+	subject = nm_auth_subject_new_unix_process_from_context (context);
 	if (!subject) {
 		error = g_error_new_literal (NM_AGENT_MANAGER_ERROR,
 		                             NM_AGENT_MANAGER_ERROR_SENDER_UNKNOWN,
 		                             "Unable to determine request sender and UID.");
 		goto done;
 	}
-	sender_uid = nm_auth_subject_get_uid (subject);
+	sender_uid = nm_auth_subject_get_unix_process_uid (subject);
 
 	if (   0 != sender_uid
 	    && !nm_session_monitor_uid_has_session (nm_session_monitor_get (),
@@ -529,8 +529,8 @@ agent_compare_func (gconstpointer aa, gconstpointer bb, gpointer user_data)
 	gulong a_pid, b_pid, requester;
 
 	/* Prefer agents in the process the request came from */
-	requester = nm_auth_subject_get_pid (req->subject);
-	if (requester != G_MAXULONG) {
+	if (nm_auth_subject_is_unix_process (req->subject)) {
+		requester = nm_auth_subject_get_unix_process_pid (req->subject);
 		a_pid = nm_secret_agent_get_pid (a);
 		b_pid = nm_secret_agent_get_pid (b);
 
@@ -572,11 +572,11 @@ request_add_agent (Request *req, NMSecretAgent *agent)
 		return;
 
 	/* If the request should filter agents by UID, do that now */
-	if (!nm_auth_subject_get_internal (req->subject)) {
+	if (nm_auth_subject_is_unix_process (req->subject)) {
 		uid_t agent_uid, subject_uid;
 
 		agent_uid = nm_secret_agent_get_owner_uid (agent);
-		subject_uid = nm_auth_subject_get_uid (req->subject);
+		subject_uid = nm_auth_subject_get_unix_process_uid (req->subject);
 		if (agent_uid != subject_uid) {
 			nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s "
 			            "(uid %ld not required %ld)",
@@ -713,12 +713,12 @@ static gboolean
 connection_request_add_agent (Request *parent, NMSecretAgent *agent)
 {
 	ConnectionRequest *req = (ConnectionRequest *) parent;
-	uid_t agent_uid = nm_secret_agent_get_owner_uid (agent);
+	NMAuthSubject *subject = nm_secret_agent_get_subject(agent);
 
 	/* Ensure the caller's username exists in the connection's permissions,
 	 * or that the permissions is empty (ie, visible by everyone).
 	 */
-	if (!nm_auth_uid_in_acl (req->connection, nm_session_monitor_get (), agent_uid, NULL)) {
+	if (!nm_auth_is_subject_in_acl (req->connection, nm_session_monitor_get (), subject, NULL)) {
 		nm_log_dbg (LOGD_AGENTS, "(%s) agent ignored for secrets request %p/%s (not in ACL)",
 		            nm_secret_agent_get_description (agent),
 		            parent, parent->detail);
@@ -1454,11 +1454,13 @@ nm_agent_manager_all_agents_have_capability (NMAgentManager *manager,
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (manager);
 	GHashTableIter iter;
 	NMSecretAgent *agent;
+	gboolean subject_is_unix_process = nm_auth_subject_is_unix_process (subject);
+	gulong subject_uid = subject_is_unix_process ? nm_auth_subject_get_unix_process_uid (subject) : 0;
 
 	g_hash_table_iter_init (&iter, priv->agents);
 	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &agent)) {
-		if (   !nm_auth_subject_get_internal (subject)
-		    && nm_secret_agent_get_owner_uid (agent) != nm_auth_subject_get_uid (subject))
+		if (   subject_is_unix_process
+		    && nm_secret_agent_get_owner_uid (agent) != subject_uid)
 			continue;
 
 		if (!(nm_secret_agent_get_capabilities (agent) & capability))
@@ -1519,9 +1521,8 @@ agent_permissions_changed_done (NMAuthChain *chain,
 }
 
 static void
-authority_changed_cb (gpointer user_data)
+authority_changed_cb (NMAuthManager *auth_manager, NMAgentManager *self)
 {
-	NMAgentManager *self = NM_AGENT_MANAGER (user_data);
 	NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE (self);
 	GHashTableIter iter;
 	NMSecretAgent *agent;
@@ -1572,7 +1573,10 @@ nm_agent_manager_get (void)
 	                  G_CALLBACK (name_owner_changed_cb),
 	                  singleton);
 
-	nm_auth_changed_func_register (authority_changed_cb, singleton);
+	g_signal_connect (nm_auth_manager_get (),
+	                  NM_AUTH_MANAGER_SIGNAL_CHANGED,
+	                  G_CALLBACK (authority_changed_cb),
+	                  singleton);
 
 	return singleton;
 }
@@ -1597,7 +1601,9 @@ dispose (GObject *object)
 	if (!priv->disposed) {
 		priv->disposed = TRUE;
 
-		nm_auth_changed_func_unregister (authority_changed_cb, NM_AGENT_MANAGER (object));
+		g_signal_handlers_disconnect_by_func (nm_auth_manager_get (),
+		                                      G_CALLBACK (authority_changed_cb),
+		                                      object);
 
 		g_slist_free_full (priv->chains, (GDestroyNotify) nm_auth_chain_unref);
 

@@ -62,7 +62,7 @@
 #include "nm-system-config-interface.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
-#include "nm-manager-auth.h"
+#include "nm-auth-utils.h"
 #include "nm-auth-subject.h"
 #include "nm-session-monitor.h"
 #include "plugins/keyfile/plugin.h"
@@ -288,7 +288,7 @@ impl_settings_get_connection_by_uuid (NMSettings *self,
 		goto error;
 	}
 
-	subject = nm_auth_subject_new_from_context (context);
+	subject = nm_auth_subject_new_unix_process_from_context (context);
 	if (!subject) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
@@ -296,10 +296,10 @@ impl_settings_get_connection_by_uuid (NMSettings *self,
 		goto error;
 	}
 
-	if (!nm_auth_uid_in_acl (NM_CONNECTION (connection),
-	                         nm_session_monitor_get (),
-	                         nm_auth_subject_get_uid (subject),
-	                         &error_desc)) {
+	if (!nm_auth_is_subject_in_acl (NM_CONNECTION (connection),
+	                                nm_session_monitor_get (),
+	                                subject,
+	                                &error_desc)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             error_desc);
@@ -1142,7 +1142,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 		goto done;
 	}
 
-	subject = nm_auth_subject_new_from_context (context);
+	subject = nm_auth_subject_new_unix_process_from_context (context);
 	if (!subject) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
@@ -1153,10 +1153,10 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	/* Ensure the caller's username exists in the connection's permissions,
 	 * or that the permissions is empty (ie, visible by everyone).
 	 */
-	if (!nm_auth_uid_in_acl (connection,
-	                         nm_session_monitor_get (),
-	                         nm_auth_subject_get_uid (subject),
-	                         &error_desc)) {
+	if (!nm_auth_is_subject_in_acl (connection,
+	                                nm_session_monitor_get (),
+	                                subject,
+	                                &error_desc)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
 		                             NM_SETTINGS_ERROR_PERMISSION_DENIED,
 		                             error_desc);

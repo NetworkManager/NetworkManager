@@ -52,6 +52,7 @@ const char *nm_config_get_path (NMConfig *config);
 const char *nm_config_get_description (NMConfig *config);
 const char **nm_config_get_plugins (NMConfig *config);
 gboolean nm_config_get_monitor_connection_files (NMConfig *config);
+gboolean nm_config_get_auth_polkit (NMConfig *config);
 const char *nm_config_get_dhcp_client (NMConfig *config);
 const char *nm_config_get_dns_mode (NMConfig *config);
 const char *nm_config_get_log_level (NMConfig *config);

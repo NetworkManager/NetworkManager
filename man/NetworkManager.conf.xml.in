@@ -123,6 +123,14 @@ Copyright (C) 2010 - 2013 Red Hat, Inc.
 	connection files any time they changed.</para></listitem>
       </varlistentry>
       <varlistentry>
+	<term><varname>auth-polkit</varname></term>
+	<listitem><para>Whether the system uses PolicyKit for authorization.
+	If <literal>false</literal>, all requests will be allowed. If
+	<literal>true</literal>, non-root requests are authorized using PolicyKit.
+	The default value is <literal>@NM_CONFIG_DEFAULT_AUTH_POLKIT_TEXT@</literal>.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
 	<term><varname>dhcp</varname></term>
 	<listitem><para>This key sets up what DHCP client
 	NetworkManager will use. Presently

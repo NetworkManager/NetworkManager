@@ -53,7 +53,7 @@
 #include "nm-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-platform.h"
-#include "nm-manager-auth.h"
+#include "nm-auth-utils.h"
 #include "nm-settings-connection.h"
 #include "nm-enum-types.h"
 #include "nm-dbus-glib-types.h"

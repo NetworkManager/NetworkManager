@@ -54,11 +54,6 @@ typedef void (*NMAuthChainResultFunc) (NMAuthChain *chain,
                                        DBusGMethodInvocation *context,
                                        gpointer user_data);
 
-NMAuthChain *nm_auth_chain_new_dbus_sender (const char *dbus_sender,
-                                            gulong user_uid,
-                                            NMAuthChainResultFunc done_func,
-                                            gpointer user_data);
-
 NMAuthChain *nm_auth_chain_new_context (DBusGMethodInvocation *context,
                                         NMAuthChainResultFunc done_func,
                                         gpointer user_data);
@@ -86,21 +81,17 @@ gulong nm_auth_chain_get_data_ulong (NMAuthChain *chain, const char *tag);
 NMAuthCallResult nm_auth_chain_get_result (NMAuthChain *chain,
                                            const char *permission);
 
-gboolean nm_auth_chain_add_call (NMAuthChain *chain,
-                                 const char *permission,
-                                 gboolean allow_interaction);
+void nm_auth_chain_add_call (NMAuthChain *chain,
+                             const char *permission,
+                             gboolean allow_interaction);
 
 void nm_auth_chain_unref (NMAuthChain *chain);
 
 /* Caller must free returned error description */
-gboolean nm_auth_uid_in_acl (NMConnection *connection,
-                             NMSessionMonitor *smon,
-                             gulong uid,
-                             char **out_error_desc);
-
-void nm_auth_changed_func_register (GDestroyNotify callback, gpointer callback_data);
-
-void nm_auth_changed_func_unregister (GDestroyNotify callback, gpointer callback_data);
+gboolean nm_auth_is_subject_in_acl (NMConnection *connection,
+                                    NMSessionMonitor *smon,
+                                    NMAuthSubject *subect,
+                                    char **out_error_desc);
 
 #endif /* __NETWORKMANAGER_MANAGER_AUTH_H__ */
 

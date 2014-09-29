@@ -108,9 +108,9 @@ nm_secret_agent_get_description (NMSecretAgent *agent)
 	priv = NM_SECRET_AGENT_GET_PRIVATE (agent);
 	if (!priv->description) {
 		priv->description = g_strdup_printf ("%s/%s/%lu",
-		                                     nm_auth_subject_get_dbus_sender (priv->subject),
+		                                     nm_auth_subject_get_unix_process_dbus_sender (priv->subject),
 		                                     priv->identifier,
-		                                     nm_auth_subject_get_uid (priv->subject));
+		                                     nm_auth_subject_get_unix_process_uid (priv->subject));
 	}
 
 	return priv->description;
@@ -121,7 +121,7 @@ nm_secret_agent_get_dbus_owner (NMSecretAgent *agent)
 {
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), NULL);
 
-	return nm_auth_subject_get_dbus_sender (NM_SECRET_AGENT_GET_PRIVATE (agent)->subject);
+	return nm_auth_subject_get_unix_process_dbus_sender (NM_SECRET_AGENT_GET_PRIVATE (agent)->subject);
 }
 
 const char *
@@ -137,7 +137,7 @@ nm_secret_agent_get_owner_uid  (NMSecretAgent *agent)
 {
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), G_MAXULONG);
 
-	return nm_auth_subject_get_uid (NM_SECRET_AGENT_GET_PRIVATE (agent)->subject);
+	return nm_auth_subject_get_unix_process_uid (NM_SECRET_AGENT_GET_PRIVATE (agent)->subject);
 }
 
 const char *
@@ -153,7 +153,7 @@ nm_secret_agent_get_pid (NMSecretAgent *agent)
 {
 	g_return_val_if_fail (NM_IS_SECRET_AGENT (agent), G_MAXULONG);
 
-	return nm_auth_subject_get_pid (NM_SECRET_AGENT_GET_PRIVATE (agent)->subject);
+	return nm_auth_subject_get_unix_process_pid (NM_SECRET_AGENT_GET_PRIVATE (agent)->subject);
 }
 
 NMSecretAgentCapabilities
@@ -477,9 +477,10 @@ nm_secret_agent_new (DBusGMethodInvocation *context,
 
 	g_return_val_if_fail (context != NULL, NULL);
 	g_return_val_if_fail (NM_IS_AUTH_SUBJECT (subject), NULL);
+	g_return_val_if_fail (nm_auth_subject_is_unix_process (subject), NULL);
 	g_return_val_if_fail (identifier != NULL, NULL);
 
-	pw = getpwuid (nm_auth_subject_get_uid (subject));
+	pw = getpwuid (nm_auth_subject_get_unix_process_uid (subject));
 	g_return_val_if_fail (pw != NULL, NULL);
 	g_return_val_if_fail (pw->pw_name[0] != '\0', NULL);
 	username = g_strdup (pw->pw_name);
@@ -492,13 +493,13 @@ nm_secret_agent_new (DBusGMethodInvocation *context,
 	priv->capabilities = capabilities;
 	priv->subject = g_object_ref (subject);
 
-	hash_str = g_strdup_printf ("%16lu%s", nm_auth_subject_get_uid (subject), identifier);
+	hash_str = g_strdup_printf ("%16lu%s", nm_auth_subject_get_unix_process_uid (subject), identifier);
 	priv->hash = g_str_hash (hash_str);
 	g_free (hash_str);
 
 	priv->proxy = nm_dbus_manager_new_proxy (nm_dbus_manager_get (),
 	                                         context,
-	                                         nm_auth_subject_get_dbus_sender (subject),
+	                                         nm_auth_subject_get_unix_process_dbus_sender (subject),
 	                                         NM_DBUS_PATH_SECRET_AGENT,
 	                                         NM_DBUS_INTERFACE_SECRET_AGENT);
 	g_assert (priv->proxy);
