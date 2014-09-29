@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=NetworkManager&keywords=I18N+L10N&component=Translations\n"
-"POT-Creation-Date: 2014-09-16 10:12+0000\n"
-"PO-Revision-Date: 2014-09-16 20:09+0530\n"
+"POT-Creation-Date: 2014-09-17 22:04+0000\n"
+"PO-Revision-Date: 2014-09-18 11:43+0530\n"
 "Last-Translator: Nilamdyuti Goswami <ngoswami@redhat.com>\n"
 "Language-Team: Assamese <kde-i18n-doc@kde.org>\n"
 "Language: as\n"
@@ -143,7 +143,7 @@ msgstr "সংযোগ কৰা (IP সংৰূপ প্ৰাপ্ত ক�
 
 #: ../clients/cli/common.c:658
 msgid "connecting (checking IP connectivity)"
-msgstr "সংযোগ কৰা (IP সংযোগ নীৰিক্ষণ কৰা)"
+msgstr "সংযোগ কৰা (IP সংযোগ নিৰীক্ষণ কৰা)"
 
 #: ../clients/cli/common.c:660
 msgid "connecting (starting secondary connections)"
@@ -314,7 +314,7 @@ msgstr "অনুৰোধ কৰা নেটৱৰ্কৰ সৈতে ৰ�
 
 #: ../clients/cli/common.c:779
 msgid "PIN check failed"
-msgstr "PIN নীৰিক্ষণ ব্যৰ্থ হল"
+msgstr "PIN নিৰীক্ষণ ব্যৰ্থ হল"
 
 #: ../clients/cli/common.c:782
 msgid "Necessary firmware for the device may be missing"
@@ -1265,9 +1265,9 @@ msgid "'%s' has to be alone"
 msgstr "'%s' অকলে থাকিব লাগিব"
 
 #: ../clients/cli/connections.c:1290 ../clients/cli/connections.c:2004
-#: ../clients/cli/connections.c:2064 ../clients/cli/connections.c:7975
-#: ../clients/cli/connections.c:8183 ../clients/cli/connections.c:8276
-#: ../clients/cli/connections.c:8304 ../clients/cli/devices.c:1186
+#: ../clients/cli/connections.c:2064 ../clients/cli/connections.c:7973
+#: ../clients/cli/connections.c:8181 ../clients/cli/connections.c:8274
+#: ../clients/cli/connections.c:8302 ../clients/cli/devices.c:1186
 #: ../clients/cli/devices.c:1234 ../clients/cli/devices.c:1397
 #: ../clients/cli/devices.c:1531 ../clients/cli/devices.c:1625
 #: ../clients/cli/devices.c:1767 ../clients/cli/devices.c:2225
@@ -1288,7 +1288,7 @@ msgstr "NetworkManager সংযোগ আলেখ্যসমূহ"
 #: ../clients/cli/connections.c:1358 ../clients/cli/connections.c:1949
 #: ../clients/cli/connections.c:1965 ../clients/cli/connections.c:1974
 #: ../clients/cli/connections.c:1984 ../clients/cli/connections.c:2081
-#: ../clients/cli/connections.c:7991 ../clients/cli/connections.c:8214
+#: ../clients/cli/connections.c:7989 ../clients/cli/connections.c:8212
 #: ../clients/cli/devices.c:1725 ../clients/cli/devices.c:1733
 #: ../clients/cli/devices.c:2138 ../clients/cli/devices.c:2145
 #: ../clients/cli/devices.c:2159 ../clients/cli/devices.c:2166
@@ -1305,8 +1305,8 @@ msgid "Error: %s - no such connection profile."
 msgstr "ত্ৰুটি: %s - এই ধৰণৰ কোনো সংযোগ আলেখ্য নাই।"
 
 #: ../clients/cli/connections.c:1425 ../clients/cli/connections.c:2017
-#: ../clients/cli/connections.c:8282 ../clients/cli/connections.c:8323
-#: ../clients/cli/connections.c:8515 ../clients/cli/devices.c:2366
+#: ../clients/cli/connections.c:8280 ../clients/cli/connections.c:8321
+#: ../clients/cli/connections.c:8513 ../clients/cli/devices.c:2366
 #: ../clients/cli/devices.c:2829 ../clients/cli/network-manager.c:537
 #: ../clients/cli/network-manager.c:580 ../clients/cli/network-manager.c:597
 #: ../clients/cli/network-manager.c:644 ../clients/cli/network-manager.c:658
@@ -1447,8 +1447,8 @@ msgstr "অজ্ঞাত প্ৰাচল: %s\n"
 msgid "preparing"
 msgstr "প্ৰস্তুত কৰা হৈছে"
 
-#: ../clients/cli/connections.c:2054 ../clients/cli/connections.c:8195
-#: ../clients/cli/connections.c:8310
+#: ../clients/cli/connections.c:2054 ../clients/cli/connections.c:8193
+#: ../clients/cli/connections.c:8308
 #, c-format
 msgid "Error: No connection specified."
 msgstr "ত্ৰুটি: কোনো সংযোগ ধাৰ্য্য কৰা হোৱা নাই।"
@@ -1470,7 +1470,7 @@ msgstr "ত্ৰুটি: '%s': '%s' এটা বৈধ %s MAC ঠিকন�
 
 #. Ask for optional arguments
 #: ../clients/cli/connections.c:2472 ../clients/cli/connections.c:2902
-#: ../clients/tui/nm-editor-utils.c:164 ../libnm-core/nm-connection.c:1487
+#: ../clients/tui/nm-editor-utils.c:164 ../libnm-core/nm-connection.c:1511
 #: ../libnm-glib/nm-device.c:1800
 msgid "InfiniBand"
 msgstr "InfiniBand"
@@ -1622,7 +1622,7 @@ msgstr "ত্ৰুটি: 'bt-type': '%s' এটা বৈধ ব্লুট�
 #. 11
 #: ../clients/cli/connections.c:3090 ../clients/cli/devices.c:219
 #: ../clients/tui/nm-editor-utils.c:218 ../clients/tui/nmt-page-vlan.c:51
-#: ../libnm-core/nm-connection.c:1485 ../libnm-glib/nm-device.c:1808
+#: ../libnm-core/nm-connection.c:1509 ../libnm-glib/nm-device.c:1808
 #: ../libnm-util/nm-connection.c:1612
 msgid "VLAN"
 msgstr "VLAN"
@@ -2176,7 +2176,7 @@ msgid ""
 "Examples: nmcli> verify\n"
 "          nmcli bond> verify\n"
 msgstr ""
-"verify [all]  :: সংহতি অথবা সংযোগৰ বৈধতা সতা সত্য নিৰূপণ কৰক\n"
+"verify [all]  :: সংহতি অথবা সংযোগৰ বৈধতা সত্যাপন কৰক\n"
 "\n"
 "সংহতি অথবা সংযোগ বৈধ নে আৰু পিছত সংৰক্ষণ কৰিব পাৰি নে সতা সত্য নিৰূপন কৰে। ই "
 "ত্ৰুটিত অবৈধ মানসমূহৰ সূচনা দিয়ে।\n"
@@ -2307,7 +2307,7 @@ msgstr ""
 "ব্যৱহাৰকাৰীক কাৰ্য্য সুনিশ্চিত কৰিবলৈ কোৱা হয়।\n"
 
 #: ../clients/cli/connections.c:6158 ../clients/cli/connections.c:6295
-#: ../clients/cli/connections.c:6683 ../clients/cli/connections.c:7576
+#: ../clients/cli/connections.c:6683 ../clients/cli/connections.c:7574
 #, c-format
 msgid "Unknown command: '%s'\n"
 msgstr "অজ্ঞাত কমান্ড: '%s'\n"
@@ -2654,111 +2654,111 @@ msgstr ", এটা বৈধ সংহতি নাম নহয়"
 #: ../clients/cli/connections.c:7332
 #, c-format
 msgid "Verify setting '%s': %s\n"
-msgstr "সংহতি '%s' সতা সত্য নিৰূপণ কৰক: %s\n"
+msgstr "সংহতি '%s' সত্যাপন কৰক: %s\n"
 
 #: ../clients/cli/connections.c:7339
 #, c-format
 msgid "Verify connection: %s\n"
-msgstr "সংযোগ সতা সত্য নিৰূপণ কৰক: %s\n"
+msgstr "সংযোগ সত্যাপন কৰক: %s\n"
 
 #: ../clients/cli/connections.c:7357
 #, c-format
 msgid "Error: invalid argument '%s'\n"
 msgstr "ত্ৰুটি: অবৈধ তৰ্ক '%s'\n"
 
-#: ../clients/cli/connections.c:7391
+#: ../clients/cli/connections.c:7390
 #, c-format
 msgid "Error: Failed to save '%s' (%s) connection: (%d) %s\n"
 msgstr "ত্ৰুটি: '%s' (%s) সংযোগ সংৰক্ষণ কৰিবলৈ ব্যৰ্থ: (%d) %s\n"
 
-#: ../clients/cli/connections.c:7399
+#: ../clients/cli/connections.c:7398
 #, c-format
 msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "সংযোগ '%s' (%s) সফলভাৱে সংৰক্ষণ কৰা হল।\n"
 
-#: ../clients/cli/connections.c:7400
+#: ../clients/cli/connections.c:7399
 #, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
 msgstr "সংযোগ '%s' (%s) সফলভাৱে আপডেইট কৰা হল।\n"
 
-#: ../clients/cli/connections.c:7434
+#: ../clients/cli/connections.c:7432
 #, c-format
 msgid "Error: connection verification failed: %s\n"
-msgstr "ত্ৰুটি: সংযোগৰ সতা সত্য নিৰূপণ ব্যৰ্থ হল: %s\n"
+msgstr "ত্ৰুটি: সংযোগৰ সত্যাপন ব্যৰ্থ হল: %s\n"
 
-#: ../clients/cli/connections.c:7435
+#: ../clients/cli/connections.c:7433
 msgid "(unknown error)"
 msgstr "(অজ্ঞাত ত্ৰুটি)"
 
-#: ../clients/cli/connections.c:7456
+#: ../clients/cli/connections.c:7454
 #, c-format
 msgid "Error: connection is not saved. Type 'save' first.\n"
 msgstr "ত্ৰুটি: সংযোগ সংৰক্ষণ হোৱা নাই। প্ৰথমতে 'save' টাইপ কৰক।\n"
 
-#: ../clients/cli/connections.c:7460
+#: ../clients/cli/connections.c:7458
 #, c-format
 msgid "Error: connection is not valid: %s\n"
 msgstr "ত্ৰুটি: সংযোগ বৈধ নহয়: %s\n"
 
-#: ../clients/cli/connections.c:7471
+#: ../clients/cli/connections.c:7469
 #, c-format
 msgid "Error: Cannot activate connection: %s.\n"
 msgstr "ত্ৰুটি: সংযোগ সক্ৰিয় কৰিব নোৱাৰি: %s।\n"
 
-#: ../clients/cli/connections.c:7481
+#: ../clients/cli/connections.c:7479
 #, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: (%d) %s\n"
 msgstr "ত্ৰুটি: '%s' (%s) সংযোগ সক্ৰিয় কৰিবলৈ ব্যৰ্থ: (%d) %s\n"
 
-#: ../clients/cli/connections.c:7487
+#: ../clients/cli/connections.c:7485
 #, c-format
 msgid "Monitoring connection activation (press any key to continue)\n"
 msgstr "সংযোগৰ সক্ৰিয়কৰণ পৰ্যবেক্ষণ কৰা হৈছে (আগবাঢ়িবলৈ যিকোনো কি টিপক)\n"
 
-#: ../clients/cli/connections.c:7525
+#: ../clients/cli/connections.c:7523
 #, c-format
 msgid "Error: status-line: %s\n"
 msgstr "ত্ৰুটি: status-line: %s\n"
 
-#: ../clients/cli/connections.c:7533
+#: ../clients/cli/connections.c:7531
 #, c-format
 msgid "Error: save-confirmation: %s\n"
 msgstr "ত্ৰুটি: save-confirmation: %s\n"
 
-#: ../clients/cli/connections.c:7541
+#: ../clients/cli/connections.c:7539
 #, c-format
 msgid "Error: bad color number: '%s'; use <0-8>\n"
 msgstr "ত্ৰুটি: বেয়া ৰঙ সংখ্যা: '%s'; <0-8> ব্যৱহাৰ কৰক\n"
 
-#: ../clients/cli/connections.c:7553
+#: ../clients/cli/connections.c:7551
 #, c-format
 msgid "Current nmcli configuration:\n"
 msgstr "বৰ্তমান nmcli সংৰূপ:\n"
 
-#: ../clients/cli/connections.c:7561
+#: ../clients/cli/connections.c:7559
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
 msgstr "অবৈধ সংৰূপ বিকল্প '%s'; অনুমোদিত [%s]\n"
 
-#: ../clients/cli/connections.c:7804
+#: ../clients/cli/connections.c:7802
 #, c-format
 msgid "Error: only one of 'id', uuid, or 'path' can be provided."
 msgstr "ত্ৰুটি: 'id', uuid, অথবা 'path' ৰ যিকোনো এটা প্ৰদান কৰিব পাৰি।"
 
-#: ../clients/cli/connections.c:7816 ../clients/cli/connections.c:8006
-#: ../clients/cli/connections.c:8013
+#: ../clients/cli/connections.c:7814 ../clients/cli/connections.c:8004
+#: ../clients/cli/connections.c:8011
 #, c-format
 msgid "Error: Unknown connection '%s'."
 msgstr "ত্ৰুটি: অজ্ঞাত সংযোগ '%s'।"
 
-#: ../clients/cli/connections.c:7831
+#: ../clients/cli/connections.c:7829
 #, c-format
 msgid "Warning: editing existing connection '%s'; 'type' argument is ignored\n"
 msgstr ""
 "সতৰ্কবাৰ্তা: অস্তিত্ববান সংযোগ '%s' সম্পাদন কৰা হৈছে; 'type' তৰ্ক উপেক্ষা কৰা "
 "হৈছে\n"
 
-#: ../clients/cli/connections.c:7834
+#: ../clients/cli/connections.c:7832
 #, c-format
 msgid ""
 "Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"
@@ -2767,128 +2767,128 @@ msgstr ""
 "কৰা "
 "হৈছে\n"
 
-#: ../clients/cli/connections.c:7848
+#: ../clients/cli/connections.c:7846
 #, c-format
 msgid "Valid connection types: %s\n"
 msgstr "বৈধ সংযোগ ধৰণসমূহ: %s\n"
 
-#: ../clients/cli/connections.c:7850
+#: ../clients/cli/connections.c:7848
 #, c-format
 msgid "Error: invalid connection type; %s\n"
 msgstr "ত্ৰুটি: অবৈধ সংযোগ ধৰণ; %s\n"
 
-#: ../clients/cli/connections.c:7889
+#: ../clients/cli/connections.c:7887
 #, c-format
 msgid "===| nmcli interactive connection editor |==="
 msgstr "===| nmcli interactive connection editor |==="
 
-#: ../clients/cli/connections.c:7892
+#: ../clients/cli/connections.c:7890
 #, c-format
 msgid "Editing existing '%s' connection: '%s'"
 msgstr "অস্তিত্ববান '%s' সংযোগ সম্পাদন কৰা হৈছে: '%s'"
 
-#: ../clients/cli/connections.c:7894
+#: ../clients/cli/connections.c:7892
 #, c-format
 msgid "Adding a new '%s' connection"
 msgstr "এটা নতুন '%s' সংযোগ যোগ কৰা হৈছে"
 
-#: ../clients/cli/connections.c:7896
+#: ../clients/cli/connections.c:7894
 #, c-format
 msgid "Type 'help' or '?' for available commands."
 msgstr "উপলব্ধ কমান্ডসমূহৰ বাবে 'help' অথবা '?' টাইপ কৰক।"
 
-#: ../clients/cli/connections.c:7898
+#: ../clients/cli/connections.c:7896
 #, c-format
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr "বিৱৰিত বৈশিষ্ট্যৰ বিৱৰণৰ বাবে 'describe [<setting>.<prop>]' টাইপ কৰক।"
 
-#: ../clients/cli/connections.c:7934
+#: ../clients/cli/connections.c:7932
 #, c-format
 msgid "Error: Failed to modify connection '%s': (%d) %s"
 msgstr "ত্ৰুটি: সংযোগ '%s' পৰিবৰ্তন কৰিবলৈ ব্যৰ্থ: (%d) %s"
 
-#: ../clients/cli/connections.c:7940
+#: ../clients/cli/connections.c:7938
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
 msgstr "সংযোগ '%s' (%s) সফলভাৱে পৰিবৰ্তন কৰা হৈছে।\n"
 
-#: ../clients/cli/connections.c:7981
+#: ../clients/cli/connections.c:7979
 #, c-format
 msgid "Error: No arguments provided."
 msgstr "ত্ৰুটি: কোনো তৰ্ক প্ৰদান কৰা হোৱা নাই।"
 
-#: ../clients/cli/connections.c:8000
+#: ../clients/cli/connections.c:7998
 #, c-format
 msgid "Error: connection ID is missing."
 msgstr "ত্ৰুটি: সংযোগ ID সন্ধানহীন।"
 
-#: ../clients/cli/connections.c:8022 ../clients/cli/connections.c:8035
+#: ../clients/cli/connections.c:8020 ../clients/cli/connections.c:8033
 #, c-format
 msgid "Error: <setting>.<property> argument is missing."
 msgstr "ত্ৰুটি: <setting>.<property> তৰ্ক সন্ধানহীন।"
 
-#: ../clients/cli/connections.c:8040
+#: ../clients/cli/connections.c:8038
 #, c-format
 msgid "Error: value for '%s' is missing."
 msgstr "ত্ৰুটি: '%s' ৰ বাবে মান নাই।"
 
-#: ../clients/cli/connections.c:8058
+#: ../clients/cli/connections.c:8056
 #, c-format
 msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "ত্ৰুটি: অবৈধ <setting>.<property> '%s'।"
 
-#: ../clients/cli/connections.c:8066
+#: ../clients/cli/connections.c:8064
 #, c-format
 msgid "Error: invalid or not allowed setting '%s': %s."
 msgstr "ত্ৰুটি: অবৈধ অথবা অনুমতি নথকা সংহতি '%s': %s।"
 
-#: ../clients/cli/connections.c:8087
+#: ../clients/cli/connections.c:8085
 #, c-format
 msgid "Error: invalid property '%s': %s."
 msgstr "ত্ৰুটি: অবৈধ বৈশিষ্ট্য '%s': %s।"
 
-#: ../clients/cli/connections.c:8098
+#: ../clients/cli/connections.c:8096
 #, c-format
 msgid "Error: failed to modify %s.%s: %s."
 msgstr "ত্ৰুটি: %s.%s পৰিবৰ্তন কৰিবলৈ ব্যৰ্থ: %s।"
 
-#: ../clients/cli/connections.c:8116
+#: ../clients/cli/connections.c:8114
 #, c-format
 msgid "Error: failed to remove a value from %s.%s: %s."
 msgstr "ত্ৰুটি: %s.%s ৰ পৰা এটা মান আতৰাবলৈ ব্যৰ্থ: %s।"
 
-#: ../clients/cli/connections.c:8152
+#: ../clients/cli/connections.c:8150
 #, c-format
 msgid "Error: Connection deletion failed: %s"
 msgstr "ত্ৰুটি: সংযোগ মচি পেলোৱা ব্যৰ্থ হল: %s"
 
-#: ../clients/cli/connections.c:8223
+#: ../clients/cli/connections.c:8221
 #, c-format
 msgid "Error: unknown connection: %s\n"
 msgstr "ত্ৰুটি: অজ্ঞাত সংযোগ: %s\n"
 
 #. truncate trailing ", "
-#: ../clients/cli/connections.c:8259
+#: ../clients/cli/connections.c:8257
 #, c-format
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "ত্ৰুটি: অজ্ঞাত সংযোগ(সমূহ) মচি পেলাব নোৱাৰি: %s।"
 
-#: ../clients/cli/connections.c:8330
+#: ../clients/cli/connections.c:8328
 #, c-format
 msgid "Could not load file '%s'\n"
 msgstr "ফাইল '%s' লড কৰিব পৰা নগল\n"
 
-#: ../clients/cli/connections.c:8443 ../clients/cli/network-manager.c:613
+#: ../clients/cli/connections.c:8441 ../clients/cli/network-manager.c:613
 #, c-format
 msgid "Error: Could not get system settings: %s."
 msgstr "ত্ৰুটি: চিস্টেম সংহতিসমূহ প্ৰাপ্ত কৰিব পৰা নগল: %s।"
 
-#: ../clients/cli/connections.c:8453
+#: ../clients/cli/connections.c:8451
 #, c-format
 msgid "Error: Can't obtain connections: settings service is not running."
 msgstr "ত্ৰুটি: সংযোগ প্ৰাপ্ত কৰিব নোৱাৰি: সংহতিসমূহ সেৱা চলি থকা নাই।"
 
-#: ../clients/cli/connections.c:8507
+#: ../clients/cli/connections.c:8505
 #, c-format
 msgid "Error: '%s' is not valid 'connection' command."
 msgstr "ত্ৰুটি: '%s' এটা বৈধ 'connection' কমান্ড নহয়।"
@@ -5239,7 +5239,7 @@ msgid "Invalid option.  Please use --help to see a list of valid options."
 msgstr ""
 "অবৈধ বিকল্প।  বৈধ বিকল্পসমূহৰ এটা তালিকা চাবলে অনুগ্ৰহ কৰি --help ব্যৱহাৰ কৰক।"
 
-#: ../clients/tui/newt/nmt-newt-utils.c:180 ../clients/tui/nmt-editor.c:245
+#: ../clients/tui/newt/nmt-newt-utils.c:180 ../clients/tui/nmt-editor.c:240
 #: ../clients/tui/nmt-password-dialog.c:175
 #: ../clients/tui/nmt-route-editor.c:135 ../clients/tui/nmtui-hostname.c:71
 #: ../clients/tui/nmtui.c:118
@@ -5296,16 +5296,16 @@ msgstr "ম'বাইল ব্ৰ'ডবেণ্ড"
 msgid "Mobile broadband connection %d"
 msgstr "ম'বাইল ব্ৰ'ডবেণ্ড সংযোগ %d"
 
-#: ../clients/tui/nm-editor-utils.c:181
+#: ../clients/tui/nm-editor-utils.c:182 ../clients/tui/nmt-page-dsl.c:39
 msgid "DSL"
 msgstr "DSL"
 
-#: ../clients/tui/nm-editor-utils.c:185
+#: ../clients/tui/nm-editor-utils.c:186
 #, c-format
 msgid "DSL connection %d"
 msgstr "DSL সংযোগ %d"
 
-#: ../clients/tui/nm-editor-utils.c:191 ../libnm-core/nm-connection.c:1479
+#: ../clients/tui/nm-editor-utils.c:191 ../libnm-core/nm-connection.c:1503
 #: ../libnm-glib/nm-device.c:1802 ../libnm-util/nm-connection.c:1606
 #: ../src/settings/plugins/ifcfg-rh/reader.c:3931
 msgid "Bond"
@@ -5316,7 +5316,7 @@ msgstr "বান্ধনী"
 msgid "Bond connection %d"
 msgstr "বান্ধনী সংযোগ %d"
 
-#: ../clients/tui/nm-editor-utils.c:200 ../libnm-core/nm-connection.c:1483
+#: ../clients/tui/nm-editor-utils.c:200 ../libnm-core/nm-connection.c:1507
 #: ../libnm-glib/nm-device.c:1806 ../libnm-util/nm-connection.c:1610
 #: ../src/settings/plugins/ifcfg-rh/reader.c:4219
 msgid "Bridge"
@@ -5327,7 +5327,7 @@ msgstr "ব্ৰিজ"
 msgid "Bridge connection %d"
 msgstr "ব্ৰিজ সংযোগ %d"
 
-#: ../clients/tui/nm-editor-utils.c:209 ../libnm-core/nm-connection.c:1481
+#: ../clients/tui/nm-editor-utils.c:209 ../libnm-core/nm-connection.c:1505
 #: ../libnm-glib/nm-device.c:1804 ../libnm-util/nm-connection.c:1608
 #: ../src/settings/plugins/ifcfg-rh/reader.c:4035
 msgid "Team"
@@ -5381,22 +5381,17 @@ msgstr "অবৈধ সংযোগ '%s' ৰ বাবে সম্পাদক
 msgid "Edit Connection"
 msgstr "সংযোগ সম্পাদন কৰক"
 
-#: ../clients/tui/nmt-editor.c:134
-#, c-format
-msgid "Error saving connection: %s"
-msgstr "সংযোগ সংৰক্ষণ কৰোতে ত্ৰুটি: %s"
-
-#: ../clients/tui/nmt-editor.c:144
+#: ../clients/tui/nmt-editor.c:139
 #, c-format
 msgid "Unable to save connection: %s"
 msgstr "সংযোগ সংৰক্ষণ কৰিবলৈ অক্ষম: %s"
 
-#: ../clients/tui/nmt-editor.c:158
+#: ../clients/tui/nmt-editor.c:153
 #, c-format
 msgid "Unable to add new connection: %s"
 msgstr "নতুন সংযোগ যোগ কৰিবলৈ অক্ষম: %s"
 
-#: ../clients/tui/nmt-editor.c:242 ../clients/tui/nmt-password-dialog.c:172
+#: ../clients/tui/nmt-editor.c:237 ../clients/tui/nmt-password-dialog.c:172
 #: ../clients/tui/nmt-route-editor.c:128 ../clients/tui/nmtui-edit.c:192
 #: ../clients/tui/nmtui-edit.c:470 ../clients/tui/nmtui-hostname.c:69
 msgid "Cancel"
@@ -5531,6 +5526,28 @@ msgstr "হেল্লো সময়"
 msgid "Max age"
 msgstr "সৰ্বাধিক আয়ু"
 
+#. TTLS and PEAP are actually much more complicated, but this complication
+#. * is not visible here since we only care about phase2 authentication
+#. * (and don't even care of which one)
+#.
+#: ../clients/tui/nmt-page-dsl.c:67 ../clients/tui/nmt-page-wifi.c:328
+#: ../clients/tui/nmt-secret-agent.c:206 ../clients/tui/nmt-secret-agent.c:301
+msgid "Username"
+msgstr "ব্যৱহাৰকাৰীনাম"
+
+#: ../clients/tui/nmt-page-dsl.c:76 ../clients/tui/nmt-page-wifi.c:273
+#: ../clients/tui/nmt-page-wifi.c:304 ../clients/tui/nmt-page-wifi.c:334
+#: ../clients/tui/nmt-secret-agent.c:211 ../clients/tui/nmt-secret-agent.c:248
+#: ../clients/tui/nmt-secret-agent.c:278 ../clients/tui/nmt-secret-agent.c:311
+#: ../clients/tui/nmt-secret-agent.c:380 ../clients/tui/nmt-secret-agent.c:393
+#: ../clients/tui/nmt-secret-agent.c:409
+msgid "Password"
+msgstr "পাছৱৰ্ড"
+
+#: ../clients/tui/nmt-page-dsl.c:79 ../clients/tui/nmt-secret-agent.c:306
+msgid "Service"
+msgstr "সেৱা"
+
 #: ../clients/tui/nmt-page-ethernet.c:41
 msgid "ETHERNET"
 msgstr "ইথাৰনেট"
@@ -5635,29 +5652,89 @@ msgstr "IPv6 সংৰূপ"
 msgid "Require IPv6 addressing for this connection"
 msgstr "এই সংযোগ সম্পূৰ্ণ হবলে IPv6 ঠিকনাৰ প্ৰয়োজন"
 
-#: ../clients/tui/nmt-page-main.c:134
+#: ../clients/tui/nmt-page-main.c:139
 msgid "Hide"
 msgstr "লুকুৱাওক"
 
-#: ../clients/tui/nmt-page-main.c:134
+#: ../clients/tui/nmt-page-main.c:139
 msgid "Show"
 msgstr "দেখুৱাওক"
 
-#: ../clients/tui/nmt-page-main.c:181
+#: ../clients/tui/nmt-page-main.c:187
 msgid "Profile name"
 msgstr "আলেখ্যৰ নাম"
 
-#: ../clients/tui/nmt-page-main.c:188
+#: ../clients/tui/nmt-page-main.c:194
 msgid "Device"
 msgstr "ডিভাইচ"
 
-#: ../clients/tui/nmt-page-main.c:252
+#: ../clients/tui/nmt-page-main.c:243
 msgid "Automatically connect"
 msgstr "স্বচালিতভাৱে সংযোগ কৰক"
 
-#: ../clients/tui/nmt-page-main.c:258
+#: ../clients/tui/nmt-page-main.c:249
 msgid "Available to all users"
 msgstr "সকলো ব্যৱহাৰকাৰীৰ বাবে উপলব্ধ"
+
+#: ../clients/tui/nmt-page-ppp.c:49
+#| msgid "IPv4 CONFIGURATION"
+msgid "PPP CONFIGURATION"
+msgstr "PPP সংৰূপ"
+
+#: ../clients/tui/nmt-page-ppp.c:142
+#| msgid "Authentication"
+msgid "Allowed authentication methods:"
+msgstr "অনুমোদিত প্ৰমাণীকৰণ পদ্ধতিসমূহ:"
+
+#: ../clients/tui/nmt-page-ppp.c:149
+#| msgid "LEAP"
+msgid "EAP"
+msgstr "EAP"
+
+#: ../clients/tui/nmt-page-ppp.c:157
+#| msgid "AP"
+msgid "PAP"
+msgstr "PAP"
+
+#: ../clients/tui/nmt-page-ppp.c:165
+msgid "CHAP"
+msgstr "CHAP"
+
+#: ../clients/tui/nmt-page-ppp.c:173
+msgid "MSCHAPv2"
+msgstr "MSCHAPv2"
+
+#: ../clients/tui/nmt-page-ppp.c:181
+msgid "MSCHAP"
+msgstr "MSCHAP"
+
+#: ../clients/tui/nmt-page-ppp.c:197
+msgid "Use point-to-point encryption (MPPE)"
+msgstr "পইণ্ট-টু-পইণ্ট ইনক্ৰিপষণ (MPPE) ব্যৱহাৰ কৰক"
+
+#: ../clients/tui/nmt-page-ppp.c:209
+msgid "Require 128-bit encryption"
+msgstr "128-bit ইনক্ৰিপষণৰ প্ৰয়োজন"
+
+#: ../clients/tui/nmt-page-ppp.c:219
+msgid "Use stateful MPPE"
+msgstr "অৱস্থাপন্ন MPPE ব্যৱহাৰ কৰক"
+
+#: ../clients/tui/nmt-page-ppp.c:231
+msgid "Allow BSD data compression"
+msgstr "BSD তথ্য সংকোচনৰ অনুমতি দিয়ক"
+
+#: ../clients/tui/nmt-page-ppp.c:239
+msgid "Allow Deflate data compression"
+msgstr "Deflate তথ্য সংকোচনৰ অনুমতি দিয়ক"
+
+#: ../clients/tui/nmt-page-ppp.c:247
+msgid "Use TCP header compression"
+msgstr "TCP হেডাৰ সংকোচন ব্যৱহাৰ কৰক"
+
+#: ../clients/tui/nmt-page-ppp.c:257
+msgid "Send PPP echo packets"
+msgstr "PPP ইকো পেকেটসমূহ পঠাওক"
 
 #: ../clients/tui/nmt-page-team-port.c:45
 msgid "TEAM PORT"
@@ -5776,14 +5853,6 @@ msgstr "চেনেল"
 msgid "Security"
 msgstr "সুৰক্ষা"
 
-#: ../clients/tui/nmt-page-wifi.c:273 ../clients/tui/nmt-page-wifi.c:304
-#: ../clients/tui/nmt-page-wifi.c:334 ../clients/tui/nmt-secret-agent.c:211
-#: ../clients/tui/nmt-secret-agent.c:248 ../clients/tui/nmt-secret-agent.c:278
-#: ../clients/tui/nmt-secret-agent.c:311 ../clients/tui/nmt-secret-agent.c:380
-#: ../clients/tui/nmt-secret-agent.c:393 ../clients/tui/nmt-secret-agent.c:409
-msgid "Password"
-msgstr "পাছৱৰ্ড"
-
 #. "wpa-enterprise"
 #. FIXME
 #: ../clients/tui/nmt-page-wifi.c:278
@@ -5807,15 +5876,6 @@ msgstr "প্ৰমাণীকৰণ"
 #: ../clients/tui/nmt-page-wifi.c:321
 msgid "(No support for dynamic-wep yet...)"
 msgstr "(dynamic-wep ৰ বাবে এতিয়াও কোনো সমৰ্থন নাই...)"
-
-#. TTLS and PEAP are actually much more complicated, but this complication
-#. * is not visible here since we only care about phase2 authentication
-#. * (and don't even care of which one)
-#.
-#: ../clients/tui/nmt-page-wifi.c:328 ../clients/tui/nmt-secret-agent.c:206
-#: ../clients/tui/nmt-secret-agent.c:301
-msgid "Username"
-msgstr "ব্যৱহাৰকাৰীনাম"
 
 #: ../clients/tui/nmt-password-fields.c:130
 msgid "Ask for this password every time"
@@ -5852,10 +5912,6 @@ msgstr "পৰিচয়"
 #: ../clients/tui/nmt-secret-agent.c:225
 msgid "Private key password"
 msgstr "ব্যক্তিগত কি' পাছৱৰ্ড"
-
-#: ../clients/tui/nmt-secret-agent.c:306
-msgid "Service"
-msgstr "সেৱা"
 
 #: ../clients/tui/nmt-secret-agent.c:340
 msgid "Authentication required by wireless network"
@@ -5916,38 +5972,38 @@ msgstr "যোগ কৰক..."
 msgid "Remove"
 msgstr "আতৰাওক"
 
-#: ../clients/tui/nmtui-connect.c:93
+#: ../clients/tui/nmtui-connect.c:90
 msgid "Activation failed"
 msgstr "সক্ৰিয়কৰণ ব্যৰ্থ হল"
 
-#: ../clients/tui/nmtui-connect.c:141
+#: ../clients/tui/nmtui-connect.c:138
 msgid "Connecting..."
 msgstr "সংযোগ কৰা হৈছে..."
 
-#: ../clients/tui/nmtui-connect.c:170 ../clients/tui/nmtui-connect.c:193
+#: ../clients/tui/nmtui-connect.c:167 ../clients/tui/nmtui-connect.c:190
 #, c-format
 msgid "Could not activate connection: %s"
 msgstr "সংযোগ সক্ৰিয় কৰিব পৰা নগল: %s"
 
-#: ../clients/tui/nmtui-connect.c:253 ../clients/tui/nmtui-connect.c:302
+#: ../clients/tui/nmtui-connect.c:250 ../clients/tui/nmtui-connect.c:299
 msgid "Activate"
 msgstr "সক্ৰিয় কৰক"
 
-#: ../clients/tui/nmtui-connect.c:255
+#: ../clients/tui/nmtui-connect.c:252
 msgid "Deactivate"
 msgstr "নিষ্ক্ৰিয় কৰক"
 
-#: ../clients/tui/nmtui-connect.c:307 ../clients/tui/nmtui-edit.c:95
+#: ../clients/tui/nmtui-connect.c:304 ../clients/tui/nmtui-edit.c:95
 #: ../clients/tui/nmtui.c:112
 msgid "Quit"
 msgstr "প্ৰস্থান কৰক"
 
-#: ../clients/tui/nmtui-connect.c:330
+#: ../clients/tui/nmtui-connect.c:327
 #, c-format
 msgid "No such connection '%s'"
 msgstr "এই ধৰণৰ কোনো সংযোগ '%s' নাই"
 
-#: ../clients/tui/nmtui-connect.c:332
+#: ../clients/tui/nmtui-connect.c:329
 msgid "Connection is already active"
 msgstr "সংযোগ ইতিমধ্যে সক্ৰিয়"
 
@@ -6237,7 +6293,7 @@ msgstr "PKCS#12 ফাইল ডি'কড কৰিব পৰা নগল: %s"
 #: ../libnm-core/crypto_gnutls.c:431 ../libnm-util/crypto_gnutls.c:428
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %s"
-msgstr "PKCS#12 ফাইল সতা সত্য নিৰূপণ কৰিব পৰা নগল: %s"
+msgstr "PKCS#12 ফাইল সত্যাপন কৰিব পৰা নগল: %s"
 
 #: ../libnm-core/crypto_gnutls.c:460 ../libnm-util/crypto_gnutls.c:456
 #, c-format
@@ -6352,17 +6408,17 @@ msgstr "PKCS#12 ফাইল ডি'কড কৰিব পৰা নগল: %d"
 #: ../libnm-core/crypto_nss.c:517 ../libnm-util/crypto_nss.c:514
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %d"
-msgstr "PKCS#12 ফাইল সতা সত্য নিৰূপণ কৰিব পৰা নগল: %d"
+msgstr "PKCS#12 ফাইল সত্যাপন কৰিব পৰা নগল: %d"
 
 #: ../libnm-core/crypto_nss.c:562 ../libnm-util/crypto_nss.c:558
 msgid "Could not generate random data."
 msgstr "যাদৃচ্ছিক তথ্য সৃজন কৰিব পৰা নগল।"
 
-#: ../libnm-core/nm-connection.c:861
+#: ../libnm-core/nm-connection.c:885
 msgid "Unexpected failure to verify the connection"
 msgstr "সংযোগ সত্যাপন কৰিবলৈ অপ্ৰত্যাশিত ব্যৰ্থতা"
 
-#: ../libnm-core/nm-connection.c:892
+#: ../libnm-core/nm-connection.c:916
 msgid "Unexpected failure to normalize the connection"
 msgstr "সংযোগ স্বাভাৱিক কৰিবলৈ অপ্ৰত্যাশিত ব্যৰ্থতা"
 
@@ -6403,7 +6459,7 @@ msgstr "অবৈধ phase2 ব্যক্তিগত কি"
 #: ../libnm-core/nm-setting-pppoe.c:158 ../libnm-core/nm-setting-vpn.c:398
 #: ../libnm-core/nm-setting-wimax.c:134
 #: ../libnm-core/nm-setting-wireless-security.c:878
-#: ../libnm-core/nm-setting-wireless.c:712 ../libnm-core/nm-setting.c:1725
+#: ../libnm-core/nm-setting-wireless.c:712 ../libnm-core/nm-setting.c:1702
 #: ../libnm-util/nm-setting.c:1279 ../libnm-util/nm-setting.c:1298
 #: ../libnm-util/nm-setting.c:1316 ../libnm-util/nm-setting-8021x.c:2282
 #: ../libnm-util/nm-setting-8021x.c:2299 ../libnm-util/nm-setting-8021x.c:2340
@@ -6478,7 +6534,6 @@ msgstr "PKCS#12 ৰ বাবে '%s' বৈশিষ্ট্য মিল খ�
 
 #: ../libnm-core/nm-setting-8021x.c:2616 ../libnm-core/nm-setting-8021x.c:2650
 #: ../libnm-core/nm-setting-bluetooth.c:146
-#: ../libnm-core/nm-setting-connection.c:986
 #: ../libnm-core/nm-setting-infiniband.c:209
 #: ../libnm-core/nm-setting-infiniband.c:224
 #: ../libnm-core/nm-setting-ip4-config.c:955
@@ -6821,7 +6876,6 @@ msgstr "%d। পথৰ অবৈধ উপসৰ্গ"
 #: ../libnm-core/nm-setting-ip4-config.c:1063
 #: ../libnm-core/nm-setting-ip6-config.c:894
 #, c-format
-#| msgid "%d. IPv4 address is invalid"
 msgid "%d. DNS server address is invalid"
 msgstr "%d। DNS চাৰ্ভাৰৰ ঠিকনা অবৈধ"
 
@@ -6938,15 +6992,10 @@ msgstr "'%s' এটা বৈধ বেণ্ড নহয়"
 msgid "requires setting '%s' property"
 msgstr "'%s' বৈশিষ্ট্য সংহতি কৰাৰ প্ৰয়োজন"
 
-#: ../libnm-core/nm-setting.c:1704
+#: ../libnm-core/nm-setting.c:1681
 #, c-format
 msgid "Missing '%s' setting"
 msgstr "'%s' সংহতিৰ প্ৰয়োজন"
-
-#: ../libnm-core/nm-setting.c:1787
-#| msgid "'%s' is not a valid value for the property"
-msgid "invalid value in compatibility property"
-msgstr "সংগতি বৈশিষ্ট্যত অবৈধ মান"
 
 #: ../libnm-glib/nm-device.c:1792
 msgid "Bluetooth"
@@ -7260,12 +7309,10 @@ msgid "no usable DHCP client could be found."
 msgstr "কোনো ব্যৱহাৰযোগ্য DHCP ক্লাএণ্ট পোৱা নগল।"
 
 #: ../src/dhcp-manager/nm-dhcp-manager.c:311
-#| msgid "'dhclient' could be found."
 msgid "'dhclient' could not be found or was disabled."
 msgstr "'dhclient' পোৱা নগল অথবা অসামৰ্থবান কৰা আছে।"
 
 #: ../src/dhcp-manager/nm-dhcp-manager.c:321
-#| msgid "'dhcpcd' could be found."
 msgid "'dhcpcd' could not be found or was disabled."
 msgstr "'dhcpcd' পোৱা নগল অথবা অসামৰ্থবান কৰা আছে।"
 
@@ -7373,11 +7420,11 @@ msgstr "plugin1,plugin2"
 #. These three are hidden for now, and should eventually just go away.
 #: ../src/nm-config.c:309
 msgid "An http(s) address for checking internet connectivity"
-msgstr "ইণ্টাৰনেট সংযোগ নীৰিক্ষণ কৰিবলে এটা http(s) ঠিকনা"
+msgstr "ইণ্টাৰনেট সংযোগ নিৰীক্ষণ কৰিবলে এটা http(s) ঠিকনা"
 
 #: ../src/nm-config.c:310
 msgid "The interval between connectivity checks (in seconds)"
-msgstr "সংযোগ নীৰিক্ষণৰ মাজৰ অন্তৰাল (ছেকেণ্ডত)"
+msgstr "সংযোগ নিৰীক্ষণৰ মাজৰ অন্তৰাল (ছেকেণ্ডত)"
 
 #: ../src/nm-config.c:311
 msgid "The expected start of the response"
@@ -7423,6 +7470,13 @@ msgstr "ibft: iscsiadm ৰেকৰ্ড পঢ়িবলে ব্যৰ্থ:
 #: ../src/settings/plugins/ifcfg-rh/reader.c:112
 msgid "System"
 msgstr "চিস্টেম"
+
+#~ msgid "Error saving connection: %s"
+#~ msgstr "সংযোগ সংৰক্ষণ কৰোতে ত্ৰুটি: %s"
+
+#~| msgid "'%s' is not a valid value for the property"
+#~ msgid "invalid value in compatibility property"
+#~ msgstr "সংগতি বৈশিষ্ট্যত অবৈধ মান"
 
 #~ msgid "invalid IPv4 route '%s'"
 #~ msgstr "অবৈধ IPv4 পথ '%s'"
