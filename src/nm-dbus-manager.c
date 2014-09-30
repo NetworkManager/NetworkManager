@@ -145,6 +145,7 @@ private_server_new_connection (DBusServer *server,
 	PrivateServer *s = user_data;
 	static guint32 counter = 0;
 	char *sender;
+	int fd;
 
 	if (!dbus_connection_add_filter (conn, private_server_message_filter, s, NULL)) {
 		dbus_connection_close (conn);
@@ -157,7 +158,8 @@ private_server_new_connection (DBusServer *server,
 	sender = g_strdup_printf ("x:y:%d", counter++);
 	g_hash_table_insert (s->connections, dbus_connection_ref (conn), sender);
 
-	nm_log_dbg (LOGD_CORE, "(%s) accepted connection %p on private socket.", s->tag, conn);
+	nm_log_dbg (LOGD_CORE, "(%s) accepted connection %p on private socket (fd %"G_GINT64_FORMAT").",
+	            s->tag, conn, dbus_connection_get_unix_fd (conn, &fd) ? fd : G_MININT64);
 
 	/* Emit this for the manager */
 	g_signal_emit (s->manager,
