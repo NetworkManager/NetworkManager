@@ -171,6 +171,7 @@ nmt_page_main_constructed (GObject *object)
 	NMConnection *conn;
 	NMSettingConnection *s_con;
 	NmtNewtWidget *widget, *section, *separator;
+	const char *deventry_label;
 	NmtDeviceEntry *deventry;
 	GType hardware_type;
 	const char *slave_type;
@@ -191,7 +192,15 @@ nmt_page_main_constructed (GObject *object)
 	else
 		hardware_type = priv->type_data->device_type;
 
-	widget = nmt_device_entry_new (_("Device"), 40, hardware_type);
+	/* For connections involving multiple network devices, clarify which one
+	 * NMSettingConnection:interface-name refers to.
+	 */
+	if (nm_connection_is_type (conn, NM_SETTING_PPPOE_SETTING_NAME))
+		deventry_label = _("Ethernet device");
+	else
+		deventry_label = _("Device");
+
+	widget = nmt_device_entry_new (deventry_label, 40, hardware_type);
 	nmt_page_grid_append (grid, NULL, widget, NULL);
 	deventry = NMT_DEVICE_ENTRY (widget);
 	g_object_bind_property (s_con, NM_SETTING_CONNECTION_INTERFACE_NAME,
