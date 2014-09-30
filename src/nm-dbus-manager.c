@@ -449,8 +449,10 @@ private_connection_new (NMDBusManager *self, DBusGConnection *connection)
 	g_hash_table_iter_init (&iter, priv->exported);
 	while (g_hash_table_iter_next (&iter, (gpointer) &object, (gpointer) &path)) {
 		dbus_g_connection_register_g_object (connection, path, object);
+		/*
 		nm_log_dbg (LOGD_CORE, "(%s) registered %p (%s) at '%s' on private socket.",
 		            PRIV_SOCK_TAG, object, G_OBJECT_TYPE_NAME (object), path);
+		*/
 	}
 }
 
