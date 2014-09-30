@@ -16,7 +16,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 /* Generated configuration file */
@@ -39,7 +39,7 @@
 #include "common.h"
 #include "connections.h"
 #include "devices.h"
-#include "network-manager.h"
+#include "general.h"
 
 #if defined(NM_DIST_VERSION)
 # define NMCLI_VERSION NM_DIST_VERSION

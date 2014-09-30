@@ -14,11 +14,11 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2012 Red Hat, Inc.
+ * Copyright 2010 - 2014 Red Hat, Inc.
  */
 
-#ifndef NMC_NETWORK_MANAGER_H
-#define NMC_NETWORK_MANAGER_H
+#ifndef NMC_GENERAL_H
+#define NMC_GENERAL_H
 
 #include "nmcli.h"
 
@@ -26,4 +26,4 @@ NMCResultCode do_general    (NmCli *nmc, int argc, char **argv);
 NMCResultCode do_networking (NmCli *nmc, int argc, char **argv);
 NMCResultCode do_radio      (NmCli *nmc, int argc, char **argv);
 
-#endif /* NMC_NETWORK_MANAGER_H */
+#endif /* NMC_GENERAL_H */

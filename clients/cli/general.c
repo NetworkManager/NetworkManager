@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -26,7 +26,7 @@
 #include <glib/gi18n.h>
 
 #include "utils.h"
-#include "network-manager.h"
+#include "general.h"
 
 
 /* Available fields for 'general status' */
