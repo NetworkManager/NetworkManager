@@ -331,7 +331,8 @@ AS_IF([! (echo "$with_session_tracking" | grep -q -E "^(systemd|consolekit|no)$"
 AM_CONDITIONAL(SESSION_TRACKING_CK, test "$with_session_tracking" = "consolekit")
 AM_CONDITIONAL(SESSION_TRACKING_SYSTEMD, test "$with_session_tracking" = "systemd")
 if test "$with_session_tracking" = "systemd"; then
-	PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login])
+	PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd],,
+	                  [PKG_CHECK_MODULES(SYSTEMD_LOGIN, [libsystemd-login])])
 	AC_SUBST(SYSTEMD_LOGIN_CFLAGS)
 	AC_SUBST(SYSTEMD_LOGIN_LIBS)
 fi
@@ -342,7 +343,8 @@ AC_MSG_RESULT($with_session_tracking)
 
 AC_ARG_WITH(suspend-resume, AS_HELP_STRING([--with-suspend-resume=upower|systemd], [Build NetworkManager with specific suspend/resume support]))
 if test "z$with_suspend_resume" = "z"; then
-    PKG_CHECK_EXISTS([libsystemd-login >= 183], [have_systemd_inhibit=yes], [have_systemd_inhibit=no])
+    PKG_CHECK_EXISTS([libsystemd >= 209], [have_systemd_inhibit=yes],
+                     [PKG_CHECK_EXISTS([libsystemd-login >= 183], [have_systemd_inhibit=yes], [have_systemd_inhibit=no])])
     if test "z${have_systemd_inhibit}" = "zyes"; then
 	# Use systemd if it's new enough
 	with_suspend_resume="systemd"
@@ -355,7 +357,8 @@ fi
 case $with_suspend_resume in
     upower) ;;
     systemd)
-	PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [libsystemd-login >= 183])
+	PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [libsystemd >= 209],,
+	                  [PKG_CHECK_MODULES(SYSTEMD_INHIBIT, [libsystemd-login >= 183])])
         ;;
     *)
 	AC_MSG_ERROR(--with-suspend-resume must be one of [upower, systemd])
