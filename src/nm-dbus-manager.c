@@ -96,7 +96,7 @@ nm_dbus_manager_get (void)
 /**************************************************************/
 
 struct _PrivateServer {
-	char *tag;
+	const char *tag;
 	GQuark detail;
 	char *address;
 	DBusServer *server;
@@ -208,8 +208,8 @@ private_server_new (const char *path,
 	                                        (GDestroyNotify) private_server_dbus_connection_destroy,
 	                                        g_free);
 	s->manager = manager;
-	s->tag = g_strdup (tag);
-	s->detail = g_quark_from_string (s->tag);
+	s->detail = g_quark_from_string (tag);
+	s->tag = g_quark_to_string (s->detail);
 
 	return s;
 }
@@ -221,7 +221,6 @@ private_server_free (gpointer ptr)
 
 	unlink (s->address);
 	g_free (s->address);
-	g_free (s->tag);
 	g_hash_table_destroy (s->connections);
 	dbus_server_unref (s->server);
 	memset (s, 0, sizeof (*s));
