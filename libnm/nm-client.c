@@ -1346,6 +1346,11 @@ nm_client_set_logging (NMClient *client, const char *level, const char *domains,
 	if (!level && !domains)
 		return TRUE;
 
+	if (!level)
+		level = "";
+	if (!domains)
+		domains = "";
+
 	return nmdbus_manager_call_set_logging_sync (priv->manager_proxy,
 	                                             level, domains,
 	                                             NULL, error);
