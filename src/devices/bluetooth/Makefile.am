@@ -64,6 +64,16 @@ libnm_device_plugin_bluetooth_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GUDEV_LIBS)
 
+if WITH_BLUEZ5_DUN
+AM_CPPFLAGS += $(BLUEZ5_CFLAGS)
+
+libnm_device_plugin_bluetooth_la_SOURCES += \
+	nm-bluez5-dun.c \
+	nm-bluez5-dun.h
+
+libnm_device_plugin_bluetooth_la_LIBADD += $(BLUEZ5_LIBS)
+endif
+
 CLEANFILES = $(BUILT_SOURCES)
 EXTRA_DIST = $(SYMBOL_VIS_FILE)
 
