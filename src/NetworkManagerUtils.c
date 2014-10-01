@@ -181,6 +181,8 @@ nm_spawn_process (const char *args)
  *
  * Returns: the timestamp when the process started (by parsing /proc/$PID/stat).
  * If an error occurs (e.g. the process does not exist), 0 is returned.
+ *
+ * The returned start time counts since boot, in the unit HZ (with HZ usually being (1/100) seconds)
  **/
 guint64
 nm_utils_get_start_time_for_pid (pid_t pid)
@@ -255,6 +257,7 @@ typedef struct {
 } KillChildAsyncData;
 
 #define LOG_NAME_FMT "kill child process '%s' (%ld)"
+#define LOG_NAME_PROCESS_FMT "kill process '%s' (%ld)"
 #define LOG_NAME_ARGS log_name,(long)pid
 
 static KillChildAsyncData *
@@ -391,7 +394,7 @@ _kc_invoke_callback (pid_t pid, guint64 log_domain, const char *log_name, NMUtil
  * @pid: the process id of the process to kill
  * @sig: signal to send initially. Set to 0 to send not signal.
  * @log_domain: the logging domain used for logging (LOGD_NONE to suppress logging)
- * @log_name: (allow-none): for logging, the name of the processes to kill
+ * @log_name: for logging, the name of the processes to kill
  * @wait_before_kill_msec: Waittime in milliseconds before sending %SIGKILL signal. Set this value
  * to zero, not to send %SIGKILL. If @sig is already %SIGKILL, this parameter is ignored.
  * @callback: (allow-none): callback after the child terminated. This function will always
@@ -483,7 +486,7 @@ nm_utils_kill_child_async (pid_t pid, int sig, guint64 log_domain,
  * second %SIGKILL signal is not sent after @wait_before_kill_msec milliseconds.
  * @log_domain: log debug information for this domain. Errors and warnings are logged both
  * as %LOGD_CORE and @log_domain.
- * @log_name: (allow-none): name of the process to kill for logging.
+ * @log_name: name of the process to kill for logging.
  * @child_status: (out) (allow-none): return the exit status of the child, if no error occured.
  * @wait_before_kill_msec: Waittime in milliseconds before sending %SIGKILL signal. Set this value
  * to zero, not to send %SIGKILL. If @sig is already %SIGKILL, this parameter has not effect.
@@ -649,7 +652,143 @@ out:
 		*child_status = success ? status : -1;
 	return success;
 }
+
+/* nm_utils_kill_process_sync:
+ * @pid: process id to kill
+ * @start_time: the start time of the process to kill (as obtained by nm_utils_get_start_time_for_pid()).
+ *   This is an optional argument, to avoid (somewhat) killing the wrong process as @pid
+ *   might get recycled. You can pass 0, to not provide this parameter.
+ * @sig: signal to sent initially. If 0, no signal is sent. If %SIGKILL, the
+ *   second %SIGKILL signal is not sent after @wait_before_kill_msec milliseconds.
+ * @log_domain: log debug information for this domain. Errors and warnings are logged both
+ *   as %LOGD_CORE and @log_domain.
+ * @log_name: name of the process to kill for logging.
+ * @wait_before_kill_msec: Waittime in milliseconds before sending %SIGKILL signal. Set this value
+ *   to zero, not to send %SIGKILL. If @sig is already %SIGKILL, this parameter has no effect.
+ * @sleep_duration_msec: the synchronous function sleeps repeatedly waiting for the child to terminate.
+ *   Set to zero, to use the default (meaning 20 wakeups per seconds).
+ *
+ * Kill a non-child process synchronously and wait. This function will not return before the
+ * process with PID @pid is gone.
+ **/
+void
+nm_utils_kill_process_sync (pid_t pid, guint64 start_time, int sig, guint64 log_domain,
+                            const char *log_name, guint32 wait_before_kill_msec,
+                            guint32 sleep_duration_msec)
+{
+	int errsv;
+	guint64 start_time0;
+	gint64 wait_until, now, wait_start_us;
+	gulong sleep_time, sleep_duration_usec;
+	int loop_count = 0;
+	gboolean was_waiting = FALSE;
+	char buf_wait[KC_WAITED_TO_STRING];
+
+	g_return_if_fail (pid > 0);
+	g_return_if_fail (log_name != NULL);
+	g_return_if_fail (wait_before_kill_msec > 0);
+
+	start_time0 = nm_utils_get_start_time_for_pid (pid);
+	if (start_time0 == 0) {
+		nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": cannot kill process %ld because it seems already gone",
+		            LOG_NAME_ARGS, (long int) pid);
+		return;
+	}
+	if (start_time != 0 && start_time != start_time0) {
+		nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": don't kill process %ld because the start_time is unexpectedly %lu instead of %ld",
+		            LOG_NAME_ARGS, (long int) pid, (long unsigned) start_time0, (long unsigned) start_time);
+		return;
+	}
+
+	if (kill (pid, sig) != 0) {
+		errsv = errno;
+		/* ESRCH means, process does not exist or is already a zombie. */
+		if (errsv == ESRCH) {
+			nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": failed to send %s because process seems gone",
+			            LOG_NAME_ARGS, _kc_signal_to_string (sig));
+		} else {
+			nm_log_warn (LOGD_CORE | log_domain, LOG_NAME_PROCESS_FMT ": failed to send %s: %s (%d)",
+			             LOG_NAME_ARGS, _kc_signal_to_string (sig), strerror (errsv), errsv);
+		}
+		return;
+	}
+
+	/* wait for the process to terminated... */
+
+	wait_start_us = nm_utils_get_monotonic_timestamp_us ();
+
+	sleep_duration_usec = (sleep_duration_msec == 0) ? (G_USEC_PER_SEC / 20) : MIN (G_MAXULONG, ((gulong) sleep_duration_msec) * 1000UL);
+	wait_until = wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
+
+	while (TRUE) {
+		start_time = nm_utils_get_start_time_for_pid (pid);
+
+		if (start_time != start_time0) {
+			nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": process is gone after sending signal %s%s",
+			            LOG_NAME_ARGS, _kc_signal_to_string (sig),
+			            was_waiting ? _kc_waited_to_string (buf_wait, wait_start_us) : "");
+			return;
+		}
+
+		if (kill (pid, 0) != 0) {
+			errsv = errno;
+			/* ESRCH means, process does not exist or is already a zombie. */
+			if (errsv == ESRCH) {
+				nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": process is gone or a zombie after sending signal %s%s",
+				            LOG_NAME_ARGS, _kc_signal_to_string (sig),
+				            was_waiting ? _kc_waited_to_string (buf_wait, wait_start_us) : "");
+			} else {
+				nm_log_warn (LOGD_CORE | log_domain, LOG_NAME_PROCESS_FMT ": failed to kill(%ld, 0): %s (%d)%s",
+				             LOG_NAME_ARGS, (long int) pid, strerror (errsv), errsv,
+				             was_waiting ? _kc_waited_to_string (buf_wait, wait_start_us) : "");
+			}
+			return;
+		}
+
+		sleep_time = sleep_duration_usec;
+		if (wait_until != 0) {
+			now = nm_utils_get_monotonic_timestamp_us ();
+			if (sig != SIGKILL && now >= wait_until) {
+				/* Still not dead. SIGKILL now... */
+				nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": sending SIGKILL", LOG_NAME_ARGS);
+				if (kill (pid, SIGKILL) != 0) {
+					errsv = errno;
+					/* ESRCH means, process does not exist or is already a zombie. */
+					if (errsv != ESRCH) {
+						nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": process is gone or a zombie%s",
+						            LOG_NAME_ARGS, _kc_waited_to_string (buf_wait, wait_start_us));
+					} else {
+						nm_log_warn (LOGD_CORE | log_domain, LOG_NAME_PROCESS_FMT ": failed to send SIGKILL (after sending %s), %s (%d)%s",
+						             LOG_NAME_ARGS, _kc_signal_to_string (sig), strerror (errsv), errsv,
+						             _kc_waited_to_string (buf_wait, wait_start_us));
+					}
+					return;
+				}
+				sig = SIGKILL;
+				was_waiting = TRUE;
+				wait_until = 0;
+				loop_count = 0; /* reset the loop_count. Now we really expect the process to die quickly. */
+			} else {
+				if (!was_waiting) {
+					nm_log_dbg (log_domain, LOG_NAME_PROCESS_FMT ": waiting up to %ld milliseconds for process to disappear after sending %s...",
+					            LOG_NAME_ARGS, (long) wait_before_kill_msec, _kc_signal_to_string (sig));
+					was_waiting = TRUE;
+				}
+				sleep_time = MIN (wait_until - now, sleep_duration_usec);
+			}
+		}
+
+		if (loop_count < 20) {
+			/* At the beginning we expect the process to die fast.
+			 * Limit the sleep time, the limit doubles with every iteration. */
+			sleep_time = MIN (sleep_time, (((guint64) 1) << loop_count) * G_USEC_PER_SEC / 2000);
+			loop_count++;
+		}
+		g_usleep (sleep_time);
+	}
+}
 #undef LOG_NAME_FMT
+#undef LOG_NAME_PROCESS_FMT
 #undef LOG_NAME_ARGS
 
 /**
