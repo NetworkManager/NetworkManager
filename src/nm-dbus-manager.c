@@ -110,11 +110,12 @@ private_server_message_filter (DBusConnection *conn,
                                void *data)
 {
 	PrivateServer *s = data;
+	int fd;
 
 	/* Clean up after the connection */
 	if (dbus_message_is_signal (message, DBUS_INTERFACE_LOCAL, "Disconnected")) {
-		nm_log_dbg (LOGD_CORE, "(%s) closed connection %p on private socket.",
-		            s->tag, conn);
+		nm_log_dbg (LOGD_CORE, "(%s) closed connection %p on private socket (fd %d).",
+		            s->tag, conn, dbus_connection_get_unix_fd (conn, &fd) ? fd : -1);
 
 		/* Emit this for the manager */
 		g_signal_emit (s->manager,
@@ -158,8 +159,8 @@ private_server_new_connection (DBusServer *server,
 	sender = g_strdup_printf ("x:y:%d", counter++);
 	g_hash_table_insert (s->connections, dbus_connection_ref (conn), sender);
 
-	nm_log_dbg (LOGD_CORE, "(%s) accepted connection %p on private socket (fd %"G_GINT64_FORMAT").",
-	            s->tag, conn, dbus_connection_get_unix_fd (conn, &fd) ? fd : G_MININT64);
+	nm_log_dbg (LOGD_CORE, "(%s) accepted connection %p on private socket (fd %d).",
+	            s->tag, conn, dbus_connection_get_unix_fd (conn, &fd) ? fd : -1);
 
 	/* Emit this for the manager */
 	g_signal_emit (s->manager,
