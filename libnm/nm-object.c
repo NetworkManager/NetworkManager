@@ -498,8 +498,11 @@ _nm_object_class_add_interface (NMObjectClass *object_class,
 	NMObjectClassPrivate *cpriv;
 
 	g_return_if_fail (NM_IS_OBJECT_CLASS (object_class));
+	g_return_if_fail (interface);
 
 	cpriv = NM_OBJECT_CLASS_GET_PRIVATE (object_class);
+
+	g_return_if_fail (g_slist_find_custom (cpriv->interfaces, interface, (GCompareFunc) g_strcmp0) == NULL);
 
 	cpriv->interfaces = g_slist_prepend (cpriv->interfaces, g_strdup (interface));
 }
