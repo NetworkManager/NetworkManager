@@ -92,6 +92,7 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_PATH,
+	PROP_DBUS_CONNECTION,
 	PROP_NM_RUNNING,
 
 	LAST_PROP
@@ -174,7 +175,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 		return FALSE;
 	}
 
-	priv->connection = _nm_dbus_new_connection (cancellable, error);
+	if (!priv->connection)
+		priv->connection = _nm_dbus_new_connection (cancellable, error);
 	if (!priv->connection)
 		return FALSE;
 
@@ -379,6 +381,10 @@ set_property (GObject *object, guint prop_id,
 		/* Construct only */
 		priv->path = g_value_dup_string (value);
 		break;
+	case PROP_DBUS_CONNECTION:
+		/* Construct only */
+		priv->connection = g_value_dup_object (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -394,6 +400,9 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_PATH:
 		g_value_set_string (value, priv->path);
+		break;
+	case PROP_DBUS_CONNECTION:
+		g_value_set_object (value, priv->connection);
 		break;
 	case PROP_NM_RUNNING:
 		g_value_set_boolean (value, priv->nm_running);
@@ -433,6 +442,19 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_CONSTRUCT_ONLY |
 		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMObject:dbus-connection: (skip)
+	 *
+	 * The #GDBusConnection of the object.
+	 **/
+	g_object_class_install_property
+	    (object_class, PROP_DBUS_CONNECTION,
+	     g_param_spec_object (NM_OBJECT_DBUS_CONNECTION, "", "",
+	                          G_TYPE_DBUS_CONNECTION,
+	                          G_PARAM_READWRITE |
+	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMObject:manager-running: (skip)
@@ -670,6 +692,7 @@ _nm_object_create (GType type, GDBusConnection *connection, const char *path)
 
 	object = g_object_new (type,
 	                       NM_OBJECT_PATH, path,
+	                       NM_OBJECT_DBUS_CONNECTION, connection,
 	                       NULL);
 	/* Cache the object before initializing it (and in particular, loading its
 	 * property values); this is necessary to make circular references work (eg,
@@ -694,6 +717,7 @@ typedef struct {
 	NMObjectCreateCallbackFunc callback;
 	gpointer user_data;
 	NMObjectTypeFuncData *type_data;
+	GDBusConnection *connection;
 } NMObjectTypeAsyncData;
 
 static void
@@ -702,6 +726,7 @@ create_async_complete (GObject *object, NMObjectTypeAsyncData *async_data)
 	async_data->callback (object, async_data->path, async_data->user_data);
 
 	g_free (async_data->path);
+	g_object_unref (async_data->connection);
 	g_slice_free (NMObjectTypeAsyncData, async_data);
 }
 
@@ -749,6 +774,7 @@ create_async_got_type (NMObjectTypeAsyncData *async_data, GType type)
 
 	object = g_object_new (type,
 	                       NM_OBJECT_PATH, async_data->path,
+	                       NM_OBJECT_DBUS_CONNECTION, async_data->connection,
 	                       NULL);
 	g_async_initable_init_async (G_ASYNC_INITABLE (object), G_PRIORITY_DEFAULT,
 	                             NULL, create_async_inited, async_data);
@@ -815,6 +841,7 @@ _nm_object_create_async (GType type, GDBusConnection *connection, const char *pa
 	async_data->path = g_strdup (path);
 	async_data->callback = callback;
 	async_data->user_data = user_data;
+	async_data->connection = g_object_ref (connection);
 
 	async_data->type_data = g_hash_table_lookup (type_funcs, GSIZE_TO_POINTER (type));
 	if (async_data->type_data) {
