@@ -1198,11 +1198,11 @@ handle_property_changed (NMObject *self, const char *dbus_name,
 	if (G_UNLIKELY (debug)) {
 		char *s;
 		s = g_variant_print (value, FALSE);
-		dbgmsg ("PC: (%p) %s::%s => '%s' (%s%s%s)",
+		dbgmsg ("PC: (%p) %s:%s => '%s' (%s%s%s)",
 		        self, G_OBJECT_TYPE_NAME (self),
 		        prop_name,
 		        s,
-		        G_VALUE_TYPE_NAME (value),
+		        g_variant_get_type_string (value),
 		        pi->object_type ? " / " : "",
 		        pi->object_type ? g_type_name (pi->object_type) : "");
 		g_free (s);
@@ -1327,7 +1327,7 @@ demarshal_generic (NMObject *object,
 	HANDLE_TYPE (G_TYPE_LONG, G_VARIANT_TYPE_INT64, glong, g_variant_get_int64)
 	HANDLE_TYPE (G_TYPE_ULONG, G_VARIANT_TYPE_UINT64, gulong, g_variant_get_uint64)
 	} else {
-		dbgmsg ("%s: %s/%s unhandled type %s.",
+		dbgmsg ("%s: %s:%s unhandled type %s.",
 		        __func__,
 		        G_OBJECT_TYPE_NAME (object),
 		        pspec->name,
@@ -1339,9 +1339,9 @@ done:
 	if (success) {
 		_nm_object_queue_notify (object, pspec->name);
 	} else {
-		dbgmsg ("%s: %s/%s (type %s) couldn't be set with type %s.",
+		dbgmsg ("%s: %s:%s (type %s) couldn't be set from D-Bus type %s.",
 		        __func__, G_OBJECT_TYPE_NAME (object), pspec->name,
-		        g_type_name (pspec->value_type), G_VALUE_TYPE_NAME (value));
+		        g_type_name (pspec->value_type), g_variant_get_type_string (value));
 	}
 	return success;
 }
