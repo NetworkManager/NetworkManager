@@ -16,7 +16,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2012 Red Hat, Inc.
+ * Copyright 2007 - 2014 Red Hat, Inc.
  */
 
 #include <config.h>
@@ -306,7 +306,7 @@ nm_device_wifi_request_scan (NMDeviceWifi *device,
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
 
 	return nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
-	                                                  g_variant_new_array (G_VARIANT_TYPE_VARDICT,
+	                                                  g_variant_new_array (G_VARIANT_TYPE ("{sv}"),
 	                                                                       NULL, 0),
 	                                                  cancellable, error);
 }
@@ -373,7 +373,7 @@ nm_device_wifi_request_scan_async (NMDeviceWifi *device,
 
 	priv->scan_info = info;
 	nmdbus_device_wifi_call_request_scan (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
-	                                      g_variant_new_array (G_VARIANT_TYPE_VARDICT, NULL, 0),
+	                                      g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0),
 	                                      cancellable, request_scan_cb, info);
 }
 
