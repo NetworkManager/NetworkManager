@@ -542,8 +542,9 @@ save_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	nm_remote_settings_save_hostname_finish (NM_REMOTE_SETTINGS (object), result, &error);
 	if (error) {
-		g_string_printf (nmc->return_text, _("Error: failed to set hostname: (%d) %s"),
-		                 error->code, error->message);
+		g_dbus_error_strip_remote_error (error);
+		g_string_printf (nmc->return_text, _("Error: failed to set hostname: %s"),
+		                 error->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		g_error_free (error);
 	}
@@ -593,7 +594,9 @@ do_general (NmCli *nmc, int argc, char **argv)
 
 			/* get system settings */
 			if (!(rem_settings = nm_remote_settings_new (NULL, &error))) {
-				g_string_printf (nmc->return_text, _("Error: Could not get system settings: %s."), error->message);
+				g_dbus_error_strip_remote_error (error);
+				g_string_printf (nmc->return_text, _("Error: Could not get system settings: %s."),
+				                 error->message);
 				g_clear_error (&error);
 				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 				goto finish;
@@ -660,11 +663,10 @@ do_general (NmCli *nmc, int argc, char **argv)
 				nmc->get_client (nmc); /* create NMClient */
 				nm_client_set_logging (nmc->client, level, domains, &error);
 				if (error) {
-					if (g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_AUTH_FAILED))
-						g_string_printf (nmc->return_text, _("Error: access denied to set logging; %s"), error->message);
-					else
-						g_string_printf (nmc->return_text, _("Error: %s"), error->message);
-					nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+					g_dbus_error_strip_remote_error (error);
+					g_string_printf (nmc->return_text, _("Error: failed to set logging: %s"),
+					                 error->message);
+					nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 					goto finish;
 				}
 			}
