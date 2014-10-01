@@ -145,6 +145,9 @@ BuildRequires: libuuid-devel
 BuildRequires: libgudev1-devel >= 143
 BuildRequires: vala-tools
 BuildRequires: iptables
+%if 0%{?with_bluetooth} && 0%{?fedora} > 19
+BuildRequires: bluez-libs-devel
+%endif
 %if 0%{?with_wimax}
 BuildRequires: wimax-devel
 %endif

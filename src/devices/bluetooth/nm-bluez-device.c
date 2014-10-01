@@ -32,7 +32,8 @@
 #include "nm-logging.h"
 #include "nm-utils.h"
 #include "nm-settings-connection.h"
-
+#include "nm-bluez5-dun.h"
+#include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMBluezDevice, nm_bluez_device, G_TYPE_OBJECT)
 
@@ -59,7 +60,8 @@ typedef struct {
 	guint32 capabilities;
 	gboolean connected;
 
-	char *bt_iface;
+	char *b4_iface;
+	NMBluez5DunContext *b5_dun_context;
 
 	NMConnectionProvider *provider;
 	GSList *connections;
@@ -153,9 +155,12 @@ nm_bluez_device_get_capabilities (NMBluezDevice *self)
 gboolean
 nm_bluez_device_get_connected (NMBluezDevice *self)
 {
+	NMBluezDevicePrivate *priv;
+
 	g_return_val_if_fail (NM_IS_BLUEZ_DEVICE (self), FALSE);
 
-	return NM_BLUEZ_DEVICE_GET_PRIVATE (self)->connected;
+	priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
+	return priv->connected;
 }
 
 static void
@@ -258,8 +263,7 @@ check_emit_usable (NMBluezDevice *self)
 	gboolean new_usable;
 
 	/* only expect the supported capabilities set. */
-	g_assert (priv->bluez_version != 4 || ((priv->capabilities & ~(NM_BT_CAPABILITY_NAP | NM_BT_CAPABILITY_DUN)) == NM_BT_CAPABILITY_NONE ));
-	g_assert (priv->bluez_version != 5 || ((priv->capabilities & ~(NM_BT_CAPABILITY_NAP                       )) == NM_BT_CAPABILITY_NONE ));
+	g_assert ((priv->capabilities & ~(NM_BT_CAPABILITY_NAP | NM_BT_CAPABILITY_DUN)) == NM_BT_CAPABILITY_NONE );
 
 	new_usable = (priv->initialized && priv->capabilities && priv->name &&
 	              ((priv->bluez_version == 4) ||
@@ -411,26 +415,33 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 {
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	GVariant *args = NULL;
-	const char *dbus_iface;
+	const char *dbus_iface = NULL;
 
 	g_return_if_fail (priv->dbus_connection);
 
-	if (priv->bluez_version == 5) {
-		g_return_if_fail (priv->connection_bt_type == NM_BT_CAPABILITY_NAP);
-		dbus_iface = BLUEZ5_NETWORK_INTERFACE;
-	} else if (priv->bluez_version == 4 && priv->connection_bt_type == NM_BT_CAPABILITY_DUN) {
-		/* Can't pass a NULL interface name through dbus to bluez, so just
-		 * ignore the disconnect if the interface isn't known.
-		 */
-		if (!priv->bt_iface)
-			return;
-
-		args = g_variant_new ("(s)", priv->bt_iface),
-		dbus_iface = BLUEZ4_SERIAL_INTERFACE;
-	} else {
-		g_return_if_fail (priv->bluez_version == 4 && priv->connection_bt_type == NM_BT_CAPABILITY_NAP);
-		dbus_iface = BLUEZ4_NETWORK_INTERFACE;
-	}
+	if (priv->connection_bt_type == NM_BT_CAPABILITY_DUN) {
+		if (priv->bluez_version == 4) {
+			/* Can't pass a NULL interface name through dbus to bluez, so just
+			 * ignore the disconnect if the interface isn't known.
+			 */
+			if (!priv->b4_iface)
+				goto out;
+			args = g_variant_new ("(s)", priv->b4_iface),
+			dbus_iface = BLUEZ4_SERIAL_INTERFACE;
+		} else if (priv->bluez_version == 5) {
+			nm_bluez5_dun_cleanup (priv->b5_dun_context);
+			priv->connected = FALSE;
+			goto out;
+		}
+	} else if (priv->connection_bt_type == NM_BT_CAPABILITY_NAP) {
+		if (priv->bluez_version == 4)
+			dbus_iface = BLUEZ4_NETWORK_INTERFACE;
+		else if (priv->bluez_version == 5)
+			dbus_iface = BLUEZ5_NETWORK_INTERFACE;
+		else
+			g_assert_not_reached ();
+	} else
+		g_assert_not_reached ();
 
 	g_dbus_connection_call (priv->dbus_connection,
 	                        BLUEZ_SERVICE,
@@ -445,6 +456,8 @@ nm_bluez_device_disconnect (NMBluezDevice *self)
 	                        (GAsyncReadyCallback) bluez_disconnect_cb,
 	                        g_object_ref (self));
 
+out:
+	g_clear_pointer (&priv->b4_iface, g_free);
 	priv->connection_bt_type = NM_BT_CAPABILITY_NONE;
 }
 
@@ -471,13 +484,33 @@ bluez_connect_cb (GDBusConnection *dbus_connection,
 		g_simple_async_result_set_op_res_gpointer (result,
 		                                           g_strdup (device),
 		                                           g_free);
-		priv->bt_iface = device;
+		priv->b4_iface = device;
 		g_variant_unref (variant);
 	}
 
 	g_simple_async_result_complete (result);
 	g_object_unref (result);
 	g_object_unref (result_object);
+}
+
+static void
+bluez5_dun_connect_cb (NMBluez5DunContext *context,
+                   const char *device,
+                   GError *error,
+                   gpointer user_data)
+{
+	GSimpleAsyncResult *result = G_SIMPLE_ASYNC_RESULT (user_data);
+
+	if (error) {
+		g_simple_async_result_take_error (result, error);
+	} else {
+		g_simple_async_result_set_op_res_gpointer (result,
+		                                           g_strdup (device),
+		                                           g_free);
+	}
+
+	g_simple_async_result_complete (result);
+	g_object_unref (result);
 }
 
 void
@@ -488,26 +521,35 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 {
 	GSimpleAsyncResult *simple;
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
-	const char *dbus_iface;
-	const char *connect_type = BLUETOOTH_CONNECT_NAP;
+	const char *dbus_iface = NULL;
+	const char *connect_type = NULL;
 
 	g_return_if_fail (priv->capabilities & connection_bt_type & (NM_BT_CAPABILITY_DUN | NM_BT_CAPABILITY_NAP));
-
-	if (priv->bluez_version == 5) {
-		g_return_if_fail (connection_bt_type == NM_BT_CAPABILITY_NAP);
-		dbus_iface = BLUEZ5_NETWORK_INTERFACE;
-	} else if (priv->bluez_version == 4 && connection_bt_type == NM_BT_CAPABILITY_DUN) {
-		dbus_iface = BLUEZ4_SERIAL_INTERFACE;
-		connect_type = BLUETOOTH_CONNECT_DUN;
-	} else {
-		g_return_if_fail (priv->bluez_version == 4 && connection_bt_type == NM_BT_CAPABILITY_NAP);
-		dbus_iface = BLUEZ4_NETWORK_INTERFACE;
-	}
 
 	simple = g_simple_async_result_new (G_OBJECT (self),
 	                                    callback,
 	                                    user_data,
 	                                    nm_bluez_device_connect_async);
+	priv->connection_bt_type = connection_bt_type;
+
+	if (connection_bt_type == NM_BT_CAPABILITY_NAP) {
+		connect_type = BLUETOOTH_CONNECT_NAP;
+		if (priv->bluez_version == 4)
+			dbus_iface = BLUEZ4_NETWORK_INTERFACE;
+		else if (priv->bluez_version == 5)
+			dbus_iface = BLUEZ5_NETWORK_INTERFACE;
+	} else if (connection_bt_type == NM_BT_CAPABILITY_DUN) {
+		connect_type = BLUETOOTH_CONNECT_DUN;
+		if (priv->bluez_version == 4)
+			dbus_iface = BLUEZ4_SERIAL_INTERFACE;
+		else if (priv->bluez_version == 5) {
+			if (priv->b5_dun_context == NULL)
+				priv->b5_dun_context = nm_bluez5_dun_new (priv->adapter_address, priv->address);
+			nm_bluez5_dun_connect (priv->b5_dun_context, bluez5_dun_connect_cb, simple);
+			return;
+		}
+	} else
+		g_assert_not_reached ();
 
 	g_dbus_connection_call (priv->dbus_connection,
 	                        BLUEZ_SERVICE,
@@ -521,8 +563,6 @@ nm_bluez_device_connect_async (NMBluezDevice *self,
 	                        NULL,
 	                        (GAsyncReadyCallback) bluez_connect_cb,
 	                        simple);
-
-	priv->connection_bt_type = connection_bt_type;
 }
 
 const char *
@@ -530,6 +570,7 @@ nm_bluez_device_connect_finish (NMBluezDevice *self,
                                 GAsyncResult *result,
                                 GError **error)
 {
+	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 	GSimpleAsyncResult *simple;
 	const char *device;
 
@@ -544,6 +585,9 @@ nm_bluez_device_connect_finish (NMBluezDevice *self,
 		return NULL;
 
 	device = (const char *) g_simple_async_result_get_op_res_gpointer (simple);
+	if (device && priv->bluez_version == 5)
+		priv->connected = TRUE;
+
 	return device;
 }
 
@@ -562,7 +606,7 @@ set_adapter_address (NMBluezDevice *self, const char *address)
 }
 
 static guint32
-convert_uuids_to_capabilities (const char **strings, int bluez_version)
+convert_uuids_to_capabilities (const char **strings)
 {
 	const char **iter;
 	guint32 capabilities = 0;
@@ -574,8 +618,7 @@ convert_uuids_to_capabilities (const char **strings, int bluez_version)
 		if (parts && parts[0]) {
 			switch (g_ascii_strtoull (parts[0], NULL, 16)) {
 			case 0x1103:
-				if (bluez_version == 4)
-					capabilities |= NM_BT_CAPABILITY_DUN;
+				capabilities |= NM_BT_CAPABILITY_DUN;
 				break;
 			case 0x1116:
 				capabilities |= NM_BT_CAPABILITY_NAP;
@@ -596,7 +639,7 @@ _set_property_capabilities (NMBluezDevice *self, const char **uuids)
 	guint32 uint_val;
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
-	uint_val = convert_uuids_to_capabilities (uuids, priv->bluez_version);
+	uint_val = convert_uuids_to_capabilities (uuids);
 	if (priv->capabilities != uint_val) {
 		if (priv->capabilities) {
 			/* changing (relevant) capabilities is not supported and ignored -- except setting initially */
@@ -1048,6 +1091,11 @@ dispose (GObject *object)
 		priv->pan_connection = NULL;
 	}
 
+	if (priv->b5_dun_context) {
+		nm_bluez5_dun_free (priv->b5_dun_context);
+		priv->b5_dun_context = NULL;
+	}
+
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_added, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_removed, self);
 	g_signal_handlers_disconnect_by_func (priv->provider, cp_connection_updated, self);
@@ -1079,7 +1127,7 @@ finalize (GObject *object)
 	g_free (priv->adapter_address);
 	g_free (priv->address);
 	g_free (priv->name);
-	g_free (priv->bt_iface);
+	g_free (priv->b4_iface);
 
 	if (priv->proxy)
 		g_signal_handlers_disconnect_by_data (priv->proxy, object);
