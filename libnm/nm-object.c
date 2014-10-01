@@ -72,7 +72,6 @@ static void reload_complete (NMObject *object);
 
 typedef struct {
 	GDBusConnection *connection;
-	gboolean private_connection;
 	gboolean nm_running;
 
 	char *path;
