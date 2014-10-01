@@ -35,6 +35,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
 #include "nm-glib-compat.h"
+#include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMAuthSubject, nm_auth_subject, G_TYPE_OBJECT)
 
@@ -59,64 +60,6 @@ typedef struct {
 		char *dbus_sender;
 	} unix_process;
 } NMAuthSubjectPrivate;
-
-
-
-/**************************************************************/
-
-/* copied from polkit source (src/polkit/polkitunixprocess.c)
- * and adjusted.
- */
-static guint64
-get_start_time_for_pid (pid_t pid)
-{
-	guint64 start_time;
-	gchar *filename;
-	gchar *contents;
-	size_t length;
-	gchar **tokens;
-	guint num_tokens;
-	gchar *p;
-	gchar *endp;
-
-	start_time = 0;
-	contents = NULL;
-
-	filename = g_strdup_printf ("/proc/%d/stat", pid);
-
-	if (!g_file_get_contents (filename, &contents, &length, NULL))
-		goto out;
-
-	/* start time is the token at index 19 after the '(process name)' entry - since only this
-	 * field can contain the ')' character, search backwards for this to avoid malicious
-	 * processes trying to fool us
-	 */
-	p = strrchr (contents, ')');
-	if (p == NULL)
-		goto out;
-	p += 2; /* skip ') ' */
-	if (p - contents >= (int) length)
-		goto out;
-
-	tokens = g_strsplit (p, " ", 0);
-
-	num_tokens = g_strv_length (tokens);
-
-	if (num_tokens < 20)
-		goto out;
-
-	start_time = strtoull (tokens[19], &endp, 10);
-	if (endp == tokens[19])
-		goto out;
-
-	g_strfreev (tokens);
-
- out:
-	g_free (filename);
-	g_free (contents);
-
-	return start_time;
-}
 
 /**************************************************************/
 
@@ -414,7 +357,7 @@ constructed (GObject *object)
 		if (!priv->unix_process.dbus_sender || !*priv->unix_process.dbus_sender)
 			break;
 
-		priv->unix_process.start_time = get_start_time_for_pid (priv->unix_process.pid);
+		priv->unix_process.start_time = nm_utils_get_start_time_for_pid (priv->unix_process.pid);
 
 		if (!priv->unix_process.start_time) {
 			/* could not detect the process start time. The subject is invalid, but don't

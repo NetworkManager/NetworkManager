@@ -172,6 +172,67 @@ nm_spawn_process (const char *args)
 	return status;
 }
 
+/**
+ * nm_utils_get_start_time_for_pid:
+ * @pid: the process identifier
+ *
+ * Originally copied from polkit source (src/polkit/polkitunixprocess.c)
+ * and adjusted.
+ *
+ * Returns: the timestamp when the process started (by parsing /proc/$PID/stat).
+ * If an error occurs (e.g. the process does not exist), 0 is returned.
+ **/
+guint64
+nm_utils_get_start_time_for_pid (pid_t pid)
+{
+	guint64 start_time;
+	gchar *filename;
+	gchar *contents;
+	size_t length;
+	gchar **tokens;
+	guint num_tokens;
+	gchar *p;
+	gchar *endp;
+
+	start_time = 0;
+	contents = NULL;
+
+	filename = g_strdup_printf ("/proc/%d/stat", pid);
+
+	if (!g_file_get_contents (filename, &contents, &length, NULL))
+		goto out;
+
+	/* start time is the token at index 19 after the '(process name)' entry - since only this
+	 * field can contain the ')' character, search backwards for this to avoid malicious
+	 * processes trying to fool us
+	 */
+	p = strrchr (contents, ')');
+	if (p == NULL)
+		goto out;
+	p += 2; /* skip ') ' */
+	if (p - contents >= (int) length)
+		goto out;
+
+	tokens = g_strsplit (p, " ", 0);
+
+	num_tokens = g_strv_length (tokens);
+
+	if (num_tokens < 20)
+		goto out;
+
+	start_time = strtoull (tokens[19], &endp, 10);
+	if (endp == tokens[19])
+		goto out;
+
+	g_strfreev (tokens);
+
+ out:
+	g_free (filename);
+	g_free (contents);
+
+	return start_time;
+}
+
 /******************************************************************************************/
 
 typedef struct {
