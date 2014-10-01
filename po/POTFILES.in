@@ -4,7 +4,7 @@
 clients/cli/common.c
 clients/cli/connections.c
 clients/cli/devices.c
-clients/cli/network-manager.c
+clients/cli/general.c
 clients/cli/nmcli.c
 clients/cli/settings.c
 clients/cli/utils.c
