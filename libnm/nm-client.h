@@ -16,7 +16,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2012 Red Hat, Inc.
+ * Copyright 2007 - 2014 Red Hat, Inc.
  */
 
 #ifndef __NM_CLIENT_H__
@@ -212,7 +212,9 @@ gboolean nm_client_deactivate_connection_finish (NMClient *client,
                                                  GError **error);
 
 gboolean  nm_client_networking_get_enabled (NMClient *client);
-void      nm_client_networking_set_enabled (NMClient *client, gboolean enabled);
+gboolean  nm_client_networking_set_enabled (NMClient *client,
+                                            gboolean enabled,
+                                            GError **error);
 
 gboolean  nm_client_wireless_get_enabled (NMClient *client);
 void      nm_client_wireless_set_enabled (NMClient *client, gboolean enabled);

@@ -16,7 +16,7 @@
  * Boston, MA 02110-1301 USA.
  *
  * Copyright 2007 - 2008 Novell, Inc.
- * Copyright 2007 - 2013 Red Hat, Inc.
+ * Copyright 2007 - 2014 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -1214,27 +1214,30 @@ nm_client_networking_get_enabled (NMClient *client)
  * nm_client_networking_set_enabled:
  * @client: a #NMClient
  * @enabled: %TRUE to set networking enabled, %FALSE to set networking disabled
+ * @error: (allow-none): return location for a #GError, or %NULL
  *
  * Enables or disables networking.  When networking is disabled, all controlled
  * interfaces are disconnected and deactivated.  When networking is enabled,
  * all controlled interfaces are available for activation.
+ *
+ * Returns: %TRUE on success, %FALSE otherwise
  **/
-void
-nm_client_networking_set_enabled (NMClient *client, gboolean enable)
+gboolean
+nm_client_networking_set_enabled (NMClient *client, gboolean enable, GError **error)
 {
-	GError *err = NULL;
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	g_return_if_fail (NM_IS_CLIENT (client));
-
-	if (!nm_client_get_nm_running (client))
-		return;
-
-	if (!nmdbus_manager_call_enable_sync (NM_CLIENT_GET_PRIVATE (client)->manager_proxy,
-	                                      enable,
-	                                      NULL, &err)) {
-		g_warning ("Error enabling/disabling networking: %s", err->message);
-		g_error_free (err);
+	if (!nm_client_get_nm_running (client)) {
+		g_set_error_literal (error,
+		                     NM_CLIENT_ERROR,
+		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+		                     "NetworkManager is not running");
+		return FALSE;
 	}
+
+	return nmdbus_manager_call_enable_sync (NM_CLIENT_GET_PRIVATE (client)->manager_proxy,
+	                                        enable,
+	                                        NULL, error);
 }
 
 /**
@@ -1969,7 +1972,7 @@ set_property (GObject *object, guint prop_id,
 	case PROP_NETWORKING_ENABLED:
 		b = g_value_get_boolean (value);
 		if (priv->networking_enabled != b) {
-			nm_client_networking_set_enabled (NM_CLIENT (object), b);
+			nm_client_networking_set_enabled (NM_CLIENT (object), b, NULL);
 			/* Let the property value flip when we get the change signal from NM */
 		}
 		break;

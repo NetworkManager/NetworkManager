@@ -806,7 +806,7 @@ test_client_nm_running (void)
 
 	g_assert (!nm_client_networking_get_enabled (client1));
 	/* This will have no effect, but it shouldn't cause any warnings either. */
-	nm_client_networking_set_enabled (client1, TRUE);
+	nm_client_networking_set_enabled (client1, TRUE, NULL);
 	g_assert (!nm_client_networking_get_enabled (client1));
 
 	/* OTOH, this should result in an error */

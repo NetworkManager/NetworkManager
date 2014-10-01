@@ -777,7 +777,7 @@ do_networking (NmCli *nmc, int argc, char **argv)
 			}
 
 			nmc->get_client (nmc); /* create NMClient */
-			nm_client_networking_set_enabled (nmc->client, enable_flag);
+			nm_client_networking_set_enabled (nmc->client, enable_flag, NULL);
 		} else {
 			usage_networking ();
 			g_string_printf (nmc->return_text, _("Error: 'networking' command '%s' is not valid."), *argv);
