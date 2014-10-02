@@ -368,7 +368,8 @@ usage_connection_add (void)
 	              "                  [downdelay <num>]\n"
 	              "                  [updelay <num>]\n"
 	              "                  [arp-interval <num>]\n"
-	              "                  [arp-ip-target <num>]\n\n"
+	              "                  [arp-ip-target <num>]\n"
+	              "                  [lacp-rate slow (0) | fast (1)]\n\n"
 	              "    bond-slave:   master <master (ifname, or connection UUID or name)>\n\n"
 	              "    team:         [config <file>|<raw JSON data>]\n\n"
 	              "    team-slave:   master <master (ifname, or connection UUID or name)>\n"
@@ -3121,7 +3122,8 @@ do_questionnaire_vlan (char **mtu, char **flags, char **ingress, char **egress)
 static void
 do_questionnaire_bond (char **mode, char **primary, char **miimon,
                        char **downdelay, char **updelay,
-                       char **arpinterval, char **arpiptarget)
+                       char **arpinterval, char **arpiptarget,
+                       char **lacp_rate)
 {
 	char *monitor_mode;
 	unsigned long tmp;
@@ -3224,6 +3226,22 @@ do_questionnaire_bond (char **mode, char **primary, char **miimon,
 			//FIXME: verify the string
 			*arpiptarget = nmc_readline (_("Bonding arp-ip-target [none]: "));
 		}
+	}
+
+	if (   !*lacp_rate
+	    && (g_strcmp0 (*mode, "802.3ad") == 0 || g_strcmp0 (*mode, "4") == 0)) {
+		do {
+			*lacp_rate = nmc_readline (_("LACP rate ('slow' or 'fast') [slow]: "));
+			once_more = *lacp_rate && (strcmp (*lacp_rate, "slow") &&
+			                           strcmp (*lacp_rate, "0") &&
+			                           strcmp (*lacp_rate, "fast") &&
+			                           strcmp (*lacp_rate, "1"));
+			if (once_more) {
+				printf (_("Error: 'lacp_rate': '%s' is invalid ('slow' or 'fast').\n"),
+				        *lacp_rate);
+				g_free (*lacp_rate);
+			}
+		} while (once_more);
 	}
 
 	g_free (monitor_mode);
@@ -4187,6 +4205,8 @@ cleanup_vlan:
 		char *bond_arpinterval = NULL;
 		const char *bond_arpiptarget_c = NULL;
 		char *bond_arpiptarget = NULL;
+		const char *bond_lacp_rate_c = NULL;
+		char *bond_lacp_rate = NULL;
 		nmc_arg_t exp_args[] = { {"mode",          TRUE, &bond_mode_c,        FALSE},
 		                         {"primary",       TRUE, &bond_primary_c,     FALSE},
 		                         {"miimon",        TRUE, &bond_miimon_c,      FALSE},
@@ -4194,6 +4214,7 @@ cleanup_vlan:
 		                         {"updelay",       TRUE, &bond_updelay_c,     FALSE},
 		                         {"arp-interval",  TRUE, &bond_arpinterval_c, FALSE},
 		                         {"arp-ip-target", TRUE, &bond_arpiptarget_c, FALSE},
+		                         {"lacp-rate",     TRUE, &bond_lacp_rate_c, FALSE},
 		                         {NULL} };
 
 		if (!nmc_parse_args (exp_args, FALSE, &argc, &argv, error))
@@ -4207,10 +4228,12 @@ cleanup_vlan:
 		bond_updelay = bond_updelay_c ? g_strdup (bond_updelay_c) : NULL;
 		bond_arpinterval = bond_arpinterval_c ? g_strdup (bond_arpinterval_c) : NULL;
 		bond_arpiptarget = bond_arpiptarget_c ? g_strdup (bond_arpiptarget_c) : NULL;
+		bond_lacp_rate = g_strdup (bond_lacp_rate_c);
 		if (ask)
 			do_questionnaire_bond (&bond_mode, &bond_primary, &bond_miimon,
 			                       &bond_downdelay, &bond_updelay,
-			                       &bond_arpinterval, &bond_arpiptarget);
+			                       &bond_arpinterval, &bond_arpiptarget,
+			                       &bond_lacp_rate);
 
 		/* Generate ifname if connection doesn't have one */
 		ifname = nm_setting_connection_get_interface_name (s_con);
@@ -4258,6 +4281,8 @@ cleanup_vlan:
 			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL, bond_arpinterval);
 		if (bond_arpiptarget)
 			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, bond_arpiptarget);
+		if (bond_lacp_rate)
+			nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_LACP_RATE, bond_lacp_rate);
 
 		success = TRUE;
 cleanup_bond:
@@ -4268,6 +4293,7 @@ cleanup_bond:
 		g_free (bond_updelay);
 		g_free (bond_arpinterval);
 		g_free (bond_arpiptarget);
+		g_free (bond_lacp_rate);
 		if (!success)
 			return FALSE;
 

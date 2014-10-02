@@ -71,6 +71,7 @@ GQuark nm_setting_bond_error_quark (void);
 #define NM_SETTING_BOND_OPTION_AD_SELECT        "ad_select"
 #define NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY "xmit_hash_policy"
 #define NM_SETTING_BOND_OPTION_RESEND_IGMP      "resend_igmp"
+#define NM_SETTING_BOND_OPTION_LACP_RATE        "lacp_rate"
 
 typedef struct {
 	NMSetting parent;
