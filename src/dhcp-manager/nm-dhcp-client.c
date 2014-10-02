@@ -178,7 +178,9 @@ reason_to_state (const char *iface, const char *reason)
 		return NM_DHCP_STATE_DONE;
 	else if (g_ascii_strcasecmp (reason, "fail") == 0 ||
 	         g_ascii_strcasecmp (reason, "abend") == 0 ||
-	         g_ascii_strcasecmp (reason, "nak") == 0)
+	         g_ascii_strcasecmp (reason, "nak") == 0 ||
+	         g_ascii_strcasecmp (reason, "expire") == 0 ||
+	         g_ascii_strcasecmp (reason, "expire6") == 0)
 		return NM_DHCP_STATE_FAIL;
 
 	nm_log_dbg (LOGD_DHCP, "(%s): unmapped DHCP state '%s'", iface, reason);

@@ -2686,8 +2686,10 @@ dhcp4_fail (NMDevice *self, gboolean timeout)
 	dhcp4_cleanup (self, TRUE, FALSE);
 	if (timeout || (priv->ip4_state == IP_CONF))
 		nm_device_activate_schedule_ip4_config_timeout (self);
-	else if (priv->ip4_state == IP_FAIL)
+	else if (priv->ip4_state == IP_DONE)
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+	else
+		g_warn_if_reached ();
 }
 
 static void
@@ -3121,8 +3123,10 @@ dhcp6_fail (NMDevice *self, gboolean timeout)
 	if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_MANAGED) {
 		if (timeout || (priv->ip6_state == IP_CONF))
 			nm_device_activate_schedule_ip6_config_timeout (self);
-		else if (priv->ip6_state == IP_FAIL)
+		else if (priv->ip6_state == IP_DONE)
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+		else
+			g_warn_if_reached ();
 	} else {
 		/* not a hard failure; just live with the RA info */
 		if (priv->ip6_state == IP_CONF)
