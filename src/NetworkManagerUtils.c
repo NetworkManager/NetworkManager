@@ -539,8 +539,8 @@ nm_utils_kill_child_sync (pid_t pid, int sig, guint64 log_domain, const char *lo
 			if (loop_count < 20) {
 				/* At the beginning we expect the process to die fast.
 				 * Limit the sleep time, the limit doubles with every iteration. */
-				loop_count++;
 				sleep_time = MIN (sleep_time, (((guint64) 1) << loop_count) * G_USEC_PER_SEC / 2000);
+				loop_count++;
 			}
 			g_usleep (sleep_time);
 		}
