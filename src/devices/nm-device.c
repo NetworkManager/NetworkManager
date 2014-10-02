@@ -2685,8 +2685,10 @@ dhcp4_fail (NMDevice *device, gboolean timeout)
 
 	if (timeout || (priv->ip4_state == IP_CONF))
 		nm_device_activate_schedule_ip4_config_timeout (device);
-	else if (priv->ip4_state == IP_FAIL)
+	else if (priv->ip4_state == IP_DONE)
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+	else
+		g_warn_if_reached ();
 }
 
 static void
@@ -2735,6 +2737,7 @@ dhcp4_state_changed (NMDHCPClient *client,
 	case DHC_TIMEOUT: /* timed out contacting DHCP server */
 		dhcp4_fail (device, TRUE);
 		break;
+	case DHC_EXPIRE: /* lease expired, address must be removed */
 	case DHC_END: /* dhclient exited normally */
 	case DHC_FAIL: /* all attempts to contact server timed out, sleeping */
 	case DHC_ABEND: /* dhclient exited abnormally */
@@ -3136,8 +3139,10 @@ dhcp6_fail (NMDevice *device, gboolean timeout)
 	if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_MANAGED) {
 		if (timeout || (priv->ip6_state == IP_CONF))
 			nm_device_activate_schedule_ip6_config_timeout (device);
-		else if (priv->ip6_state == IP_FAIL)
+		else if (priv->ip6_state == IP_DONE)
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
+		else
+			g_warn_if_reached ();
 	} else {
 		/* not a hard failure; just live with the RA info */
 		if (priv->ip6_state == IP_CONF)
@@ -3196,6 +3201,7 @@ dhcp6_state_changed (NMDHCPClient *client,
 		if (priv->dhcp6_mode == NM_RDISC_DHCP_LEVEL_OTHERCONF)
 			break;
 		/* Otherwise, fall through */
+	case DHC_EXPIRE6: /* lease expired, address must be removed */
 	case DHC_FAIL: /* all attempts to contact server timed out, sleeping */
 	case DHC_ABEND: /* dhclient exited abnormally */
 		/* dhclient quit and can't get/renew a lease; so kill the connection */
