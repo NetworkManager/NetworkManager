@@ -3988,10 +3988,24 @@ act_stage3_ip6_config_start (NMDevice *self,
 	priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_NONE;
 
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
-		if (!priv->master)
+		if (!priv->master) {
+			/* When activating an IPv6 'ignore' connection we need to revert back
+			 * to kernel IPv6LL, but the kernel won't actually assign an address
+			 * to the interface until disable_ipv6 is bounced.
+			 */
+			set_nm_ipv6ll (self, FALSE);
+			nm_device_ipv6_sysctl_set (self, "disable_ipv6", "1");
 			restore_ip6_properties (self);
+		}
 		return NM_ACT_STAGE_RETURN_STOP;
 	}
+
+	/* Any method past this point requires an IPv6LL address. Use NM-controlled
+	 * IPv6LL if this is not an assumed connection, since assumed connections
+	 * will already have IPv6 set up.
+	 */
+	if (!nm_device_uses_generated_assumed_connection (self))
+		set_nm_ipv6ll (self, TRUE);
 
 	/* Re-enable IPv6 on the interface */
 	set_disable_ipv6 (self, "0");
