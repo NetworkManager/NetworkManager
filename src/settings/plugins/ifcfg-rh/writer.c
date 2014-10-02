@@ -916,11 +916,15 @@ write_wireless_setting (NMConnection *connection,
 	}
 
 	svSetValue (ifcfg, "CHANNEL", NULL, FALSE);
+	svSetValue (ifcfg, "BAND", NULL, FALSE);
 	chan = nm_setting_wireless_get_channel (s_wireless);
 	if (chan) {
 		tmp = g_strdup_printf ("%u", chan);
 		svSetValue (ifcfg, "CHANNEL", tmp, FALSE);
 		g_free (tmp);
+	} else {
+		/* Band only set if channel is not, since channel implies band */
+		svSetValue (ifcfg, "BAND", nm_setting_wireless_get_band (s_wireless), FALSE);
 	}
 
 	bssid = nm_setting_wireless_get_bssid (s_wireless);

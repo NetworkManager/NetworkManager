@@ -3268,6 +3268,7 @@ make_wireless_setting (shvarFile *ifcfg,
 	NMSettingWireless *s_wireless;
 	GBytes *bytes = NULL;
 	char *value = NULL;
+	gint64 chan = 0;
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 
@@ -3386,22 +3387,47 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "CHANNEL", FALSE);
 	if (value) {
-		long int chan;
-
 		errno = 0;
-		chan = strtol (value, NULL, 10);
-		if (errno || chan <= 0 || chan > 196) {
+		chan = nm_utils_ascii_str_to_int64 (value, 10, 1, 196, 0);
+		if (errno || (chan == 0)) {
 			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
 			             "Invalid wireless channel '%s'", value);
 			g_free (value);
 			goto error;
 		}
 		g_object_set (s_wireless, NM_SETTING_WIRELESS_CHANNEL, (guint32) chan, NULL);
+		g_free (value);
+	}
+
+	value = svGetValue (ifcfg, "BAND", FALSE);
+	if (value) {
+		if (!strcmp (value, "a")) {
+			if (chan && chan <= 14) {
+				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				             "Band '%s' invalid for channel %ld", value, chan);
+				g_free (value);
+				goto error;
+			}
+		} else if (!strcmp (value, "bg")) {
+			if (chan && chan > 14) {
+				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+				             "Band '%s' invalid for channel %ld", value, chan);
+				g_free (value);
+				goto error;
+			}
+		} else {
+			g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
+			             "Invalid wireless band '%s'", value);
+			g_free (value);
+			goto error;
+		}
+		g_object_set (s_wireless, NM_SETTING_WIRELESS_BAND, value, NULL);
+		g_free (value);
+	} else if (chan > 0) {
 		if (chan > 14)
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_BAND, "a", NULL);
 		else
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_BAND, "bg", NULL);
-		g_free (value);
 	}
 
 	value = svGetValue (ifcfg, "MTU", FALSE);

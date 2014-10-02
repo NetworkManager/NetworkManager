@@ -60,6 +60,9 @@ EXTRA_DIST = \
 	ifcfg-test-wifi-wpa-eap-ttls-tls \
 	keys-test-wifi-wpa-eap-ttls-tls \
 	ifcfg-test-wifi-hidden \
+	ifcfg-test-wifi-band-a \
+	ifcfg-test-wifi-band-a-channel-mismatch \
+	ifcfg-test-wifi-band-bg-channel-mismatch \
 	test_ca_cert.pem \
 	test1_key_and_cert.pem \
 	ifcfg-test-ibft \
