@@ -1,0 +1,9 @@
+TYPE=Wireless
+DEVICE=eth2
+HWADDR=00:16:41:11:22:33
+BOOTPROTO=dhcp
+ESSID=blahblah
+CHANNEL=9
+BAND=a
+MODE=Managed
+
