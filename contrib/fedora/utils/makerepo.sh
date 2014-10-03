@@ -177,6 +177,7 @@ detect_build_type 'NetworkManager-vpnc-[0-9]*' NetworkManager-vpnc.spec
 detect_build_type 'wireless_tools.[0-9]*' wireless-tools.spec
 detect_build_type 'umip-[0-9]*' mipv6-daemon.spec
 detect_build_type 'initscripts-[0-9]*' initscripts.spec
+detect_build_type 'libqmi-[0-9]*' libqmi.spec
 
 [[ -n "$BUILD_TYPE" ]] || die "Could not detect dist-git type"
 
@@ -240,6 +241,8 @@ pushd "$DIRNAME"
         git remote 'set-url' --push origin "ssh://$USER@git.gnome.org/git/network-manager-vpnc"
     elif [[ "$BUILD_TYPE" == "mipv6-daemon" ]]; then
         git remote add origin "git://git.umip.org/umip.git";
+    elif [[ "$BUILD_TYPE" == "libqmi" ]]; then
+        git remote add origin 'git://anongit.freedesktop.org/libqmi';
     elif [[ "$BUILD_TYPE" == "initscripts" ]]; then
         git remote add origin "https://git.fedorahosted.org/git/initscripts.git";
     fi
@@ -304,6 +307,9 @@ c37a79d43ebe1192ba8dcc5036cd668631b6473e  d87db7021629cef7c110a371dd42b7a8 *Netw
 
 # mipv6-daemon
 428974c2d0d8e75a2750a3ab0488708c5dfdd8e3  8e3ebd242e7926822bbdf5ce77c1d076 *mipv6-daemon-1.0.tar.gz
+
+# libqmi
+7d688f382f9756027bf92338e413e425365d2835  17d6c2b404ee1eb4d1e60050fef64491 *libqmi-1.6.0.tar.xz
 EOF
 )"
             OLDIFS="$IFS"
