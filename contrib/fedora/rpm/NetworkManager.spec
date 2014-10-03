@@ -14,7 +14,7 @@
 %define wireless_tools_version 1:28-0pre9
 %define libnl3_version 3.2.7
 
-%define ppp_version %(pppd --help 2>&1 |awk 'BEGIN {v="bad"} /pppd version/ {v=$NF} END {print v}')
+%define ppp_version %(rpm -q ppp-devel >/dev/null && rpm -q --qf '%%{version}' ppp-devel || echo -n bad)
 
 %define snapshot %{nil}
 %define git_sha __COMMIT__
