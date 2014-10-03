@@ -72,6 +72,8 @@ fi
 ./autogen.sh --enable-gtk-doc || die "Error autogen.sh"
 
 if [[ $QUICK == 1 ]]; then
+    make -C include || die "Error make -C include"
+    make -C introspection || die "Error make -C introspection"
     make -C libnm-core || die "Error make -C libnm-core"
     make -C libnm || die "Error make -C libnm"
     make -C libnm-util || die "Error make -C libnm-util"
