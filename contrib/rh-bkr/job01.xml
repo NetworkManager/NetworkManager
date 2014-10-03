@@ -43,7 +43,7 @@
 			</task>
 			<task name="/distribution/pkginstall" role="STANDALONE">
 				<params>
-					<param name="PKGARGNAME" value="python-setuptools pexpect bash-completion iw net-tools teamd NetworkManager radvd wireshark git"/>
+					<param name="PKGARGNAME" value="python-setuptools pexpect bash-completion iw net-tools teamd NetworkManager radvd wireshark git firewalld"/>
 				</params>
 			</task>
 			<task name="/distribution/command" role="STANDALONE">
