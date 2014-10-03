@@ -31,6 +31,7 @@
 #include "nm-device-modem.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
+#include "nm-enum-types.h"
 
 G_DEFINE_TYPE (NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 
@@ -208,10 +209,10 @@ get_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_MODEM_CAPS:
-		g_value_set_uint (value, nm_device_modem_get_modem_capabilities (self));
+		g_value_set_flags (value, nm_device_modem_get_modem_capabilities (self));
 		break;
 	case PROP_CURRENT_CAPS:
-		g_value_set_uint (value, nm_device_modem_get_current_capabilities (self));
+		g_value_set_flags (value, nm_device_modem_get_current_capabilities (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -249,10 +250,11 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MODEM_CAPS,
-		 g_param_spec_uint (NM_DEVICE_MODEM_MODEM_CAPABILITIES, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_DEVICE_MODEM_MODEM_CAPABILITIES, "", "",
+		                     NM_TYPE_DEVICE_MODEM_CAPABILITIES,
+		                     NM_DEVICE_MODEM_CAPABILITY_NONE,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDeviceModem:current-capabilities:
@@ -262,8 +264,9 @@ nm_device_modem_class_init (NMDeviceModemClass *modem_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CURRENT_CAPS,
-		 g_param_spec_uint (NM_DEVICE_MODEM_CURRENT_CAPABILITIES, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_DEVICE_MODEM_CURRENT_CAPABILITIES, "", "",
+		                     NM_TYPE_DEVICE_MODEM_CAPABILITIES,
+		                     NM_DEVICE_MODEM_CAPABILITY_NONE,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 }

@@ -796,7 +796,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_STATE:
 		nm_vpn_plugin_set_state (NM_VPN_PLUGIN (object),
-		                         (NMVpnServiceState) g_value_get_uint (value));
+		                         (NMVpnServiceState) g_value_get_enum (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -815,7 +815,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->dbus_service_name);
 		break;
 	case PROP_STATE:
-		g_value_set_uint (value, nm_vpn_plugin_get_state (NM_VPN_PLUGIN (object)));
+		g_value_set_enum (value, nm_vpn_plugin_get_state (NM_VPN_PLUGIN (object)));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -949,9 +949,8 @@ nm_vpn_plugin_class_init (NMVpnPluginClass *plugin_class)
 	 */
 	g_object_class_install_property
 		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_VPN_PLUGIN_STATE, "", "",
-		                    NM_VPN_SERVICE_STATE_UNKNOWN,
-		                    NM_VPN_SERVICE_STATE_STOPPED,
+		 g_param_spec_enum (NM_VPN_PLUGIN_STATE, "", "",
+		                    NM_TYPE_VPN_SERVICE_STATE,
 		                    NM_VPN_SERVICE_STATE_INIT,
 		                    G_PARAM_READWRITE |
 		                    G_PARAM_STATIC_STRINGS));

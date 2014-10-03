@@ -575,6 +575,7 @@ make_test_wsec_setting (const char *detail)
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
 	              NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, "foobarbaz",
 	              NM_SETTING_WIRELESS_SECURITY_PSK, "random psk",
+	              NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS, NM_SETTING_SECRET_FLAG_NOT_SAVED,
 	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, "aaaaaaaaaa",
 	              NULL);
 
@@ -707,6 +708,72 @@ test_setting_to_dbus_transform (void)
 }
 
 static void
+test_setting_to_dbus_enum (void)
+{
+	NMSetting *s_ip6, *s_wsec, *s_serial;
+	GVariant *dict, *val;
+
+	/* enum */
+	s_ip6 = nm_setting_ip6_config_new ();
+	g_object_set (s_ip6,
+	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+	              NULL);
+
+	dict = _nm_setting_to_dbus (s_ip6, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	g_assert (dict != NULL);
+
+	val = g_variant_lookup_value (dict, NM_SETTING_IP6_CONFIG_IP6_PRIVACY, G_VARIANT_TYPE_INT32);
+	g_assert (val != NULL);
+	g_assert_cmpint (g_variant_get_int32 (val), ==, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
+	g_variant_unref (val);
+
+	g_variant_unref (dict);
+	g_object_unref (s_ip6);
+
+	/* flags (and a transformed enum) */
+	s_wsec = nm_setting_wireless_security_new ();
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, NM_WEP_KEY_TYPE_KEY,
+	              NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, (NM_SETTING_SECRET_FLAG_AGENT_OWNED |
+	                                                           NM_SETTING_SECRET_FLAG_NOT_SAVED),
+	              NULL);
+
+	dict = _nm_setting_to_dbus (s_wsec, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	g_assert (dict != NULL);
+
+	val = g_variant_lookup_value (dict, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, G_VARIANT_TYPE_UINT32);
+	g_assert (val != NULL);
+	g_assert_cmpint (g_variant_get_uint32 (val), ==, NM_WEP_KEY_TYPE_KEY);
+	g_variant_unref (val);
+
+	val = g_variant_lookup_value (dict, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS, G_VARIANT_TYPE_UINT32);
+	g_assert (val != NULL);
+	g_assert_cmpint (g_variant_get_uint32 (val), ==, (NM_SETTING_SECRET_FLAG_AGENT_OWNED |
+	                                                  NM_SETTING_SECRET_FLAG_NOT_SAVED));
+	g_variant_unref (val);
+
+	g_variant_unref (dict);
+	g_object_unref (s_wsec);
+
+	/* another transformed enum */
+	s_serial = nm_setting_serial_new ();
+	g_object_set (s_serial,
+	              NM_SETTING_SERIAL_PARITY, NM_SETTING_SERIAL_PARITY_ODD,
+	              NULL);
+
+	dict = _nm_setting_to_dbus (s_serial, NULL, NM_CONNECTION_SERIALIZE_ALL);
+	g_assert (dict != NULL);
+
+	val = g_variant_lookup_value (dict, NM_SETTING_SERIAL_PARITY, G_VARIANT_TYPE_BYTE);
+	g_assert (val != NULL);
+	g_assert_cmpint (g_variant_get_byte (val), ==, 'o');
+	g_variant_unref (val);
+
+	g_variant_unref (dict);
+	g_object_unref (s_serial);
+}
+
+static void
 test_connection_to_dbus_setting_name (void)
 {
 	NMConnection *connection;
@@ -830,6 +897,68 @@ test_setting_new_from_dbus_transform (void)
 
 	g_variant_unref (dict);
 	g_object_unref (s_wired);
+}
+
+static void
+test_setting_new_from_dbus_enum (void)
+{
+	NMSettingIP6Config *s_ip6;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingSerial *s_serial;
+	GVariant *dict;
+	GVariantBuilder builder;
+	GError *error = NULL;
+
+	/* enum */
+	g_variant_builder_init (&builder, NM_VARIANT_TYPE_SETTING);
+	g_variant_builder_add (&builder, "{sv}",
+	                       NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
+	                       g_variant_new_int32 (NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
+	dict = g_variant_builder_end (&builder);
+
+	s_ip6 = (NMSettingIP6Config *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_IP6_CONFIG, dict, NULL, &error);
+	g_assert_no_error (error);
+
+	g_assert_cmpint (nm_setting_ip6_config_get_ip6_privacy (s_ip6), ==, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
+
+	g_variant_unref (dict);
+	g_object_unref (s_ip6);
+
+	/* flags (and a transformed enum) */
+	g_variant_builder_init (&builder, NM_VARIANT_TYPE_SETTING);
+	g_variant_builder_add (&builder, "{sv}",
+	                       NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
+	                       g_variant_new_uint32 (NM_WEP_KEY_TYPE_KEY));
+	g_variant_builder_add (&builder, "{sv}",
+	                       NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS,
+	                       g_variant_new_uint32 (NM_SETTING_SECRET_FLAG_AGENT_OWNED |
+	                                             NM_SETTING_SECRET_FLAG_NOT_SAVED));
+	dict = g_variant_builder_end (&builder);
+
+	s_wsec = (NMSettingWirelessSecurity *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_WIRELESS_SECURITY, dict, NULL, &error);
+	g_assert_no_error (error);
+
+	g_assert_cmpint (nm_setting_wireless_security_get_wep_key_type (s_wsec), ==, NM_WEP_KEY_TYPE_KEY);
+	g_assert_cmpint (nm_setting_wireless_security_get_wep_key_flags (s_wsec), ==, (NM_SETTING_SECRET_FLAG_AGENT_OWNED |
+	                                                                               NM_SETTING_SECRET_FLAG_NOT_SAVED));
+
+	g_variant_unref (dict);
+	g_object_unref (s_wsec);
+
+	/* another transformed enum */
+	g_variant_builder_init (&builder, NM_VARIANT_TYPE_SETTING);
+	g_variant_builder_add (&builder, "{sv}",
+	                       NM_SETTING_SERIAL_PARITY,
+	                       g_variant_new_byte ('E'));
+	dict = g_variant_builder_end (&builder);
+
+	s_serial = (NMSettingSerial *) _nm_setting_new_from_dbus (NM_TYPE_SETTING_SERIAL, dict, NULL, &error);
+	g_assert_no_error (error);
+
+	g_assert_cmpint (nm_setting_serial_get_parity (s_serial), ==, NM_SETTING_SERIAL_PARITY_EVEN);
+
+	g_variant_unref (dict);
+	g_object_unref (s_serial);
 }
 
 static NMConnection *
@@ -3184,6 +3313,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_setting_to_dbus_no_secrets", test_setting_to_dbus_no_secrets);
 	g_test_add_func ("/core/general/test_setting_to_dbus_only_secrets", test_setting_to_dbus_only_secrets);
 	g_test_add_func ("/core/general/test_setting_to_dbus_transform", test_setting_to_dbus_transform);
+	g_test_add_func ("/core/general/test_setting_to_dbus_enum", test_setting_to_dbus_enum);
 	g_test_add_func ("/core/general/test_setting_compare_id", test_setting_compare_id);
 #define ADD_FUNC(func, secret_flags, comp_flags, remove_secret) \
 	g_test_add_data_func_full ("/core/general/" G_STRINGIFY (func), \
@@ -3203,6 +3333,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/core/general/test_connection_to_dbus_deprecated_props", test_connection_to_dbus_deprecated_props);
 	g_test_add_func ("/core/general/test_setting_new_from_dbus", test_setting_new_from_dbus);
 	g_test_add_func ("/core/general/test_setting_new_from_dbus_transform", test_setting_new_from_dbus_transform);
+	g_test_add_func ("/core/general/test_setting_new_from_dbus_enum", test_setting_new_from_dbus_enum);
 	g_test_add_func ("/core/general/test_connection_replace_settings", test_connection_replace_settings);
 	g_test_add_func ("/core/general/test_connection_replace_settings_from_connection", test_connection_replace_settings_from_connection);
 	g_test_add_func ("/core/general/test_connection_replace_settings_bad", test_connection_replace_settings_bad);

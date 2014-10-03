@@ -389,7 +389,7 @@ get_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_DEVICE_TYPE:
-		g_value_set_uint (value, nm_device_get_device_type (device));
+		g_value_set_enum (value, nm_device_get_device_type (device));
 		break;
 	case PROP_UDI:
 		g_value_set_string (value, nm_device_get_udi (device));
@@ -410,7 +410,7 @@ get_property (GObject *object,
 		g_value_set_string (value, nm_device_get_firmware_version (device));
 		break;
 	case PROP_CAPABILITIES:
-		g_value_set_uint (value, nm_device_get_capabilities (device));
+		g_value_set_flags (value, nm_device_get_capabilities (device));
 		break;
 	case PROP_MANAGED:
 		g_value_set_boolean (value, nm_device_get_managed (device));
@@ -434,7 +434,7 @@ get_property (GObject *object,
 		g_value_set_object (value, nm_device_get_dhcp6_config (device));
 		break;
 	case PROP_STATE:
-		g_value_set_uint (value, nm_device_get_state (device));
+		g_value_set_enum (value, nm_device_get_state (device));
 		break;
 	case PROP_STATE_REASON:
 		g_value_set_uint (value, nm_device_get_state_reason (device));
@@ -476,7 +476,7 @@ set_property (GObject *object,
 	switch (prop_id) {
 	case PROP_DEVICE_TYPE:
 		/* Construct only */
-		priv->device_type = g_value_get_uint (value);
+		priv->device_type = g_value_get_enum (value);
 		break;
 	case PROP_AUTOCONNECT:
 		b = g_value_get_boolean (value);
@@ -545,8 +545,9 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEVICE_TYPE,
-		 g_param_spec_uint (NM_DEVICE_DEVICE_TYPE, "", "",
-		                    NM_DEVICE_TYPE_UNKNOWN, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
+		 g_param_spec_enum (NM_DEVICE_DEVICE_TYPE, "", "",
+		                    NM_TYPE_DEVICE_TYPE,
+		                    NM_DEVICE_TYPE_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 	/**
@@ -609,10 +610,11 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CAPABILITIES,
-		 g_param_spec_uint (NM_DEVICE_CAPABILITIES, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READABLE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_DEVICE_CAPABILITIES, "", "",
+		                     NM_TYPE_DEVICE_CAPABILITIES,
+		                     NM_DEVICE_CAP_NONE,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMDevice:managed:
@@ -706,8 +708,9 @@ nm_device_class_init (NMDeviceClass *device_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_DEVICE_STATE, "", "",
-		                    0, G_MAXUINT32, 0,
+		 g_param_spec_enum (NM_DEVICE_STATE, "", "",
+		                    NM_TYPE_DEVICE_STATE,
+		                    NM_DEVICE_STATE_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 

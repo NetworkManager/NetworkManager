@@ -163,7 +163,7 @@ get_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_VPN_STATE:
-		g_value_set_uint (value, nm_vpn_connection_get_vpn_state (self));
+		g_value_set_enum (value, nm_vpn_connection_get_vpn_state (self));
 		break;
 	case PROP_BANNER:
 		g_value_set_string (value, nm_vpn_connection_get_banner (self));
@@ -201,9 +201,8 @@ nm_vpn_connection_class_init (NMVpnConnectionClass *connection_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_VPN_STATE,
-		 g_param_spec_uint (NM_VPN_CONNECTION_VPN_STATE, "", "",
-		                    NM_VPN_CONNECTION_STATE_UNKNOWN,
-		                    NM_VPN_CONNECTION_STATE_DISCONNECTED,
+		 g_param_spec_enum (NM_VPN_CONNECTION_VPN_STATE, "", "",
+		                    NM_TYPE_VPN_CONNECTION_STATE,
 		                    NM_VPN_CONNECTION_STATE_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));

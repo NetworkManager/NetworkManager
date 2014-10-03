@@ -26,6 +26,7 @@
 #include "nm-setting-gsm.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
+#include "nm-core-enum-types.h"
 
 /**
  * SECTION:nm-setting-gsm
@@ -400,7 +401,7 @@ set_property (GObject *object, guint prop_id,
 		priv->password = g_value_dup_string (value);
 		break;
 	case PROP_PASSWORD_FLAGS:
-		priv->password_flags = g_value_get_uint (value);
+		priv->password_flags = g_value_get_flags (value);
 		break;
 	case PROP_APN:
 		g_free (priv->apn);
@@ -421,7 +422,7 @@ set_property (GObject *object, guint prop_id,
 		priv->pin = g_value_dup_string (value);
 		break;
 	case PROP_PIN_FLAGS:
-		priv->pin_flags = g_value_get_uint (value);
+		priv->pin_flags = g_value_get_flags (value);
 		break;
 	case PROP_HOME_ONLY:
 		priv->home_only = g_value_get_boolean (value);
@@ -449,7 +450,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_gsm_get_password (setting));
 		break;
 	case PROP_PASSWORD_FLAGS:
-		g_value_set_uint (value, nm_setting_gsm_get_password_flags (setting));
+		g_value_set_flags (value, nm_setting_gsm_get_password_flags (setting));
 		break;
 	case PROP_APN:
 		g_value_set_string (value, nm_setting_gsm_get_apn (setting));
@@ -461,7 +462,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, nm_setting_gsm_get_pin (setting));
 		break;
 	case PROP_PIN_FLAGS:
-		g_value_set_uint (value, nm_setting_gsm_get_pin_flags (setting));
+		g_value_set_flags (value, nm_setting_gsm_get_pin_flags (setting));
 		break;
 	case PROP_HOME_ONLY:
 		g_value_set_boolean (value, nm_setting_gsm_get_home_only (setting));
@@ -540,12 +541,11 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD_FLAGS,
-		 g_param_spec_uint (NM_SETTING_GSM_PASSWORD_FLAGS, "", "",
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_GSM_PASSWORD_FLAGS, "", "",
+		                     NM_TYPE_SETTING_SECRET_FLAGS,
+		                     NM_SETTING_SECRET_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingGsm:apn:
@@ -603,12 +603,11 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PIN_FLAGS,
-		 g_param_spec_uint (NM_SETTING_GSM_PIN_FLAGS, "", "",
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_GSM_PIN_FLAGS, "", "",
+		                     NM_TYPE_SETTING_SECRET_FLAGS,
+		                     NM_SETTING_SECRET_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingGsm:home-only:

@@ -18,3 +18,4 @@ pin=2345
 
 [serial]
 baud=115200
+parity=111

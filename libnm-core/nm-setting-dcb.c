@@ -26,6 +26,7 @@
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
+#include "nm-core-enum-types.h"
 
 /**
  * SECTION:nm-setting-dcb
@@ -802,7 +803,7 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_APP_FCOE_FLAGS:
-		priv->app_fcoe_flags = g_value_get_uint (value);
+		priv->app_fcoe_flags = g_value_get_flags (value);
 		break;
 	case PROP_APP_FCOE_PRIORITY:
 		priv->app_fcoe_priority = g_value_get_int (value);
@@ -811,25 +812,25 @@ set_property (GObject *object, guint prop_id,
 		priv->app_fcoe_mode = g_value_dup_string (value);
 		break;
 	case PROP_APP_ISCSI_FLAGS:
-		priv->app_iscsi_flags = g_value_get_uint (value);
+		priv->app_iscsi_flags = g_value_get_flags (value);
 		break;
 	case PROP_APP_ISCSI_PRIORITY:
 		priv->app_iscsi_priority = g_value_get_int (value);
 		break;
 	case PROP_APP_FIP_FLAGS:
-		priv->app_fip_flags = g_value_get_uint (value);
+		priv->app_fip_flags = g_value_get_flags (value);
 		break;
 	case PROP_APP_FIP_PRIORITY:
 		priv->app_fip_priority = g_value_get_int (value);
 		break;
 	case PROP_PFC_FLAGS:
-		priv->pfc_flags = g_value_get_uint (value);
+		priv->pfc_flags = g_value_get_flags (value);
 		break;
 	case PROP_PFC:
 		SET_ARRAY_FROM_GVALUE (value, priv->pfc);
 		break;
 	case PROP_PRIORITY_GROUP_FLAGS:
-		priv->priority_group_flags = g_value_get_uint (value);
+		priv->priority_group_flags = g_value_get_flags (value);
 		break;
 	case PROP_PRIORITY_GROUP_ID:
 		SET_ARRAY_FROM_GVALUE (value, priv->priority_group_id);
@@ -861,7 +862,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_APP_FCOE_FLAGS:
-		g_value_set_uint (value, priv->app_fcoe_flags);
+		g_value_set_flags (value, priv->app_fcoe_flags);
 		break;
 	case PROP_APP_FCOE_PRIORITY:
 		g_value_set_int (value, priv->app_fcoe_priority);
@@ -870,25 +871,25 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->app_fcoe_mode);
 		break;
 	case PROP_APP_ISCSI_FLAGS:
-		g_value_set_uint (value, priv->app_iscsi_flags);
+		g_value_set_flags (value, priv->app_iscsi_flags);
 		break;
 	case PROP_APP_ISCSI_PRIORITY:
 		g_value_set_int (value, priv->app_iscsi_priority);
 		break;
 	case PROP_APP_FIP_FLAGS:
-		g_value_set_uint (value, priv->app_fip_flags);
+		g_value_set_flags (value, priv->app_fip_flags);
 		break;
 	case PROP_APP_FIP_PRIORITY:
 		g_value_set_int (value, priv->app_fip_priority);
 		break;
 	case PROP_PFC_FLAGS:
-		g_value_set_uint (value, priv->pfc_flags);
+		g_value_set_flags (value, priv->pfc_flags);
 		break;
 	case PROP_PFC:
 		SET_GVALUE_FROM_ARRAY (value, priv->pfc);
 		break;
 	case PROP_PRIORITY_GROUP_FLAGS:
-		g_value_set_uint (value, priv->priority_group_flags);
+		g_value_set_flags (value, priv->priority_group_flags);
 		break;
 	case PROP_PRIORITY_GROUP_ID:
 		SET_GVALUE_FROM_ARRAY (value, priv->priority_group_id);
@@ -934,10 +935,11 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_FCOE_FLAGS,
-		 g_param_spec_uint (NM_SETTING_DCB_APP_FCOE_FLAGS, "", "",
-		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_DCB_APP_FCOE_FLAGS, "", "",
+		                     NM_TYPE_SETTING_DCB_FLAGS,
+		                     NM_SETTING_DCB_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:app-fcoe-priority:
@@ -977,10 +979,11 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_ISCSI_FLAGS,
-		 g_param_spec_uint (NM_SETTING_DCB_APP_ISCSI_FLAGS, "", "",
-		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_DCB_APP_ISCSI_FLAGS, "", "",
+		                     NM_TYPE_SETTING_DCB_FLAGS,
+		                     NM_SETTING_DCB_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:app-iscsi-priority:
@@ -1006,10 +1009,11 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_APP_FIP_FLAGS,
-		 g_param_spec_uint (NM_SETTING_DCB_APP_FIP_FLAGS, "", "",
-		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_DCB_APP_FIP_FLAGS, "", "",
+		                     NM_TYPE_SETTING_DCB_FLAGS,
+		                     NM_SETTING_DCB_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:app-fip-priority:
@@ -1035,10 +1039,11 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PFC_FLAGS,
-		 g_param_spec_uint (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS, "", "",
-		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS, "", "",
+		                     NM_TYPE_SETTING_DCB_FLAGS,
+		                     NM_SETTING_DCB_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-flow-control:
@@ -1069,10 +1074,11 @@ nm_setting_dcb_class_init (NMSettingDcbClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIORITY_GROUP_FLAGS,
-		 g_param_spec_uint (NM_SETTING_DCB_PRIORITY_GROUP_FLAGS, "", "",
-		                    0, DCB_FLAGS_ALL, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_DCB_PRIORITY_GROUP_FLAGS, "", "",
+		                     NM_TYPE_SETTING_DCB_FLAGS,
+		                     NM_SETTING_DCB_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingDcb:priority-group-id:

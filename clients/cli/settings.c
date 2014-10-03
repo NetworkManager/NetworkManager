@@ -1425,7 +1425,6 @@ DEFINE_SECRET_FLAGS_GETTER (nmc_property_pppoe_get_password_flags, NM_SETTING_PP
 /* --- NM_SETTING_SERIAL_SETTING_NAME property get functions --- */
 DEFINE_GETTER (nmc_property_serial_get_baud, NM_SETTING_SERIAL_BAUD)
 DEFINE_GETTER (nmc_property_serial_get_bits, NM_SETTING_SERIAL_BITS)
-DEFINE_GETTER (nmc_property_serial_get_parity, NM_SETTING_SERIAL_PARITY)
 DEFINE_GETTER (nmc_property_serial_get_stopbits, NM_SETTING_SERIAL_STOPBITS)
 DEFINE_GETTER (nmc_property_serial_get_send_delay, NM_SETTING_SERIAL_SEND_DELAY)
 
@@ -3680,17 +3679,33 @@ nmc_property_olpc_set_channel (NMSetting *setting, const char *prop, const char 
 
 
 /* --- NM_SETTING_SERIAL_SETTING_NAME property setter functions --- */
+static char *
+nmc_property_serial_get_parity (NMSetting *setting)
+{
+	NMSettingSerial *s_serial = NM_SETTING_SERIAL (setting);
+
+	switch (nm_setting_serial_get_parity (s_serial)) {
+	case NM_SETTING_SERIAL_PARITY_EVEN:
+		return g_strdup ("even");
+	case NM_SETTING_SERIAL_PARITY_ODD:
+		return g_strdup ("odd");
+	default:
+	case NM_SETTING_SERIAL_PARITY_NONE:
+		return g_strdup ("none");
+	}
+}
+
 static gboolean
 nmc_property_serial_set_parity (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	char parity;
+	NMSettingSerialParity parity;
 
 	if (val[0] == 'E' || val[0] == 'e')
-		parity = 'E';
+		parity = NM_SETTING_SERIAL_PARITY_EVEN;
 	else if (val[0] == 'O' || val[0] == 'o')
-		parity = 'o';
+		parity = NM_SETTING_SERIAL_PARITY_ODD;
 	else if (val[0] == 'N' || val[0] == 'n')
-		parity = 'n';
+		parity = NM_SETTING_SERIAL_PARITY_NONE;
 	else {
 		g_set_error (error, 1, 0, _("'%s' is not valid; use [e, o, n]"), val);
 		return FALSE;

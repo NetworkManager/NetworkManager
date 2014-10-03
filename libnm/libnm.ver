@@ -742,6 +742,7 @@ global:
 	nm_setting_serial_get_stopbits;
 	nm_setting_serial_get_type;
 	nm_setting_serial_new;
+	nm_setting_serial_parity_get_type;
 	nm_setting_set_secret_flags;
 	nm_setting_team_error_get_type;
 	nm_setting_team_error_quark;

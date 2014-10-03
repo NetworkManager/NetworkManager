@@ -2017,7 +2017,7 @@ get_property (GObject *object,
 		g_value_set_string (value, nm_client_get_version (self));
 		break;
 	case PROP_STATE:
-		g_value_set_uint (value, nm_client_get_state (self));
+		g_value_set_enum (value, nm_client_get_state (self));
 		break;
 	case PROP_STARTUP:
 		g_value_set_boolean (value, nm_client_get_startup (self));
@@ -2050,7 +2050,7 @@ get_property (GObject *object,
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_client_get_active_connections (self)));
 		break;
 	case PROP_CONNECTIVITY:
-		g_value_set_uint (value, priv->connectivity);
+		g_value_set_enum (value, priv->connectivity);
 		break;
 	case PROP_PRIMARY_CONNECTION:
 		g_value_set_object (value, priv->primary_connection);
@@ -2109,8 +2109,9 @@ nm_client_class_init (NMClientClass *client_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_CLIENT_STATE, "", "",
-		                    NM_STATE_UNKNOWN, NM_STATE_CONNECTED_GLOBAL, NM_STATE_UNKNOWN,
+		 g_param_spec_enum (NM_CLIENT_STATE, "", "",
+		                    NM_TYPE_STATE,
+		                    NM_STATE_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 
@@ -2243,8 +2244,9 @@ nm_client_class_init (NMClientClass *client_class)
 	 */
 	g_object_class_install_property
 		(object_class, PROP_CONNECTIVITY,
-		 g_param_spec_uint (NM_CLIENT_CONNECTIVITY, "", "",
-		                    NM_CONNECTIVITY_UNKNOWN, NM_CONNECTIVITY_FULL, NM_CONNECTIVITY_UNKNOWN,
+		 g_param_spec_enum (NM_CLIENT_CONNECTIVITY, "", "",
+		                    NM_TYPE_CONNECTIVITY_STATE,
+		                    NM_CONNECTIVITY_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 

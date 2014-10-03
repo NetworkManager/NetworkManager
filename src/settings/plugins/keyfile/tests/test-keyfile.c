@@ -1724,6 +1724,7 @@ test_read_bt_dun_connection (void)
 	const char *bdaddr;
 	const guint8 expected_bdaddr[ETH_ALEN] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
 	const char *tmp;
+	NMSettingSerialParity parity;
 	const char *expected_id = "AT&T Data Connect BT";
 	const char *expected_uuid = "089130ab-ce28-46e4-ad77-d44869b03d19";
 	const char *expected_apn = "ISP.CINGULAR";
@@ -1860,6 +1861,13 @@ test_read_bt_dun_connection (void)
 	        TEST_BT_DUN_FILE,
 	        NM_SETTING_SERIAL_SETTING_NAME);
 
+	parity = nm_setting_serial_get_parity (s_serial);
+	ASSERT (parity == NM_SETTING_SERIAL_PARITY_ODD,
+	        "connection-verify-serial", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_BT_DUN_FILE,
+	        NM_SETTING_SERIAL_SETTING_NAME,
+	        NM_SETTING_SERIAL_PARITY);
+
 	g_object_unref (connection);
 }
 
@@ -1965,6 +1973,7 @@ test_read_gsm_connection (void)
 	NMSettingBluetooth *s_bluetooth;
 	GError *error = NULL;
 	const char *tmp;
+	NMSettingSerialParity parity;
 	const char *expected_id = "AT&T Data Connect";
 	const char *expected_apn = "ISP.CINGULAR";
 	const char *expected_username = "ISP@CINGULARGPRS.COM";
@@ -2101,6 +2110,13 @@ test_read_gsm_connection (void)
 	        "connection-verify-serial", "failed to verify %s: missing %s setting",
 	        TEST_GSM_FILE,
 	        NM_SETTING_SERIAL_SETTING_NAME);
+
+	parity = nm_setting_serial_get_parity (s_serial);
+	ASSERT (parity == NM_SETTING_SERIAL_PARITY_ODD,
+	        "connection-verify-serial", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_GSM_FILE,
+	        NM_SETTING_SERIAL_SETTING_NAME,
+	        NM_SETTING_SERIAL_PARITY);
 
 	g_object_unref (connection);
 }

@@ -27,6 +27,7 @@
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
+#include "nm-core-enum-types.h"
 
 /**
  * SECTION:nm-setting-vlan
@@ -603,7 +604,7 @@ set_property (GObject *object, guint prop_id,
 		priv->id = g_value_get_uint (value);
 		break;
 	case PROP_FLAGS:
-		priv->flags = g_value_get_uint (value);
+		priv->flags = g_value_get_flags (value);
 		break;
 	case PROP_INGRESS_PRIORITY_MAP:
 		g_slist_free_full (priv->ingress_priority_map, g_free);
@@ -654,7 +655,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->id);
 		break;
 	case PROP_FLAGS:
-		g_value_set_uint (value, priv->flags);
+		g_value_set_flags (value, priv->flags);
 		break;
 	case PROP_INGRESS_PRIORITY_MAP:
 		g_value_take_boxed (value, priority_maplist_to_strv (priv->ingress_priority_map));
@@ -740,12 +741,13 @@ nm_setting_vlan_class_init (NMSettingVlanClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_FLAGS,
-		 g_param_spec_uint (NM_SETTING_VLAN_FLAGS, "", "",
-		                    0, G_MAXUINT32, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT |
-		                    NM_SETTING_PARAM_INFERRABLE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_VLAN_FLAGS, "", "",
+		                     NM_TYPE_VLAN_FLAGS,
+		                     0,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_CONSTRUCT |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingVlan:ingress-priority-map:

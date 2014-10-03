@@ -28,6 +28,7 @@
 #include "crypto.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
+#include "nm-core-enum-types.h"
 
 /**
  * SECTION:nm-setting-8021x
@@ -2917,7 +2918,7 @@ set_property (GObject *object, guint prop_id,
 		priv->password = g_value_dup_string (value);
 		break;
 	case PROP_PASSWORD_FLAGS:
-		priv->password_flags = g_value_get_uint (value);
+		priv->password_flags = g_value_get_flags (value);
 		break;
 	case PROP_PASSWORD_RAW:
 		if (priv->password_raw)
@@ -2925,7 +2926,7 @@ set_property (GObject *object, guint prop_id,
 		priv->password_raw = g_value_dup_boxed (value);
 		break;
 	case PROP_PASSWORD_RAW_FLAGS:
-		priv->password_raw_flags = g_value_get_uint (value);
+		priv->password_raw_flags = g_value_get_flags (value);
 		break;
 	case PROP_PRIVATE_KEY:
 		if (priv->private_key)
@@ -2942,7 +2943,7 @@ set_property (GObject *object, guint prop_id,
 		priv->private_key_password = g_value_dup_string (value);
 		break;
 	case PROP_PRIVATE_KEY_PASSWORD_FLAGS:
-		priv->private_key_password_flags = g_value_get_uint (value);
+		priv->private_key_password_flags = g_value_get_flags (value);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY:
 		if (priv->phase2_private_key)
@@ -2959,14 +2960,14 @@ set_property (GObject *object, guint prop_id,
 		priv->phase2_private_key_password = g_value_dup_string (value);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS:
-		priv->phase2_private_key_password_flags = g_value_get_uint (value);
+		priv->phase2_private_key_password_flags = g_value_get_flags (value);
 		break;
 	case PROP_PIN:
 		g_free (priv->pin);
 		priv->pin = g_value_dup_string (value);
 		break;
 	case PROP_PIN_FLAGS:
-		priv->pin_flags = g_value_get_uint (value);
+		priv->pin_flags = g_value_get_flags (value);
 		break;
 	case PROP_SYSTEM_CA_CERTS:
 		priv->system_ca_certs = g_value_get_boolean (value);
@@ -3046,13 +3047,13 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->password);
 		break;
 	case PROP_PASSWORD_FLAGS:
-		g_value_set_uint (value, priv->password_flags);
+		g_value_set_flags (value, priv->password_flags);
 		break;
 	case PROP_PASSWORD_RAW:
 		g_value_set_boxed (value, priv->password_raw);
 		break;
 	case PROP_PASSWORD_RAW_FLAGS:
-		g_value_set_uint (value, priv->password_raw_flags);
+		g_value_set_flags (value, priv->password_raw_flags);
 		break;
 	case PROP_PRIVATE_KEY:
 		g_value_set_boxed (value, priv->private_key);
@@ -3061,7 +3062,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->private_key_password);
 		break;
 	case PROP_PRIVATE_KEY_PASSWORD_FLAGS:
-		g_value_set_uint (value, priv->private_key_password_flags);
+		g_value_set_flags (value, priv->private_key_password_flags);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY:
 		g_value_set_boxed (value, priv->phase2_private_key);
@@ -3070,13 +3071,13 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->phase2_private_key_password);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS:
-		g_value_set_uint (value, priv->phase2_private_key_password_flags);
+		g_value_set_flags (value, priv->phase2_private_key_password_flags);
 		break;
 	case PROP_PIN:
 		g_value_set_string (value, priv->pin);
 		break;
 	case PROP_PIN_FLAGS:
-		g_value_set_uint (value, priv->pin_flags);
+		g_value_set_flags (value, priv->pin_flags);
 		break;
 	case PROP_SYSTEM_CA_CERTS:
 		g_value_set_boolean (value, priv->system_ca_certs);
@@ -3468,12 +3469,11 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD_FLAGS,
-		 g_param_spec_uint (NM_SETTING_802_1X_PASSWORD_FLAGS, "", "",
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_802_1X_PASSWORD_FLAGS, "", "",
+		                     NM_TYPE_SETTING_SECRET_FLAGS,
+		                     NM_SETTING_SECRET_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:password-raw:
@@ -3502,12 +3502,11 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD_RAW_FLAGS,
-		 g_param_spec_uint (NM_SETTING_802_1X_PASSWORD_RAW_FLAGS, "", "",
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_802_1X_PASSWORD_RAW_FLAGS, "", "",
+		                     NM_TYPE_SETTING_SECRET_FLAGS,
+		                     NM_SETTING_SECRET_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:private-key:
@@ -3576,12 +3575,11 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRIVATE_KEY_PASSWORD_FLAGS,
-		 g_param_spec_uint (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS, "", "",
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS, "", "",
+		                     NM_TYPE_SETTING_SECRET_FLAGS,
+		                     NM_SETTING_SECRET_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:phase2-private-key:
@@ -3645,12 +3643,11 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS,
-		 g_param_spec_uint (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS, "", "",
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD_FLAGS, "", "",
+		                     NM_TYPE_SETTING_SECRET_FLAGS,
+		                     NM_SETTING_SECRET_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:pin:
@@ -3672,12 +3669,11 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_PIN_FLAGS,
-		 g_param_spec_uint (NM_SETTING_802_1X_PIN_FLAGS, "", "",
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    NM_SETTING_SECRET_FLAGS_ALL,
-		                    NM_SETTING_SECRET_FLAG_NONE,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
+		 g_param_spec_flags (NM_SETTING_802_1X_PIN_FLAGS, "", "",
+		                     NM_TYPE_SETTING_SECRET_FLAGS,
+		                     NM_SETTING_SECRET_FLAG_NONE,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSetting8021x:system-ca-certs:

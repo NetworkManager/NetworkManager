@@ -30,6 +30,7 @@
 #include "nm-wimax-nsp.h"
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"
+#include "nm-enum-types.h"
 
 G_DEFINE_TYPE (NMWimaxNsp, nm_wimax_nsp, NM_TYPE_OBJECT)
 
@@ -206,7 +207,7 @@ get_property (GObject *object,
 		g_value_set_uint (value, nm_wimax_nsp_get_signal_quality (nsp));
 		break;
 	case PROP_NETWORK_TYPE:
-		g_value_set_uint (value, nm_wimax_nsp_get_network_type (nsp));
+		g_value_set_enum (value, nm_wimax_nsp_get_network_type (nsp));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -281,8 +282,9 @@ nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_TYPE,
-		 g_param_spec_uint (NM_WIMAX_NSP_NETWORK_TYPE, "", "",
-		                    0, G_MAXUINT32, 0,
+		 g_param_spec_enum (NM_WIMAX_NSP_NETWORK_TYPE, "", "",
+		                    NM_TYPE_WIMAX_NSP_NETWORK_TYPE,
+		                    NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,
 		                    G_PARAM_READABLE |
 		                    G_PARAM_STATIC_STRINGS));
 }

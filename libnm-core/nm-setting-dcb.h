@@ -65,7 +65,7 @@ GQuark nm_setting_dcb_error_quark (void);
  *
  * DCB feature flags.
  **/
-typedef enum {
+typedef enum { /*< flags >*/
 	NM_SETTING_DCB_FLAG_NONE      = 0x00000000,
 	NM_SETTING_DCB_FLAG_ENABLE    = 0x00000001,
 	NM_SETTING_DCB_FLAG_ADVERTISE = 0x00000002,

@@ -1198,11 +1198,11 @@ handle_property_changed (NMObject *self, const char *dbus_name,
 	if (G_UNLIKELY (debug)) {
 		char *s;
 		s = g_variant_print (value, FALSE);
-		dbgmsg ("PC: (%p) %s::%s => '%s' (%s%s%s)",
+		dbgmsg ("PC: (%p) %s:%s => '%s' (%s%s%s)",
 		        self, G_OBJECT_TYPE_NAME (self),
 		        prop_name,
 		        s,
-		        G_VALUE_TYPE_NAME (value),
+		        g_variant_get_type_string (value),
 		        pi->object_type ? " / " : "",
 		        pi->object_type ? g_type_name (pi->object_type) : "");
 		g_free (s);
@@ -1264,15 +1264,16 @@ property_proxy_signal (GDBusProxy *proxy,
 	g_variant_unref (properties);
 }
 
-#define HANDLE_TYPE(gtype, vtype, ctype, getter) \
-	} else if (pspec->value_type == gtype) { \
+#define HANDLE_TYPE(vtype, ctype, getter) \
+	G_STMT_START { \
 		if (g_variant_is_of_type (value, vtype)) { \
 			ctype *param = (ctype *) field; \
 			*param = getter (value); \
 		} else { \
 			success = FALSE; \
 			goto done; \
-		}
+		} \
+	} G_STMT_END
 
 static gboolean
 demarshal_generic (NMObject *object,
@@ -1317,21 +1318,52 @@ demarshal_generic (NMObject *object,
 			*param = g_bytes_new (val, length);
 		else
 			*param = NULL;
-	HANDLE_TYPE (G_TYPE_BOOLEAN, G_VARIANT_TYPE_BOOLEAN, gboolean, g_variant_get_boolean)
-	HANDLE_TYPE (G_TYPE_UCHAR, G_VARIANT_TYPE_BYTE, guchar, g_variant_get_byte)
-	HANDLE_TYPE (G_TYPE_DOUBLE, G_VARIANT_TYPE_DOUBLE, gdouble, g_variant_get_double)
-	HANDLE_TYPE (G_TYPE_INT, G_VARIANT_TYPE_INT32, gint, g_variant_get_int32)
-	HANDLE_TYPE (G_TYPE_UINT, G_VARIANT_TYPE_UINT32, guint, g_variant_get_uint32)
-	HANDLE_TYPE (G_TYPE_INT64, G_VARIANT_TYPE_INT64, gint, g_variant_get_int64)
-	HANDLE_TYPE (G_TYPE_UINT64, G_VARIANT_TYPE_UINT64, guint, g_variant_get_uint64)
-	HANDLE_TYPE (G_TYPE_LONG, G_VARIANT_TYPE_INT64, glong, g_variant_get_int64)
-	HANDLE_TYPE (G_TYPE_ULONG, G_VARIANT_TYPE_UINT64, gulong, g_variant_get_uint64)
-	} else {
-		dbgmsg ("%s: %s/%s unhandled type %s.",
-		        __func__,
-		        G_OBJECT_TYPE_NAME (object),
-		        pspec->name,
-		        g_type_name (pspec->value_type));
+	} else if (G_IS_PARAM_SPEC_ENUM (pspec)) {
+		int *param = (int *) field;
+
+		if (g_variant_is_of_type (value, G_VARIANT_TYPE_INT32))
+			*param = g_variant_get_int32 (value);
+		else if (g_variant_is_of_type (value, G_VARIANT_TYPE_UINT32))
+			*param = g_variant_get_uint32 (value);
+		else {
+			success = FALSE;
+			goto done;
+		}
+	} else if (G_IS_PARAM_SPEC_FLAGS (pspec)) {
+		guint *param = (guint *) field;
+
+		if (g_variant_is_of_type (value, G_VARIANT_TYPE_INT32))
+			*param = g_variant_get_int32 (value);
+		else if (g_variant_is_of_type (value, G_VARIANT_TYPE_UINT32))
+			*param = g_variant_get_uint32 (value);
+		else {
+			success = FALSE;
+			goto done;
+		}
+	} else if (pspec->value_type == G_TYPE_BOOLEAN)
+		HANDLE_TYPE (G_VARIANT_TYPE_BOOLEAN, gboolean, g_variant_get_boolean);
+	else if (pspec->value_type == G_TYPE_UCHAR)
+		HANDLE_TYPE (G_VARIANT_TYPE_BYTE, guchar, g_variant_get_byte);
+	else if (pspec->value_type == G_TYPE_DOUBLE)
+		HANDLE_TYPE (G_VARIANT_TYPE_DOUBLE, gdouble, g_variant_get_double);
+	else if (pspec->value_type == G_TYPE_INT)
+		HANDLE_TYPE (G_VARIANT_TYPE_INT32, gint, g_variant_get_int32);
+	else if (pspec->value_type == G_TYPE_UINT)
+		HANDLE_TYPE (G_VARIANT_TYPE_UINT32, guint, g_variant_get_uint32);
+	else if (pspec->value_type == G_TYPE_INT64)
+		HANDLE_TYPE (G_VARIANT_TYPE_INT64, gint, g_variant_get_int64);
+	else if (pspec->value_type == G_TYPE_UINT64)
+		HANDLE_TYPE (G_VARIANT_TYPE_UINT64, guint, g_variant_get_uint64);
+	else if (pspec->value_type == G_TYPE_LONG)
+		HANDLE_TYPE (G_VARIANT_TYPE_INT64, glong, g_variant_get_int64);
+	else if (pspec->value_type == G_TYPE_ULONG)
+		HANDLE_TYPE (G_VARIANT_TYPE_UINT64, gulong, g_variant_get_uint64);
+	else {
+		g_warning ("%s: %s:%s unhandled type %s.",
+		           __func__,
+		           G_OBJECT_TYPE_NAME (object),
+		           pspec->name,
+		           g_type_name (pspec->value_type));
 		success = FALSE;
 	}
 
@@ -1339,9 +1371,9 @@ done:
 	if (success) {
 		_nm_object_queue_notify (object, pspec->name);
 	} else {
-		dbgmsg ("%s: %s/%s (type %s) couldn't be set with type %s.",
+		dbgmsg ("%s: %s:%s (type %s) couldn't be set from D-Bus type %s.",
 		        __func__, G_OBJECT_TYPE_NAME (object), pspec->name,
-		        g_type_name (pspec->value_type), G_VALUE_TYPE_NAME (value));
+		        g_type_name (pspec->value_type), g_variant_get_type_string (value));
 	}
 	return success;
 }

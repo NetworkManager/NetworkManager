@@ -16,6 +16,7 @@ apn=ISP.CINGULAR
 
 [serial]
 baud=115200
+parity=o
 
 [bluetooth]
 bdaddr=00:11:22:33:44:55
