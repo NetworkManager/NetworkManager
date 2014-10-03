@@ -34,6 +34,7 @@
 
 #include "nm-dbus-manager.h"
 #include "nm-enum-types.h"
+#include "nm-glib-compat.h"
 
 G_DEFINE_TYPE (NMAuthSubject, nm_auth_subject, G_TYPE_OBJECT)
 
