@@ -454,6 +454,31 @@ ethtool_get_driver_info (const char *ifname,
 	return TRUE;
 }
 
+static gboolean
+ethtool_get_permanent_address (const char *ifname,
+                               guint8 *buf,
+                               size_t *length)
+{
+	gs_free struct ethtool_perm_addr *epaddr = NULL;
+
+	if (!ifname)
+		return FALSE;
+
+	epaddr = g_malloc0 (sizeof (*epaddr) + NM_UTILS_HWADDR_LEN_MAX);
+	epaddr->cmd = ETHTOOL_GPERMADDR;
+	epaddr->size = NM_UTILS_HWADDR_LEN_MAX;
+
+	if (!ethtool_get (ifname, epaddr))
+		return FALSE;
+	if (!nm_ethernet_address_is_valid (epaddr->data, epaddr->size))
+		return FALSE;
+
+	g_assert (epaddr->size <= NM_UTILS_HWADDR_LEN_MAX);
+	memcpy (buf, epaddr->data, epaddr->size);
+	*length = epaddr->size;
+	return TRUE;
+}
+
 /******************************************************************
  * udev
  ******************************************************************/
@@ -2855,6 +2880,15 @@ link_get_address (NMPlatform *platform, int ifindex, size_t *length)
 }
 
 static gboolean
+link_get_permanent_address (NMPlatform *platform,
+                            int ifindex,
+                            guint8 *buf,
+                            size_t *length)
+{
+	return ethtool_get_permanent_address (nm_platform_link_get_name (platform, ifindex), buf, length);
+}
+
+static gboolean
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
 	auto_nl_object struct rtnl_link *change = _nm_rtnl_link_alloc (ifindex, NULL);
@@ -4787,6 +4821,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 
 	platform_class->link_get_address = link_get_address;
 	platform_class->link_set_address = link_set_address;
+	platform_class->link_get_permanent_address = link_get_permanent_address;
 	platform_class->link_get_mtu = link_get_mtu;
 	platform_class->link_set_mtu = link_set_mtu;
 

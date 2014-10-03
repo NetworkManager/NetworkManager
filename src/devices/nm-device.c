@@ -201,6 +201,8 @@ typedef struct {
 	GHashTable *  available_connections;
 	char *        hw_addr;
 	guint         hw_addr_len;
+	char *        perm_hw_addr;
+	char *        initial_hw_addr;
 	char *        physical_port_id;
 	guint         dev_id;
 
@@ -8408,6 +8410,22 @@ nm_device_set_hw_addr (NMDevice *self, const char *addr,
 	return success;
 }
 
+const char *
+nm_device_get_permanent_hw_address (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
+
+	return NM_DEVICE_GET_PRIVATE (self)->perm_hw_addr;
+}
+
+const char *
+nm_device_get_initial_hw_address (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
+
+	return NM_DEVICE_GET_PRIVATE (self)->initial_hw_addr;
+}
+
 /**
  * nm_device_spec_match_list:
  * @self: an #NMDevice
@@ -8579,13 +8597,29 @@ constructed (GObject *object)
 
 	nm_device_update_hw_address (self);
 
-	if (NM_DEVICE_GET_CLASS (self)->update_permanent_hw_address)
-		NM_DEVICE_GET_CLASS (self)->update_permanent_hw_address (self);
+	if (priv->hw_addr_len) {
+		priv->initial_hw_addr = g_strdup (priv->hw_addr);
+		_LOGD (LOGD_DEVICE | LOGD_HW, "read initial MAC address %s", priv->initial_hw_addr);
 
-	if (NM_DEVICE_GET_CLASS (self)->update_initial_hw_address)
-		NM_DEVICE_GET_CLASS (self)->update_initial_hw_address (self);
+		if (priv->ifindex > 0) {
+			guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+			size_t len = 0;
 
-	/* Have to call update_initial_hw_address() before calling get_ignore_carrier() */
+			if (nm_platform_link_get_permanent_address (NM_PLATFORM_GET, priv->ifindex, buf, &len)) {
+				g_warn_if_fail (len == priv->hw_addr_len);
+				priv->perm_hw_addr = nm_utils_hwaddr_ntoa (buf, priv->hw_addr_len);
+				_LOGD (LOGD_DEVICE | LOGD_HW, "read permanent MAC address %s",
+				       priv->perm_hw_addr);
+			} else {
+				/* Fall back to current address */
+				_LOGD (LOGD_HW | LOGD_ETHER, "unable to read permanent MAC address (error %d)",
+					   nm_platform_get_error (NM_PLATFORM_GET));
+				priv->perm_hw_addr = g_strdup (priv->hw_addr);
+			}
+		}
+	}
+
+	/* Note: initial hardware address must be read before calling get_ignore_carrier() */
 	if (nm_device_has_capability (self, NM_DEVICE_CAP_CARRIER_DETECT)) {
 		NMConfig *config = nm_config_get ();
 
@@ -8718,6 +8752,8 @@ finalize (GObject *object)
 	_LOGD (LOGD_DEVICE, "finalize(): %s", G_OBJECT_TYPE_NAME (self));
 
 	g_free (priv->hw_addr);
+	g_free (priv->perm_hw_addr);
+	g_free (priv->initial_hw_addr);
 	g_slist_free_full (priv->pending_actions, g_free);
 	g_clear_pointer (&priv->physical_port_id, g_free);
 	g_free (priv->udi);

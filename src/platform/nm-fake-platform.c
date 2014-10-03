@@ -455,6 +455,12 @@ link_get_address (NMPlatform *platform, int ifindex, size_t *length)
 }
 
 static gboolean
+link_get_permanent_address (NMPlatform *platform, int ifindex, guint8 *buf, size_t *length)
+{
+	return FALSE;
+}
+
+static gboolean
 link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
@@ -1432,6 +1438,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 
 	platform_class->link_set_address = link_set_address;
 	platform_class->link_get_address = link_get_address;
+	platform_class->link_get_permanent_address = link_get_permanent_address;
 	platform_class->link_get_mtu = link_get_mtu;
 	platform_class->link_set_mtu = link_set_mtu;
 

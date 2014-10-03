@@ -52,8 +52,6 @@ G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 #define NM_DEVICE_VLAN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_VLAN, NMDeviceVlanPrivate))
 
 typedef struct {
-	char *initial_hw_addr;
-
 	gboolean disposed;
 	gboolean invalid;
 
@@ -74,16 +72,6 @@ enum {
 };
 
 /******************************************************************/
-
-static void
-update_initial_hw_address (NMDevice *dev)
-{
-	NMDeviceVlan *self = NM_DEVICE_VLAN (dev);
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-
-	priv->initial_hw_addr = g_strdup (nm_device_get_hw_address (dev));
-	_LOGD (LOGD_DEVICE | LOGD_VLAN, "read initial MAC address %s", priv->initial_hw_addr);
-}
 
 static NMDeviceCapabilities
 get_generic_capabilities (NMDevice *dev)
@@ -461,12 +449,9 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 static void
 deactivate (NMDevice *device)
 {
-	NMDeviceVlan *self = NM_DEVICE_VLAN (device);
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-
 	/* Reset MAC address back to initial address */
-	if (priv->initial_hw_addr)
-		nm_device_set_hw_addr (device, priv->initial_hw_addr, "reset", LOGD_VLAN);
+	if (nm_device_get_initial_hw_address (device))
+		nm_device_set_hw_addr (device, nm_device_get_initial_hw_address (device), "reset", LOGD_VLAN);
 }
 
 /******************************************************************/
@@ -583,17 +568,6 @@ dispose (GObject *object)
 }
 
 static void
-finalize (GObject *object)
-{
-	NMDeviceVlan *self = NM_DEVICE_VLAN (object);
-	NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE (self);
-
-	g_free (priv->initial_hw_addr);
-
-	G_OBJECT_CLASS (nm_device_vlan_parent_class)->finalize (object);
-}
-
-static void
 nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -608,9 +582,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 	object_class->dispose = dispose;
-	object_class->finalize = finalize;
 
-	parent_class->update_initial_hw_address = update_initial_hw_address;
 	parent_class->get_generic_capabilities = get_generic_capabilities;
 	parent_class->bring_up = bring_up;
 	parent_class->act_stage1_prepare = act_stage1_prepare;
