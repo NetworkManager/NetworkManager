@@ -1242,6 +1242,38 @@ nm_platform_link_get_wake_on_lan (NMPlatform *self, int ifindex)
 }
 
 /**
+ * nm_platform_link_get_driver_info:
+ * @self: platform instance
+ * @ifindex: Interface index
+ * @out_driver_name: (transfer full): on success, the driver name if available
+ * @out_driver_version: (transfer full): on success, the driver version if available
+ * @out_fw_version: (transfer full): on success, the firmware version if available
+ *
+ * Returns: %TRUE on success (though @out_driver_name, @out_driver_version and
+ * @out_fw_version can be %NULL if no information was available), %FALSE on
+ * failure.
+ */
+gboolean
+nm_platform_link_get_driver_info (NMPlatform *self,
+                                  int ifindex,
+                                  char **out_driver_name,
+                                  char **out_driver_version,
+                                  char **out_fw_version)
+{
+	_CHECK_SELF (self, klass, FALSE);
+	reset_error (self);
+
+	g_return_val_if_fail (ifindex >= 0, FALSE);
+	g_return_val_if_fail (klass->link_get_driver_info, FALSE);
+
+	return klass->link_get_driver_info (self,
+	                                    ifindex,
+	                                    out_driver_name,
+	                                    out_driver_version,
+	                                    out_fw_version);
+}
+
+/**
  * nm_platform_link_enslave:
  * @self: platform instance
  * @master: Interface index of the master

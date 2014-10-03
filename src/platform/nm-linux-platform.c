@@ -372,6 +372,9 @@ ethtool_get (const char *name, gpointer edata)
 	struct ifreq ifr;
 	int fd;
 
+	if (!name || !*name)
+		return FALSE;
+
 	memset (&ifr, 0, sizeof (ifr));
 	strncpy (ifr.ifr_name, name, IFNAMSIZ);
 	ifr.ifr_data = edata;
@@ -426,21 +429,29 @@ ethtool_get_stringset_index (const char *ifname, int stringset_id, const char *s
 	return -1;
 }
 
-static const char *
-ethtool_get_driver (const char *ifname)
+static gboolean
+ethtool_get_driver_info (const char *ifname,
+                         char **out_driver_name,
+                         char **out_driver_version,
+                         char **out_fw_version)
 {
 	struct ethtool_drvinfo drvinfo = { 0 };
 
-	g_return_val_if_fail (ifname != NULL, NULL);
+	if (!ifname)
+		return FALSE;
 
 	drvinfo.cmd = ETHTOOL_GDRVINFO;
 	if (!ethtool_get (ifname, &drvinfo))
-		return NULL;
+		return FALSE;
 
-	if (!*drvinfo.driver)
-		return NULL;
+	if (out_driver_name)
+		*out_driver_name = g_strdup (drvinfo.driver);
+	if (out_driver_version)
+		*out_driver_version = g_strdup (drvinfo.version);
+	if (out_fw_version)
+		*out_fw_version = g_strdup (drvinfo.fw_version);
 
-	return g_intern_string (drvinfo.driver);
+	return TRUE;
 }
 
 /******************************************************************
@@ -983,7 +994,7 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink)
 
 	ifname = rtnl_link_get_name (rtnllink);
 	if (ifname) {
-		const char *driver = ethtool_get_driver (ifname);
+		gs_free char *driver = NULL;
 		gs_free char *sysfs_path = NULL;
 		gs_free char *anycast_mask = NULL;
 		gs_free char *devtype = NULL;
@@ -997,8 +1008,10 @@ link_extract_type (NMPlatform *platform, struct rtnl_link *rtnllink)
 		}
 
 		/* Fallback OVS detection for kernel <= 3.16 */
-		if (!g_strcmp0 (driver, "openvswitch"))
-			return NM_LINK_TYPE_OPENVSWITCH;
+		if (ethtool_get_driver_info (ifname, &driver, NULL, NULL)) {
+			if (!g_strcmp0 (driver, "openvswitch"))
+				return NM_LINK_TYPE_OPENVSWITCH;
+		}
 
 		sysfs_path = g_strdup_printf ("/sys/class/net/%s", ifname);
 		anycast_mask = g_strdup_printf ("%s/anycast_mask", sysfs_path);
@@ -1041,6 +1054,7 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GUdevDevice *udev_device;
 	const char *name;
+	char *tmp;
 
 	g_return_val_if_fail (rtnllink, FALSE);
 
@@ -1070,8 +1084,12 @@ init_link (NMPlatform *platform, NMPlatformLink *info, struct rtnl_link *rtnllin
 
 	if (!info->driver)
 		info->driver = info->kind;
-	if (!info->driver)
-		info->driver = ethtool_get_driver (info->name);
+	if (!info->driver) {
+		if (ethtool_get_driver_info (name, &tmp, NULL, NULL)) {
+			info->driver = g_intern_string (tmp);
+			g_free (tmp);
+		}
+	}
 	if (!info->driver)
 		info->driver = "unknown";
 
@@ -3658,6 +3676,19 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 		return FALSE;
 }
 
+static gboolean
+link_get_driver_info (NMPlatform *platform,
+                      int ifindex,
+                      char **out_driver_name,
+                      char **out_driver_version,
+                      char **out_fw_version)
+{
+	return ethtool_get_driver_info (nm_platform_link_get_name (platform, ifindex),
+	                                out_driver_name,
+	                                out_driver_version,
+	                                out_fw_version);
+}
+
 /******************************************************************/
 
 static gboolean
@@ -4762,6 +4793,7 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
 	platform_class->link_get_dev_id = link_get_dev_id;
 	platform_class->link_get_wake_on_lan = link_get_wake_on_lan;
+	platform_class->link_get_driver_info = link_get_driver_info;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;
