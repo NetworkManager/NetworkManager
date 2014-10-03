@@ -478,19 +478,11 @@ connection_removed_signal (NMRemoteConnection *connection,
 		nmt_sync_op_complete_boolean (&data->op, TRUE, NULL);
 }
 
-void
-nmt_remove_connection (NMRemoteConnection *connection)
+static void
+remove_one_connection (NMRemoteConnection *connection)
 {
 	ConnectionDeleteData data;
-	int choice;
 	GError *error = NULL;
-
-	choice = nmt_newt_choice_dialog (_("Cancel"),
-	                                 _("Delete"),
-	                                 _("Are you sure you want to delete the connection '%s'?"),
-	                                 nm_connection_get_id (NM_CONNECTION (connection)));
-	if (choice == 1)
-		return;
 
 	data.got_callback = data.got_signal = FALSE;
 	nmt_sync_op_init (&data.op);
@@ -501,12 +493,50 @@ nmt_remove_connection (NMRemoteConnection *connection)
 	nm_remote_connection_delete (connection, connection_deleted_callback, &data);
 
 	if (!nmt_sync_op_wait_boolean (&data.op, &error)) {
-		nmt_newt_message_dialog (_("Could not delete connection: %s"),
+		nmt_newt_message_dialog (_("Could not delete connection '%s': %s"),
+		                         nm_connection_get_id (NM_CONNECTION (connection)),
 		                         error->message);
 		g_error_free (error);
 	}
 
 	g_signal_handlers_disconnect_by_func (connection, G_CALLBACK (connection_removed_signal), &data);
+	g_object_unref (connection);
+}
+
+void
+nmt_remove_connection (NMRemoteConnection *connection)
+{
+	GSList *conns, *iter;
+	NMRemoteConnection *slave;
+	NMSettingConnection *s_con;
+	const char *uuid, *iface, *master;
+	int choice;
+
+	choice = nmt_newt_choice_dialog (_("Cancel"),
+	                                 _("Delete"),
+	                                 _("Are you sure you want to delete the connection '%s'?"),
+	                                 nm_connection_get_id (NM_CONNECTION (connection)));
+	if (choice == 1)
+		return;
+
+	g_object_ref (connection);
+	remove_one_connection (connection);
+
+	s_con = nm_connection_get_setting_connection (NM_CONNECTION (connection));
+	uuid = nm_setting_connection_get_uuid (s_con);
+	iface = nm_setting_connection_get_interface_name (s_con);
+
+	conns = nm_remote_settings_list_connections (nm_settings);
+	for (iter = conns; iter; iter = iter->next) {
+		slave = iter->data;
+		s_con = nm_connection_get_setting_connection (NM_CONNECTION (slave));
+		master = nm_setting_connection_get_master (s_con);
+		if (master) {
+			if (!g_strcmp0 (master, uuid) || !g_strcmp0 (master, iface))
+				remove_one_connection (slave);
+		}
+	}
+	g_slist_free (conns);
 	g_object_unref (connection);
 }
 
