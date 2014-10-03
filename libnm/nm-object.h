@@ -56,6 +56,7 @@ typedef enum {
 GQuark nm_object_error_quark (void);
 
 #define NM_OBJECT_PATH "path"
+#define NM_OBJECT_DBUS_CONNECTION "dbus-connection"
 
 typedef struct {
 	GObject parent;
