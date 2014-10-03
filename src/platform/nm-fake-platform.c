@@ -503,6 +503,26 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 }
 
 static gboolean
+link_get_driver_info (NMPlatform *platform,
+                      int ifindex,
+                      char **out_driver_name,
+                      char **out_driver_version,
+                      char **out_fw_version)
+{
+	if (out_driver_name)
+		*out_driver_name = NULL;
+	if (out_driver_version)
+		*out_driver_version = NULL;
+	if (out_fw_version)
+		*out_fw_version = NULL;
+
+	/* We call link_get just to cause an error to be set if @ifindex is bad. */
+	link_get (platform, ifindex);
+
+	return TRUE;
+}
+
+static gboolean
 link_supports_carrier_detect (NMPlatform *platform, int ifindex)
 {
 	NMFakePlatformLink *device = link_get (platform, ifindex);
@@ -1418,6 +1438,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->link_get_physical_port_id = link_get_physical_port_id;
 	platform_class->link_get_dev_id = link_get_dev_id;
 	platform_class->link_get_wake_on_lan = link_get_wake_on_lan;
+	platform_class->link_get_driver_info = link_get_driver_info;
 
 	platform_class->link_supports_carrier_detect = link_supports_carrier_detect;
 	platform_class->link_supports_vlans = link_supports_vlans;
