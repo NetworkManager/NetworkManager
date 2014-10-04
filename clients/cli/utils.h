@@ -14,7 +14,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2010 - 2014 Red Hat, Inc.
+ * Copyright 2010 - 2014 Red Hat, Inc.
  */
 
 #ifndef NMC_UTILS_H
@@ -72,6 +72,7 @@ char *nmc_get_user_input (const char *ask_str);
 int nmc_string_to_arg_array (const char *line, const char *delim, char ***argv, int *argc);
 const char *nmc_string_is_valid (const char *input, const char **allowed, GError **error);
 GSList *nmc_util_strv_to_slist (char **strv);
+char * nmc_util_strv_for_display (const char **strv);
 char **nmc_strsplit_set (const char *str, const char *delimiter, int max_tokens);
 int nmc_string_screen_width (const char *start, const char *end);
 void set_val_str  (NmcOutputField fields_array[], guint32 index, char *value);

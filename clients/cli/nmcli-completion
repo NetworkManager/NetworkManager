@@ -407,7 +407,14 @@ _nmcli_compl_ARGS()
                 ;;
             mode)
                 if [[ "${#words[@]}" -eq 2 ]]; then
-                    _nmcli_list "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb"
+                    case "$OPTIONS_TYPE" in
+                        "wifi")
+                            _nmcli_list "infrastructure ap adhoc"
+                            ;;
+                        "bond"| \
+                        *)
+                        _nmcli_list "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb"
+                    esac
                     return 0
                 fi
                 ;;
@@ -915,7 +922,7 @@ _nmcli()
                                 802-11-w|802-11-wi|802-11-wir|802-11-wire|802-11-wirel|802-11-wirele|802-11-wireles|802-11-wireless| \
                                 wif|wifi)
                                     OPTIONS_TYPE=wifi
-                                    OPTIONS_TYPED=(ssid mac cloned-mac mtu)
+                                    OPTIONS_TYPED=(ssid mac cloned-mac mtu mode)
                                     OPTIONS_MANDATORY=(ssid)
                                     ;;
                                 wim|wima|wimax)
