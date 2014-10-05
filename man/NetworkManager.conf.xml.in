@@ -316,11 +316,12 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
 	  <listitem><para>The default logging verbosity level.
 	  One of <literal>ERR</literal>,
 	  <literal>WARN</literal>, <literal>INFO</literal>,
-	  <literal>DEBUG</literal>.  The ERR level logs only critical
-	  errors.  WARN logs warnings that may reflect operation.
-	  INFO logs various informational messages that are useful for
-	  tracking state and operations.  DEBUG enables verbose
-	  logging for debugging purposes.  Subsequent levels also log
+	  <literal>DEBUG</literal>, <literal>TRACE</literal>.  The ERR
+	  level logs only critical errors.  WARN logs warnings that may
+	  reflect operation. INFO logs various informational messages that
+	  are useful for tracking state and operations.  DEBUG enables
+	  verbose logging for debugging purposes. TRACE enables even more
+	  verbose logging then DEBUG level.  Subsequent levels also log
 	  all messages from earlier levels; thus setting the log level
 	  to INFO also logs error and warning messages.</para></listitem>
 	</varlistentry>
