@@ -626,7 +626,8 @@ activate_cb (GObject *object,
  *
  * Note that the callback is invoked when NetworkManager has started activating
  * the new connection, not when it finishes. You can used the returned
- * #NMActiveConnection object to track the activation to its completion.
+ * #NMActiveConnection object (in particular, #NMActiveConnection:state) to
+ * track the activation to its completion.
  **/
 void
 nm_client_activate_connection_async (NMClient *client,
@@ -748,7 +749,8 @@ add_activate_cb (GObject *object,
  *
  * Note that the callback is invoked when NetworkManager has started activating
  * the new connection, not when it finishes. You can used the returned
- * #NMActiveConnection object to track the activation to its completion.
+ * #NMActiveConnection object (in particular, #NMActiveConnection:state) to
+ * track the activation to its completion.
  **/
 void
 nm_client_add_and_activate_connection_async (NMClient *client,

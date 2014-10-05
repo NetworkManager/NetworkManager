@@ -605,6 +605,11 @@ activate_nm_not_running (gpointer user_data)
  *
  * If @connection is not given for a device-based activation, NetworkManager
  * picks the best available connection for the device and activates it.
+ *
+ * Note that the callback is invoked when NetworkManager has started activating
+ * the new connection, not when it finishes. You can used the returned
+ * #NMActiveConnection object (in particular, #NMActiveConnection:state) to
+ * track the activation to its completion.
  **/
 void
 nm_client_activate_connection (NMClient *client,
@@ -689,6 +694,11 @@ add_activate_cb (DBusGProxy *proxy,
  * automatically filling in missing settings with the capabilities of the
  * given device and specific object.  The new connection is then activated.
  * Cannot be used for VPN connections at this time.
+ *
+ * Note that the callback is invoked when NetworkManager has started activating
+ * the new connection, not when it finishes. You can used the returned
+ * #NMActiveConnection object (in particular, #NMActiveConnection:state) to
+ * track the activation to its completion.
  **/
 void
 nm_client_add_and_activate_connection (NMClient *client,
