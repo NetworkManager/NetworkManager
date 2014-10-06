@@ -2176,7 +2176,7 @@ nmc_property_set_bool (NMSetting *setting, const char *prop, const char *val, GE
 static gboolean
 nmc_property_set_ssid (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
-	GByteArray *ssid_arr;
+	GBytes *ssid;
 
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
@@ -2185,10 +2185,9 @@ nmc_property_set_ssid (NMSetting *setting, const char *prop, const char *val, GE
 		return FALSE;
 	}
 
-	ssid_arr = g_byte_array_sized_new (strlen (val));
-	g_byte_array_append (ssid_arr, (const guint8 *) val, strlen (val));
-	g_object_set (setting, prop, ssid_arr, NULL);
-
+	ssid = g_bytes_new (val, strlen (val));
+	g_object_set (setting, prop, ssid, NULL);
+	g_bytes_unref (ssid);
 	return TRUE;
 }
 
