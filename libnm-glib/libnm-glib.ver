@@ -158,6 +158,7 @@ global:
 	nm_device_infiniband_get_hw_address;
 	nm_device_infiniband_get_type;
 	nm_device_infiniband_new;
+	nm_device_is_real;
 	nm_device_is_software;
 	nm_device_modem_error_get_type;
 	nm_device_modem_error_quark;

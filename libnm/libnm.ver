@@ -876,6 +876,7 @@ global:
 	nm_device_ip_tunnel_get_ttl;
 	nm_device_ip_tunnel_get_type;
 	nm_device_get_nm_plugin_missing;
+	nm_device_is_real;
 	nm_device_set_managed;
 	nm_device_tun_get_group;
 	nm_device_tun_get_hw_address;
