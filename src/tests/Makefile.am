@@ -107,7 +107,7 @@ check-local:
 			exit 1 ; \
 		fi \
 	done
-	@echo -n "Testing device factory symbols... PASSED"
+	@echo "Testing device factory symbols... PASSED"
 
 endif
 
