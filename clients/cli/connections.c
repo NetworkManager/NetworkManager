@@ -35,6 +35,7 @@
 #include "common.h"
 #include "settings.h"
 #include "connections.h"
+#include "nm-secret-agent-simple.h"
 
 /* define some prompts for connection editor */
 #define EDITOR_PROMPT_SETTING  _("Setting name? ")
@@ -505,6 +506,20 @@ quit (void)
 	}
 
 	g_main_loop_quit (loop);  /* quit main loop */
+}
+
+/* for pre-filling a string to readline prompt */
+static char *pre_input_deftext;
+static int
+set_deftext (void)
+{
+	if (pre_input_deftext && rl_startup_hook) {
+		rl_insert_text (pre_input_deftext);
+		g_free (pre_input_deftext);
+		pre_input_deftext = NULL;
+		rl_startup_hook = NULL;
+	}
+	return 0;
 }
 
 static const char *
@@ -1927,6 +1942,57 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 }
 
 static gboolean
+get_secrets_from_user (const char *request_id,
+                       const char *title,
+                       const char *msg,
+                       GPtrArray *secrets)
+{
+	int i;
+	char *pwd;
+
+	g_print ("%s\n", msg);
+	for (i = 0; i < secrets->len; i++) {
+		NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
+		if (secret->value) {
+			/* Prefill the password if we have it. */
+			rl_startup_hook = set_deftext;
+			pre_input_deftext = g_strdup (secret->value);
+		}
+		pwd = nmc_readline ("%s (%s): ", secret->name, secret->prop_name);
+		g_free (secret->value);
+		secret->value = pwd ? pwd : g_strdup ("");
+	}
+	return TRUE;
+}
+
+static void
+secrets_requested (NMSecretAgentSimple *agent,
+                   const char          *request_id,
+                   const char          *title,
+                   const char          *msg,
+                   GPtrArray           *secrets,
+                   gpointer             user_data)
+{
+	NmCli *nmc = (NmCli *) user_data;
+	gboolean success = FALSE;
+
+	if (nmc->print_output == NMC_PRINT_PRETTY)
+		nmc_terminal_erase_line ();
+
+	if (nmc->ask) {
+		success = get_secrets_from_user (request_id, title, msg, secrets);
+	} else {
+		g_print ("%s\n", msg);
+		g_print ("%s\n", _("Warning: nmcli does not ask for password without '--ask' argument."));
+	}
+
+	if (success)
+		nm_secret_agent_simple_response (agent, request_id, secrets);
+	else
+		nm_secret_agent_simple_response (agent, request_id, NULL);
+}
+
+static gboolean
 nmc_activate_connection (NmCli *nmc,
                          NMConnection *connection,
                          const char *ifname,
@@ -1966,6 +2032,11 @@ nmc_activate_connection (NmCli *nmc,
 		                     _("neither a valid connection nor device given"));
 		return FALSE;
 	}
+
+	/* Create secret agent */
+	nmc->secret_agent = nm_secret_agent_simple_new ("nmcli-connect");
+	if (nmc->secret_agent)
+		g_signal_connect (nmc->secret_agent, "request-secrets", G_CALLBACK (secrets_requested), nmc);
 
 	info = g_malloc0 (sizeof (ActivateConnectionInfo));
 	info->nmc = nmc;
@@ -5424,19 +5495,6 @@ uuid_display_hook (char **array, int len, int max_len)
 	}
 	rl_display_match_list (array, len, max_len + max + 3);
 	rl_forced_update_display ();
-}
-
-static char *pre_input_deftext;
-static int
-set_deftext (void)
-{
-	if (pre_input_deftext && rl_startup_hook) {
-		rl_insert_text (pre_input_deftext);
-		g_free (pre_input_deftext);
-		pre_input_deftext = NULL;
-		rl_startup_hook = NULL;
-	}
-	return 0;
 }
 
 static char *
