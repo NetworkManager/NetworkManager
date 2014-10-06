@@ -138,8 +138,11 @@ ssid_transform_to_entry (GBinding     *binding,
 	char *utf8;
 
 	ssid = g_value_get_boxed (source_value);
-	utf8 = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
-	                              g_bytes_get_size (ssid));
+	if (ssid)
+		utf8 = nm_utils_ssid_to_utf8 (g_bytes_get_data (ssid, NULL),
+		                              g_bytes_get_size (ssid));
+	else
+		utf8 = g_strdup ("");
 	g_value_take_string (target_value, utf8);
 	return TRUE;
 }
@@ -158,8 +161,11 @@ ssid_transform_from_entry (GBinding     *binding,
 	text = g_value_get_string (source_value);
 
 	old_ssid = nm_setting_wireless_get_ssid (s_wireless);
-	utf8 = nm_utils_ssid_to_utf8 (g_bytes_get_data (old_ssid, NULL),
-	                              g_bytes_get_size (old_ssid));
+	if (old_ssid)
+		utf8 = nm_utils_ssid_to_utf8 (g_bytes_get_data (old_ssid, NULL),
+		                              g_bytes_get_size (old_ssid));
+	else
+		utf8 = g_strdup ("");
 
 	if (!g_strcmp0 (text, utf8)) {
 		g_free (utf8);
