@@ -87,10 +87,12 @@ route_list_transform_to_route (GBinding     *binding,
 	int n = GPOINTER_TO_INT (user_data);
 	gpointer route;
 
+	if (n >= priv->routes->len)
+		return FALSE;
+
 	route = priv->routes->pdata[n];
-	if (route)
-		g_value_set_boxed (target_value, route);
-	return route != NULL;
+	g_value_set_boxed (target_value, route);
+	return TRUE;
 }
 
 static gboolean
@@ -110,7 +112,10 @@ route_list_transform_from_route (GBinding     *binding,
 	route = priv->routes->pdata[n];
 
 	routes = priv->routes;
-	priv->routes = NULL;
+	if (priv->family == AF_INET)
+		priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip4_route_unref);
+	else
+		priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip6_route_unref);
 
 	if (route) {
 		if (priv->family == AF_INET)
@@ -194,13 +199,10 @@ remove_route (NmtWidgetList *list,
 	g_ptr_array_remove_index (priv->routes, num);
 	nmt_widget_list_set_length (list, priv->routes->len);
 
-	if (priv->family == AF_INET) {
-		nm_ip4_route_unref (route);
+	if (priv->family == AF_INET)
 		g_object_notify (table, "ip4-routes");
-	} else {
-		nm_ip6_route_unref (route);
+	else
 		g_object_notify (table, "ip6-routes");
-	}
 }
 
 static void
