@@ -221,8 +221,8 @@ update_connection (NMDevice *device, NMConnection *connection)
 {
 	NMSettingInfiniband *s_infiniband = nm_connection_get_setting_infiniband (connection);
 	const char *mac = nm_device_get_hw_address (device);
-	char *mode_path, *contents = NULL;
 	const char *transport_mode = "datagram";
+	int ifindex;
 
 	if (!s_infiniband) {
 		s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new ();
@@ -232,16 +232,10 @@ update_connection (NMDevice *device, NMConnection *connection)
 	if (mac && !nm_utils_hwaddr_matches (mac, -1, NULL, INFINIBAND_ALEN))
 		g_object_set (s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, mac, NULL);
 
-	mode_path = g_strdup_printf ("/sys/class/net/%s/mode",
-	                             ASSERT_VALID_PATH_COMPONENT (nm_device_get_iface (device)));
-	contents = nm_platform_sysctl_get (NM_PLATFORM_GET, mode_path);
-	g_free (mode_path);
-	if (contents) {
-		if (strstr (contents, "datagram"))
+	ifindex = nm_device_get_ifindex (device);
+	if (ifindex > 0) {
+		if (!nm_platform_infiniband_get_info (NM_PLATFORM_GET, ifindex, NULL, NULL, &transport_mode))
 			transport_mode = "datagram";
-		else if (strstr (contents, "connected"))
-			transport_mode = "connected";
-		g_free (contents);
 	}
 	g_object_set (G_OBJECT (s_infiniband), NM_SETTING_INFINIBAND_TRANSPORT_MODE, transport_mode, NULL);
 }

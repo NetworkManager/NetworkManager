@@ -1595,6 +1595,22 @@ nm_platform_infiniband_partition_add (NMPlatform *self, int parent, int p_key, N
 }
 
 gboolean
+nm_platform_infiniband_get_info (NMPlatform *self,
+                                 int ifindex,
+                                 int *parent,
+                                 int *p_key,
+                                 const char **mode)
+{
+	_CHECK_SELF (self, klass, FALSE);
+	reset_error (self);
+
+	g_return_val_if_fail (ifindex > 0, FALSE);
+	g_return_val_if_fail (klass->infiniband_get_info, FALSE);
+
+	return klass->infiniband_get_info (self, ifindex, parent, p_key, mode);
+}
+
+gboolean
 nm_platform_veth_get_properties (NMPlatform *self, int ifindex, NMPlatformVethProperties *props)
 {
 	_CHECK_SELF (self, klass, FALSE);

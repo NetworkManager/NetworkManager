@@ -47,6 +47,7 @@ typedef struct {
 	char *udi;
 	GBytes *address;
 	int vlan_id;
+	int ib_p_key;
 } NMFakePlatformLink;
 
 #define NM_FAKE_PLATFORM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_FAKE_PLATFORM, NMFakePlatformPrivate))
@@ -688,18 +689,42 @@ vlan_set_egress_map (NMPlatform *platform, int ifindex, int from, int to)
 static gboolean
 infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatformLink *out_link)
 {
-	NMFakePlatformLink *parent_device;
-	char *name;
-	gboolean success;
+	NMFakePlatformLink *device, *parent_device;
+	gs_free char *name = NULL;
 
 	parent_device = link_get (platform, parent);
 	g_return_val_if_fail (parent_device != NULL, FALSE);
 
 	name = g_strdup_printf ("%s.%04x", parent_device->link.name, p_key);
-	success = link_add (platform, name, NM_LINK_TYPE_INFINIBAND, NULL, 0, out_link);
-	g_free (name);
+	if (!link_add (platform, name, NM_LINK_TYPE_INFINIBAND, NULL, 0, out_link))
+		return FALSE;
 
-	return success;
+	device = link_get (platform, link_get_ifindex (platform, name));
+	g_return_val_if_fail (device, FALSE);
+
+	device->ib_p_key = p_key;
+	device->link.parent = parent;
+
+	return TRUE;
+}
+
+static gboolean
+infiniband_get_info (NMPlatform *platform, int ifindex, int *parent, int *p_key, const char **mode)
+{
+	NMFakePlatformLink *device;
+
+	device = link_get (platform, ifindex);
+	g_return_val_if_fail (device, FALSE);
+	g_return_val_if_fail (device->link.type == NM_LINK_TYPE_INFINIBAND, FALSE);
+
+	if (parent)
+		*parent = device->link.parent;
+	if (p_key)
+		*p_key = device->ib_p_key;
+	if (mode)
+		*mode = "datagram";
+
+	return TRUE;
 }
 
 static gboolean
@@ -1464,6 +1489,7 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 	platform_class->vlan_set_egress_map = vlan_set_egress_map;
 
 	platform_class->infiniband_partition_add = infiniband_partition_add;
+	platform_class->infiniband_get_info = infiniband_get_info;
 
 	platform_class->veth_get_properties = veth_get_properties;
 	platform_class->tun_get_properties = tun_get_properties;
