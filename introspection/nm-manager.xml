@@ -6,11 +6,27 @@
 
     <method name="GetDevices">
       <tp:docstring>
-        Get the list of network devices.
+        Get the list of realized network devices.
       </tp:docstring>
       <arg name="devices" type="ao" direction="out">
         <tp:docstring>
-          List of object paths of network devices known to the system.
+          List of object paths of network devices known to the system.  This
+          list does not include device placeholders (see GetAllDevices()).
+        </tp:docstring>
+      </arg>
+    </method>
+
+    <method name="GetAllDevices">
+      <tp:docstring>
+        Get the list of all network devices.
+      </tp:docstring>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_all_devices"/>
+      <arg name="devices" type="ao" direction="out">
+        <tp:docstring>
+          List of object paths of network devices and device placeholders
+          (eg, devices that do not yet exist but which can be automatically
+          created by NetworkManager if one of their AvailableConnections
+          was activated).
         </tp:docstring>
       </arg>
     </method>
@@ -249,7 +265,18 @@
 
     <property name="Devices" type="ao" access="read">
       <tp:docstring>
-        The list of network devices/interfaces NetworkManager knows about.
+        The list of realized network devices. Realized devices are those which
+        have backing resources (eg from the kernel or a management daemon like
+        ModemManager, teamd, etc).
+      </tp:docstring>
+    </property>
+
+    <property name="AllDevices" type="ao" access="read">
+      <tp:docstring>
+        The list of both realized and un-realized network devices. Un-realized
+        devices are software devices which do not yet have backing resources,
+        but for which backing resources can be created if the device is
+        activated.
       </tp:docstring>
     </property>
 
