@@ -63,6 +63,8 @@ char *svGetValue (shvarFile *s, const char *key, gboolean verbatim);
  */
 gboolean svTrueValue (shvarFile *s, const char *key, gboolean def);
 
+gint64 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 max, gint64 fallback);
+
 /* Set the variable <key> equal to the value <value>.
  * If <key> does not exist, and the <current> pointer is set, append
  * the key=value pair after that line.  Otherwise, prepend the pair
