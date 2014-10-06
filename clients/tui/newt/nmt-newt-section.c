@@ -322,7 +322,10 @@ nmt_newt_section_size_allocate (NmtNewtWidget *widget,
 	NmtNewtSectionPrivate *priv = NMT_NEWT_SECTION_GET_PRIVATE (widget);
 
 	if (priv->show_border) {
+		int border_height, border_width;
+
 		adjust_border_for_allocation (priv, height);
+		nmt_newt_widget_size_request (priv->border_grid, &border_height, &border_width);
 		nmt_newt_widget_size_allocate (priv->border_grid, x, y, 1, height);
 		nmt_newt_widget_size_allocate (priv->header, x + 2, y, width, priv->hheight_req);
 	} else
