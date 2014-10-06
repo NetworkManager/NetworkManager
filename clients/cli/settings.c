@@ -2229,8 +2229,14 @@ nmc_property_set_ifname (NMSetting *setting, const char *prop, const char *val, 
 	return TRUE;
 }
 
+#define ALL_SECRET_FLAGS \
+	(NM_SETTING_SECRET_FLAG_NONE | \
+	 NM_SETTING_SECRET_FLAG_AGENT_OWNED | \
+	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
+	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+
 static gboolean
-nmc_property_set_flags (NMSetting *setting, const char *prop, const char *val, GError **error)
+nmc_property_set_secret_flags (NMSetting *setting, const char *prop, const char *val, GError **error)
 {
 	char **strv = NULL, **iter;
 	unsigned long flags = 0, val_int;
@@ -2239,8 +2245,9 @@ nmc_property_set_flags (NMSetting *setting, const char *prop, const char *val, G
 
 	strv = nmc_strsplit_set (val, " \t,", 0);
 	for (iter = strv; iter && *iter; iter++) {
-		if (!nmc_string_to_uint (*iter, TRUE, 0, G_MAXUINT32, &val_int)) {
-			g_set_error (error, 1, 0, _("'%s' is not a number"), *iter);
+		if (!nmc_string_to_uint (*iter, TRUE, 0, ALL_SECRET_FLAGS, &val_int)) {
+			g_set_error (error, 1, 0, _("'%s' is not a valid flag number; use <0-%d>"),
+			             *iter, ALL_SECRET_FLAGS);
 			g_strfreev (strv);
 			return FALSE;
 		}
@@ -2248,9 +2255,11 @@ nmc_property_set_flags (NMSetting *setting, const char *prop, const char *val, G
 	}
 	g_strfreev (strv);
 
-	/* Validate the number according to the property spec */
-	if (!validate_uint (setting, prop, (guint) flags, error))
-		return FALSE;
+	/* Validate the flags number */
+	if (flags > ALL_SECRET_FLAGS) {
+		flags = ALL_SECRET_FLAGS;
+		g_print (_("Warning: '%s' sum is higher than all flags => all flags set\n"), val);
+	}
 
 	g_object_set (setting, prop, (guint) flags, NULL);
 	return TRUE;
@@ -4807,7 +4816,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PASSWORD_FLAGS),
 	                    nmc_property_802_1X_get_password_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -4821,7 +4830,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PASSWORD_RAW_FLAGS),
 	                    nmc_property_802_1X_get_password_raw_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -4842,7 +4851,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PRIVATE_KEY_PASSWORD_FLAGS),
 	                    nmc_property_802_1X_get_private_key_password_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -4863,7 +4872,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PHASE2_PRIVATE_KEY_PASSWORD_FLAGS),
 	                    nmc_property_802_1X_get_phase2_private_key_password_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -4877,7 +4886,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (802_1X, PIN_FLAGS),
 	                    nmc_property_802_1X_get_pin_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -4907,7 +4916,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (ADSL, PASSWORD_FLAGS),
 	                    nmc_property_adsl_get_password_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -5064,7 +5073,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (CDMA, PASSWORD_FLAGS),
 	                    nmc_property_cdma_get_password_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -5294,7 +5303,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (GSM, PASSWORD_FLAGS),
 	                    nmc_property_gsm_get_password_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -5322,7 +5331,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (GSM, PIN_FLAGS),
 	                    nmc_property_gsm_get_pin_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -5712,7 +5721,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (PPPOE, PASSWORD_FLAGS),
 	                    nmc_property_pppoe_get_password_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -6112,7 +6121,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, WEP_KEY_FLAGS),
 	                    nmc_property_wifi_sec_get_wep_key_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -6133,7 +6142,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, PSK_FLAGS),
 	                    nmc_property_wifi_sec_get_psk_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
@@ -6147,7 +6156,7 @@ nmc_properties_init (void)
 	                    NULL);
 	nmc_add_prop_funcs (GLUE (WIRELESS_SECURITY, LEAP_PASSWORD_FLAGS),
 	                    nmc_property_wifi_sec_get_leap_password_flags,
-	                    nmc_property_set_flags,
+	                    nmc_property_set_secret_flags,
 	                    NULL,
 	                    NULL,
 	                    NULL,
