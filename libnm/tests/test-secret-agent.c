@@ -497,14 +497,9 @@ connection_activated_good_cb (GObject *c,
 	GError *error = NULL;
 
 	ac = nm_client_activate_connection_finish (sadata->client, result, &error);
+	g_assert_no_error (error);
 
-	/* test-networkmanager-service.py doesn't implement activation, but
-	 * we should at least get as far as the error telling us that (which the
-	 * other tests won't get to).
-	 */
-	g_assert (error != NULL);
-	g_dbus_error_strip_remote_error (error);
-	g_assert_cmpstr (error->message, ==, "Not yet implemented");
+	g_object_unref (ac);
 
 	g_main_loop_quit (sadata->loop);
 }

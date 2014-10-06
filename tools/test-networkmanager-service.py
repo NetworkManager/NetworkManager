@@ -37,6 +37,7 @@ NM_DEVICE_STATE_ACTIVATED    = 100
 NM_DEVICE_STATE_DEACTIVATING = 110
 NM_DEVICE_STATE_FAILED       = 120
 
+# Device type
 NM_DEVICE_TYPE_UNKNOWN    = 0
 NM_DEVICE_TYPE_ETHERNET   = 1
 NM_DEVICE_TYPE_WIFI       = 2
@@ -53,6 +54,13 @@ NM_DEVICE_TYPE_ADSL       = 12
 NM_DEVICE_TYPE_BRIDGE     = 13
 NM_DEVICE_TYPE_GENERIC    = 14
 NM_DEVICE_TYPE_TEAM       = 15
+
+# AC state
+NM_ACTIVE_CONNECTION_STATE_UNKNOWN      = 0
+NM_ACTIVE_CONNECTION_STATE_ACTIVATING   = 1
+NM_ACTIVE_CONNECTION_STATE_ACTIVATED    = 2
+NM_ACTIVE_CONNECTION_STATE_DEACTIVATING = 3
+NM_ACTIVE_CONNECTION_STATE_DEACTIVATED  = 4
 
 #########################################################
 IFACE_DBUS = 'org.freedesktop.DBus'
@@ -171,6 +179,9 @@ class Device(ExportedObj):
     def PropertiesChanged(self, changed):
         pass
 
+    def set_active_connection(self, ac):
+        self.active_connection = ac
+        self.__notify(PD_ACTIVE_CONNECTION)
 
 ###################################################################
 
@@ -508,6 +519,73 @@ class WimaxDevice(Device):
         raise NspNotFoundException("NSP %s not found" % path)
 
 ###################################################################
+IFACE_ACTIVE_CONNECTION = 'org.freedesktop.NetworkManager.Connection.Active'
+
+PAC_CONNECTION = "Connection"
+PAC_SPECIFIC_OBJECT = "SpecificObject"
+PAC_ID = "Id"
+PAC_UUID = "Uuid"
+PAC_TYPE = "Type"
+PAC_DEVICES = "Devices"
+PAC_STATE = "State"
+PAC_DEFAULT = "Default"
+PAC_IP4CONFIG = "Ip4Config"
+PAC_DHCP4CONFIG = "Dhcp4Config"
+PAC_DEFAULT6 = "Default6"
+PAC_IP6CONFIG = "Ip6Config"
+PAC_DHCP6CONFIG = "Dhcp6Config"
+PAC_VPN = "Vpn"
+PAC_MASTER = "Master"
+
+class ActiveConnection(ExportedObj):
+    counter = 1
+
+    def __init__(self, bus, device, connection, specific_object):
+        object_path = "/org/freedesktop/NetworkManager/ActiveConnection/%d" % ActiveConnection.counter
+        ActiveConnection.counter = ActiveConnection.counter + 1
+        ExportedObj.__init__(self, bus, object_path)
+        self.add_dbus_interface(IFACE_ACTIVE_CONNECTION, self.__get_props)
+
+        self.device = device
+        self.conn = connection
+        self.specific_object = specific_object
+        self.state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN
+        self.default = False
+        self.ip4config = None
+        self.dhcp4config = None
+        self.default6 = False
+        self.ip6config = None
+        self.dhcp6config = None
+        self.vpn = False
+        self.master = None
+
+    # Properties interface
+    def __get_props(self):
+        props = {}
+        props[PAC_CONNECTION] = to_path(self.conn)
+        props[PAC_SPECIFIC_OBJECT] = to_path(self.specific_object)
+        conn_settings = self.conn.GetSettings()
+        s_con = conn_settings['connection']
+        props[PAC_ID] = s_con['id']
+        props[PAC_UUID] = s_con['uuid']
+        props[PAC_TYPE] = s_con['type']
+        props[PAC_DEVICES] = to_path_array([self.device])
+        props[PAC_STATE] = dbus.UInt32(self.state)
+        props[PAC_DEFAULT] = self.default
+        props[PAC_IP4CONFIG] = to_path(self.ip4config)
+        props[PAC_DHCP4CONFIG] = to_path(self.dhcp4config)
+        props[PAC_DEFAULT6] = self.default6
+        props[PAC_IP6CONFIG] = to_path(self.ip6config)
+        props[PAC_DHCP6CONFIG] = to_path(self.dhcp6config)
+        props[PAC_VPN] = self.vpn
+        props[PAC_MASTER] = to_path(self.master)
+        return props
+
+    @dbus.service.signal(IFACE_ACTIVE_CONNECTION, signature='a{sv}')
+    def PropertiesChanged(self, changed):
+        pass
+
+###################################################################
 IFACE_TEST = 'org.freedesktop.NetworkManager.LibnmGlibTest'
 IFACE_NM = 'org.freedesktop.NetworkManager'
 
@@ -536,11 +614,15 @@ PM_STATE = 'State'
 PM_VERSION = 'Version'
 PM_CONNECTIVITY = 'Connectivity'
 
+def set_device_ac_cb(device, ac):
+    device.set_active_connection(ac)
+
 class NetworkManager(ExportedObj):
     def __init__(self, bus, object_path):
         ExportedObj.__init__(self, bus, object_path)
         self.add_dbus_interface(IFACE_NM, self.__get_props)
 
+        self._bus = bus;
         self.devices = []
         self.active_connections = []
         self.primary_connection = None
@@ -598,7 +680,11 @@ class NetworkManager(ExportedObj):
                 if not s_wsec.has_key('psk'):
                     raise NoSecretsException("No secrets provided")
 
-        raise PermissionDeniedException("Not yet implemented")
+        ac = ActiveConnection(self._bus, device, connection, None)
+        self.active_connections.append(ac)
+        self.__notify(PM_ACTIVE_CONNECTIONS)
+        GLib.timeout_add(50, set_device_ac_cb, device, ac)
+        return to_path(ac)
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='a{sa{sv}}oo', out_signature='oo')
     def AddAndActivateConnection(self, connection, devpath, specific_object):
@@ -610,8 +696,8 @@ class NetworkManager(ExportedObj):
         if not device:
             raise UnknownDeviceException("No device found for the requested iface.")
 
-        conpath = manager.AddConnection(connection)
-        return self.ActivateConnection(conpath, devpath, specific_object)
+        conpath = settings.AddConnection(connection)
+        return (conpath, self.ActivateConnection(conpath, devpath, specific_object))
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='o', out_signature='')
     def DeactivateConnection(self, active_connection):
