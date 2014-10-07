@@ -500,7 +500,7 @@ nmc_init (NmCli *nmc)
 
 	nmc->system_settings = NULL;
 	nmc->system_settings_running = FALSE;
-	nmc->system_connections = NULL;
+	nmc->connections = NULL;
 
 	nmc->should_wait = FALSE;
 	nmc->nowait_flag = TRUE;
@@ -527,7 +527,7 @@ nmc_cleanup (NmCli *nmc)
 	g_string_free (nmc->return_text, TRUE);
 
 	if (nmc->system_settings) g_object_unref (nmc->system_settings);
-	g_slist_free (nmc->system_connections);
+	g_slist_free (nmc->connections);
 
 	g_free (nmc->required_fields);
 	nmc_empty_output_fields (nmc);

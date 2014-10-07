@@ -820,7 +820,7 @@ fill_output_active_connection (NMActiveConnection *active,
 	GString *dev_str;
 	NMActiveConnectionState state;
 	int i;
-	GSList *con_list = nmc->system_connections;
+	GSList *con_list = nmc->connections;
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 	int idx_start = with_group ? 0 : 1;
@@ -1097,7 +1097,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			char **vpn_data_array = NULL;
 			guint32 items_num;
 
-			con = get_connection_for_active (nmc->system_connections, acon);
+			con = get_connection_for_active (nmc->connections, acon);
 
 			s_con = nm_connection_get_setting_connection (con);
 			g_assert (s_con != NULL);
@@ -1307,7 +1307,7 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 		g_ptr_array_add (nmc->output_data, arr);
 
 		/* Add values */
-		for (iter = nmc->system_connections; iter; iter = g_slist_next (iter)) {
+		for (iter = nmc->connections; iter; iter = g_slist_next (iter)) {
 			NMConnection *con = NM_CONNECTION (iter->data);
 			fill_output_connection (con, nmc, active_only);
 		}
@@ -1346,11 +1346,11 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 			}
 
 			/* Find connection by id, uuid, path or apath */
-			con = nmc_find_connection (nmc->system_connections, selector, *argv, &pos);
+			con = nmc_find_connection (nmc->connections, selector, *argv, &pos);
 			if (!con) {
-				acon = find_active_connection (active_cons, nmc->system_connections, selector, *argv, NULL);
+				acon = find_active_connection (active_cons, nmc->connections, selector, *argv, NULL);
 				if (acon)
-					con = get_connection_for_active (nmc->system_connections, acon);
+					con = get_connection_for_active (nmc->connections, acon);
 			}
 
 			/* Print connection details */
@@ -1954,7 +1954,7 @@ do_connection_up (NmCli *nmc, int argc, char **argv)
 	}
 
 	if (name)
-		connection = nmc_find_connection (nmc->system_connections, selector, name, NULL);
+		connection = nmc_find_connection (nmc->connections, selector, name, NULL);
 
 	while (argc > 0) {
 		if (strcmp (*argv, "ifname") == 0) {
@@ -2063,7 +2063,7 @@ do_connection_down (NmCli *nmc, int argc, char **argv)
 			}
 		}
 
-		active = find_active_connection (active_cons, nmc->system_connections, selector, *arg_ptr, &idx);
+		active = find_active_connection (active_cons, nmc->connections, selector, *arg_ptr, &idx);
 		if (active) {
 			nm_client_deactivate_connection (nmc->client, active, NULL, NULL);
 		} else {
@@ -4996,14 +4996,14 @@ gen_func_master_ifnames (const char *text, int state)
 	NMSettingConnection *s_con;
 	const char *con_type, *ifname;
 
-	if (!nm_cli.system_connections)
+	if (!nm_cli.connections)
 		return NULL;
 
 	/* Disable appending space after completion */
 	rl_completion_append_character = '\0';
 
 	ifnames = g_ptr_array_sized_new (20);
-	for (iter = nm_cli.system_connections; iter; iter = g_slist_next (iter)) {
+	for (iter = nm_cli.connections; iter; iter = g_slist_next (iter)) {
 		con = NM_CONNECTION (iter->data);
 		s_con = nm_connection_get_setting_connection (con);
 		g_assert (s_con);
@@ -5201,7 +5201,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 		char *try_name = ifname ?
 		                     g_strdup_printf ("%s-%s", get_name_alias (setting_name, nmc_valid_connection_types), ifname)
 		                   : g_strdup (get_name_alias (setting_name, nmc_valid_connection_types));
-		default_name = unique_connection_name (nmc->system_connections, try_name);
+		default_name = unique_connection_name (nmc->connections, try_name);
 		g_free (try_name);
 	}
 	g_object_set (s_con,
@@ -5217,7 +5217,7 @@ do_connection_add (NmCli *nmc, int argc, char **argv)
 
 	if (!complete_connection_by_type (connection,
 	                                  setting_name,
-	                                  nmc->system_connections,
+	                                  nmc->connections,
 	                                  nmc->ask,
 	                                  argc,
 	                                  argv,
@@ -5269,7 +5269,7 @@ uuid_display_hook (char **array, int len, int max_len)
 	const char *id;
 
 	for (i = 1; i <= len; i++) {
-		con = nmc_find_connection (nmc_tab_completion.nmc->system_connections, "uuid", array[i], NULL);
+		con = nmc_find_connection (nmc_tab_completion.nmc->connections, "uuid", array[i], NULL);
 		id = con ? nm_connection_get_id (con) : NULL;
 		if (id) {
 			tmp = g_strdup_printf ("%s (%s)", array[i], id);
@@ -5522,12 +5522,12 @@ gen_vpn_uuids (const char *text, int state)
 	const char **uuids;
 	char *ret;
 
-	len = g_slist_length (nmc_tab_completion.nmc->system_connections);
+	len = g_slist_length (nmc_tab_completion.nmc->connections);
 	if (len < 1)
 		return NULL;
 
 	uuids = g_new (const char *, len + 1);
-	for (iter = nmc_tab_completion.nmc->system_connections; iter; iter = g_slist_next (iter)) {
+	for (iter = nmc_tab_completion.nmc->connections; iter; iter = g_slist_next (iter)) {
 		const char *type = nm_connection_get_connection_type (NM_CONNECTION (iter->data));
 
 		if (g_strcmp0 (type, NM_SETTING_VPN_SETTING_NAME) == 0)
@@ -7831,7 +7831,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		/* Existing connection */
 		NMConnection *found_con;
 
-		found_con = nmc_find_connection (nmc->system_connections, selector, con, NULL);
+		found_con = nmc_find_connection (nmc->connections, selector, con, NULL);
 		if (!found_con) {
 			g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), con);
 			nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
@@ -7886,7 +7886,7 @@ do_connection_edit (NmCli *nmc, int argc, char **argv)
 		if (con_name)
 			default_name = g_strdup (con_name);
 		else
-			default_name = unique_connection_name (nmc->system_connections,
+			default_name = unique_connection_name (nmc->connections,
 			                                       get_name_alias (connection_type, nmc_valid_connection_types));
 
 		g_object_set (s_con,
@@ -8016,7 +8016,7 @@ do_connection_modify (NmCli *nmc,
 		nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
 		goto finish;
 	}
-	connection = nmc_find_connection (nmc->system_connections, selector, name, NULL);
+	connection = nmc_find_connection (nmc->connections, selector, name, NULL);
 	if (!connection) {
 		g_string_printf (nmc->return_text, _("Error: Unknown connection '%s'."), name);
 		nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
@@ -8227,7 +8227,7 @@ do_connection_delete (NmCli *nmc, int argc, char **argv)
 			}
 		}
 
-		connection = nmc_find_connection (nmc->system_connections, selector, *arg_ptr, &pos);
+		connection = nmc_find_connection (nmc->connections, selector, *arg_ptr, &pos);
 		if (!connection) {
 			if (nmc->print_output != NMC_PRINT_TERSE)
 				g_print (_("Error: unknown connection: %s\n"), *arg_ptr);
@@ -8383,11 +8383,11 @@ gen_func_connection_names (const char *text, int state)
 	const char **connections;
 	char *ret;
 
-	if (!nm_cli.system_connections)
+	if (!nm_cli.connections)
 		return NULL;
 
-	connections = g_new (const char *, g_slist_length (nm_cli.system_connections) + 1);
-	for (iter = nm_cli.system_connections; iter; iter = g_slist_next (iter)) {
+	connections = g_new (const char *, g_slist_length (nm_cli.connections) + 1);
+	for (iter = nm_cli.connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *con = NM_CONNECTION (iter->data);
 		const char *id = nm_connection_get_id (con);
 		connections[i++] = id;
@@ -8477,7 +8477,7 @@ do_connections (NmCli *nmc, int argc, char **argv)
 	}
 
 	/* Get the connection list */
-	nmc->system_connections = nm_remote_settings_list_connections (nmc->system_settings);
+	nmc->connections = nm_remote_settings_list_connections (nmc->system_settings);
 
 	/* Now parse the command line and perform the required operation */
 	if (argc == 0) {

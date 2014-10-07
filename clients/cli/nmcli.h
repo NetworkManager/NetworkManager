@@ -112,7 +112,7 @@ typedef struct _NmCli {
 
 	NMRemoteSettings *system_settings;                /* System settings */
 	gboolean system_settings_running;                 /* Is system settings service running? */
-	GSList *system_connections;                       /* List of system connections */
+	GSList *connections;                              /* List of connections */
 
 	gboolean should_wait;                             /* Indication that nmcli should not end yet */
 	gboolean nowait_flag;                             /* '--nowait' option; used for passing to callbacks */
