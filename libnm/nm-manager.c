@@ -127,6 +127,8 @@ nm_manager_init (NMManager *manager)
 	priv->connectivity = NM_CONNECTIVITY_UNKNOWN;
 
 	priv->permissions = g_hash_table_new (g_direct_hash, g_direct_equal);
+	priv->devices = g_ptr_array_new ();
+	priv->active_connections = g_ptr_array_new ();
 }
 
 static void
@@ -647,9 +649,6 @@ nm_manager_get_device_by_path (NMManager *manager, const char *object_path)
 	g_return_val_if_fail (object_path, NULL);
 
 	devices = nm_manager_get_devices (manager);
-	if (!devices)
-		return NULL;
-
 	for (i = 0; i < devices->len; i++) {
 		NMDevice *candidate = g_ptr_array_index (devices, i);
 		if (!strcmp (nm_object_get_path (NM_OBJECT (candidate)), object_path)) {
@@ -672,9 +671,6 @@ nm_manager_get_device_by_iface (NMManager *manager, const char *iface)
 	g_return_val_if_fail (iface, NULL);
 
 	devices = nm_manager_get_devices (manager);
-	if (!devices)
-		return NULL;
-
 	for (i = 0; i < devices->len; i++) {
 		NMDevice *candidate = g_ptr_array_index (devices, i);
 		if (!strcmp (nm_device_get_iface (candidate), iface)) {
@@ -1097,7 +1093,10 @@ free_active_connections (NMManager *manager, gboolean in_dispose)
 		return;
 
 	active_connections = priv->active_connections;
-	priv->active_connections = NULL;
+	if (in_dispose)
+		priv->active_connections = NULL;
+	else
+		priv->active_connections = g_ptr_array_new ();
 
 	for (i = 0; i < active_connections->len; i++) {
 		active_connection = active_connections->pdata[i];
@@ -1106,10 +1105,8 @@ free_active_connections (NMManager *manager, gboolean in_dispose)
 	}
 	g_ptr_array_unref (active_connections);
 
-	if (!in_dispose) {
-		priv->active_connections = g_ptr_array_new ();
+	if (!in_dispose)
 		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
-	}
 }
 
 static void

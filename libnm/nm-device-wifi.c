@@ -565,12 +565,16 @@ get_hw_address (NMDevice *device)
 static void
 nm_device_wifi_init (NMDeviceWifi *device)
 {
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
+
 	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_WIFI);
 
 	g_signal_connect (device,
 	                  "notify::" NM_DEVICE_STATE,
 	                  G_CALLBACK (state_changed_cb),
 	                  NULL);
+
+	priv->aps = g_ptr_array_new ();
 }
 
 static void

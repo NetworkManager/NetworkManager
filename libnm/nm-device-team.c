@@ -173,7 +173,11 @@ get_setting_type (NMDevice *device)
 static void
 nm_device_team_init (NMDeviceTeam *device)
 {
+	NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE (device);
+
 	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_TEAM);
+
+	priv->slaves = g_ptr_array_new ();
 }
 
 static void
