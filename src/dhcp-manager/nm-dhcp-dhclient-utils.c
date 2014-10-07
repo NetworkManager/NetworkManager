@@ -74,16 +74,24 @@ add_hostname (GString *str, const char *format, const char *hostname)
 static void
 add_ip4_config (GString *str, const char *dhcp_client_id, const char *hostname)
 {
-	if (dhcp_client_id) {
+	if (dhcp_client_id && *dhcp_client_id) {
 		gboolean is_octets = TRUE;
 		int i = 0;
 
 		while (dhcp_client_id[i]) {
-			if ((i % 3) != 2 && !g_ascii_isxdigit (dhcp_client_id[i])) {
+			if (!g_ascii_isxdigit (dhcp_client_id[i])) {
 				is_octets = FALSE;
 				break;
 			}
-			if ((i % 3) == 2 && dhcp_client_id[i] != ':') {
+			i++;
+			if (!dhcp_client_id[i])
+				break;
+			if (g_ascii_isxdigit (dhcp_client_id[i])) {
+				i++;
+				if (!dhcp_client_id[i])
+					break;
+			}
+			if (dhcp_client_id[i] != ':') {
 				is_octets = FALSE;
 				break;
 			}
