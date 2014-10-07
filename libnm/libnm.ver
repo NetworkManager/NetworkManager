@@ -521,8 +521,6 @@ global:
 	nm_setting_cdma_get_type;
 	nm_setting_cdma_get_username;
 	nm_setting_cdma_new;
-	nm_setting_clear_secrets;
-	nm_setting_clear_secrets_with_flags;
 	nm_setting_compare;
 	nm_setting_compare_flags_get_type;
 	nm_setting_connection_add_permission;
@@ -689,7 +687,6 @@ global:
 	nm_setting_ip6_config_remove_route_by_value;
 	nm_setting_lookup_type;
 	nm_setting_lookup_type_by_quark;
-	nm_setting_need_secrets;
 	nm_setting_olpc_mesh_error_get_type;
 	nm_setting_olpc_mesh_error_quark;
 	nm_setting_olpc_mesh_get_channel;

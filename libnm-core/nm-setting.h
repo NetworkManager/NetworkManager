@@ -269,14 +269,6 @@ void        nm_setting_enumerate_values (NMSetting *setting,
 char       *nm_setting_to_string      (NMSetting *setting);
 
 /* Secrets */
-void        nm_setting_clear_secrets  (NMSetting *setting);
-
-void        nm_setting_clear_secrets_with_flags (NMSetting *setting,
-                                                 NMSettingClearSecretsWithFlagsFn func,
-                                                 gpointer user_data);
-
-GPtrArray  *nm_setting_need_secrets   (NMSetting *setting);
-
 gboolean    nm_setting_get_secret_flags (NMSetting *setting,
                                          const char *secret_name,
                                          NMSettingSecretFlags *out_flags,

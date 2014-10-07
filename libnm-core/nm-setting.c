@@ -1287,19 +1287,15 @@ nm_setting_enumerate_values (NMSetting *setting,
 }
 
 /**
- * nm_setting_clear_secrets:
+ * _nm_setting_clear_secrets:
  * @setting: the #NMSetting
  *
  * Resets and clears any secrets in the setting.  Secrets should be added to the
  * setting only when needed, and cleared immediately after use to prevent
  * leakage of information.
+ *
+ * Returns: %TRUE if the setting changed at all
  **/
-void
-nm_setting_clear_secrets (NMSetting *setting)
-{
-	_nm_setting_clear_secrets (setting);
-}
-
 gboolean
 _nm_setting_clear_secrets (NMSetting *setting)
 {
@@ -1366,22 +1362,16 @@ clear_secrets_with_flags (NMSetting *setting,
 }
 
 /**
- * nm_setting_clear_secrets_with_flags:
+ * _nm_setting_clear_secrets_with_flags:
  * @setting: the #NMSetting
  * @func: (scope call): function to be called to determine whether a
  *     specific secret should be cleared or not
  * @user_data: caller-supplied data passed to @func
  *
  * Clears and frees secrets determined by @func.
+ *
+ * Returns: %TRUE if the setting changed at all
  **/
-void
-nm_setting_clear_secrets_with_flags (NMSetting *setting,
-                                     NMSettingClearSecretsWithFlagsFn func,
-                                     gpointer user_data)
-{
-	_nm_setting_clear_secrets_with_flags (setting, func, user_data);
-}
-
 gboolean
 _nm_setting_clear_secrets_with_flags (NMSetting *setting,
                                       NMSettingClearSecretsWithFlagsFn func,
@@ -1411,7 +1401,7 @@ _nm_setting_clear_secrets_with_flags (NMSetting *setting,
 }
 
 /**
- * nm_setting_need_secrets:
+ * _nm_setting_need_secrets:
  * @setting: the #NMSetting
  *
  * Returns an array of property names for each secret which may be required
@@ -1425,7 +1415,7 @@ _nm_setting_clear_secrets_with_flags (NMSetting *setting,
  * free the elements.
  **/
 GPtrArray *
-nm_setting_need_secrets (NMSetting *setting)
+_nm_setting_need_secrets (NMSetting *setting)
 {
 	GPtrArray *secrets = NULL;
 

@@ -1104,7 +1104,7 @@ nm_connection_need_secrets (NMConnection *connection,
 		GPtrArray *secrets;
 
 		setting = NM_SETTING (iter->data);
-		secrets = nm_setting_need_secrets (setting);
+		secrets = _nm_setting_need_secrets (setting);
 		if (secrets) {
 			if (hints)
 				*hints = secrets;
