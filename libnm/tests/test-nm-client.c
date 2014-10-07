@@ -28,6 +28,8 @@
 
 #include "common.h"
 
+#include "nm-test-utils.h"
+
 static GMainLoop *loop = NULL;
 static NMTestServiceInfo *sinfo;
 
@@ -730,6 +732,149 @@ test_client_nm_running (void)
 	g_object_unref (client2);
 }
 
+typedef struct {
+	GMainLoop *loop;
+	NMActiveConnection *ac;
+
+	int remaining;
+} TestACInfo;
+
+static void
+assert_ac_and_device (NMClient *client)
+{
+	const GPtrArray *devices, *acs, *ac_devices;
+	NMDevice *device, *ac_device;
+	NMActiveConnection *ac, *device_ac;
+
+	acs = nm_client_get_active_connections (client);
+	g_assert (acs != NULL);
+	g_assert_cmpint (acs->len, ==, 1);
+	devices = nm_client_get_devices (client);
+	g_assert (devices != NULL);
+	g_assert_cmpint (devices->len, ==, 1);
+
+	ac = acs->pdata[0];
+	ac_devices = nm_active_connection_get_devices (ac);
+	g_assert (ac_devices != NULL);
+	g_assert_cmpint (ac_devices->len, ==, 1);
+	ac_device = ac_devices->pdata[0];
+	g_assert (ac_device != NULL);
+
+	device = devices->pdata[0];
+	device_ac = nm_device_get_active_connection (device);
+	g_assert (device_ac != NULL);
+
+	g_assert_cmpstr (nm_object_get_path (NM_OBJECT (device)), ==, nm_object_get_path (NM_OBJECT (ac_device)));
+	g_assert (device == ac_device);
+	g_assert_cmpstr (nm_object_get_path (NM_OBJECT (ac)), ==, nm_object_get_path (NM_OBJECT (device_ac)));
+	g_assert (ac == device_ac);
+}
+
+static void
+add_and_activate_cb (GObject *object,
+                     GAsyncResult *result,
+                     gpointer user_data)
+{
+	NMClient *client = NM_CLIENT (object);
+	TestACInfo *info = user_data;
+	GError *error = NULL;
+
+	info->ac = nm_client_add_and_activate_connection_finish (client, result, &error);
+	g_assert_no_error (error);
+	g_assert (info->ac != NULL);
+
+	assert_ac_and_device (client);
+
+	info->remaining--;
+	if (!info->remaining)
+		g_main_loop_quit (info->loop);
+}
+
+static void
+client_acs_changed_cb (GObject *client,
+                       GParamSpec *pspec,
+                       gpointer user_data)
+{
+	TestACInfo *info = user_data;
+	const GPtrArray *acs;
+
+	acs = nm_client_get_active_connections (NM_CLIENT (client));
+	g_assert (acs != NULL);
+	g_assert_cmpint (acs->len, ==, 1);
+
+	info->remaining--;
+	if (!info->remaining)
+		g_main_loop_quit (info->loop);
+}
+
+static void
+device_ac_changed_cb (GObject *device,
+                      GParamSpec *pspec,
+                      gpointer user_data)
+{
+	TestACInfo *info = user_data;
+
+	g_assert (nm_device_get_active_connection (NM_DEVICE (device)) != NULL);
+
+	info->remaining--;
+	if (!info->remaining)
+		g_main_loop_quit (info->loop);
+}
+
+static void
+test_active_connections (void)
+{
+	NMClient *client;
+	NMDevice *device;
+	NMConnection *conn;
+	TestACInfo info = { loop, NULL, 0 };
+	GError *error = NULL;
+
+	sinfo = nm_test_service_init ();
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
+
+	/* Tell the test service to add a new device */
+	device = nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+
+	conn = nmtst_create_minimal_connection ("test-ac", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	nm_client_add_and_activate_connection_async (client, conn, device, NULL,
+	                                             NULL, add_and_activate_cb, &info);
+	g_object_unref (conn);
+
+	g_signal_connect (client, "notify::" NM_CLIENT_ACTIVE_CONNECTIONS,
+	                  G_CALLBACK (client_acs_changed_cb), &info);
+	g_signal_connect (device, "notify::" NM_DEVICE_ACTIVE_CONNECTION,
+	                  G_CALLBACK (device_ac_changed_cb), &info);
+
+	/* Two signals plus activate_cb */
+	info.remaining = 3;
+	g_main_loop_run (loop);
+	g_signal_handlers_disconnect_by_func (client, client_acs_changed_cb, &info);
+	g_signal_handlers_disconnect_by_func (device, device_ac_changed_cb, &info);
+
+	g_assert (info.ac != NULL);
+
+	g_object_unref (info.ac);
+	g_object_unref (client);
+
+	/* Ensure that we can correctly resolve the recursive property link between the
+	 * AC and the Device in a newly-created client.
+	 */
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
+	assert_ac_and_device (client);
+	g_object_unref (client);
+
+	client = NULL;
+	nm_client_new_async (NULL, new_client_cb, &client);
+	g_main_loop_run (loop);
+	assert_ac_and_device (client);
+	g_object_unref (client);
+
+	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+}
+
 /*******************************************************************/
 
 int
@@ -750,6 +895,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/wimax-nsp-added-removed", test_wimax_nsp_added_removed);
 	g_test_add_func ("/libnm/devices-array", test_devices_array);
 	g_test_add_func ("/libnm/client-nm-running", test_client_nm_running);
+	g_test_add_func ("/libnm/active-connections", test_active_connections);
 
 	return g_test_run ();
 }
