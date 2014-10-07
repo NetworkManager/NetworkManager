@@ -143,6 +143,7 @@ nm_client_init (NMClient *client)
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 
 	priv->state = NM_STATE_UNKNOWN;
+	priv->connectivity = NM_CONNECTIVITY_UNKNOWN;
 
 	priv->permissions = g_hash_table_new (g_direct_hash, g_direct_equal);
 }
@@ -382,21 +383,32 @@ client_recheck_permissions (NMDBusManager *proxy, gpointer user_data)
 	                                     self);
 }
 
+static gboolean
+_nm_client_check_nm_running (NMClient *client, GError **error)
+{
+	if (nm_client_get_nm_running (client))
+		return TRUE;
+	else {
+		g_set_error_literal (error,
+		                     NM_CLIENT_ERROR,
+		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
+		                     "NetworkManager is not running");
+		return FALSE;
+	}
+}
+
 /**
  * nm_client_get_version:
  * @client: a #NMClient
  *
  * Gets NetworkManager version.
  *
- * Returns: string with the version
+ * Returns: string with the version (or %NULL if NetworkManager is not running)
  **/
 const char *
 nm_client_get_version (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
-
-	if (!nm_client_get_nm_running (client))
-		return NULL;
 
 	return NM_CLIENT_GET_PRIVATE (client)->version;
 }
@@ -483,13 +495,8 @@ nm_client_networking_set_enabled (NMClient *client, gboolean enable, GError **er
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	if (!nm_client_get_nm_running (client)) {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                     "NetworkManager is not running");
+	if (!_nm_client_check_nm_running (client, error))
 		return FALSE;
-	}
 
 	return nmdbus_manager_call_enable_sync (NM_CLIENT_GET_PRIVATE (client)->manager_proxy,
 	                                        enable,
@@ -524,7 +531,7 @@ nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!nm_client_get_nm_running (client))
+	if (!_nm_client_check_nm_running (client, NULL))
 		return;
 
 	_nm_object_set_property (NM_OBJECT (client),
@@ -577,7 +584,7 @@ nm_client_wwan_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!nm_client_get_nm_running (client))
+	if (!_nm_client_check_nm_running (client, NULL))
 		return;
 
 	_nm_object_set_property (NM_OBJECT (client),
@@ -630,7 +637,7 @@ nm_client_wimax_set_enabled (NMClient *client, gboolean enabled)
 {
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!nm_client_get_nm_running (client))
+	if (!_nm_client_check_nm_running (client, NULL))
 		return;
 
 	_nm_object_set_property (NM_OBJECT (client),
@@ -670,26 +677,18 @@ nm_client_wimax_hardware_get_enabled (NMClient *client)
 gboolean
 nm_client_get_logging (NMClient *client, char **level, char **domains, GError **error)
 {
-	NMClientPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
 	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!nm_client_get_nm_running (client)) {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                     "NetworkManager is not running");
+	if (!_nm_client_check_nm_running (client, error))
 		return FALSE;
-	}
 
 	if (!level && !domains)
 		return TRUE;
 
-	return nmdbus_manager_call_get_logging_sync (priv->manager_proxy,
+	return nmdbus_manager_call_get_logging_sync (NM_CLIENT_GET_PRIVATE (client)->manager_proxy,
 	                                             level, domains,
 	                                             NULL, error);
 }
@@ -709,19 +708,11 @@ nm_client_get_logging (NMClient *client, char **level, char **domains, GError **
 gboolean
 nm_client_set_logging (NMClient *client, const char *level, const char *domains, GError **error)
 {
-	NMClientPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!nm_client_get_nm_running (client)) {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                     "NetworkManager is not running");
+	if (!_nm_client_check_nm_running (client, error))
 		return FALSE;
-	}
 
 	if (!level && !domains)
 		return TRUE;
@@ -731,7 +722,7 @@ nm_client_set_logging (NMClient *client, const char *level, const char *domains,
 	if (!domains)
 		domains = "";
 
-	return nmdbus_manager_call_set_logging_sync (priv->manager_proxy,
+	return nmdbus_manager_call_set_logging_sync (NM_CLIENT_GET_PRIVATE (client)->manager_proxy,
 	                                             level, domains,
 	                                             NULL, error);
 }
@@ -797,13 +788,14 @@ nm_client_check_connectivity (NMClient *client,
                               GCancellable *cancellable,
                               GError **error)
 {
-	NMClientPrivate *priv;
 	guint32 connectivity;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
-	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	if (nmdbus_manager_call_check_connectivity_sync (priv->manager_proxy,
+	if (!_nm_client_check_nm_running (client, error))
+		return NM_CONNECTIVITY_UNKNOWN;
+
+	if (nmdbus_manager_call_check_connectivity_sync (NM_CLIENT_GET_PRIVATE (client)->manager_proxy,
 	                                                 &connectivity,
 	                                                 cancellable, error))
 		return connectivity;
@@ -849,15 +841,19 @@ nm_client_check_connectivity_async (NMClient *client,
                                     GAsyncReadyCallback callback,
                                     gpointer user_data)
 {
-	NMClientPrivate *priv;
 	GSimpleAsyncResult *simple;
+	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
-	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	if (!_nm_client_check_nm_running (client, &error)) {
+		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
+		return;
+	}
 
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_check_connectivity_async);
-	nmdbus_manager_call_check_connectivity (priv->manager_proxy,
+	nmdbus_manager_call_check_connectivity (NM_CLIENT_GET_PRIVATE (client)->manager_proxy,
 	                                        cancellable,
 	                                        check_connectivity_cb, simple);
 }
@@ -880,7 +876,8 @@ nm_client_check_connectivity_finish (NMClient *client,
 {
 	GSimpleAsyncResult *simple;
 
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_check_connectivity_async), NM_CONNECTIVITY_UNKNOWN);
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
+	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NM_CONNECTIVITY_UNKNOWN);
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
 
@@ -999,15 +996,9 @@ nm_client_get_device_by_iface (NMClient *client, const char *iface)
 const GPtrArray *
 nm_client_get_active_connections (NMClient *client)
 {
-	NMClientPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!nm_client_get_nm_running (client))
-		return NULL;
-
-	return priv->active_connections;
+	return NM_CLIENT_GET_PRIVATE (client)->active_connections;
 }
 
 /**
@@ -1225,6 +1216,7 @@ nm_client_activate_connection_async (NMClient *client,
 {
 	NMClientPrivate *priv;
 	ActivateInfo *info;
+	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 	if (device)
@@ -1232,11 +1224,8 @@ nm_client_activate_connection_async (NMClient *client,
 	if (connection)
 		g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	if (!nm_client_get_nm_running (client)) {
-		g_simple_async_report_error_in_idle (G_OBJECT (client), callback, user_data,
-		                                     NM_CLIENT_ERROR,
-		                                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                                     "NetworkManager is not running");
+	if (!_nm_client_check_nm_running (client, &error)) {
+		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
 		return;
 	}
 
@@ -1275,7 +1264,8 @@ nm_client_activate_connection_finish (NMClient *client,
 {
 	GSimpleAsyncResult *simple;
 
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_activate_connection_async), NULL);
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
 	if (g_simple_async_result_propagate_error (simple, error))
@@ -1349,17 +1339,15 @@ nm_client_add_and_activate_connection_async (NMClient *client,
 	NMClientPrivate *priv;
 	GVariant *dict = NULL;
 	ActivateInfo *info;
+	GError *error = NULL;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_DEVICE (device));
 	if (partial)
 		g_return_if_fail (NM_IS_CONNECTION (partial));
 
-	if (!nm_client_get_nm_running (client)) {
-		g_simple_async_report_error_in_idle (G_OBJECT (client), callback, user_data,
-		                                     NM_CLIENT_ERROR,
-		                                     NM_CLIENT_ERROR_MANAGER_NOT_RUNNING,
-		                                     "NetworkManager is not running");
+	if (!_nm_client_check_nm_running (client, &error)) {
+		g_simple_async_report_take_gerror_in_idle (G_OBJECT (client), callback, user_data, error);
 		return;
 	}
 
@@ -1406,7 +1394,8 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
 {
 	GSimpleAsyncResult *simple;
 
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_add_and_activate_connection_async), NULL);
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), NULL);
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
 	if (g_simple_async_result_propagate_error (simple, error))
@@ -1445,18 +1434,16 @@ nm_client_deactivate_connection (NMClient *client,
                                  GCancellable *cancellable,
                                  GError **error)
 {
-	NMClientPrivate *priv;
 	const char *path;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
 
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!nm_client_get_nm_running (client))
+	if (!_nm_client_check_nm_running (client, NULL))
 		return TRUE;
 
 	path = nm_object_get_path (NM_OBJECT (active));
-	return nmdbus_manager_call_deactivate_connection_sync (priv->manager_proxy,
+	return nmdbus_manager_call_deactivate_connection_sync (NM_CLIENT_GET_PRIVATE (client)->manager_proxy,
 	                                                       path,
 	                                                       cancellable, error);
 }
@@ -1495,7 +1482,6 @@ nm_client_deactivate_connection_async (NMClient *client,
                                        GAsyncReadyCallback callback,
                                        gpointer user_data)
 {
-	NMClientPrivate *priv;
 	const char *path;
 	GSimpleAsyncResult *simple;
 
@@ -1505,8 +1491,7 @@ nm_client_deactivate_connection_async (NMClient *client,
 	simple = g_simple_async_result_new (G_OBJECT (client), callback, user_data,
 	                                    nm_client_deactivate_connection_async);
 
-	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!nm_client_get_nm_running (client)) {
+	if (!_nm_client_check_nm_running (client, NULL)) {
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
 		g_simple_async_result_complete_in_idle (simple);
 		g_object_unref (simple);
@@ -1514,7 +1499,7 @@ nm_client_deactivate_connection_async (NMClient *client,
 	}
 
 	path = nm_object_get_path (NM_OBJECT (active));
-	nmdbus_manager_call_deactivate_connection (priv->manager_proxy,
+	nmdbus_manager_call_deactivate_connection (NM_CLIENT_GET_PRIVATE (client)->manager_proxy,
 	                                           path,
 	                                           cancellable,
 	                                           deactivated_cb, simple);
@@ -1537,7 +1522,8 @@ nm_client_deactivate_connection_finish (NMClient *client,
 {
 	GSimpleAsyncResult *simple;
 
-	g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (client), nm_client_deactivate_connection_async), FALSE);
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+	g_return_val_if_fail (G_IS_SIMPLE_ASYNC_RESULT (result), FALSE);
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
 	if (g_simple_async_result_propagate_error (simple, error))
@@ -1627,6 +1613,7 @@ nm_running_changed_cb (GObject *object,
 	if (!nm_client_get_nm_running (client)) {
 		priv->state = NM_STATE_UNKNOWN;
 		priv->startup = FALSE;
+		priv->connectivity = NM_CONNECTIVITY_UNKNOWN;
 		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_NM_RUNNING);
 		_nm_object_suppress_property_updates (NM_OBJECT (client), TRUE);
 		poke_wireless_devices_with_rf_status (client);
@@ -1639,8 +1626,9 @@ nm_running_changed_cb (GObject *object,
 		priv->wwan_hw_enabled = FALSE;
 		priv->wimax_enabled = FALSE;
 		priv->wimax_hw_enabled = FALSE;
-		g_free (priv->version);
-		priv->version = NULL;
+		g_clear_pointer (&priv->version, g_free);
+		g_clear_object (&priv->activating_connection);
+		g_clear_object (&priv->primary_connection);
 
 		/* Clear object cache to ensure bad refcounting by clients doesn't
 		 * keep objects in the cache.
