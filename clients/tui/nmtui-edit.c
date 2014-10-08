@@ -70,11 +70,35 @@ edit_connection_list_filter (NmtEditConnectionList *list,
                              gpointer               user_data)
 {
 	NMSettingConnection *s_con;
+	const char *master, *slave_type;
+	const char *uuid, *ifname;
+	GSList *conns, *iter;
+	gboolean found_master = FALSE;
 
 	s_con = nm_connection_get_setting_connection (connection);
 	g_return_val_if_fail (s_con != NULL, FALSE);
 
-	return (nm_setting_connection_get_slave_type (s_con) == NULL);
+	master = nm_setting_connection_get_master (s_con);
+	if (!master)
+		return TRUE;
+	slave_type = nm_setting_connection_get_slave_type (s_con);
+	if (   g_strcmp0 (slave_type, NM_SETTING_BOND_SETTING_NAME) != 0
+	    && g_strcmp0 (slave_type, NM_SETTING_TEAM_SETTING_NAME) != 0
+	    && g_strcmp0 (slave_type, NM_SETTING_BRIDGE_SETTING_NAME) != 0)
+		return TRUE;
+
+	conns = nm_remote_settings_list_connections (nm_settings);
+	for (iter = conns; iter; iter = iter->next) {
+		uuid = nm_connection_get_uuid (iter->data);
+		ifname = nm_connection_get_interface_name (iter->data);
+		if (!g_strcmp0 (master, uuid) || !g_strcmp0 (master, ifname)) {
+			found_master = TRUE;
+			break;
+		}
+	}
+	g_slist_free (conns);
+
+	return !found_master;
 }
 
 static NmtNewtForm *
@@ -462,19 +486,11 @@ connection_removed_signal (NMRemoteSettings   *settings,
 	}
 }
 
-void
-nmt_remove_connection (NMRemoteConnection *connection)
+static void
+remove_one_connection (NMRemoteConnection *connection)
 {
 	ConnectionDeleteData data;
-	int choice;
 	GError *error = NULL;
-
-	choice = nmt_newt_choice_dialog (_("Cancel"),
-	                                 _("Delete"),
-	                                 _("Are you sure you want to delete the connection '%s'?"),
-	                                 nm_connection_get_id (NM_CONNECTION (connection)));
-	if (choice == 1)
-		return;
 
 	data.got_callback = data.got_signal = FALSE;
 	nmt_sync_op_init (&data.op);
@@ -485,12 +501,49 @@ nmt_remove_connection (NMRemoteConnection *connection)
 	nm_remote_connection_delete_async (connection, NULL, connection_deleted_callback, &data);
 
 	if (!nmt_sync_op_wait_boolean (&data.op, &error)) {
-		nmt_newt_message_dialog (_("Could not delete connection: %s"),
+		nmt_newt_message_dialog (_("Could not delete connection '%s': %s"),
+		                         nm_connection_get_id (NM_CONNECTION (connection)),
 		                         error->message);
 		g_error_free (error);
 	}
 
 	g_signal_handlers_disconnect_by_func (nm_settings, G_CALLBACK (connection_removed_signal), &data);
+}
+
+void
+nmt_remove_connection (NMRemoteConnection *connection)
+{
+	GSList *conns, *iter;
+	NMRemoteConnection *slave;
+	NMSettingConnection *s_con;
+	const char *uuid, *iface, *master;
+	int choice;
+
+	choice = nmt_newt_choice_dialog (_("Cancel"),
+	                                 _("Delete"),
+	                                 _("Are you sure you want to delete the connection '%s'?"),
+	                                 nm_connection_get_id (NM_CONNECTION (connection)));
+	if (choice == 1)
+		return;
+
+	g_object_ref (connection);
+	remove_one_connection (connection);
+
+	uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
+	iface = nm_connection_get_interface_name (NM_CONNECTION (connection));
+
+	conns = nm_remote_settings_list_connections (nm_settings);
+	for (iter = conns; iter; iter = iter->next) {
+		slave = iter->data;
+		s_con = nm_connection_get_setting_connection (NM_CONNECTION (slave));
+		master = nm_setting_connection_get_master (s_con);
+		if (master) {
+			if (!g_strcmp0 (master, uuid) || !g_strcmp0 (master, iface))
+				remove_one_connection (slave);
+		}
+	}
+	g_slist_free (conns);
+	g_object_unref (connection);
 }
 
 NmtNewtForm *
