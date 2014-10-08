@@ -24,6 +24,7 @@
 #include <string.h>
 #include <errno.h>
 #include <nm-utils.h>
+#include <NetworkManagerUtils.h>
 #include <nm-system-config-interface.h>
 #include <nm-logging.h>
 #include <nm-config.h>
@@ -760,30 +761,49 @@ is_managed (const char *conn_name)
 	return TRUE;
 }
 
+static char *
+_has_prefix_impl (char *str, const char *prefix, gsize prefix_len)
+{
+	if (!g_str_has_prefix (str, prefix))
+		return NULL;
+	str += prefix_len;
+	if (!g_ascii_isspace (str[0]))
+		return NULL;
+	do {
+		str++;
+	} while (g_ascii_isspace (str[0]));
+	return str;
+}
+#define _has_prefix(STR, PREFIX) _has_prefix_impl (STR, PREFIX, STRLEN (PREFIX))
+
 void
 get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 {
 	const char *dhcp_client;
 	const gchar *dhcpcd_conf = SYSCONFDIR "/dhcpcd.conf";
 	const gchar *dhclient_conf = SYSCONFDIR "/dhcp/dhclient.conf";
-	gchar *line = NULL, *tmp = NULL, *contents = NULL;
+	gchar *line = NULL, *tmp = NULL, *contents = NULL, *tmp1;
 	gchar **all_lines;
 	guint line_num, i;
+	gboolean use_dhclient = FALSE;
 
 	*hostname = NULL;
 	*client_id = NULL;
 	dhcp_client = nm_config_get_dhcp_client (nm_config_get ());
 	if (dhcp_client) {
-		if (!strcmp (dhcp_client, "dhclient"))
+		if (!strcmp (dhcp_client, "dhclient")) {
 			g_file_get_contents (dhclient_conf, &contents, NULL,
 					     NULL);
-		else if (!strcmp (dhcp_client, "dhcpcd"))
+			use_dhclient = TRUE;
+		} else if (!strcmp (dhcp_client, "dhcpcd"))
 			g_file_get_contents (dhcpcd_conf, &contents, NULL,
 					     NULL);
 	} else {
-		if (g_file_test (dhclient_conf, G_FILE_TEST_IS_REGULAR))
+		if (g_file_test (dhclient_conf, G_FILE_TEST_IS_REGULAR)) {
 			g_file_get_contents (dhclient_conf, &contents, NULL,
 					     NULL);
+			use_dhclient = TRUE;
+		}
 		else if (g_file_test (dhcpcd_conf, G_FILE_TEST_IS_REGULAR))
 			g_file_get_contents (dhcpcd_conf, &contents, NULL,
 					     NULL);
@@ -794,42 +814,44 @@ get_dhcp_hostname_and_client_id (char **hostname, char **client_id)
 	line_num = g_strv_length (all_lines);
 	for (i = 0; i < line_num; i++) {
 		line = all_lines[i];
-		// dhcpcd.conf
 		g_strstrip (line);
-		if (g_str_has_prefix (line, "hostname")) {
-			tmp = line + strlen ("hostname");
-			g_strstrip (tmp);
-			if (tmp[0] != '\0')
-				*hostname = g_strdup (tmp);
-			else
-				nm_log_info (LOGD_SETTINGS, "dhcpcd hostname not defined, ignoring");
-		} else if (g_str_has_prefix (line, "clientid")) {
-			tmp = line + strlen ("clientid");
-			g_strstrip (tmp);
-			if (tmp[0] != '\0')
-				*client_id = g_strdup (tmp);
-			else
-				nm_log_info (LOGD_SETTINGS, "dhcpcd clientid not defined, ignoring");
-		}
-		// dhclient.conf
-		else if ((tmp = strstr (line, "send host-name")) != NULL) {
-			tmp += strlen ("send host-name");
-			g_strstrip (tmp);
-			strip_string (tmp, ';');
-			strip_string (tmp, '"');
-			if (tmp[0] != '\0')
-				*hostname = g_strdup (tmp);
-			else
-				nm_log_info (LOGD_SETTINGS, "dhclient hostname not defined, ignoring");
-		} else if ((tmp = strstr (line, "send dhcp-client-identifier"))
-			   != NULL) {
-			tmp += strlen ("send dhcp-client-identifier");
-			g_strstrip (tmp);
-			strip_string (tmp, ';');
-			if (tmp[0] != '\0')
-				*client_id = g_strdup (tmp);
-			else
-				nm_log_info (LOGD_SETTINGS, "dhclient clientid not defined, ignoring");
+		if (line[0] == '#' || line[0] == '\0')
+			continue;
+		if (!use_dhclient) {
+			// dhcpcd.conf
+			if ((tmp = _has_prefix (line, "hostname"))) {
+				if (tmp[0] != '\0') {
+					g_free (*hostname);
+					*hostname = g_strdup (tmp);
+				} else
+					nm_log_info (LOGD_SETTINGS, "dhcpcd hostname not defined, ignoring");
+			} else if ((tmp = _has_prefix (line, "clientid"))) {
+				if (tmp[0] != '\0') {
+					g_free (*client_id);
+					*client_id = g_strdup (tmp);
+				} else
+					nm_log_info (LOGD_SETTINGS, "dhcpcd clientid not defined, ignoring");
+			}
+		} else {
+			// dhclient.conf
+			if ((tmp1 = _has_prefix (line, "send"))) {
+				if ((tmp = _has_prefix (tmp1, "host-name"))) {
+					strip_string (tmp, ';');
+					strip_string (tmp, '"');
+					if (tmp[0] != '\0') {
+						g_free (*hostname);
+						*hostname = g_strdup (tmp);
+					} else
+						nm_log_info (LOGD_SETTINGS, "dhclient hostname not defined, ignoring");
+				} else if ((tmp = _has_prefix (tmp1, "dhcp-client-identifier"))) {
+					strip_string (tmp, ';');
+					if (tmp[0] != '\0') {
+						g_free (*client_id);
+						*client_id = g_strdup (tmp);
+					} else
+						nm_log_info (LOGD_SETTINGS, "dhclient clientid not defined, ignoring");
+				}
+			}
 		}
 	}
 	g_strfreev (all_lines);
