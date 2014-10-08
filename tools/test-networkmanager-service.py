@@ -226,6 +226,34 @@ class WiredDevice(Device):
         pass
 
 ###################################################################
+IFACE_VLAN = 'org.freedesktop.NetworkManager.Device.Vlan'
+
+PV_HW_ADDRESS = "HwAddress"
+PV_CARRIER = "Carrier"
+PV_VLAN_ID = "VlanId"
+
+class VlanDevice(Device):
+    def __init__(self, bus, iface):
+        Device.__init__(self, bus, iface, NM_DEVICE_TYPE_VLAN)
+        self.add_dbus_interface(IFACE_VLAN, self.__get_props)
+
+        self.mac = random_mac()
+        self.carrier = False
+        self.vlan_id = 1
+
+    # Properties interface
+    def __get_props(self):
+        props = {}
+        props[PV_HW_ADDRESS] = self.mac
+        props[PV_CARRIER] = self.carrier
+        props[PV_VLAN_ID] = self.vlan_id
+        return props
+
+    @dbus.service.signal(IFACE_VLAN, signature='a{sv}')
+    def PropertiesChanged(self, changed):
+        pass
+
+###################################################################
 IFACE_WIFI_AP = 'org.freedesktop.NetworkManager.AccessPoint'
 
 PP_FLAGS = "Flags"
@@ -653,21 +681,27 @@ class NetworkManager(ExportedObj):
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='ooo', out_signature='o')
     def ActivateConnection(self, conpath, devpath, specific_object):
-        device = None
-        for d in self.devices:
-            if d.path == devpath:
-                device = d
-                break
-        if not device:
-            raise UnknownDeviceException("No device found for the requested iface.")
-
         try:
             connection = settings.get_connection(conpath)
         except Exception as e:
             raise UnknownConnectionException("Connection not found")
 
-        # See if we need secrets. For the moment, we only support WPA
         hash = connection.GetSettings()
+        s_con = hash['connection']
+
+        device = None
+        for d in self.devices:
+            if d.path == devpath:
+                device = d
+                break
+        if not device and s_con['type'] == 'vlan':
+            ifname = s_con['interface-name']
+            device = VlanDevice(self._bus, ifname)
+            self.add_device(device)
+        if not device:
+            raise UnknownDeviceException("No device found for the requested iface.")
+
+        # See if we need secrets. For the moment, we only support WPA
         if hash.has_key('802-11-wireless-security'):
             s_wsec = hash['802-11-wireless-security']
             if (s_wsec['key-mgmt'] == 'wpa-psk' and not s_wsec.has_key('psk')):
