@@ -192,7 +192,6 @@ typedef struct {
 
 	char *ifname;
 	char *con_id;
-	char *devpath;
 
 	int secrets_requested;
 } TestSecretAgentData;
@@ -201,20 +200,6 @@ static gboolean
 timeout_assert (gpointer user_data)
 {
 	g_assert_not_reached ();
-}
-
-static void
-device_added_cb (NMClient *c,
-                 NMDevice *device,
-                 gpointer user_data)
-{
-	TestSecretAgentData *sadata = user_data;
-
-	g_assert (device);
-	g_assert_cmpstr (nm_device_get_iface (device), ==, sadata->ifname);
-
-	sadata->device = device;
-	g_main_loop_quit (sadata->loop);
 }
 
 static void
@@ -261,8 +246,6 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 	GBytes *ssid;
 	NMSetting *s_wsec;
 	GError *error = NULL;
-	GVariant *ret;
-	gulong handler;
 
 	sadata->sinfo = nm_test_service_init ();
 	sadata->client = nm_client_new (NULL, &error);
@@ -276,24 +259,8 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 	counter++;
 
 	/* Create the device */
-	ret = g_dbus_proxy_call_sync (sadata->sinfo->proxy,
-	                              "AddWifiDevice",
-	                              g_variant_new ("(s)", sadata->ifname),
-	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
-	                              3000,
-	                              NULL,
-	                              &error);
-	g_assert_no_error (error);
-	g_assert (ret);
-	g_assert_cmpstr (g_variant_get_type_string (ret), ==, "(o)");
-	g_variant_get (ret, "(o)", &sadata->devpath);
-	g_variant_unref (ret);
-
-	handler = g_signal_connect (sadata->client, "device-added",
-	                            G_CALLBACK (device_added_cb), sadata);
-	g_main_loop_run (sadata->loop);
-	g_signal_handler_disconnect (sadata->client, handler);
-	g_assert (sadata->device);
+	sadata->device = nm_test_service_add_device (sadata->sinfo, sadata->client,
+	                                             "AddWifiDevice", sadata->ifname);
 
 	/* Create the connection */
 	connection = nmtst_create_minimal_connection (sadata->con_id, NULL, NM_SETTING_WIRELESS_SETTING_NAME, &s_con);
@@ -353,18 +320,18 @@ test_cleanup (TestSecretAgentData *sadata, gconstpointer test_data)
 		g_object_unref (sadata->agent);
 	}
 
-	g_object_unref (sadata->connection);
-	g_object_unref (sadata->client);
-
 	ret = g_dbus_proxy_call_sync (sadata->sinfo->proxy,
 	                              "RemoveDevice",
-	                              g_variant_new ("(s)", sadata->devpath),
+	                              g_variant_new ("(s)", nm_object_get_path (NM_OBJECT (sadata->device))),
 	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
 	                              3000,
 	                              NULL,
 	                              &error);
 	g_assert_no_error (error);
 	g_variant_unref (ret);
+
+	g_object_unref (sadata->connection);
+	g_object_unref (sadata->client);
 
 	nm_test_service_cleanup (sadata->sinfo);
 
@@ -373,7 +340,6 @@ test_cleanup (TestSecretAgentData *sadata, gconstpointer test_data)
 
 	g_free (sadata->ifname);
 	g_free (sadata->con_id);
-	g_free (sadata->devpath);
 }
 
 /*******************************************************************/

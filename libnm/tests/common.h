@@ -19,6 +19,7 @@
  */
 
 #include <gio/gio.h>
+#include <NetworkManager.h>
 
 typedef struct {
 	GDBusConnection *bus;
@@ -29,3 +30,8 @@ typedef struct {
 
 NMTestServiceInfo *nm_test_service_init (void);
 void nm_test_service_cleanup (NMTestServiceInfo *info);
+
+NMDevice *nm_test_service_add_device (NMTestServiceInfo *info,
+                                      NMClient *client,
+                                      const char *method,
+                                      const char *ifname);
