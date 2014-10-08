@@ -1818,6 +1818,7 @@ activate_connection_cb (GObject *client, GAsyncResult *result, gpointer user_dat
 				}
 			} else {
 				g_signal_connect (active, "notify::state", G_CALLBACK (active_connection_state_cb), nmc);
+				active_connection_state_cb (active, NULL, nmc);
 
 				/* Start progress indication showing device states */
 				if (nmc->print_output == NMC_PRINT_PRETTY) {
