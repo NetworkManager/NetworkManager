@@ -364,6 +364,8 @@ nm_device_tun_class_init (NMDeviceTunClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMDeviceTunPrivate));
 
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_TUN, NM_LINK_TYPE_TAP)
+
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
 

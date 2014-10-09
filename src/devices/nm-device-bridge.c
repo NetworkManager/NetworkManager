@@ -475,7 +475,7 @@ nm_device_bridge_class_init (NMDeviceBridgeClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceBridgePrivate));
 
-	parent_class->connection_type = NM_SETTING_BRIDGE_SETTING_NAME;
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_BRIDGE_SETTING_NAME, NM_LINK_TYPE_BRIDGE)
 
 	/* virtual methods */
 	object_class->get_property = get_property;

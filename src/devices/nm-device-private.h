@@ -106,4 +106,11 @@ void nm_device_set_wwan_ip6_config (NMDevice *device, NMIP6Config *config);
 
 gboolean nm_device_ipv6_sysctl_set (NMDevice *self, const char *property, const char *value);
 
+#define NM_DEVICE_CLASS_DECLARE_TYPES(klass, conn_type, ...) \
+	NM_DEVICE_CLASS (klass)->connection_type = conn_type; \
+	{ \
+		static const NMLinkType link_types[] = { __VA_ARGS__, NM_LINK_TYPE_NONE }; \
+		NM_DEVICE_CLASS (klass)->link_types = link_types; \
+	}
+
 #endif	/* NM_DEVICE_PRIVATE_H */

@@ -126,6 +126,8 @@ typedef enum {
 	NM_LINK_TYPE_BRIDGE = 0x10000 | 0x20000,
 	NM_LINK_TYPE_BOND,
 	NM_LINK_TYPE_TEAM,
+
+	NM_LINK_TYPE_ANY = G_MAXUINT32,
 } NMLinkType;
 
 typedef enum {

@@ -511,6 +511,8 @@ nm_device_olpc_mesh_class_init (NMDeviceOlpcMeshClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceOlpcMeshPrivate));
 
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_OLPC_MESH_SETTING_NAME, NM_LINK_TYPE_OLPC_MESH)
+
 	object_class->constructor = constructor;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;

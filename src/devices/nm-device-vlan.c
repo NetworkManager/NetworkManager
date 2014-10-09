@@ -667,7 +667,7 @@ nm_device_vlan_class_init (NMDeviceVlanClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
-	parent_class->connection_type = NM_SETTING_VLAN_SETTING_NAME;
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_VLAN_SETTING_NAME, NM_LINK_TYPE_VLAN)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceVlanPrivate));
 

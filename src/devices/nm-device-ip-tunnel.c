@@ -852,7 +852,12 @@ nm_device_ip_tunnel_class_init (NMDeviceIPTunnelClass *klass)
 	device_class->setup_start = setup_start;
 	device_class->unrealize = unrealize;
 
-	device_class->connection_type = NM_SETTING_IP_TUNNEL_SETTING_NAME;
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass,
+	                               NM_SETTING_IP_TUNNEL_SETTING_NAME,
+	                               NM_LINK_TYPE_GRE,
+	                               NM_LINK_TYPE_IP6TNL,
+	                               NM_LINK_TYPE_IPIP,
+	                               NM_LINK_TYPE_SIT);
 
 	/* properties */
 	g_object_class_install_property

@@ -244,6 +244,8 @@ nm_device_vxlan_class_init (NMDeviceVxlanClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMDeviceVxlanPrivate));
 
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NULL, NM_LINK_TYPE_VXLAN)
+
 	object_class->get_property = get_property;
 
 	device_class->link_changed = link_changed;

@@ -196,7 +196,7 @@ nm_device_generic_class_init (NMDeviceGenericClass *klass)
 
 	g_type_class_add_private (klass, sizeof (NMDeviceGenericPrivate));
 
-	parent_class->connection_type = NM_SETTING_GENERIC_SETTING_NAME;
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_GENERIC_SETTING_NAME, NM_LINK_TYPE_ANY)
 
 	object_class->constructor = constructor;
 	object_class->dispose = dispose;

@@ -1706,7 +1706,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDeviceEthernetPrivate));
 
-	parent_class->connection_type = NM_SETTING_WIRED_SETTING_NAME;
+	NM_DEVICE_CLASS_DECLARE_TYPES (klass, NM_SETTING_WIRED_SETTING_NAME, NM_LINK_TYPE_ETHERNET)
 
 	/* virtual methods */
 	object_class->constructor = constructor;
