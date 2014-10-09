@@ -266,6 +266,7 @@ pushd "$DIRNAME"
     git commit --allow-empty -m '*** empty initial commit'  # useful, to rebase the following commit
     git add -f -A .
     git commit -m '*** add all'
+    git tag -f ALL
     ORIG_HEAD="`git rev-parse HEAD`"
     if [[ "x$RELEASE_BASE_COMMIT" == x ]]; then
         # if RELEASE_BASE_COMMIT is not set, try detecting the BASE_COMMIT...
@@ -339,10 +340,12 @@ EOF
     fi
     if [[ x != "x$RELEASE_BASE_COMMIT" ]]; then
         git checkout -B master "$RELEASE_BASE_COMMIT" || die "could not checkout master"
+        git tag -f BASE
         git rm --cached -r :/
         git checkout "$ORIG_HEAD" -- :/
         git clean -fdx :/
         git commit -m '*** add all'
+        git tag -f ALL
         [[ x == "x$(git diff HEAD "$ORIG_HEAD")" ]] || die "error recreating initial tarball"
     fi
     (
@@ -354,6 +357,7 @@ EOF
     git rm --cached -r .
     git add --all .
     git commit -m "*** clean state (ignored files removed)"
+    git tag -f CLEAN
 
     if [[ "$REVERT_COUNT" == "" || $REVERT_COUNT -gt 0 ]]; then
 
@@ -396,6 +400,7 @@ EOF
             git add --all .
             git commit --allow-empty -a -m "<< revert Patch${LAST_PATCH_N[$i]} \"${LAST_PATCH[$i]}\"$(get_patch_origin "${LAST_PATCH[$i]}")"
             BASECOMMIT=("`git rev-parse HEAD`" "${BASECOMMIT[@]}")
+            git tag -f REVERT"${LAST_PATCH_N[$i]}"
         done
 
         # reapply the patches
@@ -406,6 +411,8 @@ EOF
             BASECOMMIT_REVERT="${BASECOMMIT[$((i))]}"
             COMMIT_MSG="$(git log -n1 --format='%s%n%n%b' "$BASECOMMIT_REVERT" | sed '1s/<< revert \(Patch.*"\)$/-- before reapplying \1/')"
             git commit --allow-empty -m "$COMMIT_MSG"
+            git tag -f "BEFORE_PATCH${LAST_PATCH_N[$i]}"
+            git tag -f "LAST0"
 
             # first try git-am to preserve the commit message, otherwise just revert the last commit
             if git am "../${LAST_PATCH[$i]}"; then
@@ -423,7 +430,9 @@ EOF
             git reset --hard HEAD
             git clean -fdx
             [[ x = "x$(git diff "${BASECOMMIT[$((i+1))]}" HEAD)" ]] || die "error reverting patch"
+            git tag -f PATCH"${LAST_PATCH_N[$i]}"
         done
+        git tag -f LAST
     fi
     git checkout "$ORIG_HEAD" -- .
     git checkout HEAD~ -- .gitignore
