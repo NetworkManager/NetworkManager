@@ -30,6 +30,7 @@
 #include <nm-utils.h>
 
 #include "nm-device-wifi.h"
+#include "nm-access-point.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-object-cache.h"

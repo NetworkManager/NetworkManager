@@ -25,7 +25,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include "nm-device.h"
+#include <nm-device.h>
 
 G_BEGIN_DECLS
 
@@ -57,9 +57,9 @@ GQuark nm_device_bond_error_quark (void);
 #define NM_DEVICE_BOND_CARRIER     "carrier"
 #define NM_DEVICE_BOND_SLAVES      "slaves"
 
-typedef struct {
+struct _NMDeviceBond {
 	NMDevice parent;
-} NMDeviceBond;
+};
 
 typedef struct {
 	NMDeviceClass parent;

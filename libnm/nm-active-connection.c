@@ -31,6 +31,10 @@
 #include "nm-vpn-connection.h"
 #include "nm-glib-compat.h"
 #include "nm-dbus-helpers.h"
+#include "nm-dhcp4-config.h"
+#include "nm-dhcp6-config.h"
+#include "nm-ip4-config.h"
+#include "nm-ip6-config.h"
 
 static GType _nm_active_connection_decide_type (GVariant *value);
 

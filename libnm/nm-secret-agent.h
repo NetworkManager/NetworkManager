@@ -25,8 +25,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <gio/gio.h>
-#include <nm-connection.h>
+#include <nm-types.h>
 
 G_BEGIN_DECLS
 
@@ -72,9 +71,9 @@ typedef enum {
 #define NM_SECRET_AGENT_REGISTERED          "registered"
 #define NM_SECRET_AGENT_CAPABILITIES        "capabilities"
 
-typedef struct {
+struct _NMSecretAgent {
 	GObject parent;
-} NMSecretAgent;
+};
 
 /**
  * NMSecretAgentGetSecretsFunc:

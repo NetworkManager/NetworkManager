@@ -26,8 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include "nm-device.h"
-#include "nm-access-point.h"
+#include <nm-device.h>
 
 G_BEGIN_DECLS
 
@@ -71,9 +70,9 @@ GQuark nm_device_wifi_error_quark (void);
 #define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
 #define NM_DEVICE_WIFI_ACCESS_POINTS       "access-points"
 
-typedef struct {
+struct _NMDeviceWifi {
 	NMDevice parent;
-} NMDeviceWifi;
+};
 
 typedef struct {
 	NMDeviceClass parent;

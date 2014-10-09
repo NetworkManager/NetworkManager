@@ -26,16 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <glib.h>
-#include <glib-object.h>
-#include "nm-object.h"
-#include "nm-dbus-interface.h"
-#include "nm-ip4-config.h"
-#include "nm-dhcp4-config.h"
-#include "nm-ip6-config.h"
-#include "nm-dhcp6-config.h"
-#include "nm-connection.h"
-#include "nm-active-connection.h"
+#include <nm-object.h>
 
 G_BEGIN_DECLS
 
@@ -84,9 +75,9 @@ GQuark nm_device_error_quark (void);
 #define NM_DEVICE_PHYSICAL_PORT_ID "physical-port-id"
 #define NM_DEVICE_MTU "mtu"
 
-typedef struct {
+struct _NMDevice {
 	NMObject parent;
-} NMDevice;
+};
 
 typedef struct {
 	NMObjectClass parent;

@@ -25,7 +25,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include "nm-device.h"
+#include <nm-device.h>
 
 G_BEGIN_DECLS
 
@@ -58,9 +58,9 @@ GQuark nm_device_infiniband_error_quark (void);
 #define NM_DEVICE_INFINIBAND_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_INFINIBAND_CARRIER     "carrier"
 
-typedef struct {
+struct _NMDeviceInfiniband {
 	NMDevice parent;
-} NMDeviceInfiniband;
+};
 
 typedef struct {
 	NMDeviceClass parent;

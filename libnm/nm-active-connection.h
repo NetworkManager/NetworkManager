@@ -26,15 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <glib.h>
-#include <glib-object.h>
-#include "nm-object.h"
-#include <nm-connection.h>
-#include <nm-dbus-interface.h>
-#include "nm-ip4-config.h"
-#include "nm-dhcp4-config.h"
-#include "nm-ip6-config.h"
-#include "nm-dhcp6-config.h"
+#include <nm-object.h>
 
 G_BEGIN_DECLS
 
@@ -61,9 +53,9 @@ G_BEGIN_DECLS
 #define NM_ACTIVE_CONNECTION_VPN                 "vpn"
 #define NM_ACTIVE_CONNECTION_MASTER              "master"
 
-typedef struct {
+struct _NMActiveConnection {
 	NMObject parent;
-} NMActiveConnection;
+};
 
 typedef struct {
 	NMObjectClass parent;

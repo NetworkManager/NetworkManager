@@ -22,10 +22,7 @@
 #ifndef __NM_REMOTE_SETTINGS_H__
 #define __NM_REMOTE_SETTINGS_H__
 
-#include <gio/gio.h>
 #include <nm-object.h>
-#include <nm-connection.h>
-#include <nm-remote-connection.h>
 
 G_BEGIN_DECLS
 

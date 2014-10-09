@@ -26,15 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <glib.h>
-#include <glib-object.h>
-#include <gio/gio.h>
-
-#include <nm-dbus-interface.h>
-#include "nm-device.h"
-#include "nm-active-connection.h"
-#include "nm-remote-connection.h"
-#include "nm-vpn-connection.h"
+#include <nm-types.h>
 
 G_BEGIN_DECLS
 
@@ -159,9 +151,9 @@ typedef enum {
 #define NM_CLIENT_ERROR nm_client_error_quark ()
 GQuark nm_client_error_quark (void);
 
-typedef struct {
+struct _NMClient {
 	GObject parent;
-} NMClient;
+};
 
 typedef struct {
 	GObjectClass parent;

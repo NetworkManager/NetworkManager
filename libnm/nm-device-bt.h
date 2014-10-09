@@ -26,8 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include "nm-dbus-interface.h"
-#include "nm-device.h"
+#include <nm-device.h>
 
 G_BEGIN_DECLS
 
@@ -63,9 +62,9 @@ GQuark nm_device_bt_error_quark (void);
 #define NM_DEVICE_BT_NAME         "name"
 #define NM_DEVICE_BT_CAPABILITIES "bt-capabilities"
 
-typedef struct {
+struct _NMDeviceBt {
 	NMDevice parent;
-} NMDeviceBt;
+};
 
 typedef struct {
 	NMDeviceClass parent;

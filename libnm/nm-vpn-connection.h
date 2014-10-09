@@ -26,10 +26,8 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <glib.h>
-#include <glib-object.h>
-#include "nm-active-connection.h"
-#include "nm-vpn-dbus-interface.h"
+#include <nm-active-connection.h>
+#include <nm-vpn-dbus-interface.h>
 
 G_BEGIN_DECLS
 
@@ -43,9 +41,9 @@ G_BEGIN_DECLS
 #define NM_VPN_CONNECTION_VPN_STATE "vpn-state"
 #define NM_VPN_CONNECTION_BANNER "banner"
 
-typedef struct {
+struct _NMVpnConnection {
 	NMActiveConnection parent;
-} NMVpnConnection;
+};
 
 typedef struct {
 	NMActiveConnectionClass parent;

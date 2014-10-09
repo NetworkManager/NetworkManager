@@ -31,6 +31,7 @@
 #include "nm-core-internal.h"
 #include "nm-active-connection.h"
 #include "nm-vpn-connection.h"
+#include "nm-remote-connection.h"
 #include "nm-object-cache.h"
 #include "nm-glib-compat.h"
 #include "nm-dbus-helpers.h"

@@ -26,8 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include "nm-device.h"
-#include "nm-wimax-nsp.h"
+#include <nm-device.h>
 
 G_BEGIN_DECLS
 
@@ -66,9 +65,9 @@ GQuark nm_device_wimax_error_quark (void);
 #define NM_DEVICE_WIMAX_BSID             "bsid"
 #define NM_DEVICE_WIMAX_NSPS             "nsps"
 
-typedef struct {
+struct _NMDeviceWimax {
 	NMDevice parent;
-} NMDeviceWimax;
+};
 
 typedef struct {
 	NMDeviceClass parent;

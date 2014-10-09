@@ -25,6 +25,7 @@
 #include <gudev/gudev.h>
 
 #include "nm-dbus-interface.h"
+#include "nm-active-connection.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-adsl.h"
 #include "nm-device-wifi.h"
@@ -40,6 +41,10 @@
 #include "nm-device-generic.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
+#include "nm-dhcp4-config.h"
+#include "nm-dhcp6-config.h"
+#include "nm-ip4-config.h"
+#include "nm-ip6-config.h"
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
 #include "nm-remote-connection.h"

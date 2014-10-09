@@ -26,9 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <glib.h>
-#include <glib-object.h>
-#include "nm-object.h"
+#include <nm-object.h>
 
 G_BEGIN_DECLS
 
@@ -39,9 +37,9 @@ G_BEGIN_DECLS
 #define NM_IS_IP6_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_IP6_CONFIG))
 #define NM_IP6_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP6_CONFIG, NMIP6ConfigClass))
 
-typedef struct {
+struct _NMIP6Config {
 	NMObject parent;
-} NMIP6Config;
+};
 
 typedef struct {
 	NMObjectClass parent;
