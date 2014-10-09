@@ -621,6 +621,21 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 		changed |= NM_RDISC_CONFIG_HOP_LIMIT;
 	}
 
+	/* MTU */
+	ndp_msg_opt_for_each_offset(offset, msg, NDP_MSG_OPT_MTU) {
+		guint32 mtu = ndp_msg_opt_mtu(msg, offset);
+		if (mtu >= 1280) {
+			rdisc->mtu = mtu;
+			changed |= NM_RDISC_CONFIG_MTU;
+		} else {
+			/* All sorts of bad things would happen if we accepted this.
+			 * Kernel would set it, but would flush out all IPv6 addresses away
+			 * from the link, even the link-local, and we wouldn't be able to
+			 * listen for further RAs that could fix the MTU. */
+			warning ("(%s): MTU too small for IPv6 ignored: %d", rdisc->ifname, mtu);
+		}
+	}
+
 	check_timestamps (rdisc, now, changed);
 
 	return 0;

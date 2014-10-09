@@ -3663,6 +3663,13 @@ rdisc_config_changed (NMRDisc *rdisc, NMRDiscConfigMap changed, NMDevice *self)
 		nm_device_ipv6_sysctl_set (self, "hop_limit", val);
 	}
 
+	if (changed & NM_RDISC_CONFIG_MTU) {
+		char val[16];
+
+		g_snprintf (val, sizeof (val), "%d", rdisc->mtu);
+		nm_device_ipv6_sysctl_set (self, "mtu", val);
+	}
+
 	nm_device_activate_schedule_ip6_config_result (self);
 }
 

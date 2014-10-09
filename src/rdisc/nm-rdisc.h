@@ -95,6 +95,7 @@ typedef enum {
 	NM_RDISC_CONFIG_DNS_SERVERS                         = 1 << 4,
 	NM_RDISC_CONFIG_DNS_DOMAINS                         = 1 << 5,
 	NM_RDISC_CONFIG_HOP_LIMIT                           = 1 << 6,
+	NM_RDISC_CONFIG_MTU                                 = 1 << 7,
 } NMRDiscConfigMap;
 
 #define NM_RDISC_MAX_ADDRESSES_DEFAULT 16
@@ -125,6 +126,7 @@ typedef struct {
 	GArray *dns_servers;
 	GArray *dns_domains;
 	int hop_limit;
+	guint32 mtu;
 } NMRDisc;
 
 typedef struct {
