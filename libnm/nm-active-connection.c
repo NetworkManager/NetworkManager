@@ -35,6 +35,7 @@
 #include "nm-dhcp6-config.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
+#include "nm-remote-connection.h"
 
 static GType _nm_active_connection_decide_type (GVariant *value);
 
@@ -48,11 +49,11 @@ G_DEFINE_TYPE_WITH_CODE (NMActiveConnection, nm_active_connection, NM_TYPE_OBJEC
 #define NM_ACTIVE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionPrivate))
 
 typedef struct {
-	char *connection;
+	NMRemoteConnection *connection;
 	char *id;
 	char *uuid;
 	char *type;
-	char *specific_object;
+	char *specific_object_path;
 	GPtrArray *devices;
 	NMActiveConnectionState state;
 	gboolean is_default;
@@ -62,7 +63,7 @@ typedef struct {
 	NMIP6Config *ip6_config;
 	NMDhcp6Config *dhcp6_config;
 	gboolean is_vpn;
-	char *master;
+	NMDevice *master;
 } NMActiveConnectionPrivate;
 
 enum {
@@ -71,7 +72,7 @@ enum {
 	PROP_ID,
 	PROP_UUID,
 	PROP_TYPE,
-	PROP_SPECIFIC_OBJECT,
+	PROP_SPECIFIC_OBJECT_PATH,
 	PROP_DEVICES,
 	PROP_STATE,
 	PROP_DEFAULT,
@@ -100,15 +101,12 @@ _nm_active_connection_decide_type (GVariant *value)
  * nm_active_connection_get_connection:
  * @connection: a #NMActiveConnection
  *
- * Gets the #NMConnection's DBus object path.  This is often used with
- * nm_remote_settings_get_connection_by_path() to retrieve the
- * #NMRemoteConnection object that describes the connection.
+ * Gets the #NMRemoteConnection associated with @connection.
  *
- * Returns: the object path of the #NMConnection which this #NMActiveConnection
- * is an active instance of.  This is the internal string used by the
- * connection, and must not be modified.
+ * Returns: (transfer none): the #NMRemoteConnection which this
+ * #NMActiveConnection is an active instance of.
  **/
-const char *
+NMRemoteConnection *
 nm_active_connection_get_connection (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
@@ -168,20 +166,26 @@ nm_active_connection_get_connection_type (NMActiveConnection *connection)
 }
 
 /**
- * nm_active_connection_get_specific_object:
+ * nm_active_connection_get_specific_object_path:
  * @connection: a #NMActiveConnection
  *
- * Gets the "specific object" used at the activation.
+ * Gets the path of the "specific object" used at activation.
  *
- * Returns: the specific object's DBus path. This is the internal string used by the
- * connection, and must not be modified.
+ * Currently there is no single method that will allow you to automatically turn
+ * this into an appropriate #NMObject; you need to know what kind of object it
+ * is based on other information. (Eg, if @connection corresponds to a Wi-Fi
+ * connection, then the specific object will be an #NMAccessPoint, and you can
+ * resolve it with nm_device_wifi_get_access_point_by_path().)
+ *
+ * Returns: the specific object's D-Bus path. This is the internal string used
+ * by the connection, and must not be modified.
  **/
 const char *
-nm_active_connection_get_specific_object (NMActiveConnection *connection)
+nm_active_connection_get_specific_object_path (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
 
-	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->specific_object;
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->specific_object_path;
 }
 
 /**
@@ -345,12 +349,11 @@ nm_active_connection_get_vpn (NMActiveConnection *connection)
  * nm_active_connection_get_master:
  * @connection: a #NMActiveConnection
  *
- * Gets the path to the master #NMDevice of the connection.
+ * Gets the master #NMDevice of the connection.
  *
- * Returns: the path of the master #NMDevice of the #NMActiveConnection.
- * This is the internal string used by the connection, and must not be modified.
+ * Returns: (transfer none): the master #NMDevice of the #NMActiveConnection.
  **/
-const char *
+NMDevice *
 nm_active_connection_get_master (NMActiveConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
@@ -370,6 +373,8 @@ dispose (GObject *object)
 
 	g_clear_pointer (&priv->devices, g_ptr_array_unref);
 
+	g_clear_object (&priv->connection);
+	g_clear_object (&priv->master);
 	g_clear_object (&priv->ip4_config);
 	g_clear_object (&priv->dhcp4_config);
 	g_clear_object (&priv->ip6_config);
@@ -383,12 +388,10 @@ finalize (GObject *object)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
 
-	g_free (priv->connection);
 	g_free (priv->id);
 	g_free (priv->uuid);
 	g_free (priv->type);
-	g_free (priv->specific_object);
-	g_free (priv->master);
+	g_free (priv->specific_object_path);
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->finalize (object);
 }
@@ -403,7 +406,7 @@ get_property (GObject *object,
 
 	switch (prop_id) {
 	case PROP_CONNECTION:
-		g_value_set_string (value, nm_active_connection_get_connection (self));
+		g_value_set_object (value, nm_active_connection_get_connection (self));
 		break;
 	case PROP_ID:
 		g_value_set_string (value, nm_active_connection_get_id (self));
@@ -414,8 +417,8 @@ get_property (GObject *object,
 	case PROP_TYPE:
 		g_value_set_string (value, nm_active_connection_get_connection_type (self));
 		break;
-	case PROP_SPECIFIC_OBJECT:
-		g_value_set_boxed (value, nm_active_connection_get_specific_object (self));
+	case PROP_SPECIFIC_OBJECT_PATH:
+		g_value_set_string (value, nm_active_connection_get_specific_object_path (self));
 		break;
 	case PROP_DEVICES:
 		g_value_take_boxed (value, _nm_utils_copy_object_array (nm_active_connection_get_devices (self)));
@@ -445,7 +448,7 @@ get_property (GObject *object,
 		g_value_set_boolean (value, nm_active_connection_get_vpn (self));
 		break;
 	case PROP_MASTER:
-		g_value_set_string (value, nm_active_connection_get_master (self));
+		g_value_set_object (value, nm_active_connection_get_master (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -458,21 +461,21 @@ init_dbus (NMObject *object)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
 	const NMPropertiesInfo property_info[] = {
-		{ NM_ACTIVE_CONNECTION_CONNECTION,          &priv->connection },
-		{ NM_ACTIVE_CONNECTION_ID,                  &priv->id },
-		{ NM_ACTIVE_CONNECTION_UUID,                &priv->uuid },
-		{ NM_ACTIVE_CONNECTION_TYPE,                &priv->type },
-		{ NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,     &priv->specific_object },
-		{ NM_ACTIVE_CONNECTION_DEVICES,             &priv->devices, NULL, NM_TYPE_DEVICE },
-		{ NM_ACTIVE_CONNECTION_STATE,               &priv->state },
-		{ NM_ACTIVE_CONNECTION_DEFAULT,             &priv->is_default },
-		{ NM_ACTIVE_CONNECTION_IP4_CONFIG,          &priv->ip4_config, NULL, NM_TYPE_IP4_CONFIG },
-		{ NM_ACTIVE_CONNECTION_DHCP4_CONFIG,        &priv->dhcp4_config, NULL, NM_TYPE_DHCP4_CONFIG },
-		{ NM_ACTIVE_CONNECTION_DEFAULT6,            &priv->is_default6 },
-		{ NM_ACTIVE_CONNECTION_IP6_CONFIG,          &priv->ip6_config, NULL, NM_TYPE_IP6_CONFIG },
-		{ NM_ACTIVE_CONNECTION_DHCP6_CONFIG,        &priv->dhcp6_config, NULL, NM_TYPE_DHCP6_CONFIG },
-		{ NM_ACTIVE_CONNECTION_VPN,                 &priv->is_vpn },
-		{ NM_ACTIVE_CONNECTION_MASTER,              &priv->master },
+		{ NM_ACTIVE_CONNECTION_CONNECTION,           &priv->connection, NULL, NM_TYPE_REMOTE_CONNECTION },
+		{ NM_ACTIVE_CONNECTION_ID,                   &priv->id },
+		{ NM_ACTIVE_CONNECTION_UUID,                 &priv->uuid },
+		{ NM_ACTIVE_CONNECTION_TYPE,                 &priv->type },
+		{ NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT_PATH, &priv->specific_object_path },
+		{ NM_ACTIVE_CONNECTION_DEVICES,              &priv->devices, NULL, NM_TYPE_DEVICE },
+		{ NM_ACTIVE_CONNECTION_STATE,                &priv->state },
+		{ NM_ACTIVE_CONNECTION_DEFAULT,              &priv->is_default },
+		{ NM_ACTIVE_CONNECTION_IP4_CONFIG,           &priv->ip4_config, NULL, NM_TYPE_IP4_CONFIG },
+		{ NM_ACTIVE_CONNECTION_DHCP4_CONFIG,         &priv->dhcp4_config, NULL, NM_TYPE_DHCP4_CONFIG },
+		{ NM_ACTIVE_CONNECTION_DEFAULT6,             &priv->is_default6 },
+		{ NM_ACTIVE_CONNECTION_IP6_CONFIG,           &priv->ip6_config, NULL, NM_TYPE_IP6_CONFIG },
+		{ NM_ACTIVE_CONNECTION_DHCP6_CONFIG,         &priv->dhcp6_config, NULL, NM_TYPE_DHCP6_CONFIG },
+		{ NM_ACTIVE_CONNECTION_VPN,                  &priv->is_vpn },
+		{ NM_ACTIVE_CONNECTION_MASTER,               &priv->master, NULL, NM_TYPE_DEVICE },
 
 		{ NULL },
 	};
@@ -507,12 +510,12 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	/**
 	 * NMActiveConnection:connection:
 	 *
-	 * The connection's path of the active connection.
+	 * The connection that this is an active instance of.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_CONNECTION,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_CONNECTION, "", "",
-		                      NULL,
+		 g_param_spec_object (NM_ACTIVE_CONNECTION_CONNECTION, "", "",
+		                      NM_TYPE_REMOTE_CONNECTION,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 
@@ -553,13 +556,14 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 		                      G_PARAM_STATIC_STRINGS));
 
 	/**
-	 * NMActiveConnection:specific-object:
+	 * NMActiveConnection:specific-object-path:
 	 *
-	 * The specific object's path of the active connection.
+	 * The path to the "specific object" of the active connection; see
+	 * nm_active_connection_get_specific_object_path() for more details.
 	 **/
 	g_object_class_install_property
-		(object_class, PROP_SPECIFIC_OBJECT,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT, "", "",
+		(object_class, PROP_SPECIFIC_OBJECT_PATH,
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT_PATH, "", "",
 		                      NULL,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
@@ -678,12 +682,12 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	/**
 	 * NMActiveConnection:master:
 	 *
-	 * The path of the master device if one exists.
+	 * The master device if one exists.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_MASTER,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_MASTER, "", "",
-		                      NULL,
+		 g_param_spec_object (NM_ACTIVE_CONNECTION_MASTER, "", "",
+		                      NM_TYPE_DEVICE,
 		                      G_PARAM_READABLE |
 		                      G_PARAM_STATIC_STRINGS));
 }

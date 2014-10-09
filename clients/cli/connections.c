@@ -594,7 +594,7 @@ get_ac_device_string (NMActiveConnection *active)
 static NMActiveConnection *
 get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection)
 {
-	const char *con_path;
+	const char *con_path, *ac_con_path;
 	int i;
 	NMActiveConnection *ac = NULL;
 
@@ -602,31 +602,16 @@ get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection)
 	con_path = nm_connection_get_path (connection);
 	for (i = 0; i < active_cons->len; i++) {
 		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
+		NMRemoteConnection *con;
 
-		if (!g_strcmp0 (nm_active_connection_get_connection (candidate), con_path)) {
+		con = nm_active_connection_get_connection (candidate);
+		ac_con_path = nm_connection_get_path (NM_CONNECTION (con));
+		if (!g_strcmp0 (ac_con_path, con_path)) {
 			ac = candidate;
 			break;
 		}
 	}
 	return ac;
-}
-
-static NMConnection *
-get_connection_for_active (const GSList *con_list, NMActiveConnection *active)
-{
-	const GSList *iter;
-	const char *path;
-
-	path = nm_active_connection_get_connection (active);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	for (iter = con_list; iter; iter = g_slist_next (iter)) {
-		NMConnection *candidate = NM_CONNECTION (iter->data);
-
-		if (strcmp (nm_connection_get_path (candidate), path) == 0)
-			return candidate;
-	}
-	return NULL;
 }
 
 static gboolean
@@ -713,14 +698,14 @@ find_active_connection (const GPtrArray *active_cons,
 	for (i = start; i < active_cons->len; i++) {
 		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
 
-		path = nm_active_connection_get_connection (candidate);
+		con = NM_CONNECTION (nm_active_connection_get_connection (candidate));
+		id = nm_connection_get_id (con);
+
+		path = nm_connection_get_path (con);
 		a_path = nm_object_get_path (NM_OBJECT (candidate));
 		uuid = nm_active_connection_get_uuid (candidate);
 		path_num = path ? strrchr (path, '/') + 1 : NULL;
 		a_path_num = a_path ? strrchr (a_path, '/') + 1 : NULL;
-
-		con = get_connection_for_active (cons, candidate);
-		id = nm_connection_get_id (con);
 
 		/* When filter_type is NULL, compare connection ID (filter_val)
 		 * against all types. Otherwise, only compare against the specific
@@ -813,20 +798,24 @@ fill_output_active_connection (NMActiveConnection *active,
                                gboolean with_group,
                                guint32 o_flags)
 {
-	GSList *iter;
-	const char *active_path;
+	NMConnection *con;
 	NMSettingConnection *s_con;
 	const GPtrArray *devices;
 	GString *dev_str;
 	NMActiveConnectionState state;
+	NMDevice *master;
 	int i;
-	GSList *con_list = nmc->connections;
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 	int idx_start = with_group ? 0 : 1;
 
-	active_path = nm_active_connection_get_connection (active);
+	con = NM_CONNECTION (nm_active_connection_get_connection (active));
+	s_con = nm_connection_get_setting_connection (con);
+	g_assert (s_con != NULL);
+
 	state = nm_active_connection_get_state (active);
+
+	master = nm_active_connection_get_master (active);
 
 	/* Get devices of the active connection */
 	dev_str = g_string_new (NULL);
@@ -854,35 +843,19 @@ fill_output_active_connection (NMActiveConnection *active,
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, o_flags);
 	if (with_group)
 		set_val_strc (arr, 0, nmc_fields_con_active_details_groups[0].name);
-	set_val_strc (arr, 1-idx_start, _("N/A"));
+	set_val_strc (arr, 1-idx_start, nm_setting_connection_get_id (s_con));
 	set_val_strc (arr, 2-idx_start, nm_active_connection_get_uuid (active));
 	set_val_str  (arr, 3-idx_start, dev_str->str);
 	set_val_strc (arr, 4-idx_start, active_connection_state_to_string (state));
 	set_val_strc (arr, 5-idx_start, nm_active_connection_get_default (active) ? _("yes") : _("no"));
 	set_val_strc (arr, 6-idx_start, nm_active_connection_get_default6 (active) ? _("yes") : _("no"));
-	set_val_strc (arr, 7-idx_start, nm_active_connection_get_specific_object (active));
+	set_val_strc (arr, 7-idx_start, nm_active_connection_get_specific_object_path (active));
 	set_val_strc (arr, 8-idx_start, NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no"));
 	set_val_strc (arr, 9-idx_start, nm_object_get_path (NM_OBJECT (active)));
-	set_val_strc (arr, 10-idx_start, nm_active_connection_get_connection (active));
-	set_val_strc (arr, 11-idx_start, _("N/A"));
-	set_val_strc (arr, 12-idx_start, nm_active_connection_get_master (active));
+	set_val_strc (arr, 10-idx_start, nm_connection_get_path (con));
+	set_val_strc (arr, 11-idx_start, nm_setting_connection_get_zone (s_con));
+	set_val_strc (arr, 12-idx_start, master ? nm_object_get_path (NM_OBJECT (master)) : NULL);
 
-	for (iter = con_list; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = (NMConnection *) iter->data;
-		const char *con_path = nm_connection_get_path (connection);
-
-		if (!strcmp (active_path, con_path)) {
-			/* This connection is active */
-			s_con = nm_connection_get_setting_connection (connection);
-			g_assert (s_con != NULL);
-
-			/* Fill field values that depend on NMConnection */
-			set_val_strc (arr, 1-idx_start,  nm_setting_connection_get_id (s_con));
-			set_val_strc (arr, 11-idx_start, nm_setting_connection_get_zone (s_con));
-
-			break;
-		}
-	}
 	g_ptr_array_add (nmc->output_data, arr);
 
 	g_string_free (dev_str, FALSE);
@@ -1097,7 +1070,7 @@ nmc_active_connection_details (NMActiveConnection *acon, NmCli *nmc)
 			char **vpn_data_array = NULL;
 			guint32 items_num;
 
-			con = get_connection_for_active (nmc->connections, acon);
+			con = NM_CONNECTION (nm_active_connection_get_connection (acon));
 
 			s_con = nm_connection_get_setting_connection (con);
 			g_assert (s_con != NULL);
@@ -1350,7 +1323,7 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 			if (!con) {
 				acon = find_active_connection (active_cons, nmc->connections, selector, *argv, NULL);
 				if (acon)
-					con = get_connection_for_active (nmc->connections, acon);
+					con = NM_CONNECTION (nm_active_connection_get_connection (acon));
 			}
 
 			/* Print connection details */

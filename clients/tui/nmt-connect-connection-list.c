@@ -445,15 +445,14 @@ connection_find_ac (NMConnection    *conn,
                     const GPtrArray *acs)
 {
 	NMActiveConnection *ac;
-	const char *path, *ac_path;
+	NMRemoteConnection *ac_conn;
 	int i;
 
-	path = nm_connection_get_path (conn);
 	for (i = 0; i < acs->len; i++) {
 		ac = acs->pdata[i];
-		ac_path = nm_active_connection_get_connection (ac);
+		ac_conn = nm_active_connection_get_connection (ac);
 
-		if (!g_strcmp0 (path, ac_path))
+		if (conn == NM_CONNECTION (ac_conn))
 			return ac;
 	}
 
