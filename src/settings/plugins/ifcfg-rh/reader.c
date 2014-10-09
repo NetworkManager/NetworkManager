@@ -1512,9 +1512,10 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 	g_return_if_fail (s_ip4 != NULL);
 	g_return_if_fail (filename != NULL);
 
-	base_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
-	if (!base_addr)
+	if (nm_setting_ip4_config_get_num_addresses (s_ip4) == 0)
 		return;
+	base_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	g_assert (base_addr);
 
 	dirname = g_path_get_dirname (filename);
 	g_return_if_fail (dirname != NULL);
