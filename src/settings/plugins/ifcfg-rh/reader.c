@@ -3404,14 +3404,14 @@ make_wireless_setting (shvarFile *ifcfg,
 		if (!strcmp (value, "a")) {
 			if (chan && chan <= 14) {
 				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-				             "Band '%s' invalid for channel %ld", value, chan);
+				             "Band '%s' invalid for channel %u", value, (guint32) chan);
 				g_free (value);
 				goto error;
 			}
 		} else if (!strcmp (value, "bg")) {
 			if (chan && chan > 14) {
 				g_set_error (error, IFCFG_PLUGIN_ERROR, 0,
-				             "Band '%s' invalid for channel %ld", value, chan);
+				             "Band '%s' invalid for channel %u", value, (guint32) chan);
 				g_free (value);
 				goto error;
 			}
