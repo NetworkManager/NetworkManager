@@ -938,7 +938,7 @@ nm_platform_link_set_mtu (int ifindex, guint32 mtu)
 	g_return_val_if_fail (mtu > 0, FALSE);
 	g_return_val_if_fail (klass->link_set_mtu, FALSE);
 
-	debug ("link: setting '%s' (%d) mtu %d", nm_platform_link_get_name (ifindex), ifindex, mtu);
+	debug ("link: setting '%s' (%d) mtu %"G_GUINT32_FORMAT, nm_platform_link_get_name (ifindex), ifindex, mtu);
 	return klass->link_set_mtu (platform, ifindex, mtu);
 }
 
