@@ -49,6 +49,7 @@ typedef struct {
 	char *nis_domain;
 	GArray *wins;
 	guint32 mtu;
+	NMIPConfigSource mtu_source;
 } NMIP4ConfigPrivate;
 
 /* internal guint32 are assigned to gobject properties of type uint. Ensure, that uint is large enough */
@@ -516,7 +517,8 @@ nm_ip4_config_merge (NMIP4Config *dst, const NMIP4Config *src)
 
 	/* MTU */
 	if (!nm_ip4_config_get_mtu (dst))
-		nm_ip4_config_set_mtu (dst, nm_ip4_config_get_mtu (src));
+		nm_ip4_config_set_mtu (dst, nm_ip4_config_get_mtu (src),
+		                       nm_ip4_config_get_mtu_source (src));
 
 	/* NIS */
 	for (i = 0; i < nm_ip4_config_get_num_nis_servers (src); i++)
@@ -630,7 +632,7 @@ nm_ip4_config_subtract (NMIP4Config *dst, const NMIP4Config *src)
 
 	/* MTU */
 	if (nm_ip4_config_get_mtu (src) == nm_ip4_config_get_mtu (dst))
-		nm_ip4_config_set_mtu (dst, 0);
+		nm_ip4_config_set_mtu (dst, 0, NM_IP_CONFIG_SOURCE_UNKNOWN);
 
 	/* NIS */
 	for (i = 0; i < nm_ip4_config_get_num_nis_servers (src); i++) {
@@ -870,7 +872,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 
 	/* mtu */
 	if (src_priv->mtu != dst_priv->mtu) {
-		nm_ip4_config_set_mtu (dst, src_priv->mtu);
+		nm_ip4_config_set_mtu (dst, src_priv->mtu, src_priv->mtu_source);
 		has_minor_changes = TRUE;
 	}
 
@@ -1502,11 +1504,15 @@ nm_ip4_config_get_wins (const NMIP4Config *config, guint i)
 /******************************************************************/
 
 void
-nm_ip4_config_set_mtu (NMIP4Config *config, guint32 mtu)
+nm_ip4_config_set_mtu (NMIP4Config *config, guint32 mtu, NMIPConfigSource source)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
-	priv->mtu = mtu;
+	if (source > priv->mtu_source) {
+		priv->mtu = mtu;
+		priv->mtu_source = source;
+	} else if (source == priv->mtu_source && (!priv->mtu || priv->mtu > mtu))
+		priv->mtu = mtu;
 }
 
 guint32
@@ -1515,6 +1521,14 @@ nm_ip4_config_get_mtu (const NMIP4Config *config)
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	return priv->mtu;
+}
+
+NMIPConfigSource
+nm_ip4_config_get_mtu_source (const NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	return priv->mtu_source;
 }
 
 /******************************************************************/

@@ -139,7 +139,7 @@ test_subtract (void)
 	nm_ip4_config_add_wins (dst, expected_wins);
 
 	nm_ip4_config_set_mss (dst, expected_mss);
-	nm_ip4_config_set_mtu (dst, expected_mtu);
+	nm_ip4_config_set_mtu (dst, expected_mtu, NM_IP_CONFIG_SOURCE_UNKNOWN);
 
 	nm_ip4_config_subtract (dst, src);
 
@@ -310,9 +310,9 @@ test_merge_subtract_mss_mtu (void)
 
 	/* add MSS, MTU to configs to test them */
 	nm_ip4_config_set_mss (cfg2, expected_mss2);
-	nm_ip4_config_set_mtu (cfg2, expected_mtu2);
+	nm_ip4_config_set_mtu (cfg2, expected_mtu2, NM_IP_CONFIG_SOURCE_UNKNOWN);
 	nm_ip4_config_set_mss (cfg3, expected_mss3);
-	nm_ip4_config_set_mtu (cfg3, expected_mtu3);
+	nm_ip4_config_set_mtu (cfg3, expected_mtu3, NM_IP_CONFIG_SOURCE_UNKNOWN);
 
 	nm_ip4_config_merge (cfg1, cfg2);
 	/* ensure MSS and MTU are in cfg1 */

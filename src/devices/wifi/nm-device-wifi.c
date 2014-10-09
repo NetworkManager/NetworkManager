@@ -2883,7 +2883,7 @@ ip4_config_pre_commit (NMDevice *device, NMIP4Config *config)
 	/* MTU override */
 	mtu = nm_setting_wireless_get_mtu (s_wifi);
 	if (mtu)
-		nm_ip4_config_set_mtu (config, mtu);
+		nm_ip4_config_set_mtu (config, mtu, NM_IP_CONFIG_SOURCE_USER);
 }
 
 static gboolean

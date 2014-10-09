@@ -1160,7 +1160,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		nm_ip4_config_set_mss (config, g_value_get_uint (val));
 
 	if (priv->mtu)
-		nm_ip4_config_set_mtu (config, priv->mtu);
+		nm_ip4_config_set_mtu (config, priv->mtu, NM_IP_CONFIG_SOURCE_VPN);
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN);
 	if (val)

@@ -542,7 +542,7 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 			goto error;
 
 		if (int_mtu > 576)
-			nm_ip4_config_set_mtu (ip4_config, int_mtu);
+			nm_ip4_config_set_mtu (ip4_config, int_mtu, NM_IP_CONFIG_SOURCE_DHCP);
 	}
 
 	str = g_hash_table_lookup (options, "nis_domain");
