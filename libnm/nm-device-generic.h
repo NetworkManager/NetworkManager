@@ -25,7 +25,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include "nm-device.h"
+#include <nm-device.h>
 
 G_BEGIN_DECLS
 
@@ -54,9 +54,9 @@ GQuark nm_device_generic_error_quark (void);
 #define NM_DEVICE_GENERIC_HW_ADDRESS       "hw-address"
 #define NM_DEVICE_GENERIC_TYPE_DESCRIPTION "type-description"
 
-typedef struct {
+struct _NMDeviceGeneric {
 	NMDevice parent;
-} NMDeviceGeneric;
+};
 
 typedef struct {
 	NMDeviceClass parent;

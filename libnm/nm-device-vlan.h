@@ -25,7 +25,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include "nm-device.h"
+#include <nm-device.h>
 
 G_BEGIN_DECLS
 
@@ -61,9 +61,9 @@ GQuark nm_device_vlan_error_quark (void);
 #define NM_DEVICE_VLAN_CARRIER     "carrier"
 #define NM_DEVICE_VLAN_VLAN_ID     "vlan-id"
 
-typedef struct {
+struct _NMDeviceVlan {
 	NMDevice parent;
-} NMDeviceVlan;
+};
 
 typedef struct {
 	NMDeviceClass parent;

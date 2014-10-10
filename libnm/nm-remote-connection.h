@@ -26,7 +26,6 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <nm-connection.h>
 #include <nm-object.h>
 
 G_BEGIN_DECLS
@@ -58,9 +57,9 @@ GQuark nm_remote_connection_error_quark (void);
 #define NM_REMOTE_CONNECTION_UNSAVED         "unsaved"
 #define NM_REMOTE_CONNECTION_VISIBLE         "visible"
 
-typedef struct {
+struct _NMRemoteConnection {
 	NMObject parent;
-} NMRemoteConnection;
+};
 
 typedef struct {
 	NMObjectClass parent_class;

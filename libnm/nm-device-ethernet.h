@@ -26,7 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include "nm-device.h"
+#include <nm-device.h>
 
 G_BEGIN_DECLS
 
@@ -61,9 +61,9 @@ GQuark nm_device_ethernet_error_quark (void);
 #define NM_DEVICE_ETHERNET_SPEED       "speed"
 #define NM_DEVICE_ETHERNET_CARRIER     "carrier"
 
-typedef struct {
+struct _NMDeviceEthernet {
 	NMDevice parent;
-} NMDeviceEthernet;
+};
 
 typedef struct {
 	NMDeviceClass parent;

@@ -26,11 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <glib.h>
-#include <glib-object.h>
-#include <nm-dbus-interface.h>
-#include <nm-connection.h>
-#include "nm-object.h"
+#include <nm-object.h>
 
 G_BEGIN_DECLS
 
@@ -55,9 +51,9 @@ G_BEGIN_DECLS
 #define NM_ACCESS_POINT_HW_ADDRESS  "hw-address"
 
 
-typedef struct {
+struct _NMAccessPoint {
 	NMObject parent;
-} NMAccessPoint;
+};
 
 typedef struct {
 	NMObjectClass parent;

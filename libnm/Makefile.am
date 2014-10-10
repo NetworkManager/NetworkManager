@@ -51,6 +51,7 @@ libnminclude_HEADERS =			\
 	nm-object.h			\
 	nm-remote-connection.h		\
 	nm-secret-agent.h		\
+	nm-types.h			\
 	nm-vpn-connection.h		\
 	nm-vpn-plugin.h			\
 	nm-vpn-plugin-ui-interface.h	\

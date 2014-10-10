@@ -26,9 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <gio/gio.h>
-
-#include <nm-version.h>
+#include <nm-types.h>
 
 G_BEGIN_DECLS
 
@@ -58,9 +56,9 @@ GQuark nm_object_error_quark (void);
 #define NM_OBJECT_PATH "path"
 #define NM_OBJECT_DBUS_CONNECTION "dbus-connection"
 
-typedef struct {
+struct _NMObject {
 	GObject parent;
-} NMObject;
+};
 
 typedef struct {
 	GObjectClass parent;

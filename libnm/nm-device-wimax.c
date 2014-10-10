@@ -29,6 +29,7 @@
 #include <nm-utils.h>
 
 #include "nm-device-wimax.h"
+#include "nm-wimax-nsp.h"
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
 #include "nm-core-internal.h"

@@ -26,9 +26,7 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <glib.h>
-#include <glib-object.h>
-#include "nm-object.h"
+#include <nm-object.h>
 
 G_BEGIN_DECLS
 
@@ -38,9 +36,9 @@ G_BEGIN_DECLS
 #define NM_IS_DHCP4_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP4_CONFIG))
 #define NM_IS_DHCP4_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP4_CONFIG))
 
-typedef struct {
+struct _NMDhcp4Config {
 	NMObject parent;
-} NMDhcp4Config;
+};
 
 typedef struct {
 	NMObjectClass parent;
