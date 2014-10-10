@@ -216,7 +216,7 @@ nm_dhcp_client_stop_pid (pid_t pid, const char *iface)
 {
 	char *name = iface ? g_strdup_printf ("dhcp-client-%s", iface) : NULL;
 
-	g_return_if_fail (pid > 25);
+	g_return_if_fail (pid > 1);
 
 	nm_utils_kill_child_sync (pid, SIGTERM, LOGD_DHCP, name ? name : "dhcp-client", NULL,
 	                          1000 / 2, 1000 / 20);
@@ -544,11 +544,14 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 	errno = 0;
 	tmp = strtol (pid_contents, NULL, 10);
 	if ((errno == 0) && (tmp > 1)) {
+		guint64 start_time;
 		const char *exe;
 
 		/* Ensure the process is a DHCP client */
+		start_time = nm_utils_get_start_time_for_pid (tmp);
 		proc_path = g_strdup_printf ("/proc/%ld/cmdline", tmp);
-		if (g_file_get_contents (proc_path, &proc_contents, NULL, NULL)) {
+		if (   start_time
+		    && g_file_get_contents (proc_path, &proc_contents, NULL, NULL)) {
 			exe = strrchr (proc_contents, '/');
 			if (exe)
 				exe++;
@@ -556,7 +559,8 @@ nm_dhcp_client_stop_existing (const char *pid_file, const char *binary_name)
 				exe = proc_contents;
 
 			if (!strcmp (exe, binary_name))
-				nm_dhcp_client_stop_pid ((pid_t) tmp, NULL);
+				nm_utils_kill_process_sync (tmp, start_time, SIGTERM, LOGD_DHCP,
+				                            "dhcp-client", 1000 / 2, 1000 / 20);
 		}
 	}
 
