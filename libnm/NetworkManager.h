@@ -50,7 +50,6 @@
 #include <nm-ip6-config.h>
 #include <nm-object.h>
 #include <nm-remote-connection.h>
-#include <nm-remote-settings.h>
 #include <nm-secret-agent.h>
 #include <nm-setting-8021x.h>
 #include <nm-setting-adsl.h>

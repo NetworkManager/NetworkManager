@@ -115,15 +115,14 @@ connection_updated (GObject      *connection,
 }
 
 static void
-connection_added (GObject      *settings,
+connection_added (GObject      *client,
                   GAsyncResult *result,
                   gpointer      op)
 {
 	NMRemoteConnection *connection;
 	GError *error = NULL;
 
-	connection = nm_remote_settings_add_connection_finish (NM_REMOTE_SETTINGS (settings),
-	                                                       result, &error);
+	connection = nm_client_add_connection_finish (NM_CLIENT (client), result, &error);
 	nmt_sync_op_complete_boolean (op, error == NULL, error);
 	g_clear_object (&connection);
 	g_clear_error (&error);
@@ -157,8 +156,8 @@ save_connection_and_exit (NmtNewtButton *button,
 		 */
 		nm_connection_clear_secrets (priv->orig_connection);
 	} else {
-		nm_remote_settings_add_connection_async (nm_settings, priv->orig_connection, TRUE,
-		                                         NULL, connection_added, &op);
+		nm_client_add_connection_async (nm_client, priv->orig_connection, TRUE,
+		                                NULL, connection_added, &op);
 		if (!nmt_sync_op_wait_boolean (&op, &error)) {
 			nmt_newt_message_dialog (_("Unable to add new connection: %s"),
 			                         error->message);

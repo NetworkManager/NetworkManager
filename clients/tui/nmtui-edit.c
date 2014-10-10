@@ -87,7 +87,7 @@ edit_connection_list_filter (NmtEditConnectionList *list,
 	    && g_strcmp0 (slave_type, NM_SETTING_BRIDGE_SETTING_NAME) != 0)
 		return TRUE;
 
-	conns = nm_remote_settings_list_connections (nm_settings);
+	conns = nm_client_list_connections (nm_client);
 	for (iter = conns; iter; iter = iter->next) {
 		uuid = nm_connection_get_uuid (iter->data);
 		ifname = nm_connection_get_interface_name (iter->data);
@@ -180,7 +180,7 @@ create_connection (NmtNewtWidget *widget, gpointer list)
 	GType type = (GType) GPOINTER_TO_SIZE (nmt_newt_listbox_get_active_key (priv->listbox));
 	NMConnection *connection;
 
-	connection = nm_editor_utils_create_connection (type, priv->master, nm_settings);
+	connection = nm_editor_utils_create_connection (type, priv->master, nm_client);
 	nmt_edit_connection (connection);
 	g_object_unref (connection);
 
@@ -473,7 +473,7 @@ connection_deleted_callback (GObject      *connection,
 }
 
 static void
-connection_removed_signal (NMRemoteSettings   *settings,
+connection_removed_signal (NMClient           *client,
                            NMRemoteConnection *connection,
                            gpointer            user_data)
 {
@@ -496,7 +496,7 @@ remove_one_connection (NMRemoteConnection *connection)
 	nmt_sync_op_init (&data.op);
 
 	data.connection = connection;
-	g_signal_connect (nm_settings, NM_REMOTE_SETTINGS_CONNECTION_REMOVED,
+	g_signal_connect (nm_client, NM_CLIENT_CONNECTION_REMOVED,
 	                  G_CALLBACK (connection_removed_signal), &data);
 	nm_remote_connection_delete_async (connection, NULL, connection_deleted_callback, &data);
 
@@ -507,7 +507,7 @@ remove_one_connection (NMRemoteConnection *connection)
 		g_error_free (error);
 	}
 
-	g_signal_handlers_disconnect_by_func (nm_settings, G_CALLBACK (connection_removed_signal), &data);
+	g_signal_handlers_disconnect_by_func (nm_client, G_CALLBACK (connection_removed_signal), &data);
 }
 
 void
@@ -532,7 +532,7 @@ nmt_remove_connection (NMRemoteConnection *connection)
 	uuid = nm_connection_get_uuid (NM_CONNECTION (connection));
 	iface = nm_connection_get_interface_name (NM_CONNECTION (connection));
 
-	conns = nm_remote_settings_list_connections (nm_settings);
+	conns = nm_client_list_connections (nm_client);
 	for (iter = conns; iter; iter = iter->next) {
 		slave = iter->data;
 		s_con = nm_connection_get_setting_connection (NM_CONNECTION (slave));
@@ -553,9 +553,9 @@ nmtui_edit (int argc, char **argv)
 
 	if (argc == 2) {
 		if (nm_utils_is_uuid (argv[1]))
-			conn = NM_CONNECTION (nm_remote_settings_get_connection_by_uuid (nm_settings, argv[1]));
+			conn = NM_CONNECTION (nm_client_get_connection_by_uuid (nm_client, argv[1]));
 		if (!conn)
-			conn = NM_CONNECTION (nm_remote_settings_get_connection_by_id (nm_settings, argv[1]));
+			conn = NM_CONNECTION (nm_client_get_connection_by_id (nm_client, argv[1]));
 
 		if (!conn) {
 			nmt_newt_message_dialog ("%s: no such connection '%s'\n", argv[0], argv[1]);

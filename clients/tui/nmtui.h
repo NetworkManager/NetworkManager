@@ -24,7 +24,6 @@
 G_BEGIN_DECLS
 
 extern NMClient *nm_client;
-extern NMRemoteSettings *nm_settings;
 
 void nmtui_quit (void);
 

@@ -182,7 +182,6 @@ test_secret_agent_new (void)
 typedef struct {
 	NMTestServiceInfo *sinfo;
 	NMClient *client;
-	NMRemoteSettings *settings;
 
 	NMSecretAgent *agent;
 	NMDevice *device;
@@ -227,7 +226,7 @@ connection_added_cb (GObject *s,
 	NMRemoteConnection *connection;
 	GError *error = NULL;
 
-	connection = nm_remote_settings_add_connection_finish (sadata->settings, result, &error);
+	connection = nm_client_add_connection_finish (sadata->client, result, &error);
 
 	g_assert_no_error (error);
 	g_assert_cmpstr (nm_connection_get_id (NM_CONNECTION (connection)), ==, sadata->con_id);
@@ -267,8 +266,6 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 
 	sadata->sinfo = nm_test_service_init ();
 	sadata->client = nm_client_new (NULL, &error);
-	g_assert_no_error (error);
-	sadata->settings = nm_remote_settings_new (NULL, &error);
 	g_assert_no_error (error);
 
 	sadata->loop = g_main_loop_new (NULL, FALSE);
@@ -316,12 +313,12 @@ test_setup (TestSecretAgentData *sadata, gconstpointer test_data)
 	                       NULL);
 	nm_connection_add_setting (connection, s_wsec);
 
-	nm_remote_settings_add_connection_async (sadata->settings,
-	                                         connection,
-	                                         TRUE,
-	                                         NULL,
-	                                         connection_added_cb,
-	                                         sadata);
+	nm_client_add_connection_async (sadata->client,
+	                                connection,
+	                                TRUE,
+	                                NULL,
+	                                connection_added_cb,
+	                                sadata);
 	g_object_unref (connection);
 
 	g_main_loop_run (sadata->loop);
@@ -358,7 +355,6 @@ test_cleanup (TestSecretAgentData *sadata, gconstpointer test_data)
 
 	g_object_unref (sadata->connection);
 	g_object_unref (sadata->client);
-	g_object_unref (sadata->settings);
 
 	ret = g_dbus_proxy_call_sync (sadata->sinfo->proxy,
 	                              "RemoveDevice",

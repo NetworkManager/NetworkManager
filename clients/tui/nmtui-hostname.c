@@ -71,8 +71,8 @@ nmtui_hostname_run_dialog (void)
 	ok = nmt_newt_button_box_add_end (bbox, _("OK"));
 	nmt_newt_widget_set_exit_on_activate (ok, TRUE);
 
-	g_object_get (G_OBJECT (nm_settings),
-	              NM_REMOTE_SETTINGS_HOSTNAME, &hostname,
+	g_object_get (G_OBJECT (nm_client),
+	              NM_CLIENT_HOSTNAME, &hostname,
 	              NULL);
 	nmt_newt_entry_set_text (entry, hostname);
 	g_free (hostname);
@@ -92,7 +92,7 @@ hostname_set (GObject      *object,
 {
 	GError *error = NULL;
 
-	nm_remote_settings_save_hostname_finish (NM_REMOTE_SETTINGS (object), result, &error);
+	nm_client_save_hostname_finish (NM_CLIENT (object), result, &error);
 	nmt_sync_op_complete_boolean (op, error == NULL, error);
 	g_clear_error (&error);
 }
@@ -112,7 +112,7 @@ nmtui_hostname (int argc, char **argv)
 
 	if (hostname) {
 		nmt_sync_op_init (&op);
-		nm_remote_settings_save_hostname_async (nm_settings, hostname, NULL, hostname_set, &op);
+		nm_client_save_hostname_async (nm_client, hostname, NULL, hostname_set, &op);
 		if (nmt_sync_op_wait_boolean (&op, &error)) {
 			/* Translators: this indicates the result. ie, "I have set the hostname to ..." */
 			nmt_newt_message_dialog (_("Set hostname to '%s'"), hostname);

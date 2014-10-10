@@ -31,7 +31,7 @@
 #include <NetworkManager.h>
 
 static void
-added_cb (GObject *settings,
+added_cb (GObject *client,
           GAsyncResult *result,
           gpointer user_data)
 {
@@ -42,8 +42,7 @@ added_cb (GObject *settings,
 	/* NM responded to our request; either handle the resulting error or
 	 * print out the object path of the connection we just added.
 	 */
-	remote = nm_remote_settings_add_connection_finish (NM_REMOTE_SETTINGS (settings),
-	                                                   result, &error);
+	remote = nm_client_add_connection_finish (NM_CLIENT (client), result, &error);
 
 	if (error) {
 		g_print ("Error adding connection: %s", error->message);
@@ -58,7 +57,7 @@ added_cb (GObject *settings,
 }
 
 static void
-add_connection (NMRemoteSettings *settings, GMainLoop *loop, const char *con_name)
+add_connection (NMClient *client, GMainLoop *loop, const char *con_name)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
@@ -94,7 +93,7 @@ add_connection (NMRemoteSettings *settings, GMainLoop *loop, const char *con_nam
 	/* Ask the settings service to add the new connection; we'll quit the
 	 * mainloop and exit when the callback is called.
 	 */
-	nm_remote_settings_add_connection_async (settings, connection, TRUE, NULL, added_cb, loop);
+	nm_client_add_connection_async (client, connection, TRUE, NULL, added_cb, loop);
 	g_object_unref (connection);
 }
 
@@ -102,7 +101,7 @@ add_connection (NMRemoteSettings *settings, GMainLoop *loop, const char *con_nam
 int
 main (int argc, char *argv[])
 {
-	NMRemoteSettings *settings;
+	NMClient *client;
 	GMainLoop *loop;
 	GError *error = NULL;
 
@@ -113,21 +112,21 @@ main (int argc, char *argv[])
 
 	loop = g_main_loop_new (NULL, FALSE);
 
-	/* Create our proxy for NetworkManager's settings service */
-	settings = nm_remote_settings_new (NULL, &error);
-	if (!settings) {
-		g_message ("Error: Could not get system settings: %s.", error->message);
+	/* Connect to NetworkManager */
+	client = nm_client_new (NULL, &error);
+	if (!client) {
+		g_message ("Error: Could not connect to NetworkManager: %s.", error->message);
 		g_error_free (error);
 		return 1;
 	}
 
-	/* Ask the settings service to add the new connection */
-	add_connection (settings, loop, "__Test connection__");
+	/* Ask NM to add the new connection */
+	add_connection (client, loop, "__Test connection__");
 	/* Wait for the connection to be added */
 	g_main_loop_run (loop);
 
 	/* Clean up */
-	g_object_unref (settings);
+	g_object_unref (client);
 
 	return 0;
 }

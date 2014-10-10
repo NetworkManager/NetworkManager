@@ -540,7 +540,7 @@ save_hostname_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	NmCli *nmc = (NmCli *) user_data;
 	GError *error = NULL;
 
-	nm_remote_settings_save_hostname_finish (NM_REMOTE_SETTINGS (object), result, &error);
+	nm_client_save_hostname_finish (NM_CLIENT (object), result, &error);
 	if (error) {
 		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text, _("Error: failed to set hostname: %s"),
@@ -585,20 +585,8 @@ do_general (NmCli *nmc, int argc, char **argv)
 			show_nm_status (nmc, NULL, NULL);
 		}
 		else if (matches (*argv, "hostname") == 0) {
-			NMRemoteSettings *rem_settings;
-
 			if (nmc_arg_is_help (*(argv+1))) {
 				usage_general_hostname ();
-				goto finish;
-			}
-
-			/* get system settings */
-			if (!(rem_settings = nm_remote_settings_new (NULL, &error))) {
-				g_dbus_error_strip_remote_error (error);
-				g_string_printf (nmc->return_text, _("Error: Could not get system settings: %s."),
-				                 error->message);
-				g_clear_error (&error);
-				nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 				goto finish;
 			}
 
@@ -606,7 +594,7 @@ do_general (NmCli *nmc, int argc, char **argv)
 				/* no arguments -> get hostname */
 				char *hostname = NULL;
 
-				g_object_get (rem_settings, NM_REMOTE_SETTINGS_HOSTNAME, &hostname, NULL);
+				g_object_get (nmc->client, NM_CLIENT_HOSTNAME, &hostname, NULL);
 				if (hostname)
 					g_print ("%s\n", hostname);
 				g_free (hostname);
@@ -618,7 +606,7 @@ do_general (NmCli *nmc, int argc, char **argv)
 					g_print ("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
 
 				nmc->should_wait = TRUE;
-				nm_remote_settings_save_hostname_async (rem_settings, hostname, NULL, save_hostname_cb, nmc);
+				nm_client_save_hostname_async (nmc->client, hostname, NULL, save_hostname_cb, nmc);
 			}
 		}
 		else if (matches (*argv, "permissions") == 0) {

@@ -254,14 +254,14 @@ nm_editor_utils_get_connection_type_list (void)
 }
 
 static char *
-get_available_connection_name (const char       *format,
-                               NMRemoteSettings *settings)
+get_available_connection_name (const char *format,
+                               NMClient   *client)
 {
 	GSList *connections, *iter, *names = NULL;
 	char *cname = NULL;
 	int i = 0;
 
-	connections = nm_remote_settings_list_connections (settings);
+	connections = nm_client_list_connections (client);
 	for (iter = connections; iter; iter = iter->next) {
 		const char *id;
 
@@ -297,7 +297,7 @@ get_available_connection_name (const char       *format,
  * nm_editor_utils_create_connection:
  * @type: the type of the connection's primary #NMSetting
  * @master: (allow-none): the connection's master, if any
- * @settings: an #NMRemoteSettings
+ * @client: an #NMClient
  *
  * Creates a new #NMConnection of the given type, automatically
  * creating a UUID and an appropriate not-currently-in-use connection
@@ -309,9 +309,9 @@ get_available_connection_name (const char       *format,
  * Returns: a new #NMConnection
  */
 NMConnection *
-nm_editor_utils_create_connection (GType             type,
-                                   NMConnection     *master,
-                                   NMRemoteSettings *settings)
+nm_editor_utils_create_connection (GType         type,
+                                   NMConnection *master,
+                                   NMClient     *client)
 {
 	NMEditorConnectionTypeData **types;
 	NMEditorConnectionTypeDataReal *type_data = NULL;
@@ -359,7 +359,7 @@ nm_editor_utils_create_connection (GType             type,
 	}
 
 	uuid = nm_utils_uuid_generate ();
-	id = get_available_connection_name (type_data->id_format, settings);
+	id = get_available_connection_name (type_data->id_format, client);
 
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_UUID, uuid,
