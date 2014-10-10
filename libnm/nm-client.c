@@ -40,8 +40,6 @@ void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enable
 
 static void nm_client_initable_iface_init (GInitableIface *iface);
 static void nm_client_async_initable_iface_init (GAsyncInitableIface *iface);
-static GInitableIface *nm_client_parent_initable_iface;
-static GAsyncInitableIface *nm_client_parent_async_initable_iface;
 
 G_DEFINE_TYPE_WITH_CODE (NMClient, nm_client, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, nm_client_initable_iface_init);
@@ -1794,31 +1792,11 @@ init_async_inited_settings (GObject *object, GAsyncResult *result, gpointer user
 }
 
 static void
-init_async_parent_inited (GObject *source, GAsyncResult *result, gpointer user_data)
-{
-	NMClientInitData *init_data = user_data;
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (init_data->client);
-	GError *error = NULL;
-
-	if (!nm_client_parent_async_initable_iface->init_finish (G_ASYNC_INITABLE (source), result, &error)) {
-		g_simple_async_result_take_error (init_data->result, error);
-		init_async_complete (init_data);
-		return;
-	}
-
-	g_async_initable_init_async (G_ASYNC_INITABLE (priv->manager),
-	                             G_PRIORITY_DEFAULT, init_data->cancellable,
-	                             init_async_inited_manager, init_data);
-	g_async_initable_init_async (G_ASYNC_INITABLE (priv->settings),
-	                             G_PRIORITY_DEFAULT, init_data->cancellable,
-	                             init_async_inited_settings, init_data);
-}
-
-static void
 init_async (GAsyncInitable *initable, int io_priority,
             GCancellable *cancellable, GAsyncReadyCallback callback,
             gpointer user_data)
 {
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (initable);
 	NMClientInitData *init_data;
 	GError *error = NULL;
 
@@ -1835,8 +1813,12 @@ init_async (GAsyncInitable *initable, int io_priority,
 	                                               user_data, init_async);
 	g_simple_async_result_set_op_res_gboolean (init_data->result, TRUE);
 
-	nm_client_parent_async_initable_iface->init_async (initable, io_priority, cancellable,
-	                                                   init_async_parent_inited, init_data);
+	g_async_initable_init_async (G_ASYNC_INITABLE (priv->manager),
+	                             G_PRIORITY_DEFAULT, init_data->cancellable,
+	                             init_async_inited_manager, init_data);
+	g_async_initable_init_async (G_ASYNC_INITABLE (priv->settings),
+	                             G_PRIORITY_DEFAULT, init_data->cancellable,
+	                             init_async_inited_settings, init_data);
 }
 
 static gboolean
@@ -2256,16 +2238,12 @@ nm_client_class_init (NMClientClass *client_class)
 static void
 nm_client_initable_iface_init (GInitableIface *iface)
 {
-	nm_client_parent_initable_iface = g_type_interface_peek_parent (iface);
-
 	iface->init = init_sync;
 }
 
 static void
 nm_client_async_initable_iface_init (GAsyncInitableIface *iface)
 {
-	nm_client_parent_async_initable_iface = g_type_interface_peek_parent (iface);
-
 	iface->init_async = init_async;
 	iface->init_finish = init_finish;
 }

@@ -681,9 +681,24 @@ da_devices_notify_cb (NMClient *c,
 }
 
 static void
+new_client_cb (GObject *object,
+               GAsyncResult *result,
+               gpointer user_data)
+{
+	NMClient **out_client = user_data;
+	GError *error = NULL;
+
+	*out_client = nm_client_new_finish (result, &error);
+	g_assert_no_error (error);
+	g_assert (*out_client != NULL);
+
+	g_main_loop_quit (loop);
+}
+
+static void
 test_devices_array (void)
 {
-	NMClient *client;
+	NMClient *client = NULL;
 	DaInfo info = { loop };
 	char *paths[3] = { NULL, NULL, NULL };
 	NMDevice *device;
@@ -692,8 +707,11 @@ test_devices_array (void)
 	GVariant *ret;
 
 	sinfo = nm_test_service_init ();
-	client = nm_client_new (NULL, &error);
-	g_assert_no_error (error);
+
+	/* Make sure that we test the async codepath in at least one test... */
+	nm_client_new_async (NULL, new_client_cb, &client);
+	g_main_loop_run (loop);
+	g_assert (client != NULL);
 
 	/*************************************/
 	/* Add some devices */
