@@ -154,8 +154,6 @@ wireless_enabled_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 }
 
 static void manager_recheck_permissions (NMDBusManager *proxy, gpointer user_data);
-static void active_connections_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data);
-static void object_creation_failed_cb (GObject *object, GError *error, char *failed_path);
 
 static void
 init_dbus (NMObject *object)
@@ -747,56 +745,56 @@ activate_info_complete (ActivateInfo *info,
 	g_slice_free (ActivateInfo, info);
 }
 
+static NMActiveConnection *
+find_active_connection_by_path (NMManager *self, const char *ac_path)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	int i;
+
+	for (i = 0; i < priv->active_connections->len; i++) {
+		NMActiveConnection *candidate = g_ptr_array_index (priv->active_connections, i);
+		const char *candidate_path = nm_object_get_path (NM_OBJECT (candidate));
+
+		if (g_strcmp0 (ac_path, candidate_path) == 0)
+			return candidate;
+	}
+
+	return NULL;
+}
+
 static void
-recheck_pending_activations (NMManager *self, const char *failed_path, GError *error)
+recheck_pending_activations (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GSList *iter, *next;
-	const GPtrArray *active_connections;
-	gboolean found_in_active = FALSE;
-	gboolean found_in_pending = FALSE;
-	ActivateInfo *ainfo = NULL;
-	int i;
+	NMActiveConnection *candidate;
+	const GPtrArray *devices;
+	NMDevice *device;
 
-	active_connections = nm_manager_get_active_connections (self);
-
-	/* For each pending activation, look for a active connection that has
-	 * the pending activation's object path, and call pending connection's
-	 * callback.
-	 * If the connection to activate doesn't make it to active_connections,
-	 * due to an error, we have to call the callback for failed_path.
+	/* For each pending activation, look for an active connection that has the
+	 * pending activation's object path, where the active connection and its
+	 * device have both updated their properties to point to each other, and
+	 * call the pending connection's callback.
 	 */
 	for (iter = priv->pending_activations; iter; iter = next) {
 		ActivateInfo *info = iter->data;
 
 		next = g_slist_next (iter);
 
-		if (!found_in_pending && failed_path && g_strcmp0 (failed_path, info->active_path) == 0) {
-			found_in_pending = TRUE;
-			ainfo = info;
-		}
+		candidate = find_active_connection_by_path (self, info->active_path);
+		if (!candidate)
+			continue;
 
-		for (i = 0; i < active_connections->len; i++) {
-			NMActiveConnection *active = g_ptr_array_index (active_connections, i);
-			const char *active_path = nm_object_get_path (NM_OBJECT (active));
+		/* Check that the AC and device are both ready */
+		devices = nm_active_connection_get_devices (candidate);
+		if (devices->len == 0)
+			continue;
+		device = devices->pdata[0];
+		if (nm_device_get_active_connection (device) != candidate)
+			continue;
 
-			if (!found_in_active && failed_path && g_strcmp0 (failed_path, active_path) == 0)
-				found_in_active = TRUE;
-
-			if (g_strcmp0 (info->active_path, active_path) == 0) {
-				/* Call the pending activation's callback and it all up */
-				activate_info_complete (info, active, NULL);
-				break;
-			}
-		}
-	}
-
-	if (!found_in_active && found_in_pending) {
-		/* A newly activated connection failed due to some immediate error
-		 * and disappeared from active connection list.  Make sure the
-		 * callback gets called.
-		 */
-		activate_info_complete (ainfo, NULL, error);
+		activate_info_complete (info, candidate, NULL);
+		break;
 	}
 }
 
@@ -830,7 +828,7 @@ activate_cb (GObject *object,
 			                                       G_CALLBACK (activation_cancelled), info);
 		}
 
-		recheck_pending_activations (info->manager, NULL, NULL);
+		recheck_pending_activations (info->manager);
 	} else {
 		activate_info_complete (info, NULL, error);
 		g_clear_error (&error);
@@ -905,7 +903,7 @@ add_activate_cb (GObject *object,
 			                                       G_CALLBACK (activation_cancelled), info);
 		}
 
-		recheck_pending_activations (info->manager, NULL, NULL);
+		recheck_pending_activations (info->manager);
 	} else {
 		activate_info_complete (info, NULL, error);
 		g_clear_error (&error);
@@ -969,16 +967,71 @@ nm_manager_add_and_activate_connection_finish (NMManager *manager,
 }
 
 static void
-active_connections_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
+device_ac_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-	recheck_pending_activations (NM_MANAGER (object), NULL, NULL);
+	NMManager *self = user_data;
+
+	recheck_pending_activations (self);
+}
+
+static void
+device_added (NMManager *self, NMDevice *device)
+{
+	g_signal_connect (device, "notify::" NM_DEVICE_ACTIVE_CONNECTION,
+	                  G_CALLBACK (device_ac_changed), self);
+}
+
+static void
+device_removed (NMManager *self, NMDevice *device)
+{
+	g_signal_handlers_disconnect_by_func (device, G_CALLBACK (device_ac_changed), self);
+}
+
+static void
+ac_devices_changed (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	NMManager *self = user_data;
+
+	recheck_pending_activations (self);
+}
+
+static void
+active_connection_added (NMManager *self, NMActiveConnection *ac)
+{
+	g_signal_connect (ac, "notify::" NM_ACTIVE_CONNECTION_DEVICES,
+	                  G_CALLBACK (ac_devices_changed), self);
+	recheck_pending_activations (self);
+}
+
+static void
+active_connection_removed (NMManager *self, NMActiveConnection *ac)
+{
+	g_signal_handlers_disconnect_by_func (ac, G_CALLBACK (ac_devices_changed), self);
 }
 
 static void
 object_creation_failed_cb (GObject *object, GError *error, char *failed_path)
 {
-	if (error)
-		recheck_pending_activations (NM_MANAGER (object), failed_path, error);
+	NMManager *self = NM_MANAGER (object);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	g_return_if_fail (error != NULL);
+	g_return_if_fail (find_active_connection_by_path (self, failed_path) == NULL);
+
+	/* A newly activated connection failed due to some immediate error
+	 * and disappeared from active connection list.  Make sure the
+	 * callback gets called.
+	 */
+
+	for (iter = priv->pending_activations; iter; iter = iter->next) {
+		ActivateInfo *info = iter->data;
+
+		if (g_strcmp0 (failed_path, info->active_path) == 0) {
+			activate_info_complete (info, NULL, error);
+			return;
+		}
+	}
 }
 
 gboolean
@@ -1175,9 +1228,6 @@ constructed (GObject *object)
 
 	g_signal_connect (object, "notify::" NM_MANAGER_WIRELESS_ENABLED,
 	                  G_CALLBACK (wireless_enabled_cb), NULL);
-
-	g_signal_connect (object, "notify::" NM_MANAGER_ACTIVE_CONNECTIONS,
-	                  G_CALLBACK (active_connections_changed_cb), NULL);
 
 	g_signal_connect (object, "object-creation-failed",
 	                  G_CALLBACK (object_creation_failed_cb), NULL);
@@ -1454,6 +1504,11 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	object_class->finalize = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
+
+	manager_class->device_added = device_added;
+	manager_class->device_removed = device_removed;
+	manager_class->active_connection_added = active_connection_added;
+	manager_class->active_connection_removed = active_connection_removed;
 
 	/* properties */
 
