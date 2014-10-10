@@ -53,6 +53,7 @@ G_BEGIN_DECLS
 #define NM_CLIENT_PRIMARY_CONNECTION "primary-connection"
 #define NM_CLIENT_ACTIVATING_CONNECTION "activating-connection"
 #define NM_CLIENT_DEVICES "devices"
+#define NM_CLIENT_ALL_DEVICES "all-devices"
 #define NM_CLIENT_CONNECTIONS "connections"
 #define NM_CLIENT_HOSTNAME "hostname"
 #define NM_CLIENT_CAN_MODIFY "can-modify"
@@ -60,6 +61,8 @@ G_BEGIN_DECLS
 
 #define NM_CLIENT_DEVICE_ADDED "device-added"
 #define NM_CLIENT_DEVICE_REMOVED "device-removed"
+#define NM_CLIENT_ANY_DEVICE_ADDED "any-device-added"
+#define NM_CLIENT_ANY_DEVICE_REMOVED "any-device-removed"
 #define NM_CLIENT_PERMISSION_CHANGED "permission-changed"
 #define NM_CLIENT_CONNECTION_ADDED "connection-added"
 #define NM_CLIENT_CONNECTION_REMOVED "connection-removed"
@@ -164,6 +167,8 @@ typedef struct {
 	/* Signals */
 	void (*device_added) (NMClient *client, NMDevice *device);
 	void (*device_removed) (NMClient *client, NMDevice *device);
+	void (*any_device_added) (NMClient *client, NMDevice *device);
+	void (*any_device_removed) (NMClient *client, NMDevice *device);
 	void (*permission_changed) (NMClient *client,
 	                            NMClientPermission permission,
 	                            NMClientPermissionResult result);
@@ -171,7 +176,7 @@ typedef struct {
 	void (*connection_removed) (NMClient *client, NMRemoteConnection *connection);
 
 	/*< private >*/
-	gpointer padding[8];
+	gpointer padding[6];
 } NMClientClass;
 
 GType nm_client_get_type (void);
@@ -248,6 +253,8 @@ gboolean nm_client_save_hostname_finish (NMClient *client,
 /* Devices */
 
 const GPtrArray *nm_client_get_devices    (NMClient *client);
+NM_AVAILABLE_IN_1_2
+const GPtrArray *nm_client_get_all_devices(NMClient *client);
 NMDevice *nm_client_get_device_by_path    (NMClient *client, const char *object_path);
 NMDevice *nm_client_get_device_by_iface   (NMClient *client, const char *iface);
 

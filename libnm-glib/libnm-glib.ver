@@ -47,6 +47,7 @@ global:
 	nm_client_error_quark;
 	nm_client_get_activating_connection;
 	nm_client_get_active_connections;
+	nm_client_get_all_devices;
 	nm_client_get_connectivity;
 	nm_client_get_device_by_iface;
 	nm_client_get_device_by_path;

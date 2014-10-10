@@ -57,6 +57,7 @@ G_BEGIN_DECLS
 #define NM_CLIENT_PRIMARY_CONNECTION "primary-connection"
 #define NM_CLIENT_ACTIVATING_CONNECTION "activating-connection"
 #define NM_CLIENT_DEVICES "devices"
+#define NM_CLIENT_ALL_DEVICES "all-devices"
 
 /**
  * NMClientPermission:
@@ -175,6 +176,8 @@ NMClient *nm_client_new_finish (GAsyncResult         *result,
                                 GError              **error);
 
 const GPtrArray *nm_client_get_devices    (NMClient *client);
+NM_AVAILABLE_IN_1_2
+const GPtrArray *nm_client_get_all_devices(NMClient *client);
 NMDevice *nm_client_get_device_by_path    (NMClient *client, const char *object_path);
 NMDevice *nm_client_get_device_by_iface   (NMClient *client, const char *iface);
 

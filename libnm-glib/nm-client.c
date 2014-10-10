@@ -59,6 +59,7 @@ typedef struct {
 	NMState state;
 	gboolean startup;
 	GPtrArray *devices;
+	GPtrArray *all_devices;
 	GPtrArray *active_connections;
 	NMConnectivityState connectivity;
 	NMActiveConnection *primary_connection;
@@ -101,6 +102,7 @@ enum {
 	PROP_PRIMARY_CONNECTION,
 	PROP_ACTIVATING_CONNECTION,
 	PROP_DEVICES,
+	PROP_ALL_DEVICES,
 
 	LAST_PROP
 };
@@ -108,6 +110,8 @@ enum {
 enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
+	ANY_DEVICE_ADDED,
+	ANY_DEVICE_REMOVED,
 	PERMISSION_CHANGED,
 
 	LAST_SIGNAL
@@ -160,8 +164,8 @@ poke_wireless_devices_with_rf_status (NMClient *client)
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	int i;
 
-	for (i = 0; priv->devices && (i < priv->devices->len); i++) {
-		NMDevice *device = g_ptr_array_index (priv->devices, i);
+	for (i = 0; priv->all_devices && (i < priv->all_devices->len); i++) {
+		NMDevice *device = g_ptr_array_index (priv->all_devices, i);
 
 		if (NM_IS_DEVICE_WIFI (device))
 			_nm_device_wifi_set_wireless_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
@@ -194,6 +198,7 @@ register_properties (NMClient *client)
 		{ NM_CLIENT_PRIMARY_CONNECTION,        &priv->primary_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_CLIENT_ACTIVATING_CONNECTION,     &priv->activating_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_CLIENT_DEVICES,                   &priv->devices, NULL, NM_TYPE_DEVICE, "device" },
+		{ NM_CLIENT_ALL_DEVICES,               &priv->all_devices, NULL, NM_TYPE_DEVICE, "any-device" },
 		{ NULL },
 	};
 
@@ -376,6 +381,34 @@ nm_client_get_devices (NMClient *client)
 	_nm_object_ensure_inited (NM_OBJECT (client));
 
 	return handle_ptr_array_return (NM_CLIENT_GET_PRIVATE (client)->devices);
+}
+
+/**
+ * nm_client_get_all_devices:
+ * @client: a #NMClient
+ *
+ * Gets both real devices and device placeholders (eg, software devices which
+ * do not currently exist, but could be created automatically by NetworkManager
+ * if one of their NMDevice::ActivatableConnections was activated).  Use
+ * nm_device_is_real() to determine whether each device is a real device or
+ * a placeholder.
+ *
+ * Use nm_device_get_type() or the NM_IS_DEVICE_XXXX() functions to determine
+ * what kind of device each member of the returned array is, and then you may
+ * use device-specific methods such as nm_device_ethernet_get_hw_address().
+ *
+ * Returns: (transfer none) (element-type NMDevice): a #GPtrArray
+ * containing all the #NMDevices.  The returned array is owned by the
+ * #NMClient object and should not be modified.
+ *
+ * Since: 1.2
+ **/
+const GPtrArray *
+nm_client_get_all_devices (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	return NM_CLIENT_GET_PRIVATE (client)->all_devices;
 }
 
 /**
@@ -1291,25 +1324,55 @@ nm_client_get_activating_connection (NMClient *client)
 /****************************************************************/
 
 static void
-free_devices (NMClient *client, gboolean emit_signals)
+free_devices (NMClient *client, gboolean in_dispose)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	GPtrArray *devices;
-	NMDevice *device;
-	int i;
+	gs_unref_ptrarray GPtrArray *real_devices = NULL;
+	gs_unref_ptrarray GPtrArray *all_devices = NULL;
+	GPtrArray *devices = NULL;
+	guint i, j;
 
-	if (!priv->devices)
-		return;
+	real_devices = priv->devices;
+	all_devices = priv->all_devices;
 
-	devices = priv->devices;
-	priv->devices = NULL;
-	for (i = 0; i < devices->len; i++) {
-		device = devices->pdata[i];
-		if (emit_signals)
-			g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
-		g_object_unref (device);
+	if (in_dispose) {
+		priv->devices = NULL;
+		priv->all_devices = NULL;
+	} else {
+		priv->devices = g_ptr_array_new ();
+		priv->all_devices = g_ptr_array_new ();
 	}
-	g_ptr_array_free (devices, TRUE);
+
+	if (all_devices && all_devices->len > 0)
+		devices = all_devices;
+	else if (devices && devices->len > 0)
+		devices = real_devices;
+
+	if (real_devices && devices != real_devices) {
+		for (i = 0; i < real_devices->len; i++) {
+			NMDevice *d = real_devices->pdata[i];
+
+			if (all_devices) {
+				for (j = 0; j < all_devices->len; j++) {
+					if (d == all_devices->pdata[j])
+						goto next;
+				}
+			}
+			if (!in_dispose)
+				g_signal_emit (client, signals[DEVICE_REMOVED], 0, d);
+next:
+			g_object_unref (d);
+		}
+	}
+	if (devices) {
+		for (i = 0; i < devices->len; i++) {
+			NMDevice *d = devices->pdata[i];
+
+			if (!in_dispose)
+				g_signal_emit (client, signals[DEVICE_REMOVED], 0, d);
+			g_object_unref (d);
+		}
+	}
 }
 
 static void
@@ -1382,7 +1445,7 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
 		_nm_object_suppress_property_updates (NM_OBJECT (client), TRUE);
 		poke_wireless_devices_with_rf_status (client);
-		free_devices (client, TRUE);
+		free_devices (client, FALSE);
 		free_active_connections (client, TRUE);
 		update_permissions (client, NULL);
 		priv->wireless_enabled = FALSE;
@@ -1980,7 +2043,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->client_proxy);
 	g_clear_object (&priv->bus_proxy);
 
-	free_devices (client, FALSE);
+	free_devices (client, TRUE);
 	free_active_connections (client, FALSE);
 	g_clear_object (&priv->primary_connection);
 	g_clear_object (&priv->activating_connection);
@@ -2105,6 +2168,9 @@ get_property (GObject *object,
 		break;
 	case PROP_DEVICES:
 		g_value_set_boxed (value, nm_client_get_devices (self));
+		break;
+	case PROP_ALL_DEVICES:
+		g_value_set_boxed (value, nm_client_get_all_devices (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2323,13 +2389,27 @@ nm_client_class_init (NMClientClass *client_class)
 	/**
 	 * NMClient:devices:
 	 *
-	 * List of known network devices.
+	 * List of real network devices.  Does not include placeholder devices.
 	 *
 	 * Since: 0.9.10
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEVICES,
 		 g_param_spec_boxed (NM_CLIENT_DEVICES, "", "",
+		                     NM_TYPE_OBJECT_ARRAY,
+		                     G_PARAM_READABLE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMClient:all-devices:
+	 *
+	 * List of both real devices and device placeholders.
+	 *
+	 * Since: 1.2
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ALL_DEVICES,
+		 g_param_spec_boxed (NM_CLIENT_ALL_DEVICES, "", "",
 		                     NM_TYPE_OBJECT_ARRAY,
 		                     G_PARAM_READABLE |
 		                     G_PARAM_STATIC_STRINGS));
@@ -2341,7 +2421,8 @@ nm_client_class_init (NMClientClass *client_class)
 	 * @client: the client that received the signal
 	 * @device: (type NMDevice): the new device
 	 *
-	 * Notifies that a #NMDevice is added.
+	 * Notifies that a #NMDevice is added.  This signal is not emitted for
+	 * placeholder devices.
 	 **/
 	signals[DEVICE_ADDED] =
 		g_signal_new ("device-added",
@@ -2357,7 +2438,8 @@ nm_client_class_init (NMClientClass *client_class)
 	 * @client: the client that received the signal
 	 * @device: (type NMDevice): the removed device
 	 *
-	 * Notifies that a #NMDevice is removed.
+	 * Notifies that a #NMDevice is removed.  This signal is not emitted for
+	 * placeholder devices.
 	 **/
 	signals[DEVICE_REMOVED] =
 		g_signal_new ("device-removed",
@@ -2365,6 +2447,38 @@ nm_client_class_init (NMClientClass *client_class)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMClientClass, device_removed),
 		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
+
+	/**
+	 * NMClient::any-device-added:
+	 * @client: the client that received the signal
+	 * @device: (type NMDevice): the new device
+	 *
+	 * Notifies that a #NMDevice is added.  This signal is emitted for both
+	 * regular devices and placeholder devices.
+	 **/
+	signals[ANY_DEVICE_ADDED] =
+		g_signal_new ("any-device-added",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
+
+	/**
+	 * NMClient::any-device-removed:
+	 * @client: the client that received the signal
+	 * @device: (type NMDevice): the removed device
+	 *
+	 * Notifies that a #NMDevice is removed.  This signal is emitted for both
+	 * regular devices and placeholder devices.
+	 **/
+	signals[ANY_DEVICE_REMOVED] =
+		g_signal_new ("any-device-removed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL, NULL,
 		              G_TYPE_NONE, 1,
 		              G_TYPE_OBJECT);
 

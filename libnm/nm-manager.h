@@ -51,6 +51,7 @@ G_BEGIN_DECLS
 #define NM_MANAGER_ACTIVATING_CONNECTION "activating-connection"
 #define NM_MANAGER_DEVICES "devices"
 #define NM_MANAGER_METERED "metered"
+#define NM_MANAGER_ALL_DEVICES "all-devices"
 
 typedef struct {
 	NMObject parent;
@@ -67,6 +68,8 @@ typedef struct {
 	void (*permission_changed) (NMManager *manager,
 	                            NMClientPermission permission,
 	                            NMClientPermissionResult result);
+
+	/* Beware: no more slots. Cannot extend struct without breaking ABI. */
 } NMManagerClass;
 
 GType nm_manager_get_type (void);
@@ -121,6 +124,8 @@ NMConnectivityState nm_manager_check_connectivity_finish (NMManager *manager,
 /* Devices */
 
 const GPtrArray *nm_manager_get_devices    (NMManager *manager);
+NM_AVAILABLE_IN_1_2
+const GPtrArray *nm_manager_get_all_devices(NMManager *manager);
 NMDevice *nm_manager_get_device_by_path    (NMManager *manager, const char *object_path);
 NMDevice *nm_manager_get_device_by_iface   (NMManager *manager, const char *iface);
 
