@@ -1008,7 +1008,56 @@ test_activate_virtual (void)
 	g_clear_pointer (&sinfo, nm_test_service_cleanup);
 }
 
+static void
+activate_failed_cb (GObject *object,
+                    GAsyncResult *result,
+                    gpointer user_data)
+{
+	NMClient *client = NM_CLIENT (object);
+	NMActiveConnection *ac;
+	GError *error = NULL;
+
+	ac = nm_client_activate_connection_finish (client, result, &error);
+	g_assert (ac == NULL);
+	g_assert_error (error, NM_OBJECT_ERROR, NM_OBJECT_ERROR_OBJECT_CREATION_FAILURE);
+	g_clear_error (&error);
+
+	g_main_loop_quit (loop);
+}
+
+static void
+test_activate_failed (void)
+{
+	NMClient *client;
+	NMDevice *device;
+	NMConnection *conn;
+	GError *error = NULL;
+
+	sinfo = nm_test_service_init ();
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
+
+	device = nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+
+	/* Note that test-networkmanager-service.py checks for this exact name */
+	conn = nmtst_create_minimal_connection ("object-creation-failed-test", NULL,
+	                                        NM_SETTING_WIRED_SETTING_NAME, NULL);
+
+	nm_client_add_and_activate_connection_async (client, conn, device, NULL,
+	                                             NULL, activate_failed_cb, NULL);
+	g_test_expect_message ("libnm", G_LOG_LEVEL_WARNING, "*Method*doesn't exist*");
+	g_main_loop_run (loop);
+	g_test_assert_expected_messages ();
+
+	g_object_unref (conn);
+	g_object_unref (client);
+
+	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+}
+
 /*******************************************************************/
+
+NMTST_DEFINE ();
 
 int
 main (int argc, char **argv)
@@ -1019,7 +1068,7 @@ main (int argc, char **argv)
 	g_type_init ();
 #endif
 
-	g_test_init (&argc, &argv, NULL);
+	nmtst_init (&argc, &argv, TRUE);
 
 	loop = g_main_loop_new (NULL, FALSE);
 
@@ -1030,6 +1079,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/client-nm-running", test_client_nm_running);
 	g_test_add_func ("/libnm/active-connections", test_active_connections);
 	g_test_add_func ("/libnm/activate-virtual", test_activate_virtual);
+	g_test_add_func ("/libnm/activate-failed", test_activate_failed);
 
 	return g_test_run ();
 }

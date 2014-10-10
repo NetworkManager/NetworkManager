@@ -717,7 +717,13 @@ class NetworkManager(ExportedObj):
         ac = ActiveConnection(self._bus, device, connection, None)
         self.active_connections.append(ac)
         self.__notify(PM_ACTIVE_CONNECTIONS)
-        GLib.timeout_add(50, set_device_ac_cb, device, ac)
+
+        if s_con['id'] == 'object-creation-failed-test':
+            self.active_connections.remove(ac)
+            ac.remove_from_connection()
+        else:
+            GLib.timeout_add(50, set_device_ac_cb, device, ac)
+
         return to_path(ac)
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature='a{sa{sv}}oo', out_signature='oo')
