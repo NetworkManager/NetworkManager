@@ -105,6 +105,8 @@ enum {
 enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
+	ACTIVE_CONNECTION_ADDED,
+	ACTIVE_CONNECTION_REMOVED,
 	PERMISSION_CHANGED,
 
 	LAST_SIGNAL
@@ -170,7 +172,7 @@ init_dbus (NMObject *object)
 		{ NM_MANAGER_WWAN_HARDWARE_ENABLED,     &priv->wwan_hw_enabled },
 		{ NM_MANAGER_WIMAX_ENABLED,             &priv->wimax_enabled },
 		{ NM_MANAGER_WIMAX_HARDWARE_ENABLED,    &priv->wimax_hw_enabled },
-		{ NM_MANAGER_ACTIVE_CONNECTIONS,        &priv->active_connections, NULL, NM_TYPE_ACTIVE_CONNECTION },
+		{ NM_MANAGER_ACTIVE_CONNECTIONS,        &priv->active_connections, NULL, NM_TYPE_ACTIVE_CONNECTION, "active-connection" },
 		{ NM_MANAGER_CONNECTIVITY,              &priv->connectivity },
 		{ NM_MANAGER_PRIMARY_CONNECTION,        &priv->primary_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
 		{ NM_MANAGER_ACTIVATING_CONNECTION,     &priv->activating_connection, NULL, NM_TYPE_ACTIVE_CONNECTION },
@@ -1100,6 +1102,7 @@ free_active_connections (NMManager *manager, gboolean in_dispose)
 
 	for (i = 0; i < active_connections->len; i++) {
 		active_connection = active_connections->pdata[i];
+		g_signal_emit (manager, signals[ACTIVE_CONNECTION_REMOVED], 0, active_connection);
 		/* Break circular refs */
 		g_object_run_dispose (G_OBJECT (active_connection));
 	}
@@ -1568,6 +1571,22 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMManagerClass, device_removed),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
+	signals[ACTIVE_CONNECTION_ADDED] =
+		g_signal_new ("active-connection-added",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMManagerClass, active_connection_added),
+		              NULL, NULL, NULL,
+		              G_TYPE_NONE, 1,
+		              G_TYPE_OBJECT);
+	signals[ACTIVE_CONNECTION_REMOVED] =
+		g_signal_new ("active-connection-removed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMManagerClass, active_connection_removed),
 		              NULL, NULL, NULL,
 		              G_TYPE_NONE, 1,
 		              G_TYPE_OBJECT);
