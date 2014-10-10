@@ -751,7 +751,7 @@ assert_ac_and_device (NMClient *client)
 	g_assert_cmpint (acs->len, ==, 1);
 	devices = nm_client_get_devices (client);
 	g_assert (devices != NULL);
-	g_assert_cmpint (devices->len, ==, 1);
+	g_assert_cmpint (devices->len, >=, 1);
 
 	ac = acs->pdata[0];
 	ac_devices = nm_active_connection_get_devices (ac);
@@ -761,6 +761,8 @@ assert_ac_and_device (NMClient *client)
 	g_assert (ac_device != NULL);
 
 	device = devices->pdata[0];
+	if (device != ac_device && devices->len > 1)
+		device = devices->pdata[1];
 	device_ac = nm_device_get_active_connection (device);
 	g_assert (device_ac != NULL);
 
@@ -875,6 +877,137 @@ test_active_connections (void)
 	g_clear_pointer (&sinfo, nm_test_service_cleanup);
 }
 
+static void
+client_devices_changed_cb (GObject *client,
+                           GParamSpec *pspec,
+                           gpointer user_data)
+{
+	TestACInfo *info = user_data;
+	const GPtrArray *devices;
+	NMDevice *device;
+
+	devices = nm_client_get_devices (NM_CLIENT (client));
+	g_assert (devices != NULL);
+	g_assert_cmpint (devices->len, ==, 2);
+
+	if (NM_IS_DEVICE_VLAN (devices->pdata[0]))
+		device = devices->pdata[0];
+	else if (NM_IS_DEVICE_VLAN (devices->pdata[1]))
+		device = devices->pdata[1];
+	else
+		g_assert_not_reached ();
+
+	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0.1");
+
+	if (nm_device_get_active_connection (device))
+		info->remaining--;
+	else {
+		g_signal_connect (device, "notify::" NM_DEVICE_ACTIVE_CONNECTION,
+		                  G_CALLBACK (device_ac_changed_cb), &info);
+	}
+
+	info->remaining--;
+	if (!info->remaining)
+		g_main_loop_quit (info->loop);
+}
+
+typedef struct {
+	GMainLoop *loop;
+	NMRemoteConnection *remote;
+} TestConnectionInfo;
+
+static void
+add_connection_cb (GObject *object,
+                   GAsyncResult *result,
+                   gpointer user_data)
+{
+	TestConnectionInfo *info = user_data;
+	GError *error = NULL;
+
+	info->remote = nm_client_add_connection_finish (NM_CLIENT (object), result, &error);
+	g_assert_no_error (error);
+	g_main_loop_quit (info->loop);
+}
+
+static void
+activate_cb (GObject *object,
+             GAsyncResult *result,
+             gpointer user_data)
+{
+	NMClient *client = NM_CLIENT (object);
+	TestACInfo *info = user_data;
+	GError *error = NULL;
+
+	info->ac = nm_client_activate_connection_finish (client, result, &error);
+	g_assert_no_error (error);
+	g_assert (info->ac != NULL);
+
+	assert_ac_and_device (client);
+
+	info->remaining--;
+	if (!info->remaining)
+		g_main_loop_quit (info->loop);
+}
+
+static void
+test_activate_virtual (void)
+{
+	NMClient *client;
+	NMConnection *conn;
+	NMSettingConnection *s_con;
+	NMSettingVlan *s_vlan;
+	TestACInfo info = { loop, NULL, 0 };
+	TestConnectionInfo conn_info = { loop, NULL };
+	GError *error = NULL;
+
+	sinfo = nm_test_service_init ();
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
+
+	nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+
+	conn = nmtst_create_minimal_connection ("test-ac", NULL, NM_SETTING_VLAN_SETTING_NAME, &s_con);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "eth0.1",
+	              NULL);
+	s_vlan = nm_connection_get_setting_vlan (conn);
+	g_object_set (s_vlan,
+	              NM_SETTING_VLAN_ID, 1,
+	              NM_SETTING_VLAN_PARENT, "eth0",
+	              NULL);
+
+	nm_client_add_connection_async (client, conn, TRUE,
+	                                NULL, add_connection_cb, &conn_info);
+	g_main_loop_run (loop);
+	g_object_unref (conn);
+	conn = NM_CONNECTION (conn_info.remote);
+
+	nm_client_activate_connection_async (client, conn, NULL, NULL,
+	                                     NULL, activate_cb, &info);
+	g_object_unref (conn);
+
+	g_signal_connect (client, "notify::" NM_CLIENT_ACTIVE_CONNECTIONS,
+	                  G_CALLBACK (client_acs_changed_cb), &info);
+	g_signal_connect (client, "notify::" NM_CLIENT_DEVICES,
+	                  G_CALLBACK (client_devices_changed_cb), &info);
+
+	/* As with test_active_connections() above, except that now we're waiting
+	 * for NMClient:devices to change rather than NMDevice:active-connections.
+	 */
+	info.remaining = 3;
+
+	g_main_loop_run (loop);
+	g_signal_handlers_disconnect_by_func (client, client_acs_changed_cb, &info);
+	g_signal_handlers_disconnect_by_func (client, client_devices_changed_cb, &info);
+
+	g_assert (info.ac != NULL);
+
+	g_object_unref (info.ac);
+	g_object_unref (client);
+
+	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+}
+
 /*******************************************************************/
 
 int
@@ -896,6 +1029,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/devices-array", test_devices_array);
 	g_test_add_func ("/libnm/client-nm-running", test_client_nm_running);
 	g_test_add_func ("/libnm/active-connections", test_active_connections);
+	g_test_add_func ("/libnm/activate-virtual", test_activate_virtual);
 
 	return g_test_run ();
 }
