@@ -369,7 +369,7 @@ nmt_page_bond_constructed (GObject *object)
 	nmt_page_grid_append (grid, _("Mode"), widget, NULL);
 	priv->mode = NMT_NEWT_POPUP (widget);
 
-	widget = nmt_newt_entry_new (40, NMT_NEWT_ENTRY_NONEMPTY);
+	widget = nmt_newt_entry_new (40, 0);
 	g_signal_connect (widget, "notify::text",
 	                  G_CALLBACK (primary_widget_changed), bond);
 	nmt_page_grid_append (grid, _("Primary"), widget, NULL);
