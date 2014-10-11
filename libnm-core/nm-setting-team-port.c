@@ -105,7 +105,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 		s_con = NM_SETTING_CONNECTION (_nm_setting_find_in_list_required (all_settings,
 		                                                                  NM_SETTING_CONNECTION_SETTING_NAME,
-		                                                                  error, NULL, NULL));
+		                                                                  error));
 		if (!s_con)
 			return FALSE;
 

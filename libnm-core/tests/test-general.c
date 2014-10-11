@@ -1965,7 +1965,8 @@ test_connection_bad_base_types (void)
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert_error (error, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "connection.type: "));
 	g_assert (success == FALSE);
 	g_object_unref (connection);
 	g_clear_error (&error);
@@ -1979,7 +1980,8 @@ test_connection_bad_base_types (void)
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert_error (error, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "connection.type: "));
 	g_assert (success == FALSE);
 	g_object_unref (connection);
 	g_clear_error (&error);
@@ -1993,7 +1995,8 @@ test_connection_bad_base_types (void)
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert_error (error, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "connection.type: "));
 	g_assert (success == FALSE);
 	g_object_unref (connection);
 	g_clear_error (&error);
@@ -2005,7 +2008,8 @@ test_connection_bad_base_types (void)
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert_error (error, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "connection.type: "));
 	g_assert (success == FALSE);
 	g_object_unref (connection);
 	g_clear_error (&error);
@@ -2017,7 +2021,8 @@ test_connection_bad_base_types (void)
 	nm_connection_add_setting (connection, setting);
 
 	success = nm_connection_verify (connection, &error);
-	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID);
+	g_assert_error (error, NM_SETTING_CONNECTION_ERROR, NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY);
+	g_assert (g_str_has_prefix (error->message, "connection.type: "));
 	g_assert (success == FALSE);
 	g_object_unref (connection);
 	g_clear_error (&error);

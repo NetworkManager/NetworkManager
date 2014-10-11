@@ -312,10 +312,11 @@ nm_connection_replace_settings (NMConnection *connection,
 
 		type = nm_setting_lookup_type (setting_name);
 		if (type == G_TYPE_INVALID) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_SETTING,
-			             "unknown setting name '%s'", setting_name);
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_SETTING,
+			                     _("unknown setting name"));
+			g_prefix_error (error, "%s: ", setting_name);
 			g_variant_unref (setting_dict);
 			g_slist_free_full (settings, g_object_unref);
 			return FALSE;
@@ -749,8 +750,9 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 	if (!s_con) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
-		                     "connection setting not found");
+		                     NM_CONNECTION_ERROR_MISSING_SETTING,
+		                     _("setting not found"));
+		g_prefix_error (error, "%s: ", NM_SETTING_CONNECTION_SETTING_NAME);
 		goto EXIT;
 	}
 
@@ -811,21 +813,23 @@ _nm_connection_verify (NMConnection *connection, GError **error)
 		if ((normalizable_error_type == NM_SETTING_VERIFY_SUCCESS ||
 		    (normalizable_error_type == NM_SETTING_VERIFY_NORMALIZABLE))  && (s_ip4 || s_ip6)) {
 			g_clear_error (&normalizable_error);
-			g_set_error (&normalizable_error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_SETTING,
-			             "slave connection cannot have an IP%c setting",
-			             s_ip4 ? '4' : '6');
+			g_set_error_literal (&normalizable_error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_SETTING,
+			                     _("setting not allowed in slave connection"));
+			g_prefix_error (&normalizable_error, "%s: ",
+			                s_ip4 ? NM_SETTING_IP4_CONFIG_SETTING_NAME : NM_SETTING_IP6_CONFIG_SETTING_NAME);
 			/* having a slave with IP config *was* and is a verify() error. */
 			normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
 		}
 	} else {
 		if (normalizable_error_type == NM_SETTING_VERIFY_SUCCESS && (!s_ip4 || !s_ip6)) {
-			g_set_error (&normalizable_error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
-			             "connection needs an IP%c setting",
-			             !s_ip4 ? '4' : '6');
+			g_set_error_literal (&normalizable_error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_MISSING_SETTING,
+			                     _("setting is required for non-slave connections"));
+			g_prefix_error (&normalizable_error, "%s: ",
+			                !s_ip4 ? NM_SETTING_IP4_CONFIG_SETTING_NAME : NM_SETTING_IP6_CONFIG_SETTING_NAME);
 			/* having a master without IP config was not a verify() error, accept
 			 * it for backward compatibility. */
 			normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
@@ -888,7 +892,7 @@ nm_connection_normalize (NMConnection *connection,
 		if (success == NM_SETTING_VERIFY_ERROR && error && !*error) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_UNKNOWN,
+			                     NM_CONNECTION_ERROR_FAILED,
 			                     _("Unexpected failure to verify the connection"));
 			g_return_val_if_reached (FALSE);
 		}
@@ -919,7 +923,7 @@ nm_connection_normalize (NMConnection *connection,
 		if (error && !*error) {
 			g_set_error_literal (error,
 			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_UNKNOWN,
+			                     NM_CONNECTION_ERROR_FAILED,
 			                     _("Unexpected failure to normalize the connection"));
 		}
 		g_return_val_if_reached (FALSE);
@@ -969,11 +973,12 @@ nm_connection_update_secrets (NMConnection *connection,
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
+	full_connection = g_variant_is_of_type (secrets, NM_VARIANT_TYPE_CONNECTION);
+	g_return_val_if_fail (setting_name != NULL || full_connection, FALSE);
+
 	/* Empty @secrets means success */
 	if (g_variant_n_children (secrets) == 0)
 		return TRUE;
-
-	full_connection = g_variant_is_of_type (secrets, NM_VARIANT_TYPE_CONNECTION);
 
 	if (setting_name) {
 		/* Update just one setting's secrets */
@@ -1009,14 +1014,6 @@ nm_connection_update_secrets (NMConnection *connection,
 		if (success_detail == NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED)
 			updated = TRUE;
 	} else {
-		if (!full_connection) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_SETTING,
-			                     _("Update secrets expects a full connection, instead only a setting is provided."));
-			return FALSE;
-		}
-
 		/* check first, whether all the settings exist... */
 		g_variant_iter_init (&iter, secrets);
 		while (g_variant_iter_next (&iter, "{&s@a{sv}}", &key, NULL)) {

@@ -840,21 +840,11 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 
 		base_type = nm_setting_lookup_type (priv->type);
-		if (base_type == G_TYPE_INVALID) {
+		if (base_type == G_TYPE_INVALID || !_nm_setting_type_is_base_type (base_type)) {
 			g_set_error (error,
 			             NM_SETTING_CONNECTION_ERROR,
 			             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
 			             _("connection type '%s' is not valid"),
-			             priv->type);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
-			return FALSE;
-		}
-
-		if (!_nm_setting_type_is_base_type (base_type)) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,
-			             _("connection type '%s' is not a valid base type"),
 			             priv->type);
 			g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE);
 			return FALSE;

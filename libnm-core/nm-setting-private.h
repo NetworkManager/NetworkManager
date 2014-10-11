@@ -95,9 +95,7 @@ NMSetting *nm_setting_find_in_list (GSList *settings_list, const char *setting_n
 
 NMSetting * _nm_setting_find_in_list_required (GSList *all_settings,
                                                const char *setting_name,
-                                               GError **error,
-                                               const char *error_prefix_setting_name,
-                                               const char *error_prefix_property_name);
+                                               GError **error);
 
 NMSettingVerifyResult _nm_setting_verify_required_virtual_interface_name (GSList *all_settings,
                                                                           GError **error);

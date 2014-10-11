@@ -72,28 +72,24 @@ G_BEGIN_DECLS
 
 /**
  * NMConnectionError:
- * @NM_CONNECTION_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND: the #NMConnection object
- *   did not contain the required #NMSettingConnection object, which must be
- *   present for all connections
- * @NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID: the 'type' property of the
- *   'connection' setting did not point to a valid connection base type; ie
- *   it was not a hardware-related setting like #NMSettingWired or
- *   #NMSettingWireless.
+ * @NM_CONNECTION_ERROR_FAILED: unknown or unclassified error
  * @NM_CONNECTION_ERROR_SETTING_NOT_FOUND: the #NMConnection object
  *   did not contain the specified #NMSetting object
- *@NM_CONNECTION_ERROR_INVALID_SETTING: the #NMConnection object contains
- *   a conflicting setting object
+ * @NM_CONNECTION_ERROR_MISSING_SETTING: the #NMConnection object is missing an
+ *   #NMSetting which is required for its configuration. The error message will
+ *   always be prefixed with "<setting-name>: ", where "<setting-name>" is the
+ *   name of the setting that is missing.
+ * @NM_CONNECTION_ERROR_INVALID_SETTING: the #NMConnection object contains an
+ *   invalid or inappropriate #NMSetting. The error message will always be
+ *   prefixed with "<setting-name>: ", where "<setting-name>" is the name of the
+ *   setting that is invalid.
  *
  * Describes errors that may result from operations involving a #NMConnection.
- *
- **/
-typedef enum
-{
-	NM_CONNECTION_ERROR_UNKNOWN = 0,                  /*< nick=UnknownError >*/
-	NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND, /*< nick=ConnectionSettingNotFound >*/
-	NM_CONNECTION_ERROR_CONNECTION_TYPE_INVALID,      /*< nick=ConnectionTypeInvalid >*/
+ */
+typedef enum {
+	NM_CONNECTION_ERROR_FAILED = 0,                   /*< nick=Failed >*/
 	NM_CONNECTION_ERROR_SETTING_NOT_FOUND,            /*< nick=SettingNotFound >*/
+	NM_CONNECTION_ERROR_MISSING_SETTING,              /*< nick=MissingSetting >*/
 	NM_CONNECTION_ERROR_INVALID_SETTING,              /*< nick=InvalidSetting >*/
 } NMConnectionError;
 
