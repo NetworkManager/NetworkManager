@@ -36,21 +36,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_ADSL_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_ADSL))
 #define NM_DEVICE_ADSL_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_ADSL, NMDeviceAdslClass))
 
-/**
- * NMDeviceAdslError:
- * @NM_DEVICE_ADSL_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_ADSL_ERROR_NOT_ADSL_CONNECTION: the connection was not of ADSL type
- * @NM_DEVICE_ADSL_ERROR_INVALID_ADSL_CONNECTION: the ADSL connection was invalid
- */
-typedef enum {
-	NM_DEVICE_ADSL_ERROR_UNKNOWN = 0,             /*< nick=UnknownError >*/
-	NM_DEVICE_ADSL_ERROR_NOT_ADSL_CONNECTION,     /*< nick=NotAdslConnection >*/
-	NM_DEVICE_ADSL_ERROR_INVALID_ADSL_CONNECTION, /*< nick=InvalidAdslConnection >*/
-} NMDeviceAdslError;
-
-#define NM_DEVICE_ADSL_ERROR nm_device_adsl_error_quark ()
-GQuark nm_device_adsl_error_quark (void);
-
 #define NM_DEVICE_ADSL_CARRIER "carrier"
 
 struct _NMDeviceAdsl {

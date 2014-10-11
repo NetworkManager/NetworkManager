@@ -2115,17 +2115,21 @@ nm_device_connection_valid (NMDevice *device, NMConnection *connection)
 gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
 	const char *config_iface, *device_iface;
+	GError *local = NULL;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	if (!nm_connection_verify (connection, &local)) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
+		             _("The connection was not valid: %s"), local->message);
+		g_error_free (local);
+		return FALSE;
+	}
 
-	config_iface = nm_setting_connection_get_interface_name (s_con);
+	config_iface = nm_connection_get_interface_name (connection);
 	device_iface = nm_device_get_iface (device);
 	if (config_iface && g_strcmp0 (config_iface, device_iface) != 0) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INTERFACE_MISMATCH,
-		             "The interface names of the device and the connection didn't match.");
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		             _("The interface names of the device and the connection didn't match."));
 		return FALSE;
 	}
 

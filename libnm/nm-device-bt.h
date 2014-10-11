@@ -37,27 +37,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_BT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_BT))
 #define NM_DEVICE_BT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_BT, NMDeviceBtClass))
 
-/**
- * NMDeviceBtError:
- * @NM_DEVICE_BT_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_BT_ERROR_NOT_BT_CONNECTION: the connection was not of bluetooth type
- * @NM_DEVICE_BT_ERROR_INVALID_BT_CONNECTION: the bluetooth connection was invalid
- * @NM_DEVICE_BT_ERROR_INVALID_DEVICE_MAC: the device's MAC was invalid
- * @NM_DEVICE_BT_ERROR_MAC_MISMATCH: the MACs of the connection and the device mismatched
- * @NM_DEVICE_BT_ERROR_MISSING_DEVICE_CAPS: the device missed required capabilities
- */
-typedef enum {
-	NM_DEVICE_BT_ERROR_UNKNOWN = 0,           /*< nick=UnknownError >*/
-	NM_DEVICE_BT_ERROR_NOT_BT_CONNECTION,     /*< nick=NotBtConnection >*/
-	NM_DEVICE_BT_ERROR_INVALID_BT_CONNECTION, /*< nick=InvalidBtConnection >*/
-	NM_DEVICE_BT_ERROR_INVALID_DEVICE_MAC,    /*< nick=InvalidDeviceMac >*/
-	NM_DEVICE_BT_ERROR_MAC_MISMATCH,          /*< nick=MacMismatch >*/
-	NM_DEVICE_BT_ERROR_MISSING_DEVICE_CAPS,   /*< nick=MissingDeviceCaps >*/
-} NMDeviceBtError;
-
-#define NM_DEVICE_BT_ERROR nm_device_bt_error_quark ()
-GQuark nm_device_bt_error_quark (void);
-
 #define NM_DEVICE_BT_HW_ADDRESS   "hw-address"
 #define NM_DEVICE_BT_NAME         "name"
 #define NM_DEVICE_BT_CAPABILITIES "bt-capabilities"

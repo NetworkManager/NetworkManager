@@ -20,6 +20,7 @@
 
 #include <config.h>
 #include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-glib-compat.h"
 
@@ -50,23 +51,6 @@ enum {
 
 	LAST_PROP
 };
-
-/**
- * nm_device_team_error_quark:
- *
- * Registers an error quark for #NMDeviceTeam if necessary.
- *
- * Returns: the error quark used for #NMDeviceTeam errors.
- **/
-GQuark
-nm_device_team_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-team-error-quark");
-	return quark;
-}
 
 /**
  * nm_device_team_get_hw_address:
@@ -128,38 +112,18 @@ get_hw_address (NMDevice *device)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
-	NMSettingTeam *s_team;
-	const char *ctype, *dev_iface_name, *team_iface_name;
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_TEAM_SETTING_NAME) != 0) {
-		g_set_error (error, NM_DEVICE_TEAM_ERROR, NM_DEVICE_TEAM_ERROR_NOT_TEAM_CONNECTION,
-		             "The connection was not a team connection.");
+	if (!NM_DEVICE_CLASS (nm_device_team_parent_class)->connection_compatible (device, connection, error))
 		return FALSE;
-	}
 
-	s_team = nm_connection_get_setting_team (connection);
-	if (!s_team) {
-		g_set_error (error, NM_DEVICE_TEAM_ERROR, NM_DEVICE_TEAM_ERROR_INVALID_TEAM_CONNECTION,
-		             "The connection was not a valid team connection.");
-		return FALSE;
-	}
-
-	dev_iface_name = nm_device_get_iface (device);
-	team_iface_name = nm_setting_connection_get_interface_name (s_con);
-	if (g_strcmp0 (dev_iface_name, team_iface_name) != 0) {
-		g_set_error (error, NM_DEVICE_TEAM_ERROR, NM_DEVICE_TEAM_ERROR_INTERFACE_MISMATCH,
-		             "The interfaces of the device and the connection didn't match.");
+	if (!nm_connection_is_type (connection, NM_SETTING_TEAM_SETTING_NAME)) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
+		                     _("The connection was not a team connection."));
 		return FALSE;
 	}
 
 	/* FIXME: check slaves? */
 
-	return NM_DEVICE_CLASS (nm_device_team_parent_class)->connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 static GType

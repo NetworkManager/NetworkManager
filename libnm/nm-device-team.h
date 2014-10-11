@@ -36,23 +36,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_TEAM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_TEAM))
 #define NM_DEVICE_TEAM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_TEAM, NMDeviceTeamClass))
 
-/**
- * NMDeviceTeamError:
- * @NM_DEVICE_TEAM_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_TEAM_ERROR_NOT_TEAM_CONNECTION: the connection was not of team type
- * @NM_DEVICE_TEAM_ERROR_INVALID_TEAM_CONNECTION: the team connection was invalid
- * @NM_DEVICE_TEAM_ERROR_INTERFACE_MISMATCH: the interfaces of the connection and the device mismatched
- */
-typedef enum {
-	NM_DEVICE_TEAM_ERROR_UNKNOWN = 0,             /*< nick=UnknownError >*/
-	NM_DEVICE_TEAM_ERROR_NOT_TEAM_CONNECTION,     /*< nick=NotTeamConnection >*/
-	NM_DEVICE_TEAM_ERROR_INVALID_TEAM_CONNECTION, /*< nick=InvalidTeamConnection >*/
-	NM_DEVICE_TEAM_ERROR_INTERFACE_MISMATCH,      /*< nick=InterfaceMismatch >*/
-} NMDeviceTeamError;
-
-#define NM_DEVICE_TEAM_ERROR nm_device_team_error_quark ()
-GQuark nm_device_team_error_quark (void);
-
 #define NM_DEVICE_TEAM_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_TEAM_CARRIER     "carrier"
 #define NM_DEVICE_TEAM_SLAVES      "slaves"

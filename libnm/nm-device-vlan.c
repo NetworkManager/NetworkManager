@@ -20,6 +20,7 @@
 
 #include <config.h>
 #include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-glib-compat.h"
 
@@ -49,23 +50,6 @@ enum {
 
 	LAST_PROP
 };
-
-/**
- * nm_device_vlan_error_quark:
- *
- * Registers an error quark for #NMDeviceVlan if necessary.
- *
- * Returns: the error quark used for #NMDeviceVlan errors.
- **/
-GQuark
-nm_device_vlan_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-vlan-error-quark");
-	return quark;
-}
 
 /**
  * nm_device_vlan_get_hw_address:
@@ -117,40 +101,23 @@ nm_device_vlan_get_vlan_id (NMDeviceVlan *device)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
 	NMSettingVlan *s_vlan;
 	NMSettingWired *s_wired;
-	const char *ctype, *dev_iface_name, *vlan_iface_name;
 	const char *setting_hwaddr;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	if (!NM_DEVICE_CLASS (nm_device_vlan_parent_class)->connection_compatible (device, connection, error))
+		return FALSE;
 
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_VLAN_SETTING_NAME) != 0) {
-		g_set_error (error, NM_DEVICE_VLAN_ERROR, NM_DEVICE_VLAN_ERROR_NOT_VLAN_CONNECTION,
-		             "The connection was not a VLAN connection.");
+	if (!nm_connection_is_type (connection, NM_SETTING_VLAN_SETTING_NAME)) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     _("The connection was not a VLAN connection."));
 		return FALSE;
 	}
 
 	s_vlan = nm_connection_get_setting_vlan (connection);
-	if (!s_vlan) {
-		g_set_error (error, NM_DEVICE_VLAN_ERROR, NM_DEVICE_VLAN_ERROR_INVALID_VLAN_CONNECTION,
-		             "The connection was not a valid VLAN connection.");
-		return FALSE;
-	}
-
 	if (nm_setting_vlan_get_id (s_vlan) != nm_device_vlan_get_vlan_id (NM_DEVICE_VLAN (device))) {
-		g_set_error (error, NM_DEVICE_VLAN_ERROR, NM_DEVICE_VLAN_ERROR_ID_MISMATCH,
-		             "The VLAN identifiers of the device and the connection didn't match.");
-		return FALSE;
-	}
-
-	dev_iface_name = nm_device_get_iface (device);
-	vlan_iface_name = nm_setting_connection_get_interface_name (s_con);
-	if (vlan_iface_name && g_strcmp0 (dev_iface_name, vlan_iface_name) != 0) {
-		g_set_error (error, NM_DEVICE_VLAN_ERROR, NM_DEVICE_VLAN_ERROR_INTERFACE_MISMATCH,
-		             "The interfaces of the device and the connection didn't match.");
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     _("The VLAN identifiers of the device and the connection didn't match."));
 		return FALSE;
 	}
 
@@ -161,13 +128,13 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 		setting_hwaddr = NULL;
 	if (setting_hwaddr) {
 		if (!nm_utils_hwaddr_matches (setting_hwaddr, -1,
-		                            NM_DEVICE_VLAN_GET_PRIVATE (device)->hw_address, -1)) {
-			g_set_error (error, NM_DEVICE_VLAN_ERROR, NM_DEVICE_VLAN_ERROR_MAC_MISMATCH,
-			             "The hardware address of the device and the connection didn't match.");
+		                              NM_DEVICE_VLAN_GET_PRIVATE (device)->hw_address, -1)) {
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			                     _("The hardware address of the device and the connection didn't match."));
 		}
 	}
 
-	return NM_DEVICE_CLASS (nm_device_vlan_parent_class)->connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 static GType

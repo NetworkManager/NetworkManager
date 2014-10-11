@@ -36,23 +36,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_BRIDGE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE_BRIDGE))
 #define NM_DEVICE_BRIDGE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_BRIDGE, NMDeviceBridgeClass))
 
-/**
- * NMDeviceBridgeError:
- * @NM_DEVICE_BRIDGE_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_BRIDGE_ERROR_NOT_BRIDGE_CONNECTION: the connection was not of bridge type
- * @NM_DEVICE_BRIDGE_ERROR_INVALID_BRIDGE_CONNECTION: the bridge connection was invalid
- * @NM_DEVICE_BRIDGE_ERROR_INTERFACE_MISMATCH: the interfaces of the connection and the device mismatched
- */
-typedef enum {
-	NM_DEVICE_BRIDGE_ERROR_UNKNOWN = 0,               /*< nick=UnknownError >*/
-	NM_DEVICE_BRIDGE_ERROR_NOT_BRIDGE_CONNECTION,     /*< nick=NotBridgeConnection >*/
-	NM_DEVICE_BRIDGE_ERROR_INVALID_BRIDGE_CONNECTION, /*< nick=InvalidBridgeConnection >*/
-	NM_DEVICE_BRIDGE_ERROR_INTERFACE_MISMATCH,        /*< nick=InterfaceMismatch >*/
-} NMDeviceBridgeError;
-
-#define NM_DEVICE_BRIDGE_ERROR nm_device_bridge_error_quark ()
-GQuark nm_device_bridge_error_quark (void);
-
 #define NM_DEVICE_BRIDGE_HW_ADDRESS  "hw-address"
 #define NM_DEVICE_BRIDGE_CARRIER     "carrier"
 #define NM_DEVICE_BRIDGE_SLAVES      "slaves"

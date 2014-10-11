@@ -39,13 +39,17 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceError:
- * @NM_DEVICE_ERROR_UNKNOWN: unknown or unclassified error
- * @NM_DEVICE_ERROR_INTERFACE_MISMATCH: the interface names of the connection and the
- *   device mismatched
+ * @NM_DEVICE_ERROR_FAILED: unknown or unclassified error
+ * @NM_DEVICE_ERROR_INVALID_CONNECTION: the connection is not valid
+ * @NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION: the connection is not compatible
+ *   with this device.
+ *
+ * Errors from #NMDevice methods.
  */
 typedef enum {
-	NM_DEVICE_ERROR_UNKNOWN = 0,        /*< nick=UnknownError >*/
-	NM_DEVICE_ERROR_INTERFACE_MISMATCH, /*< nick=InterfaceMismatch >*/
+	NM_DEVICE_ERROR_FAILED = 0,              /*< nick=Failed >*/
+	NM_DEVICE_ERROR_INVALID_CONNECTION,      /*< nick=InvalidConnection >*/
+	NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION, /*< nick=IncompatibleConnection >*/
 } NMDeviceError;
 
 #define NM_DEVICE_ERROR nm_device_error_quark ()

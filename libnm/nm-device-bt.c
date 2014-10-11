@@ -21,6 +21,7 @@
 
 #include <config.h>
 #include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-glib-compat.h"
 
@@ -51,23 +52,6 @@ enum {
 
 	LAST_PROP
 };
-
-/**
- * nm_device_bt_error_quark:
- *
- * Registers an error quark for #NMDeviceBt if necessary.
- *
- * Returns: the error quark used for #NMDeviceBt errors.
- **/
-GQuark
-nm_device_bt_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-bt-error-quark");
-	return quark;
-}
 
 /**
  * nm_device_bt_get_hw_address:
@@ -142,27 +126,17 @@ get_connection_bt_type (NMConnection *connection)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
 	NMSettingBluetooth *s_bt;
-	const char *ctype;
 	const char *hw_addr, *setting_addr;
 	NMBluetoothCapabilities dev_caps;
 	NMBluetoothCapabilities bt_type;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_BLUETOOTH_SETTING_NAME) != 0) {
-		g_set_error (error, NM_DEVICE_BT_ERROR, NM_DEVICE_BT_ERROR_NOT_BT_CONNECTION,
-		             "The connection was not a Bluetooth connection.");
+	if (!NM_DEVICE_CLASS (nm_device_bt_parent_class)->connection_compatible (device, connection, error))
 		return FALSE;
-	}
 
-	s_bt = nm_connection_get_setting_bluetooth (connection);
-	if (!s_bt) {
-		g_set_error (error, NM_DEVICE_BT_ERROR, NM_DEVICE_BT_ERROR_INVALID_BT_CONNECTION,
-		             "The connection was not a valid Bluetooth connection.");
+	if (!nm_connection_is_type (connection, NM_SETTING_BLUETOOTH_SETTING_NAME)) {
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		             _("The connection was not a Bluetooth connection."));
 		return FALSE;
 	}
 
@@ -170,14 +144,15 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	hw_addr = nm_device_bt_get_hw_address (NM_DEVICE_BT (device));
 	if (hw_addr) {
 		if (!nm_utils_hwaddr_valid (hw_addr, ETH_ALEN)) {
-			g_set_error (error, NM_DEVICE_BT_ERROR, NM_DEVICE_BT_ERROR_INVALID_DEVICE_MAC,
-			             "Invalid device MAC address.");
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+			                     _("Invalid device Bluetooth address."));
 			return FALSE;
 		}
+		s_bt = nm_connection_get_setting_bluetooth (connection);
 		setting_addr = nm_setting_bluetooth_get_bdaddr (s_bt);
 		if (setting_addr && !nm_utils_hwaddr_matches (setting_addr, -1, hw_addr, -1)) {
-			g_set_error (error, NM_DEVICE_BT_ERROR, NM_DEVICE_BT_ERROR_MAC_MISMATCH,
-			             "The MACs of the device and the connection didn't match.");
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			                     _("The Bluetooth addresses of the device and the connection didn't match."));
 			return FALSE;
 		}
 	}
@@ -185,12 +160,12 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 	dev_caps = nm_device_bt_get_capabilities (NM_DEVICE_BT (device));
 	bt_type = get_connection_bt_type (connection);
 	if (!(bt_type & dev_caps)) {
-		g_set_error (error, NM_DEVICE_BT_ERROR, NM_DEVICE_BT_ERROR_MISSING_DEVICE_CAPS,
-		             "The device missed BT capabilities required by the connection.");
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     _("The device is lacking Bluetooth capabilities required by the connection."));
 		return FALSE;
 	}
 
-	return NM_DEVICE_CLASS (nm_device_bt_parent_class)->connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 static GType

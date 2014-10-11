@@ -21,6 +21,7 @@
 
 #include <config.h>
 #include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-glib-compat.h"
 
@@ -48,23 +49,6 @@ enum {
 	PROP_CURRENT_CAPS,
 	LAST_PROP
 };
-
-/**
- * nm_device_modem_error_quark:
- *
- * Registers an error quark for #NMDeviceModem if necessary.
- *
- * Returns: the error quark used for #NMDeviceModem errors.
- **/
-GQuark
-nm_device_modem_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-modem-error-quark");
-	return quark;
-}
 
 /**
  * nm_device_modem_get_modem_capabilities:
@@ -125,39 +109,36 @@ get_type_description (NMDevice *device)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
 	NMSettingGsm *s_gsm;
 	NMSettingCdma *s_cdma;
-	const char *ctype;
 	NMDeviceModemCapabilities current_caps;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	if (!NM_DEVICE_CLASS (nm_device_modem_parent_class)->connection_compatible (device, connection, error))
+		return FALSE;
 
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (   strcmp (ctype, NM_SETTING_GSM_SETTING_NAME) != 0
-	    && strcmp (ctype, NM_SETTING_CDMA_SETTING_NAME) != 0) {
-		g_set_error (error, NM_DEVICE_MODEM_ERROR, NM_DEVICE_MODEM_ERROR_NOT_MODEM_CONNECTION,
-		             "The connection was not a modem connection.");
+	if (   !nm_connection_is_type (connection, NM_SETTING_GSM_SETTING_NAME)
+	    && !nm_connection_is_type (connection, NM_SETTING_CDMA_SETTING_NAME)) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     _("The connection was not a modem connection."));
 		return FALSE;
 	}
 
 	s_gsm = nm_connection_get_setting_gsm (connection);
 	s_cdma = nm_connection_get_setting_cdma (connection);
 	if (!s_cdma && !s_gsm) {
-		g_set_error (error, NM_DEVICE_MODEM_ERROR, NM_DEVICE_MODEM_ERROR_INVALID_MODEM_CONNECTION,
-		             "The connection was not a valid modem connection.");
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
+		                     _("The connection was not a valid modem connection."));
 		return FALSE;
 	}
 
 	current_caps = nm_device_modem_get_current_capabilities (NM_DEVICE_MODEM (device));
 	if (!(s_gsm && MODEM_CAPS_3GPP (current_caps)) && !(s_cdma && MODEM_CAPS_3GPP2 (current_caps))) {
-		g_set_error (error, NM_DEVICE_MODEM_ERROR, NM_DEVICE_MODEM_ERROR_MISSING_DEVICE_CAPS,
-		             "The device missed capabilities required by the GSM/CDMA connection.");
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     _("The device is lacking capabilities required by the connection."));
 		return FALSE;
 	}
 
-	return NM_DEVICE_CLASS (nm_device_modem_parent_class)->connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 static GType

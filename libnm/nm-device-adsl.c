@@ -26,6 +26,7 @@
 #include "nm-setting-adsl.h"
 
 #include <string.h>
+#include <glib/gi18n.h>
 
 G_DEFINE_TYPE (NMDeviceAdsl, nm_device_adsl, NM_TYPE_DEVICE)
 
@@ -41,23 +42,6 @@ enum {
 	PROP_CARRIER,
 	LAST_PROP
 };
-
-/**
- * nm_device_adsl_error_quark:
- *
- * Registers an error quark for #NMDeviceAdsl if necessary.
- *
- * Returns: the error quark used for #NMDeviceAdsl errors.
- **/
-GQuark
-nm_device_adsl_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-adsl-error-quark");
-	return quark;
-}
 
 /**
  * nm_device_adsl_get_carrier:
@@ -78,28 +62,16 @@ nm_device_adsl_get_carrier (NMDeviceAdsl *device)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
-	NMSettingAdsl *s_adsl;
-	const char *ctype;
+	if (!NM_DEVICE_CLASS (nm_device_adsl_parent_class)->connection_compatible (device, connection, error))
+		return FALSE;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_ADSL_SETTING_NAME) != 0) {
-		g_set_error (error, NM_DEVICE_ADSL_ERROR, NM_DEVICE_ADSL_ERROR_NOT_ADSL_CONNECTION,
-		             "The connection was not an ADSL connection.");
+	if (!nm_connection_is_type (connection, NM_SETTING_ADSL_SETTING_NAME)) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     _("The connection was not an ADSL connection."));
 		return FALSE;
 	}
 
-	s_adsl = nm_connection_get_setting_adsl (connection);
-	if (!s_adsl) {
-		g_set_error (error, NM_DEVICE_ADSL_ERROR, NM_DEVICE_ADSL_ERROR_INVALID_ADSL_CONNECTION,
-		             "The connection was not a valid ADSL connection.");
-		return FALSE;
-	}
-
-	return NM_DEVICE_CLASS (nm_device_adsl_parent_class)->connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 static GType

@@ -21,6 +21,7 @@
 
 #include <config.h>
 #include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-glib-compat.h"
 
@@ -53,23 +54,6 @@ enum {
 
 	LAST_PROP
 };
-
-/**
- * nm_device_ethernet_error_quark:
- *
- * Registers an error quark for #NMDeviceEthernet if necessary.
- *
- * Returns: the error quark used for #NMDeviceEthernet errors.
- **/
-GQuark
-nm_device_ethernet_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-ethernet-error-quark");
-	return quark;
-}
 
 /**
  * nm_device_ethernet_get_hw_address:
@@ -140,31 +124,22 @@ nm_device_ethernet_get_carrier (NMDeviceEthernet *device)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	const char *ctype;
 	gboolean is_pppoe = FALSE;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
+	if (!NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->connection_compatible (device, connection, error))
+		return FALSE;
 
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (!strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME))
+	if (nm_connection_is_type (connection, NM_SETTING_PPPOE_SETTING_NAME))
 		is_pppoe = TRUE;
-	else if (strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME) != 0) {
-		g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_NOT_ETHERNET_CONNECTION,
-		             "The connection was not a wired or PPPoE connection.");
+	else if (!nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     _("The connection was not an Ethernet or PPPoE connection."));
 		return FALSE;
 	}
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	/* Wired setting optional for PPPoE */
-	if (!is_pppoe && !s_wired) {
-		g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_INVALID_ETHERNET_CONNECTION,
-		             "The connection was not a valid Ethernet connection.");
-		return FALSE;
-	}
-
 	if (s_wired) {
 		const char *perm_addr, *setting_addr;
 
@@ -174,20 +149,20 @@ connection_compatible (NMDevice *device, NMConnection *connection, GError **erro
 		perm_addr = nm_device_ethernet_get_permanent_hw_address (NM_DEVICE_ETHERNET (device));
 		if (perm_addr) {
 			if (!nm_utils_hwaddr_valid (perm_addr, ETH_ALEN)) {
-				g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_INVALID_DEVICE_MAC,
-				             "Invalid device MAC address.");
+				g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+				                     _("Invalid device MAC address."));
 				return FALSE;
 			}
 			setting_addr = nm_setting_wired_get_mac_address (s_wired);
 			if (setting_addr && !nm_utils_hwaddr_matches (setting_addr, -1, perm_addr, -1)) {
-				g_set_error (error, NM_DEVICE_ETHERNET_ERROR, NM_DEVICE_ETHERNET_ERROR_MAC_MISMATCH,
-				             "The MACs of the device and the connection didn't match.");
+				g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+				                     _("The MACs of the device and the connection didn't match."));
 				return FALSE;
 			}
 		}
 	}
 
-	return NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 static GType

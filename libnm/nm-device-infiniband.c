@@ -20,6 +20,7 @@
 
 #include <config.h>
 #include <string.h>
+#include <glib/gi18n.h>
 
 #include "nm-glib-compat.h"
 
@@ -47,23 +48,6 @@ enum {
 
 	LAST_PROP
 };
-
-/**
- * nm_device_infiniband_error_quark:
- *
- * Registers an error quark for #NMDeviceInfiniband if necessary.
- *
- * Returns: the error quark used for #NMDeviceInfiniband errors.
- **/
-GQuark
-nm_device_infiniband_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-infiniband-error-quark");
-	return quark;
-}
 
 /**
  * nm_device_infiniband_get_hw_address:
@@ -101,44 +85,36 @@ nm_device_infiniband_get_carrier (NMDeviceInfiniband *device)
 static gboolean
 connection_compatible (NMDevice *device, NMConnection *connection, GError **error)
 {
-	NMSettingConnection *s_con;
 	NMSettingInfiniband *s_infiniband;
-	const char *ctype, *hwaddr, *setting_hwaddr;
+	const char *hwaddr, *setting_hwaddr;
 
-	s_con = nm_connection_get_setting_connection (connection);
-	g_assert (s_con);
-
-	ctype = nm_setting_connection_get_connection_type (s_con);
-	if (strcmp (ctype, NM_SETTING_INFINIBAND_SETTING_NAME) != 0) {
-		g_set_error (error, NM_DEVICE_INFINIBAND_ERROR, NM_DEVICE_INFINIBAND_ERROR_NOT_INFINIBAND_CONNECTION,
-		             "The connection was not a InfiniBand connection.");
+	if (!NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->connection_compatible (device, connection, error))
 		return FALSE;
-	}
 
-	s_infiniband = nm_connection_get_setting_infiniband (connection);
-	if (!s_infiniband) {
-		g_set_error (error, NM_DEVICE_INFINIBAND_ERROR, NM_DEVICE_INFINIBAND_ERROR_INVALID_INFINIBAND_CONNECTION,
-		             "The connection was not a valid InfiniBand connection.");
+	if (!nm_connection_is_type (connection, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+		g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+		                     _("The connection was not an InfiniBand connection."));
 		return FALSE;
 	}
 
 	hwaddr = nm_device_infiniband_get_hw_address (NM_DEVICE_INFINIBAND (device));
 	if (hwaddr) {
 		if (!nm_utils_hwaddr_valid (hwaddr, INFINIBAND_ALEN)) {
-			g_set_error (error, NM_DEVICE_INFINIBAND_ERROR, NM_DEVICE_INFINIBAND_ERROR_INVALID_DEVICE_MAC,
-			             "Invalid device MAC address.");
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
+			                     _("Invalid device MAC address."));
 			return FALSE;
 		}
 
+		s_infiniband = nm_connection_get_setting_infiniband (connection);
 		setting_hwaddr = nm_setting_infiniband_get_mac_address (s_infiniband);
 		if (setting_hwaddr && !nm_utils_hwaddr_matches (setting_hwaddr, -1, hwaddr, -1)) {
-			g_set_error (error, NM_DEVICE_INFINIBAND_ERROR, NM_DEVICE_INFINIBAND_ERROR_MAC_MISMATCH,
-			             "The MACs of the device and the connection didn't match.");
+			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+			                     _("The MACs of the device and the connection didn't match."));
 			return FALSE;
 		}
 	}
 
-	return NM_DEVICE_CLASS (nm_device_infiniband_parent_class)->connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 static GType
