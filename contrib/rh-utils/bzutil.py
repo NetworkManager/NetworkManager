@@ -590,7 +590,7 @@ class BzInfoRhbz(BzInfo):
 
 class UtilParseCommitMessage:
 
-    _p_related = '(?P<related>([rR]elated(:[ \t]*|[ \t]+|( |\n)to( |\n)(bug( |\n))?))?)'
+    _p_related = '(?P<related>([rR]elated(:[ \t]*|[ \t]+|( |\n)(to( |\n))?(bug( |\n))?))?)'
     _patterns = [
             ('(^|\W)(?P<replace>'+_p_related+'(?P<type>bgo)[ ]?[#]?(?P<id>[0-9]{4,7}))($|\W)',                            lambda m: BzInfoBgo(m.group('id'),related=m.group('related'))),
             ('(^|\W)(?P<replace>'+_p_related+'https://bugzilla\.gnome\.org/show_bug\.cgi\?id=(?P<id>[0-9]{4,7}))($|\W)',  lambda m: BzInfoBgo(m.group('id'),related=m.group('related'))),
