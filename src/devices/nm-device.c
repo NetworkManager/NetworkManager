@@ -1640,6 +1640,34 @@ can_auto_connect (NMDevice *self,
 	return nm_device_connection_is_available (self, connection, FALSE);
 }
 
+/**
+ * nm_device_can_auto_connect:
+ * @self: an #NMDevice
+ * @connection: a #NMConnection
+ * @specific_object: (out) (transfer full): on output, the path of an
+ *   object associated with the returned connection, to be passed to
+ *   nm_manager_activate_connection(), or %NULL.
+ *
+ * Checks if @connection can be auto-activated on @self right now.
+ * This requires, at a minimum, that the connection be compatible with
+ * @self, and that it have the #NMSettingConnection:autoconnect property
+ * set. Some devices impose additional requirements. (Eg, a Wi-Fi connection
+ * can only be activated if its SSID was seen in the last scan.)
+ *
+ * Returns: %TRUE, if the @connection can be auto-activated.
+ **/
+gboolean
+nm_device_can_auto_connect (NMDevice *self,
+                            NMConnection *connection,
+                            char **specific_object)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (specific_object && !*specific_object, FALSE);
+
+	return NM_DEVICE_GET_CLASS (self)->can_auto_connect (self, connection, specific_object);
+}
+
 static gboolean
 device_has_config (NMDevice *self)
 {
@@ -1794,46 +1822,6 @@ nm_device_generate_connection (NMDevice *self, NMDevice *master)
 	}
 
 	return connection;
-}
-
-/**
- * nm_device_get_best_auto_connection:
- * @self: an #NMDevice
- * @connections: (element-type #NMConnection): a list of connections
- * @specific_object: (out) (transfer full): on output, the path of an
- *   object associated with the returned connection, to be passed to
- *   nm_manager_activate_connection(), or %NULL.
- *
- * Looks through @connections to see if there is a connection that can
- * be auto-activated on @self right now. This requires, at a minimum,
- * that the connection be compatible with @self, and that it have the
- * #NMSettingConnection:autoconnect property set. Some devices impose
- * additional requirements. (Eg, a Wi-Fi connection can only be
- * activated if its SSID was seen in the last scan.)
- *
- * Returns: an auto-activatable #NMConnection, or %NULL if none are
- * available.
- */
-
-NMConnection *
-nm_device_get_best_auto_connection (NMDevice *self,
-                                    GSList *connections,
-                                    char **specific_object)
-{
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_DEVICE (self), NULL);
-	g_return_val_if_fail (specific_object != NULL, NULL);
-	g_return_val_if_fail (*specific_object == NULL, NULL);
-
-	for (iter = connections; iter; iter = iter->next) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-
-		if (NM_DEVICE_GET_CLASS (self)->can_auto_connect (self, connection, specific_object))
-			return connection;
-	}
-
-	return NULL;
 }
 
 gboolean

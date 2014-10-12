@@ -169,8 +169,14 @@ make_connection_setting (const char *file,
 	}
 
 	/* Missing ONBOOT is treated as "ONBOOT=true" by the old network service */
-	g_object_set (s_con, NM_SETTING_CONNECTION_AUTOCONNECT,
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_AUTOCONNECT,
 	              svTrueValue (ifcfg, "ONBOOT", TRUE),
+	              NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY,
+	              (gint) svGetValueInt64 (ifcfg, "AUTOCONNECT_PRIORITY", 10,
+	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN,
+	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX,
+	                                      NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT),
 	              NULL);
 
 	value = svGetValue (ifcfg, "USERS", FALSE);

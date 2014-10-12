@@ -80,6 +80,7 @@ typedef struct {
 	char *slave_type;
 	GSList *permissions; /* list of Permission structs */
 	gboolean autoconnect;
+	gint autoconnect_priority;
 	guint64 timestamp;
 	gboolean read_only;
 	char *zone;
@@ -95,6 +96,7 @@ enum {
 	PROP_TYPE,
 	PROP_PERMISSIONS,
 	PROP_AUTOCONNECT,
+	PROP_AUTOCONNECT_PRIORITY,
 	PROP_TIMESTAMP,
 	PROP_READ_ONLY,
 	PROP_ZONE,
@@ -495,6 +497,23 @@ nm_setting_connection_get_autoconnect (NMSettingConnection *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect;
+}
+
+/**
+ * nm_setting_connection_get_autoconnect_priority:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns the #NMSettingConnection:autoconnect-priority property of the connection.
+ * The higher number, the higher priority.
+ *
+ * Returns: the connection's autoconnect priority
+ **/
+gint
+nm_setting_connection_get_autoconnect_priority (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), 0);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect_priority;
 }
 
 /**
@@ -1094,6 +1113,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_AUTOCONNECT:
 		priv->autoconnect = g_value_get_boolean (value);
 		break;
+	case PROP_AUTOCONNECT_PRIORITY:
+		priv->autoconnect_priority = g_value_get_int (value);
+		break;
 	case PROP_TIMESTAMP:
 		priv->timestamp = g_value_get_uint64 (value);
 		break;
@@ -1164,6 +1186,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_AUTOCONNECT:
 		g_value_set_boolean (value, nm_setting_connection_get_autoconnect (setting));
+		break;
+	case PROP_AUTOCONNECT_PRIORITY:
+		g_value_set_int (value, nm_setting_connection_get_autoconnect_priority (setting));
 		break;
 	case PROP_TIMESTAMP:
 		g_value_set_uint64 (value, nm_setting_connection_get_timestamp (setting));
@@ -1330,6 +1355,24 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 		                       G_PARAM_CONSTRUCT |
 		                       NM_SETTING_PARAM_FUZZY_IGNORE |
 		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingConnection:autoconnect-priority:
+	 *
+	 * The autoconnect priority. If the connection is set to autoconnect,
+	 * connections with higher priority will be preferred. Defaults to 0.
+	 * The higher number means higher priority.
+	 **/
+	g_object_class_install_property
+	    (object_class, PROP_AUTOCONNECT_PRIORITY,
+	     g_param_spec_int (NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY, "", "",
+	                       NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN,
+	                       NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX,
+	                       NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_CONSTRUCT |
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
+	                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingConnection:timestamp:

@@ -2910,6 +2910,8 @@ test_read_wifi_open (void)
 	        NM_SETTING_CONNECTION_SETTING_NAME,
 	        NM_SETTING_CONNECTION_AUTOCONNECT);
 
+	g_assert_cmpint (nm_setting_connection_get_autoconnect_priority (s_con), ==, -1);
+
 	/* ===== WIRELESS SETTING ===== */
 
 	s_wireless = nm_connection_get_setting_wireless (connection);

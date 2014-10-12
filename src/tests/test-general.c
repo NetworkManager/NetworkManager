@@ -581,6 +581,104 @@ test_connection_no_match_ip4_addr (void)
 	g_object_unref (copy);
 }
 
+static NMConnection *
+_create_connection_autoconnect (const char *id, gboolean autoconnect, int autoconnect_priority)
+{
+	NMConnection *c;
+	NMSettingConnection *s_con;
+
+	c = nmtst_create_minimal_connection (id, NULL, NM_SETTING_WIRED_SETTING_NAME, &s_con);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, autoconnect,
+	              NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY, autoconnect_priority,
+	              NULL);
+	nmtst_connection_normalize (c);
+	return c;
+}
+
+static void
+_test_connection_sort_autoconnect_priority_one (NMConnection **list, gboolean shuffle)
+{
+	int i, j;
+	int count = 0;
+	gs_unref_ptrarray GPtrArray *connections = g_ptr_array_new ();
+
+	while (list[count])
+		count++;
+	g_assert (count > 1);
+
+	/* copy the list of connections over to @connections and shuffle. */
+	for (i = 0; i < count; i++)
+		g_ptr_array_add (connections, list[i]);
+	if (shuffle) {
+		for (i = count - 1; i > 0; i--) {
+			j = g_rand_int (nmtst_get_rand ()) % (i + 1);
+			NMTST_SWAP (connections->pdata[i], connections->pdata[j]);
+		}
+	}
+
+	/* sort it... */
+	g_ptr_array_sort (connections, (GCompareFunc) nm_utils_cmp_connection_by_autoconnect_priority);
+
+	for (i = 0; i < count; i++) {
+		if (list[i] == connections->pdata[i])
+			continue;
+		if (shuffle && nm_utils_cmp_connection_by_autoconnect_priority (&list[i], (NMConnection **) &connections->pdata[i]) == 0)
+			continue;
+		g_message ("After sorting, the order of connections is not as expected!! Offending index: %d", i);
+		for (j = 0; j < count; j++)
+			g_message ("  %3d:  %p/%-20s - %p/%-20s", j, list[j], nm_connection_get_id (list[j]), connections->pdata[j], nm_connection_get_id (connections->pdata[j]));
+		g_assert_not_reached ();
+	}
+}
+
+static void
+_test_connection_sort_autoconnect_priority_free (NMConnection **list)
+{
+	while (*list) {
+		g_object_unref (*list);
+		*list = NULL;
+	}
+}
+
+static void
+test_connection_sort_autoconnect_priority (void)
+{
+	NMConnection *c1[] = {
+		_create_connection_autoconnect ("AC/100", TRUE, 100),
+		_create_connection_autoconnect ("AC/100", TRUE, 100),
+		_create_connection_autoconnect ("AC/99", TRUE, 99),
+		_create_connection_autoconnect ("AC/0", TRUE, 0),
+		_create_connection_autoconnect ("AC/0", TRUE, 0),
+		_create_connection_autoconnect ("AC/-1", TRUE, -1),
+		_create_connection_autoconnect ("AC/-3", TRUE, -3),
+		_create_connection_autoconnect ("ac/0", FALSE, 0),
+		_create_connection_autoconnect ("ac/0", FALSE, 0),
+		_create_connection_autoconnect ("ac/1", FALSE, 1),
+		_create_connection_autoconnect ("ac/-1", FALSE, -1),
+		_create_connection_autoconnect ("ac/1", FALSE, 1),
+		_create_connection_autoconnect ("ac/0", FALSE, 0),
+		NULL,
+	};
+	NMConnection *c2[] = {
+		_create_connection_autoconnect ("AC/100", TRUE, 100),
+		_create_connection_autoconnect ("AC/99", TRUE, 99),
+		_create_connection_autoconnect ("AC/0", TRUE, 0),
+		_create_connection_autoconnect ("AC/-1", TRUE, -1),
+		_create_connection_autoconnect ("AC/-3", TRUE, -3),
+		_create_connection_autoconnect ("ac/0", FALSE, 0),
+		NULL,
+	};
+
+	_test_connection_sort_autoconnect_priority_one (c1, FALSE);
+	_test_connection_sort_autoconnect_priority_one (c2, FALSE);
+	_test_connection_sort_autoconnect_priority_one (c1, TRUE);
+	_test_connection_sort_autoconnect_priority_one (c2, TRUE);
+
+	_test_connection_sort_autoconnect_priority_free (c1);
+	_test_connection_sort_autoconnect_priority_free (c2);
+}
+
 /*******************************************/
 
 NMTST_DEFINE ();
@@ -601,6 +699,8 @@ main (int argc, char **argv)
 	g_test_add_func ("/general/connection-match/con-interface-name", test_connection_match_interface_name);
 	g_test_add_func ("/general/connection-match/wired", test_connection_match_wired);
 	g_test_add_func ("/general/connection-match/no-match-ip4-addr", test_connection_no_match_ip4_addr);
+
+	g_test_add_func ("/general/connection-sort/autoconnect-priority", test_connection_sort_autoconnect_priority);
 
 	return g_test_run ();
 }

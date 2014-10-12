@@ -1664,6 +1664,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	GString *str;
 	const char *master;
 	char *tmp;
+	gint i_int;
 
 	svSetValue (ifcfg, "NAME", nm_setting_connection_get_id (s_con), FALSE);
 	svSetValue (ifcfg, "UUID", nm_setting_connection_get_uuid (s_con), FALSE);
@@ -1671,6 +1672,12 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	svSetValue (ifcfg, "ONBOOT",
 	            nm_setting_connection_get_autoconnect (s_con) ? "yes" : "no",
 	            FALSE);
+
+	i_int = nm_setting_connection_get_autoconnect_priority (s_con);
+	tmp = i_int != NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT
+	      ? g_strdup_printf ("%d", i_int) : NULL;
+	svSetValue (ifcfg, "AUTOCONNECT_PRIORITY", tmp, FALSE);
+	g_free (tmp);
 
 	/* Permissions */
 	svSetValue (ifcfg, "USERS", NULL, FALSE);

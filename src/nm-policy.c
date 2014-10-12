@@ -42,6 +42,7 @@
 #include "nm-firewall-manager.h"
 #include "nm-dispatcher.h"
 #include "nm-utils.h"
+#include "nm-core-internal.h"
 #include "nm-glib-compat.h"
 #include "nm-manager.h"
 #include "nm-settings.h"
@@ -990,7 +991,9 @@ auto_activate_device (gpointer user_data)
 	NMPolicyPrivate *priv;
 	NMConnection *best_connection;
 	char *specific_object = NULL;
-	GSList *connections, *iter;
+	GPtrArray *connections;
+	GSList *connection_list;
+	guint i;
 
 	g_assert (data);
 	policy = data->policy;
@@ -1005,20 +1008,31 @@ auto_activate_device (gpointer user_data)
 	if (nm_device_get_act_request (data->device))
 		goto out;
 
-	iter = connections = nm_manager_get_activatable_connections (priv->manager);
+	connection_list = nm_manager_get_activatable_connections (priv->manager);
+	if (!connection_list)
+		goto out;
 
-	/* Remove connections that shouldn't be auto-activated */
-	while (iter) {
-		NMSettingsConnection *candidate = NM_SETTINGS_CONNECTION (iter->data);
+	connections = _nm_utils_copy_slist_to_array (connection_list, NULL, NULL);
+	g_slist_free (connection_list);
 
-		/* Grab next item before we possibly delete the current item */
-		iter = g_slist_next (iter);
+	/* sort is stable (which is important at this point) so that connections
+	 * with same priority are still sorted by last-connected-timestamp. */
+	g_ptr_array_sort (connections, (GCompareFunc) nm_utils_cmp_connection_by_autoconnect_priority);
+
+	/* Find the first connection that should be auto-activated */
+	best_connection = NULL;
+	for (i = 0; i < connections->len; i++) {
+		NMSettingsConnection *candidate = NM_SETTINGS_CONNECTION (connections->pdata[i]);
 
 		if (!nm_settings_connection_can_autoconnect (candidate))
-			connections = g_slist_remove (connections, candidate);
+			continue;
+		if (nm_device_can_auto_connect (data->device, (NMConnection *) candidate, &specific_object)) {
+			best_connection = (NMConnection *) candidate;
+			break;
+		}
 	}
+	g_ptr_array_free (connections, TRUE);
 
-	best_connection = nm_device_get_best_auto_connection (data->device, connections, &specific_object);
 	if (best_connection) {
 		GError *error = NULL;
 		NMAuthSubject *subject;
@@ -1040,8 +1054,6 @@ auto_activate_device (gpointer user_data)
 		}
 		g_object_unref (subject);
 	}
-
-	g_slist_free (connections);
 
  out:
 	activate_data_free (data);

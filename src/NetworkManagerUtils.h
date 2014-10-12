@@ -138,6 +138,8 @@ NMConnection *nm_utils_match_connection (GSList *connections,
                                          NMUtilsMatchFilterFunc match_filter_func,
                                          gpointer match_filter_data);
 
+int nm_utils_cmp_connection_by_autoconnect_priority (NMConnection **a, NMConnection **b);
+
 gint64 nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
 #define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)
