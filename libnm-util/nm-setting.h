@@ -124,6 +124,20 @@ typedef enum {
  * @NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS: ignore secrets for which
  * the secret's flags indicate the secret should not be saved to persistent
  * storage (ie, the secret's flag includes @NM_SETTING_SECRET_FLAG_NOT_SAVED)
+ * @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT: if this flag is set,
+ * nm_setting_diff() and nm_connection_diff() will also include properties that
+ * are set to their default value. See also @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT.
+ * @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT: if this flag is set,
+ * nm_setting_diff() and nm_connection_diff() will not include properties that
+ * are set to their default value. This is the opposite of
+ * @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT. If both flags are set together,
+ * @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT wins. If both flags are unset,
+ * this means to exclude default properties if there is a setting to compare,
+ * but include all properties, if the setting 'b' is missing. This is the legacy
+ * behaviour of libnm-util, where nm_setting_diff() behaved differently depending
+ * on whether the setting 'b' was available. If @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT
+ * is set, nm_setting_diff() will also set the flags @NM_SETTING_DIFF_RESULT_IN_A_DEFAULT
+ * and @NM_SETTING_DIFF_RESULT_IN_B_DEFAULT, if the values are default values.
  *
  * These flags modify the comparison behavior when comparing two settings or
  * two connections.
@@ -135,7 +149,9 @@ typedef enum {
 	NM_SETTING_COMPARE_FLAG_IGNORE_ID = 0x00000002,
 	NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS = 0x00000004,
 	NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS = 0x00000008,
-	NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS = 0x00000010
+	NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS = 0x00000010,
+	NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT = 0x00000020,
+	NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT = 0x00000040,
 
 	/* 0x80000000 is used for a private flag */
 } NMSettingCompareFlags;
@@ -267,6 +283,10 @@ gboolean    nm_setting_compare       (NMSetting *a,
  * @NM_SETTING_DIFF_RESULT_UNKNOWN: unknown result
  * @NM_SETTING_DIFF_RESULT_IN_A: the property is present in setting A
  * @NM_SETTING_DIFF_RESULT_IN_B: the property is present in setting B
+ * @NM_SETTING_DIFF_RESULT_IN_A_DEFAULT: the property is present in
+ * setting A but is set to the default value. This flag is only set,
+ * if you specify @NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT.
+ * @NM_SETTING_DIFF_RESULT_IN_B_DEFAULT: analog to @NM_SETTING_DIFF_RESULT_IN_A_DEFAULT.
  *
  * These values indicate the result of a setting difference operation.
  **/
@@ -274,6 +294,8 @@ typedef enum {
 	NM_SETTING_DIFF_RESULT_UNKNOWN = 0x00000000,
 	NM_SETTING_DIFF_RESULT_IN_A =    0x00000001,
 	NM_SETTING_DIFF_RESULT_IN_B =    0x00000002,
+	NM_SETTING_DIFF_RESULT_IN_A_DEFAULT = 0x00000004,
+	NM_SETTING_DIFF_RESULT_IN_B_DEFAULT = 0x00000004,
 } NMSettingDiffResult;
 
 gboolean    nm_setting_diff          (NMSetting *a,

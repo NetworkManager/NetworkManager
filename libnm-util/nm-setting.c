@@ -209,6 +209,17 @@ _get_setting_type_priority (GType type)
 	return info->priority;
 }
 
+guint32
+_nm_setting_get_setting_priority (NMSetting *setting)
+{
+	NMSettingPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), G_MAXUINT32);
+	priv = NM_SETTING_GET_PRIVATE (setting);
+	_ensure_setting_info (setting, priv);
+	return priv->info->priority;
+}
+
 gboolean
 _nm_setting_type_is_base_type (GType type)
 {
@@ -260,8 +271,8 @@ _nm_setting_compare_priority (gconstpointer a, gconstpointer b)
 {
 	guint32 prio_a, prio_b;
 
-	prio_a = _get_setting_type_priority (G_OBJECT_TYPE (a));
-	prio_b = _get_setting_type_priority (G_OBJECT_TYPE (b));
+	prio_a = _nm_setting_get_setting_priority ((NMSetting *) a);
+	prio_b = _nm_setting_get_setting_priority ((NMSetting *) b);
 
 	if (prio_a < prio_b)
 		return -1;
@@ -412,6 +423,27 @@ nm_setting_new_from_hash (GType setting_type, GHashTable *hash)
 	return setting;
 }
 
+gboolean
+_nm_setting_get_property (NMSetting *setting, const char *property_name, GValue *value)
+{
+	GParamSpec *prop_spec;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (property_name, FALSE);
+	g_return_val_if_fail (value, FALSE);
+
+	prop_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), property_name);
+
+	if (!prop_spec) {
+		g_value_unset (value);
+		return FALSE;
+	}
+
+	g_value_init (value, prop_spec->value_type);
+	g_object_get_property (G_OBJECT (setting), property_name, value);
+	return TRUE;
+}
+
 static void
 duplicate_setting (NMSetting *setting,
                    const char *name,
@@ -542,8 +574,12 @@ compare_property (NMSetting *setting,
 		NMSettingSecretFlags a_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 		NMSettingSecretFlags b_secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
-		nm_setting_get_secret_flags (setting, prop_spec->name, &a_secret_flags, NULL);
-		nm_setting_get_secret_flags (other, prop_spec->name, &b_secret_flags, NULL);
+		g_return_val_if_fail (!NM_IS_SETTING_VPN (setting), FALSE);
+
+		if (!nm_setting_get_secret_flags (setting, prop_spec->name, &a_secret_flags, NULL))
+			g_return_val_if_reached (FALSE);
+		if (!nm_setting_get_secret_flags (other, prop_spec->name, &b_secret_flags, NULL))
+			g_return_val_if_reached (FALSE);
 
 		/* If the secret flags aren't the same the settings aren't the same */
 		if (a_secret_flags != b_secret_flags)
@@ -648,7 +684,16 @@ should_compare_prop (NMSetting *setting,
 		if (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
 			return FALSE;
 
-		nm_setting_get_secret_flags (setting, prop_name, &secret_flags, NULL);
+		if (   NM_IS_SETTING_VPN (setting)
+		    && g_strcmp0 (prop_name, NM_SETTING_VPN_SECRETS) == 0) {
+			/* FIXME: NMSettingVPN:NM_SETTING_VPN_SECRETS has NM_SETTING_PARAM_SECRET.
+			 * nm_setting_get_secret_flags() quite possibly fails, but it might succeed if the
+			 * setting accidently uses a key "secrets". */
+			return FALSE;
+		}
+
+		if (!nm_setting_get_secret_flags (setting, prop_name, &secret_flags, NULL))
+			g_return_val_if_reached (FALSE);
 
 		if (   (comp_flags & NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
 		    && (secret_flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED))
@@ -700,6 +745,8 @@ nm_setting_diff (NMSetting *a,
 	guint i;
 	NMSettingDiffResult a_result = NM_SETTING_DIFF_RESULT_IN_A;
 	NMSettingDiffResult b_result = NM_SETTING_DIFF_RESULT_IN_B;
+	NMSettingDiffResult a_result_default = NM_SETTING_DIFF_RESULT_IN_A_DEFAULT;
+	NMSettingDiffResult b_result_default = NM_SETTING_DIFF_RESULT_IN_B_DEFAULT;
 	gboolean results_created = FALSE;
 
 	g_return_val_if_fail (results != NULL, FALSE);
@@ -707,6 +754,12 @@ nm_setting_diff (NMSetting *a,
 	if (b) {
 		g_return_val_if_fail (NM_IS_SETTING (b), FALSE);
 		g_return_val_if_fail (G_OBJECT_TYPE (a) == G_OBJECT_TYPE (b), FALSE);
+	}
+
+	if ((flags & (NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT)) ==
+	             (NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT)) {
+		/* conflicting flags: default to WITH_DEFAULT (clearing NO_DEFAULT). */
+		flags &= ~NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT;
 	}
 
 	/* If the caller is calling this function in a pattern like this to get
@@ -721,6 +774,8 @@ nm_setting_diff (NMSetting *a,
 	if (invert_results) {
 		a_result = NM_SETTING_DIFF_RESULT_IN_B;
 		b_result = NM_SETTING_DIFF_RESULT_IN_A;
+		a_result_default = NM_SETTING_DIFF_RESULT_IN_B_DEFAULT;
+		b_result_default = NM_SETTING_DIFF_RESULT_IN_A_DEFAULT;
 	}
 
 	if (*results == NULL) {
@@ -733,8 +788,7 @@ nm_setting_diff (NMSetting *a,
 
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
-		NMSettingDiffResult r = NM_SETTING_DIFF_RESULT_UNKNOWN, tmp;
-		gboolean different = TRUE;
+		NMSettingDiffResult r = NM_SETTING_DIFF_RESULT_UNKNOWN;
 
 		/* Handle compare flags */
 		if (!should_compare_prop (a, prop_spec->name, flags, prop_spec->flags))
@@ -743,28 +797,58 @@ nm_setting_diff (NMSetting *a,
 			continue;
 
 		if (b) {
+			gboolean different;
+
 			different = !NM_SETTING_GET_CLASS (a)->compare_property (a, b, prop_spec, flags);
 			if (different) {
+				gboolean a_is_default, b_is_default;
 				GValue value = G_VALUE_INIT;
 
 				g_value_init (&value, prop_spec->value_type);
 				g_object_get_property (G_OBJECT (a), prop_spec->name, &value);
-				if (!g_param_value_defaults (prop_spec, &value))
-					r |= a_result;
+				a_is_default = g_param_value_defaults (prop_spec, &value);
 
 				g_value_reset (&value);
 				g_object_get_property (G_OBJECT (b), prop_spec->name, &value);
-				if (!g_param_value_defaults (prop_spec, &value))
-					r |= b_result;
+				b_is_default = g_param_value_defaults (prop_spec, &value);
 
 				g_value_unset (&value);
+				if ((flags & NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT) == 0) {
+					if (!a_is_default)
+						r |= a_result;
+					if (!b_is_default)
+						r |= b_result;
+				} else {
+					r |= a_result | b_result;
+					if (a_is_default)
+						r |= a_result_default;
+					if (b_is_default)
+						r |= b_result_default;
+				}
 			}
-		} else
+		} else if ((flags & (NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT | NM_SETTING_COMPARE_FLAG_DIFF_RESULT_NO_DEFAULT)) == 0)
 			r = a_result;  /* only in A */
+		else {
+			GValue value = G_VALUE_INIT;
 
-		if (different) {
-			tmp = GPOINTER_TO_UINT (g_hash_table_lookup (*results, prop_spec->name));
-			g_hash_table_insert (*results, g_strdup (prop_spec->name), GUINT_TO_POINTER (tmp | r));
+			g_value_init (&value, prop_spec->value_type);
+			g_object_get_property (G_OBJECT (a), prop_spec->name, &value);
+			if (!g_param_value_defaults (prop_spec, &value))
+				r |= a_result;
+			else if (flags & NM_SETTING_COMPARE_FLAG_DIFF_RESULT_WITH_DEFAULT)
+				r |= a_result | a_result_default;
+
+			g_value_unset (&value);
+		}
+
+		if (r != NM_SETTING_DIFF_RESULT_UNKNOWN) {
+			void *p;
+
+			if (g_hash_table_lookup_extended (*results, prop_spec->name, NULL, &p)) {
+				if ((r & GPOINTER_TO_UINT (p)) != r)
+					g_hash_table_insert (*results, g_strdup (prop_spec->name), GUINT_TO_POINTER (r | GPOINTER_TO_UINT (p)));
+			} else
+				g_hash_table_insert (*results, g_strdup (prop_spec->name), GUINT_TO_POINTER (r));
 		}
 	}
 	g_free (property_specs);
@@ -870,8 +954,12 @@ clear_secrets_with_flags (NMSetting *setting,
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 	gboolean changed = FALSE;
 
+	g_return_val_if_fail (!NM_IS_SETTING_VPN (setting), FALSE);
+
 	/* Clear the secret if the user function says to do so */
-	nm_setting_get_secret_flags (setting, pspec->name, &flags, NULL);
+	if (!nm_setting_get_secret_flags (setting, pspec->name, &flags, NULL))
+		g_return_val_if_reached (FALSE);
+
 	if (func (setting, pspec->name, flags, user_data) == TRUE) {
 		GValue value = G_VALUE_INIT;
 
@@ -1090,8 +1178,11 @@ get_secret_flags (NMSetting *setting,
 	char *flags_prop;
 	NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
 
-	if (verify_secret)
-		g_return_val_if_fail (is_secret_prop (setting, secret_name, error), FALSE);
+	if (verify_secret && !is_secret_prop (setting, secret_name, error)) {
+		if (out_flags)
+			*out_flags = NM_SETTING_SECRET_FLAG_NONE;
+		return FALSE;
+	}
 
 	flags_prop = g_strdup_printf ("%s-flags", secret_name);
 	g_object_get (G_OBJECT (setting), flags_prop, &flags, NULL);

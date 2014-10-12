@@ -158,4 +158,6 @@ void _nm_setting_class_transform_property (NMSettingClass *setting_class,
                                            NMSettingPropertyTransformToFunc to_dbus,
                                            NMSettingPropertyTransformFromFunc from_dbus);
 
+GPtrArray  *_nm_setting_need_secrets (NMSetting *setting);
+
 #endif  /* NM_SETTING_PRIVATE_H */

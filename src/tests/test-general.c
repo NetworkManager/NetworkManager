@@ -24,6 +24,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
+#include "nm-utils.h"
 
 #include "nm-test-utils.h"
 
@@ -224,6 +225,59 @@ test_nm_utils_ip6_address_clear_host_address (void)
 	}
 
 	g_rand_free (r);
+}
+
+
+static void
+test_nm_utils_log_connection_diff()
+{
+	NMConnection *connection;
+	NMConnection *connection2;
+
+	/* if logging is disabled (the default), nm_utils_log_connection_diff() returns
+	 * early without doing anything. Hence, in the normal testing, this test does nothing.
+	 * It only gets interesting, when run verbosely with NMTST_DEBUG=debug ... */
+
+	nm_log (LOGL_DEBUG, LOGD_CORE, "START TEST test_nm_utils_log_connection_diff...");
+
+	connection = nm_simple_connection_new ();
+	nm_connection_add_setting (connection, nm_setting_connection_new ());
+	nm_utils_log_connection_diff (connection, NULL, LOGL_DEBUG, LOGD_CORE, "test1", ">>> ");
+
+	nm_connection_add_setting (connection, nm_setting_wired_new ());
+	nm_utils_log_connection_diff (connection, NULL, LOGL_DEBUG, LOGD_CORE, "test2", ">>> ");
+
+	connection2 = nm_simple_connection_new_clone (connection);
+	nm_utils_log_connection_diff (connection, connection2, LOGL_DEBUG, LOGD_CORE, "test3", ">>> ");
+
+	g_object_set (nm_connection_get_setting_connection (connection),
+	              NM_SETTING_CONNECTION_ID, "id",
+	              NM_SETTING_CONNECTION_UUID, "uuid",
+	              NULL);
+	g_object_set (nm_connection_get_setting_connection (connection2),
+	              NM_SETTING_CONNECTION_ID, "id2",
+	              NM_SETTING_CONNECTION_MASTER, "master2",
+	              NULL);
+	nm_utils_log_connection_diff (connection, connection2, LOGL_DEBUG, LOGD_CORE, "test4", ">>> ");
+
+	nm_connection_add_setting (connection, nm_setting_802_1x_new ());
+	nm_utils_log_connection_diff (connection, connection2, LOGL_DEBUG, LOGD_CORE, "test5", ">>> ");
+
+	g_object_set (nm_connection_get_setting_802_1x (connection),
+	              NM_SETTING_802_1X_PASSWORD, "id2",
+	              NM_SETTING_802_1X_PASSWORD_FLAGS, NM_SETTING_SECRET_FLAG_NOT_SAVED,
+	              NULL);
+	nm_utils_log_connection_diff (connection, NULL, LOGL_DEBUG, LOGD_CORE, "test6", ">>> ");
+	nm_utils_log_connection_diff (connection, connection2, LOGL_DEBUG, LOGD_CORE, "test7", ">>> ");
+	nm_utils_log_connection_diff (connection2, connection, LOGL_DEBUG, LOGD_CORE, "test8", ">>> ");
+
+	g_clear_object (&connection);
+	g_clear_object (&connection2);
+
+	connection = nmtst_create_minimal_connection ("id-vpn-1", NULL, NM_SETTING_VPN_SETTING_NAME, NULL);
+	nm_utils_log_connection_diff (connection, NULL, LOGL_DEBUG, LOGD_CORE, "test-vpn-1", ">>> ");
+
+	g_clear_object (&connection);
 }
 
 /*******************************************/
@@ -690,6 +744,7 @@ main (int argc, char **argv)
 
 	g_test_add_func ("/general/nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
 	g_test_add_func ("/general/nm_utils_ip6_address_clear_host_address", test_nm_utils_ip6_address_clear_host_address);
+	g_test_add_func ("/general/nm_utils_log_connection_diff", test_nm_utils_log_connection_diff);
 
 	g_test_add_func ("/general/connection-match/basic", test_connection_match_basic);
 	g_test_add_func ("/general/connection-match/ip6-method", test_connection_match_ip6_method);

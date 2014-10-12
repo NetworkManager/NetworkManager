@@ -60,6 +60,9 @@ gboolean    _nm_setting_ip4_config_add_address_with_label (NMSettingIP4Config *s
 	 NM_SETTING_SECRET_FLAG_NOT_SAVED | \
 	 NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
 
+guint32 _nm_setting_get_setting_priority (NMSetting *setting);
+
+gboolean _nm_setting_get_property (NMSetting *setting, const char *name, GValue *value);
 
 GSList *    _nm_utils_hash_values_to_slist (GHashTable *hash);
 

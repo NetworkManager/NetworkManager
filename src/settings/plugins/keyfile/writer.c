@@ -797,7 +797,8 @@ write_setting_value (NMSetting *setting,
 	if (pspec && (pspec->flags & NM_SETTING_PARAM_SECRET) && !NM_IS_SETTING_VPN (setting)) {
 		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
-		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
+		if (!nm_setting_get_secret_flags (setting, key, &secret_flags, NULL))
+			g_assert_not_reached ();
 		if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
 			return;
 	}

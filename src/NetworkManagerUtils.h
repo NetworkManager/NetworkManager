@@ -140,6 +140,8 @@ NMConnection *nm_utils_match_connection (GSList *connections,
 
 int nm_utils_cmp_connection_by_autoconnect_priority (NMConnection **a, NMConnection **b);
 
+void nm_utils_log_connection_diff (NMConnection *connection, NMConnection *diff_base, guint32 level, guint64 domain, const char *name, const char *prefix);
+
 gint64 nm_utils_ascii_str_to_int64 (const char *str, guint base, gint64 min, gint64 max, gint64 fallback);
 
 #define NM_UTILS_NS_PER_SECOND  ((gint64) 1000000000)

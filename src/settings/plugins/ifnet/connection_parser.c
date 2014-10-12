@@ -2846,7 +2846,8 @@ check_unsupported_secrets (NMSetting  *setting,
 	if (flags & NM_SETTING_PARAM_SECRET) {
 		NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
-		nm_setting_get_secret_flags (setting, key, &secret_flags, NULL);
+		if (!nm_setting_get_secret_flags (setting, key, &secret_flags, NULL))
+			g_return_if_reached ();
 		if (secret_flags != NM_SETTING_SECRET_FLAG_NONE)
 			*unsupported_secret = TRUE;
 	}
@@ -2869,17 +2870,6 @@ ifnet_can_write_connection (NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	/* If the connection has flagged secrets, ignore
-	 * it as this plugin does not deal with user agent service */
-	nm_connection_for_each_setting_value (connection,
-	                                      check_unsupported_secrets,
-	                                      &has_unsupported_secrets);
-	if (has_unsupported_secrets) {
-		g_set_error_literal (error, IFNET_PLUGIN_ERROR, 0,
-		                     "The ifnet plugin only supports persistent system secrets.");
-		return FALSE;
-	}
-
 	/* Only support wired, wifi, and PPPoE */
 	if (   !nm_connection_is_type (connection, NM_SETTING_WIRED_SETTING_NAME)
 	    && !nm_connection_is_type (connection, NM_SETTING_WIRELESS_SETTING_NAME)
@@ -2888,6 +2878,17 @@ ifnet_can_write_connection (NMConnection *connection, GError **error)
 		             "The ifnet plugin cannot write the connection '%s' (type '%s')",
 		             nm_connection_get_id (connection),
 		             nm_setting_connection_get_connection_type (s_con));
+		return FALSE;
+	}
+
+	/* If the connection has flagged secrets, ignore
+	 * it as this plugin does not deal with user agent service */
+	nm_connection_for_each_setting_value (connection,
+	                                      check_unsupported_secrets,
+	                                      &has_unsupported_secrets);
+	if (has_unsupported_secrets) {
+		g_set_error_literal (error, IFNET_PLUGIN_ERROR, 0,
+		                     "The ifnet plugin only supports persistent system secrets.");
 		return FALSE;
 	}
 
