@@ -6288,7 +6288,8 @@ _clear_available_connections (NMDevice *self, gboolean do_signal)
 static gboolean
 _try_add_available_connection (NMDevice *self, NMConnection *connection)
 {
-	if (nm_device_get_state (self) < NM_DEVICE_STATE_DISCONNECTED)
+	if (   nm_device_get_state (self) < NM_DEVICE_STATE_DISCONNECTED
+	    && !nm_device_get_default_unmanaged (self))
 		return FALSE;
 
 	if (nm_device_check_connection_compatible (self, connection)) {
@@ -6775,8 +6776,8 @@ _set_state_full (NMDevice *self,
 	}
 
 	/* Update the available connections list when a device first becomes available */
-	if (   state >= NM_DEVICE_STATE_DISCONNECTED
-	    && old_state < NM_DEVICE_STATE_DISCONNECTED)
+	if (   (state >= NM_DEVICE_STATE_DISCONNECTED && old_state < NM_DEVICE_STATE_DISCONNECTED)
+	    || nm_device_get_default_unmanaged (self))
 		nm_device_recheck_available_connections (self);
 
 	/* Handle the new state here; but anything that could trigger
@@ -7391,6 +7392,13 @@ constructed (GObject *object)
 	                  NM_CP_SIGNAL_CONNECTION_UPDATED,
 	                  G_CALLBACK (cp_connection_updated),
 	                  self);
+
+	/* Update default-unmanaged device available connections immediately,
+	 * since they don't transition from UNMANAGED (and thus the state handler
+	 * doesn't run and update them) until something external happens.
+	 */
+	if (nm_device_get_default_unmanaged (self))
+		nm_device_recheck_available_connections (self);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->constructed (object);
 }
