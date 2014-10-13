@@ -246,7 +246,7 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	}
 
 	if (nm_supplicant_interface_get_state (priv->sup_iface) < NM_SUPPLICANT_INTERFACE_STATE_READY)
-		nm_device_add_pending_action (NM_DEVICE (self), "waiting for supplicant", TRUE);
+		nm_device_add_pending_action (NM_DEVICE (self), "waiting for supplicant", FALSE);
 
 	g_signal_connect (priv->sup_iface,
 	                  NM_SUPPLICANT_INTERFACE_STATE,
