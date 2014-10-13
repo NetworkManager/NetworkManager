@@ -58,6 +58,7 @@
     <_description>Allow control of network connections</_description>
     <_message>System policy prevents control of network connections</_message>
     <defaults>
+      <allow_any>auth_admin</allow_any>
       <allow_inactive>yes</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
