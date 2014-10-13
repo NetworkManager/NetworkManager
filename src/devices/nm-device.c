@@ -6301,20 +6301,48 @@ _del_available_connection (NMDevice *self, NMConnection *connection)
 }
 
 static gboolean
+connection_ip4_method_requires_carrier (NMConnection *connection,
+                                        gboolean *out_ip4_enabled)
+{
+	const char *method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	static const char *ip4_carrier_methods[] = {
+		NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+		NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+		NULL
+	};
+
+	if (out_ip4_enabled)
+		*out_ip4_enabled = !!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED);
+	return _nm_utils_string_in_list (method, ip4_carrier_methods);
+}
+
+static gboolean
+connection_ip6_method_requires_carrier (NMConnection *connection,
+                                        gboolean *out_ip6_enabled)
+{
+	const char *method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
+	static const char *ip6_carrier_methods[] = {
+		NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		NM_SETTING_IP6_CONFIG_METHOD_DHCP,
+		NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+		NULL
+	};
+
+	if (out_ip6_enabled)
+		*out_ip6_enabled = !!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	return _nm_utils_string_in_list (method, ip6_carrier_methods);
+}
+
+static gboolean
 connection_requires_carrier (NMConnection *connection)
 {
 	NMSettingIP4Config *s_ip4;
 	NMSettingIP6Config *s_ip6;
-	const char *method;
-	gboolean ip4_carrier_wanted = FALSE, ip6_carrier_wanted = FALSE;
+	gboolean ip4_carrier_wanted, ip6_carrier_wanted;
 	gboolean ip4_used = FALSE, ip6_used = FALSE;
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (   strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) != 0
-	    && strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) != 0
-	    && strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0) {
-		ip4_carrier_wanted = TRUE;
-
+	ip4_carrier_wanted = connection_ip4_method_requires_carrier (connection, &ip4_used);
+	if (ip4_carrier_wanted) {
 		/* If IPv4 wants a carrier and cannot fail, the whole connection
 		 * requires a carrier regardless of the IPv6 method.
 		 */
@@ -6322,13 +6350,9 @@ connection_requires_carrier (NMConnection *connection)
 		if (s_ip4 && !nm_setting_ip4_config_get_may_fail (s_ip4))
 			return TRUE;
 	}
-	ip4_used = (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) != 0);
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) != 0
-	    && strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) != 0) {
-		ip6_carrier_wanted = TRUE;
-
+	ip6_carrier_wanted = connection_ip6_method_requires_carrier (connection, &ip6_used);
+	if (ip6_carrier_wanted) {
 		/* If IPv6 wants a carrier and cannot fail, the whole connection
 		 * requires a carrier regardless of the IPv4 method.
 		 */
@@ -6336,7 +6360,6 @@ connection_requires_carrier (NMConnection *connection)
 		if (s_ip6 && !nm_setting_ip6_config_get_may_fail (s_ip6))
 			return TRUE;
 	}
-	ip6_used = (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) != 0);
 
 	/* If an IP version wants a carrier and and the other IP version isn't
 	 * used, the connection requires carrier since it will just fail without one.
