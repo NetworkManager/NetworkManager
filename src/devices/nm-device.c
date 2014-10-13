@@ -4550,6 +4550,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	const char *iface, *method;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	int ip_ifindex;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET);
@@ -4563,10 +4564,14 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	/* Device should be up before we can do anything with it */
-	if (!nm_platform_link_is_up (nm_device_get_ip_ifindex (self))) {
-		nm_log_warn (LOGD_DEVICE, "(%s): interface %s not up for IP configuration",
-		             iface, nm_device_get_ip_iface (self));
+	/* Interface must be IFF_UP before IP config can be applied */
+	ip_ifindex = nm_device_get_ip_ifindex (self);
+	if (!nm_platform_link_is_up (ip_ifindex)) {
+		nm_platform_link_set_up (ip_ifindex);
+		if (!nm_platform_link_is_up (ip_ifindex)) {
+			nm_log_warn (LOGD_DEVICE, "(%s): interface %s not up for IP configuration",
+			             iface, nm_device_get_ip_iface (self));
+		}
 	}
 
 	/* NULL to use the existing priv->dev_ip4_config */
@@ -4664,6 +4669,7 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	const char *iface;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	int ip_ifindex;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET6);
@@ -4676,8 +4682,15 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	/* Device should be up before we can do anything with it */
-	g_warn_if_fail (nm_platform_link_is_up (nm_device_get_ip_ifindex (self)));
+	/* Interface must be IFF_UP before IP config can be applied */
+	ip_ifindex = nm_device_get_ip_ifindex (self);
+	if (!nm_platform_link_is_up (ip_ifindex)) {
+		nm_platform_link_set_up (ip_ifindex);
+		if (!nm_platform_link_is_up (ip_ifindex)) {
+			nm_log_warn (LOGD_DEVICE, "(%s): interface %s not up for IP configuration",
+			             iface, nm_device_get_ip_iface (self));
+		}
+	}
 
 	/* Allow setting MTU etc */
 	if (NM_DEVICE_GET_CLASS (self)->ip6_config_pre_commit)
