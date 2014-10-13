@@ -20,7 +20,7 @@ AM_CPPFLAGS = \
 GLIB_GENERATED = nm-bt-enum-types.h nm-bt-enum-types.c
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
-nm_bt_enum_types_sources = $(srcdir)/nm-device-bt.h
+nm_bt_enum_types_sources = $(srcdir)/nm-bt-error.h
 
 nm-device-bt-glue.h: $(top_srcdir)/introspection/nm-device-bt.xml
 	dbus-binding-tool --prefix=nm_device_bt --mode=glib-server --output=$@ $<
@@ -43,6 +43,8 @@ libnm_device_plugin_bluetooth_la_SOURCES = \
 	nm-bluez4-manager.h \
 	nm-bluez5-manager.c \
 	nm-bluez5-manager.h \
+	nm-bt-error.h \
+	nm-bt-error.c \
 	\
 	nm-device-bt.c \
 	nm-device-bt.h \
@@ -57,6 +59,16 @@ libnm_device_plugin_bluetooth_la_LIBADD = \
 	$(top_builddir)/src/devices/wwan/libnm-wwan.la \
 	$(DBUS_LIBS) \
 	$(GUDEV_LIBS)
+
+if WITH_BLUEZ5_DUN
+AM_CPPFLAGS += $(BLUEZ5_CFLAGS)
+
+libnm_device_plugin_bluetooth_la_SOURCES += \
+	nm-bluez5-dun.c \
+	nm-bluez5-dun.h
+
+libnm_device_plugin_bluetooth_la_LIBADD += $(BLUEZ5_LIBS)
+endif
 
 CLEANFILES = $(BUILT_SOURCES)
 EXTRA_DIST = $(SYMBOL_VIS_FILE)

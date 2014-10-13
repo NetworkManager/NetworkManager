@@ -616,6 +616,20 @@ else
 fi
 AM_CONDITIONAL(WITH_MODEM_MANAGER_1, test "${with_modem_manager_1}" = "yes")
 
+# Bluez5 DUN support
+PKG_CHECK_MODULES(BLUEZ5, [bluez >= 5], [have_bluez5=yes],[have_bluez5=no])
+AC_ARG_ENABLE(bluez5-dun, AS_HELP_STRING([--enable-bluez5-dun], [enable Bluez5 DUN support]),
+		[enable_bluez5_dun=${enableval}], [enable_bluez5_dun=${have_bluez5}])
+if (test "${enable_bluez5_dun}" = "yes"); then
+	if test x"$have_bluez5" = x"no"; then
+		AC_MSG_ERROR(Bluez 5.x development headers are required)
+	fi
+	AC_DEFINE(WITH_BLUEZ5_DUN, 1, [Define if you have Bluez 5 libraries])
+else
+	AC_DEFINE(HAVE_BLUEZ5_DUN, 0, [Define if you have Bluez 5 libraries])
+fi
+AM_CONDITIONAL(WITH_BLUEZ5_DUN, test "${enable_bluez5_dun}" = "yes")
+
 # DHCP client support
 AC_ARG_WITH([dhclient], AS_HELP_STRING([--with-dhclient=yes|no|path], [Enable dhclient 4.x support]))
 AC_ARG_WITH([dhcpcd], AS_HELP_STRING([--with-dhcpcd=yes|no|path], [Enable dhcpcd 4.x support]))

@@ -44,6 +44,8 @@
 #include "NetworkManagerUtils.h"
 #include "nm-bt-enum-types.h"
 #include "nm-utils.h"
+#include "nm-bt-error.h"
+#include "nm-bt-enum-types.h"
 
 #define MM_DBUS_SERVICE  "org.freedesktop.ModemManager1"
 
@@ -93,17 +95,6 @@ enum {
 };
 static guint signals[LAST_SIGNAL] = { 0 };
 
-
-#define NM_BT_ERROR (nm_bt_error_quark ())
-
-static GQuark
-nm_bt_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-bt-error");
-	return quark;
-}
 
 guint32 nm_device_bt_get_capabilities (NMDeviceBt *self)
 {
