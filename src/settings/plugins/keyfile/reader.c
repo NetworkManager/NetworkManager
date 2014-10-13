@@ -1385,9 +1385,8 @@ nm_keyfile_plugin_connection_from_file (const char *filename, GError **error)
 	/* Normalize and verify the connection */
 	if (!nm_connection_normalize (connection, NULL, NULL, &verify_error)) {
 		g_set_error (error, KEYFILE_PLUGIN_ERROR, 0,
-			         "invalid or missing connection property '%s/%s'",
-			         verify_error ? g_type_name (nm_setting_lookup_type_by_quark (verify_error->domain)) : "(unknown)",
-			         (verify_error && verify_error->message) ? verify_error->message : "(unknown)");
+			         "invalid connection: %s",
+		             verify_error->message);
 		g_clear_error (&verify_error);
 		g_object_unref (connection);
 		connection = NULL;

@@ -686,7 +686,6 @@ global:
 	nm_setting_ip6_config_remove_route;
 	nm_setting_ip6_config_remove_route_by_value;
 	nm_setting_lookup_type;
-	nm_setting_lookup_type_by_quark;
 	nm_setting_olpc_mesh_error_get_type;
 	nm_setting_olpc_mesh_error_quark;
 	nm_setting_olpc_mesh_get_channel;

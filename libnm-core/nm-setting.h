@@ -244,7 +244,6 @@ typedef void (*NMSettingValueIterFn) (NMSetting *setting,
 GType nm_setting_get_type (void);
 
 GType nm_setting_lookup_type (const char *name);
-GType nm_setting_lookup_type_by_quark (GQuark error_quark);
 
 NMSetting *nm_setting_duplicate      (NMSetting *setting);
 

@@ -491,9 +491,8 @@ impl_vpn_plugin_need_secrets (NMVpnPlugin *plugin,
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_VPN_PLUGIN_ERROR,
 		                                       NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
-		                                       "The connection was invalid: '%s' / '%s' invalid: %d.",
-		                                       g_type_name (nm_setting_lookup_type_by_quark (error->domain)),
-		                                       error->message, error->code);
+		                                       "The connection was invalid: %s",
+		                                       error->message);
 		g_error_free (error);
 		return;
 	}

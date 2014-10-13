@@ -834,9 +834,8 @@ claim_connection (NMSettings *self,
 	}
 
 	if (!nm_connection_normalize (NM_CONNECTION (connection), NULL, NULL, &error)) {
-		nm_log_warn (LOGD_SETTINGS, "plugin provided invalid connection: '%s' / '%s' invalid: %d",
-		             g_type_name (nm_setting_lookup_type_by_quark (error->domain)),
-		             error->message, error->code);
+		nm_log_warn (LOGD_SETTINGS, "plugin provided invalid connection: %s",
+		             error->message);
 		g_error_free (error);
 		return;
 	}

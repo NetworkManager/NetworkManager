@@ -46,13 +46,11 @@ typedef enum {
 
 void _nm_register_setting (const char *name,
                            const GType type,
-                           const guint32 priority,
-                           const GQuark error_quark);
+                           const guint32 priority);
 
 #define _nm_register_setting(name, priority) \
 	G_STMT_START { \
-		_nm_register_setting (NM_SETTING_ ## name ## _SETTING_NAME "", g_define_type_id, priority, NM_SETTING_ ## name ## _ERROR); \
-		g_type_ensure (NM_TYPE_SETTING_ ## name ## _ERROR); \
+		_nm_register_setting (NM_SETTING_ ## name ## _SETTING_NAME "", g_define_type_id, priority); \
 	} G_STMT_END
 
 gboolean _nm_setting_is_base_type (NMSetting *setting);

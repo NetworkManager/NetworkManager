@@ -69,7 +69,6 @@ typedef struct {
 	const char *name;
 	GType type;
 	guint32 priority;
-	GQuark error_quark;
 } SettingInfo;
 
 typedef struct {
@@ -127,7 +126,6 @@ _ensure_registered (void)
  * @name: the name of the #NMSetting object to register
  * @type: the #GType of the #NMSetting
  * @priority: the sort priority of the setting, see below
- * @error_quark: the setting's error quark
  *
  * INTERNAL ONLY: registers a setting's internal properties, like its priority
  * and its error quark type, with libnm.
@@ -158,22 +156,19 @@ _ensure_registered (void)
 void
 (_nm_register_setting) (const char *name,
                         const GType type,
-                        const guint32 priority,
-                        const GQuark error_quark)
+                        const guint32 priority)
 {
 	SettingInfo *info;
 
 	g_return_if_fail (name != NULL && *name);
 	g_return_if_fail (type != G_TYPE_INVALID);
 	g_return_if_fail (type != G_TYPE_NONE);
-	g_return_if_fail (error_quark != 0);
 	g_return_if_fail (priority <= 4);
 
 	_ensure_registered ();
 
 	if (G_LIKELY ((info = g_hash_table_lookup (registered_settings, name)))) {
 		g_return_if_fail (info->type == type);
-		g_return_if_fail (info->error_quark == error_quark);
 		g_return_if_fail (info->priority == priority);
 		g_return_if_fail (g_strcmp0 (info->name, name) == 0);
 		return;
@@ -186,7 +181,6 @@ void
 	info = g_slice_new0 (SettingInfo);
 	info->type = type;
 	info->priority = priority;
-	info->error_quark = error_quark;
 	info->name = name;
 	g_hash_table_insert (registered_settings, (void *) info->name, info);
 	g_hash_table_insert (registered_settings_by_type, &info->type, info);
@@ -258,32 +252,6 @@ nm_setting_lookup_type (const char *name)
 
 	info = g_hash_table_lookup (registered_settings, name);
 	return info ? info->type : G_TYPE_INVALID;
-}
-
-/**
- * nm_setting_lookup_type_by_quark:
- * @error_quark: a setting error quark
- *
- * Returns the #GType of the setting's class for a given setting error quark.
- * Useful for figuring out which setting a returned error is for.
- *
- * Returns: the #GType of the setting's class, or %G_TYPE_INVALID if
- *   @error_quark is not recognized
- **/
-GType
-nm_setting_lookup_type_by_quark (GQuark error_quark)
-{
-	SettingInfo *info;
-	GHashTableIter iter;
-
-	_ensure_registered ();
-
-	g_hash_table_iter_init (&iter, registered_settings);
-	while (g_hash_table_iter_next (&iter, NULL, (gpointer) &info)) {
-		if (info->error_quark == error_quark)
-			return info->type;
-	}
-	return G_TYPE_INVALID;
 }
 
 gint
