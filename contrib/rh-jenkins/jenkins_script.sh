@@ -49,6 +49,11 @@ git_notes_flags() {
     else
         FLAGS=("${FLAGS[@]}" "-O")
     fi
+    if [[ "$NO_CHECK" == true ]]; then
+        FLAGS=("${FLAGS[@]}" "-C")
+    else
+        FLAGS=("${FLAGS[@]}" "+C")
+    fi
     if [[ "$DISTCHECK" == true ]]; then
         FLAGS=("${FLAGS[@]}" "+D")
     elif [[ "$DIST" == true ]]; then
@@ -123,8 +128,10 @@ log_timestamp "build: autogen.sh"
 log_timestamp "build: make"
 make $MAKE_JOBS
 
-log_timestamp "build: make check"
-make check
+if [[ "$NO_CHECK" != true ]]; then
+    log_timestamp "build: make check"
+    make check
+fi
 
 if [[ "$DISTCHECK" == true ]]; then
     log_timestamp "distcheck: start"
