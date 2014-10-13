@@ -6320,7 +6320,8 @@ connection_requires_carrier (NMConnection *connection)
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 	if (   strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) != 0
-	    && strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) != 0) {
+	    && strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) != 0
+	    && strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED) != 0) {
 		ip4_carrier_wanted = TRUE;
 
 		/* If IPv4 wants a carrier and cannot fail, the whole connection
