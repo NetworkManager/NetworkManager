@@ -47,6 +47,12 @@
 %global with_wimax 1
 %endif
 
+# ModemManager on Fedora < 20 too old for Bluetooth && wwan
+%if (0%{?fedora} && 0%{?fedora} < 20)
+%global with_bluetooth 0
+%global with_wwan 0
+%endif
+
 # Bluetooth requires the WWAN plugin
 %if 0%{?with_bluetooth}
 %global with_wwan 1
@@ -154,7 +160,7 @@ BuildRequires: wimax-devel
 BuildRequires: systemd >= 200-3 systemd-devel
 BuildRequires: libsoup-devel
 BuildRequires: libndp-devel >= 1.0
-%if 0%{?with_wwan} && (0%{?rhel} || (0%{?fedora} && 0%{?fedora} > 19))
+%if 0%{?with_bluetooth} || (0%{?with_wwan} && (0%{?rhel} || (0%{?fedora} && 0%{?fedora} > 19)))
 BuildRequires: ModemManager-glib-devel >= 1.0
 %endif
 %if 0%{?with_nmtui}
