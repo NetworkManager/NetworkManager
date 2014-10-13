@@ -71,6 +71,7 @@
 #include "nm-dispatcher.h"
 #include "nm-config.h"
 #include "nm-dns-manager.h"
+#include "nm-utils-private.h"
 
 #include "nm-device-logging.h"
 _LOG_DECLARE_SELF (NMDevice);
@@ -1882,18 +1883,6 @@ nm_device_check_connection_compatible (NMDevice *self, NMConnection *connection)
 	return NM_DEVICE_GET_CLASS (self)->check_connection_compatible (self, connection);
 }
 
-static gboolean
-string_in_list (const char *str, const char **array, gsize array_len)
-{
-	gsize i;
-
-	for (i = 0; i < array_len; i++) {
-		if (strcmp (str, array[i]) == 0)
-			return TRUE;
-	}
-	return FALSE;
-}
-
 /**
  * nm_device_can_assume_connections:
  * @self: #NMDevice instance
@@ -1934,11 +1923,13 @@ nm_device_can_assume_active_connection (NMDevice *self)
 		NM_SETTING_IP6_CONFIG_METHOD_DHCP,
 		NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
 		NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+		NULL
 	};
 	const char *assumable_ip4_methods[] = {
 		NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
 		NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 		NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+		NULL
 	};
 
 	if (!nm_device_can_assume_connections (self))
@@ -1957,11 +1948,11 @@ nm_device_can_assume_active_connection (NMDevice *self)
 		return FALSE;
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-	if (!string_in_list (method, assumable_ip6_methods, G_N_ELEMENTS (assumable_ip6_methods)))
+	if (!_nm_utils_string_in_list (method, assumable_ip6_methods))
 		return FALSE;
 
 	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (!string_in_list (method, assumable_ip4_methods, G_N_ELEMENTS (assumable_ip4_methods)))
+	if (!_nm_utils_string_in_list (method, assumable_ip4_methods))
 		return FALSE;
 
 	return TRUE;
