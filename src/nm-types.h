@@ -39,6 +39,20 @@ typedef struct _NMRfkillManager      NMRfkillManager;
 typedef struct _NMSessionMonitor     NMSessionMonitor;
 typedef struct _NMSleepMonitor       NMSleepMonitor;
 
+typedef enum {
+	/* In priority order; higher number == higher priority */
+	NM_IP_CONFIG_SOURCE_UNKNOWN,
+	NM_IP_CONFIG_SOURCE_KERNEL,
+	NM_IP_CONFIG_SOURCE_SHARED,
+	NM_IP_CONFIG_SOURCE_IP4LL,
+	NM_IP_CONFIG_SOURCE_PPP,
+	NM_IP_CONFIG_SOURCE_WWAN,
+	NM_IP_CONFIG_SOURCE_VPN,
+	NM_IP_CONFIG_SOURCE_DHCP,
+	NM_IP_CONFIG_SOURCE_RDISC,
+	NM_IP_CONFIG_SOURCE_USER,
+} NMIPConfigSource;
+
 /* platform */
 typedef struct _NMPlatformIP4Address NMPlatformIP4Address;
 typedef struct _NMPlatformIP4Route   NMPlatformIP4Route;

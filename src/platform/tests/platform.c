@@ -680,7 +680,7 @@ do_ip4_route_add (char **argv)
 	metric = strtol (*argv++, NULL, 10);
 	mss = strtol (*argv++, NULL, 10);
 
-	return nm_platform_ip4_route_add (ifindex, NM_PLATFORM_SOURCE_USER,
+	return nm_platform_ip4_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER,
 	                                  network, plen, gateway,
 	                                  metric, mss);
 }
@@ -696,7 +696,7 @@ do_ip6_route_add (char **argv)
 	parse_ip6_address (*argv++, &gateway, NULL);
 	metric = strtol (*argv++, NULL, 10);
 	mss = strtol (*argv++, NULL, 10);
-	return nm_platform_ip6_route_add (ifindex, NM_PLATFORM_SOURCE_USER,
+	return nm_platform_ip6_route_add (ifindex, NM_IP_CONFIG_SOURCE_USER,
 	                                  network, plen, gateway,
 	                                  metric, mss);
 }

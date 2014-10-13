@@ -691,7 +691,7 @@ static_stage3_ip4_done (NMModemBroadband *self)
 	memset (&address, 0, sizeof (address));
 	address.address = address_network;
 	address.plen = mm_bearer_ip_config_get_prefix (self->priv->ipv4_config);
-	address.source = NM_PLATFORM_SOURCE_WWAN;
+	address.source = NM_IP_CONFIG_SOURCE_WWAN;
 	nm_ip4_config_add_address (config, &address);
 
 	nm_log_info (LOGD_MB, "  address %s/%d", address_string, address.plen);

@@ -1206,7 +1206,7 @@ init_ip4_address (NMPlatformIP4Address *address, struct rtnl_addr *rtnladdr)
 
 	memset (address, 0, sizeof (*address));
 
-	address->source = NM_PLATFORM_SOURCE_KERNEL;
+	address->source = NM_IP_CONFIG_SOURCE_KERNEL;
 	address->ifindex = rtnl_addr_get_ifindex (rtnladdr);
 	address->plen = rtnl_addr_get_prefixlen (rtnladdr);
 	_init_ip_address_lifetime ((NMPlatformIPAddress *) address, rtnladdr);
@@ -1238,7 +1238,7 @@ init_ip6_address (NMPlatformIP6Address *address, struct rtnl_addr *rtnladdr)
 
 	memset (address, 0, sizeof (*address));
 
-	address->source = NM_PLATFORM_SOURCE_KERNEL;
+	address->source = NM_IP_CONFIG_SOURCE_KERNEL;
 	address->ifindex = rtnl_addr_get_ifindex (rtnladdr);
 	address->plen = rtnl_addr_get_prefixlen (rtnladdr);
 	_init_ip_address_lifetime ((NMPlatformIPAddress *) address, rtnladdr);
@@ -1260,16 +1260,16 @@ init_ip6_address (NMPlatformIP6Address *address, struct rtnl_addr *rtnladdr)
 }
 
 static guint
-source_to_rtprot (NMPlatformSource source)
+source_to_rtprot (NMIPConfigSource source)
 {
 	switch (source) {
-	case NM_PLATFORM_SOURCE_UNKNOWN:
+	case NM_IP_CONFIG_SOURCE_UNKNOWN:
 		return RTPROT_UNSPEC;
-	case NM_PLATFORM_SOURCE_KERNEL:
+	case NM_IP_CONFIG_SOURCE_KERNEL:
 		return RTPROT_KERNEL;
-	case NM_PLATFORM_SOURCE_DHCP:
+	case NM_IP_CONFIG_SOURCE_DHCP:
 		return RTPROT_DHCP;
-	case NM_PLATFORM_SOURCE_RDISC:
+	case NM_IP_CONFIG_SOURCE_RDISC:
 		return RTPROT_RA;
 
 	default:
@@ -1277,22 +1277,22 @@ source_to_rtprot (NMPlatformSource source)
 	}
 }
 
-static NMPlatformSource
+static NMIPConfigSource
 rtprot_to_source (guint rtprot)
 {
 	switch (rtprot) {
 	case RTPROT_UNSPEC:
-		return NM_PLATFORM_SOURCE_UNKNOWN;
+		return NM_IP_CONFIG_SOURCE_UNKNOWN;
 	case RTPROT_REDIRECT:
 	case RTPROT_KERNEL:
-		return NM_PLATFORM_SOURCE_KERNEL;
+		return NM_IP_CONFIG_SOURCE_KERNEL;
 	case RTPROT_RA:
-		return NM_PLATFORM_SOURCE_RDISC;
+		return NM_IP_CONFIG_SOURCE_RDISC;
 	case RTPROT_DHCP:
-		return NM_PLATFORM_SOURCE_DHCP;
+		return NM_IP_CONFIG_SOURCE_DHCP;
 
 	default:
-		return NM_PLATFORM_SOURCE_USER;
+		return NM_IP_CONFIG_SOURCE_USER;
 	}
 }
 
@@ -3708,7 +3708,7 @@ clear_host_address (int family, const void *network, int plen, void *dst)
 }
 
 static struct nl_object *
-build_rtnl_route (int family, int ifindex, NMPlatformSource source,
+build_rtnl_route (int family, int ifindex, NMIPConfigSource source,
                   gconstpointer network, int plen, gconstpointer gateway,
                   int metric, int mss)
 {
@@ -3749,7 +3749,7 @@ build_rtnl_route (int family, int ifindex, NMPlatformSource source,
 }
 
 static gboolean
-ip4_route_add (NMPlatform *platform, int ifindex, NMPlatformSource source,
+ip4_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                in_addr_t network, int plen, in_addr_t gateway,
                int metric, int mss)
 {
@@ -3757,7 +3757,7 @@ ip4_route_add (NMPlatform *platform, int ifindex, NMPlatformSource source,
 }
 
 static gboolean
-ip6_route_add (NMPlatform *platform, int ifindex, NMPlatformSource source,
+ip6_route_add (NMPlatform *platform, int ifindex, NMIPConfigSource source,
                struct in6_addr network, int plen, struct in6_addr gateway,
                int metric, int mss)
 {
@@ -3818,7 +3818,7 @@ ip4_route_delete (NMPlatform *platform, int ifindex, in_addr_t network, int plen
 {
 	in_addr_t gateway = 0;
 	struct rtnl_route *cached_object;
-	struct nl_object *route = build_rtnl_route (AF_INET, ifindex, NM_PLATFORM_SOURCE_UNKNOWN, &network, plen, &gateway, metric, 0);
+	struct nl_object *route = build_rtnl_route (AF_INET, ifindex, NM_IP_CONFIG_SOURCE_UNKNOWN, &network, plen, &gateway, metric, 0);
 	uint8_t scope = RT_SCOPE_NOWHERE;
 	struct nl_cache *cache;
 
@@ -3878,7 +3878,7 @@ ip6_route_delete (NMPlatform *platform, int ifindex, struct in6_addr network, in
 {
 	struct in6_addr gateway = IN6ADDR_ANY_INIT;
 
-	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, NM_PLATFORM_SOURCE_UNKNOWN ,&network, plen, &gateway, metric, 0), FALSE) &&
+	return delete_object (platform, build_rtnl_route (AF_INET6, ifindex, NM_IP_CONFIG_SOURCE_UNKNOWN ,&network, plen, &gateway, metric, 0), FALSE) &&
 	    refresh_route (platform, AF_INET6, ifindex, &network, plen, metric);
 }
 
@@ -3886,7 +3886,7 @@ static gboolean
 ip_route_exists (NMPlatform *platform, int family, int ifindex, gpointer network, int plen, int metric)
 {
 	auto_nl_object struct nl_object *object = build_rtnl_route (family, ifindex,
-	                                                            NM_PLATFORM_SOURCE_UNKNOWN,
+	                                                            NM_IP_CONFIG_SOURCE_UNKNOWN,
 	                                                            network, plen, NULL, metric, 0);
 	struct nl_cache *cache = choose_cache (platform, object);
 	auto_nl_object struct nl_object *cached_object = nl_cache_search (cache, object);

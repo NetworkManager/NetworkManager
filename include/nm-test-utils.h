@@ -585,7 +585,7 @@ nmtst_platform_ip6_address (const char *address, const char *peer_address, guint
 
 inline static NMPlatformIP6Address *
 nmtst_platform_ip6_address_full (const char *address, const char *peer_address, guint plen,
-                                 int ifindex, NMPlatformSource source, guint32 timestamp,
+                                 int ifindex, NMIPConfigSource source, guint32 timestamp,
                                  guint32 lifetime, guint32 preferred, guint flags)
 {
 	NMPlatformIP6Address *addr = nmtst_platform_ip6_address (address, peer_address, plen);
@@ -615,7 +615,7 @@ nmtst_platform_ip6_route (const char *network, guint plen, const char *gateway)
 
 inline static NMPlatformIP6Route *
 nmtst_platform_ip6_route_full (const char *network, guint plen, const char *gateway,
-                               int ifindex, NMPlatformSource source,
+                               int ifindex, NMIPConfigSource source,
                                guint metric, guint mss)
 {
 	NMPlatformIP6Route *route = nmtst_platform_ip6_route (network, plen, gateway);

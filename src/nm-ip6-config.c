@@ -24,7 +24,6 @@
 #include "nm-ip6-config.h"
 
 #include "nm-glib-compat.h"
-#include "nm-platform.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
@@ -440,7 +439,7 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, i
 		address.plen = nm_ip6_address_get_prefix (s_addr);
 		address.lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
 		address.preferred = NM_PLATFORM_LIFETIME_PERMANENT;
-		address.source = NM_PLATFORM_SOURCE_USER;
+		address.source = NM_IP_CONFIG_SOURCE_USER;
 
 		nm_ip6_config_add_address (config, &address);
 	}
@@ -459,7 +458,7 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, i
 		route.metric = nm_ip6_route_get_metric (s_route);
 		if (!route.metric)
 			route.metric = default_route_metric;
-		route.source = NM_PLATFORM_SOURCE_USER;
+		route.source = NM_IP_CONFIG_SOURCE_USER;
 
 		nm_ip6_config_add_route (config, &route);
 	}
@@ -558,7 +557,7 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 			continue;
 
 		/* Ignore routes provided by external sources */
-		if (route->source != NM_PLATFORM_SOURCE_USER)
+		if (route->source != NM_IP_CONFIG_SOURCE_USER)
 			continue;
 
 		s_route = nm_ip6_route_new ();
@@ -1058,7 +1057,7 @@ nm_ip6_config_add_address (NMIP6Config *config, const NMPlatformIP6Address *new)
 			 * with "what should be" and the kernel values are "what turned out after configuring it".
 			 *
 			 * For other sources, the longer lifetime wins. */
-			if (   (new->source == NM_PLATFORM_SOURCE_KERNEL && new->source != item_old.source)
+			if (   (new->source == NM_IP_CONFIG_SOURCE_KERNEL && new->source != item_old.source)
 			    || nm_platform_ip_address_cmp_expiry ((const NMPlatformIPAddress *) &item_old, (const NMPlatformIPAddress *) new) > 0) {
 				item->timestamp = item_old.timestamp;
 				item->lifetime = item_old.lifetime;
@@ -1146,7 +1145,7 @@ void
 nm_ip6_config_add_route (NMIP6Config *config, const NMPlatformIP6Route *new)
 {
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (config);
-	NMPlatformSource old_source;
+	NMIPConfigSource old_source;
 	int i;
 
 	g_return_if_fail (new != NULL);

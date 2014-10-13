@@ -84,7 +84,7 @@ ip4_process_dhcpcd_rfc3442_routes (const char *str,
 			route.network = rt_addr;
 			route.plen = rt_cidr;
 			route.gateway = rt_route;
-			route.source = NM_PLATFORM_SOURCE_DHCP;
+			route.source = NM_IP_CONFIG_SOURCE_DHCP;
 			route.metric = priority;
 			nm_ip4_config_add_route (ip4_config, &route);
 		}
@@ -191,7 +191,7 @@ ip4_process_dhclient_rfc3442_routes (const char *str,
 			char addr[INET_ADDRSTRLEN];
 
 			/* normal route */
-			route.source = NM_PLATFORM_SOURCE_DHCP;
+			route.source = NM_IP_CONFIG_SOURCE_DHCP;
 			route.metric = priority;
 			nm_ip4_config_add_route (ip4_config, &route);
 
@@ -313,7 +313,7 @@ process_classful_routes (GHashTable *options, guint priority, NMIP4Config *ip4_c
 			route.plen = 32;
 		}
 		route.gateway = rt_route;
-		route.source = NM_PLATFORM_SOURCE_DHCP;
+		route.source = NM_IP_CONFIG_SOURCE_DHCP;
 		route.metric = priority;
 
 		nm_ip4_config_add_route (ip4_config, &route);
@@ -462,7 +462,7 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 				route.plen = 32;
 				/* this will be a device route if gwaddr is 0 */
 				route.gateway = gwaddr;
-				route.source = NM_PLATFORM_SOURCE_DHCP;
+				route.source = NM_IP_CONFIG_SOURCE_DHCP;
 				route.metric = priority;
 				nm_ip4_config_add_route (ip4_config, &route);
 				nm_log_dbg (LOGD_IP, "adding route for server identifier: %s",
@@ -479,7 +479,7 @@ nm_dhcp_utils_ip4_config_from_options (const char *iface,
 		nm_log_info (LOGD_DHCP4, "  lease time %d", address.lifetime);
 	}
 
-	address.source = NM_PLATFORM_SOURCE_DHCP;
+	address.source = NM_IP_CONFIG_SOURCE_DHCP;
 	nm_ip4_config_add_address (ip4_config, &address);
 
 	str = g_hash_table_lookup (options, "host_name");
@@ -629,7 +629,7 @@ nm_dhcp_utils_ip6_config_from_options (const char *iface,
 		}
 
 		address.address = tmp_addr;
-		address.source = NM_PLATFORM_SOURCE_DHCP;
+		address.source = NM_IP_CONFIG_SOURCE_DHCP;
 		nm_ip6_config_add_address (ip6_config, &address);
 		nm_log_info (LOGD_DHCP6, "  address %s", str);
 	} else if (info_only == FALSE) {

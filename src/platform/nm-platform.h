@@ -143,21 +143,6 @@ typedef enum {
 
 #define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
 
-typedef enum {
-	/* In priority order; higher number == higher priority */
-	NM_PLATFORM_SOURCE_UNKNOWN,
-	NM_PLATFORM_SOURCE_KERNEL,
-	NM_PLATFORM_SOURCE_SHARED,
-	NM_PLATFORM_SOURCE_IP4LL,
-	NM_PLATFORM_SOURCE_PPP,
-	NM_PLATFORM_SOURCE_WWAN,
-	NM_PLATFORM_SOURCE_VPN,
-	NM_PLATFORM_SOURCE_DHCP,
-	NM_PLATFORM_SOURCE_RDISC,
-	NM_PLATFORM_SOURCE_USER,
-} NMPlatformSource;
-
-
 typedef struct {
 	__NMPlatformObject_COMMON;
 } NMPlatformObject;
@@ -165,7 +150,7 @@ typedef struct {
 
 #define __NMPlatformIPAddress_COMMON \
 	__NMPlatformObject_COMMON; \
-	NMPlatformSource source; \
+	NMIPConfigSource source; \
 	\
 	/* Timestamp in seconds in the reference system of nm_utils_get_monotonic_timestamp_*().
 	 *
@@ -235,7 +220,7 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMPlatformIPAddress, address_ptr) == G_STRUCT_
 
 #define __NMPlatformIPRoute_COMMON \
 	__NMPlatformObject_COMMON; \
-	NMPlatformSource source; \
+	NMIPConfigSource source; \
 	int plen; \
 	guint metric; \
 	guint mss; \
@@ -454,10 +439,10 @@ typedef struct {
 
 	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, gboolean include_default);
 	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, gboolean include_default);
-	gboolean (*ip4_route_add) (NMPlatform *, int ifindex, NMPlatformSource source,
+	gboolean (*ip4_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           in_addr_t network, int plen, in_addr_t gateway,
 	                           int prio, int mss);
-	gboolean (*ip6_route_add) (NMPlatform *, int ifindex, NMPlatformSource source,
+	gboolean (*ip6_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           struct in6_addr network, int plen, struct in6_addr gateway,
 	                           int prio, int mss);
 	gboolean (*ip4_route_delete) (NMPlatform *, int ifindex, in_addr_t network, int plen, int metric);
@@ -602,10 +587,10 @@ gboolean nm_platform_address_flush (int ifindex);
 GArray *nm_platform_ip4_route_get_all (int ifindex, gboolean include_default);
 GArray *nm_platform_ip6_route_get_all (int ifindex, gboolean include_default);
 gboolean nm_platform_route_set_metric (int ifindex, int metric);
-gboolean nm_platform_ip4_route_add (int ifindex, NMPlatformSource source,
+gboolean nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
                                     in_addr_t network, int plen, in_addr_t gateway,
                                     int metric, int mss);
-gboolean nm_platform_ip6_route_add (int ifindex, NMPlatformSource source,
+gboolean nm_platform_ip6_route_add (int ifindex, NMIPConfigSource source,
                                     struct in6_addr network, int plen, struct in6_addr gateway,
                                     int metric, int mss);
 gboolean nm_platform_ip4_route_delete (int ifindex, in_addr_t network, int plen, int metric);
