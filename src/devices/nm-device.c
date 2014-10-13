@@ -4631,6 +4631,7 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	const char *method;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	int ip_ifindex;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET);
@@ -4642,9 +4643,13 @@ nm_device_activate_ip4_config_commit (gpointer user_data)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	/* Device should be up before we can do anything with it */
-	if (!nm_platform_link_is_up (nm_device_get_ip_ifindex (self)))
-		_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
+	/* Interface must be IFF_UP before IP config can be applied */
+	ip_ifindex = nm_device_get_ip_ifindex (self);
+	if (!nm_platform_link_is_up (ip_ifindex)) {
+		nm_platform_link_set_up (ip_ifindex);
+		if (!nm_platform_link_is_up (ip_ifindex))
+			_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
+	}
 
 	/* NULL to use the existing priv->dev_ip4_config */
 	if (!ip4_config_merge_and_apply (self, NULL, TRUE, &reason)) {
@@ -4737,6 +4742,7 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	NMActRequest *req;
 	NMConnection *connection;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	int ip_ifindex;
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, AF_INET6);
@@ -4748,8 +4754,13 @@ nm_device_activate_ip6_config_commit (gpointer user_data)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	/* Device should be up before we can do anything with it */
-	g_warn_if_fail (nm_platform_link_is_up (nm_device_get_ip_ifindex (self)));
+	/* Interface must be IFF_UP before IP config can be applied */
+	ip_ifindex = nm_device_get_ip_ifindex (self);
+	if (!nm_platform_link_is_up (ip_ifindex)) {
+		nm_platform_link_set_up (ip_ifindex);
+		if (!nm_platform_link_is_up (ip_ifindex))
+			_LOGW (LOGD_DEVICE, "interface %s not up for IP configuration", nm_device_get_ip_iface (self));
+	}
 
 	if (ip6_config_merge_and_apply (self, TRUE, &reason)) {
 		/* If IPv6 wasn't the first IP to complete, and DHCP was used,
