@@ -2626,9 +2626,13 @@ ip4_config_merge_and_apply (NMDevice *self,
 	if (priv->wwan_ip4_config)
 		nm_ip4_config_merge (composite, priv->wwan_ip4_config);
 
-	/* Merge user overrides into the composite config */
+	/* Merge user overrides into the composite config.  Generated+assumed
+	 * connections come from the system not the user and merging them would
+	 * be redundant, so don't bother.
+	 */
 	connection = nm_device_get_connection (self);
-	if (connection) {
+	if (   connection
+	    && !nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection))) {
 		nm_ip4_config_merge_setting (composite,
 		                             nm_connection_get_setting_ip4_config (connection),
 		                             nm_device_get_priority (self));
@@ -3051,9 +3055,13 @@ ip6_config_merge_and_apply (NMDevice *self,
 	if (priv->wwan_ip6_config)
 		nm_ip6_config_merge (composite, priv->wwan_ip6_config);
 
-	/* Merge user overrides into the composite config */
+	/* Merge user overrides into the composite config.  Generated+assumed
+	 * connections come from the system not the user and merging them would
+	 * be redundant, so don't bother.
+	 */
 	connection = nm_device_get_connection (self);
-	if (connection) {
+	if (   connection
+	    && !nm_settings_connection_get_nm_generated_assumed (NM_SETTINGS_CONNECTION (connection))) {
 		nm_ip6_config_merge_setting (composite,
 		                             nm_connection_get_setting_ip6_config (connection),
 		                             nm_device_get_priority (self));
