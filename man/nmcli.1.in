@@ -327,10 +327,10 @@ When no command is given to the \fIconnection\fP object, the default action
 is 'nmcli connection show'.
 .RE
 .TP
-.B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>]
+.B up [ id | uuid | path ] <ID> [ifname <ifname>] [ap <BSSID>] [nsp <name>] [passwd <file with passwords>]
 .RE
 .RS
-.B up ifname <ifname> [ap <BSSID>] [nsp <name>]
+.B up ifname <ifname> [ap <BSSID>] [nsp <name>] [passwd <file with passwords>]
 .RS
 .br
 Activate a connection.  The connection is identified by its name, UUID or D-Bus
@@ -355,6 +355,23 @@ Available options are:
 \(en BSSID of the AP which the command should connect to (for Wi\(hyFi connections)
 .IP \fInsp\fP 13
 \(en NSP (Network Service Provider) which the command should connect to (for WiMAX connections)
+.IP \fIpasswd-file\fP 13
+\(en some networks may require credentials during activation. You can give these
+credentials using this option.
+Each line of the file should contain one password in the form of
+.br
+\fBsetting_name.property_name:the password\fP
+.br
+For example, for WPA Wi-Fi with PSK, the line would be
+.br
+\fI802-11-wireless-security.psk:secret12345\fP
+.br
+For 802.1X password, the line would be
+.br
+\fI802-1x.password:my 1X password\fP
+.br
+nmcli also accepts "wifi-sec" and "wifi" strings instead of "802-11-wireless-security".
+When a required password is not given, nmcli will ask for it when run with --ask.
 .RE
 .RE
 .TP
