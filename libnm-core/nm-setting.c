@@ -291,6 +291,7 @@ typedef struct {
 	const GVariantType *dbus_type;
 
 	NMSettingPropertyGetFunc get_func;
+	NMSettingPropertySynthFunc synth_func;
 	NMSettingPropertySetFunc set_func;
 	NMSettingPropertyNotSetFunc not_set_func;
 
@@ -325,6 +326,7 @@ add_property_override (NMSettingClass *setting_class,
                        GParamSpec *param_spec,
                        const GVariantType *dbus_type,
                        NMSettingPropertyGetFunc get_func,
+                       NMSettingPropertySynthFunc synth_func,
                        NMSettingPropertySetFunc set_func,
                        NMSettingPropertyNotSetFunc not_set_func,
                        NMSettingPropertyTransformToFunc to_dbus,
@@ -341,6 +343,7 @@ add_property_override (NMSettingClass *setting_class,
 	override.param_spec = param_spec;
 	override.dbus_type = dbus_type;
 	override.get_func = get_func;
+	override.synth_func = synth_func;
 	override.set_func = set_func;
 	override.not_set_func = not_set_func;
 	override.to_dbus = to_dbus;
@@ -361,17 +364,17 @@ add_property_override (NMSettingClass *setting_class,
  * @setting_class: the setting class
  * @property_name: the name of the property to override
  * @dbus_type: the type of the property (in its D-Bus representation)
- * @get_func: (allow-none): function to call to get the value of the property
+ * @synth_func: (allow-none): function to call to synthesize a value for the property
  * @set_func: (allow-none): function to call to set the value of the property
  *
  * Registers a property named @property_name, which will be used in the D-Bus
  * serialization of objects of @setting_class, but which does not correspond to
  * a #GObject property.
  *
- * When serializing a setting to D-Bus, @get_func will be called to get the
- * property's value. (If it returns %NULL, no value will be added to the
- * serialization. If @get_func is %NULL, the property will always be omitted in
- * the serialization.)
+ * When serializing a setting to D-Bus, @synth_func will be called to synthesize
+ * a value for the property. (If it returns %NULL, no value will be added to the
+ * serialization. If @synth_func is %NULL, the property will always be omitted
+ * in the serialization.)
  *
  * When deserializing a D-Bus representation into a setting, if @property_name
  * is present, then @set_func will be called to set it. (If @set_func is %NULL
@@ -381,7 +384,7 @@ void
 _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
                                           const char *property_name,
                                           const GVariantType *dbus_type,
-                                          NMSettingPropertyGetFunc get_func,
+                                          NMSettingPropertySynthFunc synth_func,
                                           NMSettingPropertySetFunc set_func)
 {
 	g_return_if_fail (NM_IS_SETTING_CLASS (setting_class));
@@ -392,7 +395,7 @@ _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
 
 	add_property_override (setting_class,
 	                       property_name, NULL, dbus_type,
-	                       get_func, set_func, NULL,
+	                       NULL, synth_func, set_func, NULL,
 	                       NULL, NULL);
 }
 
@@ -439,7 +442,7 @@ _nm_setting_class_override_property (NMSettingClass *setting_class,
 
 	add_property_override (setting_class,
 	                       property_name, param_spec, dbus_type,
-	                       get_func, set_func, not_set_func,
+	                       get_func, NULL, set_func, not_set_func,
 	                       NULL, NULL);
 }
 
@@ -473,7 +476,7 @@ _nm_setting_class_transform_property (NMSettingClass *setting_class,
 
 	add_property_override (setting_class,
 	                       property, param_spec, dbus_type,
-	                       NULL, NULL, NULL,
+	                       NULL, NULL, NULL, NULL,
 	                       to_dbus, from_dbus);
 }
 
@@ -583,7 +586,10 @@ get_property_for_dbus (NMSetting *setting,
 	GValue prop_value = { 0, };
 	GVariant *dbus_value;
 
-	g_return_val_if_fail (property->param_spec != NULL, NULL);
+	if (property->get_func)
+		return property->get_func (setting, property->name);
+	else
+		g_return_val_if_fail (property->param_spec != NULL, NULL);
 
 	g_value_init (&prop_value, property->param_spec->value_type);
 	g_object_get_property (G_OBJECT (setting), property->param_spec->name, &prop_value);
@@ -651,8 +657,8 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 		const NMSettingProperty *property = &properties[i];
 		GParamSpec *prop_spec = property->param_spec;
 
-		if (!prop_spec && !property->get_func) {
-			/* Override property with no get_func, so we skip it. */
+		if (!prop_spec && !property->synth_func) {
+			/* D-Bus-only property with no synth_func, so we skip it. */
 			continue;
 		}
 
@@ -667,12 +673,10 @@ _nm_setting_to_dbus (NMSetting *setting, NMConnection *connection, NMConnectionS
 		    && !(prop_spec && (prop_spec->flags & NM_SETTING_PARAM_SECRET)))
 			continue;
 
-		if (property->get_func)
-			dbus_value = property->get_func (setting, connection, property->name);
-		else if (prop_spec)
-			dbus_value = get_property_for_dbus (setting, property, TRUE);
+		if (property->synth_func)
+			dbus_value = property->synth_func (setting, connection, property->name);
 		else
-			g_assert_not_reached ();
+			dbus_value = get_property_for_dbus (setting, property, TRUE);
 		if (dbus_value) {
 			/* Allow dbus_value to be either floating or not. */
 			g_variant_take_ref (dbus_value);
