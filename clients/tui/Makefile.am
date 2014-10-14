@@ -10,6 +10,7 @@ AM_CPPFLAGS= \
 	-I$(top_srcdir)/libnm \
 	-I$(top_builddir)/libnm \
 	-I$(srcdir)/newt \
+	-I$(top_srcdir)/clients/common \
 	$(GLIB_CFLAGS) \
 	$(NEWT_CFLAGS) \
 	$(GUDEV_CFLAGS) \
@@ -106,14 +107,14 @@ nmtui_SOURCES = \
 	nmt-route-entry.h \
 	nmt-route-table.c \
 	nmt-route-table.h \
-	nmt-secret-agent.c \
-	nmt-secret-agent.h \
 	nmt-slave-list.c \
 	nmt-slave-list.h \
 	nmt-utils.c \
 	nmt-utils.h \
 	nmt-widget-list.c \
 	nmt-widget-list.h \
+	$(srcdir)/../common/nm-secret-agent-simple.c \
+	$(srcdir)/../common/nm-secret-agent-simple.h \
 	$(NULL)
 
 nmtui_LDADD = \
