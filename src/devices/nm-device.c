@@ -2994,9 +2994,7 @@ act_stage3_ip4_config_start (NMDevice *self,
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
-
-	if (   strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) != 0
+	if (   connection_ip4_method_requires_carrier (connection, NULL)
 	    && priv->is_master
 	    && !priv->carrier) {
 		_LOGI (LOGD_IP4 | LOGD_DEVICE,
@@ -3018,6 +3016,8 @@ act_stage3_ip4_config_start (NMDevice *self,
 			return NM_ACT_STAGE_RETURN_WAIT;
 		}
 	}
+
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
 	/* Start IPv4 addressing based on the method requested */
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0)
@@ -4011,9 +4011,7 @@ act_stage3_ip6_config_start (NMDevice *self,
 	connection = nm_device_get_connection (self);
 	g_assert (connection);
 
-	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
-
-	if (   strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL) != 0
+	if (   connection_ip4_method_requires_carrier (connection, NULL)
 	    && priv->is_master
 	    && !priv->carrier) {
 		_LOGI (LOGD_IP6 | LOGD_DEVICE,
@@ -4037,6 +4035,8 @@ act_stage3_ip6_config_start (NMDevice *self,
 	}
 
 	priv->dhcp6_mode = NM_RDISC_DHCP_LEVEL_NONE;
+
+	method = nm_utils_get_ip_config_method (connection, NM_TYPE_SETTING_IP6_CONFIG);
 
 	if (strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE) == 0) {
 		if (!priv->master) {
