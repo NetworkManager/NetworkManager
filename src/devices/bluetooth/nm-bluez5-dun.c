@@ -34,7 +34,7 @@
 #include "nm-logging.h"
 #include "NetworkManagerUtils.h"
 
-typedef struct _NMBluez5DunContext {
+struct _NMBluez5DunContext {
 	bdaddr_t src;
 	bdaddr_t dst;
 	char *src_str;
@@ -47,7 +47,7 @@ typedef struct _NMBluez5DunContext {
 	gpointer user_data;
 	sdp_session_t *sdp_session;
 	guint sdp_watch_id;
-} NMBluez5DunContext;
+};
 
 static void
 dun_connect (NMBluez5DunContext *context)
