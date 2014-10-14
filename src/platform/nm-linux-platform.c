@@ -1298,6 +1298,16 @@ rtprot_to_source (guint rtprot)
 }
 
 static gboolean
+_rtnl_route_is_default (const struct rtnl_route *rtnlroute)
+{
+	struct nl_addr *dst;
+
+	return    rtnlroute
+	       && (dst = rtnl_route_get_dst ((struct rtnl_route *) rtnlroute))
+	       && nl_addr_get_prefixlen (dst) == 0;
+}
+
+static gboolean
 init_ip4_route (NMPlatformIP4Route *route, struct rtnl_route *rtnlroute)
 {
 	struct nl_addr *dst, *gw;
@@ -3647,21 +3657,28 @@ _route_match (struct rtnl_route *rtnlroute, int family, int ifindex)
 }
 
 static GArray *
-ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
+ip4_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GArray *routes;
 	NMPlatformIP4Route route;
 	struct nl_object *object;
 
+	g_return_val_if_fail (NM_IN_SET (mode, NM_PLATFORM_GET_ROUTE_MODE_ALL, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT), NULL);
+
 	routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP4Route));
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (_route_match ((struct rtnl_route *) object, AF_INET, ifindex)) {
-			if (init_ip4_route (&route, (struct rtnl_route *) object)) {
-				if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&route) || include_default)
-					g_array_append_val (routes, route);
+			if (_rtnl_route_is_default ((struct rtnl_route *) object)) {
+				if (mode == NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
+					continue;
+			} else {
+				if (mode == NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT)
+					continue;
 			}
+			if (init_ip4_route (&route, (struct rtnl_route *) object))
+				g_array_append_val (routes, route);
 		}
 	}
 
@@ -3669,21 +3686,28 @@ ip4_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
 }
 
 static GArray *
-ip6_route_get_all (NMPlatform *platform, int ifindex, gboolean include_default)
+ip6_route_get_all (NMPlatform *platform, int ifindex, NMPlatformGetRouteMode mode)
 {
 	NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE (platform);
 	GArray *routes;
 	NMPlatformIP6Route route;
 	struct nl_object *object;
 
+	g_return_val_if_fail (NM_IN_SET (mode, NM_PLATFORM_GET_ROUTE_MODE_ALL, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT, NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT), NULL);
+
 	routes = g_array_new (FALSE, FALSE, sizeof (NMPlatformIP6Route));
 
 	for (object = nl_cache_get_first (priv->route_cache); object; object = nl_cache_get_next (object)) {
 		if (_route_match ((struct rtnl_route *) object, AF_INET6, ifindex)) {
-			if (init_ip6_route (&route, (struct rtnl_route *) object)) {
-				if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (&route) || include_default)
-					g_array_append_val (routes, route);
+			if (_rtnl_route_is_default ((struct rtnl_route *) object)) {
+				if (mode == NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT)
+					continue;
+			} else {
+				if (mode == NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT)
+					continue;
 			}
+			if (init_ip6_route (&route, (struct rtnl_route *) object))
+				g_array_append_val (routes, route);
 		}
 	}
 

@@ -99,7 +99,7 @@ test_ip4_route (void)
 	accept_signal (route_changed);
 
 	/* Test route listing */
-	routes = nm_platform_ip4_route_get_all (ifindex, TRUE);
+	routes = nm_platform_ip4_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 	memset (rts, 0, sizeof (rts));
 	rts[0].source = NM_IP_CONFIG_SOURCE_USER;
 	rts[0].network = gateway;
@@ -194,7 +194,7 @@ test_ip6_route (void)
 	accept_signal (route_changed);
 
 	/* Test route listing */
-	routes = nm_platform_ip6_route_get_all (ifindex, TRUE);
+	routes = nm_platform_ip6_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 	memset (rts, 0, sizeof (rts));
 	rts[0].source = NM_IP_CONFIG_SOURCE_USER;
 	rts[0].network = gateway;

@@ -1837,25 +1837,25 @@ nm_platform_address_flush (int ifindex)
 /******************************************************************/
 
 GArray *
-nm_platform_ip4_route_get_all (int ifindex, gboolean include_default)
+nm_platform_ip4_route_get_all (int ifindex, NMPlatformGetRouteMode mode)
 {
 	reset_error ();
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (klass->ip4_route_get_all, NULL);
 
-	return klass->ip4_route_get_all (platform, ifindex, include_default);
+	return klass->ip4_route_get_all (platform, ifindex, mode);
 }
 
 GArray *
-nm_platform_ip6_route_get_all (int ifindex, gboolean include_default)
+nm_platform_ip6_route_get_all (int ifindex, NMPlatformGetRouteMode mode)
 {
 	reset_error ();
 
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (klass->ip6_route_get_all, NULL);
 
-	return klass->ip6_route_get_all (platform, ifindex, include_default);
+	return klass->ip6_route_get_all (platform, ifindex, mode);
 }
 
 gboolean
@@ -2026,7 +2026,7 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
 	int i, i_type;
 
 	/* Delete unknown routes */
-	routes = nm_platform_ip4_route_get_all (ifindex, FALSE);
+	routes = nm_platform_ip4_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
 	for (i = 0; i < routes->len; i++) {
 		route = &g_array_index (routes, NMPlatformIP4Route, i);
 
@@ -2099,7 +2099,7 @@ nm_platform_ip6_route_sync (int ifindex, const GArray *known_routes)
 	int i, i_type;
 
 	/* Delete unknown routes */
-	routes = nm_platform_ip6_route_get_all (ifindex, FALSE);
+	routes = nm_platform_ip6_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT);
 	for (i = 0; i < routes->len; i++) {
 		route = &g_array_index (routes, NMPlatformIP6Route, i);
 		route->ifindex = 0;

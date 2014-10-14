@@ -99,6 +99,12 @@ typedef enum {
 
 #define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
 
+typedef enum {
+	NM_PLATFORM_GET_ROUTE_MODE_ALL,
+	NM_PLATFORM_GET_ROUTE_MODE_NO_DEFAULT,
+	NM_PLATFORM_GET_ROUTE_MODE_ONLY_DEFAULT,
+} NMPlatformGetRouteMode;
+
 typedef struct {
 	__NMPlatformObject_COMMON;
 } NMPlatformObject;
@@ -395,8 +401,8 @@ typedef struct {
 	gboolean (*ip4_address_exists) (NMPlatform *, int ifindex, in_addr_t address, int plen);
 	gboolean (*ip6_address_exists) (NMPlatform *, int ifindex, struct in6_addr address, int plen);
 
-	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, gboolean include_default);
-	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, gboolean include_default);
+	GArray * (*ip4_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteMode mode);
+	GArray * (*ip6_route_get_all) (NMPlatform *, int ifindex, NMPlatformGetRouteMode mode);
 	gboolean (*ip4_route_add) (NMPlatform *, int ifindex, NMIPConfigSource source,
 	                           in_addr_t network, int plen, in_addr_t gateway,
 	                           guint32 metric, guint32 mss);
@@ -542,8 +548,8 @@ gboolean nm_platform_ip4_address_sync (int ifindex, const GArray *known_addresse
 gboolean nm_platform_ip6_address_sync (int ifindex, const GArray *known_addresses);
 gboolean nm_platform_address_flush (int ifindex);
 
-GArray *nm_platform_ip4_route_get_all (int ifindex, gboolean include_default);
-GArray *nm_platform_ip6_route_get_all (int ifindex, gboolean include_default);
+GArray *nm_platform_ip4_route_get_all (int ifindex, NMPlatformGetRouteMode mode);
+GArray *nm_platform_ip6_route_get_all (int ifindex, NMPlatformGetRouteMode mode);
 gboolean nm_platform_ip4_route_add (int ifindex, NMIPConfigSource source,
                                     in_addr_t network, int plen, in_addr_t gateway,
                                     guint32 metric, guint32 mss);

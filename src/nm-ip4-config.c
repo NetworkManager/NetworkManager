@@ -194,7 +194,7 @@ nm_ip4_config_capture (int ifindex, gboolean capture_resolv_conf)
 	g_array_unref (priv->routes);
 
 	priv->addresses = nm_platform_ip4_address_get_all (ifindex);
-	priv->routes = nm_platform_ip4_route_get_all (ifindex, TRUE);
+	priv->routes = nm_platform_ip4_route_get_all (ifindex, NM_PLATFORM_GET_ROUTE_MODE_ALL);
 
 	/* Extract gateway from default route */
 	old_gateway = priv->gateway;
