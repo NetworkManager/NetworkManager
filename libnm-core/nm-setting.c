@@ -374,11 +374,8 @@ add_property_override (NMSettingClass *setting_class,
  * the serialization.)
  *
  * When deserializing a D-Bus representation into a setting, if @property_name
- * is present, then @set_func will be called to set (and/or verify) it. If it
- * returns %TRUE, the value is considered to have been successfully set; if it
- * returns %FALSE then the deserializing operation as a whole will fail with the
- * returned #GError. (If @set_func is %NULL then the property will be ignored
- * when deserializing.)
+ * is present, then @set_func will be called to set it. (If @set_func is %NULL
+ * then the property will be ignored when deserializing.)
  */
 void
 _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
@@ -412,17 +409,15 @@ _nm_setting_class_add_dbus_only_property (NMSettingClass *setting_class,
  * @property_name on @setting_class.
  *
  * When serializing a setting to D-Bus, if @get_func is non-%NULL, then it will
- * be called to get the property's value. If it returns %TRUE, the value will be
- * added to the hash, and if %FALSE, it will not. (If @get_func is %NULL, the
- * property will be read normally with g_object_get_property(), and added to the
- * hash if it is not the default value.)
+ * be called to get the property's value. If it returns a #GVariant, the
+ * property will be added to the hash, and if it returns %NULL, the property
+ * will be omitted. (If @get_func is %NULL, the property will be read normally
+ * with g_object_get_property(), and added to the hash if it is not the default
+ * value.)
  *
  * When deserializing a D-Bus representation into a setting, if @property_name
- * is present, then @set_func will be called to set (and/or verify) it. If it
- * returns %TRUE, the value is considered to have been successfully set; if it
- * returns %FALSE then the deserializing operation as a whole will fail with the
- * returned #GError. (If @set_func is %NULL then the property will be set normally
- * with g_object_set_property().)
+ * is present, then @set_func will be called to set it. (If @set_func is %NULL
+ * then the property will be set normally with g_object_set_property().)
  *
  * If @not_set_func is non-%NULL, then it will be called when deserializing a
  * representation that does NOT contain @property_name. This can be used, eg, if
