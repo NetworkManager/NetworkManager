@@ -334,19 +334,6 @@ static void nm_device_update_hw_address (NMDevice *self);
 
 /***********************************************************/
 
-static GQuark
-nm_device_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-device-error");
-	return quark;
-}
-
-#define NM_DEVICE_ERROR (nm_device_error_quark ())
-
-/***********************************************************/
-
 #define QUEUED_PREFIX "queued state change to "
 
 static const char *state_table[] = {
@@ -1731,7 +1718,7 @@ nm_device_master_update_slave_connection (NMDevice *self,
 
 	g_set_error (error,
 	             NM_DEVICE_ERROR,
-	             NM_DEVICE_ERROR_UNSUPPORTED_DEVICE_TYPE,
+	             NM_DEVICE_ERROR_FAILED,
 	             "master device '%s' cannot update a slave connection for slave device '%s' (master type not supported?)",
 	             nm_device_get_iface (self), nm_device_get_iface (slave));
 	return FALSE;
@@ -1837,7 +1824,7 @@ nm_device_complete_connection (NMDevice *self,
 	g_return_val_if_fail (connection != NULL, FALSE);
 
 	if (!NM_DEVICE_GET_CLASS (self)->complete_connection) {
-		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CONNECTION_INVALID,
+		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_INVALID_CONNECTION,
 		             "Device class %s had no complete_connection method",
 		             G_OBJECT_TYPE_NAME (self));
 		return FALSE;

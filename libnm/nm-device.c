@@ -139,23 +139,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-/**
- * nm_device_error_quark:
- *
- * Registers an error quark for #NMDevice if necessary.
- *
- * Returns: the error quark used for #NMDevice errors.
- **/
-GQuark
-nm_device_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-device-error-quark");
-	return quark;
-}
-
 static void
 nm_device_init (NMDevice *device)
 {

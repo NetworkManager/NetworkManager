@@ -37,24 +37,6 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DEVICE))
 #define NM_DEVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE, NMDeviceClass))
 
-/**
- * NMDeviceError:
- * @NM_DEVICE_ERROR_FAILED: unknown or unclassified error
- * @NM_DEVICE_ERROR_INVALID_CONNECTION: the connection is not valid
- * @NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION: the connection is not compatible
- *   with this device.
- *
- * Errors from #NMDevice methods.
- */
-typedef enum {
-	NM_DEVICE_ERROR_FAILED = 0,              /*< nick=Failed >*/
-	NM_DEVICE_ERROR_INVALID_CONNECTION,      /*< nick=InvalidConnection >*/
-	NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION, /*< nick=IncompatibleConnection >*/
-} NMDeviceError;
-
-#define NM_DEVICE_ERROR nm_device_error_quark ()
-GQuark nm_device_error_quark (void);
-
 #define NM_DEVICE_DEVICE_TYPE "device-type"
 #define NM_DEVICE_UDI "udi"
 #define NM_DEVICE_INTERFACE "interface"

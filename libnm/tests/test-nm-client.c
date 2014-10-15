@@ -101,6 +101,10 @@ test_device_added (void)
 	g_assert (device);
 	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
 
+	/* Try deleting the device via the ordinary NM interface, which should fail */
+	nm_device_delete (device, NULL, &error);
+	g_assert_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_NOT_SOFTWARE);
+
 	g_object_unref (client);
 	g_clear_pointer (&sinfo, nm_test_service_cleanup);
 }

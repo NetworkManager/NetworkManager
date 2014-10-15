@@ -95,4 +95,31 @@ typedef enum {
 #define NM_CRYPTO_ERROR nm_crypto_error_quark ()
 GQuark nm_crypto_error_quark (void);
 
+/**
+ * NMDeviceError:
+ * @NM_DEVICE_ERROR_FAILED: unknown or unclassified error
+ * @NM_DEVICE_ERROR_INVALID_CONNECTION: the specified connection is not valid
+ * @NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION: the specified connection is not
+ *   compatible with this device.
+ * @NM_DEVICE_ERROR_NOT_ACTIVE: the device does not have an active connection
+ * @NM_DEVICE_ERROR_NOT_SOFTWARE: the requested operation is only valid on
+ *   software devices.
+ *
+ * Device-related errors.
+ *
+ * These errors may be returned directly from #NMDevice methods, or may be
+ * returned from D-Bus operations (where they correspond to errors in the
+ * "org.freedesktop.NetworkManager.Device" namespace).
+ */
+typedef enum {
+	NM_DEVICE_ERROR_FAILED = 0,                /*< nick=Failed >*/
+	NM_DEVICE_ERROR_INVALID_CONNECTION,        /*< nick=InvalidConnection >*/
+	NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,   /*< nick=IncompatibleConnection >*/
+	NM_DEVICE_ERROR_NOT_ACTIVE,                /*< nick=NotActive >*/
+	NM_DEVICE_ERROR_NOT_SOFTWARE,              /*< nick=NotSoftware >*/
+} NMDeviceError;
+
+#define NM_DEVICE_ERROR nm_device_error_quark ()
+GQuark nm_device_error_quark (void);
+
 #endif /* __NM_ERRORS_H__ */

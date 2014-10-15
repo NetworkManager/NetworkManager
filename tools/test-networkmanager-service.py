@@ -113,6 +113,9 @@ class ExportedObj(dbus.service.Object):
 ###################################################################
 IFACE_DEVICE = 'org.freedesktop.NetworkManager.Device'
 
+class NotSoftwareException(dbus.DBusException):
+    _dbus_error_name = IFACE_DEVICE + '.NotSoftware'
+
 PD_UDI = "Udi"
 PD_IFACE = "Interface"
 PD_DRIVER = "Driver"
@@ -168,6 +171,12 @@ class Device(ExportedObj):
     # methods
     @dbus.service.method(dbus_interface=IFACE_DEVICE, in_signature='', out_signature='')
     def Disconnect(self):
+        pass
+
+    @dbus.service.method(dbus_interface=IFACE_DEVICE, in_signature='', out_signature='')
+    def Delete(self):
+        # We don't currently support any software device types, so...
+        raise NotSoftwareException()
         pass
 
     def __notify(self, propname):
