@@ -3458,6 +3458,182 @@ test_read_minimal_slave ()
 	g_clear_object (&connection);
 }
 
+static void
+test_read_enum_property (void)
+{
+	NMConnection *connection;
+	NMSettingIP6Config *s_ip6;
+	GError *error = NULL;
+	gboolean success;
+
+	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_Enum_Property", &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* IPv6 setting */
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert_cmpint (nm_setting_ip6_config_get_ip6_privacy (s_ip6), ==, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_enum_property (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP6Config *s_ip6;
+	char *uuid;
+	gboolean success;
+	NMConnection *reread;
+	char *testfile = NULL;
+	GError *error = NULL;
+	pid_t owner_grp;
+	uid_t owner_uid;
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+
+	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Enum Property",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP6 setting */
+	s_ip6 = NM_SETTING_IP6_CONFIG (nm_setting_ip6_config_new ());
+	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
+	g_object_set (s_ip6,
+	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+	              NULL);
+
+	nmtst_connection_normalize (connection);
+
+	/* Write out the connection */
+	owner_uid = geteuid ();
+	owner_grp = getegid ();
+	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile);
+
+	/* Read the connection back in and compare it to the one we just wrote out */
+	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	nmtst_assert_connection_equals (reread, FALSE, connection, FALSE);
+
+	unlink (testfile);
+	g_free (testfile);
+
+	g_object_unref (reread);
+	g_object_unref (connection);
+}
+
+static void
+test_read_flags_property (void)
+{
+	NMConnection *connection;
+	NMSettingGsm *s_gsm;
+	GError *error = NULL;
+	gboolean success;
+
+	connection = nm_keyfile_plugin_connection_from_file (TEST_KEYFILES_DIR"/Test_Flags_Property", &error);
+	g_assert_no_error (error);
+	g_assert (connection);
+	success = nm_connection_verify (connection, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* GSM setting */
+	s_gsm = nm_connection_get_setting_gsm (connection);
+	g_assert (s_gsm);
+	g_assert_cmpint (nm_setting_gsm_get_password_flags (s_gsm), ==,
+	                   NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_REQUIRED);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_flags_property (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSetting *s_gsm;
+	char *uuid;
+	gboolean success;
+	NMConnection *reread;
+	char *testfile = NULL;
+	GError *error = NULL;
+	pid_t owner_grp;
+	uid_t owner_uid;
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+
+	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Flags Property",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_GSM_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* GSM setting */
+	s_gsm = nm_setting_gsm_new ();
+	nm_connection_add_setting (connection, s_gsm);
+	g_object_set (s_gsm,
+	              NM_SETTING_GSM_NUMBER, "#99*",
+	              NM_SETTING_GSM_APN, "myapn",
+	              NM_SETTING_GSM_USERNAME, "adfasdfasdf",
+	              NM_SETTING_GSM_PASSWORD_FLAGS, NM_SETTING_SECRET_FLAG_NOT_SAVED | NM_SETTING_SECRET_FLAG_NOT_REQUIRED,
+	              NULL);
+
+	nmtst_connection_normalize (connection);
+
+	/* Write out the connection */
+	owner_uid = geteuid ();
+	owner_grp = getegid ();
+	success = nm_keyfile_plugin_write_test_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+	g_assert (testfile);
+
+	/* Read the connection back in and compare it to the one we just wrote out */
+	reread = nm_keyfile_plugin_connection_from_file (testfile, &error);
+	g_assert_no_error (error);
+	g_assert (reread);
+
+	nmtst_assert_connection_equals (reread, FALSE, connection, FALSE);
+
+	unlink (testfile);
+	g_free (testfile);
+
+	g_object_unref (reread);
+	g_object_unref (connection);
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -3522,6 +3698,11 @@ int main (int argc, char **argv)
 
 	g_test_add_func ("/keyfile/test_read_minimal", test_read_minimal);
 	g_test_add_func ("/keyfile/test_read_minimal_slave", test_read_minimal_slave);
+
+	g_test_add_func ("/keyfile/test_read_enum_property ", test_read_enum_property);
+	g_test_add_func ("/keyfile/test_write_enum_property ", test_write_enum_property);
+	g_test_add_func ("/keyfile/test_read_flags_property ", test_read_flags_property);
+	g_test_add_func ("/keyfile/test_write_flags_property ", test_write_flags_property);
 
 	return g_test_run ();
 }

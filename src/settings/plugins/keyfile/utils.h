@@ -61,6 +61,7 @@ void nm_keyfile_plugin_kf_set_##stype (GKeyFile *kf, \
                                        set_ctype value);
 DEFINE_KF_WRAPPER_PROTO(string, gchar*, const gchar*)
 DEFINE_KF_WRAPPER_PROTO(integer, gint, gint)
+DEFINE_KF_WRAPPER_PROTO(uint64, guint64, guint64)
 DEFINE_KF_WRAPPER_PROTO(boolean, gboolean, gboolean)
 DEFINE_KF_WRAPPER_PROTO(value, gchar*, const gchar*)
 

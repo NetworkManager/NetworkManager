@@ -1,0 +1,11 @@
+[connection]
+id=Test Flags Property
+uuid=05a5ec81-fa72-4b7c-9f85-4a0dfd36c84f
+type=gsm
+
+[gsm]
+number=*99#
+username=username
+password-flags=5
+apn=my.apn
+

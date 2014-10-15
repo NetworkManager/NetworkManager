@@ -1,0 +1,8 @@
+[connection]
+id=Test Wired Connection IP6
+uuid=4e80a56d-c99f-4aad-a6dd-b449bc398c57
+type=802-3-ethernet
+
+[ipv6]
+method=auto
+ip6-privacy=2
