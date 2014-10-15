@@ -131,4 +131,44 @@ typedef enum {
 #define NM_DEVICE_ERROR nm_device_error_quark ()
 GQuark nm_device_error_quark (void);
 
+/**
+ * NMManagerError:
+ * @NM_MANAGER_ERROR_FAILED: unknown or unclassified error
+ * @NM_MANAGER_ERROR_PERMISSION_DENIED: Permission denied.
+ * @NM_MANAGER_ERROR_UNKNOWN_CONNECTION: The requested connection is not known.
+ * @NM_MANAGER_ERROR_UNKNOWN_DEVICE: The requested device is not known.
+ * @NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE: The requested connection cannot be
+ *   activated at this time.
+ * @NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE: The request could not be completed
+ *   because a required connection is not active.
+ * @NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE: The connection to be activated was
+ *   already active on another device.
+ * @NM_MANAGER_ERROR_DEPENDENCY_FAILED: An activation request failed due to a
+ *   dependency being unavailable.
+ * @NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE: The manager is already in the requested
+ *   sleep/wake state.
+ * @NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED: The network is already
+ *   enabled/disabled.
+ *
+ * Errors related to the main "network management" interface of NetworkManager.
+ * These may be returned from #NMClient methods that invoke D-Bus operations on
+ * the "org.freedesktop.NetworkManager" interface, and correspond to D-Bus
+ * errors in that namespace.
+ */
+typedef enum {
+	NM_MANAGER_ERROR_FAILED = 0,                  /*< nick=Failed >*/
+	NM_MANAGER_ERROR_PERMISSION_DENIED,           /*< nick=PermissionDenied >*/
+	NM_MANAGER_ERROR_UNKNOWN_CONNECTION,          /*< nick=UnknownConnection >*/
+	NM_MANAGER_ERROR_UNKNOWN_DEVICE,              /*< nick=UnknownDevice >*/
+	NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE,    /*< nick=ConnectionNotAvailable >*/
+	NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,       /*< nick=ConnectionNotActive >*/
+	NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,   /*< nick=ConnectionAlreadyActive >*/
+	NM_MANAGER_ERROR_DEPENDENCY_FAILED,           /*< nick=DependencyFailed >*/
+	NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,     /*< nick=AlreadyAsleepOrAwake >*/
+	NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED, /*< nick=AlreadyEnabledOrDisabled >*/
+} NMManagerError;
+
+GQuark nm_manager_error_quark (void);
+#define NM_MANAGER_ERROR (nm_manager_error_quark ())
+
 #endif /* __NM_ERRORS_H__ */

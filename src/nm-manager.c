@@ -250,19 +250,6 @@ enum {
 
 /************************************************************************/
 
-#define NM_MANAGER_ERROR (nm_manager_error_quark ())
-
-static GQuark
-nm_manager_error_quark (void)
-{
-	static GQuark quark = 0;
-	if (!quark)
-		quark = g_quark_from_static_string ("nm-manager-error");
-	return quark;
-}
-
-/************************************************************************/
-
 static void active_connection_state_changed (NMActiveConnection *active,
                                              GParamSpec *pspec,
                                              NMManager *self);
@@ -1997,7 +1984,7 @@ _register_device_factory (NMManager *self,
 		ftype = nm_device_factory_get_device_type (factory);
 		for (iter = priv->factories; iter; iter = iter->next) {
 			if (ftype == nm_device_factory_get_device_type (iter->data)) {
-				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INTERNAL,
+				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 				             "multiple plugins for same type (using '%s' instead of '%s')",
 				             (char *) g_object_get_data (G_OBJECT (iter->data), PLUGIN_PATH_TAG),
 				             path);
@@ -2517,7 +2504,7 @@ ensure_master_active_connection (NMManager *self,
 		/* Otherwise, the device is unmanaged, unavailable, or disconnecting */
 		g_set_error (error,
 		             NM_MANAGER_ERROR,
-		             NM_MANAGER_ERROR_UNMANAGED_DEVICE,
+		             NM_MANAGER_ERROR_DEPENDENCY_FAILED,
 		             "Master device %s unmanaged or not available for activation",
 		             nm_device_get_iface (master_device));
 	} else if (master_connection) {
@@ -2692,7 +2679,7 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	 */
 	if (!nm_active_connection_get_user_requested (active) &&
 	    !nm_device_autoconnect_allowed (device)) {
-		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_AUTOCONNECT_NOT_ALLOWED,
+		g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE,
 		             "%s does not allow automatic connections at this time",
 		             nm_device_get_iface (device));
 		return FALSE;
@@ -3361,9 +3348,10 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	if (vpn) {
 		/* Try to fill the VPN's connection setting and name at least */
 		if (!nm_connection_get_setting_vpn (connection)) {
-			error = g_error_new_literal (NM_MANAGER_ERROR,
-			                             NM_MANAGER_ERROR_UNSUPPORTED_CONNECTION_TYPE,
+			error = g_error_new_literal (NM_CONNECTION_ERROR,
+			                             NM_CONNECTION_ERROR_MISSING_SETTING,
 			                             "VPN connections require a 'vpn' setting");
+			g_prefix_error (&error, "%s: ", NM_SETTING_VPN_SETTING_NAME);
 			goto error;
 		}
 
@@ -4677,7 +4665,7 @@ nm_manager_new (NMSettings *settings,
 
 	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	if (!bus) {
-		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INTERNAL,
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		                     "Failed to initialize D-Bus connection");
 		g_object_unref (singleton);
 		return NULL;
@@ -4701,7 +4689,7 @@ nm_manager_new (NMSettings *settings,
 	                  G_CALLBACK (connectivity_changed), singleton);
 
 	if (!dbus_connection_add_filter (dbus_connection, prop_filter, singleton, NULL)) {
-		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_INTERNAL,
+		g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_FAILED,
 		                     "Failed to register DBus connection filter");
 		g_object_unref (singleton);
 		return NULL;
@@ -5261,7 +5249,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	                                        G_TYPE_FROM_CLASS (manager_class),
 	                                        &dbus_glib_nm_manager_object_info);
 
-	dbus_g_error_domain_register (NM_MANAGER_ERROR, NULL, NM_TYPE_MANAGER_ERROR);
+	dbus_g_error_domain_register (NM_MANAGER_ERROR, NM_DBUS_INTERFACE, NM_TYPE_MANAGER_ERROR);
 	dbus_g_error_domain_register (NM_LOGGING_ERROR, "org.freedesktop.NetworkManager.Logging", NM_TYPE_LOGGING_ERROR);
 }
 

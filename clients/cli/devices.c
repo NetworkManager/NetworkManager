@@ -1472,16 +1472,11 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 	active = nm_client_activate_connection_finish (NM_CLIENT (client), result, &error);
 
 	if (error) {
-		char *dbus_err;
-
 		/* If no connection existed for the device, create one and activate it */
-		dbus_err = g_dbus_error_get_remote_error (error);
-		if (g_strcmp0 (dbus_err, "org.freedesktop.NetworkManager.UnknownConnection") == 0) {
+		if (g_error_matches (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION)) {
 			create_connect_connection_for_device (info);
-			g_free (dbus_err);
 			return;
 		}
-		g_free (dbus_err);
 
 		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text, _("Error: Device activation failed: %s"),

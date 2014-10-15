@@ -35,22 +35,6 @@
 #define NM_IS_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_MANAGER))
 #define NM_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_MANAGER, NMManagerClass))
 
-typedef enum {
-	NM_MANAGER_ERROR_UNKNOWN_CONNECTION = 0,      /*< nick=UnknownConnection >*/
-	NM_MANAGER_ERROR_UNKNOWN_DEVICE,              /*< nick=UnknownDevice >*/
-	NM_MANAGER_ERROR_UNMANAGED_DEVICE,            /*< nick=UnmanagedDevice >*/
-	NM_MANAGER_ERROR_SYSTEM_CONNECTION,           /*< nick=SystemConnection >*/
-	NM_MANAGER_ERROR_PERMISSION_DENIED,           /*< nick=PermissionDenied >*/
-	NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,       /*< nick=ConnectionNotActive >*/
-	NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,     /*< nick=AlreadyAsleepOrAwake >*/
-	NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED, /*< nick=AlreadyEnabledOrDisabled >*/
-	NM_MANAGER_ERROR_UNSUPPORTED_CONNECTION_TYPE, /*< nick=UnsupportedConnectionType >*/
-	NM_MANAGER_ERROR_DEPENDENCY_FAILED,           /*< nick=DependencyFailed >*/
-	NM_MANAGER_ERROR_AUTOCONNECT_NOT_ALLOWED,     /*< nick=AutoconnectNotAllowed >*/
-	NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,   /*< nick=ConnectionAlreadyActive >*/
-	NM_MANAGER_ERROR_INTERNAL,                    /*< nick=Internal >*/
-} NMManagerError;
-
 #define NM_MANAGER_VERSION "version"
 #define NM_MANAGER_STATE "state"
 #define NM_MANAGER_STARTUP "startup"
