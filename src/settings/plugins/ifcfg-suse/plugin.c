@@ -55,17 +55,6 @@ typedef struct {
 	char *hostname;
 } SCPluginIfcfgPrivate;
 
-GQuark
-ifcfg_plugin_error_quark (void)
-{
-	static GQuark error_quark = 0;
-
-	if (G_UNLIKELY (error_quark == 0))
-		error_quark = g_quark_from_static_string ("ifcfg-plugin-error-quark");
-
-	return error_quark;
-}
-
 typedef void (*FileChangedFn) (gpointer user_data);
 
 typedef struct {

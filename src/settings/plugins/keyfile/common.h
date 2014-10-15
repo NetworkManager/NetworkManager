@@ -30,8 +30,5 @@
 
 #define VPN_SECRETS_GROUP "vpn-secrets"
 
-#define KEYFILE_PLUGIN_ERROR (keyfile_plugin_error_quark ())
-GQuark keyfile_plugin_error_quark (void);
-
 #endif  /* __COMMON_H__ */
 

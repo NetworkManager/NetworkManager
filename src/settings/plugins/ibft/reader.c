@@ -45,7 +45,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-logging.h"
 
-#include "errors.h"
 #include "reader.h"
 
 #define PARSE_WARNING(msg...) nm_log_warn (LOGD_SETTINGS, "    " msg)
@@ -136,13 +135,13 @@ read_ibft_blocks (const char *iscsiadm_path,
 		goto done;
 
 	if (!WIFEXITED (status)) {
-		g_set_error (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "iBFT: %s exited abnormally.", iscsiadm_path);
 		goto done;
 	}
 
 	if (WEXITSTATUS (status) != 0) {
-		g_set_error (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 		             "iBFT: %s exited with error %d.  Message: '%s'",
 		             iscsiadm_path, WEXITSTATUS (status), err ? err : "(none)");
 		goto done;
@@ -263,7 +262,7 @@ parse_ibft_config (const GPtrArray *data, GError **error, ...)
 	va_end (ap);
 
 	if (!success) {
-		g_set_error_literal (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "iBFT: failed to match at least one iscsiadm block field");
 	}
 	return success;
@@ -302,7 +301,7 @@ ip4_setting_add_from_block (const GPtrArray *block,
 		goto error;
 
 	if (!s_method) {
-		g_set_error_literal (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "iBFT: malformed iscsiadm record: missing " ISCSI_BOOTPROTO_TAG);
 		goto error;
 	}
@@ -313,7 +312,7 @@ ip4_setting_add_from_block (const GPtrArray *block,
 		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 		goto success;
 	} else if (g_ascii_strcasecmp (s_method, "static") != 0) {
-		g_set_error (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: unknown " ISCSI_BOOTPROTO_TAG " '%s'.",
 		             s_method);
 		goto error;
@@ -324,7 +323,7 @@ ip4_setting_add_from_block (const GPtrArray *block,
 
 	/* IP address */
 	if (!s_ipaddr || inet_pton (AF_INET, s_ipaddr, &ipaddr) != 1) {
-		g_set_error (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid IP address '%s'.",
 		             s_ipaddr);
 		goto error;
@@ -332,7 +331,7 @@ ip4_setting_add_from_block (const GPtrArray *block,
 
 	/* Subnet/prefix */
 	if (!s_netmask || inet_pton (AF_INET, s_netmask, &netmask) != 1) {
-		g_set_error (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid subnet mask '%s'.",
 		             s_netmask);
 		goto error;
@@ -340,21 +339,21 @@ ip4_setting_add_from_block (const GPtrArray *block,
 	prefix = nm_utils_ip4_netmask_to_prefix (netmask);
 
 	if (s_gateway && inet_pton (AF_INET, s_gateway, &gateway) != 1) {
-		g_set_error (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid IP gateway '%s'.",
 		             s_gateway);
 		goto error;
 	}
 
 	if (s_dns1 && inet_pton (AF_INET, s_dns1, &dns1) != 1) {
-		g_set_error (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid DNS1 address '%s'.",
 		             s_dns1);
 		goto error;
 	}
 
 	if (s_dns2 && inet_pton (AF_INET, s_dns2, &dns2) != 1) {
-		g_set_error (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid DNS2 address '%s'.",
 		             s_dns2);
 		goto error;
@@ -400,7 +399,7 @@ connection_setting_add (const GPtrArray *block,
 	                        NULL))
 		return FALSE;
 	if (!s_hwaddr) {
-		g_set_error_literal (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "iBFT: malformed iscsiadm record: missing " ISCSI_HWADDR_TAG);
 		return FALSE;
 	}
@@ -472,7 +471,8 @@ vlan_setting_add_from_block (const GPtrArray *block,
 	/* VLAN 0 is normally a valid VLAN ID, but in the iBFT case it means "no VLAN" */
 	vlan_id = nm_utils_ascii_str_to_int64 (vlan_id_str, 10, 1, 4095, -1);
 	if (vlan_id == -1) {
-		g_set_error (error, IBFT_PLUGIN_ERROR, 0, "Invalid VLAN_ID '%s'", vlan_id_str);
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "Invalid VLAN_ID '%s'", vlan_id_str);
 		return FALSE;
 	}
 
@@ -495,13 +495,13 @@ wired_setting_add_from_block (const GPtrArray *block,
 	g_assert (connection);
 
 	if (!parse_ibft_config (block, NULL, ISCSI_HWADDR_TAG, &hwaddr, NULL)) {
-		g_set_error_literal (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "iBFT: malformed iscsiadm record: missing " ISCSI_HWADDR_TAG);
 		return FALSE;
 	}
 
 	if (!nm_utils_hwaddr_valid (hwaddr, ETH_ALEN)) {
-		g_set_error (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "iBFT: malformed iscsiadm record: invalid " ISCSI_HWADDR_TAG " '%s'.",
 		             hwaddr);
 		return FALSE;
@@ -524,7 +524,7 @@ connection_from_block (const GPtrArray *block, GError **error)
 	g_assert (block);
 
 	if (!parse_ibft_config (block, error, ISCSI_IFACE_TAG, &iface, NULL)) {
-		g_set_error_literal (error, IBFT_PLUGIN_ERROR, 0,
+		g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		                     "iBFT: malformed iscsiadm record: missing " ISCSI_IFACE_TAG);
 		return NULL;
 	}

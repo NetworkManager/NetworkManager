@@ -48,6 +48,4 @@ struct _SCPluginIfupdownClass {
 
 GType sc_plugin_ifupdown_get_type (void);
 
-GQuark ifupdown_plugin_error_quark (void);
-
 #endif	/* _PLUGIN_H_ */

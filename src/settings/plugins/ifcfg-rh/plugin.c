@@ -141,7 +141,8 @@ _internal_new_connection (SCPluginIfcfg *self,
 		if (local)
 			g_propagate_error (error, local);
 		else
-			g_set_error (error, IFCFG_PLUGIN_ERROR, 0, "(unknown)");
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+			             "(unknown)");
 		return NULL;
 	}
 

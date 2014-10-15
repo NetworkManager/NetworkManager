@@ -36,7 +36,6 @@
 #include "NetworkManagerUtils.h"
 
 #include "plugin.h"
-#include "errors.h"
 #include "reader.h"
 #include "nm-ibft-connection.h"
 

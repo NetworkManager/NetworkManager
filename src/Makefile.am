@@ -169,7 +169,6 @@ nm_sources = \
 	settings/nm-system-config-interface.h \
 	\
 	settings/plugins/keyfile/common.h \
-	settings/plugins/keyfile/errors.c \
 	settings/plugins/keyfile/nm-keyfile-connection.c \
 	settings/plugins/keyfile/nm-keyfile-connection.h \
 	settings/plugins/keyfile/plugin.c \

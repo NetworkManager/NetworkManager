@@ -27,7 +27,6 @@ test_keyfile_SOURCES = \
 	test-keyfile.c \
 	../reader.c \
 	../writer.c \
-	../errors.c \
 	../utils.c
 
 test_keyfile_LDADD = \
