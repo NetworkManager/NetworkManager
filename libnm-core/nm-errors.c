@@ -18,10 +18,43 @@
  * Copyright 2004 - 2014 Red Hat, Inc.
  */
 
-#include <glib.h>
+#include <string.h>
+#include <gio/gio.h>
 
 #include "nm-errors.h"
 #include "nm-glib-compat.h"
+#include "nm-dbus-interface.h"
+#include "nm-core-internal.h"
 
 G_DEFINE_QUARK (nm-connection-error-quark, nm_connection_error)
 G_DEFINE_QUARK (nm-crypto-error-quark, nm_crypto_error)
+
+static void
+register_error_domain (GQuark domain,
+                       const char *interface,
+                       GType enum_type)
+{
+	GEnumClass *enum_class;
+	GEnumValue *e;
+	char *error_name;
+	int i;
+
+	enum_class = g_type_class_ref (enum_type);
+	for (i = 0; i < enum_class->n_values; i++) {
+		e = &enum_class->values[i];
+		g_assert (strchr (e->value_nick, '-') == NULL);
+		error_name = g_strdup_printf ("%s.%s", interface, e->value_nick);
+		g_dbus_error_register_error (domain, e->value, error_name);
+		g_free (error_name);
+	}
+
+	g_type_class_unref (enum_class);
+}
+
+void
+_nm_dbus_errors_init (void)
+{
+	register_error_domain (NM_CONNECTION_ERROR,
+	                       NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
+	                       NM_TYPE_CONNECTION_ERROR);
+}

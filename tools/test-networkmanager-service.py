@@ -905,9 +905,31 @@ class NetworkManager(ExportedObj):
 ###################################################################
 IFACE_CONNECTION = 'org.freedesktop.NetworkManager.Settings.Connection'
 
+class InvalidPropertyException(dbus.DBusException):
+    _dbus_error_name = IFACE_CONNECTION + '.InvalidProperty'
+
+class MissingPropertyException(dbus.DBusException):
+    _dbus_error_name = IFACE_CONNECTION + '.MissingProperty'
+
+class InvalidSettingException(dbus.DBusException):
+    _dbus_error_name = IFACE_CONNECTION + '.InvalidSetting'
+
+class MissingSettingException(dbus.DBusException):
+    _dbus_error_name = IFACE_CONNECTION + '.MissingSetting'
+
 class Connection(dbus.service.Object):
     def __init__(self, bus, object_path, settings, remove_func):
         dbus.service.Object.__init__(self, bus, object_path)
+
+        if not settings.has_key('connection'):
+            raise MissingSettingException('connection: setting is required')
+        s_con = settings['connection']
+        if not s_con.has_key('type'):
+            raise MissingPropertyException('connection.type: property is required')
+        type = s_con['type']
+        if not type in ['802-3-ethernet', '802-11-wireless', 'vlan', 'wimax']:
+            raise InvalidPropertyException('connection.type: unsupported connection type')
+
         self.path = object_path
         self.settings = settings
         self.remove_func = remove_func

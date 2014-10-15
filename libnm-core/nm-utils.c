@@ -233,6 +233,8 @@ nm_utils_init (GError **error)
 
 		if (!crypto_init (error))
 			return FALSE;
+
+		_nm_dbus_errors_init ();
 	}
 	return TRUE;
 }

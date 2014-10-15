@@ -50,6 +50,11 @@
  *
  * Describes errors that may result from operations involving a #NMConnection
  * or its #NMSettings.
+ *
+ * These errors may be returned directly from #NMConnection and #NMSetting
+ * methods, or may be returned from D-Bus operations (eg on #NMClient or
+ * #NMDevice), where they correspond to errors in the
+ * "org.freedesktop.NetworkManager.Settings.Connection" namespace.
  */
 typedef enum {
 	NM_CONNECTION_ERROR_FAILED = 0,                   /*< nick=Failed >*/

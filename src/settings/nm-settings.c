@@ -1995,9 +1995,9 @@ nm_settings_class_init (NMSettingsClass *class)
 	dbus_g_error_domain_register (NM_SETTINGS_ERROR,
 	                              NM_DBUS_INTERFACE_SETTINGS,
 	                              NM_TYPE_SETTINGS_ERROR);
-
-	/* And register all the settings errors with D-Bus */
-	dbus_g_error_domain_register (NM_CONNECTION_ERROR, NULL, NM_TYPE_CONNECTION_ERROR);
+	dbus_g_error_domain_register (NM_CONNECTION_ERROR,
+	                              NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
+	                              NM_TYPE_CONNECTION_ERROR);
 
 	dbus_g_object_type_install_info (NM_TYPE_SETTINGS, &dbus_glib_nm_settings_object_info);
 

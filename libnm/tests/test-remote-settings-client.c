@@ -415,6 +415,49 @@ test_add_remove_connection (void)
 
 /*******************************************************************/
 
+static void
+add_bad_cb (GObject *s,
+            GAsyncResult *result,
+            gpointer user_data)
+{
+	gboolean *done = user_data;
+	GError *error = NULL;
+
+	remote = nm_client_add_connection_finish (client, result, &error);
+	g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+	*done = TRUE;
+}
+
+static void
+test_add_bad_connection (void)
+{
+	NMConnection *connection;
+	time_t start, now;
+	gboolean done = FALSE;
+
+	/* The test daemon doesn't support bond connections */
+	connection = nmtst_create_minimal_connection ("bad connection test", NULL, NM_SETTING_BOND_SETTING_NAME, NULL);
+
+	nm_client_add_connection_async (client,
+	                                connection,
+	                                TRUE,
+	                                NULL,
+	                                add_bad_cb,
+	                                &done);
+	g_object_unref (connection);
+
+	start = time (NULL);
+	do {
+		now = time (NULL);
+		g_main_context_iteration (NULL, FALSE);
+	} while ((done == FALSE) && (now - start < 5));
+	g_assert (done == TRUE);
+	g_assert (remote == NULL);
+}
+
+/*******************************************************************/
+
 int
 main (int argc, char **argv)
 {
@@ -446,6 +489,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/client/make_visible", test_make_visible);
 	g_test_add_func ("/client/remove_connection", test_remove_connection);
 	g_test_add_func ("/client/add_remove_connection", test_add_remove_connection);
+	g_test_add_func ("/client/add_bad_connection", test_add_bad_connection);
 
 	ret = g_test_run ();
 
