@@ -276,7 +276,7 @@ endif
 
 
 GLIB_GENERATED = nm-enum-types.h nm-enum-types.c
-GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
+GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include <nm-core-enum-types.h>\n'
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 nm_enum_types_sources = $(nm_sources)
 

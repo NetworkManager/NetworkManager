@@ -21,6 +21,38 @@
 #define __NM_ERRORS_H__
 
 /**
+ * NMAgentManagerError:
+ * @NM_AGENT_MANAGER_ERROR_FAILED: unknown or unspecified error
+ * @NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED: The caller does not have permission
+ *   to register a secret agent, or is trying to register the same secret agent
+ *   twice.
+ * @NM_AGENT_MANAGER_ERROR_INVALID_IDENTIFIER: The identifier is not a valid
+ *   secret agent identifier.
+ * @NM_AGENT_MANAGER_ERROR_NOT_REGISTERED: The caller tried to unregister an agent
+ *   that was not registered.
+ * @NM_AGENT_MANAGER_ERROR_NO_SECRETS: No secret agent returned secrets for this
+ *   request
+ * @NM_AGENT_MANAGER_ERROR_USER_CANCELED: The user canceled the secrets request.
+ *
+ * Errors returned from the secret-agent manager.
+ *
+ * These errors may be returned from operations that could cause secrets to be
+ * requested (such as nm_client_activate_connection()), and correspond to D-Bus
+ * errors in the "org.freedesktop.NetworkManager.AgentManager" namespace.
+ */
+typedef enum {
+	NM_AGENT_MANAGER_ERROR_FAILED = 0,         /*< nick=Failed >*/
+	NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,  /*< nick=PermissionDenied >*/
+	NM_AGENT_MANAGER_ERROR_INVALID_IDENTIFIER, /*< nick=InvalidIdentifier >*/
+	NM_AGENT_MANAGER_ERROR_NOT_REGISTERED,     /*< nick=NotRegistered >*/
+	NM_AGENT_MANAGER_ERROR_NO_SECRETS,         /*< nick=NoSecrets >*/
+	NM_AGENT_MANAGER_ERROR_USER_CANCELED,      /*< nick=UserCanceled >*/
+} NMAgentManagerError;
+
+GQuark nm_agent_manager_error_quark (void);
+#define NM_AGENT_MANAGER_ERROR (nm_agent_manager_error_quark ())
+
+/**
  * NMConnectionError:
  * @NM_CONNECTION_ERROR_FAILED: unknown or unclassified error
  * @NM_CONNECTION_ERROR_SETTING_NOT_FOUND: the #NMConnection object
