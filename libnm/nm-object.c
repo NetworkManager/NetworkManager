@@ -1445,8 +1445,11 @@ _nm_object_reload_properties (NMObject *object, GError **error)
 		                              g_variant_new ("(s)", interface),
 		                              G_DBUS_CALL_FLAGS_NONE, -1,
 		                              NULL, error);
-		if (!ret)
+		if (!ret) {
+			if (error && *error)
+				g_dbus_error_strip_remote_error (*error);
 			return FALSE;
+		}
 
 		g_variant_get (ret, "(@a{sv})", &props);
 		process_properties_changed (object, props, TRUE);
@@ -1581,6 +1584,7 @@ reload_got_properties (GObject *proxy,
 		g_variant_unref (props);
 		g_variant_unref (ret);
 	} else {
+		g_dbus_error_strip_remote_error (error);
 		if (priv->reload_error)
 			g_error_free (error);
 		else

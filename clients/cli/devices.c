@@ -1396,7 +1396,6 @@ add_and_activate_cb (GObject *client,
 	active = nm_client_add_and_activate_connection_finish (NM_CLIENT (client), result, &error);
 
 	if (error) {
-		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text, _("Error: Failed to add/activate new connection: %s"),
 		                 error->message);
 		g_error_free (error);
@@ -1478,7 +1477,6 @@ connect_device_cb (GObject *client, GAsyncResult *result, gpointer user_data)
 			return;
 		}
 
-		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text, _("Error: Device activation failed: %s"),
 		                 error->message);
 		g_error_free (error);
@@ -1621,7 +1619,6 @@ disconnect_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	GError *error = NULL;
 
 	if (!nm_device_disconnect_finish (device, result, &error)) {
-		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text, _("Error: Device '%s' (%s) disconnecting failed: %s"),
 		                 nm_device_get_iface (device),
 		                 nm_object_get_path (NM_OBJECT (device)),
@@ -1727,7 +1724,6 @@ delete_device_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	GError *error = NULL;
 
 	if (!nm_device_delete_finish (device, result, &error)) {
-		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text, _("Error: Device '%s' (%s) deletion failed: %s"),
 		                 nm_device_get_iface (device),
 		                 nm_object_get_path (NM_OBJECT (device)),
@@ -2411,7 +2407,6 @@ request_rescan_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 
 	nm_device_wifi_request_scan_finish (NM_DEVICE_WIFI (object), result, &error);
 	if (error) {
-		g_dbus_error_strip_remote_error (error);
 		g_string_printf (nmc->return_text, _("Error: %s."), error->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
 		g_error_free (error);

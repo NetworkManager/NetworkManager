@@ -1900,10 +1900,15 @@ nm_device_disconnect (NMDevice *device,
                       GCancellable *cancellable,
                       GError **error)
 {
+	gboolean ret;
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	return nmdbus_device_call_disconnect_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                                           cancellable, error);
+	ret = nmdbus_device_call_disconnect_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                                          cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 static void
@@ -1916,8 +1921,10 @@ device_disconnect_cb (GObject *proxy,
 
 	if (nmdbus_device_call_disconnect_finish (NMDBUS_DEVICE (proxy), result, &error))
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
@@ -1995,10 +2002,15 @@ nm_device_delete (NMDevice *device,
                   GCancellable *cancellable,
                   GError **error)
 {
+	gboolean ret;
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
-	return nmdbus_device_call_delete_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
-	                                       cancellable, error);
+	ret = nmdbus_device_call_delete_sync (NM_DEVICE_GET_PRIVATE (device)->proxy,
+	                                      cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 static void
@@ -2011,8 +2023,10 @@ device_delete_cb (GObject *proxy,
 
 	if (nmdbus_device_call_delete_finish (NMDBUS_DEVICE (proxy), result, &error))
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);

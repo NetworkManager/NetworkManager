@@ -297,6 +297,7 @@ add_connection_done (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	}
 
 	if (error) {
+		g_dbus_error_strip_remote_error (error);
 		add_connection_info_complete (info->self, info, NULL, error);
 		g_clear_error (&error);
 	}
@@ -381,9 +382,11 @@ nm_remote_settings_load_connections (NMRemoteSettings *settings,
 	                                                 (const char * const *) filenames,
 	                                                 &success,
 	                                                 failures,
-	                                                 cancellable, error))
+	                                                 cancellable, error)) {
+		if (error && *error)
+			g_dbus_error_strip_remote_error (*error);
 		success = FALSE;
-
+	}
 	return success;
 }
 
@@ -399,8 +402,10 @@ load_connections_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	                                                  &success, &failures,
 	                                                  result, &error))
 		g_simple_async_result_set_op_res_gpointer (simple, failures, (GDestroyNotify) g_strfreev);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
@@ -461,8 +466,11 @@ nm_remote_settings_reload_connections (NMRemoteSettings *settings,
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
 	if (!nmdbus_settings_call_reload_connections_sync (priv->proxy, &success,
-	                                                   cancellable, error))
+	                                                   cancellable, error)) {
+		if (error && *error)
+			g_dbus_error_strip_remote_error (*error);
 		success = FALSE;
+	}
 
 	return success;
 }
@@ -478,8 +486,10 @@ reload_connections_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	                                                    &success,
 	                                                    result, &error))
 		g_simple_async_result_set_op_res_gboolean (simple, success);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
@@ -528,14 +538,19 @@ nm_remote_settings_save_hostname (NMRemoteSettings *settings,
                                   GError **error)
 {
 	NMRemoteSettingsPrivate *priv;
+	gboolean ret;
+
 
 	g_return_val_if_fail (NM_IS_REMOTE_SETTINGS (settings), FALSE);
 
 	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
 
-	return nmdbus_settings_call_save_hostname_sync (priv->proxy,
-	                                                hostname ? hostname : "",
-	                                                cancellable, error);
+	ret = nmdbus_settings_call_save_hostname_sync (priv->proxy,
+	                                               hostname ? hostname : "",
+	                                               cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 static void
@@ -548,8 +563,10 @@ save_hostname_cb (GObject *proxy,
 
 	if (nmdbus_settings_call_save_hostname_finish (NMDBUS_SETTINGS (proxy), result, &error))
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
 }

@@ -288,12 +288,17 @@ nm_device_wifi_request_scan (NMDeviceWifi *device,
                              GCancellable *cancellable,
                              GError **error)
 {
+	gboolean ret;
+
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
 
-	return nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
-	                                                  g_variant_new_array (G_VARIANT_TYPE ("{sv}"),
-	                                                                       NULL, 0),
-	                                                  cancellable, error);
+	ret = nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
+	                                                 g_variant_new_array (G_VARIANT_TYPE ("{sv}"),
+	                                                                      NULL, 0),
+	                                                 cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 static void
@@ -310,8 +315,10 @@ request_scan_cb (GObject *source,
 	if (nmdbus_device_wifi_call_request_scan_finish (NMDBUS_DEVICE_WIFI (source),
 	                                                 result, &error))
 		g_simple_async_result_set_op_res_gboolean (info->simple, TRUE);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (info->simple, error);
+	}
 
 	g_simple_async_result_complete (info->simple);
 	g_object_unref (info->simple);

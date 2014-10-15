@@ -312,6 +312,8 @@ get_permissions_sync (NMManager *self, GError **error)
 		g_variant_unref (permissions);
 		return TRUE;
 	} else {
+		if (error && *error)
+			g_dbus_error_strip_remote_error (*error);
 		update_permissions (self, NULL);
 		return FALSE;
 	}
@@ -409,11 +411,16 @@ nm_manager_networking_get_enabled (NMManager *manager)
 gboolean
 nm_manager_networking_set_enabled (NMManager *manager, gboolean enable, GError **error)
 {
+	gboolean ret;
+
 	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
 
-	return nmdbus_manager_call_enable_sync (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
-	                                        enable,
-	                                        NULL, error);
+	ret = nmdbus_manager_call_enable_sync (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
+	                                       enable,
+	                                       NULL, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 gboolean
@@ -500,6 +507,8 @@ nm_manager_wimax_hardware_get_enabled (NMManager *manager)
 gboolean
 nm_manager_get_logging (NMManager *manager, char **level, char **domains, GError **error)
 {
+	gboolean ret;
+
 	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
 	g_return_val_if_fail (level == NULL || *level == NULL, FALSE);
 	g_return_val_if_fail (domains == NULL || *domains == NULL, FALSE);
@@ -508,14 +517,19 @@ nm_manager_get_logging (NMManager *manager, char **level, char **domains, GError
 	if (!level && !domains)
 		return TRUE;
 
-	return nmdbus_manager_call_get_logging_sync (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
-	                                             level, domains,
-	                                             NULL, error);
+	ret = nmdbus_manager_call_get_logging_sync (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
+	                                            level, domains,
+	                                            NULL, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 gboolean
 nm_manager_set_logging (NMManager *manager, const char *level, const char *domains, GError **error)
 {
+	gboolean ret;
+
 	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
@@ -527,9 +541,12 @@ nm_manager_set_logging (NMManager *manager, const char *level, const char *domai
 	if (!domains)
 		domains = "";
 
-	return nmdbus_manager_call_set_logging_sync (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
-	                                             level, domains,
-	                                             NULL, error);
+	ret = nmdbus_manager_call_set_logging_sync (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
+	                                            level, domains,
+	                                            NULL, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 NMClientPermissionResult
@@ -567,8 +584,11 @@ nm_manager_check_connectivity (NMManager *manager,
 	                                                 &connectivity,
 	                                                 cancellable, error))
 		return connectivity;
-	else
+	else {
+		if (error && *error)
+			g_dbus_error_strip_remote_error (*error);
 		return NM_CONNECTIVITY_UNKNOWN;
+	}
 }
 
 static void
@@ -584,8 +604,10 @@ check_connectivity_cb (GObject *object,
 	                                                   &connectivity,
 	                                                   result, &error))
 		g_simple_async_result_set_op_res_gssize (simple, connectivity);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
@@ -830,6 +852,7 @@ activate_cb (GObject *object,
 
 		recheck_pending_activations (info->manager);
 	} else {
+		g_dbus_error_strip_remote_error (error);
 		activate_info_complete (info, NULL, error);
 		g_clear_error (&error);
 	}
@@ -905,6 +928,7 @@ add_activate_cb (GObject *object,
 
 		recheck_pending_activations (info->manager);
 	} else {
+		g_dbus_error_strip_remote_error (error);
 		activate_info_complete (info, NULL, error);
 		g_clear_error (&error);
 	}
@@ -1041,14 +1065,18 @@ nm_manager_deactivate_connection (NMManager *manager,
                                   GError **error)
 {
 	const char *path;
+	gboolean ret;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
 
 	path = nm_object_get_path (NM_OBJECT (active));
-	return nmdbus_manager_call_deactivate_connection_sync (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
-	                                                       path,
-	                                                       cancellable, error);
+	ret = nmdbus_manager_call_deactivate_connection_sync (NM_MANAGER_GET_PRIVATE (manager)->manager_proxy,
+	                                                      path,
+	                                                      cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
+	return ret;
 }
 
 static void
@@ -1062,8 +1090,10 @@ deactivated_cb (GObject *object,
 	if (nmdbus_manager_call_deactivate_connection_finish (NMDBUS_MANAGER (object),
 	                                                      result, &error))
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
 }

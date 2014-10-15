@@ -735,8 +735,11 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 	                              G_DBUS_CALL_FLAGS_NONE, 0,
 	                              cancellable, error);
 	g_object_unref (proxy);
-	if (!ret)
+	if (!ret) {
+		if (error && *error)
+			g_dbus_error_strip_remote_error (*error);
 		goto out;
+	}
 	g_variant_unref (ret);
 
 	priv->dbus_vpn_plugin = nmdbus_vpn_plugin_skeleton_new ();

@@ -598,7 +598,8 @@ reg_request_cb (GObject *proxy,
 	g_object_unref (self); /* drop extra ref added by get_source_object() */
 	priv = NM_SECRET_AGENT_GET_PRIVATE (self);
 
-	nmdbus_agent_manager_call_register_finish (NMDBUS_AGENT_MANAGER (proxy), result, &error);
+	if (!nmdbus_agent_manager_call_register_finish (NMDBUS_AGENT_MANAGER (proxy), result, &error))
+		g_dbus_error_strip_remote_error (error);
 	reg_result (self, simple, error);
 	g_clear_error (&error);
 }
@@ -757,6 +758,8 @@ nm_secret_agent_unregister (NMSecretAgent *self,
 	priv->suppress_auto = TRUE;
 
 	success = nmdbus_agent_manager_call_unregister_sync (priv->manager_proxy, cancellable, error);
+	if (error && *error)
+		g_dbus_error_strip_remote_error (*error);
 	_internal_unregister (self);
 
 	return success;
@@ -777,8 +780,10 @@ unregister_cb (GObject *proxy, GAsyncResult *result, gpointer user_data)
 	if (nmdbus_agent_manager_call_unregister_finish (NMDBUS_AGENT_MANAGER (proxy),
 	                                                 result, &error))
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
-	else
+	else {
+		g_dbus_error_strip_remote_error (error);
 		g_simple_async_result_take_error (simple, error);
+	}
 
 	g_simple_async_result_complete (simple);
 	g_object_unref (simple);
