@@ -69,18 +69,6 @@ enum {
 	LAST_PROP
 };
 
-/********************************************************************/
-
-GQuark
-nm_secret_agent_error_quark (void)
-{
-	static GQuark ret = 0;
-
-	if (G_UNLIKELY (ret == 0))
-		ret = g_quark_from_static_string ("nm-secret-agent-error");
-	return ret;
-}
-
 /*************************************************************/
 
 static void
@@ -182,7 +170,7 @@ verify_sender (NMSecretAgent *self,
 	if (!nm_owner) {
 		g_set_error_literal (error,
 		                     NM_SECRET_AGENT_ERROR,
-		                     NM_SECRET_AGENT_ERROR_NOT_AUTHORIZED,
+		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
 		                     "NetworkManager bus name owner unknown.");
 		return FALSE;
 	}
@@ -191,7 +179,7 @@ verify_sender (NMSecretAgent *self,
 	if (!sender) {
 		g_set_error_literal (error,
 		                     NM_SECRET_AGENT_ERROR,
-		                     NM_SECRET_AGENT_ERROR_NOT_AUTHORIZED,
+		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
 		                     "Failed to get request sender.");
 		return FALSE;
 	}
@@ -200,7 +188,7 @@ verify_sender (NMSecretAgent *self,
 	if (strcmp (sender, nm_owner) != 0) {
 		g_set_error_literal (error,
 		                     NM_SECRET_AGENT_ERROR,
-		                     NM_SECRET_AGENT_ERROR_NOT_AUTHORIZED,
+		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
 		                     "Request sender does not match NetworkManager bus name owner.");
 		return FALSE;
 	}
@@ -227,7 +215,7 @@ verify_sender (NMSecretAgent *self,
 		g_dbus_error_strip_remote_error (local);
 		g_set_error (error,
 		             NM_SECRET_AGENT_ERROR,
-		             NM_SECRET_AGENT_ERROR_NOT_AUTHORIZED,
+		             NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
 		             "Failed to request unix user: (%s) %s.",
 		             remote_error ? remote_error : "",
 		             local->message);
@@ -242,7 +230,7 @@ verify_sender (NMSecretAgent *self,
 	if (0 != sender_uid) {
 		g_set_error_literal (error,
 		                     NM_SECRET_AGENT_ERROR,
-		                     NM_SECRET_AGENT_ERROR_NOT_AUTHORIZED,
+		                     NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
 		                     "Request sender is not root.");
 		return FALSE;
 	}
@@ -287,9 +275,7 @@ verify_request (NMSecretAgent *self,
 		g_set_error (error,
 		             NM_SECRET_AGENT_ERROR,
 		             NM_SECRET_AGENT_ERROR_INVALID_CONNECTION,
-		             "Invalid connection: (%d) %s",
-		             local ? local->code : -1,
-		             (local && local->message) ? local->message : "(unknown)");
+		             "Invalid connection: %s", local->message);
 		g_clear_error (&local);
 	}
 
@@ -390,7 +376,7 @@ impl_secret_agent_cancel_get_secrets (NMSecretAgent *self,
 	if (!info) {
 		g_dbus_method_invocation_return_error (context,
 		                                       NM_SECRET_AGENT_ERROR,
-		                                       NM_SECRET_AGENT_ERROR_INTERNAL_ERROR,
+		                                       NM_SECRET_AGENT_ERROR_FAILED,
 		                                       "No secrets request in progress for this connection.");
 		return;
 	}
@@ -490,7 +476,7 @@ check_nm_running (NMSecretAgent *self, GError **error)
 	if (g_dbus_proxy_get_name_owner (G_DBUS_PROXY (priv->manager_proxy)))
 		return TRUE;
 
-	g_set_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_INTERNAL_ERROR,
+	g_set_error (error, NM_SECRET_AGENT_ERROR, NM_SECRET_AGENT_ERROR_FAILED,
 	             "NetworkManager is not running");
 	return FALSE;
 }
@@ -1347,10 +1333,6 @@ nm_secret_agent_class_init (NMSecretAgentClass *class)
 
 	_nm_dbus_register_proxy_type (NM_DBUS_INTERFACE_AGENT_MANAGER,
 	                              NMDBUS_TYPE_AGENT_MANAGER_PROXY);
-
-	_nm_dbus_register_error_domain (NM_SECRET_AGENT_ERROR,
-	                                NM_DBUS_INTERFACE_SECRET_AGENT,
-	                                NM_TYPE_SECRET_AGENT_ERROR);
 }
 
 static void

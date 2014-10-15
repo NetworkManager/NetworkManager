@@ -29,36 +29,6 @@
 
 G_BEGIN_DECLS
 
-#define NM_SECRET_AGENT_ERROR         (nm_secret_agent_error_quark ())
-
-GQuark nm_secret_agent_error_quark (void);
-
-/**
- * NMSecretAgentError:
- * @NM_SECRET_AGENT_ERROR_NOT_AUTHORIZED: the caller (ie, NetworkManager) is not
- *  authorized to make this request
- * @NM_SECRET_AGENT_ERROR_INVALID_CONNECTION: the connection for which secrets
- *  were requested could not be found
- * @NM_SECRET_AGENT_ERROR_USER_CANCELED: the request was canceled by the user
- * @NM_SECRET_AGENT_ERROR_AGENT_CANCELED: the agent canceled the request
- *  because it was requested to do so by NetworkManager
- * @NM_SECRET_AGENT_ERROR_INTERNAL_ERROR: some internal error in the agent caused
- *  the request to fail
- * @NM_SECRET_AGENT_ERROR_NO_SECRETS: the agent cannot find any secrets for this
- *  connection
- *
- * #NMSecretAgentError values are passed by secret agents back to NetworkManager
- * when they encounter problems retrieving secrets on behalf of NM.
- */
-typedef enum {
-	NM_SECRET_AGENT_ERROR_NOT_AUTHORIZED = 0, /*< nick=NotAuthorized >*/
-	NM_SECRET_AGENT_ERROR_INVALID_CONNECTION, /*< nick=InvalidConnection >*/
-	NM_SECRET_AGENT_ERROR_USER_CANCELED,      /*< nick=UserCanceled >*/
-	NM_SECRET_AGENT_ERROR_AGENT_CANCELED,     /*< nick=AgentCanceled >*/
-	NM_SECRET_AGENT_ERROR_INTERNAL_ERROR,     /*< nick=InternalError >*/
-	NM_SECRET_AGENT_ERROR_NO_SECRETS,         /*< nick=NoSecrets >*/
-} NMSecretAgentError;
-
 #define NM_TYPE_SECRET_AGENT            (nm_secret_agent_get_type ())
 #define NM_SECRET_AGENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
 #define NM_SECRET_AGENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SECRET_AGENT, NMSecretAgentClass))

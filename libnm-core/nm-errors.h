@@ -208,6 +208,40 @@ GQuark nm_manager_error_quark (void);
 #define NM_MANAGER_ERROR (nm_manager_error_quark ())
 
 /**
+ * NMSecretAgentError:
+ * @NM_SECRET_AGENT_ERROR_FAILED: unknown or unclassified error
+ * @NM_SECRET_AGENT_ERROR_PERMISSION_DENIED: the caller (ie, NetworkManager) is
+ *   not authorized to make this request
+ * @NM_SECRET_AGENT_ERROR_INVALID_CONNECTION: the connection for which secrets
+ *   were requested is invalid
+ * @NM_SECRET_AGENT_ERROR_USER_CANCELED: the request was canceled by the user
+ * @NM_SECRET_AGENT_ERROR_AGENT_CANCELED: the agent canceled the request
+ *   because it was requested to do so by NetworkManager
+ * @NM_SECRET_AGENT_ERROR_NO_SECRETS: the agent cannot find any secrets for this
+ *   connection
+ *
+ * #NMSecretAgentError values are passed by secret agents back to NetworkManager
+ * when they encounter problems retrieving secrets on behalf of NM. They
+ * correspond to errors in the "org.freedesktop.NetworkManager.SecretManager"
+ * namespace.
+ *
+ * Client APIs such as nm_client_activate_connection() will not see these error
+ * codes; instead, the secret agent manager will translate them to the
+ * corresponding #NMAgentManagerError codes.
+ */
+typedef enum {
+	NM_SECRET_AGENT_ERROR_FAILED = 0,         /*< nick=Failed >*/
+	NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,  /*< nick=PermissionDenied >*/
+	NM_SECRET_AGENT_ERROR_INVALID_CONNECTION, /*< nick=InvalidConnection >*/
+	NM_SECRET_AGENT_ERROR_USER_CANCELED,      /*< nick=UserCanceled >*/
+	NM_SECRET_AGENT_ERROR_AGENT_CANCELED,     /*< nick=AgentCanceled >*/
+	NM_SECRET_AGENT_ERROR_NO_SECRETS,         /*< nick=NoSecrets >*/
+} NMSecretAgentError;
+
+GQuark nm_secret_agent_error_quark (void);
+#define NM_SECRET_AGENT_ERROR         (nm_secret_agent_error_quark ())
+
+/**
  * NMSettingsError:
  * @NM_SETTINGS_ERROR_FAILED: unknown or unclassified error
  * @NM_SETTINGS_ERROR_PERMISSION_DENIED: permission denied
