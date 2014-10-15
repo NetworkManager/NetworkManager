@@ -175,4 +175,35 @@ typedef enum {
 GQuark nm_manager_error_quark (void);
 #define NM_MANAGER_ERROR (nm_manager_error_quark ())
 
+/**
+ * NMSettingsError:
+ * @NM_SETTINGS_ERROR_FAILED: unknown or unclassified error
+ * @NM_SETTINGS_ERROR_PERMISSION_DENIED: permission denied
+ * @NM_SETTINGS_ERROR_NOT_SUPPORTED: the requested operation is not supported by any
+ *   active settings backend
+ * @NM_SETTINGS_ERROR_INVALID_CONNECTION: the connection was invalid
+ * @NM_SETTINGS_ERROR_READ_ONLY_CONNECTION: attempted to modify a read-only connection
+ * @NM_SETTINGS_ERROR_UUID_EXISTS: a connection with that UUID already exists
+ * @NM_SETTINGS_ERROR_INVALID_HOSTNAME: attempted to set an invalid hostname
+ *
+ * Errors related to the settings/persistent configuration interface of
+ * NetworkManager.
+ *
+ * These may be returned from #NMClient methods that invoke D-Bus operations on
+ * the "org.freedesktop.NetworkManager.Settings" interface, and correspond to
+ * D-Bus errors in that namespace.
+ */
+typedef enum {
+	NM_SETTINGS_ERROR_FAILED = 0,           /*< nick=Failed >*/
+	NM_SETTINGS_ERROR_PERMISSION_DENIED,    /*< nick=PermissionDenied >*/
+	NM_SETTINGS_ERROR_NOT_SUPPORTED,        /*< nick=NotSupported >*/
+	NM_SETTINGS_ERROR_INVALID_CONNECTION,   /*< nick=InvalidConnection >*/
+	NM_SETTINGS_ERROR_READ_ONLY_CONNECTION, /*< nick=ReadOnlyConnection >*/
+	NM_SETTINGS_ERROR_UUID_EXISTS,          /*< nick=UuidExists >*/
+	NM_SETTINGS_ERROR_INVALID_HOSTNAME,     /*< nick=InvalidHostname >*/
+} NMSettingsError;
+
+GQuark nm_settings_error_quark (void);
+#define NM_SETTINGS_ERROR (nm_settings_error_quark ())
+
 #endif /* __NM_ERRORS_H__ */

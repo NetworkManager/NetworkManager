@@ -163,8 +163,6 @@ nm_sources = \
 	settings/nm-secret-agent.h \
 	settings/nm-settings-connection.c \
 	settings/nm-settings-connection.h \
-	settings/nm-settings-error.c \
-	settings/nm-settings-error.h \
 	settings/nm-settings.c \
 	settings/nm-settings.h \
 	settings/nm-system-config-interface.c \

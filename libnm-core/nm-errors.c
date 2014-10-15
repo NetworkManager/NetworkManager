@@ -30,6 +30,7 @@ G_DEFINE_QUARK (nm-connection-error-quark, nm_connection_error)
 G_DEFINE_QUARK (nm-crypto-error-quark, nm_crypto_error)
 G_DEFINE_QUARK (nm-device-error-quark, nm_device_error)
 G_DEFINE_QUARK (nm-manager-error-quark, nm_manager_error)
+G_DEFINE_QUARK (nm-settings-error-quark, nm_settings_error)
 
 static void
 register_error_domain (GQuark domain,
@@ -65,4 +66,7 @@ _nm_dbus_errors_init (void)
 	register_error_domain (NM_MANAGER_ERROR,
 	                       NM_DBUS_INTERFACE,
 	                       NM_TYPE_MANAGER_ERROR);
+	register_error_domain (NM_SETTINGS_ERROR,
+	                       NM_DBUS_INTERFACE_SETTINGS,
+	                       NM_TYPE_SETTINGS_ERROR);
 }

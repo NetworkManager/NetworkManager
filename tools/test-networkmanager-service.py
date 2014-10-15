@@ -990,6 +990,9 @@ class Connection(dbus.service.Object):
 ###################################################################
 IFACE_SETTINGS = 'org.freedesktop.NetworkManager.Settings'
 
+class InvalidHostnameException(dbus.DBusException):
+    _dbus_error_name = IFACE_SETTINGS + '.InvalidHostname'
+
 class Settings(dbus.service.Object):
     def __init__(self, bus, object_path):
         dbus.service.Object.__init__(self, bus, object_path)
@@ -1031,6 +1034,14 @@ class Settings(dbus.service.Object):
         del self.connections[connection.path]
         self.props['Connections'] = dbus.Array(self.connections.keys(), 'o')
         self.PropertiesChanged({ 'connections': self.props['Connections'] })
+
+    @dbus.service.method(dbus_interface=IFACE_SETTINGS, in_signature='s', out_signature='')
+    def SaveHostname(self, hostname):
+        # Arbitrary requirement to test error handling
+        if hostname.find('.') == -1:
+            raise InvalidHostnameException()
+        self.props['Hostname'] = hostname
+        self.PropertiesChanged({ 'hostname': hostname })
 
     @dbus.service.method(dbus_interface=dbus.PROPERTIES_IFACE, in_signature='s', out_signature='a{sv}')
     def GetAll(self, iface):

@@ -58,7 +58,6 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-settings.h"
 #include "nm-settings-connection.h"
-#include "nm-settings-error.h"
 #include "nm-system-config-interface.h"
 #include "nm-logging.h"
 #include "nm-dbus-manager.h"
@@ -952,7 +951,7 @@ nm_settings_add_connection (NMSettings *self,
 		g_clear_error (&add_error);
 	}
 
-	g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_ADD_FAILED,
+	g_set_error_literal (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_FAILED,
 	                     "No plugin supported adding this connection");
 	return NULL;
 }
@@ -1034,7 +1033,7 @@ pk_add_cb (NMAuthChain *chain,
 
 	if (chain_error) {
 		error = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_GENERAL,
+		                     NM_SETTINGS_ERROR_FAILED,
 		                     "Error checking authorization: %s",
 		                     chain_error->message ? chain_error->message : "(unknown)");
 	} else if (result != NM_AUTH_CALL_RESULT_YES) {
@@ -1138,7 +1137,7 @@ nm_settings_add_connection_dbus (NMSettings *self,
 	/* Do any of the plugins support adding? */
 	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_ADD_NOT_SUPPORTED,
+		                             NM_SETTINGS_ERROR_NOT_SUPPORTED,
 		                             "None of the registered plugins support add.");
 		goto done;
 	}
@@ -1362,7 +1361,7 @@ pk_hostname_cb (NMAuthChain *chain,
 	/* If our NMSettingsConnection is already gone, do nothing */
 	if (chain_error) {
 		error = g_error_new (NM_SETTINGS_ERROR,
-		                     NM_SETTINGS_ERROR_GENERAL,
+		                     NM_SETTINGS_ERROR_FAILED,
 		                     "Error checking authorization: %s",
 		                     chain_error->message ? chain_error->message : "(unknown)");
 	} else if (result != NM_AUTH_CALL_RESULT_YES) {
@@ -1377,7 +1376,7 @@ pk_hostname_cb (NMAuthChain *chain,
 
 			/* error will be cleared if any plugin supports saving the hostname */
 			error = g_error_new_literal (NM_SETTINGS_ERROR,
-			                             NM_SETTINGS_ERROR_SAVE_HOSTNAME_FAILED,
+			                             NM_SETTINGS_ERROR_FAILED,
 			                             "Saving the hostname failed.");
 
 			g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
@@ -1436,7 +1435,7 @@ impl_settings_save_hostname (NMSettings *self,
 	/* Minimal validation of the hostname */
 	if (!validate_hostname (hostname)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_HOSTNAME_INVALID,
+		                             NM_SETTINGS_ERROR_INVALID_HOSTNAME,
 		                             "The hostname was too long or contained invalid characters.");
 		goto done;
 	}
@@ -1444,7 +1443,7 @@ impl_settings_save_hostname (NMSettings *self,
 	/* Do any of the plugins support setting the hostname? */
 	if (!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME)) {
 		error = g_error_new_literal (NM_SETTINGS_ERROR,
-		                             NM_SETTINGS_ERROR_SAVE_HOSTNAME_NOT_SUPPORTED,
+		                             NM_SETTINGS_ERROR_NOT_SUPPORTED,
 		                             "None of the registered plugins support setting the hostname.");
 		goto done;
 	}

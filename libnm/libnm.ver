@@ -792,6 +792,8 @@ global:
 	nm_setting_wireless_security_remove_proto;
 	nm_setting_wireless_security_remove_proto_by_value;
 	nm_setting_wireless_security_set_wep_key;
+	nm_settings_error_get_type;
+	nm_settings_error_quark;
 	nm_simple_connection_get_type;
 	nm_simple_connection_new;
 	nm_simple_connection_new_clone;
