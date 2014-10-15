@@ -24,6 +24,7 @@
 #include "nm-errors.h"
 #include "nm-glib-compat.h"
 #include "nm-dbus-interface.h"
+#include "nm-vpn-dbus-interface.h"
 #include "nm-core-internal.h"
 
 G_DEFINE_QUARK (nm-agent-manager-error-quark, nm_agent_manager_error)
@@ -33,6 +34,7 @@ G_DEFINE_QUARK (nm-device-error-quark, nm_device_error)
 G_DEFINE_QUARK (nm-manager-error-quark, nm_manager_error)
 G_DEFINE_QUARK (nm-secret-agent-error-quark, nm_secret_agent_error)
 G_DEFINE_QUARK (nm-settings-error-quark, nm_settings_error)
+G_DEFINE_QUARK (nm-vpn-plugin-quark, nm_vpn_plugin_error)
 
 static void
 register_error_domain (GQuark domain,
@@ -77,4 +79,10 @@ _nm_dbus_errors_init (void)
 	register_error_domain (NM_SETTINGS_ERROR,
 	                       NM_DBUS_INTERFACE_SETTINGS,
 	                       NM_TYPE_SETTINGS_ERROR);
+	register_error_domain (NM_SETTINGS_ERROR,
+	                       NM_DBUS_INTERFACE_SETTINGS,
+	                       NM_TYPE_SETTINGS_ERROR);
+	register_error_domain (NM_VPN_PLUGIN_ERROR,
+	                       NM_VPN_DBUS_PLUGIN_INTERFACE,
+	                       NM_TYPE_VPN_PLUGIN_ERROR);
 }
