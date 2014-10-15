@@ -52,7 +52,7 @@ crypto_init (GError **error)
 	ret = NSS_NoDB_Init (NULL);
 	if (ret != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_INIT_FAILED,
+		             NM_CRYPTO_ERROR_FAILED,
 		             _("Failed to initialize the crypto engine: %d."),
 		             PR_GetError ());
 		PR_Cleanup ();
@@ -103,7 +103,7 @@ crypto_md5_hash (const char *salt,
 	ctx = PK11_CreateDigestContext (SEC_OID_MD5);
 	if (!ctx) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_MD5_INIT_FAILED,
+		             NM_CRYPTO_ERROR_FAILED,
 		             _("Failed to initialize the MD5 context: %d."),
 		             PORT_GetError ());
 		return FALSE;
@@ -167,7 +167,7 @@ crypto_decrypt (const char *cipher,
 		real_iv_len = 16;
 	} else {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_UNKNOWN_CIPHER,
+		             NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
 		             _("Private key cipher '%s' was unknown."),
 		             cipher);
 		return NULL;
@@ -175,7 +175,7 @@ crypto_decrypt (const char *cipher,
 
 	if (iv_len < real_iv_len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_RAW_IV_INVALID,
+		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Invalid IV length (must be at least %d)."),
 		             real_iv_len);
 		return NULL;
@@ -186,7 +186,7 @@ crypto_decrypt (const char *cipher,
 	slot = PK11_GetBestSlot (cipher_mech, NULL);
 	if (!slot) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_INIT_FAILED,
+		             NM_CRYPTO_ERROR_FAILED,
 		             _("Failed to initialize the decryption cipher slot."));
 		goto out;
 	}
@@ -196,7 +196,7 @@ crypto_decrypt (const char *cipher,
 	sym_key = PK11_ImportSymKey (slot, cipher_mech, PK11_OriginUnwrap, CKA_DECRYPT, &key_item, NULL);
 	if (!sym_key) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_SET_KEY_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to set symmetric key for decryption."));
 		goto out;
 	}
@@ -206,7 +206,7 @@ crypto_decrypt (const char *cipher,
 	sec_param = PK11_ParamFromIV (cipher_mech, &key_item);
 	if (!sec_param) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_SET_IV_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to set IV for decryption."));
 		goto out;
 	}
@@ -214,7 +214,7 @@ crypto_decrypt (const char *cipher,
 	ctx = PK11_CreateContextBySymKey (cipher_mech, CKA_DECRYPT, sym_key, sec_param);
 	if (!ctx) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_INIT_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to initialize the decryption context."));
 		goto out;
 	}
@@ -227,7 +227,7 @@ crypto_decrypt (const char *cipher,
 	                   data_len);
 	if (s != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to decrypt the private key: %d."),
 		             PORT_GetError ());
 		goto out;
@@ -235,7 +235,7 @@ crypto_decrypt (const char *cipher,
 
 	if (decrypted_len > data_len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to decrypt the private key: decrypted data too large."));
 		goto out;
 	}
@@ -246,7 +246,7 @@ crypto_decrypt (const char *cipher,
 	                      data_len - decrypted_len);
 	if (s != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to finalize decryption of the private key: %d."),
 		             PORT_GetError ());
 		goto out;
@@ -257,7 +257,7 @@ crypto_decrypt (const char *cipher,
 	/* Check if the padding at the end of the decrypted data is valid */
 	if (pad_len == 0 || pad_len > real_iv_len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Failed to decrypt the private key: unexpected padding length."));
 		goto out;
 	}
@@ -268,7 +268,7 @@ crypto_decrypt (const char *cipher,
 	for (i = pad_len; i > 0; i--) {
 		if (output[data_len - i] != pad_len) {
 			g_set_error (error, NM_CRYPTO_ERROR,
-			             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+			             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 			             _("Failed to decrypt the private key."));
 			goto out;
 		}
@@ -329,7 +329,7 @@ crypto_encrypt (const char *cipher,
 		cipher_mech = CKM_AES_CBC_PAD;
 	else {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_UNKNOWN_CIPHER,
+		             NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
 		             _("Private key cipher '%s' was unknown."),
 		             cipher);
 		return NULL;
@@ -351,7 +351,7 @@ crypto_encrypt (const char *cipher,
 	slot = PK11_GetBestSlot (cipher_mech, NULL);
 	if (!slot) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_INIT_FAILED,
+		             NM_CRYPTO_ERROR_FAILED,
 		             _("Failed to initialize the encryption cipher slot."));
 		goto out;
 	}
@@ -359,7 +359,7 @@ crypto_encrypt (const char *cipher,
 	sym_key = PK11_ImportSymKey (slot, cipher_mech, PK11_OriginUnwrap, CKA_ENCRYPT, &key_item, NULL);
 	if (!sym_key) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_SET_KEY_FAILED,
+		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 		             _("Failed to set symmetric key for encryption."));
 		goto out;
 	}
@@ -367,7 +367,7 @@ crypto_encrypt (const char *cipher,
 	sec_param = PK11_ParamFromIV (cipher_mech, &iv_item);
 	if (!sec_param) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_SET_IV_FAILED,
+		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 		             _("Failed to set IV for encryption."));
 		goto out;
 	}
@@ -375,7 +375,7 @@ crypto_encrypt (const char *cipher,
 	ctx = PK11_CreateContextBySymKey (cipher_mech, CKA_ENCRYPT, sym_key, sec_param);
 	if (!ctx) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_INIT_FAILED,
+		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 		             _("Failed to initialize the encryption context."));
 		goto out;
 	}
@@ -383,7 +383,7 @@ crypto_encrypt (const char *cipher,
 	ret = PK11_CipherOp (ctx, output, &encrypted_len, output_len, padded_buf, padded_buf_len);
 	if (ret != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_ENCRYPT_FAILED,
+		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 		             _("Failed to encrypt: %d."),
 		             PORT_GetError ());
 		goto out;
@@ -391,7 +391,7 @@ crypto_encrypt (const char *cipher,
 
 	if (encrypted_len != output_len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_ENCRYPT_FAILED,
+		             NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 		             _("Unexpected amount of data after encrypting."));
 		goto out;
 	}
@@ -431,7 +431,7 @@ crypto_verify_cert (const unsigned char *data,
 	cert = CERT_DecodeCertFromPackage ((char *) data, len);
 	if (!cert) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CERT_FORMAT_INVALID,
+		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Couldn't decode certificate: %d"),
 		             PORT_GetError());
 		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
@@ -451,7 +451,7 @@ crypto_verify_pkcs12 (const guint8 *data,
 	SECItem pw = { 0 };
 	PK11SlotInfo *slot = NULL;
 	SECStatus s;
-	char *ucs2_password;
+	gunichar2 *ucs2_password;
 	glong ucs2_chars = 0;
 #ifndef WORDS_BIGENDIAN
 	guint16 *p;
@@ -463,15 +463,16 @@ crypto_verify_pkcs12 (const guint8 *data,
 	/* PKCS#12 passwords are apparently UCS2 BIG ENDIAN, and NSS doesn't do
 	 * any conversions for us.
 	 */
-	if (password && strlen (password)) {
-		ucs2_password = (char *) g_utf8_to_utf16 (password, strlen (password), NULL, &ucs2_chars, NULL);
-		if (!ucs2_password || !ucs2_chars) {
+	if (password && *password) {
+		if (!g_utf8_validate (password, -1, NULL)) {
 			g_set_error (error, NM_CRYPTO_ERROR,
-			             NM_CRYPTO_ERR_INVALID_PASSWORD,
-			             _("Couldn't convert password to UCS2: %d"),
-			             PORT_GetError());
+			             NM_CRYPTO_ERROR_INVALID_PASSWORD,
+			             _("Password must be UTF-8"));
 			return FALSE;
 		}
+		ucs2_password = g_utf8_to_utf16 (password, strlen (password), NULL, &ucs2_chars, NULL);
+		/* Can't fail if g_utf8_validate() succeeded */
+		g_return_val_if_fail (ucs2_password != NULL && ucs2_chars != 0, FALSE);
 
 		ucs2_chars *= 2;  /* convert # UCS2 characters -> bytes */
 		pw.data = PORT_ZAlloc(ucs2_chars + 2);
@@ -495,7 +496,7 @@ crypto_verify_pkcs12 (const guint8 *data,
 	p12ctx = SEC_PKCS12DecoderStart (&pw, slot, NULL, NULL, NULL, NULL, NULL, NULL);
 	if (!p12ctx) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_DECODE_FAILED,
+		             NM_CRYPTO_ERROR_FAILED,
 		             _("Couldn't initialize PKCS#12 decoder: %d"),
 		             PORT_GetError());
 		goto error;
@@ -504,7 +505,7 @@ crypto_verify_pkcs12 (const guint8 *data,
 	s = SEC_PKCS12DecoderUpdate (p12ctx, (guint8 *)data, data_len);
 	if (s != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
+		             NM_CRYPTO_ERROR_INVALID_DATA,
 		             _("Couldn't decode PKCS#12 file: %d"),
 		             PORT_GetError());
 		goto error;
@@ -513,7 +514,7 @@ crypto_verify_pkcs12 (const guint8 *data,
 	s = SEC_PKCS12DecoderVerify (p12ctx);
 	if (s != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             NM_CRYPTO_ERROR_DECRYPTION_FAILED,
 		             _("Couldn't verify PKCS#12 file: %d"),
 		             PORT_GetError());
 		goto error;
@@ -558,7 +559,7 @@ crypto_randomize (void *buffer, gsize buffer_len, GError **error)
 	s = PK11_GenerateRandom (buffer, buffer_len);
 	if (s != SECSuccess) {
 		g_set_error_literal (error, NM_CRYPTO_ERROR,
-		                     NM_CRYPTO_ERR_RANDOMIZE_FAILED,
+		                     NM_CRYPTO_ERROR_FAILED,
 		                     _("Could not generate random data."));
 		return FALSE;
 	}
