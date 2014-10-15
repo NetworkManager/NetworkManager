@@ -37,6 +37,7 @@
 #include <p12plcy.h>
 
 #include "crypto.h"
+#include "nm-errors.h"
 
 static gboolean initialized = FALSE;
 

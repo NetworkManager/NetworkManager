@@ -10,6 +10,7 @@ libnm_core_headers =				\
 	$(core_build)/nm-version.h		\
 	$(core)/nm-connection.h			\
 	$(core)/nm-dbus-interface.h		\
+	$(core)/nm-errors.h			\
 	$(core)/nm-setting-8021x.h		\
 	$(core)/nm-setting-adsl.h		\
 	$(core)/nm-setting-bluetooth.h		\
@@ -52,6 +53,7 @@ libnm_core_sources =				\
 	$(core_build)/nm-core-enum-types.c	\
 	$(core)/crypto.c			\
 	$(core)/nm-connection.c			\
+	$(core)/nm-errors.c			\
 	$(core)/nm-property-compare.c		\
 	$(core)/nm-setting-8021x.c		\
 	$(core)/nm-setting-adsl.c		\

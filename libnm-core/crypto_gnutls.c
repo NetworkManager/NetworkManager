@@ -31,6 +31,7 @@
 #include <gnutls/pkcs12.h>
 
 #include "crypto.h"
+#include "nm-errors.h"
 
 #define SALT_LEN 8
 

@@ -149,6 +149,8 @@ global:
 	nm_connection_update_secrets;
 	nm_connection_verify;
 	nm_connectivity_state_get_type;
+	nm_crypto_error_get_type;
+	nm_crypto_error_quark;
 	nm_device_adsl_error_get_type;
 	nm_device_adsl_error_quark;
 	nm_device_adsl_get_carrier;

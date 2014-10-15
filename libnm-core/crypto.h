@@ -31,15 +31,6 @@
 #define CIPHER_DES_CBC "DES-CBC"
 #define CIPHER_AES_CBC "AES-128-CBC"
 
-enum {
-	NM_CRYPTO_ERROR_FAILED = 0,
-	NM_CRYPTO_ERROR_INVALID_DATA,
-	NM_CRYPTO_ERROR_INVALID_PASSWORD,
-	NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
-	NM_CRYPTO_ERROR_DECRYPTION_FAILED,
-	NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
-};
-
 typedef enum {
 	NM_CRYPTO_KEY_TYPE_UNKNOWN = 0,
 	NM_CRYPTO_KEY_TYPE_RSA,
@@ -52,9 +43,6 @@ typedef enum {
 	NM_CRYPTO_FILE_FORMAT_RAW_KEY,
 	NM_CRYPTO_FILE_FORMAT_PKCS12
 } NMCryptoFileFormat;
-
-#define NM_CRYPTO_ERROR _nm_crypto_error_quark ()
-GQuark _nm_crypto_error_quark (void);
 
 gboolean crypto_init (GError **error);
 

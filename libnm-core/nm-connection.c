@@ -72,23 +72,6 @@
  *
  */
 
-/**
- * nm_connection_error_quark:
- *
- * Registers an error quark for #NMConnection if necessary.
- *
- * Returns: the error quark used for #NMConnection errors.
- **/
-GQuark
-nm_connection_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-connection-error-quark");
-	return quark;
-}
-
 typedef struct {
 	NMConnection *self;
 

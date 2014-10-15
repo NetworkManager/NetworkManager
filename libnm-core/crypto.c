@@ -31,17 +31,7 @@
 #include <glib/gi18n.h>
 
 #include "crypto.h"
-
-GQuark
-_nm_crypto_error_quark (void)
-{
-	static GQuark quark;
-
-	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-crypto-error-quark");
-	return quark;
-}
-
+#include "nm-errors.h"
 
 #define PEM_RSA_KEY_BEGIN "-----BEGIN RSA PRIVATE KEY-----"
 #define PEM_RSA_KEY_END   "-----END RSA PRIVATE KEY-----"
