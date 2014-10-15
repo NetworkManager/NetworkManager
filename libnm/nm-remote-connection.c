@@ -64,23 +64,6 @@ typedef struct {
 
 #define NM_REMOTE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_REMOTE_CONNECTION, NMRemoteConnectionPrivate))
 
-/**
- * nm_remote_connection_error_quark:
- *
- * Registers an error quark for #NMRemoteConnection if necessary.
- *
- * Returns: the error quark used for #NMRemoteConnection errors.
- **/
-GQuark
-nm_remote_connection_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-remote-connection-error-quark");
-	return quark;
-}
-
 /****************************************************************/
 
 /**

@@ -369,8 +369,6 @@ global:
 	nm_remote_connection_delete;
 	nm_remote_connection_delete_async;
 	nm_remote_connection_delete_finish;
-	nm_remote_connection_error_get_type;
-	nm_remote_connection_error_quark;
 	nm_remote_connection_get_secrets;
 	nm_remote_connection_get_secrets_async;
 	nm_remote_connection_get_secrets_finish;
