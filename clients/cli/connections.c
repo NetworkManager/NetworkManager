@@ -797,6 +797,38 @@ fill_output_connection (gpointer data, gpointer user_data, gboolean active_only)
 }
 
 static void
+fill_output_connection_for_invisible (NMActiveConnection *ac, NmCli *nmc)
+{
+	NmcOutputField *arr;
+	const char *ac_path = NULL;
+	const char *ac_state = NULL;
+	char *ac_dev = NULL;
+
+	ac_path = nm_object_get_path (NM_OBJECT (ac));
+	ac_state = active_connection_state_to_string (nm_active_connection_get_state (ac));
+	ac_dev = get_ac_device_string (ac);
+
+	arr = nmc_dup_fields_array (nmc_fields_con_show,
+	                            sizeof (nmc_fields_con_show),
+	                            0);
+	set_val_strc (arr, 0, nm_active_connection_get_id (ac));
+	set_val_strc (arr, 1, nm_active_connection_get_uuid (ac));
+	set_val_strc (arr, 2, nm_active_connection_get_connection_type (ac));
+	set_val_strc (arr, 3, NULL);
+	set_val_strc (arr, 4, NULL);
+	set_val_strc (arr, 5, NULL);
+	set_val_strc (arr, 6, NULL);
+	set_val_strc (arr, 7, NULL);
+	set_val_strc (arr, 8, NULL);
+	set_val_strc (arr, 9, _("yes"));
+	set_val_str  (arr, 10, ac_dev);
+	set_val_strc (arr, 11, ac_state);
+	set_val_strc (arr, 12, ac_path);
+
+	g_ptr_array_add (nmc->output_data, arr);
+}
+
+static void
 fill_output_active_connection (NMActiveConnection *active,
                                NmCli *nmc,
                                gboolean with_group,
@@ -867,6 +899,37 @@ fill_output_active_connection (NMActiveConnection *active,
 	g_ptr_array_add (nmc->output_data, arr);
 
 	g_string_free (dev_str, FALSE);
+}
+
+static void
+fill_output_for_all_invisible (NmCli *nmc)
+{
+	const GPtrArray *acons;
+	GSList *iter;
+	int i;
+
+	g_return_if_fail (nmc != NULL);
+
+	acons = nm_client_get_active_connections (nmc->client);
+	for (i = 0; i < acons->len; i++) {
+		gboolean found = FALSE;
+		NMActiveConnection *acon = g_ptr_array_index (acons, i);
+		const char *a_uuid = nm_active_connection_get_uuid (acon);
+
+		for (iter = nmc->connections; iter; iter = g_slist_next (iter)) {
+			NMConnection *con = NM_CONNECTION (iter->data);
+			const char *c_uuid = nm_connection_get_uuid (con);
+
+			if (strcmp (a_uuid, c_uuid) == 0) {
+				found = TRUE;
+				break;
+			}
+		}
+
+		/* Active connection is not in connections list */
+		if (!found)
+			fill_output_connection_for_invisible (acon, nmc);
+	}
 }
 
 typedef struct {
@@ -1292,6 +1355,8 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 			NMConnection *con = NM_CONNECTION (iter->data);
 			fill_output_connection (con, nmc, active_only);
 		}
+		/* Some active connections may not be in connection list, show them here. */
+		fill_output_for_all_invisible (nmc);
 		print_data (nmc);  /* Print all data */
 	} else {
 		gboolean new_line = FALSE;
