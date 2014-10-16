@@ -1363,9 +1363,10 @@ init_async (GAsyncInitable *initable, int io_priority,
 	init_data->result = g_simple_async_result_new (G_OBJECT (initable), callback,
 	                                               user_data, init_async);
 
-	if (priv->private_bus)
+	if (priv->private_bus) {
+		priv->service_running = TRUE;
 		init_get_properties (init_data);
-	else {
+	} else {
 		/* Check if NM is running */
 		dbus_g_proxy_begin_call (priv->dbus_proxy, "NameHasOwner",
 		                         init_async_got_manager_running,
