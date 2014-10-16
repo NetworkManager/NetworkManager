@@ -499,16 +499,53 @@ find_device_by_ip_iface (NMManager *self, const gchar *iface)
 	return NULL;
 }
 
+/**
+ * find_device_by_iface:
+ * @self: the #NMManager
+ * @iface: the device interface to find
+ * @connection: a connection to ensure the returned device is compatible with
+ * @slave: a slave connection to ensure a master is compatible with
+ *
+ * Finds a device by interface name, preferring realized devices.  If @slave
+ * is given, this function will only return master devices and will ensure
+ * @slave, when activated, can be a slave of the returned master device.  If
+ * @connection is given, this function will only consider devices that are
+ * compatible with @connection.
+ *
+ * Returns: the matching #NMDevice
+ */
 static NMDevice *
-find_device_by_iface (NMManager *self, const gchar *iface)
+find_device_by_iface (NMManager *self,
+                      const char *iface,
+                      NMConnection *connection,
+                      NMConnection *slave)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	NMDevice *fallback = NULL;
 	GSList *iter;
 
-	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = g_slist_next (iter)) {
-		if (g_strcmp0 (nm_device_get_iface (NM_DEVICE (iter->data)), iface) == 0)
-			return NM_DEVICE (iter->data);
+	g_return_val_if_fail (iface != NULL, NULL);
+
+	for (iter = priv->devices; iter; iter = iter->next) {
+		NMDevice *candidate = iter->data;
+
+		if (strcmp (nm_device_get_iface (candidate), iface))
+			continue;
+		if (connection && !nm_device_check_connection_compatible (candidate, connection))
+			continue;
+		if (slave) {
+			if (!nm_device_is_master (candidate))
+				continue;
+			if (!nm_device_check_slave_connection_compatible (candidate, slave))
+				continue;
+		}
+
+		if (nm_device_is_real (candidate))
+			return candidate;
+		else if (!fallback)
+			fallback = candidate;
 	}
-	return NULL;
+	return fallback;
 }
 
 static gboolean
@@ -860,8 +897,8 @@ find_parent_device_for_connection (NMManager *self, NMConnection *connection)
 	if (!parent_name)
 		return NULL;
 
-	/* Try as an interface name */
-	parent = find_device_by_iface (self, parent_name);
+	/* Try as an interface name of a parent device */
+	parent = find_device_by_iface (self, parent_name, NULL, NULL);
 	if (parent)
 		return parent;
 
@@ -988,18 +1025,16 @@ system_create_virtual_device (NMManager *self, NMConnection *connection, GError 
 	if (!iface)
 		return NULL;
 
-	/* Make sure we didn't create a device for this connection already */
+	/* If some other device is already compatible with this connection,
+	 * don't create a new device for it.
+	 */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *candidate = iter->data;
 
 		if (   g_strcmp0 (nm_device_get_iface (candidate), iface) == 0
-		    || nm_device_check_connection_compatible (candidate, connection)) {
+		    && nm_device_check_connection_compatible (candidate, connection)) {
 			nm_log_dbg (LOGD_DEVICE, "(%s) already created virtual interface name %s",
 			            nm_connection_get_id (connection), iface);
-			g_set_error (error,
-			             NM_MANAGER_ERROR,
-			             NM_MANAGER_ERROR_FAILED,
-			             "interface name '%s' already created", iface);
 			return NULL;
 		}
 	}
@@ -1665,7 +1700,8 @@ device_ip_iface_changed (NMDevice *device,
 		NMDevice *candidate = NM_DEVICE (iter->data);
 
 		if (   candidate != device
-		    && g_strcmp0 (nm_device_get_iface (candidate), ip_iface) == 0) {
+		    && g_strcmp0 (nm_device_get_iface (candidate), ip_iface) == 0
+		    && nm_device_is_real (candidate)) {
 			remove_device (self, candidate, FALSE, FALSE);
 			break;
 		}
@@ -1728,8 +1764,6 @@ add_device (NMManager *self, NMDevice *device)
 	ifindex = nm_device_get_ifindex (device);
 	if (ifindex > 0 && nm_manager_get_device_by_ifindex (self, ifindex))
 		return;
-	if (find_device_by_iface (self, nm_device_get_iface (device)))
-		return;
 
 	/* Remove existing devices owned by the new device; eg remove ethernet
 	 * ports that are owned by a WWAN modem, since udev may announce them
@@ -1739,9 +1773,11 @@ add_device (NMManager *self, NMDevice *device)
 	 * the child NMDevice entirely
 	 */
 	for (iter = priv->devices; iter; iter = iter->next) {
-		iface = nm_device_get_ip_iface (iter->data);
-		if (nm_device_owns_iface (device, iface))
-			remove = g_slist_prepend (remove, iter->data);
+		NMDevice *candidate = iter->data;
+
+		iface = nm_device_get_ip_iface (candidate);
+		if (nm_device_is_real (candidate) && nm_device_owns_iface (device, iface))
+			remove = g_slist_prepend (remove, candidate);
 	}
 	for (iter = remove; iter; iter = iter->next)
 		remove_device (self, NM_DEVICE (iter->data), FALSE, FALSE);
@@ -1881,37 +1917,37 @@ platform_link_added (NMManager *self,
 	NMDevice *device = NULL;
 	GError *error = NULL;
 	gboolean nm_plugin_missing = FALSE;
+	GSList *iter;
 
 	g_return_if_fail (ifindex > 0);
 
 	if (nm_manager_get_device_by_ifindex (self, ifindex))
 		return;
 
-	device = find_device_by_iface (self, plink->name);
-	if (device) {
-		gboolean compatible = FALSE;
+	/* Let unrealized devices try to realize themselves with the link */
+	for (iter = NM_MANAGER_GET_PRIVATE (self)->devices; iter; iter = iter->next) {
+		NMDevice *candidate = iter->data;
+		gboolean compatible = TRUE;
 
-		if (nm_device_is_real (device))
-			return;
+		if (strcmp (nm_device_get_iface (candidate), plink->name))
+			continue;
 
-		if (nm_device_realize (device, plink, &compatible, &error)) {
-			/* Success */
-			nm_device_setup_finish (device, plink);
-			return;
-		}
-
-		nm_log_warn (LOGD_DEVICE, "(%s): %s", plink->name, error->message);
-		remove_device (self, device, FALSE, FALSE);
-		g_clear_error (&error);
-
-		if (compatible) {
-			/* Device compatible with platform link, but some other fatal error
-			 * happened during realization.
+		if (nm_device_is_real (candidate)) {
+			/* Ignore the link added event since there's already a realized
+			 * device with the link's name.
 			 */
 			return;
+		} else if (nm_device_realize (candidate, plink, &compatible, &error)) {
+			/* Success */
+			nm_device_setup_finish (candidate, plink);
+			return;
 		}
 
-		/* Fall through and create new compatible device for the link */
+		nm_log_dbg (LOGD_DEVICE, "(%s): failed to realize from plink: '%s'",
+		            plink->name, error->message);
+		g_clear_error (&error);
+
+		/* Try next unrealized device */
 	}
 
 	/* Try registered device factories */
@@ -2245,7 +2281,7 @@ find_master (NMManager *self,
 		return TRUE;  /* success, but no master */
 
 	/* Try as an interface name first */
-	master_device = find_device_by_iface (self, master);
+	master_device = find_device_by_iface (self, master, NULL, connection);
 	if (master_device) {
 		if (master_device == device) {
 			g_set_error_literal (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_DEPENDENCY_FAILED,
@@ -2620,8 +2656,10 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	NMConnection *applied;
 	NMSettingsConnection *connection;
 	NMSettingsConnection *master_connection = NULL;
+	NMConnection *existing_connection = NULL;
 	NMActiveConnection *master_ac = NULL;
-	GError *local_err = NULL;
+	NMAuthSubject *subject;
+	char *error_desc = NULL;
 
 	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
 	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (active), FALSE);
@@ -2635,72 +2673,26 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	applied = nm_active_connection_get_applied_connection (active);
 
 	device = nm_active_connection_get_device (active);
-	if (!device) {
-		if (!nm_connection_is_virtual (applied)) {
-			NMSettingConnection *s_con = nm_connection_get_setting_connection (applied);
+	g_return_val_if_fail (device != NULL, FALSE);
 
-			g_assert (s_con);
-			g_set_error (error,
-			             NM_MANAGER_ERROR,
-			             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			             "Unsupported virtual interface type '%s'",
-			             nm_setting_connection_get_connection_type (s_con));
-			return FALSE;
-		}
-
-		device = system_create_virtual_device (self, applied, &local_err);
-		if (!device) {
-			g_set_error (error,
-			             NM_MANAGER_ERROR,
-			             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			             "Failed to create virtual interface: %s",
-			             local_err ? local_err->message : "(unknown)");
-			g_clear_error (&local_err);
-			return FALSE;
-		}
-
-		if (!nm_active_connection_set_device (active, device)) {
-			g_set_error_literal (error,
-			                     NM_MANAGER_ERROR,
-			                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-			                     "The device could not be activated with this connection");
-			return FALSE;
-		}
-
-		/* A newly created device, if allowed to be managed by NM, will be
-		 * in the UNAVAILABLE state here.  To ensure it can be activated
-		 * immediately, we transition it to DISCONNECTED.
-		 */
-		if (   nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)
-			&& (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
-			nm_device_state_changed (device,
-			                         NM_DEVICE_STATE_DISCONNECTED,
-			                         NM_DEVICE_STATE_REASON_NONE);
-		}
-	} else {
-		NMConnection *existing_connection = NULL;
-		NMAuthSubject *subject;
-		char *error_desc = NULL;
-
-		/* If the device is active and its connection is not visible to the
-		 * user that's requesting this new activation, fail, since other users
-		 * should not be allowed to implicitly deactivate private connections
-		 * by activating a connection of their own.
-		 */
-		existing_connection = nm_device_get_applied_connection (device);
-		subject = nm_active_connection_get_subject (active);
-		if (existing_connection &&
-		    !nm_auth_is_subject_in_acl (existing_connection,
-			                            subject,
-			                            &error_desc)) {
-			g_set_error (error,
-			             NM_MANAGER_ERROR,
-			             NM_MANAGER_ERROR_PERMISSION_DENIED,
-			             "Private connection already active on the device: %s",
-			             error_desc);
-			g_free (error_desc);
-			return FALSE;
-		}
+	/* If the device is active and its connection is not visible to the
+	 * user that's requesting this new activation, fail, since other users
+	 * should not be allowed to implicitly deactivate private connections
+	 * by activating a connection of their own.
+	 */
+	existing_connection = nm_device_get_applied_connection (device);
+	subject = nm_active_connection_get_subject (active);
+	if (existing_connection &&
+	    !nm_auth_is_subject_in_acl (existing_connection,
+	                                subject,
+	                                &error_desc)) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		             "Private connection already active on the device: %s",
+		             error_desc);
+		g_free (error_desc);
+		return FALSE;
 	}
 
 	/* Final connection must be available on device */
@@ -2777,9 +2769,10 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 		}
 
 		nm_active_connection_set_master (active, master_ac);
-		nm_log_dbg (LOGD_CORE, "Activation of '%s' depends on active connection %p",
+		nm_log_dbg (LOGD_CORE, "Activation of '%s' depends on active connection %p %s",
 		            nm_settings_connection_get_id (connection),
-		            master_ac);
+		            master_ac,
+		            str_if_set (nm_exported_object_get_path (NM_EXPORTED_OBJECT  (master_ac)), ""));
 	}
 
 	/* Check slaves for master connection and possibly activate them */
@@ -2789,6 +2782,19 @@ _internal_activate_device (NMManager *self, NMActiveConnection *active, GError *
 	existing = nm_manager_get_connection_device (self, NM_CONNECTION (connection));
 	if (existing)
 		nm_device_steal_connection (existing, connection);
+
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_UNMANAGED) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_UNAVAILABLE,
+		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+	}
+
+	if (   nm_device_is_available (device, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)
+	    && (nm_device_get_state (device) == NM_DEVICE_STATE_UNAVAILABLE)) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_DISCONNECTED,
+		                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
+	}
 
 	/* Export the new ActiveConnection to clients and start it on the device */
 	nm_exported_object_export (NM_EXPORTED_OBJECT (active));
@@ -3042,6 +3048,23 @@ nm_manager_activate_connection (NMManager *self,
 	return active;
 }
 
+/**
+ * validate_activation_request:
+ * @self: the #NMManager
+ * @context: the D-Bus context of the requestor
+ * @connection: the partial or complete #NMConnection to be activated
+ * @device_path: the object path of the device to be activated, or "/"
+ * @out_device: on successful reutrn, the #NMDevice to be activated with @connection
+ * @out_vpn: on successful return, %TRUE if @connection is a VPN connection
+ * @error: location to store an error on failure
+ *
+ * Performs basic validation on an activation request, including ensuring that
+ * the requestor is a valid Unix process, is not disallowed in @connection
+ * permissions, and that a device exists that can activate @connection.
+ *
+ * Returns: on success, the #NMAuthSubject representing the requestor, or
+ *   %NULL on error
+ */
 static NMAuthSubject *
 validate_activation_request (NMManager *self,
                              GDBusMethodInvocation *context,
@@ -3116,11 +3139,11 @@ validate_activation_request (NMManager *self,
 	} else
 		device = nm_manager_get_best_device_for_connection (self, connection, TRUE);
 
-	if (!device) {
+	if (!device && !vpn) {
 		gboolean is_software = nm_connection_is_virtual (connection);
 
 		/* VPN and software-device connections don't need a device yet */
-		if (!vpn && !is_software) {
+		if (!is_software) {
 			g_set_error_literal (error,
 			                     NM_MANAGER_ERROR,
 			                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
@@ -3136,9 +3159,17 @@ validate_activation_request (NMManager *self,
 			if (!iface)
 				goto error;
 
-			device = find_device_by_iface (self, iface);
+			device = find_device_by_iface (self, iface, connection, NULL);
 			g_free (iface);
 		}
+	}
+
+	if ((!vpn || device_path) && !device) {
+		g_set_error_literal (error,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+		                     "Failed to find a compatible device for this connection");
+		goto error;
 	}
 
 	*out_device = device;
@@ -3453,14 +3484,6 @@ impl_manager_add_and_activate_connection (NMManager *self,
 	                                       &error);
 	if (!subject)
 		goto error;
-
-	/* AddAndActivate() requires a device to complete the connection with */
-	if (!device) {
-		error = g_error_new_literal (NM_MANAGER_ERROR,
-		                             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-		                             "This connection requires an existing device.");
-		goto error;
-	}
 
 	all_connections = nm_settings_get_connections (priv->settings);
 	if (vpn) {

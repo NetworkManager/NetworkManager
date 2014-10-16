@@ -2290,6 +2290,18 @@ nm_device_master_release_slaves (NMDevice *self)
 }
 
 /**
+ * nm_device_is_master:
+ * @self: the device
+ *
+ * Returns: %TRUE if the device can have slaves
+ */
+gboolean
+nm_device_is_master (NMDevice *self)
+{
+	return NM_DEVICE_GET_PRIVATE (self)->is_master;
+}
+
+/**
  * nm_device_get_master:
  * @self: the device
  *
@@ -2871,6 +2883,34 @@ nm_device_check_connection_compatible (NMDevice *self, NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	return NM_DEVICE_GET_CLASS (self)->check_connection_compatible (self, connection);
+}
+
+gboolean
+nm_device_check_slave_connection_compatible (NMDevice *self, NMConnection *slave)
+{
+	NMDevicePrivate *priv;
+	NMSettingConnection *s_con;
+	const char *connection_type, *slave_type;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (slave), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!priv->is_master)
+		return FALSE;
+
+	/* All masters should have connection type set */
+	connection_type = NM_DEVICE_GET_CLASS (self)->connection_type;
+	g_return_val_if_fail (connection_type, FALSE);
+
+	s_con = nm_connection_get_setting_connection (slave);
+	g_assert (s_con);
+	slave_type = nm_setting_connection_get_slave_type (s_con);
+	if (!slave_type)
+		return FALSE;
+
+	return strcmp (connection_type, slave_type) == 0;
 }
 
 /**

@@ -388,6 +388,7 @@ void            nm_device_capture_initial_config (NMDevice *dev);
 
 /* Master */
 GSList *        nm_device_master_get_slaves (NMDevice *dev);
+gboolean        nm_device_is_master         (NMDevice *dev);
 
 /* Slave */
 NMDevice *      nm_device_get_master        (NMDevice *dev);
@@ -421,6 +422,7 @@ gboolean nm_device_complete_connection (NMDevice *device,
                                         GError **error);
 
 gboolean nm_device_check_connection_compatible (NMDevice *device, NMConnection *connection);
+gboolean nm_device_check_slave_connection_compatible (NMDevice *device, NMConnection *connection);
 
 gboolean nm_device_uses_assumed_connection (NMDevice *device);
 

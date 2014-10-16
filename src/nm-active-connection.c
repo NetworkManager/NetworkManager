@@ -515,8 +515,13 @@ nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device)
 			priv->pending_activation_id = g_strdup_printf ("activation::%p", (void *)self);
 			nm_device_add_pending_action (device, priv->pending_activation_id, TRUE);
 		}
-	} else
+	} else {
+		/* The ActiveConnection's device can only be cleared after the
+		 * connection is activated.
+		 */
+		g_warn_if_fail (priv->state > NM_ACTIVE_CONNECTION_STATE_UNKNOWN);
 		priv->device = NULL;
+	}
 	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_INT_DEVICE);
 
 	g_signal_emit (self, signals[DEVICE_CHANGED], 0, priv->device, old_device);
@@ -831,6 +836,7 @@ set_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_INT_DEVICE:
+		/* construct-only */
 		nm_active_connection_set_device (NM_ACTIVE_CONNECTION (object), g_value_get_object (value));
 		break;
 	case PROP_INT_SUBJECT:
@@ -1129,7 +1135,7 @@ nm_active_connection_class_init (NMActiveConnectionClass *ac_class)
 		(object_class, PROP_INT_DEVICE,
 		 g_param_spec_object (NM_ACTIVE_CONNECTION_INT_DEVICE, "", "",
 		                      NM_TYPE_DEVICE,
-		                      G_PARAM_READWRITE |
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 		                      G_PARAM_STATIC_STRINGS));
 
 	g_object_class_install_property
