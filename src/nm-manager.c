@@ -5250,6 +5250,5 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	                                        &dbus_glib_nm_manager_object_info);
 
 	dbus_g_error_domain_register (NM_MANAGER_ERROR, NM_DBUS_INTERFACE, NM_TYPE_MANAGER_ERROR);
-	dbus_g_error_domain_register (NM_LOGGING_ERROR, "org.freedesktop.NetworkManager.Logging", NM_TYPE_LOGGING_ERROR);
 }
 

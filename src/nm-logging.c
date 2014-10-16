@@ -36,6 +36,7 @@
 
 #include "nm-glib-compat.h"
 #include "nm-logging.h"
+#include "nm-errors.h"
 
 static void
 nm_log_handler (const gchar *log_domain,
@@ -123,18 +124,6 @@ static const LogDesc domain_descs[] = {
 
 /************************************************************************/
 
-GQuark
-nm_logging_error_quark (void)
-{
-    static GQuark ret = 0;
-
-    if (ret == 0)
-        ret = g_quark_from_static_string ("nm_logging_error");
-    return ret;
-}
-
-/************************************************************************/
-
 static void
 _ensure_initialized ()
 {
@@ -156,7 +145,7 @@ match_log_level (const char  *level,
 		}
 	}
 
-	g_set_error (error, NM_LOGGING_ERROR, NM_LOGGING_ERROR_UNKNOWN_LEVEL,
+	g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL,
 	             _("Unknown log level '%s'"), level);
 	return FALSE;
 }
@@ -238,7 +227,7 @@ nm_logging_setup (const char  *level,
 
 		if (!bits) {
 			if (!bad_domains) {
-				g_set_error (error, NM_LOGGING_ERROR, NM_LOGGING_ERROR_UNKNOWN_DOMAIN,
+				g_set_error (error, NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN,
 				             _("Unknown log domain '%s'"), *iter);
 				return FALSE;
 			}

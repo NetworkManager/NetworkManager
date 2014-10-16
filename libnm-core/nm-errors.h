@@ -149,6 +149,8 @@ GQuark nm_device_error_quark (void);
  *   sleep/wake state.
  * @NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED: The network is already
  *   enabled/disabled.
+ * @NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL: Unknown log level in SetLogging
+ * @NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN: Unknown log domain in SetLogging
  *
  * Errors related to the main "network management" interface of NetworkManager.
  * These may be returned from #NMClient methods that invoke D-Bus operations on
@@ -166,6 +168,8 @@ typedef enum {
 	NM_MANAGER_ERROR_DEPENDENCY_FAILED,           /*< nick=DependencyFailed >*/
 	NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,     /*< nick=AlreadyAsleepOrAwake >*/
 	NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED, /*< nick=AlreadyEnabledOrDisabled >*/
+	NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL,           /*< nick=UnknownLogLevel >*/
+	NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN,          /*< nick=UnknownLogDomain >*/
 } NMManagerError;
 
 GQuark nm_manager_error_quark (void);
