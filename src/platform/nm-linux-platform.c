@@ -1776,12 +1776,14 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 
 		announce_object (platform, kernel_object, cached_object ? NM_PLATFORM_SIGNAL_CHANGED : NM_PLATFORM_SIGNAL_ADDED, reason);
 
-		/* Refresh the master device (even on enslave/release) */
 		if (type == OBJECT_TYPE_LINK) {
 			int kernel_master = rtnl_link_get_master ((struct rtnl_link *) kernel_object);
 			int cached_master = cached_object ? rtnl_link_get_master ((struct rtnl_link *) cached_object) : 0;
+			const char *orig_link_type = rtnl_link_get_type ((struct rtnl_link *) object);
+			const char *kernel_link_type = rtnl_link_get_type ((struct rtnl_link *) kernel_object);
 			struct nl_object *master_object;
 
+			/* Refresh the master device (even on enslave/release) */
 			if (kernel_master) {
 				master_object = build_rtnl_link (kernel_master, NULL, NM_LINK_TYPE_NONE);
 				refresh_object (platform, master_object, FALSE, NM_PLATFORM_REASON_INTERNAL);
@@ -1791,6 +1793,12 @@ refresh_object (NMPlatform *platform, struct nl_object *object, gboolean removed
 				master_object = build_rtnl_link (cached_master, NULL, NM_LINK_TYPE_NONE);
 				refresh_object (platform, master_object, FALSE, NM_PLATFORM_REASON_INTERNAL);
 				nl_object_put (master_object);
+			}
+
+			/* Ensure the existing link type matches the refreshed link type */
+			if (orig_link_type && kernel_link_type && strcmp (orig_link_type, kernel_link_type)) {
+				platform->error = NM_PLATFORM_ERROR_WRONG_TYPE;
+				return FALSE;
 			}
 		}
 	}
@@ -2328,6 +2336,8 @@ static gboolean
 link_get_by_name (NMPlatform *platform, const char *name, NMPlatformLink *out_link)
 {
 	int ifindex;
+
+	g_return_val_if_fail (name != NULL, FALSE);
 
 	if (out_link) {
 		ifindex = nm_platform_link_get_ifindex (platform, name);
@@ -3072,8 +3082,9 @@ infiniband_partition_add (NMPlatform *platform, int parent, int p_key, NMPlatfor
 
 	if (success) {
 		gs_free char *ifname = g_strdup_printf ("%s.%04x", parent_name, p_key);
-		auto_nl_object struct rtnl_link *rtnllink = _nm_rtnl_link_alloc (0, ifname);
+		auto_nl_object struct rtnl_link *rtnllink;
 
+		rtnllink = (struct rtnl_link *) build_rtnl_link (0, ifname, NM_LINK_TYPE_INFINIBAND);
 		success = refresh_object (platform, (struct nl_object *) rtnllink, FALSE, NM_PLATFORM_REASON_INTERNAL);
 		if (success)
 			success = link_get_by_name (platform, ifname, out_link);
