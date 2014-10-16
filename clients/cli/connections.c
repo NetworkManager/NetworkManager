@@ -606,7 +606,7 @@ get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection)
 		NMRemoteConnection *con;
 
 		con = nm_active_connection_get_connection (candidate);
-		ac_con_path = nm_connection_get_path (NM_CONNECTION (con));
+		ac_con_path = con ? nm_connection_get_path (NM_CONNECTION (con)) : NULL;
 		if (!g_strcmp0 (ac_con_path, con_path)) {
 			ac = candidate;
 			break;
@@ -693,19 +693,19 @@ find_active_connection (const GPtrArray *active_cons,
 	const char *path, *a_path, *path_num, *a_path_num;
 	const char *id;
 	const char *uuid;
-	NMConnection *con;
+	NMRemoteConnection *con;
 	NMActiveConnection *found = NULL;
 
 	for (i = start; i < active_cons->len; i++) {
 		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
 
-		con = NM_CONNECTION (nm_active_connection_get_connection (candidate));
-		id = nm_connection_get_id (con);
+		con = nm_active_connection_get_connection (candidate);
 
-		path = nm_connection_get_path (con);
-		a_path = nm_object_get_path (NM_OBJECT (candidate));
+		id = nm_active_connection_get_id (candidate);
 		uuid = nm_active_connection_get_uuid (candidate);
+		path = con ? nm_connection_get_path (NM_CONNECTION (con)) : NULL;
 		path_num = path ? strrchr (path, '/') + 1 : NULL;
+		a_path = nm_object_get_path (NM_OBJECT (candidate));
 		a_path_num = a_path ? strrchr (a_path, '/') + 1 : NULL;
 
 		/* When filter_type is NULL, compare connection ID (filter_val)
