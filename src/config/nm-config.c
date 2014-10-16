@@ -27,6 +27,7 @@
 #include "nm-logging.h"
 #include "nm-utils.h"
 #include "nm-glib-compat.h"
+#include "NetworkManagerUtils.h"
 
 #include <gio/gio.h>
 #include <glib/gi18n.h>
@@ -508,6 +509,8 @@ nm_config_new (GError **error)
 	if (cli_plugins && cli_plugins[0])
 		g_key_file_set_value (priv->keyfile, "main", "plugins", cli_plugins);
 	priv->plugins = g_key_file_get_string_list (priv->keyfile, "main", "plugins", NULL, NULL);
+	if (!priv->plugins && STRLEN (CONFIG_PLUGINS_DEFAULT) > 0)
+		priv->plugins = g_strsplit (CONFIG_PLUGINS_DEFAULT, ",", -1);
 
 	value = g_key_file_get_value (priv->keyfile, "main", "monitor-connection-files", NULL);
 	if (value) {
