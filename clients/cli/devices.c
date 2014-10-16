@@ -685,25 +685,13 @@ construct_header_name (const char *base, const char *spec)
 static const char *
 get_active_connection_id (NMDevice *device)
 {
-	const GPtrArray *avail_cons;
 	NMActiveConnection *ac;
-	const char *ac_uuid;
-	int i;
 
 	ac = nm_device_get_active_connection (device);
 	if (!ac)
 		return NULL;
-	ac_uuid = nm_active_connection_get_uuid (ac);
 
-	avail_cons = nm_device_get_available_connections (device);
-	for (i = 0; i < avail_cons->len; i++) {
-		NMRemoteConnection *candidate = g_ptr_array_index (avail_cons, i);
-		const char *test_uuid = nm_connection_get_uuid (NM_CONNECTION (candidate));
-
-		if (g_strcmp0 (ac_uuid, test_uuid) == 0)
-			return nm_connection_get_id (NM_CONNECTION (candidate));
-	}
-	return NULL;
+	return nm_active_connection_get_id (ac);
 }
 
 static gboolean
