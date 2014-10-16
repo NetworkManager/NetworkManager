@@ -29,20 +29,10 @@
 #include "nm-ip6-config.h"
 
 typedef enum {
-	NM_DNS_MANAGER_ERROR_SYSTEM,
-	NM_DNS_MANAGER_ERROR_INVALID_NAMESERVER,
-	NM_DNS_MANAGER_ERROR_INVALID_HOST,
-	NM_DNS_MANAGER_ERROR_INVALID_ID
-} NMDnsManagerError;
-
-typedef enum {
 	NM_DNS_IP_CONFIG_TYPE_DEFAULT = 0,
 	NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE,
 	NM_DNS_IP_CONFIG_TYPE_VPN
 } NMDnsIPConfigType;
-
-#define NM_DNS_MANAGER_ERROR nm_dns_manager_error_quark ()
-GQuark nm_dns_manager_error_quark (void);
 
 G_BEGIN_DECLS
 

@@ -54,22 +54,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-typedef enum {
-	NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND,
-	NM_DNSMASQ_MANAGER_ERROR_INVALID_IP_RANGE,
-} NMDnsMasqManagerError;
-
-GQuark
-nm_dnsmasq_manager_error_quark (void)
-{
-	static GQuark quark;
-
-	if (!quark)
-		quark = g_quark_from_static_string ("nm_dnsmasq_manager_error");
-
-	return quark;
-}
-
 static void
 nm_dnsmasq_manager_init (NMDnsMasqManager *manager)
 {
@@ -282,8 +266,8 @@ create_dm_cmd_line (const char *iface,
 
 	if (!nm_dnsmasq_utils_get_range (tmp, first, last, &error_desc)) {
 		g_set_error_literal (error,
-		                     NM_DNSMASQ_MANAGER_ERROR,
-		                     NM_DNSMASQ_MANAGER_ERROR_INVALID_IP_RANGE,
+		                     NM_MANAGER_ERROR,
+		                     NM_MANAGER_ERROR_FAILED,
 		                     error_desc);
 		nm_log_warn (LOGD_SHARING, "Failed to find DHCP address ranges: %s", error_desc);
 		g_free (error_desc);

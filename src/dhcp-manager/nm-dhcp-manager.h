@@ -29,16 +29,6 @@
 #include "nm-ip4-config.h"
 #include "nm-dhcp4-config.h"
 
-typedef enum {
-	NM_DHCP_MANAGER_ERROR_BAD_CLIENT = 0, /*< nick=BadClient >*/
-	NM_DHCP_MANAGER_ERROR_INTERNAL = 1,   /*< nick=InternalError >*/
-} NMDhcpManagerError;
-
-#define NM_DHCP_MANAGER_ERROR (nm_dhcp_manager_error_quark ())
-
-GQuark nm_dhcp_manager_error_quark    (void);
-
-
 #define NM_TYPE_DHCP_MANAGER            (nm_dhcp_manager_get_type ())
 #define NM_DHCP_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_MANAGER, NMDhcpManager))
 #define NM_DHCP_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_MANAGER, NMDhcpManagerClass))

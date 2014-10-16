@@ -21,18 +21,7 @@
 #include <sys/types.h>
 
 #include "nm-session-utils.h"
-
-/********************************************************************/
-
-GQuark
-nm_session_monitor_error_quark (void)
-{
-	static GQuark ret = 0;
-
-	if (G_UNLIKELY (ret == 0))
-		ret = g_quark_from_static_string ("nm-session-monitor-error");
-	return ret;
-}
+#include "nm-errors.h"
 
 /********************************************************************/
 
@@ -44,8 +33,8 @@ nm_session_uid_to_user (uid_t uid, const char **out_user, GError **error)
 	pw = getpwuid (uid);
 	if (!pw) {
 		g_set_error (error,
-			         NM_SESSION_MONITOR_ERROR,
-			         NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
+			         NM_MANAGER_ERROR,
+			         NM_MANAGER_ERROR_FAILED,
 			         "Could not get username for UID %d",
 			         uid);
 		return FALSE;
@@ -64,8 +53,8 @@ nm_session_user_to_uid (const char *user, uid_t *out_uid, GError **error)
 	pw = getpwnam (user);
 	if (!pw) {
 		g_set_error (error,
-			         NM_SESSION_MONITOR_ERROR,
-			         NM_SESSION_MONITOR_ERROR_UNKNOWN_USER,
+			         NM_MANAGER_ERROR,
+			         NM_MANAGER_ERROR_FAILED,
 			         "Could not get UID for username '%s'",
 			         user);
 		return FALSE;

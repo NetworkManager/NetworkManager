@@ -33,20 +33,6 @@
 #define NM_IS_VPN_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_VPN_MANAGER))
 #define NM_VPN_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_MANAGER, NMVpnManagerClass))
 
-typedef enum
-{
-	NM_VPN_MANAGER_ERROR_DEVICE_NOT_ACTIVE = 0, /*< nick=BaseDeviceNotActive >*/
-	NM_VPN_MANAGER_ERROR_CONNECTION_INVALID,    /*< nick=ConnectionInvalid >*/
-	NM_VPN_MANAGER_ERROR_SERVICE_INVALID,       /*< nick=ServiceInvalid >*/
-	NM_VPN_MANAGER_ERROR_SERVICE_START_FAILED,  /*< nick=ServiceStartFailed >*/
-} NMVpnManagerError;
-
-#define NM_VPN_MANAGER_ERROR (nm_vpn_manager_error_quark ())
-
-GQuark nm_vpn_manager_error_quark (void);
-GType nm_vpn_manager_error_get_type (void);
-
-
 typedef struct {
 	GObject parent;
 } NMVpnManager;

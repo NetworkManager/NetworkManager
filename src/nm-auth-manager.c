@@ -21,7 +21,7 @@
 #include "nm-auth-manager.h"
 
 #include "nm-logging.h"
-
+#include "nm-errors.h"
 
 #define POLKIT_SERVICE                      "org.freedesktop.PolicyKit1"
 #define POLKIT_OBJECT_PATH                  "/org/freedesktop/PolicyKit1/Authority"
@@ -80,16 +80,6 @@ G_DEFINE_TYPE (NMAuthManager, nm_auth_manager, G_TYPE_OBJECT)
 
 #define NM_AUTH_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AUTH_MANAGER, NMAuthManagerPrivate))
 
-GQuark
-nm_auth_manager_error_quark (void)
-{
-	static GQuark quark = 0;
-
-	if (G_UNLIKELY (quark == 0))
-		quark = g_quark_from_static_string ("nm-auth-manager-error-quark");
-	return quark;
-}
-
 /*****************************************************************************/
 
 gboolean
@@ -135,12 +125,13 @@ _call_check_authorization_complete_with_error (CheckAuthData *data,
                                                const char *error_message)
 {
 	NMAuthManager *self = data->self;
-	GError *error = NULL;
 
 	_LOGD ("call[%u]: CheckAuthorization failed due to internal error: %s", data->call_id, error_message);
-	g_set_error_literal (&error, NM_AUTH_MANAGER_ERROR, NM_AUTH_MANAGER_ERROR_DBUS_FAILURE, error_message);
-	g_simple_async_result_set_from_error (data->simple, error);
-	g_clear_error (&error);
+	g_simple_async_result_set_error (data->simple,
+	                                 NM_MANAGER_ERROR,
+	                                 NM_MANAGER_ERROR_FAILED,
+	                                 "Authorization check failed: %s",
+	                                 error_message);
 
 	g_simple_async_result_complete_in_idle (data->simple);
 
@@ -199,7 +190,11 @@ check_authorization_cb (GDBusProxy *proxy,
 			                   g_object_ref (self));
 		} else
 			_LOGD ("call[%u]: CheckAuthorization failed: %s", data->call_id, error->message);
-		g_simple_async_result_set_from_error (data->simple, error);
+		g_simple_async_result_set_error (data->simple,
+		                                 NM_MANAGER_ERROR,
+		                                 NM_MANAGER_ERROR_FAILED,
+		                                 "Authorization check failed: %s",
+		                                 error->message);
 		g_error_free (error);
 	} else {
 		GVariant *result_value;

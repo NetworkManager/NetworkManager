@@ -70,9 +70,4 @@ gboolean nm_ppp_manager_start (NMPPPManager *manager,
                                GError **err);
 
 
-#define NM_PPP_MANAGER_ERROR nm_ppp_manager_error_quark()
-#define NM_TYPE_PPP_MANAGER_ERROR (nm_ppp_manager_error_get_type ()) 
-
-GQuark nm_ppp_manager_error_quark (void);
-
 #endif /* __NETWORKMANAGER_PPP_MANAGER_H__ */

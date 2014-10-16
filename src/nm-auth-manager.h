@@ -40,12 +40,6 @@ G_BEGIN_DECLS
 
 #define NM_AUTH_MANAGER_SIGNAL_CHANGED "changed"
 
-#define NM_AUTH_MANAGER_ERROR (nm_auth_manager_error_quark ())
-
-typedef enum {
-	NM_AUTH_MANAGER_ERROR_DBUS_FAILURE = 1,
-} NMAuthManagerError;
-
 typedef struct {
 	GObject parent;
 } NMAuthManager;
@@ -55,7 +49,6 @@ typedef struct {
 } NMAuthManagerClass;
 
 GType nm_auth_manager_get_type (void);
-GQuark nm_auth_manager_error_quark (void);
 
 NMAuthManager *nm_auth_manager_setup (gboolean polkit_enabled);
 NMAuthManager *nm_auth_manager_get (void);
