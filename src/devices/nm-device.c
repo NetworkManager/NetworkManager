@@ -5891,14 +5891,20 @@ impl_device_delete (NMDevice *self, DBusGMethodInvocation *context)
 	               NULL);
 }
 
-static void
+static gboolean
 _device_activate (NMDevice *self, NMActRequest *req)
 {
 	NMDevicePrivate *priv;
 	NMConnection *connection;
 
-	g_return_if_fail (NM_IS_DEVICE (self));
-	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+
+	/* Ensure the activation request is still valid; the master may have
+	 * already failed in which case activation of this device should not proceed.
+	 */
+	if (nm_active_connection_get_state (NM_ACTIVE_CONNECTION (req)) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
+		return FALSE;
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -5924,6 +5930,7 @@ _device_activate (NMDevice *self, NMActRequest *req)
 	priv->act_request = g_object_ref (req);
 
 	nm_device_activate_schedule_stage1_device_prepare (self);
+	return TRUE;
 }
 
 static void
@@ -6019,7 +6026,8 @@ nm_device_queue_activation (NMDevice *self, NMActRequest *req)
 
 	if (!priv->act_request && !must_queue) {
 		/* Just activate immediately */
-		_device_activate (self, req);
+		if (!_device_activate (self, req))
+			g_assert_not_reached ();
 		return;
 	}
 
@@ -8110,13 +8118,18 @@ _set_state_full (NMDevice *self,
 		if (   priv->queued_act_request
 		    && !priv->queued_act_request_is_waiting_for_carrier) {
 			NMActRequest *queued_req;
+			gboolean success;
 
 			queued_req = priv->queued_act_request;
 			priv->queued_act_request = NULL;
-			_device_activate (self, queued_req);
+			success = _device_activate (self, queued_req);
 			g_object_unref (queued_req);
-		} else if (   old_state > NM_DEVICE_STATE_DISCONNECTED
-		           && nm_device_get_default_unmanaged (self))
+			if (success)
+				break;
+			/* fall through */
+		}
+		if (   old_state > NM_DEVICE_STATE_DISCONNECTED
+		    && nm_device_get_default_unmanaged (self))
 			nm_device_queue_state (self, NM_DEVICE_STATE_UNMANAGED, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
