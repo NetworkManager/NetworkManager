@@ -51,6 +51,7 @@ typedef struct {
 	gboolean is_default;
 	gboolean is_default6;
 	NMActiveConnectionState state;
+	gboolean state_set;
 	gboolean vpn;
 
 	NMAuthSubject *subject;
@@ -138,6 +139,7 @@ nm_active_connection_set_state (NMActiveConnection *self,
 
 	old_state = priv->state;
 	priv->state = new_state;
+	priv->state_set = TRUE;
 	g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_STATE);
 
 	check_master_ready (self);
@@ -748,7 +750,14 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, devices);
 		break;
 	case PROP_STATE:
-		g_value_set_uint (value, priv->state);
+		if (priv->state_set)
+			g_value_set_uint (value, priv->state);
+		else {
+			/* When the AC has just been created, its externally-visible state should
+			 * be "ACTIVATING", even though internally it is "UNKNOWN".
+			 */
+			g_value_set_uint (value, NM_ACTIVE_CONNECTION_STATE_ACTIVATING);
+		}
 		break;
 	case PROP_DEFAULT:
 		g_value_set_boolean (value, priv->is_default);
