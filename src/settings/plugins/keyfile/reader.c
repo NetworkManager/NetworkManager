@@ -35,6 +35,7 @@
 #include "reader.h"
 #include "common.h"
 #include "utils.h"
+#include "nm-core-internal.h"
 
 /* Some setting properties also contain setting names, such as
  * NMSettingConnection's 'type' property (which specifies the base type of the
@@ -616,7 +617,8 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 			continue;
 
 		if (NM_IS_SETTING_VPN (setting)) {
-			if (strcmp (*iter, NM_SETTING_VPN_SERVICE_TYPE) && strcmp (*iter, NM_SETTING_VPN_USER_NAME))
+			/* Add any item that's not a class property to the data hash */
+			if (!g_object_class_find_property (G_OBJECT_GET_CLASS (setting), *iter))
 				nm_setting_vpn_add_data_item (NM_SETTING_VPN (setting), *iter, value);
 		}
 		if (NM_IS_SETTING_BOND (setting)) {

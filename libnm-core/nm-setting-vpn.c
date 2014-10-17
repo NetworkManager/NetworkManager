@@ -57,6 +57,11 @@ typedef struct {
 	 */
 	char *user_name;
 
+	/* Whether the VPN stays up across link changes, until the user
+	 * explicitly disconnects it.
+	 */
+	gboolean persistent;
+
 	/* The hash table is created at setting object
 	 * init time and should not be replaced.  It is
 	 * a char * -> char * mapping, and both the key
@@ -80,6 +85,7 @@ enum {
 	PROP_0,
 	PROP_SERVICE_TYPE,
 	PROP_USER_NAME,
+	PROP_PERSISTENT,
 	PROP_DATA,
 	PROP_SECRETS,
 
@@ -128,6 +134,20 @@ nm_setting_vpn_get_user_name (NMSettingVpn *setting)
 	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), NULL);
 
 	return NM_SETTING_VPN_GET_PRIVATE (setting)->user_name;
+}
+
+/**
+ * nm_setting_vpn_get_persistent:
+ * @setting: the #NMSettingVpn
+ *
+ * Returns: the #NMSettingVpn:persistent property of the setting
+ **/
+gboolean
+nm_setting_vpn_get_persistent (NMSettingVpn *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_VPN (setting), FALSE);
+
+	return NM_SETTING_VPN_GET_PRIVATE (setting)->persistent;
 }
 
 /**
@@ -721,6 +741,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->user_name);
 		priv->user_name = g_value_dup_string (value);
 		break;
+	case PROP_PERSISTENT:
+		priv->persistent = g_value_get_boolean (value);
+		break;
 	case PROP_DATA:
 		g_hash_table_unref (priv->data);
 		priv->data = _nm_utils_copy_strdict (g_value_get_boxed (value));
@@ -748,6 +771,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_USER_NAME:
 		g_value_set_string (value, nm_setting_vpn_get_user_name (setting));
+		break;
+	case PROP_PERSISTENT:
+		g_value_set_boolean (value, priv->persistent);
 		break;
 	case PROP_DATA:
 		g_value_take_boxed (value, _nm_utils_copy_strdict (priv->data));
@@ -813,6 +839,20 @@ nm_setting_vpn_class_init (NMSettingVpnClass *setting_class)
 		                      NULL,
 		                      G_PARAM_READWRITE |
 		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingVpn:persistent:
+	 *
+	 * If the VPN service supports persistence, and this property is %TRUE,
+	 * the VPN will attempt to stay connected across link changes and outages,
+	 * until explicitly disconnected.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_PERSISTENT,
+		 g_param_spec_boolean (NM_SETTING_VPN_PERSISTENT, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_STATIC_STRINGS));
 
 	/**
 	 * NMSettingVpn:data:
