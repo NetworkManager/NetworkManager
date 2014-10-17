@@ -85,6 +85,8 @@ typedef struct {
 	guint dispatcher_id;
 	NMVpnConnectionStateReason failure_reason;
 
+	NMVpnServiceState service_state;
+
 	DBusGProxy *proxy;
 	GHashTable *connect_hash;
 	guint connect_timeout;
@@ -699,16 +701,18 @@ vpn_reason_to_string (NMVpnConnectionStateReason reason)
 
 static void
 plugin_state_changed (DBusGProxy *proxy,
-                      NMVpnServiceState state,
+                      NMVpnServiceState new_service_state,
                       gpointer user_data)
 {
 	NMVpnConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMVpnServiceState old_service_state = priv->service_state;
 
 	nm_log_info (LOGD_VPN, "VPN plugin state changed: %s (%d)",
-	             vpn_service_state_to_string (state), state);
+	             vpn_service_state_to_string (new_service_state), new_service_state);
+	priv->service_state = new_service_state;
 
-	if (state == NM_VPN_SERVICE_STATE_STOPPED) {
+	if (new_service_state == NM_VPN_SERVICE_STATE_STOPPED) {
 		/* Clear connection secrets to ensure secrets get requested each time the
 		 * connection is activated.
 		 */
@@ -722,6 +726,10 @@ plugin_state_changed (DBusGProxy *proxy,
 			/* Reset the failure reason */
 			priv->failure_reason = NM_VPN_CONNECTION_STATE_REASON_UNKNOWN;
 		}
+	} else if (new_service_state == NM_VPN_SERVICE_STATE_STARTING &&
+	           old_service_state == NM_VPN_SERVICE_STATE_STARTED) {
+		/* The VPN service got disconnected and is attempting to reconnect */
+		_set_vpn_state (connection, STATE_CONNECT, NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT, FALSE);
 	}
 }
 
@@ -895,12 +903,8 @@ nm_vpn_connection_config_maybe_complete (NMVpnConnection *connection,
 {
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	if (priv->connect_timeout == 0) {
-		/* config_complete() was already called with an error;
-		 * ignore further calls.
-		 */
+	if (priv->vpn_state < STATE_IP_CONFIG_GET || priv->vpn_state > STATE_ACTIVATED)
 		return;
-	}
 
 	if (success) {
 		if (   (priv->has_ip4 && !priv->ip4_config)
@@ -910,8 +914,10 @@ nm_vpn_connection_config_maybe_complete (NMVpnConnection *connection,
 		}
 	}
 
-	g_source_remove (priv->connect_timeout);
-	priv->connect_timeout = 0;
+	if (priv->connect_timeout == 0) {
+		g_source_remove (priv->connect_timeout);
+		priv->connect_timeout = 0;
+	}
 
 	if (success) {
 		print_vpn_config (connection);
@@ -1210,6 +1216,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	                             nm_connection_get_setting_ip4_config (priv->connection),
 	                             vpn_routing_metric (connection));
 
+	g_clear_object (&priv->ip4_config);
 	priv->ip4_config = config;
 	nm_ip4_config_export (config);
 	g_object_notify (G_OBJECT (connection), NM_ACTIVE_CONNECTION_IP4_CONFIG);
@@ -1356,6 +1363,7 @@ nm_vpn_connection_ip6_config_get (DBusGProxy *proxy,
 	                             nm_connection_get_setting_ip6_config (priv->connection),
 	                             vpn_routing_metric (connection));
 
+	g_clear_object (&priv->ip6_config);
 	priv->ip6_config = config;
 	nm_ip6_config_export (config);
 	g_object_notify (G_OBJECT (connection), NM_ACTIVE_CONNECTION_IP6_CONFIG);
@@ -1751,7 +1759,9 @@ plugin_new_secrets_cb  (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data
 	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
 	GError *error = NULL;
 
-	if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID)) {
+	if (dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID)) {
+		_set_vpn_state (self, STATE_CONNECT, NM_VPN_CONNECTION_STATE_REASON_NONE, FALSE);
+	} else {
 		nm_log_err (LOGD_VPN, "(%s/%s) sending new secrets to the plugin failed: %s %s",
 		            nm_connection_get_uuid (priv->connection),
 		            nm_connection_get_id (priv->connection),
