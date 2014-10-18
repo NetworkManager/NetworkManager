@@ -278,13 +278,6 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex)
 			    && nm_ip4_config_destination_is_direct (config, route->network, route->plen))
 				continue;
 
-			/* Don't add the default route if the connection
-			 * is never supposed to be the default connection.
-			 */
-			if (   nm_ip4_config_get_never_default (config)
-			    && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
-				continue;
-
 			g_array_append_vals (routes, route, 1);
 		}
 

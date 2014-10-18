@@ -2010,9 +2010,8 @@ array_contains_ip6_route (const GArray *routes, const NMPlatformIP6Route *route)
  * A convenience function to synchronize routes for a specific interface
  * with the least possible disturbance. It simply removes routes that are
  * not listed and adds routes that are.
- *
- * @known_routes should not contain a default route; if it does, it will be
- * ignored.
+ * Default routes are ignored (both in @known_routes and those already
+ * configured on the device).
  *
  * Returns: %TRUE on success.
  */
@@ -2083,9 +2082,8 @@ nm_platform_ip4_route_sync (int ifindex, const GArray *known_routes)
  * A convenience function to synchronize routes for a specific interface
  * with the least possible disturbance. It simply removes routes that are
  * not listed and adds routes that are.
- *
- * @known_routes should not contain a default route; if it does, it will be
- * ignored.
+ * Default routes are ignored (both in @known_routes and those already
+ * configured on the device).
  *
  * Returns: %TRUE on success.
  */
