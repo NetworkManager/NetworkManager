@@ -362,8 +362,11 @@ nm_active_connection_get_master (NMActiveConnection *connection)
 }
 
 static void
-nm_active_connection_init (NMActiveConnection *ap)
+nm_active_connection_init (NMActiveConnection *connection)
 {
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
+
+	priv->devices = g_ptr_array_new ();
 }
 
 static void

@@ -28,6 +28,8 @@
 
 #include "common.h"
 
+#include "nm-test-utils.h"
+
 static GMainLoop *loop = NULL;
 static NMTestServiceInfo *sinfo;
 
@@ -40,65 +42,14 @@ loop_quit (gpointer user_data)
 	return G_SOURCE_REMOVE;
 }
 
-static gboolean
-add_device (const char *method, const char *ifname, char **out_path)
-{
-	GError *error = NULL;
-	GVariant *ret;
-
-	ret = g_dbus_proxy_call_sync (sinfo->proxy,
-	                              method,
-	                              g_variant_new ("(s)", ifname),
-	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
-	                              3000,
-	                              NULL,
-	                              &error);
-	g_assert_no_error (error);
-	g_assert (ret);
-	g_assert_cmpstr (g_variant_get_type_string (ret), ==, "(o)");
-	if (out_path)
-		g_variant_get (ret, "(o)", out_path);
-	g_variant_unref (ret);
-	return TRUE;
-}
-
 /*******************************************************************/
-
-typedef struct {
-	GMainLoop *loop;
-	gboolean signaled;
-	gboolean notified;
-	guint quit_count;
-	guint quit_id;
-} DeviceAddedInfo;
-
-static void
-device_add_check_quit (DeviceAddedInfo *info)
-{
-	info->quit_count--;
-	if (info->quit_count == 0) {
-		g_source_remove (info->quit_id);
-		info->quit_id = 0;
-		g_main_loop_quit (info->loop);
-	}
-}
-
-static void
-device_added_cb (NMClient *c,
-                 NMDevice *device,
-                 DeviceAddedInfo *info)
-{
-	g_assert (device);
-	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
-	info->signaled = TRUE;
-	device_add_check_quit (info);
-}
 
 static void
 devices_notify_cb (NMClient *c,
                    GParamSpec *pspec,
-                   DeviceAddedInfo *info)
+                   gpointer user_data)
 {
+	gboolean *notified = user_data;
 	const GPtrArray *devices;
 	NMDevice *device;
 
@@ -110,9 +61,7 @@ devices_notify_cb (NMClient *c,
 	g_assert (device);
 	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0");
 
-	info->notified = TRUE;
-
-	device_add_check_quit (info);
+	*notified = TRUE;
 }
 
 static void
@@ -121,7 +70,7 @@ test_device_added (void)
 	NMClient *client;
 	const GPtrArray *devices;
 	NMDevice *device;
-	DeviceAddedInfo info = { loop, FALSE, FALSE, 0, 0 };
+	gboolean notified = FALSE;
 	GError *error = NULL;
 
 	sinfo = nm_test_service_init ();
@@ -131,30 +80,18 @@ test_device_added (void)
 	devices = nm_client_get_devices (client);
 	g_assert (devices->len == 0);
 
-	/* Tell the test service to add a new device */
-	add_device ("AddWiredDevice", "eth0", NULL);
-
-	g_signal_connect (client,
-	                  "device-added",
-	                  (GCallback) device_added_cb,
-	                  &info);
-	info.quit_count++;
-
 	g_signal_connect (client,
 	                  "notify::devices",
 	                  (GCallback) devices_notify_cb,
-	                  &info);
-	info.quit_count++;
+	                  &notified);
 
-	/* Wait for libnm to find the device */
-	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
-	g_main_loop_run (loop);
+	/* Tell the test service to add a new device */
+	nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
 
-	g_assert (info.signaled);
-	g_assert (info.notified);
+	while (!notified)
+		g_main_context_iteration (NULL, TRUE);
 
-	g_signal_handlers_disconnect_by_func (client, device_added_cb, &info);
-	g_signal_handlers_disconnect_by_func (client, devices_notify_cb, &info);
+	g_signal_handlers_disconnect_by_func (client, devices_notify_cb, &notified);
 
 	devices = nm_client_get_devices (client);
 	g_assert (devices);
@@ -191,16 +128,6 @@ wifi_check_quit (WifiApInfo *info)
 		info->quit_id = 0;
 		g_main_loop_quit (info->loop);
 	}
-}
-
-static void
-wifi_device_added_cb (NMClient *c,
-                      NMDevice *device,
-                      WifiApInfo *info)
-{
-	g_assert_cmpstr (nm_device_get_iface (device), ==, "wlan0");
-	info->found = TRUE;
-	wifi_check_quit (info);
 }
 
 static void
@@ -288,26 +215,11 @@ test_wifi_ap_added_removed (void)
 
 	/*************************************/
 	/* Add the wifi device */
-	add_device ("AddWifiDevice", "wlan0", NULL);
-
-	g_signal_connect (client,
-	                  "device-added",
-	                  (GCallback) wifi_device_added_cb,
-	                  &info);
-	info.quit_count = 1;
-
-	/* Wait for libnm to find the device */
-	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
-	g_main_loop_run (loop);
-
-	g_assert (info.found);
-	g_signal_handlers_disconnect_by_func (client, wifi_device_added_cb, &info);
-
-	wifi = (NMDeviceWifi *) nm_client_get_device_by_iface (client, "wlan0");
+	wifi = (NMDeviceWifi *) nm_test_service_add_device (sinfo, client, "AddWifiDevice", "wlan0");
 	g_assert (NM_IS_DEVICE_WIFI (wifi));
 
 	/*************************************/
-	/* Add the wifi device */
+	/* Add the wifi AP */
 	info.signaled =  FALSE;
 	info.notified = FALSE;
 	info.quit_id = 0;
@@ -418,16 +330,6 @@ wimax_check_quit (WimaxNspInfo *info)
 }
 
 static void
-wimax_device_added_cb (NMClient *c,
-                       NMDevice *device,
-                       WimaxNspInfo *info)
-{
-	g_assert_cmpstr (nm_device_get_iface (device), ==, "wmx0");
-	info->found = TRUE;
-	wimax_check_quit (info);
-}
-
-static void
 got_nsp_path (WimaxNspInfo *info, const char *path)
 {
 	if (info->nsp_path)
@@ -512,22 +414,7 @@ test_wimax_nsp_added_removed (void)
 
 	/*************************************/
 	/* Add the wimax device */
-	add_device ("AddWimaxDevice", "wmx0", NULL);
-
-	g_signal_connect (client,
-	                  "device-added",
-	                  (GCallback) wimax_device_added_cb,
-	                  &info);
-	info.quit_count = 1;
-
-	/* Wait for libnm to find the device */
-	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
-	g_main_loop_run (loop);
-
-	g_assert (info.found);
-	g_signal_handlers_disconnect_by_func (client, wimax_device_added_cb, &info);
-
-	wimax = (NMDeviceWimax *) nm_client_get_device_by_iface (client, "wmx0");
+	wimax = (NMDeviceWimax *) nm_test_service_add_device (sinfo, client, "AddWimaxDevice", "wmx0");
 	g_assert (NM_IS_DEVICE_WIMAX (wimax));
 
 	/*************************************/
@@ -638,14 +525,6 @@ da_check_quit (DaInfo *info)
 }
 
 static void
-da_device_added_cb (NMClient *c,
-                    NMDevice *device,
-                    DaInfo *info)
-{
-	da_check_quit (info);
-}
-
-static void
 da_device_removed_cb (NMClient *c,
                       NMDevice *device,
                       DaInfo *info)
@@ -700,8 +579,7 @@ test_devices_array (void)
 {
 	NMClient *client = NULL;
 	DaInfo info = { loop };
-	char *paths[3] = { NULL, NULL, NULL };
-	NMDevice *device;
+	NMDevice *wlan0, *eth0, *eth1, *device;
 	const GPtrArray *devices;
 	GError *error = NULL;
 	GVariant *ret;
@@ -715,22 +593,9 @@ test_devices_array (void)
 
 	/*************************************/
 	/* Add some devices */
-	add_device ("AddWifiDevice", "wlan0", &paths[0]);
-	add_device ("AddWiredDevice", "eth0", &paths[1]);
-	add_device ("AddWiredDevice", "eth1", &paths[2]);
-	info.quit_count = 3;
-
-	g_signal_connect (client,
-	                  "device-added",
-	                  (GCallback) da_device_added_cb,
-	                  &info);
-
-	/* Wait for libnm to find the device */
-	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
-	g_main_loop_run (loop);
-
-	g_assert_cmpint (info.quit_count, ==, 0);
-	g_signal_handlers_disconnect_by_func (client, da_device_added_cb, &info);
+	wlan0 = nm_test_service_add_device (sinfo, client,"AddWifiDevice", "wlan0");
+	eth0 = nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+	eth1 = nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth1");
 
 	/* Ensure the devices now exist */
 	devices = nm_client_get_devices (client);
@@ -739,18 +604,21 @@ test_devices_array (void)
 
 	device = nm_client_get_device_by_iface (client, "wlan0");
 	g_assert (NM_IS_DEVICE_WIFI (device));
+	g_assert (device == wlan0);
 
 	device = nm_client_get_device_by_iface (client, "eth0");
 	g_assert (NM_IS_DEVICE_ETHERNET (device));
+	g_assert (device == eth0);
 
 	device = nm_client_get_device_by_iface (client, "eth1");
 	g_assert (NM_IS_DEVICE_ETHERNET (device));
+	g_assert (device == eth1);
 
 	/********************************/
 	/* Now remove the device in the middle */
 	ret = g_dbus_proxy_call_sync (sinfo->proxy,
 	                              "RemoveDevice",
-	                              g_variant_new ("(o)", paths[1]),
+	                              g_variant_new ("(o)", nm_object_get_path (NM_OBJECT (eth0))),
 	                              G_DBUS_CALL_FLAGS_NO_AUTO_START,
 	                              3000,
 	                              NULL,
@@ -770,7 +638,7 @@ test_devices_array (void)
 	                  &info);
 	info.quit_count = 2;
 
-	/* Wait for libnm to find the device */
+	/* Wait for libnm to notice the changes */
 	info.quit_id = g_timeout_add_seconds (5, loop_quit, loop);
 	g_main_loop_run (loop);
 
@@ -785,13 +653,11 @@ test_devices_array (void)
 
 	device = nm_client_get_device_by_iface (client, "wlan0");
 	g_assert (NM_IS_DEVICE_WIFI (device));
+	g_assert (device == wlan0);
 
 	device = nm_client_get_device_by_iface (client, "eth1");
 	g_assert (NM_IS_DEVICE_ETHERNET (device));
-
-	g_free (paths[0]);
-	g_free (paths[1]);
-	g_free (paths[2]);
+	g_assert (device == eth1);
 
 	g_object_unref (client);
 	g_clear_pointer (&sinfo, nm_test_service_cleanup);
@@ -866,7 +732,332 @@ test_client_nm_running (void)
 	g_object_unref (client2);
 }
 
+typedef struct {
+	GMainLoop *loop;
+	NMActiveConnection *ac;
+
+	int remaining;
+} TestACInfo;
+
+static void
+assert_ac_and_device (NMClient *client)
+{
+	const GPtrArray *devices, *acs, *ac_devices;
+	NMDevice *device, *ac_device;
+	NMActiveConnection *ac, *device_ac;
+
+	acs = nm_client_get_active_connections (client);
+	g_assert (acs != NULL);
+	g_assert_cmpint (acs->len, ==, 1);
+	devices = nm_client_get_devices (client);
+	g_assert (devices != NULL);
+	g_assert_cmpint (devices->len, >=, 1);
+
+	ac = acs->pdata[0];
+	ac_devices = nm_active_connection_get_devices (ac);
+	g_assert (ac_devices != NULL);
+	g_assert_cmpint (ac_devices->len, ==, 1);
+	ac_device = ac_devices->pdata[0];
+	g_assert (ac_device != NULL);
+
+	device = devices->pdata[0];
+	if (device != ac_device && devices->len > 1)
+		device = devices->pdata[1];
+	device_ac = nm_device_get_active_connection (device);
+	g_assert (device_ac != NULL);
+
+	g_assert_cmpstr (nm_object_get_path (NM_OBJECT (device)), ==, nm_object_get_path (NM_OBJECT (ac_device)));
+	g_assert (device == ac_device);
+	g_assert_cmpstr (nm_object_get_path (NM_OBJECT (ac)), ==, nm_object_get_path (NM_OBJECT (device_ac)));
+	g_assert (ac == device_ac);
+}
+
+static void
+add_and_activate_cb (GObject *object,
+                     GAsyncResult *result,
+                     gpointer user_data)
+{
+	NMClient *client = NM_CLIENT (object);
+	TestACInfo *info = user_data;
+	GError *error = NULL;
+
+	info->ac = nm_client_add_and_activate_connection_finish (client, result, &error);
+	g_assert_no_error (error);
+	g_assert (info->ac != NULL);
+
+	assert_ac_and_device (client);
+
+	info->remaining--;
+	if (!info->remaining)
+		g_main_loop_quit (info->loop);
+}
+
+static void
+client_acs_changed_cb (GObject *client,
+                       GParamSpec *pspec,
+                       gpointer user_data)
+{
+	TestACInfo *info = user_data;
+	const GPtrArray *acs;
+
+	acs = nm_client_get_active_connections (NM_CLIENT (client));
+	g_assert (acs != NULL);
+	g_assert_cmpint (acs->len, ==, 1);
+
+	info->remaining--;
+	if (!info->remaining)
+		g_main_loop_quit (info->loop);
+}
+
+static void
+device_ac_changed_cb (GObject *device,
+                      GParamSpec *pspec,
+                      gpointer user_data)
+{
+	TestACInfo *info = user_data;
+
+	g_assert (nm_device_get_active_connection (NM_DEVICE (device)) != NULL);
+
+	info->remaining--;
+	if (!info->remaining)
+		g_main_loop_quit (info->loop);
+}
+
+static void
+test_active_connections (void)
+{
+	NMClient *client;
+	NMDevice *device;
+	NMConnection *conn;
+	TestACInfo info = { loop, NULL, 0 };
+	GError *error = NULL;
+
+	sinfo = nm_test_service_init ();
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
+
+	/* Tell the test service to add a new device */
+	device = nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+
+	conn = nmtst_create_minimal_connection ("test-ac", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+	nm_client_add_and_activate_connection_async (client, conn, device, NULL,
+	                                             NULL, add_and_activate_cb, &info);
+	g_object_unref (conn);
+
+	g_signal_connect (client, "notify::" NM_CLIENT_ACTIVE_CONNECTIONS,
+	                  G_CALLBACK (client_acs_changed_cb), &info);
+	g_signal_connect (device, "notify::" NM_DEVICE_ACTIVE_CONNECTION,
+	                  G_CALLBACK (device_ac_changed_cb), &info);
+
+	/* Two signals plus activate_cb */
+	info.remaining = 3;
+	g_main_loop_run (loop);
+	g_signal_handlers_disconnect_by_func (client, client_acs_changed_cb, &info);
+	g_signal_handlers_disconnect_by_func (device, device_ac_changed_cb, &info);
+
+	g_assert (info.ac != NULL);
+
+	g_object_unref (info.ac);
+	g_object_unref (client);
+
+	/* Ensure that we can correctly resolve the recursive property link between the
+	 * AC and the Device in a newly-created client.
+	 */
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
+	assert_ac_and_device (client);
+	g_object_unref (client);
+
+	client = NULL;
+	nm_client_new_async (NULL, new_client_cb, &client);
+	g_main_loop_run (loop);
+	assert_ac_and_device (client);
+	g_object_unref (client);
+
+	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+}
+
+static void
+client_devices_changed_cb (GObject *client,
+                           GParamSpec *pspec,
+                           gpointer user_data)
+{
+	TestACInfo *info = user_data;
+	const GPtrArray *devices;
+	NMDevice *device;
+
+	devices = nm_client_get_devices (NM_CLIENT (client));
+	g_assert (devices != NULL);
+	g_assert_cmpint (devices->len, ==, 2);
+
+	if (NM_IS_DEVICE_VLAN (devices->pdata[0]))
+		device = devices->pdata[0];
+	else if (NM_IS_DEVICE_VLAN (devices->pdata[1]))
+		device = devices->pdata[1];
+	else
+		g_assert_not_reached ();
+
+	g_assert_cmpstr (nm_device_get_iface (device), ==, "eth0.1");
+
+	if (nm_device_get_active_connection (device))
+		info->remaining--;
+	else {
+		g_signal_connect (device, "notify::" NM_DEVICE_ACTIVE_CONNECTION,
+		                  G_CALLBACK (device_ac_changed_cb), &info);
+	}
+
+	info->remaining--;
+	if (!info->remaining)
+		g_main_loop_quit (info->loop);
+}
+
+typedef struct {
+	GMainLoop *loop;
+	NMRemoteConnection *remote;
+} TestConnectionInfo;
+
+static void
+add_connection_cb (GObject *object,
+                   GAsyncResult *result,
+                   gpointer user_data)
+{
+	TestConnectionInfo *info = user_data;
+	GError *error = NULL;
+
+	info->remote = nm_client_add_connection_finish (NM_CLIENT (object), result, &error);
+	g_assert_no_error (error);
+	g_main_loop_quit (info->loop);
+}
+
+static void
+activate_cb (GObject *object,
+             GAsyncResult *result,
+             gpointer user_data)
+{
+	NMClient *client = NM_CLIENT (object);
+	TestACInfo *info = user_data;
+	GError *error = NULL;
+
+	info->ac = nm_client_activate_connection_finish (client, result, &error);
+	g_assert_no_error (error);
+	g_assert (info->ac != NULL);
+
+	assert_ac_and_device (client);
+
+	info->remaining--;
+	if (!info->remaining)
+		g_main_loop_quit (info->loop);
+}
+
+static void
+test_activate_virtual (void)
+{
+	NMClient *client;
+	NMConnection *conn;
+	NMSettingConnection *s_con;
+	NMSettingVlan *s_vlan;
+	TestACInfo info = { loop, NULL, 0 };
+	TestConnectionInfo conn_info = { loop, NULL };
+	GError *error = NULL;
+
+	sinfo = nm_test_service_init ();
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
+
+	nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+
+	conn = nmtst_create_minimal_connection ("test-ac", NULL, NM_SETTING_VLAN_SETTING_NAME, &s_con);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_INTERFACE_NAME, "eth0.1",
+	              NULL);
+	s_vlan = nm_connection_get_setting_vlan (conn);
+	g_object_set (s_vlan,
+	              NM_SETTING_VLAN_ID, 1,
+	              NM_SETTING_VLAN_PARENT, "eth0",
+	              NULL);
+
+	nm_client_add_connection_async (client, conn, TRUE,
+	                                NULL, add_connection_cb, &conn_info);
+	g_main_loop_run (loop);
+	g_object_unref (conn);
+	conn = NM_CONNECTION (conn_info.remote);
+
+	nm_client_activate_connection_async (client, conn, NULL, NULL,
+	                                     NULL, activate_cb, &info);
+	g_object_unref (conn);
+
+	g_signal_connect (client, "notify::" NM_CLIENT_ACTIVE_CONNECTIONS,
+	                  G_CALLBACK (client_acs_changed_cb), &info);
+	g_signal_connect (client, "notify::" NM_CLIENT_DEVICES,
+	                  G_CALLBACK (client_devices_changed_cb), &info);
+
+	/* As with test_active_connections() above, except that now we're waiting
+	 * for NMClient:devices to change rather than NMDevice:active-connections.
+	 */
+	info.remaining = 3;
+
+	g_main_loop_run (loop);
+	g_signal_handlers_disconnect_by_func (client, client_acs_changed_cb, &info);
+	g_signal_handlers_disconnect_by_func (client, client_devices_changed_cb, &info);
+
+	g_assert (info.ac != NULL);
+
+	g_object_unref (info.ac);
+	g_object_unref (client);
+
+	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+}
+
+static void
+activate_failed_cb (GObject *object,
+                    GAsyncResult *result,
+                    gpointer user_data)
+{
+	NMClient *client = NM_CLIENT (object);
+	NMActiveConnection *ac;
+	GError *error = NULL;
+
+	ac = nm_client_activate_connection_finish (client, result, &error);
+	g_assert (ac == NULL);
+	g_assert_error (error, NM_OBJECT_ERROR, NM_OBJECT_ERROR_OBJECT_CREATION_FAILURE);
+	g_clear_error (&error);
+
+	g_main_loop_quit (loop);
+}
+
+static void
+test_activate_failed (void)
+{
+	NMClient *client;
+	NMDevice *device;
+	NMConnection *conn;
+	GError *error = NULL;
+
+	sinfo = nm_test_service_init ();
+	client = nm_client_new (NULL, &error);
+	g_assert_no_error (error);
+
+	device = nm_test_service_add_device (sinfo, client, "AddWiredDevice", "eth0");
+
+	/* Note that test-networkmanager-service.py checks for this exact name */
+	conn = nmtst_create_minimal_connection ("object-creation-failed-test", NULL,
+	                                        NM_SETTING_WIRED_SETTING_NAME, NULL);
+
+	nm_client_add_and_activate_connection_async (client, conn, device, NULL,
+	                                             NULL, activate_failed_cb, NULL);
+	g_test_expect_message ("libnm", G_LOG_LEVEL_WARNING, "*Method*doesn't exist*");
+	g_main_loop_run (loop);
+	g_test_assert_expected_messages ();
+
+	g_object_unref (conn);
+	g_object_unref (client);
+
+	g_clear_pointer (&sinfo, nm_test_service_cleanup);
+}
+
 /*******************************************************************/
+
+NMTST_DEFINE ();
 
 int
 main (int argc, char **argv)
@@ -877,7 +1068,7 @@ main (int argc, char **argv)
 	g_type_init ();
 #endif
 
-	g_test_init (&argc, &argv, NULL);
+	nmtst_init (&argc, &argv, TRUE);
 
 	loop = g_main_loop_new (NULL, FALSE);
 
@@ -886,6 +1077,9 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/wimax-nsp-added-removed", test_wimax_nsp_added_removed);
 	g_test_add_func ("/libnm/devices-array", test_devices_array);
 	g_test_add_func ("/libnm/client-nm-running", test_client_nm_running);
+	g_test_add_func ("/libnm/active-connections", test_active_connections);
+	g_test_add_func ("/libnm/activate-virtual", test_activate_virtual);
+	g_test_add_func ("/libnm/activate-failed", test_activate_failed);
 
 	return g_test_run ();
 }

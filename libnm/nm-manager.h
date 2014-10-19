@@ -61,6 +61,8 @@ typedef struct {
 	/* Signals */
 	void (*device_added) (NMManager *manager, NMDevice *device);
 	void (*device_removed) (NMManager *manager, NMDevice *device);
+	void (*active_connection_added) (NMManager *manager, NMActiveConnection *ac);
+	void (*active_connection_removed) (NMManager *manager, NMActiveConnection *ac);
 	void (*permission_changed) (NMManager *manager,
 	                            NMClientPermission permission,
 	                            NMClientPermissionResult result);

@@ -652,6 +652,7 @@ nm_remote_settings_init (NMRemoteSettings *self)
 {
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 
+	priv->all_connections = g_ptr_array_new ();
 	priv->visible_connections = g_ptr_array_new ();
 }
 

@@ -173,7 +173,11 @@ get_hw_address (NMDevice *device)
 static void
 nm_device_bond_init (NMDeviceBond *device)
 {
+	NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE (device);
+
 	_nm_device_set_device_type (NM_DEVICE (device), NM_DEVICE_TYPE_BOND);
+
+	priv->slaves = g_ptr_array_new ();
 }
 
 static void
