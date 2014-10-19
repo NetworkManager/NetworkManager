@@ -594,6 +594,7 @@ do_general (NmCli *nmc, int argc, char **argv)
 				/* no arguments -> get hostname */
 				char *hostname = NULL;
 
+				nmc->get_client (nmc); /* create NMClient */
 				g_object_get (nmc->client, NM_CLIENT_HOSTNAME, &hostname, NULL);
 				if (hostname)
 					g_print ("%s\n", hostname);
@@ -606,6 +607,7 @@ do_general (NmCli *nmc, int argc, char **argv)
 					g_print ("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
 
 				nmc->should_wait = TRUE;
+				nmc->get_client (nmc); /* create NMClient */
 				nm_client_save_hostname_async (nmc->client, hostname, NULL, save_hostname_cb, nmc);
 			}
 		}
