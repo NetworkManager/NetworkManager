@@ -21,13 +21,28 @@
  */
 
 #include <string.h>
+#include <arpa/inet.h>
 #include <glib/gi18n.h>
 
 #include "nm-setting-ip-config.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
 #include "nm-utils.h"
 #include "nm-glib-compat.h"
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
+
+/**
+ * SECTION:nm-setting-ip-config
+ * @short_description: Abstract base class for IPv4 and IPv6
+ *   addressing, routing, and name service properties
+ * @include: nm-setting-ip-config.h
+ * @see_also: #NMSettingIP4Config, #NMSettingIP6Config
+ *
+ * #NMSettingIPConfig is the abstract base class of
+ * #NMSettingIP4Config and #NMSettingIP6Config, providing properties
+ * related to IP addressing, routing, and Domain Name Service.
+ **/
 
 static char *
 canonicalize_ip (int family, const char *ip, gboolean null_any)
@@ -1053,4 +1068,1165 @@ nm_ip_route_set_attribute (NMIPRoute *route, const char *name, GVariant *value)
 		g_hash_table_insert (route->attributes, g_strdup (name), g_variant_ref_sink (value));
 	else
 		g_hash_table_remove (route->attributes, name);
+}
+
+
+G_DEFINE_ABSTRACT_TYPE (NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)
+
+#define NM_SETTING_IP_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_IP_CONFIG, NMSettingIPConfigPrivate))
+
+typedef struct {
+	char *method;
+	GPtrArray *dns;        /* array of IP address strings */
+	GPtrArray *dns_search; /* array of domain name strings */
+	GPtrArray *addresses;  /* array of NMIPAddress */
+	GPtrArray *routes;     /* array of NMIPRoute */
+	gboolean ignore_auto_routes;
+	gboolean ignore_auto_dns;
+	char *dhcp_hostname;
+	gboolean dhcp_send_hostname;
+	gboolean never_default;
+	gboolean may_fail;
+} NMSettingIPConfigPrivate;
+
+enum {
+	PROP_0,
+	PROP_METHOD,
+	PROP_DNS,
+	PROP_DNS_SEARCH,
+	PROP_ADDRESSES,
+	PROP_ROUTES,
+	PROP_IGNORE_AUTO_ROUTES,
+	PROP_IGNORE_AUTO_DNS,
+	PROP_DHCP_HOSTNAME,
+	PROP_DHCP_SEND_HOSTNAME,
+	PROP_NEVER_DEFAULT,
+	PROP_MAY_FAIL,
+
+	LAST_PROP
+};
+
+#define NM_SETTING_IP_CONFIG_GET_FAMILY(setting) (NM_IS_SETTING_IP4_CONFIG (setting) ? AF_INET : AF_INET6)
+
+/**
+ * nm_setting_ip_config_get_method:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the #NMSettingIPConfig:method property of the setting; see
+ * #NMSettingIP4Config and #NMSettingIP6Config for details of the
+ * methods available with each type.
+ **/
+const char *
+nm_setting_ip_config_get_method (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->method;
+}
+
+/**
+ * nm_setting_ip_config_get_num_dns:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the number of configured DNS servers
+ **/
+guint
+nm_setting_ip_config_get_num_dns (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dns->len;
+}
+
+/**
+ * nm_setting_ip_config_get_dns:
+ * @setting: the #NMSettingIPConfig
+ * @i: index number of the DNS server to return
+ *
+ * Returns: the IP address of the DNS server at index @i
+ **/
+const char *
+nm_setting_ip_config_get_dns (NMSettingIPConfig *setting, int i)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_return_val_if_fail (i < priv->dns->len, NULL);
+
+	return priv->dns->pdata[i];
+}
+
+/**
+ * nm_setting_ip_config_add_dns:
+ * @setting: the #NMSettingIPConfig
+ * @dns: the IP address of the DNS server to add
+ *
+ * Adds a new DNS server to the setting.
+ *
+ * Returns: %TRUE if the DNS server was added; %FALSE if the server was already
+ * known
+ **/
+gboolean
+nm_setting_ip_config_add_dns (NMSettingIPConfig *setting, const char *dns)
+{
+	NMSettingIPConfigPrivate *priv;
+	char *dns_canonical;
+	int i;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+	g_return_val_if_fail (dns != NULL, FALSE);
+	g_return_val_if_fail (nm_utils_ipaddr_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), dns), FALSE);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+
+	dns_canonical = canonicalize_ip (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), dns, FALSE);
+	for (i = 0; i < priv->dns->len; i++) {
+		if (!strcmp (dns_canonical, priv->dns->pdata[i])) {
+			g_free (dns_canonical);
+			return FALSE;
+		}
+	}
+
+	g_ptr_array_add (priv->dns, dns_canonical);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS);
+	return TRUE;
+}
+
+/**
+ * nm_setting_ip_config_remove_dns:
+ * @setting: the #NMSettingIPConfig
+ * @i: index number of the DNS server to remove
+ *
+ * Removes the DNS server at index @i.
+ **/
+void
+nm_setting_ip_config_remove_dns (NMSettingIPConfig *setting, int i)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_return_if_fail (i < priv->dns->len);
+
+	g_ptr_array_remove_index (priv->dns, i);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS);
+}
+
+/**
+ * nm_setting_ip_config_remove_dns_by_value:
+ * @setting: the #NMSettingIPConfig
+ * @dns: the DNS server to remove
+ *
+ * Removes the DNS server @dns.
+ *
+ * Returns: %TRUE if the DNS server was found and removed; %FALSE if it was not.
+ **/
+gboolean
+nm_setting_ip_config_remove_dns_by_value (NMSettingIPConfig *setting, const char *dns)
+{
+	NMSettingIPConfigPrivate *priv;
+	char *dns_canonical;
+	int i;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+	g_return_val_if_fail (dns != NULL, FALSE);
+	g_return_val_if_fail (nm_utils_ipaddr_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), dns), FALSE);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+
+	dns_canonical = canonicalize_ip (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), dns, FALSE);
+	for (i = 0; i < priv->dns->len; i++) {
+		if (!strcmp (dns_canonical, priv->dns->pdata[i])) {
+			g_ptr_array_remove_index (priv->dns, i);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS);
+			g_free (dns_canonical);
+			return TRUE;
+		}
+	}
+	g_free (dns_canonical);
+	return FALSE;
+}
+
+/**
+ * nm_setting_ip_config_clear_dns:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Removes all configured DNS servers.
+ **/
+void
+nm_setting_ip_config_clear_dns (NMSettingIPConfig *setting)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_ptr_array_set_size (priv->dns, 0);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS);
+}
+
+/**
+ * nm_setting_ip_config_get_num_dns_searches:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the number of configured DNS search domains
+ **/
+guint
+nm_setting_ip_config_get_num_dns_searches (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dns_search->len;
+}
+
+/**
+ * nm_setting_ip_config_get_dns_search:
+ * @setting: the #NMSettingIPConfig
+ * @i: index number of the DNS search domain to return
+ *
+ * Returns: the DNS search domain at index @i
+ **/
+const char *
+nm_setting_ip_config_get_dns_search (NMSettingIPConfig *setting, int i)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_return_val_if_fail (i < priv->dns_search->len, NULL);
+
+	return priv->dns_search->pdata[i];
+}
+
+/**
+ * nm_setting_ip_config_add_dns_search:
+ * @setting: the #NMSettingIPConfig
+ * @dns_search: the search domain to add
+ *
+ * Adds a new DNS search domain to the setting.
+ *
+ * Returns: %TRUE if the DNS search domain was added; %FALSE if the search
+ * domain was already known
+ **/
+gboolean
+nm_setting_ip_config_add_dns_search (NMSettingIPConfig *setting,
+                                     const char *dns_search)
+{
+	NMSettingIPConfigPrivate *priv;
+	int i;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+	g_return_val_if_fail (dns_search != NULL, FALSE);
+	g_return_val_if_fail (dns_search[0] != '\0', FALSE);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	for (i = 0; i < priv->dns_search->len; i++) {
+		if (!strcmp (dns_search, priv->dns_search->pdata[i]))
+			return FALSE;
+	}
+
+	g_ptr_array_add (priv->dns_search, g_strdup (dns_search));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_SEARCH);
+	return TRUE;
+}
+
+/**
+ * nm_setting_ip_config_remove_dns_search:
+ * @setting: the #NMSettingIPConfig
+ * @i: index number of the DNS search domain
+ *
+ * Removes the DNS search domain at index @i.
+ **/
+void
+nm_setting_ip_config_remove_dns_search (NMSettingIPConfig *setting, int i)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_return_if_fail (i < priv->dns_search->len);
+
+	g_ptr_array_remove_index (priv->dns_search, i);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_SEARCH);
+}
+
+/**
+ * nm_setting_ip_config_remove_dns_search_by_value:
+ * @setting: the #NMSettingIPConfig
+ * @dns_search: the search domain to remove
+ *
+ * Removes the DNS search domain @dns_search.
+ *
+ * Returns: %TRUE if the DNS search domain was found and removed; %FALSE if it was not.
+ *
+ * Since 0.9.10
+ **/
+gboolean
+nm_setting_ip_config_remove_dns_search_by_value (NMSettingIPConfig *setting,
+                                                 const char *dns_search)
+{
+	NMSettingIPConfigPrivate *priv;
+	int i;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+	g_return_val_if_fail (dns_search != NULL, FALSE);
+	g_return_val_if_fail (dns_search[0] != '\0', FALSE);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	for (i = 0; i < priv->dns_search->len; i++) {
+		if (!strcmp (dns_search, priv->dns_search->pdata[i])) {
+			g_ptr_array_remove_index (priv->dns_search, i);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_SEARCH);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
+ * nm_setting_ip_config_clear_dns_searches:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Removes all configured DNS search domains.
+ **/
+void
+nm_setting_ip_config_clear_dns_searches (NMSettingIPConfig *setting)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_ptr_array_set_size (priv->dns_search, 0);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_DNS_SEARCH);
+}
+
+/**
+ * nm_setting_ip_config_get_num_addresses:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the number of configured addresses
+ **/
+guint
+nm_setting_ip_config_get_num_addresses (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->addresses->len;
+}
+
+/**
+ * nm_setting_ip_config_get_address:
+ * @setting: the #NMSettingIPConfig
+ * @i: index number of the address to return
+ *
+ * Returns: the address at index @i
+ **/
+NMIPAddress *
+nm_setting_ip_config_get_address (NMSettingIPConfig *setting, int i)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_return_val_if_fail (i < priv->addresses->len, NULL);
+
+	return priv->addresses->pdata[i];
+}
+
+/**
+ * nm_setting_ip_config_add_address:
+ * @setting: the #NMSettingIPConfig
+ * @address: the new address to add
+ *
+ * Adds a new IP address and associated information to the setting.  The
+ * given address is duplicated internally and is not changed by this function.
+ *
+ * Returns: %TRUE if the address was added; %FALSE if the address was already
+ * known.
+ **/
+gboolean
+nm_setting_ip_config_add_address (NMSettingIPConfig *setting,
+                                  NMIPAddress *address)
+{
+	NMSettingIPConfigPrivate *priv;
+	int i;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+	g_return_val_if_fail (address != NULL, FALSE);
+	g_return_val_if_fail (address->family == NM_SETTING_IP_CONFIG_GET_FAMILY (setting), FALSE);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	for (i = 0; i < priv->addresses->len; i++) {
+		if (nm_ip_address_equal (priv->addresses->pdata[i], address))
+			return FALSE;
+	}
+
+	g_ptr_array_add (priv->addresses, nm_ip_address_dup (address));
+
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+	return TRUE;
+}
+
+/**
+ * nm_setting_ip_config_remove_address:
+ * @setting: the #NMSettingIPConfig
+ * @i: index number of the address to remove
+ *
+ * Removes the address at index @i.
+ **/
+void
+nm_setting_ip_config_remove_address (NMSettingIPConfig *setting, int i)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_return_if_fail (i < priv->addresses->len);
+
+	g_ptr_array_remove_index (priv->addresses, i);
+
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+}
+
+/**
+ * nm_setting_ip_config_remove_address_by_value:
+ * @setting: the #NMSettingIPConfig
+ * @address: the IP address to remove
+ *
+ * Removes the address @address.
+ *
+ * Returns: %TRUE if the address was found and removed; %FALSE if it was not.
+ **/
+gboolean
+nm_setting_ip_config_remove_address_by_value (NMSettingIPConfig *setting,
+                                              NMIPAddress *address)
+{
+	NMSettingIPConfigPrivate *priv;
+	int i;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+	g_return_val_if_fail (address != NULL, FALSE);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	for (i = 0; i < priv->addresses->len; i++) {
+		if (nm_ip_address_equal (priv->addresses->pdata[i], address)) {
+			g_ptr_array_remove_index (priv->addresses, i);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
+ * nm_setting_ip_config_clear_addresses:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Removes all configured addresses.
+ **/
+void
+nm_setting_ip_config_clear_addresses (NMSettingIPConfig *setting)
+{
+	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+
+	g_ptr_array_set_size (priv->addresses, 0);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+}
+
+/**
+ * nm_setting_ip_config_get_num_routes:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the number of configured routes
+ **/
+guint
+nm_setting_ip_config_get_num_routes (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), 0);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->routes->len;
+}
+
+/**
+ * nm_setting_ip_config_get_route:
+ * @setting: the #NMSettingIPConfig
+ * @i: index number of the route to return
+ *
+ * Returns: the route at index @i
+ **/
+NMIPRoute *
+nm_setting_ip_config_get_route (NMSettingIPConfig *setting, int i)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_return_val_if_fail (i < priv->routes->len, NULL);
+
+	return priv->routes->pdata[i];
+}
+
+/**
+ * nm_setting_ip_config_add_route:
+ * @setting: the #NMSettingIPConfig
+ * @route: the route to add
+ *
+ * Adds a new route and associated information to the setting.  The
+ * given route is duplicated internally and is not changed by this function.
+ *
+ * Returns: %TRUE if the route was added; %FALSE if the route was already known.
+ **/
+gboolean
+nm_setting_ip_config_add_route (NMSettingIPConfig *setting,
+                                NMIPRoute *route)
+{
+	NMSettingIPConfigPrivate *priv;
+	int i;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+	g_return_val_if_fail (route != NULL, FALSE);
+	g_return_val_if_fail (route->family == NM_SETTING_IP_CONFIG_GET_FAMILY (setting), FALSE);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	for (i = 0; i < priv->routes->len; i++) {
+		if (nm_ip_route_equal (priv->routes->pdata[i], route))
+			return FALSE;
+	}
+
+	g_ptr_array_add (priv->routes, nm_ip_route_dup (route));
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
+	return TRUE;
+}
+
+/**
+ * nm_setting_ip_config_remove_route:
+ * @setting: the #NMSettingIPConfig
+ * @i: index number of the route
+ *
+ * Removes the route at index @i.
+ **/
+void
+nm_setting_ip_config_remove_route (NMSettingIPConfig *setting, int i)
+{
+	NMSettingIPConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	g_return_if_fail (i < priv->routes->len);
+
+	g_ptr_array_remove_index (priv->routes, i);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
+}
+
+/**
+ * nm_setting_ip_config_remove_route_by_value:
+ * @setting: the #NMSettingIPConfig
+ * @route: the route to remove
+ *
+ * Removes the route @route.
+ *
+ * Returns: %TRUE if the route was found and removed; %FALSE if it was not.
+ **/
+gboolean
+nm_setting_ip_config_remove_route_by_value (NMSettingIPConfig *setting,
+                                             NMIPRoute *route)
+{
+	NMSettingIPConfigPrivate *priv;
+	int i;
+
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+	g_return_val_if_fail (route != NULL, FALSE);
+
+	priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	for (i = 0; i < priv->routes->len; i++) {
+		if (nm_ip_route_equal (priv->routes->pdata[i], route)) {
+			g_ptr_array_remove_index (priv->routes, i);
+			g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
+ * nm_setting_ip_config_clear_routes:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Removes all configured routes.
+ **/
+void
+nm_setting_ip_config_clear_routes (NMSettingIPConfig *setting)
+{
+	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+
+	g_return_if_fail (NM_IS_SETTING_IP_CONFIG (setting));
+
+	g_ptr_array_set_size (priv->routes, 0);
+	g_object_notify (G_OBJECT (setting), NM_SETTING_IP_CONFIG_ROUTES);
+}
+
+/**
+ * nm_setting_ip_config_get_ignore_auto_routes:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:ignore-auto-routes
+ * property.
+ *
+ * Returns: %TRUE if automatically configured (ie via DHCP) routes should be
+ * ignored.
+ **/
+gboolean
+nm_setting_ip_config_get_ignore_auto_routes (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->ignore_auto_routes;
+}
+
+/**
+ * nm_setting_ip_config_get_ignore_auto_dns:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:ignore-auto-dns
+ * property.
+ *
+ * Returns: %TRUE if automatically configured (ie via DHCP) DNS information
+ * should be ignored.
+ **/
+gboolean
+nm_setting_ip_config_get_ignore_auto_dns (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->ignore_auto_dns;
+}
+
+/**
+ * nm_setting_ip_config_get_dhcp_hostname:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:dhcp-hostname
+ * property.
+ *
+ * Returns: the configured hostname to send to the DHCP server
+ **/
+const char *
+nm_setting_ip_config_get_dhcp_hostname (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), NULL);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dhcp_hostname;
+}
+
+/**
+ * nm_setting_ip_config_get_dhcp_send_hostname:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:dhcp-send-hostname
+ * property.
+ *
+ * Returns: %TRUE if NetworkManager should send the machine hostname to the
+ * DHCP server when requesting addresses to allow the server to automatically
+ * update DNS information for this machine.
+ **/
+gboolean
+nm_setting_ip_config_get_dhcp_send_hostname (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->dhcp_send_hostname;
+}
+
+/**
+ * nm_setting_ip_config_get_never_default:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:never-default
+ * property.
+ *
+ * Returns: %TRUE if this connection should never be the default
+ *   connection
+ **/
+gboolean
+nm_setting_ip_config_get_never_default (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->never_default;
+}
+
+/**
+ * nm_setting_ip_config_get_may_fail:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:may-fail
+ * property.
+ *
+ * Returns: %TRUE if this connection doesn't require this type of IP
+ * addressing to complete for the connection to succeed.
+ **/
+gboolean
+nm_setting_ip_config_get_may_fail (NMSettingIPConfig *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP_CONFIG (setting), FALSE);
+
+	return NM_SETTING_IP_CONFIG_GET_PRIVATE (setting)->may_fail;
+}
+
+static gboolean
+verify_label (const char *label)
+{
+	const char *p;
+	char *iface;
+
+	p = strchr (label, ':');
+	if (!p)
+		return FALSE;
+	iface = g_strndup (label, p - label);
+	if (!nm_utils_iface_valid_name (iface)) {
+		g_free (iface);
+		return FALSE;
+	}
+	g_free (iface);
+
+	for (p++; *p; p++) {
+		if (!g_ascii_isalnum (*p) && *p != '_')
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+verify (NMSetting *setting, NMConnection *connection, GError **error)
+{
+	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+	int i;
+
+	if (!priv->method) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY,
+		                     _("property is missing"));
+		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_METHOD);
+		return FALSE;
+	}
+
+	if (priv->dhcp_hostname && !*priv->dhcp_hostname) {
+		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("property is empty"));
+		g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_DHCP_HOSTNAME);
+		return FALSE;
+	}
+
+	/* Validate DNS */
+	for (i = 0; i < priv->dns->len; i++) {
+		const char *dns = priv->dns->pdata[i];
+
+		if (!nm_utils_ipaddr_valid (NM_SETTING_IP_CONFIG_GET_FAMILY (setting), dns)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("%d. DNS server address is invalid"),
+			             i+1);
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_DNS);
+			return FALSE;
+		}
+	}
+
+	/* Validate addresses */
+	for (i = 0; i < priv->addresses->len; i++) {
+		NMIPAddress *addr = (NMIPAddress *) priv->addresses->pdata[i];
+		GVariant *label;
+
+		if (nm_ip_address_get_family (addr) != NM_SETTING_IP_CONFIG_GET_FAMILY (setting)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("%d. IP address is invalid"),
+			             i+1);
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+			return FALSE;
+		}
+
+		label = nm_ip_address_get_attribute (addr, "label");
+		if (label) {
+			if (!g_variant_is_of_type (label, G_VARIANT_TYPE_STRING)) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("%d. IP address has 'label' property with invalid type"),
+				             i+1);
+				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+				return FALSE;
+			}
+			if (!verify_label (g_variant_get_string (label, NULL))) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("%d. IP address has invalid label '%s'"),
+				             i+1, g_variant_get_string (label, NULL));
+				g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ADDRESSES);
+				return FALSE;
+			}
+		}
+	}
+
+	/* Validate routes */
+	for (i = 0; i < priv->routes->len; i++) {
+		NMIPRoute *route = (NMIPRoute *) priv->routes->pdata[i];
+
+		if (nm_ip_route_get_family (route) != NM_SETTING_IP_CONFIG_GET_FAMILY (setting)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("%d. route is invalid"),
+			             i+1);
+			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ROUTES);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+
+static void
+nm_setting_ip_config_init (NMSettingIPConfig *setting)
+{
+	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+
+	priv->dns = g_ptr_array_new_with_free_func (g_free);
+	priv->dns_search = g_ptr_array_new_with_free_func (g_free);
+	priv->addresses = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_address_unref);
+	priv->routes = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_ip_route_unref);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMSettingIPConfig *self = NM_SETTING_IP_CONFIG (object);
+	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (self);
+
+	g_free (priv->method);
+	g_free (priv->dhcp_hostname);
+
+	g_ptr_array_unref (priv->dns);
+	g_ptr_array_unref (priv->dns_search);
+	g_ptr_array_unref (priv->addresses);
+	g_ptr_array_unref (priv->routes);
+
+	G_OBJECT_CLASS (nm_setting_ip_config_parent_class)->finalize (object);
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMSettingIPConfig *setting = NM_SETTING_IP_CONFIG (object);
+	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_METHOD:
+		g_free (priv->method);
+		priv->method = g_value_dup_string (value);
+		break;
+	case PROP_DNS:
+		g_ptr_array_unref (priv->dns);
+		priv->dns = _nm_utils_strv_to_ptrarray (g_value_get_boxed (value));
+		break;
+	case PROP_DNS_SEARCH:
+		g_ptr_array_unref (priv->dns_search);
+		priv->dns_search = _nm_utils_strv_to_ptrarray (g_value_get_boxed (value));
+		break;
+	case PROP_ADDRESSES:
+		g_ptr_array_unref (priv->addresses);
+		priv->addresses = _nm_utils_copy_array (g_value_get_boxed (value),
+		                                        (NMUtilsCopyFunc) nm_ip_address_dup,
+		                                        (GDestroyNotify) nm_ip_address_unref);
+		break;
+	case PROP_ROUTES:
+		g_ptr_array_unref (priv->routes);
+		priv->routes = _nm_utils_copy_array (g_value_get_boxed (value),
+		                                     (NMUtilsCopyFunc) nm_ip_route_dup,
+		                                     (GDestroyNotify) nm_ip_route_unref);
+		break;
+	case PROP_IGNORE_AUTO_ROUTES:
+		priv->ignore_auto_routes = g_value_get_boolean (value);
+		break;
+	case PROP_IGNORE_AUTO_DNS:
+		priv->ignore_auto_dns = g_value_get_boolean (value);
+		break;
+	case PROP_DHCP_HOSTNAME:
+		g_free (priv->dhcp_hostname);
+		priv->dhcp_hostname = g_value_dup_string (value);
+		break;
+	case PROP_DHCP_SEND_HOSTNAME:
+		priv->dhcp_send_hostname = g_value_get_boolean (value);
+		break;
+	case PROP_NEVER_DEFAULT:
+		priv->never_default = g_value_get_boolean (value);
+		break;
+	case PROP_MAY_FAIL:
+		priv->may_fail = g_value_get_boolean (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMSettingIPConfig *setting = NM_SETTING_IP_CONFIG (object);
+	NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE (setting);
+
+	switch (prop_id) {
+	case PROP_METHOD:
+		g_value_set_string (value, nm_setting_ip_config_get_method (setting));
+		break;
+	case PROP_DNS:
+		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (priv->dns));
+		break;
+	case PROP_DNS_SEARCH:
+		g_value_take_boxed (value, _nm_utils_ptrarray_to_strv (priv->dns_search));
+		break;
+	case PROP_ADDRESSES:
+		g_value_take_boxed (value, _nm_utils_copy_array (priv->addresses,
+		                                                 (NMUtilsCopyFunc) nm_ip_address_dup,
+		                                                 (GDestroyNotify) nm_ip_address_unref));
+		break;
+	case PROP_ROUTES:
+		g_value_take_boxed (value, _nm_utils_copy_array (priv->routes,
+		                                                 (NMUtilsCopyFunc) nm_ip_route_dup,
+		                                                 (GDestroyNotify) nm_ip_route_unref));
+		break;
+	case PROP_IGNORE_AUTO_ROUTES:
+		g_value_set_boolean (value, nm_setting_ip_config_get_ignore_auto_routes (setting));
+		break;
+	case PROP_IGNORE_AUTO_DNS:
+		g_value_set_boolean (value, nm_setting_ip_config_get_ignore_auto_dns (setting));
+		break;
+	case PROP_DHCP_HOSTNAME:
+		g_value_set_string (value, nm_setting_ip_config_get_dhcp_hostname (setting));
+		break;
+	case PROP_DHCP_SEND_HOSTNAME:
+		g_value_set_boolean (value, nm_setting_ip_config_get_dhcp_send_hostname (setting));
+		break;
+	case PROP_NEVER_DEFAULT:
+		g_value_set_boolean (value, priv->never_default);
+		break;
+	case PROP_MAY_FAIL:
+		g_value_set_boolean (value, priv->may_fail);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+nm_setting_ip_config_class_init (NMSettingIPConfigClass *setting_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
+	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+
+	g_type_class_add_private (setting_class, sizeof (NMSettingIPConfigPrivate));
+
+	/* virtual methods */
+	object_class->set_property = set_property;
+	object_class->get_property = get_property;
+	object_class->finalize     = finalize;
+	parent_class->verify       = verify;
+
+	/* Properties */
+
+	/**
+	 * NMSettingIPConfig:method:
+	 *
+	 * IP configuration method.
+	 *
+	 * #NMSettingIP4Config and #NMSettingIP6Config both support "auto",
+	 * "manual", and "link-local". See the subclass-specific documentation for
+	 * other values.
+	 *
+	 * In general, for the "auto" method, properties such as
+	 * #NMSettingIPConfig:dns and #NMSettingIPConfig:routes specify information
+	 * that is added on to the information returned from automatic
+	 * configuration.  The #NMSettingIPConfig:ignore-auto-routes and
+	 * #NMSettingIPConfig:ignore-auto-dns properties modify this behavior.
+	 *
+	 * For methods that imply no upstream network, such as "shared" or
+	 * "link-local", these properties must be empty.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_METHOD,
+		 g_param_spec_string (NM_SETTING_IP_CONFIG_METHOD, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:dns:
+	 *
+	 * Array of IP addresses of DNS servers.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DNS,
+		 g_param_spec_boxed (NM_SETTING_IP_CONFIG_DNS, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:dns-search:
+	 *
+	 * Array of DNS search domains.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DNS_SEARCH,
+		 g_param_spec_boxed (NM_SETTING_IP_CONFIG_DNS_SEARCH, "", "",
+		                     G_TYPE_STRV,
+		                     G_PARAM_READWRITE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:addresses:
+	 *
+	 * Array of IP addresses.
+	 *
+	 * Element-Type: NMIPAddress
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ADDRESSES,
+		 g_param_spec_boxed (NM_SETTING_IP_CONFIG_ADDRESSES, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:routes:
+	 *
+	 * Array of IP routes.
+	 *
+	 * Element-Type: NMIPRoute
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_ROUTES,
+		 g_param_spec_boxed (NM_SETTING_IP_CONFIG_ROUTES, "", "",
+		                     G_TYPE_PTR_ARRAY,
+		                     G_PARAM_READWRITE |
+		                     NM_SETTING_PARAM_INFERRABLE |
+		                     G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:ignore-auto-routes:
+	 *
+	 * When #NMSettingIPConfig:method is set to "auto" and this property to
+	 * %TRUE, automatically configured routes are ignored and only routes
+	 * specified in the #NMSettingIPConfig:routes property, if any, are used.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_IGNORE_AUTO_ROUTES,
+		 g_param_spec_boolean (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
+		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:ignore-auto-dns:
+	 *
+	 * When #NMSettingIPConfig:method is set to "auto" and this property to
+	 * %TRUE, automatically configured nameservers and search domains are
+	 * ignored and only nameservers and search domains specified in the
+	 * #NMSettingIPConfig:dns and #NMSettingIPConfig:dns-search properties, if
+	 * any, are used.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_IGNORE_AUTO_DNS,
+		 g_param_spec_boolean (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
+		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:dhcp-hostname:
+	 *
+	 * If the #NMSettingIPConfig:dhcp-send-hostname property is %TRUE, then the
+	 * specified name will be sent to the DHCP server when acquiring a lease.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DHCP_HOSTNAME,
+		 g_param_spec_string (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, "", "",
+		                      NULL,
+		                      G_PARAM_READWRITE |
+		                      NM_SETTING_PARAM_INFERRABLE |
+		                      G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:dhcp-send-hostname:
+	 *
+	 * If %TRUE, a hostname is sent to the DHCP server when acquiring a lease.
+	 * Some DHCP servers use this hostname to update DNS databases, essentially
+	 * providing a static hostname for the computer.  If the
+	 * #NMSettingIPConfig:dhcp-hostname property is %NULL and this property is
+	 * %TRUE, the current persistent hostname of the computer is sent.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_DHCP_SEND_HOSTNAME,
+		 g_param_spec_boolean (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
+		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:never-default:
+	 *
+	 * If %TRUE, this connection will never be the default connection for this
+	 * IP type, meaning it will never be assigned the default route by
+	 * NetworkManager.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_NEVER_DEFAULT,
+		 g_param_spec_boolean (NM_SETTING_IP_CONFIG_NEVER_DEFAULT, "", "",
+		                       FALSE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
+		                       G_PARAM_STATIC_STRINGS));
+
+	/**
+	 * NMSettingIPConfig:may-fail:
+	 *
+	 * If %TRUE, allow overall network configuration to proceed even if the
+	 * configuration specified by this property times out.  Note that at least
+	 * one IP configuration must succeed or overall network configuration will
+	 * still fail.  For example, in IPv6-only networks, setting this property to
+	 * %TRUE on the #NMSettingIP4Config allows the overall network configuration
+	 * to succeed if IPv4 configuration fails but IPv6 configuration completes
+	 * successfully.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_MAY_FAIL,
+		 g_param_spec_boolean (NM_SETTING_IP_CONFIG_MAY_FAIL, "", "",
+		                       TRUE,
+		                       G_PARAM_READWRITE |
+		                       G_PARAM_CONSTRUCT |
+		                       G_PARAM_STATIC_STRINGS));
 }

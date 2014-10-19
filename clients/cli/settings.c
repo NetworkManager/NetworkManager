@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include <stdlib.h>
+#include <arpa/inet.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -251,64 +252,64 @@ NmcOutputField nmc_fields_setting_wireless_security[] = {
 
 /* Available fields for NM_SETTING_IP4_CONFIG_SETTING_NAME */
 NmcOutputField nmc_fields_setting_ip4_config[] = {
-	SETTING_FIELD ("name", 8),                                         /* 0 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_METHOD, 10),                  /* 1 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DNS, 20),                     /* 2 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DNS_SEARCH, 15),              /* 3 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_ADDRESSES, 20),               /* 4 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_ROUTES, 20),                  /* 5 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, 19),      /* 6 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, 16),         /* 7 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, 15),          /* 8 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME, 19),      /* 9 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, 14),           /* 10 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, 15),           /* 11 */
-	SETTING_FIELD (NM_SETTING_IP4_CONFIG_MAY_FAIL, 12),                /* 12 */
+	SETTING_FIELD ("name", 8),                                        /* 0 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_METHOD, 10),                  /* 1 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS, 20),                     /* 2 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_SEARCH, 15),              /* 3 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_ADDRESSES, 20),               /* 4 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTES, 20),                  /* 5 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, 19),      /* 6 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, 16),         /* 7 */
+	SETTING_FIELD (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, 15),         /* 8 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, 19),      /* 9 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, 14),           /* 10 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_NEVER_DEFAULT, 15),           /* 11 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_MAY_FAIL, 12),                /* 12 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_IP4_CONFIG_ALL     "name"","\
-                                              NM_SETTING_IP4_CONFIG_METHOD","\
-                                              NM_SETTING_IP4_CONFIG_DNS","\
-                                              NM_SETTING_IP4_CONFIG_DNS_SEARCH","\
-                                              NM_SETTING_IP4_CONFIG_ADDRESSES","\
-                                              NM_SETTING_IP4_CONFIG_ROUTES","\
-                                              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES","\
-                                              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS","\
+                                              NM_SETTING_IP_CONFIG_METHOD","\
+                                              NM_SETTING_IP_CONFIG_DNS","\
+                                              NM_SETTING_IP_CONFIG_DNS_SEARCH","\
+                                              NM_SETTING_IP_CONFIG_ADDRESSES","\
+                                              NM_SETTING_IP_CONFIG_ROUTES","\
+                                              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES","\
+                                              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS","\
                                               NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID","\
-                                              NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME","\
-                                              NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME","\
-                                              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT","\
-                                              NM_SETTING_IP4_CONFIG_MAY_FAIL
+                                              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME","\
+                                              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME","\
+                                              NM_SETTING_IP_CONFIG_NEVER_DEFAULT","\
+                                              NM_SETTING_IP_CONFIG_MAY_FAIL
 #define NMC_FIELDS_SETTING_IP4_CONFIG_COMMON  NMC_FIELDS_SETTING_IP4_CONFIG_ALL
 
 /* Available fields for NM_SETTING_IP6_CONFIG_SETTING_NAME */
 NmcOutputField nmc_fields_setting_ip6_config[] = {
-	SETTING_FIELD ("name", 8),                                         /* 0 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_METHOD, 10),                  /* 1 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_DNS, 20),                     /* 2 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_DNS_SEARCH, 15),              /* 3 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_ADDRESSES, 20),               /* 4 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_ROUTES, 20),                  /* 5 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES, 19),      /* 6 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS, 16),         /* 7 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, 15),           /* 8 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_MAY_FAIL, 12),                /* 9 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, 15),             /* 10 */
-	SETTING_FIELD (NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME, 14),           /* 11 */
+	SETTING_FIELD ("name", 8),                                        /* 0 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_METHOD, 10),                  /* 1 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS, 20),                     /* 2 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DNS_SEARCH, 15),              /* 3 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_ADDRESSES, 20),               /* 4 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_ROUTES, 20),                  /* 5 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, 19),      /* 6 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, 16),         /* 7 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_NEVER_DEFAULT, 15),           /* 8 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_MAY_FAIL, 12),                /* 9 */
+	SETTING_FIELD (NM_SETTING_IP6_CONFIG_IP6_PRIVACY, 15),            /* 10 */
+	SETTING_FIELD (NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, 14),           /* 11 */
 	{NULL, NULL, 0, NULL, FALSE, FALSE, 0}
 };
 #define NMC_FIELDS_SETTING_IP6_CONFIG_ALL     "name"","\
-                                              NM_SETTING_IP6_CONFIG_METHOD","\
-                                              NM_SETTING_IP6_CONFIG_DNS","\
-                                              NM_SETTING_IP6_CONFIG_DNS_SEARCH","\
-                                              NM_SETTING_IP6_CONFIG_ADDRESSES","\
-                                              NM_SETTING_IP6_CONFIG_ROUTES","\
-                                              NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES","\
-                                              NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS","\
-                                              NM_SETTING_IP6_CONFIG_NEVER_DEFAULT","\
-                                              NM_SETTING_IP6_CONFIG_MAY_FAIL","\
+                                              NM_SETTING_IP_CONFIG_METHOD","\
+                                              NM_SETTING_IP_CONFIG_DNS","\
+                                              NM_SETTING_IP_CONFIG_DNS_SEARCH","\
+                                              NM_SETTING_IP_CONFIG_ADDRESSES","\
+                                              NM_SETTING_IP_CONFIG_ROUTES","\
+                                              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES","\
+                                              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS","\
+                                              NM_SETTING_IP_CONFIG_NEVER_DEFAULT","\
+                                              NM_SETTING_IP_CONFIG_MAY_FAIL","\
                                               NM_SETTING_IP6_CONFIG_IP6_PRIVACY","\
-                                              NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME
+                                              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME
 #define NMC_FIELDS_SETTING_IP6_CONFIG_COMMON  NMC_FIELDS_SETTING_IP4_CONFIG_ALL
 
 /* Available fields for NM_SETTING_SERIAL_SETTING_NAME */
@@ -1199,23 +1200,23 @@ nmc_property_ib_get_p_key (NMSetting *setting)
 DEFINE_GETTER (nmc_property_ib_get_parent, NM_SETTING_INFINIBAND_PARENT)
 
 /* --- NM_SETTING_IP4_CONFIG_SETTING_NAME property get functions --- */
-DEFINE_GETTER (nmc_property_ipv4_get_method, NM_SETTING_IP4_CONFIG_METHOD)
-DEFINE_GETTER (nmc_property_ipv4_get_dns, NM_SETTING_IP4_CONFIG_DNS)
-DEFINE_GETTER (nmc_property_ipv4_get_dns_search, NM_SETTING_IP4_CONFIG_DNS_SEARCH)
+DEFINE_GETTER (nmc_property_ipv4_get_method, NM_SETTING_IP_CONFIG_METHOD)
+DEFINE_GETTER (nmc_property_ipv4_get_dns, NM_SETTING_IP_CONFIG_DNS)
+DEFINE_GETTER (nmc_property_ipv4_get_dns_search, NM_SETTING_IP_CONFIG_DNS_SEARCH)
 
 static char *
 nmc_property_ipv4_get_addresses (NMSetting *setting)
 {
-	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (setting);
+	NMSettingIPConfig *s_ip4 = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
 	guint32 num_addresses, i;
 	NMIPAddress *addr;
 
 	printable = g_string_new (NULL);
 
-	num_addresses = nm_setting_ip4_config_get_num_addresses (s_ip4);
+	num_addresses = nm_setting_ip_config_get_num_addresses (s_ip4);
 	for (i = 0; i < num_addresses; i++) {
-		addr = nm_setting_ip4_config_get_address (s_ip4, i);
+		addr = nm_setting_ip_config_get_address (s_ip4, i);
 
 		if (printable->len > 0)
 			g_string_append (printable, "; ");
@@ -1240,16 +1241,16 @@ nmc_property_ipv4_get_addresses (NMSetting *setting)
 static char *
 nmc_property_ipv4_get_routes (NMSetting *setting)
 {
-	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (setting);
+	NMSettingIPConfig *s_ip4 = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
 	guint32 num_routes, i;
 	NMIPRoute *route;
 
 	printable = g_string_new (NULL);
 
-	num_routes = nm_setting_ip4_config_get_num_routes (s_ip4);
+	num_routes = nm_setting_ip_config_get_num_routes (s_ip4);
 	for (i = 0; i < num_routes; i++) {
-		route = nm_setting_ip4_config_get_route (s_ip4, i);
+		route = nm_setting_ip_config_get_route (s_ip4, i);
 
 		if (printable->len > 0)
 			g_string_append (printable, "; ");
@@ -1274,32 +1275,32 @@ nmc_property_ipv4_get_routes (NMSetting *setting)
 	return g_string_free (printable, FALSE);
 }
 
-DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_routes, NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES)
-DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_dns, NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS)
+DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_routes, NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES)
+DEFINE_GETTER (nmc_property_ipv4_get_ignore_auto_dns, NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS)
 DEFINE_GETTER (nmc_property_ipv4_get_dhcp_client_id, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID)
-DEFINE_GETTER (nmc_property_ipv4_get_dhcp_send_hostname, NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME)
-DEFINE_GETTER (nmc_property_ipv4_get_dhcp_hostname, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME)
-DEFINE_GETTER (nmc_property_ipv4_get_never_default, NM_SETTING_IP4_CONFIG_NEVER_DEFAULT)
-DEFINE_GETTER (nmc_property_ipv4_get_may_fail, NM_SETTING_IP4_CONFIG_MAY_FAIL)
+DEFINE_GETTER (nmc_property_ipv4_get_dhcp_send_hostname, NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME)
+DEFINE_GETTER (nmc_property_ipv4_get_dhcp_hostname, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME)
+DEFINE_GETTER (nmc_property_ipv4_get_never_default, NM_SETTING_IP_CONFIG_NEVER_DEFAULT)
+DEFINE_GETTER (nmc_property_ipv4_get_may_fail, NM_SETTING_IP_CONFIG_MAY_FAIL)
 
 /* --- NM_SETTING_IP6_CONFIG_SETTING_NAME property get functions --- */
-DEFINE_GETTER (nmc_property_ipv6_get_method, NM_SETTING_IP6_CONFIG_METHOD)
-DEFINE_GETTER (nmc_property_ipv6_get_dns, NM_SETTING_IP6_CONFIG_DNS)
-DEFINE_GETTER (nmc_property_ipv6_get_dns_search, NM_SETTING_IP6_CONFIG_DNS_SEARCH)
+DEFINE_GETTER (nmc_property_ipv6_get_method, NM_SETTING_IP_CONFIG_METHOD)
+DEFINE_GETTER (nmc_property_ipv6_get_dns, NM_SETTING_IP_CONFIG_DNS)
+DEFINE_GETTER (nmc_property_ipv6_get_dns_search, NM_SETTING_IP_CONFIG_DNS_SEARCH)
 
 static char *
 nmc_property_ipv6_get_addresses (NMSetting *setting)
 {
-	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
+	NMSettingIPConfig *s_ip6 = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
 	guint32 num_addresses, i;
 	NMIPAddress *addr;
 
 	printable = g_string_new (NULL);
 
-	num_addresses = nm_setting_ip6_config_get_num_addresses (s_ip6);
+	num_addresses = nm_setting_ip_config_get_num_addresses (s_ip6);
 	for (i = 0; i < num_addresses; i++) {
-		addr = nm_setting_ip6_config_get_address (s_ip6, i);
+		addr = nm_setting_ip_config_get_address (s_ip6, i);
 
 		if (printable->len > 0)
 			g_string_append (printable, "; ");
@@ -1324,16 +1325,16 @@ nmc_property_ipv6_get_addresses (NMSetting *setting)
 static char *
 nmc_property_ipv6_get_routes (NMSetting *setting)
 {
-	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
+	NMSettingIPConfig *s_ip6 = NM_SETTING_IP_CONFIG (setting);
 	GString *printable;
 	guint32 num_routes, i;
 	NMIPRoute *route;
 
 	printable = g_string_new (NULL);
 
-	num_routes = nm_setting_ip6_config_get_num_routes (s_ip6);
+	num_routes = nm_setting_ip_config_get_num_routes (s_ip6);
 	for (i = 0; i < num_routes; i++) {
-		route = nm_setting_ip6_config_get_route (s_ip6, i);
+		route = nm_setting_ip_config_get_route (s_ip6, i);
 
 		if (printable->len > 0)
 			g_string_append (printable, "; ");
@@ -1358,11 +1359,11 @@ nmc_property_ipv6_get_routes (NMSetting *setting)
 	return g_string_free (printable, FALSE);
 }
 
-DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_routes, NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES)
-DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_dns, NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS)
-DEFINE_GETTER (nmc_property_ipv6_get_never_default, NM_SETTING_IP6_CONFIG_NEVER_DEFAULT)
-DEFINE_GETTER (nmc_property_ipv6_get_may_fail, NM_SETTING_IP6_CONFIG_MAY_FAIL)
-DEFINE_GETTER (nmc_property_ipv6_get_dhcp_hostname, NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME)
+DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_routes, NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES)
+DEFINE_GETTER (nmc_property_ipv6_get_ignore_auto_dns, NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS)
+DEFINE_GETTER (nmc_property_ipv6_get_never_default, NM_SETTING_IP_CONFIG_NEVER_DEFAULT)
+DEFINE_GETTER (nmc_property_ipv6_get_may_fail, NM_SETTING_IP_CONFIG_MAY_FAIL)
+DEFINE_GETTER (nmc_property_ipv6_get_dhcp_hostname, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME)
 
 static char *
 nmc_property_ipv6_get_ip6_privacy (NMSetting *setting)
@@ -1696,19 +1697,19 @@ ipv4_addresses_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_dat
 	/* If we have some IP addresses set method to 'manual'.
 	 * Else if the method was 'manual', change it back to 'auto'.
 	 */
-	if (nm_setting_ip4_config_get_num_addresses (NM_SETTING_IP4_CONFIG (object))) {
-		if (g_strcmp0 (nm_setting_ip4_config_get_method (NM_SETTING_IP4_CONFIG (object)), NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+	if (nm_setting_ip_config_get_num_addresses (NM_SETTING_IP_CONFIG (object))) {
+		if (g_strcmp0 (nm_setting_ip_config_get_method (NM_SETTING_IP_CONFIG (object)), NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 			if (!answered) {
 				answered = TRUE;
 				answer = get_answer ("ipv4.method", "manual");
 			}
 			if (answer)
-				g_object_set (object, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+				g_object_set (object, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
 		}
 	} else {
 		answered = FALSE;
-		if (!g_strcmp0 (nm_setting_ip4_config_get_method (NM_SETTING_IP4_CONFIG (object)), NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
-			g_object_set (object, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+		if (!g_strcmp0 (nm_setting_ip_config_get_method (NM_SETTING_IP_CONFIG (object)), NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
+			g_object_set (object, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 	}
 
 	g_signal_handlers_unblock_by_func (object, G_CALLBACK (ipv4_method_changed_cb), NULL);
@@ -1724,8 +1725,8 @@ ipv4_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 	g_signal_handlers_block_by_func (object, G_CALLBACK (ipv4_addresses_changed_cb), NULL);
 
 	/* If method != manual, remove addresses (save them for restoring them later when method becomes 'manual' */
-	if (g_strcmp0 (nm_setting_ip4_config_get_method (NM_SETTING_IP4_CONFIG (object)), NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
-		if (nm_setting_ip4_config_get_num_addresses (NM_SETTING_IP4_CONFIG (object))) {
+	if (g_strcmp0 (nm_setting_ip_config_get_method (NM_SETTING_IP_CONFIG (object)), NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+		if (nm_setting_ip_config_get_num_addresses (NM_SETTING_IP_CONFIG (object))) {
 			if (!answered) {
 				answered = TRUE;
 				answer = get_answer ("ipv4.addresses", NULL);
@@ -1733,14 +1734,14 @@ ipv4_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 			if (answer) {
 				if (G_IS_VALUE (&value))
 					g_value_unset (&value);
-				nmc_property_get_gvalue (NM_SETTING (object), NM_SETTING_IP4_CONFIG_ADDRESSES, &value);
-				g_object_set (object, NM_SETTING_IP4_CONFIG_ADDRESSES, NULL, NULL);
+				nmc_property_get_gvalue (NM_SETTING (object), NM_SETTING_IP_CONFIG_ADDRESSES, &value);
+				g_object_set (object, NM_SETTING_IP_CONFIG_ADDRESSES, NULL, NULL);
 			}
 		}
 	} else {
 		answered = FALSE;
 		if (G_IS_VALUE (&value)) {
-			nmc_property_set_gvalue (NM_SETTING (object), NM_SETTING_IP4_CONFIG_ADDRESSES, &value);
+			nmc_property_set_gvalue (NM_SETTING (object), NM_SETTING_IP_CONFIG_ADDRESSES, &value);
 			g_value_unset (&value);
 		}
 	}
@@ -1759,19 +1760,19 @@ ipv6_addresses_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_dat
 	/* If we have some IP addresses set method to 'manual'.
 	 * Else if the method was 'manual', change it back to 'auto'.
 	 */
-	if (nm_setting_ip6_config_get_num_addresses (NM_SETTING_IP6_CONFIG (object))) {
-		if (g_strcmp0 (nm_setting_ip6_config_get_method (NM_SETTING_IP6_CONFIG (object)), NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
+	if (nm_setting_ip_config_get_num_addresses (NM_SETTING_IP_CONFIG (object))) {
+		if (g_strcmp0 (nm_setting_ip_config_get_method (NM_SETTING_IP_CONFIG (object)), NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
 			if (!answered) {
 				answered = TRUE;
 				answer = get_answer ("ipv6.method", "manual");
 			}
 			if (answer)
-				g_object_set (object, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL, NULL);
+				g_object_set (object, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL, NULL);
 		}
 	} else {
 		answered = FALSE;
-		if (!g_strcmp0 (nm_setting_ip6_config_get_method (NM_SETTING_IP6_CONFIG (object)), NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
-			g_object_set (object, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
+		if (!g_strcmp0 (nm_setting_ip_config_get_method (NM_SETTING_IP_CONFIG (object)), NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
+			g_object_set (object, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 	}
 
 	g_signal_handlers_unblock_by_func (object, G_CALLBACK (ipv6_method_changed_cb), NULL);
@@ -1787,8 +1788,8 @@ ipv6_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 	g_signal_handlers_block_by_func (object, G_CALLBACK (ipv6_addresses_changed_cb), NULL);
 
 	/* If method != manual, remove addresses (save them for restoring them later when method becomes 'manual' */
-	if (g_strcmp0 (nm_setting_ip6_config_get_method (NM_SETTING_IP6_CONFIG (object)), NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
-		if (nm_setting_ip6_config_get_num_addresses (NM_SETTING_IP6_CONFIG (object))) {
+	if (g_strcmp0 (nm_setting_ip_config_get_method (NM_SETTING_IP_CONFIG (object)), NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
+		if (nm_setting_ip_config_get_num_addresses (NM_SETTING_IP_CONFIG (object))) {
 			if (!answered) {
 				answered = TRUE;
 				answer = get_answer ("ipv6.addresses", NULL);
@@ -1796,14 +1797,14 @@ ipv6_method_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 			if (answer) {
 				if (G_IS_VALUE (&value))
 					g_value_unset (&value);
-				nmc_property_get_gvalue (NM_SETTING (object), NM_SETTING_IP6_CONFIG_ADDRESSES, &value);
-				g_object_set (object, NM_SETTING_IP6_CONFIG_ADDRESSES, NULL, NULL);
+				nmc_property_get_gvalue (NM_SETTING (object), NM_SETTING_IP_CONFIG_ADDRESSES, &value);
+				g_object_set (object, NM_SETTING_IP_CONFIG_ADDRESSES, NULL, NULL);
 			}
 		}
 	} else {
 		answered = FALSE;
 		if (G_IS_VALUE (&value)) {
-			nmc_property_set_gvalue (NM_SETTING (object), NM_SETTING_IP6_CONFIG_ADDRESSES, &value);
+			nmc_property_set_gvalue (NM_SETTING (object), NM_SETTING_IP_CONFIG_ADDRESSES, &value);
 			g_value_unset (&value);
 		}
 	}
@@ -1867,24 +1868,24 @@ connection_master_changed_cb (GObject *object, GParamSpec *pspec, gpointer user_
 }
 
 void
-nmc_setting_ip4_connect_handlers (NMSettingIP4Config *setting)
+nmc_setting_ip4_connect_handlers (NMSettingIPConfig *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_IP4_CONFIG (setting));
 
-	g_signal_connect (setting, "notify::" NM_SETTING_IP4_CONFIG_ADDRESSES,
+	g_signal_connect (setting, "notify::" NM_SETTING_IP_CONFIG_ADDRESSES,
 	                  G_CALLBACK (ipv4_addresses_changed_cb), NULL);
-	g_signal_connect (setting, "notify::" NM_SETTING_IP4_CONFIG_METHOD,
+	g_signal_connect (setting, "notify::" NM_SETTING_IP_CONFIG_METHOD,
 	                  G_CALLBACK (ipv4_method_changed_cb), NULL);
 }
 
 void
-nmc_setting_ip6_connect_handlers (NMSettingIP6Config *setting)
+nmc_setting_ip6_connect_handlers (NMSettingIPConfig *setting)
 {
 	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
 
-	g_signal_connect (setting, "notify::" NM_SETTING_IP6_CONFIG_ADDRESSES,
+	g_signal_connect (setting, "notify::" NM_SETTING_IP_CONFIG_ADDRESSES,
 	                  G_CALLBACK (ipv6_addresses_changed_cb), NULL);
-	g_signal_connect (setting, "notify::" NM_SETTING_IP6_CONFIG_METHOD,
+	g_signal_connect (setting, "notify::" NM_SETTING_IP_CONFIG_METHOD,
 	                  G_CALLBACK (ipv6_method_changed_cb), NULL);
 }
 
@@ -1918,15 +1919,15 @@ nmc_setting_custom_init (NMSetting *setting)
 	g_return_if_fail (NM_IS_SETTING (setting));
 
 	if (NM_IS_SETTING_IP4_CONFIG (setting)) {
-		g_object_set (NM_SETTING_IP4_CONFIG (setting),
-		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+		g_object_set (NM_SETTING_IP_CONFIG (setting),
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 		              NULL);
-		nmc_setting_ip4_connect_handlers (NM_SETTING_IP4_CONFIG (setting));
+		nmc_setting_ip4_connect_handlers (NM_SETTING_IP_CONFIG (setting));
 	} else if (NM_IS_SETTING_IP6_CONFIG (setting)) {
-		g_object_set (NM_SETTING_IP6_CONFIG (setting),
-		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+		g_object_set (NM_SETTING_IP_CONFIG (setting),
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 		              NULL);
-		nmc_setting_ip6_connect_handlers (NM_SETTING_IP6_CONFIG (setting));
+		nmc_setting_ip6_connect_handlers (NM_SETTING_IP_CONFIG (setting));
 	} else if (NM_IS_SETTING_WIRELESS (setting)) {
 		g_object_set (NM_SETTING_WIRELESS (setting),
 		              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
@@ -3151,14 +3152,14 @@ nmc_property_ipv4_set_dns (NMSetting *setting, const char *prop, const char *val
 			g_strfreev (strv);
 			return FALSE;
 		}
-		nm_setting_ip4_config_add_dns (NM_SETTING_IP4_CONFIG (setting), addr);
+		nm_setting_ip_config_add_dns (NM_SETTING_IP_CONFIG (setting), addr);
 	}
 	g_strfreev (strv);
 	return TRUE;
 }
 
 static gboolean
-_validate_and_remove_ipv4_dns (NMSettingIP4Config *setting,
+_validate_and_remove_ipv4_dns (NMSettingIPConfig *setting,
                                const char *dns,
                                GError **error)
 {
@@ -3170,15 +3171,15 @@ _validate_and_remove_ipv4_dns (NMSettingIP4Config *setting,
 		return FALSE;
 	}
 
-	ret = nm_setting_ip4_config_remove_dns_by_value (setting, dns);
+	ret = nm_setting_ip_config_remove_dns_by_value (setting, dns);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain DNS server '%s'"), dns);
 	return ret;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_dns,
-                               NM_SETTING_IP4_CONFIG,
-                               nm_setting_ip4_config_get_num_dns,
-                               nm_setting_ip4_config_remove_dns,
+                               NM_SETTING_IP_CONFIG,
+                               nm_setting_ip_config_get_num_dns,
+                               nm_setting_ip_config_remove_dns,
                                _validate_and_remove_ipv4_dns)
 
 static const char *
@@ -3204,20 +3205,20 @@ nmc_property_ipv4_set_dns_search (NMSetting *setting, const char *prop, const ch
 	}
 
 	while (strv && strv[i])
-		nm_setting_ip4_config_add_dns_search (NM_SETTING_IP4_CONFIG (setting), strv[i++]);
+		nm_setting_ip_config_add_dns_search (NM_SETTING_IP_CONFIG (setting), strv[i++]);
 	g_strfreev (strv);
 
 	return TRUE;
 }
 
 static gboolean
-_validate_and_remove_ipv4_dns_search (NMSettingIP4Config *setting,
+_validate_and_remove_ipv4_dns_search (NMSettingIPConfig *setting,
                                       const char *dns_search,
                                       GError **error)
 {
 	gboolean ret;
 
-	ret = nm_setting_ip4_config_remove_dns_search_by_value (setting, dns_search);
+	ret = nm_setting_ip_config_remove_dns_search_by_value (setting, dns_search);
 	if (!ret)
 		g_set_error (error, 1, 0,
 		             _("the property doesn't contain DNS search domain '%s'"),
@@ -3225,9 +3226,9 @@ _validate_and_remove_ipv4_dns_search (NMSettingIP4Config *setting,
 	return ret;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_dns_search,
-                               NM_SETTING_IP4_CONFIG,
-                               nm_setting_ip4_config_get_num_dns_searches,
-                               nm_setting_ip4_config_remove_dns_search,
+                               NM_SETTING_IP_CONFIG,
+                               nm_setting_ip_config_get_num_dns_searches,
+                               nm_setting_ip_config_remove_dns_search,
                                _validate_and_remove_ipv4_dns_search)
 
 /* 'addresses' */
@@ -3252,7 +3253,7 @@ nmc_property_ipv4_set_addresses (NMSetting *setting, const char *prop, const cha
 			g_strfreev (strv);
 			return FALSE;
 		}
-		nm_setting_ip4_config_add_address (NM_SETTING_IP4_CONFIG (setting), ip4addr);
+		nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), ip4addr);
 		nm_ip_address_unref (ip4addr);
 	}
 	g_strfreev (strv);
@@ -3260,7 +3261,7 @@ nmc_property_ipv4_set_addresses (NMSetting *setting, const char *prop, const cha
 }
 
 static gboolean
-_validate_and_remove_ipv4_address (NMSettingIP4Config *setting,
+_validate_and_remove_ipv4_address (NMSettingIPConfig *setting,
                                    const char *address,
                                    GError **error)
 {
@@ -3271,7 +3272,7 @@ _validate_and_remove_ipv4_address (NMSettingIP4Config *setting,
 	if (!ip4addr)
 		return FALSE;
 
-	ret = nm_setting_ip4_config_remove_address_by_value (setting, ip4addr);
+	ret = nm_setting_ip_config_remove_address_by_value (setting, ip4addr);
 	if (!ret)
 		g_set_error (error, 1, 0,
 		             _("the property doesn't contain IP address '%s'"), address);
@@ -3279,9 +3280,9 @@ _validate_and_remove_ipv4_address (NMSettingIP4Config *setting,
 	return ret;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_addresses,
-                               NM_SETTING_IP4_CONFIG,
-                               nm_setting_ip4_config_get_num_addresses,
-                               nm_setting_ip4_config_remove_address,
+                               NM_SETTING_IP_CONFIG,
+                               nm_setting_ip_config_get_num_addresses,
+                               nm_setting_ip_config_remove_address,
                                _validate_and_remove_ipv4_address)
 
 static const char *
@@ -3350,7 +3351,7 @@ nmc_property_ipv4_set_routes (NMSetting *setting, const char *prop, const char *
 			g_strfreev (strv);
 			return FALSE;
 		}
-		nm_setting_ip4_config_add_route (NM_SETTING_IP4_CONFIG (setting), ip4route);
+		nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), ip4route);
 		nm_ip_route_unref (ip4route);
 	}
 	g_strfreev (strv);
@@ -3358,7 +3359,7 @@ nmc_property_ipv4_set_routes (NMSetting *setting, const char *prop, const char *
 }
 
 static gboolean
-_validate_and_remove_ipv4_route (NMSettingIP4Config *setting,
+_validate_and_remove_ipv4_route (NMSettingIPConfig *setting,
                                  const char *route,
                                  GError **error)
 {
@@ -3369,16 +3370,16 @@ _validate_and_remove_ipv4_route (NMSettingIP4Config *setting,
 	if (!ip4route)
 		return FALSE;
 
-	ret = nm_setting_ip4_config_remove_route_by_value (setting, ip4route);
+	ret = nm_setting_ip_config_remove_route_by_value (setting, ip4route);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain route '%s'"), route);
 	nm_ip_route_unref (ip4route);
 	return ret;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv4_remove_routes,
-                               NM_SETTING_IP4_CONFIG,
-                               nm_setting_ip4_config_get_num_routes,
-                               nm_setting_ip4_config_remove_route,
+                               NM_SETTING_IP_CONFIG,
+                               nm_setting_ip_config_get_num_routes,
+                               nm_setting_ip_config_remove_route,
                                _validate_and_remove_ipv4_route)
 
 static const char *
@@ -3465,14 +3466,14 @@ nmc_property_ipv6_set_dns (NMSetting *setting, const char *prop, const char *val
 			g_strfreev (strv);
 			return FALSE;
 		}
-		nm_setting_ip6_config_add_dns (NM_SETTING_IP6_CONFIG (setting), addr);
+		nm_setting_ip_config_add_dns (NM_SETTING_IP_CONFIG (setting), addr);
 	}
 	g_strfreev (strv);
 	return TRUE;
 }
 
 static gboolean
-_validate_and_remove_ipv6_dns (NMSettingIP6Config *setting,
+_validate_and_remove_ipv6_dns (NMSettingIPConfig *setting,
                                const char *dns,
                                GError **error)
 {
@@ -3484,15 +3485,15 @@ _validate_and_remove_ipv6_dns (NMSettingIP6Config *setting,
 		return FALSE;
 	}
 
-	ret = nm_setting_ip6_config_remove_dns_by_value (setting, dns);
+	ret = nm_setting_ip_config_remove_dns_by_value (setting, dns);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain DNS server '%s'"), dns);
 	return ret;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_dns,
-                               NM_SETTING_IP6_CONFIG,
-                               nm_setting_ip6_config_get_num_dns,
-                               nm_setting_ip6_config_remove_dns,
+                               NM_SETTING_IP_CONFIG,
+                               nm_setting_ip_config_get_num_dns,
+                               nm_setting_ip_config_remove_dns,
                                _validate_and_remove_ipv6_dns)
 
 static const char *
@@ -3524,20 +3525,20 @@ nmc_property_ipv6_set_dns_search (NMSetting *setting, const char *prop, const ch
 	}
 
 	while (strv && strv[i])
-		nm_setting_ip6_config_add_dns_search (NM_SETTING_IP6_CONFIG (setting), strv[i++]);
+		nm_setting_ip_config_add_dns_search (NM_SETTING_IP_CONFIG (setting), strv[i++]);
 	g_strfreev (strv);
 
 	return TRUE;
 }
 
 static gboolean
-_validate_and_remove_ipv6_dns_search (NMSettingIP6Config *setting,
+_validate_and_remove_ipv6_dns_search (NMSettingIPConfig *setting,
                                       const char *dns_search,
                                       GError **error)
 {
 	gboolean ret;
 
-	ret = nm_setting_ip6_config_remove_dns_search_by_value (setting, dns_search);
+	ret = nm_setting_ip_config_remove_dns_search_by_value (setting, dns_search);
 	if (!ret)
 		g_set_error (error, 1, 0,
 		             _("the property doesn't contain DNS search domain '%s'"),
@@ -3545,9 +3546,9 @@ _validate_and_remove_ipv6_dns_search (NMSettingIP6Config *setting,
 	return ret;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_dns_search,
-                               NM_SETTING_IP6_CONFIG,
-                               nm_setting_ip6_config_get_num_dns_searches,
-                               nm_setting_ip6_config_remove_dns_search,
+                               NM_SETTING_IP_CONFIG,
+                               nm_setting_ip_config_get_num_dns_searches,
+                               nm_setting_ip_config_remove_dns_search,
                                _validate_and_remove_ipv6_dns_search)
 
 /* 'addresses' */
@@ -3572,7 +3573,7 @@ nmc_property_ipv6_set_addresses (NMSetting *setting, const char *prop, const cha
 			g_strfreev (strv);
 			return FALSE;
 		}
-		nm_setting_ip6_config_add_address (NM_SETTING_IP6_CONFIG (setting), ip6addr);
+		nm_setting_ip_config_add_address (NM_SETTING_IP_CONFIG (setting), ip6addr);
 		nm_ip_address_unref (ip6addr);
 	}
 	g_strfreev (strv);
@@ -3580,7 +3581,7 @@ nmc_property_ipv6_set_addresses (NMSetting *setting, const char *prop, const cha
 }
 
 static gboolean
-_validate_and_remove_ipv6_address (NMSettingIP6Config *setting,
+_validate_and_remove_ipv6_address (NMSettingIPConfig *setting,
                                    const char *address,
                                    GError **error)
 {
@@ -3591,16 +3592,16 @@ _validate_and_remove_ipv6_address (NMSettingIP6Config *setting,
 	if (!ip6addr)
 		return FALSE;
 
-	ret = nm_setting_ip6_config_remove_address_by_value (setting, ip6addr);
+	ret = nm_setting_ip_config_remove_address_by_value (setting, ip6addr);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain IP address '%s'"), address);
 	nm_ip_address_unref (ip6addr);
 	return ret;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_addresses,
-                               NM_SETTING_IP6_CONFIG,
-                               nm_setting_ip6_config_get_num_addresses,
-                               nm_setting_ip6_config_remove_address,
+                               NM_SETTING_IP_CONFIG,
+                               nm_setting_ip_config_get_num_addresses,
+                               nm_setting_ip_config_remove_address,
                                _validate_and_remove_ipv6_address)
 
 static const char *
@@ -3634,7 +3635,7 @@ nmc_property_ipv6_set_routes (NMSetting *setting, const char *prop, const char *
 			g_strfreev (strv);
 			return FALSE;
 		}
-		nm_setting_ip6_config_add_route (NM_SETTING_IP6_CONFIG (setting), ip6route);
+		nm_setting_ip_config_add_route (NM_SETTING_IP_CONFIG (setting), ip6route);
 		nm_ip_route_unref (ip6route);
 	}
 	g_strfreev (strv);
@@ -3642,7 +3643,7 @@ nmc_property_ipv6_set_routes (NMSetting *setting, const char *prop, const char *
 }
 
 static gboolean
-_validate_and_remove_ipv6_route (NMSettingIP6Config *setting,
+_validate_and_remove_ipv6_route (NMSettingIPConfig *setting,
                                  const char *route,
                                  GError **error)
 {
@@ -3653,16 +3654,16 @@ _validate_and_remove_ipv6_route (NMSettingIP6Config *setting,
 	if (!ip6route)
 		return FALSE;
 
-	ret = nm_setting_ip6_config_remove_route_by_value (setting, ip6route);
+	ret = nm_setting_ip_config_remove_route_by_value (setting, ip6route);
 	if (!ret)
 		g_set_error (error, 1, 0, _("the property doesn't contain route '%s'"), route);
 	nm_ip_route_unref (ip6route);
 	return ret;
 }
 DEFINE_REMOVER_INDEX_OR_VALUE (nmc_property_ipv6_remove_routes,
-                               NM_SETTING_IP6_CONFIG,
-                               nm_setting_ip6_config_get_num_routes,
-                               nm_setting_ip6_config_remove_route,
+                               NM_SETTING_IP_CONFIG,
+                               nm_setting_ip_config_get_num_routes,
+                               nm_setting_ip_config_remove_route,
                                _validate_and_remove_ipv6_route)
 
 static const char *
@@ -4695,6 +4696,8 @@ nmc_add_prop_funcs (char *key,
 
 /* concatenate setting name and property name */
 #define GLUE(A,B) (g_strconcat ((NM_SETTING_##A##_SETTING_NAME),(NM_SETTING_##A##_##B), NULL))
+#define GLUE_IP(A,B) (g_strconcat ((NM_SETTING_IP##A##_CONFIG_SETTING_NAME),(NM_SETTING_IP_CONFIG_##B), NULL))
+
 void
 nmc_properties_init (void)
 {
@@ -5420,49 +5423,49 @@ nmc_properties_init (void)
 	                    NULL);
 
 	/* Add editable properties for NM_SETTING_IP4_CONFIG_SETTING_NAME */
-	nmc_add_prop_funcs (GLUE (IP4_CONFIG, METHOD),
+	nmc_add_prop_funcs (GLUE_IP (4, METHOD),
 	                    nmc_property_ipv4_get_method,
 	                    nmc_property_ipv4_set_method,
 	                    NULL,
 	                    NULL,
 	                    nmc_property_ipv4_allowed_method,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DNS),
+	nmc_add_prop_funcs (GLUE_IP (4, DNS),
 	                    nmc_property_ipv4_get_dns,
 	                    nmc_property_ipv4_set_dns,
 	                    nmc_property_ipv4_remove_dns,
 	                    nmc_property_ipv4_describe_dns,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DNS_SEARCH),
+	nmc_add_prop_funcs (GLUE_IP (4, DNS_SEARCH),
 	                    nmc_property_ipv4_get_dns_search,
 	                    nmc_property_ipv4_set_dns_search,
 	                    nmc_property_ipv4_remove_dns_search,
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP4_CONFIG, ADDRESSES),
+	nmc_add_prop_funcs (GLUE_IP (4, ADDRESSES),
 	                    nmc_property_ipv4_get_addresses,
 	                    nmc_property_ipv4_set_addresses,
 	                    nmc_property_ipv4_remove_addresses,
 	                    nmc_property_ipv4_describe_addresses,
 	                    NULL,
 	                    nmc_property_out2in_addresses);
-	nmc_add_prop_funcs (GLUE (IP4_CONFIG, ROUTES),
+	nmc_add_prop_funcs (GLUE_IP (4, ROUTES),
 	                    nmc_property_ipv4_get_routes,
 	                    nmc_property_ipv4_set_routes,
 	                    nmc_property_ipv4_remove_routes,
 	                    nmc_property_ipv4_describe_routes,
 	                    NULL,
 	                    nmc_property_out2in_routes);
-	nmc_add_prop_funcs (GLUE (IP4_CONFIG, IGNORE_AUTO_ROUTES),
+	nmc_add_prop_funcs (GLUE_IP (4, IGNORE_AUTO_ROUTES),
 	                    nmc_property_ipv4_get_ignore_auto_routes,
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP4_CONFIG, IGNORE_AUTO_DNS),
+	nmc_add_prop_funcs (GLUE_IP (4, IGNORE_AUTO_DNS),
 	                    nmc_property_ipv4_get_ignore_auto_dns,
 	                    nmc_property_set_bool,
 	                    NULL,
@@ -5476,28 +5479,28 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DHCP_SEND_HOSTNAME),
+	nmc_add_prop_funcs (GLUE_IP (4, DHCP_SEND_HOSTNAME),
 	                    nmc_property_ipv4_get_dhcp_send_hostname,
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP4_CONFIG, DHCP_HOSTNAME),
+	nmc_add_prop_funcs (GLUE_IP (4, DHCP_HOSTNAME),
 	                    nmc_property_ipv4_get_dhcp_hostname,
 	                    nmc_property_set_string,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP4_CONFIG, NEVER_DEFAULT),
+	nmc_add_prop_funcs (GLUE_IP (4, NEVER_DEFAULT),
 	                    nmc_property_ipv4_get_never_default,
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP4_CONFIG, MAY_FAIL),
+	nmc_add_prop_funcs (GLUE_IP (4, MAY_FAIL),
 	                    nmc_property_ipv4_get_may_fail,
 	                    nmc_property_set_bool,
 	                    NULL,
@@ -5506,63 +5509,63 @@ nmc_properties_init (void)
 	                    NULL);
 
 	/* Add editable properties for NM_SETTING_IP6_CONFIG_SETTING_NAME */
-	nmc_add_prop_funcs (GLUE (IP6_CONFIG, METHOD),
+	nmc_add_prop_funcs (GLUE_IP (6, METHOD),
 	                    nmc_property_ipv6_get_method,
 	                    nmc_property_ipv6_set_method,
 	                    NULL,
 	                    NULL,
 	                    nmc_property_ipv6_allowed_method,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP6_CONFIG, DNS),
+	nmc_add_prop_funcs (GLUE_IP (6, DNS),
 	                    nmc_property_ipv6_get_dns,
 	                    nmc_property_ipv6_set_dns,
 	                    nmc_property_ipv6_remove_dns,
 	                    nmc_property_ipv6_describe_dns,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP6_CONFIG, DNS_SEARCH),
+	nmc_add_prop_funcs (GLUE_IP (6, DNS_SEARCH),
 	                    nmc_property_ipv6_get_dns_search,
 	                    nmc_property_ipv6_set_dns_search,
 	                    nmc_property_ipv6_remove_dns_search,
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP6_CONFIG, ADDRESSES),
+	nmc_add_prop_funcs (GLUE_IP (6, ADDRESSES),
 	                    nmc_property_ipv6_get_addresses,
 	                    nmc_property_ipv6_set_addresses,
 	                    nmc_property_ipv6_remove_addresses,
 	                    nmc_property_ipv6_describe_addresses,
 	                    NULL,
 	                    nmc_property_out2in_addresses);
-	nmc_add_prop_funcs (GLUE (IP6_CONFIG, ROUTES),
+	nmc_add_prop_funcs (GLUE_IP (6, ROUTES),
 	                    nmc_property_ipv6_get_routes,
 	                    nmc_property_ipv6_set_routes,
 	                    nmc_property_ipv6_remove_routes,
 	                    nmc_property_ipv6_describe_routes,
 	                    NULL,
 	                    nmc_property_out2in_routes);
-	nmc_add_prop_funcs (GLUE (IP6_CONFIG, IGNORE_AUTO_ROUTES),
+	nmc_add_prop_funcs (GLUE_IP (6, IGNORE_AUTO_ROUTES),
 	                    nmc_property_ipv6_get_ignore_auto_routes,
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP6_CONFIG, IGNORE_AUTO_DNS),
+	nmc_add_prop_funcs (GLUE_IP (6, IGNORE_AUTO_DNS),
 	                    nmc_property_ipv6_get_ignore_auto_dns,
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP6_CONFIG, NEVER_DEFAULT),
+	nmc_add_prop_funcs (GLUE_IP (6, NEVER_DEFAULT),
 	                    nmc_property_ipv6_get_never_default,
 	                    nmc_property_set_bool,
 	                    NULL,
 	                    NULL,
 	                    NULL,
 	                    NULL);
-	nmc_add_prop_funcs (GLUE (IP6_CONFIG, MAY_FAIL),
+	nmc_add_prop_funcs (GLUE_IP (6, MAY_FAIL),
 	                    nmc_property_ipv6_get_may_fail,
 	                    nmc_property_set_bool,
 	                    NULL,
@@ -5576,7 +5579,7 @@ nmc_properties_init (void)
 	                    NULL,
 	                    NULL,
 	                    nmc_property_out2in_cut_paren);
-	nmc_add_prop_funcs (GLUE (IP6_CONFIG, DHCP_HOSTNAME),
+	nmc_add_prop_funcs (GLUE_IP (6, DHCP_HOSTNAME),
 	                    nmc_property_ipv6_get_dhcp_hostname,
 	                    nmc_property_set_string,
 	                    NULL,
@@ -6715,7 +6718,7 @@ setting_wireless_security_details (NMSetting *setting, NmCli *nmc, const char *o
 static gboolean
 setting_ip4_config_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
-	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (setting);
+	NMSettingIPConfig *s_ip4 = NM_SETTING_IP_CONFIG (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 
@@ -6752,7 +6755,7 @@ setting_ip4_config_details (NMSetting *setting, NmCli *nmc,  const char *one_pro
 static gboolean
 setting_ip6_config_details (NMSetting *setting, NmCli *nmc,  const char *one_prop, gboolean secrets)
 {
-	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (setting);
+	NMSettingIPConfig *s_ip6 = NM_SETTING_IP_CONFIG (setting);
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 

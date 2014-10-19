@@ -20,6 +20,7 @@
  */
 
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "nm-ip4-config.h"
 
@@ -296,7 +297,7 @@ nm_ip4_config_commit (const NMIP4Config *config, int ifindex)
 }
 
 void
-nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, int default_route_metric)
+nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIPConfig *setting, int default_route_metric)
 {
 	guint naddresses, nroutes, nnameservers, nsearches;
 	int i;
@@ -304,20 +305,22 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 	if (!setting)
 		return;
 
+	g_return_if_fail (NM_IS_SETTING_IP4_CONFIG (setting));
+
 	g_object_freeze_notify (G_OBJECT (config));
 
-	naddresses = nm_setting_ip4_config_get_num_addresses (setting);
-	nroutes = nm_setting_ip4_config_get_num_routes (setting);
-	nnameservers = nm_setting_ip4_config_get_num_dns (setting);
-	nsearches = nm_setting_ip4_config_get_num_dns_searches (setting);
+	naddresses = nm_setting_ip_config_get_num_addresses (setting);
+	nroutes = nm_setting_ip_config_get_num_routes (setting);
+	nnameservers = nm_setting_ip_config_get_num_dns (setting);
+	nsearches = nm_setting_ip_config_get_num_dns_searches (setting);
 
 	/* Gateway */
-	if (nm_setting_ip4_config_get_never_default (setting))
+	if (nm_setting_ip_config_get_never_default (setting))
 		nm_ip4_config_set_never_default (config, TRUE);
-	else if (nm_setting_ip4_config_get_ignore_auto_routes (setting))
+	else if (nm_setting_ip_config_get_ignore_auto_routes (setting))
 		nm_ip4_config_set_never_default (config, FALSE);
 	for (i = 0; i < naddresses; i++) {
-		const char *gateway_str = nm_ip_address_get_gateway (nm_setting_ip4_config_get_address (setting, i));
+		const char *gateway_str = nm_ip_address_get_gateway (nm_setting_ip_config_get_address (setting, i));
 		guint32 gateway;
 
 		if (gateway_str) {
@@ -329,7 +332,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
-		NMIPAddress *s_addr = nm_setting_ip4_config_get_address (setting, i);
+		NMIPAddress *s_addr = nm_setting_ip_config_get_address (setting, i);
 		GVariant *label;
 		NMPlatformIP4Address address;
 
@@ -348,10 +351,10 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 	}
 
 	/* Routes */
-	if (nm_setting_ip4_config_get_ignore_auto_routes (setting))
+	if (nm_setting_ip_config_get_ignore_auto_routes (setting))
 		nm_ip4_config_reset_routes (config);
 	for (i = 0; i < nroutes; i++) {
-		NMIPRoute *s_route = nm_setting_ip4_config_get_route (setting, i);
+		NMIPRoute *s_route = nm_setting_ip_config_get_route (setting, i);
 		NMPlatformIP4Route route;
 
 		memset (&route, 0, sizeof (route));
@@ -367,7 +370,7 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 	}
 
 	/* DNS */
-	if (nm_setting_ip4_config_get_ignore_auto_dns (setting)) {
+	if (nm_setting_ip_config_get_ignore_auto_dns (setting)) {
 		nm_ip4_config_reset_nameservers (config);
 		nm_ip4_config_reset_domains (config);
 		nm_ip4_config_reset_searches (config);
@@ -375,11 +378,11 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 	for (i = 0; i < nnameservers; i++) {
 		guint32 ip;
 
-		if (inet_pton (AF_INET, nm_setting_ip4_config_get_dns (setting, i), &ip) == 1)
+		if (inet_pton (AF_INET, nm_setting_ip_config_get_dns (setting, i), &ip) == 1)
 			nm_ip4_config_add_nameserver (config, ip);
 	}
 	for (i = 0; i < nsearches; i++)
-		nm_ip4_config_add_search (config, nm_setting_ip4_config_get_dns_search (setting, i));
+		nm_ip4_config_add_search (config, nm_setting_ip_config_get_dns_search (setting, i));
 
 	g_object_thaw_notify (G_OBJECT (config));
 }
@@ -387,17 +390,17 @@ nm_ip4_config_merge_setting (NMIP4Config *config, NMSettingIP4Config *setting, i
 NMSetting *
 nm_ip4_config_create_setting (const NMIP4Config *config)
 {
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	guint32 gateway;
 	guint naddresses, nroutes, nnameservers, nsearches;
 	const char *method = NULL;
 	int i;
 
-	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
+	s_ip4 = NM_SETTING_IP_CONFIG (nm_setting_ip4_config_new ());
 
 	if (!config) {
 		g_object_set (s_ip4,
-		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
 		              NULL);
 		return NM_SETTING (s_ip4);
 	}
@@ -433,14 +436,14 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 		if (*address->label)
 			nm_ip_address_set_attribute (s_addr, "label", g_variant_new_string (address->label));
 
-		nm_setting_ip4_config_add_address (s_ip4, s_addr);
+		nm_setting_ip_config_add_address (s_ip4, s_addr);
 		nm_ip_address_unref (s_addr);
 	}
 
 	/* Use 'disabled' if the method wasn't previously set */
 	if (!method)
 		method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, method, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, method, NULL);
 
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
@@ -459,7 +462,7 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 		                                  &route->network, route->plen,
 		                                  &route->gateway, route->metric,
 		                                  NULL);
-		nm_setting_ip4_config_add_route (s_ip4, s_route);
+		nm_setting_ip_config_add_route (s_ip4, s_route);
 		nm_ip_route_unref (s_route);
 	}
 
@@ -467,12 +470,12 @@ nm_ip4_config_create_setting (const NMIP4Config *config)
 	for (i = 0; i < nnameservers; i++) {
 		guint32 nameserver = nm_ip4_config_get_nameserver (config, i);
 
-		nm_setting_ip4_config_add_dns (s_ip4, nm_utils_inet4_ntop (nameserver, NULL));
+		nm_setting_ip_config_add_dns (s_ip4, nm_utils_inet4_ntop (nameserver, NULL));
 	}
 	for (i = 0; i < nsearches; i++) {
 		const char *search = nm_ip4_config_get_search (config, i);
 
-		nm_setting_ip4_config_add_dns_search (s_ip4, search);
+		nm_setting_ip_config_add_dns_search (s_ip4, search);
 	}
 
 	return NM_SETTING (s_ip4);

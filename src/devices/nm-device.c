@@ -2106,8 +2106,7 @@ gboolean
 nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6)
 {
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 
 	g_return_val_if_fail (self != NULL, TRUE);
 
@@ -2117,11 +2116,11 @@ nm_device_ip_config_should_fail (NMDevice *self, gboolean ip6)
 	/* Fail the connection if the failed IP method is required to complete */
 	if (ip6) {
 		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (!nm_setting_ip6_config_get_may_fail (s_ip6))
+		if (!nm_setting_ip_config_get_may_fail (s_ip6))
 			return TRUE;
 	} else {
 		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		if (!nm_setting_ip4_config_get_may_fail (s_ip4))
+		if (!nm_setting_ip_config_get_may_fail (s_ip4))
 			return TRUE;
 	}
 
@@ -2778,7 +2777,7 @@ dhcp4_start (NMDevice *self,
              NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	const guint8 *hw_addr;
 	size_t hw_addr_len = 0;
 	GByteArray *tmp = NULL;
@@ -2804,9 +2803,9 @@ dhcp4_start (NMDevice *self,
 	                                                tmp,
 	                                                nm_connection_get_uuid (connection),
 	                                                nm_device_get_priority (self),
-	                                                nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4),
-	                                                nm_setting_ip4_config_get_dhcp_hostname (s_ip4),
-	                                                nm_setting_ip4_config_get_dhcp_client_id (s_ip4),
+	                                                nm_setting_ip_config_get_dhcp_send_hostname (s_ip4),
+	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip4),
+	                                                nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4)),
 	                                                priv->dhcp_timeout,
 	                                                priv->dhcp_anycast_address);
 
@@ -2864,16 +2863,16 @@ release_shared_ip (gpointer data)
 }
 
 static gboolean
-reserve_shared_ip (NMDevice *self, NMSettingIP4Config *s_ip4, NMPlatformIP4Address *address)
+reserve_shared_ip (NMDevice *self, NMSettingIPConfig *s_ip4, NMPlatformIP4Address *address)
 {
 	if (G_UNLIKELY (shared_ips == NULL))
 		shared_ips = g_hash_table_new (g_direct_hash, g_direct_equal);
 
 	memset (address, 0, sizeof (*address));
 
-	if (s_ip4 && nm_setting_ip4_config_get_num_addresses (s_ip4)) {
+	if (s_ip4 && nm_setting_ip_config_get_num_addresses (s_ip4)) {
 		/* Use the first user-supplied address */
-		NMIPAddress *user = nm_setting_ip4_config_get_address (s_ip4, 0);
+		NMIPAddress *user = nm_setting_ip_config_get_address (s_ip4, 0);
 
 		g_assert (user);
 		nm_ip_address_get_address_binary (user, &address->address);
@@ -2964,8 +2963,7 @@ connection_ip6_method_requires_carrier (NMConnection *connection,
 static gboolean
 connection_requires_carrier (NMConnection *connection)
 {
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	gboolean ip4_carrier_wanted, ip6_carrier_wanted;
 	gboolean ip4_used = FALSE, ip6_used = FALSE;
 
@@ -2975,7 +2973,7 @@ connection_requires_carrier (NMConnection *connection)
 		 * requires a carrier regardless of the IPv6 method.
 		 */
 		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-		if (s_ip4 && !nm_setting_ip4_config_get_may_fail (s_ip4))
+		if (s_ip4 && !nm_setting_ip_config_get_may_fail (s_ip4))
 			return TRUE;
 	}
 
@@ -2985,7 +2983,7 @@ connection_requires_carrier (NMConnection *connection)
 		 * requires a carrier regardless of the IPv4 method.
 		 */
 		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (s_ip6 && !nm_setting_ip6_config_get_may_fail (s_ip6))
+		if (s_ip6 && !nm_setting_ip_config_get_may_fail (s_ip6))
 			return TRUE;
 	}
 
@@ -3320,7 +3318,7 @@ dhcp6_start (NMDevice *self,
              guint32 dhcp_opt,
              NMDeviceStateReason *reason)
 {
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	GByteArray *tmp = NULL;
@@ -3358,11 +3356,11 @@ dhcp6_start (NMDevice *self,
 	                                                tmp,
 	                                                nm_connection_get_uuid (connection),
 	                                                nm_device_get_priority (self),
-	                                                nm_setting_ip6_config_get_dhcp_hostname (s_ip6),
+	                                                nm_setting_ip_config_get_dhcp_hostname (s_ip6),
 	                                                priv->dhcp_timeout,
 	                                                priv->dhcp_anycast_address,
 	                                                (dhcp_opt == NM_RDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE,
-	                                                nm_setting_ip6_config_get_ip6_privacy (s_ip6));
+	                                                nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6)));
 	if (tmp)
 		g_byte_array_free (tmp, TRUE);
 
@@ -3373,8 +3371,8 @@ dhcp6_start (NMDevice *self,
 		                                            self);
 
 		s_ip6 = nm_connection_get_setting_ip6_config (connection);
-		if (!nm_setting_ip6_config_get_may_fail (s_ip6) ||
-		    !strcmp (nm_setting_ip6_config_get_method (s_ip6), NM_SETTING_IP6_CONFIG_METHOD_DHCP))
+		if (!nm_setting_ip_config_get_may_fail (s_ip6) ||
+		    !strcmp (nm_setting_ip_config_get_method (s_ip6), NM_SETTING_IP6_CONFIG_METHOD_DHCP))
 			nm_device_add_pending_action (self, PENDING_ACTION_DHCP6, TRUE);
 
 		/* DHCP devices will be notified by the DHCP manager when stuff happens */
@@ -3858,7 +3856,7 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	priv->rdisc_use_tempaddr = use_tempaddr;
 	print_support_extended_ifa_flags (use_tempaddr);
 
-	if (!nm_setting_ip6_config_get_may_fail (nm_connection_get_setting_ip6_config (connection)))
+	if (!nm_setting_ip_config_get_may_fail (nm_connection_get_setting_ip6_config (connection)))
 		nm_device_add_pending_action (self, PENDING_ACTION_AUTOCONF6, TRUE);
 
 	/* ensure link local is ready... */
@@ -4116,10 +4114,10 @@ act_stage3_ip6_config_start (NMDevice *self,
 	 */
 	ip6_privacy = ip6_use_tempaddr ();
 	if (ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN) {
-		NMSettingIP6Config *s_ip6 = nm_connection_get_setting_ip6_config (connection);
+		NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (connection);
 
 		if (s_ip6)
-			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (s_ip6);
+			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6));
 	}
 	ip6_privacy = use_tempaddr_clamp (ip6_privacy);
 
@@ -4648,7 +4646,7 @@ send_arps (NMDevice *self, const char *mode_arg)
 	const char *argv[] = { NULL, mode_arg, "-q", "-I", nm_device_get_ip_iface (self), "-c", "1", NULL, NULL };
 	int ip_arg = G_N_ELEMENTS (argv) - 2;
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	int i, num;
 	NMIPAddress *addr;
 	GError *error = NULL;
@@ -4659,7 +4657,7 @@ send_arps (NMDevice *self, const char *mode_arg)
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (!s_ip4)
 		return;
-	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
+	num = nm_setting_ip_config_get_num_addresses (s_ip4);
 	if (num == 0)
 		return;
 
@@ -4671,7 +4669,7 @@ send_arps (NMDevice *self, const char *mode_arg)
 
 	for (i = 0; i < num; i++) {
 		gs_free char *tmp_str = NULL;
-		addr = nm_setting_ip4_config_get_address (s_ip4, i);
+		addr = nm_setting_ip_config_get_address (s_ip4, i);
 		argv[ip_arg] = nm_ip_address_get_address (addr);
 
 		_LOGD (LOGD_DEVICE | LOGD_IP4,
@@ -4719,7 +4717,7 @@ arp_announce (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMConnection *connection;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	int num;
 
 	arp_cleanup (self);
@@ -4733,7 +4731,7 @@ arp_announce (NMDevice *self)
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (!s_ip4)
 		return;
-	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
+	num = nm_setting_ip_config_get_num_addresses (s_ip4);
 	if (num == 0)
 		return;
 

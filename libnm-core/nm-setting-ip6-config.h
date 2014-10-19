@@ -26,9 +26,6 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include <arpa/inet.h>
-
-#include "nm-setting.h"
 #include "nm-setting-ip-config.h"
 
 G_BEGIN_DECLS
@@ -42,18 +39,7 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP6_CONFIG_SETTING_NAME "ipv6"
 
-#define NM_SETTING_IP6_CONFIG_METHOD             "method"
-#define NM_SETTING_IP6_CONFIG_DNS                "dns"
-#define NM_SETTING_IP6_CONFIG_DNS_SEARCH         "dns-search"
-#define NM_SETTING_IP6_CONFIG_ADDRESSES          "addresses"
-#define NM_SETTING_IP6_CONFIG_ROUTES             "routes"
-#define NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES "ignore-auto-routes"
-#define NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS    "ignore-auto-dns"
-#define NM_SETTING_IP6_CONFIG_NEVER_DEFAULT      "never-default"
-#define NM_SETTING_IP6_CONFIG_MAY_FAIL           "may-fail"
-#define NM_SETTING_IP6_CONFIG_IP6_PRIVACY        "ip6-privacy"
-#define NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME      "dhcp-hostname"
-
+#define NM_SETTING_IP6_CONFIG_IP6_PRIVACY "ip6-privacy"
 
 /**
  * NM_SETTING_IP6_CONFIG_METHOD_IGNORE:
@@ -129,11 +115,11 @@ typedef enum {
 } NMSettingIP6ConfigPrivacy;
 
 struct _NMSettingIP6Config {
-	NMSetting parent;
+	NMSettingIPConfig parent;
 };
 
 typedef struct {
-	NMSettingClass parent;
+	NMSettingIPConfigClass parent;
 
 	/*< private >*/
 	gpointer padding[4];
@@ -141,42 +127,8 @@ typedef struct {
 
 GType nm_setting_ip6_config_get_type (void);
 
-NMSetting *            nm_setting_ip6_config_new                    (void);
-const char *           nm_setting_ip6_config_get_method             (NMSettingIP6Config *setting);
+NMSetting *nm_setting_ip6_config_new (void);
 
-guint32                nm_setting_ip6_config_get_num_dns            (NMSettingIP6Config *setting);
-const char *           nm_setting_ip6_config_get_dns                (NMSettingIP6Config *setting, guint32 i);
-gboolean               nm_setting_ip6_config_add_dns                (NMSettingIP6Config *setting, const char *dns);
-void                   nm_setting_ip6_config_remove_dns             (NMSettingIP6Config *setting, guint32 i);
-gboolean               nm_setting_ip6_config_remove_dns_by_value    (NMSettingIP6Config *setting, const char *dns);
-void                   nm_setting_ip6_config_clear_dns              (NMSettingIP6Config *setting);
-
-guint32                nm_setting_ip6_config_get_num_dns_searches       (NMSettingIP6Config *setting);
-const char *           nm_setting_ip6_config_get_dns_search             (NMSettingIP6Config *setting, guint32 i);
-gboolean               nm_setting_ip6_config_add_dns_search             (NMSettingIP6Config *setting, const char *dns_search);
-void                   nm_setting_ip6_config_remove_dns_search          (NMSettingIP6Config *setting, guint32 i);
-gboolean               nm_setting_ip6_config_remove_dns_search_by_value (NMSettingIP6Config *setting, const char *dns_search);
-void                   nm_setting_ip6_config_clear_dns_searches         (NMSettingIP6Config *setting);
-
-guint32                nm_setting_ip6_config_get_num_addresses       (NMSettingIP6Config *setting);
-NMIPAddress *          nm_setting_ip6_config_get_address             (NMSettingIP6Config *setting, guint32 i);
-gboolean               nm_setting_ip6_config_add_address             (NMSettingIP6Config *setting, NMIPAddress *address);
-void                   nm_setting_ip6_config_remove_address          (NMSettingIP6Config *setting, guint32 i);
-gboolean               nm_setting_ip6_config_remove_address_by_value (NMSettingIP6Config *setting, NMIPAddress *address);
-void                   nm_setting_ip6_config_clear_addresses         (NMSettingIP6Config *setting);
-
-guint32                nm_setting_ip6_config_get_num_routes         (NMSettingIP6Config *setting);
-NMIPRoute *            nm_setting_ip6_config_get_route              (NMSettingIP6Config *setting, guint32 i);
-gboolean               nm_setting_ip6_config_add_route              (NMSettingIP6Config *setting, NMIPRoute *route);
-void                   nm_setting_ip6_config_remove_route           (NMSettingIP6Config *setting, guint32 i);
-gboolean               nm_setting_ip6_config_remove_route_by_value  (NMSettingIP6Config *setting, NMIPRoute *route);
-void                   nm_setting_ip6_config_clear_routes           (NMSettingIP6Config *setting);
-gboolean               nm_setting_ip6_config_get_ignore_auto_routes (NMSettingIP6Config *setting);
-
-gboolean               nm_setting_ip6_config_get_ignore_auto_dns    (NMSettingIP6Config *setting);
-const char *           nm_setting_ip6_config_get_dhcp_hostname      (NMSettingIP6Config *setting);
-gboolean               nm_setting_ip6_config_get_never_default      (NMSettingIP6Config *setting);
-gboolean               nm_setting_ip6_config_get_may_fail           (NMSettingIP6Config *setting);
 NMSettingIP6ConfigPrivacy nm_setting_ip6_config_get_ip6_privacy (NMSettingIP6Config *setting);
 
 G_END_DECLS

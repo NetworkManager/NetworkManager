@@ -540,7 +540,7 @@ out:
 }
 
 static gboolean
-read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError **error)
+read_route_file_legacy (const char *filename, NMSettingIPConfig *s_ip4, GError **error)
 {
 	char *contents = NULL;
 	gsize len = 0;
@@ -670,7 +670,7 @@ read_route_file_legacy (const char *filename, NMSettingIP4Config *s_ip4, GError 
 			g_free (next_hop);
 			goto error;
 		}
-		if (!nm_setting_ip4_config_add_route (s_ip4, route))
+		if (!nm_setting_ip_config_add_route (s_ip4, route))
 			PARSE_WARNING ("duplicate IP4 route");
 	}
 
@@ -771,7 +771,7 @@ error:
 #define IPV6_ADDR_REGEX "[0-9A-Fa-f:.]+"
 
 static gboolean
-read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **error)
+read_route6_file (const char *filename, NMSettingIPConfig *s_ip6, GError **error)
 {
 	char *contents = NULL;
 	gsize len = 0;
@@ -898,7 +898,7 @@ read_route6_file (const char *filename, NMSettingIP6Config *s_ip6, GError **erro
 		g_free (next_hop);
 		if (!route)
 			goto error;
-		if (!nm_setting_ip6_config_add_route (s_ip6, route))
+		if (!nm_setting_ip_config_add_route (s_ip6, route))
 			PARSE_WARNING ("duplicate IP6 route");
 	}
 
@@ -923,7 +923,7 @@ make_ip4_setting (shvarFile *ifcfg,
                   const char *network_file,
                   GError **error)
 {
-	NMSettingIP4Config *s_ip4 = NULL;
+	NMSettingIPConfig *s_ip4 = NULL;
 	char *value = NULL;
 	char *route_path = NULL;
 	char *method;
@@ -932,7 +932,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	shvarFile *route_ifcfg;
 	gboolean never_default = FALSE;
 
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 
 	/* First check if DEFROUTE is set for this device; DEFROUTE has the
 	 * opposite meaning from never-default. The default if DEFROUTE is not
@@ -975,15 +975,15 @@ make_ip4_setting (shvarFile *ifcfg,
 	} else if (!g_ascii_strcasecmp (value, "autoip")) {
 		g_free (value);
 		g_object_set (s_ip4,
-		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
-		              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+		              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
 		              NULL);
 		return NM_SETTING (s_ip4);
 	} else if (!g_ascii_strcasecmp (value, "shared")) {
 		g_free (value);
 		g_object_set (s_ip4,
-		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_SHARED,
-		              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_SHARED,
+		              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
 		              NULL);
 		return NM_SETTING (s_ip4);
 	} else {
@@ -995,11 +995,11 @@ make_ip4_setting (shvarFile *ifcfg,
 	g_free (value);
 
 	g_object_set (s_ip4,
-	              NM_SETTING_IP4_CONFIG_METHOD, method,
-	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "PEERDNS", TRUE),
-	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "PEERROUTES", TRUE),
-	              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
-	              NM_SETTING_IP4_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV4_FAILURE_FATAL", FALSE),
+	              NM_SETTING_IP_CONFIG_METHOD, method,
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "PEERDNS", TRUE),
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "PEERROUTES", TRUE),
+	              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV4_FAILURE_FATAL", FALSE),
 	              NULL);
 
 	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
@@ -1009,11 +1009,11 @@ make_ip4_setting (shvarFile *ifcfg,
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		value = svGetValue (ifcfg, "DHCP_HOSTNAME", FALSE);
 		if (value && strlen (value))
-			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, value, NULL);
+			g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, value, NULL);
 		g_free (value);
 
 		g_object_set (s_ip4,
-		              NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME,
+		              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
 		              svTrueValue (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
 		              NULL);
 
@@ -1042,7 +1042,7 @@ make_ip4_setting (shvarFile *ifcfg,
 			continue;
 		}
 
-		if (!nm_setting_ip4_config_add_address (s_ip4, addr))
+		if (!nm_setting_ip_config_add_address (s_ip4, addr))
 			PARSE_WARNING ("duplicate IP4 address");
 		nm_ip_address_unref (addr);
 	}
@@ -1057,7 +1057,7 @@ make_ip4_setting (shvarFile *ifcfg,
 		value = svGetValue (ifcfg, tag, FALSE);
 		if (value) {
 			if (nm_utils_ipaddr_valid (AF_INET, value)) {
-				if (!nm_setting_ip4_config_add_dns (s_ip4, value))
+				if (!nm_setting_ip_config_add_dns (s_ip4, value))
 					PARSE_WARNING ("duplicate DNS server %s", tag);
 			} else if (nm_utils_ipaddr_valid (AF_INET6, value)) {
 				/* Ignore IPv6 addresses */
@@ -1084,7 +1084,7 @@ make_ip4_setting (shvarFile *ifcfg,
 			char **item;
 			for (item = searches; *item; item++) {
 				if (strlen (*item)) {
-					if (!nm_setting_ip4_config_add_dns_search (s_ip4, *item))
+					if (!nm_setting_ip_config_add_dns_search (s_ip4, *item))
 						PARSE_WARNING ("duplicate DNS domain '%s'", *item);
 				}
 			}
@@ -1117,7 +1117,7 @@ make_ip4_setting (shvarFile *ifcfg,
 				if (!route)
 					break;
 
-				if (!nm_setting_ip4_config_add_route (s_ip4, route))
+				if (!nm_setting_ip_config_add_route (s_ip4, route))
 					PARSE_WARNING ("duplicate IP4 route");
 				nm_ip_route_unref (route);
 			}
@@ -1129,7 +1129,7 @@ make_ip4_setting (shvarFile *ifcfg,
 	}
 
 	/* Legacy value NM used for a while but is incorrect (rh #459370) */
-	if (!nm_setting_ip4_config_get_num_dns_searches (s_ip4)) {
+	if (!nm_setting_ip_config_get_num_dns_searches (s_ip4)) {
 		value = svGetValue (ifcfg, "SEARCH", FALSE);
 		if (value) {
 			char **searches = NULL;
@@ -1139,7 +1139,7 @@ make_ip4_setting (shvarFile *ifcfg,
 				char **item;
 				for (item = searches; *item; item++) {
 					if (strlen (*item)) {
-						if (!nm_setting_ip4_config_add_dns_search (s_ip4, *item))
+						if (!nm_setting_ip_config_add_dns_search (s_ip4, *item))
 							PARSE_WARNING ("duplicate DNS search '%s'", *item);
 					}
 				}
@@ -1158,7 +1158,7 @@ done:
 }
 
 static void
-read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *network_file)
+read_aliases (NMSettingIPConfig *s_ip4, const char *filename, const char *network_file)
 {
 	GDir *dir;
 	char *dirname, *base;
@@ -1169,10 +1169,10 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 	g_return_if_fail (s_ip4 != NULL);
 	g_return_if_fail (filename != NULL);
 
-	if (nm_setting_ip4_config_get_num_addresses (s_ip4) == 0)
+	if (nm_setting_ip_config_get_num_addresses (s_ip4) == 0)
 		return;
 
-	base_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	base_addr = nm_setting_ip_config_get_address (s_ip4, 0);
 
 	dirname = g_path_get_dirname (filename);
 	g_return_if_fail (dirname != NULL);
@@ -1236,7 +1236,7 @@ read_aliases (NMSettingIP4Config *s_ip4, const char *filename, const char *netwo
 			svCloseFile (parsed);
 			if (ok) {
 				nm_ip_address_set_attribute (addr, "label", g_variant_new_string (device));
-				if (!nm_setting_ip4_config_add_address (s_ip4, addr))
+				if (!nm_setting_ip_config_add_address (s_ip4, addr))
 					PARSE_WARNING ("duplicate IP4 address in alias file %s", item);
 			} else {
 				PARSE_WARNING ("error reading IP4 address from alias file '%s': %s",
@@ -1264,7 +1264,7 @@ make_ip6_setting (shvarFile *ifcfg,
                   const char *network_file,
                   GError **error)
 {
-	NMSettingIP6Config *s_ip6 = NULL;
+	NMSettingIPConfig *s_ip6 = NULL;
 	char *value = NULL;
 	char *str_value;
 	char *route6_path = NULL;
@@ -1279,7 +1279,7 @@ make_ip6_setting (shvarFile *ifcfg,
 	char *ip6_privacy_str;
 	NMSettingIP6ConfigPrivacy ip6_privacy_val;
 
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 
 	/* First check if IPV6_DEFROUTE is set for this device; IPV6_DEFROUTE has the
 	 * opposite meaning from never-default. The default if IPV6_DEFROUTE is not
@@ -1376,11 +1376,11 @@ make_ip6_setting (shvarFile *ifcfg,
 	g_free (ip6_privacy_str);
 
 	g_object_set (s_ip6,
-	              NM_SETTING_IP6_CONFIG_METHOD, method,
-	              NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "IPV6_PEERDNS", TRUE),
-	              NM_SETTING_IP6_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "IPV6_PEERROUTES", TRUE),
-	              NM_SETTING_IP6_CONFIG_NEVER_DEFAULT, never_default,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
+	              NM_SETTING_IP_CONFIG_METHOD, method,
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "IPV6_PEERDNS", TRUE),
+	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "IPV6_PEERROUTES", TRUE),
+	              NM_SETTING_IP_CONFIG_NEVER_DEFAULT, never_default,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, !svTrueValue (ifcfg, "IPV6_FAILURE_FATAL", FALSE),
 	              NM_SETTING_IP6_CONFIG_IP6_PRIVACY, ip6_privacy_val,
 	              NULL);
 
@@ -1393,7 +1393,7 @@ make_ip6_setting (shvarFile *ifcfg,
 		/* METHOD_AUTO may trigger DHCPv6, so save the hostname to send to DHCP */
 		value = svGetValue (ifcfg, "DHCP_HOSTNAME", FALSE);
 		if (value && value[0])
-			g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_DHCP_HOSTNAME, value, NULL);
+			g_object_set (s_ip6, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, value, NULL);
 		g_free (value);
 	}
 
@@ -1422,7 +1422,7 @@ make_ip6_setting (shvarFile *ifcfg,
 			goto error;
 		}
 
-		if (!nm_setting_ip6_config_add_address (s_ip6, addr))
+		if (!nm_setting_ip_config_add_address (s_ip6, addr))
 			PARSE_WARNING ("duplicate IP6 address");
 		nm_ip_address_unref (addr);
 	}
@@ -1442,7 +1442,7 @@ make_ip6_setting (shvarFile *ifcfg,
 		}
 
 		if (nm_utils_ipaddr_valid (AF_INET6, value)) {
-			if (!nm_setting_ip6_config_add_dns (s_ip6, value))
+			if (!nm_setting_ip_config_add_dns (s_ip6, value))
 				PARSE_WARNING ("duplicate DNS server %s", tag);
 		} else if (nm_utils_ipaddr_valid (AF_INET, value)) {
 			/* Ignore IPv4 addresses */
@@ -1457,7 +1457,7 @@ make_ip6_setting (shvarFile *ifcfg,
 		g_free (value);
 	}
 
-	/* DNS searches ('DOMAIN' key) are read by make_ip4_setting() and included in NMSettingIP4Config */
+	/* DNS searches ('DOMAIN' key) are read by make_ip4_setting() and included in NMSettingIPConfig */
 
 	/* Read static routes from route6-<interface> file */
 	route6_path = utils_get_route6_path (ifcfg->fileName);
@@ -4604,7 +4604,7 @@ check_dns_search_domains (shvarFile *ifcfg, NMSetting *s_ip4, NMSetting *s_ip6)
 	/* If there is no IPv4 config or it doesn't contain DNS searches,
 	 * read DOMAIN and put the domains into IPv6.
 	 */
-	if (!s_ip4 || nm_setting_ip4_config_get_num_dns_searches (NM_SETTING_IP4_CONFIG (s_ip4)) == 0) {
+	if (!s_ip4 || nm_setting_ip_config_get_num_dns_searches (NM_SETTING_IP_CONFIG (s_ip4)) == 0) {
 		/* DNS searches */
 		char *value = svGetValue (ifcfg, "DOMAIN", FALSE);
 		if (value) {
@@ -4613,7 +4613,7 @@ check_dns_search_domains (shvarFile *ifcfg, NMSetting *s_ip4, NMSetting *s_ip6)
 				char **item;
 				for (item = searches; *item; item++) {
 					if (strlen (*item)) {
-						if (!nm_setting_ip6_config_add_dns_search (NM_SETTING_IP6_CONFIG (s_ip6), *item))
+						if (!nm_setting_ip_config_add_dns_search (NM_SETTING_IP_CONFIG (s_ip6), *item))
 							PARSE_WARNING ("duplicate DNS domain '%s'", *item);
 					}
 				}
@@ -4794,7 +4794,7 @@ connection_from_file (const char *filename,
 		connection = NULL;
 		goto done;
 	} else {
-		read_aliases (NM_SETTING_IP4_CONFIG (s_ip4), filename, network_file);
+		read_aliases (NM_SETTING_IP_CONFIG (s_ip4), filename, network_file);
 		nm_connection_add_setting (connection, s_ip4);
 	}
 

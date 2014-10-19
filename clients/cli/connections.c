@@ -2889,7 +2889,7 @@ check_and_convert_vlan_prio_maps (const char *prio_map,
 static gboolean
 add_ip4_address_to_connection (NMIPAddress *ip4addr, NMConnection *connection)
 {
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	gboolean ret;
 
 	if (!ip4addr)
@@ -2897,13 +2897,13 @@ add_ip4_address_to_connection (NMIPAddress *ip4addr, NMConnection *connection)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	if (!s_ip4) {
-		s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+		s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 		g_object_set (s_ip4,
-		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 		              NULL);
 	}
-	ret = nm_setting_ip4_config_add_address (s_ip4, ip4addr);
+	ret = nm_setting_ip_config_add_address (s_ip4, ip4addr);
 	nm_ip_address_unref (ip4addr);
 
 	return ret;
@@ -2912,7 +2912,7 @@ add_ip4_address_to_connection (NMIPAddress *ip4addr, NMConnection *connection)
 static gboolean
 add_ip6_address_to_connection (NMIPAddress *ip6addr, NMConnection *connection)
 {
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	gboolean ret;
 
 	if (!ip6addr)
@@ -2920,13 +2920,13 @@ add_ip6_address_to_connection (NMIPAddress *ip6addr, NMConnection *connection)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	if (!s_ip6) {
-		s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+		s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 		nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 		g_object_set (s_ip6,
-		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
 		              NULL);
 	}
-	ret = nm_setting_ip6_config_add_address (s_ip6, ip6addr);
+	ret = nm_setting_ip_config_add_address (s_ip6, ip6addr);
 	nm_ip_address_unref (ip6addr);
 
 	return ret;
@@ -8107,8 +8107,7 @@ editor_init_new_connection (NmCli *nmc, NMConnection *connection)
 static void
 editor_init_existing_connection (NMConnection *connection)
 {
-	NMSettingIP4Config *s_ip4;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip4, *s_ip6;
 	NMSettingWireless *s_wireless;
 	NMSettingConnection *s_con;
 

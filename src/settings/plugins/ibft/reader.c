@@ -267,7 +267,7 @@ ip4_setting_add_from_block (const GPtrArray *block,
                             NMConnection *connection,
                             GError **error)
 {
-	NMSettingIP4Config *s_ip4 = NULL;
+	NMSettingIPConfig *s_ip4 = NULL;
 	NMIPAddress *addr;
 	const char *s_method = NULL;
 	const char *s_ipaddr = NULL;
@@ -296,10 +296,10 @@ ip4_setting_add_from_block (const GPtrArray *block,
 		goto error;
 	}
 
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 
 	if (!g_ascii_strcasecmp (s_method, "dhcp")) {
-		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+		g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 		goto success;
 	} else if (g_ascii_strcasecmp (s_method, "static") != 0) {
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -309,7 +309,7 @@ ip4_setting_add_from_block (const GPtrArray *block,
 	}
 
 	/* Static configuration stuff */
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
 
 	/* IP address */
 	if (!s_ipaddr || !nm_utils_ipaddr_valid (AF_INET, s_ipaddr)) {
@@ -355,13 +355,13 @@ ip4_setting_add_from_block (const GPtrArray *block,
 		goto error;
 	}
 
-	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 
 	if (s_dns1)
-		nm_setting_ip4_config_add_dns (s_ip4, s_dns1);
+		nm_setting_ip_config_add_dns (s_ip4, s_dns1);
 	if (s_dns2)
-		nm_setting_ip4_config_add_dns (s_ip4, s_dns2);
+		nm_setting_ip_config_add_dns (s_ip4, s_dns2);
 
 success:
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));

@@ -410,7 +410,7 @@ update_wired_setting_from_if_block(NMConnection *connection,
 }
 
 static void
-ifupdown_ip4_add_dns (NMSettingIP4Config *s_ip4, const char *dns)
+ifupdown_ip4_add_dns (NMSettingIPConfig *s_ip4, const char *dns)
 {
 	guint32 addr;
 	char **list, **iter;
@@ -428,7 +428,7 @@ ifupdown_ip4_add_dns (NMSettingIP4Config *s_ip4, const char *dns)
 			continue;
 		}
 
-		if (!nm_setting_ip4_config_add_dns (s_ip4, *iter))
+		if (!nm_setting_ip_config_add_dns (s_ip4, *iter))
 			nm_log_warn (LOGD_SETTINGS, "    duplicate DNS domain '%s'", *iter);
 	}
 	g_strfreev (list);
@@ -440,12 +440,12 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 						   GError **error)
 {
 
-	NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new());
+	NMSettingIPConfig *s_ip4 = NM_SETTING_IP_CONFIG (nm_setting_ip4_config_new());
 	const char *type = ifparser_getkey(block, "inet");
 	gboolean is_static = type && !strcmp("static", type);
 
 	if (!is_static) {
-		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+		g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 	} else {
 		guint32 tmp_mask;
 		NMIPAddress *addr;
@@ -490,9 +490,9 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		if (!addr)
 			goto error;
 
-		if (nm_setting_ip4_config_add_address (s_ip4, addr)) {
+		if (nm_setting_ip_config_add_address (s_ip4, addr)) {
 			nm_log_info (LOGD_SETTINGS, "addresses count: %d",
-			             nm_setting_ip4_config_get_num_addresses (s_ip4));
+			             nm_setting_ip_config_get_num_addresses (s_ip4));
 		} else {
 			nm_log_info (LOGD_SETTINGS, "ignoring duplicate IP4 address");
 		}
@@ -504,7 +504,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		nameservers_v = ifparser_getkey (block, "dns-nameservers");
 		ifupdown_ip4_add_dns (s_ip4, nameservers_v);
 
-		if (!nm_setting_ip4_config_get_num_dns (s_ip4))
+		if (!nm_setting_ip_config_get_num_dns (s_ip4))
 			nm_log_info (LOGD_SETTINGS, "No dns-nameserver configured in /etc/network/interfaces");
 
 		/* DNS searches */
@@ -515,13 +515,13 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 				g_strstrip (*iter);
 				if (g_ascii_isspace (*iter[0]))
 					continue;
-				if (!nm_setting_ip4_config_add_dns_search (s_ip4, *iter))
+				if (!nm_setting_ip_config_add_dns_search (s_ip4, *iter))
 					nm_log_warn (LOGD_SETTINGS, "    duplicate DNS domain '%s'", *iter);
 			}
 			g_strfreev (list);
 		}
 
-		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+		g_object_set (s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
 	}
 
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
@@ -533,7 +533,7 @@ error:
 }
 
 static void
-ifupdown_ip6_add_dns (NMSettingIP6Config *s_ip6, const char *dns)
+ifupdown_ip6_add_dns (NMSettingIPConfig *s_ip6, const char *dns)
 {
 	struct in6_addr addr;
 	char **list, **iter;
@@ -551,7 +551,7 @@ ifupdown_ip6_add_dns (NMSettingIP6Config *s_ip6, const char *dns)
 			continue;
 		}
 
-		if (!nm_setting_ip6_config_add_dns (s_ip6, *iter))
+		if (!nm_setting_ip_config_add_dns (s_ip6, *iter))
 			nm_log_warn (LOGD_SETTINGS, "    duplicate DNS domain '%s'", *iter);
 	}
 	g_strfreev (list);
@@ -562,13 +562,13 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 						   if_block *block,
 						   GError **error)
 {
-	NMSettingIP6Config *s_ip6 = NM_SETTING_IP6_CONFIG (nm_setting_ip6_config_new());
+	NMSettingIPConfig *s_ip6 = NM_SETTING_IP_CONFIG (nm_setting_ip6_config_new());
 	const char *type = ifparser_getkey(block, "inet6");
 	gboolean is_static = type && (!strcmp("static", type) ||
 							!strcmp("v4tunnel", type));
 
 	if (!is_static) {
-		g_object_set(s_ip6, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
+		g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 	} else {
 		NMIPAddress *addr;
 		const char *address_v;
@@ -603,9 +603,9 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 		if (!addr)
 			goto error;
 
-		if (nm_setting_ip6_config_add_address (s_ip6, addr)) {
+		if (nm_setting_ip_config_add_address (s_ip6, addr)) {
 			nm_log_info (LOGD_SETTINGS, "addresses count: %d",
-			             nm_setting_ip6_config_get_num_addresses (s_ip6));
+			             nm_setting_ip_config_get_num_addresses (s_ip6));
 		} else {
 			nm_log_info (LOGD_SETTINGS, "ignoring duplicate IP6 address");
 		}
@@ -617,7 +617,7 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 		nameservers_v = ifparser_getkey(block, "dns-nameservers");
 		ifupdown_ip6_add_dns (s_ip6, nameservers_v);
 
-		if (!nm_setting_ip6_config_get_num_dns (s_ip6))
+		if (!nm_setting_ip_config_get_num_dns (s_ip6))
 			nm_log_info (LOGD_SETTINGS, "No dns-nameserver configured in /etc/network/interfaces");
 
 		/* DNS searches */
@@ -628,14 +628,14 @@ update_ip6_setting_from_if_block(NMConnection *connection,
 				g_strstrip (*iter);
 				if (isblank (*iter[0]))
 					continue;
-				if (!nm_setting_ip6_config_add_dns_search (s_ip6, *iter))
+				if (!nm_setting_ip_config_add_dns_search (s_ip6, *iter))
 					nm_log_warn (LOGD_SETTINGS, "    duplicate DNS domain '%s'", *iter);
 			}
 			g_strfreev (list);
 		}
 
 		g_object_set (s_ip6,
-		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
 		              NULL);
 	}
 

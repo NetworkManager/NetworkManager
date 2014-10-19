@@ -651,7 +651,7 @@ destroy_ip_block (ip_block * iblock)
 }
 
 void
-set_ip4_dns_servers (NMSettingIP4Config *s_ip4, const char *conn_name)
+set_ip4_dns_servers (NMSettingIPConfig *s_ip4, const char *conn_name)
 {
 	const char *dns_servers;
 	gchar **server_list, *stripped;
@@ -668,7 +668,7 @@ set_ip4_dns_servers (NMSettingIP4Config *s_ip4, const char *conn_name)
 
 	length = g_strv_length (server_list);
 	if (length)
-		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS,
+		g_object_set (s_ip4, NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS,
 			      TRUE, NULL);
 	for (i = 0; i < length; i++) {
 		g_strstrip (server_list[i]);
@@ -679,14 +679,14 @@ set_ip4_dns_servers (NMSettingIP4Config *s_ip4, const char *conn_name)
 				nm_log_warn (LOGD_SETTINGS, "ignored dns: %s\n", server_list[i]);
 			continue;
 		}
-		if (!nm_setting_ip4_config_add_dns (s_ip4, server_list[i]))
+		if (!nm_setting_ip_config_add_dns (s_ip4, server_list[i]))
 			nm_log_warn (LOGD_SETTINGS, "warning: duplicate DNS server %s", server_list[i]);
 	}
 	g_strfreev (server_list);
 }
 
 void
-set_ip6_dns_servers (NMSettingIP6Config *s_ip6, const char *conn_name)
+set_ip6_dns_servers (NMSettingIPConfig *s_ip6, const char *conn_name)
 {
 	const char *dns_servers;
 	gchar **server_list, *stripped;
@@ -704,7 +704,7 @@ set_ip6_dns_servers (NMSettingIP6Config *s_ip6, const char *conn_name)
 
 	length = g_strv_length (server_list);
 	if (length)
-		g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS,
+		g_object_set (s_ip6, NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS,
 			      TRUE, NULL);
 	for (i = 0; i < length; i++) {
 		g_strstrip (server_list[i]);
@@ -715,7 +715,7 @@ set_ip6_dns_servers (NMSettingIP6Config *s_ip6, const char *conn_name)
 				nm_log_warn (LOGD_SETTINGS, "ignored dns: %s\n", server_list[i]);
 			continue;
 		}
-		if (!nm_setting_ip6_config_add_dns (s_ip6, server_list[i]))
+		if (!nm_setting_ip_config_add_dns (s_ip6, server_list[i]))
 			nm_log_warn (LOGD_SETTINGS, "warning: duplicate DNS server %s", server_list[i]);
 	}
 	g_strfreev (server_list);

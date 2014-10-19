@@ -27,7 +27,6 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include "nm-setting.h"
 #include "nm-setting-ip-config.h"
 
 G_BEGIN_DECLS
@@ -41,18 +40,7 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP4_CONFIG_SETTING_NAME "ipv4"
 
-#define NM_SETTING_IP4_CONFIG_METHOD             "method"
-#define NM_SETTING_IP4_CONFIG_DNS                "dns"
-#define NM_SETTING_IP4_CONFIG_DNS_SEARCH         "dns-search"
-#define NM_SETTING_IP4_CONFIG_ADDRESSES          "addresses"
-#define NM_SETTING_IP4_CONFIG_ROUTES             "routes"
-#define NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES "ignore-auto-routes"
-#define NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS    "ignore-auto-dns"
 #define NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID     "dhcp-client-id"
-#define NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME "dhcp-send-hostname"
-#define NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME      "dhcp-hostname"
-#define NM_SETTING_IP4_CONFIG_NEVER_DEFAULT      "never-default"
-#define NM_SETTING_IP4_CONFIG_MAY_FAIL           "may-fail"
 
 /**
  * NM_SETTING_IP4_CONFIG_METHOD_AUTO:
@@ -99,11 +87,11 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP4_CONFIG_METHOD_DISABLED   "disabled"
 
 struct _NMSettingIP4Config {
-	NMSetting parent;
+	NMSettingIPConfig parent;
 };
 
 typedef struct {
-	NMSettingClass parent;
+	NMSettingIPConfigClass parent;
 
 	/*< private >*/
 	gpointer padding[4];
@@ -111,46 +99,9 @@ typedef struct {
 
 GType nm_setting_ip4_config_get_type (void);
 
-NMSetting *   nm_setting_ip4_config_new                    (void);
-const char *  nm_setting_ip4_config_get_method             (NMSettingIP4Config *setting);
+NMSetting *nm_setting_ip4_config_new (void);
 
-guint32       nm_setting_ip4_config_get_num_dns            (NMSettingIP4Config *setting);
-const char *  nm_setting_ip4_config_get_dns                (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_add_dns                (NMSettingIP4Config *setting, const char *dns);
-void          nm_setting_ip4_config_remove_dns             (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_remove_dns_by_value    (NMSettingIP4Config *setting, const char *dns);
-void          nm_setting_ip4_config_clear_dns              (NMSettingIP4Config *setting);
-
-guint32       nm_setting_ip4_config_get_num_dns_searches       (NMSettingIP4Config *setting);
-const char *  nm_setting_ip4_config_get_dns_search             (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_add_dns_search             (NMSettingIP4Config *setting, const char *dns_search);
-void          nm_setting_ip4_config_remove_dns_search          (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_remove_dns_search_by_value (NMSettingIP4Config *setting, const char *dns_search);
-void          nm_setting_ip4_config_clear_dns_searches         (NMSettingIP4Config *setting);
-
-guint32       nm_setting_ip4_config_get_num_addresses       (NMSettingIP4Config *setting);
-NMIPAddress * nm_setting_ip4_config_get_address             (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_add_address             (NMSettingIP4Config *setting, NMIPAddress *address);
-void          nm_setting_ip4_config_remove_address          (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_remove_address_by_value (NMSettingIP4Config *setting, NMIPAddress *address);
-void          nm_setting_ip4_config_clear_addresses         (NMSettingIP4Config *setting);
-
-guint32       nm_setting_ip4_config_get_num_routes         (NMSettingIP4Config *setting);
-NMIPRoute *   nm_setting_ip4_config_get_route              (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_add_route              (NMSettingIP4Config *setting, NMIPRoute *route);
-void          nm_setting_ip4_config_remove_route           (NMSettingIP4Config *setting, guint32 i);
-gboolean      nm_setting_ip4_config_remove_route_by_value  (NMSettingIP4Config *setting, NMIPRoute *route);
-void          nm_setting_ip4_config_clear_routes           (NMSettingIP4Config *setting);
-
-gboolean      nm_setting_ip4_config_get_ignore_auto_routes (NMSettingIP4Config *setting);
-gboolean      nm_setting_ip4_config_get_ignore_auto_dns    (NMSettingIP4Config *setting);
-const char *  nm_setting_ip4_config_get_dhcp_client_id     (NMSettingIP4Config *setting);
-gboolean      nm_setting_ip4_config_get_dhcp_send_hostname (NMSettingIP4Config *setting);
-const char *  nm_setting_ip4_config_get_dhcp_hostname      (NMSettingIP4Config *setting);
-
-gboolean      nm_setting_ip4_config_get_never_default      (NMSettingIP4Config *setting);
-
-gboolean      nm_setting_ip4_config_get_may_fail           (NMSettingIP4Config *setting);
+const char *nm_setting_ip4_config_get_dhcp_client_id     (NMSettingIP4Config *setting);
 
 G_END_DECLS
 

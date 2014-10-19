@@ -23,6 +23,7 @@
 #include <glib/gi18n.h>
 #include <string.h>
 #include <ctype.h>
+#include <arpa/inet.h>
 
 #include "nm-dhcp-dhclient-utils.h"
 #include "nm-ip4-config.h"

@@ -211,16 +211,16 @@ pan_connection_check_create (NMBluezDevice *self)
 	/* Setting: IPv4 */
 	setting = nm_setting_ip4_config_new ();
 	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP4_CONFIG_MAY_FAIL, FALSE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
 	              NULL);
 	nm_connection_add_setting (connection, setting);
 
 	/* Setting: IPv6 */
 	setting = nm_setting_ip6_config_new ();
 	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP6_CONFIG_MAY_FAIL, TRUE,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NULL);
 	nm_connection_add_setting (connection, setting);
 

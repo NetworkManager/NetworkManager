@@ -323,7 +323,7 @@ test_setting_vpn_modify_during_foreach (void)
 static void
 test_setting_ip4_config_labels (void)
 {
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMIPAddress *addr;
 	GVariant *label;
 	GPtrArray *addrs;
@@ -332,21 +332,21 @@ test_setting_ip4_config_labels (void)
 	GVariant *dict, *setting_dict, *value;
 	GError *error = NULL;
 
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 	              NULL);
 
 	/* addr 1 */
 	addr = nm_ip_address_new (AF_INET, "1.1.1.1", 24, NULL, &error);
 	g_assert_no_error (error);
 
-	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
 
@@ -355,12 +355,12 @@ test_setting_ip4_config_labels (void)
 	g_assert_no_error (error);
 	nm_ip_address_set_attribute (addr, "label", g_variant_new_string ("eth0:1"));
 
-	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
+	addr = nm_setting_ip_config_get_address (s_ip4, 1);
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label != NULL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
@@ -370,27 +370,27 @@ test_setting_ip4_config_labels (void)
 	g_assert_no_error (error);
 	nm_ip_address_set_attribute (addr, "label", NULL);
 
-	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_setting_ip_config_add_address (s_ip4, addr);
 	nm_ip_address_unref (addr);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 2);
+	addr = nm_setting_ip_config_get_address (s_ip4, 2);
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
 
 	/* Remove addr 1 and re-verify remaining addresses */
-	nm_setting_ip4_config_remove_address (s_ip4, 0);
+	nm_setting_ip_config_remove_address (s_ip4, 0);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label != NULL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
+	addr = nm_setting_ip_config_get_address (s_ip4, 1);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
@@ -422,40 +422,40 @@ test_setting_ip4_config_labels (void)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (conn);
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label != NULL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
+	addr = nm_setting_ip_config_get_address (s_ip4, 1);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
 
 	/* Test explicit property assignment */
 	g_object_get (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_ADDRESSES, &addrs,
+	              NM_SETTING_IP_CONFIG_ADDRESSES, &addrs,
 	              NULL);
 
-	nm_setting_ip4_config_clear_addresses (s_ip4);
-	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 0);
+	nm_setting_ip_config_clear_addresses (s_ip4);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 0);
 
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_ADDRESSES, addrs,
+	              NM_SETTING_IP_CONFIG_ADDRESSES, addrs,
 	              NULL);
 	g_ptr_array_unref (addrs);
 	nm_setting_verify (NM_SETTING (s_ip4), NULL, &error);
 	g_assert_no_error (error);
-	g_assert_cmpint (nm_setting_ip4_config_get_num_addresses (s_ip4), ==, 2);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 2);
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "2.2.2.2");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label != NULL);
 	g_assert_cmpstr (g_variant_get_string (label, NULL), ==, "eth0:1");
 
-	addr = nm_setting_ip4_config_get_address (s_ip4, 1);
+	addr = nm_setting_ip_config_get_address (s_ip4, 1);
 	g_assert_cmpstr (nm_ip_address_get_address (addr), ==, "3.3.3.3");
 	label = nm_ip_address_get_attribute (addr, "label");
 	g_assert (label == NULL);
@@ -996,8 +996,8 @@ new_test_connection (void)
 
 	setting = nm_setting_ip4_config_new ();
 	g_object_set (G_OBJECT (setting),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
-	              NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, "eyeofthetiger",
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP_CONFIG_DHCP_HOSTNAME, "eyeofthetiger",
 	              NULL);
 	nm_connection_add_setting (connection, setting);
 
@@ -1045,7 +1045,7 @@ new_connection_dict (char **out_uuid,
 	/* IP6 */
 	g_variant_builder_init (&setting_builder, NM_VARIANT_TYPE_SETTING);
 	g_variant_builder_add (&setting_builder, "{sv}",
-	                       NM_SETTING_IP6_CONFIG_METHOD,
+	                       NM_SETTING_IP_CONFIG_METHOD,
 	                       g_variant_new_string (*out_expected_ip6_method));
 	g_variant_builder_add (&conn_builder, "{sa{sv}}",
 	                       NM_SETTING_IP6_CONFIG_SETTING_NAME,
@@ -1062,7 +1062,7 @@ test_connection_replace_settings (void)
 	GError *error = NULL;
 	gboolean success;
 	NMSettingConnection *s_con;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	char *uuid = NULL;
 	const char *expected_id = NULL, *expected_method = NULL;
 
@@ -1086,7 +1086,7 @@ test_connection_replace_settings (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, expected_method);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, expected_method);
 
 	g_free (uuid);
 	g_variant_unref (new_settings);
@@ -1217,7 +1217,7 @@ test_connection_new_from_dbus (void)
 	GVariant *new_settings;
 	GError *error = NULL;
 	NMSettingConnection *s_con;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	char *uuid = NULL;
 	const char *expected_id = NULL, *expected_method = NULL;
 
@@ -1239,7 +1239,7 @@ test_connection_new_from_dbus (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip6_config_get_method (s_ip6), ==, expected_method);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, expected_method);
 
 	g_free (uuid);
 	g_variant_unref (new_settings);
@@ -1630,18 +1630,18 @@ test_connection_diff_a_only (void)
 			{ NULL, NM_SETTING_DIFF_RESULT_UNKNOWN },
 		} },
 		{ NM_SETTING_IP4_CONFIG_SETTING_NAME, {
-			{ NM_SETTING_IP4_CONFIG_METHOD,             NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_DNS,                NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_DNS_SEARCH,         NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_ADDRESSES,          NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_ROUTES,             NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS,    NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_METHOD,             NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_DNS,                NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_DNS_SEARCH,         NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_ADDRESSES,          NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_ROUTES,             NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS,    NM_SETTING_DIFF_RESULT_IN_A },
 			{ NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,     NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME, NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,      NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_NEVER_DEFAULT,      NM_SETTING_DIFF_RESULT_IN_A },
-			{ NM_SETTING_IP4_CONFIG_MAY_FAIL,           NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_DHCP_HOSTNAME,      NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_NEVER_DEFAULT,      NM_SETTING_DIFF_RESULT_IN_A },
+			{ NM_SETTING_IP_CONFIG_MAY_FAIL,           NM_SETTING_DIFF_RESULT_IN_A },
 			{ NULL, NM_SETTING_DIFF_RESULT_UNKNOWN },
 		} },
 	};
@@ -1681,11 +1681,11 @@ test_connection_diff_different (void)
 {
 	NMConnection *a, *b;
 	GHashTable *out_diffs = NULL;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	gboolean same;
 	const DiffSetting settings[] = {
 		{ NM_SETTING_IP4_CONFIG_SETTING_NAME, {
-			{ NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B },
+			{ NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B },
 			{ NULL, NM_SETTING_DIFF_RESULT_UNKNOWN },
 		} },
 	};
@@ -1695,7 +1695,7 @@ test_connection_diff_different (void)
 	s_ip4 = nm_connection_get_setting_ip4_config (a);
 	g_assert (s_ip4);
 	g_object_set (G_OBJECT (s_ip4),
-	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
 	              NULL);
 
 	same = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_EXACT, &out_diffs);
@@ -1766,7 +1766,7 @@ test_connection_diff_inferrable (void)
 	gboolean same;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	char *uuid;
 	const DiffSetting settings[] = {
 		{ NM_SETTING_CONNECTION_SETTING_NAME, {
@@ -1794,7 +1794,7 @@ test_connection_diff_inferrable (void)
 
 	s_ip4 = nm_connection_get_setting_ip4_config (a);
 	g_assert (s_ip4);
-	g_object_set (G_OBJECT (s_ip4), NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, TRUE, NULL);
+	g_object_set (G_OBJECT (s_ip4), NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, TRUE, NULL);
 
 	/* Make sure the diff returns no results as secrets are ignored */
 	same = nm_connection_diff (a, b, NM_SETTING_COMPARE_FLAG_INFERRABLE, &out_diffs);
@@ -1836,11 +1836,11 @@ add_generic_settings (NMConnection *connection, const char *ctype)
 	g_free (uuid);
 
 	setting = nm_setting_ip4_config_new ();
-	g_object_set (setting, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (setting, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 	nm_connection_add_setting (connection, setting);
 
 	setting = nm_setting_ip6_config_new ();
-	g_object_set (setting, NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
+	g_object_set (setting, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
 	nm_connection_add_setting (connection, setting);
 }
 
@@ -2446,7 +2446,7 @@ test_setting_ip4_changed_signal (void)
 {
 	NMConnection *connection;
 	gboolean changed = FALSE;
-	NMSettingIP4Config *s_ip4;
+	NMSettingIPConfig *s_ip4;
 	NMIPAddress *addr;
 	NMIPRoute *route;
 	GError *error = NULL;
@@ -2457,53 +2457,53 @@ test_setting_ip4_changed_signal (void)
 	                  (GCallback) test_connection_changed_cb,
 	                  &changed);
 
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
-	ASSERT_CHANGED (nm_setting_ip4_config_add_dns (s_ip4, "11.22.0.0"));
-	ASSERT_CHANGED (nm_setting_ip4_config_remove_dns (s_ip4, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_dns (s_ip4, "11.22.0.0"));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_dns (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_dns (s_ip4, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip4_config_add_dns (s_ip4, "33.44.0.0");
-	ASSERT_CHANGED (nm_setting_ip4_config_clear_dns (s_ip4));
+	nm_setting_ip_config_add_dns (s_ip4, "33.44.0.0");
+	ASSERT_CHANGED (nm_setting_ip_config_clear_dns (s_ip4));
 
-	ASSERT_CHANGED (nm_setting_ip4_config_add_dns_search (s_ip4, "foobar.com"));
-	ASSERT_CHANGED (nm_setting_ip4_config_remove_dns_search (s_ip4, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_dns_search (s_ip4, "foobar.com"));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_dns_search (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_dns_search (s_ip4, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns_search->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns_search (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
-	ASSERT_CHANGED (nm_setting_ip4_config_add_dns_search (s_ip4, "foobar.com"));
-	ASSERT_CHANGED (nm_setting_ip4_config_clear_dns_searches (s_ip4));
+	ASSERT_CHANGED (nm_setting_ip_config_add_dns_search (s_ip4, "foobar.com"));
+	ASSERT_CHANGED (nm_setting_ip_config_clear_dns_searches (s_ip4));
 
 	addr = nm_ip_address_new (AF_INET, "22.33.0.0", 24, NULL, &error);
 	g_assert_no_error (error);
-	ASSERT_CHANGED (nm_setting_ip4_config_add_address (s_ip4, addr));
-	ASSERT_CHANGED (nm_setting_ip4_config_remove_address (s_ip4, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_address (s_ip4, addr));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_address (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*addr != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_address (s_ip4, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->addresses->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_address (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip4_config_add_address (s_ip4, addr);
-	ASSERT_CHANGED (nm_setting_ip4_config_clear_addresses (s_ip4));
+	nm_setting_ip_config_add_address (s_ip4, addr);
+	ASSERT_CHANGED (nm_setting_ip_config_clear_addresses (s_ip4));
 
 	route = nm_ip_route_new (AF_INET, "22.33.0.0", 24, NULL, 0, &error);
 	g_assert_no_error (error);
 
-	ASSERT_CHANGED (nm_setting_ip4_config_add_route (s_ip4, route));
-	ASSERT_CHANGED (nm_setting_ip4_config_remove_route (s_ip4, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_route (s_ip4, route));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_route (s_ip4, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip4_config_remove_route (s_ip4, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->routes->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_route (s_ip4, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip4_config_add_route (s_ip4, route);
-	ASSERT_CHANGED (nm_setting_ip4_config_clear_routes (s_ip4));
+	nm_setting_ip_config_add_route (s_ip4, route);
+	ASSERT_CHANGED (nm_setting_ip_config_clear_routes (s_ip4));
 
 	nm_ip_address_unref (addr);
 	nm_ip_route_unref (route);
@@ -2515,7 +2515,7 @@ test_setting_ip6_changed_signal (void)
 {
 	NMConnection *connection;
 	gboolean changed = FALSE;
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	NMIPAddress *addr;
 	NMIPRoute *route;
 	GError *error = NULL;
@@ -2526,54 +2526,54 @@ test_setting_ip6_changed_signal (void)
 	                  (GCallback) test_connection_changed_cb,
 	                  &changed);
 
-	s_ip6 = (NMSettingIP6Config *) nm_setting_ip6_config_new ();
+	s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new ();
 	nm_connection_add_setting (connection, NM_SETTING (s_ip6));
 
-	ASSERT_CHANGED (nm_setting_ip6_config_add_dns (s_ip6, "1:2:3::4:5:6"));
-	ASSERT_CHANGED (nm_setting_ip6_config_remove_dns (s_ip6, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_dns (s_ip6, "1:2:3::4:5:6"));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_dns (s_ip6, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_dns (s_ip6, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip6_config_add_dns (s_ip6, "1:2:3::4:5:6");
-	ASSERT_CHANGED (nm_setting_ip6_config_clear_dns (s_ip6));
+	nm_setting_ip_config_add_dns (s_ip6, "1:2:3::4:5:6");
+	ASSERT_CHANGED (nm_setting_ip_config_clear_dns (s_ip6));
 
-	ASSERT_CHANGED (nm_setting_ip6_config_add_dns_search (s_ip6, "foobar.com"));
-	ASSERT_CHANGED (nm_setting_ip6_config_remove_dns_search (s_ip6, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_dns_search (s_ip6, "foobar.com"));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_dns_search (s_ip6, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_dns_search (s_ip6, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->dns_search->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_dns_search (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip6_config_add_dns_search (s_ip6, "foobar.com");
-	ASSERT_CHANGED (nm_setting_ip6_config_clear_dns_searches (s_ip6));
+	nm_setting_ip_config_add_dns_search (s_ip6, "foobar.com");
+	ASSERT_CHANGED (nm_setting_ip_config_clear_dns_searches (s_ip6));
 
 	addr = nm_ip_address_new (AF_INET6, "1:2:3::4:5:6", 64, NULL, &error);
 	g_assert_no_error (error);
 
-	ASSERT_CHANGED (nm_setting_ip6_config_add_address (s_ip6, addr));
-	ASSERT_CHANGED (nm_setting_ip6_config_remove_address (s_ip6, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_address (s_ip6, addr));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_address (s_ip6, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_address (s_ip6, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->addresses->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_address (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip6_config_add_address (s_ip6, addr);
-	ASSERT_CHANGED (nm_setting_ip6_config_clear_addresses (s_ip6));
+	nm_setting_ip_config_add_address (s_ip6, addr);
+	ASSERT_CHANGED (nm_setting_ip_config_clear_addresses (s_ip6));
 
 	route = nm_ip_route_new (AF_INET6, "1:2:3::4:5:6", 128, NULL, 0, &error);
 	g_assert_no_error (error);
 
-	ASSERT_CHANGED (nm_setting_ip6_config_add_route (s_ip6, route));
-	ASSERT_CHANGED (nm_setting_ip6_config_remove_route (s_ip6, 0));
+	ASSERT_CHANGED (nm_setting_ip_config_add_route (s_ip6, route));
+	ASSERT_CHANGED (nm_setting_ip_config_remove_route (s_ip6, 0));
 
-	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*elt != NULL*");
-	ASSERT_UNCHANGED (nm_setting_ip6_config_remove_route (s_ip6, 1));
+	g_test_expect_message ("libnm", G_LOG_LEVEL_CRITICAL, "*i < priv->routes->len*");
+	ASSERT_UNCHANGED (nm_setting_ip_config_remove_route (s_ip6, 1));
 	g_test_assert_expected_messages ();
 
-	nm_setting_ip6_config_add_route (s_ip6, route);
-	ASSERT_CHANGED (nm_setting_ip6_config_clear_routes (s_ip6));
+	nm_setting_ip_config_add_route (s_ip6, route);
+	ASSERT_CHANGED (nm_setting_ip_config_clear_routes (s_ip6));
 
 	nm_ip_address_unref (addr);
 	nm_ip_route_unref (route);
@@ -2834,12 +2834,12 @@ test_connection_normalize_virtual_iface_name (void)
 
 	nm_connection_add_setting (con,
 	    g_object_new (NM_TYPE_SETTING_IP4_CONFIG,
-	                  NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	                  NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	                  NULL));
 
 	nm_connection_add_setting (con,
 	    g_object_new (NM_TYPE_SETTING_IP6_CONFIG,
-	                  NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	                  NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 	                  NULL));
 
 	s_vlan = nm_connection_get_setting_vlan (con);

@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <netinet/ether.h>
+#include <arpa/inet.h>
 #include <uuid/uuid.h>
 #include <gmodule.h>
 

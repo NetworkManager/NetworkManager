@@ -59,6 +59,7 @@ libnm-core/nm-setting-connection.c
 libnm-core/nm-setting-dcb.c
 libnm-core/nm-setting-gsm.c
 libnm-core/nm-setting-infiniband.c
+libnm-core/nm-setting-ip-config.c
 libnm-core/nm-setting-ip4-config.c
 libnm-core/nm-setting-ip6-config.c
 libnm-core/nm-setting-olpc-mesh.c

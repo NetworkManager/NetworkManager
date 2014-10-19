@@ -20,6 +20,7 @@
  */
 
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "nm-ip6-config.h"
 
@@ -400,7 +401,7 @@ nm_ip6_config_commit (const NMIP6Config *config, int ifindex)
 }
 
 void
-nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, int default_route_metric)
+nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIPConfig *setting, int default_route_metric)
 {
 	guint naddresses, nroutes, nnameservers, nsearches;
 	int i;
@@ -408,20 +409,22 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, i
 	if (!setting)
 		return;
 
-	naddresses = nm_setting_ip6_config_get_num_addresses (setting);
-	nroutes = nm_setting_ip6_config_get_num_routes (setting);
-	nnameservers = nm_setting_ip6_config_get_num_dns (setting);
-	nsearches = nm_setting_ip6_config_get_num_dns_searches (setting);
+	g_return_if_fail (NM_IS_SETTING_IP6_CONFIG (setting));
+
+	naddresses = nm_setting_ip_config_get_num_addresses (setting);
+	nroutes = nm_setting_ip_config_get_num_routes (setting);
+	nnameservers = nm_setting_ip_config_get_num_dns (setting);
+	nsearches = nm_setting_ip_config_get_num_dns_searches (setting);
 
 	g_object_freeze_notify (G_OBJECT (config));
 
 	/* Gateway */
-	if (nm_setting_ip6_config_get_never_default (setting))
+	if (nm_setting_ip_config_get_never_default (setting))
 		nm_ip6_config_set_never_default (config, TRUE);
-	else if (nm_setting_ip6_config_get_ignore_auto_routes (setting))
+	else if (nm_setting_ip_config_get_ignore_auto_routes (setting))
 		nm_ip6_config_set_never_default (config, FALSE);
 	for (i = 0; i < naddresses; i++) {
-		const char *gateway_str = nm_ip_address_get_gateway (nm_setting_ip6_config_get_address (setting, i));
+		const char *gateway_str = nm_ip_address_get_gateway (nm_setting_ip_config_get_address (setting, i));
 		struct in6_addr gateway;
 
 		if (gateway_str) {
@@ -433,7 +436,7 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, i
 
 	/* Addresses */
 	for (i = 0; i < naddresses; i++) {
-		NMIPAddress *s_addr = nm_setting_ip6_config_get_address (setting, i);
+		NMIPAddress *s_addr = nm_setting_ip_config_get_address (setting, i);
 		NMPlatformIP6Address address;
 
 		memset (&address, 0, sizeof (address));
@@ -447,10 +450,10 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, i
 	}
 
 	/* Routes */
-	if (nm_setting_ip6_config_get_ignore_auto_routes (setting))
+	if (nm_setting_ip_config_get_ignore_auto_routes (setting))
 		nm_ip6_config_reset_routes (config);
 	for (i = 0; i < nroutes; i++) {
-		NMIPRoute *s_route = nm_setting_ip6_config_get_route (setting, i);
+		NMIPRoute *s_route = nm_setting_ip_config_get_route (setting, i);
 		NMPlatformIP6Route route;
 
 		memset (&route, 0, sizeof (route));
@@ -466,7 +469,7 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, i
 	}
 
 	/* DNS */
-	if (nm_setting_ip6_config_get_ignore_auto_dns (setting)) {
+	if (nm_setting_ip_config_get_ignore_auto_dns (setting)) {
 		nm_ip6_config_reset_nameservers (config);
 		nm_ip6_config_reset_domains (config);
 		nm_ip6_config_reset_searches (config);
@@ -474,11 +477,11 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, i
 	for (i = 0; i < nnameservers; i++) {
 		 struct in6_addr ip;
 
-		if (inet_pton (AF_INET6, nm_setting_ip6_config_get_dns (setting, i), &ip) == 1)
+		if (inet_pton (AF_INET6, nm_setting_ip_config_get_dns (setting, i), &ip) == 1)
 			nm_ip6_config_add_nameserver (config, &ip);
 	}
 	for (i = 0; i < nsearches; i++)
-		nm_ip6_config_add_search (config, nm_setting_ip6_config_get_dns_search (setting, i));
+		nm_ip6_config_add_search (config, nm_setting_ip_config_get_dns_search (setting, i));
 
 	g_object_thaw_notify (G_OBJECT (config));
 }
@@ -486,17 +489,17 @@ nm_ip6_config_merge_setting (NMIP6Config *config, NMSettingIP6Config *setting, i
 NMSetting *
 nm_ip6_config_create_setting (const NMIP6Config *config)
 {
-	NMSettingIP6Config *s_ip6;
+	NMSettingIPConfig *s_ip6;
 	const struct in6_addr *gateway;
 	guint naddresses, nroutes, nnameservers, nsearches;
 	const char *method = NULL;
 	int i;
 
-	s_ip6 = NM_SETTING_IP6_CONFIG (nm_setting_ip6_config_new ());
+	s_ip6 = NM_SETTING_IP_CONFIG (nm_setting_ip6_config_new ());
 
 	if (!config) {
 		g_object_set (s_ip6,
-		              NM_SETTING_IP6_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+		              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
 		              NULL);
 		return NM_SETTING (s_ip6);
 	}
@@ -530,14 +533,14 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 			method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
 
 		s_addr = nm_ip_address_new_binary (AF_INET6, &address->address, address->plen, gateway, NULL);
-		nm_setting_ip6_config_add_address (s_ip6, s_addr);
+		nm_setting_ip_config_add_address (s_ip6, s_addr);
 		nm_ip_address_unref (s_addr);
 	}
 
 	/* Use 'ignore' if the method wasn't previously set */
 	if (!method)
 		method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
-	g_object_set (s_ip6, NM_SETTING_IP6_CONFIG_METHOD, method, NULL);
+	g_object_set (s_ip6, NM_SETTING_IP_CONFIG_METHOD, method, NULL);
 
 	/* Routes */
 	for (i = 0; i < nroutes; i++) {
@@ -560,7 +563,7 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 		                                  &route->network, route->plen,
 		                                  &route->gateway, route->metric,
 		                                  NULL);
-		nm_setting_ip6_config_add_route (s_ip6, s_route);
+		nm_setting_ip_config_add_route (s_ip6, s_route);
 		nm_ip_route_unref (s_route);
 	}
 
@@ -568,12 +571,12 @@ nm_ip6_config_create_setting (const NMIP6Config *config)
 	for (i = 0; i < nnameservers; i++) {
 		const struct in6_addr *nameserver = nm_ip6_config_get_nameserver (config, i);
 
-		nm_setting_ip6_config_add_dns (s_ip6, nm_utils_inet6_ntop (nameserver, NULL));
+		nm_setting_ip_config_add_dns (s_ip6, nm_utils_inet6_ntop (nameserver, NULL));
 	}
 	for (i = 0; i < nsearches; i++) {
 		const char *search = nm_ip6_config_get_search (config, i);
 
-		nm_setting_ip6_config_add_dns_search (s_ip6, search);
+		nm_setting_ip_config_add_dns_search (s_ip6, search);
 	}
 
 	return NM_SETTING (s_ip6);

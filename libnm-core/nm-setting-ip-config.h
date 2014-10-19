@@ -127,6 +127,94 @@ void         nm_ip_route_set_attribute       (NMIPRoute   *route,
                                               const char  *name,
                                               GVariant    *value);
 
+
+#define NM_TYPE_SETTING_IP_CONFIG            (nm_setting_ip_config_get_type ())
+#define NM_SETTING_IP_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_IP_CONFIG, NMSettingIPConfig))
+#define NM_SETTING_IP_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_IPCONFIG, NMSettingIPConfigClass))
+#define NM_IS_SETTING_IP_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SETTING_IP_CONFIG))
+#define NM_IS_SETTING_IP_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SETTING_IP_CONFIG))
+#define NM_SETTING_IP_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING_IP_CONFIG, NMSettingIPConfigClass))
+
+#define NM_SETTING_IP_CONFIG_METHOD             "method"
+#define NM_SETTING_IP_CONFIG_DNS                "dns"
+#define NM_SETTING_IP_CONFIG_DNS_SEARCH         "dns-search"
+#define NM_SETTING_IP_CONFIG_ADDRESSES          "addresses"
+#define NM_SETTING_IP_CONFIG_ROUTES             "routes"
+#define NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES "ignore-auto-routes"
+#define NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS    "ignore-auto-dns"
+#define NM_SETTING_IP_CONFIG_DHCP_HOSTNAME      "dhcp-hostname"
+#define NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME "dhcp-send-hostname"
+#define NM_SETTING_IP_CONFIG_NEVER_DEFAULT      "never-default"
+#define NM_SETTING_IP_CONFIG_MAY_FAIL           "may-fail"
+
+struct _NMSettingIPConfig {
+	NMSetting parent;
+};
+
+typedef struct {
+	NMSettingClass parent;
+
+	/* Padding for future expansion */
+	gpointer padding[8];
+} NMSettingIPConfigClass;
+
+GType nm_setting_ip_config_get_type (void);
+
+const char   *nm_setting_ip_config_get_method                 (NMSettingIPConfig *setting);
+
+guint         nm_setting_ip_config_get_num_dns                (NMSettingIPConfig *setting);
+const char   *nm_setting_ip_config_get_dns                    (NMSettingIPConfig *setting,
+                                                               int                i);
+gboolean      nm_setting_ip_config_add_dns                    (NMSettingIPConfig *setting,
+                                                               const char        *dns);
+void          nm_setting_ip_config_remove_dns                 (NMSettingIPConfig *setting,
+                                                               int                i);
+gboolean      nm_setting_ip_config_remove_dns_by_value        (NMSettingIPConfig *setting,
+                                                               const char        *dns);
+void          nm_setting_ip_config_clear_dns                  (NMSettingIPConfig *setting);
+
+guint         nm_setting_ip_config_get_num_dns_searches       (NMSettingIPConfig *setting);
+const char   *nm_setting_ip_config_get_dns_search             (NMSettingIPConfig *setting,
+                                                               int                i);
+gboolean      nm_setting_ip_config_add_dns_search             (NMSettingIPConfig *setting,
+                                                               const char        *dns_search);
+void          nm_setting_ip_config_remove_dns_search          (NMSettingIPConfig *setting,
+                                                               int                i);
+gboolean      nm_setting_ip_config_remove_dns_search_by_value (NMSettingIPConfig *setting,
+                                                               const char        *dns_search);
+void          nm_setting_ip_config_clear_dns_searches         (NMSettingIPConfig *setting);
+
+guint         nm_setting_ip_config_get_num_addresses          (NMSettingIPConfig *setting);
+NMIPAddress  *nm_setting_ip_config_get_address                (NMSettingIPConfig *setting,
+                                                               int                i);
+gboolean      nm_setting_ip_config_add_address                (NMSettingIPConfig *setting,
+                                                               NMIPAddress       *address);
+void          nm_setting_ip_config_remove_address             (NMSettingIPConfig *setting,
+                                                               int                i);
+gboolean      nm_setting_ip_config_remove_address_by_value    (NMSettingIPConfig *setting,
+                                                               NMIPAddress       *address);
+void          nm_setting_ip_config_clear_addresses            (NMSettingIPConfig *setting);
+
+guint         nm_setting_ip_config_get_num_routes             (NMSettingIPConfig *setting);
+NMIPRoute    *nm_setting_ip_config_get_route                  (NMSettingIPConfig *setting,
+                                                               int                i);
+gboolean      nm_setting_ip_config_add_route                  (NMSettingIPConfig *setting,
+                                                               NMIPRoute         *route);
+void          nm_setting_ip_config_remove_route               (NMSettingIPConfig *setting,
+                                                               int                i);
+gboolean      nm_setting_ip_config_remove_route_by_value      (NMSettingIPConfig *setting,
+                                                               NMIPRoute         *route);
+void          nm_setting_ip_config_clear_routes               (NMSettingIPConfig *setting);
+
+gboolean      nm_setting_ip_config_get_ignore_auto_routes     (NMSettingIPConfig *setting);
+gboolean      nm_setting_ip_config_get_ignore_auto_dns        (NMSettingIPConfig *setting);
+
+const char   *nm_setting_ip_config_get_dhcp_hostname          (NMSettingIPConfig *setting);
+gboolean      nm_setting_ip_config_get_dhcp_send_hostname     (NMSettingIPConfig *setting);
+
+gboolean      nm_setting_ip_config_get_never_default          (NMSettingIPConfig *setting);
+gboolean      nm_setting_ip_config_get_may_fail               (NMSettingIPConfig *setting);
+
 G_END_DECLS
 
 #endif /* NM_SETTING_IP_CONFIG_H */

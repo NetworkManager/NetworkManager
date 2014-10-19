@@ -86,7 +86,7 @@ add_connection (GDBusProxy *proxy, const char *con_name)
 	/* Build up the 'ipv4' Setting */
 	g_variant_builder_init (&setting_builder, G_VARIANT_TYPE ("a{sv}"));
 	g_variant_builder_add (&setting_builder, "{sv}",
-	                       NM_SETTING_IP4_CONFIG_METHOD,
+	                       NM_SETTING_IP_CONFIG_METHOD,
 	                       g_variant_new_string (NM_SETTING_IP4_CONFIG_METHOD_AUTO));
 	g_variant_builder_add (&connection_builder, "{sa{sv}}",
 	                       NM_SETTING_IP4_CONFIG_SETTING_NAME,

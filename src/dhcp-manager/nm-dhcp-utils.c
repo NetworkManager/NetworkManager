@@ -22,6 +22,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #include "nm-logging.h"
 #include "nm-dhcp-utils.h"

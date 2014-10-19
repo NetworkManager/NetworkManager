@@ -53,8 +53,8 @@ ip_block *convert_ip4_routes_block (const char *conn_name);
 ip_block *convert_ip6_routes_block (const char *conn_name);
 void destroy_ip_block (ip_block * iblock);
 
-void set_ip4_dns_servers (NMSettingIP4Config * s_ip4, const char *conn_name);
-void set_ip6_dns_servers (NMSettingIP6Config * s_ip6, const char *conn_name);
+void set_ip4_dns_servers (NMSettingIPConfig * s_ip4, const char *conn_name);
+void set_ip6_dns_servers (NMSettingIPConfig * s_ip6, const char *conn_name);
 
 gchar *strip_string (gchar *str, gchar t);
 gboolean is_managed (const char *conn_name);
