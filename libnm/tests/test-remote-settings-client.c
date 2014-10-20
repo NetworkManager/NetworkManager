@@ -368,7 +368,7 @@ add_remove_cb (GObject *s,
 	GError *error = NULL;
 
 	connection = nm_client_add_connection_finish (client, result, &error);
-	g_assert_error (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_CONNECTION_REMOVED);
+	g_assert_error (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_OBJECT_CREATION_FAILED);
 	g_assert (connection == NULL);
 
 	*done = TRUE;

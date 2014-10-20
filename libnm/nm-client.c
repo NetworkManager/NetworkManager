@@ -1634,17 +1634,8 @@ nm_client_new_finish (GAsyncResult *result, GError **error)
 {
 	GSimpleAsyncResult *simple;
 
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	if (!result) {
-		g_set_error_literal (error,
-		                     NM_CLIENT_ERROR,
-		                     NM_CLIENT_ERROR_UNKNOWN,
-		                     "NMClient initialization failed (or you passed NULL 'result' by mistake)");
-		return NULL;
-	}
-
 	g_return_val_if_fail (g_simple_async_result_is_valid (result, NULL, nm_client_new_async), NULL);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	simple = G_SIMPLE_ASYNC_RESULT (result);
 	if (g_simple_async_result_propagate_error (simple, error))

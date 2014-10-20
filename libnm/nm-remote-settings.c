@@ -20,6 +20,7 @@
  */
 
 #include <string.h>
+#include <glib/gi18n.h>
 #include <nm-dbus-interface.h>
 #include <nm-connection.h>
 
@@ -244,7 +245,7 @@ connection_added (NMRemoteSettings *self,
 }
 
 static void
-object_creation_failed (NMObject *object, GError *error, char *failed_path)
+object_creation_failed (NMObject *object, const char *failed_path)
 {
 	NMRemoteSettings *self = NM_REMOTE_SETTINGS (object);
 	AddConnectionInfo *addinfo;
@@ -253,8 +254,8 @@ object_creation_failed (NMObject *object, GError *error, char *failed_path)
 	addinfo = add_connection_info_find (self, failed_path);
 	if (addinfo) {
 		add_error = g_error_new_literal (NM_CLIENT_ERROR,
-		                                 NM_CLIENT_ERROR_CONNECTION_REMOVED,
-		                                 "Connection removed before it was initialized");
+		                                 NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
+		                                 _("Connection removed before it was initialized"));
 		add_connection_info_complete (self, addinfo, NULL, add_error);
 		g_error_free (add_error);
 	}

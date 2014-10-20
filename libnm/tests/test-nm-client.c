@@ -1023,7 +1023,7 @@ activate_failed_cb (GObject *object,
 
 	ac = nm_client_activate_connection_finish (client, result, &error);
 	g_assert (ac == NULL);
-	g_assert_error (error, NM_OBJECT_ERROR, NM_OBJECT_ERROR_OBJECT_CREATION_FAILURE);
+	g_assert_error (error, NM_CLIENT_ERROR, NM_CLIENT_ERROR_OBJECT_CREATION_FAILED);
 	g_clear_error (&error);
 
 	g_main_loop_quit (loop);

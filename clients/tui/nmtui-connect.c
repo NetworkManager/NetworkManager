@@ -86,7 +86,7 @@ activate_ac_state_changed (GObject    *object,
 		return;
 
 	if (state != NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-		error = g_error_new_literal (NM_CLIENT_ERROR, NM_CLIENT_ERROR_UNKNOWN,
+		error = g_error_new_literal (NM_CLIENT_ERROR, NM_CLIENT_ERROR_FAILED,
 		                             _("Activation failed"));
 	}
 

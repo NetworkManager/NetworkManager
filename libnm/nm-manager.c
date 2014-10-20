@@ -20,6 +20,7 @@
  */
 
 #include <string.h>
+#include <glib/gi18n.h>
 #include <nm-utils.h>
 
 #include "nm-manager.h"
@@ -1034,25 +1035,29 @@ active_connection_removed (NMManager *self, NMActiveConnection *ac)
 }
 
 static void
-object_creation_failed_cb (GObject *object, GError *error, char *failed_path)
+object_creation_failed (NMObject *object, const char *failed_path)
 {
 	NMManager *self = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GError *error;
 	GSList *iter;
 
-	g_return_if_fail (error != NULL);
 	g_return_if_fail (find_active_connection_by_path (self, failed_path) == NULL);
 
 	/* A newly activated connection failed due to some immediate error
 	 * and disappeared from active connection list.  Make sure the
 	 * callback gets called.
 	 */
+	error = g_error_new_literal (NM_CLIENT_ERROR,
+	                             NM_CLIENT_ERROR_OBJECT_CREATION_FAILED,
+	                             _("Active connection removed before it was initialized"));
 
 	for (iter = priv->pending_activations; iter; iter = iter->next) {
 		ActivateInfo *info = iter->data;
 
 		if (g_strcmp0 (failed_path, info->active_path) == 0) {
 			activate_info_complete (info, NULL, error);
+			g_error_free (error);
 			return;
 		}
 	}
@@ -1258,9 +1263,6 @@ constructed (GObject *object)
 
 	g_signal_connect (object, "notify::" NM_MANAGER_WIRELESS_ENABLED,
 	                  G_CALLBACK (wireless_enabled_cb), NULL);
-
-	g_signal_connect (object, "object-creation-failed",
-	                  G_CALLBACK (object_creation_failed_cb), NULL);
 }
 
 static gboolean
@@ -1534,6 +1536,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	object_class->finalize = finalize;
 
 	nm_object_class->init_dbus = init_dbus;
+	nm_object_class->object_creation_failed = object_creation_failed;
 
 	manager_class->device_added = device_added;
 	manager_class->device_removed = device_removed;
