@@ -606,7 +606,7 @@ get_ac_for_connection (const GPtrArray *active_cons, NMConnection *connection)
 		NMRemoteConnection *con;
 
 		con = nm_active_connection_get_connection (candidate);
-		ac_con_path = nm_connection_get_path (NM_CONNECTION (con));
+		ac_con_path = con ? nm_connection_get_path (NM_CONNECTION (con)) : NULL;
 		if (!g_strcmp0 (ac_con_path, con_path)) {
 			ac = candidate;
 			break;
@@ -693,19 +693,19 @@ find_active_connection (const GPtrArray *active_cons,
 	const char *path, *a_path, *path_num, *a_path_num;
 	const char *id;
 	const char *uuid;
-	NMConnection *con;
+	NMRemoteConnection *con;
 	NMActiveConnection *found = NULL;
 
 	for (i = start; i < active_cons->len; i++) {
 		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
 
-		con = NM_CONNECTION (nm_active_connection_get_connection (candidate));
-		id = nm_connection_get_id (con);
+		con = nm_active_connection_get_connection (candidate);
 
-		path = nm_connection_get_path (con);
-		a_path = nm_object_get_path (NM_OBJECT (candidate));
+		id = nm_active_connection_get_id (candidate);
 		uuid = nm_active_connection_get_uuid (candidate);
+		path = con ? nm_connection_get_path (NM_CONNECTION (con)) : NULL;
 		path_num = path ? strrchr (path, '/') + 1 : NULL;
+		a_path = nm_object_get_path (NM_OBJECT (candidate));
 		a_path_num = a_path ? strrchr (a_path, '/') + 1 : NULL;
 
 		/* When filter_type is NULL, compare connection ID (filter_val)
@@ -797,28 +797,64 @@ fill_output_connection (gpointer data, gpointer user_data, gboolean active_only)
 }
 
 static void
+fill_output_connection_for_invisible (NMActiveConnection *ac, NmCli *nmc)
+{
+	NmcOutputField *arr;
+	const char *ac_path = NULL;
+	const char *ac_state = NULL;
+	char *ac_dev = NULL;
+
+	ac_path = nm_object_get_path (NM_OBJECT (ac));
+	ac_state = active_connection_state_to_string (nm_active_connection_get_state (ac));
+	ac_dev = get_ac_device_string (ac);
+
+	arr = nmc_dup_fields_array (nmc_fields_con_show,
+	                            sizeof (nmc_fields_con_show),
+	                            0);
+	set_val_strc (arr, 0, nm_active_connection_get_id (ac));
+	set_val_strc (arr, 1, nm_active_connection_get_uuid (ac));
+	set_val_strc (arr, 2, nm_active_connection_get_connection_type (ac));
+	set_val_strc (arr, 3, NULL);
+	set_val_strc (arr, 4, NULL);
+	set_val_strc (arr, 5, NULL);
+	set_val_strc (arr, 6, NULL);
+	set_val_strc (arr, 7, NULL);
+	set_val_strc (arr, 8, NULL);
+	set_val_strc (arr, 9, _("yes"));
+	set_val_str  (arr, 10, ac_dev);
+	set_val_strc (arr, 11, ac_state);
+	set_val_strc (arr, 12, ac_path);
+
+	g_ptr_array_add (nmc->output_data, arr);
+}
+
+static void
 fill_output_active_connection (NMActiveConnection *active,
                                NmCli *nmc,
                                gboolean with_group,
                                guint32 o_flags)
 {
-	NMConnection *con;
+	NMRemoteConnection *con;
 	NMSettingConnection *s_con;
 	const GPtrArray *devices;
 	GString *dev_str;
 	NMActiveConnectionState state;
 	NMDevice *master;
+	const char *con_path = NULL, *con_zone = NULL;
 	int i;
 	NmcOutputField *tmpl, *arr;
 	size_t tmpl_len;
 	int idx_start = with_group ? 0 : 1;
 
-	con = NM_CONNECTION (nm_active_connection_get_connection (active));
-	s_con = nm_connection_get_setting_connection (con);
-	g_assert (s_con != NULL);
+	con = nm_active_connection_get_connection (active);
+	if (con) {
+		con_path = nm_connection_get_path (NM_CONNECTION (con));
+		s_con = nm_connection_get_setting_connection (NM_CONNECTION (con));
+		g_assert (s_con != NULL);
+		con_zone = nm_setting_connection_get_zone (s_con);
+	}
 
 	state = nm_active_connection_get_state (active);
-
 	master = nm_active_connection_get_master (active);
 
 	/* Get devices of the active connection */
@@ -847,7 +883,7 @@ fill_output_active_connection (NMActiveConnection *active,
 	arr = nmc_dup_fields_array (tmpl, tmpl_len, o_flags);
 	if (with_group)
 		set_val_strc (arr, 0, nmc_fields_con_active_details_groups[0].name);
-	set_val_strc (arr, 1-idx_start, nm_setting_connection_get_id (s_con));
+	set_val_strc (arr, 1-idx_start, nm_active_connection_get_id (active));
 	set_val_strc (arr, 2-idx_start, nm_active_connection_get_uuid (active));
 	set_val_str  (arr, 3-idx_start, dev_str->str);
 	set_val_strc (arr, 4-idx_start, active_connection_state_to_string (state));
@@ -856,13 +892,44 @@ fill_output_active_connection (NMActiveConnection *active,
 	set_val_strc (arr, 7-idx_start, nm_active_connection_get_specific_object_path (active));
 	set_val_strc (arr, 8-idx_start, NM_IS_VPN_CONNECTION (active) ? _("yes") : _("no"));
 	set_val_strc (arr, 9-idx_start, nm_object_get_path (NM_OBJECT (active)));
-	set_val_strc (arr, 10-idx_start, nm_connection_get_path (con));
-	set_val_strc (arr, 11-idx_start, nm_setting_connection_get_zone (s_con));
+	set_val_strc (arr, 10-idx_start, con_path);
+	set_val_strc (arr, 11-idx_start, con_zone);
 	set_val_strc (arr, 12-idx_start, master ? nm_object_get_path (NM_OBJECT (master)) : NULL);
 
 	g_ptr_array_add (nmc->output_data, arr);
 
 	g_string_free (dev_str, FALSE);
+}
+
+static void
+fill_output_for_all_invisible (NmCli *nmc)
+{
+	const GPtrArray *acons;
+	GSList *iter;
+	int i;
+
+	g_return_if_fail (nmc != NULL);
+
+	acons = nm_client_get_active_connections (nmc->client);
+	for (i = 0; i < acons->len; i++) {
+		gboolean found = FALSE;
+		NMActiveConnection *acon = g_ptr_array_index (acons, i);
+		const char *a_uuid = nm_active_connection_get_uuid (acon);
+
+		for (iter = nmc->connections; iter; iter = g_slist_next (iter)) {
+			NMConnection *con = NM_CONNECTION (iter->data);
+			const char *c_uuid = nm_connection_get_uuid (con);
+
+			if (strcmp (a_uuid, c_uuid) == 0) {
+				found = TRUE;
+				break;
+			}
+		}
+
+		/* Active connection is not in connections list */
+		if (!found)
+			fill_output_connection_for_invisible (acon, nmc);
+	}
 }
 
 typedef struct {
@@ -1288,6 +1355,8 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 			NMConnection *con = NM_CONNECTION (iter->data);
 			fill_output_connection (con, nmc, active_only);
 		}
+		/* Some active connections may not be in connection list, show them here. */
+		fill_output_for_all_invisible (nmc);
 		print_data (nmc);  /* Print all data */
 	} else {
 		gboolean new_line = FALSE;
@@ -1306,6 +1375,7 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 		nmc->required_fields = NULL;
 
 		while (argc > 0) {
+			gboolean res;
 			NMConnection *con;
 			NMActiveConnection *acon = NULL;
 			const char *selector = NULL;
@@ -1329,48 +1399,53 @@ do_connections_show (NmCli *nmc, gboolean active_only, int argc, char **argv)
 				if (acon)
 					con = NM_CONNECTION (nm_active_connection_get_connection (acon));
 			}
+			
+			if (!con && !acon) {
+				g_string_printf (nmc->return_text, _("Error: %s - no such connection profile."), *argv);
+				nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
+				goto finish;
+			}
 
-			/* Print connection details */
-			if (con) {
-				gboolean res;
+			/* Print connection details:
+			 * Usually we have both static and active connection.
+			 * But when a connection is private to a user, another user
+			 * may see only the active connection.
+			 */
 
-				/* Filter only active connections */
-				if (!acon)
-					acon = get_ac_for_connection (active_cons, con);
-				if (active_only && !acon) {
-					next_arg (&argc, &argv);
-					continue;
-				}
+			/* Filter only active connections */
+			if (!acon)
+				acon = get_ac_for_connection (active_cons, con);
+			if (active_only && !acon) {
+				next_arg (&argc, &argv);
+				continue;
+			}
 
-				/* Show an empty line between connections */
-				if (new_line)
-					g_print ("\n");
+			/* Show an empty line between connections */
+			if (new_line)
+				g_print ("\n");
 
-				/* Show profile configuration */
-				if (without_fields || profile_flds) {
+			/* Show profile configuration */
+			if (without_fields || profile_flds) {
+				if (con) {
 					nmc->required_fields = profile_flds;
 					res = nmc_connection_profile_details (con, nmc);
 					nmc->required_fields = NULL;
 					if (!res)
 						goto finish;
 				}
-
-				/* If the profile is active, print also active details */
-				if (without_fields || active_flds) {
-					if (acon) {
-						nmc->required_fields = active_flds;
-						res = nmc_active_connection_details (acon, nmc);
-						nmc->required_fields = NULL;
-						if (!res)
-							goto finish;
-					}
-				}
-				new_line = TRUE;
-			} else {
-				g_string_printf (nmc->return_text, _("Error: %s - no such connection profile."), *argv);
-				nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
-				goto finish;
 			}
+
+			/* If the profile is active, print also active details */
+			if (without_fields || active_flds) {
+				if (acon) {
+					nmc->required_fields = active_flds;
+					res = nmc_active_connection_details (acon, nmc);
+					nmc->required_fields = NULL;
+					if (!res)
+						goto finish;
+				}
+			}
+			new_line = TRUE;
 			
 			/* Take next argument.
 			 * But for pos != NULL we have more connections of the same name,
