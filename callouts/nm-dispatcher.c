@@ -484,7 +484,7 @@ handle_action (NMDBusDispatcher *dbus_dispatcher,
 	if (!sorted_scripts) {
 		GVariant *results;
 
-		results = g_variant_new_array (G_VARIANT_TYPE ("sus"), NULL, 0);
+		results = g_variant_new_array (G_VARIANT_TYPE ("(sus)"), NULL, 0);
 		g_dbus_method_invocation_return_value (context, g_variant_new ("(@a(sus))", results));
 		return TRUE;
 	}
