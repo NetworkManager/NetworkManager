@@ -35,6 +35,8 @@ test_ibft_LDADD = \
 
 TESTS = test-ibft
 
+endif
+
 EXTRA_DIST = \
 	iscsiadm-test-dhcp \
 	iscsiadm-test-static \
@@ -45,6 +47,4 @@ EXTRA_DIST = \
 	iscsiadm-test-bad-entry \
 	iscsiadm-test-bad-record \
 	iscsiadm-test-vlan
-
-endif
 
