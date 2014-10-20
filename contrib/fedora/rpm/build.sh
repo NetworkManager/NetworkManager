@@ -62,7 +62,7 @@ exec > >(tee "$BUILDLOG")
 exec 2>&1
 
 UUID=`uuidgen`
-RELEASE_VERSION="${RELEASE_VERSION:-$(git rev-list --first-parent HEAD | wc -l)}"
+RELEASE_VERSION="${RELEASE_VERSION:-$(git rev-list HEAD | wc -l)}"
 VERSION="${VERSION:-$(get_version || die "Could not read $VERSION")}"
 COMMIT_FULL="${COMMIT_FULL:-$(git rev-parse --verify HEAD || die "Error reading HEAD revision")}"
 COMMIT="${COMMIT:-$(git rev-parse --verify HEAD | sed 's/^\(.\{10\}\).*/\1/' || die "Error reading HEAD revision")}"

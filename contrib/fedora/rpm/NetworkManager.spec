@@ -47,6 +47,12 @@
 %global with_wimax 1
 %endif
 
+# ModemManager on Fedora < 20 too old for Bluetooth && wwan
+%if (0%{?fedora} && 0%{?fedora} < 20)
+%global with_bluetooth 0
+%global with_wwan 0
+%endif
+
 # Bluetooth requires the WWAN plugin
 %if 0%{?with_bluetooth}
 %global with_wwan 1
@@ -154,7 +160,7 @@ BuildRequires: wimax-devel
 BuildRequires: systemd >= 200-3 systemd-devel
 BuildRequires: libsoup-devel
 BuildRequires: libndp-devel >= 1.0
-%if 0%{?with_wwan} && (0%{?rhel} || (0%{?fedora} && 0%{?fedora} > 19))
+%if 0%{?with_bluetooth} || (0%{?with_wwan} && (0%{?rhel} || (0%{?fedora} && 0%{?fedora} > 19)))
 BuildRequires: ModemManager-glib-devel >= 1.0
 %endif
 %if 0%{?with_nmtui}
@@ -528,16 +534,12 @@ fi
 %files adsl
 %defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-adsl.so
-%else
-%exclude %{_libdir}/%{name}/libnm-device-plugin-adsl.so
 %endif
 
 %if 0%{?with_bluetooth}
 %files bluetooth
 %defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-bluetooth.so
-%else
-%exclude %{_libdir}/%{name}/libnm-device-plugin-bluetooth.so
 %endif
 
 %if 0%{?with_team}
@@ -550,8 +552,6 @@ fi
 %files wifi
 %defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-wifi.so
-%else
-%exclude %{_libdir}/%{name}/libnm-device-plugin-wifi.so
 %endif
 
 %if 0%{?with_wwan}
@@ -559,17 +559,12 @@ fi
 %defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-wwan.so
 %{_libdir}/%{name}/libnm-wwan.so
-%else
-%exclude %{_libdir}/%{name}/libnm-device-plugin-wwan.so
-%exclude %{_libdir}/%{name}/libnm-wwan.so
 %endif
 
 %if 0%{?with_wimax}
 %files wimax
 %defattr(-,root,root,0755)
 %{_libdir}/%{name}/libnm-device-plugin-wimax.so
-%else
-%exclude %{_libdir}/%{name}/libnm-device-plugin-wimax.so
 %endif
 
 %files devel

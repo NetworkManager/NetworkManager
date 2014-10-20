@@ -53,7 +53,7 @@ nm_dispatcher_LDADD = \
 
 noinst_LTLIBRARIES += libnmdbus-dispatcher.la
 
-libnmdbus_dispatcher_la_SOURCES = \
+nodist_libnmdbus_dispatcher_la_SOURCES = \
 	nmdbus-dispatcher.c \
 	nmdbus-dispatcher.h
 
@@ -68,10 +68,6 @@ nmdbus-dispatcher.h: nm-dispatcher.xml
 
 nmdbus-dispatcher.c: nmdbus-dispatcher.h
 	@true
-
-BUILT_SOURCES = \
-	nmdbus-dispatcher.c \
-	nmdbus-dispatcher.h
 
 ###########################################
 # dispatcher envp
@@ -113,7 +109,7 @@ install-data-hook:
 	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/pre-down.d
 	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)/pre-up.d
 
-CLEANFILES = $(BUILT_SOURCES) $(dbusactivation_DATA)
+CLEANFILES = $(nodist_libnmdbus_dispatcher_la_SOURCES) $(dbusactivation_DATA)
 
 EXTRA_DIST = \
 	$(dbusservice_DATA) \
