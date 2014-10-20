@@ -171,7 +171,9 @@ static gboolean
 routes_are_duplicate (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, gboolean consider_gateway_and_metric)
 {
 	return IN6_ARE_ADDR_EQUAL (&a->network, &b->network) && a->plen == b->plen &&
-	       (!consider_gateway_and_metric || (IN6_ARE_ADDR_EQUAL (&a->gateway, &b->gateway) && a->metric == b->metric));
+	       (   !consider_gateway_and_metric
+	        || (   IN6_ARE_ADDR_EQUAL (&a->gateway, &b->gateway)
+	            && nm_utils_ip6_route_metric_normalize (a->metric) == nm_utils_ip6_route_metric_normalize (b->metric)));
 }
 
 static gint
